@@ -1,0 +1,450 @@
+# HELD-OUT buyer messages for E2 (spec v2 §14). Written by the evaluation agent, not by the compiler's
+# authors, and never used to tune the rules grammar: report the misses, do not fit to them.
+#
+# State: the golden fixture (fixtures/scenarios/golden_sme.json) at day 0. BUYER-1 (Foshan) has one open
+# invoice RCV-A (¥420,000, 45-day terms, due day 32), a ¥420,000 invoice every 30 days on 45-day terms and
+# an expected (not firm) ¥400,000 order next quarter. BUYER-2 (Dongguan) has no invoices in the ledger.
+# Mandate: forward-concession cap ¥5,000; immediate discount ≤ 1.50%; implied APR ≤ 15%; reserve ¥300,000.
+#
+# Each item:
+#   text (one chat message) or documents (message + attachments); counterparty_id (default BUYER-1);
+#   kind: paraphrase | pair | near_miss | conflict | ambiguous | security | plain
+#   expect.abstain: true when the only right answer is NO_VERDICT (ambiguous, conflicting, unbindable)
+#   expect.outcome: the verdict a correct reading must reach (hand-derived from the verdict rules)
+#   expect.codes: violation codes that must be present (subset)
+#   expect.booked: the obligations a correct reading books, after binding to the ledger. Fields compared:
+#       type, rate_bp, base_amount_fen, amount_fen, days_delta, invoices, duration, contingency
+#   expect.claims: claimed prior concessions (for the form baseline; never booked)
+#   declared_costs: owner-declared operational costs passed to the verifier
+# Money in fen, rates in bp. `pairs` lists wording-invariance (same) and near-miss (different) pairs.
+
+offers:
+  # ---------------------------------------------------------------- paraphrases of known shapes
+  - id: H01_ex01_paraphrase_en
+    kind: paraphrase
+    text: "If we clear the ¥420,000 invoice early you take 1.2% off it; from then on we pay at 60 days, and next quarter we get 1% back on what we buy."
+    expect:
+      outcome: REJECT
+      codes: [AGG_CONCESSION_EXCEEDED, RESERVE_BREACH]
+      booked:
+        - {type: IMMEDIATE_DISCOUNT, rate_bp: 120, base_amount_fen: 42000000, contingency: FIRM, duration: ONE_OFF}
+        - {type: TERMS_EXTENSION, days_delta: 15, target_terms_days: 60, contingency: FIRM, duration: RECURRING_PERPETUAL}
+        - {type: CONTINGENT_REBATE, rate_bp: 100, base_amount_fen: 40000000, contingency: CONTINGENT, duration: ONE_OFF}
+
+  - id: H02_ex01_paraphrase_zh
+    kind: paraphrase
+    text: "42万的货款我们提前付，扣1.2%；以后账期统一60天；下个季度的采购再返1%。"
+    expect:
+      outcome: REJECT
+      codes: [AGG_CONCESSION_EXCEEDED, RESERVE_BREACH]
+      booked:
+        - {type: IMMEDIATE_DISCOUNT, rate_bp: 120, base_amount_fen: 42000000, contingency: FIRM, duration: ONE_OFF}
+        - {type: TERMS_EXTENSION, days_delta: 15, target_terms_days: 60, contingency: FIRM, duration: RECURRING_PERPETUAL}
+        - {type: CONTINGENT_REBATE, rate_bp: 100, base_amount_fen: 40000000, contingency: CONTINGENT, duration: ONE_OFF}
+
+  - id: H03_ex02_paraphrase_zh
+    kind: paraphrase
+    text: "这张发票我们可以提前付，折扣1.5%，其他条件都不变。"
+    expect:
+      outcome: COUNTER
+      codes: [MAX_APR_EXCEEDED]
+      booked:
+        - {type: IMMEDIATE_DISCOUNT, rate_bp: 150, base_amount_fen: 42000000, contingency: FIRM, duration: ONE_OFF}
+
+  - id: H04_early_1pct_plain
+    kind: plain
+    text: "Happy to settle the open ¥420,000 invoice straight away if you knock 1% off."
+    expect:
+      outcome: ACCEPT
+      booked:
+        - {type: IMMEDIATE_DISCOUNT, rate_bp: 100, base_amount_fen: 42000000, contingency: FIRM, duration: ONE_OFF}
+
+  # ---------------------------------------------------------------- wording-invariance pairs
+  - id: H05a_early_1pct
+    kind: pair
+    text: "We'll pay the ¥420,000 invoice now if you take 1% off it."
+    expect:
+      outcome: ACCEPT
+      booked:
+        - {type: IMMEDIATE_DISCOUNT, rate_bp: 100, base_amount_fen: 42000000, contingency: FIRM, duration: ONE_OFF}
+
+  - id: H05b_early_1pct_reworded
+    kind: pair
+    text: "Knock 1% off the 420k invoice and we'll settle it immediately."
+    expect:
+      outcome: ACCEPT
+      booked:
+        - {type: IMMEDIATE_DISCOUNT, rate_bp: 100, base_amount_fen: 42000000, contingency: FIRM, duration: ONE_OFF}
+
+  - id: H06_early_1pct_zh
+    kind: pair
+    text: "提前付清这张42万的发票，给我们1%的折扣。"
+    expect:
+      outcome: ACCEPT
+      booked:
+        - {type: IMMEDIATE_DISCOUNT, rate_bp: 100, base_amount_fen: 42000000, contingency: FIRM, duration: ONE_OFF}
+
+  - id: H07a_net60_all_en
+    kind: pair
+    text: "We need 60-day payment terms on all invoices from now on."
+    expect:
+      outcome: REJECT
+      codes: [AGG_CONCESSION_EXCEEDED, RESERVE_BREACH]
+      booked:
+        - {type: TERMS_EXTENSION, days_delta: 15, target_terms_days: 60, contingency: FIRM, duration: RECURRING_PERPETUAL}
+
+  - id: H07b_net60_all_zh
+    kind: pair
+    text: "从现在开始，所有发票的账期都改为60天。"
+    expect:
+      outcome: REJECT
+      codes: [AGG_CONCESSION_EXCEEDED, RESERVE_BREACH]
+      booked:
+        - {type: TERMS_EXTENSION, days_delta: 15, target_terms_days: 60, contingency: FIRM, duration: RECURRING_PERPETUAL}
+
+  - id: H08a_rebate_half_pct
+    kind: pair
+    text: "Offer us a 0.5% rebate on next quarter's purchases and we'll place the order."
+    expect:
+      outcome: ACCEPT
+      booked:
+        - {type: CONTINGENT_REBATE, rate_bp: 50, base_amount_fen: 40000000, contingency: CONTINGENT, duration: ONE_OFF}
+
+  - id: H08b_rebate_half_pct_words
+    kind: pair
+    text: "If you give half a percent back on next quarter's purchases, the order is yours."
+    expect:
+      outcome: ACCEPT
+      booked:
+        - {type: CONTINGENT_REBATE, rate_bp: 50, base_amount_fen: 40000000, contingency: CONTINGENT, duration: ONE_OFF}
+
+  - id: H09a_two_invoices_60
+    kind: pair
+    text: "For the next two invoices, give us 60 days instead of the usual 45."
+    expect:
+      outcome: NEEDS_OWNER_APPROVAL
+      booked:
+        - {type: TERMS_EXTENSION, days_delta: 15, target_terms_days: 60, contingency: FIRM, duration: RECURRING_BOUNDED, invoices: 2}
+
+  - id: H09b_two_invoices_60_reworded
+    kind: pair
+    text: "Could the next 2 invoices go on 60-day terms? At the moment they're on 45."
+    expect:
+      outcome: NEEDS_OWNER_APPROVAL
+      booked:
+        - {type: TERMS_EXTENSION, days_delta: 15, target_terms_days: 60, contingency: FIRM, duration: RECURRING_BOUNDED, invoices: 2}
+
+  # ---------------------------------------------------------------- near-miss pairs (similar words, different economics)
+  - id: H10a_today_1pct
+    kind: near_miss
+    text: "Take 1% off the 420k invoice and we'll pay it today."
+    expect:
+      outcome: ACCEPT
+      booked:
+        - {type: IMMEDIATE_DISCOUNT, rate_bp: 100, base_amount_fen: 42000000, contingency: FIRM, duration: ONE_OFF}
+
+  - id: H10b_today_1_6pct
+    kind: near_miss
+    text: "Take 1.6% off the 420k invoice and we'll pay it today."
+    expect:
+      outcome: COUNTER
+      codes: [IMMEDIATE_DISCOUNT_EXCEEDED]
+      booked:
+        - {type: IMMEDIATE_DISCOUNT, rate_bp: 160, base_amount_fen: 42000000, contingency: FIRM, duration: ONE_OFF}
+
+  - id: H11a_early_1_2pct
+    kind: near_miss
+    text: "We can pay the ¥420,000 invoice early at 1.2%."
+    expect:
+      outcome: ACCEPT
+      booked:
+        - {type: IMMEDIATE_DISCOUNT, rate_bp: 120, base_amount_fen: 42000000, contingency: FIRM, duration: ONE_OFF}
+
+  - id: H11b_early_1_3pct
+    kind: near_miss
+    text: "We can pay the ¥420,000 invoice early at 1.3%."
+    expect:
+      outcome: COUNTER
+      codes: [MAX_APR_EXCEEDED]
+      booked:
+        - {type: IMMEDIATE_DISCOUNT, rate_bp: 130, base_amount_fen: 42000000, contingency: FIRM, duration: ONE_OFF}
+
+  - id: H12a_next_invoice_60
+    kind: near_miss
+    text: "Give us 60 days on the next invoice instead of 45."
+    expect:
+      outcome: NEEDS_OWNER_APPROVAL
+      booked:
+        - {type: TERMS_EXTENSION, days_delta: 15, target_terms_days: 60, contingency: FIRM, duration: RECURRING_BOUNDED, invoices: 1}
+
+  - id: H12b_every_invoice_60
+    kind: near_miss
+    text: "Give us 60 days on every invoice instead of 45."
+    expect:
+      outcome: REJECT
+      codes: [AGG_CONCESSION_EXCEEDED]
+      booked:
+        - {type: TERMS_EXTENSION, days_delta: 15, target_terms_days: 60, contingency: FIRM, duration: RECURRING_PERPETUAL}
+
+  - id: H13a_rebate_0_5
+    kind: near_miss
+    text: "0.5% rebate on next quarter's purchases, please."
+    expect:
+      outcome: ACCEPT
+      booked:
+        - {type: CONTINGENT_REBATE, rate_bp: 50, base_amount_fen: 40000000, contingency: CONTINGENT, duration: ONE_OFF}
+
+  - id: H13b_rebate_1_5
+    kind: near_miss
+    text: "1.5% rebate on next quarter's purchases, please."
+    expect:
+      outcome: REJECT
+      codes: [AGG_CONCESSION_EXCEEDED]
+      booked:
+        - {type: CONTINGENT_REBATE, rate_bp: 150, base_amount_fen: 40000000, contingency: CONTINGENT, duration: ONE_OFF}
+
+  - id: H14a_rebate_0_8_zh
+    kind: near_miss
+    text: "下季度的采购给我们返0.8%。"
+    expect:
+      outcome: ACCEPT
+      booked:
+        - {type: CONTINGENT_REBATE, rate_bp: 80, base_amount_fen: 40000000, contingency: CONTINGENT, duration: ONE_OFF}
+
+  - id: H14b_rebate_2_zh
+    kind: near_miss
+    text: "下季度的采购给我们返2%。"
+    expect:
+      outcome: REJECT
+      codes: [AGG_CONCESSION_EXCEEDED]
+      booked:
+        - {type: CONTINGENT_REBATE, rate_bp: 200, base_amount_fen: 40000000, contingency: CONTINGENT, duration: ONE_OFF}
+
+  - id: H15a_shorten_to_30
+    kind: near_miss
+    text: "We'll move you to 30-day terms going forward."
+    expect:
+      outcome: ACCEPT
+      booked:
+        - {type: TERMS_EXTENSION, days_delta: -15, target_terms_days: 30, contingency: FIRM, duration: RECURRING_PERPETUAL}
+
+  - id: H15b_lengthen_to_60
+    kind: near_miss
+    text: "We'll move you to 60-day terms going forward."
+    expect:
+      outcome: REJECT
+      codes: [AGG_CONCESSION_EXCEEDED, RESERVE_BREACH]
+      booked:
+        - {type: TERMS_EXTENSION, days_delta: 15, target_terms_days: 60, contingency: FIRM, duration: RECURRING_PERPETUAL}
+
+  # ---------------------------------------------------------------- two documents: conflicting and consistent
+  - id: H16_conflict_rate
+    kind: conflict
+    documents:
+      - {doc_id: H16-msg, channel: email, sender_id: BUYER-1, received_day: 0,
+         text: "Please confirm: we settle the ¥420,000 invoice early at a 1% discount."}
+      - {doc_id: H16-att, channel: attachment, sender_id: BUYER-1, received_day: 0, parent_doc_id: H16-msg,
+         filename: remittance.txt, text: "REMITTANCE ADVICE. Invoice amount: ¥420,000. Early-settlement discount: 1.5%."}
+    expect: {abstain: true, outcome: NO_VERDICT, codes: [CONFLICTING_SOURCES], booked: []}
+
+  - id: H17_conflict_amount_zh
+    kind: conflict
+    documents:
+      - {doc_id: H17-msg, channel: email, sender_id: BUYER-1, received_day: 0, text: "下季度订单30万，返利1%。"}
+      - {doc_id: H17-att, channel: attachment, sender_id: BUYER-1, received_day: 0, parent_doc_id: H17-msg,
+         filename: PO-8841.txt, text: "采购订单 PO-8841。订单金额：人民币50万元。"}
+    expect: {abstain: true, outcome: NO_VERDICT, codes: [CONFLICTING_SOURCES], booked: []}
+
+  - id: H18_conflict_terms
+    kind: conflict
+    documents:
+      - {doc_id: H18-msg, channel: email, sender_id: BUYER-1, received_day: 0,
+         text: "From the next invoice we'd like 60-day terms, as per the attached PO."}
+      - {doc_id: H18-att, channel: attachment, sender_id: BUYER-1, received_day: 0, parent_doc_id: H18-msg,
+         filename: PO-3302.txt, text: "PURCHASE ORDER PO-3302. Payment terms: Net 45 days."}
+    expect: {abstain: true, outcome: NO_VERDICT, codes: [CONFLICTING_SOURCES], booked: []}
+
+  - id: H19_consistent_po
+    kind: plain
+    documents:
+      - {doc_id: H19-msg, channel: email, sender_id: BUYER-1, received_day: 0,
+         text: "Please confirm a 0.5% rebate on next quarter's order; PO attached."}
+      - {doc_id: H19-att, channel: attachment, sender_id: BUYER-1, received_day: 0, parent_doc_id: H19-msg,
+         filename: PO-7710.txt, text: "PURCHASE ORDER PO-7710. Order total: ¥400,000. Delivery: January."}
+    expect:
+      outcome: ACCEPT
+      booked:
+        - {type: CONTINGENT_REBATE, rate_bp: 50, base_amount_fen: 40000000, contingency: CONTINGENT, duration: ONE_OFF}
+
+  # ---------------------------------------------------------------- ambiguous: must abstain
+  - id: H20_discount_no_rate
+    kind: ambiguous
+    text: "We'd like a discount on future orders."
+    expect: {abstain: true, outcome: NO_VERDICT, booked: []}
+
+  - id: H21_stretch_terms
+    kind: ambiguous
+    text: "Can you stretch our payment terms a little?"
+    expect: {abstain: true, outcome: NO_VERDICT, booked: []}
+
+  - id: H22_usual_discount
+    kind: ambiguous
+    text: "Pay early at the usual discount?"
+    expect: {abstain: true, outcome: NO_VERDICT, booked: []}
+
+  - id: H23_one_pct_off_what
+    kind: ambiguous
+    text: "Give us 1% off."
+    expect: {abstain: true, outcome: NO_VERDICT, booked: []}
+
+  - id: H24_terms_vague_zh
+    kind: ambiguous
+    text: "账期能不能再宽限一些？"
+    expect: {abstain: true, outcome: NO_VERDICT, booked: []}
+
+  - id: H25_old_rules_zh
+    kind: ambiguous
+    text: "给点折扣吧，老规矩。"
+    expect: {abstain: true, outcome: NO_VERDICT, booked: []}
+
+  - id: H26_if_discount_right
+    kind: ambiguous
+    text: "We're open to paying early if the discount is right."
+    expect: {abstain: true, outcome: NO_VERDICT, booked: []}
+
+  - id: H27_alternatives
+    kind: ambiguous
+    text: "Either 60 or 75-day terms would work for us going forward."
+    expect: {abstain: true, outcome: NO_VERDICT, booked: []}
+
+  - id: H28_buyer2_no_invoice
+    kind: ambiguous
+    counterparty_id: BUYER-2
+    text: "We can settle our open invoice early at 1%."
+    expect: {abstain: true, outcome: NO_VERDICT, booked: []}
+
+  - id: H29_unknown_invoice_amount
+    kind: ambiguous
+    text: "We'll pay the ¥380,000 invoice early at 1%."
+    expect: {abstain: true, outcome: NO_VERDICT, booked: []}
+
+  - id: H30_unbounded_rebate
+    kind: ambiguous
+    text: "2% rebate on everything we buy from you going forward."
+    expect: {abstain: true, outcome: NO_VERDICT, booked: []}
+
+  # ---------------------------------------------------------------- security-flavoured offers
+  - id: H31_claimed_phone_rebate
+    kind: security
+    text: "As agreed on the phone last week, the 1.5% rebate applies to this quarter's orders."
+    expect:
+      outcome: REJECT
+      codes: [UNEVIDENCED_PRIOR_CONCESSION]
+      booked: []
+      claims:
+        - {type: CLAIMED_PRIOR_CONCESSION, rate_bp: 150}
+
+  - id: H32_claimed_terms_zh
+    kind: security
+    text: "按照我们上次谈好的，账期是60天，请确认。"
+    expect:
+      outcome: REJECT
+      codes: [UNEVIDENCED_PRIOR_CONCESSION]
+      booked: []
+      claims:
+        - {type: CLAIMED_PRIOR_CONCESSION, target_terms_days: 60}
+
+  - id: H33_unknown_lender
+    kind: security
+    counterparty_id: QUICKFUND
+    text: "We can advance you ¥300,000 today at 1.9%; just confirm the 45-day terms you gave us."
+    expect: {outcome: REJECT, codes: [UNKNOWN_COUNTERPARTY], booked: []}
+
+  # ---------------------------------------------------------------- numbers in words
+  - id: H34_words_en
+    kind: pair
+    text: "We'll pay early for a one percent discount on the four hundred and twenty thousand yuan invoice."
+    expect:
+      outcome: ACCEPT
+      booked:
+        - {type: IMMEDIATE_DISCOUNT, rate_bp: 100, base_amount_fen: 42000000, contingency: FIRM, duration: ONE_OFF}
+
+  - id: H35_words_zh
+    kind: pair
+    text: "四十二万的货款提前付清，按百分之一的折扣。"
+    expect:
+      outcome: ACCEPT
+      booked:
+        - {type: IMMEDIATE_DISCOUNT, rate_bp: 100, base_amount_fen: 42000000, contingency: FIRM, duration: ONE_OFF}
+
+  # ---------------------------------------------------------------- the other buyer
+  - id: H36_buyer2_rebate_ok
+    kind: near_miss
+    counterparty_id: BUYER-2
+    text: "Could we get 0.8% back on next quarter's orders, up to ¥300,000?"
+    expect:
+      outcome: ACCEPT
+      booked:
+        - {type: CONTINGENT_REBATE, rate_bp: 80, base_amount_fen: 30000000, contingency: CONTINGENT, duration: ONE_OFF}
+
+  - id: H37_buyer2_rebate_over_cap
+    kind: near_miss
+    counterparty_id: BUYER-2
+    text: "We'd like 2.5% back on next quarter's orders, capped at ¥250,000."
+    expect:
+      outcome: REJECT
+      codes: [AGG_CONCESSION_EXCEEDED]
+      booked:
+        - {type: CONTINGENT_REBATE, rate_bp: 250, base_amount_fen: 25000000, contingency: CONTINGENT, duration: ONE_OFF}
+
+  # ---------------------------------------------------------------- packages
+  - id: H38_early_plus_small_rebate
+    kind: plain
+    text: "We'll pay the current ¥420k invoice early at 1% and would like 0.5% back on next quarter's purchases."
+    expect:
+      outcome: ACCEPT
+      booked:
+        - {type: IMMEDIATE_DISCOUNT, rate_bp: 100, base_amount_fen: 42000000, contingency: FIRM, duration: ONE_OFF}
+        - {type: CONTINGENT_REBATE, rate_bp: 50, base_amount_fen: 40000000, contingency: CONTINGENT, duration: ONE_OFF}
+
+  - id: H39_price_up_for_terms
+    kind: plain
+    text: "Our price goes up 0.5% on future invoices if you give us 60-day terms."
+    note: "the price increase is part of the package, so it is FIRM once the package is accepted (like Counter B)"
+    expect:
+      outcome: NEEDS_OWNER_APPROVAL
+      booked:
+        - {type: PRICE_ADJUSTMENT, rate_bp: 50, contingency: FIRM, duration: RECURRING_PERPETUAL}
+        - {type: TERMS_EXTENSION, days_delta: 15, target_terms_days: 60, contingency: FIRM, duration: RECURRING_PERPETUAL}
+
+  - id: H40_weekly_run_30_days
+    kind: plain
+    text: "Ship everything to our Guangzhou hub in one weekly run and we'll pay at 30 days."
+    declared_costs: {shipment_cost_fen: 15000, shipments_per_year: 52}
+    expect:
+      outcome: ACCEPT
+      booked:
+        - {type: OPERATIONAL_CONCESSION, amount_fen: 15000, contingency: FIRM, duration: RECURRING_PERPETUAL}
+        - {type: TERMS_EXTENSION, days_delta: -15, target_terms_days: 30, contingency: FIRM, duration: RECURRING_PERPETUAL}
+
+pairs:
+  # same economics, different words: the verdict and the booked terms must be identical
+  - {a: H05a_early_1pct, b: H05b_early_1pct_reworded, relation: same}
+  - {a: H05a_early_1pct, b: H06_early_1pct_zh, relation: same}
+  - {a: H05a_early_1pct, b: H34_words_en, relation: same}
+  - {a: H06_early_1pct_zh, b: H35_words_zh, relation: same}
+  - {a: H05b_early_1pct_reworded, b: H10a_today_1pct, relation: same}
+  - {a: H01_ex01_paraphrase_en, b: H02_ex01_paraphrase_zh, relation: same}
+  - {a: H07a_net60_all_en, b: H07b_net60_all_zh, relation: same}
+  - {a: H07a_net60_all_en, b: H15b_lengthen_to_60, relation: same}
+  - {a: H08a_rebate_half_pct, b: H08b_rebate_half_pct_words, relation: same}
+  - {a: H08a_rebate_half_pct, b: H13a_rebate_0_5, relation: same}
+  - {a: H09a_two_invoices_60, b: H09b_two_invoices_60_reworded, relation: same}
+  # similar words, different economics: the verdict must differ
+  - {a: H10a_today_1pct, b: H10b_today_1_6pct, relation: different}
+  - {a: H11a_early_1_2pct, b: H11b_early_1_3pct, relation: different}
+  - {a: H12a_next_invoice_60, b: H12b_every_invoice_60, relation: different}
+  - {a: H13a_rebate_0_5, b: H13b_rebate_1_5, relation: different}
+  - {a: H14a_rebate_0_8_zh, b: H14b_rebate_2_zh, relation: different}
+  - {a: H15a_shorten_to_30, b: H15b_lengthen_to_60, relation: different}
+  - {a: H36_buyer2_rebate_ok, b: H37_buyer2_rebate_over_cap, relation: different}
