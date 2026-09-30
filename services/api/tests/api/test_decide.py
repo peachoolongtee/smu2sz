@@ -29,7 +29,7 @@ def test_scene1_cooperative_buyer_accepts_option_a_and_line_draw_is_tier1(client
     oid, _ = _eval(client, "EX01_PACKAGE")
     n = client.post(f"/negotiate/{oid}", json={"buyer_profile": "cooperative"}).json()
     assert n["outcome"] == "DEAL"
-    statuses = [(o["kind"] if "kind" in o else "", o["status"], o["tier"]) for o in n["operations"]]
+    statuses = [(o.get("kind", ""), o["status"], o["tier"]) for o in n["operations"]]
     assert statuses[0][1] == "EXECUTED"
     assert all(s == "EXECUTED" and t == "TIER_1" for _, s, t in statuses), statuses
     assert client.get("/ledger").json()["chain_valid"]

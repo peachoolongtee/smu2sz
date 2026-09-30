@@ -42,5 +42,5 @@ def test_evidence_has_run_header_and_verifies(client, tmp_path):
     f = tmp_path / "ev.jsonl"
     f.write_text(text)
     script = pathlib.Path(__file__).resolve().parents[4] / "scripts" / "verify_evidence.py"
-    out = subprocess.run([sys.executable, str(script), str(f)], capture_output=True, text=True)
+    out = subprocess.run([sys.executable, str(script), str(f)], capture_output=True, text=True, check=False)
     assert out.returncode == 0, out.stdout
