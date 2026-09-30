@@ -1315,6 +1315,13 @@ def main(argv: Sequence[str] | None = None) -> int:
     p.add_argument("--only", nargs="*", help="attack ids to run")
     args = p.parse_args(argv)
     structlog.configure(wrapper_class=structlog.make_filtering_bound_logger(logging.WARNING))
+    try:
+        return _run_cli(args)
+    finally:
+        structlog.reset_defaults()  # never leak the quiet config into the caller's process
+
+
+def _run_cli(args: argparse.Namespace) -> int:
     cat = load_catalogue()
     if args.only:
         cat = [a for a in cat if a["id"] in set(args.only)]

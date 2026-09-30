@@ -172,6 +172,7 @@ def test_chain_always_ends_in_rules() -> None:
 def test_logs_model_prompt_version_hash_latency_and_no_text(capsys: pytest.CaptureFixture[str]) -> None:
     import structlog
 
+    structlog.reset_defaults()  # another test (the attack CLI) may have left a warnings-only config behind
     with structlog.testing.capture_logs() as logs:
         Compiler([ClaudeBackend(client=_claude_client(_claude_response(EX01_JSON)))]).compile_offer(DOCS, "BUYER-1")
     ok = [e for e in logs if e.get("event") == "compiler.call" and e.get("outcome") == "ok"]

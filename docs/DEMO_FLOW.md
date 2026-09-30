@@ -14,7 +14,7 @@ The main scripted path is spec v2 §10, with the numbers from `fixtures/golden/g
    - contingent rebate ≤ ¥4,000.
 3. The Debt Desk shows the marginal cost of funds: invoice financing at 10.84% all-in, because clean-down excludes the line. Break-even discount 0.88%. The extension costs ¥1,871.30 per invoice and ¥22,455.62 a year (the notional line basis would be ¥13,255.89; the expected plan with the guaranteed loan, ¥11,052.30).
 4. The forward-concession meter shows ¥26,455.62 against a ¥5,000 cap. The cash line dips to ¥254,960 on day 47, a ¥45,040 shortfall that invoice financing can cure for ¥802.70.
-5. Verdict: **REJECT**: AGG_CONCESSION_EXCEEDED; RESERVE_BREACH@47 (curable). Covenants hold: DSCR 1.92×, leverage 1.72×.
+5. Verdict: **REJECT**: AGG_CONCESSION_EXCEEDED; RESERVE_BREACH@47 (curable); DISCOUNT_ABOVE_BREAK_EVEN (1.2% > the 0.88% break-even, which is why Option A is priced at 0.85%). Covenants hold: DSCR 1.92×, leverage 1.72×.
 6. Counters go out:
    - **Option A:** 45-day terms, no rebate, early settlement on up to ¥211,800 at 0.85%, costing ¥2,641.94.
    - **Option B:** 60-day terms with a 0.45% price adjustment of ¥1,890 per invoice, against a ¥1,871.30 funding cost.

@@ -53,7 +53,14 @@ from app.domain.models import (
 )
 from app.domain.money import DAYS_PER_YEAR, Ratio, bp, fmt_pct, fmt_yuan, post
 from app.financial import EngineError, project, value_concessions
-from app.funding import ComparisonResult, ComparisonRow, NoPermanentSourceError, compare, marginal_cost
+from app.funding import (
+    ComparisonResult,
+    ComparisonRow,
+    NoPermanentSourceError,
+    break_even_discount,
+    compare,
+    marginal_cost,
+)
 from app.funding import plan as funding_plan
 from app.mandate import check_apr, check_predicates, check_validity
 from app.verifier.bind import bind, material_gaps, recurring_for
@@ -65,7 +72,8 @@ from app.verifier.owner import describe as describe_constraints
 from app.verifier.reserve import baseline, cure_plan, induced_breach_days, reserve_violation
 from app.verifier.screen import SECURITY_CODES, screen
 
-PRICE_CODES = frozenset({ViolationCode.MAX_APR_EXCEEDED, ViolationCode.IMMEDIATE_DISCOUNT_EXCEEDED})
+PRICE_CODES = frozenset({ViolationCode.MAX_APR_EXCEEDED, ViolationCode.IMMEDIATE_DISCOUNT_EXCEEDED,
+                         ViolationCode.DISCOUNT_ABOVE_BREAK_EVEN})
 CAP_CODES = frozenset({ViolationCode.AGG_CONCESSION_EXCEEDED, ViolationCode.PER_BUYER_CAP_EXCEEDED})
 MANDATE_CODES = frozenset({ViolationCode.BAD_SIGNATURE, ViolationCode.MANDATE_EXPIRED,
                            ViolationCode.MANDATE_REVOKED, ViolationCode.MANDATE_VERSION_MISMATCH})
@@ -251,6 +259,21 @@ def _apr_checks(bound: list[Obligation], state: FinancialState, mandate: Mandate
         sel = next((row for row in comparison if row.result == ComparisonResult.SELECTED), None)
         if sel is not None:
             inputs["router_optimum"] = sel.cost_display
+        # spec v2 §5.3 / §8 example 2: early payment is worth taking only below the SME's own marginal cost
+        # of funds (the break-even discount, 0.88% on the golden fixture); above it, counter.
+        try:
+            be, be_bp = break_even_discount(state, mandate)
+        except NoPermanentSourceError:
+            be = None
+        if be is not None and d >= be.value:
+            out.append(Violation(
+                code=ViolationCode.DISCOUNT_ABOVE_BREAK_EVEN,
+                message=f"Early settlement at {fmt_pct(d)} costs more than financing the invoice: "
+                        f"break-even {fmt_pct(be.value)}",
+                observed=fmt_pct(d), limit=f"< {fmt_pct(be.value)}",
+                formula="d < c/(1+c), c = marginal source's cost share for 30 days",
+                inputs={**inputs, "break_even": fmt_pct(be.value, 4), "break_even_bp_floor": str(be_bp)},
+                spans=ob.spans))
         v = check_apr(Ratio.of(rate), mandate, f"Early settlement of {r.id} at {fmt_pct(d)}")
         if v is not None:
             out.append(v.model_copy(update={"formula": f"{formula} > {fmt_pct(bp(mandate.max_apr_bp))}",

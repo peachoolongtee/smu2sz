@@ -18,7 +18,7 @@ scenarios:
     tags: [demo, scene1, EX01]
     turns:
       - text: "Evaluate EX01"
-        expect: {intent: EVALUATE_OFFER, outcome: REJECT, codes_exact: [AGG_CONCESSION_EXCEEDED, RESERVE_BREACH],
+        expect: {intent: EVALUATE_OFFER, outcome: REJECT, codes_exact: [AGG_CONCESSION_EXCEEDED, RESERVE_BREACH, DISCOUNT_ABOVE_BREAK_EVEN],
                  ops_count: 0, awaiting: true, plan_kinds: [COUNTER_OFFER, NEGOTIATE],
                  reply_contains: ["¥26,455.62", "¥802.70"]}
       - text: "Send the counters"
@@ -45,7 +45,7 @@ scenarios:
     tags: [demo, scene2, EX01B, paste]
     turns:
       - text: "Is this a good offer from Foshan? “1.2% for early settlement. Standard terms going forward: 60 days. And 1% on next quarter as a goodwill gesture.”"
-        expect: {intent: EVALUATE_OFFER, outcome: REJECT, codes_exact: [AGG_CONCESSION_EXCEEDED, RESERVE_BREACH],
+        expect: {intent: EVALUATE_OFFER, outcome: REJECT, codes_exact: [AGG_CONCESSION_EXCEEDED, RESERVE_BREACH, DISCOUNT_ABOVE_BREAK_EVEN],
                  ops_count: 0, reply_contains: ["¥26,455.62"]}
 
   - id: S04_fund_gap

@@ -27,7 +27,7 @@ def test_buyer_offer_preset_reproduces_ex01(run, g):
     r = run(WhatIfParams(terms_days=60, discount_bp=120, rebate_bp=100))
     assert r.hypothetical is True
     assert r.outcome == "REJECT"
-    assert r.codes == ["AGG_CONCESSION_EXCEEDED", "RESERVE_BREACH"]
+    assert r.codes == ["AGG_CONCESSION_EXCEEDED", "RESERVE_BREACH", "DISCOUNT_ABOVE_BREAK_EVEN"]
     assert r.forward["total_fen"] == g["forward_ledger_total"] == 2_645_562
     assert r.forward["total_display"] == "¥26,455.62" and r.forward["cap_display"] == "¥5,000.00"
     assert r.forward["over_cap"] is True

@@ -255,3 +255,7 @@ Held-out 1 remaining misses after the re-label:
 - `outcome: unlabelled` is scored for obligations and left out of verdict agreement.
 - The report prints the source file.
 - Tests are in `services/api/tests/evals/test_heldout_alternate.py`.
+
+
+## Architect decision (1 Oct): early pay above break-even is a COUNTER
+The verifier now follows spec v2 §5.3 and §8 example 2: early settlement is taken autonomously only below the SME's own marginal cost of funds (the 0.88% break-even on the golden fixture). At or above that it's a pricing fault (`DISCOUNT_ABOVE_BREAK_EVEN`) and gets a COUNTER at 0.85%. So the held-out-1 labels for H04, H05a, H05b, H06, H10a, H11a, H34 and H35 (1–1.2% early pay) change from ACCEPT to COUNTER. This matches the held-out-2 labels, which were written to that rule from the start.

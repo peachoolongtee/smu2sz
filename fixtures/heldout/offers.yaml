@@ -55,7 +55,7 @@ offers:
     kind: plain
     text: "Happy to settle the open ¥420,000 invoice straight away if you knock 1% off."
     expect:
-      outcome: ACCEPT
+      outcome: COUNTER
       booked:
         - {type: IMMEDIATE_DISCOUNT, rate_bp: 100, base_amount_fen: 42000000, contingency: FIRM, duration: ONE_OFF}
 
@@ -64,7 +64,7 @@ offers:
     kind: pair
     text: "We'll pay the ¥420,000 invoice now if you take 1% off it."
     expect:
-      outcome: ACCEPT
+      outcome: COUNTER
       booked:
         - {type: IMMEDIATE_DISCOUNT, rate_bp: 100, base_amount_fen: 42000000, contingency: FIRM, duration: ONE_OFF}
 
@@ -72,7 +72,7 @@ offers:
     kind: pair
     text: "Knock 1% off the 420k invoice and we'll settle it immediately."
     expect:
-      outcome: ACCEPT
+      outcome: COUNTER
       booked:
         - {type: IMMEDIATE_DISCOUNT, rate_bp: 100, base_amount_fen: 42000000, contingency: FIRM, duration: ONE_OFF}
 
@@ -80,7 +80,7 @@ offers:
     kind: pair
     text: "提前付清这张42万的发票，给我们1%的折扣。"
     expect:
-      outcome: ACCEPT
+      outcome: COUNTER
       booked:
         - {type: IMMEDIATE_DISCOUNT, rate_bp: 100, base_amount_fen: 42000000, contingency: FIRM, duration: ONE_OFF}
 
@@ -139,7 +139,7 @@ offers:
     kind: near_miss
     text: "Take 1% off the 420k invoice and we'll pay it today."
     expect:
-      outcome: ACCEPT
+      outcome: COUNTER
       booked:
         - {type: IMMEDIATE_DISCOUNT, rate_bp: 100, base_amount_fen: 42000000, contingency: FIRM, duration: ONE_OFF}
 
@@ -156,7 +156,7 @@ offers:
     kind: near_miss
     text: "We can pay the ¥420,000 invoice early at 1.2%."
     expect:
-      outcome: ACCEPT
+      outcome: COUNTER
       booked:
         - {type: IMMEDIATE_DISCOUNT, rate_bp: 120, base_amount_fen: 42000000, contingency: FIRM, duration: ONE_OFF}
 
@@ -365,7 +365,7 @@ offers:
     kind: pair
     text: "We'll pay early for a one percent discount on the four hundred and twenty thousand yuan invoice."
     expect:
-      outcome: ACCEPT
+      outcome: COUNTER
       booked:
         - {type: IMMEDIATE_DISCOUNT, rate_bp: 100, base_amount_fen: 42000000, contingency: FIRM, duration: ONE_OFF}
 
@@ -373,7 +373,7 @@ offers:
     kind: pair
     text: "四十二万的货款提前付清，按百分之一的折扣。"
     expect:
-      outcome: ACCEPT
+      outcome: COUNTER
       booked:
         - {type: IMMEDIATE_DISCOUNT, rate_bp: 100, base_amount_fen: 42000000, contingency: FIRM, duration: ONE_OFF}
 

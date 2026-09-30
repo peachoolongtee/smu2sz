@@ -8,7 +8,7 @@ offers:
          text: "We'll settle the ¥420k early at 1.2% if you extend our standard terms to 60 days going forward and give us 1% off next quarter."}
     expect:
       outcome: REJECT
-      codes: [AGG_CONCESSION_EXCEEDED, RESERVE_BREACH]
+      codes: [AGG_CONCESSION_EXCEEDED, RESERVE_BREACH, DISCOUNT_ABOVE_BREAK_EVEN]
       reserve_breach_day: 47
       forward_concession_total_fen: 2645562
       obligations: [IMMEDIATE_DISCOUNT, TERMS_EXTENSION, CONTINGENT_REBATE]

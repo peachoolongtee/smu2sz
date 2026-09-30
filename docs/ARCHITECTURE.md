@@ -106,6 +106,7 @@ A module may not import another module's internals, only its public functions. *
 6. **Outcome.**
    - A Tier-3 clause or an unknown counterparty → `REJECT`.
    - Any hard violation → `REJECT` with `counters()` attached, so the outward message is a `COUNTER` when a counter exists.
+   - An early-pay discount at or above the break-even is a pricing fault (`DISCOUNT_ABOVE_BREAK_EVEN`) → `COUNTER`, like `MAX_APR_EXCEEDED` (spec §5.3, §8 example 2).
    - Otherwise, if the resulting operations need Tier 2 → `NEEDS_OWNER_APPROVAL`.
    - Otherwise → `ACCEPT`.
    - The buyer refusing every counter within the bounded rounds → `NO_DEAL`, and the router's plan covers the gap.

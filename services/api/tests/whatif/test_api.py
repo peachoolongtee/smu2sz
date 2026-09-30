@@ -14,7 +14,7 @@ def test_post_whatif_reproduces_ex01_and_is_hypothetical(client, g):
     body = client.post("/whatif", json=ACTUAL).json()
     assert body["hypothetical"] is True and "nothing is booked" in body["note"]
     assert body["outcome"] == "REJECT"
-    assert body["codes"] == ["AGG_CONCESSION_EXCEEDED", "RESERVE_BREACH"]
+    assert body["codes"] == ["AGG_CONCESSION_EXCEEDED", "RESERVE_BREACH", "DISCOUNT_ABOVE_BREAK_EVEN"]
     assert body["forward"]["total_fen"] == g["forward_ledger_total"]
     assert body["reserve"]["breach_day"] == 47
 
