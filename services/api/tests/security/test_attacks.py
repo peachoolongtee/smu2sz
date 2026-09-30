@@ -12,12 +12,10 @@ the approvals queue, and random injected text through intake, verdict and a comp
 from __future__ import annotations
 
 import json
-import logging
 import secrets
 from typing import Any
 
 import pytest
-import structlog
 from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
 
@@ -29,8 +27,6 @@ from app.security.attacks import (
     metrics,
     owner_token_env,
 )
-
-structlog.configure(wrapper_class=structlog.make_filtering_bound_logger(logging.WARNING))
 
 CATALOGUE = load_catalogue()
 BY_ID = {a["id"]: a for a in CATALOGUE}
