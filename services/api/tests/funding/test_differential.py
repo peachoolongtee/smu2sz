@@ -1,6 +1,10 @@
 """Differential test: the fast search (cash-only probes, lazy covenants) against the frozen
 reference search (`tests/funding/reference_search.py`, full `project` + covenants for every candidate).
 
+The fast search runs with the rules the reference had (`LegacyRules`: line repaid only on recovery
+days, no minimum ticket, no EXPECTED budget), so any difference is a bug in the speed-up. The new
+rules (EV-06, EV-07, EV-11) are tested in `test_router_rules.py`.
+
 Over seeded random states, menus, mandates, offers and bases, `plan()` must return an identical
 FundingPlan (actions, cost, cost lines, rejected alternatives, violations, label, id) and, on the
 COMMITTED basis, `compare()` identical rows. An exception must be the same exception.
@@ -24,7 +28,7 @@ from app.funding import compare, plan
 from app.funding.search import Search
 from tests.funding import cases
 from tests.funding.random_cases import random_case
-from tests.funding.reference_search import Search as ReferenceSearch
+from tests.funding.reference_search import Search as _FrozenSearch
 
 FULL = os.environ.get("ROUTER_DIFF_FULL") == "1"
 SEEDS = range(int(os.environ.get("ROUTER_DIFF_SEEDS", "240")))
@@ -45,10 +49,30 @@ def _with(search_cls, fn, *args):
         return _outcome(fn, *args)
 
 
+class ReferenceSearch(_FrozenSearch):
+    """The frozen search plus the hooks today's router calls, with the values that reproduce the
+    router of that time (no minimum ticket, never capped). The search itself is untouched."""
+
+    MIN_ACTION_FEN = 1
+    EXPECTED_PROBE_BUDGET = None
+    capped = False
+
+    def ticket(self, slot, amount: int) -> int:
+        return min(slot.cap_fen, max(self.MIN_ACTION_FEN, amount))
+
+
+class LegacyRules(Search):
+    """The fast search with the pre-EV-06/07/11 rules."""
+
+    LINE_REPAY_ON_ANY_INFLOW = False
+    MIN_ACTION_FEN = 1
+    EXPECTED_PROBE_BUDGET = None
+
+
 _RUNS: list[Search] = []
 
 
-class _Counted(Search):
+class _Counted(LegacyRules):
     """The fast search, remembering its instances so a test can count their probes."""
 
     def __init__(self, *args, **kwargs) -> None:
@@ -83,7 +107,7 @@ def test_compare_matches_reference(seed):
     _skip_heavy(seed)
     c = random_case(seed)
     args = (c.state, c.obligations, c.mandate)
-    assert _with(Search, compare, *args) == _with(ReferenceSearch, compare, *args)
+    assert _with(LegacyRules, compare, *args) == _with(ReferenceSearch, compare, *args)
 
 
 DESIGNED = ["bill_held", "dear_line", "cheap_early_pay", "leverage_tight", "no_new_borrowing", "long_gap",
@@ -94,9 +118,9 @@ DESIGNED = ["bill_held", "dear_line", "cheap_early_pay", "leverage_tight", "no_n
 @pytest.mark.parametrize("basis", ["COMMITTED", "EXPECTED"])
 def test_designed_cases_match_reference(name, basis):
     s, m = getattr(cases, name)()
-    assert _with(Search, plan, s, [], m, basis) == _with(ReferenceSearch, plan, s, [], m, basis)
+    assert _with(LegacyRules, plan, s, [], m, basis) == _with(ReferenceSearch, plan, s, [], m, basis)
     if basis == "COMMITTED":
-        assert _with(Search, compare, s, [], m) == _with(ReferenceSearch, compare, s, [], m)
+        assert _with(LegacyRules, compare, s, [], m) == _with(ReferenceSearch, compare, s, [], m)
 
 
 def test_random_cases_cover_every_outcome():
