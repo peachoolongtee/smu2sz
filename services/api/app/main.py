@@ -7,7 +7,9 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.offers import router as offers_router
 from app.api.read import router as read_router
-from app.config import get_settings
+from app.config import get_settings, load_dotenv
+
+load_dotenv()
 
 app = FastAPI(title="TermsLedger API", version="0.1.0")
 app.add_middleware(

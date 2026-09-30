@@ -4,7 +4,29 @@
 from __future__ import annotations
 
 import os
+import re
 from dataclasses import dataclass, field
+from pathlib import Path
+
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+_ALIASES = {"DEEPSEEK_API": "DEEPSEEK_API_KEY", "ANTHROPIC_KEY": "ANTHROPIC_API_KEY"}
+
+
+def load_dotenv(path: Path = _REPO_ROOT / ".env") -> None:
+    """Load KEY=VALUE lines from the repo-root .env without overriding the real environment.
+    Never logs values. Accepts a few key-name aliases and derives DATABASE_URL from
+    SUPABASE_DB_URL (session pooler, IPv4) when DATABASE_URL is not set. Tests opt out."""
+    if os.environ.get("TERMSLEDGER_NO_DOTENV"):
+        return
+    if path.exists():
+        for line in path.read_text().splitlines():
+            m = re.match(r"\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)\s*$", line)
+            if not m or line.lstrip().startswith("#"):
+                continue
+            k, v = m.group(1), m.group(2).strip().strip('"').strip("'")
+            os.environ.setdefault(_ALIASES.get(k, k), v)
+    if "DATABASE_URL" not in os.environ and os.environ.get("SUPABASE_DB_URL"):
+        os.environ["DATABASE_URL"] = re.sub(r"^postgres(ql)?://", "postgresql+psycopg://", os.environ["SUPABASE_DB_URL"])
 
 
 def _flag(name: str, default: bool = True) -> bool:
