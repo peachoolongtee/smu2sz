@@ -8,6 +8,7 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
+from app.api.auth import DEMO_OWNER_TOKEN
 from app.api.borrower_file import router as borrower_file_router
 from app.api.operations import router as operations_router
 from app.api.runtime import Runtime, set_runtime
@@ -25,7 +26,7 @@ def _client(settings: Settings) -> TestClient:
     app = FastAPI()
     app.include_router(borrower_file_router)
     app.include_router(operations_router)
-    return TestClient(app)
+    return TestClient(app, headers={"X-Owner-Token": DEMO_OWNER_TOKEN})  # owner routes are gated
 
 
 @pytest.fixture
