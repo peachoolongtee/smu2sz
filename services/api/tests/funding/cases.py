@@ -1,0 +1,89 @@
+"""Designed FinancialState variants where the router's search matters (spec §7.3–7.4)."""
+
+from __future__ import annotations
+
+from app.domain.models import FacilityStatus, FinancialState, Mandate
+from tests.funding.variants import (
+    add_flow,
+    golden,
+    with_debt_principal,
+    with_facility,
+    with_flow_day,
+    with_receivable,
+    without_facilities,
+)
+
+
+def bill_held() -> tuple[FinancialState, Mandate]:
+    """A cheap 银票 is held: ¥400,000 of bills discountable at 0.58%."""
+    s, m = golden()
+    return with_facility(s, "FAC-BILL", limit_fen=40_000_000), m
+
+
+def dear_line() -> tuple[FinancialState, Mandate]:
+    """The line costs 11.5%: invoice financing (≈10.84%) is cheaper for the 32-day gap."""
+    s, m = golden()
+    return with_facility(s, "FAC-LINE", rate_bp=1150), m
+
+
+def cheap_early_pay() -> tuple[FinancialState, Mandate]:
+    """The buyer offers 0.3% for payment 30 days early (≈3.7% a year): cheaper than the line."""
+    s, m = golden()
+    return with_facility(s, "FAC-EARLYPAY", rate_bp=30), m
+
+
+def leverage_tight() -> tuple[FinancialState, Mandate]:
+    """Existing debt of ¥2.5m: more than ¥200,000 of new debt breaks the 2.5x leverage covenant,
+    so part of the gap must come from early payment, which is not debt."""
+    s, m = golden()
+    return with_debt_principal(s, 250_000_000), m
+
+
+def no_new_borrowing() -> tuple[FinancialState, Mandate]:
+    """The mandate forbids new borrowing: only the buyer's early payment is allowed."""
+    s, m = golden()
+    return s, m.model_copy(update={"allow_new_borrowing": False})
+
+
+def long_gap() -> tuple[FinancialState, Mandate]:
+    """Receivable A pays on day 100; no recurring invoices and no day-47 bill: a line drawn until day 100
+    cannot rest at zero for 30 days within the 120-day horizon (clean-down)."""
+    s, m = golden()
+    s = s.model_copy(update={"recurring_invoices": [], "flows": [f for f in s.flows if f.id != "F-BILL47"]})
+    s = with_receivable(s, "RCV-A", terms_days=113)
+    return s, m
+
+
+def late_cheap_loan(payroll_day: int = 12) -> tuple[FinancialState, Mandate]:
+    """A committed guaranteed loan at 1% for one month, but it lands on day 21."""
+    s, m = golden()
+    s = with_facility(s, "FAC-GGL", status=FacilityStatus.COMMITTED, rate_bp=100, term_months=1)
+    return with_flow_day(s, "F-PAYROLL", payroll_day), m
+
+
+def uncovered_gap() -> tuple[FinancialState, Mandate]:
+    """Only the ¥150,000 line is usable: it cannot cover the ¥360,000 gap."""
+    s, m = golden()
+    return without_facilities(s, "FAC-IF", "FAC-EARLYPAY"), m
+
+
+def expected_only_gap() -> tuple[FinancialState, Mandate]:
+    """Payroll moves to day 30, invoice financing and early payment are gone: committed sources
+    cannot cover the gap, but the (not yet applied) guaranteed loan would, from day 21."""
+    s, m = golden()
+    s = without_facilities(s, "FAC-IF", "FAC-EARLYPAY")
+    return with_flow_day(s, "F-PAYROLL", 30), m
+
+
+def permanent_need() -> tuple[FinancialState, Mandate]:
+    """A ¥300,000 outflow on day 5 that nothing recovers within the 120-day horizon (a ¥500,000
+    inflow arrives only on day 300). The clean-down line is cheapest (3%) but cannot carry it; a
+    committed guaranteed loan (same-day, 12 months) can."""
+    s, m = golden()
+    s = s.model_copy(update={"recurring_invoices": [], "receivables": [], "flows": []})
+    s = without_facilities(s, "FAC-IF", "FAC-EARLYPAY")
+    s = with_facility(s, "FAC-LINE", rate_bp=300)
+    s = with_facility(s, "FAC-GGL", status=FacilityStatus.COMMITTED, lead_time_days=0)
+    s = add_flow(s, "F-BIG", 5, -30_000_000)
+    s = add_flow(s, "F-LATE", 300, 50_000_000)
+    return s, m
