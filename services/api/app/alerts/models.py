@@ -1,0 +1,116 @@
+"""Alert and reconciliation contracts. Strict, frozen, integer fen (docs/ARCHITECTURE.md conventions)."""
+
+from __future__ import annotations
+
+from enum import StrEnum
+from typing import Literal
+
+from pydantic import Field
+
+from app.domain.models import Contract, Day, Fen
+
+
+class Severity(StrEnum):
+    CRITICAL = "CRITICAL"  # a hard limit fails on the conservative trajectory
+    WARNING = "WARNING"  # a limit is close, or something needs the owner's attention
+    INFO = "INFO"
+
+
+class AlertKind(StrEnum):
+    RESERVE_BREACH_AHEAD = "RESERVE_BREACH_AHEAD"
+    RESERVE_HEADROOM_LOW = "RESERVE_HEADROOM_LOW"
+    COVENANT_HEADROOM_LOW = "COVENANT_HEADROOM_LOW"
+    CLEAN_DOWN_AT_RISK = "CLEAN_DOWN_AT_RISK"
+    COMMITMENT_EXPIRING = "COMMITMENT_EXPIRING"
+    RECEIVABLE_PAST_DUE = "RECEIVABLE_PAST_DUE"
+    CONCESSIONS_NEAR_CAP = "CONCESSIONS_NEAR_CAP"
+
+
+# Typed operation kinds an alert may suggest. A suggestion is never executed automatically: the
+# owner or the agent must submit it to POST /operations, where the executor computes its tier.
+SuggestedKind = Literal[
+    "DRAW_FACILITY",
+    "REPAY_FACILITY",
+    "SUBMIT_INVOICE_FOR_FINANCING",
+    "RECEIVE_PAYMENT",
+    "APPLY_FOR_FACILITY",
+    "ACCEPT_OFFER",
+    "RECORD_COMMITMENT",
+    "COUNTER_OFFER",
+    "GENERATE_BORROWER_FILE",
+]
+
+
+class SuggestedAction(Contract):
+    operation_kind: SuggestedKind
+    facility_id: str | None = None
+    receivable_id: str | None = None
+    commitment_id: str | None = None
+    offer_id: str | None = None
+    amount_fen: Fen | None = None
+    note: str = ""
+    executes_automatically: Literal[False] = False
+
+
+class Alert(Contract):
+    id: str
+    kind: AlertKind
+    severity: Severity
+    title: str
+    detail: str
+    formula: str
+    day: Day | None = None
+    month: int | None = None
+    amount_fen: Fen | None = None  # shortfall, past-due face, concession total ...
+    committed_cure: bool | None = None  # reserve breaches: can COMMITTED facilities cure it?
+    inputs: dict[str, str] = Field(default_factory=dict)
+    suggested: list[SuggestedAction] = Field(default_factory=list)
+    basis: Literal["CONSERVATIVE"] = "CONSERVATIVE"
+
+
+class MatchStatus(StrEnum):
+    MATCHED = "MATCHED"  # amount equals what is owed (face, or face less an accepted discount)
+    SHORT_PAYMENT = "SHORT_PAYMENT"  # received < face − agreed discount
+    DISCOUNT_IGNORED = "DISCOUNT_IGNORED"  # an accepted early-pay discount was not honoured as agreed
+    UNEXPECTED_AMOUNT = "UNEXPECTED_AMOUNT"  # between face − discount and face, matching neither
+    UNMATCHED = "UNMATCHED"  # no open receivable or commitment explains the receipt
+
+
+class ReceiptMatch(Contract):
+    seq: int
+    entry_hash: str
+    op_id: str
+    day: Day | None
+    receivable_id: str
+    counterparty_id: str | None
+    received_fen: Fen
+    face_fen: Fen | None
+    agreed_discount_fen: Fen = 0
+    expected_fen: Fen | None  # what the accepted terms say should arrive on this day
+    difference_fen: Fen | None  # received − expected
+    commitment_id: str | None = None
+    status: MatchStatus
+    flagged: bool
+    detail: str
+    formula: str
+
+
+class OutstandingReceivable(Contract):
+    receivable_id: str
+    counterparty_id: str
+    face_fen: Fen
+    due_day: Day
+    status: str
+    past_due: bool
+
+
+class ReconciliationReport(Contract):
+    as_of_day: Day
+    receipts: list[ReceiptMatch]
+    outstanding: list[OutstandingReceivable]
+    matched: int
+    flagged: int
+    received_total_fen: Fen
+    expected_total_fen: Fen
+    chain_head_hash: str | None
+    chain_valid: bool
