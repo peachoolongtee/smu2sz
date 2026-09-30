@@ -11,9 +11,9 @@ import json
 from collections.abc import Sequence
 from typing import Any
 
+from app.domain.ports import OperationRecord
 from app.persistence.canonical import canonical_json
 from app.persistence.errors import InvalidPayload
-from app.persistence.records import LedgerEntry
 
 GENESIS_HASH = "0" * 64
 
@@ -22,7 +22,7 @@ def compute_entry_hash(prev_hash: str, payload_json: str, result_json: str) -> s
     return hashlib.sha256((prev_hash + payload_json + result_json).encode("utf-8")).hexdigest()
 
 
-def verify_entries(entries: Sequence[LedgerEntry]) -> bool:
+def verify_entries(entries: Sequence[OperationRecord]) -> bool:
     """True when seq is contiguous from 1, every prev_hash links to the previous entry and every
     entry_hash matches its content."""
     prev = GENESIS_HASH
@@ -35,7 +35,7 @@ def verify_entries(entries: Sequence[LedgerEntry]) -> bool:
     return True
 
 
-def head_hash(entries: Sequence[LedgerEntry]) -> str:
+def head_hash(entries: Sequence[OperationRecord]) -> str:
     return entries[-1].entry_hash if entries else GENESIS_HASH
 
 
@@ -62,7 +62,7 @@ def op_identity(op_json: str) -> tuple[str | None, str | None]:
     return _field(op_json, "op_id"), _field(op_json, "kind")
 
 
-def build_evidence(entries: Sequence[LedgerEntry]) -> str:
+def build_evidence(entries: Sequence[OperationRecord]) -> str:
     """JSONL: one line per operation, then one chain line with `chain_valid` and `head_hash`."""
     lines = [
         canonical_json(

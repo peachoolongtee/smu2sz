@@ -2,13 +2,17 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import FrozenInstanceError, dataclass
 from enum import StrEnum
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(slots=True)
 class LedgerEntry:
-    """One row of the operations log. Satisfies `app.domain.ports.OperationRecord`."""
+    """One row of the operations log. Satisfies `app.domain.ports.OperationRecord`.
+
+    Write-once rather than `frozen=True`: the port declares plain (settable) attributes, which a
+    frozen dataclass does not match for mypy. Any assignment after construction still raises.
+    """
 
     seq: int
     op_id: str
@@ -18,6 +22,20 @@ class LedgerEntry:
     result_json: str
     prev_hash: str
     entry_hash: str
+
+    def __setattr__(self, name: str, value: object) -> None:
+        try:
+            object.__getattribute__(self, name)
+        except AttributeError:
+            object.__setattr__(self, name, value)
+            return
+        raise FrozenInstanceError(f"cannot assign to field {name!r}: operations log entries are immutable")
+
+    def __delattr__(self, name: str) -> None:
+        raise FrozenInstanceError(f"cannot delete field {name!r}: operations log entries are immutable")
+
+    def __hash__(self) -> int:
+        return hash(self.entry_hash)
 
 
 class ApprovalStatus(StrEnum):

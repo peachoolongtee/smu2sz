@@ -56,7 +56,9 @@ def discount(
     )
 
 
-def extension(oid: str = "OB-2", days_delta: int = 30, base: BaseKind = BaseKind.FUTURE_INVOICES) -> Obligation:
+def extension(
+    oid: str = "OB-2", days_delta: int = 30, base: BaseKind = BaseKind.FUTURE_INVOICES
+) -> Obligation:
     return Obligation(
         id=oid,
         type=ObligationType.TERMS_EXTENSION,
@@ -85,7 +87,9 @@ def rebate(oid: str = "OB-3", rate_bp: int = 100) -> Obligation:
     )
 
 
-def offer(offer_id: str = "OFF-1", version: int = 1, obligations: list[Obligation] | None = None) -> CompiledOffer:
+def offer(
+    offer_id: str = "OFF-1", version: int = 1, obligations: list[Obligation] | None = None
+) -> CompiledOffer:
     return CompiledOffer(
         offer_id=offer_id,
         version=version,

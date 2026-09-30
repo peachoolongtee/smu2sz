@@ -5,6 +5,7 @@ from __future__ import annotations
 import dataclasses
 import hashlib
 import inspect
+import itertools
 import json
 
 import pytest
@@ -105,7 +106,7 @@ def test_append_builds_a_contiguous_sha256_chain_from_genesis(store):
     entries = [_append(store, n) for n in range(1, 6)]
     assert [e.seq for e in entries] == [1, 2, 3, 4, 5]
     assert entries[0].prev_hash == GENESIS_HASH == "0" * 64
-    for prev, cur in zip(entries, entries[1:], strict=False):
+    for prev, cur in itertools.pairwise(entries):
         assert cur.prev_hash == prev.entry_hash
     for e in entries:
         expected = hashlib.sha256((e.prev_hash + e.payload_json + e.result_json).encode()).hexdigest()
@@ -335,7 +336,13 @@ def test_evidence_export_is_jsonl_and_ends_with_the_head_hash(store):
 def test_evidence_export_of_an_empty_ledger(store):
     lines = [json.loads(line) for line in store.export_evidence().splitlines()]
     assert lines == [
-        {"record": "chain", "operations": 0, "chain_valid": True, "head_hash": GENESIS_HASH, "genesis_hash": GENESIS_HASH}
+        {
+            "record": "chain",
+            "operations": 0,
+            "chain_valid": True,
+            "head_hash": GENESIS_HASH,
+            "genesis_hash": GENESIS_HASH,
+        }
     ]
 
 

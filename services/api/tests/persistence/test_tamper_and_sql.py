@@ -5,7 +5,7 @@ from __future__ import annotations
 import dataclasses
 import json
 import sqlite3
-import threading
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import pytest
@@ -45,7 +45,9 @@ def test_editing_a_result_with_sql_breaks_the_chain(sql_store):
     _fill(sql_store)
     assert sql_store.verify_chain() is True
     with _raw(sql_store) as db:
-        db.execute("""UPDATE operations SET result_json = '{"op_id":"OP-2","status":"REFUSED"}' WHERE seq = 2""")
+        db.execute(
+            """UPDATE operations SET result_json = '{"op_id":"OP-2","status":"REFUSED"}' WHERE seq = 2"""
+        )
     assert sql_store.verify_chain() is False
     assert _final(sql_store)["chain_valid"] is False
 
@@ -53,7 +55,9 @@ def test_editing_a_result_with_sql_breaks_the_chain(sql_store):
 def test_editing_a_payload_amount_with_sql_breaks_the_chain(sql_store):
     _fill(sql_store)
     with _raw(sql_store) as db:
-        db.execute("UPDATE operations SET payload_json = replace(payload_json, '15000000', '99000000') WHERE seq = 3")
+        db.execute(
+            "UPDATE operations SET payload_json = replace(payload_json, '15000000', '99000000') WHERE seq = 3"
+        )
     assert sql_store.verify_chain() is False
 
 
@@ -64,7 +68,8 @@ def test_rehashing_one_row_still_breaks_the_link_to_the_next(sql_store):
     forged_hash = compute_entry_hash(row.prev_hash, row.payload_json, forged_result)
     with _raw(sql_store) as db:
         db.execute(
-            "UPDATE operations SET result_json = ?, entry_hash = ? WHERE seq = 2", (forged_result, forged_hash)
+            "UPDATE operations SET result_json = ?, entry_hash = ? WHERE seq = 2",
+            (forged_result, forged_hash),
         )
     assert sql_store.verify_chain() is False
 
@@ -95,16 +100,13 @@ def test_in_memory_tamper_is_detected():
 
 def test_update_or_delete_of_the_log_through_the_engine_is_refused(sql_store):
     _fill(sql_store, 2)
-    with pytest.raises(AppendOnlyViolation):
-        with sql_store.engine.begin() as conn:
-            conn.execute(t.operations.update().where(t.operations.c.seq == 1).values(result_json="{}"))
-    with pytest.raises(AppendOnlyViolation):
-        with sql_store.engine.begin() as conn:
-            conn.execute(t.operations.delete())
+    with pytest.raises(AppendOnlyViolation), sql_store.engine.begin() as conn:
+        conn.execute(t.operations.update().where(t.operations.c.seq == 1).values(result_json="{}"))
+    with pytest.raises(AppendOnlyViolation), sql_store.engine.begin() as conn:
+        conn.execute(t.operations.delete())
     sql_store.mark_nonce_used("n-1")
-    with pytest.raises(AppendOnlyViolation):
-        with sql_store.engine.begin() as conn:
-            conn.execute(t.used_nonces.delete())
+    with pytest.raises(AppendOnlyViolation), sql_store.engine.begin() as conn:
+        conn.execute(t.used_nonces.delete())
     assert sql_store.verify_chain() is True and len(sql_store.operations()) == 2
     assert sql_store.nonce_used("n-1") is True
 
@@ -172,21 +174,13 @@ def test_indexed_projections_are_written(sql_store):
 
 
 def test_concurrent_appends_keep_one_contiguous_chain(sql_store):
-    errors: list[BaseException] = []
-
     def worker(w: int) -> None:
-        try:
-            for i in range(10):
-                sql_store.append_operation(f"OP-{w}-{i}", "DRAW_FACILITY", f"k-{w}-{i}", "{}", "{}")
-        except BaseException as exc:  # pragma: no cover - reported below
-            errors.append(exc)
+        for i in range(10):
+            sql_store.append_operation(f"OP-{w}-{i}", "DRAW_FACILITY", f"k-{w}-{i}", "{}", "{}")
 
-    threads = [threading.Thread(target=worker, args=(w,)) for w in range(4)]
-    for th in threads:
-        th.start()
-    for th in threads:
-        th.join()
-    assert errors == []
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        for fut in [pool.submit(worker, w) for w in range(4)]:
+            fut.result()  # re-raises any worker error
     ops = sql_store.operations()
     assert [e.seq for e in ops] == list(range(1, 41))
     assert sql_store.verify_chain() is True

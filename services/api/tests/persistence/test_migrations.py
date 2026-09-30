@@ -85,6 +85,7 @@ def test_alembic_cli_reads_database_url(tmp_path: Path):
         capture_output=True,
         text=True,
         timeout=120,
+        check=False,
     )
     assert proc.returncode == 0, proc.stderr
     engine = create_engine(f"sqlite:///{db}")

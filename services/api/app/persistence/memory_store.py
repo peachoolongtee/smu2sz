@@ -18,6 +18,7 @@ from app.domain.models import (
     SecurityEvent,
     Verdict,
 )
+from app.domain.ports import OperationRecord
 from app.persistence.chain import (
     approval_id,
     build_evidence,
@@ -86,7 +87,7 @@ class InMemoryLedgerStore:
         with self._lock:
             return next((e for e in self._ops if e.idempotency_key == key), None)
 
-    def operations(self) -> list[LedgerEntry]:
+    def operations(self) -> list[OperationRecord]:
         with self._lock:
             return list(self._ops)
 

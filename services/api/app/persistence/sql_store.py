@@ -12,7 +12,19 @@ from collections.abc import Callable, Mapping
 from datetime import UTC, datetime
 from typing import Any, TypeVar
 
-from sqlalchemy import Connection, Engine, Row, Table, create_engine, event, func, insert, select, update
+from sqlalchemy import (
+    Connection,
+    CursorResult,
+    Engine,
+    Row,
+    Table,
+    create_engine,
+    event,
+    func,
+    insert,
+    select,
+    update,
+)
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.pool import StaticPool
 from sqlalchemy.sql.dml import Delete, Update
@@ -25,6 +37,7 @@ from app.domain.models import (
     SecurityEvent,
     Verdict,
 )
+from app.domain.ports import OperationRecord
 from app.persistence import tables as t
 from app.persistence.canonical import canonical_json
 from app.persistence.chain import (
@@ -38,7 +51,13 @@ from app.persistence.chain import (
     parse_json,
     verify_entries,
 )
-from app.persistence.errors import AppendOnlyViolation, ApprovalAlreadyDecided, NonceAlreadyUsed, NotFound
+from app.persistence.errors import (
+    AppendOnlyViolation,
+    ApprovalAlreadyDecided,
+    NonceAlreadyUsed,
+    NotFound,
+    PersistenceError,
+)
 from app.persistence.records import (
     ApprovalRecord,
     ApprovalStatus,
@@ -69,12 +88,19 @@ def _guard_append_only(
 ) -> None:
     if not isinstance(clauseelement, (Update, Delete)):
         return
-    table = getattr(clauseelement, "table", None)
-    if getattr(table, "name", None) not in _PROTECTED:
+    name = getattr(getattr(clauseelement, "table", None), "name", None)
+    if name not in _PROTECTED:
         return
     if clauseelement.get_execution_options().get(_RESET_OPTION) or execution_options.get(_RESET_OPTION):
         return
-    raise AppendOnlyViolation(f"{table.name} is append-only; UPDATE/DELETE refused")
+    raise AppendOnlyViolation(f"{name} is append-only; UPDATE/DELETE refused")
+
+
+def _inserted_id(result: CursorResult[Any]) -> int:
+    pk = result.inserted_primary_key
+    if pk is None:
+        raise PersistenceError("insert returned no primary key")
+    return int(pk[0])
 
 
 def _entry(row: Row[Any]) -> LedgerEntry:
@@ -200,7 +226,7 @@ class SqlLedgerStore:
             ).first()
         return _entry(row) if row is not None else None
 
-    def operations(self) -> list[LedgerEntry]:
+    def operations(self) -> list[OperationRecord]:
         return [_entry(r) for r in self._read_all(t.operations, t.operations.c.seq)]
 
     def verify_chain(self) -> bool:
@@ -273,7 +299,7 @@ class SqlLedgerStore:
                     payload_json=canonical_json(state),
                 )
             )
-            state_row_id = res.inserted_primary_key[0]
+            state_row_id = _inserted_id(res)
             self._upsert(conn, t.organizations, {"id": state.org_id}, {})
             for cp in state.counterparties:
                 self._upsert(
@@ -503,7 +529,7 @@ class SqlLedgerStore:
                     error=error,
                 )
             )
-            return int(res.inserted_primary_key[0])
+            return _inserted_id(res)
 
         return self._retry(_add)
 
@@ -550,7 +576,7 @@ class SqlLedgerStore:
                     notes=notes,
                 )
             )
-            return int(res.inserted_primary_key[0])
+            return _inserted_id(res)
 
         return self._retry(_add)
 
