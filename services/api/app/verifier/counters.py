@@ -10,6 +10,11 @@
   buyer's contingent credit made firm.
 - **Rebate over the cap.** The largest whole-5bp rebate rate that fits the remaining headroom.
 
+Each counter carries two numbers: `supplier_cost_fen`, what it costs the supplier (Option A: discount +
+line interest), and `forward_value_fen`, the forward concession a commitment on it books: the net value of
+its own obligations floored at 0, as in the aggregate (Option A: 0, an immediate discount is not a forward
+concession; Option B: the extension net of the price adjustment).
+
 Outbound text is template-filled from an allow-list of fields: the offer's own terms and the counter's
 own terms. It never contains the reserve floor, a cap, a menu limit, the marginal rate or any
 reservation value (INVARIANT 7). `rationale` and `formula` are supplier-side only.
@@ -122,13 +127,19 @@ class _Ctx:
         return [cv.value_fen for cv in value_concessions(obs, self.state, _ratio(self.rate), self.rate_label,
                                                           self.mandate.forward_concession_horizon_days)]
 
+    def net_new(self, obs: list[Obligation]) -> int:
+        """New concessions + FIRM gains (contingent gains count as zero); may be negative."""
+        return sum(v for ob, v in zip(obs, self.value(obs), strict=True)
+                   if v >= 0 or ob.contingency == Contingency.FIRM)
+
     def net_forward(self, obs: list[Obligation]) -> int:
         """Existing + new concessions + FIRM gains (contingent gains count as zero)."""
-        total = sum(fc.value_fen for fc in self.state.forward_concessions)
-        for ob, v in zip(obs, self.value(obs), strict=True):
-            if v >= 0 or ob.contingency == Contingency.FIRM:
-                total += v
-        return total
+        return sum(fc.value_fen for fc in self.state.forward_concessions) + self.net_new(obs)
+
+    def forward_value(self, obs: list[Obligation]) -> int:
+        """What a commitment on `obs` books as a forward concession: the net new value, floored at 0 as in
+        the aggregate (a package never creates headroom). An immediate discount is valued at 0."""
+        return max(0, self.net_new(obs))
 
     def fits(self, obs: list[Obligation]) -> bool:
         return self.net_forward(obs) <= self.mandate.max_aggregate_forward_concession_fen
@@ -151,7 +162,10 @@ def _counter_id(verdict: Verdict, label: str) -> str:
 
 def _proposal(ctx: _Ctx, label: str, clauses: list[tuple[str, Obligation | None]], supplier_cost: int,
               rationale: str, formula: str) -> CounterProposal:
-    """Assemble the outbound text from clauses; each obligation's span is its own clause."""
+    """Assemble the outbound text from clauses; each obligation's span is its own clause.
+
+    `supplier_cost` is the immediate cost to the supplier; `forward_value_fen` is derived here from the
+    counter's own obligations, so a commitment on the counter books exactly what they are worth forward."""
     cid = _counter_id(ctx.verdict, label)
     text, obligations = "", []
     for n, (clause, ob) in enumerate(clauses, start=1):
@@ -162,7 +176,7 @@ def _proposal(ctx: _Ctx, label: str, clauses: list[tuple[str, Obligation | None]
             obligations.append(ob.model_copy(update={"id": f"{cid}-O{n}", "spans": [span], "confidence": 1.0,
                                                      "unresolved": []}))
     return CounterProposal(id=cid, label=label, text=text, obligations=obligations, supplier_cost_fen=supplier_cost,
-                           rationale=rationale, formula=formula)
+                           forward_value_fen=ctx.forward_value(obligations), rationale=rationale, formula=formula)
 
 
 def _span_stub(cp: str) -> list[SourceSpan]:

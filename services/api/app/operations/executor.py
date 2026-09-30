@@ -139,8 +139,28 @@ def committable(obligations: list[Any]) -> list[Any]:
     ]
 
 
+def lengthens_terms(obligations: list[Any]) -> bool:
+    """A terms change that needs the owner (Tier 2): a TERMS_EXTENSION that lengthens terms. A shortening
+    (days_delta < 0, e.g. EX05's move to 30 days) is a gain and stays Tier 1. An unbound delta (None)
+    cannot be shown to shorten, so it counts as lengthening (fail closed; tiers only rise)."""
+    return any(o.type == ObligationType.TERMS_EXTENSION and (o.days_delta is None or o.days_delta > 0)
+               for o in obligations)
+
+
 def has_terms_change(commitment: Commitment) -> bool:
-    return any(o.type == ObligationType.TERMS_EXTENSION for o in commitment.obligations)
+    return lengthens_terms(commitment.obligations)
+
+
+def verdict_forward_value(verdict: Verdict) -> int:
+    """The net new forward concession a verdict verified: concessions plus FIRM gains (contingent gains
+    count as zero; INVARIANT 5), floored at 0 as in the aggregate. Never an immediate cost."""
+    by_id = {o.id: o for o in verdict.bound_obligations}
+    net = 0
+    for cv in verdict.concession_values:
+        ob = by_id.get(cv.obligation_id)
+        if cv.value_fen >= 0 or (ob is not None and ob.contingency == Contingency.FIRM):
+            net += cv.value_fen
+    return max(0, net)
 
 
 class _Refused(Exception):
@@ -273,7 +293,12 @@ class Executor:
     def propose_commitment(self, verdict_id: str, *, expires_day: int, counter_id: str | None = None,
                            nonce: str | None = None) -> Commitment:
         """Create the PROPOSED commitment a verdict (or one of its counters) allows. Deterministic
-        code builds it from typed rows only (INVARIANT 1); acceptance later needs its nonce."""
+        code builds it from typed rows only (INVARIANT 1); acceptance later needs its nonce.
+
+        It commits exactly what was verified: the verdict's `bound_obligations` (never the raw compiled
+        offer, whose terms may still be unbound), or the chosen counter's obligations. Its forward value is
+        the forward concession those obligations book (`counter.forward_value_fen`, or the verdict's net
+        forward value), never a counter's immediate `supplier_cost_fen`."""
         from app.commitments import new_commitment
 
         with self._lock:
@@ -287,9 +312,11 @@ class Executor:
                 counter = next((c for c in verdict.counters if c.id == counter_id), None)
                 if counter is None:
                     raise NotFound(f"counter {counter_id} is not in verdict {verdict_id}")
-                obligations, value = committable(counter.obligations), counter.supplier_cost_fen
+                obligations, value = committable(counter.obligations), counter.forward_value_fen
             elif verdict.outcome in (Outcome.ACCEPT, Outcome.NEEDS_OWNER_APPROVAL):
-                obligations, value = committable(offer.obligations), verdict.forward_concession_total_fen
+                obligations, value = committable(verdict.bound_obligations), verdict_forward_value(verdict)
+                if not obligations:
+                    raise ValueError(f"verdict {verdict_id} verified no bound obligations; nothing to commit")
             else:
                 raise ValueError(f"verdict {verdict_id} is {verdict.outcome}; only a counter can be committed")
             kwargs = {"nonce_factory": (lambda: nonce)} if nonce else {}
@@ -555,9 +582,11 @@ class Executor:
         if v is None or v.offer_id != c.offer_id or v.offer_version != c.offer_version:
             raise _refuse(Code.INSUFFICIENT_AUTHORITY, f"No verifier verdict backs commitment {c.id}")
         if v.outcome in (Outcome.ACCEPT, Outcome.NEEDS_OWNER_APPROVAL):
+            # Only the obligations the verifier bound and verified, never the raw compiled offer.
             offer = self._store.get_offer(c.offer_id)
-            allowed = offer is not None and offer.version == c.offer_version and \
-                terms_hash(committable(offer.obligations)) == c.terms_hash
+            bound = committable(v.bound_obligations)
+            allowed = offer is not None and offer.version == c.offer_version and bool(bound) and \
+                terms_hash(bound) == c.terms_hash
         elif v.outcome in (Outcome.REJECT, Outcome.COUNTER):
             allowed = any(terms_hash(committable(k.obligations)) == c.terms_hash for k in v.counters)
         else:
@@ -579,7 +608,7 @@ class Executor:
             return f"facility {op.facility_id} is not COMMITTED and owner-approved"
         c = ctx.commitment
         if c is not None and has_terms_change(c):
-            return f"commitment {c.id} changes payment terms"
+            return f"commitment {c.id} lengthens payment terms"
         if c is not None and c.forward_value_fen > m.tier2_single_commitment_fen:
             return (f"commitment {c.id} of {fmt_yuan(c.forward_value_fen)} is above the Tier-2 threshold "
                     f"{fmt_yuan(m.tier2_single_commitment_fen)}")

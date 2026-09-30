@@ -12,10 +12,6 @@ from app.domain.models import CompiledOffer, CompiledTermSheet, FinancialState, 
 from app.mandate import demo_owner_public_key_hex, load_signed_mandate
 from app.verifier import VerdictBundle, evaluate
 
-# spec v2 §6.1: the buyer's next-quarter order (optional, not firm) is the supplier's own knowledge.
-# FinancialState has no field for it yet (INTERFACE_CHANGE_REQUEST), so the owner declares it.
-GOLDEN_DECLARED = {"period_purchases_fen": {"BUYER-1": 40_000_000}}
-
 
 @lru_cache
 def compiled(offer_id: str) -> CompiledOffer:
@@ -29,7 +25,9 @@ def compiled_term_sheet(offer_id: str) -> CompiledTermSheet:
 
 
 def declared_for(offer_id: str) -> dict:
-    return {**GOLDEN_DECLARED, **(load_offers()[offer_id].get("declared_costs") or {})}
+    """The owner's declared operational costs for an example (EX05 only). The rebate base of EX01 comes
+    from the state's expected orders (spec v2 §6.1: BUYER-1's next-quarter order, not firm)."""
+    return dict(load_offers()[offer_id].get("declared_costs") or {})
 
 
 @lru_cache

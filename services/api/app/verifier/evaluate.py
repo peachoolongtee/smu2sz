@@ -120,11 +120,12 @@ class _Result:
         self.forward_total = sum(fc.value_fen for fc in state.forward_concessions)
         self.plan: FundingPlan | None = None
         self.notes_text: list[str] = []
+        self.bound: list[Obligation] = []  # set once bound obligations reach the predicates
 
     def verdict(self, outcome: Outcome, tier: Tier, summary: str, counters: list[Any] | None = None) -> Verdict:
         return Verdict(
             id=self.id, offer_id=self.offer_id, offer_version=self.offer_version, outcome=outcome,
-            violations=self.violations, concession_values=self.values,
+            violations=self.violations, bound_obligations=self.bound, concession_values=self.values,
             forward_concession_total_fen=self.forward_total, counters=counters or [], plan=self.plan,
             required_tier=tier, mandate_version=self.mandate.version, state_version=self.state.state_version,
             calc_version=CALC_VERSION, summary=summary,
@@ -394,6 +395,7 @@ def evaluate(
         return VerdictBundle(verdict=res.verdict(outcome, Tier.TIER_1, summary), security_events=events,
                              bound_obligations=bound, notes=notes)
 
+    res.bound = list(bound)  # what the predicates below verify: a commitment on this verdict books exactly these
     floor = mandate.min_cash_fen
     horizon = mandate.horizon_days
     offer_traj = project(state, bound, [], Mode.CONSERVATIVE, horizon, floor)
