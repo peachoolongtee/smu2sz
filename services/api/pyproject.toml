@@ -1,0 +1,46 @@
+[project]
+name = "termsledger-api"
+version = "0.1.0"
+description = "TermsLedger v2 API: Terms Guard + Debt Desk under an owner-signed mandate"
+requires-python = ">=3.12,<3.14"
+dependencies = [
+  "fastapi>=0.115",
+  "uvicorn[standard]>=0.30",
+  "pydantic>=2.8",
+  "sqlalchemy>=2.0",
+  "alembic>=1.13",
+  "pynacl>=1.5",
+  "structlog>=24.1",
+  "anthropic>=0.40",
+  "openai>=1.40",
+  "pyyaml>=6.0",
+  "python-docx>=1.1",
+  "pypdf>=4.0",
+  "openpyxl>=3.1",
+  "httpx>=0.27",
+]
+
+[dependency-groups]
+dev = ["pytest>=8", "hypothesis>=6.100", "ruff>=0.6", "mypy>=1.11"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests", "app"]
+python_files = ["test_*.py"]
+addopts = "-q"
+pythonpath = ["."]
+
+[tool.ruff]
+line-length = 110
+target-version = "py312"
+
+[tool.mypy]
+python_version = "3.12"
+plugins = ["pydantic.mypy"]
+ignore_missing_imports = true

@@ -1,1 +1,11 @@
 .claude/worktrees/
+__pycache__/
+.venv/
+*.db
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.hypothesis/
+node_modules/
+.next/
+.env

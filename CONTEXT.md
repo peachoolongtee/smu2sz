@@ -1,0 +1,34 @@
+# TermsLedger glossary
+
+- **Owner**: the SME's owner, the only human with authority. Signs the mandate and approves Tier-2 actions.
+- **Supplier / SME**: the business TermsLedger works for.
+- **Buyer**: a customer who owes the supplier on invoices and negotiates payment terms.
+- **Lender**: any funder on the funding menu, such as a bank, invoice-financing platform or lessor.
+- **Debt books**: the two sides TermsLedger controls. Credit the supplier *gives* (payment terms, concessions: **Terms Guard**) and credit it *takes* (facilities: **Debt Desk**).
+- **Mandate**: the owner-signed, versioned, revocable, expiring set of limits the agent must stay inside. The agent can never change it.
+- **Reserve / minimum cash**: the mandate's floor for projected cash on every day.
+- **Forward concession**: a future cost the supplier promises, such as a rebate, a terms extension or a price cut, valued over the concession horizon. It isn't necessarily an accounting liability. Capped in aggregate and per buyer.
+- **Immediate discount**: a discount on money received now. It has its own cap and is not a forward concession.
+- **Obligation**: one typed promise extracted from a message, with source spans, base, timing, duration and contingency.
+- **Offer**: one buyer message (plus attachments), compiled into obligations. It's a proposal, never a decision.
+- **Abstain**: the compiler declines to fill a material field it can't ground in a span.
+- **Facility**: an owner-approved funding source with limit, all-in cost, lead time, commitment status and covenants.
+- **Committed / pending**: a committed facility can be used now. A pending or not-applied one counts as **zero** for hard constraints.
+- **Funding menu**: the set of facilities. Only the owner adds to it.
+- **Funding plan**: the router's cheapest admissible mix of facility actions for a cash gap.
+- **Marginal cost of funds**: the all-in annual rate of the cheapest committed source that can carry a permanent need. Terms Guard prices concessions with it.
+- **Break-even discount**: the early-pay discount above which taking early payment costs more than financing the invoice (0.88%).
+- **Trajectory**: the day-by-day projection of cash, debt and forward concessions, and the monthly covenant ratios.
+- **Conservative / expected mode**: conservative decides; expected is shown only.
+- **Covenant**: a lender's ratio or behaviour limit (DSCR, leverage, clean-down), defined per facility.
+- **Verdict**: the verifier's decision on an offer, with violations, formulas, counters and the plan.
+- **Violation**: a failed predicate with its code, day or month, observed value, limit and formula.
+- **Counter**: a template-worded alternative priced from the marginal cost of funds.
+- **Commitment**: an accepted offer's obligations with nonce, expiry and terms hash. It follows the lifecycle PROPOSED → ACCEPTED → ACTIVE → FULFILLED, or EXPIRED or REVOKED.
+- **Operation**: a typed action the executor may run (accept, counter, draw, repay…). It's logged in a hash-chained log.
+- **Tier**:
+  - 1: autonomous inside the mandate.
+  - 2: owner approval.
+  - 3: never.
+- **NO DEAL**: bounded negotiation ended without an acceptable package. It's a first-class outcome.
+- **Borrower file**: the lender-ready pack built from verified state only, mocked in the style of WeBank 微业贷.
