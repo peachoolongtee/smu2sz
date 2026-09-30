@@ -50,7 +50,7 @@ from app.domain.models import (
     ViolationCode,
 )
 from app.domain.money import DAYS_PER_YEAR, Ratio, bp, fmt_pct, fmt_yuan, post
-from app.financial import project, value_concessions
+from app.financial import EngineError, project, value_concessions
 from app.funding import ComparisonResult, ComparisonRow, NoPermanentSourceError, compare, marginal_cost
 from app.funding import plan as funding_plan
 from app.mandate import check_apr, check_predicates, check_validity
@@ -332,7 +332,7 @@ def _comparison(offer_bound: list[Obligation], state: FinancialState, mandate: M
 # ---------------------------------------------------------------- entry points
 
 
-def evaluate(
+def _evaluate(
     offer: CompiledOffer,
     state: FinancialState,
     mandate: Mandate,
@@ -395,7 +395,9 @@ def evaluate(
         return VerdictBundle(verdict=res.verdict(outcome, Tier.TIER_1, summary), security_events=events,
                              bound_obligations=bound, notes=notes)
 
-    if not bound and not sec_violations:  # nothing bookable (e.g. a message that is only instructions or questions): nothing to accept
+    # An inbound message with nothing bookable (only instructions or questions) has nothing to accept.
+    # Internal status-quo evaluations (the owner's own "no new terms" baseline) still get a verdict and plan.
+    if not bound and not sec_violations and offer.counterparty_id != "OWNER" and not offer.compiler.startswith(("nl-", "whatif")):
         res.violations = [Violation(
             code=ViolationCode.UNRESOLVED_SCOPE, message="The message contains no bookable commercial term; nothing to accept",
             observed="0 bookable obligations", limit="at least one grounded obligation",
@@ -642,3 +644,30 @@ def evaluate_term_sheet(
     summary = _summary(outcome, res.violations, [f"All-in {all_in} over 12 months (headline {headline})",
                                                  "Only the owner can add a facility"])
     return res.verdict(outcome, tier, summary)
+
+
+def evaluate(
+    offer: CompiledOffer,
+    state: FinancialState,
+    mandate: Mandate,
+    *,
+    trusted_owner_key_hex: str,
+    day: int = 0,
+    owner_declared: Mapping[str, Any] | None = None,
+    commitments: Sequence[Commitment] = (),
+) -> VerdictBundle:
+    """The verifier never crashes on an offer: obligations the ledger cannot carry (e.g. the same invoice
+    settled twice) are a NO_VERDICT with UNRESOLVED_SCOPE, and nothing is booked."""
+    try:
+        return _evaluate(offer, state, mandate, trusted_owner_key_hex=trusted_owner_key_hex, day=day,
+                         owner_declared=owner_declared, commitments=commitments)
+    except EngineError as e:
+        res = _Result(offer.offer_id, offer.version, state, mandate, day)
+        res.violations = [Violation(
+            code=ViolationCode.UNRESOLVED_SCOPE,
+            message="The offer's terms are inconsistent with the ledger; clarification needed, nothing booked",
+            observed=type(e).__name__, limit="terms the ledger can carry", formula="project(state, obligations) succeeds",
+            inputs={"reason": str(e)[:200], "booked": "0"},
+        )]
+        summary = _summary(Outcome.NO_VERDICT, res.violations, ["Nothing booked"])
+        return VerdictBundle(verdict=res.verdict(Outcome.NO_VERDICT, Tier.TIER_1, summary))

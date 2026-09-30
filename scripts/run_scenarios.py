@@ -99,6 +99,8 @@ class InProc:
             if setup.get("add_flows"):
                 update["flows"] = [*st.flows, *(CashFlow.model_validate_json(json.dumps(f)) for f in setup["add_flows"])]
             self.rt.store.put_state(st.model_copy(update=update))
+            for op in setup.get("operations", []):  # e.g. queue a Tier-2 item before the conversation
+                self.client.post("/operations", json=op, headers={"X-Owner-Token": OWNER_TOKEN})
 
     def post(self, path: str, body: dict, owner: bool) -> tuple[int, dict]:
         r = self.client.post(path, json=body, headers={"X-Owner-Token": OWNER_TOKEN} if owner else {})

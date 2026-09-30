@@ -52,6 +52,9 @@ class Runtime:
             self.day = 0
             self.scenario = scenario
             self.latest_verdict.clear()
+            from app.nl import reset_sessions
+
+            reset_sessions()
 
 
 _runtime: Runtime | None = None

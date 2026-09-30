@@ -59,15 +59,15 @@ def test_tier3_via_nl_is_refused_by_the_executor(client, rt):
 
 
 def test_owner_approve_without_token_is_refused(client, rt):
+    # A Tier-2 application waits in the queue (EX05 shortens terms, so it is Tier 1 and needs no approval).
+    body = {"kind": "APPLY_FOR_FACILITY", "op_id": "a1", "idempotency_key": "a1", "mandate_version": 1,
+            "requested_by": "AGENT", "facility_id": "FAC-GGL", "amount_fen": 20_000_000}
+    assert client.post("/operations", json=body).json()["result"]["status"] == "PENDING_APPROVAL"
     c = Chat(client, "appr")
-    c.say("Evaluate EX05")
-    (pending,) = [o for o in c.say("go ahead")["operations"]]
-    assert pending["status"] == "PENDING_APPROVAL"
     r = c.say("approve it", owner=False)
-    assert r["intent"] == "APPROVE" and ops(r) == [("ACCEPT_OFFER", "REFUSED")]
+    assert r["intent"] == "APPROVE" and ops(r) == [("APPLY_FOR_FACILITY", "REFUSED")]
     assert any(e.kind == SecurityEventKind.PRIVILEGE_ESCALATION for e in rt.store.security_events())
-    assert rt.store.commitments()[0].status.value == "PROPOSED"
-    assert ops(c.say("approve it")) == [("ACCEPT_OFFER", "EXECUTED")]
+    assert ops(c.say("approve it")) == [("APPLY_FOR_FACILITY", "EXECUTED")]
 
 
 def test_egress_blocks_a_counter_that_would_state_the_floor(client, rt, monkeypatch):
