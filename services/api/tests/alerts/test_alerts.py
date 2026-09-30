@@ -9,11 +9,13 @@ from app.alerts import Alert, AlertKind, Severity, SuggestedAction, alerts
 from app.domain.fixtures import golden_values, load_scenario
 from app.domain.models import (
     Actor,
+    CashFlow,
     Commitment,
     CommitmentStatus,
     DebtPosition,
     DrawFacility,
     FinancialState,
+    FlowKind,
 )
 from app.mandate import demo_owner_public_key_hex, load_signed_mandate
 from app.operations import Executor
@@ -97,12 +99,26 @@ def test_covenant_headroom_alerts():
     assert not _of(_run(_store()), AlertKind.COVENANT_HEADROOM_LOW)  # golden: DSCR 2.00x, leverage 1.39x
 
 
-def test_clean_down_at_risk_after_a_line_draw():
-    store = _store()
-    assert not _of(_run(store), AlertKind.CLEAN_DOWN_AT_RISK)
+def _draw_line(store: InMemoryLedgerStore) -> None:
     ex = Executor(store, trusted_owner_key_hex=demo_owner_public_key_hex(), clock=lambda: 0)
     ex.execute(DrawFacility(op_id="OP-1", idempotency_key="k-1", mandate_version=1, requested_by=Actor.AGENT, day=0,
                             facility_id="FAC-LINE", amount_fen=15_000_000))
+
+
+def test_a_drawn_line_the_projection_repays_on_a_receipt_keeps_the_clean_down():
+    # The projection repays a balance already drawn on the first receipt that keeps cash above the floor
+    # (day 32 here), so the line then stays at zero for the rest of the horizon.
+    store = _store()
+    _draw_line(store)
+    assert not _of(_run(store), AlertKind.CLEAN_DOWN_AT_RISK)
+
+
+def test_clean_down_at_risk_after_a_line_draw_no_receipt_can_repay():
+    state = load_scenario()[0]
+    big = CashFlow(id="F-BIG", day=115, amount_fen=-200_000_000, kind=FlowKind.OTHER, label="Big payment", confirmed=True)
+    store = _store(state.model_copy(update={"flows": [*state.flows, big]}))
+    assert not _of(_run(store), AlertKind.CLEAN_DOWN_AT_RISK)
+    _draw_line(store)  # now no receipt keeps the floor after repaying: the line is repaid only on the last day
     [a] = _of(_run(store), AlertKind.CLEAN_DOWN_AT_RISK)
     assert a.inputs["facility_id"] == "FAC-LINE" and a.amount_fen == 15_000_000
     assert a.suggested[0].operation_kind == "REPAY_FACILITY"
