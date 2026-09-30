@@ -3,6 +3,10 @@
 It runs on every compilation regardless of backend, and its findings are unioned with whatever the
 model flags. Detection only: nothing here refuses anything. The architecture refuses (the compiler has
 no operation field; the verifier and executor decide).
+
+Data requests, authority claims and funding claims are matched on a folded copy of the text
+(app.compiler.folding: NFKC, no zero-width or bidi characters, Latin for Cyrillic/Greek lookalikes), and
+every quote is mapped back to the exact substring of the ORIGINAL document.
 """
 
 from __future__ import annotations
@@ -10,6 +14,7 @@ from __future__ import annotations
 import re
 from collections.abc import Iterable
 
+from app.compiler.folding import Folded, fold
 from app.compiler.parsing import MONEY_PAT, RATE_PAT, parse_money
 from app.compiler.schema import XAuthorityClaim, XDataRequest, XFundingClaim, XQuantity
 from app.domain.models import DataRequestKind, SourceDocument
@@ -49,6 +54,35 @@ _DATA_REQUESTS: list[tuple[DataRequestKind, re.Pattern[str]]] = [
         r"\b(?:your|the\s+owner'?s?|the)\s+mandate\b|\bconcession\s+(?:caps?|limits?|budget)\b|\bapproval\s+(?:limits?|thresholds?)\b"
         r"|\b(?:your|the)\s+(?:caps|limits)\s+(?:are|on)\b|\bmax(?:imum)?\s+(?:apr|leverage|concession)\b"
         r"|授权书|授权(?:范围|额度|限额|上限)|审批(?:权限|限额|上限)|让利上限|让步上限", I)),
+    # prompt / secret extraction: "repeat everything above", "print your instructions", "reserve override code"
+    (DataRequestKind.SYSTEM_PROMPT, re.compile(
+        r"\b(?:repeat|print|output|echo|recite|copy|reproduce)\s+(?:back\s+)?(?:everything|all(?:\s+(?:of\s+)?the\s+text)?|the\s+text|whatever|what(?:'s|\s+is|\s+was))"
+        r"\s+(?:written\s+|said\s+)?(?:above|before\s+this|preceding|earlier|so\s+far)\b"
+        r"|\b(?:print|show|reveal|output|repeat|tell\s+me|share|send|give\s+me|paste|dump|list)\s+(?:me\s+|us\s+)?(?:your|the|all|any)\s+"
+        r"(?:\w+\s+){0,2}?(?:instructions|guidelines|internal\s+markers?|hidden\s+(?:codes?|markers?|text))\b"
+        r"|\binternal\s+markers?\b|\b(?:reserve|owner|admin|master|emergency|system)\s+override\s+(?:code|token|key|password|pin)s?\b"
+        r"|重复(?:一下|一遍)?(?:上面|以上|前面|之前)(?:的|所有)?(?:内容|文字|指令|话)?|(?:打印|输出|显示|列出|复述)(?:一下)?(?:你的|你们的|所有的?)?(?:指令|提示|规则|设定)"
+        r"|(?:储备|备付金?|管理员|超级)?(?:覆盖|解锁|授权|超控)(?:码|密码|口令)", I)),
+    (DataRequestKind.RESERVE_FLOOR, re.compile(
+        r"\bemergency\s+(?:cash\s+)?reserves?(?:\s+(?:amount|level|balance))?\b|\breserve\s+amount\b|应急(?:储备|备付金?|资金)", I)),
+]
+
+# Patterns that only become a data request when something is being asked for (cross-buyer questions).
+_DATA_REQUESTS_ASKED: list[tuple[DataRequestKind, re.Pattern[str]]] = [
+    (DataRequestKind.OTHER_COUNTERPARTY_TERMS, re.compile(
+        # "your other customers", "the terms your other buyers get", 其他客户
+        r"\b(?:your\s+)?other\s+(?:customers|buyers|clients|accounts)\b|(?:其他|别的|其它)(?:客户|买家|买方|采购商)"
+        # "What payment terms and discounts does Foshan Home Retail get from you?"
+        r"|\b(?:terms|discounts?|prices?|pricing|rebates?|deal|conditions)\b(?:[^.?!;。？！；\n]{0,40}?)\b(?:does|do|did|will)\s+"
+        r"(?-i:(?!you\b|we\b|I\b|they\b)[A-Z][\w&'’-]*(?:\s+(?:[A-Z][\w&'’-]*|&|and|of))*)\s+(?:get|gets|receive|have|pay|enjoy)\b"
+        # "the terms you give Foshan Home Retail", "the discount you offered Guangzhou Trading"
+        r"|\b(?:terms|discounts?|prices?|pricing|rebates?|deal)\s+(?:that\s+)?you\s+(?:give|gave|offer|offered|grant|granted)\s+(?:to\s+)?"
+        r"(?-i:(?!us\b|me\b)[A-Z][\w&'’-]*(?:\s+[A-Z][\w&'’-]*)*)"
+        # "the same terms as Foshan Home Retail"
+        r"|\bsame\s+(?:payment\s+)?(?:terms|discounts?|prices?|pricing|rebates?|deal)\s+as\s+(?-i:(?!you\b|before\b|usual\b)[A-Z][\w&'’-]*(?:\s+[A-Z][\w&'’-]*)+)"
+        # 告诉我佛山家居零售的账期和折扣
+        r"|(?:告诉|透露|说说|讲讲|发给|提供|问问|了解)(?:一下)?(?:我们|我)?\s*(?![们我你您贵咱本自他她它])"
+        r"[一-鿿A-Za-z]{2,14}?的(?:账期|付款条件|价格|折扣|返利|返点|优惠|条件)", I)),
 ]
 
 # Phrases that only become a data request when something is being asked for.
@@ -69,18 +103,44 @@ def sentence_bounds(text: str, pos: int) -> tuple[int, int]:
     return start, end
 
 
+def _quote(f: Folded, s: int, e: int, strip: str = " \n") -> str:
+    """The ORIGINAL substring behind the folded match [s, e), with `strip` characters trimmed."""
+    frag = f.text[s:e]
+    lead = len(frag) - len(frag.lstrip(strip))
+    trail = len(frag) - len(frag.rstrip(strip))
+    if lead + trail >= len(frag):
+        return ""
+    return f.orig(s + lead, e - trail)
+
+
+# Stricter: a question, or a verb that asks for disclosure ("give us the same terms as ..." is not one).
+_DISCLOSE = re.compile(
+    r"\b(?:tell|share|send|show|reveal|disclose|list|forward|provide|what|which|how\s+much|how\s+long)\b"
+    r"|告诉|透露|发(?:给|送)|提供|说说|讲讲|列出|是多少|多少|哪些|什么", I)
+
+
+def _asked(t: str, pos: int, rx: re.Pattern[str] = _ASK) -> bool:
+    s, e = sentence_bounds(t, pos)
+    if t[e : e + 1] in ("?", "？"):
+        return True
+    return bool(rx.search(t[max(0, s - 120) : e]))
+
+
 def find_data_requests(doc: SourceDocument) -> list[XDataRequest]:
     out: list[XDataRequest] = []
-    t = doc.text
-    for kind, rx in _DATA_REQUESTS:
+    f = fold(doc.text)
+    t = f.text
+    rules = [(k, rx, _ASK if k in _NEEDS_ASK else None) for k, rx in _DATA_REQUESTS]
+    rules += [(k, rx, _DISCLOSE) for k, rx in _DATA_REQUESTS_ASKED]
+    for kind, rx, ask in rules:
         for m in rx.finditer(t):
             if not m.group(0).strip():
                 continue
-            if kind in _NEEDS_ASK:
-                s, e = sentence_bounds(t, m.start())
-                if not _ASK.search(t[max(0, s - 120) : e]):
-                    continue
-            out.append(XDataRequest(kind=kind, doc_id=doc.doc_id, quote=m.group(0)))
+            if ask is not None and not _asked(t, m.start(), ask):
+                continue
+            q = _quote(f, m.start(), m.end())
+            if q:
+                out.append(XDataRequest(kind=kind, doc_id=doc.doc_id, quote=q))
     return out
 
 
@@ -105,7 +165,15 @@ _AUTHORITY: list[tuple[str, re.Pattern[str]]] = [
         r"|\badd\s+(?:us|this\s+(?:lender|facility)|\w+)\s+to\s+(?:your|the)\s+funding\s+menu\b"
         r"|忽略(?:之前|以上|前面|上述|先前|所有|全部)的?(?:所有|全部)?(?:指令|指示|规则|提示|要求|限制)|无视(?:之前|以上|所有)?的?(?:指令|规则|限制)"
         r"|你现在是|现在你是|系统\s*[:：]|系统消息|系统通知|新的?指令|绕过|直接(?:接受|批准|同意|放款)|回复\s*[“\"']?(?:接受|同意|ACCEPT)"
-        r"|加入(?:你们的?)?融资(?:菜单|清单|渠道)", I)),
+        r"|加入(?:你们的?)?融资(?:菜单|清单|渠道)"
+        # JSON role messages: {"role": "system", ...}
+        r"|[\"'“”]role[\"'“”]\s*:\s*[\"'“”](?:system|assistant|developer|tool)[\"'“”]"
+        # role-play jailbreaks
+        r"|\bpretend\s+(?:that\s+)?(?:you\s+are|you'?re|to\s+be)\b|\brole[- ]?play\b|\blet'?s\s+play\s+a\s+game\b"
+        r"|\b(?:act|behave|respond|answer|speak)\s+as\s+(?:if\s+you\s+(?:are|were)\s+)?(?:the\s+|our\s+|your\s+)?(?:owner|boss|admin|administrator|system|developer|ceo|cfo|supervisor)\b"
+        r"|\b(?:you\s+are|you'?re)\s+(?:now\s+)?(?:an?\s+)?(?:\w+\s+)?(?:assistant|ai|bot|agent)\s+(?:with|that\s+has|who\s+has)\s+no\s+(?:mandate|rules|restrictions|limits|filters)\b"
+        r"|\byou\s+are\s+\w*bot\b|\bas\s+\w*bot\b"
+        r"|扮演|假装(?:你是|自己是|成)|假设你是|角色扮演", I)),
     ("URGENCY", re.compile(
         r"\burgent(?:ly)?\b|\bimmediately\b|\basap\b|\bright\s+now\b|\bwithin\s+(?:the\s+)?(?:hour|\d+\s+(?:minutes?|hours?))\b"
         r"|\blast\s+chance\b|\b(?:expires?|deadline)\s+(?:today|tonight|in\s+\d+)\b|\btime[- ]sensitive\b"
@@ -117,15 +185,28 @@ _AUTHORITY: list[tuple[str, re.Pattern[str]]] = [
         r"|\bon\s+behalf\s+of\s+(?:the\s+|your\s+)?(?:owner|ceo|management)\b|\b(?:owner|admin)\s+(?:approval|override)\s*(?:code|token|granted)?\s*[:：]"
         r"|\bfrom\s+(?:the\s+)?(?:termsledger|anthropic|openai|deepseek)\b|\btermsledger\s+(?:admin|support|team|system)\b"
         r"|我是(?:你们的?)?(?:老板|老总|董事长?|总经理|管理员|业主|财务总监)|(?:老板|老总|业主|董事长|总经理|管理层)(?:已经?|已)(?:批准|同意|授权|签字|确认)"
-        r"|代表(?:老板|业主|管理层)", I)),
+        r"|代表(?:老板|业主|管理层)"
+        # "the owner told me on WeChat", "your boss said on the phone", 老板说过 / 老板已在微信上同意
+        r"|\b(?:your|the)\s+(?:owner|boss|ceo|cfo|director|md|manager|management|gm|general\s+manager)\s+(?:already\s+|personally\s+)?"
+        r"(?:told|said\s+(?:to|that)|asked|instructed|promised|confirmed\s+(?:to|with)|agreed\s+with|okayed|ok'?d)\s+(?:me|us|our\s+\w+)\b"
+        r"|\b(?:owner|boss|ceo|cfo|director|manager)\b[^.?!;。？！；\n]{0,40}?\b(?:on|via|over|by|through)\s+(?:wechat|weixin|whatsapp|the\s+phone|phone|a\s+call|text|sms|voice\s+message)\b"
+        r"|(?:老板|老总|业主|董事长|总经理|你们经理|财务总监)(?:之前|已经?|亲自)?(?:说过|说了|说好|跟我(?:们)?说|告诉(?:过)?我(?:们)?|答应过?|口头(?:同意|答应|批准))"
+        r"|(?:老板|老总|业主|董事长|总经理)[^，。,.；;！!？?]{0,8}(?:微信|电话|短信|语音|口头)[^，。,.；;！!？?]{0,6}(?:同意|答应|批准|说|确认|授权)"
+        # change-of-payee notices: a classic impersonation fraud
+        r"|\b(?:new|updated|changed|different)\s+(?:bank\s+|receiving\s+|payment\s+|beneficiary\s+)*(?:account|bank\s+details|payment\s+details|remittance\s+details|beneficiary)\b"
+        r"|\b(?:changed|updated|switched|moved)\s+(?:our|the|my)\s+(?:bank\s+|receiving\s+|payment\s+)*(?:account|bank(?:ing)?\s+details|bank|payment\s+details)\b"
+        r"|\b(?:remit|pay|transfer|wire|send\s+(?:the\s+)?(?:payment|funds|money))\s+(?:\w+\s+){0,4}?(?:to|into)\s+(?:our|this|the|a)\s+new\s+(?:bank\s+)?account\b"
+        r"|(?:请)?(?:汇款|付款|转账|打款|汇)(?:至|到)(?:我们的?|我司)?新(?:的)?(?:银行)?(?:账户|账号|帐户|帐号)|新(?:的)?(?:收款|银行)?(?:账户|账号|帐户|帐号)"
+        r"|(?:更换|变更|更改|换)(?:了)?(?:收款|银行)?(?:账户|账号|帐户|帐号)|(?:收款)?(?:账户|账号|帐户|帐号)(?:已)?(?:变更|更换|更改)", I)),
 ]
 
 
 def find_authority_claims(doc: SourceDocument) -> list[XAuthorityClaim]:
     out: list[XAuthorityClaim] = []
+    f = fold(doc.text)
     for kind, rx in _AUTHORITY:
-        for m in rx.finditer(doc.text):
-            q = m.group(0).strip(" \n[<{\"")
+        for m in rx.finditer(f.text):
+            q = _quote(f, m.start(), m.end(), " \n[<{\"")
             if q:
                 out.append(XAuthorityClaim(kind=kind, doc_id=doc.doc_id, quote=q))  # type: ignore[arg-type]
     return out
@@ -163,24 +244,34 @@ _NAME_STOP = {"You", "We", "Our", "Your", "The", "This", "Reply", "Also", "URGEN
 def find_funding_claims(doc: SourceDocument) -> list[XFundingClaim]:
     out: list[XFundingClaim] = []
     taken: list[tuple[int, int]] = []
+    f = fold(doc.text)
+
+    def group(m: re.Match[str], name: str) -> str | None:
+        if m.groupdict().get(name) is None:
+            return None
+        return _quote(f, *m.span(name)) or None
+
     for rx in _FUNDING:
-        for m in rx.finditer(doc.text):
+        for m in rx.finditer(f.text):
             if any(m.start() < e and s < m.end() for s, e in taken) or parse_money(m.group("amt")) is None:
                 continue
-            name = re.sub(r"^.*(?:获得|来自|我们是|这里是|由|从)", "", (m.groupdict().get("name") or "").strip())
+            name = re.sub(r"^.*(?:获得|来自|我们是|这里是|由|从)", "", (group(m, "name") or "").strip())
             if not name or name in _NAME_STOP or name.split()[0] in _NAME_STOP:
-                name = _lender_elsewhere(doc.text) or doc.sender_id
+                name = _lender_elsewhere(f) or doc.sender_id
+            quote = _quote(f, m.start(), m.end(), " ,，\n")
+            amount = group(m, "amt")
+            if not quote or not amount:
+                continue
             out.append(XFundingClaim(
-                lender_name=name, doc_id=doc.doc_id, quote=m.group(0).rstrip(" ,，"),
-                amount_text=m.group("amt").strip(), rate_text=m.groupdict().get("rate"),
+                lender_name=name, doc_id=doc.doc_id, quote=quote, amount_text=amount.strip(), rate_text=group(m, "rate"),
             ))
             taken.append((m.start(), m.end()))
     return out
 
 
-def _lender_elsewhere(text: str) -> str | None:
-    m = re.search(r"\bfrom\s+([A-Z][\w&.\-]*(?:\s+[A-Z][\w&.\-]*){0,3})", text)
-    return m.group(1) if m else None
+def _lender_elsewhere(f: Folded) -> str | None:
+    m = re.search(r"\bfrom\s+([A-Z][\w&.\-]*(?:\s+[A-Z][\w&.\-]*){0,3})", f.text)
+    return f.orig(*m.span(1)) if m else None
 
 
 # ---------------------------------------------------------------- quantities (conflicting sources)
