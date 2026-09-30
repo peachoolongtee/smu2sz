@@ -21,6 +21,7 @@ import {
   thCls,
 } from "@/components/ui";
 import { planFunding } from "@/lib/api";
+import { useDemo } from "@/lib/demo-store";
 import { useI18n } from "@/lib/i18n";
 import type { FundingView } from "@/lib/types";
 import { useAsync } from "@/lib/use-async";
@@ -28,7 +29,9 @@ import { useAsync } from "@/lib/use-async";
 export default function FundingPage() {
   const { t } = useI18n();
   const [basis, setBasis] = useState<"COMMITTED" | "EXPECTED">("COMMITTED");
-  const res = useAsync(() => planFunding(), []);
+  const snapshot = useDemo().funding;
+  // A decision-time snapshot (set by the demo stepper) wins over a live re-plan, which is empty once the plan has executed.
+  const res = useAsync(() => (snapshot ? Promise.resolve(snapshot) : planFunding()), [Boolean(snapshot)]);
 
   return (
     <>
@@ -53,13 +56,13 @@ export default function FundingPage() {
       ) : !res.data ? (
         <LoadingBlock rows={4} />
       ) : (
-        <FundingBody view={res.data} basis={basis} />
+        <FundingBody view={res.data} basis={basis} snapshot={Boolean(snapshot)} />
       )}
     </>
   );
 }
 
-function FundingBody({ view, basis }: { view: FundingView; basis: "COMMITTED" | "EXPECTED" }) {
+function FundingBody({ view, basis, snapshot }: { view: FundingView; basis: "COMMITTED" | "EXPECTED"; snapshot: boolean }) {
   const { t, te } = useI18n();
   const plan = basis === "COMMITTED" ? view.committed : view.expected;
   const inPlan = new Set(plan.actions.map((a) => a.facility_id));
@@ -67,6 +70,7 @@ function FundingBody({ view, basis }: { view: FundingView; basis: "COMMITTED" | 
 
   return (
     <div className="space-y-6">
+      {snapshot ? <Callout tone="info">{t("fund.snapshot")}</Callout> : null}
       {basis === "EXPECTED" ? <Callout tone="warn" title={t("fund.expected")}>{t("fund.expected.note")}</Callout> : null}
 
       <Card id="menu" title={t("fund.menu")} subtitle={t("fund.menu.sub")}>

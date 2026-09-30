@@ -8,8 +8,9 @@ import { OfferItemCard } from "@/components/offer-parts";
 import { ArrowRightIcon } from "@/components/icons";
 import { Badge, Button, Callout, Card, EmptyState, ErrorState, LoadingBlock, PageHeader, Segmented } from "@/components/ui";
 import { ANNOTATION_STYLE, type AnnotationKind } from "@/lib/annotation-style";
-import { evaluateOffer, submitOffer } from "@/lib/api";
-import { recordOffer, recordVerdict } from "@/lib/demo-store";
+import { submitOffer } from "@/lib/api";
+import { evaluate as evaluateAndCache } from "@/lib/demo";
+import { recordOffer } from "@/lib/demo-store";
 import { useI18n } from "@/lib/i18n";
 import { annotationsFor, offerItems, type OfferItem } from "@/lib/offer-items";
 import { SAMPLES, type SampleId } from "@/lib/samples";
@@ -33,8 +34,13 @@ export default function InboxPage() {
     setError(null);
     try {
       const s = SAMPLES[sample];
+      // Unedited sample text is the server fixture; edited text is sent as a document for the compiler.
+      const edited = useText.trim() !== s.documents[0].text.trim();
       const doc = { ...s.documents[0], text: useText };
-      recordOffer(await submitOffer({ counterparty_id: s.counterparty_id, documents: [doc] }));
+      recordOffer(
+        await submitOffer(edited ? { counterparty_id: s.counterparty_id, documents: [doc] } : { fixture_id: s.fixtureId }),
+        edited ? undefined : s.fixtureId,
+      );
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -46,7 +52,7 @@ export default function InboxPage() {
     setBusy("evaluate");
     setError(null);
     try {
-      recordVerdict(await evaluateOffer(offerId));
+      await evaluateAndCache(offerId);
       router.push("/verdict");
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));

@@ -1,11 +1,20 @@
-import type { SubmitOfferRequest } from "./types";
+import type { SourceDocument } from "./types";
 
 /** Demo messages, verbatim from fixtures/offers.yaml (EX01_PACKAGE, EX01B_REWORDED, SEC_DEMO_FASTCAPITAL). */
 export type SampleId = "EX01" | "EX01B" | "SEC";
 
-export const SAMPLES: Record<SampleId, SubmitOfferRequest & { offerId: string }> = {
+export interface Sample {
+  offerId: string;
+  /** The server-side fixture id (fixtures/offers.yaml); `POST /offers {fixture_id}` compiles it from the recorded cache. */
+  fixtureId: string;
+  counterparty_id: string;
+  documents: SourceDocument[];
+}
+
+export const SAMPLES: Record<SampleId, Sample> = {
   EX01: {
     offerId: "OFF-EX01",
+    fixtureId: "EX01_PACKAGE",
     counterparty_id: "BUYER-1",
     documents: [
       {
@@ -19,6 +28,7 @@ export const SAMPLES: Record<SampleId, SubmitOfferRequest & { offerId: string }>
   },
   EX01B: {
     offerId: "OFF-EX01B",
+    fixtureId: "EX01B_REWORDED",
     counterparty_id: "BUYER-1",
     documents: [
       {
@@ -32,6 +42,7 @@ export const SAMPLES: Record<SampleId, SubmitOfferRequest & { offerId: string }>
   },
   SEC: {
     offerId: "OFF-SEC",
+    fixtureId: "SEC_DEMO_FASTCAPITAL",
     counterparty_id: "FASTCAPITAL",
     documents: [
       {

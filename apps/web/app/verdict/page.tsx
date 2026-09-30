@@ -24,8 +24,9 @@ import {
   thCls,
 } from "@/components/ui";
 import { CounterCard, OperationsList, ViolationCard } from "@/components/verdict-parts";
-import { evaluateOffer, negotiate } from "@/lib/api";
-import { recordNegotiation, recordVerdict } from "@/lib/demo-store";
+import { negotiate } from "@/lib/api";
+import { evaluate as evaluateAndCache } from "@/lib/demo";
+import { recordNegotiation } from "@/lib/demo-store";
 import { useI18n } from "@/lib/i18n";
 import type { BuyerProfile, NegotiationView, VerdictView } from "@/lib/types";
 import { useCurrentOffer } from "@/lib/use-current";
@@ -41,7 +42,7 @@ export default function VerdictPage() {
     setBusy(true);
     setError(null);
     try {
-      recordVerdict(await evaluateOffer(cur.offerId));
+      await evaluateAndCache(cur.offerId);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
