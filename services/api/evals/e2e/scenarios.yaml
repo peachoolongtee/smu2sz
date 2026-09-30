@@ -139,7 +139,7 @@ scenarios:
 
   - id: S13_ex08_joint_offers
     title: "EX08: Buyer 1's package is accepted; Buyer 2's then no longer fits the aggregate cap"
-    tags: [EX08, concurrency]
+    tags: [EX08, EX08A, EX08B, concurrency]
     turns:
       - text: "Evaluate EX08A"
         expect: {intent: EVALUATE_OFFER, outcome: ACCEPT, awaiting: true}

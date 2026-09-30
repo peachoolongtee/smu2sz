@@ -49,7 +49,7 @@ def _bootstrap() -> None:
             raise
         env = {**os.environ, "TL_RUNNER_REEXEC": "1"}
         cmd = ["uv", "run", "--project", str(API), "python", str(Path(__file__).resolve()), *sys.argv[1:]]
-        sys.exit(subprocess.run(cmd, env=env).returncode)
+        sys.exit(subprocess.run(cmd, env=env, check=False).returncode)
 
 
 # ---------------------------------------------------------------- transports
@@ -350,11 +350,11 @@ def _summary_md(results: list[dict], s: dict, started: str, transport: str) -> s
     return "\n".join([
         "# /nl scripted tasks",
         "",
-        f"Run {started} ({transport}). **{s['passed']}/{s['ran']} passed** (pass rate {s['pass_rate']:.0%}), "
-        f"{s['skipped']} skipped, {s['turns']} turns, median {s['median_turn_latency_ms']} ms per turn.",
+        (f"Run {started} ({transport}). **{s['passed']}/{s['ran']} passed** (pass rate {s['pass_rate']:.0%}), "
+         f"{s['skipped']} skipped, {s['turns']} turns, median {s['median_turn_latency_ms']} ms per turn."),
         "",
-        "Each task starts from `POST /demo/reset`. Every operation below was built by code from a verifier "
-        "verdict and sent to the executor; nothing a message says can skip either.",
+        ("Each task starts from `POST /demo/reset`. Every operation below was built by code from a verifier "
+         "verdict and sent to the executor; nothing a message says can skip either."),
         "",
         "| Task | What it shows | Intents | Operations | Result | ms |",
         "| --- | --- | --- | --- | --- | --- |",
@@ -362,8 +362,8 @@ def _summary_md(results: list[dict], s: dict, started: str, transport: str) -> s
         "",
         "## Verify the evidence",
         "",
-        "Each `evidence/<task>.jsonl` is one hash chain (a `task` line with the requests, then the `run` header, "
-        "operations, security events and the chain line). Recompute every hash with the standard library:",
+        ("Each `evidence/<task>.jsonl` is one hash chain (a `task` line with the requests, then the `run` header, "
+         "operations, security events and the chain line). Recompute every hash with the standard library:"),
         "",
         "```",
         "python scripts/verify_evidence.py services/api/evals/e2e/latest/evidence/S01_scene1_counter_accept.jsonl",

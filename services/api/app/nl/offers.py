@@ -116,7 +116,8 @@ def decide(ctx: NlContext, steps: Steps, b: VerdictBundle, *, execute: bool, rec
                               "no facility added, nothing disclosed", "在验证器处拦截：发送方不在登记册中；未记账"), "INFO")
         return [REFUSAL_REPLY_ZH if ctx.lang == "zh" else REFUSAL_REPLY]
     if not b.bound_obligations and not v.counters:
-        steps.add("VERIFY", t(ctx, "No bookable terms in the message; nothing to accept or counter",
+        steps.add("VERIFY", t(ctx, "No bookable terms in the message: nothing to accept, counter or book "
+                                   "(an empty offer violates nothing, so no operation follows)",
                               "消息中没有可记账的条款"), "INFO")
         if ViolationCode.DATA_EXTRACTION_REFUSED in codes:
             return [REFUSAL_REPLY_ZH if ctx.lang == "zh" else REFUSAL_REPLY]

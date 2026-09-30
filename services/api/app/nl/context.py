@@ -31,6 +31,7 @@ from app.operations import Executor
 from app.verifier import VerdictBundle
 from app.verifier import evaluate as verify
 
+
 @dataclass
 class NlContext:
     store: LedgerStore
