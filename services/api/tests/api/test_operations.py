@@ -18,6 +18,8 @@ def test_committed_line_draw_executes_tier1(client):
 
 def test_unauthenticated_owner_claim_cannot_add_a_lender(client):
     fac = client.get("/state").json()["state"]["facilities"][0]
+    fac = {k: v for k, v in fac.items() if not k.endswith("_display")}
+    fac["covenants"] = []
     fac = {**fac, "id": "FAC-FASTCAPITAL", "lender_id": "FASTCAPITAL", "name": "FastCapital"}
     r = client.post("/operations", json=op("ADD_FACILITY", by="OWNER", facility=fac)).json()["result"]
     assert r["status"] == "REFUSED"

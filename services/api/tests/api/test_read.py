@@ -5,7 +5,7 @@ def test_health(client):
 def test_mandate_is_signed_and_valid(client):
     body = client.get("/mandate").json()
     assert body["valid"], body["problems"]
-    assert body["display"]["min_cash"] == "¥300,000.00"
+    assert body["mandate"]["min_cash_display"] == "¥300,000.00" and body["signature"]["status"] == "VALID"
 
 
 def test_baseline_trajectory_breaches_day_12(client):
@@ -17,7 +17,7 @@ def test_baseline_trajectory_breaches_day_12(client):
 def test_ledger_empty_and_chain_valid_after_reset(client):
     client.post("/demo/reset")
     body = client.get("/ledger").json()
-    assert body["chain_valid"] and body["operations"] == []
+    assert body["chain_valid"] and body["operations"] == [] and body["chain_length"] == 0
 
 
 def test_post_offer_fixture_compiles_three_obligations(client):

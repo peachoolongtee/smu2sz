@@ -2,53 +2,61 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 
 from fastapi import APIRouter
 from fastapi.responses import PlainTextResponse
 
+from app.api.display import displayed
 from app.api.runtime import get_runtime
 from app.api.views import Money, TrajectoryView, trajectory_view
 from app.domain.models import Mode
 from app.financial import project
 from app.mandate import MandatePolicyImpl
+from app.operations import security_summary
 
 router = APIRouter()
+
+
+def _op_view(o) -> dict:
+    res = json.loads(o.result_json)
+    try:
+        op = json.loads(o.payload_json)
+    except ValueError:
+        op = {}
+    v = displayed(res)
+    v.update({"seq": o.seq, "entry_hash": o.entry_hash, "prev_hash": o.prev_hash,
+              "day": res.get("effective_day", op.get("day")), "requested_by": op.get("requested_by"),
+              "summary": res.get("message") or o.kind.replace("_", " ").lower()})
+    return v
 
 
 @router.get("/state")
 def get_state() -> dict:
     rt = get_runtime()
     s = rt.store.get_state()
-    return {
-        "day": rt.day,
-        "state": json.loads(s.model_dump_json()),
-        "cash": Money.of(s.cash_fen).model_dump(),
-        "facilities": [
-            {"id": f.id, "name": f.name, "kind": f.kind.value, "status": f.status.value,
-             "limit": Money.of(f.limit_fen).model_dump(), "drawn": Money.of(f.drawn_fen).model_dump()}
-            for f in s.facilities
-        ],
-    }
+    return {"state": displayed(json.loads(s.model_dump_json())), "scenario_id": rt.scenario, "day": rt.day,
+            "cash": Money.of(s.cash_fen).model_dump()}
 
 
 @router.get("/mandate")
 def get_mandate() -> dict:
     rt = get_runtime()
     m = rt.store.get_mandate()
-    problems = MandatePolicyImpl(trusted_public_key_hex=rt.owner_key_hex).check_validity(m, rt.day, m.version)
+    policy = MandatePolicyImpl(trusted_public_key_hex=rt.owner_key_hex)
+    problems = policy.check_validity(m, rt.day, m.version)
+    codes = {v.code.value for v in problems}
+    sig = "UNSIGNED" if not m.signature_hex else ("INVALID" if "BAD_SIGNATURE" in codes else "VALID")
+    status = "REVOKED" if m.revoked else ("EXPIRED" if "MANDATE_EXPIRED" in codes else "ACTIVE")
     return {
-        "mandate": json.loads(m.model_dump_json()),
+        "mandate": displayed(json.loads(m.model_dump_json())),
+        "signature": {"status": sig, "algorithm": "Ed25519",
+                      "key_fingerprint": hashlib.sha256(bytes.fromhex(rt.owner_key_hex)).hexdigest()[:16]},
+        "validity": {"status": status, "current_day": rt.day, "expires_day": m.expires_day,
+                     "days_remaining": max(0, m.expires_day - rt.day)},
         "valid": not problems,
         "problems": [json.loads(v.model_dump_json()) for v in problems],
-        "display": {
-            "min_cash": Money.of(m.min_cash_fen).text,
-            "max_aggregate_forward_concession": Money.of(m.max_aggregate_forward_concession_fen).text,
-            "tier2_single_commitment": Money.of(m.tier2_single_commitment_fen).text,
-            "min_dscr": f"{m.min_dscr_bp / 10000:.2f}x",
-            "max_leverage": f"{m.max_leverage_bp / 10000:.2f}x",
-            "max_apr": f"{m.max_apr_bp / 100:.2f}%",
-        },
     }
 
 
@@ -65,20 +73,33 @@ def get_ledger() -> dict:
     rt = get_runtime()
     ops = rt.store.operations()
     return {
+        "commitments": [displayed(json.loads(c.model_dump_json())) for c in rt.store.commitments()],
+        "operations": [_op_view(o) for o in ops],
         "chain_valid": rt.store.verify_chain(),
-        "operations": [
-            {"seq": o.seq, "op_id": o.op_id, "kind": o.kind, "idempotency_key": o.idempotency_key,
-             "result": json.loads(o.result_json), "prev_hash": o.prev_hash, "entry_hash": o.entry_hash}
-            for o in ops
-        ],
-        "commitments": [json.loads(c.model_dump_json()) for c in rt.store.commitments()],
+        "chain_length": len(ops),
+        "head_hash": ops[-1].entry_hash if ops else None,
     }
 
 
 @router.get("/audit")
 def get_audit() -> dict:
     rt = get_runtime()
-    return {"security_events": [json.loads(e.model_dump_json()) for e in rt.store.security_events()]}
+    ops = rt.store.operations()
+    refusals = [_op_view(o) for o in ops if json.loads(o.result_json).get("status") == "REFUSED"]
+    s = security_summary(rt.store)
+    return {
+        "events": [displayed(json.loads(e.model_dump_json())) for e in rt.store.security_events()],
+        "refusals": refusals,
+        "documents": [],
+        "summary": displayed({
+            "facilities_added": s.get("facilities_added_by_non_owner", 0),
+            "commitments_booked": len(rt.store.commitments()),
+            "money_moved_fen": 0,
+            "disclosed_fields": [],
+            "reply_text": None,
+            **{k: v for k, v in s.items() if isinstance(v, (int, str, bool))},
+        }),
+    }
 
 
 @router.get("/evidence", response_class=PlainTextResponse)
