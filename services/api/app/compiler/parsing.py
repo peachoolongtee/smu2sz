@@ -117,7 +117,7 @@ def parse_rate_bp(text: str | None) -> int | None:
 
 # ---------------------------------------------------------------- days, months, counts
 
-DAYS_RE = re.compile(r"(?P<n>\d+)\s?[-‑]?\s?(?:days?\b|天|日)")
+DAYS_RE = re.compile(r"(?P<n>\d+)\s?[-‑]?\s?(?:(?:business|working|calendar)\s+)?(?:days?\b|个?工作日|天|日)")
 MONTHS_RE = re.compile(r"(?P<n>\d+)\s?[-‑]?\s?(?:months?\b|mos?\b|个月|月期)")
 YEARS_RE = re.compile(r"(?P<n>\d+)\s?[-‑]?\s?(?:years?\b|yrs?\b|年期|年)")
 

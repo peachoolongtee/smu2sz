@@ -268,12 +268,21 @@ def _ground_obligation(
     return ob, False
 
 
-def _force_claimed(ob: Obligation, prior: Sequence[AuthorityClaim]) -> Obligation:
-    """An obligation whose evidence overlaps a prior-agreement claim is a claimed prior concession,
-    whatever the backend called it: it is never booked without ledger evidence."""
+def _same_sentence(docs: dict[str, SourceDocument], a: SourceSpan, b: SourceSpan) -> bool:
+    if a.doc_id != b.doc_id:
+        return False
+    text = docs[a.doc_id].text
+    return lexicon.sentence_bounds(text, a.start) == lexicon.sentence_bounds(text, b.start)
+
+
+def _force_claimed(docs: dict[str, SourceDocument], ob: Obligation, claims: Sequence[AuthorityClaim]) -> Obligation:
+    """An obligation stated in the same sentence as a prior-agreement claim ("the 2% rebate we agreed
+    last month", "as we already agreed, the 3% rebate applies") is a claimed prior concession, whatever
+    the backend called it: it is never booked without ledger evidence."""
     if ob.type == ObligationType.CLAIMED_PRIOR_CONCESSION:
         return ob
-    if any(_overlaps(s, c.span) for s in ob.spans for c in prior if c.kind == "PRIOR_AGREEMENT"):
+    prior = [c.span for c in claims if c.kind == "PRIOR_AGREEMENT"]
+    if any(_overlaps(s, p) or _same_sentence(docs, s, p) for s in ob.spans[:1] for p in prior):
         return ob.model_copy(update={"type": ObligationType.CLAIMED_PRIOR_CONCESSION, "contingency": Contingency.CLAIMED_UNEVIDENCED})
     return ob
 
@@ -359,7 +368,7 @@ def build_offer(
         protected = [f.span for f in funding] + [r.span for r in data_requests]
         if any(_overlaps(s, p) for s in ob.spans[:1] for p in protected):
             continue
-        ob = _force_claimed(ob, authority)
+        ob = _force_claimed(by_id, ob, authority)
         built.append((order[ob.spans[0].doc_id], ob.spans[0].start, ob))
 
     for m in ex.missing_material:

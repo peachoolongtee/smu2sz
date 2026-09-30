@@ -29,7 +29,7 @@ _DATA_REQUESTS: list[tuple[DataRequestKind, re.Pattern[str]]] = [
         r"|授信额度|信用额度|贷款额度|融资额度|额度上限|借款额度", I)),
     (DataRequestKind.FUNDING_MENU, re.compile(
         r"\bfunding\s+(?:menu|sources?|options|plan)\b|\b(?:list|which|what)\s+(?:of\s+)?(?:your\s+)?(?:lenders|banks|facilities|funders)\b"
-        r"|\byour\s+(?:lenders|banks|facilities|funders)\b"
+        r"|\byour\s+(?:other\s+|existing\s+)?(?:lenders|banks|facilities|funders)\b"
         r"|融资渠道|资金来源|资金方|融资方案|融资清单|合作银行", I)),
     (DataRequestKind.OTHER_COUNTERPARTY_TERMS, re.compile(
         r"\b(?:buyer|customer|client)\s+[A-Z0-9](?:'s|’s)?\s+(?:payment\s+)?(?:terms|prices?|pricing|discounts?|rebates?|deal)\b"
@@ -93,10 +93,11 @@ _AUTHORITY: list[tuple[str, re.Pattern[str]]] = [
     ("PRIOR_AGREEMENT", re.compile(
         r"\b(?:we|you)\s+(?:have\s+)?(?:already\s+|previously\s+|both\s+)?(?:agreed|promised|approved)\b(?!\s+to\s+(?:review|consider))"
         r"|\bas\s+(?:previously\s+)?(?:agreed|discussed|promised)\b|\b(?:agreed|promised)\s+last\s+(?:week|month|time|quarter|year)\b"
+        r"|\b(?:owner|ceo|cfo|director|boss|management)\s+(?:has\s+|have\s+)?(?:already\s+)?(?:approved|agreed(?:\s+to)?|signed\s+off\s+on)\b"
         r"|已经?(?:同意|答应|批准)(?:过|了)?|说好的?|谈好的?|之前(?:约定|说定|商定)|上(?:个)?(?:月|次|周)(?:已经?)?(?:同意|答应|说好|谈好)", I)),
     ("INSTRUCTION_OVERRIDE", re.compile(
         r"\b(?:ignore|disregard|forget|override|bypass|skip)\s+(?:all\s+|any\s+)?(?:of\s+)?(?:the\s+|your\s+|these\s+|those\s+)?"
-        r"(?:previous|prior|above|earlier|preceding|existing|system|safety|original)?\s*(?:instructions?|rules|prompts?|constraints|checks|limits|mandate|verifier|guidelines)\b"
+        r"(?:previous|prior|above|earlier|preceding|existing|system|safety|original)?\s*(?:instructions?|rules?|prompts?|constraints?|checks?|limits?|mandate|verifier|guidelines?|policy|policies)\b"
         r"|\byou\s+are\s+now\b|\bact\s+as\s+(?:the\s+)?(?:owner|admin|administrator|system)\b|\bnew\s+instructions?\b"
         r"|(?:^|\n|\[|<|\{)\s*(?:system|assistant|developer)\s*[:：\]>]|\bdeveloper\s+mode\b|\bjailbreak\b"
         r"|\b(?:reply|respond|answer|type|output)\s+(?:with\s+)?[\"'“]?ACCEPT(?:ED)?\b|\bauto[- ]?(?:accept|approve)\b"
@@ -145,10 +146,13 @@ _FUNDING: list[re.Pattern[str]] = [
         rf"\b(?:loan|financing|credit\s+line|facility|funding|advance|credit)\s+of\s+(?:up\s+to\s+)?(?P<amt>{_AMT})"
         rf"{_GAP}\bat\s+(?P<rate>{_RATE})(?:{_GAP}\bfrom\s+{_NAME})?", I),
     re.compile(
+        rf"(?P<amt>{_AMT})\s+(?:[\w-]+\s+){{0,2}}(?:loan|credit\s+line|facility|financing|advance)\b{_GAP}\bat\s+(?P<rate>{_RATE})"
+        rf"(?:{_GAP}\bfrom\s+{_NAME})?", I),
+    re.compile(
         rf"{_NAME}\s+(?:can|will|is\s+(?:able|ready|happy)\s+to|would\s+like\s+to)\s+(?:offer|lend|provide|fund|advance)\s+(?:you\s+)?"
         rf"(?:up\s+to\s+)?(?P<amt>{_AMT}){_GAP}(?:\bat\s+(?P<rate>{_RATE}))?", 0),
     re.compile(
-        rf"(?P<name>[A-Za-z][\w&\-]*|[一-鿿]{{2,12}}?(?:银行|金融|资本|小贷|保理|公司))(?:已)?(?:为您|给您|向您)?(?:预批准|预授信|提供|批复)(?:了)?\s*(?P<amt>{_AMT})\s*(?:的)?"
+        rf"(?P<name>[A-Za-z][\w&\-]*|[一-鿿]{{2,12}}?(?:银行|金融|资本|小贷|保理|公司))[，,\s]*(?:已)?(?:为您|给您|向您)?(?:预批准|预授信|提供|批复)(?:了)?\s*(?P<amt>{_AMT})\s*(?:的)?"
         rf"(?:贷款|融资|额度|授信)(?:{_GAP}(?:年化)?(?:利率|年利率)?\s*(?P<rate>{_RATE}))?"),
     re.compile(
         rf"(?:预批准|预授信)(?:了)?\s*(?P<amt>{_AMT})\s*(?:的)?(?:贷款|融资|额度|授信)?(?:{_GAP}(?:利率|年化)\s*(?P<rate>{_RATE}))?"),
@@ -161,9 +165,9 @@ def find_funding_claims(doc: SourceDocument) -> list[XFundingClaim]:
     taken: list[tuple[int, int]] = []
     for rx in _FUNDING:
         for m in rx.finditer(doc.text):
-            if any(m.start() < e and s < m.end() for s, e in taken):
+            if any(m.start() < e and s < m.end() for s, e in taken) or parse_money(m.group("amt")) is None:
                 continue
-            name = (m.groupdict().get("name") or "").strip()
+            name = re.sub(r"^.*(?:获得|来自|我们是|这里是|由|从)", "", (m.groupdict().get("name") or "").strip())
             if not name or name in _NAME_STOP or name.split()[0] in _NAME_STOP:
                 name = _lender_elsewhere(doc.text) or doc.sender_id
             out.append(XFundingClaim(

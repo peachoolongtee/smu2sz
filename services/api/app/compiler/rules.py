@@ -96,7 +96,7 @@ TERMS = [
 
 _PERIOD = r"(?:next|following|coming)\s+(?:quarter|month|year|season|half)(?:'s|’s)?"
 _PERIOD_ZH = r"(?:下(?:个)?季度|下个?月|明年|下半年|下一季度?)"
-_CAP = rf"(?:\s+(?:purchases|orders|volume|spend|buying)?\s*(?:of|on)?\s*(?:up\s+to|a\s+maximum\s+of|capped\s+at|at\s+most|no\s+more\s+than)\s+(?P<cap>{AMT})(?:\s+(?:of|in)\s+(?:orders|purchases|volume|spend))?)"
+_CAP = rf"(?:,?\s+(?:purchases|orders|volume|spend|buying)?\s*(?:of|on)?\s*(?:up\s+to|a\s+maximum\s+of|capped\s+at|at\s+most|no\s+more\s+than)\s+(?P<cap>{AMT})(?:\s+(?:of|in)\s+(?:orders|purchases|volume|spend))?)"
 REBATE = [
     # "0.75% off next quarter's purchases of up to ¥400,000", "1% off next quarter on up to ¥250,000 of orders"
     (re.compile(rf"(?P<rate>{RATE})\s+(?:rebate\s+|discount\s+|off\s+|reduction\s+)?(?:off\s+|on\s+|for\s+|from\s+|across\s+)?(?:the\s+|our\s+)?{_PERIOD}(?:\s+(?:purchases|orders|volume|spend|invoices))?{_CAP}?", I), BaseKind.PERIOD_PURCHASES),
@@ -483,7 +483,7 @@ _TS_FEE = re.compile(
     rf"(?:\s+(?:of|is|at))?\s*[:：]?\s*(?:{G(10)})(?P<v>{RATE}|{AMT})(?:\s+(?:per|every)\s+(?:\d+\s+days?|month|advance|period))?"
     rf"|(?:手续费|服务费|安排费|承诺费|管理费)\s*[:：为]?\s*(?P<vz>{RATE}|{AMT})", I)
 _TS_RATE = re.compile(
-    rf"(?:\bat\s+|\b(?:interest\s+)?rate\s+(?:of\s+|is\s+)?[:：]?\s*|\binterest\s+(?:of\s+|at\s+)?|(?:年化)?(?:年)?利率\s*[:：为]?\s*|年化\s*)"
+    rf"(?:\bat\s+|\b(?:interest\s+)?rate\s*(?:of\s+|is\s+)?[:：]?\s*|\binterest\s+(?:of\s+|at\s+)?|(?:年化)?(?:年)?利率\s*[:：为]?\s*|年化\s*)"
     rf"(?P<v>{RATE})(?:\s*(?:p\.?a\.?|per\s+annum|a\s+year|annual(?:ly)?|APR))?", I)
 _TS_PRINCIPAL = [
     re.compile(rf"\b(?:[\w-]+\s+){{0,3}}(?:loan|facility|line|credit|financing|advance)\s+(?:of\s+|for\s+|amount\s+)?(?:up\s+to\s+)?[:：]?\s*(?P<v>{AMT})", I),
