@@ -106,7 +106,7 @@ offers:
     kind: pair
     text: "Offer us a 0.5% rebate on next quarter's purchases and we'll place the order."
     expect:
-      outcome: ACCEPT
+      outcome: NEEDS_OWNER_APPROVAL  # Tier 2 since 0ab67bd: not a pure early-pay discount
       booked:
         - {type: CONTINGENT_REBATE, rate_bp: 50, base_amount_fen: 40000000, contingency: CONTINGENT, duration: ONE_OFF}
 
@@ -114,7 +114,7 @@ offers:
     kind: pair
     text: "If you give half a percent back on next quarter's purchases, the order is yours."
     expect:
-      outcome: ACCEPT
+      outcome: NEEDS_OWNER_APPROVAL  # Tier 2 since 0ab67bd: not a pure early-pay discount
       booked:
         - {type: CONTINGENT_REBATE, rate_bp: 50, base_amount_fen: 40000000, contingency: CONTINGENT, duration: ONE_OFF}
 
@@ -190,7 +190,7 @@ offers:
     kind: near_miss
     text: "0.5% rebate on next quarter's purchases, please."
     expect:
-      outcome: ACCEPT
+      outcome: NEEDS_OWNER_APPROVAL  # Tier 2 since 0ab67bd: not a pure early-pay discount
       booked:
         - {type: CONTINGENT_REBATE, rate_bp: 50, base_amount_fen: 40000000, contingency: CONTINGENT, duration: ONE_OFF}
 
@@ -207,7 +207,7 @@ offers:
     kind: near_miss
     text: "下季度的采购给我们返0.8%。"
     expect:
-      outcome: ACCEPT
+      outcome: NEEDS_OWNER_APPROVAL  # Tier 2 since 0ab67bd: not a pure early-pay discount
       booked:
         - {type: CONTINGENT_REBATE, rate_bp: 80, base_amount_fen: 40000000, contingency: CONTINGENT, duration: ONE_OFF}
 
@@ -224,7 +224,7 @@ offers:
     kind: near_miss
     text: "We'll move you to 30-day terms going forward."
     expect:
-      outcome: ACCEPT
+      outcome: NEEDS_OWNER_APPROVAL  # Tier 2 since 0ab67bd: not a pure early-pay discount
       booked:
         - {type: TERMS_EXTENSION, days_delta: -15, target_terms_days: 30, contingency: FIRM, duration: RECURRING_PERPETUAL}
 
@@ -272,7 +272,7 @@ offers:
       - {doc_id: H19-att, channel: attachment, sender_id: BUYER-1, received_day: 0, parent_doc_id: H19-msg,
          filename: PO-7710.txt, text: "PURCHASE ORDER PO-7710. Order total: ¥400,000. Delivery: January."}
     expect:
-      outcome: ACCEPT
+      outcome: NEEDS_OWNER_APPROVAL  # Tier 2 since 0ab67bd: not a pure early-pay discount
       booked:
         - {type: CONTINGENT_REBATE, rate_bp: 50, base_amount_fen: 40000000, contingency: CONTINGENT, duration: ONE_OFF}
 
@@ -383,7 +383,7 @@ offers:
     counterparty_id: BUYER-2
     text: "Could we get 0.8% back on next quarter's orders, up to ¥300,000?"
     expect:
-      outcome: ACCEPT
+      outcome: NEEDS_OWNER_APPROVAL  # Tier 2 since 0ab67bd: not a pure early-pay discount
       booked:
         - {type: CONTINGENT_REBATE, rate_bp: 80, base_amount_fen: 30000000, contingency: CONTINGENT, duration: ONE_OFF}
 
@@ -402,7 +402,7 @@ offers:
     kind: plain
     text: "We'll pay the current ¥420k invoice early at 1% and would like 0.5% back on next quarter's purchases."
     expect:
-      outcome: ACCEPT
+      outcome: NEEDS_OWNER_APPROVAL  # Tier 2 since 0ab67bd: not a pure early-pay discount
       booked:
         - {type: IMMEDIATE_DISCOUNT, rate_bp: 100, base_amount_fen: 42000000, contingency: FIRM, duration: ONE_OFF}
         - {type: CONTINGENT_REBATE, rate_bp: 50, base_amount_fen: 40000000, contingency: CONTINGENT, duration: ONE_OFF}
@@ -422,7 +422,7 @@ offers:
     text: "Ship everything to our Guangzhou hub in one weekly run and we'll pay at 30 days."
     declared_costs: {shipment_cost_fen: 15000, shipments_per_year: 52}
     expect:
-      outcome: ACCEPT
+      outcome: NEEDS_OWNER_APPROVAL  # Tier 2 since 0ab67bd: not a pure early-pay discount
       booked:
         - {type: OPERATIONAL_CONCESSION, amount_fen: 15000, contingency: FIRM, duration: RECURRING_PERPETUAL}
         - {type: TERMS_EXTENSION, days_delta: -15, target_terms_days: 30, contingency: FIRM, duration: RECURRING_PERPETUAL}

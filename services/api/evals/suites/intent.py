@@ -1,4 +1,4 @@
-"""/nl intent parsing on held-out owner utterances (fixtures/heldout/intents.yaml).
+"""/nl intent parsing on held-out owner utterances (fixtures/heldout/intents.yaml, or --heldout DIR).
 
 Each utterance runs through POST /nl on a freshly reset in-memory runtime (a new session, the golden
 fixture at day 0), exactly as the UI would send it. The intent and the clarification come from the
@@ -13,20 +13,23 @@ from typing import Any
 
 import yaml
 
-from evals.common import HELDOUT, Failure, InProcApi, Metric, SuiteResult, median, pct, quiet, ratio
+from evals.common import Failure, InProcApi, Metric, SuiteResult, heldout_path, median, pct, quiet, ratio
 
 REPRO = "uv run --project services/api python scripts/evaluate.py --suite intent --only {id}"
 
 
-def load() -> list[dict[str, Any]]:
-    return yaml.safe_load((HELDOUT / "intents.yaml").read_text(encoding="utf-8"))["intents"]
+def load(path: Any = None) -> list[dict[str, Any]]:
+    """Utterances from `path`: an intents.yaml file or a held-out directory holding one (default
+    fixtures/heldout)."""
+    return yaml.safe_load(heldout_path(path, "intents.yaml").read_text(encoding="utf-8"))["intents"]
 
 
-def run(only: list[str] | None = None, api: InProcApi | None = None, **_: Any) -> SuiteResult:
+def run(only: list[str] | None = None, api: InProcApi | None = None, heldout: Any = None, **_: Any) -> SuiteResult:
     quiet()
     from app.nl.rules import slots_from
 
-    items = [i for i in load() if not only or i["id"] in only]
+    source = heldout_path(heldout, "intents.yaml")
+    items = [i for i in load(source) if not only or i["id"] in only]
     api = api or InProcApi()
     res = SuiteResult(name="intent")
     rows = []
@@ -62,7 +65,7 @@ def run(only: list[str] | None = None, api: InProcApi | None = None, **_: Any) -
         d = by_intent.setdefault(r["expect_intent"], {"n": 0, "ok": 0})
         d["n"] += 1
         d["ok"] += r["intent_ok"]
-    res.details = {"rows": rows, "by_intent": by_intent, "latency_ms": {"p50": median(lat), "p95": pct(lat, 95)},
+    res.details = {"rows": rows, "by_intent": by_intent, "source": str(source), "latency_ms": {"p50": median(lat), "p95": pct(lat, 95)},
                    "counts": {"items": n, "zh": sum(any("一" <= c <= "鿿" for c in r["text"]) for r in rows)}}
     res.metrics += [
         Metric("intent_accuracy", "Intent accuracy (held-out owner utterances)", ratio(ok, n),

@@ -1,7 +1,8 @@
 """E2 held-out offers: compiler + verifier against hand labels, and the "form" baseline.
 
-For every item in fixtures/heldout/offers.yaml the real pipeline runs (compiler in the configured
-LLM_MODE, then the verifier on the golden state). Metrics:
+For every item in fixtures/heldout/offers.yaml (or the file in `--heldout DIR`) the real pipeline runs
+(compiler in the configured LLM_MODE, then the verifier on the golden state). An item whose outcome is
+`unlabelled` still has its obligations scored but is left out of verdict agreement. Metrics:
 
 - MATERIAL ERROR RATE: items (not labelled abstain) where the system booked a verdict and at least one
   booked obligation has a wrong type (missing or spurious), rate, amount, days/duration or contingency.
@@ -20,16 +21,20 @@ from typing import Any
 
 import yaml
 
-from evals.common import HELDOUT, Failure, Metric, SuiteResult, median, pct, quiet, ratio
+from evals.common import Failure, Metric, SuiteResult, heldout_path, median, pct, quiet, ratio
 
 REPRO = "uv run --project services/api python scripts/evaluate.py --suite offers --only {id}"
 FIELD_GROUP = {"rate_bp": "rate", "base_amount_fen": "amount", "amount_fen": "amount", "days_delta": "days",
                "invoices": "days", "duration": "days", "contingency": "contingency"}
 ACCEPTISH = {"ACCEPT", "NEEDS_OWNER_APPROVAL"}
+UNLABELLED = "unlabelled"  # outcome deliberately not asserted: obligations are scored, the verdict is not
 
 
 def load(path: Any = None) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
-    data = yaml.safe_load((path or HELDOUT / "offers.yaml").read_text(encoding="utf-8"))
+    """Items and pairs from `path`: an offers.yaml file or a held-out directory holding one (default
+    fixtures/heldout)."""
+    p = heldout_path(path, "offers.yaml")
+    data = yaml.safe_load(p.read_text(encoding="utf-8"))
     return data["offers"], data.get("pairs", [])
 
 
@@ -91,7 +96,7 @@ def cap_decision(labels: list[dict[str, Any]], max_bp: int) -> str:
     return "ACCEPT" if ok else "REJECT"
 
 
-def run(only: list[str] | None = None, **_: Any) -> SuiteResult:
+def run(only: list[str] | None = None, heldout: Any = None, **_: Any) -> SuiteResult:
     quiet()
     from app.compiler import compile_offer
     from app.domain.fixtures import load_scenario
@@ -100,7 +105,8 @@ def run(only: list[str] | None = None, **_: Any) -> SuiteResult:
     from app.verifier import evaluate
     from evals.forms import form_offer
 
-    items, pairs = load()
+    source = heldout_path(heldout, "offers.yaml")
+    items, pairs = load(source)
     if only:
         items = [i for i in items if i["id"] in only]
         pairs = [p for p in pairs if p["a"] in only and p["b"] in only]
@@ -141,7 +147,8 @@ def run(only: list[str] | None = None, **_: Any) -> SuiteResult:
             "counterparty_id": cp, "text": " | ".join(d.text for d in docs),
             "compiler": offer.compiler, "compile_status": offer.status.value,
             "expect_abstain": bool(exp.get("abstain")), "abstained": abstained,
-            "expect_outcome": exp["outcome"], "outcome": v.outcome.value, "outcome_ok": v.outcome.value == exp["outcome"],
+            "expect_outcome": exp["outcome"], "labelled": exp["outcome"] != UNLABELLED, "outcome": v.outcome.value,
+            "outcome_ok": exp["outcome"] == UNLABELLED or v.outcome.value == exp["outcome"],
             "expect_codes": exp.get("codes", []), "codes": codes,
             "codes_ok": set(exp.get("codes", [])) <= set(codes),
             "booked": [{"type": o.type.value, "rate_bp": o.rate_bp, "base_amount_fen": o.base.amount_fen,
@@ -153,7 +160,8 @@ def run(only: list[str] | None = None, **_: Any) -> SuiteResult:
                           "invoices": o.duration.invoices} for o in offer.obligations],
             "abstentions": [a.field for a in offer.abstentions],
             "material_errors": errs,
-            "form_outcome": form_outcome, "form_ok": form_outcome == exp["outcome"], "form_codes": form_codes,
+            "form_outcome": form_outcome, "form_ok": exp["outcome"] == UNLABELLED or form_outcome == exp["outcome"],
+            "form_codes": form_codes,
             "compile_ms": round(compile_ms[-1], 1),
         })
     by_id = {r["id"]: r for r in rows}
@@ -167,8 +175,9 @@ def run(only: list[str] | None = None, **_: Any) -> SuiteResult:
     fp = sum(r["abstained"] for r in non_abstain)
     fn = len(must_abstain) - tp
     prec, rec = ratio(tp, tp + fp), ratio(tp, tp + fn)
-    agree = sum(r["outcome_ok"] for r in rows)
-    form_agree = sum(r["form_ok"] for r in rows)
+    labelled = [r for r in rows if r["labelled"]]
+    agree = sum(r["outcome_ok"] for r in labelled)
+    form_agree = sum(r["form_ok"] for r in labelled)
     same = [p for p in pairs if p["relation"] == "same"]
     diff = [p for p in pairs if p["relation"] == "different"]
     pair_rows = []
@@ -201,10 +210,12 @@ def run(only: list[str] | None = None, **_: Any) -> SuiteResult:
         backends[r["compiler"]] = backends.get(r["compiler"], 0) + 1
     mer = ratio(len(mat), len(non_abstain))
     res.details = {"rows": rows, "pairs": pair_rows, "material_error_fields": field_counts, "backends": backends,
+                   "source": str(source),
                    "counts": {"items": len(rows), "must_abstain": len(must_abstain), "non_abstain": len(non_abstain),
+                              "unlabelled_outcome": len(rows) - len(labelled),
                               "en": sum(r["lang"] == "en" for r in rows), "zh": sum(r["lang"] == "zh" for r in rows)},
                    "compile_ms": {"p50": median(compile_ms), "p95": pct(compile_ms, 95)}}
-    gap = (form_agree - agree) / len(rows) if rows else 0.0
+    gap = (form_agree - agree) / len(labelled) if labelled else 0.0
     res.metrics += [
         Metric("compiler_material_error_rate", "Compiler material error rate (held-out, booked verdicts)", mer,
                f"{len(mat)}/{len(non_abstain)} ({(mer or 0):.1%})", "≤ 5%", (mer or 0) <= 0.05, "offers",
@@ -220,10 +231,11 @@ def run(only: list[str] | None = None, **_: Any) -> SuiteResult:
                ratio(same_ok, len(same)), f"{same_ok}/{len(same)}", "informational", None, "offers"),
         Metric("wording_invariance_near_miss", "Near-miss pairs → different verdicts", ratio(diff_ok, len(diff)),
                f"{diff_ok}/{len(diff)}", "informational", None, "offers"),
-        Metric("verdict_agreement", "Verdict agreement with labels (compiler)", ratio(agree, len(rows)),
-               f"{agree}/{len(rows)} ({(ratio(agree, len(rows)) or 0):.0%})", "informational", None, "offers"),
+        Metric("verdict_agreement", "Verdict agreement with labels (compiler)", ratio(agree, len(labelled)),
+               f"{agree}/{len(labelled)} ({(ratio(agree, len(labelled)) or 0):.0%})", "informational", None, "offers"),
         Metric("verdict_agreement_form", "Verdict agreement with labels (form baseline: labels as input)",
-               ratio(form_agree, len(rows)), f"{form_agree}/{len(rows)} ({(ratio(form_agree, len(rows)) or 0):.0%}); "
+               ratio(form_agree, len(labelled)),
+               f"{form_agree}/{len(labelled)} ({(ratio(form_agree, len(labelled)) or 0):.0%}); "
                f"gap {gap:+.0%}", "informational", None, "offers"),
         Metric("engine_vs_cap", "E2 engine ≠ static cap (form inputs)", ratio(cap_diff, len(capable)),
                f"{cap_diff}/{len(capable)}", "≥ 35% (7/20)", cap_diff * 20 >= 7 * max(1, len(capable)), "offers"),

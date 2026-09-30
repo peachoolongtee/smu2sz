@@ -1,0 +1,91 @@
+# Held-out set 2: owner utterances for /nl (en, zh and mixed), written from the domain before reading
+# app/nl/lexicon.py, app/nl/rules.py or the first held-out set. Each runs on a fresh session at day 0
+# of the golden fixture (no pending plan, no pending approvals).
+#
+# `slots` lists only the key slots a correct parse must carry (typed: fen, bp, days, ids).
+# `ambiguous: true` marks a deliberately vague request that should get a clarifying question.
+intents:
+  # ---------------------------------------------------------------- SHOW_STATUS
+  - {id: H2I-S01, text: "How much cash do we have right now?", intent: SHOW_STATUS}
+  - {id: H2I-S02, text: "现在账上还有多少钱？", intent: SHOW_STATUS}
+  - {id: H2I-S03, text: "show me the 13 week forecast pls", intent: SHOW_STATUS}
+  - {id: H2I-S04, text: "我们下个月的现金流预测给我看一下", intent: SHOW_STATUS}
+  - {id: H2I-S05, text: "list the open receivables", intent: SHOW_STATUS}
+  - {id: H2I-S06, text: "帮我 check 一下 cash position", intent: SHOW_STATUS}
+
+  # ---------------------------------------------------------------- FUND_GAP
+  - {id: H2I-F01, text: "Cover the payroll gap with the cheapest option", intent: FUND_GAP}
+  - {id: H2I-F02, text: "发工资前的资金缺口帮我找最便宜的方式补上", intent: FUND_GAP}
+  - {id: H2I-F03, text: "draw 150k on the credit line", intent: FUND_GAP,
+     slots: {facility_id: FAC-LINE, amount_fen: 15000000}}
+  - {id: H2I-F04, text: "we're short for payroll on the 12th, find us the money", intent: FUND_GAP}
+  - {id: H2I-F05, text: "从授信额度里提10万出来", intent: FUND_GAP,
+     slots: {facility_id: FAC-LINE, amount_fen: 10000000}}
+
+  # ---------------------------------------------------------------- REPAY_FACILITY
+  - {id: H2I-P01, text: "Repay the credit line in full", intent: REPAY_FACILITY, slots: {facility_id: FAC-LINE}}
+  - {id: H2I-P02, text: "把银行授信先还掉5万", intent: REPAY_FACILITY,
+     slots: {facility_id: FAC-LINE, amount_fen: 5000000}}
+  - {id: H2I-P03, text: "pay back ¥80,000 on the line", intent: REPAY_FACILITY,
+     slots: {facility_id: FAC-LINE, amount_fen: 8000000}}
+
+  # ---------------------------------------------------------------- ACCELERATE_RECEIPT
+  - {id: H2I-A01, text: "Get paid early on the Foshan invoice, max 0.8%, and don't give anything away next quarter",
+     intent: ACCELERATE_RECEIPT, slots: {counterparty_id: BUYER-1, rate_bp: 80, zero_forward: true}}
+  - {id: H2I-A02, text: "佛山那张42万的发票能不能让他们早点付？折扣别超过0.85%", intent: ACCELERATE_RECEIPT,
+     slots: {counterparty_id: BUYER-1, rate_bp: 85}}
+  - {id: H2I-A03, text: "try to collect the 420k from Foshan Home Retail sooner", intent: ACCELERATE_RECEIPT,
+     slots: {counterparty_id: BUYER-1}}
+  - {id: H2I-A04, text: "Foshan 那张 invoice 能 early pay 吗, max 0.8%", intent: ACCELERATE_RECEIPT,
+     slots: {counterparty_id: BUYER-1, rate_bp: 80}}
+
+  # ---------------------------------------------------------------- EVALUATE_OFFER
+  - {id: H2I-E01, text: "Foshan just sent this: 'We'll pay the 420k early at 1% if you give us 60 days going forward.' What do you think?",
+     intent: EVALUATE_OFFER, slots: {counterparty_id: BUYER-1}}
+  - {id: H2I-E02, text: "东莞那边发来：下季度返点1%，上限25万。帮我看看能不能接", intent: EVALUATE_OFFER,
+     slots: {counterparty_id: BUYER-2}}
+  - {id: H2I-E03, text: "Is this offer from Foshan ok? \"Early pay at 0.8% on the ¥420,000 invoice, nothing else changes.\"",
+     intent: EVALUATE_OFFER, slots: {counterparty_id: BUYER-1}}
+  - {id: H2I-E04, text: "佛山客户说：提前付款扣1.2个点，账期改60天。这个能答应吗？", intent: EVALUATE_OFFER,
+     slots: {counterparty_id: BUYER-1}}
+
+  # ---------------------------------------------------------------- NEGOTIATE
+  - {id: H2I-N01, text: "Counter Foshan at 0.8%", intent: NEGOTIATE, slots: {counterparty_id: BUYER-1, rate_bp: 80}}
+  - {id: H2I-N02, text: "跟佛山谈一下，提前付款最多给0.7%", intent: NEGOTIATE, slots: {counterparty_id: BUYER-1, rate_bp: 70}}
+  - {id: H2I-N03, text: "negotiate with Dongguan, offer them a 0.5% rebate max", intent: NEGOTIATE,
+     slots: {counterparty_id: BUYER-2, rebate_bp: 50}}
+
+  # ---------------------------------------------------------------- EXPLAIN
+  - {id: H2I-X01, text: "Why did you reject the Foshan package?", intent: EXPLAIN, slots: {counterparty_id: BUYER-1}}
+  - {id: H2I-X02, text: "What's the break-even discount and why is it 0.88%?", intent: EXPLAIN}
+  - {id: H2I-X03, text: "为什么不用政府担保贷款？", intent: EXPLAIN}
+  - {id: H2I-X04, text: "explain the DSCR number to me like I'm not an accountant", intent: EXPLAIN}
+
+  # ---------------------------------------------------------------- WHAT_IF
+  - {id: H2I-W01, text: "What if Foshan pays 15 days late?", intent: WHAT_IF, slots: {counterparty_id: BUYER-1}}
+  - {id: H2I-W02, text: "What happens if we give Foshan 60-day terms?", intent: WHAT_IF,
+     slots: {counterparty_id: BUYER-1, terms_days: 60}}
+  - {id: H2I-W03, text: "如果给佛山60天账期，现金流会怎样？", intent: WHAT_IF, slots: {counterparty_id: BUYER-1, terms_days: 60}}
+  - {id: H2I-W04, text: "what if payroll goes up 10% next month", intent: WHAT_IF}
+
+  # ---------------------------------------------------------------- APPROVE / REJECT
+  - {id: H2I-Y01, text: "Approve APR-000001", intent: APPROVE, slots: {approval_id: APR-000001}}
+  - {id: H2I-Y02, text: "批准 APR-000002", intent: APPROVE, slots: {approval_id: APR-000002}}
+  - {id: H2I-R01, text: "Reject APR-000003, too expensive", intent: REJECT, slots: {approval_id: APR-000003}}
+  - {id: H2I-R02, text: "驳回APR-000004", intent: REJECT, slots: {approval_id: APR-000004}}
+
+  # ---------------------------------------------------------------- OUT_OF_SCOPE
+  - {id: H2I-O01, text: "Write me a poem about cash flow", intent: OUT_OF_SCOPE}
+  - {id: H2I-O02, text: "帮我订明天去上海的高铁票", intent: OUT_OF_SCOPE}
+  - {id: H2I-O03, text: "what's the weather in Shenzhen tomorrow", intent: OUT_OF_SCOPE}
+  - {id: H2I-O04, text: "Sign the personal guarantee for the bank loan on my behalf", intent: OUT_OF_SCOPE,
+     slots: {tier3: SIGN_PERSONAL_GUARANTEE}}
+
+  # ---------------------------------------------------------------- deliberately vague → clarification
+  - {id: H2I-V01, text: "sort it out", intent: AMBIGUOUS, ambiguous: true}
+  - {id: H2I-V02, text: "搞定它", intent: AMBIGUOUS, ambiguous: true}
+  - {id: H2I-V03, text: "do the thing with Foshan", intent: AMBIGUOUS, ambiguous: true}
+  - {id: H2I-V04, text: "帮我处理一下那个事", intent: AMBIGUOUS, ambiguous: true}
+  - {id: H2I-V05, text: "make it cheaper", intent: AMBIGUOUS, ambiguous: true}
+  - {id: H2I-V06, text: "help with the money", intent: AMBIGUOUS, ambiguous: true}
+  - {id: H2I-V07, text: "那个单子怎么说", intent: AMBIGUOUS, ambiguous: true}
