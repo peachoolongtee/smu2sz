@@ -1,0 +1,13 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>S11_ex06_three_invoices turn 1</title><style>body{font:14px/1.5 system-ui,sans-serif;margin:24px;max-width:960px;color:#1d2330;background:#fff}
+.tag{display:inline-block;padding:2px 8px;border-radius:10px;background:#e3f5e8}
+pre{white-space:pre-wrap;background:#f5f6f8;padding:12px;border-radius:6px}table{border-collapse:collapse;width:100%}
+td{border-top:1px solid #e3e5e8;padding:4px 6px;vertical-align:top}</style></head><body>
+<h1>S11_ex06_three_invoices · turn 1 <span class="tag">PASS</span></h1><p>EX06 from the buyer: bounded extension + loyalty credit exceeds the concession cap</p>
+<p><b>COUNTERPARTY</b> (BUYER-1):</p>
+<pre>Take 45 days on the next three invoices instead of 30 and we&#x27;ll add a 0.5% loyalty credit.</pre><p><b>Intent</b> COUNTERPARTY_MESSAGE · <b>Verdict</b> REJECT
+AGG_CONCESSION_EXCEEDED, RESERVE_BREACH</p><p><b>Reply</b></p><pre>Option A: We can extend terms by 15 days on the next two invoices.
+Option B: We can extend terms by 15 days on the next three invoices if the 0.50% credit is firm on each of them.</pre><p><b>Plan</b></p><ol><li>[DONE] VERIFY: Verdict REJECT (TIER_1): AGG_CONCESSION_EXCEEDED, RESERVE_BREACH. REJECT: AGG_CONCESSION_EXCEEDED (¥5,613.90 vs ¥5,000.00); RESERVE_BREACH@47 (curable at ¥761.22). Forward concessions ¥5,613.90 against ¥5,000.00. Covenants hold: DSCR_MIN 1.92x, LEVERAGE_MAX 1.58x. Counters: Option A, Option B.</li><li>[EXECUTED] COUNTER_OFFER: Option A: We can extend terms by 15 days on the next two invoices.</li><li>[EXECUTED] COUNTER_OFFER: Option B: We can extend terms by 15 days on the next three invoices if the 0.50% credit is firm on each of them.</li></ol>
+<p><b>Operations</b></p><table><tr><td>COUNTER_OFFER</td><td>EXECUTED</td><td>TIER_1</td><td>We can extend terms by 15 days on the next two invoices.</td></tr><tr><td>COUNTER_OFFER</td><td>EXECUTED</td><td>TIER_1</td><td>We can extend terms by 15 days on the next three invoices if the 0.50% credit is firm on each of them.</td></tr></table>
+<p>session S11_ex06_three_invoices-counterparty · trace S11_ex06_three_invoices-counterparty:1 · security events 0</p>
+</body></html>
