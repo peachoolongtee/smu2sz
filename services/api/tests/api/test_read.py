@@ -18,3 +18,15 @@ def test_ledger_empty_and_chain_valid_after_reset(client):
     client.post("/demo/reset")
     body = client.get("/ledger").json()
     assert body["chain_valid"] and body["operations"] == []
+
+
+def test_post_offer_fixture_compiles_three_obligations(client):
+    body = client.post("/offers", json={"fixture_id": "EX01_PACKAGE"}).json()
+    types = sorted(o["type"] for o in body["offer"]["obligations"])
+    assert types == ["CONTINGENT_REBATE", "IMMEDIATE_DISCOUNT", "TERMS_EXTENSION"]
+
+
+def test_term_sheet_is_proposal_only(client):
+    ts = client.post("/facilities/compile", json={"fixture_id": "EX09_TERM_SHEET_PG"}).json()["term_sheet"]
+    assert ts["all_in_rate_bp"] == 590 and ts["tier3_clauses"]
+    assert ts["proposed_facility"]["owner_approved"] is False

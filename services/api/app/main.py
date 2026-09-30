@@ -5,6 +5,7 @@ from __future__ import annotations
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.offers import router as offers_router
 from app.api.read import router as read_router
 from app.config import get_settings
 
@@ -14,6 +15,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.include_router(read_router)
+app.include_router(offers_router)
 
 
 @app.get("/health")
