@@ -76,8 +76,8 @@ We do not claim "first", "best loan", "proof", "atomic", "financial advice", "ba
 
 TermsLedger is a **modular monolith** (ADR-0001): one FastAPI service (`services/api`), one Next.js web app (`apps/web`) and one database. Shared contracts live in `app/domain/`. Modules talk only through those contracts, and import cycles are forbidden. The diagram's source is `docs/deliverables/architecture.mmd`.
 
-![Figure 1. TermsLedger v2 architecture](architecture.png)
-
+<!-- figure: architecture.png | Figure 1. TermsLedger v2 architecture (rendered from architecture.mmd) -->
+<!-- ascii-fallback -->
 ```
  UNTRUSTED TEXT                      OWNER AUTHORITY (signed / token)
  buyer msg, PO, term sheet           Mandate v1 (Ed25519)   Funding menu   Tier-2 approvals
@@ -426,9 +426,12 @@ python3 scripts/run_scenarios.py --inproc                               # the 37
 | mandate | 69 | financial engine | 52 |
 | whatif | 44 | funding router | 44 |
 
-<!-- TEST-RESULT -->
-**Latest full run** at `dev` 3ac4c39 (1 Oct 2026): [TEAM: fill after the suite is green; see the note below].
-<!-- /TEST-RESULT -->
+**Latest full run** (`uv run pytest`, `dev` at 3ac4c39, 1 Oct 2026): **2,175 passed, 4 expected failures, 21 failed**, in 194 s.
+
+- The 4 expected failures are the four documented security findings (F-01, F-02, F-04, F-07). Each runs as a strict xfail, so a silent fix or regression is caught.
+- The 21 failures are API tests (alerts, borrower file, capex, `/nl` approvals and three security tests) written before commit 3ac4c39 put these routes behind the owner token and agent key. They now receive HTTP 401 where they expected a result.
+
+[TEAM: update those tests, re-run, and replace this paragraph with the green result before submission.]
 
 The web app adds 19 Playwright test declarations (demo walk in mock and live modes, API contract, alerts, what-if, responsive layout) and a unit test that checks the mock data against `golden_values.json`.
 
