@@ -175,7 +175,7 @@ def _dispatch(ctx: NlContext, p: Parsed, text: str) -> Turn:
         case Intent.ACCELERATE_RECEIPT:
             return accelerate(ctx, slots, text, execute=slots.execute_now and not llm)
         case Intent.FUND_GAP:
-            return fund_gap(ctx, slots, execute=not llm)
+            return fund_gap(ctx, slots, execute=not llm and not p.tentative)
         case Intent.REPAY_FACILITY:
             return repay(ctx, slots, execute=not llm)
         case Intent.SHOW_STATUS:

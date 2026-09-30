@@ -103,6 +103,23 @@ def log_authority_claims(ctx: NlContext, offer: CompiledOffer) -> None:
 # ---------------------------------------------------------------- the verdict -> operations decision
 
 
+def clarification_request(ctx: NlContext, v: Verdict) -> str:
+    """One specific question for a NO_VERDICT, from the typed violation fields only (a fixed template: no
+    value from the message is echoed back)."""
+    what = " ".join([x.observed or "" for x in v.violations] + [k for x in v.violations for k in x.inputs])
+    if any(x.code == ViolationCode.CONFLICTING_SOURCES for x in v.violations):
+        return t(ctx, "Your message and the attached document state different values. Please confirm which one is "
+                      "correct.", "贵方消息与附件中的数值不一致，请确认以哪一个为准。")
+    if "alternatives" in what:
+        return t(ctx, "Your message offers more than one value for a term. Please confirm the single value you propose.",
+                 "贵方消息中同一条款给出了多个数值，请确认贵方提议的具体数值。")
+    if "scope" in what or "base" in what or "receivable_id" in what:
+        return t(ctx, "Please confirm what the discount or rebate applies to: which invoice, or which period's "
+                      "purchases, and for how long.", "请确认该折扣或返利适用于哪张发票或哪一期的采购，以及适用多长时间。")
+    return t(ctx, "Please clarify the terms: we cannot establish them from your message.",
+             "请澄清条款：我方无法从贵方消息中确定这些条款。")
+
+
 def decide(ctx: NlContext, steps: Steps, b: VerdictBundle, *, execute: bool, recipient: str) -> list[str]:
     """Tier-1 response to a verified offer. Returns outbound lines for the counterparty.
 
@@ -122,15 +139,15 @@ def decide(ctx: NlContext, steps: Steps, b: VerdictBundle, *, execute: bool, rec
                                    "term; logged as security events, nothing booked, nothing executed",
                               "已拒绝：消息包含指令或声称的授权，且没有可记账条款；已记录安全事件，未记账、未执行"), "INFO")
         return [INSTRUCTION_REFUSAL_ZH if ctx.lang == "zh" else INSTRUCTION_REFUSAL]
-    if v.outcome == Outcome.NO_VERDICT and ViolationCode.UNRESOLVED_SCOPE in codes and not b.bound_obligations:
+    asked = any(x.inputs.get("clarification") == "requested" for x in v.violations)  # the compiler abstained
+    if v.outcome == Outcome.NO_VERDICT and ViolationCode.UNRESOLVED_SCOPE in codes and not b.bound_obligations and not asked:
         steps.add("VERIFY", t(ctx, "No bookable terms in the message; nothing booked", "消息中没有可记账的条款；未记账"),
                   "INFO")
         return [t(ctx, "Thank you. We did not find payment terms in your message that we can act on.",
                   "谢谢。贵方消息中没有我方可以处理的付款条款。")]
     if v.outcome == Outcome.NO_VERDICT:
         steps.add("VERIFY", t(ctx, "No verdict: clarification requested; nothing booked", "无结论：已请求澄清，未记账"), "INFO")
-        return [t(ctx, "Please clarify the terms: we cannot establish them from your message.",
-                  "请澄清条款：我方无法从贵方消息中确定这些条款。")]
+        return [clarification_request(ctx, v)]
     if codes & STOP_CODES:
         steps.add("VERIFY", t(ctx, "Stopped at the verifier: sender not on the owner's registry; nothing booked, "
                               "no facility added, nothing disclosed", "在验证器处拦截：发送方不在登记册中；未记账"), "INFO")
@@ -378,6 +395,18 @@ def what_if(ctx: NlContext, slots: Slots, text: str) -> Turn:
     if cp is None and ctx.session.last_offer_id:
         last = ctx.store.get_offer(ctx.session.last_offer_id)
         cp = last.counterparty_id if last is not None and last.counterparty_id != "OWNER" else None
+    implied = ""
+    if cp is None:
+        # An early-pay discount needs an open invoice: when exactly one buyer has one, the question names it.
+        low = lx.norm(text)
+        early_only = (any(w in low for w in ("early", "discount", "提前", "折扣", "贴现")) and not lx.days(text)
+                      and not any(w in low for w in ("next quarter", "rebate", "off next", "返利", "下季度", "返点")))
+        holders = sorted({x.counterparty_id for x in state.receivables if x.status == "OPEN"})
+        if early_only and len(holders) == 1:
+            cp = holders[0]
+            name = next((c.name for c in state.counterparties if c.id == cp), cp)
+            implied = t(ctx, f"For {name} ({cp}), the only buyer with an open invoice. ",
+                        f"针对 {name}（{cp}），唯一有未结发票的买家。")
     if cp is None:
         return ask(Intent.WHAT_IF, "counterparty_id", t(ctx, "Which buyer is this for?", "针对哪位买家？"),
                    buyer_options(ctx), slots)
@@ -420,7 +449,7 @@ def what_if(ctx: NlContext, slots: Slots, text: str) -> Turn:
     v = b.verdict
     steps = Steps()
     steps.add("VERIFY", verdict_line(ctx, v), "DONE")
-    reply = [t(ctx, "What-if (nothing executed): ", "假设分析（未执行任何操作）：") + verdict_line(ctx, v)]
+    reply = [t(ctx, "What-if (nothing executed): ", "假设分析（未执行任何操作）：") + implied + verdict_line(ctx, v)]
     reply.append(t(ctx, f"Forward concessions {fmt_yuan(v.forward_concession_total_fen)}.",
                    f"远期让步 {fmt_yuan(v.forward_concession_total_fen)}。"))
     return Turn(intent=Intent.WHAT_IF, reply="\n".join(reply), plan=steps.items, verdict=v)

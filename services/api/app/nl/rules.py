@@ -108,6 +108,8 @@ def parse(text: str, state: FinancialState, *, pending_plan: bool = False) -> Pa
         return hit(Intent.NEGOTIATE, "negotiate+offer")
     if s.fixture_id or s.quoted_text:
         return hit(Intent.EVALUATE_OFFER, "offer_reference")
+    if lx.STATUS_QUESTION.search(text) and not lx.ACCELERATE.search(text):
+        return hit(Intent.SHOW_STATUS, "status_question")
     if lx.ACCELERATE.search(text):
         return hit(Intent.ACCELERATE_RECEIPT, "accelerate")
     if lx.NEGOTIATE.search(text):
@@ -116,6 +118,8 @@ def parse(text: str, state: FinancialState, *, pending_plan: bool = False) -> Pa
         return hit(Intent.REPAY_FACILITY, "repay")
     if lx.FUND.search(text):
         return hit(Intent.FUND_GAP, "fund")
+    if lx.FUND_SOFT.search(text):
+        return hit(Intent.FUND_GAP, "fund_need", tentative=True)
     if lx.STATUS.search(text):
         return hit(Intent.SHOW_STATUS, "status")
     if lx.EVALUATE.search(text):
