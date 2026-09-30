@@ -29,6 +29,7 @@ class Runtime:
     day: int = 0
     scenario: str = "golden_sme"
     lock: threading.RLock = field(default_factory=threading.RLock)
+    latest_verdict: dict[str, str] = field(default_factory=dict)  # offer_id -> verdict_id
 
     def clock(self) -> int:
         return self.day
@@ -50,6 +51,7 @@ class Runtime:
             self.store.put_mandate(load_signed_mandate())
             self.day = 0
             self.scenario = scenario
+            self.latest_verdict.clear()
 
 
 _runtime: Runtime | None = None

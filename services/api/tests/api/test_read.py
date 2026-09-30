@@ -33,7 +33,9 @@ def test_term_sheet_is_proposal_only(client):
 
 
 def test_evidence_has_run_header_and_verifies(client, tmp_path):
-    import subprocess, sys, pathlib
+    import pathlib
+    import subprocess
+    import sys
     text = client.get("/evidence").text
     lines = text.strip().splitlines()
     assert '"record":"run"' in lines[0] and '"record":"chain"' in lines[-1]
