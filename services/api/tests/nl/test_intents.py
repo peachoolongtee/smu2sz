@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from app.domain.models import CashFlow, FlowKind
-from tests.nl.conftest import OWNER, Chat, codes, ops
+from tests.nl.conftest import AGENT, OWNER, Chat, codes, ops
 
 EX12 = "Get paid early on the Foshan invoice without giving anything away next quarter."
 
@@ -107,11 +107,12 @@ def test_what_if_needs_a_change(client):
 
 
 def test_approve_and_reject_pending_operations(client):
+    body = {"kind": "APPLY_FOR_FACILITY", "op_id": "a1", "idempotency_key": "a1", "mandate_version": 1,
+            "requested_by": "AGENT", "facility_id": "FAC-GGL", "amount_fen": 20_000_000}
+    assert client.post("/operations", json=body, headers=AGENT).json()["result"]["status"] == "PENDING_APPROVAL"
     c = Chat(client, "t-appr")
-    c.say("Evaluate EX05")
-    assert ops(c.say("go ahead")) == [("ACCEPT_OFFER", "PENDING_APPROVAL")]
     r = c.say("reject APR-000001")
-    assert r["intent"] == "REJECT" and ops(r) == [("ACCEPT_OFFER", "REFUSED")]
+    assert r["intent"] == "REJECT" and ops(r) == [("APPLY_FOR_FACILITY", "REFUSED")]
     assert "Declined" in r["reply"]
     assert c.say("approve it")["reply"].startswith("Nothing is waiting")
 
@@ -165,7 +166,8 @@ def test_zh_replies_in_zh(client):
 
 def test_sessions_are_multi_turn_and_ids_returned(client):
     r1 = client.post("/nl", json={"actor": "OWNER", "text": "status"}, headers=OWNER).json()
-    r2 = client.post("/nl", json={"session_id": r1["session_id"], "actor": "OWNER", "text": "status"}, headers=OWNER).json()
+    r2 = client.post("/nl", json={"session_id": r1["session_id"], "actor": "OWNER", "text": "status"},
+                     headers=OWNER).json()
     assert r1["session_id"] == r2["session_id"] and r2["turn"] == 2
 
 
