@@ -734,6 +734,7 @@ class ApplyForFacility(_OpBase):
     kind: Literal["APPLY_FOR_FACILITY"] = "APPLY_FOR_FACILITY"
     facility_id: str
     amount_fen: Fen
+    term_months: int | None = None
 
 
 class SignPersonalGuarantee(_OpBase):

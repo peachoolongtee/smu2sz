@@ -5,6 +5,7 @@ from __future__ import annotations
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.capex import router as capex_router
 from app.api.decide import router as decide_router
 from app.api.offers import router as offers_router
 from app.api.operations import router as operations_router
@@ -22,6 +23,7 @@ app.include_router(read_router)
 app.include_router(offers_router)
 app.include_router(operations_router)
 app.include_router(decide_router)
+app.include_router(capex_router)
 
 
 @app.get("/health")
