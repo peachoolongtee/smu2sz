@@ -12,14 +12,15 @@ The main architect owns `app/domain/`, `app/api/`, `app/main.py`, `app/config.py
 | 1 | J: frontend (mock data) | agent/frontend | `apps/web/**` | merged |
 | 2 | E: funding router | agent/funding-router | `app/funding/**`, `tests/funding/**` | merged |
 | 2 | F1: executor | agent/executor | `app/operations/**`, `tests/operations/**` | merged |
-| 2 | F2: verifier + counters | agent/verifier | `app/verifier/**`, `tests/verifier/**` | running |
-| 2 | G: security suite | agent/security | `app/security/**`, `evals/security/**`, `tests/security/**` | blocked on C, F |
+| 2 | F2: verifier + counters | agent/verifier | `app/verifier/**`, `tests/verifier/**` | merged |
+| 2 | Contracts follow-up | agent/contracts-followup | compiler, verifier, operations, `mandate/tiers.py` | running |
+| 2 | G: security suite | agent/security | `app/security/**`, `evals/security/**`, `tests/security/**`, `docs/SECURITY_SELF_ASSESSMENT.md` | running |
 | 3 | H: buyer + lender simulators | agent/counterparties | `app/counterparties/**`, `tests/counterparties/**`, `fixtures/counterparties/**` | merged |
-| 3 | I: /nl harness | agent/nl | `app/nl/**`, `evals/e2e/**`, `tests/nl/**` | after wave 2 |
-| 4 | K: capex | agent/capex | `app/capex/**`, `tests/capex/**` | after core E2E |
-| 4 | L: borrower file + alerts | agent/borrower-file | `app/borrower_file/**`, `app/alerts/**`, `tests/borrower_file/**` | after core E2E |
-| 3 | Egress guard (owner-requested) | agent/egress-guard | `app/egress/**`, `tests/egress/**`, `fixtures/security/canaries.yaml` (+ a canary in compiler prompts) | running |
-| 3 | What-if sandbox (owner-requested) | agent/whatif | `app/whatif/**`, `tests/whatif/**`, `apps/web/app/whatif/**` (+ nav and dictionary entries) | queued: needs the verifier |
+| 3 | I: /nl harness | agent/nl | `app/nl/**`, `app/api/nl.py`, `evals/e2e/**`, `tests/nl/**`, `scripts/run_scenarios.py` | running |
+| 4 | K: capex | agent/capex | `app/capex/**`, `app/api/capex.py`, `tests/capex/**` | running |
+| 4 | L: borrower file + alerts | agent/borrower-file | `app/borrower_file/**`, `app/alerts/**`, `app/api/{borrower_file,alerts}.py` | running |
+| 3 | Egress guard (owner-requested) | agent/egress-guard | `app/egress/**`, `tests/egress/**`, `fixtures/security/canaries.yaml` (+ a canary in compiler prompts) | merged |
+| 3 | What-if sandbox (owner-requested) | agent/whatif | `app/whatif/**`, `tests/whatif/**`, `apps/web/app/whatif/**` (+ nav and dictionary entries) | running |
 | 5 | Eval agent | agent/evals | `evals/**` (except security), `scripts/evaluate.py` | after first integrated build |
 
 ## Return format (every coding agent)
@@ -38,3 +39,6 @@ STATUS / FILES CHANGED / INTERFACES IMPLEMENTED / TESTS ADDED / TEST COMMAND / T
 - Main: evidence export per ADR-0004 plus `scripts/verify_evidence.py`; `/operations`, `/approvals`, `/circuit` endpoints with an owner token; Supabase (Singapore pooler) migrated with RLS on every table; the DeepSeek live path verified.
 - Decision: the reserve-breach cure is priced only on permanent-capable sources (no clean-down line), because a terms extension recurs. The verifier computes the figure, and golden values and docs follow it.
 - Backlog: compiler live-mode contingency calibration (DeepSeek marks the whole package CONTINGENT).
+- **F2 merged.** Every offers.yaml verdict reproduces. The cure cost is set to **¥802.70** (2 IF periods, ADR-0003); oracle and docs updated.
+- **Egress guard merged.** 925 tests; canaries in the system prompt and in hidden fields.
+- Main: `/offers/{id}/evaluate`, `/negotiate/{offer_id}`, `/router/plan` wired, with the egress guard on counters and buyer replies. Scenes 1 and 2 run end to end through the API: DEAL → accept + line draw at Tier 1; NO_DEAL → line + IF ¥2,712.94 executed. The core E2E path works, so wave 4 is launched.
