@@ -32,6 +32,10 @@ test("trajectory adapter: the position today, then the offer applied", async () 
   const view = await live.getTrajectory("CONSERVATIVE", verdict);
   expect(view.trajectory.min_cash_display).toBe("¥254,960.00");
   expect(view.trajectory.min_cash_day).toBe(47);
+  // The committed cure lifts day 47 back to the floor; it is drawn as the dashed line.
+  expect(view.cured_trajectory?.min_cash_display).toBe("¥300,000.00");
+  expect(view.cured_trajectory?.first_breach_day).toBeNull();
+  expect(view.cured_trajectory?.days).toHaveLength(121);
   expect(view.trajectory.first_breach_day).toBe(47);
   expect(view.shortfall_display).toBe("¥45,040.00");
   expect(view.forward_concession).toMatchObject({ total_display: "¥26,455.62", cap_display: "¥5,000.00", over_cap: true });
@@ -83,11 +87,17 @@ test("approvals adapter: capex and borrower file queue as Tier 2, and the owner 
     ["TIER_2", "PENDING"],
   ]);
   expect(queue[0].subject).toMatch(/FAC-ETL/);
+  // The queue rows are display-ready: amount, day and tier come from the server.
+  expect(queue[0]).toMatchObject({ amount_display: "¥600,000.00", created_day: 0, tier: "TIER_2" });
 
   const decided = await live.decideApproval(queue[0].id, "APPROVE");
   expect(decided.status).toBe("APPROVED");
   const rejected = await live.decideApproval(queue[1].id, "REJECT");
   expect(rejected.status).toBe("REJECTED");
+
+  // A second decision is a 409, an unknown id a 404; both carry their status so the page can explain them.
+  await expect(live.decideApproval(queue[0].id, "APPROVE")).rejects.toMatchObject({ status: 409 });
+  await expect(live.decideApproval("APR-999999", "APPROVE")).rejects.toMatchObject({ status: 404 });
 });
 
 test("alerts and reconciliation adapters", async () => {

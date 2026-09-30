@@ -125,7 +125,7 @@ export function CashChart({
               dataKey="cured"
               stroke={C.ok}
               strokeWidth={2}
-              strokeDasharray="2 4"
+              strokeDasharray="9 5"
               dot={false}
               isAnimationActive={false}
             />
@@ -199,7 +199,7 @@ export function DebtChart({
               fill={C.ok}
               fillOpacity={0.15}
               strokeWidth={2}
-              strokeDasharray="2 4"
+              strokeDasharray="9 5"
               isAnimationActive={false}
             />
           ) : null}

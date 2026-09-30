@@ -5,7 +5,7 @@
  */
 
 import { ApiError } from "../errors";
-import type { Actor, ApprovalDecision, ApprovalStatus, ApprovalView, OperationResult, StateView } from "../types";
+import type { Actor, ApprovalDecision, ApprovalStatus, ApprovalView, OperationResult, StateView, Tier } from "../types";
 import { http } from "./http";
 
 interface RawApproval {
@@ -16,6 +16,12 @@ interface RawApproval {
   status: ApprovalStatus;
   decided_by: string | null;
   operation: { requested_by?: Actor; day?: number; amount_fen?: number | null } | null;
+  /** Added by the API: the row is display-ready. */
+  subject?: string;
+  tier?: Tier;
+  created_day?: number | null;
+  amount_fen?: number | null;
+  amount_display?: string | null;
 }
 
 export async function getApprovals(): Promise<ApprovalView[]> {
@@ -27,23 +33,24 @@ export async function getApprovals(): Promise<ApprovalView[]> {
     (a) =>
       ({
         id: a.id,
-        subject: a.reason,
+        // The API sends a short subject; `reason` (the executor's sentence) is the detail line.
+        subject: a.subject || a.reason,
         status: a.status,
         // The queue holds Tier-2 operations by definition (docs/ARCHITECTURE.md, Operations and tiers).
-        tier: "TIER_2",
+        tier: a.tier ?? "TIER_2",
         requested_by: a.operation?.requested_by ?? "AGENT",
-        created_day: a.operation?.day ?? 0,
+        created_day: a.created_day ?? a.operation?.day ?? 0,
         operation_kind: a.kind ?? "",
-        amount_fen: a.operation?.amount_fen ?? null,
-        // INTERFACE_CHANGE_REQUEST: the queue has no amount_display; the amount is inside `reason`.
-        amount_display: null,
-        detail: a.op_id ? `Operation ${a.op_id}` : "",
+        amount_fen: a.amount_fen ?? a.operation?.amount_fen ?? null,
+        amount_display: a.amount_display ?? null,
+        detail: a.subject && a.reason ? a.reason : a.op_id ? `Operation ${a.op_id}` : "",
         decided_day: a.status === "PENDING" ? null : today,
       }) as ApprovalView,
   );
 }
 
 export async function decideApproval(id: string, decision: ApprovalDecision): Promise<ApprovalView> {
+  // A 404 (unknown id) or 409 (already decided) is thrown as an ApiError with that status; the page explains it.
   const { result } = await http<{ result: OperationResult }>("POST", `/approvals/${encodeURIComponent(id)}`, {
     body: { decision },
   });

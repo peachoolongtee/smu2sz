@@ -662,6 +662,8 @@ export type VerdictView = Displayed<Verdict> & {
   bound_obligations?: Displayed<Obligation>[];
   /** Conservative projection with the offer applied. */
   trajectory?: MoneyTrajectory | null;
+  /** The same projection with the committed cure plan applied. Null when the verdict has no cure. */
+  cured_trajectory?: MoneyTrajectory | null;
   forward_concession?: { total_fen: Fen; total_display: string; cap_fen: Fen; cap_display: string; over_cap: boolean };
 };
 

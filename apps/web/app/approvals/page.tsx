@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { TierBadge } from "@/components/badges";
 import { Badge, Button, Callout, Card, EmptyState, ErrorState, LoadingBlock, PageHeader, type Tone } from "@/components/ui";
-import { apiMode, decideApproval, getApprovals } from "@/lib/api";
+import { ApiError, apiMode, decideApproval, getApprovals } from "@/lib/api";
 import { bump } from "@/lib/demo-store";
 import { useI18n } from "@/lib/i18n";
 import type { ApprovalDecision, ApprovalView } from "@/lib/types";
@@ -24,7 +24,13 @@ export default function ApprovalsPage() {
       await decideApproval(id, decision);
       bump();
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      if (e instanceof ApiError && (e.status === 404 || e.status === 409)) {
+        // The row is gone or already decided: say so in plain words and show the server's current queue.
+        setError(t(e.status === 404 ? "appr.err.404" : "appr.err.409"));
+        list.reload();
+      } else {
+        setError(e instanceof Error ? e.message : String(e));
+      }
     } finally {
       setBusyId(null);
     }
@@ -66,7 +72,7 @@ export default function ApprovalsPage() {
                   id={`approval-${a.id}`}
                   tone={isPending ? "warn" : undefined}
                   title={a.subject}
-                  subtitle={`${a.id} · ${te("opkind", a.operation_kind)} · ${te("actor", a.requested_by)} · ${t("common.dayN", { n: a.created_day })}`}
+                  subtitle={`${a.id} · ${te("opkind", a.operation_kind)} · ${te("actor", a.requested_by)} · ${t("appr.created", { day: a.created_day })}`}
                   actions={<Badge tone={statusTone[a.status]}>{te("apprstatus", a.status)}</Badge>}
                 >
                   <div className="flex flex-wrap items-center gap-2">
