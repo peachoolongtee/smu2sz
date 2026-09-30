@@ -6,6 +6,7 @@ from typing import Any
 
 from app.domain.fixtures import golden_values
 from app.domain.models import (
+    Actor,
     DrawFacility,
     FundingAction,
     FundingActionKind,
@@ -15,6 +16,7 @@ from app.domain.models import (
     ReceivePayment,
     RepayFacility,
     SubmitInvoiceForFinancing,
+    ViolationCode,
 )
 from app.domain.money import bp, post, simple_interest
 from app.financial import project
@@ -62,6 +64,7 @@ def test_repay_more_than_drawn_is_refused(ex: Any, store: Any, clock: Clock) -> 
     before = store.get_state()
     r = ex.execute(op(RepayFacility, clock, facility_id="FAC-LINE", amount_fen=1_000_001))
     assert r.status == OperationStatus.REFUSED and store.get_state() == before
+    assert [v.code for v in r.violations] == [ViolationCode.PRECONDITION_FAILED]
 
 
 def test_invoice_financing_and_settlement_match_the_financial_engine(ex: Any, store: Any, clock: Clock) -> None:
@@ -119,13 +122,20 @@ def test_financing_needs_an_open_confirmed_buyer_receivable(ex: Any, store: Any,
         rcv.model_copy(update={"id": "RCV-S", "status": "SETTLED"}),
     ]
     store.put_state(state.model_copy(update={"receivables": [*state.receivables, *extra]}))
-    for rid in ("RCV-U", "RCV-L", "RCV-S", "RCV-NOPE"):
+    expected = {
+        "RCV-U": ViolationCode.PRECONDITION_FAILED,
+        "RCV-L": ViolationCode.UNKNOWN_COUNTERPARTY,
+        "RCV-S": ViolationCode.PRECONDITION_FAILED,
+        "RCV-NOPE": ViolationCode.PRECONDITION_FAILED,
+    }
+    for rid, code in expected.items():
+        ex.reset_circuit("PLATFORM-1", Actor.OWNER)  # four refusals in a row would otherwise open it
         r = ex.execute(op(SubmitInvoiceForFinancing, clock, facility_id="FAC-IF", receivable_id=rid,
                           advance_fen=1_000_000))
-        assert r.status == OperationStatus.REFUSED, rid
+        assert r.status == OperationStatus.REFUSED and [v.code for v in r.violations] == [code], rid
     wrong_facility = ex.execute(op(SubmitInvoiceForFinancing, clock, facility_id="FAC-LINE", receivable_id="RCV-A",
                                    advance_fen=1_000_000))
-    assert wrong_facility.status == OperationStatus.REFUSED
+    assert [v.code for v in wrong_facility.violations] == [ViolationCode.PRECONDITION_FAILED]
 
 
 def test_receive_payment_on_open_receivable(ex: Any, store: Any, clock: Clock) -> None:

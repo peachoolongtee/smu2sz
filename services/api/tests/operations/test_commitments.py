@@ -74,7 +74,8 @@ def test_acceptance_cannot_be_backdated_past_expiry(ex: Any, store: Any, clock: 
     clock.day = 6
     result = ex.execute(op(AcceptOffer, Clock(5), offer_id=c.offer_id, offer_version=1, terms_hash=c.terms_hash,
                            nonce=c.nonce))
-    assert result.status == S.REFUSED and codes(result) == [ViolationCode.REPLAY]
+    assert result.status == S.REFUSED
+    assert codes(result) == [ViolationCode.STALE_OPERATION, ViolationCode.REPLAY]
     assert store.get_commitment(c.id).status == CommitmentStatus.PROPOSED
 
 

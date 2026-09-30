@@ -32,7 +32,9 @@ def queue_terms_change(ex: Any, store: Any, clock: Clock) -> tuple[Any, str]:
     pending = ex.execute(op(AcceptOffer, clock, offer_id=c.offer_id, offer_version=1, terms_hash=c.terms_hash,
                             nonce=c.nonce))
     assert pending.status == OperationStatus.PENDING_APPROVAL
-    return c, approval_id_of(pending)
+    assert pending.approval_id is not None and approval_id_of(pending) == pending.approval_id
+    assert store.get_approval(pending.approval_id).op_id == pending.op_id
+    return c, pending.approval_id
 
 
 @pytest.mark.parametrize("actor", [Actor.AGENT, Actor.COUNTERPARTY, Actor.SYSTEM])
@@ -78,7 +80,10 @@ def test_owner_decline_executes_nothing_and_replay_stays_declined(ex: Any, store
 
 def test_owner_approval_executes_once(ex: Any, store: Any, clock: Clock) -> None:
     _c, aid = queue_terms_change(ex, store, clock)
-    assert ex.decide(aid, True, Actor.OWNER).status == OperationStatus.EXECUTED
+    clock.day = 3
+    done = ex.decide(aid, True, Actor.OWNER)
+    assert done.status == OperationStatus.EXECUTED
+    assert (done.approval_id, done.effective_day) == (aid, 3)
     with pytest.raises(ApprovalAlreadyDecided):
         ex.decide(aid, True, Actor.OWNER)
     # Replaying the original operation now returns the executed result as a duplicate.

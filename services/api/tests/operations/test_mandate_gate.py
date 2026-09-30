@@ -16,6 +16,7 @@ from app.domain.models import (
     ReceivePayment,
     RejectOffer,
     RepayFacility,
+    SecurityEventKind,
     SubmitInvoiceForFinancing,
     ViolationCode,
 )
@@ -99,10 +100,14 @@ def test_executor_requires_a_pinned_owner_key() -> None:
         Executor(InMemoryLedgerStore(), trusted_owner_key_hex="", clock=lambda: 0)
 
 
-def test_misdated_operation_is_refused_as_replay(ex: Any, store: Any, clock: Clock) -> None:
+def test_misdated_operation_is_stale_and_backdating_is_also_replay(ex: Any, store: Any, clock: Clock) -> None:
     clock.day = 3
     before = store.get_state()
-    for day in (2, 4):
-        r = ex.execute(op(DrawFacility, Clock(day), facility_id="FAC-LINE", amount_fen=1_000_000))
-        assert [v.code for v in r.violations] == [ViolationCode.REPLAY]
+    back = ex.execute(op(DrawFacility, Clock(2), facility_id="FAC-LINE", amount_fen=1_000_000))
+    assert [v.code for v in back.violations] == [ViolationCode.STALE_OPERATION, ViolationCode.REPLAY]
+    assert [e.kind for e in store.security_events()] == [SecurityEventKind.REPLAY]
+    ahead = ex.execute(op(DrawFacility, Clock(4), facility_id="FAC-LINE", amount_fen=1_000_000))
+    assert [v.code for v in ahead.violations] == [ViolationCode.STALE_OPERATION]
+    assert len(store.security_events()) == 1
+    assert back.effective_day == ahead.effective_day == 3
     assert store.get_state() == before

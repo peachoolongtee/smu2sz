@@ -99,6 +99,7 @@ def test_draw_beyond_available_is_refused(ex: Any, store: Any, clock: Clock) -> 
     before = store.get_state()
     result = ex.execute(op(DrawFacility, clock, facility_id="FAC-LINE", amount_fen=5_000_001))
     assert result.status == OperationStatus.REFUSED
+    assert [v.code for v in result.violations] == [ViolationCode.PRECONDITION_FAILED]
     assert store.get_state() == before
 
 
@@ -109,9 +110,10 @@ def test_draw_on_uncommitted_facility_goes_to_owner(ex: Any, store: Any, clock: 
     assert store.get_state() == before
     [approval] = store.approvals()
     assert approval.op_id == result.op_id and approval.kind == "DRAW_FACILITY"
+    assert result.approval_id == approval.id and result.effective_day == 0
     # Even approved, the executor re-checks: the facility is still NOT_APPLIED, so nothing is drawn.
     decided = ex.decide(approval.id, True, Actor.OWNER)
-    assert decided.status == OperationStatus.REFUSED
+    assert decided.status == OperationStatus.REFUSED and decided.approval_id == approval.id
     assert [v.code for v in decided.violations] == [ViolationCode.UNCOMMITTED_FACILITY]
     assert store.get_state() == before
 

@@ -4,8 +4,8 @@ Every typed operation goes through the same gates, in this order, and every outc
 refusals and duplicates) is appended to the hash-chained log:
 
 1. idempotency: a known key returns the original result as DUPLICATE; nothing is re-run;
-   then dating: the operation's `day` must be the executor's clock day (a stale or future-dated
-   operation is refused as REPLAY), so every logged day is an executed day;
+   then dating: the operation's `day` must be the executor's clock day (otherwise
+   STALE_OPERATION; a backdated one is also a REPLAY), so logged days are executed days;
 2. mandate: signature (pinned to the owner key), expiry, revocation and version;
 3. tier, computed here from the typed operation and the STORED commitment/verdict:
    Tier 3 is refused for every caller; then the counterparty circuit breaker; then, for
@@ -20,7 +20,6 @@ operation through every gate except the Tier-2 queue, against the mandate in for
 from __future__ import annotations
 
 import hmac
-import re
 import threading
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -70,7 +69,7 @@ from app.domain.models import (
 from app.domain.money import fmt_yuan
 from app.domain.ports import LedgerStore
 from app.mandate import check_validity, tier_for
-from app.operations.charges import financing_charges, line_interest_fen, upfront_fee_fen
+from app.operations.charges import finance_invoice_charges, line_interest, upfront_fee
 from app.operations.log import (
     RESET_CIRCUIT_KIND,
     LoggedEntry,
@@ -118,13 +117,9 @@ _MANDATE_SECURITY = {
     Code.BAD_SIGNATURE: SecurityEventKind.PRIVILEGE_ESCALATION,
 }
 
-_APPROVAL_RE = re.compile(r"\b(APR-\d+)\b")
-
-
 def approval_id_of(result: OperationResult) -> str | None:
-    """The approval id a PENDING_APPROVAL result names in its message, if any."""
-    m = _APPROVAL_RE.search(result.message)
-    return m.group(1) if m else None
+    """The owner-approval queue entry a PENDING_APPROVAL result points at, if any."""
+    return result.approval_id
 
 
 def _max_tier(*tiers: Tier) -> Tier:
@@ -166,6 +161,7 @@ class _Effect:
     commitment: Commitment | None = None
     nonce: str | None = None
     approval: tuple[str, str] | None = None  # (op_json, reason) to queue for the owner
+    approval_id: str | None = None  # an existing queue entry the result points at
     status: OperationStatus = EXECUTED
 
 
@@ -188,7 +184,7 @@ def _bump(state: FinancialState, **updates: object) -> FinancialState:
 def _facility(state: FinancialState, facility_id: str) -> Facility:
     f = next((f for f in state.facilities if f.id == facility_id), None)
     if f is None:
-        raise _refuse(Code.INSUFFICIENT_AUTHORITY, f"Facility {facility_id} is not on the owner's funding menu",
+        raise _refuse(Code.PRECONDITION_FAILED, f"Facility {facility_id} is not on the owner's funding menu",
                       facility_id=facility_id)
     return f
 
@@ -235,17 +231,20 @@ class Executor:
                 self._security(SecurityEventKind.PRIVILEGE_ESCALATION, op, now, None,
                                f"{actor} tried to decide approval {approval_id} ({op.kind})")
                 result = OperationResult(op_id=op.op_id, kind=op.kind, status=REFUSED, tier=Tier.TIER_2,
-                                         violations=[v], message=v.message)
+                                         violations=[v], effective_day=now, approval_id=approval_id,
+                                         message=v.message)
                 return self._log(op, result, key=f"{op.idempotency_key}#decide:{approval_id}:{actor}")
             if rec.status != ApprovalStatus.PENDING:
                 raise ApprovalAlreadyDecided(f"approval {approval_id} is {rec.status}")
             self._store.decide_approval(approval_id, approved, Actor.OWNER.value)
             if not approved:
                 result = OperationResult(op_id=op.op_id, kind=op.kind, status=REFUSED, tier=Tier.TIER_2,
+                                         effective_day=now, approval_id=approval_id,
                                          message=f"Declined by the owner ({approval_id}); nothing executed")
                 return self._log(op, result)
             # Re-run at decision time: every gate except the Tier-2 queue, against today's mandate.
-            return self._run(op.model_copy(update={"day": now}), approved=True)
+            result = self._run(op.model_copy(update={"day": now}), approved=True)
+            return result.model_copy(update={"approval_id": approval_id})
 
     def reset_circuit(self, counterparty_id: str, actor: Actor) -> OperationResult:
         """Close a counterparty's circuit breaker. Owner only; logged either way."""
@@ -260,10 +259,10 @@ class Executor:
                 self._add_security(SecurityEventKind.PRIVILEGE_ESCALATION, now, counterparty_id,
                                    f"{actor} tried to reset the circuit breaker for {counterparty_id}")
                 result = OperationResult(op_id=op_id, kind=RESET_CIRCUIT_KIND, status=REFUSED,
-                                         tier=Tier.TIER_2, violations=[v], message=v.message)
+                                         tier=Tier.TIER_2, violations=[v], effective_day=now, message=v.message)
             else:
                 result = OperationResult(op_id=op_id, kind=RESET_CIRCUIT_KIND, status=EXECUTED,
-                                         tier=Tier.TIER_2, message=f"Circuit for {counterparty_id} reset by the owner")
+                                         tier=Tier.TIER_2, effective_day=now, message=f"Circuit for {counterparty_id} reset by the owner")
             rec = self._store.append_operation(op_id, RESET_CIRCUIT_KIND, op_id,
                                                canonical_json(payload), canonical_json(result))
             return result.model_copy(update={"seq": rec.seq, "entry_hash": rec.entry_hash, "prev_hash": rec.prev_hash})
@@ -316,13 +315,12 @@ class Executor:
                 self._security(exc.security, op, now, ctx.counterparty_id, exc.violations[0].message)
             msg = "Refused: " + "; ".join(v.message for v in exc.violations)
             return self._log(op, OperationResult(op_id=op.op_id, kind=kind, status=REFUSED, tier=ctx.tier,
-                                                 violations=exc.violations, message=msg))
+                                                 violations=exc.violations, effective_day=now, message=msg))
 
         try:
             # 1b. dating: the log's days are executed days (interest, windows, expiry)
             if op.day != now:
-                raise _refuse(Code.REPLAY, f"Operation dated day {op.day} but the executor clock is day {now}",
-                              SecurityEventKind.REPLAY, op_day=op.day, clock_day=now)
+                raise self._misdated(op, now)
             # 2. mandate ---------------------------------------------------------------
             self._check_mandate(ctx)
             # 3. tier ------------------------------------------------------------------
@@ -339,7 +337,7 @@ class Executor:
                 reason = self._tier2_reason(ctx)
                 aid = self._store.add_approval(canonical_json(op), reason)
                 return self._log(op, OperationResult(
-                    op_id=op.op_id, kind=kind, status=PENDING, tier=ctx.tier,
+                    op_id=op.op_id, kind=kind, status=PENDING, tier=ctx.tier, effective_day=now, approval_id=aid,
                     message=f"Queued for owner approval ({aid}): {reason}"))
             # 4. preconditions and effects -------------------------------------------------
             effect = self._handle(ctx)
@@ -355,12 +353,24 @@ class Executor:
             self._store.put_commitment(effect.commitment)
         if effect.state is not None:
             self._store.put_state(effect.state)
-        message = effect.message
+        message, queued = effect.message, effect.approval_id
         if effect.approval is not None:
-            aid = self._store.add_approval(*effect.approval)
-            message = f"{message} ({aid})"
+            queued = self._store.add_approval(*effect.approval)
+            message = f"{message} ({queued})"
         return self._log(op, OperationResult(op_id=op.op_id, kind=kind, status=effect.status, tier=ctx.tier,
-                                             message=message))
+                                             effective_day=now, approval_id=queued, message=message))
+
+    @staticmethod
+    def _misdated(op: Any, now: int) -> _Refused:
+        """An operation must be dated to the executor's day. A backdated one is also a replay: it
+        could only carry an older day to dodge an expiry or a window."""
+        violations = [_v(Code.STALE_OPERATION, f"Operation dated day {op.day} but the executor clock is day {now}",
+                         op_day=op.day, clock_day=now)]
+        if op.day < now:
+            violations.append(_v(Code.REPLAY, f"Operation backdated from day {now} to day {op.day}",
+                                 op_day=op.day, clock_day=now))
+            return _Refused(violations, SecurityEventKind.REPLAY)
+        return _Refused(violations)
 
     # ---------------------------------------------------------------- logging
 
@@ -386,6 +396,7 @@ class Executor:
         o = original.result
         result = OperationResult(
             op_id=o.op_id, kind=o.kind, status=DUPLICATE, tier=o.tier, violations=o.violations,
+            effective_day=o.effective_day, approval_id=o.approval_id,
             message=f"Duplicate of seq {original.seq} (status {o.status.value}); nothing re-executed. {o.message}",
         )
         return self._log(op, result)
@@ -424,8 +435,6 @@ class Executor:
         if isinstance(op, AcceptOffer | RecordCommitment) and c is not None:
             terms_change, value = has_terms_change(c), c.forward_value_fen
         tier = tier_for(op, ctx.mandate, ctx.state, accepts_terms_change=terms_change, commitment_value_fen=value)
-        if isinstance(op, RecordCommitment) and terms_change:
-            tier = _max_tier(tier, Tier.TIER_2)  # recording a terms change is accepting one
         v = ctx.verdict
         verdict_backs_offer = v is not None and v.outcome in (Outcome.ACCEPT, Outcome.NEEDS_OWNER_APPROVAL)
         if isinstance(op, AcceptOffer | RecordCommitment) and c is not None and v is not None and verdict_backs_offer:
@@ -484,7 +493,7 @@ class Executor:
         for e in entries:
             if e.seq <= start or e.op is None or e.result.status != REFUSED or not e.result.violations:
                 continue
-            if not (now - CIRCUIT_WINDOW_DAYS < e.op.day <= now):
+            if e.day is None or not (now - CIRCUIT_WINDOW_DAYS < e.day <= now):
                 continue
             if self._counterparty(e.op, state) == counterparty_id:
                 n += 1
@@ -522,9 +531,9 @@ class Executor:
         op, c, v = ctx.op, ctx.commitment, ctx.verdict
         if c is None:
             ref = op.commitment_id if isinstance(op, RecordCommitment) else f"offer {op.offer_id} v{op.offer_version}"
-            raise _refuse(Code.INSUFFICIENT_AUTHORITY, f"No proposed commitment for {ref}")
+            raise _refuse(Code.PRECONDITION_FAILED, f"No proposed commitment for {ref}")
         if c.status == CommitmentStatus.REVOKED:
-            raise _refuse(Code.INSUFFICIENT_AUTHORITY, f"Commitment {c.id} was revoked")
+            raise _refuse(Code.PRECONDITION_FAILED, f"Commitment {c.id} was revoked")
         presented = op.terms_hash if isinstance(op, AcceptOffer) else c.terms_hash
         codes = check_acceptance(c, presented, op.nonce, ctx.now, self._store)
         if c.status not in (CommitmentStatus.PROPOSED, CommitmentStatus.ACCEPTED, CommitmentStatus.EXPIRED) \
@@ -615,7 +624,7 @@ class Executor:
                 c = transition(c, CommitmentStatus.ACCEPTED, ctx.now)
             c = transition(c, CommitmentStatus.ACTIVE, ctx.now)
         except CommitmentError as exc:
-            raise _refuse(Code.INSUFFICIENT_AUTHORITY, str(exc)) from exc
+            raise _refuse(Code.PRECONDITION_FAILED, str(exc)) from exc
         fc = ForwardConcession(id=f"FC-{c.id}", counterparty_id=c.counterparty_id, value_fen=c.forward_value_fen,
                                commitment_id=c.id, label=f"Commitment {c.id} on offer {c.offer_id} v{c.offer_version}")
         state = _bump(ctx.state, forward_concessions=[*ctx.state.forward_concessions, fc])
@@ -646,14 +655,14 @@ class Executor:
         f = _facility(ctx.state, op.facility_id)
         self._require_committed(f)
         if f.kind in _NOT_DRAWABLE or f.repayment == Repayment.ON_RECEIPT:
-            raise _refuse(Code.INSUFFICIENT_AUTHORITY, f"Facility {f.id} ({f.kind.value}) cannot be drawn")
+            raise _refuse(Code.PRECONDITION_FAILED, f"Facility {f.id} ({f.kind.value}) cannot be drawn")
         self._check_borrowing(ctx)
         available = f.limit_fen - f.drawn_fen
         if op.amount_fen > available:
-            raise _refuse(Code.INSUFFICIENT_AUTHORITY,
+            raise _refuse(Code.PRECONDITION_FAILED,
                           f"Draw {fmt_yuan(op.amount_fen)} exceeds {f.id}'s available {fmt_yuan(available)}",
                           amount_fen=op.amount_fen, limit_fen=f.limit_fen, drawn_fen=f.drawn_fen)
-        fee = upfront_fee_fen(f, op.amount_fen)
+        fee = upfront_fee(f, op.amount_fen)
         state = _bump(ctx.state, cash_fen=ctx.state.cash_fen + op.amount_fen - fee,
                       facilities=_with_facility(ctx.state, f.model_copy(update={"drawn_fen": f.drawn_fen + op.amount_fen})))
         fee_note = f", upfront fee {fmt_yuan(fee)}" if fee else ""
@@ -662,9 +671,9 @@ class Executor:
     def _repay(self, op: RepayFacility, ctx: _Ctx) -> _Effect:
         f = _facility(ctx.state, op.facility_id)
         if f.repayment != Repayment.BULLET:
-            raise _refuse(Code.INSUFFICIENT_AUTHORITY, f"Facility {f.id} is repaid {f.repayment.value}, not on demand")
+            raise _refuse(Code.PRECONDITION_FAILED, f"Facility {f.id} is repaid {f.repayment.value}, not on demand")
         if op.amount_fen > f.drawn_fen:
-            raise _refuse(Code.INSUFFICIENT_AUTHORITY,
+            raise _refuse(Code.PRECONDITION_FAILED,
                           f"Repayment {fmt_yuan(op.amount_fen)} exceeds {f.id}'s drawn {fmt_yuan(f.drawn_fen)}",
                           amount_fen=op.amount_fen, drawn_fen=f.drawn_fen)
         interest, left, parts = 0, op.amount_fen, []
@@ -672,13 +681,13 @@ class Executor:
             if left == 0:
                 break
             part = min(left, remaining)
-            lot_interest = line_interest_fen(part, f.rate_bp, ctx.now - day)
+            lot_interest = line_interest(part, f.rate_bp, ctx.now - day)
             interest += lot_interest
             parts.append(f"{fmt_yuan(part)} × {f.rate_bp}bp × {ctx.now - day}/365 = {fmt_yuan(lot_interest)}")
             left -= part
         total = op.amount_fen + interest
         if total > ctx.state.cash_fen:
-            raise _refuse(Code.INSUFFICIENT_AUTHORITY,
+            raise _refuse(Code.PRECONDITION_FAILED,
                           f"Repayment plus interest {fmt_yuan(total)} exceeds cash {fmt_yuan(ctx.state.cash_fen)}")
         state = _bump(ctx.state, cash_fen=ctx.state.cash_fen - total,
                       facilities=_with_facility(ctx.state, f.model_copy(update={"drawn_fen": f.drawn_fen - op.amount_fen})))
@@ -689,31 +698,31 @@ class Executor:
         state = ctx.state
         f = _facility(state, op.facility_id)
         if f.kind != FacilityKind.INVOICE_FINANCING:
-            raise _refuse(Code.INSUFFICIENT_AUTHORITY, f"Facility {f.id} is not an invoice-financing facility")
+            raise _refuse(Code.PRECONDITION_FAILED, f"Facility {f.id} is not an invoice-financing facility")
         self._require_committed(f)
         self._check_borrowing(ctx)
         r = next((r for r in state.receivables if r.id == op.receivable_id), None)
         if r is None:
-            raise _refuse(Code.INSUFFICIENT_AUTHORITY, f"Receivable {op.receivable_id} does not exist")
+            raise _refuse(Code.PRECONDITION_FAILED, f"Receivable {op.receivable_id} does not exist")
         if r.status != "OPEN":
-            raise _refuse(Code.INSUFFICIENT_AUTHORITY, f"Receivable {r.id} is {r.status}, not OPEN")
+            raise _refuse(Code.PRECONDITION_FAILED, f"Receivable {r.id} is {r.status}, not OPEN")
         if not r.confirmed:
-            raise _refuse(Code.INSUFFICIENT_AUTHORITY, f"Receivable {r.id} is not buyer-confirmed (确权)")
+            raise _refuse(Code.PRECONDITION_FAILED, f"Receivable {r.id} is not buyer-confirmed (确权)")
         buyer = next((c for c in state.counterparties if c.id == r.counterparty_id), None)
         if buyer is None or buyer.role != "BUYER" or not buyer.known:
             raise _refuse(Code.UNKNOWN_COUNTERPARTY, f"Receivable {r.id} is not owed by a registered buyer",
                           SecurityEventKind.UNKNOWN_COUNTERPARTY)
         if ctx.now >= r.due_day:
-            raise _refuse(Code.INSUFFICIENT_AUTHORITY, f"Receivable {r.id} is due on day {r.due_day}; too late to finance")
+            raise _refuse(Code.PRECONDITION_FAILED, f"Receivable {r.id} is due on day {r.due_day}; too late to finance")
         if f.advance_rate_bp is not None and op.advance_fen * 10_000 > f.advance_rate_bp * r.face_fen:
-            raise _refuse(Code.INSUFFICIENT_AUTHORITY,
+            raise _refuse(Code.PRECONDITION_FAILED,
                           f"Advance {fmt_yuan(op.advance_fen)} exceeds {f.advance_rate_bp}bp of {r.id}'s face "
                           f"{fmt_yuan(r.face_fen)}", advance_fen=op.advance_fen, face_fen=r.face_fen)
         available = f.limit_fen - f.drawn_fen
         if op.advance_fen > available:
-            raise _refuse(Code.INSUFFICIENT_AUTHORITY,
+            raise _refuse(Code.PRECONDITION_FAILED,
                           f"Advance {fmt_yuan(op.advance_fen)} exceeds {f.id}'s available {fmt_yuan(available)}")
-        fee = upfront_fee_fen(f, op.advance_fen)
+        fee = upfront_fee(f, op.advance_fen)
         receivables = [x.model_copy(update={"status": "FINANCED"}) if x.id == r.id else x for x in state.receivables]
         new_state = _bump(state, cash_fen=state.cash_fen + op.advance_fen - fee, receivables=receivables,
                           facilities=_with_facility(state, f.model_copy(update={"drawn_fen": f.drawn_fen + op.advance_fen})))
@@ -723,22 +732,23 @@ class Executor:
         state = ctx.state
         r = next((r for r in state.receivables if r.id == op.receivable_id), None)
         if r is None:
-            raise _refuse(Code.INSUFFICIENT_AUTHORITY, f"Receivable {op.receivable_id} does not exist")
+            raise _refuse(Code.PRECONDITION_FAILED, f"Receivable {op.receivable_id} does not exist")
         if r.status not in ("OPEN", "FINANCED"):
-            raise _refuse(Code.INSUFFICIENT_AUTHORITY, f"Receivable {r.id} is {r.status}; nothing is owed")
+            raise _refuse(Code.PRECONDITION_FAILED, f"Receivable {r.id} is {r.status}; nothing is owed")
         if op.amount_fen > r.face_fen:
-            raise _refuse(Code.INSUFFICIENT_AUTHORITY,
+            raise _refuse(Code.PRECONDITION_FAILED,
                           f"Payment {fmt_yuan(op.amount_fen)} exceeds {r.id}'s face {fmt_yuan(r.face_fen)}")
         cash = state.cash_fen + op.amount_fen
         facilities = state.facilities
         note = ""
         if r.status == "FINANCED":
-            adv = advance_for(self._entries(), r.id)
-            if adv is None:
-                raise _refuse(Code.INSUFFICIENT_AUTHORITY, f"No executed advance on record for financed {r.id}")
+            found = advance_for(self._entries(), r.id)
+            if found is None:
+                raise _refuse(Code.PRECONDITION_FAILED, f"No executed advance on record for financed {r.id}")
+            adv, adv_day = found
             f = _facility(state, adv.facility_id)
-            days = ctx.now - adv.day
-            interest, fee, periods = financing_charges(f, adv.advance_fen, days)
+            days = ctx.now - adv_day
+            interest, fee, periods = finance_invoice_charges(f, adv.advance_fen, days)
             cash -= adv.advance_fen + interest + fee
             facilities = _with_facility(state, f.model_copy(update={"drawn_fen": max(0, f.drawn_fen - adv.advance_fen)}))
             note = (f"; repaid advance {fmt_yuan(adv.advance_fen)} + interest {fmt_yuan(interest)} + fee "
@@ -753,7 +763,7 @@ class Executor:
         if op.requested_by != Actor.OWNER:  # defence in depth; tier_for already made this Tier 3
             raise _refuse(Code.INSUFFICIENT_AUTHORITY, "Only the owner can add a facility", SecurityEventKind.TIER3)
         if any(f.id == op.facility.id for f in state.facilities):
-            raise _refuse(Code.INSUFFICIENT_AUTHORITY, f"Facility {op.facility.id} is already on the menu")
+            raise _refuse(Code.PRECONDITION_FAILED, f"Facility {op.facility.id} is already on the menu")
         fac = op.facility.model_copy(update={"owner_approved": True})
         counterparties = list(state.counterparties)
         if not any(c.id == fac.lender_id for c in counterparties):
@@ -764,7 +774,7 @@ class Executor:
     def _apply(self, op: ApplyForFacility, ctx: _Ctx) -> _Effect:
         f = _facility(ctx.state, op.facility_id)
         if f.status != FacilityStatus.NOT_APPLIED:
-            raise _refuse(Code.INSUFFICIENT_AUTHORITY, f"Facility {f.id} is {f.status.value}; nothing to apply for")
+            raise _refuse(Code.PRECONDITION_FAILED, f"Facility {f.id} is {f.status.value}; nothing to apply for")
         new_state = _bump(ctx.state, facilities=_with_facility(ctx.state, f.model_copy(
             update={"status": FacilityStatus.PENDING})))
         return _Effect(f"Applied for {fmt_yuan(op.amount_fen)} on {f.id}; it is PENDING and counts as zero "
@@ -773,12 +783,12 @@ class Executor:
     def _request_approval(self, op: RequestOwnerApproval) -> _Effect:
         entries = [e for e in self._entries() if e.op is not None and e.op.op_id == op.payload_op_id]
         if not entries:
-            raise _refuse(Code.INSUFFICIENT_AUTHORITY, f"Operation {op.payload_op_id} is not in the log")
+            raise _refuse(Code.PRECONDITION_FAILED, f"Operation {op.payload_op_id} is not in the log")
         target = entries[-1]
         if any(e.result.status == EXECUTED for e in entries):
-            raise _refuse(Code.INSUFFICIENT_AUTHORITY, f"Operation {op.payload_op_id} was already executed")
+            raise _refuse(Code.PRECONDITION_FAILED, f"Operation {op.payload_op_id} was already executed")
         pending = [a for a in self._store.approvals(ApprovalStatus.PENDING) if a.op_id == op.payload_op_id]
         if pending:
-            return _Effect(f"Already awaiting the owner ({pending[0].id})", status=PENDING)
+            return _Effect(f"Already awaiting the owner ({pending[0].id})", status=PENDING, approval_id=pending[0].id)
         return _Effect(f"Owner approval requested: {op.subject}", status=PENDING,
                        approval=(canonical_json(target.op), op.subject))

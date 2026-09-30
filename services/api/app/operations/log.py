@@ -39,6 +39,14 @@ class LoggedEntry:
     result: OperationResult
     entry_hash: str
 
+    @property
+    def day(self) -> int | None:
+        """The simulated day the executor ran this entry (older entries: the operation's own day)."""
+        if self.result.effective_day is not None:
+            return self.result.effective_day
+        day = getattr(self.op, "day", None)
+        return day if isinstance(day, int) else None
+
 
 def parse_operation(payload_json: str) -> Any:
     """The typed Operation in a payload, or None when the payload is not one."""
@@ -92,7 +100,7 @@ def open_lots(entries: list[LoggedEntry], facility_id: str, drawn_fen: int) -> l
     for e in executed(entries):
         op = e.op
         if isinstance(op, DrawFacility) and op.facility_id == facility_id:
-            lots.append([op.day, op.amount_fen])
+            lots.append([e.day if e.day is not None else op.day, op.amount_fen])
         elif isinstance(op, RepayFacility) and op.facility_id == facility_id:
             left = op.amount_fen
             for lot in lots:
@@ -108,10 +116,10 @@ def open_lots(entries: list[LoggedEntry], facility_id: str, drawn_fen: int) -> l
     return out
 
 
-def advance_for(entries: list[LoggedEntry], receivable_id: str) -> SubmitInvoiceForFinancing | None:
-    """The executed financing submission for a receivable, if any (the latest one)."""
+def advance_for(entries: list[LoggedEntry], receivable_id: str) -> tuple[SubmitInvoiceForFinancing, int] | None:
+    """The executed financing submission for a receivable and the day it ran (the latest one)."""
     found = None
     for e in executed(entries):
         if isinstance(e.op, SubmitInvoiceForFinancing) and e.op.receivable_id == receivable_id:
-            found = e.op
+            found = (e.op, e.day if e.day is not None else e.op.day)
     return found
