@@ -13,14 +13,15 @@ The main architect owns `app/domain/`, `app/api/`, `app/main.py`, `app/config.py
 | 2 | E: funding router | agent/funding-router | `app/funding/**`, `tests/funding/**` | merged |
 | 2 | F1: executor | agent/executor | `app/operations/**`, `tests/operations/**` | merged |
 | 2 | F2: verifier + counters | agent/verifier | `app/verifier/**`, `tests/verifier/**` | merged |
-| 2 | Contracts follow-up | agent/contracts-followup | compiler, verifier, operations, `mandate/tiers.py` | running |
+| 2 | Contracts follow-up | agent/contracts-followup | compiler, verifier, operations, `mandate/tiers.py` | merged |
 | 2 | G: security suite | agent/security | `app/security/**`, `evals/security/**`, `tests/security/**`, `docs/SECURITY_SELF_ASSESSMENT.md` | running |
 | 3 | H: buyer + lender simulators | agent/counterparties | `app/counterparties/**`, `tests/counterparties/**`, `fixtures/counterparties/**` | merged |
 | 3 | I: /nl harness | agent/nl | `app/nl/**`, `app/api/nl.py`, `evals/e2e/**`, `tests/nl/**`, `scripts/run_scenarios.py` | running |
-| 4 | K: capex | agent/capex | `app/capex/**`, `app/api/capex.py`, `tests/capex/**` | running |
-| 4 | L: borrower file + alerts | agent/borrower-file | `app/borrower_file/**`, `app/alerts/**`, `app/api/{borrower_file,alerts}.py` | running |
+| 4 | K: capex | agent/capex | `app/capex/**`, `app/api/capex.py`, `tests/capex/**` | merged |
+| 4 | L: borrower file + alerts | agent/borrower-file | `app/borrower_file/**`, `app/alerts/**`, `app/api/{borrower_file,alerts}.py` | merged |
 | 3 | Egress guard (owner-requested) | agent/egress-guard | `app/egress/**`, `tests/egress/**`, `fixtures/security/canaries.yaml` (+ a canary in compiler prompts) | merged |
-| 3 | What-if sandbox (owner-requested) | agent/whatif | `app/whatif/**`, `tests/whatif/**`, `apps/web/app/whatif/**` (+ nav and dictionary entries) | running |
+| 3 | What-if sandbox (owner-requested) | agent/whatif | `app/whatif/**`, `tests/whatif/**`, `apps/web/app/whatif/**` (+ nav and dictionary entries) | merged |
+| 4 | Web live integration | agent/web-live | `apps/web/**` | running |
 | 5 | Eval agent | agent/evals | `evals/**` (except security), `scripts/evaluate.py` | after first integrated build |
 
 ## Return format (every coding agent)
@@ -42,3 +43,7 @@ STATUS / FILES CHANGED / INTERFACES IMPLEMENTED / TESTS ADDED / TEST COMMAND / T
 - **F2 merged.** Every offers.yaml verdict reproduces. The cure cost is set to **¥802.70** (2 IF periods, ADR-0003); oracle and docs updated.
 - **Egress guard merged.** 925 tests; canaries in the system prompt and in hidden fields.
 - Main: `/offers/{id}/evaluate`, `/negotiate/{offer_id}`, `/router/plan` wired, with the egress guard on counters and buyer replies. Scenes 1 and 2 run end to end through the API: DEAL → accept + line draw at Tier 1; NO_DEAL → line + IF ¥2,712.94 executed. The core E2E path works, so wave 4 is launched.
+- **Contracts follow-up merged.** The verifier reads no text (AST-enforced); the rebate binds from expected orders; commitments book the verified obligations.
+- **K capex merged** and mounted: every Scene 3 golden value holds, and the application is queued at Tier 2.
+- **What-if merged** and mounted. Uncached calls take 0.13–1 s (the router runs 3× per evaluate); backlog: a verifier fast path.
+- **L merged** and mounted: borrower file (HTML/DOCX, evidence labels, anonymised counterparties), alerts, reconciliation. Mock style label neutralised (no bank branding).
