@@ -62,7 +62,7 @@ Our positioning line is therefore narrow: **none we found is owned by the suppli
 
 **Claims we make** (spec v2 §13):
 
-1. No model output alone can create a commitment, borrow or move money in this system.
+1. No model output alone can create a commitment, borrow or move money in this system. Every operation is built by code from a verifier verdict and gated by the executor. One live-mode weakness, where the model's contingency label can change a verdict, is disclosed as finding F-04 in section 04.
 2. Every accepted, countered and refused offer carries a typed record with the failing predicate and its source spans.
 3. The verifier never reads free text.
 4. Contingent concessions count at maximum exposure, and uncommitted facilities at zero, by default.
