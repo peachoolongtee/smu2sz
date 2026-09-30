@@ -17,7 +17,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from fractions import Fraction
 
 from app.covenants import evaluate as evaluate_covenants
@@ -256,7 +256,8 @@ class Search:
         self.slots = self._slots() if below else []
         self.best: Eval | None = None
         self.best_effort: Eval | None = None
-        self.unit: dict[Slot, Fraction] = {}
+        self.unit: dict[Slot, Fraction] = {}  # probed cost per fen of net cash raised
+        self.unit_amt: dict[Slot, Fraction] = {}  # probed cost per fen of action amount (face)
 
     # ------------------------------------------------------------ slots
 
@@ -351,7 +352,7 @@ class Search:
         key = action_key(acts)
         hit = self._cache.get(key)
         if hit is not None:
-            return hit
+            return hit if hit.actions == acts else replace(hit, actions=acts)
         ev = Eval(actions=acts)
         try:
             t = project(self.pstate, self.obligations, list(acts), self.mode, self.mandate.horizon_days, self.floor)
@@ -415,10 +416,8 @@ class Search:
             base_cost, short, first = 0, self.need_fen, self.breach_days[0]
         if first < slot.arrival:
             return None  # the cash would land after the breach
-        if prune and self.best is not None and slot in self.unit:
-            bound = base_cost + self.unit[slot] * short * Fraction(98, 100) - 2
-            if bound > self.best.cost:
-                return None
+        if prune and slot in self.unit and self._beaten(base_cost + self._lb(slot, short, net=True)):
+            return None
         net = short
         ev: Eval | None = None
         for _ in range(4):
@@ -443,12 +442,14 @@ class Search:
             net = amount - ev.cost if s.kind in (FundingActionKind.EARLY_PAY, FundingActionKind.DISCOUNT_BILL) else amount
             if net > 0:
                 self.unit[s] = Fraction(ev.cost, net)
+                self.unit_amt[s] = Fraction(ev.cost, amount)
 
     def run(self) -> None:
         if not self.breach_days:
             return
         self._probe_units()
-        slots = [s for s in self.slots if s in self.unit]
+        slots = [s for s in self.slots if s in self.unit
+                 and (self.mandate.allow_new_borrowing or not is_debt(s.facility))]
         for s in slots:
             self.fill([], s)
         for a in slots:
@@ -456,7 +457,8 @@ class Search:
                 if a is b or a.conflicts(b):
                     continue
                 for amt in self._grid(a.cap_fen):
-                    self.fill([a.action(amt)], b)
+                    if not self._beaten(self._lb(a, amt)):
+                        self.fill([a.action(amt)], b)
         for a in slots:
             for b in slots:
                 if a is b or a.conflicts(b):
@@ -465,7 +467,17 @@ class Search:
                     if c is a or c is b or c.conflicts(a) or c.conflicts(b):
                         continue
                     for amt in self._grid(b.cap_fen):
-                        self.fill([a.action(a.cap_fen), b.action(amt)], c)
+                        if not self._beaten(self._lb(a, a.cap_fen) + self._lb(b, amt)):
+                            self.fill([a.action(a.cap_fen), b.action(amt)], c)
+
+    def _lb(self, slot: Slot, amount: int, net: bool = False) -> Fraction:
+        """A lower bound on what `slot` posts for an action `amount` (or, with `net`, for raising
+        that much cash): its probed unit cost, less a 2% margin and 2 fen for rounding."""
+        unit = self.unit[slot] if net else self.unit_amt[slot]
+        return unit * amount * Fraction(98, 100) - 2
+
+    def _beaten(self, bound: Fraction) -> bool:
+        return self.best is not None and self.best.cost is not None and bound > self.best.cost
 
     # ------------------------------------------------------------ presentation helpers
 
