@@ -63,6 +63,8 @@ def test_pending_plan_turns_confirmation_and_correction():
     p = parse("no, use invoice financing instead", STATE, pending_plan=True)
     assert p.correction and p.slots.use_financing
     assert parse("cancel", STATE, pending_plan=True).intent == Intent.REJECT
+    explicit = parse("approve APR-000001", STATE, pending_plan=True)  # an explicit approval id is not the plan
+    assert explicit.intent == Intent.APPROVE and not explicit.confirm_plan
     p = parse("actually make it 0.8%", STATE)  # nothing pending: not a correction
     assert p is None or not p.correction
 

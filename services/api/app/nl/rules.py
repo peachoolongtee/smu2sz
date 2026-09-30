@@ -84,7 +84,7 @@ def parse(text: str, state: FinancialState, *, pending_plan: bool = False) -> Pa
     if pending_plan and lx.CORRECTION.search(text) and (s.rate_bp is not None or s.use_financing or s.counterparty_id
                                                         or s.amount_fen is not None or s.buyer_profile):
         return hit(Intent.AMBIGUOUS, "correction", correction=True)  # the service keeps the plan's intent
-    if pending_plan and not s.tier3:
+    if pending_plan and not s.tier3 and not s.approval_id:
         if lx.CONFIRM.search(text) and not lx.DECLINE.search(text):
             return hit(Intent.APPROVE, "confirm_plan", confirm_plan=True)
         if lx.DECLINE.search(text):
