@@ -109,10 +109,11 @@ def test_early_discount_and_period_rebate_in_one_sentence(rules_compiler: Compil
     assert [(o.type, o.rate_bp) for o in offer.obligations] == [(T.IMMEDIATE_DISCOUNT, 90), (T.CONTINGENT_REBATE, 25)]
 
 
-def test_several_amounts_leave_the_invoice_unresolved(rules_compiler: Compiler) -> None:
+def test_part_of_an_invoice_records_the_part_and_abstains(rules_compiler: Compiler) -> None:
     offer = _compile(rules_compiler, "We'll pay ¥200,000 of the ¥420,000 today if you take 1% off.")
     (ob,) = offer.obligations
-    assert ob.type == T.IMMEDIATE_DISCOUNT and ob.base.amount_fen is None and "base_amount" in ob.unresolved
+    assert ob.type == T.IMMEDIATE_DISCOUNT and ob.base.amount_fen == 20_000_000 and "base_amount" in ob.unresolved
+    assert offer.status.value == "ABSTAINED"
 
 
 # ---------------------------------------------------------------- rebate scope (EV-02)
