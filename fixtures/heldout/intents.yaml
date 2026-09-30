@@ -1,0 +1,85 @@
+# HELD-OUT owner utterances for the /nl intent parser (en + zh). Written by the evaluation agent, not
+# taken from services/api/evals/e2e/scenarios.yaml or the tests, and never used to tune the lexicon.
+#
+# Each item: text, intent (the right intent for a fresh session on the golden fixture), slots (the typed
+# values a correct parse extracts; only the listed ones are scored), ambiguous (true: the only right
+# response is a clarifying question). Money in fen, rates in bp.
+# Counterparties: Foshan / 佛山 = BUYER-1, Dongguan / 东莞 = BUYER-2. The credit line is FAC-LINE.
+
+intents:
+  # EVALUATE_OFFER
+  - {id: I01, text: "Have a look at EX06 and tell me if it's acceptable.", intent: EVALUATE_OFFER,
+     slots: {fixture_id: EX06_THREE_INVOICES}}
+  - {id: I02, text: "Foshan just messaged: “We'll take 1% off if we pay the invoice tomorrow.” Is that OK?",
+     intent: EVALUATE_OFFER, slots: {counterparty_id: BUYER-1, rate_bp: 100}}
+  - {id: I03, text: "帮我看看佛山发来的这个报价：“下季度返利0.5%”", intent: EVALUATE_OFFER,
+     slots: {counterparty_id: BUYER-1, rate_bp: 50}}
+  - {id: I04, text: "Assess EX02 for me.", intent: EVALUATE_OFFER, slots: {fixture_id: EX02_EARLY_1_5}}
+  - {id: I05, text: "Run the checks on EX10.", intent: EVALUATE_OFFER, slots: {fixture_id: EX10_FASTCAPITAL}}
+  - {id: I06, text: "评估一下EX05。", intent: EVALUATE_OFFER, slots: {fixture_id: EX05_CONSOLIDATE}}
+
+  # NEGOTIATE
+  - {id: I07, text: "Go back to Foshan with a counter-offer.", intent: NEGOTIATE, slots: {counterparty_id: BUYER-1}}
+  - {id: I08, text: "跟佛山那边还个价。", intent: NEGOTIATE, slots: {counterparty_id: BUYER-1}}
+  - {id: I09, text: "Push back on Dongguan's request with our counters.", intent: NEGOTIATE,
+     slots: {counterparty_id: BUYER-2}}
+
+  # ACCELERATE_RECEIPT
+  - {id: I10, text: "I'd like the Foshan money in sooner, but don't give away more than 0.8%.",
+     intent: ACCELERATE_RECEIPT, slots: {counterparty_id: BUYER-1, rate_bp: 80}}
+  - {id: I11, text: "佛山那张发票能不能早点收回来？", intent: ACCELERATE_RECEIPT, slots: {counterparty_id: BUYER-1}}
+  - {id: I12, text: "Collect the ¥420,000 receivable early.", intent: ACCELERATE_RECEIPT,
+     slots: {amount_fen: 42000000}}
+  - {id: I13, text: "Can we get paid faster on the open invoice?", intent: ACCELERATE_RECEIPT, slots: {}}
+
+  # FUND_GAP
+  - {id: I14, text: "Payroll is coming and we're short, cover it.", intent: FUND_GAP, slots: {}}
+  - {id: I15, text: "Top up cash so we don't dip below the reserve.", intent: FUND_GAP, slots: {}}
+  - {id: I16, text: "下周发工资钱不够，帮我安排融资。", intent: FUND_GAP, slots: {}}
+  - {id: I17, text: "Arrange funding for the shortfall before payroll.", intent: FUND_GAP, slots: {}}
+  - {id: I18, text: "现金缺口怎么补？直接办吧。", intent: FUND_GAP, slots: {}}
+
+  # REPAY_FACILITY
+  - {id: I19, text: "Pay back the credit line.", intent: REPAY_FACILITY, slots: {facility_id: FAC-LINE}}
+  - {id: I20, text: "把银行授信额度还掉。", intent: REPAY_FACILITY, slots: {facility_id: FAC-LINE}}
+  - {id: I21, text: "Repay ¥50,000 of the line.", intent: REPAY_FACILITY,
+     slots: {facility_id: FAC-LINE, amount_fen: 5000000}}
+
+  # SHOW_STATUS
+  - {id: I22, text: "Where do we stand on cash this month?", intent: SHOW_STATUS, slots: {}}
+  - {id: I23, text: "现在账上还有多少钱？", intent: SHOW_STATUS, slots: {}}
+  - {id: I24, text: "Are we close to breaching any covenant?", intent: SHOW_STATUS, slots: {}}
+  - {id: I25, text: "Give me a quick cash overview.", intent: SHOW_STATUS, slots: {}}
+
+  # EXPLAIN
+  - {id: I26, text: "Why did you turn down the Foshan package?", intent: EXPLAIN, slots: {counterparty_id: BUYER-1}}
+  - {id: I27, text: "为什么这个报价不行？", intent: EXPLAIN, slots: {}}
+  - {id: I28, text: "Explain how you got the ¥26,455.62 figure.", intent: EXPLAIN, slots: {amount_fen: 2645562}}
+
+  # WHAT_IF
+  - {id: I29, text: "What happens if we agree to 75-day terms?", intent: WHAT_IF, slots: {terms_days: 75}}
+  - {id: I30, text: "如果给2%的提前付款折扣会怎样？", intent: WHAT_IF, slots: {rate_bp: 200}}
+  - {id: I31, text: "Suppose Foshan asks for 60 days, would we still be fine?", intent: WHAT_IF,
+     slots: {counterparty_id: BUYER-1, terms_days: 60}}
+  - {id: I32, text: "Model a 0.5% rebate for next quarter.", intent: WHAT_IF, slots: {rate_bp: 50}}
+
+  # APPROVE / REJECT (the Tier-2 queue)
+  - {id: I33, text: "Approve APR-000001.", intent: APPROVE, slots: {approval_id: APR-000001}}
+  - {id: I34, text: "Decline APR-000002, I don't want that loan.", intent: REJECT, slots: {approval_id: APR-000002}}
+  - {id: I35, text: "批准APR-000003。", intent: APPROVE, slots: {approval_id: APR-000003}}
+
+  # OUT_OF_SCOPE (including Tier-3 requests, which the executor refuses anyway)
+  - {id: I36, text: "Book me a flight to Shanghai.", intent: OUT_OF_SCOPE, slots: {}}
+  - {id: I37, text: "今天天气怎么样？", intent: OUT_OF_SCOPE, slots: {}}
+  - {id: I38, text: "Sign the personal guarantee the bank wants.", intent: OUT_OF_SCOPE, slots: {}}
+  - {id: I39, text: "Should we buy the new CNC machine for ¥600k?", intent: OUT_OF_SCOPE, slots: {amount_fen: 60000000}}
+  - {id: I40, text: "Write a poem about invoices.", intent: OUT_OF_SCOPE, slots: {}}
+  - {id: I41, text: "帮我把公司股份卖掉一部分。", intent: OUT_OF_SCOPE, slots: {}}
+
+  # AMBIGUOUS: the right answer is one clarifying question
+  - {id: I42, text: "Sort out the money situation.", intent: AMBIGUOUS, ambiguous: true, slots: {}}
+  - {id: I43, text: "Can you handle it?", intent: AMBIGUOUS, ambiguous: true, slots: {}}
+  - {id: I44, text: "帮我处理一下。", intent: AMBIGUOUS, ambiguous: true, slots: {}}
+  - {id: I45, text: "Do the usual.", intent: AMBIGUOUS, ambiguous: true, slots: {}}
+  - {id: I46, text: "钱的事你看着办。", intent: AMBIGUOUS, ambiguous: true, slots: {}}
+  - {id: I47, text: "We need to do something about cash flow.", intent: AMBIGUOUS, ambiguous: true, slots: {}}
