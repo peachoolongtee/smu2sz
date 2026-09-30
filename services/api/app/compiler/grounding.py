@@ -23,6 +23,7 @@ from app.compiler.parsing import (
     parse_money,
     parse_rate_bp,
     parse_tenor_months,
+    rx,
 )
 from app.compiler.schema import (
     OfferExtraction,
@@ -171,6 +172,110 @@ def ground_funding(docs: dict[str, SourceDocument], items: Sequence[XFundingClai
 # ---------------------------------------------------------------- obligations
 
 
+# ---------------------------------------------------------------- alternatives and scope (INVARIANT 10)
+#
+# "Either 60 or 75-day terms", "1% or 1.5% off", "60-75 days": the text offers a choice, so no single value
+# is established. Any backend's obligation whose clause holds such an alternative is dropped and the offer
+# abstains with a clarification, instead of booking one of the values.
+
+_ALT_UNIT = r"(?:%|％|\s?percent\b|\s?per\s?cent\b|\s?个点|\s*[-‑]?\s*days?\b|\s?天)"
+_ALTERNATIVE = rx(
+    rf"(?<![\d.,])(?P<a>\d+(?:\.\d+)?)(?P<ua>{_ALT_UNIT})?\s*,?\s*(?:or|/|或者?|还是|[-–~～])\s*(?:(?:maybe|perhaps|even|possibly)\s+)?"
+    rf"(?P<b>\d+(?:\.\d+)?)(?P<ub>{_ALT_UNIT})"
+    rf"|\bbetween\s+(?P<c>\d+(?:\.\d+)?)(?P<uc>{_ALT_UNIT})?\s+and\s+(?P<d>\d+(?:\.\d+)?)(?P<ud>{_ALT_UNIT})"
+    rf"|(?P<e>\d+(?:\.\d+)?)(?P<ue>{_ALT_UNIT})?\s*(?:到|至)\s*(?P<f>\d+(?:\.\d+)?)(?P<uf>{_ALT_UNIT})",
+    re.IGNORECASE)
+# Two obligations offered as alternatives: "1% off or 60-day terms", "要么…要么", "either … or".
+_OR_BETWEEN = rx(r"\bor\b|或者?|还是|要么", re.IGNORECASE)
+
+
+def _unit_class(u: str | None) -> str | None:
+    if not u:
+        return None
+    return "rate" if re.search(r"%|％|percent|per\s?cent|个点", u, re.IGNORECASE) else "days"
+
+
+def _alternative(docs: dict[str, SourceDocument], spans: Sequence[SourceSpan]) -> SourceSpan | None:
+    """A span stating alternative values in the clause of one of `spans`, or None."""
+    for sp in spans:
+        text = docs[sp.doc_id].text
+        s0, e0 = lexicon.sentence_bounds(text, sp.start)
+        parts = [(cs, ce) for cs, ce in lexicon.clauses(text, s0, max(e0, sp.end)) if cs < sp.end and sp.start < ce]
+        if not parts:
+            continue
+        lo, hi = parts[0][0], parts[-1][1]
+        for m in _ALTERNATIVE.finditer(text, s0, max(e0, sp.end)):
+            if not (m.start() < hi and lo < m.end()):
+                continue
+            ua, ub = next(((m.group(x), m.group(y)) for x, y in (("ua", "ub"), ("uc", "ud"), ("ue", "uf"))
+                           if m.group(y) is not None), (None, None))
+            if ua is not None and _unit_class(ua) != _unit_class(ub):
+                continue  # "60 days - 1%": two different terms, not a choice
+            return SourceSpan(doc_id=sp.doc_id, start=m.start(), end=m.end(), text=m.group(0))
+    return None
+
+
+_CONCESSION_CUE = rx(r"\b(?:off|discount|rebate|back|terms|days?|net|price|credit)\b|账期|折扣|返|扣|天|优惠|价格", re.IGNORECASE)
+
+
+def _unplaced_alternatives(docs: Sequence[SourceDocument], taken: Sequence[SourceSpan]) -> list[SourceSpan]:
+    """Alternative values ("50到70天", "0.5-0.8% back") in a sentence about a concession that no extracted
+    obligation covers: the backend could not read the term, but the text offers a choice, so abstain."""
+    out: list[SourceSpan] = []
+    for d in docs:
+        for m in _ALTERNATIVE.finditer(d.text):
+            units = next(((m.group(x), m.group(y)) for x, y in (("ua", "ub"), ("uc", "ud"), ("ue", "uf"))
+                          if m.group(y) is not None), (None, None))
+            if units[0] is not None and _unit_class(units[0]) != _unit_class(units[1]):
+                continue
+            if any(sp.doc_id == d.doc_id and sp.start < m.end() and m.start() < sp.end for sp in taken):
+                continue
+            s0, e0 = lexicon.sentence_bounds(d.text, m.start())
+            if _unit_class(units[1]) == "rate" and not _CONCESSION_CUE.search(d.text, s0, e0):
+                continue
+            out.append(SourceSpan(doc_id=d.doc_id, start=m.start(), end=m.end(), text=m.group(0)))
+    return out
+
+
+def _offered_as_alternatives(docs: dict[str, SourceDocument], a: Obligation, b: Obligation) -> bool:
+    """Two obligations of one sentence joined by "or" / 或者 / 要么 (the buyer offers one OR the other)."""
+    x, y = a.spans[0], b.spans[0]
+    if x.doc_id != y.doc_id or not _same_sentence(docs, x, y):
+        return False
+    if x.start > y.start:
+        x, y = y, x
+    if y.start < x.end:
+        return False
+    text = docs[x.doc_id].text
+    return bool(_OR_BETWEEN.search(text, x.end, y.start))
+
+
+_UNBOUNDED_SCOPE_NOTE = ("unresolved scope: a rebate with no stated base and no named period, or an unbounded forward "
+                         "promise, cannot be bound to an order; nothing booked")
+
+
+def _rebate_scope(docs: dict[str, SourceDocument], x: XObligation, spans: Sequence[SourceSpan], base_amount: int | None,
+                  amount_fen: int | None) -> bool:
+    """True when a rebate's base cannot be established from the text, whatever the backend said:
+    - an unbounded forward promise (RECURRING_PERPETUAL) has no bounded base;
+    - no stated base amount and no named period ("Give us 1% off."): binding it to an expected order would
+      be a guess. Only a text that names the period ("next quarter", 下季度) lets the verifier bind the order."""
+    if x.type != ObligationType.CONTINGENT_REBATE or amount_fen is not None:
+        return False
+    if x.duration_kind == DurationKind.RECURRING_PERPETUAL:
+        return True
+    if base_amount is not None:
+        return False
+    from app.compiler.rules import PERIOD_RE  # the grammar's period vocabulary (en + zh)
+
+    for sp in spans:
+        text = docs[sp.doc_id].text
+        s0, e0 = lexicon.sentence_bounds(text, sp.start)
+        if PERIOD_RE.search(text, s0, max(e0, sp.end)):
+            return False
+    return True
+
+
 def _ground_obligation(
     docs: dict[str, SourceDocument],
     x: XObligation,
@@ -189,6 +294,14 @@ def _ground_obligation(
     if not spans:
         abst.append(Abstention(field=f"obligation:{label}", reason="obligation dropped: no source span"))
         return None, True
+    if x.type != ObligationType.CLAIMED_PRIOR_CONCESSION:
+        alt = _alternative(docs, spans)
+        if alt is not None:
+            abst.append(Abstention(
+                field=f"{label}.alternatives",
+                reason="ambiguous: the text states alternative values for this term; clarification needed, nothing booked",
+                spans=[*spans, alt]))
+            return None, True
 
     unresolved: list[str] = list(dict.fromkeys(x.unresolved))
     confidence = min(max(float(x.confidence), 0.0), 1.0)
@@ -219,6 +332,9 @@ def _ground_obligation(
     if x.type in MATERIAL_VALUE_TYPES and rate_bp is None and amount_fen is None:
         abst.append(Abstention(field=f"{label}.rate_bp", reason="material field has no grounded span: rate or amount missing", spans=spans))
         return None, True
+    if _rebate_scope(docs, x, spans, base_amount, amount_fen) and "scope" not in unresolved:
+        unresolved.append("scope")
+        abst.append(Abstention(field=f"note:{label}.scope", reason=_UNBOUNDED_SCOPE_NOTE, spans=spans))
 
     # The stated target terms are always carried (`target_terms_days`); `days_delta` only when the text
     # states both the current and the new terms. Otherwise the verifier binds the current terms from state.
@@ -548,6 +664,24 @@ def build_offer(
 
     conflicts = _quantity_conflicts(by_id, ex, abst)
     built.sort(key=lambda t: (t[0], t[1]))
+    # Terms offered as alternatives ("1% off or 60-day terms") establish neither: abstain on both.
+    bookable = [ob for _, _, ob in built if ob.type != ObligationType.CLAIMED_PRIOR_CONCESSION]
+    alternatives = {id(a) for a in bookable for b in bookable if a is not b and _offered_as_alternatives(by_id, a, b)}
+    if alternatives:
+        for _, _, ob in built:
+            if id(ob) in alternatives:
+                abst.append(Abstention(
+                    field=f"{ob.type.value}.alternatives",
+                    reason="ambiguous: the text offers this term as an alternative to another; clarification needed, "
+                           "nothing booked", spans=ob.spans))
+        built = [t for t in built if id(t[2]) not in alternatives]
+        material_abstain = True
+    placed = [sp for _, _, ob in built for sp in ob.spans] + [sp for a in abst for sp in a.spans]
+    for sp in _unplaced_alternatives(docs, placed):
+        material_abstain = True
+        abst.append(Abstention(field="offer.alternatives", spans=[sp],
+                               reason="ambiguous: the text offers alternative values for a term; clarification needed, "
+                                      "nothing booked"))
     ordered = enforce_contingency(by_id, [ob for _, _, ob in built], abst)
     ordered = dedupe_obligations(ordered, abst)
     obligations: list[Obligation] = []

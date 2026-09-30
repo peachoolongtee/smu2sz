@@ -12,9 +12,9 @@
       {
         "amount_text": null,
         "base_amount_text": null,
-        "base_kind": "PERIOD_PURCHASES",
+        "base_kind": "UNSPECIFIED",
         "bounded_invoices_text": null,
-        "confidence": 0.9,
+        "confidence": 0.6,
         "contingency": "CONTINGENT",
         "current_terms_text": null,
         "duration_kind": "ONE_OFF",
@@ -28,7 +28,9 @@
         "rate_text": "1%",
         "target_terms_text": null,
         "type": "CONTINGENT_REBATE",
-        "unresolved": []
+        "unresolved": [
+          "scope"
+        ]
       }
     ],
     "quantities": [
