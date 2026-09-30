@@ -113,7 +113,7 @@ def test_verdict_requiring_owner_raises_the_tier(ex: Any, store: Any, clock: Clo
 
 def test_accept_without_a_backing_verdict_is_refused(ex: Any, store: Any, clock: Clock) -> None:
     store.put_offer(offer("OFF-9", [rebate()]))
-    store.put_verdict(verdict("V-OFF-9", "OFF-9"))
+    store.put_verdict(verdict("V-OFF-9", "OFF-9", bound=[rebate()]))
     c = ex.propose_commitment("V-OFF-9", expires_day=5, nonce="N9")
     # The stored verdict is replaced by a REJECT with no counters: nothing backs these terms any more.
     store.put_verdict(verdict("V-OFF-9", "OFF-9", outcome=Outcome.REJECT))
@@ -131,7 +131,7 @@ def test_counter_commitment_can_be_accepted(ex: Any, store: Any, clock: Clock) -
     store.put_offer(offer("OFF-2", [rebate(rate_bp=300)]))
     store.put_verdict(verdict("V-2", "OFF-2", outcome=Outcome.REJECT, counters=[k]))
     c = ex.propose_commitment("V-2", counter_id=k.id, expires_day=5, nonce="N2")
-    assert c.forward_value_fen == k.supplier_cost_fen
+    assert c.forward_value_fen == k.forward_value_fen
     result = ex.execute(accept(clock, c))
     assert result.status == S.EXECUTED
     assert store.get_state().forward_concessions[0].value_fen == 200_000

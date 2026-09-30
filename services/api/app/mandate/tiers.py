@@ -3,7 +3,9 @@
 Nothing a caller supplies as a "tier" is read. The only caller-supplied inputs are two facts the
 operation object cannot carry, and each can only *raise* the tier:
 - `accepts_terms_change`: the commitment an AcceptOffer/RecordCommitment accepts or records
-  contains a TERMS_EXTENSION (-> Tier 2).
+  contains a TERMS_EXTENSION that lengthens terms, `days_delta > 0` (-> Tier 2). A shortening
+  (`days_delta < 0`) is a gain to the supplier and does not set it. Callers pass True for an
+  unbound delta (`None`): it cannot be shown to shorten, and the flag can only raise the tier.
 - `commitment_value_fen`: the value of the commitment an AcceptOffer/RecordCommitment creates
   (-> Tier 2 above `tier2_single_commitment_fen`).
 An operation type this function does not know is Tier 3 (fail closed).

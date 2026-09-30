@@ -11,6 +11,7 @@ from app.domain.models import (
     BaseKind,
     CompiledOffer,
     CompileStatus,
+    ConcessionValue,
     Contingency,
     CounterProposal,
     Duration,
@@ -120,12 +121,20 @@ def verdict(
     tier: Tier = Tier.TIER_1,
     counters: list[CounterProposal] | None = None,
     mandate_version: int = 1,
+    bound: list[Obligation] | None = None,
 ) -> Verdict:
+    """A verdict that verified `bound` (none by default). Their net forward value is `value_fen`, carried
+    on the first bound obligation, the others valued at zero."""
+    bound = bound or []
+    values = [ConcessionValue(obligation_id=o.id, value_fen=value_fen if n == 0 else 0, basis="test",
+                              formula="test") for n, o in enumerate(bound)]
     return Verdict(
         id=verdict_id,
         offer_id=offer_id,
         offer_version=1,
         outcome=outcome,
+        bound_obligations=bound,
+        concession_values=values,
         forward_concession_total_fen=value_fen,
         counters=counters or [],
         required_tier=tier,
@@ -136,13 +145,16 @@ def verdict(
     )
 
 
-def counter(counter_id: str = "CTR-A", obligations: list[Obligation] | None = None, cost_fen: int = 200_000) -> CounterProposal:
+def counter(counter_id: str = "CTR-A", obligations: list[Obligation] | None = None, cost_fen: int = 200_000,
+            forward_fen: int | None = None) -> CounterProposal:
+    """A counter whose immediate cost is `cost_fen` and forward value `forward_fen` (default: the same)."""
     return CounterProposal(
         id=counter_id,
         label="Option A",
         text="We can offer a 0.85% early-payment discount on invoice RCV-A.",
         obligations=obligations or [rebate("OB-C", rate_bp=50)],
         supplier_cost_fen=cost_fen,
+        forward_value_fen=cost_fen if forward_fen is None else forward_fen,
         rationale="priced below break-even",
         formula="d/(1-d) < c",
     )
@@ -151,9 +163,11 @@ def counter(counter_id: str = "CTR-A", obligations: list[Obligation] | None = No
 def seed_offer(store: Any, ex: Executor, offer_id: str = "OFF-1", *, obligations: list[Obligation] | None = None,
                value_fen: int = 300_000, tier: Tier = Tier.TIER_1, expires_day: int = 5,
                nonce: str | None = None) -> Any:
-    """Store an offer and an ACCEPT verdict, and propose its commitment. Returns the commitment."""
-    store.put_offer(offer(offer_id, obligations or [rebate()]))
-    store.put_verdict(verdict(f"V-{offer_id}", offer_id, value_fen=value_fen, tier=tier))
+    """Store an offer and an ACCEPT verdict that verified its obligations, and propose its commitment.
+    Returns the commitment."""
+    obs = obligations or [rebate()]
+    store.put_offer(offer(offer_id, obs))
+    store.put_verdict(verdict(f"V-{offer_id}", offer_id, value_fen=value_fen, tier=tier, bound=obs))
     return ex.propose_commitment(f"V-{offer_id}", expires_day=expires_day, nonce=nonce or f"NONCE-{offer_id}")
 
 
