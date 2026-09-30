@@ -16,6 +16,7 @@ const NAV: { href: string; key: DictKey; group: "screens" | "more" }[] = [
   { href: "/trajectory", key: "nav.trajectory", group: "screens" },
   { href: "/funding", key: "nav.funding", group: "screens" },
   { href: "/verdict", key: "nav.verdict", group: "screens" },
+  { href: "/whatif", key: "nav.whatif", group: "screens" },
   { href: "/capex", key: "nav.capex", group: "screens" },
   { href: "/ledger", key: "nav.ledger", group: "screens" },
   { href: "/approvals", key: "nav.approvals", group: "more" },
