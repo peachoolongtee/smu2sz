@@ -76,11 +76,11 @@ class NlContext:
 
     def evaluate(self, offer: CompiledOffer, *, declared: Mapping[str, Any] | None = None,
                  remember: bool = True, state: FinancialState | None = None,
-                 owner_constraints: OwnerConstraints | None = None, plans: Plans = "all") -> VerdictBundle:
+                 owner_constraints: OwnerConstraints | None = None, plans: Plans = "committed") -> VerdictBundle:
         """`state` is a hypothetical variant of the stored state (e.g. one gap only); the verdict is
         still the verifier's, and the operations built from it still pass the executor's gates.
-        `owner_constraints` passes the owner's goal to the verifier (it only tightens); `plans` as in
-        `app.verifier.evaluate`."""
+        `owner_constraints` passes the owner's goal to the verifier (it only tightens). `plans` defaults
+        to "committed": no /nl handler reads the display-only expected plan, and the verdict is the same."""
         state = state or self.state()
         mandate = self.mandate()
         if declared is None and offer.offer_id in self.session.offer_fixtures:
