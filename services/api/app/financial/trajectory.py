@@ -36,6 +36,7 @@ from app.domain.models import (
 )
 from app.domain.money import Ratio, bp, post, simple_interest
 from app.financial.amortisation import amortisation_schedule
+from app.financial.charges import fee_period_days, finance_invoice_charges, line_interest, upfront_fee
 from app.financial.errors import FundingActionError, ObligationError, UncommittedFacilityError
 from app.financial.fmt import day as fday
 from app.financial.fmt import pct, y
@@ -316,7 +317,7 @@ def _receivable_for(a: FundingAction, rcvs: dict[str, _Rcv], mode: Mode) -> _Rcv
 
 def _upfront_fee(f: Facility, arrival: int, amount: int, book: _Book) -> None:
     if f.upfront_fee_bp:
-        fee = post(bp(f.upfront_fee_bp) * amount)
+        fee = upfront_fee(f, amount)
         book.add(_Posting(arrival, SETTLE, LedgerEventKind.FEE, -fee, f"Upfront fee, {f.name}", f.id,
                           f"{y(amount)} × {pct(bp(f.upfront_fee_bp))} = {y(fee)}", f.id, "fee"))
 
@@ -324,7 +325,7 @@ def _upfront_fee(f: Facility, arrival: int, amount: int, book: _Book) -> None:
 def _bullet_repayment(lot: _Lot, amount: int, day: int, book: _Book) -> None:
     f = lot.facility
     days = day - lot.arrival
-    interest = post(simple_interest(amount, bp(f.rate_bp), days))
+    interest = line_interest(amount, f.rate_bp, days)
     book.add(_Posting(day, SETTLE, LedgerEventKind.INTEREST, -interest, f"Interest, {f.name}", f.id,
                       f"{y(amount)} × {pct(bp(f.rate_bp))} × {days}/365 = {y(interest)}", f.id, "interest"))
     book.add(_Posting(day, SETTLE, LedgerEventKind.REPAYMENT, -amount, f"Repay {f.name}", f.id,
@@ -402,11 +403,9 @@ def _finance_invoice(f: Facility, a: FundingAction, r: _Rcv, book: _Book) -> Non
     days = r.due - arrival
     if days <= 0:
         raise FundingActionError(f"advance on {r.id} would land on {fday(arrival)}, not before its due day {r.due}")
-    period = f.fee_period_days or MONTH_DAYS
-    periods = -(-days // period)
+    period = fee_period_days(f)
     rate = bp(f.rate_bp)
-    interest = post(simple_interest(a.amount_fen, rate, periods * period))
-    fee = post(bp(f.fee_bp_per_advance) * a.amount_fen * periods)
+    interest, fee, periods = finance_invoice_charges(f, a.amount_fen, days)
     r.financed = True
     book.add(_Posting(arrival, INFLOW, LedgerEventKind.ADVANCE, a.amount_fen, f"Advance on {r.id}, {f.name}", f.id,
                       f"requested {fday(request)} + {f.lead_time_days}-day lead time", f.id))
