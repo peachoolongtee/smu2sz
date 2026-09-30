@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import pytest
+
 from app.domain.models import ObligationType
 from tests.nl.conftest import Chat, ops
 
@@ -107,3 +109,15 @@ def test_correction_in_chinese(client, rt):
     assert r["amended"]
     _, obs = _counter_obligations(rt, r["verdict"]["id"])
     assert obs[0].rate_bp == 80
+
+
+@pytest.mark.parametrize("question", ["为什么被拒绝?", "why was it rejected?", "Why cancel that?"])
+def test_why_explains_and_keeps_the_pending_plan(client, rt, question):
+    """"为什么被拒绝?" contains 拒绝, but it asks why: EXPLAIN wins over REJECT/cancel."""
+    c = Chat(client, "g-why")
+    c.say(EX12)
+    r = c.say(question)
+    assert r["intent"] == "EXPLAIN"
+    assert ops(r) == []
+    r = c.say("go ahead")
+    assert ("COUNTER_OFFER", "EXECUTED") in ops(r)

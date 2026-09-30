@@ -1,7 +1,7 @@
 """The deterministic intent parser (en + zh). It runs first on every owner request; the optional LLM
 classifier is consulted only when these rules find nothing.
 
-Order matters and is fixed:
+Order matters and is fixed ("why"/"为什么" makes a request EXPLAIN before any decline or approval cue):
   correction / confirmation of the session's pending plan, Tier-3 requests, explicit approvals,
   EXPLAIN, WHAT_IF, fixture or quoted-offer references, ACCELERATE_RECEIPT, NEGOTIATE, REPAY_FACILITY,
   FUND_GAP, SHOW_STATUS, bare approvals, capex, vague cash requests (AMBIGUOUS).
@@ -77,21 +77,23 @@ def slots_from(text: str, state: FinancialState) -> Slots:
 def parse(text: str, state: FinancialState, *, pending_plan: bool = False) -> Parsed | None:
     """Owner request -> intent + typed slots, or None when no rule applies."""
     s = slots_from(text, state)
+    asks_why = bool(lx.EXPLAIN.search(text))  # "why was it rejected?" / "为什么被拒绝?" asks; it declines nothing
 
     def hit(intent: Intent, cue: str, **kw: bool) -> Parsed:
         return Parsed(intent=intent, slots=s, matched=[cue], **kw)
 
-    if pending_plan and lx.CORRECTION.search(text) and (s.rate_bp is not None or s.use_financing or s.counterparty_id
+    if pending_plan and not asks_why and lx.CORRECTION.search(text) and (s.rate_bp is not None or s.use_financing or s.counterparty_id
                                                         or s.amount_fen is not None or s.buyer_profile):
         return hit(Intent.AMBIGUOUS, "correction", correction=True)  # the service keeps the plan's intent
-    if pending_plan and not s.tier3 and not s.approval_id:
+    if pending_plan and not s.tier3 and not s.approval_id and not asks_why:
         if lx.CONFIRM.search(text) and not lx.DECLINE.search(text):
             return hit(Intent.APPROVE, "confirm_plan", confirm_plan=True)
         if lx.DECLINE.search(text):
             return hit(Intent.REJECT, "decline_plan", confirm_plan=True)
     if s.tier3:
         return hit(Intent.OUT_OF_SCOPE, f"tier3:{s.tier3}")
-    if s.approval_id or (lx.APPROVAL_REF.search(text) and (lx.CONFIRM.search(text) or lx.DECLINE.search(text))):
+    if not asks_why and (s.approval_id or (lx.APPROVAL_REF.search(text) and (lx.CONFIRM.search(text)
+                                                                            or lx.DECLINE.search(text)))):
         return hit(Intent.REJECT if lx.DECLINE.search(text) and not lx.CONFIRM.search(text) else Intent.APPROVE,
                    "approval")
     if lx.EXPLAIN.search(text):
