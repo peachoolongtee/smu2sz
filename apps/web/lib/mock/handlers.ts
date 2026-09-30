@@ -31,6 +31,9 @@ import type {
   VerdictView,
   Displayed,
   Commitment,
+  WhatIfControls,
+  WhatIfParams,
+  WhatIfResult,
 } from "../types";
 
 import approvalsSeed from "../../mocks/approvals_seed.json";
@@ -51,6 +54,7 @@ import trajExp from "../../mocks/trajectory_expected.json";
 import verdictEx01 from "../../mocks/verdict_ex01.json";
 import verdictEx01b from "../../mocks/verdict_ex01b.json";
 import verdictSec from "../../mocks/verdict_sec.json";
+import whatifJson from "../../mocks/whatif_presets.json";
 
 type Json = unknown;
 const cast = <T>(v: Json): T => v as T;
@@ -397,6 +401,51 @@ export async function nl(req: NlRequest): Promise<NlResponse> {
     operations: [],
     clarification: asksCapex ? null : "Try: Can we buy the ¥600k machine?",
   };
+}
+
+// ------------------------------------------------------------------ what-if (display-only)
+
+interface WhatIfMockFile {
+  controls: WhatIfControls;
+  entries: { id: string; params: WhatIfParams; result: Omit<WhatIfResult, "controls" | "mock_nearest"> }[];
+}
+
+/**
+ * Serves mocks/whatif_presets.json (written by `app.whatif.export_mocks` from the real simulator).
+ * An exact slider position returns its entry; otherwise the nearest precomputed position is returned
+ * with `mock_nearest` set, and the page says so. Distance is over slider positions (days and bp), never money.
+ */
+export async function whatIf(params: WhatIfParams): Promise<WhatIfResult> {
+  await delay();
+  const file = cast<WhatIfMockFile>(whatifJson);
+  const g = file.controls.grid;
+  const span = (k: "terms_days" | "discount_bp" | "rebate_bp" | "price_adjustment_bp") => g[k].max - g[k].min || 1;
+  const distance = (p: WhatIfParams) =>
+    Math.abs(p.terms_days - params.terms_days) / span("terms_days") +
+    Math.abs(p.discount_bp - params.discount_bp) / span("discount_bp") +
+    Math.abs(p.rebate_bp - params.rebate_bp) / span("rebate_bp") +
+    Math.abs(p.price_adjustment_bp - params.price_adjustment_bp) / span("price_adjustment_bp") +
+    ((p.settle_face_fen === null) === (params.settle_face_fen === null || params.discount_bp === 0) ? 0 : 0.25);
+  let best = file.entries[0];
+  let bestD = distance(best.params);
+  for (const e of file.entries) {
+    const d = distance(e.params);
+    if (d < bestD) {
+      best = e;
+      bestD = d;
+    }
+  }
+  const exact =
+    best.params.terms_days === params.terms_days &&
+    best.params.discount_bp === params.discount_bp &&
+    best.params.rebate_bp === params.rebate_bp &&
+    best.params.price_adjustment_bp === params.price_adjustment_bp &&
+    (params.discount_bp === 0 || best.params.settle_face_fen === params.settle_face_fen);
+  return clone({
+    ...best.result,
+    controls: file.controls,
+    mock_nearest: exact ? null : { id: best.id, params: best.params },
+  } as WhatIfResult);
 }
 
 export async function demoReset(): Promise<void> {
