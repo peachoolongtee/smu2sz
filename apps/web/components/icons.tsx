@@ -67,3 +67,8 @@ export const Spinner = (p: P) => (
     <path d="M8 2a6 6 0 1 0 6 6" />
   </svg>
 );
+export const ChatIcon = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M2.5 3.5h11a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H7l-3 2.5v-2.5H2.5a1 1 0 0 1-1-1v-6a1 1 0 0 1 1-1z" />
+  </svg>
+);

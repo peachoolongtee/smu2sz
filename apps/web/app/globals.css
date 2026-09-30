@@ -59,6 +59,17 @@ body {
   border-radius: 4px;
 }
 
+@keyframes tl-slide-in {
+  from {
+    transform: translateX(2rem);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

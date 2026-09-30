@@ -6,12 +6,14 @@ import { useState, type ReactNode } from "react";
 import { apiMode } from "@/lib/api";
 import { setLang, useI18n } from "@/lib/i18n";
 import type { DictKey } from "@/lib/dictionary";
+import { ChatPanel } from "./chat/chat-panel";
 import { DemoStepper } from "./demo-stepper";
 import { MenuIcon, ShieldIcon, XIcon } from "./icons";
 import { OwnerSessionControl, OwnerSignInDialog } from "./owner-auth";
 import { Badge, Segmented } from "./ui";
 
 const NAV: { href: string; key: DictKey; group: "screens" | "more" }[] = [
+  { href: "/chat", key: "nav.chat", group: "screens" },
   { href: "/mandate", key: "nav.mandate", group: "screens" },
   { href: "/inbox", key: "nav.inbox", group: "screens" },
   { href: "/trajectory", key: "nav.trajectory", group: "screens" },
@@ -98,6 +100,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       </aside>
 
       <OwnerSignInDialog />
+      <ChatPanel />
 
       <div className="min-w-0">
         <div className="border-b border-line bg-surface lg:sticky lg:top-0 lg:z-30">
