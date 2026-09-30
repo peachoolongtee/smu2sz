@@ -7,14 +7,14 @@ The main architect owns `app/domain/`, `app/api/`, `app/main.py`, `app/config.py
 | 0 | main | dev | contracts, docs, fixtures, oracle, skeleton | done |
 | 1 | A: financial engine | agent/financial-engine | `app/financial/**`, `tests/financial/**` | merged |
 | 1 | B: covenants + mandate | agent/covenants-mandate | `app/covenants/**`, `app/mandate/**`, `tests/covenants/**`, `tests/mandate/**` | merged |
-| 1 | C: compiler | agent/compiler | `app/compiler/**`, `tests/compiler/**`, `fixtures/compiler_cache/**` | running |
+| 1 | C: compiler | agent/compiler | `app/compiler/**`, `tests/compiler/**`, `fixtures/compiler_cache/**` | merged |
 | 1 | D: persistence + commitments | agent/persistence | `app/persistence/**`, `app/commitments/**`, `services/api/migrations/**`, `tests/persistence/**`, `tests/commitments/**` | merged |
-| 1 | J: frontend (mock data) | agent/frontend | `apps/web/**` | running |
-| 2 | E: funding router | agent/funding-router | `app/funding/**`, `tests/funding/**` | running |
-| 2 | F1: executor | agent/executor | `app/operations/**`, `tests/operations/**` | running |
-| 2 | F2: verifier + counters | agent/verifier | `app/verifier/**`, `tests/verifier/**` | blocked on E |
+| 1 | J: frontend (mock data) | agent/frontend | `apps/web/**` | merged |
+| 2 | E: funding router | agent/funding-router | `app/funding/**`, `tests/funding/**` | merged |
+| 2 | F1: executor | agent/executor | `app/operations/**`, `tests/operations/**` | merged |
+| 2 | F2: verifier + counters | agent/verifier | `app/verifier/**`, `tests/verifier/**` | running |
 | 2 | G: security suite | agent/security | `app/security/**`, `evals/security/**`, `tests/security/**` | blocked on C, F |
-| 3 | H: buyer + lender simulators | agent/counterparties | `app/counterparties/**`, `tests/counterparties/**`, `fixtures/counterparties/**` | running (domain-only dependency) |
+| 3 | H: buyer + lender simulators | agent/counterparties | `app/counterparties/**`, `tests/counterparties/**`, `fixtures/counterparties/**` | merged |
 | 3 | I: /nl harness | agent/nl | `app/nl/**`, `evals/e2e/**`, `tests/nl/**` | after wave 2 |
 | 4 | K: capex | agent/capex | `app/capex/**`, `tests/capex/**` | after core E2E |
 | 4 | L: borrower file + alerts | agent/borrower-file | `app/borrower_file/**`, `app/alerts/**`, `tests/borrower_file/**` | after core E2E |
@@ -28,3 +28,11 @@ STATUS / FILES CHANGED / INTERFACES IMPLEMENTED / TESTS ADDED / TEST COMMAND / T
 - **A merged.** 48 tests; every golden value matches exactly. Accepted: `MonthPoint.leverage` may be None. Deferred: `DayPoint.facility_balances_fen`.
 - **D merged.** 152 tests; SQL and in-memory stores; hash chain; Alembic. Accepted: read-only `OperationRecord`, approvals and evidence on the port. Accepted deviation: ACTIVE commitments can still be fulfilled after expiry.
 - `main` fast-forwarded to `dev` at 76ee428 (checkpoint: engine, covenants, mandate, persistence).
+- **C merged.** 180 tests, 25 injection cases (zh + en), offline cache and rules grammar, Claude and DeepSeek adapters. Accepted: equity clauses and injection flags on term sheets.
+- **J merged.** 7 screens + Approvals/Security/Evidence, demo stepper, en/中文, mock mode. Its view-shape requests are being applied in `app/api/` (state, mandate, ledger and audit done).
+- **E merged.** Golden plan ¥2,712.94 found in 0.14 s; beats the line-first baseline in 6 designed cases. Accepted: NEW_BORROWING_NOT_ALLOWED, `compare` on the port.
+- **F1 merged**, plus a follow-up: effective_day, approval_id, PRECONDITION_FAILED / STALE_OPERATION, shared charge helpers in `app.financial`.
+- **H merged.** Scene 1 accept, Scene 2 NO_DEAL in 3 rounds, hidden reservations never leak.
+- Main: evidence export per ADR-0004 plus `scripts/verify_evidence.py`; `/operations`, `/approvals`, `/circuit` endpoints with an owner token; Supabase (Singapore pooler) migrated with RLS on every table; the DeepSeek live path verified.
+- Decision: the reserve-breach cure is priced only on permanent-capable sources (no clean-down line), because a terms extension recurs. The verifier computes the figure, and golden values and docs follow it.
+- Backlog: compiler live-mode contingency calibration (DeepSeek marks the whole package CONTINGENT).
