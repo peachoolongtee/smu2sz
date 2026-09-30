@@ -155,3 +155,11 @@ def seed_offer(store: Any, ex: Executor, offer_id: str = "OFF-1", *, obligations
     store.put_offer(offer(offer_id, obligations or [rebate()]))
     store.put_verdict(verdict(f"V-{offer_id}", offer_id, value_fen=value_fen, tier=tier))
     return ex.propose_commitment(f"V-{offer_id}", expires_day=expires_day, nonce=nonce or f"NONCE-{offer_id}")
+
+
+def new_facility(lender: str = "BANK-1", fid: str = "FAC-NEW") -> Any:
+    """A facility proposal modelled on FAC-LINE, not yet owner-approved."""
+    state, _ = load_scenario()
+    line = next(f for f in state.facilities if f.id == "FAC-LINE")
+    return line.model_copy(update={"id": fid, "name": "New line", "lender_id": lender, "owner_approved": False,
+                                   "covenants": []})

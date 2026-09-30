@@ -6,7 +6,6 @@ from typing import Any
 
 import pytest
 
-from app.domain.fixtures import load_scenario
 from app.domain.models import (
     Actor,
     AddFacility,
@@ -24,7 +23,7 @@ from app.domain.models import (
     ViolationCode,
 )
 from app.operations import approval_id_of, security_summary
-from tests.operations.builders import Clock, op
+from tests.operations.builders import Clock, new_facility, op
 
 TIER3 = [
     (SignPersonalGuarantee, {"facility_id": "FAC-LINE"}, ViolationCode.TIER3_PERSONAL_GUARANTEE),
@@ -51,18 +50,11 @@ def test_tier3_refused_for_every_actor_and_nothing_changes(
     assert security_summary(store)["unauthorised_executions"] == 0
 
 
-def _new_facility(lender: str = "BANK-1", fid: str = "FAC-NEW") -> Any:
-    state, _ = load_scenario()
-    line = next(f for f in state.facilities if f.id == "FAC-LINE")
-    return line.model_copy(update={"id": fid, "name": "New line", "lender_id": lender, "owner_approved": False,
-                                   "covenants": []})
-
-
 @pytest.mark.parametrize("actor", [Actor.AGENT, Actor.COUNTERPARTY, Actor.SYSTEM])
 def test_add_facility_by_non_owner_is_refused(ex: Any, store: Any, clock: Clock, actor: Actor) -> None:
     before = store.get_state()
-    known = ex.execute(op(AddFacility, clock, actor=actor, facility=_new_facility("BANK-1")))
-    unknown = ex.execute(op(AddFacility, clock, actor=actor, facility=_new_facility("SHADOW-LENDER", "FAC-X")))
+    known = ex.execute(op(AddFacility, clock, actor=actor, facility=new_facility("BANK-1")))
+    unknown = ex.execute(op(AddFacility, clock, actor=actor, facility=new_facility("SHADOW-LENDER", "FAC-X")))
     assert known.status == unknown.status == OperationStatus.REFUSED
     assert known.tier == unknown.tier == Tier.TIER_3
     assert [v.code for v in known.violations] == [ViolationCode.INSUFFICIENT_AUTHORITY]
@@ -74,7 +66,7 @@ def test_add_facility_by_non_owner_is_refused(ex: Any, store: Any, clock: Clock,
 
 
 def test_add_facility_by_owner_goes_pending_then_owner_approves(ex: Any, store: Any, clock: Clock) -> None:
-    fac = _new_facility("NEW-BANK", "FAC-NEW")
+    fac = new_facility("NEW-BANK", "FAC-NEW")
     pending = ex.execute(op(AddFacility, clock, actor=Actor.OWNER, facility=fac))
     assert pending.status == OperationStatus.PENDING_APPROVAL and pending.tier == Tier.TIER_2
     assert "FAC-NEW" not in {f.id for f in store.get_state().facilities}
