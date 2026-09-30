@@ -63,7 +63,14 @@ def compute() -> dict[str, tuple[Any, str]]:
     )
     from app.domain.money import fmt_pct, round_half_up
     from app.financial import project, value_concessions
-    from app.funding import all_in_rate, break_even_discount, compare, extension_cost_bases, marginal_cost, plan
+    from app.funding import (
+        all_in_rate,
+        break_even_discount,
+        compare,
+        extension_cost_bases,
+        marginal_cost,
+        plan,
+    )
     from app.mandate import demo_owner_public_key_hex, load_signed_mandate
     from app.verifier import evaluate
 

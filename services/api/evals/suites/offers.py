@@ -98,7 +98,6 @@ def run(only: list[str] | None = None, **_: Any) -> SuiteResult:
     from app.domain.models import CompileStatus
     from app.mandate import demo_owner_public_key_hex, load_signed_mandate
     from app.verifier import evaluate
-
     from evals.forms import form_offer
 
     items, pairs = load()

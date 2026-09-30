@@ -1,0 +1,183 @@
+# Findings from the evaluation agent (agent/evals). Each is reproducible offline (LLM_MODE=cache: held-out
+# text is never in the fixture cache, so the rules grammar answers). Severity: high = a wrong commitment or a
+# gate failure; medium = a wrong or missing result on a safe path, or a target missed; low = display/cost.
+# Rendered into latest_report.md by scripts/evaluate.py.
+
+findings:
+  - id: EV-01
+    severity: high
+    owner: services/api/app/compiler (rules grammar) + services/api/app/nl (counterparty acceptance reply)
+    suite: offers
+    title: "“X% off the invoice, we pay today” compiles to a next-quarter rebate; a buyer message then executes ACCEPT_OFFER on terms the buyer never offered"
+    evidence: |
+      "We'll pay the ¥420,000 invoice now if you take 1% off it", "Knock 1% off the 420k invoice and we'll
+      settle it immediately", "Take 1% off the 420k invoice and we'll pay it today" and "Happy to settle the open
+      ¥420,000 invoice straight away if you knock 1% off" (H04, H05a, H05b, H10a) all compile to
+      CONTINGENT_REBATE on BUYER-1's expected next-quarter order (¥400,000) instead of IMMEDIATE_DISCOUNT on
+      RCV-A. The verdict is ACCEPT by accident at 1%. At 1.6% (H10b) the verdict becomes REJECT on the
+      concession cap instead of COUNTER on the discount cap. A derived probe shows the unsafe direction:
+      "Take 1.25% off the 420k invoice and we'll pay it today" should be COUNTER (implied APR 15.4% > 15%) but
+      is ACCEPT at Tier 1. Sent as a buyer message through /nl (actor COUNTERPARTY), the executor runs
+      ACCEPT_OFFER, records an ACTIVE commitment "CONTINGENT_REBATE 1.25% on ¥400,000", and the buyer is told
+      "Agreed as proposed." The buyer reads that as 1.25% off the invoice; the ledger holds a different promise.
+      The security catalogue (0% injection success) does not cover this: it is a benign-looking message.
+    repro: "uv run --project services/api python scripts/evaluate.py --probe \"Take 1.25% off the 420k invoice and we'll pay it today.\""
+    suggestion: |
+      In the grammar, bind "off" to the invoice/payment clause when an early-payment cue ("pay/settle
+      today/now/early/immediately", "提前") is present; otherwise abstain on the base instead of defaulting to a
+      rebate. Make the counterparty acceptance reply restate the booked terms from the template ("We accept a
+      1.25% rebate on next quarter's purchases up to ¥400,000") so a divergence is visible to the buyer.
+
+  - id: EV-02
+    severity: high
+    owner: services/api/app/compiler (abstention) + services/api/app/verifier/bind.py (rebate base)
+    suite: offers
+    title: "Unbounded or unscoped rebates are booked as a one-off next-quarter rebate instead of abstaining (INVARIANT 10)"
+    evidence: |
+      "2% rebate on everything we buy from you going forward" (H30) books a ONE_OFF rebate on the ¥400,000
+      next-quarter order (¥8,000); the real exposure is perpetual. It is rejected here only because ¥8,000 > ¥5,000.
+      Derived probe: "0.5% rebate on everything we buy from you going forward" is ACCEPTED at Tier 1 (¥2,000
+      booked) and, as a buyer message through /nl, executes ACCEPT_OFFER with "Agreed as proposed." — a perpetual
+      rebate accepted as a one-off. "Give us 1% off." (H23, no base, no period) is also bound to next quarter's
+      order and ACCEPTED. bind() fills a missing rebate base from the expected order even when the text names
+      no period, and the grammar drops "going forward"/"everything" for rebates.
+    repro: "uv run --project services/api python scripts/evaluate.py --probe \"0.5% rebate on everything we buy from you going forward.\""
+    suggestion: |
+      A rebate whose text states no period and no cap is UNRESOLVED_SCOPE; "going forward"/"from now on"/
+      "所有" on a rebate is RECURRING_PERPETUAL with no end, which must abstain. Only bind the expected order when
+      the text names that period ("next quarter", "下季度").
+
+  - id: EV-03
+    severity: high
+    owner: services/api/app/compiler (rules grammar)
+    suite: offers
+    title: "Compiler material error rate 22% on held-out offers (target ≤ 5%); 11 silent material errors (E2 needs 0)"
+    evidence: |
+      Beyond EV-01/EV-02: "…early at 1% and would like 0.5% back on next quarter's purchases" (H38) drops the
+      rebate and ACCEPTs (the ¥2,000 concession is never counted against the cap: unsafe direction);
+      "Give us 60 days on the next invoice instead of 45" (H12a) is booked as a perpetual extension (REJECT
+      instead of NEEDS_OWNER_APPROVAL; the near-miss pair with "every invoice" gets the same verdict);
+      "Our price goes up 0.5% on future invoices if you give us 60-day terms" (H39) drops the price increase;
+      "Either 60 or 75-day terms" (H27) silently books 75 days instead of asking. The form baseline (labels as
+      input) agrees with every label (50/50), so the gap (+38 points of verdict agreement) is the compiler's.
+    repro: "uv run --project services/api python scripts/evaluate.py --suite offers"
+    suggestion: |
+      Treat these held-out misses as a regression list for the grammar authors (without adding these exact
+      strings to the grammar's own tests), and rerun with --live to measure the LLM path, which this offline run
+      does not exercise.
+
+  - id: EV-04
+    severity: medium
+    owner: services/api/app/compiler (rules grammar, zh and number words)
+    suite: offers
+    title: "13 of 36 clear held-out offers abstain (safe, but the owner must re-key them)"
+    evidence: |
+      NO_VERDICT on clear terms: the EX01 paraphrases in en and zh (H01, H02), the zh EX02 paraphrase "这张发票我们
+      可以提前付，折扣1.5%" (H03), "提前付清这张42万的发票，给我们1%的折扣" (H06), "half a percent back" (H08b),
+      "instead of the usual 45" (H09a: "usual" trips the as-usual rule), "下季度的采购给我们返0.8%/2%" (H14a/b),
+      number words "one percent … four hundred and twenty thousand yuan" and "百分之一 … 四十二万" (H34/H35),
+      BUYER-2 rebates "0.8% back on next quarter's orders, up to ¥300,000" (H36/H37) and the weekly-run
+      operational concession (H40). Abstention precision is 46% (11 of 24 abstentions were needed). Four of eleven
+      same-economics pairs and three of seven near-miss pairs fail because one side abstains.
+    repro: "uv run --project services/api python scripts/evaluate.py --suite offers --only H02_ex01_paraphrase_zh,H06_early_1pct_zh,H34_words_en"
+    suggestion: "Rate/value attachment in zh (折扣X%, 返X%, 扣X%), 'X% back', number words; do not treat 'the usual 45' as an as-usual reference when a number follows."
+
+  - id: EV-05
+    severity: medium
+    owner: services/api/app/compiler/grounding.py
+    suite: offers
+    title: "Conflicting message/attachment pairs are reported as UNRESOLVED_SCOPE, not CONFLICTING_SOURCES"
+    evidence: |
+      A 1% discount vs a remittance advice saying 1.5% (H16), a ¥300,000 order vs a PO for ¥500,000 (H17) and
+      60-day terms vs a PO saying Net 45 (H18) all end in NO_VERDICT (safe), but with UNRESOLVED_SCOPE ("a material
+      field has no evidence") instead of CONFLICTING_SOURCES ("the documents disagree"), so the clarification
+      the owner sends does not name the disagreement. EX07 (the fixture) is detected; these held-out variants are not.
+    repro: "uv run --project services/api python scripts/evaluate.py --suite offers --only H16_conflict_rate,H17_conflict_amount_zh,H18_conflict_terms"
+
+  - id: EV-06
+    severity: medium
+    owner: services/api/app/funding/search.py (Search._slots, recovery_days)
+    suite: funding
+    title: "Router optimality 85% (22/26) against brute force: it only repays the line on baseline recovery days"
+    evidence: |
+      On R01, R03, R05 and R15 the brute force finds admissible plans ¥290–¥490 cheaper (8–11%): repay the line
+      on day 32 (RCV-A's receipt) and cover the rest with an advance or early payment on a later invoice
+      (RI:BUYER-1:2). The router's line slots use only the days on which the no-funding baseline recovers above the
+      floor (day 47 in these scenarios), so an earlier repayment made possible by the other source is never tried.
+      Every router plan passes an independent admissibility check and none uses an uncommitted facility.
+    repro: "uv run --project services/api python scripts/evaluate.py --suite funding --only R01,R05 --workers 2"
+    suggestion: "Add a line slot per receipt day after the first breach (as the brute force does), or re-derive the repayment day from the funded trajectory after filling the second source."
+
+  - id: EV-07
+    severity: medium
+    owner: services/api/app/verifier/evaluate.py (expected plan) + services/api/app/funding/search.py (EXPECTED basis)
+    suite: covenants
+    title: "POST /offers/{id}/evaluate can take 14 s: the display-only EXPECTED plan search blows up near the floor"
+    evidence: |
+      With opening cash ¥344,199.99 and a 1% early settlement of RCV-A (the reserve boundary case), the committed
+      plan takes 0.36 s but the EXPECTED-basis plan takes 13.4 s, and the API evaluate call takes 14.0 s. The
+      expected plan is shown only (INVARIANT 11) yet blocks the verdict. The golden state's expected plan takes 0.2 s.
+    repro: "uv run --project services/api python scripts/evaluate.py --suite covenants  # see 'Slowest verifier.evaluate'"
+    suggestion: "Compute the expected plan lazily or under a time budget (and cache it), returning the verdict first."
+
+  - id: EV-08
+    severity: medium
+    owner: services/api/app/nl/lexicon.py (FIXTURE_RE, APPROVAL_ID_RE)
+    suite: intent
+    title: "Ids glued to Chinese text are not recognised: “批准APR-000003。” approves nothing specific"
+    evidence: |
+      FIXTURE_RE and APPROVAL_ID_RE use \b, and Python treats CJK characters as word characters, so there is no
+      boundary in "批准APR-000003" or "评估一下EX05". I35 parses APPROVE without an approval id; I06 falls through to
+      AMBIGUOUS. With a space ("批准 APR-000003") both work.
+    repro: "uv run --project services/api python scripts/evaluate.py --suite intent --only I06,I35"
+    suggestion: "Use (?<![A-Za-z0-9]) / (?![A-Za-z0-9]) lookarounds instead of \\b."
+
+  - id: EV-09
+    severity: medium
+    owner: services/api/app/nl/lexicon.py + services/api/app/nl/intent_cache
+    suite: intent
+    title: "Offline intent accuracy 57%: most misses fall back to OUT_OF_SCOPE; 4 of 6 vague requests get no clarifying question"
+    evidence: |
+      "Payroll is coming and we're short, cover it", "Top up cash so we don't dip below the reserve",
+      "下周发工资钱不够，帮我安排融资", "把银行授信额度还掉", "现在账上还有多少钱？", "Are we close to breaching any
+      covenant?", "What happens if we agree to 75-day terms?" and "如果给2%的提前付款折扣会怎样？" miss. The
+      failure is safe (nothing executes) but the task is not done. "Can you handle it?", "帮我处理一下。", "Do the
+      usual." and "钱的事你看着办。" get the capability list instead of one question. Slot accuracy is 93%.
+    repro: "uv run --project services/api python scripts/evaluate.py --suite intent"
+
+  - id: EV-10
+    severity: medium
+    owner: product / evaluation design (spec §14 E2)
+    suite: offers
+    title: "E2 engine ≠ cap on only 27% of held-out offers (criterion ≥ 35%, i.e. 7/20)"
+    evidence: |
+      A static cap (accept when every stated rate ≤ 1.50% and terms ≤ 60 days) agrees with the engine (form inputs)
+      on 24 of 33 bookable held-out offers; the spec's kill line is "cap agrees on > 14/20" (70%). The engine
+      differs where it matters (60-day terms, 1.3% early pay over the APR limit, 1.5%+ rebates over the cap), but
+      this set was written to test the compiler, not to separate the engine from a cap. A dedicated E2 set
+      (20 offers by non-builders) is still needed.
+    repro: "uv run --project services/api python scripts/evaluate.py --suite offers"
+
+  - id: EV-11
+    severity: low
+    owner: services/api/app/funding/search.py
+    suite: covenants
+    title: "The router proposes a 1-fen early payment (cost ¥0.00) to cure a 1-fen shortfall"
+    evidence: |
+      In the reserve boundary case (shortfall 1 fen) the committed plan is EARLY_PAY of 1 fen of face on
+      FAC-EARLYPAY. Admissible on paper, meaningless in practice (no buyer settles 1 fen early); there is no
+      minimum ticket size.
+    repro: "uv run --project services/api python scripts/evaluate.py --suite covenants"
+    suggestion: "A minimum amount per source (e.g. ¥1,000, or the facility's minimum draw) in the menu."
+
+  - id: EV-12
+    severity: low
+    owner: services/api/app/covenants (display) + services/api/app/verifier (summary)
+    suite: covenants
+    title: "A one-fen DSCR breach reads “1.25x < 1.25x”, repeated eight times in the summary"
+    evidence: |
+      Debt service ¥72,000.01 gives DSCR 9000000/7200001 < 1.25 exactly; the breach is right and the exact values
+      are in the inputs, but the observed value is displayed as "1.25x", the formula reads "= 1.25x < 1.25x" and
+      the verdict summary lists the breach once per month and per covenant source (8 times).
+    repro: "uv run --project services/api python scripts/evaluate.py --suite covenants"
+    suggestion: "Show more decimals (or ‘just below’) when the rounded value equals the limit; group repeated breaches by code."

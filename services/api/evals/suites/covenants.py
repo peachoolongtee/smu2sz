@@ -9,6 +9,7 @@ through the router's own plans).
 
 from __future__ import annotations
 
+import time
 from typing import Any
 
 from evals.common import Failure, Metric, SuiteResult, quiet, ratio
@@ -82,7 +83,7 @@ def clean_down_cases() -> list[dict[str, Any]]:
     return out
 
 
-def run(**_: Any) -> SuiteResult:
+def run(plans: str = "all", **_: Any) -> SuiteResult:
     quiet()
     from app.covenants import evaluate as evaluate_covenants
     from app.domain.fixtures import load_scenario
@@ -99,7 +100,9 @@ def run(**_: Any) -> SuiteResult:
     for c in verifier_cases():
         st = _state_with(state0, **c["state"])
         offer = form_offer([doc("boundary case")], "BUYER-1", c["offer"], offer_id=f"EVAL-{c['id']}")
-        b = evaluate(offer, st, m, trusted_owner_key_hex=key)
+        t0 = time.perf_counter()
+        b = evaluate(offer, st, m, trusted_owner_key_hex=key, plans=plans)  # type: ignore[arg-type]
+        ms = round((time.perf_counter() - t0) * 1000, 1)
         hits = [v for v in b.verdict.violations if v.code.value == c["code"]]
         got = bool(hits)
         passed_chk = next((p for p in b.passed_checks if c["code"].startswith(p.code.split("_")[0])), None)
@@ -108,7 +111,7 @@ def run(**_: Any) -> SuiteResult:
                      "got_violation": got, "ok": got == c["violation"], "outcome": b.verdict.outcome.value,
                      "observed": observed, "month": hits[0].month if hits else None,
                      "day": hits[0].day if hits else None,
-                     "codes": [v.code.value for v in b.verdict.violations]})
+                     "codes": [v.code.value for v in b.verdict.violations], "verifier_ms": ms})
     line = next(f for f in state0.facilities if f.id == "FAC-LINE")
     st = _state_with(state0, cash_fen=CASH_NO_GAP)
     for c in clean_down_cases():
@@ -135,7 +138,12 @@ def run(**_: Any) -> SuiteResult:
     ok = sum(r["ok"] for r in rows)
     breaches = [r for r in rows if r["got_violation"] and r["group"] in ("DSCR", "LEVERAGE")]
     with_month = sum(r["month"] is not None for r in breaches)
-    res.details = {"rows": rows}
+    res.details = {"rows": rows, "plans": plans}
+    timed = [r for r in rows if "verifier_ms" in r]
+    slow = max(timed, key=lambda r: r["verifier_ms"])
+    res.metrics.append(Metric("verifier_slowest_call", f"Slowest verifier.evaluate on these states (plans={plans})",
+                              slow["verifier_ms"], f"{slow['verifier_ms'] / 1000:.1f} s ({slow['id']})",
+                              "informational", None, "covenants"))
     res.metrics.append(Metric("covenant_boundary_accuracy", "Covenant/mandate boundaries (exact, ±1 fen/bp/day)",
                               ratio(ok, len(rows)), f"{ok}/{len(rows)}", "100%", ok == len(rows), "covenants"))
     res.metrics.append(Metric("covenant_breach_month_reported", "DSCR/leverage breaches reported with their month",
