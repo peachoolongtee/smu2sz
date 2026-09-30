@@ -22,11 +22,12 @@ The main architect owns `app/domain/`, `app/api/`, `app/main.py`, `app/config.py
 | 3 | Egress guard (owner-requested) | agent/egress-guard | `app/egress/**`, `tests/egress/**`, `fixtures/security/canaries.yaml` (+ a canary in compiler prompts) | merged |
 | 3 | What-if sandbox (owner-requested) | agent/whatif | `app/whatif/**`, `tests/whatif/**`, `apps/web/app/whatif/**` (+ nav and dictionary entries) | merged |
 | 4 | Web live integration | agent/web-live | `apps/web/**` | merged |
-| 5 | Runtime hardening | agent/harden-runtime | operations, persistence, migrations, tiers, financial (drawn balances), security runner flags | running |
-| 5 | Semantics hardening | agent/harden-semantics | compiler, verifier, egress, nl offers | running |
-| 5 | Web chat + owner login | agent/web-chat | `apps/web/**` | running |
-| 5 | Deliverables | agent/deliverables | `docs/deliverables/**`, `scripts/build_deliverables.py` | running |
-| 5 | Eval agent | agent/evals | `evals/**` (except security), `scripts/evaluate.py` | after first integrated build |
+| 5 | Runtime hardening | agent/harden-runtime | operations, persistence, migrations, tiers, financial (drawn balances), security runner flags | merged |
+| 5 | Semantics hardening | agent/harden-semantics | compiler, verifier, egress, nl offers | merged |
+| 5 | Web chat + owner login | agent/web-chat | `apps/web/**` | merged |
+| 5 | Deliverables | agent/deliverables | `docs/deliverables/**`, `scripts/build_deliverables.py` | merged |
+| 5 | Eval agent | agent/evals | `evals/**` (except security), `scripts/evaluate.py`, `fixtures/heldout/**` | running |
+| 5 | Router performance | agent/router-perf | `app/funding/**` (+ a fast path in financial) | running |
 
 ## Return format (every coding agent)
 STATUS / FILES CHANGED / INTERFACES IMPLEMENTED / TESTS ADDED / TEST COMMAND / TEST RESULT / ASSUMPTIONS / KNOWN LIMITATIONS / INTERFACE CHANGE REQUESTS / NEXT INTEGRATION STEP
@@ -53,3 +54,7 @@ STATUS / FILES CHANGED / INTERFACES IMPLEMENTED / TESTS ADDED / TEST COMMAND / T
 - **L merged** and mounted: borrower file (HTML/DOCX, evidence labels, anonymised counterparties), alerts, reconciliation. Mock style label neutralised (no bank branding).
 - **G merged.** 122 attacks, 12 findings. **I merged**: /nl, with 37/37 scenarios. **Web live merged**: 29/29 Playwright in mock and live mode.
 - Main: owner-token gate on all owner routes, agent key on /operations and owner-actor /nl, DEMO_MODE=0 fails closed, refused credentials logged, 404/409 on approvals, env-configurable CORS, cured trajectory, audit documents. F-03, F-05, F-06 and F-08 fixed; detection 94.3%, zero harm. The verifier returns NO_VERDICT for unbookable inbound messages and on engine errors (fuzz finding).
+- **Runtime and semantics hardening merged.** All security findings F-01..F-12 are closed or mitigated: 122 attacks, 0 harm, detection 97.5%, event rate 69.7%. /nl turns take about 5 ms.
+- **Web chat + owner sign-in merged** (no token in the bundle). Deliverables drafted and built from the official templates.
+- Main: bank-feed credential for SYSTEM receipts, a commitment revoke route, 409 plus logging on approvals, corrupted-row tolerance, compiler flags logged on evaluate, the egress fix for glued scale words.
+- Checkpoint: dev = main at bf80efc. Backend 2,386 passed; web 46 Playwright passed (mock and live); scenarios 37/37.
