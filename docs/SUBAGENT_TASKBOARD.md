@@ -18,6 +18,8 @@ The main architect owns `app/domain/`, `app/api/`, `app/main.py`, `app/config.py
 | 3 | I: /nl harness | agent/nl | `app/nl/**`, `evals/e2e/**`, `tests/nl/**` | after wave 2 |
 | 4 | K: capex | agent/capex | `app/capex/**`, `tests/capex/**` | after core E2E |
 | 4 | L: borrower file + alerts | agent/borrower-file | `app/borrower_file/**`, `app/alerts/**`, `tests/borrower_file/**` | after core E2E |
+| 3 | Egress guard (owner-requested) | agent/egress-guard | `app/egress/**`, `tests/egress/**`, `fixtures/security/canaries.yaml` (+ a canary in compiler prompts) | running |
+| 3 | What-if sandbox (owner-requested) | agent/whatif | `app/whatif/**`, `tests/whatif/**`, `apps/web/app/whatif/**` (+ nav and dictionary entries) | queued: needs the verifier |
 | 5 | Eval agent | agent/evals | `evals/**` (except security), `scripts/evaluate.py` | after first integrated build |
 
 ## Return format (every coding agent)
