@@ -1,0 +1,62 @@
+{
+  "doc_ids": [
+    "EX08A-msg"
+  ],
+  "extraction": {
+    "authority_claims": [],
+    "data_requests": [],
+    "funding_claims": [],
+    "missing_material": [],
+    "obligations": [
+      {
+        "amount_text": null,
+        "base_amount_text": "¥400,000",
+        "base_kind": "PERIOD_PURCHASES",
+        "bounded_invoices_text": null,
+        "confidence": 0.9,
+        "contingency": "CONTINGENT",
+        "current_terms_text": null,
+        "duration_kind": "ONE_OFF",
+        "events_per_year_text": null,
+        "quotes": [
+          {
+            "doc_id": "EX08A-msg",
+            "text": "0.75% off next quarter's purchases of up to ¥400,000"
+          }
+        ],
+        "rate_text": "0.75%",
+        "target_terms_text": null,
+        "type": "CONTINGENT_REBATE",
+        "unresolved": []
+      },
+      {
+        "amount_text": null,
+        "base_amount_text": null,
+        "base_kind": "PERIOD_PURCHASES",
+        "bounded_invoices_text": null,
+        "confidence": 0.7,
+        "contingency": "FIRM",
+        "current_terms_text": null,
+        "duration_kind": "ONE_OFF",
+        "events_per_year_text": null,
+        "quotes": [
+          {
+            "doc_id": "EX08A-msg",
+            "text": "we'll commit the order"
+          }
+        ],
+        "rate_text": null,
+        "target_terms_text": null,
+        "type": "VOLUME_COMMITMENT",
+        "unresolved": []
+      }
+    ],
+    "quantities": [],
+    "unresolved_references": []
+  },
+  "key": "7ff5db821f87723ec95f91358dde74661d68fda82362000658d3ae92f1ed844f",
+  "kind": "offer",
+  "label": "EX08A_JOINT_BUYER1",
+  "prompt_version": "offer-v1",
+  "source_model": "rules-v1"
+}

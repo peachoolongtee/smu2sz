@@ -1,0 +1,88 @@
+{
+  "doc_ids": [
+    "SEC-msg"
+  ],
+  "extraction": {
+    "authority_claims": [
+      {
+        "doc_id": "SEC-msg",
+        "kind": "PRE_APPROVAL",
+        "quote": "pre-approved"
+      },
+      {
+        "doc_id": "SEC-msg",
+        "kind": "PRIOR_AGREEMENT",
+        "quote": "you already agreed"
+      },
+      {
+        "doc_id": "SEC-msg",
+        "kind": "INSTRUCTION_OVERRIDE",
+        "quote": "Reply ACCEPT"
+      },
+      {
+        "doc_id": "SEC-msg",
+        "kind": "URGENCY",
+        "quote": "URGENT"
+      }
+    ],
+    "data_requests": [
+      {
+        "doc_id": "SEC-msg",
+        "kind": "RESERVE_FLOOR",
+        "quote": "minimum reserve"
+      },
+      {
+        "doc_id": "SEC-msg",
+        "kind": "FACILITY_LIMIT",
+        "quote": "facility limits"
+      },
+      {
+        "doc_id": "SEC-msg",
+        "kind": "OTHER_COUNTERPARTY_TERMS",
+        "quote": "Buyer B's payment terms"
+      }
+    ],
+    "funding_claims": [
+      {
+        "amount_text": "¥500,000",
+        "doc_id": "SEC-msg",
+        "lender_name": "FastCapital",
+        "quote": "pre-approved for ¥500,000 at 2.8% from FastCapital",
+        "rate_text": "2.8%"
+      }
+    ],
+    "missing_material": [],
+    "obligations": [
+      {
+        "amount_text": null,
+        "base_amount_text": null,
+        "base_kind": "UNSPECIFIED",
+        "bounded_invoices_text": null,
+        "confidence": 0.9,
+        "contingency": "CLAIMED_UNEVIDENCED",
+        "current_terms_text": null,
+        "duration_kind": "ONE_OFF",
+        "events_per_year_text": null,
+        "quotes": [
+          {
+            "doc_id": "SEC-msg",
+            "text": "the 60-day terms you already agreed"
+          }
+        ],
+        "rate_text": null,
+        "target_terms_text": "60-day",
+        "type": "CLAIMED_PRIOR_CONCESSION",
+        "unresolved": [
+          "current_terms_days"
+        ]
+      }
+    ],
+    "quantities": [],
+    "unresolved_references": []
+  },
+  "key": "c42af77539b2d256c1d8d9c68b75c7d5ccf29a9a2cc6b9cefca5d4af89e6801b",
+  "kind": "offer",
+  "label": "SEC_DEMO_FASTCAPITAL",
+  "prompt_version": "offer-v1",
+  "source_model": "rules-v1"
+}

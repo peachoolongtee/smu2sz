@@ -1,0 +1,19 @@
+{
+  "doc_ids": [
+    "EX11-msg"
+  ],
+  "extraction": {
+    "authority_claims": [],
+    "data_requests": [],
+    "funding_claims": [],
+    "missing_material": [],
+    "obligations": [],
+    "quantities": [],
+    "unresolved_references": []
+  },
+  "key": "76211f57418815424c31b576c03e268fea893396bc5b1e8367a92ed018077820",
+  "kind": "offer",
+  "label": "EX11_CAPEX",
+  "prompt_version": "offer-v1",
+  "source_model": "rules-v1"
+}

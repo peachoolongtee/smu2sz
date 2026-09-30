@@ -1,0 +1,46 @@
+{
+  "doc_ids": [
+    "EX03-msg"
+  ],
+  "extraction": {
+    "authority_claims": [],
+    "data_requests": [],
+    "funding_claims": [],
+    "missing_material": [],
+    "obligations": [
+      {
+        "amount_text": null,
+        "base_amount_text": null,
+        "base_kind": "INVOICE",
+        "bounded_invoices_text": null,
+        "confidence": 0.9,
+        "contingency": "FIRM",
+        "current_terms_text": null,
+        "duration_kind": "ONE_OFF",
+        "events_per_year_text": null,
+        "quotes": [
+          {
+            "doc_id": "EX03-msg",
+            "text": "Early pay at 1.5%"
+          }
+        ],
+        "rate_text": "1.5%",
+        "target_terms_text": null,
+        "type": "IMMEDIATE_DISCOUNT",
+        "unresolved": []
+      }
+    ],
+    "quantities": [],
+    "unresolved_references": [
+      {
+        "doc_id": "EX03-msg",
+        "text": "Same arrangement as usual"
+      }
+    ]
+  },
+  "key": "52b108c245333011c978edd13dd81cbfc29838702396d38d1c1d38a66d581d20",
+  "kind": "offer",
+  "label": "EX03_AS_USUAL",
+  "prompt_version": "offer-v1",
+  "source_model": "rules-v1"
+}
