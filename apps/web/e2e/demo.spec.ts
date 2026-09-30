@@ -89,10 +89,11 @@ test("demo stepper walks Scene 1, Scene 2, Scene 3 and Security with the golden 
   // Security: the FastCapital message.
   await next(page, /\/security/);
   const events = page.locator('[data-testid^="event-"]');
-  await expect(events).toHaveCount(3);
-  await expect(events.nth(0)).toContainText("UNKNOWN_COUNTERPARTY");
-  await expect(events.nth(1)).toContainText("UNEVIDENCED_CLAIM");
-  await expect(events.nth(2)).toContainText("DATA_EXTRACTION");
+  // The three refusals (plus, in live mode, the compiler's injection flags as INJECTION events).
+  expect(await events.count()).toBeGreaterThanOrEqual(3);
+  await expect(events.filter({ hasText: "UNKNOWN_COUNTERPARTY" }).first()).toBeVisible();
+  await expect(events.filter({ hasText: "UNEVIDENCED_CLAIM" }).first()).toBeVisible();
+  await expect(events.filter({ hasText: "DATA_EXTRACTION" }).first()).toBeVisible();
   await expect(page.getByText("¥0.00").first()).toBeVisible();
   // The original message with the triggering spans highlighted, and the exact reply that went out.
   await expect(page.getByRole("group", { name: /Message from/ }).locator("mark").first()).toBeVisible();

@@ -50,6 +50,7 @@ from app.funding import (
     menu_view,
     plan,
 )
+from app.security import flag_events
 from app.verifier import evaluate
 
 router = APIRouter(dependencies=[Depends(require_owner)])
@@ -102,7 +103,10 @@ def evaluate_offer(offer_id: str, body: EvaluateIn | None = None) -> dict:
         v = bundle.verdict
         rt.store.put_verdict(v)
         rt.latest_verdict[offer_id] = v.id
-        for ev in bundle.security_events:
+        known = {e.id for e in bundle.security_events}
+        for ev in [*bundle.security_events, *flag_events(offer, rt.day)]:  # F-09: compiler authority flags too
+            if ev.id in known and ev not in bundle.security_events:
+                continue
             rt.store.add_security_event(ev)
         view = displayed(json.loads(v.model_dump_json()))
         view["counters"] = _guarded_counters(rt, offer, list(v.counters))

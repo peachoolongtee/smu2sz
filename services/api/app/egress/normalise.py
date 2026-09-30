@@ -122,7 +122,11 @@ def _dec(s: str) -> Decimal:
 
 def _scaled(factor: int) -> Callable[[re.Match[str]], str]:
     def repl(m: re.Match[str]) -> str:
-        return "¥" + canon(_dec(m.group(1)) * factor)
+        n = _dec(m.group(1))
+        scaled = "¥" + canon(n * factor)
+        # A number that is already a full amount ("¥300,000.00million") is ambiguous: keep both readings,
+        # so a guard never misses the literal value because a scale word was glued to it.
+        return f"¥{canon(n)} {scaled}" if n >= 1000 else scaled
 
     return repl
 

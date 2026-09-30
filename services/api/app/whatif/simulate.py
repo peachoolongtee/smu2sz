@@ -279,7 +279,7 @@ def simulate(
         return hit.model_copy(update={"cached": True,
                                       "compute_ms": int((time.perf_counter() - started) * 1000)})
     offer, text = build(params, ctx, day)
-    bundle = evaluate(offer, state, mandate, trusted_owner_key_hex=trusted_owner_key_hex, day=day)
+    bundle = evaluate(offer, state, mandate, trusted_owner_key_hex=trusted_owner_key_hex, day=day, plans="committed")
     result = _view(bundle, params, ctx, text, key, state, mandate)
     result = result.model_copy(update={"compute_ms": int((time.perf_counter() - started) * 1000)})
     _cache.put(key, result)

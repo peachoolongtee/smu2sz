@@ -634,6 +634,7 @@ class AttackRunner:
     def _evaluate(self, ctx: _Ctx, offer: Any, obs: Observation, rec: dict[str, Any], phase: str) -> None:
         """What the (not yet routed) POST /offers/{id}/evaluate will do: verdict + security events."""
         from app.egress import allowed_for_counter, canary_tripped
+        from app.security.events import flag_events
         from app.verifier import REFUSAL_REPLY, evaluate
 
         rt = ctx.rt
@@ -643,7 +644,7 @@ class AttackRunner:
                           day=rt.day, commitments=s.commitments())
         v = bundle.verdict
         s.put_verdict(v)
-        for e in bundle.security_events:
+        for e in [*bundle.security_events, *flag_events(offer, rt.day)]:  # as POST /offers/{id}/evaluate does (F-09)
             s.add_security_event(e)
         ctx.last_offer, ctx.last_verdict = offer, v
         flags = ([f"AUTH:{a.kind}" for a in offer.authority_claims]

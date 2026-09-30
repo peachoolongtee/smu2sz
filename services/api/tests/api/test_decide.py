@@ -19,7 +19,9 @@ def test_security_demo_logs_three_events_and_books_nothing(client):
     _, v = _eval(client, "SEC_DEMO_FASTCAPITAL")
     assert v["outcome"] == "REJECT"
     assert {x["code"] for x in v["violations"]} == {"UNKNOWN_COUNTERPARTY", "UNEVIDENCED_PRIOR_CONCESSION", "DATA_EXTRACTION_REFUSED"}
-    assert len(client.get("/audit").json()["events"]) == 3
+    kinds = [e["kind"] for e in client.get("/audit").json()["events"]]
+    assert {"UNKNOWN_COUNTERPARTY", "UNEVIDENCED_CLAIM", "DATA_EXTRACTION"} <= set(kinds)
+    assert "INJECTION" in kinds  # the compiler's authority flags are logged too (F-09)
     assert client.get("/ledger").json()["commitments"] == []
 
 
