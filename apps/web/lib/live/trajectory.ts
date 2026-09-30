@@ -104,7 +104,7 @@ function shortfall(verdict: VerdictView): { fen: number | null; display: string 
 
 const NOTE: Record<Mode, string> = {
   CONSERVATIVE:
-    "Conservative mode decides. Unconfirmed inflows are ignored and only COMMITTED facilities can be used. Covenant months are pro forma with the extension funded on the marginal source.",
+    "Conservative mode decides. Unconfirmed inflows are ignored and only COMMITTED facilities can be used. The monthly ratios are the projection itself; the pro forma ratios with a terms extension funded are in the verdict's covenant checks.",
   EXPECTED:
     "Expected mode is shown, never relied on. It is the current position without any offer applied; unconfirmed inflows and pending facilities may be included.",
 };

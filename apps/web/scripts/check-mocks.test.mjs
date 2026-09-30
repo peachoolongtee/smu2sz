@@ -63,3 +63,20 @@ test("funding, trajectory and capex mocks match the golden values", () => {
   assert.equal(s36.monthly_payment_display, "¥18,144.62");
   assert.equal(c.selected_id, "loan_36m");
 });
+
+test("alerts and reconciliation mocks are the recorded server output for the opening books", () => {
+  const a = mock("alerts.json");
+  assert.equal(a.counts.CRITICAL, 1);
+  assert.equal(a.alerts[0].day, 12);
+  assert.equal(a.alerts[0].amount_fen, 24000000);
+  assert.equal(a.alerts[0].amount_display, fmtYuan(24000000));
+  assert.ok(a.alerts[0].suggested.every((s) => s.executes_automatically === false));
+  // The suggestions are the cure from the funded facilities: the line, then invoice financing for the rest.
+  assert.deepEqual(a.alerts[0].suggested.map((s) => s.operation_kind), ["DRAW_FACILITY", "SUBMIT_INVOICE_FOR_FINANCING"]);
+
+  const r = mock("reconciliation.json");
+  assert.equal(r.receipts.length, 0);
+  assert.equal(r.outstanding[0].receivable_id, "RCV-A");
+  assert.equal(r.outstanding[0].face_display, "¥420,000.00");
+  assert.equal(r.chain_valid, true);
+});

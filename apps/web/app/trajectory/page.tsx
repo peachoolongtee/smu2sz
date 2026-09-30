@@ -53,7 +53,7 @@ export default function TrajectoryPage() {
             <label className="flex min-h-10 cursor-pointer items-center gap-2 text-sm text-ink-2">
               <input
                 type="checkbox"
-                checked={showCured}
+                checked={showCured && Boolean(view?.cured_trajectory)}
                 disabled={!view?.cured_trajectory}
                 onChange={(e) => setShowCured(e.target.checked)}
                 className="size-4 accent-brand-600"
