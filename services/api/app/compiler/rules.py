@@ -244,7 +244,7 @@ WEAK_UNBOUNDED_RE = rx(
     r"|所有(?:的)?(?:采购|订单|货|发票|进货)|全部(?:的)?(?:采购|订单)|一切采购", I)
 RECURRING_REBATE_RE = rx(r"\bevery\s+(?:quarter|month|year|order)\b|\beach\s+(?:quarter|month|year|order)\b|\bper\s+(?:quarter|order)\b|每(?:个)?(?:季度|月|年|单)", I)
 CURRENT_TERMS_RE = rx(
-    rf"\b(?:instead\s+of|rather\s+than)\s+(?:(?:the|our|your|my)\s+)?(?:(?:usual|current|normal|standard|existing|present|agreed)\s+)?(?P<a>\d+)"
+    r"\b(?:instead\s+of|rather\s+than)\s+(?:(?:the|our|your|my)\s+)?(?:(?:usual|current|normal|standard|existing|present|agreed)\s+)?(?P<a>\d+)"
     r"|\b(?:up|down)\s+from\s+(?P<b>\d+)|\bcurrent(?:ly)?\s+(?:terms\s+(?:are|of)\s+)?(?P<c>\d+)\s*[-‑]?\s*days?"
     r"|\bfrom\s+(?P<d>\d+)\s*[-‑]?\s*days?\s+to\b|(?:现在|目前|原来)(?:的)?(?:账期)?(?:是)?\s*(?P<e>\d+)\s*天", I)
 INVOICE_REF_RE = rx(r"\bthis\s+(?:one|invoice|bill)\b|\bthe\s+invoice\b|\bthat\s+invoice\b|本张|这张|这笔|该发票|货款", I)

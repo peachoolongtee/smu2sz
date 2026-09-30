@@ -135,21 +135,21 @@ _DISCLOSE = rx(
     r"|告诉|透露|发(?:给|送)|提供|说说|讲讲|列出|是多少|多少|哪些|什么", I)
 
 
-def _asked(t: str, pos: int, rx: re.Pattern[str] = _ASK) -> bool:
+def _asked(t: str, pos: int, pat: re.Pattern[str] = _ASK) -> bool:
     s, e = sentence_bounds(t, pos)
     if t[e : e + 1] in ("?", "？"):
         return True
-    return bool(rx.search(t[max(0, s - 120) : e]))
+    return bool(pat.search(t[max(0, s - 120) : e]))
 
 
 def find_data_requests(doc: SourceDocument) -> list[XDataRequest]:
     out: list[XDataRequest] = []
     f = fold(doc.text)
     t = f.text
-    rules = [(k, rx, _ASK if k in _NEEDS_ASK else None) for k, rx in _DATA_REQUESTS]
-    rules += [(k, rx, _DISCLOSE) for k, rx in _DATA_REQUESTS_ASKED]
-    for kind, rx, ask in rules:
-        for m in rx.finditer(t):
+    rules = [(k, pat, _ASK if k in _NEEDS_ASK else None) for k, pat in _DATA_REQUESTS]
+    rules += [(k, pat, _DISCLOSE) for k, pat in _DATA_REQUESTS_ASKED]
+    for kind, pat, ask in rules:
+        for m in pat.finditer(t):
             if not m.group(0).strip():
                 continue
             if ask is not None and not _asked(t, m.start(), ask):
@@ -220,8 +220,8 @@ _AUTHORITY: list[tuple[str, re.Pattern[str]]] = [
 def find_authority_claims(doc: SourceDocument) -> list[XAuthorityClaim]:
     out: list[XAuthorityClaim] = []
     f = fold(doc.text)
-    for kind, rx in _AUTHORITY:
-        for m in rx.finditer(f.text):
+    for kind, pat in _AUTHORITY:
+        for m in pat.finditer(f.text):
             q = _quote(f, m.start(), m.end(), " \n[<{\"")
             if q:
                 out.append(XAuthorityClaim(kind=kind, doc_id=doc.doc_id, quote=q))  # type: ignore[arg-type]
@@ -267,8 +267,8 @@ def find_funding_claims(doc: SourceDocument) -> list[XFundingClaim]:
             return None
         return _quote(f, *m.span(name)) or None
 
-    for rx in _FUNDING:
-        for m in rx.finditer(f.text):
+    for pat in _FUNDING:
+        for m in pat.finditer(f.text):
             if any(m.start() < e and s < m.end() for s, e in taken) or parse_money(m.group("amt")) is None:
                 continue
             name = re.sub(r"^.*(?:获得|来自|我们是|这里是|由|从)", "", (group(m, "name") or "").strip())
@@ -309,8 +309,8 @@ _QUANTITIES: list[tuple[str, re.Pattern[str]]] = [
 
 def find_quantities(doc: SourceDocument) -> list[XQuantity]:
     out: list[XQuantity] = []
-    for kind, rx in _QUANTITIES:
-        for m in rx.finditer(doc.text):
+    for kind, pat in _QUANTITIES:
+        for m in pat.finditer(doc.text):
             if parse_money(m.group("amt")) is None:
                 continue
             out.append(XQuantity(kind=kind, doc_id=doc.doc_id, quote=m.group(0).strip(), amount_text=m.group("amt").strip()))  # type: ignore[arg-type]
