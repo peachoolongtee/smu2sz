@@ -24,8 +24,10 @@ test("what-if: moving the terms slider changes the hypothetical verdict", async 
   await terms.press("ArrowLeft");
   await terms.press("ArrowLeft");
   await expect(page.getByTestId("whatif-terms-readout")).toHaveText("45 days");
-  await expect(outcome).toHaveAttribute("data-outcome", "ACCEPT");
-  await expect(page.getByTestId("whatif-codes")).toContainText("No violations");
+  // The 1% rebate is still in the package: within the cap, but only an early-pay discount on a named
+  // invoice is accepted autonomously, so the owner must approve it.
+  await expect(outcome).toHaveAttribute("data-outcome", "NEEDS_OWNER_APPROVAL");
+  await expect(page.getByTestId("whatif-codes")).not.toContainText("AGG_CONCESSION_EXCEEDED");
 
   // Option A preset: 45 days, 0.85% on ¥211,800 of the invoice.
   await page.getByTestId("whatif-preset-option_a").click();
