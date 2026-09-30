@@ -1,0 +1,53 @@
+%% TermsLedger v2: system architecture (source for the Technical Document, section 02).
+%% Render: npx -p @mermaid-js/mermaid-cli mmdc -i architecture.mmd -o architecture.png -w 2000
+%% scripts/build_deliverables.py embeds docs/deliverables/architecture.png when it exists;
+%% otherwise it uses the ASCII fallback in technical_document.md.
+flowchart LR
+  subgraph Untrusted["Untrusted input (data only)"]
+    BUYER["Buyer message / PO<br/>(zh + en, text or file)"]
+    LENDER["Lender message / term sheet"]
+    OWNERNL["Owner request<br/>(/nl, natural language)"]
+  end
+
+  subgraph Owner["Owner authority"]
+    MANDATE["Mandate v1<br/>Ed25519-signed limits<br/>+ 3 permission tiers"]
+    MENU["Funding menu<br/>(owner-approved facilities)"]
+    APPROVE["Tier-2 approval queue<br/>(X-Owner-Token)"]
+  end
+
+  subgraph API["FastAPI modular monolith (services/api)"]
+    NL["nl/: intent + typed slots,<br/>sessions: clarify, correct, fallback"]
+    COMPILER["compiler/: LLM or cache<br/>+ rules grammar<br/>typed obligations with exact spans,<br/>or abstain"]
+    ENGINE["financial/: daily cash, debt and<br/>forward-concession trajectory<br/>(conservative decides)"]
+    ROUTER["funding/: grid-search router,<br/>marginal cost of funds,<br/>break-even discount"]
+    COV["covenants/: DSCR, leverage,<br/>clean-down per facility"]
+    VERIFIER["verifier/: screen, predicates,<br/>verdict + formulas, counters<br/>(reads no free text)"]
+    KERNEL["counterparties/: deterministic<br/>buyer kernel (hidden reservation),<br/>mock lenders, template verbaliser"]
+    EXEC["operations/: executor<br/>tier, mandate, nonce, idempotency,<br/>circuit breaker"]
+    EGRESS["egress/: outbound guard<br/>(protected values, canaries)"]
+    LOG[("Append-only hash-chained<br/>operations log + commitments<br/>+ security events")]
+  end
+
+  EVID["GET /evidence (JSONL)<br/>scripts/verify_evidence.py"]
+  WEB["apps/web (Next.js)<br/>displays server-formatted money"]
+
+  BUYER --> COMPILER
+  LENDER --> COMPILER
+  OWNERNL --> NL
+  NL --> COMPILER
+  NL --> VERIFIER
+  COMPILER -->|"CompiledOffer (typed)"| VERIFIER
+  MANDATE --> VERIFIER
+  MENU --> ROUTER
+  ENGINE --> ROUTER
+  ENGINE --> COV
+  ROUTER --> VERIFIER
+  COV --> VERIFIER
+  VERIFIER -->|"Verdict"| KERNEL
+  VERIFIER -->|"Verdict -> typed operations<br/>(built by code)"| EXEC
+  KERNEL --> EGRESS
+  EXEC --> LOG
+  APPROVE --> EXEC
+  MANDATE --> EXEC
+  LOG --> EVID
+  API --> WEB
