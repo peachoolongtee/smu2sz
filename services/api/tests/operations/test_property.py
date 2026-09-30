@@ -100,7 +100,7 @@ def build_op(s: tuple, clock: Clock, model: BankModel) -> Any:
     if name == "finance":
         return op(SubmitInvoiceForFinancing, clock, facility_id="FAC-IF", receivable_id="RCV-A", advance_fen=s[1])
     if name == "receive":
-        return op(ReceivePayment, clock, receivable_id="RCV-A", amount_fen=s[1])
+        return op(ReceivePayment, clock, actor=Actor.SYSTEM, receivable_id="RCV-A", amount_fen=s[1])
     if name == "tier3":
         cls, fields = TIER3_OPS[s[1]]
         return op(cls, clock, actor=s[2], **fields)

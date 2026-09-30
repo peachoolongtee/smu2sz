@@ -9,6 +9,10 @@ operation object cannot carry, and each can only *raise* the tier:
 - `commitment_value_fen`: the value of the commitment an AcceptOffer/RecordCommitment creates
   (-> Tier 2 above `tier2_single_commitment_fen`).
 An operation type this function does not know is Tier 3 (fail closed).
+
+A receipt (`ReceivePayment`) is Tier 1 only from the bank feed (SYSTEM) or the owner. Reported by
+the agent or a counterparty ("we've paid, mark it settled") it is Tier 2: the owner confirms it
+before any cash is booked (F-02).
 """
 
 from __future__ import annotations
@@ -59,6 +63,10 @@ def _is_committed(state: FinancialState, facility_id: str) -> bool:
     return f is not None and f.owner_approved and f.status == FacilityStatus.COMMITTED
 
 
+# Who may record a receipt without owner confirmation: the bank feed and the owner.
+RECEIPT_TIER1_ACTORS = frozenset({Actor.SYSTEM, Actor.OWNER})
+
+
 def _commitment_amount(operation: object) -> int | None:
     """The new commitment an operation creates, in fen. Operating an existing COMMITTED facility
     (draw, invoice submission) is Tier 1 at any size within its owner-approved limit (spec v2
@@ -86,6 +94,8 @@ def tier_for(
     if not isinstance(operation, _TIER1_BASE):
         return Tier.TIER_3
 
+    if isinstance(operation, ReceivePayment) and operation.requested_by not in RECEIPT_TIER1_ACTORS:
+        return Tier.TIER_2
     if isinstance(operation, DrawFacility | SubmitInvoiceForFinancing) and not _is_committed(
         state, operation.facility_id
     ):
