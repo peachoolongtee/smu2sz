@@ -84,6 +84,7 @@ def tier_for(
     *,
     accepts_terms_change: bool = False,
     commitment_value_fen: int | None = None,
+    accepts_beyond_early_pay: bool = False,
 ) -> Tier:
     if isinstance(operation, _ALWAYS_TIER3):
         return Tier.TIER_3
@@ -104,7 +105,11 @@ def tier_for(
     if amount is not None and amount > mandate.tier2_single_commitment_fen:
         return Tier.TIER_2
     if isinstance(operation, AcceptOffer | RecordCommitment):
-        if accepts_terms_change:
+        # Autonomous (Tier 1) acceptance is limited to spec §5.3's example: early payment of a named
+        # invoice at a discount, nothing else changed. Any other promise (rebates, terms, price, volume,
+        # operational concessions) waits for the owner, so a misread message can never commit the
+        # business on its own (evaluation findings EV-01/EV-02; INVARIANT 10).
+        if accepts_terms_change or accepts_beyond_early_pay:
             return Tier.TIER_2
         if commitment_value_fen is not None and commitment_value_fen > mandate.tier2_single_commitment_fen:
             return Tier.TIER_2
