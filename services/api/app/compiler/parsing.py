@@ -41,8 +41,12 @@ _NUM = r"\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?"
 _UNIT = r"(?:[kK](?![a-zA-Z])|mn\b|million\b|thousand\b|m(?![a-zA-Z])|M(?![a-zA-Z])|万|亿|千)"
 _SUFFIX = r"(?:元|\s?yuan\b|\s?RMB\b|\s?CNY\b)"
 
+# A number with no currency marker is money only when the word right after it names a bill: "the 420k inv",
+# "the 420,000 invoice". `ctx` is an empty group that records that lookahead.
+_BILL_CTX = r"(?:(?P<ctx>)(?=\s?(?:inv(?:oice)?s?\b|inv\.|bills?\b|发票|货款)))"
+
 MONEY_RE = re.compile(
-    rf"(?P<cur>{_CUR})?(?P<num>{_NUM})(?:\s?(?P<unit>{_UNIT}))?(?P<suffix>{_SUFFIX})?",
+    rf"(?P<cur>{_CUR})?(?P<num>{_NUM})(?:\s?(?P<unit>{_UNIT}))?(?P<suffix>{_SUFFIX})?{_BILL_CTX}?",
 )
 
 _UNIT_MULT = {
@@ -97,8 +101,10 @@ MONEY_PAT = (
 def _money_value(m: re.Match[str]) -> int | None:
     cur, unit, suffix = m.group("cur"), m.group("unit"), m.group("suffix")
     unit_key = unit.lower() if unit and unit not in "千万亿" else unit
-    # A bare number is not money. Chinese 万/亿 are unambiguous; k/m need a currency marker.
-    if not (cur or suffix or unit_key in {"万", "亿"}):
+    # A bare number is not money. Chinese 万/亿 are unambiguous; k/m need a currency marker, or a bill noun
+    # right after a k/m amount or a comma-grouped one ("420k inv", "the 420,000 invoice").
+    bill = m.group("ctx") is not None and (unit_key in {"k", "m", "mn", "million", "thousand"} or "," in m.group("num"))
+    if not (cur or suffix or unit_key in {"万", "亿"} or bill):
         return None
     try:
         d = Decimal(m.group("num").replace(",", ""))
