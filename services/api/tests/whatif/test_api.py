@@ -76,7 +76,8 @@ def _join_prewarm() -> None:
 
 def test_warm_latency_under_400ms(client):
     _join_prewarm()  # a background warm-up from an earlier test would compete for the GIL
-    client.post("/whatif", json=ACTUAL)  # cold: fills the cache
+    client.post("/whatif", json=ACTUAL)  # cold: fills the cache (and starts the preset warm-up)
+    _join_prewarm()
     t = time.perf_counter()
     body = client.post("/whatif", json=ACTUAL).json()
     elapsed = time.perf_counter() - t
@@ -96,3 +97,12 @@ def test_presets_endpoint(client):
     assert body["grid"]["terms_days"] == {"min": 30, "max": 90, "step": 5}
     assert body["grid"]["settle_face_fen"]["max"] == 42_000_000
     assert body["receivable_face_display"] == "¥420,000.00" and body["current_terms_days"] == 45
+
+
+def test_post_carries_the_controls(client):
+    body = client.post("/whatif", json=ACTUAL).json()
+    c = body["controls"]
+    assert c["rate_labels"]["120"] == "1.20%" and c["rate_labels"]["85"] == "0.85%"
+    assert {"fen": 21_180_000, "display": "¥211,800.00"} in c["face_stops"]
+    assert c["face_stops"][-1] == {"fen": 42_000_000, "display": "¥420,000.00"}
+    assert set(c["presets"]) == {"actual", "option_a", "option_b", "status_quo"}

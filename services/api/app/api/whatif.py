@@ -59,10 +59,15 @@ def get_presets() -> dict[str, Any]:
 
 @router.post("/whatif")
 def post_whatif(params: WhatIfParams) -> dict[str, Any]:
+    """The hypothetical verdict for `params`, plus `controls` (presets, slider grid and server-formatted
+    slider labels) so one call gives the page everything it shows."""
     rt = get_runtime()
+    state = rt.store.get_state()
     try:
-        result = simulate(rt.store.get_state(), rt.store.get_mandate(), params,
-                          trusted_owner_key_hex=rt.owner_key_hex, day=rt.day)
+        result = simulate(state, rt.store.get_mandate(), params, trusted_owner_key_hex=rt.owner_key_hex,
+                          day=rt.day)
+        controls = presets(state, rt.day)
     except WhatIfParamError as e:
         raise HTTPException(422, str(e)) from e
-    return result.model_dump()
+    _start_prewarm()
+    return {**result.model_dump(), "controls": {"hypothetical": True, **controls}}

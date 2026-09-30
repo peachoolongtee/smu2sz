@@ -32,14 +32,15 @@ from app.domain.models import (
     Violation,
     ViolationCode,
 )
-from app.domain.money import bp, fmt_pct
+from app.domain.money import bp, fmt_pct, fmt_yuan
 from app.financial import project
 from app.funding import NoPermanentSourceError, break_even_discount
 from app.verifier import VerdictBundle, evaluate
 from app.whatif.offer import DOC_ID, Context, build, context
-from app.whatif.params import PRESETS, WhatIfParams, grid
+from app.whatif.params import PRESETS, RATE_STEP_BP, WhatIfParams, grid
 
 CACHE_SIZE = 256
+FACE_STOP_FEN = 1_000_000  # face slider stops every ¥10,000, plus the whole invoice and preset faces
 HYPOTHETICAL_NOTE = "Hypothetical: nothing is booked, sent or executed. The same verifier decides real offers."
 
 COVENANT_CODES = {"DSCR_MIN": ViolationCode.DSCR_BREACH, "LEVERAGE_MAX": ViolationCode.LEVERAGE_BREACH,
@@ -158,7 +159,8 @@ def _plan_view(p: FundingPlan | None, state: FinancialState) -> dict[str, Any] |
 
 
 def _series(traj_days: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    return [{k: d[k] for k in ("day", "closing", "debt", "below_floor")} for d in traj_days]
+    """The cash line only: day, closing Money {fen (axis), text (display)}, below_floor (server-decided)."""
+    return [{k: d[k] for k in ("day", "closing", "below_floor")} for d in traj_days]
 
 
 def _covenants(b: VerdictBundle) -> list[dict[str, Any]]:
@@ -224,14 +226,14 @@ def _view(b: VerdictBundle, params: WhatIfParams, ctx: Context, text: str, key: 
     traj = funded = None
     if b.trajectory is not None:
         tv = _dump(trajectory_view(b.trajectory, floor))
-        tv["days"] = _series(tv["days"])
-        traj = displayed(tv)
+        days = _series(tv.pop("days"))
+        traj = {**displayed(tv), "days": days}
         pc = b.plan_committed
         if pc is not None and pc.admissible and pc.actions:
             ft = project(state, b.bound_obligations, pc.actions, Mode.CONSERVATIVE, mandate.horizon_days, floor)
             fv = _dump(trajectory_view(ft, floor))
-            funded = displayed({"label": pc.label, "min_cash": fv["min_cash"], "min_cash_day": fv["min_cash_day"],
-                                "first_breach_day": fv["first_breach_day"], "days": _series(fv["days"])})
+            funded = {**displayed({"label": pc.label, "min_cash": fv["min_cash"], "min_cash_day": fv["min_cash_day"],
+                                   "first_breach_day": fv["first_breach_day"]}), "days": _series(fv["days"])}
     reserve_v = next((x for x in v.violations if x.code == ViolationCode.RESERVE_BREACH), None)
     spans = [{"obligation_type": o.type.value, "label": OBLIGATION_LABELS.get(o.type, o.type.value),
               "span": _dump(o.spans[0])} for o in b.bound_obligations]
@@ -287,14 +289,23 @@ def simulate(
 
 
 def presets(state: FinancialState, day: int = 0) -> dict[str, Any]:
-    """Preset slider positions and the slider grid for the current state."""
+    """Preset slider positions, the slider grid, and server-formatted labels for every slider stop,
+    so the UI shows readouts without formatting a rate or an amount itself (INVARIANT 13)."""
     ctx = context(state, day)
-    return displayed({
-        "presets": {k: v.model_dump() for k, v in PRESETS.items()},
-        "grid": grid(ctx.receivable.face_fen),
-        "current_terms_days": ctx.recurring.terms_days,
-        "receivable_id": ctx.receivable.id,
-        "receivable_face_fen": ctx.receivable.face_fen,
+    face = ctx.receivable.face_fen
+    g = grid(face)
+    rate_max = max(g[k]["max"] for k in ("discount_bp", "rebate_bp", "price_adjustment_bp"))
+    faces = set(range(FACE_STOP_FEN, face, FACE_STOP_FEN)) | {face}
+    faces |= {p.settle_face_fen for p in PRESETS.values() if p.settle_face_fen is not None and p.settle_face_fen <= face}
+    return {
+        **displayed({
+            "presets": {k: v.model_dump() for k, v in PRESETS.items()},
+            "grid": g,
+            "current_terms_days": ctx.recurring.terms_days,
+            "receivable_id": ctx.receivable.id,
+            "receivable_face_fen": face,
+        }),
+        "rate_labels": {str(b): fmt_pct(bp(b)) for b in range(0, rate_max + 1, RATE_STEP_BP)},
+        "face_stops": [{"fen": f, "display": fmt_yuan(f)} for f in sorted(faces)],
         "note": HYPOTHETICAL_NOTE,
-    })
-
+    }
