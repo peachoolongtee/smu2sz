@@ -9,8 +9,8 @@ import pytest
 
 from app.domain.models import FacilityKind, ObligationType, Outcome, Tier, ViolationCode
 from app.financial import finance_invoice_charges
-from app.verifier import CALC_VERSION, evaluate
-from tests.verifier.conftest import bundle, codes, compiled, declared_for
+from app.verifier import CALC_VERSION, evaluate, evaluate_term_sheet
+from tests.verifier.conftest import bundle, codes, compiled, compiled_term_sheet, declared_for
 
 EX01 = ("EX01_PACKAGE", "EX01B_REWORDED")
 
@@ -218,3 +218,17 @@ def test_ex06_bounded_extension(g):
     assert b.text == "We can extend terms by 15 days on the next three invoices if the 0.50% credit is firm on each of them."
     credit = b.obligations[1]
     assert credit.contingency.value == "FIRM" and credit.duration.invoices == 3 and credit.rate_bp == 50
+
+
+# ---------------------------------------------------------------- EX09 term sheet
+
+
+def test_ex09_term_sheet_shows_all_in_rate(state, mandate, key):
+    v = evaluate_term_sheet(compiled_term_sheet("EX09_TERM_SHEET_PG"), state, mandate, trusted_owner_key_hex=key)
+    assert v.outcome == Outcome.REJECT and v.required_tier == Tier.TIER_3
+    (pg,) = v.violations
+    assert pg.code == ViolationCode.TIER3_PERSONAL_GUARANTEE
+    assert pg.observed == "5.90%" and pg.inputs["headline_rate"] == "3.90%"
+    assert "5.90% all-in, not 3.90%" in pg.message and "All-in 5.90%" in v.summary
+    assert pg.spans and pg.spans[0].text.endswith("personal guarantee")
+    assert v.counters == [] and v.calc_version == "tl-v2.0"

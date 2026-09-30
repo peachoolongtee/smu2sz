@@ -51,7 +51,7 @@ from app.domain.models import (
 )
 from app.domain.money import DAYS_PER_YEAR, Ratio, bp, fmt_pct, fmt_yuan, post
 from app.financial import project, value_concessions
-from app.funding import ComparisonRow, NoPermanentSourceError, compare, marginal_cost
+from app.funding import ComparisonResult, ComparisonRow, NoPermanentSourceError, compare, marginal_cost
 from app.funding import plan as funding_plan
 from app.mandate import check_apr, check_predicates, check_validity
 from app.verifier.bind import bind, material_gaps, recurring_for
@@ -174,8 +174,8 @@ def _apr_checks(bound: list[Obligation], state: FinancialState, mandate: Mandate
         rows = {row.key: row for row in comparison}
         if "line_partial_early_pay" in rows:
             inputs["line_plus_partial_at_offered_rate"] = rows["line_partial_early_pay"].cost_display
-        if "router_optimum" in rows or any(row.result.value == "SELECTED" for row in comparison):
-            sel = next(row for row in comparison if row.result.value == "SELECTED")
+        sel = next((row for row in comparison if row.result == ComparisonResult.SELECTED), None)
+        if sel is not None:
             inputs["router_optimum"] = sel.cost_display
         v = check_apr(Ratio.of(rate), mandate, f"Early settlement of {r.id} at {fmt_pct(d)}")
         if v is not None:
