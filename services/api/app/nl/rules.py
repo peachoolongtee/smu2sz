@@ -9,6 +9,8 @@ Order matters and is fixed ("why"/"为什么" makes a request EXPLAIN before any
 
 from __future__ import annotations
 
+import re
+
 from app.domain.fixtures import load_offers
 from app.domain.models import FinancialState
 from app.nl import lexicon as lx
@@ -29,13 +31,30 @@ def fixture_id(text: str) -> str | None:
     return hits[0] if len(hits) == 1 else None
 
 
+_QUOTE_PAIRS = {"'": "'", "‘": "’", '"': '"', "“": "”", "「": "」", "『": "』"}
+
+
+def _pasted(body: str) -> str | None:
+    """The buyer's words after "X sent this:": inside its quotes when quoted, without the owner's own
+    trailing question ("What do you think?", 帮我看看能不能接)."""
+    body = body.strip()
+    close = _QUOTE_PAIRS.get(body[:1])
+    if close and body.rfind(close) > 0:
+        body = body[1:body.rfind(close)]
+    parts = re.split(r"(?<=[!?。！？])\s*|(?<=\.)(?!\d)\s*", body)
+    while len(parts) > 1 and (not parts[-1].strip() or lx.OWNER_TAIL.search(parts[-1])):
+        parts.pop()
+    out = " ".join(p.strip() for p in parts if p.strip()).strip()
+    return out or None
+
+
 def quoted(text: str) -> str | None:
     m = lx.QUOTED_RE.search(text)
     if m:
         return m.group(1).strip()
     m = lx.BUYER_SAYS_RE.search(text.strip())
     if m:
-        return (m.group(1) or m.group(2) or "").strip() or None
+        return _pasted(next((g for g in m.groups() if g), ""))
     return None
 
 
@@ -51,6 +70,8 @@ def _facility(text: str, state: FinancialState) -> str | None:
 def slots_from(text: str, state: FinancialState) -> Slots:
     rates = lx.rates(text)
     amounts = lx.amounts(text)
+    low = lx.norm(text)
+    rebate = next((r.value for r in rates if lx.REBATE_WORD.search(low[max(0, r.start - 25):r.end + 25])), None)
     days = lx.days(text)
     cps = lx.find_counterparty(text, state)
     tier3 = next((kind for kind, pat in lx.TIER3 if pat.search(text)), None)
@@ -61,6 +82,7 @@ def slots_from(text: str, state: FinancialState) -> Slots:
         facility_id=_facility(text, state),
         amount_fen=amounts[0].value if amounts else None,
         rate_bp=rates[0].value if rates else None,
+        rebate_bp=rebate,
         terms_days=days[0].value if days else None,
         invoices=lx.invoices(text),
         approval_id=appr.group(0).upper() if appr else None,
@@ -110,6 +132,8 @@ def parse(text: str, state: FinancialState, *, pending_plan: bool = False) -> Pa
         return hit(Intent.EVALUATE_OFFER, "offer_reference")
     if lx.STATUS_QUESTION.search(text) and not lx.ACCELERATE.search(text):
         return hit(Intent.SHOW_STATUS, "status_question")
+    if lx.NEGOTIATE_VERB.search(text):
+        return hit(Intent.NEGOTIATE, "negotiate")
     if lx.ACCELERATE.search(text):
         return hit(Intent.ACCELERATE_RECEIPT, "accelerate")
     if lx.NEGOTIATE.search(text):
@@ -117,7 +141,9 @@ def parse(text: str, state: FinancialState, *, pending_plan: bool = False) -> Pa
     if lx.REPAY.search(text):
         return hit(Intent.REPAY_FACILITY, "repay")
     if lx.FUND.search(text):
-        return hit(Intent.FUND_GAP, "fund")
+        # an explicit instruction executes; a request to find or suggest a way proposes (en and zh alike)
+        explore = bool(lx.FUND_EXPLORE.search(text))
+        return hit(Intent.FUND_GAP, "fund_explore" if explore else "fund", tentative=explore)
     if lx.FUND_SOFT.search(text):
         return hit(Intent.FUND_GAP, "fund_need", tentative=True)
     if lx.STATUS.search(text):

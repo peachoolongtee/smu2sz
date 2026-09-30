@@ -18,6 +18,8 @@ from fractions import Fraction
 
 from app.compiler import lexicon
 from app.compiler.parsing import (
+    MONEY_PAT,
+    find_money,
     find_rates,
     parse_count,
     parse_days,
@@ -241,9 +243,10 @@ def _unplaced_alternatives(docs: Sequence[SourceDocument], taken: Sequence[Sourc
 # A safety net under every backend: a rate or a payment-terms length stated in a concession clause that no
 # extracted item covers means a term was not read. Dropping it silently would book the rest of the package
 # without it (a silent material error), so the offer abstains instead (INVARIANT 10).
-_RATE_CLAUSE_CUE = rx(r"\b(?:off|discount|rebate|back|credit|price|premium|surcharge|cashback)\b|折扣|返|优惠|价格|扣|让利|加价|涨价",
+_RATE_CLAUSE_CUE = rx(r"\b(?:off|discount|rebate|back|credit|price|premium|surcharge|cashback|early|less|minus)\b|提前|折扣|返|优惠|价格|扣|让利|加价|涨价",
                       re.IGNORECASE)
-_TERMS_CLAUSE_CUE = rx(r"\bterms?\b|\bnet\s?\d|\bcredit\b|\bpay(?:ing|ment)?\s+(?:at|on|in|after)\b|账期|付款|结算|回款|月结",
+_TERMS_CLAUSE_CUE = rx(r"\bterms?\b|\bnet\s?\d|\bcredit\b|\bpay(?:ing|ment)?\s+(?:you\s+|us\s+)?(?:at|on|in|after|within)\b"
+                       r"|\b(?:instead\s+of|rather\s+than)\s+\d|账期|付款|结算|回款|月结",
                        re.IGNORECASE)
 _DAYS_MENTION = rx(r"(?<![\d.])\d{1,3}\s*[-‑]?\s*(?:days?\b|天)", re.IGNORECASE)
 
@@ -586,7 +589,7 @@ def _is_quantity(doc: SourceDocument, sp: SourceSpan, kind: str, value: int) -> 
 
 
 def _quantity_conflicts(docs: dict[str, SourceDocument], ex: OfferExtraction, abst: list[Abstention]) -> dict[str, set[int]]:
-    by_kind: dict[str, list[tuple[int, SourceSpan]]] = {}
+    by_kind: dict[str, list[tuple[int, SourceSpan, bool]]] = {}
     for q in ex.quantities:
         sp = locate(docs, q.doc_id, q.quote)
         if sp is None or q.amount_text.strip() not in sp.text:
@@ -595,10 +598,16 @@ def _quantity_conflicts(docs: dict[str, SourceDocument], ex: OfferExtraction, ab
         if v is None or not _is_quantity(docs[q.doc_id], sp, q.kind, v):
             continue
         lst = by_kind.setdefault(q.kind, [])
-        if not any(_overlaps(sp, s) for _, s in lst):
-            lst.append((v, sp))
+        if not any(_overlaps(sp, s) for _, s, _ in lst):
+            lst.append((v, sp, lexicon.labelled_quantity(q.kind, sp.text)))
     conflicts: dict[str, set[int]] = {}
-    for kind, vals in by_kind.items():
+    for kind, triples in by_kind.items():
+        # Two amounts disagree when both are labelled as the quantity ("Invoice amount: ..."), or they come
+        # from different documents. Two invoices merely named in one message ("the ¥420k invoice and the
+        # ¥150k one") are two invoices, not a conflict.
+        clash = [(a, b) for i, a in enumerate(triples) for b in triples[i + 1:]
+                 if a[0] != b[0] and (a[1].doc_id != b[1].doc_id or (a[2] and b[2]))]
+        vals = [(v, sp) for v, sp, _ in triples if any(v in (a[0], b[0]) for a, b in clash)]
         distinct = {v for v, _ in vals}
         if len(distinct) > 1:
             conflicts[kind] = distinct
@@ -629,6 +638,127 @@ def _obligation_conflicts(obs: Sequence[Obligation], abst: list[Abstention]) -> 
                 spans=[o.spans[0] for o in lst],
             ))
     return conflict
+
+
+# ---------------------------------------------------------------- early-pay base (the Tier-1 path)
+#
+# A pure early-pay discount on a named invoice is the only thing the agent may accept on its own, so its base
+# and rate must be unambiguous in the text, whatever the backend extracted (INVARIANT 10):
+# - a partial payment ("half of the ¥420,000 invoice (¥210,000)", 先付一半, "the rest on the due date") binds the
+#   partial amount when the text states one, and abstains: the verifier binds whole invoices only;
+# - two different amounts given for the invoice in one breath ("420,000元 / RMB 42,000", "42万元（或4.2万元）")
+#   are conflicting sources;
+# - several invoices ("0.8% off the invoices this month") leave the receivable unresolved;
+# - a second, different rate in the same sentence that no other term accounts for leaves the rate ambiguous.
+
+_BILL = r"(?:invoice|inv|bill|amount|balance|payment|sum|total|remittance|发票|货款|款)"
+PARTIAL_PAYMENT_RE = rx(
+    rf"\b(?:half|part|parts|portion|share|fraction|some|\d{{1,3}}(?:\.\d+)?\s*%|{MONEY_PAT})\s+of\s+"
+    rf"(?:the\s+|this\s+|that\s+|your\s+|our\s+|its\s+)?(?:[^\s.;,]+\s+){{0,3}}?{_BILL}"
+    rf"|{MONEY_PAT}\s+of\s+(?:the\s+|this\s+|that\s+|your\s+|our\s+)?{MONEY_PAT}"
+    r"|\bpartial(?:ly)?\b|\bpart[- ](?:pay|payment|settle|settlement)\b|\bin\s+(?:two|2|three|3|several)\s+(?:instal+ments|tranches|parts|payments)\b"
+    r"|\bsplit\s+(?:the|this|that|your|our)\s+(?:payment|invoice|bill|amount)\b"
+    r"|\b(?:that|this|the\s+early|the\s+first)\s+(?:part|portion|tranche|half)\b"
+    r"|\b(?:the\s+)?(?:rest|remainder|remaining\s+(?:amount|balance|part)|balance)\s+(?:on|at|by|when|later|due|in|after|will|to\s+follow|paid|as\s+normal|as\s+usual|on\s+the\s+(?:normal|usual|original)\s+due)\b"
+    r"|一半|半数|(?:一|大|小)?部分|其中|剩(?:下|余)|余款|尾款|余额(?:按|照|在|到期)|分(?:两|三|几|\d)(?:次|期|笔)|先付[^，。,;；]{0,6}?(?:成|%|％)|[一二三四五六七八九\d]成", re.IGNORECASE)
+_AMOUNT_ALT = re.compile(
+    rf"(?P<a>{MONEY_PAT})\s*(?:/|／|\bor\b|或者?|还是)\s*(?P<b>{MONEY_PAT})"
+    rf"|(?P<c>{MONEY_PAT})\s*[（(]\s*(?:or\s+|或者?\s*|即\s*|i\.?e\.?\s*)?(?P<d>{MONEY_PAT})\s*[)）]", re.IGNORECASE)
+PLURAL_INVOICES_RE = rx(
+    r"\b(?:invoices|bills|invs)\b|(?:这些|那些|几张|多张|所有|全部|各张|每张|两张|三张)(?:的)?(?:发票|单据|账单|货款)|发票们", re.IGNORECASE)
+
+
+def _sentences(docs: dict[str, SourceDocument], spans: Sequence[SourceSpan]) -> list[tuple[str, int, int]]:
+    out: list[tuple[str, int, int]] = []
+    for sp in spans:
+        s0, e0 = lexicon.sentence_bounds(docs[sp.doc_id].text, sp.start)
+        _, e1 = lexicon.sentence_bounds(docs[sp.doc_id].text, max(sp.start, sp.end - 1))
+        key = (sp.doc_id, s0, max(e0, e1))
+        if key not in out:
+            out.append(key)
+    return out
+
+
+def _amount_alternatives(text: str, s: int, e: int) -> list[tuple[int, int, set[int]]]:
+    out = []
+    for m in _AMOUNT_ALT.finditer(text, s, e):
+        x, y = (m.group("a"), m.group("b")) if m.group("a") else (m.group("c"), m.group("d"))
+        vx, vy = parse_money(x), parse_money(y)
+        if vx is not None and vy is not None and vx != vy:
+            out.append((m.start(), m.end(), {vx, vy}))
+    return out
+
+
+def early_pay_guard(
+    docs: dict[str, SourceDocument], obs: Sequence[Obligation], abst: list[Abstention]
+) -> tuple[list[Obligation], bool, bool]:
+    """(obligations, material abstention, conflicting sources) after checking every immediate discount's
+    base and rate against its own text."""
+    out: list[Obligation] = []
+    material = conflict = False
+    for ob in obs:
+        if ob.type != ObligationType.IMMEDIATE_DISCOUNT:
+            out.append(ob)
+            continue
+        sents = _sentences(docs, ob.spans)
+        doc_ids = {sp.doc_id for sp in ob.spans}
+        upd: dict[str, object] = {}
+        unresolved = list(ob.unresolved)
+        # 1. a partial payment anywhere in the discount's document
+        partial = next((SourceSpan(doc_id=d, start=m.start(), end=m.end(), text=m.group(0))
+                        for d in doc_ids for m in PARTIAL_PAYMENT_RE.finditer(docs[d].text)), None)
+        if partial is not None:
+            vals = sorted({f.value for d, s, e in sents for f in find_money(docs[d].text[s:e])})
+            part = vals[0] if len(vals) >= 2 else None  # "half of the ¥420,000 invoice (¥210,000)": the part
+            upd["base"] = ob.base.model_copy(update={"amount_fen": part, "receivable_id": None})
+            unresolved.append("base_amount")
+            material = True
+            abst.append(Abstention(
+                field=f"{ob.type.value}.base.partial",
+                reason="partial early payment: the discount applies to part of an invoice; the part is recorded but a "
+                       "whole-invoice early payment cannot be booked for it; clarification needed, nothing booked",
+                spans=[*ob.spans, partial]))
+        else:
+            # 2. two different amounts given for the same invoice
+            alts = [(d, a) for d, s, e in sents for a in _amount_alternatives(docs[d].text, s, e)]
+            if alts:
+                d, (a0, a1, _vals) = alts[0]
+                conflict = True
+                upd["base"] = ob.base.model_copy(update={"amount_fen": None})
+                unresolved.append("base_amount")
+                abst.append(Abstention(
+                    field="base.amount_fen:invoice_amount",
+                    reason="conflicting sources: the message states two different amounts for the invoice",
+                    spans=[*ob.spans, SourceSpan(doc_id=d, start=a0, end=a1, text=docs[d].text[a0:a1])]))
+        # 3. several invoices
+        plural = next((SourceSpan(doc_id=d, start=m.start(), end=m.end(), text=m.group(0))
+                       for d, s, e in sents for m in PLURAL_INVOICES_RE.finditer(docs[d].text, s, e)), None)
+        if plural is not None:
+            unresolved.append("scope")
+            material = True
+            abst.append(Abstention(
+                field=f"{ob.type.value}.base.receivable_id",
+                reason="unresolved scope: the discount names several invoices, so no single invoice can be bound; "
+                       "clarification needed, nothing booked", spans=[*ob.spans, plural]))
+        # 4. a second rate in the sentence that no other term accounts for
+        others = [sp for o in obs if o is not ob for sp in o.spans]
+        if partial is not None:
+            others.append(partial)  # "60% of the invoice" is a share of the base, not a second rate
+        stray = [(d, s + f.start, s + f.end) for d, s, e in sents for f in find_rates(docs[d].text[s:e])
+                 if f.value != ob.rate_bp
+                 and not any(o.doc_id == d and o.start < s + f.end and s + f.start < o.end for o in others)]
+        if ob.rate_bp is not None and stray:
+            d, r0, r1 = stray[0]
+            material = True
+            abst.append(Abstention(
+                field=f"{ob.type.value}.rate_bp.ambiguous",
+                reason="ambiguous: the sentence states another rate for this early payment; clarification needed, "
+                       "nothing booked",
+                spans=[*ob.spans, SourceSpan(doc_id=d, start=r0, end=r1, text=docs[d].text[r0:r1])]))
+        if unresolved != list(ob.unresolved):
+            upd["unresolved"] = list(dict.fromkeys(unresolved))
+        out.append(ob.model_copy(update=upd) if upd else ob)
+    return out, material, conflict
 
 
 # ---------------------------------------------------------------- offers
@@ -720,6 +850,8 @@ def build_offer(
                                       "booked rather than booking the package without it"))
     ordered = enforce_contingency(by_id, [ob for _, _, ob in built], abst)
     ordered = dedupe_obligations(ordered, abst)
+    ordered, guard_material, guard_conflict = early_pay_guard(by_id, ordered, abst)
+    material_abstain |= guard_material
     obligations: list[Obligation] = []
     conflict_values = set().union(*conflicts.values()) if conflicts else set()
     for n, ob in enumerate(ordered, start=1):
@@ -730,7 +862,7 @@ def build_offer(
         obligations.append(ob.model_copy(update=upd))
     obligation_conflict = _obligation_conflicts(obligations, abst)
 
-    if conflicts or obligation_conflict:
+    if conflicts or obligation_conflict or guard_conflict:
         status = CompileStatus.CONFLICTING_SOURCES
     elif material_abstain:
         status = CompileStatus.ABSTAINED
