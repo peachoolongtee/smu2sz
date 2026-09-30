@@ -11,6 +11,13 @@ what the offer alone already posts). Admissibility is decided from the same traj
 
 Timing follows ADR-0003: every source is requested on day 0 and lands after its lead time; the router
 searches amounts, not dates. A credit line is repaid on the first receipt that restores the floor.
+
+Speed: the search steers on `financial.project_cash`, which books exactly the postings `project`
+books and returns the same closing cash, peak debt and posted costs without building the display
+trajectory (a `Probe`). A probe that breaches the floor, exceeds the max APR or borrows against the
+mandate is inadmissible whatever the covenants say; any other probe that could become the best plan
+is re-run through the full `project` and `covenants.evaluate` (`Search.evaluate`) before it is
+accepted. So the chosen plan is the one the full evaluation of every candidate would choose.
 """
 
 from __future__ import annotations
@@ -41,7 +48,13 @@ from app.domain.models import (
     ViolationCode,
 )
 from app.domain.money import DAYS_PER_YEAR, Ratio, bp, fmt_yuan, gross_up_face
-from app.financial import EngineError, UncommittedFacilityError, project, recurring_receivable_id
+from app.financial import (
+    EngineError,
+    UncommittedFacilityError,
+    project,
+    project_cash,
+    recurring_receivable_id,
+)
 from app.funding.rates import MONTH_DAYS, all_in_rate, is_debt, pct, tier3_reasons
 from app.mandate import check_apr
 
@@ -183,6 +196,23 @@ class Eval:
         return (self.cost, len(self.actions), self.peak_debt, action_key(self.actions))
 
 
+@dataclass
+class Probe:
+    """A candidate on the cash-only fast path: what steers the search, and whether the plan is
+    already inadmissible without looking at covenants (`blocked`)."""
+
+    actions: tuple[FundingAction, ...]
+    ok: bool  # the engine accepted the actions (Eval.traj is not None)
+    cost: int | None = None
+    breach_day: int | None = None
+    shortfall: int = 0
+    peak_debt: int = 0
+    blocked: bool = False  # known inadmissible (reserve breach, max APR, no new borrowing, or evaluated)
+
+    def rank(self) -> tuple:
+        return (self.cost, len(self.actions), self.peak_debt, action_key(self.actions))
+
+
 def _akey(a: FundingAction) -> tuple:
     return (a.kind.value, a.facility_id, a.day, a.amount_fen, a.receivable_id or "", a.repay_day or -1, a.rate_bp or -1)
 
@@ -247,6 +277,8 @@ class Search:
         self.floor = mandate.min_cash_fen
         self.facilities = {f.id: f for f in state.facilities}
         self._cache: dict[tuple, Eval] = {}
+        self._probes: dict[tuple, Probe] = {}
+        self._rule_cache: dict[tuple, bool] = {}  # per action: breaks the max APR or no new borrowing
         self.baseline = project(self.pstate, obligations, [], self.mode, mandate.horizon_days, self.floor)
         self.base_cost = _cost_total(self.baseline)
         below = [p for p in self.baseline.days if p.closing_fen < self.floor]
@@ -255,7 +287,7 @@ class Search:
         self.rcvs = receivables(state, self.baseline)
         self.slots = self._slots() if below else []
         self.best: Eval | None = None
-        self.best_effort: Eval | None = None
+        self._best_effort: Eval | Probe | None = None
         self.unit: dict[Slot, Fraction] = {}  # probed cost per fen of net cash raised
         self.unit_amt: dict[Slot, Fraction] = {}  # probed cost per fen of action amount (face)
 
@@ -390,23 +422,94 @@ class Search:
         self._cache[key] = ev
         return ev
 
-    def consider(self, ev: Eval) -> None:
+    def _breaks_rules(self, a: FundingAction) -> bool:
+        """The action alone makes any plan inadmissible: max APR, or new debt the mandate forbids
+        (the same checks `evaluate` makes, without the trajectory)."""
+        k = _akey(a)
+        hit = self._rule_cache.get(k)
+        if hit is None:
+            f = self.facilities[a.facility_id]
+            hit = (check_apr(Ratio.of(self.action_rate(a)), self.mandate, f.name) is not None
+                   or (not self.mandate.allow_new_borrowing and is_debt(f)))
+            self._rule_cache[k] = hit
+        return hit
+
+    def probe(self, actions: list[FundingAction] | tuple[FundingAction, ...]) -> Probe:
+        """`evaluate` on the cash-only fast path (no covenants): the same cost, breach day,
+        shortfall and peak debt, and whether the engine accepts the actions at all."""
+        acts = tuple(actions)
+        key = action_key(acts)
+        hit = self._probes.get(key)
+        if hit is not None:
+            return hit if hit.actions == acts else replace(hit, actions=acts)
+        full = self._cache.get(key)
+        if full is not None:
+            pr = Probe(acts, ok=full.traj is not None, cost=full.cost, breach_day=full.breach_day,
+                       shortfall=full.shortfall, peak_debt=full.peak_debt,
+                       blocked=full.traj is not None and not full.admissible)
+            self._probes[key] = pr
+            return pr
+        try:
+            path = project_cash(self.pstate, self.obligations, list(acts), self.mode, self.mandate.horizon_days,
+                                self.floor)
+        except EngineError:  # includes UncommittedFacilityError; `evaluate` gives no trajectory either
+            pr = Probe(acts, ok=False)
+            self._probes[key] = pr
+            return pr
+        floor = self.floor
+        breach_day = next((d for d, c in enumerate(path.closings) if c < floor), None)
+        shortfall = 0
+        if breach_day is not None:
+            shortfall = floor - min(path.closings)
+        blocked = breach_day is not None or any(self._breaks_rules(a) for a in acts)
+        pr = Probe(acts, ok=True, cost=path.cost_fen - self.base_cost, breach_day=breach_day, shortfall=shortfall,
+                   peak_debt=path.peak_debt_fen, blocked=blocked)
+        self._probes[key] = pr
+        return pr
+
+    @property
+    def best_effort(self) -> Eval | None:
+        """The inadmissible candidate with the smallest shortfall (then rank), fully evaluated. It
+        is tracked only while no admissible plan is known: it is read only when there is none."""
+        be = self._best_effort
+        if be is None or isinstance(be, Eval):
+            return be
+        return self.evaluate(be.actions)
+
+    def consider(self, ev: Eval | Probe) -> None:
+        """Keep the best admissible candidate by rank and, while there is none, the best effort."""
+        if isinstance(ev, Probe):
+            if not ev.ok:
+                return
+            if ev.blocked:
+                self._keep_best_effort(ev)
+                return
+            if self.best is not None and ev.rank() >= self.best.rank():
+                return  # it cannot become the best, and the best effort no longer matters
+            ev = self.evaluate(ev.actions)  # it could become the best: the full evaluation decides
         if ev.traj is None:
             return
         if ev.admissible:
             if self.best is None or ev.rank() < self.best.rank():
                 self.best = ev
-        elif self.best_effort is None or (ev.shortfall, ev.rank()) < (self.best_effort.shortfall, self.best_effort.rank()):
-            self.best_effort = ev
+        else:
+            self._keep_best_effort(ev)
+
+    def _keep_best_effort(self, ev: Eval | Probe) -> None:
+        if self.best is not None:
+            return
+        be = self._best_effort
+        if be is None or (ev.shortfall, ev.rank()) < (be.shortfall, be.rank()):
+            self._best_effort = ev
 
     # ------------------------------------------------------------ grid search
 
-    def fill(self, prefix: list[FundingAction], slot: Slot, prune: bool = True) -> Eval | None:
+    def fill(self, prefix: list[FundingAction], slot: Slot, prune: bool = True) -> Probe | None:
         """Add `slot` for exactly the residual the prefix leaves (iterating on any shortfall the
         added source's own postings cause), capped at the slot's capacity."""
-        pe = self.evaluate(prefix) if prefix else None
+        pe = self.probe(prefix) if prefix else None
         if pe is not None:
-            if pe.traj is None:
+            if not pe.ok:
                 return None
             self.consider(pe)
             if pe.breach_day is None:
@@ -419,12 +522,12 @@ class Search:
         if prune and slot in self.unit and self._beaten(base_cost + self._lb(slot, short, net=True)):
             return None
         net = short
-        ev: Eval | None = None
+        ev: Probe | None = None
         for _ in range(4):
             amount = min(slot.cap_fen, slot.amount_for_net(net))
-            ev = self.evaluate([*prefix, slot.action(amount)])
+            ev = self.probe([*prefix, slot.action(amount)])
             self.consider(ev)
-            if ev.traj is None or ev.breach_day is None or amount == slot.cap_fen or ev.breach_day < slot.arrival:
+            if not ev.ok or ev.breach_day is None or amount == slot.cap_fen or ev.breach_day < slot.arrival:
                 break
             net += ev.shortfall
         return ev
@@ -435,9 +538,9 @@ class Search:
     def _probe_units(self) -> None:
         for s in self.slots:
             amount = min(s.cap_fen, s.amount_for_net(self.need_fen))
-            ev = self.evaluate([s.action(amount)])
+            ev = self.probe([s.action(amount)])
             self.consider(ev)
-            if ev.traj is None or ev.cost is None:
+            if not ev.ok or ev.cost is None:
                 continue
             net = amount - ev.cost if s.kind in (FundingActionKind.EARLY_PAY, FundingActionKind.DISCOUNT_BILL) else amount
             if net > 0:
