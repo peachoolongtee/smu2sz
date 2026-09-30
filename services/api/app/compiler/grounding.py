@@ -220,6 +220,8 @@ def _ground_obligation(
         abst.append(Abstention(field=f"{label}.rate_bp", reason="material field has no grounded span: rate or amount missing", spans=spans))
         return None, True
 
+    # The stated target terms are always carried (`target_terms_days`); `days_delta` only when the text
+    # states both the current and the new terms. Otherwise the verifier binds the current terms from state.
     days_delta: int | None = None
     if x.type == ObligationType.TERMS_EXTENSION and target is None:
         abst.append(Abstention(field=f"{label}.days_delta", reason="material field has no grounded span: target terms missing", spans=spans))
@@ -258,6 +260,7 @@ def _ground_obligation(
         rate_bp=rate_bp,
         amount_fen=amount_fen,
         days_delta=days_delta,
+        target_terms_days=target,
         base=base,
         contingency=contingency,
         duration=duration,
@@ -325,7 +328,7 @@ def _obligation_conflicts(obs: Sequence[Obligation], abst: list[Abstention]) -> 
     conflict = False
     for (t, _), lst in groups.items():
         doc_sets = {o.spans[0].doc_id for o in lst}
-        values = {(o.rate_bp, o.days_delta, o.amount_fen) for o in lst}
+        values = {(o.rate_bp, o.days_delta, o.target_terms_days, o.amount_fen) for o in lst}
         if len(doc_sets) > 1 and len(values) > 1:
             conflict = True
             abst.append(Abstention(
