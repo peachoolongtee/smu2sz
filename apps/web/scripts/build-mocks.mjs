@@ -32,8 +32,8 @@ eq(g.line_interest_150k_32d + g.v1_partial_discount, g.v1_optimum_total, "v1 tot
 const IF_INTEREST_210K = 134630; // 210,000 x 7.80% x 30/365
 const IF_FEE_210K = 52500; // 210,000 x 0.25%
 eq(IF_INTEREST_210K + IF_FEE_210K, g.if_cost_210k_30d, "IF 210k cost split");
-const CURE_INTEREST = 28875; // 45,040 x 7.80% x 30/365
-const CURE_FEE = 11260; // 45,040 x 0.25%
+const CURE_INTEREST = 57750; // 45,040 x 7.80% x 60/365 (two 30-day periods, day 5 to day 62)
+const CURE_FEE = 22520; // 45,040 x 0.25% x 2 periods
 eq(CURE_INTEREST + CURE_FEE, g.reserve_cure_cost_if, "cure cost split");
 const EXP_BRIDGE = 129197;
 const EXP_GGL = 976033;
@@ -430,7 +430,7 @@ function verdictEx01(suffix, offerId, sourceOffer) {
         curable: true,
         cure_cost_fen: g.reserve_cure_cost_if,
         cure_note:
-          "Carry the ¥45,040.00 shortfall from day 47 to day 62 on invoice financing (the committed marginal source) for ¥401.35.",
+          "Carry the ¥45,040.00 shortfall on invoice financing against the day-2 invoice (the committed marginal source): requested day 0, lands day 5, repaid day 62, two 30-day periods, ¥802.70.",
         formula: "closing_cash(day) ≥ min_cash, checked on every day of the conservative trajectory",
         inputs: {
           cash_after_day_20: fmtYuan(g.cash_day20),
@@ -516,7 +516,7 @@ function verdictEx01(suffix, offerId, sourceOffer) {
     state_version: 1,
     calc_version: "calc-1.0",
     summary:
-      "REJECT: the package books ¥26,455.62 of forward concessions against a ¥5,000.00 cap, and cash falls to ¥254,960.00 on day 47 (curable for ¥401.35). Covenants hold. Two counters priced from the marginal cost of funds are attached.",
+      "REJECT: the package books ¥26,455.62 of forward concessions against a ¥5,000.00 cap, and cash falls to ¥254,960.00 on day 47 (curable for ¥802.70). Covenants hold. Two counters priced from the marginal cost of funds are attached.",
     passed_checks: [
       {
         code: "IMMEDIATE_DISCOUNT_EXCEEDED",

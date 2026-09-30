@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.capex import router as capex_router
 from app.api.decide import router as decide_router
 from app.api.offers import router as offers_router
+from app.api.whatif import router as whatif_router
 from app.api.operations import router as operations_router
 from app.api.read import router as read_router
 from app.config import get_settings, load_dotenv
@@ -24,6 +25,7 @@ app.include_router(offers_router)
 app.include_router(operations_router)
 app.include_router(decide_router)
 app.include_router(capex_router)
+app.include_router(whatif_router)
 
 
 @app.get("/health")

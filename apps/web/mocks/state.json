@@ -335,6 +335,17 @@
       }
     ],
     "forward_concessions": [],
+    "expected_orders": [
+      {
+        "counterparty_id": "BUYER-1",
+        "label": "next quarter",
+        "start_day": 92,
+        "end_day": 182,
+        "amount_fen": 40000000,
+        "firm": false,
+        "amount_display": "¥400,000.00"
+      }
+    ],
     "counterparties": [
       {
         "id": "BUYER-1",

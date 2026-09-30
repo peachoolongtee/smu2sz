@@ -46,8 +46,8 @@
       "observed": "¥254,960.00",
       "limit": "¥300,000.00",
       "curable": true,
-      "cure_cost_fen": 40135,
-      "cure_note": "Carry the ¥45,040.00 shortfall from day 47 to day 62 on invoice financing (the committed marginal source) for ¥401.35.",
+      "cure_cost_fen": 80270,
+      "cure_note": "Carry the ¥45,040.00 shortfall on invoice financing against the day-2 invoice (the committed marginal source): requested day 0, lands day 5, repaid day 62, two 30-day periods, ¥802.70.",
       "formula": "closing_cash(day) ≥ min_cash, checked on every day of the conservative trajectory",
       "inputs": {
         "cash_after_day_20": "¥354,960.00",
@@ -71,7 +71,7 @@
           "text": "extend our standard terms to 60 days going forward"
         }
       ],
-      "cure_cost_display": "¥401.35"
+      "cure_cost_display": "¥802.70"
     }
   ],
   "concession_values": [
@@ -241,20 +241,20 @@
     "costs": [
       {
         "label": "Invoice financing interest (one 30-day period)",
-        "fen": 28875,
+        "fen": 57750,
         "facility_id": "FAC-IF",
         "formula": "¥45,040.00 × 7.80% × 30 / 365 = ¥288.75",
-        "display": "¥288.75"
+        "display": "¥577.50"
       },
       {
         "label": "Invoice financing fee (0.25% per advance)",
-        "fen": 11260,
+        "fen": 22520,
         "facility_id": "FAC-IF",
         "formula": "¥45,040.00 × 0.25% = ¥112.60",
-        "display": "¥112.60"
+        "display": "¥225.20"
       }
     ],
-    "total_cost_fen": 40135,
+    "total_cost_fen": 80270,
     "admissible": true,
     "violations": [],
     "marginal_cost_annual": {
@@ -266,13 +266,13 @@
     "rejected": [],
     "label": "Carry the day-47 shortfall on invoice financing until day 62",
     "need_display": "¥45,040.00",
-    "total_cost_display": "¥401.35"
+    "total_cost_display": "¥802.70"
   },
   "required_tier": "TIER_1",
   "mandate_version": 1,
   "state_version": 1,
   "calc_version": "calc-1.0",
-  "summary": "REJECT: the package books ¥26,455.62 of forward concessions against a ¥5,000.00 cap, and cash falls to ¥254,960.00 on day 47 (curable for ¥401.35). Covenants hold. Two counters priced from the marginal cost of funds are attached.",
+  "summary": "REJECT: the package books ¥26,455.62 of forward concessions against a ¥5,000.00 cap, and cash falls to ¥254,960.00 on day 47 (curable for ¥802.70). Covenants hold. Two counters priced from the marginal cost of funds are attached.",
   "passed_checks": [
     {
       "code": "IMMEDIATE_DISCOUNT_EXCEEDED",
