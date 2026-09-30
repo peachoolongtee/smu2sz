@@ -18,6 +18,7 @@ from fractions import Fraction
 
 from app.compiler import lexicon
 from app.compiler.parsing import (
+    find_rates,
     parse_count,
     parse_days,
     parse_money,
@@ -234,6 +235,34 @@ def _unplaced_alternatives(docs: Sequence[SourceDocument], taken: Sequence[Sourc
             if _unit_class(units[1]) == "rate" and not _CONCESSION_CUE.search(d.text, s0, e0):
                 continue
             out.append(SourceSpan(doc_id=d.doc_id, start=m.start(), end=m.end(), text=m.group(0)))
+    return out
+
+
+# A safety net under every backend: a rate or a payment-terms length stated in a concession clause that no
+# extracted item covers means a term was not read. Dropping it silently would book the rest of the package
+# without it (a silent material error), so the offer abstains instead (INVARIANT 10).
+_RATE_CLAUSE_CUE = rx(r"\b(?:off|discount|rebate|back|credit|price|premium|surcharge|cashback)\b|折扣|返|优惠|价格|扣|让利|加价|涨价",
+                      re.IGNORECASE)
+_TERMS_CLAUSE_CUE = rx(r"\bterms?\b|\bnet\s?\d|\bcredit\b|\bpay(?:ing|ment)?\s+(?:at|on|in|after)\b|账期|付款|结算|回款|月结",
+                       re.IGNORECASE)
+_DAYS_MENTION = rx(r"(?<![\d.])\d{1,3}\s*[-‑]?\s*(?:days?\b|天)", re.IGNORECASE)
+
+
+def _unplaced_terms(docs: Sequence[SourceDocument], covered: Sequence[SourceSpan]) -> list[tuple[str, SourceSpan]]:
+    out: list[tuple[str, SourceSpan]] = []
+    for d in docs:
+        hits = [("rate_bp", f.start, f.end, _RATE_CLAUSE_CUE) for f in find_rates(d.text)]
+        hits += [("target_terms_days", m.start(), m.end(), _TERMS_CLAUSE_CUE) for m in _DAYS_MENTION.finditer(d.text)]
+        for fld, s, e, cue in hits:
+            if any(sp.doc_id == d.doc_id and sp.start < e and s < sp.end for sp in covered):
+                continue
+            s0, e0 = lexicon.sentence_bounds(d.text, s)
+            lo, hi = s0, max(e0, e)  # a terms length: its sentence talks about payment terms
+            if fld == "rate_bp":  # a rate: its own clause names a concession (not "sales grew 12%")
+                parts = [(cs, ce) for cs, ce in lexicon.clauses(d.text, s0, max(e0, e)) if cs < e and s < ce]
+                lo, hi = (parts[0][0], parts[-1][1]) if parts else (s0, e0)
+            if cue.search(d.text, lo, hi):
+                out.append((fld, SourceSpan(doc_id=d.doc_id, start=s, end=e, text=d.text[s:e])))
     return out
 
 
@@ -682,6 +711,13 @@ def build_offer(
         abst.append(Abstention(field="offer.alternatives", spans=[sp],
                                reason="ambiguous: the text offers alternative values for a term; clarification needed, "
                                       "nothing booked"))
+    covered = [*placed, *(f.span for f in funding), *(r.span for r in data_requests), *(c.span for c in authority)]
+    covered += [sp for a in abst for sp in a.spans]
+    for fld, sp in _unplaced_terms(docs, covered):
+        material_abstain = True
+        abst.append(Abstention(field=f"offer.unread_term.{fld}", spans=[sp],
+                               reason="a stated rate or payment-terms length was not read into any term; nothing "
+                                      "booked rather than booking the package without it"))
     ordered = enforce_contingency(by_id, [ob for _, _, ob in built], abst)
     ordered = dedupe_obligations(ordered, abst)
     obligations: list[Obligation] = []

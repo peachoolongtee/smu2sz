@@ -121,9 +121,12 @@ TERMS = [
     (rx(r"\bnet\s?(?P<to>\d+)\b", I), 0.75),
     # "give us 60 days", "we'd like 55 days on the next invoice" (the ask itself, no "instead of")
     (rx(rf"\b{_ASK_DAYS}\s+(?P<to>\d+)\s*[-‑]?\s*days?\b(?!\s+(?:early|earlier|sooner|ahead|before))", I), 0.8),
+    # "we'll pay at 60 days", "we pay on 45-day terms" ("pay within 10 days" is early payment, not terms)
+    (rx(r"\b(?:we'?ll\s+|we\s+will\s+|we\s+)?pay\s+(?:at|on)\s+(?P<to>\d+)\s*[-‑]?\s*days?\b", I), 0.8),
     # zh: "账期从30天延长到45天", "账期延长到60天", "以后账期改为60天"
     (rx(rf"账期{G(12)}从\s*(?P<from>\d+)\s*天?{G(6)}(?:延长|改|调整|缩短|变|定|放宽)\w?(?:为|到|至|成)\s*(?P<to>\d+)\s*天"), 0.95),
     (rx(rf"账期{G(12)}(?:延长|改|调整|缩短|变|定|放宽|统一)(?:为|到|至|成)\s*(?P<to>\d+)\s*天"), 0.95),
+    (rx(r"账期(?:都|一律|统一|全部)(?:按|是)?\s*(?P<to>\d+)\s*天"), 0.9),
     (rx(r"(?P<to>\d+)\s*天(?:的)?账期"), 0.8),
     (rx(r"账期\s*[:：为是]?\s*(?P<to>\d+)\s*天"), 0.8),
 ]
@@ -178,7 +181,7 @@ CLAIMED = [
 
 PRICE_ADJ = [
     # "we'll add a 0.5% loyalty credit", "we'll pay you a 0.5% premium"
-    (rx(rf"\b(?:we'?ll|we\s+will|we\s+can|we\s+could)\s+(?:add|give\s+you|pay\s+you|offer\s+you|throw\s+in|include)\s+(?:a\s+|an\s+)?(?P<rate>{RATE})\s+(?:loyalty\s+|volume\s+|bonus\s+|goodwill\s+)?(?:credit|bonus|premium|uplift|price\s+increase|top[- ]?up)", I), Contingency.CONTINGENT),
+    (rx(rf"\b(?:we'?ll|we\s+will|we\s+can|we\s+could)\s+(?:add|give\s+you|pay(?:\s+you)?|offer(?:\s+you)?|throw\s+in|include)\s+(?:a\s+|an\s+)?(?P<rate>{RATE})\s+(?:loyalty\s+|volume\s+|bonus\s+|goodwill\s+|price\s+)?(?:credit|bonus|premium|uplift|price\s+increase|top[- ]?up)", I), Contingency.CONTINGENT),
     # "a 0.45% price adjustment on future invoices"
     (rx(rf"(?:a\s+)?(?P<rate>{RATE})\s+(?:price\s+(?:adjustment|increase|uplift|rise)|(?:higher|more)\s+(?:prices?|per\s+unit|on\s+(?:the\s+)?price))", I), Contingency.FIRM),
     # "our price goes up 0.5%", "prices will go up by 0.5%", "raise the unit price by 0.5%", "we'll pay 0.3% more"
@@ -191,11 +194,11 @@ PRICE_ADJ = [
 
 OPERATIONAL = [
     rx(rf"\b(?:consolidate|combine|merge|batch|split|reroute|redirect)\s+(?:all\s+|our\s+|your\s+)?(?:deliveries|shipments|orders|delivery|shipping|drops)\b{_G}{{0,40}}", I),
-    rx(r"\b(?:deliver|ship)\s+(?:everything\s+|all\s+orders\s+)?(?:directly\s+)?to\s+our\s+[\w\s-]{0,30}?(?:DC|warehouse|distribution\s+cent(?:er|re)|depot|stores?)\b", I),
+    rx(r"\b(?:deliver|ship)\s+(?:everything\s+|all\s+orders\s+|all\s+deliveries\s+)?(?:directly\s+)?to\s+our\s+[\w\s-]{0,30}?(?:DC|warehouse|distribution\s+cent(?:er|re)|depot|hub|stores?)\b", I),
     rx(r"\b(?:you\s+)?(?:cover|pay\s+for|absorb)\s+(?:the\s+|all\s+)?(?:shipping|freight|delivery)(?:\s+costs?)?\b", I),
     # delivery schedule changes the supplier absorbs: "switch to a weekly delivery run", "deliver twice a week"
     rx(r"\b(?:switch|move|change|go)\s+(?:us\s+|you\s+)?(?:over\s+)?to\s+(?:a\s+)?(?:weekly|daily|twice[- ]weekly|fortnightly|bi-?weekly)\s+(?:delivery\s+|shipping\s+)?(?:runs?|deliver(?:y|ies)|schedule|shipments?|drops?)\b", I),
-    rx(r"\b(?:weekly|daily|twice[- ]weekly|fortnightly|bi-?weekly)\s+(?:delivery\s+)?(?:runs?|deliver(?:y|ies)|drops?|shipments?)\s+(?:to|into)\s+(?:our|the)\s+[\w\s-]{0,30}?(?:DC|warehouse|distribution\s+cent(?:er|re)|depot|stores?|site)\b", I),
+    rx(r"\b(?:weekly|daily|twice[- ]weekly|fortnightly|bi-?weekly)\s+(?:delivery\s+)?(?:runs?|deliver(?:y|ies)|drops?|shipments?)\s+(?:to|into)\s+(?:our|the)\s+[\w\s-]{0,30}?(?:DC|warehouse|distribution\s+cent(?:er|re)|depot|hub|stores?|site)\b", I),
     rx(r"\b(?:deliver|ship)\s+(?:to\s+us\s+)?(?:every\s+(?:week|day|monday|tuesday|wednesday|thursday|friday)|twice\s+a\s+week|weekly|daily)\b", I),
     rx(rf"(?:合并|集中|统一)(?:送货|发货|配送|交付|出货){_G}{{0,20}}"),
     rx(rf"(?:送到|配送到|发到)我们的?{G(12)}(?:仓库?|配送中心|门店)"),
@@ -379,6 +382,7 @@ def _days_phrase(m: re.Match[str]) -> str | None:
 
 
 _CAP_START = rx(r"\s*(?:(?:but\s+|and\s+)?(?:up\s+to|a\s+maximum\s+of|capped\s+at|at\s+most|no\s+more\s+than|maximum|max\.?)\b|最多|不超过|上限|封顶|最高)", I)
+_DISCOUNT_TAIL = rx(r"\s*(?:的)?(?:现金)?(?:折扣|优惠|贴息)|\s+(?:cash\s+)?discount\b", I)
 _REBATE_GAP = rx(rf"返|{_PERIOD_ZH}|{_PERIOD}|以后|今后|每(?:个)?(?:季度|月|年)", I)
 
 
@@ -413,6 +417,9 @@ def _discounts(st: _Doc) -> list[XObligation]:
         # "提前付款，下季度返1%": the rate after the early-pay phrase belongs to a rebate, not to this discount
         if _REBATE_GAP.search(t, s, m.start("rate")):
             return None
+        tail = _DISCOUNT_TAIL.match(t, e)
+        if tail:
+            e = tail.end()
         seg = t[s:e]
         money = re.search(AMT, seg)
         amount_text = None

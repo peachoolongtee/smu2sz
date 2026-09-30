@@ -232,3 +232,52 @@ def test_order_amount_conflict_zh(rules_compiler: Compiler) -> None:
 def test_order_worth_conflict_en(rules_compiler: Compiler) -> None:
     offer = _compile(rules_compiler, "Please ship an order worth ¥250,000.", "PO 17: order total ¥280,000.")
     assert offer.status == CompileStatus.CONFLICTING_SOURCES
+
+
+# ---------------------------------------------------------------- no term is dropped silently
+
+
+@pytest.mark.parametrize(("text", "days"), [
+    ("Settle early at 1% for us, and after that we'll pay at 50 days.", 50),
+    ("我们提前付款，折扣1%；今后账期一律按50天。", 50),
+])
+def test_terms_stated_as_how_we_pay(rules_compiler: Compiler, text: str, days: int) -> None:
+    offer = _compile(rules_compiler, text)
+    ext = [o for o in offer.obligations if o.type == T.TERMS_EXTENSION]
+    assert [o.target_terms_days for o in ext] == [days] and offer.status == CompileStatus.COMPILED
+
+
+@pytest.mark.parametrize("text", [
+    "这笔货款提前结清，按百分之一点一的折扣。",
+    "提前付清三十万的货款，给我们0.9%的现金折扣。",
+])
+def test_trailing_discount_word_is_part_of_the_term(rules_compiler: Compiler, text: str) -> None:
+    offer = _compile(rules_compiler, text)
+    assert [o.type for o in offer.obligations] == [T.IMMEDIATE_DISCOUNT] and offer.status == CompileStatus.COMPILED
+
+
+@pytest.mark.parametrize("text", [
+    "We'd like our credit extended, 70 days would suit us, and 1% off next quarter.",
+    "Early at 1% is fine; our finance team also wants a 0.4% volume credit.",
+    "账期我们希望放宽一些，大概70天，另外下季度返1%。",
+])
+def test_unread_rate_or_terms_abstain(rules_compiler: Compiler, text: str) -> None:
+    offer = _compile(rules_compiler, text)
+    assert offer.status == CompileStatus.ABSTAINED
+    assert any(a.field.startswith("offer.unread_term") for a in offer.abstentions)
+
+
+def test_conditional_premium_is_read_as_a_contingent_gain(rules_compiler: Compiler) -> None:
+    offer = _compile(rules_compiler, "If our returns stay under 2%, we'll pay a 0.7% price premium on next month's orders.")
+    (ob,) = offer.obligations
+    assert (ob.type, ob.rate_bp, ob.contingency.value) == (T.PRICE_ADJUSTMENT, 70, "CONTINGENT")
+
+
+def test_informational_numbers_do_not_abstain(rules_compiler: Compiler) -> None:
+    offer = _compile(rules_compiler, "Our sales grew 12% last year. We'd like 1% off next quarter's orders.")
+    assert offer.status == CompileStatus.COMPILED and [o.type for o in offer.obligations] == [T.CONTINGENT_REBATE]
+
+
+def test_delivery_to_a_hub_is_operational(rules_compiler: Compiler) -> None:
+    offer = _compile(rules_compiler, "Deliver everything to our Shenzhen hub and we'll pay at 30 days.")
+    assert {o.type for o in offer.obligations} == {T.OPERATIONAL_CONCESSION, T.TERMS_EXTENSION}
