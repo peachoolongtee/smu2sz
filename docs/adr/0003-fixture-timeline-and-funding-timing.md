@@ -20,3 +20,8 @@ An invoice-financing advance against an invoice not yet issued is requested on t
 
 ## Cure cost
 The day-47 shortfall is carried on the committed marginal source for a *permanent* need: invoice financing, because clean-down rules out the line. Requested on day 0 against the day-2 invoice, the advance lands on day 5 and is repaid on day 62: 57 days, billed as two 30-day periods, for **¥802.70** (¥577.50 interest + ¥225.20 fee). The extension's structural cost is ¥1,871.30 per invoice, and the screen shows both.
+
+## Addendum (router, 1 Oct): repayment days and a minimum action
+- **Repayment day.** Funds are still requested on day 0. A bullet line may now be repaid on **any** receipt day after the gap opens on which cash stays at or above the floor, not only on the day the unfunded baseline recovers. That brought the router to optimality on 26 of 26 brute-force scenarios (evaluation finding EV-06). The golden plan is unchanged: ¥2,712.94.
+- **Minimum action ¥1,000** (`MIN_ACTION_FEN`). No draw, advance or early payment is smaller. A smaller residual is rounded up, and a source with less than ¥1,000 available is not used. This avoids absurd plans such as a 1-fen early payment for a 1-fen shortfall (EV-11), at a cost of a few yuan at most in rare cases.
+- **Expected-basis cap.** The display-only EXPECTED search stops after 2,000 candidates, and its label says so. The COMMITTED search, which decides, is never capped.
