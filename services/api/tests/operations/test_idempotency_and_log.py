@@ -26,6 +26,16 @@ def test_same_key_twice_is_duplicate_with_no_double_effect(ex: Any, store: Any, 
     assert (second.seq, second.prev_hash) == (2, first.entry_hash)
 
 
+def test_results_record_the_executed_day_and_duplicates_keep_the_original(ex: Any, store: Any, clock: Clock) -> None:
+    clock.day = 4
+    first = ex.execute(op(DrawFacility, clock, key="K-DAY", facility_id="FAC-LINE", amount_fen=1_000_000))
+    assert first.effective_day == 4 and first.approval_id is None
+    assert OperationResult.model_validate_json(store.operations()[0].result_json).effective_day == 4
+    clock.day = 9
+    dup = ex.execute(op(DrawFacility, clock, key="K-DAY", facility_id="FAC-LINE", amount_fen=1_000_000))
+    assert dup.status == OperationStatus.DUPLICATE and dup.effective_day == 4
+
+
 def test_duplicate_of_a_refusal_stays_refused(ex: Any, store: Any, clock: Clock) -> None:
     first = ex.execute(op(IssueEquity, clock, key="K-EQ", amount_fen=1))
     second = ex.execute(op(IssueEquity, clock, key="K-EQ", amount_fen=1))

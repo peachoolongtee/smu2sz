@@ -86,6 +86,17 @@ def test_accept_offer_with_terms_change_is_tier2():
     assert tier(o, commitment_value_fen=LIMIT + 1) == Tier.TIER_2
 
 
+def test_record_commitment_with_terms_change_is_tier2():
+    o = op(m.RecordCommitment, commitment_id="c", nonce="n")
+    assert tier(o) == Tier.TIER_1
+    assert tier(o, accepts_terms_change=True) == Tier.TIER_2
+    assert tier(o, commitment_value_fen=LIMIT + 1) == Tier.TIER_2
+
+
+def test_terms_change_flag_does_not_affect_other_operations():
+    assert tier(op(m.RejectOffer, offer_id="o", reason_codes=[]), accepts_terms_change=True) == Tier.TIER_1
+
+
 def test_owner_cannot_lower_tier3():
     o = op(m.ChangeMandate, actor=Actor.OWNER, new_version=2)
     assert tier(o, accepts_terms_change=False, commitment_value_fen=0) == Tier.TIER_3
