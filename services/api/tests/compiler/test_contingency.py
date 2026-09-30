@@ -93,7 +93,7 @@ def test_ex01_discount_and_extension_firm_rebate_contingent_whatever_the_backend
     assert offer.status == CompileStatus.COMPILED
     assert _labels(offer) == {ObligationType.IMMEDIATE_DISCOUNT: F, ObligationType.TERMS_EXTENSION: F,
                               ObligationType.CONTINGENT_REBATE: C}
-    changed = [a for a in offer.abstentions if a.field.endswith(".contingency")]
+    changed = [a for a in offer.abstentions if a.field.startswith("note:") and a.field.endswith(".contingency")]
     assert len(changed) == sum(1 for t, c in label.items() if c != _labels(offer)[t])
 
 
@@ -143,7 +143,7 @@ def test_fr05_conditional_premium_labelled_firm_is_forced_contingent() -> None:
     doc, ex = _fr05(F)
     offer = _compile([doc], ex)
     assert _labels(offer)[ObligationType.PRICE_ADJUSTMENT] == C
-    note = next(a for a in offer.abstentions if a.field == "PRICE_ADJUSTMENT.contingency")
+    note = next(a for a in offer.abstentions if a.field == "note:PRICE_ADJUSTMENT.contingency")
     assert "future business event" in note.reason and note.spans[0].text == PREMIUM
 
 
@@ -218,7 +218,7 @@ def test_repeated_phrase_is_booked_once_and_the_dedupe_is_noted() -> None:
     assert offer.status == CompileStatus.COMPILED
     assert [o.rate_bp for o in offer.obligations] == [150]
     note = next(a for a in offer.abstentions if "duplicate" in a.reason)
-    assert note.field == "obligation:IMMEDIATE_DISCOUNT" and len(note.spans) == 2
+    assert note.field == "note:obligation:IMMEDIATE_DISCOUNT" and len(note.spans) == 2
     assert note.spans[0].start != note.spans[1].start
 
 
@@ -246,3 +246,22 @@ def test_duplicate_keeps_the_more_conservative_contingency() -> None:
     )
     offer = _compile([doc], ex)
     assert [(o.type, o.contingency) for o in offer.obligations] == [(ObligationType.PRICE_ADJUSTMENT, C)]
+
+
+def test_correction_notes_are_not_reported_as_material_gaps() -> None:
+    """A relabel or dedupe note never makes an offer ABSTAINED, and a NO_VERDICT on an abstained offer
+    lists only the real gaps."""
+    from app.compiler.schema import XMissing
+
+    ex = _ex01({ObligationType.IMMEDIATE_DISCOUNT: C, ObligationType.TERMS_EXTENSION: C,
+                ObligationType.CONTINGENT_REBATE: C})
+    docs = offer_documents("EX01_PACKAGE")
+    assert _compile(docs, ex).status == CompileStatus.COMPILED
+    missing = XMissing(obligation_type=ObligationType.IMMEDIATE_DISCOUNT, missing_field="rate_bp",
+                       doc_id=docs[0].doc_id, quote="We'll")
+    offer = _compile(docs, ex.model_copy(update={"missing_material": [missing]}))
+    assert offer.status == CompileStatus.ABSTAINED
+    state, _ = load_scenario()
+    v = evaluate(offer, state, load_signed_mandate(), trusted_owner_key_hex=demo_owner_public_key_hex()).verdict
+    assert v.outcome == Outcome.NO_VERDICT
+    assert v.violations[0].observed == "IMMEDIATE_DISCOUNT.rate_bp"

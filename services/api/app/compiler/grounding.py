@@ -319,6 +319,9 @@ _TAIL_STOP = re.compile(
     re.IGNORECASE,
 )
 _LENGTHENING = re.compile(r"\b(?:extend\w*|lengthen\w*|longer|more\s+time)\b|延长|放宽|宽限", re.IGNORECASE)
+# Informational abstention notes (a label corrected, a duplicate dropped) carry this field prefix: they
+# record a deterministic correction, not a material gap, and never make an offer ABSTAINED.
+NOTE_PREFIX = "note:"
 _CONTINGENCY_NOTE_FORCED = ("contingency set to CONTINGENT: the text makes it conditional on a future business "
                             "event (a contingent gain counts as zero)")
 _CONTINGENCY_NOTE_FIRM = ("contingency set to FIRM: offered as part of the package, with no condition on a future "
@@ -388,7 +391,7 @@ def enforce_contingency(
             note = _CONTINGENCY_NOTE_FORCED if want == Contingency.CONTINGENT else _CONTINGENCY_NOTE_FIRM
             if want == Contingency.CONTINGENT and ob.type == ObligationType.CONTINGENT_REBATE and not governed:
                 note = "contingency set to CONTINGENT: a rebate on future purchases is contingent by type"
-            abst.append(Abstention(field=f"{ob.type.value}.contingency", reason=note, spans=ob.spans))
+            abst.append(Abstention(field=f"note:{ob.type.value}.contingency", reason=note, spans=ob.spans))
             ob = ob.model_copy(update={"contingency": want})
         out.append(ob)
     return out
@@ -417,7 +420,7 @@ def dedupe_obligations(obs: Sequence[Obligation], abst: list[Abstention]) -> lis
         if first.contingency == Contingency.FIRM and o.contingency != Contingency.FIRM:
             kept[index[k]] = first.model_copy(update={"contingency": o.contingency})
         abst.append(Abstention(
-            field=f"obligation:{o.type.value}",
+            field=f"note:obligation:{o.type.value}",
             reason="duplicate obligation not booked twice: the same concession is stated more than once",
             spans=[first.spans[0], o.spans[0]],
         ))

@@ -426,8 +426,9 @@ def _evaluate(
     # 1. offer status
     if offer.status in (CompileStatus.CONFLICTING_SOURCES, CompileStatus.ABSTAINED):
         conflict = offer.status == CompileStatus.CONFLICTING_SOURCES
-        fields = [a.field for a in offer.abstentions if a.field != "unresolved_reference"]
-        spans = [sp for a in offer.abstentions if a.field != "unresolved_reference" for sp in a.spans]
+        gaps = [a for a in offer.abstentions if a.field != "unresolved_reference" and not a.field.startswith("note:")]
+        fields = [a.field for a in gaps]
+        spans = [sp for a in gaps for sp in a.spans]
         code = ViolationCode.CONFLICTING_SOURCES if conflict else ViolationCode.UNRESOLVED_SCOPE
         what = "the documents disagree on a material value" if conflict else "a material field has no evidence"
         res.violations = [Violation(
