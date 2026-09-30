@@ -419,18 +419,7 @@ export async function verifyOwnerToken(token: string): Promise<void> {
 
 export async function nl(req: NlRequest): Promise<NlResponse> {
   await delay();
-  const asksCapex = /machine|capex|设备|机器/i.test(req.text);
-  return {
-    session_id: req.session_id ?? "mock-session",
-    reply: asksCapex
-      ? "Mock mode: use the Capex screen. The 36-month equipment loan is the only structure that keeps every covenant."
-      : "Mock mode answers only the capex question. Switch to live mode for free-form requests.",
-    intent: asksCapex ? "CAPEX_EVALUATE" : "UNSUPPORTED_IN_MOCK",
-    plan: asksCapex ? ["capex.evaluate", "borrower_file.prepare (Tier 2)"] : [],
-    verdict: null,
-    operations: [],
-    clarification: asksCapex ? null : "Try: Can we buy the ¥600k machine?",
-  };
+  return (await import("./nl")).mockNl(req);
 }
 
 // ------------------------------------------------------------------ what-if (display-only)

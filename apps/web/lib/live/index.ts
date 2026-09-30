@@ -91,25 +91,9 @@ export const live = {
   getReconciliation: async (): Promise<ReconciliationView> =>
     (await http<{ reconciliation: ReconciliationView }>("GET", "/reconciliation")).reconciliation,
 
-  /** POST /nl is being built on another branch: a 404/405 answers as "not available yet" instead of an error. */
-  nl: async (req: NlRequest): Promise<NlResponse> => {
-    try {
-      return await http<NlResponse>("POST", "/nl", { body: req });
-    } catch (e) {
-      if (e instanceof ApiError && (e.status === 404 || e.status === 405)) {
-        return {
-          session_id: req.session_id ?? "",
-          reply: "Free-form requests (/nl) are not available on this server yet. Use the screens instead.",
-          intent: "NL_UNAVAILABLE",
-          plan: [],
-          verdict: null,
-          operations: [],
-          clarification: null,
-        };
-      }
-      throw e;
-    }
-  },
+  /** POST /nl. The owner channel sends X-Owner-Token; a counterparty turn sends no credential at all. */
+  nl: (req: NlRequest): Promise<NlResponse> =>
+    http<NlResponse>("POST", "/nl", { body: req, auth: req.actor === "COUNTERPARTY" ? "none" : "owner" }),
 
   whatIf: (params: WhatIfParams) => http<WhatIfResult>("POST", "/whatif", { body: params }),
 

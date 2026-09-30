@@ -141,7 +141,7 @@ export async function getReconciliation(): Promise<ReconciliationView> {
   return isMock ? (await mock()).getReconciliation() : (await live()).getReconciliation();
 }
 
-/** POST /nl. A server without the route answers with intent NL_UNAVAILABLE instead of throwing. */
+/** POST /nl: one turn of the conversation. Owner turns need the owner token (401 opens the sign-in dialog). */
 export async function nl(req: NlRequest): Promise<NlResponse> {
   return isMock ? (await mock()).nl(req) : (await live()).nl(req);
 }
