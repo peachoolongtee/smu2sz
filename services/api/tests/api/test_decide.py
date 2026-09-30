@@ -3,10 +3,8 @@ def _eval(client, fx):
     return oid, client.post(f"/offers/{oid}/evaluate", json={"fixture_id": fx}).json()
 
 
-import pytest
 
 
-@pytest.mark.xfail(strict=True, reason="rebate base binds from state.expected_orders after the contracts follow-up")
 def test_ex01_rejects_with_golden_numbers_and_guarded_counters(client):
     _, v = _eval(client, "EX01_PACKAGE")
     assert v["outcome"] == "REJECT"
