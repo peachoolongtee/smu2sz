@@ -65,7 +65,7 @@ class ObligationType(StrEnum):
     CONTINGENT_REBATE = "CONTINGENT_REBATE"
     VOLUME_COMMITMENT = "VOLUME_COMMITMENT"
     OPERATIONAL_CONCESSION = "OPERATIONAL_CONCESSION"
-    PRICE_ADJUSTMENT = "PRICE_ADJUSTMENT"  # price change on future invoices (Counter B)
+    PRICE_ADJUSTMENT = "PRICE_ADJUSTMENT"  # rate_bp > 0: price increase the buyer pays on future invoices (Counter B)
     CLAIMED_PRIOR_CONCESSION = "CLAIMED_PRIOR_CONCESSION"
 
 
