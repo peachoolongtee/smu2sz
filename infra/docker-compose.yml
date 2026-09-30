@@ -1,0 +1,33 @@
+# One VM, one stack: web + api + postgres (ADR-0001). Secrets come from infra/.env (never committed).
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: termsledger
+      POSTGRES_USER: termsledger
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in infra/.env}
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U termsledger"]
+      interval: 5s
+      retries: 10
+  api:
+    build: {context: .., dockerfile: infra/api.Dockerfile}
+    environment:
+      DATABASE_URL: postgresql+psycopg://termsledger:${POSTGRES_PASSWORD}@postgres:5432/termsledger
+      LLM_MODE: ${LLM_MODE:-cache}
+      LLM_PRIMARY: ${LLM_PRIMARY:-claude}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+      FIXTURE_DIR: /app/fixtures
+    depends_on: {postgres: {condition: service_healthy}}
+    ports: ["8000:8000"]
+  web:
+    build: {context: .., dockerfile: infra/web.Dockerfile}
+    environment:
+      NEXT_PUBLIC_API_MODE: live
+      NEXT_PUBLIC_API_URL: ${PUBLIC_API_URL:-http://localhost:8000}
+    depends_on: [api]
+    ports: ["3000:3000"]
+volumes:
+  pgdata:
