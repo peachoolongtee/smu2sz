@@ -90,9 +90,10 @@ out["cash_day20"] = cash
 out["cash_day47_45d_terms"] = day47_45
 out["cash_day47_60d_terms"] = day47_60
 out["reserve_shortfall_day47"] = 30000000 - day47_60
-# cure: carry the shortfall from day 47 to day 62 on the committed marginal source (invoice financing)
+# cure: carry the shortfall on the committed marginal permanent source (invoice financing), requested
+# on day 0 against the day-2 invoice: lands day 5 (lead 3), repaid day 62 -> 57 days -> 2 periods (ADR-0003)
 sf = F(out["reserve_shortfall_day47"], 100)
-out["reserve_cure_cost_if"] = if_cost(sf, 15)
+out["reserve_cure_cost_if"] = if_cost(sf, 57)
 
 # Counter A
 out["counter_a_discount"] = fen(Y(211800) * bp(85))

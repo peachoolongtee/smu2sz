@@ -66,9 +66,10 @@ def test_ex01_package_with_45_day_terms_kept(state, g):
 
 
 def test_ex01_day47_breach_cured_by_invoice_financing(state, g):
-    # carry the shortfall from day 47 to day 62 against the day-2 invoice (ADR-0003 cure cost)
+    # ADR-0003: requested on day 0 against the day-2 invoice (requested on its issue day), lands day 5,
+    # repaid day 62 -> 57 days -> two 30-day periods
     ri = recurring_receivable_id("BUYER-1", 2)
-    t = project(state, ex01_package(), [finance(g["reserve_shortfall_day47"], ri, day=44)], C, 120, FLOOR)
+    t = project(state, ex01_package(), [finance(g["reserve_shortfall_day47"], ri, day=0)], C, 120, FLOOR)
     assert cost(t) - g["full_discount_1_2pct"] == g["reserve_cure_cost_if"]
     assert t.first_breach_day is None and t.min_cash_fen == FLOOR
 

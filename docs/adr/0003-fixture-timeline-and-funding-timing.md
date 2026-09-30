@@ -19,4 +19,4 @@ An invoice-financing advance against an invoice not yet issued is requested on t
 **Consequence:** the router searches amounts, not draw dates. A just-in-time draw scheduler could be cheaper, but it would rely on availability it can't guarantee.
 
 ## Cure cost
-The day-47 shortfall is carried on the committed marginal source for a *permanent* need: invoice financing, because clean-down rules out the line. That costs ¥401.35, one period on ¥45,040. The extension's structural cost is ¥1,871.30 per invoice, and the screen shows both.
+The day-47 shortfall is carried on the committed marginal source for a *permanent* need: invoice financing, because clean-down rules out the line. Requested on day 0 against the day-2 invoice, the advance lands on day 5 and is repaid on day 62: 57 days, billed as two 30-day periods, for **¥802.70** (¥577.50 interest + ¥225.20 fee). The extension's structural cost is ¥1,871.30 per invoice, and the screen shows both.
