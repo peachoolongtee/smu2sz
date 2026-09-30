@@ -69,3 +69,21 @@ def test_fail_closed_without_configured_credentials(client, monkeypatch):
     assert client.get("/state").status_code == 503  # the published demo token is not accepted
     monkeypatch.setenv("OWNER_TOKEN", "s3cret-owner")
     assert client.get("/state", headers={"X-Owner-Token": "s3cret-owner"}).status_code == 200
+
+
+def test_system_claim_without_bank_feed_key_is_the_agent(client):
+    body = op("RECEIVE_PAYMENT", by="SYSTEM", receivable_id="RCV-A", amount_fen=42_000_000)
+    r = client.post("/operations", json=body, headers=AGENT).json()["result"]
+    assert r["status"] == "PENDING_APPROVAL"  # the agent cannot book cash that never arrived (F-02)
+    ok = client.post("/operations", json={**body, "op_id": "rx2", "idempotency_key": "rx2"},
+                     headers={**AGENT, "X-Bank-Feed-Key": "demo-bank-feed-key"}).json()["result"]
+    assert ok["status"] == "EXECUTED"
+
+
+def test_deciding_twice_is_409_and_logged(client):
+    r = client.post("/operations", json=op("APPLY_FOR_FACILITY", facility_id="FAC-GGL", amount_fen=1_000_000),
+                    headers=AGENT).json()["result"]
+    client.post(f"/approvals/{r['approval_id']}", json={"decision": "REJECT"}, headers=OWNER)
+    before = len(client.get("/audit").json()["events"])
+    assert client.post(f"/approvals/{r['approval_id']}", json={"decision": "APPROVE"}, headers=OWNER).status_code == 409
+    assert len(client.get("/audit").json()["events"]) == before + 1

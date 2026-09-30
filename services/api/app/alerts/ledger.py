@@ -53,7 +53,11 @@ def entries(store: LedgerStore) -> list[Entry]:
             op = _OP.validate_json(r.payload_json)
         except ValidationError:
             op = None
-        out.append(Entry(r.seq, r.kind, op, OperationResult.model_validate_json(r.result_json), r.entry_hash))
+        try:
+            res = OperationResult.model_validate_json(r.result_json)
+        except ValidationError:  # a corrupted row is an integrity failure, reported by /audit, not a crash (F-12)
+            continue
+        out.append(Entry(r.seq, r.kind, op, res, r.entry_hash))
     return out
 
 

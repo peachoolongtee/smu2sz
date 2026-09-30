@@ -54,7 +54,7 @@ def test_alerts_with_an_evaluated_offer_show_the_day_47_breach(client):
 def test_reconciliation_view(client):
     pay = {"kind": "RECEIVE_PAYMENT", "op_id": "OP-R1", "idempotency_key": "r1", "mandate_version": 1,
            "requested_by": "SYSTEM", "receivable_id": "RCV-A", "amount_fen": 41_000_000}
-    assert client.post("/operations", json=pay).json()["result"]["status"] == "EXECUTED"
+    assert client.post("/operations", json=pay, headers={"X-Bank-Feed-Key": "demo-bank-feed-key"}).json()["result"]["status"] == "EXECUTED"
     rep = client.get("/reconciliation").json()["reconciliation"]
     [m] = rep["receipts"]
     assert m["status"] == "SHORT_PAYMENT" and m["flagged"] is True

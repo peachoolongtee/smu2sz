@@ -18,6 +18,7 @@ from fastapi import Header, HTTPException, Request
 
 DEMO_OWNER_TOKEN = "demo-owner-token"
 DEMO_AGENT_KEY = "demo-agent-key"
+DEMO_BANK_FEED_KEY = "demo-bank-feed-key"
 
 
 def demo_mode() -> bool:
@@ -43,7 +44,7 @@ def is_agent(key: str | None) -> bool:
     return _match(key, _expected("AGENT_KEY", DEMO_AGENT_KEY))
 
 
-def _log_refusal(request: Request, why: str) -> None:
+def log_refusal(request: Request, why: str) -> None:
     """Every rejected credential is evidence (a probe, a misconfiguration or a stolen link)."""
     import hashlib
 
@@ -59,11 +60,16 @@ def _log_refusal(request: Request, why: str) -> None:
     ))
 
 
+def is_bank_feed(key: str | None) -> bool:
+    """The simulated bank feed (receipts arrive as SYSTEM); env BANK_FEED_KEY."""
+    return _match(key, _expected("BANK_FEED_KEY", DEMO_BANK_FEED_KEY))
+
+
 def require_owner(request: Request, x_owner_token: str | None = Header(default=None)) -> None:
     if _expected("OWNER_TOKEN", DEMO_OWNER_TOKEN) is None:
         raise HTTPException(503, {"code": "OWNER_TOKEN_NOT_CONFIGURED", "message": "set OWNER_TOKEN (DEMO_MODE=0)"})
     if not is_owner(x_owner_token):
-        _log_refusal(request, "owner token missing or wrong")
+        log_refusal(request, "owner token missing or wrong")
         raise HTTPException(401, {"code": "OWNER_TOKEN_REQUIRED", "message": "owner token missing or wrong"})
 
 
@@ -73,5 +79,5 @@ def require_owner_or_agent(request: Request, x_owner_token: str | None = Header(
         return
     if _expected("OWNER_TOKEN", DEMO_OWNER_TOKEN) is None and _expected("AGENT_KEY", DEMO_AGENT_KEY) is None:
         raise HTTPException(503, {"code": "CREDENTIALS_NOT_CONFIGURED", "message": "set OWNER_TOKEN and AGENT_KEY"})
-    _log_refusal(request, "owner token or agent key missing or wrong")
+    log_refusal(request, "owner token or agent key missing or wrong")
     raise HTTPException(401, {"code": "CREDENTIAL_REQUIRED", "message": "owner token or agent key required"})

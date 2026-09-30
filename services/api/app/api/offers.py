@@ -12,6 +12,7 @@ from app.api.runtime import get_runtime
 from app.compiler import compile_offer, compile_term_sheet
 from app.domain.fixtures import load_offers, offer_documents
 from app.domain.models import SourceDocument
+from app.persistence import OfferVersionConflict
 
 router = APIRouter()
 
@@ -39,7 +40,10 @@ def post_offer(body: OfferIn) -> dict:
     docs, cp = _docs(body)
     offer = compile_offer(docs, cp)
     rt = get_runtime()
-    rt.store.put_offer(offer)
+    try:
+        rt.store.put_offer(offer)
+    except OfferVersionConflict:
+        raise HTTPException(409, {"code": "OFFER_VERSION_CONFLICT", "offer_id": offer.offer_id}) from None
     for d in docs:
         rt.documents[d.doc_id] = d
     return {"offer": json.loads(offer.model_dump_json()), "documents": [json.loads(d.model_dump_json()) for d in docs]}
