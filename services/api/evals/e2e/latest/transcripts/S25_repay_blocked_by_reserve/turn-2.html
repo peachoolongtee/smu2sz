@@ -1,0 +1,12 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>S25_repay_blocked_by_reserve turn 2</title><style>body{font:14px/1.5 system-ui,sans-serif;margin:24px;max-width:960px;color:#1d2330;background:#fff}
+.tag{display:inline-block;padding:2px 8px;border-radius:10px;background:#e3f5e8}
+pre{white-space:pre-wrap;background:#f5f6f8;padding:12px;border-radius:6px}table{border-collapse:collapse;width:100%}
+td{border-top:1px solid #e3e5e8;padding:4px 6px;vertical-align:top}</style></head><body>
+<h1>S25_repay_blocked_by_reserve · turn 2 <span class="tag">PASS</span></h1><p>Repay: repaying the line now would breach the owner&#x27;s reserve, so it is held</p>
+<p><b>OWNER</b>:</p>
+<pre>Repay the credit line</pre><p><b>Intent</b> REPAY_FACILITY · <b>Verdict</b> ACCEPT
+</p><p><b>Reply</b></p><pre>Not repaid: it would take projected cash to ¥150,000.00, below the owner&#x27;s reserve. Repay when the receivable pays (the plan&#x27;s repayment day).</pre><p><b>Plan</b></p><ol><li>[DONE] VERIFY: Projected low after repaying: ¥150,000.00 (now ¥300,000.00); reserve ¥300,000.00</li><li>[SKIPPED] REPAY_FACILITY: Repay ¥150,000.00 on FAC-LINE</li></ol>
+<p><b>Operations</b></p><table><tr><td>none</td></tr></table>
+<p>session S25_repay_blocked_by_reserve-owner · trace S25_repay_blocked_by_reserve-owner:2 · security events 0</p>
+</body></html>
