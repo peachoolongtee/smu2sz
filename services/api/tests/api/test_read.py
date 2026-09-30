@@ -30,3 +30,15 @@ def test_term_sheet_is_proposal_only(client):
     ts = client.post("/facilities/compile", json={"fixture_id": "EX09_TERM_SHEET_PG"}).json()["term_sheet"]
     assert ts["all_in_rate_bp"] == 590 and ts["tier3_clauses"]
     assert ts["proposed_facility"]["owner_approved"] is False
+
+
+def test_evidence_has_run_header_and_verifies(client, tmp_path):
+    import subprocess, sys, pathlib
+    text = client.get("/evidence").text
+    lines = text.strip().splitlines()
+    assert '"record":"run"' in lines[0] and '"record":"chain"' in lines[-1]
+    f = tmp_path / "ev.jsonl"
+    f.write_text(text)
+    script = pathlib.Path(__file__).resolve().parents[4] / "scripts" / "verify_evidence.py"
+    out = subprocess.run([sys.executable, str(script), str(f)], capture_output=True, text=True)
+    assert out.returncode == 0, out.stdout

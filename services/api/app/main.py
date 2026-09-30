@@ -6,6 +6,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.offers import router as offers_router
+from app.api.operations import router as operations_router
 from app.api.read import router as read_router
 from app.config import get_settings, load_dotenv
 
@@ -18,6 +19,7 @@ app.add_middleware(
 )
 app.include_router(read_router)
 app.include_router(offers_router)
+app.include_router(operations_router)
 
 
 @app.get("/health")

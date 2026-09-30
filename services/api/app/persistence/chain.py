@@ -62,34 +62,52 @@ def op_identity(op_json: str) -> tuple[str | None, str | None]:
     return _field(op_json, "op_id"), _field(op_json, "kind")
 
 
+def _parsed(text: str) -> dict:
+    try:
+        v = json.loads(text)
+        return v if isinstance(v, dict) else {}
+    except ValueError:
+        return {}
+
+
+def evidence_line(e: OperationRecord) -> dict:
+    """One operation as judges see it: timestamp (simulated day), action, result, and the exact
+    payload/result text so `entry_hash = sha256(prev_hash + payload_json + result_json)` can be
+    recomputed without our code (scripts/verify_evidence.py)."""
+    op, res = _parsed(e.payload_json), _parsed(e.result_json)
+    return {
+        "record": "operation",
+        "seq": e.seq,
+        "op_id": e.op_id,
+        "kind": e.kind,
+        "idempotency_key": e.idempotency_key,
+        "day": res.get("effective_day", op.get("day")),
+        "requested_by": op.get("requested_by"),
+        "status": res.get("status"),
+        "tier": res.get("tier"),
+        "violations": [v.get("code") for v in res.get("violations", []) if isinstance(v, dict)],
+        "message": res.get("message", ""),
+        "payload_json": e.payload_json,
+        "result_json": e.result_json,
+        "prev_hash": e.prev_hash,
+        "entry_hash": e.entry_hash,
+    }
+
+
+def chain_line(entries: Sequence[OperationRecord]) -> dict:
+    return {
+        "record": "chain",
+        "operations": len(entries),
+        "chain_valid": verify_entries(entries),
+        "head_hash": head_hash(entries),
+        "genesis_hash": GENESIS_HASH,
+    }
+
+
 def build_evidence(entries: Sequence[OperationRecord]) -> str:
     """JSONL: one line per operation, then one chain line with `chain_valid` and `head_hash`."""
-    lines = [
-        canonical_json(
-            {
-                "record": "operation",
-                "seq": e.seq,
-                "op_id": e.op_id,
-                "kind": e.kind,
-                "idempotency_key": e.idempotency_key,
-                "status": _field(e.result_json, "status"),
-                "prev_hash": e.prev_hash,
-                "entry_hash": e.entry_hash,
-            }
-        )
-        for e in entries
-    ]
-    lines.append(
-        canonical_json(
-            {
-                "record": "chain",
-                "operations": len(entries),
-                "chain_valid": verify_entries(entries),
-                "head_hash": head_hash(entries),
-                "genesis_hash": GENESIS_HASH,
-            }
-        )
-    )
+    lines = [canonical_json(evidence_line(e)) for e in entries]
+    lines.append(canonical_json(chain_line(entries)))
     return "\n".join(lines) + "\n"
 
 

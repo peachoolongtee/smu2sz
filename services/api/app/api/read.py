@@ -81,15 +81,13 @@ def get_audit() -> dict:
     return {"security_events": [json.loads(e.model_dump_json()) for e in rt.store.security_events()]}
 
 
-@router.get("/approvals")
-def get_approvals() -> dict:
-    rt = get_runtime()
-    return {"approvals": [a.__dict__ if hasattr(a, "__dict__") else a for a in rt.store.approvals()]}
-
-
 @router.get("/evidence", response_class=PlainTextResponse)
 def get_evidence() -> str:
-    return get_runtime().store.export_evidence()
+    from app.api.evidence import build
+
+    rt = get_runtime()
+    rt.store.export_evidence()  # records the export (count, head hash) in evidence_exports
+    return build(rt)
 
 
 @router.post("/demo/reset")

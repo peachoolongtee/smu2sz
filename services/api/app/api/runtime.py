@@ -3,6 +3,8 @@ Owned by the main architect. Modules never import this; only app/api does."""
 
 from __future__ import annotations
 
+import hmac
+import os
 import threading
 from dataclasses import dataclass, field
 
@@ -11,7 +13,12 @@ from app.domain.fixtures import load_scenario
 from app.domain.ports import LedgerStore
 from app.mandate import load_signed_mandate
 from app.mandate.fixture import demo_owner_public_key_hex
+from app.operations import Executor
 from app.persistence import InMemoryLedgerStore, SqlLedgerStore
+
+# Demo-only owner credential. The real deployment sets OWNER_TOKEN; the UI's owner console sends it
+# as X-Owner-Token. Without it, a request claiming to be the OWNER is treated as the AGENT.
+DEMO_OWNER_TOKEN = "demo-owner-token"
 
 
 @dataclass
@@ -25,6 +32,14 @@ class Runtime:
 
     def clock(self) -> int:
         return self.day
+
+    @property
+    def executor(self) -> Executor:
+        return Executor(self.store, trusted_owner_key_hex=self.owner_key_hex, clock=self.clock)
+
+    def is_owner(self, token: str | None) -> bool:
+        expected = os.environ.get("OWNER_TOKEN", DEMO_OWNER_TOKEN)
+        return bool(token) and hmac.compare_digest(token or "", expected)
 
     def reset(self, scenario: str = "golden_sme") -> None:
         """Reload fixtures and clear the ledger (POST /demo/reset)."""
