@@ -1,0 +1,98 @@
+{
+  "file_id": "BF-1",
+  "status": "PREPARED_NOT_SENT",
+  "style": "WeBank 微业贷 style (mock)",
+  "sections": [
+    {
+      "title": "Applicant",
+      "rows": [
+        {
+          "label": "Organisation",
+          "value": "SME-1 (synthetic fixture)"
+        },
+        {
+          "label": "Data as of",
+          "value": "2026-10-01"
+        },
+        {
+          "label": "Source",
+          "value": "Verified ledger state only"
+        }
+      ]
+    },
+    {
+      "title": "Request",
+      "rows": [
+        {
+          "label": "Facility",
+          "value": "Equipment term loan (FAC-ETL)"
+        },
+        {
+          "label": "Purpose",
+          "value": "Machine purchase, ¥600,000.00"
+        },
+        {
+          "label": "Amount",
+          "value": "¥600,000.00"
+        },
+        {
+          "label": "Tenor",
+          "value": "36 months"
+        },
+        {
+          "label": "Rate",
+          "value": "5.60% p.a."
+        },
+        {
+          "label": "Monthly payment",
+          "value": "¥18,144.62"
+        }
+      ]
+    },
+    {
+      "title": "Verified financials",
+      "rows": [
+        {
+          "label": "Cash",
+          "value": "¥400,000.00"
+        },
+        {
+          "label": "Monthly EBITDA",
+          "value": "¥90,000.00"
+        },
+        {
+          "label": "Existing equipment loan",
+          "value": "¥1,500,000.00"
+        },
+        {
+          "label": "Existing monthly debt service",
+          "value": "¥45,000.00"
+        }
+      ]
+    },
+    {
+      "title": "Covenant headroom",
+      "rows": [
+        {
+          "label": "DSCR, months 1 to 3",
+          "value": "1.43× (minimum 1.25×)"
+        },
+        {
+          "label": "Leverage after the loan",
+          "value": "2.08× (maximum 2.50×)"
+        }
+      ]
+    },
+    {
+      "title": "Receivables",
+      "rows": [
+        {
+          "label": "Receivable A, Foshan Home Retail Co.",
+          "value": "¥420,000.00 due day 32, buyer-confirmed"
+        }
+      ]
+    }
+  ],
+  "approval_id": null,
+  "generated_day": 0
+}

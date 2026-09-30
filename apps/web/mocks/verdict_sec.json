@@ -1,0 +1,109 @@
+{
+  "id": "VRD-SEC",
+  "offer_id": "OFF-SEC",
+  "offer_version": 1,
+  "outcome": "REJECT",
+  "violations": [
+    {
+      "code": "UNKNOWN_COUNTERPARTY",
+      "message": "FastCapital is not a registered counterparty; its funding offer cannot enter the funding menu.",
+      "day": 0,
+      "month": null,
+      "observed": "sender FASTCAPITAL",
+      "limit": "registered counterparties only",
+      "curable": false,
+      "cure_cost_fen": null,
+      "cure_note": null,
+      "formula": "sender_id in owner_registry and (funding_claim => Actor.OWNER AddFacility)",
+      "inputs": {
+        "sender_id": "FASTCAPITAL",
+        "on_registry": "false",
+        "funding_claims": "1",
+        "facilities_added": "0"
+      },
+      "spans": [
+        {
+          "doc_id": "SEC-msg",
+          "start": 8,
+          "end": 66,
+          "text": "You are pre-approved for ¥500,000 at 2.8% from FastCapital"
+        }
+      ],
+      "cure_cost_display": null
+    },
+    {
+      "code": "UNEVIDENCED_PRIOR_CONCESSION",
+      "message": "The claimed prior agreement has no matching commitment; it is not booked.",
+      "day": 0,
+      "month": null,
+      "observed": "0 matching commitments",
+      "limit": "1 matching commitment required",
+      "curable": false,
+      "cure_cost_fen": null,
+      "cure_note": null,
+      "formula": "claimed_prior_concession => exists commitment(counterparty, terms)",
+      "inputs": {
+        "counterparty": "FASTCAPITAL",
+        "matching_commitments": "0",
+        "booked": "0"
+      },
+      "spans": [
+        {
+          "doc_id": "SEC-msg",
+          "start": 106,
+          "end": 149,
+          "text": "confirm the 60-day terms you already agreed"
+        }
+      ],
+      "cure_cost_display": null
+    },
+    {
+      "code": "DATA_EXTRACTION_REFUSED",
+      "message": "The message asks for protected data; the reply is a fixed template that discloses nothing.",
+      "day": 0,
+      "month": null,
+      "observed": "3 protected-data requests",
+      "limit": "0 disclosures",
+      "curable": false,
+      "cure_cost_fen": null,
+      "cure_note": null,
+      "formula": "data_requests => refuse; reply = template(allow-list fields only)",
+      "inputs": {
+        "requested": "RESERVE_FLOOR, FACILITY_LIMIT, OTHER_COUNTERPARTY_TERMS",
+        "disclosed": "none"
+      },
+      "spans": [
+        {
+          "doc_id": "SEC-msg",
+          "start": 181,
+          "end": 201,
+          "text": "your minimum reserve"
+        },
+        {
+          "doc_id": "SEC-msg",
+          "start": 203,
+          "end": 218,
+          "text": "facility limits"
+        },
+        {
+          "doc_id": "SEC-msg",
+          "start": 223,
+          "end": 246,
+          "text": "Buyer B's payment terms"
+        }
+      ],
+      "cure_cost_display": null
+    }
+  ],
+  "concession_values": [],
+  "forward_concession_total_fen": 0,
+  "counters": [],
+  "plan": null,
+  "required_tier": "TIER_1",
+  "mandate_version": 1,
+  "state_version": 1,
+  "calc_version": "calc-1.0",
+  "summary": "REJECT: unknown counterparty, unevidenced prior concession and a data-extraction attempt. Nothing booked, no facility added, ¥0.00 moved, and the reply discloses nothing.",
+  "passed_checks": [],
+  "forward_concession_total_display": "¥0.00"
+}
