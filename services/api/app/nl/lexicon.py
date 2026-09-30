@@ -52,7 +52,11 @@ STATUS = _re(r"\bstatus\b", r"\bposition\b", r"\bhow are we\b", r"\bhow'?s (?:ou
              r"现金(?:余额|情况)", r"余额", r"概况", r"情况怎么样",
              r"\bhow much (?:cash|money)\b", r"\bcash (?:on hand|do we have|position)\b", r"\bbank balance\b",
              r"\bcovenants?\b.{0,30}\b(?:look|looking|status|headroom|ok|okay|safe|risk)\b",
-             r"账上", r"多少(?:钱|现金)", r"还有多少", r"(?:契约|财务指标).{0,10}(?:怎么样|情况|风险)")
+             r"账上", r"多少(?:钱|现金)", r"还有多少", r"(?:契约|财务指标).{0,10}(?:怎么样|情况|风险)",
+             # forecasts and receivables: "show me the 13 week forecast", "list the open receivables", 现金流预测
+             r"\bforecast\b", r"\b\d{1,2}[- ]?week\b", r"\bcash ?flows?\b", r"\breceivables?\b", r"\bopen invoices\b",
+             r"\baging\b", r"\bageing\b", r"\bwho owes us\b", r"\bprojection\b",
+             r"现金流", r"预测", r"应收(?:账款)?", r"未(?:收|回)(?:款|回)", r"谁欠(?:我们)?钱", r"账龄")
 # A question about the position ("are we close to breaching a covenant?", "会不会跌破储备线？"): it asks, so
 # it is SHOW_STATUS even when it names the reserve or a shortfall (checked before FUND).
 STATUS_QUESTION = _re(
@@ -66,7 +70,20 @@ REPAY = _re(r"\brepay", r"\bpay (?:back|down|off)\b", r"\bpay (?:the |our )?(?:c
             r"(?:授信|信用|银行|额度).{0,8}还(?:掉|了|上|回去)", r"把.{0,12}还(?:掉|了|上|回去)")
 FUND = _re(r"\bfund (?:the |it\b|this\b|that\b|our )", r"\bfund it\b", r"\bcover (?:the |our )?(?:cash )?(?:gap|shortfall)",
            r"\bclose (?:the )?gap\b", r"\bfunding gap\b", r"\bcash gap\b", r"\bshortfall\b", r"\bbridge (?:the )?gap\b",
-           r"\bdraw\b", r"补(?:足|上)?(?:资金)?缺口", r"资金缺口", r"填补", r"提款", r"支取", r"动用.{0,6}额度")
+           r"\bdraw\b", r"补(?:足|上)?(?:资金)?缺口", r"资金缺口", r"填补", r"提款", r"支取", r"动用.{0,6}额度",
+           r"\bcover (?:the |our |this |that )?\w+ (?:gap|shortfall)\b",
+           r"缺口(?:给)?补(?:上|足|齐|平)", r"补(?:上|足|齐|平)?.{0,6}缺口",
+           # "从授信额度里提10万出来", "在额度上借20万"
+           r"(?:额度|授信|信用额度|贷款额度)(?:里|中|上)?.{0,4}(?:提|借|拿|取|支)(?:款|现|用|出)?.{0,3}(?:\d|[一二两三四五六七八九十])",
+           r"(?:提|借|拿|取)(?:款|现)?\s*(?:\d[\d,.]*|[一二两三四五六七八九十]+)\s*(?:万|千|元|块).{0,6}(?:出来|用|周转)")
+# A request to look for options rather than to act ("find me the cheapest way to cover the gap",
+# 帮我找最便宜的方式补上): FUND_GAP proposes the plan and waits for "go ahead", in either language.
+FUND_EXPLORE = _re(
+    r"\b(?:find|look for|figure out|work out|suggest|recommend|propose|show me|what(?:'s| is| are)|which is)\b.{0,40}"
+    r"\b(?:way|ways|option|options|cheapest|best|plan|route)\b",
+    r"\bhow (?:can|could|should|do|would) we\b", r"\bany (?:way|option)s?\b",
+    r"(?:找|想|看看|推荐|建议|有没有|有什么|怎么|如何|哪种|哪个).{0,12}(?:办法|方式|方法|方案|途径|最便宜|最划算|最省)",
+    r"怎么补|如何补|怎么解决|如何解决")
 # Needs described, not the funding asked for ("payroll is due and we are short", 工资不够): FUND_GAP, but the plan is
 # proposed and waits for "go ahead" instead of executing on a reading this loose.
 FUND_SOFT = _re(
@@ -78,11 +95,21 @@ FUND_SOFT = _re(
            r"(?:工资|薪水|房租|货款|账单).{0,12}(?:不够|缺|付不起|发不出)", r"(?:钱|资金|现金)不够", r"缺钱", r"安排(?:一下)?融资",
            r"找(?:点)?钱", r"借(?:点)?钱", r"周转", r"(?:别|不要|不能)(?:让)?.{0,6}(?:跌破|低于)(?:储备|底线|最低)")
 ACCELERATE = _re(r"\b(?:get|be|getting) paid (?:early|sooner|faster)\b", r"\b(?:get|have)\b.{0,40}\bpaid (?:early|sooner|faster)\b",
+                 r"\bcollect\b.{0,50}\b(?:sooner|earlier|early|faster|quicker)\b", r"\bearly[- ]pay\b",
+                 r"\b(?:pay|paid|settle|settled|clear|cleared)\b(?!.{0,50}\b(?:line|loan|facility|debt|bank|back|off)\b)"
+                 r".{0,40}\b(?:sooner|earlier|faster|quicker)\b",
+                 r"\b(?:get|ask|make)\b.{0,30}\bto pay (?:early|sooner|earlier)\b",
+                 r"早点(?:付|给钱|打款)", r"提前(?:付|打款|给钱)", r"早付", r"尽快(?:付|打款|收)",
                  r"\b(?:money|cash|payment|invoice)\b.{0,20}\bin (?:sooner|earlier|faster)\b", r"\bearly (?:payment|settlement)\b",
                  r"\bcollect (?:early|sooner)\b", r"\baccelerate\b", r"\bspeed up (?:the )?(?:payment|collection|receipt)",
                  r"提前(?:收款|回款|结算)", r"早点(?:收|回)款", r"加快回款", r"尽快收回")
 NEGOTIATE = _re(r"\bnegotiat", r"\bsend (?:the |our |both )?counters?\b", r"\bcounter[- ]?offer", r"\bhaggle\b",
-                r"\bbargain\b", r"谈判", r"还价", r"议价", r"反报价", r"发(?:送)?反要约")
+                r"\bbargain\b", r"谈判", r"还价", r"议价", r"反报价", r"发(?:送)?反要约",
+                r"^\s*counter\b", r"\bcounter (?:them|him|her|the buyer|it|at|with)\b",
+                r"谈一下", r"谈谈", r"去谈", r"跟.{1,10}谈", r"砍价")
+# An explicit negotiating verb outranks an early-payment cue: "跟佛山谈一下，提前付款最多给0.7%" negotiates.
+NEGOTIATE_VERB = _re(r"\bnegotiat", r"^\s*counter\b", r"\bcounter (?:them|him|her|the buyer|it|at|with)\b",
+                     r"谈判", r"谈一下", r"谈谈", r"去谈", r"跟.{1,10}谈", r"还价", r"议价", r"砍价")
 EVALUATE = _re(r"\bevaluate\b", r"\bassess\b", r"\bcheck (?:this|the|that|offer)\b", r"\breview (?:this|the|that)\b",
                r"\banaly[sz]e\b", r"\bis (?:this|it) (?:a )?good\b", r"\bshould (?:we|i) accept\b", r"\bbuyer (?:says|wrote|sent)\b",
                r"评估", r"审核", r"分析", r"看看这", r"要不要接受", r"能不能接受", r"买家说")
@@ -95,10 +122,16 @@ AMBIGUOUS = _re(r"\b(?:help|sort out|do something about|handle|deal with|fix)\b.
                 r"\b(?:do|does) (?:the |what(?:ever)? (?:is|'s) )?(?:usual|normal|same as (?:always|usual|before))\b",
                 r"\bthe (?:usual|normal thing|normal stuff)\b", r"\byou decide\b", r"\byour call\b", r"\bup to you\b",
                 r"\bwhatever you think\b", r"看着办", r"你(?:来)?决定", r"你看着", r"帮我处理", r"处理一下", r"帮我搞定", r"^\s*搞定",
-                r"老样子", r"照旧", r"老规矩", r"你来定", r"你定吧")
+                r"老样子", r"照旧", r"老规矩", r"你来定", r"你定吧",
+                # a task named only by a pointer: "do the thing with Foshan", "make it cheaper", 那个单子怎么说
+                r"\bdo the (?:thing|needful|stuff)\b", r"\bmake (?:it|this|that) (?:cheaper|better|work|happen|right)\b",
+                r"\b(?:sort|figure) (?:it|this|that) out\b", r"那个(?:单子|事情?|东西)", r"那件事", r"那笔(?:单|生意)?怎么")
 CAPEX = _re(r"\bmachine\b", r"\bequipment\b", r"\bcapex\b", r"设备", r"机器", r"购置")
 ZERO_FORWARD = _re(r"without giving (?:anything|something) away", r"\bnothing away\b", r"\bno (?:forward )?concessions?\b",
+                   r"\b(?:don'?t|do not|never|without)\s+giv(?:e|ing)\s+(?:\w+\s+){0,2}?away\b",
+                   r"\bnothing (?:in return|forward|else)\b", r"不要?(?:给|做)(?:任何)?(?:让步|让利|优惠)", r"别(?:给|让)(?:任何)?(?:让步|让利|优惠)",
                    r"\bzero (?:forward )?concessions?\b", r"不(?:做|给)(?:任何)?让步", r"不让利", r"不给任何(?:优惠|让利)")
+REBATE_WORD = _re(r"\brebates?\b", r"\bback\b", r"\bcashback\b", r"返利", r"返点", r"返现", r"返")
 USE_FINANCING = _re(r"invoice financing", r"\bfactoring\b", r"\bfinance the invoice\b", r"发票融资", r"保理")
 HARDLINE = _re(r"\bhard[- ]?line\b", r"\btough\b", r"\bwalks?\b", r"\brefuses?\b", r"强硬")
 APPROVAL_REF = _re(r"\bapproval\b", r"\bpending\b", r"\bqueue", r"审批", r"待批")
@@ -115,8 +148,18 @@ TIER3: tuple[tuple[str, re.Pattern[str]], ...] = (
 
 FIXTURE_RE = rx(r"\b(EX\s?\d{2}[A-Z]?|SEC[_ ]DEMO)(?:_[A-Z0-9_]+)?\b", re.IGNORECASE)
 QUOTED_RE = re.compile(r"[\"“「『](.{8,}?)[\"”」』]", re.DOTALL)
-BUYER_SAYS_RE = rx(r"(?:buyer (?:says|wrote|sent)|message)\s*[:：]\s*(.{8,})$|买家说\s*[:：]\s*(.{4,})$",
-                           re.IGNORECASE | re.DOTALL)
+BUYER_SAYS_RE = rx(
+    r"(?:buyer (?:says|wrote|sent)|message)\s*[:：]\s*(.{8,})$|买家说\s*[:：]\s*(.{4,})$"
+    # "Foshan just sent this: 'We'll pay …'", "the customer wrote:", 东莞那边发来：, 佛山客户说：
+    r"|\b(?:buyer|customer|client|they|he|she|[a-z][a-z]+(?: [a-z][a-z&]+){0,3})\s+(?:just\s+)?(?:says|said|wrote|sent(?: (?:this|us|me|over))?"
+    r"|messaged|emailed|texted|replied|offered|proposed)\s*[:：]\s*(.{8,})$"
+    r"|(?:客户|买家|买方|对方|那边|他们)(?:刚才?|刚刚)?(?:说|发来|来信|回复|提出|发消息说|发了)(?:了)?\s*[:：]\s*(.{4,})$",
+    re.IGNORECASE | re.DOTALL)
+# The owner's own question after a pasted offer: dropped before the offer is compiled.
+OWNER_TAIL = _re(r"\bwhat do you think\b", r"\bthoughts\b", r"\bshould (?:we|i) (?:accept|take|agree)",
+                 r"\bcan we (?:accept|take|agree|do)\b", r"\bis (?:this|it|that) (?:ok|okay|good|acceptable|fine)\b",
+                 r"帮我看看", r"能不能接", r"能接吗", r"能答应吗", r"可以接受吗", r"能接受吗", r"怎么看", r"要不要接",
+                 r"行不行", r"可以吗")
 APPROVAL_ID_RE = rx(r"\bAPR-\d{6}\b", re.IGNORECASE)
 
 ORDINALS = {"1": 1, "one": 1, "first": 1, "1st": 1, "第一": 1, "一": 1,

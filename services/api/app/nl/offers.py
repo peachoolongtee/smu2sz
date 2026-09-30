@@ -407,6 +407,14 @@ def what_if(ctx: NlContext, slots: Slots, text: str) -> Turn:
             name = next((c.name for c in state.counterparties if c.id == cp), cp)
             implied = t(ctx, f"For {name} ({cp}), the only buyer with an open invoice. ",
                         f"针对 {name}（{cp}），唯一有未结发票的买家。")
+    if cp is None and not _buyer_what_if(text):
+        # "what if payroll goes up 10%": not a change to a buyer's terms, so asking which buyer is the wrong question
+        return Turn(intent=Intent.WHAT_IF, reply=t(
+            ctx, "I can test changes to a buyer's terms: for example '60-day terms for Foshan', 'a 1% early-pay "
+                 "discount' or '1% off next quarter'. Cost what-ifs (payroll, rent) aren't supported yet; nothing "
+                 "was changed.",
+            "我可以测试买家条款的变化，例如“给佛山 60 天账期”“1% 提前付款折扣”“下季度 1% 返利”。成本类假设（工资、房租）"
+            "暂不支持；未做任何更改。"))
     if cp is None:
         return ask(Intent.WHAT_IF, "counterparty_id", t(ctx, "Which buyer is this for?", "针对哪位买家？"),
                    buyer_options(ctx), slots)
@@ -453,6 +461,16 @@ def what_if(ctx: NlContext, slots: Slots, text: str) -> Turn:
     reply.append(t(ctx, f"Forward concessions {fmt_yuan(v.forward_concession_total_fen)}.",
                    f"远期让步 {fmt_yuan(v.forward_concession_total_fen)}。"))
     return Turn(intent=Intent.WHAT_IF, reply="\n".join(reply), plan=steps.items, verdict=v)
+
+
+_BUYER_TERMS_WORDS = ("early", "discount", "rebate", "terms", "days", "off next", "next quarter", "buyer", "invoice",
+                      "提前", "折扣", "贴现", "返利", "返点", "账期", "天", "下季度", "买家", "发票")
+
+
+def _buyer_what_if(text: str) -> bool:
+    """True when the hypothetical is a change to a buyer's terms (days, a discount or a rebate)."""
+    low = lx.norm(text)
+    return bool(lx.days(text)) or any(w in low for w in _BUYER_TERMS_WORDS)
 
 
 def owner_doc_for(ctx: NlContext, text: str) -> SourceDocument:
