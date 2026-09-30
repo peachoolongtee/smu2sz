@@ -2,7 +2,8 @@
 
 Nothing a caller supplies as a "tier" is read. The only caller-supplied inputs are two facts the
 operation object cannot carry, and each can only *raise* the tier:
-- `accepts_terms_change`: the accepted offer contains a TERMS_EXTENSION (-> Tier 2).
+- `accepts_terms_change`: the commitment an AcceptOffer/RecordCommitment accepts or records
+  contains a TERMS_EXTENSION (-> Tier 2).
 - `commitment_value_fen`: the value of the commitment an AcceptOffer/RecordCommitment creates
   (-> Tier 2 above `tier2_single_commitment_fen`).
 An operation type this function does not know is Tier 3 (fail closed).
@@ -91,7 +92,7 @@ def tier_for(
     if amount is not None and amount > mandate.tier2_single_commitment_fen:
         return Tier.TIER_2
     if isinstance(operation, AcceptOffer | RecordCommitment):
-        if isinstance(operation, AcceptOffer) and accepts_terms_change:
+        if accepts_terms_change:
             return Tier.TIER_2
         if commitment_value_fen is not None and commitment_value_fen > mandate.tier2_single_commitment_fen:
             return Tier.TIER_2
