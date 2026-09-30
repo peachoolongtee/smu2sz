@@ -1,0 +1,28 @@
+{
+  "apply_loan": {
+    "id": "APR-1",
+    "subject": "Apply for the 36-month equipment term loan",
+    "status": "PENDING",
+    "tier": "TIER_2",
+    "requested_by": "AGENT",
+    "created_day": 0,
+    "operation_kind": "APPLY_FOR_FACILITY",
+    "amount_fen": 60000000,
+    "detail": "Capex financing is always Tier 2. ¥18,144.62 a month at 5.60%; DSCR 1.43× in months 1 to 3; leverage 2.08×.",
+    "decided_day": null,
+    "amount_display": "¥600,000.00"
+  },
+  "borrower_file": {
+    "id": "APR-2",
+    "subject": "Release the borrower file for the owner to submit",
+    "status": "PENDING",
+    "tier": "TIER_2",
+    "requested_by": "AGENT",
+    "created_day": 0,
+    "operation_kind": "GENERATE_BORROWER_FILE",
+    "amount_fen": 60000000,
+    "detail": "Built from verified state only. Prepared, not sent to the lender.",
+    "decided_day": null,
+    "amount_display": "¥600,000.00"
+  }
+}

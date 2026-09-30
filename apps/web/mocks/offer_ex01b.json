@@ -1,0 +1,133 @@
+{
+  "documents": [
+    {
+      "doc_id": "EX01B-msg",
+      "channel": "email",
+      "sender_id": "BUYER-1",
+      "received_day": 0,
+      "text": "1.2% for early settlement. Standard terms going forward: 60 days. And 1% on next quarter as a goodwill gesture.",
+      "parent_doc_id": null,
+      "filename": null
+    }
+  ],
+  "offer": {
+    "offer_id": "OFF-EX01B",
+    "version": 1,
+    "counterparty_id": "BUYER-1",
+    "doc_ids": [
+      "EX01B-msg"
+    ],
+    "received_day": 0,
+    "status": "COMPILED",
+    "obligations": [
+      {
+        "id": "OB-1",
+        "type": "IMMEDIATE_DISCOUNT",
+        "counterparty_id": "BUYER-1",
+        "rate_bp": 120,
+        "amount_fen": null,
+        "days_delta": null,
+        "effective_day": 2,
+        "base": {
+          "kind": "INVOICE",
+          "amount_fen": 42000000,
+          "receivable_id": "RCV-A",
+          "events_per_year": null,
+          "amount_display": "¥420,000.00"
+        },
+        "contingency": "FIRM",
+        "duration": {
+          "kind": "ONE_OFF",
+          "invoices": null,
+          "end_day": null
+        },
+        "spans": [
+          {
+            "doc_id": "EX01B-msg",
+            "start": 0,
+            "end": 25,
+            "text": "1.2% for early settlement"
+          }
+        ],
+        "confidence": 0.97,
+        "unresolved": [],
+        "rate_display": "1.20%",
+        "amount_display": null
+      },
+      {
+        "id": "OB-2",
+        "type": "TERMS_EXTENSION",
+        "counterparty_id": "BUYER-1",
+        "rate_bp": null,
+        "amount_fen": null,
+        "days_delta": 15,
+        "effective_day": 2,
+        "base": {
+          "kind": "FUTURE_INVOICES",
+          "amount_fen": 42000000,
+          "receivable_id": null,
+          "events_per_year": null,
+          "amount_display": "¥420,000.00"
+        },
+        "contingency": "FIRM",
+        "duration": {
+          "kind": "RECURRING_PERPETUAL",
+          "invoices": null,
+          "end_day": null
+        },
+        "spans": [
+          {
+            "doc_id": "EX01B-msg",
+            "start": 27,
+            "end": 64,
+            "text": "Standard terms going forward: 60 days"
+          }
+        ],
+        "confidence": 0.94,
+        "unresolved": [],
+        "rate_display": null,
+        "amount_display": null
+      },
+      {
+        "id": "OB-3",
+        "type": "CONTINGENT_REBATE",
+        "counterparty_id": "BUYER-1",
+        "rate_bp": 100,
+        "amount_fen": null,
+        "days_delta": null,
+        "effective_day": null,
+        "base": {
+          "kind": "PERIOD_PURCHASES",
+          "amount_fen": 40000000,
+          "receivable_id": null,
+          "events_per_year": null,
+          "amount_display": "¥400,000.00"
+        },
+        "contingency": "CONTINGENT",
+        "duration": {
+          "kind": "ONE_OFF",
+          "invoices": null,
+          "end_day": null
+        },
+        "spans": [
+          {
+            "doc_id": "EX01B-msg",
+            "start": 70,
+            "end": 110,
+            "text": "1% on next quarter as a goodwill gesture"
+          }
+        ],
+        "confidence": 0.91,
+        "unresolved": [],
+        "rate_display": "1.00%",
+        "amount_display": null
+      }
+    ],
+    "abstentions": [],
+    "data_requests": [],
+    "authority_claims": [],
+    "funding_claims": [],
+    "compiler": "fixture-cache",
+    "prompt_version": "offer-v1"
+  }
+}

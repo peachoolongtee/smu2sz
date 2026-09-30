@@ -1,0 +1,557 @@
+{
+  "committed": {
+    "id": "PLAN-S2",
+    "basis": "COMMITTED",
+    "need_fen": 36000000,
+    "actions": [
+      {
+        "kind": "DRAW",
+        "facility_id": "FAC-LINE",
+        "day": 0,
+        "amount_fen": 15000000,
+        "receivable_id": null,
+        "repay_day": 32,
+        "rate_bp": null,
+        "amount_display": "¥150,000.00",
+        "rate_display": null
+      },
+      {
+        "kind": "FINANCE_INVOICE",
+        "facility_id": "FAC-IF",
+        "day": 0,
+        "amount_fen": 21000000,
+        "receivable_id": "RCV-A",
+        "repay_day": 32,
+        "rate_bp": null,
+        "amount_display": "¥210,000.00",
+        "rate_display": null
+      }
+    ],
+    "costs": [
+      {
+        "label": "Credit line interest (32 days)",
+        "fen": 84164,
+        "facility_id": "FAC-LINE",
+        "formula": "¥150,000.00 × 6.40% × 32 / 365 = ¥841.64",
+        "display": "¥841.64"
+      },
+      {
+        "label": "Invoice financing interest (one 30-day period)",
+        "fen": 134630,
+        "facility_id": "FAC-IF",
+        "formula": "¥210,000.00 × 7.80% × 30 / 365 = ¥1,346.30",
+        "display": "¥1,346.30"
+      },
+      {
+        "label": "Invoice financing fee (0.25% per advance)",
+        "fen": 52500,
+        "facility_id": "FAC-IF",
+        "formula": "¥210,000.00 × 0.25% = ¥525.00",
+        "display": "¥525.00"
+      }
+    ],
+    "total_cost_fen": 271294,
+    "admissible": true,
+    "violations": [],
+    "marginal_cost_annual": {
+      "num": 1301,
+      "den": 12000,
+      "text": "0.11"
+    },
+    "marginal_facility_id": "FAC-IF",
+    "rejected": [
+      {
+        "label": "Take the full 1.2% early-pay discount on ¥420,000.00",
+        "reasons": [],
+        "note": "Admissible, but costs ¥5,040.00: more than the router plan."
+      },
+      {
+        "label": "v1 optimum: credit line plus a partial early pay at 1.2%",
+        "reasons": [],
+        "note": "Admissible, but costs ¥3,392.25 (¥2,550.61 discount + ¥841.64 line interest)."
+      },
+      {
+        "label": "Guaranteed working-capital loan (FAC-GGL)",
+        "reasons": [
+          "UNCOMMITTED_FACILITY",
+          "LEAD_TIME_TOO_LONG"
+        ],
+        "note": "NOT_APPLIED counts as zero, and 21 days to cash lands after payroll on day 12."
+      },
+      {
+        "label": "Credit line alone (¥150,000.00)",
+        "reasons": [
+          "RESERVE_BREACH"
+        ],
+        "note": "Leaves cash below the ¥300,000.00 floor on day 12."
+      }
+    ],
+    "label": "Credit line + invoice financing",
+    "need_display": "¥360,000.00",
+    "total_cost_display": "¥2,712.94"
+  },
+  "expected": {
+    "id": "PLAN-EXP",
+    "basis": "EXPECTED",
+    "need_fen": 20712329,
+    "actions": [
+      {
+        "kind": "FINANCE_INVOICE",
+        "facility_id": "FAC-IF",
+        "day": 0,
+        "amount_fen": 20712329,
+        "receivable_id": null,
+        "repay_day": 21,
+        "rate_bp": null,
+        "amount_display": "¥207,123.29",
+        "rate_display": null
+      },
+      {
+        "kind": "DRAW",
+        "facility_id": "FAC-GGL",
+        "day": 21,
+        "amount_fen": 20712329,
+        "receivable_id": null,
+        "repay_day": null,
+        "rate_bp": null,
+        "amount_display": "¥207,123.29",
+        "rate_display": null
+      }
+    ],
+    "costs": [
+      {
+        "label": "Invoice financing bridge (21 days)",
+        "fen": 129197,
+        "facility_id": "FAC-IF",
+        "formula": "¥207,123.29 × 10.8417% × 21 / 365 = ¥1,291.97",
+        "display": "¥1,291.97"
+      },
+      {
+        "label": "Guaranteed loan for the rest of the year (344 days)",
+        "fen": 976033,
+        "facility_id": "FAC-GGL",
+        "formula": "¥207,123.29 × 5.00% × 344 / 365 = ¥9,760.33",
+        "display": "¥9,760.33"
+      }
+    ],
+    "total_cost_fen": 1105230,
+    "admissible": false,
+    "violations": [
+      {
+        "code": "UNCOMMITTED_FACILITY",
+        "message": "FAC-GGL is NOT_APPLIED: it counts as zero for hard constraints.",
+        "day": null,
+        "month": null,
+        "observed": "NOT_APPLIED",
+        "limit": "COMMITTED",
+        "curable": true,
+        "cure_cost_fen": null,
+        "cure_note": "Shown for information. The verifier never relies on the expected plan.",
+        "formula": "status == COMMITTED for any source in a committed plan",
+        "inputs": {
+          "facility": "FAC-GGL",
+          "status": "NOT_APPLIED",
+          "lead_time_days": "21"
+        },
+        "spans": [],
+        "cure_cost_display": null
+      }
+    ],
+    "marginal_cost_annual": {
+      "num": 1301,
+      "den": 12000,
+      "text": "0.11"
+    },
+    "marginal_facility_id": "FAC-IF",
+    "rejected": [],
+    "label": "Expected: invoice-financing bridge, then the guaranteed loan (not relied on)",
+    "need_display": "¥207,123.29",
+    "total_cost_display": "¥11,052.30"
+  },
+  "menu": [
+    {
+      "facility": {
+        "id": "FAC-LINE",
+        "name": "Bank credit line",
+        "kind": "CREDIT_LINE",
+        "lender_id": "BANK-1",
+        "status": "COMMITTED",
+        "owner_approved": true,
+        "limit_fen": 15000000,
+        "drawn_fen": 0,
+        "advance_rate_bp": null,
+        "rate_bp": 640,
+        "fee_bp_per_advance": 0,
+        "fee_period_days": null,
+        "upfront_fee_bp": 0,
+        "lead_time_days": 0,
+        "term_months": null,
+        "repayment": "BULLET",
+        "collateral": false,
+        "personal_guarantee": false,
+        "counts_in_leverage": true,
+        "counts_in_debt_service": true,
+        "covenants": [
+          {
+            "id": "FAC-LINE-DSCR",
+            "facility_id": "FAC-LINE",
+            "kind": "DSCR_MIN",
+            "threshold_bp": 12500,
+            "clean_down_days": null,
+            "definition": "monthly EBITDA / scheduled debt service (principal + interest, all facilities)",
+            "formula": "EBITDA_m / DS_m >= 1.25",
+            "threshold_display": "125.00%"
+          },
+          {
+            "id": "FAC-LINE-LEV",
+            "facility_id": "FAC-LINE",
+            "kind": "LEVERAGE_MAX",
+            "threshold_bp": 25000,
+            "clean_down_days": null,
+            "definition": "total debt / annualised EBITDA",
+            "formula": "Debt_m / (12 x EBITDA_m) <= 2.5",
+            "threshold_display": "250.00%"
+          },
+          {
+            "id": "FAC-LINE-CD",
+            "facility_id": "FAC-LINE",
+            "kind": "CLEAN_DOWN",
+            "threshold_bp": null,
+            "clean_down_days": 30,
+            "definition": "credit line at zero for 30 consecutive days each year",
+            "formula": "max run of days with balance = 0 >= 30",
+            "threshold_display": null
+          }
+        ],
+        "source_note": "synthetic fixture (spec v2 §7.2)",
+        "limit_display": "¥150,000.00",
+        "drawn_display": "¥0.00",
+        "advance_rate_display": null,
+        "rate_display": "6.40%",
+        "upfront_fee_display": "0.00%"
+      },
+      "cost_display": "6.40% p.a. simple",
+      "time_to_cash_display": "Same day",
+      "covenant_effect": "Adds interest to debt service and balance to leverage. Clean-down: zero balance for 30 consecutive days a year.",
+      "admissible": true,
+      "reason_codes": [],
+      "reason": "Committed and same-day. Covers ¥150,000.00 of the ¥360,000.00 need; alone it breaches the floor on day 12. Excluded from permanent needs by clean-down."
+    },
+    {
+      "facility": {
+        "id": "FAC-IF",
+        "name": "Invoice financing (onboarded platform)",
+        "kind": "INVOICE_FINANCING",
+        "lender_id": "PLATFORM-1",
+        "status": "COMMITTED",
+        "owner_approved": true,
+        "limit_fen": 35000000,
+        "drawn_fen": 0,
+        "advance_rate_bp": 8000,
+        "rate_bp": 780,
+        "fee_bp_per_advance": 25,
+        "fee_period_days": 30,
+        "upfront_fee_bp": 0,
+        "lead_time_days": 3,
+        "term_months": null,
+        "repayment": "ON_RECEIPT",
+        "collateral": false,
+        "personal_guarantee": false,
+        "counts_in_leverage": true,
+        "counts_in_debt_service": true,
+        "covenants": [],
+        "source_note": "synthetic fixture (spec v2 §7.2)",
+        "limit_display": "¥350,000.00",
+        "drawn_display": "¥0.00",
+        "advance_rate_display": "80.00%",
+        "rate_display": "7.80%",
+        "upfront_fee_display": "0.00%"
+      },
+      "cost_display": "10.84% all-in (7.80% + 0.25% per 30 days)",
+      "time_to_cash_display": "3 days",
+      "covenant_effect": "Interest and fee count in debt service; balance counts in leverage. No clean-down.",
+      "admissible": true,
+      "reason_codes": [],
+      "reason": "Committed. Repaid from the receivable on day 32. The marginal source for permanent needs."
+    },
+    {
+      "facility": {
+        "id": "FAC-EARLYPAY",
+        "name": "Buyer early-payment offer",
+        "kind": "BUYER_EARLY_PAY",
+        "lender_id": "BUYER-1",
+        "status": "COMMITTED",
+        "owner_approved": true,
+        "limit_fen": 42000000,
+        "drawn_fen": 0,
+        "advance_rate_bp": null,
+        "rate_bp": 120,
+        "fee_bp_per_advance": 0,
+        "fee_period_days": null,
+        "upfront_fee_bp": 0,
+        "lead_time_days": 2,
+        "term_months": null,
+        "repayment": "ON_RECEIPT",
+        "collateral": false,
+        "personal_guarantee": false,
+        "counts_in_leverage": false,
+        "counts_in_debt_service": false,
+        "covenants": [],
+        "source_note": "available only while the buyer offers it",
+        "limit_display": "¥420,000.00",
+        "drawn_display": "¥0.00",
+        "advance_rate_display": null,
+        "rate_display": "1.20%",
+        "upfront_fee_display": "0.00%"
+      },
+      "cost_display": "1.20% discount (break-even 0.88%)",
+      "time_to_cash_display": "2 days",
+      "covenant_effect": "None: a discount, not debt.",
+      "admissible": true,
+      "reason_codes": [],
+      "reason": "Within the 1.50% immediate-discount cap, but above the 0.88% break-even, so dearer than invoice financing."
+    },
+    {
+      "facility": {
+        "id": "FAC-GGL",
+        "name": "Government-guaranteed working-capital loan",
+        "kind": "GOV_GUARANTEED_LOAN",
+        "lender_id": "BANK-2",
+        "status": "NOT_APPLIED",
+        "owner_approved": true,
+        "limit_fen": 50000000,
+        "drawn_fen": 0,
+        "advance_rate_bp": null,
+        "rate_bp": 500,
+        "fee_bp_per_advance": 0,
+        "fee_period_days": null,
+        "upfront_fee_bp": 0,
+        "lead_time_days": 21,
+        "term_months": 12,
+        "repayment": "BULLET",
+        "collateral": false,
+        "personal_guarantee": false,
+        "counts_in_leverage": true,
+        "counts_in_debt_service": true,
+        "covenants": [],
+        "source_note": "4.0% + 1.0% guarantee fee; needs the borrower file",
+        "limit_display": "¥500,000.00",
+        "drawn_display": "¥0.00",
+        "advance_rate_display": null,
+        "rate_display": "5.00%",
+        "upfront_fee_display": "0.00%"
+      },
+      "cost_display": "5.00% p.a. (4.0% + 1.0% guarantee fee)",
+      "time_to_cash_display": "21 days",
+      "covenant_effect": "Adds to leverage and debt service. Needs the borrower file.",
+      "admissible": false,
+      "reason_codes": [
+        "UNCOMMITTED_FACILITY",
+        "LEAD_TIME_TOO_LONG"
+      ],
+      "reason": "NOT_APPLIED counts as zero, and 21 days to cash lands after payroll on day 12."
+    },
+    {
+      "facility": {
+        "id": "FAC-ETL",
+        "name": "Equipment term loan",
+        "kind": "EQUIPMENT_TERM_LOAN",
+        "lender_id": "BANK-1",
+        "status": "NOT_APPLIED",
+        "owner_approved": true,
+        "limit_fen": 60000000,
+        "drawn_fen": 0,
+        "advance_rate_bp": null,
+        "rate_bp": 560,
+        "fee_bp_per_advance": 0,
+        "fee_period_days": null,
+        "upfront_fee_bp": 0,
+        "lead_time_days": 14,
+        "term_months": 36,
+        "repayment": "AMORTISING",
+        "collateral": false,
+        "personal_guarantee": false,
+        "counts_in_leverage": true,
+        "counts_in_debt_service": true,
+        "covenants": [],
+        "source_note": "secured on the financed equipment; 18 or 36 months",
+        "limit_display": "¥600,000.00",
+        "drawn_display": "¥0.00",
+        "advance_rate_display": null,
+        "rate_display": "5.60%",
+        "upfront_fee_display": "0.00%"
+      },
+      "cost_display": "5.60% p.a.",
+      "time_to_cash_display": "14 days",
+      "covenant_effect": "Adds amortisation to debt service: DSCR 1.13× (18 months) or 1.43× (36 months) in months 1 to 3.",
+      "admissible": false,
+      "reason_codes": [
+        "UNCOMMITTED_FACILITY"
+      ],
+      "reason": "Not applied. Used for capex only (Tier 2)."
+    },
+    {
+      "facility": {
+        "id": "FAC-LEASE",
+        "name": "Equipment lease",
+        "kind": "EQUIPMENT_LEASE",
+        "lender_id": "LESSOR-1",
+        "status": "NOT_APPLIED",
+        "owner_approved": true,
+        "limit_fen": 60000000,
+        "drawn_fen": 0,
+        "advance_rate_bp": null,
+        "rate_bp": 720,
+        "fee_bp_per_advance": 0,
+        "fee_period_days": null,
+        "upfront_fee_bp": 0,
+        "lead_time_days": 10,
+        "term_months": 48,
+        "repayment": "AMORTISING",
+        "collateral": false,
+        "personal_guarantee": false,
+        "counts_in_leverage": true,
+        "counts_in_debt_service": true,
+        "covenants": [],
+        "source_note": "7.2% effective",
+        "limit_display": "¥600,000.00",
+        "drawn_display": "¥0.00",
+        "advance_rate_display": null,
+        "rate_display": "7.20%",
+        "upfront_fee_display": "0.00%"
+      },
+      "cost_display": "7.20% effective",
+      "time_to_cash_display": "10 days",
+      "covenant_effect": "Lease payments count in debt service: DSCR 1.51× in months 1 to 3.",
+      "admissible": false,
+      "reason_codes": [
+        "UNCOMMITTED_FACILITY"
+      ],
+      "reason": "Not applied. Used for capex only (Tier 2)."
+    },
+    {
+      "facility": {
+        "id": "FAC-BILL",
+        "name": "Bank acceptance bill discounting (银票)",
+        "kind": "BANK_ACCEPTANCE_BILL",
+        "lender_id": "BANK-1",
+        "status": "COMMITTED",
+        "owner_approved": true,
+        "limit_fen": 0,
+        "drawn_fen": 0,
+        "advance_rate_bp": null,
+        "rate_bp": 58,
+        "fee_bp_per_advance": 0,
+        "fee_period_days": null,
+        "upfront_fee_bp": 0,
+        "lead_time_days": 1,
+        "term_months": null,
+        "repayment": "BULLET",
+        "collateral": false,
+        "personal_guarantee": false,
+        "counts_in_leverage": false,
+        "counts_in_debt_service": false,
+        "covenants": [],
+        "source_note": "≈0.58% p.a., 6-month 国股 bill (Aug 2026); no bills held in this fixture",
+        "limit_display": "¥0.00",
+        "drawn_display": "¥0.00",
+        "advance_rate_display": null,
+        "rate_display": "0.58%",
+        "upfront_fee_display": "0.00%"
+      },
+      "cost_display": "0.58% p.a. (6-month bill)",
+      "time_to_cash_display": "1 day",
+      "covenant_effect": "None.",
+      "admissible": false,
+      "reason_codes": [],
+      "reason": "No acceptance bills are held in this fixture, so the limit is ¥0.00."
+    },
+    {
+      "facility": {
+        "id": "FAC-EQUITY",
+        "name": "Owner equity or outside investor",
+        "kind": "EQUITY",
+        "lender_id": "INVESTOR",
+        "status": "REFERENCE_ONLY",
+        "owner_approved": true,
+        "limit_fen": 0,
+        "drawn_fen": 0,
+        "advance_rate_bp": null,
+        "rate_bp": 0,
+        "fee_bp_per_advance": 0,
+        "fee_period_days": null,
+        "upfront_fee_bp": 0,
+        "lead_time_days": 60,
+        "term_months": null,
+        "repayment": "BULLET",
+        "collateral": false,
+        "personal_guarantee": false,
+        "counts_in_leverage": false,
+        "counts_in_debt_service": false,
+        "covenants": [],
+        "source_note": "Tier 3: reference line only",
+        "limit_display": "¥0.00",
+        "drawn_display": "¥0.00",
+        "advance_rate_display": null,
+        "rate_display": "0.00%",
+        "upfront_fee_display": "0.00%"
+      },
+      "cost_display": "n/a",
+      "time_to_cash_display": "60 days",
+      "covenant_effect": "n/a",
+      "admissible": false,
+      "reason_codes": [
+        "TIER3_EQUITY"
+      ],
+      "reason": "Reference line only. Issuing equity is Tier 3 and is never executed."
+    }
+  ],
+  "marginal": {
+    "rate": {
+      "num": 1301,
+      "den": 12000,
+      "text": "0.11"
+    },
+    "rate_display": "10.8417%",
+    "facility_id": "FAC-IF",
+    "facility_name": "Invoice financing (onboarded platform)",
+    "break_even_bp": 88,
+    "break_even_formula": "d / (1 − d) < c, where c = 7.80% × 30/365 + 0.25% = 0.8911%, so d < 0.88%",
+    "excluded_note": "The credit line is excluded: clean-down needs a zero balance for 30 consecutive days a year, so it cannot carry a permanent need.",
+    "extension_extra_receivables_fen": 20712329,
+    "extension_per_invoice_fen": 187130,
+    "extension_committed_12m_fen": 2245562,
+    "extension_notional_line_12m_fen": 1325589,
+    "extension_expected_12m_fen": 1105230,
+    "extension_formula": "¥420,000.00 × 12 × 15 / 365 = ¥207,123.29 of extra receivables; × 10.8417% = ¥22,455.62 a year (¥1,871.30 per invoice)",
+    "break_even_display": "0.88%",
+    "extension_extra_receivables_display": "¥207,123.29",
+    "extension_per_invoice_display": "¥1,871.30",
+    "extension_committed_12m_display": "¥22,455.62",
+    "extension_notional_line_12m_display": "¥13,255.89",
+    "extension_expected_12m_display": "¥11,052.30"
+  },
+  "comparison": [
+    {
+      "label": "Take the full 1.2% early-pay discount",
+      "total_fen": 504000,
+      "note": "0.88% break-even exceeded",
+      "selected": false,
+      "total_display": "¥5,040.00"
+    },
+    {
+      "label": "v1 optimum: line + partial early pay",
+      "total_fen": 339225,
+      "note": "discount above break-even",
+      "selected": false,
+      "total_display": "¥3,392.25"
+    },
+    {
+      "label": "Router: credit line + invoice financing",
+      "total_fen": 271294,
+      "note": "committed sources only",
+      "selected": true,
+      "total_display": "¥2,712.94"
+    }
+  ]
+}

@@ -1,0 +1,75 @@
+@import "tailwindcss";
+
+/* Design tokens. Calm light fintech theme: neutral surfaces, one blue accent, semantic status colours.
+   Every colour used by components comes from here or from the default Tailwind palette (annotation tones). */
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", "PingFang SC", "Hiragino Sans GB",
+    "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+
+  --color-canvas: #f5f7fa;
+  --color-surface: #ffffff;
+  --color-subtle: #eef2f6;
+  --color-line: #dde3ea;
+  --color-line-strong: #c3cdd9;
+
+  --color-ink: #0f1c2e;
+  --color-ink-2: #3f5068;
+  --color-ink-3: #5d6e84;
+
+  --color-brand-50: #eaf1fc;
+  --color-brand-100: #d6e4f9;
+  --color-brand-600: #1558c0;
+  --color-brand-700: #0f479c;
+
+  --color-ok-fg: #0b6b48;
+  --color-ok-bg: #e5f5ed;
+  --color-ok-line: #b2dec6;
+  --color-warn-fg: #82490a;
+  --color-warn-bg: #fdf2d9;
+  --color-warn-line: #ecd092;
+  --color-bad-fg: #a3241a;
+  --color-bad-bg: #fdecea;
+  --color-bad-line: #f1b9b2;
+  --color-info-fg: #1447a6;
+  --color-info-bg: #e8f0fd;
+  --color-info-line: #b9cff4;
+
+  --shadow-card: 0 1px 2px rgb(15 28 46 / 0.04);
+  --radius-card: 0.625rem;
+}
+
+html {
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-size-adjust: 100%;
+}
+
+body {
+  min-height: 100dvh;
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-brand-600);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* Recharts draws its own focus outline on the wrapper; keep it subtle. */
+.recharts-wrapper:focus-visible,
+.recharts-surface:focus-visible {
+  outline: none;
+}

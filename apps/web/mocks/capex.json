@@ -1,0 +1,297 @@
+{
+  "request": {
+    "label": "¥600k machine",
+    "price_fen": 60000000,
+    "price_display": "¥600,000.00"
+  },
+  "npv_fen": 38088577,
+  "payback_month": 31,
+  "structures": [
+    {
+      "id": "cash_line",
+      "label": "Cash + credit line",
+      "kind": "CASH_LINE",
+      "term_months": null,
+      "monthly_payment_fen": null,
+      "total_interest_fen": null,
+      "feasible": false,
+      "violations": [
+        {
+          "code": "RESERVE_BREACH",
+          "message": "Cash above the reserve (¥250,000.00) plus the ¥150,000.00 line cannot fund the ¥600,000.00 price.",
+          "day": 0,
+          "month": null,
+          "observed": "¥400,000.00",
+          "limit": "¥600,000.00",
+          "curable": false,
+          "cure_cost_fen": null,
+          "cure_note": null,
+          "formula": "(cash − min_cash) + line_limit ≥ price",
+          "inputs": {
+            "cash_above_reserve": "¥250,000.00",
+            "line_limit": "¥150,000.00",
+            "price": "¥600,000.00"
+          },
+          "spans": [],
+          "cure_cost_display": null
+        }
+      ],
+      "dscr_by_month": [],
+      "extra_cost_vs_selected_fen": null,
+      "note": "Infeasible: not enough cash above the reserve.",
+      "monthly_payment_display": null,
+      "total_interest_display": null,
+      "extra_cost_vs_selected_display": null
+    },
+    {
+      "id": "loan_18m",
+      "label": "18-month equipment loan",
+      "kind": "LOAN",
+      "term_months": 18,
+      "monthly_payment_fen": 3483060,
+      "total_interest_fen": 2695084,
+      "feasible": false,
+      "violations": [
+        {
+          "code": "DSCR_BREACH",
+          "message": "DSCR is 1.13× in month 1, below the 1.25× minimum.",
+          "day": null,
+          "month": 1,
+          "observed": "1.13×",
+          "limit": "≥ 1.25×",
+          "curable": false,
+          "cure_cost_fen": null,
+          "cure_note": null,
+          "formula": "EBITDA_m / DS_m = ¥90,000.00 / (¥45,000.00 + ¥34,830.60)",
+          "inputs": {
+            "EBITDA_m": "¥90,000.00",
+            "existing_debt_service": "¥45,000.00",
+            "new_payment": "¥34,830.60",
+            "DS_m": "¥79,830.60"
+          },
+          "spans": [],
+          "cure_cost_display": null
+        }
+      ],
+      "dscr_by_month": [
+        {
+          "month": 1,
+          "dscr": {
+            "num": 113,
+            "den": 100,
+            "text": "1.13"
+          },
+          "passes": false
+        },
+        {
+          "month": 2,
+          "dscr": {
+            "num": 113,
+            "den": 100,
+            "text": "1.13"
+          },
+          "passes": false
+        },
+        {
+          "month": 3,
+          "dscr": {
+            "num": 113,
+            "den": 100,
+            "text": "1.13"
+          },
+          "passes": false
+        },
+        {
+          "month": 4,
+          "dscr": {
+            "num": 140,
+            "den": 100,
+            "text": "1.40"
+          },
+          "passes": true
+        },
+        {
+          "month": 5,
+          "dscr": {
+            "num": 140,
+            "den": 100,
+            "text": "1.40"
+          },
+          "passes": true
+        },
+        {
+          "month": 6,
+          "dscr": {
+            "num": 140,
+            "den": 100,
+            "text": "1.40"
+          },
+          "passes": true
+        }
+      ],
+      "extra_cost_vs_selected_fen": null,
+      "note": "Fails the DSCR covenant in months 1 to 3.",
+      "monthly_payment_display": "¥34,830.60",
+      "total_interest_display": "¥26,950.84",
+      "extra_cost_vs_selected_display": null
+    },
+    {
+      "id": "loan_36m",
+      "label": "36-month equipment loan",
+      "kind": "LOAN",
+      "term_months": 36,
+      "monthly_payment_fen": 1814462,
+      "total_interest_fen": 5320614,
+      "feasible": true,
+      "violations": [],
+      "dscr_by_month": [
+        {
+          "month": 1,
+          "dscr": {
+            "num": 143,
+            "den": 100,
+            "text": "1.43"
+          },
+          "passes": true
+        },
+        {
+          "month": 2,
+          "dscr": {
+            "num": 143,
+            "den": 100,
+            "text": "1.43"
+          },
+          "passes": true
+        },
+        {
+          "month": 3,
+          "dscr": {
+            "num": 143,
+            "den": 100,
+            "text": "1.43"
+          },
+          "passes": true
+        },
+        {
+          "month": 4,
+          "dscr": {
+            "num": 177,
+            "den": 100,
+            "text": "1.77"
+          },
+          "passes": true
+        },
+        {
+          "month": 5,
+          "dscr": {
+            "num": 177,
+            "den": 100,
+            "text": "1.77"
+          },
+          "passes": true
+        },
+        {
+          "month": 6,
+          "dscr": {
+            "num": 177,
+            "den": 100,
+            "text": "1.77"
+          },
+          "passes": true
+        }
+      ],
+      "extra_cost_vs_selected_fen": null,
+      "note": "Selected: the cheapest structure that keeps every covenant.",
+      "monthly_payment_display": "¥18,144.62",
+      "total_interest_display": "¥53,206.14",
+      "extra_cost_vs_selected_display": null
+    },
+    {
+      "id": "lease_48m",
+      "label": "48-month lease",
+      "kind": "LEASE",
+      "term_months": 48,
+      "monthly_payment_fen": 1442349,
+      "total_interest_fen": 9232732,
+      "feasible": true,
+      "violations": [],
+      "dscr_by_month": [
+        {
+          "month": 1,
+          "dscr": {
+            "num": 151,
+            "den": 100,
+            "text": "1.51"
+          },
+          "passes": true
+        },
+        {
+          "month": 2,
+          "dscr": {
+            "num": 151,
+            "den": 100,
+            "text": "1.51"
+          },
+          "passes": true
+        },
+        {
+          "month": 3,
+          "dscr": {
+            "num": 151,
+            "den": 100,
+            "text": "1.51"
+          },
+          "passes": true
+        },
+        {
+          "month": 4,
+          "dscr": {
+            "num": 188,
+            "den": 100,
+            "text": "1.88"
+          },
+          "passes": true
+        },
+        {
+          "month": 5,
+          "dscr": {
+            "num": 188,
+            "den": 100,
+            "text": "1.88"
+          },
+          "passes": true
+        },
+        {
+          "month": 6,
+          "dscr": {
+            "num": 188,
+            "den": 100,
+            "text": "1.88"
+          },
+          "passes": true
+        }
+      ],
+      "extra_cost_vs_selected_fen": 3912118,
+      "note": "Feasible, but dearer than the selected loan.",
+      "monthly_payment_display": "¥14,423.49",
+      "total_interest_display": "¥92,327.32",
+      "extra_cost_vs_selected_display": "¥39,121.18"
+    }
+  ],
+  "selected_id": "loan_36m",
+  "leverage_financed": {
+    "num": 208,
+    "den": 100,
+    "text": "2.08"
+  },
+  "leverage_with_extension": {
+    "num": 228,
+    "den": 100,
+    "text": "2.28"
+  },
+  "dscr_limit_display": "1.25×",
+  "leverage_limit_display": "2.50×",
+  "required_tier": "TIER_2",
+  "approval_id": null,
+  "npv_display": "¥380,885.77"
+}

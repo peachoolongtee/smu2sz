@@ -1,0 +1,314 @@
+"use client";
+
+import Link from "next/link";
+import { useState } from "react";
+import { CheckIcon } from "@/components/icons";
+import { OutcomeBadge, TierBadge } from "@/components/badges";
+import { PlanCard } from "@/components/plan-card";
+import {
+  Badge,
+  Button,
+  Callout,
+  Card,
+  EmptyState,
+  ErrorState,
+  Formula,
+  Hash,
+  KeyValueList,
+  LoadingBlock,
+  PageHeader,
+  Segmented,
+  TableWrap,
+  tableCls,
+  tdCls,
+  thCls,
+} from "@/components/ui";
+import { CounterCard, OperationsList, ViolationCard } from "@/components/verdict-parts";
+import { evaluateOffer, negotiate } from "@/lib/api";
+import { recordNegotiation, recordVerdict } from "@/lib/demo-store";
+import { useI18n } from "@/lib/i18n";
+import type { BuyerProfile, NegotiationView, VerdictView } from "@/lib/types";
+import { useCurrentOffer } from "@/lib/use-current";
+
+export default function VerdictPage() {
+  const { t } = useI18n();
+  const cur = useCurrentOffer();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function evaluate() {
+    if (!cur.offerId) return;
+    setBusy(true);
+    setError(null);
+    try {
+      recordVerdict(await evaluateOffer(cur.offerId));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <>
+      <PageHeader title={t("verdict.title")} subtitle={t("verdict.subtitle")} />
+      {cur.error ? (
+        <ErrorState error={cur.error} onRetry={cur.reload} />
+      ) : cur.loading ? (
+        <LoadingBlock rows={3} />
+      ) : !cur.offerId ? (
+        <EmptyState
+          title={t("verdict.noOffer.title")}
+          body={t("verdict.noOffer.body")}
+          action={
+            <Link href="/inbox" className="inline-flex min-h-10 items-center rounded-md bg-brand-600 px-3.5 text-sm font-medium text-white hover:bg-brand-700">
+              {t("verdict.noOffer.cta")}
+            </Link>
+          }
+        />
+      ) : !cur.verdict ? (
+        <div className="space-y-3">
+          <EmptyState
+            title={t("verdict.notEvaluated.title")}
+            body={t("verdict.notEvaluated.body")}
+            action={
+              <Button variant="primary" loading={busy} onClick={() => void evaluate()}>
+                {t("verdict.evaluate")}
+              </Button>
+            }
+          />
+          {error ? <ErrorState error={error} /> : null}
+        </div>
+      ) : (
+        <VerdictBody verdict={cur.verdict} offerId={cur.offerId} negotiation={cur.negotiation} />
+      )}
+    </>
+  );
+}
+
+function VerdictBody({
+  verdict,
+  offerId,
+  negotiation,
+}: {
+  verdict: VerdictView;
+  offerId: string;
+  negotiation: NegotiationView | null;
+}) {
+  const { t, te } = useI18n();
+  const canNegotiate = verdict.counters.length > 0;
+  const plan = negotiation?.plan ?? verdict.plan;
+
+  return (
+    <div className="space-y-6">
+      <Card id="outcome" tone={verdict.outcome === "REJECT" ? "bad" : verdict.outcome === "ACCEPT" ? "ok" : "warn"}>
+        <div className="flex flex-wrap items-start gap-x-6 gap-y-3">
+          <div>
+            <p className="mb-1 text-xs font-medium text-ink-3">{t("verdict.outcome")}</p>
+            <span data-testid="outcome-badge">
+              <OutcomeBadge outcome={verdict.outcome} large />
+            </span>
+          </div>
+          <div className="min-w-0 flex-1 basis-72">
+            <p className="text-sm leading-relaxed">{verdict.summary}</p>
+            <p className="mt-2 font-mono text-xs text-ink-3">
+              {verdict.id} &middot; {offerId} &middot; {t("verdict.versions", { m: verdict.mandate_version, s: verdict.state_version, c: verdict.calc_version })}
+            </p>
+          </div>
+          <div className="min-w-44">
+            <p className="mb-1 text-xs font-medium text-ink-3">{t("verdict.tier")}</p>
+            <TierBadge tier={verdict.required_tier} />
+            <p className="mt-1 max-w-56 text-xs text-ink-2">{te("tier.short", verdict.required_tier)}</p>
+          </div>
+        </div>
+      </Card>
+
+      <section aria-labelledby="violations-title">
+        <h2 id="violations-title" className="mb-2 text-sm font-semibold">
+          {t("verdict.violations", { n: verdict.violations.length })}
+        </h2>
+        {verdict.violations.length ? (
+          <ul className="grid gap-4 xl:grid-cols-2">
+            {verdict.violations.map((v) => (
+              <ViolationCard key={`${v.code}-${v.day ?? v.month ?? ""}`} v={v} />
+            ))}
+          </ul>
+        ) : (
+          <Callout tone="ok">{t("verdict.noViolations")}</Callout>
+        )}
+      </section>
+
+      {verdict.passed_checks.length ? (
+        <Card id="passed" title={t("verdict.passed", { n: verdict.passed_checks.length })} subtitle={t("verdict.passed.sub")}>
+          <ul className="divide-y divide-line">
+            {verdict.passed_checks.map((c) => (
+              <li key={c.code} className="flex flex-wrap items-start justify-between gap-x-4 gap-y-1 py-2">
+                <div className="min-w-0 flex-1 basis-64">
+                  <p className="flex items-center gap-1.5 text-sm font-medium">
+                    <span className="text-ok-fg">
+                      <CheckIcon />
+                    </span>
+                    {c.label}
+                  </p>
+                  {c.formula ? <p className="mt-0.5 font-mono text-xs text-ink-3">{c.formula}</p> : null}
+                </div>
+                <p className="text-sm tabular-nums">
+                  <span className="font-semibold">{c.observed}</span>
+                  <span className="text-ink-3"> &nbsp;{c.limit}</span>
+                </p>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      ) : null}
+
+      {verdict.concession_values.length ? (
+        <Card
+          id="valuation"
+          title={t("verdict.valuation")}
+          subtitle={t("verdict.valuation.sub")}
+          actions={<Badge tone="bad">{t("verdict.total", { total: verdict.forward_concession_total_display })}</Badge>}
+        >
+          <TableWrap label={t("verdict.valuation")}>
+            <table className={tableCls}>
+              <caption className="sr-only">{t("verdict.valuation")}</caption>
+              <thead>
+                <tr>
+                  <th scope="col" className={thCls}>{t("verdict.obligation")}</th>
+                  <th scope="col" className={`${thCls} text-right`}>{t("verdict.value")}</th>
+                  <th scope="col" className={`${thCls} text-right`}>{t("verdict.perInvoice")}</th>
+                  <th scope="col" className={thCls}>{t("verdict.basis")}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {verdict.concession_values.map((c) => (
+                  <tr key={c.obligation_id}>
+                    <td className={`${tdCls} font-mono text-xs`}>{c.obligation_id}</td>
+                    <td className={`${tdCls} text-right font-medium tabular-nums`}>{c.value_display}</td>
+                    <td className={`${tdCls} text-right tabular-nums`}>{c.per_invoice_display ?? t("common.none")}</td>
+                    <td className={`${tdCls} min-w-72`}>
+                      <p>{c.basis}</p>
+                      <div className="mt-1.5">
+                        <Formula>{c.formula}</Formula>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </TableWrap>
+        </Card>
+      ) : null}
+
+      <section aria-labelledby="counters-title">
+        <h2 id="counters-title" className="mb-2 text-sm font-semibold">
+          {t("verdict.counters", { n: verdict.counters.length })}
+        </h2>
+        {verdict.counters.length ? (
+          <ul className="grid gap-4 lg:grid-cols-2">
+            {verdict.counters.map((c) => (
+              <CounterCard key={c.id} c={c} />
+            ))}
+          </ul>
+        ) : (
+          <Callout tone="neutral">{t("verdict.noCounters")}</Callout>
+        )}
+      </section>
+
+      {canNegotiate ? <NegotiationPanel offerId={offerId} negotiation={negotiation} /> : null}
+
+      {plan ? <PlanCard plan={plan} id="verdict-plan" /> : null}
+    </div>
+  );
+}
+
+function NegotiationPanel({ offerId, negotiation }: { offerId: string; negotiation: NegotiationView | null }) {
+  const { t } = useI18n();
+  const [profile, setProfile] = useState<BuyerProfile>("cooperative");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function run() {
+    setBusy(true);
+    setError(null);
+    try {
+      recordNegotiation(await negotiate(offerId, { buyer_profile: profile }));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Card id="negotiation" title={t("neg.title")} subtitle={t("neg.subtitle")}>
+      {!negotiation ? (
+        <div className="space-y-3">
+          <Segmented
+            label={t("neg.profile")}
+            name="profile"
+            value={profile}
+            onChange={setProfile}
+            options={[
+              { value: "cooperative", label: t("neg.cooperative") },
+              { value: "hard_line", label: t("neg.hardLine") },
+            ]}
+          />
+          <p className="text-xs text-ink-3">{t("neg.hidden")}</p>
+          <div>
+            <Button variant="primary" loading={busy} onClick={() => void run()}>
+              {t("neg.run")}
+            </Button>
+          </div>
+          {error ? <ErrorState error={error} /> : null}
+        </div>
+      ) : (
+        <div className="space-y-4" data-testid="negotiation-result">
+          <div className="flex flex-wrap items-center gap-3">
+            <Badge tone={negotiation.outcome === "DEAL" ? "ok" : "neutral"} className="px-3 py-1 text-sm font-bold">
+              {negotiation.outcome === "DEAL" ? t("neg.deal") : t("neg.noDeal")}
+            </Badge>
+            <p className="min-w-0 flex-1 basis-64 text-sm">{negotiation.message}</p>
+          </div>
+
+          <ol className="space-y-2" aria-label={t("neg.rounds")}>
+            {negotiation.rounds.map((r) => (
+              <li key={r.round} className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border border-line px-3 py-2 text-sm">
+                <span className="font-mono text-xs text-ink-3">{t("neg.round", { n: r.round })}</span>
+                <span className="font-medium">{r.counter_label ?? t("common.none")}</span>
+                <Badge tone={r.buyer_response === "ACCEPT" ? "ok" : "bad"}>{r.buyer_response === "ACCEPT" ? t("neg.accepted") : t("neg.refused")}</Badge>
+                <span className="text-ink-2">&ldquo;{r.buyer_text}&rdquo;</span>
+              </li>
+            ))}
+          </ol>
+
+          {negotiation.commitment ? (
+            <div className="rounded-lg border border-ok-line bg-ok-bg/50 p-3">
+              <p className="mb-2 text-sm font-semibold text-ok-fg">{t("neg.commitment")}</p>
+              <KeyValueList
+                items={[
+                  { k: t("neg.commitment.id"), v: negotiation.commitment.id },
+                  { k: t("neg.commitment.status"), v: negotiation.commitment.status },
+                  { k: t("neg.commitment.nonce"), v: <span className="font-mono text-xs">{negotiation.commitment.nonce}</span> },
+                  { k: t("neg.commitment.expires"), v: t("common.dayN", { n: negotiation.commitment.expires_day }) },
+                  { k: t("neg.commitment.forward"), v: negotiation.commitment.forward_value_display },
+                  { k: t("neg.commitment.hash"), v: <Hash value={negotiation.commitment.terms_hash} /> },
+                ]}
+              />
+            </div>
+          ) : null}
+
+          <div>
+            <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-ink-3">{t("neg.operations")}</p>
+            <OperationsList ops={negotiation.operations} />
+            <p className="mt-2 text-xs">
+              <Link href="/ledger" className="font-medium text-brand-700 underline underline-offset-2">
+                {t("neg.openLedger")}
+              </Link>
+            </p>
+          </div>
+        </div>
+      )}
+    </Card>
+  );
+}

@@ -1,0 +1,314 @@
+{
+  "id": "VRD-EX01B",
+  "offer_id": "OFF-EX01B",
+  "offer_version": 1,
+  "outcome": "REJECT",
+  "violations": [
+    {
+      "code": "AGG_CONCESSION_EXCEEDED",
+      "message": "Forward concessions total ¥26,455.62, above the ¥5,000.00 aggregate cap.",
+      "day": null,
+      "month": null,
+      "observed": "¥26,455.62",
+      "limit": "¥5,000.00",
+      "curable": false,
+      "cure_cost_fen": null,
+      "cure_note": null,
+      "formula": "Σ forward_value(obligation) over 365 days + already committed ≤ max_aggregate_forward_concession",
+      "inputs": {
+        "terms_extension_12m": "¥22,455.62",
+        "contingent_rebate_at_maximum": "¥4,000.00",
+        "already_committed": "¥0.00",
+        "total": "¥26,455.62",
+        "cap": "¥5,000.00"
+      },
+      "spans": [
+        {
+          "doc_id": "EX01B-msg",
+          "start": 27,
+          "end": 64,
+          "text": "Standard terms going forward: 60 days"
+        },
+        {
+          "doc_id": "EX01B-msg",
+          "start": 70,
+          "end": 110,
+          "text": "1% on next quarter as a goodwill gesture"
+        }
+      ],
+      "cure_cost_display": null
+    },
+    {
+      "code": "RESERVE_BREACH",
+      "message": "Cash falls to ¥254,960.00 on day 47, ¥45,040.00 below the ¥300,000.00 reserve floor.",
+      "day": 47,
+      "month": null,
+      "observed": "¥254,960.00",
+      "limit": "¥300,000.00",
+      "curable": true,
+      "cure_cost_fen": 40135,
+      "cure_note": "Carry the ¥45,040.00 shortfall from day 47 to day 62 on invoice financing (the committed marginal source) for ¥401.35.",
+      "formula": "closing_cash(day) ≥ min_cash, checked on every day of the conservative trajectory",
+      "inputs": {
+        "cash_after_day_20": "¥354,960.00",
+        "operating_bill_day_47": "−¥100,000.00",
+        "closing_cash_day_47": "¥254,960.00",
+        "min_cash": "¥300,000.00",
+        "shortfall": "¥45,040.00",
+        "next_invoice_due": "day 62 (60-day terms), day 47 under 45-day terms"
+      },
+      "spans": [
+        {
+          "doc_id": "EX01B-msg",
+          "start": 0,
+          "end": 25,
+          "text": "1.2% for early settlement"
+        },
+        {
+          "doc_id": "EX01B-msg",
+          "start": 27,
+          "end": 64,
+          "text": "Standard terms going forward: 60 days"
+        }
+      ],
+      "cure_cost_display": "¥401.35"
+    }
+  ],
+  "concession_values": [
+    {
+      "obligation_id": "OB-2",
+      "value_fen": 2245562,
+      "basis": "committed marginal source: invoice financing 10.8417% all-in (clean-down excludes the credit line)",
+      "formula": "¥420,000.00 × 12 × 15 / 365 = ¥207,123.29 extra receivables; × 10.8417% = ¥22,455.62 a year",
+      "per_invoice_fen": 187130,
+      "value_display": "¥22,455.62",
+      "per_invoice_display": "¥1,871.30"
+    },
+    {
+      "obligation_id": "OB-3",
+      "value_fen": 400000,
+      "basis": "contingent rebate counted at its maximum (Invariant 5)",
+      "formula": "1.00% × ¥400,000.00 = ¥4,000.00",
+      "per_invoice_fen": null,
+      "value_display": "¥4,000.00",
+      "per_invoice_display": null
+    }
+  ],
+  "forward_concession_total_fen": 2645562,
+  "counters": [
+    {
+      "id": "CTR-A",
+      "label": "Option A",
+      "text": "Thank you for the proposal. We can agree to settle up to ¥211,800 of the ¥420,000 invoice early at 0.85%, with payment on day 2, and keep your standard terms at 45 days. We are not able to offer the quarterly rebate.",
+      "obligations": [
+        {
+          "counterparty_id": "BUYER-1",
+          "rate_bp": 85,
+          "amount_fen": null,
+          "days_delta": null,
+          "effective_day": 2,
+          "contingency": "FIRM",
+          "duration": {
+            "kind": "ONE_OFF",
+            "invoices": null,
+            "end_day": null
+          },
+          "unresolved": [],
+          "confidence": 1,
+          "type": "IMMEDIATE_DISCOUNT",
+          "base": {
+            "kind": "INVOICE",
+            "amount_fen": 21180000,
+            "receivable_id": "RCV-A",
+            "events_per_year": null,
+            "amount_display": "¥211,800.00"
+          },
+          "spans": [
+            {
+              "doc_id": "CTR-A",
+              "start": 0,
+              "end": 216,
+              "text": "Thank you for the proposal. We can agree to settle up to ¥211,800 of the ¥420,000 invoice early at 0.85%, with payment on day 2, and keep your standard terms at 45 days. We are not able to offer the quarterly rebate."
+            }
+          ],
+          "id": "CTR-A-OB1",
+          "rate_display": "0.85%",
+          "amount_display": null
+        }
+      ],
+      "supplier_cost_fen": 264194,
+      "rationale": "Priced below the 0.88% break-even early-pay discount: 0.85% on up to ¥211,800.00, the face that closes the gap net of the credit line. No forward concession is created.",
+      "formula": "0.85% × ¥211,800.00 = ¥1,800.30; + line interest ¥150,000.00 × 6.40% × 32 / 365 = ¥841.64; total ¥2,641.94",
+      "supplier_cost_display": "¥2,641.94"
+    },
+    {
+      "id": "CTR-B",
+      "label": "Option B",
+      "text": "Thank you for the proposal. We can agree to 60-day terms going forward with a 0.45% price adjustment on each invoice (¥1,890 on a ¥420,000 invoice). We are not able to offer the quarterly rebate.",
+      "obligations": [
+        {
+          "counterparty_id": "BUYER-1",
+          "rate_bp": null,
+          "amount_fen": null,
+          "days_delta": 15,
+          "effective_day": 2,
+          "contingency": "FIRM",
+          "duration": {
+            "kind": "RECURRING_PERPETUAL",
+            "invoices": null,
+            "end_day": null
+          },
+          "unresolved": [],
+          "confidence": 1,
+          "type": "TERMS_EXTENSION",
+          "base": {
+            "kind": "FUTURE_INVOICES",
+            "amount_fen": 42000000,
+            "receivable_id": null,
+            "events_per_year": null,
+            "amount_display": "¥420,000.00"
+          },
+          "spans": [
+            {
+              "doc_id": "CTR-B",
+              "start": 0,
+              "end": 195,
+              "text": "Thank you for the proposal. We can agree to 60-day terms going forward with a 0.45% price adjustment on each invoice (¥1,890 on a ¥420,000 invoice). We are not able to offer the quarterly rebate."
+            }
+          ],
+          "id": "CTR-B-OB1",
+          "rate_display": null,
+          "amount_display": null
+        },
+        {
+          "counterparty_id": "BUYER-1",
+          "rate_bp": 45,
+          "amount_fen": 189000,
+          "days_delta": null,
+          "effective_day": null,
+          "contingency": "FIRM",
+          "duration": {
+            "kind": "RECURRING_PERPETUAL",
+            "invoices": null,
+            "end_day": null
+          },
+          "unresolved": [],
+          "confidence": 1,
+          "type": "PRICE_ADJUSTMENT",
+          "base": {
+            "kind": "FUTURE_INVOICES",
+            "amount_fen": 42000000,
+            "receivable_id": null,
+            "events_per_year": null,
+            "amount_display": "¥420,000.00"
+          },
+          "spans": [
+            {
+              "doc_id": "CTR-B",
+              "start": 0,
+              "end": 195,
+              "text": "Thank you for the proposal. We can agree to 60-day terms going forward with a 0.45% price adjustment on each invoice (¥1,890 on a ¥420,000 invoice). We are not able to offer the quarterly rebate."
+            }
+          ],
+          "id": "CTR-B-OB2",
+          "rate_display": "0.45%",
+          "amount_display": "¥1,890.00"
+        }
+      ],
+      "supplier_cost_fen": 187130,
+      "rationale": "The 0.45% price adjustment of ¥1,890.00 per invoice covers the ¥1,871.30 per-invoice funding cost of the 15-day extension, priced from the 10.8417% marginal source.",
+      "formula": "0.45% × ¥420,000.00 = ¥1,890.00 ≥ ¥207,123.29 × 10.8417% / 12 = ¥1,871.30",
+      "supplier_cost_display": "¥1,871.30"
+    }
+  ],
+  "plan": {
+    "id": "PLAN-CURE-47",
+    "basis": "COMMITTED",
+    "need_fen": 4504000,
+    "actions": [
+      {
+        "kind": "FINANCE_INVOICE",
+        "facility_id": "FAC-IF",
+        "day": 47,
+        "amount_fen": 4504000,
+        "receivable_id": "RCV-B",
+        "repay_day": 62,
+        "rate_bp": null,
+        "amount_display": "¥45,040.00",
+        "rate_display": null
+      }
+    ],
+    "costs": [
+      {
+        "label": "Invoice financing interest (one 30-day period)",
+        "fen": 28875,
+        "facility_id": "FAC-IF",
+        "formula": "¥45,040.00 × 7.80% × 30 / 365 = ¥288.75",
+        "display": "¥288.75"
+      },
+      {
+        "label": "Invoice financing fee (0.25% per advance)",
+        "fen": 11260,
+        "facility_id": "FAC-IF",
+        "formula": "¥45,040.00 × 0.25% = ¥112.60",
+        "display": "¥112.60"
+      }
+    ],
+    "total_cost_fen": 40135,
+    "admissible": true,
+    "violations": [],
+    "marginal_cost_annual": {
+      "num": 1301,
+      "den": 12000,
+      "text": "0.11"
+    },
+    "marginal_facility_id": "FAC-IF",
+    "rejected": [],
+    "label": "Carry the day-47 shortfall on invoice financing until day 62",
+    "need_display": "¥45,040.00",
+    "total_cost_display": "¥401.35"
+  },
+  "required_tier": "TIER_1",
+  "mandate_version": 1,
+  "state_version": 1,
+  "calc_version": "calc-1.0",
+  "summary": "REJECT: the package books ¥26,455.62 of forward concessions against a ¥5,000.00 cap, and cash falls to ¥254,960.00 on day 47 (curable for ¥401.35). Covenants hold. Two counters priced from the marginal cost of funds are attached.",
+  "passed_checks": [
+    {
+      "code": "IMMEDIATE_DISCOUNT_EXCEEDED",
+      "label": "Immediate discount cap",
+      "observed": "1.20%",
+      "limit": "≤ 1.50%",
+      "formula": "rate_bp ≤ max_immediate_discount_bp"
+    },
+    {
+      "code": "DSCR_BREACH",
+      "label": "Monthly DSCR, extension funded pro forma",
+      "observed": "1.92×",
+      "limit": "≥ 1.25×",
+      "formula": "EBITDA_m / DS_m = ¥90,000.00 / (¥45,000.00 + ¥1,871.30)"
+    },
+    {
+      "code": "LEVERAGE_BREACH",
+      "label": "Leverage, extension funded pro forma",
+      "observed": "1.72×",
+      "limit": "≤ 2.50×",
+      "formula": "(¥1,500,000.00 + ¥150,000.00 + ¥207,123.29) / (12 × ¥90,000.00)"
+    },
+    {
+      "code": "MAX_APR_EXCEEDED",
+      "label": "All-in rate of the marginal source",
+      "observed": "10.84%",
+      "limit": "≤ 15.00%",
+      "formula": "all_in(FAC-IF) = 7.80% + 0.25% × 365/30"
+    },
+    {
+      "code": "CLEAN_DOWN_BREACH",
+      "label": "Credit line clean-down",
+      "observed": "line not used for the permanent need",
+      "limit": "0 balance for 30 consecutive days a year",
+      "formula": "max run of days with balance = 0 ≥ 30"
+    }
+  ],
+  "forward_concession_total_display": "¥26,455.62"
+}

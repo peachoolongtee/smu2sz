@@ -1,0 +1,827 @@
+/**
+ * Hand-written mirror of services/api/app/domain/models.py.
+ * Later replaced by `openapi-typescript` output (see docs/ARCHITECTURE.md, Frontend).
+ *
+ * Conventions (INVARIANT 13: the UI never computes money):
+ * - `*_fen` fields are integer fen. They are for plotting only; never add, subtract or format them in the UI.
+ * - Read views are returned "server-formatted": every `<name>_fen` / `<name>_bp` number has a sibling
+ *   `<name>_display` string ("¥26,455.62", "1.25×"), and the bare `fen` of `CostLine` has `display`.
+ *   `Displayed<T>` expresses that rule in the type system.
+ * - Ratio carries `text` (two decimals, half-up), as produced by `Ratio.text` in money.py.
+ */
+
+export type Fen = number;
+export type Bp = number;
+export type Day = number;
+
+export interface Ratio {
+  num: number;
+  den: number;
+  text: string;
+}
+
+// ------------------------------------------------------------------ display rule
+
+type DisplaySiblings<T> = {
+  [K in keyof T as K extends "fen"
+    ? T[K] extends number | null | undefined
+      ? "display"
+      : never
+    : K extends `${infer P}_fen` | `${infer P}_bp`
+      ? T[K] extends number | null | undefined
+        ? `${P}_display`
+        : never
+      : never]: T[K] extends number ? string : string | null;
+};
+
+export type Displayed<T> = T extends readonly (infer U)[]
+  ? Displayed<U>[]
+  : T extends Ratio
+    ? T
+    : T extends object
+      ? { [K in keyof T]: Displayed<T[K]> } & DisplaySiblings<T>
+      : T;
+
+// ------------------------------------------------------------------ evidence
+
+export interface SourceSpan {
+  doc_id: string;
+  start: number;
+  end: number;
+  text: string;
+}
+
+export type Channel = "chat" | "email" | "portal" | "attachment" | "term_sheet" | "owner";
+
+export interface SourceDocument {
+  doc_id: string;
+  channel: Channel;
+  sender_id: string;
+  received_day: Day;
+  text: string;
+  parent_doc_id?: string | null;
+  filename?: string | null;
+}
+
+// ------------------------------------------------------------------ obligations
+
+export type ObligationType =
+  | "IMMEDIATE_DISCOUNT"
+  | "TERMS_EXTENSION"
+  | "CONTINGENT_REBATE"
+  | "VOLUME_COMMITMENT"
+  | "OPERATIONAL_CONCESSION"
+  | "PRICE_ADJUSTMENT"
+  | "CLAIMED_PRIOR_CONCESSION";
+
+export type Contingency = "FIRM" | "CONTINGENT" | "CLAIMED_UNEVIDENCED";
+export type BaseKind = "INVOICE" | "FUTURE_INVOICES" | "PERIOD_PURCHASES" | "PER_EVENT" | "UNSPECIFIED";
+
+export interface ObligationBase {
+  kind: BaseKind;
+  amount_fen: Fen | null;
+  receivable_id: string | null;
+  events_per_year: number | null;
+}
+
+export type DurationKind = "ONE_OFF" | "RECURRING_PERPETUAL" | "RECURRING_BOUNDED";
+
+export interface Duration {
+  kind: DurationKind;
+  invoices: number | null;
+  end_day: Day | null;
+}
+
+export interface Obligation {
+  id: string;
+  type: ObligationType;
+  counterparty_id: string;
+  rate_bp: Bp | null;
+  amount_fen: Fen | null;
+  days_delta: number | null;
+  effective_day: Day | null;
+  base: ObligationBase;
+  contingency: Contingency;
+  duration: Duration;
+  spans: SourceSpan[];
+  confidence: number;
+  unresolved: string[];
+}
+
+export interface Abstention {
+  field: string;
+  reason: string;
+  spans: SourceSpan[];
+}
+
+export type DataRequestKind =
+  | "MANDATE_VALUE"
+  | "RESERVE_FLOOR"
+  | "FACILITY_LIMIT"
+  | "FUNDING_MENU"
+  | "OTHER_COUNTERPARTY_TERMS"
+  | "RESERVATION_VALUE"
+  | "SYSTEM_PROMPT"
+  | "OTHER_PRIVATE";
+
+export interface DataRequest {
+  kind: DataRequestKind;
+  span: SourceSpan;
+}
+
+export type AuthorityClaimKind =
+  | "PRE_APPROVAL"
+  | "PRIOR_AGREEMENT"
+  | "INSTRUCTION_OVERRIDE"
+  | "URGENCY"
+  | "IMPERSONATION";
+
+export interface AuthorityClaim {
+  kind: AuthorityClaimKind;
+  span: SourceSpan;
+}
+
+export interface UnsolicitedFundingClaim {
+  lender_name: string;
+  amount_fen: Fen | null;
+  rate_bp: Bp | null;
+  span: SourceSpan;
+}
+
+export type CompileStatus = "COMPILED" | "ABSTAINED" | "CONFLICTING_SOURCES";
+
+export interface CompiledOffer {
+  offer_id: string;
+  version: number;
+  counterparty_id: string;
+  doc_ids: string[];
+  received_day: Day;
+  status: CompileStatus;
+  obligations: Obligation[];
+  abstentions: Abstention[];
+  data_requests: DataRequest[];
+  authority_claims: AuthorityClaim[];
+  funding_claims: UnsolicitedFundingClaim[];
+  compiler: string;
+  prompt_version: string;
+}
+
+// ------------------------------------------------------------------ facilities
+
+export type FacilityKind =
+  | "CREDIT_LINE"
+  | "INVOICE_FINANCING"
+  | "BUYER_EARLY_PAY"
+  | "GOV_GUARANTEED_LOAN"
+  | "EQUIPMENT_TERM_LOAN"
+  | "EQUIPMENT_LEASE"
+  | "BANK_ACCEPTANCE_BILL"
+  | "EQUITY";
+
+export type FacilityStatus = "COMMITTED" | "PENDING" | "NOT_APPLIED" | "REFERENCE_ONLY";
+export type Repayment = "BULLET" | "AMORTISING" | "ON_RECEIPT";
+export type CovenantKind = "DSCR_MIN" | "LEVERAGE_MAX" | "CLEAN_DOWN";
+
+export interface Covenant {
+  id: string;
+  facility_id: string;
+  kind: CovenantKind;
+  threshold_bp: Bp | null;
+  clean_down_days: number | null;
+  definition: string;
+  formula: string;
+}
+
+export interface Facility {
+  id: string;
+  name: string;
+  kind: FacilityKind;
+  lender_id: string;
+  status: FacilityStatus;
+  owner_approved: boolean;
+  limit_fen: Fen;
+  drawn_fen: Fen;
+  advance_rate_bp: Bp | null;
+  rate_bp: Bp;
+  fee_bp_per_advance: Bp;
+  fee_period_days: number | null;
+  upfront_fee_bp: Bp;
+  lead_time_days: number;
+  term_months: number | null;
+  repayment: Repayment;
+  collateral: boolean;
+  personal_guarantee: boolean;
+  counts_in_leverage: boolean;
+  counts_in_debt_service: boolean;
+  covenants: Covenant[];
+  source_note: string;
+}
+
+// ------------------------------------------------------------------ mandate
+
+export type Tier = "TIER_1" | "TIER_2" | "TIER_3";
+
+export interface Mandate {
+  org_id: string;
+  version: number;
+  min_cash_fen: Fen;
+  max_aggregate_forward_concession_fen: Fen;
+  forward_concession_horizon_days: number;
+  per_buyer_caps_fen: Record<string, Fen>;
+  max_immediate_discount_bp: Bp | null;
+  min_dscr_bp: Bp;
+  max_leverage_bp: Bp;
+  max_apr_bp: Bp;
+  require_clean_down: boolean;
+  allow_new_borrowing: boolean;
+  tier2_single_commitment_fen: Fen;
+  horizon_days: number;
+  issued_day: Day;
+  expires_day: Day;
+  revoked: boolean;
+  public_key_hex: string | null;
+  signature_hex: string | null;
+}
+
+// ------------------------------------------------------------------ financial state
+
+export type FlowKind = "PAYROLL" | "SUPPLIER" | "OPERATING" | "RECEIVABLE" | "DEBT_SERVICE" | "OTHER";
+
+export interface CashFlow {
+  id: string;
+  day: Day;
+  amount_fen: Fen;
+  kind: FlowKind;
+  label: string;
+  counterparty_id: string | null;
+  confirmed: boolean;
+}
+
+export interface Receivable {
+  id: string;
+  counterparty_id: string;
+  face_fen: Fen;
+  issue_day: Day;
+  terms_days: number;
+  status: "OPEN" | "FINANCED" | "SETTLED" | "FAILED";
+  confirmed: boolean;
+}
+
+export interface RecurringInvoice {
+  counterparty_id: string;
+  face_fen: Fen;
+  every_days: number;
+  next_issue_day: Day;
+  terms_days: number;
+}
+
+export interface DebtPosition {
+  id: string;
+  facility_id: string | null;
+  label: string;
+  principal_fen: Fen;
+  monthly_debt_service_fen: Fen;
+}
+
+export interface ForwardConcession {
+  id: string;
+  counterparty_id: string;
+  value_fen: Fen;
+  commitment_id: string | null;
+  label: string;
+}
+
+export interface Counterparty {
+  id: string;
+  name: string;
+  role: "BUYER" | "LENDER" | "SUPPLIER" | "OWNER";
+  known: boolean;
+}
+
+export interface FinancialState {
+  org_id: string;
+  as_of: string;
+  cash_fen: Fen;
+  flows: CashFlow[];
+  receivables: Receivable[];
+  recurring_invoices: RecurringInvoice[];
+  facilities: Facility[];
+  debts: DebtPosition[];
+  forward_concessions: ForwardConcession[];
+  counterparties: Counterparty[];
+  monthly_ebitda_fen: Fen;
+  state_version: number;
+}
+
+// ------------------------------------------------------------------ funding and trajectory
+
+export type FundingActionKind = "DRAW" | "REPAY" | "FINANCE_INVOICE" | "EARLY_PAY" | "DISCOUNT_BILL";
+
+export interface FundingAction {
+  kind: FundingActionKind;
+  facility_id: string;
+  day: Day;
+  amount_fen: Fen;
+  receivable_id: string | null;
+  repay_day: Day | null;
+  rate_bp: Bp | null;
+}
+
+export type Mode = "CONSERVATIVE" | "EXPECTED";
+
+export type LedgerEventKind =
+  | "OPENING"
+  | "FLOW"
+  | "RECEIPT"
+  | "EARLY_RECEIPT"
+  | "DISCOUNT"
+  | "DRAW"
+  | "ADVANCE"
+  | "FEE"
+  | "INTEREST"
+  | "REPAYMENT"
+  | "CONCESSION";
+
+export interface LedgerEvent {
+  day: Day;
+  kind: LedgerEventKind;
+  amount_fen: Fen;
+  label: string;
+  ref: string | null;
+  formula: string | null;
+}
+
+export interface DayPoint {
+  day: Day;
+  opening_fen: Fen;
+  closing_fen: Fen;
+  debt_outstanding_fen: Fen;
+  forward_concession_fen: Fen;
+  events: LedgerEvent[];
+}
+
+export interface MonthPoint {
+  month: number;
+  ebitda_fen: Fen;
+  debt_service_fen: Fen;
+  total_debt_fen: Fen;
+  dscr: Ratio | null;
+  leverage: Ratio;
+}
+
+export interface Trajectory {
+  mode: Mode;
+  horizon_days: number;
+  days: DayPoint[];
+  months: MonthPoint[];
+  min_cash_fen: Fen;
+  min_cash_day: Day;
+  first_breach_day: Day | null;
+  interest_posted_fen: Fen;
+  fees_posted_fen: Fen;
+  discounts_posted_fen: Fen;
+}
+
+// ------------------------------------------------------------------ violations and verdicts
+
+export type ViolationCode =
+  | "AGG_CONCESSION_EXCEEDED"
+  | "PER_BUYER_CAP_EXCEEDED"
+  | "IMMEDIATE_DISCOUNT_EXCEEDED"
+  | "RESERVE_BREACH"
+  | "DSCR_BREACH"
+  | "LEVERAGE_BREACH"
+  | "CLEAN_DOWN_BREACH"
+  | "MAX_APR_EXCEEDED"
+  | "UNCOMMITTED_FACILITY"
+  | "LEAD_TIME_TOO_LONG"
+  | "TIER3_PERSONAL_GUARANTEE"
+  | "TIER3_COLLATERAL"
+  | "TIER3_EQUITY"
+  | "TIER3_MANDATE_CHANGE"
+  | "UNKNOWN_COUNTERPARTY"
+  | "UNEVIDENCED_PRIOR_CONCESSION"
+  | "DATA_EXTRACTION_REFUSED"
+  | "CONFLICTING_SOURCES"
+  | "UNRESOLVED_SCOPE"
+  | "MANDATE_EXPIRED"
+  | "MANDATE_REVOKED"
+  | "MANDATE_VERSION_MISMATCH"
+  | "BAD_SIGNATURE"
+  | "REPLAY"
+  | "COMMITMENT_EXPIRED"
+  | "TERMS_CHANGED"
+  | "INSUFFICIENT_AUTHORITY"
+  | "CIRCUIT_OPEN"
+  | "FEATURE_DISABLED";
+
+export interface Violation {
+  code: ViolationCode;
+  message: string;
+  day: Day | null;
+  month: number | null;
+  observed: string | null;
+  limit: string | null;
+  curable: boolean | null;
+  cure_cost_fen: Fen | null;
+  cure_note: string | null;
+  formula: string | null;
+  inputs: Record<string, string>;
+  spans: SourceSpan[];
+}
+
+export interface CostLine {
+  label: string;
+  fen: Fen;
+  facility_id: string | null;
+  formula: string;
+}
+
+export interface RejectedCandidate {
+  label: string;
+  reasons: ViolationCode[];
+  note: string;
+}
+
+export interface FundingPlan {
+  id: string;
+  basis: "COMMITTED" | "EXPECTED";
+  need_fen: Fen;
+  actions: FundingAction[];
+  costs: CostLine[];
+  total_cost_fen: Fen;
+  admissible: boolean;
+  violations: Violation[];
+  marginal_cost_annual: Ratio | null;
+  marginal_facility_id: string | null;
+  rejected: RejectedCandidate[];
+  label: string;
+}
+
+export interface ConcessionValue {
+  obligation_id: string;
+  value_fen: Fen;
+  basis: string;
+  formula: string;
+  per_invoice_fen: Fen | null;
+}
+
+export type Outcome = "ACCEPT" | "COUNTER" | "REJECT" | "NO_DEAL" | "NEEDS_OWNER_APPROVAL" | "NO_VERDICT";
+
+export interface CounterProposal {
+  id: string;
+  label: string;
+  text: string;
+  obligations: Obligation[];
+  supplier_cost_fen: Fen;
+  rationale: string;
+  formula: string;
+}
+
+export interface Verdict {
+  id: string;
+  offer_id: string;
+  offer_version: number;
+  outcome: Outcome;
+  violations: Violation[];
+  concession_values: ConcessionValue[];
+  forward_concession_total_fen: Fen;
+  counters: CounterProposal[];
+  plan: FundingPlan | null;
+  required_tier: Tier;
+  mandate_version: number;
+  state_version: number;
+  calc_version: string;
+  summary: string;
+}
+
+// ------------------------------------------------------------------ commitments and operations
+
+export type CommitmentStatus = "PROPOSED" | "ACCEPTED" | "ACTIVE" | "EXPIRED" | "REVOKED" | "FULFILLED";
+
+export interface Commitment {
+  id: string;
+  offer_id: string;
+  offer_version: number;
+  counterparty_id: string;
+  verdict_id: string;
+  terms_hash: string;
+  obligations: Obligation[];
+  status: CommitmentStatus;
+  nonce: string;
+  expires_day: Day;
+  mandate_version: number;
+  forward_value_fen: Fen;
+}
+
+export type Actor = "OWNER" | "AGENT" | "SYSTEM" | "COUNTERPARTY";
+
+export type OperationKind =
+  | "ACCEPT_OFFER"
+  | "COUNTER_OFFER"
+  | "REJECT_OFFER"
+  | "RECORD_COMMITMENT"
+  | "DRAW_FACILITY"
+  | "REPAY_FACILITY"
+  | "SUBMIT_INVOICE_FOR_FINANCING"
+  | "RECEIVE_PAYMENT"
+  | "GENERATE_BORROWER_FILE"
+  | "REQUEST_OWNER_APPROVAL"
+  | "APPLY_FOR_FACILITY"
+  | "SIGN_PERSONAL_GUARANTEE"
+  | "PLEDGE_COLLATERAL"
+  | "ISSUE_EQUITY"
+  | "CHANGE_MANDATE"
+  | "ADD_FACILITY";
+
+export type OperationStatus = "EXECUTED" | "REFUSED" | "PENDING_APPROVAL" | "DUPLICATE";
+
+export interface OperationResult {
+  op_id: string;
+  kind: OperationKind | string;
+  status: OperationStatus;
+  tier: Tier;
+  violations: Violation[];
+  seq: number | null;
+  entry_hash: string | null;
+  prev_hash: string | null;
+  message: string;
+}
+
+export type SecurityEventKind =
+  | "INJECTION"
+  | "UNKNOWN_COUNTERPARTY"
+  | "DATA_EXTRACTION"
+  | "PRIVILEGE_ESCALATION"
+  | "UNEVIDENCED_CLAIM"
+  | "REPLAY"
+  | "EXPIRED"
+  | "REVOKED"
+  | "TERMS_CHANGED"
+  | "TIER3";
+
+export interface SecurityEvent {
+  id: string;
+  day: Day;
+  kind: SecurityEventKind;
+  counterparty_id: string | null;
+  action_taken: string;
+  detail: string;
+  spans: SourceSpan[];
+  trace_id: string | null;
+}
+
+// ================================================================== read views (not in models.py yet)
+// Every shape below is an INTERFACE_CHANGE_REQUEST: the API must return it (server-formatted).
+
+export type ApiMode = "mock" | "live";
+
+/** GET /mandate */
+export interface MandateView {
+  mandate: Displayed<Mandate>;
+  signature: {
+    status: "VALID" | "INVALID" | "UNSIGNED";
+    algorithm: string;
+    key_fingerprint: string;
+  };
+  validity: {
+    status: "ACTIVE" | "EXPIRED" | "REVOKED";
+    current_day: Day;
+    expires_day: Day;
+    days_remaining: number;
+  };
+}
+
+/** GET /state */
+export interface StateView {
+  state: Displayed<FinancialState>;
+  scenario_id: string;
+}
+
+/** GET /offers/{id} and the response of POST /offers. */
+export interface OfferView {
+  offer: Displayed<CompiledOffer>;
+  documents: SourceDocument[];
+}
+
+export interface SubmitOfferRequest {
+  counterparty_id: string;
+  documents: SourceDocument[];
+}
+
+export interface PassedCheck {
+  code: string;
+  label: string;
+  observed: string;
+  limit: string;
+  formula: string | null;
+}
+
+/** POST /offers/{id}/evaluate */
+export type VerdictView = Displayed<Verdict> & { passed_checks: PassedCheck[] };
+
+export interface NegotiationRound {
+  round: number;
+  counter_id: string | null;
+  counter_label: string | null;
+  buyer_response: "ACCEPT" | "REFUSE";
+  buyer_text: string;
+}
+
+export interface OperationView extends Displayed<OperationResult> {
+  day: Day;
+  requested_by: Actor;
+  summary: string;
+}
+
+export type BuyerProfile = "cooperative" | "hard_line";
+
+export interface NegotiateRequest {
+  buyer_profile: BuyerProfile;
+  max_rounds?: number;
+}
+
+/** POST /negotiate/{offer_id} */
+export interface NegotiationView {
+  offer_id: string;
+  outcome: "DEAL" | "NO_DEAL";
+  rounds: NegotiationRound[];
+  accepted_counter_id: string | null;
+  commitment: Displayed<Commitment> | null;
+  operations: OperationView[];
+  plan: Displayed<FundingPlan> | null;
+  message: string;
+}
+
+/** One row of the Debt Desk comparison table. */
+export interface MenuRow {
+  facility: Displayed<Facility>;
+  cost_display: string;
+  time_to_cash_display: string;
+  covenant_effect: string;
+  admissible: boolean;
+  reason_codes: ViolationCode[];
+  reason: string;
+}
+
+export type MarginalCostView = Displayed<{
+  rate: Ratio;
+  facility_id: string;
+  facility_name: string;
+  break_even_bp: Bp;
+  break_even_formula: string;
+  excluded_note: string;
+  extension_extra_receivables_fen: Fen;
+  extension_per_invoice_fen: Fen;
+  extension_committed_12m_fen: Fen;
+  extension_notional_line_12m_fen: Fen;
+  extension_expected_12m_fen: Fen;
+  extension_formula: string;
+}> & { rate_display: string };
+
+export type ComparisonRow = Displayed<{
+  label: string;
+  total_fen: Fen;
+  note: string;
+  selected: boolean;
+}>;
+
+export interface PlanRequest {
+  need_fen?: Fen;
+}
+
+/** POST /router/plan */
+export interface FundingView {
+  committed: Displayed<FundingPlan>;
+  expected: Displayed<FundingPlan>;
+  menu: MenuRow[];
+  marginal: MarginalCostView;
+  comparison: ComparisonRow[];
+}
+
+export type TrajectoryScenario = "AS_RECEIVED" | "WITH_PLAN";
+
+export interface CovenantLimits {
+  min_dscr_display: string;
+  max_leverage_display: string;
+}
+
+/** GET /trajectory?mode= */
+export interface TrajectoryView {
+  mode: Mode;
+  floor: Displayed<{ min_cash_fen: Fen }>;
+  shortfall_fen: Fen | null;
+  shortfall_display: string | null;
+  trajectory: Displayed<Trajectory>;
+  cured_trajectory: Displayed<Trajectory> | null;
+  forward_concession: Displayed<{
+    total_fen: Fen;
+    cap_fen: Fen;
+    /** Server-decided comparison, so the UI never compares money itself. */
+    over_cap: boolean;
+    parts: { label: string; value_fen: Fen }[];
+  }>;
+  covenant_limits: CovenantLimits;
+  note: string;
+}
+
+/** GET /ledger */
+export interface LedgerView {
+  commitments: Displayed<Commitment>[];
+  operations: OperationView[];
+  chain_valid: boolean;
+  chain_length: number;
+  head_hash: string | null;
+}
+
+/** GET /audit */
+export interface AuditView {
+  events: Displayed<SecurityEvent>[];
+  refusals: OperationView[];
+  documents: SourceDocument[];
+  summary: Displayed<{
+    facilities_added: number;
+    commitments_booked: number;
+    money_moved_fen: Fen;
+    disclosed_fields: string[];
+    reply_text: string | null;
+  }>;
+}
+
+export type ApprovalStatus = "PENDING" | "APPROVED" | "REJECTED";
+
+export type ApprovalView = Displayed<{
+  id: string;
+  subject: string;
+  status: ApprovalStatus;
+  tier: Tier;
+  requested_by: Actor;
+  created_day: Day;
+  operation_kind: OperationKind | string;
+  amount_fen: Fen | null;
+  detail: string;
+  decided_day: Day | null;
+}>;
+
+export type ApprovalDecision = "APPROVE" | "REJECT";
+
+export interface CapexStructure {
+  id: string;
+  label: string;
+  kind: "CASH_LINE" | "LOAN" | "LEASE";
+  term_months: number | null;
+  monthly_payment_fen: Fen | null;
+  total_interest_fen: Fen | null;
+  feasible: boolean;
+  violations: Violation[];
+  dscr_by_month: { month: number; dscr: Ratio; passes: boolean }[];
+  extra_cost_vs_selected_fen: Fen | null;
+  note: string;
+}
+
+export interface CapexRequest {
+  label: string;
+  price_fen: Fen;
+}
+
+/** POST /capex/evaluate */
+export type CapexView = Displayed<{
+  request: CapexRequest;
+  npv_fen: Fen;
+  payback_month: number;
+  structures: CapexStructure[];
+  selected_id: string | null;
+  leverage_financed: Ratio;
+  leverage_with_extension: Ratio;
+  dscr_limit_display: string;
+  leverage_limit_display: string;
+  required_tier: Tier;
+  approval_id: string | null;
+}>;
+
+/** POST /borrower-file */
+export interface BorrowerFileView {
+  file_id: string;
+  status: "PREPARED_NOT_SENT";
+  style: string;
+  sections: { title: string; rows: { label: string; value: string }[] }[];
+  approval_id: string | null;
+  generated_day: Day;
+}
+
+export interface NlRequest {
+  session_id?: string;
+  actor: Actor;
+  text: string;
+}
+
+/** POST /nl */
+export interface NlResponse {
+  session_id: string;
+  reply: string;
+  intent: string;
+  plan: string[];
+  verdict: VerdictView | null;
+  operations: OperationView[];
+  clarification: string | null;
+}

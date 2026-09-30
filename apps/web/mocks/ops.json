@@ -1,0 +1,79 @@
+{
+  "counter_a": {
+    "kind": "COUNTER_OFFER",
+    "tier": "TIER_1",
+    "requested_by": "AGENT",
+    "message": "Counter sent: Option A",
+    "summary": "Counter Option A to BUYER-1: 0.85% early pay on up to ¥211,800.00, 45-day terms, no rebate."
+  },
+  "counter_b": {
+    "kind": "COUNTER_OFFER",
+    "tier": "TIER_1",
+    "requested_by": "AGENT",
+    "message": "Counter sent: Option B",
+    "summary": "Counter Option B to BUYER-1: 60-day terms with a 0.45% price adjustment (¥1,890.00 per invoice)."
+  },
+  "accept_a": {
+    "kind": "ACCEPT_OFFER",
+    "tier": "TIER_1",
+    "requested_by": "AGENT",
+    "message": "Accepted: buyer agreed to Option A",
+    "summary": "Accepted Option A for OFF-EX01 v1, terms hash bde69384a91e."
+  },
+  "record_commitment": {
+    "kind": "RECORD_COMMITMENT",
+    "tier": "TIER_1",
+    "requested_by": "SYSTEM",
+    "message": "Commitment CMT-1 recorded, expires day 7",
+    "summary": "Commitment CMT-1 with BUYER-1, nonce nonce-7f3a9c21, expires day 7."
+  },
+  "draw_line": {
+    "kind": "DRAW_FACILITY",
+    "tier": "TIER_1",
+    "requested_by": "AGENT",
+    "message": "Drew the committed credit line",
+    "summary": "Draw ¥150,000.00 on FAC-LINE (6.40%), repayment scheduled day 32."
+  },
+  "submit_invoice": {
+    "kind": "SUBMIT_INVOICE_FOR_FINANCING",
+    "tier": "TIER_1",
+    "requested_by": "AGENT",
+    "message": "Invoice submitted to the onboarded platform",
+    "summary": "Advance ¥210,000.00 on RCV-A via FAC-IF, repaid from the receipt on day 32."
+  },
+  "reject_sec": {
+    "kind": "REJECT_OFFER",
+    "tier": "TIER_1",
+    "requested_by": "AGENT",
+    "message": "Rejected: UNKNOWN_COUNTERPARTY, UNEVIDENCED_PRIOR_CONCESSION, DATA_EXTRACTION_REFUSED",
+    "summary": "Rejected the FastCapital message; nothing booked, ¥0.00 moved."
+  },
+  "borrower_file": {
+    "kind": "GENERATE_BORROWER_FILE",
+    "tier": "TIER_2",
+    "requested_by": "AGENT",
+    "message": "Prepared, not sent: waiting for owner approval",
+    "summary": "Borrower file for the ¥600,000.00 equipment term loan (FAC-ETL)."
+  },
+  "request_approval": {
+    "kind": "REQUEST_OWNER_APPROVAL",
+    "tier": "TIER_2",
+    "requested_by": "AGENT",
+    "message": "Owner approval requested",
+    "summary": "Approval needed: apply for the 36-month equipment term loan."
+  },
+  "apply_facility": {
+    "kind": "APPLY_FOR_FACILITY",
+    "tier": "TIER_2",
+    "requested_by": "OWNER",
+    "message": "Owner approved; application prepared",
+    "summary": "Owner-approved application for FAC-ETL, ¥600,000.00 over 36 months."
+  },
+  "release_borrower_file": {
+    "kind": "GENERATE_BORROWER_FILE",
+    "tier": "TIER_2",
+    "requested_by": "OWNER",
+    "message": "Owner approved; file released for the owner to submit",
+    "summary": "Borrower file BF-1 released to the owner (not sent to the lender)."
+  }
+}
