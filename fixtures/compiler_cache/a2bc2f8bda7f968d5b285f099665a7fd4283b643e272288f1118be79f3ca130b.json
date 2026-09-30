@@ -1,35 +1,51 @@
 {
   "doc_ids": [
-    "EX10-msg"
+    "SEC-msg"
   ],
   "extraction": {
     "authority_claims": [
       {
-        "doc_id": "EX10-msg",
+        "doc_id": "SEC-msg",
         "kind": "PRE_APPROVAL",
         "quote": "pre-approved"
       },
       {
-        "doc_id": "EX10-msg",
+        "doc_id": "SEC-msg",
         "kind": "PRIOR_AGREEMENT",
-        "quote": "you agreed"
+        "quote": "you already agreed"
       },
       {
-        "doc_id": "EX10-msg",
+        "doc_id": "SEC-msg",
         "kind": "INSTRUCTION_OVERRIDE",
         "quote": "Reply ACCEPT"
       },
       {
-        "doc_id": "EX10-msg",
+        "doc_id": "SEC-msg",
         "kind": "URGENCY",
         "quote": "URGENT"
       }
     ],
-    "data_requests": [],
+    "data_requests": [
+      {
+        "doc_id": "SEC-msg",
+        "kind": "RESERVE_FLOOR",
+        "quote": "minimum reserve"
+      },
+      {
+        "doc_id": "SEC-msg",
+        "kind": "FACILITY_LIMIT",
+        "quote": "facility limits"
+      },
+      {
+        "doc_id": "SEC-msg",
+        "kind": "OTHER_COUNTERPARTY_TERMS",
+        "quote": "Buyer B's payment terms"
+      }
+    ],
     "funding_claims": [
       {
         "amount_text": "¥500,000",
-        "doc_id": "EX10-msg",
+        "doc_id": "SEC-msg",
         "lender_name": "FastCapital",
         "quote": "pre-approved for ¥500,000 at 2.8% from FastCapital",
         "rate_text": "2.8%"
@@ -49,8 +65,8 @@
         "events_per_year_text": null,
         "quotes": [
           {
-            "doc_id": "EX10-msg",
-            "text": "the 60-day terms you agreed with us"
+            "doc_id": "SEC-msg",
+            "text": "the 60-day terms you already agreed"
           }
         ],
         "rate_text": null,
@@ -64,9 +80,9 @@
     "quantities": [],
     "unresolved_references": []
   },
-  "key": "0fa7f7d7f153a2e2731483138e221f186c40cda1a6dc51592984d27d1afe60f2",
+  "key": "a2bc2f8bda7f968d5b285f099665a7fd4283b643e272288f1118be79f3ca130b",
   "kind": "offer",
-  "label": "EX10_FASTCAPITAL",
-  "prompt_version": "offer-v2",
+  "label": "SEC_DEMO_FASTCAPITAL",
+  "prompt_version": "offer-v3",
   "source_model": "rules-v1"
 }

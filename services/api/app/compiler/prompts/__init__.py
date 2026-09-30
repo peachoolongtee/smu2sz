@@ -14,7 +14,7 @@ from collections.abc import Sequence
 
 from app.domain.models import SourceDocument
 
-PROMPT_VERSION = "offer-v2"
+PROMPT_VERSION = "offer-v3"
 TERM_SHEET_PROMPT_VERSION = "termsheet-v2"
 
 # Synthetic canary (fixtures/security/canaries.yaml, CANARY-PROMPT). It unlocks nothing; if it ever
@@ -63,6 +63,16 @@ Obligation types:
 - CLAIMED_PRIOR_CONCESSION: anything the text says was already agreed ("the 2% rebate we agreed last
   month", "the 60-day terms you already agreed"); contingency CLAIMED_UNEVIDENCED. Never book these as
   other types.
+
+Contingency (who decides it: code re-checks it, so be literal):
+- FIRM: a term the counterparty offers as part of the package. A package is accepted or refused as a
+  whole, so "we'll settle the ¥420k early at 1.2% if you extend our standard terms to 60 days and give us
+  1% off next quarter" gives a FIRM discount and a FIRM extension: the "if" points at the package's own
+  terms, not at a future event.
+- CONTINGENT: a term that depends on a future business event the parties do not control today: a future
+  order or volume, next quarter's purchases, delivery or sales performance ("if your on-time delivery
+  stays above 98%, we'll pay a 1.5% premium" is CONTINGENT). Every CONTINGENT_REBATE is CONTINGENT.
+- CLAIMED_UNEVIDENCED: only for CLAIMED_PRIOR_CONCESSION.
 
 Also fill:
 - unresolved_references: phrases like "as usual" / "same arrangement" that point to terms not in the

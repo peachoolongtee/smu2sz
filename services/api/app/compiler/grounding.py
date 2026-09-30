@@ -290,6 +290,140 @@ def _force_claimed(docs: dict[str, SourceDocument], ob: Obligation, claims: Sequ
     return ob
 
 
+# ---------------------------------------------------------------- contingency (F-04)
+#
+# The backend's contingency label is advisory. A gain or concession stated under a condition on a FUTURE
+# business event (an order, a volume, a quarter, delivery performance) is CONTINGENT whatever the model
+# says: contingent gains then count as zero (INVARIANT 5). Offer-package conditionality ("we'll settle
+# early if you extend terms") is not a contingency: the package is accepted or refused as a whole. The two
+# are told apart by what the condition refers to once the package's own obligations are blanked out of it.
+
+CONDITION_MARKER = re.compile(
+    r"\b(?:only\s+if|if|provided(?:\s+that)?|providing(?:\s+that)?|subject\s+to|as\s+long\s+as|so\s+long\s+as|only\s+when"
+    r"|assuming(?:\s+that)?|on\s+(?:the\s+)?condition\s+that|in\s+the\s+event\s+that|contingent\s+(?:on|upon)"
+    r"|conditional\s+(?:on|upon)|depending\s+(?:on|upon)|dependent\s+(?:on|upon)|unless)\b"
+    r"|如果|假如|倘若|如若|要是|只要|前提是|条件是|取决于|若(?!干)|视(?=[^，。,;；]{1,30}?而定)",
+    re.IGNORECASE,
+)
+# Where a condition clause stops: a clause comma (not a thousands separator), a semicolon or colon, "then".
+_CLAUSE_END = re.compile(r",(?!\d{3})|[，;；:：]|\bthen\b", re.IGNORECASE)
+FUTURE_EVENT = re.compile(
+    r"\b(?:orders?|ordering|reorders?|POs?|purchase[sd]?|purchasing|volumes?|quarter(?:ly|s)?|months?|monthly"
+    r"|years?|yearly|annual(?:ly)?|season|sales|spend(?:ing)?|revenue|turnover|deliver(?:y|ies|ed)|shipments?"
+    r"|on[- ]time|targets?|quotas?|forecasts?|performance|sell[- ]through|renewals?|milestones?)\b"
+    r"|订单|下单|订货|采购|进货|季度|个月|月份|下月|年度|明年|销量|销售|营业额|交付|交货|送货|发货|准时|目标|业绩|用量|指标",
+    re.IGNORECASE,
+)
+_TAIL_STOP = re.compile(
+    _CLAUSE_END.pattern + r"|\b(?:and|or|but|so|in\s+return|while|whereas)\b|和|并且|而且|同时|" + CONDITION_MARKER.pattern,
+    re.IGNORECASE,
+)
+_LENGTHENING = re.compile(r"\b(?:extend\w*|lengthen\w*|longer|more\s+time)\b|延长|放宽|宽限", re.IGNORECASE)
+_CONTINGENCY_NOTE_FORCED = ("contingency set to CONTINGENT: the text makes it conditional on a future business "
+                            "event (a contingent gain counts as zero)")
+_CONTINGENCY_NOTE_FIRM = ("contingency set to FIRM: offered as part of the package, with no condition on a future "
+                          "business event")
+
+
+def _future_conditions(doc: SourceDocument, own: Sequence[SourceSpan]) -> list[tuple[int, int, int]]:
+    """(sentence start, clause start, clause end) for every condition clause in `doc` that refers to a
+    future business event once the package's own obligation spans (`own`) are blanked out of it."""
+    text = doc.text
+    # Blank the package's own terms, each with its trailing descriptor up to the next conjunction or
+    # clause boundary ("1%" + " off next quarter"), so a quote that is only the number still hides it.
+    masked = list(text)
+    for sp in own:
+        if sp.doc_id != doc.doc_id:
+            continue
+        _, e0 = lexicon.sentence_bounds(text, sp.start)
+        stop = _TAIL_STOP.search(text, sp.end, e0)
+        for i in range(sp.start, stop.start() if stop else e0):
+            masked[i] = " "
+    blanked = "".join(masked)
+    out: list[tuple[int, int, int]] = []
+    for m in CONDITION_MARKER.finditer(text):
+        s0, e0 = lexicon.sentence_bounds(text, m.start())
+        end = _CLAUSE_END.search(text, m.end(), e0)
+        c0, c1 = m.end(), (end.start() if end else e0)
+        if m.group(0) == "视":
+            k = text.find("而定", c0, e0)
+            c1 = k if k >= 0 else c1
+        if FUTURE_EVENT.search(blanked, c0, c1):
+            out.append((s0, c0, c1))
+    return out
+
+
+def enforce_contingency(
+    docs: dict[str, SourceDocument], obs: Sequence[Obligation], abst: list[Abstention]
+) -> list[Obligation]:
+    """Deterministic contingency, whatever the backend said (F-04):
+
+    - CLAIMED_PRIOR_CONCESSION stays CLAIMED_UNEVIDENCED; a CONTINGENT_REBATE is always CONTINGENT.
+    - Anything in a sentence with a future-event condition is CONTINGENT (on either side of the "if").
+    - An early-pay discount or a lengthening terms extension that the backend called CONTINGENT becomes
+      FIRM when no future-event condition appears anywhere in its document: it is package
+      conditionality. Concessions count at maximum either way (INVARIANT 5); gains are never made FIRM.
+    """
+    own = [sp for o in obs for sp in o.spans]
+    conds = {d: _future_conditions(doc, own) for d, doc in docs.items()}
+    out: list[Obligation] = []
+    for ob in obs:
+        if ob.type == ObligationType.CLAIMED_PRIOR_CONCESSION or ob.contingency == Contingency.CLAIMED_UNEVIDENCED:
+            out.append(ob)
+            continue
+        sp = ob.spans[0]
+        text = docs[sp.doc_id].text
+        s0, _ = lexicon.sentence_bounds(text, sp.start)
+        governed = any(cs == s0 for cs, _, _ in conds[sp.doc_id])
+        want = ob.contingency
+        if ob.type == ObligationType.CONTINGENT_REBATE or governed:
+            want = Contingency.CONTINGENT
+        elif ob.contingency == Contingency.CONTINGENT and not conds[sp.doc_id] and (
+            ob.type == ObligationType.IMMEDIATE_DISCOUNT
+            or (ob.type == ObligationType.TERMS_EXTENSION and ((ob.days_delta or 0) > 0 or (
+                ob.days_delta is None and any(_LENGTHENING.search(s.text) for s in ob.spans))))
+        ):
+            want = Contingency.FIRM
+        if want != ob.contingency:
+            note = _CONTINGENCY_NOTE_FORCED if want == Contingency.CONTINGENT else _CONTINGENCY_NOTE_FIRM
+            if want == Contingency.CONTINGENT and ob.type == ObligationType.CONTINGENT_REBATE and not governed:
+                note = "contingency set to CONTINGENT: a rebate on future purchases is contingent by type"
+            abst.append(Abstention(field=f"{ob.type.value}.contingency", reason=note, spans=ob.spans))
+            ob = ob.model_copy(update={"contingency": want})
+        out.append(ob)
+    return out
+
+
+# ---------------------------------------------------------------- duplicates
+
+
+def _dup_key(o: Obligation) -> tuple[object, ...]:
+    return (o.type, o.rate_bp, o.amount_fen, o.days_delta, o.target_terms_days, o.base.kind, o.base.amount_fen,
+            o.base.receivable_id, o.base.events_per_year, o.duration.kind, o.duration.invoices)
+
+
+def dedupe_obligations(obs: Sequence[Obligation], abst: list[Abstention]) -> list[Obligation]:
+    """The same concession stated twice (same type, rate, base and receivable) is booked once. The kept
+    copy takes the more conservative contingency (a non-FIRM label wins), and the dedupe is noted."""
+    kept: list[Obligation] = []
+    index: dict[tuple[object, ...], int] = {}
+    for o in obs:
+        k = _dup_key(o)
+        if k not in index:
+            index[k] = len(kept)
+            kept.append(o)
+            continue
+        first = kept[index[k]]
+        if first.contingency == Contingency.FIRM and o.contingency != Contingency.FIRM:
+            kept[index[k]] = first.model_copy(update={"contingency": o.contingency})
+        abst.append(Abstention(
+            field=f"obligation:{o.type.value}",
+            reason="duplicate obligation not booked twice: the same concession is stated more than once",
+            spans=[first.spans[0], o.spans[0]],
+        ))
+    return kept
+
+
 # ---------------------------------------------------------------- conflicts
 
 
@@ -401,9 +535,11 @@ def build_offer(
 
     conflicts = _quantity_conflicts(by_id, ex, abst)
     built.sort(key=lambda t: (t[0], t[1]))
+    ordered = enforce_contingency(by_id, [ob for _, _, ob in built], abst)
+    ordered = dedupe_obligations(ordered, abst)
     obligations: list[Obligation] = []
     conflict_values = set().union(*conflicts.values()) if conflicts else set()
-    for n, (_, _, ob) in enumerate(built, start=1):
+    for n, ob in enumerate(ordered, start=1):
         upd: dict[str, object] = {"id": f"{offer_id}-O{n}"}
         if ob.base.amount_fen is not None and ob.base.amount_fen in conflict_values:
             upd["base"] = ob.base.model_copy(update={"amount_fen": None})

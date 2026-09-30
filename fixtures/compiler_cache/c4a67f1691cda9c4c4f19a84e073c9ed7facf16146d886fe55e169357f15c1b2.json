@@ -1,6 +1,6 @@
 {
   "doc_ids": [
-    "EX06-msg"
+    "EX05-msg"
   ],
   "extraction": {
     "authority_claims": [],
@@ -12,53 +12,56 @@
         "amount_text": null,
         "base_amount_text": null,
         "base_kind": "FUTURE_INVOICES",
-        "bounded_invoices_text": "three",
+        "bounded_invoices_text": null,
         "confidence": 0.9,
         "contingency": "FIRM",
-        "current_terms_text": "30",
-        "duration_kind": "RECURRING_BOUNDED",
+        "current_terms_text": null,
+        "duration_kind": "RECURRING_PERPETUAL",
         "events_per_year_text": null,
         "quotes": [
           {
-            "doc_id": "EX06-msg",
-            "text": "Take 45 days on the next three invoices instead of 30"
+            "doc_id": "EX05-msg",
+            "text": "move you to 30-day terms"
           }
         ],
         "rate_text": null,
-        "target_terms_text": "45 days",
+        "target_terms_text": "30-day",
         "type": "TERMS_EXTENSION",
-        "unresolved": []
+        "unresolved": [
+          "current_terms_days"
+        ]
       },
       {
         "amount_text": null,
         "base_amount_text": null,
-        "base_kind": "UNSPECIFIED",
+        "base_kind": "PER_EVENT",
         "bounded_invoices_text": null,
         "confidence": 0.8,
-        "contingency": "CONTINGENT",
+        "contingency": "FIRM",
         "current_terms_text": null,
-        "duration_kind": "ONE_OFF",
+        "duration_kind": "RECURRING_PERPETUAL",
         "events_per_year_text": null,
         "quotes": [
           {
-            "doc_id": "EX06-msg",
-            "text": "we'll add a 0.5% loyalty credit"
+            "doc_id": "EX05-msg",
+            "text": "Consolidate deliveries to our Foshan DC"
           }
         ],
-        "rate_text": "0.5%",
+        "rate_text": null,
         "target_terms_text": null,
-        "type": "PRICE_ADJUSTMENT",
+        "type": "OPERATIONAL_CONCESSION",
         "unresolved": [
-          "base"
+          "per_event_cost_fen",
+          "events_per_year"
         ]
       }
     ],
     "quantities": [],
     "unresolved_references": []
   },
-  "key": "8156f9dcb7dbd986cf0fba9a6dbcbb4f0a40615726927fd1bb6f1e51de4c175a",
+  "key": "c4a67f1691cda9c4c4f19a84e073c9ed7facf16146d886fe55e169357f15c1b2",
   "kind": "offer",
-  "label": "EX06_THREE_INVOICES",
-  "prompt_version": "offer-v2",
+  "label": "EX05_CONSOLIDATE",
+  "prompt_version": "offer-v3",
   "source_model": "rules-v1"
 }

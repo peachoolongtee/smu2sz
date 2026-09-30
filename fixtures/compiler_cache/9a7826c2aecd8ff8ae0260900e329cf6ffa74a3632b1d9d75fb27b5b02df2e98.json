@@ -11,9 +11,9 @@
     "quantities": [],
     "unresolved_references": []
   },
-  "key": "d986015cca73702b9a5a8f96be47a2d4db918a42baa87d4ed65df3d78704011a",
+  "key": "9a7826c2aecd8ff8ae0260900e329cf6ffa74a3632b1d9d75fb27b5b02df2e98",
   "kind": "offer",
   "label": "EX12_GOAL",
-  "prompt_version": "offer-v2",
+  "prompt_version": "offer-v3",
   "source_model": "rules-v1"
 }

@@ -54,9 +54,9 @@
     "quantities": [],
     "unresolved_references": []
   },
-  "key": "8a50b148b583a4a1adf58201f8792f0a1c0fa2ddedb6c9bb66e5f93fe3ef9b45",
+  "key": "fda81cc88202e2b136fa2d3674859aaff1a3750acbe45bf615a78f3cb8b1d9aa",
   "kind": "offer",
   "label": "EX08A_JOINT_BUYER1",
-  "prompt_version": "offer-v2",
+  "prompt_version": "offer-v3",
   "source_model": "rules-v1"
 }
