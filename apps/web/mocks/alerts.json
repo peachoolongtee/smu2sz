@@ -1,0 +1,58 @@
+{
+ "day": 0,
+ "basis": "CONSERVATIVE",
+ "projected_offer_id": null,
+ "counts": {
+  "CRITICAL": 1,
+  "WARNING": 0,
+  "INFO": 0
+ },
+ "alerts": [
+  {
+   "id": "ALERT-RESERVE-12",
+   "kind": "RESERVE_BREACH_AHEAD",
+   "severity": "CRITICAL",
+   "title": "Reserve breach ahead on day 12",
+   "detail": "Projected cash closes at ¥60,000.00 on day 12, ¥240,000.00 below the reserve floor; the gap peaks at ¥360,000.00 on day 20 and lasts to day 31. A committed cure exists: DRAW_FACILITY FAC-LINE ¥150,000.00 + SUBMIT_INVOICE_FOR_FINANCING FAC-IF ¥336,000.00.",
+   "formula": "shortfall = floor − closing_d: ¥300,000.00 − ¥60,000.00 = ¥240,000.00 (day 12); max over days 12..31 = ¥360,000.00",
+   "day": 12,
+   "month": null,
+   "amount_fen": 24000000,
+   "committed_cure": true,
+   "inputs": {
+    "floor": "¥300,000.00",
+    "closing": "¥60,000.00",
+    "last_day": "31",
+    "worst_day": "20",
+    "max_shortfall": "¥360,000.00"
+   },
+   "suggested": [
+    {
+     "operation_kind": "DRAW_FACILITY",
+     "facility_id": "FAC-LINE",
+     "receivable_id": null,
+     "commitment_id": null,
+     "offer_id": null,
+     "amount_fen": 15000000,
+     "note": "draw requested day 0; the router sizes and prices the final plan",
+     "executes_automatically": false,
+     "amount_display": "¥150,000.00"
+    },
+    {
+     "operation_kind": "SUBMIT_INVOICE_FOR_FINANCING",
+     "facility_id": "FAC-IF",
+     "receivable_id": "RCV-A",
+     "commitment_id": null,
+     "offer_id": null,
+     "amount_fen": 33600000,
+     "note": "submit once the invoice is issued and buyer-confirmed",
+     "executes_automatically": false,
+     "amount_display": "¥336,000.00"
+    }
+   ],
+   "basis": "CONSERVATIVE",
+   "amount_display": "¥240,000.00"
+  }
+ ],
+ "note": "Suggested operations are never executed automatically; submit them to POST /operations."
+}

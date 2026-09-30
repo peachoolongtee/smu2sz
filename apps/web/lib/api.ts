@@ -3,16 +3,20 @@
  * Paths mirror the API table in docs/ARCHITECTURE.md.
  *
  * NEXT_PUBLIC_API_MODE=mock (default): answers come from ./mock/handlers, which serves apps/web/mocks/*.json.
- * NEXT_PUBLIC_API_MODE=live: calls NEXT_PUBLIC_API_URL (default http://localhost:8000).
+ * NEXT_PUBLIC_API_MODE=live: calls NEXT_PUBLIC_API_URL (default http://localhost:8000) through ./live,
+ * whose adapters reshape the few responses that differ from the mock shape.
  *
  * Money arrives pre-formatted (`*_display`); the client never parses or computes it.
  */
 
-import { API_MODE, API_URL } from "./config";
+import { API_MODE } from "./config";
+import { ApiError } from "./errors";
 import type {
+  AlertsView,
   ApprovalDecision,
   ApprovalView,
   AuditView,
+  BorrowerFileRequest,
   BorrowerFileView,
   CapexRequest,
   CapexView,
@@ -26,6 +30,7 @@ import type {
   NlResponse,
   OfferView,
   PlanRequest,
+  ReconciliationView,
   StateView,
   SubmitOfferRequest,
   TrajectoryView,
@@ -34,139 +39,125 @@ import type {
   WhatIfResult,
 } from "./types";
 
-export class ApiError extends Error {
-  readonly status: number;
-  constructor(status: number, message: string) {
-    super(message);
-    this.name = "ApiError";
-    this.status = status;
-  }
-}
+export { ApiError };
 
-async function http<T>(method: "GET" | "POST", path: string, body?: unknown, as: "json" | "text" = "json"): Promise<T> {
-  let res: Response;
-  try {
-    res = await fetch(`${API_URL}${path}`, {
-      method,
-      headers: body === undefined ? undefined : { "Content-Type": "application/json" },
-      body: body === undefined ? undefined : JSON.stringify(body),
-    });
-  } catch {
-    throw new ApiError(0, `Cannot reach the API at ${API_URL}. Is the service running?`);
-  }
-  if (!res.ok) {
-    let message = `${res.status} ${res.statusText}`;
-    try {
-      const data = (await res.json()) as { detail?: unknown };
-      if (typeof data.detail === "string") message = data.detail;
-      else if (data.detail !== undefined) message = JSON.stringify(data.detail);
-    } catch {
-      /* keep the status line */
-    }
-    throw new ApiError(res.status, message);
-  }
-  return (as === "text" ? await res.text() : await res.json()) as T;
-}
-
-// The mock module is loaded lazily so live builds never ship the mock JSON to the browser.
+// Each implementation is loaded lazily, so a live build never ships the mock JSON and a mock build never ships the live client.
 const mock = () => import("./mock/handlers");
+const live = async () => (await import("./live")).live;
 const isMock = API_MODE === "mock";
 
 export const apiMode = API_MODE;
 
 /** GET /state */
 export async function getState(): Promise<StateView> {
-  return isMock ? (await mock()).getState() : http("GET", "/state");
+  return isMock ? (await mock()).getState() : (await live()).getState();
 }
 
 /** GET /mandate */
 export async function getMandate(): Promise<MandateView> {
-  return isMock ? (await mock()).getMandate() : http("GET", "/mandate");
+  return isMock ? (await mock()).getMandate() : (await live()).getMandate();
 }
 
-/** POST /offers: submit documents, get the compiled offer. */
+/** POST /offers: submit a fixture id or documents, get the compiled offer. */
 export async function submitOffer(req: SubmitOfferRequest): Promise<OfferView> {
-  return isMock ? (await mock()).submitOffer(req) : http("POST", "/offers", req);
+  return isMock ? (await mock()).submitOffer(req) : (await live()).submitOffer(req);
 }
 
-/** GET /offers/{id} (interface change request: the contract has no read endpoint for offers). */
+/** The contract has no read endpoint for offers: live mode answers from the session cache only. */
 export async function getOffer(offerId: string): Promise<OfferView> {
-  return isMock ? (await mock()).getOffer(offerId) : http("GET", `/offers/${encodeURIComponent(offerId)}`);
+  return isMock ? (await mock()).getOffer(offerId) : (await live()).getOffer(offerId);
 }
 
-/** POST /offers/{id}/evaluate */
-export async function evaluateOffer(offerId: string): Promise<VerdictView> {
-  return isMock
-    ? (await mock()).evaluateOffer(offerId)
-    : http("POST", `/offers/${encodeURIComponent(offerId)}/evaluate`);
+/** POST /offers/{id}/evaluate. `fixtureId` lets the server use the owner-declared costs of a demo fixture. */
+export async function evaluateOffer(offerId: string, fixtureId?: string): Promise<VerdictView> {
+  return isMock ? (await mock()).evaluateOffer(offerId) : (await live()).evaluateOffer(offerId, fixtureId);
 }
 
 /** POST /negotiate/{offer_id}: bounded rounds with the buyer kernel. */
 export async function negotiate(offerId: string, req: NegotiateRequest): Promise<NegotiationView> {
-  return isMock
-    ? (await mock()).negotiate(offerId, req)
-    : http("POST", `/negotiate/${encodeURIComponent(offerId)}`, req);
+  return isMock ? (await mock()).negotiate(offerId, req) : (await live()).negotiate(offerId, req);
 }
 
 /** POST /router/plan */
 export async function planFunding(req: PlanRequest = {}): Promise<FundingView> {
-  return isMock ? (await mock()).planFunding(req) : http("POST", "/router/plan", req);
+  return isMock ? (await mock()).planFunding(req) : (await live()).planFunding(req);
 }
 
-/** GET /trajectory */
-export async function getTrajectory(mode: Mode = "CONSERVATIVE"): Promise<TrajectoryView> {
-  return isMock ? (await mock()).getTrajectory(mode) : http("GET", `/trajectory?mode=${mode}`);
+/**
+ * GET /trajectory. In live mode pass the evaluated verdict to see the trajectory with the offer applied;
+ * without one the screen shows the position today.
+ */
+export async function getTrajectory(mode: Mode = "CONSERVATIVE", verdict?: VerdictView | null): Promise<TrajectoryView> {
+  return isMock ? (await mock()).getTrajectory(mode) : (await live()).getTrajectory(mode, verdict);
 }
 
 /** GET /ledger */
 export async function getLedger(): Promise<LedgerView> {
-  return isMock ? (await mock()).getLedger() : http("GET", "/ledger");
+  return isMock ? (await mock()).getLedger() : (await live()).getLedger();
 }
 
 /** GET /audit */
 export async function getAudit(): Promise<AuditView> {
-  return isMock ? (await mock()).getAudit() : http("GET", "/audit");
+  return isMock ? (await mock()).getAudit() : (await live()).getAudit();
 }
 
-/** GET /approvals */
+/** GET /approvals/queue */
 export async function getApprovals(): Promise<ApprovalView[]> {
-  return isMock ? (await mock()).getApprovals() : http("GET", "/approvals");
+  return isMock ? (await mock()).getApprovals() : (await live()).getApprovals();
 }
 
-/** POST /approvals/{id} */
+/** POST /approvals/{id}. Owner action: live mode sends X-Owner-Token. */
 export async function decideApproval(id: string, decision: ApprovalDecision): Promise<ApprovalView> {
-  return isMock
-    ? (await mock()).decideApproval(id, decision)
-    : http("POST", `/approvals/${encodeURIComponent(id)}`, { decision });
+  return isMock ? (await mock()).decideApproval(id, decision) : (await live()).decideApproval(id, decision);
+}
+
+/** POST /circuit/{counterparty_id}/reset. Owner action: live mode sends X-Owner-Token. */
+export async function resetCircuit(counterpartyId: string): Promise<{ status: string; message: string }> {
+  return isMock ? (await mock()).resetCircuit(counterpartyId) : (await live()).resetCircuit(counterpartyId);
 }
 
 /** POST /capex/evaluate (flag `capex`) */
 export async function capexEvaluate(req: CapexRequest): Promise<CapexView> {
-  return isMock ? (await mock()).capexEvaluate(req) : http("POST", "/capex/evaluate", req);
+  return isMock ? (await mock()).capexEvaluate(req) : (await live()).capexEvaluate(req);
 }
 
 /** POST /borrower-file (flag `borrower_file`) */
-export async function borrowerFile(req: { facility_id: string; amount_fen: number }): Promise<BorrowerFileView> {
-  return isMock ? (await mock()).borrowerFile(req) : http("POST", "/borrower-file", req);
+export async function borrowerFile(req: BorrowerFileRequest): Promise<BorrowerFileView> {
+  return isMock ? (await mock()).borrowerFile(req) : (await live()).borrowerFile(req);
 }
 
-/** POST /nl */
+/** GET /alerts (flag `alerts`): cash-flow alerts from the conservative trajectory. Suggestions are never executed. */
+export async function getAlerts(): Promise<AlertsView> {
+  return isMock ? (await mock()).getAlerts() : (await live()).getAlerts();
+}
+
+/** GET /reconciliation (flag `alerts`): receipts in the log matched to receivables. */
+export async function getReconciliation(): Promise<ReconciliationView> {
+  return isMock ? (await mock()).getReconciliation() : (await live()).getReconciliation();
+}
+
+/** POST /nl. A server without the route answers with intent NL_UNAVAILABLE instead of throwing. */
 export async function nl(req: NlRequest): Promise<NlResponse> {
-  return isMock ? (await mock()).nl(req) : http("POST", "/nl", req);
+  return isMock ? (await mock()).nl(req) : (await live()).nl(req);
 }
 
 /** POST /whatif: a hypothetical verdict for slider positions. Display-only; nothing is booked or executed. */
 export async function whatIf(params: WhatIfParams): Promise<WhatIfResult> {
-  return isMock ? (await mock()).whatIf(params) : http("POST", "/whatif", params);
+  return isMock ? (await mock()).whatIf(params) : (await live()).whatIf(params);
 }
 
 /** POST /demo/reset */
 export async function demoReset(): Promise<void> {
-  if (isMock) return (await mock()).demoReset();
-  await http("POST", "/demo/reset");
+  return isMock ? (await mock()).demoReset() : (await live()).demoReset();
+}
+
+/** GET /borrower-file/{id}.html | .docx | .pdf: fetched with the owner token and saved. Live mode only. */
+export async function downloadFile(path: string, filename: string): Promise<void> {
+  if (isMock) throw new ApiError(0, "Downloads are available in live mode, where the API renders the file.");
+  return (await live()).downloadFile(path, filename);
 }
 
 /** GET /evidence: JSONL execution evidence with hashes. */
 export async function getEvidence(): Promise<string> {
-  return isMock ? (await mock()).getEvidence() : http("GET", "/evidence", undefined, "text");
+  return isMock ? (await mock()).getEvidence() : (await live()).getEvidence();
 }

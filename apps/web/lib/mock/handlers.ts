@@ -5,12 +5,14 @@
  */
 
 import { sha256 } from "js-sha256";
-import { ApiError } from "../api";
 import { MOCK_LATENCY_MS } from "../config";
+import { ApiError } from "../errors";
 import type {
+  AlertsView,
   ApprovalDecision,
   ApprovalView,
   AuditView,
+  BorrowerFileRequest,
   BorrowerFileView,
   CapexRequest,
   CapexView,
@@ -25,6 +27,7 @@ import type {
   OfferView,
   OperationView,
   PlanRequest,
+  ReconciliationView,
   StateView,
   SubmitOfferRequest,
   TrajectoryView,
@@ -36,6 +39,7 @@ import type {
   WhatIfResult,
 } from "../types";
 
+import alertsJson from "../../mocks/alerts.json";
 import approvalsSeed from "../../mocks/approvals_seed.json";
 import auditSec from "../../mocks/audit_sec.json";
 import borrowerFileJson from "../../mocks/borrower_file.json";
@@ -48,6 +52,7 @@ import offerEx01 from "../../mocks/offer_ex01.json";
 import offerEx01b from "../../mocks/offer_ex01b.json";
 import offerSec from "../../mocks/offer_sec.json";
 import opsJson from "../../mocks/ops.json";
+import reconciliationJson from "../../mocks/reconciliation.json";
 import stateJson from "../../mocks/state.json";
 import trajCons from "../../mocks/trajectory_conservative.json";
 import trajExp from "../../mocks/trajectory_expected.json";
@@ -68,10 +73,11 @@ type OpTemplate = {
 };
 const OPS = cast<Record<string, OpTemplate>>(opsJson);
 
-const FIXTURE_OFFERS: { view: OfferView; verdict: VerdictView }[] = [
-  { view: cast(offerEx01), verdict: cast(verdictEx01) },
-  { view: cast(offerEx01b), verdict: cast(verdictEx01b) },
-  { view: cast(offerSec), verdict: cast(verdictSec) },
+/** `fixture_id` matches the server's fixtures/offers.yaml ids, so the same call works in both modes. */
+const FIXTURE_OFFERS: { fixture_id: string; view: OfferView; verdict: VerdictView }[] = [
+  { fixture_id: "EX01_PACKAGE", view: cast(offerEx01), verdict: cast(verdictEx01) },
+  { fixture_id: "EX01B_REWORDED", view: cast(offerEx01b), verdict: cast(verdictEx01b) },
+  { fixture_id: "SEC_DEMO_FASTCAPITAL", view: cast(offerSec), verdict: cast(verdictSec) },
 ];
 
 const GENESIS = "0".repeat(64);
@@ -261,8 +267,10 @@ function bundleFor(offerId: string) {
 
 export async function submitOffer(req: SubmitOfferRequest): Promise<OfferView> {
   await delay();
-  const text = req.documents[0]?.text.trim() ?? "";
-  const match = FIXTURE_OFFERS.find((f) => f.view.documents[0]?.text.trim() === text);
+  const text = req.documents?.[0]?.text.trim() ?? "";
+  const match = req.fixture_id
+    ? FIXTURE_OFFERS.find((f) => f.fixture_id === req.fixture_id)
+    : FIXTURE_OFFERS.find((f) => f.view.documents[0]?.text.trim() === text);
   if (!match) {
     throw new ApiError(
       422,
@@ -351,7 +359,7 @@ export async function capexEvaluate(_req: CapexRequest): Promise<CapexView> {
   return res;
 }
 
-export async function borrowerFile(_req: { facility_id: string; amount_fen: number }): Promise<BorrowerFileView> {
+export async function borrowerFile(_req: BorrowerFileRequest): Promise<BorrowerFileView> {
   void _req;
   await delay();
   const s = load();
@@ -385,6 +393,22 @@ export async function decideApproval(id: string, decision: ApprovalDecision): Pr
   a.decided_day = 0;
   save();
   return clone(a);
+}
+
+export async function getAlerts(): Promise<AlertsView> {
+  await delay();
+  return clone(cast<AlertsView>(alertsJson));
+}
+
+export async function getReconciliation(): Promise<ReconciliationView> {
+  await delay();
+  return clone(cast<ReconciliationView>(reconciliationJson));
+}
+
+/** Owner action; the mock has no circuit breaker state, so it only acknowledges. */
+export async function resetCircuit(counterpartyId: string): Promise<{ status: string; message: string }> {
+  await delay();
+  return { status: "EXECUTED", message: `Circuit for ${counterpartyId} reset by the owner` };
 }
 
 export async function nl(req: NlRequest): Promise<NlResponse> {
