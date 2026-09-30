@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from app.domain.models import FacilityStatus, FinancialState, Mandate
+from app.domain.models import CovenantKind, FacilityStatus, FinancialState, Mandate
 from tests.funding.variants import (
     add_flow,
     golden,
@@ -87,3 +87,55 @@ def permanent_need() -> tuple[FinancialState, Mandate]:
     s = add_flow(s, "F-BIG", 5, -30_000_000)
     s = add_flow(s, "F-LATE", 300, 50_000_000)
     return s, m
+
+
+# ---------------------------------------------------------------- EV-06: line repaid before the baseline recovers
+# Seeded variants R01, R03, R05 and R15 of the evaluation suite (evals/suites/funding.py on agent/evals):
+# the cheapest plan repays the line on day 32 (RCV-A's receipt) and covers days 32–47 with another source.
+
+
+def _eval_variant(cash_fen: int, payroll_day: int, payroll_fen: int, fac: dict[str, dict],
+                  clean_down_days: int | None = None) -> tuple[FinancialState, Mandate]:
+    s, m = golden()
+    s = with_flow_day(s.model_copy(update={"cash_fen": cash_fen}), "F-PAYROLL", payroll_day)
+    s = s.model_copy(update={"flows": [f.model_copy(update={"amount_fen": payroll_fen}) if f.id == "F-PAYROLL" else f
+                                       for f in s.flows]})
+    for fid, update in fac.items():
+        s = with_facility(s, fid, **update)
+    if clean_down_days is not None:
+        line = next(f for f in s.facilities if f.id == "FAC-LINE")
+        covs = [c for c in line.covenants if c.kind != CovenantKind.CLEAN_DOWN] if clean_down_days == 0 else [
+            c.model_copy(update={"clean_down_days": clean_down_days}) if c.kind == CovenantKind.CLEAN_DOWN else c
+            for c in line.covenants]
+        s = with_facility(s, "FAC-LINE", covenants=covs)
+    return s, m
+
+
+def r01_early_line_repayment() -> tuple[FinancialState, Mandate]:
+    return _eval_variant(30_000_000, 10, -34_000_000, {
+        "FAC-LINE": {"rate_bp": 550, "limit_fen": 15_000_000},
+        "FAC-IF": {"rate_bp": 780, "fee_bp_per_advance": 40, "lead_time_days": 8, "advance_rate_bp": 7000},
+        "FAC-EARLYPAY": {"rate_bp": 80, "lead_time_days": 1},
+        "FAC-GGL": {"status": FacilityStatus.PENDING, "rate_bp": 100, "lead_time_days": 1}})
+
+
+def r03_early_line_repayment() -> tuple[FinancialState, Mandate]:
+    return _eval_variant(35_000_000, 18, -40_000_000, {
+        "FAC-LINE": {"rate_bp": 640, "limit_fen": 20_000_000},
+        "FAC-IF": {"rate_bp": 600, "fee_bp_per_advance": 25, "lead_time_days": 8, "advance_rate_bp": 9000},
+        "FAC-EARLYPAY": {"rate_bp": 150, "lead_time_days": 1},
+        "FAC-BILL": {"limit_fen": 40_000_000, "rate_bp": 150}}, clean_down_days=60)
+
+
+def r05_early_line_repayment() -> tuple[FinancialState, Mandate]:
+    return _eval_variant(35_000_000, 19, -40_000_000, {
+        "FAC-LINE": {"rate_bp": 450, "limit_fen": 30_000_000},
+        "FAC-IF": {"rate_bp": 780, "fee_bp_per_advance": 10, "lead_time_days": 8, "advance_rate_bp": 7000},
+        "FAC-EARLYPAY": {"rate_bp": 120, "lead_time_days": 2}})
+
+
+def r15_early_line_repayment() -> tuple[FinancialState, Mandate]:
+    return _eval_variant(30_000_000, 16, -40_000_000, {
+        "FAC-LINE": {"rate_bp": 800, "limit_fen": 30_000_000},
+        "FAC-IF": {"rate_bp": 700, "fee_bp_per_advance": 40, "lead_time_days": 5, "advance_rate_bp": 9000},
+        "FAC-EARLYPAY": {"rate_bp": 80, "lead_time_days": 1}}, clean_down_days=0)
