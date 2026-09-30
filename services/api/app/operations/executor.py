@@ -15,6 +15,11 @@ refusals and duplicates) is appended to the hash-chained log:
 
 Nothing the caller supplies can lower a tier. Owner decisions (`decide`) re-run the queued
 operation through every gate except the Tier-2 queue, against the mandate in force at decision time.
+
+Atomicity (F-01). Every public entry point runs as one store unit of work (`store.transaction()`):
+the state, the commitment, the nonce, any approval or security event and the log entry are
+committed together or not at all. If the log append fails, nothing the operation did survives, so
+a retry with the same idempotency key executes exactly once.
 """
 
 from __future__ import annotations
@@ -22,6 +27,7 @@ from __future__ import annotations
 import hmac
 import threading
 from collections.abc import Callable
+from contextlib import AbstractContextManager, nullcontext
 from dataclasses import dataclass
 from typing import Any
 
@@ -72,6 +78,7 @@ from app.mandate import check_validity, tier_for
 from app.operations.charges import finance_invoice_charges, line_interest, upfront_fee
 from app.operations.log import (
     RESET_CIRCUIT_KIND,
+    REVOKE_COMMITMENT_KIND,
     LoggedEntry,
     LogReader,
     advance_for,
@@ -231,13 +238,19 @@ class Executor:
 
     # ================================================================ public API
 
+    def _unit_of_work(self) -> AbstractContextManager[Any]:
+        """The store's transaction (both shipped stores have one). A store without it gets no
+        atomicity; `LedgerStore` should declare it (interface change request)."""
+        tx = getattr(self._store, "transaction", None)
+        return tx() if callable(tx) else nullcontext()
+
     def execute(self, op: Any) -> OperationResult:
-        with self._lock:
+        with self._lock, self._unit_of_work():
             return self._run(op, approved=False)
 
     def decide(self, approval_id: str, approved: bool, actor: Actor) -> OperationResult:
         """Owner decision on a queued Tier-2 operation. Anyone else is refused and logged."""
-        with self._lock:
+        with self._lock, self._unit_of_work():
             rec = self._store.get_approval(approval_id)
             if rec is None:
                 raise NotFound(f"approval {approval_id} not found")
@@ -268,7 +281,7 @@ class Executor:
 
     def reset_circuit(self, counterparty_id: str, actor: Actor) -> OperationResult:
         """Close a counterparty's circuit breaker. Owner only; logged either way."""
-        with self._lock:
+        with self._lock, self._unit_of_work():
             now = self._clock()
             op_id = f"RESET-{counterparty_id}-{now}-{len(self._store.operations()) + 1}"
             payload = {"kind": RESET_CIRCUIT_KIND, "op_id": op_id, "counterparty_id": counterparty_id,
@@ -287,6 +300,55 @@ class Executor:
                                                canonical_json(payload), canonical_json(result))
             return result.model_copy(update={"seq": rec.seq, "entry_hash": rec.entry_hash, "prev_hash": rec.prev_hash})
 
+    def revoke_commitment(self, commitment_id: str, actor: Actor) -> OperationResult:
+        """Revoke a commitment (the compensating action for a booked concession). Owner only.
+
+        Logged as a REVOKE_COMMITMENT entry either way, like RESET_CIRCUIT (it is not a typed
+        Operation). For the owner: the commitment moves to REVOKED and its forward concession
+        leaves the state, in one unit of work with the log entry. Anyone else is refused with a
+        PRIVILEGE_ESCALATION event; an unknown, expired, fulfilled or already revoked commitment
+        is refused with PRECONDITION_FAILED."""
+        with self._lock, self._unit_of_work():
+            now = self._clock()
+            op_id = f"REVOKE-{commitment_id}-{now}-{len(self._store.operations()) + 1}"
+            payload = {"kind": REVOKE_COMMITMENT_KIND, "op_id": op_id, "commitment_id": commitment_id,
+                       "requested_by": actor.value, "day": now}
+            c = self._store.get_commitment(commitment_id)
+            cp = c.counterparty_id if c is not None else None
+
+            def done(status: OperationStatus, message: str, violations: list[Violation] | None = None) -> OperationResult:
+                result = OperationResult(op_id=op_id, kind=REVOKE_COMMITMENT_KIND, status=status, tier=Tier.TIER_2,
+                                         violations=violations or [], effective_day=now, message=message)
+                rec = self._store.append_operation(op_id, REVOKE_COMMITMENT_KIND, op_id,
+                                                   canonical_json(payload), canonical_json(result))
+                return result.model_copy(update={"seq": rec.seq, "entry_hash": rec.entry_hash,
+                                                 "prev_hash": rec.prev_hash})
+
+            if actor != Actor.OWNER:
+                v = _v(Code.INSUFFICIENT_AUTHORITY, f"Only the owner may revoke commitment {commitment_id}; "
+                       f"{actor} may not", actor=actor, commitment_id=commitment_id)
+                self._add_security(SecurityEventKind.PRIVILEGE_ESCALATION, now, cp,
+                                   f"{actor} tried to revoke commitment {commitment_id}")
+                return done(REFUSED, v.message, [v])
+            if c is None:
+                v = _v(Code.PRECONDITION_FAILED, f"Commitment {commitment_id} does not exist",
+                       commitment_id=commitment_id)
+                return done(REFUSED, v.message, [v])
+            try:
+                revoked = transition(c, CommitmentStatus.REVOKED, now)
+            except CommitmentError as exc:
+                v = _v(Code.PRECONDITION_FAILED, f"Commitment {c.id} is {c.status.value}; it cannot be revoked "
+                       f"({exc})", commitment_id=c.id, status=c.status.value)
+                return done(REFUSED, v.message, [v])
+            state = self._store.get_state()
+            kept = [fc for fc in state.forward_concessions if fc.commitment_id != c.id]
+            removed = sum(fc.value_fen for fc in state.forward_concessions if fc.commitment_id == c.id)
+            self._store.put_commitment(revoked)
+            if len(kept) != len(state.forward_concessions):
+                self._store.put_state(_bump(state, forward_concessions=kept))
+            return done(EXECUTED, f"Commitment {c.id} revoked by the owner ({c.status.value} -> REVOKED); "
+                                  f"forward concession {fmt_yuan(removed)} removed")
+
     def circuit_open(self, counterparty_id: str) -> bool:
         return self._recent_refusals(counterparty_id, self._clock()) >= CIRCUIT_THRESHOLD
 
@@ -301,7 +363,7 @@ class Executor:
         forward value), never a counter's immediate `supplier_cost_fen`."""
         from app.commitments import new_commitment
 
-        with self._lock:
+        with self._lock, self._unit_of_work():
             verdict = self._store.get_verdict(verdict_id)
             if verdict is None:
                 raise NotFound(f"verdict {verdict_id} not found")
@@ -414,7 +476,17 @@ class Executor:
         key = op.idempotency_key
         if self._store.find_by_idempotency_key(key) is None:
             return None
-        prior = [e for e in self._entries() if e.idempotency_key == key and e.result.status != DUPLICATE]
+        records = self._store.operations()
+        entries = self._reader.entries(records)
+        if any(r.idempotency_key == key for r in records if r.seq in self._reader.unreadable):
+            # A log row with this key no longer parses (tampering): its status cannot be known, so
+            # nothing runs again (fail closed).
+            now = self._clock()
+            v = _v(Code.PRECONDITION_FAILED, f"The log entry for idempotency key {key} is unreadable; "
+                   f"nothing re-executed", idempotency_key=key)
+            return self._log(op, OperationResult(op_id=op.op_id, kind=op.kind, status=REFUSED, tier=Tier.TIER_3,
+                                                 violations=[v], effective_day=now, message=v.message))
+        prior = [e for e in entries if e.idempotency_key == key and e.result.status != DUPLICATE]
         if approved:  # an owner-approved re-run: only a completed execution makes it a duplicate
             prior = [e for e in prior if e.result.status == EXECUTED]
         if not prior:
@@ -581,16 +653,17 @@ class Executor:
                           f"current is v{ctx.mandate.version}")
         if v is None or v.offer_id != c.offer_id or v.offer_version != c.offer_version:
             raise _refuse(Code.INSUFFICIENT_AUTHORITY, f"No verifier verdict backs commitment {c.id}")
+        # F-07: the commitment must carry exactly what the verifier verified, at the value it verified:
+        # the verdict's bound obligations or one of its counters. The stored offer row is never
+        # consulted here, so replacing it after the verdict changes nothing that is committed.
+        verified: list[tuple[str, int]] = []
         if v.outcome in (Outcome.ACCEPT, Outcome.NEEDS_OWNER_APPROVAL):
-            # Only the obligations the verifier bound and verified, never the raw compiled offer.
-            offer = self._store.get_offer(c.offer_id)
             bound = committable(v.bound_obligations)
-            allowed = offer is not None and offer.version == c.offer_version and bool(bound) and \
-                terms_hash(bound) == c.terms_hash
-        elif v.outcome in (Outcome.REJECT, Outcome.COUNTER):
-            allowed = any(terms_hash(committable(k.obligations)) == c.terms_hash for k in v.counters)
-        else:
-            allowed = False
+            if bound:
+                verified.append((terms_hash(bound), verdict_forward_value(v)))
+        if v.outcome in (Outcome.ACCEPT, Outcome.NEEDS_OWNER_APPROVAL, Outcome.REJECT, Outcome.COUNTER):
+            verified += [(terms_hash(committable(k.obligations)), k.forward_value_fen) for k in v.counters]
+        allowed = any(hmac.compare_digest(h, c.terms_hash) and value == c.forward_value_fen for h, value in verified)
         if not allowed:
             raise _refuse(Code.INSUFFICIENT_AUTHORITY,
                           f"Verdict {v.id} ({v.outcome.value}) does not allow the terms of commitment {c.id}")
@@ -606,6 +679,9 @@ class Executor:
             return f"prepare the borrower file for {op.facility_id} (prepared, not sent)"
         if isinstance(op, DrawFacility | SubmitInvoiceForFinancing):
             return f"facility {op.facility_id} is not COMMITTED and owner-approved"
+        if isinstance(op, ReceivePayment):
+            return (f"receipt of {fmt_yuan(op.amount_fen)} on {op.receivable_id} reported by {op.requested_by}; "
+                    f"only the bank feed or the owner records a receipt without confirmation")
         c = ctx.commitment
         if c is not None and has_terms_change(c):
             return f"commitment {c.id} lengthens payment terms"
