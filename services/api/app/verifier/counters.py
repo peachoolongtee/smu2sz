@@ -1,0 +1,420 @@
+"""Counter generation, priced from the Debt Desk's marginal cost of funds (spec v2 §6.5, §8).
+
+- **Early-pay counter (Option A).** Keep the current terms, no rebate; accept early settlement on up
+  to the face that closes the near-term gap net of the committed line, at the largest whole-5bp rate
+  strictly below the break-even discount d/(1−d) < c (0.85% < 0.88%). Supplier cost = discount +
+  line interest, projected by the engine.
+- **Price-adjustment counter (Option B).** Accept a perpetual terms extension with the smallest
+  whole-5bp PRICE_ADJUSTMENT whose per-invoice amount covers the per-invoice funding cost, no rebate.
+- **Bounded extension.** Fewer invoices (the most that fit the cap), or the same invoices with the
+  buyer's contingent credit made firm.
+- **Rebate over the cap.** The largest whole-5bp rebate rate that fits the remaining headroom.
+
+Outbound text is template-filled from an allow-list of fields: the offer's own terms and the counter's
+own terms. It never contains the reserve floor, a cap, a menu limit, the marginal rate or any
+reservation value (INVARIANT 7). `rationale` and `formula` are supplier-side only.
+"""
+
+from __future__ import annotations
+
+import hashlib
+from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
+from fractions import Fraction
+from typing import Any
+
+from app.domain.models import (
+    BaseKind,
+    CompiledOffer,
+    Contingency,
+    CounterProposal,
+    Duration,
+    DurationKind,
+    FacilityKind,
+    FacilityStatus,
+    FinancialState,
+    Mandate,
+    Mode,
+    Obligation,
+    ObligationBase,
+    ObligationType,
+    Receivable,
+    SourceSpan,
+    Verdict,
+    ViolationCode,
+)
+from app.domain.money import BP_DENOM, DAYS_PER_YEAR, Ratio, bp, fmt_pct, fmt_yuan, post
+from app.financial import project, value_concessions
+from app.funding import NoPermanentSourceError, break_even_discount, marginal_cost
+from app.verifier.bind import bind, early_pay_lead, is_claimed, is_gain, open_receivables, recurring_for
+from app.verifier.reserve import baseline
+
+STEP_BP = 5
+BREAK_EVEN_PERIOD_DAYS = 30
+NO_COUNTER_CODES = frozenset({
+    ViolationCode.UNKNOWN_COUNTERPARTY,
+    ViolationCode.TIER3_PERSONAL_GUARANTEE,
+    ViolationCode.TIER3_COLLATERAL,
+    ViolationCode.TIER3_EQUITY,
+    ViolationCode.TIER3_MANDATE_CHANGE,
+    ViolationCode.CONFLICTING_SOURCES,
+    ViolationCode.UNRESOLVED_SCOPE,
+    ViolationCode.MANDATE_EXPIRED,
+    ViolationCode.MANDATE_REVOKED,
+    ViolationCode.MANDATE_VERSION_MISMATCH,
+    ViolationCode.BAD_SIGNATURE,
+})
+_WORDS = {1: "one", 2: "two", 3: "three", 4: "four", 5: "five", 6: "six", 7: "seven", 8: "eight", 9: "nine",
+          10: "ten", 11: "eleven", 12: "twelve"}
+
+
+# ---------------------------------------------------------------- formatting for outbound text
+
+
+def money_text(fen: int) -> str:
+    """Whole yuan without decimals ('¥211,800'), else two decimals ('¥1,871.30')."""
+    return fmt_yuan(fen)[:-3] if fen % 100 == 0 else fmt_yuan(fen)
+
+
+def rate_text(rate_bp: int) -> str:
+    return fmt_pct(bp(rate_bp))
+
+
+def invoices_text(n: int) -> str:
+    return "the next invoice" if n == 1 else f"the next {_WORDS.get(n, str(n))} invoices"
+
+
+def largest_step_below(limit: Fraction) -> int:
+    """Largest whole-5bp rate strictly below `limit` (a fraction, not bp)."""
+    k = -(-limit * BP_DENOM // STEP_BP) - 1  # ceil(limit in 5bp steps) − 1
+    return max(0, int(k) * STEP_BP)
+
+
+def smallest_step_covering(per_invoice_fen: int, face_fen: int) -> int:
+    """Smallest whole-5bp rate r with post(r × face) >= per_invoice_fen."""
+    r = STEP_BP
+    while post(bp(r) * face_fen) < per_invoice_fen:
+        r += STEP_BP
+    return r
+
+
+# ---------------------------------------------------------------- context
+
+
+@dataclass
+class _Ctx:
+    offer: CompiledOffer
+    verdict: Verdict
+    state: FinancialState
+    mandate: Mandate
+    bound: list[Obligation]
+    rate: Fraction  # marginal all-in annual rate
+    rate_label: str
+
+    @property
+    def cp(self) -> str:
+        return self.offer.counterparty_id
+
+    def of_type(self, t: ObligationType) -> list[Obligation]:
+        return [o for o in self.bound if o.type == t]
+
+    def value(self, obs: list[Obligation]) -> list[int]:
+        return [cv.value_fen for cv in value_concessions(obs, self.state, _ratio(self.rate), self.rate_label,
+                                                          self.mandate.forward_concession_horizon_days)]
+
+    def net_forward(self, obs: list[Obligation]) -> int:
+        """Existing + new concessions + FIRM gains (contingent gains count as zero)."""
+        total = sum(fc.value_fen for fc in self.state.forward_concessions)
+        for ob, v in zip(obs, self.value(obs), strict=True):
+            if v >= 0 or ob.contingency == Contingency.FIRM:
+                total += v
+        return total
+
+    def fits(self, obs: list[Obligation]) -> bool:
+        return self.net_forward(obs) <= self.mandate.max_aggregate_forward_concession_fen
+
+    def current_terms(self) -> int | None:
+        rec = recurring_for(self.state, self.cp)
+        if rec is not None:
+            return rec.terms_days
+        rcvs = open_receivables(self.state, self.cp)
+        return rcvs[0].terms_days if rcvs else None
+
+
+def _ratio(x: Fraction) -> Ratio:
+    return Ratio.of(x)
+
+
+def _counter_id(verdict: Verdict, label: str) -> str:
+    return "CTR-" + hashlib.sha256(f"{verdict.id}|{label}".encode()).hexdigest()[:12]
+
+
+def _proposal(ctx: _Ctx, label: str, clauses: list[tuple[str, Obligation | None]], supplier_cost: int,
+              rationale: str, formula: str) -> CounterProposal:
+    """Assemble the outbound text from clauses; each obligation's span is its own clause."""
+    cid = _counter_id(ctx.verdict, label)
+    text, obligations = "", []
+    for n, (clause, ob) in enumerate(clauses, start=1):
+        start = len(text) + (1 if text else 0)
+        text = f"{text} {clause}" if text else clause
+        if ob is not None:
+            span = SourceSpan(doc_id=cid, start=start, end=start + len(clause), text=clause)
+            obligations.append(ob.model_copy(update={"id": f"{cid}-O{n}", "spans": [span], "confidence": 1.0,
+                                                     "unresolved": []}))
+    return CounterProposal(id=cid, label=label, text=text, obligations=obligations, supplier_cost_fen=supplier_cost,
+                           rationale=rationale, formula=formula)
+
+
+def _span_stub(cp: str) -> list[SourceSpan]:
+    return [SourceSpan(doc_id=f"counter:{cp}", start=0, end=0, text="")]
+
+
+def _obligation(cp: str, t: ObligationType, **kw: Any) -> Obligation:
+    kw.setdefault("contingency", Contingency.FIRM)
+    kw.setdefault("duration", Duration(kind=DurationKind.ONE_OFF))
+    return Obligation(id="pending", type=t, counterparty_id=cp, spans=_span_stub(cp), confidence=1.0, **kw)
+
+
+# ---------------------------------------------------------------- Option A: early-pay counter
+
+
+def _target_receivable(ctx: _Ctx) -> Receivable | None:
+    for ob in ctx.of_type(ObligationType.IMMEDIATE_DISCOUNT):
+        if ob.base.receivable_id is not None:
+            r = next((r for r in open_receivables(ctx.state, ctx.cp) if r.id == ob.base.receivable_id), None)
+            if r is not None:
+                return r
+    rcvs = sorted(open_receivables(ctx.state, ctx.cp), key=lambda r: (r.due_day, r.id))
+    return rcvs[0] if rcvs else None
+
+
+def early_pay_counter(ctx: _Ctx, label: str = "Option A") -> CounterProposal | None:
+    r = _target_receivable(ctx)
+    if r is None:
+        return None
+    try:
+        d_ratio, _ = break_even_discount(ctx.state, ctx.mandate)
+    except NoPermanentSourceError:
+        return None
+    rate_bp = largest_step_below(d_ratio.value)
+    offered = [o.rate_bp for o in ctx.of_type(ObligationType.IMMEDIATE_DISCOUNT) if o.rate_bp is not None]
+    if offered:
+        rate_bp = min(rate_bp, min(offered))
+    if ctx.mandate.max_immediate_discount_bp is not None:
+        rate_bp = min(rate_bp, ctx.mandate.max_immediate_discount_bp)
+    if rate_bp <= 0:
+        return None
+
+    _, base_plan = baseline(ctx.state, ctx.mandate)
+    lines = [f for f in ctx.state.facilities if f.kind == FacilityKind.CREDIT_LINE and f.owner_approved
+             and f.status == FacilityStatus.COMMITTED]
+    line_avail = sum(max(0, f.limit_fen - f.drawn_fen) for f in lines)
+    need = base_plan.need_fen
+    net = need - line_avail
+    if net <= 0:
+        return None
+    rate = bp(rate_bp)
+    face_exact = Fraction(net) / (1 - rate)
+    face = min(int(face_exact // 10_000) * 10_000, r.face_fen)  # whole ¥100, never above the invoice
+    if face <= 0:
+        return None
+    settle = early_pay_lead(ctx.state, ctx.cp)
+    disc_ob = _obligation(
+        ctx.cp, ObligationType.IMMEDIATE_DISCOUNT, rate_bp=rate_bp, effective_day=settle,
+        base=ObligationBase(kind=BaseKind.INVOICE, amount_fen=face, receivable_id=r.id),
+    )
+    line_ids = {f.id for f in lines}
+    line_actions = [a for a in base_plan.actions if a.facility_id in line_ids]
+    t = project(ctx.state, [disc_ob], line_actions, Mode.CONSERVATIVE, ctx.mandate.horizon_days)
+    discount = t.discounts_posted_fen
+    line_cost = t.interest_posted_fen + t.fees_posted_fen
+    total = discount + line_cost
+
+    c = ctx.rate * BREAK_EVEN_PERIOD_DAYS / DAYS_PER_YEAR
+    clauses: list[tuple[str, Obligation | None]] = []
+    touched_terms = bool(ctx.of_type(ObligationType.TERMS_EXTENSION))
+    mentioned_rebate = bool(ctx.of_type(ObligationType.CONTINGENT_REBATE)) or any(
+        is_claimed(o) for o in ctx.offer.obligations)
+    current = ctx.current_terms()
+    lead = []
+    if touched_terms and current is not None:
+        lead.append(f"Terms stay at {current} days")
+    if mentioned_rebate:
+        lead.append("no rebate" if lead else "No rebate is on record, so none applies")
+    if lead:
+        clauses.append((", ".join(lead) + ".", None))
+    settle_text = f"We will accept early settlement on up to {money_text(face)} of this invoice at {rate_text(rate_bp)}."
+    clauses.append((settle_text, disc_ob))
+    if not lead:
+        clauses.append(("Nothing else changes.", None))
+    formula = (
+        f"break-even: d/(1−d) < c, c = {fmt_pct(ctx.rate, 4)} × {BREAK_EVEN_PERIOD_DAYS}/365 = {fmt_pct(c, 4)} "
+        f"→ d < {fmt_pct(d_ratio.value, 4)}; largest whole-5bp rate below it = {rate_text(rate_bp)}. "
+        f"Face: (near-term need {fmt_yuan(need)} − committed line {fmt_yuan(line_avail)}) / (1 − {rate_text(rate_bp)}) "
+        f"= {fmt_yuan(post(face_exact))} → up to {fmt_yuan(face)} (whole ¥100, at most the invoice). "
+        f"Cost: discount {fmt_yuan(discount)} + line interest {fmt_yuan(line_cost)} = {fmt_yuan(total)}"
+    )
+    rationale = (f"Early settlement at {rate_text(rate_bp)} is cheaper than financing the invoice on the "
+                 f"marginal committed source; the line covers the rest of the near-term gap.")
+    return _proposal(ctx, label, clauses, total, rationale, formula)
+
+
+# ---------------------------------------------------------------- Option B: price adjustment
+
+
+def price_adjustment_counter(ctx: _Ctx, ext: Obligation, label: str = "Option B") -> CounterProposal | None:
+    rec = recurring_for(ctx.state, ctx.cp)
+    if rec is None or ext.days_delta is None:
+        return None
+    cv = value_concessions([ext], ctx.state, _ratio(ctx.rate), ctx.rate_label,
+                           ctx.mandate.forward_concession_horizon_days)[0]
+    per_invoice = cv.per_invoice_fen or 0
+    rate_bp = smallest_step_covering(per_invoice, rec.face_fen)
+    price = _obligation(
+        ctx.cp, ObligationType.PRICE_ADJUSTMENT, rate_bp=rate_bp,
+        base=ObligationBase(kind=BaseKind.FUTURE_INVOICES, amount_fen=rec.face_fen),
+        duration=Duration(kind=DurationKind.RECURRING_PERPETUAL),
+    )
+    terms = ext.model_copy(update={"contingency": Contingency.FIRM})
+    if not ctx.fits([terms, price]):
+        return None
+    ext_v, price_v = ctx.value([terms, price])
+    net = ext_v + price_v
+    per_price = post(bp(rate_bp) * rec.face_fen)
+    target = rec.terms_days + ext.days_delta
+    clauses: list[tuple[str, Obligation | None]] = [
+        (f"{target}-day terms accepted", terms),
+        (f"with a {rate_text(rate_bp)} price adjustment on future invoices, no rebate.", price),
+    ]
+    formula = (
+        f"smallest whole-5bp rate r with r × {fmt_yuan(rec.face_fen)} >= per-invoice funding cost "
+        f"{fmt_yuan(per_invoice)}: {rate_text(rate_bp)} → {fmt_yuan(per_price)} per invoice. "
+        f"12-month: extension {fmt_yuan(ext_v)} + price adjustment {fmt_yuan(price_v)} = {fmt_yuan(net)} "
+        f"(cost to the supplier {fmt_yuan(max(0, net))})"
+    )
+    rationale = ("The price adjustment covers the per-invoice cost of funding the longer terms on the marginal "
+                 "committed source, so the net forward concession is about zero.")
+    return _proposal(ctx, label, clauses, max(0, net), rationale, formula)
+
+
+# ---------------------------------------------------------------- bounded extension
+
+
+def bounded_extension_counters(ctx: _Ctx, ext: Obligation) -> list[CounterProposal]:
+    n = ext.duration.invoices or 0
+    delta = ext.days_delta or 0
+    others = [o for o in ctx.bound if o is not ext and not (o.contingency != Contingency.FIRM and is_gain(o))]
+    out: list[CounterProposal] = []
+    for k in range(n - 1, 0, -1):
+        fewer = ext.model_copy(update={"duration": Duration(kind=DurationKind.RECURRING_BOUNDED, invoices=k)})
+        if ctx.fits([fewer, *others]):
+            v = ctx.value([fewer])[0]
+            formula = (f"largest invoice count k < {n} with existing + {k} × per-invoice funding cost within the "
+                       f"concession budget: k = {k}, value {fmt_yuan(v)}")
+            out.append(_proposal(ctx, "Option A", [
+                (f"We can extend terms by {delta} days on {invoices_text(k)}.", fewer)], max(0, v),
+                "Fewer extended invoices keep the forward concession inside the mandate.", formula))
+            break
+    credits = [o for o in ctx.bound if o.type == ObligationType.PRICE_ADJUSTMENT and o.contingency != Contingency.FIRM
+               and is_gain(o) and o.rate_bp is not None]
+    rec = recurring_for(ctx.state, ctx.cp)
+    if credits and rec is not None:
+        firm = [c.model_copy(update={
+            "contingency": Contingency.FIRM,
+            "base": ObligationBase(kind=BaseKind.FUTURE_INVOICES, amount_fen=rec.face_fen),
+            "duration": Duration(kind=DurationKind.RECURRING_BOUNDED, invoices=n),
+        }) for c in credits]
+        if ctx.fits([ext, *firm, *others]):
+            values = ctx.value([ext, *firm])
+            net = sum(values)
+            formula = (f"extension {fmt_yuan(values[0])} + firm credit "
+                       f"{' + '.join(fmt_yuan(v) for v in values[1:])} = {fmt_yuan(net)}")
+            clauses: list[tuple[str, Obligation | None]] = [
+                (f"We can extend terms by {delta} days on {invoices_text(n)}", ext),
+            ]
+            for c in firm:
+                clauses.append((f"if the {rate_text(c.rate_bp or 0)} credit is firm on each of them.", c))
+            out.append(_proposal(ctx, "Option B", clauses, max(0, net),
+                                 "A firm credit is a FIRM gain and may offset the extension; a contingent one "
+                                 "counts as zero.", formula))
+    return out
+
+
+# ---------------------------------------------------------------- rebate reduction
+
+
+def rebate_counter(ctx: _Ctx) -> CounterProposal | None:
+    rebates = [o for o in ctx.of_type(ObligationType.CONTINGENT_REBATE)
+               if o.rate_bp is not None and o.base.amount_fen is not None]
+    if len(rebates) != 1:
+        return None
+    rb = rebates[0]
+    others = [o for o in ctx.bound if o is not rb]
+    base = rb.base.amount_fen or 0
+    headroom = ctx.mandate.max_aggregate_forward_concession_fen - ctx.net_forward(others)
+    cap = ctx.mandate.per_buyer_caps_fen.get(ctx.cp)
+    if cap is not None:
+        existing = sum(fc.value_fen for fc in ctx.state.forward_concessions if fc.counterparty_id == ctx.cp)
+        headroom = min(headroom, cap - existing - sum(max(0, v) for v in ctx.value(others)))
+    r = (rb.rate_bp or 0) - STEP_BP
+    while r > 0 and post(bp(r) * base) > headroom:
+        r -= STEP_BP
+    if r <= 0:
+        return None
+    new = rb.model_copy(update={"rate_bp": r})
+    value = post(bp(r) * base)
+    formula = (f"largest whole-5bp rate r below {rate_text(rb.rate_bp or 0)} with r × {fmt_yuan(base)} inside the "
+               f"remaining concession budget: {rate_text(r)} → {fmt_yuan(value)}")
+    return _proposal(ctx, "Option A", [
+        (f"We can offer {rate_text(r)} off next quarter's purchases of up to {money_text(base)}.", new)],
+        value, "A smaller rebate keeps every committed package inside the mandate.", formula)
+
+
+# ---------------------------------------------------------------- entry point
+
+
+def counters(
+    offer: CompiledOffer,
+    verdict: Verdict,
+    state: FinancialState,
+    mandate: Mandate,
+    *,
+    bound: Sequence[Obligation] | None = None,
+    owner_declared: Mapping[str, Any] | None = None,
+) -> list[CounterProposal]:
+    """Counters for a verdict that needs one. Empty when no counter is possible or appropriate."""
+    codes = {v.code for v in verdict.violations}
+    if codes & NO_COUNTER_CODES:
+        return []
+    if bound is None:
+        bound, _ = bind(offer, state, owner_declared)
+    try:
+        rate_ratio, fid = marginal_cost(state, mandate)
+    except NoPermanentSourceError:
+        return []
+    fac = next(f for f in state.facilities if f.id == fid)
+    ctx = _Ctx(offer, verdict, state, mandate, list(bound), rate_ratio.value,
+               f"committed marginal source: {fac.name} {fmt_pct(rate_ratio.value, 4)}")
+
+    lengthening = [o for o in ctx.of_type(ObligationType.TERMS_EXTENSION) if (o.days_delta or 0) > 0]
+    perpetual = [o for o in lengthening if o.duration.kind == DurationKind.RECURRING_PERPETUAL]
+    bounded = [o for o in lengthening if o.duration.kind == DurationKind.RECURRING_BOUNDED]
+    has_discount = bool(ctx.of_type(ObligationType.IMMEDIATE_DISCOUNT))
+    claimed = any(is_claimed(o) for o in offer.obligations)
+
+    out: list[CounterProposal] = []
+    if has_discount or perpetual or (claimed and not ctx.bound):
+        a = early_pay_counter(ctx)
+        if a is not None:
+            out.append(a)
+        if len(perpetual) == 1:
+            b = price_adjustment_counter(ctx, perpetual[0], "Option B" if out else "Option A")
+            if b is not None:
+                out.append(b)
+    elif len(bounded) == 1:
+        out.extend(bounded_extension_counters(ctx, bounded[0]))
+    elif ctx.of_type(ObligationType.CONTINGENT_REBATE):
+        r = rebate_counter(ctx)
+        if r is not None:
+            out.append(r)
+    return out
