@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { setOwnerToken } from "../lib/auth";
 import { live } from "../lib/live";
 import type { VerdictView } from "../lib/types";
 
@@ -11,6 +12,7 @@ import type { VerdictView } from "../lib/types";
 test.describe.configure({ mode: "serial" });
 
 test.beforeAll(async () => {
+  setOwnerToken("demo-owner-token"); // the adapters read the token the sign-in dialog would have stored
   await live.demoReset();
 });
 

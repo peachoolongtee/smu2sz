@@ -1,9 +1,10 @@
-import { expect, test, type Page } from "@playwright/test";
+import type { Page } from "@playwright/test";
+import { DEMO_TOKEN, expect, test } from "./fixtures";
 
 /** Live-mode only: owner-token handling, the 401 state, borrower-file downloads and owner approval. */
 
 const API = "http://localhost:8000";
-const TOKEN = process.env.NEXT_PUBLIC_OWNER_TOKEN ?? "demo-owner-token";
+const TOKEN = DEMO_TOKEN;
 
 async function walkTo(page: Page, steps: number) {
   await page.goto("/mandate");
@@ -26,7 +27,7 @@ test("every API request carries the owner token", async ({ page }) => {
   for (const r of seen) expect(r.token, r.url).toBe(TOKEN);
 });
 
-test("a 401 from the API shows the owner-token message instead of a blank screen", async ({ page }) => {
+test("a 401 from the API opens the owner sign-in dialog instead of leaving a blank screen", async ({ page }) => {
   await page.route(`${API}/state`, (route) =>
     route.fulfill({
       status: 401,
@@ -36,8 +37,8 @@ test("a 401 from the API shows the owner-token message instead of a blank screen
     }),
   );
   await page.goto("/mandate");
-  await expect(page.getByText(/rejected the owner token/i)).toBeVisible();
-  await expect(page.getByRole("button", { name: "Retry" })).toBeVisible();
+  await expect(page.getByText(/rejected the owner token/i).first()).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "Owner sign-in" })).toBeVisible();
 });
 
 test("the borrower file downloads as HTML and Word, and the owner approves both pending requests", async ({ page }) => {

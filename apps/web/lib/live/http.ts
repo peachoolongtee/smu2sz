@@ -1,21 +1,39 @@
 /** Transport for live mode: the only place that calls fetch(). */
 
-import { API_URL, OWNER_TOKEN } from "../config";
+import { API_URL } from "../config";
+import { getOwnerToken, requestSignIn } from "../auth";
 import { ApiError } from "../errors";
 
 interface HttpOptions {
   body?: unknown;
   as?: "json" | "text";
+  /** "none" sends no credential (a counterparty's /nl turn). Default: the signed-in owner token, if any. */
+  auth?: "owner" | "none";
+  /** Try this token instead of the stored one (the sign-in dialog checks a token before keeping it). */
+  token?: string;
+  /** Do not open the sign-in dialog on a 401 (the caller shows the failure itself). */
+  silent?: boolean;
 }
 
 /**
- * The API gates every owner-console route on X-Owner-Token (only POST /offers intake and POST /nl are open),
- * so every request carries it. The value is the demo token: see OWNER_TOKEN in ../config.
+ * The API gates every owner-console route on X-Owner-Token (only POST /offers intake and counterparty
+ * POST /nl turns are open). The token is whatever the owner typed into the sign-in dialog (sessionStorage).
  */
-const ownerHeaders = (): Record<string, string> => ({ "X-Owner-Token": OWNER_TOKEN });
+function ownerHeaders(opts: Pick<HttpOptions, "auth" | "token"> = {}): Record<string, string> {
+  if (opts.auth === "none") return {};
+  const token = opts.token ?? getOwnerToken();
+  return token ? { "X-Owner-Token": token } : {};
+}
 
-const UNAUTHORIZED =
-  "The API rejected the owner token (401). Set NEXT_PUBLIC_OWNER_TOKEN to the API's OWNER_TOKEN (the demo default is demo-owner-token) and reload.";
+const UNAUTHORIZED = "Owner sign-in required (401). Sign in with the owner token to use this.";
+const REJECTED = "The API rejected the owner token (401). Sign in again with the correct token.";
+export const NOT_CONFIGURED = "Server credentials not configured (503). Set OWNER_TOKEN and AGENT_KEY on the API, or run it in demo mode.";
+
+function unauthorized(opts: Pick<HttpOptions, "auth" | "token" | "silent">): ApiError {
+  const hadToken = Boolean(opts.token ?? getOwnerToken());
+  if (!opts.silent && opts.auth !== "none") requestSignIn(hadToken ? "rejected" : "required");
+  return new ApiError(401, hadToken ? REJECTED : UNAUTHORIZED);
+}
 
 function detailMessage(detail: unknown, fallback: string): string {
   if (typeof detail === "string") return detail;
@@ -36,7 +54,7 @@ function detailMessage(detail: unknown, fallback: string): string {
 }
 
 export async function http<T>(method: "GET" | "POST", path: string, opts: HttpOptions = {}): Promise<T> {
-  const headers: Record<string, string> = ownerHeaders();
+  const headers: Record<string, string> = ownerHeaders(opts);
   if (opts.body !== undefined) headers["Content-Type"] = "application/json";
   let res: Response;
   try {
@@ -48,13 +66,15 @@ export async function http<T>(method: "GET" | "POST", path: string, opts: HttpOp
   } catch {
     throw new ApiError(0, `Cannot reach the API at ${API_URL}. Is the service running?`);
   }
-  if (res.status === 401) throw new ApiError(401, UNAUTHORIZED);
+  if (res.status === 401) throw unauthorized(opts);
   if (!res.ok) {
     let message = `${res.status} ${res.statusText}`;
     try {
       const data = (await res.json()) as { detail?: unknown };
+      if (res.status === 503 && /NOT_CONFIGURED/.test(JSON.stringify(data.detail))) throw new ApiError(503, NOT_CONFIGURED);
       message = detailMessage(data.detail, message);
-    } catch {
+    } catch (e) {
+      if (e instanceof ApiError) throw e;
       /* keep the status line */
     }
     throw new ApiError(res.status, message);
@@ -73,7 +93,7 @@ export async function downloadFile(path: string, filename: string): Promise<void
   } catch {
     throw new ApiError(0, `Cannot reach the API at ${API_URL}. Is the service running?`);
   }
-  if (res.status === 401) throw new ApiError(401, UNAUTHORIZED);
+  if (res.status === 401) throw unauthorized({});
   if (!res.ok) throw new ApiError(res.status, `Download failed: ${res.status} ${res.statusText}`);
   const url = URL.createObjectURL(await res.blob());
   const a = document.createElement("a");

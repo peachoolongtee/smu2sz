@@ -53,6 +53,11 @@ export async function getState(): Promise<StateView> {
   return isMock ? (await mock()).getState() : (await live()).getState();
 }
 
+/** Checks an owner token before it is kept: a cheap owner-gated read in live mode. Resolves, or throws ApiError 401 / 503. */
+export async function verifyOwnerToken(token: string): Promise<void> {
+  return isMock ? (await mock()).verifyOwnerToken(token) : (await live()).verifyOwnerToken(token);
+}
+
 /** GET /mandate */
 export async function getMandate(): Promise<MandateView> {
   return isMock ? (await mock()).getMandate() : (await live()).getMandate();

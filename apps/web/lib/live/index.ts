@@ -52,6 +52,9 @@ function asOperationView(o: Record<string, unknown>): OperationView {
 export const live = {
   downloadFile,
   getState: () => http<StateView>("GET", "/state"),
+  verifyOwnerToken: async (token: string): Promise<void> => {
+    await http("GET", "/state", { token, silent: true });
+  },
   getMandate: () => http<MandateView>("GET", "/mandate"),
 
   submitOffer: (req: SubmitOfferRequest) =>

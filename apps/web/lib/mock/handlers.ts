@@ -411,6 +411,12 @@ export async function resetCircuit(counterpartyId: string): Promise<{ status: st
   return { status: "EXECUTED", message: `Circuit for ${counterpartyId} reset by the owner` };
 }
 
+/** The mock has no secret to protect: any non-empty token signs in, so the dialog can be exercised offline. */
+export async function verifyOwnerToken(token: string): Promise<void> {
+  await delay();
+  if (!token.trim()) throw new ApiError(401, "Owner token rejected");
+}
+
 export async function nl(req: NlRequest): Promise<NlResponse> {
   await delay();
   const asksCapex = /machine|capex|设备|机器/i.test(req.text);

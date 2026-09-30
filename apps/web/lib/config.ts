@@ -10,9 +10,9 @@ export const API_URL: string = (process.env.NEXT_PUBLIC_API_URL ?? "http://local
 export const MOCK_LATENCY_MS: number = Number(process.env.NEXT_PUBLIC_MOCK_LATENCY_MS ?? 160);
 
 /**
- * DEMO-ONLY owner credential, sent as X-Owner-Token on every live request (the API gates all owner-console
- * routes on it; only POST /offers intake and POST /nl are open). It is public by construction
- * (NEXT_PUBLIC_*): a real deployment sets OWNER_TOKEN on the API and authenticates the owner properly.
- * Never put a real secret here.
+ * Local demo builds only (NEXT_PUBLIC_DEMO=1): the owner sign-in dialog prefills the API's published demo
+ * token and says so. A real deployment leaves this unset, so no token is in the bundle and the owner types
+ * their own (kept in sessionStorage, see ./auth).
  */
-export const OWNER_TOKEN: string = process.env.NEXT_PUBLIC_OWNER_TOKEN ?? "demo-owner-token";
+export const DEMO_BUILD: boolean = process.env.NEXT_PUBLIC_DEMO === "1";
+export const DEMO_OWNER_TOKEN: string = process.env.NEXT_PUBLIC_DEMO === "1" ? "demo-owner-token" : "";

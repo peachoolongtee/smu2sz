@@ -1,4 +1,5 @@
-import { expect, test, type Page } from "@playwright/test";
+import type { Page } from "@playwright/test";
+import { expect, test } from "./fixtures";
 
 /**
  * Walks the demo stepper in the order of docs/DEMO_FLOW.md and asserts the golden numbers from
