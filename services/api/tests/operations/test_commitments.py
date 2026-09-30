@@ -1,14 +1,20 @@
-"""AcceptOffer / RecordCommitment / CounterOffer / RejectOffer: replay, expiry, terms hash and tiers."""
+"""AcceptOffer / RecordCommitment / CounterOffer / RejectOffer: replay, expiry, terms hash and tiers.
+
+Only an early-pay discount on a named invoice, with nothing else changed, is accepted at Tier 1 (spec v2
+§5.3); every other package waits for the owner (Tier 2)."""
 
 from __future__ import annotations
 
 from typing import Any
+
+import pytest
 
 from app.domain.models import (
     AcceptOffer,
     Actor,
     CommitmentStatus,
     CounterOffer,
+    ObligationType,
     Outcome,
     RecordCommitment,
     RejectOffer,
@@ -18,7 +24,17 @@ from app.domain.models import (
 )
 from app.domain.models import OperationStatus as S
 from app.operations import approval_id_of, security_summary
-from tests.operations.builders import Clock, counter, extension, offer, op, rebate, seed_offer, verdict
+from tests.operations.builders import (
+    Clock,
+    counter,
+    early_pay,
+    extension,
+    offer,
+    op,
+    rebate,
+    seed_offer,
+    verdict,
+)
 
 
 def accept(clock: Clock, c: Any, **overrides: Any) -> AcceptOffer:
@@ -41,6 +57,62 @@ def test_accept_activates_commitment_and_books_forward_concession(ex: Any, store
     [fc] = after.forward_concessions
     assert (fc.value_fen, fc.commitment_id, fc.counterparty_id) == (300_000, c.id, "BUYER-1")
     assert after.cash_fen == before.cash_fen and after.state_version == before.state_version + 1
+
+
+def test_an_early_pay_only_acceptance_executes_at_tier1(ex: Any, store: Any, clock: Clock) -> None:
+    """Option A: a discount for paying RCV-A now, nothing else changed. The one autonomous acceptance."""
+    c = seed_offer(store, ex, obligations=[early_pay()])
+    result = ex.execute(accept(clock, c))
+    assert (result.status, result.tier) == (S.EXECUTED, Tier.TIER_1)
+    assert store.approvals() == []
+    assert store.get_commitment(c.id).status == CommitmentStatus.ACTIVE
+
+
+def test_a_rebate_only_acceptance_waits_for_the_owner(ex: Any, store: Any, clock: Clock) -> None:
+    c = seed_offer(store, ex, obligations=[rebate()])
+    before = store.get_state()
+    pending = ex.execute(accept(clock, c))
+    assert (pending.status, pending.tier) == (S.PENDING_APPROVAL, Tier.TIER_2)
+    assert store.get_commitment(c.id).status == CommitmentStatus.PROPOSED
+    assert store.get_state() == before and not store.nonce_used(c.nonce)
+    done = ex.decide(approval_id_of(pending), True, Actor.OWNER)
+    assert done.status == S.EXECUTED
+    assert store.get_commitment(c.id).status == CommitmentStatus.ACTIVE
+    assert security_summary(store)["unauthorised_executions"] == 0
+
+
+def _other(kind: ObligationType) -> Any:
+    return rebate("OB-O", rate_bp=50).model_copy(update={"type": kind})
+
+
+@pytest.mark.parametrize("extra", [
+    rebate("OB-O"),
+    extension("OB-O", days_delta=-15),  # even a shortening that favours the SME
+    extension("OB-O", days_delta=15),
+    _other(ObligationType.PRICE_ADJUSTMENT),
+    _other(ObligationType.VOLUME_COMMITMENT),
+    _other(ObligationType.OPERATIONAL_CONCESSION),
+    early_pay("OB-O", receivable_id=None),  # a discount on no named invoice
+], ids=["rebate", "shortening", "lengthening", "price", "volume", "operational", "unnamed-discount"])
+def test_early_pay_plus_anything_else_is_tier2(extra: Any, ex: Any, store: Any, clock: Clock) -> None:
+    c = seed_offer(store, ex, obligations=[early_pay(), extra])
+    result = ex.execute(accept(clock, c))
+    assert (result.status, result.tier) == (S.PENDING_APPROVAL, Tier.TIER_2)
+    assert store.get_commitment(c.id).status == CommitmentStatus.PROPOSED
+    assert store.get_state().forward_concessions == []
+
+
+def test_a_discount_on_no_named_invoice_is_tier2(ex: Any, store: Any, clock: Clock) -> None:
+    c = seed_offer(store, ex, obligations=[early_pay(receivable_id=None)])
+    result = ex.execute(accept(clock, c))
+    assert (result.status, result.tier) == (S.PENDING_APPROVAL, Tier.TIER_2)
+
+
+def test_recording_a_rebate_commitment_waits_for_the_owner(ex: Any, store: Any, clock: Clock) -> None:
+    c = seed_offer(store, ex, obligations=[rebate()])
+    result = ex.execute(op(RecordCommitment, clock, commitment_id=c.id, nonce=c.nonce))
+    assert (result.status, result.tier) == (S.PENDING_APPROVAL, Tier.TIER_2)
+    assert store.get_commitment(c.id).status == CommitmentStatus.PROPOSED
 
 
 def test_reused_nonce_is_replay(ex: Any, store: Any, clock: Clock) -> None:

@@ -22,7 +22,7 @@ from app.domain.models import (
 from app.domain.models import OperationStatus as S
 from app.operations import REVOKE_COMMITMENT_KIND, security_summary
 from app.persistence import OfferVersionConflict
-from tests.operations.builders import Clock, make_executor, offer, op, rebate, seed_offer, verdict
+from tests.operations.builders import Clock, early_pay, make_executor, offer, op, rebate, seed_offer, verdict
 
 
 class _FailingAppend:
@@ -115,7 +115,8 @@ def test_a_receipt_from_the_bank_feed_or_the_owner_is_tier1(actor: Actor, ex: An
 
 def test_the_executor_never_reads_the_stored_offer(ex: Any, store: Any, clock: Clock) -> None:
     """Even if someone with database access swaps the stored offer row (bypassing put_offer), the
-    commitment carries and books exactly the verdict's terms at the verdict's value."""
+    commitment carries and books exactly the verdict's terms (an early-pay discount) at the verdict's value,
+    not the swapped-in rebate."""
     c = seed_offer(store, ex, "OFF-S")
     swapped = offer("OFF-S", [rebate(rate_bp=300)])
     with pytest.raises(OfferVersionConflict):
@@ -125,7 +126,7 @@ def test_the_executor_never_reads_the_stored_offer(ex: Any, store: Any, clock: C
     result = ex.execute(accept(clock, c))
     assert result.status == S.EXECUTED
     (fc,) = store.get_state().forward_concessions
-    assert fc.value_fen == 300_000 and store.get_commitment(c.id).obligations == [rebate()]
+    assert fc.value_fen == 300_000 and store.get_commitment(c.id).obligations == [early_pay()]
 
 
 def test_a_commitment_whose_value_differs_from_the_verdict_is_refused(ex: Any, store: Any, clock: Clock) -> None:
