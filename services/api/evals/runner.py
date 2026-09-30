@@ -125,6 +125,13 @@ def _md_table(headers: list[str], rows: list[list[Any]]) -> list[str]:
             *("| " + " | ".join(cell(c) for c in row) + " |" for row in rows)]
 
 
+def _rel(path: str | None, default: str) -> str:
+    if not path:
+        return default
+    p = Path(path)
+    return str(p.relative_to(ROOT)) if p.is_relative_to(ROOT) else str(p)
+
+
 def _yuan(fen: int | None) -> str:
     return "—" if fen is None else f"¥{fen / 100:,.2f}"
 
@@ -189,7 +196,8 @@ def to_markdown(rep: dict[str, Any]) -> str:
         L += [f"## {TITLES['offers']}", ""]
         c = d.get("counts", {})
         L.append(f"{c.get('items')} held-out messages ({c.get('en')} en, {c.get('zh')} zh; {c.get('must_abstain')} must "
-                 f"abstain) in `fixtures/heldout/offers.yaml`, labelled by hand and never used to tune the grammar. "
+                 f"abstain; {c.get('unlabelled_outcome', 0)} with the outcome unlabelled) in "
+                 f"`{_rel(d.get('source'), 'fixtures/heldout/offers.yaml')}`, labelled by hand and never used to tune the grammar. "
                  f"Compiler backends: {d.get('backends')}. Compile latency p50/p95 "
                  f"{d.get('compile_ms', {}).get('p50')}/{d.get('compile_ms', {}).get('p95')} ms. The form baseline types "
                  f"the labels straight into the verifier.")
@@ -260,7 +268,7 @@ def to_markdown(rep: dict[str, Any]) -> str:
         d = s["intent"]["details"]
         L += [f"## {TITLES['intent']}", ""]
         L.append(f"{d.get('counts', {}).get('items')} held-out utterances ({d.get('counts', {}).get('zh')} zh) in "
-                 f"`fixtures/heldout/intents.yaml`, each on a fresh session through POST /nl. Per intent: "
+                 f"`{_rel(d.get('source'), 'fixtures/heldout/intents.yaml')}`, each on a fresh session through POST /nl. Per intent: "
                  + ", ".join(f"{k} {v['ok']}/{v['n']}" for k, v in d.get("by_intent", {}).items()) + ".")
         L.append("")
         L += _md_table(["Id", "Utterance", "Label", "Got", "Source", "Slots", "Clarified"],

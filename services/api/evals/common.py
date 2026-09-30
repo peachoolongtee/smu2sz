@@ -18,6 +18,20 @@ FIXTURES = ROOT / "fixtures"
 HELDOUT = FIXTURES / "heldout"
 EVALS = API / "evals"
 
+
+def heldout_path(path: str | Path | None, filename: str) -> Path:
+    """The held-out file to evaluate: `path` may be None (fixtures/heldout), a directory holding
+    `filename`, or the file itself. A relative path resolves against the repo root first, then the CWD."""
+    if path is None:
+        return HELDOUT / filename
+    p = Path(path)
+    if not p.is_absolute():
+        p = ROOT / p if (ROOT / p).exists() else p.resolve()
+    p = p / filename if p.is_dir() else p
+    if not p.is_file():
+        raise FileNotFoundError(f"held-out file not found: {p}")
+    return p
+
 OWNER_TOKEN = os.environ.get("OWNER_TOKEN", "demo-owner-token")
 AGENT_KEY = os.environ.get("AGENT_KEY", "demo-agent-key")
 

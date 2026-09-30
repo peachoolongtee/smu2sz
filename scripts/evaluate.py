@@ -6,6 +6,7 @@ Usage (from the repo root):
   uv run --project services/api python scripts/evaluate.py --suite offers --only H10b_today_1_6pct
   uv run --project services/api python scripts/evaluate.py --suite funding --only R01 --workers 1
   uv run --project services/api python scripts/evaluate.py --live          # the configured LLM backends
+  uv run --project services/api python scripts/evaluate.py --suite offers --heldout fixtures/heldout2
 
 Suites: offers (E2), financial (E3/E10), funding (E9), covenants, security, intent, e2e (E7), no_deal (E5).
 Offline (default) sets LLM_MODE=cache: recorded compiler outputs where they exist, else the rules grammar.
@@ -55,6 +56,8 @@ def main() -> int:
     ap.add_argument("--funding-random", type=int, default=16, help="seeded random funding scenarios (default 16)")
     ap.add_argument("--funding-budget", type=float, default=180.0, help="brute-force seconds per funding scenario")
     ap.add_argument("--workers", type=int, help="processes for the funding brute force (default: cores − 1, max 8)")
+    ap.add_argument("--heldout", help="directory holding an alternate offers.yaml / intents.yaml for the offers and "
+                    "intent suites (default fixtures/heldout), e.g. fixtures/heldout2")
     ap.add_argument("--out", help="directory for latest_report.{json,md}")
     ap.add_argument("--strict", action="store_true", help="exit 1 when any target is missed")
     ap.add_argument("--probe", help="compile and verify one buyer message on the golden state, print, and exit")
@@ -78,9 +81,10 @@ def main() -> int:
     funding = {"n_random": args.funding_random, "budget_s": args.funding_budget, "workers": args.workers}
     if args.fast:
         funding.update({"n_random": 2, "step2_fen": 2_000_000, "step3_fen": 5_000_000, "budget_s": 20.0})
-    options = {"funding": {**funding, "only": only}, "offers": {"only": only}, "intent": {"only": only},
-               "e2e": {"only": only}}
-    partial = bool(args.suite or only or args.fast)
+    heldout = {"heldout": args.heldout} if args.heldout else {}
+    options = {"funding": {**funding, "only": only}, "offers": {"only": only, **heldout},
+               "intent": {"only": only, **heldout}, "e2e": {"only": only}}
+    partial = bool(args.suite or only or args.fast or args.heldout)
     out = Path(args.out) if args.out else (Path(tempfile.mkdtemp(prefix="tl-eval-")) if partial else None)
     command = "uv run --project services/api python scripts/evaluate.py " + " ".join(shlex.quote(a) for a in sys.argv[1:])
     rep, jp, mp = run_eval(suites, options, out, command.strip())
