@@ -11,7 +11,7 @@ Dependency direction (no cycles):
 
 from __future__ import annotations
 
-from typing import Protocol
+from typing import Any, Protocol
 
 from app.domain.models import (
     Commitment,
@@ -155,14 +155,22 @@ class Executor(Protocol):
 
 
 class OperationRecord(Protocol):
-    seq: int
-    op_id: str
-    kind: str
-    idempotency_key: str
-    payload_json: str  # canonical JSON of the typed operation
-    result_json: str  # canonical JSON of the OperationResult
-    prev_hash: str
-    entry_hash: str  # sha256(prev_hash + payload_json + result_json)
+    @property
+    def seq(self) -> int: ...
+    @property
+    def op_id(self) -> str: ...
+    @property
+    def kind(self) -> str: ...
+    @property
+    def idempotency_key(self) -> str: ...
+    @property
+    def payload_json(self) -> str: ...  # canonical JSON of the typed operation
+    @property
+    def result_json(self) -> str: ...  # canonical JSON of the OperationResult
+    @property
+    def prev_hash(self) -> str: ...
+    @property
+    def entry_hash(self) -> str: ...  # sha256(prev_hash + payload_json + result_json)
 
 
 class LedgerStore(Protocol):
@@ -195,4 +203,13 @@ class LedgerStore(Protocol):
     def get_verdict(self, verdict_id: str) -> Verdict | None: ...
     def add_security_event(self, event: SecurityEvent) -> None: ...
     def security_events(self) -> list[SecurityEvent]: ...
-    def reset(self) -> None: ...
+    def reset(self, include_telemetry: bool = False) -> None: ...
+
+    # Tier-2 approvals queue (the executor/API enforce owner-only decisions)
+    def add_approval(self, op_json: str, reason: str) -> str: ...
+    def get_approval(self, approval_id_: str) -> Any: ...
+    def approvals(self, status: Any = None) -> list[Any]: ...
+    def decide_approval(self, approval_id_: str, approved: bool, by: str) -> Any: ...
+
+    # evidence
+    def export_evidence(self) -> str: ...
