@@ -1,0 +1,98 @@
+"""Permission tiers, computed from the typed operation only (INVARIANTS 6 and 12).
+
+Nothing a caller supplies as a "tier" is read. The only caller-supplied inputs are two facts the
+operation object cannot carry, and each can only *raise* the tier:
+- `accepts_terms_change`: the accepted offer contains a TERMS_EXTENSION (-> Tier 2).
+- `commitment_value_fen`: the value of the commitment an AcceptOffer/RecordCommitment creates
+  (-> Tier 2 above `tier2_single_commitment_fen`).
+An operation type this function does not know is Tier 3 (fail closed).
+"""
+
+from __future__ import annotations
+
+from app.domain.models import (
+    AcceptOffer,
+    Actor,
+    AddFacility,
+    ApplyForFacility,
+    ChangeMandate,
+    CounterOffer,
+    DrawFacility,
+    FacilityStatus,
+    FinancialState,
+    GenerateBorrowerFile,
+    IssueEquity,
+    Mandate,
+    PledgeCollateral,
+    ReceivePayment,
+    RecordCommitment,
+    RejectOffer,
+    RepayFacility,
+    RequestOwnerApproval,
+    SignPersonalGuarantee,
+    SubmitInvoiceForFinancing,
+    Tier,
+)
+
+_ALWAYS_TIER3 = (SignPersonalGuarantee, PledgeCollateral, IssueEquity, ChangeMandate)
+_ALWAYS_TIER2 = (ApplyForFacility, GenerateBorrowerFile)
+_TIER1_BASE = (
+    AcceptOffer,
+    CounterOffer,
+    RejectOffer,
+    RecordCommitment,
+    DrawFacility,
+    RepayFacility,
+    SubmitInvoiceForFinancing,
+    ReceivePayment,
+    RequestOwnerApproval,
+)
+
+
+def _is_committed(state: FinancialState, facility_id: str) -> bool:
+    """A facility is usable at Tier 1 only if it is on the owner's menu, owner-approved and
+    COMMITTED. An unknown id is treated as not committed."""
+    f = next((f for f in state.facilities if f.id == facility_id), None)
+    return f is not None and f.owner_approved and f.status == FacilityStatus.COMMITTED
+
+
+def _commitment_amount(operation: object) -> int | None:
+    """The new commitment an operation creates, in fen. Repayments and receipts reduce exposure
+    and are not commitments, so they are not size-tested."""
+    if isinstance(operation, DrawFacility | ApplyForFacility | GenerateBorrowerFile):
+        return operation.amount_fen
+    if isinstance(operation, SubmitInvoiceForFinancing):
+        return operation.advance_fen
+    return None
+
+
+def tier_for(
+    operation: object,
+    mandate: Mandate,
+    state: FinancialState,
+    *,
+    accepts_terms_change: bool = False,
+    commitment_value_fen: int | None = None,
+) -> Tier:
+    if isinstance(operation, _ALWAYS_TIER3):
+        return Tier.TIER_3
+    if isinstance(operation, AddFacility):
+        return Tier.TIER_2 if operation.requested_by == Actor.OWNER else Tier.TIER_3
+    if isinstance(operation, _ALWAYS_TIER2):
+        return Tier.TIER_2
+    if not isinstance(operation, _TIER1_BASE):
+        return Tier.TIER_3
+
+    if isinstance(operation, DrawFacility | SubmitInvoiceForFinancing) and not _is_committed(
+        state, operation.facility_id
+    ):
+        return Tier.TIER_2
+    amount = _commitment_amount(operation)
+    if amount is not None and amount > mandate.tier2_single_commitment_fen:
+        return Tier.TIER_2
+    if isinstance(operation, AcceptOffer | RecordCommitment):
+        if isinstance(operation, AcceptOffer) and accepts_terms_change:
+            return Tier.TIER_2
+        if commitment_value_fen is not None and commitment_value_fen > mandate.tier2_single_commitment_fen:
+            return Tier.TIER_2
+    return Tier.TIER_1
