@@ -126,13 +126,73 @@ def test_missing_declared_cost_is_unresolved_scope(state, mandate, key):
     assert b.trajectory is None and v.forward_concession_total_fen == 0
 
 
-def test_undeclared_rebate_base_uses_a_conservative_ledger_estimate(state, mandate, key):
+def test_rebate_base_binds_to_the_expected_order_without_owner_declarations(state, mandate, key, g):
     b = evaluate(compiled("EX01_PACKAGE"), state, mandate, trusted_owner_key_hex=key)
     rebate = next(o for o in b.bound_obligations if o.type == ObligationType.CONTINGENT_REBATE)
-    assert rebate.base.amount_fen == 3 * 42_000_000  # a quarter of the ledger's invoicing to BUYER-1
-    note = next(n for n in b.notes if n.obligation_id == rebate.id)
-    assert note.resolved and "conservative estimate" in note.message
+    assert rebate.base.amount_fen == 40_000_000  # BUYER-1's next-quarter order (days 92-182), not firm
+    note = next(n for n in b.notes if n.obligation_id == rebate.id and n.field == "base.amount_fen")
+    assert note.resolved and "next quarter" in note.message and "counted at maximum" in note.message
     assert b.verdict.outcome == Outcome.REJECT
+    assert b.verdict.forward_concession_total_fen == g["forward_ledger_total"]
+
+
+def test_rebate_base_falls_back_to_a_conservative_ledger_estimate(state, mandate, key):
+    no_orders = state.model_copy(update={"expected_orders": []})
+    b = evaluate(compiled("EX01_PACKAGE"), no_orders, mandate, trusted_owner_key_hex=key)
+    rebate = next(o for o in b.bound_obligations if o.type == ObligationType.CONTINGENT_REBATE)
+    assert rebate.base.amount_fen == 3 * 42_000_000  # a quarter of the ledger's invoicing to BUYER-1
+    note = next(n for n in b.notes if n.obligation_id == rebate.id and n.field == "base.amount_fen")
+    assert note.resolved and "conservative estimate" in note.message and "no expected order" in note.message
+
+
+def test_rebate_base_ignores_other_buyers_and_orders_outside_the_period(state):
+    order = state.expected_orders[0]
+    others = state.model_copy(update={"expected_orders": [
+        order.model_copy(update={"counterparty_id": "BUYER-2"}),
+        order.model_copy(update={"start_day": 400, "end_day": 490}),
+    ]})
+    bound, notes = bind(_rebate_offer("RB-1", rate_bp=100), others)
+    assert bound[0].base.amount_fen == 3 * 42_000_000
+    assert "conservative estimate" in notes[0].message
+
+
+def test_one_off_rebate_takes_the_largest_order_recurring_takes_all(state):
+    order = state.expected_orders[0]
+    two = state.model_copy(update={"expected_orders": [
+        order, order.model_copy(update={"label": "following quarter", "start_day": 183, "end_day": 272,
+                                        "amount_fen": 25_000_000, "firm": True}),
+    ]})
+    offer = _rebate_offer("RB-2", rate_bp=100)
+    (one_off,), _ = bind(offer, two)
+    assert one_off.base.amount_fen == 40_000_000
+    recurring = offer.model_copy(update={"obligations": [offer.obligations[0].model_copy(
+        update={"duration": Duration(kind=DurationKind.RECURRING_PERPETUAL)})]})
+    (every,), notes = bind(recurring, two)
+    assert every.base.amount_fen == 65_000_000
+    assert "following quarter" in notes[0].message
+
+
+def test_terms_bind_from_target_terms_days_never_from_span_text(state):
+    offer = compiled("EX01_PACKAGE")
+    ext = next(o for o in offer.obligations if o.type == ObligationType.TERMS_EXTENSION)
+    assert (ext.target_terms_days, ext.days_delta) == (60, None)
+    lying = SourceSpan(doc_id="EX01-msg", start=0, end=7, text="90 days")
+    forged = offer.model_copy(update={"obligations": [
+        o.model_copy(update={"spans": [lying]}) if o.id == ext.id else o for o in offer.obligations]})
+    bound, notes = bind(forged, state)
+    (b_ext,) = [o for o in bound if o.type == ObligationType.TERMS_EXTENSION]
+    assert b_ext.days_delta == 15 and b_ext.unresolved == []  # 60 − the ledger's 45
+    assert any("target 60 days − current 45 days" in n.message for n in notes)
+
+
+def test_terms_without_target_or_delta_are_unresolved_scope(state, mandate, key):
+    offer = compiled("EX01_PACKAGE")
+    blind = offer.model_copy(update={"obligations": [
+        o.model_copy(update={"target_terms_days": None}) if o.type == ObligationType.TERMS_EXTENSION else o
+        for o in offer.obligations]})
+    v = evaluate(blind, state, mandate, trusted_owner_key_hex=key).verdict
+    assert v.outcome == Outcome.NO_VERDICT and codes(v.violations) == ["UNRESOLVED_SCOPE"]
+    assert v.bound_obligations == []  # nothing was verified, so nothing may be committed
 
 
 def test_claimed_concessions_are_never_bound(state):

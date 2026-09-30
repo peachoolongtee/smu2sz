@@ -1,8 +1,11 @@
 """Bind a compiled offer to the verified state: resolve what the compiler could not.
 
 The compiler sees documents only, so it cannot know which receivable "this one" is, what the
-buyer's current terms are, or what a delivery change costs the supplier. `bind()` resolves those
-from typed state rows and the owner's declared values, and reports every decision as a `BindNote`.
+buyer's current terms are, what a rebate's base is, or what a delivery change costs the supplier.
+`bind()` resolves those from typed state rows (receivables, recurring invoices, expected orders) and
+the owner's declared operational costs, and reports every decision as a `BindNote`. It reads typed
+fields only, never span or document text (INVARIANT 2): a terms change binds from the compiler's
+`days_delta`, or from its `target_terms_days` minus the ledger's current terms.
 An unresolved material field makes the verdict UNRESOLVED_SCOPE (INVARIANT 10). An unresolved
 reference ("as usual") is informational only and books nothing.
 
@@ -11,7 +14,6 @@ Claimed prior concessions are never bound or booked (INVARIANT 5); the security 
 
 from __future__ import annotations
 
-import re
 from collections.abc import Mapping
 from typing import Any
 
@@ -19,6 +21,7 @@ from app.domain.models import (
     BaseKind,
     CompiledOffer,
     Contingency,
+    DurationKind,
     FacilityKind,
     FinancialState,
     Obligation,
@@ -31,15 +34,12 @@ from app.verifier.models import BindNote
 
 DEFAULT_EARLY_PAY_LEAD_DAYS = 2  # the engine's default when the buyer has no early-pay facility
 QUARTER_DAYS = 90
+REBATE_PERIOD_DAYS = 365  # the rebate period an expected order must overlap (see _expected_order_base)
 
-# Owner-declared keys (fixture `declared_costs`). A value is an int, or a {counterparty_id: int} map.
+# Owner-declared keys (fixture `declared_costs`). A value is an int, or a {counterparty_id: int} map. They
+# cover only what the ledger cannot know: the supplier's own operational cost per event.
 PER_EVENT_COST_KEYS = ("per_event_cost_fen", "shipment_cost_fen")
 EVENTS_PER_YEAR_KEYS = ("events_per_year", "shipments_per_year")
-PERIOD_PURCHASES_KEYS = ("period_purchases_fen", "next_quarter_purchases_fen")
-
-# A payment-terms length inside the obligation's own evidence span: "60 days", "30-day", "60天", "Net 60".
-_DAYS = re.compile(r"(?i)(?<![\d.])(\d{1,3})\s*(?:-\s*)?(?:days?\b|天)|\bnet\s?(\d{1,3})\b")
-_TARGET_KEY = re.compile(r"^target_terms_days[=:](\d{1,3})$")
 
 
 def is_claimed(ob: Obligation) -> bool:
@@ -85,26 +85,8 @@ def early_pay_lead(state: FinancialState, counterparty_id: str) -> int:
     return eps[0].lead_time_days if eps else DEFAULT_EARLY_PAY_LEAD_DAYS
 
 
-def _target_terms_days(ob: Obligation) -> int | None:
-    """The target payment terms a TERMS_EXTENSION names but the compiler could not turn into a delta.
-
-    The compiler keeps the target only inside the obligation's evidence (its validated span, an exact
-    substring of the source). This is the verifier's one read of span text: a single number of days,
-    and nothing else. More than one distinct number, or none, is unresolved (INVARIANT 10).
-    """
-    for key in ob.unresolved:
-        m = _TARGET_KEY.match(key)
-        if m:
-            return int(m.group(1))
-    found: set[int] = set()
-    for sp in ob.spans:
-        for m in _DAYS.finditer(sp.text):
-            found.add(int(m.group(1) or m.group(2)))
-    return found.pop() if len(found) == 1 else None
-
-
 def _drop(unresolved: list[str], *keys: str) -> list[str]:
-    return [u for u in unresolved if u not in keys and not _TARGET_KEY.match(u)]
+    return [u for u in unresolved if u not in keys]
 
 
 class _Binder:
@@ -162,9 +144,9 @@ class _Binder:
     def terms(self, ob: Obligation) -> Obligation:
         if ob.days_delta is not None:
             return ob.model_copy(update={"unresolved": _drop(ob.unresolved, "current_terms_days")})
-        target = _target_terms_days(ob)
+        target = ob.target_terms_days
         if target is None:
-            self.note(ob, "days_delta", False, True, "target payment terms could not be read as one number of days")
+            self.note(ob, "days_delta", False, True, "the offer states neither a terms change nor target terms")
             return ob
         rec = recurring_for(self.state, ob.counterparty_id)
         current: int | None = None
@@ -193,26 +175,52 @@ class _Binder:
         if ob.rate_bp is None:
             self.note(ob, "rate_bp", False, True, "rebate without a rate or amount")
             return ob
-        declared = _declared(self.declared, ob.counterparty_id, PERIOD_PURCHASES_KEYS)
-        if declared is not None:
-            self.note(ob, "base.amount_fen", True, True,
-                      f"rebate base: owner-declared period purchases {fmt_yuan(declared)} (counted at maximum)")
-            base_amount = declared
+        found = self._expected_order_base(ob)
+        if found is not None:
+            base_amount, message = found
+            self.note(ob, "base.amount_fen", True, True, message)
         else:
             rec = recurring_for(self.state, ob.counterparty_id)
             if rec is None or rec.every_days <= 0:
                 self.note(ob, "base.amount_fen", False, True,
-                          "rebate base is not stated, not declared by the owner and not derivable from the ledger")
+                          f"rebate base is not stated, {ob.counterparty_id} has no expected order in the rebate "
+                          f"period and the ledger has no recurring invoice to estimate it from")
                 return ob
             n = max(1, QUARTER_DAYS // rec.every_days)
             base_amount = n * rec.face_fen
             self.note(ob, "base.amount_fen", True, True,
-                      f"rebate base not stated or declared: conservative estimate {n} × {fmt_yuan(rec.face_fen)} "
-                      f"= {fmt_yuan(base_amount)} (a quarter of the ledger's invoicing to {ob.counterparty_id})")
+                      f"rebate base not stated and no expected order of {ob.counterparty_id} in the rebate period: "
+                      f"conservative estimate {n} × {fmt_yuan(rec.face_fen)} = {fmt_yuan(base_amount)} "
+                      f"(a quarter of the ledger's invoicing to {ob.counterparty_id})")
         return ob.model_copy(update={
             "base": ob.base.model_copy(update={"kind": BaseKind.PERIOD_PURCHASES, "amount_fen": base_amount}),
             "unresolved": _drop(ob.unresolved, "base_amount", "base"),
         })
+
+    def _expected_order_base(self, ob: Obligation) -> tuple[int, str] | None:
+        """The rebate base from the counterparty's expected orders (typed state rows, never text).
+
+        The compiler never computes days, so it cannot place "next quarter" on the day axis: the rebate
+        period is the year from the rebate's `effective_day`, or from the day after the offer. A one-off
+        rebate binds to the largest single order overlapping that period; a recurring rebate to all of them.
+        An order that is not firm is still counted in full (contingent concessions at maximum, INVARIANT 5).
+        """
+        start = ob.effective_day if ob.effective_day is not None else self.offer.received_day + 1
+        end = start + REBATE_PERIOD_DAYS - 1
+        orders = sorted(
+            (o for o in self.state.expected_orders
+             if o.counterparty_id == ob.counterparty_id and o.start_day <= end and o.end_day >= start),
+            key=lambda o: (-o.amount_fen, o.start_day, o.label),
+        )
+        if not orders:
+            return None
+        chosen = orders[:1] if ob.duration.kind == DurationKind.ONE_OFF else orders
+        amount = sum(o.amount_fen for o in chosen)
+        described = ", ".join(
+            f"{o.label} (days {o.start_day}–{o.end_day}) {fmt_yuan(o.amount_fen)}{'' if o.firm else ', not firm'}"
+            for o in chosen)
+        counted = "" if all(o.firm for o in chosen) else "; counted at maximum"
+        return amount, f"rebate base: expected order of {ob.counterparty_id}: {described}{counted}"
 
     def operational(self, ob: Obligation) -> Obligation:
         cp = ob.counterparty_id

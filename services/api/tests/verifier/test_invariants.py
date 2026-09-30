@@ -18,48 +18,68 @@ from tests.verifier.conftest import bundle, compiled
 
 VERIFIER = Path(__file__).resolve().parents[2] / "app" / "verifier"
 FREE_TEXT_ATTRS = {"text", "value_text", "reason", "filename", "lender_name", "quote"}
+SPAN_ATTRS = {"spans", "span"}
 FORBIDDEN_IMPORTS = ("app.compiler", "app.counterparties", "app.nl", "app.security", "app.api", "app.operations",
                      "app.persistence")
-# The single sanctioned read: the target terms of a TERMS_EXTENSION, from its own validated span.
-ALLOWED_TEXT_READS = {("bind.py", "_target_terms_days")}
+TEXT_MODULES = ("re", "regex", "string", "difflib", "unicodedata")
 
 
-def _functions(tree: ast.AST) -> dict[ast.AST, str]:
-    """Each node -> the name of the outermost function that contains it."""
-    owner: dict[ast.AST, str] = {}
-    for fn in ast.walk(tree):
-        if isinstance(fn, ast.FunctionDef | ast.AsyncFunctionDef):
-            for node in ast.walk(fn):
-                if node is not fn:
-                    owner.setdefault(node, fn.name)
-    return owner
+def _free_text_reads(source: str, name: str = "<src>") -> list[str]:
+    """Every way the verifier could read document or span text. There is no sanctioned exception: target
+    terms arrive as `Obligation.target_terms_days`, so the verifier reads no text at all (INVARIANT 2)."""
+    offenders: list[str] = []
+    for node in ast.walk(ast.parse(source)):
+        if isinstance(node, ast.Name | ast.alias) and "SourceDocument" in (getattr(node, "id", None) or
+                                                                         getattr(node, "name", "")):
+            offenders.append(f"{name}: references SourceDocument")
+        if isinstance(node, ast.ImportFrom) and node.module and node.module.startswith(FORBIDDEN_IMPORTS):
+            offenders.append(f"{name}: imports {node.module}")
+        if isinstance(node, ast.ImportFrom) and node.module and node.module.split(".")[0] in TEXT_MODULES:
+            offenders.append(f"{name}: imports text-processing module {node.module}")
+        if isinstance(node, ast.Import):
+            offenders += [f"{name}: imports {a.name}" for a in node.names
+                          if a.name.startswith(FORBIDDEN_IMPORTS) or a.name.split(".")[0] in TEXT_MODULES]
+        if isinstance(node, ast.Attribute) and node.attr in FREE_TEXT_ATTRS and isinstance(node.ctx, ast.Load):
+            offenders.append(f"{name}:{node.lineno} reads .{node.attr}")
+            base = node.value.value if isinstance(node.value, ast.Subscript) else node.value
+            if isinstance(base, ast.Attribute) and base.attr in SPAN_ATTRS:
+                offenders.append(f"{name}:{node.lineno} reads .{base.attr}[...].{node.attr}")
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Name | ast.Attribute):
+            fn = node.func.id if isinstance(node.func, ast.Name) else node.func.attr
+            consts = [a.value for a in node.args if isinstance(a, ast.Constant) and isinstance(a.value, str)]
+            if fn in {"getattr", "attrgetter"} and set(consts) & (FREE_TEXT_ATTRS | SPAN_ATTRS):
+                offenders.append(f"{name}:{node.lineno} {fn}(..., {consts})")
+        if isinstance(node, ast.Subscript) and isinstance(node.slice, ast.Constant) \
+                and node.slice.value in FREE_TEXT_ATTRS:
+            offenders.append(f"{name}:{node.lineno} reads [{node.slice.value!r}]")
+    return offenders
 
 
 def test_verifier_never_reads_document_free_text():
     offenders = []
     for path in sorted(VERIFIER.glob("*.py")):
-        tree = ast.parse(path.read_text())
-        owner = _functions(tree)
-        for node in ast.walk(tree):
-            if isinstance(node, ast.Name | ast.alias) and "SourceDocument" in (getattr(node, "id", None) or
-                                                                             getattr(node, "name", "")):
-                offenders.append(f"{path.name}: references SourceDocument")
-            if isinstance(node, ast.ImportFrom) and node.module and node.module.startswith(FORBIDDEN_IMPORTS):
-                offenders.append(f"{path.name}: imports {node.module}")
-            if isinstance(node, ast.Import):
-                offenders += [f"{path.name}: imports {a.name}" for a in node.names if a.name.startswith(FORBIDDEN_IMPORTS)]
-            if isinstance(node, ast.Attribute) and node.attr in FREE_TEXT_ATTRS and isinstance(node.ctx, ast.Load):
-                where = (path.name, owner.get(node, "<module>"))
-                if where not in ALLOWED_TEXT_READS:
-                    offenders.append(f"{path.name}:{node.lineno} reads .{node.attr} in {where[1]}")
+        offenders += _free_text_reads(path.read_text(), path.name)
     assert offenders == []
 
 
-def test_the_sanctioned_span_read_only_parses_days():
-    tree = ast.parse((VERIFIER / "bind.py").read_text())
-    fn = next(n for n in ast.walk(tree) if isinstance(n, ast.FunctionDef) and n.name == "_target_terms_days")
-    reads = [n for n in ast.walk(fn) if isinstance(n, ast.Attribute) and n.attr == "text"]
-    assert len(reads) == 1 and isinstance(reads[0].value, ast.Name) and reads[0].value.id == "sp"
+def test_bind_has_no_span_parser_left():
+    source = (VERIFIER / "bind.py").read_text()
+    assert "_target_terms_days" not in source and ".spans" not in source
+
+
+def test_the_free_text_detector_catches_span_reads():
+    # The detector itself: every read the verifier used to allow, and the obvious workarounds, are caught.
+    for snippet in (
+        "def f(ob):\n    return ob.spans[0].text\n",
+        "def f(ob):\n    return [sp.text for sp in ob.spans]\n",
+        "def f(ob):\n    return getattr(ob.spans[0], 'text')\n",
+        "def f(ob):\n    return ob.spans[0].model_dump()['text']\n",
+        "import re\n",
+        "from operator import attrgetter\nattrgetter('text')\n",
+    ):
+        assert _free_text_reads(snippet), snippet
+    assert any("spans[...].text" in o for o in _free_text_reads("x = ob.spans[0].text\n"))
+    assert _free_text_reads("def f(ob):\n    return ob.target_terms_days, ob.spans\n") == []
 
 
 # ---------------------------------------------------------------- counters disclose nothing
