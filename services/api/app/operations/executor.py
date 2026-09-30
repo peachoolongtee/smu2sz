@@ -251,19 +251,20 @@ class Executor:
         """Close a counterparty's circuit breaker. Owner only; logged either way."""
         with self._lock:
             now = self._clock()
-            payload = {"kind": RESET_CIRCUIT_KIND, "op_id": f"RESET-{counterparty_id}-{now}",
-                       "counterparty_id": counterparty_id, "requested_by": actor.value, "day": now}
+            op_id = f"RESET-{counterparty_id}-{now}-{len(self._store.operations()) + 1}"
+            payload = {"kind": RESET_CIRCUIT_KIND, "op_id": op_id, "counterparty_id": counterparty_id,
+                       "requested_by": actor.value, "day": now}
             if actor != Actor.OWNER:
                 v = _v(Code.INSUFFICIENT_AUTHORITY, f"Only the owner may reset the circuit for {counterparty_id}",
                        actor=actor, counterparty_id=counterparty_id)
                 self._add_security(SecurityEventKind.PRIVILEGE_ESCALATION, now, counterparty_id,
                                    f"{actor} tried to reset the circuit breaker for {counterparty_id}")
-                result = OperationResult(op_id=payload["op_id"], kind=RESET_CIRCUIT_KIND, status=REFUSED,
+                result = OperationResult(op_id=op_id, kind=RESET_CIRCUIT_KIND, status=REFUSED,
                                          tier=Tier.TIER_2, violations=[v], message=v.message)
             else:
-                result = OperationResult(op_id=payload["op_id"], kind=RESET_CIRCUIT_KIND, status=EXECUTED,
+                result = OperationResult(op_id=op_id, kind=RESET_CIRCUIT_KIND, status=EXECUTED,
                                          tier=Tier.TIER_2, message=f"Circuit for {counterparty_id} reset by the owner")
-            rec = self._store.append_operation(payload["op_id"], RESET_CIRCUIT_KIND, payload["op_id"],
+            rec = self._store.append_operation(op_id, RESET_CIRCUIT_KIND, op_id,
                                                canonical_json(payload), canonical_json(result))
             return result.model_copy(update={"seq": rec.seq, "entry_hash": rec.entry_hash, "prev_hash": rec.prev_hash})
 
