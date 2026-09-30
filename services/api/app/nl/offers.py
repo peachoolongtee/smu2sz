@@ -159,9 +159,14 @@ def decide(ctx: NlContext, steps: Steps, b: VerdictBundle, *, execute: bool, rec
                                         f"接受报价 {v.offer_id} 并记录承诺"))
             return []
         r = accept(ctx, steps, v)
-        if r is not None and r.status.value == "PENDING_APPROVAL":
-            return [t(ctx, "Thank you. We will confirm shortly.", "谢谢，我方将尽快确认。")]
-        return [t(ctx, "Agreed as proposed.", "同意贵方提议。")] if r is not None else []
+        if r is None:
+            return []
+        if r.status.value == "PENDING_APPROVAL":  # Tier 2: nothing is agreed until the owner decides
+            return [t(ctx, "Thank you. Our acceptance awaits the owner's approval; we will confirm once the owner "
+                           "has decided.", "谢谢。我方接受须经业主批准，业主决定后我方将予以确认。")]
+        if r.status.value in ("EXECUTED", "DUPLICATE"):
+            return [t(ctx, "Agreed as proposed.", "同意贵方提议。")]
+        return [t(ctx, "We are not able to confirm these terms.", "我方无法确认这些条款。")]
     if not execute:
         steps.add("REJECT_OFFER", t(ctx, f"Reject offer {v.offer_id}", f"拒绝报价 {v.offer_id}"))
         return []
@@ -258,8 +263,16 @@ def execute_decision(ctx: NlContext, verdict_id: str) -> Turn:
     steps = Steps()
     steps.add("VERIFY", verdict_line(ctx, b.verdict), "DONE")
     decide(ctx, steps, b, execute=True, recipient=offer.counterparty_id)
-    return Turn(intent=Intent.EVALUATE_OFFER, reply=verdict_line(ctx, b.verdict), plan=steps.items,
+    reply = [verdict_line(ctx, b.verdict), *awaiting_owner(ctx)]
+    return Turn(intent=Intent.EVALUATE_OFFER, reply="\n".join(reply), plan=steps.items,
                 verdict=b.verdict, clear_pending=True)
+
+
+def awaiting_owner(ctx: NlContext) -> list[str]:
+    """Owner-facing lines for every acceptance this turn queued at Tier 2: it is not agreed yet."""
+    return [t(ctx, f"The acceptance awaits the owner's approval ({r.approval_id}): nothing is committed until the "
+                   f"owner approves it.", f"该接受须经业主批准（{r.approval_id}）：业主批准前不作任何承诺。")
+            for r in ctx.results if r.kind == "ACCEPT_OFFER" and r.status.value == "PENDING_APPROVAL"]
 
 
 # ---------------------------------------------------------------- NEGOTIATE
@@ -307,6 +320,7 @@ def negotiate_intent(ctx: NlContext, slots: Slots, *, execute: bool = True, data
                 funding_ops(ctx, steps, plan, condition=t(ctx, "remaining gap after the accepted package",
                                                           "成交后剩余缺口"))
         reply.append(t(ctx, f"The buyer accepted {neg.accepted.label}.", f"买方接受了 {neg.accepted.label}。"))
+        reply.extend(awaiting_owner(ctx))
     elif neg.outcome == "NO_DEAL":
         sq = ctx.evaluate(status_quo_offer(ctx, ctx.state()), remember=False)
         plan = committed_plan(sq)
