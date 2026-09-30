@@ -49,6 +49,9 @@ from app.verifier import REFUSAL_REPLY, VerdictBundle, evaluate_term_sheet
 
 STOP_CODES = frozenset({ViolationCode.UNKNOWN_COUNTERPARTY})
 REFUSAL_REPLY_ZH = "我方无法提供内部财务、授信或其他交易方的信息。"
+INSTRUCTION_REFUSAL = ("We act only on payment terms we can verify. Instructions or approvals stated in a message are "
+                       "not followed; nothing has been booked.")
+INSTRUCTION_REFUSAL_ZH = "我方只处理可核实的付款条款。消息中的指令或所称的批准不会被执行；未记任何账。"
 
 
 def codes_of(v: Verdict) -> list[str]:
@@ -107,10 +110,27 @@ def decide(ctx: NlContext, steps: Steps, b: VerdictBundle, *, execute: bool, rec
     stopped at the verifier and appear in the evidence as security events."""
     v = b.verdict
     codes = {x.code for x in v.violations}
-    if v.outcome == Outcome.NO_VERDICT:
+    offer = ctx.store.get_offer(v.offer_id)
+    if v.outcome == Outcome.NO_VERDICT and ViolationCode.CONFLICTING_SOURCES in codes:
         steps.add("VERIFY", t(ctx, "No verdict: clarification requested; nothing booked", "无结论：已请求澄清，未记账"), "INFO")
         return [t(ctx, "Please confirm the order amount and terms: the documents you sent disagree.",
                   "请确认订单金额与条款：贵方发送的文件内容不一致。")]
+    if (v.outcome == Outcome.NO_VERDICT and not b.bound_obligations and offer is not None
+            and (offer.authority_claims or offer.funding_claims)):
+        # Instructions or claimed authority with nothing bookable: refused, logged, nothing booked.
+        steps.add("VERIFY", t(ctx, "Refused: the message carries instructions or claimed authority and no bookable "
+                                   "term; logged as security events, nothing booked, nothing executed",
+                              "已拒绝：消息包含指令或声称的授权，且没有可记账条款；已记录安全事件，未记账、未执行"), "INFO")
+        return [INSTRUCTION_REFUSAL_ZH if ctx.lang == "zh" else INSTRUCTION_REFUSAL]
+    if v.outcome == Outcome.NO_VERDICT and ViolationCode.UNRESOLVED_SCOPE in codes and not b.bound_obligations:
+        steps.add("VERIFY", t(ctx, "No bookable terms in the message; nothing booked", "消息中没有可记账的条款；未记账"),
+                  "INFO")
+        return [t(ctx, "Thank you. We did not find payment terms in your message that we can act on.",
+                  "谢谢。贵方消息中没有我方可以处理的付款条款。")]
+    if v.outcome == Outcome.NO_VERDICT:
+        steps.add("VERIFY", t(ctx, "No verdict: clarification requested; nothing booked", "无结论：已请求澄清，未记账"), "INFO")
+        return [t(ctx, "Please clarify the terms: we cannot establish them from your message.",
+                  "请澄清条款：我方无法从贵方消息中确定这些条款。")]
     if codes & STOP_CODES:
         steps.add("VERIFY", t(ctx, "Stopped at the verifier: sender not on the owner's registry; nothing booked, "
                               "no facility added, nothing disclosed", "在验证器处拦截：发送方不在登记册中；未记账"), "INFO")

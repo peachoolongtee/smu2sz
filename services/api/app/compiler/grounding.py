@@ -430,6 +430,16 @@ def dedupe_obligations(obs: Sequence[Obligation], abst: list[Abstention]) -> lis
 # ---------------------------------------------------------------- conflicts
 
 
+def _is_quantity(doc: SourceDocument, sp: SourceSpan, kind: str, value: int) -> bool:
+    """A model-reported quantity counts for conflict detection only if its sentence states it as an order
+    or invoice amount by the deterministic grammar ("¥40k order", "Order size: ¥400,000"). Any other
+    amount ("draw ¥500,000 from the credit line") is not an order size and cannot make sources conflict."""
+    s0, e0 = lexicon.sentence_bounds(doc.text, sp.start)
+    _, e1 = lexicon.sentence_bounds(doc.text, max(sp.start, sp.end - 1))
+    sentence = doc.model_copy(update={"text": doc.text[s0:max(e0, e1)]})
+    return any(x.kind == kind and parse_money(x.amount_text) == value for x in lexicon.find_quantities(sentence))
+
+
 def _quantity_conflicts(docs: dict[str, SourceDocument], ex: OfferExtraction, abst: list[Abstention]) -> dict[str, set[int]]:
     by_kind: dict[str, list[tuple[int, SourceSpan]]] = {}
     for q in ex.quantities:
@@ -437,7 +447,7 @@ def _quantity_conflicts(docs: dict[str, SourceDocument], ex: OfferExtraction, ab
         if sp is None or q.amount_text.strip() not in sp.text:
             continue
         v = parse_money(q.amount_text)
-        if v is None:
+        if v is None or not _is_quantity(docs[q.doc_id], sp, q.kind, v):
             continue
         lst = by_kind.setdefault(q.kind, [])
         if not any(_overlaps(sp, s) for _, s in lst):
