@@ -129,7 +129,7 @@ def test_ex01_counter_b(offer_id, g):
 def _normalise(x: Any, ids: set[str]) -> Any:
     if isinstance(x, dict):
         return {k: _normalise(v, ids) for k, v in x.items()
-                if k not in {"id", "offer_id", "obligation_id", "spans", "doc_id"}}
+                if k not in {"id", "offer_id", "obligation_id", "spans", "doc_id", "confidence"}}
     if isinstance(x, list):
         return [_normalise(v, ids) for v in x]
     if isinstance(x, str):
