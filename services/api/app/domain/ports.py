@@ -87,14 +87,18 @@ class MandatePolicy(Protocol):
     def check_predicates(
         self,
         trajectory: Trajectory,
+        obligations: list[Obligation],
         concession_values: list[ConcessionValue],
         state: FinancialState,
         mandate: Mandate,
         counterparty_id: str | None,
     ) -> list[Violation]:
-        """min cash every day, aggregate + per-buyer forward concession caps, immediate
-        discount cap, max APR."""
+        """min cash every day (RESERVE_BREACH, curable left None for the verifier), aggregate +
+        per-buyer forward concession caps (existing + net new; only FIRM gains net), immediate
+        discount cap."""
         ...
+
+    def check_apr(self, annual_rate: Ratio, mandate: Mandate, label: str) -> Violation | None: ...
 
 
 class FundingRouter(Protocol):
