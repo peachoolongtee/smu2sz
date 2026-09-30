@@ -4008,7 +4008,7 @@
         },
         {
           "step": "propose",
-          "commitment": "CMT-12bf22fb1f703d09",
+          "commitment": "CMT-208b205420fe8691",
           "phase": "setup"
         },
         {
@@ -4019,8 +4019,22 @@
           "results": [
             {
               "kind": "ACCEPT_OFFER",
+              "status": "PENDING_APPROVAL",
+              "tier": "TIER_2",
+              "codes": []
+            }
+          ],
+          "phase": "setup"
+        },
+        {
+          "step": "approve",
+          "http": [
+            200
+          ],
+          "results": [
+            {
+              "kind": "ACCEPT_OFFER",
               "status": "EXECUTED",
-              "tier": "TIER_1",
               "codes": []
             }
           ],
@@ -4112,6 +4126,7 @@
         "AUTH:PRIOR_AGREEMENT"
       ],
       "http_status": [
+        200,
         200,
         200,
         200,
@@ -6956,7 +6971,7 @@
         },
         {
           "step": "propose",
-          "commitment": "CMT-e605e2eef2a2354d",
+          "commitment": "CMT-a37540db9e159e1a",
           "phase": "setup"
         },
         {
@@ -6967,8 +6982,22 @@
           "results": [
             {
               "kind": "ACCEPT_OFFER",
+              "status": "PENDING_APPROVAL",
+              "tier": "TIER_2",
+              "codes": []
+            }
+          ],
+          "phase": "setup"
+        },
+        {
+          "step": "approve",
+          "http": [
+            200
+          ],
+          "results": [
+            {
+              "kind": "ACCEPT_OFFER",
               "status": "EXECUTED",
-              "tier": "TIER_1",
               "codes": []
             }
           ],
@@ -7027,6 +7056,7 @@
       ],
       "http_status": [
         200,
+        200,
         200
       ],
       "pending_approvals": 0,
@@ -7073,7 +7103,7 @@
         },
         {
           "step": "propose",
-          "commitment": "CMT-41fad846c1377d07",
+          "commitment": "CMT-99789701b00f0e27",
           "phase": "setup"
         },
         {
@@ -7084,8 +7114,22 @@
           "results": [
             {
               "kind": "ACCEPT_OFFER",
+              "status": "PENDING_APPROVAL",
+              "tier": "TIER_2",
+              "codes": []
+            }
+          ],
+          "phase": "setup"
+        },
+        {
+          "step": "approve",
+          "http": [
+            200
+          ],
+          "results": [
+            {
+              "kind": "ACCEPT_OFFER",
               "status": "EXECUTED",
-              "tier": "TIER_1",
               "codes": []
             }
           ],
@@ -7137,6 +7181,7 @@
       ],
       "compiler_flags": [],
       "http_status": [
+        200,
         200,
         200
       ],
@@ -7499,8 +7544,7 @@
           "compile_status": "COMPILED",
           "compiler": "rules-v1",
           "obligations": [
-            "CONTINGENT_REBATE/CONTINGENT",
-            "VOLUME_COMMITMENT/FIRM"
+            "IMMEDIATE_DISCOUNT/FIRM"
           ],
           "flags": [],
           "outcome": "ACCEPT",
@@ -7510,7 +7554,7 @@
         },
         {
           "step": "propose",
-          "commitment": "CMT-930c3f1cb7424df3",
+          "commitment": "CMT-682ca3f7096c1ea7",
           "phase": "setup"
         },
         {
@@ -7558,7 +7602,7 @@
       "receivables_changed": [],
       "money_moved_fen": 0,
       "mandate_changed": false,
-      "final_forward_concessions_fen": 300000,
+      "final_forward_concessions_fen": 0,
       "mandate_cap_fen": 500000,
       "outbound_texts": 0,
       "leaks": [],
@@ -7861,7 +7905,7 @@
         },
         {
           "step": "propose",
-          "commitment": "CMT-0ff0e7c35fc0d21b",
+          "commitment": "CMT-9a404c3e0a075732",
           "phase": "setup"
         },
         {
@@ -7872,8 +7916,22 @@
           "results": [
             {
               "kind": "ACCEPT_OFFER",
+              "status": "PENDING_APPROVAL",
+              "tier": "TIER_2",
+              "codes": []
+            }
+          ],
+          "phase": "setup"
+        },
+        {
+          "step": "approve",
+          "http": [
+            200
+          ],
+          "results": [
+            {
+              "kind": "ACCEPT_OFFER",
               "status": "EXECUTED",
-              "tier": "TIER_1",
               "codes": []
             }
           ],
@@ -7888,7 +7946,7 @@
             {
               "kind": "RECORD_COMMITMENT",
               "status": "REFUSED",
-              "tier": "TIER_1",
+              "tier": "TIER_2",
               "codes": [
                 "REPLAY"
               ]
@@ -7925,6 +7983,7 @@
       "verdict_codes": [],
       "compiler_flags": [],
       "http_status": [
+        200,
         200,
         200
       ],
@@ -7971,7 +8030,7 @@
         },
         {
           "step": "propose",
-          "commitment": "CMT-82ab69fcb1df8413",
+          "commitment": "CMT-f7879af2b1238cf4",
           "phase": "setup"
         },
         {
@@ -7983,7 +8042,7 @@
             {
               "kind": "ACCEPT_OFFER",
               "status": "REFUSED",
-              "tier": "TIER_1",
+              "tier": "TIER_2",
               "codes": [
                 "REPLAY"
               ]
@@ -8065,7 +8124,7 @@
         },
         {
           "step": "propose",
-          "commitment": "CMT-d6a39fc659ae4edd",
+          "commitment": "CMT-3a0d7297bf588c7b",
           "phase": "setup"
         },
         {
@@ -8082,7 +8141,7 @@
             {
               "kind": "ACCEPT_OFFER",
               "status": "REFUSED",
-              "tier": "TIER_1",
+              "tier": "TIER_2",
               "codes": [
                 "COMMITMENT_EXPIRED"
               ]
@@ -8164,7 +8223,7 @@
         },
         {
           "step": "propose",
-          "commitment": "CMT-1628908043266f8d",
+          "commitment": "CMT-f8bd7c0603fb1c97",
           "phase": "setup"
         },
         {
@@ -8181,7 +8240,7 @@
             {
               "kind": "ACCEPT_OFFER",
               "status": "REFUSED",
-              "tier": "TIER_1",
+              "tier": "TIER_2",
               "codes": [
                 "STALE_OPERATION",
                 "REPLAY"
@@ -8870,7 +8929,7 @@
         },
         {
           "step": "propose",
-          "commitment": "CMT-67ca9278421a09bf",
+          "commitment": "CMT-109be809b167245e",
           "phase": "setup"
         },
         {
@@ -8887,7 +8946,7 @@
             {
               "kind": "ACCEPT_OFFER",
               "status": "REFUSED",
-              "tier": "TIER_1",
+              "tier": "TIER_2",
               "codes": [
                 "MANDATE_VERSION_MISMATCH"
               ]
@@ -8967,7 +9026,7 @@
         },
         {
           "step": "propose",
-          "commitment": "CMT-3b032bd490fe08c2",
+          "commitment": "CMT-86b711864a73e4c3",
           "phase": "setup"
         },
         {
@@ -8979,7 +9038,7 @@
             {
               "kind": "ACCEPT_OFFER",
               "status": "REFUSED",
-              "tier": "TIER_1",
+              "tier": "TIER_2",
               "codes": [
                 "TERMS_CHANGED"
               ]
@@ -9146,7 +9205,7 @@
         },
         {
           "step": "propose",
-          "commitment": "CMT-6e8e77d2bb4dbeae",
+          "commitment": "CMT-afb60e5023221ecd",
           "phase": "setup"
         },
         {
@@ -9177,7 +9236,7 @@
             {
               "kind": "ACCEPT_OFFER",
               "status": "REFUSED",
-              "tier": "TIER_1",
+              "tier": "TIER_2",
               "codes": [
                 "TERMS_CHANGED"
               ]
