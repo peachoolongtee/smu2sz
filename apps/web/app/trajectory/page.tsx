@@ -18,6 +18,7 @@ import {
 } from "@/components/ui";
 import { getTrajectory } from "@/lib/api";
 import { toCashRows } from "@/lib/chart-helpers";
+import { useDemo } from "@/lib/demo-store";
 import { useI18n } from "@/lib/i18n";
 import type { Mode, TrajectoryView } from "@/lib/types";
 import { useAsync } from "@/lib/use-async";
@@ -26,7 +27,10 @@ export default function TrajectoryPage() {
   const { t } = useI18n();
   const [mode, setMode] = useState<Mode>("CONSERVATIVE");
   const [showCured, setShowCured] = useState(true);
-  const traj = useAsync(() => getTrajectory(mode), [mode]);
+  const demo = useDemo();
+  // Live mode draws the evaluated offer's own trajectory; without a verdict it shows the position today.
+  const verdict = demo.offerId ? (demo.verdicts[demo.offerId] ?? null) : null;
+  const traj = useAsync(() => getTrajectory(mode, verdict), [mode, verdict?.id]);
   const view = traj.data;
 
   return (
@@ -49,7 +53,7 @@ export default function TrajectoryPage() {
             <label className="flex min-h-10 cursor-pointer items-center gap-2 text-sm text-ink-2">
               <input
                 type="checkbox"
-                checked={showCured}
+                checked={showCured && Boolean(view?.cured_trajectory)}
                 disabled={!view?.cured_trajectory}
                 onChange={(e) => setShowCured(e.target.checked)}
                 className="size-4 accent-brand-600"

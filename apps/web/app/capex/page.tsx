@@ -20,6 +20,7 @@ import {
   tdCls,
   thCls,
 } from "@/components/ui";
+import { downloadFile } from "@/lib/api";
 import { runBorrowerFile, runCapex } from "@/lib/demo";
 import { useDemo } from "@/lib/demo-store";
 import { useI18n } from "@/lib/i18n";
@@ -27,7 +28,7 @@ import { useI18n } from "@/lib/i18n";
 export default function CapexPage() {
   const { t } = useI18n();
   const demo = useDemo();
-  const [busy, setBusy] = useState<"capex" | "file" | null>(null);
+  const [busy, setBusy] = useState<"capex" | "file" | string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const capex = demo.capex;
   const file = demo.borrowerFile;
@@ -37,6 +38,18 @@ export default function CapexPage() {
     setError(null);
     try {
       await (kind === "capex" ? runCapex() : runBorrowerFile());
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function download(kind: string, path: string, fileId: string) {
+    setBusy(`download-${kind}`);
+    setError(null);
+    try {
+      await downloadFile(path, `${fileId}.${kind}`);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -184,8 +197,39 @@ export default function CapexPage() {
                   </div>
                 ))}
               </div>
+              <div className="mt-4 flex flex-wrap items-center gap-2" data-testid="borrower-file-downloads">
+                {file.downloads ? (
+                  <>
+                    <span className="text-sm font-medium">{t("capex.file.download")}</span>
+                    {(
+                      [
+                        ["html", file.downloads.html, "capex.file.html"],
+                        ["docx", file.downloads.docx, "capex.file.docx"],
+                        ["pdf", file.downloads.pdf, "capex.file.pdf"],
+                      ] as const
+                    ).map(([kind, path, label]) =>
+                      path ? (
+                        <Button
+                          key={kind}
+                          variant="secondary"
+                          loading={busy === `download-${kind}`}
+                          disabled={busy !== null}
+                          onClick={() => void download(kind, path, file.file_id)}
+                          data-testid={`download-${kind}`}
+                        >
+                          {t(label)}
+                        </Button>
+                      ) : null,
+                    )}
+                    {file.pdf_note ? <span className="text-xs text-ink-3">{file.pdf_note}</span> : null}
+                  </>
+                ) : (
+                  <p className="text-xs text-ink-3">{t("capex.file.mockDownload")}</p>
+                )}
+              </div>
+              {file.approval_id ? <p className="mt-2 text-xs text-ink-2">{t("capex.file.approval", { id: file.approval_id })}</p> : null}
               <div className="mt-3">
-                <Callout tone="info">{t("capex.file.note")}</Callout>
+                <Callout tone="info">{file.lender_note ?? t("capex.file.note")}</Callout>
               </div>
             </Card>
           ) : null}

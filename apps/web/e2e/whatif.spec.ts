@@ -1,11 +1,13 @@
 import { expect, test } from "@playwright/test";
+import { resetBooks } from "./helpers";
 
 /**
  * What-if sandbox in mock mode: the page opens on the buyer's actual offer (REJECT), moving the terms
  * slider back to 45 days changes the hypothetical verdict, and the presets jump to the counters.
  * Every figure is a server-formatted string from mocks/whatif_presets.json.
  */
-test("what-if: moving the terms slider changes the hypothetical verdict", async ({ page }) => {
+test("what-if: moving the terms slider changes the hypothetical verdict", async ({ page, request }) => {
+  await resetBooks(request);
   await page.goto("/whatif");
   await expect(page.getByRole("heading", { name: "What-if sandbox", level: 1 })).toBeVisible();
 

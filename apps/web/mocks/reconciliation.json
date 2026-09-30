@@ -1,0 +1,23 @@
+{
+  "as_of_day": 0,
+  "receipts": [],
+  "outstanding": [
+    {
+      "receivable_id": "RCV-A",
+      "counterparty_id": "BUYER-1",
+      "face_fen": 42000000,
+      "due_day": 32,
+      "status": "OPEN",
+      "past_due": false,
+      "face_display": "¥420,000.00"
+    }
+  ],
+  "matched": 0,
+  "flagged": 0,
+  "received_total_fen": 0,
+  "expected_total_fen": 0,
+  "chain_head_hash": null,
+  "chain_valid": true,
+  "received_total_display": "¥0.00",
+  "expected_total_display": "¥0.00"
+}

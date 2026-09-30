@@ -11,9 +11,12 @@ interface EvidenceLine {
   kind?: string;
   status?: string;
   entry_hash?: string | null;
+  /** Live evidence brackets the operations with a `run` header and a `chain` trailer (with head_hash). */
+  record?: string;
+  head_hash?: string | null;
 }
 
-function parse(jsonl: string): { lines: string[]; head: EvidenceLine | null; last: EvidenceLine | null } {
+function parse(jsonl: string): { lines: string[]; head: EvidenceLine | null; last: EvidenceLine | null; headHash: string | null } {
   const lines = jsonl.split("\n").filter((l) => l.trim().length > 0);
   const safe = (l: string | undefined): EvidenceLine | null => {
     if (!l) return null;
@@ -23,7 +26,11 @@ function parse(jsonl: string): { lines: string[]; head: EvidenceLine | null; las
       return null;
     }
   };
-  return { lines, head: safe(lines[0]), last: safe(lines[lines.length - 1]) };
+  const records = lines.map(safe);
+  // Operation entries only: skip the live `run` header and `chain` trailer when present.
+  const ops = records.filter((r): r is EvidenceLine => r !== null && r.record !== "run" && r.record !== "chain");
+  const trailer = records.find((r) => r?.record === "chain") ?? null;
+  return { lines, head: ops[0] ?? null, last: ops[ops.length - 1] ?? null, headHash: trailer?.head_hash ?? ops[ops.length - 1]?.entry_hash ?? null };
 }
 
 export default function EvidencePage() {
@@ -60,7 +67,7 @@ export default function EvidencePage() {
 
 function EvidenceBody({ text, onDownload }: { text: string; onDownload: () => void }) {
   const { t } = useI18n();
-  const { lines, head, last } = parse(text);
+  const { lines, head, last, headHash } = parse(text);
   return (
     <div className="space-y-6">
       <Card
@@ -76,9 +83,9 @@ function EvidenceBody({ text, onDownload }: { text: string; onDownload: () => vo
         <KeyValueList
           items={[
             { k: t("evid.lines"), v: lines.length },
-            { k: t("evid.first"), v: head ? `#${head.seq} ${head.kind}` : t("common.none") },
-            { k: t("evid.last"), v: last ? `#${last.seq} ${last.kind}` : t("common.none") },
-            { k: t("evid.head"), v: <Hash value={last?.entry_hash ?? null} /> },
+            { k: t("evid.first"), v: head ? [head.seq !== undefined ? `#${head.seq}` : null, head.kind].filter(Boolean).join(" ") : t("common.none") },
+            { k: t("evid.last"), v: last ? [last.seq !== undefined ? `#${last.seq}` : null, last.kind].filter(Boolean).join(" ") : t("common.none") },
+            { k: t("evid.head"), v: <Hash value={headHash} /> },
             { k: t("evid.file"), v: <span className="font-mono text-xs">termsledger-evidence.jsonl</span> },
           ]}
         />

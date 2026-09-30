@@ -20,6 +20,8 @@ const NAV: { href: string; key: DictKey; group: "screens" | "more" }[] = [
   { href: "/capex", key: "nav.capex", group: "screens" },
   { href: "/ledger", key: "nav.ledger", group: "screens" },
   { href: "/approvals", key: "nav.approvals", group: "more" },
+  { href: "/alerts", key: "nav.alerts", group: "more" },
+  { href: "/reconciliation", key: "nav.reconciliation", group: "more" },
   { href: "/security", key: "nav.security", group: "more" },
   { href: "/evidence", key: "nav.evidence", group: "more" },
 ];

@@ -14,6 +14,8 @@ test("no page overflows horizontally after the demo has run", async ({ page }) =
     const button = page.getByTestId("demo-next");
     await expect(button).toBeEnabled();
     await button.click();
+    // Wait for the step to finish: a click while the stepper is busy is ignored.
+    await expect(page.getByRole("region", { name: "Guided demo" }).locator("[aria-live=polite]")).toContainText(`${i + 1}/15`);
   }
   await expect(page).toHaveURL(/\/evidence/);
   for (const route of ROUTES) {

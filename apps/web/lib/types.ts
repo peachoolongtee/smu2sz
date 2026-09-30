@@ -20,6 +20,13 @@ export interface Ratio {
   text: string;
 }
 
+/** A ratio the server already formatted ("1.92"), without its exact fraction (live trajectory months). */
+export interface TextRatio {
+  text: string;
+  num?: undefined;
+  den?: undefined;
+}
+
 // ------------------------------------------------------------------ display rule
 
 type DisplaySiblings<T> = {
@@ -99,6 +106,7 @@ export interface Obligation {
   rate_bp: Bp | null;
   amount_fen: Fen | null;
   days_delta: number | null;
+  target_terms_days?: number | null;
   effective_day: Day | null;
   base: ObligationBase;
   contingency: Contingency;
@@ -353,7 +361,8 @@ export interface LedgerEvent {
 
 export interface DayPoint {
   day: Day;
-  opening_fen: Fen;
+  /** Not sent by every live view; nothing on screen reads it. */
+  opening_fen?: Fen;
   closing_fen: Fen;
   debt_outstanding_fen: Fen;
   forward_concession_fen: Fen;
@@ -365,8 +374,8 @@ export interface MonthPoint {
   ebitda_fen: Fen;
   debt_service_fen: Fen;
   total_debt_fen: Fen;
-  dscr: Ratio | null;
-  leverage: Ratio;
+  dscr: Ratio | TextRatio | null;
+  leverage: Ratio | TextRatio;
 }
 
 export interface Trajectory {
@@ -605,8 +614,10 @@ export interface OfferView {
 }
 
 export interface SubmitOfferRequest {
-  counterparty_id: string;
-  documents: SourceDocument[];
+  /** A server-side fixture (for example EX01_PACKAGE). Live mode sends only this; mock mode resolves it locally. */
+  fixture_id?: string;
+  counterparty_id?: string;
+  documents?: SourceDocument[];
 }
 
 export interface PassedCheck {
@@ -617,8 +628,42 @@ export interface PassedCheck {
   formula: string | null;
 }
 
-/** POST /offers/{id}/evaluate */
-export type VerdictView = Displayed<Verdict> & { passed_checks: PassedCheck[] };
+/** The server's own trajectory shape (views.TrajectoryView): money as `{fen, text}` pairs. */
+export interface MoneyTrajectory {
+  mode: Mode;
+  floor: MoneyView;
+  min_cash: MoneyView;
+  min_cash_day: Day;
+  first_breach_day: Day | null;
+  days: {
+    day: Day;
+    closing: MoneyView;
+    debt: MoneyView;
+    forward_concession: MoneyView;
+    below_floor: boolean;
+    events: { kind: string; amount: MoneyView; label: string; ref: string | null; formula: string | null }[];
+  }[];
+  months: {
+    month: number;
+    /** Already formatted by the server, for example "1.92x". */
+    dscr: string | null;
+    leverage: string | null;
+    debt_service: MoneyView;
+    total_debt: MoneyView;
+  }[];
+  interest: MoneyView;
+  fees: MoneyView;
+  discounts: MoneyView;
+}
+
+/** POST /offers/{id}/evaluate. The optional members are live-mode extras the API sends alongside the verdict. */
+export type VerdictView = Displayed<Verdict> & {
+  passed_checks: PassedCheck[];
+  bound_obligations?: Displayed<Obligation>[];
+  /** Conservative projection with the offer applied. */
+  trajectory?: MoneyTrajectory | null;
+  forward_concession?: { total_fen: Fen; total_display: string; cap_fen: Fen; cap_display: string; over_cap: boolean };
+};
 
 export interface NegotiationRound {
   round: number;
@@ -630,7 +675,8 @@ export interface NegotiationRound {
 
 export interface OperationView extends Displayed<OperationResult> {
   day: Day;
-  requested_by: Actor;
+  /** Null when the log entry does not record who asked (for example an owner decision). */
+  requested_by: Actor | null;
   summary: string;
 }
 
@@ -777,6 +823,8 @@ export interface CapexStructure {
   dscr_by_month: { month: number; dscr: Ratio; passes: boolean }[];
   extra_cost_vs_selected_fen: Fen | null;
   note: string;
+  /** Live mode: the facility this structure would draw on (used to prepare the borrower file). */
+  facility_id?: string | null;
 }
 
 export interface CapexRequest {
@@ -799,6 +847,12 @@ export type CapexView = Displayed<{
   approval_id: string | null;
 }>;
 
+export interface BorrowerFileRequest {
+  facility_id: string;
+  amount_fen: Fen;
+  use_of_proceeds: string;
+}
+
 /** POST /borrower-file */
 export interface BorrowerFileView {
   file_id: string;
@@ -807,6 +861,98 @@ export interface BorrowerFileView {
   sections: { title: string; rows: { label: string; value: string }[] }[];
   approval_id: string | null;
   generated_day: Day;
+  /** Live mode: download paths on the API. Null in mock mode (there is no file to download). */
+  downloads?: { html: string; docx: string; pdf: string | null } | null;
+  pdf_note?: string | null;
+  lender_note?: string | null;
+}
+
+// ------------------------------------------------------------------ alerts and reconciliation (flag `alerts`)
+
+export type AlertSeverity = "CRITICAL" | "WARNING" | "INFO";
+
+export interface SuggestedOperation {
+  operation_kind: string;
+  facility_id: string | null;
+  receivable_id: string | null;
+  note: string;
+  amount_fen: Fen | null;
+  amount_display: string | null;
+  /** Always false: alerts never execute anything. */
+  executes_automatically: boolean;
+}
+
+export interface AlertItem {
+  id: string;
+  kind: string;
+  severity: AlertSeverity;
+  title: string;
+  detail: string;
+  formula: string | null;
+  day: Day | null;
+  month: number | null;
+  amount_fen: Fen | null;
+  amount_display: string | null;
+  committed_cure: boolean;
+  suggested: SuggestedOperation[];
+}
+
+/** GET /alerts */
+export interface AlertsView {
+  day: Day;
+  basis: Mode;
+  counts: Record<AlertSeverity, number>;
+  alerts: AlertItem[];
+  note: string;
+}
+
+export interface OutstandingReceivable {
+  receivable_id: string;
+  counterparty_id: string;
+  face_fen: Fen;
+  face_display: string;
+  due_day: Day;
+  status: string;
+  past_due: boolean;
+}
+
+export type MatchStatus = "MATCHED" | "SHORT_PAYMENT" | "DISCOUNT_IGNORED" | "UNEXPECTED_AMOUNT" | "UNMATCHED";
+
+export interface ReceiptRow {
+  seq: number;
+  entry_hash: string;
+  op_id: string;
+  day: Day | null;
+  receivable_id: string;
+  counterparty_id: string | null;
+  received_fen: Fen;
+  received_display: string;
+  face_fen: Fen | null;
+  face_display: string | null;
+  expected_fen: Fen | null;
+  expected_display: string | null;
+  difference_fen: Fen | null;
+  difference_display: string | null;
+  commitment_id: string | null;
+  status: MatchStatus;
+  flagged: boolean;
+  detail: string;
+  formula: string;
+}
+
+/** GET /reconciliation */
+export interface ReconciliationView {
+  as_of_day: Day;
+  receipts: ReceiptRow[];
+  outstanding: OutstandingReceivable[];
+  matched: number;
+  flagged: number;
+  received_total_fen: Fen;
+  received_total_display: string;
+  expected_total_fen: Fen;
+  expected_total_display: string;
+  chain_head_hash: string | null;
+  chain_valid: boolean;
 }
 
 export interface NlRequest {

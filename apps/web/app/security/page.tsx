@@ -6,8 +6,9 @@ import { CodeBadge, OutcomeBadge } from "@/components/badges";
 import { SpanQuote } from "@/components/offer-parts";
 import { Badge, Button, Callout, Card, EmptyState, ErrorState, LoadingBlock, PageHeader, Stat } from "@/components/ui";
 import type { AnnotationKind } from "@/lib/annotation-style";
-import { getAudit } from "@/lib/api";
+import { getAudit, resetCircuit } from "@/lib/api";
 import { runSecurityScene } from "@/lib/demo";
+import { bump, useDemo } from "@/lib/demo-store";
 import { useI18n } from "@/lib/i18n";
 import type { SecurityEventKind } from "@/lib/types";
 import { useAsync } from "@/lib/use-async";
@@ -26,6 +27,21 @@ export default function SecurityPage() {
   const [active, setActive] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const demo = useDemo();
+  const [circuit, setCircuit] = useState<{ busy: string | null; done: string | null }>({ busy: null, done: null });
+
+  async function resetBreaker(counterpartyId: string) {
+    setCircuit({ busy: counterpartyId, done: null });
+    setError(null);
+    try {
+      await resetCircuit(counterpartyId);
+      bump();
+      setCircuit({ busy: null, done: counterpartyId });
+    } catch (e) {
+      setCircuit({ busy: null, done: null });
+      setError(e instanceof Error ? e.message : String(e));
+    }
+  }
 
   async function run() {
     setBusy(true);
@@ -40,7 +56,15 @@ export default function SecurityPage() {
   }
 
   const data = audit.data;
-  const doc = data?.documents[0];
+  // The audit may omit the documents (live API). Fall back to the offers this session compiled, matched by the spans' doc_id.
+  const spanDocId = data?.events.flatMap((e) => e.spans)[0]?.doc_id;
+  const doc =
+    data?.documents.find((d) => d.doc_id === spanDocId) ??
+    Object.values(demo.offers)
+      .flatMap((o) => o.documents)
+      .find((d) => d.doc_id === spanDocId) ??
+    data?.documents[0];
+  const counterparties = [...new Set(data?.events.map((e) => e.counterparty_id).filter((c): c is string => Boolean(c)))];
   const annotations: Annotation[] =
     data?.events.flatMap((e, ei) =>
       e.spans
@@ -125,6 +149,28 @@ export default function SecurityPage() {
               <blockquote className="rounded-md border-l-4 border-line-strong bg-subtle px-3 py-2 text-sm">{data.summary.reply_text}</blockquote>
             </Card>
           ) : null}
+
+          <Card id="sec-circuit" title={t("sec.circuit")} subtitle={t("sec.circuit.note")}>
+            <div className="flex flex-wrap items-center gap-3">
+              {counterparties.map((id) => (
+                <Button
+                  key={id}
+                  variant="secondary"
+                  loading={circuit.busy === id}
+                  disabled={circuit.busy !== null}
+                  onClick={() => void resetBreaker(id)}
+                  data-testid={`circuit-reset-${id}`}
+                >
+                  {t("sec.circuit.reset", { id })}
+                </Button>
+              ))}
+              {circuit.done ? (
+                <p role="status" className="text-sm text-ok-fg">
+                  {t("sec.circuit.done", { id: circuit.done })}
+                </p>
+              ) : null}
+            </div>
+          </Card>
 
           <Card id="sec-events" title={t("sec.events", { n: data.events.length })} subtitle={t("sec.events.sub")}>
             <ul className="space-y-3">

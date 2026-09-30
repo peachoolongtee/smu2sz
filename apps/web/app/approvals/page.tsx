@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { TierBadge } from "@/components/badges";
 import { Badge, Button, Callout, Card, EmptyState, ErrorState, LoadingBlock, PageHeader, type Tone } from "@/components/ui";
-import { decideApproval, getApprovals } from "@/lib/api";
+import { apiMode, decideApproval, getApprovals } from "@/lib/api";
 import { bump } from "@/lib/demo-store";
 import { useI18n } from "@/lib/i18n";
 import type { ApprovalDecision, ApprovalView } from "@/lib/types";
@@ -40,7 +40,9 @@ export default function ApprovalsPage() {
         actions={list.data ? <Badge tone={pending ? "warn" : "neutral"}>{t("appr.pending", { n: pending })}</Badge> : undefined}
       />
       <div className="mb-4">
-        <Callout tone="info">{t("appr.note")}</Callout>
+        <Callout tone="info">
+          {t("appr.note")} {apiMode === "live" ? t("appr.ownerNote") : null}
+        </Callout>
       </div>
       {error ? (
         <div className="mb-4">
@@ -71,7 +73,7 @@ export default function ApprovalsPage() {
                     <TierBadge tier={a.tier} />
                     {a.amount_display ? <span className="text-lg font-semibold tabular-nums">{a.amount_display}</span> : null}
                   </div>
-                  <p className="mt-2 text-sm text-ink-2">{a.detail}</p>
+                  {a.detail ? <p className="mt-2 text-sm text-ink-2">{a.detail}</p> : null}
                   {isPending ? (
                     <div className="mt-4 flex flex-wrap gap-2">
                       <Button
