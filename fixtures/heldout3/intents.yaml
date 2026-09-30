@@ -1,0 +1,84 @@
+# Held-out set 3: owner utterances, written by the independent evaluator before any run.
+# Intent names are the closed set published in apps/web/lib/types.ts (NlIntent). Slot names are the field names
+# of the rules parser's slot model (names only, introspected; no parser code read). Vague items carry
+# `ambiguous: true` and expect AMBIGUOUS (a clarifying question).
+# BUYER-1 = Foshan Home Retail (佛山); BUYER-2 = Dongguan Office Supplies (东莞); FAC-LINE = bank credit line;
+# FAC-IF = invoice financing.
+intents:
+  # ---------------------------------------------------------------- SHOW_STATUS
+  - {id: H3I-01, text: "How's cash looking for the next month?", intent: SHOW_STATUS}
+  - {id: H3I-02, text: "账上现在还有多少钱？", intent: SHOW_STATUS}
+  - {id: H3I-03, text: "pull up the ledger pls", intent: SHOW_STATUS}
+  - {id: H3I-04, text: "银行授信还剩多少额度能用", intent: SHOW_STATUS, slots: {facility_id: FAC-LINE}}
+  - {id: H3I-05, text: "where do we stand vs the bank covenants this month? DSCR ok?", intent: SHOW_STATUS}
+  # ---------------------------------------------------------------- FUND_GAP
+  - {id: H3I-06, text: "We're short for payroll on the 12th — find me the cheapest way to cover it.", intent: FUND_GAP}
+  - {id: H3I-07, text: "发工资前那个资金缺口，怎么补最便宜？", intent: FUND_GAP}
+  - {id: H3I-08, text: "cover the cash gap before payroll, line + invoice financing, whatever's cheapest", intent: FUND_GAP}
+  - {id: H3I-09, text: "下个月20号付供应商12万，钱不够的话帮我安排一下融资", intent: FUND_GAP}
+  # ---------------------------------------------------------------- ACCELERATE_RECEIPT
+  - {id: H3I-10, text: "Try to get Foshan to pay the 420k early, but don't go above 0.8%", intent: ACCELERATE_RECEIPT,
+     slots: {counterparty_id: BUYER-1, rate_bp: 80, amount_fen: 42000000}}
+  - {id: H3I-11, text: "佛山那张42万的票，看能不能让他们早点付，贴息别超过0.85%", intent: ACCELERATE_RECEIPT,
+     slots: {counterparty_id: BUYER-1, rate_bp: 85, amount_fen: 42000000}}
+  - {id: H3I-12, text: "get the Foshan money in early, no rebates or anything for next quarter; if they won't play ball just finance the invoice",
+     intent: ACCELERATE_RECEIPT, slots: {counterparty_id: BUYER-1, zero_forward: true, use_financing: true}}
+  - {id: H3I-13, text: "催一下佛山提前回款，下季度不要答应任何返点", intent: ACCELERATE_RECEIPT,
+     slots: {counterparty_id: BUYER-1, zero_forward: true}}
+  - {id: H3I-14, text: "can we pull the Foshan receivable forward? max 0.6% discount", intent: ACCELERATE_RECEIPT,
+     slots: {counterparty_id: BUYER-1, rate_bp: 60}}
+  # ---------------------------------------------------------------- REPAY_FACILITY
+  - {id: H3I-15, text: "Pay down the credit line by 50k", intent: REPAY_FACILITY,
+     slots: {facility_id: FAC-LINE, amount_fen: 5000000}}
+  - {id: H3I-16, text: "把银行授信先还掉5万", intent: REPAY_FACILITY, slots: {facility_id: FAC-LINE, amount_fen: 5000000}}
+  - {id: H3I-17, text: "repay the invoice financing advance in full", intent: REPAY_FACILITY, slots: {facility_id: FAC-IF}}
+  # ---------------------------------------------------------------- EVALUATE_OFFER
+  - {id: H3I-18, text: "Foshan says they'll pay early at 1.2% if we go to 60 days. Good deal or not?", intent: EVALUATE_OFFER,
+     slots: {counterparty_id: BUYER-1, rate_bp: 120, terms_days: 60}}
+  - {id: H3I-19, text: "东莞那边说下季度要我们返1个点，这个能接吗？", intent: EVALUATE_OFFER,
+     slots: {counterparty_id: BUYER-2, rebate_bp: 100}}
+  - {id: H3I-20, text: "check this for me — Foshan: 'next two invoices at 60 days instead of 45, then back to normal'", intent: EVALUATE_OFFER,
+     slots: {counterparty_id: BUYER-1, terms_days: 60, invoices: 2}}
+  - {id: H3I-21, text: "佛山发来的：42万那张票提前付，千分之六贴息。能接吗", intent: EVALUATE_OFFER,
+     slots: {counterparty_id: BUYER-1, rate_bp: 60, amount_fen: 42000000}}
+  # ---------------------------------------------------------------- NEGOTIATE
+  - {id: H3I-22, text: "Counter Foshan at 0.85% on the early pay", intent: NEGOTIATE, slots: {counterparty_id: BUYER-1, rate_bp: 85}}
+  - {id: H3I-23, text: "跟佛山谈一下，贴息最多给0.8%", intent: NEGOTIATE, slots: {counterparty_id: BUYER-1, rate_bp: 80}}
+  - {id: H3I-24, text: "push back on Dongguan's rebate ask, go back to them with something smaller", intent: NEGOTIATE,
+     slots: {counterparty_id: BUYER-2}}
+  - {id: H3I-25, text: "negotiate w/ Foshan: we can live with 50 days, not 60", intent: NEGOTIATE,
+     slots: {counterparty_id: BUYER-1, terms_days: 50}}
+  # ---------------------------------------------------------------- EXPLAIN
+  - {id: H3I-26, text: "why did you reject Foshan's offer?", intent: EXPLAIN, slots: {counterparty_id: BUYER-1}}
+  - {id: H3I-27, text: "为什么说1.2%的提前付款不划算？", intent: EXPLAIN, slots: {rate_bp: 120}}
+  - {id: H3I-28, text: "what does 'break-even discount' actually mean", intent: EXPLAIN}
+  - {id: H3I-29, text: "explain how you got the ¥22,455 number for the 60 day terms", intent: EXPLAIN}
+  # ---------------------------------------------------------------- WHAT_IF
+  - {id: H3I-30, text: "What if we gave Foshan 60-day terms?", intent: WHAT_IF, slots: {counterparty_id: BUYER-1, terms_days: 60}}
+  - {id: H3I-31, text: "如果佛山账期改成60天，我们现金流会怎么样？", intent: WHAT_IF, slots: {counterparty_id: BUYER-1, terms_days: 60}}
+  - {id: H3I-32, text: "what happens to cash if the Q1 400k order never comes in", intent: WHAT_IF, slots: {amount_fen: 40000000}}
+  - {id: H3I-33, text: "what if we drew the full 150k on the credit line today", intent: WHAT_IF,
+     slots: {amount_fen: 15000000, facility_id: FAC-LINE}}
+  - {id: H3I-34, text: "假如下季度给东莞返1个点，会不会超总让利上限？", intent: WHAT_IF, slots: {counterparty_id: BUYER-2}}
+  # ---------------------------------------------------------------- APPROVE / REJECT
+  - {id: H3I-35, text: "approve the pending Foshan request", intent: APPROVE, slots: {counterparty_id: BUYER-1}}
+  - {id: H3I-36, text: "同意那个待审批的佛山申请", intent: APPROVE, slots: {counterparty_id: BUYER-1}}
+  - {id: H3I-37, text: "reject Dongguan's rebate request", intent: REJECT, slots: {counterparty_id: BUYER-2}}
+  - {id: H3I-38, text: "拒绝佛山那个60天账期的申请", intent: REJECT, slots: {counterparty_id: BUYER-1}}
+  - {id: H3I-39, text: "no, turn down the Foshan package", intent: REJECT, slots: {counterparty_id: BUYER-1}}
+  # ---------------------------------------------------------------- OUT_OF_SCOPE
+  - {id: H3I-40, text: "what's the weather in Shenzhen tmrw", intent: OUT_OF_SCOPE}
+  - {id: H3I-41, text: "帮我写个中秋节给客户的祝福短信", intent: OUT_OF_SCOPE}
+  - {id: H3I-42, text: "book me a flight to Shanghai friday morning", intent: OUT_OF_SCOPE}
+  - {id: H3I-43, text: "can you do this month's VAT filing for me", intent: OUT_OF_SCOPE}
+  # ---------------------------------------------------------------- vague: must ask a clarifying question
+  - {id: H3I-44, text: "sort it out", intent: AMBIGUOUS, ambiguous: true}
+  - {id: H3I-45, text: "钱的事你看着办吧", intent: AMBIGUOUS, ambiguous: true}
+  - {id: H3I-46, text: "handle the bank thing", intent: AMBIGUOUS, ambiguous: true}
+  - {id: H3I-47, text: "is it ok?", intent: AMBIGUOUS, ambiguous: true}
+  - {id: H3I-48, text: "那个怎么样了", intent: AMBIGUOUS, ambiguous: true}
+  - {id: H3I-49, text: "deal with the thing from yesterday", intent: AMBIGUOUS, ambiguous: true}
+  - {id: H3I-50, text: "搞一下那个单子", intent: AMBIGUOUS, ambiguous: true}
+  - {id: H3I-51, text: "yes do it", intent: AMBIGUOUS, ambiguous: true}
+  - {id: H3I-52, text: "can we afford it", intent: AMBIGUOUS, ambiguous: true}
+  - {id: H3I-53, text: "Foshan???", intent: AMBIGUOUS, ambiguous: true}
