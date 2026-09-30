@@ -105,6 +105,7 @@ class _Book:
     balance_deltas: dict[str, dict[int, int]] = field(default_factory=lambda: defaultdict(lambda: defaultdict(int)))
     balance_in: dict[str, dict[int, int]] = field(default_factory=lambda: defaultdict(lambda: defaultdict(int)))
     repayment_days: list[int] = field(default_factory=list)
+    funding_days: list[int] = field(default_factory=list)  # days funding cash lands
     # (from_day, until_day_or_None, amount): forward concessions outstanding on [from, until)
     forward: list[tuple[int, int | None, int]] = field(default_factory=list)
 
@@ -115,6 +116,7 @@ class _Book:
         self.balance_deltas[facility_id][day] += delta
         if delta > 0:
             self.balance_in[facility_id][day] += delta
+            self.funding_days.append(day)
 
 
 # ---------------------------------------------------------------- receivables and obligations
@@ -441,6 +443,7 @@ def _early_pay(f: Facility, a: FundingAction, r: _Rcv, book: _Book) -> int:
     rate = bp(a.rate_bp if a.rate_bp is not None else f.rate_bp)
     disc = post(rate * portion)
     r.early += portion
+    book.funding_days.append(arrival)
     book.add(_Posting(arrival, INFLOW, LedgerEventKind.EARLY_RECEIPT, portion, f"Early payment on {r.id}", r.id,
                       f"face {y(portion)} of {y(r.face)}; residual {y(r.face - r.early)} on {fday(r.due)}", f.id))
     book.add(_Posting(arrival, INFLOW, LedgerEventKind.DISCOUNT, -disc, f"Early-payment discount on {r.id}", f.id,
@@ -457,6 +460,7 @@ def _discount_bill(f: Facility, a: FundingAction, book: _Book) -> int:
     days = a.repay_day - arrival
     rate = bp(a.rate_bp if a.rate_bp is not None else f.rate_bp)
     disc = post(simple_interest(a.amount_fen, rate, days))
+    book.funding_days.append(arrival)
     book.add(_Posting(arrival, INFLOW, LedgerEventKind.EARLY_RECEIPT, a.amount_fen, f"Bill discounted, {f.name}",
                       f.id, f"bill face {y(a.amount_fen)}, matures {fday(a.repay_day)}", f.id))
     book.add(_Posting(arrival, INFLOW, LedgerEventKind.DISCOUNT, -disc, f"Bill discount, {f.name}", f.id,
@@ -575,14 +579,19 @@ def project(
     horizon_days: int,
     min_cash_fen: int | None = None,
 ) -> Trajectory:
-    """Daily cash recursion over days 0..H, where H = max(horizon_days, last repayment day + 1)."""
+    """Daily cash recursion over days 0..H.
+
+    H = max(horizon_days, last repayment day + 1, last day funding cash lands). Raises
+    UncommittedFacilityError for a facility the mode may not use, FundingActionError for a malformed
+    or over-limit action, and ObligationError for an obligation that cannot be bound to state.
+    """
     if horizon_days < 0:
         raise ValueError("horizon_days must not be negative")
     bound = max([horizon_days] + [a.day for a in actions] + [a.repay_day or 0 for a in actions]
                 + [ob.effective_day or 0 for ob in obligations] + [_issue_day_of(a.receivable_id) for a in actions])
     while True:
         book, _ = _build(state, obligations, actions, mode, bound)
-        horizon = max([horizon_days] + [d + 1 for d in book.repayment_days])
+        horizon = max([horizon_days] + [d + 1 for d in book.repayment_days] + book.funding_days)
         if horizon <= bound:
             break
         bound = horizon
