@@ -4,6 +4,7 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
+from app.api.auth import DEMO_OWNER_TOKEN
 from app.api.capex import router as capex_router
 from app.api.operations import router as operations_router
 from app.api.runtime import Runtime, set_runtime
@@ -29,7 +30,7 @@ def client(rt):
     app = FastAPI()
     app.include_router(capex_router)
     app.include_router(operations_router)
-    return TestClient(app)
+    return TestClient(app, headers={"X-Owner-Token": DEMO_OWNER_TOKEN})  # owner routes are gated
 
 
 def etl_status(rt):
@@ -80,8 +81,8 @@ def test_application_is_pending_and_nothing_executes_without_the_owner(client, r
     assert queued[0]["operation"]["amount_fen"] == 60_000_000
     assert etl_status(rt) == FacilityStatus.NOT_APPLIED  # nothing executed
 
-    denied = client.post(f"/approvals/{aid}", json={"decision": "APPROVE"}).json()["result"]
-    assert denied["status"] == "REFUSED"
+    denied = client.post(f"/approvals/{aid}", json={"decision": "APPROVE"}, headers={"X-Owner-Token": "not-the-owner"})
+    assert denied.status_code == 401  # the owner gate refuses before the executor
     assert etl_status(rt) == FacilityStatus.NOT_APPLIED
 
     ok = client.post(f"/approvals/{aid}", json={"decision": "APPROVE"}, headers=OWNER).json()["result"]

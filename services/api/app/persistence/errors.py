@@ -25,3 +25,8 @@ class ApprovalAlreadyDecided(PersistenceError):
 
 class InvalidPayload(PersistenceError, ValueError):
     """A payload that must be JSON text is not valid JSON."""
+
+
+class OfferVersionConflict(PersistenceError):
+    """`put_offer` was called for an (offer_id, version) already stored with other terms. A stored
+    offer version is immutable; new terms need a new version (F-07)."""

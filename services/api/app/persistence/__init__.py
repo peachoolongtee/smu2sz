@@ -8,6 +8,7 @@ from app.persistence.errors import (
     InvalidPayload,
     NonceAlreadyUsed,
     NotFound,
+    OfferVersionConflict,
     PersistenceError,
 )
 from app.persistence.memory_store import InMemoryLedgerStore
@@ -35,6 +36,7 @@ __all__ = [
     "LlmCallRecord",
     "NonceAlreadyUsed",
     "NotFound",
+    "OfferVersionConflict",
     "PersistenceError",
     "SqlLedgerStore",
     "canonical_json",

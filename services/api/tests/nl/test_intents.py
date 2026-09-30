@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from app.domain.models import CashFlow, FlowKind
-from tests.nl.conftest import Chat, codes, ops
+from tests.nl.conftest import OWNER, Chat, codes, ops
 
 EX12 = "Get paid early on the Foshan invoice without giving anything away next quarter."
 
@@ -164,8 +164,8 @@ def test_zh_replies_in_zh(client):
 
 
 def test_sessions_are_multi_turn_and_ids_returned(client):
-    r1 = client.post("/nl", json={"actor": "OWNER", "text": "status"}).json()
-    r2 = client.post("/nl", json={"session_id": r1["session_id"], "actor": "OWNER", "text": "status"}).json()
+    r1 = client.post("/nl", json={"actor": "OWNER", "text": "status"}, headers=OWNER).json()
+    r2 = client.post("/nl", json={"session_id": r1["session_id"], "actor": "OWNER", "text": "status"}, headers=OWNER).json()
     assert r1["session_id"] == r2["session_id"] and r2["turn"] == 2
 
 

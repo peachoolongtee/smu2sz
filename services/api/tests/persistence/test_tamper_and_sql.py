@@ -6,10 +6,12 @@ import dataclasses
 import json
 import sqlite3
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import contextmanager
 from pathlib import Path
 
 import pytest
 from sqlalchemy import BigInteger, Float, Numeric, text
+from sqlalchemy.exc import IntegrityError
 
 from app.persistence import (
     AppendOnlyViolation,
@@ -17,6 +19,7 @@ from app.persistence import (
     SqlLedgerStore,
     canonical_json,
     compute_entry_hash,
+    guards,
 )
 from app.persistence import tables as t
 
@@ -33,7 +36,15 @@ def _fill(store, n: int = 4) -> None:
 
 
 def _raw(store: SqlLedgerStore) -> sqlite3.Connection:
-    """A connection outside SQLAlchemy, as someone with direct database access would use."""
+    """A connection outside SQLAlchemy, as someone with full direct database access would use: they
+    drop the append-only triggers first (the hash chain must still catch what they do next)."""
+    db = sqlite3.connect(store.engine.url.database)
+    for name, _create in guards.SQLITE_TRIGGERS:
+        db.execute(f"DROP TRIGGER IF EXISTS {name}")
+    return db
+
+
+def _raw_keep_triggers(store: SqlLedgerStore) -> sqlite3.Connection:
     return sqlite3.connect(store.engine.url.database)
 
 
@@ -109,6 +120,56 @@ def test_update_or_delete_of_the_log_through_the_engine_is_refused(sql_store):
         conn.execute(t.used_nonces.delete())
     assert sql_store.verify_chain() is True and len(sql_store.operations()) == 2
     assert sql_store.nonce_used("n-1") is True
+
+
+@pytest.mark.parametrize("stmt", [
+    "UPDATE operations SET result_json = '{}' WHERE seq = 1",
+    "DELETE FROM operations WHERE seq = 2",
+    "DELETE FROM operations",
+    "UPDATE used_nonces SET nonce = 'n-2'",
+    "DELETE FROM used_nonces",
+])
+def test_the_database_itself_refuses_update_or_delete_on_the_log(sql_store, stmt):
+    """F-11: textual SQL bypasses the engine hook; the triggers refuse it, on any connection."""
+    _fill(sql_store, 2)
+    sql_store.mark_nonce_used("n-1")
+    with pytest.raises(sqlite3.IntegrityError, match="append-only"), _raw_keep_triggers(sql_store) as db:
+        db.execute(stmt)
+    with pytest.raises(IntegrityError, match="append-only"), sql_store.engine.begin() as conn:
+        conn.execute(text(stmt))  # FR-12b: a textual statement through the application's own engine
+    assert sql_store.verify_chain() is True and len(sql_store.operations()) == 2
+    assert sql_store.nonce_used("n-1") is True
+
+
+def test_reset_still_clears_the_log_and_puts_the_guard_back(sql_store):
+    _fill(sql_store, 3)
+    sql_store.mark_nonce_used("n-1")
+    sql_store.reset()
+    assert sql_store.operations() == [] and sql_store.nonce_used("n-1") is False
+    _fill(sql_store, 1)
+    with pytest.raises(sqlite3.IntegrityError, match="append-only"), _raw_keep_triggers(sql_store) as db:
+        db.execute("DELETE FROM operations")
+    with sqlite3.connect(sql_store.engine.url.database) as db:
+        names = {r[0] for r in db.execute("SELECT name FROM sqlite_master WHERE type = 'trigger'")}
+    assert names == {name for name, _ in guards.SQLITE_TRIGGERS}
+
+
+def test_a_failed_reset_rolls_back_and_keeps_the_guard(sql_store, monkeypatch):
+    _fill(sql_store, 2)
+    real_lifted = guards.lifted
+
+    @contextmanager
+    def failing(conn):  # the reset fails after the triggers were dropped inside its transaction
+        with real_lifted(conn):
+            yield
+            raise RuntimeError("disk full")
+
+    monkeypatch.setattr(guards, "lifted", failing)
+    with pytest.raises(RuntimeError):
+        sql_store.reset()
+    assert len(sql_store.operations()) == 2 and sql_store.verify_chain() is True
+    with pytest.raises(sqlite3.IntegrityError, match="append-only"), _raw_keep_triggers(sql_store) as db:
+        db.execute("DELETE FROM operations")
 
 
 def test_ledger_survives_reopening_the_database(tmp_path: Path):

@@ -64,6 +64,39 @@ def test_upgrade_head_creates_every_table_and_matches_the_metadata(tmp_path: Pat
     store.dispose()
 
 
+def test_migration_0003_makes_the_log_append_only_in_the_database(tmp_path: Path):
+    """F-11: after `upgrade head`, textual UPDATE/DELETE on the log is refused by the database; reset
+    still works; downgrading to 0002 removes exactly the triggers."""
+    import sqlite3
+
+    import pytest
+
+    from app.persistence import guards
+
+    db = tmp_path / "guarded.db"
+    url = f"sqlite:///{db}"
+    cfg = _config(url)
+    command.upgrade(cfg, "head")
+    store = SqlLedgerStore(url, create_tables=False)
+    store.append_operation("OP-1", "DRAW_FACILITY", "k-1", "{}", '{"status":"EXECUTED"}')
+    store.mark_nonce_used("n-1")
+    for stmt in ("UPDATE operations SET result_json = '{}'", "DELETE FROM operations",
+                 "UPDATE used_nonces SET nonce = 'x'", "DELETE FROM used_nonces"):
+        with pytest.raises(sqlite3.IntegrityError, match="append-only"), sqlite3.connect(db) as conn:
+            conn.execute(stmt)
+    store.reset()
+    assert store.operations() == [] and store.nonce_used("n-1") is False
+    store.dispose()
+
+    def triggers() -> set[str]:
+        with sqlite3.connect(db) as conn:
+            return {r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type = 'trigger'")}
+
+    assert triggers() == {name for name, _ in guards.SQLITE_TRIGGERS}
+    command.downgrade(cfg, "0002")
+    assert triggers() == set()
+
+
 def test_downgrade_base_drops_every_table(tmp_path: Path):
     url = f"sqlite:///{tmp_path / 'down.db'}"
     cfg = _config(url)

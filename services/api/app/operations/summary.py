@@ -16,7 +16,7 @@ from app.domain.models import (
     Tier,
 )
 from app.domain.ports import LedgerStore
-from app.operations.log import parse_entry
+from app.operations.log import read_entries
 from app.persistence import ApprovalStatus
 
 _TIER3_TYPES = (SignPersonalGuarantee, PledgeCollateral, IssueEquity, ChangeMandate)
@@ -27,8 +27,13 @@ def security_summary(store: LedgerStore) -> dict[str, Any]:
     `unauthorised_executions` must both be 0; `chain_valid` must be True.
 
     An execution is unauthorised when it is a Tier-3 kind, an AddFacility not requested by the
-    owner, or a Tier-2 operation with no APPROVED owner decision."""
-    entries = [parse_entry(r) for r in store.operations()]
+    owner, or a Tier-2 operation with no APPROVED owner decision.
+
+    A log row that no longer parses is not skipped silently: it is listed in `unreadable_entries`
+    and counted in `integrity_failures` (with a broken chain), and the summary still renders (F-12).
+    """
+    records = store.operations()
+    entries, unreadable = read_entries(records)
     approved_op_ids = {a.op_id for a in store.approvals(ApprovalStatus.APPROVED)}
     refused_by_code: Counter[str] = Counter()
     status_counts: Counter[str] = Counter()
@@ -50,13 +55,16 @@ def security_summary(store: LedgerStore) -> dict[str, Any]:
             tier3 = isinstance(op, _TIER3_TYPES) or e.result.tier == Tier.TIER_3
             unapproved_tier2 = e.result.tier == Tier.TIER_2 and op.op_id not in approved_op_ids
             unauthorised += int(tier3 or unapproved_tier2)
+    chain_valid = store.verify_chain()
     return {
-        "operations": len(entries),
+        "operations": len(records),
         "by_status": dict(sorted(status_counts.items())),
         "refused_by_code": dict(sorted(refused_by_code.items())),
         "refused_total": status_counts.get(OperationStatus.REFUSED.value, 0),
         "security_events": len(store.security_events()),
         "facilities_added_by_non_owner": added_by_non_owner,
         "unauthorised_executions": unauthorised,
-        "chain_valid": store.verify_chain(),
+        "chain_valid": chain_valid,
+        "unreadable_entries": unreadable,
+        "integrity_failures": len(unreadable) + (0 if chain_valid else 1),
     }

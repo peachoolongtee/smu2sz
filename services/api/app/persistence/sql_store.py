@@ -1,14 +1,20 @@
 """SQLAlchemy 2 `LedgerStore`. SQLite for dev and tests, Postgres to deploy (ADR-0001).
 
-Only portable Core constructs are used. The operations log is append-only: this class has no
-update or delete for it, and an engine hook refuses any Core/ORM UPDATE or DELETE aimed at
-`operations` or `used_nonces` (only `reset()` is allowed through). The hash chain is computed in
-Python, so a row edited behind the store's back is caught by `verify_chain()`.
+Only portable Core constructs are used for data. The operations log is append-only: this class has
+no update or delete for it, an engine hook refuses any Core/ORM UPDATE or DELETE aimed at
+`operations` or `used_nonces`, and database triggers (`guards`, migration 0003) refuse any UPDATE or
+DELETE there, textual SQL included (only `reset()` is allowed through). The hash chain is computed
+in Python, so a row edited behind the store's back is caught by `verify_chain()`.
+
+`transaction()` is the unit of work (F-01): every store call made inside it on the same thread runs
+on one connection in one database transaction, committed together or rolled back together.
 """
 
 from __future__ import annotations
 
-from collections.abc import Callable, Mapping
+import threading
+from collections.abc import Callable, Iterator, Mapping
+from contextlib import contextmanager
 from datetime import UTC, datetime
 from typing import Any, TypeVar
 
@@ -38,6 +44,7 @@ from app.domain.models import (
     Verdict,
 )
 from app.domain.ports import OperationRecord
+from app.persistence import guards
 from app.persistence import tables as t
 from app.persistence.canonical import canonical_json
 from app.persistence.chain import (
@@ -47,6 +54,7 @@ from app.persistence.chain import (
     compute_entry_hash,
     content_sha256,
     head_hash,
+    offer_fingerprint,
     op_identity,
     parse_json,
     verify_entries,
@@ -56,6 +64,7 @@ from app.persistence.errors import (
     ApprovalAlreadyDecided,
     NonceAlreadyUsed,
     NotFound,
+    OfferVersionConflict,
     PersistenceError,
 )
 from app.persistence.records import (
@@ -140,18 +149,59 @@ class SqlLedgerStore:
     ) -> None:
         self.database_url = database_url
         self.engine = engine if engine is not None else _make_engine(database_url)
+        self._local = threading.local()
         event.listen(self.engine, "before_execute", _guard_append_only)
         if create_tables:
             t.metadata.create_all(self.engine)
+            with self.engine.begin() as conn:
+                guards.install(conn)
 
     def dispose(self) -> None:
         self.engine.dispose()
+
+    # ------------------------------------------------------------ unit of work
+
+    def _tx(self) -> Connection | None:
+        return getattr(self._local, "conn", None)
+
+    @contextmanager
+    def transaction(self) -> Iterator[None]:
+        """One database transaction for every store call made inside the block on this thread.
+
+        Commits when the block exits normally and rolls everything back if it raises. A nested
+        block joins the open transaction (it does not commit on its own)."""
+        if self._tx() is not None:
+            yield
+            return
+        with self.engine.begin() as conn:
+            self._local.conn = conn
+            try:
+                yield
+            finally:
+                self._local.conn = None
+
+    @contextmanager
+    def _reading(self) -> Iterator[Connection]:
+        conn = self._tx()
+        if conn is not None:
+            yield conn
+            return
+        with self.engine.connect() as c:
+            yield c
 
     # ------------------------------------------------------------ helpers
 
     def _retry(
         self, fn: Callable[[Connection], T], on_conflict: Callable[[IntegrityError], Exception] | None = None
     ) -> T:
+        conn = self._tx()
+        if conn is not None:  # inside a unit of work: one attempt; a conflict fails the whole unit
+            try:
+                return fn(conn)
+            except IntegrityError as exc:
+                if on_conflict is not None:
+                    raise on_conflict(exc) from exc
+                raise
         for attempt in range(_RETRIES):
             try:
                 with self.engine.begin() as conn:
@@ -174,7 +224,7 @@ class SqlLedgerStore:
             conn.execute(insert(table).values(**key, **values))
 
     def _read_all(self, table: Table, order: Any, *where: Any) -> list[Row[Any]]:
-        with self.engine.connect() as conn:
+        with self._reading() as conn:
             return list(conn.execute(select(table).where(*where).order_by(order)))
 
     # ------------------------------------------------------------ operations log
@@ -220,7 +270,7 @@ class SqlLedgerStore:
 
     def find_by_idempotency_key(self, key: str) -> LedgerEntry | None:
         ops = t.operations
-        with self.engine.connect() as conn:
+        with self._reading() as conn:
             row = conn.execute(
                 select(ops).where(ops.c.idempotency_key == key).order_by(ops.c.seq).limit(1)
             ).first()
@@ -233,17 +283,24 @@ class SqlLedgerStore:
         return verify_entries(self.operations())
 
     def nonce_used(self, nonce: str) -> bool:
-        with self.engine.connect() as conn:
+        with self._reading() as conn:
             n = conn.execute(
                 select(func.count()).select_from(t.used_nonces).where(t.used_nonces.c.nonce == nonce)
             ).scalar_one()
         return bool(n)
 
     def mark_nonce_used(self, nonce: str) -> None:
-        self._retry(
-            lambda conn: conn.execute(insert(t.used_nonces).values(nonce=nonce)),
-            on_conflict=lambda _exc: NonceAlreadyUsed(nonce),
-        )
+        nonces = t.used_nonces
+
+        def _mark(conn: Connection) -> None:
+            # Checked first so a replay inside a unit of work raises before any statement fails
+            # (a failed statement would abort a Postgres transaction). The primary key still
+            # refuses a concurrent duplicate.
+            if conn.execute(select(func.count()).select_from(nonces).where(nonces.c.nonce == nonce)).scalar_one():
+                raise NonceAlreadyUsed(nonce)
+            conn.execute(insert(nonces).values(nonce=nonce))
+
+        self._retry(_mark, on_conflict=lambda _exc: NonceAlreadyUsed(nonce))
 
     # ------------------------------------------------------------ commitments
 
@@ -369,6 +426,17 @@ class SqlLedgerStore:
 
         def _put(conn: Connection) -> None:
             key = {"offer_id": offer.offer_id, "version": offer.version}
+            existing = conn.execute(
+                select(t.offers.c.payload_json).where(
+                    t.offers.c.offer_id == offer.offer_id, t.offers.c.version == offer.version
+                )
+            ).first()
+            if existing is not None and offer_fingerprint(
+                CompiledOffer.model_validate_json(existing.payload_json)
+            ) != offer_fingerprint(offer):
+                raise OfferVersionConflict(
+                    f"offer {offer.offer_id} v{offer.version} is already stored with other terms"
+                )
             self._upsert(
                 conn,
                 t.offers,
@@ -481,7 +549,9 @@ class SqlLedgerStore:
     def decide_approval(self, approval_id_: str, approved: bool, by: str) -> ApprovalRecord:
         status = ApprovalStatus.APPROVED if approved else ApprovalStatus.REJECTED
         a = t.approvals
-        with self.engine.begin() as conn:
+        with self.transaction():
+            conn = self._tx()
+            assert conn is not None
             res = conn.execute(
                 update(a)
                 .where(a.c.id == approval_id_, a.c.status == ApprovalStatus.PENDING.value)
@@ -628,10 +698,20 @@ class SqlLedgerStore:
     # ------------------------------------------------------------ reset
 
     def reset(self, include_telemetry: bool = False) -> None:
-        """Clear the ledger (demo reset). LLM calls and evaluation runs survive unless asked."""
+        """Clear the ledger (demo reset). LLM calls and evaluation runs survive unless asked.
+
+        The append-only guard is lifted for this transaction only (`guards.lifted`): the other
+        tables are cleared first, so the transaction is open before any trigger DDL runs, and the
+        triggers are back in place before it commits."""
         keep = set() if include_telemetry else {table.name for table in t.TELEMETRY_TABLES}
-        with self.engine.begin() as conn:
-            for table in reversed(t.metadata.sorted_tables):
-                if table.name in keep:
-                    continue
-                conn.execute(table.delete().execution_options(**{_RESET_OPTION: True}))
+        tables = [table for table in reversed(t.metadata.sorted_tables) if table.name not in keep]
+        with self.transaction():
+            conn = self._tx()
+            assert conn is not None
+            for table in tables:
+                if table.name not in _PROTECTED:
+                    conn.execute(table.delete())
+            with guards.lifted(conn):
+                for table in tables:
+                    if table.name in _PROTECTED:
+                        conn.execute(table.delete().execution_options(**{_RESET_OPTION: True}))

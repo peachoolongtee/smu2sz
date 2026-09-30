@@ -27,6 +27,7 @@ from app.persistence import (
     InvalidPayload,
     NonceAlreadyUsed,
     NotFound,
+    OfferVersionConflict,
     canonical_json,
 )
 from tests.persistence import factories as f
@@ -222,9 +223,27 @@ def test_offers_round_trip_by_latest_or_explicit_version(store):
     assert store.get_offer("OFF-1", 1) == v1
     assert store.get_offer("OFF-1", 3) is None
     assert store.get_offer("nope") is None
-    v1b = f.offer("OFF-1", 1, obligations=[f.rebate()])
-    store.put_offer(v1b)
-    assert store.get_offer("OFF-1", 1) == v1b
+
+
+
+def test_a_stored_offer_version_cannot_be_swapped_for_other_terms(store):
+    """F-07: an (offer_id, version) is immutable in its economics; new terms need a new version."""
+    v1 = f.offer("OFF-1", 1)
+    store.put_offer(v1)
+    store.put_offer(v1)  # the same offer again is fine (idempotent intake)
+    reworded = v1.model_copy(update={"obligations": [o.model_copy(update={"confidence": 0.5, "id": o.id + "x"})
+                                                     for o in v1.obligations]})
+    store.put_offer(reworded)  # ids, spans and confidence are not economics
+    for swapped in (
+        f.offer("OFF-1", 1, obligations=[f.rebate()]),  # different terms
+        f.offer("OFF-1", 1, obligations=[f.discount(rate_bp=300), f.extension(), f.rebate()]),  # a richer rate
+        v1.model_copy(update={"counterparty_id": "BUYER-2"}),
+    ):
+        with pytest.raises(OfferVersionConflict):
+            store.put_offer(swapped)
+    assert store.get_offer("OFF-1", 1) == reworded
+    store.put_offer(f.offer("OFF-1", 2, obligations=[f.rebate()]))  # a new version is the way to change terms
+    assert store.get_offer("OFF-1").version == 2
 
 
 def test_verdicts_round_trip(store):
@@ -384,3 +403,53 @@ def test_reset_clears_the_ledger_and_keeps_telemetry(store):
 
     store.reset(include_telemetry=True)
     assert store.llm_calls() == [] and store.evaluation_runs() == []
+
+
+# ---------------------------------------------------------------- unit of work (F-01)
+
+
+def test_a_failed_transaction_keeps_nothing(store):
+    state, mandate = load_scenario()
+    store.put_state(state)
+    store.put_mandate(mandate)
+    _append(store, 1)
+    with pytest.raises(RuntimeError), store.transaction():
+        store.put_state(state.model_copy(update={"cash_fen": 1, "state_version": 2}))
+        store.put_commitment(f.commitment())
+        store.mark_nonce_used("n-tx")
+        store.add_security_event(f.security_event())
+        store.add_approval(_op(2)[3], "Tier 2")
+        _append(store, 3)
+        assert len(store.operations()) == 2  # visible inside the unit of work
+        raise RuntimeError("the database went away")
+    assert store.get_state() == state and store.state_history() == [state]
+    assert store.commitments() == [] and store.nonce_used("n-tx") is False
+    assert store.security_events() == [] and store.approvals() == []
+    assert [e.seq for e in store.operations()] == [1] and store.verify_chain() is True
+    assert _append(store, 4).seq == 2  # the chain continues from what was committed
+
+
+def test_a_transaction_commits_everything_together_and_nested_blocks_join_it(store):
+    state, _ = load_scenario()
+    with store.transaction():
+        store.put_state(state)
+        with store.transaction():
+            store.mark_nonce_used("n-1")
+            _append(store, 1)
+        store.put_commitment(f.commitment())
+    assert store.get_state() == state and store.nonce_used("n-1") is True
+    assert len(store.operations()) == 1 and len(store.commitments()) == 1
+    with pytest.raises(RuntimeError), store.transaction():
+        with store.transaction():
+            _append(store, 2)
+        raise RuntimeError("outer fails after the inner block")
+    assert len(store.operations()) == 1  # the inner block did not commit on its own
+
+
+def test_a_nonce_replay_inside_a_transaction_raises_before_any_write_fails(store):
+    store.mark_nonce_used("n-1")
+    with store.transaction():
+        with pytest.raises(NonceAlreadyUsed):
+            store.mark_nonce_used("n-1")
+        _append(store, 1)  # the unit of work is still usable, e.g. to log the refusal
+    assert len(store.operations()) == 1 and store.verify_chain() is True

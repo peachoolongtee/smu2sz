@@ -7,6 +7,8 @@ handed out by this store can be used to change what it holds.
 from __future__ import annotations
 
 import threading
+from collections.abc import Iterator
+from contextlib import contextmanager
 from dataclasses import replace
 from datetime import UTC, datetime
 
@@ -25,11 +27,12 @@ from app.persistence.chain import (
     compute_entry_hash,
     content_sha256,
     head_hash,
+    offer_fingerprint,
     op_identity,
     parse_json,
     verify_entries,
 )
-from app.persistence.errors import ApprovalAlreadyDecided, NonceAlreadyUsed, NotFound
+from app.persistence.errors import ApprovalAlreadyDecided, NonceAlreadyUsed, NotFound, OfferVersionConflict
 from app.persistence.records import (
     ApprovalRecord,
     ApprovalStatus,
@@ -43,11 +46,46 @@ from app.persistence.records import (
 class InMemoryLedgerStore:
     """Satisfies `app.domain.ports.LedgerStore`. Thread-safe via one lock."""
 
+    # Every container the store mutates; `transaction()` snapshots and restores exactly these.
+    _CONTAINERS = (
+        "_ops", "_nonces", "_commitments", "_states", "_mandates", "_offers", "_verdicts",
+        "_security_events", "_approvals", "_evidence_exports", "_llm_calls", "_evaluation_runs",
+    )
+
     def __init__(self) -> None:
         self._lock = threading.RLock()
+        self._tx_depth = 0
         self._llm_calls: list[LlmCallRecord] = []
         self._evaluation_runs: list[EvaluationRunRecord] = []
         self._clear_ledger()
+
+    # ------------------------------------------------------------ unit of work
+
+    @contextmanager
+    def transaction(self) -> Iterator[None]:
+        """One unit of work: every write inside it is kept together or none is (F-01).
+
+        The outermost block holds the store lock and snapshots every container (shallow copies;
+        the values are frozen), and restores them all if the block raises. Nested blocks join the
+        outer one, as a nested `SqlLedgerStore.transaction()` joins the open DB transaction."""
+        with self._lock:
+            if self._tx_depth:
+                self._tx_depth += 1
+                try:
+                    yield
+                finally:
+                    self._tx_depth -= 1
+                return
+            snapshot = {name: _copy(getattr(self, name)) for name in self._CONTAINERS}
+            self._tx_depth = 1
+            try:
+                yield
+            except BaseException:
+                for name, value in snapshot.items():
+                    setattr(self, name, value)
+                raise
+            finally:
+                self._tx_depth = 0
 
     def _clear_ledger(self) -> None:
         self._ops: list[LedgerEntry] = []
@@ -152,8 +190,14 @@ class InMemoryLedgerStore:
     # ------------------------------------------------------------ offers, verdicts, security events
 
     def put_offer(self, offer: CompiledOffer) -> None:
+        """Store an offer version. An (offer_id, version) already stored with different economic
+        content (counterparty or obligation terms) is refused: a version is immutable (F-07)."""
         with self._lock:
-            self._offers[(offer.offer_id, offer.version)] = offer
+            key = (offer.offer_id, offer.version)
+            existing = self._offers.get(key)
+            if existing is not None and offer_fingerprint(existing) != offer_fingerprint(offer):
+                raise OfferVersionConflict(f"offer {offer.offer_id} v{offer.version} is already stored with other terms")
+            self._offers[key] = offer
 
     def get_offer(self, offer_id: str, version: int | None = None) -> CompiledOffer | None:
         with self._lock:
@@ -314,3 +358,13 @@ class InMemoryLedgerStore:
             if include_telemetry:
                 self._llm_calls = []
                 self._evaluation_runs = []
+
+
+def _copy(value: object) -> object:
+    if isinstance(value, list):
+        return list(value)
+    if isinstance(value, dict):
+        return dict(value)
+    if isinstance(value, set):
+        return set(value)
+    raise TypeError(f"cannot snapshot {type(value).__name__}")

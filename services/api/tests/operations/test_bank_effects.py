@@ -93,13 +93,13 @@ def test_invoice_financing_and_settlement_match_the_financial_engine(ex: Any, st
 
     clock.day = 32
     before = store.get_state().cash_fen
-    paid = ex.execute(op(ReceivePayment, clock, receivable_id="RCV-A", amount_fen=42_000_000))
+    paid = ex.execute(op(ReceivePayment, clock, actor=Actor.SYSTEM, receivable_id="RCV-A", amount_fen=42_000_000))
     assert paid.status == OperationStatus.EXECUTED
     expected = 42_000_000 - advance - charges[LedgerEventKind.INTEREST] - charges[LedgerEventKind.FEE]
     assert store.get_state().cash_fen - before == expected
     assert receivable(store, "RCV-A").status == "SETTLED"
     assert facility(store, "FAC-IF").drawn_fen == 0
-    assert ex.execute(op(ReceivePayment, clock, receivable_id="RCV-A", amount_fen=1)).status == "REFUSED"
+    assert ex.execute(op(ReceivePayment, clock, actor=Actor.SYSTEM, receivable_id="RCV-A", amount_fen=1)).status == "REFUSED"
 
 
 def test_financing_bills_whole_periods(ex: Any, store: Any, clock: Clock) -> None:
@@ -107,7 +107,7 @@ def test_financing_bills_whole_periods(ex: Any, store: Any, clock: Clock) -> Non
                   advance_fen=10_000_000))
     clock.day = 31  # 31 days outstanding -> two 30-day periods
     before = store.get_state().cash_fen
-    ex.execute(op(ReceivePayment, clock, receivable_id="RCV-A", amount_fen=42_000_000))
+    ex.execute(op(ReceivePayment, clock, actor=Actor.SYSTEM, receivable_id="RCV-A", amount_fen=42_000_000))
     interest = post(simple_interest(10_000_000, bp(780), 60))
     fee = post(bp(25) * 10_000_000 * 2)
     assert store.get_state().cash_fen - before == 42_000_000 - 10_000_000 - interest - fee
@@ -140,9 +140,9 @@ def test_financing_needs_an_open_confirmed_buyer_receivable(ex: Any, store: Any,
 
 def test_receive_payment_on_open_receivable(ex: Any, store: Any, clock: Clock) -> None:
     before = store.get_state().cash_fen
-    r = ex.execute(op(ReceivePayment, clock, receivable_id="RCV-A", amount_fen=42_000_000))
+    r = ex.execute(op(ReceivePayment, clock, actor=Actor.SYSTEM, receivable_id="RCV-A", amount_fen=42_000_000))
     assert r.status == OperationStatus.EXECUTED
     assert store.get_state().cash_fen == before + 42_000_000
     assert receivable(store, "RCV-A").status == "SETTLED"
-    over = ex.execute(op(ReceivePayment, clock, receivable_id="RCV-A", amount_fen=1))
+    over = ex.execute(op(ReceivePayment, clock, actor=Actor.SYSTEM, receivable_id="RCV-A", amount_fen=1))
     assert over.status == OperationStatus.REFUSED

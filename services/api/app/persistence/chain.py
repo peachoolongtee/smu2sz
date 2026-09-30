@@ -1,4 +1,5 @@
-"""Hash chain over the operations log, computed in Python (ADR-0001: no triggers).
+"""Hash chain over the operations log, computed in Python (ADR-0001: the chain is never computed
+by triggers; the database triggers of migration 0003 only refuse UPDATE/DELETE on the log).
 
 entry_hash = sha256(prev_hash + payload_json + result_json); the genesis prev_hash is "0" * 64
 and `seq` runs 1, 2, 3, ... with no gaps.
@@ -113,6 +114,23 @@ def build_evidence(entries: Sequence[OperationRecord]) -> str:
 
 def content_sha256(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+# Obligation fields that identify or evidence a term but do not change its economics (the same set
+# `app.commitments.terms` strips for the terms hash).
+_NON_ECONOMIC = frozenset({"id", "spans", "confidence"})
+
+
+def offer_fingerprint(offer: Any) -> str:
+    """What an offer version commits to: its counterparty, compile status and the economic terms
+    of its obligations (order-independent). Re-storing a version is allowed only when this is
+    unchanged, so a stored version can never be swapped for richer terms (F-07)."""
+    terms = sorted(
+        canonical_json({k: v for k, v in o.model_dump(mode="json").items() if k not in _NON_ECONOMIC})
+        for o in offer.obligations
+    )
+    body = canonical_json({"counterparty_id": offer.counterparty_id, "status": str(offer.status), "terms": terms})
+    return hashlib.sha256(body.encode("utf-8")).hexdigest()
 
 
 def approval_id(n: int) -> str:

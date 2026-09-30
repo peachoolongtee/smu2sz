@@ -7,6 +7,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from app.api.alerts import router as alerts_router
+from app.api.auth import DEMO_OWNER_TOKEN
 from app.api.decide import router as decide_router
 from app.api.offers import router as offers_router
 from app.api.operations import router as operations_router
@@ -23,7 +24,7 @@ def _client(settings: Settings) -> TestClient:
     app = FastAPI()
     for r in (alerts_router, offers_router, decide_router, operations_router):
         app.include_router(r)
-    return TestClient(app)
+    return TestClient(app, headers={"X-Owner-Token": DEMO_OWNER_TOKEN})  # owner routes are gated
 
 
 @pytest.fixture

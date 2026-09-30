@@ -25,8 +25,10 @@ from app.domain.ports import OperationRecord
 
 OPERATION_ADAPTER: TypeAdapter[Operation] = TypeAdapter(Operation)
 
-# A log entry that is not a typed Operation: the owner resetting a counterparty's circuit breaker.
+# Log entries that are not typed Operations: the owner resetting a counterparty's circuit breaker,
+# and the owner revoking a commitment (`Executor.revoke_commitment`).
 RESET_CIRCUIT_KIND = "RESET_CIRCUIT"
+REVOKE_COMMITMENT_KIND = "REVOKE_COMMITMENT"
 
 
 @dataclass(frozen=True, slots=True)
@@ -69,20 +71,43 @@ def parse_entry(record: OperationRecord) -> LoggedEntry:
     )
 
 
+def read_entries(records: list[OperationRecord]) -> tuple[list[LoggedEntry], list[int]]:
+    """Every record that parses, plus the seq of every one that does not (a corrupted row is an
+    integrity failure to report, never a crash; F-12)."""
+    entries: list[LoggedEntry] = []
+    unreadable: list[int] = []
+    for r in records:
+        try:
+            entries.append(parse_entry(r))
+        except (ValueError, TypeError):  # JSON and pydantic validation errors are ValueErrors
+            unreadable.append(r.seq)
+    return entries, unreadable
+
+
 class LogReader:
-    """Parses store records once each (entries are immutable; the cache is keyed by entry hash)."""
+    """Parses store records once each (entries are immutable; the cache is keyed by entry hash).
+
+    A row that does not parse is skipped and its seq kept in `unreadable` (for the last read), so
+    callers that must fail closed on it (the idempotency check) can."""
 
     def __init__(self) -> None:
         self._cache: dict[str, LoggedEntry] = {}
+        self.unreadable: set[int] = set()
 
     def entries(self, records: list[OperationRecord]) -> list[LoggedEntry]:
         out = []
+        bad: set[int] = set()
         for r in records:
             e = self._cache.get(r.entry_hash)
             if e is None:
-                e = parse_entry(r)
+                try:
+                    e = parse_entry(r)
+                except (ValueError, TypeError):
+                    bad.add(r.seq)
+                    continue
                 self._cache[r.entry_hash] = e
             out.append(e)
+        self.unreadable = bad
         return out
 
 

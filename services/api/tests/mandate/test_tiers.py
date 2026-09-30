@@ -32,7 +32,7 @@ CASES = [
         op(m.SubmitInvoiceForFinancing, facility_id="FAC-IF", receivable_id="RCV-A", advance_fen=LIMIT),
         Tier.TIER_1,
     ),
-    (op(m.ReceivePayment, receivable_id="RCV-A", amount_fen=42_000_000), Tier.TIER_1),
+    (op(m.ReceivePayment, receivable_id="RCV-A", amount_fen=42_000_000), Tier.TIER_2),
     (op(m.RequestOwnerApproval, subject="s", payload_op_id="p"), Tier.TIER_1),
     (op(m.GenerateBorrowerFile, facility_id="FAC-GGL", amount_fen=1), Tier.TIER_2),
     (op(m.ApplyForFacility, facility_id="FAC-GGL", amount_fen=1), Tier.TIER_2),
@@ -76,6 +76,16 @@ def test_draw_on_non_committed_facility_is_tier2(fid):
     assert tier(op(m.DrawFacility, facility_id=fid, amount_fen=1)) == Tier.TIER_2
     o = op(m.SubmitInvoiceForFinancing, facility_id=fid, receivable_id="RCV-A", advance_fen=1)
     assert tier(o) == Tier.TIER_2
+
+
+@pytest.mark.parametrize(("actor", "expected"), [
+    (Actor.SYSTEM, Tier.TIER_1),  # the bank feed
+    (Actor.OWNER, Tier.TIER_1),
+    (Actor.AGENT, Tier.TIER_2),  # "we've paid, mark it settled" (F-02, SE-07)
+    (Actor.COUNTERPARTY, Tier.TIER_2),
+])
+def test_receipt_is_tier1_only_from_the_bank_feed_or_the_owner(actor, expected):
+    assert tier(op(m.ReceivePayment, actor=actor, receivable_id="RCV-A", amount_fen=1)) == expected
 
 
 def test_accept_offer_with_terms_change_is_tier2():

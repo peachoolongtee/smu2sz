@@ -12,6 +12,7 @@ the approvals queue, and random injected text through intake, verdict and a comp
 from __future__ import annotations
 
 import json
+import os
 import secrets
 from typing import Any
 
@@ -192,8 +193,11 @@ def test_fuzzed_operation_bodies_cause_no_harm(bodies: list[dict[str, Any]], tok
     from app.operations import security_summary
 
     secret = "owner-" + secrets.token_hex(16)
-    headers = {} if token is None else {"X-Owner-Token": token}
     with owner_token_env(secret):
+        # The compromised agent: it holds its own agent key and guesses at the owner token.
+        headers = {"X-Agent-Key": os.environ["AGENT_KEY"]}
+        if token is not None:
+            headers["X-Owner-Token"] = token
         rt, client = _fresh_client()
         try:
             s = rt.store
@@ -209,7 +213,8 @@ def test_fuzzed_operation_bodies_cause_no_harm(bodies: list[dict[str, Any]], tok
                     assert not (res["status"] == "EXECUTED" and res["tier"] in ("TIER_2", "TIER_3")), res
             for a in s.approvals():  # the attacker also tries to decide everything it queued
                 r = client.post(f"/approvals/{a.id}", json={"decision": "APPROVE"}, headers=headers)
-                assert r.status_code == 200 and r.json()["result"]["status"] == "REFUSED"
+                assert r.status_code == 401 or (r.status_code == 200 and r.json()["result"]["status"] == "REFUSED")
+                assert s.get_approval(a.id).status == "PENDING"
             client.post("/circuit/BANK-1/reset", headers=headers)
             summary = security_summary(s)
             assert summary["unauthorised_executions"] == 0
