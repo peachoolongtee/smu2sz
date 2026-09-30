@@ -241,9 +241,7 @@ def _view(b: VerdictBundle, params: WhatIfParams, ctx: Context, text: str, key: 
     p.update({"current_terms_days": ctx.recurring.terms_days, "receivable_id": ctx.receivable.id,
               "receivable_face_fen": ctx.receivable.face_fen,
               "effective_face_fen": (params.settle_face_fen or ctx.receivable.face_fen) if params.discount_bp else None,
-              "order_fen": ctx.order.amount_fen if ctx.order else None,
-              "discount_pct": fmt_pct(bp(params.discount_bp)), "rebate_pct": fmt_pct(bp(params.rebate_bp)),
-              "price_adjustment_pct": fmt_pct(bp(params.price_adjustment_bp))})
+              "order_fen": ctx.order.amount_fen if ctx.order else None})
     return WhatIfResult(
         key=key, params=displayed(p),
         description={"doc_id": DOC_ID, "text": text, "obligations": spans},
