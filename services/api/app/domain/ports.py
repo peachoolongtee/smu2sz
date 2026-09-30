@@ -128,6 +128,11 @@ class FundingRouter(Protocol):
         respects lead times and clean-down; EXPECTED basis may include PENDING ones."""
         ...
 
+    def compare(self, state: FinancialState, obligations: list[Obligation], mandate: Mandate) -> list[Any]:
+        """Spec §7.4 rows (app.funding.ComparisonRow). Also exported from app.funding:
+        menu_view(), break_even_discount(), extension_cost_bases()."""
+        ...
+
     def marginal_cost(self, state: FinancialState, mandate: Mandate) -> tuple[Ratio, str]:
         """All-in annual rate of the cheapest committed source able to carry a *permanent*
         need (clean-down excludes the credit line), and its facility id."""

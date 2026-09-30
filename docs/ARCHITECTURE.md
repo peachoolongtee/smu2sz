@@ -36,7 +36,7 @@ Everything lives under `services/api/app/`.
 | `commitments/` | commitment lifecycle state machine, terms hash, nonce, expiry | `transition()`, `terms_hash()` | domain, persistence |
 | `funding/` | funding menu view, same-basis costing, grid-search router, marginal cost, break-even | `plan()`, `marginal_cost()`, `break_even_discount()` | domain, financial, covenants, mandate |
 | `verifier/` | verdict algorithm, reason codes, formulas, counter generation (priced from marginal cost) | `evaluate()`, `counters()` | domain, financial, covenants, mandate, funding |
-| `operations/` | the executor: tier check, mandate version/signature/expiry, nonce, idempotency, circuit breaker | `Executor.execute()` | domain, mandate, commitments, persistence, verifier |
+| `operations/` | the executor: tier check, mandate version/signature/expiry, nonce, idempotency, circuit breaker | `Executor.execute()`, `decide()`, `propose_commitment()` | domain, financial (charge helpers), mandate, commitments, persistence |
 | `security/` | attack catalogue, security-event logging helpers, refusal templates | `refuse()`, attack runners | domain, persistence |
 | `counterparties/` | deterministic buyer kernel (hidden reservation), mock lenders, template verbaliser | `BuyerKernel`, `MockLender` | domain |
 | `nl/` | intent parsing, sessions (multi-turn: clarification, correction, fallback), plan → operations | `handle()` | everything above except compiler internals |

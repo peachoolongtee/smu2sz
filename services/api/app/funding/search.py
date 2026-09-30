@@ -383,7 +383,7 @@ class Search:
                 ev.violations.append(v)
         if not self.mandate.allow_new_borrowing and any(is_debt(self.facilities[a.facility_id]) for a in acts):
             ev.violations.append(Violation(
-                code=ViolationCode.INSUFFICIENT_AUTHORITY,
+                code=ViolationCode.NEW_BORROWING_NOT_ALLOWED,
                 message="The mandate does not allow new borrowing",
                 formula="allow_new_borrowing = false",
             ))
