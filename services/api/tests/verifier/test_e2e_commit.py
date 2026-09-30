@@ -94,17 +94,23 @@ def test_ex01_option_a_then_line_draw_executes_at_tier1(desk):
     assert store.verify_chain()
 
 
-def test_ex05_accept_executes_at_tier1(desk):
+def test_ex05_accept_waits_for_the_owner_then_executes(desk):
+    """A shortening is a gain, but it is not an early-pay discount: accepting it is Tier 2 (EV-01/EV-02)."""
     store, ex, clock = desk
     v = _verdict(store, "EX05_CONSOLIDATE", declared_for("EX05_CONSOLIDATE"))  # per-event cost is owner-declared
-    assert v.outcome == Outcome.ACCEPT and v.required_tier == Tier.TIER_1
+    assert v.outcome == Outcome.ACCEPT
     c = ex.propose_commitment(v.id, expires_day=5)
     assert c.obligations == v.bound_obligations
     ext = next(o for o in c.obligations if o.type == ObligationType.TERMS_EXTENSION)
     assert ext.days_delta == -15  # 30-day terms from the ledger's 45: a shortening
     assert c.forward_value_fen == 0  # the FIRM gain outweighs the delivery cost; floored at zero
-    result = _accept(ex, clock, v, c)
-    assert (result.status, result.tier) == (OperationStatus.EXECUTED, Tier.TIER_1), result.message
+    before = store.get_state()
+    pending = _accept(ex, clock, v, c)
+    assert (pending.status, pending.tier) == (OperationStatus.PENDING_APPROVAL, Tier.TIER_2), pending.message
+    assert store.get_commitment(c.id).status == CommitmentStatus.PROPOSED
+    assert store.get_state() == before
+    done = ex.decide(pending.approval_id, True, Actor.OWNER)
+    assert done.status == OperationStatus.EXECUTED, done.message
     assert store.get_commitment(c.id).status == CommitmentStatus.ACTIVE
     assert store.verify_chain()
 
