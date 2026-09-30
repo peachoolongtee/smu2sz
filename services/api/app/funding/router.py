@@ -46,8 +46,11 @@ class Alternative:
 
 
 def _first_line(search: Search) -> Slot | None:
+    """The line repaid on the first day the unfunded baseline recovers (the canonical "line" of the
+    spec §7.4 table), else on its earliest repayment day."""
     lines = [s for s in search.slots if s.facility.kind == FacilityKind.CREDIT_LINE]
-    return min(lines, key=lambda s: (s.repay_day or 0, s.facility.id)) if lines else None
+    recovery = set(search.recovery_days())
+    return min(lines, key=lambda s: (s.repay_day not in recovery, s.repay_day or 0, s.facility.id)) if lines else None
 
 
 def _target_early_pay(search: Search) -> Slot | None:
@@ -75,7 +78,7 @@ def alternatives(search: Search) -> list[Alternative]:
     out: list[Alternative] = []
     ep = _target_early_pay(search)
     line = _first_line(search)
-    line_amt = min(line.cap_fen, need) if line else 0
+    line_amt = search.ticket(line, need) if line else 0
     if ep is not None:
         d = f"{ep.rate_bp / 100:g}%"
         out.append(_alt(search, "full_discount", f"Discount the whole invoice at {d}", [ep.action(ep.cap_fen)]))
@@ -87,10 +90,11 @@ def alternatives(search: Search) -> list[Alternative]:
     ggl = next((f for f in sorted(search.state.facilities, key=lambda f: f.id)
                 if f.kind == FacilityKind.GOV_GUARANTEED_LOAN and f.owner_approved), None)
     if ggl is not None and line is not None and line_amt < need:
-        loan = FundingAction(kind=FundingActionKind.DRAW, facility_id=ggl.id, day=0, amount_fen=need - line_amt)
+        loan_amt = max(search.MIN_ACTION_FEN, need - line_amt)
+        loan = FundingAction(kind=FundingActionKind.DRAW, facility_id=ggl.id, day=0, amount_fen=loan_amt)
         actions = [line.action(line_amt), loan]
         comps = [search.action_label(line.action(line_amt)),
-                 f"{ggl.name}: draw {fmt_yuan(need - line_amt)} (arrives day {ggl.lead_time_days})"]
+                 f"{ggl.name}: draw {fmt_yuan(loan_amt)} (arrives day {ggl.lead_time_days})"]
         reasons: list[ViolationCode] = []
         if ggl.status not in search.statuses:
             reasons.append(ViolationCode.UNCOMMITTED_FACILITY)
@@ -157,7 +161,7 @@ def _build_plan(search: Search, state: FinancialState, mandate: Mandate) -> Fund
         violations = _infeasible_violations(search)
         return FundingPlan(id=plan_id(basis, [], state, mandate), actions=[], costs=[], total_cost_fen=0,
                            admissible=False, violations=violations, rejected=rejected,
-                           label="no admissible plan: the menu cannot cover the gap", **common)
+                           label="no admissible plan: the menu cannot cover the gap" + _capped(search), **common)
     best = search.evaluate(search.ordered(best.actions))
     lines = search.cost_lines(best)
     uses_expected = any(state_fac.status != FacilityStatus.COMMITTED
@@ -166,10 +170,14 @@ def _build_plan(search: Search, state: FinancialState, mandate: Mandate) -> Fund
         label = "committed plan: " + cost_display(lines, best.cost)
     else:
         label = (EXPECTED_LABEL if uses_expected else "expected plan (committed sources only)") + ": " + \
-            cost_display(lines, best.cost)
+            cost_display(lines, best.cost) + _capped(search)
     return FundingPlan(id=plan_id(basis, list(best.actions), state, mandate), actions=list(best.actions),
                        costs=lines, total_cost_fen=best.cost or 0, admissible=True, rejected=rejected,
                        label=label, **common)
+
+
+def _capped(search: Search) -> str:
+    return f" (best of the first {search.EXPECTED_PROBE_BUDGET:,} candidates; search capped)" if search.capped else ""
 
 
 def _infeasible_violations(search: Search) -> list[Violation]:
