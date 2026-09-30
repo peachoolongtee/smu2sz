@@ -1,0 +1,22 @@
+[slide size 12192000x6858000 EMU; 4 slides]
+=== Slide 1 (layout: 标题幻灯片) ===
+作品名
+团队名
+=== Slide 2 (layout: 两栏内容) ===
+目录
+CONTENTS
+01
+目录内容
+02
+目录内容
+03
+目录内容
+04
+目录内容
+05
+目录内容
+06
+目录内容
+=== Slide 3 (layout: 标题和内容) ===
+演示主标题
+=== Slide 4 (layout: 节标题) ===

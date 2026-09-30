@@ -1,0 +1,32 @@
+2026 FINTECHATHON · SUBMISSION TEMPLATE
+International AI Track | Technical Document
+Required material for the International AI Track. Please complete this document in English.
+[TABLE]
+| Team name | Please complete |
+| Competition track | Please complete |
+| Submission date | Please complete |
+[/TABLE]
+# 01 Project Overview
+- Problem, target users and selected topic
+Write here
+- Core value and innovation
+Write here
+# 02 System Architecture
+- Architecture diagram and component responsibilities
+Write here
+- Models, tools, data sources and external services
+Write here
+# 03 Agent Design
+- Intent understanding, planning, tool use and state management
+Write here
+- Core algorithms and evaluation approach
+Write here
+# 04 Security Design
+- Tiered permissions and confirmation for sensitive actions
+Write here
+- Protection against prompt injection, privilege escalation and privacy leakage
+Write here
+# 05 Deployment and Testing
+- Environment, deployment instructions, test cases and known limitations
+Write here
+[FOOTER] Complete this document according to the competition notice. If a newer template is published, the newer version prevails.
