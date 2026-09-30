@@ -1,0 +1,406 @@
+/**
+ * Mock API. Serves apps/web/mocks/*.json (authored by scripts/build-mocks.mjs from the golden values).
+ * Only bookkeeping is done here: sequence numbers, the SHA-256 hash chain and the order of events.
+ * There is no money arithmetic; every amount on screen is a string from the mock JSON.
+ */
+
+import { sha256 } from "js-sha256";
+import { ApiError } from "../api";
+import { MOCK_LATENCY_MS } from "../config";
+import type {
+  ApprovalDecision,
+  ApprovalView,
+  AuditView,
+  BorrowerFileView,
+  CapexRequest,
+  CapexView,
+  FundingView,
+  LedgerView,
+  MandateView,
+  Mode,
+  NegotiateRequest,
+  NegotiationView,
+  NlRequest,
+  NlResponse,
+  OfferView,
+  OperationView,
+  PlanRequest,
+  StateView,
+  SubmitOfferRequest,
+  TrajectoryView,
+  VerdictView,
+  Displayed,
+  Commitment,
+} from "../types";
+
+import approvalsSeed from "../../mocks/approvals_seed.json";
+import auditSec from "../../mocks/audit_sec.json";
+import borrowerFileJson from "../../mocks/borrower_file.json";
+import capexJson from "../../mocks/capex.json";
+import fundingJson from "../../mocks/funding.json";
+import mandateJson from "../../mocks/mandate.json";
+import negAccept from "../../mocks/negotiation_accept.json";
+import negNoDeal from "../../mocks/negotiation_nodeal.json";
+import offerEx01 from "../../mocks/offer_ex01.json";
+import offerEx01b from "../../mocks/offer_ex01b.json";
+import offerSec from "../../mocks/offer_sec.json";
+import opsJson from "../../mocks/ops.json";
+import stateJson from "../../mocks/state.json";
+import trajCons from "../../mocks/trajectory_conservative.json";
+import trajExp from "../../mocks/trajectory_expected.json";
+import verdictEx01 from "../../mocks/verdict_ex01.json";
+import verdictEx01b from "../../mocks/verdict_ex01b.json";
+import verdictSec from "../../mocks/verdict_sec.json";
+
+type Json = unknown;
+const cast = <T>(v: Json): T => v as T;
+
+type OpTemplate = {
+  kind: string;
+  tier: OperationView["tier"];
+  requested_by: OperationView["requested_by"];
+  message: string;
+  summary: string;
+};
+const OPS = cast<Record<string, OpTemplate>>(opsJson);
+
+const FIXTURE_OFFERS: { view: OfferView; verdict: VerdictView }[] = [
+  { view: cast(offerEx01), verdict: cast(verdictEx01) },
+  { view: cast(offerEx01b), verdict: cast(verdictEx01b) },
+  { view: cast(offerSec), verdict: cast(verdictSec) },
+];
+
+const GENESIS = "0".repeat(64);
+const STORAGE_KEY = "tl-mock-store-v1";
+
+interface Store {
+  offers: Record<string, OfferView>;
+  evaluated: string[];
+  negotiated: Record<string, NegotiationView>;
+  ops: OperationView[];
+  commitments: Displayed<Commitment>[];
+  approvals: ApprovalView[];
+  securityScene: boolean;
+}
+
+const emptyStore = (): Store => ({
+  offers: {},
+  evaluated: [],
+  negotiated: {},
+  ops: [],
+  commitments: [],
+  approvals: [],
+  securityScene: false,
+});
+
+let memory: Store | null = null;
+
+function load(): Store {
+  if (memory) return memory;
+  if (typeof window !== "undefined") {
+    try {
+      const raw = window.sessionStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        memory = JSON.parse(raw) as Store;
+        return memory;
+      }
+    } catch {
+      /* fall through to an empty store */
+    }
+  }
+  memory = emptyStore();
+  return memory;
+}
+
+function save(): void {
+  if (typeof window === "undefined" || !memory) return;
+  try {
+    window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(memory));
+  } catch {
+    /* storage full or unavailable: the in-memory store still works */
+  }
+}
+
+const delay = () => new Promise<void>((r) => setTimeout(r, MOCK_LATENCY_MS));
+const clone = <T>(v: T): T => JSON.parse(JSON.stringify(v)) as T;
+
+function entryHash(op: Pick<OperationView, "seq" | "op_id" | "kind" | "status" | "tier" | "summary">, prev: string): string {
+  return sha256(`${prev}|${op.seq}|${op.op_id}|${op.kind}|${op.status}|${op.tier}|${op.summary}`);
+}
+
+function append(
+  key: keyof typeof OPS,
+  overrides: Partial<Pick<OperationView, "status" | "message" | "summary" | "requested_by">> = {},
+): OperationView {
+  const s = load();
+  const t = OPS[key];
+  const seq = s.ops.length + 1;
+  const prev = s.ops.length ? (s.ops[s.ops.length - 1].entry_hash ?? GENESIS) : GENESIS;
+  const base = {
+    op_id: `OP-${String(seq).padStart(4, "0")}`,
+    kind: t.kind,
+    status: overrides.status ?? ("EXECUTED" as const),
+    tier: t.tier,
+    violations: [],
+    seq,
+    message: overrides.message ?? t.message,
+    day: 0,
+    requested_by: overrides.requested_by ?? t.requested_by,
+    summary: overrides.summary ?? t.summary,
+  };
+  const op: OperationView = { ...base, prev_hash: prev, entry_hash: entryHash(base, prev) };
+  s.ops.push(op);
+  return op;
+}
+
+function chainValid(ops: OperationView[]): boolean {
+  let prev = GENESIS;
+  for (const op of ops) {
+    if (op.prev_hash !== prev || op.entry_hash !== entryHash(op, prev)) return false;
+    prev = op.entry_hash ?? "";
+  }
+  return true;
+}
+
+// ------------------------------------------------------------------ reads
+
+export async function getState(): Promise<StateView> {
+  await delay();
+  return clone(cast<StateView>(stateJson));
+}
+
+export async function getMandate(): Promise<MandateView> {
+  await delay();
+  return clone(cast<MandateView>(mandateJson));
+}
+
+export async function getTrajectory(mode: Mode): Promise<TrajectoryView> {
+  await delay();
+  return clone(cast<TrajectoryView>(mode === "EXPECTED" ? trajExp : trajCons));
+}
+
+export async function planFunding(_req: PlanRequest): Promise<FundingView> {
+  void _req;
+  await delay();
+  return clone(cast<FundingView>(fundingJson));
+}
+
+export async function getLedger(): Promise<LedgerView> {
+  await delay();
+  const s = load();
+  const head = s.ops.length ? s.ops[s.ops.length - 1].entry_hash : null;
+  return clone({
+    commitments: s.commitments,
+    operations: s.ops,
+    chain_valid: chainValid(s.ops),
+    chain_length: s.ops.length,
+    head_hash: head,
+  });
+}
+
+export async function getAudit(): Promise<AuditView> {
+  await delay();
+  const s = load();
+  const scene = cast<AuditView>(auditSec);
+  const refusals = s.ops.filter((o) => o.status === "REFUSED");
+  if (!s.securityScene) {
+    return clone({
+      events: [],
+      refusals,
+      documents: [],
+      summary: {
+        facilities_added: 0,
+        commitments_booked: 0,
+        money_moved_fen: 0,
+        money_moved_display: "¥0.00",
+        disclosed_fields: [],
+        reply_text: null,
+      },
+    });
+  }
+  return clone({ ...scene, refusals });
+}
+
+export async function getApprovals(): Promise<ApprovalView[]> {
+  await delay();
+  return clone(load().approvals);
+}
+
+export async function getEvidence(): Promise<string> {
+  await delay();
+  const s = load();
+  if (!s.ops.length) return "";
+  const lines = s.ops.map((o) =>
+    JSON.stringify({
+      seq: o.seq,
+      op_id: o.op_id,
+      kind: o.kind,
+      status: o.status,
+      tier: o.tier,
+      requested_by: o.requested_by,
+      day: o.day,
+      mandate_version: 1,
+      summary: o.summary,
+      message: o.message,
+      prev_hash: o.prev_hash,
+      entry_hash: o.entry_hash,
+    }),
+  );
+  return lines.join("\n") + "\n";
+}
+
+// ------------------------------------------------------------------ writes
+
+function bundleFor(offerId: string) {
+  return FIXTURE_OFFERS.find((f) => f.view.offer.offer_id === offerId);
+}
+
+export async function submitOffer(req: SubmitOfferRequest): Promise<OfferView> {
+  await delay();
+  const text = req.documents[0]?.text.trim() ?? "";
+  const match = FIXTURE_OFFERS.find((f) => f.view.documents[0]?.text.trim() === text);
+  if (!match) {
+    throw new ApiError(
+      422,
+      "Mock mode compiles only the three demo messages (package offer, reworded offer, FastCapital). Set NEXT_PUBLIC_API_MODE=live to compile any text.",
+    );
+  }
+  const s = load();
+  s.offers[match.view.offer.offer_id] = clone(match.view);
+  save();
+  return clone(match.view);
+}
+
+export async function getOffer(offerId: string): Promise<OfferView> {
+  await delay();
+  const v = load().offers[offerId];
+  if (!v) throw new ApiError(404, `Offer ${offerId} not found.`);
+  return clone(v);
+}
+
+export async function evaluateOffer(offerId: string): Promise<VerdictView> {
+  await delay();
+  const s = load();
+  const b = bundleFor(offerId);
+  if (!b || !s.offers[offerId]) throw new ApiError(404, `Offer ${offerId} not found. Submit it first.`);
+  if (!s.evaluated.includes(offerId)) {
+    s.evaluated.push(offerId);
+    if (offerId === "OFF-SEC") {
+      s.securityScene = true;
+      append("reject_sec");
+    } else {
+      append("counter_a");
+      append("counter_b");
+    }
+    save();
+  }
+  return clone(b.verdict);
+}
+
+export async function negotiate(offerId: string, req: NegotiateRequest): Promise<NegotiationView> {
+  await delay();
+  const s = load();
+  if (!s.evaluated.includes(offerId) || offerId === "OFF-SEC") {
+    throw new ApiError(409, "Evaluate a package offer before negotiating.");
+  }
+  const existing = s.negotiated[offerId];
+  if (existing) return clone(existing);
+  let result: NegotiationView;
+  if (req.buyer_profile === "cooperative") {
+    const ops = [append("accept_a"), append("record_commitment"), append("draw_line")];
+    const res = clone(cast<NegotiationView>(negAccept));
+    res.offer_id = offerId;
+    res.operations = ops;
+    if (res.commitment) s.commitments.push(clone(res.commitment));
+    result = res;
+  } else {
+    const ops = [append("draw_line"), append("submit_invoice")];
+    const res = clone(cast<NegotiationView>(negNoDeal));
+    res.offer_id = offerId;
+    res.operations = ops;
+    result = res;
+  }
+  s.negotiated[offerId] = result;
+  save();
+  return clone(result);
+}
+
+function ensureApproval(key: "apply_loan" | "borrower_file"): ApprovalView {
+  const s = load();
+  const seed = cast<Record<string, ApprovalView>>(approvalsSeed)[key];
+  const found = s.approvals.find((a) => a.id === seed.id);
+  if (found) return found;
+  s.approvals.push(clone(seed));
+  return s.approvals[s.approvals.length - 1];
+}
+
+export async function capexEvaluate(_req: CapexRequest): Promise<CapexView> {
+  void _req;
+  await delay();
+  const s = load();
+  const first = !s.approvals.some((a) => a.id === "APR-1");
+  const approval = ensureApproval("apply_loan");
+  if (first) append("request_approval");
+  save();
+  const res = clone(cast<CapexView>(capexJson));
+  res.approval_id = approval.id;
+  return res;
+}
+
+export async function borrowerFile(_req: { facility_id: string; amount_fen: number }): Promise<BorrowerFileView> {
+  void _req;
+  await delay();
+  const s = load();
+  const first = !s.approvals.some((a) => a.id === "APR-2");
+  const approval = ensureApproval("borrower_file");
+  if (first) append("borrower_file");
+  save();
+  const res = clone(cast<BorrowerFileView>(borrowerFileJson));
+  res.approval_id = approval.id;
+  return res;
+}
+
+export async function decideApproval(id: string, decision: ApprovalDecision): Promise<ApprovalView> {
+  await delay();
+  const s = load();
+  const a = s.approvals.find((x) => x.id === id);
+  if (!a) throw new ApiError(404, `Approval ${id} not found.`);
+  if (a.status !== "PENDING") throw new ApiError(409, `Approval ${id} is already ${a.status}.`);
+  if (decision === "APPROVE") {
+    a.status = "APPROVED";
+    append(id === "APR-2" ? "release_borrower_file" : "apply_facility");
+  } else {
+    a.status = "REJECTED";
+    append("request_approval", {
+      status: "REFUSED",
+      requested_by: "OWNER",
+      message: "Owner rejected the request; nothing executed",
+      summary: `Owner rejected: ${a.subject}.`,
+    });
+  }
+  a.decided_day = 0;
+  save();
+  return clone(a);
+}
+
+export async function nl(req: NlRequest): Promise<NlResponse> {
+  await delay();
+  const asksCapex = /machine|capex|设备|机器/i.test(req.text);
+  return {
+    session_id: req.session_id ?? "mock-session",
+    reply: asksCapex
+      ? "Mock mode: use the Capex screen. The 36-month equipment loan is the only structure that keeps every covenant."
+      : "Mock mode answers only the capex question. Switch to live mode for free-form requests.",
+    intent: asksCapex ? "CAPEX_EVALUATE" : "UNSUPPORTED_IN_MOCK",
+    plan: asksCapex ? ["capex.evaluate", "borrower_file.prepare (Tier 2)"] : [],
+    verdict: null,
+    operations: [],
+    clarification: asksCapex ? null : "Try: Can we buy the ¥600k machine?",
+  };
+}
+
+export async function demoReset(): Promise<void> {
+  await delay();
+  memory = emptyStore();
+  save();
+}
