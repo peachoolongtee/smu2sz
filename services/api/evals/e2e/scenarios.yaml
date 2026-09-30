@@ -114,7 +114,7 @@ scenarios:
            requested_by: AGENT, facility_id: FAC-GGL, amount_fen: 20000000}
     turns:
       - text: "Evaluate EX05"
-        expect: {intent: EVALUATE_OFFER, outcome: ACCEPT, awaiting: true, ops_count: 0}
+        expect: {intent: EVALUATE_OFFER, outcome: NEEDS_OWNER_APPROVAL, awaiting: true, ops_count: 0}
       - text: "go ahead"
         expect: {intent: EVALUATE_OFFER, ops: ["ACCEPT_OFFER:PENDING_APPROVAL"],
                  reply_contains: ["awaits the owner's approval (APR-000002)"], reply_excludes: ["Agreed"]}
@@ -153,7 +153,7 @@ scenarios:
     tags: [EX08, EX08A, EX08B, concurrency]
     turns:
       - text: "Evaluate EX08A"
-        expect: {intent: EVALUATE_OFFER, outcome: ACCEPT, awaiting: true}
+        expect: {intent: EVALUATE_OFFER, outcome: NEEDS_OWNER_APPROVAL, awaiting: true}
       - text: "go ahead"
         expect: {intent: EVALUATE_OFFER, ops: ["ACCEPT_OFFER:PENDING_APPROVAL"]}
       - text: "approve it"

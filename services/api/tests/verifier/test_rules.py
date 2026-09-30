@@ -45,7 +45,7 @@ def _rebate_offer(offer_id: str, cp: str = "BUYER-1", *, amount_fen: int | None 
 def test_forward_value_exactly_on_the_cap_passes(state, mandate, key):
     cap = mandate.max_aggregate_forward_concession_fen
     v = evaluate(_rebate_offer("CAP-EQ", amount_fen=cap), state, mandate, trusted_owner_key_hex=key).verdict
-    assert v.outcome == Outcome.ACCEPT and v.violations == []
+    assert v.outcome == Outcome.NEEDS_OWNER_APPROVAL and v.violations == []  # a rebate: Tier 2
     assert v.forward_concession_total_fen == cap
 
 
@@ -235,16 +235,16 @@ def test_ex10_two_events():
 def test_evaluate_many_reserves_in_order(state, mandate, key):
     a, b = compiled("EX08A_JOINT_BUYER1"), compiled("EX08B_JOINT_BUYER2")
     first, second = evaluate_many([a, b], state, mandate, trusted_owner_key_hex=key)
-    assert first.verdict.outcome == Outcome.ACCEPT and first.verdict.forward_concession_total_fen == 300_000
+    assert first.verdict.outcome == Outcome.NEEDS_OWNER_APPROVAL and first.verdict.forward_concession_total_fen == 300_000
     assert second.verdict.outcome == Outcome.COUNTER
     (c,) = second.verdict.counters
     assert c.obligations[0].rate_bp == 80 and c.supplier_cost_fen == 200_000  # ¥5,000 − ¥3,000 left
     assert c.text == "We can offer 0.80% off next quarter's purchases of up to ¥250,000."
     # the reverse order accepts BUYER-2 and counters BUYER-1
     r1, r2 = evaluate_many([b, a], state, mandate, trusted_owner_key_hex=key)
-    assert r1.verdict.outcome == Outcome.ACCEPT and r2.verdict.outcome == Outcome.COUNTER
-    # alone, each fits
-    assert evaluate(b, state, mandate, trusted_owner_key_hex=key).verdict.outcome == Outcome.ACCEPT
+    assert r1.verdict.outcome == Outcome.NEEDS_OWNER_APPROVAL and r2.verdict.outcome == Outcome.COUNTER
+    # alone, each fits (a rebate still waits for the owner)
+    assert evaluate(b, state, mandate, trusted_owner_key_hex=key).verdict.outcome == Outcome.NEEDS_OWNER_APPROVAL
 
 
 # ---------------------------------------------------------------- tiers and the port

@@ -44,7 +44,7 @@ offers:
       - {doc_id: EX05-msg, channel: chat, sender_id: BUYER-1, received_day: 0,
          text: "Consolidate deliveries to our Foshan DC and we'll move you to 30-day terms."}
     declared_costs: {shipment_cost_fen: 15000, shipments_per_year: 52}
-    expect: {outcome: ACCEPT, obligations: [OPERATIONAL_CONCESSION, TERMS_EXTENSION], funding_saved_12m_fen: 2245562}
+    expect: {outcome: NEEDS_OWNER_APPROVAL, obligations: [OPERATIONAL_CONCESSION, TERMS_EXTENSION], funding_saved_12m_fen: 2245562}
   - id: EX06_THREE_INVOICES
     counterparty_id: BUYER-1
     documents:
@@ -64,7 +64,7 @@ offers:
     documents:
       - {doc_id: EX08A-msg, channel: chat, sender_id: BUYER-1, received_day: 0,
          text: "Give us 0.75% off next quarter's purchases of up to ¥400,000 and we'll commit the order."}
-    expect: {concurrent_with: EX08B_JOINT_BUYER2, outcome: ACCEPT}
+    expect: {concurrent_with: EX08B_JOINT_BUYER2, outcome: NEEDS_OWNER_APPROVAL}
   - id: EX08B_JOINT_BUYER2
     counterparty_id: BUYER-2
     documents:
