@@ -59,7 +59,7 @@ def test_tier3_via_nl_is_refused_by_the_executor(client, rt):
 
 
 def test_owner_approve_without_token_is_refused(client, rt):
-    # A Tier-2 application waits in the queue (EX05 shortens terms, so it is Tier 1 and needs no approval).
+    # A Tier-2 application waits in the queue.
     body = {"kind": "APPLY_FOR_FACILITY", "op_id": "a1", "idempotency_key": "a1", "mandate_version": 1,
             "requested_by": "AGENT", "facility_id": "FAC-GGL", "amount_fen": 20_000_000}
     assert client.post("/operations", json=body, headers=AGENT).json()["result"]["status"] == "PENDING_APPROVAL"
@@ -68,6 +68,35 @@ def test_owner_approve_without_token_is_refused(client, rt):
     assert r["intent"] == "APPROVE" and ops(r) == [("APPLY_FOR_FACILITY", "REFUSED")]
     assert any(e.kind == SecurityEventKind.PRIVILEGE_ESCALATION for e in rt.store.security_events())
     assert ops(c.say("approve it")) == [("APPLY_FOR_FACILITY", "EXECUTED")]
+
+
+def test_an_early_pay_only_acceptance_is_agreed_at_tier1(client, rt):
+    r = Chat(client, "ep", actor="COUNTERPARTY", owner=False, counterparty_id="BUYER-1").say(
+        "We can pay this one early at 0.5%. Nothing else changes.")
+    assert ops(r) == [("ACCEPT_OFFER", "EXECUTED")] and r["operations"][0]["tier"] == "TIER_1"
+    assert r["reply"] == "Agreed as proposed."
+
+
+def test_a_rebate_acceptance_is_not_agreed_until_the_owner_approves(client, rt):
+    """A buyer's rebate is Tier 2: the reply must not say it is agreed, and nothing is booked."""
+    r = Chat(client, "reb", actor="COUNTERPARTY", owner=False, counterparty_id="BUYER-1").say(
+        "Rebate of 1% on next quarter purchases, nothing else changes.")
+    assert ops(r) == [("ACCEPT_OFFER", "PENDING_APPROVAL")] and r["operations"][0]["tier"] == "TIER_2"
+    assert "Agreed" not in r["reply"] and "awaits the owner's approval" in r["reply"]
+    assert rt.store.get_state().forward_concessions == []
+
+
+def test_owner_go_ahead_on_ex05_awaits_the_owner_then_only_the_token_approves(client, rt):
+    c = Chat(client, "ex05")
+    assert c.say("Evaluate EX05")["awaiting_confirmation"]
+    r = c.say("go ahead")
+    assert ops(r) == [("ACCEPT_OFFER", "PENDING_APPROVAL")]
+    assert "Agreed" not in r["reply"] and "awaits the owner's approval (APR-000001)" in r["reply"]
+    refused = c.say("approve it", owner=False)
+    assert ops(refused) == [("ACCEPT_OFFER", "REFUSED")] and "only the owner" in refused["reply"]
+    assert rt.store.get_state().forward_concessions == []
+    assert ops(c.say("approve it")) == [("ACCEPT_OFFER", "EXECUTED")]
+    assert len(rt.store.get_state().forward_concessions) == 1
 
 
 def test_egress_blocks_a_counter_that_would_state_the_floor(client, rt, monkeypatch):

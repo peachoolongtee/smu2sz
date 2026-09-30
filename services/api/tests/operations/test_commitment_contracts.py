@@ -1,5 +1,6 @@
 """propose_commitment commits exactly what was verified (the verdict's bound obligations, or a counter's
-obligations) at its forward value, never an immediate cost; only a lengthening terms change is Tier 2."""
+obligations) at its forward value, never an immediate cost. Any terms change, in either direction, is Tier 2:
+only an early-pay discount on a named invoice is accepted autonomously."""
 
 from __future__ import annotations
 
@@ -10,6 +11,7 @@ import pytest
 from app.commitments import new_commitment, terms_hash
 from app.domain.models import (
     AcceptOffer,
+    Actor,
     CommitmentStatus,
     ConcessionValue,
     Contingency,
@@ -97,21 +99,21 @@ def test_verdict_forward_value_nets_only_firm_gains_and_floors_at_zero() -> None
     assert v({"OB-C": 100_000, "OB-F": -200_000}, [cost, firm_gain]) == 0  # never creates headroom
 
 
-@pytest.mark.parametrize(("delta", "tier", "status"), [
-    (-15, Tier.TIER_1, S.EXECUTED),  # a shortening (EX05) is a gain: Tier 1
-    (15, Tier.TIER_2, S.PENDING_APPROVAL),
-    (None, Tier.TIER_2, S.PENDING_APPROVAL),  # an unbound delta fails closed
+@pytest.mark.parametrize("delta", [
+    -15,  # a shortening (EX05) is a gain, but it is not an early-pay discount: the owner decides
+    15,
+    None,  # an unbound delta fails closed
 ])
-def test_only_a_lengthening_terms_change_is_tier2(delta: int | None, tier: Tier, status: S, ex: Any, store: Any,
-                                                 clock: Clock) -> None:
+def test_every_terms_change_is_tier2(delta: int | None, ex: Any, store: Any, clock: Clock) -> None:
     ext = extension("OB-X", days_delta=15).model_copy(update={"days_delta": delta})
     store.put_offer(offer("OFF-X", [ext]))
     store.put_verdict(verdict("V-X", "OFF-X", bound=[ext], value_fen=0))
     c = ex.propose_commitment("V-X", expires_day=5, nonce="NX")
     result = ex.execute(accept(clock, c))
-    assert (result.tier, result.status) == (tier, status)
-    expected = CommitmentStatus.ACTIVE if status == S.EXECUTED else CommitmentStatus.PROPOSED
-    assert store.get_commitment(c.id).status == expected
+    assert (result.tier, result.status) == (Tier.TIER_2, S.PENDING_APPROVAL)
+    assert store.get_commitment(c.id).status == CommitmentStatus.PROPOSED
+    done = ex.decide(result.approval_id, True, Actor.OWNER)
+    assert done.status == S.EXECUTED and store.get_commitment(c.id).status == CommitmentStatus.ACTIVE
 
 
 def test_lengthens_terms() -> None:

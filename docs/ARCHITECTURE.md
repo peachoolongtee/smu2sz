@@ -118,10 +118,10 @@ Every violation carries a `formula` and `inputs` the UI can show verbatim.
 
 ## Operations and tiers (binding for `operations/`)
 
-- **Tier 1:** accept, counter and reject within the mandate (below `tier2_single_commitment_fen` in forward value, no terms change); draw on or submit invoices to a COMMITTED, owner-approved facility at any size within its limit (spec §5.3); record commitment; draw and repay a COMMITTED facility; submit an eligible invoice to the onboarded financing facility; receive payment.
+- **Tier 1:** accept an early-pay discount on a named invoice with nothing else changed; any other accepted package is Tier 2 (spec §5.3's example; EV-01/EV-02). Counter and reject within the mandate (acceptance also below `tier2_single_commitment_fen` in forward value); draw on or submit invoices to a COMMITTED, owner-approved facility at any size within its limit (spec §5.3); record a commitment of that same early-pay kind; draw and repay a COMMITTED facility; submit an eligible invoice to the onboarded financing facility; receive payment.
 - **Tier 2:**
   - apply for a facility;
-  - accept a terms change;
+  - accept or record any package other than an early-pay discount on a named invoice (rebates, terms changes in either direction, price adjustments, volume or operational concessions);
   - capex financing;
   - any single commitment above `tier2_single_commitment_fen`;
   - generate the borrower file (prepared, not sent).

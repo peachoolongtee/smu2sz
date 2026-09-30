@@ -85,6 +85,21 @@ def rebate(oid: str = "OB-R", rate_bp: int = 100, cap_fen: int = 30_000_000) -> 
     )
 
 
+def early_pay(oid: str = "OB-D", rate_bp: int = 85, receivable_id: str | None = "RCV-A") -> Obligation:
+    """An early-payment discount on one named invoice: the only package accepted autonomously (Tier 1)."""
+    return Obligation(
+        id=oid,
+        type=ObligationType.IMMEDIATE_DISCOUNT,
+        counterparty_id=BUYER,
+        rate_bp=rate_bp,
+        base=ObligationBase(kind=BaseKind.INVOICE, receivable_id=receivable_id),
+        contingency=Contingency.FIRM,
+        duration=Duration(kind=DurationKind.ONE_OFF),
+        spans=[span("0.85% discount for payment of RCV-A now")],
+        confidence=0.9,
+    )
+
+
 def extension(oid: str = "OB-T", days_delta: int = 15) -> Obligation:
     return Obligation(
         id=oid,
@@ -152,7 +167,7 @@ def counter(counter_id: str = "CTR-A", obligations: list[Obligation] | None = No
         id=counter_id,
         label="Option A",
         text="We can offer a 0.85% early-payment discount on invoice RCV-A.",
-        obligations=obligations or [rebate("OB-C", rate_bp=50)],
+        obligations=obligations or [early_pay("OB-C")],
         supplier_cost_fen=cost_fen,
         forward_value_fen=cost_fen if forward_fen is None else forward_fen,
         rationale="priced below break-even",
@@ -164,8 +179,8 @@ def seed_offer(store: Any, ex: Executor, offer_id: str = "OFF-1", *, obligations
                value_fen: int = 300_000, tier: Tier = Tier.TIER_1, expires_day: int = 5,
                nonce: str | None = None) -> Any:
     """Store an offer and an ACCEPT verdict that verified its obligations, and propose its commitment.
-    Returns the commitment."""
-    obs = obligations or [rebate()]
+    Returns the commitment. The default is an early-pay discount on RCV-A, the Tier-1 acceptance."""
+    obs = obligations or [early_pay()]
     store.put_offer(offer(offer_id, obs))
     store.put_verdict(verdict(f"V-{offer_id}", offer_id, value_fen=value_fen, tier=tier, bound=obs))
     return ex.propose_commitment(f"V-{offer_id}", expires_day=expires_day, nonce=nonce or f"NONCE-{offer_id}")

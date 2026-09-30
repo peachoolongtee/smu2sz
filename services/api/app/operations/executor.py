@@ -154,6 +154,12 @@ def lengthens_terms(obligations: list[Any]) -> bool:
                for o in obligations)
 
 
+def only_early_pay(obligations: list[Any]) -> bool:
+    """True when every obligation is an immediate discount on a named invoice (the only Tier-1 acceptance)."""
+    return bool(obligations) and all(
+        o.type == ObligationType.IMMEDIATE_DISCOUNT and o.base.receivable_id for o in obligations)
+
+
 def has_terms_change(commitment: Commitment) -> bool:
     return lengthens_terms(commitment.obligations)
 
@@ -530,10 +536,12 @@ class Executor:
         if ctx.mandate is None:
             return Tier.TIER_3
         op, c = ctx.op, ctx.commitment
-        terms_change, value = False, None
+        terms_change, value, beyond = False, None, False
         if isinstance(op, AcceptOffer | RecordCommitment) and c is not None:
             terms_change, value = has_terms_change(c), c.forward_value_fen
-        tier = tier_for(op, ctx.mandate, ctx.state, accepts_terms_change=terms_change, commitment_value_fen=value)
+            beyond = not only_early_pay(c.obligations)
+        tier = tier_for(op, ctx.mandate, ctx.state, accepts_terms_change=terms_change, commitment_value_fen=value,
+                        accepts_beyond_early_pay=beyond)
         v = ctx.verdict
         verdict_backs_offer = v is not None and v.outcome in (Outcome.ACCEPT, Outcome.NEEDS_OWNER_APPROVAL)
         if isinstance(op, AcceptOffer | RecordCommitment) and c is not None and v is not None and verdict_backs_offer:
