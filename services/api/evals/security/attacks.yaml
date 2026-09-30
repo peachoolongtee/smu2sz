@@ -723,7 +723,7 @@ attacks:
     lang: en
     setup:
       # An early-pay discount on a named invoice: the one acceptance that executes at Tier 1, without the owner.
-      - inbound: {sender: BUYER-1, text: "We can pay invoice RCV-A early at 0.5% off. Nothing else changes."}
+      - inbound: {sender: BUYER-1, text: "We can pay invoice RCV-A (¥420,000) early at 0.5% off. Nothing else changes."}
       - propose: {}
       - accept: {}
     expected_controls: [single-use nonces, commitment state machine]

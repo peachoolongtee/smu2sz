@@ -42,9 +42,6 @@ def _verdict(offer: Any) -> tuple[str, list[str]]:
 
 
 @pytest.mark.parametrize("text", [
-    # a stated settlement window and "provided you allow"
-    "Hello, our treasury can transfer the ¥420,000 for your invoice (due late October) within 3 business days "
-    "provided you allow a 0.6% discount.",
     # typos: settel / setle, "inv"
     "We will settel the 420k invoice ahead of schedule, 0.7% off please.",
     "we can setle the 420k inv early 0.6% off",
@@ -53,16 +50,32 @@ def _verdict(offer: Any) -> tuple[str, list[str]]:
     "Pay the ¥420k invoice right now, less 0.6%?",
     # mixed zh/en with a question tag
     "Pls confirm: 420,000元的invoice, early payment, discount 0.6% 行吗",
-    "420,000元那张invoice我们下周early pay, discount 0.6% 可以吗",
-    # zh window "两天内付清"
-    "42万那张发票我们两天内付清，折扣0.6%",
-    "We can pay within 5 days if you give us 0.6% off the ¥420k invoice",
 ])
 def test_clear_early_pay_below_break_even_is_read_and_accepted(rules_compiler: Compiler, text: str) -> None:
     offer = _compile(rules_compiler, text)
     assert offer.status == CompileStatus.COMPILED
     assert [(o.type, o.base.amount_fen) for o in offer.obligations] == [(T.IMMEDIATE_DISCOUNT, 42_000_000)]
+    assert offer.autonomy_eligible, offer.autonomy_notes
     assert _verdict(offer)[0] == "ACCEPT"
+
+
+@pytest.mark.parametrize("text", [
+    # a stated settlement window and "provided you allow"
+    "Hello, our treasury can transfer the ¥420,000 for your invoice (due late October) within 3 business days "
+    "provided you allow a 0.6% discount.",
+    "420,000元那张invoice我们下周early pay, discount 0.6% 可以吗",
+    # zh window "两天内付清"
+    "42万那张发票我们两天内付清，折扣0.6%",
+    "We can pay within 5 days if you give us 0.6% off the ¥420k invoice",
+])
+def test_a_stated_settlement_window_is_read_but_waits_for_the_owner(rules_compiler: Compiler, text: str) -> None:
+    """The window is not read into the term (the verifier assumes its own settlement day), so the coverage proof
+    fails and the discount, below break-even, waits for the owner instead of being accepted (ADR-0005)."""
+    offer = _compile(rules_compiler, text)
+    assert offer.status == CompileStatus.COMPILED
+    assert [(o.type, o.base.amount_fen) for o in offer.obligations] == [(T.IMMEDIATE_DISCOUNT, 42_000_000)]
+    assert not offer.autonomy_eligible
+    assert _verdict(offer)[0] == "NEEDS_OWNER_APPROVAL"
 
 
 def test_due_early_names_the_due_date_not_an_early_payment(rules_compiler: Compiler) -> None:
@@ -121,7 +134,9 @@ def test_conflicting_amounts_are_conflicting_sources(rules_compiler: Compiler, t
 def test_two_invoices_named_in_one_message_are_not_a_conflict(rules_compiler: Compiler) -> None:
     offer = _compile(rules_compiler, "We'll pay the ¥420k invoice early at 0.6%; the ¥150k invoice stays on normal terms.")
     assert offer.status == CompileStatus.COMPILED
-    assert _verdict(offer)[0] == "ACCEPT"
+    # the second invoice is not a term of this offer, so it is not accounted for: the owner decides
+    assert not offer.autonomy_eligible
+    assert _verdict(offer)[0] == "NEEDS_OWNER_APPROVAL"
 
 
 def test_a_second_rate_for_the_early_payment_abstains(rules_compiler: Compiler) -> None:
@@ -174,7 +189,9 @@ def test_changing_a_protected_setting_is_an_override_not_a_data_request(rules_co
     assert offer.data_requests == []
     assert "INSTRUCTION_OVERRIDE" in {c.kind for c in offer.authority_claims}
     assert [o.type for o in offer.obligations] == [T.IMMEDIATE_DISCOUNT]
-    assert _verdict(offer)[0] == "ACCEPT"
+    # the offer is still read, but an injected instruction is never accepted without the owner
+    assert not offer.autonomy_eligible
+    assert _verdict(offer)[0] == "NEEDS_OWNER_APPROVAL"
 
 
 def test_a_claimed_cap_change_is_not_a_data_request(rules_compiler: Compiler) -> None:

@@ -72,7 +72,7 @@ def test_owner_approve_without_token_is_refused(client, rt):
 
 def test_an_early_pay_only_acceptance_is_agreed_at_tier1(client, rt):
     r = Chat(client, "ep", actor="COUNTERPARTY", owner=False, counterparty_id="BUYER-1").say(
-        "We can pay this one early at 0.5%. Nothing else changes.")
+        "We can pay the ¥420,000 invoice early at 0.5%. Nothing else changes.")
     assert ops(r) == [("ACCEPT_OFFER", "EXECUTED")] and r["operations"][0]["tier"] == "TIER_1"
     assert r["reply"] == "Agreed as proposed."
 
