@@ -6,7 +6,6 @@ plan carried by the verifier's verdict on the status quo; operations are built f
 
 from __future__ import annotations
 
-import hashlib
 from dataclasses import dataclass
 from fractions import Fraction
 
@@ -30,7 +29,6 @@ from app.domain.models import (
     Outcome,
     RepayFacility,
     Repayment,
-    Tier,
 )
 from app.domain.money import BP_DENOM, Ratio, fmt_pct, fmt_yuan
 from app.financial import project
@@ -51,7 +49,7 @@ from app.nl.pipeline import (
 )
 from app.nl.sessions import PendingPlan
 from app.nl.turn import Turn, ask
-from app.verifier import counters as make_counters
+from app.verifier import OwnerConstraints
 
 STEP_BP = 5
 
@@ -278,21 +276,22 @@ def accelerate(ctx: NlContext, slots: Slots, text: str, *, execute: bool = False
                                  f"{fmt_pct(be_ratio.value)}). The plan is unchanged.",
                             f"不能使用 {fmt_pct(Fraction(slots.rate_bp, BP_DENOM))}：高于 {fmt_pct(Fraction(cap, BP_DENOM))} "
                             f"的提前付款折扣比发票融资更贵（盈亏平衡 {fmt_pct(be_ratio.value)}）。方案不变。"))
+    # The buyer's standing early-pay offer on the invoice (or, without one, the first rate at the
+    # break-even, which the owner would never give); the owner's goal caps early pay at `limit` with
+    # zero forward concessions. The verifier applies the goal itself: COUNTER with its own counters.
     standing = next((f for f in state.facilities if f.kind == FacilityKind.BUYER_EARLY_PAY and f.lender_id == cp
                      and f.status == FacilityStatus.COMMITTED), None)
-    ask_bp = standing.rate_bp if standing is not None else cap
-    offered = min(ask_bp, slots.rate_bp) if slots.rate_bp is not None else ask_bp
-
-    goal = _goal_offer(ctx, text, cp, rcv.id, rcv.face_fen, offered)
-    b = ctx.evaluate(goal)
+    ask_bp = standing.rate_bp if standing is not None else cap + STEP_BP
+    limit = min(cap, slots.rate_bp) if slots.rate_bp is not None else cap
+    goal = _goal_offer(ctx, text, cp, rcv.id, rcv.face_fen, ask_bp)
+    b = ctx.evaluate(goal, owner_constraints=OwnerConstraints(max_early_pay_bp=limit, zero_forward_concessions=True))
     v = b.verdict
-    zero = [c for c in make_counters(goal, v, state, mandate, owner_declared=ctx.declared(state))
-            if _zero_forward(c) and all((o.rate_bp or 0) <= cap for o in c.obligations)]
+    zero = v.counters if v.outcome == Outcome.COUNTER else []
     steps.add("VERIFY", t(ctx, f"Break-even discount {fmt_pct(be_ratio.value)} (d/(1−d) < marginal cost of funds "
                                f"for 30 days); counter cap {fmt_pct(Fraction(cap, BP_DENOM))}; forward concessions ¥0.00",
                           f"盈亏平衡折扣 {fmt_pct(be_ratio.value)}；反报价上限 {fmt_pct(Fraction(cap, BP_DENOM))}；远期让步 ¥0.00"),
               "DONE")
-    if v.outcome in (Outcome.REJECT, Outcome.NO_VERDICT) and not v.counters or not zero:
+    if not zero:
         steps.add("VERIFY", verdict_line(ctx, v), "DONE")
         if fallback is not None:
             funding_ops(ctx, steps, fallback, execute=execute, condition=if_cond)
@@ -300,7 +299,7 @@ def accelerate(ctx: NlContext, slots: Slots, text: str, *, execute: bool = False
                     reply=t(ctx, "No early-pay counter fits the goal; the committed financing plan applies.",
                             "没有符合目标的提前付款反报价；适用已承诺融资方案。"))
     counter = zero[0]
-    gv = _goal_verdict(ctx, v, counter, cap)
+    gv = v
     steps.add("COUNTER_OFFER", f"{counter.label}: {counter.text}", "PROPOSED")
     steps.add("NEGOTIATE", t(ctx, f"Bounded rounds with {cp}", f"与 {cp} 有限轮次谈判"))
     steps.add("ACCEPT_OFFER", t(ctx, "Record the commitment (nonce, expiry)", "记录承诺（随机数、到期日）"),
@@ -365,27 +364,6 @@ def _goal_offer(ctx: NlContext, text: str, cp: str, receivable_id: str, face: in
     oid = f"GOAL-{cp}-{receivable_id}-{rate_bp}-d{ctx.day}"
     return CompiledOffer(offer_id=oid, counterparty_id=cp, doc_ids=[doc.doc_id], received_day=ctx.day,
                          status=CompileStatus.COMPILED, obligations=[ob], compiler="nl-goal", prompt_version="nl-v1")
-
-
-def _goal_verdict(ctx: NlContext, v, counter: CounterProposal, cap: int):
-    """The owner's goal is stricter than the mandate (early pay at most `cap`, zero forward concessions).
-    The verdict is only ever tightened here (ACCEPT -> COUNTER with the verifier's own counter), never
-    loosened, and it is stored under its own id so the executor can check the counter against it.
-    See INTERFACE_CHANGE_REQUEST: owner goal constraints in `verifier.evaluate`."""
-    if v.outcome == Outcome.COUNTER and any(c.id == counter.id for c in v.counters):
-        return v
-    gid = f"{v.id}-G{hashlib.sha256(counter.id.encode()).hexdigest()[:6]}"
-    gv = v.model_copy(update={
-        "id": gid, "outcome": Outcome.COUNTER, "counters": [counter], "required_tier": Tier.TIER_1,
-        "summary": f"COUNTER (owner goal: early pay at most {fmt_pct(Fraction(cap, BP_DENOM))}, zero forward "
-                   f"concessions; mandate verdict was {v.outcome.value}). {v.summary}"})
-    ctx.store.put_verdict(gv)
-    ctx.session.last_verdict_id = gid
-    return gv
-
-
-def _zero_forward(c: CounterProposal) -> bool:
-    return c.forward_value_fen == 0 and all(o.type == ObligationType.IMMEDIATE_DISCOUNT for o in c.obligations)
 
 
 def _face(c: CounterProposal) -> int:

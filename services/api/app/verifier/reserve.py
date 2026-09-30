@@ -16,6 +16,7 @@ takes the capacity it uses off those facilities' limits, so the cure prices only
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from functools import lru_cache
 
 from app.covenants import line_can_carry_permanent_need
@@ -157,11 +158,13 @@ def cure_plan(
     offer_traj: Trajectory,
     base_traj: Trajectory,
     base_plan: FundingPlan,
+    planner: Callable[[FinancialState, list[Obligation], Mandate, str], FundingPlan] = funding_plan,
 ) -> FundingPlan:
-    """The cheapest committed plan on permanent-capable sources for the offer's trajectory."""
+    """The cheapest committed plan on permanent-capable sources for the offer's trajectory. `planner` is
+    the router (the verifier passes its per-evaluation memo)."""
     floor = mandate.min_cash_fen
     base_first = next((p.day for p in base_traj.days if p.closing_fen < floor), None)
     offer = _closing(offer_traj)
     gap_left_open = base_first is not None and offer.get(base_first, floor) < floor and bool(base_plan.actions)
     cstate = cure_state(state, (base_traj, base_plan, mandate) if gap_left_open else None)
-    return funding_plan(cstate, bound, mandate, "COMMITTED")
+    return planner(cstate, bound, mandate, "COMMITTED")

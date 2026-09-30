@@ -2,7 +2,8 @@
 marginal cost of funds. Reads typed contracts only, never free text (INVARIANT 2); conservative
 mode alone decides (INVARIANT 11).
 
-Public interface: `bind()`, `evaluate()` (-> VerdictBundle), `evaluate_verdict()` (-> Verdict),
+Public interface: `bind()`, `evaluate()` (-> VerdictBundle; optional `owner_constraints: OwnerConstraints`
+and `plans="all"|"committed"`), `evaluate_verdict()` (-> Verdict),
 `evaluate_many()`, `evaluate_term_sheet()`, `counters()`, and `Verifier`, which satisfies
 `app.domain.ports.Verifier`.
 """
@@ -15,8 +16,8 @@ from typing import Any
 from app.domain.models import Commitment, CompiledOffer, CounterProposal, FinancialState, Mandate, Verdict
 from app.verifier.bind import bind
 from app.verifier.counters import counters
-from app.verifier.evaluate import evaluate, evaluate_many, evaluate_term_sheet, evaluate_verdict
-from app.verifier.models import CALC_VERSION, BindNote, PassedCheck, VerdictBundle
+from app.verifier.evaluate import clear_caches, evaluate, evaluate_many, evaluate_term_sheet, evaluate_verdict
+from app.verifier.models import CALC_VERSION, BindNote, OwnerConstraints, PassedCheck, VerdictBundle
 from app.verifier.screen import REFUSAL_REPLY
 
 
@@ -56,10 +57,12 @@ __all__ = [
     "CALC_VERSION",
     "REFUSAL_REPLY",
     "BindNote",
+    "OwnerConstraints",
     "PassedCheck",
     "VerdictBundle",
     "Verifier",
     "bind",
+    "clear_caches",
     "counters",
     "evaluate",
     "evaluate_many",

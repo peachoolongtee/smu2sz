@@ -28,8 +28,9 @@ from app.domain.ports import LedgerStore
 from app.egress import AllowedValue, ProtectedSet, guard
 from app.nl.sessions import Session
 from app.operations import Executor
-from app.verifier import VerdictBundle
+from app.verifier import OwnerConstraints, VerdictBundle
 from app.verifier import evaluate as verify
+from app.verifier.evaluate import Plans
 
 
 @dataclass
@@ -74,9 +75,12 @@ class NlContext:
         return {"period_purchases_fen": purchases, **(dict(extra) if extra else {})}
 
     def evaluate(self, offer: CompiledOffer, *, declared: Mapping[str, Any] | None = None,
-                 remember: bool = True, state: FinancialState | None = None) -> VerdictBundle:
+                 remember: bool = True, state: FinancialState | None = None,
+                 owner_constraints: OwnerConstraints | None = None, plans: Plans = "all") -> VerdictBundle:
         """`state` is a hypothetical variant of the stored state (e.g. one gap only); the verdict is
-        still the verifier's, and the operations built from it still pass the executor's gates."""
+        still the verifier's, and the operations built from it still pass the executor's gates.
+        `owner_constraints` passes the owner's goal to the verifier (it only tightens); `plans` as in
+        `app.verifier.evaluate`."""
         state = state or self.state()
         mandate = self.mandate()
         if declared is None and offer.offer_id in self.session.offer_fixtures:
@@ -84,7 +88,8 @@ class NlContext:
 
             declared = load_offers()[self.session.offer_fixtures[offer.offer_id]].get("declared_costs")
         bundle = verify(offer, state, mandate, trusted_owner_key_hex=self.owner_key_hex, day=self.day,
-                        owner_declared=self.declared(state, declared), commitments=self.store.commitments())
+                        owner_declared=self.declared(state, declared), commitments=self.store.commitments(),
+                        owner_constraints=owner_constraints, plans=plans)
         self.store.put_offer(offer)
         self.store.put_verdict(bundle.verdict)
         for ev in bundle.security_events:

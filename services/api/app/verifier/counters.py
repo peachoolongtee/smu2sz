@@ -52,6 +52,8 @@ from app.domain.money import BP_DENOM, DAYS_PER_YEAR, Ratio, bp, fmt_pct, fmt_yu
 from app.financial import project, value_concessions
 from app.funding import NoPermanentSourceError, break_even_discount, marginal_cost
 from app.verifier.bind import bind, early_pay_lead, is_claimed, is_gain, open_receivables, recurring_for
+from app.verifier.models import OwnerConstraints
+from app.verifier.owner import breaches as owner_breaches
 from app.verifier.reserve import baseline
 
 STEP_BP = 5
@@ -115,6 +117,7 @@ class _Ctx:
     bound: list[Obligation]
     rate: Fraction  # marginal all-in annual rate
     rate_label: str
+    constraints: OwnerConstraints | None = None  # the owner's goal for this evaluation, if any
 
     @property
     def cp(self) -> str:
@@ -216,6 +219,8 @@ def early_pay_counter(ctx: _Ctx, label: str = "Option A") -> CounterProposal | N
         rate_bp = min(rate_bp, min(offered))
     if ctx.mandate.max_immediate_discount_bp is not None:
         rate_bp = min(rate_bp, ctx.mandate.max_immediate_discount_bp)
+    if ctx.constraints is not None and ctx.constraints.max_early_pay_bp is not None:
+        rate_bp = min(rate_bp, ctx.constraints.max_early_pay_bp)
     if rate_bp <= 0:
         return None
 
@@ -395,8 +400,12 @@ def counters(
     *,
     bound: Sequence[Obligation] | None = None,
     owner_declared: Mapping[str, Any] | None = None,
+    owner_constraints: OwnerConstraints | None = None,
 ) -> list[CounterProposal]:
-    """Counters for a verdict that needs one. Empty when no counter is possible or appropriate."""
+    """Counters for a verdict that needs one. Empty when no counter is possible or appropriate.
+
+    With `owner_constraints`, the early-pay rate is capped at the owner's maximum and every counter that
+    still breaks a constraint is dropped."""
     codes = {v.code for v in verdict.violations}
     if codes & NO_COUNTER_CODES:
         return []
@@ -408,7 +417,16 @@ def counters(
         return []
     fac = next(f for f in state.facilities if f.id == fid)
     ctx = _Ctx(offer, verdict, state, mandate, list(bound), rate_ratio.value,
-               f"committed marginal source: {fac.name} {fmt_pct(rate_ratio.value, 4)}")
+               f"committed marginal source: {fac.name} {fmt_pct(rate_ratio.value, 4)}", owner_constraints)
+    out = _counters(ctx, offer)
+    if owner_constraints is None:
+        return out
+    return [c for c in out if not owner_breaches(
+        c.obligations, value_concessions(c.obligations, state, _ratio(ctx.rate), ctx.rate_label,
+                                         mandate.forward_concession_horizon_days), state, owner_constraints)]
+
+
+def _counters(ctx: _Ctx, offer: CompiledOffer) -> list[CounterProposal]:
 
     lengthening = [o for o in ctx.of_type(ObligationType.TERMS_EXTENSION) if (o.days_delta or 0) > 0]
     perpetual = [o for o in lengthening if o.duration.kind == DurationKind.RECURRING_PERPETUAL]

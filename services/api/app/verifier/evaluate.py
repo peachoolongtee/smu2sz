@@ -17,9 +17,11 @@ expected plan is returned for display and never consulted.
 from __future__ import annotations
 
 import hashlib
-from collections.abc import Mapping, Sequence
+import threading
+from collections import OrderedDict
+from collections.abc import Callable, Mapping, Sequence
 from fractions import Fraction
-from typing import Any
+from typing import Any, Literal
 
 from app.covenants import evaluate as evaluate_covenants
 from app.covenants import fmt_x, line_balances, longest_zero_run, pro_forma
@@ -56,7 +58,9 @@ from app.funding import plan as funding_plan
 from app.mandate import check_apr, check_predicates, check_validity
 from app.verifier.bind import bind, material_gaps, recurring_for
 from app.verifier.counters import counters as make_counters
-from app.verifier.models import CALC_VERSION, PassedCheck, VerdictBundle
+from app.verifier.models import CALC_VERSION, OwnerConstraints, PassedCheck, VerdictBundle
+from app.verifier.owner import breaches as owner_breaches
+from app.verifier.owner import describe as describe_constraints
 from app.verifier.reserve import baseline, cure_plan, induced_breach_days, reserve_violation
 from app.verifier.screen import SECURITY_CODES, screen
 
@@ -64,6 +68,7 @@ PRICE_CODES = frozenset({ViolationCode.MAX_APR_EXCEEDED, ViolationCode.IMMEDIATE
 CAP_CODES = frozenset({ViolationCode.AGG_CONCESSION_EXCEEDED, ViolationCode.PER_BUYER_CAP_EXCEEDED})
 MANDATE_CODES = frozenset({ViolationCode.BAD_SIGNATURE, ViolationCode.MANDATE_EXPIRED,
                            ViolationCode.MANDATE_REVOKED, ViolationCode.MANDATE_VERSION_MISMATCH})
+Plans = Literal["all", "committed"]
 TIER3_BY_FIELD = {
     "guarantee": ViolationCode.TIER3_PERSONAL_GUARANTEE,
     "collateral": ViolationCode.TIER3_COLLATERAL,
@@ -78,9 +83,75 @@ def _digest(*parts: str) -> str:
     return hashlib.sha256("|".join(parts).encode()).hexdigest()[:12]
 
 
-def verdict_id(offer_id: str, offer_version: int, state: FinancialState, mandate: Mandate, day: int) -> str:
-    return "VER-" + _digest(offer_id, str(offer_version), state.model_dump_json(), str(mandate.version),
-                            str(day), CALC_VERSION)
+def verdict_id(offer_id: str, offer_version: int, state: FinancialState, mandate: Mandate, day: int,
+               constraints: OwnerConstraints | None = None) -> str:
+    """Deterministic. An owner-constrained evaluation gets its own id: its verdict can differ from the
+    unconstrained one for the same offer, and both may be stored."""
+    parts = [offer_id, str(offer_version), state.model_dump_json(), str(mandate.version), str(day), CALC_VERSION]
+    if constraints is not None:
+        parts.append(constraints.model_dump_json())
+    return "VER-" + _digest(*parts)
+
+
+# ---------------------------------------------------------------- router memo
+
+
+class _Router:
+    """Memoises identical router calls within one evaluation (same state, obligations and basis): the
+    status-quo plan is the baseline's, and a cure on an unchanged state is the committed plan."""
+
+    def __init__(self, mandate: Mandate) -> None:
+        self.mandate = mandate
+        self.memo: dict[tuple[str, str, str], FundingPlan] = {}
+        self.calls = 0  # router searches actually run (for tests and measurement)
+
+    @staticmethod
+    def key(state: FinancialState, obligations: Sequence[Obligation], basis: str) -> tuple[str, str, str]:
+        return state.model_dump_json(), "|".join(o.model_dump_json() for o in obligations), basis
+
+    def seed(self, state: FinancialState, obligations: Sequence[Obligation], basis: str, plan: FundingPlan) -> None:
+        self.memo.setdefault(self.key(state, obligations, basis), plan)
+
+    def plan(self, state: FinancialState, obligations: list[Obligation], mandate: Mandate,
+             basis: str = "COMMITTED") -> FundingPlan:
+        k = self.key(state, obligations, basis)
+        hit = self.memo.get(k)
+        if hit is None:
+            self.calls += 1
+            hit = funding_plan(state, obligations, mandate, basis)
+            self.memo[k] = hit
+        return hit
+
+
+# The spec §7.4 comparison depends only on (state with the offered early-pay rate, mandate): cached across
+# evaluations like the baseline, so slider moves that keep the discount do not re-run that search.
+_COMPARE_CACHE: OrderedDict[tuple[str, str], list[ComparisonRow]] = OrderedDict()
+_COMPARE_LOCK = threading.Lock()
+_COMPARE_SIZE = 32
+
+
+def _compare_cached(state: FinancialState, mandate: Mandate) -> list[ComparisonRow]:
+    k = (state.model_dump_json(), mandate.model_dump_json())
+    with _COMPARE_LOCK:
+        hit = _COMPARE_CACHE.get(k)
+        if hit is not None:
+            _COMPARE_CACHE.move_to_end(k)
+            return list(hit)
+    rows = compare(state, [], mandate)
+    with _COMPARE_LOCK:
+        _COMPARE_CACHE[k] = list(rows)
+        while len(_COMPARE_CACHE) > _COMPARE_SIZE:
+            _COMPARE_CACHE.popitem(last=False)
+    return rows
+
+
+def clear_caches() -> None:
+    """Drop the cross-evaluation caches (baseline, comparison), e.g. before a cold measurement."""
+    from app.verifier.reserve import _baseline
+
+    _baseline.cache_clear()
+    with _COMPARE_LOCK:
+        _COMPARE_CACHE.clear()
 
 
 def _unique_codes(violations: Sequence[Violation]) -> list[ViolationCode]:
@@ -109,12 +180,13 @@ def _describe(v: Violation) -> str:
 class _Result:
     """Accumulates one evaluation."""
 
-    def __init__(self, offer_id: str, offer_version: int, state: FinancialState, mandate: Mandate, day: int):
+    def __init__(self, offer_id: str, offer_version: int, state: FinancialState, mandate: Mandate, day: int,
+                 constraints: OwnerConstraints | None = None):
         self.offer_id = offer_id
         self.offer_version = offer_version
         self.state = state
         self.mandate = mandate
-        self.id = verdict_id(offer_id, offer_version, state, mandate, day)
+        self.id = verdict_id(offer_id, offer_version, state, mandate, day, constraints)
         self.violations: list[Violation] = []
         self.values: list[ConcessionValue] = []
         self.forward_total = sum(fc.value_fen for fc in state.forward_concessions)
@@ -326,7 +398,7 @@ def _comparison(offer_bound: list[Obligation], state: FinancialState, mandate: M
     facilities = [f.model_copy(update={"rate_bp": ob.rate_bp})
                   if f.kind == FacilityKind.BUYER_EARLY_PAY and f.lender_id == ob.counterparty_id else f
                   for f in state.facilities]
-    return compare(state.model_copy(update={"facilities": facilities}), [], mandate)
+    return _compare_cached(state.model_copy(update={"facilities": facilities}), mandate)
 
 
 # ---------------------------------------------------------------- entry points
@@ -341,8 +413,12 @@ def _evaluate(
     day: int = 0,
     owner_declared: Mapping[str, Any] | None = None,
     commitments: Sequence[Commitment] = (),
+    owner_constraints: OwnerConstraints | None = None,
+    plans: Plans = "all",
+    router: _Router | None = None,
 ) -> VerdictBundle:
-    res = _Result(offer.offer_id, offer.version, state, mandate, day)
+    res = _Result(offer.offer_id, offer.version, state, mandate, day, owner_constraints)
+    router = router or _Router(mandate)
 
     # 2 (computed first so its events are logged whatever the outcome)
     sec_violations, events = screen(offer, state, day=day, commitments=commitments)
@@ -412,8 +488,10 @@ def _evaluate(
     horizon = mandate.horizon_days
     offer_traj = project(state, bound, [], Mode.CONSERVATIVE, horizon, floor)
     base_traj, base_plan = baseline(state, mandate)
-    plan_committed = funding_plan(state, bound, mandate, "COMMITTED")
-    plan_expected = funding_plan(state, bound, mandate, "EXPECTED")
+    router.seed(state, [], "COMMITTED", base_plan)
+    plan_committed = router.plan(state, bound, mandate, "COMMITTED")
+    # The expected plan is display-only (INVARIANT 11): callers that need only the committed plan skip it.
+    plan_expected = router.plan(state, bound, mandate, "EXPECTED") if plans == "all" else None
     res.plan = plan_committed
 
     extra_notes: list[str] = []
@@ -450,7 +528,7 @@ def _evaluate(
     ext_violations, ext_passed, pf_inputs = _extension_pro_forma(bound, values, state, mandate)
     if induced:
         rv = reserve_violation(offer_traj, base_traj, floor, induced[0])
-        cure = cure_plan(state, bound, mandate, offer_traj, base_traj, base_plan)
+        cure = cure_plan(state, bound, mandate, offer_traj, base_traj, base_plan, planner=router.plan)
         per_invoice = [cv.per_invoice_fen for cv in values for ob in bound
                        if cv.obligation_id == ob.id and ob.type == ObligationType.TERMS_EXTENSION
                        and (ob.days_delta or 0) > 0 and cv.per_invoice_fen]
@@ -484,7 +562,7 @@ def _evaluate(
                     "offer_lowest_without_funding": fmt_yuan(offer_traj.min_cash_fen),
                     "offer_lowest_day": str(offer_traj.min_cash_day)}))
 
-    comparison = _comparison(bound, state, mandate, base_plan)
+    comparison = _comparison(bound, state, mandate, base_plan)  # its rows feed the MAX_APR check's inputs
     apr_v, apr_passed = _apr_checks(bound, state, mandate, comparison)
     violations += apr_v
     passed += apr_passed
@@ -499,12 +577,18 @@ def _evaluate(
     codes = set(_unique_codes(violations))
     hard = [v for v in violations if _is_hard(v)]
     draft = res.verdict(Outcome.REJECT, Tier.TIER_1, "")
+    # The owner's goal (if any) only tightens: a package that breaks it cannot be accepted as offered.
+    goal_breaches = owner_breaches(bound, values, state, owner_constraints) if owner_constraints else []
     counter_list = []
-    if hard or (codes & PRICE_CODES):
-        counter_list = make_counters(offer, draft, state, mandate, bound=bound, owner_declared=owner_declared)
+    if hard or (codes & PRICE_CODES) or goal_breaches:
+        counter_list = make_counters(offer, draft, state, mandate, bound=bound, owner_declared=owner_declared,
+                                     owner_constraints=owner_constraints)
+    if owner_constraints is not None:
+        extra_notes.append(f"owner goal ({describe_constraints(owner_constraints)}): "
+                           + ("; ".join(goal_breaches) if goal_breaches else "the package satisfies it"))
     if hard or codes & SECURITY_CODES:
         outcome, tier = Outcome.REJECT, Tier.TIER_1
-    elif codes & PRICE_CODES:
+    elif codes & PRICE_CODES or goal_breaches:
         outcome, tier = (Outcome.COUNTER if counter_list else Outcome.REJECT), Tier.TIER_1
     else:
         existing = sum(fc.value_fen for fc in state.forward_concessions)
@@ -545,9 +629,11 @@ def evaluate_verdict(
     day: int = 0,
     owner_declared: Mapping[str, Any] | None = None,
     commitments: Sequence[Commitment] = (),
+    owner_constraints: OwnerConstraints | None = None,
 ) -> Verdict:
     return evaluate(offer, state, mandate, trusted_owner_key_hex=trusted_owner_key_hex, day=day,
-                    owner_declared=owner_declared, commitments=commitments).verdict
+                    owner_declared=owner_declared, commitments=commitments, owner_constraints=owner_constraints,
+                    plans="committed").verdict
 
 
 def evaluate_many(
@@ -655,14 +741,24 @@ def evaluate(
     day: int = 0,
     owner_declared: Mapping[str, Any] | None = None,
     commitments: Sequence[Commitment] = (),
+    owner_constraints: OwnerConstraints | None = None,
+    plans: Plans = "all",
+    _router_probe: Callable[[_Router], None] | None = None,
 ) -> VerdictBundle:
     """The verifier never crashes on an offer: obligations the ledger cannot carry (e.g. the same invoice
-    settled twice) are a NO_VERDICT with UNRESOLVED_SCOPE, and nothing is booked."""
+    settled twice) are a NO_VERDICT with UNRESOLVED_SCOPE, and nothing is booked.
+
+    `owner_constraints`: the owner's goal for this evaluation (stricter than the mandate); a package that
+    breaks it gets COUNTER with counters that satisfy it, or REJECT when none does. It never loosens.
+    `plans="committed"` skips the expected plan (display-only, INVARIANT 11) for callers that need only
+    the committed plan; the Verdict is identical either way (conservative mode alone decides)."""
+    router = _Router(mandate)
     try:
         return _evaluate(offer, state, mandate, trusted_owner_key_hex=trusted_owner_key_hex, day=day,
-                         owner_declared=owner_declared, commitments=commitments)
+                         owner_declared=owner_declared, commitments=commitments,
+                         owner_constraints=owner_constraints, plans=plans, router=router)
     except EngineError as e:
-        res = _Result(offer.offer_id, offer.version, state, mandate, day)
+        res = _Result(offer.offer_id, offer.version, state, mandate, day, owner_constraints)
         res.violations = [Violation(
             code=ViolationCode.UNRESOLVED_SCOPE,
             message="The offer's terms are inconsistent with the ledger; clarification needed, nothing booked",
@@ -671,3 +767,6 @@ def evaluate(
         )]
         summary = _summary(Outcome.NO_VERDICT, res.violations, ["Nothing booked"])
         return VerdictBundle(verdict=res.verdict(Outcome.NO_VERDICT, Tier.TIER_1, summary))
+    finally:
+        if _router_probe is not None:
+            _router_probe(router)

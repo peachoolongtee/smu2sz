@@ -43,6 +43,17 @@ class PassedCheck(Contract):
     inputs: dict[str, str] = Field(default_factory=dict)
 
 
+class OwnerConstraints(Contract):
+    """A goal the owner states for one evaluation, stricter than the mandate (e.g. EX12: "get paid early
+    without giving anything away next quarter"). It can only tighten a verdict: a package that violates it
+    gets COUNTER (or REJECT when no counter satisfies it), with the verifier's own counters filtered or
+    adjusted to satisfy it. None on a field means no limit."""
+
+    max_early_pay_bp: int | None = Field(default=None, ge=0)  # highest early-settlement discount
+    zero_forward_concessions: bool = False  # no obligation may carry a positive forward value
+    max_terms_days: int | None = Field(default=None, ge=0)  # longest payment terms
+
+
 class VerdictBundle(Contract):
     verdict: Verdict
     trajectory: Trajectory | None = None  # conservative, under the bookable obligations, no new funding
