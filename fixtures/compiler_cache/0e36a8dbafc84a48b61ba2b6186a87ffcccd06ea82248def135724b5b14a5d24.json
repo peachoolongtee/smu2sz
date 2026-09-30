@@ -1,0 +1,38 @@
+{
+  "doc_ids": [
+    "EX09-ts"
+  ],
+  "extraction": {
+    "authority_claims": [],
+    "clauses": [
+      {
+        "field": "fee",
+        "quote": "Arrangement fee 2%",
+        "value_text": "2%"
+      },
+      {
+        "field": "principal",
+        "quote": "Working-capital loan ¥300,000",
+        "value_text": "¥300,000"
+      },
+      {
+        "field": "rate",
+        "quote": "at 3.9%",
+        "value_text": "3.9%"
+      },
+      {
+        "field": "guarantee",
+        "quote": "Director to provide personal guarantee",
+        "value_text": "personal guarantee"
+      }
+    ],
+    "facility_kind": "CREDIT_LINE",
+    "lender_name": null,
+    "repayment": null
+  },
+  "key": "0e36a8dbafc84a48b61ba2b6186a87ffcccd06ea82248def135724b5b14a5d24",
+  "kind": "term_sheet",
+  "label": "EX09_TERM_SHEET_PG",
+  "prompt_version": "termsheet-v1",
+  "source_model": "rules-v1"
+}
