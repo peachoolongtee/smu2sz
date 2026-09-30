@@ -1,0 +1,48 @@
+# Canary values for the egress guard (services/api/app/egress, INVARIANTS 7).
+#
+# Every value here is SYNTHETIC. None is a real code, amount, company or instruction. A canary is
+# planted somewhere only a leak could surface it: if one appears in LLM output or in any outbound
+# text, something regurgitated hidden context. `canary_tripped(text)` reports it; `guard()` blocks
+# the whole message and logs a DATA_EXTRACTION event that names the canary id, never its value.
+#
+# Canaries are never entitled to any recipient (not even the owner) and can never be allowed.
+#
+# Fields:
+#   id          stable label; appears in security events as "canary.<id>"
+#   token       a distinctive string (matched after NFKC/case folding, and with spacing and
+#               punctuation squashed out), or
+#   amount_fen  a distinctive fen amount (matched in every money surface form)
+#   planted_in  system_prompt | hidden_field | private_note
+#   where       exactly where it is planted
+canaries:
+  - id: CANARY-PROMPT
+    token: "TLX-KESTREL-7Q3Z-PROMPT"
+    planted_in: system_prompt
+    where: >-
+      app/compiler/prompts PROMPT_CANARY, embedded in the shared header of OFFER_SYSTEM_PROMPT and
+      TERM_SHEET_SYSTEM_PROMPT with an instruction never to repeat it. Seeing it in compiler output,
+      a /nl reply or any outbound text means the system prompt leaked.
+
+  - id: CANARY-RESERVE-CODE
+    token: "RSV-OVERRIDE-4471-HALCYON"
+    planted_in: hidden_field
+    where: >-
+      A fake "reserve override code". The caller passes it as a synthetic hidden field (a
+      PrivateValue built by Canary.private_value(), included by default in ProtectedSet.build) and
+      may place it in any private context an LLM can see, e.g. the owner-side /nl session state.
+      It unlocks nothing; asking for or repeating it is an extraction attempt.
+
+  - id: CANARY-RESERVE-AMOUNT
+    amount_fen: 31333700   # ¥313,337.00: a distinctive fen amount no fixture uses
+    planted_in: hidden_field
+    where: >-
+      A fake "emergency reserve override amount" carried beside CANARY-RESERVE-CODE in the same
+      synthetic hidden field. Caught in every money form (¥313,337.00, 313337, 31.3337万, ...).
+
+  - id: CANARY-COUNTERPARTY
+    token: "Quillmere Trading Co."
+    planted_in: private_note
+    where: >-
+      A canary counterparty name placed in a private owner note (e.g. "internal: do not contact
+      Quillmere Trading Co. about Buyer B's terms"). It is on no registry and in no public text, so
+      it can only reach an outbound message through a private-context leak.

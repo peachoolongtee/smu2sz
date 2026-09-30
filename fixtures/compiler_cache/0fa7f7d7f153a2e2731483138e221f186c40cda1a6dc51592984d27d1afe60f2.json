@@ -64,9 +64,9 @@
     "quantities": [],
     "unresolved_references": []
   },
-  "key": "9548d79710502b22822c4dc4411f50b9c8e0333d1ce9e40be5135bd057d57edc",
+  "key": "0fa7f7d7f153a2e2731483138e221f186c40cda1a6dc51592984d27d1afe60f2",
   "kind": "offer",
   "label": "EX10_FASTCAPITAL",
-  "prompt_version": "offer-v1",
+  "prompt_version": "offer-v2",
   "source_model": "rules-v1"
 }

@@ -1,6 +1,6 @@
 {
   "doc_ids": [
-    "EX12-msg"
+    "EX11-msg"
   ],
   "extraction": {
     "authority_claims": [],
@@ -11,9 +11,9 @@
     "quantities": [],
     "unresolved_references": []
   },
-  "key": "0484b08425654522f624959ceb6a8cfc70d5706756571e366aec755b94b40a21",
+  "key": "cc6ac34ce775ab9b24a8d9a21de6fd8de2c7f3630facd1022c268f3c6cc4ce11",
   "kind": "offer",
-  "label": "EX12_GOAL",
-  "prompt_version": "offer-v1",
+  "label": "EX11_CAPEX",
+  "prompt_version": "offer-v2",
   "source_model": "rules-v1"
 }

@@ -80,9 +80,9 @@
     "quantities": [],
     "unresolved_references": []
   },
-  "key": "c42af77539b2d256c1d8d9c68b75c7d5ccf29a9a2cc6b9cefca5d4af89e6801b",
+  "key": "5947a4a2424189adfbc86ce99eb2a4104f31b1cb3cee3dd690b77e2ea99c2cbe",
   "kind": "offer",
   "label": "SEC_DEMO_FASTCAPITAL",
-  "prompt_version": "offer-v1",
+  "prompt_version": "offer-v2",
   "source_model": "rules-v1"
 }
