@@ -15,7 +15,7 @@ import re
 from collections.abc import Iterable
 
 from app.compiler.folding import Folded, fold
-from app.compiler.parsing import MONEY_PAT, RATE_PAT, parse_money
+from app.compiler.parsing import MONEY_PAT, RATE_PAT, parse_money, rx
 from app.compiler.schema import XAuthorityClaim, XDataRequest, XFundingClaim, XQuantity
 from app.domain.models import DataRequestKind, SourceDocument
 
@@ -24,38 +24,38 @@ I = re.IGNORECASE
 # ---------------------------------------------------------------- data requests
 
 _DATA_REQUESTS: list[tuple[DataRequestKind, re.Pattern[str]]] = [
-    (DataRequestKind.RESERVE_FLOOR, re.compile(
+    (DataRequestKind.RESERVE_FLOOR, rx(
         r"\b(?:minimum|min\.?)\s+(?:cash\s+)?(?:reserve|cash|balance|liquidity)(?:\s+(?:floor|level|requirement))?"
         r"|\bcash\s+(?:floor|reserve|buffer)\b|\breserve\s+(?:floor|level|requirement)s?\b"
         r"|最低(?:现金)?(?:储备|备付金?|余额|现金|资金)|现金(?:底线|储备)|安全(?:资金|现金)线", I)),
-    (DataRequestKind.FACILITY_LIMIT, re.compile(
+    (DataRequestKind.FACILITY_LIMIT, rx(
         r"\b(?:facility|credit|borrowing|loan|financing|bank)\s+(?:line\s+)?limits?\b|\bcredit\s+lines?\b(?=[^.。]{0,20}\b(?:size|limit|amount)s?\b)"
         r"|\bhow\s+much\s+(?:you\s+can|can\s+you)\s+borrow\b"
         r"|授信额度|信用额度|贷款额度|融资额度|额度上限|借款额度", I)),
-    (DataRequestKind.FUNDING_MENU, re.compile(
+    (DataRequestKind.FUNDING_MENU, rx(
         r"\bfunding\s+(?:menu|sources?|options|plan)\b|\b(?:list|which|what)\s+(?:of\s+)?(?:your\s+)?(?:lenders|banks|facilities|funders)\b"
         r"|\byour\s+(?:other\s+|existing\s+)?(?:lenders|banks|facilities|funders)\b"
         r"|融资渠道|资金来源|资金方|融资方案|融资清单|合作银行", I)),
-    (DataRequestKind.OTHER_COUNTERPARTY_TERMS, re.compile(
+    (DataRequestKind.OTHER_COUNTERPARTY_TERMS, rx(
         r"\b(?:buyer|customer|client)\s+[A-Z0-9](?:'s|’s)?\s+(?:payment\s+)?(?:terms|prices?|pricing|discounts?|rebates?|deal)\b"
         r"|\bother\s+(?:buyers?|customers?|clients?)(?:'|’|'s|’s)?\s+(?:payment\s+)?(?:terms|prices?|pricing|discounts?|rebates?|deals?)\b"
         r"|\b(?:terms|discounts?|prices?|rebates?)\s+(?:you\s+(?:give|gave|offer(?:ed)?)|given|offered)\s+to\s+(?:other|another|your\s+other)\b"
         r"|(?:其他|别的|其它)(?:客户|买家|买方|采购商)的?(?:账期|付款条件|价格|折扣|返利|条件)"
         r"|[A-Z0-9](?:客户|买家|公司)的?(?:账期|付款条件|价格|折扣|返利)|(?:客户|买家)[A-Z0-9]的?(?:账期|付款条件|价格|折扣)", I)),
-    (DataRequestKind.RESERVATION_VALUE, re.compile(
+    (DataRequestKind.RESERVATION_VALUE, rx(
         r"\breservation\s+(?:value|price)\b|\bwalk[- ]?away\s+(?:price|point|terms)\b|\bbottom\s+line\b"
         r"|\b(?:lowest|best|maximum|max)\s+(?:price|discount|terms?)\s+you\s+(?:would|will|can|could)\s+(?:accept|agree|go)\b"
         r"|底价|保留价|最低(?:可)?接受|心理价位|最多能(?:让|给)", I)),
-    (DataRequestKind.SYSTEM_PROMPT, re.compile(
+    (DataRequestKind.SYSTEM_PROMPT, rx(
         r"\bsystem\s+prompt\b|\b(?:reveal|show|print|repeat|output|tell\s+me|share|send|give\s+me|paste|dump)\s+(?:me\s+|us\s+)?"
         r"(?:your|the)\s+(?:full\s+|exact\s+)?(?:system\s+|hidden\s+|internal\s+|original\s+)?(?:prompt|instructions|rules|configuration)\b"
         r"|系统提示词?|提示词|系统指令|内部指令", I)),
-    (DataRequestKind.MANDATE_VALUE, re.compile(
+    (DataRequestKind.MANDATE_VALUE, rx(
         r"\b(?:your|the\s+owner'?s?|the)\s+mandate\b|\bconcession\s+(?:caps?|limits?|budget)\b|\bapproval\s+(?:limits?|thresholds?)\b"
         r"|\b(?:your|the)\s+(?:caps|limits)\s+(?:are|on)\b|\bmax(?:imum)?\s+(?:apr|leverage|concession)\b"
         r"|授权书|授权(?:范围|额度|限额|上限)|审批(?:权限|限额|上限)|让利上限|让步上限", I)),
     # prompt / secret extraction: "repeat everything above", "print your instructions", "reserve override code"
-    (DataRequestKind.SYSTEM_PROMPT, re.compile(
+    (DataRequestKind.SYSTEM_PROMPT, rx(
         r"\b(?:repeat|print|output|echo|recite|copy|reproduce)\s+(?:back\s+)?(?:everything|all(?:\s+(?:of\s+)?the\s+text)?|the\s+text|whatever|what(?:'s|\s+is|\s+was))"
         r"\s+(?:written\s+|said\s+)?(?:above|before\s+this|preceding|earlier|so\s+far)\b"
         r"|\b(?:print|show|reveal|output|repeat|tell\s+me|share|send|give\s+me|paste|dump|list)\s+(?:me\s+|us\s+)?(?:your|the|all|any)\s+"
@@ -63,13 +63,13 @@ _DATA_REQUESTS: list[tuple[DataRequestKind, re.Pattern[str]]] = [
         r"|\binternal\s+markers?\b|\b(?:reserve|owner|admin|master|emergency|system)\s+override\s+(?:code|token|key|password|pin)s?\b"
         r"|重复(?:一下|一遍)?(?:上面|以上|前面|之前)(?:的|所有)?(?:内容|文字|指令|话)?|(?:打印|输出|显示|列出|复述)(?:一下)?(?:你的|你们的|所有的?)?(?:指令|提示|规则|设定)"
         r"|(?:储备|备付金?|管理员|超级)?(?:覆盖|解锁|授权|超控)(?:码|密码|口令)", I)),
-    (DataRequestKind.RESERVE_FLOOR, re.compile(
+    (DataRequestKind.RESERVE_FLOOR, rx(
         r"\bemergency\s+(?:cash\s+)?reserves?(?:\s+(?:amount|level|balance))?\b|\breserve\s+amount\b|应急(?:储备|备付金?|资金)", I)),
 ]
 
 # Patterns that only become a data request when something is being asked for (cross-buyer questions).
 _DATA_REQUESTS_ASKED: list[tuple[DataRequestKind, re.Pattern[str]]] = [
-    (DataRequestKind.OTHER_COUNTERPARTY_TERMS, re.compile(
+    (DataRequestKind.OTHER_COUNTERPARTY_TERMS, rx(
         # "your other customers", "the terms your other buyers get", 其他客户
         r"\b(?:your\s+)?other\s+(?:customers|buyers|clients|accounts)\b|(?:其他|别的|其它)(?:客户|买家|买方|采购商)"
         # "What payment terms and discounts does Foshan Home Retail get from you?"
@@ -86,7 +86,7 @@ _DATA_REQUESTS_ASKED: list[tuple[DataRequestKind, re.Pattern[str]]] = [
 ]
 
 # Phrases that only become a data request when something is being asked for.
-_ASK = re.compile(
+_ASK = rx(
     r"\b(?:send|tell|share|give|provide|reveal|disclose|show|list|what(?:'s| is| are)|how\s+much|confirm|forward|print|repeat)\b"
     r"|告诉|发(?:给|送)|提供|透露|说明|列出|给我|是多少|多少", I)
 _NEEDS_ASK = {DataRequestKind.FUNDING_MENU, DataRequestKind.MANDATE_VALUE, DataRequestKind.RESERVATION_VALUE}
@@ -94,13 +94,29 @@ _NEEDS_ASK = {DataRequestKind.FUNDING_MENU, DataRequestKind.MANDATE_VALUE, DataR
 
 def sentence_bounds(text: str, pos: int) -> tuple[int, int]:
     """Start/end of the sentence containing `pos` (terminators: . ! ? ; newline and CJK forms)."""
-    term = re.compile(r"[!?;！？；。\n]|\.(?!\d)")
+    term = rx(r"[!?;！？；。\n]|\.(?!\d)")
     start = 0
     for m in term.finditer(text, 0, pos):
         start = m.end()
     m = term.search(text, pos)
     end = m.start() if m else len(text)
     return start, end
+
+
+# Clause boundaries inside a sentence: a comma that is not a thousands separator, a semicolon or colon, a
+# list comma, or a coordinating conjunction ("and", "but", 而且, 但是 ...).
+_CLAUSE_BOUNDARY = rx(r",(?!\d{3})|[，;；:：、]|\s(?:and|but|while|whereas|plus)\s|而且|并且|但是?|同时|另外", I)
+
+
+def clauses(text: str, start: int, end: int) -> list[tuple[int, int]]:
+    """The clauses of text[start:end] as (start, end) pairs, in order."""
+    out: list[tuple[int, int]] = []
+    pos = start
+    for m in _CLAUSE_BOUNDARY.finditer(text, start, end):
+        out.append((pos, m.start()))
+        pos = m.end()
+    out.append((pos, end))
+    return out
 
 
 def _quote(f: Folded, s: int, e: int, strip: str = " \n") -> str:
@@ -114,7 +130,7 @@ def _quote(f: Folded, s: int, e: int, strip: str = " \n") -> str:
 
 
 # Stricter: a question, or a verb that asks for disclosure ("give us the same terms as ..." is not one).
-_DISCLOSE = re.compile(
+_DISCLOSE = rx(
     r"\b(?:tell|share|send|show|reveal|disclose|list|forward|provide|what|which|how\s+much|how\s+long)\b"
     r"|告诉|透露|发(?:给|送)|提供|说说|讲讲|列出|是多少|多少|哪些|什么", I)
 
@@ -147,15 +163,15 @@ def find_data_requests(doc: SourceDocument) -> list[XDataRequest]:
 # ---------------------------------------------------------------- authority claims
 
 _AUTHORITY: list[tuple[str, re.Pattern[str]]] = [
-    ("PRE_APPROVAL", re.compile(
+    ("PRE_APPROVAL", rx(
         r"\bpre[- ]?(?:approved|approval|qualified|authori[sz]ed)\b|\balready\s+approved\s+(?:for|by)\b"
         r"|预批准|预审批|预授信|已获批|预先批准|已预批", I)),
-    ("PRIOR_AGREEMENT", re.compile(
+    ("PRIOR_AGREEMENT", rx(
         r"\b(?:we|you)\s+(?:have\s+)?(?:already\s+|previously\s+|both\s+)?(?:agreed|promised|approved)\b(?!\s+to\s+(?:review|consider))"
         r"|\bas\s+(?:previously\s+)?(?:agreed|discussed|promised)\b|\b(?:agreed|promised)\s+last\s+(?:week|month|time|quarter|year)\b"
         r"|\b(?:owner|ceo|cfo|director|boss|management)\s+(?:has\s+|have\s+)?(?:already\s+)?(?:approved|agreed(?:\s+to)?|signed\s+off\s+on)\b"
         r"|已经?(?:同意|答应|批准)(?:过|了)?|说好的?|谈好的?|之前(?:约定|说定|商定)|上(?:个)?(?:月|次|周)(?:已经?)?(?:同意|答应|说好|谈好)", I)),
-    ("INSTRUCTION_OVERRIDE", re.compile(
+    ("INSTRUCTION_OVERRIDE", rx(
         r"\b(?:ignore|disregard|forget|override|bypass|skip)\s+(?:all\s+|any\s+)?(?:of\s+)?(?:the\s+|your\s+|these\s+|those\s+)?"
         r"(?:previous|prior|above|earlier|preceding|existing|system|safety|original)?\s*(?:instructions?|rules?|prompts?|constraints?|checks?|limits?|mandate|verifier|guidelines?|policy|policies)\b"
         r"|\byou\s+are\s+now\b|\bact\s+as\s+(?:the\s+)?(?:owner|admin|administrator|system)\b|\bnew\s+instructions?\b"
@@ -174,11 +190,11 @@ _AUTHORITY: list[tuple[str, re.Pattern[str]]] = [
         r"|\b(?:you\s+are|you'?re)\s+(?:now\s+)?(?:an?\s+)?(?:\w+\s+)?(?:assistant|ai|bot|agent)\s+(?:with|that\s+has|who\s+has)\s+no\s+(?:mandate|rules|restrictions|limits|filters)\b"
         r"|\byou\s+are\s+\w*bot\b|\bas\s+\w*bot\b"
         r"|扮演|假装(?:你是|自己是|成)|假设你是|角色扮演", I)),
-    ("URGENCY", re.compile(
+    ("URGENCY", rx(
         r"\burgent(?:ly)?\b|\bimmediately\b|\basap\b|\bright\s+now\b|\bwithin\s+(?:the\s+)?(?:hour|\d+\s+(?:minutes?|hours?))\b"
         r"|\blast\s+chance\b|\b(?:expires?|deadline)\s+(?:today|tonight|in\s+\d+)\b|\btime[- ]sensitive\b"
         r"|紧急|加急|立即|立刻|马上|尽快|最后机会|今天(?:内)?必须|限时", I)),
-    ("IMPERSONATION", re.compile(
+    ("IMPERSONATION", rx(
         r"\b(?:this\s+is|i\s+am|i'm|we\s+are)\s+(?:the\s+|your\s+)?(?:owner|ceo|cfo|director|boss|admin|administrator|system|supervisor|auditor)\b"
         r"|\b(?:the\s+|your\s+)?(?:owner|ceo|cfo|boss|director|management|admin)\s+(?:has\s+|have\s+)?(?:already\s+)?"
         r"(?:approved|authori[sz]ed|signed\s+off|confirmed|instructed|asked)\b"
@@ -220,22 +236,22 @@ _NAME = r"(?P<name>(?-i:[A-Z][\w&\-]*(?:[ ][A-Z][\w&\-]*){0,3}))"
 _GAP = r"(?:[^.。;；!！?？\n]|\.(?=\d)){0,40}?"
 
 _FUNDING: list[re.Pattern[str]] = [
-    re.compile(
+    rx(
         rf"pre[- ]?(?:approved|qualified)\s+for\s+(?:a\s+)?(?:loan\s+of\s+)?(?P<amt>{_AMT})"
         rf"(?:{_GAP}\bat\s+(?P<rate>{_RATE}))?(?:{_GAP}\bfrom\s+{_NAME})?", I),
-    re.compile(
+    rx(
         rf"\b(?:loan|financing|credit\s+line|facility|funding|advance|credit)\s+of\s+(?:up\s+to\s+)?(?P<amt>{_AMT})"
         rf"{_GAP}\bat\s+(?P<rate>{_RATE})(?:{_GAP}\bfrom\s+{_NAME})?", I),
-    re.compile(
+    rx(
         rf"(?P<amt>{_AMT})\s+(?:[\w-]+\s+){{0,2}}(?:loan|credit\s+line|facility|financing|advance)\b{_GAP}\bat\s+(?P<rate>{_RATE})"
         rf"(?:{_GAP}\bfrom\s+{_NAME})?", I),
-    re.compile(
+    rx(
         rf"{_NAME}\s+(?:can|will|is\s+(?:able|ready|happy)\s+to|would\s+like\s+to)\s+(?:offer|lend|provide|fund|advance)\s+(?:you\s+)?"
         rf"(?:up\s+to\s+)?(?P<amt>{_AMT}){_GAP}(?:\bat\s+(?P<rate>{_RATE}))?", 0),
-    re.compile(
+    rx(
         rf"(?P<name>[A-Za-z][\w&\-]*|[一-鿿]{{2,12}}?(?:银行|金融|资本|小贷|保理|公司))[，,\s]*(?:已)?(?:为您|给您|向您)?(?:预批准|预授信|提供|批复)(?:了)?\s*(?P<amt>{_AMT})\s*(?:的)?"
         rf"(?:贷款|融资|额度|授信)(?:{_GAP}(?:年化)?(?:利率|年利率)?\s*(?P<rate>{_RATE}))?"),
-    re.compile(
+    rx(
         rf"(?:预批准|预授信)(?:了)?\s*(?P<amt>{_AMT})\s*(?:的)?(?:贷款|融资|额度|授信)?(?:{_GAP}(?:利率|年化)\s*(?P<rate>{_RATE}))?"),
 ]
 _NAME_STOP = {"You", "We", "Our", "Your", "The", "This", "Reply", "Also", "URGENT", "I"}
@@ -270,22 +286,24 @@ def find_funding_claims(doc: SourceDocument) -> list[XFundingClaim]:
 
 
 def _lender_elsewhere(f: Folded) -> str | None:
-    m = re.search(r"\bfrom\s+([A-Z][\w&.\-]*(?:\s+[A-Z][\w&.\-]*){0,3})", f.text)
+    m = rx(r"\bfrom\s+([A-Z][\w&.\-]*(?:\s+[A-Z][\w&.\-]*){0,3})").search(f.text)
     return f.orig(*m.span(1)) if m else None
 
 
 # ---------------------------------------------------------------- quantities (conflicting sources)
 
 _QUANTITIES: list[tuple[str, re.Pattern[str]]] = [
-    ("order_size", re.compile(rf"(?P<amt>{_AMT})\s+(?:purchase\s+)?(?:order|PO)\b", I)),
-    ("order_size", re.compile(
+    ("order_size", rx(rf"(?P<amt>{_AMT})\s+(?:purchase\s+)?(?:order|PO)\b", I)),
+    ("order_size", rx(
         rf"\b(?:order|PO|purchase\s+order)\s+(?:size|value|amount|total)\s*(?:of|is|[:：])?\s*(?P<amt>{_AMT})", I)),
-    ("order_size", re.compile(rf"\b(?:an?\s+)?order\s+of\s+(?P<amt>{_AMT})", I)),
-    ("order_size", re.compile(rf"(?:订单|采购)(?:金额|总额|总价|规模)\s*[:：为是]?\s*(?P<amt>{_AMT})")),
-    ("order_size", re.compile(rf"(?P<amt>{_AMT})\s*(?:的)?(?:订单|采购单)")),
-    ("invoice_amount", re.compile(
+    ("order_size", rx(rf"\b(?:an?\s+)?order\s+of\s+(?P<amt>{_AMT})", I)),
+    ("order_size", rx(rf"\b(?:order|PO|purchase\s+order)\s+(?:for|worth|totall?ing|valued\s+at)\s+(?P<amt>{_AMT})", I)),
+    ("order_size", rx(rf"(?:下单|订购|订货|下了?订单)\s*(?:了)?\s*(?P<amt>{_AMT})")),
+    ("order_size", rx(rf"(?:订单|采购)(?:金额|总额|总价|规模)\s*[:：为是]?\s*(?P<amt>{_AMT})")),
+    ("order_size", rx(rf"(?P<amt>{_AMT})\s*(?:的)?(?:订单|采购单)")),
+    ("invoice_amount", rx(
         rf"\binvoice\s+(?:amount|face|value|total)\s*(?:of|is|[:：])?\s*(?P<amt>{_AMT})", I)),
-    ("invoice_amount", re.compile(rf"(?:发票|货款)(?:金额|总额)\s*[:：为是]?\s*(?P<amt>{_AMT})")),
+    ("invoice_amount", rx(rf"(?:发票|货款)(?:金额|总额)\s*[:：为是]?\s*(?P<amt>{_AMT})")),
 ]
 
 
@@ -301,7 +319,7 @@ def find_quantities(doc: SourceDocument) -> list[XQuantity]:
 
 # ---------------------------------------------------------------- unresolved references ("as usual")
 
-AS_USUAL_RE = re.compile(
+AS_USUAL_RE = rx(
     r"\bsame\s+(?:arrangement|terms|deal|conditions|as\s+(?:usual|before|always|last\s+time))(?:\s+as\s+(?:usual|before|always|last\s+time))?"
     r"|\bas\s+(?:usual|always|before|per\s+usual)\b|\bthe\s+usual\s+(?:arrangement|terms|deal|discount|rebate)\b|\blike\s+last\s+time\b"
     r"|\bthe\s+(?:normal|standard)\s+arrangement\b"

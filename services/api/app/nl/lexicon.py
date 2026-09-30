@@ -11,6 +11,7 @@ import unicodedata
 from dataclasses import dataclass
 from decimal import Decimal, InvalidOperation
 
+from app.compiler.parsing import rx
 from app.domain.models import FinancialState
 
 
@@ -26,7 +27,8 @@ def detect_lang(text: str) -> str:
 
 
 def _re(*parts: str) -> re.Pattern[str]:
-    return re.compile("|".join(parts), re.IGNORECASE)
+    """Alternatives, case-insensitive, with CJK-safe word boundaries (EV-08: "批准APR-000003")."""
+    return rx("|".join(parts), re.IGNORECASE)
 
 
 # ---------------------------------------------------------------- intent cues
@@ -77,11 +79,11 @@ TIER3: tuple[tuple[str, re.Pattern[str]], ...] = (
                            r"修改.{0,4}(?:授权|限额|底线|上限)", r"(?:降低|取消|提高).{0,6}(?:储备|底线|上限|限额)")),
 )
 
-FIXTURE_RE = re.compile(r"\b(EX\s?\d{2}[A-Z]?|SEC[_ ]DEMO)(?:_[A-Z0-9_]+)?\b", re.IGNORECASE)
+FIXTURE_RE = rx(r"\b(EX\s?\d{2}[A-Z]?|SEC[_ ]DEMO)(?:_[A-Z0-9_]+)?\b", re.IGNORECASE)
 QUOTED_RE = re.compile(r"[\"“「『](.{8,}?)[\"”」』]", re.DOTALL)
-BUYER_SAYS_RE = re.compile(r"(?:buyer (?:says|wrote|sent)|message)\s*[:：]\s*(.{8,})$|买家说\s*[:：]\s*(.{4,})$",
+BUYER_SAYS_RE = rx(r"(?:buyer (?:says|wrote|sent)|message)\s*[:：]\s*(.{8,})$|买家说\s*[:：]\s*(.{4,})$",
                            re.IGNORECASE | re.DOTALL)
-APPROVAL_ID_RE = re.compile(r"\bAPR-\d{6}\b", re.IGNORECASE)
+APPROVAL_ID_RE = rx(r"\bAPR-\d{6}\b", re.IGNORECASE)
 
 ORDINALS = {"1": 1, "one": 1, "first": 1, "1st": 1, "第一": 1, "一": 1,
             "2": 2, "two": 2, "second": 2, "2nd": 2, "第二": 2, "二": 2,
@@ -90,12 +92,12 @@ ORDINALS = {"1": 1, "one": 1, "first": 1, "1st": 1, "第一": 1, "一": 1,
 
 # ---------------------------------------------------------------- values
 
-_MONEY_RE = re.compile(
+_MONEY_RE = rx(
     r"(?P<pre>¥|￥|rmb\s*|cny\s*)?(?P<num>\d[\d,]*(?:\.\d+)?)\s*(?P<unit>million|k\b|千|万|元|yuan\b|块)?",
     re.IGNORECASE)
-_RATE_RE = re.compile(r"(?P<num>\d+(?:\.\d+)?)\s*(?P<unit>%|percent\b|bps?\b|个基点)", re.IGNORECASE)
-_DAYS_RE = re.compile(r"(?P<num>\d{1,3})\s*(?:-\s*)?(?:days?\b|天|日)", re.IGNORECASE)
-_INVOICES_RE = re.compile(r"(?:next|following)\s+(?P<n>\d+|two|three|four|five|six)\s+invoices|(?:接下来|后续)(?P<zh>\d+)张",
+_RATE_RE = rx(r"(?P<num>\d+(?:\.\d+)?)\s*(?P<unit>%|percent\b|bps?\b|个基点)", re.IGNORECASE)
+_DAYS_RE = rx(r"(?P<num>\d{1,3})\s*(?:-\s*)?(?:days?\b|天|日)", re.IGNORECASE)
+_INVOICES_RE = rx(r"(?:next|following)\s+(?P<n>\d+|two|three|four|five|six)\s+invoices|(?:接下来|后续)(?P<zh>\d+)张",
                           re.IGNORECASE)
 _WORD_NUM = {"two": 2, "three": 3, "four": 4, "five": 5, "six": 6}
 _UNIT = {"k": 1_000, "千": 1_000, "万": 10_000, "million": 1_000_000}
