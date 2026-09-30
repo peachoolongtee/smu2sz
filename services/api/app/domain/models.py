@@ -462,7 +462,7 @@ class MonthPoint(Contract):
     debt_service_fen: Fen
     total_debt_fen: Fen
     dscr: Ratio | None  # None when debt service is zero
-    leverage: Ratio
+    leverage: Ratio | None  # None when EBITDA <= 0 (undefined; fails any maximum)
 
 
 class Trajectory(Contract):

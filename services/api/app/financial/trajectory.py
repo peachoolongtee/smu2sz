@@ -43,7 +43,6 @@ from app.financial.fmt import pct, y
 DEFAULT_EARLY_PAY_LEAD_DAYS = 2
 MONTH_DAYS = 30
 # Leverage when annualised EBITDA is zero or negative: larger than any limit, so it always fails.
-UNBOUNDED_LEVERAGE = Ratio(num=10**12, den=1)
 
 # intra-day phases (Engine semantics §1)
 INFLOW, OUTFLOW, SETTLE = 0, 1, 2
@@ -651,7 +650,7 @@ def project(
         ds = base_ds + month_ds[m]
         total_debt = month_end_leverage_debt[m]
         dscr = Ratio.of(Fraction(ebitda, ds)) if ds > 0 else None
-        leverage = Ratio.of(Fraction(total_debt, 12 * ebitda)) if ebitda > 0 else UNBOUNDED_LEVERAGE
+        leverage = Ratio.of(Fraction(total_debt, 12 * ebitda)) if ebitda > 0 else None
         months.append(MonthPoint(month=m, ebitda_fen=ebitda, debt_service_fen=ds, total_debt_fen=total_debt,
                                  dscr=dscr, leverage=leverage))
 
