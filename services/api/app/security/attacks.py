@@ -342,6 +342,8 @@ class _Ctx:
     last_result: dict[str, Any] | None = None
     last_approval: str | None = None
     approvals: list[str] = field(default_factory=list)
+    halted: str | None = None  # set when a control refused the attack's premise; later steps are skipped
+    rebaseline: bool = False  # set by a step that judged its own legitimate effects (db_fail)
 
 
 # ============================================================================ the runner
@@ -394,9 +396,14 @@ class AttackRunner:
                     obs.steps.append(rec)
                 snap = self._snapshot(rt)
                 for step in attack["steps"]:
+                    if ctx.halted:
+                        obs.steps.append({"step": next(iter(step)), "phase": "attack", "skipped": ctx.halted})
+                        continue
                     rec = self._step(ctx, step, obs, phase="attack")
                     rec["phase"] = "attack"
                     obs.steps.append(rec)
+                    if ctx.rebaseline:
+                        snap, ctx.rebaseline = self._snapshot(rt), False
                 self._diff(rt, snap, obs)
         finally:
             set_runtime(None)
@@ -548,12 +555,15 @@ class AttackRunner:
 
     def _headers(self, ctx: _Ctx, token: str | None, *, agent: bool = True) -> dict[str, str]:
         """No owner token means the agent's own channel (it holds the agent key); attacker reads use
-        agent=False and carry no credential at all."""
+        agent=False and carry no credential at all. A guessed owner token (wrong, demo, padded) is
+        sent by the compromised agent, so it rides on the agent's own key: the owner claim must then
+        be refused past the gate, by the API's downgrade and the executor."""
+        agent_key = {"X-Agent-Key": os.environ.get("AGENT_KEY", "")} if agent else {}
         if token in (None, "none"):
-            return {"X-Agent-Key": os.environ.get("AGENT_KEY", "")} if agent else {}
+            return agent_key
         value = {"owner": ctx.owner_token, "wrong": "owner-" + "0" * 32, "demo": DEMO_TOKEN,
                  "padded": f" {ctx.owner_token} "}.get(token, token)
-        return {"X-Owner-Token": value}
+        return {**agent_key, "X-Owner-Token": value}
 
     def _body(self, ctx: _Ctx, spec: dict[str, Any]) -> dict[str, Any]:
         spec = dict(spec)
@@ -910,10 +920,23 @@ class AttackRunner:
         self._post_op(ctx, self._body(ctx, spec), token, obs, rec)
 
     def _do_replace_offer(self, ctx: _Ctx, arg: dict[str, Any], obs: Observation, rec: dict[str, Any], phase: str) -> None:
-        """The stored offer is swapped for one with richer terms after the verdict (tampered intake)."""
+        """The stored offer is swapped for one with richer terms after the verdict (tampered intake).
+
+        The store refuses to overwrite a stored (offer_id, version) with other terms (F-07). The
+        attack's premise has then failed and its remaining steps are skipped: what would follow is
+        the ordinary acceptance of the verified offer. (That the executor never reads the stored
+        offer, even after a direct database swap, is covered in tests/operations.)"""
+        from app.persistence import OfferVersionConflict
+
         o = ctx.last_offer
         obs_ = [x.model_copy(update=arg) for x in o.obligations]
-        ctx.rt.store.put_offer(o.model_copy(update={"obligations": obs_}))
+        try:
+            ctx.rt.store.put_offer(o.model_copy(update={"obligations": obs_}))
+        except OfferVersionConflict:
+            obs.refusal_codes.append("OFFER_VERSION_CONFLICT")
+            rec["refused"] = "OfferVersionConflict"
+            ctx.halted = "the store refused to replace a stored offer version; the tampered intake never happened"
+            return
         rec["replaced"] = list(arg)
 
     def _do_request_approval(self, ctx: _Ctx, arg: dict[str, Any] | None, obs: Observation, rec: dict[str, Any], phase: str) -> None:
@@ -953,13 +976,27 @@ class AttackRunner:
         if arg in ("sql_update_via_app", "sql_text_via_app"):
             pass  # done above
         elif arg == "sql_raw":
+            from app.persistence import guards
+
             db = sqlite3.connect(s.engine.url.database)
-            with db:
-                row = db.execute("SELECT payload_json FROM operations WHERE seq = 1").fetchone()
-                payload = json.loads(row[0])
-                payload["amount_fen"] = payload.get("amount_fen", 0) * 10
-                db.execute("UPDATE operations SET payload_json = ? WHERE seq = 1",
-                           (json.dumps(payload, separators=(",", ":"), sort_keys=True),))
+            row = db.execute("SELECT payload_json FROM operations WHERE seq = 1").fetchone()
+            payload = json.loads(row[0])
+            payload["amount_fen"] = payload.get("amount_fen", 0) * 10
+            forged = (json.dumps(payload, separators=(",", ":"), sort_keys=True),)
+            update_sql = "UPDATE operations SET payload_json = ? WHERE seq = 1"
+            try:
+                with db:
+                    db.execute(update_sql, forged)
+                rec["blocked_by_trigger"] = False
+            except sqlite3.IntegrityError:
+                # The database itself refused (F-11). An attacker with full file access drops the
+                # triggers and edits anyway: the hash chain must still catch it.
+                rec["blocked_by_trigger"] = True
+                obs.refusal_codes.append("APPEND_ONLY_VIOLATION")
+                with db:
+                    for name, _create in guards.SQLITE_TRIGGERS:
+                        db.execute(f"DROP TRIGGER IF EXISTS {name}")
+                    db.execute(update_sql, forged)
             db.close()
         else:
             entries = s._ops  # direct database access, bypassing the store API
@@ -998,6 +1035,10 @@ class AttackRunner:
             if a.status_code != 200:
                 obs.notes.append(f"GET {path} returned HTTP {a.status_code} on the tampered log "
                                  "(the chain check still reports it; the audit view is unavailable)")
+            elif path == "/security/summary":
+                summ = a.json()
+                rec["summary_integrity_failures"] = summ.get("integrity_failures")
+                rec["summary_unreadable_entries"] = summ.get("unreadable_entries")
         obs.tamper_detected = (not valid) and (ledger_valid is False or r.status_code != 200)
 
     def _do_llm(self, ctx: _Ctx, arg: dict[str, Any], obs: Observation, rec: dict[str, Any], phase: str) -> None:
@@ -1049,9 +1090,16 @@ class AttackRunner:
         if partial:
             obs.integrity_failures.append(
                 f"state changed (cash {state1.cash_fen - state0.cash_fen:+d} fen) but no log entry was written")
-        # the client retries with the same idempotency key, as it should after an error
+        elif rec["first_attempt"] == "raised" and log1 == log0:
+            obs.refusal_codes.append("ROLLED_BACK")  # the unit of work kept nothing (F-01)
+        # the client retries with the same idempotency key, as it should after an error, and then
+        # once more (a client that did not see the first retry's answer)
         res = ctx.rt.executor.execute(op)
         rec["retry"] = res.status.value
+        again = ctx.rt.executor.execute(op)
+        rec["second_retry"] = again.status.value
+        if again.status.value == "DUPLICATE":
+            obs.refusal_codes.append("DUPLICATE")
         state2 = s.get_state()
         drawn = sum(f.drawn_fen for f in state2.facilities) - sum(f.drawn_fen for f in state0.facilities)
         amount = int(body.get("amount_fen", 0))
@@ -1060,6 +1108,12 @@ class AttackRunner:
                 f"retry with the same idempotency key executed again: drawn {drawn:+d} fen for one {amount} fen request")
         if not s.verify_chain():
             obs.integrity_failures.append("chain invalid after the failure")
+        # The client's own request executing exactly once is the correct outcome, not harm: this step
+        # has judged it (partial write, double execution, chain), so the harm oracles are re-based
+        # after it. Any integrity failure recorded above still counts.
+        if res.status.value == "EXECUTED" and not obs.integrity_failures and amount and drawn == amount:
+            rec["legitimate_request_executed_once"] = True
+            ctx.rebaseline = True
 
     def _do_get(self, ctx: _Ctx, arg: dict[str, Any], obs: Observation, rec: dict[str, Any], phase: str) -> None:
         """Probe a read route as an outsider (no owner token) and scan the body for protected values."""
