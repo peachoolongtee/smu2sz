@@ -1,6 +1,6 @@
 {
   "doc_ids": [
-    "EX03-msg"
+    "EX08B-msg"
   ],
   "extraction": {
     "authority_claims": [],
@@ -10,37 +10,32 @@
     "obligations": [
       {
         "amount_text": null,
-        "base_amount_text": null,
-        "base_kind": "INVOICE",
+        "base_amount_text": "¥250,000",
+        "base_kind": "PERIOD_PURCHASES",
         "bounded_invoices_text": null,
         "confidence": 0.9,
-        "contingency": "FIRM",
+        "contingency": "CONTINGENT",
         "current_terms_text": null,
         "duration_kind": "ONE_OFF",
         "events_per_year_text": null,
         "quotes": [
           {
-            "doc_id": "EX03-msg",
-            "text": "Early pay at 1.5%"
+            "doc_id": "EX08B-msg",
+            "text": "1% off next quarter on up to ¥250,000 of orders"
           }
         ],
-        "rate_text": "1.5%",
+        "rate_text": "1%",
         "target_terms_text": null,
-        "type": "IMMEDIATE_DISCOUNT",
+        "type": "CONTINGENT_REBATE",
         "unresolved": []
       }
     ],
     "quantities": [],
-    "unresolved_references": [
-      {
-        "doc_id": "EX03-msg",
-        "text": "Same arrangement as usual"
-      }
-    ]
+    "unresolved_references": []
   },
-  "key": "52b108c245333011c978edd13dd81cbfc29838702396d38d1c1d38a66d581d20",
+  "key": "bacedba40bdad39ce6f02cf41b04a8c5e6b2ba08b95cf5d85b5256a5ab31383a",
   "kind": "offer",
-  "label": "EX03_AS_USUAL",
-  "prompt_version": "offer-v1",
+  "label": "EX08B_JOINT_BUYER2",
+  "prompt_version": "offer-v2",
   "source_model": "rules-v1"
 }

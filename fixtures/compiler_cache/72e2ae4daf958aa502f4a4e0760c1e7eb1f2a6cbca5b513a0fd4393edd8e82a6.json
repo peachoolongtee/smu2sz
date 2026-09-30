@@ -47,9 +47,9 @@
     ],
     "unresolved_references": []
   },
-  "key": "e8cd3e531eb3dabb057b67dba2968c3a9a9247f273a5b15d2af3dce319c59900",
+  "key": "72e2ae4daf958aa502f4a4e0760c1e7eb1f2a6cbca5b513a0fd4393edd8e82a6",
   "kind": "offer",
   "label": "EX07_CONFLICT",
-  "prompt_version": "offer-v1",
+  "prompt_version": "offer-v2",
   "source_model": "rules-v1"
 }
