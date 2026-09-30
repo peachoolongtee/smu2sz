@@ -1,0 +1,7 @@
+{
+  "WARNING": "DEMO ONLY - NOT A SECRET. This throwaway Ed25519 keypair is published in the repo so the demo and tests can sign the golden mandate offline. Anyone can read it, so a signature from it proves nothing about a real owner. Never use it to sign a real mandate; a real owner key lives outside the repo.",
+  "algorithm": "Ed25519",
+  "owner": "OWNER (demo, org SME-1)",
+  "private_key_hex": "4f08b573df3400398375e436f419173011cb5323e63b8802562e9e99612bddc8",
+  "public_key_hex": "05cf00d3354cef9054d4eefe865e035a5acc95a85f9b0b1c683538c81c62b96f"
+}

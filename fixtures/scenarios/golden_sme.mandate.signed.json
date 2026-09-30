@@ -1,0 +1,24 @@
+{
+  "_note": "Golden mandate (fixtures/scenarios/golden_sme.json) signed with the DEMO owner key fixtures/keys/owner_demo_ed25519.json. Ed25519 over canonical_bytes(): sorted-key compact UTF-8 JSON excluding signature_hex. Regenerate: uv run python -m app.mandate.fixture",
+  "mandate": {
+    "org_id": "SME-1",
+    "version": 1,
+    "min_cash_fen": 30000000,
+    "max_aggregate_forward_concession_fen": 500000,
+    "forward_concession_horizon_days": 365,
+    "per_buyer_caps_fen": {},
+    "max_immediate_discount_bp": 150,
+    "min_dscr_bp": 12500,
+    "max_leverage_bp": 25000,
+    "max_apr_bp": 1500,
+    "require_clean_down": true,
+    "allow_new_borrowing": true,
+    "tier2_single_commitment_fen": 10000000,
+    "horizon_days": 120,
+    "issued_day": 0,
+    "expires_day": 90,
+    "revoked": false,
+    "public_key_hex": "05cf00d3354cef9054d4eefe865e035a5acc95a85f9b0b1c683538c81c62b96f",
+    "signature_hex": "e97190f4d8bc3cdfc89935757b95508bcfc2e908780e43ba94032e01c75c8e589f78270197a054a0bf06e1d9b1d7abac74ef7ec61602b1b0214d136d11a53a07"
+  }
+}
