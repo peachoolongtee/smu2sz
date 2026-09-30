@@ -56,9 +56,9 @@
     "quantities": [],
     "unresolved_references": []
   },
-  "key": "f0b56693aab2d472529deb29b98815f0f638d6a8bbed683e0a1d256113368df4",
+  "key": "574ab97ba4130e3565c079cf7cc15acafc87e2d82ff4444c3493d0461d34e940",
   "kind": "offer",
   "label": "EX06_THREE_INVOICES",
-  "prompt_version": "offer-v3",
+  "prompt_version": "offer-v4",
   "source_model": "rules-v1"
 }

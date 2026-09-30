@@ -3,6 +3,10 @@
 Every number that reaches a contract is parsed here from text that is itself an exact substring of a
 source document. The model never supplies a number directly. Money is integer fen; rates are integer
 bp. No float is used anywhere on these paths.
+
+Numbers may be written in digits ("1.5%", "¥420k", "42万"), in English words ("one and a half percent",
+"four hundred and twenty thousand yuan") or in Chinese numerals ("百分之一点五", "四十二万"). A form that is
+colloquial and ambiguous ("四万二", "一千二") parses to None: the compiler then abstains instead of guessing.
 """
 
 from __future__ import annotations
@@ -11,11 +15,30 @@ import re
 from dataclasses import dataclass
 from decimal import Decimal, InvalidOperation
 
+# ---------------------------------------------------------------- CJK-safe word boundaries
+
+# Python's `\b` treats CJK characters as word characters, so "批准APR-000003" or "评估一下EX05" has no
+# boundary before the id. ASCII_B is a word boundary on ASCII word characters only.
+_W_ASCII = "[A-Za-z0-9_]"
+ASCII_B = rf"(?:(?<={_W_ASCII})(?!{_W_ASCII})|(?<!{_W_ASCII})(?={_W_ASCII}))"
+_BACKSLASH_B = re.compile(r"(?<!\\)\\b")
+
+
+def cjk_safe(pattern: str) -> str:
+    r"""`pattern` with every `\b` replaced by ASCII_B (lookarounds on ASCII word characters)."""
+    return _BACKSLASH_B.sub(lambda _m: ASCII_B, pattern)
+
+
+def rx(pattern: str, flags: int | re.RegexFlag = 0) -> re.Pattern[str]:
+    """re.compile with CJK-safe word boundaries."""
+    return re.compile(cjk_safe(pattern), flags)
+
+
 # ---------------------------------------------------------------- money
 
 _CUR = r"(?:¥|￥|RMB\s?|CNY\s?|人民币\s?)"
 _NUM = r"\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?"
-_UNIT = r"(?:[kK](?![a-zA-Z])|mn\b|million\b|m(?![a-zA-Z])|M(?![a-zA-Z])|万|亿|千)"
+_UNIT = r"(?:[kK](?![a-zA-Z])|mn\b|million\b|thousand\b|m(?![a-zA-Z])|M(?![a-zA-Z])|万|亿|千)"
 _SUFFIX = r"(?:元|\s?yuan\b|\s?RMB\b|\s?CNY\b)"
 
 MONEY_RE = re.compile(
@@ -24,6 +47,7 @@ MONEY_RE = re.compile(
 
 _UNIT_MULT = {
     "k": Decimal(1_000),
+    "thousand": Decimal(1_000),
     "m": Decimal(1_000_000),
     "mn": Decimal(1_000_000),
     "million": Decimal(1_000_000),
@@ -31,6 +55,24 @@ _UNIT_MULT = {
     "万": Decimal(10_000),
     "亿": Decimal(100_000_000),
 }
+
+# English number words: "four hundred and twenty thousand yuan" (a currency word is required).
+_EN_SMALL = {
+    "zero": 0, "one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8, "nine": 9,
+    "ten": 10, "eleven": 11, "twelve": 12, "thirteen": 13, "fourteen": 14, "fifteen": 15, "sixteen": 16,
+    "seventeen": 17, "eighteen": 18, "nineteen": 19,
+}
+_EN_TENS = {"twenty": 20, "thirty": 30, "forty": 40, "fifty": 50, "sixty": 60, "seventy": 70, "eighty": 80, "ninety": 90}
+_EN_SCALE = {"hundred": 100, "thousand": 1_000, "million": 1_000_000}
+_EN_W = "(?:" + "|".join(sorted([*_EN_SMALL, *_EN_TENS, *_EN_SCALE], key=len, reverse=True)) + ")"
+EN_WORD_MONEY_RE = re.compile(
+    rf"(?i:(?<![A-Za-z-])(?P<w>{_EN_W}(?:(?:\s+and\s+|[\s-]+){_EN_W})*)\s+(?:yuan|rmb|renminbi|cny)(?![A-Za-z]))")
+# Chinese numerals: "四十二万", "三十万元", "五千元". A 万/亿 unit or a 元/块 suffix is required.
+_ZH_N = "零一二两三四五六七八九十百千"
+ZH_WORD_MONEY_RE = re.compile(
+    rf"(?:人民币\s?)?(?<![{_ZH_N}万亿])(?P<z>[{_ZH_N}]+(?:(?:万|亿)[{_ZH_N}万亿]*)?)(?P<zs>元|块钱?)?")
+_ZH_DIGIT_VALUES = {"零": 0, "一": 1, "二": 2, "两": 2, "三": 3, "四": 4, "五": 5, "六": 6, "七": 7, "八": 8, "九": 9}
+_ZH_UNIT_VALUES = {"十": 10, "百": 100, "千": 1_000}
 
 
 @dataclass(frozen=True)
@@ -41,7 +83,15 @@ class Found:
     text: str
 
 
-MONEY_PAT = re.sub(r"\?P<\w+>", "?:", MONEY_RE.pattern)  # same grammar, no named groups
+def _strip_names(p: str) -> str:
+    return re.sub(r"\?P<\w+>", "?:", p)
+
+
+# Same grammar, no named groups: digits (with ¥/k/万), English number words, Chinese numerals.
+MONEY_PAT = (
+    f"(?:{_strip_names(MONEY_RE.pattern)}|{_strip_names(EN_WORD_MONEY_RE.pattern)}"
+    rf"|(?:人民币\s?)?(?<![{_ZH_N}万亿])[{_ZH_N}]+(?:(?:万|亿)[{_ZH_N}万亿]*(?:元|块钱?)?|元|块钱?))"
+)
 
 
 def _money_value(m: re.Match[str]) -> int | None:
@@ -62,6 +112,95 @@ def _money_value(m: re.Match[str]) -> int | None:
     return int(fen)
 
 
+def en_number_words(text: str) -> int | None:
+    """'four hundred and twenty thousand' -> 420000. None if the words do not form one number."""
+    toks = re.findall(_EN_W, text.lower())
+    if not toks:
+        return None
+    total = cur = 0
+    prev: str | None = None
+    for tok in toks:
+        if tok in _EN_SMALL or tok in _EN_TENS:
+            # "two three", "twenty thirty", "twenty twelve": not one number
+            if prev in _EN_SMALL or (prev in _EN_TENS and _EN_SMALL.get(tok, 10) >= 10):
+                return None
+            cur += _EN_SMALL.get(tok, _EN_TENS.get(tok, 0))
+        elif tok == "hundred":
+            if prev is None or prev in _EN_SCALE:
+                return None
+            cur *= 100
+        else:
+            if prev is None or (prev in _EN_SCALE and prev != "hundred"):
+                return None
+            total += cur * _EN_SCALE[tok]
+            cur = 0
+        prev = tok
+    return total + cur
+
+
+def _zh_section(s: str) -> int | None:
+    """A Chinese numeral below 10,000: '四千二百', '三十', '十二'. Colloquial '一千二' is refused (ambiguous)."""
+    n = cur = 0
+    last_unit = 0
+    zero_seen = False
+    for ch in s:
+        if ch in _ZH_DIGIT_VALUES:
+            if ch == "零":
+                zero_seen = True
+                continue
+            cur = _ZH_DIGIT_VALUES[ch]
+        elif ch in _ZH_UNIT_VALUES:
+            unit = _ZH_UNIT_VALUES[ch]
+            n += (cur or 1) * unit
+            cur = 0
+            last_unit = unit
+        else:
+            return None
+    if cur and last_unit >= 100 and not zero_seen:
+        return None  # "一千二" (1,200 colloquially): do not guess
+    return n + cur
+
+
+def zh_number(s: str) -> int | None:
+    """'四十二万' -> 420000, '一亿二千万' -> 120000000, '十二' -> 12. None when not one exact number."""
+    total = 0
+    rest = s
+    for big, mult in (("亿", 100_000_000), ("万", 10_000)):
+        if big in rest:
+            head, rest = rest.split(big, 1)
+            v = zh_number(head) if big == "亿" and "万" in head else _zh_section(head)
+            if not v:
+                return None
+            total += v * mult
+            # "四万二" (42,000 colloquially): a bare digit after the unit is ambiguous
+            if len(rest) == 1 and rest in _ZH_DIGIT_VALUES and rest != "零":
+                return None
+    if rest:
+        v = _zh_section(rest)
+        if v is None:
+            return None
+        total += v
+    return total
+
+
+def _word_money(text: str) -> list[Found]:
+    out: list[Found] = []
+    for m in EN_WORD_MONEY_RE.finditer(text):
+        n = en_number_words(m.group("w"))
+        if n:
+            out.append(Found(m.start(), m.end(), n * 100, m.group(0)))
+    for m in ZH_WORD_MONEY_RE.finditer(text):
+        z = m.group("z")
+        if not (m.group("zs") or "万" in z or "亿" in z):
+            continue
+        if not re.search("[一二两三四五六七八九十]", z):
+            continue  # "千万" (by all means), not an amount
+        n = zh_number(z)
+        if n:
+            out.append(Found(m.start(), m.end(), n * 100, m.group(0)))
+    return out
+
+
 def find_money(text: str) -> list[Found]:
     out: list[Found] = []
     for m in MONEY_RE.finditer(text):
@@ -72,7 +211,10 @@ def find_money(text: str) -> list[Found]:
         raw = text[s:e]
         stripped = raw.rstrip()
         out.append(Found(s, s + len(stripped), v, stripped))
-    return out
+    for f in _word_money(text):
+        if not any(f.start < o.end and o.start < f.end for o in out):
+            out.append(f)
+    return sorted(out, key=lambda f: f.start)
 
 
 def parse_money(text: str | None) -> int | None:
@@ -85,22 +227,83 @@ def parse_money(text: str | None) -> int | None:
 
 # ---------------------------------------------------------------- rates
 
+_EN_DIGIT_WORD = "(?:zero|oh|one|two|three|four|five|six|seven|eight|nine)"
+_EN_RATE_WORDS = (
+    r"(?:(?:zero|one|two|three|four|five|six|seven|eight|nine|ten)"
+    rf"(?:\s+point(?:\s+{_EN_DIGIT_WORD})+|\s+and\s+(?:a\s+)?(?:half|quarter|three[\s-]quarters))?"
+    rf"|point(?:\s+{_EN_DIGIT_WORD})+|half\s+(?:a|of\s+a|of\s+one)|a\s+half|a\s+quarter\s+of\s+a|a\s+quarter"
+    r"|three[\s-]quarters\s+of\s+a)"
+)
+_ZH_DEC = "[零一二两三四五六七八九十]+(?:点[零一二三四五六七八九]+)?"
 RATE_RE = re.compile(
-    r"(?:百分之\s?(?P<zh>\d+(?:\.\d+)?))|(?:(?P<num>\d+(?:\.\d+)?)\s?(?:%|％|\s?percent\b|\s?per\s?cent\b|个点))"
+    rf"(?:百分之\s?(?P<zh>\d+(?:\.\d+)?|{_ZH_DEC}))"
+    r"|(?:(?P<num>\d+(?:\.\d+)?)\s?(?:%|％|\s?percent\b|\s?per\s?cent\b|\s?percentage\s+points?\b|个点))"
+    rf"|(?:(?P<zhp>{_ZH_DEC}|半)个点)|(?:(?P<zhh>[一二两三四五六七八九十]+)个半点)"
+    rf"|(?i:(?<![A-Za-z-])(?P<en>{_EN_RATE_WORDS})\s+(?:percent|per\s?cent|percentage\s+points?)(?![A-Za-z]))"
 )
 
 
-RATE_PAT = re.sub(r"\?P<\w+>", "?:", RATE_RE.pattern)
+RATE_PAT = _strip_names(RATE_RE.pattern)
+_EN_DIGITS = {"zero": 0, "oh": 0, "one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7,
+              "eight": 8, "nine": 9, "ten": 10}
+_EN_FIXED = {"half a": "0.5", "half of a": "0.5", "half of one": "0.5", "a half": "0.5", "a quarter of a": "0.25",
+             "a quarter": "0.25", "three quarters of a": "0.75"}
+_EN_FRACTION = {"half": Decimal("0.5"), "quarter": Decimal("0.25"), "three quarters": Decimal("0.75")}
+
+
+def _zh_decimal(s: str) -> Decimal | None:
+    whole, _, frac = s.partition("点")
+    w = zh_number(whole) if whole else 0
+    if w is None:
+        return None
+    if not frac:
+        return Decimal(w)
+    return Decimal(f"{w}." + "".join(str(_ZH_DIGIT_VALUES[c]) for c in frac))
+
+
+def _en_rate_value(s: str) -> Decimal | None:
+    t = re.sub(r"[\s-]+", " ", s.lower()).strip()
+    if t in _EN_FIXED:
+        return Decimal(_EN_FIXED[t])
+    m = re.fullmatch(r"(?:(\w+) )?point((?: \w+)+)", t)
+    if m:
+        whole = _EN_DIGITS.get(m.group(1) or "zero")
+        digits = [_EN_DIGITS.get(w) for w in m.group(2).split()]
+        if whole is None or any(d is None or d > 9 for d in digits):
+            return None
+        return Decimal(f"{whole}." + "".join(str(d) for d in digits))
+    m = re.fullmatch(r"(\w+)(?: and (?:a )?(half|quarter|three quarters))?", t)
+    if m and m.group(1) in _EN_DIGITS:
+        return Decimal(_EN_DIGITS[m.group(1)]) + (_EN_FRACTION[m.group(2)] if m.group(2) else 0)
+    return None
+
+
+def _rate_value(m: re.Match[str]) -> Decimal | None:
+    try:
+        if m.group("num"):
+            return Decimal(m.group("num"))
+        if m.group("zh"):
+            z = m.group("zh")
+            return Decimal(z) if z[0].isdigit() else _zh_decimal(z)
+        if m.group("zhp"):
+            return Decimal("0.5") if m.group("zhp") == "半" else _zh_decimal(m.group("zhp"))
+        if m.group("zhh"):
+            w = zh_number(m.group("zhh"))
+            return None if w is None else Decimal(w) + Decimal("0.5")
+        if m.group("en"):
+            return _en_rate_value(m.group("en"))
+    except (InvalidOperation, KeyError):
+        return None
+    return None
 
 
 def find_rates(text: str) -> list[Found]:
     out: list[Found] = []
     for m in RATE_RE.finditer(text):
-        raw = m.group("zh") or m.group("num")
-        try:
-            bp = Decimal(raw) * 100
-        except InvalidOperation:
+        v = _rate_value(m)
+        if v is None:
             continue
+        bp = v * 100
         if bp != bp.to_integral_value():
             continue
         out.append(Found(m.start(), m.end(), int(bp), m.group(0)))
@@ -128,10 +331,14 @@ _WORDS = {
 _ZH_DIGITS = {"零": 0, "一": 1, "二": 2, "两": 2, "三": 3, "四": 4, "五": 5, "六": 6, "七": 7, "八": 8, "九": 9}
 
 NUMBER_WORD = r"\d+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|[一二两三四五六七八九十]+"
+# "the next invoice", "下一张发票": a bound of exactly one invoice.
+SINGLE_NEXT_RE = re.compile(
+    r"(?i:(?<![A-Za-z])(?:next|following|coming)\s+(?:invoice|order|bill|shipment|delivery)(?![A-Za-z]))"
+    r"|下一?(?:张|笔|批)(?:发票|订单|单|货)")
 
 
 def parse_count(text: str | None) -> int | None:
-    """'3', 'three', '三', '十二' -> int. The first count found, or None."""
+    """'3', 'three', '三', '十二', 'next invoice' -> int. The first count found, or None."""
     if not text:
         return None
     t = text.strip().lower()
@@ -144,6 +351,8 @@ def parse_count(text: str | None) -> int | None:
     m = re.search(r"[一二两三四五六七八九十]+", text)
     if m:
         return _zh_number(m.group(0))
+    if SINGLE_NEXT_RE.search(text):
+        return 1
     return None
 
 

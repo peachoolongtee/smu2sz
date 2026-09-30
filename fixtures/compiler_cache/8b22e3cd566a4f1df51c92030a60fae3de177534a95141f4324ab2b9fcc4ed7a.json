@@ -33,9 +33,9 @@
     "quantities": [],
     "unresolved_references": []
   },
-  "key": "30ca8f79c7282cfeea1ff9f0555ae84714eb2edcadab1256c3be35d539187a9b",
+  "key": "8b22e3cd566a4f1df51c92030a60fae3de177534a95141f4324ab2b9fcc4ed7a",
   "kind": "offer",
   "label": "EX02_EARLY_1_5",
-  "prompt_version": "offer-v3",
+  "prompt_version": "offer-v4",
   "source_model": "rules-v1"
 }

@@ -58,6 +58,7 @@ from app.funding import plan as funding_plan
 from app.mandate import check_apr, check_predicates, check_validity
 from app.verifier.bind import bind, material_gaps, recurring_for
 from app.verifier.counters import counters as make_counters
+from app.verifier.display import describe_all, only_early_pay, precise
 from app.verifier.models import CALC_VERSION, OwnerConstraints, PassedCheck, VerdictBundle
 from app.verifier.owner import breaches as owner_breaches
 from app.verifier.owner import describe as describe_constraints
@@ -206,7 +207,7 @@ class _Result:
 
 def _summary(outcome: Outcome, violations: Sequence[Violation], extra: Sequence[str] = ()) -> str:
     head = outcome.value.replace("_", " ")
-    parts = [f"{head}: " + "; ".join(_describe(v) for v in violations) if violations else head]
+    parts = [f"{head}: " + "; ".join(describe_all(violations, _describe)) if violations else head]
     parts += [e for e in extra if e]
     return ". ".join(parts) + "."
 
@@ -346,7 +347,7 @@ def _extension_pro_forma(
 def _covenant_checks(traj: Trajectory, state: FinancialState, mandate: Mandate,
                      skip_ratios: bool) -> tuple[list[Violation], list[PassedCheck]]:
     facilities = _committed(state)
-    violations = evaluate_covenants(traj, facilities, mandate)
+    violations = [precise(v) for v in evaluate_covenants(traj, facilities, mandate)]
     if not mandate.require_clean_down:
         violations = [v for v in violations if v.code != ViolationCode.CLEAN_DOWN_BREACH]
     codes = {v.code for v in violations}
@@ -595,11 +596,21 @@ def _evaluate(
         existing = sum(fc.value_fen for fc in state.forward_concessions)
         lengthening = any(o.type == ObligationType.TERMS_EXTENSION and (o.days_delta or 0) > 0 for o in bound)
         new_value = res.forward_total - existing
-        if lengthening or new_value > mandate.tier2_single_commitment_fen:
+        # Autonomous (Tier 1) acceptance covers only an early-payment discount on a named invoice; any other
+        # bound promise (rebate, terms, price, volume, operational) waits for the owner (the executor's rule).
+        beyond = bool(bound) and not only_early_pay(bound)
+        if lengthening or new_value > mandate.tier2_single_commitment_fen or beyond:
             outcome, tier = Outcome.NEEDS_OWNER_APPROVAL, Tier.TIER_2
-            extra_notes.append("owner approval needed: " + (
-                "the package lengthens payment terms" if lengthening else
-                f"forward value {fmt_yuan(new_value)} is above the Tier-2 threshold"))
+            if lengthening:
+                why = "the package lengthens payment terms"
+            elif new_value > mandate.tier2_single_commitment_fen:
+                why = f"forward value {fmt_yuan(new_value)} is above the Tier-2 threshold"
+            else:
+                kinds = ", ".join(dict.fromkeys(o.type.value for o in bound
+                                                if o.type != ObligationType.IMMEDIATE_DISCOUNT or not o.base.receivable_id))
+                why = (f"only an early-payment discount on a named invoice is accepted without the owner; "
+                       f"this package also binds {kinds}")
+            extra_notes.append("owner approval needed: " + why)
         else:
             outcome, tier = Outcome.ACCEPT, Tier.TIER_1
 

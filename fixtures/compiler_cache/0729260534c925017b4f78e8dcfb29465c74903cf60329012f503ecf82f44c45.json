@@ -12,9 +12,9 @@
       {
         "amount_text": null,
         "base_amount_text": null,
-        "base_kind": "PERIOD_PURCHASES",
+        "base_kind": "UNSPECIFIED",
         "bounded_invoices_text": null,
-        "confidence": 0.9,
+        "confidence": 0.6,
         "contingency": "CONTINGENT",
         "current_terms_text": null,
         "duration_kind": "ONE_OFF",
@@ -28,7 +28,9 @@
         "rate_text": "1%",
         "target_terms_text": null,
         "type": "CONTINGENT_REBATE",
-        "unresolved": []
+        "unresolved": [
+          "scope"
+        ]
       }
     ],
     "quantities": [
@@ -47,9 +49,9 @@
     ],
     "unresolved_references": []
   },
-  "key": "9403fba1574edffee538e0f6de5666daae8567a3998aec168d3da9d11d26a9fe",
+  "key": "0729260534c925017b4f78e8dcfb29465c74903cf60329012f503ecf82f44c45",
   "kind": "offer",
   "label": "EX07_CONFLICT",
-  "prompt_version": "offer-v3",
+  "prompt_version": "offer-v4",
   "source_model": "rules-v1"
 }

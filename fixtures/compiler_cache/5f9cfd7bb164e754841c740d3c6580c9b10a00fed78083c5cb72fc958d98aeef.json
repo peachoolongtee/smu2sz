@@ -11,9 +11,9 @@
     "quantities": [],
     "unresolved_references": []
   },
-  "key": "1460bfe420e8c72bf58dd43419752c35f013ec03fe7ed4eceb449678eb2d1ae8",
+  "key": "5f9cfd7bb164e754841c740d3c6580c9b10a00fed78083c5cb72fc958d98aeef",
   "kind": "offer",
   "label": "EX11_CAPEX",
-  "prompt_version": "offer-v3",
+  "prompt_version": "offer-v4",
   "source_model": "rules-v1"
 }

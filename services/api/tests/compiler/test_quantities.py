@@ -54,4 +54,5 @@ def test_a_mislabelled_amount_cannot_manufacture_a_conflict_but_real_orders_stil
     assert Compiler([_Mocked(_ex(real))]).compile_offer(docs, "BUYER-1").status == CompileStatus.CONFLICTING_SOURCES
     fake = [real[1], XQuantity(kind="order_size", doc_id=docs[1].doc_id, quote="PO-2026-118",
                                amount_text="PO-2026-118")]
-    assert Compiler([_Mocked(_ex(fake))]).compile_offer(docs, "BUYER-1").status == CompileStatus.COMPILED
+    # no conflict; the mocked backend read no term, so the "1% off" it skipped makes the offer abstain instead
+    assert Compiler([_Mocked(_ex(fake))]).compile_offer(docs, "BUYER-1").status == CompileStatus.ABSTAINED

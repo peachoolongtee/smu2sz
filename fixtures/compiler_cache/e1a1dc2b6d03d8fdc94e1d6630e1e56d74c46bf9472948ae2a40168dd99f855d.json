@@ -39,9 +39,9 @@
     "quantities": [],
     "unresolved_references": []
   },
-  "key": "364bd473d91abb125daf23f2687079739738df32a4133ac5280f5c81f8c18966",
+  "key": "e1a1dc2b6d03d8fdc94e1d6630e1e56d74c46bf9472948ae2a40168dd99f855d",
   "kind": "offer",
   "label": "EX04_CLAIMED_REBATE",
-  "prompt_version": "offer-v3",
+  "prompt_version": "offer-v4",
   "source_model": "rules-v1"
 }

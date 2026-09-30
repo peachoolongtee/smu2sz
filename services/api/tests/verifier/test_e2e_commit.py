@@ -98,7 +98,7 @@ def test_ex05_accept_waits_for_the_owner_then_executes(desk):
     """A shortening is a gain, but it is not an early-pay discount: accepting it is Tier 2 (EV-01/EV-02)."""
     store, ex, clock = desk
     v = _verdict(store, "EX05_CONSOLIDATE", declared_for("EX05_CONSOLIDATE"))  # per-event cost is owner-declared
-    assert v.outcome == Outcome.ACCEPT
+    assert (v.outcome, v.required_tier) == (Outcome.NEEDS_OWNER_APPROVAL, Tier.TIER_2)  # the verdict says so too
     c = ex.propose_commitment(v.id, expires_day=5)
     assert c.obligations == v.bound_obligations
     ext = next(o for o in c.obligations if o.type == ObligationType.TERMS_EXTENSION)

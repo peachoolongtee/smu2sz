@@ -77,9 +77,9 @@
     "quantities": [],
     "unresolved_references": []
   },
-  "key": "58388b68c962e15574ebfc2ef02ddcab8d51a4358dead72d42778fdb0fa4e968",
+  "key": "920de56f64d7e6eb7d2eadcea8c8bd24187404f797cea66d6bc379c2d2732040",
   "kind": "offer",
   "label": "EX01_PACKAGE",
-  "prompt_version": "offer-v3",
+  "prompt_version": "offer-v4",
   "source_model": "rules-v1"
 }

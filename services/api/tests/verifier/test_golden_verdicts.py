@@ -198,8 +198,8 @@ def test_ex04_rejects_claim_and_counters_without_the_rebate():
 def test_ex05_accepts_net_firm_gain(g):
     b = bundle("EX05_CONSOLIDATE")
     v = b.verdict
-    assert v.outcome == Outcome.ACCEPT and v.violations == []
-    assert v.required_tier == Tier.TIER_1  # a shorter term is a gain; forward value below Tier 2
+    assert v.outcome == Outcome.NEEDS_OWNER_APPROVAL and v.violations == []
+    assert v.required_tier == Tier.TIER_2  # a shorter term is a gain, but only early pay is accepted at Tier 1
     op, op_v = _by_type(b, ObligationType.OPERATIONAL_CONCESSION)
     assert op.amount_fen == 15_000 and op.base.events_per_year == 52 and op_v.value_fen == 780_000
     ext, ext_v = _by_type(b, ObligationType.TERMS_EXTENSION)

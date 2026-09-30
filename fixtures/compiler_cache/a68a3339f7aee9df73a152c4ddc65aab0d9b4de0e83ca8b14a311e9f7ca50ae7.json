@@ -59,9 +59,9 @@
     "quantities": [],
     "unresolved_references": []
   },
-  "key": "c4a67f1691cda9c4c4f19a84e073c9ed7facf16146d886fe55e169357f15c1b2",
+  "key": "a68a3339f7aee9df73a152c4ddc65aab0d9b4de0e83ca8b14a311e9f7ca50ae7",
   "kind": "offer",
   "label": "EX05_CONSOLIDATE",
-  "prompt_version": "offer-v3",
+  "prompt_version": "offer-v4",
   "source_model": "rules-v1"
 }

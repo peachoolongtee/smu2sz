@@ -66,6 +66,7 @@ class Parsed(_Strict):
     slots: Slots = Field(default_factory=Slots)
     correction: bool = False  # amends the session's pending plan
     confirm_plan: bool = False  # APPROVE/REJECT aimed at the pending plan, not an executor approval
+    tentative: bool = False  # a loose reading (a need described, not an instruction): propose, never execute
     source: str = "rules"  # "rules" | "llm:<model>" | "clarification" | "fallback"
     matched: list[str] = Field(default_factory=list)
 
