@@ -87,7 +87,7 @@ TermsLedger is a **modular monolith** (ADR-0001): one FastAPI service (`services
  +---------------+  CompiledOffer   +-------------------------------------+      |
  | compiler/     |----------------->| verifier/ (reads no free text)      |      |
  | LLM or cache  | typed + spans    |  screen -> mandate -> predicates    |      |
- | + rules grammar| or abstain      |  -> Verdict + formulas + counters   |      |
+ | + rules gram. | or abstain       |  -> Verdict + formulas + counters   |      |
  +---------------+                  +-------------------------------------+      |
         ^                              ^           ^            ^                |
         |                              |           |            |                |

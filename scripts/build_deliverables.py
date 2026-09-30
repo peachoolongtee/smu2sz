@@ -495,12 +495,13 @@ class Renderer:
                 p = self.para_before(anchor, style)
                 p.paragraph_format.left_indent = Inches(0.55 + 0.25 * b.level)
                 p.paragraph_format.first_line_indent = Inches(-0.2)
+                p.paragraph_format.tab_stops.add_tab_stop(Inches(0.55 + 0.25 * b.level))
                 self.inline(p, b.text)
             elif b.kind == "number":
                 p = self.para_before(anchor)
                 p.paragraph_format.left_indent = Inches(0.5 + 0.25 * b.level)
-                p.paragraph_format.first_line_indent = Inches(-0.25)
-                p.add_run(f"{b.number}.\t")
+                p.paragraph_format.first_line_indent = Inches(-0.2)
+                p.add_run(f"{b.number}. ")
                 self.inline(p, b.text)
             elif b.kind == "heading":
                 style = "Heading 2" if b.level <= 3 else "Heading 3"
