@@ -662,6 +662,8 @@ export type VerdictView = Displayed<Verdict> & {
   bound_obligations?: Displayed<Obligation>[];
   /** Conservative projection with the offer applied. */
   trajectory?: MoneyTrajectory | null;
+  /** The same projection with the committed cure plan applied. Null when the verdict has no cure. */
+  cured_trajectory?: MoneyTrajectory | null;
   forward_concession?: { total_fen: Fen; total_display: string; cap_fen: Fen; cap_display: string; over_cap: boolean };
 };
 
@@ -955,21 +957,110 @@ export interface ReconciliationView {
   chain_valid: boolean;
 }
 
+/** The closed intent set of POST /nl (services/api/app/nl/models.py). Unknown values still render, by their raw code. */
+export type NlIntent =
+  | "EVALUATE_OFFER"
+  | "NEGOTIATE"
+  | "ACCELERATE_RECEIPT"
+  | "FUND_GAP"
+  | "REPAY_FACILITY"
+  | "SHOW_STATUS"
+  | "EXPLAIN"
+  | "WHAT_IF"
+  | "APPROVE"
+  | "REJECT"
+  | "COUNTERPARTY_MESSAGE"
+  | "OUT_OF_SCOPE"
+  | "AMBIGUOUS";
+
+/** OWNER sends X-Owner-Token; COUNTERPARTY sends no credential and never executes. */
+export type NlActor = "OWNER" | "COUNTERPARTY";
+
 export interface NlRequest {
   session_id?: string;
-  actor: Actor;
+  actor: NlActor;
+  counterparty_id?: string;
   text: string;
+  lang?: "en" | "zh";
+  /** Makes a retried request replay-safe: the same id in the same session is answered as DUPLICATE, not run twice. */
+  request_id?: string;
+}
+
+export type NlPlanStatus = "PROPOSED" | "EXECUTED" | "REFUSED" | "PENDING_APPROVAL" | "DUPLICATE" | "SKIPPED" | "DONE" | "INFO";
+
+export interface NlPlanStep {
+  step: number;
+  /** An operation kind (DRAW_FACILITY, ...) or a verification step (VERIFY, NEGOTIATE). */
+  kind: string;
+  description: string;
+  status: NlPlanStatus;
+  op_id: string | null;
+  /** For example "if the buyer refuses (NO DEAL)". */
+  condition: string | null;
+}
+
+export interface NlClarification {
+  question: string;
+  options: { id: string; label: string }[];
+}
+
+/** The verdict as /nl sends it (display strings included); only the members the chat renders are typed. */
+export interface NlVerdict {
+  outcome: Outcome;
+  required_tier?: Tier;
+  summary?: string;
+  forward_concession_total_display?: string | null;
+  violations: {
+    code: string;
+    message: string;
+    day?: number | null;
+    observed?: string | null;
+    limit?: string | null;
+    formula?: string | null;
+    curable?: boolean | null;
+    cure_cost_display?: string | null;
+  }[];
+}
+
+export interface NlOperation {
+  op_id: string;
+  kind: OperationKind | string;
+  status: OperationStatus;
+  tier: Tier;
+  seq: number | null;
+  entry_hash: string | null;
+  approval_id?: string | null;
+  message: string;
+}
+
+export interface NlNegotiation {
+  outcome: string;
+  rounds: number;
+  accepted_counter: string | null;
+  ended_reason?: string;
+  buyer_replies?: string[];
 }
 
 /** POST /nl */
 export interface NlResponse {
   session_id: string;
+  turn: number;
   reply: string;
-  intent: string;
-  plan: string[];
-  verdict: VerdictView | null;
-  operations: OperationView[];
-  clarification: string | null;
+  intent: NlIntent | string;
+  lang: "en" | "zh";
+  plan: NlPlanStep[];
+  verdict: NlVerdict | null;
+  operations: NlOperation[];
+  clarification: NlClarification | null;
+  awaiting_confirmation: boolean;
+  /** The message corrected the plan that was waiting for confirmation. */
+  amended: boolean;
+  replayed: boolean;
+  negotiation: NlNegotiation | null;
+  /** Ids of the security events this turn logged (see the Security screen). */
+  security_events: string[];
+  parse_source: string;
+  trace_id: string;
 }
 
 // ------------------------------------------------------------------ what-if sandbox (display-only)

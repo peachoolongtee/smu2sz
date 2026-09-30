@@ -1,4 +1,5 @@
-import { expect, test, type Page } from "@playwright/test";
+import type { Page } from "@playwright/test";
+import { expect, test } from "./fixtures";
 
 /**
  * Walks the demo stepper in the order of docs/DEMO_FLOW.md and asserts the golden numbers from
@@ -93,6 +94,10 @@ test("demo stepper walks Scene 1, Scene 2, Scene 3 and Security with the golden 
   await expect(events.nth(1)).toContainText("UNEVIDENCED_CLAIM");
   await expect(events.nth(2)).toContainText("DATA_EXTRACTION");
   await expect(page.getByText("¥0.00").first()).toBeVisible();
+  // The original message with the triggering spans highlighted, and the exact reply that went out.
+  await expect(page.getByRole("group", { name: /Message from/ }).locator("mark").first()).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Reply sent" })).toBeVisible();
+  await expect(page.locator("#sec-reply blockquote")).not.toBeEmpty();
 
   await next(page, /\/evidence/);
   const [download] = await Promise.all([page.waitForEvent("download"), page.getByTestId("download-evidence").click()]);

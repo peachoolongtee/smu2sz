@@ -1,0 +1,257 @@
+"use client";
+
+import Link from "next/link";
+import { CodeBadge, OpStatusBadge, OutcomeBadge, TierBadge } from "@/components/badges";
+import { Badge, Button, Hash, type Tone } from "@/components/ui";
+import { useI18n } from "@/lib/i18n";
+import type { DictKey } from "@/lib/dictionary";
+import type { NlOperation, NlPlanStatus, NlPlanStep, NlResponse, NlVerdict } from "@/lib/types";
+
+const PLAN_TONE: Record<NlPlanStatus, Tone> = {
+  PROPOSED: "info",
+  EXECUTED: "ok",
+  REFUSED: "bad",
+  PENDING_APPROVAL: "warn",
+  DUPLICATE: "neutral",
+  SKIPPED: "neutral",
+  DONE: "ok",
+  INFO: "neutral",
+};
+
+/** A glyph beside the label, so status never relies on colour alone. */
+const PLAN_GLYPH: Record<NlPlanStatus, string> = {
+  PROPOSED: "○",
+  EXECUTED: "✓",
+  REFUSED: "✕",
+  PENDING_APPROVAL: "…",
+  DUPLICATE: "=",
+  SKIPPED: "–",
+  DONE: "✓",
+  INFO: "i",
+};
+
+const LONG = 160;
+
+/** Verification steps repeat the whole verdict sentence; show the start and let the reader expand it. */
+function StepText({ text }: { text: string }) {
+  const { t } = useI18n();
+  if (text.length <= LONG) return <span className="break-words">{text}</span>;
+  return (
+    <details className="min-w-0">
+      <summary className="cursor-pointer break-words marker:text-ink-3">
+        {text.slice(0, LONG)}…<span className="sr-only"> {t("chat.plan.more")}</span>
+      </summary>
+      <span className="mt-1 block whitespace-pre-wrap break-words text-ink-2">{text}</span>
+    </details>
+  );
+}
+
+function PlanList({ plan }: { plan: NlPlanStep[] }) {
+  const { t, te } = useI18n();
+  return (
+    <section aria-label={t("chat.plan")} data-testid="chat-plan">
+      <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-ink-3">{t("chat.plan")}</h3>
+      <ol className="space-y-1.5">
+        {plan.map((s) => (
+          <li key={s.step} className="flex items-start gap-2 text-sm" data-testid={`plan-step-${s.step}`} data-status={s.status}>
+            <Badge tone={PLAN_TONE[s.status]} className="mt-0.5 shrink-0">
+              <span aria-hidden>{PLAN_GLYPH[s.status]}</span>
+              {t(`chat.plan.status.${s.status}` as DictKey)}
+            </Badge>
+            <div className="min-w-0">
+              <span className="mr-1.5 text-xs font-medium text-ink-3">{te("opkind", s.kind) || s.kind}</span>
+              <StepText text={s.description} />
+              {s.condition ? <p className="text-xs text-ink-3">{t("chat.plan.condition", { c: s.condition })}</p> : null}
+            </div>
+          </li>
+        ))}
+      </ol>
+    </section>
+  );
+}
+
+function VerdictBlock({ verdict }: { verdict: NlVerdict }) {
+  const { t, te } = useI18n();
+  const bad = verdict.outcome === "REJECT";
+  return (
+    <section aria-label={t("chat.verdict")} data-testid="chat-verdict" className="space-y-2">
+      <div className="flex flex-wrap items-center gap-2">
+        <span data-testid="chat-outcome">
+          <OutcomeBadge outcome={verdict.outcome} />
+        </span>
+        {verdict.required_tier && verdict.required_tier !== "TIER_1" ? <TierBadge tier={verdict.required_tier} /> : null}
+        {verdict.violations.map((v) => (
+          <span key={v.code} data-testid={`chat-code-${v.code}`}>
+            <CodeBadge code={v.code} tone={bad ? "bad" : "warn"} />
+          </span>
+        ))}
+      </div>
+      {verdict.violations.length ? (
+        <details className="text-sm">
+          <summary className="cursor-pointer text-xs font-medium text-ink-2">{t("chat.verdict.why")}</summary>
+          <ul className="mt-1.5 space-y-2">
+            {verdict.violations.map((v) => (
+              <li key={v.code} className="rounded-md border border-line bg-subtle px-2.5 py-2">
+                <p className="font-mono text-xs font-semibold text-ink">{v.code}</p>
+                <p className="mt-0.5 break-words text-ink-2">{v.message}</p>
+                {v.observed || v.limit ? (
+                  <p className="mt-0.5 text-xs text-ink-3">
+                    {v.observed ? `${t("chat.verdict.observed")}: ${v.observed}` : null}
+                    {v.observed && v.limit ? " · " : null}
+                    {v.limit ? `${t("chat.verdict.limit")}: ${v.limit}` : null}
+                  </p>
+                ) : null}
+                {v.curable && v.cure_cost_display ? (
+                  <p className="mt-0.5 text-xs text-ok-fg">{t("chat.verdict.curable", { cost: v.cure_cost_display })}</p>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        </details>
+      ) : (
+        <p className="text-xs text-ink-3">{te("outcome", verdict.outcome)}</p>
+      )}
+    </section>
+  );
+}
+
+function OperationList({ operations }: { operations: NlOperation[] }) {
+  const { t, te } = useI18n();
+  return (
+    <section aria-label={t("chat.ops")} data-testid="chat-ops">
+      <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-ink-3">{t("chat.ops")}</h3>
+      <ul className="space-y-2">
+        {operations.map((o) => (
+          <li key={o.op_id} className="rounded-md border border-line px-2.5 py-2" data-testid={`chat-op-${o.kind}`} data-status={o.status}>
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+              <span className="text-sm font-medium text-ink">{te("opkind", o.kind) || o.kind}</span>
+              <OpStatusBadge status={o.status} />
+              <TierBadge tier={o.tier} />
+              {o.seq !== null ? <span className="text-xs text-ink-3">{t("chat.ops.seq", { n: o.seq })}</span> : null}
+              <Hash value={o.entry_hash} />
+            </div>
+            {o.message ? <p className="mt-1 break-words text-xs text-ink-2">{o.message}</p> : null}
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+export function AssistantTurn({
+  response: r,
+  active,
+  busy,
+  onSend,
+}: {
+  response: NlResponse;
+  /** Only the latest turn can be answered: confirmations and clarifications on older turns are history. */
+  active: boolean;
+  busy: boolean;
+  onSend: (text: string, display?: string) => void;
+}) {
+  const { t, te } = useI18n();
+  const hasSecurity = r.security_events.length > 0;
+  const ranNothing = r.operations.length === 0 && (hasSecurity || r.plan.length > 0);
+  const zh = r.lang === "zh";
+
+  return (
+    <div
+      className={`space-y-3 rounded-lg border bg-surface p-3 ${hasSecurity ? "border-bad-line" : "border-line"}`}
+      data-testid="chat-turn"
+      data-intent={r.intent}
+    >
+      <div className="flex flex-wrap items-center gap-2">
+        <span data-testid="chat-intent">
+          <Badge tone="brand">{te("nlintent", r.intent) || r.intent}</Badge>
+        </span>
+        {r.amended ? (
+          <span data-testid="chat-corrected">
+            <Badge tone="info" title={t("chat.corrected.hint")}>
+              {t("chat.corrected")}
+            </Badge>
+          </span>
+        ) : null}
+        {r.replayed ? (
+          <span data-testid="chat-replayed">
+            <Badge tone="neutral" title={t("chat.replayed.hint")}>
+              {t("chat.replayed")}
+            </Badge>
+          </span>
+        ) : null}
+      </div>
+
+      <p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-ink" data-testid="chat-reply">
+        {r.reply}
+      </p>
+
+      {hasSecurity ? (
+        <div role="alert" className="rounded-md border border-bad-line bg-bad-bg px-3 py-2 text-sm text-bad-fg" data-testid="chat-security">
+          <p className="font-semibold">{t("chat.security.title", { n: r.security_events.length })}</p>
+          <p className="mt-0.5">{t("chat.security.body")}</p>
+          <p className="mt-1 break-all font-mono text-xs">{r.security_events.join(", ")}</p>
+          <Link href="/security" className="mt-1 inline-block text-xs font-medium underline">
+            {t("chat.security.open")}
+          </Link>
+        </div>
+      ) : null}
+
+      {r.verdict ? <VerdictBlock verdict={r.verdict} /> : null}
+
+      {r.negotiation ? (
+        <p className="text-sm text-ink-2" data-testid="chat-negotiation">
+          {t("chat.negotiation", {
+            outcome: r.negotiation.accepted_counter
+              ? t("chat.negotiation.ACCEPT", { counter: r.negotiation.accepted_counter })
+              : t("chat.negotiation.NO_DEAL"),
+            rounds: r.negotiation.rounds,
+          })}
+        </p>
+      ) : null}
+
+      {r.plan.length ? <PlanList plan={r.plan} /> : null}
+
+      {r.operations.length ? <OperationList operations={r.operations} /> : null}
+      {ranNothing ? (
+        <p className="text-xs font-medium text-ink-2" data-testid="chat-nothing-executed">
+          {t("chat.ops.none")}
+        </p>
+      ) : null}
+
+      {r.clarification ? (
+        <section aria-label={t("chat.clarify")} className="rounded-md border border-info-line bg-info-bg px-3 py-2" data-testid="chat-clarify">
+          <p className="text-sm font-medium text-info-fg">{r.clarification.question}</p>
+          <div className="mt-2 flex flex-wrap gap-2" role="group" aria-label={t("chat.clarify.pick")}>
+            {r.clarification.options.map((o) => (
+              <Button
+                key={o.id}
+                size="sm"
+                variant="secondary"
+                disabled={!active || busy}
+                onClick={() => onSend(o.id, o.label)}
+                data-testid={`clarify-option-${o.id}`}
+              >
+                {o.label}
+              </Button>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {r.awaiting_confirmation ? (
+        <section className="rounded-md border border-warn-line bg-warn-bg px-3 py-2" data-testid="chat-awaiting" aria-label={t("chat.awaiting")}>
+          <p className="text-sm font-medium text-warn-fg">{t("chat.awaiting")}</p>
+          <p className="mt-0.5 text-xs text-warn-fg">{t("chat.awaiting.hint")}</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <Button variant="primary" size="sm" disabled={!active || busy} onClick={() => onSend(zh ? "执行" : "go ahead", t("chat.goahead"))} data-testid="chat-goahead">
+              {t("chat.goahead")}
+            </Button>
+            <Button variant="secondary" size="sm" disabled={!active || busy} onClick={() => onSend(zh ? "取消" : "cancel", t("chat.cancelPlan"))} data-testid="chat-cancel">
+              {t("chat.cancelPlan")}
+            </Button>
+          </div>
+        </section>
+      ) : null}
+    </div>
+  );
+}

@@ -6,11 +6,14 @@ import { useState, type ReactNode } from "react";
 import { apiMode } from "@/lib/api";
 import { setLang, useI18n } from "@/lib/i18n";
 import type { DictKey } from "@/lib/dictionary";
+import { ChatPanel } from "./chat/chat-panel";
 import { DemoStepper } from "./demo-stepper";
 import { MenuIcon, ShieldIcon, XIcon } from "./icons";
+import { OwnerSessionControl, OwnerSignInDialog } from "./owner-auth";
 import { Badge, Segmented } from "./ui";
 
 const NAV: { href: string; key: DictKey; group: "screens" | "more" }[] = [
+  { href: "/chat", key: "nav.chat", group: "screens" },
   { href: "/mandate", key: "nav.mandate", group: "screens" },
   { href: "/inbox", key: "nav.inbox", group: "screens" },
   { href: "/trajectory", key: "nav.trajectory", group: "screens" },
@@ -96,6 +99,9 @@ export function AppShell({ children }: { children: ReactNode }) {
         <p className="mt-auto px-3 text-xs text-ink-3">{t("common.synthetic")}</p>
       </aside>
 
+      <OwnerSignInDialog />
+      <ChatPanel />
+
       <div className="min-w-0">
         <div className="border-b border-line bg-surface lg:sticky lg:top-0 lg:z-30">
         <header>
@@ -114,10 +120,11 @@ export function AppShell({ children }: { children: ReactNode }) {
               <Brand />
             </div>
             <div className="hidden text-xs text-ink-3 lg:block">{t("common.tagline")}</div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center justify-end gap-2">
               <Badge tone={apiMode === "mock" ? "warn" : "ok"} title={t(apiMode === "mock" ? "mode.mock.hint" : "mode.live.hint")}>
                 {t(apiMode === "mock" ? "mode.mock" : "mode.live")}
               </Badge>
+              <OwnerSessionControl />
               <Segmented
                 label={t("lang.label")}
                 name="lang"

@@ -34,14 +34,30 @@ cd services/api && TERMSLEDGER_NO_DOTENV=1 DATABASE_URL=memory LLM_MODE=cache uv
 cd apps/web && NEXT_PUBLIC_API_MODE=live pnpm dev      # must be on :3000, the API's CORS allow-list
 ```
 
-### Owner token (demo only)
+### Owner sign-in
 
-The API gates its owner-console routes on the `X-Owner-Token` header, so every live request sends it. The
-value comes from `NEXT_PUBLIC_OWNER_TOKEN` and defaults to `demo-owner-token`, the API's demo default. It is
-**demo-only**: a `NEXT_PUBLIC_*` value is visible to anyone who loads the page, so a real deployment must
-authenticate the owner properly and never ship a real secret this way. A 401 shows an "owner token rejected"
-state instead of a blank screen. Downloads (borrower file `.html` / `.docx`) are fetched with the header and
-saved from an object URL, because a plain link cannot send it.
+The API gates its owner routes on `X-Owner-Token`. No token is built into the bundle. A 401 from any owner request
+opens the **Owner sign-in** dialog; the token is checked against the API (`GET /state`), then kept in
+`sessionStorage` only (every storage access is in a try/catch, so a blocked store just means the token lives for
+the page) and sent on owner requests. **Sign out** in the header clears it. A 503 with `*_NOT_CONFIGURED` shows
+"Server credentials not configured". Counterparty chat turns never send a credential.
+
+For a local demo build only, `NEXT_PUBLIC_DEMO=1` prefills the dialog with the API's published `demo-owner-token`
+and shows a "Demo credentials" badge. Do not set it for a deployment. Mock mode accepts any non-empty token, so the
+dialog can be tried offline. Downloads (borrower file `.html` / `.docx`) are fetched with the header and saved from
+an object URL, because a plain link cannot send it.
+
+### Chat (`/chat` and the slide-over)
+
+`POST /nl` through `lib/api.ts` (`nl`). State is in `lib/chat.ts` (one conversation per role, shared by the page and
+the slide-over reachable from every page). Owner turns send the token; buyer turns (BUYER-1, BUYER-2, FASTCAPITAL)
+send none. Each answer renders the intent, verdict and reason codes, plan checklist, operations (kind, status, tier,
+seq, hash), clarification buttons, the Go ahead / Cancel confirmation, the "Corrected" flag and any security events
+in red. A failed send keeps its `request_id`, so Retry is replay-safe; a 401 resends the turn after sign-in.
+Suggested prompts are in `lib/chat-prompts.ts` (from `services/api/evals/e2e/scenarios.yaml`).
+
+Mock mode replays replies recorded from the real API (`mocks/nl_script.json`, `lib/mock/nl.ts`). To re-record, run
+the API as above and POST each scripted text to `/nl` after `/demo/reset`.
 
 ### Live-mode notes
 
@@ -51,12 +67,17 @@ saved from an object URL, because a plain link cannot send it.
   screen therefore shows the snapshot taken when the decision was made (`demo.funding`).
 - The reworded offer (EX01B) is evaluated on the same books as EX01 before anything executes; the later
   "reworded" step only switches to it.
-- `/nl` is being built elsewhere: a 404 is reported as `intent: "NL_UNAVAILABLE"` rather than thrown.
+- The trajectory screen draws the verdict's `cured_trajectory` as the dashed "with committed cure" line; the Security
+  screen reads `documents` and `summary.reply_text`; approval rows use the queue's `subject`, `tier`, `created_day`
+  and `amount_display`, and a 404 or 409 on a decision refreshes the list with a plain explanation.
 
 ## Tests
 
 `playwright.config.ts` has three projects. `desktop` and `phone` run against a mock-mode build on :3100.
-`live` runs `demo`, `whatif`, `alerts`, `contract` and `live` specs against uvicorn (:8000, in-memory store,
-recorded LLM cache, no Supabase) and a live-mode build on :3000. `demo.spec.ts` is the same file in both
+`live` runs `demo`, `whatif`, `alerts`, `chat`, `contract` and `live` specs against uvicorn (:8000, in-memory store,
+recorded LLM cache, no Supabase) and a live-mode build on :3000. `demo.spec.ts` and `chat.spec.ts` are the same files in both
 modes and asserts the same golden numbers. `contract.spec.ts` calls the live adapters from Node against the
 running API. Mock and live builds use separate `NEXT_DIST_DIR`s (`.next-e2e-mock`, `.next-e2e-live`).
+
+Specs that are not about sign-in import `test` from `e2e/fixtures.ts`, which pre-seeds the owner token in the live
+project; `chat.spec.ts` signs in through the dialog like a user.

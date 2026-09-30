@@ -53,6 +53,11 @@ export async function getState(): Promise<StateView> {
   return isMock ? (await mock()).getState() : (await live()).getState();
 }
 
+/** Checks an owner token before it is kept: a cheap owner-gated read in live mode. Resolves, or throws ApiError 401 / 503. */
+export async function verifyOwnerToken(token: string): Promise<void> {
+  return isMock ? (await mock()).verifyOwnerToken(token) : (await live()).verifyOwnerToken(token);
+}
+
 /** GET /mandate */
 export async function getMandate(): Promise<MandateView> {
   return isMock ? (await mock()).getMandate() : (await live()).getMandate();
@@ -136,7 +141,7 @@ export async function getReconciliation(): Promise<ReconciliationView> {
   return isMock ? (await mock()).getReconciliation() : (await live()).getReconciliation();
 }
 
-/** POST /nl. A server without the route answers with intent NL_UNAVAILABLE instead of throwing. */
+/** POST /nl: one turn of the conversation. Owner turns need the owner token (401 opens the sign-in dialog). */
 export async function nl(req: NlRequest): Promise<NlResponse> {
   return isMock ? (await mock()).nl(req) : (await live()).nl(req);
 }

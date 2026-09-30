@@ -1,4 +1,5 @@
 import { expect, test, type APIRequestContext } from "@playwright/test";
+import { DEMO_TOKEN } from "./fixtures";
 
 /**
  * Live mode shares one in-memory API across specs, so a spec that reads the books (alerts, what-if) resets
@@ -7,7 +8,7 @@ import { expect, test, type APIRequestContext } from "@playwright/test";
 export async function resetBooks(request: APIRequestContext): Promise<void> {
   if (test.info().project.name !== "live") return;
   const res = await request.post("http://localhost:8000/demo/reset", {
-    headers: { "X-Owner-Token": process.env.NEXT_PUBLIC_OWNER_TOKEN ?? "demo-owner-token" },
+    headers: { "X-Owner-Token": DEMO_TOKEN },
   });
   expect(res.ok()).toBeTruthy();
 }

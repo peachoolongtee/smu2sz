@@ -154,7 +154,7 @@ function TrajectoryBody({
           </li>
           {showCured ? (
             <li className="flex items-center gap-1.5">
-              <span className="inline-block w-5 border-t-2 border-dotted border-ok-fg" aria-hidden />
+              <span className="inline-block w-5 border-t-2 border-dashed border-ok-fg" aria-hidden />
               {t("traj.legend.cured")}
             </li>
           ) : null}

@@ -127,6 +127,8 @@ export async function getTrajectory(mode: Mode, verdict?: VerdictView | null): P
   // The verdict's trajectory is the conservative projection with the offer applied. Expected mode has no
   // offer-applied counterpart in the API, so it shows the position today.
   const withOffer = mode === "CONSERVATIVE" && verdict?.trajectory ? (verdict.trajectory as unknown as MoneyTrajectory) : null;
+  // The API projects the offer with its committed cure plan applied (display only; the verdict already priced it).
+  const curedRaw = withOffer && verdict?.cured_trajectory ? (verdict.cured_trajectory as unknown as MoneyTrajectory) : null;
   const used = withOffer ?? raw;
   const short = withOffer && verdict ? shortfall(verdict) : { fen: null, display: null };
   const fwd = withOffer && verdict ? verdict.forward_concession : null;
@@ -136,8 +138,7 @@ export async function getTrajectory(mode: Mode, verdict?: VerdictView | null): P
     shortfall_fen: short.fen,
     shortfall_display: short.display,
     trajectory: toTrajectory(used, ctx),
-    // INTERFACE_CHANGE_REQUEST: the API does not return the trajectory with the cure plan applied.
-    cured_trajectory: null,
+    cured_trajectory: curedRaw ? toTrajectory(curedRaw, ctx) : null,
     forward_concession: {
       total_fen: fwd?.total_fen ?? 0,
       total_display: fwd?.total_display ?? used.days[used.days.length - 1]?.forward_concession.text ?? "",
