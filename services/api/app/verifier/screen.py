@@ -24,6 +24,7 @@ from app.domain.models import (
     Violation,
     ViolationCode,
 )
+from app.domain.money import bp, fmt_pct, fmt_yuan
 from app.verifier.bind import is_claimed
 
 REFUSAL_REPLY = "We are not able to share internal financial, facility or counterparty information."
@@ -77,7 +78,9 @@ def screen(
         inputs = {"sender": offer.counterparty_id, "sender_on_registry": str(sender_known).lower(),
                   "funding_claims": str(len(offer.funding_claims))}
         for n, f in enumerate(offer.funding_claims, start=1):
-            inputs[f"funding_claim_{n}"] = f"{f.lender_name}: not on the owner's funding menu; no facility added"
+            amount = fmt_yuan(f.amount_fen) if f.amount_fen is not None else "no amount"
+            rate = fmt_pct(bp(f.rate_bp)) if f.rate_bp is not None else "no rate"
+            inputs[f"funding_claim_{n}"] = f"{amount} at {rate}: not on the owner's funding menu; no facility added"
         what = [] if sender_known else [f"sender {offer.counterparty_id} is not on the owner's registry"]
         what += [f"{len(offer.funding_claims)} unsolicited funding offer(s) in the message"] if offer.funding_claims else []
         violations.append(Violation(
