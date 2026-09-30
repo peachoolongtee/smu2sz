@@ -20,8 +20,12 @@ services:
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
       FIXTURE_DIR: /app/fixtures
+      DEMO_MODE: "0"  # never accept the published demo credentials in a deployment (finding F-06)
+      OWNER_TOKEN: ${OWNER_TOKEN:?set OWNER_TOKEN in infra/.env}
+      AGENT_KEY: ${AGENT_KEY:?set AGENT_KEY in infra/.env}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
     depends_on: {postgres: {condition: service_healthy}}
-    ports: ["8000:8000"]
+    ports: ["127.0.0.1:8000:8000"]  # behind a TLS reverse proxy in deployment, never 0.0.0.0 (finding F-03)
   web:
     build: {context: .., dockerfile: infra/web.Dockerfile}
     environment:

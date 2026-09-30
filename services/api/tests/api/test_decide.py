@@ -47,3 +47,16 @@ def test_router_plan_golden(client):
     assert r["marginal"]["facility_id"] == "FAC-IF" and r["marginal"]["break_even_bp"] == 88
     assert r["marginal"]["extension_committed_12m_display"] == "¥22,455.62"
     assert any(row["selected"] for row in r["comparison"])
+
+
+def test_cured_trajectory_and_audit_documents(client):
+    _, v = _eval(client, "EX01_PACKAGE")
+    assert v["cured_trajectory"] and v["cured_trajectory"]["first_breach_day"] is None
+    _eval(client, "SEC_DEMO_FASTCAPITAL")
+    audit = client.get("/audit").json()
+    assert audit["documents"] and audit["documents"][0]["sender_id"] == "FASTCAPITAL"
+    assert audit["summary"]["reply_text"]
+
+
+def test_approval_unknown_and_already_decided(client):
+    assert client.post("/approvals/APR-999999", json={"decision": "APPROVE"}).status_code == 404

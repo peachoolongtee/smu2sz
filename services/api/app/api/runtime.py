@@ -3,10 +3,9 @@ Owned by the main architect. Modules never import this; only app/api does."""
 
 from __future__ import annotations
 
-import hmac
-import os
 import threading
 from dataclasses import dataclass, field
+from typing import Any
 
 from app.config import Settings, get_settings
 from app.domain.fixtures import load_scenario
@@ -30,6 +29,7 @@ class Runtime:
     scenario: str = "golden_sme"
     lock: threading.RLock = field(default_factory=threading.RLock)
     latest_verdict: dict[str, str] = field(default_factory=dict)  # offer_id -> verdict_id
+    documents: dict[str, Any] = field(default_factory=dict)  # doc_id -> SourceDocument (inbound, untrusted)
 
     def clock(self) -> int:
         return self.day
@@ -39,8 +39,9 @@ class Runtime:
         return Executor(self.store, trusted_owner_key_hex=self.owner_key_hex, clock=self.clock)
 
     def is_owner(self, token: str | None) -> bool:
-        expected = os.environ.get("OWNER_TOKEN", DEMO_OWNER_TOKEN)
-        return bool(token) and hmac.compare_digest(token or "", expected)
+        from app.api.auth import is_owner
+
+        return is_owner(token)
 
     def reset(self, scenario: str = "golden_sme") -> None:
         """Reload fixtures and clear the ledger (POST /demo/reset)."""
@@ -52,6 +53,7 @@ class Runtime:
             self.day = 0
             self.scenario = scenario
             self.latest_verdict.clear()
+            self.documents.clear()
             from app.nl import reset_sessions
 
             reset_sessions()

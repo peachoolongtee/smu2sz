@@ -13,6 +13,7 @@ from app.nl import reset_sessions
 from app.persistence import InMemoryLedgerStore
 
 OWNER = {"X-Owner-Token": "demo-owner-token"}
+AGENT = {"X-Agent-Key": "demo-agent-key"}  # the agent channel: no owner authority
 
 
 def build_app() -> FastAPI:
@@ -59,7 +60,7 @@ class Chat:
             body["buyer_profile"] = self.buyer_profile
         owner = kw.pop("owner", self.owner)
         body.update(kw)
-        r = self.client.post("/nl", json=body, headers=OWNER if owner else {})
+        r = self.client.post("/nl", json=body, headers=OWNER if owner else AGENT)
         assert r.status_code == 200, r.text
         return r.json()
 

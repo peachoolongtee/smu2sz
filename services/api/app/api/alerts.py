@@ -10,16 +10,17 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
 from app.alerts import Severity, alerts, reconcile
+from app.api.auth import require_owner
 from app.api.display import displayed
 from app.api.runtime import Runtime, get_runtime
 from app.domain.models import Obligation
 from app.financial import EngineError
 from app.verifier import bind
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(require_owner)])
 
 
 def _require_enabled(rt: Runtime) -> None:

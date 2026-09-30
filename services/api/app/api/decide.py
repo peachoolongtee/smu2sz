@@ -10,9 +10,10 @@ import json
 from fractions import Fraction
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
+from app.api.auth import require_owner
 from app.api.display import displayed
 from app.api.runtime import Runtime, get_runtime
 from app.api.views import trajectory_view
@@ -30,6 +31,7 @@ from app.domain.models import (
     DurationKind,
     FundingAction,
     FundingActionKind,
+    Mode,
     Obligation,
     ObligationBase,
     ObligationType,
@@ -39,6 +41,7 @@ from app.domain.models import (
 )
 from app.domain.money import fmt_pct, fmt_yuan, post
 from app.egress import AllowedValue, ProtectedSet, allowed_for_counter, guard
+from app.financial import EngineError, project
 from app.funding import (
     break_even_discount,
     compare,
@@ -49,7 +52,7 @@ from app.funding import (
 )
 from app.verifier import evaluate
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(require_owner)])
 
 PROFILES = {"cooperative": "BUYER-1", "hard_line": "BUYER-1-HARDLINE"}
 
@@ -111,6 +114,7 @@ def evaluate_offer(offer_id: str, body: EvaluateIn | None = None) -> dict:
         "plan_committed": displayed(json.loads(bundle.plan_committed.model_dump_json())) if bundle.plan_committed else None,
         "plan_expected": displayed(json.loads(bundle.plan_expected.model_dump_json())) if bundle.plan_expected else None,
         "cure_plan": displayed(json.loads(bundle.cure_plan.model_dump_json())) if bundle.cure_plan else None,
+        "cured_trajectory": _cured(bundle, state, mandate),
         "comparison": [json.loads(r.model_dump_json()) for r in bundle.comparison],
         "forward_concession": {
             "total_fen": v.forward_concession_total_fen, "total_display": fmt_yuan(v.forward_concession_total_fen),
@@ -120,6 +124,18 @@ def evaluate_offer(offer_id: str, body: EvaluateIn | None = None) -> dict:
         },
     })
     return view
+
+
+def _cured(bundle, state, mandate) -> dict | None:
+    """The trajectory with the cure plan applied (display only; the verdict already priced it)."""
+    if not bundle.cure_plan or not bundle.cure_plan.actions:
+        return None
+    try:
+        t = project(state, list(bundle.bound_obligations), list(bundle.cure_plan.actions), Mode.CONSERVATIVE,
+                    mandate.horizon_days, mandate.min_cash_fen)
+    except EngineError:
+        return None
+    return trajectory_view(t, mandate.min_cash_fen).model_dump()
 
 
 # ---------------------------------------------------------------- negotiation

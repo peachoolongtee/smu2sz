@@ -12,13 +12,14 @@ import hashlib
 import threading
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
+from app.api.auth import require_owner
 from app.api.runtime import get_runtime
 from app.domain.models import FinancialState, Mandate
 from app.whatif import PRESETS, WhatIfParamError, WhatIfParams, presets, simulate
 
-router = APIRouter(tags=["whatif"])
+router = APIRouter(tags=["whatif"], dependencies=[Depends(require_owner)])
 
 _warm_lock = threading.Lock()
 _warmed: set[str] = set()

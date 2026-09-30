@@ -10,10 +10,11 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import HTMLResponse, Response
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.api.auth import require_owner
 from app.api.display import displayed
 from app.api.runtime import Runtime, get_runtime
 from app.borrower_file import (
@@ -28,7 +29,7 @@ from app.borrower_file import (
 )
 from app.domain.models import Actor, GenerateBorrowerFile, OperationResult
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(require_owner)])
 
 # Files built in this process, by id. A file is a snapshot of verified state with its own provenance
 # footer (state version, mandate version, chain head); rebuilding with the same request on the same

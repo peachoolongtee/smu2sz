@@ -5,9 +5,10 @@ from __future__ import annotations
 import hashlib
 import json
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from fastapi.responses import PlainTextResponse
 
+from app.api.auth import require_owner
 from app.api.display import displayed
 from app.api.runtime import get_runtime
 from app.api.views import Money, TrajectoryView, trajectory_view
@@ -15,8 +16,9 @@ from app.domain.models import Mode
 from app.financial import project
 from app.mandate import MandatePolicyImpl
 from app.operations import security_summary
+from app.verifier import REFUSAL_REPLY
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(require_owner)])
 
 
 def _op_view(o) -> dict:
@@ -87,16 +89,19 @@ def get_audit() -> dict:
     ops = rt.store.operations()
     refusals = [_op_view(o) for o in ops if json.loads(o.result_json).get("status") == "REFUSED"]
     s = security_summary(rt.store)
+    events = rt.store.security_events()
+    doc_ids = {sp.doc_id for e in events for sp in e.spans}
+    extraction = any(e.kind.value == "DATA_EXTRACTION" for e in events)
     return {
-        "events": [displayed(json.loads(e.model_dump_json())) for e in rt.store.security_events()],
+        "events": [displayed(json.loads(e.model_dump_json())) for e in events],
         "refusals": refusals,
-        "documents": [],
+        "documents": [json.loads(d.model_dump_json()) for i, d in rt.documents.items() if i in doc_ids],
         "summary": displayed({
             "facilities_added": s.get("facilities_added_by_non_owner", 0),
             "commitments_booked": len(rt.store.commitments()),
             "money_moved_fen": 0,
             "disclosed_fields": [],
-            "reply_text": None,
+            "reply_text": REFUSAL_REPLY if extraction else None,
             **{k: v for k, v in s.items() if isinstance(v, (int, str, bool))},
         }),
     }

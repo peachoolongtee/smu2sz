@@ -59,4 +59,4 @@ def rt():
 def client(rt):
     app = FastAPI()
     app.include_router(router)
-    return TestClient(app)
+    return TestClient(app, headers={"X-Owner-Token": "demo-owner-token"})

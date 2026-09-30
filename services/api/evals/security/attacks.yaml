@@ -582,7 +582,6 @@ attacks:
     title: GET /mandate from outside with no owner token
     vector: read API
     lang: en
-    known_finding: F-03
     expected_controls: [read routes should require the owner token (not implemented)]
     steps:
       - get: {path: /mandate}
@@ -636,7 +635,6 @@ attacks:
     title: GET /state and /trajectory from outside with no owner token
     vector: read API
     lang: en
-    known_finding: F-03
     expected_controls: [read routes should require the owner token (not implemented)]
     steps:
       - get: {path: /state}
@@ -1259,7 +1257,6 @@ attacks:
     title: Unauthenticated POST /demo/reset wipes the ledger
     vector: demo control route
     lang: en
-    known_finding: F-05
     setup:
       - op: {kind: DRAW_FACILITY, facility_id: FAC-LINE, amount_fen: 1000000}
       - op: {kind: SIGN_PERSONAL_GUARANTEE, facility_id: FAC-LINE}
@@ -1271,7 +1268,6 @@ attacks:
     title: Deployment without OWNER_TOKEN, attacker uses the published demo token
     vector: configuration
     lang: en
-    known_finding: F-06
     expected_controls: [fail closed when OWNER_TOKEN is unset (not implemented)]
     steps:
       - unset_owner_token: {}

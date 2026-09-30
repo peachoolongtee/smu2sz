@@ -11,14 +11,15 @@ import hashlib
 import json
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
+from app.api.auth import require_owner
 from app.api.display import displayed
 from app.api.runtime import get_runtime
 from app.capex import CapexDisabled, CapexRequest, CapexResult, evaluate_capex
 from app.domain.models import Actor, ApplyForFacility, OperationResult
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(require_owner)])
 
 
 def _with_null_displays(x: Any) -> Any:

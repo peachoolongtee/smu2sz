@@ -34,6 +34,7 @@ ROOT = Path(__file__).resolve().parents[1]
 API = ROOT / "services" / "api"
 DEFAULT_SCENARIOS = API / "evals" / "e2e" / "scenarios.yaml"
 DEFAULT_OUT = API / "evals" / "e2e" / "latest"
+AGENT_KEY = os.environ.get("AGENT_KEY", "demo-agent-key")
 OWNER_TOKEN = os.environ.get("OWNER_TOKEN", "demo-owner-token")
 
 
@@ -103,11 +104,11 @@ class InProc:
                 self.client.post("/operations", json=op, headers={"X-Owner-Token": OWNER_TOKEN})
 
     def post(self, path: str, body: dict, owner: bool) -> tuple[int, dict]:
-        r = self.client.post(path, json=body, headers={"X-Owner-Token": OWNER_TOKEN} if owner else {})
+        r = self.client.post(path, json=body, headers={"X-Owner-Token": OWNER_TOKEN} if owner else {"X-Agent-Key": AGENT_KEY})
         return r.status_code, (r.json() if r.headers.get("content-type", "").startswith("application/json") else {})
 
     def get(self, path: str) -> Any:
-        r = self.client.get(path)
+        r = self.client.get(path, headers={"X-Owner-Token": OWNER_TOKEN})
         return r.json() if r.headers.get("content-type", "").startswith("application/json") else r.text
 
     def evidence(self, screenshots: dict[str, str]) -> str:
@@ -126,18 +127,19 @@ class Http:
         self.client = httpx.Client(timeout=60.0)
 
     def reset(self, setup: dict | None) -> None:
-        self.client.post(f"{self.base}/demo/reset").raise_for_status()
+        self.client.post(f"{self.base}/demo/reset", headers={"X-Owner-Token": OWNER_TOKEN}).raise_for_status()
         self.client.post(f"{self.base}/nl/reset", headers={"X-Owner-Token": OWNER_TOKEN})
 
     def post(self, path: str, body: dict, owner: bool) -> tuple[int, dict]:
-        r = self.client.post(f"{self.base}{path}", json=body, headers={"X-Owner-Token": OWNER_TOKEN} if owner else {})
+        r = self.client.post(f"{self.base}{path}", json=body,
+                             headers={"X-Owner-Token": OWNER_TOKEN} if owner else {"X-Agent-Key": AGENT_KEY})
         try:
             return r.status_code, r.json()
         except ValueError:
             return r.status_code, {}
 
     def get(self, path: str) -> Any:
-        r = self.client.get(f"{self.base}{path}")
+        r = self.client.get(f"{self.base}{path}", headers={"X-Owner-Token": OWNER_TOKEN})
         try:
             return r.json()
         except ValueError:
@@ -145,7 +147,7 @@ class Http:
 
     def evidence(self, screenshots: dict[str, str]) -> str:
         lines = []
-        for raw in self.client.get(f"{self.base}/evidence").text.splitlines():
+        for raw in self.client.get(f"{self.base}/evidence", headers={"X-Owner-Token": OWNER_TOKEN}).text.splitlines():
             if not raw.strip():
                 continue
             rec = json.loads(raw)

@@ -13,5 +13,5 @@ def client():
     rt.reset()
     set_runtime(rt)
     from app.main import app
-    yield TestClient(app)
+    yield TestClient(app, headers={"X-Owner-Token": "demo-owner-token"})
     set_runtime(None)

@@ -6,12 +6,15 @@ from __future__ import annotations
 import json
 from dataclasses import asdict
 
-from fastapi import APIRouter, Header, HTTPException
+from fastapi import APIRouter, Depends, Header, HTTPException
 from pydantic import BaseModel, TypeAdapter, ValidationError
 
+from app.api.auth import require_owner, require_owner_or_agent
 from app.api.runtime import get_runtime
 from app.domain.models import Actor, Operation
+from app.domain.money import fmt_yuan
 from app.operations import security_summary
+from app.persistence import ApprovalAlreadyDecided
 
 router = APIRouter()
 _OP = TypeAdapter(Operation)
@@ -21,7 +24,7 @@ def _result(r) -> dict:
     return json.loads(r.model_dump_json())
 
 
-@router.post("/operations")
+@router.post("/operations", dependencies=[Depends(require_owner_or_agent)])
 def post_operation(body: dict, x_owner_token: str | None = Header(default=None)) -> dict:
     rt = get_runtime()
     if body.get("requested_by") == Actor.OWNER.value and not rt.is_owner(x_owner_token):
@@ -35,7 +38,7 @@ def post_operation(body: dict, x_owner_token: str | None = Header(default=None))
         return {"result": _result(rt.executor.execute(op))}
 
 
-@router.get("/approvals/queue")
+@router.get("/approvals/queue", dependencies=[Depends(require_owner)])
 def approvals_queue() -> dict:
     rt = get_runtime()
     out = []
@@ -46,6 +49,11 @@ def approvals_queue() -> dict:
             d["operation"] = json.loads(a.op_json)
         except ValueError:
             d["operation"] = None
+        op = d["operation"] or {}
+        amt = op.get("amount_fen", op.get("advance_fen"))
+        d.update({"tier": "TIER_2", "created_day": op.get("day"), "amount_fen": amt,
+                  "amount_display": fmt_yuan(amt) if isinstance(amt, int) else None,
+                  "subject": f"{(a.kind or '').replace('_', ' ').lower()} {op.get('facility_id', '')}".strip()})
         out.append(d)
     return {"approvals": out}
 
@@ -54,16 +62,21 @@ class Decision(BaseModel):
     decision: str  # APPROVE | REJECT
 
 
-@router.post("/approvals/{approval_id}")
+@router.post("/approvals/{approval_id}", dependencies=[Depends(require_owner_or_agent)])
 def decide(approval_id: str, body: Decision, x_owner_token: str | None = Header(default=None)) -> dict:
     rt = get_runtime()
     actor = Actor.OWNER if rt.is_owner(x_owner_token) else Actor.AGENT
-    with rt.lock:
-        r = rt.executor.decide(approval_id, body.decision.upper() == "APPROVE", actor)
+    if rt.store.get_approval(approval_id) is None:
+        raise HTTPException(404, {"code": "APPROVAL_NOT_FOUND", "approval_id": approval_id})
+    try:
+        with rt.lock:
+            r = rt.executor.decide(approval_id, body.decision.upper() == "APPROVE", actor)
+    except ApprovalAlreadyDecided:
+        raise HTTPException(409, {"code": "APPROVAL_ALREADY_DECIDED", "approval_id": approval_id}) from None
     return {"result": _result(r)}
 
 
-@router.post("/circuit/{counterparty_id}/reset")
+@router.post("/circuit/{counterparty_id}/reset", dependencies=[Depends(require_owner_or_agent)])
 def reset_circuit(counterparty_id: str, x_owner_token: str | None = Header(default=None)) -> dict:
     rt = get_runtime()
     actor = Actor.OWNER if rt.is_owner(x_owner_token) else Actor.AGENT
@@ -71,6 +84,6 @@ def reset_circuit(counterparty_id: str, x_owner_token: str | None = Header(defau
         return {"result": _result(rt.executor.reset_circuit(counterparty_id, actor))}
 
 
-@router.get("/security/summary")
+@router.get("/security/summary", dependencies=[Depends(require_owner)])
 def get_security_summary() -> dict:
     return security_summary(get_runtime().store)

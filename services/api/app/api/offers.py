@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import json
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
+from app.api.auth import require_owner
 from app.api.runtime import get_runtime
 from app.compiler import compile_offer, compile_term_sheet
 from app.domain.fixtures import load_offers, offer_documents
@@ -37,11 +38,14 @@ def _docs(body: OfferIn) -> tuple[list[SourceDocument], str]:
 def post_offer(body: OfferIn) -> dict:
     docs, cp = _docs(body)
     offer = compile_offer(docs, cp)
-    get_runtime().store.put_offer(offer)
+    rt = get_runtime()
+    rt.store.put_offer(offer)
+    for d in docs:
+        rt.documents[d.doc_id] = d
     return {"offer": json.loads(offer.model_dump_json()), "documents": [json.loads(d.model_dump_json()) for d in docs]}
 
 
-@router.post("/facilities/compile")
+@router.post("/facilities/compile", dependencies=[Depends(require_owner)])
 def post_term_sheet(body: OfferIn) -> dict:
     docs, _ = _docs(body)
     ts = compile_term_sheet(docs[0])

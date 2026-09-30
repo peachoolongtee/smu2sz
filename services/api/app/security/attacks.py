@@ -191,7 +191,12 @@ def _canon(model: Any) -> dict[str, Any]:
 
 @contextmanager
 def owner_token_env(value: str | None) -> Iterator[None]:
-    old = os.environ.get("OWNER_TOKEN")
+    """Production-like credentials for one attack: DEMO_MODE off, the given owner token (or none, to
+    model a deployment that forgot it) and a random agent key."""
+    keys = ("OWNER_TOKEN", "AGENT_KEY", "DEMO_MODE")
+    old = {k: os.environ.get(k) for k in keys}
+    os.environ["DEMO_MODE"] = "0"
+    os.environ["AGENT_KEY"] = "agent-" + secrets.token_hex(16)
     if value is None:
         os.environ.pop("OWNER_TOKEN", None)
     else:
@@ -199,10 +204,11 @@ def owner_token_env(value: str | None) -> Iterator[None]:
     try:
         yield
     finally:
-        if old is None:
-            os.environ.pop("OWNER_TOKEN", None)
-        else:
-            os.environ["OWNER_TOKEN"] = old
+        for k, v in old.items():
+            if v is None:
+                os.environ.pop(k, None)
+            else:
+                os.environ[k] = v
 
 
 class _FlakyStore:
@@ -540,9 +546,11 @@ class AttackRunner:
 
     # -- helpers
 
-    def _headers(self, ctx: _Ctx, token: str | None) -> dict[str, str]:
+    def _headers(self, ctx: _Ctx, token: str | None, *, agent: bool = True) -> dict[str, str]:
+        """No owner token means the agent's own channel (it holds the agent key); attacker reads use
+        agent=False and carry no credential at all."""
         if token in (None, "none"):
-            return {}
+            return {"X-Agent-Key": os.environ.get("AGENT_KEY", "")} if agent else {}
         value = {"owner": ctx.owner_token, "wrong": "owner-" + "0" * 32, "demo": DEMO_TOKEN,
                  "padded": f" {ctx.owner_token} "}.get(token, token)
         return {"X-Owner-Token": value}
@@ -981,12 +989,12 @@ class AttackRunner:
             else:
                 raise ValueError(f"unknown tamper {arg}")
         valid = s.verify_chain()
-        r = ctx.client.get("/ledger")
+        r = ctx.client.get("/ledger", headers={"X-Owner-Token": ctx.owner_token})
         ledger_valid = r.json().get("chain_valid") if r.status_code == 200 else None
         rec.update(tamper=arg, verify_chain=valid, ledger_http=r.status_code, ledger_chain_valid=ledger_valid,
                    log_len=len(ops))
         for path in ("/audit", "/security/summary"):
-            a = ctx.client.get(path)
+            a = ctx.client.get(path, headers={"X-Owner-Token": ctx.owner_token})
             if a.status_code != 200:
                 obs.notes.append(f"GET {path} returned HTTP {a.status_code} on the tampered log "
                                  "(the chain check still reports it; the audit view is unavailable)")
@@ -1057,7 +1065,7 @@ class AttackRunner:
         """Probe a read route as an outsider (no owner token) and scan the body for protected values."""
         from app.egress import ProtectedSet, scan
 
-        r = ctx.client.get(arg["path"], headers=self._headers(ctx, arg.get("token")))
+        r = ctx.client.get(arg["path"], headers=self._headers(ctx, arg.get("token"), agent=False))
         obs.http_status.append(r.status_code)
         rec["http"] = [r.status_code]
         if r.status_code == 200:
@@ -1069,7 +1077,7 @@ class AttackRunner:
     def _do_demo_reset(self, ctx: _Ctx, arg: dict[str, Any] | None, obs: Observation, rec: dict[str, Any], phase: str) -> None:
         arg = arg or {}
         before = len(ctx.rt.store.operations())
-        r = ctx.client.post("/demo/reset", headers=self._headers(ctx, arg.get("token")))
+        r = ctx.client.post("/demo/reset", headers=self._headers(ctx, arg.get("token"), agent=False))
         obs.http_status.append(r.status_code)
         rec["http"] = [r.status_code]
         after = len(ctx.rt.store.operations())

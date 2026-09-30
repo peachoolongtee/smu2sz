@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Header, HTTPException
 
+from app.api.auth import is_agent
 from app.api.display import displayed
 from app.api.runtime import get_runtime
 from app.nl import NlRequest, handle, reset_sessions
@@ -17,8 +18,13 @@ router = APIRouter()
 
 
 @router.post("/nl")
-def post_nl(body: NlRequest, x_owner_token: str | None = Header(default=None)) -> dict:
+def post_nl(body: NlRequest, x_owner_token: str | None = Header(default=None),
+            x_agent_key: str | None = Header(default=None)) -> dict:
     rt = get_runtime()
+    if str(getattr(body.actor, "value", body.actor)) != "COUNTERPARTY" and not (
+            rt.is_owner(x_owner_token) or is_agent(x_agent_key)):
+        raise HTTPException(401, {"code": "CREDENTIAL_REQUIRED",
+                                  "message": "owner token or agent key required for the owner channel"})
     with rt.lock:
         resp = handle(body, store=rt.store, executor=rt.executor, day=rt.day, owner_key_hex=rt.owner_key_hex,
                       owner_authenticated=rt.is_owner(x_owner_token))
