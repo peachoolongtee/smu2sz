@@ -998,7 +998,7 @@ eq(c.lease_48m.total_interest - c.loan_36m.total_interest, c.lease_minus_36m_int
 write("borrower_file.json", {
   file_id: "BF-1",
   status: "PREPARED_NOT_SENT",
-  style: "WeBank 微业贷 style (mock)",
+  style: "Borrower file (micro-enterprise loan format) · lender mocked",
   sections: [
     {
       title: "Applicant",

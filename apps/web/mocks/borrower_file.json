@@ -1,7 +1,7 @@
 {
   "file_id": "BF-1",
   "status": "PREPARED_NOT_SENT",
-  "style": "WeBank 微业贷 style (mock)",
+  "style": "Borrower file (micro-enterprise loan format) · lender mocked",
   "sections": [
     {
       "title": "Applicant",
