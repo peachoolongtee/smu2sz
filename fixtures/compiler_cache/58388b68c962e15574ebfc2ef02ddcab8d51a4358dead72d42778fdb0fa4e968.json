@@ -1,6 +1,6 @@
 {
   "doc_ids": [
-    "EX01B-msg"
+    "EX01-msg"
   ],
   "extraction": {
     "authority_claims": [],
@@ -10,7 +10,7 @@
     "obligations": [
       {
         "amount_text": null,
-        "base_amount_text": null,
+        "base_amount_text": "¥420k",
         "base_kind": "INVOICE",
         "bounded_invoices_text": null,
         "confidence": 0.9,
@@ -20,8 +20,8 @@
         "events_per_year_text": null,
         "quotes": [
           {
-            "doc_id": "EX01B-msg",
-            "text": "1.2% for early settlement"
+            "doc_id": "EX01-msg",
+            "text": "settle the ¥420k early at 1.2%"
           }
         ],
         "rate_text": "1.2%",
@@ -34,15 +34,15 @@
         "base_amount_text": null,
         "base_kind": "FUTURE_INVOICES",
         "bounded_invoices_text": null,
-        "confidence": 0.9,
+        "confidence": 0.95,
         "contingency": "FIRM",
         "current_terms_text": null,
         "duration_kind": "RECURRING_PERPETUAL",
         "events_per_year_text": null,
         "quotes": [
           {
-            "doc_id": "EX01B-msg",
-            "text": "Standard terms going forward: 60 days"
+            "doc_id": "EX01-msg",
+            "text": "extend our standard terms to 60 days going forward"
           }
         ],
         "rate_text": null,
@@ -64,8 +64,8 @@
         "events_per_year_text": null,
         "quotes": [
           {
-            "doc_id": "EX01B-msg",
-            "text": "1% on next quarter"
+            "doc_id": "EX01-msg",
+            "text": "1% off next quarter"
           }
         ],
         "rate_text": "1%",
@@ -77,9 +77,9 @@
     "quantities": [],
     "unresolved_references": []
   },
-  "key": "a5f8a8291c1f80d4bfc3f2437fdc9d4542abc88c309060f47e0e9f87db1619ad",
+  "key": "58388b68c962e15574ebfc2ef02ddcab8d51a4358dead72d42778fdb0fa4e968",
   "kind": "offer",
-  "label": "EX01B_REWORDED",
-  "prompt_version": "offer-v2",
+  "label": "EX01_PACKAGE",
+  "prompt_version": "offer-v3",
   "source_model": "rules-v1"
 }
