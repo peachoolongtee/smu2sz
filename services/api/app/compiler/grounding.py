@@ -433,7 +433,7 @@ def build_offer(
 
 # ---------------------------------------------------------------- term sheets
 
-_CLAUSE_FIELD_MAP = {"equity": "covenant"}  # TermSheetClause has no 'equity' field yet (see ICR)
+_CLAUSE_FIELD_MAP: dict[str, str] = {}
 _TIER3_FIELDS = {"guarantee", "collateral", "equity"}
 _NEGATED = re.compile(r"\b(?:no|not|without|unsecured|waived?|none)\b|无需|不需要|无须|免", re.IGNORECASE)
 _PERIODIC_FEE = re.compile(r"(?:per|every)\s+(?:(?P<d>\d+)\s*days?|month|advance|period)|每(?:月|笔|期)", re.IGNORECASE)
@@ -573,10 +573,18 @@ def build_term_sheet(doc: SourceDocument, ex: TermSheetExtraction, compiler_id: 
     if ex.lender_name and ex.lender_name.strip() and ex.lender_name.strip() in doc.text:
         lender_name = ex.lender_name.strip()
 
+    ts_claims: list[AuthorityClaim] = []
+    ts_requests: list[DataRequest] = []
+    for d in lexicon.find_data_requests(doc):
+        sp = locate(by_id, doc.doc_id, d.quote)
+        if sp is not None and not any(r.kind == d.kind and _overlaps(r.span, sp) for r in ts_requests):
+            ts_requests.append(DataRequest(kind=DataRequestKind(d.kind), span=sp))
     for a in [*lexicon.find_authority_claims(doc), *ex.authority_claims]:
         sp = locate(by_id, doc.doc_id, a.quote)
         if sp is None:
             continue
+        if not any(c.kind == a.kind and _overlaps(c.span, sp) for c in ts_claims):
+            ts_claims.append(AuthorityClaim(kind=a.kind, span=sp))
         if any(x.field == f"authority_claim:{a.kind}" and x.spans and _overlaps(x.spans[0], sp) for x in abst):
             continue
         abst.append(Abstention(field=f"authority_claim:{a.kind}", reason="text asserts authority it cannot have; ignored", spans=[sp]))
@@ -626,6 +634,8 @@ def build_term_sheet(doc: SourceDocument, ex: TermSheetExtraction, compiler_id: 
         clauses=clauses,
         abstentions=abst,
         tier3_clauses=tier3,
+        authority_claims=ts_claims,
+        data_requests=ts_requests,
         status=status,
         compiler=compiler_id,
         prompt_version=prompt_version,

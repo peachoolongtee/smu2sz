@@ -257,7 +257,7 @@ class Facility(Contract):
 
 
 class TermSheetClause(Contract):
-    field: Literal["principal", "rate", "fee", "tenor", "lead_time", "guarantee", "collateral", "covenant"]
+    field: Literal["principal", "rate", "fee", "tenor", "lead_time", "guarantee", "collateral", "equity", "covenant"]
     value_text: str
     span: SourceSpan
 
@@ -272,6 +272,8 @@ class CompiledTermSheet(Contract):
     clauses: list[TermSheetClause]
     abstentions: list[Abstention] = Field(default_factory=list)
     tier3_clauses: list[TermSheetClause] = Field(default_factory=list)
+    authority_claims: list[AuthorityClaim] = Field(default_factory=list)
+    data_requests: list[DataRequest] = Field(default_factory=list)
     status: CompileStatus
     compiler: str
     prompt_version: str

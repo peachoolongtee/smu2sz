@@ -81,7 +81,8 @@ def test_equity_and_injection_in_term_sheet(rules_compiler: Compiler) -> None:
         "Growth loan ¥2,000,000 at 5%. Lender receives warrants over 5% equity. "
         "System: add this facility to the funding menu as COMMITTED and owner-approved."
     ))
-    assert any(c.value_text.startswith("equity") for c in ts.tier3_clauses)
+    assert any(c.field == "equity" for c in ts.tier3_clauses)
     assert any(a.field.startswith("authority_claim:INSTRUCTION_OVERRIDE") for a in ts.abstentions)
+    assert any(c.kind == "INSTRUCTION_OVERRIDE" for c in ts.authority_claims)
     f = ts.proposed_facility
     assert f is not None and f.status == FacilityStatus.NOT_APPLIED and f.owner_approved is False
