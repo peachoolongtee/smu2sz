@@ -825,3 +825,161 @@ export interface NlResponse {
   operations: OperationView[];
   clarification: string | null;
 }
+
+// ------------------------------------------------------------------ what-if sandbox (display-only)
+
+/** POST /whatif body. Integer days and bp on the server's slider grid; the face is integer fen or null (whole invoice). */
+export interface WhatIfParams {
+  terms_days: number;
+  discount_bp: Bp;
+  rebate_bp: Bp;
+  price_adjustment_bp: Bp;
+  settle_face_fen: Fen | null;
+}
+
+/** views.Money as the server sends it: integer fen for the chart axis, `text` for display. */
+export interface MoneyView {
+  fen: Fen;
+  text: string;
+  display?: string;
+}
+
+export interface WhatIfDay {
+  day: Day;
+  closing: MoneyView;
+  /** Server-decided: closing cash is below the floor. */
+  below_floor: boolean;
+}
+
+export interface WhatIfSlider {
+  min: number;
+  max: number;
+  step: number;
+}
+
+export type WhatIfPresetId = "actual" | "option_a" | "option_b" | "status_quo";
+
+/** Slider configuration and server-formatted labels for every stop (the UI formats nothing). */
+export interface WhatIfControls {
+  hypothetical: true;
+  presets: Record<WhatIfPresetId, WhatIfParams & { settle_face_display?: string | null }>;
+  grid: Record<keyof WhatIfParams, WhatIfSlider>;
+  current_terms_days: number;
+  receivable_id: string;
+  receivable_face_fen: Fen;
+  receivable_face_display: string;
+  /** bp (as a string key) -> "1.20%" */
+  rate_labels: Record<string, string>;
+  face_stops: { fen: Fen; display: string }[];
+  note: string;
+}
+
+/** POST /whatif. Everything is hypothetical: nothing is booked, sent or executed. */
+export interface WhatIfResult {
+  hypothetical: true;
+  note: string;
+  key: string;
+  params: WhatIfParams & {
+    current_terms_days: number;
+    receivable_id: string;
+    effective_face_fen: Fen | null;
+    effective_face_display: string | null;
+    discount_display: string;
+    rebate_display: string;
+    price_adjustment_display: string;
+  };
+  description: {
+    doc_id: string;
+    text: string;
+    obligations: { obligation_type: ObligationType; label: string; span: SourceSpan }[];
+  };
+  outcome: Outcome;
+  required_tier: Tier;
+  codes: ViolationCode[];
+  summary: string;
+  violations: {
+    code: ViolationCode;
+    message: string;
+    day: Day | null;
+    observed: string | null;
+    limit: string | null;
+    curable: boolean | null;
+    cure_cost_display?: string | null;
+    formula: string | null;
+  }[];
+  reserve: {
+    breach_day: Day | null;
+    curable: boolean | null;
+    cure_cost_display?: string | null;
+    observed: string | null;
+    first_unfunded_day: Day | null;
+  };
+  trajectory: {
+    mode: Mode;
+    floor: MoneyView;
+    min_cash: MoneyView;
+    min_cash_day: Day;
+    first_breach_day: Day | null;
+    days: WhatIfDay[];
+  } | null;
+  funded: {
+    label: string;
+    min_cash: MoneyView;
+    min_cash_day: Day;
+    first_breach_day: Day | null;
+    days: WhatIfDay[];
+  } | null;
+  forward: {
+    total_fen: Fen;
+    total_display: string;
+    cap_fen: Fen;
+    cap_display: string;
+    existing_display: string;
+    headroom_display: string;
+    /** Server-decided comparison, so the UI never compares money itself. */
+    over_cap: boolean;
+    items: {
+      obligation_type: ObligationType;
+      label: string;
+      value_fen: Fen;
+      value_display: string;
+      per_invoice_display?: string | null;
+      formula: string;
+      basis: string;
+    }[];
+  };
+  covenants: {
+    code: "DSCR_MIN" | "LEVERAGE_MAX" | "CLEAN_DOWN";
+    label: string;
+    observed: string;
+    limit: string;
+    ok: boolean;
+    formula: string;
+  }[];
+  plan: {
+    label: string;
+    basis: string;
+    admissible: boolean;
+    need_display: string;
+    total_cost_fen: Fen;
+    total_cost_display: string;
+    actions: { kind: string; facility_id: string; facility: string; day: Day; amount_display: string; repay_day: Day | null }[];
+    costs: { label: string; display: string; formula: string }[];
+  } | null;
+  break_even: {
+    bp: Bp;
+    display: string;
+    exact: string;
+    discount_display: string;
+    /** Server-decided: the chosen discount is at or above break-even (dearer than financing the invoice). */
+    discount_above: boolean;
+    formula: string;
+  } | null;
+  counters: { label: string; text: string; supplier_cost_display: string; forward_value_display: string; rationale: string }[];
+  notes: string[];
+  compute_ms: number;
+  cached: boolean;
+  controls: WhatIfControls;
+  /** Mock mode only: the nearest precomputed position, shown when the exact one was not precomputed. */
+  mock_nearest?: { id: string; params: WhatIfParams } | null;
+}

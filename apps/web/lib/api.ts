@@ -30,6 +30,8 @@ import type {
   SubmitOfferRequest,
   TrajectoryView,
   VerdictView,
+  WhatIfParams,
+  WhatIfResult,
 } from "./types";
 
 export class ApiError extends Error {
@@ -151,6 +153,11 @@ export async function borrowerFile(req: { facility_id: string; amount_fen: numbe
 /** POST /nl */
 export async function nl(req: NlRequest): Promise<NlResponse> {
   return isMock ? (await mock()).nl(req) : http("POST", "/nl", req);
+}
+
+/** POST /whatif: a hypothetical verdict for slider positions. Display-only; nothing is booked or executed. */
+export async function whatIf(params: WhatIfParams): Promise<WhatIfResult> {
+  return isMock ? (await mock()).whatIf(params) : http("POST", "/whatif", params);
 }
 
 /** POST /demo/reset */
