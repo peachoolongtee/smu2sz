@@ -681,6 +681,30 @@ def _month_of(d: int) -> int:
     return max(1, -(-d // MONTH_DAYS))
 
 
+def _booked(
+    state: FinancialState,
+    obligations: list[Obligation],
+    actions: list[FundingAction],
+    mode: Mode,
+    horizon_days: int,
+    min_cash_fen: int | None,
+) -> tuple[_Book, int]:
+    """Every posting of a projection and its final horizon H (see `project`). Shared by `project`
+    and `app.financial.cashpath.project_cash`, so both book exactly the same postings."""
+    if horizon_days < 0:
+        raise ValueError("horizon_days must not be negative")
+    bound = max([horizon_days] + [a.day for a in actions] + [a.repay_day or 0 for a in actions]
+                + [ob.effective_day or 0 for ob in obligations] + [_issue_day_of(a.receivable_id) for a in actions])
+    while True:
+        book, _ = _build(state, obligations, actions, mode, bound)
+        horizon = max([horizon_days] + [d + 1 for d in book.repayment_days] + book.funding_days)
+        if horizon <= bound:
+            break
+        bound = horizon
+    _repay_carried(state, book, horizon, min_cash_fen if min_cash_fen is not None else 0)
+    return book, horizon
+
+
 def project(
     state: FinancialState,
     obligations: list[Obligation],
@@ -695,17 +719,7 @@ def project(
     UncommittedFacilityError for a facility the mode may not use, FundingActionError for a malformed
     or over-limit action, and ObligationError for an obligation that cannot be bound to state.
     """
-    if horizon_days < 0:
-        raise ValueError("horizon_days must not be negative")
-    bound = max([horizon_days] + [a.day for a in actions] + [a.repay_day or 0 for a in actions]
-                + [ob.effective_day or 0 for ob in obligations] + [_issue_day_of(a.receivable_id) for a in actions])
-    while True:
-        book, _ = _build(state, obligations, actions, mode, bound)
-        horizon = max([horizon_days] + [d + 1 for d in book.repayment_days] + book.funding_days)
-        if horizon <= bound:
-            break
-        bound = horizon
-    _repay_carried(state, book, horizon, min_cash_fen if min_cash_fen is not None else 0)
+    book, horizon = _booked(state, obligations, actions, mode, horizon_days, min_cash_fen)
 
     fac = {f.id: f for f in state.facilities}
     by_day: dict[int, list[_Posting]] = defaultdict(list)

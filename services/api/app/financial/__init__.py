@@ -4,6 +4,7 @@ Pure and deterministic. Money is integer fen; rounding happens only through app.
 """
 
 from app.financial.amortisation import AmortisationRow, amortisation_schedule, annuity_payment
+from app.financial.cashpath import CashPath, project_cash
 from app.financial.charges import (
     DEFAULT_FEE_PERIOD_DAYS,
     fee_period_days,
@@ -20,6 +21,7 @@ from app.financial.trajectory import project, recurring_receivable_id
 __all__ = [
     "DEFAULT_FEE_PERIOD_DAYS",
     "AmortisationRow",
+    "CashPath",
     "Engine",
     "EngineError",
     "FundingActionError",
@@ -32,6 +34,7 @@ __all__ = [
     "if_all_in_rate",
     "line_interest",
     "project",
+    "project_cash",
     "recurring_receivable_id",
     "upfront_fee",
     "value_concessions",
