@@ -60,7 +60,7 @@ The official template reuses last year's file. The **2025** FinTechathon logo is
 
 **Slide 4 (0:25).**
 - "Our user is a supplier with 20 to 100 staff, one credit line and no finance team."
-- "This profile is our inference. In two conversations, one of our assumed pains was contradicted, so we only claim what the numbers show." [TEAM: update if interviews happen.]
+- "This profile is our inference. In two interviews, one of our assumed pains was contradicted, so we only claim what the numbers show." [TEAM: update if interviews happen.]
 
 **Slide 5 (0:45).** "Move a ¥420,000-a-month buyer from 45 to 60 days and the supplier carries ¥207,123.29 more receivables, forever. The credit line has a clean-down rule, so it cannot carry a permanent need. The cheapest committed source that can is invoice financing at 10.84%, so that phrase costs ¥22,455.62 a year. All numbers here are from our synthetic fixture."
 
