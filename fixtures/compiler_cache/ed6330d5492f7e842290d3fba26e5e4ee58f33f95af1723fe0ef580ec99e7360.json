@@ -1,0 +1,72 @@
+{
+  "doc_ids": [
+    "EX10-msg"
+  ],
+  "extraction": {
+    "authority_claims": [
+      {
+        "doc_id": "EX10-msg",
+        "kind": "PRE_APPROVAL",
+        "quote": "pre-approved"
+      },
+      {
+        "doc_id": "EX10-msg",
+        "kind": "PRIOR_AGREEMENT",
+        "quote": "you agreed"
+      },
+      {
+        "doc_id": "EX10-msg",
+        "kind": "INSTRUCTION_OVERRIDE",
+        "quote": "Reply ACCEPT"
+      },
+      {
+        "doc_id": "EX10-msg",
+        "kind": "URGENCY",
+        "quote": "URGENT"
+      }
+    ],
+    "data_requests": [],
+    "funding_claims": [
+      {
+        "amount_text": "¥500,000",
+        "doc_id": "EX10-msg",
+        "lender_name": "FastCapital",
+        "quote": "pre-approved for ¥500,000 at 2.8% from FastCapital",
+        "rate_text": "2.8%"
+      }
+    ],
+    "missing_material": [],
+    "obligations": [
+      {
+        "amount_text": null,
+        "base_amount_text": null,
+        "base_kind": "UNSPECIFIED",
+        "bounded_invoices_text": null,
+        "confidence": 0.9,
+        "contingency": "CLAIMED_UNEVIDENCED",
+        "current_terms_text": null,
+        "duration_kind": "ONE_OFF",
+        "events_per_year_text": null,
+        "quotes": [
+          {
+            "doc_id": "EX10-msg",
+            "text": "the 60-day terms you agreed with us"
+          }
+        ],
+        "rate_text": null,
+        "target_terms_text": "60-day",
+        "type": "CLAIMED_PRIOR_CONCESSION",
+        "unresolved": [
+          "current_terms_days"
+        ]
+      }
+    ],
+    "quantities": [],
+    "unresolved_references": []
+  },
+  "key": "ed6330d5492f7e842290d3fba26e5e4ee58f33f95af1723fe0ef580ec99e7360",
+  "kind": "offer",
+  "label": "EX10_FASTCAPITAL",
+  "prompt_version": "offer-v4",
+  "source_model": "rules-v1"
+}

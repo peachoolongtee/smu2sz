@@ -1,0 +1,47 @@
+{
+  "doc_ids": [
+    "EX04-msg"
+  ],
+  "extraction": {
+    "authority_claims": [
+      {
+        "doc_id": "EX04-msg",
+        "kind": "PRIOR_AGREEMENT",
+        "quote": "we agreed"
+      }
+    ],
+    "data_requests": [],
+    "funding_claims": [],
+    "missing_material": [],
+    "obligations": [
+      {
+        "amount_text": null,
+        "base_amount_text": null,
+        "base_kind": "UNSPECIFIED",
+        "bounded_invoices_text": null,
+        "confidence": 0.9,
+        "contingency": "CLAIMED_UNEVIDENCED",
+        "current_terms_text": null,
+        "duration_kind": "ONE_OFF",
+        "events_per_year_text": null,
+        "quotes": [
+          {
+            "doc_id": "EX04-msg",
+            "text": "the 2% rebate we agreed last month"
+          }
+        ],
+        "rate_text": "2%",
+        "target_terms_text": null,
+        "type": "CLAIMED_PRIOR_CONCESSION",
+        "unresolved": []
+      }
+    ],
+    "quantities": [],
+    "unresolved_references": []
+  },
+  "key": "e1a1dc2b6d03d8fdc94e1d6630e1e56d74c46bf9472948ae2a40168dd99f855d",
+  "kind": "offer",
+  "label": "EX04_CLAIMED_REBATE",
+  "prompt_version": "offer-v4",
+  "source_model": "rules-v1"
+}

@@ -1,0 +1,41 @@
+{
+  "doc_ids": [
+    "EX08B-msg"
+  ],
+  "extraction": {
+    "authority_claims": [],
+    "data_requests": [],
+    "funding_claims": [],
+    "missing_material": [],
+    "obligations": [
+      {
+        "amount_text": null,
+        "base_amount_text": "¥250,000",
+        "base_kind": "PERIOD_PURCHASES",
+        "bounded_invoices_text": null,
+        "confidence": 0.9,
+        "contingency": "CONTINGENT",
+        "current_terms_text": null,
+        "duration_kind": "ONE_OFF",
+        "events_per_year_text": null,
+        "quotes": [
+          {
+            "doc_id": "EX08B-msg",
+            "text": "1% off next quarter on up to ¥250,000"
+          }
+        ],
+        "rate_text": "1%",
+        "target_terms_text": null,
+        "type": "CONTINGENT_REBATE",
+        "unresolved": []
+      }
+    ],
+    "quantities": [],
+    "unresolved_references": []
+  },
+  "key": "f8273f6d7efac58d19e85263dabacb8e75ffc8105a852851cc50c575957cae43",
+  "kind": "offer",
+  "label": "EX08B_JOINT_BUYER2",
+  "prompt_version": "offer-v4",
+  "source_model": "rules-v1"
+}

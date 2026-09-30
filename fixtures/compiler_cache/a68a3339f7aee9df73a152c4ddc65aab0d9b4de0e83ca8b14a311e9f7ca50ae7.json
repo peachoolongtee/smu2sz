@@ -1,0 +1,67 @@
+{
+  "doc_ids": [
+    "EX05-msg"
+  ],
+  "extraction": {
+    "authority_claims": [],
+    "data_requests": [],
+    "funding_claims": [],
+    "missing_material": [],
+    "obligations": [
+      {
+        "amount_text": null,
+        "base_amount_text": null,
+        "base_kind": "FUTURE_INVOICES",
+        "bounded_invoices_text": null,
+        "confidence": 0.9,
+        "contingency": "FIRM",
+        "current_terms_text": null,
+        "duration_kind": "RECURRING_PERPETUAL",
+        "events_per_year_text": null,
+        "quotes": [
+          {
+            "doc_id": "EX05-msg",
+            "text": "move you to 30-day terms"
+          }
+        ],
+        "rate_text": null,
+        "target_terms_text": "30-day",
+        "type": "TERMS_EXTENSION",
+        "unresolved": [
+          "current_terms_days"
+        ]
+      },
+      {
+        "amount_text": null,
+        "base_amount_text": null,
+        "base_kind": "PER_EVENT",
+        "bounded_invoices_text": null,
+        "confidence": 0.8,
+        "contingency": "FIRM",
+        "current_terms_text": null,
+        "duration_kind": "RECURRING_PERPETUAL",
+        "events_per_year_text": null,
+        "quotes": [
+          {
+            "doc_id": "EX05-msg",
+            "text": "Consolidate deliveries to our Foshan DC"
+          }
+        ],
+        "rate_text": null,
+        "target_terms_text": null,
+        "type": "OPERATIONAL_CONCESSION",
+        "unresolved": [
+          "per_event_cost_fen",
+          "events_per_year"
+        ]
+      }
+    ],
+    "quantities": [],
+    "unresolved_references": []
+  },
+  "key": "a68a3339f7aee9df73a152c4ddc65aab0d9b4de0e83ca8b14a311e9f7ca50ae7",
+  "kind": "offer",
+  "label": "EX05_CONSOLIDATE",
+  "prompt_version": "offer-v4",
+  "source_model": "rules-v1"
+}

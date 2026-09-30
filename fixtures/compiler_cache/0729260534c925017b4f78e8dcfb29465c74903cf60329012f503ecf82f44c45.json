@@ -1,0 +1,57 @@
+{
+  "doc_ids": [
+    "EX07-msg",
+    "EX07-att"
+  ],
+  "extraction": {
+    "authority_claims": [],
+    "data_requests": [],
+    "funding_claims": [],
+    "missing_material": [],
+    "obligations": [
+      {
+        "amount_text": null,
+        "base_amount_text": null,
+        "base_kind": "UNSPECIFIED",
+        "bounded_invoices_text": null,
+        "confidence": 0.6,
+        "contingency": "CONTINGENT",
+        "current_terms_text": null,
+        "duration_kind": "ONE_OFF",
+        "events_per_year_text": null,
+        "quotes": [
+          {
+            "doc_id": "EX07-msg",
+            "text": "1% off for the volume"
+          }
+        ],
+        "rate_text": "1%",
+        "target_terms_text": null,
+        "type": "CONTINGENT_REBATE",
+        "unresolved": [
+          "scope"
+        ]
+      }
+    ],
+    "quantities": [
+      {
+        "amount_text": "¥40k",
+        "doc_id": "EX07-msg",
+        "kind": "order_size",
+        "quote": "¥40k order"
+      },
+      {
+        "amount_text": "¥400,000",
+        "doc_id": "EX07-att",
+        "kind": "order_size",
+        "quote": "Order size: ¥400,000"
+      }
+    ],
+    "unresolved_references": []
+  },
+  "key": "0729260534c925017b4f78e8dcfb29465c74903cf60329012f503ecf82f44c45",
+  "kind": "offer",
+  "label": "EX07_CONFLICT",
+  "prompt_version": "offer-v4",
+  "source_model": "rules-v1"
+}

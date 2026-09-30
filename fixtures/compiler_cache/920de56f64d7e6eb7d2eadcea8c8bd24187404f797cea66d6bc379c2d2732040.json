@@ -1,0 +1,85 @@
+{
+  "doc_ids": [
+    "EX01-msg"
+  ],
+  "extraction": {
+    "authority_claims": [],
+    "data_requests": [],
+    "funding_claims": [],
+    "missing_material": [],
+    "obligations": [
+      {
+        "amount_text": null,
+        "base_amount_text": "¥420k",
+        "base_kind": "INVOICE",
+        "bounded_invoices_text": null,
+        "confidence": 0.9,
+        "contingency": "FIRM",
+        "current_terms_text": null,
+        "duration_kind": "ONE_OFF",
+        "events_per_year_text": null,
+        "quotes": [
+          {
+            "doc_id": "EX01-msg",
+            "text": "settle the ¥420k early at 1.2%"
+          }
+        ],
+        "rate_text": "1.2%",
+        "target_terms_text": null,
+        "type": "IMMEDIATE_DISCOUNT",
+        "unresolved": []
+      },
+      {
+        "amount_text": null,
+        "base_amount_text": null,
+        "base_kind": "FUTURE_INVOICES",
+        "bounded_invoices_text": null,
+        "confidence": 0.95,
+        "contingency": "FIRM",
+        "current_terms_text": null,
+        "duration_kind": "RECURRING_PERPETUAL",
+        "events_per_year_text": null,
+        "quotes": [
+          {
+            "doc_id": "EX01-msg",
+            "text": "extend our standard terms to 60 days going forward"
+          }
+        ],
+        "rate_text": null,
+        "target_terms_text": "60 days",
+        "type": "TERMS_EXTENSION",
+        "unresolved": [
+          "current_terms_days"
+        ]
+      },
+      {
+        "amount_text": null,
+        "base_amount_text": null,
+        "base_kind": "PERIOD_PURCHASES",
+        "bounded_invoices_text": null,
+        "confidence": 0.9,
+        "contingency": "CONTINGENT",
+        "current_terms_text": null,
+        "duration_kind": "ONE_OFF",
+        "events_per_year_text": null,
+        "quotes": [
+          {
+            "doc_id": "EX01-msg",
+            "text": "1% off next quarter"
+          }
+        ],
+        "rate_text": "1%",
+        "target_terms_text": null,
+        "type": "CONTINGENT_REBATE",
+        "unresolved": []
+      }
+    ],
+    "quantities": [],
+    "unresolved_references": []
+  },
+  "key": "920de56f64d7e6eb7d2eadcea8c8bd24187404f797cea66d6bc379c2d2732040",
+  "kind": "offer",
+  "label": "EX01_PACKAGE",
+  "prompt_version": "offer-v4",
+  "source_model": "rules-v1"
+}

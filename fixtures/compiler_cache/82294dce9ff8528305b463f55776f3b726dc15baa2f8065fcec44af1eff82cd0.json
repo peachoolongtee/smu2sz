@@ -1,0 +1,19 @@
+{
+  "doc_ids": [
+    "EX12-msg"
+  ],
+  "extraction": {
+    "authority_claims": [],
+    "data_requests": [],
+    "funding_claims": [],
+    "missing_material": [],
+    "obligations": [],
+    "quantities": [],
+    "unresolved_references": []
+  },
+  "key": "82294dce9ff8528305b463f55776f3b726dc15baa2f8065fcec44af1eff82cd0",
+  "kind": "offer",
+  "label": "EX12_GOAL",
+  "prompt_version": "offer-v4",
+  "source_model": "rules-v1"
+}

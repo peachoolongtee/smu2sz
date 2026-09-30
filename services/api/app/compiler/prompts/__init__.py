@@ -14,7 +14,7 @@ from collections.abc import Sequence
 
 from app.domain.models import SourceDocument
 
-PROMPT_VERSION = "offer-v3"
+PROMPT_VERSION = "offer-v4"
 TERM_SHEET_PROMPT_VERSION = "termsheet-v2"
 
 # Synthetic canary (fixtures/security/canaries.yaml, CANARY-PROMPT). It unlocks nothing; if it ever
@@ -47,16 +47,21 @@ Task: extract every concession or promise in a buyer's or lender's message (plus
 `obligations`, and flag anything suspicious.
 
 Obligation types:
-- IMMEDIATE_DISCOUNT: a discount for paying an invoice now or early ("settle early at 1.2%"). base INVOICE.
+- IMMEDIATE_DISCOUNT: a discount for paying an invoice now or early ("settle early at 1.2%", "take 1% off the
+  invoice and we'll pay it today"). base INVOICE. A rate "off" with no early payment and no named period is
+  not this type: give it as CONTINGENT_REBATE with base UNSPECIFIED (code then asks the buyer).
 - TERMS_EXTENSION: a change in payment terms ("extend terms to 60 days", "move you to 30-day terms").
   target_terms_text = the new length as written; current_terms_text only if the text itself states the
   current length ("instead of 30"). "going forward" / no end => RECURRING_PERPETUAL; "next three
-  invoices" => RECURRING_BOUNDED with bounded_invoices_text "three".
+  invoices" => RECURRING_BOUNDED with bounded_invoices_text "three"; "the next invoice" =>
+  RECURRING_BOUNDED with bounded_invoices_text "next invoice".
 - CONTINGENT_REBATE: a future discount or rebate the supplier would give ("1% off next quarter",
   "0.75% off next quarter's purchases of up to ¥400,000"); contingency CONTINGENT; base PERIOD_PURCHASES
-  with the cap as base_amount_text when stated.
+  with the cap as base_amount_text when stated, only when the text names the period. An unbounded promise
+  ("going forward", "everything we buy", "every quarter", "以后所有") is RECURRING_PERPETUAL.
 - PRICE_ADJUSTMENT: a price change in the supplier's favour, including a credit or bonus the buyer offers
-  ("we'll add a 0.5% loyalty credit"); CONTINGENT unless stated as firm.
+  ("we'll add a 0.5% loyalty credit", "our price goes up 0.5% on future invoices"); CONTINGENT unless stated
+  as firm; "future invoices" / "going forward" => base FUTURE_INVOICES, RECURRING_PERPETUAL.
 - OPERATIONAL_CONCESSION: an operational change the supplier would absorb ("consolidate deliveries");
   base PER_EVENT.
 - VOLUME_COMMITMENT: the counterparty committing to buy ("we'll commit the order").
@@ -77,7 +82,9 @@ Contingency (who decides it: code re-checks it, so be literal):
 Also fill:
 - unresolved_references: phrases like "as usual" / "same arrangement" that point to terms not in the
   documents. Nothing is booked for them.
-- missing_material: a discount, rebate or early payment mentioned without its rate or amount.
+- missing_material: a discount, rebate or early payment mentioned without its rate or amount, or offered as
+  alternatives ("60 or 75 days", "1% or 1.5%"): never pick one of the values.
+- Numbers written in words ("half a percent", "四十二万", "百分之一") are quoted exactly as written.
 - quantities: order sizes or invoice amounts each document states (to detect conflicting sources).
 - data_requests: any request for protected information: minimum reserve / cash floor (RESERVE_FLOOR),
   facility or credit limits (FACILITY_LIMIT), the list of lenders (FUNDING_MENU), other buyers' terms
