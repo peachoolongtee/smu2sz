@@ -111,6 +111,7 @@ class Obligation(Contract):
     rate_bp: Bp | None = None  # discount / rebate / price-adjustment rate
     amount_fen: Fen | None = None  # fixed amount, e.g. ¥150 per shipment
     days_delta: int | None = None  # payment-terms change in days
+    target_terms_days: int | None = None  # terms the text states ("60 days"); the verifier derives days_delta
     effective_day: Day | None = None  # when it takes effect / is settled
     base: ObligationBase
     contingency: Contingency
@@ -376,6 +377,17 @@ class ForwardConcession(Contract):
     label: str
 
 
+class ExpectedOrder(Contract):
+    """A buyer order the supplier expects (e.g. next quarter). Rebate bases bind to it."""
+
+    counterparty_id: str
+    label: str  # "next quarter"
+    start_day: Day
+    end_day: Day
+    amount_fen: Fen
+    firm: bool = False
+
+
 class Counterparty(Contract):
     id: str
     name: str
@@ -395,6 +407,7 @@ class FinancialState(Contract):
     facilities: list[Facility] = Field(default_factory=list)
     debts: list[DebtPosition] = Field(default_factory=list)
     forward_concessions: list[ForwardConcession] = Field(default_factory=list)
+    expected_orders: list[ExpectedOrder] = Field(default_factory=list)
     counterparties: list[Counterparty] = Field(default_factory=list)
     monthly_ebitda_fen: Fen
     state_version: int = 1
@@ -585,7 +598,8 @@ class CounterProposal(Contract):
     label: str  # "Option A"
     text: str  # template-filled outbound wording; never free-generated with secrets
     obligations: list[Obligation]
-    supplier_cost_fen: Fen
+    supplier_cost_fen: Fen  # immediate cost to the supplier (e.g. discount + line interest)
+    forward_value_fen: Fen = 0  # forward-concession value the commitment would book
     rationale: str
     formula: str
 
@@ -596,6 +610,7 @@ class Verdict(Contract):
     offer_version: int
     outcome: Outcome
     violations: list[Violation] = Field(default_factory=list)
+    bound_obligations: list[Obligation] = Field(default_factory=list)  # what was verified; commit exactly these
     concession_values: list[ConcessionValue] = Field(default_factory=list)
     forward_concession_total_fen: Fen = 0
     counters: list[CounterProposal] = Field(default_factory=list)

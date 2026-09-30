@@ -57,6 +57,8 @@ state = FinancialState(
     recurring_invoices=[RecurringInvoice(counterparty_id="BUYER-1", face_fen=42_000_000, every_days=30,
                                          next_issue_day=2, terms_days=45)],
     facilities=facilities,
+    expected_orders=[ExpectedOrder(counterparty_id="BUYER-1", label="next quarter", start_day=92, end_day=182,
+                                   amount_fen=40_000_000, firm=False)],
     debts=[DebtPosition(id="D-EQUIP", facility_id=None, label="Existing equipment loan",
                         principal_fen=150_000_000, monthly_debt_service_fen=4_500_000)],
     counterparties=[
