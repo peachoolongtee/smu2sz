@@ -1,0 +1,101 @@
+# Buyer profiles for the deterministic negotiation kernel (app/counterparties).
+#
+# HIDDEN STATE. These are the buyers' private reservation values. They never enter a prompt,
+# an API response, a reply text or the supplier's view (INVARIANTS 7). Only `public_view`
+# (name, role) may leave the kernel.
+#
+# Money is integer fen, rates are integer bp. A buyer's surplus from a package is
+#   discount received + declared benefits + rebate received + value of extra payment days
+#   - its own funding cost of paying early - price adjustments it pays,
+# valued over its own 12-month view. It accepts a package only if every reservation gate holds
+# (minimum early-pay discount, insisted terms, minimum rebate) and surplus >= min_surplus_fen.
+# Declared benefits are values the buyer itself declares for a named operational change; no
+# invented "relationship" value is assigned.
+buyers:
+  # Scene 1: accepts Option A (0.85% early settlement on <= ¥211,800, 45-day terms, no rebate)
+  # in round 1, because 0.85% >= its minimum early-pay discount.
+  - profile_id: BUYER-1
+    counterparty_id: BUYER-1
+    name: Foshan Home Retail Co.
+    role: BUYER
+    receivable_id: RCV-A
+    invoice_face_fen: 42000000
+    invoice_due_day: 32
+    early_settlement_day: 2
+    invoices_per_year: 12
+    current_terms_days: 45
+    next_quarter_purchases_fen: 40000000
+    funding_cost_bp: 420
+    min_early_pay_discount_bp: 80
+    requires_early_pay: false
+    payment_day_value_fen: 4833          # 420,000 x 4.2% / 365 per invoice per day, declared
+    insists_on_terms_extension: false
+    min_terms_days: 45
+    max_rebate_bp: 100
+    min_rebate_bp: 0
+    declared_benefits:
+      - id: BEN-CONSOLIDATION
+        label: delivery consolidation to the Foshan DC
+        obligation_type: OPERATIONAL_CONCESSION
+        value_fen: 1040000                # declared by the buyer: ¥200 x 52 shipments a year
+    min_surplus_fen: 60000
+    ask: {discount_bp: 120, terms_days: 60}
+    concession_step_bp: 10
+    rebate_step_bp: 50
+    max_rounds: 3
+
+  # Scene 2: requires >= 1.0% early-pay discount AND 60-day terms. Refuses Option A and
+  # Option B, counters toward (never at) its reservation, never inside the supplier's
+  # feasible region, and ends NO_DEAL after 3 rounds.
+  - profile_id: BUYER-1-HARDLINE
+    counterparty_id: BUYER-1
+    name: Foshan Home Retail Co.
+    role: BUYER
+    receivable_id: RCV-A
+    invoice_face_fen: 42000000
+    invoice_due_day: 32
+    early_settlement_day: 2
+    invoices_per_year: 12
+    current_terms_days: 45
+    next_quarter_purchases_fen: 40000000
+    funding_cost_bp: 600
+    min_early_pay_discount_bp: 100
+    requires_early_pay: true
+    payment_day_value_fen: 6904          # 420,000 x 6.0% / 365 per invoice per day, declared
+    insists_on_terms_extension: true
+    min_terms_days: 60
+    max_rebate_bp: 100
+    min_rebate_bp: 0
+    declared_benefits: []
+    min_surplus_fen: 300000
+    ask: {discount_bp: 120, terms_days: 60}
+    concession_step_bp: 5
+    rebate_step_bp: 50
+    max_rounds: 3
+
+  # Worked example 8 (concurrent offers): asks 1% off next quarter on up to ¥250,000.
+  - profile_id: BUYER-2
+    counterparty_id: BUYER-2
+    name: Dongguan Office Supplies Ltd.
+    role: BUYER
+    receivable_id: null
+    invoice_face_fen: 0
+    invoice_due_day: null
+    early_settlement_day: 2
+    invoices_per_year: 12
+    current_terms_days: 45
+    next_quarter_purchases_fen: 25000000
+    funding_cost_bp: 350
+    min_early_pay_discount_bp: 0
+    requires_early_pay: false
+    payment_day_value_fen: 0
+    insists_on_terms_extension: false
+    min_terms_days: 45
+    max_rebate_bp: 100
+    min_rebate_bp: 50
+    declared_benefits: []
+    min_surplus_fen: 100000
+    ask: {}
+    concession_step_bp: 10
+    rebate_step_bp: 10
+    max_rounds: 3
