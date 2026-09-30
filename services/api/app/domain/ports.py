@@ -28,6 +28,7 @@ from app.domain.models import (
     Operation,
     OperationResult,
     SourceDocument,
+    Tier,
     Trajectory,
     Verdict,
     Commitment,
@@ -81,9 +82,21 @@ class MandatePolicy(Protocol):
     """app.mandate -- canonical serialisation, signing, tiers, predicates."""
 
     def canonical_bytes(self, mandate: Mandate) -> bytes: ...
-    def verify_signature(self, mandate: Mandate) -> bool: ...
-    def check_validity(self, mandate: Mandate, day: int, expected_version: int | None) -> list[Violation]: ...
-    def tier_for(self, operation: Operation, mandate: Mandate, state: FinancialState) -> str: ...
+    def verify_signature(self, mandate: Mandate, trusted_public_key_hex: str | None = None) -> bool: ...
+    def check_validity(
+        self, mandate: Mandate, day: int, expected_version: int | None, trusted_public_key_hex: str | None = None
+    ) -> list[Violation]: ...
+    def tier_for(
+        self,
+        operation: Operation,
+        mandate: Mandate,
+        state: FinancialState,
+        *,
+        accepts_terms_change: bool = False,
+        commitment_value_fen: int | None = None,
+    ) -> Tier:
+        """Both keyword facts can only raise the tier. The executor pins the owner's key."""
+        ...
     def check_predicates(
         self,
         trajectory: Trajectory,

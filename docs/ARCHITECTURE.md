@@ -71,9 +71,10 @@ A module may not import another module's internals, only its public functions. *
    - Unconfirmed inflows are ignored.
    - Only `COMMITTED` facilities can be drawn; PENDING and NOT_APPLIED count as zero.
    - Contingent concessions count at maximum.
-6. **Expected mode** may include PENDING facilities and unconfirmed inflows. It is shown on screen and **never** used by the verifier for a hard constraint.
+6. **Event convention** (clean-down depends on it): line `DRAW` and `REPAYMENT` events carry `ref=facility.id` and principal only; interest and fees are separate `INTEREST` / `FEE` events with the same `ref`.
+7. **Expected mode** may include PENDING facilities and unconfirmed inflows. It is shown on screen and **never** used by the verifier for a hard constraint.
 7. **Horizon.** The horizon always runs past the last repayment. The default is the mandate's `horizon_days`, extended to the last repayment day plus 1.
-8. **Months.**
+9. **Months.**
    - EBITDA is flat at `monthly_ebitda_fen`.
    - Debt service = existing `monthly_debt_service_fen` + interest and fees posted in the month on facilities with `counts_in_debt_service` + scheduled amortisation.
    - Total debt = debt principal + month-end facility balances with `counts_in_leverage`.
@@ -117,7 +118,7 @@ Every violation carries a `formula` and `inputs` the UI can show verbatim.
 
 ## Operations and tiers (binding for `operations/`)
 
-- **Tier 1:** accept, counter and reject within the mandate; record commitment; draw and repay a COMMITTED facility; submit an eligible invoice to the onboarded financing facility; receive payment.
+- **Tier 1:** accept, counter and reject within the mandate (below `tier2_single_commitment_fen` in forward value, no terms change); draw on or submit invoices to a COMMITTED, owner-approved facility at any size within its limit (spec §5.3); record commitment; draw and repay a COMMITTED facility; submit an eligible invoice to the onboarded financing facility; receive payment.
 - **Tier 2:**
   - apply for a facility;
   - accept a terms change;

@@ -57,12 +57,12 @@ def _is_committed(state: FinancialState, facility_id: str) -> bool:
 
 
 def _commitment_amount(operation: object) -> int | None:
-    """The new commitment an operation creates, in fen. Repayments and receipts reduce exposure
-    and are not commitments, so they are not size-tested."""
-    if isinstance(operation, DrawFacility | ApplyForFacility | GenerateBorrowerFile):
+    """The new commitment an operation creates, in fen. Operating an existing COMMITTED facility
+    (draw, invoice submission) is Tier 1 at any size within its owner-approved limit (spec v2
+    §5.3); the size threshold applies to new commitments. Repayments and receipts reduce
+    exposure and are not commitments."""
+    if isinstance(operation, ApplyForFacility | GenerateBorrowerFile):
         return operation.amount_fen
-    if isinstance(operation, SubmitInvoiceForFinancing):
-        return operation.advance_fen
     return None
 
 

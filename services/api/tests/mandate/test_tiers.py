@@ -57,13 +57,18 @@ def test_every_operation_kind_is_covered():
     assert kinds == {o.kind for o, _ in CASES}
 
 
-def test_draw_one_fen_over_the_limit_is_tier2():
-    assert tier(op(m.DrawFacility, facility_id="FAC-LINE", amount_fen=10_000_001)) == Tier.TIER_2
+def test_committed_line_draw_is_tier1_at_any_size_within_limit():
+    # spec v2 §5.3: operating an existing committed facility is Tier 1; the ¥100k threshold is for new commitments
+    assert tier(op(m.DrawFacility, facility_id="FAC-LINE", amount_fen=15_000_000)) == Tier.TIER_1
 
 
-def test_invoice_advance_over_the_limit_is_tier2():
+def test_committed_invoice_advance_is_tier1_at_any_size():
     o = op(m.SubmitInvoiceForFinancing, facility_id="FAC-IF", receivable_id="RCV-A", advance_fen=LIMIT + 1)
-    assert tier(o) == Tier.TIER_2
+    assert tier(o) == Tier.TIER_1
+
+
+def test_apply_for_facility_is_tier2_at_any_size():
+    assert tier(op(m.ApplyForFacility, facility_id="FAC-GGL", amount_fen=1)) == Tier.TIER_2
 
 
 @pytest.mark.parametrize("fid", ["FAC-GGL", "FAC-ETL", "FAC-EQUITY", "NOT-ON-MENU"])
