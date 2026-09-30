@@ -15,11 +15,12 @@ from typing import Any, Literal
 import yaml
 from pydantic import Field, model_serializer, model_validator
 
+from app.counterparties.errors import HiddenStateError, UnknownBuyerProfile
 from app.domain.fixtures import FIXTURES
 from app.domain.models import Contract, ObligationType
-from app.counterparties.errors import HiddenStateError, UnknownBuyerProfile
 
 BUYERS_YAML: Path = FIXTURES / "counterparties" / "buyers.yaml"
+_HIDDEN = "BuyerProfile is hidden buyer state and is never serialised"
 
 
 class DeclaredBenefit(Contract):
@@ -89,10 +90,17 @@ class BuyerProfile(Contract):
             raise ValueError("a buyer that requires early pay must ask for a discount on a receivable")
         return self
 
-    # ---- hidden: never serialise, never print
+    # ---- hidden: never serialise, never print. The serializer covers nesting and TypeAdapters
+    # (pydantic wraps the error); the overrides raise HiddenStateError directly.
     @model_serializer(mode="plain")
     def _refuse_serialisation(self) -> Any:
-        raise HiddenStateError("BuyerProfile is hidden buyer state and is never serialised")
+        raise HiddenStateError(_HIDDEN)
+
+    def model_dump(self, *args: Any, **kwargs: Any) -> dict[str, Any]:  # type: ignore[override]
+        raise HiddenStateError(_HIDDEN)
+
+    def model_dump_json(self, *args: Any, **kwargs: Any) -> str:  # type: ignore[override]
+        raise HiddenStateError(_HIDDEN)
 
     def __repr_args__(self):  # type: ignore[override]
         yield "counterparty_id", self.counterparty_id

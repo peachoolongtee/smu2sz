@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from typing import Literal
 
 from pydantic import Field, model_validator
@@ -64,7 +64,7 @@ class NegotiationTranscript(Contract):
         return len(self.rounds)
 
 
-def _hash(body: dict[str, object]) -> str:
+def _hash(body: Mapping[str, object]) -> str:
     raw = json.dumps(body, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()
 
