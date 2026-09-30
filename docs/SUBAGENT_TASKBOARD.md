@@ -14,14 +14,18 @@ The main architect owns `app/domain/`, `app/api/`, `app/main.py`, `app/config.py
 | 2 | F1: executor | agent/executor | `app/operations/**`, `tests/operations/**` | merged |
 | 2 | F2: verifier + counters | agent/verifier | `app/verifier/**`, `tests/verifier/**` | merged |
 | 2 | Contracts follow-up | agent/contracts-followup | compiler, verifier, operations, `mandate/tiers.py` | merged |
-| 2 | G: security suite | agent/security | `app/security/**`, `evals/security/**`, `tests/security/**`, `docs/SECURITY_SELF_ASSESSMENT.md` | running |
+| 2 | G: security suite | agent/security | `app/security/**`, `evals/security/**`, `tests/security/**`, `docs/SECURITY_SELF_ASSESSMENT.md` | merged |
 | 3 | H: buyer + lender simulators | agent/counterparties | `app/counterparties/**`, `tests/counterparties/**`, `fixtures/counterparties/**` | merged |
-| 3 | I: /nl harness | agent/nl | `app/nl/**`, `app/api/nl.py`, `evals/e2e/**`, `tests/nl/**`, `scripts/run_scenarios.py` | running |
+| 3 | I: /nl harness | agent/nl | `app/nl/**`, `app/api/nl.py`, `evals/e2e/**`, `tests/nl/**`, `scripts/run_scenarios.py` | merged |
 | 4 | K: capex | agent/capex | `app/capex/**`, `app/api/capex.py`, `tests/capex/**` | merged |
 | 4 | L: borrower file + alerts | agent/borrower-file | `app/borrower_file/**`, `app/alerts/**`, `app/api/{borrower_file,alerts}.py` | merged |
 | 3 | Egress guard (owner-requested) | agent/egress-guard | `app/egress/**`, `tests/egress/**`, `fixtures/security/canaries.yaml` (+ a canary in compiler prompts) | merged |
 | 3 | What-if sandbox (owner-requested) | agent/whatif | `app/whatif/**`, `tests/whatif/**`, `apps/web/app/whatif/**` (+ nav and dictionary entries) | merged |
-| 4 | Web live integration | agent/web-live | `apps/web/**` | running |
+| 4 | Web live integration | agent/web-live | `apps/web/**` | merged |
+| 5 | Runtime hardening | agent/harden-runtime | operations, persistence, migrations, tiers, financial (drawn balances), security runner flags | running |
+| 5 | Semantics hardening | agent/harden-semantics | compiler, verifier, egress, nl offers | running |
+| 5 | Web chat + owner login | agent/web-chat | `apps/web/**` | running |
+| 5 | Deliverables | agent/deliverables | `docs/deliverables/**`, `scripts/build_deliverables.py` | running |
 | 5 | Eval agent | agent/evals | `evals/**` (except security), `scripts/evaluate.py` | after first integrated build |
 
 ## Return format (every coding agent)
@@ -47,3 +51,5 @@ STATUS / FILES CHANGED / INTERFACES IMPLEMENTED / TESTS ADDED / TEST COMMAND / T
 - **K capex merged** and mounted: every Scene 3 golden value holds, and the application is queued at Tier 2.
 - **What-if merged** and mounted. Uncached calls take 0.13–1 s (the router runs 3× per evaluate); backlog: a verifier fast path.
 - **L merged** and mounted: borrower file (HTML/DOCX, evidence labels, anonymised counterparties), alerts, reconciliation. Mock style label neutralised (no bank branding).
+- **G merged.** 122 attacks, 12 findings. **I merged**: /nl, with 37/37 scenarios. **Web live merged**: 29/29 Playwright in mock and live mode.
+- Main: owner-token gate on all owner routes, agent key on /operations and owner-actor /nl, DEMO_MODE=0 fails closed, refused credentials logged, 404/409 on approvals, env-configurable CORS, cured trajectory, audit documents. F-03, F-05, F-06 and F-08 fixed; detection 94.3%, zero harm. The verifier returns NO_VERDICT for unbookable inbound messages and on engine errors (fuzz finding).
