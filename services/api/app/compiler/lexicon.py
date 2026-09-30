@@ -49,7 +49,9 @@ _DATA_REQUESTS: list[tuple[DataRequestKind, re.Pattern[str]]] = [
     (DataRequestKind.SYSTEM_PROMPT, rx(
         r"\bsystem\s+prompt\b|\b(?:reveal|show|print|repeat|output|tell\s+me|share|send|give\s+me|paste|dump)\s+(?:me\s+|us\s+)?"
         r"(?:your|the)\s+(?:full\s+|exact\s+)?(?:system\s+|hidden\s+|internal\s+|original\s+)?(?:prompt|instructions|rules|configuration)\b"
-        r"|系统提示词?(?!\s*[:：])|(?<!系统)提示词|系统指令(?!\s*[:：])|内部指令(?!\s*[:：])", I)),
+        # a bracketed header ("【系统指令】", "[系统提示]") labels an injected instruction; it asks for nothing
+        r"|(?<![【\[(（<])系统提示词?(?!\s*[:：】\]）)>])|(?<!系统)提示词|(?<![【\[(（<])系统指令(?!\s*[:：】\]）)>])"
+        r"|(?<![【\[(（<])内部指令(?!\s*[:：】\]）)>])", I)),
     (DataRequestKind.MANDATE_VALUE, rx(
         r"\b(?:your|the\s+owner'?s?|the)\s+mandate\b|\bconcession\s+(?:caps?|limits?|budget)\b|\bapproval\s+(?:limits?|thresholds?)\b"
         r"|\b(?:your|the)\s+(?:caps|limits)\s+(?:are|on)\b|\bmax(?:imum)?\s+(?:apr|leverage|concession)\b"
@@ -82,7 +84,9 @@ _DATA_REQUESTS_ASKED: list[tuple[DataRequestKind, re.Pattern[str]]] = [
         r"|\bsame\s+(?:payment\s+)?(?:terms|discounts?|prices?|pricing|rebates?|deal)\s+as\s+(?-i:(?!you\b|before\b|usual\b)[A-Z][\w&'’-]*(?:\s+[A-Z][\w&'’-]*)+)"
         # 告诉我佛山家居零售的账期和折扣
         r"|(?:告诉|透露|说说|讲讲|发给|提供|问问|了解)(?:一下)?(?:我们|我)?\s*(?![们我你您贵咱本自他她它])"
-        r"[一-鿿A-Za-z]{2,14}?的(?:账期|付款条件|价格|折扣|返利|返点|优惠|条件)", I)),
+        r"[一-鿿A-Za-z]{2,14}?的(?:账期|付款条件|价格|折扣|返利|返点|优惠|条件)"
+        # "把你们给东莞那家的账期和折扣发我参考一下": what the supplier gives another buyer
+        r"|(?:你们|贵司|您)(?:给|对)(?!我们|我方|我司|咱们)[一-鿿A-Za-z]{2,12}?的(?:账期|付款条件|价格|折扣|返利|返点|优惠|条件)", I)),
 ]
 
 # Phrases that only become a data request when something is being asked for.
@@ -156,7 +160,7 @@ def _quote(f: Folded, s: int, e: int, strip: str = " \n") -> str:
 # Stricter: a question, or a verb that asks for disclosure ("give us the same terms as ..." is not one).
 _DISCLOSE = rx(
     r"\b(?:tell|share|send|show|reveal|disclose|list|forward|provide|what|which|how\s+much|how\s+long)\b"
-    r"|告诉|透露|发(?:给|送)|提供|说说|讲讲|列出|是多少|多少|哪些|什么", I)
+    r"|告诉|透露|发(?:给|送)|发我|发过来|提供|说说|讲讲|列出|是多少|多少|哪些|什么|参考|给我看", I)
 
 
 def _asked(t: str, pos: int, pat: re.Pattern[str] = _ASK) -> bool:
@@ -218,7 +222,8 @@ def find_data_requests(doc: SourceDocument) -> list[XDataRequest]:
 _AUTHORITY: list[tuple[str, re.Pattern[str]]] = [
     ("PRE_APPROVAL", rx(
         r"\bpre[- ]?(?:approved|approval|qualified|authori[sz]ed)\b|\balready\s+approved\s+(?:for|by)\b"
-        r"|预批准|预审批|预授信|已获批|预先批准|已预批", I)),
+        r"|预批准|预审批|预授信|已获批|预先批准|已预批"
+        r"|(?:已经?|已)(?:经过?|获得?|通过)?(?:了)?(?:老板|老总|业主|管理层|领导|总经理|财务总监)(?:的)?(?:审批|批准|同意|授权|签字)", I)),
     ("PRIOR_AGREEMENT", rx(
         r"\b(?:we|you)\s+(?:have\s+)?(?:already\s+|previously\s+|both\s+)?(?:agreed|promised|approved)\b(?!\s+to\s+(?:review|consider))"
         r"|\bas\s+(?:previously\s+)?(?:agreed|discussed|promised)\b|\b(?:agreed|promised)\s+last\s+(?:week|month|time|quarter|year)\b"
@@ -237,8 +242,10 @@ _AUTHORITY: list[tuple[str, re.Pattern[str]]] = [
         r"|\b(?:reply|respond|answer|type|output)\s+(?:with\s+)?[\"'“]?ACCEPT(?:ED)?\b|\bauto[- ]?(?:accept|approve)\b"
         r"|\b(?:must|shall|have\s+to)\s+(?:immediately\s+)?(?:accept|approve|sign|execute|book|add)\b"
         r"|\badd\s+(?:us|this\s+(?:lender|facility)|\w+)\s+to\s+(?:your|the)\s+funding\s+menu\b"
-        r"|忽略(?:之前|以上|前面|上述|先前|所有|全部)的?(?:所有|全部)?(?:指令|指示|规则|提示|要求|限制)|无视(?:之前|以上|所有)?的?(?:指令|规则|限制)"
-        r"|你现在是|现在你是|系统\s*[:：]|系统(?:提示|指令|消息|通知)\s*[:：]|系统消息|系统通知|新的?指令|绕过|直接(?:接受|批准|同意|放款)|回复\s*[“\"']?(?:接受|同意|ACCEPT)"
+        r"|忽略(?:你|您)?(?:之前|以上|前面|上述|先前|所有|全部)(?:收到|看到)?的?(?:所有|全部)?(?:指令|指示|规则|提示|要求|限制)"
+        r"|无视(?:你|您)?(?:之前|以上|所有)?(?:收到)?的?(?:指令|规则|限制)"
+        r"|[【\[(（<]\s*(?:系统|管理员|admin|system)\s*(?:指令|提示词?|消息|通知|命令|instruction|prompt|message|note)?\s*[】\])）>]"
+        r"|你现在是|现在你是|系统\s*[:：]|系统(?:提示|指令|消息|通知)\s*[:：]|系统消息|系统通知|新的?指令|绕过|直接(?:接受|批准|同意|放款|执行)|回复\s*[“\"']?(?:接受|同意|ACCEPT)"
         r"|加入(?:你们的?)?融资(?:菜单|清单|渠道)"
         # JSON role messages: {"role": "system", ...}
         r"|[\"'“”]role[\"'“”]\s*:\s*[\"'“”](?:system|assistant|developer|tool)[\"'“”]"

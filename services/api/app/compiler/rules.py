@@ -61,20 +61,27 @@ _EARLY_VERB = rf"(?:{_SETTLE}|pay|paying|payment|pymt|pay\s+off|clear|release|re
 # A short, stated settlement window: "within 2 working days", "in 3 business days", "T+2".
 _WINDOW = (r"(?:within|in)\s+(?:the\s+next\s+)?(?:[1-9]|1[0-4]|one|two|three|four|five|six|seven|a\s+couple\s+of|a\s+few)"
            r"\s+(?:working\s+|business\s+|banking\s+|calendar\s+)?days?|T\s?\+\s?[0-9]")
+_MONTH = (r"(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?"
+          r"|nov(?:ember)?|dec(?:ember)?)\.?")
+_WEEKDAY = r"(?:mon|tue|tues|wed|thu|thur|thurs|fri|sat|sun)(?:day)?\.?"
+# A stated calendar day: "Oct 8", "8 October", "the 8th", "Monday", "10/8".
+DATE_EN = (rf"(?:{_MONTH}\s+\d{{1,2}}(?:st|nd|rd|th)?|\d{{1,2}}(?:st|nd|rd|th)?\s+(?:of\s+)?{_MONTH}|the\s+\d{{1,2}}(?:st|nd|rd|th)"
+           rf"|(?:next\s+|this\s+|coming\s+)?{_WEEKDAY}|\d{{1,2}}/\d{{1,2}})")
 # "early" in "due early Nov" names the due date, not an early payment.
 _EARLY_WORD = (rf"(?:(?<!due\s)early|ahead\s+of\s+(?:time|schedule|the\s+due\s+date)|before\s+(?:the\s+)?due(?:\s+date)?|now|today"
-               rf"|tomorrow|immediately|upfront|up\s+front|in\s+advance|right\s+away|straight\s+away|at\s+once|this\s+week|{_WINDOW})")
+               rf"|tomorrow|tmrw|tmr|immediately|upfront|up\s+front|in\s+advance|right\s+away|straight\s+away|at\s+once|this\s+week"
+               rf"|{_WINDOW}|(?:on|by)\s+{DATE_EN})")
 # What links the settlement to its price: "at 1%", "for 1% off", "if you give us 0.8%", "less 1.2%".
 _PRICE_LINK = (r"(?:at|for|with|against|in\s+exchange\s+for|less|minus|net\s+of"
-               r"|(?:if|provided(?:\s+that)?|as\s+long\s+as)\s+you\s+(?:can\s+)?(?:give|allow|grant|offer|knock|take)(?:\s+us)?)")
+               r"|(?:if|provided(?:\s+that)?|as\s+long\s+as)\s+(?:you|u)\s+(?:can\s+|could\s+)?(?:give|allow|grant|offer|knock|take)(?:\s+us)?)")
 # The Chinese verbs of paying an invoice ahead of time: 提前付 / 付款 / 付清 / 支付 / 结清 / 还 ...
 _EARLY_ZH = r"提前(?:付(?:款|清|掉)?|支付|结清|结算|结账|回款|还款|还清|还|打款|转账)"
 
 DISCOUNT = [
     # "settle the ¥420k early at 1.2%", "pay this one early at 1.5%", "pay early for a 1.2% discount"
-    rx(rf"\b{_EARLY_VERB}\b{G(60)}\b{_EARLY_WORD}\b{G(40)}\b{_PRICE_LINK}\s+(?:a\s+|an\s+)?(?P<rate>{RATE})(?:\s+(?:discount|off))?", I),
-    # "Early pay at 1.5%", "early-payment discount of 2%", "early settlement at 1.2%"
-    rx(rf"\bearly[- ]?(?:pay(?:ment)?|settlement|{_SETTLE})\b(?:\s+discount)?{G(40)}(?:\b(?:at|of|for|with|taken|applied|deducted|claimed|discount|less|minus)\b\s*[:：]?|[:：=])\s*(?P<rate>{RATE})", I),
+    rx(rf"\b{_EARLY_VERB}\b{G(60)}\b{_EARLY_WORD}\b{G(40)}\b{_PRICE_LINK}\s+(?:a\s+|an\s+)?(?P<rate>{RATE})(?:\s+(?:discount|disc\b\.?|off))?", I),
+    # "Early pay at 1.5%", "early-payment discount of 2%", "early settlement at 1.2%", "rate for early settlement is 0.8%"
+    rx(rf"\bearly[- ]?(?:pay(?:ment)?|settlement|{_SETTLE})\b(?:\s+discount)?{G(40)}(?:\b(?:at|of|for|with|taken|applied|deducted|claimed|discount|less|minus|is|would\s+be|will\s+be)\b\s*[:：]?|[:：=])\s*(?P<rate>{RATE})", I),
     # "…, early at 0.5%": the settling verb is implied by the invoice around it
     rx(rf"(?<!due\s)\bearly\s+(?:at|for|with|less|minus)\s+(?:a\s+|an\s+)?(?P<rate>{RATE})(?:\s+(?:discount|off))?", I),
     # "1.2% for early settlement", "a 2% discount for paying early", "1.5% early-payment discount"
@@ -90,30 +97,45 @@ DISCOUNT = [
 # discount only when its sentence has an early-payment cue and its clause names no future period.
 DISCOUNT_RATE = [
     rx(rf"\b(?:take|knock|shave|deduct|trim|lop|cut|strip)\s+(?:off\s+)?(?:a\s+|an\s+|another\s+|just\s+|only\s+)?(?P<rate>{RATE})(?:\s+off)?", I),
-    rx(rf"(?:\b(?:a|an)\s+)?(?P<rate>{RATE})\s+(?:cash\s+)?(?:discount|off|reduction|deduction)\b", I),
+    rx(rf"(?:\b(?:a|an)\s+)?(?P<rate>{RATE})\s+(?:cash\s+)?(?:discount\b|disc\b\.?|off\b|reduction\b|deduction\b)", I),
     rx(rf"\b(?:discount|reduction|deduction)\s*(?:of|at|is|[:：=])?\s*(?P<rate>{RATE})", I),
     # "less 1.2%", "minus 0.8%", "net of 1%"
     rx(rf"\b(?:less|minus|net\s+of)\s+(?:a\s+)?(?P<rate>{RATE})", I),
-    rx(rf"(?:折扣|扣|减|优惠|少收|让)\s*(?:我们|给我们)?\s*(?P<rate>{RATE})"),
-    rx(rf"(?P<rate>{RATE})\s*(?:的)?(?:现金)?(?:折扣|优惠|扣减)"),
+    rx(rf"(?:折扣|扣|减|优惠|少收|让|给)\s*(?:我们|给我们|个|我们个)?\s*(?P<rate>{RATE})"),
+    rx(rf"(?P<rate>{RATE})\s*(?:的)?(?:现金)?(?:折扣|优惠|扣减|贴息|贴现息?)"),
+    # 贴息 / 贴现息 is the discount taken for paying early: "贴息0.5%", "按千分之八扣贴现息", "按99.3折付"
+    rx(rf"(?:贴息|贴现息?|贴现率)\s*(?:按|是|为|[:：])?\s*(?P<rate>{RATE})"),
+    rx(rf"按\s*(?P<rate>{RATE})\s*(?:扣|收|算|付|支付|结算|结清)"),
 ]
 # An early-payment cue anywhere in the sentence: "pay it today", "settle straight away", "马上付".
 EARLY_CUE = rx(
     rf"\b(?:pay|paying|paid|pymt|{_SETTLE}|clear|clearing|wire|wiring|remit|remitting|transfer|release|releasing)\b"
-    rf"{G(50)}\b(?:(?<!due\s)early|(?<!from\s)now(?!\s+on)|today|tonight|tomorrow|immediately|straight\s+away|right\s+away|at\s+once|this\s+week"
+    rf"{G(50)}\b(?:(?<!due\s)early|(?<!from\s)now(?!\s+on)|today|tonight|tomorrow|tmrw|tmr|immediately|straight\s+away|right\s+away|at\s+once|this\s+week"
     r"|upfront|up\s+front|in\s+advance|ahead\s+of\s+(?:time|schedule|the\s+due\s+date)|before\s+(?:the\s+|its\s+)?due(?:\s+date)?"
     rf"|on\s+receipt|{_WINDOW})\b"
     r"|\b(?:today|immediately|straight\s+away|right\s+away)\b[\s,]+(?:we'?ll|we\s+will|we\s+can|we)\s+(?:pay|settle|clear|wire)\b"
     rf"|\b(?:early|immediate|prompt)[- ]?(?:payment|settlement|pay|{_SETTLE})\b"
     rf"|{_EARLY_ZH}|(?:马上|立即|立刻|今天|明天|现在|即刻|当天|尽快|早点|提早)就?(?:付|支付|结清|结算|打款|转账|付清)"
-    r"|(?:[一二两三四五\d]|几)\s*(?:个)?(?:工作日|天)内(?:就)?(?:付|支付|结清|打款|转账|付清)", I)
+    r"|(?:[一二两三四五\d]|几)\s*(?:个)?(?:工作日|天)内(?:就)?(?:付|支付|结清|打款|转账|付清)"
+    # a stated day or week, then paying: "下周一全款打过去", "这周全部付清", "10月8号可以全额付"
+    r"|(?:这周|本周|这个星期|下周[一二三四五六日天]?|周[一二三四五六日天]|星期[一二三四五六日天]|礼拜[一二三四五六日天]|\d{1,2}\s*[号日]"
+    r"|明天|今天|后天|今晚)[^，。；;！!？?\n]{0,8}?(?:付|支付|结清|结算|打款|转账|付清|打过去|转过去|汇过去|汇款)", I)
 # The invoice a discount applies to, with its stated amount: "the ¥420,000 invoice", "42万的发票", "invoice for ¥420k".
+# An invoice number the buyer quotes: "INV-2026-0871", "RCV-A", "invoice no. 5531", "发票号 12345".
+INVOICE_REF_ID = (r"(?:\b(?:INV|RCV|FP)[-‐_]?(?=[A-Z0-9-]*\d|[A-Z]\b)[A-Z0-9][A-Z0-9-]*"
+                  r"|(?<=(?i:invoice)\s)(?:(?i:no)\.?\s*|(?i:number)\s*|#\s*)[A-Z0-9][A-Z0-9-]{2,}"
+                  r"|(?<=发票号)\s*[:：]?\s*[A-Z0-9][A-Z0-9-]{2,})")
 INVOICE_AMOUNT = [
-    rx(rf"(?P<amt>{AMT})\s*(?:的)?\s*(?:那|这|该)?(?:张|笔)?\s*(?:open\s+|outstanding\s+|unpaid\s+)?(?:invoice|inv\b|bill|发票|货款)", I),
+    rx(rf"(?P<amt>{AMT})\s*(?:的)?\s*(?:(?:那|这|该)?(?:张|笔)?\s*(?:open\s+|outstanding\s+|unpaid\s+)?(?:invoice|inv\b|bill|发票|货款)"
+       rf"|(?:那|这|该)?张票|票(?![据号])|(?:那|这)张)", I),
     rx(rf"\b(?:invoice|bill)\s+(?:of|for|worth)\s+(?P<amt>{AMT})", I),
     rx(rf"(?:发票|货款)\s*(?P<amt>{AMT})"),
+    # "the full ¥420,000 on your inv", "¥420,000 for your invoice"
+    rx(rf"(?P<amt>{AMT})\s+(?:on|for|of)\s+(?:your|the|our|this|that)\s+(?:invoice|inv\b|bill)", I),
+    # "invoice RCV-A (¥420,000)", "Re INV-2026-0871 (RMB 86,500.00)", "invoice (¥420,000)"
+    rx(rf"(?:\b(?i:invoice|inv\.?|bill)\s+(?:(?i:no\.?|number)\s*|#\s*)?(?:[A-Z0-9][A-Z0-9-]*\s*)?|{INVOICE_REF_ID}\s*)[(（:：]\s*(?P<amt>{AMT})"),
 ]
-INVOICE_WORD = rx(r"\binvoices?\b|\binv\b|\bbills?\b|发票|货款|这笔款|这张", I)
+INVOICE_WORD = rx(r"\binvoices?\b|\binv\b|\bbills?\b|发票|货款|这笔款|这张|那张|张票|的票", I)
 
 _TERMS_WORD = r"(?:(?:standard\s+|payment\s+|credit\s+)*terms)"
 # zh verbs of changing the payment terms: 延长到 / 缩到 / 缩短为 / 改成 / 调整至 / 减到 ...
@@ -146,6 +168,7 @@ TERMS = [
     # zh: "账期从30天延长到45天", "账期延长到60天", "以后账期改为60天"
     (rx(rf"账期{G(12)}从\s*(?P<from>\d+)\s*天?{G(6)}{_ZH_TERMS_VERB}\s*(?P<to>\d+)\s*天"), 0.95),
     (rx(rf"账期{G(12)}{_ZH_TERMS_VERB}\s*(?P<to>\d+)\s*天"), 0.95),
+    (rx(rf"账期{G(12)}(?:改|调|延长?|缩短?|变|放到|拉到)\s*(?P<to>\d+)\s*天"), 0.9),
     # "从45天缩到30天付款", "我们以后30天付款，不再是45天"
     (rx(rf"从\s*(?P<from>\d+)\s*天{G(4)}{_ZH_TERMS_VERB}\s*(?P<to>\d+)\s*天(?:付款|结算|回款|账期)"), 0.9),
     (rx(r"账期(?:都|一律|统一|全部)(?:按|是)?\s*(?P<to>\d+)\s*天"), 0.9),
@@ -182,7 +205,11 @@ CAP_RE = rx(
 REBATE_BASE_RE = rx(
     rf"(?P<b1>{AMT})\s+(?:of\s+)?(?:(?:purchase|order)\s+)?(?:orders?|purchases?|volume|spend|PO)\b"
     rf"|\b(?:orders?|purchases?|volume|spend)\s+(?:of|worth|totall?ing)\s+(?P<b2>{AMT})"
-    rf"|(?P<b3>{AMT})\s*(?:的)?(?:采购|订单|货款)", I)
+    rf"|(?P<b3>{AMT})\s*(?:左右|上下)?\s*(?:的)?(?:采购|订单|货款|货(?!款))"
+    # a hedged base, bound at the stated figure (grounding notes it): "order (approx. ¥400,000)", "~¥400k of orders"
+    rf"|\b(?:orders?|purchases?|PO)\b{G(25)}[(（]?\s*(?:approx\.?|approximately|about|around|roughly|circa|est\.?|estimated|~|≈|c\.)\s*(?P<b4>{AMT})"
+    rf"|(?:approx\.?|approximately|about|around|roughly|~|≈)\s*(?P<b5>{AMT})\s+(?:of\s+|in\s+)?(?:orders?|purchases?|volume|spend)\b"
+    rf"|(?:那|这|该)单\s*(?:大约|大概|约)?\s*(?P<b6>{AMT})", I)
 
 CLAIMED = [
     # "the 2% rebate we agreed last month", "the 60-day terms you already agreed", "the 60-day terms you agreed with us"
@@ -212,6 +239,12 @@ PRICE_ADJ = [
     (rx(rf"\b(?:we'?ll|we\s+will|we\s+can|we\s+could|we'?d)\s+(?:happily\s+|gladly\s+)?pay\s+(?:you\s+)?(?P<rate>{RATE})\s+(?:more|extra|higher)", I), Contingency.FIRM),
     (rx(rf"(?:价格|单价|货价)(?:上调|提高|上浮|上涨|涨|提升)了?\s*(?P<rate>{RATE})"), Contingency.FIRM),
     (rx(rf"(?:涨价|加价|多付)\s*(?P<rate>{RATE})"), Contingency.FIRM),
+    # price cuts: grounding books these with a negative rate (a cost to the supplier)
+    (rx(rf"(?:a\s+)?(?P<rate>{RATE})\s+(?:price\s+(?:reduction|cut|decrease|drop)|(?:lower|cheaper)\s+(?:unit\s+)?prices?|cut\s+(?:in|to|on)\s+(?:the\s+|your\s+|our\s+)?(?:unit\s+)?prices?)", I), Contingency.FIRM),
+    (rx(rf"\b(?:reduce|reducing|cut|cutting|lower|lowering|decrease|decreasing|drop|dropping)\s+(?:our|the|your|its|unit|all)?\s*(?:unit\s+)?prices?\s+(?:by\s+)?(?P<rate>{RATE})", I), Contingency.FIRM),
+    (rx(rf"\bprices?\s+(?:will\s+|would\s+|need\s+to\s+|must\s+|should\s+|to\s+)?(?:go(?:es)?\s+down|drop|fall|decrease|come\s+down|be\s+(?:cut|reduced|lowered))\s+(?:by\s+)?(?P<rate>{RATE})", I), Contingency.FIRM),
+    (rx(rf"(?:价格|单价|货价)(?:需要|要|必须|得)?(?:下调|降低|下降|降|减少|下浮)了?\s*(?P<rate>{RATE})"), Contingency.FIRM),
+    (rx(rf"(?:降价|减价|让价)\s*(?P<rate>{RATE})"), Contingency.FIRM),
 ]
 
 OPERATIONAL = [
@@ -264,6 +297,12 @@ WEAK_UNBOUNDED_RE = rx(
     r"\b(?:everything|anything|whatever|all)\s+(?:that\s+)?(?:we|you)\s+(?:buy|order|purchase|take)\b"
     r"|\ball\s+(?:of\s+)?(?:our|your|the|their)?\s*(?:purchases|orders|business|buying|invoices|volume|spend)\b"
     r"|所有(?:的)?(?:采购|订单|货|发票|进货)|全部(?:的)?(?:采购|订单)|一切采购", I)
+# A starting point, not a bound: "starting with the next invoice", "effective from the next order", 从下一张发票开始.
+START_RE = rx(
+    r"\b(?:starting|beginning|commencing|effective|applying)\s+(?:with|from|on|as\s+of)?\s*(?:the\s+)?(?:very\s+)?"
+    r"(?:next|following|coming)\s+(?:invoice|order|bill|shipment|delivery)\b"
+    r"|\bfrom\s+(?:the\s+)?(?:next|following)\s+(?:invoice|order|bill)\s+(?:on(?:wards?)?|forward|and\s+after)\b"
+    r"|从\s*下一?(?:张|笔|批)(?:发票|订单|单|货)(?:开始|起)", I)
 RECURRING_REBATE_RE = rx(r"\bevery\s+(?:quarter|month|year|order)\b|\beach\s+(?:quarter|month|year|order)\b|\bper\s+(?:quarter|order)\b|每(?:个)?(?:季度|月|年|单)", I)
 CURRENT_TERMS_RE = rx(
     r"\b(?:instead\s+of|rather\s+than)\s+(?:(?:the|our|your|my)\s+)?(?:(?:usual|current|normal|standard|existing|present|agreed)\s+)?(?P<a>\d+)"
@@ -447,6 +486,35 @@ def _invoice_amount(t: str, ss: int, se: int) -> re.Match[str] | None:
     return min(hits, key=lambda m: m.start()) if hits else None
 
 
+def _only_invoice_amount(t: str) -> re.Match[str] | None:
+    """The invoice amount of a message that names exactly one amount of money ("We'll pay the ¥420k invoice by
+    Monday. Our rate for early settlement is 0.8%."): the discount in the other sentence is on that invoice.
+    None when the message states no amount, or more than one."""
+    hits = [m for p in INVOICE_AMOUNT for m in p.finditer(t) if _money_text(m.group("amt"), m.group(0))]
+    if not hits or len({f.value for f in find_money(t)}) > 1:
+        return None
+    values = {parse_money(_money_text(m.group("amt"), m.group(0))) for m in hits}
+    return min(hits, key=lambda m: m.start()) if len(values) == 1 else None
+
+
+def _base_amount(d: SourceDocument, s: int, e: int, quotes: list[Quote]) -> str | None:
+    """The invoice amount a discount phrase t[s:e] applies to: in the phrase, else in its sentence, else the
+    single amount of the whole message. Adds the amount's own quote when it lies outside the phrase."""
+    t = d.text
+    inv = _invoice_amount(t, s, e)
+    if inv is not None:
+        return _money_text(inv.group("amt"), inv.group(0))
+    money = re.search(AMT, t[s:e])
+    if money and parse_money(money.group(0)) is not None:
+        return money.group(0).strip()
+    ss, se = sentence_bounds(t, s)
+    inv = _invoice_amount(t, ss, se) or _only_invoice_amount(t)
+    if inv is not None:
+        quotes.append(_quote(d, inv.start(), inv.end()))
+        return _money_text(inv.group("amt"), inv.group(0))
+    return None
+
+
 def _discounts(st: _Doc) -> list[XObligation]:
     d = st.doc
     t = d.text
@@ -459,29 +527,57 @@ def _discounts(st: _Doc) -> list[XObligation]:
         tail = _DISCOUNT_TAIL.match(t, e)
         if tail:
             e = tail.end()
-        seg = t[s:e]
         quotes = [_quote(d, s, e)]
-        amount_text = None
-        inv = _invoice_amount(t, s, e)
-        money = re.search(AMT, seg)
-        if inv is not None:
-            amount_text = _money_text(inv.group("amt"), inv.group(0))
-        elif money and parse_money(money.group(0)) is not None:
-            amount_text = money.group(0).strip()
-        else:
-            # "42万货款我们提前付，扣0.8%": the invoice amount sits in the same sentence, outside the phrase
-            ss, se = sentence_bounds(t, s)
-            inv = _invoice_amount(t, ss, se)
-            if inv is not None:
-                amount_text = _money_text(inv.group("amt"), inv.group(0))
-                quotes.append(_quote(d, inv.start(), inv.end()))
+        # "42万货款我们提前付，扣0.8%": the invoice amount may sit in the same sentence, outside the phrase
+        amount_text = _base_amount(d, s, e, quotes)
         return _obligation(
             type=ObligationType.IMMEDIATE_DISCOUNT, quotes=quotes, rate_text=_sub(m, "rate"),
             base_kind=BaseKind.INVOICE, base_amount_text=amount_text, contingency=Contingency.FIRM,
             duration_kind=DurationKind.ONE_OFF, confidence=0.9,
         )
 
-    return _run(st, DISCOUNT, build) + _cued_discounts(st)
+    return _run(st, DISCOUNT, build) + _cued_discounts(st) + _net_settlements(st)
+
+
+# Paying on the due date is not an early payment: a "discount" for it is a price cut, never the Tier-1 path.
+ON_TIME_RE = rx(r"\bon\s+time\b|\bon\s+(?:the\s+)?due\s+date\b|\bwhen\s+(?:it'?s\s+)?due\b|\bat\s+maturity\b|\bas\s+(?:normal|usual)\b"
+                r"|按时|准时|到期(?:时|日|当天)?(?:再)?(?:付|支付|结)", I)
+PAY_VERB_RE = rx(rf"\b(?:{_SETTLE}|pay|paying|release|releasing|remit|remitting|transfer|wire|wiring|clear|close\s+out)\b"
+                 r"|付款|支付|打款|转账|结清|付清|打过去|转过去|汇款", I)
+
+# A discount stated only as the net sum paid: "we'd transfer ¥417,480 tomorrow as full and final settlement of the
+# ¥420,000 invoice". The rate is derived in grounding, exactly, from (face - net) / face.
+NET_SETTLEMENT = [
+    rx(rf"\b(?:transfer|wire|remit|pay|send|settle\s+(?:it\s+|this\s+)?(?:for|with|at)|close\s+(?:it\s+|this\s+)?out\s+(?:for|with|at))"
+       rf"\s+(?:you\s+)?(?:only\s+|just\s+)?(?P<net>{AMT}){G(40)}\b(?:as|in)\s+(?:full(?:\s+and\s+final)?|final|complete)\s+"
+       r"(?:settlement|payment)", I),
+    rx(rf"(?:实付|只付|付|打|转|汇)(?:给(?:你们|贵司|您))?\s*(?P<net>{AMT})\s*(?:作为|当作|算作|就)?(?:全款|结清|了结|全部结清|一次结清|一次性结清)"),
+]
+
+
+def _net_settlements(st: _Doc) -> list[XObligation]:
+    """The net sum and the invoice amount it settles, quoted together; no rate is claimed here."""
+    d = st.doc
+    t = d.text
+    out: list[XObligation] = []
+    for pat in NET_SETTLEMENT:
+        for m in pat.finditer(t):
+            s, e = m.start(), m.end()
+            ss, se = sentence_bounds(t, s)
+            net = parse_money(m.group("net"))
+            if net is None or not st.free(ss, se):
+                continue  # a rate is already read in this sentence: grounding checks the sum against it instead
+            bases = [f for f in find_money(t) if f.value > net and not (s <= f.start < e)]
+            if len({f.value for f in bases}) != 1:
+                continue
+            f0 = bases[0]
+            st.taken.append((s, e))
+            out.append(_obligation(
+                type=ObligationType.IMMEDIATE_DISCOUNT, quotes=[_quote(d, s, e), _quote(d, f0.start, f0.end)],
+                base_kind=BaseKind.INVOICE, base_amount_text=f0.text, contingency=Contingency.FIRM,
+                duration_kind=DurationKind.ONE_OFF, confidence=0.7,
+            ))
+    return out
 
 
 # A named FUTURE period ("next quarter's orders", 下季度): the rate is a rebate on purchases, not an early-pay
@@ -513,6 +609,10 @@ def _cued_discounts(st: _Doc) -> list[XObligation]:
             if not cues and INVOICE_WORD.search(t, cs, ce):
                 # "Take 1% off the invoice. We'll pay it today." — an explicit invoice base, the cue next door
                 cues = [c for c in EARLY_CUE.finditer(t) if st.free(*c.span())]
+            if not cues and not ON_TIME_RE.search(t, ss, se) and _invoice_amount(t, ss, se) is not None:
+                # "We can release the full ¥420,000 on your inv next week if you're ok to take 0.6% off": a rate
+                # taken off a stated invoice that the sentence pays is a discount on that invoice, not a rebate.
+                cues = [c for c in PAY_VERB_RE.finditer(t, ss, se) if st.free(*c.span()) and not (c.start() < e and s < c.end())]
             if not cues:
                 continue
             cue = cues[0]
@@ -532,6 +632,9 @@ def _cued_discounts(st: _Doc) -> list[XObligation]:
                     quotes.append(_quote(d, ss + f.start, ss + f.end))
                 elif len(free_money) > 1:
                     unresolved.append("base_amount")  # several amounts: which one is the invoice?
+                elif (only := _only_invoice_amount(t)) is not None:
+                    amount_text = _money_text(only.group("amt"), only.group(0))
+                    quotes.append(_quote(d, only.start(), only.end()))
             st.taken += [(s, e), cue.span()]
             out.append(_obligation(
                 type=ObligationType.IMMEDIATE_DISCOUNT, quotes=quotes, rate_text=_sub(m, "rate"),
@@ -564,6 +667,8 @@ def _terms(st: _Doc) -> list[XObligation]:
             duration = DurationKind.RECURRING_PERPETUAL
             bounded_text = None
             bm = BOUNDED_RE.search(d.text, sent_s, sent_e)
+            if bm and any(sm.start() <= bm.start() and bm.end() <= sm.end() for sm in START_RE.finditer(d.text, sent_s, sent_e)):
+                bm = None  # "starting with the next invoice": where it starts, not how long it lasts
             if bm:
                 duration = DurationKind.RECURRING_BOUNDED
                 bounded_text = next(v for v in (bm.group("n"), bm.group("nz"), bm.group("one"), bm.group("onez")) if v).strip()
@@ -657,17 +762,26 @@ def _rebates(st: _Doc) -> list[XObligation]:
     return out
 
 
-_ANAPHOR = rx(r"\b(?:on|for|against|of|across)\s+(?:all\s+)?(?:those|these|them)\b|\bthat\s+volume\b"
+_ANAPHOR = rx(r"\b(?:on|for|against|of|across)\s+(?:all\s+)?(?:those|these|them|that|it)\b|\bthat\s+(?:volume|order)\b|也返|同样返"
              r"|(?:那些|这些|上述|这批|那批)(?:的)?(?:采购|订单|货)?", I)
+
+
+_INVOICE_NOUN = rx(r"\binvoices?\b|\binv\b|\bbills?\b|发票|货款|票", I)
 
 
 def _antecedent(t: str, s: int, e: int) -> tuple[re.Match[str] | None, re.Match[str] | None] | None:
     """(named period, cap or base) of the sentence before a rebate whose own clause points back at it
     ("… on those"), or None when there is no such pointer or the previous sentence names no period."""
     cs, ce = clause_scope(t, s, e)
+    ss, se = sentence_bounds(t, s)
+    # "if our Q1 order (~¥400k) happens, 0.5% rebate on that too", "那批40万的货如果下单，希望给1个点的返利": the one
+    # order the sentence names before the rebate (never an invoice being paid)
+    same = [b for b in REBATE_BASE_RE.finditer(t, ss, cs) if not _INVOICE_NOUN.search(b.group(0))]
+    if (len(same) == 1 and len({f.value for f in find_money(t[ss:se])}) == 1
+            and not (STRONG_PERPETUAL_RE.search(t, ss, se) or WEAK_UNBOUNDED_RE.search(t, ss, se))):
+        return PERIOD_RE.search(t, ss, se), same[0]
     if not _ANAPHOR.search(t, cs, ce):
         return None
-    ss, _ = sentence_bounds(t, s)
     if ss == 0:
         return None
     ps, pe = sentence_bounds(t, max(0, ss - 2))
