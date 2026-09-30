@@ -512,6 +512,8 @@ class ViolationCode(StrEnum):
     TERMS_CHANGED = "TERMS_CHANGED"
     INSUFFICIENT_AUTHORITY = "INSUFFICIENT_AUTHORITY"
     CIRCUIT_OPEN = "CIRCUIT_OPEN"
+    PRECONDITION_FAILED = "PRECONDITION_FAILED"  # e.g. over limit, receivable not open
+    STALE_OPERATION = "STALE_OPERATION"  # op dated to a different simulated day
     FEATURE_DISABLED = "FEATURE_DISABLED"
 
 
@@ -782,6 +784,8 @@ class OperationResult(Contract):
     seq: int | None = None  # position in the operations log
     entry_hash: str | None = None
     prev_hash: str | None = None
+    effective_day: Day | None = None  # simulated day the executor ran it
+    approval_id: str | None = None  # set when PENDING_APPROVAL
     message: str = ""
 
 
