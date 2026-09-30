@@ -395,6 +395,16 @@ def evaluate(
         return VerdictBundle(verdict=res.verdict(outcome, Tier.TIER_1, summary), security_events=events,
                              bound_obligations=bound, notes=notes)
 
+    if not bound and not sec_violations:  # nothing bookable (e.g. a message that is only instructions or questions): nothing to accept
+        res.violations = [Violation(
+            code=ViolationCode.UNRESOLVED_SCOPE, message="The message contains no bookable commercial term; nothing to accept",
+            observed="0 bookable obligations", limit="at least one grounded obligation",
+            formula="len(bind(offer)) > 0", inputs={"booked": "0"},
+        )]
+        outcome = Outcome.NO_VERDICT
+        summary = _summary(outcome, res.violations, ["Nothing booked"])
+        return VerdictBundle(verdict=res.verdict(outcome, Tier.TIER_1, summary), security_events=events, notes=notes)
+
     res.bound = list(bound)  # what the predicates below verify: a commitment on this verdict books exactly these
     floor = mandate.min_cash_fen
     horizon = mandate.horizon_days
