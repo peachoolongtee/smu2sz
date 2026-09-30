@@ -2,9 +2,12 @@
 
 Every surface form of a value is reduced to one canonical token before matching:
 
-- NFKC folds full-width digits, currency signs and Latin letters; zero-width characters are removed
-  and thin/narrow spaces between digits are treated as thousands separators.
-- Chinese numerals become Arabic ("三十万" -> 300000, "六点四" -> 6.4), and "百分之N" becomes "N%".
+- NFKC folds full-width digits, currency signs and Latin letters; zero-width and bidi control characters
+  are removed and thin/narrow spaces between digits are treated as thousands separators; a digit-grouped
+  number with plain spaces ("300 000") is also read joined (the spaced digits are kept too).
+- English number words become digits ("three hundred thousand" -> 300000, "six point four" -> 6.4).
+- Financial (大写) numerals become ordinary ones ("叁拾万" -> "三十万"), then Chinese numerals become
+  Arabic ("三十万" -> 300000, "六点四" -> 6.4), and "百分之N" becomes "N%".
 - Thousands commas are removed; "bp"/"bps"/"basis points" become a percentage; "percent" becomes "%".
 - Multipliers expand to plain yuan with a currency marker: "30万" / "300k" / "300 thousand" /
   "1.5 million" / "¥1.5m" -> "¥300000" etc.
@@ -21,7 +24,30 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from decimal import Decimal, InvalidOperation
 
-_ZERO_WIDTH = re.compile("[\u00ad\u200b\u200c\u200d\u2060\ufeff]")
+_ZERO_WIDTH = re.compile("[\u00ad\u061c\u180e\u200b-\u200f\u202a-\u202e\u2060-\u2064\u2066-\u2069\ufeff]")
+# "300 000", "1 500 000": a digit group of 1-3, then groups of exactly three after one plain space.
+_SPACE_GROUPED = re.compile(r"(?<![\d.,])\d{1,3}(?: \d{3})+(?![\d])")
+# 大写 (financial) numerals -> ordinary Chinese numerals.
+_DAXIE = str.maketrans({
+    "壹": "一", "贰": "二", "貳": "二", "叁": "三", "叄": "三", "參": "三", "肆": "四", "伍": "五", "陆": "六",
+    "陸": "六", "柒": "七", "捌": "八", "玖": "九", "拾": "十", "佰": "百", "仟": "千", "萬": "万", "億": "亿",
+    "圆": "元", "圓": "元",
+})
+
+# English number words.
+_UNITS = {
+    "zero": 0, "one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8,
+    "nine": 9, "ten": 10, "eleven": 11, "twelve": 12, "thirteen": 13, "fourteen": 14, "fifteen": 15,
+    "sixteen": 16, "seventeen": 17, "eighteen": 18, "nineteen": 19,
+}
+_TENS = {"twenty": 20, "thirty": 30, "forty": 40, "fourty": 40, "fifty": 50, "sixty": 60, "seventy": 70,
+         "eighty": 80, "ninety": 90}
+_SCALES = {"thousand": 1_000, "million": 1_000_000, "billion": 1_000_000_000}
+_VALUE_WORDS = "|".join(sorted([*_UNITS, *_TENS], key=len, reverse=True))
+_ALL_WORDS = _VALUE_WORDS + "|hundred|thousand|million|billion|point"
+_WORD_RUN = re.compile(
+    rf"(?<![a-z])(?:{_VALUE_WORDS}|hundred)(?:(?:\s*-\s*|\s+)(?:and\s+)?(?:{_ALL_WORDS}))*(?![a-z])"
+)
 _DIGIT_GAP = re.compile(r"(?<=\d)[\u00a0\u2007\u2008\u2009\u200a\u202f](?=\d)")
 
 CN_DIGITS = {"零": 0, "〇": 0, "一": 1, "二": 2, "两": 2, "三": 3, "四": 4, "五": 5, "六": 6, "七": 7, "八": 8, "九": 9}
@@ -105,6 +131,48 @@ def _wan(m: re.Match[str]) -> str:
     return "¥" + canon(_dec(m.group(1)) * (10_000 if m.group(2) == "万" else 100_000_000))
 
 
+def _words_int(words: list[str]) -> Decimal | None:
+    total = current = Decimal(0)
+    for w in words:
+        if w in _UNITS:
+            current += _UNITS[w]
+        elif w in _TENS:
+            current += _TENS[w]
+        elif w == "hundred":
+            current = (current or 1) * 100
+        elif w in _SCALES:
+            total += (current or 1) * _SCALES[w]
+            current = Decimal(0)
+        else:
+            return None
+    return total + current
+
+
+def words_value(run: str) -> Decimal | None:
+    """'three hundred and fifty thousand' -> 350000, 'one point five million' -> 1500000,
+    'six point four' -> 6.4. None when the run is not a well-formed number."""
+    words = [w for w in re.split(r"[\s-]+", run.strip()) if w and w != "and"]
+    if "point" not in words:
+        return _words_int(words)
+    i = words.index("point")
+    whole = _words_int(words[:i]) if words[:i] else Decimal(0)
+    digits = []
+    rest = words[i + 1 :]
+    while rest and rest[0] in _UNITS and _UNITS[rest[0]] < 10:
+        digits.append(str(_UNITS[rest.pop(0)]))
+    if whole is None or not digits or any(w not in _SCALES for w in rest):
+        return None
+    value = whole + Decimal("0." + "".join(digits))
+    for w in rest:
+        value *= _SCALES[w]
+    return value
+
+
+def _words(m: re.Match[str]) -> str:
+    v = words_value(m.group(0))
+    return m.group(0) if v is None else canon(v)
+
+
 def fold(text: str) -> str:
     """Light form for names and tokens: no zero-width characters, NFKC, lower case, single spaces.
 
@@ -120,6 +188,11 @@ def normalise(text: str) -> str:
     t = _ZERO_WIDTH.sub("", text)
     t = _DIGIT_GAP.sub("", t)
     t = unicodedata.normalize("NFKC", t).lower()
+    # Non-destructive: the joined number goes in front and the spaced digits stay, so "1 150k" still
+    # shows 150k and "300 000" also shows 300000.
+    t = _SPACE_GROUPED.sub(lambda m: m.group(0).replace(" ", "") + " " + m.group(0), t)
+    t = _WORD_RUN.sub(_words, t)
+    t = t.translate(_DAXIE)
     t = _CN_RUN.sub(_cn_number, t)
     t = _PCT_OF.sub(r"\1%", t)
     t = _THOUSANDS.sub("", t)
