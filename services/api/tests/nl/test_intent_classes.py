@@ -23,6 +23,9 @@ STATE = load_scenario()[0]
     ("应收账款列一下", "SHOW_STATUS"),
     ("who owes us money right now?", "SHOW_STATUS"),
     ("下周的现金流怎么样", "SHOW_STATUS"),
+    ("how's our cash flow looking", "SHOW_STATUS"),
+    # "cash flow" as a topic is not a request to see it
+    ("We should really fix our cash flow somehow.", "AMBIGUOUS"),
     # zh / en draws
     ("从信用额度借20万出来周转", "FUND_GAP"),
     ("在授信里提5万出来", "FUND_GAP"),
@@ -50,6 +53,11 @@ STATE = load_scenario()[0]
 def test_intent(text: str, intent: str) -> None:
     p = parse(text, STATE)
     assert p is not None and p.intent.value == intent, (text, p)
+
+
+def test_cash_flow_as_a_topic_is_not_a_status_request() -> None:
+    p = parse("Compose a limerick about cash flow", STATE)
+    assert p is None or p.intent.value != "SHOW_STATUS"
 
 
 def test_pasted_offer_keeps_only_the_buyers_words() -> None:

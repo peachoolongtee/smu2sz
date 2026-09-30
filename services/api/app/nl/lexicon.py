@@ -54,9 +54,15 @@ STATUS = _re(r"\bstatus\b", r"\bposition\b", r"\bhow are we\b", r"\bhow'?s (?:ou
              r"\bcovenants?\b.{0,30}\b(?:look|looking|status|headroom|ok|okay|safe|risk)\b",
              r"账上", r"多少(?:钱|现金)", r"还有多少", r"(?:契约|财务指标).{0,10}(?:怎么样|情况|风险)",
              # forecasts and receivables: "show me the 13 week forecast", "list the open receivables", 现金流预测
-             r"\bforecast\b", r"\b\d{1,2}[- ]?week\b", r"\bcash ?flows?\b", r"\breceivables?\b", r"\bopen invoices\b",
-             r"\baging\b", r"\bageing\b", r"\bwho owes us\b", r"\bprojection\b",
-             r"现金流", r"预测", r"应收(?:账款)?", r"未(?:收|回)(?:款|回)", r"谁欠(?:我们)?钱", r"账龄")
+             # ("cash flow" alone is a topic, not a request to see it: "a poem about cash flow" is not a status)
+             r"\bforecast\b", r"\b\d{1,2}[- ]?week (?:forecast|projection|view|outlook)\b", r"\bprojection\b",
+             r"\bcash ?flows? (?:forecast|projection|statement|position|situation|outlook|report)\b",
+             r"\b(?:show|pull up|see|view|list|display|check)\b.{0,20}\bcash ?flows?\b",
+             r"\b(?:how(?:'s| is| does)|what(?:'s| is| does))\b.{0,20}\bcash ?flows?\b.{0,15}(?:look|looking)?",
+             r"\b(?:list|show|pull up|see|view|display|check)\b.{0,20}\b(?:receivables?|open invoices)\b",
+             r"\b(?:open|outstanding) receivables\b", r"\baging\b", r"\bageing\b", r"\bwho owes us\b",
+             r"现金流(?:预测|情况|怎么样|表|状况)", r"(?:现金流|资金|回款)?预测", r"应收(?:账款)?", r"未(?:收|回)(?:款|回)",
+             r"谁欠(?:我们)?钱", r"账龄")
 # A question about the position ("are we close to breaching a covenant?", "会不会跌破储备线？"): it asks, so
 # it is SHOW_STATUS even when it names the reserve or a shortfall (checked before FUND).
 STATUS_QUESTION = _re(
