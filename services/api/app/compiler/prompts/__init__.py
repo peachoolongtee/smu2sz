@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from collections.abc import Sequence
 
 from app.domain.models import SourceDocument
@@ -90,15 +91,19 @@ def _fence(docs: Sequence[SourceDocument]) -> str:
     return f"doc-{h[:16]}"
 
 
+def _attr(v: str) -> str:
+    return re.sub(r"[\"<>\n\r]", "_", v)[:120]
+
+
 def render_documents(docs: Sequence[SourceDocument]) -> str:
     tag = _fence(docs)
     parts = [f"<documents fence=\"{tag}\">"]
     for d in docs:
-        attrs = f'doc_id="{d.doc_id}" channel="{d.channel}"'
+        attrs = f'doc_id="{_attr(d.doc_id)}" channel="{d.channel}"'
         if d.filename:
-            attrs += f' filename="{d.filename}"'
+            attrs += f' filename="{_attr(d.filename)}"'
         if d.parent_doc_id:
-            attrs += f' attachment_of="{d.parent_doc_id}"'
+            attrs += f' attachment_of="{_attr(d.parent_doc_id)}"'
         parts.append(f"<{tag} {attrs}>\n{d.text}\n</{tag}>")
     parts.append("</documents>")
     return "\n".join(parts)

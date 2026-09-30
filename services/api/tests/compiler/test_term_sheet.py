@@ -62,7 +62,7 @@ def test_periodic_fee_is_annualised(rules_compiler: Compiler) -> None:
     f = ts.proposed_facility
     assert f is not None and f.kind == FacilityKind.INVOICE_FINANCING and f.repayment == Repayment.ON_RECEIPT
     assert (f.fee_bp_per_advance, f.fee_period_days) == (25, 30)
-    assert ts.all_in_rate_bp == 600 + round(25 * 365 / 30)  # 904 bp
+    assert ts.all_in_rate_bp == 904  # 600 + 25 x 365 / 30 = 904.17, half-up in app.domain.money
 
 
 def test_missing_rate_abstains_without_a_proposal(rules_compiler: Compiler) -> None:
