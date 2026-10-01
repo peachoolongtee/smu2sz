@@ -60,6 +60,12 @@ payment never arrives at all, reconciliation reports it LAPSED and no committed 
 | C2 | Alert carries a typed cure; `POST /alerts/{id}/act` executes Tier 1 or queues Tier 2 | sub, after B4 | 5h | missed receipt → "draw ¥150,000" → one call executes it | DONE |
 | C3 | Reconcile compares receipts with what commitments promised | sub, after B2 | 3h | missing early payment reported as lapsed | DONE |
 | C4 | Proactive opener in `/nl` and the UI after a clock or bank-feed event | sub, after C2 | 4h | demo steps 8 to 13 run from the chat | DONE (backend: `POST /nl/opener`, intent SHOW_ALERTS; the UI hook is in E3) |
+| C5 | A drawn line past its planned repayment day raises an alert with a repay cure (found on the 1 Oct demo walk: the day-0 draw stayed outstanding to day 47 until the owner asked) | sub, after C2 | 3h | on the demo path the agent proposes repaying FAC-LINE once cash allows | IN PROGRESS (feat/repay-alert) |
+
+Demo steps 1 to 17 run in one script on 1 Oct (`scripts/demo_run.py`, exit 0): deal, agreed receipt, clock,
+opener and "go ahead" in chat, late residual and financed invoice paid (advance repaid with interest and fee),
+reconciliation 3 matched 0 flagged, 12 hash-chained ledger entries, attack through chat harmless. One gap found
+on the walk and opened as C5: nothing repays the line draw unless the owner asks.
 
 ## Wave D: financial correctness (P0 where a verdict changes)
 
@@ -68,7 +74,7 @@ payment never arrives at all, reconciliation reports it LAPSED and no committed 
 | D1 | Break-even from actual days early | F1 | main formula, sub tests | 3h | 30 days still 0.88%; 90 days at 1.2% accepted | DONE |
 | D2 | Early pay only when cash is needed and cheaper than the router's plan | F2 | main rule, sub code | 4h | no-need offer is not accepted | DONE |
 | D3 | Financed receivable settled early repays the advance that day | F7 | covered by B2 | — | day-20 cash not double counted | DONE |
-| D4 | DSCR counts scheduled bullet principal | F6 | sub + second sub to check | 3h | hand-calculated case | OPEN |
+| D4 | DSCR counts scheduled bullet principal (ADR-0008) | F6 | sub + second sub to check | 3h | hand-calculated case | IN PROGRESS (fix/dscr-bullet-principal) |
 | D5 | APR gate on posted cost over actual days | F5 | sub | 3h | 3-day advance fails the 15% cap | IF TIME |
 
 D1/D2 merged 1 Oct. Whole-invoice early pay at 0.65% to 0.88% (30 days early, golden books) now counters;
