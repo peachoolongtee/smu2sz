@@ -24,6 +24,7 @@ class AlertKind(StrEnum):
     COMMITMENT_EXPIRING = "COMMITMENT_EXPIRING"
     RECEIVABLE_PAST_DUE = "RECEIVABLE_PAST_DUE"
     CONCESSIONS_NEAR_CAP = "CONCESSIONS_NEAR_CAP"
+    FACILITY_REPAYABLE = "FACILITY_REPAYABLE"  # a drawn credit-line balance the books can repay today
 
 
 # Typed operation kinds an alert may suggest. A suggestion is never executed automatically: the
@@ -42,7 +43,7 @@ SuggestedKind = Literal[
 
 
 # The kinds POST /alerts/{id}/act may turn into typed operations (the executor still decides the tier).
-EXECUTABLE_KINDS = frozenset({"DRAW_FACILITY", "SUBMIT_INVOICE_FOR_FINANCING", "APPLY_FOR_FACILITY"})
+EXECUTABLE_KINDS = frozenset({"DRAW_FACILITY", "REPAY_FACILITY", "SUBMIT_INVOICE_FOR_FINANCING", "APPLY_FOR_FACILITY"})
 
 
 class SuggestedAction(Contract):

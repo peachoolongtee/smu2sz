@@ -1,13 +1,20 @@
 """Turn an alert's suggested cure into typed operations for the executor. Pure: nothing here executes anything.
 
-Only the three kinds an agent may submit on a click are mapped; the executor computes each one's tier."""
+Only the four kinds an agent may submit on a click are mapped; the executor computes each one's tier."""
 
 from __future__ import annotations
 
 from typing import Any
 
-from app.alerts.models import Alert
-from app.domain.models import Actor, ApplyForFacility, DrawFacility, Operation, SubmitInvoiceForFinancing
+from app.alerts.models import Alert, AlertKind
+from app.domain.models import (
+    Actor,
+    ApplyForFacility,
+    DrawFacility,
+    Operation,
+    RepayFacility,
+    SubmitInvoiceForFinancing,
+)
 
 
 def cure_operations(alert: Alert, *, day: int, mandate_version: int, state_version: int) -> list[Operation]:
@@ -18,6 +25,9 @@ def cure_operations(alert: Alert, *, day: int, mandate_version: int, state_versi
                                   "requested_by": Actor.AGENT, "day": day}
         if s.operation_kind == "DRAW_FACILITY" and s.facility_id and s.amount_fen:
             out.append(DrawFacility(**common, facility_id=s.facility_id, amount_fen=s.amount_fen))
+        elif (s.operation_kind == "REPAY_FACILITY" and alert.kind == AlertKind.FACILITY_REPAYABLE
+              and s.facility_id and s.amount_fen):  # only the alert that proved the repayment affordable
+            out.append(RepayFacility(**common, facility_id=s.facility_id, amount_fen=s.amount_fen))
         elif (s.operation_kind == "SUBMIT_INVOICE_FOR_FINANCING" and s.facility_id and s.receivable_id
               and s.amount_fen):
             out.append(SubmitInvoiceForFinancing(**common, facility_id=s.facility_id, receivable_id=s.receivable_id,

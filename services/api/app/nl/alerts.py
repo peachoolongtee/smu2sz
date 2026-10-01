@@ -17,6 +17,7 @@ from app.domain.models import (
     Operation,
     OperationResult,
     OperationStatus,
+    RepayFacility,
     SubmitInvoiceForFinancing,
 )
 from app.domain.money import fmt_yuan
@@ -71,6 +72,11 @@ def _op_clause(ctx: NlContext, state: FinancialState, op: Operation) -> tuple[st
         amount = fmt_yuan(op.amount_fen)
         return (op.kind, "PROPOSED", t(ctx, f"Draw {amount} on {op.facility_id}", f"从 {op.facility_id} 提款 {amount}"),
                 t(ctx, f"draw {amount} on {fac} now", f"立即从 {fac} 提款 {amount}"))
+    if isinstance(op, RepayFacility):
+        fac = _facility_name(state, op.facility_id)
+        amount = fmt_yuan(op.amount_fen)
+        return (op.kind, "PROPOSED", t(ctx, f"Repay {amount} on {op.facility_id}", f"向 {op.facility_id} 还款 {amount}"),
+                t(ctx, f"repay {amount} on {fac} now", f"立即向 {fac} 还款 {amount}"))
     assert isinstance(op, ApplyForFacility)
     fac = _facility_name(state, op.facility_id)
     return (op.kind, "PENDING_APPROVAL",
@@ -96,6 +102,8 @@ def alerts_turn(ctx: NlContext) -> tuple[Turn, bool]:
     past_due = [a for a in news if a.kind == AlertKind.RECEIVABLE_PAST_DUE][:MAX_PAST_DUE]
     breach = next((a for a in news if a.kind == AlertKind.RESERVE_BREACH_AHEAD), None)
     shown = {a.id for a in past_due} | ({breach.id} if breach else set())
+    repay = None if breach else next((a for a in news if a.kind == AlertKind.FACILITY_REPAYABLE), None)
+    shown |= {repay.id} if repay else set()
     rest = [a for a in news if a.id not in shown]
 
     parts = [t(ctx, f"Day {ctx.day}.", f"第 {ctx.day} 天。")]
@@ -113,6 +121,22 @@ def alerts_turn(ctx: NlContext) -> tuple[Turn, bool]:
     pending: PendingPlan | None = None
     if breach is None:
         parts += rest_sentence
+        ops = cure_operations(repay, day=ctx.day, mandate_version=mandate.version,
+                              state_version=state.state_version) if repay and repay.actionable else []
+        if repay and ops:  # the books can repay a drawn credit line today: one sentence, then the proposal
+            for op in ops:
+                kind, status, text, _clause = _op_clause(ctx, state, op)
+                steps.add(kind, text, status)
+            fac = _facility_name(state, repay.inputs.get("facility_id", ""))
+            amount = fmt_yuan(repay.amount_fen or 0)
+            low, low_day = repay.inputs.get("lowest_closing", "?"), repay.inputs.get("lowest_day", "?")
+            interest = repay.inputs.get("interest_due", "?")
+            parts.append(t(ctx, f"The {amount} drawn on {fac} can be repaid today: cash stays above your floor "
+                                f"(lowest {low} on day {low_day}). Interest to date {interest}. I can repay it now. "
+                                f"Go ahead?",
+                           f"{fac} 已提取的 {amount} 今天可以还清：现金仍高于您的储备线（最低 {low}，第 {low_day} 天）。"
+                           f"截至今日利息 {interest}。我现在就可以还款。要执行吗？"))
+            pending = PendingPlan(Intent.SHOW_ALERTS, Slots(), steps.items, {"alert_id": repay.id})
     else:
         parts.append(t(ctx, f"On current books cash falls {fmt_yuan(breach.amount_fen or 0)} below your "
                             f"{fmt_yuan(mandate.min_cash_fen)} floor on day {breach.day}.",
@@ -184,8 +208,10 @@ def confirm_cure(ctx: NlContext, pending: PendingPlan) -> Turn:
         after = None
     if after is not None:
         cleared = all(a.id != alert_id for a in after)
-        lines.append(t(ctx, "The reserve alert is now cleared." if cleared else "The alert is still open.",
-                       "储备线提醒已解除。" if cleared else "该提醒仍未解除。"))
+        repaid = alert.kind == AlertKind.FACILITY_REPAYABLE
+        lines.append(t(ctx, ("The repayment alert" if repaid else "The reserve alert") + " is now cleared."
+                       if cleared else "The alert is still open.",
+                       ("还款提醒已解除。" if repaid else "储备线提醒已解除。") if cleared else "该提醒仍未解除。"))
     return Turn(intent=Intent.SHOW_ALERTS, reply=" ".join(lines), plan=steps.items, clear_pending=True)
 
 

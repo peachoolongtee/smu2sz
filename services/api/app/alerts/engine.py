@@ -36,7 +36,8 @@ from app.domain.models import (
 )
 from app.domain.money import bp, fmt_yuan, round_half_up
 from app.domain.ports import LedgerStore
-from app.financial import EngineError, project
+from app.financial import EngineError, line_interest, project
+from app.operations.log import open_lots, read_entries
 
 MONTH_DAYS = 30
 HEADROOM_SHARE = Fraction(1, 10)  # reserve headroom below 10% of the floor
@@ -494,6 +495,65 @@ def _concession_alerts(state: FinancialState, mandate: Mandate, t: Trajectory) -
     return out
 
 
+# ---------------------------------------------------------------- repayable credit line
+
+
+def _repay_alerts(state: FinancialState, mandate: Mandate, store: LedgerStore, obs: list[Obligation],
+                  day: int) -> list[Alert]:
+    """A drawn balance on a COMMITTED, owner-approved bullet credit line that the books can repay today: cash
+    after paying the whole balance plus the interest the executor will charge stays at or above the floor on
+    every day from today (CONSERVATIVE, the mandate horizon). Interest is the executor's own rule: each open
+    lot (open_lots over the operations log; a balance no logged draw explains is dated day 0) at the facility's
+    rate for the days from its draw day to today. The what-if state is a copy and is never written back: cash
+    less balance and interest, the line's drawn balance zero, so the projection no longer schedules its repayment."""
+    floor = mandate.min_cash_fen
+    entries, _bad = read_entries(store.operations())
+    out: list[Alert] = []
+    for f in state.facilities:
+        if not (_usable(f) and f.kind == FacilityKind.CREDIT_LINE and f.repayment == Repayment.BULLET
+                and f.drawn_fen > 0):
+            continue
+        interest = sum(line_interest(amount, f.rate_bp, day - d) for d, amount in open_lots(entries, f.id, f.drawn_fen))
+        total = f.drawn_fen + interest
+        if total > state.cash_fen:
+            continue
+        what_if = state.model_copy(update={
+            "cash_fen": state.cash_fen - total,
+            "facilities": [g.model_copy(update={"drawn_fen": 0}) if g.id == f.id else g for g in state.facilities]})
+        try:
+            t = project(what_if, obs, [], Mode.CONSERVATIVE, mandate.horizon_days, floor)
+        except EngineError:
+            continue
+        ahead = [p for p in t.days if p.day >= day]
+        if not ahead:
+            continue
+        low = min(ahead, key=lambda p: (p.closing_fen, p.day))
+        if low.closing_fen < floor:
+            continue
+        clean_down = any(c.kind == CovenantKind.CLEAN_DOWN for c in f.covenants)
+        out.append(Alert(
+            id=f"ALERT-REPAY-{f.id}",
+            kind=AlertKind.FACILITY_REPAYABLE,
+            severity=Severity.WARNING,
+            title=f"{f.name} can be repaid",
+            detail=(f"{fmt_yuan(f.drawn_fen)} is drawn on {f.name}. Repaying it today costs {fmt_yuan(interest)} "
+                    f"interest to date, {fmt_yuan(total)} in all, and cash stays above the floor: the lowest projected "
+                    f"close after repaying is {fmt_yuan(low.closing_fen)} on day {low.day}."
+                    + (" The line must be at zero for its clean-down." if clean_down else "")),
+            formula=(f"repay today = balance + interest = {fmt_yuan(f.drawn_fen)} + {fmt_yuan(interest)} = "
+                     f"{fmt_yuan(total)}; lowest closing after repaying = {fmt_yuan(low.closing_fen)} (day {low.day}) "
+                     f"≥ floor {fmt_yuan(floor)}"),
+            day=day,
+            amount_fen=f.drawn_fen,
+            inputs={"facility_id": f.id, "interest_due": fmt_yuan(interest), "lowest_closing": fmt_yuan(low.closing_fen),
+                    "lowest_day": str(low.day), "floor": fmt_yuan(floor)},
+            suggested=[SuggestedAction(operation_kind="REPAY_FACILITY", facility_id=f.id, amount_fen=f.drawn_fen,
+                                       note="repay the whole drawn balance today")],
+            actionable=True,
+        ))
+    return out
+
+
 # ---------------------------------------------------------------- entry point
 
 
@@ -507,12 +567,15 @@ def alerts(state: FinancialState, mandate: Mandate, store: LedgerStore, day: int
     books = current_books(state, store.commitments())
     obs = books.with_(obligations)
     t = project(books.state, obs, [], Mode.CONSERVATIVE, mandate.horizon_days, mandate.min_cash_fen)
+    reserve = _reserve_alerts(books.state, mandate, t, obs, today)
     out = [
-        *_reserve_alerts(books.state, mandate, t, obs, today),
+        *reserve,
         *_covenant_alerts(books.state, mandate, t, today),
         *_clean_down_alerts(books.state, t, today),
         *_expiring(store, today),
         *_past_due(books, today, today + mandate.horizon_days),
         *_concession_alerts(books.state, mandate, t),
+        *([] if any(a.kind == AlertKind.RESERVE_BREACH_AHEAD for a in reserve)  # never propose repaying in a breach
+          else _repay_alerts(books.state, mandate, store, obs, today)),
     ]
     return sorted(out, key=lambda a: (_RANK[a.severity], a.day if a.day is not None else 10**6, a.id))
