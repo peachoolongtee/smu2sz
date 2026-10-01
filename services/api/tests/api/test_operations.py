@@ -48,7 +48,7 @@ def test_replayed_idempotency_key_is_duplicate_and_evidence_verifies(client, tmp
     client.post("/operations", json=body, headers=AGENT)
     assert client.post("/operations", json=body, headers=AGENT).json()["result"]["status"] == "DUPLICATE"
     f = tmp_path / "ev.jsonl"
-    f.write_text(client.get("/evidence").text)
+    f.write_text(client.get("/evidence").text, encoding="utf-8")
     script = Path(__file__).resolve().parents[4] / "scripts" / "verify_evidence.py"
     out = subprocess.run([sys.executable, str(script), str(f)], capture_output=True, text=True, check=False)
     assert out.returncode == 0 and "2 operations" in out.stdout, out.stdout

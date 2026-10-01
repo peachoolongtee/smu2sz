@@ -19,7 +19,7 @@ def load_dotenv(path: Path = _REPO_ROOT / ".env") -> None:
     if os.environ.get("TERMSLEDGER_NO_DOTENV"):
         return
     if path.exists():
-        for line in path.read_text().splitlines():
+        for line in path.read_text(encoding="utf-8").splitlines():
             m = re.match(r"\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)\s*$", line)
             if not m or line.lstrip().startswith("#"):
                 continue

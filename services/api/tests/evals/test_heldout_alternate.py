@@ -47,7 +47,7 @@ def test_unlabelled_outcomes_are_left_out_of_verdict_agreement():
     assert not rows["H2N02_60D_ONE_INVOICE"]["labelled"] and rows["H2N02_60D_ONE_INVOICE"]["outcome_ok"]
     assert res.details["counts"]["unlabelled_outcome"] == 1
     assert metric(res, "verdict_agreement").display.split(" ")[0].endswith("/1")
-    assert res.details["source"].endswith("heldout2/offers.yaml")
+    assert res.details["source"].replace("\\", "/").endswith("heldout2/offers.yaml")
 
 
 def test_heldout2_intents_run_through_the_alternate_file():

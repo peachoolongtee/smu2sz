@@ -50,7 +50,7 @@ def build() -> dict:
 
 
 def main(out: Path = OUT) -> None:
-    out.write_text(json.dumps(build(), ensure_ascii=False, separators=(",", ":")) + "\n")
+    out.write_text(json.dumps(build(), ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
     print(f"wrote {out} ({out.stat().st_size // 1024} KiB)")
 
 

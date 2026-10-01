@@ -22,7 +22,7 @@ SIGNED_MANDATE_PATH: Path = FIXTURES / "scenarios" / "golden_sme.mandate.signed.
 
 def load_demo_owner_key() -> dict[str, str]:
     """{'private_key_hex', 'public_key_hex', ...}. Demo only, not a secret."""
-    data = json.loads(DEMO_KEY_PATH.read_text())
+    data = json.loads(DEMO_KEY_PATH.read_text(encoding="utf-8"))
     if public_key_for(data["private_key_hex"]) != data["public_key_hex"]:
         raise ValueError("demo key file is inconsistent")
     return data
@@ -34,7 +34,7 @@ def demo_owner_public_key_hex() -> str:
 
 def load_signed_mandate(path: Path | None = None) -> Mandate:
     """The golden mandate, signed with the demo owner key."""
-    raw = json.loads((path or SIGNED_MANDATE_PATH).read_text())
+    raw = json.loads((path or SIGNED_MANDATE_PATH).read_text(encoding="utf-8"))
     return Mandate.model_validate_json(json.dumps(raw["mandate"]))
 
 
@@ -53,7 +53,7 @@ def write_signed_mandate(path: Path | None = None) -> Path:
         ),
         "mandate": build_signed_mandate().model_dump(mode="json"),
     }
-    target.write_text(json.dumps(doc, indent=2, ensure_ascii=False) + "\n")
+    target.write_text(json.dumps(doc, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     return target
 
 

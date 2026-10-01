@@ -58,12 +58,12 @@ def _free_text_reads(source: str, name: str = "<src>") -> list[str]:
 def test_verifier_never_reads_document_free_text():
     offenders = []
     for path in sorted(VERIFIER.glob("*.py")):
-        offenders += _free_text_reads(path.read_text(), path.name)
+        offenders += _free_text_reads(path.read_text(encoding="utf-8"), path.name)
     assert offenders == []
 
 
 def test_bind_has_no_span_parser_left():
-    source = (VERIFIER / "bind.py").read_text()
+    source = (VERIFIER / "bind.py").read_text(encoding="utf-8")
     assert "_target_terms_days" not in source and ".spans" not in source
 
 
@@ -110,7 +110,7 @@ def _secrets(state, mandate, counterparty_id: str) -> set[str]:
     out |= _rate_forms(rate.value)
     d, _ = break_even_discount(state, mandate)
     out |= _rate_forms(d.value)
-    buyers = yaml.safe_load((FIXTURES / "counterparties" / "buyers.yaml").read_text())["buyers"]
+    buyers = yaml.safe_load((FIXTURES / "counterparties" / "buyers.yaml").read_text(encoding="utf-8"))["buyers"]
     for p in buyers:
         if p["counterparty_id"] != counterparty_id:
             continue
