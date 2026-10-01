@@ -10,6 +10,8 @@ import { getOwnerToken, requestSignIn } from "../auth";
 import { ApiError } from "../errors";
 import type { NlRequest, NlResponse } from "../types";
 import script from "../../mocks/nl_script.json";
+import { appendRecorded } from "./handlers";
+import { mockOpenerAnswer, openerWaiting } from "./home";
 
 type Key = keyof typeof script;
 type Recorded = Omit<NlResponse, "session_id">;
@@ -97,6 +99,18 @@ export async function mockNl(req: NlRequest): Promise<NlResponse> {
   }
   const sid = req.session_id ?? "mock-session";
   const s = sessions.get(sid) ?? { turn: 0, pending: null, clarifying: false, zh: false };
+  // The agent's opener left a cure waiting in this session: "go ahead" runs it (recorded), "cancel" drops it.
+  if (req.actor === "OWNER" && openerWaiting(sid) && (CONFIRM.test(req.text) || CANCEL.test(req.text))) {
+    const confirm = CONFIRM.test(req.text);
+    const ran = mockOpenerAnswer(sid, confirm);
+    const recorded: Recorded = ran ?? (JSON.parse(JSON.stringify(script.cancel)) as Recorded);
+    for (const o of ran?.operations ?? []) appendRecorded({ kind: o.kind, status: o.status, tier: o.tier, message: o.message, day: 34 });
+    s.turn += 1;
+    s.pending = null;
+    s.clarifying = false;
+    sessions.set(sid, s);
+    return { ...recorded, session_id: sid, turn: s.turn, trace_id: `${sid}:${s.turn}` };
+  }
   const base = pick(req, s);
   // A Chinese request replays the Chinese recording of the same scenario when there is one.
   const zh = CJK.test(req.text) || (/^\d$/.test(req.text.trim()) && s.zh);

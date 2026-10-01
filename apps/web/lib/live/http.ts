@@ -13,6 +13,8 @@ interface HttpOptions {
   token?: string;
   /** Do not open the sign-in dialog on a 401 (the caller shows the failure itself). */
   silent?: boolean;
+  /** The route answers 403 (not 401) when the owner credential is missing or wrong: open the sign-in dialog for that too. */
+  ownerOn403?: boolean;
 }
 
 /**
@@ -71,6 +73,7 @@ export async function http<T>(method: "GET" | "POST", path: string, opts: HttpOp
     let message = `${res.status} ${res.statusText}`;
     try {
       const data = (await res.json()) as { detail?: unknown };
+      if (res.status === 403 && opts.ownerOn403 && !/FEATURE_DISABLED/.test(JSON.stringify(data.detail))) throw unauthorized(opts);
       if (res.status === 503 && /NOT_CONFIGURED/.test(JSON.stringify(data.detail))) throw new ApiError(503, NOT_CONFIGURED);
       message = detailMessage(data.detail, message);
     } catch (e) {

@@ -115,7 +115,7 @@ function VerdictBlock({ verdict }: { verdict: NlVerdict }) {
   );
 }
 
-function OperationList({ operations }: { operations: NlOperation[] }) {
+export function OperationList({ operations }: { operations: NlOperation[] }) {
   const { t, te } = useI18n();
   return (
     <section aria-label={t("chat.ops")} data-testid="chat-ops">

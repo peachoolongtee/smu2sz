@@ -18,8 +18,9 @@ async function next(page: Page, url: RegExp) {
 }
 
 test("demo stepper walks Scene 1, Scene 2, Scene 3 and Security with the golden numbers", async ({ page }) => {
-  await page.goto("/");
-  await expect(page).toHaveURL(/\/mandate/);
+  // `/` is the owner home now (it no longer redirects, and its owner reads open the sign-in dialog without a token),
+  // so the walk starts on the mandate page; home.spec.ts covers `/`.
+  await page.goto("/mandate");
 
   // Setup: reset, then the signed mandate and its three tiers.
   await next(page, /\/mandate/);

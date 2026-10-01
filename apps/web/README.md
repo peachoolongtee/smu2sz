@@ -59,6 +59,20 @@ Suggested prompts are in `lib/chat-prompts.ts` (from `services/api/evals/e2e/sce
 Mock mode replays replies recorded from the real API (`mocks/nl_script.json`, `lib/mock/nl.ts`). To re-record, run
 the API as above and POST each scripted text to `/nl` after `/demo/reset`.
 
+### Home (`/`)
+
+The owner home answers "what needs me today". Six cards, each reading through `lib/api.ts`: **Today** (GET `/clock` and a
+labelled demo control, POST `/clock/advance {days}`), **What needs you** (POST `/nl/opener`; "Go ahead" / "Not now" send
+"go ahead" / "cancel" through `lib/chat.ts` in the owner's session, so the opener and the answer also show in the chat
+panel), **Position** (cash from `/state`; floor, lowest cash, month-1 DSCR and leverage and their limits from
+`/trajectory`), **Waiting for you** (`/approvals/queue`), **At risk** (`/alerts`, with "Let the agent fix this" on
+`actionable` alerts, POST `/alerts/{id}/act`; the same button is on `/alerts`) and **Done by the agent** (`/ledger`,
+`requested_by = AGENT`). Every section refetches after a clock advance or an executed action (`bump()`). The owner calls
+answer 403 without the token; `ownerOn403` in `lib/live/http.ts` opens the sign-in dialog for that too.
+
+Mock mode replays a script recorded from the real API on the demo path (`mocks/home_*.json`, `lib/mock/home.ts`): day 0 to 33
+"nothing needs you"; from day 34 the opener has news and the reserve alert is actionable until it is cured.
+
 ### Live-mode notes
 
 - The demo stepper compiles the server fixtures (`POST /offers {fixture_id}`) and passes the fixture id back

@@ -1,0 +1,20 @@
+{
+  "session_id": "z",
+  "turn": 1,
+  "reply": "Day 34. Foshan Home Retail Co.'s ¥208,100.00 on RCV-A was due on day 32 and has not arrived. 1 more warning: Reserve headroom thin on day 42.",
+  "intent": "SHOW_ALERTS",
+  "lang": "en",
+  "plan": [],
+  "verdict": null,
+  "operations": [],
+  "clarification": null,
+  "awaiting_confirmation": false,
+  "amended": false,
+  "replayed": false,
+  "negotiation": null,
+  "security_events": [],
+  "parse_source": "opener",
+  "trace_id": "z:1",
+  "proactive": true,
+  "has_news": true
+}

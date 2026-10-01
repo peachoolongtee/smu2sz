@@ -6,7 +6,9 @@
 
 import { ApiError } from "../errors";
 import type {
+  AlertActResult,
   AlertsView,
+  ClockView,
   ApprovalView,
   AuditView,
   BorrowerFileRequest,
@@ -19,6 +21,7 @@ import type {
   Mode,
   NegotiateRequest,
   NegotiationView,
+  NlOpenerResponse,
   NlRequest,
   NlResponse,
   OfferView,
@@ -94,6 +97,22 @@ export const live = {
   /** POST /nl. The owner channel sends X-Owner-Token; a counterparty turn sends no credential at all. */
   nl: (req: NlRequest): Promise<NlResponse> =>
     http<NlResponse>("POST", "/nl", { body: req, auth: req.actor === "COUNTERPARTY" ? "none" : "owner" }),
+
+  /** POST /nl/opener. Owner only (the API answers 403 without the token, which opens the sign-in dialog). */
+  nlOpener: (sessionId: string | undefined, lang: "en" | "zh"): Promise<NlOpenerResponse> =>
+    http<NlOpenerResponse>("POST", "/nl/opener", { body: { session_id: sessionId, lang }, ownerOn403: true }),
+
+  /** GET /clock needs no credential. */
+  clock: async (): Promise<ClockView> => ({ day: (await http<{ day: number }>("GET", "/clock", { auth: "none" })).day, message: null }),
+
+  /** POST /clock/advance {days}: the owner token (or the bank-feed key) is required; 403 opens the sign-in dialog. */
+  advanceClock: async (days: number): Promise<ClockView> => {
+    const r = await http<{ day: number; result: { message?: string } | null }>("POST", "/clock/advance", { body: { days }, ownerOn403: true });
+    return { day: r.day, message: r.result?.message ?? null };
+  },
+
+  /** POST /alerts/{id}/act: executes the alert's cure as the agent. */
+  actOnAlert: (id: string) => http<AlertActResult>("POST", `/alerts/${enc(id)}/act`, { ownerOn403: true }),
 
   whatIf: (params: WhatIfParams) => http<WhatIfResult>("POST", "/whatif", { body: params }),
 

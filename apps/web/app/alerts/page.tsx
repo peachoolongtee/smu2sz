@@ -2,6 +2,7 @@
 
 import { Badge, Callout, Card, EmptyState, ErrorState, Formula, LoadingBlock, PageHeader, type Tone } from "@/components/ui";
 import { CodeBadge } from "@/components/badges";
+import { FixButton, FixResult, useFixAlert } from "@/components/home/fix-alert";
 import { getAlerts } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
 import type { AlertSeverity } from "@/lib/types";
@@ -14,6 +15,7 @@ export default function AlertsPage() {
   const { t, te } = useI18n();
   const alerts = useAsync(getAlerts, []);
   const data = alerts.data;
+  const fixer = useFixAlert();
 
   return (
     <>
@@ -42,6 +44,7 @@ export default function AlertsPage() {
       ) : (
         <div className="space-y-4">
           <p className="text-xs text-ink-3">{t("alerts.basis", { basis: te("traj.modeName", data.basis), day: data.day })}</p>
+          <FixResult result={fixer.result} error={fixer.error} />
           {data.alerts.length === 0 ? (
             <EmptyState title={t("alerts.empty.title")} body={t("alerts.empty.body")} />
           ) : (
@@ -89,6 +92,11 @@ export default function AlertsPage() {
                             </li>
                           ))}
                         </ul>
+                      </div>
+                    ) : null}
+                    {a.actionable ? (
+                      <div className="mt-4">
+                        <FixButton alertId={a.id} busyId={fixer.busyId} onFix={(id) => void fixer.fix(id)} />
                       </div>
                     ) : null}
                   </Card>

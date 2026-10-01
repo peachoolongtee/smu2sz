@@ -13,6 +13,7 @@ import { OwnerSessionControl, OwnerSignInDialog } from "./owner-auth";
 import { Badge, Segmented } from "./ui";
 
 const NAV: { href: string; key: DictKey; group: "screens" | "more" }[] = [
+  { href: "/", key: "nav.home", group: "screens" },
   { href: "/chat", key: "nav.chat", group: "screens" },
   { href: "/mandate", key: "nav.mandate", group: "screens" },
   { href: "/inbox", key: "nav.inbox", group: "screens" },

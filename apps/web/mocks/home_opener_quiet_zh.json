@@ -1,0 +1,20 @@
+{
+  "session_id": "q",
+  "turn": 4,
+  "reply": "今天（第 0 天）没有需要您处理的事项。",
+  "intent": "SHOW_ALERTS",
+  "lang": "zh",
+  "plan": [],
+  "verdict": null,
+  "operations": [],
+  "clarification": null,
+  "awaiting_confirmation": false,
+  "amended": false,
+  "replayed": false,
+  "negotiation": null,
+  "security_events": [],
+  "parse_source": "opener",
+  "trace_id": "q:4",
+  "proactive": true,
+  "has_news": false
+}

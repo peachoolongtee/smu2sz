@@ -900,6 +900,8 @@ export interface AlertItem {
   amount_display: string | null;
   committed_cure: boolean;
   suggested: SuggestedOperation[];
+  /** True when the agent may execute the alert's cure (POST /alerts/{id}/act). Absent in older recordings: treat as false. */
+  actionable: boolean;
 }
 
 /** GET /alerts */
@@ -909,6 +911,19 @@ export interface AlertsView {
   counts: Record<AlertSeverity, number>;
   alerts: AlertItem[];
   note: string;
+}
+
+/** POST /alerts/{id}/act: the alert's cure submitted as the agent. Tier 1 executes, Tier 2 waits in the approvals queue. */
+export interface AlertActResult {
+  alert_id: string;
+  day: Day;
+  results: NlOperation[];
+  executed: number;
+  pending_approval: number;
+  refused: number;
+  /** The server's answer to "is this alert gone now". */
+  cured: boolean;
+  alerts_after: { counts: Record<AlertSeverity, number> };
 }
 
 export interface OutstandingReceivable {
@@ -1064,6 +1079,20 @@ export interface NlResponse {
   security_events: string[];
   parse_source: string;
   trace_id: string;
+}
+
+/** POST /nl/opener: the agent speaks first. A pending cure sits in the owner's session until "go ahead". */
+export interface NlOpenerResponse extends NlResponse {
+  proactive: true;
+  /** False when nothing needs the owner today (the reply says so). */
+  has_news: boolean;
+}
+
+/** GET /clock and POST /clock/advance, reduced to what the home page shows. */
+export interface ClockView {
+  day: Day;
+  /** The executor's one-line account of the step (server text); null for a plain read. */
+  message: string | null;
 }
 
 // ------------------------------------------------------------------ what-if sandbox (display-only)

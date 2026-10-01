@@ -8,7 +8,9 @@ import { sha256 } from "js-sha256";
 import { MOCK_LATENCY_MS } from "../config";
 import { ApiError } from "../errors";
 import type {
+  AlertActResult,
   AlertsView,
+  ClockView,
   ApprovalDecision,
   ApprovalView,
   AuditView,
@@ -22,6 +24,7 @@ import type {
   Mode,
   NegotiateRequest,
   NegotiationView,
+  NlOpenerResponse,
   NlRequest,
   NlResponse,
   OfferView,
@@ -39,6 +42,7 @@ import type {
   WhatIfResult,
 } from "../types";
 
+import * as home from "./home";
 import alertsJson from "../../mocks/alerts.json";
 import approvalsSeed from "../../mocks/approvals_seed.json";
 import auditSec from "../../mocks/audit_sec.json";
@@ -161,6 +165,27 @@ function append(
   const op: OperationView = { ...base, prev_hash: prev, entry_hash: entryHash(base, prev) };
   s.ops.push(op);
   return op;
+}
+
+/** Books an operation the recorded API answer reports (a cure the agent ran), on the same hash chain as the rest. */
+export function appendRecorded(r: { kind: string; status: OperationView["status"]; tier: OperationView["tier"]; message: string; day: number }): void {
+  const s = load();
+  const seq = s.ops.length + 1;
+  const prev = s.ops.length ? (s.ops[s.ops.length - 1].entry_hash ?? GENESIS) : GENESIS;
+  const base = {
+    op_id: `OP-${String(seq).padStart(4, "0")}`,
+    kind: r.kind,
+    status: r.status,
+    tier: r.tier,
+    violations: [],
+    seq,
+    message: r.message,
+    day: r.day,
+    requested_by: "AGENT" as const,
+    summary: r.message,
+  };
+  s.ops.push({ ...base, prev_hash: prev, entry_hash: entryHash(base, prev) });
+  save();
 }
 
 function chainValid(ops: OperationView[]): boolean {
@@ -397,7 +422,29 @@ export async function decideApproval(id: string, decision: ApprovalDecision): Pr
 
 export async function getAlerts(): Promise<AlertsView> {
   await delay();
-  return clone(cast<AlertsView>(alertsJson));
+  return home.mockAlerts() ?? clone(cast<AlertsView>(alertsJson));
+}
+
+export async function getClock(): Promise<ClockView> {
+  await delay();
+  return home.mockClock();
+}
+
+export async function advanceClock(days: number): Promise<ClockView> {
+  await delay();
+  return home.mockAdvance(days);
+}
+
+export async function nlOpener(sessionId: string | undefined, lang: "en" | "zh"): Promise<NlOpenerResponse> {
+  await delay();
+  return home.mockOpener(sessionId, lang);
+}
+
+export async function actOnAlert(id: string): Promise<AlertActResult> {
+  await delay();
+  const r = home.mockAct(id);
+  for (const o of r.results) appendRecorded({ kind: o.kind, status: o.status, tier: o.tier, message: o.message, day: r.day });
+  return r;
 }
 
 export async function getReconciliation(): Promise<ReconciliationView> {
@@ -471,4 +518,5 @@ export async function demoReset(): Promise<void> {
   await delay();
   memory = emptyStore();
   save();
+  home.resetHome();
 }

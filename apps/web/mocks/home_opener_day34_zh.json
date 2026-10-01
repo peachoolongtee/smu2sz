@@ -1,0 +1,29 @@
+{
+  "session_id": "web-rec-zh",
+  "turn": 1,
+  "reply": "第 34 天。 Foshan Home Retail Co. 的 RCV-A 款项 ¥208,100.00 应于第 32 天到账，至今未到。 按现有账目，第 42 天现金将比 ¥300,000.00 的储备线低 ¥200,000.00。 另有 1 项警告：Reserve headroom thin on day 34。 我可以立即以发票 RI:BUYER-1:2 在 Invoice financing (onboarded platform) 融资 ¥200,000.00。要执行吗？",
+  "intent": "SHOW_ALERTS",
+  "lang": "zh",
+  "plan": [
+    {
+      "step": 1,
+      "kind": "SUBMIT_INVOICE_FOR_FINANCING",
+      "description": "将 RI:BUYER-1:2 提交 FAC-IF 融资，预付 ¥200,000.00",
+      "status": "PROPOSED",
+      "op_id": null,
+      "condition": null
+    }
+  ],
+  "verdict": null,
+  "operations": [],
+  "clarification": null,
+  "awaiting_confirmation": true,
+  "amended": false,
+  "replayed": false,
+  "negotiation": null,
+  "security_events": [],
+  "parse_source": "opener",
+  "trace_id": "web-rec-zh:1",
+  "proactive": true,
+  "has_news": true
+}
