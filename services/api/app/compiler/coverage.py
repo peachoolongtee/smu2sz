@@ -16,6 +16,11 @@ false negative costs the owner one click, a false positive commits the business.
     confirmation tags are set aside.
 (d) No authority claim, data request or funding claim; nothing claimed as previously agreed.
 (e) Every document of the offer (message and attachments) is scanned.
+(f) Fail closed on unread words: the text left once the numbers and references the obligations explain,
+    greetings, sign-offs and contact details are removed (the residue, source spans included) may hold only the closed list of filler
+    words in `_FILLER_EN` / `_FILLER_ZH`. Any other word is unread text that might carry a term, so the proof
+    fails and names up to five such words (single words only, never a phrase). No other currency than CNY, no
+    rate per a period other than the invoice, and no reference to an attachment that was not supplied.
 It also requires a clean compilation (COMPILED, no material abstention, nothing unresolved) and, for each
 early-pay discount, a stated rate and a stated invoice amount.
 """
@@ -23,7 +28,7 @@ early-pay discount, a stated rate and a stated invoice amount.
 from __future__ import annotations
 
 import re
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from decimal import Decimal
 from fractions import Fraction
@@ -398,6 +403,129 @@ def _requests(doc: SourceDocument, spans: Sequence[SourceSpan]) -> list[str]:
         s = max(stop, s + 1)
     return found
 
+# ---------------------------------------------------------------- (f) unread words (fail closed)
+
+# The closed list of filler: function words, courtesy and the vocabulary of the single supported pattern (an early
+# payment of a named invoice for a discount). It holds NO noun or verb that could carry a commercial term, and
+# nothing that negates, quantifies, conditions beyond "if", or names a means, a period, a document or a party.
+# Unsure: leave it out. A queued decision costs one click; a wrong autonomous accept commits the business.
+_FILLER_EN = frozenset("""
+hi hello hey thanks thank thx cheers regards sincerely please pls plz kindly ok okay advise confirm
+i we us our ours you your yours u it its this that these those the a an
+can could will would shall do am is are be
+we'll we're we'd you'll you're you'd i'll i'd i'm it's that's
+and or but so if then
+for of on in at by with within from as to
+pay payment invoice inv early discount disc off settle setle settel clear take give knock deduct less minus transfer remit agree
+today tomorrow tmrw now immediately full whole open days day
+happy glad able
+cny rmb yuan
+""".split())  # noqa: SIM905
+_FILLER_ZH = sorted("""
+您好 你好 谢谢 多谢 感谢 辛苦了 辛苦 祝好 此致 敬礼 请 麻烦 劳烦 确认
+我方 我们 我司 我 贵方 贵司 您 你们 你
+提前 付款 付清 结清 支付 付 结算 全额 整 发票 货款 折扣 贴息 扣除 扣 按 算 个 也就是 是 也 同意 给
+这张 那张 这笔 那笔 一张 今天 明天 现在 马上 立即 立刻
+可以 愿意 想 能 如果 就 即可 就行 行吗 好吗 可以吗
+天 元 人民币 的 了 吗 吧 呢 啊 嘛 呀 哦 这 那
+""".split(), key=len, reverse=True)  # noqa: SIM905
+_ZH_FILLER_RE = re.compile("|".join(map(re.escape, _FILLER_ZH)))
+
+_WORD = re.compile(r"[一-鿿㐀-䶿]+|[^\W\d_一-鿿㐀-䶿]+(?:'[^\W\d_一-鿿㐀-䶿]+)?")
+_HONORIFIC = r"(?:总|经理|小姐|先生|女士|老师|老板)"
+# Fixed courtesy and framing phrases, set aside whole (their words are not on the list one by one).
+_PHRASES = rx(
+    r"\bnothing\s+else\s+(?:changes|changing)(?:\s+on\s+our\s+side)?\b|\beverything\s+else\s+(?:stays|remains)\s+(?:the\s+)?same\b"
+    r"|\ball\s+else\s+(?:unchanged|the\s+same)\b|\b(?:rest|remainder)\s+of\s+the\s+(?:arrangement|terms|deal)\s+"
+    r"(?:(?:is|are|stays|remains)\s+)?(?:unchanged|the\s+same)\b|\b(?:all\s+)?other\s+terms\s+(?:(?:are|remain)\s+)?(?:unchanged|the\s+same)\b"
+    r"|\bhope\s+(?:all\s+is|you\s+are|you're)\s+well\b|\blet\s+(?:me|us)\s+know\b|\b(?:this|that|the)\s+one\b"
+    r"|\bstraight\s+away\b|\bright\s+now\b|\bthank\s+you\b|\binvoice\s+amount\b|\bi\.\s?e\.|\b(?:call|ring|text|message|contact)\s+me(?:\s+(?:on|at))?\b"
+    r"|\bif\s+(?:needed|necessary|you\s+have\s+(?:any\s+)?questions?)\b"
+    r"|(?:其他|其它|其余|别的)(?:的)?(?:条款|条件)?(?:都)?不变|就这一?张", I)
+# "Hi Chen," / "Dear Mr Wang," / "Hi 陈总" / "陈总好": a greeting and the name it addresses, at the start of a line.
+_SALUTATION = rx(
+    r"^[ \t]*(?:(?:hi|hello|hey|dear|good\s+(?:morning|afternoon|evening)|morning)\b"
+    rf"(?:[ \t]+(?:(?-i:[A-Z][a-z]{{1,15}})(?:[ \t]+(?-i:[A-Z][a-z]{{1,15}})){{0,2}}(?=[ \t]*[,，:：!！\n-])|[一-鿿]{{1,3}}{_HONORIFIC}))?"
+    rf"|[一-鿿]{{1,3}}{_HONORIFIC}(?:(?:你|您)?好|(?=[，,:：])))", I | re.MULTILINE)
+# A sign-off at the end, with at most a three-word capitalised name on the next line.
+_SIGNOFF = rx(
+    r"(?:\b(?:best|kind|warm)\s+regards|\bregards|\bsincerely|\bcheers|\bthanks|\bthank\s+you|\bbest|\bbr)\b[ \t]*[,!.]?[ \t]*"
+    r"(?:\n[ \t]*(?-i:[A-Z][A-Za-z.'-]{0,19})(?:[ \t]+(?-i:[A-Z][A-Za-z.'-]{0,19})){0,2})?\s*$", I)
+# A signature: a name of up to three capitalised words alone on a line directly above contact details.
+_SIGNATURE_NAME = rx(
+    r"^[ \t]*(?-i:[A-Z][a-z.'-]{1,19})(?:[ \t]+(?-i:[A-Z][a-z.'-]{1,19})){0,2}[ \t]*\n"
+    r"(?=[ \t]*(?:(?:tel|phone|mob(?:ile)?|fax|cell|e-?mail|wechat|whatsapp)[ \t]*[:：]|[\w.+-]+@))", I | re.MULTILINE)
+# "before 3 pm" in Chinese: the clock time is allow-listed, its "前" / "左右" is the tail of the same phrase.
+_TIME_TAIL = rx(r"(?:上午|下午|晚上|早上)?\d{1,2}\s*点(?:半|\d{1,2}分?)?(?:之前|以前|前|左右)", I)
+# Contact details and the label of a contact line.
+_CONTACT_LABEL = rx(r"^[ \t]*(?:subject|tel|phone|mob(?:ile)?|fax|cell|e-?mail|date|sent|wechat|whatsapp|电话|手机|传真|邮箱|日期|微信)[ \t]*[:：]",
+                    I | re.MULTILINE)
+
+_FOREIGN_CURRENCY = rx(
+    r"\$|€|£|₩|₹|₽|(?<![A-Za-z])(?:usd|us\s?dollars?|dollars?|eur|euros?|gbp|pounds?|sterling|hkd|hk\s?dollars?|jpy|yen|sgd|aud|cad|chf"
+    r"|krw|twd|inr|thb|myr|nzd|bucks)(?![A-Za-z])|美元|美金|美刀|港币|港元|欧元|英镑|日元|日圆|新币|新元|澳元|加元|韩元|台币|卢比|泰铢|林吉特", I)
+_PERIOD = (r"(?:week|wk|fortnight|month|mo|day|quarter|year|yr|annum|diem)\b")
+_RATE_PERIOD = rx(
+    rf"\s*(?:(?:per|a|an|each|every|/)\s*{_PERIOD}|(?:weekly|monthly|daily|quarterly|annual(?:ly)?|yearly)\b)"
+    r"|\s*(?:每|/)\s*(?:个)?(?:周|星期|礼拜|月|天|日|季度?|年)|\s*(?:周息|月息|日息|年息|年化)", I)
+_ZH_PERIODIC = rx(r"每\s*(?:个)?(?:周|星期|礼拜|月|天|日|季度?|年)[^。.;；\n]{0,12}?(?:\d\s*[%％]|百分之|千分之|个点|折扣|贴息|返)"
+                  r"|(?:周|月|日)(?:息|利率)", I)
+_NOT_SUPPLIED = rx(
+    r"\battach(?:ed|ment|ments)?\b|\benclos(?:ed|ure|ures)\b|\bas\s+per\b|\bper\s+the\b|\bsee\s+(?:the\s+)?(?:annex|appendix|schedule|exhibit|below|above)\b"
+    r"|\b(?:annex|appendix|schedule|exhibit)\b|附件|附表|附录|附后|见附|详见|如附|所附|随附|另附|见下表|见上表", I)
+
+
+def _residue(doc: SourceDocument, known: _Known) -> str:
+    """The folded text of `doc` with the numbers and references the obligations explain, contact details,
+    greetings, sign-offs and fixed courtesy phrases blanked out.
+
+    The obligations' own source spans are deliberately NOT blanked: a span is the clause the compiler read, and it can
+    swallow a rider ("pay invoice X tomorrow by bank draft if you take 0.5% off" is one clause). The words inside a
+    span must be on the filler list too, which the vocabulary of the supported pattern is."""
+    f = fold(doc.text)
+    gone = bytearray(len(doc.text))
+    for m in mentions(doc):
+        if m.kind != "date" and _explained(m, known):
+            for i in range(m.start, min(m.end, len(gone))):
+                gone[i] = 1
+    text = "".join(" " if gone[f.starts[i]] else ch for i, ch in enumerate(f.text))
+
+    def blank(pat: re.Pattern[str], s: str) -> str:
+        return pat.sub(lambda m: " " * len(m.group(0)), s)
+
+    for pat in (_SIGNATURE_NAME, _TIME_TAIL, *ALLOWED[:5], _CONTACT_LABEL, _SALUTATION, _SIGNOFF, _PHRASES):
+        text = blank(pat, text)
+    return text
+
+
+def _unread_tokens(residue: str) -> list[str]:
+    """The words of `residue` that are not on the filler list (Latin words and runs of CJK), in order, once each."""
+    out: list[str] = []
+    for m in _WORD.finditer(residue):
+        w = m.group(0)
+        if re.match(r"[一-鿿㐀-䶿]", w):
+            toks = [x for x in _ZH_FILLER_RE.sub(" ", w).split() if x]
+        else:
+            toks = [] if w.lower() in _FILLER_EN else [w.lower()]
+        out.extend(x[:20] for x in toks if x not in out)
+    return out
+
+
+def _unread(docs: Sequence[SourceDocument], known: _Known, note: Callable[[str], None]) -> None:
+    for d in docs:
+        t = fold(d.text).text
+        if _FOREIGN_CURRENCY.search(t):
+            note("non-CNY currency stated")
+        if any(_RATE_PERIOD.match(t, r.end) for r in find_rates(t)) or _ZH_PERIODIC.search(t):
+            note("a rate is stated per a period other than the invoice")
+        if len(docs) < 2 and _NOT_SUPPLIED.search(t):
+            note("the message refers to a document that was not supplied")
+    seen: list[str] = []
+    for d in docs:
+        seen.extend(x for x in _unread_tokens(_residue(d, known)) if x not in seen)
+    if seen:
+        note("text not read into the terms: " + ", ".join(f"'{x}'" for x in seen[:5]) + (", ..." if len(seen) > 5 else ""))
+
 
 def prove(
     docs: Sequence[SourceDocument],
@@ -465,6 +593,9 @@ def prove(
     for d in docs:
         for cue in _requests(d, spans):
             note(f"{d.doc_id} holds a {cue} beyond the extracted terms")
+
+    # (f): unread words, other currencies, per-period rates, references to what was not supplied
+    _unread(docs, known, note)
 
     return (not notes), notes
 

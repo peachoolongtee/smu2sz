@@ -25,8 +25,8 @@ from app.domain.models import (
     Verdict,
     ViolationCode,
 )
-from app.domain.money import fmt_yuan
-from app.egress import allowed_for_counter
+from app.domain.money import bp, fmt_pct, fmt_yuan
+from app.egress import AllowedValue, ProtectedSet, allowed_for_counter, allowed_from_obligations, scan
 from app.nl import lexicon as lx
 from app.nl.context import NlContext
 from app.nl.models import Intent, Slots
@@ -120,6 +120,44 @@ def clarification_request(ctx: NlContext, v: Verdict) -> str:
              "请澄清条款：我方无法从贵方消息中确定这些条款。")
 
 
+def acceptance_allow(b: VerdictBundle) -> list[AllowedValue]:
+    """What the acceptance reply may repeat: the buyer's own offered rates, amounts and day counts."""
+    out = allowed_from_obligations(b.bound_obligations)
+    out += [AllowedValue.days(abs(o.days_delta)) for o in b.bound_obligations if o.days_delta]
+    return out
+
+
+def _restated(ctx: NlContext, o: Obligation) -> str:
+    """One bound obligation in words, from its typed fields only (never the buyer's text)."""
+    pct = fmt_pct(bp(o.rate_bp)) if o.rate_bp is not None else None
+    if o.type == ObligationType.IMMEDIATE_DISCOUNT:
+        what = o.base.receivable_id or t(ctx, "the invoice", "该发票")
+        face = f" ({fmt_yuan(o.base.amount_fen)})" if o.base.amount_fen is not None else ""
+        day = t(ctx, f" on day {o.effective_day}", f"于第{o.effective_day}天") if o.effective_day is not None else ""
+        rate = t(ctx, f" at a {pct} discount", f"，折扣{pct}") if pct else ""
+        return t(ctx, f"payment of invoice {what}{face}{day}{rate}", f"发票 {what}{face}{day}付款{rate}")
+    if o.type == ObligationType.TERMS_EXTENSION and o.days_delta is not None:
+        return t(ctx, f"a payment-terms change of {o.days_delta:+d} days", f"付款账期变更{o.days_delta:+d}天")
+    if o.type == ObligationType.CONTINGENT_REBATE and pct:
+        return t(ctx, f"a {pct} rebate", f"{pct}返利")
+    kind = o.type.value.lower().replace("_", " ")
+    return t(ctx, f"a {kind}" + (f" at {pct}" if pct else ""), f"{kind}" + (f"，{pct}" if pct else ""))
+
+
+def acceptance_line(ctx: NlContext, b: VerdictBundle, recipient: str) -> str:
+    """The reply to an executed acceptance: the typed terms we agreed, and that nothing else is. If the egress guard
+    would block that restatement, a fixed sentence without values."""
+    fallback = t(ctx, "Agreed on the terms we confirmed in writing; nothing else in your message is agreed.",
+                 "同意我方书面确认的条款；贵方消息中的其他内容均未同意。")
+    if not b.bound_obligations:
+        return fallback
+    terms = t(ctx, "; ", "；").join(_restated(ctx, o) for o in b.bound_obligations)
+    text = t(ctx, f"Agreed: {terms}. Nothing else in your message is agreed.", f"同意：{terms}。贵方消息中的其他内容均未同意。")
+    if scan(text, ProtectedSet.build(ctx.state(), ctx.mandate()), recipient_id=recipient, allow=acceptance_allow(b)):
+        return fallback
+    return text
+
+
 def decide(ctx: NlContext, steps: Steps, b: VerdictBundle, *, execute: bool, recipient: str) -> list[str]:
     """Tier-1 response to a verified offer. Returns outbound lines for the counterparty.
 
@@ -182,7 +220,7 @@ def decide(ctx: NlContext, steps: Steps, b: VerdictBundle, *, execute: bool, rec
             return [t(ctx, "Thank you. Our acceptance awaits the owner's approval; we will confirm once the owner "
                            "has decided.", "谢谢。我方接受须经业主批准，业主决定后我方将予以确认。")]
         if r.status.value in ("EXECUTED", "DUPLICATE"):
-            return [t(ctx, "Agreed as proposed.", "同意贵方提议。")]
+            return [acceptance_line(ctx, b, recipient)]
         return [t(ctx, "We are not able to confirm these terms.", "我方无法确认这些条款。")]
     if not execute:
         steps.add("REJECT_OFFER", t(ctx, f"Reject offer {v.offer_id}", f"拒绝报价 {v.offer_id}"))
@@ -204,6 +242,8 @@ def counterparty_message(ctx: NlContext, text: str, counterparty_id: str | None)
     steps.add("VERIFY", verdict_line(ctx, b.verdict), "DONE")
     lines = decide(ctx, steps, b, execute=True, recipient=cp)
     allow = [a for c in b.verdict.counters for a in allowed_for_counter(c)]
+    if not b.verdict.counters:
+        allow += acceptance_allow(b)  # the acceptance restates the buyer's own terms
     reply = "\n".join(lines) or t(ctx, "Thank you, noted.", "谢谢，已收到。")
     out, _ok = ctx.guard(reply, cp, allow=allow)
     return Turn(intent=Intent.COUNTERPARTY_MESSAGE, reply=out, plan=steps.items, verdict=b.verdict,

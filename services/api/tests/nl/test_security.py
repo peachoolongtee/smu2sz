@@ -102,7 +102,8 @@ def test_an_early_pay_only_acceptance_is_agreed_at_tier1(client, rt):
         "We can pay the ¥420,000 invoice early at 0.5%. Nothing else changes.")
     assert ops(r) == [] and stored_ops(rt) == [("ACCEPT_OFFER", "EXECUTED")]
     assert json.loads(rt.store.operations()[-1].result_json)["tier"] == "TIER_1"
-    assert r["reply"] == "Agreed as proposed."
+    assert r["reply"] == ("Agreed: payment of invoice RCV-A (¥420,000.00) on day 2 at a 0.50% discount. "
+                          "Nothing else in your message is agreed.")
 
 
 def test_a_rebate_acceptance_is_not_agreed_until_the_owner_approves(client, rt):

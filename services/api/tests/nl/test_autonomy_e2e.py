@@ -49,7 +49,8 @@ def test_a_clean_covered_offer_below_break_even_is_accepted_at_tier1(client, rt)
     assert v["outcome"] == "ACCEPT"
     assert stored_ops(rt) == [("ACCEPT_OFFER", "EXECUTED")]
     assert json.loads(rt.store.operations()[-1].result_json)["tier"] == "TIER_1"
-    assert r["reply"] == "Agreed as proposed."
+    assert r["reply"] == ("Agreed: payment of invoice RCV-A (¥420,000.00) on day 2 at a 0.50% discount. "
+                          "Nothing else in your message is agreed.")
     offer = rt.store.get_offer(v["offer_id"])
     assert offer.autonomy_eligible and offer.autonomy_notes == []
 
