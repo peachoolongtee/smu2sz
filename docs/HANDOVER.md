@@ -77,8 +77,7 @@ agent and independently checked by another.
 when security-relevant; run the main end-to-end path; update `docs/NEXT_FIXES.md`. Never merge several branches
 and test at the end.
 
-**Git.** `dev` is the working branch; `main` is fast-forwarded to `dev` only at checkpoints (it is still at
-`6d500a9`). One branch per task (`fix/...`, `feat/...`), merged into `dev` with `--no-ff`. Commit often. Commit
+**Git.** `dev` is the working branch; `main` is fast-forwarded to `dev` only at checkpoints (last done at this handover). One branch per task (`fix/...`, `feat/...`), merged into `dev` with `--no-ff`. Commit often. Commit
 messages are plain, concise, one line, easy to understand; no prefixes such as "fix:", and **no co-author
 trailers**. Push after each merge.
 
@@ -96,7 +95,7 @@ what-if sandbox. Team of five. A DeepSeek key exists; an Anthropic key is option
 
 ## 4. Where things stand
 
-`dev` at the time of writing is green: 3,718 passed at the last full run, scenarios 37/37. Baseline before this
+`dev` is green: 3,806 passed, 17 skipped; scenarios 37/37; attacks 182 (122 API + 60 chat), 0 with harm. Baseline before this
 phase was `6d500a9` (3,557 passed).
 
 **Done and merged into `dev`**
@@ -112,12 +111,13 @@ phase was `6d500a9` (3,557 passed).
 | Partial settlement | A receipt equal to the agreed early-pay amount settles that face and marks the commitment FULFILLED; other amounts settle their own amount |
 | Capex, borrower file, alerts on current books | Alerts work past day 0, report past-due and missed early payments, and date cures today |
 
-**In flight when this was written** (agents were still running; check what is on origin)
+**Nothing is in flight.** Both branches that were running when this file was first written are merged:
 
-| Branch | Task | State |
-| --- | --- | --- |
-| `feat/books-verifier` | Verifier, router callers, `/trajectory`, what-if and `/nl` handlers project from current books (tracker row B3) | Two commits pushed, final report not received. Review the diff, run the suite and scenarios, merge if green. The brief's kill condition: no golden value may change at day 0 with no commitments |
-| `fix/nl-attacks` | Attack catalogue through `/nl` in owner, buyer and agent roles; `LedgerStore.verdicts()`; scenario runner reads buyer-turn results from the store; new scoreboard rows (tracker row A3) | Nothing pushed yet. If the branch is absent or incomplete, relaunch it; the requirements are in tracker row A3 and audit C1 |
+| Item | What changed |
+| --- | --- |
+| Verifier, router callers, `/trajectory`, what-if and chat handlers on current books (B3) | After an accepted commitment, the next verdict, plans and trajectory all include it; `/alerts` agrees with `/trajectory`. `ctx.books()` and `ctx.evaluate_accepted()` in `app/nl/context.py` |
+| Attack suite through chat (A3) | 60 attacks through `/nl` in owner, buyer and agent-key roles on top of the 122 through the API; 0 with harm. `LedgerStore.verdicts()`; the scenario runner checks buyer turns against the store (`store_outcome`, `store_codes`, `store_ops`); three new rows in `scripts/evaluate.py` |
+| Two holes A3 found, fixed | A chat session is bound to the credential that opened it (`Session.owner_auth`). An approval, decline or go-ahead counts only as a short direct instruction (`_direct_command` in `app/nl/service.py`): one line, at most 80 characters, no counterparty name, no forwarding or attachment marks. Otherwise nothing is decided, an INJECTION event is logged and the owner is told what to type |
 
 **Integrated demo run on 1 Oct** (evaluate EX01, deal on Counter A, bank receipt of ¥209,999.70 on day 2, clock to
 day 34): the ¥208,200 residual is reported past due and the gap peaks at ¥200,000.30 on day 42 because of the
@@ -142,12 +142,12 @@ breach starts "today". That is tracker row B5.
 
 ## 6. What to do next, in order
 
-1. **Close the two in-flight branches** (section 4). Merge one at a time with the integration loop.
+1. Confirm the baseline on the new machine (section 1 commands).
 2. **B5, Counter A rounding (F8).** The counter's face must net at least the gap after the discount: roughly
    ¥211,900 instead of ¥211,800, rounded up to a tidy unit, and the counter must be checked against the floor.
    Code is in `services/api/app/verifier/counters.py`. This changes a headline number in tests, mocks, the demo
    script and the documents; update them all. Proof: no critical alert straight after the demo deal.
-3. **D1/D2, implement ADR-0007** in the verifier (`_apr_checks` and the outcome logic), after step 1. One agent
+3. **D1/D2, implement ADR-0007** in the verifier (`_apr_checks` and the outcome logic). One agent
    implements; a different agent re-derives every row of the ADR's table by hand and adds cases for 3, 30 and 90
    days early, no cash need, partial gap, and break-even ±1 bp. Check that the re-verify hook in
    `app/api/runtime.py` still passes verified counters.
@@ -168,8 +168,11 @@ Known loose ends to fold in where convenient:
 
 - `apps/web/mocks/nl_script.json` still holds a verdict for a buyer turn; the live API now returns none. The buyer
   chat UI needs checking and the mock regenerating.
-- `/nl` status text reports breach days from day 0 even when today is later (should start at today); may already
-  be fixed on `feat/books-verifier`.
+- `/nl` status text reports breach days from day 0 even when today is later (should start at today). Still open.
+- A consequence of credential-bound sessions: a web client that sends some turns without the owner token gets a
+  fresh session for those turns. Check the chat panel keeps the token on every owner turn.
+- `services/api/evals/latest_report.*` has not been regenerated with the three new scoreboard rows; do it in the
+  close-out.
 - An over-cap Tier-2 offer is queued as pending and only refused when the owner approves it.
 - The alert cure search is greedy (one facility's room on the earliest invoice) and can miss a multi-invoice cure.
 - `committed_cure` does not check `mandate.allow_new_borrowing`.

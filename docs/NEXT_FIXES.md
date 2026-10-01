@@ -15,7 +15,17 @@ Evidence: V = reproduced by me on 1 Oct, A = audit only, C = confirmed by readin
 | A4 | Security scoreboard computed from run data | S11 | V | sub | fix/scoreboard | 2h | no literal `0` or `[]`; a seeded leak shows up in it | DONE |
 | A5 | Coverage proof fails closed on unread words; reply restates typed terms | S3, C7 | A | sub | fix/coverage-fail-closed | 5h | rider cases go to owner review; no "Agreed as proposed" | DONE |
 | A6 | Re-verify at accept and approve: receivable, exclusivity, caps, state version | S4, C2 | C | sub (spec: ADR-0006 §5) | fix/commit-state-binding | 6h | two 1.2% rebates: second refused over the ¥5,000 cap | DONE |
-| A3 | Attack catalogue also runs through `/nl` as owner and as counterparty | C1 | C | sub | fix/nl-attacks | 5h | attacks via `/nl`: 0 harm, counted in the report | IN PROGRESS |
+| A3 | Attack catalogue also runs through `/nl` as owner and as counterparty | C1 | C | sub | fix/nl-attacks | 5h | attacks via `/nl`: 0 harm, counted in the report | DONE |
+
+Found by A3 and fixed the same day: text pasted without quote marks ("Attachment:", "> …", "Forwarded message")
+could still approve a queued item, and a caller with only the agent key could say "go ahead" inside the owner's
+session. Now a chat session is bound to the credential that opened it, and an approval, decline or go-ahead only
+counts as a one-line instruction of at most 80 characters with no counterparty name and no forwarding marks.
+Attack report: 122 through the API and 60 through chat, 0 with harm.
+
+Still open from A3 (medium): buyer-role probing finds the accept/counter threshold to 1 bp in 12 messages with no
+throttle, and each accepted probe queues its own owner approval (S5); the agent key can read cash, floor and
+headroom through the chat status reply (S9).
 
 ## Wave B: one financial reality (P0/P1)
 
@@ -24,7 +34,7 @@ Evidence: V = reproduced by me on 1 Oct, A = audit only, C = confirmed by readin
 | B0 | ADR-0006 | C3 | main | done | `docs/adr/0006-current-books-and-clock.md` | DONE |
 | B1 | `as_of_day`, `settled_fen`, engine drops closed days, `app.books.current_books` | C3 | main | 5h | golden values unchanged at day 0 | DONE |
 | B2 | Partial settlement and FULFILLED in the executor (ADR §4) | wf 3 | sub, after A6 | 4h | ¥209,999.70 settles ¥211,800 of RCV-A; ¥208,200 stays open | DONE |
-| B3 | Verifier, router, trajectory, what-if on current books | C3 | sub, after B1 | 5h | verdict after an accepted extension sees the shifted receipts | IN PROGRESS |
+| B3 | Verifier, router, trajectory, what-if on current books | C3 | sub, after B1 | 5h | verdict after an accepted extension sees the shifted receipts | DONE |
 | B4 | Alerts, capex, borrower file on current books | C3 | sub, after B1 | 4h | all screens give the same lowest-cash day | DONE |
 | B5 | Counter A rounds up and is checked against the floor | F8 | sub | 2h | no critical alert straight after the demo deal | OPEN |
 
