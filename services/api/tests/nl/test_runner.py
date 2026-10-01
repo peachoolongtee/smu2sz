@@ -33,7 +33,7 @@ def test_runner_inproc_passes_everything(tmp_path):
     proc = subprocess.run([sys.executable, str(ROOT / "scripts" / "run_scenarios.py"), "--inproc", "--out", str(out)],
                           capture_output=True, text=True, timeout=900, cwd=ROOT, check=False)
     assert proc.returncode == 0, proc.stdout[-4000:] + proc.stderr[-4000:]
-    results = json.loads((out / "results.json").read_text())
+    results = json.loads((out / "results.json").read_text(encoding="utf-8"))
     assert results["summary"]["failed"] == 0 and results["summary"]["pass_rate"] == 1.0
     assert (out / "summary.md").exists() and (out / "evidence.jsonl").stat().st_size > 0
     verify = ROOT / "scripts" / "verify_evidence.py"

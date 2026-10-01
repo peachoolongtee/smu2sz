@@ -22,7 +22,15 @@ def _offline(monkeypatch: pytest.MonkeyPatch) -> None:
     def _refuse(*_a: object, **_k: object) -> None:
         raise RuntimeError("network access in a compiler test")
 
-    monkeypatch.setattr(socket.socket, "connect", _refuse)
+    real_connect = socket.socket.connect
+
+    def _connect(sock: socket.socket, address: object) -> None:
+        # Windows builds the event loop's self-pipe from a loopback socket pair; that is not a network call.
+        if isinstance(address, tuple) and address and address[0] in ("127.0.0.1", "::1"):
+            return real_connect(sock, address)
+        _refuse()
+
+    monkeypatch.setattr(socket.socket, "connect", _connect)
     monkeypatch.setattr(socket, "create_connection", _refuse)
     _default_compiler.cache_clear()
 

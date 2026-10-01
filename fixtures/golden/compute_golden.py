@@ -159,5 +159,5 @@ out["capex"] = cap
 for k, v in cap.items():
     if isinstance(v, dict): v["dscr_m1_3_passes"] = bool(v["dscr_m1_3_passes"])
 p = pathlib.Path(__file__).with_name("golden_values.json")
-p.write_text(json.dumps(out, indent=2, ensure_ascii=False) + "\n")
+p.write_text(json.dumps(out, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 print(json.dumps(out, indent=2))

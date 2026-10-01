@@ -54,9 +54,9 @@ def test_key_depends_on_prompt_version_and_every_document_field() -> None:
 def test_stale_prompt_version_is_a_miss(tmp_path: Path) -> None:
     docs = offer_documents("EX02_EARLY_1_5")
     p = write_entry(tmp_path, PROMPT_VERSION, docs, rules_offer(docs), "rules-v1")
-    entry = json.loads(p.read_text())
+    entry = json.loads(p.read_text(encoding="utf-8"))
     entry["prompt_version"] = "offer-v0"
-    p.write_text(json.dumps(entry))
+    p.write_text(json.dumps(entry), encoding="utf-8")
     with pytest.raises(CacheMiss):
         CacheBackend(tmp_path).extract_offer(docs)
 

@@ -46,7 +46,7 @@ def test_policy_satisfies_port():
 
 
 def test_demo_key_is_loudly_marked():
-    raw = json.loads(DEMO_KEY_PATH.read_text())
+    raw = json.loads(DEMO_KEY_PATH.read_text(encoding="utf-8"))
     assert raw["WARNING"].startswith("DEMO ONLY - NOT A SECRET")
 
 

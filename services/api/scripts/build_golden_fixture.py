@@ -77,5 +77,5 @@ mandate = Mandate(org_id="SME-1", version=1, min_cash_fen=30_000_000, max_aggreg
                   tier2_single_commitment_fen=10_000_000, horizon_days=120, issued_day=0, expires_day=90)
 out = {"state": json.loads(state.model_dump_json()), "mandate": json.loads(mandate.model_dump_json())}
 p = pathlib.Path(__file__).resolve().parents[3] / "fixtures" / "scenarios" / "golden_sme.json"
-p.write_text(json.dumps(out, indent=2, ensure_ascii=False) + "\n")
+p.write_text(json.dumps(out, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 print("wrote", p)

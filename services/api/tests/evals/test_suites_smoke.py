@@ -109,7 +109,7 @@ def test_heldout_intents_are_valid_and_disjoint_from_the_scripted_tasks(api):
     items = intent.load()
     assert len(items) >= 40
     assert all(Intent(i["intent"]) for i in items)
-    scripted = {t["text"] for s in yaml.safe_load((EVALS / "e2e" / "scenarios.yaml").read_text())["scenarios"]
+    scripted = {t["text"] for s in yaml.safe_load((EVALS / "e2e" / "scenarios.yaml").read_text(encoding="utf-8"))["scenarios"]
                 for t in s["turns"]}
     assert not scripted & {i["text"] for i in items}
     res = intent.run(only=["I19", "I22", "I42"], api=api)

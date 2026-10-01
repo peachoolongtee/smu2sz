@@ -14,7 +14,7 @@ FIXTURES = Path(__file__).resolve().parents[4] / "fixtures"
 
 
 def load_scenario(name: str = "golden_sme") -> tuple[FinancialState, Mandate]:
-    raw = json.loads((FIXTURES / "scenarios" / f"{name}.json").read_text())
+    raw = json.loads((FIXTURES / "scenarios" / f"{name}.json").read_text(encoding="utf-8"))
     state = FinancialState.model_validate_json(json.dumps(raw["state"]))
     mandate = Mandate.model_validate_json(json.dumps(raw["mandate"]))
     return state, mandate
@@ -26,16 +26,16 @@ def scenario_events(name: str = "golden_sme") -> list[dict]:
     path = FIXTURES / "scenarios" / f"{name}.events.json"
     if not path.exists():
         return []
-    return list(json.loads(path.read_text()).get("events", []))
+    return list(json.loads(path.read_text(encoding="utf-8")).get("events", []))
 
 
 def golden_values() -> dict:
-    return json.loads((FIXTURES / "golden" / "golden_values.json").read_text())
+    return json.loads((FIXTURES / "golden" / "golden_values.json").read_text(encoding="utf-8"))
 
 
 def load_offers() -> dict[str, dict]:
     """Worked examples (spec v2 §8) and security messages, keyed by id."""
-    data = yaml.safe_load((FIXTURES / "offers" / "offers.yaml").read_text())
+    data = yaml.safe_load((FIXTURES / "offers" / "offers.yaml").read_text(encoding="utf-8"))
     return {o["id"]: o for o in data["offers"]}
 
 
