@@ -74,10 +74,13 @@ test("the conversation also appears in the chat panel, opener first", async ({ p
   await expect(page.getByTestId("home-goahead")).toBeVisible();
   await page.getByTestId("home-goahead").click();
   await expect(page.getByTestId("home-answer")).toBeVisible();
-  await page.goto("/chat");
+  // Chat state lives in memory, so go there through the navigation (a full page load starts a new conversation).
+  await page.getByRole("navigation").getByRole("link", { name: "Chat", exact: true }).first().click();
+  await expect(page).toHaveURL(/\/chat/);
   const turns = page.getByTestId("chat-turn");
   await expect(turns.first()).toContainText("Go ahead?");
-  await expect(turns.last().getByTestId("chat-op-SUBMIT_INVOICE_FOR_FINANCING")).toBeVisible();
+  // The answer to "go ahead" is in the same conversation (the home then asks the agent again, so it is not the last turn).
+  await expect(turns.getByTestId("chat-op-SUBMIT_INVOICE_FOR_FINANCING")).toHaveAttribute("data-status", "EXECUTED");
 });
 
 test("Let the agent fix this works from the home alert and from the alerts page", async ({ page }) => {
@@ -85,7 +88,7 @@ test("Let the agent fix this works from the home alert and from the alerts page"
   await advanceTo34(page);
 
   // The alerts page: the button is on the actionable alert only.
-  await page.getByRole("link", { name: "Alerts" }).click();
+  await page.getByRole("link", { name: "Alerts", exact: true }).click();
   await expect(page).toHaveURL(/\/alerts/);
   await expect(page.getByRole("heading", { name: "Reserve breach ahead on day 42" })).toBeVisible();
   await expect(page.getByTestId("fix-ALERT-RESERVE-42")).toBeVisible();
