@@ -67,7 +67,9 @@ class Runtime:
         from app.domain.models import Actor
 
         with self.lock:
-            adv = advance(self.store, day, Actor.SYSTEM)
+            from app.domain.fixtures import scenario_events
+
+            adv = advance(self.store, day, Actor.SYSTEM, events=scenario_events(self.scenario))
             self.day = self.store.get_state().as_of_day
             return adv
 

@@ -60,3 +60,18 @@ def test_two_steps_equal_one_step():
     advance(b, 60)
     sa, sb = a.get_state(), b.get_state()
     assert sa.cash_fen == sb.cash_fen and sa.receivables == sb.receivables and sa.flows == sb.flows
+
+
+def test_scenario_events_add_flows_only_when_the_clock_passes_them():
+    from app.domain.fixtures import scenario_events
+
+    ev = scenario_events("golden_sme")
+    assert ev and all(e["day"] > 0 for e in ev)  # nothing exists on day 0: golden values are unaffected
+    st = _store()
+    assert not advance(st, 20, events=ev).added_flow_ids
+    a = advance(st, 34, events=ev)
+    assert a.added_flow_ids == ["F-PAYROLL-M2"]
+    assert [f.day for f in st.get_state().flows if f.id == "F-PAYROLL-M2"] == [42]
+    assert not advance(st, 40, events=ev).added_flow_ids  # never twice
+    b = advance(st, 60, events=ev)
+    assert "F-PAYROLL-M2" in b.posted_flow_ids and st.verify_chain()
