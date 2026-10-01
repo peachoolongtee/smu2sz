@@ -57,7 +57,7 @@ payment never arrives at all, reconciliation reports it LAPSED and no committed 
 | ID | Fix | Owner | Effort | Proof | Status |
 | --- | --- | --- | --- | --- | --- |
 | C1 | `Runtime.advance_to` and `POST /clock/advance` (ADR §2) | main | 4h | day 40 cash includes payroll; expired commitments marked | DONE |
-| C2 | Alert carries a typed cure; `POST /alerts/{id}/act` executes Tier 1 or queues Tier 2 | sub, after B4 | 5h | missed receipt → "draw ¥150,000" → one call executes it | IN PROGRESS (feat/alert-act) |
+| C2 | Alert carries a typed cure; `POST /alerts/{id}/act` executes Tier 1 or queues Tier 2 | sub, after B4 | 5h | missed receipt → "draw ¥150,000" → one call executes it | DONE |
 | C3 | Reconcile compares receipts with what commitments promised | sub, after B2 | 3h | missing early payment reported as lapsed | DONE |
 | C4 | Proactive opener in `/nl` and the UI after a clock or bank-feed event | sub, after C2 | 4h | demo steps 8 to 13 run from the chat | OPEN |
 
