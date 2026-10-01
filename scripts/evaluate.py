@@ -36,6 +36,12 @@ def _bootstrap(live: bool) -> None:
     if not live:
         os.environ["TERMSLEDGER_NO_DOTENV"] = "1"  # offline: never read developer keys
     sys.path.insert(0, str(API))
+    if live:  # read the developer's keys (DEEPSEEK_API / ANTHROPIC_API_KEY) from the repo-root .env
+        from app.config import load_dotenv
+
+        load_dotenv()
+        if not (os.environ.get("DEEPSEEK_API_KEY") or os.environ.get("ANTHROPIC_API_KEY")):
+            raise SystemExit("--live needs DEEPSEEK_API_KEY or ANTHROPIC_API_KEY (repo-root .env)")
     try:
         import fastapi  # noqa: F401
         import yaml  # noqa: F401
