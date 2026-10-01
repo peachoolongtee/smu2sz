@@ -89,19 +89,21 @@ T1: n = 90, k = 3, limit 3903/149903 = 2.6037%. 1.2% passes (the old fixed limit
 
 C0, books with RCV-A due day 92: cash minus floor: day 12 short 240,000; day 20 short 360,000; day 47 cash =
 400-340-120+420-100 = 260,000 (recurring invoice due day 47), short 40,000; day 77 the recurring invoice (issued
-day 32) pays 420,000, cured. Funding must be drawn day 0. IF is repaid only at RCV-A's due day 92, so arrival day 3 to 92
-= 89 days, **k = 3** (the cost of carrying the gap is three periods, not one).
-- IF 210,000, k = 3: interest 21,000,000 x 0.078 x 90/365 = 147,420,000/365 -> 403,890.41 -> 403,890; fee 52,500 x 3 = 157,500; total **561,390**
-  (check: 3 x 187,130 = 561,390).
-- Line 150,000 only needs to stay to day 47: after day 47 the IF's 210,000 alone covers the 40,000 short.
-  15,000,000 x 0.064 x 47/365 = 45,120,000/365 = 123,616.44 -> **123,616**.
-- **C0 = 561,390 + 123,616 = 685,006 = 6,850.06.**
-Candidate if the router holds the line to day 77 instead: line 15,000,000 x 0.064 x 77/365 = 202,521 (2,025.21);
-C0 = 763,911 = 7,639.11. 6,850.06 is the lower bound (IF >= 210,000 is forced by the line cap; IF cost is fixed by
-k = 3; the line needs at least day 47).
+day 32) pays 420,000, cured. Funding must be drawn day 0. Line 150,000 first, held to day 47 (after day 47 the other
+source's 210,000 alone covers the 40,000 short): 15,000,000 x 0.064 x 47/365 = 45,120,000/365 = 123,616.44 -> **123,616**.
+The other 210,000 net, two committed candidates (the first version of this note omitted the second; see Corrections):
+- IF, arrival day 3 to repayment day 92 = 89 days = **k = 3**: 3 x 187,130 = 561,390 (5,613.90).
+- The buyer's own early-pay facility FAC-EARLYPAY (committed, 1.20%): face = 21,000,000/0.988 = 21,255,060.73 ->
+  21,255,061 (ADR-0002 gross-up rounded to the fen), discount 255,061 (2,550.61).
+Early pay is cheaper (255,061 < 561,390). **C0 = 123,616 + 255,061 = 378,677 = 3,786.77.**
+(If the router held the line to day 77 instead: 202,521 for the line, C0 would be 457,582; not chosen, line repaid day 47.)
 C1: whole invoice at 1.2% day 2: disc 42,000,000 x 0.012 = 504,000; net 41,496,000; cash day 20 = 354,960
 >= 300,000, day 47 fine. No funding: **C1 = 504,000 = 5,040.00**.
-T3: 5,040.00 < 6,850.06 (and < 7,639.11): passes whichever C0. Verdict: accept (no early-pay fault).
+T3: 5,040.00 >= 3,786.77: **fails**, `EARLY_PAY_DEARER_THAN_PLAN`, although T1 passes (1.2% < 2.6037%). The whole invoice is
+taken at 1.2% when only 210,000 of cash is needed; the buyer's facility on just that amount is cheaper.
+The ADR "Problem" bullet 1 reads as if 1.2% for 90 days should be accepted; under its own three tests it is not.
+Cutting the face to the gap (21,255,061) gives C1 = 255,061 + 123,616 = 378,677 = C0, still a fail by the strict
+`C1 < C0`. A smaller discount, e.g. whole invoice at 0.85% (357,000 < 378,677), passes.
 
 ### 0 days early
 
@@ -121,4 +123,31 @@ Funding 260,500: line 150,000 (84,164 as before) + IF 110,500 on the residual (<
 - IF interest 11,050,000 x 0.078 x 30/365 = 25,857,000/365 -> 70,841.10 -> 70,841; fee 11,050,000 x 0.0025 = 27,625; total 98,466
 - **C1 = 50,000 + 84,164 + 98,466 = 232,630 = 2,326.30** < C0 2,712.94. T1 pass (50 bp), T3 pass: accept.
 Router uncertainty: sizing the IF to exactly the gap (110,500) is assumed, as in the golden plan; a router that
-over-advanced would cost more.
+over-advanced would cost more. I also did not consider the buyer's early pay at the offered rate as a source for the
+rest; see the next sections.
+
+## Corrections to my first derivation (found when the implementation's figures differed)
+
+I omitted the buyer's early-pay facility (FAC-EARLYPAY, committed, 1.20%) as a router source in the 90-day C0. With it
+the implementation's C0 = 3,786.77 is right and my first figure (6,850.06) was wrong. For the golden C0 it does not
+matter: early pay on 210,000 net costs 2,550.61 against 1,871.30 for one IF period. Also, a 3-day-early 85 bp offer
+also trips `MAX_APR_EXCEEDED` (0.85% over 3 days = 104% a year); a pricing fault, no effect on the figures.
+
+## Disagreements: what funds the rest of the gap in C1
+
+The router (`funding/search.py` `early_pay_bp`) prices FAC-EARLYPAY at the rate of any IMMEDIATE_DISCOUNT the offer
+carries for that buyer, and may then early-pay other invoices (or more of RCV-A) at that rate. My C1 funds the rest of
+the gap from line + IF at their standing rates, treating the offer as exactly the obligation it names.
+
+| Case | My C1 (offer only, line + IF) | Implementation C1 | Verdict mine / impl |
+| --- | --- | --- | --- |
+| 3 days early, whole at 85 bp | 357,000 + 76,274 + 187,130 = 620,404 | 613,304 (router early-pays 211,800 at 85 bp: 180,030 vs 187,130) | dearer / dearer |
+| 3 days early, whole at 1 bp | 4,200 + 76,274 + 187,130 = 267,604 | 7,800 (4,200 + early pay of recurring invoice RI:BUYER-1:2, 360,036 face, at 1 bp = 3,600) | accept / accept |
+| 3 days early, whole at 2 bp | 8,400 + 76,274 + 187,130 = 271,804 >= 271,294 | below C0 | **dearer / accept** |
+| 100,000 at 0.5%, day 2 | 50,000 + 84,164 + 98,466 = 232,630 | 180,905 (router early-pays 261,809 more of RCV-A at 0.5%: 130,905) | accept / accept |
+
+Reasoning: the buyer offered 100,000 (or the whole RCV-A) at d; nothing says it will also pay other faces or
+invoices early at d. C1 then understates what the offer as written costs and can flip a verdict (2 bp, 3 days early).
+Counter-view: ADR-0007 defines C1 as "the router's committed plan for those same books", and the router already
+reads an offered rate that way (Counter A uses it for the partial face). Owner of the question: funding router /
+ADR author. Verdicts agree on every other case.
