@@ -10,7 +10,7 @@
 2. End-to-end demonstration of the core scenario.
 3. Safety mechanisms, innovation and results.
 
-**Target running time:** the timeline below ends at 4:55, under the 5:00 limit, with about 670 words of narration at 125–150 words a minute (segment 8 is the fastest; trim it first if a take runs long). Segment 5 (the agent stays on duty, 35 seconds) was added on 1 Oct 2026. To make room, the capex segment (20 seconds) was cut from the video, the chat segment was shortened by 5 seconds, and segments 6 and 9 by 5 seconds each. Capex stays in the deck (slide 9) and the technical document.
+**Target running time:** the timeline below ends at 4:55, under the 5:00 limit, with about 670 words of narration at 125–150 words a minute (segment 8 is the fastest; trim it first if a take runs long). Segment 5 (the agent stays on duty, 35 seconds) was added on 1 Oct 2026. To make room, the capex segment (20 seconds) was cut from the video, the chat segment was shortened by 5 seconds, and segments 6 and 9 by 5 seconds each. Capex stays in the deck (slide 10) and the technical document.
 
 ## Recording set-up
 
