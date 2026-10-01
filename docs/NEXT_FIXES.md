@@ -88,14 +88,14 @@ cheap early payment a few days before the due day; never accepts wrongly).
 
 | ID | Fix | Audit | Owner | Effort | Status |
 | --- | --- | --- | --- | --- | --- |
-| E1 | `/nl` intents: financing comparison, alerts, reconcile, ratios, capex, borrower file | C6 | sub | 6h | OPEN |
-| E2 | Nearest-capability fallback | C6 | sub | 2h | OPEN |
+| E1 | `/nl` intents: financing comparison, alerts, reconcile, ratios, capex, borrower file | C6 | sub | 6h | IN PROGRESS (feat/nl-capabilities) |
+| E2 | Nearest-capability fallback | C6 | sub | 2h | IN PROGRESS (feat/nl-capabilities) |
 | E3 | Owner home at `/` | C8 | sub (frontend) | 5h | DONE (home at `/` with the opener, Go ahead, the alert button and a demo clock; mock e2e 25 passed) |
-| E4 | Approval card with operation, clause, after-state | C8 | sub (frontend) | 4h | OPEN |
-| E5 | Autonomy proof shown on Tier-1 accepts; REJECT badge fix | C8 | sub (frontend) | 2h | OPEN |
+| E4 | Approval card with operation, clause, after-state | C8 | sub (frontend) | 4h | IN PROGRESS (feat/approval-card) |
+| E5 | Autonomy proof shown on Tier-1 accepts; REJECT badge fix | C8 | sub (frontend) | 2h | IN PROGRESS (feat/approval-card) |
 | E6 | Annualised column next to every discount | §9 | sub | 3h | OPEN |
 | E7 | Compliance half-page, LICENSE, reframed accuracy numbers | §8 | sub (docs) | 2h | OPEN |
-| E8 | Demo fixes: Start 401, mock/live mismatch | §9 | sub (frontend) | 2h | OPEN |
+| E8 | Demo fixes: Start 401, mock/live mismatch | §9 | sub (frontend) | 2h | IN PROGRESS (feat/approval-card) |
 
 ## Wave F: optional (P3, only when A to D are green)
 
