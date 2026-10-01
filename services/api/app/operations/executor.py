@@ -748,6 +748,12 @@ class Executor:
             if r is None or r.status not in ("OPEN", "FINANCED"):
                 raise _refuse(Code.STALE_VERDICT, f"Receivable {rid} is {status}; re-evaluate the offer",
                               commitment_id=c.id, receivable_id=rid, status=status)
+            need = o.base.amount_fen if o.type == ObligationType.IMMEDIATE_DISCOUNT and o.base.amount_fen else 1
+            if r.outstanding_fen < need:
+                raise _refuse(Code.STALE_VERDICT,
+                              f"Receivable {rid} has {fmt_yuan(r.outstanding_fen)} outstanding, less than the "
+                              f"{fmt_yuan(need)} these terms settle; re-evaluate the offer",
+                              commitment_id=c.id, receivable_id=rid, outstanding_fen=r.outstanding_fen, need_fen=need)
         # 2. exclusivity: one live commitment per named receivable
         mine = {o.base.receivable_id for o in c.obligations if o.base.receivable_id}
         for other in self._store.commitments():
