@@ -77,6 +77,8 @@ def handle(req: NlRequest, *, store: LedgerStore, executor: Executor, day: int, 
     if not turn.guarded:
         turn.reply, _ok = ctx.guard(turn.reply, turn.recipient, allow=turn.allow)
     _update_session(session, turn)
+    if req.actor == "OWNER":
+        _remember_shown(ctx, turn)
     if req.request_id:
         session.requests[req.request_id] = list(ctx.sent)
     session.history.append((session.turn, turn.intent.value))
@@ -181,11 +183,11 @@ def _dispatch(ctx: NlContext, p: Parsed, text: str) -> Turn:
         case Intent.SHOW_STATUS:
             return status(ctx)
         case Intent.EXPLAIN:
-            return explain(ctx, slots)
+            return explain(ctx, slots, text)
         case Intent.WHAT_IF:
             return what_if(ctx, slots, text)
         case Intent.APPROVE | Intent.REJECT:
-            return _decide_approval(ctx, slots, p.intent == Intent.APPROVE)
+            return _decide_approval(ctx, slots, p.intent == Intent.APPROVE, text, bare="bare_confirm" in p.matched)
         case Intent.AMBIGUOUS:
             return ask(Intent.AMBIGUOUS, "intent", t(ctx, "What would you like me to do?", "您希望我做什么？"),
                        [("1", t(ctx, "show cash status", "查看现金状况"), Intent.SHOW_STATUS.value),
@@ -258,21 +260,51 @@ def _confirm(ctx: NlContext, yes: bool, text: str) -> Turn:
     return turn
 
 
-def _decide_approval(ctx: NlContext, slots: Slots, approve: bool) -> Turn:
+def _pending_approvals(ctx: NlContext) -> list[Any]:
+    return [a for a in ctx.store.approvals() if str(getattr(a.status, "value", a.status)) == "PENDING"]
+
+
+def _remember_shown(ctx: NlContext, turn: Turn) -> None:
+    """The queue items this turn showed the owner (named in the reply or the clarification): the only ones the
+    next bare "approve it" / "yes" / 好的办吧 may decide."""
+    pending = {a.id for a in _pending_approvals(ctx)}
+    text = turn.reply + " " + " ".join(o.label for o in (turn.clarification.options if turn.clarification else []))
+    ctx.session.shown_approvals = [a for a in dict.fromkeys(x.upper() for x in lx.APPROVAL_ID_RE.findall(text)) if a in pending]
+
+
+def _decide_approval(ctx: NlContext, slots: Slots, approve: bool, text: str = "", *, bare: bool = False) -> Turn:
     """Owner decision on a queued Tier-2 operation. Without the owner token the request is the AGENT's,
-    and the executor refuses it (logged as PRIVILEGE_ESCALATION)."""
+    and the executor refuses it (logged as PRIVILEGE_ESCALATION).
+
+    An utterance that does not name the item ("approve it", "yes do it", 好的办吧) decides only the one item this
+    session has just shown; it never reaches into the queue on its own. Otherwise the owner is asked which one,
+    which shows the queue."""
     from app.persistence import ApprovalAlreadyDecided, NotFound
 
-    pending = [a for a in ctx.store.approvals() if str(getattr(a.status, "value", a.status)) == "PENDING"]
+    pending = _pending_approvals(ctx)
     aid = slots.approval_id
     intent = Intent.APPROVE if approve else Intent.REJECT
     if aid is None:
-        if not pending:
+        shown = [a for a in ctx.session.shown_approvals if a in {p.id for p in pending}]
+        if len(shown) == 1:
+            aid = shown[0]
+        elif not pending:
+            if bare:
+                return ask(Intent.AMBIGUOUS, "intent", t(ctx, "What should I go ahead with? Nothing in this conversation "
+                                                              "is waiting for a yes.", "请问要执行什么？本次对话中没有待确认的事项。"),
+                           [("1", t(ctx, "show cash status", "查看现金状况"), Intent.SHOW_STATUS.value),
+                            ("2", t(ctx, "fund the projected gap", "为资金缺口融资"), Intent.FUND_GAP.value),
+                            ("3", t(ctx, "get an invoice paid early", "提前收款"), Intent.ACCELERATE_RECEIPT.value)],
+                           slots)
             return Turn(intent=intent, reply=t(ctx, "Nothing is waiting for approval.", "目前没有待审批的操作。"))
-        if len(pending) > 1:
-            return ask(intent, "approval_id", t(ctx, "Which pending operation?", "哪一项待审批操作？"),
-                       [(str(i), f"{a.id}: {a.reason}", a.id) for i, a in enumerate(pending, 1)], slots)
-        aid = pending[0].id
+        elif len(pending) == 1 and lx.APPROVAL_REF.search(text) and not bare:
+            aid = pending[0].id  # "approve the pending one": the owner names the queue, which holds one item
+        else:
+            q = (t(ctx, "Nothing in this conversation is waiting for a yes. Which pending operation do you mean?",
+                   "本次对话中没有待确认的事项。您指的是哪一项待审批操作？") if bare and not shown
+                 else t(ctx, "Which pending operation?", "哪一项待审批操作？"))
+            return ask(intent, "approval_id", q, [(str(i), f"{a.id}: {a.reason}", a.id) for i, a in enumerate(pending, 1)],
+                       slots)
     actor = Actor.OWNER if ctx.owner_authenticated else Actor.AGENT
     steps = Steps()
     try:
@@ -289,6 +321,9 @@ def _decide_approval(ctx: NlContext, slots: Slots, approve: bool) -> Turn:
                        "Logged.", f"已拒绝：只有业主可以审批 {aid}，此请求没有业主凭证。已记录。")
     else:
         reply = r.message
+        rest = [a for a in _pending_approvals(ctx) if a.id != aid]
+        if rest:
+            reply += t(ctx, " Still waiting for your decision: ", " 仍待您审批：") + "; ".join(f"{a.id} ({a.reason})" for a in rest)
     return Turn(intent=intent, reply=reply, plan=steps.items)
 
 

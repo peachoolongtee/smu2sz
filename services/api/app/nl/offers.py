@@ -355,7 +355,55 @@ def negotiate_intent(ctx: NlContext, slots: Slots, *, execute: bool = True, data
 # ---------------------------------------------------------------- EXPLAIN
 
 
-def explain(ctx: NlContext, slots: Slots) -> Turn:
+# Plain definitions for the owner's "what does X mean" questions. Generic wording only: no mandate value, limit
+# or other counterparty's term is ever part of a definition.
+GLOSSARY: list[tuple[str, str, str]] = [
+    (r"break[- ]?even|盈亏平衡|保本",
+     "Break-even discount: the largest early-payment discount worth giving. Below it, taking the buyer's money early "
+     "costs less than funding the same days from your cheapest committed source; at or above it the agent counters.",
+     "盈亏平衡折扣：值得给出的最大提前付款折扣。低于它，提前收款比用最便宜的已承诺资金来源垫付同样天数更省；达到或高于它，代理会还价。"),
+    (r"\bapr\b|年化",
+     "APR: a discount expressed as a yearly rate, discount / (1 − discount) × 365 / days paid early, so offers with "
+     "different timing can be compared.", "年化成本：把折扣换算成年利率，折扣 /（1 − 折扣）× 365 / 提前天数，便于比较不同时间的报价。"),
+    (r"forward concession|远期让步",
+     "Forward concession: a promise that costs money later (a rebate, longer terms, a price cut), valued over the "
+     "mandate's horizon and capped per buyer and in total.", "远期让步：日后才产生成本的承诺（返利、延长账期、降价），按授权期限估值，并有单个买家和总额上限。"),
+    (r"\btier\b|层级|级别",
+     "Tiers: Tier 1 the agent may do on its own inside the mandate; Tier 2 waits for your approval; Tier 3 (guarantees, "
+     "collateral, equity, mandate changes) the agent can never do.", "层级：一级在授权内由代理自行执行；二级须经您批准；三级（担保、抵押、股权、修改授权）代理永远不能执行。"),
+    (r"covenant|dscr|leverage|契约|偿债覆盖|杠杆",
+     "Covenants: conditions a lender sets, such as DSCR (monthly earnings over scheduled debt service) or leverage "
+     "(debt over annualised earnings); every plan is checked against them.", "契约：贷款方设定的条件，例如偿债覆盖率（月度收益/应付本息）或杠杆率（负债/年化收益）；每个方案都会据此检查。"),
+    (r"reserve|min(?:imum)? cash|floor|储备|底线|最低现金",
+     "Reserve floor: the lowest cash balance the mandate allows on any day; a plan that dips below it is refused.",
+     "最低现金储备：授权允许的任何一天的最低现金余额；低于它的方案会被拒绝。"),
+    (r"no verdict|abstain|弃权|无结论",
+     "No verdict: the message did not establish a term exactly (an amount, a scope, conflicting figures), so nothing is "
+     "booked and the buyer is asked to clarify.", "无结论：消息没有准确确定条款（金额、范围或数字冲突），因此不记账，并请买方澄清。"),
+    (r"early[- ]?pay|贴息|提前付款|折扣",
+     "Early-payment discount: the buyer pays an open invoice before it is due and deducts a percentage of it.",
+     "提前付款折扣（贴息）：买方在到期前支付未结发票，并扣除其中一定比例。"),
+]
+
+
+def glossary_reply(ctx: NlContext, text: str) -> str | None:
+    import re as _re
+
+    for pat, en, zh in GLOSSARY:
+        if _re.search(pat, text, _re.IGNORECASE):
+            return t(ctx, en, zh)
+    if lx.GLOSSARY.search(text):
+        return t(ctx, "I can define: break-even discount, APR, forward concession, tiers, covenants, the reserve floor, "
+                      "no verdict and early-payment discount.",
+                 "我可以解释：盈亏平衡折扣、年化成本、远期让步、层级、契约、最低现金储备、无结论和提前付款折扣。")
+    return None
+
+
+def explain(ctx: NlContext, slots: Slots, text: str = "") -> Turn:
+    if text and lx.GLOSSARY.search(text) and not slots.fixture_id:
+        g = glossary_reply(ctx, text)
+        if g is not None:
+            return Turn(intent=Intent.EXPLAIN, reply=g)
     v = None
     if slots.fixture_id:
         _, v = evaluate_fixture(ctx, slots.fixture_id)

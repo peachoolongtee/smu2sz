@@ -64,10 +64,37 @@ def test_owner_approve_without_token_is_refused(client, rt):
             "requested_by": "AGENT", "facility_id": "FAC-GGL", "amount_fen": 20_000_000}
     assert client.post("/operations", json=body, headers=AGENT).json()["result"]["status"] == "PENDING_APPROVAL"
     c = Chat(client, "appr")
-    r = c.say("approve it", owner=False)
+    r = c.say("approve APR-000001", owner=False)
     assert r["intent"] == "APPROVE" and ops(r) == [("APPLY_FOR_FACILITY", "REFUSED")]
     assert any(e.kind == SecurityEventKind.PRIVILEGE_ESCALATION for e in rt.store.security_events())
+    # the refusal named the item, so "approve it" now means that item
     assert ops(c.say("approve it")) == [("APPLY_FOR_FACILITY", "EXECUTED")]
+
+
+def test_approve_it_never_reaches_into_a_queue_the_session_did_not_show(client, rt):
+    """An item queued elsewhere is not decided by a bare "approve it" / "yes do it" / 好的办吧: the owner is shown
+    the queue first, and only then may "approve it" bind to the one item shown."""
+    body = {"kind": "APPLY_FOR_FACILITY", "op_id": "a1", "idempotency_key": "a1", "mandate_version": 1,
+            "requested_by": "AGENT", "facility_id": "FAC-GGL", "amount_fen": 20_000_000}
+    assert client.post("/operations", json=body, headers=AGENT).json()["result"]["status"] == "PENDING_APPROVAL"
+    for i, text in enumerate(("yes do it", "好的办吧", "approve it")):
+        r = Chat(client, f"q-{i}").say(text)
+        assert ops(r) == [], text
+        assert r["clarification"] is not None and "APR-000001" in r["reply"], text
+    c = Chat(client, "q-shown")
+    assert "APR-000001" in c.say("approve it")["reply"]  # asks, showing the queue
+    assert ops(c.say("approve it")) == [("APPLY_FOR_FACILITY", "EXECUTED")]
+
+
+def test_yes_binds_to_the_pending_plan_of_this_session(client, rt):
+    body = {"kind": "APPLY_FOR_FACILITY", "op_id": "a1", "idempotency_key": "a1", "mandate_version": 1,
+            "requested_by": "AGENT", "facility_id": "FAC-GGL", "amount_fen": 20_000_000}
+    client.post("/operations", json=body, headers=AGENT)
+    c = Chat(client, "plan-yes")
+    assert c.say("Evaluate EX05")["awaiting_confirmation"]
+    r = c.say("好的办吧")
+    assert ops(r) == [("ACCEPT_OFFER", "PENDING_APPROVAL")]  # the plan shown, not the queued application
+    assert [str(getattr(a.status, "value", a.status)) for a in rt.store.approvals() if a.id == "APR-000001"] == ["PENDING"]
 
 
 def test_an_early_pay_only_acceptance_is_agreed_at_tier1(client, rt):

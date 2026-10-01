@@ -51,11 +51,33 @@ def _pasted(body: str) -> str | None:
 def quoted(text: str) -> str | None:
     m = lx.QUOTED_RE.search(text)
     if m:
-        return m.group(1).strip()
+        return (m.group(1) or m.group(2)).strip()
     m = lx.BUYER_SAYS_RE.search(text.strip())
     if m:
         return _pasted(next((g for g in m.groups() if g), ""))
-    return None
+    return reported(text)
+
+
+def reported(text: str) -> str | None:
+    """A buyer's offer the owner reports in their own words and asks about ("Foshan says they'll pay early at
+    1.2% if we go to 60 days. Good deal or not?", 东莞那边说下季度要我们返1个点，这个能接吗): the reported terms,
+    compiled as the buyer's message so the verdict is on THEIR offer, not a plan of ours."""
+    if not lx.EVAL_QUESTION.search(text):
+        return None
+    m = lx.REPORTED_OFFER.search(text)
+    if not m:
+        return None
+    body = (m.group("en") or m.group("zh") or "").strip(" ,，:：")
+    return body if len(body) >= 4 else None
+
+
+def bare_counterparty(text: str, state: FinancialState) -> bool:
+    """"Foshan???", "佛山？": a counterparty's name and nothing else to act on."""
+    core = re.sub(r"[\s?？!！.。,，:：~…]+", " ", lx.norm(text)).strip()
+    if not core:
+        return False
+    names = {n for ns in lx.counterparty_aliases(state).values() for n in ns}
+    return core in names or core.replace("那边", "").replace("这边", "").strip() in names
 
 
 def _facility(text: str, state: FinancialState) -> str | None:
@@ -88,7 +110,7 @@ def slots_from(text: str, state: FinancialState) -> Slots:
         approval_id=appr.group(0).upper() if appr else None,
         buyer_profile="BUYER-1-HARDLINE" if lx.HARDLINE.search(text) else None,
         quoted_text=quoted(text),
-        zero_forward=bool(lx.ZERO_FORWARD.search(text)),
+        zero_forward=bool(lx.ZERO_FORWARD.search(text) or lx.ZERO_FORWARD_EXTRA.search(text)),
         use_financing=bool(lx.USE_FINANCING.search(text)),
         execute_now=bool(lx.EXECUTE_NOW.search(text)),
         tier3=tier3,  # type: ignore[arg-type]
@@ -112,6 +134,10 @@ def parse(text: str, state: FinancialState, *, pending_plan: bool = False) -> Pa
             return hit(Intent.APPROVE, "confirm_plan", confirm_plan=True)
         if lx.DECLINE.search(text):
             return hit(Intent.REJECT, "decline_plan", confirm_plan=True)
+    if not pending_plan and lx.BARE_CONFIRM.search(text) and not lx.DECLINE.search(text):
+        # "yes do it" with no plan in this session: it names nothing, so it may only bind to an approval the
+        # session has just shown (the service checks); never to whatever happens to be in the queue
+        return hit(Intent.APPROVE, "bare_confirm")
     if s.tier3:
         return hit(Intent.OUT_OF_SCOPE, f"tier3:{s.tier3}")
     if not asks_why and (s.approval_id or (lx.APPROVAL_REF.search(text) and (lx.CONFIRM.search(text)
@@ -156,6 +182,6 @@ def parse(text: str, state: FinancialState, *, pending_plan: bool = False) -> Pa
         return hit(Intent.REJECT, "approval")
     if s.capex:
         return hit(Intent.OUT_OF_SCOPE, "capex")
-    if lx.AMBIGUOUS.search(text):
+    if lx.AMBIGUOUS.search(text) or bare_counterparty(text, state):
         return hit(Intent.AMBIGUOUS, "vague")
     return None
