@@ -92,7 +92,7 @@ RIDERS = {
     "guarantee_zh": (_zh("请老板提供个人担保"), "老板提供"),
     "unknown_sentence": (_en(" The pricing committee's framework applies."), "pricing"),
     "unknown_sentence_zh": (_zh("适用定价委员会的框架"), "适用定价委员会框架"),
-    "ahead_of_schedule": ("We will settle the 420k invoice ahead of schedule, 0.7% off please.", "schedule"),
+    "ahead_of_schedule": ("We will settle the 420k invoice ahead of schedule, 0.6% off please.", "schedule"),
 }
 
 

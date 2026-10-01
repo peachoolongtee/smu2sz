@@ -519,6 +519,8 @@ class ViolationCode(StrEnum):
     CLEAN_DOWN_BREACH = "CLEAN_DOWN_BREACH"
     MAX_APR_EXCEEDED = "MAX_APR_EXCEEDED"
     DISCOUNT_ABOVE_BREAK_EVEN = "DISCOUNT_ABOVE_BREAK_EVEN"  # early pay dearer than the SME's own marginal funding
+    EARLY_PAY_NOT_NEEDED = "EARLY_PAY_NOT_NEEDED"  # early pay with no funding need: the discount buys nothing
+    EARLY_PAY_DEARER_THAN_PLAN = "EARLY_PAY_DEARER_THAN_PLAN"  # costs at least as much as the router's plan without it
     UNCOMMITTED_FACILITY = "UNCOMMITTED_FACILITY"
     LEAD_TIME_TOO_LONG = "LEAD_TIME_TOO_LONG"
     TIER3_PERSONAL_GUARANTEE = "TIER3_PERSONAL_GUARANTEE"

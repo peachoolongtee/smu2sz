@@ -66,17 +66,17 @@ def test_a_tighter_owner_cap_adjusts_the_counter_rate(state, mandate) -> None:
 
 
 def test_a_package_inside_the_mandate_but_above_the_goal_is_never_accepted(state, mandate) -> None:
-    plain = _eval(_early_pay_offer(80), state, mandate).verdict
+    plain = _eval(_early_pay_offer(60), state, mandate).verdict
     assert plain.outcome == Outcome.ACCEPT and not plain.counters
-    v = _eval(_early_pay_offer(80), state, mandate,
-              owner_constraints=OwnerConstraints(max_early_pay_bp=75)).verdict
+    v = _eval(_early_pay_offer(60), state, mandate,
+              owner_constraints=OwnerConstraints(max_early_pay_bp=50)).verdict
     assert v.outcome == Outcome.COUNTER
-    assert all(o.rate_bp is not None and o.rate_bp <= 75 for c in v.counters for o in c.obligations)
+    assert all(o.rate_bp is not None and o.rate_bp <= 50 for c in v.counters for o in c.obligations)
 
 
 def test_a_package_that_satisfies_the_goal_keeps_the_mandate_verdict(state, mandate) -> None:
-    plain = _eval(_early_pay_offer(80), state, mandate).verdict
-    v = _eval(_early_pay_offer(80), state, mandate, owner_constraints=GOAL).verdict
+    plain = _eval(_early_pay_offer(60), state, mandate).verdict
+    v = _eval(_early_pay_offer(60), state, mandate, owner_constraints=GOAL).verdict
     assert (v.outcome, v.required_tier, v.counters) == (plain.outcome, plain.required_tier, plain.counters)
     assert v.id != plain.id  # a constrained verdict is stored under its own id
 
@@ -132,4 +132,4 @@ def test_identical_router_calls_run_once_per_evaluation(state, mandate) -> None:
     assert calls[-1] == 1  # only the expected plan
     _eval(compiled("EX01_PACKAGE"), state, mandate, owner_declared=declared_for("EX01_PACKAGE"),
           plans="committed", _router_probe=lambda r: calls.append(r.calls))
-    assert calls[-1] == 2  # committed + cure (different states), no expected plan
+    assert calls[-1] == 3  # committed + cure (different states) + the early-pay leg priced at the margin (ADR-0007), no expected plan

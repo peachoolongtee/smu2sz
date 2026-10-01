@@ -1185,7 +1185,7 @@ COUNTERPARTY_OPS = ("COUNTER_OFFER", "REJECT_OFFER")  # all a Tier-1 answer to a
 QUOTED_APPROVAL_EVENT = "quoted text contained an approval instruction"
 EX01 = ("We'll settle the ¥420k early at 1.2% if you extend our standard terms to 60 days going forward "
         "and give us 1% off next quarter.")
-PROBE_RATES_BP = tuple(range(80, 92))  # 12 early-pay rates, 1 bp apart, around the 0.85% break-even
+PROBE_RATES_BP = tuple(range(60, 72))  # 12 early-pay rates, 1 bp apart, around the 0.65% point where early pay stops beating the plan (ADR-0007)
 
 
 def _nl(id_: str, group: str, role: str, title: str, steps: list[dict[str, Any]], *,

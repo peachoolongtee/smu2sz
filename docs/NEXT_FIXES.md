@@ -65,11 +65,18 @@ payment never arrives at all, reconciliation reports it LAPSED and no committed 
 
 | ID | Fix | Audit | Owner | Effort | Proof | Status |
 | --- | --- | --- | --- | --- | --- | --- |
-| D1 | Break-even from actual days early | F1 | main formula, sub tests | 3h | 30 days still 0.88%; 90 days at 1.2% accepted | IN PROGRESS (fix/early-pay-economics) |
-| D2 | Early pay only when cash is needed and cheaper than the router's plan | F2 | main rule, sub code | 4h | no-need offer is not accepted | IN PROGRESS (fix/early-pay-economics) |
+| D1 | Break-even from actual days early | F1 | main formula, sub tests | 3h | 30 days still 0.88%; 90 days at 1.2% accepted | DONE |
+| D2 | Early pay only when cash is needed and cheaper than the router's plan | F2 | main rule, sub code | 4h | no-need offer is not accepted | DONE |
 | D3 | Financed receivable settled early repays the advance that day | F7 | covered by B2 | — | day-20 cash not double counted | DONE |
 | D4 | DSCR counts scheduled bullet principal | F6 | sub + second sub to check | 3h | hand-calculated case | OPEN |
 | D5 | APR gate on posted cost over actual days | F5 | sub | 3h | 3-day advance fails the 15% cap | IF TIME |
+
+D1/D2 merged 1 Oct. Whole-invoice early pay at 0.65% to 0.88% (30 days early, golden books) now counters;
+0.64% and below accepts. The independent hand check (`docs/research/early-pay-handcalc-2026-10-01.md`) agreed
+with every ADR row and found one fault, fixed before the merge: the router priced the buyer's early-payment
+facility at the offer's rate and used it on other money. It now always uses the standing rate. Known
+conservative convention: an invoice under an early-pay commitment cannot also be financed (can refuse a
+cheap early payment a few days before the due day; never accepts wrongly).
 
 ## Wave E: interaction (P2)
 

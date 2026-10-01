@@ -145,7 +145,7 @@ def test_no_commitments_ex01_verdict_is_unchanged(client: TestClient, rt: Runtim
     oid, v = _evaluate_ex01(client)
     assert v["outcome"] == "REJECT"
     assert [x["code"] for x in v["violations"]] == ["AGG_CONCESSION_EXCEEDED", "RESERVE_BREACH",
-                                                    "DISCOUNT_ABOVE_BREAK_EVEN"]
+                                                    "DISCOUNT_ABOVE_BREAK_EVEN", "EARLY_PAY_DEARER_THAN_PLAN"]
     assert [c["text"] for c in v["counters"]] == EX01_COUNTERS
     assert next(x for x in v["violations"] if x["code"] == "RESERVE_BREACH")["cure_cost_fen"] == 80_270
     # the id of a verdict on books with nothing live is a function of the state, mandate and day alone
@@ -263,12 +263,16 @@ def test_verdict_and_counters_carry_only_the_offers_obligations(client: TestClie
     assert [o.id for o in stored.bound_obligations] == ["OFF-f806f79b6c21-O1", "OFF-f806f79b6c21-O2",
                                                         "OFF-f806f79b6c21-O3"]
     assert all(o.id.startswith("CTR-") for c in stored.counters for o in c.obligations)
-    assert stored.counters[0].text == EX01_COUNTERS[0]  # the counter's text is the offer's own terms
+    # each counter's text is the offer's own terms. With 15 more days already live, an early payment at 0.85% no
+    # longer beats the standing plan (ADR-0007), so only the price-adjustment counter is offered on these books.
+    assert [c.text for c in stored.counters] == [EX01_COUNTERS[1]]
 
 
 def test_a_commitment_carries_what_the_counter_bound(client: TestClient, rt: Runtime) -> None:
     """Accepting on books that hold a live commitment books the counter's obligations alone."""
-    _live(rt, _extension(15))
+    # the live commitment is another buyer's: with BUYER-1's own terms already extended, an early payment at 0.85%
+    # no longer beats the standing plan (ADR-0007) and there would be no early-pay counter to accept
+    _live(rt, _extension(15).model_copy(update={"counterparty_id": "BUYER-2"}))
     oid, _ = _evaluate_ex01(client)
     n = client.post(f"/negotiate/{oid}", json={"buyer_profile": "cooperative"}).json()
     assert n["outcome"] == "DEAL"
