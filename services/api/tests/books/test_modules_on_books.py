@@ -46,7 +46,7 @@ SPAN = [SourceSpan(doc_id="T", start=0, end=0, text="")]
 GOLDEN_TRAJECTORY = "6e416d997eccbf94"
 GOLDEN_ROUTER_PLAN = "de93d3064db00850"
 EX01_COUNTERS = [
-    "Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥211,800 of this invoice at 0.85%.",
+    "Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥211,900 of this invoice at 0.85%.",
     "60-day terms accepted with a 0.45% price adjustment on future invoices, no rebate.",
 ]
 
@@ -78,7 +78,7 @@ def _extension(days: int = 15) -> Obligation:
                       spans=SPAN, confidence=1.0)
 
 
-def _early_pay(face: int = 21_180_000, day: int = 2, rate_bp: int = 85) -> Obligation:
+def _early_pay(face: int = 21_190_000, day: int = 2, rate_bp: int = 85) -> Obligation:
     return Obligation(id="OB-EP", type=ObligationType.IMMEDIATE_DISCOUNT, counterparty_id="BUYER-1", rate_bp=rate_bp,
                       effective_day=day, base=ObligationBase(kind=BaseKind.INVOICE, receivable_id="RCV-A",
                                                              amount_fen=face),
@@ -208,12 +208,12 @@ def test_router_plan_follows_the_live_commitment(client: TestClient, rt: Runtime
 
 def test_live_early_pay_is_in_the_trajectory_and_the_router(client: TestClient, rt: Runtime) -> None:
     base_plan = client.post("/router/plan").json()["committed"]
-    _live(rt, _early_pay(21_180_000, 2, 85))
+    _live(rt, _early_pay(21_190_000, 2, 85))
     t = client.get("/trajectory").json()
     ev = _events(t, "RCV-A")
-    assert (2, 21_180_000) in ev  # the early receipt of the settled face, on the effective day
-    assert t["discounts"]["fen"] == 180_030  # 0.85% of 21_180_000, the price of getting it early
-    assert (32, RCV_A_FACE - 21_180_000) in ev  # the residual keeps its due day
+    assert (2, 21_190_000) in ev  # the early receipt of the settled face, on the effective day
+    assert t["discounts"]["fen"] == 180_115  # 0.85% of 21_190_000, the price of getting it early
+    assert (32, RCV_A_FACE - 21_190_000) in ev  # the residual keeps its due day
     assert not any(day == 32 and amt == RCV_A_FACE for day, amt in ev)
     plan_now = client.post("/router/plan").json()["committed"]
     # part of RCV-A is already coming early: the router no longer finances that part
@@ -237,12 +237,13 @@ def test_negotiate_cooperative_plan_and_operations_unchanged(client: TestClient)
     assert n["outcome"] == "DEAL"
     assert [(o["kind"], o["status"], o["tier"]) for o in n["operations"]] == [
         ("ACCEPT_OFFER", "EXECUTED", "TIER_1"), ("DRAW_FACILITY", "EXECUTED", "TIER_1")]
-    assert n["operations"][1]["message"] == "Drew ¥150,000.00 on FAC-LINE on day 0"
-    # the same plan as on origin/dev: the accepted counter is in the books once, not twice
+    assert n["operations"][1]["message"] == "Drew ¥149,901.15 on FAC-LINE on day 0"
+    # the accepted counter is in the books once, not twice: the line carries the rest of the gap and the
+    # router adds no early pay on top (the counter's face already nets the gap less the line)
     assert [(a["kind"], a["facility_id"], a["amount_fen"]) for a in n["plan"]["actions"]] == [
-        ("DRAW", "FAC-LINE", 15_000_000), ("EARLY_PAY", "FAC-EARLYPAY", 100_000)]
-    assert n["plan"]["need_fen"] == 15_000_030 and n["plan"]["total_cost_fen"] == 85_014
-    assert n["plan"]["label"] == "committed plan: ¥841.64 + ¥8.50 = ¥850.14"
+        ("DRAW", "FAC-LINE", 14_990_115)]
+    assert n["plan"]["need_fen"] == 14_990_115 and n["plan"]["total_cost_fen"] == 84_109
+    assert n["plan"]["label"] == "committed plan: ¥841.09"
 
 
 def test_negotiate_hard_line_still_funds_the_standing_gap(client: TestClient) -> None:

@@ -17,7 +17,7 @@
     "offer_version": 1,
     "counterparty_id": "BUYER-1",
     "verdict_id": "VRD-EX01",
-    "terms_hash": "bde69384a91ec40579395726a4b2a5262152bba21d23fb206f86edc4e5a74635",
+    "terms_hash": "eff00bc3929afc5e88c3e982519983c6dbbdc308170a52726fb05358989d4e9b",
     "obligations": [
       {
         "counterparty_id": "BUYER-1",
@@ -36,17 +36,17 @@
         "type": "IMMEDIATE_DISCOUNT",
         "base": {
           "kind": "INVOICE",
-          "amount_fen": 21180000,
+          "amount_fen": 21190000,
           "receivable_id": "RCV-A",
           "events_per_year": null,
-          "amount_display": "¥211,800.00"
+          "amount_display": "¥211,900.00"
         },
         "spans": [
           {
             "doc_id": "CTR-A",
             "start": 0,
             "end": 216,
-            "text": "Thank you for the proposal. We can agree to settle up to ¥211,800 of the ¥420,000 invoice early at 0.85%, with payment on day 2, and keep your standard terms at 45 days. We are not able to offer the quarterly rebate."
+            "text": "Thank you for the proposal. We can agree to settle up to ¥211,900 of the ¥420,000 invoice early at 0.85%, with payment on day 2, and keep your standard terms at 45 days. We are not able to offer the quarterly rebate."
           }
         ],
         "id": "CTR-A-OB1",

@@ -21,7 +21,7 @@ def test_post_whatif_reproduces_ex01_and_is_hypothetical(client, g):
 
 def test_option_a_over_http(client):
     body = client.post("/whatif", json={"terms_days": 45, "discount_bp": 85, "rebate_bp": 0,
-                                        "settle_face_fen": 21_180_000}).json()
+                                        "settle_face_fen": 21_190_000}).json()
     assert body["outcome"] != "REJECT" and "AGG_CONCESSION_EXCEEDED" not in body["codes"]
 
 
@@ -58,7 +58,7 @@ def test_whatif_writes_nothing(client, rt):
     store = rt.store
     before = (len(store.operations()), len(store.commitments()), len(store.security_events()),
               store.get_state().model_dump_json(), store.get_mandate().model_dump_json(), store.verify_chain())
-    for body in (ACTUAL, {"terms_days": 45, "discount_bp": 85, "rebate_bp": 0, "settle_face_fen": 21_180_000},
+    for body in (ACTUAL, {"terms_days": 45, "discount_bp": 85, "rebate_bp": 0, "settle_face_fen": 21_190_000},
                  {"terms_days": 90, "discount_bp": 200, "rebate_bp": 200, "price_adjustment_bp": 100}):
         assert client.post("/whatif", json=body).status_code == 200
     client.get("/whatif/presets")
@@ -93,7 +93,7 @@ def test_presets_endpoint(client):
                                    "settle_face_fen")} == {"terms_days": 60, "discount_bp": 120, "rebate_bp": 100,
                                                            "price_adjustment_bp": 0, "settle_face_fen": None}
     assert actual["discount_display"] == "1.20%" and actual["rebate_display"] == "1.00%"
-    assert body["presets"]["option_a"]["settle_face_display"] == "¥211,800.00"
+    assert body["presets"]["option_a"]["settle_face_display"] == "¥211,900.00"
     assert body["grid"]["terms_days"] == {"min": 30, "max": 90, "step": 5}
     assert body["grid"]["settle_face_fen"]["max"] == 42_000_000
     assert body["receivable_face_display"] == "¥420,000.00" and body["current_terms_days"] == 45
@@ -103,6 +103,6 @@ def test_post_carries_the_controls(client):
     body = client.post("/whatif", json=ACTUAL).json()
     c = body["controls"]
     assert c["rate_labels"]["120"] == "1.20%" and c["rate_labels"]["85"] == "0.85%"
-    assert {"fen": 21_180_000, "display": "¥211,800.00"} in c["face_stops"]
+    assert {"fen": 21_190_000, "display": "¥211,900.00"} in c["face_stops"]
     assert c["face_stops"][-1] == {"fen": 42_000_000, "display": "¥420,000.00"}
     assert set(c["presets"]) == {"actual", "option_a", "option_b", "status_quo"}

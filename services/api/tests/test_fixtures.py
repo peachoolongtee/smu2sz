@@ -31,5 +31,5 @@ def test_oracle_documented_differences_from_spec():
     # ADR-0002: totals are sums of posted fen amounts; the spec rounded unrounded sums.
     g = golden_values()
     assert g["v2_optimum_total"] == 271294  # spec: ¥2,712.95
-    assert g["counter_a_total"] == 264194  # spec: ¥2,641.95
+    assert g["counter_a_total"] == 264224  # spec: ¥2,641.95 (old face ¥211,800 and the line alone; B5 rounds the face up and prices the router plan)
     assert g["capex"]["loan_36m"]["total_interest"] == 5320614  # spec: ¥53,206.17

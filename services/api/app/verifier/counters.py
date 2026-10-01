@@ -2,8 +2,9 @@
 
 - **Early-pay counter (Option A).** Keep the current terms, no rebate; accept early settlement on up
   to the face that closes the near-term gap net of the committed line, at the largest whole-5bp rate
-  strictly below the break-even discount d/(1−d) < c (0.85% < 0.88%). Supplier cost = discount +
-  line interest, projected by the engine.
+  strictly below the break-even discount d/(1−d) < c (0.85% < 0.88%). The face is rounded up to a whole
+  ¥100 so it nets at least the gap; the router's committed plan on books that include the counter must
+  keep the floor (else no Option A). Supplier cost = discount + that plan's cost.
 - **Price-adjustment counter (Option B).** Accept a perpetual terms extension with the smallest
   whole-5bp PRICE_ADJUSTMENT whose per-invoice amount covers the per-invoice funding cost, no rebate.
 - **Bounded extension.** Fewer invoices (the most that fit the cap), or the same invoices with the
@@ -11,7 +12,7 @@
 - **Rebate over the cap.** The largest whole-5bp rebate rate that fits the remaining headroom.
 
 Each counter carries two numbers: `supplier_cost_fen`, what it costs the supplier (Option A: discount +
-line interest), and `forward_value_fen`, the forward concession a commitment on it books: the net value of
+funding the rest of the gap), and `forward_value_fen`, the forward concession a commitment on it books: the net value of
 its own obligations floored at 0, as in the aggregate (Option A: 0, an immediate discount is not a forward
 concession; Option B: the extension net of the price adjustment).
 
@@ -51,6 +52,7 @@ from app.domain.models import (
 from app.domain.money import BP_DENOM, DAYS_PER_YEAR, Ratio, bp, fmt_pct, fmt_yuan, post
 from app.financial import project, value_concessions
 from app.funding import NoPermanentSourceError, break_even_discount, marginal_cost
+from app.funding import plan as funding_plan
 from app.verifier.bind import bind, early_pay_lead, is_claimed, is_gain, open_receivables, recurring_for
 from app.verifier.models import OwnerConstraints
 from app.verifier.owner import breaches as owner_breaches
@@ -79,7 +81,7 @@ _WORDS = {1: "one", 2: "two", 3: "three", 4: "four", 5: "five", 6: "six", 7: "se
 
 
 def money_text(fen: int) -> str:
-    """Whole yuan without decimals ('¥211,800'), else two decimals ('¥1,871.30')."""
+    """Whole yuan without decimals ('¥211,900'), else two decimals ('¥1,871.30')."""
     return fmt_yuan(fen)[:-3] if fen % 100 == 0 else fmt_yuan(fen)
 
 
@@ -235,7 +237,7 @@ def early_pay_counter(ctx: _Ctx, label: str = "Option A") -> CounterProposal | N
         return None
     rate = bp(rate_bp)
     face_exact = Fraction(net) / (1 - rate)
-    face = min(int(face_exact // 10_000) * 10_000, r.face_fen)  # whole ¥100, never above the invoice
+    face = min(int(-(-face_exact // 10_000)) * 10_000, r.face_fen)  # rounded UP to a whole ¥100, never above the invoice
     if face <= 0:
         return None
     settle = early_pay_lead(ctx.state, ctx.cp)
@@ -243,15 +245,17 @@ def early_pay_counter(ctx: _Ctx, label: str = "Option A") -> CounterProposal | N
         ctx.cp, ObligationType.IMMEDIATE_DISCOUNT, rate_bp=rate_bp, effective_day=settle,
         base=ObligationBase(kind=BaseKind.INVOICE, amount_fen=face, receivable_id=r.id),
     )
-    line_ids = {f.id for f in lines}
-    line_actions = [a for a in base_plan.actions if a.facility_id in line_ids]
-    t = project(ctx.state, [*ctx.live, disc_ob], line_actions, Mode.CONSERVATIVE, ctx.mandate.horizon_days)
+    # the committed plan on books that include the counter: a counter that cannot keep the floor is not offered
+    counter_plan = funding_plan(ctx.state, [*ctx.live, disc_ob], ctx.mandate, "COMMITTED")
+    if not counter_plan.admissible:
+        return None
+    t = project(ctx.state, [*ctx.live, disc_ob], counter_plan.actions, Mode.CONSERVATIVE, ctx.mandate.horizon_days)
     discount = t.discounts_posted_fen
     if ctx.live:  # the counter's own discount: what the commitments in force already cost is not its cost
         discount -= project(ctx.state, list(ctx.live), [], Mode.CONSERVATIVE,
                             ctx.mandate.horizon_days).discounts_posted_fen
-    line_cost = t.interest_posted_fen + t.fees_posted_fen
-    total = discount + line_cost
+    funding_cost = counter_plan.total_cost_fen
+    total = discount + funding_cost
 
     c = ctx.rate * BREAK_EVEN_PERIOD_DAYS / DAYS_PER_YEAR
     clauses: list[tuple[str, Obligation | None]] = []
@@ -274,8 +278,9 @@ def early_pay_counter(ctx: _Ctx, label: str = "Option A") -> CounterProposal | N
         f"break-even: d/(1−d) < c, c = {fmt_pct(ctx.rate, 4)} × {BREAK_EVEN_PERIOD_DAYS}/365 = {fmt_pct(c, 4)} "
         f"→ d < {fmt_pct(d_ratio.value, 4)}; largest whole-5bp rate below it = {rate_text(rate_bp)}. "
         f"Face: (near-term need {fmt_yuan(need)} − committed line {fmt_yuan(line_avail)}) / (1 − {rate_text(rate_bp)}) "
-        f"= {fmt_yuan(post(face_exact))} → up to {fmt_yuan(face)} (whole ¥100, at most the invoice). "
-        f"Cost: discount {fmt_yuan(discount)} + line interest {fmt_yuan(line_cost)} = {fmt_yuan(total)}"
+        f"= {fmt_yuan(post(face_exact))} → up to {fmt_yuan(face)} (rounded up to a whole ¥100, at most the invoice). "
+        f"Cost: discount {fmt_yuan(discount)} + funding the rest of the gap {fmt_yuan(funding_cost)} "
+        f"({counter_plan.label}) = {fmt_yuan(total)}"
     )
     rationale = (f"Early settlement at {rate_text(rate_bp)} is cheaper than financing the invoice on the "
                  f"marginal committed source; the line covers the rest of the near-term gap.")

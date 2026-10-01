@@ -27,7 +27,8 @@ const SHORTFALL = g.reserve_shortfall_day47; // 4,504,000
 eq(g.cash_day47_60d_terms + SHORTFALL, fixture.mandate.min_cash_fen, "shortfall identity");
 eq(g.extension_committed_12m + g.rebate_max, g.forward_ledger_total, "forward ledger total");
 eq(g.line_interest_150k_32d + g.if_cost_210k_30d, g.v2_optimum_total, "router total");
-eq(g.line_interest_150k_32d + g.counter_a_discount, g.counter_a_total, "counter A total");
+const COUNTER_A_FUNDING = 84109; // 149,901.15 x 6.40% x 32/365: the line carries the gap the counter leaves
+eq(COUNTER_A_FUNDING + g.counter_a_discount, g.counter_a_total, "counter A total");
 eq(g.line_interest_150k_32d + g.v1_partial_discount, g.v1_optimum_total, "v1 total");
 const IF_INTEREST_210K = 134630; // 210,000 x 7.80% x 30/365
 const IF_FEE_210K = 52500; // 210,000 x 0.25%
@@ -387,7 +388,7 @@ function counterObligations(suffix, list) {
 }
 
 const COUNTER_A_TEXT =
-  "Thank you for the proposal. We can agree to settle up to ¥211,800 of the ¥420,000 invoice early at 0.85%, with payment on day 2, and keep your standard terms at 45 days. We are not able to offer the quarterly rebate.";
+  "Thank you for the proposal. We can agree to settle up to ¥211,900 of the ¥420,000 invoice early at 0.85%, with payment on day 2, and keep your standard terms at 45 days. We are not able to offer the quarterly rebate.";
 const COUNTER_B_TEXT =
   "Thank you for the proposal. We can agree to 60-day terms going forward with a 0.45% price adjustment on each invoice (¥1,890 on a ¥420,000 invoice). We are not able to offer the quarterly rebate.";
 const spanAll = (docId, text) => ({ doc_id: docId, start: 0, end: text.length, text });
@@ -471,15 +472,15 @@ function verdictEx01(suffix, offerId, sourceOffer) {
             type: "IMMEDIATE_DISCOUNT",
             rate_bp: 85,
             effective_day: 2,
-            base: { kind: "INVOICE", amount_fen: 21180000, receivable_id: "RCV-A", events_per_year: null },
+            base: { kind: "INVOICE", amount_fen: 21190000, receivable_id: "RCV-A", events_per_year: null },
             spans: [spanAll("CTR-A", COUNTER_A_TEXT)],
           },
         ]),
         supplier_cost_fen: g.counter_a_total,
         rationale:
-          "Priced below the 0.88% break-even early-pay discount: 0.85% on up to ¥211,800.00, the face that closes the gap net of the credit line. No forward concession is created.",
+          "Priced below the 0.88% break-even early-pay discount: 0.85% on up to ¥211,900.00, the face that closes the gap net of the credit line. No forward concession is created.",
         formula:
-          "0.85% × ¥211,800.00 = ¥1,800.30; + line interest ¥150,000.00 × 6.40% × 32 / 365 = ¥841.64; total ¥2,641.94",
+          "0.85% × ¥211,900.00 = ¥1,801.15; + funding the rest of the gap, ¥149,901.15 × 6.40% × 32 / 365 = ¥841.09; total ¥2,642.24",
       },
       {
         id: "CTR-B",
@@ -1046,7 +1047,7 @@ write("borrower_file.json", {
 
 // ---------------------------------------------------------------- operations and approvals templates
 write("ops.json", {
-  counter_a: { kind: "COUNTER_OFFER", tier: "TIER_1", requested_by: "AGENT", message: "Counter sent: Option A", summary: "Counter Option A to BUYER-1: 0.85% early pay on up to ¥211,800.00, 45-day terms, no rebate." },
+  counter_a: { kind: "COUNTER_OFFER", tier: "TIER_1", requested_by: "AGENT", message: "Counter sent: Option A", summary: "Counter Option A to BUYER-1: 0.85% early pay on up to ¥211,900.00, 45-day terms, no rebate." },
   counter_b: { kind: "COUNTER_OFFER", tier: "TIER_1", requested_by: "AGENT", message: "Counter sent: Option B", summary: "Counter Option B to BUYER-1: 60-day terms with a 0.45% price adjustment (¥1,890.00 per invoice)." },
   accept_a: { kind: "ACCEPT_OFFER", tier: "TIER_1", requested_by: "AGENT", message: "Accepted: buyer agreed to Option A", summary: "Accepted Option A for OFF-EX01 v1, terms hash " + termsHash.slice(0, 12) + "." },
   record_commitment: { kind: "RECORD_COMMITMENT", tier: "TIER_1", requested_by: "SYSTEM", message: "Commitment CMT-1 recorded, expires day 7", summary: "Commitment CMT-1 with BUYER-1, nonce nonce-7f3a9c21, expires day 7." },

@@ -16,7 +16,7 @@ The main scripted path is spec v2 §10, with the numbers from `fixtures/golden/g
 4. The forward-concession meter shows ¥26,455.62 against a ¥5,000 cap. The cash line dips to ¥254,960 on day 47, a ¥45,040 shortfall that invoice financing can cure for ¥802.70.
 5. Verdict: **REJECT**: AGG_CONCESSION_EXCEEDED; RESERVE_BREACH@47 (curable); DISCOUNT_ABOVE_BREAK_EVEN (1.2% > the 0.88% break-even, which is why Option A is priced at 0.85%). Covenants hold: DSCR 1.92×, leverage 1.72×.
 6. Counters go out:
-   - **Option A:** 45-day terms, no rebate, early settlement on up to ¥211,800 at 0.85%, costing ¥2,641.94.
+   - **Option A:** 45-day terms, no rebate, early settlement on up to ¥211,900 at 0.85% (rounded up to a whole ¥100), costing ¥2,642.24.
    - **Option B:** 60-day terms with a 0.45% price adjustment of ¥1,890 per invoice, against a ¥1,871.30 funding cost.
 7. The buyer kernel accepts Option A. The commitment is recorded with a nonce and expiry, and the line draw is logged as a Tier-1 operation.
 

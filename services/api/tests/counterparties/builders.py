@@ -15,11 +15,11 @@ from app.domain.models import (
 )
 
 OPTION_A_TEXT = (
-    "Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥211,800 "
+    "Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥211,900 "
     "of this invoice at 0.85%."
 )
 OPTION_B_TEXT = "60-day terms accepted with a 0.45% price adjustment on future invoices, no rebate."
-OPTION_A_FACE_FEN = 21_180_000
+OPTION_A_FACE_FEN = 21_190_000
 INVOICE_FACE_FEN = 42_000_000
 NEXT_QUARTER_FEN = 40_000_000
 
@@ -117,7 +117,7 @@ def counter(
 
 
 def option_a(rate_bp: int = 85, **kw: object) -> CounterProposal:
-    """Option A: 45-day terms, no rebate, early settlement on up to ¥211,800 at 0.85%."""
+    """Option A: 45-day terms, no rebate, early settlement on up to ¥211,900 at 0.85%."""
     opts: dict[str, object] = {"supplier_cost_fen": 264_194, **kw}
     return counter("CTR-A", "Option A", [discount(rate_bp, oid="A-DISC")], OPTION_A_TEXT, **opts)  # type: ignore[arg-type]
 

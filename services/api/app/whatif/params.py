@@ -67,7 +67,7 @@ def grid(face_max_fen: int) -> dict[str, dict[str, int]]:
 # The buyer's actual offer (EX01) and the two counters the verifier generates for it (DEMO_FLOW §1.6).
 PRESETS: dict[str, WhatIfParams] = {
     "actual": WhatIfParams(terms_days=60, discount_bp=120, rebate_bp=100),
-    "option_a": WhatIfParams(terms_days=45, discount_bp=85, rebate_bp=0, settle_face_fen=21_180_000),
+    "option_a": WhatIfParams(terms_days=45, discount_bp=85, rebate_bp=0, settle_face_fen=21_190_000),
     "option_b": WhatIfParams(terms_days=60, discount_bp=0, rebate_bp=0, price_adjustment_bp=45),
     "status_quo": WhatIfParams(terms_days=45, discount_bp=0, rebate_bp=0),
 }

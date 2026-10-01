@@ -201,8 +201,8 @@ def test_declared_consolidation_benefit_is_counted() -> None:
 
 
 def test_option_a_surplus_in_exact_fen() -> None:
-    # discount 0.85% x 21,180,000 = 180,030 fen; paid 20,999,970 fen 30 days early at 4.2%:
-    # 20,999,970 x 0.042 x 30 / 365 = 72,493.05... -> 72,493 fen. Surplus 107,537 fen.
+    # discount 0.85% x 21,190,000 = 180,115 fen; paid 21,009,885 fen 30 days early at 4.2%:
+    # 21,009,885 x 0.042 x 30 / 365 = 72,527.27... -> 72,527 fen. Surplus 107,588 fen.
     a = assess(get_profile("BUYER-1"), [discount(85, OPTION_A_FACE_FEN)])
-    assert dict(a.components) == {"OB-DISC:discount_received": 180_030, "OB-DISC:early_funding_cost": -72_493}
-    assert a.surplus_fen == 107_537
+    assert dict(a.components) == {"OB-DISC:discount_received": 180_115, "OB-DISC:early_funding_cost": -72_527}
+    assert a.surplus_fen == 107_588

@@ -22,7 +22,7 @@ def test_ex12_plan_is_a_zero_forward_counter_at_or_below_break_even(client, rt):
     assert ops(r) == []  # proposed, not executed
     c, obs = _counter_obligations(rt, r["verdict"]["id"])
     assert [o.type for o in obs] == [ObligationType.IMMEDIATE_DISCOUNT]
-    assert obs[0].rate_bp == 85 and obs[0].base.amount_fen == 21_180_000 and obs[0].base.receivable_id == "RCV-A"
+    assert obs[0].rate_bp == 85 and obs[0].base.amount_fen == 21_190_000 and obs[0].base.receivable_id == "RCV-A"
     assert c.forward_value_fen == 0
     kinds = [(s["kind"], s["condition"]) for s in r["plan"]]
     assert ("COUNTER_OFFER", None) in kinds and ("NEGOTIATE", None) in kinds

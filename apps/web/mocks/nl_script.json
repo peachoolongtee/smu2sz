@@ -16,7 +16,7 @@
    {
     "step": 2,
     "kind": "COUNTER_OFFER",
-    "description": "Option A: Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥211,800 of this invoice at 0.85%.",
+    "description": "Option A: Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥211,900 of this invoice at 0.85%.",
     "status": "PROPOSED",
     "op_id": null,
     "condition": null
@@ -109,7 +109,7 @@
    {
     "step": 2,
     "kind": "COUNTER_OFFER",
-    "description": "Option A: Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥211,800 of this invoice at 0.85%.",
+    "description": "Option A: Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥211,900 of this invoice at 0.85%.",
     "status": "EXECUTED",
     "op_id": "NL-c4fe9f6ebc50d4c0",
     "condition": null
@@ -187,7 +187,7 @@
     "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
     "effective_day": 0,
     "approval_id": null,
-    "message": "Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥211,800 of this invoice at 0.85%."
+    "message": "Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥211,900 of this invoice at 0.85%."
    },
    {
     "op_id": "NL-49c33efdcb806208",
@@ -226,7 +226,7 @@
     "prev_hash": "02fae0c624c5411a367013e040bcdf0ef47472f211b63d394eff88be258deb63",
     "effective_day": 0,
     "approval_id": null,
-    "message": "Drew ¥150,000.00 on FAC-LINE on day 0"
+    "message": "Drew ¥149,901.15 on FAC-LINE on day 0"
    }
   ],
   "clarification": null,
@@ -264,7 +264,7 @@
    {
     "step": 2,
     "kind": "COUNTER_OFFER",
-    "description": "Option A: Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥211,800 of this invoice at 0.85%.",
+    "description": "Option A: Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥211,900 of this invoice at 0.85%.",
     "status": "SKIPPED",
     "op_id": null,
     "condition": null
@@ -315,7 +315,7 @@
  },
  "explain_en": {
   "turn": 3,
-  "reply": "Verdict REJECT (TIER_1): AGG_CONCESSION_EXCEEDED, RESERVE_BREACH. REJECT: AGG_CONCESSION_EXCEEDED (¥26,455.62 vs ¥5,000.00); RESERVE_BREACH@47 (curable at ¥802.70). Forward concessions ¥26,455.62 against ¥5,000.00. Covenants hold: DSCR_MIN 1.92x, LEVERAGE_MAX 1.72x. Counters: Option A, Option B.\n- AGG_CONCESSION_EXCEEDED: Forward concessions (all buyers) would reach ¥26,455.62, above the cap. Observed ¥26,455.62 vs limit ¥5,000.00. Formula: existing + new concessions + FIRM gains <= cap: ¥0.00 + ¥26,455.62 + (¥0.00) = ¥26,455.62 > ¥5,000.00. Inputs: scope=aggregate; existing=¥0.00; new_concessions=¥26,455.62; firm_gains_netted=¥0.00; contingent_gains_ignored=¥0.00.\n- RESERVE_BREACH day 47: Under this offer projected cash falls below the reserve on day 47. Observed ¥254,960.00 vs limit ¥300,000.00. Formula: closing_cash(day 47) >= min_cash: ¥254,960.00 < ¥300,000.00, shortfall ¥45,040.00. Inputs: day=47; closing_cash=¥254,960.00; baseline_closing_cash=¥680,000.00; min_cash=¥300,000.00; shortfall=¥45,040.00. Curable for ¥802.70.\n- Forward value ¥22,455.62 (terms extension priced as a loan: committed marginal source: Invoice financing (onboarded platform) 10.8417%): extra receivables 207,123.29 = 420,000.00 × 12 × 15/365; × ≈10.8417% × 365/365 = 22,455.62\n- Forward value ¥4,000.00 (contingent rebate counted at maximum): 1% × 400,000.00 = 4,000.00\nForward concessions total ¥26,455.62 against the ¥5,000.00 cap.\n- Option A: Early settlement at 0.85% is cheaper than financing the invoice on the marginal committed source; the line covers the rest of the near-term gap. Formula: break-even: d/(1−d) < c, c = 10.8417% × 30/365 = 0.8911% → d < 0.8832%; largest whole-5bp rate below it = 0.85%. Face: (near-term need ¥360,000.00 − committed line ¥150,000.00) / (1 − 0.85%) = ¥211,800.30 → up to ¥211,800.00 (whole ¥100, at most the invoice). Cost: discount ¥1,800.30 + line interest ¥841.64 = ¥2,641.94\n- Option B: The price adjustment covers the per-invoice cost of funding the longer terms on the marginal committed source, so the net forward concession is about zero. Formula: smallest whole-5bp rate r with r × ¥420,000.00 >= per-invoice funding cost ¥1,871.30: 0.45% → ¥1,890.00 per invoice. 12-month: extension ¥22,455.62 + price adjustment −¥22,680.00 = −¥224.38 (cost to the supplier ¥0.00)",
+  "reply": "Verdict REJECT (TIER_1): AGG_CONCESSION_EXCEEDED, RESERVE_BREACH. REJECT: AGG_CONCESSION_EXCEEDED (¥26,455.62 vs ¥5,000.00); RESERVE_BREACH@47 (curable at ¥802.70). Forward concessions ¥26,455.62 against ¥5,000.00. Covenants hold: DSCR_MIN 1.92x, LEVERAGE_MAX 1.72x. Counters: Option A, Option B.\n- AGG_CONCESSION_EXCEEDED: Forward concessions (all buyers) would reach ¥26,455.62, above the cap. Observed ¥26,455.62 vs limit ¥5,000.00. Formula: existing + new concessions + FIRM gains <= cap: ¥0.00 + ¥26,455.62 + (¥0.00) = ¥26,455.62 > ¥5,000.00. Inputs: scope=aggregate; existing=¥0.00; new_concessions=¥26,455.62; firm_gains_netted=¥0.00; contingent_gains_ignored=¥0.00.\n- RESERVE_BREACH day 47: Under this offer projected cash falls below the reserve on day 47. Observed ¥254,960.00 vs limit ¥300,000.00. Formula: closing_cash(day 47) >= min_cash: ¥254,960.00 < ¥300,000.00, shortfall ¥45,040.00. Inputs: day=47; closing_cash=¥254,960.00; baseline_closing_cash=¥680,000.00; min_cash=¥300,000.00; shortfall=¥45,040.00. Curable for ¥802.70.\n- Forward value ¥22,455.62 (terms extension priced as a loan: committed marginal source: Invoice financing (onboarded platform) 10.8417%): extra receivables 207,123.29 = 420,000.00 × 12 × 15/365; × ≈10.8417% × 365/365 = 22,455.62\n- Forward value ¥4,000.00 (contingent rebate counted at maximum): 1% × 400,000.00 = 4,000.00\nForward concessions total ¥26,455.62 against the ¥5,000.00 cap.\n- Option A: Early settlement at 0.85% is cheaper than financing the invoice on the marginal committed source; the line covers the rest of the near-term gap. Formula: break-even: d/(1−d) < c, c = 10.8417% × 30/365 = 0.8911% → d < 0.8832%; largest whole-5bp rate below it = 0.85%. Face: (near-term need ¥360,000.00 − committed line ¥150,000.00) / (1 − 0.85%) = ¥211,900.30 → up to ¥211,900.00 (whole ¥100, at most the invoice). Cost: discount ¥1,800.30 + line interest ¥841.64 = ¥2,641.94\n- Option B: The price adjustment covers the per-invoice cost of funding the longer terms on the marginal committed source, so the net forward concession is about zero. Formula: smallest whole-5bp rate r with r × ¥420,000.00 >= per-invoice funding cost ¥1,871.30: 0.45% → ¥1,890.00 per invoice. 12-month: extension ¥22,455.62 + price adjustment −¥22,680.00 = −¥224.38 (cost to the supplier ¥0.00)",
   "intent": "EXPLAIN",
   "lang": "en",
   "plan": [],
@@ -359,7 +359,7 @@
  },
  "explain_zh": {
   "turn": 3,
-  "reply": "结论 REJECT（TIER_1）：AGG_CONCESSION_EXCEEDED, RESERVE_BREACH。REJECT: AGG_CONCESSION_EXCEEDED (¥26,455.62 vs ¥5,000.00); RESERVE_BREACH@47 (curable at ¥802.70). Forward concessions ¥26,455.62 against ¥5,000.00. Covenants hold: DSCR_MIN 1.92x, LEVERAGE_MAX 1.72x. Counters: Option A, Option B.\n- AGG_CONCESSION_EXCEEDED: Forward concessions (all buyers) would reach ¥26,455.62, above the cap. Observed ¥26,455.62 vs limit ¥5,000.00. Formula: existing + new concessions + FIRM gains <= cap: ¥0.00 + ¥26,455.62 + (¥0.00) = ¥26,455.62 > ¥5,000.00. Inputs: scope=aggregate; existing=¥0.00; new_concessions=¥26,455.62; firm_gains_netted=¥0.00; contingent_gains_ignored=¥0.00.\n- RESERVE_BREACH day 47: Under this offer projected cash falls below the reserve on day 47. Observed ¥254,960.00 vs limit ¥300,000.00. Formula: closing_cash(day 47) >= min_cash: ¥254,960.00 < ¥300,000.00, shortfall ¥45,040.00. Inputs: day=47; closing_cash=¥254,960.00; baseline_closing_cash=¥680,000.00; min_cash=¥300,000.00; shortfall=¥45,040.00. Curable for ¥802.70.\n- Forward value ¥22,455.62 (terms extension priced as a loan: committed marginal source: Invoice financing (onboarded platform) 10.8417%): extra receivables 207,123.29 = 420,000.00 × 12 × 15/365; × ≈10.8417% × 365/365 = 22,455.62\n- Forward value ¥4,000.00 (contingent rebate counted at maximum): 1% × 400,000.00 = 4,000.00\n远期让步合计 ¥26,455.62，上限 ¥5,000.00。\n- Option A: Early settlement at 0.85% is cheaper than financing the invoice on the marginal committed source; the line covers the rest of the near-term gap. Formula: break-even: d/(1−d) < c, c = 10.8417% × 30/365 = 0.8911% → d < 0.8832%; largest whole-5bp rate below it = 0.85%. Face: (near-term need ¥360,000.00 − committed line ¥150,000.00) / (1 − 0.85%) = ¥211,800.30 → up to ¥211,800.00 (whole ¥100, at most the invoice). Cost: discount ¥1,800.30 + line interest ¥841.64 = ¥2,641.94\n- Option B: The price adjustment covers the per-invoice cost of funding the longer terms on the marginal committed source, so the net forward concession is about zero. Formula: smallest whole-5bp rate r with r × ¥420,000.00 >= per-invoice funding cost ¥1,871.30: 0.45% → ¥1,890.00 per invoice. 12-month: extension ¥22,455.62 + price adjustment −¥22,680.00 = −¥224.38 (cost to the supplier ¥0.00)",
+  "reply": "结论 REJECT（TIER_1）：AGG_CONCESSION_EXCEEDED, RESERVE_BREACH。REJECT: AGG_CONCESSION_EXCEEDED (¥26,455.62 vs ¥5,000.00); RESERVE_BREACH@47 (curable at ¥802.70). Forward concessions ¥26,455.62 against ¥5,000.00. Covenants hold: DSCR_MIN 1.92x, LEVERAGE_MAX 1.72x. Counters: Option A, Option B.\n- AGG_CONCESSION_EXCEEDED: Forward concessions (all buyers) would reach ¥26,455.62, above the cap. Observed ¥26,455.62 vs limit ¥5,000.00. Formula: existing + new concessions + FIRM gains <= cap: ¥0.00 + ¥26,455.62 + (¥0.00) = ¥26,455.62 > ¥5,000.00. Inputs: scope=aggregate; existing=¥0.00; new_concessions=¥26,455.62; firm_gains_netted=¥0.00; contingent_gains_ignored=¥0.00.\n- RESERVE_BREACH day 47: Under this offer projected cash falls below the reserve on day 47. Observed ¥254,960.00 vs limit ¥300,000.00. Formula: closing_cash(day 47) >= min_cash: ¥254,960.00 < ¥300,000.00, shortfall ¥45,040.00. Inputs: day=47; closing_cash=¥254,960.00; baseline_closing_cash=¥680,000.00; min_cash=¥300,000.00; shortfall=¥45,040.00. Curable for ¥802.70.\n- Forward value ¥22,455.62 (terms extension priced as a loan: committed marginal source: Invoice financing (onboarded platform) 10.8417%): extra receivables 207,123.29 = 420,000.00 × 12 × 15/365; × ≈10.8417% × 365/365 = 22,455.62\n- Forward value ¥4,000.00 (contingent rebate counted at maximum): 1% × 400,000.00 = 4,000.00\n远期让步合计 ¥26,455.62，上限 ¥5,000.00。\n- Option A: Early settlement at 0.85% is cheaper than financing the invoice on the marginal committed source; the line covers the rest of the near-term gap. Formula: break-even: d/(1−d) < c, c = 10.8417% × 30/365 = 0.8911% → d < 0.8832%; largest whole-5bp rate below it = 0.85%. Face: (near-term need ¥360,000.00 − committed line ¥150,000.00) / (1 − 0.85%) = ¥211,900.30 → up to ¥211,900.00 (whole ¥100, at most the invoice). Cost: discount ¥1,800.30 + line interest ¥841.64 = ¥2,641.94\n- Option B: The price adjustment covers the per-invoice cost of funding the longer terms on the marginal committed source, so the net forward concession is about zero. Formula: smallest whole-5bp rate r with r × ¥420,000.00 >= per-invoice funding cost ¥1,871.30: 0.45% → ¥1,890.00 per invoice. 12-month: extension ¥22,455.62 + price adjustment −¥22,680.00 = −¥224.38 (cost to the supplier ¥0.00)",
   "intent": "EXPLAIN",
   "lang": "zh",
   "plan": [],
@@ -403,7 +403,7 @@
  },
  "goal": {
   "turn": 1,
-  "reply": "Plan (Tier 1): offer BUYER-1 early settlement on up to ¥211,800.00 of RCV-A at 0.85% (below the 0.88% break-even), terms unchanged, no rebate: ¥0.00 of forward concessions. If BUYER-1 refuses: committed plan: ¥841.64 + ¥1,871.30 = ¥2,712.94. Reply 'go ahead' to run it, or correct me (e.g. 'make it 0.8%').",
+  "reply": "Plan (Tier 1): offer BUYER-1 early settlement on up to ¥211,900.00 of RCV-A at 0.85% (below the 0.88% break-even), terms unchanged, no rebate: ¥0.00 of forward concessions. If BUYER-1 refuses: committed plan: ¥841.64 + ¥1,871.30 = ¥2,712.94. Reply 'go ahead' to run it, or correct me (e.g. 'make it 0.8%').",
   "intent": "ACCELERATE_RECEIPT",
   "lang": "en",
   "plan": [
@@ -418,7 +418,7 @@
    {
     "step": 2,
     "kind": "COUNTER_OFFER",
-    "description": "Option A: We will accept early settlement on up to ¥211,800 of this invoice at 0.85%. Nothing else changes.",
+    "description": "Option A: We will accept early settlement on up to ¥211,900 of this invoice at 0.85%. Nothing else changes.",
     "status": "PROPOSED",
     "op_id": null,
     "condition": null
@@ -475,7 +475,7 @@
  },
  "goal_go": {
   "turn": 2,
-  "reply": "BUYER-1 accepted Option A: We will accept early settlement on up to ¥211,800 of this invoice at 0.85%. Nothing else changes.",
+  "reply": "BUYER-1 accepted Option A: We will accept early settlement on up to ¥211,900 of this invoice at 0.85%. Nothing else changes.",
   "intent": "ACCELERATE_RECEIPT",
   "lang": "en",
   "plan": [
@@ -490,7 +490,7 @@
    {
     "step": 2,
     "kind": "COUNTER_OFFER",
-    "description": "Option A: We will accept early settlement on up to ¥211,800 of this invoice at 0.85%. Nothing else changes.",
+    "description": "Option A: We will accept early settlement on up to ¥211,900 of this invoice at 0.85%. Nothing else changes.",
     "status": "EXECUTED",
     "op_id": "NL-fca4dde9dc693dda",
     "condition": null
@@ -539,7 +539,7 @@
     "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
     "effective_day": 0,
     "approval_id": null,
-    "message": "We will accept early settlement on up to ¥211,800 of this invoice at 0.85%. Nothing else changes."
+    "message": "We will accept early settlement on up to ¥211,900 of this invoice at 0.85%. Nothing else changes."
    },
    {
     "op_id": "NL-9406d925a2da7d46",
@@ -565,7 +565,7 @@
     "prev_hash": "ab77e12fa30d009a59f58acd66d7f5724acd0ef85bbfeab6a315a2a3f6d1823f",
     "effective_day": 0,
     "approval_id": null,
-    "message": "Drew ¥150,000.00 on FAC-LINE on day 0"
+    "message": "Drew ¥149,901.15 on FAC-LINE on day 0"
    }
   ],
   "clarification": null,
@@ -588,7 +588,7 @@
  },
  "amend_08": {
   "turn": 2,
-  "reply": "Plan (Tier 1): offer BUYER-1 early settlement on up to ¥211,600.00 of RCV-A at 0.80% (below the 0.88% break-even), terms unchanged, no rebate: ¥0.00 of forward concessions. If BUYER-1 refuses: committed plan: ¥841.64 + ¥1,871.30 = ¥2,712.94. Reply 'go ahead' to run it, or correct me (e.g. 'make it 0.8%').",
+  "reply": "Plan (Tier 1): offer BUYER-1 early settlement on up to ¥211,700.00 of RCV-A at 0.80% (below the 0.88% break-even), terms unchanged, no rebate: ¥0.00 of forward concessions. If BUYER-1 refuses: committed plan: ¥841.64 + ¥1,871.30 = ¥2,712.94. Reply 'go ahead' to run it, or correct me (e.g. 'make it 0.8%').",
   "intent": "ACCELERATE_RECEIPT",
   "lang": "en",
   "plan": [
@@ -675,7 +675,7 @@
    {
     "step": 2,
     "kind": "COUNTER_OFFER",
-    "description": "Option A: We will accept early settlement on up to ¥211,800 of this invoice at 0.85%. Nothing else changes.",
+    "description": "Option A: We will accept early settlement on up to ¥211,900 of this invoice at 0.85%. Nothing else changes.",
     "status": "PROPOSED",
     "op_id": null,
     "condition": null
@@ -932,7 +932,7 @@
  },
  "amend_08_zh": {
   "turn": 2,
-  "reply": "方案（一级权限）：向 BUYER-1 提议对 RCV-A 最多 ¥211,600.00 按 0.80% 提前结算（低于盈亏平衡 0.88%），账期不变、无返利：远期让步 ¥0.00。若对方拒绝：committed plan: ¥841.64 + ¥1,871.30 = ¥2,712.94。 回复“执行”运行，或直接修改（例如“改成 0.8%”）。",
+  "reply": "方案（一级权限）：向 BUYER-1 提议对 RCV-A 最多 ¥211,700.00 按 0.80% 提前结算（低于盈亏平衡 0.88%），账期不变、无返利：远期让步 ¥0.00。若对方拒绝：committed plan: ¥841.64 + ¥1,871.30 = ¥2,712.94。 回复“执行”运行，或直接修改（例如“改成 0.8%”）。",
   "intent": "ACCELERATE_RECEIPT",
   "lang": "zh",
   "plan": [
@@ -1004,7 +1004,7 @@
  },
  "goal_zh": {
   "turn": 1,
-  "reply": "方案（一级权限）：向 BUYER-1 提议对 RCV-A 最多 ¥211,800.00 按 0.85% 提前结算（低于盈亏平衡 0.88%），账期不变、无返利：远期让步 ¥0.00。若对方拒绝：committed plan: ¥841.64 + ¥1,871.30 = ¥2,712.94。 回复“执行”运行，或直接修改（例如“改成 0.8%”）。",
+  "reply": "方案（一级权限）：向 BUYER-1 提议对 RCV-A 最多 ¥211,900.00 按 0.85% 提前结算（低于盈亏平衡 0.88%），账期不变、无返利：远期让步 ¥0.00。若对方拒绝：committed plan: ¥841.64 + ¥1,871.30 = ¥2,712.94。 回复“执行”运行，或直接修改（例如“改成 0.8%”）。",
   "intent": "ACCELERATE_RECEIPT",
   "lang": "zh",
   "plan": [
@@ -1019,7 +1019,7 @@
    {
     "step": 2,
     "kind": "COUNTER_OFFER",
-    "description": "Option A: We will accept early settlement on up to ¥211,800 of this invoice at 0.85%. Nothing else changes.",
+    "description": "Option A: We will accept early settlement on up to ¥211,900 of this invoice at 0.85%. Nothing else changes.",
     "status": "PROPOSED",
     "op_id": null,
     "condition": null
@@ -1076,7 +1076,7 @@
  },
  "goal_go_zh": {
   "turn": 2,
-  "reply": "BUYER-1 接受了 Option A：We will accept early settlement on up to ¥211,800 of this invoice at 0.85%. Nothing else changes.",
+  "reply": "BUYER-1 接受了 Option A：We will accept early settlement on up to ¥211,900 of this invoice at 0.85%. Nothing else changes.",
   "intent": "ACCELERATE_RECEIPT",
   "lang": "zh",
   "plan": [
@@ -1091,7 +1091,7 @@
    {
     "step": 2,
     "kind": "COUNTER_OFFER",
-    "description": "Option A: We will accept early settlement on up to ¥211,800 of this invoice at 0.85%. Nothing else changes.",
+    "description": "Option A: We will accept early settlement on up to ¥211,900 of this invoice at 0.85%. Nothing else changes.",
     "status": "EXECUTED",
     "op_id": "NL-3acfbda865efee05",
     "condition": null
@@ -1140,7 +1140,7 @@
     "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
     "effective_day": 0,
     "approval_id": null,
-    "message": "We will accept early settlement on up to ¥211,800 of this invoice at 0.85%. Nothing else changes."
+    "message": "We will accept early settlement on up to ¥211,900 of this invoice at 0.85%. Nothing else changes."
    },
    {
     "op_id": "NL-a21b2c47da460b48",
@@ -1166,7 +1166,7 @@
     "prev_hash": "d12cd8e00e92eb92284ea3920729897917b27af7241111b1887e9060571e1e63",
     "effective_day": 0,
     "approval_id": null,
-    "message": "Drew ¥150,000.00 on FAC-LINE on day 0"
+    "message": "Drew ¥149,901.15 on FAC-LINE on day 0"
    }
   ],
   "clarification": null,
@@ -1204,7 +1204,7 @@
    {
     "step": 2,
     "kind": "COUNTER_OFFER",
-    "description": "Option A: Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥211,800 of this invoice at 0.85%.",
+    "description": "Option A: Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥211,900 of this invoice at 0.85%.",
     "status": "PROPOSED",
     "op_id": null,
     "condition": null
@@ -1297,7 +1297,7 @@
    {
     "step": 2,
     "kind": "COUNTER_OFFER",
-    "description": "Option A: Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥211,800 of this invoice at 0.85%.",
+    "description": "Option A: Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥211,900 of this invoice at 0.85%.",
     "status": "EXECUTED",
     "op_id": "NL-07d660f86326e063",
     "condition": null
@@ -1375,7 +1375,7 @@
     "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
     "effective_day": 0,
     "approval_id": null,
-    "message": "Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥211,800 of this invoice at 0.85%."
+    "message": "Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥211,900 of this invoice at 0.85%."
    },
    {
     "op_id": "NL-e8acca187f351e42",
@@ -1414,7 +1414,7 @@
     "prev_hash": "8483b28d031321a8ac9afe7f8a938f063a5b35b3263aaa95f59ccde3029efe42",
     "effective_day": 0,
     "approval_id": null,
-    "message": "Drew ¥150,000.00 on FAC-LINE on day 0"
+    "message": "Drew ¥149,901.15 on FAC-LINE on day 0"
    }
   ],
   "clarification": null,
@@ -1716,7 +1716,7 @@
  },
  "buyer_ex02": {
   "turn": 1,
-  "reply": "Option A: We will accept early settlement on up to ¥211,800 of this invoice at 0.85%. Nothing else changes.",
+  "reply": "Option A: We will accept early settlement on up to ¥211,900 of this invoice at 0.85%. Nothing else changes.",
   "intent": "COUNTERPARTY_MESSAGE",
   "lang": "en",
   "plan": [
@@ -1731,7 +1731,7 @@
    {
     "step": 2,
     "kind": "COUNTER_OFFER",
-    "description": "Option A: We will accept early settlement on up to ¥211,800 of this invoice at 0.85%. Nothing else changes.",
+    "description": "Option A: We will accept early settlement on up to ¥211,900 of this invoice at 0.85%. Nothing else changes.",
     "status": "EXECUTED",
     "op_id": "NL-6623e32991386a7f",
     "condition": null
@@ -1767,7 +1767,7 @@
     "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
     "effective_day": 0,
     "approval_id": null,
-    "message": "We will accept early settlement on up to ¥211,800 of this invoice at 0.85%. Nothing else changes."
+    "message": "We will accept early settlement on up to ¥211,900 of this invoice at 0.85%. Nothing else changes."
    }
   ],
   "clarification": null,
@@ -1943,7 +1943,7 @@
  },
  "buyer_rebate": {
   "turn": 1,
-  "reply": "Option A: No rebate is on record, so none applies. We will accept early settlement on up to ¥211,800 of this invoice at 0.85%.",
+  "reply": "Option A: No rebate is on record, so none applies. We will accept early settlement on up to ¥211,900 of this invoice at 0.85%.",
   "intent": "COUNTERPARTY_MESSAGE",
   "lang": "en",
   "plan": [
@@ -1958,7 +1958,7 @@
    {
     "step": 2,
     "kind": "COUNTER_OFFER",
-    "description": "Option A: No rebate is on record, so none applies. We will accept early settlement on up to ¥211,800 of this invoice at 0.85%.",
+    "description": "Option A: No rebate is on record, so none applies. We will accept early settlement on up to ¥211,900 of this invoice at 0.85%.",
     "status": "EXECUTED",
     "op_id": "NL-eb412575b748b400",
     "condition": null
@@ -1994,7 +1994,7 @@
     "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
     "effective_day": 0,
     "approval_id": null,
-    "message": "No rebate is on record, so none applies. We will accept early settlement on up to ¥211,800 of this invoice at 0.85%."
+    "message": "No rebate is on record, so none applies. We will accept early settlement on up to ¥211,900 of this invoice at 0.85%."
    }
   ],
   "clarification": null,

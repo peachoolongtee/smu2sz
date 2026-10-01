@@ -22,9 +22,9 @@ from app.operations.charges import finance_invoice_charges
 from tests.operations.builders import Clock, early_pay, op, seed_offer
 
 FACE = 42_000_000  # RCV-A, due day 32
-PORTION = 21_180_000  # Counter A: ¥211,800 of RCV-A ...
-EARLY = 20_999_970  # ... at 0.85%: 21_180_000 - post(0.0085 * 21_180_000) = 21_180_000 - 180_030
-RESIDUAL = FACE - PORTION  # 20_820_000
+PORTION = 21_190_000  # Counter A: ¥211,900 of RCV-A ...
+EARLY = 21_009_885  # ... at 0.85%: 21_190_000 - post(0.0085 * 21_190_000) = 21_190_000 - 180_115
+RESIDUAL = FACE - PORTION  # 20_810_000
 DUE = 32
 
 
@@ -41,7 +41,7 @@ def cash(store: Any) -> int:
 
 
 def counter_a(store: Any, ex: Any, clock: Clock, offer_id: str = "OFF-A") -> Commitment:
-    """Counter A of the EX01 flow, accepted: 0.85% on ¥211,800 of RCV-A, paid on day 2."""
+    """Counter A of the EX01 flow, accepted: 0.85% on ¥211,900 of RCV-A, paid on day 2."""
     ob = early_pay("OB-A").model_copy(update={
         "effective_day": 2, "base": early_pay().base.model_copy(update={"kind": BaseKind.INVOICE, "amount_fen": PORTION})})
     c = seed_offer(store, ex, offer_id, obligations=[ob], value_fen=0)
@@ -62,8 +62,8 @@ def test_golden_option_a_fulfils_the_commitment_and_leaves_the_residual(ex: Any,
     feed = op(ReceivePayment, clock, actor=Actor.SYSTEM, receivable_id="RCV-A", amount_fen=EARLY)
     first = ex.execute(feed)
     assert first.status == OperationStatus.EXECUTED, first.message
-    assert first.message == (f"Received ¥209,999.70 on RCV-A (settles ¥211,800.00 at the agreed 0.85% early-payment "
-                             f"discount; ¥208,200.00 still due on day {DUE})")
+    assert first.message == (f"Received ¥210,098.85 on RCV-A (settles ¥211,900.00 at the agreed 0.85% early-payment "
+                             f"discount; ¥208,100.00 still due on day {DUE})")
     r = rcv(store)
     assert (r.settled_fen, r.status, r.outstanding_fen) == (PORTION, "OPEN", RESIDUAL)
     assert store.get_commitment(c.id).status == CommitmentStatus.FULFILLED
@@ -233,7 +233,7 @@ def test_reconciliation_matches_the_agreed_amount_and_reports_partials_with_the_
     assert agreed.expected_fen == EARLY and agreed.difference_fen == 0
     assert partial.status == MatchStatus.SHORT_PAYMENT and partial.flagged and partial.commitment_id is None
     assert partial.expected_fen == RESIDUAL and partial.difference_fen == 5_000_000 - RESIDUAL
-    assert "partial payment" in partial.detail and "¥158,200.00 of RCV-A still due" in partial.detail
+    assert "partial payment" in partial.detail and "¥158,100.00 of RCV-A still due" in partial.detail
     [out] = [o for o in rep.outstanding if o.receivable_id == "RCV-A"]
     assert out.face_fen == RESIDUAL - 5_000_000 and out.status == "OPEN"
     assert rep.chain_valid

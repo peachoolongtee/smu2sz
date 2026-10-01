@@ -156,14 +156,14 @@ def test_counter_spans_point_into_the_counter_text(state, mandate, key):
 
 
 def test_counter_is_what_it_costs_under_the_engine(state, mandate, key):
-    # Option A's cost is the engine's posted discount plus line interest, not a separate formula.
+    # Option A's cost is the engine's posted discount plus the committed plan on books that hold the counter.
     from app.domain.models import Mode
     from app.financial import project
-    from app.verifier.reserve import baseline
+    from app.funding import plan
 
     a = bundle("EX01_PACKAGE").verdict.counters[0]
-    _, base_plan = baseline(state, mandate)
-    line = [x for x in base_plan.actions if x.facility_id == "FAC-LINE"]
-    t = project(state, a.obligations, line, Mode.CONSERVATIVE, mandate.horizon_days)
+    counter_plan = plan(state, a.obligations, mandate, "COMMITTED")
+    t = project(state, a.obligations, counter_plan.actions, Mode.CONSERVATIVE, mandate.horizon_days)
     assert t.discounts_posted_fen + t.interest_posted_fen + t.fees_posted_fen == a.supplier_cost_fen
+    assert t.discounts_posted_fen + counter_plan.total_cost_fen == a.supplier_cost_fen
     assert evaluate  # imported for the module's public surface

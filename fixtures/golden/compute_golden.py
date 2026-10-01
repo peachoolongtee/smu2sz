@@ -96,8 +96,12 @@ sf = F(out["reserve_shortfall_day47"], 100)
 out["reserve_cure_cost_if"] = if_cost(sf, 57)
 
 # Counter A
-out["counter_a_discount"] = fen(Y(211800) * bp(85))
-out["counter_a_total"] = out["counter_a_discount"] + line_int
+# face = the exact gross-up of the gap net of the committed line, rounded UP to a whole 100 yuan (so it nets
+# at least the gap); the rest of the gap is carried on the committed line, whose cost is the funding cost
+ca_face = -(-(Y(210000) / (1 - bp(85))) // 100) * 100
+out["counter_a_discount"] = fen(ca_face * bp(85))
+ca_line_draw = Y(360000) - (ca_face - F(out["counter_a_discount"], 100))
+out["counter_a_total"] = out["counter_a_discount"] + fen(ca_line_draw * LINE_RATE * 32 / 365)
 # Counter B
 out["counter_b_price_adj_per_invoice"] = fen(Y(420000) * bp(45))
 
