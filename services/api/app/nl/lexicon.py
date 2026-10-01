@@ -81,6 +81,13 @@ STATUS = _re(r"\bstatus\b", r"\bposition\b", r"\bhow are we\b", r"\bhow'?s (?:ou
              r"\b(?:available|remaining|unused|undrawn)\s+(?:credit|headroom|facility|line)\b",
              r"(?:授信|额度|信用额度|贷款额度)[^，。?？]{0,10}(?:还剩|剩下|剩|还有|可用|能用|余额|多少)",
              r"(?:还剩|剩下|可用|能用)[^，。?？]{0,6}(?:额度|授信)")
+# "any alerts?", "what needs me today", 有什么提醒: the owner asks what needs them (SHOW_ALERTS, checked before the
+# status questions). It only reads the alerts; the cure runs on a later, direct "go ahead".
+ALERTS = _re(r"alerts?", r"notifications?", r"what needs (?:me|my attention|attention|doing|action)",
+             r"(?:anything|something) (?:needs?|requires?) (?:me|my attention|attention|action)",
+             r"anything (?:i|we) (?:should|need to|ought to|must|have to) (?:know|see|look at|handle|deal with|worry)",
+             r"what should i (?:know|look at|deal with|handle)", r"any(?:thing)? (?:news|warnings?)",
+             r"提醒", r"预警", r"告警", r"需要我(?:处理|关注|注意|看|决定)", r"有什么(?:需要|要)我", r"有什么(?:要紧|新情况|新消息)")
 # A question about the position ("are we close to breaching a covenant?", "会不会跌破储备线？"): it asks, so
 # it is SHOW_STATUS even when it names the reserve or a shortfall (checked before FUND).
 STATUS_QUESTION = _re(
