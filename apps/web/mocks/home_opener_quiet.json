@@ -1,20 +1,37 @@
 {
-  "session_id": "q",
-  "turn": 3,
-  "reply": "Nothing needs you today (day 0).",
+  "session_id": "rec-quiet-en",
+  "turn": 1,
+  "reply": "Day 0. On current books cash falls ¥240,000.00 below your ¥300,000.00 floor on day 12. I can draw ¥150,000.00 on Bank credit line now and finance ¥336,000.00 of invoice RCV-A on Invoice financing (onboarded platform) now; it will cost ¥2,994.08 by day 32, which is 10.2% a year for those 32 days. Go ahead?",
   "intent": "SHOW_ALERTS",
   "lang": "en",
-  "plan": [],
+  "plan": [
+    {
+      "step": 1,
+      "kind": "DRAW_FACILITY",
+      "description": "Draw ¥150,000.00 on FAC-LINE",
+      "status": "PROPOSED",
+      "op_id": null,
+      "condition": null
+    },
+    {
+      "step": 2,
+      "kind": "SUBMIT_INVOICE_FOR_FINANCING",
+      "description": "Submit RCV-A to FAC-IF for a ¥336,000.00 advance",
+      "status": "PROPOSED",
+      "op_id": null,
+      "condition": null
+    }
+  ],
   "verdict": null,
   "operations": [],
   "clarification": null,
-  "awaiting_confirmation": false,
+  "awaiting_confirmation": true,
   "amended": false,
   "replayed": false,
   "negotiation": null,
   "security_events": [],
   "parse_source": "opener",
-  "trace_id": "q:3",
+  "trace_id": "rec-quiet-en:1",
   "proactive": true,
-  "has_news": false
+  "has_news": true
 }

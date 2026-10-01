@@ -1,17 +1,6 @@
 {
-  "documents": [
-    {
-      "doc_id": "EX01B-msg",
-      "channel": "email",
-      "sender_id": "BUYER-1",
-      "received_day": 0,
-      "text": "1.2% for early settlement. Standard terms going forward: 60 days. And 1% on next quarter as a goodwill gesture.",
-      "parent_doc_id": null,
-      "filename": null
-    }
-  ],
   "offer": {
-    "offer_id": "OFF-EX01B",
+    "offer_id": "OFF-1559c5b525ed",
     "version": 1,
     "counterparty_id": "BUYER-1",
     "doc_ids": [
@@ -21,19 +10,19 @@
     "status": "COMPILED",
     "obligations": [
       {
-        "id": "OB-1",
+        "id": "OFF-1559c5b525ed-O1",
         "type": "IMMEDIATE_DISCOUNT",
         "counterparty_id": "BUYER-1",
         "rate_bp": 120,
         "amount_fen": null,
         "days_delta": null,
-        "effective_day": 2,
+        "target_terms_days": null,
+        "effective_day": null,
         "base": {
           "kind": "INVOICE",
-          "amount_fen": 42000000,
-          "receivable_id": "RCV-A",
-          "events_per_year": null,
-          "amount_display": "¥420,000.00"
+          "amount_fen": null,
+          "receivable_id": null,
+          "events_per_year": null
         },
         "contingency": "FIRM",
         "duration": {
@@ -49,25 +38,24 @@
             "text": "1.2% for early settlement"
           }
         ],
-        "confidence": 0.97,
+        "confidence": 0.9,
         "unresolved": [],
-        "rate_display": "1.20%",
-        "amount_display": null
+        "rate_display": "1.20%"
       },
       {
-        "id": "OB-2",
+        "id": "OFF-1559c5b525ed-O2",
         "type": "TERMS_EXTENSION",
         "counterparty_id": "BUYER-1",
         "rate_bp": null,
         "amount_fen": null,
-        "days_delta": 15,
-        "effective_day": 2,
+        "days_delta": null,
+        "target_terms_days": 60,
+        "effective_day": null,
         "base": {
           "kind": "FUTURE_INVOICES",
-          "amount_fen": 42000000,
+          "amount_fen": null,
           "receivable_id": null,
-          "events_per_year": null,
-          "amount_display": "¥420,000.00"
+          "events_per_year": null
         },
         "contingency": "FIRM",
         "duration": {
@@ -83,25 +71,25 @@
             "text": "Standard terms going forward: 60 days"
           }
         ],
-        "confidence": 0.94,
-        "unresolved": [],
-        "rate_display": null,
-        "amount_display": null
+        "confidence": 0.9,
+        "unresolved": [
+          "current_terms_days"
+        ]
       },
       {
-        "id": "OB-3",
+        "id": "OFF-1559c5b525ed-O3",
         "type": "CONTINGENT_REBATE",
         "counterparty_id": "BUYER-1",
         "rate_bp": 100,
         "amount_fen": null,
         "days_delta": null,
+        "target_terms_days": null,
         "effective_day": null,
         "base": {
           "kind": "PERIOD_PURCHASES",
-          "amount_fen": 40000000,
+          "amount_fen": null,
           "receivable_id": null,
-          "events_per_year": null,
-          "amount_display": "¥400,000.00"
+          "events_per_year": null
         },
         "contingency": "CONTINGENT",
         "duration": {
@@ -113,14 +101,13 @@
           {
             "doc_id": "EX01B-msg",
             "start": 70,
-            "end": 110,
-            "text": "1% on next quarter as a goodwill gesture"
+            "end": 88,
+            "text": "1% on next quarter"
           }
         ],
-        "confidence": 0.91,
+        "confidence": 0.9,
         "unresolved": [],
-        "rate_display": "1.00%",
-        "amount_display": null
+        "rate_display": "1.00%"
       }
     ],
     "abstentions": [],
@@ -128,6 +115,24 @@
     "authority_claims": [],
     "funding_claims": [],
     "compiler": "fixture-cache",
-    "prompt_version": "offer-v1"
-  }
+    "prompt_version": "offer-v4",
+    "autonomy_eligible": false,
+    "autonomy_notes": [
+      "a discount does not state its invoice amount",
+      "TERMS_EXTENSION leaves current_terms_days unresolved",
+      "a settlement date or window is stated but not read into the terms",
+      "text not read into the terms: 'settlement', 'standard', 'terms', 'going', 'forward', ..."
+    ]
+  },
+  "documents": [
+    {
+      "doc_id": "EX01B-msg",
+      "channel": "email",
+      "sender_id": "BUYER-1",
+      "received_day": 0,
+      "text": "1.2% for early settlement. Standard terms going forward: 60 days. And 1% on next quarter as a goodwill gesture.",
+      "parent_doc_id": null,
+      "filename": null
+    }
+  ]
 }

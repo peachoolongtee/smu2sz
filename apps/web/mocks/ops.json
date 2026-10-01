@@ -1,79 +1,82 @@
 {
-  "counter_a": {
-    "kind": "COUNTER_OFFER",
-    "tier": "TIER_1",
-    "requested_by": "AGENT",
-    "message": "Counter sent: Option A",
-    "summary": "Counter Option A to BUYER-1: 0.85% early pay on up to ¥211,900.00, 45-day terms, no rebate."
-  },
-  "counter_b": {
-    "kind": "COUNTER_OFFER",
-    "tier": "TIER_1",
-    "requested_by": "AGENT",
-    "message": "Counter sent: Option B",
-    "summary": "Counter Option B to BUYER-1: 60-day terms with a 0.45% price adjustment (¥1,890.00 per invoice)."
-  },
   "accept_a": {
     "kind": "ACCEPT_OFFER",
+    "status": "EXECUTED",
     "tier": "TIER_1",
     "requested_by": "AGENT",
-    "message": "Accepted: buyer agreed to Option A",
-    "summary": "Accepted Option A for OFF-EX01 v1, terms hash eff00bc3929a."
-  },
-  "record_commitment": {
-    "kind": "RECORD_COMMITMENT",
-    "tier": "TIER_1",
-    "requested_by": "SYSTEM",
-    "message": "Commitment CMT-1 recorded, expires day 7",
-    "summary": "Commitment CMT-1 with BUYER-1, nonce nonce-7f3a9c21, expires day 7."
+    "message": "Commitment CMT-ef495c17e67812f3 is ACTIVE; forward concession ¥0.00 booked",
+    "summary": "Commitment CMT-ef495c17e67812f3 is ACTIVE; forward concession ¥0.00 booked"
   },
   "draw_line": {
     "kind": "DRAW_FACILITY",
+    "status": "EXECUTED",
     "tier": "TIER_1",
     "requested_by": "AGENT",
-    "message": "Drew the committed credit line",
-    "summary": "Draw ¥150,000.00 on FAC-LINE (6.40%), repayment scheduled day 32."
+    "message": "Drew ¥149,901.15 on FAC-LINE on day 0",
+    "summary": "Drew ¥149,901.15 on FAC-LINE on day 0"
+  },
+  "draw_line_hard_line": {
+    "kind": "DRAW_FACILITY",
+    "status": "EXECUTED",
+    "tier": "TIER_1",
+    "requested_by": "AGENT",
+    "message": "Drew ¥150,000.00 on FAC-LINE on day 0",
+    "summary": "Drew ¥150,000.00 on FAC-LINE on day 0"
   },
   "submit_invoice": {
     "kind": "SUBMIT_INVOICE_FOR_FINANCING",
+    "status": "EXECUTED",
     "tier": "TIER_1",
     "requested_by": "AGENT",
-    "message": "Invoice submitted to the onboarded platform",
-    "summary": "Advance ¥210,000.00 on RCV-A via FAC-IF, repaid from the receipt on day 32."
+    "message": "Advance ¥210,000.00 on RCV-A from FAC-IF on day 0",
+    "summary": "Advance ¥210,000.00 on RCV-A from FAC-IF on day 0"
   },
-  "reject_sec": {
-    "kind": "REJECT_OFFER",
-    "tier": "TIER_1",
+  "request_approval": {
+    "kind": "APPLY_FOR_FACILITY",
+    "status": "PENDING_APPROVAL",
+    "tier": "TIER_2",
     "requested_by": "AGENT",
-    "message": "Rejected: UNKNOWN_COUNTERPARTY, UNEVIDENCED_PRIOR_CONCESSION, DATA_EXTRACTION_REFUSED",
-    "summary": "Rejected the FastCapital message; nothing booked, ¥0.00 moved."
+    "message": "Queued for owner approval (APR-000001): apply for facility FAC-ETL (¥600,000.00)",
+    "summary": "Queued for owner approval (APR-000001): apply for facility FAC-ETL (¥600,000.00)"
   },
   "borrower_file": {
     "kind": "GENERATE_BORROWER_FILE",
+    "status": "PENDING_APPROVAL",
     "tier": "TIER_2",
     "requested_by": "AGENT",
-    "message": "Prepared, not sent: waiting for owner approval",
-    "summary": "Borrower file for the ¥600,000.00 equipment term loan (FAC-ETL)."
+    "message": "Queued for owner approval (APR-000002): prepare the borrower file for FAC-ETL (prepared, not sent)",
+    "summary": "Queued for owner approval (APR-000002): prepare the borrower file for FAC-ETL (prepared, not sent)"
   },
-  "request_approval": {
-    "kind": "REQUEST_OWNER_APPROVAL",
-    "tier": "TIER_2",
-    "requested_by": "AGENT",
-    "message": "Owner approval requested",
-    "summary": "Approval needed: apply for the 36-month equipment term loan."
-  },
-  "apply_facility": {
+  "approve_apply_loan": {
     "kind": "APPLY_FOR_FACILITY",
+    "status": "EXECUTED",
     "tier": "TIER_2",
-    "requested_by": "OWNER",
-    "message": "Owner approved; application prepared",
-    "summary": "Owner-approved application for FAC-ETL, ¥600,000.00 over 36 months."
+    "requested_by": "AGENT",
+    "message": "Applied for ¥600,000.00 on FAC-ETL; it is PENDING and counts as zero until committed",
+    "summary": "Applied for ¥600,000.00 on FAC-ETL; it is PENDING and counts as zero until committed"
   },
-  "release_borrower_file": {
+  "approve_borrower_file": {
     "kind": "GENERATE_BORROWER_FILE",
+    "status": "EXECUTED",
     "tier": "TIER_2",
-    "requested_by": "OWNER",
-    "message": "Owner approved; file released for the owner to submit",
-    "summary": "Borrower file BF-1 released to the owner (not sent to the lender)."
+    "requested_by": "AGENT",
+    "message": "Borrower file for FAC-ETL authorised: prepared, not sent",
+    "summary": "Borrower file for FAC-ETL authorised: prepared, not sent"
+  },
+  "reject_apply_loan": {
+    "kind": "APPLY_FOR_FACILITY",
+    "status": "REFUSED",
+    "tier": "TIER_2",
+    "requested_by": "AGENT",
+    "message": "Declined by the owner (APR-000001); nothing executed",
+    "summary": "Declined by the owner (APR-000001); nothing executed"
+  },
+  "reject_borrower_file": {
+    "kind": "GENERATE_BORROWER_FILE",
+    "status": "REFUSED",
+    "tier": "TIER_2",
+    "requested_by": "AGENT",
+    "message": "Declined by the owner (APR-000002); nothing executed",
+    "summary": "Declined by the owner (APR-000002); nothing executed"
   }
 }

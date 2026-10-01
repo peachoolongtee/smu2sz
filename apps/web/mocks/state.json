@@ -1,5 +1,4 @@
 {
-  "scenario_id": "golden_sme",
   "state": {
     "org_id": "SME-1",
     "as_of": "2026-10-01",
@@ -45,7 +44,12 @@
         "terms_days": 45,
         "status": "OPEN",
         "confirmed": true,
-        "face_display": "¥420,000.00"
+        "settled_fen": 0,
+        "advance_fen": 0,
+        "advance_facility_id": null,
+        "face_display": "¥420,000.00",
+        "settled_display": "¥0.00",
+        "advance_display": "¥0.00"
       }
     ],
     "recurring_invoices": [
@@ -89,7 +93,7 @@
             "clean_down_days": null,
             "definition": "monthly EBITDA / scheduled debt service (principal + interest, all facilities)",
             "formula": "EBITDA_m / DS_m >= 1.25",
-            "threshold_display": "125.00%"
+            "threshold_display": "1.25×"
           },
           {
             "id": "FAC-LINE-LEV",
@@ -99,7 +103,7 @@
             "clean_down_days": null,
             "definition": "total debt / annualised EBITDA",
             "formula": "Debt_m / (12 x EBITDA_m) <= 2.5",
-            "threshold_display": "250.00%"
+            "threshold_display": "2.50×"
           },
           {
             "id": "FAC-LINE-CD",
@@ -108,14 +112,12 @@
             "threshold_bp": null,
             "clean_down_days": 30,
             "definition": "credit line at zero for 30 consecutive days each year",
-            "formula": "max run of days with balance = 0 >= 30",
-            "threshold_display": null
+            "formula": "max run of days with balance = 0 >= 30"
           }
         ],
         "source_note": "synthetic fixture (spec v2 §7.2)",
         "limit_display": "¥150,000.00",
         "drawn_display": "¥0.00",
-        "advance_rate_display": null,
         "rate_display": "6.40%",
         "upfront_fee_display": "0.00%"
       },
@@ -173,7 +175,6 @@
         "source_note": "available only while the buyer offers it",
         "limit_display": "¥420,000.00",
         "drawn_display": "¥0.00",
-        "advance_rate_display": null,
         "rate_display": "1.20%",
         "upfront_fee_display": "0.00%"
       },
@@ -202,7 +203,6 @@
         "source_note": "4.0% + 1.0% guarantee fee; needs the borrower file",
         "limit_display": "¥500,000.00",
         "drawn_display": "¥0.00",
-        "advance_rate_display": null,
         "rate_display": "5.00%",
         "upfront_fee_display": "0.00%"
       },
@@ -231,7 +231,6 @@
         "source_note": "secured on the financed equipment; 18 or 36 months",
         "limit_display": "¥600,000.00",
         "drawn_display": "¥0.00",
-        "advance_rate_display": null,
         "rate_display": "5.60%",
         "upfront_fee_display": "0.00%"
       },
@@ -260,7 +259,6 @@
         "source_note": "7.2% effective",
         "limit_display": "¥600,000.00",
         "drawn_display": "¥0.00",
-        "advance_rate_display": null,
         "rate_display": "7.20%",
         "upfront_fee_display": "0.00%"
       },
@@ -289,7 +287,6 @@
         "source_note": "≈0.58% p.a., 6-month 国股 bill (Aug 2026); no bills held in this fixture",
         "limit_display": "¥0.00",
         "drawn_display": "¥0.00",
-        "advance_rate_display": null,
         "rate_display": "0.58%",
         "upfront_fee_display": "0.00%"
       },
@@ -318,7 +315,6 @@
         "source_note": "Tier 3: reference line only",
         "limit_display": "¥0.00",
         "drawn_display": "¥0.00",
-        "advance_rate_display": null,
         "rate_display": "0.00%",
         "upfront_fee_display": "0.00%"
       }
@@ -392,7 +388,14 @@
     ],
     "monthly_ebitda_fen": 9000000,
     "state_version": 1,
+    "as_of_day": 0,
     "cash_display": "¥400,000.00",
     "monthly_ebitda_display": "¥90,000.00"
+  },
+  "scenario_id": "golden_sme",
+  "day": 0,
+  "cash": {
+    "fen": 40000000,
+    "text": "¥400,000.00"
   }
 }

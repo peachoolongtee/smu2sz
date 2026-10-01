@@ -13,7 +13,7 @@
       "kind": "RESERVE_BREACH_AHEAD",
       "severity": "CRITICAL",
       "title": "Reserve breach ahead on day 42",
-      "detail": "Projected cash closes at ¥100,000.00 on day 42, ¥200,000.00 below the reserve floor; the gap peaks at ¥200,000.00 on day 42 and lasts to day 46. A committed cure exists: SUBMIT_INVOICE_FOR_FINANCING FAC-IF ¥200,000.00.",
+      "detail": "Projected cash closes at ¥100,000.00 on day 42, ¥200,000.00 below the reserve floor; the gap peaks at ¥200,000.00 on day 42 and lasts to day 46. A committed cure exists: SUBMIT_INVOICE_FOR_FINANCING FAC-IF ¥200,000.00, cost ¥1,782.19 (25.0% a year for 13 days).",
       "formula": "shortfall = floor − closing_d: ¥300,000.00 − ¥100,000.00 = ¥200,000.00 (day 42); max over days 42..46 = ¥200,000.00",
       "day": 42,
       "month": null,
@@ -26,7 +26,10 @@
         "closing": "¥100,000.00",
         "last_day": "46",
         "worst_day": "42",
-        "max_shortfall": "¥200,000.00"
+        "max_shortfall": "¥200,000.00",
+        "cure_end_day_0": "47",
+        "cure_cost": "¥1,782.19",
+        "cure_above_apr_cap": "true"
       },
       "suggested": [
         {
@@ -37,8 +40,18 @@
           "offer_id": null,
           "amount_fen": 20000000,
           "note": "submit today: the invoice is open, buyer-confirmed and not yet due",
+          "cost_fen": 178219,
+          "cost_days": 13,
+          "annual_rate": {
+            "num": 13009987,
+            "den": 52000000,
+            "text": "0.25"
+          },
+          "cost_formula": "¥1,782.19 / ¥200,000.00 × 365/13 = 25.0% a year",
+          "above_apr_cap": true,
           "executes_automatically": false,
-          "amount_display": "¥200,000.00"
+          "amount_display": "¥200,000.00",
+          "cost_display": "¥1,782.19"
         }
       ],
       "actionable": true,
@@ -73,6 +86,11 @@
           "offer_id": null,
           "amount_fen": 20810000,
           "note": "chase the buyer; record the receipt when the money lands",
+          "cost_fen": null,
+          "cost_days": null,
+          "annual_rate": null,
+          "cost_formula": "",
+          "above_apr_cap": false,
           "executes_automatically": false,
           "amount_display": "¥208,100.00"
         }

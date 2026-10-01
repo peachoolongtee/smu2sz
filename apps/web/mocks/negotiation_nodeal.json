@@ -1,34 +1,67 @@
 {
-  "offer_id": "OFF-EX01",
+  "offer_id": "OFF-f806f79b6c21",
   "outcome": "NO_DEAL",
   "rounds": [
     {
       "round": 1,
-      "counter_id": "CTR-A",
+      "counter_id": "CTR-6cf1543f0dde",
       "counter_label": "Option A",
       "buyer_response": "REFUSE",
-      "buyer_text": "We cannot accept these terms."
+      "buyer_text": "Round 1. We have considered Option A and cannot accept as proposed. We propose: early settlement of invoice RCV-A (¥420,000.00) on day 2 at a 1.15% discount; 60-day payment terms on future invoices; a 0.50% rebate on next quarter's purchases of up to ¥400,000.00."
     },
     {
       "round": 2,
-      "counter_id": "CTR-B",
+      "counter_id": "CTR-6576b0a62cbf",
       "counter_label": "Option B",
       "buyer_response": "REFUSE",
-      "buyer_text": "We cannot accept these terms either."
+      "buyer_text": "Round 2. We have considered Option B and cannot accept as proposed. We propose: early settlement of invoice RCV-A (¥420,000.00) on day 2 at a 1.10% discount; 60-day payment terms on future invoices."
     },
     {
       "round": 3,
-      "counter_id": "CTR-A",
-      "counter_label": "Option A (final)",
+      "counter_id": "CTR-6cf1543f0dde",
+      "counter_label": "Option A",
       "buyer_response": "REFUSE",
-      "buyer_text": "We are unable to proceed."
+      "buyer_text": "Round 3. We cannot accept Option A. This is our final round, so we will keep our existing terms."
     }
   ],
   "accepted_counter_id": null,
   "commitment": null,
-  "operations": [],
+  "operations": [
+    {
+      "op_id": "fund-OFF-f806f79b6c21-hard_line-0",
+      "kind": "DRAW_FACILITY",
+      "status": "EXECUTED",
+      "tier": "TIER_1",
+      "violations": [],
+      "seq": 1,
+      "entry_hash": "3a58b1c3a966bc84e131779acc8606e389118068402a963f545ca955cf9e4dd0",
+      "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+      "effective_day": 0,
+      "approval_id": null,
+      "message": "Drew ¥150,000.00 on FAC-LINE on day 0",
+      "day": 0,
+      "requested_by": null,
+      "summary": "Drew ¥150,000.00 on FAC-LINE on day 0"
+    },
+    {
+      "op_id": "fund-OFF-f806f79b6c21-hard_line-1",
+      "kind": "SUBMIT_INVOICE_FOR_FINANCING",
+      "status": "EXECUTED",
+      "tier": "TIER_1",
+      "violations": [],
+      "seq": 2,
+      "entry_hash": "a6c82c99b0d0147a711cef5d9923985b69c44f0ec957785d475a670a27180e14",
+      "prev_hash": "3a58b1c3a966bc84e131779acc8606e389118068402a963f545ca955cf9e4dd0",
+      "effective_day": 0,
+      "approval_id": null,
+      "message": "Advance ¥210,000.00 on RCV-A from FAC-IF on day 0",
+      "day": 0,
+      "requested_by": null,
+      "summary": "Advance ¥210,000.00 on RCV-A from FAC-IF on day 0"
+    }
+  ],
   "plan": {
-    "id": "PLAN-S2",
+    "id": "PLAN-COM-1ec49ce46f15",
     "basis": "COMMITTED",
     "need_fen": 36000000,
     "actions": [
@@ -40,8 +73,7 @@
         "receivable_id": null,
         "repay_day": 32,
         "rate_bp": null,
-        "amount_display": "¥150,000.00",
-        "rate_display": null
+        "amount_display": "¥150,000.00"
       },
       {
         "kind": "FINANCE_INVOICE",
@@ -49,33 +81,25 @@
         "day": 0,
         "amount_fen": 21000000,
         "receivable_id": "RCV-A",
-        "repay_day": 32,
+        "repay_day": null,
         "rate_bp": null,
-        "amount_display": "¥210,000.00",
-        "rate_display": null
+        "amount_display": "¥210,000.00"
       }
     ],
     "costs": [
       {
-        "label": "Credit line interest (32 days)",
+        "label": "Bank credit line: draw ¥150,000.00, repaid day 32",
         "fen": 84164,
         "facility_id": "FAC-LINE",
-        "formula": "¥150,000.00 × 6.40% × 32 / 365 = ¥841.64",
+        "formula": "150,000.00 × 6.4% × 32/365 = 841.64",
         "display": "¥841.64"
       },
       {
-        "label": "Invoice financing interest (one 30-day period)",
-        "fen": 134630,
+        "label": "Invoice financing (onboarded platform): advance ¥210,000.00 on RCV-A",
+        "fen": 187130,
         "facility_id": "FAC-IF",
-        "formula": "¥210,000.00 × 7.80% × 30 / 365 = ¥1,346.30",
-        "display": "¥1,346.30"
-      },
-      {
-        "label": "Invoice financing fee (0.25% per advance)",
-        "fen": 52500,
-        "facility_id": "FAC-IF",
-        "formula": "¥210,000.00 × 0.25% = ¥525.00",
-        "display": "¥525.00"
+        "formula": "210,000.00 × 7.8% × 30/365 (29 days billed as 1 × 30-day period) = 1,346.30; 210,000.00 × 0.25% × 1 = 525.00; total ¥1,871.30",
+        "display": "¥1,871.30"
       }
     ],
     "total_cost_fen": 271294,
@@ -89,34 +113,35 @@
     "marginal_facility_id": "FAC-IF",
     "rejected": [
       {
-        "label": "Take the full 1.2% early-pay discount on ¥420,000.00",
+        "label": "Discount the whole invoice at 1.2%",
         "reasons": [],
-        "note": "Admissible, but costs ¥5,040.00: more than the router plan."
+        "note": "cost ¥5,040.00; admissible but dearer than the selected plan"
       },
       {
-        "label": "v1 optimum: credit line plus a partial early pay at 1.2%",
+        "label": "Line + early payment on part of the invoice at 1.2%",
         "reasons": [],
-        "note": "Admissible, but costs ¥3,392.25 (¥2,550.61 discount + ¥841.64 line interest)."
+        "note": "cost ¥3,392.25; admissible but dearer than the selected plan"
       },
       {
-        "label": "Guaranteed working-capital loan (FAC-GGL)",
+        "label": "Line + guaranteed loan",
         "reasons": [
           "UNCOMMITTED_FACILITY",
           "LEAD_TIME_TOO_LONG"
         ],
-        "note": "NOT_APPLIED counts as zero, and 21 days to cash lands after payroll on day 12."
+        "note": "not applied; cash on day 21, gap opens on day 12"
       },
       {
-        "label": "Credit line alone (¥150,000.00)",
+        "label": "Line only",
         "reasons": [
           "RESERVE_BREACH"
         ],
-        "note": "Leaves cash below the ¥300,000.00 floor on day 12."
+        "note": "cost ¥841.64; RESERVE_BREACH on day 12"
       }
     ],
-    "label": "Credit line + invoice financing",
+    "label": "committed plan: ¥841.64 + ¥1,871.30 = ¥2,712.94",
     "need_display": "¥360,000.00",
     "total_cost_display": "¥2,712.94"
   },
-  "message": "NO DEAL after 3 rounds. The router's committed plan already covers the ¥360,000.00 gap, so the business is not exposed."
+  "message": "NO DEAL after bounded rounds; the Debt Desk funds the near-term gap.",
+  "transcript_hash": "be281cee61257b922f4b2db66e312fbb0740cb588cc0295591bfc35ce3a81776"
 }

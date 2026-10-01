@@ -1,0 +1,301 @@
+// Records apps/web/mocks/*.json from a running API. Run: pnpm mocks:record   (or: node scripts/record-mocks.mjs --api http://localhost:8011)
+//
+//   cd services/api && TERMSLEDGER_NO_DOTENV=1 DATABASE_URL=memory LLM_MODE=cache PYTHONUTF8=1 uv run uvicorn app.main:app --port 8011
+//
+// Mock-authoring tooling only (never imported by the app). It resets the books and replays the sequences the demo
+// stepper (lib/demo.ts), the pages and the chat (lib/chat-prompts.ts) perform, through the SAME client code the browser
+// uses in live mode (lib/api.ts -> lib/live/*.ts, loaded straight from the TypeScript by Node's type stripping through
+// scripts/ts-resolve-hook.mjs), so every file holds exactly what the live adapters hand to the pages. Nothing here
+// computes, formats or edits money: a mock file is the API's own answer.
+//
+// Output is deterministic: API key order, 2-space indent, trailing newline. The only values changed after recording are
+// listed under NORMALISED below.
+//
+// NORMALISED (the API returns these differently on every run; everything else, including hashes and ids, is kept):
+//   - whatif_presets.json: every entry's `compute_ms` -> 0 and `cached` -> false (timing and cache state of the call).
+//   - the commitment id (CMT-<16 hex>) and its nonce, which the API draws at random for every deal: replaced by one fixed
+//     id and nonce wherever they appear (negotiation_accept.json, ops.json, home_act.json, home_goahead.json).
+//   - the entry_hash / prev_hash of the operations in negotiation_accept.json, home_act.json and home_goahead.json: the
+//     server's chain includes that commitment id, so it differs on every run. They are re-derived (sha256 over the op's
+//     own seq, id, kind, status and the previous hash) so the chain stays internally consistent and repeatable. Hashes in
+//     every other file (the chat script, for one) are deterministic and are kept exactly as recorded.
+// Verified by running the recorder twice on two fresh APIs: `git status --short apps/web/mocks` is empty.
+
+import { createHash } from "node:crypto";
+import { register } from "node:module";
+import { mkdirSync, writeFileSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const here = dirname(fileURLToPath(import.meta.url));
+
+function arg(name, fallback) {
+  const i = process.argv.indexOf(name);
+  return i >= 0 && process.argv[i + 1] ? process.argv[i + 1] : fallback;
+}
+if (process.argv.includes("--help")) {
+  console.log("usage: node scripts/record-mocks.mjs [--api http://localhost:8011] [--out apps/web/mocks]\n(start the API first, see the header of this file; never use port 8000)");
+  process.exit(0);
+}
+const API = arg("--api", "http://localhost:8011").replace(/\/+$/, "");
+const OUT = resolve(arg("--out", join(here, "..", "mocks")));
+const OWNER_TOKEN = "demo-owner-token";
+const BANK = { "X-Agent-Key": "demo-agent-key", "X-Bank-Feed-Key": "demo-bank-feed-key" };
+
+register("./ts-resolve-hook.mjs", import.meta.url);
+process.env.NEXT_PUBLIC_API_URL = API;
+process.env.NEXT_PUBLIC_API_MODE = "live";
+const { setOwnerToken } = await import("../lib/auth.ts");
+const { live } = await import("../lib/live/index.ts");
+const { DEMO_STEPS, runBorrowerFile, runCapex } = await import("../lib/demo.ts");
+const { demoStore, clearDemo } = await import("../lib/demo-store.ts");
+const { promptsFor } = await import("../lib/chat-prompts.ts");
+setOwnerToken(OWNER_TOKEN);
+
+mkdirSync(OUT, { recursive: true });
+const written = [];
+function write(name, value) {
+  writeFileSync(join(OUT, name), JSON.stringify(value, null, 2) + "\n");
+  written.push(name);
+}
+const step = (id) => DEMO_STEPS.find((s) => s.id === id);
+const demo = () => demoStore.get();
+
+/** An operation as the mock ledger replays it: what the server said, without the position in the chain. */
+function template(op) {
+  return { kind: op.kind, status: op.status, tier: op.tier, requested_by: op.requested_by, message: op.message, summary: op.summary };
+}
+async function ledgerTail(n) {
+  return (await live.getLedger()).operations.slice(-n);
+}
+async function reset() {
+  await live.demoReset();
+  clearDemo();
+}
+
+// ------------------------------------------------------------------ the demo stepper, in order, snapshotting after each step
+const ops = {};
+const files = {};
+
+await reset();
+files["state.json"] = await live.getState();
+files["mandate.json"] = await live.getMandate();
+// Opening books: the alerts and reconciliation the owner sees before anything happens.
+files["alerts.json"] = await live.getAlerts();
+files["reconciliation.json"] = await live.getReconciliation();
+
+let verdictEx01 = null;
+for (const s of DEMO_STEPS) {
+  await s.run();
+  const d = demo();
+  if (s.id === "inbox") files["offer_ex01.json"] = d.offers[d.offerId];
+  if (s.id === "trajectory") {
+    verdictEx01 = d.verdicts[d.offerId];
+    files["verdict_ex01.json"] = verdictEx01;
+    // The trajectory page: the position with the offer applied (conservative decides) and the position today (expected).
+    files["trajectory_conservative.json"] = await live.getTrajectory("CONSERVATIVE", verdictEx01);
+    files["trajectory_expected.json"] = await live.getTrajectory("EXPECTED", verdictEx01);
+  }
+  if (s.id === "funding") files["funding.json"] = d.funding;
+  if (s.id === "negotiate") {
+    files["negotiation_accept.json"] = d.negotiations[d.offerId];
+    const [accept, draw] = await ledgerTail(2);
+    ops.accept_a = template(accept);
+    ops.draw_line = template(draw);
+  }
+  if (s.id === "walk") {
+    files["offer_ex01b.json"] = d.offers[d.rewordedId];
+    files["verdict_ex01b.json"] = d.verdicts[d.rewordedId];
+    files["negotiation_nodeal.json"] = d.negotiations[d.offerId];
+    const [draw, invoice] = await ledgerTail(2);
+    ops.draw_line_hard_line = template(draw);
+    ops.submit_invoice = template(invoice);
+  }
+  if (s.id === "capex") {
+    files["capex.json"] = d.capex;
+    ops.request_approval = template((await ledgerTail(1))[0]);
+    files["approvals_seed.json"] = { apply_loan: (await live.getApprovals())[0] };
+  }
+  if (s.id === "approval") {
+    files["borrower_file.json"] = d.borrowerFile;
+    ops.borrower_file = template((await ledgerTail(1))[0]);
+    files["approvals_seed.json"].borrower_file = (await live.getApprovals())[1];
+  }
+  if (s.id === "fastcapital") {
+    const sec = Object.values(d.offers).find((o) => o.offer.counterparty_id !== "BUYER-1");
+    files["offer_sec.json"] = sec;
+    files["verdict_sec.json"] = d.verdicts[sec.offer.offer_id];
+    files["audit_sec.json"] = await live.getAudit();
+  }
+}
+
+// ------------------------------------------------------------------ the owner's decisions in the approval queue (ledger rows)
+async function queueTwo() {
+  await reset();
+  await runCapex();
+  await runBorrowerFile();
+  return live.getApprovals();
+}
+let q = await queueTwo();
+await live.decideApproval(q[0].id, "APPROVE");
+await live.decideApproval(q[1].id, "APPROVE");
+let tail = await ledgerTail(2);
+ops.approve_apply_loan = template(tail[0]);
+ops.approve_borrower_file = template(tail[1]);
+q = await queueTwo();
+await live.decideApproval(q[0].id, "REJECT");
+await live.decideApproval(q[1].id, "REJECT");
+tail = await ledgerTail(2);
+ops.reject_apply_loan = template(tail[0]);
+ops.reject_borrower_file = template(tail[1]);
+files["ops.json"] = ops;
+
+// ------------------------------------------------------------------ a typed offer (no server fixture): early payment inside every limit
+await reset();
+const typed = await live.submitOffer({
+  counterparty_id: "BUYER-1",
+  documents: [
+    { doc_id: "ACC-msg", channel: "chat", sender_id: "BUYER-1", received_day: 0, text: "We will pay the full ¥420,000 invoice early at 0.5%." },
+  ],
+});
+files["offer_accept.json"] = typed;
+files["verdict_accept.json"] = await live.evaluateOffer(typed.offer.offer_id);
+
+// ------------------------------------------------------------------ what-if: the presets and a coarse grid, on the opening books
+await reset();
+{
+  const first = await live.whatIf({ terms_days: 60, discount_bp: 120, rebate_bp: 100, price_adjustment_bp: 0, settle_face_fen: null });
+  const controls = first.controls;
+  const asked = [];
+  const seen = new Set();
+  const add = (id, params) => {
+    const k = JSON.stringify(params);
+    if (!seen.has(k)) {
+      seen.add(k);
+      asked.push({ id, params });
+    }
+  };
+  for (const [key, p] of Object.entries(controls.presets)) {
+    add(key, { terms_days: p.terms_days, discount_bp: p.discount_bp, rebate_bp: p.rebate_bp, price_adjustment_bp: p.price_adjustment_bp, settle_face_fen: p.settle_face_fen });
+  }
+  for (const t of [30, 45, 60, 90]) for (const d of [0, 120]) for (const r of [0, 100]) add(`t${t}_d${d}_r${r}`, { terms_days: t, discount_bp: d, rebate_bp: r, price_adjustment_bp: 0, settle_face_fen: null });
+  const entries = [];
+  for (const a of asked) {
+    const { controls: _c, ...result } = await live.whatIf(a.params);
+    void _c;
+    entries.push({ id: a.id, params: result.params ?? a.params, result: { ...result, compute_ms: 0, cached: false } });
+  }
+  files["whatif_presets.json"] = { source: "recorded from POST /whatif on the opening books (scripts/record-mocks.mjs)", controls, entries };
+}
+
+// ------------------------------------------------------------------ the home: deal, receipt on day 2, clock to day 34 (as scripts/demo_run.py)
+async function bankReceipt() {
+  const recon = await live.getReconciliation();
+  const promised = recon.promised[0];
+  const mandate = await live.getMandate();
+  const res = await fetch(`${API}/operations`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-Owner-Token": OWNER_TOKEN, ...BANK },
+    body: JSON.stringify({
+      kind: "RECEIVE_PAYMENT",
+      op_id: "rec-receipt-1",
+      idempotency_key: "rec-receipt-1",
+      mandate_version: mandate.mandate.version,
+      requested_by: "SYSTEM",
+      receivable_id: promised.receivable_id,
+      amount_fen: promised.expected_fen,
+    }),
+  });
+  if (!res.ok) throw new Error(`bank receipt failed: ${res.status} ${await res.text()}`);
+}
+async function toDay34() {
+  await reset();
+  await step("inbox").run();
+  await step("trajectory").run();
+  await step("negotiate").run();
+  await live.advanceClock(2);
+  await bankReceipt();
+  await live.advanceClock(28);
+  await live.advanceClock(4);
+}
+await reset();
+files["home_opener_quiet.json"] = await live.nlOpener("rec-quiet-en", "en");
+files["home_opener_quiet_zh.json"] = await live.nlOpener("rec-quiet-zh", "zh");
+
+await toDay34();
+files["home_alerts_day34.json"] = await live.getAlerts();
+const reserve = files["home_alerts_day34.json"].alerts.find((a) => a.id.startsWith("ALERT-RESERVE") && a.actionable);
+if (!reserve) throw new Error("no actionable reserve alert on day 34: the demo path has changed");
+files["home_opener_day34.json"] = await live.nlOpener("rec-home-en", "en");
+files["home_opener_day34_zh.json"] = await live.nlOpener("rec-home-zh", "zh");
+files["home_act.json"] = await live.actOnAlert(reserve.id);
+files["home_alerts_after.json"] = await live.getAlerts();
+files["home_opener_after_act.json"] = await live.nlOpener("rec-home-after", "en");
+
+await toDay34();
+await live.nlOpener("rec-home-go", "en");
+files["home_goahead.json"] = await live.nl({ session_id: "rec-home-go", actor: "OWNER", text: "go ahead" });
+
+// ------------------------------------------------------------------ the chat: every scripted text the mock knows, one conversation each
+const P = (role, lang, id) => promptsFor(role, lang).find((p) => p.id === id);
+const o = (lang, id) => P("OWNER", lang, id).text;
+const b = (lang, id) => P("COUNTERPARTY", lang, id);
+
+/** [conversation, role, counterparty, turns: [script key or null (setup only), text]] */
+const CONVERSATIONS = [
+  ["ex01-go", "OWNER", null, [["evaluate_ex01", o("en", "evaluate")], ["negotiate_ex01", "go ahead"]]],
+  ["ex01-cancel", "OWNER", null, [[null, o("en", "evaluate")], ["cancel", "cancel"]]],
+  ["ex01-why", "OWNER", null, [[null, o("en", "evaluate")], ["explain_en", o("en", "why")]]],
+  ["ex01-why-zh", "OWNER", null, [[null, o("zh", "evaluate")], ["explain_zh", o("zh", "why")]]],
+  ["goal-go", "OWNER", null, [["goal", o("en", "goal")], ["goal_go", "go ahead"]]],
+  ["goal-08", "OWNER", null, [[null, o("en", "goal")], ["amend_08", o("en", "amend")]]],
+  ["goal-1", "OWNER", null, [[null, o("en", "goal")], ["amend_1_refused", "actually make it 1%"]]],
+  ["goal-fin", "OWNER", null, [[null, o("en", "goal")], ["amend_fin", "actually use invoice financing instead"]]],
+  ["goal-go-zh", "OWNER", null, [["goal_zh", o("zh", "goal")], ["goal_go_zh", "执行"]]],
+  ["goal-08-zh", "OWNER", null, [[null, o("zh", "goal")], ["amend_08_zh", o("zh", "amend")]]],
+  ["ex01-go-zh", "OWNER", null, [["evaluate_ex01_zh", o("zh", "evaluate")], ["negotiate_ex01_zh", "执行"]]],
+  ["fund", "OWNER", null, [["fund_gap", o("en", "fund")]]],
+  ["fund-zh", "OWNER", null, [["fund_gap_zh", o("zh", "fund")]]],
+  ["status", "OWNER", null, [["status", o("en", "status")]]],
+  ["status-zh", "OWNER", null, [["status_zh", o("zh", "status")]]],
+  ["vague", "OWNER", null, [["clarify_cash", o("en", "vague")]]],
+  ["vague-zh", "OWNER", null, [["clarify_cash_zh", o("zh", "vague")]]],
+  ["approve", "OWNER", null, [["approve_none", o("en", "approve")]]],
+  ["approve-zh", "OWNER", null, [["approve_none_zh", o("zh", "approve")]]],
+  ["scope", "OWNER", null, [["out_of_scope", "Tell me a joke about the weather."]]],
+  ["tier3", "OWNER", null, [["tier3", "Sign a personal guarantee for the bank loan."]]],
+  ["buyer-fastcapital", "COUNTERPARTY", b("en", "fastcapital").counterparty, [["fastcapital", b("en", "fastcapital").text]]],
+  ["buyer-ex02", "COUNTERPARTY", b("en", "ex02").counterparty, [["buyer_ex02", b("en", "ex02").text]]],
+  ["buyer-rebate", "COUNTERPARTY", b("en", "rebate").counterparty, [["buyer_rebate", b("en", "rebate").text]]],
+  ["buyer-extraction", "COUNTERPARTY", b("en", "extraction").counterparty, [["buyer_extraction", b("en", "extraction").text]]],
+  ["buyer-extraction-zh", "COUNTERPARTY", b("zh", "extraction").counterparty, [["buyer_extraction_zh", b("zh", "extraction").text]]],
+  ["buyer-injection-zh", "COUNTERPARTY", b("zh", "injection").counterparty, [["buyer_injection_zh", b("zh", "injection").text]]],
+];
+// The order of the keys in the file (the mock looks them up by name; the order only keeps the file diffable).
+const KEY_ORDER = [
+  "evaluate_ex01", "negotiate_ex01", "cancel", "explain_en", "explain_zh", "goal", "goal_go", "amend_08", "amend_1_refused", "amend_fin",
+  "fund_gap", "status", "clarify_cash", "clarify_cash_zh", "amend_08_zh", "goal_zh", "goal_go_zh", "evaluate_ex01_zh", "negotiate_ex01_zh",
+  "fund_gap_zh", "status_zh", "approve_none_zh", "approve_none", "out_of_scope", "tier3", "fastcapital", "buyer_ex02", "buyer_extraction",
+  "buyer_extraction_zh", "buyer_injection_zh", "buyer_rebate",
+];
+const script = {};
+for (const [conv, role, counterparty, turns] of CONVERSATIONS) {
+  await live.demoReset();
+  for (const [key, text] of turns) {
+    const r = await live.nl({
+      session_id: `rec-${conv}`,
+      actor: role,
+      counterparty_id: role === "COUNTERPARTY" ? counterparty : undefined,
+      text,
+    });
+    if (key) script[key] = r;
+  }
+}
+const missing = KEY_ORDER.filter((k) => !(k in script));
+if (missing.length || Object.keys(script).length !== KEY_ORDER.length) throw new Error(`nl script keys do not match: missing ${missing.join(", ")}`);
+files["nl_script.json"] = Object.fromEntries(KEY_ORDER.map((k) => [k, script[k]]));
+
+await live.demoReset();
+
+for (const name of Object.keys(files).sort()) write(name, files[name]);
+console.log(`recorded ${written.length} files into ${OUT} from ${API}`);

@@ -1,39 +1,33 @@
 {
-  "offer_id": "OFF-EX01",
+  "offer_id": "OFF-f806f79b6c21",
   "outcome": "DEAL",
   "rounds": [
     {
       "round": 1,
-      "counter_id": "CTR-A",
+      "counter_id": "CTR-6cf1543f0dde",
       "counter_label": "Option A",
       "buyer_response": "ACCEPT",
-      "buyer_text": "Option A works for us."
+      "buyer_text": "Round 1. We accept Option A as proposed."
     }
   ],
-  "accepted_counter_id": "CTR-A",
+  "accepted_counter_id": "CTR-6cf1543f0dde",
   "commitment": {
-    "id": "CMT-1",
-    "offer_id": "OFF-EX01",
+    "id": "CMT-ef495c17e67812f3",
+    "offer_id": "OFF-f806f79b6c21",
     "offer_version": 1,
     "counterparty_id": "BUYER-1",
-    "verdict_id": "VRD-EX01",
-    "terms_hash": "eff00bc3929afc5e88c3e982519983c6dbbdc308170a52726fb05358989d4e9b",
+    "verdict_id": "VER-a4d828a7825e",
+    "terms_hash": "967aa05f00a80b603139fe775dfa0101850e7e912131f5b1e23d2f6879c100d5",
     "obligations": [
       {
+        "id": "CTR-6cf1543f0dde-O2",
+        "type": "IMMEDIATE_DISCOUNT",
         "counterparty_id": "BUYER-1",
         "rate_bp": 85,
         "amount_fen": null,
         "days_delta": null,
+        "target_terms_days": null,
         "effective_day": 2,
-        "contingency": "FIRM",
-        "duration": {
-          "kind": "ONE_OFF",
-          "invoices": null,
-          "end_day": null
-        },
-        "unresolved": [],
-        "confidence": 1,
-        "type": "IMMEDIATE_DISCOUNT",
         "base": {
           "kind": "INVOICE",
           "amount_fen": 21190000,
@@ -41,27 +35,111 @@
           "events_per_year": null,
           "amount_display": "¥211,900.00"
         },
+        "contingency": "FIRM",
+        "duration": {
+          "kind": "ONE_OFF",
+          "invoices": null,
+          "end_day": null
+        },
         "spans": [
           {
-            "doc_id": "CTR-A",
-            "start": 0,
-            "end": 216,
-            "text": "Thank you for the proposal. We can agree to settle up to ¥211,900 of the ¥420,000 invoice early at 0.85%, with payment on day 2, and keep your standard terms at 45 days. We are not able to offer the quarterly rebate."
+            "doc_id": "CTR-6cf1543f0dde",
+            "start": 34,
+            "end": 109,
+            "text": "We will accept early settlement on up to ¥211,900 of this invoice at 0.85%."
           }
         ],
-        "id": "CTR-A-OB1",
-        "rate_display": "0.85%",
-        "amount_display": null
+        "confidence": 1,
+        "unresolved": [],
+        "rate_display": "0.85%"
       }
     ],
-    "status": "ACCEPTED",
-    "nonce": "nonce-7f3a9c21",
+    "status": "ACTIVE",
+    "nonce": "f8aebc1753c1caf9802aee43f0de9213",
     "expires_day": 7,
     "mandate_version": 1,
     "forward_value_fen": 0,
     "forward_value_display": "¥0.00"
   },
-  "operations": [],
-  "plan": null,
-  "message": "The buyer accepted Option A in round 1. The commitment is recorded with a nonce and an expiry."
+  "operations": [
+    {
+      "op_id": "accept-CMT-ef495c17e67812f3",
+      "kind": "ACCEPT_OFFER",
+      "status": "EXECUTED",
+      "tier": "TIER_1",
+      "violations": [],
+      "seq": 1,
+      "entry_hash": "abf1ecfce74d736695a3f50e1592e89b36fa68267509181dbcd8635d196df6c5",
+      "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+      "effective_day": 0,
+      "approval_id": null,
+      "message": "Commitment CMT-ef495c17e67812f3 is ACTIVE; forward concession ¥0.00 booked",
+      "day": 0,
+      "requested_by": null,
+      "summary": "Commitment CMT-ef495c17e67812f3 is ACTIVE; forward concession ¥0.00 booked"
+    },
+    {
+      "op_id": "fund-OFF-f806f79b6c21-cooperative-0",
+      "kind": "DRAW_FACILITY",
+      "status": "EXECUTED",
+      "tier": "TIER_1",
+      "violations": [],
+      "seq": 2,
+      "entry_hash": "1ce1fb50124abe23fa168cb50391624518a7dee1d881cf5297d15ca2c6700c15",
+      "prev_hash": "abf1ecfce74d736695a3f50e1592e89b36fa68267509181dbcd8635d196df6c5",
+      "effective_day": 0,
+      "approval_id": null,
+      "message": "Drew ¥149,901.15 on FAC-LINE on day 0",
+      "day": 0,
+      "requested_by": null,
+      "summary": "Drew ¥149,901.15 on FAC-LINE on day 0"
+    }
+  ],
+  "plan": {
+    "id": "PLAN-COM-f54179c4dab9",
+    "basis": "COMMITTED",
+    "need_fen": 14990115,
+    "actions": [
+      {
+        "kind": "DRAW",
+        "facility_id": "FAC-LINE",
+        "day": 0,
+        "amount_fen": 14990115,
+        "receivable_id": null,
+        "repay_day": 32,
+        "rate_bp": null,
+        "amount_display": "¥149,901.15"
+      }
+    ],
+    "costs": [
+      {
+        "label": "Bank credit line: draw ¥149,901.15, repaid day 32",
+        "fen": 84109,
+        "facility_id": "FAC-LINE",
+        "formula": "149,901.15 × 6.4% × 32/365 = 841.09",
+        "display": "¥841.09"
+      }
+    ],
+    "total_cost_fen": 84109,
+    "admissible": true,
+    "violations": [],
+    "marginal_cost_annual": {
+      "num": 1301,
+      "den": 12000,
+      "text": "0.11"
+    },
+    "marginal_facility_id": "FAC-IF",
+    "rejected": [
+      {
+        "label": "Discount the whole invoice at 1.2%",
+        "reasons": [],
+        "note": "cost ¥2,497.20; admissible but dearer than the selected plan"
+      }
+    ],
+    "label": "committed plan: ¥841.09",
+    "need_display": "¥149,901.15",
+    "total_cost_display": "¥841.09"
+  },
+  "message": "CTR-6cf1543f0dde accepted; commitment recorded; remaining gap funded.",
+  "transcript_hash": "6e879b3b6637abaa7578f63f99a370ddd4a9bbd6c0201f190c0e1d3ba81ec69a"
 }

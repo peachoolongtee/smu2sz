@@ -1,20 +1,37 @@
 {
-  "session_id": "q",
-  "turn": 4,
-  "reply": "今天（第 0 天）没有需要您处理的事项。",
+  "session_id": "rec-quiet-zh",
+  "turn": 1,
+  "reply": "第 0 天。 按现有账目，第 12 天现金将比 ¥300,000.00 的储备线低 ¥240,000.00。 我可以立即从 Bank credit line 提款 ¥150,000.00，并立即以发票 RCV-A 在 Invoice financing (onboarded platform) 融资 ¥336,000.00；到第 32 天费用为 ¥2,994.08，相当于这 32 天的年化 10.2%。要执行吗？",
   "intent": "SHOW_ALERTS",
   "lang": "zh",
-  "plan": [],
+  "plan": [
+    {
+      "step": 1,
+      "kind": "DRAW_FACILITY",
+      "description": "从 FAC-LINE 提款 ¥150,000.00",
+      "status": "PROPOSED",
+      "op_id": null,
+      "condition": null
+    },
+    {
+      "step": 2,
+      "kind": "SUBMIT_INVOICE_FOR_FINANCING",
+      "description": "将 RCV-A 提交 FAC-IF 融资，预付 ¥336,000.00",
+      "status": "PROPOSED",
+      "op_id": null,
+      "condition": null
+    }
+  ],
   "verdict": null,
   "operations": [],
   "clarification": null,
-  "awaiting_confirmation": false,
+  "awaiting_confirmation": true,
   "amended": false,
   "replayed": false,
   "negotiation": null,
   "security_events": [],
   "parse_source": "opener",
-  "trace_id": "q:4",
+  "trace_id": "rec-quiet-zh:1",
   "proactive": true,
-  "has_news": false
+  "has_news": true
 }
