@@ -54,8 +54,33 @@ setOwnerToken(OWNER_TOKEN);
 
 mkdirSync(OUT, { recursive: true });
 const written = [];
+const sha = (t) => createHash("sha256").update(t).digest("hex");
+const FIXED_CMT = `CMT-${sha("recorded commitment").slice(0, 16)}`;
+const FIXED_NONCE = sha("recorded nonce").slice(0, 32);
+const RECHAIN = new Set(["negotiation_accept.json", "home_act.json", "home_goahead.json"]);
+
+function normalise(name, value) {
+  if (name === "nl_script.json") return value; // deterministic (its commitment ids and hashes come from the recorded LLM cache)
+  const text = JSON.stringify(value).replace(/CMT-[0-9a-f]{16}/g, FIXED_CMT);
+  const out = JSON.parse(text, (k, v) => (k === "nonce" && typeof v === "string" && /^[0-9a-f]{32}$/.test(v) ? FIXED_NONCE : v));
+  const rechain = (node) => {
+    if (Array.isArray(node)) {
+      let prev = null;
+      for (const op of node) {
+        if (op && typeof op === "object" && typeof op.entry_hash === "string") {
+          op.prev_hash = prev ?? (op.seq === 1 ? "0".repeat(64) : sha(`prev|${op.op_id}`));
+          op.entry_hash = sha(`${op.prev_hash}|${op.seq}|${op.op_id}|${op.kind}|${op.status}`);
+          prev = op.entry_hash;
+        } else rechain(op);
+      }
+    } else if (node && typeof node === "object") for (const v of Object.values(node)) rechain(v);
+  };
+  if (RECHAIN.has(name)) rechain(out);
+  return out;
+}
+
 function write(name, value) {
-  writeFileSync(join(OUT, name), JSON.stringify(value, null, 2) + "\n");
+  writeFileSync(join(OUT, name), JSON.stringify(normalise(name, value), null, 2) + "\n");
   written.push(name);
 }
 const step = (id) => DEMO_STEPS.find((s) => s.id === id);
@@ -208,21 +233,23 @@ async function bankReceipt() {
   });
   if (!res.ok) throw new Error(`bank receipt failed: ${res.status} ${await res.text()}`);
 }
-async function toDay34() {
+async function toDay34(atDay0 = async () => {}) {
   await reset();
   await step("inbox").run();
   await step("trajectory").run();
   await step("negotiate").run();
+  await atDay0();
   await live.advanceClock(2);
   await bankReceipt();
   await live.advanceClock(28);
   await live.advanceClock(4);
 }
-await reset();
-files["home_opener_quiet.json"] = await live.nlOpener("rec-quiet-en", "en");
-files["home_opener_quiet_zh.json"] = await live.nlOpener("rec-quiet-zh", "zh");
 
-await toDay34();
+// Day 0 after the deal the cure is committed, so "nothing needs you": the quiet opener in both languages.
+await toDay34(async () => {
+  files["home_opener_quiet.json"] = await live.nlOpener("rec-quiet-en", "en");
+  files["home_opener_quiet_zh.json"] = await live.nlOpener("rec-quiet-zh", "zh");
+});
 files["home_alerts_day34.json"] = await live.getAlerts();
 const reserve = files["home_alerts_day34.json"].alerts.find((a) => a.id.startsWith("ALERT-RESERVE") && a.actionable);
 if (!reserve) throw new Error("no actionable reserve alert on day 34: the demo path has changed");

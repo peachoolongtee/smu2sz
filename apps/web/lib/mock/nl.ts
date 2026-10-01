@@ -123,7 +123,7 @@ export async function mockNl(req: NlRequest): Promise<NlResponse> {
   const family = base?.startsWith("goal") || base?.startsWith("amend") ? "goal" : base;
   s.pending = recorded.awaiting_confirmation ? (family as Key) : null;
   sessions.set(sid, s);
-  // As live: a buyer's turn carries only the reply. The verdict and its security codes stay with the owner.
+  // As live: a buyer's turn carries only the reply (the recorded buyer turns already have a null verdict; this stays as a guard).
   if (req.actor === "COUNTERPARTY") return { ...recorded, verdict: null, operations: [], security_events: [], session_id: sid, turn: s.turn, trace_id: `${sid}:${s.turn}` };
   return { ...recorded, session_id: sid, turn: s.turn, trace_id: `${sid}:${s.turn}` };
 }

@@ -4,8 +4,8 @@
     "status": "EXECUTED",
     "tier": "TIER_1",
     "requested_by": "AGENT",
-    "message": "Commitment CMT-ef495c17e67812f3 is ACTIVE; forward concession ¥0.00 booked",
-    "summary": "Commitment CMT-ef495c17e67812f3 is ACTIVE; forward concession ¥0.00 booked"
+    "message": "Commitment CMT-a78afaa5becb5273 is ACTIVE; forward concession ¥0.00 booked",
+    "summary": "Commitment CMT-a78afaa5becb5273 is ACTIVE; forward concession ¥0.00 booked"
   },
   "draw_line": {
     "kind": "DRAW_FACILITY",

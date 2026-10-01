@@ -1,31 +1,14 @@
 {
   "session_id": "rec-quiet-zh",
   "turn": 1,
-  "reply": "第 0 天。 按现有账目，第 12 天现金将比 ¥300,000.00 的储备线低 ¥240,000.00。 我可以立即从 Bank credit line 提款 ¥150,000.00，并立即以发票 RCV-A 在 Invoice financing (onboarded platform) 融资 ¥336,000.00；到第 32 天费用为 ¥2,994.08，相当于这 32 天的年化 10.2%。要执行吗？",
+  "reply": "第 0 天。 1 项警告：Reserve headroom thin on day 20。",
   "intent": "SHOW_ALERTS",
   "lang": "zh",
-  "plan": [
-    {
-      "step": 1,
-      "kind": "DRAW_FACILITY",
-      "description": "从 FAC-LINE 提款 ¥150,000.00",
-      "status": "PROPOSED",
-      "op_id": null,
-      "condition": null
-    },
-    {
-      "step": 2,
-      "kind": "SUBMIT_INVOICE_FOR_FINANCING",
-      "description": "将 RCV-A 提交 FAC-IF 融资，预付 ¥336,000.00",
-      "status": "PROPOSED",
-      "op_id": null,
-      "condition": null
-    }
-  ],
+  "plan": [],
   "verdict": null,
   "operations": [],
   "clarification": null,
-  "awaiting_confirmation": true,
+  "awaiting_confirmation": false,
   "amended": false,
   "replayed": false,
   "negotiation": null,
