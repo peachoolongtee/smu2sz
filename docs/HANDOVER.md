@@ -44,6 +44,7 @@ Read, in this order:
 
 | File | Why |
 | --- | --- |
+| `docs/SYSTEM_WALKTHROUGH.md` | Every feature step by step, how the modules interact, and the end-to-end flow with real numbers |
 | `docs/research/audit-2026-10-01.md` | The independent audit this phase works from (findings S1–S11, F1–F10, changes C1–C13) |
 | `docs/NEXT_FIXES.md` | Live tracker: every fix, status, dependencies, stop conditions |
 | `docs/adr/0006-current-books-and-clock.md` | The state model: current books, the clock, settlement, re-verification at commitment |
