@@ -535,6 +535,8 @@ class ViolationCode(StrEnum):
     PRECONDITION_FAILED = "PRECONDITION_FAILED"  # e.g. over limit, receivable not open
     STALE_OPERATION = "STALE_OPERATION"  # op dated to a different simulated day
     FEATURE_DISABLED = "FEATURE_DISABLED"
+    STALE_VERDICT = "STALE_VERDICT"  # the books or mandate moved since the verdict and it no longer holds
+    CONFLICTING_COMMITMENT = "CONFLICTING_COMMITMENT"  # another live commitment already covers the receivable
 
 
 class Violation(Contract):
