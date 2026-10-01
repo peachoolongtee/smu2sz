@@ -52,8 +52,8 @@ from app.domain.models import (
 from app.domain.money import BP_DENOM, Ratio, bp, fmt_pct, fmt_yuan, post
 from app.financial import project, value_concessions
 from app.funding import NoPermanentSourceError, break_even_discount, marginal_cost
-from app.funding.rates import break_even_cost_share
 from app.funding import plan as funding_plan
+from app.funding.rates import break_even_cost_share
 from app.verifier.bind import bind, early_pay_lead, is_claimed, is_gain, open_receivables, recurring_for
 from app.verifier.models import OwnerConstraints
 from app.verifier.owner import breaches as owner_breaches

@@ -63,8 +63,8 @@ from app.funding import (
     marginal_cost,
 )
 from app.funding import plan as funding_plan
-from app.mandate import check_apr, check_predicates, check_validity
 from app.funding.rates import break_even_cost_share
+from app.mandate import check_apr, check_predicates, check_validity
 from app.verifier.bind import bind, material_gaps, recurring_for
 from app.verifier.counters import counters as make_counters
 from app.verifier.display import describe_all, only_early_pay, precise
