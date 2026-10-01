@@ -1,17 +1,23 @@
 """Receipt reconciliation: match every RECEIVE_PAYMENT in the operations log to the receivable it
 settles and to any accepted commitment that changed what is owed (an early-pay discount).
 
-Statuses (one receipt of `received` on day D for a receivable of face F, agreed discount d):
-- expected = F − d when an accepted discount applies and D is on or before its settlement day
-  (its effective day, else the due day); otherwise expected = F.
-- MATCHED           received == expected.
-- SHORT_PAYMENT     received < F − d: the buyer paid less than even the discounted amount.
-- DISCOUNT_IGNORED  an accepted discount exists and the receipt does not follow it: the full face
+Receipts are replayed in log order against what was outstanding O when each arrived (ADR-0006
+section 4): a receipt equal to the agreed `P − d` settles face P and uses up its commitment; any other
+receipt settles its own amount. Statuses (one receipt of `received` on day D, an unused accepted
+discount d on a portion P <= O):
+- expected = P − d when D is on or before the discount's settlement day (its effective day, else the
+  due day); otherwise expected = O.
+- MATCHED           received == expected: the agreed early-pay amount for its portion, or the whole
+                    outstanding amount.
+- SHORT_PAYMENT     received < P − d (or < O with no discount): a partial payment; the detail states
+                    the residual still due on the original day.
+- DISCOUNT_IGNORED  an accepted discount exists and the receipt does not follow it: the full portion
                     arrived inside the discount window (the supplier owes the agreed credit), or the
                     discount was deducted after the window closed.
-- UNEXPECTED_AMOUNT anything else between F − d and F.
+- UNEXPECTED_AMOUNT anything else between P − d and O.
 - UNMATCHED         the executor refused the receipt (no such receivable, already settled, above
-                    face ...): no open receivable or commitment explains the money.
+                    what is outstanding ...): no open receivable or commitment explains the money.
+`outstanding[].face_fen` is the amount still owed (face less settled).
 """
 
 from __future__ import annotations
@@ -32,10 +38,12 @@ from app.domain.ports import LedgerStore
 _AGREED = (CommitmentStatus.ACCEPTED, CommitmentStatus.ACTIVE, CommitmentStatus.FULFILLED)
 
 
-def _discount(r: Receivable, commitments: list[Commitment]) -> tuple[int, int | None, str | None, str]:
-    """(agreed discount fen, settlement day, commitment id, formula) for receivable r."""
+def _discount(r: Receivable, commitments: list[Commitment], outstanding: int,
+              used: set[str]) -> tuple[int, int, int | None, str | None, str]:
+    """(agreed discount fen, portion P it covers, settlement day, commitment id, formula) for the unused
+    accepted discount on receivable r whose portion still fits inside what is outstanding."""
     for c in commitments:
-        if c.status not in _AGREED:
+        if c.status not in _AGREED or c.id in used:
             continue
         for o in c.obligations:
             if o.type != ObligationType.IMMEDIATE_DISCOUNT:
@@ -45,30 +53,37 @@ def _discount(r: Receivable, commitments: list[Commitment]) -> tuple[int, int | 
                 and o.base.amount_fen == r.face_fen
             if not (named or by_face):
                 continue
-            portion = o.base.amount_fen if named and o.base.amount_fen is not None else r.face_fen
+            portion = o.base.amount_fen if named and o.base.amount_fen else outstanding if named else r.face_fen
+            if portion > outstanding:
+                continue
             if o.rate_bp is not None:
                 d = post(bp(o.rate_bp) * portion)
                 formula = f"{fmt_yuan(portion)} × {o.rate_bp} bp = {fmt_yuan(d)}"
             else:
                 d = o.amount_fen or 0
                 formula = f"fixed discount {fmt_yuan(d)}"
-            return d, o.effective_day, c.id, formula
-    return 0, None, None, "no accepted discount"
+            return d, portion, o.effective_day, c.id, formula
+    return 0, 0, None, None, "no accepted discount"
 
 
-def _match(e: Entry, op: ReceivePayment, r: Receivable, commitments: list[Commitment]) -> ReceiptMatch:
+def _match(e: Entry, op: ReceivePayment, r: Receivable, commitments: list[Commitment], settled: int,
+           used: set[str]) -> tuple[ReceiptMatch, int]:
+    """The match, and the face this receipt settled (so the caller can replay the next receipt)."""
     face, received, day = r.face_fen, op.amount_fen, e.day
-    d, settle_by, cid, dformula = _discount(r, commitments)
+    outstanding = face - settled
+    d, portion, settle_by, cid, dformula = _discount(r, commitments, outstanding, used)
     window = settle_by if settle_by is not None else r.due_day
     in_window = day is not None and day <= window
-    expected = face - d if d and in_window else face
-    floor = face - d
+    floor = portion - d if d else outstanding
+    expected = floor if d and in_window else outstanding
     if received == expected:
         status, detail = MatchStatus.MATCHED, "amount equals what the accepted terms say is owed"
     elif received < floor:
         status = MatchStatus.SHORT_PAYMENT
-        detail = f"short by {fmt_yuan(floor - received)} against face less the agreed discount"
-    elif d and received == face and in_window:
+        detail = (f"partial payment: short by {fmt_yuan(floor - received)} against "
+                  f"{'face less the agreed discount' if d else 'what is outstanding'}; "
+                  f"{fmt_yuan(outstanding - received)} of {r.id} still due")
+    elif d and received == portion and in_window:
         status = MatchStatus.DISCOUNT_IGNORED
         detail = (f"full face paid inside the discount window of accepted commitment {cid}; "
                   f"the agreed {fmt_yuan(d)} credit is still owed to the buyer")
@@ -78,14 +93,19 @@ def _match(e: Entry, op: ReceivePayment, r: Receivable, commitments: list[Commit
                   f"(commitment {cid})")
     else:
         status, detail = MatchStatus.UNEXPECTED_AMOUNT, "amount matches neither the face nor the discounted face"
-    return ReceiptMatch(
+    agreed = cid is not None and bool(d) and received == floor  # the executor fulfils the commitment on this amount
+    if agreed and cid is not None:
+        used.add(cid)
+    match = ReceiptMatch(
         seq=e.seq, entry_hash=e.entry_hash, op_id=op.op_id, day=day, receivable_id=r.id,
         counterparty_id=r.counterparty_id, received_fen=received, face_fen=face, agreed_discount_fen=d,
         expected_fen=expected, difference_fen=received - expected, commitment_id=cid, status=status,
         flagged=status != MatchStatus.MATCHED, detail=detail,
-        formula=(f"expected = face − discount if paid by day {window} else face = {fmt_yuan(expected)} "
-                 f"(face {fmt_yuan(face)}; discount {dformula}); received {fmt_yuan(received)}"),
+        formula=(f"expected = face − discount if paid by day {window} else outstanding = {fmt_yuan(expected)} "
+                 f"(outstanding {fmt_yuan(outstanding)} of face {fmt_yuan(face)}; discount {dformula}); "
+                 f"received {fmt_yuan(received)}"),
     )
+    return match, portion if agreed else received
 
 
 def reconcile(store: LedgerStore, day: int | None = None) -> ReconciliationReport:
@@ -95,6 +115,8 @@ def reconcile(store: LedgerStore, day: int | None = None) -> ReconciliationRepor
     receivables = {r.id: r for r in state.receivables}
     log = entries(store)
     receipts: list[ReceiptMatch] = []
+    settled: dict[str, int] = {}  # face settled so far per receivable, replayed from the log
+    used: set[str] = set()  # commitments whose agreed amount a receipt has already paid
     for e in log:
         op = e.op
         if not isinstance(op, ReceivePayment) or e.result.status in (OperationStatus.DUPLICATE,
@@ -102,7 +124,9 @@ def reconcile(store: LedgerStore, day: int | None = None) -> ReconciliationRepor
             continue
         r = receivables.get(op.receivable_id)
         if e.result.status == OperationStatus.EXECUTED and r is not None:
-            receipts.append(_match(e, op, r, commitments))
+            m, face_settled = _match(e, op, r, commitments, settled.get(r.id, 0), used)
+            settled[r.id] = settled.get(r.id, 0) + face_settled
+            receipts.append(m)
             continue
         why = "; ".join(v.message for v in e.result.violations) or e.result.message
         receipts.append(ReceiptMatch(
@@ -116,8 +140,8 @@ def reconcile(store: LedgerStore, day: int | None = None) -> ReconciliationRepor
     days = [e.day for e in log if e.day is not None]
     today = day if day is not None else (max(days) if days else 0)
     outstanding = [
-        OutstandingReceivable(receivable_id=r.id, counterparty_id=r.counterparty_id, face_fen=r.face_fen,
-                              due_day=r.due_day, status=r.status, past_due=r.due_day < today)
+        OutstandingReceivable(receivable_id=r.id, counterparty_id=r.counterparty_id,
+                              face_fen=r.outstanding_fen, due_day=r.due_day, status=r.status, past_due=r.due_day < today)
         for r in state.receivables if r.status in ("OPEN", "FINANCED")
     ]
     return ReconciliationReport(
