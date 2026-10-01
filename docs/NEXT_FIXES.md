@@ -94,7 +94,7 @@ cheap early payment a few days before the due day; never accepts wrongly).
 | E3 | Owner home at `/` | C8 | sub (frontend) | 5h | DONE (home at `/` with the opener, Go ahead, the alert button and a demo clock; mock e2e 25 passed) |
 | E4 | Approval card with operation, clause, after-state | C8 | sub (frontend) | 4h | DONE |
 | E5 | Autonomy proof shown on Tier-1 accepts; REJECT badge fix | C8 | sub (frontend) | 2h | DONE |
-| E6 | Annualised column next to every discount | §9 | sub | 3h | BACKEND DONE (`annualised` and `autonomy` on owner verdict responses); the column in the UI is IN PROGRESS (feat/web-closeout) |
+| E6 | Annualised column next to every discount | §9 | sub | 3h | DONE (`annualised` on owner verdict responses, shown on the verdict page, counters and chat; live e2e 27 passed) |
 | E7 | Compliance half-page, LICENSE, reframed accuracy numbers | §8 | sub (docs) | 2h | OPEN |
 | E8 | Demo fixes: Start 401, mock/live mismatch | §9 | sub (frontend) | 2h | PARTLY DONE (Start resumes after sign-in, step 6 scrolls to its result; mock verdicts still differ from live: close-out re-records them) |
 
