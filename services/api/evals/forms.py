@@ -70,6 +70,8 @@ def form_offer(docs: list[SourceDocument], counterparty_id: str, labels: list[di
         offer_id=oid, counterparty_id=counterparty_id, doc_ids=[d.doc_id for d in docs], received_day=d0.received_day,
         status=status, obligations=[obligation(lb, counterparty_id, i + 1, span) for i, lb in enumerate(labels)],
         compiler="form-baseline", prompt_version="form",
+        # A structured form has no free text to misread: every field is the buyer's typed value (ADR-0005).
+        autonomy_eligible=True,
     )
 
 

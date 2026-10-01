@@ -117,7 +117,7 @@ test("/nl: the owner channel needs the token, a buyer turn does not, and the res
   const owner = await live.nl({ session_id: "contract-owner", actor: "OWNER", text: "Evaluate EX01" });
   expect(owner).toMatchObject({ session_id: "contract-owner", intent: "EVALUATE_OFFER", awaiting_confirmation: true, amended: false });
   expect(owner.verdict?.outcome).toBe("REJECT");
-  expect(owner.verdict?.violations.map((v) => v.code)).toEqual(["AGG_CONCESSION_EXCEEDED", "RESERVE_BREACH"]);
+  expect(owner.verdict?.violations.map((v) => v.code)).toEqual(["AGG_CONCESSION_EXCEEDED", "RESERVE_BREACH", "DISCOUNT_ABOVE_BREAK_EVEN"]);
   expect(owner.plan.map((p) => p.status)).toContain("PROPOSED");
 
   const ran = await live.nl({ session_id: "contract-owner", actor: "OWNER", text: "go ahead" });

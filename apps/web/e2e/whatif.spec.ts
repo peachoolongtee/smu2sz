@@ -24,9 +24,9 @@ test("what-if: moving the terms slider changes the hypothetical verdict", async 
   await terms.press("ArrowLeft");
   await terms.press("ArrowLeft");
   await expect(page.getByTestId("whatif-terms-readout")).toHaveText("45 days");
-  // The 1% rebate is still in the package: within the cap, but only an early-pay discount on a named
-  // invoice is accepted autonomously, so the owner must approve it.
-  await expect(outcome).toHaveAttribute("data-outcome", "NEEDS_OWNER_APPROVAL");
+  // No terms extension any more, so no concession breach; but 1.2% early settlement is above the 0.88%
+  // break-even, so the verifier counters at 0.85% rather than accepting.
+  await expect(outcome).toHaveAttribute("data-outcome", "COUNTER");
   await expect(page.getByTestId("whatif-codes")).not.toContainText("AGG_CONCESSION_EXCEEDED");
 
   // Option A preset: 45 days, 0.85% on ¥211,800 of the invoice.
