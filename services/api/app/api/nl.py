@@ -13,8 +13,22 @@ from app.api.auth import is_agent
 from app.api.display import displayed
 from app.api.runtime import get_runtime
 from app.nl import NlRequest, handle, reset_sessions
+from app.nl.service import APPROVAL_ID
 
 router = APIRouter()
+
+
+COUNTERPARTY_KEYS = ("session_id", "turn", "reply", "intent", "lang", "trace_id")
+
+
+def _counterparty_view(out: dict) -> dict:
+    """Defence in depth: a counterparty gets an allow-list of keys, never the verdict, plan or operations."""
+    view = {k: out[k] for k in COUNTERPARTY_KEYS}
+    view["intent"] = "COUNTERPARTY_MESSAGE"
+    view["reply"] = APPROVAL_ID.sub("the owner's approval", str(view["reply"]))
+    view.update(plan=[], verdict=None, operations=[], clarification=None, negotiation=None, security_events=[],
+                parse_source="actor", awaiting_confirmation=False, amended=False, replayed=False)
+    return view
 
 
 @router.post("/nl")
@@ -29,6 +43,8 @@ def post_nl(body: NlRequest, x_owner_token: str | None = Header(default=None),
         resp = handle(body, store=rt.store, executor=rt.executor, day=rt.day, owner_key_hex=rt.owner_key_hex,
                       owner_authenticated=rt.is_owner(x_owner_token))
     out = resp.model_dump(mode="json")
+    if str(getattr(body.actor, "value", body.actor)) == "COUNTERPARTY":
+        return _counterparty_view(out)
     out["verdict"] = displayed(out["verdict"]) if out["verdict"] is not None else None
     out["operations"] = displayed(out["operations"])
     return out

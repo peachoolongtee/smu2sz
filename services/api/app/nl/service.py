@@ -7,6 +7,7 @@ sees the token. A COUNTERPARTY request is never parsed for intents.
 
 from __future__ import annotations
 
+import re
 from collections.abc import Sequence
 from typing import Any
 
@@ -40,6 +41,7 @@ from app.nl.turn import Turn, ask
 from app.operations import Executor
 
 MIN_LLM_CONFIDENCE = 0.6
+APPROVAL_ID = re.compile(r"APR-\d{6}", re.IGNORECASE)
 CAPABILITIES_EN = ("I can evaluate a buyer's offer, negotiate with counters, get an invoice paid early, fund a "
                    "projected cash gap, repay a facility, show cash status, explain a verdict, run a what-if, and "
                    "approve or reject pending operations.")
@@ -97,6 +99,9 @@ def _parse(ctx: NlContext, text: str, backends: Sequence[clf.IntentBackend] | No
             return resolved
     parsed = parse(text, state, pending_plan=s.pending_plan is not None)
     if parsed is not None:
+        if parsed.slots.quoted_approval:
+            ctx.new_event(SecurityEventKind.INJECTION, parsed.slots.counterparty_id or "OWNER",
+                          "quoted text contained an approval instruction; ignored", action="ignored; nothing approved")
         return parsed
     if s.pending_clarification is not None:  # still unanswered: ask again
         pc = s.pending_clarification
@@ -385,10 +390,21 @@ def _replay(ctx: NlContext, ops: list[Any], before: set[str]) -> NlResponse:
     return _response(ctx, turn, "replay", before, replayed=True)
 
 
+def scrub_approval_ids(reply: str) -> str:
+    return APPROVAL_ID.sub("the owner's approval", reply)
+
+
 def _response(ctx: NlContext, turn: Turn, parse_source: str, before: set[str],
               replayed: bool = False) -> NlResponse:
     events = list(ctx.events) + [e.id for e in ctx.store.security_events()
                                  if e.id not in before and e.id not in ctx.events]
+    if ctx.session.actor == "COUNTERPARTY":
+        # The counterparty channel returns the (already guarded) reply and nothing else: the verdict, plan and
+        # operations carry the owner's floor, caps and rates. The turn itself ran and was logged as usual.
+        return NlResponse(
+            session_id=ctx.session.id, turn=ctx.session.turn, reply=scrub_approval_ids(turn.reply),
+            intent=Intent.COUNTERPARTY_MESSAGE, lang=ctx.lang,  # type: ignore[arg-type]
+            parse_source="actor", trace_id=ctx.trace_id)
     return NlResponse(
         session_id=ctx.session.id, turn=ctx.session.turn, reply=turn.reply, intent=turn.intent,
         lang=ctx.lang,  # type: ignore[arg-type]

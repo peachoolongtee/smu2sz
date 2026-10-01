@@ -59,6 +59,7 @@ class Slots(_Strict):
     execute_now: bool = False
     tier3: Tier3Kind | None = None
     capex: bool = False
+    quoted_approval: bool = False  # quoted/pasted text carried an approval instruction (ignored, logged)
 
 
 class Parsed(_Strict):
