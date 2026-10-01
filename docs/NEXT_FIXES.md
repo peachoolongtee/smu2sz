@@ -57,7 +57,7 @@ payment never arrives at all, reconciliation reports it LAPSED and no committed 
 | ID | Fix | Owner | Effort | Proof | Status |
 | --- | --- | --- | --- | --- | --- |
 | C1 | `Runtime.advance_to` and `POST /clock/advance` (ADR §2) | main | 4h | day 40 cash includes payroll; expired commitments marked | DONE |
-| C2 | Alert carries a typed cure; `POST /alerts/{id}/act` executes Tier 1 or queues Tier 2 | sub, after B4 | 5h | missed receipt → "draw ¥150,000" → one call executes it | OPEN |
+| C2 | Alert carries a typed cure; `POST /alerts/{id}/act` executes Tier 1 or queues Tier 2 | sub, after B4 | 5h | missed receipt → "draw ¥150,000" → one call executes it | IN PROGRESS (feat/alert-act) |
 | C3 | Reconcile compares receipts with what commitments promised | sub, after B2 | 3h | missing early payment reported as lapsed | DONE |
 | C4 | Proactive opener in `/nl` and the UI after a clock or bank-feed event | sub, after C2 | 4h | demo steps 8 to 13 run from the chat | OPEN |
 
@@ -65,8 +65,8 @@ payment never arrives at all, reconciliation reports it LAPSED and no committed 
 
 | ID | Fix | Audit | Owner | Effort | Proof | Status |
 | --- | --- | --- | --- | --- | --- | --- |
-| D1 | Break-even from actual days early | F1 | main formula, sub tests | 3h | 30 days still 0.88%; 90 days at 1.2% accepted | OPEN |
-| D2 | Early pay only when cash is needed and cheaper than the router's plan | F2 | main rule, sub code | 4h | no-need offer is not accepted | OPEN |
+| D1 | Break-even from actual days early | F1 | main formula, sub tests | 3h | 30 days still 0.88%; 90 days at 1.2% accepted | IN PROGRESS (fix/early-pay-economics) |
+| D2 | Early pay only when cash is needed and cheaper than the router's plan | F2 | main rule, sub code | 4h | no-need offer is not accepted | IN PROGRESS (fix/early-pay-economics) |
 | D3 | Financed receivable settled early repays the advance that day | F7 | covered by B2 | — | day-20 cash not double counted | DONE |
 | D4 | DSCR counts scheduled bullet principal | F6 | sub + second sub to check | 3h | hand-calculated case | OPEN |
 | D5 | APR gate on posted cost over actual days | F5 | sub | 3h | 3-day advance fails the 15% cap | IF TIME |
