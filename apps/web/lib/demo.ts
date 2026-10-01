@@ -115,7 +115,8 @@ export const DEMO_STEPS: DemoStep[] = [
   {
     id: "negotiate",
     scene: "s1",
-    route: "/verdict",
+    // The verdict page is already open from the step before; the hash scrolls to the negotiation card that shows this step's result.
+    route: "/verdict#negotiation",
     run: async () => {
       const id = demoStore.get().offerId;
       if (id) recordNegotiation(await negotiate(id, { buyer_profile: "cooperative" }));

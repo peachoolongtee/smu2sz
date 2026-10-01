@@ -1,4 +1,5 @@
-import { expect, test, type Page } from "@playwright/test";
+import type { Page } from "@playwright/test";
+import { expect, test } from "./fixtures";
 
 /** Runs on a phone viewport (and desktop): no page may scroll sideways, and the stepper stays reachable. */
 

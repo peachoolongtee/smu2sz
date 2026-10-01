@@ -5,6 +5,7 @@
  */
 
 import { sha256 } from "js-sha256";
+import { getOwnerToken, requestSignIn } from "../auth";
 import { MOCK_LATENCY_MS } from "../config";
 import { ApiError } from "../errors";
 import type {
@@ -521,6 +522,11 @@ export async function whatIf(params: WhatIfParams): Promise<WhatIfResult> {
 
 export async function demoReset(): Promise<void> {
   await delay();
+  // Like the live API, the reset is an owner action: without a token the sign-in dialog opens and the caller retries after sign-in.
+  if (!getOwnerToken()) {
+    requestSignIn("required");
+    throw new ApiError(401, "Owner sign-in required (401). Sign in with the owner token to use this.");
+  }
   memory = emptyStore();
   save();
   home.resetHome();
