@@ -253,6 +253,19 @@ def test_verdicts_round_trip(store):
     assert store.get_verdict("V-2") is None
 
 
+def test_verdicts_lists_every_stored_verdict_in_first_stored_order(store):
+    assert store.verdicts() == []
+    first, second = f.verdict("V-1"), f.verdict("V-2", offer_id="OFF-2")
+    store.put_verdict(first)
+    store.put_verdict(second)
+    assert store.verdicts() == [first, second]
+    replaced = first.model_copy(update={"forward_concession_total_fen": 1})
+    store.put_verdict(replaced)  # same id: replaced in place, not duplicated or moved
+    assert store.verdicts() == [replaced, second]
+    store.reset()
+    assert store.verdicts() == []
+
+
 def test_security_events_are_kept_in_order(store):
     events = [f.security_event(f"SEC-{i}") for i in range(3)]
     for e in events:
@@ -387,7 +400,7 @@ def test_reset_clears_the_ledger_and_keeps_telemetry(store):
 
     assert store.operations() == [] and store.verify_chain() is True
     assert store.commitments() == [] and store.security_events() == [] and store.approvals() == []
-    assert store.get_offer("OFF-1") is None and store.get_verdict("V-1") is None
+    assert store.get_offer("OFF-1") is None and store.get_verdict("V-1") is None and store.verdicts() == []
     assert store.nonce_used("n-1") is False
     assert store.evidence_exports() == []
     with pytest.raises(NotFound):

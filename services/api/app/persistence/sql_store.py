@@ -494,6 +494,9 @@ class SqlLedgerStore:
         rows = self._read_all(t.verdicts, t.verdicts.c.row_id, t.verdicts.c.id == verdict_id)
         return Verdict.model_validate_json(rows[0].payload_json) if rows else None
 
+    def verdicts(self) -> list[Verdict]:
+        return [Verdict.model_validate_json(r.payload_json) for r in self._read_all(t.verdicts, t.verdicts.c.row_id)]
+
     def add_security_event(self, event: SecurityEvent) -> None:
         self._retry(
             lambda conn: conn.execute(

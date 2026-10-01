@@ -7,7 +7,10 @@ Usage (from the repo root):
   python3 scripts/run_scenarios.py --inproc --only S01_scene1_counter_accept,S17_ex12_goal_accept
 
 Each task starts from POST /demo/reset and fresh /nl sessions, runs its turns, and checks the expected
-intent, verdict outcome and codes, and operation kinds/statuses. It writes:
+intent, verdict outcome and codes, and operation kinds/statuses. A COUNTERPARTY response carries only the
+reply (the verdict, plan and operations are withheld from the sender), so in `--inproc` mode a counterparty
+turn's `store_*` expectations are checked against what the runtime's store holds for that turn: the verdict
+outcome and codes, the operations logged and the security events raised. It writes:
   results.json          pass/fail and latency per task and per turn
   evidence.jsonl        per-task segments (task header + app.api.evidence.build output)
   evidence/<task>.jsonl the same segment alone; `python scripts/verify_evidence.py <file>` verifies it
@@ -107,6 +110,28 @@ class InProc:
         r = self.client.post(path, json=body, headers={"X-Owner-Token": OWNER_TOKEN} if owner else {"X-Agent-Key": AGENT_KEY})
         return r.status_code, (r.json() if r.headers.get("content-type", "").startswith("application/json") else {})
 
+    def snapshot(self) -> tuple[int, int, int]:
+        """(operations, security events, verdicts) the store holds now."""
+        s = self.rt.store
+        return len(s.operations()), len(s.security_events()), len(s.verdicts())
+
+    def store_view(self, session_id: str | None, before: tuple[int, int, int]) -> dict[str, Any]:
+        """What the store holds for the turn that just ran: the verdict behind it, the operations it logged and
+        the security events it raised. The response of a COUNTERPARTY turn withholds all three."""
+        from app.nl.sessions import SESSIONS
+
+        s = self.rt.store
+        ops0, events0, verdicts0 = before
+        new = s.verdicts()[verdicts0:]
+        session = SESSIONS.get(session_id) if session_id else None
+        verdict = next((v for v in new if session and v.id == session.last_verdict_id), new[-1] if new else None)
+        return {
+            "outcome": verdict.outcome.value if verdict else None,
+            "codes": list(dict.fromkeys(x.code.value for x in verdict.violations)) if verdict else [],
+            "ops": [f"{r.kind}:{json.loads(r.result_json)['status']}" for r in s.operations()[ops0:]],
+            "security_events": len(s.security_events()) - events0,
+        }
+
     def get(self, path: str) -> Any:
         r = self.client.get(path, headers={"X-Owner-Token": OWNER_TOKEN})
         return r.json() if r.headers.get("content-type", "").startswith("application/json") else r.text
@@ -138,6 +163,12 @@ class Http:
         except ValueError:
             return r.status_code, {}
 
+    def snapshot(self) -> None:
+        return None  # the store is not reachable over HTTP
+
+    def store_view(self, session_id: str | None, before: Any) -> None:
+        return None
+
     def get(self, path: str) -> Any:
         r = self.client.get(f"{self.base}{path}", headers={"X-Owner-Token": OWNER_TOKEN})
         try:
@@ -165,8 +196,32 @@ def _codes(resp: dict) -> list[str]:
     return list(dict.fromkeys(x.get("code") for x in v.get("violations", [])))
 
 
-def check_turn(resp: dict, exp: dict) -> list[str]:
+def check_store(store: dict, exp: dict) -> list[str]:
+    """Expectations on what the store holds for a COUNTERPARTY turn (`store_*` keys; see InProc.store_view)."""
     f: list[str] = []
+    if "store_outcome" in exp and store["outcome"] != exp["store_outcome"]:
+        f.append(f"stored outcome {store['outcome']} != {exp['store_outcome']}")
+    if "store_codes" in exp and not set(exp["store_codes"]) <= set(store["codes"]):
+        f.append(f"stored codes {store['codes']} missing {sorted(set(exp['store_codes']) - set(store['codes']))}")
+    if "store_codes_exact" in exp and store["codes"] != exp["store_codes_exact"]:
+        f.append(f"stored codes {store['codes']} != {exp['store_codes_exact']}")
+    if "store_ops" in exp and store["ops"] != exp["store_ops"]:
+        f.append(f"stored ops {store['ops']} != {exp['store_ops']}")
+    if "store_none_executed" in exp:
+        executed = any(o.endswith(":EXECUTED") for o in store["ops"])
+        if exp["store_none_executed"] and executed:
+            f.append(f"expected nothing executed in the store: {store['ops']}")
+        if not exp["store_none_executed"] and not executed:
+            f.append("expected at least one executed operation in the store")
+    if "store_security_events_min" in exp and store["security_events"] < exp["store_security_events_min"]:
+        f.append(f"{store['security_events']} stored security events < {exp['store_security_events_min']}")
+    return f
+
+
+def check_turn(resp: dict, exp: dict, store: dict | None = None) -> list[str]:
+    f: list[str] = []
+    if store is not None:
+        f += check_store(store, exp)
     ops = [f"{o['kind']}:{o['status']}" for o in resp.get("operations", [])]
     reply = (resp.get("reply") or "").lower()
     outcome = (resp.get("verdict") or {}).get("outcome")
@@ -232,13 +287,16 @@ def check_after(t: Any, after: dict, cash_before: int) -> list[str]:
 # ---------------------------------------------------------------- transcripts
 
 
-def card(scn: dict, n: int, turn: dict, resp: dict, ok: bool) -> str:
+def card(scn: dict, n: int, turn: dict, resp: dict, ok: bool, store: dict | None = None) -> str:
     esc = html.escape
     ops = "".join(f"<tr><td>{esc(o['kind'])}</td><td>{esc(o['status'])}</td><td>{esc(o.get('tier', ''))}</td>"
                   f"<td>{esc(o.get('message', ''))}</td></tr>" for o in resp.get("operations", []))
     plan = "".join(f"<li>[{esc(s['status'])}] {esc(s['kind'])}: {esc(s['description'])}"
                    f"{' (' + esc(s['condition']) + ')' if s.get('condition') else ''}</li>" for s in resp.get("plan", []))
     v = resp.get("verdict") or {}
+    stored = (f"<p><b>Stored (withheld from the sender)</b> verdict {esc(str(store['outcome']))} "
+              f"{esc(', '.join(store['codes']))} · operations {esc(', '.join(store['ops']) or 'none')} · "
+              f"security events {store['security_events']}</p>") if store else ""
     return f"""<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{esc(scn['id'])} turn {n}</title><style>body{{font:14px/1.5 system-ui,sans-serif;margin:24px;max-width:960px;color:#1d2330;background:#fff}}
 .tag{{display:inline-block;padding:2px 8px;border-radius:10px;background:{'#e3f5e8' if ok else '#fde8e8'}}}
@@ -247,7 +305,7 @@ td{{border-top:1px solid #e3e5e8;padding:4px 6px;vertical-align:top}}</style></h
 <h1>{esc(scn['id'])} · turn {n} <span class="tag">{'PASS' if ok else 'FAIL'}</span></h1><p>{esc(scn.get('title', ''))}</p>
 <p><b>{esc(turn.get('actor', 'OWNER'))}</b>{' (' + esc(turn['counterparty_id']) + ')' if turn.get('counterparty_id') else ''}:</p>
 <pre>{esc(turn['text'])}</pre><p><b>Intent</b> {esc(str(resp.get('intent')))} · <b>Verdict</b> {esc(str(v.get('outcome', '—')))}
-{esc(', '.join(_codes(resp)))}</p><p><b>Reply</b></p><pre>{esc(resp.get('reply', ''))}</pre><p><b>Plan</b></p><ol>{plan}</ol>
+{esc(', '.join(_codes(resp)))}</p><p><b>Reply</b></p><pre>{esc(resp.get('reply', ''))}</pre>{stored}<p><b>Plan</b></p><ol>{plan}</ol>
 <p><b>Operations</b></p><table>{ops or '<tr><td>none</td></tr>'}</table>
 <p>session {esc(str(resp.get('session_id')))} · trace {esc(str(resp.get('trace_id')))} · security events {len(resp.get('security_events', []))}</p>
 </body></html>"""
@@ -288,18 +346,22 @@ def run(args: argparse.Namespace) -> int:
             if turn.get("buyer_profile") or scn.get("buyer_profile"):
                 body["buyer_profile"] = turn.get("buyer_profile") or scn["buyer_profile"]
             owner = actor == "OWNER" and turn.get("owner_token", True)
+            before = transport.snapshot()
             s0 = time.perf_counter()
             code, resp = transport.post("/nl", body, owner)
             latency = round((time.perf_counter() - s0) * 1000, 1)
-            fails = [f"HTTP {code}"] if code != 200 else check_turn(resp, turn.get("expect", {}))
+            store = transport.store_view(resp.get("session_id"), before) if actor == "COUNTERPARTY" and code == 200 \
+                and before is not None else None
+            fails = [f"HTTP {code}"] if code != 200 else check_turn(resp, turn.get("expect", {}), store)
             link = f"{shots.relative_to(out) if shots.is_relative_to(out) else shots}/{scn['id']}/turn-{n}.html"
             (shots / scn["id"]).mkdir(parents=True, exist_ok=True)
-            (shots / scn["id"] / f"turn-{n}.html").write_text(card(scn, n, turn, resp, not fails), encoding="utf-8")
+            (shots / scn["id"] / f"turn-{n}.html").write_text(card(scn, n, turn, resp, not fails, store), encoding="utf-8")
             for o in resp.get("operations", []):
                 op_links.setdefault(o["op_id"], link)
             failures += [f"turn {n}: {x}" for x in fails]
             turns_out.append({"n": n, "actor": actor, "text": turn["text"], "intent": resp.get("intent"),
-                              "outcome": (resp.get("verdict") or {}).get("outcome"), "codes": _codes(resp),
+                              "outcome": (resp.get("verdict") or {}).get("outcome") or (store or {}).get("outcome"),
+                              "codes": _codes(resp) or (store or {}).get("codes", []), "store": store,
                               "operations": [f"{o['kind']}:{o['status']}" for o in resp.get("operations", [])],
                               "reply": resp.get("reply"), "latency_ms": latency, "passed": not fails,
                               "failures": fails, "transcript": link})

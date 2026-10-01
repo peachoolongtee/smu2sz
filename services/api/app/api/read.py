@@ -102,7 +102,7 @@ def get_audit() -> dict:
     events = rt.store.security_events()
     doc_ids = {sp.doc_id for e in events for sp in e.spans}
     extraction = any(e.kind.value == "DATA_EXTRACTION" for e in events)
-    board = scoreboard(rt.store, rt.latest_verdict.values(), allow_for=_counter_allow)  # computed, not asserted
+    board = scoreboard(rt.store, allow_for=_counter_allow)  # computed from every stored verdict, not asserted
     return {
         "events": [displayed(json.loads(e.model_dump_json())) for e in events],
         "refusals": refusals,

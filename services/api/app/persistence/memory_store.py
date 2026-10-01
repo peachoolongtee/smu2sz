@@ -214,6 +214,10 @@ class InMemoryLedgerStore:
         with self._lock:
             return self._verdicts.get(verdict_id)
 
+    def verdicts(self) -> list[Verdict]:
+        with self._lock:
+            return list(self._verdicts.values())
+
     def add_security_event(self, event: SecurityEvent) -> None:
         with self._lock:
             self._security_events.append(event)
