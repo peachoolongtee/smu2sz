@@ -1,0 +1,20 @@
+{
+  "session_id": "q",
+  "turn": 3,
+  "reply": "Nothing needs you today (day 0).",
+  "intent": "SHOW_ALERTS",
+  "lang": "en",
+  "plan": [],
+  "verdict": null,
+  "operations": [],
+  "clarification": null,
+  "awaiting_confirmation": false,
+  "amended": false,
+  "replayed": false,
+  "negotiation": null,
+  "security_events": [],
+  "parse_source": "opener",
+  "trace_id": "q:3",
+  "proactive": true,
+  "has_news": false
+}

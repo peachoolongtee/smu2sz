@@ -12,6 +12,7 @@
 import { API_MODE } from "./config";
 import { ApiError } from "./errors";
 import type {
+  AlertActResult,
   AlertsView,
   ApprovalDecision,
   ApprovalView,
@@ -20,12 +21,14 @@ import type {
   BorrowerFileView,
   CapexRequest,
   CapexView,
+  ClockView,
   FundingView,
   LedgerView,
   MandateView,
   Mode,
   NegotiateRequest,
   NegotiationView,
+  NlOpenerResponse,
   NlRequest,
   NlResponse,
   OfferView,
@@ -144,6 +147,26 @@ export async function getReconciliation(): Promise<ReconciliationView> {
 /** POST /nl: one turn of the conversation. Owner turns need the owner token (401 opens the sign-in dialog). */
 export async function nl(req: NlRequest): Promise<NlResponse> {
   return isMock ? (await mock()).nl(req) : (await live()).nl(req);
+}
+
+/** POST /nl/opener: the agent speaks first. Owner only. Any pending cure waits in `sessionId` until "go ahead". */
+export async function nlOpener(sessionId: string | undefined, lang: "en" | "zh"): Promise<NlOpenerResponse> {
+  return isMock ? (await mock()).nlOpener(sessionId, lang) : (await live()).nlOpener(sessionId, lang);
+}
+
+/** GET /clock: the simulated day. */
+export async function getClock(): Promise<ClockView> {
+  return isMock ? (await mock()).getClock() : (await live()).clock();
+}
+
+/** POST /clock/advance {days}: demo control. Time moves only here and through the bank feed. Owner action. */
+export async function advanceClock(days: number): Promise<ClockView> {
+  return isMock ? (await mock()).advanceClock(days) : (await live()).advanceClock(days);
+}
+
+/** POST /alerts/{id}/act: execute the alert's cure as the agent (Tier 1 runs, Tier 2 waits for approval). Owner action. */
+export async function actOnAlert(id: string): Promise<AlertActResult> {
+  return isMock ? (await mock()).actOnAlert(id) : (await live()).actOnAlert(id);
 }
 
 /** POST /whatif: a hypothetical verdict for slider positions. Display-only; nothing is booked or executed. */

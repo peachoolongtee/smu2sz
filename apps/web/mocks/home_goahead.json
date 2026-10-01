@@ -1,0 +1,41 @@
+{
+  "session_id": "web-rec",
+  "turn": 3,
+  "reply": "Advance ¥200,000.00 on RI:BUYER-1:2 from FAC-IF on day 34 The reserve alert is now cleared.",
+  "intent": "SHOW_ALERTS",
+  "lang": "en",
+  "plan": [
+    {
+      "step": 1,
+      "kind": "SUBMIT_INVOICE_FOR_FINANCING",
+      "description": "Submit RI:BUYER-1:2 to FAC-IF for a ¥200,000.00 advance",
+      "status": "EXECUTED",
+      "op_id": "alert:ALERT-RESERVE-42:v7:0",
+      "condition": null
+    }
+  ],
+  "verdict": null,
+  "operations": [
+    {
+      "op_id": "alert:ALERT-RESERVE-42:v7:0",
+      "kind": "SUBMIT_INVOICE_FOR_FINANCING",
+      "status": "EXECUTED",
+      "tier": "TIER_1",
+      "violations": [],
+      "seq": 7,
+      "entry_hash": "07b86ab1c0db60da48e3cd523e44a0718a277a7a307052f6945d9c4edf3e7617",
+      "prev_hash": "b12b4d9970873aa779f5591893d174b06ba82bc753d8a9c6f4fc581afe853086",
+      "effective_day": 34,
+      "approval_id": null,
+      "message": "Advance ¥200,000.00 on RI:BUYER-1:2 from FAC-IF on day 34"
+    }
+  ],
+  "clarification": null,
+  "awaiting_confirmation": false,
+  "amended": false,
+  "replayed": false,
+  "negotiation": null,
+  "security_events": [],
+  "parse_source": "rules",
+  "trace_id": "web-rec:3"
+}
