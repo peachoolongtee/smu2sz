@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from app.domain.models import CashFlow, FlowKind
-from tests.nl.conftest import AGENT, OWNER, Chat, codes, ops
+from tests.nl.conftest import AGENT, OWNER, Chat, codes, ops, stored_ops
 
 EX12 = "Get paid early on the Foshan invoice without giving anything away next quarter."
 
@@ -117,11 +117,11 @@ def test_approve_and_reject_pending_operations(client):
     assert c.say("approve it")["reply"].startswith("Nothing is waiting")
 
 
-def test_counterparty_message_is_compiled_and_answered_within_tier1(client):
+def test_counterparty_message_is_compiled_and_answered_within_tier1(client, rt):
     r = Chat(client, "t-cp", actor="COUNTERPARTY", owner=False, counterparty_id="BUYER-1").say(
         "We can pay this one early at 1.5%. Nothing else changes.")
     assert r["intent"] == "COUNTERPARTY_MESSAGE"
-    assert ops(r) == [("COUNTER_OFFER", "EXECUTED")]
+    assert ops(r) == [] and stored_ops(rt) == [("COUNTER_OFFER", "EXECUTED")]
     assert "0.85%" in r["reply"] and "¥211,800" in r["reply"]
 
 

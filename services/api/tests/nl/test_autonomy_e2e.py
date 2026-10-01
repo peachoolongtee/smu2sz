@@ -8,9 +8,11 @@ fixtures/heldout3.
 
 from __future__ import annotations
 
+import json
+
 import pytest
 
-from tests.nl.conftest import Chat, ops
+from tests.nl.conftest import Chat, stored_ops, stored_verdict
 
 PATTERNS = {
     # 1. an invoice number and amount that are not ours: never bound to the open invoice
@@ -32,9 +34,10 @@ PATTERNS = {
 @pytest.mark.parametrize("key", list(PATTERNS))
 def test_the_tier1_failure_patterns_are_never_accepted_autonomously(client, rt, key: str) -> None:
     r = Chat(client, f"t1-{key}", actor="COUNTERPARTY", owner=False, counterparty_id="BUYER-1").say(PATTERNS[key])
-    v = r["verdict"]
+    assert r["verdict"] is None and r["operations"] == []  # the counterparty channel returns the reply only
+    v = stored_verdict(rt, r)
     assert v["outcome"] in ("NEEDS_OWNER_APPROVAL", "NO_VERDICT"), (key, v["outcome"], v["summary"])
-    assert ("ACCEPT_OFFER", "EXECUTED") not in ops(r)
+    assert ("ACCEPT_OFFER", "EXECUTED") not in stored_ops(rt)
     assert rt.store.get_state().forward_concessions == []
     assert "Agreed" not in r["reply"]
 
@@ -42,15 +45,17 @@ def test_the_tier1_failure_patterns_are_never_accepted_autonomously(client, rt, 
 def test_a_clean_covered_offer_below_break_even_is_accepted_at_tier1(client, rt) -> None:
     r = Chat(client, "t1-clean", actor="COUNTERPARTY", owner=False, counterparty_id="BUYER-1").say(
         "Hi, we can pay invoice RCV-A (¥420,000) tomorrow if you give us 0.5% off. Thanks!")
-    assert r["verdict"]["outcome"] == "ACCEPT"
-    assert ops(r) == [("ACCEPT_OFFER", "EXECUTED")] and r["operations"][0]["tier"] == "TIER_1"
+    v = stored_verdict(rt, r)
+    assert v["outcome"] == "ACCEPT"
+    assert stored_ops(rt) == [("ACCEPT_OFFER", "EXECUTED")]
+    assert json.loads(rt.store.operations()[-1].result_json)["tier"] == "TIER_1"
     assert r["reply"] == "Agreed as proposed."
-    offer = rt.store.get_offer(r["verdict"]["offer_id"])
+    offer = rt.store.get_offer(v["offer_id"])
     assert offer.autonomy_eligible and offer.autonomy_notes == []
 
 
-def test_the_same_offer_at_or_above_break_even_is_countered_not_accepted(client) -> None:
+def test_the_same_offer_at_or_above_break_even_is_countered_not_accepted(client, rt) -> None:
     r = Chat(client, "t1-be", actor="COUNTERPARTY", owner=False, counterparty_id="BUYER-1").say(
         "Hi, we can pay invoice RCV-A (¥420,000) tomorrow if you give us 0.9% off. Thanks!")
-    assert r["verdict"]["outcome"] == "COUNTER"
-    assert ("ACCEPT_OFFER", "EXECUTED") not in ops(r)
+    assert stored_verdict(rt, r)["outcome"] == "COUNTER"
+    assert ("ACCEPT_OFFER", "EXECUTED") not in stored_ops(rt)

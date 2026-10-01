@@ -69,6 +69,24 @@ def ops(resp: dict) -> list[tuple[str, str]]:
     return [(o["kind"], o["status"]) for o in resp["operations"]]
 
 
+def stored_verdict(rt: Runtime, resp: dict) -> dict:
+    """The verdict behind a COUNTERPARTY turn, read owner-side from the store: the /nl response withholds it."""
+    from app.nl.sessions import SESSIONS
+
+    session = SESSIONS.get(resp["session_id"])
+    assert session is not None and session.last_verdict_id is not None
+    verdict = rt.store.get_verdict(session.last_verdict_id)
+    assert verdict is not None
+    return verdict.model_dump(mode="json")
+
+
+def stored_ops(rt: Runtime, since: int = 0) -> list[tuple[str, str]]:
+    """(kind, status) of the operations logged after the first `since`: what a COUNTERPARTY turn executed."""
+    import json
+
+    return [(r.kind, json.loads(r.result_json)["status"]) for r in rt.store.operations()[since:]]
+
+
 def codes(resp: dict) -> list[str]:
     v = resp.get("verdict") or {}
     return list(dict.fromkeys(x["code"] for x in v.get("violations", [])))
