@@ -420,7 +420,7 @@ pay payment invoice inv early discount disc off settle setle settel clear take g
 today tomorrow tmrw now immediately full whole open days day
 happy glad able
 cny rmb yuan
-""".split())
+""".split())  # noqa: SIM905
 _FILLER_ZH = sorted("""
 您好 你好 谢谢 多谢 感谢 辛苦了 辛苦 祝好 此致 敬礼 请 麻烦 劳烦 确认
 我方 我们 我司 我 贵方 贵司 您 你们 你
@@ -428,7 +428,7 @@ _FILLER_ZH = sorted("""
 这张 那张 这笔 那笔 一张 今天 明天 现在 马上 立即 立刻
 可以 愿意 想 能 如果 就 即可 就行 行吗 好吗 可以吗
 天 元 人民币 的 了 吗 吧 呢 啊 嘛 呀 哦 这 那
-""".split(), key=len, reverse=True)
+""".split(), key=len, reverse=True)  # noqa: SIM905
 _ZH_FILLER_RE = re.compile("|".join(map(re.escape, _FILLER_ZH)))
 
 _WORD = re.compile(r"[一-鿿㐀-䶿]+|[^\W\d_一-鿿㐀-䶿]+(?:'[^\W\d_一-鿿㐀-䶿]+)?")
