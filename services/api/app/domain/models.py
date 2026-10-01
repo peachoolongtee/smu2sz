@@ -348,6 +348,11 @@ class Receivable(Contract):
     terms_days: int
     status: Literal["OPEN", "FINANCED", "SETTLED", "FAILED"] = "OPEN"
     confirmed: bool = True  # buyer-confirmed (确权)
+    settled_fen: Fen = 0  # face already settled by receipts; outstanding = face_fen - settled_fen (ADR-0006)
+
+    @property
+    def outstanding_fen(self) -> Fen:
+        return self.face_fen - self.settled_fen
 
     @property
     def due_day(self) -> Day:
@@ -416,6 +421,7 @@ class FinancialState(Contract):
     counterparties: list[Counterparty] = Field(default_factory=list)
     monthly_ebitda_fen: Fen
     state_version: int = 1
+    as_of_day: Day = 0  # the books are closed for every day before this one; cash_fen is cash at its start (ADR-0006)
 
 
 # ---------------------------------------------------------------- funding actions and trajectory

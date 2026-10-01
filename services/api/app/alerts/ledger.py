@@ -11,23 +11,18 @@ from typing import Any
 
 from pydantic import TypeAdapter, ValidationError
 
+from app.books import current_books
 from app.domain.models import (
     Commitment,
-    CommitmentStatus,
-    Contingency,
     FinancialState,
-    Mode,
     Obligation,
-    ObligationType,
     Operation,
     OperationResult,
 )
 from app.domain.ports import LedgerStore
-from app.financial import EngineError, project
 
 _OP: TypeAdapter[Any] = TypeAdapter(Operation)
 
-LIVE = (CommitmentStatus.ACCEPTED, CommitmentStatus.ACTIVE)
 
 
 @dataclass(frozen=True, slots=True)
@@ -66,33 +61,7 @@ def head(store: LedgerStore) -> str | None:
     return ops[-1].entry_hash if ops else None
 
 
-def _cash_relevant(o: Obligation) -> bool:
-    """Obligations of a live commitment that still move cash. Rebates and operational concessions
-    without an effective day live in `state.forward_concessions` already (booked at acceptance)."""
-    if o.contingency == Contingency.CLAIMED_UNEVIDENCED or o.type == ObligationType.CLAIMED_PRIOR_CONCESSION:
-        return False
-    if o.type in (ObligationType.CONTINGENT_REBATE, ObligationType.OPERATIONAL_CONCESSION):
-        return o.effective_day is not None
-    return o.type in (ObligationType.IMMEDIATE_DISCOUNT, ObligationType.TERMS_EXTENSION,
-                      ObligationType.PRICE_ADJUSTMENT)
-
-
 def committed_obligations(state: FinancialState, commitments: list[Commitment]) -> list[Obligation]:
-    """Cash-relevant obligations of ACCEPTED/ACTIVE commitments that still bind to the state (an
-    early-pay discount on a receivable already settled is history, not a projection)."""
-    out: list[Obligation] = []
-    for c in commitments:
-        if c.status not in LIVE:
-            continue
-        for o in c.obligations:
-            if _cash_relevant(o) and binds(state, o):
-                out.append(o)
-    return out
-
-
-def binds(state: FinancialState, o: Obligation) -> bool:
-    try:
-        project(state, [o], [], Mode.CONSERVATIVE, 0)
-    except EngineError:
-        return False
-    return True
+    """Cash-relevant obligations of ACCEPTED/ACTIVE commitments that still bind to the state: the live
+    obligations of the current books (`app.books`, ADR-0006)."""
+    return list(current_books(state, commitments).obligations)

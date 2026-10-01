@@ -143,8 +143,10 @@ def _receivables(state: FinancialState, issue_bound: int) -> dict[str, _Rcv]:
     for r in state.receivables:
         if r.status in ("SETTLED", "FAILED"):
             continue
-        out[r.id] = _Rcv(r.id, r.counterparty_id, r.face_fen, r.issue_day, r.terms_days, r.confirmed, False,
-                         financed=r.status == "FINANCED")
+        if r.face_fen - r.settled_fen <= 0:
+            continue
+        out[r.id] = _Rcv(r.id, r.counterparty_id, r.face_fen - r.settled_fen, r.issue_day, r.terms_days, r.confirmed,
+                         False, financed=r.status == "FINANCED")
     for ri in state.recurring_invoices:
         if ri.every_days <= 0:
             raise ObligationError(f"recurring invoice for {ri.counterparty_id} has every_days <= 0")
@@ -256,8 +258,9 @@ def _immediate_discount(ob: Obligation, state: FinancialState, rcvs: dict[str, _
     settle_day = ob.effective_day
     if settle_day is None:
         settle_day = _early_pay_lead(state, ob.counterparty_id)
-    if settle_day < 0 or settle_day >= r.due:
-        raise ObligationError(f"{ob.id}: settlement on {fday(settle_day)} is not before {r.id}'s due day {r.due}")
+    if settle_day < state.as_of_day or settle_day >= r.due:
+        raise ObligationError(f"{ob.id}: settlement on {fday(settle_day)} is not between today "
+                              f"({fday(state.as_of_day)}) and {r.id}'s due day {r.due}")
     portion = r.face - r.early
     if ob.base.receivable_id is not None and ob.base.amount_fen is not None:
         portion = ob.base.amount_fen
@@ -529,9 +532,10 @@ _NOT_CARRIED = (FacilityKind.BUYER_EARLY_PAY, FacilityKind.BANK_ACCEPTANCE_BILL,
 _BUYER_RECEIPTS = (LedgerEventKind.RECEIPT, LedgerEventKind.EARLY_RECEIPT)
 
 
-def _repay_carried_advance(f: Facility, r: _Rcv, advance: int, book: _Book) -> None:
-    """An advance made before day 0 on a FINANCED receivable, repaid from its receipt on the due day."""
-    day = max(0, r.due)
+def _repay_carried_advance(f: Facility, r: _Rcv, advance: int, book: _Book, today: int = 0) -> None:
+    """An advance made before day 0 on a FINANCED receivable, repaid from its receipt on the due day. If the
+    receivable is already overdue the advance is repaid today without the receipt (recourse; ADR-0006)."""
+    day = max(today, r.due)
     period = fee_period_days(f)
     interest, fee, periods = finance_invoice_charges(f, advance, day)
     book.add(_Posting(day, SETTLE, LedgerEventKind.INTEREST, -interest, f"Interest, {f.name} on {r.id}", f.id,
@@ -559,7 +563,7 @@ def _carry_drawn_balances(state: FinancialState, rcvs: dict[str, _Rcv], book: _B
                 cap = r.face if f.advance_rate_bp is None else post(bp(f.advance_rate_bp) * r.face)
                 advance = min(left, cap)
                 if advance > 0:
-                    _repay_carried_advance(f, r, advance, book)
+                    _repay_carried_advance(f, r, advance, book, state.as_of_day)
                     left -= advance
             if left > 0:
                 book.unallocated.append((f, left))
@@ -647,7 +651,10 @@ def _build(
     _apply_actions(state, actions, mode, rcvs, book)
     _check_limits(state, book)
 
+    today = state.as_of_day  # days before it are closed: posted flows are in cash_fen, unpaid receipts did not happen
     for fl in state.flows:
+        if fl.day < today:
+            continue
         if mode == Mode.CONSERVATIVE and fl.amount_fen > 0 and not fl.confirmed:
             continue  # unconfirmed inflows are ignored
         phase = INFLOW if fl.amount_fen >= 0 else OUTFLOW
@@ -656,8 +663,8 @@ def _build(
                           f"{fl.kind.value.lower()} {y(fl.amount_fen)}"))
     for r in rcvs.values():
         residual = r.face - r.early
-        if residual <= 0 or r.due < 0:
-            continue  # settled early, or overdue before day 0 (no dated receipt to rely on)
+        if residual <= 0 or r.due < today:
+            continue  # settled early, or overdue before today (no dated receipt to rely on)
         if mode == Mode.CONSERVATIVE and not r.confirmed:
             continue
         what = "residual " if r.early else ""
@@ -693,6 +700,7 @@ def _booked(
     and `app.financial.cashpath.project_cash`, so both book exactly the same postings."""
     if horizon_days < 0:
         raise ValueError("horizon_days must not be negative")
+    horizon_days += state.as_of_day  # the horizon is counted from today; days stay absolute (ADR-0006)
     bound = max([horizon_days] + [a.day for a in actions] + [a.repay_day or 0 for a in actions]
                 + [ob.effective_day or 0 for ob in obligations] + [_issue_day_of(a.receivable_id) for a in actions])
     while True:
@@ -713,9 +721,9 @@ def project(
     horizon_days: int,
     min_cash_fen: int | None = None,
 ) -> Trajectory:
-    """Daily cash recursion over days 0..H.
+    """Daily cash recursion over days 0..H. Days before `state.as_of_day` are closed and carry no postings.
 
-    H = max(horizon_days, last repayment day + 1, last day funding cash lands). Raises
+    H = max(as_of_day + horizon_days, last repayment day + 1, last day funding cash lands). Raises
     UncommittedFacilityError for a facility the mode may not use, FundingActionError for a malformed
     or over-limit action, and ObligationError for an obligation that cannot be bound to state.
     """

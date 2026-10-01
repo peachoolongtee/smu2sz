@@ -137,12 +137,13 @@ class Slot:
     rate_bp: int | None = None
     days_early: int | None = None  # EARLY_PAY: due day − arrival
     expected: bool = False
+    request_day: int = 0  # today (state.as_of_day): funding is requested today, never in the past
 
     def action(self, amount_fen: int) -> FundingAction:
         return FundingAction(
             kind=self.kind,
             facility_id=self.facility.id,
-            day=0,
+            day=self.request_day,
             amount_fen=amount_fen,
             receivable_id=self.receivable_id,
             repay_day=self.repay_day,
@@ -306,7 +307,7 @@ class Search:
         self._rule_cache: dict[tuple, bool] = {}  # per action: breaks the max APR or no new borrowing
         self.baseline = project(self.pstate, obligations, [], self.mode, mandate.horizon_days, self.floor)
         self.base_cost = _cost_total(self.baseline)
-        below = [p for p in self.baseline.days if p.closing_fen < self.floor]
+        below = [p for p in self.baseline.days if p.closing_fen < self.floor and p.day >= state.as_of_day]
         self.breach_days = [p.day for p in below]
         self.need_fen = max((self.floor - p.closing_fen for p in below), default=0)
         self.rcvs = receivables(state, self.baseline)
@@ -366,40 +367,42 @@ class Search:
                 continue
             avail = f.limit_fen - f.drawn_fen
             exp = f.status != FacilityStatus.COMMITTED
-            lead = f.lead_time_days
+            today = self.state.as_of_day
+            lead = today + f.lead_time_days  # the day cash lands when requested today
             match f.kind:
                 case FacilityKind.CREDIT_LINE if f.repayment == Repayment.BULLET:
                     for r in self.line_repay_days():
                         if r > lead:
-                            out.append(Slot(f, FundingActionKind.DRAW, lead, avail, repay_day=r, expected=exp))
+                            out.append(Slot(f, FundingActionKind.DRAW, lead, avail, repay_day=r, expected=exp,
+                                            request_day=today))
                 case FacilityKind.INVOICE_FINANCING:
                     for r in self.rcvs.values():
-                        arrival = max(0, r.issue_day) + lead
+                        arrival = max(today, r.issue_day) + f.lead_time_days
                         if arrival < r.due_day and arrival <= last and r.due_day > first:
                             cap = r.open_fen if f.advance_rate_bp is None else f.advance_rate_bp * r.open_fen // 10_000
                             if min(cap, avail) > 0:
                                 out.append(Slot(f, FundingActionKind.FINANCE_INVOICE, arrival, min(cap, avail),
-                                                receivable_id=r.id, expected=exp))
+                                                receivable_id=r.id, expected=exp, request_day=today))
                 case FacilityKind.BUYER_EARLY_PAY:
                     rate = self.early_pay_bp(f)
                     for r in self.rcvs.values():
-                        arrival = max(0, r.issue_day) + lead
+                        arrival = max(today, r.issue_day) + f.lead_time_days
                         if (r.counterparty_id == f.lender_id and arrival < r.due_day and arrival <= last
                                 and r.due_day > first):
                             out.append(Slot(f, FundingActionKind.EARLY_PAY, arrival, min(r.open_fen, avail),
                                             receivable_id=r.id, rate_bp=rate, days_early=r.due_day - arrival,
-                                            expected=exp))
+                                            expected=exp, request_day=today))
                 case FacilityKind.BANK_ACCEPTANCE_BILL:
-                    maturity = MONTH_DAYS * (f.term_months or DEFAULT_BILL_MONTHS)
+                    maturity = today + MONTH_DAYS * (f.term_months or DEFAULT_BILL_MONTHS)
                     if maturity > lead and lead <= last:
                         out.append(Slot(f, FundingActionKind.DISCOUNT_BILL, lead, avail, repay_day=maturity,
-                                        rate_bp=f.rate_bp, expected=exp))
+                                        rate_bp=f.rate_bp, expected=exp, request_day=today))
                 case FacilityKind.CREDIT_LINE:
                     pass
                 case _:
                     # term loans and leases: drawn on day 0, repaid on their own schedule
                     if f.term_months and f.repayment in (Repayment.BULLET, Repayment.AMORTISING) and lead <= last:
-                        out.append(Slot(f, FundingActionKind.DRAW, lead, avail, expected=exp))
+                        out.append(Slot(f, FundingActionKind.DRAW, lead, avail, expected=exp, request_day=today))
         return sorted((s for s in out if s.cap_fen >= self.MIN_ACTION_FEN), key=lambda s: s.sort_key)
 
     # ------------------------------------------------------------ evaluation
