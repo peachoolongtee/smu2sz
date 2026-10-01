@@ -635,7 +635,12 @@ def _evaluate(
                        f"this package also binds {kinds}")
             extra_notes.append("owner approval needed: " + why)
         else:
-            outcome, tier = Outcome.ACCEPT, Tier.TIER_1
+            unproven = _autonomy_gaps(offer, bound, state)
+            if unproven:
+                outcome, tier = Outcome.NEEDS_OWNER_APPROVAL, Tier.TIER_2
+                extra_notes.append("owner approval needed: autonomy not proven (" + "; ".join(unproven) + ")")
+            else:
+                outcome, tier = Outcome.ACCEPT, Tier.TIER_1
 
     extra = [f"Forward concessions {fmt_yuan(res.forward_total)} against "
              + fmt_yuan(mandate.max_aggregate_forward_concession_fen)]
@@ -653,6 +658,31 @@ def _evaluate(
         security_events=events, passed_checks=passed, bound_obligations=bound, notes=notes, cure_plan=cure,
         comparison=comparison,
     )
+
+
+def _autonomy_gaps(offer: CompiledOffer, bound: list[Obligation], state: FinancialState) -> list[str]:
+    """Why this offer may not be accepted without the owner (ADR-0005). Empty means proven.
+
+    Owner-built typed offers (/nl plans, what-if) carry no free text and are exempt. A counterparty's
+    message must carry the compiler's positive coverage proof, and every early-pay discount must name
+    a whole open invoice by its stated face: never bound by default to "the only open receivable"."""
+    if offer.compiler.startswith(("nl-", "whatif")):
+        return []
+    gaps: list[str] = []
+    if not offer.autonomy_eligible:
+        gaps.append("the compiler could not account for every figure and request in the message"
+                    + (f": {'; '.join(offer.autonomy_notes)}" if offer.autonomy_notes else ""))
+    faces = {r.id: r.face_fen for r in state.receivables}
+    stated = {o.id: o.base.amount_fen for o in offer.obligations}
+    for ob in bound:
+        if ob.type != ObligationType.IMMEDIATE_DISCOUNT:
+            continue
+        face = faces.get(ob.base.receivable_id or "")
+        if stated.get(ob.id) is None:
+            gaps.append(f"{ob.id}: the message does not state the invoice amount")
+        elif face is None or stated[ob.id] != face or ob.base.amount_fen != face:
+            gaps.append(f"{ob.id}: the stated amount is not the whole face of an open invoice")
+    return gaps
 
 
 def evaluate_verdict(

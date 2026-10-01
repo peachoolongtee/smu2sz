@@ -43,7 +43,7 @@ _SUFFIX = r"(?:元|\s?yuan\b|\s?RMB\b|\s?CNY\b)"
 
 # A number with no currency marker is money only when the word right after it names a bill: "the 420k inv",
 # "the 420,000 invoice". `ctx` is an empty group that records that lookahead.
-_BILL_CTX = r"(?:(?P<ctx>)(?=\s?(?:inv(?:oice)?s?\b|inv\.|bills?\b|发票|货款)))"
+_BILL_CTX = r"(?:(?P<ctx>)(?=\s?(?:的|那张|这张|那笔|这笔)?\s?(?:inv(?:oice)?s?\b|inv\.|bills?\b|发票|货款|张票)))"
 
 MONEY_RE = re.compile(
     rf"(?P<cur>{_CUR})?(?P<num>{_NUM})(?:\s?(?P<unit>{_UNIT}))?(?P<suffix>{_SUFFIX})?{_BILL_CTX}?",
@@ -72,9 +72,11 @@ _EN_W = "(?:" + "|".join(sorted([*_EN_SMALL, *_EN_TENS, *_EN_SCALE], key=len, re
 EN_WORD_MONEY_RE = re.compile(
     rf"(?i:(?<![A-Za-z-])(?P<w>{_EN_W}(?:(?:\s+and\s+|[\s-]+){_EN_W})*)\s+(?:yuan|rmb|renminbi|cny)(?![A-Za-z]))")
 # Chinese numerals: "四十二万", "三十万元", "五千元". A 万/亿 unit or a 元/块 suffix is required.
-_ZH_N = "零一二两三四五六七八九十百千"
+# Financial (大写) numerals are the same numbers written fraud-proof: 肆拾贰万元整 = 四十二万元.
+_ZH_CAPITAL = str.maketrans("壹贰叁肆伍陆柒捌玖拾佰仟〇", "一二三四五六七八九十百千零")
+_ZH_N = "零〇一二两三四五六七八九十百千壹贰叁肆伍陆柒捌玖拾佰仟"
 ZH_WORD_MONEY_RE = re.compile(
-    rf"(?:人民币\s?)?(?<![{_ZH_N}万亿])(?P<z>[{_ZH_N}]+(?:(?:万|亿)[{_ZH_N}万亿]*)?)(?P<zs>元|块钱?)?")
+    rf"(?:人民币\s?)?(?<![{_ZH_N}万亿])(?P<z>[{_ZH_N}]+(?:(?:万|亿)[{_ZH_N}万亿]*)?)(?P<zs>元整?|块钱?)?")
 _ZH_DIGIT_VALUES = {"零": 0, "一": 1, "二": 2, "两": 2, "三": 3, "四": 4, "五": 5, "六": 6, "七": 7, "八": 8, "九": 9}
 _ZH_UNIT_VALUES = {"十": 10, "百": 100, "千": 1_000}
 
@@ -94,7 +96,7 @@ def _strip_names(p: str) -> str:
 # Same grammar, no named groups: digits (with ¥/k/万), English number words, Chinese numerals.
 MONEY_PAT = (
     f"(?:{_strip_names(MONEY_RE.pattern)}|{_strip_names(EN_WORD_MONEY_RE.pattern)}"
-    rf"|(?:人民币\s?)?(?<![{_ZH_N}万亿])[{_ZH_N}]+(?:(?:万|亿)[{_ZH_N}万亿]*(?:元|块钱?)?|元|块钱?))"
+    rf"|(?:人民币\s?)?(?<![{_ZH_N}万亿])[{_ZH_N}]+(?:(?:万|亿)[{_ZH_N}万亿]*(?:元整?|块钱?)?|元整?|块钱?))"
 )
 
 
@@ -103,7 +105,8 @@ def _money_value(m: re.Match[str]) -> int | None:
     unit_key = unit.lower() if unit and unit not in "千万亿" else unit
     # A bare number is not money. Chinese 万/亿 are unambiguous; k/m need a currency marker, or a bill noun
     # right after a k/m amount or a comma-grouped one ("420k inv", "the 420,000 invoice").
-    bill = m.group("ctx") is not None and (unit_key in {"k", "m", "mn", "million", "thousand"} or "," in m.group("num"))
+    bill = m.group("ctx") is not None and (unit_key in {"k", "m", "mn", "million", "thousand"} or "," in m.group("num")
+                                           or (not unit_key and re.fullmatch(r"\d{5,}", m.group("num")) is not None))
     if not (cur or suffix or unit_key in {"万", "亿"} or bill):
         return None
     try:
@@ -168,9 +171,10 @@ def _zh_section(s: str) -> int | None:
 
 
 def zh_number(s: str) -> int | None:
-    """'四十二万' -> 420000, '一亿二千万' -> 120000000, '十二' -> 12. None when not one exact number."""
+    """'四十二万' -> 420000, '一亿二千万' -> 120000000, '十二' -> 12, '肆拾贰万' -> 420000. None when not one
+    exact number."""
     total = 0
-    rest = s
+    rest = s.translate(_ZH_CAPITAL)
     for big, mult in (("亿", 100_000_000), ("万", 10_000)):
         if big in rest:
             head, rest = rest.split(big, 1)
@@ -199,7 +203,7 @@ def _word_money(text: str) -> list[Found]:
         z = m.group("z")
         if not (m.group("zs") or "万" in z or "亿" in z):
             continue
-        if not re.search("[一二两三四五六七八九十]", z):
+        if not re.search("[一二两三四五六七八九十]", z.translate(_ZH_CAPITAL)):
             continue  # "千万" (by all means), not an amount
         n = zh_number(z)
         if n:
@@ -241,9 +245,16 @@ _EN_RATE_WORDS = (
     r"|three[\s-]quarters\s+of\s+a)"
 )
 _ZH_DEC = "[零一二两三四五六七八九十]+(?:点[零一二三四五六七八九]+)?"
+# Discounts are also quoted per mille (千分之六 = 0.6%), per ten-thousand (万分之五 = 5 bp), in basis points
+# ("30bps"), and as the share of the price still paid (99.3折 = pay 99.3% = 0.7% off; 九五折 = 5% off).
+_ZH_DIGIT_RUN = "[零一二两三四五六七八九]"
 RATE_RE = re.compile(
     rf"(?:百分之\s?(?P<zh>\d+(?:\.\d+)?|{_ZH_DEC}))"
-    r"|(?:(?P<num>\d+(?:\.\d+)?)\s?(?:%|％|\s?percent\b|\s?per\s?cent\b|\s?percentage\s+points?\b|个点))"
+    rf"|(?:千分之\s?(?P<pm>\d+(?:\.\d+)?|{_ZH_DEC}))"
+    rf"|(?:万分之\s?(?P<pt>\d+(?:\.\d+)?|{_ZH_DEC}))"
+    r"|(?:(?<![\d.])(?P<bps>\d+(?:\.\d+)?)\s?(?:bps|bp|basis\s+points?|个基点)(?![A-Za-z]))"
+    rf"|(?:(?<![\d.])(?P<zhe>\d{{1,2}}(?:\.\d{{1,2}})?|{_ZH_DIGIT_RUN}{{1,3}})\s?折(?!扣|算|合|叠|旧|返|现|让))"
+    r"|(?:(?P<num>\d+(?:\.\d+)?)\s?(?:%|％|\s?percent\b|\s?per\s?cent\b|\s?percentage\s+points?\b|个百分点|个点))"
     rf"|(?:(?P<zhp>{_ZH_DEC}|半)个点)|(?:(?P<zhh>[一二两三四五六七八九十]+)个半点)"
     rf"|(?i:(?<![A-Za-z-])(?P<en>{_EN_RATE_WORDS})\s+(?:percent|per\s?cent|percentage\s+points?)(?![A-Za-z]))"
 )
@@ -284,10 +295,35 @@ def _en_rate_value(s: str) -> Decimal | None:
     return None
 
 
+def _zhe_discount(raw: str) -> Decimal | None:
+    """'99.3' -> 0.7, '95' -> 5, '9.5' -> 5, '九五' -> 5, '九' -> 10: the percentage taken off by an N折 price."""
+    if raw[0].isdigit():
+        pay = Decimal(raw)
+        pay = pay * 10 if pay < 10 else pay
+    else:
+        digits = "".join(str(_ZH_DIGIT_VALUES[c]) for c in raw)
+        pay = Decimal(digits) * 10 if len(digits) == 1 else Decimal(digits[:2] + ("." + digits[2:] if digits[2:] else ""))
+    if not Decimal(50) <= pay < Decimal(100):
+        return None
+    return Decimal(100) - pay
+
+
 def _rate_value(m: re.Match[str]) -> Decimal | None:
     try:
         if m.group("num"):
             return Decimal(m.group("num"))
+        if m.group("pm"):
+            z = m.group("pm")
+            v = Decimal(z) if z[0].isdigit() else _zh_decimal(z)
+            return None if v is None else v / 10
+        if m.group("pt"):
+            z = m.group("pt")
+            v = Decimal(z) if z[0].isdigit() else _zh_decimal(z)
+            return None if v is None else v / 100
+        if m.group("bps"):
+            return Decimal(m.group("bps")) / 100
+        if m.group("zhe"):
+            return _zhe_discount(m.group("zhe"))
         if m.group("zh"):
             z = m.group("zh")
             return Decimal(z) if z[0].isdigit() else _zh_decimal(z)

@@ -183,6 +183,11 @@ class CompiledOffer(Contract):
     funding_claims: list[UnsolicitedFundingClaim] = Field(default_factory=list)
     compiler: str  # e.g. "fixture-cache" | "claude-sonnet-5-5" | "deepseek-flash"
     prompt_version: str
+    # Positive proof that the whole message is explained by `obligations`: every amount, rate, day count
+    # and invoice reference is accounted for and no other request is left unread. False by default: only
+    # a proven offer can be accepted without the owner (docs/adr/0005-autonomy-requires-proof.md).
+    autonomy_eligible: bool = False
+    autonomy_notes: list[str] = Field(default_factory=list)
 
 
 # ---------------------------------------------------------------- facilities (Debt Desk)

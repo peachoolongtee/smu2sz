@@ -55,6 +55,8 @@ class Session:
     pending_clarification: PendingClarification | None = None
     requests: dict[str, list[Any]] = field(default_factory=dict)  # request_id -> typed ops sent
     history: list[tuple[int, str]] = field(default_factory=list)  # (turn, intent)
+    # approval ids the previous turn showed the owner: the only queue items a bare "approve it" / "yes" may decide
+    shown_approvals: list[str] = field(default_factory=list)
 
 
 class SessionStore:

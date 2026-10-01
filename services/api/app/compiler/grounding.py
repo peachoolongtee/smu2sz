@@ -16,7 +16,7 @@ import re
 from collections.abc import Sequence
 from fractions import Fraction
 
-from app.compiler import lexicon
+from app.compiler import coverage, lexicon
 from app.compiler.parsing import (
     MONEY_PAT,
     find_money,
@@ -361,9 +361,37 @@ def _ground_obligation(
     target = grounded(x.target_terms_text, parse_days, "target_terms_days")
     current = grounded(x.current_terms_text, parse_days, "current_terms_days")
 
+    if x.type == ObligationType.IMMEDIATE_DISCOUNT and rate_bp is None and amount_fen is None and base_amount is not None:
+        derived = _net_rate(spans, base_amount)
+        if derived is False:
+            abst.append(Abstention(field=f"{label}.rate_bp", spans=spans, reason=(
+                "the net sum stated implies a discount that is not a whole basis point of the invoice; clarification "
+                "needed, nothing booked")))
+            return None, True
+        if derived is not None:
+            rate_bp = derived
+            abst.append(Abstention(field=f"note:{label}.rate_bp.derived", spans=spans, reason=(
+                "rate derived exactly from the net sum stated: (invoice amount - net sum) / invoice amount")))
     if x.type in MATERIAL_VALUE_TYPES and rate_bp is None and amount_fen is None:
         abst.append(Abstention(field=f"{label}.rate_bp", reason="material field has no grounded span: rate or amount missing", spans=spans))
         return None, True
+    if x.type == ObligationType.IMMEDIATE_DISCOUNT and amount_fen is not None and base_amount is not None and amount_fen >= base_amount:
+        abst.append(Abstention(field=f"{label}.amount_fen", spans=spans, reason=(
+            "a discount sum at or above the invoice amount is not a discount; clarification needed, nothing booked")))
+        return None, True
+    if x.type == ObligationType.PRICE_ADJUSTMENT and rate_bp is not None:
+        down = bool(_PRICE_DOWN.search(spans[0].text))
+        if down and _PRICE_UP.search(spans[0].text):
+            abst.append(Abstention(field=f"{label}.rate_bp", spans=spans, reason=(
+                "the direction of the price change is ambiguous; clarification needed, nothing booked")))
+            return None, True
+        if down:
+            rate_bp = -abs(rate_bp)
+            abst.append(Abstention(field=f"note:{label}.sign", spans=spans, reason=(
+                "a price reduction: booked as a negative price adjustment, a cost to the supplier")))
+    if base_amount is not None and x.base_amount_text and _approximate(docs, spans, x.base_amount_text):
+        abst.append(Abstention(field=f"note:{label}.base.approximate", spans=spans, reason=(
+            "approximate base bound at the stated figure; the owner confirms the final amount")))
     if _rebate_scope(docs, x, spans, base_amount, amount_fen) and "scope" not in unresolved:
         unresolved.append("scope")
         abst.append(Abstention(field=f"note:{label}.scope", reason=_UNBOUNDED_SCOPE_NOTE, spans=spans))
@@ -419,11 +447,49 @@ def _ground_obligation(
     return ob, False
 
 
+# Price-change direction, read from the obligation's own evidence (whatever the backend's rate sign).
+_PRICE_DOWN = rx(r"\b(?:reduc\w*|cut|cuts|cutting|lower\w*|decreas\w*|drop\w*|cheaper|down|discount\w*|markdown)\b"
+                 r"|下调|降低|降价|下降|减少|减价|让价|下浮|便宜|降", re.IGNORECASE)
+_PRICE_UP = rx(r"\b(?:increas\w*|rais\w*|higher|more|uplift|premium|up|rise[sd]?|rising|mark\s+up|top[- ]?up|extra)\b"
+               r"|上调|提高|上浮|上涨|涨|加价|多付", re.IGNORECASE)
+_APPROX = rx(r"(?:\b(?:approx\.?|approximately|about|around|roughly|circa|some|est\.?|estimated)\s*|[~≈～]\s*|大约|大概|约)$"
+             r"|^\s*(?:左右|上下|or\s+so\b|give\s+or\s+take)", re.IGNORECASE)
+_NET_CUE = rx(r"\b(?:transfer|wire|remit|pay|send|settle|close\s+out)\b|实付|只付|付|打|转|汇", re.IGNORECASE)
+
+
+def _net_rate(spans: Sequence[SourceSpan], base: int) -> int | None | bool:
+    """A discount stated as the net sum paid: the exact rate in bp, None when no single net sum is quoted, or
+    False when the implied discount is not a whole basis point."""
+    nets = {f.value for sp in spans if _NET_CUE.search(sp.text) for f in find_money(sp.text) if 0 < f.value < base}
+    if len(nets) != 1:
+        return None
+    disc = base - nets.pop()
+    bp = Fraction(disc * 10_000, base)
+    return int(bp) if bp.denominator == 1 and 0 < bp < 10_000 else False
+
+
+def _approximate(docs: dict[str, SourceDocument], spans: Sequence[SourceSpan], amount_text: str) -> bool:
+    """The base amount is hedged ("approx. ¥400,000", "~¥400k", "40万左右") where it is quoted."""
+    frag = amount_text.strip()
+    for sp in spans:
+        text = docs[sp.doc_id].text
+        i = text.find(frag, sp.start, sp.end + len(frag))
+        if i < 0:
+            continue
+        if _APPROX.search(text[max(0, i - 16):i]) or _APPROX.search(text[i + len(frag):i + len(frag) + 16]):
+            return True
+    return False
+
+
 def _same_sentence(docs: dict[str, SourceDocument], a: SourceSpan, b: SourceSpan) -> bool:
     if a.doc_id != b.doc_id:
         return False
     text = docs[a.doc_id].text
     return lexicon.sentence_bounds(text, a.start) == lexicon.sentence_bounds(text, b.start)
+
+
+_APPROVED = rx(r"\b(?:approv\w*|agreed|agree|okayed|ok'?d|signed\s+off|authori[sz]ed|promised)\b|同意|批准|答应|审批|授权|说好|确认",
+              re.IGNORECASE)
 
 
 def _force_claimed(docs: dict[str, SourceDocument], ob: Obligation, claims: Sequence[AuthorityClaim]) -> Obligation:
@@ -432,7 +498,10 @@ def _force_claimed(docs: dict[str, SourceDocument], ob: Obligation, claims: Sequ
     the backend called it: it is never booked without ledger evidence."""
     if ob.type == ObligationType.CLAIMED_PRIOR_CONCESSION:
         return ob
-    prior = [c.span for c in claims if c.kind == "PRIOR_AGREEMENT"]
+    # "the owner pre-approved a 3% rebate", "你们老板上周电话里已经同意我们账期改60天": a concession presented as
+    # already approved is a claim to evidence, never a live term.
+    prior = [c.span for c in claims if c.kind in ("PRIOR_AGREEMENT", "PRE_APPROVAL")
+             or (c.kind == "IMPERSONATION" and _APPROVED.search(c.span.text))]
     if any(_overlaps(s, p) or _same_sentence(docs, s, p) for s in ob.spans[:1] for p in prior):
         return ob.model_copy(update={"type": ObligationType.CLAIMED_PRIOR_CONCESSION, "contingency": Contingency.CLAIMED_UNEVIDENCED})
     return ob
@@ -761,6 +830,33 @@ def early_pay_guard(
     return out, material, conflict
 
 
+def bind_invoice_refs(
+    docs: dict[str, SourceDocument], obs: Sequence[Obligation], abst: list[Abstention]
+) -> tuple[list[Obligation], bool]:
+    """An early-pay discount names its invoice by number ("invoice RCV-A", "Re INV-2026-0871"): the number is kept
+    as the base's receivable id, so the verifier binds that invoice or none, never another one. A number in the
+    discount's own sentence wins; otherwise the only number the document quotes. Two different numbers leave the
+    receivable unresolved (material)."""
+    out: list[Obligation] = []
+    material = False
+    for ob in obs:
+        if ob.type != ObligationType.IMMEDIATE_DISCOUNT or ob.base.receivable_id is not None:
+            out.append(ob)
+            continue
+        refs = {r for d, s, e in _sentences(docs, ob.spans) for *_, r in coverage.invoice_refs(docs[d].text, s, e)}
+        if not refs:
+            refs = {r for d in {sp.doc_id for sp in ob.spans} for *_, r in coverage.invoice_refs(docs[d].text)}
+        if len(refs) == 1:
+            ob = ob.model_copy(update={"base": ob.base.model_copy(update={"receivable_id": refs.pop()})})
+        elif len(refs) > 1:
+            material = True
+            ob = ob.model_copy(update={"unresolved": list(dict.fromkeys([*ob.unresolved, "receivable_id"]))})
+            abst.append(Abstention(field=f"{ob.type.value}.base.receivable_id", spans=ob.spans, reason=(
+                "unresolved scope: the discount names more than one invoice number; clarification needed, nothing booked")))
+        out.append(ob)
+    return out, material
+
+
 # ---------------------------------------------------------------- offers
 
 
@@ -852,6 +948,8 @@ def build_offer(
     ordered = dedupe_obligations(ordered, abst)
     ordered, guard_material, guard_conflict = early_pay_guard(by_id, ordered, abst)
     material_abstain |= guard_material
+    ordered, ref_material = bind_invoice_refs(by_id, ordered, abst)
+    material_abstain |= ref_material
     obligations: list[Obligation] = []
     conflict_values = set().union(*conflicts.values()) if conflicts else set()
     for n, ob in enumerate(ordered, start=1):
@@ -861,14 +959,25 @@ def build_offer(
             upd["unresolved"] = [*ob.unresolved, "base_amount"]
         obligations.append(ob.model_copy(update=upd))
     obligation_conflict = _obligation_conflicts(obligations, abst)
+    # (b) of the coverage proof: a stated discount sum or net payment must equal rate x invoice amount
+    partial = {sp.doc_id for a in abst if a.field.endswith(".base.partial") for sp in a.spans}
+    sums = coverage.settlement_conflicts(by_id, obligations, partial)
+    if sums:
+        abst.append(Abstention(
+            field="base.amount_fen:settlement_sum",
+            reason="conflicting sources: a stated discount sum or net payment does not equal the rate times the invoice "
+                   "amount; clarification needed, nothing booked",
+            spans=[*(sp for o in obligations if o.type == ObligationType.IMMEDIATE_DISCOUNT for sp in o.spans[:1]), *sums]))
 
-    if conflicts or obligation_conflict or guard_conflict:
+    if conflicts or obligation_conflict or guard_conflict or sums:
         status = CompileStatus.CONFLICTING_SOURCES
     elif material_abstain:
         status = CompileStatus.ABSTAINED
     else:
         status = CompileStatus.COMPILED
 
+    eligible, why = coverage.prove(docs, obligations, status=status, abstentions=abst, data_requests=data_requests,
+                                   authority_claims=authority, funding_claims=funding)
     return CompiledOffer(
         offer_id=offer_id,
         counterparty_id=counterparty_id,
@@ -882,6 +991,8 @@ def build_offer(
         funding_claims=funding,
         compiler=compiler_id,
         prompt_version=prompt_version,
+        autonomy_eligible=eligible,
+        autonomy_notes=why,
     )
 
 
