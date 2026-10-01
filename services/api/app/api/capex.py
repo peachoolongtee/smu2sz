@@ -73,7 +73,7 @@ def post_capex_evaluate(body: CapexRequest | None = None) -> dict:
     with rt.lock:
         state, mandate = rt.store.get_state(), rt.store.get_mandate()
         try:
-            result = evaluate_capex(request, state, mandate)
+            result = evaluate_capex(request, state, mandate, commitments=rt.store.commitments())
         except CapexDisabled as exc:
             raise HTTPException(403, detail={"code": exc.code.value, "message": str(exc)}) from None
         applied = _queue_application(result)

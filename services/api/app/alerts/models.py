@@ -63,6 +63,8 @@ class Alert(Contract):
     month: int | None = None
     amount_fen: Fen | None = None  # shortfall, past-due face, concession total ...
     committed_cure: bool | None = None  # reserve breaches: can COMMITTED facilities cure it?
+    commitment_id: str | None = None  # past-due kind: the commitment whose early payment did not arrive
+    receivable_id: str | None = None  # past-due kind: the receivable concerned
     inputs: dict[str, str] = Field(default_factory=dict)
     suggested: list[SuggestedAction] = Field(default_factory=list)
     basis: Literal["CONSERVATIVE"] = "CONSERVATIVE"
