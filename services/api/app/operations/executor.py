@@ -52,11 +52,13 @@ from app.domain.models import (
     GenerateBorrowerFile,
     IssueEquity,
     Mandate,
+    Obligation,
     ObligationType,
     OperationResult,
     OperationStatus,
     Outcome,
     PledgeCollateral,
+    Receivable,
     ReceivePayment,
     RecordCommitment,
     RejectOffer,
@@ -72,7 +74,7 @@ from app.domain.models import (
     Violation,
     ViolationCode,
 )
-from app.domain.money import fmt_yuan
+from app.domain.money import bp, fmt_yuan, post
 from app.domain.ports import LedgerStore
 from app.mandate import check_validity, tier_for
 from app.operations.charges import finance_invoice_charges, line_interest, upfront_fee
@@ -909,16 +911,47 @@ class Executor:
                           facilities=_with_facility(state, f.model_copy(update={"drawn_fen": f.drawn_fen + op.advance_fen})))
         return _Effect(f"Advance {fmt_yuan(op.advance_fen)} on {r.id} from {f.id} on day {ctx.now}", state=new_state)
 
+    def _early_pay_match(self, op: ReceivePayment, r: Receivable, now: int) -> tuple[Commitment, Obligation, int] | None:
+        """ADR-0006 section 4: the live early-pay obligation on `r` whose posted `P - discount` equals this
+        receipt to the fen, as (its commitment moved to FULFILLED, the obligation, the face P it settles).
+        Same arithmetic as `_immediate_discount` in app/financial/trajectory.py. None when there is none."""
+        for c in self._store.commitments():
+            if c.status not in (CommitmentStatus.ACCEPTED, CommitmentStatus.ACTIVE):
+                continue
+            for o in c.obligations:
+                if o.type != ObligationType.IMMEDIATE_DISCOUNT or o.base.receivable_id != r.id:
+                    continue
+                portion = o.base.amount_fen if o.base.amount_fen else r.outstanding_fen
+                if o.rate_bp is not None:
+                    discount = post(bp(o.rate_bp) * portion)
+                elif o.amount_fen is not None:
+                    discount = o.amount_fen
+                else:
+                    continue
+                if op.amount_fen != portion - discount:
+                    continue
+                try:
+                    done = transition(c, CommitmentStatus.ACTIVE, now) if c.status == CommitmentStatus.ACCEPTED else c
+                    done = transition(done, CommitmentStatus.FULFILLED, now)
+                except CommitmentError:
+                    continue  # cannot be fulfilled (e.g. expired before activation): a plain receipt
+                return done, o, portion
+        return None
+
     def _receive(self, op: ReceivePayment, ctx: _Ctx) -> _Effect:
         state = ctx.state
         r = next((r for r in state.receivables if r.id == op.receivable_id), None)
         if r is None:
             raise _refuse(Code.PRECONDITION_FAILED, f"Receivable {op.receivable_id} does not exist")
-        if r.status not in ("OPEN", "FINANCED"):
+        if r.status not in ("OPEN", "FINANCED") or r.outstanding_fen <= 0:
             raise _refuse(Code.PRECONDITION_FAILED, f"Receivable {r.id} is {r.status}; nothing is owed")
-        if op.amount_fen > r.face_fen:
+        matched = self._early_pay_match(op, r, ctx.now)
+        face_settled = matched[2] if matched else op.amount_fen
+        if face_settled > r.outstanding_fen:
             raise _refuse(Code.PRECONDITION_FAILED,
-                          f"Payment {fmt_yuan(op.amount_fen)} exceeds {r.id}'s face {fmt_yuan(r.face_fen)}")
+                          f"Payment {fmt_yuan(op.amount_fen)} settles {fmt_yuan(face_settled)} of {r.id}, which has "
+                          f"only {fmt_yuan(r.outstanding_fen)} outstanding",
+                          amount_fen=op.amount_fen, face_settled_fen=face_settled, outstanding_fen=r.outstanding_fen)
         cash = state.cash_fen + op.amount_fen
         facilities = state.facilities
         note = ""
@@ -934,9 +967,22 @@ class Executor:
             facilities = _with_facility(state, f.model_copy(update={"drawn_fen": max(0, f.drawn_fen - adv.advance_fen)}))
             note = (f"; repaid advance {fmt_yuan(adv.advance_fen)} + interest {fmt_yuan(interest)} + fee "
                     f"{fmt_yuan(fee)} ({days} days billed as {periods} whole period(s)) to {f.id}")
-        receivables = [x.model_copy(update={"status": "SETTLED"}) if x.id == r.id else x for x in state.receivables]
+        settled = r.settled_fen + face_settled
+        status = "SETTLED" if settled == r.face_fen else "OPEN"
+        receivables = [x.model_copy(update={"status": status, "settled_fen": settled}) if x.id == r.id else x
+                       for x in state.receivables]
         new_state = _bump(state, cash_fen=cash, receivables=receivables, facilities=facilities)
-        return _Effect(f"Received {fmt_yuan(op.amount_fen)} on {r.id}{note}", state=new_state)
+        residual = r.face_fen - settled
+        parts: list[str] = []
+        if matched:
+            _, o, portion = matched
+            terms = f"{o.rate_bp / 100:g}%" if o.rate_bp is not None else fmt_yuan(o.amount_fen or 0)
+            parts.append(f"settles {fmt_yuan(portion)} at the agreed {terms} early-payment discount")
+        if residual:
+            parts.append(f"{fmt_yuan(residual)} still due on day {r.due_day}")
+        detail = f" ({'; '.join(parts)})" if parts else ""
+        return _Effect(f"Received {fmt_yuan(op.amount_fen)} on {r.id}{detail}{note}", state=new_state,
+                       commitment=matched[0] if matched else None)
 
     def _add_facility(self, op: AddFacility, ctx: _Ctx) -> _Effect:
         # Reached only for an owner-originated AddFacility the owner has approved (Tier 2).
