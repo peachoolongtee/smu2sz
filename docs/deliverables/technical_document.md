@@ -301,7 +301,7 @@ Every violation carries a code, the day or month, the observed value, the limit,
 
 **5. Counters from the marginal cost (`verifier/counters.py`).**
 
-- **Option A (early pay):** keep 45-day terms and no rebate; accept early settlement on up to **¥211,800** of face at the largest whole-5 bp rate below break-even, **0.85%**. The supplier's cost is the discount of **¥1,800.30** plus line interest of **¥841.64**: **¥2,641.94**. It books no forward concession.
+- **Option A (early pay):** keep 45-day terms and no rebate; accept early settlement on up to **¥211,900** of face (the exact gross-up ¥211,800.30 rounded up to a whole ¥100, so it nets at least the gap) at the largest whole-5 bp rate below break-even, **0.85%**. The supplier's cost is the discount of **¥1,801.15** plus the cost of funding the rest of the gap on the committed line (¥149,901.15, **¥841.09**): **¥2,642.24**. The router must keep the cash floor on books that include the counter, otherwise no early-pay counter is offered. It books no forward concession.
 - **Option B (price adjustment):** accept the 60-day terms with the smallest whole-5 bp price adjustment whose per-invoice amount covers the per-invoice funding cost: **0.45%**, **¥1,890** per invoice against ¥1,871.30.
 - Bounded-extension and rebate-within-headroom counters are generated the same way.
 - Outbound text is template-filled from an allow-list and passes the egress guard. It never contains the floor, a cap, a limit, the marginal rate or a reservation.

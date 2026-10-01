@@ -233,7 +233,7 @@ def test_reconciliation_matches_the_agreed_amount_and_reports_partials_with_the_
     assert agreed.expected_fen == EARLY and agreed.difference_fen == 0
     assert partial.status == MatchStatus.SHORT_PAYMENT and partial.flagged and partial.commitment_id is None
     assert partial.expected_fen == RESIDUAL and partial.difference_fen == 5_000_000 - RESIDUAL
-    assert "partial payment" in partial.detail and "¥158,200.00 of RCV-A still due" in partial.detail
+    assert "partial payment" in partial.detail and "¥158,100.00 of RCV-A still due" in partial.detail
     [out] = [o for o in rep.outstanding if o.receivable_id == "RCV-A"]
     assert out.face_fen == RESIDUAL - 5_000_000 and out.status == "OPEN"
     assert rep.chain_valid

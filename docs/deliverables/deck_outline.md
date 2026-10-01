@@ -75,7 +75,7 @@ The official template reuses last year's file. The **2025** FinTechathon logo is
 - cash at ¥254,960 on day 47, below the ¥300,000 floor, curable for ¥802.70;
 - break-even 0.88%: the buyer's 1.2% is above it, so the verdict also carries DISCOUNT_ABOVE_BREAK_EVEN;
 - REJECT with AGG_CONCESSION_EXCEEDED, RESERVE_BREACH@47 and DISCOUNT_ABOVE_BREAK_EVEN, each with its formula;
-- Counter A: 45 days, early settlement on up to ¥211,800 at 0.85%, ¥2,641.94 in total;
+- Counter A: 45 days, early settlement on up to ¥211,900 at 0.85%, ¥2,642.24 in total;
 - the buyer kernel accepts, and the commitment and the line draw are logged.
 
 **Slide 8 (0:35).** "A different buyer refuses every counter within three rounds. No deal is a real outcome. The router finds the line plus invoice financing for ¥2,712.94, against ¥5,040 for taking the discount. The government-guaranteed loan would be cheaper, but it is not committed and arrives after payroll, so it counts as zero. The same offer in other words gets the same verdict."

@@ -62,7 +62,7 @@ def assert_no_leak(profile_id: str, *texts: str) -> None:
 def test_reservation_strings_are_non_trivial() -> None:
     assert "0.80%" in reservation_strings(get_profile("BUYER-1"))
     assert "1.00%" in reservation_strings(get_profile("BUYER-1-HARDLINE"))
-    assert "¥1,694.40" in reservation_strings(get_profile("BUYER-1"))
+    assert "¥1,695.20" in reservation_strings(get_profile("BUYER-1"))
 
 
 @pytest.mark.parametrize("profile_id", PROFILES)

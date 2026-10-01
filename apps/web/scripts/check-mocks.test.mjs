@@ -37,7 +37,7 @@ test("verdict figures are the golden values, server-formatted", () => {
   assert.equal(reserve.cure_cost_fen, golden.reserve_cure_cost_if);
   const a = v.counters.find((c) => c.id === "CTR-A");
   assert.equal(a.supplier_cost_fen, golden.counter_a_total);
-  assert.equal(a.supplier_cost_display, "¥2,641.94");
+  assert.equal(a.supplier_cost_display, "¥2,642.24");
   assert.equal(v.counters.find((c) => c.id === "CTR-B").obligations[1].amount_fen, golden.counter_b_price_adj_per_invoice);
 });
 

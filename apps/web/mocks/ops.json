@@ -4,7 +4,7 @@
     "tier": "TIER_1",
     "requested_by": "AGENT",
     "message": "Counter sent: Option A",
-    "summary": "Counter Option A to BUYER-1: 0.85% early pay on up to ¥211,800.00, 45-day terms, no rebate."
+    "summary": "Counter Option A to BUYER-1: 0.85% early pay on up to ¥211,900.00, 45-day terms, no rebate."
   },
   "counter_b": {
     "kind": "COUNTER_OFFER",
@@ -18,7 +18,7 @@
     "tier": "TIER_1",
     "requested_by": "AGENT",
     "message": "Accepted: buyer agreed to Option A",
-    "summary": "Accepted Option A for OFF-EX01 v1, terms hash bde69384a91e."
+    "summary": "Accepted Option A for OFF-EX01 v1, terms hash eff00bc3929a."
   },
   "record_commitment": {
     "kind": "RECORD_COMMITMENT",

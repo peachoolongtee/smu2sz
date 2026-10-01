@@ -29,10 +29,10 @@ test("what-if: moving the terms slider changes the hypothetical verdict", async 
   await expect(outcome).toHaveAttribute("data-outcome", "COUNTER");
   await expect(page.getByTestId("whatif-codes")).not.toContainText("AGG_CONCESSION_EXCEEDED");
 
-  // Option A preset: 45 days, 0.85% on ¥211,800 of the invoice.
+  // Option A preset: 45 days, 0.85% on ¥211,900 of the invoice.
   await page.getByTestId("whatif-preset-option_a").click();
   await expect(page.getByTestId("whatif-discount-readout")).toHaveText("0.85%");
-  await expect(page.getByTestId("whatif-face-readout")).toHaveText("¥211,800.00");
+  await expect(page.getByTestId("whatif-face-readout")).toHaveText("¥211,900.00");
   await expect(outcome).toHaveAttribute("data-outcome", "ACCEPT");
 
   // Back to the buyer's actual offer.

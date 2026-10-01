@@ -99,7 +99,7 @@
     {
       "id": "CTR-A",
       "label": "Option A",
-      "text": "Thank you for the proposal. We can agree to settle up to ¥211,800 of the ¥420,000 invoice early at 0.85%, with payment on day 2, and keep your standard terms at 45 days. We are not able to offer the quarterly rebate.",
+      "text": "Thank you for the proposal. We can agree to settle up to ¥211,900 of the ¥420,000 invoice early at 0.85%, with payment on day 2, and keep your standard terms at 45 days. We are not able to offer the quarterly rebate.",
       "obligations": [
         {
           "counterparty_id": "BUYER-1",
@@ -118,17 +118,17 @@
           "type": "IMMEDIATE_DISCOUNT",
           "base": {
             "kind": "INVOICE",
-            "amount_fen": 21180000,
+            "amount_fen": 21190000,
             "receivable_id": "RCV-A",
             "events_per_year": null,
-            "amount_display": "¥211,800.00"
+            "amount_display": "¥211,900.00"
           },
           "spans": [
             {
               "doc_id": "CTR-A",
               "start": 0,
               "end": 216,
-              "text": "Thank you for the proposal. We can agree to settle up to ¥211,800 of the ¥420,000 invoice early at 0.85%, with payment on day 2, and keep your standard terms at 45 days. We are not able to offer the quarterly rebate."
+              "text": "Thank you for the proposal. We can agree to settle up to ¥211,900 of the ¥420,000 invoice early at 0.85%, with payment on day 2, and keep your standard terms at 45 days. We are not able to offer the quarterly rebate."
             }
           ],
           "id": "CTR-A-OB1",
@@ -136,10 +136,10 @@
           "amount_display": null
         }
       ],
-      "supplier_cost_fen": 264194,
-      "rationale": "Priced below the 0.88% break-even early-pay discount: 0.85% on up to ¥211,800.00, the face that closes the gap net of the credit line. No forward concession is created.",
-      "formula": "0.85% × ¥211,800.00 = ¥1,800.30; + line interest ¥150,000.00 × 6.40% × 32 / 365 = ¥841.64; total ¥2,641.94",
-      "supplier_cost_display": "¥2,641.94"
+      "supplier_cost_fen": 264224,
+      "rationale": "Priced below the 0.88% break-even early-pay discount: 0.85% on up to ¥211,900.00, the face that closes the gap net of the credit line. No forward concession is created.",
+      "formula": "0.85% × ¥211,900.00 = ¥1,801.15; + funding the rest of the gap, ¥149,901.15 × 6.40% × 32 / 365 = ¥841.09; total ¥2,642.24",
+      "supplier_cost_display": "¥2,642.24"
     },
     {
       "id": "CTR-B",
