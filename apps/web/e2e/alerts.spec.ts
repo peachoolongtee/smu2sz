@@ -18,7 +18,8 @@ test("alerts: the day-12 reserve breach shows its amounts, formula and committed
   await expect(page.getByText("¥240,000.00").first()).toBeVisible();
   await expect(page.getByText("¥150,000.00").first()).toBeVisible();
   await expect(page.getByText("¥336,000.00").first()).toBeVisible();
-  await expect(page.getByText(/never executed automatically/i).first()).toBeVisible();
+  // The note is the server's: live says "...executed only through POST /alerts/{id}/act...", an older recording says "never executed automatically".
+  await expect(page.getByText(/never executed automatically|executed only through POST \/alerts\/\{id\}\/act/i).first()).toBeVisible();
 });
 
 test("reconciliation: no receipts yet, one outstanding receivable, chain valid", async ({ page, request }) => {
