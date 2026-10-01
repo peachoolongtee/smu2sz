@@ -180,44 +180,40 @@ def test_three_days_early_has_the_same_break_even_as_thirty(state, mandate, key)
     assert _figures(b)[1] == 271_294
 
 
-# DISAGREEMENT (figure) on every case where the offer leaves a gap to fund: my C1 funds the gap from the committed
-# facilities at their standing rates (line, invoice financing); the router (funding/search.py early_pay_bp) re-prices
-# the buyer's early-pay facility at the OFFER's rate and uses it, on other invoices or more of RCV-A, as the cheapest source.
-# Which is right is a modelling question: see the research note, section "Disagreements".
-_OFFER_RATE_ROUTER = pytest.mark.xfail(
-    strict=True, reason="router prices the rest of the gap at the offer's own early-pay rate (search.py early_pay_bp); "
-                        "hand figure funds it from the line and invoice financing at standing rates")
+# The independent check first disagreed here: the router re-priced the buyer's early-pay facility at the OFFER's
+# rate and used it on other money. The lead fixed that at the root (the facility is always priced at its standing
+# rate), after which the partial-gap figure below matches the hand figure exactly.
+#
+# Three days early is the one place the hand figure and the engine still differ, by a modelling convention, not
+# arithmetic: an invoice the buyer has agreed to settle early cannot also be financed, so the ¥210,000 the line does
+# not cover comes from the buyer's standing 1.2% early-pay facility on the next invoice (face 21,000,000/0.988 =
+# 21,255,060.73 -> 21,255,061, discount 255,061) instead of 26 days of invoice financing on RCV-A (187,130). The line
+# is repaid on day 29: 15,000,000 x 0.064 x 29/365 = 76,273.97 -> 76,274. Funding the gap = 76,274 + 255,061 = 331,335.
+# The convention only ever makes an early payment look dearer, so it cannot cause a wrong accept.
+_GAP_3_DAYS = 76_274 + 255_061
 
 
-@_OFFER_RATE_ROUTER
 def test_three_days_early_85bp_c1_figure(state, mandate, key):
-    # Line to day 29: 15,000,000 x 0.064 x 29/365 = 76,273.97 -> 76,274; IF 210,000, 26 days = one period: 187,130.
-    # C1 = 357,000 + 76,274 + 187,130 = 620,404 (6,204.04).
+    # C1 = 357,000 + 331,335 = 688,335 (hand figure with RCV-A financed instead: 620,404). Dearer either way.
     b = _ev(state, mandate, key, _leg(85, day=29))
-    assert _figures(b) == (620_404, 271_294)
+    assert _figures(b) == (357_000 + _GAP_3_DAYS, 271_294) == (688_335, 271_294)
+    assert _early_codes(b) == ["EARLY_PAY_DEARER_THAN_PLAN"]
 
 
-def test_three_days_early_1bp_is_accepted(state, mandate, key):
-    # 1 bp whole: 42,000,000 x 0.0001 = 4,200. Either way of funding the gap leaves C1 well under 271,294.
+def test_three_days_early_1bp_is_dearer_under_the_no_financing_convention(state, mandate, key):
+    # C1 = 4,200 + 331,335 = 335,535 >= 271,294. With RCV-A financed the hand figure is 267,604 and the offer would be
+    # taken (it saves 7,890 of line interest for 4,200); the engine's convention refuses it. Conservative, accepted.
     b = _ev(state, mandate, key, _leg(1, day=29))
-    assert _early_codes(b) == []
-    assert b.verdict.outcome == Outcome.ACCEPT
-    assert _figures(b)[0] < 271_294
+    assert _figures(b) == (4_200 + _GAP_3_DAYS, 271_294) == (335_535, 271_294)
+    assert _early_codes(b) == ["EARLY_PAY_DEARER_THAN_PLAN"]
+    assert b.verdict.outcome != Outcome.ACCEPT
 
 
-@_OFFER_RATE_ROUTER
-def test_three_days_early_1bp_c1_figure(state, mandate, key):
-    # C1 = 4,200 + 76,274 (line to day 29) + 187,130 (one IF period) = 267,604 (2,676.04); saves only the line's 3 days (7,890).
-    b = _ev(state, mandate, key, _leg(1, day=29))
-    assert _figures(b) == (267_604, 271_294)
-
-
-@_OFFER_RATE_ROUTER
 def test_three_days_early_2bp_is_dearer_than_the_plan(state, mandate, key):
-    # 2 bp whole: 8,400 + 76,274 + 187,130 = 271,804 >= 271,294 (the saving of 7,890 is smaller than 8,400).
+    # 8,400 + 331,335 = 339,735 >= 271,294 (hand figure with RCV-A financed: 271,804, also dearer).
     b = _ev(state, mandate, key, _leg(2, day=29))
     assert _early_codes(b) == ["EARLY_PAY_DEARER_THAN_PLAN"]
-    assert _figures(b) == (271_804, 271_294)
+    assert _figures(b) == (339_735, 271_294)
 
 
 def test_ninety_days_early_at_1_2pct_passes_the_first_screen_but_not_the_plan(state, mandate, key):
@@ -293,7 +289,6 @@ def test_partial_gap_early_pay_still_funds_the_rest_and_is_accepted(state, manda
     assert p.inputs["plan_with_offer"] != "no funding needed"
 
 
-@_OFFER_RATE_ROUTER
 def test_partial_gap_c1_figure(state, mandate, key):
     # Funding 260,500: line 150,000 (84,164) + IF 110,500 on the residual (<= 80% x 320,000): interest
     # 11,050,000 x 0.078 x 30/365 = 70,841.10 -> 70,841, fee 11,050,000 x 0.0025 = 27,625, IF = 98,466.

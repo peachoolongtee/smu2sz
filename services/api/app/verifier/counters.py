@@ -254,23 +254,22 @@ def early_pay_counter(ctx: _Ctx, label: str = "Option A") -> CounterProposal | N
     if not counter_plan.admissible:
         return None
     t = project(ctx.state, [*ctx.live, disc_ob], counter_plan.actions, Mode.CONSERVATIVE, ctx.mandate.horizon_days)
-    discount = t.discounts_posted_fen
     live_discounts = 0
-    if ctx.live:  # the counter's own discount: what the commitments in force already cost is not its cost
+    if ctx.live:  # what the commitments in force already cost is not the counter's cost
         live_discounts = project(ctx.state, list(ctx.live), [], Mode.CONSERVATIVE,
                                  ctx.mandate.horizon_days).discounts_posted_fen
-        discount -= live_discounts
-    funding_cost = counter_plan.total_cost_fen
-    total = discount + funding_cost
+    # Read from the projection (ADR-0007): interest + fees + discounts the engine posts with the counter in the
+    # books and the router's plan for the rest. The counter's own discount is its face at its rate; everything
+    # else is the cost of funding the rest of the gap.
+    total = t.interest_posted_fen + t.fees_posted_fen + t.discounts_posted_fen - live_discounts
+    discount = post(rate * face)
+    funding_cost = total - discount
     # ADR-0007 test 3 for the counter: it is offered only if it beats the standing plan, like with like
     # (both exclude the discounts the live commitments already post).
     if base_plan.admissible:
         t0 = project(ctx.state, list(ctx.live), base_plan.actions, Mode.CONSERVATIVE, ctx.mandate.horizon_days)
         standing = t0.interest_posted_fen + t0.fees_posted_fen + t0.discounts_posted_fen - live_discounts
-        # read from the projection (ADR-0007): `total` adds the plan's cost to a posted discount that already
-        # includes any early pay the plan itself takes, which would count that early pay twice
-        posted = t.interest_posted_fen + t.fees_posted_fen + t.discounts_posted_fen - live_discounts
-        if posted >= standing:
+        if total >= standing:
             return None
 
     clauses: list[tuple[str, Obligation | None]] = []
