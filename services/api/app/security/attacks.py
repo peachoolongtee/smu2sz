@@ -1767,7 +1767,7 @@ def render_markdown(m: dict[str, Any], observations: list[Observation],
 
 
 def _render_entry_points(m: dict[str, Any], nl: Sequence[Observation]) -> list[str]:
-    rows = [[f"{ep} ({e['label']})", str(e["attacks"]), str(e["harm"]), str(e["documented_findings"]),
+    rows = [[f"{e['label']} (`{ep}`)", str(e["attacks"]), str(e["harm"]), str(e["documented_findings"]),
              str(e["unauthorised_operations"]), str(e["protected_values_disclosed"]), f"¥{e['money_moved_fen'] / 100:,.2f}"]
             for ep, e in m["by_entry_point"].items()]
     lines = ["## Attacks per entry point", "",
@@ -1797,11 +1797,14 @@ def _render_entry_points(m: dict[str, Any], nl: Sequence[Observation]) -> list[s
                        f"{ora['circuit_open_after']}; owner approvals queued by the probes: "
                        f"{ora['approvals_queued_by_probes']}.")]
     for o in nl:
-        if "agent_reads" in o.measurements:
-            labels = sorted({lb for r in o.measurements["agent_reads"] for lb in r["protected_labels_in_response"]})
-            lines += ["", f"### {o.id}: what the agent key can read through /nl (reported)", "",
-                      (f"Status replies carry {len(labels)} protected labels: {', '.join(labels)}. Read API with the "
-                       f"agent key only: {o.measurements.get('agent_read_api_status')}.")]
+        if "agent_reads" not in o.measurements:
+            continue
+        labels = sorted({lb for r in o.measurements["agent_reads"] for lb in r["protected_labels_in_response"]})
+        if not labels and "agent_read_api_status" not in o.measurements:
+            continue
+        lines += ["", f"### {o.id}: what the agent key can read through /nl (reported)", "",
+                  (f"The responses to the agent key carry {len(labels)} protected labels: {', '.join(labels)}. "
+                   f"Read API with the agent key only: {o.measurements.get('agent_read_api_status', 'not tried')}.")]
     return lines
 
 
@@ -1866,6 +1869,7 @@ def _run_cli(args: argparse.Namespace) -> int:
         m = metrics(observations)
         m["by_entry_point"] = entry_point_breakdown([*observations, *nl_observations])
     z = m["zero_harm_metrics"]
+    print(f"zero-harm metrics of the {m['attacks']} API catalogue attacks:")
     print(json.dumps({k: z[k] for k in z}, indent=1))
     print(f"detection_rate={m['detection_rate']} security_event_rate={m['security_event_rate']}")
     print("per entry point (attacks / with harm / documented findings):")

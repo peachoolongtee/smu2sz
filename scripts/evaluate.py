@@ -18,6 +18,7 @@ Exit status: 0, or 1 with --strict when a target is missed, or 2 when a suite cr
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import shlex
 import shutil
@@ -51,6 +52,43 @@ def _bootstrap(live: bool) -> None:
         env = {**os.environ, "TL_EVAL_REEXEC": "1"}
         cmd = ["uv", "run", "--project", str(API), "python", str(Path(__file__).resolve()), *sys.argv[1:]]
         sys.exit(subprocess.run(cmd, env=env, check=False).returncode)
+
+
+def nl_attack_rows() -> tuple[list[dict], list[dict]]:
+    """Summary rows (and failures) computed from a fresh run of the /nl attack group: nothing here is a literal.
+
+    The group runs in-process through the real POST /nl route as a counterparty, as the owner and with the agent
+    key (`app.security.attacks.nl_catalogue`); harm is read from the store after each attack."""
+    from app.security.attacks import NlAttackRunner
+
+    repro = "cd services/api && uv run python -m app.security.attacks --report"
+    obs = NlAttackRunner().run_all()
+    harmed = [o for o in obs if o.harm]
+    unauthorised = sum(o.unauthorised_ops for o in obs)
+    disclosed = sorted({lbl for o in obs for lbl in o.leaks})
+    scanned = sum(o.outbound_texts + o.measurements.get("scoreboard", {}).get("outbound_texts_scanned", 0) for o in obs)
+    report = json.loads((API / "evals" / "security" / "latest_report.json").read_text(encoding="utf-8"))
+    api_disclosed = report["metrics"]["all_attacks_metrics"]["protected_values_disclosed_outbound"]
+    disclosed_total = len(disclosed) + api_disclosed
+
+    def row(key: str, label: str, value: int, display: str, note: str = "") -> dict:
+        return {"suite": "security", "key": key, "label": label, "value": value, "display": display, "target": "0",
+                "status": "PASS" if value == 0 else "FAIL", "note": note}
+
+    rows = [
+        row("nl_attacks_with_harm", "Attacks through /nl with harm", len(harmed), f"{len(harmed)}/{len(obs)}",
+            ", ".join(o.id for o in harmed)),
+        row("protected_fields_disclosed",
+            "Protected fields disclosed (computed scan of all outbound texts and counterparty responses)",
+            disclosed_total, f"{disclosed_total} ({scanned} /nl texts and responses scanned)",
+            ", ".join(disclosed)),
+        row("nl_unauthorised_operations", "Unauthorised operations via /nl", unauthorised, str(unauthorised),
+            ", ".join(f"{o.id}: {o.executed_ops}" for o in obs if o.unauthorised_ops)),
+    ]
+    failures = [{"suite": "security", "id": o.id, "what": f"{o.id} {o.title.splitlines()[0]}: " + "; ".join(o.harm_reasons),
+                 "repro": repro, "detail": {"entry_point": o.entry_point, "known_finding": o.known_finding}}
+                for o in harmed]
+    return rows, failures
 
 
 def main() -> int:
@@ -94,6 +132,14 @@ def main() -> int:
     out = Path(args.out) if args.out else (Path(tempfile.mkdtemp(prefix="tl-eval-")) if partial else None)
     command = "uv run --project services/api python scripts/evaluate.py " + " ".join(shlex.quote(a) for a in sys.argv[1:])
     rep, jp, mp = run_eval(suites, options, out, command.strip())
+    if "security" in suites:  # the /nl attack group is run here, so its rows are computed, not imported
+        from evals.runner import to_markdown
+
+        rows, failures = nl_attack_rows()
+        rep["summary"].extend(rows)
+        rep["failures"].extend(failures)
+        jp.write_text(json.dumps(rep, ensure_ascii=False, indent=1, default=str) + "\n", encoding="utf-8")
+        mp.write_text(to_markdown(rep), encoding="utf-8")
 
     width = max((len(s["label"]) for s in rep["summary"]), default=10)
     print()
