@@ -10,12 +10,12 @@ Evidence: V = reproduced by me on 1 Oct, A = audit only, C = confirmed by readin
 
 | ID | Fix | Audit | Evidence | Owner | Branch | Effort | Proof of completion | Status |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| A1 | Counterparty `/nl` response carries reply and session only | S1 | V | sub | fix/nl-boundary | 3h | counterparty response has no verdict, plan, operations or protected value | IN PROGRESS |
-| A2 | Quoted or pasted text never becomes owner intent or an approval id | S2 | V | sub | fix/nl-boundary | 4h | pasted "approve APR-…" evaluates the offer, logs an event, approves nothing | IN PROGRESS |
+| A1 | Counterparty `/nl` response carries reply and session only | S1 | V | sub | fix/nl-boundary | 3h | counterparty response has no verdict, plan, operations or protected value | DONE |
+| A2 | Quoted or pasted text never becomes owner intent or an approval id | S2 | V | sub | fix/nl-boundary | 4h | pasted "approve APR-…" evaluates the offer, logs an event, approves nothing | DONE |
 | A4 | Security scoreboard computed from run data | S11 | V | sub | fix/scoreboard | 2h | no literal `0` or `[]`; a seeded leak shows up in it | DONE |
-| A5 | Coverage proof fails closed on unread words; reply restates typed terms | S3, C7 | A | sub | fix/coverage-fail-closed | 5h | rider cases go to owner review; no "Agreed as proposed" | IN PROGRESS |
-| A6 | Re-verify at accept and approve: receivable, exclusivity, caps, state version | S4, C2 | C | sub (spec: ADR-0006 §5) | fix/commit-state-binding | 6h | two 1.2% rebates: second refused over the ¥5,000 cap | IN PROGRESS |
-| A3 | Attack catalogue also runs through `/nl` as owner and as counterparty | C1 | C | sub | fix/nl-attacks | 5h | attacks via `/nl`: 0 harm, counted in the report | OPEN (after A1, A2, A4) |
+| A5 | Coverage proof fails closed on unread words; reply restates typed terms | S3, C7 | A | sub | fix/coverage-fail-closed | 5h | rider cases go to owner review; no "Agreed as proposed" | DONE |
+| A6 | Re-verify at accept and approve: receivable, exclusivity, caps, state version | S4, C2 | C | sub (spec: ADR-0006 §5) | fix/commit-state-binding | 6h | two 1.2% rebates: second refused over the ¥5,000 cap | DONE |
+| A3 | Attack catalogue also runs through `/nl` as owner and as counterparty | C1 | C | sub | fix/nl-attacks | 5h | attacks via `/nl`: 0 harm, counted in the report | IN PROGRESS |
 
 ## Wave B: one financial reality (P0/P1)
 
@@ -23,10 +23,18 @@ Evidence: V = reproduced by me on 1 Oct, A = audit only, C = confirmed by readin
 | --- | --- | --- | --- | --- | --- | --- |
 | B0 | ADR-0006 | C3 | main | done | `docs/adr/0006-current-books-and-clock.md` | DONE |
 | B1 | `as_of_day`, `settled_fen`, engine drops closed days, `app.books.current_books` | C3 | main | 5h | golden values unchanged at day 0 | DONE |
-| B2 | Partial settlement and FULFILLED in the executor (ADR §4) | wf 3 | sub, after A6 | 4h | ¥209,999.70 settles ¥211,800 of RCV-A; ¥208,200 stays open | OPEN |
+| B2 | Partial settlement and FULFILLED in the executor (ADR §4) | wf 3 | sub, after A6 | 4h | ¥209,999.70 settles ¥211,800 of RCV-A; ¥208,200 stays open | DONE |
 | B3 | Verifier, router, trajectory, what-if on current books | C3 | sub, after B1 | 5h | verdict after an accepted extension sees the shifted receipts | IN PROGRESS |
-| B4 | Alerts, capex, borrower file on current books | C3 | sub, after B1 | 4h | all screens give the same lowest-cash day | IN PROGRESS |
+| B4 | Alerts, capex, borrower file on current books | C3 | sub, after B1 | 4h | all screens give the same lowest-cash day | DONE |
 | B5 | Counter A rounds up and is checked against the floor | F8 | sub | 2h | no critical alert straight after the demo deal | OPEN |
+
+Added during integration (all DONE): each financing advance is recorded on its invoice (`Receivable.advance_fen`)
+so the projection repays it from that invoice; the clock applies a scenario's dated events
+(`fixtures/scenarios/golden_sme.events.json`: month-2 payroll of ¥200,000 appears on day 25).
+
+Integrated run on 1 Oct (EX01 → deal → receipt of ¥209,999.70 on day 2 → clock to day 34): the residual
+¥208,200 is reported past due and the gap peaks at ¥200,000.30 on day 42. The only thing stopping a cure
+is B5: Counter A leaves cash ¥0.30 under the floor, so the breach starts "today".
 
 ## Wave C: clock, event, re-plan (P1)
 
@@ -43,7 +51,7 @@ Evidence: V = reproduced by me on 1 Oct, A = audit only, C = confirmed by readin
 | --- | --- | --- | --- | --- | --- | --- |
 | D1 | Break-even from actual days early | F1 | main formula, sub tests | 3h | 30 days still 0.88%; 90 days at 1.2% accepted | OPEN |
 | D2 | Early pay only when cash is needed and cheaper than the router's plan | F2 | main rule, sub code | 4h | no-need offer is not accepted | OPEN |
-| D3 | Financed receivable settled early repays the advance that day | F7 | covered by B2 | — | day-20 cash not double counted | OPEN |
+| D3 | Financed receivable settled early repays the advance that day | F7 | covered by B2 | — | day-20 cash not double counted | DONE |
 | D4 | DSCR counts scheduled bullet principal | F6 | sub + second sub to check | 3h | hand-calculated case | OPEN |
 | D5 | APR gate on posted cost over actual days | F5 | sub | 3h | 3-day advance fails the 15% cap | IF TIME |
 
