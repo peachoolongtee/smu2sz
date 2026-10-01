@@ -12,11 +12,12 @@ feasibility only; the funding router prices the cheapest admissible plan.
 
 from __future__ import annotations
 
+import hashlib
 from collections.abc import Sequence
 from fractions import Fraction
 
-from app.alerts.ledger import committed_obligations
 from app.alerts.models import Alert, AlertKind, Severity, SuggestedAction
+from app.books import Books, current_books
 from app.domain.models import (
     CommitmentStatus,
     CovenantKind,
@@ -35,7 +36,7 @@ from app.domain.models import (
 )
 from app.domain.money import bp, fmt_yuan, round_half_up
 from app.domain.ports import LedgerStore
-from app.financial import EngineError, project, recurring_receivable_id
+from app.financial import EngineError, project
 
 MONTH_DAYS = 30
 HEADROOM_SHARE = Fraction(1, 10)  # reserve headroom below 10% of the floor
@@ -89,22 +90,25 @@ def _cured(state: FinancialState, obs: list[Obligation], actions: list[FundingAc
     return all(p.closing_fen >= floor for p in t.days if start <= p.day <= end)
 
 
-def _candidates(state: FinancialState, day: int, end: int) -> list[FundingAction]:
+def stable_id(prefix: str, kind: AlertKind, subject: str, day: int | None) -> str:
+    """A deterministic alert id: a hash of the kind, the subject and the day the alert refers to."""
+    digest = hashlib.sha256(f"{kind.value}|{subject}|{day}".encode()).hexdigest()[:12]
+    return f"{prefix}-{digest}"
+
+
+def _candidates(state: FinancialState, day: int) -> list[FundingAction]:
+    """Draws and invoice advances the executor would accept on `day` (today): COMMITTED facilities, and
+    invoices that exist, are OPEN, buyer-confirmed and not yet due."""
     out: list[FundingAction] = []
     for f in state.facilities:
         if _usable(f) and f.kind in _DRAWABLE and f.repayment != Repayment.ON_RECEIPT and f.limit_fen > f.drawn_fen:
             out.append(FundingAction(kind=FundingActionKind.DRAW, facility_id=f.id, day=day,
                                      amount_fen=f.limit_fen - f.drawn_fen))
-    invoices: list[tuple[int, str, int]] = []  # (due, id, face)
+    invoices: list[tuple[int, str, int]] = []  # (due, id, outstanding face)
     for r in state.receivables:
-        if r.status == "OPEN" and r.confirmed and r.due_day > day:
-            invoices.append((r.due_day, r.id, r.face_fen))
-    for ri in state.recurring_invoices:
-        d = ri.next_issue_day
-        while ri.every_days > 0 and d <= end:
-            invoices.append((d + ri.terms_days, recurring_receivable_id(ri.counterparty_id, d), ri.face_fen))
-            d += ri.every_days
-    invoices.sort()
+        if r.status == "OPEN" and r.confirmed and r.outstanding_fen > 0 and r.due_day > day:
+            invoices.append((r.due_day, r.id, r.outstanding_fen))
+    invoices.sort()  # a recurring invoice not yet issued is not a receivable: the executor refuses it today
     for f in state.facilities:
         if not (_usable(f) and f.kind == FacilityKind.INVOICE_FINANCING):
             continue
@@ -123,9 +127,11 @@ def _candidates(state: FinancialState, day: int, end: int) -> list[FundingAction
 
 def committed_cure(state: FinancialState, obs: list[Obligation], horizon: int, floor: int, day: int,
                    start: int, end: int) -> list[FundingAction] | None:
-    """A small set of committed funding actions that keeps days start..end at or above the floor."""
+    """A small set of committed funding actions that keeps days start..end at or above the floor. Every
+    action is requested today: `day`, and never before the day the books are closed to."""
+    day = max(day, state.as_of_day)
     chosen: list[FundingAction] = []
-    for a in _candidates(state, day, end):
+    for a in _candidates(state, day):
         trial = [*chosen, a]
         try:
             project(state, obs, trial, Mode.CONSERVATIVE, horizon)
@@ -157,7 +163,7 @@ def _suggest(a: FundingAction) -> SuggestedAction:
                                note=f"draw requested day {a.day}; the router sizes and prices the final plan")
     return SuggestedAction(operation_kind="SUBMIT_INVOICE_FOR_FINANCING", facility_id=a.facility_id,
                            receivable_id=a.receivable_id, amount_fen=a.amount_fen,
-                           note="submit once the invoice is issued and buyer-confirmed")
+                           note="submit today: the invoice is open, buyer-confirmed and not yet due")
 
 
 def _reserve_alerts(state: FinancialState, mandate: Mandate, t: Trajectory, obs: list[Obligation],
@@ -365,25 +371,78 @@ def _expiring(store: LedgerStore, day: int) -> list[Alert]:
     return out
 
 
-def _past_due(state: FinancialState, day: int) -> list[Alert]:
+def _books_due_days(books: Books, horizon: int) -> dict[str, int]:
+    """Due day of each receivable on current books, read from the engine: the day of its RECEIPT event once
+    the live obligations (terms extensions ...) are applied. The books are projected as of day 0 so a receipt
+    already past due still appears; only its date is used, never its cash. A receivable without a dated
+    receipt (unconfirmed, settled early) is absent and falls back to the invoice's own due day."""
+    try:
+        t = project(books.state.model_copy(update={"as_of_day": 0}), list(books.obligations), [], Mode.CONSERVATIVE,
+                    horizon)
+    except EngineError:
+        return {}
+    return {e.ref: p.day for p in t.days for e in p.events if e.kind == LedgerEventKind.RECEIPT and e.ref}
+
+
+def _past_due(books: Books, today: int, horizon: int) -> list[Alert]:
+    """Receivables OPEN or FINANCED with money outstanding whose due day on current books is before today,
+    and the early payments promised under a live commitment that did not arrive."""
+    state = books.state
+    due_on = _books_due_days(books, horizon)
     out: list[Alert] = []
     for r in state.receivables:
-        if r.status not in ("OPEN", "FINANCED") or r.due_day >= day:
+        if r.status not in ("OPEN", "FINANCED") or r.outstanding_fen <= 0:
             continue
-        late = day - r.due_day
+        due = due_on.get(r.id, r.due_day)
+        if due >= today:
+            continue
+        late = today - due
+        moved = f" (day {r.due_day} on the invoice, moved to day {due} by a live terms extension)" if due != r.due_day else ""
         out.append(Alert(
             id=f"ALERT-PASTDUE-{r.id}",
             kind=AlertKind.RECEIVABLE_PAST_DUE,
             severity=Severity.CRITICAL if r.status == "FINANCED" else Severity.WARNING,
             title=f"Receivable {r.id} is {late} day(s) past due",
-            detail=(f"{fmt_yuan(r.face_fen)} from {r.counterparty_id} was due on day {r.due_day} and is still "
-                    f"{r.status}. The conservative trajectory no longer counts on a dated receipt."
+            detail=(f"{fmt_yuan(r.outstanding_fen)} outstanding from {r.counterparty_id} was due on day {due}{moved} "
+                    f"and is still {r.status}. The conservative trajectory no longer counts on a dated receipt."
                     + (" The financing advance falls due with it." if r.status == "FINANCED" else "")),
-            formula=f"today − due_day = {day} − {r.due_day} = {late} > 0",
-            day=r.due_day,
-            amount_fen=r.face_fen,
-            inputs={"receivable_id": r.id, "counterparty_id": r.counterparty_id},
-            suggested=[SuggestedAction(operation_kind="RECEIVE_PAYMENT", receivable_id=r.id, amount_fen=r.face_fen,
+            formula=f"today − due_day = {today} − {due} = {late} > 0",
+            day=due,
+            amount_fen=r.outstanding_fen,
+            receivable_id=r.id,
+            inputs={"receivable_id": r.id, "counterparty_id": r.counterparty_id, "due_day": str(due),
+                    "outstanding": fmt_yuan(r.outstanding_fen)},
+            suggested=[SuggestedAction(operation_kind="RECEIVE_PAYMENT", receivable_id=r.id,
+                                       amount_fen=r.outstanding_fen,
+                                       note="chase the buyer; record the receipt when the money lands")],
+        ))
+    for lp in books.lapsed:
+        if lp.reason != "EARLY_PAYMENT_MISSED":
+            continue
+        o = lp.obligation
+        rid = o.base.receivable_id
+        rcv = next((x for x in state.receivables if x.id == rid), None)
+        if rcv is None or o.effective_day is None:
+            continue
+        due = due_on.get(rcv.id, rcv.due_day)
+        promised = o.effective_day
+        out.append(Alert(
+            id=stable_id("ALERT-EARLYPAY", AlertKind.RECEIVABLE_PAST_DUE, f"{lp.commitment_id}|{o.id}|{rcv.id}", promised),
+            kind=AlertKind.RECEIVABLE_PAST_DUE,
+            severity=Severity.WARNING,
+            title=f"Early payment on {rcv.id} did not arrive",
+            detail=(f"The early payment promised under commitment {lp.commitment_id} for day {promised} did not "
+                    f"arrive. {rcv.id} ({fmt_yuan(rcv.outstanding_fen)} outstanding from {rcv.counterparty_id}) is back "
+                    f"on its original due day, day {due}, and the conservative trajectory is projected that way."),
+            formula=f"promised day − today = {promised} − {today} < 0 and outstanding = {fmt_yuan(rcv.outstanding_fen)} > 0",
+            day=today,
+            amount_fen=rcv.outstanding_fen,
+            commitment_id=lp.commitment_id,
+            receivable_id=rcv.id,
+            inputs={"commitment_id": lp.commitment_id, "receivable_id": rcv.id, "counterparty_id": rcv.counterparty_id,
+                    "promised_day": str(promised), "due_day": str(due), "obligation_id": o.id},
+            suggested=[SuggestedAction(operation_kind="RECEIVE_PAYMENT", receivable_id=rcv.id,
+                                       amount_fen=rcv.outstanding_fen, commitment_id=lp.commitment_id,
                                        note="chase the buyer; record the receipt when the money lands")],
         ))
     return out
@@ -435,16 +494,20 @@ def _concession_alerts(state: FinancialState, mandate: Mandate, t: Trajectory) -
 
 def alerts(state: FinancialState, mandate: Mandate, store: LedgerStore, day: int, *,
            obligations: Sequence[Obligation] = ()) -> list[Alert]:
-    """All alerts for `day`, from the conservative trajectory of the verified state plus the live
-    commitments' obligations and any `obligations` being considered (e.g. a verdict's bound ones)."""
-    obs = committed_obligations(state, store.commitments()) + list(obligations)
-    t = project(state, obs, [], Mode.CONSERVATIVE, mandate.horizon_days, mandate.min_cash_fen)
+    """All alerts for today, from the conservative trajectory of current books (ADR-0006: the stored state plus
+    the live commitments' obligations) and any `obligations` being considered (e.g. a verdict's bound ones).
+    Today is `day`, or the day the books are closed to if that is later; no alert refers to an earlier day
+    (a past-due alert names the day the receivable was due, which is the point of it)."""
+    today = max(day, state.as_of_day)
+    books = current_books(state, store.commitments())
+    obs = books.with_(obligations)
+    t = project(books.state, obs, [], Mode.CONSERVATIVE, mandate.horizon_days, mandate.min_cash_fen)
     out = [
-        *_reserve_alerts(state, mandate, t, obs, day),
-        *_covenant_alerts(state, mandate, t, day),
-        *_clean_down_alerts(state, t, day),
-        *_expiring(store, day),
-        *_past_due(state, day),
-        *_concession_alerts(state, mandate, t),
+        *_reserve_alerts(books.state, mandate, t, obs, today),
+        *_covenant_alerts(books.state, mandate, t, today),
+        *_clean_down_alerts(books.state, t, today),
+        *_expiring(store, today),
+        *_past_due(books, today, today + mandate.horizon_days),
+        *_concession_alerts(books.state, mandate, t),
     ]
     return sorted(out, key=lambda a: (_RANK[a.severity], a.day if a.day is not None else 10**6, a.id))
