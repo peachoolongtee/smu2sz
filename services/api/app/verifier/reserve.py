@@ -16,7 +16,7 @@ takes the capacity it uses off those facilities' limits, so the cure prices only
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from functools import lru_cache
 
 from app.covenants import line_can_carry_permanent_need
@@ -46,16 +46,19 @@ NOT_PERMANENT_KINDS = frozenset({FacilityKind.BUYER_EARLY_PAY, FacilityKind.BANK
 
 
 @lru_cache(maxsize=32)
-def _baseline(state_json: str, mandate_json: str) -> tuple[Trajectory, FundingPlan]:
+def _baseline(state_json: str, mandate_json: str, live_json: tuple[str, ...]) -> tuple[Trajectory, FundingPlan]:
     state = FinancialState.model_validate_json(state_json)
     mandate = Mandate.model_validate_json(mandate_json)
-    traj = project(state, [], [], Mode.CONSERVATIVE, mandate.horizon_days, mandate.min_cash_fen)
-    return traj, funding_plan(state, [], mandate, "COMMITTED")
+    live = [Obligation.model_validate_json(j) for j in live_json]
+    traj = project(state, live, [], Mode.CONSERVATIVE, mandate.horizon_days, mandate.min_cash_fen)
+    return traj, funding_plan(state, live, mandate, "COMMITTED")
 
 
-def baseline(state: FinancialState, mandate: Mandate) -> tuple[Trajectory, FundingPlan]:
-    """(no-offer conservative trajectory, the Debt Desk's standing committed plan). Cached."""
-    return _baseline(state.model_dump_json(), mandate.model_dump_json())
+def baseline(state: FinancialState, mandate: Mandate,
+             live: Sequence[Obligation] = ()) -> tuple[Trajectory, FundingPlan]:
+    """(no-offer conservative trajectory, the Debt Desk's standing committed plan) on current books: the
+    state plus the `live` obligations of commitments already in force. Cached."""
+    return _baseline(state.model_dump_json(), mandate.model_dump_json(), tuple(o.model_dump_json() for o in live))
 
 
 # ---------------------------------------------------------------- induced breach
@@ -121,8 +124,8 @@ def permanent_capable(f: Facility) -> bool:
 
 
 def _standing_plan_flows(state: FinancialState, base_traj: Trajectory, base_plan: FundingPlan,
-                         mandate: Mandate) -> list[CashFlow]:
-    funded = project(state, [], base_plan.actions, Mode.CONSERVATIVE, mandate.horizon_days)
+                         mandate: Mandate, live: Sequence[Obligation] = ()) -> list[CashFlow]:
+    funded = project(state, list(live), base_plan.actions, Mode.CONSERVATIVE, mandate.horizon_days)
     base = {p.day: p.closing_fen - p.opening_fen for p in base_traj.days}
     flows = []
     for p in funded.days:
@@ -134,7 +137,8 @@ def _standing_plan_flows(state: FinancialState, base_traj: Trajectory, base_plan
     return flows
 
 
-def cure_state(state: FinancialState, prefund: tuple[Trajectory, FundingPlan, Mandate] | None) -> FinancialState:
+def cure_state(state: FinancialState, prefund: tuple[Trajectory, FundingPlan, Mandate] | None,
+               live: Sequence[Obligation] = ()) -> FinancialState:
     """What-if copy for pricing a permanent need (never written back)."""
     used: dict[str, int] = {}
     flows = list(state.flows)
@@ -143,7 +147,7 @@ def cure_state(state: FinancialState, prefund: tuple[Trajectory, FundingPlan, Ma
         for a in base_plan.actions:
             if a.kind in (FundingActionKind.DRAW, FundingActionKind.FINANCE_INVOICE):
                 used[a.facility_id] = used.get(a.facility_id, 0) + a.amount_fen
-        flows += _standing_plan_flows(state, base_traj, base_plan, mandate)
+        flows += _standing_plan_flows(state, base_traj, base_plan, mandate, live)
     facilities = [
         f.model_copy(update={"limit_fen": max(f.drawn_fen, f.limit_fen - used.get(f.id, 0))})
         for f in state.facilities if permanent_capable(f)
@@ -159,12 +163,14 @@ def cure_plan(
     base_traj: Trajectory,
     base_plan: FundingPlan,
     planner: Callable[[FinancialState, list[Obligation], Mandate, str], FundingPlan] = funding_plan,
+    live: Sequence[Obligation] = (),
 ) -> FundingPlan:
     """The cheapest committed plan on permanent-capable sources for the offer's trajectory. `planner` is
-    the router (the verifier passes its per-evaluation memo)."""
+    the router (the verifier passes its per-evaluation memo). `bound` is the offer's obligations only;
+    `live` are those of commitments already in force, which the offer's trajectory and baseline include."""
     floor = mandate.min_cash_fen
     base_first = next((p.day for p in base_traj.days if p.closing_fen < floor), None)
     offer = _closing(offer_traj)
     gap_left_open = base_first is not None and offer.get(base_first, floor) < floor and bool(base_plan.actions)
-    cstate = cure_state(state, (base_traj, base_plan, mandate) if gap_left_open else None)
-    return planner(cstate, bound, mandate, "COMMITTED")
+    cstate = cure_state(state, (base_traj, base_plan, mandate) if gap_left_open else None, live)
+    return planner(cstate, [*live, *bound], mandate, "COMMITTED")

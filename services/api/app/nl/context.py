@@ -10,12 +10,14 @@
 from __future__ import annotations
 
 import hashlib
-from collections.abc import Iterable, Mapping
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Any
 
+from app.books import Books, current_books
 from app.domain.models import (
     Actor,
+    Commitment,
     CompiledOffer,
     FinancialState,
     Mandate,
@@ -57,6 +59,11 @@ class NlContext:
     def mandate(self) -> Mandate:
         return self.store.get_mandate()
 
+    def books(self, state: FinancialState | None = None) -> Books:
+        """Current books (ADR-0006): the stored state (or a hypothetical `state`) plus the obligations of
+        the live commitments. Every projection in /nl runs on `books.state` and `books.with_(...)`."""
+        return current_books(state or self.state(), self.store.commitments())
+
     @property
     def requested_by(self) -> Actor:
         """An owner claim without the owner token is the AGENT (as on POST /operations)."""
@@ -76,11 +83,13 @@ class NlContext:
 
     def evaluate(self, offer: CompiledOffer, *, declared: Mapping[str, Any] | None = None,
                  remember: bool = True, state: FinancialState | None = None,
-                 owner_constraints: OwnerConstraints | None = None, plans: Plans = "committed") -> VerdictBundle:
+                 owner_constraints: OwnerConstraints | None = None, plans: Plans = "committed",
+                 commitments: Sequence[Commitment] | None = None) -> VerdictBundle:
         """`state` is a hypothetical variant of the stored state (e.g. one gap only); the verdict is
         still the verifier's, and the operations built from it still pass the executor's gates.
         `owner_constraints` passes the owner's goal to the verifier (it only tightens). `plans` defaults
-        to "committed": no /nl handler reads the display-only expected plan, and the verdict is the same."""
+        to "committed": no /nl handler reads the display-only expected plan, and the verdict is the same.
+        `commitments` defaults to every commitment in the store; the verifier projects current books."""
         state = state or self.state()
         mandate = self.mandate()
         if declared is None and offer.offer_id in self.session.offer_fixtures:
@@ -88,7 +97,8 @@ class NlContext:
 
             declared = load_offers()[self.session.offer_fixtures[offer.offer_id]].get("declared_costs")
         bundle = verify(offer, state, mandate, trusted_owner_key_hex=self.owner_key_hex, day=self.day,
-                        owner_declared=self.declared(state, declared), commitments=self.store.commitments(),
+                        owner_declared=self.declared(state, declared),
+                        commitments=self.store.commitments() if commitments is None else commitments,
                         owner_constraints=owner_constraints, plans=plans)
         self.store.put_offer(offer)
         self.store.put_verdict(bundle.verdict)
@@ -98,6 +108,19 @@ class NlContext:
             self.session.last_offer_id = offer.offer_id
             self.session.last_verdict_id = bundle.verdict.id
         return bundle
+
+    def evaluate_accepted(self, package: CompiledOffer) -> VerdictBundle:
+        """The verdict on an accepted counter's package, for the gap that remains. Once the accept has
+        executed, the package's obligations are already live in the books; they are counted once, so the
+        commitment that holds exactly these terms is left out of the books for this evaluation. A queued
+        (PENDING_APPROVAL) accept is not live and the package is projected as the plan's assumption."""
+        def terms(obs: Iterable[Any]) -> list[str]:
+            return sorted(o.model_dump_json(exclude={"id", "spans", "confidence"}) for o in obs)
+
+        want = terms(package.obligations)
+        rest = [c for c in self.store.commitments()
+                if not (c.counterparty_id == package.counterparty_id and terms(c.obligations) == want)]
+        return self.evaluate(package, remember=False, commitments=rest)
 
     # ------------------------------------------------------------ executor
 

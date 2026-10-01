@@ -17,17 +17,21 @@ import json
 import threading
 import time
 from collections import OrderedDict
+from collections.abc import Sequence
 from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
 from app.api.display import displayed
 from app.api.views import trajectory_view
+from app.books import current_books
 from app.domain.models import (
+    Commitment,
     FinancialState,
     FundingPlan,
     Mandate,
     Mode,
+    Obligation,
     ObligationType,
     Violation,
     ViolationCode,
@@ -122,9 +126,14 @@ def _normalise(params: WhatIfParams, ctx: Context) -> WhatIfParams:
     return params.model_copy(update={"settle_face_fen": face})
 
 
-def cache_key(state: FinancialState, mandate: Mandate, day: int, params: WhatIfParams) -> str:
+def cache_key(state: FinancialState, mandate: Mandate, day: int, params: WhatIfParams,
+              live: Sequence[Obligation] = ()) -> str:
+    """The commitments in force change the books, so their obligations are part of the key."""
     h = hashlib.sha256()
-    for part in (state.model_dump_json(), mandate.model_dump_json(), str(day), params.model_dump_json()):
+    parts = [state.model_dump_json(), mandate.model_dump_json(), str(day), params.model_dump_json()]
+    if live:
+        parts.append("|".join(o.model_dump_json() for o in live))
+    for part in parts:
         h.update(part.encode())
         h.update(b"|")
     return h.hexdigest()[:20]
@@ -220,7 +229,7 @@ def _reserve(v: Violation | None, traj: dict[str, Any] | None) -> dict[str, Any]
 
 
 def _view(b: VerdictBundle, params: WhatIfParams, ctx: Context, text: str, key: str,
-          state: FinancialState, mandate: Mandate) -> WhatIfResult:
+          state: FinancialState, mandate: Mandate, live: Sequence[Obligation] = ()) -> WhatIfResult:
     v = b.verdict
     floor = mandate.min_cash_fen
     traj = funded = None
@@ -230,7 +239,7 @@ def _view(b: VerdictBundle, params: WhatIfParams, ctx: Context, text: str, key: 
         traj = {**displayed(tv), "days": days}
         pc = b.plan_committed
         if pc is not None and pc.admissible and pc.actions:
-            ft = project(state, b.bound_obligations, pc.actions, Mode.CONSERVATIVE, mandate.horizon_days, floor)
+            ft = project(state, [*live, *b.bound_obligations], pc.actions, Mode.CONSERVATIVE, mandate.horizon_days, floor)
             fv = _dump(trajectory_view(ft, floor))
             funded = {**displayed({"label": pc.label, "min_cash": fv["min_cash"], "min_cash_day": fv["min_cash_day"],
                                    "first_breach_day": fv["first_breach_day"]}), "days": _series(fv["days"])}
@@ -267,20 +276,24 @@ def simulate(
     *,
     trusted_owner_key_hex: str,
     day: int = 0,
+    commitments: Sequence[Commitment] = (),
 ) -> WhatIfResult:
-    """Evaluate the hypothetical package `params` against `state` under `mandate`. Pure: reads its
-    arguments only and writes nothing. Raises WhatIfParamError when the params do not fit the state."""
+    """Evaluate the hypothetical package `params` against current books (`state` plus the obligations of
+    the live `commitments`) under `mandate`. Pure: reads its arguments only and writes nothing. Raises
+    WhatIfParamError when the params do not fit the state."""
     started = time.perf_counter()
     ctx = context(state, day)
     params = _normalise(params, ctx)
-    key = cache_key(state, mandate, day, params)
+    live = current_books(state, commitments).obligations
+    key = cache_key(state, mandate, day, params, live)
     hit = _cache.get(key)
     if hit is not None:
         return hit.model_copy(update={"cached": True,
                                       "compute_ms": int((time.perf_counter() - started) * 1000)})
     offer, text = build(params, ctx, day)
-    bundle = evaluate(offer, state, mandate, trusted_owner_key_hex=trusted_owner_key_hex, day=day, plans="committed")
-    result = _view(bundle, params, ctx, text, key, state, mandate)
+    bundle = evaluate(offer, state, mandate, trusted_owner_key_hex=trusted_owner_key_hex, day=day,
+                      commitments=commitments, plans="committed")
+    result = _view(bundle, params, ctx, text, key, state, mandate, live)
     result = result.model_copy(update={"compute_ms": int((time.perf_counter() - started) * 1000)})
     _cache.put(key, result)
     return result

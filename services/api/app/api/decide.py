@@ -17,6 +17,7 @@ from app.api.auth import require_feature, require_owner
 from app.api.display import displayed
 from app.api.runtime import Runtime, get_runtime
 from app.api.views import trajectory_view
+from app.books import Books, current_books
 from app.config import get_settings
 from app.counterparties import negotiate
 from app.domain.fixtures import load_offers
@@ -120,7 +121,7 @@ def evaluate_offer(offer_id: str, body: EvaluateIn | None = None) -> dict:
         "plan_committed": displayed(json.loads(bundle.plan_committed.model_dump_json())) if bundle.plan_committed else None,
         "plan_expected": displayed(json.loads(bundle.plan_expected.model_dump_json())) if bundle.plan_expected else None,
         "cure_plan": displayed(json.loads(bundle.cure_plan.model_dump_json())) if bundle.cure_plan else None,
-        "cured_trajectory": _cured(bundle, state, mandate),
+        "cured_trajectory": _cured(bundle, current_books(state, rt.store.commitments()), mandate),
         "comparison": [json.loads(r.model_dump_json()) for r in bundle.comparison],
         "forward_concession": {
             "total_fen": v.forward_concession_total_fen, "total_display": fmt_yuan(v.forward_concession_total_fen),
@@ -132,12 +133,13 @@ def evaluate_offer(offer_id: str, body: EvaluateIn | None = None) -> dict:
     return view
 
 
-def _cured(bundle, state, mandate) -> dict | None:
-    """The trajectory with the cure plan applied (display only; the verdict already priced it)."""
+def _cured(bundle, books: Books, mandate) -> dict | None:
+    """The trajectory with the cure plan applied (display only; the verdict already priced it), on current
+    books plus the offer's bound obligations."""
     if not bundle.cure_plan or not bundle.cure_plan.actions:
         return None
     try:
-        t = project(state, list(bundle.bound_obligations), list(bundle.cure_plan.actions), Mode.CONSERVATIVE,
+        t = project(books.state, books.with_(bundle.bound_obligations), list(bundle.cure_plan.actions), Mode.CONSERVATIVE,
                     mandate.horizon_days, mandate.min_cash_fen)
     except EngineError:
         return None
@@ -220,11 +222,15 @@ def negotiate_offer(offer_id: str, body: NegotiateIn) -> dict:
                                  nonce=c.nonce)
             operations.append(json.loads(rt.executor.execute(accept).model_dump_json()))
             commitment = rt.store.get_commitment(c.id)
-            accepted = by_id[t.accepted_counter_id]
-            gap_plan = plan(rt.store.get_state(), list(accepted.obligations), mandate)
+            # The accept has executed: when it took effect, the counter's obligations are already live in the
+            # books, so the gap is planned on the books as they now stand (never `accepted.obligations` again).
+            # A queued (PENDING_APPROVAL) or refused accept is not live and leaves the books as they were.
+            books = current_books(rt.store.get_state(), rt.store.commitments())
+            gap_plan = plan(books.state, books.with_([]), mandate)
             message = f"{t.accepted_counter_id} accepted; commitment recorded; remaining gap funded."
         else:
-            gap_plan = plan(state, [], mandate)
+            books = current_books(state, rt.store.commitments())
+            gap_plan = plan(books.state, books.with_([]), mandate)
             message = "NO DEAL after bounded rounds; the Debt Desk funds the near-term gap."
         operations += _ops_for_plan(rt, list(gap_plan.actions), f"fund-{offer_id}-{body.buyer_profile}")
     return {
@@ -258,8 +264,9 @@ def _extension_probe(state) -> Obligation:
 def router_plan() -> dict:
     rt = get_runtime()
     state, mandate = rt.store.get_state(), rt.store.get_mandate()
-    committed = plan(state, [], mandate)
-    expected = plan(state, [], mandate, basis="EXPECTED") if get_settings().features.expected_plans else None
+    books = current_books(state, rt.store.commitments())
+    committed = plan(books.state, books.with_([]), mandate)
+    expected = plan(books.state, books.with_([]), mandate, basis="EXPECTED") if get_settings().features.expected_plans else None
     rate, fid = marginal_cost(state, mandate)
     d, be_bp = break_even_discount(state, mandate)
     bases = extension_cost_bases(state, _extension_probe(state), mandate)
@@ -299,6 +306,6 @@ def router_plan() -> dict:
         "comparison": [
             {**json.loads(r.model_dump_json()), "total_fen": r.cost_fen, "total_display": r.cost_display,
              "selected": r.result.value == "SELECTED"}
-            for r in compare(state, [], mandate)
+            for r in compare(books.state, books.with_([]), mandate)
         ],
     }
