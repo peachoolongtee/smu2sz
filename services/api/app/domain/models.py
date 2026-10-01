@@ -349,6 +349,8 @@ class Receivable(Contract):
     status: Literal["OPEN", "FINANCED", "SETTLED", "FAILED"] = "OPEN"
     confirmed: bool = True  # buyer-confirmed (确权)
     settled_fen: Fen = 0  # face already settled by receipts; outstanding = face_fen - settled_fen (ADR-0006)
+    advance_fen: Fen = 0  # financing advance still outstanding on this invoice (0 when not FINANCED)
+    advance_facility_id: str | None = None
 
     @property
     def outstanding_fen(self) -> Fen:

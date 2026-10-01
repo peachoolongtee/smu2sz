@@ -107,3 +107,18 @@ def test_settled_receivable_lapses_its_obligation():
                                                  if x.id == r.id else x for x in s.receivables]})
     b = current_books(done, [_commitment(ob)])
     assert b.obligations == () and b.lapsed[0].reason == "RECEIVABLE_SETTLED"
+
+
+def test_a_recorded_advance_is_repaid_from_its_own_invoice():
+    """Two financed invoices: each advance is repaid on its own invoice's due day, not in due order."""
+    s = _state()
+    fac = next(f for f in s.facilities if f.kind.value == "INVOICE_FINANCING")
+    a = next(r for r in s.receivables if r.status == "OPEN")
+    b = a.model_copy(update={"id": "RCV-B", "issue_day": a.issue_day + 20, "status": "FINANCED",
+                             "advance_fen": 5_000_000, "advance_facility_id": fac.id})
+    s2 = s.model_copy(update={
+        "receivables": [a, b],
+        "facilities": [f.model_copy(update={"drawn_fen": 5_000_000}) if f.id == fac.id else f for f in s.facilities]})
+    t = project(s2, [], [], Mode.CONSERVATIVE, H)
+    repay = [(e.day, e.amount_fen) for d in t.days for e in d.events if e.kind.value == "REPAYMENT" and e.ref == fac.id]
+    assert repay == [(b.due_day, -5_000_000)]
