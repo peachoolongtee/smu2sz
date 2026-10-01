@@ -10,7 +10,11 @@ from app.domain.models import Actor, FacilityKind, FinancialState, RepayFacility
 from app.domain.money import bp, post
 from app.financial import line_interest
 from tests.alerts.test_alerts import _of, _run, _store
-from tests.nl.conftest import OWNER, client, rt  # noqa: F401  (the fixtures)
+from tests.nl import conftest as nl_conftest
+
+OWNER = nl_conftest.OWNER
+rt = nl_conftest.rt  # the in-memory runtime and the app client of the chat tests
+client = nl_conftest.client
 
 BANK = {"X-Agent-Key": "demo-agent-key", "X-Bank-Feed-Key": "demo-bank-feed-key"}
 REPAY_ID = "ALERT-REPAY-FAC-LINE"
@@ -80,7 +84,7 @@ def test_demo_path_day47_raises_the_repay_alert_and_act_repays_the_line(client, 
     body = r.json()
     assert [(x["kind"], x["status"]) for x in body["results"]] == [("REPAY_FACILITY", "EXECUTED")]
     assert body["cured"] is True and line(rt).drawn_fen == 0 and repay_alerts(client) == []
-    interest = int(round(float(alert["inputs"]["interest_due"].replace("¥", "").replace(",", "")) * 100))
+    interest = round(float(alert["inputs"]["interest_due"].replace("¥", "").replace(",", "")) * 100)
     assert rt.store.get_state().cash_fen == cash - drawn - interest and interest > 0
 
 
