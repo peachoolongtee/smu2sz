@@ -5,9 +5,11 @@ pre{white-space:pre-wrap;background:#f5f6f8;padding:12px;border-radius:6px}table
 td{border-top:1px solid #e3e5e8;padding:4px 6px;vertical-align:top}</style></head><body>
 <h1>S37_whatif_discount_and_explain_zh · turn 2 <span class="tag">PASS</span></h1><p>What-if on a 1% early-pay discount, then an explanation in Chinese</p>
 <p><b>OWNER</b>:</p>
-<pre>为什么？</pre><p><b>Intent</b> EXPLAIN · <b>Verdict</b> ACCEPT
-</p><p><b>Reply</b></p><pre>结论 ACCEPT（TIER_1）：无违规。ACCEPT. Forward concessions ¥0.00 against ¥5,000.00. Covenants hold: DSCR_MIN 2.00x, LEVERAGE_MAX 1.39x.
-远期让步合计 ¥0.00，上限 ¥5,000.00。</pre><p><b>Plan</b></p><ol></ol>
+<pre>为什么？</pre><p><b>Intent</b> EXPLAIN · <b>Verdict</b> COUNTER
+DISCOUNT_ABOVE_BREAK_EVEN</p><p><b>Reply</b></p><pre>结论 COUNTER（TIER_1）：DISCOUNT_ABOVE_BREAK_EVEN。COUNTER: DISCOUNT_ABOVE_BREAK_EVEN (1.00% vs &lt; 0.88%). Forward concessions ¥0.00 against ¥5,000.00. Covenants hold: DSCR_MIN 2.00x, LEVERAGE_MAX 1.39x. Counters: Option A.
+- DISCOUNT_ABOVE_BREAK_EVEN: Early settlement at 1.00% costs more than financing the invoice: break-even 0.88%. Observed 1.00% vs limit &lt; 0.88%. Formula: d &lt; c/(1+c), c = marginal source&#x27;s cost share for 30 days. Inputs: discount=1.00%; days_early=30; receivable_id=RCV-A; implied_annual_rate=12.2896%; line_plus_partial_at_offered_rate=¥841.64 + ¥2,121.21 = ¥2,962.85.
+远期让步合计 ¥0.00，上限 ¥5,000.00。
+- Option A: Early settlement at 0.85% is cheaper than financing the invoice on the marginal committed source; the line covers the rest of the near-term gap. Formula: break-even: d/(1−d) &lt; c, c = 10.8417% × 30/365 = 0.8911% → d &lt; 0.8832%; largest whole-5bp rate below it = 0.85%. Face: (near-term need ¥360,000.00 − committed line ¥150,000.00) / (1 − 0.85%) = ¥211,800.30 → up to ¥211,800.00 (whole ¥100, at most the invoice). Cost: discount ¥1,800.30 + line interest ¥841.64 = ¥2,641.94</pre><p><b>Plan</b></p><ol></ol>
 <p><b>Operations</b></p><table><tr><td>none</td></tr></table>
 <p>session S37_whatif_discount_and_explain_zh-owner · trace S37_whatif_discount_and_explain_zh-owner:2 · security events 0</p>
 </body></html>
