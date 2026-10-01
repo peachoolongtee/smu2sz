@@ -192,7 +192,7 @@ def test_an_unread_request_fails_the_proof(rules_compiler: Compiler, text: str, 
 
 @pytest.mark.parametrize("text", [
     "Morning! Could remit the full ¥420,000 today, minus 0.5%? Let me know.",
-    "We will settel the 420k invoice ahead of schedule, 0.7% off please.",
+    "We will settel the 420k invoice early, 0.7% off please.",
     "Dear Lily, we can pay the ¥420,000 invoice today if you're ok to take 0.5% off. Best regards",
     "陈经理您好，42万的发票我们明天付清，麻烦给个千分之五的贴息，可以吗？谢谢",
 ])
