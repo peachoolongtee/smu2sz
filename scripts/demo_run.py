@@ -105,12 +105,12 @@ def main() -> int:
         print(f"\n== day {financed.due_day}: {financed.id} is paid and repays its advance")
         c.post("/clock/advance", json={"to_day": financed.due_day}, headers=OWNER)
         r15 = receipt("demo-receipt-3", financed.id, financed.outstanding_fen)
-    # the line drawn on day 0 was planned to be repaid on day 32; nothing repays it unless the owner asks
-    for text in ("repay the credit line", "go ahead"):
-        rp = c.post("/nl", json={"session_id": "demo-owner", "actor": "OWNER", "text": text}, headers=OWNER).json()
-        print(f"== owner: {text}\n  {rp['reply']}")
-        if not rp["awaiting_confirmation"]:
-            break
+    # the line drawn on day 0 is still outstanding: the books can repay it, so the agent proposes it and the owner agrees
+    o = c.post("/nl/opener", json={"session_id": "demo-owner", "lang": "en"}, headers=OWNER).json()
+    print(f"\n== agent opener (has_news {o['has_news']}, awaiting {o['awaiting_confirmation']}):\n  {o['reply']}")
+    if o["awaiting_confirmation"]:
+        rp = c.post("/nl", json={"session_id": "demo-owner", "actor": "OWNER", "text": "go ahead"}, headers=OWNER).json()
+        print(f"== owner: go ahead\n  {rp['reply']}")
     fac_drawn = {f.id: f.drawn_fen for f in rt.store.get_state().facilities if f.drawn_fen}
     rec = c.get("/reconciliation", headers=OWNER).json()["reconciliation"]
     end = show_alerts(c, "after the receipts")
