@@ -219,6 +219,8 @@ def parse(text: str, state: FinancialState, *, pending_plan: bool = False) -> Pa
         return hit(Intent.NEGOTIATE, "negotiate+offer")
     if s.fixture_id or s.quoted_text:
         return hit(Intent.EVALUATE_OFFER, "offer_reference")
+    if lx.ALERTS.search(text) and not lx.ACCELERATE.search(text):
+        return hit(Intent.SHOW_ALERTS, "alerts")
     if lx.STATUS_QUESTION.search(text) and not lx.ACCELERATE.search(text):
         return hit(Intent.SHOW_STATUS, "status_question")
     if lx.NEGOTIATE_VERB.search(text):

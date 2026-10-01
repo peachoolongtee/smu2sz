@@ -23,6 +23,7 @@ from app.domain.models import (
 from app.domain.ports import LedgerStore
 from app.nl import classifier as clf
 from app.nl import lexicon as lx
+from app.nl.alerts import alerts_intent, alerts_turn, confirm_cure
 from app.nl.context import NlContext
 from app.nl.funding import accelerate, fund_gap, repay, status
 from app.nl.models import Intent, NlRequest, NlResponse, Parsed, Slots
@@ -86,6 +87,26 @@ def handle(req: NlRequest, *, store: LedgerStore, executor: Executor, day: int, 
         session.requests[req.request_id] = list(ctx.sent)
     session.history.append((session.turn, turn.intent.value))
     return _response(ctx, turn, parse_source, before)
+
+
+def opener(session_id: str | None, lang: str | None, *, store: LedgerStore, executor: Executor, day: int,
+           owner_key_hex: str, sessions: SessionStore = SESSIONS) -> tuple[NlResponse, bool]:
+    """An agent-initiated turn in the owner's session (the API layer has checked the owner token): the agent says
+    what needs the owner, if anything, and proposes the cure as a pending plan. It executes nothing; the owner's
+    next direct "go ahead" in this session confirms it. Returns (the response, whether anything needs the owner)."""
+    session, _new = sessions.get_or_create(session_id, "OWNER", owner_auth=True)
+    session.turn += 1
+    if lang:
+        session.lang = lang
+    ctx = NlContext(store=store, executor=executor, day=day, owner_key_hex=owner_key_hex, owner_authenticated=True,
+                    session=session, lang=session.lang, trace_id=f"{session.id}:{session.turn}")
+    before = {e.id for e in store.security_events()}
+    turn, has_news = alerts_turn(ctx)
+    turn.reply, _ok = ctx.guard(turn.reply, turn.recipient, allow=turn.allow)
+    _update_session(session, turn)
+    _remember_shown(ctx, turn)
+    session.history.append((session.turn, turn.intent.value))
+    return _response(ctx, turn, "opener", before), has_news
 
 
 # ---------------------------------------------------------------- parsing
@@ -190,6 +211,8 @@ def _dispatch(ctx: NlContext, p: Parsed, text: str) -> Turn:
             return repay(ctx, slots, execute=not llm)
         case Intent.SHOW_STATUS:
             return status(ctx)
+        case Intent.SHOW_ALERTS:
+            return alerts_intent(ctx)
         case Intent.EXPLAIN:
             return explain(ctx, slots, text)
         case Intent.WHAT_IF:
@@ -289,6 +312,8 @@ def _confirm(ctx: NlContext, yes: bool, text: str) -> Turn:
                                     execute=True, data=pending.data)
         case Intent.EVALUATE_OFFER:
             turn = execute_decision(ctx, pending.data["verdict_id"])
+        case Intent.SHOW_ALERTS:
+            turn = confirm_cure(ctx, pending)
         case _:
             turn = Turn(intent=pending.intent, reply=t(ctx, "Nothing to run.", "没有可执行的内容。"))
     turn.clear_pending = True

@@ -41,6 +41,10 @@ SuggestedKind = Literal[
 ]
 
 
+# The kinds POST /alerts/{id}/act may turn into typed operations (the executor still decides the tier).
+EXECUTABLE_KINDS = frozenset({"DRAW_FACILITY", "SUBMIT_INVOICE_FOR_FINANCING", "APPLY_FOR_FACILITY"})
+
+
 class SuggestedAction(Contract):
     operation_kind: SuggestedKind
     facility_id: str | None = None
@@ -67,6 +71,7 @@ class Alert(Contract):
     receivable_id: str | None = None  # past-due kind: the receivable concerned
     inputs: dict[str, str] = Field(default_factory=dict)
     suggested: list[SuggestedAction] = Field(default_factory=list)
+    actionable: bool = False  # at least one suggestion POST /alerts/{id}/act can submit to the executor
     basis: Literal["CONSERVATIVE"] = "CONSERVATIVE"
 
 

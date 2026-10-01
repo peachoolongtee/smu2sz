@@ -16,7 +16,7 @@ import hashlib
 from collections.abc import Sequence
 from fractions import Fraction
 
-from app.alerts.models import Alert, AlertKind, Severity, SuggestedAction
+from app.alerts.models import EXECUTABLE_KINDS, Alert, AlertKind, Severity, SuggestedAction
 from app.books import Books, current_books
 from app.domain.models import (
     CommitmentStatus,
@@ -175,11 +175,15 @@ def _reserve_alerts(state: FinancialState, mandate: Mandate, t: Trajectory, obs:
         worst = min(run, key=lambda p: (p.closing_fen, p.day))
         first_short = floor - run[0].closing_fen
         max_short = floor - worst.closing_fen
-        cure = committed_cure(state, obs, t.horizon_days, floor, day, start, end)
+        cure = (committed_cure(state, obs, t.horizon_days, floor, day, start, end)
+                if mandate.allow_new_borrowing else None)
         if cure is not None:
             suggested = [_suggest(a) for a in cure]
             cure_text = "a committed cure exists: " + " + ".join(
                 f"{s.operation_kind} {s.facility_id} {fmt_yuan(s.amount_fen or 0)}" for s in suggested)
+        elif not mandate.allow_new_borrowing:
+            suggested = []
+            cure_text = "the mandate does not allow new borrowing, so no facility can be drawn or applied for"
         else:
             usable = [f for f in state.facilities if f.owner_approved and f.status == FacilityStatus.NOT_APPLIED
                       and f.kind in _DRAWABLE and day + f.lead_time_days <= start]
@@ -203,6 +207,7 @@ def _reserve_alerts(state: FinancialState, mandate: Mandate, t: Trajectory, obs:
             inputs={"floor": fmt_yuan(floor), "closing": fmt_yuan(run[0].closing_fen), "last_day": str(end),
                     "worst_day": str(worst.day), "max_shortfall": fmt_yuan(max_short)},
             suggested=suggested,
+            actionable=any(sg.operation_kind in EXECUTABLE_KINDS for sg in suggested),
         ))
     # headroom below 10% of the floor on days that do not breach
     thin = [p for p in t.days if p.day >= day and floor <= p.closing_fen and
