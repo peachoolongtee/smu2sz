@@ -5,6 +5,7 @@
 
 findings:
   - id: EV-01
+    status: "fixed: Tier-1 limited to pure early pay; ADR-0005 coverage proof; grammar round 1"
     severity: high
     owner: services/api/app/compiler (rules grammar) + services/api/app/nl (counterparty acceptance reply)
     suite: offers
@@ -29,6 +30,7 @@ findings:
       1.25% rebate on next quarter's purchases up to ¥400,000") so a divergence is visible to the buyer.
 
   - id: EV-02
+    status: "fixed: unbounded and bare rebates abstain; ADR-0005"
     severity: high
     owner: services/api/app/compiler (abstention) + services/api/app/verifier/bind.py (rebate base)
     suite: offers
@@ -48,6 +50,7 @@ findings:
       the text names that period ("next quarter", "下季度").
 
   - id: EV-03
+    status: "fixed: grammar rounds 1–2 plus the unread-term safety net"
     severity: high
     owner: services/api/app/compiler (rules grammar)
     suite: offers
@@ -67,6 +70,7 @@ findings:
       does not exercise.
 
   - id: EV-04
+    status: "mitigated: zh and number words in rounds 1–3; unfamiliar wording still over-abstains"
     severity: medium
     owner: services/api/app/compiler (rules grammar, zh and number words)
     suite: offers
@@ -83,6 +87,7 @@ findings:
     suggestion: "Rate/value attachment in zh (折扣X%, 返X%, 扣X%), 'X% back', number words; do not treat 'the usual 45' as an as-usual reference when a number follows."
 
   - id: EV-05
+    status: "partly fixed: most conflicts report CONFLICTING_SOURCES; some cross-document cases still UNRESOLVED_SCOPE"
     severity: medium
     owner: services/api/app/compiler/grounding.py
     suite: offers
@@ -95,6 +100,7 @@ findings:
     repro: "uv run --project services/api python scripts/evaluate.py --suite offers --only H16_conflict_rate,H17_conflict_amount_zh,H18_conflict_terms"
 
   - id: EV-06
+    status: "fixed: repayment on any receipt day; brute-force optimality 26/26"
     severity: medium
     owner: services/api/app/funding/search.py (Search._slots, recovery_days)
     suite: funding
@@ -109,6 +115,7 @@ findings:
     suggestion: "Add a line slot per receipt day after the first breach (as the brute force does), or re-derive the repayment day from the funded trajectory after filling the second source."
 
   - id: EV-07
+    status: "fixed: cash-path fast check and an expected-basis cap (13.4 s → 67 ms)"
     severity: medium
     owner: services/api/app/verifier/evaluate.py (expected plan) + services/api/app/funding/search.py (EXPECTED basis)
     suite: covenants
@@ -121,6 +128,7 @@ findings:
     suggestion: "Compute the expected plan lazily or under a time budget (and cache it), returning the verdict first."
 
   - id: EV-08
+    status: "fixed: CJK-safe boundaries"
     severity: medium
     owner: services/api/app/nl/lexicon.py (FIXTURE_RE, APPROVAL_ID_RE)
     suite: intent
@@ -133,6 +141,7 @@ findings:
     suggestion: "Use (?<![A-Za-z0-9]) / (?![A-Za-z0-9]) lookarounds instead of \\b."
 
   - id: EV-09
+    status: "mitigated: intent coverage and clarifications in rounds 1–3"
     severity: medium
     owner: services/api/app/nl/lexicon.py + services/api/app/nl/intent_cache
     suite: intent
@@ -146,6 +155,7 @@ findings:
     repro: "uv run --project services/api python scripts/evaluate.py --suite intent"
 
   - id: EV-10
+    status: "open: needs a dedicated E2 dataset"
     severity: medium
     owner: product / evaluation design (spec §14 E2)
     suite: offers
@@ -159,6 +169,7 @@ findings:
     repro: "uv run --project services/api python scripts/evaluate.py --suite offers"
 
   - id: EV-11
+    status: "fixed: ¥1,000 minimum action"
     severity: low
     owner: services/api/app/funding/search.py
     suite: covenants
@@ -171,6 +182,7 @@ findings:
     suggestion: "A minimum amount per source (e.g. ¥1,000, or the facility's minimum draw) in the menu."
 
   - id: EV-12
+    status: "fixed: 4-dp display near limits, grouped monthly breaches"
     severity: low
     owner: services/api/app/covenants (display) + services/api/app/verifier (summary)
     suite: covenants

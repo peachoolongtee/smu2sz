@@ -59,5 +59,9 @@ def post_term_sheet(body: OfferIn) -> dict:
 
 @router.get("/fixtures/offers")
 def list_offer_fixtures() -> dict:
+    from app.config import get_settings
+
+    show_security = get_settings().features.security_scenes
     return {"offers": [{"id": k, "counterparty_id": v["counterparty_id"], "kind": v.get("kind", "offer"),
-                        "text": v["documents"][0]["text"]} for k, v in load_offers().items()]}
+                        "text": v["documents"][0]["text"]} for k, v in load_offers().items()
+                       if show_security or not k.startswith("SEC_")]}

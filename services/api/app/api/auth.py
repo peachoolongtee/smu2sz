@@ -81,3 +81,14 @@ def require_owner_or_agent(request: Request, x_owner_token: str | None = Header(
         raise HTTPException(503, {"code": "CREDENTIALS_NOT_CONFIGURED", "message": "set OWNER_TOKEN and AGENT_KEY"})
     log_refusal(request, "owner token or agent key missing or wrong")
     raise HTTPException(401, {"code": "CREDENTIAL_REQUIRED", "message": "owner token or agent key required"})
+
+
+def require_feature(name: str):
+    """A route dependency: 403 FEATURE_DISABLED when the flag is off (app/config.py Features)."""
+    def dep() -> None:
+        from app.config import get_settings
+
+        if not getattr(get_settings().features, name):
+            raise HTTPException(403, {"code": "FEATURE_DISABLED", "feature": name})
+
+    return dep

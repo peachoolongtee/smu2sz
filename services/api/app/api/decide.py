@@ -13,10 +13,11 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
-from app.api.auth import require_owner
+from app.api.auth import require_feature, require_owner
 from app.api.display import displayed
 from app.api.runtime import Runtime, get_runtime
 from app.api.views import trajectory_view
+from app.config import get_settings
 from app.counterparties import negotiate
 from app.domain.fixtures import load_offers
 from app.domain.models import (
@@ -89,7 +90,7 @@ class EvaluateIn(BaseModel):
     fixture_id: str | None = None  # lets the demo pass the owner's declared costs for that example
 
 
-@router.post("/offers/{offer_id}/evaluate")
+@router.post("/offers/{offer_id}/evaluate", dependencies=[Depends(require_feature("terms_guard"))])
 def evaluate_offer(offer_id: str, body: EvaluateIn | None = None) -> dict:
     rt = get_runtime()
     offer = rt.store.get_offer(offer_id)
@@ -99,7 +100,8 @@ def evaluate_offer(offer_id: str, body: EvaluateIn | None = None) -> dict:
         state, mandate = rt.store.get_state(), rt.store.get_mandate()
         bundle = evaluate(offer, state, mandate, trusted_owner_key_hex=rt.owner_key_hex, day=rt.day,
                           owner_declared=_owner_declared(body.fixture_id if body else None),
-                          commitments=rt.store.commitments())
+                          commitments=rt.store.commitments(),
+                          plans="all" if get_settings().features.expected_plans else "committed")
         v = bundle.verdict
         rt.store.put_verdict(v)
         rt.latest_verdict[offer_id] = v.id
@@ -168,7 +170,8 @@ def _ops_for_plan(rt: Runtime, actions: list[FundingAction], key: str) -> list[d
     return results
 
 
-@router.post("/negotiate/{offer_id}")
+@router.post("/negotiate/{offer_id}", dependencies=[Depends(require_feature("terms_guard")),
+                                                  Depends(require_feature("buyer_negotiation"))])
 def negotiate_offer(offer_id: str, body: NegotiateIn) -> dict:
     rt = get_runtime()
     profile = PROFILES.get(body.buyer_profile)
@@ -251,11 +254,12 @@ def _extension_probe(state) -> Obligation:
                       spans=[SourceSpan(doc_id="PROBE", start=0, end=0, text="")], confidence=1.0)
 
 
-@router.post("/router/plan")
+@router.post("/router/plan", dependencies=[Depends(require_feature("debt_desk"))])
 def router_plan() -> dict:
     rt = get_runtime()
     state, mandate = rt.store.get_state(), rt.store.get_mandate()
-    committed, expected = plan(state, [], mandate), plan(state, [], mandate, basis="EXPECTED")
+    committed = plan(state, [], mandate)
+    expected = plan(state, [], mandate, basis="EXPECTED") if get_settings().features.expected_plans else None
     rate, fid = marginal_cost(state, mandate)
     d, be_bp = break_even_discount(state, mandate)
     bases = extension_cost_bases(state, _extension_probe(state), mandate)
@@ -276,7 +280,7 @@ def router_plan() -> dict:
     notional, committed_b, expected_b = (bases + [None, None, None])[:3]
     return {
         "committed": displayed(json.loads(committed.model_dump_json())),
-        "expected": displayed(json.loads(expected.model_dump_json())),
+        "expected": displayed(json.loads(expected.model_dump_json())) if expected else None,
         "menu": menu,
         "marginal": displayed({
             "rate": {"num": rate.num, "den": rate.den}, "rate_display": fmt_pct(rate.value, 4),

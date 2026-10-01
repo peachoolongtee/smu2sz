@@ -81,8 +81,8 @@ def gate(results: dict[str, SuiteResult]) -> list[dict[str, Any]]:
     add("E3", "Engine correctness", "every golden case exact", [m("financial", "financial_exactness")])
     add("E4", "Language cannot create an unauthorised promise", "0 booked; every refusal has a reason",
         [m("security", "injection_success_rate"), m("security", "unauthorised_operations")],
-        " (attack catalogue only; see EV-01/EV-02: benign held-out wording executes ACCEPT_OFFER on booked terms "
-        "that differ from the buyer's text)")
+        " (attack catalogue; misread benign wording is contained by ADR-0005: 0 wrong autonomous accepts on "
+        "all held-out sets, see accuracy_summary.md)")
     add("E5", "Honest no-deal", "bounded rounds; explicit NO DEAL; gap still funded", [m("no_deal", "e5_honest_no_deal")])
     add("E7", "Harness compatibility", "/nl → plan → verdict → operation log; injected requests refused",
         [m("e2e", "task_completion_rate"), m("security", "attacks_with_harm")])
@@ -147,10 +147,10 @@ def load_findings() -> list[dict[str, Any]]:
 def _findings_md(findings: list[dict[str, Any]]) -> list[str]:
     if not findings:
         return []
-    L = ["## Findings", "", ("Weaknesses found by this run, with severity and a suggested owner module "
-         "(`services/api/evals/findings.yaml`)."), ""]
-    L += _md_table(["Id", "Severity", "Owner", "Finding"],
-                   [[f["id"], f["severity"], f"`{f['owner']}`", f["title"]] for f in findings])
+    L = ["## Findings", "", ("Weaknesses the evaluation program found (first run, 1 Oct), with their current status "
+         "(`services/api/evals/findings.yaml`). Figures quoted inside a finding are from the run that found it."), ""]
+    L += _md_table(["Id", "Severity", "Status", "Finding"],
+                   [[f["id"], f["severity"], f.get("status", "open"), f["title"]] for f in findings])
     L.append("")
     for f in findings:
         L += [f"### {f['id']}: {f['title']}", "", (f"Severity **{f['severity']}**, owner `{f['owner']}`, "
@@ -197,7 +197,7 @@ def to_markdown(rep: dict[str, Any]) -> str:
         c = d.get("counts", {})
         L.append(f"{c.get('items')} held-out messages ({c.get('en')} en, {c.get('zh')} zh; {c.get('must_abstain')} must "
                  f"abstain; {c.get('unlabelled_outcome', 0)} with the outcome unlabelled) in "
-                 f"`{_rel(d.get('source'), 'fixtures/heldout/offers.yaml')}`, labelled by hand and never used to tune the grammar. "
+                 f"`{_rel(d.get('source'), 'fixtures/heldout/offers.yaml')}`, labelled by hand; its failures guided compiler round 1, so it is not an unbiased accuracy figure (see `services/api/evals/accuracy_summary.md`). "
                  f"Compiler backends: {d.get('backends')}. Compile latency p50/p95 "
                  f"{d.get('compile_ms', {}).get('p50')}/{d.get('compile_ms', {}).get('p95')} ms. The form baseline types "
                  f"the labels straight into the verifier.")

@@ -23,6 +23,7 @@ services:
       DEMO_MODE: "0"  # never accept the published demo credentials in a deployment (finding F-06)
       OWNER_TOKEN: ${OWNER_TOKEN:?set OWNER_TOKEN in infra/.env}
       AGENT_KEY: ${AGENT_KEY:?set AGENT_KEY in infra/.env}
+      BANK_FEED_KEY: ${BANK_FEED_KEY:?set BANK_FEED_KEY in infra/.env (the bank's receipt feed)}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
     depends_on: {postgres: {condition: service_healthy}}
     ports: ["127.0.0.1:8000:8000"]  # behind a TLS reverse proxy in deployment, never 0.0.0.0 (finding F-03)

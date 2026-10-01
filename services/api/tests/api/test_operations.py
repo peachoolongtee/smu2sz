@@ -87,3 +87,16 @@ def test_deciding_twice_is_409_and_logged(client):
     before = len(client.get("/audit").json()["events"])
     assert client.post(f"/approvals/{r['approval_id']}", json={"decision": "APPROVE"}, headers=OWNER).status_code == 409
     assert len(client.get("/audit").json()["events"]) == before + 1
+
+
+def test_feature_flags_disable_routes(client, monkeypatch):
+    monkeypatch.setenv("FEATURE_DEBT_DESK", "0")
+    assert client.post("/router/plan").status_code == 403
+    monkeypatch.setenv("FEATURE_DEBT_DESK", "1")
+    monkeypatch.setenv("FEATURE_EXPECTED_PLANS", "0")
+    assert client.post("/router/plan").json()["expected"] is None
+    monkeypatch.setenv("FEATURE_SECURITY_SCENES", "0")
+    ids = [o["id"] for o in client.get("/fixtures/offers").json()["offers"]]
+    assert not any(i.startswith("SEC_") for i in ids)
+    monkeypatch.setenv("FEATURE_BUYER_NEGOTIATION", "0")
+    assert client.post("/negotiate/X", json={"buyer_profile": "cooperative"}).status_code == 403

@@ -59,17 +59,17 @@ Flags are environment variables read by `services/api/app/config.py` (`1` on, `0
 
 | Feature | What it does | Flag | Default |
 | --- | --- | --- | --- |
-| Terms Guard | Compile a buyer's offer (zh + en, message and attachments) into typed obligations with exact spans; verdict with formulas; counters priced from the marginal cost of funds; break-even rule; ADR-0005 autonomy proof | core (`FEATURE_TERMS_GUARD` is declared but not yet checked) | on |
-| Debt Desk | Grid-search funding router over committed facilities, marginal cost of funds, break-even discount | core (`FEATURE_DEBT_DESK` declared, not checked) | on |
-| Buyer negotiation | Deterministic buyer kernel with a hidden reservation; bounded rounds; NO DEAL | core (`FEATURE_BUYER_NEGOTIATION` declared, not checked) | on |
+| Terms Guard | Compile a buyer's offer (zh + en, message and attachments) into typed obligations with exact spans; verdict with formulas; counters priced from the marginal cost of funds; break-even rule; ADR-0005 autonomy proof | core (`FEATURE_TERMS_GUARD`) | on |
+| Debt Desk | Grid-search funding router over committed facilities, marginal cost of funds, break-even discount | core (`FEATURE_DEBT_DESK`) | on |
+| Buyer negotiation | Deterministic buyer kernel with a hidden reservation; bounded rounds; NO DEAL | core (`FEATURE_BUYER_NEGOTIATION`) | on |
 | Natural-language harness and chat | `POST /nl`: intents, plans, clarification, correction, fallback; `/chat` page and slide-over panel | core | on |
 | Permission tiers and executor | Tier 1 / 2 / 3, signed mandate, nonce, idempotency, circuit breaker, hash-chained log, `GET /evidence` | core | on |
-| Security scenes | FastCapital and other hostile-message scenes in the demo | `FEATURE_SECURITY_SCENES` (declared, not checked) | on |
+| Security scenes | FastCapital and other hostile-message scenes in the demo | `FEATURE_SECURITY_SCENES` | on |
 | What-if sandbox | Read-only hypothetical verdicts (terms slider, discounts) | core | on |
 | Capex | NPV, payback and financing-structure comparison | `FEATURE_CAPEX` | on |
 | Borrower file | Lender-ready file from verified state (HTML / DOCX), Tier 2 | `FEATURE_BORROWER_FILE` | on |
 | Alerts and reconciliation | Cash-flow alerts from the conservative trajectory; receipt reconciliation | `FEATURE_ALERTS` | on |
-| Expected-mode plans | Display-only expected-basis funding plan beside the committed one | `FEATURE_EXPECTED_PLANS` (declared, not checked) | on |
+| Expected-mode plans | Display-only expected-basis funding plan beside the committed one | `FEATURE_EXPECTED_PLANS` | on |
 | After signing | Statutory due dates, late interest, 确权 draft | `FEATURE_AFTER_SIGNING` (stub only) | **off** |
 
 Other switches: `LLM_MODE=cache|live`, `LLM_PRIMARY=claude|deepseek`, `DATABASE_URL` (SQLite by default, `memory`, or Postgres), and `DEMO_MODE`.
