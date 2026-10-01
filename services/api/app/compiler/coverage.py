@@ -25,6 +25,7 @@ from __future__ import annotations
 import re
 from collections.abc import Sequence
 from dataclasses import dataclass
+from decimal import Decimal
 from fractions import Fraction
 
 from app.compiler import lexicon
@@ -151,7 +152,8 @@ _PARTICLES = re.compile(r"^[\s吗呢吧哈啊呀哦嘛么\W]*$")
 # A sum stated as the discount or the net payment: "i.e. we transfer ¥402,000", "也就是扣2940元", "discount of ¥2,100".
 _SUM_CUE = rx(
     r"(?:\b(?:discount|deduct\w*|less|minus|saving|savings|save|off|i\.?\s?e\.?|that'?s|that\s+is|which\s+is|equals?|net|transfer\w*"
-    r"|wire|remit\w*|pay\w*|send|settle\w*|total)\b|=|扣除?|减去?|贴息|贴现息?|折扣|优惠|少付|实付|也就是|即|相当于|等于|共计|合计|付|打|转|汇)"
+    r"|wire|remit\w*|pay\w*|send|settle\w*|total|receive|get)\b|=|扣除?|减去?|贴息|贴现息?|折扣|优惠|少付|实付|也就是|即|相当于|等于|共计|合计"
+    r"|付|打|转|汇|收到|到账)"
     r"(?:\s*(?:of|is|us|you|only|just|a|the|about|为|是|给你们|给您))*[\s:：,，]*(?:only\s+)?$", I)
 
 
@@ -353,7 +355,7 @@ def _explained(m: Mention, k: _Known) -> bool:
                 n = int(raw)
                 return n * 100 in k.money or n in k.days or n in k.counts
             if re.fullmatch(r"\d+\.\d{1,2}", raw):
-                return round(float(raw) * 100) in k.money  # a bare "420,000.00"
+                return int(Decimal(raw) * 100) in k.money  # a bare "420,000.00" (exact: no float on a money path)
             return False
     return False
 

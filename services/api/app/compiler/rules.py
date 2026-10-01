@@ -132,6 +132,9 @@ INVOICE_AMOUNT = [
     rx(rf"(?:发票|货款)\s*(?P<amt>{AMT})"),
     # "the full ¥420,000 on your inv", "¥420,000 for your invoice"
     rx(rf"(?P<amt>{AMT})\s+(?:on|for|of)\s+(?:your|the|our|this|that)\s+(?:invoice|inv\b|bill)", I),
+    # "Invoice amount: ¥420,000", "发票号 FP2025，金额5.12万元"
+    rx(rf"\binvoice\s+(?:amount|total|value|face)\s*(?:of|is|[:：])?\s*(?P<amt>{AMT})", I),
+    rx(rf"(?:发票|货款)[^。；;\n]{{0,24}}?(?:金额|总额|面额)\s*[:：为是]?\s*(?P<amt>{AMT})"),
     # "invoice RCV-A (¥420,000)", "Re INV-2026-0871 (RMB 86,500.00)", "invoice (¥420,000)"
     rx(rf"(?:\b(?i:invoice|inv\.?|bill)\s+(?:(?i:no\.?|number)\s*|#\s*)?(?:[A-Z0-9][A-Z0-9-]*\s*)?|{INVOICE_REF_ID}\s*)[(（:：]\s*(?P<amt>{AMT})"),
 ]
@@ -203,7 +206,7 @@ CAP_RE = rx(
     rf"|(?:最多|不超过|上限|封顶|最高)\s*(?:为|是)?\s*(?P<capz>{AMT})", I)
 # A stated base for a period rebate: "next quarter's ¥300,000 order", "orders worth ¥300k", "30万的采购"
 REBATE_BASE_RE = rx(
-    rf"(?P<b1>{AMT})\s+(?:of\s+)?(?:(?:purchase|order)\s+)?(?:orders?|purchases?|volume|spend|PO)\b"
+    rf"(?<![A-Za-z\d.,])(?P<b1>{AMT})\s+(?:of\s+)?(?:(?:purchase|order)\s+)?(?:orders?|purchases?|volume|spend|PO)\b"
     rf"|\b(?:orders?|purchases?|volume|spend)\s+(?:of|worth|totall?ing)\s+(?P<b2>{AMT})"
     rf"|(?P<b3>{AMT})\s*(?:左右|上下)?\s*(?:的)?(?:采购|订单|货款|货(?!款))"
     # a hedged base, bound at the stated figure (grounding notes it): "order (approx. ¥400,000)", "~¥400k of orders"
@@ -776,9 +779,9 @@ def _antecedent(t: str, s: int, e: int) -> tuple[re.Match[str] | None, re.Match[
     ss, se = sentence_bounds(t, s)
     # "if our Q1 order (~¥400k) happens, 0.5% rebate on that too", "那批40万的货如果下单，希望给1个点的返利": the one
     # order the sentence names before the rebate (never an invoice being paid)
-    same = [b for b in REBATE_BASE_RE.finditer(t, ss, cs) if not _INVOICE_NOUN.search(b.group(0))]
-    if (len(same) == 1 and len({f.value for f in find_money(t[ss:se])}) == 1
-            and not (STRONG_PERPETUAL_RE.search(t, ss, se) or WEAK_UNBOUNDED_RE.search(t, ss, se))):
+    same = [b for b in REBATE_BASE_RE.finditer(t, ss, cs) if not _INVOICE_NOUN.search(b.group(0))
+            and parse_money(next((g for g in b.groups() if g), None)) is not None]
+    if len(same) == 1 and not (STRONG_PERPETUAL_RE.search(t, ss, se) or WEAK_UNBOUNDED_RE.search(t, ss, se)):
         return PERIOD_RE.search(t, ss, se), same[0]
     if not _ANAPHOR.search(t, cs, ce):
         return None
