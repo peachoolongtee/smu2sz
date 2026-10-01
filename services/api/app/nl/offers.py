@@ -371,7 +371,7 @@ def negotiate_intent(ctx: NlContext, slots: Slots, *, execute: bool = True, data
     if neg.accepted is not None:
         r = accept(ctx, steps, v, neg.accepted)
         if r is not None and r.status.value in ("EXECUTED", "PENDING_APPROVAL", "DUPLICATE"):
-            pkg = ctx.evaluate(package_offer(ctx, offer, neg.accepted), remember=False)
+            pkg = ctx.evaluate_accepted(package_offer(ctx, offer, neg.accepted))
             plan = committed_plan(pkg)
             if plan is not None:
                 funding_ops(ctx, steps, plan, condition=t(ctx, "remaining gap after the accepted package",

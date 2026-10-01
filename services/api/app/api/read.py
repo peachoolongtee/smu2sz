@@ -13,6 +13,7 @@ from app.api.decide import _counter_allow
 from app.api.display import displayed
 from app.api.runtime import get_runtime
 from app.api.views import Money, TrajectoryView, trajectory_view
+from app.books import current_books
 from app.domain.models import Mode
 from app.financial import project
 from app.mandate import MandatePolicyImpl
@@ -64,12 +65,19 @@ def get_mandate() -> dict:
     }
 
 
-@router.get("/trajectory", response_model=TrajectoryView)
-def get_trajectory(mode: str = "CONSERVATIVE") -> TrajectoryView:
+class TodayTrajectoryView(TrajectoryView):
+    today: int  # the first open day of the books (`state.as_of_day`): earlier days are closed
+
+
+@router.get("/trajectory", response_model=TodayTrajectoryView)
+def get_trajectory(mode: str = "CONSERVATIVE") -> TodayTrajectoryView:
+    """The projection on current books (ADR-0006): the state plus the live commitments' obligations."""
     rt = get_runtime()
-    s, m = rt.store.get_state(), rt.store.get_mandate()
-    t = project(s, [], [], Mode(mode), m.horizon_days, m.min_cash_fen)
-    return trajectory_view(t, m.min_cash_fen)
+    with rt.lock:
+        s, m = rt.store.get_state(), rt.store.get_mandate()
+        b = current_books(s, rt.store.commitments())
+    t = project(b.state, b.with_([]), [], Mode(mode), m.horizon_days, m.min_cash_fen)
+    return TodayTrajectoryView(**trajectory_view(t, m.min_cash_fen).model_dump(), today=s.as_of_day)
 
 
 @router.get("/ledger")

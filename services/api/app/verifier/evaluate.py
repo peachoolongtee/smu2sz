@@ -23,6 +23,7 @@ from collections.abc import Callable, Mapping, Sequence
 from fractions import Fraction
 from typing import Any, Literal
 
+from app.books import current_books
 from app.covenants import evaluate as evaluate_covenants
 from app.covenants import fmt_x, line_balances, longest_zero_run, pro_forma
 from app.domain.models import (
@@ -93,12 +94,15 @@ def _digest(*parts: str) -> str:
 
 
 def verdict_id(offer_id: str, offer_version: int, state: FinancialState, mandate: Mandate, day: int,
-               constraints: OwnerConstraints | None = None) -> str:
+               constraints: OwnerConstraints | None = None, live: Sequence[Obligation] = ()) -> str:
     """Deterministic. An owner-constrained evaluation gets its own id: its verdict can differ from the
-    unconstrained one for the same offer, and both may be stored."""
+    unconstrained one for the same offer, and both may be stored. So does one run on books that carry live
+    obligations (same state, different commitments in force)."""
     parts = [offer_id, str(offer_version), state.model_dump_json(), str(mandate.version), str(day), CALC_VERSION]
     if constraints is not None:
         parts.append(constraints.model_dump_json())
+    if live:
+        parts.append("|".join(o.model_dump_json() for o in live))
     return "VER-" + _digest(*parts)
 
 
@@ -134,19 +138,19 @@ class _Router:
 
 # The spec §7.4 comparison depends only on (state with the offered early-pay rate, mandate): cached across
 # evaluations like the baseline, so slider moves that keep the discount do not re-run that search.
-_COMPARE_CACHE: OrderedDict[tuple[str, str], list[ComparisonRow]] = OrderedDict()
+_COMPARE_CACHE: OrderedDict[tuple[str, str, str], list[ComparisonRow]] = OrderedDict()
 _COMPARE_LOCK = threading.Lock()
 _COMPARE_SIZE = 32
 
 
-def _compare_cached(state: FinancialState, mandate: Mandate) -> list[ComparisonRow]:
-    k = (state.model_dump_json(), mandate.model_dump_json())
+def _compare_cached(state: FinancialState, mandate: Mandate, live: Sequence[Obligation] = ()) -> list[ComparisonRow]:
+    k = (state.model_dump_json(), mandate.model_dump_json(), "|".join(o.model_dump_json() for o in live))
     with _COMPARE_LOCK:
         hit = _COMPARE_CACHE.get(k)
         if hit is not None:
             _COMPARE_CACHE.move_to_end(k)
             return list(hit)
-    rows = compare(state, [], mandate)
+    rows = compare(state, list(live), mandate)
     with _COMPARE_LOCK:
         _COMPARE_CACHE[k] = list(rows)
         while len(_COMPARE_CACHE) > _COMPARE_SIZE:
@@ -190,12 +194,12 @@ class _Result:
     """Accumulates one evaluation."""
 
     def __init__(self, offer_id: str, offer_version: int, state: FinancialState, mandate: Mandate, day: int,
-                 constraints: OwnerConstraints | None = None):
+                 constraints: OwnerConstraints | None = None, live: Sequence[Obligation] = ()):
         self.offer_id = offer_id
         self.offer_version = offer_version
         self.state = state
         self.mandate = mandate
-        self.id = verdict_id(offer_id, offer_version, state, mandate, day, constraints)
+        self.id = verdict_id(offer_id, offer_version, state, mandate, day, constraints, live)
         self.violations: list[Violation] = []
         self.values: list[ConcessionValue] = []
         self.forward_total = sum(fc.value_fen for fc in state.forward_concessions)
@@ -411,7 +415,7 @@ def _covenant_checks(traj: Trajectory, state: FinancialState, mandate: Mandate,
 
 
 def _comparison(offer_bound: list[Obligation], state: FinancialState, mandate: Mandate,
-                base_plan: FundingPlan) -> list[ComparisonRow]:
+                base_plan: FundingPlan, live: Sequence[Obligation] = ()) -> list[ComparisonRow]:
     """Spec §7.4 rows with the buyer's offered discount as the early-pay rate (a what-if copy)."""
     if not base_plan.need_fen:
         return []
@@ -422,7 +426,7 @@ def _comparison(offer_bound: list[Obligation], state: FinancialState, mandate: M
     facilities = [f.model_copy(update={"rate_bp": ob.rate_bp})
                   if f.kind == FacilityKind.BUYER_EARLY_PAY and f.lender_id == ob.counterparty_id else f
                   for f in state.facilities]
-    return _compare_cached(state.model_copy(update={"facilities": facilities}), mandate)
+    return _compare_cached(state.model_copy(update={"facilities": facilities}), mandate, live)
 
 
 # ---------------------------------------------------------------- entry points
@@ -441,7 +445,10 @@ def _evaluate(
     plans: Plans = "all",
     router: _Router | None = None,
 ) -> VerdictBundle:
-    res = _Result(offer.offer_id, offer.version, state, mandate, day, owner_constraints)
+    # Current books (ADR-0006): every projection runs on `live + <what is tested>`. `live` is never part of
+    # the verdict's bound obligations, the concession values, the forward total or a counter's obligations.
+    live = list(current_books(state, commitments).obligations)
+    res = _Result(offer.offer_id, offer.version, state, mandate, day, owner_constraints, live)
     router = router or _Router(mandate)
 
     # 2 (computed first so its events are logged whatever the outcome)
@@ -511,12 +518,12 @@ def _evaluate(
     res.bound = list(bound)  # what the predicates below verify: a commitment on this verdict books exactly these
     floor = mandate.min_cash_fen
     horizon = mandate.horizon_days
-    offer_traj = project(state, bound, [], Mode.CONSERVATIVE, horizon, floor)
-    base_traj, base_plan = baseline(state, mandate)
-    router.seed(state, [], "COMMITTED", base_plan)
-    plan_committed = router.plan(state, bound, mandate, "COMMITTED")
+    offer_traj = project(state, [*live, *bound], [], Mode.CONSERVATIVE, horizon, floor)
+    base_traj, base_plan = baseline(state, mandate, live)
+    router.seed(state, live, "COMMITTED", base_plan)
+    plan_committed = router.plan(state, [*live, *bound], mandate, "COMMITTED")
     # The expected plan is display-only (INVARIANT 11): callers that need only the committed plan skip it.
-    plan_expected = router.plan(state, bound, mandate, "EXPECTED") if plans == "all" else None
+    plan_expected = router.plan(state, [*live, *bound], mandate, "EXPECTED") if plans == "all" else None
     res.plan = plan_committed
 
     extra_notes: list[str] = []
@@ -546,14 +553,14 @@ def _evaluate(
 
     funded = offer_traj
     if plan_committed.admissible and plan_committed.actions:
-        funded = project(state, bound, plan_committed.actions, Mode.CONSERVATIVE, horizon, floor)
+        funded = project(state, [*live, *bound], plan_committed.actions, Mode.CONSERVATIVE, horizon, floor)
 
     cure: FundingPlan | None = None
     induced = induced_breach_days(offer_traj, base_traj, floor)
     ext_violations, ext_passed, pf_inputs = _extension_pro_forma(bound, values, state, mandate)
     if induced:
         rv = reserve_violation(offer_traj, base_traj, floor, induced[0])
-        cure = cure_plan(state, bound, mandate, offer_traj, base_traj, base_plan, planner=router.plan)
+        cure = cure_plan(state, bound, mandate, offer_traj, base_traj, base_plan, planner=router.plan, live=live)
         per_invoice = [cv.per_invoice_fen for cv in values for ob in bound
                        if cv.obligation_id == ob.id and ob.type == ObligationType.TERMS_EXTENSION
                        and (ob.days_delta or 0) > 0 and cv.per_invoice_fen]
@@ -587,7 +594,7 @@ def _evaluate(
                     "offer_lowest_without_funding": fmt_yuan(offer_traj.min_cash_fen),
                     "offer_lowest_day": str(offer_traj.min_cash_day)}))
 
-    comparison = _comparison(bound, state, mandate, base_plan)  # its rows feed the MAX_APR check's inputs
+    comparison = _comparison(bound, state, mandate, base_plan, live)  # its rows feed the MAX_APR check's inputs
     apr_v, apr_passed = _apr_checks(bound, state, mandate, comparison)
     violations += apr_v
     passed += apr_passed
@@ -607,7 +614,7 @@ def _evaluate(
     counter_list = []
     if hard or (codes & PRICE_CODES) or goal_breaches:
         counter_list = make_counters(offer, draft, state, mandate, bound=bound, owner_declared=owner_declared,
-                                     owner_constraints=owner_constraints)
+                                     owner_constraints=owner_constraints, live=live)
     if owner_constraints is not None:
         extra_notes.append(f"owner goal ({describe_constraints(owner_constraints)}): "
                            + ("; ".join(goal_breaches) if goal_breaches else "the package satisfies it"))

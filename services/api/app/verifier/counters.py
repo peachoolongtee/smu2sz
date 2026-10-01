@@ -118,6 +118,7 @@ class _Ctx:
     rate: Fraction  # marginal all-in annual rate
     rate_label: str
     constraints: OwnerConstraints | None = None  # the owner's goal for this evaluation, if any
+    live: tuple[Obligation, ...] = ()  # obligations of commitments in force: part of the books, not of any counter
 
     @property
     def cp(self) -> str:
@@ -224,7 +225,7 @@ def early_pay_counter(ctx: _Ctx, label: str = "Option A") -> CounterProposal | N
     if rate_bp <= 0:
         return None
 
-    _, base_plan = baseline(ctx.state, ctx.mandate)
+    _, base_plan = baseline(ctx.state, ctx.mandate, ctx.live)
     lines = [f for f in ctx.state.facilities if f.kind == FacilityKind.CREDIT_LINE and f.owner_approved
              and f.status == FacilityStatus.COMMITTED]
     line_avail = sum(max(0, f.limit_fen - f.drawn_fen) for f in lines)
@@ -244,8 +245,11 @@ def early_pay_counter(ctx: _Ctx, label: str = "Option A") -> CounterProposal | N
     )
     line_ids = {f.id for f in lines}
     line_actions = [a for a in base_plan.actions if a.facility_id in line_ids]
-    t = project(ctx.state, [disc_ob], line_actions, Mode.CONSERVATIVE, ctx.mandate.horizon_days)
+    t = project(ctx.state, [*ctx.live, disc_ob], line_actions, Mode.CONSERVATIVE, ctx.mandate.horizon_days)
     discount = t.discounts_posted_fen
+    if ctx.live:  # the counter's own discount: what the commitments in force already cost is not its cost
+        discount -= project(ctx.state, list(ctx.live), [], Mode.CONSERVATIVE,
+                            ctx.mandate.horizon_days).discounts_posted_fen
     line_cost = t.interest_posted_fen + t.fees_posted_fen
     total = discount + line_cost
 
@@ -401,8 +405,11 @@ def counters(
     bound: Sequence[Obligation] | None = None,
     owner_declared: Mapping[str, Any] | None = None,
     owner_constraints: OwnerConstraints | None = None,
+    live: Sequence[Obligation] = (),
 ) -> list[CounterProposal]:
     """Counters for a verdict that needs one. Empty when no counter is possible or appropriate.
+    `live` are the obligations of commitments in force (current books); the counters' own obligations,
+    texts and forward values never include them.
 
     With `owner_constraints`, the early-pay rate is capped at the owner's maximum and every counter that
     still breaks a constraint is dropped."""
@@ -417,7 +424,8 @@ def counters(
         return []
     fac = next(f for f in state.facilities if f.id == fid)
     ctx = _Ctx(offer, verdict, state, mandate, list(bound), rate_ratio.value,
-               f"committed marginal source: {fac.name} {fmt_pct(rate_ratio.value, 4)}", owner_constraints)
+               f"committed marginal source: {fac.name} {fmt_pct(rate_ratio.value, 4)}", owner_constraints,
+               tuple(live))
     out = _counters(ctx, offer)
     if owner_constraints is None:
         return out

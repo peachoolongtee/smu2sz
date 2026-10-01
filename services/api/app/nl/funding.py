@@ -6,6 +6,7 @@ plan carried by the verifier's verdict on the status quo; operations are built f
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 from fractions import Fraction
 
@@ -63,9 +64,10 @@ class Gap:
     shortfall_fen: int
 
 
-def gaps(state: FinancialState, floor_fen: int, horizon: int) -> list[Gap]:
-    """Maximal runs of days whose conservative closing cash is below the floor."""
-    traj = project(state, [], [], Mode.CONSERVATIVE, horizon, floor_fen)
+def gaps(state: FinancialState, floor_fen: int, horizon: int, live: Sequence[Obligation] = ()) -> list[Gap]:
+    """Maximal runs of days whose conservative closing cash is below the floor, on current books: `live`
+    are the obligations of the commitments in force (`ctx.books(state).obligations`)."""
+    traj = project(state, list(live), [], Mode.CONSERVATIVE, horizon, floor_fen)
     out: list[Gap] = []
     run: list = []
     for d in [*traj.days, None]:
@@ -98,7 +100,7 @@ def fund_gap(ctx: NlContext, slots: Slots, *, execute: bool = True) -> Turn:
     steps = Steps()
     if slots.amount_fen is not None and slots.facility_id is not None:
         return _direct_draw(ctx, slots, steps, execute=execute)
-    found = gaps(state, mandate.min_cash_fen, mandate.horizon_days)
+    found = gaps(state, mandate.min_cash_fen, mandate.horizon_days, ctx.books(state).obligations)
     if not found:
         steps.add("VERIFY", t(ctx, "No projected day falls below the reserve; nothing to fund",
                               "预测期内没有低于储备线的日子，无需融资"), "INFO")
@@ -333,7 +335,7 @@ def accelerate(ctx: NlContext, slots: Slots, text: str, *, execute: bool = False
         if r is not None and r.status.value in ("EXECUTED", "PENDING_APPROVAL", "DUPLICATE"):
             offer = ctx.store.get_offer(gv.offer_id)
             if offer is not None:
-                plan = committed_plan(ctx.evaluate(package_offer(ctx, offer, neg.accepted), remember=False))
+                plan = committed_plan(ctx.evaluate_accepted(package_offer(ctx, offer, neg.accepted)))
                 if plan is not None:
                     funding_ops(ctx, run, plan, condition=t(ctx, "remaining gap after early settlement", "提前结算后剩余缺口"))
         reply.append(t(ctx, f"{cp} accepted {counter.label}: {counter.text}", f"{cp} 接受了 {counter.label}：{counter.text}"))
@@ -384,8 +386,9 @@ def _x(x: Fraction) -> str:
 def status(ctx: NlContext) -> Turn:
     state, mandate = ctx.state(), ctx.mandate()
     floor = mandate.min_cash_fen
-    traj = project(state, [], [], Mode.CONSERVATIVE, mandate.horizon_days, floor)
-    found = gaps(state, floor, mandate.horizon_days)
+    live = ctx.books(state).obligations
+    traj = project(state, list(live), [], Mode.CONSERVATIVE, mandate.horizon_days, floor)
+    found = gaps(state, floor, mandate.horizon_days, live)
     lines = [t(ctx, f"Cash today (day {ctx.day}): {fmt_yuan(state.cash_fen)}. Reserve floor {fmt_yuan(floor)}.",
                f"今日（第 {ctx.day} 天）现金 {fmt_yuan(state.cash_fen)}，储备线 {fmt_yuan(floor)}。")]
     if found:
