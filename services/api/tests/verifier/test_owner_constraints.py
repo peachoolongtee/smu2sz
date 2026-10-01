@@ -53,7 +53,7 @@ def test_goal_above_the_owner_cap_gets_a_counter_that_satisfies_it(state, mandat
     (c,) = v.counters
     (ob,) = c.obligations
     assert ob.type == ObligationType.IMMEDIATE_DISCOUNT and ob.rate_bp == 85
-    assert ob.base.amount_fen == 21_180_000 and ob.base.receivable_id == "RCV-A"
+    assert ob.base.amount_fen == 21_190_000 and ob.base.receivable_id == "RCV-A"
     assert c.forward_value_fen == 0
     assert "owner goal (early pay at most 0.85%, zero forward concessions)" in v.summary
 

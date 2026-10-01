@@ -24,7 +24,7 @@ offers:
     documents:
       - {doc_id: EX02-msg, channel: chat, sender_id: BUYER-1, received_day: 0,
          text: "We can pay this one early at 1.5%. Nothing else changes."}
-    expect: {outcome: COUNTER, obligations: [IMMEDIATE_DISCOUNT], counter_rate_bp: 85, counter_face_cap_fen: 21180000,
+    expect: {outcome: COUNTER, obligations: [IMMEDIATE_DISCOUNT], counter_rate_bp: 85, counter_face_cap_fen: 21190000,
              line_plus_partial_fen: 403961, router_best_fen: 271294}
   - id: EX03_AS_USUAL
     counterparty_id: BUYER-1

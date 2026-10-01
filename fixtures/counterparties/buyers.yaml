@@ -12,7 +12,7 @@
 # Declared benefits are values the buyer itself declares for a named operational change; no
 # invented "relationship" value is assigned.
 buyers:
-  # Scene 1: accepts Option A (0.85% early settlement on <= ¥211,800, 45-day terms, no rebate)
+  # Scene 1: accepts Option A (0.85% early settlement on <= ¥211,900, 45-day terms, no rebate)
   # in round 1, because 0.85% >= its minimum early-pay discount.
   - profile_id: BUYER-1
     counterparty_id: BUYER-1

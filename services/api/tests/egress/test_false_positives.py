@@ -18,7 +18,7 @@ from app.egress import (
 from tests.counterparties.builders import OPTION_A_TEXT, OPTION_B_TEXT, option_a, option_b
 from tests.egress.helpers import golden_set
 
-OPTION_A_ZH = "账期维持45天，不设返利。我方接受本发票不超过¥211,800的部分以0.85%的折扣提前结算。"
+OPTION_A_ZH = "账期维持45天，不设返利。我方接受本发票不超过¥211,900的部分以0.85%的折扣提前结算。"
 OPTION_B_ZH = "接受60天账期，今后发票价格上调0.45%，不设返利。按¥420,000的发票计，每张发票¥1,890。"
 OPTION_B_EXPLAINED = (
     OPTION_B_TEXT + " 0.45% of ¥420,000 is ¥1,890 per invoice, so 60-day terms cost you nothing extra."
@@ -43,7 +43,7 @@ def test_option_b_counter_passes_to_buyer_1(text: str) -> None:
 
 def test_the_counters_own_values_are_what_the_allow_list_carries() -> None:
     allow = set(allowed_for_counter(option_a()))
-    assert AllowedValue.rate_bp(85) in allow and AllowedValue.money(21_180_000) in allow
+    assert AllowedValue.rate_bp(85) in allow and AllowedValue.money(21_190_000) in allow
     assert AllowedValue.rate_bp(45) in set(allowed_for_counter(option_b()))
 
 
@@ -119,6 +119,6 @@ def test_a_lender_may_see_its_own_facility_terms_only() -> None:
 
 
 def test_an_allowed_value_suppresses_only_that_value() -> None:
-    text = "We accept 0.85% on up to ¥211,800; our floor is ¥300,000."
+    text = "We accept 0.85% on up to ¥211,900; our floor is ¥300,000."
     allow = allowed_for_counter(option_a())
     assert {x.label for x in scan(text, golden_set(), recipient_id="BUYER-1", allow=allow)} == {"mandate.min_cash"}

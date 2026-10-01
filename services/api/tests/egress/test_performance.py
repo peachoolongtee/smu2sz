@@ -9,7 +9,7 @@ from tests.counterparties.builders import OPTION_A_TEXT, OPTION_B_TEXT, option_a
 from tests.egress.helpers import buyer_b_set
 
 CHUNK = (
-    OPTION_A_TEXT + " " + OPTION_B_TEXT + " 第2轮。我方接受本发票不超过¥211,800的部分以0.85%提前结算，账期维持45天。"
+    OPTION_A_TEXT + " " + OPTION_B_TEXT + " 第2轮。我方接受本发票不超过¥211,900的部分以0.85%提前结算，账期维持45天。"
     " Invoice RCV-A (¥420,000.00) is due on day 32, 2026-11-02. Round 3 of 3; 12 invoices a year. "
 )
 MESSAGE = (CHUNK * (2000 // len(CHUNK) + 1))[:2000]
