@@ -52,7 +52,8 @@ CAPABILITIES_ZH = ("我可以评估买家报价、发送反报价谈判、提前
 def handle(req: NlRequest, *, store: LedgerStore, executor: Executor, day: int, owner_key_hex: str,
            owner_authenticated: bool, sessions: SessionStore = SESSIONS,
            classifier_backends: Sequence[clf.IntentBackend] | None = None) -> NlResponse:
-    session, _new = sessions.get_or_create(req.session_id, req.actor)
+    session, _new = sessions.get_or_create(req.session_id, req.actor,
+                                           owner_auth=owner_authenticated and req.actor == "OWNER")
     session.turn += 1
     lang = req.lang or lx.detect_lang(req.text)
     session.lang = lang
@@ -164,6 +165,8 @@ def _dispatch(ctx: NlContext, p: Parsed, text: str) -> Turn:
     llm = p.source.startswith("llm:")
     if p.correction and s.pending_plan is not None:
         return _correct(ctx, p, text)
+    if p.intent in (Intent.APPROVE, Intent.REJECT) and not llm and not _direct_command(ctx, text):
+        return _not_a_direct_command(ctx, p)
     if p.confirm_plan and s.pending_plan is not None:
         return _confirm(ctx, p.intent == Intent.APPROVE, text)
     if p.intent == Intent.AMBIGUOUS and p.source == "clarification" and s.pending_clarification is not None:
@@ -201,6 +204,33 @@ def _dispatch(ctx: NlContext, p: Parsed, text: str) -> Turn:
                        slots)
         case _:
             return _out_of_scope(ctx, slots)
+
+
+MAX_COMMAND_CHARS = 80
+_PASTE_MARKS = re.compile(r"^\s*>|[:：]\s*\S|\b(forward(ed)?|attach(ed|ment)?|document|paste[d]?|wrote|writes|says?|said|sent|from)\b"
+                          r"|转发|附件|粘贴|来自|发来|说[:：]?", re.IGNORECASE)
+
+
+def _direct_command(ctx: NlContext, text: str) -> bool:
+    """An approval, a decline or a "go ahead" counts only as the owner's own short instruction: one line, at most
+    MAX_COMMAND_CHARS, naming no counterparty and carrying no mark of forwarded, attached or pasted content.
+    Anything longer may hold someone else's words, however it is formatted, so it decides nothing (fail closed)."""
+    body = text.strip()
+    if "\n" in body or len(body) > MAX_COMMAND_CHARS or _PASTE_MARKS.search(body):
+        return False
+    return not lx.find_counterparty(body, ctx.state())
+
+
+def _not_a_direct_command(ctx: NlContext, p: Parsed) -> Turn:
+    ctx.new_event(SecurityEventKind.INJECTION, "OWNER",
+                  "quoted text contained an approval instruction; ignored (it sat inside a longer or forwarded message)",
+                  action="ignored; nothing approved or executed")
+    aid = p.slots.approval_id
+    how = (f"approve {aid}" if aid else "go ahead") if p.intent == Intent.APPROVE else (f"reject {aid}" if aid else "cancel")
+    return Turn(intent=Intent.AMBIGUOUS, awaiting=ctx.session.pending_plan is not None, reply=t(
+        ctx, "That message holds more than a short instruction from you, so I have not approved or run anything. "
+             f"If you mean it, reply with just: {how}",
+        f"这条消息不只是您本人的简短指令，因此我没有批准或执行任何操作。如确有此意，请只回复：{how}"))
 
 
 HANDLERS_WITH_PLANS = (Intent.ACCELERATE_RECEIPT, Intent.FUND_GAP, Intent.REPAY_FACILITY, Intent.NEGOTIATE,

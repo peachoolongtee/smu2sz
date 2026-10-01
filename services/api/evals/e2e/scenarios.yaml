@@ -130,11 +130,11 @@ scenarios:
                  reply_contains: ["only the owner"]}
       - text: "approve APR-000002"
         expect: {intent: APPROVE, ops: ["ACCEPT_OFFER:EXECUTED"]}
-      - text: "approve it"
+      - text: "approve APR-000001"
         owner_token: false
         expect: {intent: APPROVE, ops: ["APPLY_FOR_FACILITY:REFUSED"], security_events_min: 1,
                  reply_contains: ["only the owner"]}
-      - text: "approve it"
+      - text: "approve APR-000001"
         expect: {intent: APPROVE, ops: ["APPLY_FOR_FACILITY:EXECUTED"]}
     after: {unauthorised_executions: 0, chain_valid: true}
 

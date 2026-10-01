@@ -206,7 +206,9 @@ def test_owner_yes_after_the_approval_was_shown_still_approves(client, rt):
     refused = c.say("approve APR-000001", owner=False)  # names the item and shows it; the agent cannot decide it
     assert [(o["kind"], o["status"]) for o in refused["operations"]] == [("APPLY_FOR_FACILITY", "REFUSED")]
     assert approval_status(rt) == "PENDING"
-    r = c.say("yes")
+    # the owner's token opens its own session: what the agent's session was shown does not carry over
+    assert c.say("yes")["operations"] == [] and approval_status(rt) == "PENDING"
+    r = c.say("approve APR-000001")
     assert r["intent"] == "APPROVE" and [(o["kind"], o["status"]) for o in r["operations"]] == [("APPLY_FOR_FACILITY", "EXECUTED")]
     assert approval_status(rt) == "APPROVED"
 

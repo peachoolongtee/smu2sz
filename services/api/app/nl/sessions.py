@@ -41,6 +41,7 @@ class PendingClarification:
 class Session:
     id: str
     actor: str
+    owner_auth: bool = False  # opened with the owner token; only the same credential may continue it
     counterparty_id: str | None = None
     lang: str = "en"
     buyer_profile: str | None = None
@@ -73,18 +74,19 @@ class SessionStore:
             for k, _ in sorted(self._sessions.items(), key=lambda kv: kv[1].touched)[: len(self._sessions) - MAX_SESSIONS]:
                 del self._sessions[k]
 
-    def get_or_create(self, session_id: str | None, actor: str) -> tuple[Session, bool]:
-        """A session is bound to the actor that opened it: a counterparty cannot continue an owner
-        session (or the reverse) by guessing its id; it gets a fresh one instead."""
+    def get_or_create(self, session_id: str | None, actor: str, owner_auth: bool = False) -> tuple[Session, bool]:
+        """A session is bound to the actor and the credential that opened it: a counterparty cannot continue
+        an owner session (or the reverse), and a caller without the owner token cannot continue a session the
+        owner opened (or the reverse), by guessing its id; each gets a fresh one instead."""
         now = time.monotonic()
         with self._lock:
             self._expire(now)
             s = self._sessions.get(session_id) if session_id else None
-            if s is not None and s.actor == actor:
+            if s is not None and s.actor == actor and s.owner_auth == owner_auth:
                 s.touched = now
                 return s, False
             sid = session_id if session_id and s is None else f"nls-{uuid.uuid4().hex[:16]}"
-            s = Session(id=sid, actor=actor)
+            s = Session(id=sid, actor=actor, owner_auth=owner_auth)
             self._sessions[sid] = s
             return s, True
 

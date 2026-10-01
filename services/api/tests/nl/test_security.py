@@ -67,8 +67,8 @@ def test_owner_approve_without_token_is_refused(client, rt):
     r = c.say("approve APR-000001", owner=False)
     assert r["intent"] == "APPROVE" and ops(r) == [("APPLY_FOR_FACILITY", "REFUSED")]
     assert any(e.kind == SecurityEventKind.PRIVILEGE_ESCALATION for e in rt.store.security_events())
-    # the refusal named the item, so "approve it" now means that item
-    assert ops(c.say("approve it")) == [("APPLY_FOR_FACILITY", "EXECUTED")]
+    # the agent's session does not carry over to the owner's credential: the owner names the item
+    assert ops(c.say("approve APR-000001")) == [("APPLY_FOR_FACILITY", "EXECUTED")]
 
 
 def test_approve_it_never_reaches_into_a_queue_the_session_did_not_show(client, rt):
@@ -123,7 +123,7 @@ def test_owner_go_ahead_on_ex05_awaits_the_owner_then_only_the_token_approves(cl
     r = c.say("go ahead")
     assert ops(r) == [("ACCEPT_OFFER", "PENDING_APPROVAL")]
     assert "Agreed" not in r["reply"] and "awaits the owner's approval (APR-000001)" in r["reply"]
-    refused = c.say("approve it", owner=False)
+    refused = c.say("approve APR-000001", owner=False)  # a caller without the token gets its own session
     assert ops(refused) == [("ACCEPT_OFFER", "REFUSED")] and "only the owner" in refused["reply"]
     assert rt.store.get_state().forward_concessions == []
     assert ops(c.say("approve it")) == [("ACCEPT_OFFER", "EXECUTED")]
