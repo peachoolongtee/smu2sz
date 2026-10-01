@@ -54,6 +54,9 @@ def approvals_queue() -> dict:
             d["operation"] = None
         op = d["operation"] or {}
         amt = op.get("amount_fen", op.get("advance_fen"))
+        day = op.get("day")
+        d.update({"requested_by": op.get("requested_by"),
+                  "requested_day_display": f"day {day}" if isinstance(day, int) else None})
         d.update({"tier": "TIER_2", "created_day": op.get("day"), "amount_fen": amt,
                   "amount_display": fmt_yuan(amt) if isinstance(amt, int) else None,
                   "subject": f"{(a.kind or '').replace('_', ' ').lower()} {op.get('facility_id', '')}".strip()})

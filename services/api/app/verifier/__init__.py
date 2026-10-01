@@ -16,7 +16,14 @@ from typing import Any
 from app.domain.models import Commitment, CompiledOffer, CounterProposal, FinancialState, Mandate, Verdict
 from app.verifier.bind import bind
 from app.verifier.counters import counters
-from app.verifier.evaluate import clear_caches, evaluate, evaluate_many, evaluate_term_sheet, evaluate_verdict
+from app.verifier.evaluate import (
+    autonomy_gaps,
+    clear_caches,
+    evaluate,
+    evaluate_many,
+    evaluate_term_sheet,
+    evaluate_verdict,
+)
 from app.verifier.models import CALC_VERSION, BindNote, OwnerConstraints, PassedCheck, VerdictBundle
 from app.verifier.screen import REFUSAL_REPLY
 
@@ -64,6 +71,7 @@ __all__ = [
     "PassedCheck",
     "VerdictBundle",
     "Verifier",
+    "autonomy_gaps",
     "bind",
     "clear_caches",
     "counters",

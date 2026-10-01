@@ -16,7 +16,7 @@ from pydantic import BaseModel
 from app.api.auth import require_feature, require_owner
 from app.api.display import displayed
 from app.api.runtime import Runtime, get_runtime
-from app.api.views import trajectory_view
+from app.api.views import owner_verdict_extras, trajectory_view
 from app.books import Books, current_books
 from app.config import get_settings
 from app.counterparties import negotiate
@@ -114,7 +114,7 @@ def evaluate_offer(offer_id: str, body: EvaluateIn | None = None) -> dict:
         view = displayed(json.loads(v.model_dump_json()))
         view["counters"] = _guarded_counters(rt, offer, list(v.counters))
     view.update({
-        "passed_checks": [json.loads(p.model_dump_json()) for p in bundle.passed_checks],
+        **owner_verdict_extras(bundle, offer, state, mandate),  # passed_checks, autonomy, annualised
         "bound_obligations": displayed([json.loads(o.model_dump_json()) for o in bundle.bound_obligations]),
         "notes": [json.loads(n.model_dump_json()) for n in bundle.notes],
         "trajectory": trajectory_view(bundle.trajectory, mandate.min_cash_fen).model_dump() if bundle.trajectory else None,
