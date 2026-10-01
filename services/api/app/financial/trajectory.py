@@ -112,6 +112,20 @@ class _Lot:
 
 
 @dataclass
+class _TermLot:
+    """A lot drawn on a bullet term facility. For DSCR its principal, interest and fees are spread
+    evenly over the months of its term (ADR-0008): `postings` are the ones that make up that total."""
+
+    arrival: int
+    term_months: int
+    postings: list[_Posting]
+
+
+def _is_bullet_term(f: Facility) -> bool:
+    return f.repayment == Repayment.BULLET and bool(f.term_months) and f.counts_in_debt_service
+
+
+@dataclass
 class _Book:
     """Everything the recursion needs, before it knows the final horizon."""
 
@@ -126,6 +140,8 @@ class _Book:
     carried: list[_Lot] = field(default_factory=list)
     # invoice-financing balance no FINANCED receivable explains: (facility, amount), repaid at the horizon end
     unallocated: list[tuple[Facility, int]] = field(default_factory=list)
+    # lots on bullet term facilities, serviced on a level basis in the monthly debt service (ADR-0008)
+    term_lots: list[_TermLot] = field(default_factory=list)
 
     def add(self, p: _Posting) -> None:
         self.postings.append(p)
@@ -380,6 +396,7 @@ def _draw(f: Facility, a: FundingAction, book: _Book) -> _Lot | None:
     if f.repayment == Repayment.ON_RECEIPT:
         raise FundingActionError(f"facility {f.id} is repaid on receipt; DRAW is not available")
     arrival = a.day + f.lead_time_days
+    first = len(book.postings)
     book.add(_Posting(arrival, INFLOW, LedgerEventKind.DRAW, a.amount_fen, f"Draw {f.name}", f.id,
                       f"requested {fday(a.day)} + {f.lead_time_days}-day lead time", f.id))
     book.balance(f.id, arrival, a.amount_fen)
@@ -398,6 +415,9 @@ def _draw(f: Facility, a: FundingAction, book: _Book) -> _Lot | None:
     if repay is not None:
         _bullet_repayment(lot, a.amount_fen, repay, book)
         lot.remaining = 0
+    if repay is not None and _is_bullet_term(f):
+        book.term_lots.append(_TermLot(arrival, f.term_months, [
+            p for p in book.postings[first:] if p.category in ("interest", "fee", "principal")]))
     return lot
 
 
@@ -582,7 +602,10 @@ def _carry_drawn_balances(state: FinancialState, rcvs: dict[str, _Rcv], book: _B
             _amortise(f, 0, f.drawn_fen, book)
         elif f.repayment == Repayment.BULLET and f.term_months and f.kind != FacilityKind.CREDIT_LINE:
             maturity = MONTH_DAYS * f.term_months  # a term bullet is repaid at maturity, as a projected draw is
+            first = len(book.postings)
             _bullet_repayment(_Lot(f, 0, f.drawn_fen, maturity, 0), f.drawn_fen, maturity, book)
+            if _is_bullet_term(f):
+                book.term_lots.append(_TermLot(0, f.term_months, book.postings[first:]))
         elif f.repayment == Repayment.ON_RECEIPT:
             book.unallocated.append((f, f.drawn_fen))
         else:
@@ -754,6 +777,14 @@ def project(
 
     n_months = _month_of(horizon)
     month_ds = defaultdict(int)
+    # bullet term lots: level amount in each month of the term, their own postings left out below
+    level_posted = {id(p) for lot in book.term_lots for p in lot.postings}
+    for lot in book.term_lots:
+        total = -sum(p.amount for p in lot.postings)  # principal + interest + fees, as the engine posted them
+        level, rest = divmod(total, lot.term_months)
+        first_month = _month_of(lot.arrival)
+        for i in range(lot.term_months):
+            month_ds[first_month + i] += level + (rest if i == lot.term_months - 1 else 0)
     month_end_leverage_debt: dict[int, int] = {}
 
     days: list[DayPoint] = []
@@ -772,7 +803,8 @@ def project(
                 fees_total -= p.amount
             elif p.category == "discount":
                 discounts_total -= p.amount
-            if p.facility_id and p.category in ("interest", "fee", "amort") and fac[p.facility_id].counts_in_debt_service:
+            if (p.facility_id and p.category in ("interest", "fee", "amort") and id(p) not in level_posted
+                    and fac[p.facility_id].counts_in_debt_service):
                 month_ds[_month_of(d)] -= p.amount
         forward = existing_fc + sum(a for start, until, a in book.forward if start <= d and (until is None or d < until))
         days.append(DayPoint(
