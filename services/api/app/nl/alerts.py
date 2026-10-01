@@ -100,13 +100,25 @@ def alerts_turn(ctx: NlContext) -> tuple[Turn, bool]:
 
     parts = [t(ctx, f"Day {ctx.day}.", f"第 {ctx.day} 天。")]
     parts += [_past_due_sentence(ctx, state, a) for a in past_due]
+    rest_sentence: list[str] = []
+    if rest:  # the other alerts, in one line, before the question so that the question ends the message
+        titles = "; ".join(a.title for a in rest[:MAX_TITLES]) + ("…" if len(rest) > MAX_TITLES else "")
+        all_warn = all(a.severity == Severity.WARNING for a in rest)
+        more = bool(past_due or breach)
+        noun_en = ("warning" if all_warn else "alert") + ("" if len(rest) == 1 else "s")
+        noun_zh = "警告" if all_warn else "提醒"
+        rest_sentence.append(t(ctx, f"{len(rest)} {'more ' if more else ''}{noun_en}: {titles}.",
+                               f"{'另有 ' if more else ''}{len(rest)} 项{noun_zh}：{titles}。"))
     steps = Steps()
     pending: PendingPlan | None = None
-    if breach is not None:
+    if breach is None:
+        parts += rest_sentence
+    else:
         parts.append(t(ctx, f"On current books cash falls {fmt_yuan(breach.amount_fen or 0)} below your "
                             f"{fmt_yuan(mandate.min_cash_fen)} floor on day {breach.day}.",
                        f"按现有账目，第 {breach.day} 天现金将比 {fmt_yuan(mandate.min_cash_fen)} 的储备线低 "
                        f"{fmt_yuan(breach.amount_fen or 0)}。"))
+        parts += rest_sentence
         ops = cure_operations(breach, day=ctx.day, mandate_version=mandate.version,
                               state_version=state.state_version) if breach.actionable else []
         if ops:
@@ -122,14 +134,6 @@ def alerts_turn(ctx: NlContext) -> tuple[Turn, bool]:
             parts.append(t(ctx, "No committed facility can cover it, so there is nothing I can do on my own; "
                                 "this needs your decision.",
                            "没有已承诺的额度可以覆盖，我无法自行处理；需要您来决定。"))
-    if rest:
-        titles = "; ".join(a.title for a in rest[:MAX_TITLES]) + ("…" if len(rest) > MAX_TITLES else "")
-        all_warn = all(a.severity == Severity.WARNING for a in rest)
-        more = bool(past_due or breach)
-        noun_en = ("warning" if all_warn else "alert") + ("" if len(rest) == 1 else "s")
-        parts.append(t(ctx, f"{len(rest)} {'more ' if more else ''}{noun_en}: {titles}.",
-                       f"另有 {len(rest)} 项{'警告' if all_warn else '提醒'}：{titles}。") if more else
-                     t(ctx, f"{len(rest)} {noun_en}: {titles}.", f"{len(rest)} 项{'警告' if all_warn else '提醒'}：{titles}。"))
     return Turn(intent=Intent.SHOW_ALERTS, reply=" ".join(parts), plan=steps.items, awaiting=pending is not None,
                 pending=pending), True
 
