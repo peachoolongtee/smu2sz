@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { AnnualisedCompact, offerLegs } from "@/components/annualised";
 import { AutonomyPanel } from "@/components/autonomy-panel";
 import { CodeBadge, OpStatusBadge, OutcomeBadge, TierBadge, outcomeHasTier } from "@/components/badges";
 import { Badge, Button, Hash, type Tone } from "@/components/ui";
@@ -198,6 +199,7 @@ export function AssistantTurn({
       ) : null}
 
       {r.verdict ? <VerdictBlock verdict={r.verdict} /> : null}
+      {r.verdict?.annualised?.length ? <AnnualisedCompact legs={offerLegs(r.verdict.annualised, r.verdict.counters)} /> : null}
       {r.verdict ? (
         <AutonomyPanel
           outcome={r.verdict.outcome}
@@ -206,6 +208,7 @@ export function AssistantTurn({
           passedChecks={r.verdict.passed_checks}
           autonomyEligible={r.verdict.autonomy_eligible}
           autonomyNotes={r.verdict.autonomy_notes}
+          autonomy={r.verdict.autonomy}
           checksInReply={r.verdict.passed_checks !== undefined}
         />
       ) : null}

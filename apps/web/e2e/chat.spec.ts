@@ -59,7 +59,7 @@ test("owner: Evaluate EX01 is a REJECT, then go ahead lists the executed operati
   await expect(turns(page).first().getByTestId("chat-goahead")).toBeDisabled();
 });
 
-test("buyer: the FastCapital message gives three security codes, executes nothing and sends no credential", async ({ page, request }) => {
+test("buyer: the FastCapital message gets only the refusal reply, no verdict, and sends no credential", async ({ page, request }) => {
   await resetBooks(request);
   const sent: (string | undefined)[] = [];
   page.on("request", (r) => {
@@ -72,17 +72,16 @@ test("buyer: the FastCapital message gives three security codes, executes nothin
   await page.getByTestId("chat-counterparty").selectOption("FASTCAPITAL");
   await page.getByTestId("prompt-fastcapital").click();
 
+  // A buyer never sees the verdict: the reply is a refusal and nothing else.
   const turn = turns(page).last();
   await expect(turn.getByTestId("chat-intent")).toHaveText("Buyer message");
-  await expect(turn.getByTestId("chat-outcome")).toContainText("REJECT");
-  await expect(turn.locator('[data-testid^="chat-code-"]')).toHaveCount(3);
-  for (const code of ["UNKNOWN_COUNTERPARTY", "UNEVIDENCED_PRIOR_CONCESSION", "DATA_EXTRACTION_REFUSED"]) {
-    await expect(turn.getByTestId(`chat-code-${code}`)).toBeVisible();
-  }
-  await expect(turn.getByTestId("chat-security")).toContainText(/\d+ security events logged/);
-  await expect(turn.getByTestId("chat-nothing-executed")).toBeVisible();
-  await expect(turn.getByTestId("chat-ops")).toHaveCount(0);
+  await expect(turn.getByTestId("chat-reply")).toContainText("We are not able to share internal financial, facility or counterparty information.");
   await expect(turn.getByTestId("chat-reply")).not.toContainText("300,000");
+  await expect(turn.getByTestId("chat-verdict")).toHaveCount(0);
+  await expect(turn.getByTestId("chat-outcome")).toHaveCount(0);
+  await expect(turn.locator('[data-testid^="chat-code-"]')).toHaveCount(0);
+  await expect(turn.getByTestId("chat-security")).toHaveCount(0);
+  await expect(turn.getByTestId("chat-ops")).toHaveCount(0);
 
   if (isLive()) {
     expect(sent.length).toBeGreaterThan(0);
