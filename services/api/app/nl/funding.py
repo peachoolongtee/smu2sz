@@ -64,13 +64,16 @@ class Gap:
     shortfall_fen: int
 
 
-def gaps(state: FinancialState, floor_fen: int, horizon: int, live: Sequence[Obligation] = ()) -> list[Gap]:
+def gaps(state: FinancialState, floor_fen: int, horizon: int, live: Sequence[Obligation] = (),
+         from_day: int = 0) -> list[Gap]:
     """Maximal runs of days whose conservative closing cash is below the floor, on current books: `live`
     are the obligations of the commitments in force (`ctx.books(state).obligations`)."""
     traj = project(state, list(live), [], Mode.CONSERVATIVE, horizon, floor_fen)
     out: list[Gap] = []
     run: list = []
     for d in [*traj.days, None]:
+        if d is not None and d.day < from_day:
+            continue
         if d is not None and d.closing_fen < floor_fen:
             run.append(d)
             continue
@@ -388,7 +391,7 @@ def status(ctx: NlContext) -> Turn:
     floor = mandate.min_cash_fen
     live = ctx.books(state).obligations
     traj = project(state, list(live), [], Mode.CONSERVATIVE, mandate.horizon_days, floor)
-    found = gaps(state, floor, mandate.horizon_days, live)
+    found = gaps(state, floor, mandate.horizon_days, live, from_day=max(ctx.day, state.as_of_day))
     lines = [t(ctx, f"Cash today (day {ctx.day}): {fmt_yuan(state.cash_fen)}. Reserve floor {fmt_yuan(floor)}.",
                f"今日（第 {ctx.day} 天）现金 {fmt_yuan(state.cash_fen)}，储备线 {fmt_yuan(floor)}。")]
     if found:
