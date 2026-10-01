@@ -50,7 +50,10 @@ class Verifier:
     def counters(
         self, offer: CompiledOffer, verdict: Verdict, state: FinancialState, mandate: Mandate
     ) -> list[CounterProposal]:
-        return counters(offer, verdict, state, mandate, owner_declared=self.owner_declared)
+        from app.books import current_books
+
+        return counters(offer, verdict, state, mandate, owner_declared=self.owner_declared,
+                        live=current_books(state, self.commitments).obligations)
 
 
 __all__ = [
