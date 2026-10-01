@@ -48,7 +48,7 @@ def _run(state, amounts_days, horizon=120, **ggl):
 def test_2a_500k_12_month_level_service(state):
     # 50,000,000 x 0.05 x 360/365 = 900,000,000 / 365 = 2,465,753.42 -> 2,465,753
     # total 52,465,753 / 12 = 4,372,146.08 -> level 4,372,146, 12 x level = 52,465,752, remainder 1 -> month 12
-    s, t = _run(state, [(50_000_000, 0)])
+    _s, t = _run(state, [(50_000_000, 0)])
     assert t.interest_posted_fen == 2_465_753
     assert t.fees_posted_fen == 0
     assert t.horizon_days == 382  # last repayment day 21 + 360 = 381, plus 1
@@ -76,7 +76,7 @@ def test_2a_dscr_values_and_covenant_failure(state, mandate):
 
 def test_2f_annual_ratio_matches_the_monthly_one(state):
     # 12 x 9,000,000 = 108,000,000 ; 12 x 4,500,000 + 52,465,753 = 106,465,753 ; ratio 1.0144106
-    s, t = _run(state, [(50_000_000, 0)])
+    _s, t = _run(state, [(50_000_000, 0)])
     annual = Fraction(12 * EBITDA, sum(_ds(t)[:12]))
     assert sum(_ds(t)[:12]) == 106_465_753
     assert annual == Fraction(108_000_000, 106_465_753)
@@ -90,7 +90,7 @@ def test_2f_annual_ratio_matches_the_monthly_one(state):
 def test_2b_six_month_bullet(state):
     # repaid day 21 + 180 = 201 (month 7). interest 50,000,000 x 0.05 x 180/365 = 450,000,000/365 = 1,232,876.71 -> 1,232,877
     # total 51,232,877 / 6 = 8,538,812.83 -> level 8,538,812 (6 x = 51,232,872), remainder 5 -> month 6 = 8,538,817
-    s, t = _run(state, [(50_000_000, 0)], term_months=6)
+    _s, t = _run(state, [(50_000_000, 0)], term_months=6)
     assert t.interest_posted_fen == 1_232_877
     ds = _ds(t)
     assert ds[0:5] == [13_038_812] * 5  # 4,500,000 + 8,538,812
@@ -130,7 +130,7 @@ def test_2d_two_lots_months_1_to_15(state):
     # lot 1: 20,000,000, int 986,301.37 -> 986,301, total 20,986,301 / 12 = 1,748,858 r5 (month 12: 1,748,863), months 1-12
     # lot 2: 10,000,000, int 493,150.68 -> 493,151, total 10,493,151 / 12 =   874,429 r3 (month 14:   874,432), months 3-14
     # lot 2 requested day 40 -> lands day 61 (month 3)
-    s, t = _run(state, [(20_000_000, 0), (10_000_000, 40)])
+    _s, t = _run(state, [(20_000_000, 0), (10_000_000, 40)])
     assert t.interest_posted_fen == 986_301 + 493_151
     expect = [
         6_248_858, 6_248_858,  # months 1-2: 4,500,000 + 1,748,858
@@ -154,7 +154,7 @@ def test_2d_two_lots_months_1_to_15(state):
 
 def test_2e_loan_maturing_after_a_90_day_horizon(state):
     # months 1-3 each: 4,500,000 + 4,372,146 = 8,872,146 (DSCR 1.014, not 2.00)
-    s, t = _run(state, [(50_000_000, 0)], horizon=90)
+    _s, t = _run(state, [(50_000_000, 0)], horizon=90)
     assert _ds(t)[:3] == [8_872_146] * 3
     assert all(t.months[m].dscr.value == Fraction(9_000_000, 8_872_146) for m in range(3))
 
