@@ -145,7 +145,7 @@ def test_no_commitments_ex01_verdict_is_unchanged(client: TestClient, rt: Runtim
     oid, v = _evaluate_ex01(client)
     assert v["outcome"] == "REJECT"
     assert [x["code"] for x in v["violations"]] == ["AGG_CONCESSION_EXCEEDED", "RESERVE_BREACH",
-                                                    "DISCOUNT_ABOVE_BREAK_EVEN"]
+                                                    "DISCOUNT_ABOVE_BREAK_EVEN", "EARLY_PAY_DEARER_THAN_PLAN"]
     assert [c["text"] for c in v["counters"]] == EX01_COUNTERS
     assert next(x for x in v["violations"] if x["code"] == "RESERVE_BREACH")["cure_cost_fen"] == 80_270
     # the id of a verdict on books with nothing live is a function of the state, mandate and day alone

@@ -267,7 +267,10 @@ def early_pay_counter(ctx: _Ctx, label: str = "Option A") -> CounterProposal | N
     if base_plan.admissible:
         t0 = project(ctx.state, list(ctx.live), base_plan.actions, Mode.CONSERVATIVE, ctx.mandate.horizon_days)
         standing = t0.interest_posted_fen + t0.fees_posted_fen + t0.discounts_posted_fen - live_discounts
-        if total >= standing:
+        # read from the projection (ADR-0007): `total` adds the plan's cost to a posted discount that already
+        # includes any early pay the plan itself takes, which would count that early pay twice
+        posted = t.interest_posted_fen + t.fees_posted_fen + t.discounts_posted_fen - live_discounts
+        if posted >= standing:
             return None
 
     clauses: list[tuple[str, Obligation | None]] = []

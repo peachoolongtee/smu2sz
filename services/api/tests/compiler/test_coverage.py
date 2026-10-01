@@ -68,7 +68,7 @@ def test_a_clean_fully_covered_early_pay_offer_is_eligible_and_accepted_at_tier_
 
 
 @pytest.mark.parametrize("text", [
-    "We can pay the ¥420,000 invoice today at 0.8%. Nothing else changes.",
+    "We can pay the ¥420,000 invoice today at 0.6%. Nothing else changes.",
     "42万的发票我们明天就付清，扣千分之五，谢谢",
     "人民币肆拾贰万元整的货款，明天付，按99.4折结算可以吗",
     "hey the 420k invoice, we pay in full tmrw if u give us 0.6% disc. ok?",
