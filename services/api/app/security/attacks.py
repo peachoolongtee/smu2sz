@@ -696,7 +696,7 @@ class AttackRunner:
             obs.http_status.append(r.status_code)
         if r.status_code != 200:
             return
-        offer = CompiledOffer.model_validate_json(json.dumps(r.json()["offer"]))
+        offer = CompiledOffer.model_validate_json(json.dumps(_without_display(r.json()["offer"])))
         self._evaluate(ctx, offer, obs, rec, phase)
         if arg.get("check_fence"):
             from app.compiler.prompts import offer_user_message
@@ -1186,6 +1186,15 @@ QUOTED_APPROVAL_EVENT = "quoted text contained an approval instruction"
 EX01 = ("We'll settle the ¥420k early at 1.2% if you extend our standard terms to 60 days going forward "
         "and give us 1% off next quarter.")
 PROBE_RATES_BP = tuple(range(60, 72))  # 12 early-pay rates, 1 bp apart, around the 0.65% point where early pay stops beating the plan (ADR-0007)
+
+
+def _without_display(x: Any) -> Any:
+    """The typed payload under an owner view: the server adds `*_display` strings next to money and rates."""
+    if isinstance(x, list):
+        return [_without_display(v) for v in x]
+    if isinstance(x, dict):
+        return {k: _without_display(v) for k, v in x.items() if not k.endswith("_display")}
+    return x
 
 
 def _nl(id_: str, group: str, role: str, title: str, steps: list[dict[str, Any]], *,
