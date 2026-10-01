@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { CheckIcon } from "@/components/icons";
-import { OutcomeBadge, TierBadge } from "@/components/badges";
+import { OutcomeBadge, TierBadge, outcomeHasTier } from "@/components/badges";
 import { PlanCard } from "@/components/plan-card";
 import {
   Badge,
@@ -117,9 +117,17 @@ function VerdictBody({
             </p>
           </div>
           <div className="min-w-44">
-            <p className="mb-1 text-xs font-medium text-ink-3">{t("verdict.tier")}</p>
-            <TierBadge tier={verdict.required_tier} />
-            <p className="mt-1 max-w-56 text-xs text-ink-2">{te("tier.short", verdict.required_tier)}</p>
+            {outcomeHasTier(verdict.outcome) ? <p className="mb-1 text-xs font-medium text-ink-3">{t("verdict.tier")}</p> : null}
+            {outcomeHasTier(verdict.outcome) ? (
+              <>
+                <TierBadge tier={verdict.required_tier} />
+                <p className="mt-1 max-w-56 text-xs text-ink-2">{te("tier.short", verdict.required_tier)}</p>
+              </>
+            ) : (
+              <p className="max-w-56 text-sm text-ink-2" data-testid="nothing-executed">
+                {t("verdict.nothingExecuted")}
+              </p>
+            )}
           </div>
         </div>
       </Card>

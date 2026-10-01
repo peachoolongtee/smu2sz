@@ -27,6 +27,11 @@ export function OutcomeBadge({ outcome, large = false }: { outcome: Outcome; lar
   );
 }
 
+/** A REJECT or NO_VERDICT executes nothing, so a tier-of-action badge on it would mislead. */
+export function outcomeHasTier(outcome: Outcome | "NO_DEAL"): boolean {
+  return outcome === "ACCEPT" || outcome === "COUNTER" || outcome === "NEEDS_OWNER_APPROVAL";
+}
+
 export function TierBadge({ tier }: { tier: Tier }) {
   const { te } = useI18n();
   const tone: Tone = tier === "TIER_1" ? "ok" : tier === "TIER_2" ? "warn" : "bad";
