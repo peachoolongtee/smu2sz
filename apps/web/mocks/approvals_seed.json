@@ -10,7 +10,18 @@
     "amount_fen": 60000000,
     "detail": "Capex financing is always Tier 2. ¥18,144.62 a month at 5.60%; DSCR 1.43× in months 1 to 3; leverage 2.08×.",
     "decided_day": null,
-    "amount_display": "¥600,000.00"
+    "amount_display": "¥600,000.00",
+    "reason": "apply for facility FAC-ETL (¥600,000.00)",
+    "op_id": "capex-apply-03157ecb48a7c97c",
+    "operation": {
+      "kind": "APPLY_FOR_FACILITY",
+      "op_id": "capex-apply-03157ecb48a7c97c",
+      "requested_by": "AGENT",
+      "day": 0,
+      "facility_id": "FAC-ETL",
+      "source_verdict_id": null,
+      "term_months": null
+    }
   },
   "borrower_file": {
     "id": "APR-2",
@@ -23,6 +34,16 @@
     "amount_fen": 60000000,
     "detail": "Built from verified state only. Prepared, not sent to the lender.",
     "decided_day": null,
-    "amount_display": "¥600,000.00"
+    "amount_display": "¥600,000.00",
+    "reason": "prepare the borrower file for FAC-ETL (prepared, not sent)",
+    "op_id": "OP-BF-3AD75A980608",
+    "operation": {
+      "kind": "GENERATE_BORROWER_FILE",
+      "op_id": "OP-BF-3AD75A980608",
+      "requested_by": "AGENT",
+      "day": 0,
+      "facility_id": "FAC-ETL",
+      "source_verdict_id": null
+    }
   }
 }

@@ -5,7 +5,7 @@
  */
 
 import { ApiError } from "../errors";
-import type { Actor, ApprovalDecision, ApprovalStatus, ApprovalView, OperationResult, StateView, Tier } from "../types";
+import type { ApprovalDecision, ApprovalOperation, ApprovalStatus, ApprovalView, OperationResult, StateView, Tier } from "../types";
 import { http } from "./http";
 
 interface RawApproval {
@@ -15,7 +15,7 @@ interface RawApproval {
   reason: string;
   status: ApprovalStatus;
   decided_by: string | null;
-  operation: { requested_by?: Actor; day?: number; amount_fen?: number | null } | null;
+  operation: (ApprovalOperation & { amount_fen?: number | null }) | null;
   /** Added by the API: the row is display-ready. */
   subject?: string;
   tier?: Tier;
@@ -41,6 +41,9 @@ export async function getApprovals(): Promise<ApprovalView[]> {
         requested_by: a.operation?.requested_by ?? "AGENT",
         created_day: a.created_day ?? a.operation?.day ?? 0,
         operation_kind: a.kind ?? "",
+        reason: a.reason,
+        op_id: a.op_id,
+        operation: a.operation,
         amount_fen: a.amount_fen ?? a.operation?.amount_fen ?? null,
         amount_display: a.amount_display ?? null,
         detail: a.subject && a.reason ? a.reason : a.op_id ? `Operation ${a.op_id}` : "",
@@ -60,5 +63,5 @@ export async function decideApproval(id: string, decision: ApprovalDecision): Pr
   }
   const found = (await getApprovals()).find((a) => a.id === id);
   if (!found) throw new ApiError(404, `Approval ${id} not found.`);
-  return found;
+  return { ...found, result_message: result.message };
 }

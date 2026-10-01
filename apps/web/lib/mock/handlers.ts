@@ -403,12 +403,13 @@ export async function decideApproval(id: string, decision: ApprovalDecision): Pr
   const a = s.approvals.find((x) => x.id === id);
   if (!a) throw new ApiError(404, `Approval ${id} not found.`);
   if (a.status !== "PENDING") throw new ApiError(409, `Approval ${id} is already ${a.status}.`);
+  let op: OperationView;
   if (decision === "APPROVE") {
     a.status = "APPROVED";
-    append(id === "APR-2" ? "release_borrower_file" : "apply_facility");
+    op = append(id === "APR-2" ? "release_borrower_file" : "apply_facility");
   } else {
     a.status = "REJECTED";
-    append("request_approval", {
+    op = append("request_approval", {
       status: "REFUSED",
       requested_by: "OWNER",
       message: "Owner rejected the request; nothing executed",
@@ -417,7 +418,7 @@ export async function decideApproval(id: string, decision: ApprovalDecision): Pr
   }
   a.decided_day = 0;
   save();
-  return clone(a);
+  return { ...clone(a), result_message: op.message };
 }
 
 export async function getAlerts(): Promise<AlertsView> {

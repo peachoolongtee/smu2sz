@@ -812,7 +812,35 @@ export type ApprovalView = Displayed<{
   amount_fen: Fen | null;
   detail: string;
   decided_day: Day | null;
-}>;
+}> &
+  ApprovalDetail;
+
+/** The typed operation the queue holds, as GET /approvals/queue parses it (`operation`). Only the members the card reads. */
+export interface ApprovalOperation {
+  kind: OperationKind | string;
+  op_id: string;
+  requested_by?: Actor;
+  day?: Day;
+  source_verdict_id?: string | null;
+  offer_id?: string;
+  offer_version?: number;
+  terms_hash?: string;
+  nonce?: string;
+  commitment_id?: string;
+  facility_id?: string;
+  receivable_id?: string;
+  term_months?: number | null;
+}
+
+/** What the card needs beyond the display row: the executor's reason, the operation and, after a decision, its result message. */
+export interface ApprovalDetail {
+  /** The executor's sentence on why the owner has to decide (the queue's `reason`). */
+  reason: string;
+  op_id: string | null;
+  operation: ApprovalOperation | null;
+  /** Set by decideApproval: the executor's message for the decision just made. */
+  result_message?: string;
+}
 
 export type ApprovalDecision = "APPROVE" | "REJECT";
 
