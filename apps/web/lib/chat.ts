@@ -71,7 +71,7 @@ interface Attempt {
 /** The last failed attempt per role, kept so Retry resends the same text under the same request_id (replay-safe). */
 const failed: Partial<Record<NlActor, Attempt>> = {};
 
-async function run(a: Attempt): Promise<void> {
+async function run(a: Attempt): Promise<NlResponse | null> {
   const conv = store.get().convs[a.role];
   const sessionId = conv.sessionId ?? newSessionId();
   const generation = conv.generation;
@@ -88,11 +88,13 @@ async function run(a: Attempt): Promise<void> {
     patchConv(a.role, (c) =>
       c.generation !== generation ? c : { ...c, busy: false, sessionId: response.session_id, messages: [...c.messages, { id: uid("a"), from: "assistant", response }] },
     );
+    return response;
   } catch (e) {
     failed[a.role] = a;
     const status = e instanceof ApiError ? e.status : 0;
     const text = e instanceof Error ? e.message : String(e);
     patchConv(a.role, (c) => (c.generation !== generation ? c : { ...c, busy: false, messages: [...c.messages, { id: uid("e"), from: "error", text, status }] }));
+    return null;
   }
 }
 
@@ -101,12 +103,39 @@ async function run(a: Attempt): Promise<void> {
  * what is sent (a clarification option shows its label and sends its id).
  */
 export async function sendMessage(text: string, display?: string): Promise<void> {
+  await sendTurn(store.get().role, text, display);
+}
+
+async function sendTurn(role: NlActor, text: string, display?: string): Promise<NlResponse | null> {
   const s = store.get();
-  const conv = s.convs[s.role];
+  const conv = s.convs[role];
   const trimmed = text.trim();
-  if (!trimmed || conv.busy) return;
-  patchConv(s.role, (c) => ({ ...c, messages: [...c.messages, { id: uid("u"), from: "user", text: display ?? trimmed }] }));
-  await run({ role: s.role, counterpartyId: s.counterpartyId, text: trimmed, requestId: uid("req") });
+  if (!trimmed || conv.busy) return null;
+  patchConv(role, (c) => ({ ...c, messages: [...c.messages, { id: uid("u"), from: "user", text: display ?? trimmed }] }));
+  return run({ role, counterpartyId: s.counterpartyId, text: trimmed, requestId: uid("req") });
+}
+
+/** The owner's session id, created on first use. The home page opens its opener in this session, so "go ahead" lands in the same conversation as the chat panel. */
+export function ensureOwnerSession(): string {
+  const existing = store.get().convs.OWNER.sessionId;
+  if (existing) return existing;
+  const sessionId = newSessionId();
+  patchConv("OWNER", (c) => ({ ...c, sessionId }));
+  return sessionId;
+}
+
+/** Shows the agent's opener as an assistant turn in the owner's conversation (a newer opener replaces an older one that nobody answered). */
+export function appendOwnerOpener(response: NlResponse): void {
+  patchConv("OWNER", (c) => {
+    const last = c.messages.at(-1);
+    const rest = last?.from === "assistant" && last.response.parse_source === "opener" ? c.messages.slice(0, -1) : c.messages;
+    return { ...c, sessionId: response.session_id, messages: [...rest, { id: uid("a"), from: "assistant", response }] };
+  });
+}
+
+/** Sends one owner turn whatever channel the chat panel is showing, and returns the answer (null if it failed or a turn was in flight). */
+export function sendOwnerTurn(text: string, display?: string): Promise<NlResponse | null> {
+  return sendTurn("OWNER", text, display);
 }
 
 /** Resends the last failed turn (same request_id). The error bubble is replaced by the answer. */
