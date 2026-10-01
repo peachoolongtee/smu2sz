@@ -95,7 +95,7 @@ cheap early payment a few days before the due day; never accepts wrongly).
 | E4 | Approval card with operation, clause, after-state | C8 | sub (frontend) | 4h | DONE |
 | E5 | Autonomy proof shown on Tier-1 accepts; REJECT badge fix | C8 | sub (frontend) | 2h | DONE |
 | E6 | Annualised column next to every discount | §9 | sub | 3h | DONE (`annualised` on owner verdict responses, shown on the verdict page, counters and chat; live e2e 27 passed) |
-| E7 | Compliance half-page, LICENSE, reframed accuracy numbers | §8 | sub (docs) | 2h | OPEN |
+| E7 | Compliance half-page, LICENSE, reframed accuracy numbers | §8 | sub (docs) | 2h | DONE except the LICENSE file (the licence is the owner's choice) |
 | E8 | Demo fixes: Start 401, mock/live mismatch | §9 | sub (frontend) | 2h | PARTLY DONE (Start resumes after sign-in, step 6 scrolls to its result; mock verdicts still differ from live: close-out re-records them) |
 
 ## Wave F: optional (P3, only when A to D are green)
