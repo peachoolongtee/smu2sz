@@ -43,6 +43,16 @@ class Runtime:
 
         return is_owner(token)
 
+    def advance_to(self, day: int) -> Any:
+        """Move simulated time forward (ADR-0006 §2). The books close every day before `day`."""
+        from app.clock import advance
+        from app.domain.models import Actor
+
+        with self.lock:
+            adv = advance(self.store, day, Actor.SYSTEM)
+            self.day = self.store.get_state().as_of_day
+            return adv
+
     def reset(self, scenario: str = "golden_sme") -> None:
         """Reload fixtures and clear the ledger (POST /demo/reset)."""
         with self.lock:

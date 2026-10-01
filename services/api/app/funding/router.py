@@ -91,7 +91,8 @@ def alternatives(search: Search) -> list[Alternative]:
                 if f.kind == FacilityKind.GOV_GUARANTEED_LOAN and f.owner_approved), None)
     if ggl is not None and line is not None and line_amt < need:
         loan_amt = max(search.MIN_ACTION_FEN, need - line_amt)
-        loan = FundingAction(kind=FundingActionKind.DRAW, facility_id=ggl.id, day=0, amount_fen=loan_amt)
+        loan = FundingAction(kind=FundingActionKind.DRAW, facility_id=ggl.id, day=search.state.as_of_day,
+                             amount_fen=loan_amt)
         actions = [line.action(line_amt), loan]
         comps = [search.action_label(line.action(line_amt)),
                  f"{ggl.name}: draw {fmt_yuan(loan_amt)} (arrives day {ggl.lead_time_days})"]

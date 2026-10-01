@@ -10,6 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.alerts import router as alerts_router
 from app.api.borrower_file import router as borrower_file_router
 from app.api.capex import router as capex_router
+from app.api.clock import router as clock_router
 from app.api.decide import router as decide_router
 from app.api.nl import router as nl_router
 from app.api.offers import router as offers_router
@@ -37,6 +38,7 @@ app.include_router(whatif_router)
 app.include_router(borrower_file_router)
 app.include_router(alerts_router)
 app.include_router(nl_router)
+app.include_router(clock_router)
 
 
 @app.get("/health")
