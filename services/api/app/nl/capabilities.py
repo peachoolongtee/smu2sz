@@ -15,8 +15,13 @@ import re
 from dataclasses import dataclass
 from fractions import Fraction
 
-from app.alerts import AlertKind, PromiseStatus, alerts, reconcile
-from app.alerts.engine import _limits  # the covenant thresholds as the covenant alerts take them
+from app.alerts import (
+    AlertKind,
+    PromiseStatus,
+    alerts,
+    covenant_limits,  # the covenant thresholds as the covenant alerts take them
+    reconcile,
+)
 from app.borrower_file import BorrowerFileError, build
 from app.capex import CapexDisabled, CapexRequest, CapexResult, CapexStructure, evaluate_capex
 from app.config import get_settings
@@ -168,7 +173,7 @@ def show_ratios(ctx: NlContext) -> Turn:
     except EngineError:
         return Turn(intent=Intent.SHOW_RATIOS, reply=t(ctx, "I could not project the books just now, so I cannot "
                                                             "show the ratios.", "暂时无法预测账目，无法显示指标。"))
-    dscr_limits, lev_limits = _limits(books.state, mandate)
+    dscr_limits, lev_limits = covenant_limits(books.state, mandate)
     dscr_limit, dscr_src = max(dscr_limits, key=lambda z: z[0])
     lev_limit, lev_src = min(lev_limits, key=lambda z: z[0])
     lines: list[str] = []

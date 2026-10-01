@@ -74,7 +74,7 @@ on the walk and opened as C5: nothing repays the line draw unless the owner asks
 | D1 | Break-even from actual days early | F1 | main formula, sub tests | 3h | 30 days still 0.88%; 90 days at 1.2% accepted | DONE |
 | D2 | Early pay only when cash is needed and cheaper than the router's plan | F2 | main rule, sub code | 4h | no-need offer is not accepted | DONE |
 | D3 | Financed receivable settled early repays the advance that day | F7 | covered by B2 | — | day-20 cash not double counted | DONE |
-| D4 | DSCR counts scheduled bullet principal (ADR-0008) | F6 | sub + second sub to check | 3h | hand-calculated case | IN PROGRESS (fix/dscr-bullet-principal) |
+| D4 | DSCR counts scheduled bullet principal (ADR-0008) | F6 | sub + second sub to check | 3h | hand-calculated case | DONE |
 | D5 | APR gate on posted cost over actual days | F5 | sub | 3h | 3-day advance fails the 15% cap | IF TIME |
 
 D1/D2 merged 1 Oct. Whole-invoice early pay at 0.65% to 0.88% (30 days early, golden books) now counters;
@@ -88,8 +88,8 @@ cheap early payment a few days before the due day; never accepts wrongly).
 
 | ID | Fix | Audit | Owner | Effort | Status |
 | --- | --- | --- | --- | --- | --- |
-| E1 | `/nl` intents: financing comparison, alerts, reconcile, ratios, capex, borrower file | C6 | sub | 6h | IN PROGRESS (feat/nl-capabilities) |
-| E2 | Nearest-capability fallback | C6 | sub | 2h | IN PROGRESS (feat/nl-capabilities) |
+| E1 | `/nl` intents: financing comparison, alerts, reconcile, ratios, capex, borrower file | C6 | sub | 6h | DONE |
+| E2 | Nearest-capability fallback | C6 | sub | 2h | DONE |
 | E3 | Owner home at `/` | C8 | sub (frontend) | 5h | DONE (home at `/` with the opener, Go ahead, the alert button and a demo clock; mock e2e 25 passed) |
 | E4 | Approval card with operation, clause, after-state | C8 | sub (frontend) | 4h | IN PROGRESS (feat/approval-card) |
 | E5 | Autonomy proof shown on Tier-1 accepts; REJECT badge fix | C8 | sub (frontend) | 2h | IN PROGRESS (feat/approval-card) |

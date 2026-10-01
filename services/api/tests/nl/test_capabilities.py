@@ -7,8 +7,7 @@ from __future__ import annotations
 
 import pytest
 
-from app.alerts import PromiseStatus, reconcile
-from app.alerts.engine import _limits
+from app.alerts import PromiseStatus, covenant_limits, reconcile
 from app.books import current_books
 from app.capex import CapexRequest, evaluate_capex
 from app.domain.fixtures import load_scenario
@@ -125,7 +124,7 @@ def test_ratios_equal_the_covenant_figures(client, rt):
     traj = project(books.state, list(books.obligations), [], Mode.CONSERVATIVE, mandate.horizon_days, mandate.min_cash_fen)
     low = min((m for m in traj.months if m.dscr is not None), key=lambda m: m.dscr.value)
     high = max((m for m in traj.months if m.leverage is not None), key=lambda m: m.leverage.value)
-    dscr_limits, lev_limits = _limits(books.state, mandate)
+    dscr_limits, lev_limits = covenant_limits(books.state, mandate)
     d_lim, l_lim = max(dscr_limits, key=lambda z: z[0])[0], min(lev_limits, key=lambda z: z[0])[0]
     reply = Chat(client, "cap-rat").say("What is our DSCR?")["reply"]
     assert f"Lowest DSCR {low.dscr.text}× in month {low.month}" in reply

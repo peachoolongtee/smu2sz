@@ -6,7 +6,7 @@ only. Alerts suggest typed operations; nothing here executes one.
 """
 
 from app.alerts.act import cure_operations
-from app.alerts.engine import alerts, committed_cure
+from app.alerts.engine import alerts, committed_cure, covenant_limits
 from app.alerts.models import (
     Alert,
     AlertKind,
@@ -34,6 +34,7 @@ __all__ = [
     "SuggestedAction",
     "alerts",
     "committed_cure",
+    "covenant_limits",
     "cure_operations",
     "reconcile",
 ]

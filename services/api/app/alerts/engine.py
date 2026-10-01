@@ -235,7 +235,7 @@ def _reserve_alerts(state: FinancialState, mandate: Mandate, t: Trajectory, obs:
 # ---------------------------------------------------------------- covenants
 
 
-def _limits(state: FinancialState, mandate: Mandate) -> tuple[list[tuple[Fraction, str]], list[tuple[Fraction, str]]]:
+def covenant_limits(state: FinancialState, mandate: Mandate) -> tuple[list[tuple[Fraction, str]], list[tuple[Fraction, str]]]:
     dscr = [(bp(mandate.min_dscr_bp), f"mandate v{mandate.version}")]
     lev = [(bp(mandate.max_leverage_bp), f"mandate v{mandate.version}")]
     for f in state.facilities:
@@ -252,7 +252,7 @@ def _limits(state: FinancialState, mandate: Mandate) -> tuple[list[tuple[Fractio
 
 
 def _covenant_alerts(state: FinancialState, mandate: Mandate, t: Trajectory, day: int) -> list[Alert]:
-    dscr_limits, lev_limits = _limits(state, mandate)
+    dscr_limits, lev_limits = covenant_limits(state, mandate)
     dscr_limit, dscr_src = max(dscr_limits, key=lambda z: z[0])
     lev_limit, lev_src = min(lev_limits, key=lambda z: z[0])
     ahead = [m for m in t.months if MONTH_DAYS * m.month >= day]
