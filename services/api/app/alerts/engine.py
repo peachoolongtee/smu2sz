@@ -207,7 +207,9 @@ def _priced(a: FundingAction, s: SuggestedAction, alone: Trajectory, base: Traje
         if not repay:
             return s, None
     if len(arrive) == 1 and len(repay) == 1:  # one lump repayment: a schedule of instalments has no single day
-        days, end = repay[0] - arrive[0], repay[0]
+        # counted from the day the funding is requested: the executor books the cash and starts charging that
+        # day, whereas the projection lands it after the facility's lead time
+        days, end = repay[0] - a.day, repay[0]
     amount = a.amount_fen
     rate: Fraction | None = Fraction(cost, amount) * DAYS_PER_YEAR / days if days is not None and days > 0 else None
     if rate is not None:

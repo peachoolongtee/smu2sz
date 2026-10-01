@@ -28,11 +28,10 @@ def test_demo_day34_the_invoice_cure_is_priced_from_the_engine(client, rt):
     [s] = b["suggested"]
     state = rt.store.get_state()
     rcv = next(r for r in state.receivables if r.id == "RI:BUYER-1:2")
-    fac = next(f for f in state.facilities if f.id == s["facility_id"])
     assert s["operation_kind"] == "SUBMIT_INVOICE_FOR_FINANCING" and s["receivable_id"] == "RI:BUYER-1:2"
     assert s["cost_fen"] > 0
     # the engine's arrival is the request day plus the facility's lead time; billed to the invoice's due day
-    assert s["cost_days"] == rcv.due_day - (34 + fac.lead_time_days)
+    assert s["cost_days"] == rcv.due_day - 34 == 13  # from the request day, as the executor charges
     expected = Fraction(s["cost_fen"], s["amount_fen"]) * 365 / s["cost_days"]
     assert Fraction(s["annual_rate"]["num"], s["annual_rate"]["den"]) == expected
     assert s["annual_rate"]["text"] == Ratio.of(expected).text  # displayed() adds the text of a Ratio
