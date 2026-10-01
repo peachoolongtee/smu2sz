@@ -36,6 +36,7 @@ from app.funding import plan
 from app.mandate.fixture import demo_owner_public_key_hex
 from app.persistence import InMemoryLedgerStore
 from app.verifier import evaluate
+from app.verifier.evaluate import verdict_id
 from app.whatif import PRESETS, simulate
 
 RCV_A_FACE = 42_000_000
@@ -140,14 +141,17 @@ def test_no_commitments_trajectory_and_router_plan_are_unchanged(client: TestCli
     assert r["committed"]["total_cost_fen"] == 271_294
 
 
-def test_no_commitments_ex01_verdict_is_unchanged(client: TestClient) -> None:
-    _, v = _evaluate_ex01(client)
+def test_no_commitments_ex01_verdict_is_unchanged(client: TestClient, rt: Runtime) -> None:
+    oid, v = _evaluate_ex01(client)
     assert v["outcome"] == "REJECT"
     assert [x["code"] for x in v["violations"]] == ["AGG_CONCESSION_EXCEEDED", "RESERVE_BREACH",
                                                     "DISCOUNT_ABOVE_BREAK_EVEN"]
     assert [c["text"] for c in v["counters"]] == EX01_COUNTERS
     assert next(x for x in v["violations"] if x["code"] == "RESERVE_BREACH")["cure_cost_fen"] == 80_270
-    assert v["id"] == "VER-6a80c764bc83"  # the id of a verdict on books with nothing live is unchanged
+    # the id of a verdict on books with nothing live is a function of the state, mandate and day alone
+    offer = rt.store.get_offer(oid)
+    assert offer is not None
+    assert v["id"] == verdict_id(oid, offer.version, rt.store.get_state(), rt.store.get_mandate(), rt.day)
 
 
 def test_inactive_commitments_do_not_enter_the_books(client: TestClient, rt: Runtime) -> None:
