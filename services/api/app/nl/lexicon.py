@@ -88,6 +88,34 @@ ALERTS = _re(r"\balerts?\b", r"\bnotifications?\b", r"\bwhat needs (?:me|my atte
              r"\banything (?:i|we) (?:should|need to|ought to|must|have to) (?:know|see|look at|handle|deal with|worry)\b",
              r"\bwhat should i (?:know|look at|deal with|handle)\b", r"\bany(?:thing)? (?:news|warnings?)\b",
              r"提醒", r"预警", r"告警", r"需要我(?:处理|关注|注意|看|决定)", r"有什么(?:需要|要)我", r"有什么(?:要紧|新情况|新消息)")
+# Capabilities that are built but were not reachable from chat (tracker rows E1, E2). Each names its subject; the
+# phrasings that already mean SHOW_STATUS ("how are we doing", "are we close to breaching a covenant?") keep doing so.
+COMPARE_FINANCING = _re(
+    r"\bcompare\b.{0,30}\b(?:financing|funding|loans?|sources?|options?|facilit\w*)\b",
+    r"\b(?:financing|funding|loan|credit) options?\b",
+    r"\b(?:cheapest|best|lowest[- ]cost|least expensive|most affordable)\b.{0,25}\b(?:financing|funding|loans?|sources?|facilit\w*|options?)\b",
+    r"\b(?:financing|funding|loans?|sources?|facilit\w*|options?)\b.{0,25}\b(?:cheapest|cheaper|lowest cost|least expensive)\b",
+    r"\bwhich (?:financing|funding|loan|source|facility)\b", r"\bwhat does each (?:source|option|facility|financing|loan)\b.{0,15}\bcost",
+    r"哪种(?:融资|贷款|资金)", r"哪个(?:融资|贷款)", r"比较.{0,6}(?:融资|贷款|资金|方案)", r"融资(?:方案|选择|选项)",
+    r"(?:各|每).{0,3}(?:融资|来源|渠道).{0,6}(?:成本|多少钱|利率)")
+RECONCILE = _re(
+    r"\breconcil\w*", r"\bdid\b.{0,40}\b(?:pay|paid)\b(?!.{0,30}\b(?:early|sooner|earlier|faster)\b)",
+    r"\b(?:which|what|any)\b.{0,20}\b(?:receipts?|payments?)\b.{0,25}\b(?:missing|outstanding|late|overdue|not (?:in|arrived|received|come))",
+    r"\bmissing (?:receipts?|payments?)\b", r"对账", r"核对.{0,6}(?:回款|收款|款项|账)",
+    r"哪些.{0,4}(?:回款|收款|款).{0,6}(?:没到|未到|缺)")
+RATIOS = _re(
+    r"\bdscr\b", r"\bdebt[- ]service[- ]coverage\b", r"\bleverage\b", r"\bcovenant headroom\b",
+    r"\bheadroom\b.{0,25}\bcovenants?\b",
+    r"\b(?:inside|within|meeting|meet|satisfy|satisfying|comply|complying|compliant|compliance)\b.{0,25}\bcovenants?\b",
+    r"\bcovenants?\b.{0,20}\b(?:ratios?|compliance|tests?)\b", r"偿债覆盖", r"杠杆", r"契约")
+CAPEX_ASK = _re(
+    r"\b(?:buy|buying|purchase|purchasing|afford|invest(?:ing)? in|worth)\b.{0,40}\b(?:machine|machinery|equipment)\b",
+    r"\b(?:machine|machinery|equipment|capex)\b.{0,40}\b(?:purchase|worth|afford|affordable|payback|npv)\b",
+    r"\b(?:evaluate|assess|appraise|review)\b.{0,20}\b(?:machine|machinery|equipment|capex)\b", r"\bcapex\b",
+    r"买.{0,6}(?:设备|机器)", r"(?:设备|机器).{0,8}(?:划算|值得|购置|采购|买)", r"购置.{0,4}(?:设备|机器)")
+BORROWER_FILE = _re(
+    r"\b(?:borrower|lender|loan|bank)[’']?s?\s+(?:file|pack|package|dossier)\b", r"\bloan application (?:file|pack|package)\b",
+    r"借款人(?:资料|文件|材料)", r"(?:贷款|申贷|授信)(?:申请)?(?:资料|材料|文件)", r"贷款包")
 # A question about the position ("are we close to breaching a covenant?", "会不会跌破储备线？"): it asks, so
 # it is SHOW_STATUS even when it names the reserve or a shortfall (checked before FUND).
 STATUS_QUESTION = _re(

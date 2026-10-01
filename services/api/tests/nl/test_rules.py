@@ -37,7 +37,7 @@ CASES = [
     ("批准待审批的操作", Intent.APPROVE),
     ("Book me a flight", None),
     ("help me sort out our cash", Intent.AMBIGUOUS),
-    ("Can we buy the ¥600k machine?", Intent.OUT_OF_SCOPE),
+    ("Can we buy the ¥600k machine?", Intent.CAPEX),
     ("Sign a personal guarantee for the loan", Intent.OUT_OF_SCOPE),
     ("把工厂抵押给银行", Intent.OUT_OF_SCOPE),
 ]

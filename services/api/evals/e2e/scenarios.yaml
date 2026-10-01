@@ -185,11 +185,11 @@ scenarios:
     after: {facilities_added: 0, cash_unchanged: true}
 
   - id: S16_ex11_capex_out_of_scope
-    title: "EX11: capex is not a /nl intent yet; polite refusal with what it can do"
-    tags: [EX11, out_of_scope]
+    title: "EX11: the capex case is answered in chat (NPV, payback, structures); nothing is applied for"
+    tags: [EX11, capex]
     turns:
       - text: "Can we buy the ¥600k machine?"
-        expect: {intent: OUT_OF_SCOPE, ops_count: 0, reply_contains: ["I can"]}
+        expect: {intent: CAPEX, ops_count: 0, reply_contains: ["NPV", "Capex screen"]}
 
   - id: S17_ex12_goal_accept
     title: "EX12 goal -> plan: early-pay counter at 0.85% with zero forward concessions; the buyer accepts"
@@ -418,3 +418,83 @@ scenarios:
         expect: {intent: WHAT_IF, ops_count: 0}
       - text: "为什么？"
         expect: {intent: EXPLAIN, ops_count: 0}
+
+  - id: S38_compare_financing
+    title: "Which financing option is cheapest? Every source with its all-in rate, the committed plan and its cost; nothing runs"
+    tags: [nl_capabilities, compare_financing, debt_desk]
+    turns:
+      - text: "Which financing option is cheapest?"
+        expect: {intent: COMPARE_FINANCING, ops_count: 0, awaiting: false,
+                 reply_contains: ["Gap to fund: ¥360,000.00", "6.40% all-in", "10.84% all-in", "¥841.64 + ¥1,871.30 = ¥2,712.94",
+                                  "say 'fund the gap'"]}
+    after: {cash_unchanged: true}
+
+  - id: S39_compare_financing_zh
+    title: "哪种融资最便宜: the same comparison in Chinese"
+    tags: [nl_capabilities, compare_financing, zh]
+    turns:
+      - text: "哪种融资最便宜"
+        expect: {intent: COMPARE_FINANCING, ops_count: 0, reply_contains: ["综合年化 6.40%", "¥2,712.94", "未执行任何操作"]}
+
+  - id: S40_reconcile
+    title: "Reconcile this month: receipts matched, the outstanding receivable and the chain check"
+    tags: [nl_capabilities, reconcile, alerts]
+    turns:
+      - text: "Reconcile this month"
+        expect: {intent: RECONCILE, ops_count: 0,
+                 reply_contains: ["0 receipt(s) matched", "RCV-A (BUYER-1) ¥420,000.00 due day 32", "The audit chain verifies."]}
+
+  - id: S41_show_ratios
+    title: "What is our DSCR? The lowest DSCR and the highest leverage against the binding thresholds"
+    tags: [nl_capabilities, covenants]
+    turns:
+      - text: "What is our DSCR?"
+        expect: {intent: SHOW_RATIOS, ops_count: 0,
+                 reply_contains: ["Lowest DSCR 2.00× in month 1", "1.25× minimum", "headroom 0.75×", "Highest leverage 1.39×",
+                                  "2.50× maximum", "inside the covenants"]}
+
+  - id: S42_show_ratios_zh
+    title: "偿债覆盖率是多少: the covenant ratios in Chinese"
+    tags: [nl_capabilities, covenants, zh]
+    turns:
+      - text: "偿债覆盖率是多少"
+        expect: {intent: SHOW_RATIOS, ops_count: 0, reply_contains: ["最低 DSCR 2.00×", "余量 0.75×", "最高杠杆 1.39×"]}
+
+  - id: S43_capex_case
+    title: "Can we afford the ¥600,000 machine? NPV, payback and each financing structure; the application is not made"
+    tags: [nl_capabilities, capex, EX11]
+    turns:
+      - text: "can we afford the ¥600,000 machine?"
+        expect: {intent: CAPEX, ops_count: 0, awaiting: false,
+                 reply_contains: ["NPV ¥380,885.77", "payback in month 31", "36-month term loan, 5.60%: min DSCR 1.43×", "SELECTED",
+                                  "fails", "Capex screen"]}
+    after: {facilities_added: 0}
+
+  - id: S44_borrower_file
+    title: "Prepare the borrower file: proposed first, then queued for the owner's approval on a direct go-ahead (prepared, not sent)"
+    tags: [nl_capabilities, borrower_file, tier2]
+    turns:
+      - text: "prepare the borrower file for the term loan, ¥600,000"
+        expect: {intent: BORROWER_FILE, awaiting: true, ops_count: 0, plan_kinds: ["GENERATE_BORROWER_FILE"],
+                 reply_contains: ["FAC-ETL", "¥600,000.00", "go ahead"]}
+      - text: "go ahead"
+        expect: {intent: BORROWER_FILE, ops: ["GENERATE_BORROWER_FILE:PENDING_APPROVAL"],
+                 reply_contains: ["waits for your approval", "prepared, not sent"]}
+    after: {unauthorised_executions: 0}
+
+  - id: S45_nearest_capability
+    title: "An out-of-scope request names the closest thing the agent can do, with an example, instead of a flat refusal"
+    tags: [nl_capabilities, out_of_scope]
+    turns:
+      - text: "Email the loan officer about our rates"
+        expect: {intent: OUT_OF_SCOPE, ops_count: 0,
+                 reply_contains: ["I can't do that.", "closest thing I can do is compare financing options",
+                                  "which financing option is cheapest?"]}
+
+  - id: S46_agent_key_needs_owner_sign_in
+    title: "With the agent key only, a covenant question is recognised but nothing is disclosed"
+    tags: [nl_capabilities, security, authorization]
+    turns:
+      - text: "What is our DSCR?"
+        owner_token: false
+        expect: {intent: SHOW_RATIOS, ops_count: 0, reply_contains: ["owner's sign-in"], reply_excludes: ["¥", "%", "×"]}
