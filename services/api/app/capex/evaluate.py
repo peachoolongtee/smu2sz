@@ -12,8 +12,10 @@ discounting lives here (appraisal.py), rounded once through `app.domain.money.po
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from fractions import Fraction
 
+from app.books import Books, current_books
 from app.capex.appraisal import effective_monthly_rate_text, npv_fen, payback_month, uplift_in_month
 from app.capex.models import (
     OWNER_ESTIMATE,
@@ -31,7 +33,9 @@ from app.domain.models import (
     Actor,
     ApplyForFacility,
     CashFlow,
+    Commitment,
     CovenantKind,
+    DurationKind,
     Facility,
     FacilityKind,
     FacilityStatus,
@@ -41,6 +45,7 @@ from app.domain.models import (
     FundingActionKind,
     Mandate,
     Mode,
+    ObligationType,
     Tier,
     Violation,
     ViolationCode,
@@ -79,9 +84,13 @@ def x(r: Ratio | Fraction | None) -> str:
 
 
 class _Base:
-    """The verified position every structure is tested against."""
+    """The current books every structure is tested against: the stored state plus the live commitments'
+    obligations (ADR-0006)."""
 
-    def __init__(self, state: FinancialState, mandate: Mandate) -> None:
+    def __init__(self, books: Books, mandate: Mandate) -> None:
+        state = books.state
+        self.obligations = list(books.obligations)
+        self.live_extension_debt = _live_extension_debt(books, mandate)
         self.ebitda = state.monthly_ebitda_fen
         self.debt_service = sum(d.monthly_debt_service_fen for d in state.debts)
         self.debt = sum(d.principal_fen for d in state.debts)
@@ -89,6 +98,12 @@ class _Base:
         # A committed credit line counts at its full limit, as in the verifier's pro-forma test.
         self.lines = [f for f in committed if f.kind == FacilityKind.CREDIT_LINE]
         self.line_limits = sum(f.limit_fen for f in self.lines if f.counts_in_leverage)
+        # Debt the pro-forma ratios start from: committed line limits, plus the receivables the live terms
+        # extensions tie up, funded permanently (the verifier's pro-forma rule). Zero without such commitments.
+        self.base_extra_debt = self.line_limits + self.live_extension_debt
+        self.extension_inputs = ({"live_terms_extension_receivables": fmt_yuan(self.live_extension_debt)}
+                                 if self.live_extension_debt else {})
+        self.extension_term = f" + {fmt_yuan(self.live_extension_debt)}" if self.live_extension_debt else ""
         dscr = [(bp(mandate.min_dscr_bp), f"mandate v{mandate.version}")]
         lev = [(bp(mandate.max_leverage_bp), f"mandate v{mandate.version}")]
         for f in committed:
@@ -121,6 +136,27 @@ def _covenant_limits(f: Facility) -> tuple[list[tuple[Fraction, str]], list[tupl
         elif c.kind == CovenantKind.LEVERAGE_MAX:
             lev.append((bp(c.threshold_bp), c.id))
     return dscr, lev
+
+
+def _live_extension_debt(books: Books, mandate: Mandate) -> int:
+    """Receivables tied up by the live lengthening terms extensions, funded permanently: for each, the
+    buyer's recurring face × invoices in the horizon × Δdays / 365, rounded once (the verifier's pro-forma
+    rule, so capex and the verifier read a live extension the same way)."""
+    total = Fraction(0)
+    for ob in books.obligations:
+        if ob.type != ObligationType.TERMS_EXTENSION or (ob.days_delta or 0) <= 0:
+            continue
+        recs = [r for r in books.state.recurring_invoices if r.counterparty_id == ob.counterparty_id]
+        if len(recs) != 1 or recs[0].every_days <= 0:
+            continue
+        rec = recs[0]
+        n = mandate.forward_concession_horizon_days // rec.every_days
+        if ob.duration.kind == DurationKind.RECURRING_BOUNDED and ob.duration.invoices is not None:
+            n = min(n, ob.duration.invoices)
+        elif ob.duration.kind == DurationKind.ONE_OFF:
+            n = 1
+        total += Fraction(rec.face_fen * n * (ob.days_delta or 0), DAYS_PER_YEAR)
+    return post(total)
 
 
 def _extension_extra_receivables(request: CapexRequest, state: FinancialState, mandate: Mandate) -> int | None:
@@ -212,7 +248,7 @@ def _financed(
     schedule = amortisation_schedule(price, f.rate_bp, c.term_months)
     total_interest = sum(row.interest for row in schedule)
     d_lim, d_src, l_lim, l_src = base.limits_with(f)
-    debt = base.debt + base.line_limits + price
+    debt = base.debt + base.base_extra_debt + price
 
     months: list[DscrMonth] = []
     failing: list[DscrMonth] = []
@@ -226,7 +262,7 @@ def _financed(
         months.append(point)
         if not passes:
             failing.append(point)
-    _, leverage = pro_forma(state, extra_debt_fen=price, base_extra_debt_fen=base.line_limits)
+    _, leverage = pro_forma(state, extra_debt_fen=price, base_extra_debt_fen=base.base_extra_debt)
 
     if failing:
         first = failing[0]
@@ -253,6 +289,7 @@ def _financed(
             formula=f"(debt + committed line limits + principal) / (12 × EBITDA_m) = {fmt_yuan(debt)} / "
                     f"(12 × {fmt_yuan(base.ebitda)}) = {x(leverage)} > {x(l_lim)}",
             inputs={"debt": fmt_yuan(base.debt), "committed_line_limits": fmt_yuan(base.line_limits),
+                    **base.extension_inputs,
                     "principal": fmt_yuan(price), "EBITDA_m": fmt_yuan(base.ebitda), "limit_source": l_src}))
 
     dscrs = [p.dscr.value for p in months if p.dscr is not None]
@@ -275,6 +312,7 @@ def _financed(
                 formula=f"(debt + committed line limits + principal) / (12 × EBITDA_m) = {fmt_yuan(debt)} / "
                         f"(12 × {fmt_yuan(base.ebitda)})",
                 inputs={"debt": fmt_yuan(base.debt), "committed_line_limits": fmt_yuan(base.line_limits),
+                    **base.extension_inputs,
                         "principal": fmt_yuan(price), "max_leverage": x(l_lim), "limit_source": l_src}),
     ]
     return CapexStructure(
@@ -303,8 +341,9 @@ def _month_ranges(ms: list[int]) -> str:
 
 def _cash_line(request: CapexRequest, state: FinancialState, mandate: Mandate, base: _Base) -> CapexStructure:
     """Pay from cash above the reserve plus the committed line, tested on the conservative daily
-    trajectory with the purchase posted on day 0."""
+    trajectory of current books with the purchase posted today (day 0 on a fresh ledger)."""
     price = request.price_fen
+    today = state.as_of_day
     lines = [f for f in base.lines if f.limit_fen > f.drawn_fen]
     line_available = sum(f.limit_fen - f.drawn_fen for f in lines)
     cash_above = state.cash_fen - mandate.min_cash_fen
@@ -316,24 +355,26 @@ def _cash_line(request: CapexRequest, state: FinancialState, mandate: Mandate, b
     for f in lines:
         amt = min(remaining, f.limit_fen - f.drawn_fen)
         if amt > 0:
-            actions.append(FundingAction(kind=FundingActionKind.DRAW, facility_id=f.id, day=0, amount_fen=amt))
+            actions.append(FundingAction(kind=FundingActionKind.DRAW, facility_id=f.id, day=today, amount_fen=amt))
             remaining -= amt
-    purchase = CashFlow(id="CAPEX-PURCHASE", day=0, amount_fen=-price, kind=FlowKind.OTHER,
+    purchase = CashFlow(id="CAPEX-PURCHASE", day=today, amount_fen=-price, kind=FlowKind.OTHER,
                         label=f"Capex purchase: {request.label}")
     inputs = {"cash": fmt_yuan(state.cash_fen), "min_cash": fmt_yuan(mandate.min_cash_fen),
               "line_available": fmt_yuan(line_available), "available_above_reserve": fmt_yuan(available),
               "price": fmt_yuan(price)}
     violations: list[Violation] = []
     try:
-        traj = project(state.model_copy(update={"flows": [*state.flows, purchase]}), [], actions,
+        traj = project(state.model_copy(update={"flows": [*state.flows, purchase]}), base.obligations, actions,
                        Mode.CONSERVATIVE, mandate.horizon_days, mandate.min_cash_fen)
     except EngineError as exc:
         traj = None
         violations.append(Violation(code=ViolationCode.PRECONDITION_FAILED, message=str(exc), inputs=inputs))
-    if traj is not None and traj.first_breach_day is not None:
-        day = traj.first_breach_day
+    breach_day = None if traj is None else next(
+        (p.day for p in traj.days if p.day >= today and p.closing_fen < mandate.min_cash_fen), None)
+    if traj is not None and breach_day is not None:
+        day = breach_day
         closing = next(p.closing_fen for p in traj.days if p.day == day)
-        when = "on purchase day" if day == 0 else f"on day {day}"
+        when = "on purchase day" if day == today else f"on day {day}"
         violations.append(Violation(
             code=ViolationCode.RESERVE_BREACH,
             message=(f"Only {fmt_yuan(available)} is available above the {fmt_yuan(mandate.min_cash_fen)} reserve "
@@ -352,13 +393,22 @@ def _cash_line(request: CapexRequest, state: FinancialState, mandate: Mandate, b
                 message=f"{f.name} must return to zero for its clean-down period, so it cannot carry a "
                         f"permanent purchase",
                 formula="a clean-down line cannot fund a permanent need", inputs={"facility_id": f.id}))
+    lowest: list[Working] = []
+    if traj is not None:
+        low = min((p for p in traj.days if p.day >= today), key=lambda p: (p.closing_fen, p.day))
+        lowest.append(Working(
+            label="Lowest projected cash", value=fmt_yuan(low.closing_fen),
+            formula=f"min over days {today}..{traj.days[-1].day} of the conservative closing cash on current books, "
+                    f"with the purchase on day {today}",
+            inputs={"day": str(low.day), "min_cash": fmt_yuan(mandate.min_cash_fen),
+                    "live_obligations": str(len(base.obligations))}))
     feasible = not violations
     if feasible:
         note = "Feasible: paid from cash above the reserve" + (" and the line." if need_from_line else ".")
     elif any(v.code == ViolationCode.RESERVE_BREACH for v in violations):
         breach = next(v for v in violations if v.code == ViolationCode.RESERVE_BREACH)
         note = (f"Infeasible: only {fmt_yuan(available)} available above the reserve; RESERVE_BREACH "
-                f"{'on purchase day' if breach.day == 0 else f'on day {breach.day}'}.")
+                f"{'on purchase day' if breach.day == today else f'on day {breach.day}'}.")
     else:
         note = f"Infeasible: {violations[0].message}"
     return CapexStructure(
@@ -367,21 +417,24 @@ def _cash_line(request: CapexRequest, state: FinancialState, mandate: Mandate, b
         total_interest_fen=0 if feasible and need_from_line == 0 else None,
         feasible=feasible, result="ADMISSIBLE" if feasible else "INFEASIBLE", violations=violations, note=note,
         workings=[Working(label="Available above the reserve", value=fmt_yuan(available),
-                          formula="(cash − min_cash) + committed line available", inputs=inputs)])
+                          formula="(cash − min_cash) + committed line available", inputs=inputs),
+                  *lowest])
 
 
 # ---------------------------------------------------------------- entry point
 
 
 def evaluate_capex(
-    request: CapexRequest, state: FinancialState, mandate: Mandate, *, settings: Settings | None = None
+    request: CapexRequest, state: FinancialState, mandate: Mandate, *, settings: Settings | None = None,
+    commitments: Sequence[Commitment] = (),
 ) -> CapexResult:
     """Step 1: NPV and payback on the owner's estimate. Step 2: each structure month by month;
-    select the cheapest by total interest that holds DSCR and leverage in every month.
+    select the cheapest by total interest that holds DSCR and leverage in every month. Everything is
+    projected on current books: `state` plus the live obligations of `commitments` (ADR-0006).
     Raises CapexDisabled when FEATURE_CAPEX is off."""
     if not capex_enabled(settings):
         raise CapexDisabled()
-    base = _Base(state, mandate)
+    base = _Base(current_books(state, commitments), mandate)
     price = request.price_fen
 
     npv = npv_fen(price, request.monthly_uplift_fen, request.uplift_start_month, request.life_months,
@@ -427,16 +480,16 @@ def evaluate_capex(
             s = s.model_copy(update={"note": f"Rejected: {v.code.value}{where}{detail}."})
         final.append(s)
 
-    _, lev_fin = pro_forma(state, extra_debt_fen=price, base_extra_debt_fen=base.line_limits)
+    _, lev_fin = pro_forma(state, extra_debt_fen=price, base_extra_debt_fen=base.base_extra_debt)
     ext = _extension_extra_receivables(request, state, mandate)
-    lev_ext = (pro_forma(state, extra_debt_fen=price + ext, base_extra_debt_fen=base.line_limits)[1]
+    lev_ext = (pro_forma(state, extra_debt_fen=price + ext, base_extra_debt_fen=base.base_extra_debt)[1]
                if ext is not None else None)
     d_lim, _, l_lim, _ = base.limits_with(None)
 
     sel_fac = selected.facility_id if selected else None
     if sel_fac is not None:
         preview = ApplyForFacility(op_id="capex-tier-preview", idempotency_key="capex-tier-preview",
-                                   mandate_version=mandate.version, requested_by=Actor.AGENT, day=0,
+                                   mandate_version=mandate.version, requested_by=Actor.AGENT, day=state.as_of_day,
                                    facility_id=sel_fac, amount_fen=price)
         tier = tier_for(preview, mandate, state)
     else:
@@ -444,7 +497,7 @@ def evaluate_capex(
 
     worth = npv >= 0 and payback_ok
     recommendation = _recommendation(worth, npv, payback, request, final, selected, tier)
-    debt_all = base.debt + base.line_limits
+    debt_all = base.debt + base.base_extra_debt
     workings = [
         Working(label="NPV at the hurdle", value=fmt_yuan(npv),
                 formula=(f"−price + Σ_(m={request.uplift_start_month}..{request.life_months}) uplift / (1 + r_m)^m, "
@@ -463,9 +516,10 @@ def evaluate_capex(
                 evidence=OWNER_ESTIMATE),
         Working(label="Leverage, financed", value=x(lev_fin),
                 formula=(f"(debt + committed line limits + principal) / (12 × EBITDA_m) = "
-                         f"({fmt_yuan(base.debt)} + {fmt_yuan(base.line_limits)} + {fmt_yuan(price)}) / "
+                         f"({fmt_yuan(base.debt)} + {fmt_yuan(base.line_limits)}{base.extension_term} + {fmt_yuan(price)}) / "
                          f"(12 × {fmt_yuan(base.ebitda)})"),
                 inputs={"debt": fmt_yuan(base.debt), "committed_line_limits": fmt_yuan(base.line_limits),
+                    **base.extension_inputs,
                         "principal": fmt_yuan(price), "EBITDA_m": fmt_yuan(base.ebitda), "max_leverage": x(l_lim)}),
     ]
     if lev_ext is not None and ext is not None:
