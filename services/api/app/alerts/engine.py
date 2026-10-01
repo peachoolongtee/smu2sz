@@ -13,6 +13,7 @@ feasibility only; the funding router prices the cheapest admissible plan.
 from __future__ import annotations
 
 import hashlib
+from collections import Counter
 from collections.abc import Sequence
 from fractions import Fraction
 
@@ -34,7 +35,7 @@ from app.domain.models import (
     Repayment,
     Trajectory,
 )
-from app.domain.money import bp, fmt_yuan, round_half_up
+from app.domain.money import DAYS_PER_YEAR, Ratio, bp, fmt_pct, fmt_yuan, round_half_up
 from app.domain.ports import LedgerStore
 from app.financial import EngineError, line_interest, project
 from app.operations.log import open_lots, read_entries
@@ -167,6 +168,91 @@ def _suggest(a: FundingAction) -> SuggestedAction:
                            note="submit today: the invoice is open, buyer-confirmed and not yet due")
 
 
+def _charges(t: Trajectory) -> int:
+    return t.interest_posted_fen + t.fees_posted_fen
+
+
+def _new_events(t: Trajectory, base: Trajectory, kind: LedgerEventKind, ref: str) -> list[tuple[int, str]]:
+    """(day, label) of the events of `kind` on `ref` that the cure adds to the base projection, by day."""
+    seen = Counter((e.day, e.kind, e.amount_fen, e.label, e.ref) for p in base.days for e in p.events)
+    out: list[tuple[int, str]] = []
+    for p in t.days:
+        for e in p.events:
+            key = (e.day, e.kind, e.amount_fen, e.label, e.ref)
+            if e.kind == kind and e.ref == ref:
+                if seen[key] > 0:
+                    seen[key] -= 1
+                else:
+                    out.append((e.day, e.label))
+    return sorted(out)
+
+
+def _priced(a: FundingAction, s: SuggestedAction, alone: Trajectory, base: Trajectory,
+            mandate: Mandate) -> tuple[SuggestedAction, int | None]:
+    """`s` with its cost read from the engine: the charges the projection posts with `a` alone minus without it,
+    and the days it is out (arrival to the repayment the projection shows). Also the day that cost falls due.
+    A draw the projection never repays is carried open: it posts no interest, so its cost is not stated (a
+    "¥0.00" would be false) and `s` comes back unpriced."""
+    cost = _charges(alone) - _charges(base)
+    ref = a.facility_id
+    days: int | None = None
+    end: int | None = None
+    if a.kind == FundingActionKind.FINANCE_INVOICE:
+        rid = a.receivable_id or ""
+        arrive = [d for d, label in _new_events(alone, base, LedgerEventKind.ADVANCE, ref) if rid in label]
+        repay = [d for d, label in _new_events(alone, base, LedgerEventKind.REPAYMENT, ref) if rid in label]
+    else:
+        arrive = [d for d, _ in _new_events(alone, base, LedgerEventKind.DRAW, ref)]
+        repay = [d for d, _ in _new_events(alone, base, LedgerEventKind.REPAYMENT, ref)]
+        if not repay:
+            return s, None
+    if len(arrive) == 1 and len(repay) == 1:  # one lump repayment: a schedule of instalments has no single day
+        days, end = repay[0] - arrive[0], repay[0]
+    amount = a.amount_fen
+    rate: Fraction | None = Fraction(cost, amount) * DAYS_PER_YEAR / days if days is not None and days > 0 else None
+    if rate is not None:
+        formula = f"{fmt_yuan(cost)} / {fmt_yuan(amount)} × 365/{days} = {fmt_pct(rate, 1)} a year"
+    else:
+        formula = f"{fmt_yuan(cost)} on {fmt_yuan(amount)}; the projection shows no single repayment day"
+    priced = s.model_copy(update={
+        "cost_fen": cost, "cost_days": days if rate is not None else None,
+        "annual_rate": Ratio.of(rate) if rate is not None else None, "cost_formula": formula,
+        "above_apr_cap": rate is not None and rate > bp(mandate.max_apr_bp)})
+    return priced, end
+
+
+def _cure_costs(state: FinancialState, obs: list[Obligation], t: Trajectory, cure: list[FundingAction],
+                mandate: Mandate) -> tuple[list[SuggestedAction], int | None, dict[int, int]]:
+    """The cure's suggestions, each priced from the engine, the whole cure's cost (None if it cannot be projected)
+    and the day each priced cost falls due. An action that is infeasible alone keeps empty cost fields."""
+    base = project(state, obs, [], Mode.CONSERVATIVE, t.horizon_days)
+    suggested = [_suggest(a) for a in cure]
+    due: dict[int, int] = {}
+    for i, a in enumerate(cure):
+        try:
+            alone = project(state, obs, [a], Mode.CONSERVATIVE, t.horizon_days)
+        except EngineError:
+            continue
+        suggested[i], end = _priced(a, suggested[i], alone, base, mandate)
+        if end is not None:
+            due[i] = end
+    try:
+        total = _charges(project(state, obs, cure, Mode.CONSERVATIVE, t.horizon_days)) - _charges(base)
+    except EngineError:
+        total = None
+    if any(a.kind == FundingActionKind.DRAW and s.cost_fen is None for a, s in zip(cure, suggested, strict=True)):
+        total = None  # an open-ended draw has no stated interest: a total without it would understate the price
+    return suggested, total, due
+
+
+def _cost_words(s: SuggestedAction) -> str:
+    if s.cost_fen is None:
+        return ""
+    if s.annual_rate is None:
+        return f", cost {fmt_yuan(s.cost_fen)}"
+    return f", cost {fmt_yuan(s.cost_fen)} ({fmt_pct(s.annual_rate.value, 1)} a year for {s.cost_days} days)"
+
+
 def _reserve_alerts(state: FinancialState, mandate: Mandate, t: Trajectory, obs: list[Obligation],
                     day: int) -> list[Alert]:
     floor = mandate.min_cash_fen
@@ -179,13 +265,20 @@ def _reserve_alerts(state: FinancialState, mandate: Mandate, t: Trajectory, obs:
         cure = (committed_cure(state, obs, t.horizon_days, floor, day, start, end)
                 if mandate.allow_new_borrowing else None)
         if cure is not None:
-            suggested = [_suggest(a) for a in cure]
+            suggested, cure_total, cure_due = _cure_costs(state, obs, t, cure, mandate)
             cure_text = "a committed cure exists: " + " + ".join(
-                f"{s.operation_kind} {s.facility_id} {fmt_yuan(s.amount_fen or 0)}" for s in suggested)
+                f"{s.operation_kind} {s.facility_id} {fmt_yuan(s.amount_fen or 0)}{_cost_words(s)}" for s in suggested)
+            cure_inputs = {f"cure_end_day_{i}": str(d) for i, d in cure_due.items()}
+            if cure_total is not None:
+                cure_inputs["cure_cost"] = fmt_yuan(cure_total)
+            if any(s.above_apr_cap for s in suggested):
+                cure_inputs["cure_above_apr_cap"] = "true"
         elif not mandate.allow_new_borrowing:
+            cure_inputs = {}
             suggested = []
             cure_text = "the mandate does not allow new borrowing, so no facility can be drawn or applied for"
         else:
+            cure_inputs = {}
             usable = [f for f in state.facilities if f.owner_approved and f.status == FacilityStatus.NOT_APPLIED
                       and f.kind in _DRAWABLE and day + f.lead_time_days <= start]
             suggested = [SuggestedAction(operation_kind="APPLY_FOR_FACILITY", facility_id=f.id,
@@ -206,7 +299,7 @@ def _reserve_alerts(state: FinancialState, mandate: Mandate, t: Trajectory, obs:
             amount_fen=first_short,
             committed_cure=cure is not None,
             inputs={"floor": fmt_yuan(floor), "closing": fmt_yuan(run[0].closing_fen), "last_day": str(end),
-                    "worst_day": str(worst.day), "max_shortfall": fmt_yuan(max_short)},
+                    "worst_day": str(worst.day), "max_shortfall": fmt_yuan(max_short), **cure_inputs},
             suggested=suggested,
             actionable=any(sg.operation_kind in EXECUTABLE_KINDS for sg in suggested),
         ))
@@ -548,7 +641,8 @@ def _repay_alerts(state: FinancialState, mandate: Mandate, store: LedgerStore, o
             inputs={"facility_id": f.id, "interest_due": fmt_yuan(interest), "lowest_closing": fmt_yuan(low.closing_fen),
                     "lowest_day": str(low.day), "floor": fmt_yuan(floor)},
             suggested=[SuggestedAction(operation_kind="REPAY_FACILITY", facility_id=f.id, amount_fen=f.drawn_fen,
-                                       note="repay the whole drawn balance today")],
+                                       note="repay the whole drawn balance today", cost_fen=interest,
+                                       cost_formula=f"{fmt_yuan(interest)} interest to date")],
             actionable=True,
         ))
     return out
