@@ -60,7 +60,7 @@ payment never arrives at all, reconciliation reports it LAPSED and no committed 
 | C2 | Alert carries a typed cure; `POST /alerts/{id}/act` executes Tier 1 or queues Tier 2 | sub, after B4 | 5h | missed receipt → "draw ¥150,000" → one call executes it | DONE |
 | C3 | Reconcile compares receipts with what commitments promised | sub, after B2 | 3h | missing early payment reported as lapsed | DONE |
 | C4 | Proactive opener in `/nl` and the UI after a clock or bank-feed event | sub, after C2 | 4h | demo steps 8 to 13 run from the chat | DONE (backend: `POST /nl/opener`, intent SHOW_ALERTS; the UI hook is in E3) |
-| C5 | A drawn line past its planned repayment day raises an alert with a repay cure (found on the 1 Oct demo walk: the day-0 draw stayed outstanding to day 47 until the owner asked) | sub, after C2 | 3h | on the demo path the agent proposes repaying FAC-LINE once cash allows | IN PROGRESS (feat/repay-alert) |
+| C5 | A drawn line past its planned repayment day raises an alert with a repay cure (found on the 1 Oct demo walk: the day-0 draw stayed outstanding to day 47 until the owner asked) | sub, after C2 | 3h | on the demo path the agent proposes repaying FAC-LINE once cash allows | DONE |
 
 Demo steps 1 to 17 run in one script on 1 Oct (`scripts/demo_run.py`, exit 0): deal, agreed receipt, clock,
 opener and "go ahead" in chat, late residual and financed invoice paid (advance repaid with interest and fee),
