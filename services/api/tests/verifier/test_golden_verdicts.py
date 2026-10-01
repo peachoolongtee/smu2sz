@@ -32,7 +32,7 @@ def test_ex01_reject_codes_and_forward_ledger(offer_id, g):
     v = bundle(offer_id).verdict
     assert v.outcome == Outcome.REJECT
     # 1.2% early settlement is above the 0.88% break-even, which is why Option A is priced at 0.85%.
-    assert codes(v.violations) == ["AGG_CONCESSION_EXCEEDED", "RESERVE_BREACH", "DISCOUNT_ABOVE_BREAK_EVEN"]
+    assert codes(v.violations) == ["AGG_CONCESSION_EXCEEDED", "RESERVE_BREACH", "DISCOUNT_ABOVE_BREAK_EVEN", "EARLY_PAY_DEARER_THAN_PLAN"]
     assert v.forward_concession_total_fen == g["forward_ledger_total"]
     agg = v.violations[0]
     assert agg.inputs["total_fen"] == str(g["forward_ledger_total"])
@@ -163,7 +163,7 @@ def test_early_pay_offers_counter_at_85bp(offer_id, g):
     v = b.verdict
     assert v.outcome == Outcome.COUNTER
     # 1.5% is above the 0.88% break-even, and 1.5% for 30 days ≈ 18.53% a year is above the 15% APR cap
-    assert codes(v.violations) == ["DISCOUNT_ABOVE_BREAK_EVEN", "MAX_APR_EXCEEDED"]
+    assert codes(v.violations) == ["DISCOUNT_ABOVE_BREAK_EVEN", "MAX_APR_EXCEEDED", "EARLY_PAY_DEARER_THAN_PLAN"]
     apr = v.violations[0]
     assert apr.inputs["days_early"] == "30"
     assert apr.inputs["line_plus_partial_at_offered_rate"].endswith(

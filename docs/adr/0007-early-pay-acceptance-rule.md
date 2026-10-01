@@ -92,6 +92,21 @@ before the change merges.
   strictly below `d*(n)` for its own invoice and day (and never above the buyer's offered rate), and is
   offered only when its total cost (its discount plus the plan for the rest) is below `C0`. Otherwise no
   early-pay counter exists and the outcome is REJECT.
+- **The offer's rate is not a standing rate** (found by the independent check, 1 Oct). The router used to
+  price the buyer's early-payment facility at the rate of any early-pay obligation in the books, and then
+  used it on other faces or other invoices, which the offer never said. That made `C1` too low (3 days
+  early at 0.02% on the whole invoice was accepted although it costs more than the plan). The router now
+  always prices that facility at its standing rate; an offer's own leg is in the books as an obligation
+  and nothing more. On books with a live terms extension for the same buyer the early-pay counter no longer
+  beats the standing plan, so only the price-adjustment counter is offered there.
+- **Known conservative convention.** An invoice the buyer has agreed to settle early cannot also be
+  financed. For an early payment only a few days before the due day this prices the gap dearer than
+  financing that invoice would (3 days early at 0.01% is refused where a hand calculation that finances
+  the invoice would take it). It can only refuse, never wrongly accept. See
+  `docs/research/early-pay-handcalc-2026-10-01.md`.
+- A whole-invoice discount that passes the break-even can still fail test 3. Example: 1.2% for paying 90
+  days early passes the first screen (limit 2.60%) and is then countered, because the standing plan
+  (¥3,786.77) is cheaper than discounting the whole ¥420,000 (¥5,040.00); 0.85% for 90 days is accepted.
 - Counter A's face is ¥211,900 since tracker row B5 (it was ¥211,800, which netted ¥0.30 short of the gap).
 
 ## Consequences

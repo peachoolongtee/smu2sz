@@ -12,7 +12,7 @@ def test_evaluate_offer_by_fixture_proposes_counters(client):
     r = Chat(client, "t-eval").say("Evaluate EX01")
     assert r["intent"] == "EVALUATE_OFFER"
     assert r["verdict"]["outcome"] == "REJECT"
-    assert codes(r) == ["AGG_CONCESSION_EXCEEDED", "RESERVE_BREACH", "DISCOUNT_ABOVE_BREAK_EVEN"]
+    assert codes(r) == ["AGG_CONCESSION_EXCEEDED", "RESERVE_BREACH", "DISCOUNT_ABOVE_BREAK_EVEN", "EARLY_PAY_DEARER_THAN_PLAN"]
     assert ops(r) == [] and r["awaiting_confirmation"]
     assert [s["kind"] for s in r["plan"]][:4] == ["VERIFY", "COUNTER_OFFER", "COUNTER_OFFER", "NEGOTIATE"]
     assert r["verdict"]["forward_concession_total_display"] == "¥26,455.62"
@@ -21,7 +21,7 @@ def test_evaluate_offer_by_fixture_proposes_counters(client):
 def test_evaluate_pasted_offer_compiles_the_quoted_text(client):
     r = Chat(client, "t-paste").say("Should we accept this from Foshan? “We can pay this one early at 1.5%. Nothing else changes.”")
     assert r["intent"] == "EVALUATE_OFFER" and r["verdict"]["outcome"] == "COUNTER"
-    assert codes(r) == ["DISCOUNT_ABOVE_BREAK_EVEN", "MAX_APR_EXCEEDED"]
+    assert codes(r) == ["DISCOUNT_ABOVE_BREAK_EVEN", "MAX_APR_EXCEEDED", "EARLY_PAY_DEARER_THAN_PLAN"]
 
 
 def test_term_sheet_with_personal_guarantee(client):

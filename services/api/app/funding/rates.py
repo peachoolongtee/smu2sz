@@ -144,11 +144,26 @@ def marginal_cost(state: FinancialState, mandate: Mandate) -> tuple[Ratio, str]:
     return Ratio.of(rate), f.id
 
 
-def break_even_discount(state: FinancialState, mandate: Mandate) -> tuple[Ratio, int]:
-    """(d, bp floor): an early-pay discount d is cheaper than the marginal source only if
-    d/(1−d) < c, where c = marginal all-in rate × 30/365 is its cost share for one 30-day period
-    (for invoice financing: rate × 30/365 + fee). d = c/(1+c). Golden: 0.88%, 88 bp."""
-    rate, _ = marginal_cost(state, mandate)
-    c = rate.value * BREAK_EVEN_PERIOD_DAYS / DAYS_PER_YEAR
+def break_even_cost_share(state: FinancialState, mandate: Mandate, days_early: int) -> tuple[Fraction, int | None, int | None]:
+    """(c, whole periods k, period p): what the marginal committed source charges, as a share of
+    principal, to carry the money for `days_early` days. Invoice financing is billed in whole
+    periods (k = ceil(days/p), c = R × p/365 × k); any other source accrues daily (c = R × days/365,
+    k and p are None)."""
+    rate, fid = marginal_cost(state, mandate)
+    facility = next((f for f in state.facilities if f.id == fid), None)
+    if facility is not None and facility.kind == FacilityKind.INVOICE_FINANCING:
+        period = facility.fee_period_days or MONTH_DAYS
+        k = max(1, -(-days_early // period))
+        return rate.value * period * k / DAYS_PER_YEAR, k, period
+    return rate.value * days_early / DAYS_PER_YEAR, None, None
+
+
+def break_even_discount(
+    state: FinancialState, mandate: Mandate, days_early: int = BREAK_EVEN_PERIOD_DAYS
+) -> tuple[Ratio, int]:
+    """(d, bp floor): an early-pay discount d paid `days_early` days early is cheaper than the
+    marginal source only if d/(1−d) < c, where c is that source's cost share for the tenor
+    (see break_even_cost_share). d = c/(1+c). Golden at 30 days: 0.88%, 88 bp."""
+    c, _, _ = break_even_cost_share(state, mandate, days_early)
     d = c / (1 + c)
     return Ratio.of(d), int(d * 10_000)

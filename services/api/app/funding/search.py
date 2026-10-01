@@ -31,7 +31,6 @@ from fractions import Fraction
 
 from app.covenants import evaluate as evaluate_covenants
 from app.domain.models import (
-    Contingency,
     CostLine,
     Facility,
     FacilityKind,
@@ -43,7 +42,6 @@ from app.domain.models import (
     Mandate,
     Mode,
     Obligation,
-    ObligationType,
     Repayment,
     Trajectory,
     Violation,
@@ -347,12 +345,9 @@ class Search:
         return min(slot.cap_fen, max(self.MIN_ACTION_FEN, amount))
 
     def early_pay_bp(self, f: Facility) -> int:
-        """The buyer's offered discount: an IMMEDIATE_DISCOUNT obligation for that counterparty if
-        the offer carries one, else the facility's standing rate."""
-        for ob in self.obligations:
-            if (ob.type == ObligationType.IMMEDIATE_DISCOUNT and ob.counterparty_id == f.lender_id
-                    and ob.rate_bp is not None and ob.contingency != Contingency.CLAIMED_UNEVIDENCED):
-                return ob.rate_bp
+        """The buyer's standing early-payment rate. A discount an offer puts on one invoice is not a standing
+        rate for other money: an offer's own early-pay leg is already in the books as an obligation, and the
+        router never extends it to other faces or invoices (ADR-0007, implementation notes)."""
         return f.rate_bp
 
     def usable(self, f: Facility) -> bool:

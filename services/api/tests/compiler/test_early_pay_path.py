@@ -43,7 +43,7 @@ def _verdict(offer: Any) -> tuple[str, list[str]]:
 
 @pytest.mark.parametrize("text", [
     # typos: settel / setle, "inv"
-    "We will settel the 420k invoice early, 0.7% off please.",
+    "We will settel the 420k invoice early, 0.6% off please.",
     "we can setle the 420k inv early 0.6% off",
     # "minus" / "less" after a settle-now phrase
     "Morning! Could remit the full ¥420,000 today, minus 0.5%? Let me know.",
