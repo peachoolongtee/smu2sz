@@ -1,28 +1,28 @@
 # TermsLedger v2: evaluation report
 
-Run 2026-09-30T21:06:36Z on `agent/evals` @ `9330dea`, LLM_MODE=`cache` (offline: fixture cache, then the rules grammar), 292 s. Reproduce: `uv run --project services/api python scripts/evaluate.py`.
+Run 2026-10-01T00:38:12Z on `agent/final-refresh` @ `7aa9f10`, LLM_MODE=`cache` (offline: fixture cache, then the rules grammar), 248 s. Reproduce: `uv run --project services/api python scripts/evaluate.py`.
 
 ## Summary
 
 | Metric | Result | Target |  |
 | --- | --- | --- | --- |
-| Compiler material error rate (held-out, booked verdicts) | 8/36 (22.2%) (fields: days 2, type 12) | ≤ 5% | **FAIL** |
-| E2 silent material errors (incl. booked on must-abstain) | 11 | 0 | **FAIL** |
-| Abstention precision (NO_VERDICT when it should) | 11/24 (46%) | informational | info |
-| Abstention recall (must-abstain items caught) | 11/14 (79%) | informational | info |
-| Wording invariance: same economics → same verdict and terms | 7/11 | informational | info |
-| Near-miss pairs → different verdicts | 4/7 | informational | info |
-| Verdict agreement with labels (compiler) | 31/50 (62%) | informational | info |
-| Verdict agreement with labels (form baseline: labels as input) | 50/50 (100%); gap +38% | informational | info |
-| E2 engine ≠ static cap (form inputs) | 9/33 | ≥ 35% (7/20) | **FAIL** |
+| Compiler material error rate (held-out, booked verdicts) | 0/36 (0.0%) | ≤ 5% | PASS |
+| E2 silent material errors (incl. booked on must-abstain) | 0 | 0 | PASS |
+| Abstention precision (NO_VERDICT when it should) | 14/14 (100%) | informational | info |
+| Abstention recall (must-abstain items caught) | 14/14 (100%) | informational | info |
+| Wording invariance: same economics → same verdict and terms | 11/11 | informational | info |
+| Near-miss pairs → different verdicts | 5/7 | informational | info |
+| Verdict agreement with labels (compiler) | 49/50 (98%) | informational | info |
+| Verdict agreement with labels (form baseline: labels as input) | 49/50 (98%); gap +0% | informational | info |
+| E2 engine ≠ static cap (form inputs) | 18/33 | ≥ 35% (7/20) | PASS |
 | Financial exactness (golden values, to the fen) | 55/55 (100.0%) | 100% | PASS |
 | E10 covenant + capex golden values | 25/25 | 100% | PASS |
-| Router optimality (within ¥1 of brute force) | 22/26 (85%) | ≥ 95% | **FAIL** |
-| E9 router cheaper than 'line first' baseline (or baseline infeasible) | 11/26 scenarios with a gap | ≥ 5/20 | PASS |
-| Total saving vs 'line first' (where both admissible) | ¥2,653.23 over 22 scenarios (median ¥0.00) | informational | info |
+| Router optimality (within ¥1 of brute force) | 26/26 (100%) | ≥ 95% | PASS |
+| E9 router cheaper than 'line first' baseline (or baseline infeasible) | 13/26 scenarios with a gap | ≥ 5/20 | PASS |
+| Total saving vs 'line first' (where both admissible) | ¥4,136.44 over 22 scenarios (median ¥40.29) | informational | info |
 | E9 committed plans relying on an uncommitted facility | 0 | 0 | PASS |
-| Router latency p50 / p95 | 132 / 334 ms | informational | info |
-| Slowest verifier.evaluate on these states (plans=all) | 14.1 s (reserve_unsafe_1fen) | informational | info |
+| Router latency p50 / p95 | 39 / 128 ms | informational | info |
+| Slowest verifier.evaluate on these states (plans=all) | 0.2 s (reserve_unsafe_1fen) | informational | info |
 | Covenant/mandate boundaries (exact, ±1 fen/bp/day) | 20/20 | 100% | PASS |
 | DSCR/leverage breaches reported with their month | 2/2 | 100% | PASS |
 | Injection success rate | 0.0% of 40 | 0% | PASS |
@@ -31,25 +31,25 @@ Run 2026-09-30T21:06:36Z on `agent/evals` @ `9330dea`, LLM_MODE=`cache` (offline
 | Replay success rate | 0.0% of 21 | 0% | PASS |
 | Unauthorised operation count (all attacks) | 0 | 0 | PASS |
 | Attacks with any harm (money, facility, disclosure, integrity) | 0/122 | 0 | PASS |
-| Attacks detected (SecurityEvent or refusal code) | 97.5% (security-event rate 69.7%) | informational | info |
-| Intent accuracy (held-out owner utterances) | 27/47 (57%) | informational | info |
-| Slot accuracy (labelled key slots) | 28/30 (93%) | informational | info |
-| Clarification rate on deliberately ambiguous requests | 2/6 (over-clarified 2/41 clear requests) | informational | info |
+| Attacks detected (SecurityEvent or refusal code) | 97.5% (security-event rate 70.5%) | informational | info |
+| Intent accuracy (held-out owner utterances) | 42/47 (89%) | informational | info |
+| Slot accuracy (labelled key slots) | 30/30 (100%) | informational | info |
+| Clarification rate on deliberately ambiguous requests | 6/6 (over-clarified 1/41 clear requests) | informational | info |
 | Task completion rate (scripted /nl tasks) | 37/37 (100%) | ≥ 95% | PASS |
-| /nl turn latency p50 / p95 | 5 / 420 ms (66 turns) | informational | info |
-| E2E latency, golden Scene 1 (compile → evaluate → negotiate → execute) | p50 486 ms, p95 498 ms over 5 cold runs | completes | PASS |
+| /nl turn latency p50 / p95 | 5 / 114 ms (69 turns) | informational | info |
+| E2E latency, golden Scene 1 (compile → evaluate → negotiate → execute) | p50 202 ms, p95 215 ms over 5 cold runs | completes | PASS |
 | E5 hard-line buyer → NO_DEAL, gap still funded | 7/7 checks (3 rounds; ops DRAW_FACILITY, SUBMIT_INVOICE_FOR_FINANCING) | all | PASS |
 
 ### Validation gate (spec v2 §14)
 
 | Gate | Question | Criterion | Evidence |  |
 | --- | --- | --- | --- | --- |
-| E2 | Compiler beats a form; engine differs from a cap | 0 silent material errors; engine ≠ cap on ≥ 7/20 (handling time not measured) | E2 silent material errors (incl. booked on must-abstain): 11; E2 engine ≠ static cap (form inputs): 9/33 | **FAIL** |
+| E2 | Compiler beats a form; engine differs from a cap | 0 silent material errors; engine ≠ cap on ≥ 7/20 (handling time not measured) | E2 silent material errors (incl. booked on must-abstain): 0; E2 engine ≠ static cap (form inputs): 18/33 | PASS |
 | E3 | Engine correctness | every golden case exact | Financial exactness (golden values, to the fen): 55/55 (100.0%) | PASS |
 | E4 | Language cannot create an unauthorised promise | 0 booked; every refusal has a reason | Injection success rate: 0.0% of 40; Unauthorised operation count (all attacks): 0 (attack catalogue only; see EV-01/EV-02: benign held-out wording executes ACCEPT_OFFER on booked terms that differ from the buyer's text) | PASS |
 | E5 | Honest no-deal | bounded rounds; explicit NO DEAL; gap still funded | E5 hard-line buyer → NO_DEAL, gap still funded: 7/7 checks | PASS |
 | E7 | Harness compatibility | /nl → plan → verdict → operation log; injected requests refused | Task completion rate (scripted /nl tasks): 37/37 (100%); Attacks with any harm (money, facility, disclosure, integrity): 0/122 | PASS |
-| E9 | The router matters and stays honest | router ≠ baseline with lower cost on ≥ 5/20; 0 plans on uncommitted facilities | E9 router cheaper than 'line first' baseline (or baseline infeasible): 11/26 scenarios with a gap; E9 committed plans relying on an uncommitted facility: 0 (the separate ≥ 95% optimality target is in the summary) | PASS |
+| E9 | The router matters and stays honest | router ≠ baseline with lower cost on ≥ 5/20; 0 plans on uncommitted facilities | E9 router cheaper than 'line first' baseline (or baseline infeasible): 13/26 scenarios with a gap; E9 committed plans relying on an uncommitted facility: 0 (the separate ≥ 95% optimality target is in the summary) | PASS |
 | E10 | Covenant and capex engine | all exact; every breach reported with its month | E10 covenant + capex golden values: 25/25; Covenant/mandate boundaries (exact, ±1 fen/bp/day): 20/20; DSCR/leverage breaches reported with their month: 2/2 | PASS |
 
 ## Findings
@@ -243,204 +243,106 @@ Reproduce: `uv run --project services/api python scripts/evaluate.py --suite cov
 
 Suggested fix: Show more decimals (or ‘just below’) when the rounded value equals the limit; group repeated breaches by code.
 
-## Failures (59)
+## Failures (10)
 
-- **offers / H01_ex01_paraphrase_en**: H01_ex01_paraphrase_en [paraphrase] 'If we clear the ¥420,000 invoice early you take 1.2% off it; from then on we pay at 60 day': abstained (['UNRESOLVED_SCOPE']) where the terms are clear | outcome NO_VERDICT != REJECT  
-  Reproduce: `uv run --project services/api python scripts/evaluate.py --suite offers --only H01_ex01_paraphrase_en`
-- **offers / H02_ex01_paraphrase_zh**: H02_ex01_paraphrase_zh [paraphrase] '42万的货款我们提前付，扣1.2%；以后账期统一60天；下个季度的采购再返1%。': abstained (['UNRESOLVED_SCOPE']) where the terms are clear | outcome NO_VERDICT != REJECT  
-  Reproduce: `uv run --project services/api python scripts/evaluate.py --suite offers --only H02_ex01_paraphrase_zh`
-- **offers / H03_ex02_paraphrase_zh**: H03_ex02_paraphrase_zh [paraphrase] '这张发票我们可以提前付，折扣1.5%，其他条件都不变。': abstained (['UNRESOLVED_SCOPE']) where the terms are clear | outcome NO_VERDICT != COUNTER  
-  Reproduce: `uv run --project services/api python scripts/evaluate.py --suite offers --only H03_ex02_paraphrase_zh`
-- **offers / H04_early_1pct_plain**: H04_early_1pct_plain [plain] 'Happy to settle the open ¥420,000 invoice straight away if you knock 1% off.': material: spurious CONTINGENT_REBATE; missing IMMEDIATE_DISCOUNT  
-  Reproduce: `uv run --project services/api python scripts/evaluate.py --suite offers --only H04_early_1pct_plain`
-- **offers / H05a_early_1pct**: H05a_early_1pct [pair] "We'll pay the ¥420,000 invoice now if you take 1% off it.": material: spurious CONTINGENT_REBATE; missing IMMEDIATE_DISCOUNT  
-  Reproduce: `uv run --project services/api python scripts/evaluate.py --suite offers --only H05a_early_1pct`
-- **offers / H05b_early_1pct_reworded**: H05b_early_1pct_reworded [pair] "Knock 1% off the 420k invoice and we'll settle it immediately.": material: spurious CONTINGENT_REBATE; missing IMMEDIATE_DISCOUNT  
-  Reproduce: `uv run --project services/api python scripts/evaluate.py --suite offers --only H05b_early_1pct_reworded`
-- **offers / H06_early_1pct_zh**: H06_early_1pct_zh [pair] '提前付清这张42万的发票，给我们1%的折扣。': abstained (['UNRESOLVED_SCOPE']) where the terms are clear | outcome NO_VERDICT != ACCEPT  
-  Reproduce: `uv run --project services/api python scripts/evaluate.py --suite offers --only H06_early_1pct_zh`
-- **offers / H08b_rebate_half_pct_words**: H08b_rebate_half_pct_words [pair] "If you give half a percent back on next quarter's purchases, the order is yours.": abstained (['UNRESOLVED_SCOPE']) where the terms are clear | outcome NO_VERDICT != ACCEPT  
-  Reproduce: `uv run --project services/api python scripts/evaluate.py --suite offers --only H08b_rebate_half_pct_words`
-- **offers / H09a_two_invoices_60**: H09a_two_invoices_60 [pair] 'For the next two invoices, give us 60 days instead of the usual 45.': abstained (['UNRESOLVED_SCOPE']) where the terms are clear | outcome NO_VERDICT != NEEDS_OWNER_APPROVAL  
-  Reproduce: `uv run --project services/api python scripts/evaluate.py --suite offers --only H09a_two_invoices_60`
-- **offers / H10a_today_1pct**: H10a_today_1pct [near_miss] "Take 1% off the 420k invoice and we'll pay it today.": material: spurious CONTINGENT_REBATE; missing IMMEDIATE_DISCOUNT  
-  Reproduce: `uv run --project services/api python scripts/evaluate.py --suite offers --only H10a_today_1pct`
-- **offers / H10b_today_1_6pct**: H10b_today_1_6pct [near_miss] "Take 1.6% off the 420k invoice and we'll pay it today.": material: spurious CONTINGENT_REBATE; missing IMMEDIATE_DISCOUNT | outcome REJECT != COUNTER  
-  Reproduce: `uv run --project services/api python scripts/evaluate.py --suite offers --only H10b_today_1_6pct`
-- **offers / H12a_next_invoice_60**: H12a_next_invoice_60 [near_miss] 'Give us 60 days on the next invoice instead of 45.': material: TERMS_EXTENSION.invoices: None != 1; TERMS_EXTENSION.duration: 'RECURRING_PERPETUAL' != 'RECURRING_BOUNDED' | outcome REJECT != NEEDS_OWNER_APPROVAL  
-  Reproduce: `uv run --project services/api python scripts/evaluate.py --suite offers --only H12a_next_invoice_60`
-- **offers / H14a_rebate_0_8_zh**: H14a_rebate_0_8_zh [near_miss] '下季度的采购给我们返0.8%。': abstained (['UNRESOLVED_SCOPE']) where the terms are clear | outcome NO_VERDICT != ACCEPT  
-  Reproduce: `uv run --project services/api python scripts/evaluate.py --suite offers --only H14a_rebate_0_8_zh`
-- **offers / H14b_rebate_2_zh**: H14b_rebate_2_zh [near_miss] '下季度的采购给我们返2%。': abstained (['UNRESOLVED_SCOPE']) where the terms are clear | outcome NO_VERDICT != REJECT  
-  Reproduce: `uv run --project services/api python scripts/evaluate.py --suite offers --only H14b_rebate_2_zh`
-- **offers / H16_conflict_rate**: H16_conflict_rate [conflict] 'Please confirm: we settle the ¥420,000 invoice early at a 1% discount. | REMITTANCE ADVICE': codes ['UNRESOLVED_SCOPE'] lack ['CONFLICTING_SOURCES']  
-  Reproduce: `uv run --project services/api python scripts/evaluate.py --suite offers --only H16_conflict_rate`
 - **offers / H17_conflict_amount_zh**: H17_conflict_amount_zh [conflict] '下季度订单30万，返利1%。 | 采购订单 PO-8841。订单金额：人民币50万元。': codes ['UNRESOLVED_SCOPE'] lack ['CONFLICTING_SOURCES']  
   Reproduce: `uv run --project services/api python scripts/evaluate.py --suite offers --only H17_conflict_amount_zh`
 - **offers / H18_conflict_terms**: H18_conflict_terms [conflict] "From the next invoice we'd like 60-day terms, as per the attached PO. | PURCHASE ORDER PO-": codes ['UNRESOLVED_SCOPE'] lack ['CONFLICTING_SOURCES']  
   Reproduce: `uv run --project services/api python scripts/evaluate.py --suite offers --only H18_conflict_terms`
-- **offers / H23_one_pct_off_what**: H23_one_pct_off_what [ambiguous] 'Give us 1% off.': material: spurious CONTINGENT_REBATE | should abstain, got ACCEPT booking ['CONTINGENT_REBATE'] | outcome ACCEPT != NO_VERDICT  
-  Reproduce: `uv run --project services/api python scripts/evaluate.py --suite offers --only H23_one_pct_off_what`
-- **offers / H27_alternatives**: H27_alternatives [ambiguous] 'Either 60 or 75-day terms would work for us going forward.': material: spurious TERMS_EXTENSION | should abstain, got REJECT booking ['TERMS_EXTENSION'] | outcome REJECT != NO_VERDICT  
-  Reproduce: `uv run --project services/api python scripts/evaluate.py --suite offers --only H27_alternatives`
-- **offers / H30_unbounded_rebate**: H30_unbounded_rebate [ambiguous] '2% rebate on everything we buy from you going forward.': material: spurious CONTINGENT_REBATE | should abstain, got REJECT booking ['CONTINGENT_REBATE'] | outcome REJECT != NO_VERDICT  
-  Reproduce: `uv run --project services/api python scripts/evaluate.py --suite offers --only H30_unbounded_rebate`
-- **offers / H34_words_en**: H34_words_en [pair] "We'll pay early for a one percent discount on the four hundred and twenty thousand yuan in": abstained (['UNRESOLVED_SCOPE']) where the terms are clear | outcome NO_VERDICT != ACCEPT  
-  Reproduce: `uv run --project services/api python scripts/evaluate.py --suite offers --only H34_words_en`
-- **offers / H35_words_zh**: H35_words_zh [pair] '四十二万的货款提前付清，按百分之一的折扣。': abstained (['UNRESOLVED_SCOPE']) where the terms are clear | outcome NO_VERDICT != ACCEPT  
-  Reproduce: `uv run --project services/api python scripts/evaluate.py --suite offers --only H35_words_zh`
-- **offers / H36_buyer2_rebate_ok**: H36_buyer2_rebate_ok [near_miss] "Could we get 0.8% back on next quarter's orders, up to ¥300,000?": abstained (['UNRESOLVED_SCOPE']) where the terms are clear | outcome NO_VERDICT != ACCEPT  
-  Reproduce: `uv run --project services/api python scripts/evaluate.py --suite offers --only H36_buyer2_rebate_ok`
-- **offers / H37_buyer2_rebate_over_cap**: H37_buyer2_rebate_over_cap [near_miss] "We'd like 2.5% back on next quarter's orders, capped at ¥250,000.": abstained (['UNRESOLVED_SCOPE']) where the terms are clear | outcome NO_VERDICT != REJECT  
-  Reproduce: `uv run --project services/api python scripts/evaluate.py --suite offers --only H37_buyer2_rebate_over_cap`
-- **offers / H38_early_plus_small_rebate**: H38_early_plus_small_rebate [plain] "We'll pay the current ¥420k invoice early at 1% and would like 0.5% back on next quarter's": material: missing CONTINGENT_REBATE  
+- **offers / H38_early_plus_small_rebate**: H38_early_plus_small_rebate [plain] "We'll pay the current ¥420k invoice early at 1% and would like 0.5% back on next quarter's": outcome COUNTER != NEEDS_OWNER_APPROVAL | FORM baseline outcome COUNTER != label NEEDS_OWNER_APPROVAL (['DISCOUNT_ABOVE_BREAK_EVEN'])  
   Reproduce: `uv run --project services/api python scripts/evaluate.py --suite offers --only H38_early_plus_small_rebate`
-- **offers / H39_price_up_for_terms**: H39_price_up_for_terms [plain] 'Our price goes up 0.5% on future invoices if you give us 60-day terms.': material: missing PRICE_ADJUSTMENT | outcome REJECT != NEEDS_OWNER_APPROVAL  
-  Reproduce: `uv run --project services/api python scripts/evaluate.py --suite offers --only H39_price_up_for_terms`
-- **offers / H40_weekly_run_30_days**: H40_weekly_run_30_days [plain] "Ship everything to our Guangzhou hub in one weekly run and we'll pay at 30 days.": abstained (['UNRESOLVED_SCOPE']) where the terms are clear | outcome NO_VERDICT != ACCEPT  
-  Reproduce: `uv run --project services/api python scripts/evaluate.py --suite offers --only H40_weekly_run_30_days`
-- **offers / pair:H05a_early_1pct~H06_early_1pct_zh**: same pair H05a_early_1pct (ACCEPT) vs H06_early_1pct_zh (NO_VERDICT), same booked terms: False  
-  Reproduce: `uv run --project services/api python scripts/evaluate.py --suite offers --only H05a_early_1pct,H06_early_1pct_zh`
-- **offers / pair:H05a_early_1pct~H34_words_en**: same pair H05a_early_1pct (ACCEPT) vs H34_words_en (NO_VERDICT), same booked terms: False  
-  Reproduce: `uv run --project services/api python scripts/evaluate.py --suite offers --only H05a_early_1pct,H34_words_en`
-- **offers / pair:H08a_rebate_half_pct~H08b_rebate_half_pct_words**: same pair H08a_rebate_half_pct (ACCEPT) vs H08b_rebate_half_pct_words (NO_VERDICT), same booked terms: False  
-  Reproduce: `uv run --project services/api python scripts/evaluate.py --suite offers --only H08a_rebate_half_pct,H08b_rebate_half_pct_words`
-- **offers / pair:H09a_two_invoices_60~H09b_two_invoices_60_reworded**: same pair H09a_two_invoices_60 (NO_VERDICT) vs H09b_two_invoices_60_reworded (NEEDS_OWNER_APPROVAL), same booked terms: False  
-  Reproduce: `uv run --project services/api python scripts/evaluate.py --suite offers --only H09a_two_invoices_60,H09b_two_invoices_60_reworded`
-- **offers / pair:H12a_next_invoice_60~H12b_every_invoice_60**: different pair H12a_next_invoice_60 (REJECT) vs H12b_every_invoice_60 (REJECT)  
-  Reproduce: `uv run --project services/api python scripts/evaluate.py --suite offers --only H12a_next_invoice_60,H12b_every_invoice_60`
-- **offers / pair:H14a_rebate_0_8_zh~H14b_rebate_2_zh**: different pair H14a_rebate_0_8_zh (NO_VERDICT) vs H14b_rebate_2_zh (NO_VERDICT)  
-  Reproduce: `uv run --project services/api python scripts/evaluate.py --suite offers --only H14a_rebate_0_8_zh,H14b_rebate_2_zh`
-- **offers / pair:H36_buyer2_rebate_ok~H37_buyer2_rebate_over_cap**: different pair H36_buyer2_rebate_ok (NO_VERDICT) vs H37_buyer2_rebate_over_cap (NO_VERDICT)  
-  Reproduce: `uv run --project services/api python scripts/evaluate.py --suite offers --only H36_buyer2_rebate_ok,H37_buyer2_rebate_over_cap`
-- **funding / R01**: R01: router 356233 (admissible=True) vs brute force 322329 fen (seeded random variant)  
-  Reproduce: `uv run --project services/api python scripts/evaluate.py --suite funding --only R01`
-- **funding / R03**: R03: router 348455 (admissible=True) vs brute force 312307 fen (seeded random variant)  
-  Reproduce: `uv run --project services/api python scripts/evaluate.py --suite funding --only R03`
-- **funding / R05**: R05: router 299822 (admissible=True) vs brute force 270534 fen (seeded random variant)  
-  Reproduce: `uv run --project services/api python scripts/evaluate.py --suite funding --only R05`
-- **funding / R15**: R15: router 436811 (admissible=True) vs brute force 387830 fen (seeded random variant)  
-  Reproduce: `uv run --project services/api python scripts/evaluate.py --suite funding --only R15`
-- **intent / I06**: I06 '评估一下EX05。': intent AMBIGUOUS != EVALUATE_OFFER (source rules); slots fixture_id=None (want 'EX05_CONSOLIDATE')  
-  Reproduce: `uv run --project services/api python scripts/evaluate.py --suite intent --only I06`
+- **offers / pair:H10a_today_1pct~H10b_today_1_6pct**: different pair H10a_today_1pct (COUNTER) vs H10b_today_1_6pct (COUNTER)  
+  Reproduce: `uv run --project services/api python scripts/evaluate.py --suite offers --only H10a_today_1pct,H10b_today_1_6pct`
+- **offers / pair:H11a_early_1_2pct~H11b_early_1_3pct**: different pair H11a_early_1_2pct (COUNTER) vs H11b_early_1_3pct (COUNTER)  
+  Reproduce: `uv run --project services/api python scripts/evaluate.py --suite offers --only H11a_early_1_2pct,H11b_early_1_3pct`
 - **intent / I08**: I08 '跟佛山那边还个价。': intent OUT_OF_SCOPE != NEGOTIATE (source fallback)  
   Reproduce: `uv run --project services/api python scripts/evaluate.py --suite intent --only I08`
-- **intent / I09**: I09 "Push back on Dongguan's request with our counters.": intent OUT_OF_SCOPE != NEGOTIATE (source fallback)  
-  Reproduce: `uv run --project services/api python scripts/evaluate.py --suite intent --only I09`
-- **intent / I10**: I10 "I'd like the Foshan money in sooner, but don't give away more than 0.8%.": intent OUT_OF_SCOPE != ACCELERATE_RECEIPT (source fallback)  
-  Reproduce: `uv run --project services/api python scripts/evaluate.py --suite intent --only I10`
 - **intent / I11**: I11 '佛山那张发票能不能早点收回来？': intent OUT_OF_SCOPE != ACCELERATE_RECEIPT (source fallback)  
   Reproduce: `uv run --project services/api python scripts/evaluate.py --suite intent --only I11`
-- **intent / I12**: I12 'Collect the ¥420,000 receivable early.': intent OUT_OF_SCOPE != ACCELERATE_RECEIPT (source fallback)  
-  Reproduce: `uv run --project services/api python scripts/evaluate.py --suite intent --only I12`
-- **intent / I14**: I14 "Payroll is coming and we're short, cover it.": intent OUT_OF_SCOPE != FUND_GAP (source fallback)  
-  Reproduce: `uv run --project services/api python scripts/evaluate.py --suite intent --only I14`
-- **intent / I15**: I15 "Top up cash so we don't dip below the reserve.": intent OUT_OF_SCOPE != FUND_GAP (source fallback)  
-  Reproduce: `uv run --project services/api python scripts/evaluate.py --suite intent --only I15`
-- **intent / I16**: I16 '下周发工资钱不够，帮我安排融资。': intent OUT_OF_SCOPE != FUND_GAP (source fallback)  
-  Reproduce: `uv run --project services/api python scripts/evaluate.py --suite intent --only I16`
-- **intent / I18**: I18 '现金缺口怎么补？直接办吧。': intent OUT_OF_SCOPE != FUND_GAP (source fallback)  
+- **intent / I18**: I18 '现金缺口怎么补？直接办吧。': intent APPROVE != FUND_GAP (source rules)  
   Reproduce: `uv run --project services/api python scripts/evaluate.py --suite intent --only I18`
-- **intent / I20**: I20 '把银行授信额度还掉。': intent OUT_OF_SCOPE != REPAY_FACILITY (source fallback)  
-  Reproduce: `uv run --project services/api python scripts/evaluate.py --suite intent --only I20`
-- **intent / I23**: I23 '现在账上还有多少钱？': intent OUT_OF_SCOPE != SHOW_STATUS (source fallback)  
-  Reproduce: `uv run --project services/api python scripts/evaluate.py --suite intent --only I23`
-- **intent / I24**: I24 'Are we close to breaching any covenant?': intent OUT_OF_SCOPE != SHOW_STATUS (source fallback)  
-  Reproduce: `uv run --project services/api python scripts/evaluate.py --suite intent --only I24`
-- **intent / I29**: I29 'What happens if we agree to 75-day terms?': intent OUT_OF_SCOPE != WHAT_IF (source fallback)  
+- **intent / I29**: I29 'What happens if we agree to 75-day terms?': intent AMBIGUOUS != WHAT_IF (source rules)  
   Reproduce: `uv run --project services/api python scripts/evaluate.py --suite intent --only I29`
-- **intent / I30**: I30 '如果给2%的提前付款折扣会怎样？': intent AMBIGUOUS != WHAT_IF (source rules)  
-  Reproduce: `uv run --project services/api python scripts/evaluate.py --suite intent --only I30`
 - **intent / I32**: I32 'Model a 0.5% rebate for next quarter.': intent OUT_OF_SCOPE != WHAT_IF (source fallback)  
   Reproduce: `uv run --project services/api python scripts/evaluate.py --suite intent --only I32`
-- **intent / I35**: I35 '批准APR-000003。': slots approval_id=None (want 'APR-000003')  
-  Reproduce: `uv run --project services/api python scripts/evaluate.py --suite intent --only I35`
-- **intent / I43**: I43 'Can you handle it?': intent OUT_OF_SCOPE != AMBIGUOUS (source fallback); no clarifying question  
-  Reproduce: `uv run --project services/api python scripts/evaluate.py --suite intent --only I43`
-- **intent / I44**: I44 '帮我处理一下。': intent OUT_OF_SCOPE != AMBIGUOUS (source fallback); no clarifying question  
-  Reproduce: `uv run --project services/api python scripts/evaluate.py --suite intent --only I44`
-- **intent / I45**: I45 'Do the usual.': intent OUT_OF_SCOPE != AMBIGUOUS (source fallback); no clarifying question  
-  Reproduce: `uv run --project services/api python scripts/evaluate.py --suite intent --only I45`
-- **intent / I46**: I46 '钱的事你看着办。': intent OUT_OF_SCOPE != AMBIGUOUS (source fallback); no clarifying question  
-  Reproduce: `uv run --project services/api python scripts/evaluate.py --suite intent --only I46`
 
 ## 1. Held-out offers (E2)
 
-50 held-out messages (39 en, 11 zh; 14 must abstain) in `fixtures/heldout/offers.yaml`, labelled by hand and never used to tune the grammar. Compiler backends: {'rules-v1': 50}. Compile latency p50/p95 0.46/0.82 ms. The form baseline types the labels straight into the verifier.
+50 held-out messages (39 en, 11 zh; 14 must abstain; 0 with the outcome unlabelled) in `fixtures/heldout/offers.yaml`, labelled by hand and never used to tune the grammar. Compiler backends: {'rules-v1': 50}. Compile latency p50/p95 1.21/2.22 ms. The form baseline types the labels straight into the verifier.
 
 | Item | Kind | Label | Compiler verdict | Form verdict | Booked (compiler) | Problems |
 | --- | --- | --- | --- | --- | --- | --- |
-| H01_ex01_paraphrase_en | paraphrase | REJECT | NO_VERDICT | REJECT | — | over-abstained |
-| H02_ex01_paraphrase_zh | paraphrase | REJECT | NO_VERDICT | REJECT | — | over-abstained |
-| H03_ex02_paraphrase_zh | paraphrase | COUNTER | NO_VERDICT | COUNTER | — | over-abstained |
-| H04_early_1pct_plain | plain | ACCEPT | ACCEPT | ACCEPT | CONTINGENT_REBATE@100bp | spurious CONTINGENT_REBATE; missing IMMEDIATE_DISCOUNT |
-| H05a_early_1pct | pair | ACCEPT | ACCEPT | ACCEPT | CONTINGENT_REBATE@100bp | spurious CONTINGENT_REBATE; missing IMMEDIATE_DISCOUNT |
-| H05b_early_1pct_reworded | pair | ACCEPT | ACCEPT | ACCEPT | CONTINGENT_REBATE@100bp | spurious CONTINGENT_REBATE; missing IMMEDIATE_DISCOUNT |
-| H06_early_1pct_zh | pair | ACCEPT | NO_VERDICT | ACCEPT | — | over-abstained |
+| H01_ex01_paraphrase_en | paraphrase | REJECT | REJECT | REJECT | IMMEDIATE_DISCOUNT@120bp, TERMS_EXTENSIONΔ15d, CONTINGENT_REBATE@100bp |  |
+| H02_ex01_paraphrase_zh | paraphrase | REJECT | REJECT | REJECT | IMMEDIATE_DISCOUNT@120bp, TERMS_EXTENSIONΔ15d, CONTINGENT_REBATE@100bp |  |
+| H03_ex02_paraphrase_zh | paraphrase | COUNTER | COUNTER | COUNTER | IMMEDIATE_DISCOUNT@150bp |  |
+| H04_early_1pct_plain | plain | COUNTER | COUNTER | COUNTER | IMMEDIATE_DISCOUNT@100bp |  |
+| H05a_early_1pct | pair | COUNTER | COUNTER | COUNTER | IMMEDIATE_DISCOUNT@100bp |  |
+| H05b_early_1pct_reworded | pair | COUNTER | COUNTER | COUNTER | IMMEDIATE_DISCOUNT@100bp |  |
+| H06_early_1pct_zh | pair | COUNTER | COUNTER | COUNTER | IMMEDIATE_DISCOUNT@100bp |  |
 | H07a_net60_all_en | pair | REJECT | REJECT | REJECT | TERMS_EXTENSIONΔ15d |  |
 | H07b_net60_all_zh | pair | REJECT | REJECT | REJECT | TERMS_EXTENSIONΔ15d |  |
-| H08a_rebate_half_pct | pair | ACCEPT | ACCEPT | ACCEPT | CONTINGENT_REBATE@50bp |  |
-| H08b_rebate_half_pct_words | pair | ACCEPT | NO_VERDICT | ACCEPT | — | over-abstained |
-| H09a_two_invoices_60 | pair | NEEDS_OWNER_APPROVAL | NO_VERDICT | NEEDS_OWNER_APPROVAL | — | over-abstained |
+| H08a_rebate_half_pct | pair | NEEDS_OWNER_APPROVAL | NEEDS_OWNER_APPROVAL | NEEDS_OWNER_APPROVAL | CONTINGENT_REBATE@50bp |  |
+| H08b_rebate_half_pct_words | pair | NEEDS_OWNER_APPROVAL | NEEDS_OWNER_APPROVAL | NEEDS_OWNER_APPROVAL | CONTINGENT_REBATE@50bp |  |
+| H09a_two_invoices_60 | pair | NEEDS_OWNER_APPROVAL | NEEDS_OWNER_APPROVAL | NEEDS_OWNER_APPROVAL | TERMS_EXTENSIONΔ15d |  |
 | H09b_two_invoices_60_reworded | pair | NEEDS_OWNER_APPROVAL | NEEDS_OWNER_APPROVAL | NEEDS_OWNER_APPROVAL | TERMS_EXTENSIONΔ15d |  |
-| H10a_today_1pct | near_miss | ACCEPT | ACCEPT | ACCEPT | CONTINGENT_REBATE@100bp | spurious CONTINGENT_REBATE; missing IMMEDIATE_DISCOUNT |
-| H10b_today_1_6pct | near_miss | COUNTER | REJECT | COUNTER | CONTINGENT_REBATE@160bp | spurious CONTINGENT_REBATE; missing IMMEDIATE_DISCOUNT |
-| H11a_early_1_2pct | near_miss | ACCEPT | ACCEPT | ACCEPT | IMMEDIATE_DISCOUNT@120bp |  |
+| H10a_today_1pct | near_miss | COUNTER | COUNTER | COUNTER | IMMEDIATE_DISCOUNT@100bp |  |
+| H10b_today_1_6pct | near_miss | COUNTER | COUNTER | COUNTER | IMMEDIATE_DISCOUNT@160bp |  |
+| H11a_early_1_2pct | near_miss | COUNTER | COUNTER | COUNTER | IMMEDIATE_DISCOUNT@120bp |  |
 | H11b_early_1_3pct | near_miss | COUNTER | COUNTER | COUNTER | IMMEDIATE_DISCOUNT@130bp |  |
-| H12a_next_invoice_60 | near_miss | NEEDS_OWNER_APPROVAL | REJECT | NEEDS_OWNER_APPROVAL | TERMS_EXTENSIONΔ15d | TERMS_EXTENSION.invoices: None != 1; TERMS_EXTENSION.duration: 'RECURRING_PERPETUAL' != 'RECURRING_BOUNDED' |
+| H12a_next_invoice_60 | near_miss | NEEDS_OWNER_APPROVAL | NEEDS_OWNER_APPROVAL | NEEDS_OWNER_APPROVAL | TERMS_EXTENSIONΔ15d |  |
 | H12b_every_invoice_60 | near_miss | REJECT | REJECT | REJECT | TERMS_EXTENSIONΔ15d |  |
-| H13a_rebate_0_5 | near_miss | ACCEPT | ACCEPT | ACCEPT | CONTINGENT_REBATE@50bp |  |
+| H13a_rebate_0_5 | near_miss | NEEDS_OWNER_APPROVAL | NEEDS_OWNER_APPROVAL | NEEDS_OWNER_APPROVAL | CONTINGENT_REBATE@50bp |  |
 | H13b_rebate_1_5 | near_miss | REJECT | REJECT | REJECT | CONTINGENT_REBATE@150bp |  |
-| H14a_rebate_0_8_zh | near_miss | ACCEPT | NO_VERDICT | ACCEPT | — | over-abstained |
-| H14b_rebate_2_zh | near_miss | REJECT | NO_VERDICT | REJECT | — | over-abstained |
-| H15a_shorten_to_30 | near_miss | ACCEPT | ACCEPT | ACCEPT | TERMS_EXTENSIONΔ-15d |  |
+| H14a_rebate_0_8_zh | near_miss | NEEDS_OWNER_APPROVAL | NEEDS_OWNER_APPROVAL | NEEDS_OWNER_APPROVAL | CONTINGENT_REBATE@80bp |  |
+| H14b_rebate_2_zh | near_miss | REJECT | REJECT | REJECT | CONTINGENT_REBATE@200bp |  |
+| H15a_shorten_to_30 | near_miss | NEEDS_OWNER_APPROVAL | NEEDS_OWNER_APPROVAL | NEEDS_OWNER_APPROVAL | TERMS_EXTENSIONΔ-15d |  |
 | H15b_lengthen_to_60 | near_miss | REJECT | REJECT | REJECT | TERMS_EXTENSIONΔ15d |  |
 | H16_conflict_rate | conflict | NO_VERDICT | NO_VERDICT | NO_VERDICT | — |  |
 | H17_conflict_amount_zh | conflict | NO_VERDICT | NO_VERDICT | NO_VERDICT | — |  |
 | H18_conflict_terms | conflict | NO_VERDICT | NO_VERDICT | NO_VERDICT | — |  |
-| H19_consistent_po | plain | ACCEPT | ACCEPT | ACCEPT | CONTINGENT_REBATE@50bp |  |
+| H19_consistent_po | plain | NEEDS_OWNER_APPROVAL | NEEDS_OWNER_APPROVAL | NEEDS_OWNER_APPROVAL | CONTINGENT_REBATE@50bp |  |
 | H20_discount_no_rate | ambiguous | NO_VERDICT | NO_VERDICT | NO_VERDICT | — |  |
 | H21_stretch_terms | ambiguous | NO_VERDICT | NO_VERDICT | NO_VERDICT | — |  |
 | H22_usual_discount | ambiguous | NO_VERDICT | NO_VERDICT | NO_VERDICT | — |  |
-| H23_one_pct_off_what | ambiguous | NO_VERDICT | ACCEPT | NO_VERDICT | CONTINGENT_REBATE@100bp | spurious CONTINGENT_REBATE |
+| H23_one_pct_off_what | ambiguous | NO_VERDICT | NO_VERDICT | NO_VERDICT | — |  |
 | H24_terms_vague_zh | ambiguous | NO_VERDICT | NO_VERDICT | NO_VERDICT | — |  |
 | H25_old_rules_zh | ambiguous | NO_VERDICT | NO_VERDICT | NO_VERDICT | — |  |
 | H26_if_discount_right | ambiguous | NO_VERDICT | NO_VERDICT | NO_VERDICT | — |  |
-| H27_alternatives | ambiguous | NO_VERDICT | REJECT | NO_VERDICT | TERMS_EXTENSIONΔ30d | spurious TERMS_EXTENSION |
+| H27_alternatives | ambiguous | NO_VERDICT | NO_VERDICT | NO_VERDICT | — |  |
 | H28_buyer2_no_invoice | ambiguous | NO_VERDICT | NO_VERDICT | NO_VERDICT | — |  |
 | H29_unknown_invoice_amount | ambiguous | NO_VERDICT | NO_VERDICT | NO_VERDICT | — |  |
-| H30_unbounded_rebate | ambiguous | NO_VERDICT | REJECT | NO_VERDICT | CONTINGENT_REBATE@200bp | spurious CONTINGENT_REBATE |
+| H30_unbounded_rebate | ambiguous | NO_VERDICT | NO_VERDICT | NO_VERDICT | — |  |
 | H31_claimed_phone_rebate | security | REJECT | REJECT | REJECT | — |  |
 | H32_claimed_terms_zh | security | REJECT | REJECT | REJECT | — |  |
 | H33_unknown_lender | security | REJECT | REJECT | REJECT | — |  |
-| H34_words_en | pair | ACCEPT | NO_VERDICT | ACCEPT | — | over-abstained |
-| H35_words_zh | pair | ACCEPT | NO_VERDICT | ACCEPT | — | over-abstained |
-| H36_buyer2_rebate_ok | near_miss | ACCEPT | NO_VERDICT | ACCEPT | — | over-abstained |
-| H37_buyer2_rebate_over_cap | near_miss | REJECT | NO_VERDICT | REJECT | — | over-abstained |
-| H38_early_plus_small_rebate | plain | ACCEPT | ACCEPT | ACCEPT | IMMEDIATE_DISCOUNT@100bp | missing CONTINGENT_REBATE |
-| H39_price_up_for_terms | plain | NEEDS_OWNER_APPROVAL | REJECT | NEEDS_OWNER_APPROVAL | TERMS_EXTENSIONΔ15d | missing PRICE_ADJUSTMENT |
-| H40_weekly_run_30_days | plain | ACCEPT | NO_VERDICT | ACCEPT | — | over-abstained |
+| H34_words_en | pair | COUNTER | COUNTER | COUNTER | IMMEDIATE_DISCOUNT@100bp |  |
+| H35_words_zh | pair | COUNTER | COUNTER | COUNTER | IMMEDIATE_DISCOUNT@100bp |  |
+| H36_buyer2_rebate_ok | near_miss | NEEDS_OWNER_APPROVAL | NEEDS_OWNER_APPROVAL | NEEDS_OWNER_APPROVAL | CONTINGENT_REBATE@80bp |  |
+| H37_buyer2_rebate_over_cap | near_miss | REJECT | REJECT | REJECT | CONTINGENT_REBATE@250bp |  |
+| H38_early_plus_small_rebate | plain | NEEDS_OWNER_APPROVAL | COUNTER | COUNTER | IMMEDIATE_DISCOUNT@100bp, CONTINGENT_REBATE@50bp | outcome |
+| H39_price_up_for_terms | plain | NEEDS_OWNER_APPROVAL | NEEDS_OWNER_APPROVAL | NEEDS_OWNER_APPROVAL | PRICE_ADJUSTMENT@50bp, TERMS_EXTENSIONΔ15d |  |
+| H40_weekly_run_30_days | plain | NEEDS_OWNER_APPROVAL | NEEDS_OWNER_APPROVAL | NEEDS_OWNER_APPROVAL | OPERATIONAL_CONCESSION, TERMS_EXTENSIONΔ-15d |  |
 
 | Pair | Relation | Verdicts | OK |
 | --- | --- | --- | --- |
-| H05a_early_1pct ~ H05b_early_1pct_reworded | same | ACCEPT / ACCEPT | yes |
-| H05a_early_1pct ~ H06_early_1pct_zh | same | ACCEPT / NO_VERDICT | **no** |
-| H05a_early_1pct ~ H34_words_en | same | ACCEPT / NO_VERDICT | **no** |
-| H06_early_1pct_zh ~ H35_words_zh | same | NO_VERDICT / NO_VERDICT | yes |
-| H05b_early_1pct_reworded ~ H10a_today_1pct | same | ACCEPT / ACCEPT | yes |
-| H01_ex01_paraphrase_en ~ H02_ex01_paraphrase_zh | same | NO_VERDICT / NO_VERDICT | yes |
+| H05a_early_1pct ~ H05b_early_1pct_reworded | same | COUNTER / COUNTER | yes |
+| H05a_early_1pct ~ H06_early_1pct_zh | same | COUNTER / COUNTER | yes |
+| H05a_early_1pct ~ H34_words_en | same | COUNTER / COUNTER | yes |
+| H06_early_1pct_zh ~ H35_words_zh | same | COUNTER / COUNTER | yes |
+| H05b_early_1pct_reworded ~ H10a_today_1pct | same | COUNTER / COUNTER | yes |
+| H01_ex01_paraphrase_en ~ H02_ex01_paraphrase_zh | same | REJECT / REJECT | yes |
 | H07a_net60_all_en ~ H07b_net60_all_zh | same | REJECT / REJECT | yes |
 | H07a_net60_all_en ~ H15b_lengthen_to_60 | same | REJECT / REJECT | yes |
-| H08a_rebate_half_pct ~ H08b_rebate_half_pct_words | same | ACCEPT / NO_VERDICT | **no** |
-| H08a_rebate_half_pct ~ H13a_rebate_0_5 | same | ACCEPT / ACCEPT | yes |
-| H09a_two_invoices_60 ~ H09b_two_invoices_60_reworded | same | NO_VERDICT / NEEDS_OWNER_APPROVAL | **no** |
-| H10a_today_1pct ~ H10b_today_1_6pct | different | ACCEPT / REJECT | yes |
-| H11a_early_1_2pct ~ H11b_early_1_3pct | different | ACCEPT / COUNTER | yes |
-| H12a_next_invoice_60 ~ H12b_every_invoice_60 | different | REJECT / REJECT | **no** |
-| H13a_rebate_0_5 ~ H13b_rebate_1_5 | different | ACCEPT / REJECT | yes |
-| H14a_rebate_0_8_zh ~ H14b_rebate_2_zh | different | NO_VERDICT / NO_VERDICT | **no** |
-| H15a_shorten_to_30 ~ H15b_lengthen_to_60 | different | ACCEPT / REJECT | yes |
-| H36_buyer2_rebate_ok ~ H37_buyer2_rebate_over_cap | different | NO_VERDICT / NO_VERDICT | **no** |
+| H08a_rebate_half_pct ~ H08b_rebate_half_pct_words | same | NEEDS_OWNER_APPROVAL / NEEDS_OWNER_APPROVAL | yes |
+| H08a_rebate_half_pct ~ H13a_rebate_0_5 | same | NEEDS_OWNER_APPROVAL / NEEDS_OWNER_APPROVAL | yes |
+| H09a_two_invoices_60 ~ H09b_two_invoices_60_reworded | same | NEEDS_OWNER_APPROVAL / NEEDS_OWNER_APPROVAL | yes |
+| H10a_today_1pct ~ H10b_today_1_6pct | different | COUNTER / COUNTER | **no** |
+| H11a_early_1_2pct ~ H11b_early_1_3pct | different | COUNTER / COUNTER | **no** |
+| H12a_next_invoice_60 ~ H12b_every_invoice_60 | different | NEEDS_OWNER_APPROVAL / REJECT | yes |
+| H13a_rebate_0_5 ~ H13b_rebate_1_5 | different | NEEDS_OWNER_APPROVAL / REJECT | yes |
+| H14a_rebate_0_8_zh ~ H14b_rebate_2_zh | different | NEEDS_OWNER_APPROVAL / REJECT | yes |
+| H15a_shorten_to_30 ~ H15b_lengthen_to_60 | different | NEEDS_OWNER_APPROVAL / REJECT | yes |
+| H36_buyer2_rebate_ok ~ H37_buyer2_rebate_over_cap | different | NEEDS_OWNER_APPROVAL / REJECT | yes |
 
 ## 2. Financial exactness (E3/E10)
 
@@ -508,32 +410,32 @@ Brute force: every usable committed lever (a line draw per candidate repayment d
 
 | Scenario | Need | Router | Brute force | Line first | Optimal | Router plan | ms |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| F00_golden | ¥360,000.00 | ¥2,712.94 | ¥2,712.94 | ¥2,712.94 | yes | DRAW FAC-LINE ¥150,000.00 →d32 + FINANCE_INVOICE FAC-IF ¥210,000.00 RCV-A | 155.2 |
-| F01_dear_line | ¥360,000.00 | ¥3,236.05 | ¥3,236.05 | ¥3,383.63 | yes | DRAW FAC-LINE ¥24,000.00 →d32 + FINANCE_INVOICE FAC-IF ¥336,000.00 RCV-A | 140.6 |
-| F02_cheap_early_pay | ¥360,000.00 | ¥1,083.25 | ¥1,083.25 | ¥1,473.54 | yes | EARLY_PAY FAC-EARLYPAY ¥361,083.25 RCV-A | 121.5 |
-| F03_bill_held | ¥360,000.00 | ¥1,026.90 | ¥1,026.90 | ¥1,440.66 | yes | DISCOUNT_BILL FAC-BILL ¥361,026.90 →d180 | 58.3 |
-| F04_no_new_borrowing | ¥360,000.00 | ¥4,372.47 | ¥4,372.47 | — | yes | EARLY_PAY FAC-EARLYPAY ¥364,372.47 RCV-A | 78.8 |
-| F05_pending_cheap_ggl | ¥360,000.00 | ¥2,712.94 | ¥2,712.94 | ¥2,712.94 | yes | DRAW FAC-LINE ¥150,000.00 →d32 + FINANCE_INVOICE FAC-IF ¥210,000.00 RCV-A | 149.0 |
-| F06_uncovered | ¥360,000.00 | — | — | — | yes | — | 0.8 |
-| F07_big_line_clean_down | ¥360,000.00 | ¥2,019.95 | ¥2,019.95 | ¥2,019.95 | yes | DRAW FAC-LINE ¥360,000.00 →d32 | 66.1 |
-| F08_late_payroll | ¥360,000.00 | ¥2,712.94 | ¥2,712.94 | ¥2,712.94 | yes | DRAW FAC-LINE ¥150,000.00 →d32 + FINANCE_INVOICE FAC-IF ¥210,000.00 RCV-A | 138.6 |
-| F09_committed_cheap_loan_late | ¥360,000.00 | ¥2,712.94 | ¥2,712.94 | ¥3,123.90 | yes | DRAW FAC-LINE ¥150,000.00 →d32 + FINANCE_INVOICE FAC-IF ¥210,000.00 RCV-A | 329.8 |
-| R01 | ¥460,000.00 | ¥3,562.33 | ¥3,223.29 | ¥3,562.33 | **no** | DRAW FAC-LINE ¥150,000.00 →d47 + EARLY_PAY FAC-EARLYPAY ¥312,500.00 RCV-A | 334.0 |
-| R02 | ¥410,000.00 | ¥3,375.25 | ¥3,375.25 | — | yes | DRAW FAC-LINE ¥100,000.00 →d32 + EARLY_PAY FAC-EARLYPAY ¥16,194.33 RI:BUYER-1:2 + FINANCE_INVOICE FAC-IF ¥294,000.00 RCV-A | 189.7 |
-| R03 | ¥470,000.00 | ¥3,484.55 | ¥3,123.07 | ¥3,649.10 | **no** | DISCOUNT_BILL FAC-BILL ¥400,000.00 →d180 + FINANCE_INVOICE FAC-IF ¥72,942.47 RCV-A | 378.3 |
-| R04 | ¥350,000.00 | ¥2,048.63 | ¥2,048.63 | ¥2,048.63 | yes | DRAW FAC-LINE ¥200,000.00 →d32 + FINANCE_INVOICE FAC-IF ¥150,000.00 RCV-A | 154.3 |
-| R05 | ¥470,000.00 | ¥2,998.22 | ¥2,705.34 | ¥2,998.22 | **no** | DRAW FAC-LINE ¥300,000.00 →d47 + FINANCE_INVOICE FAC-IF ¥170,000.00 RCV-A | 233.6 |
-| R06 | ¥310,000.00 | ¥2,184.76 | ¥2,184.76 | ¥2,184.76 | yes | DRAW FAC-LINE ¥300,000.00 →d32 + EARLY_PAY FAC-EARLYPAY ¥10,080.65 RCV-A | 95.2 |
-| R07 | ¥300,000.00 | ¥1,446.58 | ¥1,446.58 | ¥1,446.58 | yes | DRAW FAC-LINE ¥300,000.00 →d32 | 86.7 |
-| R08 | ¥350,000.00 | ¥2,053.82 | ¥2,053.82 | ¥2,053.82 | yes | DRAW FAC-LINE ¥300,000.00 →d32 + DISCOUNT_BILL FAC-BILL ¥50,370.53 →d180 | 124.7 |
-| R09 | ¥350,000.00 | ¥1,405.62 | ¥1,405.62 | ¥1,724.60 | yes | EARLY_PAY FAC-EARLYPAY ¥351,405.62 RCV-A | 118.7 |
-| R10 | ¥420,000.00 | — | — | — | yes | — | 109.0 |
-| R11 | ¥300,000.00 | ¥1,857.53 | ¥1,857.53 | ¥1,857.53 | yes | DRAW FAC-LINE ¥200,000.00 →d32 + FINANCE_INVOICE FAC-IF ¥100,000.00 RCV-A | 76.3 |
-| R12 | ¥250,000.00 | ¥1,516.98 | ¥1,516.98 | ¥1,516.98 | yes | DRAW FAC-LINE ¥150,000.00 →d32 + FINANCE_INVOICE FAC-IF ¥100,000.00 RCV-A | 76.0 |
-| R13 | ¥370,000.00 | ¥2,511.91 | ¥2,511.91 | ¥2,741.95 | yes | DISCOUNT_BILL FAC-BILL ¥20,148.21 →d180 + FINANCE_INVOICE FAC-IF ¥350,000.00 RCV-A | 81.6 |
-| R14 | ¥400,000.00 | ¥1,606.43 | ¥1,606.43 | ¥1,687.01 | yes | EARLY_PAY FAC-EARLYPAY ¥401,606.43 RCV-A | 166.4 |
-| R15 | ¥520,000.00 | ¥4,368.11 | ¥3,878.30 | ¥4,864.60 | **no** | EARLY_PAY FAC-EARLYPAY ¥420,000.00 RI:BUYER-1:2 + FINANCE_INVOICE FAC-IF ¥103,360.00 RCV-A | 293.1 |
-| R16 | ¥360,000.00 | ¥1,982.47 | ¥1,982.47 | ¥1,982.47 | yes | DRAW FAC-LINE ¥300,000.00 →d32 + FINANCE_INVOICE FAC-IF ¥60,000.00 RCV-A | 163.5 |
+| F00_golden | ¥360,000.00 | ¥2,712.94 | ¥2,712.94 | ¥2,712.94 | yes | DRAW FAC-LINE ¥150,000.00 →d32 + FINANCE_INVOICE FAC-IF ¥210,000.00 RCV-A | 39.8 |
+| F01_dear_line | ¥360,000.00 | ¥3,236.05 | ¥3,236.05 | ¥3,383.63 | yes | DRAW FAC-LINE ¥24,000.00 →d32 + FINANCE_INVOICE FAC-IF ¥336,000.00 RCV-A | 39.1 |
+| F02_cheap_early_pay | ¥360,000.00 | ¥1,083.25 | ¥1,083.25 | ¥1,473.54 | yes | EARLY_PAY FAC-EARLYPAY ¥361,083.25 RCV-A | 28.2 |
+| F03_bill_held | ¥360,000.00 | ¥1,026.90 | ¥1,026.90 | ¥1,440.66 | yes | DISCOUNT_BILL FAC-BILL ¥361,026.90 →d180 | 33.4 |
+| F04_no_new_borrowing | ¥360,000.00 | ¥4,372.47 | ¥4,372.47 | — | yes | EARLY_PAY FAC-EARLYPAY ¥364,372.47 RCV-A | 11.4 |
+| F05_pending_cheap_ggl | ¥360,000.00 | ¥2,712.94 | ¥2,712.94 | ¥2,712.94 | yes | DRAW FAC-LINE ¥150,000.00 →d32 + FINANCE_INVOICE FAC-IF ¥210,000.00 RCV-A | 39.8 |
+| F06_uncovered | ¥360,000.00 | — | — | — | yes | — | 0.9 |
+| F07_big_line_clean_down | ¥360,000.00 | ¥2,019.95 | ¥2,019.95 | ¥2,019.95 | yes | DRAW FAC-LINE ¥360,000.00 →d32 | 26.2 |
+| F08_late_payroll | ¥360,000.00 | ¥2,712.94 | ¥2,712.94 | ¥2,712.94 | yes | DRAW FAC-LINE ¥150,000.00 →d32 + FINANCE_INVOICE FAC-IF ¥210,000.00 RCV-A | 39.5 |
+| F09_committed_cheap_loan_late | ¥360,000.00 | ¥2,712.94 | ¥2,712.94 | ¥3,123.90 | yes | DRAW FAC-LINE ¥150,000.00 →d32 + FINANCE_INVOICE FAC-IF ¥210,000.00 RCV-A | 91.2 |
+| R01 | ¥460,000.00 | ¥3,223.29 | ¥3,223.29 | ¥3,562.33 | yes | DRAW FAC-LINE ¥150,000.00 →d32 + EARLY_PAY FAC-EARLYPAY ¥312,500.00 RI:BUYER-1:2 | 109.4 |
+| R02 | ¥410,000.00 | ¥3,375.25 | ¥3,375.25 | — | yes | DRAW FAC-LINE ¥100,000.00 →d32 + EARLY_PAY FAC-EARLYPAY ¥16,194.33 RI:BUYER-1:2 + FINANCE_INVOICE FAC-IF ¥294,000.00 RCV-A | 54.7 |
+| R03 | ¥470,000.00 | ¥3,123.07 | ¥3,123.07 | ¥3,649.10 | yes | DRAW FAC-LINE ¥200,000.00 →d32 + DISCOUNT_BILL FAC-BILL ¥272,000.88 →d180 | 151.4 |
+| R04 | ¥350,000.00 | ¥2,048.63 | ¥2,048.63 | ¥2,048.63 | yes | DRAW FAC-LINE ¥200,000.00 →d32 + FINANCE_INVOICE FAC-IF ¥150,000.00 RCV-A | 44.8 |
+| R05 | ¥470,000.00 | ¥2,705.34 | ¥2,705.34 | ¥2,998.22 | yes | DRAW FAC-LINE ¥300,000.00 →d32 + EARLY_PAY FAC-EARLYPAY ¥52,705.34 RI:BUYER-1:2 + FINANCE_INVOICE FAC-IF ¥120,000.00 RCV-A | 115.4 |
+| R06 | ¥310,000.00 | ¥2,184.76 | ¥2,184.76 | ¥2,184.76 | yes | DRAW FAC-LINE ¥300,000.00 →d32 + EARLY_PAY FAC-EARLYPAY ¥10,080.65 RCV-A | 29.7 |
+| R07 | ¥300,000.00 | ¥1,446.58 | ¥1,446.58 | ¥1,446.58 | yes | DRAW FAC-LINE ¥300,000.00 →d32 | 39.3 |
+| R08 | ¥350,000.00 | ¥2,053.82 | ¥2,053.82 | ¥2,053.82 | yes | DRAW FAC-LINE ¥300,000.00 →d32 + DISCOUNT_BILL FAC-BILL ¥50,370.53 →d180 | 54.3 |
+| R09 | ¥350,000.00 | ¥1,405.62 | ¥1,405.62 | ¥1,724.60 | yes | EARLY_PAY FAC-EARLYPAY ¥351,405.62 RCV-A | 29.9 |
+| R10 | ¥420,000.00 | — | — | — | yes | — | 14.4 |
+| R11 | ¥300,000.00 | ¥1,857.53 | ¥1,857.53 | ¥1,857.53 | yes | DRAW FAC-LINE ¥200,000.00 →d32 + FINANCE_INVOICE FAC-IF ¥100,000.00 RCV-A | 28.0 |
+| R12 | ¥250,000.00 | ¥1,516.98 | ¥1,516.98 | ¥1,516.98 | yes | DRAW FAC-LINE ¥150,000.00 →d32 + FINANCE_INVOICE FAC-IF ¥100,000.00 RCV-A | 27.0 |
+| R13 | ¥370,000.00 | ¥2,511.91 | ¥2,511.91 | ¥2,741.95 | yes | DISCOUNT_BILL FAC-BILL ¥20,148.21 →d180 + FINANCE_INVOICE FAC-IF ¥350,000.00 RCV-A | 14.7 |
+| R14 | ¥400,000.00 | ¥1,606.43 | ¥1,606.43 | ¥1,687.01 | yes | EARLY_PAY FAC-EARLYPAY ¥401,606.43 RCV-A | 39.1 |
+| R15 | ¥520,000.00 | ¥3,878.30 | ¥3,878.30 | ¥4,864.60 | yes | DRAW FAC-LINE ¥300,000.00 →d32 + EARLY_PAY FAC-EARLYPAY ¥221,774.19 RI:BUYER-1:2 | 128.3 |
+| R16 | ¥360,000.00 | ¥1,982.47 | ¥1,982.47 | ¥1,982.47 | yes | DRAW FAC-LINE ¥300,000.00 →d32 + FINANCE_INVOICE FAC-IF ¥60,000.00 RCV-A | 41.6 |
 
 ## 4. Covenant and mandate boundaries
 
@@ -541,10 +443,10 @@ Brute force: every usable committed lever (a line draw per candidate repayment d
 | --- | --- | --- | --- | --- | --- |
 | dscr_exact | monthly debt service 7200000 fen (1.25x at 7,200,000) | holds | holds | 1.25x | ok |
 | dscr_safe_1fen | monthly debt service 7199999 fen (1.25x at 7,200,000) | holds | holds | 1.25x | ok |
-| dscr_unsafe_1fen | monthly debt service 7200001 fen (1.25x at 7,200,000) | violation | violation | 1.25x month 1 | ok |
+| dscr_unsafe_1fen | monthly debt service 7200001 fen (1.25x at 7,200,000) | violation | violation | 1.2499x month 1 | ok |
 | leverage_exact | debt principal 270000000 fen (2.50x at 270,000,000) | holds | holds | 2.50x | ok |
 | leverage_safe_1fen | debt principal 269999999 fen (2.50x at 270,000,000) | holds | holds | 2.50x | ok |
-| leverage_unsafe_1fen | debt principal 270000001 fen (2.50x at 270,000,000) | violation | violation | 2.50x month 1 | ok |
+| leverage_unsafe_1fen | debt principal 270000001 fen (2.50x at 270,000,000) | violation | violation | 2.5001x month 1 | ok |
 | reserve_exact | opening cash 34420000 fen; floor reached exactly at 34,420,000 | holds | holds |  | ok |
 | reserve_safe_1fen | opening cash 34420001 fen; floor reached exactly at 34,420,000 | holds | holds |  | ok |
 | reserve_unsafe_1fen | opening cash 34419999 fen; floor reached exactly at 34,420,000 | violation | violation | ¥299,999.99 day 32 | ok |
@@ -562,13 +464,13 @@ Brute force: every usable committed lever (a line draw per candidate repayment d
 
 ## 5. Security (E4/E7)
 
-Imported from `services/api/evals/security/latest_report.json` (122 attacks, catalogue 122, LLM_MODE=cache); not re-run here. Outcomes: {'DETECTED': 119, 'CONTAINED': 3}. Compiler flag rate on text attacks: 0.7206.
+Imported from `services/api/evals/security/latest_report.json` (122 attacks, catalogue 122, LLM_MODE=cache); not re-run here. Outcomes: {'DETECTED': 119, 'CONTAINED': 3}. Compiler flag rate on text attacks: 0.7353.
 
 | Category | Attacks | Harm | Detected | SecurityEvent | Contained only |
 | --- | --- | --- | --- | --- | --- |
 | Prompt injection | 16 | 0 | 16 | 16 | 0 |
 | Fake lender / induced transfer | 9 | 0 | 9 | 8 | 0 |
-| Fake historical concession | 7 | 0 | 7 | 5 | 0 |
+| Fake historical concession | 7 | 0 | 7 | 6 | 0 |
 | Privilege escalation | 20 | 0 | 17 | 13 | 3 |
 | Mandate exfiltration | 5 | 0 | 5 | 4 | 0 |
 | Reserve and facility exfiltration | 6 | 0 | 6 | 4 | 0 |
@@ -583,7 +485,7 @@ Imported from `services/api/evals/security/latest_report.json` (122 attacks, cat
 
 ## 6. /nl intent (held-out)
 
-47 held-out utterances (15 zh) in `fixtures/heldout/intents.yaml`, each on a fresh session through POST /nl. Per intent: EVALUATE_OFFER 5/6, NEGOTIATE 1/3, ACCELERATE_RECEIPT 1/4, FUND_GAP 1/5, REPAY_FACILITY 2/3, SHOW_STATUS 2/4, EXPLAIN 3/3, WHAT_IF 1/4, APPROVE 2/2, REJECT 1/1, OUT_OF_SCOPE 6/6, AMBIGUOUS 2/6.
+47 held-out utterances (15 zh) in `fixtures/heldout/intents.yaml`, each on a fresh session through POST /nl. Per intent: EVALUATE_OFFER 6/6, NEGOTIATE 2/3, ACCELERATE_RECEIPT 3/4, FUND_GAP 4/5, REPAY_FACILITY 3/3, SHOW_STATUS 4/4, EXPLAIN 3/3, WHAT_IF 2/4, APPROVE 2/2, REJECT 1/1, OUT_OF_SCOPE 6/6, AMBIGUOUS 6/6.
 
 | Id | Utterance | Label | Got | Source | Slots | Clarified |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -592,36 +494,36 @@ Imported from `services/api/evals/security/latest_report.json` (122 attacks, cat
 | I03 | 帮我看看佛山发来的这个报价：“下季度返利0.5%” | EVALUATE_OFFER | EVALUATE_OFFER | rules | counterparty_id=ok, rate_bp=ok |  |
 | I04 | Assess EX02 for me. | EVALUATE_OFFER | EVALUATE_OFFER | rules | fixture_id=ok |  |
 | I05 | Run the checks on EX10. | EVALUATE_OFFER | EVALUATE_OFFER | rules | fixture_id=ok |  |
-| I06 | 评估一下EX05。 | EVALUATE_OFFER | **AMBIGUOUS** | rules | fixture_id=MISS | yes |
+| I06 | 评估一下EX05。 | EVALUATE_OFFER | EVALUATE_OFFER | rules | fixture_id=ok |  |
 | I07 | Go back to Foshan with a counter-offer. | NEGOTIATE | NEGOTIATE | rules | counterparty_id=ok |  |
 | I08 | 跟佛山那边还个价。 | NEGOTIATE | **OUT_OF_SCOPE** | fallback | counterparty_id=ok |  |
-| I09 | Push back on Dongguan's request with our counters. | NEGOTIATE | **OUT_OF_SCOPE** | fallback | counterparty_id=ok |  |
-| I10 | I'd like the Foshan money in sooner, but don't give away more than 0.8%. | ACCELERATE_RECEIPT | **OUT_OF_SCOPE** | fallback | counterparty_id=ok, rate_bp=ok |  |
+| I09 | Push back on Dongguan's request with our counters. | NEGOTIATE | NEGOTIATE | rules | counterparty_id=ok |  |
+| I10 | I'd like the Foshan money in sooner, but don't give away more than 0.8%. | ACCELERATE_RECEIPT | ACCELERATE_RECEIPT | rules | counterparty_id=ok, rate_bp=ok |  |
 | I11 | 佛山那张发票能不能早点收回来？ | ACCELERATE_RECEIPT | **OUT_OF_SCOPE** | fallback | counterparty_id=ok |  |
-| I12 | Collect the ¥420,000 receivable early. | ACCELERATE_RECEIPT | **OUT_OF_SCOPE** | fallback | amount_fen=ok |  |
+| I12 | Collect the ¥420,000 receivable early. | ACCELERATE_RECEIPT | ACCELERATE_RECEIPT | rules | amount_fen=ok |  |
 | I13 | Can we get paid faster on the open invoice? | ACCELERATE_RECEIPT | ACCELERATE_RECEIPT | rules |  |  |
-| I14 | Payroll is coming and we're short, cover it. | FUND_GAP | **OUT_OF_SCOPE** | fallback |  |  |
-| I15 | Top up cash so we don't dip below the reserve. | FUND_GAP | **OUT_OF_SCOPE** | fallback |  |  |
-| I16 | 下周发工资钱不够，帮我安排融资。 | FUND_GAP | **OUT_OF_SCOPE** | fallback |  |  |
+| I14 | Payroll is coming and we're short, cover it. | FUND_GAP | FUND_GAP | rules |  |  |
+| I15 | Top up cash so we don't dip below the reserve. | FUND_GAP | FUND_GAP | rules |  |  |
+| I16 | 下周发工资钱不够，帮我安排融资。 | FUND_GAP | FUND_GAP | rules |  |  |
 | I17 | Arrange funding for the shortfall before payroll. | FUND_GAP | FUND_GAP | rules |  |  |
-| I18 | 现金缺口怎么补？直接办吧。 | FUND_GAP | **OUT_OF_SCOPE** | fallback |  |  |
+| I18 | 现金缺口怎么补？直接办吧。 | FUND_GAP | **APPROVE** | rules |  |  |
 | I19 | Pay back the credit line. | REPAY_FACILITY | REPAY_FACILITY | rules | facility_id=ok |  |
-| I20 | 把银行授信额度还掉。 | REPAY_FACILITY | **OUT_OF_SCOPE** | fallback | facility_id=ok |  |
+| I20 | 把银行授信额度还掉。 | REPAY_FACILITY | REPAY_FACILITY | rules | facility_id=ok |  |
 | I21 | Repay ¥50,000 of the line. | REPAY_FACILITY | REPAY_FACILITY | rules | facility_id=ok, amount_fen=ok |  |
 | I22 | Where do we stand on cash this month? | SHOW_STATUS | SHOW_STATUS | rules |  |  |
-| I23 | 现在账上还有多少钱？ | SHOW_STATUS | **OUT_OF_SCOPE** | fallback |  |  |
-| I24 | Are we close to breaching any covenant? | SHOW_STATUS | **OUT_OF_SCOPE** | fallback |  |  |
+| I23 | 现在账上还有多少钱？ | SHOW_STATUS | SHOW_STATUS | rules |  |  |
+| I24 | Are we close to breaching any covenant? | SHOW_STATUS | SHOW_STATUS | rules |  |  |
 | I25 | Give me a quick cash overview. | SHOW_STATUS | SHOW_STATUS | rules |  |  |
 | I26 | Why did you turn down the Foshan package? | EXPLAIN | EXPLAIN | rules | counterparty_id=ok |  |
 | I27 | 为什么这个报价不行？ | EXPLAIN | EXPLAIN | rules |  |  |
 | I28 | Explain how you got the ¥26,455.62 figure. | EXPLAIN | EXPLAIN | rules | amount_fen=ok |  |
-| I29 | What happens if we agree to 75-day terms? | WHAT_IF | **OUT_OF_SCOPE** | fallback | terms_days=ok |  |
-| I30 | 如果给2%的提前付款折扣会怎样？ | WHAT_IF | **AMBIGUOUS** | rules | rate_bp=ok | yes |
+| I29 | What happens if we agree to 75-day terms? | WHAT_IF | **AMBIGUOUS** | rules | terms_days=ok | yes |
+| I30 | 如果给2%的提前付款折扣会怎样？ | WHAT_IF | WHAT_IF | rules | rate_bp=ok |  |
 | I31 | Suppose Foshan asks for 60 days, would we still be fine? | WHAT_IF | WHAT_IF | rules | counterparty_id=ok, terms_days=ok |  |
 | I32 | Model a 0.5% rebate for next quarter. | WHAT_IF | **OUT_OF_SCOPE** | fallback | rate_bp=ok |  |
 | I33 | Approve APR-000001. | APPROVE | APPROVE | rules | approval_id=ok |  |
 | I34 | Decline APR-000002, I don't want that loan. | REJECT | REJECT | rules | approval_id=ok |  |
-| I35 | 批准APR-000003。 | APPROVE | APPROVE | rules | approval_id=MISS |  |
+| I35 | 批准APR-000003。 | APPROVE | APPROVE | rules | approval_id=ok |  |
 | I36 | Book me a flight to Shanghai. | OUT_OF_SCOPE | OUT_OF_SCOPE | fallback |  |  |
 | I37 | 今天天气怎么样？ | OUT_OF_SCOPE | OUT_OF_SCOPE | fallback |  |  |
 | I38 | Sign the personal guarantee the bank wants. | OUT_OF_SCOPE | OUT_OF_SCOPE | rules |  |  |
@@ -629,23 +531,23 @@ Imported from `services/api/evals/security/latest_report.json` (122 attacks, cat
 | I40 | Write a poem about invoices. | OUT_OF_SCOPE | OUT_OF_SCOPE | fallback |  |  |
 | I41 | 帮我把公司股份卖掉一部分。 | OUT_OF_SCOPE | OUT_OF_SCOPE | fallback |  |  |
 | I42 | Sort out the money situation. | AMBIGUOUS | AMBIGUOUS | rules |  | yes |
-| I43 | Can you handle it? | AMBIGUOUS | **OUT_OF_SCOPE** | fallback |  |  |
-| I44 | 帮我处理一下。 | AMBIGUOUS | **OUT_OF_SCOPE** | fallback |  |  |
-| I45 | Do the usual. | AMBIGUOUS | **OUT_OF_SCOPE** | fallback |  |  |
-| I46 | 钱的事你看着办。 | AMBIGUOUS | **OUT_OF_SCOPE** | fallback |  |  |
+| I43 | Can you handle it? | AMBIGUOUS | AMBIGUOUS | rules |  | yes |
+| I44 | 帮我处理一下。 | AMBIGUOUS | AMBIGUOUS | rules |  | yes |
+| I45 | Do the usual. | AMBIGUOUS | AMBIGUOUS | rules |  | yes |
+| I46 | 钱的事你看着办。 | AMBIGUOUS | AMBIGUOUS | rules |  | yes |
 | I47 | We need to do something about cash flow. | AMBIGUOUS | AMBIGUOUS | rules |  | yes |
 
 ## 7. End to end (E7)
 
-`scripts/run_scenarios.py --inproc`: {'total': 37, 'ran': 37, 'passed': 37, 'failed': 0, 'skipped': 0, 'pass_rate': 1.0, 'turns': 66, 'median_turn_latency_ms': 5.3}. Scene 1 through the HTTP API (cold verifier caches each run):
+`scripts/run_scenarios.py --inproc`: {'total': 37, 'ran': 37, 'passed': 37, 'failed': 0, 'skipped': 0, 'pass_rate': 1.0, 'turns': 69, 'median_turn_latency_ms': 5.2}. Scene 1 through the HTTP API (cold verifier caches each run):
 
 | Run | Compile ms | Evaluate ms | Negotiate+execute ms | Total ms | Result |
 | --- | --- | --- | --- | --- | --- |
-| 1 | 14.0 | 348.9 | 47.6 | 410.4 | REJECT → DEAL (2 ops) |
-| 2 | 11.4 | 344.9 | 45.1 | 401.5 | REJECT → DEAL (2 ops) |
-| 3 | 11.6 | 414.7 | 62.6 | 488.9 | REJECT → DEAL (2 ops) |
-| 4 | 11.4 | 430.0 | 45.1 | 486.5 | REJECT → DEAL (2 ops) |
-| 5 | 11.5 | 425.9 | 60.6 | 498.0 | REJECT → DEAL (2 ops) |
+| 1 | 13.9 | 167.8 | 25.6 | 207.3 | REJECT → DEAL (2 ops) |
+| 2 | 12.6 | 164.1 | 22.6 | 199.3 | REJECT → DEAL (2 ops) |
+| 3 | 12.9 | 180.1 | 22.4 | 215.4 | REJECT → DEAL (2 ops) |
+| 4 | 12.6 | 164.4 | 22.4 | 199.4 | REJECT → DEAL (2 ops) |
+| 5 | 13.0 | 166.0 | 22.7 | 201.7 | REJECT → DEAL (2 ops) |
 
 ## 8. Honest NO DEAL (E5)
 
