@@ -49,9 +49,10 @@ from app.domain.models import (
     Verdict,
     ViolationCode,
 )
-from app.domain.money import BP_DENOM, DAYS_PER_YEAR, Ratio, bp, fmt_pct, fmt_yuan, post
+from app.domain.money import BP_DENOM, Ratio, bp, fmt_pct, fmt_yuan, post
 from app.financial import project, value_concessions
 from app.funding import NoPermanentSourceError, break_even_discount, marginal_cost
+from app.funding.rates import break_even_cost_share
 from app.funding import plan as funding_plan
 from app.verifier.bind import bind, early_pay_lead, is_claimed, is_gain, open_receivables, recurring_for
 from app.verifier.models import OwnerConstraints
@@ -59,7 +60,6 @@ from app.verifier.owner import breaches as owner_breaches
 from app.verifier.reserve import baseline
 
 STEP_BP = 5
-BREAK_EVEN_PERIOD_DAYS = 30
 NO_COUNTER_CODES = frozenset({
     ViolationCode.UNKNOWN_COUNTERPARTY,
     ViolationCode.TIER3_PERSONAL_GUARANTEE,
@@ -212,8 +212,13 @@ def early_pay_counter(ctx: _Ctx, label: str = "Option A") -> CounterProposal | N
     r = _target_receivable(ctx)
     if r is None:
         return None
+    settle = early_pay_lead(ctx.state, ctx.cp)
+    n = r.due_day - settle  # days early: the tenor the break-even is computed for (ADR-0007)
+    if n <= 0:
+        return None
     try:
-        d_ratio, _ = break_even_discount(ctx.state, ctx.mandate)
+        d_ratio, _ = break_even_discount(ctx.state, ctx.mandate, n)
+        c, k_periods, period = break_even_cost_share(ctx.state, ctx.mandate, n)
     except NoPermanentSourceError:
         return None
     rate_bp = largest_step_below(d_ratio.value)
@@ -240,7 +245,6 @@ def early_pay_counter(ctx: _Ctx, label: str = "Option A") -> CounterProposal | N
     face = min(int(-(-face_exact // 10_000)) * 10_000, r.face_fen)  # rounded UP to a whole ¥100, never above the invoice
     if face <= 0:
         return None
-    settle = early_pay_lead(ctx.state, ctx.cp)
     disc_ob = _obligation(
         ctx.cp, ObligationType.IMMEDIATE_DISCOUNT, rate_bp=rate_bp, effective_day=settle,
         base=ObligationBase(kind=BaseKind.INVOICE, amount_fen=face, receivable_id=r.id),
@@ -251,13 +255,21 @@ def early_pay_counter(ctx: _Ctx, label: str = "Option A") -> CounterProposal | N
         return None
     t = project(ctx.state, [*ctx.live, disc_ob], counter_plan.actions, Mode.CONSERVATIVE, ctx.mandate.horizon_days)
     discount = t.discounts_posted_fen
+    live_discounts = 0
     if ctx.live:  # the counter's own discount: what the commitments in force already cost is not its cost
-        discount -= project(ctx.state, list(ctx.live), [], Mode.CONSERVATIVE,
-                            ctx.mandate.horizon_days).discounts_posted_fen
+        live_discounts = project(ctx.state, list(ctx.live), [], Mode.CONSERVATIVE,
+                                 ctx.mandate.horizon_days).discounts_posted_fen
+        discount -= live_discounts
     funding_cost = counter_plan.total_cost_fen
     total = discount + funding_cost
+    # ADR-0007 test 3 for the counter: it is offered only if it beats the standing plan, like with like
+    # (both exclude the discounts the live commitments already post).
+    if base_plan.admissible:
+        t0 = project(ctx.state, list(ctx.live), base_plan.actions, Mode.CONSERVATIVE, ctx.mandate.horizon_days)
+        standing = t0.interest_posted_fen + t0.fees_posted_fen + t0.discounts_posted_fen - live_discounts
+        if total >= standing:
+            return None
 
-    c = ctx.rate * BREAK_EVEN_PERIOD_DAYS / DAYS_PER_YEAR
     clauses: list[tuple[str, Obligation | None]] = []
     touched_terms = bool(ctx.of_type(ObligationType.TERMS_EXTENSION))
     mentioned_rebate = bool(ctx.of_type(ObligationType.CONTINGENT_REBATE)) or any(
@@ -274,8 +286,13 @@ def early_pay_counter(ctx: _Ctx, label: str = "Option A") -> CounterProposal | N
     clauses.append((settle_text, disc_ob))
     if not lead:
         clauses.append(("Nothing else changes.", None))
+    if k_periods is not None:
+        times = f" × {k_periods}" if k_periods > 1 else ""
+        c_text = f"{fmt_pct(ctx.rate, 4)} × {period}/365{times} = {fmt_pct(c, 4)}"
+    else:
+        c_text = f"{fmt_pct(ctx.rate, 4)} × {n}/365 = {fmt_pct(c, 4)}"
     formula = (
-        f"break-even: d/(1−d) < c, c = {fmt_pct(ctx.rate, 4)} × {BREAK_EVEN_PERIOD_DAYS}/365 = {fmt_pct(c, 4)} "
+        f"break-even: d/(1−d) < c, c = {c_text} "
         f"→ d < {fmt_pct(d_ratio.value, 4)}; largest whole-5bp rate below it = {rate_text(rate_bp)}. "
         f"Face: (near-term need {fmt_yuan(need)} − committed line {fmt_yuan(line_avail)}) / (1 − {rate_text(rate_bp)}) "
         f"= {fmt_yuan(post(face_exact))} → up to {fmt_yuan(face)} (rounded up to a whole ¥100, at most the invoice). "

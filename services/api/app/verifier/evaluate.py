@@ -64,6 +64,7 @@ from app.funding import (
 )
 from app.funding import plan as funding_plan
 from app.mandate import check_apr, check_predicates, check_validity
+from app.funding.rates import break_even_cost_share
 from app.verifier.bind import bind, material_gaps, recurring_for
 from app.verifier.counters import counters as make_counters
 from app.verifier.display import describe_all, only_early_pay, precise
@@ -74,7 +75,8 @@ from app.verifier.reserve import baseline, cure_plan, induced_breach_days, reser
 from app.verifier.screen import SECURITY_CODES, screen
 
 PRICE_CODES = frozenset({ViolationCode.MAX_APR_EXCEEDED, ViolationCode.IMMEDIATE_DISCOUNT_EXCEEDED,
-                         ViolationCode.DISCOUNT_ABOVE_BREAK_EVEN})
+                         ViolationCode.DISCOUNT_ABOVE_BREAK_EVEN,
+                         ViolationCode.EARLY_PAY_NOT_NEEDED, ViolationCode.EARLY_PAY_DEARER_THAN_PLAN})
 CAP_CODES = frozenset({ViolationCode.AGG_CONCESSION_EXCEEDED, ViolationCode.PER_BUYER_CAP_EXCEEDED})
 MANDATE_CODES = frozenset({ViolationCode.BAD_SIGNATURE, ViolationCode.MANDATE_EXPIRED,
                            ViolationCode.MANDATE_REVOKED, ViolationCode.MANDATE_VERSION_MISMATCH})
@@ -263,20 +265,23 @@ def _apr_checks(bound: list[Obligation], state: FinancialState, mandate: Mandate
         sel = next((row for row in comparison if row.result == ComparisonResult.SELECTED), None)
         if sel is not None:
             inputs["router_optimum"] = sel.cost_display
-        # spec v2 §5.3 / §8 example 2: early payment is worth taking only below the SME's own marginal cost
-        # of funds (the break-even discount, 0.88% on the golden fixture); above it, counter.
+        # ADR-0007 test 1 (spec v2 §5.3 / §8 example 2): early payment is worth taking only below the SME's own
+        # marginal cost of carrying the money for this tenor (0.88% for 30 days on the golden fixture).
         try:
-            be, be_bp = break_even_discount(state, mandate)
+            be, be_bp = break_even_discount(state, mandate, days)
+            _, k_periods, period = break_even_cost_share(state, mandate, days)
         except NoPermanentSourceError:
             be = None
         if be is not None and d >= be.value:
+            tenor = f"{days} days ({k_periods} × {period}-day periods)" if k_periods is not None else f"{days} days"
             out.append(Violation(
                 code=ViolationCode.DISCOUNT_ABOVE_BREAK_EVEN,
                 message=f"Early settlement at {fmt_pct(d)} costs more than financing the invoice: "
                         f"break-even {fmt_pct(be.value)}",
                 observed=fmt_pct(d), limit=f"< {fmt_pct(be.value)}",
-                formula="d < c/(1+c), c = marginal source's cost share for 30 days",
-                inputs={**inputs, "break_even": fmt_pct(be.value, 4), "break_even_bp_floor": str(be_bp)},
+                formula=f"d < c/(1+c), c = marginal source's cost share for {tenor}",
+                inputs={**inputs, "break_even": fmt_pct(be.value, 4), "break_even_bp_floor": str(be_bp),
+                        "break_even_days": str(days)},
                 spans=ob.spans))
         v = check_apr(Ratio.of(rate), mandate, f"Early settlement of {r.id} at {fmt_pct(d)}")
         if v is not None:
@@ -287,6 +292,63 @@ def _apr_checks(bound: list[Obligation], state: FinancialState, mandate: Mandate
                                       observed=fmt_pct(rate), limit=fmt_pct(bp(mandate.max_apr_bp)),
                                       formula=formula, inputs=inputs))
     return out, passed
+
+
+def _early_pay_legs(bound: Sequence[Obligation], state: FinancialState) -> list[Obligation]:
+    """The offer's early-payment legs: an immediate discount on a named open invoice, settled before it is due."""
+    due = {r.id: r.due_day for r in state.receivables}
+    return [o for o in bound if o.type == ObligationType.IMMEDIATE_DISCOUNT and o.rate_bp is not None
+            and o.base.receivable_id in due and o.effective_day is not None
+            and due[o.base.receivable_id] - o.effective_day > 0]
+
+
+def _early_pay_vs_plan(bound: list[Obligation], live: Sequence[Obligation], state: FinancialState,
+                       mandate: Mandate, router: _Router, base_plan: FundingPlan, plan_committed: FundingPlan,
+                       horizon: int, floor: int) -> tuple[list[Violation], list[PassedCheck]]:
+    """ADR-0007 tests 2 and 3, once per offer. C = interest + fees + discounts the engine posts over the
+    horizon for the books under test with the router's committed plan for those same books. The early-pay legs
+    are priced at the margin: C0 = books + the offer's other obligations, C1 = books + everything."""
+    legs = _early_pay_legs(bound, state)
+    if not legs or not plan_committed.admissible:
+        return [], []
+    leg_ids = {o.id for o in legs}
+    others = [o for o in bound if o.id not in leg_ids]
+    plan0 = base_plan if not others else router.plan(state, [*live, *others], mandate, "COMMITTED")
+    spans = [sp for o in legs for sp in o.spans]
+    label = ", ".join(f"{o.base.receivable_id} at {fmt_pct(bp(o.rate_bp or 0))}" for o in legs)
+
+    def cost(obs: list[Obligation], plan: FundingPlan) -> int:
+        t = project(state, obs, plan.actions, Mode.CONSERVATIVE, horizon, floor)
+        return t.interest_posted_fen + t.fees_posted_fen + t.discounts_posted_fen
+
+    c1 = cost([*live, *bound], plan_committed)
+    if not plan0.admissible:
+        return [], [PassedCheck(
+            code="EARLY_PAY_VS_PLAN", label="Early payment against the router's plan", observed=fmt_yuan(c1),
+            limit="no admissible plan without the offer",
+            formula="the books cannot keep the floor on committed sources without the early payment, and can with it",
+            inputs={"plan_with_offer": plan_committed.label, "plan_without_offer": plan0.label,
+                    "cost_with_offer": fmt_yuan(c1), "legs": label})]
+    c0 = cost([*live, *others], plan0)
+    inputs = {"plan_with_offer": plan_committed.label, "plan_without_offer": plan0.label,
+              "cost_with_offer": fmt_yuan(c1), "cost_without_offer": fmt_yuan(c0), "legs": label}
+    formula_base = (f"C1 = interest + fees + discounts with the offer = {fmt_yuan(c1)}; "
+                    f"C0 = the same without the early payment = {fmt_yuan(c0)}")
+    if c1 < c0:
+        return [], [PassedCheck(
+            code="EARLY_PAY_VS_PLAN", label="Early payment against the router's plan", observed=fmt_yuan(c1),
+            limit=f"< {fmt_yuan(c0)}", formula=f"{formula_base}; C1 < C0", inputs=inputs)]
+    if not plan0.actions and c1 > c0:
+        code = ViolationCode.EARLY_PAY_NOT_NEEDED
+        message = (f"No funding is needed without the early payment; taking it costs {fmt_yuan(c1)} "
+                   f"for cash the books do not need")
+        formula = f"{formula_base}; no funding needed without the offer and C1 > C0"
+    else:
+        code = ViolationCode.EARLY_PAY_DEARER_THAN_PLAN
+        message = f"The early payment costs {fmt_yuan(c1)}, not less than the plan without it ({fmt_yuan(c0)})"
+        formula = f"{formula_base}; C1 < C0 required"
+    return [Violation(code=code, message=message, observed=fmt_yuan(c1), limit=f"< {fmt_yuan(c0)}",
+                      formula=formula, inputs=inputs, spans=spans)], []
 
 
 def _committed(state: FinancialState) -> list[Facility]:
@@ -598,6 +660,10 @@ def _evaluate(
     apr_v, apr_passed = _apr_checks(bound, state, mandate, comparison)
     violations += apr_v
     passed += apr_passed
+    ep_v, ep_passed = _early_pay_vs_plan(bound, live, state, mandate, router, base_plan, plan_committed,
+                                         horizon, floor)
+    violations += ep_v
+    passed += ep_passed
 
     cov_v, cov_passed = _covenant_checks(funded, state, mandate, skip_ratios=bool(ext_passed or ext_violations))
     violations += cov_v + ext_violations
