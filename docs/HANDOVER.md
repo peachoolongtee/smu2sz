@@ -15,6 +15,12 @@ Needs `uv` (Python 3.12), Node with `pnpm`, and `gh` logged in to GitHub. Expect
 3 to 4 minutes. Then, from the repo root: `python3 scripts/run_scenarios.py --inproc` (expect 37/37), followed by
 `git checkout -- services/api/evals` so regenerated evidence is not committed by accident.
 
+On Windows (confirmed 1 Oct on a second machine): `.gitattributes` keeps every text file LF, because fixture
+text is hashed and span-matched byte for byte. Run the suite as `SKIP_PERF_BENCH=1 uv run pytest -o addopts= -q`
+(the latency targets were set on the Mac; expect about 3,800 passed, 24 skipped, 6 to 8 minutes) and prefix
+scripts that print with `PYTHONUTF8=1`, for example
+`PYTHONUTF8=1 uv run --project services/api python scripts/run_scenarios.py --inproc`.
+
 First message to give the new session:
 
 > Read docs/HANDOVER.md and everything it points to, then continue from section 6. Follow the standing

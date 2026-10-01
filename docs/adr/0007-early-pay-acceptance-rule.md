@@ -66,13 +66,33 @@ Without any offer the router draws ¥150,000 on the line to day 32 and finances 
 | Whole RCV-A (¥420,000) at 0.85%, day 2 | discount 420,000 × 0.0085 = ¥3,570.00; nets ¥416,430 ≥ the ¥360,000 need, so no other funding; C1 = 3,570.00 > 2,712.94 | Test 1 passes (0.85% < 0.8832%), test 3 fails → COUNTER |
 | Whole RCV-A at 0.64% | 420,000 × 0.0064 = ¥2,688.00 < 2,712.94 | accept |
 | Whole RCV-A at 0.65% | 420,000 × 0.0065 = ¥2,730.00 > 2,712.94 | COUNTER |
-| ¥211,800 of RCV-A at 0.85% (Counter A) | discount 211,800 × 0.0085 = ¥1,800.30; line ¥150,000 × 6.4% × 32/365 = ¥841.64; C1 = ¥2,641.94 < 2,712.94 | accept |
+| ¥211,900 of RCV-A at 0.85% (Counter A, after the F8 rounding fix) | discount 211,900 × 0.0085 = ¥1,801.15, nets ¥210,098.85; line ¥149,901.15 × 6.4% × 32/365 = ¥841.09; C1 = ¥2,642.24 < 2,712.94 | accept |
 | Any discount > 0 when cash never nears the floor and nothing is drawn | C0 = 0, C1 = discount > 0 | `EARLY_PAY_NOT_NEEDED` |
 | Whole invoice at 0.89%, 30 days early | 0.89% ≥ 0.8832% | `DISCOUNT_ABOVE_BREAK_EVEN` (unchanged) |
 
 The line figure above assumes the line is repaid on day 32 as in the golden plan; the implementation takes
 `C0` and `C1` from the router, not from this table. A second person re-derives every row independently
 before the change merges.
+
+## Implementation notes (added 1 Oct 2026, before the code change)
+
+- **What `C` is.** `C(obligations)` = interest + fees + discounts the engine posts over the horizon when
+  current books plus `obligations` are projected with the router's committed plan for those same books. It
+  is read from the projection, not assembled from plan rows, so the offer's own discount and interest on
+  balances already drawn are both in it.
+- **Packages.** The tests price the early-pay leg at the margin: `C0` = books + the offer's other bound
+  obligations (everything except its early-pay legs), `C1` = books + all bound obligations. For an offer
+  that is only an early payment, `C0` is the standing plan, as in the table.
+- **When a plan is missing.** If the `C0` plan is inadmissible and the `C1` plan is admissible, tests 2 and
+  3 pass. If the `C1` plan is inadmissible, tests 2 and 3 are not evaluated; the reserve predicate reports
+  the breach.
+- **Test 1 source and tenor.** The source is the one `marginal_cost()` returns. `n` = the invoice's due day
+  on current books minus the settlement day; `n ≤ 0` is not an early payment and is not tested.
+- **The counter follows the same rule.** The early-pay counter is priced at the largest whole-5bp rate
+  strictly below `d*(n)` for its own invoice and day (and never above the buyer's offered rate), and is
+  offered only when its total cost (its discount plus the plan for the rest) is below `C0`. Otherwise no
+  early-pay counter exists and the outcome is REJECT.
+- Counter A's face is ¥211,900 since tracker row B5 (it was ¥211,800, which netted ¥0.30 short of the gap).
 
 ## Consequences
 
