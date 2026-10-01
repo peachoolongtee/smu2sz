@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { AutonomyPanel } from "@/components/autonomy-panel";
 import { CheckIcon } from "@/components/icons";
-import { OutcomeBadge, TierBadge } from "@/components/badges";
+import { OutcomeBadge, TierBadge, outcomeHasTier } from "@/components/badges";
 import { PlanCard } from "@/components/plan-card";
 import {
   Badge,
@@ -81,7 +82,13 @@ export default function VerdictPage() {
           {error ? <ErrorState error={error} /> : null}
         </div>
       ) : (
-        <VerdictBody verdict={cur.verdict} offerId={cur.offerId} negotiation={cur.negotiation} />
+        <VerdictBody
+          verdict={cur.verdict}
+          offerId={cur.offerId}
+          negotiation={cur.negotiation}
+          autonomyEligible={cur.offer?.offer.autonomy_eligible}
+          autonomyNotes={cur.offer?.offer.autonomy_notes}
+        />
       )}
     </>
   );
@@ -91,10 +98,14 @@ function VerdictBody({
   verdict,
   offerId,
   negotiation,
+  autonomyEligible,
+  autonomyNotes,
 }: {
   verdict: VerdictView;
   offerId: string;
   negotiation: NegotiationView | null;
+  autonomyEligible?: boolean;
+  autonomyNotes?: string[];
 }) {
   const { t, te } = useI18n();
   const canNegotiate = verdict.counters.length > 0;
@@ -117,12 +128,29 @@ function VerdictBody({
             </p>
           </div>
           <div className="min-w-44">
-            <p className="mb-1 text-xs font-medium text-ink-3">{t("verdict.tier")}</p>
-            <TierBadge tier={verdict.required_tier} />
-            <p className="mt-1 max-w-56 text-xs text-ink-2">{te("tier.short", verdict.required_tier)}</p>
+            {outcomeHasTier(verdict.outcome) ? <p className="mb-1 text-xs font-medium text-ink-3">{t("verdict.tier")}</p> : null}
+            {outcomeHasTier(verdict.outcome) ? (
+              <>
+                <TierBadge tier={verdict.required_tier} />
+                <p className="mt-1 max-w-56 text-xs text-ink-2">{te("tier.short", verdict.required_tier)}</p>
+              </>
+            ) : (
+              <p className="max-w-56 text-sm text-ink-2" data-testid="nothing-executed">
+                {t("verdict.nothingExecuted")}
+              </p>
+            )}
           </div>
         </div>
       </Card>
+
+      <AutonomyPanel
+        outcome={verdict.outcome}
+        tier={verdict.required_tier}
+        summary={verdict.summary}
+        passedChecks={verdict.passed_checks}
+        autonomyEligible={autonomyEligible}
+        autonomyNotes={autonomyNotes}
+      />
 
       <section aria-labelledby="violations-title">
         <h2 id="violations-title" className="mb-2 text-sm font-semibold">

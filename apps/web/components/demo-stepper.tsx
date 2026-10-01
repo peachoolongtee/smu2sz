@@ -1,7 +1,10 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useEffect, useRef } from "react";
 import { demoReset } from "@/lib/api";
+import { onSignedIn } from "@/lib/auth";
+import { ApiError } from "@/lib/errors";
 import { clearDemo, demoStore, useDemo } from "@/lib/demo-store";
 import { DEMO_STEPS, SCENES } from "@/lib/demo";
 import { useI18n } from "@/lib/i18n";
@@ -17,17 +20,40 @@ export function DemoStepper() {
   const current = step >= 0 ? DEMO_STEPS[step] : null;
   const last = DEMO_STEPS.length - 1;
 
+  // The step a 401 interrupted: once the owner signs in from the dialog it opened, it runs by itself (as the chat resends its turn).
+  const interrupted = useRef<number | null>(null);
+
   async function goTo(target: number) {
     if (demoStore.get().busy || target < 0 || target > last) return;
+    interrupted.current = null;
     demoStore.set((s) => ({ ...s, busy: true, error: null }));
     try {
       await DEMO_STEPS[target].run();
       demoStore.set((s) => ({ ...s, step: target, busy: false }));
-      router.push(DEMO_STEPS[target].route);
+      const route = DEMO_STEPS[target].route;
+      router.push(route);
+      const hash = route.split("#")[1];
+      if (hash) requestAnimationFrame(() => document.getElementById(hash)?.scrollIntoView({ block: "start" }));
     } catch (e) {
+      if (e instanceof ApiError && e.status === 401) {
+        interrupted.current = target;
+        demoStore.set((s) => ({ ...s, busy: false }));
+        return;
+      }
       demoStore.set((s) => ({ ...s, busy: false, error: e instanceof Error ? e.message : String(e) }));
     }
   }
+
+  useEffect(
+    () =>
+      onSignedIn(() => {
+        const target = interrupted.current;
+        if (target !== null) void goTo(target);
+      }),
+    // goTo only reads the demo store and the router, so the first render's copy is the one to keep.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
 
   function back() {
     const target = step - 1;
@@ -44,7 +70,9 @@ export function DemoStepper() {
       clearDemo();
       router.push("/mandate");
     } catch (e) {
-      demoStore.set((s) => ({ ...s, busy: false, error: e instanceof Error ? e.message : String(e) }));
+      // A 401 has opened the sign-in dialog; Reset stays a deliberate click.
+      const unauthorized = e instanceof ApiError && e.status === 401;
+      demoStore.set((s) => ({ ...s, busy: false, error: unauthorized ? null : e instanceof Error ? e.message : String(e) }));
     }
   }
 

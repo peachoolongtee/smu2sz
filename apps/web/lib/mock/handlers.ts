@@ -5,6 +5,7 @@
  */
 
 import { sha256 } from "js-sha256";
+import { getOwnerToken, requestSignIn } from "../auth";
 import { MOCK_LATENCY_MS } from "../config";
 import { ApiError } from "../errors";
 import type {
@@ -52,6 +53,7 @@ import fundingJson from "../../mocks/funding.json";
 import mandateJson from "../../mocks/mandate.json";
 import negAccept from "../../mocks/negotiation_accept.json";
 import negNoDeal from "../../mocks/negotiation_nodeal.json";
+import offerAccept from "../../mocks/offer_accept.json";
 import offerEx01 from "../../mocks/offer_ex01.json";
 import offerEx01b from "../../mocks/offer_ex01b.json";
 import offerSec from "../../mocks/offer_sec.json";
@@ -60,6 +62,7 @@ import reconciliationJson from "../../mocks/reconciliation.json";
 import stateJson from "../../mocks/state.json";
 import trajCons from "../../mocks/trajectory_conservative.json";
 import trajExp from "../../mocks/trajectory_expected.json";
+import verdictAccept from "../../mocks/verdict_accept.json";
 import verdictEx01 from "../../mocks/verdict_ex01.json";
 import verdictEx01b from "../../mocks/verdict_ex01b.json";
 import verdictSec from "../../mocks/verdict_sec.json";
@@ -82,6 +85,8 @@ const FIXTURE_OFFERS: { fixture_id: string; view: OfferView; verdict: VerdictVie
   { fixture_id: "EX01_PACKAGE", view: cast(offerEx01), verdict: cast(verdictEx01) },
   { fixture_id: "EX01B_REWORDED", view: cast(offerEx01b), verdict: cast(verdictEx01b) },
   { fixture_id: "SEC_DEMO_FASTCAPITAL", view: cast(offerSec), verdict: cast(verdictSec) },
+  // Recorded from the live API for typed text (no server fixture): a whole-invoice early payment inside every limit, an ACCEPT at Tier 1.
+  { fixture_id: "TYPED_EARLY_0_5", view: cast(offerAccept), verdict: cast(verdictAccept) },
 ];
 
 const GENESIS = "0".repeat(64);
@@ -325,7 +330,7 @@ export async function evaluateOffer(offerId: string): Promise<VerdictView> {
     if (offerId === "OFF-SEC") {
       s.securityScene = true;
       append("reject_sec");
-    } else {
+    } else if (b.verdict.outcome === "COUNTER" || b.verdict.outcome === "REJECT") {
       append("counter_a");
       append("counter_b");
     }
@@ -403,12 +408,13 @@ export async function decideApproval(id: string, decision: ApprovalDecision): Pr
   const a = s.approvals.find((x) => x.id === id);
   if (!a) throw new ApiError(404, `Approval ${id} not found.`);
   if (a.status !== "PENDING") throw new ApiError(409, `Approval ${id} is already ${a.status}.`);
+  let op: OperationView;
   if (decision === "APPROVE") {
     a.status = "APPROVED";
-    append(id === "APR-2" ? "release_borrower_file" : "apply_facility");
+    op = append(id === "APR-2" ? "release_borrower_file" : "apply_facility");
   } else {
     a.status = "REJECTED";
-    append("request_approval", {
+    op = append("request_approval", {
       status: "REFUSED",
       requested_by: "OWNER",
       message: "Owner rejected the request; nothing executed",
@@ -417,7 +423,7 @@ export async function decideApproval(id: string, decision: ApprovalDecision): Pr
   }
   a.decided_day = 0;
   save();
-  return clone(a);
+  return { ...clone(a), result_message: op.message };
 }
 
 export async function getAlerts(): Promise<AlertsView> {
@@ -516,6 +522,11 @@ export async function whatIf(params: WhatIfParams): Promise<WhatIfResult> {
 
 export async function demoReset(): Promise<void> {
   await delay();
+  // Like the live API, the reset is an owner action: without a token the sign-in dialog opens and the caller retries after sign-in.
+  if (!getOwnerToken()) {
+    requestSignIn("required");
+    throw new ApiError(401, "Owner sign-in required (401). Sign in with the owner token to use this.");
+  }
   memory = emptyStore();
   save();
   home.resetHome();

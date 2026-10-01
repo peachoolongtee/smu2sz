@@ -1,27 +1,29 @@
 "use client";
 
 import { useState } from "react";
-import { TierBadge } from "@/components/badges";
-import { Badge, Button, Callout, Card, EmptyState, ErrorState, LoadingBlock, PageHeader, type Tone } from "@/components/ui";
-import { ApiError, apiMode, decideApproval, getApprovals } from "@/lib/api";
+import { ApprovalCard } from "@/components/approval-card";
+import { Badge, Callout, EmptyState, ErrorState, LoadingBlock, PageHeader } from "@/components/ui";
+import { ApiError, apiMode, decideApproval, getApprovals, getLedger } from "@/lib/api";
 import { bump } from "@/lib/demo-store";
 import { useI18n } from "@/lib/i18n";
-import type { ApprovalDecision, ApprovalView } from "@/lib/types";
+import type { ApprovalDecision } from "@/lib/types";
 import { useAsync } from "@/lib/use-async";
 
-const statusTone: Record<ApprovalView["status"], Tone> = { PENDING: "warn", APPROVED: "ok", REJECTED: "bad" };
-
 export default function ApprovalsPage() {
-  const { t, te } = useI18n();
+  const { t } = useI18n();
   const list = useAsync(getApprovals, []);
+  // The commitments an ACCEPT_OFFER or RECORD_COMMITMENT names are read from the ledger; a failed read only hides the terms.
+  const ledger = useAsync(getLedger, []);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [results, setResults] = useState<Record<string, string>>({});
 
   async function decide(id: string, decision: ApprovalDecision) {
     setBusyId(`${id}:${decision}`);
     setError(null);
     try {
-      await decideApproval(id, decision);
+      const decided = await decideApproval(id, decision);
+      if (decided.result_message) setResults((r) => ({ ...r, [id]: decided.result_message ?? "" }));
       bump();
     } catch (e) {
       if (e instanceof ApiError && (e.status === 404 || e.status === 409)) {
@@ -63,49 +65,19 @@ export default function ApprovalsPage() {
       ) : list.data.length === 0 ? (
         <EmptyState title={t("appr.empty.title")} body={t("appr.empty.body")} />
       ) : (
-        <ul className="grid gap-4 lg:grid-cols-2">
-          {list.data.map((a) => {
-            const isPending = a.status === "PENDING";
-            return (
-              <li key={a.id} className="min-w-0">
-                <Card
-                  id={`approval-${a.id}`}
-                  tone={isPending ? "warn" : undefined}
-                  title={a.subject}
-                  subtitle={`${a.id} · ${te("opkind", a.operation_kind)} · ${te("actor", a.requested_by)} · ${t("appr.created", { day: a.created_day })}`}
-                  actions={<Badge tone={statusTone[a.status]}>{te("apprstatus", a.status)}</Badge>}
-                >
-                  <div className="flex flex-wrap items-center gap-2">
-                    <TierBadge tier={a.tier} />
-                    {a.amount_display ? <span className="text-lg font-semibold tabular-nums">{a.amount_display}</span> : null}
-                  </div>
-                  {a.detail ? <p className="mt-2 text-sm text-ink-2">{a.detail}</p> : null}
-                  {isPending ? (
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      <Button
-                        variant="primary"
-                        loading={busyId === `${a.id}:APPROVE`}
-                        disabled={busyId !== null}
-                        onClick={() => void decide(a.id, "APPROVE")}
-                      >
-                        {t("appr.approve")}
-                      </Button>
-                      <Button
-                        variant="secondary"
-                        loading={busyId === `${a.id}:REJECT`}
-                        disabled={busyId !== null}
-                        onClick={() => void decide(a.id, "REJECT")}
-                      >
-                        {t("appr.reject")}
-                      </Button>
-                    </div>
-                  ) : (
-                    <p className="mt-3 text-xs text-ink-3">{t("appr.decided", { day: a.decided_day ?? 0 })}</p>
-                  )}
-                </Card>
-              </li>
-            );
-          })}
+        <ul className="grid items-start gap-4 lg:grid-cols-2">
+          {list.data.map((a) => (
+            <li key={a.id} className="min-w-0">
+              <ApprovalCard
+                a={a}
+                commitments={ledger.data?.commitments}
+                ledgerLoaded={!ledger.loading || Boolean(ledger.error)}
+                busyId={busyId}
+                resultMessage={results[a.id]}
+                onDecide={(id, d) => void decide(id, d)}
+              />
+            </li>
+          ))}
         </ul>
       )}
     </>
