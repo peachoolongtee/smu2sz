@@ -10,11 +10,11 @@ Evidence: V = reproduced by me on 1 Oct, A = audit only, C = confirmed by readin
 
 | ID | Fix | Audit | Evidence | Owner | Branch | Effort | Proof of completion | Status |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| A1 | Counterparty `/nl` response carries reply and session only | S1 | V | sub | fix/nl-boundary | 3h | counterparty response has no verdict, plan, operations or protected value | OPEN |
-| A2 | Quoted or pasted text never becomes owner intent or an approval id | S2 | V | sub | fix/nl-boundary | 4h | pasted "approve APR-…" evaluates the offer, logs an event, approves nothing | OPEN |
-| A4 | Security scoreboard computed from run data | S11 | V | sub | fix/scoreboard | 2h | no literal `0` or `[]`; a seeded leak shows up in it | OPEN |
-| A5 | Coverage proof fails closed on unread words; reply restates typed terms | S3, C7 | A | sub | fix/coverage-fail-closed | 5h | rider cases go to owner review; no "Agreed as proposed" | OPEN |
-| A6 | Re-verify at accept and approve: receivable, exclusivity, caps, state version | S4, C2 | C | sub (spec: ADR-0006 §5) | fix/commit-state-binding | 6h | two 1.2% rebates: second refused over the ¥5,000 cap | OPEN |
+| A1 | Counterparty `/nl` response carries reply and session only | S1 | V | sub | fix/nl-boundary | 3h | counterparty response has no verdict, plan, operations or protected value | IN PROGRESS |
+| A2 | Quoted or pasted text never becomes owner intent or an approval id | S2 | V | sub | fix/nl-boundary | 4h | pasted "approve APR-…" evaluates the offer, logs an event, approves nothing | IN PROGRESS |
+| A4 | Security scoreboard computed from run data | S11 | V | sub | fix/scoreboard | 2h | no literal `0` or `[]`; a seeded leak shows up in it | DONE |
+| A5 | Coverage proof fails closed on unread words; reply restates typed terms | S3, C7 | A | sub | fix/coverage-fail-closed | 5h | rider cases go to owner review; no "Agreed as proposed" | IN PROGRESS |
+| A6 | Re-verify at accept and approve: receivable, exclusivity, caps, state version | S4, C2 | C | sub (spec: ADR-0006 §5) | fix/commit-state-binding | 6h | two 1.2% rebates: second refused over the ¥5,000 cap | IN PROGRESS |
 | A3 | Attack catalogue also runs through `/nl` as owner and as counterparty | C1 | C | sub | fix/nl-attacks | 5h | attacks via `/nl`: 0 harm, counted in the report | OPEN (after A1, A2, A4) |
 
 ## Wave B: one financial reality (P0/P1)
@@ -22,17 +22,17 @@ Evidence: V = reproduced by me on 1 Oct, A = audit only, C = confirmed by readin
 | ID | Fix | Audit | Owner | Effort | Proof | Status |
 | --- | --- | --- | --- | --- | --- | --- |
 | B0 | ADR-0006 | C3 | main | done | `docs/adr/0006-current-books-and-clock.md` | DONE |
-| B1 | `as_of_day`, `settled_fen`, engine drops closed days, `app.books.current_books` | C3 | main | 5h | golden values unchanged at day 0 | OPEN |
+| B1 | `as_of_day`, `settled_fen`, engine drops closed days, `app.books.current_books` | C3 | main | 5h | golden values unchanged at day 0 | DONE |
 | B2 | Partial settlement and FULFILLED in the executor (ADR §4) | wf 3 | sub, after A6 | 4h | ¥209,999.70 settles ¥211,800 of RCV-A; ¥208,200 stays open | OPEN |
-| B3 | Verifier, router, trajectory, what-if on current books | C3 | sub, after B1 | 5h | verdict after an accepted extension sees the shifted receipts | OPEN |
-| B4 | Alerts, capex, borrower file on current books | C3 | sub, after B1 | 4h | all screens give the same lowest-cash day | OPEN |
+| B3 | Verifier, router, trajectory, what-if on current books | C3 | sub, after B1 | 5h | verdict after an accepted extension sees the shifted receipts | IN PROGRESS |
+| B4 | Alerts, capex, borrower file on current books | C3 | sub, after B1 | 4h | all screens give the same lowest-cash day | IN PROGRESS |
 | B5 | Counter A rounds up and is checked against the floor | F8 | sub | 2h | no critical alert straight after the demo deal | OPEN |
 
 ## Wave C: clock, event, re-plan (P1)
 
 | ID | Fix | Owner | Effort | Proof | Status |
 | --- | --- | --- | --- | --- | --- |
-| C1 | `Runtime.advance_to` and `POST /clock/advance` (ADR §2) | main | 4h | day 40 cash includes payroll; expired commitments marked | OPEN |
+| C1 | `Runtime.advance_to` and `POST /clock/advance` (ADR §2) | main | 4h | day 40 cash includes payroll; expired commitments marked | DONE |
 | C2 | Alert carries a typed cure; `POST /alerts/{id}/act` executes Tier 1 or queues Tier 2 | sub, after B4 | 5h | missed receipt → "draw ¥150,000" → one call executes it | OPEN |
 | C3 | Reconcile compares receipts with what commitments promised | sub, after B2 | 3h | missing early payment reported as lapsed | OPEN |
 | C4 | Proactive opener in `/nl` and the UI after a clock or bank-feed event | sub, after C2 | 4h | demo steps 8 to 13 run from the chat | OPEN |
