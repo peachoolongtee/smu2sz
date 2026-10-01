@@ -71,8 +71,18 @@ def main() -> int:
         print("  outstanding:", o["receivable_id"], o.get("face_display", o["face_fen"]), "due", o["due_day"],
               "past due" if o["past_due"] else "")
     cure = [a for a in late if a["kind"] == "RESERVE_BREACH_AHEAD" and a.get("committed_cure")]
-    print(f"\nRESULT: critical alerts after the deal: {len(critical)}; breach alerts with a committed cure on day 34: {len(cure)}")
-    return 0 if not critical and cure else 1
+    cured = False
+    if cure:
+        r = c.post(f"/alerts/{cure[0]['id']}/act", headers=OWNER)
+        act = r.json()
+        print(f"\n== act on {cure[0]['id']}: HTTP {r.status_code}")
+        for res in act.get("results", []):
+            print(f"  {res['kind']} {res['status']} (tier {res['tier']}, seq {res['seq']}): {res['message']}")
+        cured = r.status_code == 200 and act["executed"] >= 1 and act["cured"]
+        show_alerts(c, "after the cure")
+    print(f"\nRESULT: critical alerts after the deal: {len(critical)}; breach alerts with a committed cure on day 34: "
+          f"{len(cure)}; cure executed and alert cleared: {cured}")
+    return 0 if not critical and cure and cured else 1
 
 
 if __name__ == "__main__":
