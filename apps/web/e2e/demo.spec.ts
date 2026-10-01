@@ -19,7 +19,8 @@ async function next(page: Page, url: RegExp) {
 
 test("demo stepper walks Scene 1, Scene 2, Scene 3 and Security with the golden numbers", async ({ page }) => {
   await page.goto("/");
-  await expect(page).toHaveURL(/\/mandate/);
+  // `/` is the owner home now (it no longer redirects); the stepper's first step goes to the mandate.
+  await expect(page.getByRole("heading", { name: "Home", level: 1 })).toBeVisible();
 
   // Setup: reset, then the signed mandate and its three tiers.
   await next(page, /\/mandate/);
