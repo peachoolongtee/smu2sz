@@ -36,7 +36,7 @@ headroom through the chat status reply (S9).
 | B2 | Partial settlement and FULFILLED in the executor (ADR §4) | wf 3 | sub, after A6 | 4h | ¥209,999.70 settles ¥211,800 of RCV-A; ¥208,200 stays open | DONE |
 | B3 | Verifier, router, trajectory, what-if on current books | C3 | sub, after B1 | 5h | verdict after an accepted extension sees the shifted receipts | DONE |
 | B4 | Alerts, capex, borrower file on current books | C3 | sub, after B1 | 4h | all screens give the same lowest-cash day | DONE |
-| B5 | Counter A rounds up and is checked against the floor | F8 | sub | 2h | no critical alert straight after the demo deal | IN PROGRESS (fix/counter-a-rounding) |
+| B5 | Counter A rounds up and is checked against the floor | F8 | sub | 2h | no critical alert straight after the demo deal | DONE |
 
 Added during integration (all DONE): each financing advance is recorded on its invoice (`Receivable.advance_fen`)
 so the projection repays it from that invoice; the clock applies a scenario's dated events
@@ -46,13 +46,19 @@ Integrated run on 1 Oct (EX01 → deal → receipt of ¥209,999.70 on day 2 → 
 ¥208,200 is reported past due and the gap peaks at ¥200,000.30 on day 42. The only thing stopping a cure
 is B5: Counter A leaves cash ¥0.30 under the floor, so the breach starts "today".
 
+B5 merged 1 Oct: Counter A is ¥211,900 at 0.85% (nets ¥210,098.85; discount ¥1,801.15 + line ¥841.09 =
+¥2,642.24), offered only when the router's plan on books with the counter is admissible. Integrated run
+(`scripts/demo_run.py`): no critical alert after the deal; on day 34, with the ¥208,100 residual unpaid, the
+breach on day 42 (¥200,000) comes with a committed cure: finance ¥200,000 of `RI:BUYER-1:2`. If the early
+payment never arrives at all, reconciliation reports it LAPSED and no committed cure exists (gap ¥410,098.85).
+
 ## Wave C: clock, event, re-plan (P1)
 
 | ID | Fix | Owner | Effort | Proof | Status |
 | --- | --- | --- | --- | --- | --- |
 | C1 | `Runtime.advance_to` and `POST /clock/advance` (ADR §2) | main | 4h | day 40 cash includes payroll; expired commitments marked | DONE |
 | C2 | Alert carries a typed cure; `POST /alerts/{id}/act` executes Tier 1 or queues Tier 2 | sub, after B4 | 5h | missed receipt → "draw ¥150,000" → one call executes it | OPEN |
-| C3 | Reconcile compares receipts with what commitments promised | sub, after B2 | 3h | missing early payment reported as lapsed | IN PROGRESS (feat/reconcile-promises) |
+| C3 | Reconcile compares receipts with what commitments promised | sub, after B2 | 3h | missing early payment reported as lapsed | DONE |
 | C4 | Proactive opener in `/nl` and the UI after a clock or bank-feed event | sub, after C2 | 4h | demo steps 8 to 13 run from the chat | OPEN |
 
 ## Wave D: financial correctness (P0 where a verdict changes)
