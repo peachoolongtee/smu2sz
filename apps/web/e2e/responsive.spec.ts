@@ -43,12 +43,7 @@ test("the stepper and navigation are reachable", async ({ page }) => {
 
 test("the slide-over chat fits the viewport with a long reply", async ({ page }) => {
   await page.goto("/mandate");
-  await page.getByTestId("owner-signin-open").click();
-  const signin = page.getByRole("dialog", { name: "Owner sign-in" });
-  await signin.getByLabel("Owner token").fill("demo-owner-token");
-  await signin.getByRole("button", { name: "Sign in" }).click();
-  await expect(signin).toBeHidden();
-
+  // Already signed in as the owner by the fixture.
   await page.getByTestId("chat-open").click();
   const panel = page.getByRole("dialog", { name: "Chat with the agent" });
   await expect(panel).toBeVisible();
