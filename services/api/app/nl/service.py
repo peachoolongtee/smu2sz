@@ -21,6 +21,7 @@ from app.domain.models import (
     SignPersonalGuarantee,
 )
 from app.domain.ports import LedgerStore
+from app.nl import capabilities as cap
 from app.nl import classifier as clf
 from app.nl import lexicon as lx
 from app.nl.alerts import alerts_intent, alerts_turn, confirm_cure
@@ -44,10 +45,11 @@ from app.operations import Executor
 MIN_LLM_CONFIDENCE = 0.6
 APPROVAL_ID = re.compile(r"APR-\d{6}", re.IGNORECASE)
 CAPABILITIES_EN = ("I can evaluate a buyer's offer, negotiate with counters, get an invoice paid early, fund a "
-                   "projected cash gap, repay a facility, show cash status, explain a verdict, run a what-if, and "
-                   "approve or reject pending operations.")
+                   "projected cash gap, repay a facility, show cash status, explain a verdict, run a what-if, compare "
+                   "financing options, reconcile receipts, show the covenant ratios, evaluate an equipment purchase, "
+                   "prepare a borrower file, and approve or reject pending operations.")
 CAPABILITIES_ZH = ("我可以评估买家报价、发送反报价谈判、提前收款、为资金缺口融资、偿还额度、查看现金状况、解释结论、"
-                   "做假设分析，以及批准或驳回待审批操作。")
+                   "做假设分析、比较融资方案、核对回款、查看契约指标、评估设备购置、准备借款人资料，以及批准或驳回待审批操作。")
 
 
 def handle(req: NlRequest, *, store: LedgerStore, executor: Executor, day: int, owner_key_hex: str,
@@ -198,6 +200,8 @@ def _dispatch(ctx: NlContext, p: Parsed, text: str) -> Turn:
     slots = p.slots
     if slots.counterparty_id is None and s.counterparty_id:
         slots = slots.model_copy(update={"counterparty_id": s.counterparty_id})
+    if p.intent in cap.OWNER_ONLY and not ctx.owner_authenticated:
+        return cap.needs_sign_in(ctx, p.intent)
     match p.intent:
         case Intent.EVALUATE_OFFER:
             return evaluate_offer(ctx, slots)
@@ -213,6 +217,16 @@ def _dispatch(ctx: NlContext, p: Parsed, text: str) -> Turn:
             return status(ctx)
         case Intent.SHOW_ALERTS:
             return alerts_intent(ctx)
+        case Intent.COMPARE_FINANCING:
+            return cap.compare_financing(ctx)
+        case Intent.RECONCILE:
+            return cap.reconcile_receipts(ctx)
+        case Intent.SHOW_RATIOS:
+            return cap.show_ratios(ctx)
+        case Intent.CAPEX:
+            return cap.capex_intent(ctx, slots)
+        case Intent.BORROWER_FILE:
+            return cap.borrower_file(ctx, slots, text, execute=False)  # proposed first; runs on a direct go-ahead
         case Intent.EXPLAIN:
             return explain(ctx, slots, text)
         case Intent.WHAT_IF:
@@ -226,7 +240,7 @@ def _dispatch(ctx: NlContext, p: Parsed, text: str) -> Turn:
                         ("3", t(ctx, "get an invoice paid early", "提前收款"), Intent.ACCELERATE_RECEIPT.value)],
                        slots)
         case _:
-            return _out_of_scope(ctx, slots)
+            return _out_of_scope(ctx, slots, text)
 
 
 MAX_COMMAND_CHARS = 80
@@ -314,6 +328,8 @@ def _confirm(ctx: NlContext, yes: bool, text: str) -> Turn:
             turn = execute_decision(ctx, pending.data["verdict_id"])
         case Intent.SHOW_ALERTS:
             turn = confirm_cure(ctx, pending)
+        case Intent.BORROWER_FILE:
+            turn = cap.borrower_file(ctx, slots, "", execute=True)
         case _:
             turn = Turn(intent=pending.intent, reply=t(ctx, "Nothing to run.", "没有可执行的内容。"))
     turn.clear_pending = True
@@ -391,7 +407,7 @@ TIER3_OPS = {"SIGN_PERSONAL_GUARANTEE": SignPersonalGuarantee, "PLEDGE_COLLATERA
              "ISSUE_EQUITY": IssueEquity, "CHANGE_MANDATE": ChangeMandate}
 
 
-def _out_of_scope(ctx: NlContext, slots: Slots) -> Turn:
+def _out_of_scope(ctx: NlContext, slots: Slots, text: str = "") -> Turn:
     steps = Steps()
     if slots.tier3:
         # The typed request goes to the executor so its refusal is on the hash-chained log: tiers are
@@ -411,12 +427,7 @@ def _out_of_scope(ctx: NlContext, slots: Slots) -> Turn:
             ctx, f"Refused: {kind.replace('_', ' ').lower()} is a Tier-3 action. The agent can never do it, whoever "
                  f"asks; it was refused by the executor and logged. " + CAPABILITIES_EN,
             f"已拒绝：{kind} 属于三级操作，代理在任何情况下都不能执行；执行器已拒绝并记录。" + CAPABILITIES_ZH))
-    if slots.capex:
-        return Turn(intent=Intent.OUT_OF_SCOPE, reply=t(
-            ctx, "Capex decisions are not available through this assistant yet (feature 'capex'). " + CAPABILITIES_EN,
-            "资本支出评估暂不支持。" + CAPABILITIES_ZH))
-    return Turn(intent=Intent.OUT_OF_SCOPE, reply=t(ctx, "Sorry, that's outside what I can do. " + CAPABILITIES_EN,
-                                                    "抱歉，这超出了我的能力范围。" + CAPABILITIES_ZH))
+    return cap.nearest_reply(ctx, text, CAPABILITIES_EN, CAPABILITIES_ZH)
 
 
 # ---------------------------------------------------------------- session and response

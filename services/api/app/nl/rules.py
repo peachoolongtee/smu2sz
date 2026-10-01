@@ -2,6 +2,7 @@
 classifier is consulted only when these rules find nothing.
 
 Order matters and is fixed ("why"/"为什么" makes a request EXPLAIN before any decline or approval cue):
+  (borrower file, financing comparison, reconciliation, ratios and capex are read before the status questions)
   correction / confirmation of the session's pending plan, Tier-3 requests, explicit approvals,
   EXPLAIN, WHAT_IF, fixture or quoted-offer references, ACCELERATE_RECEIPT, NEGOTIATE, REPAY_FACILITY,
   FUND_GAP, SHOW_STATUS, bare approvals, capex, vague cash requests (AMBIGUOUS).
@@ -214,13 +215,23 @@ def parse(text: str, state: FinancialState, *, pending_plan: bool = False) -> Pa
     if s.fixture_id == "EX12_GOAL":
         return hit(Intent.ACCELERATE_RECEIPT, "fixture:EX12")
     if s.fixture_id == "EX11_CAPEX":
-        return hit(Intent.OUT_OF_SCOPE, "capex")
+        return hit(Intent.CAPEX, "fixture:EX11")
     if (s.fixture_id or s.quoted_text) and lx.NEGOTIATE.search(text):
         return hit(Intent.NEGOTIATE, "negotiate+offer")
     if s.fixture_id or s.quoted_text:
         return hit(Intent.EVALUATE_OFFER, "offer_reference")
     if lx.ALERTS.search(text) and not lx.ACCELERATE.search(text):
         return hit(Intent.SHOW_ALERTS, "alerts")
+    if lx.BORROWER_FILE.search(text):
+        return hit(Intent.BORROWER_FILE, "borrower_file")
+    if lx.COMPARE_FINANCING.search(text) and not lx.ACCELERATE.search(text):
+        return hit(Intent.COMPARE_FINANCING, "compare_financing")
+    if lx.RECONCILE.search(text):
+        return hit(Intent.RECONCILE, "reconcile")
+    if lx.RATIOS.search(text):
+        return hit(Intent.SHOW_RATIOS, "ratios")
+    if lx.CAPEX_ASK.search(text):
+        return hit(Intent.CAPEX, "capex")
     if lx.STATUS_QUESTION.search(text) and not lx.ACCELERATE.search(text):
         return hit(Intent.SHOW_STATUS, "status_question")
     if lx.NEGOTIATE_VERB.search(text):
@@ -246,7 +257,7 @@ def parse(text: str, state: FinancialState, *, pending_plan: bool = False) -> Pa
     if lx.DECLINE.search(text):
         return hit(Intent.REJECT, "approval")
     if s.capex:
-        return hit(Intent.OUT_OF_SCOPE, "capex")
+        return hit(Intent.CAPEX, "capex")
     if lx.AMBIGUOUS.search(text) or bare_counterparty(text, state):
         return hit(Intent.AMBIGUOUS, "vague")
     return None
