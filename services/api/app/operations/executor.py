@@ -906,7 +906,9 @@ class Executor:
             raise _refuse(Code.PRECONDITION_FAILED,
                           f"Advance {fmt_yuan(op.advance_fen)} exceeds {f.id}'s available {fmt_yuan(available)}")
         fee = upfront_fee(f, op.advance_fen)
-        receivables = [x.model_copy(update={"status": "FINANCED"}) if x.id == r.id else x for x in state.receivables]
+        receivables = [x.model_copy(update={"status": "FINANCED", "advance_fen": op.advance_fen,
+                                            "advance_facility_id": f.id}) if x.id == r.id else x
+                       for x in state.receivables]
         new_state = _bump(state, cash_fen=state.cash_fen + op.advance_fen - fee, receivables=receivables,
                           facilities=_with_facility(state, f.model_copy(update={"drawn_fen": f.drawn_fen + op.advance_fen})))
         return _Effect(f"Advance {fmt_yuan(op.advance_fen)} on {r.id} from {f.id} on day {ctx.now}", state=new_state)
@@ -969,7 +971,8 @@ class Executor:
                     f"{fmt_yuan(fee)} ({days} days billed as {periods} whole period(s)) to {f.id}")
         settled = r.settled_fen + face_settled
         status = "SETTLED" if settled == r.face_fen else "OPEN"
-        receivables = [x.model_copy(update={"status": status, "settled_fen": settled}) if x.id == r.id else x
+        receivables = [x.model_copy(update={"status": status, "settled_fen": settled, "advance_fen": 0,
+                                            "advance_facility_id": None}) if x.id == r.id else x
                        for x in state.receivables]
         new_state = _bump(state, cash_fen=cash, receivables=receivables, facilities=facilities)
         residual = r.face_fen - settled

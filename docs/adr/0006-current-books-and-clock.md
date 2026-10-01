@@ -94,8 +94,8 @@ re-evaluate. Nothing is ever executed from a verdict that no longer holds.
 
 - Interest on a balance drawn after day 0 is still projected as if drawn on day 0 (existing convention,
   overstates only). The executor charges actual days.
-- A financed receivable that goes overdue keeps its advance outstanding in the projection until the
-  horizon end. Known limit; say so in the technical document.
+- A financed receivable that goes overdue: the projection repays its advance today, without the receipt
+  (the lender has recourse). Each advance is recorded on its own invoice (`Receivable.advance_fen`).
 
 ## Kill condition
 

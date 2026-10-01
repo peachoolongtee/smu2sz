@@ -81,6 +81,8 @@ class _Rcv:
     notes: list[str] = field(default_factory=list)
     early: int = 0  # face settled before the due day (discounted or early-paid)
     financed: bool = False
+    advance: int = 0  # recorded advance outstanding on this invoice, and its facility
+    advance_facility_id: str | None = None
 
     @property
     def due(self) -> int:
@@ -146,7 +148,9 @@ def _receivables(state: FinancialState, issue_bound: int) -> dict[str, _Rcv]:
         if r.face_fen - r.settled_fen <= 0:
             continue
         out[r.id] = _Rcv(r.id, r.counterparty_id, r.face_fen - r.settled_fen, r.issue_day, r.terms_days, r.confirmed,
-                         False, financed=r.status == "FINANCED")
+                         False, financed=r.status == "FINANCED",
+                         advance=r.advance_fen if r.status == "FINANCED" else 0,
+                         advance_facility_id=r.advance_facility_id)
     for ri in state.recurring_invoices:
         if ri.every_days <= 0:
             raise ObligationError(f"recurring invoice for {ri.counterparty_id} has every_days <= 0")
@@ -553,11 +557,18 @@ def _repay_carried_advance(f: Facility, r: _Rcv, advance: int, book: _Book, toda
 def _carry_drawn_balances(state: FinancialState, rcvs: dict[str, _Rcv], book: _Book) -> None:
     """Schedule the repayment of every balance already drawn at day 0 (module docstring)."""
     financed = sorted((r for r in rcvs.values() if r.financed), key=lambda r: (r.due, r.id))
+    recorded = [r for r in financed if r.advance > 0]  # the executor recorded the advance on the invoice
+    financed = [r for r in financed if r.advance == 0]  # older states: allocate the balance in due order
     for f in sorted(state.facilities, key=lambda x: x.id):
         if f.drawn_fen <= 0 or f.kind in _NOT_CARRIED:
             continue
         if f.kind == FacilityKind.INVOICE_FINANCING:
             left = f.drawn_fen
+            for r in [r for r in recorded if r.advance_facility_id == f.id]:
+                advance = min(left, r.advance)
+                if advance > 0:
+                    _repay_carried_advance(f, r, advance, book, state.as_of_day)
+                    left -= advance
             while financed and left > 0:
                 r = financed.pop(0)
                 cap = r.face if f.advance_rate_bp is None else post(bp(f.advance_rate_bp) * r.face)
