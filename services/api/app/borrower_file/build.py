@@ -25,6 +25,7 @@ from typing import Any
 
 from pydantic import TypeAdapter, ValidationError
 
+from app.books import current_books
 from app.borrower_file.models import (
     EVIDENCE_TEXT,
     BorrowerFile,
@@ -40,7 +41,6 @@ from app.domain.models import (
     CashFlow,
     Commitment,
     CommitmentStatus,
-    Contingency,
     CovenantKind,
     DrawFacility,
     Facility,
@@ -53,8 +53,6 @@ from app.domain.models import (
     LedgerEventKind,
     Mode,
     MonthPoint,
-    Obligation,
-    ObligationType,
     Operation,
     OperationResult,
     OperationStatus,
@@ -158,31 +156,6 @@ def _entries(store: LedgerStore) -> list[_Entry]:
         except ValidationError:  # a corrupted row is an integrity failure, reported by /audit, not a crash (F-12)
             continue
         out.append(_Entry(r.seq, op, res, r.entry_hash, r.prev_hash))
-    return out
-
-
-def _cash_relevant(o: Obligation) -> bool:
-    if o.contingency == Contingency.CLAIMED_UNEVIDENCED or o.type == ObligationType.CLAIMED_PRIOR_CONCESSION:
-        return False
-    if o.type in (ObligationType.CONTINGENT_REBATE, ObligationType.OPERATIONAL_CONCESSION):
-        return o.effective_day is not None  # otherwise already in state.forward_concessions
-    return o.type in (ObligationType.IMMEDIATE_DISCOUNT, ObligationType.TERMS_EXTENSION,
-                      ObligationType.PRICE_ADJUSTMENT)
-
-
-def _committed_obligations(state: FinancialState, commitments: list[Commitment]) -> list[Obligation]:
-    out = []
-    for c in commitments:
-        if c.status not in (CommitmentStatus.ACCEPTED, CommitmentStatus.ACTIVE):
-            continue
-        for o in c.obligations:
-            if not _cash_relevant(o):
-                continue
-            try:
-                project(state, [o], [], Mode.CONSERVATIVE, 0)
-            except EngineError:
-                continue  # e.g. a discount on a receivable already settled: history, not a projection
-            out.append(o)
     return out
 
 
@@ -539,12 +512,15 @@ def build(store: LedgerStore, *, facility_id: str, amount_fen: int, use_of_proce
     use = " ".join(use_of_proceeds.split())
     if not use:
         raise BorrowerFileError("use of proceeds is required")
+    if day < state.as_of_day:
+        raise BorrowerFileError(f"the books are closed to day {state.as_of_day}; the file cannot be dated day {day}")
     if day < 0 or (spend_day is not None and spend_day < day):
         raise BorrowerFileError("the file and any spend day must not be dated before day 0 / the generation day")
 
     commitments = store.commitments()
     log = _entries(store)
-    obs = _committed_obligations(state, commitments)
+    books = current_books(state, commitments)
+    obs = list(books.obligations)
     horizon = max(mandate.horizon_days, day + 7 * WEEKS, MONTH_DAYS * MONTHS)
     try:
         before = project(state, obs, [], Mode.CONSERVATIVE, horizon)
