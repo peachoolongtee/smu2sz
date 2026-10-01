@@ -96,7 +96,7 @@ cheap early payment a few days before the due day; never accepts wrongly).
 | E5 | Autonomy proof shown on Tier-1 accepts; REJECT badge fix | C8 | sub (frontend) | 2h | DONE |
 | E6 | Annualised column next to every discount | §9 | sub | 3h | DONE (`annualised` on owner verdict responses, shown on the verdict page, counters and chat; live e2e 27 passed) |
 | E7 | Compliance half-page, LICENSE, reframed accuracy numbers | §8 | sub (docs) | 2h | DONE except the LICENSE file (the licence is the owner's choice) |
-| E8 | Demo fixes: Start 401, mock/live mismatch | §9 | sub (frontend) | 2h | PARTLY DONE (Start resumes after sign-in, step 6 scrolls to its result; mock verdicts still differ from live: close-out re-records them) |
+| E8 | Demo fixes: Start 401, mock/live mismatch | §9 | sub (frontend) | 2h | DONE (Start resumes after sign-in, step 6 scrolls to its result, every mock re-recorded from the live API) |
 
 ## Wave F: optional (P3, only when A to D are green)
 
@@ -123,6 +123,13 @@ E1, E2 after A1+A2 (same files)         E3–E6 after B4 and C2
 - C waves not green by 9 Oct: ship alert-with-button only (C2), drop C4.
 - E3–E6 never delay the video recording: home view first, the rest if time.
 - No Wave F work while any A to D row is open.
+
+## Close-out, 1 Oct
+
+Evidence, `latest_report.*`, the security report and the docx deliverables were regenerated at the merge of the
+re-recorded mocks; 46 evidence chains verify; `main` fast-forwarded. The held-out intent label I39 (the capex
+question) changed from OUT_OF_SCOPE to CAPEX because chat now answers it; the report's other 10 listed misses
+are unchanged in kind. Open: D5 (owner decision), LICENSE (owner decision), wave F.
 
 ## Scoreboard
 

@@ -129,7 +129,7 @@ def _rel(path: str | None, default: str) -> str:
     if not path:
         return default
     p = Path(path)
-    return str(p.relative_to(ROOT)) if p.is_relative_to(ROOT) else str(p)
+    return p.relative_to(ROOT).as_posix() if p.is_relative_to(ROOT) else p.as_posix()
 
 
 def _yuan(fen: int | None) -> str:

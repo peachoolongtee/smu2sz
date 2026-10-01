@@ -101,8 +101,8 @@ what-if sandbox. Team of five. A DeepSeek key exists; an Anthropic key is option
 
 ## 4. Where things stand (evening of 1 Oct)
 
-`dev` is green: 4,026 passed, 26 skipped (Windows, perf benchmarks skipped); scenarios 46/46; attacks 182
-(122 API + 60 chat), 0 with harm; web mock e2e 29 passed. `scripts/demo_run.py` walks demo steps 1 to 17 in
+`dev` is green: 4,044 passed, 26 skipped (Windows, perf benchmarks skipped); scenarios 46/46; attacks 182
+(122 API + 60 chat), 0 with harm; web mock e2e 29 passed, live e2e 27 passed. `scripts/demo_run.py` walks demo steps 1 to 17 in
 process and exits 0. Baseline before this phase was `6d500a9` (3,557 passed).
 
 **Merged into `dev` before this session** (waves A, B and the clock): chat boundary (S1, S2), computed scoreboard
@@ -125,6 +125,10 @@ direct-command rule for approvals and go-aheads. See `docs/NEXT_FIXES.md` for ea
 | E1/E2 chat | Intents COMPARE_FINANCING, RECONCILE, SHOW_RATIOS, CAPEX, BORROWER_FILE (owner token required) and a nearest-capability fallback |
 | E3 home | `/` is the owner home: the day and a demo clock, the opener with Go ahead, position, approvals, alerts with "Let the agent fix this", recent agent actions |
 | E4/E5 | Approval card with the operation, reason and terms; autonomy proof panel; no tier badge on REJECT; the stepper resumes after sign-in |
+| C6 cure cost | Every proposed cure states its cost and effective annual rate and flags a rate above the APR cap; nothing is blocked |
+| E6 and owner view fields | `annualised` and `autonomy` on owner verdict responses; shown on the verdict page, counters and chat |
+| Web mocks | Every mock file is recorded from the live API by `apps/web/scripts/record-mocks.mjs`; mock and live agree |
+| Documents | Technical document, video script, demo flow, self-assessment, deck outline and README follow today's product; compliance statements added |
 
 Both financial rules were re-derived by hand by a second agent before merging
 (`docs/research/early-pay-handcalc-2026-10-01.md`, `docs/research/dscr-handcalc-2026-10-01.md`). The early-pay
@@ -151,26 +155,27 @@ check found one real fault (the router used an offer's discount as a standing ra
 
 ## 6. What to do next, in order
 
+Everything on the 1 Oct list is merged; `main` was fast-forwarded to `dev` at the end of 1 Oct. The gate at that
+commit: 4,044 backend tests passed, 26 skipped; scenarios 46/46 with 46 evidence chains VALID; attacks 182 with
+0 harm; web mock e2e 29 passed, live e2e 27 passed; `scripts/demo_run.py` exits 0. Evidence, the evaluation
+report, the security report and the three docx deliverables were regenerated at that commit.
+
 1. Confirm the baseline (section 1 commands), then `PYTHONUTF8=1 uv run --project services/api python
-   scripts/demo_run.py` (expect exit 0).
-2. **In flight when this was written:** `feat/api-display-fields` (display strings on obligations; `passed_checks`,
-   `autonomy` and `annualised` on owner verdict responses, for E6 and the autonomy panel). Review, gate, merge.
-3. **Frontend close-out** (one task, after step 2): the annualised column (E6) from the new `annualised` field; make
-   the live e2e project green (3 stale expectations: the alerts note text, the buyer chat turn no longer carries a
-   verdict, EX01 now has four codes); re-record every mock from the live API, including `mocks/nl_script.json`
-   (hand-edited for Counter A) and the verdict mocks (mock Counter B still says ¥1,871.30, live says ¥0.00).
-   Run live e2e with `E2E_API_PORT=8010 E2E_TARGET=live pnpm exec playwright test` if another program holds 8000.
-4. **Cost on the cure** (new, small): the alert and the opener propose "finance ¥200,000 of RI:BUYER-1:2" without
-   saying what it costs. Add the posted cost and the effective annual rate to the suggestion and both texts.
-5. **D5 needs an owner decision before any code** (see section 8): gating invoice financing on its effective annual
-   rate would refuse the demo's day-34 cure (¥200,000 for 13 days costs ¥1,782.19, about 25% a year, against the
-   15% cap).
-6. **E7** compliance half-page and LICENSE (licence choice is the owner's), reframed accuracy numbers.
-7. **Close-out:** regenerate evidence (`uv run --project services/api python scripts/build_deliverables.py
-   --refresh-evidence`) and `services/api/evals/latest_report.*`; update the documents and the demo script for the
-   changed outcomes (early pay 0.65% to 0.88% counters; the guaranteed loan fails DSCR; the borrower file's ¥360,000
-   request is below covenant); fast-forward `main`.
-8. Optional work (wave F) only after the above.
+   scripts/demo_run.py` (expect exit 0). For the web app: `E2E_TARGET=mock pnpm exec playwright test` and, if another
+   program holds port 8000, `E2E_API_PORT=8010 E2E_TARGET=live pnpm exec playwright test`.
+2. **Owner decisions pending** (section 8): whether the 15% APR cap gates invoice financing on its effective annual
+   rate (D5; today the day-34 cure is disclosed as 25.0% a year and flagged, not blocked); the licence; whether the
+   borrower file's ¥360,000 request (1.18×, below the 1.25× covenant) stays as an honest shortfall or is made smaller;
+   whether the video drops the capex scene (the current script does) or Scene 2 and the chat segment instead.
+3. If the web mocks drift from the API again: start the API on a free port and run `pnpm mocks:record` (see
+   `apps/web/README.md`); never edit a mock by hand.
+4. Small items worth doing next: suggested chat prompts for the new capabilities (the recorded script now allows
+   it); an "AI-generated, for reference" label in the UI (listed as a gap in the compliance statements); S9 (make
+   status and alerts in chat owner-only, as the new read intents already are).
+5. Optional work (wave F) after that: named stresses, payment instrument, guarded supplier payment, recurring
+   outflows, Chinese server text, deployment.
+6. After any change that moves a figure: scenarios, attack report, `scripts/evaluate.py`,
+   `scripts/build_deliverables.py --refresh-evidence`, commit the regenerated files, and fast-forward `main`.
 
 Known loose ends:
 
