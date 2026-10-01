@@ -1,0 +1,65 @@
+{
+  "offer": {
+    "offer_id": "OFF-8e944bff0cc9",
+    "version": 1,
+    "counterparty_id": "BUYER-1",
+    "doc_ids": [
+      "ACC-msg"
+    ],
+    "received_day": 0,
+    "status": "COMPILED",
+    "obligations": [
+      {
+        "id": "OFF-8e944bff0cc9-O1",
+        "type": "IMMEDIATE_DISCOUNT",
+        "counterparty_id": "BUYER-1",
+        "rate_bp": 50,
+        "amount_fen": null,
+        "days_delta": null,
+        "target_terms_days": null,
+        "effective_day": null,
+        "base": {
+          "kind": "INVOICE",
+          "amount_fen": 42000000,
+          "receivable_id": null,
+          "events_per_year": null
+        },
+        "contingency": "FIRM",
+        "duration": {
+          "kind": "ONE_OFF",
+          "invoices": null,
+          "end_day": null
+        },
+        "spans": [
+          {
+            "doc_id": "ACC-msg",
+            "start": 8,
+            "end": 51,
+            "text": "pay the full ¥420,000 invoice early at 0.5%"
+          }
+        ],
+        "confidence": 0.9,
+        "unresolved": []
+      }
+    ],
+    "abstentions": [],
+    "data_requests": [],
+    "authority_claims": [],
+    "funding_claims": [],
+    "compiler": "rules-v1",
+    "prompt_version": "offer-v4",
+    "autonomy_eligible": true,
+    "autonomy_notes": []
+  },
+  "documents": [
+    {
+      "doc_id": "ACC-msg",
+      "channel": "chat",
+      "sender_id": "BUYER-1",
+      "received_day": 0,
+      "text": "We will pay the full ¥420,000 invoice early at 0.5%.",
+      "parent_doc_id": null,
+      "filename": null
+    }
+  ]
+}

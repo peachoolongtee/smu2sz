@@ -172,6 +172,10 @@ export interface CompiledOffer {
   funding_claims: UnsolicitedFundingClaim[];
   compiler: string;
   prompt_version: string;
+  /** The compiler's coverage proof (ADR-0005): every figure and request in the message is accounted for. Live offers only. */
+  autonomy_eligible?: boolean;
+  /** Why the proof failed; empty when it held. */
+  autonomy_notes?: string[];
 }
 
 // ------------------------------------------------------------------ facilities
@@ -1056,6 +1060,10 @@ export interface NlVerdict {
   required_tier?: Tier;
   summary?: string;
   forward_concession_total_display?: string | null;
+  /** Not in the /nl reply today (see the interface change requests); rendered when the API starts sending it. */
+  passed_checks?: PassedCheck[];
+  autonomy_eligible?: boolean;
+  autonomy_notes?: string[];
   violations: {
     code: string;
     message: string;

@@ -1,0 +1,357 @@
+{
+  "id": "VER-6ce85b03137d",
+  "offer_id": "OFF-8e944bff0cc9",
+  "offer_version": 1,
+  "outcome": "ACCEPT",
+  "violations": [],
+  "bound_obligations": [
+    {
+      "id": "OFF-8e944bff0cc9-O1",
+      "type": "IMMEDIATE_DISCOUNT",
+      "counterparty_id": "BUYER-1",
+      "rate_bp": 50,
+      "amount_fen": null,
+      "days_delta": null,
+      "target_terms_days": null,
+      "effective_day": 2,
+      "base": {
+        "kind": "INVOICE",
+        "amount_fen": 42000000,
+        "receivable_id": "RCV-A",
+        "events_per_year": null,
+        "amount_display": "¥420,000.00"
+      },
+      "contingency": "FIRM",
+      "duration": {
+        "kind": "ONE_OFF",
+        "invoices": null,
+        "end_day": null
+      },
+      "spans": [
+        {
+          "doc_id": "ACC-msg",
+          "start": 8,
+          "end": 51,
+          "text": "pay the full ¥420,000 invoice early at 0.5%"
+        }
+      ],
+      "confidence": 0.9,
+      "unresolved": [],
+      "rate_display": "0.50%"
+    }
+  ],
+  "concession_values": [
+    {
+      "obligation_id": "OFF-8e944bff0cc9-O1",
+      "value_fen": 0,
+      "basis": "immediate discount: settled in cash now and capped separately, not a forward concession",
+      "formula": "0 (see the immediate-discount cap)",
+      "per_invoice_fen": null,
+      "value_display": "¥0.00"
+    }
+  ],
+  "forward_concession_total_fen": 0,
+  "counters": [],
+  "plan": {
+    "id": "PLAN-COM-5c833211b38c",
+    "basis": "COMMITTED",
+    "need_fen": 0,
+    "actions": [],
+    "costs": [],
+    "total_cost_fen": 0,
+    "admissible": true,
+    "violations": [],
+    "marginal_cost_annual": {
+      "num": 1301,
+      "den": 12000,
+      "text": "0.11"
+    },
+    "marginal_facility_id": "FAC-IF",
+    "rejected": [],
+    "label": "no funding needed",
+    "need_display": "¥0.00",
+    "total_cost_display": "¥0.00"
+  },
+  "required_tier": "TIER_1",
+  "mandate_version": 1,
+  "state_version": 1,
+  "calc_version": "tl-v2.0",
+  "summary": "ACCEPT. Forward concessions ¥0.00 against ¥5,000.00. Covenants hold: DSCR_MIN 2.00x, LEVERAGE_MAX 1.39x.",
+  "forward_concession_total_display": "¥0.00",
+  "passed_checks": [
+    {
+      "code": "MIN_CASH",
+      "label": "Minimum cash",
+      "observed": "¥357,900.00 on day 20",
+      "limit": "≥ ¥300,000.00",
+      "formula": "closing_cash(day) >= min_cash on every day; the offer induces no breach",
+      "inputs": {
+        "plan": "no funding needed",
+        "offer_lowest_without_funding": "¥357,900.00",
+        "offer_lowest_day": "20"
+      }
+    },
+    {
+      "code": "MAX_APR",
+      "label": "Implied cost of early settlement of RCV-A",
+      "observed": "6.11%",
+      "limit": "15.00%",
+      "formula": "d/(1−d) × 365/days_early = 0.50%/(1 − 0.50%) × 365/30 = 6.1139%",
+      "inputs": {
+        "discount": "0.50%",
+        "days_early": "30",
+        "receivable_id": "RCV-A",
+        "implied_annual_rate": "6.1139%",
+        "line_plus_partial_at_offered_rate": "¥841.64 + ¥1,055.28 = ¥1,896.92",
+        "router_optimum": "¥1,809.05"
+      }
+    },
+    {
+      "code": "EARLY_PAY_VS_PLAN",
+      "label": "Early payment against the router's plan",
+      "observed": "¥2,100.00",
+      "limit": "< ¥2,712.94",
+      "formula": "C1 = interest + fees + discounts with the offer = ¥2,100.00; C0 = the same without the early payment = ¥2,712.94; C1 < C0",
+      "inputs": {
+        "plan_with_offer": "no funding needed",
+        "plan_without_offer": "committed plan: ¥841.64 + ¥1,871.30 = ¥2,712.94",
+        "cost_with_offer": "¥2,100.00",
+        "cost_without_offer": "¥2,712.94",
+        "legs": "RCV-A at 0.50%"
+      }
+    },
+    {
+      "code": "DSCR_MIN",
+      "label": "Lowest monthly DSCR (month 1)",
+      "observed": "2.00x",
+      "limit": "≥ 1.25x",
+      "formula": "EBITDA_m / DS_m = ¥90,000.00 / ¥45,000.00",
+      "inputs": {}
+    },
+    {
+      "code": "LEVERAGE_MAX",
+      "label": "Highest monthly leverage (month 1)",
+      "observed": "1.39x",
+      "limit": "≤ 2.50x",
+      "formula": "Debt_m / (12 × EBITDA_m) = ¥1,500,000.00 / (12 × ¥90,000.00)",
+      "inputs": {}
+    },
+    {
+      "code": "CLEAN_DOWN",
+      "label": "Bank credit line: clean-down",
+      "observed": "121 days at zero",
+      "limit": "≥ 30 consecutive days",
+      "formula": "max run of days with balance = 0 >= 30",
+      "inputs": {
+        "facility_id": "FAC-LINE",
+        "run_start_day": "0",
+        "run_end_day": "120",
+        "horizon_days": "120"
+      }
+    }
+  ],
+  "notes": [
+    {
+      "obligation_id": "OFF-8e944bff0cc9-O1",
+      "field": "base.receivable_id",
+      "resolved": true,
+      "material": true,
+      "message": "bound to RCV-A (face ¥420,000.00, due day 32)"
+    }
+  ],
+  "plan_committed": {
+    "id": "PLAN-COM-5c833211b38c",
+    "basis": "COMMITTED",
+    "need_fen": 0,
+    "actions": [],
+    "costs": [],
+    "total_cost_fen": 0,
+    "admissible": true,
+    "violations": [],
+    "marginal_cost_annual": {
+      "num": 1301,
+      "den": 12000,
+      "text": "0.11"
+    },
+    "marginal_facility_id": "FAC-IF",
+    "rejected": [],
+    "label": "no funding needed",
+    "need_display": "¥0.00",
+    "total_cost_display": "¥0.00"
+  },
+  "plan_expected": {
+    "id": "PLAN-EXP-3eb83f5d8c1e",
+    "basis": "EXPECTED",
+    "need_fen": 0,
+    "actions": [],
+    "costs": [],
+    "total_cost_fen": 0,
+    "admissible": true,
+    "violations": [],
+    "marginal_cost_annual": {
+      "num": 1301,
+      "den": 12000,
+      "text": "0.11"
+    },
+    "marginal_facility_id": "FAC-IF",
+    "rejected": [],
+    "label": "no funding needed (expected plan: shown only, never relied on (uses facilities not yet committed))",
+    "need_display": "¥0.00",
+    "total_cost_display": "¥0.00"
+  },
+  "cure_plan": null,
+  "comparison": [
+    {
+      "key": "full_discount",
+      "label": "Discount the whole invoice at 0.5%",
+      "components": [
+        "Buyer early-payment offer: early payment on ¥420,000.00 face of RCV-A at 0.5%"
+      ],
+      "actions": [
+        {
+          "kind": "EARLY_PAY",
+          "facility_id": "FAC-EARLYPAY",
+          "day": 0,
+          "amount_fen": 42000000,
+          "receivable_id": "RCV-A",
+          "repay_day": null,
+          "rate_bp": 50
+        }
+      ],
+      "cost_fen": 210000,
+      "cost_display": "¥2,100.00",
+      "result": "ADMISSIBLE",
+      "reasons": [],
+      "breach_day": null,
+      "note": "cost ¥2,100.00; admissible but dearer than the selected plan"
+    },
+    {
+      "key": "line_partial_early_pay",
+      "label": "Line + early payment on part of the invoice at 0.5%",
+      "components": [
+        "Bank credit line: draw ¥150,000.00, repaid day 32",
+        "Buyer early-payment offer: early payment on ¥211,055.28 face of RCV-A at 0.5%"
+      ],
+      "actions": [
+        {
+          "kind": "DRAW",
+          "facility_id": "FAC-LINE",
+          "day": 0,
+          "amount_fen": 15000000,
+          "receivable_id": null,
+          "repay_day": 32,
+          "rate_bp": null
+        },
+        {
+          "kind": "EARLY_PAY",
+          "facility_id": "FAC-EARLYPAY",
+          "day": 0,
+          "amount_fen": 21105528,
+          "receivable_id": "RCV-A",
+          "repay_day": null,
+          "rate_bp": 50
+        }
+      ],
+      "cost_fen": 189692,
+      "cost_display": "¥841.64 + ¥1,055.28 = ¥1,896.92",
+      "result": "ADMISSIBLE",
+      "reasons": [],
+      "breach_day": null,
+      "note": "cost ¥1,896.92; admissible but dearer than the selected plan"
+    },
+    {
+      "key": "router_optimum",
+      "label": "Router optimum",
+      "components": [
+        "Buyer early-payment offer: early payment on ¥361,809.05 face of RCV-A at 0.5%"
+      ],
+      "actions": [
+        {
+          "kind": "EARLY_PAY",
+          "facility_id": "FAC-EARLYPAY",
+          "day": 0,
+          "amount_fen": 36180905,
+          "receivable_id": "RCV-A",
+          "repay_day": null,
+          "rate_bp": 50
+        }
+      ],
+      "cost_fen": 180905,
+      "cost_display": "¥1,809.05",
+      "result": "SELECTED",
+      "reasons": [],
+      "breach_day": null,
+      "note": ""
+    },
+    {
+      "key": "line_guaranteed_loan",
+      "label": "Line + guaranteed loan",
+      "components": [
+        "Bank credit line: draw ¥150,000.00, repaid day 32",
+        "Government-guaranteed working-capital loan: draw ¥210,000.00 (arrives day 21)"
+      ],
+      "actions": [
+        {
+          "kind": "DRAW",
+          "facility_id": "FAC-LINE",
+          "day": 0,
+          "amount_fen": 15000000,
+          "receivable_id": null,
+          "repay_day": 32,
+          "rate_bp": null
+        },
+        {
+          "kind": "DRAW",
+          "facility_id": "FAC-GGL",
+          "day": 0,
+          "amount_fen": 21000000,
+          "receivable_id": null,
+          "repay_day": null,
+          "rate_bp": null
+        }
+      ],
+      "cost_fen": null,
+      "cost_display": "—",
+      "result": "NOT_ADMISSIBLE",
+      "reasons": [
+        "UNCOMMITTED_FACILITY",
+        "LEAD_TIME_TOO_LONG"
+      ],
+      "breach_day": null,
+      "note": "not applied; cash on day 21, gap opens on day 12"
+    },
+    {
+      "key": "line_only",
+      "label": "Line only",
+      "components": [
+        "Bank credit line: draw ¥150,000.00, repaid day 32"
+      ],
+      "actions": [
+        {
+          "kind": "DRAW",
+          "facility_id": "FAC-LINE",
+          "day": 0,
+          "amount_fen": 15000000,
+          "receivable_id": null,
+          "repay_day": 32,
+          "rate_bp": null
+        }
+      ],
+      "cost_fen": 84164,
+      "cost_display": "¥841.64",
+      "result": "NOT_ADMISSIBLE",
+      "reasons": [
+        "RESERVE_BREACH"
+      ],
+      "breach_day": 12,
+      "note": "cost ¥841.64; RESERVE_BREACH on day 12"
+    }
+  ],
+  "forward_concession": {
+    "total_fen": 0,
+    "total_display": "¥0.00",
+    "cap_fen": 500000,
+    "cap_display": "¥5,000.00",
+    "over_cap": false
+  }
+}

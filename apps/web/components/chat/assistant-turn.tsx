@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { AutonomyPanel } from "@/components/autonomy-panel";
 import { CodeBadge, OpStatusBadge, OutcomeBadge, TierBadge, outcomeHasTier } from "@/components/badges";
 import { Badge, Button, Hash, type Tone } from "@/components/ui";
 import { useI18n } from "@/lib/i18n";
@@ -197,6 +198,17 @@ export function AssistantTurn({
       ) : null}
 
       {r.verdict ? <VerdictBlock verdict={r.verdict} /> : null}
+      {r.verdict ? (
+        <AutonomyPanel
+          outcome={r.verdict.outcome}
+          tier={r.verdict.required_tier}
+          summary={r.verdict.summary}
+          passedChecks={r.verdict.passed_checks}
+          autonomyEligible={r.verdict.autonomy_eligible}
+          autonomyNotes={r.verdict.autonomy_notes}
+          checksInReply={r.verdict.passed_checks !== undefined}
+        />
+      ) : null}
 
       {r.negotiation ? (
         <p className="text-sm text-ink-2" data-testid="chat-negotiation">
