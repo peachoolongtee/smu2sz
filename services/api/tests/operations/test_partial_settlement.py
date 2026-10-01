@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from app.alerts import MatchStatus, reconcile
 from app.books import current_books
 from app.domain.models import (
     AcceptOffer,
@@ -12,7 +13,6 @@ from app.domain.models import (
     Commitment,
     CommitmentStatus,
     Mode,
-    Obligation,
     OperationStatus,
     ReceivePayment,
     SubmitInvoiceForFinancing,
@@ -214,3 +214,26 @@ def test_financed_receivable_repays_the_advance_once(ex: Any, store: Any, clock:
     assert cash(store) == before + FACE - 10_000_000  # no second repayment
     assert next(f for f in store.get_state().facilities if f.id == "FAC-IF").drawn_fen == fac1.drawn_fen
     assert store.verify_chain()
+
+
+# ---------------------------------------------------------------- reconciliation follows the same semantics
+
+
+def test_reconciliation_matches_the_agreed_amount_and_reports_partials_with_the_residual(
+    ex: Any, store: Any, clock: Clock
+) -> None:
+    counter_a(store, ex, clock)
+    clock.day = 2
+    assert receipt(ex, clock, EARLY).status == OperationStatus.EXECUTED
+    clock.day = 20
+    assert receipt(ex, clock, 5_000_000).status == OperationStatus.EXECUTED  # a partial of the residual
+    rep = reconcile(store, day=20)
+    agreed, partial = rep.receipts
+    assert agreed.status == MatchStatus.MATCHED and not agreed.flagged and agreed.commitment_id is not None
+    assert agreed.expected_fen == EARLY and agreed.difference_fen == 0
+    assert partial.status == MatchStatus.SHORT_PAYMENT and partial.flagged and partial.commitment_id is None
+    assert partial.expected_fen == RESIDUAL and partial.difference_fen == 5_000_000 - RESIDUAL
+    assert "partial payment" in partial.detail and "¥158,200.00 of RCV-A still due" in partial.detail
+    [out] = [o for o in rep.outstanding if o.receivable_id == "RCV-A"]
+    assert out.face_fen == RESIDUAL - 5_000_000 and out.status == "OPEN"
+    assert rep.chain_valid
