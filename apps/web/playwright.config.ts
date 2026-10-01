@@ -13,7 +13,9 @@ import { defineConfig, devices } from "@playwright/test";
  */
 const MOCK_PORT = Number(process.env.E2E_PORT ?? 3100);
 const LIVE_PORT = 3000;
-const API_PORT = 8000;
+const API_PORT = Number(process.env.E2E_API_PORT ?? 8000); // override when another program holds :8000
+// contract.spec.ts calls the live adapters from Node: they read the API address from this variable.
+process.env.NEXT_PUBLIC_API_URL ??= `http://localhost:${API_PORT}`;
 const target = process.env.E2E_TARGET ?? "all";
 const wantMock = target === "all" || target === "mock";
 const wantLive = target === "all" || target === "live";

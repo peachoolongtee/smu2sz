@@ -8,7 +8,7 @@ import { resetBooks } from "./helpers";
  * through the dialog, exactly as a user would.
  */
 
-const API = "http://localhost:8000";
+const API = `http://localhost:${process.env.E2E_API_PORT ?? 8000}`;
 const isLive = () => test.info().project.name === "live";
 
 async function signIn(page: Page, token = DEMO_TOKEN) {

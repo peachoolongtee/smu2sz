@@ -3,7 +3,7 @@ import { DEMO_TOKEN, expect, test } from "./fixtures";
 
 /** Live-mode only: owner-token handling, the 401 state, borrower-file downloads and owner approval. */
 
-const API = "http://localhost:8000";
+const API = `http://localhost:${process.env.E2E_API_PORT ?? 8000}`;
 const TOKEN = DEMO_TOKEN;
 
 async function walkTo(page: Page, steps: number) {
