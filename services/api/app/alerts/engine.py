@@ -190,17 +190,22 @@ def _new_events(t: Trajectory, base: Trajectory, kind: LedgerEventKind, ref: str
 def _priced(a: FundingAction, s: SuggestedAction, alone: Trajectory, base: Trajectory,
             mandate: Mandate) -> tuple[SuggestedAction, int | None]:
     """`s` with its cost read from the engine: the charges the projection posts with `a` alone minus without it,
-    and the days it is out (arrival to the repayment the projection shows). Also the day that cost falls due."""
+    and the days it is out (arrival to the repayment the projection shows). Also the day that cost falls due.
+    A draw the projection never repays is carried open: it posts no interest, so its cost is not stated (a
+    "¥0.00" would be false) and `s` comes back unpriced."""
     cost = _charges(alone) - _charges(base)
     ref = a.facility_id
     days: int | None = None
     end: int | None = None
     if a.kind == FundingActionKind.FINANCE_INVOICE:
-        arrive = [d for d, label in _new_events(alone, base, LedgerEventKind.ADVANCE, ref) if a.receivable_id in label]
-        repay = [d for d, label in _new_events(alone, base, LedgerEventKind.REPAYMENT, ref) if a.receivable_id in label]
+        rid = a.receivable_id or ""
+        arrive = [d for d, label in _new_events(alone, base, LedgerEventKind.ADVANCE, ref) if rid in label]
+        repay = [d for d, label in _new_events(alone, base, LedgerEventKind.REPAYMENT, ref) if rid in label]
     else:
         arrive = [d for d, _ in _new_events(alone, base, LedgerEventKind.DRAW, ref)]
         repay = [d for d, _ in _new_events(alone, base, LedgerEventKind.REPAYMENT, ref)]
+        if not repay:
+            return s, None
     if len(arrive) == 1 and len(repay) == 1:  # one lump repayment: a schedule of instalments has no single day
         days, end = repay[0] - arrive[0], repay[0]
     amount = a.amount_fen
@@ -235,6 +240,8 @@ def _cure_costs(state: FinancialState, obs: list[Obligation], t: Trajectory, cur
         total = _charges(project(state, obs, cure, Mode.CONSERVATIVE, t.horizon_days)) - _charges(base)
     except EngineError:
         total = None
+    if any(a.kind == FundingActionKind.DRAW and s.cost_fen is None for a, s in zip(cure, suggested, strict=True)):
+        total = None  # an open-ended draw has no stated interest: a total without it would understate the price
     return suggested, total, due
 
 
