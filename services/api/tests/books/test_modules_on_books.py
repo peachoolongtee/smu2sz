@@ -1,0 +1,326 @@
+"""Every projection runs on current books (ADR-0006, audit C3): the verifier, the funding-plan callers,
+/trajectory, /router/plan, the what-if sandbox and the negotiate flow see the obligations of live
+commitments; with none, nothing changes."""
+
+from __future__ import annotations
+
+import hashlib
+import json
+from typing import Any
+
+import pytest
+from fastapi.testclient import TestClient
+
+from app.api.runtime import Runtime, set_runtime
+from app.api.views import trajectory_view
+from app.books import current_books
+from app.config import get_settings
+from app.domain.models import (
+    BaseKind,
+    Commitment,
+    CommitmentStatus,
+    CompiledOffer,
+    CompileStatus,
+    Contingency,
+    Duration,
+    DurationKind,
+    Mode,
+    Obligation,
+    ObligationBase,
+    ObligationType,
+    SourceSpan,
+)
+from app.domain.money import fmt_yuan
+from app.financial import project
+from app.funding import plan
+from app.mandate.fixture import demo_owner_public_key_hex
+from app.persistence import InMemoryLedgerStore
+from app.verifier import evaluate
+from app.whatif import PRESETS, simulate
+
+RCV_A_FACE = 42_000_000
+SPAN = [SourceSpan(doc_id="T", start=0, end=0, text="")]
+
+# Recorded on origin/dev (cfecd72) with no commitments: sha256 of the sorted-key JSON of each response.
+GOLDEN_TRAJECTORY = "6e416d997eccbf94"
+GOLDEN_ROUTER_PLAN = "de93d3064db00850"
+EX01_COUNTERS = [
+    "Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥211,800 of this invoice at 0.85%.",
+    "60-day terms accepted with a 0.45% price adjustment on future invoices, no rebate.",
+]
+
+
+def _digest(o: Any) -> str:
+    return hashlib.sha256(json.dumps(o, sort_keys=True, ensure_ascii=False).encode()).hexdigest()[:16]
+
+
+@pytest.fixture
+def rt() -> Any:
+    runtime = Runtime(settings=get_settings(), store=InMemoryLedgerStore(), owner_key_hex=demo_owner_public_key_hex())
+    runtime.reset()
+    set_runtime(runtime)
+    yield runtime
+    set_runtime(None)
+
+
+@pytest.fixture
+def client(rt: Runtime) -> Any:
+    from app.main import app
+
+    return TestClient(app, headers={"X-Owner-Token": "demo-owner-token"})
+
+
+def _extension(days: int = 15) -> Obligation:
+    return Obligation(id="OB-EXT", type=ObligationType.TERMS_EXTENSION, counterparty_id="BUYER-1", days_delta=days,
+                      base=ObligationBase(kind=BaseKind.FUTURE_INVOICES, amount_fen=RCV_A_FACE),
+                      contingency=Contingency.FIRM, duration=Duration(kind=DurationKind.RECURRING_PERPETUAL),
+                      spans=SPAN, confidence=1.0)
+
+
+def _early_pay(face: int = 21_180_000, day: int = 2, rate_bp: int = 85) -> Obligation:
+    return Obligation(id="OB-EP", type=ObligationType.IMMEDIATE_DISCOUNT, counterparty_id="BUYER-1", rate_bp=rate_bp,
+                      effective_day=day, base=ObligationBase(kind=BaseKind.INVOICE, receivable_id="RCV-A",
+                                                             amount_fen=face),
+                      contingency=Contingency.FIRM, duration=Duration(kind=DurationKind.ONE_OFF), spans=SPAN,
+                      confidence=1.0)
+
+
+def _live(rt: Runtime, ob: Obligation, status: CommitmentStatus = CommitmentStatus.ACTIVE) -> Commitment:
+    c = Commitment(id=f"CMT-{ob.id}", offer_id="OFF-LIVE", offer_version=1, counterparty_id=ob.counterparty_id,
+                   verdict_id="V-LIVE", terms_hash="h", obligations=[ob], status=status, nonce="n", expires_day=7,
+                   mandate_version=1, forward_value_fen=0)
+    rt.store.put_commitment(c)
+    return c
+
+
+def _receipts(traj: dict[str, Any]) -> dict[str, int]:
+    """receivable / recurring invoice id -> day its receipt lands in the projection"""
+    return {e["ref"]: d["day"] for d in traj["days"] for e in d["events"] if e["kind"] == "RECEIPT"}
+
+
+def _events(traj: dict[str, Any], ref: str) -> list[tuple[int, int]]:
+    return [(d["day"], e["amount"]["fen"]) for d in traj["days"] for e in d["events"] if e["ref"] == ref]
+
+
+def _evaluate_ex01(client: TestClient) -> tuple[str, dict[str, Any]]:
+    oid = client.post("/offers", json={"fixture_id": "EX01_PACKAGE"}).json()["offer"]["offer_id"]
+    return oid, client.post(f"/offers/{oid}/evaluate", json={"fixture_id": "EX01_PACKAGE"}).json()
+
+
+def _assert_alert_matches(client: TestClient, rt: Runtime, traj: dict[str, Any]) -> None:
+    """/alerts and /trajectory report the same lowest-cash day and amount (the amount as the shortfall)."""
+    floor = rt.store.get_mandate().min_cash_fen
+    alert = next(x for x in client.get("/alerts").json()["alerts"] if x["kind"] == "RESERVE_BREACH_AHEAD")
+    assert int(alert["inputs"]["worst_day"]) == traj["min_cash_day"]
+    assert alert["inputs"]["max_shortfall"] == fmt_yuan(floor - traj["min_cash"]["fen"])
+
+
+def _financed(p: dict[str, Any]) -> int:
+    return sum(a["amount_fen"] for a in p["actions"] if a["kind"] == "FINANCE_INVOICE")
+
+
+def _lowest(traj: dict[str, Any]) -> tuple[int, int]:
+    return traj["min_cash_day"], traj["min_cash"]["fen"]
+
+
+# ---------------------------------------------------------------- 1. no commitments: nothing moves
+
+
+def test_no_commitments_trajectory_and_router_plan_are_unchanged(client: TestClient, rt: Runtime) -> None:
+    t = client.get("/trajectory").json()
+    assert t.pop("today") == 0
+    assert _digest(t) == GOLDEN_TRAJECTORY
+    state, mandate = rt.store.get_state(), rt.store.get_mandate()
+    raw = trajectory_view(project(state, [], [], Mode.CONSERVATIVE, mandate.horizon_days, mandate.min_cash_fen),
+                          mandate.min_cash_fen).model_dump()
+    assert t == json.loads(json.dumps(raw))
+    r = client.post("/router/plan").json()
+    assert _digest(r) == GOLDEN_ROUTER_PLAN
+    assert r["committed"]["total_cost_display"] == "¥2,712.94"
+    assert r["committed"]["total_cost_fen"] == 271_294
+
+
+def test_no_commitments_ex01_verdict_is_unchanged(client: TestClient) -> None:
+    _, v = _evaluate_ex01(client)
+    assert v["outcome"] == "REJECT"
+    assert [x["code"] for x in v["violations"]] == ["AGG_CONCESSION_EXCEEDED", "RESERVE_BREACH",
+                                                    "DISCOUNT_ABOVE_BREAK_EVEN"]
+    assert [c["text"] for c in v["counters"]] == EX01_COUNTERS
+    assert next(x for x in v["violations"] if x["code"] == "RESERVE_BREACH")["cure_cost_fen"] == 80_270
+    assert v["id"] == "VER-6a80c764bc83"  # the id of a verdict on books with nothing live is unchanged
+
+
+def test_inactive_commitments_do_not_enter_the_books(client: TestClient, rt: Runtime) -> None:
+    before = client.get("/trajectory").json()
+    _live(rt, _extension(), CommitmentStatus.PROPOSED)
+    assert client.get("/trajectory").json() == before
+
+
+# ---------------------------------------------------------------- 2. a live terms extension
+
+
+def test_live_extension_shifts_receipts_in_trajectory_and_alerts_agree(client: TestClient, rt: Runtime) -> None:
+    before = client.get("/trajectory").json()
+    _live(rt, _extension(15))
+    after = client.get("/trajectory").json()
+    b, a = _receipts(before), _receipts(after)
+    assert b["RI:BUYER-1:2"] == 47 and a["RI:BUYER-1:2"] == 62  # issued day 2, terms 45 -> 60
+    assert b["RI:BUYER-1:32"] == 77 and a["RI:BUYER-1:32"] == 92
+    assert b["RCV-A"] == a["RCV-A"] == 32  # an invoice already issued keeps its terms
+    assert after["today"] == 0
+    assert _lowest(after) == _lowest(before)  # the near-term gap is untouched
+    _assert_alert_matches(client, rt, after)
+
+
+def test_live_extension_enters_the_next_verdict_baseline(client: TestClient, rt: Runtime) -> None:
+    _, plain = _evaluate_ex01(client)
+    _live(rt, _extension(15))
+    oid = client.post("/offers", json={"fixture_id": "EX01_PACKAGE"}).json()["offer"]["offer_id"]
+    v = client.post(f"/offers/{oid}/evaluate", json={"fixture_id": "EX01_PACKAGE"}).json()
+    traj = v["trajectory"]
+    # the offer's own trajectory sits on the shifted baseline: EX01 itself carries a +15 extension, so
+    # the live one stacks and the receipts land 30 days later than on the books alone
+    assert _receipts(traj)["RI:BUYER-1:2"] == 77
+    assert _receipts(plain["trajectory"])["RI:BUYER-1:2"] == 62
+    assert v["id"] != plain["id"]  # a verdict on other books is not the same record
+    # only the offer's obligations are bound: nothing of the live commitment leaks into the verdict
+    assert [o["id"] for o in v["bound_obligations"]] == [o["id"] for o in plain["bound_obligations"]]
+    assert "OB-EXT" not in {o["id"] for o in v["bound_obligations"]}
+    assert v["forward_concession"]["total_fen"] == plain["forward_concession"]["total_fen"]
+
+
+def test_router_plan_follows_the_live_commitment(client: TestClient, rt: Runtime) -> None:
+    base = client.post("/router/plan").json()
+    _live(rt, _early_pay(), CommitmentStatus.ACCEPTED)
+    moved = client.post("/router/plan").json()
+    assert moved["committed"]["need_fen"] < base["committed"]["need_fen"]
+    state, mandate = rt.store.get_state(), rt.store.get_mandate()
+    books = current_books(state, rt.store.commitments())
+    assert moved["committed"]["total_cost_fen"] == plan(books.state, books.with_([]), mandate).total_cost_fen
+
+
+# ---------------------------------------------------------------- 3. a live early-pay
+
+
+def test_live_early_pay_is_in_the_trajectory_and_the_router(client: TestClient, rt: Runtime) -> None:
+    base_plan = client.post("/router/plan").json()["committed"]
+    _live(rt, _early_pay(21_180_000, 2, 85))
+    t = client.get("/trajectory").json()
+    ev = _events(t, "RCV-A")
+    assert (2, 21_180_000) in ev  # the early receipt of the settled face, on the effective day
+    assert t["discounts"]["fen"] == 180_030  # 0.85% of 21_180_000, the price of getting it early
+    assert (32, RCV_A_FACE - 21_180_000) in ev  # the residual keeps its due day
+    assert not any(day == 32 and amt == RCV_A_FACE for day, amt in ev)
+    plan_now = client.post("/router/plan").json()["committed"]
+    # part of RCV-A is already coming early: the router no longer finances that part
+    assert _financed(plan_now) < _financed(base_plan)
+    assert plan_now["need_fen"] < base_plan["need_fen"]
+
+
+def test_alerts_and_trajectory_agree_with_a_live_early_pay(client: TestClient, rt: Runtime) -> None:
+    _live(rt, _early_pay())
+    t = client.get("/trajectory").json()
+    assert t["first_breach_day"] is not None
+    _assert_alert_matches(client, rt, t)
+
+
+# ---------------------------------------------------------------- 4. negotiate: no double counting
+
+
+def test_negotiate_cooperative_plan_and_operations_unchanged(client: TestClient) -> None:
+    oid, _ = _evaluate_ex01(client)
+    n = client.post(f"/negotiate/{oid}", json={"buyer_profile": "cooperative"}).json()
+    assert n["outcome"] == "DEAL"
+    assert [(o["kind"], o["status"], o["tier"]) for o in n["operations"]] == [
+        ("ACCEPT_OFFER", "EXECUTED", "TIER_1"), ("DRAW_FACILITY", "EXECUTED", "TIER_1")]
+    assert n["operations"][1]["message"] == "Drew ¥150,000.00 on FAC-LINE on day 0"
+    # the same plan as on origin/dev: the accepted counter is in the books once, not twice
+    assert [(a["kind"], a["facility_id"], a["amount_fen"]) for a in n["plan"]["actions"]] == [
+        ("DRAW", "FAC-LINE", 15_000_000), ("EARLY_PAY", "FAC-EARLYPAY", 100_000)]
+    assert n["plan"]["need_fen"] == 15_000_030 and n["plan"]["total_cost_fen"] == 85_014
+    assert n["plan"]["label"] == "committed plan: ¥841.64 + ¥8.50 = ¥850.14"
+
+
+def test_negotiate_hard_line_still_funds_the_standing_gap(client: TestClient) -> None:
+    oid, _ = _evaluate_ex01(client)
+    n = client.post(f"/negotiate/{oid}", json={"buyer_profile": "hard_line"}).json()
+    assert n["outcome"] == "NO_DEAL" and n["plan"]["total_cost_display"] == "¥2,712.94"
+
+
+# ---------------------------------------------------------------- 5. the verdict binds only the offer
+
+
+def test_verdict_and_counters_carry_only_the_offers_obligations(client: TestClient, rt: Runtime) -> None:
+    _live(rt, _extension(15))
+    _, v = _evaluate_ex01(client)
+    stored = rt.store.get_verdict(v["id"])
+    assert stored is not None
+    assert [o.id for o in stored.bound_obligations] == ["OFF-f806f79b6c21-O1", "OFF-f806f79b6c21-O2",
+                                                        "OFF-f806f79b6c21-O3"]
+    assert all(o.id.startswith("CTR-") for c in stored.counters for o in c.obligations)
+    assert stored.counters[0].text == EX01_COUNTERS[0]  # the counter's text is the offer's own terms
+
+
+def test_a_commitment_carries_what_the_counter_bound(client: TestClient, rt: Runtime) -> None:
+    """Accepting on books that hold a live commitment books the counter's obligations alone."""
+    _live(rt, _extension(15))
+    oid, _ = _evaluate_ex01(client)
+    n = client.post(f"/negotiate/{oid}", json={"buyer_profile": "cooperative"}).json()
+    assert n["outcome"] == "DEAL"
+    c = rt.store.get_commitment(n["commitment"]["id"])
+    assert c is not None and "OB-EXT" not in {o.id for o in c.obligations}
+    assert len(c.obligations) == 1 and c.obligations[0].type == ObligationType.IMMEDIATE_DISCOUNT
+
+
+# ---------------------------------------------------------------- 6. what-if
+
+
+def _closing(days: list[dict[str, Any]]) -> list[int]:
+    return [d["closing"]["fen"] for d in days]
+
+
+def test_whatif_baseline_includes_the_live_commitment(client: TestClient, rt: Runtime) -> None:
+    state, mandate = rt.store.get_state(), rt.store.get_mandate()
+    key = demo_owner_public_key_hex()
+    plain = simulate(state, mandate, PRESETS["status_quo"], trusted_owner_key_hex=key)
+    _live(rt, _early_pay())
+    held = simulate(state, mandate, PRESETS["status_quo"], trusted_owner_key_hex=key,
+                    commitments=rt.store.commitments())
+    assert held.key != plain.key
+    assert _closing(held.trajectory["days"]) != _closing(plain.trajectory["days"])
+    # the status-quo what-if is the books themselves: the same line as GET /trajectory
+    served = client.get("/trajectory").json()
+    assert _closing(held.trajectory["days"]) == _closing(served["days"])
+    # the endpoint hands the store's commitments to the sandbox
+    posted = client.post("/whatif", json=PRESETS["status_quo"].model_dump()).json()
+    assert _closing(posted["trajectory"]["days"]) == _closing(served["days"])
+
+
+def test_whatif_without_commitments_is_unchanged(rt: Runtime) -> None:
+    state, mandate = rt.store.get_state(), rt.store.get_mandate()
+    key = demo_owner_public_key_hex()
+    a = simulate(state, mandate, PRESETS["actual"], trusted_owner_key_hex=key)
+    b = simulate(state, mandate, PRESETS["actual"], trusted_owner_key_hex=key, commitments=[])
+    assert a.key == b.key and a.outcome == b.outcome == "REJECT"
+
+
+# ---------------------------------------------------------------- the verifier itself
+
+
+def test_verifier_baseline_is_the_live_books_not_an_empty_list(rt: Runtime) -> None:
+    """A no-offer evaluation on live books projects those books; with the commitment left out of
+    `commitments` (the re-verify hook's case) it projects the raw state."""
+    ob = _early_pay()
+    c = _live(rt, ob)
+    state, mandate = rt.store.get_state(), rt.store.get_mandate()
+    sq = CompiledOffer(offer_id="SQ", counterparty_id="OWNER", doc_ids=["SQ"], received_day=0,
+                       status=CompileStatus.COMPILED, obligations=[], compiler="nl-status-quo", prompt_version="t")
+    key = demo_owner_public_key_hex()
+    on_books = evaluate(sq, state, mandate, trusted_owner_key_hex=key, commitments=[c])
+    raw = evaluate(sq, state, mandate, trusted_owner_key_hex=key, commitments=[])
+    assert on_books.trajectory is not None and raw.trajectory is not None
+    want = project(state, [ob], [], Mode.CONSERVATIVE, mandate.horizon_days, mandate.min_cash_fen)
+    assert on_books.trajectory.model_dump() == want.model_dump()
+    assert on_books.trajectory.model_dump() != raw.trajectory.model_dump()
+    assert on_books.verdict.bound_obligations == []
+    assert on_books.verdict.id != raw.verdict.id
