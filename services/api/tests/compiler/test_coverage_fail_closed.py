@@ -20,7 +20,7 @@ from app.domain.fixtures import load_scenario
 from app.domain.models import CompiledOffer, CompileStatus, SourceDocument
 from app.mandate import demo_owner_public_key_hex, load_signed_mandate
 from app.verifier import evaluate
-from tests.nl.conftest import Chat, client, ops, rt  # noqa: F401  (fixtures)
+from tests.nl.conftest import Chat, client, rt, stored_ops  # noqa: F401  (fixtures)
 
 STATE, _ = load_scenario()
 MANDATE = load_signed_mandate()
@@ -169,14 +169,14 @@ def test_the_filler_list_holds_no_word_that_can_carry_a_term() -> None:
 def test_a_rider_through_nl_is_not_agreed_and_nothing_is_committed(client, rt, key: str) -> None:  # noqa: F811
     r = Chat(client, f"fc-{key}", actor="COUNTERPARTY", owner=False, counterparty_id="BUYER-1").say(RIDERS[key][0])
     assert "Agreed" not in r["reply"] and "同意" not in r["reply"], r["reply"]
-    assert ("ACCEPT_OFFER", "EXECUTED") not in ops(r)
+    assert ("ACCEPT_OFFER", "EXECUTED") not in stored_ops(rt)
     assert not [c for c in rt.store.commitments() if c.status.value == "ACTIVE"]
     assert rt.store.get_state().forward_concessions == []
 
 
 def test_the_clean_offer_through_nl_restates_the_typed_terms(client, rt) -> None:  # noqa: F811
     r = Chat(client, "fc-clean", actor="COUNTERPARTY", owner=False, counterparty_id="BUYER-1").say(BASE_EN)
-    assert ops(r) == [("ACCEPT_OFFER", "EXECUTED")] and r["operations"][0]["tier"] == "TIER_1"
+    assert stored_ops(rt) == [("ACCEPT_OFFER", "EXECUTED")] and r["operations"] == []
     reply = r["reply"]
     assert "RCV-A" in reply and "0.50%" in reply and "¥420,000.00" in reply
     assert "as proposed" not in reply.lower()
@@ -186,7 +186,7 @@ def test_the_clean_offer_through_nl_restates_the_typed_terms(client, rt) -> None
 
 def test_the_clean_offer_through_nl_restates_the_typed_terms_in_chinese(client, rt) -> None:  # noqa: F811
     r = Chat(client, "fc-clean-zh", actor="COUNTERPARTY", owner=False, counterparty_id="BUYER-1").say(BASE_ZH)
-    assert ops(r) == [("ACCEPT_OFFER", "EXECUTED")]
+    assert stored_ops(rt) == [("ACCEPT_OFFER", "EXECUTED")]
     reply = r["reply"]
     assert "RCV-A" in reply and "0.50%" in reply and "同意贵方提议" not in reply
     assert "其他内容均未同意" in reply
