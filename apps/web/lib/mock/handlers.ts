@@ -1,5 +1,5 @@
 /**
- * Mock API. Serves apps/web/mocks/*.json (authored by scripts/build-mocks.mjs from the golden values).
+ * Mock API. Serves apps/web/mocks/*.json, recorded from the live API through the live adapters (scripts/record-mocks.mjs).
  * Only bookkeeping is done here: sequence numbers, the SHA-256 hash chain and the order of events.
  * There is no money arithmetic; every amount on screen is a string from the mock JSON.
  */
@@ -73,6 +73,7 @@ const cast = <T>(v: Json): T => v as T;
 
 type OpTemplate = {
   kind: string;
+  status: OperationView["status"];
   tier: OperationView["tier"];
   requested_by: OperationView["requested_by"];
   message: string;
@@ -89,6 +90,7 @@ const FIXTURE_OFFERS: { fixture_id: string; view: OfferView; verdict: VerdictVie
   { fixture_id: "TYPED_EARLY_0_5", view: cast(offerAccept), verdict: cast(verdictAccept) },
 ];
 
+const SECURITY_FIXTURE = "SEC_DEMO_FASTCAPITAL";
 const GENESIS = "0".repeat(64);
 const STORAGE_KEY = "tl-mock-store-v1";
 
@@ -158,7 +160,7 @@ function append(
   const base = {
     op_id: `OP-${String(seq).padStart(4, "0")}`,
     kind: t.kind,
-    status: overrides.status ?? ("EXECUTED" as const),
+    status: overrides.status ?? t.status,
     tier: t.tier,
     violations: [],
     seq,
@@ -327,13 +329,8 @@ export async function evaluateOffer(offerId: string): Promise<VerdictView> {
   if (!b || !s.offers[offerId]) throw new ApiError(404, `Offer ${offerId} not found. Submit it first.`);
   if (!s.evaluated.includes(offerId)) {
     s.evaluated.push(offerId);
-    if (offerId === "OFF-SEC") {
-      s.securityScene = true;
-      append("reject_sec");
-    } else if (b.verdict.outcome === "COUNTER" || b.verdict.outcome === "REJECT") {
-      append("counter_a");
-      append("counter_b");
-    }
+    // As live: evaluating an offer books nothing (the counters go out in the negotiation); the FastCapital message opens the security scene.
+    if (b.fixture_id === SECURITY_FIXTURE) s.securityScene = true;
     save();
   }
   return clone(b.verdict);
@@ -342,21 +339,21 @@ export async function evaluateOffer(offerId: string): Promise<VerdictView> {
 export async function negotiate(offerId: string, req: NegotiateRequest): Promise<NegotiationView> {
   await delay();
   const s = load();
-  if (!s.evaluated.includes(offerId) || offerId === "OFF-SEC") {
+  if (!s.evaluated.includes(offerId) || bundleFor(offerId)?.fixture_id === SECURITY_FIXTURE) {
     throw new ApiError(409, "Evaluate a package offer before negotiating.");
   }
   const existing = s.negotiated[offerId];
   if (existing) return clone(existing);
   let result: NegotiationView;
   if (req.buyer_profile === "cooperative") {
-    const ops = [append("accept_a"), append("record_commitment"), append("draw_line")];
+    const ops = [append("accept_a"), append("draw_line")];
     const res = clone(cast<NegotiationView>(negAccept));
     res.offer_id = offerId;
     res.operations = ops;
     if (res.commitment) s.commitments.push(clone(res.commitment));
     result = res;
   } else {
-    const ops = [append("draw_line"), append("submit_invoice")];
+    const ops = [append("draw_line_hard_line"), append("submit_invoice")];
     const res = clone(cast<NegotiationView>(negNoDeal));
     res.offer_id = offerId;
     res.operations = ops;
@@ -366,6 +363,8 @@ export async function negotiate(offerId: string, req: NegotiateRequest): Promise
   save();
   return clone(result);
 }
+
+const APPROVAL_SEEDS = cast<Record<"apply_loan" | "borrower_file", ApprovalView>>(approvalsSeed);
 
 function ensureApproval(key: "apply_loan" | "borrower_file"): ApprovalView {
   const s = load();
@@ -380,7 +379,7 @@ export async function capexEvaluate(_req: CapexRequest): Promise<CapexView> {
   void _req;
   await delay();
   const s = load();
-  const first = !s.approvals.some((a) => a.id === "APR-1");
+  const first = !s.approvals.some((a) => a.id === APPROVAL_SEEDS.apply_loan.id);
   const approval = ensureApproval("apply_loan");
   if (first) append("request_approval");
   save();
@@ -393,7 +392,7 @@ export async function borrowerFile(_req: BorrowerFileRequest): Promise<BorrowerF
   void _req;
   await delay();
   const s = load();
-  const first = !s.approvals.some((a) => a.id === "APR-2");
+  const first = !s.approvals.some((a) => a.id === APPROVAL_SEEDS.borrower_file.id);
   const approval = ensureApproval("borrower_file");
   if (first) append("borrower_file");
   save();
@@ -408,19 +407,9 @@ export async function decideApproval(id: string, decision: ApprovalDecision): Pr
   const a = s.approvals.find((x) => x.id === id);
   if (!a) throw new ApiError(404, `Approval ${id} not found.`);
   if (a.status !== "PENDING") throw new ApiError(409, `Approval ${id} is already ${a.status}.`);
-  let op: OperationView;
-  if (decision === "APPROVE") {
-    a.status = "APPROVED";
-    op = append(id === "APR-2" ? "release_borrower_file" : "apply_facility");
-  } else {
-    a.status = "REJECTED";
-    op = append("request_approval", {
-      status: "REFUSED",
-      requested_by: "OWNER",
-      message: "Owner rejected the request; nothing executed",
-      summary: `Owner rejected: ${a.subject}.`,
-    });
-  }
+  const loan = id === APPROVAL_SEEDS.apply_loan.id;
+  a.status = decision === "APPROVE" ? "APPROVED" : "REJECTED";
+  const op = append(`${decision === "APPROVE" ? "approve" : "reject"}_${loan ? "apply_loan" : "borrower_file"}`);
   a.decided_day = 0;
   save();
   return { ...clone(a), result_message: op.message };

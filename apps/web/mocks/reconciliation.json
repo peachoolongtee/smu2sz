@@ -18,6 +18,8 @@
   "expected_total_fen": 0,
   "chain_head_hash": null,
   "chain_valid": true,
+  "promised": [],
+  "lapsed_promises": 0,
   "received_total_display": "¥0.00",
   "expected_total_display": "¥0.00"
 }

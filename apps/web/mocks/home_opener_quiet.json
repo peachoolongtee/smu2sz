@@ -1,7 +1,7 @@
 {
-  "session_id": "q",
-  "turn": 3,
-  "reply": "Nothing needs you today (day 0).",
+  "session_id": "rec-quiet-en",
+  "turn": 1,
+  "reply": "Day 0. 1 warning: Reserve headroom thin on day 20.",
   "intent": "SHOW_ALERTS",
   "lang": "en",
   "plan": [],
@@ -14,7 +14,7 @@
   "negotiation": null,
   "security_events": [],
   "parse_source": "opener",
-  "trace_id": "q:3",
+  "trace_id": "rec-quiet-en:1",
   "proactive": true,
-  "has_news": false
+  "has_news": true
 }

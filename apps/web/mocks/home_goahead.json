@@ -1,6 +1,6 @@
 {
-  "session_id": "web-rec",
-  "turn": 3,
+  "session_id": "rec-home-go",
+  "turn": 2,
   "reply": "Advance ¥200,000.00 on RI:BUYER-1:2 from FAC-IF on day 34 The reserve alert is now cleared.",
   "intent": "SHOW_ALERTS",
   "lang": "en",
@@ -23,8 +23,8 @@
       "tier": "TIER_1",
       "violations": [],
       "seq": 7,
-      "entry_hash": "07b86ab1c0db60da48e3cd523e44a0718a277a7a307052f6945d9c4edf3e7617",
-      "prev_hash": "b12b4d9970873aa779f5591893d174b06ba82bc753d8a9c6f4fc581afe853086",
+      "entry_hash": "8b47633eb6752f2293a81cbd02f2f47a8229918d930f2041ddcbefd0ee002daf",
+      "prev_hash": "ba361ee60b03593a7bc5c080530de6dc6eff9bcb06da3e0d113ae01adb9c7f6e",
       "effective_day": 34,
       "approval_id": null,
       "message": "Advance ¥200,000.00 on RI:BUYER-1:2 from FAC-IF on day 34"
@@ -37,5 +37,5 @@
   "negotiation": null,
   "security_events": [],
   "parse_source": "rules",
-  "trace_id": "web-rec:3"
+  "trace_id": "rec-home-go:2"
 }

@@ -30,12 +30,14 @@
   "signature": {
     "status": "VALID",
     "algorithm": "Ed25519",
-    "key_fingerprint": "Ed25519:05cf00d3…1c62b96f"
+    "key_fingerprint": "0e47d927d549de63"
   },
   "validity": {
     "status": "ACTIVE",
     "current_day": 0,
     "expires_day": 90,
     "days_remaining": 90
-  }
+  },
+  "valid": true,
+  "problems": []
 }

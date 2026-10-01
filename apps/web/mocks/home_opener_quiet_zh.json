@@ -1,7 +1,7 @@
 {
-  "session_id": "q",
-  "turn": 4,
-  "reply": "今天（第 0 天）没有需要您处理的事项。",
+  "session_id": "rec-quiet-zh",
+  "turn": 1,
+  "reply": "第 0 天。 1 项警告：Reserve headroom thin on day 20。",
   "intent": "SHOW_ALERTS",
   "lang": "zh",
   "plan": [],
@@ -14,7 +14,7 @@
   "negotiation": null,
   "security_events": [],
   "parse_source": "opener",
-  "trace_id": "q:4",
+  "trace_id": "rec-quiet-zh:1",
   "proactive": true,
-  "has_news": false
+  "has_news": true
 }

@@ -3,14 +3,14 @@
   "day": 34,
   "results": [
     {
-      "op_id": "alert:ALERT-RESERVE-42:v6:0",
+      "op_id": "alert:ALERT-RESERVE-42:v7:0",
       "kind": "SUBMIT_INVOICE_FOR_FINANCING",
       "status": "EXECUTED",
       "tier": "TIER_1",
       "violations": [],
-      "seq": 6,
-      "entry_hash": "35b5f86fec2837db57f5a752b92a61b003ae7d1ec01aef02961579c79c9f63ec",
-      "prev_hash": "dd447d53c95fbb9089d0046049124a00e12b3154a262a72a796ec7788c2bf51e",
+      "seq": 7,
+      "entry_hash": "8b47633eb6752f2293a81cbd02f2f47a8229918d930f2041ddcbefd0ee002daf",
+      "prev_hash": "ba361ee60b03593a7bc5c080530de6dc6eff9bcb06da3e0d113ae01adb9c7f6e",
       "effective_day": 34,
       "approval_id": null,
       "message": "Advance ¥200,000.00 on RI:BUYER-1:2 from FAC-IF on day 34"
