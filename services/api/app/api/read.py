@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends
 from fastapi.responses import PlainTextResponse
 
 from app.api.auth import require_owner
+from app.api.decide import _counter_allow
 from app.api.display import displayed
 from app.api.runtime import get_runtime
 from app.api.views import Money, TrajectoryView, trajectory_view
@@ -16,6 +17,7 @@ from app.domain.models import Mode
 from app.financial import project
 from app.mandate import MandatePolicyImpl
 from app.operations import security_summary
+from app.security.scoreboard import scoreboard
 from app.verifier import REFUSAL_REPLY
 
 router = APIRouter(dependencies=[Depends(require_owner)])
@@ -92,6 +94,7 @@ def get_audit() -> dict:
     events = rt.store.security_events()
     doc_ids = {sp.doc_id for e in events for sp in e.spans}
     extraction = any(e.kind.value == "DATA_EXTRACTION" for e in events)
+    board = scoreboard(rt.store, rt.latest_verdict.values(), allow_for=_counter_allow)  # computed, not asserted
     return {
         "events": [displayed(json.loads(e.model_dump_json())) for e in events],
         "refusals": refusals,
@@ -99,8 +102,7 @@ def get_audit() -> dict:
         "summary": displayed({
             "facilities_added": s.get("facilities_added_by_non_owner", 0),
             "commitments_booked": len(rt.store.commitments()),
-            "money_moved_fen": 0,
-            "disclosed_fields": [],
+            **board,
             "reply_text": REFUSAL_REPLY if extraction else None,
             **{k: v for k, v in s.items() if isinstance(v, (int, str, bool))},
         }),

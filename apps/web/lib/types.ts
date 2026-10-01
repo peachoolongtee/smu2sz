@@ -792,6 +792,9 @@ export interface AuditView {
     commitments_booked: number;
     money_moved_fen: Fen;
     disclosed_fields: string[];
+    computed?: boolean;
+    outbound_texts_scanned?: number;
+    operations_scanned?: number;
     reply_text: string | null;
   }>;
 }
