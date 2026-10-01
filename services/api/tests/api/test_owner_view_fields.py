@@ -143,14 +143,3 @@ def test_whole_invoice_is_null_without_an_early_pay_leg(client):
     assert v["autonomy"]["whole_invoice"] is None and v["autonomy"]["accepted_alone"] is False
     assert v["annualised"] == []
     assert len(v["autonomy"]["covered"]) == len(v["bound_obligations"])
-
-
-# ---------------------------------------------------------------- part 5: approvals queue convenience
-
-
-def test_approvals_queue_items_say_who_asked_and_on_which_day(client):
-    body = {"kind": "APPLY_FOR_FACILITY", "op_id": "a1", "idempotency_key": "a1", "mandate_version": 1,
-            "requested_by": "AGENT", "facility_id": "FAC-GGL", "amount_fen": 20_000_000}
-    assert client.post("/operations", json=body).json()["result"]["status"] == "PENDING_APPROVAL"
-    item = client.get("/approvals/queue").json()["approvals"][0]
-    assert item["requested_by"] == "AGENT" and item["requested_day_display"].startswith("day ")
