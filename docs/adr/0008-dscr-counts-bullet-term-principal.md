@@ -8,7 +8,7 @@ The covenant reads "monthly EBITDA / scheduled debt service (principal + interes
 engine's monthly debt service holds the fixed service on existing debt, interest and fees as they post, and
 the principal of amortising facilities. The principal of a bullet term loan is left out, and its interest
 posts only in the month it is repaid. A ¥500,000 12-month guaranteed loan at 5% therefore shows 2.00× for
-eleven months and 1.29× in the twelfth, and passes a 1.25× covenant that it fails on any annual reading.
+the months of its term and 1.29× in the month it is repaid, and passes a 1.25× covenant that it fails on any annual reading.
 
 ## Decision
 
@@ -39,7 +39,21 @@ EBITDA ¥90,000 a month; existing debt service ¥45,000 a month. Draw ¥500,000 
   days from arrival to repayment; the implementation takes the figure from the engine, not from this line).
 - Level service: (500,000 + 24,657.53) / 12 = ¥43,721.46 a month.
 - DSCR every month of the term: 90,000 / (45,000 + 43,721.46) = 1.014× < 1.25× → `DSCR_BREACH`.
-- Before this decision: 2.00× in months 1 to 11 and 90,000 / (45,000 + 24,657.53) = 1.29× in month 12.
+- Before this decision: 2.00× in every month of the term and 90,000 / (45,000 + 24,657.53) = 1.29× in the
+  month of repayment (month 13: the loan arrives on day 21 after its lead time and is repaid on day 381).
+- Checked independently (`docs/research/dscr-handcalc-2026-10-01.md`): every figure agrees. Spreading only the
+  principal and leaving interest in the repayment month would give 1.038× in months 1 to 12, so the loan
+  fails 1.25× either way; spreading both makes the monthly and the annual reading agree (1.0144×).
+
+## Cases settled after the independent check
+
+- A revolving credit line is never a bullet term facility, even if it carries `term_months`.
+- A term loan repaid early (an explicit repayment day) is charged interest for the actual days, and that
+  total is still spread over the whole term. Service is then shown after the loan is gone. Conservative;
+  left as it is.
+- A balance already drawn on a bullet term loan when the projection starts is treated as arriving today
+  and spread over a full term, which overstates service when part of the term has passed. Conservative;
+  left as it is, because the state does not record the original draw day.
 
 ## Consequences
 

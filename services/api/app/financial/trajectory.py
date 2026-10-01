@@ -122,7 +122,10 @@ class _TermLot:
 
 
 def _is_bullet_term(f: Facility) -> bool:
-    return f.repayment == Repayment.BULLET and bool(f.term_months) and f.counts_in_debt_service
+    """ADR-0008: a bullet facility with a term, serviced on a level basis for DSCR. Never a revolving credit line,
+    even if one carries a term: its principal is not scheduled debt service."""
+    return (f.repayment == Repayment.BULLET and bool(f.term_months) and f.counts_in_debt_service
+            and f.kind != FacilityKind.CREDIT_LINE)
 
 
 @dataclass
