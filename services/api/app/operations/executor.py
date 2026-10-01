@@ -233,12 +233,14 @@ class Executor:
     refused (BAD_SIGNATURE). `clock` returns the simulated current day.
     """
 
-    def __init__(self, store: LedgerStore, *, trusted_owner_key_hex: str, clock: Callable[[], int]) -> None:
+    def __init__(self, store: LedgerStore, *, trusted_owner_key_hex: str, clock: Callable[[], int],
+                 reverify: Callable[[Commitment, FinancialState, Mandate, int], Outcome | None] | None = None) -> None:
         if not trusted_owner_key_hex:
             raise ValueError("the executor needs the owner's public key to pin mandate signatures")
         self._store = store
         self._owner_key = trusted_owner_key_hex
         self._clock = clock
+        self._reverify = reverify
         self._reader = LogReader()
         self._lock = threading.RLock()
 
@@ -729,9 +731,69 @@ class Executor:
                 return self._request_approval(op)
         raise _refuse(Code.INSUFFICIENT_AUTHORITY, f"No handler for {getattr(op, 'kind', type(op).__name__)}")
 
+    def _check_binding(self, ctx: _Ctx) -> None:
+        """ADR-0006 section 5: a verdict is not standing authority. Re-check the commitment against the
+        state and mandate at this moment; any failure refuses (and is logged like any refusal)."""
+        c, v, m = ctx.commitment, ctx.verdict, ctx.mandate
+        assert c is not None and m is not None
+        state = ctx.state
+        # 1. every named receivable is still owed (RI: ids are generated future invoices)
+        by_id = {r.id: r for r in state.receivables}
+        for o in c.obligations:
+            rid = o.base.receivable_id
+            if not rid or rid.startswith("RI:"):
+                continue
+            r = by_id.get(rid)
+            status = r.status if r is not None else "absent from the books"
+            if r is None or r.status not in ("OPEN", "FINANCED"):
+                raise _refuse(Code.STALE_VERDICT, f"Receivable {rid} is {status}; re-evaluate the offer",
+                              commitment_id=c.id, receivable_id=rid, status=status)
+        # 2. exclusivity: one live commitment per named receivable
+        mine = {o.base.receivable_id for o in c.obligations if o.base.receivable_id}
+        for other in self._store.commitments():
+            if other.id == c.id or other.status not in (CommitmentStatus.ACCEPTED, CommitmentStatus.ACTIVE):
+                continue
+            shared = sorted(mine & {o.base.receivable_id for o in other.obligations if o.base.receivable_id})
+            if shared:
+                raise _refuse(Code.CONFLICTING_COMMITMENT,
+                              f"Commitment {c.id} and the earlier {other.status.value} commitment {other.id} both "
+                              f"cover receivable {shared[0]}; the owner must revoke {other.id} first",
+                              commitment_id=c.id, other_commitment_id=other.id, receivable_id=shared[0])
+        # 3. caps, with the verifier's netting: this commitment adds its (non-negative) forward value
+        booked = sum(fc.value_fen for fc in state.forward_concessions)
+        cap = m.max_aggregate_forward_concession_fen
+        if booked + c.forward_value_fen > cap:
+            raise _refuse(Code.STALE_VERDICT,
+                          f"Aggregate forward-concession cap would be exceeded: "
+                          f"{fmt_yuan(booked + c.forward_value_fen)} vs {fmt_yuan(cap)}",
+                          booked_fen=booked, this_fen=c.forward_value_fen, cap_fen=cap)
+        buyer_cap = m.per_buyer_caps_fen.get(c.counterparty_id)
+        if buyer_cap is not None:
+            buyer_booked = sum(fc.value_fen for fc in state.forward_concessions
+                               if fc.counterparty_id == c.counterparty_id)
+            if buyer_booked + c.forward_value_fen > buyer_cap:
+                raise _refuse(Code.STALE_VERDICT,
+                              f"Per-buyer forward-concession cap for {c.counterparty_id} would be exceeded: "
+                              f"{fmt_yuan(buyer_booked + c.forward_value_fen)} vs {fmt_yuan(buyer_cap)}",
+                              booked_fen=buyer_booked, this_fen=c.forward_value_fen, cap_fen=buyer_cap,
+                              counterparty_id=c.counterparty_id)
+        # 4. the books moved since the verdict: the terms must still verify on today's books
+        if v is not None and v.state_version != state.state_version and self._reverify is not None:
+            try:
+                outcome = self._reverify(c, state, m, ctx.now)
+            except Exception:  # noqa: BLE001  fail closed: a hook that cannot evaluate refuses
+                outcome = None
+            if outcome not in (Outcome.ACCEPT, Outcome.NEEDS_OWNER_APPROVAL):
+                raise _refuse(Code.STALE_VERDICT,
+                              f"The books changed since verdict {v.id} (state v{v.state_version} \u2192 "
+                              f"v{state.state_version}) and the terms no longer verify; re-evaluate",
+                              verdict_id=v.id, verdict_state_version=v.state_version,
+                              state_version=state.state_version, outcome=outcome.value if outcome else "none")
+
     def _commit(self, ctx: _Ctx) -> _Effect:
         c = ctx.commitment
         assert c is not None
+        self._check_binding(ctx)
         try:
             if c.status == CommitmentStatus.PROPOSED:
                 c = transition(c, CommitmentStatus.ACCEPTED, ctx.now)
