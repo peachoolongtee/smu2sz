@@ -18,15 +18,28 @@ discount d on a portion P <= O):
 - UNMATCHED         the executor refused the receipt (no such receivable, already settled, above
                     what is outstanding ...): no open receivable or commitment explains the money.
 `outstanding[].face_fen` is the amount still owed (face less settled).
+
+`promised` is the other direction: every early payment a live commitment promised (an IMMEDIATE_DISCOUNT
+naming a receivable, on an ACCEPTED, ACTIVE or FULFILLED commitment), as AWAITED, RECEIVED, LAPSED (its day
+passed unpaid; the receivable is back on its due day) or SETTLED_OTHERWISE. Read-only: nothing is written.
 """
 
 from __future__ import annotations
 
 from app.alerts.ledger import Entry, entries, head
-from app.alerts.models import MatchStatus, OutstandingReceivable, ReceiptMatch, ReconciliationReport
+from app.alerts.models import (
+    MatchStatus,
+    OutstandingReceivable,
+    PromisedReceipt,
+    PromiseStatus,
+    ReceiptMatch,
+    ReconciliationReport,
+)
+from app.books import current_books
 from app.domain.models import (
     Commitment,
     CommitmentStatus,
+    FinancialState,
     ObligationType,
     OperationStatus,
     Receivable,
@@ -108,6 +121,71 @@ def _match(e: Entry, op: ReceivePayment, r: Receivable, commitments: list[Commit
     return match, portion if agreed else received
 
 
+def _promises(state: FinancialState, commitments: list[Commitment],
+              paid: dict[str, ReceiptMatch]) -> list[PromisedReceipt]:
+    """What each live early-pay commitment promised and what became of it (ADR-0006 sections 3 and 4).
+    `paid` maps a commitment id to the receipt the replay matched to its agreed amount."""
+    books = current_books(state, commitments)
+    receivables = {r.id: r for r in state.receivables}
+    lapsed = {(lp.commitment_id, lp.obligation.id): lp.reason for lp in books.lapsed}
+    rows: list[PromisedReceipt] = []
+    for c in commitments:
+        if c.status not in _AGREED:
+            continue
+        for o in c.obligations:
+            rid = o.base.receivable_id
+            r = receivables.get(rid) if rid else None
+            if o.type != ObligationType.IMMEDIATE_DISCOUNT or rid is None or r is None:
+                continue
+            if o.rate_bp is None and o.amount_fen is None:
+                continue
+            hit = paid.get(c.id)
+            hit = hit if hit is not None and hit.receivable_id == rid else None
+            fulfilled = c.status == CommitmentStatus.FULFILLED
+            if hit is not None:
+                portion, d = hit.received_fen + hit.agreed_discount_fen, hit.agreed_discount_fen
+            else:
+                settled = fulfilled or lapsed.get((c.id, o.id)) == "RECEIVABLE_SETTLED"
+                portion = o.base.amount_fen or (r.face_fen if settled else r.outstanding_fen)
+                d = post(bp(o.rate_bp) * portion) if o.rate_bp is not None else o.amount_fen or 0
+            expected = portion - d
+            formula = (f"{fmt_yuan(portion)} × {o.rate_bp} bp = {fmt_yuan(d)}; "
+                       if o.rate_bp is not None else f"fixed discount {fmt_yuan(d)} on {fmt_yuan(portion)}; ")
+            formula += f"{fmt_yuan(portion)} − {fmt_yuan(d)} = {fmt_yuan(expected)}"
+            day = o.effective_day
+            when = f"day {day}" if day is not None else "its due day"
+            seq: int | None = None
+            if hit is not None or fulfilled:
+                status = PromiseStatus.RECEIVED
+                seq = hit.seq if hit is not None else None
+                detail = f"the agreed {fmt_yuan(expected)} for {rid} arrived (commitment {c.id})"
+            elif (c.id, o.id) in lapsed or o in books.obligations:
+                reason = lapsed.get((c.id, o.id))
+                if reason is None:
+                    status = PromiseStatus.AWAITED
+                    detail = (f"{fmt_yuan(expected)} promised for {rid} by {when} under commitment {c.id}; "
+                              f"the day has not passed")
+                elif reason == "RECEIVABLE_SETTLED":
+                    status = PromiseStatus.SETTLED_OTHERWISE
+                    detail = (f"{rid} was settled without the agreed {fmt_yuan(expected)} early payment "
+                              f"(commitment {c.id})")
+                else:
+                    status = PromiseStatus.LAPSED
+                    detail = (f"{fmt_yuan(expected)} promised for {when} under commitment {c.id} did not arrive; "
+                              f"{fmt_yuan(r.outstanding_fen)} of {rid} is still outstanding and falls back to its "
+                              f"original due day, day {r.due_day}")
+                    if reason != "EARLY_PAYMENT_MISSED":
+                        detail += f" (lapsed: {reason})"
+            else:
+                continue
+            rows.append(PromisedReceipt(
+                commitment_id=c.id, obligation_id=o.id, receivable_id=rid, counterparty_id=o.counterparty_id,
+                promised_day=day, face_fen=portion, discount_fen=d, expected_fen=expected, status=status,
+                receipt_seq=seq, detail=detail, formula=formula))
+    rows.sort(key=lambda p: (p.promised_day is None, p.promised_day or 0, p.commitment_id, p.obligation_id))
+    return rows
+
+
 def reconcile(store: LedgerStore, day: int | None = None) -> ReconciliationReport:
     """Match the log's receipts; `day` (the simulated clock) marks outstanding receivables past due."""
     state = store.get_state()
@@ -117,6 +195,7 @@ def reconcile(store: LedgerStore, day: int | None = None) -> ReconciliationRepor
     receipts: list[ReceiptMatch] = []
     settled: dict[str, int] = {}  # face settled so far per receivable, replayed from the log
     used: set[str] = set()  # commitments whose agreed amount a receipt has already paid
+    paid: dict[str, ReceiptMatch] = {}  # the receipt that paid each of them
     for e in log:
         op = e.op
         if not isinstance(op, ReceivePayment) or e.result.status in (OperationStatus.DUPLICATE,
@@ -124,7 +203,9 @@ def reconcile(store: LedgerStore, day: int | None = None) -> ReconciliationRepor
             continue
         r = receivables.get(op.receivable_id)
         if e.result.status == OperationStatus.EXECUTED and r is not None:
+            before = set(used)
             m, face_settled = _match(e, op, r, commitments, settled.get(r.id, 0), used)
+            paid.update({cid: m for cid in used - before})
             settled[r.id] = settled.get(r.id, 0) + face_settled
             receipts.append(m)
             continue
@@ -144,6 +225,7 @@ def reconcile(store: LedgerStore, day: int | None = None) -> ReconciliationRepor
                               face_fen=r.outstanding_fen, due_day=r.due_day, status=r.status, past_due=r.due_day < today)
         for r in state.receivables if r.status in ("OPEN", "FINANCED")
     ]
+    promised = _promises(state, commitments, paid)
     return ReconciliationReport(
         as_of_day=today,
         receipts=receipts,
@@ -154,4 +236,6 @@ def reconcile(store: LedgerStore, day: int | None = None) -> ReconciliationRepor
         expected_total_fen=sum(m.expected_fen or 0 for m in receipts),
         chain_head_hash=head(store),
         chain_valid=store.verify_chain(),
+        promised=promised,
+        lapsed_promises=sum(1 for p in promised if p.status == PromiseStatus.LAPSED),
     )

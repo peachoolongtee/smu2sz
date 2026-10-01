@@ -106,6 +106,30 @@ class OutstandingReceivable(Contract):
     past_due: bool
 
 
+class PromiseStatus(StrEnum):
+    AWAITED = "AWAITED"  # commitment live, obligation still binds, its day has not passed
+    RECEIVED = "RECEIVED"  # the agreed amount arrived (commitment FULFILLED / matched receipt)
+    LAPSED = "LAPSED"  # its day passed with the receivable unpaid; receivable back on its due day
+    SETTLED_OTHERWISE = "SETTLED_OTHERWISE"  # the receivable was settled, but not by the agreed early-pay amount
+
+
+class PromisedReceipt(Contract):
+    """An early payment a live commitment promised, and what became of it."""
+
+    commitment_id: str
+    obligation_id: str
+    receivable_id: str
+    counterparty_id: str
+    promised_day: Day | None
+    face_fen: Fen  # the portion P of the invoice the discount covers
+    discount_fen: Fen  # posted discount d on P
+    expected_fen: Fen  # P − d
+    status: PromiseStatus
+    receipt_seq: int | None = None  # log seq of the receipt that paid it, when RECEIVED
+    detail: str
+    formula: str
+
+
 class ReconciliationReport(Contract):
     as_of_day: Day
     receipts: list[ReceiptMatch]
@@ -116,3 +140,5 @@ class ReconciliationReport(Contract):
     expected_total_fen: Fen
     chain_head_hash: str | None
     chain_valid: bool
+    promised: list[PromisedReceipt] = Field(default_factory=list)
+    lapsed_promises: int = 0
