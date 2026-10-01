@@ -3,7 +3,7 @@
 import { CheckIcon } from "@/components/icons";
 import { Card } from "@/components/ui";
 import { useI18n } from "@/lib/i18n";
-import type { Outcome, PassedCheck, Tier } from "@/lib/types";
+import type { AutonomyView, Outcome, PassedCheck, Tier } from "@/lib/types";
 
 /** The three early-payment tests, in the order the server names them. */
 const EARLY_PAY_TESTS = ["MAX_APR", "MIN_CASH", "EARLY_PAY_VS_PLAN"] as const;
@@ -16,6 +16,8 @@ interface Props {
   /** From the compiled offer (`autonomy_eligible`, `autonomy_notes`); undefined when the API did not send them. */
   autonomyEligible?: boolean;
   autonomyNotes?: string[];
+  /** The server's own account (covered, whole-invoice, gaps, notes). When absent the panel infers its lines, as for older recordings. */
+  autonomy?: AutonomyView;
   /** The chat reply carries no checks; the panel then says where to find them. */
   checksInReply?: boolean;
 }
@@ -33,7 +35,7 @@ export function autonomyPanelKind(outcome: Outcome, tier: Tier | undefined, summ
 }
 
 /** Why the agent may (or may not) accept this alone. Every item is the server's own text; nothing is computed here. */
-export function AutonomyPanel({ outcome, tier, summary, passedChecks, autonomyEligible, autonomyNotes, checksInReply = true }: Props) {
+export function AutonomyPanel({ outcome, tier, summary, passedChecks, autonomyEligible, autonomyNotes, autonomy, checksInReply = true }: Props) {
   const { t } = useI18n();
   const kind = autonomyPanelKind(outcome, tier, summary);
   if (!kind) return null;
@@ -43,7 +45,34 @@ export function AutonomyPanel({ outcome, tier, summary, passedChecks, autonomyEl
   return (
     <Card id="autonomy" title={ok ? t("autonomy.title") : t("autonomy.warnTitle")} tone={ok ? "ok" : "warn"}>
       <div data-testid={ok ? "autonomy-panel" : "autonomy-warning"} className="space-y-3">
-        {ok ? (
+        {ok && autonomy ? (
+          <ul className="space-y-1.5 text-sm" data-testid="autonomy-covered">
+            {autonomy.eligible ? (
+              <li className="flex items-start gap-1.5">
+                <span className="mt-0.5 text-ok-fg">
+                  <CheckIcon />
+                </span>
+                <span>{t("autonomy.compiler")}</span>
+              </li>
+            ) : null}
+            {autonomy.covered.map((c) => (
+              <li key={c} className="flex items-start gap-1.5">
+                <span className="mt-0.5 text-ok-fg">
+                  <CheckIcon />
+                </span>
+                <span>{c}</span>
+              </li>
+            ))}
+            {autonomy.whole_invoice !== null ? (
+              <li className="flex items-start gap-1.5">
+                <span className="mt-0.5 text-ok-fg">
+                  <CheckIcon />
+                </span>
+                <span>{autonomy.whole_invoice ? t("autonomy.whole.yes") : t("autonomy.whole.no")}</span>
+              </li>
+            ) : null}
+          </ul>
+        ) : ok ? (
           <ul className="space-y-1.5 text-sm">
             <li className="flex items-start gap-1.5">
               <span className="mt-0.5 text-ok-fg">
@@ -69,9 +98,19 @@ export function AutonomyPanel({ outcome, tier, summary, passedChecks, autonomyEl
             {notProvenLine(summary)}
           </p>
         )}
-        {!ok && autonomyNotes?.length ? (
-          <ul className="list-disc pl-5 text-sm text-ink-2">
-            {autonomyNotes.map((n) => (
+        {autonomy?.gaps.length ? (
+          <div data-testid="autonomy-gaps">
+            <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-warn-fg">{t("autonomy.gaps")}</p>
+            <ul className="list-disc pl-5 text-sm text-warn-fg">
+              {autonomy.gaps.map((g) => (
+                <li key={g}>{g}</li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+        {(autonomy ? autonomy.notes : !ok ? autonomyNotes : undefined)?.length ? (
+          <ul className="list-disc pl-5 text-sm text-ink-2" data-testid="autonomy-notes">
+            {(autonomy ? autonomy.notes : autonomyNotes)?.map((n) => (
               <li key={n}>{n}</li>
             ))}
           </ul>

@@ -2,7 +2,7 @@
 
 import { Badge, Callout, Card, EmptyState, ErrorState, Formula, LoadingBlock, PageHeader, type Tone } from "@/components/ui";
 import { CodeBadge } from "@/components/badges";
-import { FixButton, FixResult, useFixAlert } from "@/components/home/fix-alert";
+import { FixButton, FixResult, SuggestionCost, useFixAlert } from "@/components/home/fix-alert";
 import { getAlerts } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
 import type { AlertSeverity } from "@/lib/types";
@@ -89,6 +89,7 @@ export default function AlertsPage() {
                                 {s.facility_id || s.receivable_id ? " · " : ""}
                                 {s.note}
                               </p>
+                              <SuggestionCost s={s} />
                             </li>
                           ))}
                         </ul>

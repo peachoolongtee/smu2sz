@@ -6,7 +6,7 @@ import { Badge, Button, ErrorState } from "@/components/ui";
 import { actOnAlert, ApiError } from "@/lib/api";
 import { bump } from "@/lib/demo-store";
 import { useI18n } from "@/lib/i18n";
-import type { AlertActResult } from "@/lib/types";
+import type { AlertActResult, SuggestedOperation } from "@/lib/types";
 
 /**
  * "Let the agent fix this": POST /alerts/{id}/act, then every read refetches (bump). The answer is kept here,
@@ -35,6 +35,19 @@ export function useFixAlert(onDone?: () => void) {
   }
 
   return { busyId, result, error, fix };
+}
+
+/** What a suggested cure costs, in the server's words: the cost, the formula behind it and a warning when it is above the yearly cap. Nothing when the server sent no cost. */
+export function SuggestionCost({ s }: { s: SuggestedOperation }) {
+  const { t } = useI18n();
+  if (!s.cost_display) return null;
+  return (
+    <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink-2" data-testid="suggestion-cost">
+      <span className="font-medium text-ink">{t("alerts.cost", { cost: s.cost_display })}</span>
+      {s.cost_formula ? <span className="break-words font-mono text-ink-3">{s.cost_formula}</span> : null}
+      {s.above_apr_cap ? <Badge tone="warn">{t("alerts.aboveCap")}</Badge> : null}
+    </div>
+  );
 }
 
 export function FixButton({ alertId, busyId, onFix }: { alertId: string; busyId: string | null; onFix: (id: string) => void }) {

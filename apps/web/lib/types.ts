@@ -660,9 +660,34 @@ export interface MoneyTrajectory {
   discounts: MoneyView;
 }
 
+/** Why the offer could, or could not, be accepted without the owner: the server's own sentences (owner routes only). */
+export interface AutonomyView {
+  eligible: boolean;
+  accepted_alone: boolean;
+  /** True or false when the offer has an early-pay discount; null when there is none to name an invoice for. */
+  whole_invoice: boolean | null;
+  covered: string[];
+  gaps: string[];
+  notes: string[];
+}
+
+/** One early-pay discount with its annual rate, as the server states it (owner routes only). */
+export interface AnnualisedLeg {
+  obligation_id: string;
+  receivable_id: string;
+  discount_display: string;
+  days_early: number;
+  annual_rate_display: string;
+  formula: string;
+  compare_to: { label: string; annual_rate_display: string }[];
+}
+
 /** POST /offers/{id}/evaluate. The optional members are live-mode extras the API sends alongside the verdict. */
 export type VerdictView = Displayed<Verdict> & {
   passed_checks: PassedCheck[];
+  /** Absent in older recordings: the UI then renders nothing for them. */
+  autonomy?: AutonomyView;
+  annualised?: AnnualisedLeg[];
   bound_obligations?: Displayed<Obligation>[];
   /** Conservative projection with the offer applied. */
   trajectory?: MoneyTrajectory | null;
@@ -915,6 +940,13 @@ export interface SuggestedOperation {
   note: string;
   amount_fen: Fen | null;
   amount_display: string | null;
+  /** What the cure costs, as the server states it. Absent in older recordings and when the cost is not known. */
+  cost_fen?: Fen | null;
+  cost_display?: string | null;
+  cost_days?: number | null;
+  cost_formula?: string | null;
+  /** The cure's annual rate is above the mandate's max APR (disclosed only; nothing is blocked). */
+  above_apr_cap?: boolean;
   /** Always false: alerts never execute anything. */
   executes_automatically: boolean;
 }
@@ -1060,8 +1092,12 @@ export interface NlVerdict {
   required_tier?: Tier;
   summary?: string;
   forward_concession_total_display?: string | null;
-  /** Not in the /nl reply today (see the interface change requests); rendered when the API starts sending it. */
+  /** Owner turns only, and only when the verifier ran in that turn. */
   passed_checks?: PassedCheck[];
+  autonomy?: AutonomyView;
+  annualised?: AnnualisedLeg[];
+  /** Only the obligation ids are read: they tell the offer's own legs from a counter's. */
+  counters?: { obligations: { id: string }[] }[];
   autonomy_eligible?: boolean;
   autonomy_notes?: string[];
   violations: {

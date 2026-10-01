@@ -1,7 +1,8 @@
 "use client";
 
 import { useI18n } from "@/lib/i18n";
-import type { Displayed, CounterProposal, OperationView, Violation } from "@/lib/types";
+import { AnnualisedLine } from "@/components/annualised";
+import type { AnnualisedLeg, Displayed, CounterProposal, OperationView, Violation } from "@/lib/types";
 import { CodeBadge, OpStatusBadge, TierBadge } from "./badges";
 import { SpanQuote } from "./offer-parts";
 import { Badge, Formula, Hash } from "./ui";
@@ -70,7 +71,7 @@ export function ViolationCard({ v }: { v: Displayed<Violation> }) {
   );
 }
 
-export function CounterCard({ c }: { c: Displayed<CounterProposal> }) {
+export function CounterCard({ c, legs = [] }: { c: Displayed<CounterProposal>; legs?: AnnualisedLeg[] }) {
   const { t } = useI18n();
   return (
     <li className="flex min-w-0 flex-col rounded-lg border border-warn-line bg-surface p-4" data-testid={`counter-${c.id}`}>
@@ -83,6 +84,11 @@ export function CounterCard({ c }: { c: Displayed<CounterProposal> }) {
       </div>
       <blockquote className="mt-3 rounded-md border-l-4 border-warn-line bg-warn-bg/60 px-3 py-2 text-sm">{c.text}</blockquote>
       <p className="mt-3 text-sm text-ink-2">{c.rationale}</p>
+      {legs.map((l) => (
+        <div key={l.obligation_id} className="mt-3">
+          <AnnualisedLine leg={l} />
+        </div>
+      ))}
       <div className="mt-3">
         <p className="mb-1 text-xs font-semibold text-ink-3">{t("verdict.counter.priced")}</p>
         <Formula>{c.formula}</Formula>
