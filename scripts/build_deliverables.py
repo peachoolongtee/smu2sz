@@ -708,6 +708,13 @@ def verify(out_path: Path, template: Path) -> list[str]:
     return problems
 
 
+def team_placeholders(out_path: Path) -> list[str]:
+    """The distinct [TEAM: ...] markers left in a built document (deliberate; listed, not a failure)."""
+    doc = docx.Document(str(out_path))
+    texts = [p.text for p in doc.paragraphs] + [c.text for t in doc.tables for row in t.rows for c in row.cells]
+    return sorted(set(re.findall(r"\[TEAM:[^\]]*\]", "\n".join(texts))))
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--refresh-evidence", action="store_true", help="regenerate the evidence tables from the e2e run first")
@@ -735,6 +742,11 @@ def main() -> int:
         else:
             n = len(template_outline(template))
             print(f"OK   {rel}  ({n} template headings and prompts present, no placeholders left)")
+        team = team_placeholders(out_path)
+        if team:
+            print(f"     {len(team)} [TEAM: ...] placeholder(s) for the team to fill:")
+            for t in team:
+                print(f"       {t}")
     return 1 if failed else 0
 
 
