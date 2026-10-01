@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from app.api.auth import require_owner
+from app.api.display import displayed
 from app.api.runtime import get_runtime
 from app.compiler import compile_offer, compile_term_sheet
 from app.domain.fixtures import load_offers, offer_documents
@@ -46,7 +47,7 @@ def post_offer(body: OfferIn) -> dict:
         raise HTTPException(409, {"code": "OFFER_VERSION_CONFLICT", "offer_id": offer.offer_id}) from None
     for d in docs:
         rt.documents[d.doc_id] = d
-    return {"offer": json.loads(offer.model_dump_json()), "documents": [json.loads(d.model_dump_json()) for d in docs]}
+    return {"offer": displayed(json.loads(offer.model_dump_json())), "documents": [json.loads(d.model_dump_json()) for d in docs]}
 
 
 @router.post("/facilities/compile", dependencies=[Depends(require_owner)])

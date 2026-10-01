@@ -8,13 +8,17 @@ sees the token. A COUNTERPARTY request is never parsed for intents.
 from __future__ import annotations
 
 import re
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
+from dataclasses import dataclass, field
 from typing import Any
 
 from app.domain.models import (
     Actor,
     ChangeMandate,
+    CompiledOffer,
+    FinancialState,
     IssueEquity,
+    Mandate,
     OperationResult,
     PledgeCollateral,
     SecurityEventKind,
@@ -41,6 +45,11 @@ from app.nl.rules import parse
 from app.nl.sessions import SESSIONS, Session, SessionStore
 from app.nl.turn import Turn, ask
 from app.operations import Executor
+from app.verifier import VerdictBundle
+
+# (bundle, offer, state, mandate) -> extra keys for an OWNER verdict; injected by the API layer, never used for
+# a counterparty (the counterparty response carries no verdict at all).
+VerdictExtras = Callable[[VerdictBundle, CompiledOffer, FinancialState, Mandate], dict[str, Any]]
 
 MIN_LLM_CONFIDENCE = 0.6
 APPROVAL_ID = re.compile(r"APR-\d{6}", re.IGNORECASE)
@@ -52,9 +61,25 @@ CAPABILITIES_ZH = ("我可以评估买家报价、发送反报价谈判、提前
                    "做假设分析、比较融资方案、核对回款、查看契约指标、评估设备购置、准备借款人资料，以及批准或驳回待审批操作。")
 
 
+@dataclass
+class _TurnContext(NlContext):
+    """NlContext that remembers each bundle the verifier produced this turn (with the offer, state and mandate it
+    was evaluated on), so the owner's response can carry its passed checks and autonomy proof."""
+
+    extras: VerdictExtras | None = None
+    seen: dict[str, tuple[VerdictBundle, CompiledOffer, FinancialState, Mandate]] = field(default_factory=dict)
+
+    def evaluate(self, offer: CompiledOffer, **kw: Any) -> VerdictBundle:
+        state, mandate = kw.get("state") or self.state(), self.mandate()
+        bundle = super().evaluate(offer, **kw)
+        self.seen[bundle.verdict.id] = (bundle, offer, state, mandate)
+        return bundle
+
+
 def handle(req: NlRequest, *, store: LedgerStore, executor: Executor, day: int, owner_key_hex: str,
            owner_authenticated: bool, sessions: SessionStore = SESSIONS,
-           classifier_backends: Sequence[clf.IntentBackend] | None = None) -> NlResponse:
+           classifier_backends: Sequence[clf.IntentBackend] | None = None,
+           verdict_extras: VerdictExtras | None = None) -> NlResponse:
     session, _new = sessions.get_or_create(req.session_id, req.actor,
                                            owner_auth=owner_authenticated and req.actor == "OWNER")
     session.turn += 1
@@ -64,9 +89,9 @@ def handle(req: NlRequest, *, store: LedgerStore, executor: Executor, day: int, 
         session.counterparty_id = req.counterparty_id
     if req.buyer_profile:
         session.buyer_profile = req.buyer_profile
-    ctx = NlContext(store=store, executor=executor, day=day, owner_key_hex=owner_key_hex,
-                    owner_authenticated=owner_authenticated and req.actor == "OWNER", session=session, lang=lang,
-                    trace_id=f"{session.id}:{session.turn}", request_id=req.request_id)
+    ctx = _TurnContext(store=store, executor=executor, day=day, owner_key_hex=owner_key_hex,
+                       owner_authenticated=owner_authenticated and req.actor == "OWNER", session=session, lang=lang,
+                       trace_id=f"{session.id}:{session.turn}", request_id=req.request_id, extras=verdict_extras)
 
     before = {e.id for e in store.security_events()}
     if req.request_id and req.request_id in session.requests:
@@ -92,7 +117,8 @@ def handle(req: NlRequest, *, store: LedgerStore, executor: Executor, day: int, 
 
 
 def opener(session_id: str | None, lang: str | None, *, store: LedgerStore, executor: Executor, day: int,
-           owner_key_hex: str, sessions: SessionStore = SESSIONS) -> tuple[NlResponse, bool]:
+           owner_key_hex: str, sessions: SessionStore = SESSIONS,
+           verdict_extras: VerdictExtras | None = None) -> tuple[NlResponse, bool]:
     """An agent-initiated turn in the owner's session (the API layer has checked the owner token): the agent says
     what needs the owner, if anything, and proposes the cure as a pending plan. It executes nothing; the owner's
     next direct "go ahead" in this session confirms it. Returns (the response, whether anything needs the owner)."""
@@ -100,8 +126,9 @@ def opener(session_id: str | None, lang: str | None, *, store: LedgerStore, exec
     session.turn += 1
     if lang:
         session.lang = lang
-    ctx = NlContext(store=store, executor=executor, day=day, owner_key_hex=owner_key_hex, owner_authenticated=True,
-                    session=session, lang=session.lang, trace_id=f"{session.id}:{session.turn}")
+    ctx = _TurnContext(store=store, executor=executor, day=day, owner_key_hex=owner_key_hex, owner_authenticated=True,
+                       session=session, lang=session.lang, trace_id=f"{session.id}:{session.turn}",
+                       extras=verdict_extras)
     before = {e.id for e in store.security_events()}
     turn, has_news = alerts_turn(ctx)
     turn.reply, _ok = ctx.guard(turn.reply, turn.recipient, allow=turn.allow)
@@ -471,10 +498,13 @@ def _response(ctx: NlContext, turn: Turn, parse_source: str, before: set[str],
             session_id=ctx.session.id, turn=ctx.session.turn, reply=scrub_approval_ids(turn.reply),
             intent=Intent.COUNTERPARTY_MESSAGE, lang=ctx.lang,  # type: ignore[arg-type]
             parse_source="actor", trace_id=ctx.trace_id)
+    verdict = turn.verdict.model_dump(mode="json") if turn.verdict is not None else None
+    if verdict is not None and isinstance(ctx, _TurnContext) and ctx.extras and turn.verdict.id in ctx.seen:
+        verdict.update(ctx.extras(*ctx.seen[turn.verdict.id]))  # owner channel only: the branch above returns first
     return NlResponse(
         session_id=ctx.session.id, turn=ctx.session.turn, reply=turn.reply, intent=turn.intent,
         lang=ctx.lang,  # type: ignore[arg-type]
-        plan=turn.plan, verdict=turn.verdict.model_dump(mode="json") if turn.verdict is not None else None,
+        plan=turn.plan, verdict=verdict,
         operations=[r.model_dump(mode="json") for r in ctx.results], clarification=turn.clarification,
         awaiting_confirmation=turn.awaiting, amended=turn.amended, replayed=replayed, negotiation=turn.negotiation,
         security_events=events, parse_source=parse_source, trace_id=ctx.trace_id)

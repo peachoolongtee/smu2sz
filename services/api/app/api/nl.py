@@ -15,6 +15,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from app.api.auth import is_agent
 from app.api.display import displayed
 from app.api.runtime import get_runtime
+from app.api.views import owner_verdict_extras
 from app.nl import NlRequest, handle, opener, reset_sessions
 from app.nl.service import APPROVAL_ID
 
@@ -42,9 +43,11 @@ def post_nl(body: NlRequest, x_owner_token: str | None = Header(default=None),
             rt.is_owner(x_owner_token) or is_agent(x_agent_key)):
         raise HTTPException(401, {"code": "CREDENTIAL_REQUIRED",
                                   "message": "owner token or agent key required for the owner channel"})
+    is_counterparty = str(getattr(body.actor, "value", body.actor)) == "COUNTERPARTY"
     with rt.lock:
         resp = handle(body, store=rt.store, executor=rt.executor, day=rt.day, owner_key_hex=rt.owner_key_hex,
-                      owner_authenticated=rt.is_owner(x_owner_token))
+                      owner_authenticated=rt.is_owner(x_owner_token),
+                      verdict_extras=None if is_counterparty else owner_verdict_extras)
     out = resp.model_dump(mode="json")
     if str(getattr(body.actor, "value", body.actor)) == "COUNTERPARTY":
         return _counterparty_view(out)
@@ -78,7 +81,7 @@ def post_nl_opener(body: OpenerRequest, x_owner_token: str | None = Header(defau
         raise HTTPException(403, "owner token required")
     with rt.lock:
         resp, has_news = opener(body.session_id, body.lang, store=rt.store, executor=rt.executor, day=rt.day,
-                                owner_key_hex=rt.owner_key_hex)
+                                owner_key_hex=rt.owner_key_hex, verdict_extras=owner_verdict_extras)
     out = resp.model_dump(mode="json")
     out["verdict"] = displayed(out["verdict"]) if out["verdict"] is not None else None
     out["operations"] = displayed(out["operations"])

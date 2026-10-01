@@ -758,6 +758,11 @@ def _autonomy_gaps(offer: CompiledOffer, bound: list[Obligation], state: Financi
     return gaps
 
 
+def autonomy_gaps(offer: CompiledOffer, bound: list[Obligation], state: FinancialState) -> list[str]:
+    """Public read of `_autonomy_gaps` (display only): why the offer may not be accepted without the owner."""
+    return _autonomy_gaps(offer, bound, state)
+
+
 def evaluate_verdict(
     offer: CompiledOffer,
     state: FinancialState,
