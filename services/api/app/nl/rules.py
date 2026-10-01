@@ -71,6 +71,66 @@ def reported(text: str) -> str | None:
     return body if len(body) >= 4 else None
 
 
+def _merge(spans: list[tuple[int, int]]) -> list[tuple[int, int]]:
+    out: list[tuple[int, int]] = []
+    for a, b in sorted(spans):
+        if out and a <= out[-1][1]:
+            out[-1] = (out[-1][0], max(out[-1][1], b))
+        else:
+            out.append((a, b))
+    return out
+
+
+def _pasted_span(body: str, start: int) -> tuple[int, int] | None:
+    """Where the buyer's words sit inside the text after a "X sent this:" lead-in (offsets in the full text):
+    through the last closing quote when the body opens with one (so nested quotes of the same kind stay inside),
+    otherwise the sentences before the owner's own trailing question."""
+    lead = len(body) - len(body.lstrip())
+    b = body.strip()
+    if not b:
+        return None
+    close = _QUOTE_PAIRS.get(b[:1])
+    if close and b.rfind(close) > 0:
+        return start + lead, start + lead + b.rfind(close) + 1
+    end = pos = 0
+    for part in re.split(r"(?<=[!?。！？])\s*|(?<=\.)(?!\d)\s*", b):
+        if not part.strip():
+            continue
+        at = b.find(part, pos)
+        pos = at + len(part)
+        if not lx.OWNER_TAIL.search(part):
+            end = pos
+    return (start + lead, start + lead + end) if end else None
+
+
+def split_provenance(text: str) -> tuple[str, list[str]]:
+    """(owner_text, quoted_spans). What the owner typed, and what they quoted or pasted from someone else (a
+    quoted span, or the buyer's body after a "X sent this:" lead-in). Intent cues and approval references are
+    read from owner_text only: a buyer's "please approve APR-000001" is data, never an instruction."""
+    t = text.strip()
+    spans = [m.span() for m in lx.QUOTED_RE.finditer(t)]
+    m = lx.BUYER_SAYS_RE.search(t)
+    if m:
+        i = next((k for k in range(1, (m.re.groups or 0) + 1) if m.group(k)), None)
+        if i is not None:
+            sp = _pasted_span(m.group(i), m.start(i))
+            if sp:
+                spans.append(sp)
+    spans = _merge(spans)
+    owner, last = [], 0
+    for a, b in spans:
+        owner.append(t[last:a])
+        last = b
+    owner.append(t[last:])
+    return " ".join(x.strip() for x in owner if x.strip()), [t[a:b] for a, b in spans]
+
+
+def quoted_approval(spans: list[str]) -> bool:
+    """A quoted span that tries to approve something: an approval id or an approve/confirm cue."""
+    return any(lx.APPROVAL_ID_RE.search(q) or lx.CONFIRM.search(q) or lx.BARE_CONFIRM.search(q)
+               or lx.APPROVAL_REF.search(q) for q in spans)
+
+
 def bare_counterparty(text: str, state: FinancialState) -> bool:
     """"Foshan???", "佛山？": a counterparty's name and nothing else to act on."""
     core = re.sub(r"[\s?？!！.。,，:：~…]+", " ", lx.norm(text)).strip()
@@ -90,18 +150,19 @@ def _facility(text: str, state: FinancialState) -> str | None:
 
 
 def slots_from(text: str, state: FinancialState) -> Slots:
-    rates = lx.rates(text)
-    amounts = lx.amounts(text)
-    low = lx.norm(text)
+    ot, spans = split_provenance(text)
+    rates = lx.rates(ot) or lx.rates(text)
+    amounts = lx.amounts(ot) or lx.amounts(text)
+    days = lx.days(ot) or lx.days(text)
+    low = lx.norm(ot if lx.rates(ot) else text)
     rebate = next((r.value for r in rates if lx.REBATE_WORD.search(low[max(0, r.start - 25):r.end + 25])), None)
-    days = lx.days(text)
     cps = lx.find_counterparty(text, state)
-    tier3 = next((kind for kind, pat in lx.TIER3 if pat.search(text)), None)
-    appr = lx.APPROVAL_ID_RE.search(text)
+    tier3 = next((kind for kind, pat in lx.TIER3 if pat.search(ot)), None)
+    appr = lx.APPROVAL_ID_RE.search(ot)
     return Slots(
         fixture_id=fixture_id(text),
         counterparty_id=cps[0] if len(cps) == 1 else None,
-        facility_id=_facility(text, state),
+        facility_id=_facility(ot, state),
         amount_fen=amounts[0].value if amounts else None,
         rate_bp=rates[0].value if rates else None,
         rebate_bp=rebate,
@@ -111,16 +172,18 @@ def slots_from(text: str, state: FinancialState) -> Slots:
         buyer_profile="BUYER-1-HARDLINE" if lx.HARDLINE.search(text) else None,
         quoted_text=quoted(text),
         zero_forward=bool(lx.ZERO_FORWARD.search(text) or lx.ZERO_FORWARD_EXTRA.search(text)),
-        use_financing=bool(lx.USE_FINANCING.search(text)),
-        execute_now=bool(lx.EXECUTE_NOW.search(text)),
+        use_financing=bool(lx.USE_FINANCING.search(ot)),
+        execute_now=bool(lx.EXECUTE_NOW.search(ot)),
         tier3=tier3,  # type: ignore[arg-type]
-        capex=bool(lx.CAPEX.search(text)),
+        capex=bool(lx.CAPEX.search(ot)),
+        quoted_approval=quoted_approval(spans),
     )
 
 
 def parse(text: str, state: FinancialState, *, pending_plan: bool = False) -> Parsed | None:
     """Owner request -> intent + typed slots, or None when no rule applies."""
     s = slots_from(text, state)
+    text = split_provenance(text)[0]  # every cue below is read from what the owner typed, never from quoted text
     asks_why = bool(lx.EXPLAIN.search(text))  # "why was it rejected?" / "为什么被拒绝?" asks; it declines nothing
 
     def hit(intent: Intent, cue: str, **kw: bool) -> Parsed:
