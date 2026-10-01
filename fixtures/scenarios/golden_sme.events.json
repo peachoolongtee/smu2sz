@@ -1,0 +1,11 @@
+{
+  "_note": "What the outside world adds to the books as simulated time passes. Applied by the clock when it passes the event's day. Nothing here exists on day 0, so day-0 golden values are unaffected. Receipts are never in this file: they come from the bank feed.",
+  "events": [
+    {
+      "day": 25,
+      "type": "ADD_FLOW",
+      "note": "The bookkeeper schedules next month's payroll",
+      "flow": {"id": "F-PAYROLL-M2", "day": 42, "amount_fen": -20000000, "kind": "PAYROLL", "label": "Payroll, month 2", "counterparty_id": null, "confirmed": true}
+    }
+  ]
+}

@@ -9,13 +9,17 @@ only from the bank feed, which is what makes a missing one detectable.
 
 from __future__ import annotations
 
+import json
+from collections.abc import Sequence
 from contextlib import nullcontext
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
+from typing import Any
 
 from app.commitments import CommitmentError, transition
 from app.commitments.lifecycle import PRE_ACTIVE
 from app.domain.models import (
     Actor,
+    CashFlow,
     CommitmentStatus,
     FinancialState,
     OperationResult,
@@ -40,6 +44,7 @@ class ClockAdvance:
     skipped_unconfirmed_inflow_ids: list[str] = field(default_factory=list)
     issued_receivable_ids: list[str] = field(default_factory=list)
     expired_commitment_ids: list[str] = field(default_factory=list)
+    added_flow_ids: list[str] = field(default_factory=list)
     result: OperationResult | None = None
 
     @property
@@ -79,14 +84,36 @@ def close_days(state: FinancialState, to_day: int) -> tuple[FinancialState, Cloc
     return new, ClockAdvance(today, to_day, posted, net, skipped, issued)
 
 
-def advance(store: LedgerStore, to_day: int, actor: Actor = Actor.SYSTEM) -> ClockAdvance:
-    """Move the books to `to_day`. A day already reached is a no-op (nothing logged)."""
+def apply_events(state: FinancialState, to_day: int, events: Sequence[dict[str, Any]]) -> tuple[FinancialState, list[str]]:
+    """Pure: scheduled flows the outside world added on the days being closed (ADD_FLOW events dated in
+    [as_of_day, to_day)). A flow already on the books, or dated before its own event, is ignored."""
+    have = {f.id for f in state.flows}
+    added: list[CashFlow] = []
+    for ev in events:
+        if ev.get("type") != "ADD_FLOW" or not (state.as_of_day <= int(ev["day"]) < to_day):
+            continue
+        fl = CashFlow.model_validate_json(json.dumps(ev["flow"]))
+        if fl.id in have or fl.day < int(ev["day"]):
+            continue
+        have.add(fl.id)
+        added.append(fl)
+    if not added:
+        return state, []
+    return state.model_copy(update={"flows": [*state.flows, *added]}), [f.id for f in added]
+
+
+def advance(store: LedgerStore, to_day: int, actor: Actor = Actor.SYSTEM,
+            events: Sequence[dict[str, Any]] = ()) -> ClockAdvance:
+    """Move the books to `to_day`. A day already reached is a no-op (nothing logged). `events` are the
+    scenario's dated outside-world events (new scheduled flows); they are applied before the days close."""
     tx = getattr(store, "transaction", None)
     with tx() if callable(tx) else nullcontext():
         state = store.get_state()
+        if to_day <= state.as_of_day:
+            return ClockAdvance(state.as_of_day, state.as_of_day)
+        state, added = apply_events(state, to_day, events)
         new, adv = close_days(state, to_day)
-        if not adv.moved:
-            return adv
+        adv = replace(adv, added_flow_ids=added)
         expired = []
         for c in store.commitments():
             if c.status in PRE_ACTIVE and to_day > c.expires_day:
@@ -100,16 +127,18 @@ def advance(store: LedgerStore, to_day: int, actor: Actor = Actor.SYSTEM) -> Clo
         payload = {"kind": ADVANCE_CLOCK_KIND, "op_id": op_id, "from_day": adv.from_day, "to_day": adv.to_day,
                    "requested_by": actor.value, "day": adv.to_day, "posted_flow_ids": adv.posted_flow_ids,
                    "posted_net_fen": adv.posted_net_fen, "issued_receivable_ids": adv.issued_receivable_ids,
-                   "expired_commitment_ids": expired}
+                   "expired_commitment_ids": expired, "added_flow_ids": adv.added_flow_ids}
         msg = (f"Clock moved from day {adv.from_day} to day {adv.to_day}: {len(adv.posted_flow_ids)} scheduled "
                f"flow(s) posted (net {fmt_yuan(adv.posted_net_fen)}), {len(adv.issued_receivable_ids)} invoice(s) "
-               f"issued, {len(expired)} commitment(s) expired")
+               f"issued, {len(expired)} commitment(s) expired"
+               + (f", {len(adv.added_flow_ids)} new scheduled flow(s) recorded" if adv.added_flow_ids else ""))
         result = OperationResult(op_id=op_id, kind=ADVANCE_CLOCK_KIND, status=OperationStatus.EXECUTED,
                                  tier=Tier.TIER_1, effective_day=adv.to_day, message=msg)
         rec = store.append_operation(op_id, ADVANCE_CLOCK_KIND, op_id, canonical_json(payload), canonical_json(result))
         result = result.model_copy(update={"seq": rec.seq, "entry_hash": rec.entry_hash, "prev_hash": rec.prev_hash})
         return ClockAdvance(adv.from_day, adv.to_day, adv.posted_flow_ids, adv.posted_net_fen,
-                            adv.skipped_unconfirmed_inflow_ids, adv.issued_receivable_ids, expired, result)
+                            adv.skipped_unconfirmed_inflow_ids, adv.issued_receivable_ids, expired,
+                            adv.added_flow_ids, result)
 
 
-__all__ = ["ADVANCE_CLOCK_KIND", "ClockAdvance", "advance", "close_days"]
+__all__ = ["ADVANCE_CLOCK_KIND", "ClockAdvance", "advance", "apply_events", "close_days"]
