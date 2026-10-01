@@ -99,3 +99,39 @@ Alternative (principal only spread, interest stays in the repayment month 13):
 Both choices breach in months 1 to 12 for this loan, so the decision does not change the case-a outcome. Under the
 alternative a smaller loan could pass months 1-12 (principal share only) and the interest month would look better than
 the true cost; the ADR's choice is the more conservative one for the lender-facing test, by about 0.024x in months 1-11.
+
+## Result of testing the implementation against the figures above
+
+Test file: `services/api/tests/financial/test_dscr_bullet_handcalc.py` (8 tests, all hard-coded from this note).
+
+| Case | Hand figure | Implementation | Verdict |
+| --- | --- | --- | --- |
+| 2a interest | 2,465,753 | 2,465,753 | AGREE |
+| 2a DS months 1-11 / 12 / 13 | 8,872,146 / 8,872,147 / 4,500,000 | same | AGREE |
+| 2a DSCR, covenant | 1.014, fails months 1-12, passes 13 | same (observed "1.01x" in the report) | AGREE |
+| 2b interest, level, DS | 1,232,877; 8,538,812 (r5); 13,038,812 months 1-5, 13,038,817 month 6; 0.690 | same | AGREE |
+| 2c level, month-1 DS, DSCR, headroom | 3,147,945; 7,647,945; 1.177 -> 1.18; -0.07 | same | AGREE (9,000,000 / 7,647,945 confirmed) |
+| 2d months 1-15 | 6,248,858 x2; 7,123,287 x9; 7,123,292; 5,374,429; 5,374,432; 4,500,000 | same | AGREE |
+| 2e 90-day horizon, months 1-3 | 8,872,146 each | same | AGREE |
+| 2f annual | 108,000,000 / 106,465,753 = 1.0144106 | DS sum 106,465,753 | AGREE |
+| Boundary 1.25x | rate 0, 32,400,000: DS 7,200,000 passes; +12 fen fails | same | AGREE |
+| 2g design choice | agree with spreading interest | n/a | AGREE (judgement) |
+
+One wording point in the ADR (not a calculation error): the "before" line says "1.29x in the twelfth [month]". With the 21-day
+lead the repayment is on day 381, which is month 13, so the old 1.29x was in month 13. The engine also puts it in month 13.
+
+## Cases the rule handles that the ADR does not define (what the code does)
+
+Observed by running `project()` on the golden books (probe test, not committed).
+
+| Case | Code behaviour | Concern |
+| --- | --- | --- |
+| Early repayment of a term loan by an explicit `repay_day` on the DRAW (500,000 on FAC-GGL, repay day 60) | Interest for the actual 39 days (267,123); principal + interest 50,267,123 still spread over all 12 term months (4,188,926 a month). Cash leaves in month 2, DSCR keeps carrying it through month 12 | Debt service is charged after the debt is gone. Conservative but not what the ADR says ("over the months of its term" is the contract term, not the holding period). Needs a decision. |
+| Repayment later than maturity (repay day 500) | Interest for 479 days (3,280,822) spread over 12 months; repayment lands in month 17 | Level amount is spread over the term but the debt outlives it; months 13-17 carry nothing. |
+| REPAY action on a term bullet draw | `FundingActionError` "exceeds its open draws" (the draw already has a fixed repay day) | Acceptable, but it means early repayment can only be expressed through `repay_day` on the DRAW. |
+| Credit line that has `term_months` (FAC-LINE with 12) | A DRAW is treated as a bullet term lot: repaid at arrival + 360 and spread (level 1,328,904 months 1-11; r1 in 12). With an explicit `repay_day=32` it is spread over 12 months (1,257,013 a month), where the same line without `term_months` posts interest in month 2 only | `_is_bullet_term` does not exclude `CREDIT_LINE`, but the carried-balance branch does (line ~603). ADR says a line is BULLET with *no* term_months, so it is technically undefined, but the two code paths disagree. |
+| Carried balance on a term bullet (GGL `drawn_fen` 10,000,000, no actions) | Treated as a lot arriving day 0, repaid at day 360; interest 493,151; spread months 1-12 (874,429, month 12 874,432) | Overstates the service when part of the term has already elapsed (the same "can only overstate" as interest). Conservative. |
+| Carried balance on a credit line that has `term_months` | Not spread (excluded by kind); interest posts in month 2 (28,055) as a plain line | Inconsistent with a draw on the same line (above). |
+| Facility with `counts_in_debt_service` false | Not spread; nothing added (0 each month), interest still posted to cash | Consistent with the ADR. |
+| Upfront fee | Included in the level amount (covered by the existing test) | Fine. |
+| Horizon shorter than the term | The engine already extends the horizon to the last repayment + 1, so a 90-day look still shows 13 months and the term lot is never cut off | The ADR's "months beyond the horizon are not shown" clause is only live for a lot with no repay day (none exists for a term bullet). |
