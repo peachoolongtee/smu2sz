@@ -39,13 +39,13 @@ def test_scene2_hard_line_buyer_no_deal_and_gap_funded(client):
     oid, _ = _eval(client, "EX01_PACKAGE")
     n = client.post(f"/negotiate/{oid}", json={"buyer_profile": "hard_line"}).json()
     assert n["outcome"] == "NO_DEAL" and len(n["rounds"]) == 3
-    assert n["plan"]["total_cost_display"] == "¥2,712.94"
+    assert n["plan"]["total_cost_display"] == "¥3,113.93"  # line 841.64 + an advance of 255,000: 2,272.29
     assert [o["status"] for o in n["operations"]] == ["EXECUTED", "EXECUTED"]
 
 
 def test_router_plan_golden(client):
     r = client.post("/router/plan").json()
-    assert r["committed"]["total_cost_display"] == "¥2,712.94"
+    assert r["committed"]["total_cost_display"] == "¥3,113.93"
     assert r["marginal"]["facility_id"] == "FAC-IF" and r["marginal"]["break_even_bp"] == 88
     assert r["marginal"]["extension_committed_12m_display"] == "¥24,326.92"
     assert any(row["selected"] for row in r["comparison"])
