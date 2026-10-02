@@ -198,9 +198,13 @@ def test_next_three_invoices_stays_on_the_three_chosen_at_acceptance() -> None:
         rid = f"RI:BUYER-1:{day - 1}"
         assert _rcv(rt, rid).due_day == day - 1 + 50
         assert _receive(rt, rid, FACE, f"recv{day}").status == OperationStatus.EXECUTED
-    # the third scoped invoice is issued: the adjustment is consumed, the commitment fulfilled, its concession gone
+    # the third scoped invoice is issued: the adjustment is consumed. ADR-0009 §7 as amended (red team F7): the
+    # commitment is fulfilled, and its concession gone, once all three are paid, when the clock closes that day
     state = rt.store.get_state()
     assert state.invoice_adjustments == []
+    assert rt.store.get_commitment(c.id).status == CommitmentStatus.ACTIVE
+    rt.advance_to(64)
+    state = rt.store.get_state()
     assert rt.store.get_commitment(c.id).status == CommitmentStatus.FULFILLED
     assert not [fc for fc in state.forward_concessions if fc.commitment_id == c.id]
     after = _receipts(_projection(rt))
@@ -370,10 +374,13 @@ def test_a_price_cut_cannot_take_an_invoice_below_what_is_already_settled() -> N
     rt.advance_to(3)
     _receive(rt, RI2, 30_000_000, "partial-before-cut")
     state = rt.store.get_state()
-    cut = _commitment("CMT-CUT", _ob("OB-CUT", ObligationType.PRICE_ADJUSTMENT, rate=-5000))
+    # red team F2: an unnamed scope never selects an invoice issued before today, so the cut names RI2
+    on_ri2 = {"base": ObligationBase(kind=BaseKind.INVOICE, receivable_id=RI2)}
+    cut = _commitment("CMT-CUT", _ob("OB-CUT", ObligationType.PRICE_ADJUSTMENT, rate=-5000).model_copy(update=on_ri2))
     with pytest.raises(Exception, match="already"):
         invoices.accept(state, cut)
-    small = _commitment("CMT-SMALL", _ob("OB-SMALL", ObligationType.PRICE_ADJUSTMENT, rate=-100))
+    small = _commitment("CMT-SMALL", _ob("OB-SMALL", ObligationType.PRICE_ADJUSTMENT, rate=-100).model_copy(
+        update=on_ri2))
     after = invoices.accept(state, small)
     r = next(x for x in after.receivables if x.id == RI2)
     assert r.face_fen == FACE - post(bp(100) * FACE) and r.outstanding_fen == r.face_fen - 30_000_000

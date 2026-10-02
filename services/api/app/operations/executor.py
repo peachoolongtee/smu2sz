@@ -25,6 +25,7 @@ a retry with the same idempotency key executes exactly once.
 from __future__ import annotations
 
 import hmac
+import json
 import threading
 from collections.abc import Callable
 from contextlib import AbstractContextManager, nullcontext
@@ -124,6 +125,8 @@ _ACCEPTANCE_SECURITY = {
     Code.COMMITMENT_EXPIRED: SecurityEventKind.EXPIRED,
     Code.TERMS_CHANGED: SecurityEventKind.TERMS_CHANGED,
 }
+
+RECEIPT_FACT_ACTORS = frozenset({Actor.SYSTEM, Actor.OWNER})  # whose ReceivePayment records a fact (F5)
 
 _MANDATE_SECURITY = {
     Code.MANDATE_REVOKED: SecurityEventKind.REVOKED,
@@ -240,19 +243,37 @@ def _with_facility(state: FinancialState, f: Facility) -> list[Facility]:
     return [f if x.id == f.id else x for x in state.facilities]
 
 
-def _to_lender(f: Facility, lot: Any, amount_fen: int, day: int) -> tuple[int, Any, str]:
-    """(what the lender takes from a receipt on the financed invoice, the advance lot left or None, the note)."""
-    a = funding_lots.apply_receipt(f, lot, amount_fen, day)
+def _to_lender(f: Facility, lot: Any, amount_fen: int, day: int, final: bool) -> tuple[int, Any, str]:
+    """(what the lender takes from a receipt on the financed invoice, the advance lot left or None, the note).
+    `final`: the receipt settles the invoice (its outstanding face reaches zero)."""
+    a = funding_lots.apply_receipt(f, lot, amount_fen, day, final)
     if a.lot is None:
         return a.applied, None, (f"; repaid advance {fmt_yuan(a.principal)} + interest {fmt_yuan(a.interest)} + fee "
                                  f"{fmt_yuan(a.fee)} ({a.days} days billed as {a.periods} whole period(s)) to {f.id}")
-    if a.principal < lot.remaining_fen:
+    if not funding_lots.is_fixed_remainder(a.lot):
         return a.applied, a.lot, (f"; all {fmt_yuan(a.applied)} goes to {f.id} against the advance, "
                                   f"{fmt_yuan(a.lot.remaining_fen)} of it still outstanding; its interest and fee are "
                                   f"billed by the receipt that clears it; the invoice stays financed")
-    return a.applied, a.lot, (f"; all {fmt_yuan(a.applied)} goes to {f.id}: advance {fmt_yuan(a.principal)} repaid and "
-                              f"{fmt_yuan(a.interest)} of its charges; {fmt_yuan(a.lot.remaining_fen)} of charges stays "
-                              f"due and the invoice stays financed")
+    billed = "" if funding_lots.is_fixed_remainder(lot) else (
+        f" (charges billed now: interest {fmt_yuan(a.interest)} + fee {fmt_yuan(a.fee)}, {a.days} days as "
+        f"{a.periods} whole period(s))")
+    after = ("the invoice is settled, so the owner owes it to the lender directly (repay the facility); nothing "
+             "further accrues on it" if final else "a fixed amount, nothing further accrues; the invoice stays financed")
+    return a.applied, a.lot, (f"; all {fmt_yuan(a.applied)} goes to {f.id} against the advance{billed}; "
+                              f"{fmt_yuan(a.lot.remaining_fen)} stays due: {after}")
+
+
+def _comparable(op_or_payload: Any) -> dict[str, Any]:
+    """An operation as plain data without its `day`: a retry of the same operation on a later day (a bank feed
+    re-sending, an owner-approved re-run) is still the same operation."""
+    plain = op_or_payload if isinstance(op_or_payload, dict) else json.loads(canonical_json(op_or_payload))
+    return {k: v for k, v in plain.items() if k != "day"}
+
+
+def _same_operation(entry: LoggedEntry, op: Any) -> bool:
+    """F6: the logged entry is the same operation as `op`: same kind, op_id, requester and every other field
+    (only `day` may differ). Compared through the current model when the entry still parses."""
+    return _comparable(entry.op if entry.op is not None else entry.payload) == _comparable(op)
 
 
 def _landing(f: Facility, lot: Any, cash: int) -> tuple[int, str]:
@@ -550,6 +571,17 @@ class Executor:
         if not prior:
             return None
         original = prior[-1]
+        different = next((e for e in prior if not _same_operation(e, op)), None)
+        if different is not None:
+            # F6: a key names one operation. Reused for another, it is neither answered as a duplicate (the new
+            # operation would silently never run) nor executed (the key would then mean two things): refused.
+            now = self._clock()
+            v = _v(Code.REPLAY, f"Idempotency key {key} was already used for a different operation "
+                   f"({different.kind} {different.payload.get('op_id', '?')}, seq {different.seq}); nothing executed",
+                   idempotency_key=key, earlier_seq=different.seq, earlier_kind=different.kind)
+            self._security(SecurityEventKind.REPLAY, op, now, None, v.message)
+            return self._log(op, OperationResult(op_id=op.op_id, kind=op.kind, status=REFUSED, tier=Tier.TIER_1,
+                                                 violations=[v], effective_day=now, message="Refused: " + v.message))
         o = original.result
         result = OperationResult(
             op_id=o.op_id, kind=o.kind, status=DUPLICATE, tier=o.tier, violations=o.violations,
@@ -687,6 +719,12 @@ class Executor:
         if ctx.mandate is None:
             raise _refuse(Code.BAD_SIGNATURE, "No owner-signed mandate is stored", SecurityEventKind.PRIVILEGE_ESCALATION)
         violations = check_validity(ctx.mandate, ctx.now, ctx.op.mandate_version, self._owner_key)
+        if isinstance(ctx.op, ReceivePayment) and ctx.op.requested_by in RECEIPT_FACT_ACTORS:
+            # A receipt from the bank feed or the owner is a fact, not an exercise of the agent's authority: an
+            # expired, revoked or newer mandate does not stop it being booked. A stored mandate with a valid owner
+            # signature is still required (it pins the books to the owner). An agent-reported receipt is checked
+            # in full (and is Tier 2).
+            violations = [v for v in violations if v.code == Code.BAD_SIGNATURE]
         if violations:
             kinds = [_MANDATE_SECURITY[v.code] for v in violations if v.code in _MANDATE_SECURITY]
             raise _Refused(violations, kinds[0] if kinds else None)
@@ -783,8 +821,10 @@ class Executor:
             case AcceptOffer() | RecordCommitment():
                 return self._commit(ctx)
             case CounterOffer():
+                self._require_offer(op.offer_id)
                 return self._counter(op)
             case RejectOffer():
+                self._require_offer(op.offer_id)
                 codes = ", ".join(c.value for c in op.reason_codes) or "none"
                 return _Effect(f"Offer {op.offer_id} rejected (reasons: {codes})")
             case DrawFacility():
@@ -896,6 +936,11 @@ class Executor:
         return _Effect(f"Commitment {c.id} is ACTIVE; forward concession {fmt_yuan(c.forward_value_fen)} booked{note}",
                        state=state, commitment=c, nonce=c.nonce)
 
+    def _require_offer(self, offer_id: str) -> None:
+        if self._store.get_offer(offer_id) is None:
+            raise _refuse(Code.PRECONDITION_FAILED, f"Offer {offer_id} does not exist; nothing to answer",
+                          offer_id=offer_id)
+
     def _counter(self, op: CounterOffer) -> _Effect:
         v = self._store.get_verdict(op.source_verdict_id) if op.source_verdict_id else None
         if v is None or v.offer_id != op.offer_id:
@@ -938,6 +983,8 @@ class Executor:
     def _repay(self, op: RepayFacility, ctx: _Ctx) -> _Effect:
         state = funding_lots.ensure_lots(ctx.state)
         f = _facility(state, op.facility_id)
+        if f.repayment == Repayment.ON_RECEIPT:
+            return self._repay_orphaned(op, ctx, state, f)
         if f.repayment != Repayment.BULLET:
             raise _refuse(Code.PRECONDITION_FAILED, f"Facility {f.id} is repaid {f.repayment.value}, not on demand")
         if op.amount_fen > f.drawn_fen:
@@ -963,6 +1010,38 @@ class Executor:
         return _Effect(f"Repaid {fmt_yuan(op.amount_fen)} on {f.id} with interest {fmt_yuan(repaid.interest)} "
                        f"({'; '.join(repaid.parts)})", state=state)
 
+    def _repay_orphaned(self, op: RepayFacility, ctx: _Ctx, state: FinancialState, f: Facility) -> _Effect:
+        """An ON_RECEIPT facility is repaid by its invoices' receipts, except what is left on a lot whose invoice
+        is SETTLED (unpaid charges, or a remainder the last receipt did not cover): the owner owes that directly,
+        as a fixed amount (nothing accrues on it), and only that can be repaid on demand. Admission as usual."""
+        mine = funding_lots.orphaned(state, f.id)
+        owed = sum(lot.remaining_fen for lot in mine)
+        if not mine:
+            raise _refuse(Code.PRECONDITION_FAILED, f"Facility {f.id} is repaid {f.repayment.value}, not on demand: "
+                          f"none of its advances is left on a settled invoice", facility_id=f.id)
+        if op.amount_fen > owed:
+            raise _refuse(Code.PRECONDITION_FAILED,
+                          f"Repayment {fmt_yuan(op.amount_fen)} exceeds the {fmt_yuan(owed)} left on {f.id}'s "
+                          f"advances whose invoices are settled", amount_fen=op.amount_fen, owed_fen=owed)
+        if op.amount_fen > state.cash_fen:
+            raise _refuse(Code.PRECONDITION_FAILED,
+                          f"Repayment {fmt_yuan(op.amount_fen)} exceeds cash {fmt_yuan(state.cash_fen)}")
+        self._admitted(ctx)
+        left, parts, after = op.amount_fen, [], {}
+        for lot in mine:
+            if left == 0:
+                break
+            part = min(left, lot.remaining_fen)
+            after[lot.id] = lot.remaining_fen - part
+            parts.append(f"{fmt_yuan(part)} on {lot.id} ({lot.receivable_id} settled)")
+            left -= part
+        lots = [x.model_copy(update={"remaining_fen": after[x.id]}) if x.id in after else x for x in state.lots]
+        lots = [x for x in lots if x.remaining_fen > 0]
+        new_state = _bump(state, cash_fen=state.cash_fen - op.amount_fen, lots=lots,
+                          facilities=_with_facility(state, f.model_copy(update={"drawn_fen": f.drawn_fen - op.amount_fen})))
+        return _Effect(f"Repaid {fmt_yuan(op.amount_fen)} on {f.id} left on settled invoices, a fixed amount with no "
+                       f"further charges ({'; '.join(parts)})", state=new_state)
+
     def _finance(self, op: SubmitInvoiceForFinancing, ctx: _Ctx) -> _Effect:
         state = ctx.state
         f = _facility(state, op.facility_id)
@@ -977,6 +1056,13 @@ class Executor:
             raise _refuse(Code.PRECONDITION_FAILED, f"Receivable {r.id} is {r.status}, not OPEN")
         if not r.confirmed:
             raise _refuse(Code.PRECONDITION_FAILED, f"Receivable {r.id} is not buyer-confirmed (确权)")
+        for c in self._store.commitments():  # FINANCIAL_SEMANTICS §2: not while under an early-payment agreement
+            if c.status in (CommitmentStatus.ACCEPTED, CommitmentStatus.ACTIVE) and any(
+                    o.type == ObligationType.IMMEDIATE_DISCOUNT and o.base.receivable_id == r.id for o in c.obligations):
+                raise _refuse(Code.PRECONDITION_FAILED,
+                              f"Receivable {r.id} is under the early-payment agreement of {c.status.value} commitment "
+                              f"{c.id}; it cannot also be financed (the owner may revoke {c.id} first)",
+                              receivable_id=r.id, commitment_id=c.id)
         buyer = next((c for c in state.counterparties if c.id == r.counterparty_id), None)
         if buyer is None or buyer.role != "BUYER" or not buyer.known:
             raise _refuse(Code.UNKNOWN_COUNTERPARTY, f"Receivable {r.id} is not owed by a registered buyer",
@@ -1055,6 +1141,8 @@ class Executor:
         cash = state.cash_fen + op.amount_fen
         facilities, lots = state.facilities, state.lots
         note = ""
+        settled = r.settled_fen + face_settled
+        outstanding_after = r.face_fen - settled
         still: Any = None  # the advance lot a FINANCED invoice still carries after this receipt
         if r.status == "FINANCED":
             lot = next((x for x in state.lots if x.receivable_id == r.id and x.remaining_fen > 0), None)
@@ -1062,23 +1150,36 @@ class Executor:
                 raise _refuse(Code.PRECONDITION_FAILED, f"No advance on record for financed {r.id}")
             f = _facility(state, lot.facility_id)
             if not lot.settled:
-                # ADR-0010: the buyer paid before the advance landed. The request is cancelled: the room is
-                # released, no cash was ever credited and nothing is charged; the receipt books as usual.
-                lots = [x for x in state.lots if x.id != lot.id]
-                facilities = _with_facility(state, f.model_copy(update={"drawn_fen": f.drawn_fen - lot.remaining_fen}))
-                note = (f"; the advance of {fmt_yuan(lot.remaining_fen)} requested on day {lot.request_day} had not "
-                        f"landed (it was due on day {lot.arrival_day}): cancelled with no charges, {f.id} room released")
+                # ADR-0010: the buyer paid before the advance landed; the lender has advanced nothing yet, so the
+                # receipt is the owner's cash. The request stands and lands as planned unless the receipt leaves it
+                # above the facility's advance rate of what is still outstanding (or settles the invoice): then it
+                # is cancelled, the room released and nothing charged.
+                rate = f.advance_rate_bp if f.advance_rate_bp is not None else 10_000
+                if outstanding_after == 0 or lot.remaining_fen * 10_000 > rate * outstanding_after:
+                    lots = [x for x in state.lots if x.id != lot.id]
+                    facilities = _with_facility(state, f.model_copy(
+                        update={"drawn_fen": f.drawn_fen - lot.remaining_fen}))
+                    why = ("the invoice is settled" if outstanding_after == 0 else
+                           f"it would exceed {rate}bp of the {fmt_yuan(outstanding_after)} still outstanding")
+                    note = (f"; the advance of {fmt_yuan(lot.remaining_fen)} requested on day {lot.request_day} had "
+                            f"not landed (it was due on day {lot.arrival_day}) and {why}: cancelled with no charges, "
+                            f"{f.id} room released")
+                else:
+                    still = lot
+                    note = (f"; the advance of {fmt_yuan(lot.remaining_fen)} requested on day {lot.request_day} has "
+                            f"not landed: the receipt is the owner's, the advance stands and lands on day "
+                            f"{lot.arrival_day}")
             else:
-                applied, still, note = _to_lender(f, lot, op.amount_fen, ctx.now)
+                applied, still, note = _to_lender(f, lot, op.amount_fen, ctx.now, outstanding_after == 0)
                 cash -= applied  # the lender is paid first, from the receipt only: cash never falls on a receipt
                 lots = [x for x in state.lots if x.id != lot.id] + ([still] if still is not None else [])
                 drawn = f.drawn_fen - lot.remaining_fen + (still.remaining_fen if still is not None else 0)
                 facilities = _with_facility(state, f.model_copy(update={"drawn_fen": drawn}))
-        settled = r.settled_fen + face_settled
-        if still is not None:  # the advance is not cleared: the invoice stays pledged to the lender
+        if still is not None and outstanding_after > 0:  # the advance is not cleared: still pledged to the lender
             update: dict[str, Any] = {"status": "FINANCED", "settled_fen": settled, "advance_fen": still.remaining_fen}
         else:
-            update = {"status": "SETTLED" if settled == r.face_fen else "OPEN", "settled_fen": settled,
+            # nothing outstanding: SETTLED whatever is left on the lot (that lot is then owed by the owner directly)
+            update = {"status": "SETTLED" if outstanding_after == 0 else "OPEN", "settled_fen": settled,
                       "advance_fen": 0, "advance_facility_id": None}
         receivables = [x.model_copy(update=update) if x.id == r.id else x for x in state.receivables]
         new_state = _bump(state, cash_fen=cash, receivables=receivables, facilities=facilities, lots=lots)

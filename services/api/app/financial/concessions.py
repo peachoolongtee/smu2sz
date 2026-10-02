@@ -39,7 +39,7 @@ from app.domain.models import (
 from app.domain.money import DAYS_PER_YEAR, Ratio, bp, post
 from app.financial.errors import ObligationError
 from app.financial.fmt import pct, y
-from app.financial.invoices import scope_at
+from app.financial.invoices import scope_at, scope_start
 
 UNEVIDENCED_BASIS = "unevidenced, not booked"
 
@@ -153,10 +153,9 @@ def scoped_invoices(ob: Obligation, state: FinancialState, horizon_days: int) ->
     if not named and rec is None:
         assert ob.base.amount_fen is not None
         n = 1 if ob.duration.kind == DurationKind.ONE_OFF else (ob.duration.invoices or 0)
-        day = max(today, ob.effective_day or 0)
+        day = scope_start(ob, today)
         return [] if day >= hi else [DatedInvoice(day, ob.base.amount_fen)] * n
-    start = max(ob.effective_day or 0, today)
-    scope = scope_at(state, ob if named else ob.model_copy(update={"effective_day": start}))
+    scope = scope_at(state, ob)  # the scope acceptance writes: an unnamed one starts at scope_start(ob, today)
     if scope.receivable_ids is not None:
         issued = {r.id: r for r in state.receivables}
         out: list[DatedInvoice] = []
@@ -172,7 +171,7 @@ def scoped_invoices(ob: Obligation, state: FinancialState, horizon_days: int) ->
                 out.append(DatedInvoice(issue, face))
         return out
     assert rec is not None
-    lo = max(start, scope.from_issue_day or 0)
+    lo = scope.from_issue_day if scope.from_issue_day is not None else today
     top = hi if scope.until_issue_day is None else min(hi, scope.until_issue_day + 1)
     return [DatedInvoice(day, rec.face_fen)
             for day in recurring_issue_days(rec, lo, top)]

@@ -447,9 +447,11 @@ def test_a_receipt_that_repays_the_principal_but_not_the_charges_keeps_them_due(
     s = w.state
     assert s.cash_fen == cash and w.rcv("RCV-A").status == "FINANCED"
     (left,) = s.lots
-    assert left.remaining_fen == interest + fee - 100 and left.arrival_day == 25 and w.fac(IF).drawn_fen == left.remaining_fen
+    # red team F3: the unpaid charges are a fixed amount (principal 0, dates kept), never charged again
+    assert left.remaining_fen == interest + fee - 100 and left.principal_fen == 0 and left.arrival_day == lot.arrival_day
+    assert w.fac(IF).drawn_fen == left.remaining_fen
     a = apply_receipt(w.fac(IF), left, 10**9, 32)
-    assert a.lot is None and a.applied == left.remaining_fen + a.interest + a.fee
+    assert a.lot is None and a.applied == left.remaining_fen and (a.interest, a.fee) == (0, 0)
 
 
 def test_ensure_lots_dates_an_older_balance_to_today_and_states_without_lots_serialise_unchanged() -> None:

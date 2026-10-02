@@ -2,10 +2,10 @@
 
 Pure. Two functions decide everything, and the engine, the clock and the executor all call them:
 
-- `resolve_scope(ob, invoices)`: which invoices a TERMS_EXTENSION or PRICE_ADJUSTMENT covers. The selection
-  rule is the engine's historical one (the named invoice, or the buyer's invoices issued on or after the
-  effective day, in issue order, bounded by the duration). A named, ONE_OFF or count-bounded scope becomes an
-  explicit list of ids; a perpetual or date-bounded scope becomes an issue-day range.
+- `resolve_scope(ob, invoices, today)`: which invoices a TERMS_EXTENSION or PRICE_ADJUSTMENT covers: the named
+  invoice, or the buyer's invoices issued on or after max(effective day, today) (`scope_start`), in issue order,
+  bounded by the duration. A named, ONE_OFF or count-bounded scope becomes an explicit list of ids; a perpetual
+  or date-bounded scope becomes an issue-day range.
 - `materialise(base_face, base_terms, adjustments)`: the contractual face and terms after the adjustments, in
   order. A price adjustment is `post(rate × contractual face)` on the face as it stands when it is applied.
 
@@ -77,14 +77,24 @@ def check_adjusting(ob: Obligation) -> None:
         raise ObligationError(f"{ob.id}: price adjustment without rate_bp")
 
 
-def resolve_scope(ob: Obligation, invoices: Iterable[InvoiceRef]) -> Scope:
-    """The invoices `ob` covers, among `invoices` (the open ones and the future ones that may be named)."""
+def scope_start(ob: Obligation, today: int) -> int:
+    """The first issue day an UNNAMED scope may select: max(effective day, today). An invoice issued before today
+    is history (it may be overdue or already adjusted) and is never picked by "the next invoice(s)" or a
+    perpetual change; only a named invoice can be one of those. Valuation and writing both use this."""
+    return max(ob.effective_day if ob.effective_day is not None else 0, today)
+
+
+def resolve_scope(ob: Obligation, invoices: Iterable[InvoiceRef], today: int) -> Scope:
+    """The invoices `ob` covers, among `invoices` (the open ones and the future ones that may be named).
+
+    `today` is the books' day (`state.as_of_day`): an unnamed scope starts at `scope_start(ob, today)`. A named
+    invoice is the named invoice whatever its issue day."""
     refs = list(invoices)
     if ob.base.receivable_id is not None:
         if not any(r.id == ob.base.receivable_id for r in refs):
             raise ObligationError(f"{ob.id}: receivable {ob.base.receivable_id} not found or not open")
         return Scope(receivable_ids=(ob.base.receivable_id,))
-    start = ob.effective_day if ob.effective_day is not None else 0
+    start = scope_start(ob, today)
     d = ob.duration
     if d.kind == DurationKind.RECURRING_BOUNDED and d.end_day is None and d.invoices is None:
         raise ObligationError(f"{ob.id}: bounded duration with neither invoices nor end_day")
@@ -176,7 +186,7 @@ def scope_at(state: FinancialState, ob: Obligation) -> Scope:
     want = 1 if d.kind == DurationKind.ONE_OFF else d.invoices if d.kind == DurationKind.RECURRING_BOUNDED else None
     bound = max(state.as_of_day, ob.effective_day or 0, _named_day(ob.base.receivable_id)) + 400
     for _ in range(12):
-        scope = resolve_scope(ob, issued + [f for f in _future(state, bound) if f.id not in have])
+        scope = resolve_scope(ob, issued + [f for f in _future(state, bound) if f.id not in have], state.as_of_day)
         if want is None or scope.receivable_ids is None or len(scope.receivable_ids) >= want:
             return scope
         if d.end_day is not None and bound >= d.end_day:
@@ -273,4 +283,5 @@ __all__ = [
     "resolve_scope",
     "revoke",
     "scope_at",
+    "scope_start",
 ]
