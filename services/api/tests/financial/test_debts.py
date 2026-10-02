@@ -35,7 +35,7 @@ def test_a_positive_rate_splits_each_payment() -> None:
     pays = debt_payments(debt(10_000_000, 4_500_000, rate_bp=730), 0, 1_000)
     assert [(p.day, p.principal, p.interest, p.remaining) for p in pays] == [
         (30, 4_440_000, 60_000, 5_560_000), (60, 4_466_640, 33_360, 1_093_360), (90, 1_093_360, 6_560, 0)]
-    assert pays[-1].amount == 1_099_920 < 4_500_000
+    assert pays[-1].amount == 1_099_920  # smaller than the ¥45,000 service
 
 
 def test_nothing_is_dated_before_today() -> None:

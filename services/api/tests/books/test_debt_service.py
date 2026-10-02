@@ -111,7 +111,7 @@ def test_closing_days_then_projecting_is_the_suffix_and_cash_matches(d: int, k: 
     p1 = project(s_d, [], [], C, 240)
     s_dk, adv = close_days(s_d, d + k)
     p2 = project(s_dk, [], [], C, 240)
-    key = lambda p, e: (p.day, e.kind, e.amount_fen, e.ref)  # noqa: E731
+    key = lambda p, e: (p.day, e.kind, e.amount_fen, e.ref)
     first = sorted(key(p, e) for p in p1.days if d + k <= p.day <= p1.horizon_days for e in p.events)
     second = sorted(key(p, e) for p in p2.days if d + k <= p.day <= p1.horizon_days for e in p.events)
     assert first == second
