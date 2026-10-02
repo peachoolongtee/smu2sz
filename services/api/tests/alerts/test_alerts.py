@@ -43,7 +43,8 @@ def test_baseline_reserve_breach_on_day_12_with_a_committed_cure():
     [breach] = _of(found, AlertKind.RESERVE_BREACH_AHEAD)
     assert breach.day == 12 and breach.severity == Severity.CRITICAL
     assert breach.amount_fen == 24_000_000  # ¥300,000 floor − ¥60,000 after payroll
-    assert breach.inputs["max_shortfall"] == "¥360,000.00"  # the spec's ¥360,000 need before day 32
+    # the ¥405,000 need before day 32: the spec's ¥360,000 plus the existing loan's ¥45,000 day-30 payment
+    assert breach.inputs["max_shortfall"] == "¥405,000.00"
     assert breach.committed_cure is True
     kinds = {s.operation_kind for s in breach.suggested}
     assert kinds == {"DRAW_FACILITY", "SUBMIT_INVOICE_FOR_FINANCING"}

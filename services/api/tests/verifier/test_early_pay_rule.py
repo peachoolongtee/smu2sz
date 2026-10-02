@@ -44,7 +44,9 @@ from tests.verifier.conftest import bundle, codes
 SPAN = [SourceSpan(doc_id="OWNER-DOC", start=0, end=0, text="")]
 NEW_CODES = {"EARLY_PAY_NOT_NEEDED", "EARLY_PAY_DEARER_THAN_PLAN"}
 WHOLE = 42_000_000  # RCV-A, ¥420,000
-C0_GOLDEN = 271_294  # ¥2,712.94: the router's plan with no offer
+# ¥3,113.93: the router's plan with no offer, line 841.64 + an advance of 255,000 (the gap includes the existing loan's
+# ¥45,000 day-30 payment): 1,634.79 + 637.50 = 2,272.29 (tests/verifier/test_early_pay_handcalc.py)
+C0_GOLDEN = 311_393
 
 
 def _leg(rate_bp: int, face: int = WHOLE, day: int = 2, oid: str = "EP-O1") -> Obligation:
@@ -103,18 +105,18 @@ def _cost(state, mandate, obs):  # type: ignore[no-untyped-def]
 # ---------------------------------------------------------------- 1. the ADR table, one test per row
 
 
-def test_whole_invoice_at_85bp_costs_3570_against_the_plan_2712_94_and_is_countered(state, mandate, key):
+def test_whole_invoice_at_85bp_costs_3570_against_the_plan_3113_93_and_is_countered(state, mandate, key):
     b = _ev(state, mandate, key, _leg(85))
     assert b.verdict.outcome == Outcome.COUNTER
     assert codes(b.verdict.violations) == ["EARLY_PAY_DEARER_THAN_PLAN"]  # test 1 passes: 0.85% < 0.8832%
     assert _figures(b) == (357_000, C0_GOLDEN)
     v = b.verdict.violations[0]
-    assert (v.observed, v.limit) == ("¥3,570.00", "< ¥2,712.94")
+    assert (v.observed, v.limit) == ("¥3,570.00", "< ¥3,113.93")
     assert v.inputs["plan_with_offer"] == "no funding needed"
-    assert v.inputs["plan_without_offer"] == "committed plan: ¥841.64 + ¥1,871.30 = ¥2,712.94"
+    assert v.inputs["plan_without_offer"] == "committed plan: ¥841.64 + ¥2,272.29 = ¥3,113.93"
     assert v.spans == SPAN
     (a,) = b.verdict.counters  # the partial early-pay counter still exists
-    assert a.obligations[0].base.amount_fen == 21_190_000 and a.obligations[0].rate_bp == 85
+    assert a.obligations[0].base.amount_fen == 25_720_000 and a.obligations[0].rate_bp == 85
 
 
 def test_whole_invoice_at_64bp_costs_2688_and_is_accepted(state, mandate, key):
@@ -124,17 +126,19 @@ def test_whole_invoice_at_64bp_costs_2688_and_is_accepted(state, mandate, key):
     assert any(p.code == "EARLY_PAY_VS_PLAN" for p in b.passed_checks)
 
 
-def test_whole_invoice_at_65bp_costs_2730_and_is_countered(state, mandate, key):
-    b = _ev(state, mandate, key, _leg(65))
+def test_whole_invoice_at_75bp_costs_3150_and_is_countered(state, mandate, key):
+    # 42,000,000 × 0.0075 = 315,000 > 311,393 (65 bp, 273,000, is below the plan now; 74 bp, 310,800, too)
+    b = _ev(state, mandate, key, _leg(75))
     assert b.verdict.outcome == Outcome.COUNTER
     assert codes(b.verdict.violations) == ["EARLY_PAY_DEARER_THAN_PLAN"]
-    assert _figures(b) == (273_000, C0_GOLDEN)
+    assert _figures(b) == (315_000, C0_GOLDEN)
 
 
-def test_counter_a_face_211900_at_85bp_costs_2642_24_and_is_accepted(state, mandate, key):
-    b = _ev(state, mandate, key, _leg(85, face=21_190_000))
+def test_counter_a_face_257200_at_85bp_costs_3027_77_and_is_accepted(state, mandate, key):
+    # discount 257,200 × 0.85% = 2,186.20 + line 149,986.20 × 6.4% × 32/365 = 841.57 -> 3,027.77 < 3,113.93
+    b = _ev(state, mandate, key, _leg(85, face=25_720_000))
     assert b.verdict.outcome == Outcome.ACCEPT and _new(b) == []
-    assert _figures(b) == (264_224, C0_GOLDEN)
+    assert _figures(b) == (302_777, C0_GOLDEN)
 
 
 def test_whole_invoice_at_89bp_is_above_the_break_even_whatever_the_plan(state, mandate, key):
@@ -277,7 +281,8 @@ def test_no_plan_without_the_offer_but_one_with_it_passes_both_tests(state, mand
 def test_golden_counter_a_is_unchanged(state):
     (a,) = [c for c in bundle("EX01_PACKAGE").verdict.counters if c.label == "Option A"]
     (ob,) = a.obligations
-    assert (ob.base.amount_fen, ob.rate_bp, a.supplier_cost_fen) == (21_190_000, 85, 264_224)
+    # face ⌈255,000 / (1 − 0.85%)⌉ to ¥100 = 257,200; cost 2,186.20 + 841.57 = 3,027.77 (compute_golden.py)
+    assert (ob.base.amount_fen, ob.rate_bp, a.supplier_cost_fen) == (25_720_000, 85, 302_777)
     assert "c = 10.8417% × 30/365 = 0.8911% → d < 0.8832%" in a.formula
 
 

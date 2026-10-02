@@ -119,8 +119,9 @@ def _with_line(cash: int, drawn: int = 10_000_000) -> FinancialState:
 
 
 def test_affordable_today_but_not_on_a_later_day_gives_no_alert():
-    # With the line carried the books hold the floor (it is repaid on day 32); repaying today would dip on days 20-28.
-    tight = _store(_with_line(77_000_000))
+    # With the line carried the books hold the floor (it is repaid on day 32): 815,000 − 460,000 − 45,000 (the existing
+    # loan's day-30 payment) = 310,000; repaying today would dip on days 20-31 (715,000 − 460,000 = 255,000).
+    tight = _store(_with_line(81_500_000))
     assert _of(_run(tight), AlertKind.RESERVE_BREACH_AHEAD) == []
     assert _of(_run(tight), AlertKind.FACILITY_REPAYABLE) == []
     roomy = _store(_with_line(95_000_000))

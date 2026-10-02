@@ -30,6 +30,7 @@ from tests.verifier.conftest import bundle, compiled, declared_for
 LINE_FEN = 15_000_000  # the committed credit line, undrawn
 INVOICE_FEN = 42_000_000  # RCV-A
 RATE_BP = 85
+GAP_FEN = 40_500_000  # 340,000 + 120,000 + the existing loan's 45,000 on day 30 + the 300,000 reserve − 400,000
 
 
 def _option_a(b):
@@ -45,13 +46,14 @@ def _evaluate_ex01(state, mandate, key):
                     owner_declared=declared_for("EX01_PACKAGE"))
 
 
-def test_golden_ex01_option_a_is_face_21_190_000_at_85bp(state):
+def test_golden_ex01_option_a_is_face_25_720_000_at_85bp(state):
+    # gap net of the line 405,000 − 150,000 = 255,000; 255,000 / (1 − 0.85%) = 257,186.0817 -> up to 257,200
     a = _option_a(bundle("EX01_PACKAGE"))
     assert a is not None and a.label == "Option A"
     (ob,) = a.obligations
-    assert ob.base.amount_fen == 21_190_000 and ob.rate_bp == RATE_BP
+    assert ob.base.amount_fen == 25_720_000 and ob.rate_bp == RATE_BP
     assert ob.base.receivable_id == "RCV-A" and ob.effective_day == 2
-    assert "¥211,800.30 → up to ¥211,900.00 (rounded up to a whole ¥100, at most the invoice)" in a.formula
+    assert "¥257,186.08 → up to ¥257,200.00 (rounded up to a whole ¥100, at most the invoice)" in a.formula
 
 
 def test_the_floor_holds_every_day_with_the_counter_and_the_routers_plan(state, mandate):
@@ -62,8 +64,9 @@ def test_the_floor_holds_every_day_with_the_counter_and_the_routers_plan(state, 
     lowest = min(d.closing_fen for d in t.days)
     assert lowest >= mandate.min_cash_fen
     assert lowest == t.min_cash_fen and t.first_breach_day is None
-    # the plan draws exactly what the gap needs, so the lowest day (day 20) lands on the floor, not under it
-    assert (lowest, t.min_cash_day) == (mandate.min_cash_fen, 20)
+    # the plan draws exactly what the gap needs, so the lowest day lands on the floor, not under it: day 30, after the
+    # existing loan's payment (400,000 + 255,013.80 + 149,986.20 − 460,000 − 45,000 = 300,000)
+    assert (lowest, t.min_cash_day) == (mandate.min_cash_fen, 30)
 
 
 def test_cost_is_the_discount_plus_the_plan_and_the_plan_adds_no_early_pay(state, mandate):
@@ -73,8 +76,9 @@ def test_cost_is_the_discount_plus_the_plan_and_the_plan_adds_no_early_pay(state
     assert FundingActionKind.EARLY_PAY not in {x.kind for x in p.actions}
     discount = post(bp(ob.rate_bp) * ob.base.amount_fen)
     assert a.supplier_cost_fen == discount + p.total_cost_fen
-    assert (discount, p.total_cost_fen, a.supplier_cost_fen) == (180_115, 84_109, 264_224)
-    assert f"discount ¥1,801.15 + funding the rest of the gap ¥841.09 ({p.label}) = ¥2,642.24" in a.formula
+    # 257,200 × 0.85% = 2,186.20; line 405,000 − 255,013.80 = 149,986.20 × 6.4% × 32/365 = 841.5664 -> 841.57
+    assert (discount, p.total_cost_fen, a.supplier_cost_fen) == (218_620, 84_157, 302_777)
+    assert f"discount ¥2,186.20 + funding the rest of the gap ¥841.57 ({p.label}) = ¥3,027.77" in a.formula
 
 
 @pytest.mark.parametrize("drop_fen", [1, 3_733, 99_999, 500_000, 2_000_000])
@@ -85,7 +89,7 @@ def test_face_nets_at_least_the_gap_and_is_a_whole_100_yuan(state, mandate, key,
     (ob,) = a.obligations
     face = ob.base.amount_fen
     _, base_plan = baseline(s, mandate)
-    assert base_plan.need_fen == 36_000_000 + drop_fen
+    assert base_plan.need_fen == GAP_FEN + drop_fen
     assert face % 10_000 == 0
     if face < INVOICE_FEN:
         assert Fraction(face) * (1 - bp(ob.rate_bp)) >= base_plan.need_fen - LINE_FEN
@@ -98,9 +102,9 @@ def test_face_nets_at_least_the_gap_and_is_a_whole_100_yuan(state, mandate, key,
 
 
 def test_no_early_pay_counter_when_the_floor_cannot_be_kept(state, mandate, key):
-    s = state.model_copy(update={"cash_fen": state.cash_fen - 30_000_000})  # need ¥660,000 > line + whole invoice
+    s = state.model_copy(update={"cash_fen": state.cash_fen - 30_000_000})  # need ¥705,000 > line + whole invoice
     _, base_plan = baseline(s, mandate)
-    assert base_plan.need_fen == 66_000_000 and not base_plan.admissible
+    assert base_plan.need_fen == GAP_FEN + 30_000_000 == 70_500_000 and not base_plan.admissible
     (golden_ob,) = _option_a(bundle("EX01_PACKAGE")).obligations
     whole_invoice = golden_ob.model_copy(update={"base": golden_ob.base.model_copy(update={"amount_fen": INVOICE_FEN})})
     assert not plan(s, [whole_invoice], mandate, "COMMITTED").admissible  # the router agrees
@@ -135,6 +139,6 @@ def test_accepting_counter_a_leaves_no_critical_alert(client: TestClient, rt: Ru
     n = client.post(f"/negotiate/{oid}", json={"buyer_profile": "cooperative"}).json()
     assert n["outcome"] == "DEAL"
     c = rt.store.get_commitment(n["commitment"]["id"])
-    assert c is not None and c.obligations[0].base.amount_fen == 21_190_000
+    assert c is not None and c.obligations[0].base.amount_fen == 25_720_000
     alerts = client.get("/alerts").json()["alerts"]
     assert [x for x in alerts if x["severity"] == "CRITICAL"] == []

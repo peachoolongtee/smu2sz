@@ -62,8 +62,12 @@ def test_ex01_reserve_breach_day_47_curable(offer_id, g, state):
     b = bundle(offer_id)
     rb = _reserve(b.verdict)
     assert rb.day == 47 and rb.curable is True
-    assert rb.observed == "¥254,960.00"
+    # 354,960 on day 20 − the existing loan's 45,000 on day 30 − the 100,000 bill = 209,960 on day 47; the deepest is
+    # day 60, after the next 45,000 payment: 164,960, short 135,040 (compute_golden.py reserve_shortfall_max)
+    assert rb.observed == "¥209,960.00"
     assert int(rb.inputs["shortfall_fen"]) == g["reserve_shortfall_day47"]
+    assert rb.inputs["max_shortfall"] == "¥135,040.00" and rb.inputs["max_shortfall_day"] == "60"
+    assert g["reserve_shortfall_max"] == 13_504_000
     assert b.trajectory is not None and b.trajectory.days[47].closing_fen == g["cash_day47_60d_terms"]
     assert b.trajectory.days[20].closing_fen == g["cash_day20"]
     # The cure uses only sources able to carry a permanent need: invoice financing, never the line.
@@ -71,12 +75,13 @@ def test_ex01_reserve_breach_day_47_curable(offer_id, g, state):
     kinds = {f.kind for f in state.facilities for a in b.cure_plan.actions if a.facility_id == f.id}
     assert kinds == {FacilityKind.INVOICE_FINANCING}
     (adv,) = b.cure_plan.actions
-    assert adv.amount_fen == g["reserve_shortfall_day47"]
-    # requested day 0 (ADR-0003), lands day 5 against the day-2 invoice, repaid day 62: 57 days = 2 periods
+    assert adv.amount_fen == g["reserve_shortfall_max"]  # the deepest shortfall (day 60), not day 47's
+    # requested day 0 (ADR-0003), lands day 5 against the day-2 invoice, repaid day 62: 57 days = 2 periods:
+    # 135,040 × 7.8% × 60/365 = 1,731.47 + 135,040 × 0.25% × 2 = 675.20 -> 2,406.67
     fac = next(f for f in state.facilities if f.id == "FAC-IF")
-    interest, fee, periods = finance_invoice_charges(fac, g["reserve_shortfall_day47"], 62 - 5)
+    interest, fee, periods = finance_invoice_charges(fac, g["reserve_shortfall_max"], 62 - 5)
     assert periods == 2
-    assert rb.cure_cost_fen == b.cure_plan.total_cost_fen == interest + fee == 80_270
+    assert rb.cure_cost_fen == b.cure_plan.total_cost_fen == interest + fee == g["reserve_cure_cost_if"] == 240_667
     assert "Invoice financing" in (rb.cure_note or "")
     assert rb.inputs["structural_cost_per_invoice"] == "¥1,871.30"  # extension_committed_per_invoice
     assert b.verdict.plan == b.cure_plan
@@ -106,11 +111,12 @@ def test_ex01_counter_a(offer_id, g):
     assert a.supplier_cost_fen == g["counter_a_total"]
     (ob,) = a.obligations
     assert ob.type == ObligationType.IMMEDIATE_DISCOUNT and ob.rate_bp == 85
-    assert ob.base.amount_fen == 21_190_000 and ob.base.receivable_id == "RCV-A" and ob.effective_day == 2
-    assert a.text == ("Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥211,900 "
+    assert ob.base.amount_fen == g["counter_a_face"] == 25_720_000
+    assert ob.base.receivable_id == "RCV-A" and ob.effective_day == 2
+    assert a.text == ("Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥257,200 "
                       "of this invoice at 0.85%.")
-    assert "¥1,801.15" in a.formula and "¥841.09" in a.formula  # counter_a_discount + the router plan's funding cost
-    assert "0.8832%" in a.formula and "¥211,800.30" in a.formula
+    assert "¥2,186.20" in a.formula and "¥841.57" in a.formula  # counter_a_discount + the router plan's funding cost
+    assert "0.8832%" in a.formula and "¥257,186.08" in a.formula
     assert all(sp.text == a.text[sp.start:sp.end] for sp in ob.spans)
 
 
@@ -169,11 +175,11 @@ def test_early_pay_offers_counter_at_85bp(offer_id, g):
     assert apr.inputs["days_early"] == "30"
     assert apr.inputs["line_plus_partial_at_offered_rate"].endswith(
         f"¥{g['example2_line_plus_partial_1_5pct'] // 100:,}.{g['example2_line_plus_partial_1_5pct'] % 100:02d}")
-    assert apr.inputs["router_optimum"].endswith("¥2,712.94")
+    assert apr.inputs["router_optimum"].endswith("¥3,113.93")
     (a,) = v.counters
-    assert a.obligations[0].rate_bp == 85 and a.obligations[0].base.amount_fen == 21_190_000
+    assert a.obligations[0].rate_bp == 85 and a.obligations[0].base.amount_fen == g["counter_a_face"]
     assert a.supplier_cost_fen == g["counter_a_total"]
-    assert a.text == "We will accept early settlement on up to ¥211,900 of this invoice at 0.85%. Nothing else changes."
+    assert a.text == "We will accept early settlement on up to ¥257,200 of this invoice at 0.85%. Nothing else changes."
     assert len(b.bound_obligations) == 1 and v.forward_concession_total_fen == 0
 
 

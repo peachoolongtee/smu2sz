@@ -47,7 +47,8 @@ def test_alerts_with_an_evaluated_offer_show_the_day_47_breach(client):
     client.post(f"/offers/{oid}/evaluate", json={"fixture_id": "EX01_PACKAGE"})
     v = client.get("/alerts", params={"offer_id": oid}).json()
     breach = [a for a in v["alerts"] if a["kind"] == "RESERVE_BREACH_AHEAD"]
-    assert [a["day"] for a in breach] == [47] and breach[0]["amount_display"] == "¥45,040.00"
+    # day 47 closes at 209,960 (the day-30 debt payment taken): 300,000 − 209,960 = 90,040 (golden reserve_shortfall_day47)
+    assert [a["day"] for a in breach] == [47] and breach[0]["amount_display"] == "¥90,040.00"
     assert client.get("/alerts", params={"offer_id": "OFF-NONE"}).status_code == 404
 
 
