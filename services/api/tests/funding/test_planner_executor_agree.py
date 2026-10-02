@@ -441,8 +441,6 @@ DRAW_INTEREST_GAP = World(cash=15_000_000, payroll=(18, -15_000_000), supplier=(
                           rcv_a=(15_000_000, 0, 18, 0), line=(5_000_000, 300, 0, 0), recurring=None, bill=None)
 
 
-@pytest.mark.xfail(strict=True, raises=AssertionError,
-                   reason="admission does not price the interest an executed open draw later carries")
 @settings(PROPS)
 @given(w=worlds(), steps=st.lists(draw_step | tick_step, min_size=1, max_size=3))
 @example(w=DRAW_INTEREST_GAP, steps=[("draw", LINE, 1)])

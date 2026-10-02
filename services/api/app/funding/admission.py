@@ -28,11 +28,13 @@ from app.domain.models import (
     DrawFacility,
     FacilityKind,
     FacilityStatus,
+    FinancialState,
     FundingAction,
     FundingActionKind,
     Mandate,
     Mode,
     RepayFacility,
+    Repayment,
     SubmitInvoiceForFinancing,
     Trajectory,
     Violation,
@@ -40,6 +42,7 @@ from app.domain.models import (
 )
 from app.domain.money import fmt_yuan
 from app.financial import EngineError, project
+from app.financial.lots import ensure_lots, new_lot, unique_id
 from app.funding.rates import action_rate, approval_reason, invoice_landing_day
 from app.funding.search import receivables
 
@@ -93,6 +96,20 @@ def effective_rate(op: object, books: Books, baseline: Trajectory | None = None)
     return None
 
 
+def _as_carried(op: object, state: FinancialState) -> FinancialState | None:
+    """The books as they stand right after a draw on a revolving line executes; None for anything else."""
+    if not isinstance(op, DrawFacility):
+        return None
+    f = next((x for x in state.facilities if x.id == op.facility_id), None)
+    if f is None or f.repayment != Repayment.BULLET or f.term_months:
+        return None
+    base = ensure_lots(state)
+    lot = new_lot(unique_id(base.lots, "admission-probe"), f, op.amount_fen, state.as_of_day)
+    facilities = [x.model_copy(update={"drawn_fen": x.drawn_fen + op.amount_fen}) if x.id == f.id else x
+                  for x in base.facilities]
+    return base.model_copy(update={"facilities": facilities, "lots": [*base.lots, lot]})
+
+
 def _worst(t: Trajectory, today: int) -> int:
     return min(p.closing_fen for p in t.days if p.day >= today)
 
@@ -108,6 +125,14 @@ def admit(op: object, books: Books, mandate: Mandate) -> Admission:
         after = project(state, obligations, [action], Mode.CONSERVATIVE, horizon, floor)
     except EngineError as exc:
         return Admission([Violation(code=ViolationCode.PRECONDITION_FAILED, message=str(exc))])
+    carried = _as_carried(op, state)
+    if carried is not None:
+        # A draw on a revolving line has no repayment day, so as an action it is projected open and free. Once
+        # executed it is a lot the engine repays, with interest, on the first affordable day: judge that.
+        try:
+            after = project(carried, obligations, [], Mode.CONSERVATIVE, horizon, floor)
+        except EngineError as exc:
+            return Admission([Violation(code=ViolationCode.PRECONDITION_FAILED, message=str(exc))])
     try:
         before: Trajectory | None = project(state, obligations, [], Mode.CONSERVATIVE, horizon, floor)
     except EngineError:
