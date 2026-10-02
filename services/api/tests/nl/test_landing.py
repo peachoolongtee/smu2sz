@@ -342,3 +342,38 @@ def test_the_grammar_reads_a_constraint_and_a_chinese_refusal(client, rt):
         assert consent.is_constraint(text) and consent.confirmation(text) is None
     for text in ("don't", "no", "cancel", "不要", "取消", "do not go ahead"):
         assert consent.confirmation(text) == "no" and not consent.is_constraint(text)
+
+
+# ---------------------------------------------------------------- accelerate: the fallback and the financing plan
+
+
+ACCEL = "Get paid early on the Foshan invoice without giving anything away next quarter."
+
+
+def test_the_early_pay_proposal_names_the_landing_day_of_the_fallback(client, rt):
+    c = Chat(client, "ac-ld")
+    r = c.say(ACCEL)
+    assert r["awaiting_confirmation"] and ops(r) == []
+    assert "If BUYER-1 refuses:" in r["reply"] and "requested today, lands on day 3" in r["reply"]
+    assert "Raised" not in r["reply"]
+    assert rt.store.get_state().lots == [] and rt.store.get_state().cash_fen == 40_000_000
+
+
+def test_the_early_pay_fallback_result_names_the_landing_day(client, rt):
+    c = Chat(client, "ac-ld2", buyer_profile="BUYER-1-HARDLINE")
+    c.say(ACCEL)
+    r = c.say("go ahead")
+    assert ("SUBMIT_INVOICE_FOR_FINANCING", "EXECUTED") in ops(r)
+    assert "refused" in r["reply"] and "requested today, cash lands on day 3" in r["reply"]
+    assert "Still to land: ¥210,000.00 on FAC-IF" in r["reply"] and "Raised" not in r["reply"]
+    assert ("FAC-IF", 0, 3, False) in lots(rt)
+
+
+def test_the_financing_plan_for_an_invoice_names_the_landing_day_in_chinese(client, rt):
+    c = Chat(client, "ac-ld3")
+    c.say(ACCEL)
+    r = c.say("改用发票融资")
+    assert r["awaiting_confirmation"] and "第 3 天到账" in r["reply"]
+    r = c.say("执行")
+    assert ("SUBMIT_INVOICE_FOR_FINANCING", "EXECUTED") in ops(r) and "第 3 天到账" in r["reply"]
+    assert ("FAC-IF", 0, 3, False) in lots(rt)
