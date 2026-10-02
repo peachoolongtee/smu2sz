@@ -185,7 +185,7 @@ def test_replayed_request_id_is_duplicate(client, rt):
     assert again["replayed"] and ops(again) == [("DRAW_FACILITY", "DUPLICATE"), ("SUBMIT_INVOICE_FOR_FINANCING", "DUPLICATE")]
     assert rt.store.get_state().cash_fen == 55_000_000  # ADR-0010: the advance lands on day 3, once
     rt.advance_to(4)
-    assert rt.store.get_state().cash_fen == 76_000_000
+    assert rt.store.get_state().cash_fen == 80_500_000  # 400,000 + the 150,000 line + the 255,000 advance
 
 
 def test_every_operation_is_typed_dated_keyed_and_verified(client, rt, monkeypatch):

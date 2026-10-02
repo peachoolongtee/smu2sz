@@ -18,8 +18,11 @@ from tests.nl.conftest import OWNER, Chat, ops
 from tests.nl.test_alerts_opener import _day34, _opener
 
 LINE_DRAW = ("DRAW_FACILITY", "FAC-LINE", None, 15_000_000)
-ADVANCE_210K = ("SUBMIT_INVOICE_FOR_FINANCING", "FAC-IF", "RCV-A", 21_000_000)
-ADVANCE_260K = ("SUBMIT_INVOICE_FOR_FINANCING", "FAC-IF", "RCV-A", 26_060_000)
+# the day-0 plan's advance: the ¥405,000 gap (it includes the existing loan's ¥45,000 day-30 payment) less the line
+ADVANCE_PLAN = ("SUBMIT_INVOICE_FOR_FINANCING", "FAC-IF", "RCV-A", 25_500_000)
+# after the books lose ¥100,000 the gap is ¥505,000: the line, an advance of 266,080 on RCV-A and an early payment of
+# 90,000 face on RI:BUYER-1:2 at 1.2% (1,080.00, netting 88,920) that is shown but is not an operation of this plan
+ADVANCE_MOVED = ("SUBMIT_INVOICE_FOR_FINANCING", "FAC-IF", "RCV-A", 26_608_000)
 GOAL = "Find me the cheapest way to fund the cash gap"
 
 
@@ -52,10 +55,10 @@ def pending(session_id: str):
 def test_a_proposal_stores_the_operations_the_cost_and_the_books(client, rt):
     c = Chat(client, "pb-store")
     r = c.say(GOAL)
-    assert r["awaiting_confirmation"] and ops(r) == [] and "¥2,712.94" in r["reply"]
+    assert r["awaiting_confirmation"] and ops(r) == [] and "¥3,113.93" in r["reply"]
     plan = pending("pb-store")
-    assert signature(plan.ops) == [LINE_DRAW, ADVANCE_210K]
-    assert plan.quoted_cost_fen == 271_294
+    assert signature(plan.ops) == [LINE_DRAW, ADVANCE_PLAN]
+    assert plan.quoted_cost_fen == 311_393
     s, m = rt.store.get_state(), rt.store.get_mandate()
     assert (plan.state_version, plan.mandate_version, plan.day) == (s.state_version, m.version, rt.day)
     assert all(isinstance(o, DrawFacility | SubmitInvoiceForFinancing) and o.day == rt.day for o in plan.ops)
@@ -68,16 +71,17 @@ def test_s05_go_ahead_after_the_books_moved_runs_nothing_and_shows_the_new_plan(
     before = books(rt)
     r = c.say("go ahead")
     assert ops(r) == [] and books(rt) == before  # no operation, no change of cash, no drawn balance moved
-    assert r["awaiting_confirmation"] and "I did not run it" in r["reply"] and "¥3,763.84" in r["reply"]
+    # 841.64 + 266,080 × 7.8% × 30/365 = 1,705.83 + fee 665.20 (2,371.03) + 1,080.00 = 4,292.67
+    assert r["awaiting_confirmation"] and "I did not run it" in r["reply"] and "¥4,292.67" in r["reply"]
     assert "Raised" not in r["reply"] and "funded" not in r["reply"].lower()
     new = pending("s05")
-    assert signature(new.ops) == [LINE_DRAW, ADVANCE_260K] and new.quoted_cost_fen == 376_384
+    assert signature(new.ops) == [LINE_DRAW, ADVANCE_MOVED] and new.quoted_cost_fen == 429_267
     # the new plan needs its own go-ahead, and then runs exactly its own operations
     r = c.say("go ahead")
     assert ops(r) == [("DRAW_FACILITY", "EXECUTED"), ("SUBMIT_INVOICE_FOR_FINANCING", "EXECUTED")]
     after = books(rt)
-    assert after["executed"] == [("DRAW_FACILITY", 15_000_000), ("SUBMIT_INVOICE_FOR_FINANCING", 26_060_000)]
-    assert after["drawn"]["FAC-LINE"] == 15_000_000 and after["drawn"]["FAC-IF"] == 26_060_000
+    assert after["executed"] == [("DRAW_FACILITY", 15_000_000), ("SUBMIT_INVOICE_FOR_FINANCING", 26_608_000)]
+    assert after["drawn"]["FAC-LINE"] == 15_000_000 and after["drawn"]["FAC-IF"] == 26_608_000
     assert SESSIONS.get("s05").pending_plan is None
 
 
@@ -90,10 +94,10 @@ def test_the_same_operations_still_feasible_at_no_higher_cost_run_as_shown(clien
     r = c.say("go ahead")
     assert ops(r) == [("DRAW_FACILITY", "EXECUTED"), ("SUBMIT_INVOICE_FOR_FINANCING", "EXECUTED")]
     after = books(rt)
-    assert after["executed"] == [("DRAW_FACILITY", 15_000_000), ("SUBMIT_INVOICE_FOR_FINANCING", 21_000_000)]
-    assert stored == [LINE_DRAW, ADVANCE_210K] and after["drawn"]["FAC-LINE"] == 15_000_000
-    assert after["drawn"]["FAC-IF"] == 21_000_000 and after["cash_fen"] > cash
-    assert "Cost as quoted: ¥2,712.94" in r["reply"] and shown["awaiting_confirmation"]
+    assert after["executed"] == [("DRAW_FACILITY", 15_000_000), ("SUBMIT_INVOICE_FOR_FINANCING", 25_500_000)]
+    assert stored == [LINE_DRAW, ADVANCE_PLAN] and after["drawn"]["FAC-LINE"] == 15_000_000
+    assert after["drawn"]["FAC-IF"] == 25_500_000 and after["cash_fen"] > cash
+    assert "Cost as quoted: ¥3,113.93" in r["reply"] and shown["awaiting_confirmation"]
 
 
 def test_an_unchanged_state_sends_the_stored_operations_untouched(client, rt):
@@ -141,7 +145,7 @@ def test_a_cheaper_world_does_not_let_a_dearer_plan_through(client, rt):
     before = books(rt)
     r = c.say("go ahead")
     assert ops(r) == [] and books(rt) == before
-    assert "more than the ¥1,356.47 I quoted" in r["reply"]
+    assert "more than the ¥1,556.96 I quoted" in r["reply"]  # half of ¥3,113.93, rounded down to the fen
 
 
 # ---------------------------------------------------------------- the alert cure
@@ -397,7 +401,9 @@ def test_an_early_pay_plan_runs_the_stored_legs_and_not_a_replan(client, rt):
 def test_an_early_pay_plan_whose_books_moved_is_proposed_again(client, rt):
     c = Chat(client, "ac-moved")
     c.say(ACCEL)
-    move_books(rt, -10_000_000)
+    # cash down by ¥300,000: the ¥705,000 gap is more than the line and the whole invoice at 0.85% can carry
+    # (150,000 + 416,430)
+    move_books(rt, -30_000_000)
     before = books(rt)
     r = c.say("go ahead")
     assert ops(r) == [] and books(rt) == before  # the plan no longer comes out the same: nothing runs

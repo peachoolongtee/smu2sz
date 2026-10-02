@@ -283,13 +283,14 @@ PROPS = settings(max_examples=int(os.environ.get("AGREE_EXAMPLES", "60")), deadl
 # the golden day-0 plan (line + advance on RCV-A, not flagged), and the review's R01: an invoice due soon, so the
 # advance is held about 10 days, costs far above the ceiling and must wait for the owner
 # the router prices an advance on a recurring invoice that is not issued yet (RI:BUYER-1:2): the executor refuses it
-# (cash ¥275,000 in both: the ¥230,000 they were pinned with plus the existing loan's ¥45,000 day-30 payment, so the
-# gap is the ¥135,000 they were designed around)
-UNISSUED = World(cash=27_500_000, payroll=(5, -8_000_000), supplier=(10, -3_000_000), bill=None,
+# (pinned with ¥230,000 of cash before the existing loan's ¥45,000 payments on days 30 and 60 were cash. Now ¥300,000:
+# 300,000 − 80,000 − 30,000 = 190,000 by day 10, one gap of ¥110,000, and day 60 closes exactly at the floor
+# (+50,000 day 18 − 45,000 day 30 + 150,000 day 32 − 45,000 day 60), so there is no second gap to ask about)
+UNISSUED = World(cash=30_000_000, payroll=(5, -8_000_000), supplier=(10, -3_000_000), bill=None,
                  rcv_a=(5_000_000, 0, 18, 0), recurring=(15_000_000, 2, 30), line=(5_500_000, 300, 0, 0),
                  iff=(12_500_000, 400, 0, 0, 7, 0, None))
 # the same, with an invoice that exists to finance instead: a plan the agent can run beats the cheaper one that
-# relies on RI:BUYER-1:2
+# relies on RI:BUYER-1:2 (¥275,000: the ¥230,000 it was pinned with plus the existing loan's ¥45,000 day-30 payment)
 RI_CHEAPER = World(cash=27_500_000, payroll=(5, -8_000_000), supplier=(10, -3_000_000), bill=None,
                    rcv_a=(15_000_000, 0, 18, 0), recurring=(15_000_000, 2, 30), line=(5_500_000, 300, 0, 0),
                    iff=(12_500_000, 400, 0, 0, 7, 0, None))

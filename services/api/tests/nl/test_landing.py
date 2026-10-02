@@ -16,7 +16,8 @@ from tests.nl.conftest import OWNER, Chat, ops
 from tests.nl.test_alerts_opener import _day34, _opener
 from tests.nl.test_plan_binding import GOAL, LINE_DRAW, books, move_books, pending
 
-ADVANCE = ("SUBMIT_INVOICE_FOR_FINANCING", "FAC-IF", "RCV-A", 21_000_000)
+# the day-0 plan's advance: the ¥405,000 gap (it includes the existing loan's ¥45,000 day-30 payment) less the line
+ADVANCE = ("SUBMIT_INVOICE_FOR_FINANCING", "FAC-IF", "RCV-A", 25_500_000)
 SESSIONS_NEG = "Negotiate EX01 with the buyer"
 
 
@@ -38,8 +39,8 @@ def test_the_gap_proposal_names_the_landing_day_and_does_not_count_the_advance_a
     assert r["awaiting_confirmation"] and ops(r) == []
     reply = r["reply"]
     assert "Cash today: ¥150,000.00." in reply
-    assert "Cash later: ¥210,000.00 on FAC-IF, requested today, lands on day 3." in reply
-    assert "360,000" in reply.split("Cash today")[0]  # the need is named; it is never called cash in hand
+    assert "Cash later: ¥255,000.00 on FAC-IF, requested today, lands on day 3." in reply
+    assert "405,000" in reply.split("Cash today")[0]  # the need is named; it is never called cash in hand
     assert "Raised" not in reply and "in total" not in reply
     advance = next(s for s in r["plan"] if s["kind"] == "SUBMIT_INVOICE_FOR_FINANCING")
     assert "requested today, cash lands on day 3" in advance["description"]
@@ -53,9 +54,9 @@ def test_the_gap_result_separates_cash_in_from_cash_landing_later(client, rt):
     r = c.say("go ahead")
     assert ops(r) == [("DRAW_FACILITY", "EXECUTED"), ("SUBMIT_INVOICE_FOR_FINANCING", "EXECUTED")]
     reply = r["reply"]
-    assert "Submit RCV-A to FAC-IF for a ¥210,000.00 advance: done; requested today, cash lands on day 3." in reply
-    assert "Cash in now: ¥150,000.00. Still to land: ¥210,000.00 on FAC-IF, requested today, lands on day 3." in reply
-    assert "Raised" not in reply and "funded" not in reply.lower() and "Cost as quoted: ¥2,712.94" in reply
+    assert "Submit RCV-A to FAC-IF for a ¥255,000.00 advance: done; requested today, cash lands on day 3." in reply
+    assert "Cash in now: ¥150,000.00. Still to land: ¥255,000.00 on FAC-IF, requested today, lands on day 3." in reply
+    assert "Raised" not in reply and "funded" not in reply.lower() and "Cost as quoted: ¥3,113.93" in reply
     after = rt.store.get_state()
     assert after.cash_fen == before.cash_fen + 15_000_000  # the draw only: the advance is not in cash
     assert lots(rt) == [("FAC-LINE", 0, 0, True), ("FAC-IF", 0, 3, False)]
@@ -70,11 +71,11 @@ def test_the_chinese_gap_replies_carry_the_landing_day(client, rt):
     c = Chat(client, "ld-zh")
     r = c.say("帮我补足资金缺口")
     assert r["lang"] == "zh" and r["awaiting_confirmation"]
-    assert "今日到账：¥150,000.00。稍后到账：FAC-IF ¥210,000.00，今日申请，第 3 天到账。" in r["reply"]
+    assert "今日到账：¥150,000.00。稍后到账：FAC-IF ¥255,000.00，今日申请，第 3 天到账。" in r["reply"]
     assert "第 3 天到账" in next(s for s in r["plan"] if s["kind"] == "SUBMIT_INVOICE_FOR_FINANCING")["description"]
     r = c.say("执行")
     assert ops(r) == [("DRAW_FACILITY", "EXECUTED"), ("SUBMIT_INVOICE_FOR_FINANCING", "EXECUTED")]
-    assert "今日申请，第 3 天到账" in r["reply"] and "已到账：¥150,000.00。待到账：FAC-IF ¥210,000.00" in r["reply"]
+    assert "今日申请，第 3 天到账" in r["reply"] and "已到账：¥150,000.00。待到账：FAC-IF ¥255,000.00" in r["reply"]
     assert "合计融得" not in r["reply"] and ("FAC-IF", 0, 3, False) in lots(rt)
 
 
@@ -209,7 +210,7 @@ def test_the_no_deal_legs_shown_with_the_proposal_are_the_legs_that_run(client, 
                       ("SUBMIT_INVOICE_FOR_FINANCING", "EXECUTED")]
     logged = [json.loads(e.payload_json) for e in rt.store.operations()][-2:]
     assert [(e["op_id"], e["idempotency_key"]) for e in logged] == stored
-    assert [e.get("amount_fen") or e.get("advance_fen") for e in logged] == [15_000_000, 21_000_000]
+    assert [e.get("amount_fen") or e.get("advance_fen") for e in logged] == [15_000_000, 25_500_000]
     assert rt.store.get_state().cash_fen == cash + 15_000_000 and lots(rt)[-1] == ("FAC-IF", 0, 3, False)
     assert "lands on day 3" in r["reply"] and "Raised" not in r["reply"]
     assert [s["status"] for s in r["plan"]][-2:] == ["EXECUTED", "EXECUTED"]
@@ -365,7 +366,7 @@ def test_the_early_pay_fallback_result_names_the_landing_day(client, rt):
     r = c.say("go ahead")
     assert ("SUBMIT_INVOICE_FOR_FINANCING", "EXECUTED") in ops(r)
     assert "refused" in r["reply"] and "requested today, cash lands on day 3" in r["reply"]
-    assert "Still to land: ¥210,000.00 on FAC-IF" in r["reply"] and "Raised" not in r["reply"]
+    assert "Still to land: ¥255,000.00 on FAC-IF" in r["reply"] and "Raised" not in r["reply"]
     assert ("FAC-IF", 0, 3, False) in lots(rt)
 
 
