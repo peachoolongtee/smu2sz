@@ -28,6 +28,7 @@ class Intent(StrEnum):
     BORROWER_FILE = "BORROWER_FILE"
     EXPLAIN = "EXPLAIN"
     WHAT_IF = "WHAT_IF"
+    RECORD_FACT = "RECORD_FACT"  # the owner states a new bill, invoice, delay or figure: read-only, nothing is recorded
     APPROVE = "APPROVE"
     REJECT = "REJECT"
     COUNTERPARTY_MESSAGE = "COUNTERPARTY_MESSAGE"

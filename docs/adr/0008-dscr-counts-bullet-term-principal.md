@@ -63,3 +63,14 @@ EBITDA ¥90,000 a month; existing debt service ¥45,000 a month. Draw ¥500,000 
   mocks follow.
 - A second person re-derives the case above and two more (a 6-month bullet; a loan maturing after the
   horizon) before the change merges.
+
+## Note, 3 Oct 2026
+
+- Capex applies the same level service to bullet-term candidates: a term-loan candidate of the capex screen is
+  serviced on the level basis in every month of its term, and a candidate is evaluated only at its facility's
+  actual term (other terms are labelled illustrations, never selected). See
+  `services/api/tests/capex/test_audit_fixes.py`.
+- The level basis is labelled a reserve-coverage reading wherever it is shown. It is the owner's rule for how much
+  cash is set aside against a bullet loan; it is not a lender's contractual DSCR definition, and the system makes
+  no claim of covenant compliance with any bank (audit F-FIN-10, uncertainty debt U-004). A covenant that carries
+  its own measurement basis (monthly, annual, cash paid) is a later decision.

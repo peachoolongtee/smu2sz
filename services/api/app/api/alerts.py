@@ -7,20 +7,47 @@ submits the cure to the executor as the agent (nothing here executes one itself)
 
 from __future__ import annotations
 
+import hashlib
 import json
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel, ConfigDict
 
 from app.alerts import Alert, Severity, alerts, cure_operations, reconcile
 from app.api.auth import require_owner
 from app.api.display import displayed
 from app.api.runtime import Runtime, get_runtime
-from app.domain.models import Obligation, OperationStatus
+from app.domain.models import Obligation, OperationStatus, SecurityEvent, SecurityEventKind
 from app.financial import EngineError
 from app.verifier import bind
 
 router = APIRouter(dependencies=[Depends(require_owner)])
+
+
+class ActSuggestion(BaseModel):
+    """One suggestion as the web received it: only the fields that decide what runs are read (the web may send the
+    whole suggestion object back)."""
+
+    model_config = ConfigDict(extra="ignore")
+    operation_kind: str
+    facility_id: str | None = None
+    receivable_id: str | None = None
+    amount_fen: int | None = None
+
+
+class ActRequest(BaseModel):
+    """What the owner was shown when they pressed the button: the state version of the GET /alerts they read and,
+    optionally, the alert's suggestions in order (kind, facility, receivable, amount)."""
+
+    model_config = ConfigDict(extra="forbid")
+    state_version: int | None = None
+    suggestions: list[ActSuggestion] | None = None
+
+
+def _signature(alert: Alert) -> list[dict[str, Any]]:
+    return [{"operation_kind": s.operation_kind, "facility_id": s.facility_id, "receivable_id": s.receivable_id,
+             "amount_fen": s.amount_fen} for s in alert.suggested]
 
 
 def _require_enabled(rt: Runtime) -> None:
@@ -57,6 +84,7 @@ def get_alerts(offer_id: str | None = None) -> dict[str, Any]:
     return {
         "day": rt.day,
         "basis": "CONSERVATIVE",
+        "state_version": state.state_version,
         "projected_offer_id": offer_id,
         "counts": _counts(found),
         "alerts": displayed([json.loads(a.model_dump_json()) for a in found]),
@@ -70,9 +98,16 @@ def _counts(found: list[Alert]) -> dict[str, int]:
 
 
 @router.post("/alerts/{alert_id}/act")
-def act_on_alert(alert_id: str) -> dict[str, Any]:
+def act_on_alert(alert_id: str, body: ActRequest | None = None) -> dict[str, Any]:
     """Submit the alert's suggested cure to the executor as the agent. Tier 1 executes; Tier 2 waits in the
-    approvals queue. This route never writes state itself."""
+    approvals queue. This route never writes state itself.
+
+    The button is bound to what was shown: the body carries `state_version` (from GET /alerts) and optionally the
+    `suggestions` the web received. When the state version differs from the current one, or the suggestions (kind,
+    facility, receivable, amount, in order) no longer match the recomputed alert, nothing runs and the answer is
+    409 ALERT_CHANGED with the current alert (null when it is gone), so the owner sees the new cure before acting.
+    The body is optional for one release: when it is absent (or names neither field) the request is unbound, a
+    security event "unbound act" is logged and the route still acts on the recomputed alert, as before."""
     rt = get_runtime()
     _require_enabled(rt)
     with rt.lock:
@@ -82,6 +117,25 @@ def act_on_alert(alert_id: str) -> dict[str, Any]:
         except EngineError as exc:
             raise HTTPException(422, f"cannot project: {exc}") from None
         alert = next((a for a in found if a.id == alert_id), None)
+        shown_version = body.state_version if body is not None else None
+        shown_suggestions = ([s.model_dump() for s in body.suggestions]
+                             if body is not None and body.suggestions is not None else None)
+        if shown_version is None and shown_suggestions is None:
+            key = f"unbound-act|{alert_id}|{rt.day}|{len(rt.store.security_events())}"
+            rt.store.add_security_event(SecurityEvent(
+                id="SEC-ACT-" + hashlib.sha256(key.encode()).hexdigest()[:12], day=rt.day,
+                kind=SecurityEventKind.PRIVILEGE_ESCALATION, counterparty_id=None,
+                action_taken="acted on the recomputed alert; the request was not bound to what the owner was shown",
+                detail=f"unbound act: POST /alerts/{alert_id}/act carried no state_version and no suggestions"))
+        else:
+            changed = ((shown_version is not None and shown_version != state.state_version)
+                       or (shown_suggestions is not None
+                           and (alert is None or shown_suggestions != _signature(alert))))
+            if changed:
+                raise HTTPException(409, detail={
+                    "code": "ALERT_CHANGED", "alert_id": alert_id, "state_version": state.state_version,
+                    "message": "The alert changed since you read it; nothing was run. Review the current cure.",
+                    "alert": displayed(json.loads(alert.model_dump_json())) if alert is not None else None})
         if alert is None:
             raise HTTPException(404, detail={"code": "ALERT_NOT_FOUND", "alert_id": alert_id})
         ops = cure_operations(alert, day=rt.day, mandate_version=mandate.version, state_version=state.state_version)

@@ -1,4 +1,4 @@
-# Handover: TermsLedger v2, 1 Oct 2026 (updated that evening)
+# Handover: TermsLedger v2, 3 Oct 2026 (sections 4 to 6 and 8 updated after the audit fixes)
 
 For a new Claude Code session on another machine. Read this file first, then the files it points to.
 Everything you need is in this repository; nothing depends on the previous machine.
@@ -11,14 +11,14 @@ cd smu2sz && git checkout dev
 cd services/api && uv sync && uv run pytest -o addopts= -q
 ```
 
-Needs `uv` (Python 3.12), Node with `pnpm`, and `gh` logged in to GitHub. Expect about 4,000 tests passing in
-4 to 6 minutes. Then, from the repo root: `python3 scripts/run_scenarios.py --inproc` (expect 46/46), followed by
-`git checkout -- services/api/evals` so regenerated evidence is not committed by accident.
+Needs `uv` (Python 3.12), Node with `pnpm`, and `gh` logged in to GitHub. Expect about 4,730 tests passing in
+about 9 minutes on Windows. Then, from the repo root: `python3 scripts/run_scenarios.py --inproc` (expect 46/46),
+followed by `git checkout -- services/api/evals` so regenerated evidence is not committed by accident.
 
 On Windows (confirmed 1 Oct on a second machine): `.gitattributes` keeps every text file LF, because fixture
 text is hashed and span-matched byte for byte. Run the suite as `SKIP_PERF_BENCH=1 uv run pytest -o addopts= -q`
-(the latency targets were set on the Mac; expect about 3,800 passed, 24 skipped, 6 to 8 minutes) and prefix
-scripts that print with `PYTHONUTF8=1`, for example
+(the latency targets were set on the Mac; expect about 4,730 passed, 20 skipped) and prefix scripts that print
+with `PYTHONUTF8=1`, for example
 `PYTHONUTF8=1 uv run --project services/api python scripts/run_scenarios.py --inproc`.
 
 First message to give the new session:
@@ -45,10 +45,12 @@ Read, in this order:
 | File | Why |
 | --- | --- |
 | `docs/SYSTEM_WALKTHROUGH.md` | Every feature step by step, how the modules interact, and the end-to-end flow with real numbers |
-| `docs/research/audit-2026-10-01.md` | The independent audit this phase works from (findings S1–S11, F1–F10, changes C1–C13) |
-| `docs/NEXT_FIXES.md` | Live tracker: every fix, status, dependencies, stop conditions |
+| `docs/AGENT_MISSION.md`, `docs/CONTINUOUS_OPTIMIZATION.md`, `docs/FINANCIAL_SEMANTICS.md` | The three mission documents of 3 Oct: the role, the live backlog and scorecard, and the contract for every financial quantity |
+| `docs/research/independent-principal-audit-2026-10-03.md` and the three `docs/research/redteam-2026-10-03*` folders | The audit and the red-team rounds whose findings were fixed on 3 Oct |
+| `docs/NEXT_FIXES.md` | History up to the audit; the live tracker is `docs/CONTINUOUS_OPTIMIZATION.md` |
+| `docs/research/audit-2026-10-01.md` | The 1 Oct audit (findings S1–S11, F1–F10, changes C1–C13) |
 | `docs/adr/0006-current-books-and-clock.md` | The state model: current books, the clock, settlement, re-verification at commitment |
-| `docs/adr/0007-early-pay-acceptance-rule.md` | The early-pay rule, decided but NOT yet implemented |
+| `docs/adr/0007`–`0010` | Early pay (implemented, with a 3 Oct note), DSCR on bullet loans, invoice terms, funding lots |
 | `docs/adr/0001`–`0005`, `docs/ARCHITECTURE.md`, `docs/INVARIANTS.md`, `CONTEXT.md` | Earlier decisions and vocabulary |
 | `docs/handover/01_main_architect_brief.md` | The owner's first long brief, verbatim |
 | `docs/handover/02_technical_lead_brief.md` | The owner's second long brief, verbatim (the one in force now) |
@@ -100,126 +102,142 @@ hard-coded success metrics anywhere.
 wayfinder map is issue #1. Features the owner asked to add earlier (done): outbound leak guard with canaries,
 what-if sandbox. Team of five. A DeepSeek key exists; an Anthropic key is optional.
 
-## 4. Where things stand (evening of 1 Oct)
+## 4. Where things stand (3 Oct 2026)
 
-`dev` is green: 4,044 passed, 26 skipped (Windows, perf benchmarks skipped); scenarios 46/46; attacks 182
-(122 API + 60 chat), 0 with harm; web mock e2e 29 passed, live e2e 27 passed. `scripts/demo_run.py` walks demo steps 1 to 17 in
-process and exits 0. Baseline before this phase was `6d500a9` (3,557 passed).
+`dev` carries the fixes for an independent audit's 13 findings and three red-team rounds' 13 findings, all fixed on
+3 Oct (`git log --oneline b0e0ab6..origin/dev` lists the merges; the findings, decisions and scorecard are in
+`docs/CONTINUOUS_OPTIMIZATION.md` sections 1, 3 and 5). `main` is still at `beb8c66`, 90 commits behind `dev`: it
+was fast-forwarded last at the audit merge and not since. The gate on `dev` at `5305d9a`: backend about 4,730
+passed (20 skipped; Windows, `SKIP_PERF_BENCH=1`), scenarios 46/46 (85 turns), web mock e2e 31, live e2e 29,
+255 attacks (122 API + 133 chat) with 0 harm, `scripts/demo_run.py` exits 0. This is a simulation: lenders, the
+buyer and the bank feed are simulated, and nothing is a bank covenant test.
 
-**Merged into `dev` before this session** (waves A, B and the clock): chat boundary (S1, S2), computed scoreboard
-(S11), coverage proof (S3), re-verification at commitment (S4), current books, the clock, partial settlement,
-alerts/capex/borrower file on current books, attacks through chat, credential-bound sessions and the
-direct-command rule for approvals and go-aheads. See `docs/NEXT_FIXES.md` for each row.
+**Merged on 3 Oct** (the changes with their test files are in `docs/SYSTEM_WALKTHROUGH.md` section 11):
 
-**Merged on 1 Oct in this session**
-
-| Item | What changed |
+| Merge | What changed |
 | --- | --- |
-| Windows portability | `.gitattributes` keeps text LF; files are read as UTF-8; the offline guard allows loopback |
-| B5 Counter A | ¥211,900 at 0.85% (nets ¥210,098.85; cost ¥1,801.15 + ¥841.09 = ¥2,642.24). Offered only when the router's plan on books that include it is admissible, and (ADR-0007) only when it beats the standing plan |
-| C3 reconciliation | `ReconciliationReport.promised`: every promised early payment as AWAITED, RECEIVED, LAPSED or SETTLED_OTHERWISE |
-| C2 alert button | `POST /alerts/{id}/act` submits the alert's cure to the executor as the agent. No cure is offered when the mandate forbids new borrowing |
-| C4 opener | `POST /nl/opener` and the intent SHOW_ALERTS: the agent says what needs the owner and proposes the cure; a direct "go ahead" runs it |
-| C5 repay alert | A drawn credit line the books can afford to repay raises `ALERT-REPAY-<facility>`; the opener offers it |
-| D1/D2 early pay | ADR-0007 in the verifier: tenor-aware break-even, `EARLY_PAY_NOT_NEEDED`, `EARLY_PAY_DEARER_THAN_PLAN`. Whole-invoice early pay at 0.65% to 0.88% (30 days) now counters. The router prices the buyer's early-pay facility at its standing rate only |
-| D4 DSCR | ADR-0008: a bullet term loan is serviced on a level basis. The ¥500,000 guaranteed loan shows 1.014× and fails 1.25×; the borrower file's ¥360,000 request shows 1.18× (below covenant) |
-| E1/E2 chat | Intents COMPARE_FINANCING, RECONCILE, SHOW_RATIOS, CAPEX, BORROWER_FILE (owner token required) and a nearest-capability fallback |
-| E3 home | `/` is the owner home: the day and a demo clock, the opener with Go ahead, position, approvals, alerts with "Let the agent fix this", recent agent actions |
-| E4/E5 | Approval card with the operation, reason and terms; autonomy proof panel; no tier badge on REJECT; the stepper resumes after sign-in |
-| C6 cure cost | Every proposed cure states its cost and effective annual rate and flags a rate above the APR cap; nothing is blocked |
-| E6 and owner view fields | `annualised` and `autonomy` on owner verdict responses; shown on the verdict page, counters and chat |
-| Web mocks | Every mock file is recorded from the live API by `apps/web/scripts/record-mocks.mjs`; mock and live agree |
-| Documents | Technical document, video script, demo flow, self-assessment, deck outline and README follow today's product; compliance statements added |
+| `b78e205` chat consent | Only a closed affirmative command executes; approvals need an exact decision |
+| `cf9dab9` counterparty channel | A buyer is who its `X-Counterparty-Key` says; no key means a proposal only |
+| `0bb25ab` startup hydration | A restart keeps the persisted books, log and approvals |
+| `d2fe408` executor admission | Funding operations pass the planner's checks at execution; a rate above the ceiling waits for the owner (Tier 2); a late receipt earns no discount |
+| `5ebb7c7` ADR-0009 | Accepted terms and prices are written onto invoices, with a scope fixed at acceptance |
+| `13db5e0` capex and borrower file | Fees, drawn debt, liquidity and real tenor count; no winner for an unworthy project; the purchase is deducted |
+| `1a4621f`, `4729621` first red team | Circuit breaker scope, burnt keys, price-cut guard |
+| `436c9e7` plan binding | "Go ahead" runs the exact operations shown; negotiation proposes first |
+| `cebdebf` dated valuation | Concessions valued on the dated invoices in the window: 13 invoices; ¥28,326.92, ¥24,326.92, ¥210,000.00, ¥1,897.29 |
+| `a95f97d` ADR-0010 | Funding lots with dates; cash lands after the lead time; a receipt pays the lender from the receipt |
+| `a6da4bb`, `91b8b53` | Landing days in chat; second red team's seven findings |
+| `574a04f` | One rate rule for router and executor; plans flag needs-the-owner and cannot-run-today; orphaned lots are repayable |
+| `5fabd4a` web follow-up | Landing days, waiting-for-approval states, funding in transit, promised payments; mocks re-recorded |
+| `8358ae0` and the plan-flag merges | Third red team's probes; owner sees the operation's own reason; chat funding is the agent's act in every session |
 
-Both financial rules were re-derived by hand by a second agent before merging
-(`docs/research/early-pay-handcalc-2026-10-01.md`, `docs/research/dscr-handcalc-2026-10-01.md`). The early-pay
-check found one real fault (the router used an offer's discount as a standing rate), fixed before the merge.
+Earlier merges (1 Oct): the chat boundary, the computed scoreboard, the coverage proof, re-verification at
+commitment, current books, the clock, partial settlement, attacks through chat, credential-bound sessions,
+reconciliation of promised receipts, the alert button and opener, the early-pay rule (ADR-0007), DSCR on bullet
+loans (ADR-0008), the owner home and the chat capabilities. Both financial rules of 1 Oct were re-derived by hand
+by a second agent (`docs/research/early-pay-handcalc-2026-10-01.md`, `dscr-handcalc-2026-10-01.md`), and the
+forward-concession valuation of 3 Oct likewise (`docs/research/concession-valuation-handcalc-2026-10-03.md`).
 
-## 5. Decisions made in this phase that a new session must not undo
+The evidence (`services/api/evals/e2e/latest`, `latest_report.*`, `security/latest_report.*`) and the docx
+deliverables were regenerated for the document close-out branch `docs/audit-closeout`; if a later change moves a
+cash-derived figure, regenerate them again (section 6, step 6).
+
+## 5. Decisions made that a new session must not undo
 
 - Days stay absolute; the books close days before `as_of_day`. Nothing is re-based.
-- Receipts come only from the bank feed (`ReceivePayment` by SYSTEM with the bank-feed key). The clock never
-  assumes one arrived.
-- An overdue financed invoice repays its advance today in the projection (recourse).
-- The golden scenario has no outflows after day 47, so the proactive scene relies on the scenario event that adds
-  month-2 payroll (¥200,000, day 42) on day 25. It does not exist on day 0, so day-0 golden values are unchanged.
-- Coverage: words inside an obligation's source span are not exempt from the filler list. Do not widen the list
-  with words that can carry a commercial term.
-- Buyer-role scenario expectations live in the store, not the response.
-- ADR-0007 and its implementation notes: `C` is read from the projection; the early-pay leg of a package is priced
-  at the margin; an offer's discount is never a standing rate; an invoice under an early-pay commitment cannot also
-  be financed (conservative).
-- ADR-0008: level service for bullet term loans; never for a revolving credit line.
-- A cure runs only on the owner's click or direct "go ahead", is submitted as the AGENT, and the executor decides
-  the tier. The repay proposal is never made while a reserve breach is open.
-- The new chat read intents need the owner token; a caller with only the agent key gets "needs the owner's sign-in".
+- Receipts come only from the bank feed (or the owner). The clock never assumes one arrived, and never repays a
+  credit line.
+- `docs/FINANCIAL_SEMANTICS.md` is the contract for every quantity. `max_apr_bp` is a ceiling on what the agent
+  may borrow alone, tested on the effective annual cost; above it the owner approves explicitly (decided 3 Oct:
+  Tier 2; this closes the old D5). No code approves on the owner's behalf: an above-ceiling cure is queued and the
+  owner approves it as a second step.
+- Reserve, DSCR, leverage and the borrowing switch are hard for everyone at execution (admission); clean-down is
+  tested at plan level. The owner cannot waive a hard rule by approving.
+- "Go ahead" binds to the exact operations shown with the quoted cost as a ceiling. Free text executes only as a
+  closed affirmative command.
+- Forward concessions are valued on dated invoices issued in [today, today + H): the golden 12-month figures use 13
+  invoices. A cash-date rule for gains was tried and withdrawn.
+- Accepted terms are written onto invoices once, with a scope fixed at acceptance (ADR-0009). Funding is a dated lot
+  that lands after the lead time (ADR-0010).
+- ADR-0007 (early pay; an invoice under an early-pay agreement is never financed) and ADR-0008 (level service for
+  bullet loans, a reserve-coverage reading, never described as a bank covenant).
+- Coverage: words inside an obligation's source span are not exempt from the filler list; do not widen the list
+  with words that can carry a commercial term. A stated timing ("today", "tomorrow") is not accepted alone.
+- Buyer-role scenario expectations live in the store, not the response. A buyer's chat response carries the reply
+  and the session id only.
+- Wording to keep: "simulation", "screens the entered obligations only", "reserve-coverage reading" for the bullet
+  DSCR, "cheapest within the bounded search", "internally checkable chain". Do not claim bank-covenant compliance
+  or "safe by construction".
+- The chat read intents need the owner token; a caller with only the agent key gets "needs the owner's sign-in".
 
 ## 6. What to do next, in order
 
-Everything on the 1 Oct list is merged; `main` was fast-forwarded to `dev` at the end of 1 Oct. The gate at that
-commit: 4,044 backend tests passed, 26 skipped; scenarios 46/46 with 46 evidence chains VALID; attacks 182 with
-0 harm; web mock e2e 29 passed, live e2e 27 passed; `scripts/demo_run.py` exits 0. Evidence, the evaluation
-report, the security report and the three docx deliverables were regenerated at that commit.
-
-1. Confirm the baseline (section 1 commands), then `PYTHONUTF8=1 uv run --project services/api python
-   scripts/demo_run.py` (expect exit 0). For the web app: `E2E_TARGET=mock pnpm exec playwright test` and, if another
-   program holds port 8000, `E2E_API_PORT=8010 E2E_TARGET=live pnpm exec playwright test`.
-2. **Owner decisions pending** (section 8): whether the 15% APR cap gates invoice financing on its effective annual
-   rate (D5; today the day-34 cure is disclosed as 25.0% a year and flagged, not blocked); the licence; whether the
-   borrower file's ¥360,000 request (1.18×, below the 1.25× covenant) stays as an honest shortfall or is made smaller;
-   whether the video drops the capex scene (the current script does) or Scene 2 and the chat segment instead.
-3. If the web mocks drift from the API again: start the API on a free port and run `pnpm mocks:record` (see
+1. Read the three mission documents first: `docs/AGENT_MISSION.md`, `docs/CONTINUOUS_OPTIMIZATION.md` (the live
+   tracker; `docs/NEXT_FIXES.md` is history) and `docs/FINANCIAL_SEMANTICS.md`.
+2. Run the gate. From `services/api`: `SKIP_PERF_BENCH=1 uv run pytest -o addopts= -q` (about 9 minutes on
+   Windows; expect about 4,730 passed, 20 skipped). From the repo root, with `PYTHONUTF8=1`:
+   `uv run --project services/api python scripts/run_scenarios.py --inproc` (46/46),
+   `uv run --project services/api python scripts/demo_run.py` (exit 0, 14 ledger entries),
+   `cd services/api && uv run python -m app.security.attacks --report` (255 attacks, 0 with harm), and for the web
+   app `E2E_TARGET=mock pnpm exec playwright test` (31) and, if another program holds port 8000,
+   `E2E_API_PORT=8010 E2E_TARGET=live pnpm exec playwright test` (29). Scenario, attack and evaluation runs rewrite
+   tracked files under `services/api/evals/`; commit them only when the task is to refresh evidence.
+3. Open rows of the backlog (`docs/CONTINUOUS_OPTIMIZATION.md` section 1): R02 (a multi-leg plan is not one
+   transaction), R03 (a bank event is identified by its key only), R04 and R05 (unauthenticated intake is not
+   capped), R07 (a backfill for stores that hold commitments from before ADR-0009), F-FIN-10 (label the level DSCR
+   as a reserve-coverage reading on every screen), F6 (borrower-file approval), W01 (approval decision day and
+   landing day on queue rows), W02 (accepted), MW1 (several workers), and the uncertainty debt U-001 to U-012.
+4. If the web mocks drift from the API again: start the API on a free port and run `pnpm mocks:record` (see
    `apps/web/README.md`); never edit a mock by hand.
-4. Small items worth doing next: suggested chat prompts for the new capabilities (the recorded script now allows
-   it); an "AI-generated, for reference" label in the UI (listed as a gap in the compliance statements); S9 (make
-   status and alerts in chat owner-only, as the new read intents already are).
-5. Optional work (wave F) after that: named stresses, payment instrument, guarded supplier payment, recurring
-   outflows, Chinese server text, deployment.
+5. Small items worth doing next: an "AI-generated, for reference" label in the UI (a listed gap); suggested chat
+   prompts for the newer capabilities.
 6. After any change that moves a figure: scenarios, attack report, `scripts/evaluate.py`,
-   `scripts/build_deliverables.py --refresh-evidence`, commit the regenerated files, and fast-forward `main`.
+   `scripts/build_deliverables.py --refresh-evidence`, `scripts/verify_evidence.py` on each per-task chain, then
+   the documents that quote the figure, then commit the regenerated files.
+7. Optional work (wave F) only after the P0 and P1 rows are closed: named stresses, payment instrument, guarded
+   supplier payment, recurring outflows, Chinese server text, deployment.
 
 Known loose ends:
 
-- The EX01 evaluate benchmark is at or just over its 250 ms target on the Windows machine after the extra router
-  calls; re-measure on the Mac before deciding anything.
-- `/nl/opener` and `/clock/advance` answer 403 without the owner token where other owner routes answer 401; the
-  web client handles both.
-- `app/alerts/engine.py` imports `app.operations.log` for the repay alert's interest; it bends the module map
-  (alerts → domain, financial) without creating a cycle.
-- The approvals queue has no after-state for a pending item; the card shows none.
+- The EX01 evaluate benchmark is at or just over its 250 ms target on the Windows machine; re-measure on the Mac
+  before deciding anything.
+- `/nl/opener` and `/clock/advance` answer 403 without the owner token where other owner routes answer 401; the web
+  client handles both.
 - An over-cap Tier-2 offer is queued as pending and only refused when the owner approves it.
 - The alert cure search is greedy and can miss a multi-invoice cure.
 - Reconciliation reuses `SHORT_PAYMENT` for partial payments.
 - Supabase is at migration 0002; `alembic upgrade head` applies 0003. Confirm no migration is needed for the new
-  state fields before pointing the app at Postgres.
-- Audit items deferred to after the hackathon: S6, S7, S8, C13, F9. Medium items not scheduled: S5 (the
-  accept/counter threshold can be probed, now at 0.64%/0.65%), S9 (the agent key reads status and alerts through
-  chat; the new read intents are already owner-only), S10 (bind "go ahead" to the plan shown).
+  state fields (`lots`, `invoice_adjustments`, the invoice base fields) before pointing the app at Postgres; stored
+  states gain fields with defaults.
+- Audit items deferred to after the hackathon: S6, S7, S8 (the chain head is not anchored; the claim is
+  "internally checkable"), C13, F9. S5 (the accept/counter threshold can be probed; an authenticated buyer finds it to
+  1 bp) and S9 (the agent key reads protected labels through chat status replies) are open and reported, not
+  harmful in the suite.
 
 ## 7. Stop conditions
 
 - A task past 1.5× its estimate stops and reports.
-- If the proactive loop (steps 4 and 5) is not green by 9 Oct, ship only the alert with a button.
 - UI work never delays the video recording.
-- Optional features (named stresses, payment instrument, guarded supplier payment, recurring outflows, Chinese
-  server text, deployment) start only when waves A to D are closed.
+- Optional features start only when the P0 and P1 rows are closed.
 
 ## 8. What only the owner can do
 
 Team eligibility and registration (issue #10); the organiser email (issue #9, draft posted); team roster (#5);
-deployment region (#7); the licence for the LICENSE file; whether the 15% APR cap should gate invoice
-financing on its effective annual rate (D5: it would refuse the demo's 13-day cure at about 25% a year); deck branding; building the deck (outline only exists) and recording the video; the
-`[TEAM:]` placeholders in the documents.
+deployment region (#7); the licence for the LICENSE file; whether the borrower file's ¥360,000 request stays as an
+honest shortfall or is made smaller; whether the video drops the capex scene or Scene 2 and the chat segment;
+deck branding; building the deck (outline only exists) and recording the video; the `[TEAM:]` placeholders in the
+documents.
 
 ## 9. Useful commands
 
 ```bash
 cd services/api && uv run pytest -o addopts= -q                  # full suite with a summary line
-python3 scripts/run_scenarios.py --inproc                        # 37 chat scenarios (repo root)
+python3 scripts/run_scenarios.py --inproc                        # 46 chat scenarios (repo root)
 cd services/api && uv run python -m app.security.attacks --report
 uv run --project services/api python scripts/evaluate.py         # scoreboard rows
 git checkout -- services/api/evals                               # drop regenerated evidence
 ```
 
 Credentials in demo mode: owner `X-Owner-Token: demo-owner-token`, agent `X-Agent-Key: demo-agent-key`, bank feed
-`X-Bank-Feed-Key: demo-bank-feed-key`.
+`X-Bank-Feed-Key: demo-bank-feed-key`, buyer channel keys `X-Counterparty-Key: demo-buyer-1-key` (BUYER-1) and
+`demo-buyer-2-key` (BUYER-2).

@@ -238,8 +238,10 @@ def to_markdown(rep: dict[str, Any]) -> str:
                        [[r["id"], _yuan(r["need_fen"]), _yuan(r["router_cost_fen"]),
                          _yuan(r["brute_cost_fen"]) + ("" if r["brute_complete"] else " (budget hit)"),
                          _yuan(r["baseline_cost_fen"]), "yes" if r["optimal"] else "**no**",
-                         " + ".join(f"{a[0]} {a[1]} {_yuan(a[2])}{' ' + a[3] if a[3] else ''}"
-                                    f"{' →d' + str(a[4]) if a[4] else ''}" for a in r["router_actions"]) or "—",
+                         (" + ".join(f"{a[0]} {a[1]} {_yuan(a[2])}{' ' + a[3] if a[3] else ''}"
+                                     f"{' →d' + str(a[4]) if a[4] else ''}" for a in r["router_actions"]) or "—")
+                         + (" (needs the owner)" if r.get("router_needs_approval") else "")
+                         + (" (cannot run today)" if r.get("router_executable_now") is False else ""),
                          r.get("router_ms")] for r in d.get("rows", [])])
         L.append("")
     if "covenants" in s:

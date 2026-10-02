@@ -816,6 +816,9 @@ class ReceivePayment(_OpBase):
     kind: Literal["RECEIVE_PAYMENT"] = "RECEIVE_PAYMENT"
     receivable_id: str
     amount_fen: Fen = Field(gt=0)
+    # The bank's own reference for the credit (a feed id, a statement line). When present, a second receipt on the same
+    # receivable carrying the same reference is the same bank event under a new key and is refused, whatever its key.
+    bank_reference: str | None = Field(default=None, min_length=1, max_length=64)
 
 
 class GenerateBorrowerFile(_OpBase):
