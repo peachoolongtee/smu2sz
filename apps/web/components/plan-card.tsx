@@ -2,6 +2,7 @@
 
 import { useI18n } from "@/lib/i18n";
 import type { Displayed, FundingPlan } from "@/lib/types";import { CodeBadge } from "./badges";
+import { PlanNotes } from "./plan-notes";
 import { Badge, Card, Formula, TableWrap, tableCls, tdCls, thCls } from "./ui";
 
 /** A funding plan exactly as the router returned it: actions, priced cost lines with formulas, rejected candidates. */
@@ -38,6 +39,12 @@ export function PlanCard({
       }
     >
       <div className="space-y-4">
+        <PlanNotes
+          needsApproval={plan.needs_owner_approval}
+          approvalReason={plan.approval_reason}
+          executableNow={plan.executable_now}
+          notExecutableReason={plan.not_executable_reason}
+        />
         <TableWrap label={t("plan.actions")}>
           <table className={tableCls}>
             <caption className="sr-only">{t("plan.actions")}</caption>
@@ -81,6 +88,12 @@ export function PlanCard({
                   <span className="font-medium tabular-nums">{c.display}</span>
                 </div>
                 <Formula>{c.formula}</Formula>
+                <PlanNotes
+                  needsApproval={c.needs_owner_approval}
+                  approvalReason={c.approval_reason}
+                  executableNow={c.executable_now}
+                  notExecutableReason={c.not_executable_reason}
+                />
               </li>
             ))}
             <li className="flex items-baseline justify-between gap-3 bg-subtle px-3 py-2 font-semibold">

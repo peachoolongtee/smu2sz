@@ -494,6 +494,12 @@ export interface CostLine {
   fen: Fen;
   facility_id: string | null;
   formula: string;
+  /** The leg's effective annual cost is above the mandate's ceiling: the executor queues it for the owner. */
+  needs_owner_approval?: boolean;
+  approval_reason?: string;
+  /** False when the executor cannot run the leg today (an advance on an invoice that is not issued yet). */
+  executable_now?: boolean;
+  not_executable_reason?: string;
 }
 
 export interface RejectedCandidate {
@@ -515,6 +521,12 @@ export interface FundingPlan {
   marginal_facility_id: string | null;
   rejected: RejectedCandidate[];
   label: string;
+  /** Admissible but not autonomous: a leg is above the yearly cost ceiling, so the owner must approve it. `approval_reason` names each such leg. */
+  needs_owner_approval?: boolean;
+  approval_reason?: string;
+  /** False when some leg cannot run today (the invoice is not issued yet); `not_executable_reason` names each such leg. */
+  executable_now?: boolean;
+  not_executable_reason?: string;
 }
 
 export interface ConcessionValue {
@@ -785,6 +797,8 @@ export interface MenuRow {
   time_to_cash_display: string;
   covenant_effect: string;
   admissible: boolean;
+  /** The source's own tariff is above the yearly cost ceiling: any use of it needs the owner's approval. */
+  needs_owner_approval?: boolean;
   reason_codes: ViolationCode[];
   reason: string;
 }
@@ -809,7 +823,12 @@ export type ComparisonRow = Displayed<{
   total_fen: Fen;
   note: string;
   selected: boolean;
-}>;
+}> & {
+  needs_owner_approval?: boolean;
+  approval_reason?: string;
+  executable_now?: boolean;
+  not_executable_reason?: string;
+};
 
 export interface PlanRequest {
   need_fen?: Fen;
