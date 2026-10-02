@@ -96,9 +96,12 @@ def test_sections_cover_spec_7_8(after_draw):
     assert wk3.figures[4].fen - wk3.figures[2].fen == 36_000_000
     # leverage rises after the pro-forma draw; DSCR headroom against FAC-LINE's 1.25x. The pro-forma ¥360,000
     # guaranteed loan is a bullet term loan, serviced on a level basis (ADR-0008): DSCR 1.18x, headroom -0.07x
+    # (the ratio keeps the existing loan's fixed ¥45,000 service). Leverage is month-end debt, after the existing
+    # loan's ¥45,000 day-30 payment: before (1,455,000 + 150,000 line) / 1,080,000 = 1.486 -> 1.49 (was 1.53);
+    # pro forma + ¥360,000: 1,965,000 / 1,080,000 = 1.819 -> 1.82 (was 1.86)
     m1 = sec["covenant_headroom"].rows[0]
     assert m1.figures[0].text == "2.00×" and m1.figures[2].text == "−0.07×"
-    assert m1.figures[3].text == "1.53×" and m1.figures[4].text == "1.86×"
+    assert m1.figures[3].text == "1.49×" and m1.figures[4].text == "1.82×"
     assert bf.status == "PREPARED_NOT_SENT" and bf.lender_mocked is True
 
 

@@ -33,6 +33,13 @@ clock posts scheduled flows but no loan instalment or maturity. Three modules ho
 6. **Only a settled lot can be repaid**, and an unsettled advance still marks its invoice FINANCED (it is pledged
    from the request).
 
+7. **Existing debt follows the same rule.** A `DebtPosition` (a loan that predates the books) is paid on one
+   schedule, `app/financial/debts.py` (`next_payment_day`, `payment_every_days`, simple interest at `rate_bp` since
+   the last payment, the rest of the fixed service as principal). The projection posts the payments dated today or
+   later as DEBT_SERVICE outflows and lowers the debt by the principal; the clock pays the ones on the days it
+   closes, lowers `principal_fen`, moves `next_payment_day` and lists them in the ADVANCE_CLOCK payload
+   (`posted_debt_service`). Closing days then projecting gives the suffix of the earlier projection.
+
 ## Consequences
 
 - The day-34 cure requested on day 34 is cash on day 37; the UI and the chat say so. Its cost is unchanged

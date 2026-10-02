@@ -23,15 +23,16 @@ def month_cash(bf, month: int) -> int:
 
 def test_f5_equipment_file_deducts_the_purchase_by_default():
     # FAC-ETL lands 14 days after the request, so the defaulted spend day is day 14 and the ¥600,000 leaves cash
-    # on day 14: month-2 cash (day 60) is ¥661,855.38, not ¥1,261,855.38 (the audit's omitted-spend figure).
+    # on day 14: month-2 cash (day 60) is ¥571,855.38, not ¥1,171,855.38 (the audit's omitted-spend figure). It was
+    # ¥661,855.38 before the existing loan's payments were cash: less ¥45,000 on day 30 and ¥45,000 on day 60.
     store, _ = _store()
     default = build(store, day=0, **ETL)
     explicit = build(store, day=0, spend_day=14, **ETL)
     kept = build(store, day=0, **{**ETL, "use_of_proceeds": "Working capital"}, spend_day=None)
     # a working-capital file on an equipment loan is still an equipment purpose: the facility is purpose-bound
-    assert month_cash(default, 2) == month_cash(explicit, 2) == month_cash(kept, 2) == 66_185_538
+    assert month_cash(default, 2) == month_cash(explicit, 2) == month_cash(kept, 2) == 57_185_538
     assert next(f for f in store.get_state().facilities if f.id == "FAC-ETL").kind == FacilityKind.EQUIPMENT_TERM_LOAN
-    # (the audit's ¥1,261,855.38 was this figure plus the ¥600,000 that was never deducted)
+    # (the audit's omitted-spend figure was this one plus the ¥600,000 that was never deducted)
     # a working-capital file on a non-equipment facility is left alone: no purchase is invented
     ggl = month_cash(build(store, day=0, **GGL), 2)
     assert ggl == month_cash(build(store, day=0, **GGL, spend_day=None), 2)

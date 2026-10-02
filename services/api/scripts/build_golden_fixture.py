@@ -59,8 +59,9 @@ state = FinancialState(
     facilities=facilities,
     expected_orders=[ExpectedOrder(counterparty_id="BUYER-1", label="next quarter", start_day=92, end_day=182,
                                    amount_fen=40_000_000, firm=False)],
-    debts=[DebtPosition(id="D-EQUIP", facility_id=None, label="Existing equipment loan",
-                        principal_fen=150_000_000, monthly_debt_service_fen=4_500_000)],
+    debts=[DebtPosition(id="D-EQUIP", facility_id=None, label="Existing equipment loan (rate 0%: a fixture assumption)",
+                        principal_fen=150_000_000, monthly_debt_service_fen=4_500_000, rate_bp=0,
+                        payment_every_days=30, next_payment_day=30)],
     counterparties=[
         Counterparty(id="BUYER-1", name="Foshan Home Retail Co.", role="BUYER"),
         Counterparty(id="BUYER-2", name="Dongguan Office Supplies Ltd.", role="BUYER"),

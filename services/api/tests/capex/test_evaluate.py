@@ -51,26 +51,33 @@ def test_18_month_loan_rejected_on_dscr_in_month_1(result, g):
     assert v.formula and v.inputs["new_payment"] == "¥34,830.60"
 
 
-def test_36_month_loan_selected_and_holds_every_month(result, g):
+def test_36_month_loan_holds_dscr_but_breaches_the_reserve_on_its_first_payment(result, g):
     s = by_id(result)["loan_36m"]
     assert s.monthly_payment_fen == g["loan_36m"]["monthly_payment"] == 1814462
     assert s.total_interest_fen == g["loan_36m"]["total_interest"] == 5320614
     assert s.dscr_by_month[0].dscr.text == g["loan_36m"]["dscr_m1_3"] == "1.43"
     assert s.dscr_by_month[3].dscr.text == g["loan_36m"]["dscr_m4_on"] == "1.77"
     assert len(s.dscr_by_month) == 36 and all(m.passes for m in s.dscr_by_month)
-    assert s.feasible and s.result == "SELECTED" and s.violations == []
-    assert result.selected_id == "loan_36m" and result.selected_facility_id == "FAC-ETL"
+    # Liquidity: before the first instalment the books close at 400,000 − 340,000 − 120,000 − 45,000 (the day-30
+    # debt payment) + 420,000 (RCV-A, day 32) = 315,000; the first instalment on day 44 (14-day lead + 30) takes it
+    # to 315,000 − 18,144.62 = 296,855.38, below the 300,000 reserve the books keep without it
+    assert not s.feasible and s.result == "REJECTED"
+    assert [(v.code, v.day, v.observed) for v in s.violations] == [(ViolationCode.RESERVE_BREACH, 44, "¥296,855.38")]
+    assert result.selected_id == g["selected"] == "lease_48m" and result.selected_facility_id == "FAC-LEASE"
 
 
-def test_lease_admissible_but_dearer(result, g):
+def test_lease_selected_though_dearer(result, g):
     s = by_id(result)["lease_48m"]
     assert s.monthly_payment_fen == g["lease_48m"]["monthly_payment"] == 1442349
     assert s.total_interest_fen == g["lease_48m"]["total_interest"] == 9232732
     assert s.dscr_by_month[0].dscr.text == g["lease_48m"]["dscr_m1_3"]
     assert s.dscr_by_month[3].dscr.text == g["lease_48m"]["dscr_m4_on"]
-    assert s.feasible and s.result == "ADMISSIBLE"
-    assert s.extra_cost_vs_selected_fen == g["lease_minus_36m_interest"] == 3912118
-    assert "¥39,121.18" in s.note
+    # its first payment (day 40: 10-day lead + 30) leaves 315,000 − 14,423.49 = 300,576.51, above the reserve
+    assert s.feasible and s.result == "SELECTED" and s.violations == []
+    assert s.extra_cost_vs_selected_fen is None
+    loan = by_id(result)["loan_36m"]
+    assert s.total_interest_fen - loan.total_interest_fen == g["lease_minus_36m_interest"] == 3912118
+    assert "36-month term loan, 5.60% is rejected (RESERVE_BREACH)" in result.recommendation
 
 
 def test_leverage_financed_and_with_extension(result, g):
