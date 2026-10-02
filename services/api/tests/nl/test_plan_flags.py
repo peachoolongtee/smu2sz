@@ -93,13 +93,16 @@ def test_a_proposal_names_the_rate_and_ceiling_in_chinese(world):
     assert ops(Chat(client, "flag-zh-owner").say(f"批准 {aid}")) == [("SUBMIT_INVOICE_FOR_FINANCING", "EXECUTED")]
 
 
-def test_an_owner_session_is_not_promised_a_queue_it_will_not_get(world):
-    """The owner's own go-ahead is sent as the owner's request, which the executor does not queue: the proposal still
-    states the cost, rate and ceiling, but promises no APR-... wait."""
+def test_an_owner_session_is_promised_the_same_queue(world):
+    """Funding the agent plans is the agent's act whoever is in the chat: in an owner session the leg above the
+    ceiling waits for the owner's explicit approval too, and the proposal says so."""
     rt, client = world(SHORT_HOLD)
     r = Chat(client, "flag-own").say(GOAL["en"])
     assert "costs ¥801.99, which is 32.53% a year, above your 15.00% yearly ceiling" in r["reply"]
-    assert "APR-…" not in r["reply"] and "will wait for your approval" not in r["reply"]
+    assert "will wait for your approval (APR-…)" in r["reply"]
+    go = Chat(client, "flag-own").say("go ahead")
+    assert [o["status"] for o in go["operations"] if o["kind"] == "SUBMIT_INVOICE_FOR_FINANCING"] == ["PENDING_APPROVAL"]
+    assert len(rt.store.approvals()) == 1
 
 
 def test_a_plan_that_needs_no_one_says_nothing_about_approval(client, rt):
@@ -139,7 +142,7 @@ def test_the_compare_reply_shows_both_flags_in_words(world):
     # SHORT_HOLD has no gap on day 0 once the golden draws are made; ask on the books as they stand
     en = Chat(client, "cmp-sh").say(COMPARE["en"])["reply"]
     assert "It needs your approval: " in en and "32.53% a year, above your 15.00% yearly ceiling" in en
-    assert "legs above your ceiling will wait for your approval" not in en  # an owner session: no queue is promised
+    assert "legs above your ceiling will wait for your approval" in en  # the same queue in an owner session
     assert "its rate alone is above your 15.00% yearly ceiling, so any use of it needs your approval" in en
 
     rt, client = world(UNISSUED)

@@ -26,7 +26,7 @@ from app.borrower_file import BorrowerFileError, build
 from app.capex import CapexDisabled, CapexRequest, CapexResult, CapexStructure, evaluate_capex
 from app.capex.models import CHARGES_BASIS
 from app.config import get_settings
-from app.domain.models import Actor, GenerateBorrowerFile, Mode, OperationStatus
+from app.domain.models import GenerateBorrowerFile, Mode, OperationStatus
 from app.domain.money import BP_DENOM, Ratio, bp, fmt_pct, fmt_yuan
 from app.financial import EngineError, project
 from app.funding import compare, menu_view, plan
@@ -145,7 +145,7 @@ def compare_financing(ctx: NlContext) -> Turn:
         if committed.admissible and not committed.executable_now:
             lines.append(t(ctx, "Nothing was executed, and 'fund the gap' would not run this plan today.",
                            "未执行任何操作；今天回复“补足资金缺口”也不会执行该方案。"))
-        elif committed.admissible and committed.needs_owner_approval and ctx.requested_by != Actor.OWNER:
+        elif committed.admissible and committed.needs_owner_approval:
             lines.append(t(ctx, "Nothing was executed. If you say 'fund the gap', the legs above your ceiling will wait "
                                 "for your approval rather than run.",
                            "未执行任何操作。若您回复“补足资金缺口”，高于上限的步骤会等待您批准，而不会直接执行。"))

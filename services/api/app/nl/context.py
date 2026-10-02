@@ -132,10 +132,15 @@ class NlContext:
         key = f"nl:{self.session.id}:{scope}:{self._n}:{kind}"
         return "NL-" + hashlib.sha256(key.encode()).hexdigest()[:16], key
 
+    # Funding the agent plans and runs on a "go ahead" is the agent's act, whoever is in the chat: a leg above the
+    # mandate's ceiling therefore waits for the owner's explicit approval, in an owner session as on every other path.
+    AGENT_RUN_KINDS = frozenset({"DRAW_FACILITY", "SUBMIT_INVOICE_FOR_FINANCING", "REPAY_FACILITY"})
+
     def base(self, kind: str) -> dict[str, Any]:
         op_id, key = self.next_key(kind)
+        by = Actor.AGENT if kind in self.AGENT_RUN_KINDS else self.requested_by
         return {"op_id": op_id, "idempotency_key": key, "mandate_version": self.mandate().version,
-                "requested_by": self.requested_by, "day": self.day}
+                "requested_by": by, "day": self.day}
 
     def execute(self, op: Any) -> OperationResult:
         if op.day != self.day:  # built by this module only; a mismatch is a bug, not a user error
