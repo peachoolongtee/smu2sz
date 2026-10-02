@@ -30,13 +30,13 @@ from fractions import Fraction
 from app.domain.models import (
     Contingency,
     DayPoint,
-    DurationKind,
     Facility,
     FacilityKind,
     FacilityStatus,
     FinancialState,
     FundingAction,
     FundingActionKind,
+    InvoiceAdjustment,
     LedgerEvent,
     LedgerEventKind,
     Mode,
@@ -52,6 +52,16 @@ from app.financial.charges import fee_period_days, finance_invoice_charges, line
 from app.financial.errors import FundingActionError, ObligationError, UncommittedFacilityError
 from app.financial.fmt import day as fday
 from app.financial.fmt import pct, y
+from app.financial.invoices import (
+    InvoiceRef,
+    adjustment,
+    check_adjusting,
+    covers,
+    is_gain,
+    materialise,
+    recurring_receivable_id,
+    resolve_scope,
+)
 
 DEFAULT_EARLY_PAY_LEAD_DAYS = 2
 MONTH_DAYS = 30
@@ -61,11 +71,6 @@ MONTH_DAYS = 30
 INFLOW, OUTFLOW, SETTLE = 0, 1, 2
 
 
-def recurring_receivable_id(counterparty_id: str, issue_day: int) -> str:
-    """Id of the receivable a RecurringInvoice generates on `issue_day` (e.g. 'RI:BUYER-1:2')."""
-    return f"RI:{counterparty_id}:{issue_day}"
-
-
 # ---------------------------------------------------------------- internal records
 
 
@@ -73,11 +78,13 @@ def recurring_receivable_id(counterparty_id: str, issue_day: int) -> str:
 class _Rcv:
     id: str
     counterparty_id: str
-    face: int
+    face: int  # outstanding: the contractual face less what receipts have settled
     issue_day: int
     terms: int
     confirmed: bool
     generated: bool
+    contract: int  # the full contractual face (ADR-0009); a price adjustment is computed on it
+    applied: list[str] = field(default_factory=list)  # adjustment ids already in `contract` / `terms`
     notes: list[str] = field(default_factory=list)
     early: int = 0  # face settled before the due day (discounted or early-paid)
     financed: bool = False
@@ -159,7 +166,10 @@ class _Book:
 # ---------------------------------------------------------------- receivables and obligations
 
 
-def _receivables(state: FinancialState, issue_bound: int) -> dict[str, _Rcv]:
+def _receivables(state: FinancialState, issue_bound: int, mode: Mode = Mode.CONSERVATIVE) -> dict[str, _Rcv]:
+    """Open receivables at their contractual face and terms, and the recurring invoices issued up to
+    `issue_bound` with the state's accepted adjustments in scope written on them as the clock will write them
+    (ADR-0009). A contingent gain is never written by the clock: only the EXPECTED projection applies it."""
     out: dict[str, _Rcv] = {}
     for r in state.receivables:
         if r.status in ("SETTLED", "FAILED"):
@@ -167,9 +177,11 @@ def _receivables(state: FinancialState, issue_bound: int) -> dict[str, _Rcv]:
         if r.face_fen - r.settled_fen <= 0:
             continue
         out[r.id] = _Rcv(r.id, r.counterparty_id, r.face_fen - r.settled_fen, r.issue_day, r.terms_days, r.confirmed,
-                         False, financed=r.status == "FINANCED",
+                         False, r.face_fen, list(r.applied), financed=r.status == "FINANCED",
                          advance=r.advance_fen if r.status == "FINANCED" else 0,
                          advance_facility_id=r.advance_facility_id)
+        if r.applied:
+            out[r.id].notes.append(f"contractual terms as agreed ({', '.join(r.applied)})")
     for ri in state.recurring_invoices:
         if ri.every_days <= 0:
             raise ObligationError(f"recurring invoice for {ri.counterparty_id} has every_days <= 0")
@@ -178,18 +190,33 @@ def _receivables(state: FinancialState, issue_bound: int) -> dict[str, _Rcv]:
             rid = recurring_receivable_id(ri.counterparty_id, d)
             if rid in out:
                 raise ObligationError(f"duplicate recurring invoice {rid}")
-            out[rid] = _Rcv(rid, ri.counterparty_id, ri.face_fen, d, ri.terms_days, True, True)
+            out[rid] = _Rcv(rid, ri.counterparty_id, ri.face_fen, d, ri.terms_days, True, True, ri.face_fen)
             d += ri.every_days
+    adjs = [a for a in state.invoice_adjustments if mode == Mode.EXPECTED or not a.contingent_gain]
+    for r in out.values():
+        ref = InvoiceRef(r.id, r.counterparty_id, r.issue_day)
+        for a in adjs:
+            if a.id not in r.applied and covers(a, ref):
+                _adjust(r, a)
     return out
 
 
+def _adjust(r: _Rcv, a: InvoiceAdjustment) -> None:
+    """Apply one adjustment to an invoice on its contractual face; what it adds is also outstanding."""
+    face, terms, applied = materialise(r.contract, r.terms, [a])
+    added = face - r.contract
+    if a.days_delta:
+        sign = "+" if a.days_delta >= 0 else "−"
+        r.notes.append(f"terms {sign}{abs(a.days_delta)} days ({a.id})")
+    if a.price_bp:
+        r.notes.append(f"price {pct(bp(a.price_bp))} of {y(r.contract)} = {y(added)} ({a.id})")
+    r.contract, r.terms, r.face = face, terms, r.face + added
+    r.applied.extend(applied)
+
+
 def _is_gain(ob: Obligation) -> bool:
-    if ob.type == ObligationType.TERMS_EXTENSION:
-        return (ob.days_delta or 0) < 0
-    if ob.type == ObligationType.PRICE_ADJUSTMENT:
-        return (ob.rate_bp or 0) > 0
     # an immediate discount is an early receipt: the cash arrives only if the buyer performs
-    return ob.type == ObligationType.IMMEDIATE_DISCOUNT
+    return is_gain(ob)
 
 
 def _bookable(ob: Obligation, mode: Mode) -> bool:
@@ -199,49 +226,22 @@ def _bookable(ob: Obligation, mode: Mode) -> bool:
     return not (mode == Mode.CONSERVATIVE and ob.contingency == Contingency.CONTINGENT and _is_gain(ob))
 
 
-def _select_invoices(ob: Obligation, rcvs: dict[str, _Rcv]) -> list[_Rcv]:
-    """Invoices a terms or price change applies to: the named one, or the buyer's invoices issued on
-    or after the effective day (default 0), bounded by the duration."""
-    if ob.base.receivable_id is not None:
-        if ob.base.receivable_id not in rcvs:
-            raise ObligationError(f"{ob.id}: receivable {ob.base.receivable_id} not found or not open")
-        return [rcvs[ob.base.receivable_id]]
-    start = ob.effective_day if ob.effective_day is not None else 0
-    pool = sorted(
-        (r for r in rcvs.values() if r.counterparty_id == ob.counterparty_id and r.issue_day >= start),
-        key=lambda r: (r.issue_day, r.id),
-    )
-    d = ob.duration
-    if d.kind == DurationKind.ONE_OFF:
-        return pool[:1]
-    if d.kind == DurationKind.RECURRING_BOUNDED:
-        if d.end_day is not None:
-            pool = [r for r in pool if r.issue_day <= d.end_day]
-        if d.invoices is not None:
-            pool = pool[: d.invoices]
-        if d.end_day is None and d.invoices is None:
-            raise ObligationError(f"{ob.id}: bounded duration with neither invoices nor end_day")
-    return pool
-
-
 def _apply_terms_and_prices(obs: list[Obligation], rcvs: dict[str, _Rcv]) -> None:
+    """Obligations under evaluation, applied on top of the contractual invoices with the same functions the
+    clock and the executor write with (ADR-0009 §4-5). The invoices a change covers are chosen by
+    `app.financial.invoices.resolve_scope`: the named one, or the buyer's invoices issued on or after the
+    effective day (default 0), bounded by the duration."""
     for ob in obs:
-        if ob.type == ObligationType.TERMS_EXTENSION:
-            if ob.days_delta is None:
-                raise ObligationError(f"{ob.id}: terms extension without days_delta")
-            for r in _select_invoices(ob, rcvs):
-                if r.terms + ob.days_delta < 0:
+        if ob.type not in (ObligationType.TERMS_EXTENSION, ObligationType.PRICE_ADJUSTMENT):
+            continue
+        check_adjusting(ob)
+        a = adjustment(ob, resolve_scope(ob, (InvoiceRef(r.id, r.counterparty_id, r.issue_day)
+                                              for r in rcvs.values())))
+        for r in rcvs.values():
+            if covers(a, InvoiceRef(r.id, r.counterparty_id, r.issue_day)):
+                if r.terms + a.days_delta < 0:
                     raise ObligationError(f"{ob.id}: terms of {r.id} would become negative")
-                r.terms += ob.days_delta
-                sign = "+" if ob.days_delta >= 0 else "−"
-                r.notes.append(f"terms {sign}{abs(ob.days_delta)} days ({ob.id})")
-        elif ob.type == ObligationType.PRICE_ADJUSTMENT:
-            if ob.rate_bp is None:
-                raise ObligationError(f"{ob.id}: price adjustment without rate_bp")
-            for r in _select_invoices(ob, rcvs):
-                adj = post(bp(ob.rate_bp) * r.face)
-                r.notes.append(f"price {pct(bp(ob.rate_bp))} of {y(r.face)} = {y(adj)} ({ob.id})")
-                r.face += adj
+                _adjust(r, a)
 
 
 def _early_pay_lead(state: FinancialState, counterparty_id: str) -> int:
@@ -675,7 +675,7 @@ def _check_limits(state: FinancialState, book: _Book) -> None:
 def _build(
     state: FinancialState, obligations: list[Obligation], actions: list[FundingAction], mode: Mode, issue_bound: int
 ) -> tuple[_Book, dict[str, _Rcv]]:
-    rcvs = _receivables(state, issue_bound)
+    rcvs = _receivables(state, issue_bound, mode)
     book = _Book()
     obs = [ob for ob in obligations if _bookable(ob, mode)]
     _apply_terms_and_prices(obs, rcvs)

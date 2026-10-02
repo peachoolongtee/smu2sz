@@ -73,9 +73,13 @@ class Runtime:
         try:
             from app.verifier import evaluate_verdict
 
+            # ADR-0009: never apply a commitment twice. Terms already written into the state (adjustments, or
+            # invoices carrying them) are not evaluated again as a candidate.
+            written = {a.id for a in state.invoice_adjustments} | {i for r in state.receivables for i in r.applied}
+            obligations = [o for o in c.obligations if f"{c.id}:{o.id}" not in written]
             offer = CompiledOffer(offer_id=f"REVERIFY-{c.id}", counterparty_id=c.counterparty_id,
                                   doc_ids=sorted({sp.doc_id for o in c.obligations for sp in o.spans}),
-                                  received_day=now, status=CompileStatus.COMPILED, obligations=list(c.obligations),
+                                  received_day=now, status=CompileStatus.COMPILED, obligations=obligations,
                                   compiler="whatif-reverify", prompt_version="reverify-v1")
             others = [x for x in self.store.commitments() if x.id != c.id]
             return evaluate_verdict(offer, state, mandate, trusted_owner_key_hex=self.owner_key_hex, day=now,

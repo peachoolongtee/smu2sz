@@ -76,6 +76,8 @@ from app.domain.models import (
 )
 from app.domain.money import bp, fmt_yuan, post
 from app.domain.ports import LedgerStore
+from app.financial import invoices
+from app.financial.errors import EngineError
 from app.mandate import check_validity, tier_for
 from app.operations.charges import finance_invoice_charges, line_interest, upfront_fee
 from app.operations.log import (
@@ -363,10 +365,14 @@ class Executor:
             kept = [fc for fc in state.forward_concessions if fc.commitment_id != c.id]
             removed = sum(fc.value_fen for fc in state.forward_concessions if fc.commitment_id == c.id)
             self._store.put_commitment(revoked)
-            if len(kept) != len(state.forward_concessions):
-                self._store.put_state(_bump(state, forward_concessions=kept))
+            # ADR-0009 §8: remaining adjustments go; invoices already issued keep their contractual terms
+            after = invoices.revoke(state, c.id)
+            dropped = len(state.invoice_adjustments) - len(after.invoice_adjustments)
+            if len(kept) != len(state.forward_concessions) or dropped:
+                self._store.put_state(_bump(after, forward_concessions=kept))
+            extra = f"; {dropped} invoice adjustment(s) removed" if dropped else ""
             return done(EXECUTED, f"Commitment {c.id} revoked by the owner ({c.status.value} -> REVOKED); "
-                                  f"forward concession {fmt_yuan(removed)} removed")
+                                  f"forward concession {fmt_yuan(removed)} removed{extra}")
 
     def circuit_open(self, counterparty_id: str) -> bool:
         return self._recent_refusals(counterparty_id, self._clock()) >= CIRCUIT_THRESHOLD
@@ -840,10 +846,19 @@ class Executor:
             c = transition(c, CommitmentStatus.ACTIVE, ctx.now)
         except CommitmentError as exc:
             raise _refuse(Code.PRECONDITION_FAILED, str(exc)) from exc
+        # ADR-0009: terms and price changes become invoice adjustments, scope fixed now, written on issued invoices
+        try:
+            state = invoices.accept(ctx.state, c)
+        except EngineError as exc:
+            raise _refuse(Code.PRECONDITION_FAILED, f"Commitment {c.id} cannot be written onto invoices: {exc}",
+                          commitment_id=c.id) from exc
         fc = ForwardConcession(id=f"FC-{c.id}", counterparty_id=c.counterparty_id, value_fen=c.forward_value_fen,
                                commitment_id=c.id, label=f"Commitment {c.id} on offer {c.offer_id} v{c.offer_version}")
-        state = _bump(ctx.state, forward_concessions=[*ctx.state.forward_concessions, fc])
-        return _Effect(f"Commitment {c.id} is ACTIVE; forward concession {fmt_yuan(c.forward_value_fen)} booked",
+        state = _bump(state, forward_concessions=[*state.forward_concessions, fc])
+        written = [r.id for r in state.receivables
+                   if any(a.startswith(f"{c.id}:") for a in r.applied)]
+        note = f"; accepted terms written on {', '.join(written)}" if written else ""
+        return _Effect(f"Commitment {c.id} is ACTIVE; forward concession {fmt_yuan(c.forward_value_fen)} booked{note}",
                        state=state, commitment=c, nonce=c.nonce)
 
     def _counter(self, op: CounterOffer) -> _Effect:
