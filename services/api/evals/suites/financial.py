@@ -130,7 +130,7 @@ def compute() -> dict[str, tuple[Any, str]]:
     shortening = ext.model_copy(update={"id": "EVAL-SHORT", "days_delta": -15})
     put("extension_shortening_gain_12m",
         lambda: value_concessions([shortening], state, rate, "eval", m.forward_concession_horizon_days)[0].value_fen,
-        "financial.value_concessions(shortening): a gain counts only on cash inside the window")
+        "financial.value_concessions(shortening): the mirror of the extension")
 
     # EX01 through the compiler (cache) and the verifier (spec §6.5, §7.6)
     ex01 = compile_offer(offer_documents("EX01_PACKAGE"), "BUYER-1")
@@ -179,8 +179,11 @@ def compute() -> dict[str, tuple[Any, str]]:
         "financial.value_concessions(Option B price adjustment).per_invoice_fen")
     put("counter_b_price_gain_12m",
         lambda: value_concessions([pa], state, rate, "eval", m.forward_concession_horizon_days)[0].value_fen,
-        "financial.value_concessions(Option B price adjustment): only the invoices paid inside the window")
-    put("counter_b_net_12m", lambda: opt["Option B"].supplier_cost_fen, "verifier EX01 Option B supplier_cost_fen")
+        "financial.value_concessions(Option B price adjustment): the same 13 invoices as the extension")
+    put("counter_b_net_12m",
+        lambda: sum(cv.value_fen for cv in value_concessions(
+            list(opt["Option B"].obligations), state, rate, "eval", m.forward_concession_horizon_days)),
+        "financial.value_concessions(Option B): extension + price adjustment, unfloored")
 
     # EX02: line + partial early pay at the offered 1.5%
     ex02 = compile_offer(offer_documents("EX02_EARLY_1_5"), "BUYER-1")

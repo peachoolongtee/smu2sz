@@ -125,8 +125,7 @@ def test_ex01_counter_b(offer_id, g):
     assert b.text == "60-day terms accepted with a 0.45% price adjustment on future invoices, no rebate."
     assert f"¥{g['counter_b_price_adj_per_invoice'] // 100:,}.00 per invoice" in b.formula
     assert "¥1,871.30" in b.formula
-    # The price gain counts only on the invoices whose cash is inside the window (11 of the 13): a net cost.
-    assert b.supplier_cost_fen == g["counter_b_net_12m"]
+    assert b.supplier_cost_fen == 0 and g["counter_b_net_12m"] < 0  # the price adjustment more than covers the cost
 
 
 def _normalise(x: Any, ids: set[str]) -> Any:
@@ -207,7 +206,7 @@ def test_ex05_accepts_net_firm_gain(g):
     op, op_v = _by_type(b, ObligationType.OPERATIONAL_CONCESSION)
     assert op.amount_fen == 15_000 and op.base.events_per_year == 52 and op_v.value_fen == 780_000
     ext, ext_v = _by_type(b, ObligationType.TERMS_EXTENSION)
-    assert ext.days_delta == -15 and ext_v.value_fen == g["extension_shortening_gain_12m"]
+    assert ext.days_delta == -15 and ext_v.value_fen == g["extension_shortening_gain_12m"] == -g["extension_committed_12m"]
     assert v.forward_concession_total_fen == 0  # a net FIRM gain adds nothing to the ledger
 
 

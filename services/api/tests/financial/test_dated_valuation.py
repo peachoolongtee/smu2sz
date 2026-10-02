@@ -3,12 +3,13 @@
 Every reference figure is hard-coded from docs/research/concession-valuation-handcalc-2026-10-03.md (tables of
 parts 3, 4, 5, 6, 8), under its row label; nothing is imported from scripts/handcalc_concessions.py.
 
-Two places where the decided rules differ from the document's tables, both stated at the row:
-- the window is half-open, W = [today, today + H): the document's closed window counts the day-362 invoice at
-  H = 362 (row P362); the half-open window does not (12 invoices, not 13);
-- a GAIN counts only if its cash, the invoice's due day, is also inside W (rule 4, the answer to the document's
-  objection 1). The document's gain rows (parts 3.3 mirror and 4) are by issue day; the gain tests below say
-  how many invoices fall due inside W.
+One place where the decided rule differs from the document's tables, stated at the row: the window is half-open,
+W = [today, today + H). The document's closed window counts the day-362 invoice at H = 362 (row P362); the
+half-open window does not (12 invoices, not 13).
+
+Costs and gains are dated the same way, on the invoice's ISSUE day. The document's objection 1 (a gain issued
+inside W whose cash arrives after W still offsets) is accepted as the window-edge convention and pinned by
+test_gain_issued_inside_w_but_paid_outside_still_offsets.
 """
 
 from __future__ import annotations
@@ -109,22 +110,28 @@ def test_price_cut_tables(label, today, horizon, kw, _a, _b, cut_45bp):
 
 @pytest.mark.parametrize(
     ("horizon", "gain_045", "gain_1pct"),
-    [
-        # +p% is a gain: only the invoices whose cash (issue + 45) is inside [0, H) count (rule 4).
-        (90, -378_000, -840_000),        # issues 2, 32 (dues 47, 77); 62 falls due on 107
-        (180, -945_000, -2_100_000),     # issues 2..122; 152 falls due on 197
-        (365, -2_079_000, -4_620_000),   # issues 2..302 (11); 332 and 362 fall due on 377, 407
-        (730, -4_347_000, -9_660_000),   # issues 2..662 (23); 692 and 722 fall due on 737, 767
+    [  # parts 4.1 and 4.2, rows P90, P180, P365, P730: a gain is dated by issue day, like a cost
+        (90, -567_000, -1_260_000),
+        (180, -1_134_000, -2_520_000),
+        (365, -2_457_000, -5_460_000),
+        (730, -4_725_000, -10_500_000),
     ],
 )
-def test_price_gain_counts_only_cash_inside_the_window(horizon, gain_045, gain_1pct):
+def test_price_gain_tables_by_issue_day(horizon, gain_045, gain_1pct):
     assert value(ob("PA", ObligationType.PRICE_ADJUSTMENT, rate_bp=45), STATE0, R2, horizon) == gain_045
     assert value(ob("PA", ObligationType.PRICE_ADJUSTMENT, rate_bp=100), STATE0, R2, horizon) == gain_1pct
 
 
-def test_shortening_gain_counts_only_cash_inside_the_window():
-    # -15 days on 45-day terms: due = issue + 30, so issues 2..332 (12 invoices); the day-362 invoice falls due on 392.
-    assert value(extension(-15), STATE0, R2, 365) == -2_245_562  # 12 x 13,660,500/73 posted once; part 3.2 N=12
+def test_shortening_is_the_mirror_of_the_extension():
+    # part 3.3: delta = -15, perpetual H = 365, N = 13, golden rate: -2,432,692 (the mirror of +2,432,692)
+    assert value(extension(-15), STATE0, R2, 365) == -2_432_692
+    assert value(extension(-15), STATE0, R1, 365) == -2_243_836
+
+
+def test_counter_b_matched_pair_on_the_same_invoices():
+    """Extension +15 d and +0.45% price on the same 13 invoices: 2,432,692 - 2,457,000 = -24,308 fen (-243.08 yuan)."""
+    pair = [extension(15), ob("PA", ObligationType.PRICE_ADJUSTMENT, rate_bp=45)]
+    assert sum(cv.value_fen for cv in value_concessions(pair, STATE0, R2, "test", 365)) == -24_308
 
 
 def test_identical_invoice_sets_give_identical_values():
@@ -137,7 +144,7 @@ def test_identical_invoice_sets_give_identical_values():
             assert value(extension(15, duration=BOUND, end_day=10_000), STATE0, rate, horizon) == perpetual
 
 
-# ---------------------------------------------------------------- F-FIN-01 and rule 4 through the cap
+# ---------------------------------------------------------------- F-FIN-01 and the window edge through the cap
 
 
 def _cap_breached(price_obligation) -> tuple[bool, int]:
@@ -156,24 +163,25 @@ def test_ffin01_gain_from_day_1000_is_worth_nothing_and_the_cap_is_breached():
     assert gain == 0 and breached  # part 5, row "F-FIN-01": 600,000 against 500,000
 
 
-def test_gain_issued_inside_w_but_paid_outside_does_not_offset():
-    """Objection 1 / rule 4: firm +1% from day 362. The invoice is issued on day 362 (inside W) and paid on
-    day 407 (outside): the gain is not there to offset the rebate. The document's part 5 row counts -420,000
-    and passes; the decided rule gives 0 and a breach by 100,000 fen."""
+def test_gain_issued_inside_w_but_paid_outside_still_offsets():
+    """Window-edge convention (derivation objection 1, accepted): firm +1% from day 362. The invoice is issued
+    on day 362, inside W, and paid on day 407, outside it. Gains are dated by issue day like costs, so the gain
+    of -420,000 is counted: 600,000 - 420,000 = 180,000 passes the 500,000 cap (part 5, row "from day 362")."""
     breached, gain = _cap_breached(ob("PA", ObligationType.PRICE_ADJUSTMENT, rate_bp=100, effective_day=362))
-    assert gain == 0 and breached
+    assert gain == -420_000 and not breached
+    breached, gain = _cap_breached(ob("PA", ObligationType.PRICE_ADJUSTMENT, rate_bp=100, effective_day=363))
+    assert gain == 0 and breached  # part 5, row "from day 363": no invoice issued inside W
 
 
-def test_firm_gain_with_cash_inside_w_still_offsets():
-    # from day 100: issues 122..302 fall due by 347 (7 invoices, 420,000 each); the document counts 9 by issue day
+def test_firm_gain_inside_w_offsets():
     breached, gain = _cap_breached(ob("PA", ObligationType.PRICE_ADJUSTMENT, rate_bp=100, effective_day=100))
-    assert gain == -2_940_000 and not breached
+    assert gain == -3_780_000 and not breached  # part 5, row "from day 100, FIRM": N = 9
 
 
 def test_contingent_gain_never_offsets():
     breached, gain = _cap_breached(
         ob("PA", ObligationType.PRICE_ADJUSTMENT, rate_bp=100, effective_day=100, contingency=Contingency.CONTINGENT))
-    assert gain == -2_940_000 and breached  # part 5, row "NOT firm": the existing FIRM-only netting is unchanged
+    assert gain == -3_780_000 and breached  # part 5, row "NOT firm": the existing FIRM-only netting is unchanged
 
 
 # ---------------------------------------------------------------- properties

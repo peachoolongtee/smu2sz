@@ -112,12 +112,9 @@ ca_line_draw = Y(360000) - (ca_face - F(out["counter_a_discount"], 100))
 out["counter_a_total"] = out["counter_a_discount"] + fen(ca_line_draw * LINE_RATE * 32 / 365)
 # Counter B
 out["counter_b_price_adj_per_invoice"] = fen(Y(420000) * bp(45))
-# Rule 4: a gain counts only if its cash (the invoice's due day) is also inside W. A cost counts on the issue day.
-TERMS = 45                                               # golden recurring invoice terms
-shortening_days = [d for d in issue_days if d + TERMS - DELTA < TODAY + HORIZON]   # 30-day terms: 2 .. 332
-out["extension_shortening_gain_12m"] = -fen(len(shortening_days) * per_exact * if_all_in)
-price_gain_days = [d for d in issue_days if d + TERMS + DELTA < TODAY + HORIZON]   # Option B's 60-day terms: 2 .. 302
-out["counter_b_price_gain_12m"] = -len(price_gain_days) * out["counter_b_price_adj_per_invoice"]
+# A gain is dated like a cost: on the invoice's ISSUE day (so the same 13 invoices). Shortening mirrors the extension.
+out["extension_shortening_gain_12m"] = -out["extension_committed_12m"]
+out["counter_b_price_gain_12m"] = -n_inv * out["counter_b_price_adj_per_invoice"]
 out["counter_b_net_12m"] = out["extension_committed_12m"] + out["counter_b_price_gain_12m"]
 
 # 7.6 covenants (exact comparisons; display 2 dp)

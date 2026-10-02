@@ -16,7 +16,9 @@ Dating (rules fixed by the owner, 3 Oct 2026):
 - Terms extension of delta days: Σ face × delta × r / 365 over those invoices, rounded once at the end.
   Price adjustment p: −Σ post(p × face) (each invoice is posted on its own, because the price lands on the
   invoice).
-- A cost counts on the issue day. A gain counts only if its cash (the invoice's due day) is also inside W.
+- A cost and a gain are dated the same way: on the ISSUE day. A gain issued inside W whose cash arrives just
+  after W still counts (the window-edge convention, derivation objection 1); a gain whose invoices are all
+  issued outside W is worth 0 (F-FIN-01).
 """
 
 from __future__ import annotations
@@ -84,10 +86,9 @@ def _invoice_face(ob: Obligation, state: FinancialState, rec: RecurringInvoice |
 
 @dataclass(frozen=True, slots=True)
 class DatedInvoice:
-    """One invoice of an obligation's scope: the day it is issued, the day its cash is due, its face."""
+    """One invoice of an obligation's scope: the day it is issued and its face."""
 
     issue_day: int
-    due_day: int
     face_fen: int
 
 
@@ -144,18 +145,16 @@ def scoped_invoices(ob: Obligation, state: FinancialState, horizon_days: int) ->
 
     With no recurring invoice and no named receivable, a ONE_OFF or count-bounded obligation with a stated
     base amount is that many undated invoices of that amount, issued on max(effective day, today).
-    The due day is issue + terms + the obligation's own `days_delta`.
     """
     today, hi = window(state, horizon_days)
     rec = _recurring(state, ob.counterparty_id)
     _check_scope(ob, rec)
-    delta = ob.days_delta if ob.type == ObligationType.TERMS_EXTENSION and ob.days_delta else 0
     named = ob.base.receivable_id is not None
     if not named and rec is None:
         assert ob.base.amount_fen is not None
         n = 1 if ob.duration.kind == DurationKind.ONE_OFF else (ob.duration.invoices or 0)
         day = max(today, ob.effective_day or 0)
-        return [] if day >= hi else [DatedInvoice(day, day + delta, ob.base.amount_fen)] * n
+        return [] if day >= hi else [DatedInvoice(day, ob.base.amount_fen)] * n
     start = max(ob.effective_day or 0, today)
     scope = scope_at(state, ob if named else ob.model_copy(update={"effective_day": start}))
     if scope.receivable_ids is not None:
@@ -164,28 +163,19 @@ def scoped_invoices(ob: Obligation, state: FinancialState, horizon_days: int) ->
         for rid in scope.receivable_ids:
             if rid in issued:
                 r = issued[rid]
-                issue, terms, face = max(r.issue_day, today), r.terms_days, r.face_fen
+                issue, face = max(r.issue_day, today), r.face_fen
             elif rec is not None and rid.startswith("RI:"):
-                issue, terms, face = int(rid.rsplit(":", 1)[1]), rec.terms_days, rec.face_fen
+                issue, face = int(rid.rsplit(":", 1)[1]), rec.face_fen
             else:
                 raise ObligationError(f"{ob.id}: receivable {rid} not found")
             if today <= issue < hi:
-                out.append(DatedInvoice(issue, issue + terms + delta, face))
+                out.append(DatedInvoice(issue, face))
         return out
     assert rec is not None
     lo = max(start, scope.from_issue_day or 0)
     top = hi if scope.until_issue_day is None else min(hi, scope.until_issue_day + 1)
-    return [DatedInvoice(day, day + rec.terms_days + delta, rec.face_fen)
+    return [DatedInvoice(day, rec.face_fen)
             for day in recurring_issue_days(rec, lo, top)]
-
-
-def _counted(invoices: list[DatedInvoice], gain: bool, state: FinancialState, horizon_days: int) -> list[DatedInvoice]:
-    """A cost counts on the issue day (already inside W). A gain counts only if its cash, the due day, is
-    inside W too: a gain whose money arrives after the window is not there to offset anything."""
-    if not gain:
-        return invoices
-    lo, hi = window(state, horizon_days)
-    return [i for i in invoices if lo <= i.due_day < hi]
 
 
 def _span(invoices: list[DatedInvoice], state: FinancialState, horizon_days: int) -> str:
@@ -202,7 +192,7 @@ def _terms_extension(
     delta = ob.days_delta
     rec = _recurring(state, ob.counterparty_id)
     face = _invoice_face(ob, state, rec)
-    counted = _counted(scoped_invoices(ob, state, horizon_days), delta < 0, state, horizon_days)
+    counted = scoped_invoices(ob, state, horizon_days)
     value = post(sum((Fraction(i.face_fen) * delta * rate / DAYS_PER_YEAR for i in counted), Fraction(0)))
     kind = "shortening (gain)" if delta < 0 else "terms extension priced as a loan"
     return ConcessionValue(
@@ -221,7 +211,7 @@ def _price_adjustment(ob: Obligation, state: FinancialState, horizon_days: int) 
     rec = _recurring(state, ob.counterparty_id)
     face = _invoice_face(ob, state, rec)
     rate = bp(ob.rate_bp)
-    counted = _counted(scoped_invoices(ob, state, horizon_days), ob.rate_bp > 0, state, horizon_days)
+    counted = scoped_invoices(ob, state, horizon_days)
     # Each invoice is posted on its own (the price lands on the invoice): value = −Σ post(p × face).
     value = -sum((post(rate * i.face_fen) for i in counted), 0)
     return ConcessionValue(

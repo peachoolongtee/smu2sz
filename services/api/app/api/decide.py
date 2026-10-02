@@ -43,7 +43,7 @@ from app.domain.models import (
 )
 from app.domain.money import fmt_pct, fmt_yuan, post
 from app.egress import AllowedValue, ProtectedSet, allowed_for_counter, guard
-from app.financial import EngineError, project
+from app.financial import EngineError, extension_pro_forma, project
 from app.funding import (
     break_even_discount,
     compare,
@@ -269,7 +269,9 @@ def router_plan() -> dict:
     expected = plan(books.state, books.with_([]), mandate, basis="EXPECTED") if get_settings().features.expected_plans else None
     rate, fid = marginal_cost(state, mandate)
     d, be_bp = break_even_discount(state, mandate)
-    bases = extension_cost_bases(state, _extension_probe(state), mandate)
+    probe = _extension_probe(state)
+    bases = extension_cost_bases(state, probe, mandate)
+    pro_forma = extension_pro_forma(probe, state, rate.value, mandate.forward_concession_horizon_days)
     fac = {f.id: f for f in state.facilities}
     menu = []
     for r in menu_view(state, mandate, need_fen=committed.need_fen or None):
@@ -295,7 +297,7 @@ def router_plan() -> dict:
             "break_even_bp": be_bp, "break_even_display": fmt_pct(d.value),
             "break_even_formula": "d / (1 − d) < c, c = marginal cost share for 30 days → d < c / (1 + c)",
             "excluded_note": "The credit line is excluded: its 30-day clean-down rules out a permanent need.",
-            "extension_extra_receivables_fen": post(Fraction(15 * 12 * (state.recurring_invoices[0].face_fen if state.recurring_invoices else 0), 365)),
+            "extension_extra_receivables_fen": post(pro_forma.extra_debt) if pro_forma else 0,
             "extension_per_invoice_fen": committed_b.per_invoice_fen if committed_b and committed_b.per_invoice_fen else 0,
             "extension_committed_12m_fen": committed_b.value_fen if committed_b else 0,
             "extension_notional_line_12m_fen": notional.value_fen if notional else 0,
