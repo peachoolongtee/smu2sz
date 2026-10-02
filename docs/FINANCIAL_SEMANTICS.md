@@ -25,7 +25,7 @@ half-up to the fen once, where the cash moves (ADR-0002).
 | --- | --- |
 | An invoice has one contractual face and one due day, read by every module. Accepted terms or price changes are written onto the invoice once: at acceptance for an issued invoice, at issue for a future one. | Done (3 Oct) |
 | A receipt reduces the contractual face. Nothing is ever recomputed on the remaining balance. | Done (3 Oct) |
-| The scope of a finite agreement ("this invoice", "the next 3 invoices", "until day D") is fixed at acceptance as a list of invoice ids or an issue-day range. Settling an invoice never moves the scope to another invoice. A finite agreement ends when its last invoice is issued. | Done (3 Oct) |
+| The scope of a finite agreement ("this invoice", "the next 3 invoices", "until day D") is fixed at acceptance as a list of invoice ids or an issue-day range. Settling an invoice never moves the scope to another invoice. An unnamed scope never starts before today. A finite agreement ends, and its forward concession is released, when every invoice in its scope is paid. | Done (3 Oct) |
 | An invoice can be financed only while it is open, confirmed, not under an early-payment agreement, and only up to the advance rate of its **outstanding** face, with the cash landing before its due day. | Done (3 Oct) |
 | An early-payment discount is earned only by a receipt on or before the promised day. A later receipt of the same amount is a plain receipt; the difference stays due. | Done (3 Oct) |
 

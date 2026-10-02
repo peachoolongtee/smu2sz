@@ -4,7 +4,7 @@ Live document of the continuous technical owner (`docs/AGENT_MISSION.md`). Updat
 quantity are in `docs/FINANCIAL_SEMANTICS.md`. Audit ids (A01…, F-FIN-…, S-…, F1…) refer to
 `docs/research/independent-principal-audit-2026-10-03.md` and its three working papers.
 
-Last updated: 3 Oct 2026, after the plan-binding, valuation and funding-lots merges.
+Last updated: 3 Oct 2026, after three red-team rounds; backend 4,731 passed; web mock e2e 31, live 29.
 
 ## 1. Open findings
 
@@ -44,19 +44,25 @@ Status: OPEN, IN PROGRESS (branch named), DONE (merged to `dev`, date).
 | RT1-1 | P0 | A receipt on a financed invoice repays the whole advance from the owner's cash; 1 fen took cash negative and reopened the invoice | probe `p03` | subagent | A08 | Very high | S | DONE 3 Oct | p03 sequence: cash never falls on a receipt; invoice stays FINANCED until cleared |
 | RT1-2 | P0 | Agent-key refusals opened a buyer's circuit and blocked bank receipts; a refused key was burnt | probe `p01` | owner | | High | S | DONE 3 Oct | `tests/operations/test_circuit_scope.py` |
 | RT1-3 | P1 | A price cut could take an invoice below its settled amount | red team suggestion, confirmed in code | owner | | Medium | S | DONE 3 Oct | `test_a_price_cut_cannot_take_an_invoice_below_what_is_already_settled` |
-| R08 | P2 | `RequestOwnerApproval`: caller's free text becomes the reason the owner sees; `payload_op_id` need not be unique | red team suggestion, not reproduced | owner | | Medium | S | OPEN | The owner sees the operation's own description, never caller text; ambiguous op ids refused |
-| RT2 | P0 | Second fresh red team, aimed at the seams of the 3 Oct rewrites: seven reproduced findings (probes in `docs/research/redteam-2026-10-03b/`) | red-team round b | subagent | | Very high | M | IN PROGRESS `fix/redteam-b` | Each probe prints held; `tests/operations/test_redteam_b.py` |
-| RT2-1 | P0 | An invoice under an early-pay agreement could be financed; any receipt before the advance landed cancelled it (cash fell to half the reserve) | p03 | subagent | | High | S | IN PROGRESS | |
-| RT2-2 | P0 | "Next invoice" terms valued on the next invoice but written onto an older, even overdue, one | p07, p06 | subagent | | High | S | IN PROGRESS | |
-| RT2-3 | P1 | Advance repaid but charges short: invoice FINANCED with nothing outstanding, lot nobody can clear | p05 | subagent | N03 | Medium | S | IN PROGRESS | |
-| RT2-4 | P1 | Default early-pay settlement day was absolute day 2, so early-pay offers failed from day 3 | p13 | subagent | | Medium | S | IN PROGRESS | |
-| RT2-5 | P1 | Bank and owner receipts refused after the mandate expires | p08 | subagent | | Medium | S | IN PROGRESS | |
-| RT2-6 | P1 | A different operation reusing an idempotency key made a bank receipt a DUPLICATE | p10 | subagent | | Medium | S | IN PROGRESS | |
-| RT2-7 | P2 | Aggregate cap bypassed by splitting an agreement into one-invoice agreements over time | p06 | subagent | | Low | S | IN PROGRESS | |
-| N01 | P1 | Chat does not say when funding cash lands; the repay proposal defaults to the whole drawn balance including cash not yet landed | funding-lots report | subagent | | High | S | IN PROGRESS | Replies name the landing day; repay proposes the landed balance |
-| N02 | P1 | After a negotiation, the fallback and remaining-gap funding legs are rebuilt and do not stop at a refused or queued leg | plan-binding report | subagent | | Medium | M | IN PROGRESS | Stored legs sent; stop at the first leg not executed |
-| N03 | P2 | A financed invoice whose face is fully settled while its advance is open drops out of the projection; its lot is repaid at the horizon end | funding-lots report | subagent | | Low | S | IN PROGRESS | Projection repays the remaining lot today |
-| N04 | P2 | A receipt that covers the advance but not its charges capitalises the unpaid charges and charges them again | funding-lots report (agent's own choice) | owner | | Low | S | OPEN (accepted for now; documented) | |
+| R08 | P1 | `RequestOwnerApproval`: caller's free text became the reason the owner saw (third red team reproduced it: an agent-reported receipt described as "no payment") | `docs/research/redteam-2026-10-03c/p06` | owner | | High | S | DONE 3 Oct | The owner sees the operation's own description, never caller text; ambiguous op ids refused |
+| RT2 | P0 | Second fresh red team, aimed at the seams of the 3 Oct rewrites: seven reproduced findings (probes in `docs/research/redteam-2026-10-03b/`) | red-team round b | subagent | | Very high | M | DONE 3 Oct | Each probe prints held; `tests/operations/test_redteam_b.py` |
+| RT2-1 | P0 | An invoice under an early-pay agreement could be financed; any receipt before the advance landed cancelled it (cash fell to half the reserve) | p03 | subagent | | High | S | DONE 3 Oct | |
+| RT2-2 | P0 | "Next invoice" terms valued on the next invoice but written onto an older, even overdue, one | p07, p06 | subagent | | High | S | DONE 3 Oct | |
+| RT2-3 | P1 | Advance repaid but charges short: invoice FINANCED with nothing outstanding, lot nobody can clear | p05 | subagent | N03 | Medium | S | DONE 3 Oct | |
+| RT2-4 | P1 | Default early-pay settlement day was absolute day 2, so early-pay offers failed from day 3 | p13 | subagent | | Medium | S | DONE 3 Oct | |
+| RT2-5 | P1 | Bank and owner receipts refused after the mandate expires | p08 | subagent | | Medium | S | DONE 3 Oct | |
+| RT2-6 | P1 | A different operation reusing an idempotency key made a bank receipt a DUPLICATE | p10 | subagent | | Medium | S | DONE 3 Oct | |
+| RT2-7 | P2 | Aggregate cap bypassed by splitting an agreement into one-invoice agreements over time | p06 | subagent | | Low | S | DONE 3 Oct | |
+| N01 | P1 | Chat does not say when funding cash lands; the repay proposal defaults to the whole drawn balance including cash not yet landed | funding-lots report | subagent | | High | S | DONE 3 Oct | Replies name the landing day; repay proposes the landed balance |
+| N02 | P1 | After a negotiation, the fallback and remaining-gap funding legs are rebuilt and do not stop at a refused or queued leg | plan-binding report | subagent | | Medium | M | DONE 3 Oct | Stored legs sent; stop at the first leg not executed |
+| N03 | P2 | A financed invoice whose face is fully settled while its advance is open drops out of the projection; its lot is repaid at the horizon end | funding-lots report | subagent | | Low | S | DONE 3 Oct | Projection repays the remaining lot today |
+| N04 | P2 | A receipt that covers the advance but not its charges capitalises the unpaid charges and charges them again | funding-lots report (agent's own choice) | owner | | Low | S | DONE 3 Oct (no longer capitalised: a fixed remainder the owner repays) | |
+| RT3 | P0 | Third fresh red team: three findings | `docs/research/redteam-2026-10-03c/` | subagent | | High | M | DONE 3 Oct: all three fixed (`tests/operations/test_redteam_c.py`) | |
+| RT3-2 | P0 | Admission (my own fix 11acc56) omitted a line draw's cash, so a runnable plan was refused for everyone | p03, p05 | owner | | High | S | DONE 3 Oct | |
+| RT3-3 | P1 | A recreated chat session reused old idempotency keys: a later command was a DUPLICATE or a REPLAY | p07 | owner | | Medium | S | DONE 3 Oct | |
+| C01 | P1 | Owner-session chat ran an above-ceiling leg directly while the agent channel queued it | plan-flags report | owner | | Medium | S | DONE 3 Oct: chat funding legs are the agent's act in every session | |
+| W01 | P2 | Approvals queue has no decision day; plan actions carry no landing day; executed ledger rows lack the approval id they ran under | web report | subagent | | Low | S | OPEN | |
+| W02 | P3 | 1-fen receipt before landing cancels an advance sitting exactly at the advance-rate limit (by rule; harsh) | third red team | owner | | Low | S | OPEN (accepted) | |
 | MW1 | P1 | Several API workers: process-local lock, no state-version compare-and-swap | audit §7, unverified | owner | | Medium | M | OPEN | SQLite two-connection interleaving test; PostgreSQL test when a database is available |
 
 Not doing before the deadline (audit §14 agrees): supplier payments, lender connectors, tax, FX, calendars, lease
@@ -89,16 +95,17 @@ Numbers are measurements on the commit named, never targets.
 
 | Area | Measure | `beb8c66` (audit baseline) | Latest `dev` |
 | --- | --- | --- | --- |
-| Financial | Backend tests passed | 4,042 (26 skipped) | 4,614 (26 skipped) after the ADR-0010 merge |
+| Financial | Backend tests passed | 4,042 (26 skipped) | 4,731 (20 skipped) |
 | Financial | Planner/executor mismatches reproduced by the audit probes | 6 of 6 | 0 of 6 defects; the discretionary line repayment is a labelled assumption (ADR-0010) |
 | Financial | Formula discrepancies open | 9 (F-FIN-01, 02, 03, 04, 06, 07, 09, 10, 11) | 1 (F-FIN-10: label) |
 | Financial | Accepted-terms lifecycle failures (A06, A07) | 2 | 0 |
 | Security | Catalogue attacks / with harm | 182 / 0 | 241 (122 API + 119 chat) / 0, by the suite; report not yet regenerated |
-| Security | Audit attacks with harm (A01, A02, A03, A04, A10) | 5 of 5 | 0 of 5 |
+| Security | Audit attacks with harm (A01, A02, A03, A04, A10) | 5 of 5 | 0 of 5; three red-team rounds: 13 findings, 13 fixed |
 | Language | Wrong and financially material interpretations known | 13 texts (S-01 ×8, S-02 ×5) | 0 known |
 | Execution | Scenarios passed | 46 / 46 (79 turns) | 46 / 46 (85 turns) |
 | Execution | Restart preserves state | No | Yes |
-| Product | Demo path (`scripts/demo_run.py`) | exit 0 | exit 0 |
+| Product | Demo path (`scripts/demo_run.py`) | exit 0 | exit 0 (cure queued → approved → lands day 37) |
+| Product | Web e2e mock / live | 29 / 27 | 31 / 29 |
 
 ## 4. New questions
 
