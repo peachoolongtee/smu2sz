@@ -46,7 +46,7 @@ from app.nl.pipeline import (
     status_quo_offer,
     t,
 )
-from app.nl.plans import run_legs, runnable_legs
+from app.nl.plans import approval_sentences, run_legs, runnable_legs, unrunnable_sentences
 from app.nl.sessions import PendingPlan
 from app.nl.turn import Turn, ask
 from app.verifier import REFUSAL_REPLY, VerdictBundle, evaluate_term_sheet
@@ -73,7 +73,22 @@ def codes_of(v: Verdict) -> list[str]:
 def verdict_line(ctx: NlContext, v: Verdict) -> str:
     codes = ", ".join(codes_of(v)) or t(ctx, "no violations", "无违规")
     return t(ctx, f"Verdict {v.outcome.value} ({v.required_tier.value}): {codes}. {v.summary}",
-             f"结论 {v.outcome.value}（{v.required_tier.value}）：{codes}。{v.summary}")
+             f"结论 {v.outcome.value}（{v.required_tier.value}）：{codes}。{v.summary}") + cure_flag_note(ctx, v)
+
+
+def cure_flag_note(ctx: NlContext, v: Verdict) -> str:
+    """When the verdict calls a reserve breach curable and the cure it relies on is flagged by the router (above the
+    ceiling, or not runnable today), say so in the owner's language, with the router's own figures."""
+    plan = v.plan
+    if plan is None or not any(x.code == ViolationCode.RESERVE_BREACH and x.curable and "cure_plan" in x.inputs
+                               for x in v.violations):
+        return ""
+    parts = []
+    if plan.needs_owner_approval:
+        parts.append(t(ctx, "The cure needs your approval: ", "该处理方案需要您批准：") + " ".join(approval_sentences(ctx, plan)))
+    if not plan.executable_now:
+        parts.append(t(ctx, "The cure cannot run today: ", "该处理方案今天无法执行：") + " ".join(unrunnable_sentences(ctx, plan)))
+    return (" " + " ".join(parts)) if parts else ""
 
 
 def buyer_options(ctx: NlContext) -> list[tuple[str, str, str]]:

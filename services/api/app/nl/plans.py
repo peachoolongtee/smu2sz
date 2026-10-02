@@ -20,6 +20,7 @@ from collections.abc import Sequence
 from typing import Any
 
 from app.domain.models import (
+    Actor,
     ApplyForFacility,
     DrawFacility,
     FundingAction,
@@ -120,7 +121,9 @@ def approval_note(ctx: NlContext, plan: FundingPlan) -> str:
     legs = [i for i, a in enumerate(plan.actions) if _is_leg(a)]
     first = next((i for i, cl in enumerate(plan.costs) if cl.needs_owner_approval and i in legs), None)
     tail = ""
-    if first is not None and aligned:
+    if first is not None and ctx.requested_by == Actor.OWNER:
+        tail = ""  # what the executor does with an owner-requested leg is its own rule; no queue is promised here
+    elif first is not None and aligned:
         name = _leg_name(ctx, plan, first)
         later = any(i > first for i in legs)
         tail = t(ctx, f" After you say go ahead, \"{name}\" will wait for your approval (APR-…) rather than run"

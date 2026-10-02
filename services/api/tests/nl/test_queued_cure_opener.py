@@ -19,7 +19,7 @@ def _queue_the_cure(client, rt) -> str:
 
 def test_the_opener_says_a_queued_cure_waits_instead_of_offering_it_again(client, rt):
     aid = _queue_the_cure(client, rt)
-    logged, cash = len(rt.store.operations()), rt.store.get_state().cash_fen
+    logged = len(rt.store.operations())
     body = _opener(client, "op-2").json()
     reply = body["reply"]
     assert body["has_news"] is True and body["awaiting_confirmation"] is False and body["operations"] == []

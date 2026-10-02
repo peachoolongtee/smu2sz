@@ -158,6 +158,32 @@ class _Ctx:
         return rcvs[0].terms_days if rcvs else None
 
 
+def plan_flags(plan: Any, subject: str) -> str:
+    """What the router flagged on a plan or a comparison row, as "<subject> needs the owner's approval: ..." and
+    "<subject> cannot run today: ...", or '' when it is neither. A text only: no verdict, counter or number reads it."""
+    out: list[str] = []
+    if getattr(plan, "needs_owner_approval", False):
+        out.append(f"{subject} needs the owner's approval: {getattr(plan, 'approval_reason', '')}")
+    if not getattr(plan, "executable_now", True):
+        reason = getattr(plan, "not_executable_reason", "") or "it relies on an invoice that is not issued yet"
+        out.append(f"{subject} cannot run today: {reason}")
+    return "; ".join(out)
+
+
+def flag_inputs(plan: Any, prefix: str) -> dict[str, str]:
+    """The same flags as `inputs` entries (`<prefix>_needs_owner_approval`, ...); empty when the plan is not flagged."""
+    out: dict[str, str] = {}
+    if getattr(plan, "needs_owner_approval", False):
+        out[f"{prefix}_needs_owner_approval"] = "true"
+        if getattr(plan, "approval_reason", ""):
+            out[f"{prefix}_approval_reason"] = plan.approval_reason
+    if not getattr(plan, "executable_now", True):
+        out[f"{prefix}_executable_now"] = "false"
+        if getattr(plan, "not_executable_reason", ""):
+            out[f"{prefix}_not_executable_reason"] = plan.not_executable_reason
+    return out
+
+
 def _ratio(x: Fraction) -> Ratio:
     return Ratio.of(x)
 
@@ -303,6 +329,14 @@ def early_pay_counter(ctx: _Ctx, label: str = "Option A") -> CounterProposal | N
     )
     rationale = (f"Early settlement at {rate_text(rate_bp)} is cheaper than financing the invoice on the "
                  f"marginal committed source; the line covers the rest of the near-term gap.")
+    # What the router flagged on the plans this counter stands on (supplier-side texts only: the outbound text, the
+    # figures and whether the counter is offered are unchanged).
+    for plan, subject in ((counter_plan, "the committed plan that funds the rest of the gap"),
+                          (base_plan, "the standing plan it is compared with")):
+        flags = plan_flags(plan, subject)
+        if flags:
+            formula += f". Flagged: {flags}"
+            rationale += f" Note: {flags}."
     return _proposal(ctx, label, clauses, total, rationale, formula)
 
 
