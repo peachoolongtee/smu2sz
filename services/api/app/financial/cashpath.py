@@ -47,7 +47,7 @@ def project_cash(
     for p in book.postings:
         if 0 <= p.day <= horizon:
             cash_by_day[p.day] += p.amount
-            if p.category == "interest":
+            if p.category == "interest" and p.facility_id:  # as in `project`: facility interest only
                 interest -= p.amount
             elif p.category == "fee":
                 fees -= p.amount
@@ -60,6 +60,9 @@ def project_cash(
         for d, delta in book.balance_deltas.get(f.id, {}).items():
             if 0 <= d <= horizon:
                 debt_by_day[d] += delta
+    for d, delta in book.debt_deltas.items():  # the existing debts' scheduled principal
+        if 0 <= d <= horizon:
+            debt_by_day[d] += delta
     cash = state.cash_fen
     closings = []
     peak = debt + debt_by_day.get(0, 0)  # horizon >= 0, so day 0 always exists

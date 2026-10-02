@@ -52,10 +52,15 @@ def test_an_expired_mandate_is_critical():
 
 
 def _short_facilities_state():
-    """Committed headroom too small to restore the reserve but enough to keep cash from going below zero."""
+    """Committed headroom too small to restore the reserve but enough to keep cash from going below zero.
+
+    Without action cash is 400,000 − 340,000 − 120,000 = −60,000 on days 20–29 and −105,000 on days 30–31 (the existing
+    loan's ¥45,000 day-30 payment), until RCV-A pays on day 32. ¥60,000 of line and ¥60,000 of invoice financing
+    (landing day 3) give 120,000 ≥ 105,000 to stay at or above zero, far short of the 405,000 the reserve needs.
+    (Before the loan's payments were cash, ¥50,000 each covered the −60,000 low.)"""
     state, _ = load_scenario()
     return state.model_copy(update={"facilities": [
-        f.model_copy(update={"limit_fen": 5_000_000}) if f.id in ("FAC-LINE", "FAC-IF") else f for f in state.facilities]})
+        f.model_copy(update={"limit_fen": 6_000_000}) if f.id in ("FAC-LINE", "FAC-IF") else f for f in state.facilities]})
 
 
 def test_no_plan_restores_the_reserve_but_one_keeps_cash_at_or_above_zero():

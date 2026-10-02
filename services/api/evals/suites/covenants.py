@@ -16,7 +16,9 @@ from evals.common import Failure, Metric, SuiteResult, quiet, ratio
 from evals.forms import doc, form_offer
 
 REPRO = "uv run --project services/api python scripts/evaluate.py --suite covenants"
-CASH_NO_GAP = 80_000_000  # ¥800,000: the golden day-12 gap disappears, so no funding plan enters the months
+# ¥850,000: the golden gap disappears (850,000 − 460,000 − the existing loan's 45,000 on day 30 = 345,000 at the low),
+# so no funding plan enters the months
+CASH_NO_GAP = 85_000_000
 REBATE_2000 = [{"type": "CONTINGENT_REBATE", "rate_bp": 50, "base_amount_fen": 40_000_000}]  # ¥2,000, under the cap
 
 
@@ -40,20 +42,22 @@ def verifier_cases() -> list[dict[str, Any]]:
         out.append({"id": f"dscr_{tag}", "group": "DSCR", "state": {"cash_fen": CASH_NO_GAP, "debt_service_fen": ds},
                     "offer": REBATE_2000, "code": "DSCR_BREACH", "violation": bad,
                     "input": f"monthly debt service {ds} fen (1.25x at 7,200,000)"})
-    # Leverage = debt / (12 × 90,000); exactly 2.50x at ¥2,700,000.00 of debt.
-    for tag, p, bad in (("exact", 270_000_000, False), ("safe_1fen", 269_999_999, False),
-                        ("unsafe_1fen", 270_000_001, True)):
+    # Leverage = month-end debt / (12 × 90,000); exactly 2.50x at ¥2,700,000.00 of debt. The existing loan pays
+    # ¥45,000 of principal on day 30 (FINANCIAL_SEMANTICS §5), so the month-1 end is at the limit with ¥2,745,000 today.
+    for tag, p, bad in (("exact", 274_500_000, False), ("safe_1fen", 274_499_999, False),
+                        ("unsafe_1fen", 274_500_001, True)):
         out.append({"id": f"leverage_{tag}", "group": "LEVERAGE", "state": {"cash_fen": CASH_NO_GAP, "principal_fen": p},
                     "offer": REBATE_2000, "code": "LEVERAGE_BREACH", "violation": bad,
-                    "input": f"debt principal {p} fen (2.50x at 270,000,000)"})
-    # Reserve floor: 1% early settlement of RCV-A lands day 2; closing cash on days 20–46 is
-    # cash − 34,420,000 + 30,000,000, i.e. exactly the ¥300,000 floor at cash = 34,420,000.
+                    "input": f"debt principal {p} fen (2.50x at 274,500,000 less the day-30 payment of 4,500,000)"})
+    # Reserve floor: 1% early settlement of RCV-A lands day 2; closing cash on days 30–46 is
+    # cash − 34,420,000 − 4,500,000 (the existing loan's day-30 payment) + 30,000,000, i.e. exactly the ¥300,000 floor
+    # at cash = 38,920,000.
     disc = [{"type": "IMMEDIATE_DISCOUNT", "rate_bp": 100, "base_amount_fen": 42_000_000, "receivable_id": "RCV-A"}]
-    for tag, cash, bad in (("exact", 34_420_000, False), ("safe_1fen", 34_420_001, False),
-                           ("unsafe_1fen", 34_419_999, True)):
+    for tag, cash, bad in (("exact", 38_920_000, False), ("safe_1fen", 38_920_001, False),
+                           ("unsafe_1fen", 38_919_999, True)):
         out.append({"id": f"reserve_{tag}", "group": "RESERVE", "state": {"cash_fen": cash}, "offer": disc,
                     "code": "RESERVE_BREACH", "violation": bad,
-                    "input": f"opening cash {cash} fen; floor reached exactly at 34,420,000"})
+                    "input": f"opening cash {cash} fen; floor reached exactly at 38,920,000"})
     # Aggregate forward-concession cap ¥5,000.00: a 1% rebate on a stated base B is worth B/100.
     for tag, base, bad in (("exact", 50_000_000, False), ("safe_1fen", 49_999_900, False),
                            ("unsafe_1fen", 50_000_100, True)):

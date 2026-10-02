@@ -186,12 +186,13 @@ def test_f3_a_known_10m_outflow_on_day_1_makes_the_loan_infeasible(golden, manda
     assert r.selected_id is None and "Finance with" not in r.recommendation
 
 
-def test_f3_the_golden_books_keep_the_36_month_loan_selected(golden, mandate):
+def test_f3_the_golden_books_select_the_lease_once_the_debt_payment_is_cash(golden, mandate):
     # The golden books already dip below the reserve on days 12-31 (before any purchase). The loan's proceeds
-    # and the purchase cancel on day 14 and its first payment (day 44) falls when cash is back above the reserve,
-    # so the loan does not cause a breach: it stays selected, and the structure notes the existing dip.
+    # and the purchase cancel on day 14; cash is back to 315,000 on day 32 (after the ¥45,000 day-30 payment on the
+    # existing loan), so the 36-month loan's first payment on day 44 (¥18,144.62) takes it to ¥296,855.38, below
+    # the reserve: it causes a breach. The lease's first payment (day 40, ¥14,423.49) leaves ¥300,576.51.
     r = evaluate_capex(CapexRequest(), golden, mandate)
-    assert r.selected_id == "loan_36m" and "Finance with the 36-month term loan" in r.recommendation
+    assert r.selected_id == "lease_48m" and "Finance with the 48-month lease" in r.recommendation
 
 
 def test_f3_a_20_percent_upfront_fee_changes_the_ranked_cost_by_120000(golden, mandate):

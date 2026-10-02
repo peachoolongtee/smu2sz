@@ -14,7 +14,8 @@ def test_advance_posts_scheduled_outflows_and_moves_the_executor_clock(client):
     assert r.status_code == 200 and r.json()["day"] == 40
     s1 = rt.store.get_state()
     assert rt.day == 40 and s1.as_of_day == 40
-    assert s1.cash_fen == s0.cash_fen + r.json()["posted_net_fen"] <= s0.cash_fen + outflows + sum(
+    # the scheduled flows and the existing loan's day-30 payment (¥45,000, paid by the simulated bank)
+    assert s1.cash_fen == s0.cash_fen + r.json()["posted_net_fen"] - 4_500_000 <= s0.cash_fen + outflows + sum(
         f.amount_fen for f in s0.flows if f.day < 40 and f.amount_fen > 0)
     assert [x.status for x in s1.receivables if x.id == "RCV-A"] == ["OPEN"]  # never recorded as received
     assert client.get("/clock").json() == {"day": 40}

@@ -62,7 +62,7 @@ def test_fund_gap_executes_the_router_plan_on_go_ahead(client, rt):
     assert rt.store.get_state().cash_fen == 55_000_000
     assert all(o["tier"] == "TIER_1" for o in r["operations"])
     rt.advance_to(4)
-    assert rt.store.get_state().cash_fen == 76_000_000
+    assert rt.store.get_state().cash_fen == 80_500_000  # 400,000 + the 150,000 line + the 255,000 advance
 
 
 def test_repay_is_held_when_it_would_breach_the_reserve(client):
@@ -137,7 +137,7 @@ def test_counterparty_message_is_compiled_and_answered_within_tier1(client, rt):
         "We can pay this one early at 1.5%. Nothing else changes.")
     assert r["intent"] == "COUNTERPARTY_MESSAGE"
     assert ops(r) == [] and stored_ops(rt) == [("COUNTER_OFFER", "EXECUTED")]
-    assert "0.85%" in r["reply"] and "¥211,900" in r["reply"]
+    assert "0.85%" in r["reply"] and "¥257,200" in r["reply"]  # Counter A's face
 
 
 def test_out_of_scope(client):

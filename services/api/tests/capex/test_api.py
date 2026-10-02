@@ -33,15 +33,17 @@ def client(rt):
     return TestClient(app, headers={"X-Owner-Token": DEMO_OWNER_TOKEN})  # owner routes are gated
 
 
-def etl_status(rt):
-    return next(f for f in rt.store.get_state().facilities if f.id == "FAC-ETL").status
+def etl_status(rt, fid: str = "FAC-ETL"):
+    return next(f for f in rt.store.get_state().facilities if f.id == fid).status
 
 
 def test_view_matches_capex_view(client, g):
     v = client.post("/capex/evaluate", json={"label": "¥600k machine", "price_fen": 60_000_000}).json()
     assert v["npv_fen"] == g["npv"] and v["npv_display"] == "¥380,885.77"
     assert v["payback_month"] == 31
-    assert v["selected_id"] == "loan_36m" and v["required_tier"] == "TIER_2"
+    # the 36-month loan's first payment (day 44) would take cash to ¥296,855.38 once the day-30 debt payment is
+    # cash: the 48-month lease is selected (compute_golden.py, capex "selected")
+    assert v["selected_id"] == g["selected"] == "lease_48m" and v["required_tier"] == "TIER_2"
     assert v["leverage_financed"]["text"] == "2.08" and v["leverage_with_extension"]["text"] == "2.28"
     assert v["dscr_limit_display"] == "1.25×" and v["leverage_limit_display"] == "2.50×"
     assert v["request"]["price_display"] == "¥600,000.00"
@@ -57,7 +59,8 @@ def test_view_matches_capex_view(client, g):
     assert s["loan_18m"]["dscr_by_month"][0]["dscr"]["text"] == "1.13"
     assert s["loan_36m"]["monthly_payment_display"] == "¥18,144.62"
     assert s["loan_36m"]["total_interest_display"] == "¥53,206.14"
-    assert s["lease_48m"]["extra_cost_vs_selected_display"] == "¥39,121.18"
+    assert s["loan_36m"]["violations"][0]["code"] == "RESERVE_BREACH"
+    assert s["lease_48m"]["extra_cost_vs_selected_display"] is None  # it is the selected structure
     assert s["cash_line"]["feasible"] is False
     assert s["cash_line"]["violations"][0]["code"] == "RESERVE_BREACH"
     assert s["cash_line"]["monthly_payment_display"] is None
@@ -65,7 +68,7 @@ def test_view_matches_capex_view(client, g):
 
 def test_default_body_is_the_spec_case(client, g):
     v = client.post("/capex/evaluate").json()
-    assert v["npv_fen"] == g["npv"] and v["selected_id"] == "loan_36m"
+    assert v["npv_fen"] == g["npv"] and v["selected_id"] == g["selected"] == "lease_48m"
 
 
 def test_application_is_pending_and_nothing_executes_without_the_owner(client, rt):
@@ -76,18 +79,18 @@ def test_application_is_pending_and_nothing_executes_without_the_owner(client, r
     assert aid and v["approval_status"] == "PENDING"
     queue = client.get("/approvals/queue").json()["approvals"]
     queued = [a for a in queue if a["id"] == aid]
-    assert queued and queued[0]["operation"]["facility_id"] == "FAC-ETL"
+    assert queued and queued[0]["operation"]["facility_id"] == "FAC-LEASE"
     assert queued[0]["operation"]["requested_by"] == "AGENT"
     assert queued[0]["operation"]["amount_fen"] == 60_000_000
-    assert etl_status(rt) == FacilityStatus.NOT_APPLIED  # nothing executed
+    assert etl_status(rt, "FAC-LEASE") == FacilityStatus.NOT_APPLIED  # nothing executed
 
     denied = client.post(f"/approvals/{aid}", json={"decision": "APPROVE"}, headers={"X-Owner-Token": "not-the-owner"})
     assert denied.status_code == 401  # the owner gate refuses before the executor
-    assert etl_status(rt) == FacilityStatus.NOT_APPLIED
+    assert etl_status(rt, "FAC-LEASE") == FacilityStatus.NOT_APPLIED
 
     ok = client.post(f"/approvals/{aid}", json={"decision": "APPROVE"}, headers=OWNER).json()["result"]
     assert ok["status"] == "EXECUTED"
-    assert etl_status(rt) == FacilityStatus.PENDING  # applied: still counts as zero until committed
+    assert etl_status(rt, "FAC-LEASE") == FacilityStatus.PENDING  # applied: still counts as zero until committed
 
 
 def test_repeat_evaluation_does_not_queue_twice(client):
@@ -135,4 +138,5 @@ def test_view_carries_the_charges_basis_assumptions_and_day(client):
     assert s["loan_36m"]["charges_total_display"] == "¥53,206.14" and s["loan_18m"]["hypothetical"] is True
     assert v["as_of_day"] == 0 and v["estimate_note"].startswith("Owner's estimate")
     assert any("nominal annual rate" in a for a in v["assumptions"])
-    assert "Finance with the 36-month term loan" in v["recommendation"]
+    assert "Finance with the 48-month lease" in v["recommendation"]
+    assert "36-month term loan, 5.60% is rejected (RESERVE_BREACH)" in v["recommendation"]

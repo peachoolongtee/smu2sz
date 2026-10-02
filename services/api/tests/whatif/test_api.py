@@ -93,7 +93,7 @@ def test_presets_endpoint(client):
                                    "settle_face_fen")} == {"terms_days": 60, "discount_bp": 120, "rebate_bp": 100,
                                                            "price_adjustment_bp": 0, "settle_face_fen": None}
     assert actual["discount_display"] == "1.20%" and actual["rebate_display"] == "1.00%"
-    assert body["presets"]["option_a"]["settle_face_display"] == "¥211,900.00"
+    assert body["presets"]["option_a"]["settle_face_display"] == "¥257,200.00"  # Counter A's face
     assert body["grid"]["terms_days"] == {"min": 30, "max": 90, "step": 5}
     assert body["grid"]["settle_face_fen"]["max"] == 42_000_000
     assert body["receivable_face_display"] == "¥420,000.00" and body["current_terms_days"] == 45
@@ -103,6 +103,6 @@ def test_post_carries_the_controls(client):
     body = client.post("/whatif", json=ACTUAL).json()
     c = body["controls"]
     assert c["rate_labels"]["120"] == "1.20%" and c["rate_labels"]["85"] == "0.85%"
-    assert {"fen": 21_190_000, "display": "¥211,900.00"} in c["face_stops"]
+    assert {"fen": 25_720_000, "display": "¥257,200.00"} in c["face_stops"]  # Option A's face is a stop
     assert c["face_stops"][-1] == {"fen": 42_000_000, "display": "¥420,000.00"}
     assert set(c["presets"]) == {"actual", "option_a", "option_b", "status_quo"}

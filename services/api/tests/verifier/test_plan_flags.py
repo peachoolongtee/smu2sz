@@ -88,8 +88,10 @@ def test_a_cure_the_executor_cannot_run_today_says_so_and_nothing_else_changes(m
     state = short_hold(keep_early_pay=False)
     flagged = run("EX01_PACKAGE", state)
     rv = next(v for v in flagged.verdict.violations if v.code.value == "RESERVE_BREACH")
-    assert rv.curable and "the cure cannot run today: " in rv.cure_note and "RI:BUYER-1:2 is not an invoice" in rv.cure_note
-    assert rv.inputs["cure_executable_now"] == "false" and "RI:BUYER-1:2" in rv.inputs["cure_not_executable_reason"]
+    # the deepest shortfall is now after the existing loan's day-60 payment (¥135,040), carried on the invoice issued
+    # on day 32, which does not exist yet
+    assert rv.curable and "the cure cannot run today: " in rv.cure_note and "RI:BUYER-1:32 is not an invoice" in rv.cure_note
+    assert rv.inputs["cure_executable_now"] == "false" and "RI:BUYER-1:32" in rv.inputs["cure_not_executable_reason"]
     assert "the cure cannot run today" in flagged.verdict.summary
 
     disable_flags(monkeypatch)

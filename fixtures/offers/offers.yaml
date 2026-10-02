@@ -24,8 +24,8 @@ offers:
     documents:
       - {doc_id: EX02-msg, channel: chat, sender_id: BUYER-1, received_day: 0,
          text: "We can pay this one early at 1.5%. Nothing else changes."}
-    expect: {outcome: COUNTER, obligations: [IMMEDIATE_DISCOUNT], counter_rate_bp: 85, counter_face_cap_fen: 21190000,
-             line_plus_partial_fen: 403961, router_best_fen: 271294}
+    expect: {outcome: COUNTER, obligations: [IMMEDIATE_DISCOUNT], counter_rate_bp: 85, counter_face_cap_fen: 25720000,
+             line_plus_partial_fen: 472489, router_best_fen: 311393}
   - id: EX03_AS_USUAL
     counterparty_id: BUYER-1
     documents:
@@ -96,7 +96,7 @@ offers:
     kind: owner_request
     documents:
       - {doc_id: EX11-msg, channel: owner, sender_id: OWNER, received_day: 0, text: "Can we buy the ¥600k machine?"}
-    expect: {outcome: NEEDS_OWNER_APPROVAL, selected: loan_36m, npv_fen: 38088577, payback_month: 31}
+    expect: {outcome: NEEDS_OWNER_APPROVAL, selected: lease_48m, npv_fen: 38088577, payback_month: 31}
   - id: EX12_GOAL
     counterparty_id: OWNER
     kind: owner_request

@@ -53,6 +53,7 @@ def compute() -> dict[str, tuple[Any, str]]:
         DurationKind,
         FacilityKind,
         FacilityStatus,
+        FundingAction,
         FundingActionKind,
         Mode,
         Obligation,
@@ -92,7 +93,15 @@ def compute() -> dict[str, tuple[Any, str]]:
     put("v2_optimum_total", lambda: p.total_cost_fen, "funding.plan().total_cost_fen")
     put("funding_need_before_day_32", lambda: p.need_fen, "funding.plan().need_fen")
     put("line_interest_150k_32d", lambda: costs["FAC-LINE"], "funding.plan().costs[FAC-LINE]")
-    put("if_cost_210k_30d", lambda: costs["FAC-IF"], "funding.plan().costs[FAC-IF]")
+    put("if_cost_plan_advance", lambda: costs["FAC-IF"], "funding.plan().costs[FAC-IF]")
+    put("plan_advance", lambda: next(a.amount_fen for a in p.actions if a.kind == FundingActionKind.FINANCE_INVOICE),
+        "funding.plan() FINANCE_INVOICE amount")
+    # existing debt is cash (FINANCIAL_SEMANTICS §5): D-EQUIP's scheduled payments in the baseline projection
+    t0 = project(state, [], [], Mode.CONSERVATIVE, H)
+    debt_days = [(pt.day, -sum(e.amount_fen for e in pt.events if e.ref == "D-EQUIP")) for pt in t0.days]
+    put("debt_service_day30", lambda: dict(debt_days)[30], "financial.project() day 30 D-EQUIP events")
+    put("debt_payments_to_day120", lambda: [d for d, a in debt_days if a and d <= 120],
+        "financial.project() days with D-EQUIP events")
     rows = {r.key: r for r in compare(state, [], m)}
     put("full_discount_1_2pct", lambda: rows["full_discount"].cost_fen, "funding.compare() full_discount")
     put("v1_optimum_total", lambda: rows["line_partial_early_pay"].cost_fen, "funding.compare() line_partial_early_pay")
@@ -145,12 +154,14 @@ def compute() -> dict[str, tuple[Any, str]]:
     assert traj is not None
     put("cash_day20", lambda: traj.days[20].closing_fen, "verifier EX01 trajectory day 20")
     put("cash_day47_60d_terms", lambda: traj.days[47].closing_fen, "verifier EX01 trajectory day 47")
+    put("cash_day60_60d_terms", lambda: traj.days[60].closing_fen, "verifier EX01 trajectory day 60")
     no_ext = [o for o in b1.bound_obligations if o.type != ObligationType.TERMS_EXTENSION]
     put("cash_day47_45d_terms",
         lambda: project(state, no_ext, [], Mode.CONSERVATIVE, H, m.min_cash_fen).days[47].closing_fen,
         "financial.project(EX01 without the extension) day 47")
     rb = next(v for v in v1.violations if v.code == ViolationCode.RESERVE_BREACH)
     put("reserve_shortfall_day47", lambda: int(rb.inputs["shortfall_fen"]), "verifier EX01 RESERVE_BREACH shortfall")
+    put("reserve_shortfall_max", lambda: _fen(rb.inputs["max_shortfall"]), "verifier EX01 RESERVE_BREACH max_shortfall")
     put("reserve_cure_cost_if", lambda: rb.cure_cost_fen, "verifier EX01 RESERVE_BREACH cure_cost_fen")
     dscr_chk = next(pc for pc in b1.passed_checks if pc.code == "DSCR_MIN")
     lev_chk = next(pc for pc in b1.passed_checks if pc.code == "LEVERAGE_MAX")
@@ -165,11 +176,19 @@ def compute() -> dict[str, tuple[Any, str]]:
     dscr_b, lev_b = pro_forma(state, base_extra_debt_fen=line_limit)
     put("dscr_base", lambda: dscr_b.text if dscr_b else None, "covenants.pro_forma(state + committed line)")
     put("leverage_base", lambda: lev_b.text, "covenants.pro_forma(state + committed line)")
+    line_drawn = FundingAction(kind=FundingActionKind.DRAW, facility_id="FAC-LINE", day=0, amount_fen=line_limit,
+                               repay_day=45)
+    put("leverage_month1_line_drawn",
+        lambda: project(state, [], [line_drawn], Mode.CONSERVATIVE, H).months[0].leverage.text,
+        "financial.project(line drawn) month 1 leverage")
 
     # counters (spec §6.6)
     opt = {c.label: c for c in v1.counters}
     a = opt["Option A"]
     put("counter_a_total", lambda: a.supplier_cost_fen, "verifier EX01 Option A supplier_cost_fen")
+    put("counter_a_face", lambda: next(o.base.amount_fen for o in a.obligations
+                                       if o.type == ObligationType.IMMEDIATE_DISCOUNT),
+        "verifier EX01 Option A early-settlement face")
     put("counter_a_discount",
         lambda: project(state, list(a.obligations), [], Mode.CONSERVATIVE, H).discounts_posted_fen,
         "financial.project(Option A).discounts_posted_fen")
@@ -202,7 +221,9 @@ def compute() -> dict[str, tuple[Any, str]]:
         put(f"capex.{sid}.dscr_m1_3", lambda s=s: _x(s.dscr_by_month[0].dscr.text), "capex.evaluate_capex() month 1")
         put(f"capex.{sid}.dscr_m4_on", lambda s=s: _x(s.dscr_by_month[3].dscr.text), "capex.evaluate_capex() month 4")
         put(f"capex.{sid}.dscr_m1_3_passes", lambda s=s: bool(s.dscr_by_month[0].passes), "capex.evaluate_capex()")
-    put("capex.lease_minus_36m_interest", lambda: by["lease_48m"].extra_cost_vs_selected_fen, "capex.evaluate_capex()")
+    put("capex.lease_minus_36m_interest",
+        lambda: by["lease_48m"].total_interest_fen - by["loan_36m"].total_interest_fen, "capex.evaluate_capex()")
+    put("capex.selected", lambda: cap.selected_id, "capex.evaluate_capex().selected_id")
     put("capex.npv", lambda: cap.npv_fen, "capex.evaluate_capex()")
     put("capex.payback_month", lambda: cap.payback_month, "capex.evaluate_capex()")
     put("capex.leverage_financed", lambda: _x(cap.leverage_financed.text), "capex.evaluate_capex()")

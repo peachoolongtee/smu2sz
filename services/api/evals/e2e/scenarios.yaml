@@ -24,7 +24,7 @@ scenarios:
       - text: "Evaluate EX01"
         expect: {intent: EVALUATE_OFFER, outcome: REJECT, codes_exact: [AGG_CONCESSION_EXCEEDED, RESERVE_BREACH, DISCOUNT_ABOVE_BREAK_EVEN, EARLY_PAY_DEARER_THAN_PLAN],
                  ops_count: 0, awaiting: true, plan_kinds: [COUNTER_OFFER, NEGOTIATE],
-                 reply_contains: ["¥28,326.92", "¥802.70"]}
+                 reply_contains: ["¥28,326.92", "¥2,406.67"]}  # the cure carries the ¥135,040 day-60 low
       - text: "Send the counters"
         expect: {intent: NEGOTIATE, ops_count: 0, awaiting: true, reply_contains: ["I would send", "Option A"]}
       - text: "go ahead"
@@ -41,10 +41,10 @@ scenarios:
       - text: "Evaluate EX01"
         expect: {intent: EVALUATE_OFFER, outcome: REJECT, awaiting: true}
       - text: "go ahead"
-        expect: {intent: NEGOTIATE, negotiation: NO_DEAL, reply_contains: ["¥2,712.94"],
+        expect: {intent: NEGOTIATE, negotiation: NO_DEAL, reply_contains: ["¥3,113.93"],
                  ops: ["COUNTER_OFFER:EXECUTED", "COUNTER_OFFER:EXECUTED", "DRAW_FACILITY:EXECUTED",
                        "SUBMIT_INVOICE_FOR_FINANCING:EXECUTED"]}
-    # ADR-0010: the line is cash at once; the ¥210,000 advance lands on day 3 (FAC-IF lead time), not today
+    # ADR-0010: the line is cash at once; the ¥255,000 advance lands on day 3 (FAC-IF lead time), not today
     after: {cash_fen: 55000000, chain_valid: true}
 
   - id: S03_scene2_wording_invariance
@@ -60,10 +60,10 @@ scenarios:
     tags: [demo, scene2, fund]
     turns:
       - text: "Fund the cash gap"
-        expect: {intent: FUND_GAP, awaiting: true, ops_count: 0, reply_contains: ["¥360,000.00"]}
+        expect: {intent: FUND_GAP, awaiting: true, ops_count: 0, reply_contains: ["¥405,000.00"]}  # incl. the ¥45,000 day-30 loan payment
       - text: "go ahead"
         expect: {intent: FUND_GAP, ops: ["DRAW_FACILITY:EXECUTED", "SUBMIT_INVOICE_FOR_FINANCING:EXECUTED"],
-                 reply_contains: ["Cash in now: ¥150,000.00", "lands on day 3"]}  # not "raised ¥360,000.00": the advance is not cash yet
+                 reply_contains: ["Cash in now: ¥150,000.00", "lands on day 3"]}  # not "raised ¥405,000.00": the advance is not cash yet
     after: {cash_fen: 55000000}  # ADR-0010: the advance lands on day 3
 
   - id: S05_fund_gap_zh
@@ -90,14 +90,14 @@ scenarios:
     after: {cash_unchanged: true, facilities_added: 0, unauthorised_executions: 0}
 
   - id: S07_ex02_counter
-    title: "EX02 from the buyer: early pay at 1.5% is countered at 0.85% on up to ¥211,900"
+    title: "EX02 from the buyer: early pay at 1.5% is countered at 0.85% on up to ¥257,200"
     tags: [EX02, counterparty]
     turns:
       - actor: COUNTERPARTY
         counterparty_id: BUYER-1
         text: "We can pay this one early at 1.5%. Nothing else changes."
         expect: {intent: COUNTERPARTY_MESSAGE, ops_count: 0, store_outcome: COUNTER, store_codes: [MAX_APR_EXCEEDED],
-                 store_ops: ["COUNTER_OFFER:EXECUTED"], reply_contains: ["0.85%", "¥211,900"]}
+                 store_ops: ["COUNTER_OFFER:EXECUTED"], reply_contains: ["0.85%", "¥257,200"]}
 
   - id: S08_ex03_as_usual
     title: "EX03: 'same arrangement as usual' books nothing for the reference; counter proposed"
@@ -438,7 +438,7 @@ scenarios:
     turns:
       - text: "Which financing option is cheapest?"
         expect: {intent: COMPARE_FINANCING, ops_count: 0, awaiting: false,
-                 reply_contains: ["Gap to fund: ¥360,000.00", "6.40% all-in", "10.84% all-in", "¥841.64 + ¥1,871.30 = ¥2,712.94",
+                 reply_contains: ["Gap to fund: ¥405,000.00", "6.40% all-in", "10.84% all-in", "¥841.64 + ¥2,272.29 = ¥3,113.93",
                                   "say 'fund the gap'"]}
     after: {cash_unchanged: true}
 
@@ -447,7 +447,7 @@ scenarios:
     tags: [nl_capabilities, compare_financing, zh]
     turns:
       - text: "哪种融资最便宜"
-        expect: {intent: COMPARE_FINANCING, ops_count: 0, reply_contains: ["综合年化 6.40%", "¥2,712.94", "未执行任何操作"]}
+        expect: {intent: COMPARE_FINANCING, ops_count: 0, reply_contains: ["综合年化 6.40%", "¥3,113.93", "未执行任何操作"]}
 
   - id: S40_reconcile
     title: "Reconcile this month: receipts matched, the outstanding receivable and the chain check"
@@ -463,7 +463,7 @@ scenarios:
     turns:
       - text: "What is our DSCR?"
         expect: {intent: SHOW_RATIOS, ops_count: 0,
-                 reply_contains: ["Lowest DSCR 2.00× in month 1", "1.25× minimum", "headroom 0.75×", "Highest leverage 1.39×",
+                 reply_contains: ["Lowest DSCR 2.00× in month 1", "1.25× minimum", "headroom 0.75×", "Highest leverage 1.35×",
                                   "2.50× maximum", "inside the covenants"]}
 
   - id: S42_show_ratios_zh
@@ -471,7 +471,7 @@ scenarios:
     tags: [nl_capabilities, covenants, zh]
     turns:
       - text: "偿债覆盖率是多少"
-        expect: {intent: SHOW_RATIOS, ops_count: 0, reply_contains: ["最低 DSCR 2.00×", "余量 0.75×", "最高杠杆 1.39×"]}
+        expect: {intent: SHOW_RATIOS, ops_count: 0, reply_contains: ["最低 DSCR 2.00×", "余量 0.75×", "最高杠杆 1.35×"]}  # (1,500,000 − 45,000) / 1,080,000 at the month-1 end
 
   - id: S43_capex_case
     title: "Can we afford the ¥600,000 machine? NPV, payback and each financing structure; the application is not made"

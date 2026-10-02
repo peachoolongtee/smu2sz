@@ -43,10 +43,14 @@ RCV_A_FACE = 42_000_000
 SPAN = [SourceSpan(doc_id="T", start=0, end=0, text="")]
 
 # Recorded on origin/dev (cfecd72) with no commitments: sha256 of the sorted-key JSON of each response.
-GOLDEN_TRAJECTORY = "6e416d997eccbf94"
-GOLDEN_ROUTER_PLAN = "60bcdca14e272842"  # 3 Oct: extension figures on 13 dated invoices; extra receivables ¥210,000.00. 118733a57fd7900b before the plan, cost lines and menu rows carried the approval and executable_now flags (every figure unchanged)
+# 3 Oct (existing debt is cash): the existing loan's ¥45,000 payments on days 30, 60, 90 and 120 are in the
+# trajectory, and the plan carries a ¥255,000 advance (cost ¥3,113.93); before: 6e416d997eccbf94 and 60bcdca14e272842
+GOLDEN_TRAJECTORY = "0437cc43e3b22800"
+GOLDEN_ROUTER_PLAN = "2479590b9ee26e83"  # earlier, 3 Oct: extension figures on 13 dated invoices; extra receivables ¥210,000.00. 118733a57fd7900b before the plan, cost lines and menu rows carried the approval and executable_now flags (every figure unchanged)
 EX01_COUNTERS = [
-    "Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥211,900 of this invoice at 0.85%.",
+    # face 255,000 / (1 − 0.85%) = 257,186.08, rounded up to a whole ¥100 (the gap net of the line includes the
+    # existing loan's ¥45,000 day-30 payment; compute_golden.py counter_a_face)
+    "Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥257,200 of this invoice at 0.85%.",
     "60-day terms accepted with a 0.45% price adjustment on future invoices, no rebate.",
 ]
 
@@ -141,8 +145,8 @@ def test_no_commitments_trajectory_and_router_plan_are_unchanged(client: TestCli
     assert r["marginal"]["extension_extra_receivables_fen"] == 21_000_000  # F x 15 / 30, the shared pro forma
     assert r["marginal"]["extension_committed_12m_fen"] == 2_432_692
     assert _digest(r) == GOLDEN_ROUTER_PLAN
-    assert r["committed"]["total_cost_display"] == "¥2,712.94"
-    assert r["committed"]["total_cost_fen"] == 271_294
+    assert r["committed"]["total_cost_display"] == "¥3,113.93"  # line 841.64 + advance of 255,000 2,272.29
+    assert r["committed"]["total_cost_fen"] == 311_393
 
 
 def test_no_commitments_ex01_verdict_is_unchanged(client: TestClient, rt: Runtime) -> None:
@@ -151,7 +155,9 @@ def test_no_commitments_ex01_verdict_is_unchanged(client: TestClient, rt: Runtim
     assert [x["code"] for x in v["violations"]] == ["AGG_CONCESSION_EXCEEDED", "RESERVE_BREACH",
                                                     "DISCOUNT_ABOVE_BREAK_EVEN", "EARLY_PAY_DEARER_THAN_PLAN"]
     assert [c["text"] for c in v["counters"]] == EX01_COUNTERS
-    assert next(x for x in v["violations"] if x["code"] == "RESERVE_BREACH")["cure_cost_fen"] == 80_270
+    # the cure carries the deepest shortfall, 135,040 on day 60 (after the existing loan's day-60 payment):
+    # 135,040 × 7.8% × 60/365 = 1,731.47 + fees 135,040 × 0.25% × 2 = 675.20 -> 2,406.67 (golden reserve_cure_cost_if)
+    assert next(x for x in v["violations"] if x["code"] == "RESERVE_BREACH")["cure_cost_fen"] == 240_667
     # the id of a verdict on books with nothing live is a function of the state, mandate and day alone
     offer = rt.store.get_offer(oid)
     assert offer is not None
@@ -241,19 +247,21 @@ def test_negotiate_cooperative_plan_and_operations_unchanged(client: TestClient)
     assert n["outcome"] == "DEAL"
     assert [(o["kind"], o["status"], o["tier"]) for o in n["operations"]] == [
         ("ACCEPT_OFFER", "EXECUTED", "TIER_1"), ("DRAW_FACILITY", "EXECUTED", "TIER_1")]
-    assert n["operations"][1]["message"] == "Drew ¥149,901.15 on FAC-LINE on day 0"
+    # the line carries 405,000 − (257,200 − 2,186.20) = 149,986.20
+    assert n["operations"][1]["message"] == "Drew ¥149,986.20 on FAC-LINE on day 0"
     # the accepted counter is in the books once, not twice: the line carries the rest of the gap and the
     # router adds no early pay on top (the counter's face already nets the gap less the line)
     assert [(a["kind"], a["facility_id"], a["amount_fen"]) for a in n["plan"]["actions"]] == [
-        ("DRAW", "FAC-LINE", 14_990_115)]
-    assert n["plan"]["need_fen"] == 14_990_115 and n["plan"]["total_cost_fen"] == 84_109
-    assert n["plan"]["label"] == "committed plan: ¥841.09"
+        ("DRAW", "FAC-LINE", 14_998_620)]
+    # 149,986.20 × 6.4% × 32/365 = 841.5664 -> 841.57
+    assert n["plan"]["need_fen"] == 14_998_620 and n["plan"]["total_cost_fen"] == 84_157
+    assert n["plan"]["label"] == "committed plan: ¥841.57"
 
 
 def test_negotiate_hard_line_still_funds_the_standing_gap(client: TestClient) -> None:
     oid, _ = _evaluate_ex01(client)
     n = client.post(f"/negotiate/{oid}", json={"buyer_profile": "hard_line"}).json()
-    assert n["outcome"] == "NO_DEAL" and n["plan"]["total_cost_display"] == "¥2,712.94"
+    assert n["outcome"] == "NO_DEAL" and n["plan"]["total_cost_display"] == "¥3,113.93"
 
 
 # ---------------------------------------------------------------- 5. the verdict binds only the offer

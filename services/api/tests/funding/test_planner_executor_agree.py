@@ -283,18 +283,31 @@ PROPS = settings(max_examples=int(os.environ.get("AGREE_EXAMPLES", "60")), deadl
 # the golden day-0 plan (line + advance on RCV-A, not flagged), and the review's R01: an invoice due soon, so the
 # advance is held about 10 days, costs far above the ceiling and must wait for the owner
 # the router prices an advance on a recurring invoice that is not issued yet (RI:BUYER-1:2): the executor refuses it
-UNISSUED = World(cash=23_000_000, payroll=(5, -8_000_000), supplier=(10, -3_000_000), bill=None,
+# (pinned with ¥230,000 of cash before the existing loan's ¥45,000 payments on days 30 and 60 were cash. Now ¥300,000:
+# 300,000 − 80,000 − 30,000 = 190,000 by day 10, one gap of ¥110,000, and day 60 closes exactly at the floor
+# (+50,000 day 18 − 45,000 day 30 + 150,000 day 32 − 45,000 day 60), so there is no second gap to ask about)
+UNISSUED = World(cash=30_000_000, payroll=(5, -8_000_000), supplier=(10, -3_000_000), bill=None,
                  rcv_a=(5_000_000, 0, 18, 0), recurring=(15_000_000, 2, 30), line=(5_500_000, 300, 0, 0),
                  iff=(12_500_000, 400, 0, 0, 7, 0, None))
 # the same, with an invoice that exists to finance instead: a plan the agent can run beats the cheaper one that
-# relies on RI:BUYER-1:2
-RI_CHEAPER = World(cash=23_000_000, payroll=(5, -8_000_000), supplier=(10, -3_000_000), bill=None,
+# relies on RI:BUYER-1:2 (¥275,000: the ¥230,000 it was pinned with plus the existing loan's ¥45,000 day-30 payment)
+RI_CHEAPER = World(cash=27_500_000, payroll=(5, -8_000_000), supplier=(10, -3_000_000), bill=None,
                    rcv_a=(15_000_000, 0, 18, 0), recurring=(15_000_000, 2, 30), line=(5_500_000, 300, 0, 0),
                    iff=(12_500_000, 400, 0, 0, 7, 0, None))
 GOLDEN = World()
 SHORT_HOLD = World(rcv_a=(42_000_000, -13, 26, 0))
 PARTLY_PAID = World(rcv_a=(42_000_000, -13, 45, 50), cash=52_000_000)
-TERM_LOAN = World(cash=30_000_000, ggl=(25_000_000, 500, 2, 3), payroll=(8, -40_000_000))
+# ¥345,000: the ¥300,000 this world was pinned with plus the existing loan's ¥45,000 day-30 payment, so the gap stays
+# ¥520,000 and a small term-loan leg still fits the DSCR (at ¥300,000 the ¥565,000 gap needs more than it can carry)
+TERM_LOAN = World(cash=34_500_000, ggl=(25_000_000, 500, 2, 3), payroll=(8, -40_000_000))
+# a line repayment day the executed books cannot keep: the router once held the line to day 62 so that its interest fell
+# in month 3, but once drawn the line is carried and assumed repaid on the first affordable receipt (day 44), its
+# interest lands in month 2 and admission refused the guaranteed-loan leg (DSCR 1.247x < 1.25x). The router now judges
+# a plan's line legs as admission will (`Search._carried_line_ratios`).
+LINE_HELD = World(day=0, cash=8_000_000, payroll=(5, -1_000_000), supplier=(10, -25_000_000), bill=None, extra=None,
+                  rcv_a=(47_000_000, 0, 44, 0), rcv_b=None, recurring=(15_000_000, 2, 30),
+                  line=(24_500_000, 547, 0, 0), iff=(14_500_000, 400, 50, 0, 30, 0, None),
+                  ggl=(25_000_000, 583, 1, 6), ebitda=9_000_000)
 
 
 @settings(PROPS)
@@ -305,6 +318,7 @@ TERM_LOAN = World(cash=30_000_000, ggl=(25_000_000, 500, 2, 3), payroll=(8, -40_
 @example(w=TERM_LOAN)
 @example(w=UNISSUED)
 @example(w=RI_CHEAPER)
+@example(w=LINE_HELD)
 def test_the_router_plan_runs_in_the_executor_as_quoted(w: World) -> None:
     rt = build(w)
     books, mandate, p = committed_plan(rt)
@@ -314,7 +328,7 @@ def test_the_router_plan_runs_in_the_executor_as_quoted(w: World) -> None:
 
 def test_pinned_worlds_make_the_plans_they_are_pinned_for() -> None:
     _, _, golden = committed_plan(build(GOLDEN))
-    assert golden.total_cost_fen == 271_294 and not golden.needs_owner_approval  # day-0 golden plan, unchanged
+    assert golden.total_cost_fen == 311_393 and not golden.needs_owner_approval  # day-0 golden plan (¥3,113.93)
     assert {a.facility_id for a in golden.actions} == {"FAC-LINE", "FAC-IF"}
     _, _, short = committed_plan(build(SHORT_HOLD))
     assert short.admissible and short.needs_owner_approval and "held 10 days" in short.approval_reason

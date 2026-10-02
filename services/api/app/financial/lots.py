@@ -164,6 +164,24 @@ class Repaid:
     parts: list[str]  # one formula per lot repaid
 
 
+def is_open_line(f: Facility) -> bool:
+    """A bullet facility with no term (a revolving line): once drawn, its repayment day is discretionary, so the
+    projection carries the lot and assumes it repaid on the first affordable receipt day (ADR-0010 §5)."""
+    return f.repayment == Repayment.BULLET and not f.term_months
+
+
+def carry_draw(state: FinancialState, f: Facility, amount_fen: int, lot_id: str = "admission-probe") -> FinancialState:
+    """The books as they stand right after a draw of `amount_fen` on the open line `f` executes today: the lot in the
+    state (its cash in at once when there is no lead time), the drawn balance up. Admission judges a line draw this
+    way, and the router judges a plan's line legs the same way (`app.funding.search.Search.evaluate`)."""
+    base = ensure_lots(state)
+    lot = new_lot(unique_id(base.lots, lot_id), f, amount_fen, state.as_of_day)
+    facilities = [x.model_copy(update={"drawn_fen": x.drawn_fen + amount_fen}) if x.id == f.id else x
+                  for x in base.facilities]
+    cash = base.cash_fen + (landing_cash(f, lot) if lot.settled else 0)
+    return base.model_copy(update={"facilities": facilities, "lots": [*base.lots, lot], "cash_fen": cash})
+
+
 def landed(lots: list[FundingLot], facility_id: str) -> int:
     """What can be repaid on a facility today: the remaining balance of its settled lots."""
     return sum(lot.remaining_fen for lot in lots if lot.facility_id == facility_id and lot.settled)
@@ -266,11 +284,13 @@ __all__ = [
     "Repaid",
     "advance_charges",
     "apply_receipt",
+    "carry_draw",
     "contractual_payments",
     "ensure_lots",
     "first_unsettled",
     "has_maturity",
     "is_fixed_remainder",
+    "is_open_line",
     "landed",
     "landing_cash",
     "maturity_day",

@@ -68,6 +68,7 @@ year, so the owner must approve it.
 | DSCR = monthly EBITDA / monthly debt service. Service = fixed service on existing debt + interest and fees as posted + amortising principal + bullet term loans on a level basis (ADR-0008). The level basis is an owner's reserve-coverage reading, not a lender's contractual definition (U-004). | Done; label open |
 | Leverage = month-end debt / (12 × monthly EBITDA). Undefined when EBITDA ≤ 0: with debt it is a breach, never an exception. | Done (3 Oct) |
 | Every drawn balance has a dated lot (request day, landing day, principal, maturity). The projection never invents day 0. | Done (3 Oct) |
+| Existing debt (`state.debts`) is cash. One schedule (`app/financial/debts.py`): from `next_payment_day`, every `payment_every_days`, on each payment day on or after today while principal is left, interest = principal × `rate_bp` × days since the last payment / 365 and principal = min(principal, service − interest); the last payment clears the principal. The projection and the clock post the same payments (cash down, debt and leverage debt down by the principal); nothing is posted before today. The ratio keeps the fixed monthly service for the months the schedule covers, zero once the principal is cleared. The golden D-EQUIP's 0% rate is a fixture assumption. | Done (3 Oct) |
 
 ## 6. Forward concessions
 

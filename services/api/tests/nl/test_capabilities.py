@@ -154,7 +154,9 @@ def test_capex_figures_equal_the_route(client, rt):
         if s.min_dscr is not None:
             assert f"{s.label}: min DSCR {s.min_dscr.text}×" in reply
     sel = next(s for s in direct.structures if s.id == direct.selected_id)
-    assert f"- {sel.label}:" in reply and "SELECTED" in reply and "fails" in reply and "passes" in reply
+    # the 36-month loan fails on the reserve (its day-44 payment after the existing loan's day-30 payment), so the
+    # selected lease is the only structure that passes
+    assert f"- {sel.label}:" in reply and "SELECTED" in reply and "fails" in reply
     assert "Capex screen" in reply
 
 

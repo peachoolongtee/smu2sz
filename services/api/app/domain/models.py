@@ -402,6 +402,11 @@ class DebtPosition(Contract):
     label: str
     principal_fen: Fen
     monthly_debt_service_fen: Fen  # scheduled principal + interest
+    # The payment schedule (`app.financial.debts.debt_payments`): simple annual interest on the principal since the
+    # last payment (0: the whole payment is principal), paid every `payment_every_days` from `next_payment_day`.
+    rate_bp: int = 0
+    payment_every_days: int = 30
+    next_payment_day: Day = 30  # the first month-end after day 0
 
 
 class ForwardConcession(Contract):

@@ -40,11 +40,12 @@ def unsettled(rt) -> list[FundingLot]:
 def test_an_advance_in_transit_is_an_info_alert_with_no_suggested_operation(client, rt):
     fund(client)
     [lot] = unsettled(rt)
-    assert (lot.facility_id, lot.request_day, lot.arrival_day, lot.principal_fen) == ("FAC-IF", 0, 3, 21_000_000)
+    # the day-0 plan's advance: 405,000 − the 150,000 line = 255,000
+    assert (lot.facility_id, lot.request_day, lot.arrival_day, lot.principal_fen) == ("FAC-IF", 0, 3, 25_500_000)
     [a] = transit(client)
     assert a["severity"] == "INFO" and a["actionable"] is False and a["suggested"] == []
-    assert a["title"] == ("¥210,000.00 requested on day 0 on Invoice financing (onboarded platform) lands on day 3")
-    assert a["amount_fen"] == 21_000_000 and a["day"] == 3
+    assert a["title"] == ("¥255,000.00 requested on day 0 on Invoice financing (onboarded platform) lands on day 3")
+    assert a["amount_fen"] == 25_500_000 and a["day"] == 3
     assert a["inputs"]["arrival_day"] == "3" and a["inputs"]["request_day"] == "0"
 
 

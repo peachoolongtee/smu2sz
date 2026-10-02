@@ -357,6 +357,12 @@ def test_adjusted_state_round_trips_through_the_sql_store_and_old_states_seriali
 
 def test_an_accepted_commitment_is_applied_once_also_after_reverification() -> None:
     rt = _runtime()
+    # Option B's 60-day terms move RI:2's receipt to day 62, past the existing loan's day-60 payment: on the golden
+    # books the re-verification finds a reserve shortfall (¥130,000 at most) that the committed sources cannot cure
+    # (FAC-IF's limit is held by the day-0 plan's ¥255,000 advance), so it is refused. What this test checks is that
+    # the terms are applied once, so the books get ¥150,000 more cash to keep the commitment verifiable.
+    s = rt.store.get_state()
+    rt.store.put_state(s.model_copy(update={"cash_fen": s.cash_fen + 15_000_000}))
     c = _option_b(rt, delay=1)  # the books move before acceptance: the executor re-verifies the commitment
     books = current_books(rt.store.get_state(), rt.store.commitments())
     assert not [o for o in books.obligations if o.type in invoices.ADJUSTING]

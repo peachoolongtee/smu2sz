@@ -28,10 +28,33 @@ def ratio2(x: F) -> str:
 Y = lambda s: F(s)  # yuan
 bp = lambda n: F(n, 10000)
 
+# Existing debt (FINANCIAL_SEMANTICS section 5): D-EQUIP, principal 1,500,000 yuan, fixed service 45,000 yuan
+# every 30 days from day 30, rate 0 (a fixture assumption: the whole payment is principal). Each payment day d,
+# while principal > 0: interest = principal x rate x 30/365 (zero here), principal part = min(principal,
+# service - interest). So 45,000 yuan leaves cash on days 30, 60, 90, 120, ... and the debt falls by the same.
+DEBT_PRINCIPAL, DEBT_SERVICE, DEBT_RATE, DEBT_EVERY, DEBT_FIRST = Y(1500000), Y(45000), bp(0), 30, 30
+def debt_schedule(until_day, today=0):
+    """[(day, principal part, interest)] of D-EQUIP dated in [today, until_day)."""
+    out, bal, d = [], fen(DEBT_PRINCIPAL), DEBT_FIRST
+    while d < today:
+        d += DEBT_EVERY
+    while bal > 0 and d < until_day:
+        i = fen(F(bal, 100) * DEBT_RATE * DEBT_EVERY / 365)
+        part = max(0, min(bal, fen(DEBT_SERVICE) - i))
+        bal -= part
+        out.append((d, part, i))
+        d += DEBT_EVERY
+    return out
+def debt_paid(first_day, last_day):
+    """Cash the existing debt takes on days first_day..last_day inclusive, fen."""
+    return sum(p + i for d, p, i in debt_schedule(last_day + 1) if d >= first_day)
+DS = debt_paid(0, 30)                       # the one payment before RCV-A lands on day 32: day 30, 4,500,000 fen
+out_debt = {"debt_service_day30": DS, "debt_payments_to_day120": [d for d, _, _ in debt_schedule(121)]}
+
 LINE_RATE = bp(640)
 IF_RATE, IF_FEE = bp(780), bp(25)          # per 30-day advance
 GL_RATE = bp(500)                           # 4.0% + 1.0% guarantee fee
-out = {}
+out = dict(out_debt)
 
 # 7.4 router table
 line_int = fen(Y(150000) * LINE_RATE * 32 / 365)
@@ -40,20 +63,27 @@ def if_cost(amount, days, period=30):
     periods = -(-days // period)
     return fen(amount * IF_RATE * periods * period / 365) + fen(amount * IF_FEE * periods)
 
-if_cost_210k_30d = if_cost(Y(210000), 29)  # advance lands day 3 (lead time), repaid day 32
-face_12 = fen(Y(210000) / (1 - bp(120)))            # grossed-up face, fen
-disc_12 = face_12 - 21000000
-face_15 = fen(Y(210000) / (1 - bp(150)))
-disc_15 = face_15 - 21000000
+# The gap before RCV-A lands on day 32: payroll 340,000 (day 12) + supplier 120,000 (day 20) + the day-30 debt
+# payment 45,000, plus the 300,000 reserve, less the 400,000 cash on day 0 = 405,000. The committed line carries
+# its 150,000 limit; the rest, 255,000, is the plan's second leg (an advance, or a partial early payment's net).
+need = 34000000 + 12000000 + DS + 30000000 - 40000000
+plan_rest = need - 15000000
+PR = F(plan_rest, 100)
+if_cost_plan = if_cost(PR, 29)  # advance lands day 3 (lead time), repaid day 32
+face_12 = fen(PR / (1 - bp(120)))            # grossed-up face, fen
+disc_12 = face_12 - plan_rest
+face_15 = fen(PR / (1 - bp(150)))
+disc_15 = face_15 - plan_rest
 out["full_discount_1_2pct"] = fen(Y(420000) * bp(120))
 out["line_interest_150k_32d"] = line_int
-out["if_cost_210k_30d"] = if_cost_210k_30d
+out["plan_advance"] = plan_rest
+out["if_cost_plan_advance"] = if_cost_plan
 out["v1_partial_face"] = face_12
 out["v1_partial_discount"] = disc_12
 out["v1_optimum_total"] = line_int + disc_12
-out["v2_optimum_total"] = line_int + if_cost_210k_30d
+out["v2_optimum_total"] = line_int + if_cost_plan
 out["example2_line_plus_partial_1_5pct"] = line_int + disc_15
-out["funding_need_before_day_32"] = 46000000 + 30000000 - 40000000
+out["funding_need_before_day_32"] = need
 
 # break-even early-pay discount: d/(1-d) < c  =>  d < c/(1+c), c = IF cost share for 30 days
 c = IF_RATE * 30 / 365 + IF_FEE
@@ -92,23 +122,32 @@ out["concession_cap"] = 500000
 cash = 40000000 + (42000000 - out["full_discount_1_2pct"])  # day 2
 cash -= 34000000   # day 12 payroll
 cash -= 12000000   # day 20 supplier
+out["cash_day20"] = cash
+cash -= debt_paid(21, 47)   # day 30 debt payment
 day47_45 = cash + 42000000 - 10000000
 day47_60 = cash - 10000000
-out["cash_day20"] = cash
 out["cash_day47_45d_terms"] = day47_45
 out["cash_day47_60d_terms"] = day47_60
 out["reserve_shortfall_day47"] = 30000000 - day47_60
-# cure: carry the shortfall on the committed marginal permanent source (invoice financing), requested
-# on day 0 against the day-2 invoice: lands day 5 (lead 3), repaid day 62 -> 57 days -> 2 periods (ADR-0003)
-sf = F(out["reserve_shortfall_day47"], 100)
+# Under 60-day terms the day-2 invoice pays on day 62, so the day-60 debt payment falls before it: the lowest
+# closing is day 60 (and 61), deeper than day 47 by one more payment.
+day60_60 = day47_60 - debt_paid(48, 61)
+out["cash_day60_60d_terms"] = day60_60
+out["reserve_shortfall_max"] = 30000000 - day60_60
+# cure: carry the deepest shortfall on the committed marginal permanent source (invoice financing) for 57 days ->
+# 2 periods (ADR-0003): against the day-2 invoice (lands day 5, repaid day 62) or, as the verifier picks, the day-32
+# invoice (lands day 35, repaid day 92 under 60-day terms): the same 57 days, the same price
+sf = F(out["reserve_shortfall_max"], 100)
 out["reserve_cure_cost_if"] = if_cost(sf, 57)
 
 # Counter A
 # face = the exact gross-up of the gap net of the committed line, rounded UP to a whole 100 yuan (so it nets
 # at least the gap); the rest of the gap is carried on the committed line, whose cost is the funding cost
-ca_face = -(-(Y(210000) / (1 - bp(85))) // 100) * 100
+ca_face = -(-(PR / (1 - bp(85))) // 100) * 100
+out["counter_a_face"] = fen(ca_face)
 out["counter_a_discount"] = fen(ca_face * bp(85))
-ca_line_draw = Y(360000) - (ca_face - F(out["counter_a_discount"], 100))
+ca_line_draw = F(need, 100) - (ca_face - F(out["counter_a_discount"], 100))
+# the line carries the rest of the gap: 405,000 - (257,200 - 2,186.20) = 149,986.20 (shown by the demo's repay)
 out["counter_a_total"] = out["counter_a_discount"] + fen(ca_line_draw * LINE_RATE * 32 / 365)
 # Counter B
 out["counter_b_price_adj_per_invoice"] = fen(Y(420000) * bp(45))
@@ -124,6 +163,8 @@ ext_int_m = F(out["extension_monthly_service"], 100)
 out["dscr_base"] = ratio2(ebitda_m / ds_m)
 out["dscr_after_extension"] = ratio2(ebitda_m / (ds_m + ext_int_m))
 out["leverage_base"] = ratio2(debt_base / (ebitda_m * 12))
+# the projection's month-1 leverage with the line drawn: the month-end debt is after the day-30 payment
+out["leverage_month1_line_drawn"] = ratio2((debt_base - F(debt_paid(0, 30), 100)) / (ebitda_m * 12))
 out["leverage_after_extension"] = ratio2((debt_base + F(out["extension_extra_receivables"], 100)) / (ebitda_m * 12))
 
 # 7.7 capex
@@ -170,10 +211,22 @@ cap["payback_month"] = payback
 cap["leverage_financed"] = ratio2((debt_base + Y(600000)) / (ebitda_m * 12))
 cap["leverage_financed_plus_extension"] = ratio2((debt_base + Y(600000) + F(out["extension_extra_receivables"], 100)) / (ebitda_m * 12))
 cap["cash_above_reserve"] = 40000000 - 30000000 + 15000000
+# Liquidity on the daily projection (requested day 0; proceeds land and the machine is paid on the same day, so the
+# purchase is cash-neutral). Before the first instalment the books close at 400,000 - 340,000 (day 12) - 120,000
+# (day 20) - 45,000 (the day-30 debt payment) + 420,000 (RCV-A, day 32) = 315,000; nothing else moves until the
+# first instalment (loan: day 14 + 30 = 44; lease: day 10 + 30 = 40), which must not take cash below the 300,000
+# reserve the current books keep on that day. Loan 18m: 315,000 - 34,830.60 = 280,169.40 (and DSCR fails);
+# loan 36m: 315,000 - 18,144.62 = 296,855.38 < 300,000, so it is not feasible; lease 48m: 315,000 - 14,423.49 =
+# 300,576.51. The cheapest feasible structure by charges is the lease (the 36-month loan was, before the debt
+# payment was cash: 360,000 - 18,144.62 = 341,855.38).
+before_first = 40000000 - 34000000 - 12000000 - debt_paid(0, 32) + 42000000
+feasible = [k for k in ("loan_18m", "loan_36m", "lease_48m")
+            if cap[k]["dscr_m1_3_passes"] and before_first - cap[k]["monthly_payment"] >= 30000000]
+cap["selected"] = min(feasible, key=lambda k: cap[k]["total_interest"]) if feasible else None
 out["capex"] = cap
 
 for k, v in cap.items():
     if isinstance(v, dict): v["dscr_m1_3_passes"] = bool(v["dscr_m1_3_passes"])
 p = pathlib.Path(__file__).with_name("golden_values.json")
-p.write_text(json.dumps(out, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+p.write_text(json.dumps(out, indent=2, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n")
 print(json.dumps(out, indent=2))

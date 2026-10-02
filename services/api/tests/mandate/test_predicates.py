@@ -76,12 +76,13 @@ def test_reserve_breach_golden_day47():
     [v] = run(t=t)
     assert v.day == 47
     assert v.curable is None
-    assert v.observed == "¥254,960.00" and v.limit == "¥300,000.00"
+    # 354,960 on day 20 − 45,000 (the existing loan, day 30) − 100,000 (the bill) = 209,960; short 90,040
+    assert v.observed == "¥209,960.00" and v.limit == "¥300,000.00"
     assert v.inputs["shortfall_fen"] == str(g["reserve_shortfall_day47"])
-    assert v.inputs["shortfall"] == "¥45,040.00"
+    assert v.inputs["shortfall"] == "¥90,040.00"
     assert v.inputs["max_shortfall"] == "¥100,000.00" and v.inputs["max_shortfall_day"] == "50"
     assert v.inputs["recovery_day"] == "62"
-    assert v.formula and "¥254,960.00 < ¥300,000.00" in v.formula
+    assert v.formula and "¥209,960.00 < ¥300,000.00" in v.formula
 
 
 def test_reserve_breach_without_recovery():

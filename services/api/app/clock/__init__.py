@@ -1,7 +1,8 @@
 """The clock (ADR-0006 §2): the only way simulated time moves.
 
 `advance(store, to_day, actor)` closes every day before `to_day` in one store transaction:
-scheduled flows dated on those days are posted to cash, recurring invoices issued on those days
+scheduled flows dated on those days are posted to cash, the existing debts' scheduled payments due on those days
+are paid (`app.financial.debts`, the schedule the projection posts), recurring invoices issued on those days
 become real receivables (with the accepted adjustments in scope written on them, ADR-0009), finite
 adjustments whose invoices are all issued are consumed (an ACTIVE commitment left with nothing live becomes
 FULFILLED once every invoice carrying its terms is SETTLED), commitments past their expiry are marked EXPIRED, `as_of_day` moves and
@@ -23,6 +24,7 @@ from app.domain.models import (
     Actor,
     CashFlow,
     CommitmentStatus,
+    DebtPosition,
     Facility,
     FinancialState,
     FundingLot,
@@ -33,6 +35,7 @@ from app.domain.models import (
 )
 from app.domain.money import fmt_yuan
 from app.domain.ports import LedgerStore
+from app.financial.debts import debt_payments, first_payment_day
 from app.financial.invoices import InvoiceRef, consumed, issue_terms, only_adjusting, recurring_receivable_id
 from app.financial.lots import contractual_payments, ensure_lots, landing_cash
 from app.persistence import canonical_json
@@ -56,6 +59,8 @@ class ClockAdvance:
     settled_lot_ids: list[str] = field(default_factory=list)  # ADR-0010: funding whose cash landed
     posted_debt_payments: list[dict[str, Any]] = field(default_factory=list)  # instalments and maturities paid
     lots_net_fen: int = 0  # cash those moved: landings less payments
+    posted_debt_service: list[dict[str, Any]] = field(default_factory=list)  # existing debts' scheduled payments
+    debt_service_fen: int = 0  # the cash they took (positive)
 
     @property
     def moved(self) -> bool:
@@ -96,13 +101,36 @@ def close_days(state: FinancialState, to_day: int) -> tuple[FinancialState, Cloc
     done = [a for a in state.invoice_adjustments if consumed(a, ids, to_day)]
     left = [a for a in state.invoice_adjustments if a not in done]
     lots, facilities, settled, payments, bank = _close_lots(state, to_day)
-    new = state.model_copy(update={"cash_fen": state.cash_fen + net + bank, "flows": kept, "receivables": receivables,
-                                   "recurring_invoices": recurring, "as_of_day": to_day,
+    debts, serviced, service = _close_debts(state.debts, today, to_day)
+    new = state.model_copy(update={"cash_fen": state.cash_fen + net + bank - service, "flows": kept,
+                                   "receivables": receivables, "recurring_invoices": recurring, "as_of_day": to_day,
                                    "invoice_adjustments": left, "state_version": state.state_version + 1,
-                                   "lots": lots, "facilities": facilities})
+                                   "lots": lots, "facilities": facilities, "debts": debts})
     return new, ClockAdvance(today, to_day, posted, net, skipped, issued,
                              consumed_adjustment_ids=[a.id for a in done], settled_lot_ids=settled,
-                             posted_debt_payments=payments, lots_net_fen=bank)
+                             posted_debt_payments=payments, lots_net_fen=bank, posted_debt_service=serviced,
+                             debt_service_fen=service)
+
+
+def _close_debts(debts: list[DebtPosition], today: int,
+                 to_day: int) -> tuple[list[DebtPosition], list[dict[str, Any]], int]:
+    """The existing debts' scheduled payments on the days being closed (`debt_payments`, the projection's schedule):
+    cash out, principal down, the next payment day moved past the closed days. Returns (debts, payments, cash paid)."""
+    out: list[DebtPosition] = []
+    paid: list[dict[str, Any]] = []
+    cash = 0
+    for dbt in debts:
+        pays = debt_payments(dbt, today, to_day)
+        if not pays and dbt.next_payment_day >= to_day:
+            out.append(dbt)
+            continue
+        for p in pays:
+            cash += p.amount
+            paid.append({"debt_id": dbt.id, "day": p.day, "principal_fen": p.principal, "interest_fen": p.interest})
+        principal = pays[-1].remaining if pays else dbt.principal_fen
+        out.append(dbt.model_copy(update={"principal_fen": principal,
+                                          "next_payment_day": first_payment_day(dbt, to_day)}))
+    return out, paid, cash
 
 
 def _close_lots(state: FinancialState, to_day: int) -> tuple[list[FundingLot], list[Facility], list[str],
@@ -229,6 +257,8 @@ def advance(store: LedgerStore, to_day: int, actor: Actor = Actor.SYSTEM,
             payload |= {"posted_debt_payments": adv.posted_debt_payments}
         if adv.settled_lot_ids or adv.posted_debt_payments:
             payload |= {"lots_net_fen": adv.lots_net_fen}
+        if adv.posted_debt_service:  # the existing debts' scheduled payments, only when there are some
+            payload |= {"posted_debt_service": adv.posted_debt_service, "debt_service_fen": adv.debt_service_fen}
         msg = (f"Clock moved from day {adv.from_day} to day {adv.to_day}: {len(adv.posted_flow_ids)} scheduled "
                f"flow(s) posted (net {fmt_yuan(adv.posted_net_fen)}), {len(adv.issued_receivable_ids)} invoice(s) "
                f"issued, {len(expired)} commitment(s) expired"
@@ -238,7 +268,9 @@ def advance(store: LedgerStore, to_day: int, actor: Actor = Actor.SYSTEM,
                + (f", {len(adv.settled_lot_ids)} funding request(s) landed" if adv.settled_lot_ids else "")
                + (f", {len(adv.posted_debt_payments)} loan payment(s) posted" if adv.posted_debt_payments else "")
                + (f" (funding net {fmt_yuan(adv.lots_net_fen)})"
-                  if adv.settled_lot_ids or adv.posted_debt_payments else ""))
+                  if adv.settled_lot_ids or adv.posted_debt_payments else "")
+               + (f", {len(adv.posted_debt_service)} existing-debt payment(s) posted "
+                  f"({fmt_yuan(-adv.debt_service_fen)})" if adv.posted_debt_service else ""))
         result = OperationResult(op_id=op_id, kind=ADVANCE_CLOCK_KIND, status=OperationStatus.EXECUTED,
                                  tier=Tier.TIER_1, effective_day=adv.to_day, message=msg)
         rec = store.append_operation(op_id, ADVANCE_CLOCK_KIND, op_id, canonical_json(payload), canonical_json(result))

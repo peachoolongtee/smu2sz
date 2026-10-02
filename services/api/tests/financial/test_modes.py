@@ -60,7 +60,8 @@ def test_rebate_with_effective_day_is_paid_in_cash(state, g):
     t = project(state, [rebate(effective_day=90)], [], C, 120)
     assert t.days[89].forward_concession_fen == g["rebate_max"]
     assert t.days[90].forward_concession_fen == 0
-    assert t.days[90].closing_fen - t.days[90].opening_fen == -g["rebate_max"]
+    # day 90 also carries the existing loan's third ¥45,000 payment (days 30, 60, 90)
+    assert t.days[90].closing_fen - t.days[90].opening_fen == -g["rebate_max"] - 4_500_000
 
 
 def test_claimed_prior_concession_books_nothing(state):
@@ -103,4 +104,4 @@ def test_open_draw_and_repay(state, g):
     repay = FundingAction(kind=FundingActionKind.REPAY, facility_id="FAC-LINE", day=32, amount_fen=15_000_000)
     t = project(state, [], [open_draw, repay], C, 120)
     assert t.interest_posted_fen == g["line_interest_150k_32d"]
-    assert t.days[32].debt_outstanding_fen == 150_000_000
+    assert t.days[32].debt_outstanding_fen == 150_000_000 - 4_500_000  # the existing loan after its day-30 payment

@@ -53,7 +53,7 @@ def test_plan_is_line_plus_invoice_financing(baseline_plan, g):
     got = sorted((a.kind, a.facility_id, a.amount_fen, a.receivable_id) for a in p.actions)
     assert got == sorted([
         (FundingActionKind.DRAW, "FAC-LINE", 15_000_000, None),
-        (FundingActionKind.FINANCE_INVOICE, "FAC-IF", 21_000_000, "RCV-A"),
+        (FundingActionKind.FINANCE_INVOICE, "FAC-IF", g["plan_advance"], "RCV-A"),  # 405,000 − 150,000
     ])
     line = next(a for a in p.actions if a.facility_id == "FAC-LINE")
     assert line.day == 0 and line.repay_day == 32
@@ -65,9 +65,10 @@ def test_plan_cost_lines_and_formulas(baseline_plan, g):
     costs = {c.facility_id: c for c in baseline_plan.costs}
     assert costs["FAC-LINE"].fen == g["line_interest_150k_32d"]
     assert costs["FAC-LINE"].formula == "150,000.00 × 6.4% × 32/365 = 841.64"
-    assert costs["FAC-IF"].fen == g["if_cost_210k_30d"]
-    assert "1 × 30-day period" in costs["FAC-IF"].formula and "total ¥1,871.30" in costs["FAC-IF"].formula
-    assert baseline_plan.label.endswith("¥2,712.94")
+    # 255,000 × 7.8% × 30/365 = 1,634.79 + fee 255,000 × 0.25% = 637.50 -> 2,272.29; + line 841.64 = 3,113.93
+    assert costs["FAC-IF"].fen == g["if_cost_plan_advance"]
+    assert "1 × 30-day period" in costs["FAC-IF"].formula and "total ¥2,272.29" in costs["FAC-IF"].formula
+    assert baseline_plan.label.endswith("¥3,113.93")
 
 
 def test_plan_reports_marginal_cost_and_rejections(baseline_plan):
@@ -92,7 +93,10 @@ def test_plan_trajectory_holds_the_floor(sm, baseline_plan):
     s, m = sm
     t = project(s, [], baseline_plan.actions, Mode.CONSERVATIVE, m.horizon_days, m.min_cash_fen)
     assert t.first_breach_day is None
-    assert t.days[20].closing_fen == m.min_cash_fen  # exactly at the floor after the supplier payment
+    # 400,000 + 150,000 + 255,000 − 340,000 − 120,000 = 345,000 after the supplier payment; the existing loan's
+    # ¥45,000 on day 30 takes it exactly to the floor
+    assert t.days[20].closing_fen == m.min_cash_fen + 4_500_000
+    assert t.days[30].closing_fen == m.min_cash_fen
 
 
 def test_plan_runs_under_one_second(sm):
@@ -118,10 +122,11 @@ def test_compare_rows(rows, g):
     assert v1.result == ComparisonResult.ADMISSIBLE and v1.cost_fen == g["v1_optimum_total"]
     ep = next(a for a in v1.actions if a.kind == FundingActionKind.EARLY_PAY)
     assert ep.amount_fen == g["v1_partial_face"]
-    assert v1.cost_display == "¥841.64 + ¥2,550.61 = ¥3,392.25"
+    # face 255,000 / (1 − 1.2%) = 258,097.17, discount 3,097.17
+    assert v1.cost_display == "¥841.64 + ¥3,097.17 = ¥3,938.81"
     opt = rows["router_optimum"]
     assert opt.result == ComparisonResult.SELECTED and opt.cost_fen == g["v2_optimum_total"]
-    assert opt.cost_display == "¥841.64 + ¥1,871.30 = ¥2,712.94"
+    assert opt.cost_display == "¥841.64 + ¥2,272.29 = ¥3,113.93"
     line_only = rows["line_only"]
     assert line_only.result == ComparisonResult.NOT_ADMISSIBLE
     assert line_only.reasons == [ViolationCode.RESERVE_BREACH] and line_only.breach_day == 12
