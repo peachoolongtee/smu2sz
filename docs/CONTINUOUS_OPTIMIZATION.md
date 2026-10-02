@@ -4,7 +4,7 @@ Live document of the continuous technical owner (`docs/AGENT_MISSION.md`). Updat
 quantity are in `docs/FINANCIAL_SEMANTICS.md`. Audit ids (A01…, F-FIN-…, S-…, F1…) refer to
 `docs/research/independent-principal-audit-2026-10-03.md` and its three working papers.
 
-Last updated: 3 Oct 2026.
+Last updated: 3 Oct 2026, after six merges (`eb15850`).
 
 ## 1. Open findings
 
@@ -12,21 +12,21 @@ Status: OPEN, IN PROGRESS (branch named), DONE (merged to `dev`, date).
 
 | Id | P | Finding | Evidence | Owner | Depends on | Value | Effort | Status | Test that closes it |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| A01 | P0 | Negated, questioning, conditional, future-dated, foreign-currency or unreadable-amount messages execute financing | security working paper S-01 | subagent | | Very high | M | IN PROGRESS `fix/nl-consent` | Every transformation of a valid command leaves state unchanged, both credentials, EN and ZH |
-| A02 | P0 | "Do not approve APR-…", a question or a bare id approves | S-02 | subagent | | Very high | S | IN PROGRESS `fix/nl-consent` | Five texts leave the approval PENDING; exact approve runs once |
-| A03 | P0 | Anyone can speak as a registered buyer and book a commitment | S-03 | subagent | | Very high | M | IN PROGRESS `fix/counterparty-channel` | No credentials: zero operations, zero live commitments |
+| A01 | P0 | Negated, questioning, conditional, future-dated, foreign-currency or unreadable-amount messages execute financing | security working paper S-01 | subagent | | Very high | M | DONE 3 Oct | Every transformation of a valid command leaves state unchanged, both credentials, EN and ZH |
+| A02 | P0 | "Do not approve APR-…", a question or a bare id approves | S-02 | subagent | | Very high | S | DONE 3 Oct ("do not approve" declines) | Unclear texts leave the approval PENDING; exact approve runs once |
+| A03 | P0 | Anyone can speak as a registered buyer and book a commitment | S-03 | subagent | | Very high | M | DONE 3 Oct | No credentials: zero operations, zero live commitments |
 | A04 | P0 | Startup wiped the persisted books and log | S-04 | subagent | | High | S | DONE 3 Oct | `tests/api/test_startup_hydrate.py` |
-| A05 | P0 | Executor admitted what the planner rejects (original face, lead time, rate cap, DSCR) | `scripts/independent_audit_books.py` | owner | | Very high | M | IN PROGRESS `fix/executor-admission` (code done; texts, demo and scenarios following) | `tests/operations/test_admission.py` |
-| A09 | P0 | A late receipt earned the early-payment discount | same script | owner | | High | S | IN PROGRESS `fix/executor-admission` | same file, four pay days |
-| A06 | P0 | Accepted price and terms never become the issued invoice; partial receipt loses ¥450 | `counter-repro.py` | owner design, subagent build | | Very high | L | OPEN (next engine task) | Real Option B: issue, full and partial receipt conserve the agreed face and due day in every module |
-| A07 | P0 | "Next 3 invoices" rolls on to later invoices as earlier ones settle | `bounded-repro.py` | with A06 | A06 | Very high | M | OPEN | Scope identical after settlement, retries and clock; invoice four never inherits |
-| A08 | P0 | Funding cash and debt dates differ between projection, executor and clock; carried debt posts into closed days | books script, F-FIN-02 | owner design, subagent build | A06 merged first (same files) | Very high | L | OPEN | Projection today equals actual cash; close-then-project equals the remaining schedule |
-| A10 | P0 | "Go ahead" re-plans and can run a larger, dearer plan | S-05 | subagent | A01 merged first (same files) | High | M | OPEN | State change after a proposal: same operations at the same or lower cost run, anything else re-proposes |
-| A11 | P1 | Gains outside the horizon offset the cap; perpetual value is quadratic in the horizon; monthly service ignores invoice frequency | F-FIN-01, 06, 07; derivation merged 3 Oct | subagent against the derivation | A07 (shared scope) | High | M | OPEN | Derivation tables reproduced by the code |
-| F-FIN-09 | P1 | Upfront fee repeated per period in the break-even | derivation part 11 | subagent | | Medium | S | OPEN | c(n) equals ledger charges for n = 1…91 |
-| A12 | P1 | Capex recommends while omitting fees, drawn debt, liquidity, real tenor | F-FIN-03/04/05, flows F3/F4 | subagent | | High | M | IN PROGRESS `fix/capex-borrower-claims` | Named audit cases |
-| A13 | P1 | Borrower file keeps the equipment money as cash; window anchored at day 0 | flows F5, F7 | subagent | | High | S | IN PROGRESS same branch | Purchase deducted; rolling 12 months; day 361 works |
-| S-06 | P1 | "today" and "tomorrow" both bind to day 2 | S-06 | subagent | | Medium | S | IN PROGRESS `fix/counterparty-channel` | Explicit timing is not accepted autonomously |
+| A05 | P0 | Executor admitted what the planner rejects (original face, lead time, rate cap, DSCR) | `scripts/independent_audit_books.py` | owner | | Very high | M | DONE 3 Oct | `tests/operations/test_admission.py` |
+| A09 | P0 | A late receipt earned the early-payment discount | same script | owner | | High | S | DONE 3 Oct | same file, four pay days |
+| A06 | P0 | Accepted price and terms never become the issued invoice; partial receipt loses ¥450 | `counter-repro.py` | owner design, subagent build | | Very high | L | DONE 3 Oct (ADR-0009) | `tests/books/test_invoice_terms.py`: real Option B: issue, full and partial receipt conserve the agreed face and due day in every module |
+| A07 | P0 | "Next 3 invoices" rolls on to later invoices as earlier ones settle | `bounded-repro.py` | with A06 | A06 | Very high | M | DONE 3 Oct (ADR-0009) | Scope identical after settlement, retries and clock; invoice four never inherits |
+| A08 | P0 | Funding cash and debt dates differ between projection, executor and clock; carried debt posts into closed days | books script, F-FIN-02 | owner design, subagent build | A06 merged first (same files) | Very high | L | IN PROGRESS `fix/funding-lots` (ADR-0010) | Projection today equals actual cash; close-then-project equals the remaining schedule |
+| A10 | P0 | "Go ahead" re-plans and can run a larger, dearer plan | S-05 | subagent | A01 merged first (same files) | High | M | IN PROGRESS `fix/plan-binding` (also gates negotiate and accelerate) | State change after a proposal: same operations at the same or lower cost run, anything else re-proposes |
+| A11 | P1 | Gains outside the horizon offset the cap; perpetual value is quadratic in the horizon; monthly service ignores invoice frequency | F-FIN-01, 06, 07; derivation merged 3 Oct | subagent against the derivation | A07 (shared scope) | High | M | IN PROGRESS `fix/dated-valuation` | Derivation tables reproduced by the code |
+| F-FIN-09 | P1 | Upfront fee repeated per period in the break-even | derivation part 11 | subagent | | Medium | S | IN PROGRESS `fix/dated-valuation` | c(n) equals ledger charges for n = 1…91 |
+| A12 | P1 | Capex recommends while omitting fees, drawn debt, liquidity, real tenor | F-FIN-03/04/05, flows F3/F4 | subagent | | High | M | DONE 3 Oct | `tests/capex/test_audit_fixes.py` |
+| A13 | P1 | Borrower file keeps the equipment money as cash; window anchored at day 0 | flows F5, F7 | subagent | | High | S | DONE 3 Oct | Purchase deducted; rolling 12 months; day 361 works |
+| S-06 | P1 | "today" and "tomorrow" both bind to day 2 | S-06 | subagent | | Medium | S | DONE 3 Oct (fails closed; a typed settlement day would let "today" be accepted again) | Explicit timing is not accepted autonomously |
 | R01 | P1 | Router tests the rate cap on the tariff; the executor on the effective cost | 3 Oct, own finding | owner | A08 | Medium | S | OPEN | Router marks an above-ceiling action as needing the owner; no plan the router calls autonomous is queued by the executor |
 | R02 | P1 | Multi-leg plan is not one transaction: a later leg can be refused after an earlier one ran | audit §7 | owner | A10 | Medium | M | OPEN | Whole plan admitted before the first leg; partial outcome reported truthfully |
 | R03 | P1 | Same bank event with a new key settles twice | audit §7, code-inspected | subagent | | Medium | S | OPEN | External event id required on bank receipts; same id with a new key is a duplicate, different payload conflicts |
@@ -36,6 +36,15 @@ Status: OPEN, IN PROGRESS (branch named), DONE (merged to `dev`, date).
 | UI2 | P2 | Reconciliation page does not show promised payments; approvals show the current day as decision day | flows "Additional UI evidence" | frontend subagent | | Medium | S | OPEN | e2e |
 | UI3 | P3 | Phone layout: security page 6 px overflow, chat panel past the viewport | audit integration record | frontend subagent | | Low | S | OPEN | `e2e/responsive.spec.ts` phone project |
 | DOC1 | P1 | Documents, mocks, evidence, video script quote numbers that these fixes change | | owner | all P0 | High | M | OPEN (last) | `scripts/evaluate.py` clean; mocks re-recorded |
+| R04 | P2 | `POST /offers` stores a compiled offer for a sender id taken from the body, unauthenticated | counterparty-channel report | owner | | Low (nothing executes) | S | OPEN | Unauthenticated intake is capped or marked untrusted; evaluate still needs the owner |
+| R05 | P2 | Unauthenticated buyer messages and wrong keys grow the offer, verdict and security-event tables without limit | same report | owner | | Low | S | OPEN | A cap per day; test |
+| R06 | P1 | Three refused agent attempts on a lender open its circuit and then block the owner's own approval | admission follow-through report | owner | | Medium | S | DONE 3 Oct (with RT1-2) | Refused approval attempts by a non-owner do not count toward the lender's circuit; owner approval still executes |
+| R07 | P2 | Commitments made ACTIVE before ADR-0009 in a persistent store carry no adjustments | invoice-terms report | owner | | Low (no such store in use) | S | OPEN | One-off backfill or a startup check that refuses to hydrate such a store silently |
+| RT1 | P0 | Fresh red team on `dev` after the six merges | `docs/research/redteam-2026-10-03/REPORT.md` | subagent | | High | M | DONE 3 Oct: three findings, triaged below | |
+| RT1-1 | P0 | A receipt on a financed invoice repays the whole advance from the owner's cash; 1 fen took cash negative and reopened the invoice | probe `p03` | subagent | A08 | Very high | S | IN PROGRESS `fix/funding-lots` | p03 sequence: cash never falls on a receipt; invoice stays FINANCED until cleared |
+| RT1-2 | P0 | Agent-key refusals opened a buyer's circuit and blocked bank receipts; a refused key was burnt | probe `p01` | owner | | High | S | DONE 3 Oct | `tests/operations/test_circuit_scope.py` |
+| RT1-3 | P1 | A price cut could take an invoice below its settled amount | red team suggestion, confirmed in code | owner | | Medium | S | DONE 3 Oct | `test_a_price_cut_cannot_take_an_invoice_below_what_is_already_settled` |
+| R08 | P2 | `RequestOwnerApproval`: caller's free text becomes the reason the owner sees; `payload_op_id` need not be unique | red team suggestion, not reproduced | owner | | Medium | S | OPEN | The owner sees the operation's own description, never caller text; ambiguous op ids refused |
 | MW1 | P1 | Several API workers: process-local lock, no state-version compare-and-swap | audit §7, unverified | owner | | Medium | M | OPEN | SQLite two-connection interleaving test; PostgreSQL test when a database is available |
 
 Not doing before the deadline (audit §14 agrees): supplier payments, lender connectors, tax, FX, calendars, lease
@@ -68,14 +77,14 @@ Numbers are measurements on the commit named, never targets.
 
 | Area | Measure | `beb8c66` (audit baseline) | Latest `dev` |
 | --- | --- | --- | --- |
-| Financial | Backend tests passed | 4,042 (26 skipped) | 4,049 at `42c0e8f` (focused runs only since) |
-| Financial | Planner/executor mismatches reproduced by the audit probes | 6 of 6 | 6 of 6 on `dev`; 1 of 6 on `fix/executor-admission` (discretionary repayment, by design) |
-| Financial | Formula discrepancies open | 9 (F-FIN-01, 02, 03, 04, 06, 07, 09, 10, 11) | 9 |
-| Financial | Accepted-terms lifecycle failures (A06, A07) | 2 | 2 |
-| Security | Catalogue attacks / with harm | 182 / 0 | 182 / 0 |
-| Security | Audit attacks with harm (A01, A02, A03, A04, A10) | 5 of 5 | 4 of 5 (A04 closed) |
-| Language | Wrong and financially material interpretations known | 13 texts (S-01 ×8, S-02 ×5) | 13 |
-| Execution | Scenarios passed | 46 / 46 | 46 / 46 |
+| Financial | Backend tests passed | 4,042 (26 skipped) | 4,418 (26 skipped) at `eb15850` |
+| Financial | Planner/executor mismatches reproduced by the audit probes | 6 of 6 | 1 of 6 at `eb15850` (discretionary repayment: by design until ADR-0010 labels it) |
+| Financial | Formula discrepancies open | 9 (F-FIN-01, 02, 03, 04, 06, 07, 09, 10, 11) | 6 (01, 02, 06, 07, 09 in progress; 10 label) |
+| Financial | Accepted-terms lifecycle failures (A06, A07) | 2 | 0 |
+| Security | Catalogue attacks / with harm | 182 / 0 | 241 (122 API + 119 chat) / 0, by the suite; report not yet regenerated |
+| Security | Audit attacks with harm (A01, A02, A03, A04, A10) | 5 of 5 | 1 of 5 (A10, in progress) |
+| Language | Wrong and financially material interpretations known | 13 texts (S-01 ×8, S-02 ×5) | 0 of those; negotiate and accelerate negations in progress |
+| Execution | Scenarios passed | 46 / 46 (79 turns) | 46 / 46 (84 turns) |
 | Execution | Restart preserves state | No | Yes |
 | Product | Demo path (`scripts/demo_run.py`) | exit 0 | exit 0 |
 
@@ -92,7 +101,7 @@ Numbers are measurements on the commit named, never targets.
 2. "Go ahead" binds to the exact operations shown with the quoted cost as a ceiling. (Owner agreed.)
 3. No approval is given by code on the owner's behalf: an above-ceiling cure is queued and the owner approves it as
    a second step.
-4. Forward concessions are valued on dated invoices in [today, today + H); a gain counts only if its cash falls in
-   the window. Golden 12-month figures change (13 invoices, not 12).
+4. Forward concessions are valued on dated invoices issued in [today, today + H), gains and costs alike. Golden
+   12-month figures change (13 invoices, not 12). A cash-date rule for gains was tried and withdrawn the same day.
 5. Reserve, DSCR, leverage and the borrowing switch are hard for everyone at execution; clean-down is tested at
    plan level.

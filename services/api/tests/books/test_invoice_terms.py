@@ -363,3 +363,17 @@ def test_an_accepted_commitment_is_applied_once_also_after_reverification() -> N
     assert len(_rcv(rt, RI2).applied) == len(set(_rcv(rt, RI2).applied)) == 2
     # re-verifying the active commitment does not add its terms on top of the state
     assert rt.reverify(c, rt.store.get_state(), rt.store.get_mandate(), rt.day) is not None
+
+
+def test_a_price_cut_cannot_take_an_invoice_below_what_is_already_settled() -> None:
+    rt = _runtime()
+    rt.advance_to(3)
+    _receive(rt, RI2, 30_000_000, "partial-before-cut")
+    state = rt.store.get_state()
+    cut = _commitment("CMT-CUT", _ob("OB-CUT", ObligationType.PRICE_ADJUSTMENT, rate=-5000))
+    with pytest.raises(Exception, match="already"):
+        invoices.accept(state, cut)
+    small = _commitment("CMT-SMALL", _ob("OB-SMALL", ObligationType.PRICE_ADJUSTMENT, rate=-100))
+    after = invoices.accept(state, small)
+    r = next(x for x in after.receivables if x.id == RI2)
+    assert r.face_fen == FACE - post(bp(100) * FACE) and r.outstanding_fen == r.face_fen - 30_000_000
