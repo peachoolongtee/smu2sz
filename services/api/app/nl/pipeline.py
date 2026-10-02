@@ -156,21 +156,23 @@ def send_counters(ctx: NlContext, steps: Steps, verdict: Verdict, counters: Sequ
     return sent
 
 
-def funding_ops(ctx: NlContext, steps: Steps, plan: FundingPlan, condition: str | None = None) -> None:
+def funding_ops(ctx: NlContext, steps: Steps, plan: FundingPlan, condition: str | None = None,
+                status: str = "PROPOSED") -> None:
     """Show the router's committed plan as plan steps: DRAW -> a draw, FINANCE_INVOICE -> an invoice advance, each
     with the day its cash lands. It sends nothing: the operations a confirmation sends are the typed legs stored with
     the plan (`app.nl.plans.legs_from_plan`, run by `run_legs`); no path builds a funding plan after the owner's
-    go-ahead. Early pay is a buyer acceptance, not a funding operation; repayments happen on their scheduled day."""
+    go-ahead. Early pay is a buyer acceptance, not a funding operation; repayments happen on their scheduled day.
+    A plan that cannot run today is shown with `status` "SKIPPED": it is never one a go-ahead sends."""
     for a in plan.actions:
         if a.kind == FundingActionKind.DRAW:
             desc = t(ctx, f"Draw {fmt_yuan(a.amount_fen)} on {a.facility_id}" +
                      (f", repay day {a.repay_day}" if a.repay_day is not None else ""),
                      f"从 {a.facility_id} 提款 {fmt_yuan(a.amount_fen)}")
-            steps.add("DRAW_FACILITY", desc + _lands(ctx, a.facility_id), condition=condition)
+            steps.add("DRAW_FACILITY", desc + _lands(ctx, a.facility_id), status, condition=condition)
         elif a.kind == FundingActionKind.FINANCE_INVOICE and a.receivable_id:
             desc = t(ctx, f"Submit {a.receivable_id} to {a.facility_id} for a {fmt_yuan(a.amount_fen)} advance",
                      f"将 {a.receivable_id} 提交 {a.facility_id} 融资，预付 {fmt_yuan(a.amount_fen)}")
-            steps.add("SUBMIT_INVOICE_FOR_FINANCING", desc + _lands(ctx, a.facility_id), condition=condition)
+            steps.add("SUBMIT_INVOICE_FOR_FINANCING", desc + _lands(ctx, a.facility_id), status, condition=condition)
 
 
 def _lands(ctx: NlContext, facility_id: str) -> str:

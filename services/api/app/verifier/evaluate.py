@@ -66,6 +66,7 @@ from app.funding.rates import break_even_cost_share
 from app.mandate import check_apr, check_predicates, check_validity
 from app.verifier.bind import bind, material_gaps
 from app.verifier.counters import counters as make_counters
+from app.verifier.counters import flag_inputs, plan_flags
 from app.verifier.display import describe_all, only_early_pay, precise
 from app.verifier.models import CALC_VERSION, OwnerConstraints, PassedCheck, VerdictBundle
 from app.verifier.owner import breaches as owner_breaches
@@ -182,7 +183,9 @@ def _describe(v: Violation) -> str:
     if v.code == ViolationCode.RESERVE_BREACH:
         cure = ""
         if v.curable:
-            cure = f" (curable at {fmt_yuan(v.cure_cost_fen or 0)})"
+            held = [w for k, w in (("cure_needs_owner_approval", "needs the owner's approval"),
+                                   ("cure_executable_now", "cannot run today")) if k in v.inputs]
+            cure = f" (curable at {fmt_yuan(v.cure_cost_fen or 0)}" + (f"; the cure {' and '.join(held)}" if held else "") + ")"
         elif v.curable is False:
             cure = " (not curable on committed sources)"
         return f"RESERVE_BREACH@{v.day}{cure}"
@@ -264,6 +267,7 @@ def _apr_checks(bound: list[Obligation], state: FinancialState, mandate: Mandate
         sel = next((row for row in comparison if row.result == ComparisonResult.SELECTED), None)
         if sel is not None:
             inputs["router_optimum"] = sel.cost_display
+            inputs.update(flag_inputs(sel, "router_optimum"))
         # ADR-0007 test 1 (spec v2 §5.3 / §8 example 2): early payment is worth taking only below the SME's own
         # marginal cost of carrying the money for this tenor (0.88% for 30 days on the golden fixture).
         try:
@@ -321,18 +325,24 @@ def _early_pay_vs_plan(bound: list[Obligation], live: Sequence[Obligation], stat
         return t.interest_posted_fen + t.fees_posted_fen + t.discounts_posted_fen
 
     c1 = cost([*live, *bound], plan_committed)
+    flagged = [x for x in (plan_flags(plan_committed, "the plan with the offer"),
+                           plan_flags(plan0, "the plan without it")) if x]
+    flag_note = "; ".join(flagged)
+    flag_in = {**flag_inputs(plan_committed, "plan_with_offer"), **flag_inputs(plan0, "plan_without_offer")}
     if not plan0.admissible:
         return [], [PassedCheck(
             code="EARLY_PAY_VS_PLAN", label="Early payment against the router's plan", observed=fmt_yuan(c1),
             limit="no admissible plan without the offer",
-            formula="the books cannot keep the floor on committed sources without the early payment, and can with it",
+            formula="the books cannot keep the floor on committed sources without the early payment, and can with it"
+                    + (f"; {flag_note}" if flag_note else ""),
             inputs={"plan_with_offer": plan_committed.label, "plan_without_offer": plan0.label,
-                    "cost_with_offer": fmt_yuan(c1), "legs": label})]
+                    "cost_with_offer": fmt_yuan(c1), "legs": label, **flag_in})]
     c0 = cost([*live, *others], plan0)
     inputs = {"plan_with_offer": plan_committed.label, "plan_without_offer": plan0.label,
-              "cost_with_offer": fmt_yuan(c1), "cost_without_offer": fmt_yuan(c0), "legs": label}
+              "cost_with_offer": fmt_yuan(c1), "cost_without_offer": fmt_yuan(c0), "legs": label, **flag_in}
     formula_base = (f"C1 = interest + fees + discounts with the offer = {fmt_yuan(c1)}; "
-                    f"C0 = the same without the early payment = {fmt_yuan(c0)}")
+                    f"C0 = the same without the early payment = {fmt_yuan(c0)}"
+                    + (f"; {flag_note}" if flag_note else ""))
     if c1 < c0:
         return [], [PassedCheck(
             code="EARLY_PAY_VS_PLAN", label="Early payment against the router's plan", observed=fmt_yuan(c1),
@@ -340,11 +350,12 @@ def _early_pay_vs_plan(bound: list[Obligation], live: Sequence[Obligation], stat
     if not plan0.actions and c1 > c0:
         code = ViolationCode.EARLY_PAY_NOT_NEEDED
         message = (f"No funding is needed without the early payment; taking it costs {fmt_yuan(c1)} "
-                   f"for cash the books do not need")
+                   f"for cash the books do not need" + (f" ({flag_note})" if flag_note else ""))
         formula = f"{formula_base}; no funding needed without the offer and C1 > C0"
     else:
         code = ViolationCode.EARLY_PAY_DEARER_THAN_PLAN
-        message = f"The early payment costs {fmt_yuan(c1)}, not less than the plan without it ({fmt_yuan(c0)})"
+        message = (f"The early payment costs {fmt_yuan(c1)}, not less than the plan without it ({fmt_yuan(c0)})"
+                   + (f" ({flag_note})" if flag_note else ""))
         formula = f"{formula_base}; C1 < C0 required"
     return [Violation(code=code, message=message, observed=fmt_yuan(c1), limit=f"< {fmt_yuan(c0)}",
                       formula=formula, inputs=inputs, spans=spans)], []
@@ -630,6 +641,9 @@ def _evaluate(
             if per_invoice:
                 note += f"; the extension itself costs {fmt_yuan(sum(p for p in per_invoice if p))} per invoice"
             inputs["cure_plan"] = cure.label
+            if cure_flags := plan_flags(cure, "the cure"):  # the plan the verdict relies on is not one the agent runs alone
+                note += f"; {cure_flags}"
+                inputs.update(flag_inputs(cure, "cure"))
             rv = rv.model_copy(update={"curable": True, "cure_cost_fen": cure.total_cost_fen, "cure_note": note,
                                        "inputs": inputs})
             res.plan = cure  # the plan the verdict relies on for the breach it reports
@@ -641,13 +655,17 @@ def _evaluate(
     else:
         low = min(funded.days, key=lambda p: (p.closing_fen, p.day))
         with_plan = funded is not offer_traj
+        min_formula = "closing_cash(day) >= min_cash on every day; the offer induces no breach"
+        min_inputs = {"plan": plan_committed.label if with_plan else "no funding needed",
+                      "offer_lowest_without_funding": fmt_yuan(offer_traj.min_cash_fen),
+                      "offer_lowest_day": str(offer_traj.min_cash_day)}
+        if with_plan and (plan_note := plan_flags(plan_committed, "the committed plan")):
+            min_formula += f"; {plan_note}"
+            min_inputs.update(flag_inputs(plan_committed, "plan"))
         passed.append(PassedCheck(
             code="MIN_CASH", label="Minimum cash" + (" with the committed plan" if with_plan else ""),
             observed=f"{fmt_yuan(low.closing_fen)} on day {low.day}", limit=f"≥ {fmt_yuan(floor)}",
-            formula="closing_cash(day) >= min_cash on every day; the offer induces no breach",
-            inputs={"plan": plan_committed.label if with_plan else "no funding needed",
-                    "offer_lowest_without_funding": fmt_yuan(offer_traj.min_cash_fen),
-                    "offer_lowest_day": str(offer_traj.min_cash_day)}))
+            formula=min_formula, inputs=min_inputs))
 
     comparison = _comparison(bound, state, mandate, base_plan, live)  # its rows feed the MAX_APR check's inputs
     apr_v, apr_passed = _apr_checks(bound, state, mandate, comparison)

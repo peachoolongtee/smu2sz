@@ -201,7 +201,7 @@ def test_the_no_deal_legs_shown_with_the_proposal_are_the_legs_that_run(client, 
     def never(*_a, **_k):
         raise AssertionError("a funding plan was built after the owner's confirmation")
 
-    for name in ("committed_plan", "legs_from_plan", "followups", "status_quo_offer"):
+    for name in ("committed_plan", "runnable_legs", "followups", "status_quo_offer"):
         monkeypatch.setattr(offers, name, never)
     r = c.say("go ahead")
     assert r["negotiation"]["outcome"] == "NO_DEAL"
