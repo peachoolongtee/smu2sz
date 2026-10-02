@@ -97,6 +97,12 @@ def main() -> int:
             print(f"== owner: approve {aid}\n  {approved['reply']}")
             for res in approved["operations"]:
                 print(f"  {res['kind']} {res['status']} (tier {res['tier']}, seq {res['seq']})")
+        landing = rt.store.get_state()
+        for lot in landing.lots:  # ADR-0010: requested is not cash; the simulated bank credits it on arrival
+            if not lot.settled:
+                print(f"  cure cash: {fmt_yuan(lot.principal_fen)} on {lot.facility_id} requested day {lot.request_day}, "
+                      f"lands day {lot.arrival_day}; cash today {fmt_yuan(landing.cash_fen)} (unchanged: "
+                      f"{landing.cash_fen == cash_day34})")
         after = show_alerts(c, "after the owner's approval")
         cured = (held and any(x["status"] == "EXECUTED" for x in approved["operations"])
                  and not any(a["id"] == cure[0]["id"] for a in after))
@@ -119,6 +125,10 @@ def main() -> int:
     print("\n== day 36: the buyer pays the residual")
     c.post("/clock/advance", json={"to_day": 36}, headers=OWNER)
     r14 = receipt("demo-receipt-2", ob.base.receivable_id, rcv(ob.base.receivable_id).outstanding_fen)
+    c.post("/clock/advance", json={"to_day": 38}, headers=OWNER)  # closes day 37: the cure's advance lands
+    landed = [f"{lot.id} on day {lot.arrival_day}" for lot in rt.store.get_state().lots
+              if lot.settled and lot.request_day == 34]
+    print(f"day 38: cure cash landed: {', '.join(landed) or 'none'}; cash {fmt_yuan(rt.store.get_state().cash_fen)}")
     financed = next((r for r in rt.store.get_state().receivables if r.status == "FINANCED"), None)
     r15 = {"status": "SKIPPED"}
     if financed is not None:
