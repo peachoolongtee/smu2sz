@@ -26,8 +26,8 @@ STATE, _ = load_scenario()
 MANDATE = load_signed_mandate()
 KEY = demo_owner_public_key_hex()
 
-BASE_EN = "Hi, we can pay invoice RCV-A (¥420,000) tomorrow if you give us 0.5% off. Thanks!"
-BASE_ZH = "42万的发票我们明天就付清，扣千分之五，谢谢"
+BASE_EN = "Hi, we can pay invoice RCV-A (¥420,000) early if you give us 0.5% off. Thanks!"
+BASE_ZH = "42万的发票我们提前就付清，扣千分之五，谢谢"
 UNREAD = "text not read into the terms: "
 
 
@@ -74,16 +74,16 @@ RIDERS = {
     "bank_draft_en": (_en(" Settled by a six-month bank acceptance draft."), "settled"),
     "bank_draft_zh": (_zh("用六个月银行承兑汇票结算"), "承兑汇票"),
     "bank_draft_inside_the_clause": (
-        "Hi, we can pay invoice RCV-A (¥420,000) tomorrow by bank draft if you give us 0.5% off. Thanks!", "draft"),
+        "Hi, we can pay invoice RCV-A (¥420,000) early by bank draft if you give us 0.5% off. Thanks!", "draft"),
     "set_off_en": (_en(" It will be netted against what our sister company owes you."), "netted"),
     "set_off_zh": (_zh("与关联公司欠款抵销"), "关联公司欠款抵销"),
     "waiver_en": (_en(" And you waive all late-payment claims."), "waive"),
     "waiver_zh": (_zh("放弃逾期付款索赔"), "放弃逾期索赔"),
-    "per_week_rate": ("Hi, we can pay invoice RCV-A (¥420,000) tomorrow if you give us 0.5% per week off. Thanks!", "week"),
-    "per_month_rate_zh": ("42万的发票我们明天就付清，每月扣千分之五，谢谢", "每月"),
+    "per_week_rate": ("Hi, we can pay invoice RCV-A (¥420,000) early if you give us 0.5% per week off. Thanks!", "week"),
+    "per_month_rate_zh": ("42万的发票我们提前就付清，每月扣千分之五，谢谢", "每月"),
     "unsupplied_attachment": (_en(" Per the attached schedule."), "attached"),
     "unsupplied_attachment_zh": (_zh("详见附表"), "详见附表"),
-    "usd": ("Hi, we can pay invoice RCV-A (USD 420,000) tomorrow if you give us 0.5% off. Thanks!", "usd"),
+    "usd": ("Hi, we can pay invoice RCV-A (USD 420,000) early if you give us 0.5% off. Thanks!", "usd"),
     "exclusivity_en": (_en(" You will not supply our competitor."), "not"),
     "exclusivity_zh": (_zh("你们不得向我们的竞争对手供货"), "不得向"),
     "penalty_en": (_en(" A penalty applies if delivery is late."), "penalty"),
@@ -116,17 +116,17 @@ def test_a_rider_alone_never_rejects_a_clean_offer(rules_compiler: Compiler) -> 
 
 
 def test_a_foreign_currency_is_named(rules_compiler: Compiler) -> None:
-    for text in ("We can pay the $420,000 invoice tomorrow at 0.5% off.", "我们明天付42万美元的发票，扣千分之五。",
-                 "Hi, we can pay invoice RCV-A (EUR 420,000) tomorrow if you give us 0.5% off."):
+    for text in ("We can pay the $420,000 invoice early at 0.5% off.", "我们提前付42万美元的发票，扣千分之五。",
+                 "Hi, we can pay invoice RCV-A (EUR 420,000) early if you give us 0.5% off."):
         offer = _compile(rules_compiler, text)
         assert not offer.autonomy_eligible
         assert "non-CNY currency stated" in offer.autonomy_notes, (text, offer.autonomy_notes)
 
 
 @pytest.mark.parametrize("text", [
-    "We can pay the ¥420,000 invoice tomorrow at 0.5% a day off.",
-    "We can pay the ¥420,000 invoice tomorrow at 0.5% per month.",
-    "42万的发票明天付清，每天扣千分之五。",
+    "We can pay the ¥420,000 invoice early at 0.5% a day off.",
+    "We can pay the ¥420,000 invoice early at 0.5% per month.",
+    "42万的发票提前付清，每天扣千分之五。",
 ])
 def test_a_rate_per_a_period_other_than_the_invoice_is_named(rules_compiler: Compiler, text: str) -> None:
     offer = _compile(rules_compiler, text)

@@ -39,6 +39,22 @@ DEFAULT_SCENARIOS = API / "evals" / "e2e" / "scenarios.yaml"
 DEFAULT_OUT = API / "evals" / "e2e" / "latest"
 AGENT_KEY = os.environ.get("AGENT_KEY", "demo-agent-key")
 OWNER_TOKEN = os.environ.get("OWNER_TOKEN", "demo-owner-token")
+# A registered buyer's own channel key (the server maps key -> counterparty id). Buyer turns send it by default; a
+# scenario turn with `buyer_key: false` models an unauthenticated sender (proposal only).
+BUYER_KEYS = {"BUYER-1": os.environ.get("BUYER_1_KEY", "demo-buyer-1-key"),
+              "BUYER-2": os.environ.get("BUYER_2_KEY", "demo-buyer-2-key")}
+
+
+def _nl_headers(body: dict, owner: bool) -> dict:
+    """Headers for one /nl turn. Pops the scenario-only `_buyer_key` marker so it is never sent as a body field."""
+    send_key = body.pop("_buyer_key", True)
+    if owner:
+        return {"X-Owner-Token": OWNER_TOKEN}
+    headers = {"X-Agent-Key": AGENT_KEY}
+    key = BUYER_KEYS.get(body.get("counterparty_id") or "") if body.get("actor") == "COUNTERPARTY" else None
+    if key and send_key:
+        headers["X-Counterparty-Key"] = key
+    return headers
 
 
 def _bootstrap() -> None:
@@ -107,7 +123,8 @@ class InProc:
                 self.client.post("/operations", json=op, headers={"X-Owner-Token": OWNER_TOKEN})
 
     def post(self, path: str, body: dict, owner: bool) -> tuple[int, dict]:
-        r = self.client.post(path, json=body, headers={"X-Owner-Token": OWNER_TOKEN} if owner else {"X-Agent-Key": AGENT_KEY})
+        headers = _nl_headers(body, owner)
+        r = self.client.post(path, json=body, headers=headers)
         return r.status_code, (r.json() if r.headers.get("content-type", "").startswith("application/json") else {})
 
     def snapshot(self) -> tuple[int, int, int]:
@@ -156,8 +173,8 @@ class Http:
         self.client.post(f"{self.base}/nl/reset", headers={"X-Owner-Token": OWNER_TOKEN})
 
     def post(self, path: str, body: dict, owner: bool) -> tuple[int, dict]:
-        r = self.client.post(f"{self.base}{path}", json=body,
-                             headers={"X-Owner-Token": OWNER_TOKEN} if owner else {"X-Agent-Key": AGENT_KEY})
+        headers = _nl_headers(body, owner)
+        r = self.client.post(f"{self.base}{path}", json=body, headers=headers)
         try:
             return r.status_code, r.json()
         except ValueError:
@@ -343,6 +360,8 @@ def run(args: argparse.Namespace) -> int:
             for k in ("counterparty_id", "request_id", "lang"):
                 if turn.get(k):
                     body[k] = turn[k]
+            if turn.get("buyer_key") is False:
+                body["_buyer_key"] = False
             if turn.get("buyer_profile") or scn.get("buyer_profile"):
                 body["buyer_profile"] = turn.get("buyer_profile") or scn["buyer_profile"]
             owner = actor == "OWNER" and turn.get("owner_token", True)

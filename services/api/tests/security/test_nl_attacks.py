@@ -93,7 +93,13 @@ def test_oracle_probing_is_reported_and_discloses_no_protected_value(
     for key in ("accept_counter_flips_seen", "accepted_or_pending_up_to_bp", "countered_from_bp",
                 "counter_figures_revealed", "throttled", "circuit_open_after", "approvals_queued_by_probes"):
         assert key in oracle, key
-    assert oracle["accept_counter_flips_seen"] >= 1  # the threshold is visible from the replies alone
+    if attack_id.endswith("K"):
+        assert oracle["accept_counter_flips_seen"] >= 1  # the threshold is visible from the replies alone
+    else:
+        # an unauthenticated sender gets the same "received, not agreed" reply at every rate: nothing to probe
+        assert oracle["accept_counter_flips_seen"] == 0
+        assert oracle["accepted_or_pending_up_to_bp"] is None and oracle["countered_from_bp"] is None
+        assert oracle["counter_figures_revealed"] == []
     assert oracle["http_statuses"] == [200]
 
 

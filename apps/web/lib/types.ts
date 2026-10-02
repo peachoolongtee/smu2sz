@@ -1055,7 +1055,7 @@ export type NlIntent =
   | "OUT_OF_SCOPE"
   | "AMBIGUOUS";
 
-/** OWNER sends X-Owner-Token; COUNTERPARTY sends no credential and never executes. */
+/** OWNER sends X-Owner-Token; COUNTERPARTY sends its channel key (X-Counterparty-Key) or nothing, never the owner token. */
 export type NlActor = "OWNER" | "COUNTERPARTY";
 
 export interface NlRequest {

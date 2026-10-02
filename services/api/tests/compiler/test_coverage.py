@@ -60,7 +60,7 @@ def test_the_contract_default_is_not_eligible() -> None:
 
 
 def test_a_clean_fully_covered_early_pay_offer_is_eligible_and_accepted_at_tier_1(rules_compiler: Compiler) -> None:
-    offer = _eligible(rules_compiler, "Hi, we can pay invoice RCV-A (¥420,000) tomorrow if you give us 0.5% off. Thanks!")
+    offer = _eligible(rules_compiler, "Hi, we can pay invoice RCV-A (¥420,000) early if you give us 0.5% off. Thanks!")
     (ob,) = offer.obligations
     assert (ob.type, ob.rate_bp, ob.base.amount_fen, ob.base.receivable_id) == (T.IMMEDIATE_DISCOUNT, 50, 42_000_000, "RCV-A")
     v = evaluate(offer, STATE, MANDATE, trusted_owner_key_hex=KEY).verdict
@@ -68,12 +68,12 @@ def test_a_clean_fully_covered_early_pay_offer_is_eligible_and_accepted_at_tier_
 
 
 @pytest.mark.parametrize("text", [
-    "We can pay the ¥420,000 invoice today at 0.6%. Nothing else changes.",
-    "42万的发票我们明天就付清，扣千分之五，谢谢",
-    "人民币肆拾贰万元整的货款，明天付，按99.4折结算可以吗",
-    "hey the 420k invoice, we pay in full tmrw if u give us 0.6% disc. ok?",
-    "early settle on the whole 420K inv today, 40bps off",
-    "Pls confirm: 420,000元的invoice, today付清, discount 0.6% 行吗",
+    "We can pay the ¥420,000 invoice early at 0.6%. Nothing else changes.",
+    "42万的发票我们提前就付清，扣千分之五，谢谢",
+    "人民币肆拾贰万元整的货款，提前付，按99.4折结算可以吗",
+    "hey the 420k invoice, we pay in full early if u give us 0.6% disc. ok?",
+    "early settle on the whole 420K inv, 40bps off",
+    "Pls confirm: 420,000元的invoice, 提前付清, discount 0.6% 行吗",
 ])
 def test_clean_offers_in_en_zh_and_mixed_are_eligible(rules_compiler: Compiler, text: str) -> None:
     offer = _eligible(rules_compiler, text)
@@ -103,10 +103,10 @@ def test_an_unexplained_figure_fails_the_proof(rules_compiler: Compiler, text: s
 
 
 @pytest.mark.parametrize("text", [
-    "We'll pay the ¥420,000 invoice today at 0.6%. Call me on 138-1234-5678 if needed.",
-    "We'll pay the ¥420,000 invoice today at 0.6%.\n\nKevin Lam\nTel: +86 757 8123 4567\nkevin.lam@example.com",
-    "Date: 2026-09-30\nSubject: payment\n\nWe'll pay the ¥420,000 invoice today at 0.6%.",
-    "我们今天下午3点前付清42万的发票，扣0.6%。",
+    "We'll pay the ¥420,000 invoice early at 0.6%. Call me on 138-1234-5678 if needed.",
+    "We'll pay the ¥420,000 invoice early at 0.6%.\n\nKevin Lam\nTel: +86 757 8123 4567\nkevin.lam@example.com",
+    "Date: 2026-09-30\nSubject: payment\n\nWe'll pay the ¥420,000 invoice early at 0.6%.",
+    "我们下午3点前提前付清42万的发票，扣0.6%。",
 ])
 def test_the_allow_list_covers_phones_mail_headers_and_clock_times(rules_compiler: Compiler, text: str) -> None:
     _eligible(rules_compiler, text)
@@ -139,9 +139,9 @@ def test_a_different_invoice_is_kept_and_never_bound_to_ours(rules_compiler: Com
 
 
 @pytest.mark.parametrize("text", [
-    "We will settle the ¥420,000 invoice early at 0.5%, i.e. we transfer ¥417,900 tomorrow.",
-    "42万的发票明天提前付，折扣0.5%，也就是扣2100元。",
-    "We pay the 420k invoice today, 0.5% off = ¥2,100 less, ok?",
+    "We will settle the ¥420,000 invoice early at 0.5%, i.e. we transfer ¥417,900.",
+    "42万的发票提前付，折扣0.5%，也就是扣2100元。",
+    "We pay the 420k invoice early, 0.5% off = ¥2,100 less, ok?",
 ])
 def test_a_stated_sum_that_equals_rate_times_face_is_explained(rules_compiler: Compiler, text: str) -> None:
     offer = _eligible(rules_compiler, text)
@@ -191,10 +191,10 @@ def test_an_unread_request_fails_the_proof(rules_compiler: Compiler, text: str, 
 
 
 @pytest.mark.parametrize("text", [
-    "Morning! Could remit the full ¥420,000 today, minus 0.5%? Let me know.",
+    "Morning! Could remit the full ¥420,000 early, minus 0.5%? Let me know.",
     "We will settel the 420k invoice early, 0.7% off please.",
-    "Dear Lily, we can pay the ¥420,000 invoice today if you're ok to take 0.5% off. Best regards",
-    "陈经理您好，42万的发票我们明天付清，麻烦给个千分之五的贴息，可以吗？谢谢",
+    "Dear Lily, we can pay the ¥420,000 invoice early if you're ok to take 0.5% off. Best regards",
+    "陈经理您好，42万的发票我们提前付清，麻烦给个千分之五的贴息，可以吗？谢谢",
 ])
 def test_courtesy_and_confirmation_tags_are_not_requests(rules_compiler: Compiler, text: str) -> None:
     _eligible(rules_compiler, text)
@@ -215,8 +215,23 @@ def test_claims_and_data_requests_fail_the_proof(rules_compiler: Compiler, text:
     assert _verdict(offer) != "ACCEPT"
 
 
-def test_an_urgency_word_that_is_the_settlement_time_is_not_a_claim(rules_compiler: Compiler) -> None:
-    _eligible(rules_compiler, "Pay the ¥420k invoice right now, less 0.6%?")
+def test_right_now_is_a_stated_settlement_time_and_never_autonomous(rules_compiler: Compiler) -> None:
+    # "right now" is a stated time: not provably the day the binding assigns, so it is unread timing
+    _not_eligible(rules_compiler, "Pay the ¥420k invoice right now, less 0.6%?", why="settlement date")
+
+
+@pytest.mark.parametrize("text", [
+    "We can pay the ¥420,000 invoice today at 0.6%. Nothing else changes.",
+    "We can pay the ¥420,000 invoice tomorrow at 0.6%. Nothing else changes.",
+    "We can pay the ¥420,000 invoice now at 0.6%.",
+    "hey the 420k invoice, we pay in full tmrw if u give us 0.6% disc. ok?",
+    "42万的发票我们今天就付清，扣千分之五，谢谢",
+    "42万的发票我们明天就付清，扣千分之五，谢谢",
+    "42万的发票我们现在就付清，扣千分之五，谢谢",
+])
+def test_a_stated_today_tomorrow_or_now_is_unread_timing_and_never_autonomous(rules_compiler: Compiler, text: str) -> None:
+    offer = _not_eligible(rules_compiler, text, why="settlement date")
+    assert _verdict(offer) != "ACCEPT"
 
 
 def test_an_override_alone_does_not_turn_a_clean_offer_into_a_data_extraction_refusal(rules_compiler: Compiler) -> None:
@@ -230,7 +245,7 @@ def test_an_override_alone_does_not_turn_a_clean_offer_into_a_data_extraction_re
 
 
 def test_an_attachment_that_restates_the_terms_is_covered(rules_compiler: Compiler) -> None:
-    _eligible(rules_compiler, "We'll pay the ¥420,000 invoice today at 0.5%.", "Invoice amount: ¥420,000.00")
+    _eligible(rules_compiler, "We'll pay the ¥420,000 invoice early at 0.5%.", "Invoice amount: ¥420,000.00")
 
 
 @pytest.mark.parametrize("attachment", [

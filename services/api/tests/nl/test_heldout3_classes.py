@@ -78,7 +78,7 @@ def test_slots_read_the_new_wordings(text: str, slot: str, value: object) -> Non
 def test_should_we_take_it_evaluates_the_buyers_offer_not_a_plan_of_ours(client, rt) -> None:
     """The owner pastes the buyer's 0.5% offer and asks: the verdict is on THAT offer; no counter-plan of ours
     (an early settlement at a different rate) is proposed, and nothing runs before the owner says go."""
-    r = Chat(client, "take-it").say("佛山发来的：42万的发票明天提前付，千分之五贴息。能接吗")
+    r = Chat(client, "take-it").say("佛山发来的：42万的发票提前付，千分之五贴息。能接吗")
     assert r["intent"] == "EVALUATE_OFFER"
     v = r["verdict"]
     assert v is not None and v["outcome"] == "ACCEPT"

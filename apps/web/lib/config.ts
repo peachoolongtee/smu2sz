@@ -16,3 +16,11 @@ export const MOCK_LATENCY_MS: number = Number(process.env.NEXT_PUBLIC_MOCK_LATEN
  */
 export const DEMO_BUILD: boolean = process.env.NEXT_PUBLIC_DEMO === "1";
 export const DEMO_OWNER_TOKEN: string = process.env.NEXT_PUBLIC_DEMO === "1" ? "demo-owner-token" : "";
+
+/**
+ * Demo builds only: the API's published buyer channel keys (X-Counterparty-Key). The server maps a key to the
+ * buyer it belongs to; a buyer turn without one is only a proposal, which the API never books. A real
+ * deployment leaves this empty: each buyer's own system holds its key.
+ */
+export const DEMO_BUYER_KEYS: Record<string, string> =
+  process.env.NEXT_PUBLIC_DEMO === "1" ? { "BUYER-1": "demo-buyer-1-key", "BUYER-2": "demo-buyer-2-key" } : {};

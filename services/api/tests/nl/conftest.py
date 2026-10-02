@@ -6,6 +6,7 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
+from app.api.auth import DEMO_COUNTERPARTY_KEYS
 from app.api.runtime import Runtime, set_runtime
 from app.config import get_settings
 from app.mandate.fixture import demo_owner_public_key_hex
@@ -48,9 +49,13 @@ class Chat:
     """A multi-turn owner (or counterparty) conversation."""
 
     def __init__(self, client: TestClient, session_id: str, actor: str = "OWNER", owner: bool = True,
-                 counterparty_id: str | None = None, buyer_profile: str | None = None) -> None:
+                 counterparty_id: str | None = None, buyer_profile: str | None = None,
+                 key: str | None = "demo") -> None:
         self.client, self.session_id, self.actor = client, session_id, actor
         self.owner, self.counterparty_id, self.buyer_profile = owner, counterparty_id, buyer_profile
+        # The counterparty channel key: "demo" (default) sends the published demo key of counterparty_id when it has
+        # one (a registered buyer); None sends no key (an unauthenticated sender); any other string is sent as given.
+        self.key = DEMO_COUNTERPARTY_KEYS.get(counterparty_id or "") if key == "demo" else key
 
     def say(self, text: str, **kw) -> dict:
         body = {"session_id": self.session_id, "actor": self.actor, "text": text}
@@ -59,8 +64,12 @@ class Chat:
         if self.buyer_profile:
             body["buyer_profile"] = self.buyer_profile
         owner = kw.pop("owner", self.owner)
+        key = kw.pop("key", self.key)
         body.update(kw)
-        r = self.client.post("/nl", json=body, headers=OWNER if owner else AGENT)
+        headers = dict(OWNER if owner else AGENT)
+        if self.actor == "COUNTERPARTY" and key:
+            headers["X-Counterparty-Key"] = key
+        r = self.client.post("/nl", json=body, headers=headers)
         assert r.status_code == 200, r.text
         return r.json()
 

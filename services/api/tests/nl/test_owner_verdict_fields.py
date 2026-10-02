@@ -10,7 +10,7 @@ from app.domain.fixtures import load_offers
 from tests.nl.conftest import Chat
 
 EX01 = load_offers()["EX01_PACKAGE"]["documents"][0]["text"]
-CLEAN = "Deduct 0.6% and we'll settle the open ¥420,000 invoice today."
+CLEAN = "Deduct 0.6% and we'll settle the open ¥420,000 invoice early."
 ALLOW = {*COUNTERPARTY_KEYS, "plan", "verdict", "operations", "clarification", "negotiation", "security_events",
          "parse_source", "awaiting_confirmation", "amended", "replayed"}
 

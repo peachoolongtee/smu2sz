@@ -7,6 +7,8 @@ intents: whatever it says, it is an inbound offer to compile and verify (INVARIA
 
 from __future__ import annotations
 
+from contextvars import ContextVar
+
 from app.compiler import compile_offer, compile_term_sheet
 from app.domain.fixtures import load_offers, offer_documents
 from app.domain.models import (
@@ -46,6 +48,14 @@ from app.nl.pipeline import (
 from app.nl.sessions import PendingPlan
 from app.nl.turn import Turn, ask
 from app.verifier import REFUSAL_REPLY, VerdictBundle, evaluate_term_sheet
+
+# Set by the API layer for the duration of one COUNTERPARTY turn when the sender was identified by a channel
+# credential (X-Counterparty-Key). Fail closed: unset means an unauthenticated sender, whose message is a proposal
+# only (compiled and evaluated, never executed).
+COUNTERPARTY_AUTHENTICATED: ContextVar[bool] = ContextVar("counterparty_authenticated", default=False)
+UNCONFIRMED_NOTE = ("Your message has been received. It is a proposal only and is not agreed until it is confirmed "
+                    "through an authenticated channel; nothing has been booked.")
+UNCONFIRMED_NOTE_ZH = "我方已收到贵方消息。该消息仅为提议，须通过已认证的渠道确认后方为有效；未记任何账。"
 
 STOP_CODES = frozenset({ViolationCode.UNKNOWN_COUNTERPARTY})
 REFUSAL_REPLY_ZH = "我方无法提供内部财务、授信或其他交易方的信息。"
@@ -240,10 +250,16 @@ def counterparty_message(ctx: NlContext, text: str, counterparty_id: str | None)
     b = ctx.evaluate(offer)
     steps = Steps()
     steps.add("VERIFY", verdict_line(ctx, b.verdict), "DONE")
-    lines = decide(ctx, steps, b, execute=True, recipient=cp)
-    allow = [a for c in b.verdict.counters for a in allowed_for_counter(c)]
-    if not b.verdict.counters:
+    authenticated = COUNTERPARTY_AUTHENTICATED.get()
+    lines = decide(ctx, steps, b, execute=authenticated, recipient=cp)
+    allow = [a for c in b.verdict.counters for a in allowed_for_counter(c)] if authenticated else []
+    if authenticated and not b.verdict.counters:
         allow += acceptance_allow(b)  # the acceptance restates the buyer's own terms
+    if not authenticated:
+        # Proposal only: nothing was executed above. The reply says so and never claims agreement.
+        lines = [*lines, UNCONFIRMED_NOTE_ZH if ctx.lang == "zh" else UNCONFIRMED_NOTE]
+        steps.add("RECEIVED", t(ctx, "Unauthenticated sender: proposal recorded as a message only; nothing executed",
+                                "发送方未认证：仅记录为消息；未执行任何操作"), "INFO")
     reply = "\n".join(lines) or t(ctx, "Thank you, noted.", "谢谢，已收到。")
     out, _ok = ctx.guard(reply, cp, allow=allow)
     return Turn(intent=Intent.COUNTERPARTY_MESSAGE, reply=out, plan=steps.items, verdict=b.verdict,
