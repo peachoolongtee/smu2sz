@@ -49,6 +49,7 @@ class Features:
 @dataclass(frozen=True)
 class Settings:
     database_url: str = field(default_factory=lambda: os.environ.get("DATABASE_URL", "sqlite:///./termsledger.db"))
+    owner_public_key_hex: str = field(default_factory=lambda: os.environ.get("OWNER_PUBLIC_KEY_HEX", ""))
     llm_mode: str = field(default_factory=lambda: os.environ.get("LLM_MODE", "cache"))  # cache | live
     llm_primary: str = field(default_factory=lambda: os.environ.get("LLM_PRIMARY", "claude"))  # claude | deepseek
     claude_model: str = field(default_factory=lambda: os.environ.get("CLAUDE_MODEL", "claude-sonnet-5-5"))

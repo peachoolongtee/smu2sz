@@ -5,7 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import PlainTextResponse
 
 from app.api.auth import require_owner
@@ -128,6 +128,11 @@ def get_evidence() -> str:
 
 @router.post("/demo/reset")
 def demo_reset(scenario: str = "golden_sme") -> dict:
+    from app.api.runtime import ResetRefused
+
     rt = get_runtime()
-    rt.reset(scenario)
+    try:
+        rt.reset(scenario)
+    except ResetRefused as e:
+        raise HTTPException(403, {"code": "RESET_REFUSED", "message": str(e)}) from e
     return {"ok": True, "scenario": scenario, "day": rt.day}
