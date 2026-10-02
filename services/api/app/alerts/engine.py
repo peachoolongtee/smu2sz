@@ -207,9 +207,8 @@ def _priced(a: FundingAction, s: SuggestedAction, alone: Trajectory, base: Traje
         if not repay:
             return s, None
     if len(arrive) == 1 and len(repay) == 1:  # one lump repayment: a schedule of instalments has no single day
-        # counted from the day the funding is requested: the executor books the cash and starts charging that
-        # day, whereas the projection lands it after the facility's lead time
-        days, end = repay[0] - a.day, repay[0]
+        # counted from the day the cash lands: the same days the executor's rate ceiling is tested on
+        days, end = repay[0] - arrive[0], repay[0]
     amount = a.amount_fen
     rate: Fraction | None = Fraction(cost, amount) * DAYS_PER_YEAR / days if days is not None and days > 0 else None
     if rate is not None:
@@ -275,6 +274,8 @@ def _reserve_alerts(state: FinancialState, mandate: Mandate, t: Trajectory, obs:
                 cure_inputs["cure_cost"] = fmt_yuan(cure_total)
             if any(s.above_apr_cap for s in suggested):
                 cure_inputs["cure_above_apr_cap"] = "true"
+                cure_text += (f"; that is above the {fmt_pct(bp(mandate.max_apr_bp))} ceiling for what the agent may "
+                              f"borrow alone, so it needs the owner's approval before it runs")
         elif not mandate.allow_new_borrowing:
             cure_inputs = {}
             suggested = []

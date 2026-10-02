@@ -85,13 +85,33 @@ def _cost_clause(ctx: NlContext, op: Operation, s: SuggestedAction | None, end: 
 
 
 def _cap_sentence(ctx: NlContext, mandate: Mandate, op: Operation) -> str:
+    """Above the ceiling the agent may not borrow alone: the executor queues the cure for the owner's approval."""
     cap = fmt_pct(bp(mandate.max_apr_bp))
+    queue_en = ("so it needs your approval: if you say go ahead I will queue it for you to approve, and it does not "
+                "run until you do.")
+    queue_zh = "所以需要您批准：您确认后我会把它放入待批队列，您批准之前不会执行。"
     if isinstance(op, SubmitInvoiceForFinancing):
-        return t(ctx, f" That is above your {cap} yearly cap for funding, because invoice financing is billed in whole "
-                      f"30-day periods; it is your call.",
-                 f"这高于您 {cap} 的年度融资成本上限，因为发票融资按整 30 天计费；由您决定。")
-    return t(ctx, f" That is above your {cap} yearly cap for funding; it is your call.",
-             f"这高于您 {cap} 的年度融资成本上限；由您决定。")
+        return t(ctx, f" That is above your {cap} yearly ceiling for funding (invoice financing is billed in whole "
+                      f"30-day periods), {queue_en}",
+                 f"这高于您 {cap} 的年度融资成本上限（发票融资按整 30 天计费），{queue_zh}")
+    return t(ctx, f" That is above your {cap} yearly ceiling for funding, {queue_en}",
+             f"这高于您 {cap} 的年度融资成本上限，{queue_zh}")
+
+
+def _queued_sentence(ctx: NlContext, mandate: Mandate, s: SuggestedAction | None, end: int | None,
+                     approval_id: str | None) -> str:
+    """After "go ahead": what the cure costs, why it did not run, and how to approve it."""
+    cap = fmt_pct(bp(mandate.max_apr_bp))
+    ref = approval_id or "its approval id"
+    cost_en = cost_zh = ""
+    if s is not None and s.cost_fen is not None and s.annual_rate is not None and s.cost_days is not None and end:
+        cost, rate = fmt_yuan(s.cost_fen), fmt_pct(s.annual_rate.value, 1)
+        cost_en = f"It costs {cost} by day {end}, which is {rate} a year for those {s.cost_days} days. "
+        cost_zh = f"到第 {end} 天费用为 {cost}，相当于这 {s.cost_days} 天的年化 {rate}。"
+    return t(ctx, f"{cost_en}That is above your {cap} ceiling, so it needs your approval. I have not run it: it is "
+                  f"queued as {ref}. Say \"approve {ref}\" or use the approval card.",
+             f"{cost_zh}这高于您 {cap} 的上限，需要您批准。我尚未执行：已列入待批队列，编号 {ref}。"
+             f"请说“批准 {ref}”或使用审批卡。")
 
 
 def _op_clause(ctx: NlContext, state: FinancialState, op: Operation) -> tuple[str, str, str, str]:
@@ -239,8 +259,13 @@ def confirm_cure(ctx: NlContext, pending: PendingPlan) -> Turn:
         if r.status not in (OperationStatus.EXECUTED, OperationStatus.PENDING_APPROVAL):
             break
     lines = []
-    for r in results:
-        if r.status == OperationStatus.PENDING_APPROVAL:
+    for op, r in zip(ops, results, strict=False):
+        sg, end = _suggestion(alert, op)
+        waits = r.status == OperationStatus.PENDING_APPROVAL or (
+            r.status == OperationStatus.DUPLICATE and r.approval_id is not None)
+        if waits and sg is not None and sg.above_apr_cap and isinstance(op, DrawFacility | SubmitInvoiceForFinancing):
+            lines.append(_queued_sentence(ctx, mandate, sg, end, r.approval_id))
+        elif r.status == OperationStatus.PENDING_APPROVAL:
             ref = f" ({r.approval_id})" if r.approval_id else ""
             lines.append(t(ctx, f"{r.message} It waits for your approval{ref}; I have not done it.",
                            f"{r.message} 它在等您批准{ref}；我尚未执行。"))

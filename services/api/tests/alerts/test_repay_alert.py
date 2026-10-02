@@ -45,12 +45,23 @@ def to_day34(client, rt):
     return ob
 
 
+def approve_cure(client, rt, alert_id: str) -> None:
+    """The day-34 cure is above the rate ceiling: POST /alerts/{id}/act queues it and the owner approves it."""
+    r = client.post(f"/alerts/{alert_id}/act", headers=OWNER)
+    assert r.status_code == 200, r.text
+    [res] = r.json()["results"]
+    assert res["status"] == "PENDING_APPROVAL" and res["approval_id"], res
+    done = client.post(f"/approvals/{res['approval_id']}", headers=OWNER, json={"decision": "APPROVE"})
+    assert done.status_code == 200 and done.json()["result"]["status"] == "EXECUTED", done.text
+
+
 def to_day47(client, rt) -> None:
-    """As scripts/demo_run.py up to the financed invoice's payment; the cure runs through POST /alerts/{id}/act."""
+    """As scripts/demo_run.py up to the financed invoice's payment; the cure is queued through POST /alerts/{id}/act
+    and the owner approves it."""
     ob = to_day34(client, rt)
     [breach] = [a for a in client.get("/alerts", headers=OWNER).json()["alerts"]
                 if a["kind"] == "RESERVE_BREACH_AHEAD"]
-    assert client.post(f"/alerts/{breach['id']}/act", headers=OWNER).status_code == 200
+    approve_cure(client, rt, breach["id"])
     client.post("/clock/advance", json={"to_day": 36}, headers=OWNER)
     rcv = next(r for r in rt.store.get_state().receivables if r.id == ob.base.receivable_id)
     _receipt(client, rt, "t-receipt-2", rcv.id, rcv.outstanding_fen)

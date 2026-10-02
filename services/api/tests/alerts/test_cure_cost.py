@@ -9,7 +9,15 @@ from fractions import Fraction
 from app.alerts import AlertKind
 from app.domain.money import Ratio, bp, fmt_pct, fmt_yuan
 from tests.alerts.test_alerts import _of, _run, _store
-from tests.alerts.test_repay_alert import BANK, OWNER, _receipt, repay_alerts, to_day34, to_day47
+from tests.alerts.test_repay_alert import (
+    BANK,
+    OWNER,
+    _receipt,
+    approve_cure,
+    repay_alerts,
+    to_day34,
+    to_day47,
+)
 from tests.nl import conftest as nl_conftest
 from tests.nl.conftest import Chat, ops
 
@@ -30,8 +38,10 @@ def test_demo_day34_the_invoice_cure_is_priced_from_the_engine(client, rt):
     rcv = next(r for r in state.receivables if r.id == "RI:BUYER-1:2")
     assert s["operation_kind"] == "SUBMIT_INVOICE_FOR_FINANCING" and s["receivable_id"] == "RI:BUYER-1:2"
     assert s["cost_fen"] > 0
-    # the engine's arrival is the request day plus the facility's lead time; billed to the invoice's due day
-    assert s["cost_days"] == rcv.due_day - 34 == 13  # from the request day, as the executor charges
+    # the cash lands on the request day plus the facility's lead time; billed to the invoice's due day: 3 days
+    # of the 13 to day 47 pass before it arrives, and the executor's rate ceiling is tested on the same days
+    lead = next(f for f in state.facilities if f.id == s["facility_id"]).lead_time_days
+    assert lead == 3 and s["cost_days"] == rcv.due_day - (34 + lead) == 10
     expected = Fraction(s["cost_fen"], s["amount_fen"]) * 365 / s["cost_days"]
     assert Fraction(s["annual_rate"]["num"], s["annual_rate"]["den"]) == expected
     assert s["annual_rate"]["text"] == Ratio.of(expected).text  # displayed() adds the text of a Ratio
@@ -41,7 +51,10 @@ def test_demo_day34_the_invoice_cure_is_priced_from_the_engine(client, rt):
                                  f"{fmt_pct(expected, 1)} a year")
     assert b["detail"].endswith(f"A committed cure exists: SUBMIT_INVOICE_FOR_FINANCING FAC-IF "
                                 f"{fmt_yuan(s['amount_fen'])}, cost {fmt_yuan(s['cost_fen'])} "
-                                f"({fmt_pct(expected, 1)} a year for {s['cost_days']} days).")
+                                f"({fmt_pct(expected, 1)} a year for {s['cost_days']} days); that is above the "
+                                f"{fmt_pct(bp(rt.store.get_mandate().max_apr_bp))} ceiling for what the agent may "
+                                f"borrow alone, so it needs the owner's approval before it runs.")
+    assert fmt_pct(expected, 1) == "32.5%" and s["cost_fen"] == 178_219
     assert b["inputs"]["cure_cost"] == fmt_yuan(s["cost_fen"]) and b["inputs"]["cure_above_apr_cap"] == "true"
     assert b["actionable"] is True and b["committed_cure"] is True  # nothing about what is executable changed
 
@@ -50,7 +63,7 @@ def test_demo_the_suggested_cost_is_what_the_executor_charges(client, rt):
     to_day34(client, rt)
     b = _breach(client)
     [s] = b["suggested"]
-    assert client.post(f"/alerts/{b['id']}/act", headers=OWNER).status_code == 200
+    approve_cure(client, rt, b["id"])  # above the ceiling: queued, then approved by the owner
     client.post("/clock/advance", json={"to_day": 36}, headers=OWNER)
     rcv = next(r for r in rt.store.get_state().receivables if r.id == "RCV-A")
     _receipt(client, rt, "t-receipt-2", rcv.id, rcv.outstanding_fen)
@@ -89,7 +102,7 @@ def test_a_cure_under_the_cap_is_not_flagged_and_has_no_cap_sentence(client, rt)
     assert (f"cost {fmt_yuan(inv.cost_fen)} ({fmt_pct(inv.annual_rate.value, 1)} a year for {inv.cost_days} days)"
             in b.detail)
     r = client.post("/nl/opener", json={"session_id": "uc-1"}, headers=OWNER).json()  # day 0: the golden gap
-    assert r["has_news"] and "yearly cap" not in r["reply"]
+    assert r["has_news"] and "yearly ceiling" not in r["reply"] and "needs your approval" not in r["reply"]
     assert fmt_yuan(inv.cost_fen) in r["reply"] and "a year for those" in r["reply"]
     assert r["reply"].endswith("Go ahead?")
 
@@ -111,17 +124,36 @@ def test_the_opener_states_the_price_and_go_ahead_still_runs_one_operation(clien
     cap = fmt_pct(bp(rt.store.get_mandate().max_apr_bp))
     en = client.post("/nl/opener", json={"session_id": "pc-1"}, headers=OWNER).json()["reply"]
     assert f"it will cost {cost} by day 47, which is {rate} a year for those {s['cost_days']} days." in en
-    assert (f"That is above your {cap} yearly cap for funding, because invoice financing is billed in whole "
-            f"30-day periods; it is your call. Go ahead?") in en
-    assert en.endswith("Go ahead?") and en.index("a year") < en.index("yearly cap")
+    assert s["cost_days"] == 10 and rate == "32.5%"
+    assert (f"That is above your {cap} yearly ceiling for funding (invoice financing is billed in whole 30-day "
+            f"periods), so it needs your approval: if you say go ahead I will queue it for you to approve, and it "
+            f"does not run until you do. Go ahead?") in en
+    assert en.endswith("Go ahead?") and en.index("a year") < en.index("yearly ceiling")
     zh = client.post("/nl/opener", json={"session_id": "pc-2", "lang": "zh"}, headers=OWNER).json()["reply"]
-    for figure in (cost, rate, str(s["cost_days"]), cap, "47"):
+    for figure in (cost, rate, str(s["cost_days"]), cap, "47", "需要您批准"):
         assert figure in zh
     assert zh.endswith("要执行吗？")
     logged = len(rt.store.operations())
+    cash, drawn = rt.store.get_state().cash_fen, next(
+        f.drawn_fen for f in rt.store.get_state().facilities if f.id == s["facility_id"])
     done = Chat(client, "pc-1").say("go ahead")
-    assert ops(done) == [("SUBMIT_INVOICE_FOR_FINANCING", "EXECUTED")]
-    assert len(rt.store.operations()) == logged + 1
+    assert ops(done) == [("SUBMIT_INVOICE_FOR_FINANCING", "PENDING_APPROVAL")]
+    approval_id = done["operations"][0]["approval_id"]
+    assert f"it is queued as {approval_id}" in done["reply"] and f'"approve {approval_id}"' in done["reply"]
+    assert cost in done["reply"] and rate in done["reply"] and f"for those {s['cost_days']} days" in done["reply"]
+    assert f"above your {cap} ceiling, so it needs your approval" in done["reply"]
+    assert len(rt.store.operations()) == logged + 1  # the queued request is logged; nothing is booked
+    assert rt.store.get_state().cash_fen == cash
+    assert next(f.drawn_fen for f in rt.store.get_state().facilities if f.id == s["facility_id"]) == drawn
+    assert rt.store.get_approval(approval_id).status.value == "PENDING" and _breach(client)["id"]
+    zh_done = Chat(client, "pc-2").say("好的办吧")  # the same cure in Chinese: the original approval, nothing new
+    assert [o["status"] for o in zh_done["operations"]] == ["DUPLICATE"] and approval_id in zh_done["reply"]
+    assert "批准" in zh_done["reply"] and len(rt.store.approvals()) == 1
+    ok = Chat(client, "pc-1").say(f"approve {approval_id}")
+    assert ops(ok) == [("SUBMIT_INVOICE_FOR_FINANCING", "EXECUTED")]
+    assert next(f.drawn_fen for f in rt.store.get_state().facilities if f.id == s["facility_id"]) == drawn + s["amount_fen"]
+    assert not [a for a in client.get("/alerts", headers=OWNER).json()["alerts"]
+                if a["kind"] == "RESERVE_BREACH_AHEAD"]
 
 
 def test_a_counterparty_asking_about_alerts_gets_no_price(client, rt):

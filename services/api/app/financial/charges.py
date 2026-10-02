@@ -8,8 +8,10 @@ Every amount is posted once through `app.domain.money` (ADR-0002):
 
 from __future__ import annotations
 
+from fractions import Fraction
+
 from app.domain.models import Facility
-from app.domain.money import bp, post, simple_interest
+from app.domain.money import DAYS_PER_YEAR, bp, post, simple_interest
 
 DEFAULT_FEE_PERIOD_DAYS = 30
 
@@ -40,3 +42,14 @@ def finance_invoice_charges(facility: Facility, advance_fen: int, days: int) -> 
 def upfront_fee(facility: Facility, amount_fen: int) -> int:
     """Upfront fee on a draw or advance, in fen (0 when the facility has none)."""
     return post(bp(facility.upfront_fee_bp) * amount_fen) if facility.upfront_fee_bp else 0
+
+
+def advance_effective_rate(facility: Facility, advance_fen: int, days: int) -> Fraction:
+    """Effective simple annual cost of one invoice-financing advance held `days` days: every posted charge
+    (interest, period fee, upfront fee) over the advance, annualised on the actual days. Whole-period billing
+    makes this higher than the tariff whenever the advance is held for less than its billed periods
+    (docs/FINANCIAL_SEMANTICS.md, "Rates")."""
+    if advance_fen <= 0 or days <= 0:
+        raise ValueError("an advance needs a positive amount and a positive number of days")
+    interest, fee, _ = finance_invoice_charges(facility, advance_fen, days)
+    return Fraction(interest + fee + upfront_fee(facility, advance_fen), advance_fen) * DAYS_PER_YEAR / days

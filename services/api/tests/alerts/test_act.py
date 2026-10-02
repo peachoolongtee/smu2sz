@@ -67,12 +67,14 @@ def _day34(client: TestClient) -> tuple[dict, int, str]:
     return breach, ob.base.amount_fen, ob.base.receivable_id
 
 
-def test_act_executes_the_committed_cure_on_the_demo_path(client):
+def test_act_queues_the_committed_cure_and_it_runs_once_the_owner_approves(client):
     rt = get_runtime()
     breach, _face, _rid = _day34(client)
     assert breach["severity"] == "CRITICAL" and breach["committed_cure"] is True and breach["actionable"] is True
     [s] = breach["suggested"]
     assert s["operation_kind"] == "SUBMIT_INVOICE_FOR_FINANCING" and s["receivable_id"] == "RI:BUYER-1:2"
+    assert s["above_apr_cap"] is True and s["cost_days"] == 10  # the cash lands on day 37; due on day 47
+    assert "needs the owner's approval" in breach["detail"]
     amount = s["amount_fen"]
     assert 19_000_000 <= amount <= 21_000_000  # about ¥200,000
     before = rt.store.get_state()
@@ -82,10 +84,33 @@ def test_act_executes_the_committed_cure_on_the_demo_path(client):
     assert r.status_code == 200
     body = r.json()
     [res] = body["results"]
-    assert res["status"] == "EXECUTED" and res["kind"] == "SUBMIT_INVOICE_FOR_FINANCING"
-    assert (body["executed"], body["pending_approval"], body["refused"]) == (1, 0, 0)
-    assert body["cured"] is True and body["alert_id"] == breach["id"] and body["day"] == 34
-    assert body["alerts_after"]["counts"]["CRITICAL"] == 0
+    assert res["status"] == "PENDING_APPROVAL" and res["tier"] == "TIER_2" and res["approval_id"]
+    assert res["kind"] == "SUBMIT_INVOICE_FOR_FINANCING"
+    assert "32.52%" in res["message"] and "15.00% ceiling" in res["message"] and "held 10 days" in res["message"]
+    assert (body["executed"], body["pending_approval"], body["refused"]) == (0, 1, 0)
+    assert body["cured"] is False and body["alert_id"] == breach["id"] and body["day"] == 34
+    assert body["alerts_after"]["counts"]["CRITICAL"] == 1
+    # nothing is booked: cash, the facility's drawn balance and the invoice are as they were
+    st = rt.store.get_state()
+    assert st.cash_fen == before.cash_fen
+    assert next(f for f in st.facilities if f.id == s["facility_id"]).drawn_fen == next(
+        f for f in before.facilities if f.id == s["facility_id"]).drawn_fen
+    assert next(v for v in st.receivables if v.id == s["receivable_id"]).status == "OPEN"
+    [queued] = client.get("/approvals/queue").json()["approvals"]
+    assert res["approval_id"] in queued.values() and queued["operation"]["kind"] == "SUBMIT_INVOICE_FOR_FINANCING"
+    assert rt.store.get_approval(res["approval_id"]).status.value == "PENDING"
+    assert client.get("/alerts").json()["counts"]["CRITICAL"] == 1
+
+    # acting again while the cure waits reports the original result; no second approval is queued
+    again = client.post(f"/alerts/{breach['id']}/act")
+    assert again.status_code == 200
+    [dup] = again.json()["results"]
+    assert dup["status"] == "DUPLICATE" and dup["approval_id"] == res["approval_id"]
+    assert len(client.get("/approvals/queue").json()["approvals"]) == 1
+
+    done = client.post(f"/approvals/{res['approval_id']}", json={"decision": "APPROVE"})
+    assert done.status_code == 200, done.text
+    assert done.json()["result"]["status"] == "EXECUTED"
 
     after = client.get("/alerts").json()
     assert after["counts"]["CRITICAL"] == 0 and all(a["severity"] != "CRITICAL" for a in after["alerts"])
@@ -96,14 +121,16 @@ def test_act_executes_the_committed_cure_on_the_demo_path(client):
     assert ra.advance_fen - rb.advance_fen == amount
 
     entries = _log(rt)
-    assert len(entries) == logged + 1
+    assert len(entries) > logged
     assert json.loads(entries[-1].payload_json)["requested_by"] == Actor.AGENT.value
-    assert entries[-1].entry_hash == res["entry_hash"] and entries[-1].prev_hash == entries[-2].entry_hash
+    assert json.loads(entries[-1].result_json)["status"] == "EXECUTED"
+    assert entries[-1].prev_hash == entries[-2].entry_hash
 
 
-def test_act_again_after_a_cure_is_alert_not_found(client):
+def test_act_again_after_the_cure_is_approved_is_alert_not_found(client):
     breach, _, _ = _day34(client)
-    assert client.post(f"/alerts/{breach['id']}/act").status_code == 200
+    [res] = client.post(f"/alerts/{breach['id']}/act").json()["results"]
+    assert client.post(f"/approvals/{res['approval_id']}", json={"decision": "APPROVE"}).status_code == 200
     again = client.post(f"/alerts/{breach['id']}/act")
     assert again.status_code == 404 and again.json()["detail"]["code"] == "ALERT_NOT_FOUND"
 

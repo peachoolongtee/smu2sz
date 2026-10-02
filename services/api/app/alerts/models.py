@@ -61,7 +61,9 @@ class SuggestedAction(Contract):
     cost_days: int | None = None  # days the money is out: arrival to the repayment the projection shows
     annual_rate: Ratio | None = None  # cost / amount × 365 / cost_days, exact
     cost_formula: str = ""
-    above_apr_cap: bool = False  # annual_rate is above the mandate's max APR (disclosed only; nothing is blocked)
+    # annual_rate is above the mandate's max APR: the agent may not run it alone, so the executor queues it for
+    # the owner's approval (Tier 2); it runs only after the owner approves
+    above_apr_cap: bool = False
     executes_automatically: Literal[False] = False
 
 

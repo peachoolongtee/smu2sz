@@ -7,6 +7,7 @@ from app.financial.amortisation import AmortisationRow, amortisation_schedule, a
 from app.financial.cashpath import CashPath, project_cash
 from app.financial.charges import (
     DEFAULT_FEE_PERIOD_DAYS,
+    advance_effective_rate,
     fee_period_days,
     finance_invoice_charges,
     line_interest,
@@ -27,6 +28,7 @@ __all__ = [
     "FundingActionError",
     "ObligationError",
     "UncommittedFacilityError",
+    "advance_effective_rate",
     "amortisation_schedule",
     "annuity_payment",
     "fee_period_days",

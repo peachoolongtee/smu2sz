@@ -1,5 +1,6 @@
 """The integrated demo path, in process: EX01 -> deal on Counter A -> the agreed early payment arrives on
-day 2 -> clock to day 34 -> the agent's opener and the owner's "go ahead" -> the late and the financed receipts ->
+day 2 -> clock to day 34 -> the agent's opener and the owner's "go ahead" (the cure is above the rate ceiling, so it is
+queued) -> the owner's "approve APR-..." -> the late and the financed receipts ->
 reconciliation and ledger -> an attack through the chat (demo steps 1 to 17). Prints what the owner would see. Nothing is written
 outside memory. Run from the repo root:
 
@@ -76,13 +77,32 @@ def main() -> int:
     if cure:  # steps 10-13 from the chat: the agent speaks first, the owner says go ahead
         o = c.post("/nl/opener", json={"session_id": "demo-owner", "lang": "en"}, headers=OWNER).json()
         print(f"\n== agent opener (has_news {o['has_news']}, awaiting {o['awaiting_confirmation']}):\n  {o['reply']}")
+        cash_day34 = rt.store.get_state().cash_fen
         g = c.post("/nl", json={"session_id": "demo-owner", "actor": "OWNER", "text": "go ahead"}, headers=OWNER).json()
         print(f"== owner: go ahead\n  {g['reply']}")
         for res in g["operations"]:
             print(f"  {res['kind']} {res['status']} (tier {res['tier']}, seq {res['seq']})")
-        after = show_alerts(c, "after the cure")
-        cured = (any(x["status"] == "EXECUTED" for x in g["operations"])
+        # the cure costs more than the mandate's rate ceiling, so the executor queues it for the owner: nothing is
+        # booked and the reserve alert stays open until the owner approves, in a second step of their own
+        queued = [x for x in g["operations"] if x["status"] == "PENDING_APPROVAL" and x.get("approval_id")]
+        pending_state = rt.store.get_state()
+        still_open = any(a["id"] == cure[0]["id"] for a in show_alerts(c, "after go ahead: cure queued, alert open"))
+        held = (len(queued) == 1 and still_open and pending_state.cash_fen == cash_day34
+                and not any(x["status"] == "EXECUTED" for x in g["operations"]))
+        approved: dict = {"operations": []}
+        if queued:
+            aid = queued[0]["approval_id"]
+            approved = c.post("/nl", json={"session_id": "demo-owner", "actor": "OWNER", "text": f"approve {aid}"},
+                              headers=OWNER).json()
+            print(f"== owner: approve {aid}\n  {approved['reply']}")
+            for res in approved["operations"]:
+                print(f"  {res['kind']} {res['status']} (tier {res['tier']}, seq {res['seq']})")
+        after = show_alerts(c, "after the owner's approval")
+        cured = (held and any(x["status"] == "EXECUTED" for x in approved["operations"])
                  and not any(a["id"] == cure[0]["id"] for a in after))
+        print(f"\ncure: queued {bool(queued)} -> approved by the owner -> executed "
+              f"{any(x['status'] == 'EXECUTED' for x in approved['operations'])} -> alert cleared "
+              f"{not any(a['id'] == cure[0]['id'] for a in after)}")
 
     def receipt(key: str, rid: str, amount: int) -> dict:
         out = c.post("/operations", headers=BANK, json={

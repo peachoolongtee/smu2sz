@@ -58,7 +58,14 @@ class Runtime:
     @property
     def executor(self) -> Executor:
         return Executor(self.store, trusted_owner_key_hex=self.owner_key_hex, clock=self.clock,
-                        reverify=self.reverify)
+                        reverify=self.reverify, admit=self.admit)
+
+    def admit(self, op: Any, state: FinancialState, mandate: Mandate) -> Any:
+        """A05: one funding operation judged on today's books with the planner's engine and predicates."""
+        from app.books import current_books
+        from app.funding.admission import admit
+
+        return admit(op, current_books(state, self.store.commitments()), mandate)
 
     def reverify(self, c: Commitment, state: FinancialState, mandate: Mandate, now: int) -> Outcome | None:
         """Re-evaluate a commitment's obligations on today's books (ADR-0006 section 5). The other commitments
