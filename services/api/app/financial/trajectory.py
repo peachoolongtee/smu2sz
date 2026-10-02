@@ -22,6 +22,12 @@ Interest runs from the arrival day.
 - Other bullet facilities (the credit line): a REPAY action may repay a landed lot like any draw;
   what is left is assumed repaid in full, with `line_interest`, on the first receipt day after which cash
   stays at or above the floor (`min_cash_fen`, or zero), or else on the horizon's last day.
+
+Existing debt (`state.debts`) is paid on its schedule (`app.financial.debts.debt_payments`, the one the clock posts):
+each payment is a DEBT_SERVICE outflow (its interest and principal parts) that lowers the debt outstanding and the
+leverage debt by the principal paid. Its interest is not a cost of the plan (`interest_posted_fen` counts facility
+interest only). The debt-service ratio keeps the debt's fixed monthly service for the months the schedule covers,
+and zero after the principal is cleared.
 """
 
 from __future__ import annotations
@@ -53,6 +59,7 @@ from app.domain.models import (
 from app.domain.money import Ratio, bp, post, simple_interest
 from app.financial.amortisation import amortisation_schedule
 from app.financial.charges import fee_period_days, finance_invoice_charges, line_interest, upfront_fee
+from app.financial.debts import debt_payments, service_months_end
 from app.financial.errors import FundingActionError, ObligationError, UncommittedFacilityError
 from app.financial.fmt import day as fday
 from app.financial.fmt import pct, y
@@ -159,6 +166,8 @@ class _Book:
     term_lots: list[_TermLot] = field(default_factory=list)
     # per on-receipt facility: what the REPAY actions may still repay of its orphaned lots (oldest first), (lot, amount)
     orphan_room: dict[str, list[tuple[str, int]]] = field(default_factory=dict)
+    # principal of the state's existing debts paid on each day (their scheduled payments)
+    debt_deltas: dict[int, int] = field(default_factory=lambda: defaultdict(int))
 
     def add(self, p: _Posting) -> None:
         self.postings.append(p)
@@ -837,6 +846,7 @@ def _build(
         note = "" if fl.confirmed else " (unconfirmed)"
         book.add(_Posting(fl.day, phase, LedgerEventKind.FLOW, fl.amount_fen, fl.label + note, fl.id,
                           f"{fl.kind.value.lower()} {y(fl.amount_fen)}"))
+    _debt_service(state, issue_bound, book)
     for r in rcvs.values():
         residual = r.face - r.early
         if residual <= 0 or r.due < today:
@@ -848,6 +858,23 @@ def _build(
         book.add(_Posting(r.due, INFLOW, LedgerEventKind.RECEIPT, residual, f"Receipt {r.id} from {r.counterparty_id}",
                           r.id, f"{what}face {y(residual)}: issued {fday(r.issue_day)} + {r.terms}-day terms{notes}"))
     return book, rcvs
+
+
+def _debt_service(state: FinancialState, bound: int, book: _Book) -> None:
+    """The existing debts' scheduled payments dated today..bound (`app.financial.debts`): cash out, debt down."""
+    for dbt in state.debts:
+        for pay in debt_payments(dbt, state.as_of_day, bound + 1):
+            if pay.interest:
+                book.add(_Posting(pay.day, OUTFLOW, LedgerEventKind.FLOW, -pay.interest,
+                                  f"Debt service (interest), {dbt.label}", dbt.id,
+                                  f"debt_service: {y(pay.principal + pay.remaining)} × {pct(bp(dbt.rate_bp))} × "
+                                  f"{dbt.payment_every_days}/365 = {y(pay.interest)}", category="interest"))
+            if pay.principal:
+                book.add(_Posting(pay.day, OUTFLOW, LedgerEventKind.FLOW, -pay.principal,
+                                  f"Debt service (principal), {dbt.label}", dbt.id,
+                                  f"debt_service: payment {y(pay.amount)} − interest {y(pay.interest)}; "
+                                  f"principal left {y(pay.remaining)}", category="amort"))
+            book.debt_deltas[pay.day] -= pay.principal
 
 
 def _issue_day_of(receivable_id: str | None) -> int:
@@ -916,9 +943,14 @@ def project(
     balances = {fid: fac[fid].drawn_fen for fid in fids}
     debt_principal = sum(dbt.principal_fen for dbt in state.debts)
     existing_fc = sum(fc.value_fen for fc in state.forward_concessions)
-    base_ds = sum(dbt.monthly_debt_service_fen for dbt in state.debts)
 
     n_months = _month_of(horizon)
+    # the fixed service of each existing debt, for the months its schedule covers (zero once its principal is cleared)
+    base_ds: dict[int, int] = defaultdict(int)
+    for dbt in state.debts:
+        end = service_months_end(dbt, state.as_of_day, horizon + 1)
+        for m in range(1, (n_months if end is None else min(n_months, _month_of(end))) + 1):
+            base_ds[m] += dbt.monthly_debt_service_fen
     month_ds = defaultdict(int)
     # bullet term lots: level amount in each month of the term, their own postings left out below
     level_posted = {id(p) for lot in book.term_lots for p in lot.postings}
@@ -939,8 +971,9 @@ def project(
         cash += sum(p.amount for p in todays)
         for fid in fids:
             balances[fid] += book.balance_deltas.get(fid, {}).get(d, 0)
+        debt_principal += book.debt_deltas.get(d, 0)
         for p in todays:
-            if p.category == "interest":
+            if p.category == "interest" and p.facility_id:  # an existing debt's interest is not a plan's cost
                 interest_total -= p.amount
             elif p.category == "fee":
                 fees_total -= p.amount
@@ -967,7 +1000,7 @@ def project(
     ebitda = state.monthly_ebitda_fen
     months: list[MonthPoint] = []
     for m in range(1, n_months + 1):
-        ds = base_ds + month_ds[m]
+        ds = base_ds[m] + month_ds[m]
         total_debt = month_end_leverage_debt[m]
         dscr = Ratio.of(Fraction(ebitda, ds)) if ds > 0 else None
         leverage = Ratio.of(Fraction(total_debt, 12 * ebitda)) if ebitda > 0 else None

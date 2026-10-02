@@ -67,6 +67,7 @@ from app.financial import (
     upfront_fee,
     window,
 )
+from app.financial.debts import service_months_end
 from app.financial.trajectory import MONTH_DAYS
 from app.funding import MenuRow, menu_view
 from app.mandate import check_apr, tier_for
@@ -131,6 +132,9 @@ def _carried_service(f: Facility) -> tuple[list[int], int]:
 # ---------------------------------------------------------------- limits and base position
 
 
+_DEBT_MONTHS = 600  # how far ahead an existing debt's schedule is read for the ratio months (50 years)
+
+
 class _Base:
     """The current books every structure is tested against: the stored state plus the live commitments'
     obligations (ADR-0006), with every facility balance already drawn counted in debt and debt service."""
@@ -140,7 +144,14 @@ class _Base:
         self.obligations = list(books.obligations)
         self.live_extension_debt = _live_extension_debt(books, mandate)
         self.ebitda = state.monthly_ebitda_fen
-        self.fixed_debt_service = sum(d.monthly_debt_service_fen for d in state.debts)
+        # Existing debt: its fixed service for the months its schedule (`app.financial.debts`, the cash the projection
+        # below already pays) covers, counted from today's month; None: not cleared in the horizon of any structure.
+        self._fixed: list[tuple[int, int | None]] = []
+        for d in state.debts:
+            end = service_months_end(d, state.as_of_day, state.as_of_day + MONTH_DAYS * _DEBT_MONTHS)
+            if end is not None:
+                end = 0 if d.principal_fen <= 0 else max(1, -(-(end - state.as_of_day) // MONTH_DAYS))
+            self._fixed.append((d.monthly_debt_service_fen, end))
         committed = [f for f in state.facilities if f.status == FacilityStatus.COMMITTED and f.owner_approved]
         # A committed credit line counts at its full limit, as in the verifier's pro-forma test (ASSUMPTIONS).
         self.lines = [f for f in committed if f.kind == FacilityKind.CREDIT_LINE]
@@ -219,7 +230,7 @@ class _Base:
     def debt_service(self, month: int) -> int:
         """Existing monthly debt service in `month`: the fixed service on state debts plus the contractual
         service on every drawn facility balance still being serviced that month."""
-        total = self.fixed_debt_service
+        total = sum(ds for ds, end in self._fixed if end is None or month <= end)
         for payments, tail in self._carried:
             total += payments[month - 1] if month <= len(payments) else tail
         return total
