@@ -31,6 +31,10 @@
         "fen": 84164,
         "facility_id": "FAC-LINE",
         "formula": "150,000.00 × 6.4% × 32/365 = 841.64",
+        "needs_owner_approval": false,
+        "approval_reason": "",
+        "executable_now": true,
+        "not_executable_reason": "",
         "display": "¥841.64"
       },
       {
@@ -38,6 +42,10 @@
         "fen": 187130,
         "facility_id": "FAC-IF",
         "formula": "210,000.00 × 7.8% × 30/365 (29 days billed as 1 × 30-day period) = 1,346.30; 210,000.00 × 0.25% × 1 = 525.00; total ¥1,871.30",
+        "needs_owner_approval": false,
+        "approval_reason": "",
+        "executable_now": true,
+        "not_executable_reason": "",
         "display": "¥1,871.30"
       }
     ],
@@ -78,6 +86,10 @@
       }
     ],
     "label": "committed plan: ¥841.64 + ¥1,871.30 = ¥2,712.94",
+    "needs_owner_approval": false,
+    "approval_reason": "",
+    "executable_now": true,
+    "not_executable_reason": "",
     "need_display": "¥360,000.00",
     "total_cost_display": "¥2,712.94"
   },
@@ -113,6 +125,10 @@
         "fen": 84164,
         "facility_id": "FAC-LINE",
         "formula": "150,000.00 × 6.4% × 32/365 = 841.64",
+        "needs_owner_approval": false,
+        "approval_reason": "",
+        "executable_now": true,
+        "not_executable_reason": "",
         "display": "¥841.64"
       },
       {
@@ -120,6 +136,10 @@
         "fen": 187130,
         "facility_id": "FAC-IF",
         "formula": "210,000.00 × 7.8% × 30/365 (29 days billed as 1 × 30-day period) = 1,346.30; 210,000.00 × 0.25% × 1 = 525.00; total ¥1,871.30",
+        "needs_owner_approval": false,
+        "approval_reason": "",
+        "executable_now": true,
+        "not_executable_reason": "",
         "display": "¥1,871.30"
       }
     ],
@@ -160,6 +180,10 @@
       }
     ],
     "label": "expected plan (committed sources only): ¥841.64 + ¥1,871.30 = ¥2,712.94",
+    "needs_owner_approval": false,
+    "approval_reason": "",
+    "executable_now": true,
+    "not_executable_reason": "",
     "need_display": "¥360,000.00",
     "total_cost_display": "¥2,712.94"
   },
@@ -228,6 +252,7 @@
       "time_to_cash_display": "same day",
       "covenant_effect": "DSCR_MIN: monthly EBITDA / scheduled debt service (principal + interest, all facilities) (EBITDA_m / DS_m >= 1.25); LEVERAGE_MAX: total debt / annualised EBITDA (Debt_m / (12 x EBITDA_m) <= 2.5); CLEAN_DOWN: credit line at zero for 30 consecutive days each year (max run of days with balance = 0 >= 30); short-term only: the clean-down rule means it cannot carry a permanent need",
       "admissible": true,
+      "needs_owner_approval": false,
       "reason_codes": [],
       "reason": "covers at most ¥150,000.00 of the ¥360,000.00 need; synthetic fixture (spec v2 §7.2)",
       "limit_display": "¥150,000.00",
@@ -270,6 +295,7 @@
       "time_to_cash_display": "3 days",
       "covenant_effect": "counts in leverage",
       "admissible": true,
+      "needs_owner_approval": false,
       "reason_codes": [],
       "reason": "covers at most ¥350,000.00 of the ¥360,000.00 need; synthetic fixture (spec v2 §7.2)",
       "limit_display": "¥350,000.00",
@@ -311,6 +337,7 @@
       "time_to_cash_display": "2 days",
       "covenant_effect": "no debt",
       "admissible": true,
+      "needs_owner_approval": false,
       "reason_codes": [],
       "reason": "only while the buyer offers it; reduces receivables and creates no debt; available only while the buyer offers it",
       "limit_display": "¥420,000.00",
@@ -352,6 +379,7 @@
       "time_to_cash_display": "21 days",
       "covenant_effect": "counts in leverage",
       "admissible": false,
+      "needs_owner_approval": false,
       "reason_codes": [
         "UNCOMMITTED_FACILITY"
       ],
@@ -395,6 +423,7 @@
       "time_to_cash_display": "14 days",
       "covenant_effect": "counts in leverage",
       "admissible": false,
+      "needs_owner_approval": false,
       "reason_codes": [
         "UNCOMMITTED_FACILITY"
       ],
@@ -438,6 +467,7 @@
       "time_to_cash_display": "10 days",
       "covenant_effect": "counts in leverage",
       "admissible": false,
+      "needs_owner_approval": false,
       "reason_codes": [
         "UNCOMMITTED_FACILITY"
       ],
@@ -481,6 +511,7 @@
       "time_to_cash_display": "1 days",
       "covenant_effect": "no debt",
       "admissible": false,
+      "needs_owner_approval": false,
       "reason_codes": [],
       "reason": "no capacity (limit fully used or zero); ≈0.58% p.a., 6-month 国股 bill (Aug 2026); no bills held in this fixture",
       "limit_display": "¥0.00",
@@ -522,6 +553,7 @@
       "time_to_cash_display": "60 days",
       "covenant_effect": "no debt",
       "admissible": false,
+      "needs_owner_approval": false,
       "reason_codes": [
         "UNCOMMITTED_FACILITY",
         "TIER3_EQUITY"
@@ -610,6 +642,9 @@
       "reasons": [],
       "breach_day": null,
       "note": "cost ¥5,040.00; admissible but dearer than the selected plan",
+      "needs_owner_approval": false,
+      "approval_reason": "",
+      "executable_now": true,
       "total_fen": 504000,
       "total_display": "¥5,040.00",
       "selected": false
@@ -647,6 +682,9 @@
       "reasons": [],
       "breach_day": null,
       "note": "cost ¥3,392.25; admissible but dearer than the selected plan",
+      "needs_owner_approval": false,
+      "approval_reason": "",
+      "executable_now": true,
       "total_fen": 339225,
       "total_display": "¥841.64 + ¥2,550.61 = ¥3,392.25",
       "selected": false
@@ -684,6 +722,9 @@
       "reasons": [],
       "breach_day": null,
       "note": "",
+      "needs_owner_approval": false,
+      "approval_reason": "",
+      "executable_now": true,
       "total_fen": 271294,
       "total_display": "¥841.64 + ¥1,871.30 = ¥2,712.94",
       "selected": true
@@ -724,6 +765,9 @@
       ],
       "breach_day": null,
       "note": "not applied; cash on day 21, gap opens on day 12",
+      "needs_owner_approval": false,
+      "approval_reason": "",
+      "executable_now": true,
       "total_fen": null,
       "total_display": "—",
       "selected": false
@@ -753,6 +797,9 @@
       ],
       "breach_day": 12,
       "note": "cost ¥841.64; RESERVE_BREACH on day 12",
+      "needs_owner_approval": false,
+      "approval_reason": "",
+      "executable_now": true,
       "total_fen": 84164,
       "total_display": "¥841.64",
       "selected": false

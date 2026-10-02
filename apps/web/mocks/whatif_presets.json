@@ -405,7 +405,7 @@
             "limit": "¥300,000.00",
             "curable": true,
             "cure_cost_fen": 80270,
-            "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥802.70; the extension itself costs ¥1,871.30 per invoice",
+            "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥802.70 (cannot run today); the extension itself costs ¥1,871.30 per invoice",
             "formula": "closing_cash(day 47) >= min_cash: ¥254,960.00 < ¥300,000.00, shortfall ¥45,040.00",
             "cure_cost_display": "¥802.70"
           },
@@ -439,7 +439,7 @@
           "curable": true,
           "cure_cost_fen": 80270,
           "observed": "¥254,960.00",
-          "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥802.70; the extension itself costs ¥1,871.30 per invoice",
+          "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥802.70 (cannot run today); the extension itself costs ¥1,871.30 per invoice",
           "first_unfunded_day": 47,
           "cure_cost_display": "¥802.70"
         },
@@ -4900,7 +4900,7 @@
             "limit": "¥300,000.00",
             "curable": true,
             "cure_cost_fen": 76122,
-            "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥761.22; the extension itself costs ¥1,871.30 per invoice",
+            "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥761.22 (cannot run today); the extension itself costs ¥1,871.30 per invoice",
             "formula": "closing_cash(day 47) >= min_cash: ¥260,000.00 < ¥300,000.00, shortfall ¥40,000.00",
             "cure_cost_display": "¥761.22"
           }
@@ -4910,7 +4910,7 @@
           "curable": true,
           "cure_cost_fen": 76122,
           "observed": "¥260,000.00",
-          "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥761.22; the extension itself costs ¥1,871.30 per invoice",
+          "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥761.22 (cannot run today); the extension itself costs ¥1,871.30 per invoice",
           "first_unfunded_day": 12,
           "cure_cost_display": "¥761.22"
         },
@@ -21094,7 +21094,7 @@
             "limit": "¥300,000.00",
             "curable": true,
             "cure_cost_fen": 76122,
-            "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥761.22; the extension itself costs ¥1,871.30 per invoice",
+            "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥761.22 (cannot run today); the extension itself costs ¥1,871.30 per invoice",
             "formula": "closing_cash(day 47) >= min_cash: ¥260,000.00 < ¥300,000.00, shortfall ¥40,000.00",
             "cure_cost_display": "¥761.22"
           }
@@ -21104,7 +21104,7 @@
           "curable": true,
           "cure_cost_fen": 76122,
           "observed": "¥260,000.00",
-          "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥761.22; the extension itself costs ¥1,871.30 per invoice",
+          "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥761.22 (cannot run today); the extension itself costs ¥1,871.30 per invoice",
           "first_unfunded_day": 12,
           "cure_cost_display": "¥761.22"
         },
@@ -23385,7 +23385,7 @@
             "limit": "¥300,000.00",
             "curable": true,
             "cure_cost_fen": 76122,
-            "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥761.22; the extension itself costs ¥1,871.30 per invoice",
+            "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥761.22 (cannot run today); the extension itself costs ¥1,871.30 per invoice",
             "formula": "closing_cash(day 47) >= min_cash: ¥260,000.00 < ¥300,000.00, shortfall ¥40,000.00",
             "cure_cost_display": "¥761.22"
           }
@@ -23395,7 +23395,7 @@
           "curable": true,
           "cure_cost_fen": 76122,
           "observed": "¥260,000.00",
-          "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥761.22; the extension itself costs ¥1,871.30 per invoice",
+          "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥761.22 (cannot run today); the extension itself costs ¥1,871.30 per invoice",
           "first_unfunded_day": 12,
           "cure_cost_display": "¥761.22"
         },
@@ -25689,7 +25689,7 @@
             "limit": "¥300,000.00",
             "curable": true,
             "cure_cost_fen": 80270,
-            "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥802.70; the extension itself costs ¥1,871.30 per invoice",
+            "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥802.70 (cannot run today); the extension itself costs ¥1,871.30 per invoice",
             "formula": "closing_cash(day 47) >= min_cash: ¥254,960.00 < ¥300,000.00, shortfall ¥45,040.00",
             "cure_cost_display": "¥802.70"
           },
@@ -25723,7 +25723,7 @@
           "curable": true,
           "cure_cost_fen": 80270,
           "observed": "¥254,960.00",
-          "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥802.70; the extension itself costs ¥1,871.30 per invoice",
+          "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥802.70 (cannot run today); the extension itself costs ¥1,871.30 per invoice",
           "first_unfunded_day": 47,
           "cure_cost_display": "¥802.70"
         },
@@ -27973,7 +27973,7 @@
             "limit": "¥300,000.00",
             "curable": true,
             "cure_cost_fen": 114184,
-            "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥1,141.84; the extension itself costs ¥5,613.90 per invoice",
+            "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥1,141.84 (cannot run today); the extension itself costs ¥5,613.90 per invoice",
             "formula": "closing_cash(day 47) >= min_cash: ¥260,000.00 < ¥300,000.00, shortfall ¥40,000.00",
             "cure_cost_display": "¥1,141.84"
           }
@@ -27983,7 +27983,7 @@
           "curable": true,
           "cure_cost_fen": 114184,
           "observed": "¥260,000.00",
-          "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥1,141.84; the extension itself costs ¥5,613.90 per invoice",
+          "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥1,141.84 (cannot run today); the extension itself costs ¥5,613.90 per invoice",
           "first_unfunded_day": 12,
           "cure_cost_display": "¥1,141.84"
         },
@@ -30264,7 +30264,7 @@
             "limit": "¥300,000.00",
             "curable": true,
             "cure_cost_fen": 114184,
-            "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥1,141.84; the extension itself costs ¥5,613.90 per invoice",
+            "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥1,141.84 (cannot run today); the extension itself costs ¥5,613.90 per invoice",
             "formula": "closing_cash(day 47) >= min_cash: ¥260,000.00 < ¥300,000.00, shortfall ¥40,000.00",
             "cure_cost_display": "¥1,141.84"
           }
@@ -30274,7 +30274,7 @@
           "curable": true,
           "cure_cost_fen": 114184,
           "observed": "¥260,000.00",
-          "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥1,141.84; the extension itself costs ¥5,613.90 per invoice",
+          "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥1,141.84 (cannot run today); the extension itself costs ¥5,613.90 per invoice",
           "first_unfunded_day": 12,
           "cure_cost_display": "¥1,141.84"
         },
@@ -32568,7 +32568,7 @@
             "limit": "¥300,000.00",
             "curable": true,
             "cure_cost_fen": 120405,
-            "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥1,204.05; the extension itself costs ¥5,613.90 per invoice",
+            "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥1,204.05 (cannot run today); the extension itself costs ¥5,613.90 per invoice",
             "formula": "closing_cash(day 47) >= min_cash: ¥254,960.00 < ¥300,000.00, shortfall ¥45,040.00",
             "cure_cost_display": "¥1,204.05"
           },
@@ -32602,7 +32602,7 @@
           "curable": true,
           "cure_cost_fen": 120405,
           "observed": "¥254,960.00",
-          "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥1,204.05; the extension itself costs ¥5,613.90 per invoice",
+          "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥1,204.05 (cannot run today); the extension itself costs ¥5,613.90 per invoice",
           "first_unfunded_day": 47,
           "cure_cost_display": "¥1,204.05"
         },
@@ -34876,7 +34876,7 @@
             "limit": "¥300,000.00",
             "curable": true,
             "cure_cost_fen": 120405,
-            "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥1,204.05; the extension itself costs ¥5,613.90 per invoice",
+            "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥1,204.05 (cannot run today); the extension itself costs ¥5,613.90 per invoice",
             "formula": "closing_cash(day 47) >= min_cash: ¥254,960.00 < ¥300,000.00, shortfall ¥45,040.00",
             "cure_cost_display": "¥1,204.05"
           },
@@ -34910,7 +34910,7 @@
           "curable": true,
           "cure_cost_fen": 120405,
           "observed": "¥254,960.00",
-          "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥1,204.05; the extension itself costs ¥5,613.90 per invoice",
+          "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥1,204.05 (cannot run today); the extension itself costs ¥5,613.90 per invoice",
           "first_unfunded_day": 47,
           "cure_cost_display": "¥1,204.05"
         },
