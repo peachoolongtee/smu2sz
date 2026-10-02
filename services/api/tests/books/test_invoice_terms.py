@@ -329,6 +329,25 @@ def test_a_contingent_gain_is_never_written_and_counts_only_in_expected() -> Non
     assert expected[RI2] == (47, AGREED) and expected["RI:BUYER-1:32"] == (77, AGREED)
 
 
+# ---------------------------------------------------------------- stored states
+
+
+def test_adjusted_state_round_trips_through_the_sql_store_and_old_states_serialise_unchanged() -> None:
+    plain = seeded_store().get_state()
+    assert "invoice_adjustments" not in plain.model_dump_json() and '"applied"' not in plain.model_dump_json()
+    store = seeded_store("sqlite")
+    c = _commitment("CMT-S", _ob("OB-P", ObligationType.PRICE_ADJUSTMENT, rate=45),
+                    _ob("OB-T", ObligationType.TERMS_EXTENSION, days=10,
+                        duration=Duration(kind=DurationKind.RECURRING_BOUNDED, invoices=3)))
+    store.put_state(invoices.accept(store.get_state(), c))
+    advance(store, 3)
+    state = store.get_state()
+    assert [a.id for a in state.invoice_adjustments] == ["CMT-S:OB-P", "CMT-S:OB-T"]
+    r = next(x for x in state.receivables if x.id == RI2)
+    assert (r.face_fen, r.terms_days, r.base_face_fen, r.applied) == (AGREED, 55, FACE, ["CMT-S:OB-P", "CMT-S:OB-T"])
+    assert FinancialState.model_validate_json(state.model_dump_json()) == state
+
+
 # ---------------------------------------------------------------- 7. never applied twice
 
 
