@@ -1,5 +1,5 @@
 {
-  "file_id": "BF-0B013EC7A25A",
+  "file_id": "BF-485628C594A7",
   "status": "PREPARED_NOT_SENT",
   "style": "Borrower file (micro-enterprise loan format) · lender mocked",
   "title_en": "Borrower file (micro-enterprise loan format)",
@@ -66,10 +66,10 @@
           ]
         },
         {
-          "label": "Monthly EBITDA",
+          "label": "EBITDA (owner's figure), monthly",
           "value": "¥90,000.00",
           "evidence": "OBSERVED",
-          "note": "",
+          "note": "Profit as the owner reports it; not observed bank cash and not cash available for debt service.",
           "figures": [
             {
               "text": "¥90,000.00",
@@ -460,7 +460,7 @@
         },
         {
           "label": "Week 2 (days 8–14)",
-          "value": "¥0.00 · −¥340,000.00 · ¥420,000.00 · ¥420,000.00 · ¥1,020,000.00",
+          "value": "¥0.00 · −¥340,000.00 · ¥420,000.00 · ¥420,000.00 · ¥420,000.00",
           "evidence": "PROJECTED",
           "note": "",
           "figures": [
@@ -501,19 +501,19 @@
               "display": "¥420,000.00"
             },
             {
-              "text": "¥1,020,000.00",
+              "text": "¥420,000.00",
               "evidence": "PROJECTED",
-              "fen": 102000000,
+              "fen": 42000000,
               "ratio": null,
               "formula": null,
               "source": "pro-forma trajectory day 14",
-              "display": "¥1,020,000.00"
+              "display": "¥420,000.00"
             }
           ]
         },
         {
           "label": "Week 3 (days 15–21)",
-          "value": "¥0.00 · −¥120,000.00 · ¥300,000.00 · ¥300,000.00 · ¥900,000.00",
+          "value": "¥0.00 · −¥120,000.00 · ¥300,000.00 · ¥300,000.00 · ¥300,000.00",
           "evidence": "PROJECTED",
           "note": "",
           "figures": [
@@ -554,19 +554,19 @@
               "display": "¥300,000.00"
             },
             {
-              "text": "¥900,000.00",
+              "text": "¥300,000.00",
               "evidence": "PROJECTED",
-              "fen": 90000000,
+              "fen": 30000000,
               "ratio": null,
               "formula": null,
               "source": "pro-forma trajectory day 21",
-              "display": "¥900,000.00"
+              "display": "¥300,000.00"
             }
           ]
         },
         {
           "label": "Week 4 (days 22–28)",
-          "value": "¥0.00 · ¥0.00 · ¥300,000.00 · ¥300,000.00 · ¥900,000.00",
+          "value": "¥0.00 · ¥0.00 · ¥300,000.00 · ¥300,000.00 · ¥300,000.00",
           "evidence": "PROJECTED",
           "note": "",
           "figures": [
@@ -607,19 +607,19 @@
               "display": "¥300,000.00"
             },
             {
-              "text": "¥900,000.00",
+              "text": "¥300,000.00",
               "evidence": "PROJECTED",
-              "fen": 90000000,
+              "fen": 30000000,
               "ratio": null,
               "formula": null,
               "source": "pro-forma trajectory day 28",
-              "display": "¥900,000.00"
+              "display": "¥300,000.00"
             }
           ]
         },
         {
           "label": "Week 5 (days 29–35)",
-          "value": "¥420,000.00 · −¥364,584.24 · ¥355,415.76 · ¥300,000.00 · ¥955,415.76",
+          "value": "¥420,000.00 · −¥364,584.24 · ¥355,415.76 · ¥300,000.00 · ¥355,415.76",
           "evidence": "PROJECTED",
           "note": "",
           "figures": [
@@ -660,19 +660,19 @@
               "display": "¥300,000.00"
             },
             {
-              "text": "¥955,415.76",
+              "text": "¥355,415.76",
               "evidence": "PROJECTED",
-              "fen": 95541576,
+              "fen": 35541576,
               "ratio": null,
               "formula": null,
               "source": "pro-forma trajectory day 35",
-              "display": "¥955,415.76"
+              "display": "¥355,415.76"
             }
           ]
         },
         {
           "label": "Week 6 (days 36–42)",
-          "value": "¥0.00 · ¥0.00 · ¥355,415.76 · ¥355,415.76 · ¥955,415.76",
+          "value": "¥0.00 · ¥0.00 · ¥355,415.76 · ¥355,415.76 · ¥355,415.76",
           "evidence": "PROJECTED",
           "note": "",
           "figures": [
@@ -713,19 +713,19 @@
               "display": "¥355,415.76"
             },
             {
-              "text": "¥955,415.76",
+              "text": "¥355,415.76",
               "evidence": "PROJECTED",
-              "fen": 95541576,
+              "fen": 35541576,
               "ratio": null,
               "formula": null,
               "source": "pro-forma trajectory day 42",
-              "display": "¥955,415.76"
+              "display": "¥355,415.76"
             }
           ]
         },
         {
           "label": "Week 7 (days 43–49)",
-          "value": "¥420,000.00 · −¥100,000.00 · ¥675,415.76 · ¥355,415.76 · ¥1,257,271.14",
+          "value": "¥420,000.00 · −¥100,000.00 · ¥675,415.76 · ¥355,415.76 · ¥657,271.14",
           "evidence": "PROJECTED",
           "note": "",
           "figures": [
@@ -766,19 +766,19 @@
               "display": "¥355,415.76"
             },
             {
-              "text": "¥1,257,271.14",
+              "text": "¥657,271.14",
               "evidence": "PROJECTED",
-              "fen": 125727114,
+              "fen": 65727114,
               "ratio": null,
               "formula": null,
               "source": "pro-forma trajectory day 49",
-              "display": "¥1,257,271.14"
+              "display": "¥657,271.14"
             }
           ]
         },
         {
           "label": "Week 8 (days 50–56)",
-          "value": "¥0.00 · ¥0.00 · ¥675,415.76 · ¥675,415.76 · ¥1,257,271.14",
+          "value": "¥0.00 · ¥0.00 · ¥675,415.76 · ¥675,415.76 · ¥657,271.14",
           "evidence": "PROJECTED",
           "note": "",
           "figures": [
@@ -819,19 +819,19 @@
               "display": "¥675,415.76"
             },
             {
-              "text": "¥1,257,271.14",
+              "text": "¥657,271.14",
               "evidence": "PROJECTED",
-              "fen": 125727114,
+              "fen": 65727114,
               "ratio": null,
               "formula": null,
               "source": "pro-forma trajectory day 56",
-              "display": "¥1,257,271.14"
+              "display": "¥657,271.14"
             }
           ]
         },
         {
           "label": "Week 9 (days 57–63)",
-          "value": "¥0.00 · ¥0.00 · ¥675,415.76 · ¥675,415.76 · ¥1,257,271.14",
+          "value": "¥0.00 · ¥0.00 · ¥675,415.76 · ¥675,415.76 · ¥657,271.14",
           "evidence": "PROJECTED",
           "note": "",
           "figures": [
@@ -872,19 +872,19 @@
               "display": "¥675,415.76"
             },
             {
-              "text": "¥1,257,271.14",
+              "text": "¥657,271.14",
               "evidence": "PROJECTED",
-              "fen": 125727114,
+              "fen": 65727114,
               "ratio": null,
               "formula": null,
               "source": "pro-forma trajectory day 63",
-              "display": "¥1,257,271.14"
+              "display": "¥657,271.14"
             }
           ]
         },
         {
           "label": "Week 10 (days 64–70)",
-          "value": "¥0.00 · ¥0.00 · ¥675,415.76 · ¥675,415.76 · ¥1,257,271.14",
+          "value": "¥0.00 · ¥0.00 · ¥675,415.76 · ¥675,415.76 · ¥657,271.14",
           "evidence": "PROJECTED",
           "note": "",
           "figures": [
@@ -925,19 +925,19 @@
               "display": "¥675,415.76"
             },
             {
-              "text": "¥1,257,271.14",
+              "text": "¥657,271.14",
               "evidence": "PROJECTED",
-              "fen": 125727114,
+              "fen": 65727114,
               "ratio": null,
               "formula": null,
               "source": "pro-forma trajectory day 70",
-              "display": "¥1,257,271.14"
+              "display": "¥657,271.14"
             }
           ]
         },
         {
           "label": "Week 11 (days 71–77)",
-          "value": "¥420,000.00 · ¥0.00 · ¥1,095,415.76 · ¥675,415.76 · ¥1,659,126.52",
+          "value": "¥420,000.00 · ¥0.00 · ¥1,095,415.76 · ¥675,415.76 · ¥1,059,126.52",
           "evidence": "PROJECTED",
           "note": "",
           "figures": [
@@ -978,19 +978,19 @@
               "display": "¥675,415.76"
             },
             {
-              "text": "¥1,659,126.52",
+              "text": "¥1,059,126.52",
               "evidence": "PROJECTED",
-              "fen": 165912652,
+              "fen": 105912652,
               "ratio": null,
               "formula": null,
               "source": "pro-forma trajectory day 77",
-              "display": "¥1,659,126.52"
+              "display": "¥1,059,126.52"
             }
           ]
         },
         {
           "label": "Week 12 (days 78–84)",
-          "value": "¥0.00 · ¥0.00 · ¥1,095,415.76 · ¥1,095,415.76 · ¥1,659,126.52",
+          "value": "¥0.00 · ¥0.00 · ¥1,095,415.76 · ¥1,095,415.76 · ¥1,059,126.52",
           "evidence": "PROJECTED",
           "note": "",
           "figures": [
@@ -1031,19 +1031,19 @@
               "display": "¥1,095,415.76"
             },
             {
-              "text": "¥1,659,126.52",
+              "text": "¥1,059,126.52",
               "evidence": "PROJECTED",
-              "fen": 165912652,
+              "fen": 105912652,
               "ratio": null,
               "formula": null,
               "source": "pro-forma trajectory day 84",
-              "display": "¥1,659,126.52"
+              "display": "¥1,059,126.52"
             }
           ]
         },
         {
           "label": "Week 13 (days 85–91)",
-          "value": "¥0.00 · ¥0.00 · ¥1,095,415.76 · ¥1,095,415.76 · ¥1,659,126.52",
+          "value": "¥0.00 · ¥0.00 · ¥1,095,415.76 · ¥1,095,415.76 · ¥1,059,126.52",
           "evidence": "PROJECTED",
           "note": "",
           "figures": [
@@ -1084,13 +1084,13 @@
               "display": "¥1,095,415.76"
             },
             {
-              "text": "¥1,659,126.52",
+              "text": "¥1,059,126.52",
               "evidence": "PROJECTED",
-              "fen": 165912652,
+              "fen": 105912652,
               "ratio": null,
               "formula": null,
               "source": "pro-forma trajectory day 91",
-              "display": "¥1,659,126.52"
+              "display": "¥1,059,126.52"
             }
           ]
         }
@@ -1112,19 +1112,19 @@
       ],
       "rows": [
         {
-          "label": "Month 1 (day 30)",
-          "value": "¥900,000.00 · ¥2,460,000.00 · 2.00× · 2.28×",
+          "label": "Month 1 (days 1–30)",
+          "value": "¥300,000.00 · ¥2,460,000.00 · 2.00× · 2.28×",
           "evidence": "PROJECTED",
           "note": "",
           "figures": [
             {
-              "text": "¥900,000.00",
+              "text": "¥300,000.00",
               "evidence": "PROJECTED",
-              "fen": 90000000,
+              "fen": 30000000,
               "ratio": null,
               "formula": null,
               "source": "pro-forma trajectory day 30",
-              "display": "¥900,000.00"
+              "display": "¥300,000.00"
             },
             {
               "text": "¥2,460,000.00",
@@ -1132,7 +1132,7 @@
               "fen": 246000000,
               "ratio": null,
               "formula": "principal + balances counted in leverage",
-              "source": "pro-forma month 1",
+              "source": "pro-forma calendar month 1",
               "display": "¥2,460,000.00"
             },
             {
@@ -1145,7 +1145,7 @@
                 "text": "2.00"
               },
               "formula": "EBITDA_m / DS_m",
-              "source": "pro-forma month 1"
+              "source": "pro-forma calendar month 1"
             },
             {
               "text": "2.28×",
@@ -1157,24 +1157,24 @@
                 "text": "2.28"
               },
               "formula": "Debt_m / (12 × EBITDA_m)",
-              "source": "pro-forma month 1"
+              "source": "pro-forma calendar month 1"
             }
           ]
         },
         {
-          "label": "Month 2 (day 60)",
-          "value": "¥1,257,271.14 · ¥2,084,655.38 · 1.33× · 1.93×",
+          "label": "Month 2 (days 31–60)",
+          "value": "¥657,271.14 · ¥2,084,655.38 · 1.33× · 1.93×",
           "evidence": "PROJECTED",
           "note": "",
           "figures": [
             {
-              "text": "¥1,257,271.14",
+              "text": "¥657,271.14",
               "evidence": "PROJECTED",
-              "fen": 125727114,
+              "fen": 65727114,
               "ratio": null,
               "formula": null,
               "source": "pro-forma trajectory day 60",
-              "display": "¥1,257,271.14"
+              "display": "¥657,271.14"
             },
             {
               "text": "¥2,084,655.38",
@@ -1182,7 +1182,7 @@
               "fen": 208465538,
               "ratio": null,
               "formula": "principal + balances counted in leverage",
-              "source": "pro-forma month 2",
+              "source": "pro-forma calendar month 2",
               "display": "¥2,084,655.38"
             },
             {
@@ -1195,7 +1195,7 @@
                 "text": "1.33"
               },
               "formula": "EBITDA_m / DS_m",
-              "source": "pro-forma month 2"
+              "source": "pro-forma calendar month 2"
             },
             {
               "text": "1.93×",
@@ -1207,24 +1207,24 @@
                 "text": "1.93"
               },
               "formula": "Debt_m / (12 × EBITDA_m)",
-              "source": "pro-forma month 2"
+              "source": "pro-forma calendar month 2"
             }
           ]
         },
         {
-          "label": "Month 3 (day 90)",
-          "value": "¥1,659,126.52 · ¥2,069,239.15 · 1.43× · 1.92×",
+          "label": "Month 3 (days 61–90)",
+          "value": "¥1,059,126.52 · ¥2,069,239.15 · 1.43× · 1.92×",
           "evidence": "PROJECTED",
           "note": "",
           "figures": [
             {
-              "text": "¥1,659,126.52",
+              "text": "¥1,059,126.52",
               "evidence": "PROJECTED",
-              "fen": 165912652,
+              "fen": 105912652,
               "ratio": null,
               "formula": null,
               "source": "pro-forma trajectory day 90",
-              "display": "¥1,659,126.52"
+              "display": "¥1,059,126.52"
             },
             {
               "text": "¥2,069,239.15",
@@ -1232,7 +1232,7 @@
               "fen": 206923915,
               "ratio": null,
               "formula": "principal + balances counted in leverage",
-              "source": "pro-forma month 3",
+              "source": "pro-forma calendar month 3",
               "display": "¥2,069,239.15"
             },
             {
@@ -1245,7 +1245,7 @@
                 "text": "1.43"
               },
               "formula": "EBITDA_m / DS_m",
-              "source": "pro-forma month 3"
+              "source": "pro-forma calendar month 3"
             },
             {
               "text": "1.92×",
@@ -1257,24 +1257,24 @@
                 "text": "1.92"
               },
               "formula": "Debt_m / (12 × EBITDA_m)",
-              "source": "pro-forma month 3"
+              "source": "pro-forma calendar month 3"
             }
           ]
         },
         {
-          "label": "Month 4 (day 120)",
-          "value": "¥2,060,981.90 · ¥2,053,750.98 · 1.43× · 1.90×",
+          "label": "Month 4 (days 91–120)",
+          "value": "¥1,460,981.90 · ¥2,053,750.98 · 1.43× · 1.90×",
           "evidence": "PROJECTED",
           "note": "",
           "figures": [
             {
-              "text": "¥2,060,981.90",
+              "text": "¥1,460,981.90",
               "evidence": "PROJECTED",
-              "fen": 206098190,
+              "fen": 146098190,
               "ratio": null,
               "formula": null,
               "source": "pro-forma trajectory day 120",
-              "display": "¥2,060,981.90"
+              "display": "¥1,460,981.90"
             },
             {
               "text": "¥2,053,750.98",
@@ -1282,7 +1282,7 @@
               "fen": 205375098,
               "ratio": null,
               "formula": "principal + balances counted in leverage",
-              "source": "pro-forma month 4",
+              "source": "pro-forma calendar month 4",
               "display": "¥2,053,750.98"
             },
             {
@@ -1295,7 +1295,7 @@
                 "text": "1.43"
               },
               "formula": "EBITDA_m / DS_m",
-              "source": "pro-forma month 4"
+              "source": "pro-forma calendar month 4"
             },
             {
               "text": "1.90×",
@@ -1307,24 +1307,24 @@
                 "text": "1.90"
               },
               "formula": "Debt_m / (12 × EBITDA_m)",
-              "source": "pro-forma month 4"
+              "source": "pro-forma calendar month 4"
             }
           ]
         },
         {
-          "label": "Month 5 (day 150)",
-          "value": "¥2,462,837.28 · ¥2,038,190.53 · 1.43× · 1.89×",
+          "label": "Month 5 (days 121–150)",
+          "value": "¥1,862,837.28 · ¥2,038,190.53 · 1.43× · 1.89×",
           "evidence": "PROJECTED",
           "note": "",
           "figures": [
             {
-              "text": "¥2,462,837.28",
+              "text": "¥1,862,837.28",
               "evidence": "PROJECTED",
-              "fen": 246283728,
+              "fen": 186283728,
               "ratio": null,
               "formula": null,
               "source": "pro-forma trajectory day 150",
-              "display": "¥2,462,837.28"
+              "display": "¥1,862,837.28"
             },
             {
               "text": "¥2,038,190.53",
@@ -1332,7 +1332,7 @@
               "fen": 203819053,
               "ratio": null,
               "formula": "principal + balances counted in leverage",
-              "source": "pro-forma month 5",
+              "source": "pro-forma calendar month 5",
               "display": "¥2,038,190.53"
             },
             {
@@ -1345,7 +1345,7 @@
                 "text": "1.43"
               },
               "formula": "EBITDA_m / DS_m",
-              "source": "pro-forma month 5"
+              "source": "pro-forma calendar month 5"
             },
             {
               "text": "1.89×",
@@ -1357,24 +1357,24 @@
                 "text": "1.89"
               },
               "formula": "Debt_m / (12 × EBITDA_m)",
-              "source": "pro-forma month 5"
+              "source": "pro-forma calendar month 5"
             }
           ]
         },
         {
-          "label": "Month 6 (day 180)",
-          "value": "¥2,864,692.66 · ¥2,022,557.47 · 1.43× · 1.87×",
+          "label": "Month 6 (days 151–180)",
+          "value": "¥2,264,692.66 · ¥2,022,557.47 · 1.43× · 1.87×",
           "evidence": "PROJECTED",
           "note": "",
           "figures": [
             {
-              "text": "¥2,864,692.66",
+              "text": "¥2,264,692.66",
               "evidence": "PROJECTED",
-              "fen": 286469266,
+              "fen": 226469266,
               "ratio": null,
               "formula": null,
               "source": "pro-forma trajectory day 180",
-              "display": "¥2,864,692.66"
+              "display": "¥2,264,692.66"
             },
             {
               "text": "¥2,022,557.47",
@@ -1382,7 +1382,7 @@
               "fen": 202255747,
               "ratio": null,
               "formula": "principal + balances counted in leverage",
-              "source": "pro-forma month 6",
+              "source": "pro-forma calendar month 6",
               "display": "¥2,022,557.47"
             },
             {
@@ -1395,7 +1395,7 @@
                 "text": "1.43"
               },
               "formula": "EBITDA_m / DS_m",
-              "source": "pro-forma month 6"
+              "source": "pro-forma calendar month 6"
             },
             {
               "text": "1.87×",
@@ -1407,24 +1407,24 @@
                 "text": "1.87"
               },
               "formula": "Debt_m / (12 × EBITDA_m)",
-              "source": "pro-forma month 6"
+              "source": "pro-forma calendar month 6"
             }
           ]
         },
         {
-          "label": "Month 7 (day 210)",
-          "value": "¥3,266,548.04 · ¥2,006,851.45 · 1.43× · 1.86×",
+          "label": "Month 7 (days 181–210)",
+          "value": "¥2,666,548.04 · ¥2,006,851.45 · 1.43× · 1.86×",
           "evidence": "PROJECTED",
           "note": "",
           "figures": [
             {
-              "text": "¥3,266,548.04",
+              "text": "¥2,666,548.04",
               "evidence": "PROJECTED",
-              "fen": 326654804,
+              "fen": 266654804,
               "ratio": null,
               "formula": null,
               "source": "pro-forma trajectory day 210",
-              "display": "¥3,266,548.04"
+              "display": "¥2,666,548.04"
             },
             {
               "text": "¥2,006,851.45",
@@ -1432,7 +1432,7 @@
               "fen": 200685145,
               "ratio": null,
               "formula": "principal + balances counted in leverage",
-              "source": "pro-forma month 7",
+              "source": "pro-forma calendar month 7",
               "display": "¥2,006,851.45"
             },
             {
@@ -1445,7 +1445,7 @@
                 "text": "1.43"
               },
               "formula": "EBITDA_m / DS_m",
-              "source": "pro-forma month 7"
+              "source": "pro-forma calendar month 7"
             },
             {
               "text": "1.86×",
@@ -1457,24 +1457,24 @@
                 "text": "1.86"
               },
               "formula": "Debt_m / (12 × EBITDA_m)",
-              "source": "pro-forma month 7"
+              "source": "pro-forma calendar month 7"
             }
           ]
         },
         {
-          "label": "Month 8 (day 240)",
-          "value": "¥3,668,403.42 · ¥1,991,072.14 · 1.43× · 1.84×",
+          "label": "Month 8 (days 211–240)",
+          "value": "¥3,068,403.42 · ¥1,991,072.14 · 1.43× · 1.84×",
           "evidence": "PROJECTED",
           "note": "",
           "figures": [
             {
-              "text": "¥3,668,403.42",
+              "text": "¥3,068,403.42",
               "evidence": "PROJECTED",
-              "fen": 366840342,
+              "fen": 306840342,
               "ratio": null,
               "formula": null,
               "source": "pro-forma trajectory day 240",
-              "display": "¥3,668,403.42"
+              "display": "¥3,068,403.42"
             },
             {
               "text": "¥1,991,072.14",
@@ -1482,7 +1482,7 @@
               "fen": 199107214,
               "ratio": null,
               "formula": "principal + balances counted in leverage",
-              "source": "pro-forma month 8",
+              "source": "pro-forma calendar month 8",
               "display": "¥1,991,072.14"
             },
             {
@@ -1495,7 +1495,7 @@
                 "text": "1.43"
               },
               "formula": "EBITDA_m / DS_m",
-              "source": "pro-forma month 8"
+              "source": "pro-forma calendar month 8"
             },
             {
               "text": "1.84×",
@@ -1507,24 +1507,24 @@
                 "text": "1.84"
               },
               "formula": "Debt_m / (12 × EBITDA_m)",
-              "source": "pro-forma month 8"
+              "source": "pro-forma calendar month 8"
             }
           ]
         },
         {
-          "label": "Month 9 (day 270)",
-          "value": "¥4,070,258.80 · ¥1,975,219.19 · 1.43× · 1.83×",
+          "label": "Month 9 (days 241–270)",
+          "value": "¥3,470,258.80 · ¥1,975,219.19 · 1.43× · 1.83×",
           "evidence": "PROJECTED",
           "note": "",
           "figures": [
             {
-              "text": "¥4,070,258.80",
+              "text": "¥3,470,258.80",
               "evidence": "PROJECTED",
-              "fen": 407025880,
+              "fen": 347025880,
               "ratio": null,
               "formula": null,
               "source": "pro-forma trajectory day 270",
-              "display": "¥4,070,258.80"
+              "display": "¥3,470,258.80"
             },
             {
               "text": "¥1,975,219.19",
@@ -1532,7 +1532,7 @@
               "fen": 197521919,
               "ratio": null,
               "formula": "principal + balances counted in leverage",
-              "source": "pro-forma month 9",
+              "source": "pro-forma calendar month 9",
               "display": "¥1,975,219.19"
             },
             {
@@ -1545,7 +1545,7 @@
                 "text": "1.43"
               },
               "formula": "EBITDA_m / DS_m",
-              "source": "pro-forma month 9"
+              "source": "pro-forma calendar month 9"
             },
             {
               "text": "1.83×",
@@ -1557,24 +1557,24 @@
                 "text": "1.83"
               },
               "formula": "Debt_m / (12 × EBITDA_m)",
-              "source": "pro-forma month 9"
+              "source": "pro-forma calendar month 9"
             }
           ]
         },
         {
-          "label": "Month 10 (day 300)",
-          "value": "¥4,472,114.18 · ¥1,959,292.26 · 1.43× · 1.81×",
+          "label": "Month 10 (days 271–300)",
+          "value": "¥3,872,114.18 · ¥1,959,292.26 · 1.43× · 1.81×",
           "evidence": "PROJECTED",
           "note": "",
           "figures": [
             {
-              "text": "¥4,472,114.18",
+              "text": "¥3,872,114.18",
               "evidence": "PROJECTED",
-              "fen": 447211418,
+              "fen": 387211418,
               "ratio": null,
               "formula": null,
               "source": "pro-forma trajectory day 300",
-              "display": "¥4,472,114.18"
+              "display": "¥3,872,114.18"
             },
             {
               "text": "¥1,959,292.26",
@@ -1582,7 +1582,7 @@
               "fen": 195929226,
               "ratio": null,
               "formula": "principal + balances counted in leverage",
-              "source": "pro-forma month 10",
+              "source": "pro-forma calendar month 10",
               "display": "¥1,959,292.26"
             },
             {
@@ -1595,7 +1595,7 @@
                 "text": "1.43"
               },
               "formula": "EBITDA_m / DS_m",
-              "source": "pro-forma month 10"
+              "source": "pro-forma calendar month 10"
             },
             {
               "text": "1.81×",
@@ -1607,24 +1607,24 @@
                 "text": "1.81"
               },
               "formula": "Debt_m / (12 × EBITDA_m)",
-              "source": "pro-forma month 10"
+              "source": "pro-forma calendar month 10"
             }
           ]
         },
         {
-          "label": "Month 11 (day 330)",
-          "value": "¥4,873,969.56 · ¥1,943,291.00 · 1.43× · 1.80×",
+          "label": "Month 11 (days 301–330)",
+          "value": "¥4,273,969.56 · ¥1,943,291.00 · 1.43× · 1.80×",
           "evidence": "PROJECTED",
           "note": "",
           "figures": [
             {
-              "text": "¥4,873,969.56",
+              "text": "¥4,273,969.56",
               "evidence": "PROJECTED",
-              "fen": 487396956,
+              "fen": 427396956,
               "ratio": null,
               "formula": null,
               "source": "pro-forma trajectory day 330",
-              "display": "¥4,873,969.56"
+              "display": "¥4,273,969.56"
             },
             {
               "text": "¥1,943,291.00",
@@ -1632,7 +1632,7 @@
               "fen": 194329100,
               "ratio": null,
               "formula": "principal + balances counted in leverage",
-              "source": "pro-forma month 11",
+              "source": "pro-forma calendar month 11",
               "display": "¥1,943,291.00"
             },
             {
@@ -1645,7 +1645,7 @@
                 "text": "1.43"
               },
               "formula": "EBITDA_m / DS_m",
-              "source": "pro-forma month 11"
+              "source": "pro-forma calendar month 11"
             },
             {
               "text": "1.80×",
@@ -1657,24 +1657,24 @@
                 "text": "1.80"
               },
               "formula": "Debt_m / (12 × EBITDA_m)",
-              "source": "pro-forma month 11"
+              "source": "pro-forma calendar month 11"
             }
           ]
         },
         {
-          "label": "Month 12 (day 360)",
-          "value": "¥5,275,824.94 · ¥1,927,215.07 · 1.43× · 1.78×",
+          "label": "Month 12 (days 331–360)",
+          "value": "¥4,675,824.94 · ¥1,927,215.07 · 1.43× · 1.78×",
           "evidence": "PROJECTED",
           "note": "",
           "figures": [
             {
-              "text": "¥5,275,824.94",
+              "text": "¥4,675,824.94",
               "evidence": "PROJECTED",
-              "fen": 527582494,
+              "fen": 467582494,
               "ratio": null,
               "formula": null,
               "source": "pro-forma trajectory day 360",
-              "display": "¥5,275,824.94"
+              "display": "¥4,675,824.94"
             },
             {
               "text": "¥1,927,215.07",
@@ -1682,7 +1682,7 @@
               "fen": 192721507,
               "ratio": null,
               "formula": "principal + balances counted in leverage",
-              "source": "pro-forma month 12",
+              "source": "pro-forma calendar month 12",
               "display": "¥1,927,215.07"
             },
             {
@@ -1695,7 +1695,7 @@
                 "text": "1.43"
               },
               "formula": "EBITDA_m / DS_m",
-              "source": "pro-forma month 12"
+              "source": "pro-forma calendar month 12"
             },
             {
               "text": "1.78×",
@@ -1707,13 +1707,14 @@
                 "text": "1.78"
               },
               "formula": "Debt_m / (12 × EBITDA_m)",
-              "source": "pro-forma month 12"
+              "source": "pro-forma calendar month 12"
             }
           ]
         }
       ],
       "notes": [
-        "EBITDA is held flat at the observed monthly figure; any owner-estimated uplift is shown separately and not used."
+        "Twelve 30-day months rolling from today (day 0): month 1 starts on day 1. DSCR and leverage are those of the 30-day calendar month that ends on or after each window's last day.",
+        "EBITDA is held flat at the owner's monthly figure; any owner-estimated uplift is shown separately and not used."
       ]
     },
     {
@@ -1730,7 +1731,7 @@
       ],
       "rows": [
         {
-          "label": "Month 1",
+          "label": "Month 1 (days 1–30)",
           "value": "2.00× · 2.00× · +0.75× · 1.72× · 2.28× · +0.22×",
           "evidence": "PROJECTED",
           "note": "",
@@ -1745,7 +1746,7 @@
                 "text": "2.00"
               },
               "formula": "EBITDA_m / DS_m",
-              "source": "before, month 1"
+              "source": "before, calendar month 1"
             },
             {
               "text": "2.00×",
@@ -1757,7 +1758,7 @@
                 "text": "2.00"
               },
               "formula": "EBITDA_m / DS_m",
-              "source": "after (pro forma), month 1"
+              "source": "after (pro forma), calendar month 1"
             },
             {
               "text": "+0.75×",
@@ -1781,7 +1782,7 @@
                 "text": "1.72"
               },
               "formula": "Debt_m / (12 × EBITDA_m)",
-              "source": "before, month 1"
+              "source": "before, calendar month 1"
             },
             {
               "text": "2.28×",
@@ -1793,7 +1794,7 @@
                 "text": "2.28"
               },
               "formula": "Debt_m / (12 × EBITDA_m)",
-              "source": "after (pro forma), month 1"
+              "source": "after (pro forma), calendar month 1"
             },
             {
               "text": "+0.22×",
@@ -1810,7 +1811,7 @@
           ]
         },
         {
-          "label": "Month 2",
+          "label": "Month 2 (days 31–60)",
           "value": "1.82× · 1.33× · +0.08× · 1.39× · 1.93× · +0.57×",
           "evidence": "PROJECTED",
           "note": "",
@@ -1825,7 +1826,7 @@
                 "text": "1.82"
               },
               "formula": "EBITDA_m / DS_m",
-              "source": "before, month 2"
+              "source": "before, calendar month 2"
             },
             {
               "text": "1.33×",
@@ -1837,7 +1838,7 @@
                 "text": "1.33"
               },
               "formula": "EBITDA_m / DS_m",
-              "source": "after (pro forma), month 2"
+              "source": "after (pro forma), calendar month 2"
             },
             {
               "text": "+0.08×",
@@ -1861,7 +1862,7 @@
                 "text": "1.39"
               },
               "formula": "Debt_m / (12 × EBITDA_m)",
-              "source": "before, month 2"
+              "source": "before, calendar month 2"
             },
             {
               "text": "1.93×",
@@ -1873,7 +1874,7 @@
                 "text": "1.93"
               },
               "formula": "Debt_m / (12 × EBITDA_m)",
-              "source": "after (pro forma), month 2"
+              "source": "after (pro forma), calendar month 2"
             },
             {
               "text": "+0.57×",
@@ -1890,7 +1891,7 @@
           ]
         },
         {
-          "label": "Month 3",
+          "label": "Month 3 (days 61–90)",
           "value": "2.00× · 1.43× · +0.18× · 1.39× · 1.92× · +0.58×",
           "evidence": "PROJECTED",
           "note": "",
@@ -1905,7 +1906,7 @@
                 "text": "2.00"
               },
               "formula": "EBITDA_m / DS_m",
-              "source": "before, month 3"
+              "source": "before, calendar month 3"
             },
             {
               "text": "1.43×",
@@ -1917,7 +1918,7 @@
                 "text": "1.43"
               },
               "formula": "EBITDA_m / DS_m",
-              "source": "after (pro forma), month 3"
+              "source": "after (pro forma), calendar month 3"
             },
             {
               "text": "+0.18×",
@@ -1941,7 +1942,7 @@
                 "text": "1.39"
               },
               "formula": "Debt_m / (12 × EBITDA_m)",
-              "source": "before, month 3"
+              "source": "before, calendar month 3"
             },
             {
               "text": "1.92×",
@@ -1953,7 +1954,7 @@
                 "text": "1.92"
               },
               "formula": "Debt_m / (12 × EBITDA_m)",
-              "source": "after (pro forma), month 3"
+              "source": "after (pro forma), calendar month 3"
             },
             {
               "text": "+0.58×",
@@ -1970,7 +1971,7 @@
           ]
         },
         {
-          "label": "Month 4",
+          "label": "Month 4 (days 91–120)",
           "value": "2.00× · 1.43× · +0.18× · 1.39× · 1.90× · +0.60×",
           "evidence": "PROJECTED",
           "note": "",
@@ -1985,7 +1986,7 @@
                 "text": "2.00"
               },
               "formula": "EBITDA_m / DS_m",
-              "source": "before, month 4"
+              "source": "before, calendar month 4"
             },
             {
               "text": "1.43×",
@@ -1997,7 +1998,7 @@
                 "text": "1.43"
               },
               "formula": "EBITDA_m / DS_m",
-              "source": "after (pro forma), month 4"
+              "source": "after (pro forma), calendar month 4"
             },
             {
               "text": "+0.18×",
@@ -2021,7 +2022,7 @@
                 "text": "1.39"
               },
               "formula": "Debt_m / (12 × EBITDA_m)",
-              "source": "before, month 4"
+              "source": "before, calendar month 4"
             },
             {
               "text": "1.90×",
@@ -2033,7 +2034,7 @@
                 "text": "1.90"
               },
               "formula": "Debt_m / (12 × EBITDA_m)",
-              "source": "after (pro forma), month 4"
+              "source": "after (pro forma), calendar month 4"
             },
             {
               "text": "+0.60×",
@@ -2050,7 +2051,7 @@
           ]
         },
         {
-          "label": "Month 5",
+          "label": "Month 5 (days 121–150)",
           "value": "2.00× · 1.43× · +0.18× · 1.39× · 1.89× · +0.61×",
           "evidence": "PROJECTED",
           "note": "",
@@ -2065,7 +2066,7 @@
                 "text": "2.00"
               },
               "formula": "EBITDA_m / DS_m",
-              "source": "before, month 5"
+              "source": "before, calendar month 5"
             },
             {
               "text": "1.43×",
@@ -2077,7 +2078,7 @@
                 "text": "1.43"
               },
               "formula": "EBITDA_m / DS_m",
-              "source": "after (pro forma), month 5"
+              "source": "after (pro forma), calendar month 5"
             },
             {
               "text": "+0.18×",
@@ -2101,7 +2102,7 @@
                 "text": "1.39"
               },
               "formula": "Debt_m / (12 × EBITDA_m)",
-              "source": "before, month 5"
+              "source": "before, calendar month 5"
             },
             {
               "text": "1.89×",
@@ -2113,7 +2114,7 @@
                 "text": "1.89"
               },
               "formula": "Debt_m / (12 × EBITDA_m)",
-              "source": "after (pro forma), month 5"
+              "source": "after (pro forma), calendar month 5"
             },
             {
               "text": "+0.61×",
@@ -2130,7 +2131,7 @@
           ]
         },
         {
-          "label": "Month 6",
+          "label": "Month 6 (days 151–180)",
           "value": "2.00× · 1.43× · +0.18× · 1.39× · 1.87× · +0.63×",
           "evidence": "PROJECTED",
           "note": "",
@@ -2145,7 +2146,7 @@
                 "text": "2.00"
               },
               "formula": "EBITDA_m / DS_m",
-              "source": "before, month 6"
+              "source": "before, calendar month 6"
             },
             {
               "text": "1.43×",
@@ -2157,7 +2158,7 @@
                 "text": "1.43"
               },
               "formula": "EBITDA_m / DS_m",
-              "source": "after (pro forma), month 6"
+              "source": "after (pro forma), calendar month 6"
             },
             {
               "text": "+0.18×",
@@ -2181,7 +2182,7 @@
                 "text": "1.39"
               },
               "formula": "Debt_m / (12 × EBITDA_m)",
-              "source": "before, month 6"
+              "source": "before, calendar month 6"
             },
             {
               "text": "1.87×",
@@ -2193,7 +2194,7 @@
                 "text": "1.87"
               },
               "formula": "Debt_m / (12 × EBITDA_m)",
-              "source": "after (pro forma), month 6"
+              "source": "after (pro forma), calendar month 6"
             },
             {
               "text": "+0.63×",
@@ -2210,7 +2211,7 @@
           ]
         },
         {
-          "label": "Month 7",
+          "label": "Month 7 (days 181–210)",
           "value": "2.00× · 1.43× · +0.18× · 1.39× · 1.86× · +0.64×",
           "evidence": "PROJECTED",
           "note": "",
@@ -2225,7 +2226,7 @@
                 "text": "2.00"
               },
               "formula": "EBITDA_m / DS_m",
-              "source": "before, month 7"
+              "source": "before, calendar month 7"
             },
             {
               "text": "1.43×",
@@ -2237,7 +2238,7 @@
                 "text": "1.43"
               },
               "formula": "EBITDA_m / DS_m",
-              "source": "after (pro forma), month 7"
+              "source": "after (pro forma), calendar month 7"
             },
             {
               "text": "+0.18×",
@@ -2261,7 +2262,7 @@
                 "text": "1.39"
               },
               "formula": "Debt_m / (12 × EBITDA_m)",
-              "source": "before, month 7"
+              "source": "before, calendar month 7"
             },
             {
               "text": "1.86×",
@@ -2273,7 +2274,7 @@
                 "text": "1.86"
               },
               "formula": "Debt_m / (12 × EBITDA_m)",
-              "source": "after (pro forma), month 7"
+              "source": "after (pro forma), calendar month 7"
             },
             {
               "text": "+0.64×",
@@ -2290,7 +2291,7 @@
           ]
         },
         {
-          "label": "Month 8",
+          "label": "Month 8 (days 211–240)",
           "value": "2.00× · 1.43× · +0.18× · 1.39× · 1.84× · +0.66×",
           "evidence": "PROJECTED",
           "note": "",
@@ -2305,7 +2306,7 @@
                 "text": "2.00"
               },
               "formula": "EBITDA_m / DS_m",
-              "source": "before, month 8"
+              "source": "before, calendar month 8"
             },
             {
               "text": "1.43×",
@@ -2317,7 +2318,7 @@
                 "text": "1.43"
               },
               "formula": "EBITDA_m / DS_m",
-              "source": "after (pro forma), month 8"
+              "source": "after (pro forma), calendar month 8"
             },
             {
               "text": "+0.18×",
@@ -2341,7 +2342,7 @@
                 "text": "1.39"
               },
               "formula": "Debt_m / (12 × EBITDA_m)",
-              "source": "before, month 8"
+              "source": "before, calendar month 8"
             },
             {
               "text": "1.84×",
@@ -2353,7 +2354,7 @@
                 "text": "1.84"
               },
               "formula": "Debt_m / (12 × EBITDA_m)",
-              "source": "after (pro forma), month 8"
+              "source": "after (pro forma), calendar month 8"
             },
             {
               "text": "+0.66×",
@@ -2370,7 +2371,7 @@
           ]
         },
         {
-          "label": "Month 9",
+          "label": "Month 9 (days 241–270)",
           "value": "2.00× · 1.43× · +0.18× · 1.39× · 1.83× · +0.67×",
           "evidence": "PROJECTED",
           "note": "",
@@ -2385,7 +2386,7 @@
                 "text": "2.00"
               },
               "formula": "EBITDA_m / DS_m",
-              "source": "before, month 9"
+              "source": "before, calendar month 9"
             },
             {
               "text": "1.43×",
@@ -2397,7 +2398,7 @@
                 "text": "1.43"
               },
               "formula": "EBITDA_m / DS_m",
-              "source": "after (pro forma), month 9"
+              "source": "after (pro forma), calendar month 9"
             },
             {
               "text": "+0.18×",
@@ -2421,7 +2422,7 @@
                 "text": "1.39"
               },
               "formula": "Debt_m / (12 × EBITDA_m)",
-              "source": "before, month 9"
+              "source": "before, calendar month 9"
             },
             {
               "text": "1.83×",
@@ -2433,7 +2434,7 @@
                 "text": "1.83"
               },
               "formula": "Debt_m / (12 × EBITDA_m)",
-              "source": "after (pro forma), month 9"
+              "source": "after (pro forma), calendar month 9"
             },
             {
               "text": "+0.67×",
@@ -2450,7 +2451,7 @@
           ]
         },
         {
-          "label": "Month 10",
+          "label": "Month 10 (days 271–300)",
           "value": "2.00× · 1.43× · +0.18× · 1.39× · 1.81× · +0.69×",
           "evidence": "PROJECTED",
           "note": "",
@@ -2465,7 +2466,7 @@
                 "text": "2.00"
               },
               "formula": "EBITDA_m / DS_m",
-              "source": "before, month 10"
+              "source": "before, calendar month 10"
             },
             {
               "text": "1.43×",
@@ -2477,7 +2478,7 @@
                 "text": "1.43"
               },
               "formula": "EBITDA_m / DS_m",
-              "source": "after (pro forma), month 10"
+              "source": "after (pro forma), calendar month 10"
             },
             {
               "text": "+0.18×",
@@ -2501,7 +2502,7 @@
                 "text": "1.39"
               },
               "formula": "Debt_m / (12 × EBITDA_m)",
-              "source": "before, month 10"
+              "source": "before, calendar month 10"
             },
             {
               "text": "1.81×",
@@ -2513,7 +2514,7 @@
                 "text": "1.81"
               },
               "formula": "Debt_m / (12 × EBITDA_m)",
-              "source": "after (pro forma), month 10"
+              "source": "after (pro forma), calendar month 10"
             },
             {
               "text": "+0.69×",
@@ -2530,7 +2531,7 @@
           ]
         },
         {
-          "label": "Month 11",
+          "label": "Month 11 (days 301–330)",
           "value": "2.00× · 1.43× · +0.18× · 1.39× · 1.80× · +0.70×",
           "evidence": "PROJECTED",
           "note": "",
@@ -2545,7 +2546,7 @@
                 "text": "2.00"
               },
               "formula": "EBITDA_m / DS_m",
-              "source": "before, month 11"
+              "source": "before, calendar month 11"
             },
             {
               "text": "1.43×",
@@ -2557,7 +2558,7 @@
                 "text": "1.43"
               },
               "formula": "EBITDA_m / DS_m",
-              "source": "after (pro forma), month 11"
+              "source": "after (pro forma), calendar month 11"
             },
             {
               "text": "+0.18×",
@@ -2581,7 +2582,7 @@
                 "text": "1.39"
               },
               "formula": "Debt_m / (12 × EBITDA_m)",
-              "source": "before, month 11"
+              "source": "before, calendar month 11"
             },
             {
               "text": "1.80×",
@@ -2593,7 +2594,7 @@
                 "text": "1.80"
               },
               "formula": "Debt_m / (12 × EBITDA_m)",
-              "source": "after (pro forma), month 11"
+              "source": "after (pro forma), calendar month 11"
             },
             {
               "text": "+0.70×",
@@ -2610,7 +2611,7 @@
           ]
         },
         {
-          "label": "Month 12",
+          "label": "Month 12 (days 331–360)",
           "value": "2.00× · 1.43× · +0.18× · 1.39× · 1.78× · +0.72×",
           "evidence": "PROJECTED",
           "note": "",
@@ -2625,7 +2626,7 @@
                 "text": "2.00"
               },
               "formula": "EBITDA_m / DS_m",
-              "source": "before, month 12"
+              "source": "before, calendar month 12"
             },
             {
               "text": "1.43×",
@@ -2637,7 +2638,7 @@
                 "text": "1.43"
               },
               "formula": "EBITDA_m / DS_m",
-              "source": "after (pro forma), month 12"
+              "source": "after (pro forma), calendar month 12"
             },
             {
               "text": "+0.18×",
@@ -2661,7 +2662,7 @@
                 "text": "1.39"
               },
               "formula": "Debt_m / (12 × EBITDA_m)",
-              "source": "before, month 12"
+              "source": "before, calendar month 12"
             },
             {
               "text": "1.78×",
@@ -2673,7 +2674,7 @@
                 "text": "1.78"
               },
               "formula": "Debt_m / (12 × EBITDA_m)",
-              "source": "after (pro forma), month 12"
+              "source": "after (pro forma), calendar month 12"
             },
             {
               "text": "+0.72×",
@@ -2897,10 +2898,26 @@
           ]
         },
         {
-          "label": "Repayment source: operating cash flow (monthly EBITDA)",
+          "label": "Proceeds spent on (assumed)",
+          "value": "day 14",
+          "evidence": "PROJECTED",
+          "note": "",
+          "figures": [
+            {
+              "text": "day 14",
+              "evidence": "PROJECTED",
+              "fen": null,
+              "ratio": null,
+              "formula": null,
+              "source": "assumed: the day the proceeds land"
+            }
+          ]
+        },
+        {
+          "label": "Repayment capacity basis: EBITDA (owner's figure), monthly",
           "value": "¥90,000.00",
           "evidence": "OBSERVED",
-          "note": "",
+          "note": "Profit as the owner reports it; not observed bank cash and not cash available for debt service.",
           "figures": [
             {
               "text": "¥90,000.00",
@@ -2932,40 +2949,42 @@
         },
         {
           "label": "Projected cash after the final repayment (day 1094)",
-          "value": "¥14,902,209.62",
+          "value": "¥14,302,209.62",
           "evidence": "PROJECTED",
           "note": "",
           "figures": [
             {
-              "text": "¥14,902,209.62",
+              "text": "¥14,302,209.62",
               "evidence": "PROJECTED",
-              "fen": 1490220962,
+              "fen": 1430220962,
               "ratio": null,
               "formula": null,
               "source": "pro-forma trajectory day 1094",
-              "display": "¥14,902,209.62"
+              "display": "¥14,302,209.62"
             }
           ]
         },
         {
-          "label": "Lowest projected cash with the facility, 12 months (day 12)",
-          "value": "¥420,000.00",
+          "label": "Lowest projected cash with the facility, 12 months (day 20)",
+          "value": "¥300,000.00",
           "evidence": "PROJECTED",
           "note": "",
           "figures": [
             {
-              "text": "¥420,000.00",
+              "text": "¥300,000.00",
               "evidence": "PROJECTED",
-              "fen": 42000000,
+              "fen": 30000000,
               "ratio": null,
               "formula": null,
-              "source": "pro-forma trajectory day 12",
-              "display": "¥420,000.00"
+              "source": "pro-forma trajectory day 20",
+              "display": "¥300,000.00"
             }
           ]
         }
       ],
-      "notes": []
+      "notes": [
+        "Assumption: no spend day was given for this equipment purchase, so the whole amount is taken as spent on day 14, the day the proceeds land; cash in every table after that day has the purchase deducted."
+      ]
     },
     {
       "key": "evidence",
@@ -2991,12 +3010,12 @@
         },
         {
           "label": "Projected / 预测",
-          "value": "199 figure(s): engine projection, conservative mode",
+          "value": "200 figure(s): engine projection, conservative mode",
           "evidence": "PROJECTED",
           "note": "",
           "figures": [
             {
-              "text": "199 figure(s): engine projection, conservative mode",
+              "text": "200 figure(s): engine projection, conservative mode",
               "evidence": "PROJECTED",
               "fen": null,
               "ratio": null,
@@ -3141,13 +3160,13 @@
   "approval_id": "APR-000002",
   "approval_status": "PENDING",
   "operation": {
-    "op_id": "OP-BF-0B013EC7A25A",
+    "op_id": "OP-BF-485628C594A7",
     "kind": "GENERATE_BORROWER_FILE",
     "status": "PENDING_APPROVAL",
     "tier": "TIER_2",
     "violations": [],
     "seq": 4,
-    "entry_hash": "caed241c8fd2eedabd00ab4b09a3da4f1346759c62a2f995805f8d2b42a7ed15",
+    "entry_hash": "faa87d20dba52ee07d62263aa44aefc6a6c17fd3e6aebfd12bce475c45aa2908",
     "prev_hash": "1704a092745f41b9aa07597c0b5e851c9a7f3c666dfaef511c61cf079d339940",
     "effective_day": 0,
     "approval_id": "APR-000002",
@@ -3167,8 +3186,8 @@
     "calc": "app.financial.project (integer fen, ADR-0002)"
   },
   "downloads": {
-    "html": "/borrower-file/BF-0B013EC7A25A.html",
-    "docx": "/borrower-file/BF-0B013EC7A25A.docx",
+    "html": "/borrower-file/BF-485628C594A7.html",
+    "docx": "/borrower-file/BF-485628C594A7.docx",
     "pdf": null
   },
   "pdf_note": "PDF skipped: no local PDF renderer is installed; print the HTML to PDF.",

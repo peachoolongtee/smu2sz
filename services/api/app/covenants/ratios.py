@@ -41,6 +41,18 @@ def ratios(
     return (Ratio.of(d) if d is not None else None), Ratio.of(lev)
 
 
+def ratios_or_undefined(
+    monthly_ebitda_fen: int, monthly_debt_service_fen: int, total_debt_fen: int
+) -> tuple[Ratio | None, Ratio | None]:
+    """(DSCR, leverage), exact, without raising. Leverage is None when EBITDA <= 0 (undefined); DSCR is
+    None when debt service is zero. For callers that must report an undefined basis instead of failing
+    (capex, the extension pro-forma). A caller testing a limit must treat an undefined leverage as a
+    breach whenever there is debt."""
+    lev = leverage_value(total_debt_fen, monthly_ebitda_fen)
+    d = dscr_value(monthly_ebitda_fen, monthly_debt_service_fen)
+    return (Ratio.of(d) if d is not None else None), (Ratio.of(lev) if lev is not None else None)
+
+
 def pro_forma(
     state: FinancialState,
     extra_debt_fen: int = 0,

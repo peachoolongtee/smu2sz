@@ -177,7 +177,9 @@ def _summary(state: FinancialState, before: Trajectory, subs: Any) -> Section:
         Row(label="Organisation", figures=[text(state.org_id, O, "state.org_id")]),
         Row(label="Data as of (day 0)", figures=[text(state.as_of, O, "state.as_of")]),
         Row(label="Cash on hand", figures=[money(state.cash_fen, O, "state.cash_fen")]),
-        Row(label="Monthly EBITDA", figures=[money(state.monthly_ebitda_fen, O, "state.monthly_ebitda_fen")]),
+        Row(label="EBITDA (owner's figure), monthly",
+            figures=[money(state.monthly_ebitda_fen, O, "state.monthly_ebitda_fen")],
+            note="Profit as the owner reports it; not observed bank cash and not cash available for debt service."),
         Row(label="Existing term debt (principal · monthly debt service)",
             figures=[money(debt, O, "state.debts[].principal_fen"),
                      money(ds, O, "state.debts[].monthly_debt_service_fen")]),
@@ -267,20 +269,35 @@ def _lev(m: MonthPoint) -> Fraction | None:
     return Fraction(m.total_debt_fen, 12 * m.ebitda_fen) if m.ebitda_fen > 0 else None
 
 
-def _trajectory(after: Trajectory) -> Section:
+def _rolling(t: Trajectory, day: int) -> list[tuple[int, int, int, MonthPoint]]:
+    """The forward table: MONTHS rolling 30-day months from the generation day, never from day 0. Month k covers
+    days day + 30(k−1) + 1 .. day + 30k, so no closed day is in it. Its DSCR and leverage are those of the
+    engine's calendar 30-day month that ends on or after the window's last day (debt service is booked by
+    calendar month). Returns (k, first day, last day, that month's point)."""
+    out = []
+    for k in range(1, MONTHS + 1):
+        a, b = day + MONTH_DAYS * (k - 1) + 1, day + MONTH_DAYS * k
+        out.append((k, a, b, t.months[min(max(1, -(-b // MONTH_DAYS)), len(t.months)) - 1]))
+    return out
+
+
+def _trajectory(after: Trajectory, day: int) -> Section:
     rows = []
-    for m in after.months[:MONTHS]:
-        d = MONTH_DAYS * m.month
-        rows.append(Row(label=f"Month {m.month} (day {d})", figures=[
-            money(after.days[d].closing_fen, P, f"pro-forma trajectory day {d}"),
-            money(m.total_debt_fen, P, f"pro-forma month {m.month}", "principal + balances counted in leverage"),
-            ratio(_dscr(m), P, f"pro-forma month {m.month}", "EBITDA_m / DS_m", none_text="n/a"),
-            ratio(_lev(m), P, f"pro-forma month {m.month}", "Debt_m / (12 × EBITDA_m)"),
+    for k, a, b, m in _rolling(after, day):
+        rows.append(Row(label=f"Month {k} (days {a}–{b})", figures=[
+            money(after.days[b].closing_fen, P, f"pro-forma trajectory day {b}"),
+            money(m.total_debt_fen, P, f"pro-forma calendar month {m.month}",
+                  "principal + balances counted in leverage"),
+            ratio(_dscr(m), P, f"pro-forma calendar month {m.month}", "EBITDA_m / DS_m", none_text="n/a"),
+            ratio(_lev(m), P, f"pro-forma calendar month {m.month}", "Debt_m / (12 × EBITDA_m)"),
         ]))
     return Section(key="trajectory_12m", title_en="12-month trajectory under the proposed facility",
                    title_zh="12个月轨迹 (含拟申请额度)",
                    columns=["Month-end cash", "Total debt", "DSCR", "Leverage"], rows=rows,
-                   notes=[("EBITDA is held flat at the observed monthly figure; any owner-estimated uplift is "
+                   notes=[(f"Twelve 30-day months rolling from today (day {day}): month 1 starts on day {day + 1}. "
+                           f"DSCR and leverage are those of the 30-day calendar month that ends on or after each "
+                           f"window's last day."),
+                          ("EBITDA is held flat at the owner's monthly figure; any owner-estimated uplift is "
                            "shown separately and not used.")])
 
 
@@ -298,15 +315,15 @@ def _binding(facilities: Iterable[Facility]) -> tuple[tuple[Fraction, str] | Non
     return (max(dscr) if dscr else None), (min(lev) if lev else None)
 
 
-def _headroom(before: Trajectory, after: Trajectory, facilities: list[Facility]) -> Section:
+def _headroom(before: Trajectory, after: Trajectory, facilities: list[Facility], day: int) -> Section:
     d_lim, l_lim = _binding(facilities)
     rows = []
-    for mb, ma in zip(before.months[:MONTHS], after.months[:MONTHS], strict=True):
-        src = f"month {mb.month}"
+    for (k, a, b, mb), (_, _, _, ma) in zip(_rolling(before, day), _rolling(after, day), strict=True):
+        src = f"calendar month {mb.month}"
         db, da, lb, la = _dscr(mb), _dscr(ma), _lev(mb), _lev(ma)
         dh = (da - d_lim[0]) if (da is not None and d_lim) else None
         lh = (l_lim[0] - la) if (la is not None and l_lim) else None
-        rows.append(Row(label=f"Month {mb.month}", figures=[
+        rows.append(Row(label=f"Month {k} (days {a}–{b})", figures=[
             ratio(db, P, "before, " + src, "EBITDA_m / DS_m"),
             ratio(da, P, "after (pro forma), " + src, "EBITDA_m / DS_m"),
             ratio(dh, P, "after − covenant minimum", signed=True, none_text="no DSCR covenant"
@@ -328,19 +345,19 @@ def _headroom(before: Trajectory, after: Trajectory, facilities: list[Facility])
                             "Leverage headroom"], rows=rows, notes=notes)
 
 
-def _covenant_tests(before: Trajectory, after: Trajectory, facilities: list[Facility]) -> Section:
+def _covenant_tests(before: Trajectory, after: Trajectory, facilities: list[Facility], day: int) -> Section:
     rows = []
     months = MONTHS
 
     def ratio_test(t: Trajectory, kind: CovenantKind, limit: Fraction) -> str:
         worst: tuple[Fraction, int] | None = None
-        for m in t.months[:months]:
+        for k, _, _, m in _rolling(t, day):
             v = _dscr(m) if kind == CovenantKind.DSCR_MIN else _lev(m)
             if v is None:
                 continue
             key = v if kind == CovenantKind.DSCR_MIN else -v
             if worst is None or key < worst[0]:
-                worst = (key, m.month)
+                worst = (key, k)
         if worst is None:
             return "pass (no debt service)"
         v = worst[0] if kind == CovenantKind.DSCR_MIN else -worst[0]
@@ -421,19 +438,28 @@ def _commitments_ledger(state: FinancialState, commitments: list[Commitment], lo
                            "spans quote the counterparty's own words, with identities pseudonymised.")])
 
 
-def _proceeds(f: Facility, amount: int, use: str, spend_day: int | None, uplift: int | None, day: int,
-              state: FinancialState, after: Trajectory) -> Section:
+def _proceeds(f: Facility, amount: int, use: str, spend_day: int | None, spend_assumed: bool, uplift: int | None,
+              day: int, state: FinancialState, after: Trajectory) -> Section:
     rows = [
         Row(label="Use of proceeds", figures=[text(use, E, "owner request")]),
         Row(label="Amount", figures=[money(amount, E, "owner request")]),
     ]
+    notes: list[str] = []
     if spend_day is not None:
-        rows.append(Row(label="Proceeds spent on", figures=[text(f"day {spend_day}", E, "owner request")]))
+        rows.append(Row(label="Proceeds spent on" + (" (assumed)" if spend_assumed else ""),
+                        figures=[text(f"day {spend_day}", P if spend_assumed else E,
+                                      "assumed: the day the proceeds land" if spend_assumed else "owner request")]))
+        notes.append(("Assumption: no spend day was given for this equipment purchase, so the whole amount is taken "
+                      f"as spent on day {spend_day}, the day the proceeds land; cash in every table after that day "
+                      "has the purchase deducted.") if spend_assumed else
+                     f"The {fmt_yuan(amount)} purchase is deducted from cash on day {spend_day} (owner's date).")
     if uplift is not None:
         rows.append(Row(label="Expected monthly EBITDA uplift (not used in any projection)",
                         figures=[money(uplift, E, "owner estimate")]))
-    rows.append(Row(label="Repayment source: operating cash flow (monthly EBITDA)",
-                    figures=[money(state.monthly_ebitda_fen, O, "state.monthly_ebitda_fen")]))
+    rows.append(Row(label="Repayment capacity basis: EBITDA (owner's figure), monthly",
+                    figures=[money(state.monthly_ebitda_fen, O, "state.monthly_ebitda_fen")],
+                    note="Profit as the owner reports it; not observed bank cash and not cash available for debt "
+                         "service."))
     repay = [(p.day, e) for p in after.days for e in p.events if e.ref == f.id and e.kind == LedgerEventKind.REPAYMENT]
     if repay:
         last_day = repay[-1][0]
@@ -445,12 +471,12 @@ def _proceeds(f: Facility, amount: int, use: str, spend_day: int | None, uplift:
     else:
         rows.append(Row(label="Principal repayment", figures=[text("revolving: repaid from collections as they land",
                                                                    P, "facility terms")]))
-    window = [p for p in after.days if day <= p.day <= MONTH_DAYS * MONTHS]
+    window = [p for p in after.days if day <= p.day <= day + MONTH_DAYS * MONTHS]
     low = min(window, key=lambda p: (p.closing_fen, p.day))
     rows.append(Row(label=f"Lowest projected cash with the facility, 12 months (day {low.day})",
                     figures=[money(low.closing_fen, P, f"pro-forma trajectory day {low.day}")]))
     return Section(key="proceeds", title_en="Use of proceeds and repayment source", title_zh="资金用途与还款来源",
-                   rows=rows)
+                   rows=rows, notes=notes)
 
 
 def _legend(sections: list[Section]) -> Section:
@@ -497,9 +523,20 @@ def _file_id(parts: dict[str, Any]) -> str:
     return "BF-" + hashlib.sha256(raw.encode()).hexdigest()[:12].upper()
 
 
+_EQUIPMENT_USE = re.compile(r"equipment|machine|machinery|capex|设备|机器", re.IGNORECASE)
+
+
+def is_equipment_purpose(f: Facility, use_of_proceeds: str) -> bool:
+    """An equipment loan or lease, or proceeds the owner says buy equipment: the purchase must be in the file."""
+    return f.kind in (FacilityKind.EQUIPMENT_TERM_LOAN, FacilityKind.EQUIPMENT_LEASE) or bool(
+        _EQUIPMENT_USE.search(use_of_proceeds))
+
+
 def build(store: LedgerStore, *, facility_id: str, amount_fen: int, use_of_proceeds: str, day: int,
           spend_day: int | None = None, ebitda_uplift_fen: int | None = None) -> BorrowerFile:
-    """The borrower file for a proposed draw of `amount_fen` on menu facility `facility_id`."""
+    """The borrower file for a proposed draw of `amount_fen` on menu facility `facility_id`. For an equipment
+    purpose the purchase is always carried: a missing `spend_day` defaults to the day the proceeds land, and the
+    file says so, so cash never keeps the purchase money."""
     state, mandate = store.get_state(), store.get_mandate()
     f = next((x for x in state.facilities if x.id == facility_id), None)
     if f is None or not f.owner_approved:
@@ -517,11 +554,15 @@ def build(store: LedgerStore, *, facility_id: str, amount_fen: int, use_of_proce
     if day < 0 or (spend_day is not None and spend_day < day):
         raise BorrowerFileError("the file and any spend day must not be dated before day 0 / the generation day")
 
+    spend_assumed = spend_day is None and is_equipment_purpose(f, use)
+    if spend_assumed:
+        spend_day = day + f.lead_time_days
     commitments = store.commitments()
     log = _entries(store)
     books = current_books(state, commitments)
     obs = list(books.obligations)
-    horizon = max(mandate.horizon_days, day + 7 * WEEKS, MONTH_DAYS * MONTHS)
+    ahead = day - state.as_of_day  # the engine counts its horizon from the books' day; days stay absolute
+    horizon = max(mandate.horizon_days, ahead + 7 * WEEKS, ahead + MONTH_DAYS * MONTHS)
     try:
         before = project(state, obs, [], Mode.CONSERVATIVE, horizon)
         flows = list(state.flows)
@@ -550,11 +591,11 @@ def build(store: LedgerStore, *, facility_id: str, amount_fen: int, use_of_proce
         _summary(state, before, subs),
         _request(f, amount_fen, day, after),
         _forecast(before, after, day),
-        _trajectory(after),
-        _headroom(before, after, binding),
-        _covenant_tests(before, after, binding),
+        _trajectory(after, day),
+        _headroom(before, after, binding, day),
+        _covenant_tests(before, after, binding, day),
         _commitments_ledger(state, commitments, log, subs),
-        _proceeds(f, amount_fen, use, spend_day, ebitda_uplift_fen, day, state, after),
+        _proceeds(f, amount_fen, use, spend_day, spend_assumed, ebitda_uplift_fen, day, state, after),
     ]
     sections.append(_legend(sections))
     sections.append(_provenance_section(prov))

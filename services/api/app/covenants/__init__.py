@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from app.covenants.clean_down import line_balances, line_can_carry_permanent_need, longest_zero_run
 from app.covenants.evaluate import evaluate
-from app.covenants.ratios import fmt_x, pro_forma, ratios
+from app.covenants.ratios import fmt_x, pro_forma, ratios, ratios_or_undefined
 from app.domain.models import Facility, Mandate, Trajectory, Violation
 
 
@@ -32,4 +32,5 @@ __all__ = [
     "longest_zero_run",
     "pro_forma",
     "ratios",
+    "ratios_or_undefined",
 ]

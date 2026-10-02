@@ -247,7 +247,7 @@ class Facility(Contract):
     limit_fen: Fen
     drawn_fen: Fen = 0
     advance_rate_bp: Bp | None = None  # invoice financing: 8000 = 80% of eligible receivables
-    rate_bp: Bp  # annual simple rate (lease: effective rate)
+    rate_bp: Bp  # nominal annual rate; monthly schedules (loans and leases) use rate/12, not an effective rate
     fee_bp_per_advance: Bp = 0  # e.g. 25 bp per 30-day advance
     fee_period_days: int | None = None
     upfront_fee_bp: Bp = 0
