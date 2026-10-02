@@ -520,3 +520,243 @@ The break-even values 0.8832% / 1.751% / 2.6037% do not depend on the invoice co
 3. Rule 3 posts once but rule 4 posts per invoice. The two are consistent only when the per-invoice price adjustment is an integer number of fen; for faces with fractional fen products the rules diverge by at most N/2 fen. The golden values are integers so no number here depends on it.
 4. Rule 7 is a time-average over one invoice interval, not a peak. For one invoice extended by 15 days (F = 42,000,000, e = 30) the extra receivable is the full 42,000,000 fen for 15 days; averaged over the 30-day interval that is 21,000,000 fen, which is what the rule reports. A leverage covenant tested on the peak day sees 42,000,000, twice the pro-forma stock. The derivation uses the rule as given (steady state, an average).
 
+## 11. Comparison with the implementation
+
+Written after parts 1 to 10. Code read: `services/api/app/financial/concessions.py` (`_invoice_count`, `_terms_extension`, `_price_adjustment`), `app/verifier/evaluate.py`
+(`_extension_pro_forma`, lines 365 to 390), `app/funding/rates.py` (`break_even_cost_share`, `break_even_discount`, `all_in_rate`), plus `app/mandate/predicates.py` (`_net`,
+`check_concession_caps`) and the callers `funding/extension.py`, `verifier/counters.py`, `capex/evaluate.py`. Code values were produced by a throwaway script run with
+`PYTHONUTF8=1 uv run --project services/api python ...` against the golden scenario (not committed; it builds the same obligations as the case catalogue, and calls
+`value_concessions`, `check_concession_caps`, `_extension_pro_forma`, `break_even_cost_share`, `break_even_discount` and `finance_invoice_charges`). Differences are "code minus mine".
+Sanity check of the harness: the code reproduces the audit numbers (perpetual H = 90 / 180 / 730 at 10%: 127,679 / 510,715 / 8,284,932 fen; bounded 3 / 6 / 24 invoices agree with mine), and my golden-rate figure
+for 12 invoices (2,245,562) equals the golden file and the code.
+
+What the code does, as read:
+- `_invoice_count`: perpetual = `floor(H / every_days)` (ignores effective day, `today`, and the issue-day phase `next_issue_day`); count-bounded = N as given (not truncated by W, effective day ignored);
+  date-bounded = issues from `max(effective_day, next_issue_day)` to `min(end_day, H)` capped at `floor(H/every)` (H is treated as an absolute day, there is no `today` anywhere);
+  ONE_OFF = 1. No function receives `as_of_day`.
+- `_terms_extension`, recurring case: `extra = F x n x delta / 365`, `value = post(extra x r x H / 365)`: the invoice count n is already `floor(H/e)` and then H/365 is applied again (F-FIN-06). Non-recurring: `post(per_invoice_exact x n)` = rule 3.
+- `_price_adjustment`: `post(-rate x F x n)` with n from `_invoice_count` (so it inherits every dating defect; F-FIN-01).
+- `_extension_pro_forma`: extra debt = `post(F x n x delta / 365)` with n = `floor(H/e)`; extra monthly debt service = the per-invoice posted cost, added once, for any invoice frequency.
+- `break_even_cost_share`: c = `all_in_rate x p x k / 365` with `all_in_rate` = rate + (fee + upfront) x 365/p, so the one-off upfront fee is multiplied by k.
+
+### 11.1 to 11.3 Extension and price adjustment, every case of the catalogue
+
+Scopes are in part 2. The code has no `today`, so the T34 rows show what it gives for today = 34 (the same as for today = 0).
+
+#### 11.1 Terms extension +15 days, 10% funding (fen; code minus mine)
+
+| id | N (mine) | my value | code value | difference | which rule explains it |
+|---|---|---|---|---|---|
+| P90 | 3 | 517,808 | 127,679 | -390,129 | rule 3 / F-FIN-06: perpetual multiplied by H/365 = 90/365 |
+| P180 | 6 | 1,035,616 | 510,715 | -524,901 | rule 3 / F-FIN-06: H/365 = 180/365 |
+| P365 | 13 | 2,243,836 | 2,071,233 | -172,603 | rule 1: window holds 13 invoices (anchor day 2), code counts floor(365/30) = 12 |
+| P730 | 25 | 4,315,068 | 8,284,932 | 3,969,864 | rule 3 / F-FIN-06: H/365 = 2; and rule 1: 25 invoices in W, code 24 |
+| P360 | 12 | 2,071,233 | 2,042,860 | -28,373 | rule 3: H/365 = 360/365 on 12 invoices (count 12 agrees) |
+| P361 | 12 | 2,071,233 | 2,048,534 | -22,699 | rule 3: H/365 = 361/365 on 12 invoices (count 12 agrees) |
+| P362 | 13 | 2,243,836 | 2,054,209 | -189,627 | rule 1: 13 invoices in W (day 362 on the edge) vs 12; and H/365 = 362/365 |
+| B90 | 3 | 517,808 | 517,808 | 0 | agrees |
+| B180 | 6 | 1,035,616 | 1,035,616 | 0 | agrees |
+| B365 | 13 | 2,243,836 | 2,243,836 | 0 | agrees |
+| B730 | 25 | 4,315,068 | 4,315,068 | 0 | agrees |
+| Q365 | 12 | 2,071,233 | 2,071,233 | 0 | agrees |
+| Q730 | 24 | 4,142,466 | 4,142,466 | 0 | agrees |
+| T90 | 3 | 517,808 | 17,260,274 | 16,742,466 | rule 1: bounded N is not truncated to W; code values 100 invoices, W holds 3 |
+| D100 | 4 | 690,411 | 690,411 | 0 | agrees |
+| D400 | 13 | 2,243,836 | 2,071,233 | -172,603 | rule 1: end_day 400 beyond W; code caps the issue count at floor(H/e) = 12, W holds 13 |
+| O365 | 1 | 172,603 | 172,603 | 0 | agrees |
+| O100 | 1 | 172,603 | 172,603 | 0 | agrees |
+| N3 | 3 | 517,808 | 517,808 | 0 | agrees |
+| N3e300 | 3 | 517,808 | 517,808 | 0 | agrees (3 invoices both ways) |
+| N3e330 | 2 | 345,205 | 517,808 | 172,603 | rule 1: next-3 from day 330 is cut by W to 2; code does not date counted obligations and values 3 |
+| E100 | 9 | 1,553,425 | 2,071,233 | 517,808 | rule 1: code ignores effective_day for perpetual (12 invoices), W from day 100 holds 9, and H/365 = 1 |
+| E362 | 1 | 172,603 | 2,071,233 | 1,898,630 | rule 1: code ignores effective_day (12), W holds 1 |
+| E363 | 0 | 0 | 2,071,233 | 2,071,233 | rule 1: effective day after the last issue in W; code values 12, correct value 0 |
+| E365 | 0 | 0 | 2,071,233 | 2,071,233 | rule 1: effective day = today+H; code values 12, correct value 0 |
+| E1000 | 0 | 0 | 2,071,233 | 2,071,233 | rule 1: effective day beyond W (F-FIN-01 shape); code values 12, correct value 0 |
+| T34 | 12 | 2,071,233 | 2,071,233 | 0 | agrees numerically: code has no `today` (12 invoices from day 0 coincide with 12 from day 34 here) |
+| T34h90 | 3 | 517,808 | 127,679 | -390,129 | rule 3 / F-FIN-06: H/365 = 90/365; code also has no `today` |
+| T34e100 | 10 | 1,726,027 | 2,071,233 | 345,206 | rule 1: code ignores effective_day and today; W = [34, 399] from day 100 holds 10 |
+| T34o | 1 | 172,603 | 172,603 | 0 | agrees |
+| T34n3 | 3 | 517,808 | 517,808 | 0 | agrees (3 invoices both ways; code has no `today`) |
+
+#### 11.2 Terms extension +15 days, golden rate 10.8417% (fen; code minus mine)
+
+| id | N (mine) | my value | code value | difference | which rule explains it |
+|---|---|---|---|---|---|
+| P90 | 3 | 561,390 | 138,425 | -422,965 | rule 3 / F-FIN-06: perpetual multiplied by H/365 = 90/365 |
+| P180 | 6 | 1,122,781 | 553,700 | -569,081 | rule 3 / F-FIN-06: H/365 = 180/365 |
+| P365 | 13 | 2,432,692 | 2,245,562 | -187,130 | rule 1: window holds 13 invoices (anchor day 2), code counts floor(365/30) = 12 |
+| P730 | 25 | 4,678,253 | 8,982,247 | 4,303,994 | rule 3 / F-FIN-06: H/365 = 2; and rule 1: 25 invoices in W, code 24 |
+| P360 | 12 | 2,245,562 | 2,214,801 | -30,761 | rule 3: H/365 = 360/365 on 12 invoices (count 12 agrees) |
+| P361 | 12 | 2,245,562 | 2,220,953 | -24,609 | rule 3: H/365 = 361/365 on 12 invoices (count 12 agrees) |
+| P362 | 13 | 2,432,692 | 2,227,105 | -205,587 | rule 1: 13 invoices in W (day 362 on the edge) vs 12; and H/365 = 362/365 |
+| B90 | 3 | 561,390 | 561,390 | 0 | agrees |
+| B180 | 6 | 1,122,781 | 1,122,781 | 0 | agrees |
+| B365 | 13 | 2,432,692 | 2,432,692 | 0 | agrees |
+| B730 | 25 | 4,678,253 | 4,678,253 | 0 | agrees |
+| Q365 | 12 | 2,245,562 | 2,245,562 | 0 | agrees |
+| Q730 | 24 | 4,491,123 | 4,491,123 | 0 | agrees |
+| T90 | 3 | 561,390 | 18,713,014 | 18,151,624 | rule 1: bounded N is not truncated to W; code values 100 invoices, W holds 3 |
+| D100 | 4 | 748,521 | 748,521 | 0 | agrees |
+| D400 | 13 | 2,432,692 | 2,245,562 | -187,130 | rule 1: end_day 400 beyond W; code caps the issue count at floor(H/e) = 12, W holds 13 |
+| O365 | 1 | 187,130 | 187,130 | 0 | agrees |
+| O100 | 1 | 187,130 | 187,130 | 0 | agrees |
+| N3 | 3 | 561,390 | 561,390 | 0 | agrees |
+| N3e300 | 3 | 561,390 | 561,390 | 0 | agrees (3 invoices both ways) |
+| N3e330 | 2 | 374,260 | 561,390 | 187,130 | rule 1: next-3 from day 330 is cut by W to 2; code does not date counted obligations and values 3 |
+| E100 | 9 | 1,684,171 | 2,245,562 | 561,391 | rule 1: code ignores effective_day for perpetual (12 invoices), W from day 100 holds 9, and H/365 = 1 |
+| E362 | 1 | 187,130 | 2,245,562 | 2,058,432 | rule 1: code ignores effective_day (12), W holds 1 |
+| E363 | 0 | 0 | 2,245,562 | 2,245,562 | rule 1: effective day after the last issue in W; code values 12, correct value 0 |
+| E365 | 0 | 0 | 2,245,562 | 2,245,562 | rule 1: effective day = today+H; code values 12, correct value 0 |
+| E1000 | 0 | 0 | 2,245,562 | 2,245,562 | rule 1: effective day beyond W (F-FIN-01 shape); code values 12, correct value 0 |
+| T34 | 12 | 2,245,562 | 2,245,562 | 0 | agrees numerically: code has no `today` (12 invoices from day 0 coincide with 12 from day 34 here) |
+| T34h90 | 3 | 561,390 | 138,425 | -422,965 | rule 3 / F-FIN-06: H/365 = 90/365; code also has no `today` |
+| T34e100 | 10 | 1,871,301 | 2,245,562 | 374,261 | rule 1: code ignores effective_day and today; W = [34, 399] from day 100 holds 10 |
+| T34o | 1 | 187,130 | 187,130 | 0 | agrees |
+| T34n3 | 3 | 561,390 | 561,390 | 0 | agrees (3 invoices both ways; code has no `today`) |
+
+#### 11.3 Price adjustment +0.45% and +1% (fen; negative = gain; code minus mine)
+
+| id | N (mine) | +0.45% mine | +0.45% code | diff | +1% mine | +1% code | diff | which rule explains it |
+|---|---|---|---|---|---|---|---|---|
+| P90 | 3 | -567,000 | -567,000 | 0 | -1,260,000 | -1,260,000 | 0 | agrees (3 invoices) |
+| P180 | 6 | -1,134,000 | -1,134,000 | 0 | -2,520,000 | -2,520,000 | 0 | agrees (6 invoices) |
+| P365 | 13 | -2,457,000 | -2,268,000 | 189,000 | -5,460,000 | -5,040,000 | 420,000 | rule 1: 13 invoices in W vs floor(365/30) = 12 |
+| P730 | 25 | -4,725,000 | -4,536,000 | 189,000 | -10,500,000 | -10,080,000 | 420,000 | rule 1: 25 invoices in W vs floor(730/30) = 24 |
+| P360 | 12 | -2,268,000 | -2,268,000 | 0 | -5,040,000 | -5,040,000 | 0 | agrees (12) |
+| P361 | 12 | -2,268,000 | -2,268,000 | 0 | -5,040,000 | -5,040,000 | 0 | agrees (12) |
+| P362 | 13 | -2,457,000 | -2,268,000 | 189,000 | -5,460,000 | -5,040,000 | 420,000 | rule 1: 13 invoices in W (day 362 on the edge) vs 12 |
+| B90 | 3 | -567,000 | -567,000 | 0 | -1,260,000 | -1,260,000 | 0 | agrees |
+| B180 | 6 | -1,134,000 | -1,134,000 | 0 | -2,520,000 | -2,520,000 | 0 | agrees |
+| B365 | 13 | -2,457,000 | -2,457,000 | 0 | -5,460,000 | -5,460,000 | 0 | agrees |
+| B730 | 25 | -4,725,000 | -4,725,000 | 0 | -10,500,000 | -10,500,000 | 0 | agrees |
+| Q365 | 12 | -2,268,000 | -2,268,000 | 0 | -5,040,000 | -5,040,000 | 0 | agrees |
+| Q730 | 24 | -4,536,000 | -4,536,000 | 0 | -10,080,000 | -10,080,000 | 0 | agrees |
+| T90 | 3 | -567,000 | -18,900,000 | -18,333,000 | -1,260,000 | -42,000,000 | -40,740,000 | rule 1: bounded N not truncated to W (100 invoices vs 3) |
+| D100 | 4 | -756,000 | -756,000 | 0 | -1,680,000 | -1,680,000 | 0 | agrees |
+| D400 | 13 | -2,457,000 | -2,268,000 | 189,000 | -5,460,000 | -5,040,000 | 420,000 | rule 1: end_day beyond W; code caps at floor(H/e) = 12, W holds 13 |
+| O365 | 1 | -189,000 | -189,000 | 0 | -420,000 | -420,000 | 0 | agrees |
+| O100 | 1 | -189,000 | -189,000 | 0 | -420,000 | -420,000 | 0 | agrees |
+| N3 | 3 | -567,000 | -567,000 | 0 | -1,260,000 | -1,260,000 | 0 | agrees |
+| N3e300 | 3 | -567,000 | -567,000 | 0 | -1,260,000 | -1,260,000 | 0 | agrees (3 invoices both ways) |
+| N3e330 | 2 | -378,000 | -567,000 | -189,000 | -840,000 | -1,260,000 | -420,000 | rule 1: cut by W to 2; code values 3 |
+| E100 | 9 | -1,701,000 | -2,268,000 | -567,000 | -3,780,000 | -5,040,000 | -1,260,000 | rule 1: code ignores effective_day: books a gain from 12 invoices, W from day 100 holds 9 |
+| E362 | 1 | -189,000 | -2,268,000 | -2,079,000 | -420,000 | -5,040,000 | -4,620,000 | rule 1 / F-FIN-01: code books 12 invoices of gain, W holds 1 |
+| E363 | 0 | 0 | -2,268,000 | -2,268,000 | 0 | -5,040,000 | -5,040,000 | rule 1 / F-FIN-01: code books 12 invoices of gain, W holds 0 |
+| E365 | 0 | 0 | -2,268,000 | -2,268,000 | 0 | -5,040,000 | -5,040,000 | rule 1 / F-FIN-01: code books 12 invoices of gain, W holds 0 |
+| E1000 | 0 | 0 | -2,268,000 | -2,268,000 | 0 | -5,040,000 | -5,040,000 | rule 1 / F-FIN-01: code books 12 invoices of gain (-5,040,000 at 1%), W holds 0 |
+| T34 | 12 | -2,268,000 | -2,268,000 | 0 | -5,040,000 | -5,040,000 | 0 | agrees numerically (code has no `today`) |
+| T34h90 | 3 | -567,000 | -567,000 | 0 | -1,260,000 | -1,260,000 | 0 | agrees (3 invoices) |
+| T34e100 | 10 | -1,890,000 | -2,268,000 | -378,000 | -4,200,000 | -5,040,000 | -840,000 | rule 1: code ignores effective_day and today; W holds 10 |
+| T34o | 1 | -189,000 | -189,000 | 0 | -420,000 | -420,000 | 0 | agrees |
+| T34n3 | 3 | -567,000 | -567,000 | 0 | -1,260,000 | -1,260,000 | 0 | agrees |
+
+### 11.4 F-FIN-01 cap case
+
+Rebate CNY 6,000 (600,000 fen) firm, cap 500,000 fen, aggregate scope, no existing forward concessions. Code values and verdicts from `value_concessions` and `check_concession_caps`.
+
+| case | my price value | my counted total | my verdict | code price value | code counted total | code verdict |
+|---|---|---|---|---|---|---|
+| firm +1% from day 1000 (F-FIN-01) | 0 | 600,000 | BREACH by 100,000 | -5,040,000 | -4,440,000 | pass |
+| firm +1% from day 100 | -3,780,000 | -3,180,000 | pass | -5,040,000 | -4,440,000 | pass |
+| NOT firm +1% from day 100 | -3,780,000 (ignored) | 600,000 | BREACH by 100,000 | -5,040,000 (ignored) | 600,000 | BREACH (observed CNY 6,000.00) |
+| firm +1% from day 362 | -420,000 | 180,000 | pass | -5,040,000 | -4,440,000 | pass |
+| firm +1% from day 363 | 0 | 600,000 | BREACH by 100,000 | -5,040,000 | -4,440,000 | pass |
+
+The code reproduces `FUTURE_GAIN_OFFSET [-5040000, 600000]` of the audit. Disagreement to the fen: 5,040,000 fen of gain that does not exist is counted, so the F-FIN-01 case is a pass in the code and a breach by 100,000 fen under rules 1 and 5.
+Rule: 1 (dating), through `_invoice_count` ignoring `effective_day` for perpetual obligations. The firm/contingent rule (rule 5) is implemented as I derived it (`_net`: only FIRM negative values net).
+
+### 11.5 Pro-forma monthly debt service and extra debt (`_extension_pro_forma`)
+
+| rate | every_days | monthly service: mine (fen) | code (fen) | code minus mine | extra debt: mine (fen) | code (fen) | code minus mine | which rule explains it |
+|---|---|---|---|---|---|---|---|---|
+| 10% | 15 | 350,000 | 172,603 | -177,397 | 42,000,000 | 41,424,658 | -575,342 | rule 6: code adds one per-invoice cost whatever e (and 365/360 factor); rule 7: code uses F x floor(365/e) x 15/365 instead of F x 15/e |
+| 10% | 30 | 175,000 | 172,603 | -2,397 | 21,000,000 | 20,712,329 | -287,671 | rule 6: code adds one per-invoice cost whatever e (and 365/360 factor); rule 7: code uses F x floor(365/e) x 15/365 instead of F x 15/e |
+| 10% | 60 | 87,500 | 172,603 | 85,103 | 10,500,000 | 10,356,164 | -143,836 | rule 6: code adds one per-invoice cost whatever e (and 365/360 factor); rule 7: code uses F x floor(365/e) x 15/365 instead of F x 15/e |
+| 10% | 365 | 14,384 | 172,603 | 158,219 | 1,726,027 | 1,726,027 | 0 | rule 6: code adds one per-invoice cost whatever e (and 365/360 factor); rule 7: code uses F x floor(365/e) x 15/365 instead of F x 15/e |
+| golden 10.8417% | 15 | 379,458 | 187,130 | -192,328 | 42,000,000 | 41,424,658 | -575,342 | rule 6: code adds one per-invoice cost whatever e (and 365/360 factor); rule 7: code uses F x floor(365/e) x 15/365 instead of F x 15/e |
+| golden 10.8417% | 30 | 189,729 | 187,130 | -2,599 | 21,000,000 | 20,712,329 | -287,671 | rule 6: code adds one per-invoice cost whatever e (and 365/360 factor); rule 7: code uses F x floor(365/e) x 15/365 instead of F x 15/e |
+| golden 10.8417% | 60 | 94,865 | 187,130 | 92,265 | 10,500,000 | 10,356,164 | -143,836 | rule 6: code adds one per-invoice cost whatever e (and 365/360 factor); rule 7: code uses F x floor(365/e) x 15/365 instead of F x 15/e |
+| golden 10.8417% | 365 | 15,594 | 187,130 | 171,536 | 1,726,027 | 1,726,027 | 0 | rule 6: code adds one per-invoice cost whatever e (and 365/360 factor); rule 7: code uses F x floor(365/e) x 15/365 instead of F x 15/e |
+
+At e = 30 and the golden rate the service is 2,599 fen too low (rule 6: 365/360) and the extra debt is 287,671 fen too low (rule 7: the code uses 12 invoices x 15/365 where steady state F x 15/30 = 21,000,000);
+at e = 15 the service is half; at e = 60 it is double; at e = 365 it is 12 times too high. At e = 365 the extra debt agrees because floor(365/365) = 1.
+
+### 11.6 Early-pay break-even (`break_even_cost_share`, `break_even_discount`)
+
+P = 10,000,000 fen, golden invoice-financing tariff; the ledger charges (`finance_invoice_charges` + `upfront_fee`) equal my T(n) at every n for both fee settings (column 3).
+For the 1% case the facility had to be tested with the mandate APR cap relaxed (the golden 15% `max_apr_bp` excludes a facility with a 1% upfront fee from the permanent sources, since the code folds 1% x 365/30 into the annual rate).
+
+| upfront fee | n | actual ledger charges = mine T(n) (fen) | code c x P (fen) | code minus ledger (fen) | d*: mine | d*: code | code minus mine (percentage points) |
+|---|---|---|---|---|---|---|---|
+| 0 bp | 1 | 89,110 | 89,109.59 | -0.41 | 0.883230% | 0.883226% | -0.000004 |
+| 0 bp | 29 | 89,110 | 89,109.59 | -0.41 | 0.883230% | 0.883226% | -0.000004 |
+| 0 bp | 30 | 89,110 | 89,109.59 | -0.41 | 0.883230% | 0.883226% | -0.000004 |
+| 0 bp | 31 | 178,219 | 178,219.18 | 0.18 | 1.750984% | 1.750986% | +0.000002 |
+| 0 bp | 59 | 178,219 | 178,219.18 | 0.18 | 1.750984% | 1.750986% | +0.000002 |
+| 0 bp | 60 | 178,219 | 178,219.18 | 0.18 | 1.750984% | 1.750986% | +0.000002 |
+| 0 bp | 61 | 267,329 | 267,328.77 | -0.23 | 2.603686% | 2.603684% | -0.000002 |
+| 0 bp | 89 | 267,329 | 267,328.77 | -0.23 | 2.603686% | 2.603684% | -0.000002 |
+| 0 bp | 90 | 267,329 | 267,328.77 | -0.23 | 2.603686% | 2.603684% | -0.000002 |
+| 0 bp | 91 | 356,438 | 356,438.36 | 0.36 | 3.441705% | 3.441708% | +0.000003 |
+| 100 bp | 1 | 189,110 | 189,109.59 | -0.41 | 1.856001% | 1.855997% | -0.000004 |
+| 100 bp | 29 | 189,110 | 189,109.59 | -0.41 | 1.856001% | 1.855997% | -0.000004 |
+| 100 bp | 30 | 189,110 | 189,109.59 | -0.41 | 1.856001% | 1.855997% | -0.000004 |
+| 100 bp | 31 | 278,219 | 378,219.18 | 100,000.18 | 2.706879% | 3.644355% | +0.937476 |
+| 100 bp | 59 | 278,219 | 378,219.18 | 100,000.18 | 2.706879% | 3.644355% | +0.937476 |
+| 100 bp | 60 | 278,219 | 378,219.18 | 100,000.18 | 2.706879% | 3.644355% | +0.937476 |
+| 100 bp | 61 | 367,329 | 567,328.77 | 199,999.77 | 3.543140% | 5.368706% | +1.825566 |
+| 100 bp | 89 | 367,329 | 567,328.77 | 199,999.77 | 3.543140% | 5.368706% | +1.825566 |
+| 100 bp | 90 | 367,329 | 567,328.77 | 199,999.77 | 3.543140% | 5.368706% | +1.825566 |
+| 100 bp | 91 | 456,438 | 756,438.36 | 300,000.36 | 4.365138% | 7.032424% | +2.667286 |
+
+With no upfront fee the code is the same as mine up to the unrounded versus posted charge (at most 0.41 fen, 0.000004 percentage points of d*), and the same at the four decimals displayed. With a 1% upfront fee
+the code's estimate exceeds the real charges by 100,000 / 200,000 / 300,000 fen at k = 2 / 3 / 4 (the audit's CNY 1,000 / 2,000 / 3,000) and d* is too high by 0.937476 / 1.825566 / 2.667286 percentage points; at k = 1 the two agree.
+Rule: 8 (the upfront fee is multiplied by k in the code because it is inside the repeated period rate).
+
+### 11.7 Current golden numbers under rules 1 to 8
+
+Golden file: `fixtures/golden/golden_values.json`. Today = 0, H = 365: the answer is that they are NOT all unchanged. The reason is the phase-blind count (rule 1 gives 13 invoices, not 12) and the steady-state
+definitions of rules 6 and 7. Unchanged: every per-invoice number, the break-even numbers, and the two-decimal DSCR and leverage displays.
+
+| quantity (golden key) | current value | under rules 1 to 8 | change | rule |
+|---|---|---|---|---|
+| `extension_committed_per_invoice` | 187,130 | 187,130 | 0 | unchanged (rule 3 per invoice) |
+| `extension_committed_12m` (EX01 extension, committed marginal source) | 2,245,562 | 2,432,692 | +187,130 | rule 1: 13 invoices in W |
+| `extension_notional_line_per_invoice` | 110,466 | 110,466 | 0 | unchanged |
+| `extension_notional_line_12m` | 1,325,589 | 1,436,055 | +110,466 | rule 1 (13 invoices; value from the code run with N = 13 at the same line rate) |
+| `extension_expected_12m` | 1,105,230 | 1,197,332 | +92,102 | rule 1 (13 invoices; blended bridge rate not derivable from the given inputs: it is the code's `extension_cost_bases` with N = 13 and unchanged rate construction) |
+| `extension_extra_receivables` (pro-forma extra debt) | 20,712,329 | 21,000,000 | +287,671 | rule 7 |
+| `forward_ledger_total` (EX01 verdict, extension + rebate_max 400,000) | 2,645,562 | 2,832,692 | +187,130 | rule 1; the cap of 500,000 is breached before and after, so the `AGG_CONCESSION_EXCEEDED` verdict stays and its reported total moves from CNY 26,455.62 to CNY 28,326.92 |
+| EX01 pro-forma monthly debt service added (`_extension_pro_forma`) | 187,130 | 189,729 | +2,599 | rule 6 |
+| `dscr_after_extension` | 1.92 | 1.92 | 0 | exact 900000/468713 = 1.92015 becomes 1000000/521081 = 1.91909, same at 2 dp |
+| `leverage_after_extension` | 1.72 | 1.72 | 0 | exact 1.71956 becomes 31/18 = 1.72222, same at 2 dp; debt 1,857,123.29 becomes 1,860,000.00 |
+| capex `leverage_financed_plus_extension` | 2.28 | 2.28 | 0 | exact 2.27511 becomes 2.27778 (`capex/evaluate.py` lines 153 and 176 use the same floor(H/e) formula) |
+| `counter_b_price_adj_per_invoice` | 189,000 | 189,000 | 0 | per-invoice basis: smallest 5 bp step covering 187,130 is 45 bp |
+| Counter B "12-month net" sentence | -22,438 (2,245,562 - 2,268,000) | -24,308 (2,432,692 - 2,457,000) | -1,870 | rule 1; still a gain, so the cost to the supplier stays 0 |
+| `counter_a_discount` 180,115 and `counter_a_total` 264,224 | as is | as is | 0 | read from the cash projection and funding plan (the discount-counter function in `verifier/counters.py`), which does not call the forward valuation; not re-run |
+| `break_even_discount_display` / 60 days / 90 days | 0.8832% / 1.751% / 2.6037% | 0.8832% / 1.751% / 2.6037% | 0 | rule 8 with a zero upfront fee: 0.883230% / 1.750984% / 2.603686% |
+
+If H = 365 and today = 0 are kept and the golden numbers must remain unchanged, the only way under rule 1 is to anchor the window to the first issue day (first issue day + H), which the rules as written do not say. As written they give 13.
+`if_all_in_rate_display` 10.8417% is the marginal rate and is unchanged. Other golden values (cash projection, capex NPV, loans) do not use the forward valuation.
+
+### 11.8 Summary of disagreements
+
+1. Perpetual extension at H != 365 (F-FIN-06): code = floor(H/e) invoices x H/365. At H = 90: 127,679 against 517,808 (r1); H = 730: 8,284,932 against 4,315,068, +3,969,864 fen.
+2. Phase-blind invoice count (rule 1): 12 against 13 at H = 365 (-172,603 fen at r1, -187,130 fen at r2 for the extension; +189,000 fen at 0.45% and +420,000 fen at 1% on the price adjustment) and 24 against 25 at H = 730.
+3. Effective day ignored for perpetual and count-bounded scope (rule 1, F-FIN-01): E100 to E1000, N3e330, T34e100; the F-FIN-01 case books -5,040,000 fen of gain instead of 0 and turns a breach by 100,000 fen into a pass.
+4. Count-bounded and date-bounded scope not truncated to W (T90: 100 invoices against 3; D400: 12 against 13, the code caps the date-bounded count at floor(H/e)).
+5. No `today` in the valuation (rule 1, today = 34): numerically coincident here (12 against 12) but undefined; W would also move the day-32 invoice out.
+6. Pro-forma monthly debt service (rule 6, F-FIN-07): one per-invoice cost for every e; wrong by -177,397 / -2,397 / +85,103 / +158,219 fen at e = 15 / 30 / 60 / 365 (r1).
+7. Pro-forma extra debt (rule 7): -575,342 / -287,671 / -143,836 / 0 fen at e = 15 / 30 / 60 / 365.
+8. Break-even with an upfront fee (rule 8, F-FIN-09): +100,000 / +200,000 / +300,000 fen of excess estimate at k = 2 / 3 / 4.
+
+Rule 5's netting itself (only FIRM gains net) agrees with the code.
+
+## 12. Reproduce
+
+    PYTHONUTF8=1 python scripts/handcalc_concessions.py                       # print everything
+    PYTHONUTF8=1 python scripts/handcalc_concessions.py --list                # section names
+    PYTHONUTF8=1 python scripts/handcalc_concessions.py --check docs/research/concession-valuation-handcalc-2026-10-03.md
+
+`--check` fails if any table row printed by the script is absent from this file. Part 11 (code values) is not generated by that script, by design: the script must not import `app.*`.
