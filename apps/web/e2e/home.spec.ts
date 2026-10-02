@@ -25,7 +25,7 @@ async function advanceTo34(page: Page) {
   await expect(page.getByTestId("home-day")).toHaveText("Day 34");
 }
 
-test("home renders the six sections and says nothing needs the owner on day 0", async ({ page }) => {
+test("home renders the six sections and the day-0 opener has a warning but nothing to approve", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "Home", level: 1 })).toBeVisible();
   for (const name of ["Today", "What needs you", "Position", "Waiting for you", "At risk", "Done by the agent"]) {
@@ -33,8 +33,8 @@ test("home renders the six sections and says nothing needs the owner on day 0", 
   }
   await expect(page.getByTestId("home-day")).toHaveText("Day 0");
   await expect(page.getByText("Demo control")).toBeVisible();
-  await expect(page.getByTestId("home-opener")).toHaveAttribute("data-news", "false");
-  await expect(page.getByTestId("home-opener")).toContainText("Nothing needs you today");
+  await expect(page.getByTestId("home-opener")).toHaveAttribute("data-news", "true");
+  await expect(page.getByTestId("home-opener")).toContainText("Reserve headroom thin on day 20");
   await expect(page.getByTestId("home-goahead")).toHaveCount(0);
   // Position: server display strings only.
   await expect(page.getByTestId("home-waiting-empty")).toBeVisible();

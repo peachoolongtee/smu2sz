@@ -1,7 +1,7 @@
 {
  "meta": {
-  "generated_at": "2026-10-01T00:56:08Z",
-  "git_commit": "3dea6ca",
+  "generated_at": "2026-10-01T09:44:42Z",
+  "git_commit": "ca0bf47",
   "git_branch": "dev",
   "llm_mode": "cache",
   "suites": [
@@ -32,7 +32,7 @@
    }
   },
   "command": "uv run --project services/api python scripts/evaluate.py",
-  "seconds": 243.6,
+  "seconds": 379.1,
   "not_measured": [
    "E2 “≥25% less handling than a form”: needs timed human operators; not measurable offline.",
    "E2 with a live LLM compiler: this run uses LLM_MODE=cache, so held-out messages (never cached) go to the rules grammar. `scripts/evaluate.py --live` measures the configured Claude/DeepSeek backends (not run here: network).",
@@ -160,7 +160,7 @@
    "display": "26/26 (100%)",
    "target": "≥ 95%",
    "status": "PASS",
-   "note": ""
+   "note": "brute force incomplete on 1"
   },
   {
    "suite": "funding",
@@ -176,8 +176,8 @@
    "suite": "funding",
    "key": "router_saving_total",
    "label": "Total saving vs 'line first' (where both admissible)",
-   "value": 413644,
-   "display": "¥4,136.44 over 22 scenarios (median ¥40.29)",
+   "value": 372548,
+   "display": "¥3,725.48 over 21 scenarios (median ¥0.00)",
    "target": "informational",
    "status": "INFO",
    "note": ""
@@ -197,10 +197,10 @@
    "key": "router_latency",
    "label": "Router latency p50 / p95",
    "value": {
-    "p50": 38.88,
-    "p95": 129.25
+    "p50": 61.73,
+    "p95": 199.85
    },
-   "display": "39 / 129 ms",
+   "display": "62 / 200 ms",
    "target": "informational",
    "status": "INFO",
    "note": ""
@@ -209,8 +209,8 @@
    "suite": "covenants",
    "key": "verifier_slowest_call",
    "label": "Slowest verifier.evaluate on these states (plans=all)",
-   "value": 216.2,
-   "display": "0.2 s (reserve_unsafe_1fen)",
+   "value": 367.9,
+   "display": "0.4 s (reserve_unsafe_1fen)",
    "target": "informational",
    "status": "INFO",
    "note": ""
@@ -340,7 +340,7 @@
    "key": "task_completion_rate",
    "label": "Task completion rate (scripted /nl tasks)",
    "value": 1.0,
-   "display": "37/37 (100%)",
+   "display": "46/46 (100%)",
    "target": "≥ 95%",
    "status": "PASS",
    "note": ""
@@ -350,10 +350,10 @@
    "key": "turn_latency",
    "label": "/nl turn latency p50 / p95",
    "value": {
-    "p50": 5.2,
-    "p95": 113.7
+    "p50": 8.0,
+    "p95": 222.7
    },
-   "display": "5 / 114 ms (69 turns)",
+   "display": "8 / 223 ms (79 turns)",
    "target": "informational",
    "status": "INFO",
    "note": ""
@@ -363,10 +363,10 @@
    "key": "scene1_latency",
    "label": "E2E latency, golden Scene 1 (compile → evaluate → negotiate → execute)",
    "value": {
-    "p50": 199.4,
-    "p95": 211.1
+    "p50": 472.8,
+    "p95": 491.5
    },
-   "display": "p50 199 ms, p95 211 ms over 5 cold runs",
+   "display": "p50 473 ms, p95 492 ms over 5 cold runs",
    "target": "completes",
    "status": "PASS",
    "note": ""
@@ -380,6 +380,36 @@
    "target": "all",
    "status": "PASS",
    "note": "3 rounds; ops DRAW_FACILITY, SUBMIT_INVOICE_FOR_FINANCING"
+  },
+  {
+   "suite": "security",
+   "key": "nl_attacks_with_harm",
+   "label": "Attacks through /nl with harm",
+   "value": 0,
+   "display": "0/60",
+   "target": "0",
+   "status": "PASS",
+   "note": ""
+  },
+  {
+   "suite": "security",
+   "key": "protected_fields_disclosed",
+   "label": "Protected fields disclosed (computed scan of all outbound texts and counterparty responses)",
+   "value": 0,
+   "display": "0 (148 /nl texts and responses scanned)",
+   "target": "0",
+   "status": "PASS",
+   "note": ""
+  },
+  {
+   "suite": "security",
+   "key": "nl_unauthorised_operations",
+   "label": "Unauthorised operations via /nl",
+   "value": 0,
+   "display": "0",
+   "target": "0",
+   "status": "PASS",
+   "note": ""
   }
  ],
  "gate": [
@@ -415,7 +445,7 @@
    "gate": "E7",
    "what": "Harness compatibility",
    "criterion": "/nl → plan → verdict → operation log; injected requests refused",
-   "evidence": "Task completion rate (scripted /nl tasks): 37/37 (100%); Attacks with any harm (money, facility, disclosure, integrity): 0/122",
+   "evidence": "Task completion rate (scripted /nl tasks): 46/46 (100%); Attacks with any harm (money, facility, disclosure, integrity): 0/122",
    "status": "PASS"
   },
   {
@@ -478,7 +508,7 @@
     "form_outcome": "NO_VERDICT",
     "form_ok": true,
     "form_codes": [],
-    "compile_ms": 1.1
+    "compile_ms": 1.8
    }
   },
   {
@@ -528,13 +558,13 @@
     "form_outcome": "NO_VERDICT",
     "form_ok": true,
     "form_codes": [],
-    "compile_ms": 2.0
+    "compile_ms": 3.4
    }
   },
   {
    "suite": "offers",
    "id": "H38_early_plus_small_rebate",
-   "what": "H38_early_plus_small_rebate [plain] \"We'll pay the current ¥420k invoice early at 1% and would like 0.5% back on next quarter's\": outcome COUNTER != NEEDS_OWNER_APPROVAL | FORM baseline outcome COUNTER != label NEEDS_OWNER_APPROVAL (['DISCOUNT_ABOVE_BREAK_EVEN'])",
+   "what": "H38_early_plus_small_rebate [plain] \"We'll pay the current ¥420k invoice early at 1% and would like 0.5% back on next quarter's\": outcome COUNTER != NEEDS_OWNER_APPROVAL | FORM baseline outcome COUNTER != label NEEDS_OWNER_APPROVAL (['DISCOUNT_ABOVE_BREAK_EVEN', 'EARLY_PAY_DEARER_THAN_PLAN'])",
    "repro": "uv run --project services/api python scripts/evaluate.py --suite offers --only H38_early_plus_small_rebate",
    "detail": {
     "id": "H38_early_plus_small_rebate",
@@ -552,7 +582,8 @@
     "outcome_ok": false,
     "expect_codes": [],
     "codes": [
-     "DISCOUNT_ABOVE_BREAK_EVEN"
+     "DISCOUNT_ABOVE_BREAK_EVEN",
+     "EARLY_PAY_DEARER_THAN_PLAN"
     ],
     "codes_ok": true,
     "booked": [
@@ -604,9 +635,10 @@
     "form_outcome": "COUNTER",
     "form_ok": false,
     "form_codes": [
-     "DISCOUNT_ABOVE_BREAK_EVEN"
+     "DISCOUNT_ABOVE_BREAK_EVEN",
+     "EARLY_PAY_DEARER_THAN_PLAN"
     ],
-    "compile_ms": 2.3
+    "compile_ms": 3.8
    }
   },
   {
@@ -664,8 +696,8 @@
      "counterparty_id": true
     },
     "executed": [],
-    "reply": "抱歉，这超出了我的能力范围。我可以评估买家报价、发送反报价谈判、提前收款、为资金缺口融资、偿还额度、查看现金状况、解释结论、做假设分析，以及批准或驳回待审批操作。",
-    "latency_ms": 1.5
+    "reply": "这个我做不了。我可以评估买家报价、发送反报价谈判、提前收款、为资金缺口融资、偿还额度、查看现金状况、解释结论、做假设分析、比较融资方案、核对回款、查看契约指标、评估设备购置、准备借款人资料，以及批准或驳回待审批操作。",
+    "latency_ms": 6.6
    }
   },
   {
@@ -693,8 +725,8 @@
      "counterparty_id": true
     },
     "executed": [],
-    "reply": "抱歉，这超出了我的能力范围。我可以评估买家报价、发送反报价谈判、提前收款、为资金缺口融资、偿还额度、查看现金状况、解释结论、做假设分析，以及批准或驳回待审批操作。",
-    "latency_ms": 1.3
+    "reply": "这个我做不了。我最接近能做的是提前收款，您可以试试说：“让佛山提前付款”。",
+    "latency_ms": 2.9
    }
   },
   {
@@ -717,7 +749,7 @@
     "slot_hits": {},
     "executed": [],
     "reply": "目前没有待审批的操作。",
-    "latency_ms": 1.4
+    "latency_ms": 2.4
    }
   },
   {
@@ -746,7 +778,7 @@
     },
     "executed": [],
     "reply": "Which buyer is this for? (1) Foshan Home Retail Co. (BUYER-1) (2) Dongguan Office Supplies Ltd. (BUYER-2)",
-    "latency_ms": 1.3
+    "latency_ms": 2.5
    }
   },
   {
@@ -774,14 +806,14 @@
      "rate_bp": true
     },
     "executed": [],
-    "reply": "Sorry, that's outside what I can do. I can evaluate a buyer's offer, negotiate with counters, get an invoice paid early, fund a projected cash gap, repay a facility, show cash status, explain a verdic",
-    "latency_ms": 1.9
+    "reply": "I can't do that. The closest thing I can do is evaluate a buyer's offer: try \"evaluate EX01\".",
+    "latency_ms": 3.8
    }
   }
  ],
  "suites": {
   "offers": {
-   "seconds": 9.9,
+   "seconds": 17.69,
    "error": null,
    "metrics": [
     {
@@ -898,7 +930,8 @@
       "codes": [
        "AGG_CONCESSION_EXCEEDED",
        "RESERVE_BREACH",
-       "DISCOUNT_ABOVE_BREAK_EVEN"
+       "DISCOUNT_ABOVE_BREAK_EVEN",
+       "EARLY_PAY_DEARER_THAN_PLAN"
       ],
       "codes_ok": true,
       "booked": [
@@ -972,9 +1005,10 @@
       "form_codes": [
        "AGG_CONCESSION_EXCEEDED",
        "RESERVE_BREACH",
-       "DISCOUNT_ABOVE_BREAK_EVEN"
+       "DISCOUNT_ABOVE_BREAK_EVEN",
+       "EARLY_PAY_DEARER_THAN_PLAN"
       ],
-      "compile_ms": 3.2
+      "compile_ms": 7.3
      },
      {
       "id": "H02_ex01_paraphrase_zh",
@@ -997,7 +1031,8 @@
       "codes": [
        "AGG_CONCESSION_EXCEEDED",
        "RESERVE_BREACH",
-       "DISCOUNT_ABOVE_BREAK_EVEN"
+       "DISCOUNT_ABOVE_BREAK_EVEN",
+       "EARLY_PAY_DEARER_THAN_PLAN"
       ],
       "codes_ok": true,
       "booked": [
@@ -1071,9 +1106,10 @@
       "form_codes": [
        "AGG_CONCESSION_EXCEEDED",
        "RESERVE_BREACH",
-       "DISCOUNT_ABOVE_BREAK_EVEN"
+       "DISCOUNT_ABOVE_BREAK_EVEN",
+       "EARLY_PAY_DEARER_THAN_PLAN"
       ],
-      "compile_ms": 2.3
+      "compile_ms": 3.7
      },
      {
       "id": "H03_ex02_paraphrase_zh",
@@ -1094,7 +1130,8 @@
       ],
       "codes": [
        "DISCOUNT_ABOVE_BREAK_EVEN",
-       "MAX_APR_EXCEEDED"
+       "MAX_APR_EXCEEDED",
+       "EARLY_PAY_DEARER_THAN_PLAN"
       ],
       "codes_ok": true,
       "booked": [
@@ -1127,9 +1164,10 @@
       "form_ok": true,
       "form_codes": [
        "DISCOUNT_ABOVE_BREAK_EVEN",
-       "MAX_APR_EXCEEDED"
+       "MAX_APR_EXCEEDED",
+       "EARLY_PAY_DEARER_THAN_PLAN"
       ],
-      "compile_ms": 0.9
+      "compile_ms": 1.4
      },
      {
       "id": "H04_early_1pct_plain",
@@ -1147,7 +1185,8 @@
       "outcome_ok": true,
       "expect_codes": [],
       "codes": [
-       "DISCOUNT_ABOVE_BREAK_EVEN"
+       "DISCOUNT_ABOVE_BREAK_EVEN",
+       "EARLY_PAY_DEARER_THAN_PLAN"
       ],
       "codes_ok": true,
       "booked": [
@@ -1179,9 +1218,10 @@
       "form_outcome": "COUNTER",
       "form_ok": true,
       "form_codes": [
-       "DISCOUNT_ABOVE_BREAK_EVEN"
+       "DISCOUNT_ABOVE_BREAK_EVEN",
+       "EARLY_PAY_DEARER_THAN_PLAN"
       ],
-      "compile_ms": 1.7
+      "compile_ms": 3.1
      },
      {
       "id": "H05a_early_1pct",
@@ -1199,7 +1239,8 @@
       "outcome_ok": true,
       "expect_codes": [],
       "codes": [
-       "DISCOUNT_ABOVE_BREAK_EVEN"
+       "DISCOUNT_ABOVE_BREAK_EVEN",
+       "EARLY_PAY_DEARER_THAN_PLAN"
       ],
       "codes_ok": true,
       "booked": [
@@ -1231,9 +1272,10 @@
       "form_outcome": "COUNTER",
       "form_ok": true,
       "form_codes": [
-       "DISCOUNT_ABOVE_BREAK_EVEN"
+       "DISCOUNT_ABOVE_BREAK_EVEN",
+       "EARLY_PAY_DEARER_THAN_PLAN"
       ],
-      "compile_ms": 1.4
+      "compile_ms": 2.4
      },
      {
       "id": "H05b_early_1pct_reworded",
@@ -1251,7 +1293,8 @@
       "outcome_ok": true,
       "expect_codes": [],
       "codes": [
-       "DISCOUNT_ABOVE_BREAK_EVEN"
+       "DISCOUNT_ABOVE_BREAK_EVEN",
+       "EARLY_PAY_DEARER_THAN_PLAN"
       ],
       "codes_ok": true,
       "booked": [
@@ -1283,9 +1326,10 @@
       "form_outcome": "COUNTER",
       "form_ok": true,
       "form_codes": [
-       "DISCOUNT_ABOVE_BREAK_EVEN"
+       "DISCOUNT_ABOVE_BREAK_EVEN",
+       "EARLY_PAY_DEARER_THAN_PLAN"
       ],
-      "compile_ms": 1.5
+      "compile_ms": 2.5
      },
      {
       "id": "H06_early_1pct_zh",
@@ -1303,7 +1347,8 @@
       "outcome_ok": true,
       "expect_codes": [],
       "codes": [
-       "DISCOUNT_ABOVE_BREAK_EVEN"
+       "DISCOUNT_ABOVE_BREAK_EVEN",
+       "EARLY_PAY_DEARER_THAN_PLAN"
       ],
       "codes_ok": true,
       "booked": [
@@ -1335,9 +1380,10 @@
       "form_outcome": "COUNTER",
       "form_ok": true,
       "form_codes": [
-       "DISCOUNT_ABOVE_BREAK_EVEN"
+       "DISCOUNT_ABOVE_BREAK_EVEN",
+       "EARLY_PAY_DEARER_THAN_PLAN"
       ],
-      "compile_ms": 0.8
+      "compile_ms": 1.4
      },
      {
       "id": "H07a_net60_all_en",
@@ -1394,7 +1440,7 @@
        "AGG_CONCESSION_EXCEEDED",
        "RESERVE_BREACH"
       ],
-      "compile_ms": 1.1
+      "compile_ms": 2.0
      },
      {
       "id": "H07b_net60_all_zh",
@@ -1451,7 +1497,7 @@
        "AGG_CONCESSION_EXCEEDED",
        "RESERVE_BREACH"
       ],
-      "compile_ms": 0.7
+      "compile_ms": 1.0
      },
      {
       "id": "H08a_rebate_half_pct",
@@ -1499,7 +1545,7 @@
       "form_outcome": "NEEDS_OWNER_APPROVAL",
       "form_ok": true,
       "form_codes": [],
-      "compile_ms": 1.6
+      "compile_ms": 2.6
      },
      {
       "id": "H08b_rebate_half_pct_words",
@@ -1547,7 +1593,7 @@
       "form_outcome": "NEEDS_OWNER_APPROVAL",
       "form_ok": true,
       "form_codes": [],
-      "compile_ms": 1.6
+      "compile_ms": 2.5
      },
      {
       "id": "H09a_two_invoices_60",
@@ -1599,7 +1645,7 @@
       "form_codes": [
        "RESERVE_BREACH"
       ],
-      "compile_ms": 1.5
+      "compile_ms": 2.7
      },
      {
       "id": "H09b_two_invoices_60_reworded",
@@ -1651,7 +1697,7 @@
       "form_codes": [
        "RESERVE_BREACH"
       ],
-      "compile_ms": 1.5
+      "compile_ms": 2.4
      },
      {
       "id": "H10a_today_1pct",
@@ -1669,7 +1715,8 @@
       "outcome_ok": true,
       "expect_codes": [],
       "codes": [
-       "DISCOUNT_ABOVE_BREAK_EVEN"
+       "DISCOUNT_ABOVE_BREAK_EVEN",
+       "EARLY_PAY_DEARER_THAN_PLAN"
       ],
       "codes_ok": true,
       "booked": [
@@ -1701,9 +1748,10 @@
       "form_outcome": "COUNTER",
       "form_ok": true,
       "form_codes": [
-       "DISCOUNT_ABOVE_BREAK_EVEN"
+       "DISCOUNT_ABOVE_BREAK_EVEN",
+       "EARLY_PAY_DEARER_THAN_PLAN"
       ],
-      "compile_ms": 1.5
+      "compile_ms": 2.3
      },
      {
       "id": "H10b_today_1_6pct",
@@ -1725,7 +1773,8 @@
       "codes": [
        "IMMEDIATE_DISCOUNT_EXCEEDED",
        "DISCOUNT_ABOVE_BREAK_EVEN",
-       "MAX_APR_EXCEEDED"
+       "MAX_APR_EXCEEDED",
+       "EARLY_PAY_DEARER_THAN_PLAN"
       ],
       "codes_ok": true,
       "booked": [
@@ -1759,9 +1808,10 @@
       "form_codes": [
        "IMMEDIATE_DISCOUNT_EXCEEDED",
        "DISCOUNT_ABOVE_BREAK_EVEN",
-       "MAX_APR_EXCEEDED"
+       "MAX_APR_EXCEEDED",
+       "EARLY_PAY_DEARER_THAN_PLAN"
       ],
-      "compile_ms": 1.3
+      "compile_ms": 2.4
      },
      {
       "id": "H11a_early_1_2pct",
@@ -1779,7 +1829,8 @@
       "outcome_ok": true,
       "expect_codes": [],
       "codes": [
-       "DISCOUNT_ABOVE_BREAK_EVEN"
+       "DISCOUNT_ABOVE_BREAK_EVEN",
+       "EARLY_PAY_DEARER_THAN_PLAN"
       ],
       "codes_ok": true,
       "booked": [
@@ -1811,9 +1862,10 @@
       "form_outcome": "COUNTER",
       "form_ok": true,
       "form_codes": [
-       "DISCOUNT_ABOVE_BREAK_EVEN"
+       "DISCOUNT_ABOVE_BREAK_EVEN",
+       "EARLY_PAY_DEARER_THAN_PLAN"
       ],
-      "compile_ms": 1.2
+      "compile_ms": 2.4
      },
      {
       "id": "H11b_early_1_3pct",
@@ -1834,7 +1886,8 @@
       ],
       "codes": [
        "DISCOUNT_ABOVE_BREAK_EVEN",
-       "MAX_APR_EXCEEDED"
+       "MAX_APR_EXCEEDED",
+       "EARLY_PAY_DEARER_THAN_PLAN"
       ],
       "codes_ok": true,
       "booked": [
@@ -1867,9 +1920,10 @@
       "form_ok": true,
       "form_codes": [
        "DISCOUNT_ABOVE_BREAK_EVEN",
-       "MAX_APR_EXCEEDED"
+       "MAX_APR_EXCEEDED",
+       "EARLY_PAY_DEARER_THAN_PLAN"
       ],
-      "compile_ms": 1.1
+      "compile_ms": 2.0
      },
      {
       "id": "H12a_next_invoice_60",
@@ -1921,7 +1975,7 @@
       "form_codes": [
        "RESERVE_BREACH"
       ],
-      "compile_ms": 1.2
+      "compile_ms": 1.9
      },
      {
       "id": "H12b_every_invoice_60",
@@ -1977,7 +2031,7 @@
        "AGG_CONCESSION_EXCEEDED",
        "RESERVE_BREACH"
       ],
-      "compile_ms": 1.1
+      "compile_ms": 1.7
      },
      {
       "id": "H13a_rebate_0_5",
@@ -2025,7 +2079,7 @@
       "form_outcome": "NEEDS_OWNER_APPROVAL",
       "form_ok": true,
       "form_codes": [],
-      "compile_ms": 1.1
+      "compile_ms": 2.0
      },
      {
       "id": "H13b_rebate_1_5",
@@ -2079,7 +2133,7 @@
       "form_codes": [
        "AGG_CONCESSION_EXCEEDED"
       ],
-      "compile_ms": 1.2
+      "compile_ms": 1.7
      },
      {
       "id": "H14a_rebate_0_8_zh",
@@ -2127,7 +2181,7 @@
       "form_outcome": "NEEDS_OWNER_APPROVAL",
       "form_ok": true,
       "form_codes": [],
-      "compile_ms": 0.6
+      "compile_ms": 1.0
      },
      {
       "id": "H14b_rebate_2_zh",
@@ -2181,7 +2235,7 @@
       "form_codes": [
        "AGG_CONCESSION_EXCEEDED"
       ],
-      "compile_ms": 0.6
+      "compile_ms": 0.9
      },
      {
       "id": "H15a_shorten_to_30",
@@ -2229,7 +2283,7 @@
       "form_outcome": "NEEDS_OWNER_APPROVAL",
       "form_ok": true,
       "form_codes": [],
-      "compile_ms": 1.1
+      "compile_ms": 2.0
      },
      {
       "id": "H15b_lengthen_to_60",
@@ -2286,7 +2340,7 @@
        "AGG_CONCESSION_EXCEEDED",
        "RESERVE_BREACH"
       ],
-      "compile_ms": 1.0
+      "compile_ms": 1.7
      },
      {
       "id": "H16_conflict_rate",
@@ -2339,7 +2393,7 @@
       "form_outcome": "NO_VERDICT",
       "form_ok": true,
       "form_codes": [],
-      "compile_ms": 3.3
+      "compile_ms": 5.5
      },
      {
       "id": "H17_conflict_amount_zh",
@@ -2380,7 +2434,7 @@
       "form_outcome": "NO_VERDICT",
       "form_ok": true,
       "form_codes": [],
-      "compile_ms": 1.1
+      "compile_ms": 1.8
      },
      {
       "id": "H18_conflict_terms",
@@ -2424,7 +2478,7 @@
       "form_outcome": "NO_VERDICT",
       "form_ok": true,
       "form_codes": [],
-      "compile_ms": 2.0
+      "compile_ms": 3.4
      },
      {
       "id": "H19_consistent_po",
@@ -2472,7 +2526,7 @@
       "form_outcome": "NEEDS_OWNER_APPROVAL",
       "form_ok": true,
       "form_codes": [],
-      "compile_ms": 2.2
+      "compile_ms": 3.6
      },
      {
       "id": "H20_discount_no_rate",
@@ -2502,7 +2556,7 @@
       "form_outcome": "NO_VERDICT",
       "form_ok": true,
       "form_codes": [],
-      "compile_ms": 0.8
+      "compile_ms": 1.3
      },
      {
       "id": "H21_stretch_terms",
@@ -2530,7 +2584,7 @@
       "form_outcome": "NO_VERDICT",
       "form_ok": true,
       "form_codes": [],
-      "compile_ms": 0.7
+      "compile_ms": 1.4
      },
      {
       "id": "H22_usual_discount",
@@ -2560,7 +2614,7 @@
       "form_outcome": "NO_VERDICT",
       "form_ok": true,
       "form_codes": [],
-      "compile_ms": 0.6
+      "compile_ms": 1.0
      },
      {
       "id": "H23_one_pct_off_what",
@@ -2599,7 +2653,7 @@
       "form_outcome": "NO_VERDICT",
       "form_ok": true,
       "form_codes": [],
-      "compile_ms": 0.4
+      "compile_ms": 0.8
      },
      {
       "id": "H24_terms_vague_zh",
@@ -2627,7 +2681,7 @@
       "form_outcome": "NO_VERDICT",
       "form_ok": true,
       "form_codes": [],
-      "compile_ms": 0.3
+      "compile_ms": 0.4
      },
      {
       "id": "H25_old_rules_zh",
@@ -2658,7 +2712,7 @@
       "form_outcome": "NO_VERDICT",
       "form_ok": true,
       "form_codes": [],
-      "compile_ms": 0.3
+      "compile_ms": 0.4
      },
      {
       "id": "H26_if_discount_right",
@@ -2688,7 +2742,7 @@
       "form_outcome": "NO_VERDICT",
       "form_ok": true,
       "form_codes": [],
-      "compile_ms": 0.8
+      "compile_ms": 1.5
      },
      {
       "id": "H27_alternatives",
@@ -2718,7 +2772,7 @@
       "form_outcome": "NO_VERDICT",
       "form_ok": true,
       "form_codes": [],
-      "compile_ms": 1.0
+      "compile_ms": 1.7
      },
      {
       "id": "H28_buyer2_no_invoice",
@@ -2757,7 +2811,7 @@
       "form_outcome": "NO_VERDICT",
       "form_ok": true,
       "form_codes": [],
-      "compile_ms": 0.8
+      "compile_ms": 1.4
      },
      {
       "id": "H29_unknown_invoice_amount",
@@ -2796,7 +2850,7 @@
       "form_outcome": "NO_VERDICT",
       "form_ok": true,
       "form_codes": [],
-      "compile_ms": 1.0
+      "compile_ms": 1.7
      },
      {
       "id": "H30_unbounded_rebate",
@@ -2835,7 +2889,7 @@
       "form_outcome": "NO_VERDICT",
       "form_ok": true,
       "form_codes": [],
-      "compile_ms": 0.9
+      "compile_ms": 1.8
      },
      {
       "id": "H31_claimed_phone_rebate",
@@ -2878,7 +2932,7 @@
       "form_codes": [
        "UNEVIDENCED_PRIOR_CONCESSION"
       ],
-      "compile_ms": 1.5
+      "compile_ms": 2.8
      },
      {
       "id": "H32_claimed_terms_zh",
@@ -2921,7 +2975,7 @@
       "form_codes": [
        "UNEVIDENCED_PRIOR_CONCESSION"
       ],
-      "compile_ms": 0.7
+      "compile_ms": 1.1
      },
      {
       "id": "H33_unknown_lender",
@@ -2965,7 +3019,7 @@
       "form_codes": [
        "UNKNOWN_COUNTERPARTY"
       ],
-      "compile_ms": 1.9
+      "compile_ms": 3.6
      },
      {
       "id": "H34_words_en",
@@ -2983,7 +3037,8 @@
       "outcome_ok": true,
       "expect_codes": [],
       "codes": [
-       "DISCOUNT_ABOVE_BREAK_EVEN"
+       "DISCOUNT_ABOVE_BREAK_EVEN",
+       "EARLY_PAY_DEARER_THAN_PLAN"
       ],
       "codes_ok": true,
       "booked": [
@@ -3015,9 +3070,10 @@
       "form_outcome": "COUNTER",
       "form_ok": true,
       "form_codes": [
-       "DISCOUNT_ABOVE_BREAK_EVEN"
+       "DISCOUNT_ABOVE_BREAK_EVEN",
+       "EARLY_PAY_DEARER_THAN_PLAN"
       ],
-      "compile_ms": 2.1
+      "compile_ms": 3.6
      },
      {
       "id": "H35_words_zh",
@@ -3035,7 +3091,8 @@
       "outcome_ok": true,
       "expect_codes": [],
       "codes": [
-       "DISCOUNT_ABOVE_BREAK_EVEN"
+       "DISCOUNT_ABOVE_BREAK_EVEN",
+       "EARLY_PAY_DEARER_THAN_PLAN"
       ],
       "codes_ok": true,
       "booked": [
@@ -3067,9 +3124,10 @@
       "form_outcome": "COUNTER",
       "form_ok": true,
       "form_codes": [
-       "DISCOUNT_ABOVE_BREAK_EVEN"
+       "DISCOUNT_ABOVE_BREAK_EVEN",
+       "EARLY_PAY_DEARER_THAN_PLAN"
       ],
-      "compile_ms": 0.8
+      "compile_ms": 1.2
      },
      {
       "id": "H36_buyer2_rebate_ok",
@@ -3117,7 +3175,7 @@
       "form_outcome": "NEEDS_OWNER_APPROVAL",
       "form_ok": true,
       "form_codes": [],
-      "compile_ms": 1.2
+      "compile_ms": 2.3
      },
      {
       "id": "H37_buyer2_rebate_over_cap",
@@ -3171,7 +3229,7 @@
       "form_codes": [
        "AGG_CONCESSION_EXCEEDED"
       ],
-      "compile_ms": 1.5
+      "compile_ms": 2.5
      },
      {
       "id": "H38_early_plus_small_rebate",
@@ -3189,7 +3247,8 @@
       "outcome_ok": false,
       "expect_codes": [],
       "codes": [
-       "DISCOUNT_ABOVE_BREAK_EVEN"
+       "DISCOUNT_ABOVE_BREAK_EVEN",
+       "EARLY_PAY_DEARER_THAN_PLAN"
       ],
       "codes_ok": true,
       "booked": [
@@ -3241,9 +3300,10 @@
       "form_outcome": "COUNTER",
       "form_ok": false,
       "form_codes": [
-       "DISCOUNT_ABOVE_BREAK_EVEN"
+       "DISCOUNT_ABOVE_BREAK_EVEN",
+       "EARLY_PAY_DEARER_THAN_PLAN"
       ],
-      "compile_ms": 2.3
+      "compile_ms": 3.8
      },
      {
       "id": "H39_price_up_for_terms",
@@ -3315,7 +3375,7 @@
       "form_codes": [
        "RESERVE_BREACH"
       ],
-      "compile_ms": 1.3
+      "compile_ms": 2.4
      },
      {
       "id": "H40_weekly_run_30_days",
@@ -3383,7 +3443,7 @@
       "form_outcome": "NEEDS_OWNER_APPROVAL",
       "form_ok": true,
       "form_codes": [],
-      "compile_ms": 1.6
+      "compile_ms": 2.5
      }
     ],
     "pairs": [
@@ -3554,7 +3614,7 @@
     "backends": {
      "rules-v1": 50
     },
-    "source": "/Users/ianpong/Hackathons/smu2sz/fixtures/heldout/offers.yaml",
+    "source": "C:\\Users\\ian\\Documents\\Projects\\smu2sz\\fixtures\\heldout\\offers.yaml",
     "counts": {
      "items": 50,
      "must_abstain": 14,
@@ -3564,13 +3624,13 @@
      "zh": 11
     },
     "compile_ms": {
-     "p50": 1.14,
-     "p95": 2.3
+     "p50": 2.01,
+     "p95": 3.81
     }
    }
   },
   "financial": {
-   "seconds": 0.18,
+   "seconds": 0.46,
    "error": null,
    "metrics": [
     {
@@ -3787,15 +3847,15 @@
      },
      {
       "key": "counter_a_discount",
-      "golden": 180030,
-      "computed": 180030,
+      "golden": 180115,
+      "computed": 180115,
       "source": "financial.project(Option A).discounts_posted_fen",
       "exact": true
      },
      {
       "key": "counter_a_total",
-      "golden": 264194,
-      "computed": 264194,
+      "golden": 264224,
+      "computed": 264224,
       "source": "verifier EX01 Option A supplier_cost_fen",
       "exact": true
      },
@@ -3986,7 +4046,7 @@
    }
   },
   "funding": {
-   "seconds": 226.79,
+   "seconds": 346.72,
    "error": null,
    "metrics": [
     {
@@ -3997,7 +4057,7 @@
      "target": "≥ 95%",
      "passed": true,
      "suite": "funding",
-     "note": ""
+     "note": "brute force incomplete on 1"
     },
     {
      "key": "router_beats_line_first",
@@ -4012,8 +4072,8 @@
     {
      "key": "router_saving_total",
      "label": "Total saving vs 'line first' (where both admissible)",
-     "value": 413644,
-     "display": "¥4,136.44 over 22 scenarios (median ¥40.29)",
+     "value": 372548,
+     "display": "¥3,725.48 over 21 scenarios (median ¥0.00)",
      "target": "informational",
      "passed": null,
      "suite": "funding",
@@ -4033,10 +4093,10 @@
      "key": "router_latency",
      "label": "Router latency p50 / p95",
      "value": {
-      "p50": 38.88,
-      "p95": 129.25
+      "p50": 61.73,
+      "p95": 199.85
      },
-     "display": "39 / 129 ms",
+     "display": "62 / 200 ms",
      "target": "informational",
      "passed": null,
      "suite": "funding",
@@ -4116,8 +4176,8 @@
       "optimal": true,
       "gap_to_brute_fen": 0,
       "saving_vs_baseline_fen": 0,
-      "eval_s": 43.1,
-      "router_ms": 39.4
+      "eval_s": 67.4,
+      "router_ms": 71.5
      },
      {
       "id": "F01_dear_line",
@@ -4195,8 +4255,8 @@
       "optimal": true,
       "gap_to_brute_fen": 0,
       "saving_vs_baseline_fen": 14758,
-      "eval_s": 50.5,
-      "router_ms": 39.4
+      "eval_s": 80.3,
+      "router_ms": 60.3
      },
      {
       "id": "F02_cheap_early_pay",
@@ -4260,8 +4320,8 @@
       "optimal": true,
       "gap_to_brute_fen": 0,
       "saving_vs_baseline_fen": 39029,
-      "eval_s": 33.3,
-      "router_ms": 28.6
+      "eval_s": 51.5,
+      "router_ms": 43.4
      },
      {
       "id": "F03_bill_held",
@@ -4325,8 +4385,8 @@
       "optimal": true,
       "gap_to_brute_fen": 0,
       "saving_vs_baseline_fen": 41376,
-      "eval_s": 32.1,
-      "router_ms": 34.1
+      "eval_s": 51.4,
+      "router_ms": 52.6
      },
      {
       "id": "F04_no_new_borrowing",
@@ -4388,8 +4448,8 @@
       "optimal": true,
       "gap_to_brute_fen": 0,
       "saving_vs_baseline_fen": null,
-      "eval_s": 99.6,
-      "router_ms": 11.4
+      "eval_s": 148.6,
+      "router_ms": 17.8
      },
      {
       "id": "F05_pending_cheap_ggl",
@@ -4469,8 +4529,8 @@
       "optimal": true,
       "gap_to_brute_fen": 0,
       "saving_vs_baseline_fen": 0,
-      "eval_s": 43.9,
-      "router_ms": 39.1
+      "eval_s": 69.2,
+      "router_ms": 62.9
      },
      {
       "id": "F06_uncovered",
@@ -4513,7 +4573,7 @@
       "gap_to_brute_fen": null,
       "saving_vs_baseline_fen": null,
       "eval_s": 0.0,
-      "router_ms": 0.9
+      "router_ms": 1.5
      },
      {
       "id": "F07_big_line_clean_down",
@@ -4570,8 +4630,8 @@
       "optimal": true,
       "gap_to_brute_fen": 0,
       "saving_vs_baseline_fen": 0,
-      "eval_s": 41.1,
-      "router_ms": 26.5
+      "eval_s": 64.3,
+      "router_ms": 41.3
      },
      {
       "id": "F08_late_payroll",
@@ -4649,8 +4709,8 @@
       "optimal": true,
       "gap_to_brute_fen": 0,
       "saving_vs_baseline_fen": 0,
-      "eval_s": 43.4,
-      "router_ms": 39.8
+      "eval_s": 69.3,
+      "router_ms": 61.6
      },
      {
       "id": "F09_committed_cheap_loan_late",
@@ -4709,8 +4769,8 @@
       "brute_complete": true,
       "brute_levers": 13,
       "brute_evals": 330435,
-      "baseline_cost_fen": 312390,
-      "baseline_admissible": true,
+      "baseline_cost_fen": null,
+      "baseline_admissible": false,
       "baseline_actions": [
        [
         "DRAW",
@@ -4736,9 +4796,9 @@
       ],
       "optimal": true,
       "gap_to_brute_fen": 0,
-      "saving_vs_baseline_fen": 41096,
-      "eval_s": 111.1,
-      "router_ms": 91.2
+      "saving_vs_baseline_fen": null,
+      "eval_s": 166.6,
+      "router_ms": 131.7
      },
      {
       "id": "R01",
@@ -4839,8 +4899,8 @@
       "optimal": true,
       "gap_to_brute_fen": 0,
       "saving_vs_baseline_fen": 33904,
-      "eval_s": 62.4,
-      "router_ms": 109.4
+      "eval_s": 90.6,
+      "router_ms": 172.3
      },
      {
       "id": "R02",
@@ -4971,8 +5031,8 @@
       "optimal": true,
       "gap_to_brute_fen": 0,
       "saving_vs_baseline_fen": null,
-      "eval_s": 53.9,
-      "router_ms": 53.9
+      "eval_s": 77.9,
+      "router_ms": 86.4
      },
      {
       "id": "R03",
@@ -5049,9 +5109,9 @@
         180
        ]
       ],
-      "brute_complete": true,
+      "brute_complete": false,
       "brute_levers": 13,
-      "brute_evals": 491381,
+      "brute_evals": 342159,
       "baseline_cost_fen": 364910,
       "baseline_admissible": true,
       "baseline_actions": [
@@ -5073,8 +5133,8 @@
       "optimal": true,
       "gap_to_brute_fen": 0,
       "saving_vs_baseline_fen": 52603,
-      "eval_s": 162.7,
-      "router_ms": 150.5
+      "eval_s": 180.0,
+      "router_ms": 249.3
      },
      {
       "id": "R04",
@@ -5171,8 +5231,8 @@
       "optimal": true,
       "gap_to_brute_fen": 0,
       "saving_vs_baseline_fen": 0,
-      "eval_s": 33.2,
-      "router_ms": 45.2
+      "eval_s": 50.8,
+      "router_ms": 70.6
      },
      {
       "id": "R05",
@@ -5282,8 +5342,8 @@
       "optimal": true,
       "gap_to_brute_fen": 0,
       "saving_vs_baseline_fen": 29288,
-      "eval_s": 66.6,
-      "router_ms": 113.5
+      "eval_s": 98.4,
+      "router_ms": 166.9
      },
      {
       "id": "R06",
@@ -5379,8 +5439,8 @@
       "optimal": true,
       "gap_to_brute_fen": 0,
       "saving_vs_baseline_fen": 0,
-      "eval_s": 58.6,
-      "router_ms": 29.3
+      "eval_s": 87.6,
+      "router_ms": 46.2
      },
      {
       "id": "R07",
@@ -5460,8 +5520,8 @@
       "optimal": true,
       "gap_to_brute_fen": 0,
       "saving_vs_baseline_fen": 0,
-      "eval_s": 52.0,
-      "router_ms": 38.7
+      "eval_s": 76.7,
+      "router_ms": 61.9
      },
      {
       "id": "R08",
@@ -5566,8 +5626,8 @@
       "optimal": true,
       "gap_to_brute_fen": 0,
       "saving_vs_baseline_fen": 0,
-      "eval_s": 72.5,
-      "router_ms": 55.4
+      "eval_s": 109.2,
+      "router_ms": 93.9
      },
      {
       "id": "R09",
@@ -5649,8 +5709,8 @@
       "optimal": true,
       "gap_to_brute_fen": 0,
       "saving_vs_baseline_fen": 31898,
-      "eval_s": 48.0,
-      "router_ms": 29.9
+      "eval_s": 69.0,
+      "router_ms": 46.9
      },
      {
       "id": "R10",
@@ -5737,8 +5797,8 @@
       "optimal": true,
       "gap_to_brute_fen": null,
       "saving_vs_baseline_fen": null,
-      "eval_s": 33.1,
-      "router_ms": 14.2
+      "eval_s": 47.9,
+      "router_ms": 23.9
      },
      {
       "id": "R11",
@@ -5834,8 +5894,8 @@
       "optimal": true,
       "gap_to_brute_fen": 0,
       "saving_vs_baseline_fen": 0,
-      "eval_s": 26.2,
-      "router_ms": 28.1
+      "eval_s": 38.2,
+      "router_ms": 44.5
      },
      {
       "id": "R12",
@@ -5932,8 +5992,8 @@
       "optimal": true,
       "gap_to_brute_fen": 0,
       "saving_vs_baseline_fen": 0,
-      "eval_s": 31.3,
-      "router_ms": 26.0
+      "eval_s": 44.6,
+      "router_ms": 42.4
      },
      {
       "id": "R13",
@@ -6031,8 +6091,8 @@
       "optimal": true,
       "gap_to_brute_fen": 0,
       "saving_vs_baseline_fen": 23004,
-      "eval_s": 57.7,
-      "router_ms": 14.1
+      "eval_s": 88.1,
+      "router_ms": 22.7
      },
      {
       "id": "R14",
@@ -6120,8 +6180,8 @@
       "optimal": true,
       "gap_to_brute_fen": 0,
       "saving_vs_baseline_fen": 8058,
-      "eval_s": 39.9,
-      "router_ms": 38.5
+      "eval_s": 61.2,
+      "router_ms": 62.7
      },
      {
       "id": "R15",
@@ -6218,8 +6278,8 @@
       "optimal": true,
       "gap_to_brute_fen": 0,
       "saving_vs_baseline_fen": 98630,
-      "eval_s": 89.2,
-      "router_ms": 129.3
+      "eval_s": 137.0,
+      "router_ms": 199.9
      },
      {
       "id": "R16",
@@ -6315,37 +6375,37 @@
       "optimal": true,
       "gap_to_brute_fen": 0,
       "saving_vs_baseline_fen": 0,
-      "eval_s": 31.5,
-      "router_ms": 41.4
+      "eval_s": 48.6,
+      "router_ms": 63.7
      }
     ],
     "latency_ms": [
-     39.40587499528192,
-     39.376875007292256,
-     28.613000002224,
-     34.09083299629856,
-     11.419250004109927,
-     39.05862499959767,
-     0.875917001394555,
-     26.473167003132403,
-     39.823249986511655,
-     91.21800000139046,
-     109.3727499974193,
-     53.9075410051737,
-     150.45529100461863,
-     45.157375003327616,
-     113.50112500076648,
-     29.270165992784314,
-     38.70649999589659,
-     55.4134160047397,
-     29.8787909996463,
-     14.193082999554463,
-     28.143749994342215,
-     26.02166699944064,
-     14.126125010079704,
-     38.49812500993721,
-     129.25416699727066,
-     41.41741599596571
+     71.52549999955227,
+     60.333499997796025,
+     43.423899998742854,
+     52.56299999746261,
+     17.815700000937795,
+     62.88950000089244,
+     1.5268999995896593,
+     41.309299998829374,
+     61.59570000090753,
+     131.71820000206935,
+     172.28489999979502,
+     86.36760000081267,
+     249.25220000295667,
+     70.61420000172802,
+     166.86229999686475,
+     46.17050000160816,
+     61.86860000161687,
+     93.88060000128462,
+     46.924999998736894,
+     23.934899996675085,
+     44.50139999971725,
+     42.366500001662644,
+     22.739899999578483,
+     62.74699999994482,
+     199.85280000037164,
+     63.70170000081998
     ],
     "grid": {
      "pairs_step_fen": 500000,
@@ -6355,14 +6415,14 @@
    }
   },
   "covenants": {
-   "seconds": 0.5,
+   "seconds": 0.83,
    "error": null,
    "metrics": [
     {
      "key": "verifier_slowest_call",
      "label": "Slowest verifier.evaluate on these states (plans=all)",
-     "value": 216.2,
-     "display": "0.2 s (reserve_unsafe_1fen)",
+     "value": 367.9,
+     "display": "0.4 s (reserve_unsafe_1fen)",
      "target": "informational",
      "passed": null,
      "suite": "covenants",
@@ -6403,7 +6463,7 @@
       "month": null,
       "day": null,
       "codes": [],
-      "verifier_ms": 3.0
+      "verifier_ms": 3.4
      },
      {
       "id": "dscr_safe_1fen",
@@ -6417,7 +6477,7 @@
       "month": null,
       "day": null,
       "codes": [],
-      "verifier_ms": 2.5
+      "verifier_ms": 3.1
      },
      {
       "id": "dscr_unsafe_1fen",
@@ -6440,7 +6500,7 @@
        "DSCR_BREACH",
        "DSCR_BREACH"
       ],
-      "verifier_ms": 2.7
+      "verifier_ms": 3.4
      },
      {
       "id": "leverage_exact",
@@ -6454,7 +6514,7 @@
       "month": null,
       "day": null,
       "codes": [],
-      "verifier_ms": 2.8
+      "verifier_ms": 12.8
      },
      {
       "id": "leverage_safe_1fen",
@@ -6468,7 +6528,7 @@
       "month": null,
       "day": null,
       "codes": [],
-      "verifier_ms": 2.5
+      "verifier_ms": 3.1
      },
      {
       "id": "leverage_unsafe_1fen",
@@ -6491,7 +6551,7 @@
        "LEVERAGE_BREACH",
        "LEVERAGE_BREACH"
       ],
-      "verifier_ms": 2.9
+      "verifier_ms": 3.4
      },
      {
       "id": "reserve_exact",
@@ -6505,9 +6565,10 @@
       "month": null,
       "day": null,
       "codes": [
-       "DISCOUNT_ABOVE_BREAK_EVEN"
+       "DISCOUNT_ABOVE_BREAK_EVEN",
+       "EARLY_PAY_DEARER_THAN_PLAN"
       ],
-      "verifier_ms": 117.5
+      "verifier_ms": 206.2
      },
      {
       "id": "reserve_safe_1fen",
@@ -6521,9 +6582,10 @@
       "month": null,
       "day": null,
       "codes": [
-       "DISCOUNT_ABOVE_BREAK_EVEN"
+       "DISCOUNT_ABOVE_BREAK_EVEN",
+       "EARLY_PAY_DEARER_THAN_PLAN"
       ],
-      "verifier_ms": 129.5
+      "verifier_ms": 208.5
      },
      {
       "id": "reserve_unsafe_1fen",
@@ -6538,9 +6600,10 @@
       "day": 32,
       "codes": [
        "RESERVE_BREACH",
-       "DISCOUNT_ABOVE_BREAK_EVEN"
+       "DISCOUNT_ABOVE_BREAK_EVEN",
+       "EARLY_PAY_DEARER_THAN_PLAN"
       ],
-      "verifier_ms": 216.2
+      "verifier_ms": 367.9
      },
      {
       "id": "concession_cap_exact",
@@ -6554,7 +6617,7 @@
       "month": null,
       "day": null,
       "codes": [],
-      "verifier_ms": 2.6
+      "verifier_ms": 3.2
      },
      {
       "id": "concession_cap_safe_1fen",
@@ -6568,7 +6631,7 @@
       "month": null,
       "day": null,
       "codes": [],
-      "verifier_ms": 1.9
+      "verifier_ms": 2.1
      },
      {
       "id": "concession_cap_unsafe_1fen",
@@ -6584,7 +6647,7 @@
       "codes": [
        "AGG_CONCESSION_EXCEEDED"
       ],
-      "verifier_ms": 1.9
+      "verifier_ms": 2.2
      },
      {
       "id": "discount_cap_exact",
@@ -6599,9 +6662,10 @@
       "day": null,
       "codes": [
        "DISCOUNT_ABOVE_BREAK_EVEN",
-       "MAX_APR_EXCEEDED"
+       "MAX_APR_EXCEEDED",
+       "EARLY_PAY_NOT_NEEDED"
       ],
-      "verifier_ms": 2.3
+      "verifier_ms": 3.4
      },
      {
       "id": "discount_cap_safe_1bp",
@@ -6616,9 +6680,10 @@
       "day": null,
       "codes": [
        "DISCOUNT_ABOVE_BREAK_EVEN",
-       "MAX_APR_EXCEEDED"
+       "MAX_APR_EXCEEDED",
+       "EARLY_PAY_NOT_NEEDED"
       ],
-      "verifier_ms": 1.9
+      "verifier_ms": 3.2
      },
      {
       "id": "discount_cap_unsafe_1bp",
@@ -6634,9 +6699,10 @@
       "codes": [
        "IMMEDIATE_DISCOUNT_EXCEEDED",
        "DISCOUNT_ABOVE_BREAK_EVEN",
-       "MAX_APR_EXCEEDED"
+       "MAX_APR_EXCEEDED",
+       "EARLY_PAY_NOT_NEEDED"
       ],
-      "verifier_ms": 1.9
+      "verifier_ms": 3.4
      },
      {
       "id": "clean_down_exact_30d",
@@ -6986,7 +7052,7 @@
    }
   },
   "intent": {
-   "seconds": 0.62,
+   "seconds": 1.18,
    "error": null,
    "metrics": [
     {
@@ -7043,7 +7109,7 @@
       },
       "executed": [],
       "reply": "Verdict REJECT (TIER_1): AGG_CONCESSION_EXCEEDED, RESERVE_BREACH. REJECT: AGG_CONCESSION_EXCEEDED (¥5,613.90 vs ¥5,000.00); RESERVE_BREACH@47 (curable at ¥761.22). Forward concessions ¥5,613.90 agains",
-      "latency_ms": 155.9
+      "latency_ms": 243.6
      },
      {
       "id": "I02",
@@ -7068,8 +7134,8 @@
        "rate_bp": true
       },
       "executed": [],
-      "reply": "Verdict COUNTER (TIER_1): DISCOUNT_ABOVE_BREAK_EVEN. COUNTER: DISCOUNT_ABOVE_BREAK_EVEN (1.00% vs < 0.88%). Forward concessions ¥0.00 against ¥5,000.00. Covenants hold: DSCR_MIN 2.00x, LEVERAGE_MAX 1.",
-      "latency_ms": 7.6
+      "reply": "Verdict COUNTER (TIER_1): DISCOUNT_ABOVE_BREAK_EVEN, EARLY_PAY_DEARER_THAN_PLAN. COUNTER: DISCOUNT_ABOVE_BREAK_EVEN (1.00% vs < 0.88%); EARLY_PAY_DEARER_THAN_PLAN (¥4,200.00 vs < ¥2,712.94). Forward c",
+      "latency_ms": 36.5
      },
      {
       "id": "I03",
@@ -7095,7 +7161,7 @@
       },
       "executed": [],
       "reply": "结论 NEEDS_OWNER_APPROVAL（TIER_2）：无违规。NEEDS OWNER APPROVAL. Forward concessions ¥2,000.00 against ¥5,000.00. Covenants hold: DSCR_MIN 1.89x, LEVERAGE_MAX 1.72x. owner approval needed: only an early-paym",
-      "latency_ms": 47.9
+      "latency_ms": 73.4
      },
      {
       "id": "I04",
@@ -7117,8 +7183,8 @@
        "fixture_id": true
       },
       "executed": [],
-      "reply": "Verdict COUNTER (TIER_1): DISCOUNT_ABOVE_BREAK_EVEN, MAX_APR_EXCEEDED. COUNTER: DISCOUNT_ABOVE_BREAK_EVEN (1.50% vs < 0.88%); MAX_APR_EXCEEDED (18.5279% vs 15.00%). Forward concessions ¥0.00 against ¥",
-      "latency_ms": 27.2
+      "reply": "Verdict COUNTER (TIER_1): DISCOUNT_ABOVE_BREAK_EVEN, MAX_APR_EXCEEDED, EARLY_PAY_DEARER_THAN_PLAN. COUNTER: DISCOUNT_ABOVE_BREAK_EVEN (1.50% vs < 0.88%); MAX_APR_EXCEEDED (18.5279% vs 15.00%); EARLY_P",
+      "latency_ms": 64.2
      },
      {
       "id": "I05",
@@ -7141,7 +7207,7 @@
       },
       "executed": [],
       "reply": "Verdict REJECT (TIER_1): UNKNOWN_COUNTERPARTY, UNEVIDENCED_PRIOR_CONCESSION. REJECT: UNKNOWN_COUNTERPARTY (FASTCAPITAL vs owner-registered counterparties and owner-approved facilities only); UNEVIDENC",
-      "latency_ms": 23.4
+      "latency_ms": 33.7
      },
      {
       "id": "I06",
@@ -7164,7 +7230,7 @@
       },
       "executed": [],
       "reply": "结论 NEEDS_OWNER_APPROVAL（TIER_2）：无违规。NEEDS OWNER APPROVAL. Forward concessions ¥0.00 against ¥5,000.00. Covenants hold: DSCR_MIN 1.89x, LEVERAGE_MAX 1.72x. owner approval needed: only an early-payment ",
-      "latency_ms": 67.6
+      "latency_ms": 103.0
      },
      {
       "id": "I07",
@@ -7187,7 +7253,7 @@
       },
       "executed": [],
       "reply": "There are no counters to send. Evaluate an offer first (e.g. 'evaluate EX01').",
-      "latency_ms": 1.7
+      "latency_ms": 3.2
      },
      {
       "id": "I08",
@@ -7209,8 +7275,8 @@
        "counterparty_id": true
       },
       "executed": [],
-      "reply": "抱歉，这超出了我的能力范围。我可以评估买家报价、发送反报价谈判、提前收款、为资金缺口融资、偿还额度、查看现金状况、解释结论、做假设分析，以及批准或驳回待审批操作。",
-      "latency_ms": 1.5
+      "reply": "这个我做不了。我可以评估买家报价、发送反报价谈判、提前收款、为资金缺口融资、偿还额度、查看现金状况、解释结论、做假设分析、比较融资方案、核对回款、查看契约指标、评估设备购置、准备借款人资料，以及批准或驳回待审批操作。",
+      "latency_ms": 6.6
      },
      {
       "id": "I09",
@@ -7233,7 +7299,7 @@
       },
       "executed": [],
       "reply": "There are no counters to send. Evaluate an offer first (e.g. 'evaluate EX01').",
-      "latency_ms": 1.4
+      "latency_ms": 3.0
      },
      {
       "id": "I10",
@@ -7258,8 +7324,8 @@
        "rate_bp": true
       },
       "executed": [],
-      "reply": "Plan (Tier 1): offer BUYER-1 early settlement on up to ¥211,600.00 of RCV-A at 0.80% (below the 0.88% break-even), terms unchanged, no rebate: ¥0.00 of forward concessions. If BUYER-1 refuses: committ",
-      "latency_ms": 5.6
+      "reply": "Plan (Tier 1): offer BUYER-1 early settlement on up to ¥211,700.00 of RCV-A at 0.80% (below the 0.88% break-even), terms unchanged, no rebate: ¥0.00 of forward concessions. If BUYER-1 refuses: committ",
+      "latency_ms": 35.1
      },
      {
       "id": "I11",
@@ -7281,8 +7347,8 @@
        "counterparty_id": true
       },
       "executed": [],
-      "reply": "抱歉，这超出了我的能力范围。我可以评估买家报价、发送反报价谈判、提前收款、为资金缺口融资、偿还额度、查看现金状况、解释结论、做假设分析，以及批准或驳回待审批操作。",
-      "latency_ms": 1.3
+      "reply": "这个我做不了。我最接近能做的是提前收款，您可以试试说：“让佛山提前付款”。",
+      "latency_ms": 2.9
      },
      {
       "id": "I12",
@@ -7304,8 +7370,8 @@
        "amount_fen": true
       },
       "executed": [],
-      "reply": "Plan (Tier 1): offer BUYER-1 early settlement on up to ¥211,800.00 of RCV-A at 0.85% (below the 0.88% break-even), terms unchanged, no rebate: ¥0.00 of forward concessions. If BUYER-1 refuses: committ",
-      "latency_ms": 5.4
+      "reply": "Plan (Tier 1): offer BUYER-1 early settlement on up to ¥211,900.00 of RCV-A at 0.85% (below the 0.88% break-even), terms unchanged, no rebate: ¥0.00 of forward concessions. If BUYER-1 refuses: committ",
+      "latency_ms": 33.6
      },
      {
       "id": "I13",
@@ -7321,8 +7387,8 @@
       "slots": {},
       "slot_hits": {},
       "executed": [],
-      "reply": "Plan (Tier 1): offer BUYER-1 early settlement on up to ¥211,800.00 of RCV-A at 0.85% (below the 0.88% break-even), terms unchanged, no rebate: ¥0.00 of forward concessions. If BUYER-1 refuses: committ",
-      "latency_ms": 5.3
+      "reply": "Plan (Tier 1): offer BUYER-1 early settlement on up to ¥211,900.00 of RCV-A at 0.85% (below the 0.88% break-even), terms unchanged, no rebate: ¥0.00 of forward concessions. If BUYER-1 refuses: committ",
+      "latency_ms": 35.9
      },
      {
       "id": "I14",
@@ -7339,7 +7405,7 @@
       "slot_hits": {},
       "executed": [],
       "reply": "Router plan (committed facilities only): committed plan: ¥841.64 + ¥1,871.30 = ¥2,712.94, need ¥360,000.00. Reply 'go ahead' to execute.",
-      "latency_ms": 3.4
+      "latency_ms": 5.5
      },
      {
       "id": "I15",
@@ -7356,7 +7422,7 @@
       "slot_hits": {},
       "executed": [],
       "reply": "Router plan (committed facilities only): committed plan: ¥841.64 + ¥1,871.30 = ¥2,712.94, need ¥360,000.00. Reply 'go ahead' to execute.",
-      "latency_ms": 3.4
+      "latency_ms": 5.4
      },
      {
       "id": "I16",
@@ -7373,7 +7439,7 @@
       "slot_hits": {},
       "executed": [],
       "reply": "融资路由方案（仅已承诺额度）：committed plan: ¥841.64 + ¥1,871.30 = ¥2,712.94，需求 ¥360,000.00。 回复“执行”以执行。",
-      "latency_ms": 3.3
+      "latency_ms": 5.1
      },
      {
       "id": "I17",
@@ -7393,7 +7459,7 @@
        "SUBMIT_INVOICE_FOR_FINANCING"
       ],
       "reply": "Router plan (committed facilities only): committed plan: ¥841.64 + ¥1,871.30 = ¥2,712.94, need ¥360,000.00.",
-      "latency_ms": 4.4
+      "latency_ms": 5.7
      },
      {
       "id": "I18",
@@ -7410,7 +7476,7 @@
       "slot_hits": {},
       "executed": [],
       "reply": "目前没有待审批的操作。",
-      "latency_ms": 1.4
+      "latency_ms": 2.4
      },
      {
       "id": "I19",
@@ -7433,7 +7499,7 @@
       },
       "executed": [],
       "reply": "Nothing is drawn on a facility that can be repaid on demand.",
-      "latency_ms": 1.3
+      "latency_ms": 2.8
      },
      {
       "id": "I20",
@@ -7456,7 +7522,7 @@
       },
       "executed": [],
       "reply": "没有可按需偿还的已提款额度。",
-      "latency_ms": 1.2
+      "latency_ms": 2.3
      },
      {
       "id": "I21",
@@ -7482,7 +7548,7 @@
       },
       "executed": [],
       "reply": "Nothing is drawn on a facility that can be repaid on demand.",
-      "latency_ms": 1.2
+      "latency_ms": 2.8
      },
      {
       "id": "I22",
@@ -7499,7 +7565,7 @@
       "slot_hits": {},
       "executed": [],
       "reply": "Cash today (day 0): ¥400,000.00. Reserve floor ¥300,000.00.\nBreach days (conservative): days 12–31, short ¥360,000.00 at the low on day 20.\nDSCR low 2.00× in month 1 (min 1.25×, headroom 0.75×).\nLever",
-      "latency_ms": 2.3
+      "latency_ms": 3.9
      },
      {
       "id": "I23",
@@ -7516,7 +7582,7 @@
       "slot_hits": {},
       "executed": [],
       "reply": "今日（第 0 天）现金 ¥400,000.00，储备线 ¥300,000.00。\n低于储备的日子（保守口径）：第 12–31 天，最低点（第 20 天）缺 ¥360,000.00.\nDSCR 最低 2.00×（第 1 月），下限 1.25×，余量 0.75×。\n杠杆最高 1.39×（第 1 月），上限 2.50×，余量 1.11×。\n远期让步 ¥0.00 / 上限 ¥5,000.00（余量 ¥5,",
-      "latency_ms": 2.1
+      "latency_ms": 3.6
      },
      {
       "id": "I24",
@@ -7533,7 +7599,7 @@
       "slot_hits": {},
       "executed": [],
       "reply": "Cash today (day 0): ¥400,000.00. Reserve floor ¥300,000.00.\nBreach days (conservative): days 12–31, short ¥360,000.00 at the low on day 20.\nDSCR low 2.00× in month 1 (min 1.25×, headroom 0.75×).\nLever",
-      "latency_ms": 2.1
+      "latency_ms": 4.2
      },
      {
       "id": "I25",
@@ -7550,7 +7616,7 @@
       "slot_hits": {},
       "executed": [],
       "reply": "Cash today (day 0): ¥400,000.00. Reserve floor ¥300,000.00.\nBreach days (conservative): days 12–31, short ¥360,000.00 at the low on day 20.\nDSCR low 2.00× in month 1 (min 1.25×, headroom 0.75×).\nLever",
-      "latency_ms": 2.1
+      "latency_ms": 3.8
      },
      {
       "id": "I26",
@@ -7573,7 +7639,7 @@
       },
       "executed": [],
       "reply": "There is no verdict to explain yet. Evaluate an offer first.",
-      "latency_ms": 1.3
+      "latency_ms": 2.4
      },
      {
       "id": "I27",
@@ -7590,7 +7656,7 @@
       "slot_hits": {},
       "executed": [],
       "reply": "还没有可解释的结论。请先评估一条报价。",
-      "latency_ms": 1.2
+      "latency_ms": 2.7
      },
      {
       "id": "I28",
@@ -7613,7 +7679,7 @@
       },
       "executed": [],
       "reply": "There is no verdict to explain yet. Evaluate an offer first.",
-      "latency_ms": 1.2
+      "latency_ms": 2.5
      },
      {
       "id": "I29",
@@ -7636,7 +7702,7 @@
       },
       "executed": [],
       "reply": "Which buyer is this for? (1) Foshan Home Retail Co. (BUYER-1) (2) Dongguan Office Supplies Ltd. (BUYER-2)",
-      "latency_ms": 1.3
+      "latency_ms": 2.5
      },
      {
       "id": "I30",
@@ -7658,8 +7724,8 @@
        "rate_bp": true
       },
       "executed": [],
-      "reply": "假设分析（未执行任何操作）：针对 Foshan Home Retail Co.（BUYER-1），唯一有未结发票的买家。结论 COUNTER（TIER_1）：IMMEDIATE_DISCOUNT_EXCEEDED, DISCOUNT_ABOVE_BREAK_EVEN, MAX_APR_EXCEEDED。COUNTER: IMMEDIATE_DISCOUNT_EXCEEDED (2.00% vs 1",
-      "latency_ms": 69.2
+      "reply": "假设分析（未执行任何操作）：针对 Foshan Home Retail Co.（BUYER-1），唯一有未结发票的买家。结论 COUNTER（TIER_1）：IMMEDIATE_DISCOUNT_EXCEEDED, DISCOUNT_ABOVE_BREAK_EVEN, MAX_APR_EXCEEDED, EARLY_PAY_DEARER_THAN_PLAN。COUNTER: IMMEDIATE_D",
+      "latency_ms": 158.4
      },
      {
       "id": "I31",
@@ -7685,7 +7751,7 @@
       },
       "executed": [],
       "reply": "What-if (nothing executed): Verdict REJECT (TIER_1): AGG_CONCESSION_EXCEEDED, RESERVE_BREACH. REJECT: AGG_CONCESSION_EXCEEDED (¥22,455.62 vs ¥5,000.00); RESERVE_BREACH@47 (curable at ¥761.22). Forward",
-      "latency_ms": 105.1
+      "latency_ms": 171.1
      },
      {
       "id": "I32",
@@ -7707,8 +7773,8 @@
        "rate_bp": true
       },
       "executed": [],
-      "reply": "Sorry, that's outside what I can do. I can evaluate a buyer's offer, negotiate with counters, get an invoice paid early, fund a projected cash gap, repay a facility, show cash status, explain a verdic",
-      "latency_ms": 1.9
+      "reply": "I can't do that. The closest thing I can do is evaluate a buyer's offer: try \"evaluate EX01\".",
+      "latency_ms": 3.8
      },
      {
       "id": "I33",
@@ -7731,7 +7797,7 @@
       },
       "executed": [],
       "reply": "APR-000001 is not in the approvals queue.",
-      "latency_ms": 1.4
+      "latency_ms": 2.6
      },
      {
       "id": "I34",
@@ -7754,7 +7820,7 @@
       },
       "executed": [],
       "reply": "APR-000002 is not in the approvals queue.",
-      "latency_ms": 1.3
+      "latency_ms": 2.5
      },
      {
       "id": "I35",
@@ -7777,7 +7843,7 @@
       },
       "executed": [],
       "reply": "APR-000003 不在审批队列中。",
-      "latency_ms": 1.3
+      "latency_ms": 2.7
      },
      {
       "id": "I36",
@@ -7793,8 +7859,8 @@
       "slots": {},
       "slot_hits": {},
       "executed": [],
-      "reply": "Sorry, that's outside what I can do. I can evaluate a buyer's offer, negotiate with counters, get an invoice paid early, fund a projected cash gap, repay a facility, show cash status, explain a verdic",
-      "latency_ms": 1.4
+      "reply": "I can't do that. I can evaluate a buyer's offer, negotiate with counters, get an invoice paid early, fund a projected cash gap, repay a facility, show cash status, explain a verdict, run a what-if, co",
+      "latency_ms": 3.0
      },
      {
       "id": "I37",
@@ -7810,8 +7876,8 @@
       "slots": {},
       "slot_hits": {},
       "executed": [],
-      "reply": "抱歉，这超出了我的能力范围。我可以评估买家报价、发送反报价谈判、提前收款、为资金缺口融资、偿还额度、查看现金状况、解释结论、做假设分析，以及批准或驳回待审批操作。",
-      "latency_ms": 1.4
+      "reply": "这个我做不了。我可以评估买家报价、发送反报价谈判、提前收款、为资金缺口融资、偿还额度、查看现金状况、解释结论、做假设分析、比较融资方案、核对回款、查看契约指标、评估设备购置、准备借款人资料，以及批准或驳回待审批操作。",
+      "latency_ms": 2.7
      },
      {
       "id": "I38",
@@ -7828,14 +7894,14 @@
       "slot_hits": {},
       "executed": [],
       "reply": "Refused: sign personal guarantee is a Tier-3 action. The agent can never do it, whoever asks; it was refused by the executor and logged. I can evaluate a buyer's offer, negotiate with counters, get an",
-      "latency_ms": 2.0
+      "latency_ms": 3.1
      },
      {
       "id": "I39",
       "text": "Should we buy the new CNC machine for ¥600k?",
       "http": 200,
-      "expect_intent": "OUT_OF_SCOPE",
-      "intent": "OUT_OF_SCOPE",
+      "expect_intent": "CAPEX",
+      "intent": "CAPEX",
       "intent_ok": true,
       "parse_source": "rules",
       "ambiguous": false,
@@ -7850,8 +7916,8 @@
        "amount_fen": true
       },
       "executed": [],
-      "reply": "Capex decisions are not available through this assistant yet (feature 'capex'). I can evaluate a buyer's offer, negotiate with counters, get an invoice paid early, fund a projected cash gap, repay a f",
-      "latency_ms": 1.5
+      "reply": "¥600k die-cutting line, ¥600,000.00: NPV ¥380,885.77 at 10.00%, payback in month 31. Owner's estimate, not observed by the system: +¥22,000.00 a month of operating cash flow from month 4 through month",
+      "latency_ms": 6.1
      },
      {
       "id": "I40",
@@ -7867,8 +7933,8 @@
       "slots": {},
       "slot_hits": {},
       "executed": [],
-      "reply": "Sorry, that's outside what I can do. I can evaluate a buyer's offer, negotiate with counters, get an invoice paid early, fund a projected cash gap, repay a facility, show cash status, explain a verdic",
-      "latency_ms": 1.4
+      "reply": "I can't do that. The closest thing I can do is get an invoice paid early: try \"get Foshan to pay early\".",
+      "latency_ms": 2.9
      },
      {
       "id": "I41",
@@ -7884,8 +7950,8 @@
       "slots": {},
       "slot_hits": {},
       "executed": [],
-      "reply": "抱歉，这超出了我的能力范围。我可以评估买家报价、发送反报价谈判、提前收款、为资金缺口融资、偿还额度、查看现金状况、解释结论、做假设分析，以及批准或驳回待审批操作。",
-      "latency_ms": 1.2
+      "reply": "这个我做不了。我可以评估买家报价、发送反报价谈判、提前收款、为资金缺口融资、偿还额度、查看现金状况、解释结论、做假设分析、比较融资方案、核对回款、查看契约指标、评估设备购置、准备借款人资料，以及批准或驳回待审批操作。",
+      "latency_ms": 3.0
      },
      {
       "id": "I42",
@@ -7902,7 +7968,7 @@
       "slot_hits": {},
       "executed": [],
       "reply": "What would you like me to do? (1) show cash status (2) fund the projected gap (3) get an invoice paid early",
-      "latency_ms": 1.4
+      "latency_ms": 2.6
      },
      {
       "id": "I43",
@@ -7919,7 +7985,7 @@
       "slot_hits": {},
       "executed": [],
       "reply": "What would you like me to do? (1) show cash status (2) fund the projected gap (3) get an invoice paid early",
-      "latency_ms": 1.3
+      "latency_ms": 2.8
      },
      {
       "id": "I44",
@@ -7936,7 +8002,7 @@
       "slot_hits": {},
       "executed": [],
       "reply": "您希望我做什么？ (1) 查看现金状况 (2) 为资金缺口融资 (3) 提前收款",
-      "latency_ms": 1.2
+      "latency_ms": 2.4
      },
      {
       "id": "I45",
@@ -7953,7 +8019,7 @@
       "slot_hits": {},
       "executed": [],
       "reply": "What would you like me to do? (1) show cash status (2) fund the projected gap (3) get an invoice paid early",
-      "latency_ms": 1.2
+      "latency_ms": 2.7
      },
      {
       "id": "I46",
@@ -7970,7 +8036,7 @@
       "slot_hits": {},
       "executed": [],
       "reply": "您希望我做什么？ (1) 查看现金状况 (2) 为资金缺口融资 (3) 提前收款",
-      "latency_ms": 1.1
+      "latency_ms": 2.4
      },
      {
       "id": "I47",
@@ -7987,7 +8053,7 @@
       "slot_hits": {},
       "executed": [],
       "reply": "What would you like me to do? (1) show cash status (2) fund the projected gap (3) get an invoice paid early",
-      "latency_ms": 1.3
+      "latency_ms": 2.8
      }
     ],
     "by_intent": {
@@ -8032,18 +8098,22 @@
       "ok": 1
      },
      "OUT_OF_SCOPE": {
-      "n": 6,
-      "ok": 6
+      "n": 5,
+      "ok": 5
+     },
+     "CAPEX": {
+      "n": 1,
+      "ok": 1
      },
      "AMBIGUOUS": {
       "n": 6,
       "ok": 6
      }
     },
-    "source": "/Users/ianpong/Hackathons/smu2sz/fixtures/heldout/intents.yaml",
+    "source": "C:\\Users\\ian\\Documents\\Projects\\smu2sz\\fixtures\\heldout\\intents.yaml",
     "latency_ms": {
-     "p50": 1.45,
-     "p95": 69.2
+     "p50": 3.07,
+     "p95": 158.37
     },
     "counts": {
      "items": 47,
@@ -8052,14 +8122,14 @@
    }
   },
   "e2e": {
-   "seconds": 4.87,
+   "seconds": 10.73,
    "error": null,
    "metrics": [
     {
      "key": "task_completion_rate",
      "label": "Task completion rate (scripted /nl tasks)",
      "value": 1.0,
-     "display": "37/37 (100%)",
+     "display": "46/46 (100%)",
      "target": "≥ 95%",
      "passed": true,
      "suite": "e2e",
@@ -8069,10 +8139,10 @@
      "key": "turn_latency",
      "label": "/nl turn latency p50 / p95",
      "value": {
-      "p50": 5.2,
-      "p95": 113.7
+      "p50": 8.0,
+      "p95": 222.7
      },
-     "display": "5 / 114 ms (69 turns)",
+     "display": "8 / 223 ms (79 turns)",
      "target": "informational",
      "passed": null,
      "suite": "e2e",
@@ -8082,10 +8152,10 @@
      "key": "scene1_latency",
      "label": "E2E latency, golden Scene 1 (compile → evaluate → negotiate → execute)",
      "value": {
-      "p50": 199.4,
-      "p95": 211.1
+      "p50": 472.8,
+      "p95": 491.5
      },
-     "display": "p50 199 ms, p95 211 ms over 5 cold runs",
+     "display": "p50 473 ms, p95 492 ms over 5 cold runs",
      "target": "completes",
      "passed": true,
      "suite": "e2e",
@@ -8095,276 +8165,339 @@
    "details": {
     "tasks": {
      "summary": {
-      "total": 37,
-      "ran": 37,
-      "passed": 37,
+      "total": 46,
+      "ran": 46,
+      "passed": 46,
       "failed": 0,
       "skipped": 0,
       "pass_rate": 1.0,
-      "turns": 69,
-      "median_turn_latency_ms": 5.2
+      "turns": 79,
+      "median_turn_latency_ms": 8.0
      },
      "exit": 0,
-     "out": "/var/folders/hc/279g9_d544dcvfy59jhx6ql00000gn/T/tl-e2e-i7i31n_j",
-     "wall_s": 3.9,
+     "out": "C:\\Users\\ian\\AppData\\Local\\Temp\\tl-e2e-rbc8gmlj",
+     "wall_s": 8.3,
      "rows": [
       {
        "id": "S01_scene1_counter_accept",
        "status": "PASSED",
-       "latency_ms": 262.0,
+       "latency_ms": 759.4,
        "turns": 2,
        "failures": []
       },
       {
        "id": "S02_scene2_no_deal_router_covers",
        "status": "PASSED",
-       "latency_ms": 82.1,
+       "latency_ms": 431.3,
        "turns": 2,
        "failures": []
       },
       {
        "id": "S03_scene2_wording_invariance",
        "status": "PASSED",
-       "latency_ms": 26.1,
+       "latency_ms": 213.0,
        "turns": 1,
        "failures": []
       },
       {
        "id": "S04_fund_gap",
        "status": "PASSED",
-       "latency_ms": 8.0,
+       "latency_ms": 12.3,
        "turns": 1,
        "failures": []
       },
       {
        "id": "S05_fund_gap_zh",
        "status": "PASSED",
-       "latency_ms": 7.7,
+       "latency_ms": 12.2,
        "turns": 1,
        "failures": []
       },
       {
        "id": "S06_security_fastcapital",
        "status": "PASSED",
-       "latency_ms": 9.0,
+       "latency_ms": 16.3,
        "turns": 1,
        "failures": []
       },
       {
        "id": "S07_ex02_counter",
        "status": "PASSED",
-       "latency_ms": 55.5,
+       "latency_ms": 134.9,
        "turns": 1,
        "failures": []
       },
       {
        "id": "S08_ex03_as_usual",
        "status": "PASSED",
-       "latency_ms": 28.9,
+       "latency_ms": 70.1,
        "turns": 1,
        "failures": []
       },
       {
        "id": "S09_ex04_claimed_rebate",
        "status": "PASSED",
-       "latency_ms": 8.9,
+       "latency_ms": 41.4,
        "turns": 1,
        "failures": []
       },
       {
        "id": "S10_ex05_tier2_approval",
        "status": "PASSED",
-       "latency_ms": 129.5,
+       "latency_ms": 201.4,
        "turns": 6,
        "failures": []
       },
       {
        "id": "S11_ex06_three_invoices",
        "status": "PASSED",
-       "latency_ms": 99.2,
+       "latency_ms": 153.1,
        "turns": 1,
        "failures": []
       },
       {
        "id": "S12_ex07_conflict",
        "status": "PASSED",
-       "latency_ms": 27.0,
+       "latency_ms": 40.4,
        "turns": 1,
        "failures": []
       },
       {
        "id": "S13_ex08_joint_offers",
        "status": "PASSED",
-       "latency_ms": 251.9,
+       "latency_ms": 384.7,
        "turns": 4,
        "failures": []
       },
       {
        "id": "S14_ex09_term_sheet_pg",
        "status": "PASSED",
-       "latency_ms": 21.1,
+       "latency_ms": 30.9,
        "turns": 1,
        "failures": []
       },
       {
        "id": "S15_ex10_fastcapital",
        "status": "PASSED",
-       "latency_ms": 27.3,
+       "latency_ms": 39.2,
        "turns": 1,
        "failures": []
       },
       {
        "id": "S16_ex11_capex_out_of_scope",
        "status": "PASSED",
-       "latency_ms": 4.8,
+       "latency_ms": 12.4,
        "turns": 1,
        "failures": []
       },
       {
        "id": "S17_ex12_goal_accept",
        "status": "PASSED",
-       "latency_ms": 123.7,
+       "latency_ms": 238.3,
        "turns": 2,
        "failures": []
       },
       {
        "id": "S18_ex12_goal_fallback",
        "status": "PASSED",
-       "latency_ms": 16.8,
+       "latency_ms": 88.1,
        "turns": 2,
        "failures": []
       },
       {
        "id": "S19_ex12_goal_zh",
        "status": "PASSED",
-       "latency_ms": 124.3,
+       "latency_ms": 261.3,
        "turns": 2,
        "failures": []
       },
       {
        "id": "S20_correction",
        "status": "PASSED",
-       "latency_ms": 24.7,
+       "latency_ms": 93.1,
        "turns": 5,
        "failures": []
       },
       {
        "id": "S21_clarify_two_gaps",
        "status": "PASSED",
-       "latency_ms": 65.9,
+       "latency_ms": 81.1,
        "turns": 2,
        "failures": []
       },
       {
        "id": "S22_clarify_vague",
        "status": "PASSED",
-       "latency_ms": 7.0,
+       "latency_ms": 14.1,
        "turns": 2,
        "failures": []
       },
       {
        "id": "S23_clarify_which_buyer",
        "status": "PASSED",
-       "latency_ms": 12.0,
+       "latency_ms": 46.2,
        "turns": 2,
        "failures": []
       },
       {
        "id": "S24_out_of_scope",
        "status": "PASSED",
-       "latency_ms": 6.4,
+       "latency_ms": 16.7,
        "turns": 2,
        "failures": []
       },
       {
        "id": "S25_repay_blocked_by_reserve",
        "status": "PASSED",
-       "latency_ms": 19.2,
+       "latency_ms": 29.4,
        "turns": 2,
        "failures": []
       },
       {
        "id": "S26_repay_executed",
        "status": "PASSED",
-       "latency_ms": 13.0,
+       "latency_ms": 20.0,
        "turns": 2,
        "failures": []
       },
       {
        "id": "S27_status_explain_whatif",
        "status": "PASSED",
-       "latency_ms": 186.7,
+       "latency_ms": 507.9,
        "turns": 5,
        "failures": []
       },
       {
        "id": "S28_tier3_en",
        "status": "PASSED",
-       "latency_ms": 7.2,
+       "latency_ms": 13.6,
        "turns": 2,
        "failures": []
       },
       {
        "id": "S29_tier3_zh",
        "status": "PASSED",
-       "latency_ms": 7.1,
+       "latency_ms": 12.3,
        "turns": 2,
        "failures": []
       },
       {
        "id": "S30_injection_en",
        "status": "PASSED",
-       "latency_ms": 7.2,
+       "latency_ms": 11.3,
        "turns": 1,
        "failures": []
       },
       {
        "id": "S31_injection_zh",
        "status": "PASSED",
-       "latency_ms": 7.4,
+       "latency_ms": 12.3,
        "turns": 1,
        "failures": []
       },
       {
        "id": "S32_extraction_en",
        "status": "PASSED",
-       "latency_ms": 8.2,
+       "latency_ms": 13.8,
        "turns": 1,
        "failures": []
       },
       {
        "id": "S33_extraction_zh",
        "status": "PASSED",
-       "latency_ms": 7.3,
+       "latency_ms": 11.7,
        "turns": 1,
        "failures": []
       },
       {
        "id": "S34_replay",
        "status": "PASSED",
-       "latency_ms": 9.8,
+       "latency_ms": 15.1,
        "turns": 2,
        "failures": []
       },
       {
        "id": "S35_counterparty_cannot_approve",
        "status": "PASSED",
-       "latency_ms": 8.9,
+       "latency_ms": 15.9,
        "turns": 2,
        "failures": []
       },
       {
        "id": "S36_owner_channel_extraction",
        "status": "PASSED",
-       "latency_ms": 4.8,
+       "latency_ms": 9.6,
        "turns": 1,
        "failures": []
       },
       {
        "id": "S37_whatif_discount_and_explain_zh",
        "status": "PASSED",
-       "latency_ms": 50.1,
+       "latency_ms": 108.2,
        "turns": 2,
+       "failures": []
+      },
+      {
+       "id": "S38_compare_financing",
+       "status": "PASSED",
+       "latency_ms": 136.8,
+       "turns": 1,
+       "failures": []
+      },
+      {
+       "id": "S39_compare_financing_zh",
+       "status": "PASSED",
+       "latency_ms": 140.4,
+       "turns": 1,
+       "failures": []
+      },
+      {
+       "id": "S40_reconcile",
+       "status": "PASSED",
+       "latency_ms": 9.5,
+       "turns": 1,
+       "failures": []
+      },
+      {
+       "id": "S41_show_ratios",
+       "status": "PASSED",
+       "latency_ms": 15.2,
+       "turns": 1,
+       "failures": []
+      },
+      {
+       "id": "S42_show_ratios_zh",
+       "status": "PASSED",
+       "latency_ms": 15.0,
+       "turns": 1,
+       "failures": []
+      },
+      {
+       "id": "S43_capex_case",
+       "status": "PASSED",
+       "latency_ms": 12.4,
+       "turns": 1,
+       "failures": []
+      },
+      {
+       "id": "S44_borrower_file",
+       "status": "PASSED",
+       "latency_ms": 31.4,
+       "turns": 2,
+       "failures": []
+      },
+      {
+       "id": "S45_nearest_capability",
+       "status": "PASSED",
+       "latency_ms": 9.7,
+       "turns": 1,
+       "failures": []
+      },
+      {
+       "id": "S46_agent_key_needs_owner_sign_in",
+       "status": "PASSED",
+       "latency_ms": 8.9,
+       "turns": 1,
        "failures": []
       }
      ]
@@ -8381,7 +8514,7 @@
        ],
        "outcome": "REJECT",
        "negotiation": "DEAL",
-       "accepted": "CTR-465a6abe7082",
+       "accepted": "CTR-6cf1543f0dde",
        "operations": [
         [
          "ACCEPT_OFFER",
@@ -8392,10 +8525,10 @@
          "EXECUTED"
         ]
        ],
-       "compile_ms": 14.5,
-       "evaluate_ms": 165.7,
-       "negotiate_execute_ms": 25.6,
-       "total_ms": 205.8
+       "compile_ms": 19.9,
+       "evaluate_ms": 420.6,
+       "negotiate_execute_ms": 32.3,
+       "total_ms": 472.8
       },
       {
        "rep": 2,
@@ -8407,7 +8540,7 @@
        ],
        "outcome": "REJECT",
        "negotiation": "DEAL",
-       "accepted": "CTR-465a6abe7082",
+       "accepted": "CTR-6cf1543f0dde",
        "operations": [
         [
          "ACCEPT_OFFER",
@@ -8418,10 +8551,10 @@
          "EXECUTED"
         ]
        ],
-       "compile_ms": 12.6,
-       "evaluate_ms": 164.1,
-       "negotiate_execute_ms": 22.7,
-       "total_ms": 199.4
+       "compile_ms": 19.7,
+       "evaluate_ms": 436.9,
+       "negotiate_execute_ms": 30.3,
+       "total_ms": 486.9
       },
       {
        "rep": 3,
@@ -8433,7 +8566,7 @@
        ],
        "outcome": "REJECT",
        "negotiation": "DEAL",
-       "accepted": "CTR-465a6abe7082",
+       "accepted": "CTR-6cf1543f0dde",
        "operations": [
         [
          "ACCEPT_OFFER",
@@ -8444,10 +8577,10 @@
          "EXECUTED"
         ]
        ],
-       "compile_ms": 12.6,
-       "evaluate_ms": 176.3,
-       "negotiate_execute_ms": 22.2,
-       "total_ms": 211.1
+       "compile_ms": 19.1,
+       "evaluate_ms": 405.2,
+       "negotiate_execute_ms": 31.2,
+       "total_ms": 455.6
       },
       {
        "rep": 4,
@@ -8459,7 +8592,7 @@
        ],
        "outcome": "REJECT",
        "negotiation": "DEAL",
-       "accepted": "CTR-465a6abe7082",
+       "accepted": "CTR-6cf1543f0dde",
        "operations": [
         [
          "ACCEPT_OFFER",
@@ -8470,10 +8603,10 @@
          "EXECUTED"
         ]
        ],
-       "compile_ms": 12.6,
-       "evaluate_ms": 161.9,
-       "negotiate_execute_ms": 22.0,
-       "total_ms": 196.5
+       "compile_ms": 19.8,
+       "evaluate_ms": 443.0,
+       "negotiate_execute_ms": 28.7,
+       "total_ms": 491.5
       },
       {
        "rep": 5,
@@ -8485,7 +8618,7 @@
        ],
        "outcome": "REJECT",
        "negotiation": "DEAL",
-       "accepted": "CTR-465a6abe7082",
+       "accepted": "CTR-6cf1543f0dde",
        "operations": [
         [
          "ACCEPT_OFFER",
@@ -8496,17 +8629,17 @@
          "EXECUTED"
         ]
        ],
-       "compile_ms": 12.6,
-       "evaluate_ms": 163.1,
-       "negotiate_execute_ms": 22.8,
-       "total_ms": 198.5
+       "compile_ms": 19.5,
+       "evaluate_ms": 410.8,
+       "negotiate_execute_ms": 29.7,
+       "total_ms": 460.1
       }
      ]
     }
    }
   },
   "no_deal": {
-   "seconds": 0.15,
+   "seconds": 0.4,
    "error": null,
    "metrics": [
     {
@@ -8533,21 +8666,21 @@
     "rounds": [
      {
       "round": 1,
-      "counter_id": "CTR-465a6abe7082",
+      "counter_id": "CTR-6cf1543f0dde",
       "counter_label": "Option A",
       "buyer_response": "REFUSE",
       "buyer_text": "Round 1. We have considered Option A and cannot accept as proposed. We propose: early settlement of invoice RCV-A (¥420,000.00) on day 2 at a 1.15% discount; 60-day payment terms on future invoices; a 0.50% rebate on next quarter's purchases of up to ¥400,000.00."
      },
      {
       "round": 2,
-      "counter_id": "CTR-984f10384e92",
+      "counter_id": "CTR-6576b0a62cbf",
       "counter_label": "Option B",
       "buyer_response": "REFUSE",
       "buyer_text": "Round 2. We have considered Option B and cannot accept as proposed. We propose: early settlement of invoice RCV-A (¥420,000.00) on day 2 at a 1.10% discount; 60-day payment terms on future invoices."
      },
      {
       "round": 3,
-      "counter_id": "CTR-465a6abe7082",
+      "counter_id": "CTR-6cf1543f0dde",
       "counter_label": "Option A",
       "buyer_response": "REFUSE",
       "buyer_text": "Round 3. We cannot accept Option A. This is our final round, so we will keep our existing terms."

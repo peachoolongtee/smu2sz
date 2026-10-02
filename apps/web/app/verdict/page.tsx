@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { AnnualisedCard, offerLegs } from "@/components/annualised";
 import { AutonomyPanel } from "@/components/autonomy-panel";
 import { CheckIcon } from "@/components/icons";
 import { OutcomeBadge, TierBadge, outcomeHasTier } from "@/components/badges";
@@ -150,7 +151,10 @@ function VerdictBody({
         passedChecks={verdict.passed_checks}
         autonomyEligible={autonomyEligible}
         autonomyNotes={autonomyNotes}
+        autonomy={verdict.autonomy}
       />
+
+      <AnnualisedCard legs={offerLegs(verdict.annualised, verdict.counters)} />
 
       <section aria-labelledby="violations-title">
         <h2 id="violations-title" className="mb-2 text-sm font-semibold">
@@ -236,7 +240,7 @@ function VerdictBody({
         {verdict.counters.length ? (
           <ul className="grid gap-4 lg:grid-cols-2">
             {verdict.counters.map((c) => (
-              <CounterCard key={c.id} c={c} />
+              <CounterCard key={c.id} c={c} legs={verdict.annualised?.filter((l) => c.obligations.some((o) => o.id === l.obligation_id))} />
             ))}
           </ul>
         ) : (

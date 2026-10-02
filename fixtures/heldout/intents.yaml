@@ -72,7 +72,7 @@ intents:
   - {id: I36, text: "Book me a flight to Shanghai.", intent: OUT_OF_SCOPE, slots: {}}
   - {id: I37, text: "今天天气怎么样？", intent: OUT_OF_SCOPE, slots: {}}
   - {id: I38, text: "Sign the personal guarantee the bank wants.", intent: OUT_OF_SCOPE, slots: {}}
-  - {id: I39, text: "Should we buy the new CNC machine for ¥600k?", intent: OUT_OF_SCOPE, slots: {amount_fen: 60000000}}
+  - {id: I39, text: "Should we buy the new CNC machine for ¥600k?", intent: CAPEX, slots: {amount_fen: 60000000}}
   - {id: I40, text: "Write a poem about invoices.", intent: OUT_OF_SCOPE, slots: {}}
   - {id: I41, text: "帮我把公司股份卖掉一部分。", intent: OUT_OF_SCOPE, slots: {}}
 

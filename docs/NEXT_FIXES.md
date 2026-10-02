@@ -61,6 +61,7 @@ payment never arrives at all, reconciliation reports it LAPSED and no committed 
 | C3 | Reconcile compares receipts with what commitments promised | sub, after B2 | 3h | missing early payment reported as lapsed | DONE |
 | C4 | Proactive opener in `/nl` and the UI after a clock or bank-feed event | sub, after C2 | 4h | demo steps 8 to 13 run from the chat | DONE (backend: `POST /nl/opener`, intent SHOW_ALERTS; the UI hook is in E3) |
 | C5 | A drawn line past its planned repayment day raises an alert with a repay cure (found on the 1 Oct demo walk: the day-0 draw stayed outstanding to day 47 until the owner asked) | sub, after C2 | 3h | on the demo path the agent proposes repaying FAC-LINE once cash allows | DONE |
+| C6 | Each proposed cure states its cost and effective annual rate, in the alert, the opener and the suggestion (the day-34 advance: ¥1,782.19, 25.0% a year for 13 days, flagged as above the 15% cap; nothing is blocked) | sub | 3h | the proposal's cost equals what the executor charges | DONE |
 
 Demo steps 1 to 17 run in one script on 1 Oct (`scripts/demo_run.py`, exit 0): deal, agreed receipt, clock,
 opener and "go ahead" in chat, late residual and financed invoice paid (advance repaid with interest and fee),
@@ -93,9 +94,9 @@ cheap early payment a few days before the due day; never accepts wrongly).
 | E3 | Owner home at `/` | C8 | sub (frontend) | 5h | DONE (home at `/` with the opener, Go ahead, the alert button and a demo clock; mock e2e 25 passed) |
 | E4 | Approval card with operation, clause, after-state | C8 | sub (frontend) | 4h | DONE |
 | E5 | Autonomy proof shown on Tier-1 accepts; REJECT badge fix | C8 | sub (frontend) | 2h | DONE |
-| E6 | Annualised column next to every discount | §9 | sub | 3h | OPEN |
-| E7 | Compliance half-page, LICENSE, reframed accuracy numbers | §8 | sub (docs) | 2h | OPEN |
-| E8 | Demo fixes: Start 401, mock/live mismatch | §9 | sub (frontend) | 2h | PARTLY DONE (Start resumes after sign-in, step 6 scrolls to its result; mock verdicts still differ from live: close-out re-records them) |
+| E6 | Annualised column next to every discount | §9 | sub | 3h | DONE (`annualised` on owner verdict responses, shown on the verdict page, counters and chat; live e2e 27 passed) |
+| E7 | Compliance half-page, LICENSE, reframed accuracy numbers | §8 | sub (docs) | 2h | DONE except the LICENSE file (the licence is the owner's choice) |
+| E8 | Demo fixes: Start 401, mock/live mismatch | §9 | sub (frontend) | 2h | DONE (Start resumes after sign-in, step 6 scrolls to its result, every mock re-recorded from the live API) |
 
 ## Wave F: optional (P3, only when A to D are green)
 
@@ -122,6 +123,13 @@ E1, E2 after A1+A2 (same files)         E3–E6 after B4 and C2
 - C waves not green by 9 Oct: ship alert-with-button only (C2), drop C4.
 - E3–E6 never delay the video recording: home view first, the rest if time.
 - No Wave F work while any A to D row is open.
+
+## Close-out, 1 Oct
+
+Evidence, `latest_report.*`, the security report and the docx deliverables were regenerated at the merge of the
+re-recorded mocks; 46 evidence chains verify; `main` fast-forwarded. The held-out intent label I39 (the capex
+question) changed from OUT_OF_SCOPE to CAPEX because chat now answers it; the report's other 10 listed misses
+are unchanged in kind. Open: D5 (owner decision), LICENSE (owner decision), wave F.
 
 ## Scoreboard
 

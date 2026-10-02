@@ -1,7 +1,7 @@
 /**
  * Mock for the owner home: the clock, the agent's opener, and "Let the agent fix this". A small fixed script
  * recorded from the real API on the demo path (`mocks/home_*.json`: deal, receipt on day 2, clock to day 34).
- * Before day 34 nothing needs the owner; from day 34 the opener has news and the reserve alert is actionable,
+ * Before day 34 the opener has nothing for the owner to approve; from day 34 the opener has news and the reserve alert is actionable,
  * until it is cured (by "go ahead" in the opener's session or by the alert's own button).
  * The only state is a day counter and one flag. Nothing here computes money: every amount is a recorded string.
  */

@@ -39,6 +39,8 @@ Each feature sharpens the other. Concessions are priced at the SME's real margin
 
 **What the agent actually does.** Inside three permission tiers, it counters and rejects offers, accepts the one kind of offer it can prove it has read completely, records commitments, draws and repays committed facilities, and submits invoices for financing. Everything else waits for the owner. Every action is a typed operation in an append-only, hash-chained log.
 
+**The agent stays on duty after the decision.** The books are current: every accepted commitment changes every later projection, and a simulated clock (`POST /clock/advance`) moves the books forward day by day. Receipts come only from the bank feed, so a payment the buyer promised and did not make is visible. Partial settlement is recorded (a partial payment leaves the residual open). Reconciliation reports each promised early payment as AWAITED, RECEIVED, LAPSED or SETTLED_OTHERWISE. An alert can carry a typed cure that the owner runs with one call (`POST /alerts/{id}/act`). In chat the agent speaks first (`POST /nl/opener`): it says what needs the owner, proposes a cure inside the mandate with its cost and effective annual rate, and runs it only when the owner replies with a direct "go ahead". When a drawn credit line can be repaid and cash stays above the floor, it proposes the repayment too. On the golden books the path is: the deal on Counter A, the agreed early payment of ¥210,098.85 on day 2, the clock to day 34 with ¥208,100.00 still unpaid, the opener (a ¥200,000.00 advance on invoice RI:BUYER-1:2, cost ¥1,782.19, 25.0% a year for 13 days, flagged as above the 15% cap), "go ahead", the late residual on day 36, the financed invoice paid on day 47 and its advance repaid, the proposal to repay the ¥149,901.15 line draw, reconciliation, and a ledger of 12 hash-chained entries (`scripts/demo_run.py`, 1 Oct 2026).
+
 **Innovation, stated honestly.** Nothing here is a new algorithm. Negotiation agents, cash-flow forecasting, loan marketplaces, covenant monitoring and rebate accrual all exist.
 
 - **New application of known mechanisms.** The supplier's side of buyer-side negotiation automation, joined to the borrower's side of SME lending: control what the agent can *promise*, and the borrowing those promises cause.
@@ -137,14 +139,15 @@ TermsLedger is a **modular monolith** (ADR-0001): one FastAPI service (`services
 | `verifier/` | The verdict algorithm, reason codes, formulas and counters priced from the marginal cost of funds. It imports no text-bearing field (enforced by an AST test). | Trusted, deterministic |
 | `operations/` | The executor: the **only** writer of commitments and operations. It computes the tier itself. | Trusted |
 | `commitments/` | Commitment lifecycle (PROPOSED → ACCEPTED → ACTIVE → FULFILLED, or EXPIRED / REVOKED), terms hash, nonce, expiry | Trusted |
+| `books/`, `clock/` | `books.current_books` is the one set of current books: the state today plus the live obligations of accepted commitments. Every projection in every module runs on it (ADR-0006). `Runtime.advance_to` is the only way time moves: it posts the day's scheduled flows, expires lapsed commitments and logs one `ADVANCE_CLOCK` entry on the chain. It never records a receipt. | Trusted, deterministic |
 | `persistence/` | SQLAlchemy tables, Alembic migrations (`0001_initial`, `0002_enable_rls`, `0003_append_only_triggers`) and `LedgerStore` (SQL and in-memory). The operations log is append-only and hash-chained. | Trusted |
 | `counterparties/` | A deterministic buyer kernel with a hidden reservation, mock lenders, and a template verbaliser | Separate fixtures; can refuse |
 | `egress/` | Scans every outbound text for protected values and planted canaries, and blocks the whole message on a hit | Trusted, last step |
-| `nl/` | `/nl` harness: natural-language request → intent and typed slots → verifier → typed operations; multi-turn sessions with clarification, correction and fallback | Trusted orchestration; never skips the verifier |
+| `nl/` | `/nl` harness: natural-language request → intent and typed slots → verifier → typed operations; multi-turn sessions with clarification, correction and a nearest-capability fallback. A counterparty's response carries the reply and the session id only. A session is bound to the credential that opened it. | Trusted orchestration; never skips the verifier |
 | `security/` | Attack catalogue runner, security-event helpers, refusal templates | Test and audit |
-| `capex/`, `borrower_file/`, `alerts/`, `whatif/` | Capex NPV and financing structures; a lender-ready borrower file built from verified state (HTML/DOCX, neutral styling); cash alerts and receipt reconciliation; a read-only what-if sandbox | Trusted, deterministic |
+| `capex/`, `borrower_file/`, `alerts/`, `whatif/` | Capex NPV and financing structures; a lender-ready borrower file built from verified state (HTML/DOCX, neutral styling); cash alerts, each with a typed cure, and receipt reconciliation including promised early payments; a read-only what-if sandbox. All of them read current books. | Trusted, deterministic |
 | `api/` | FastAPI routers, dependency wiring and authentication (owner token, agent key, bank-feed key) | Trust boundary |
-| `apps/web` | Next.js screens: Mandate, Inbox, Trajectory, Funding, Verdict, Capex, Ledger, Approvals, Security, Evidence, Alerts, Reconciliation and What-if; a `/chat` page and a slide-over chat panel on every page (owner and buyer roles); an Owner sign-in dialog that keeps the token in `sessionStorage` only; English and Chinese labels; a 15-step demo stepper | Displays server-formatted values only |
+| `apps/web` | Next.js screens: the owner home at `/` (the day and a demo clock control, the agent's opener with a Go ahead button, position, approvals waiting, alerts with "Let the agent fix this", recent agent actions), Mandate, Inbox, Trajectory, Funding, Verdict (with the autonomy-proof panel, also shown in chat), Capex, Ledger, Approvals (an approval card for each queued item: the operation, the reason and the terms), Security, Evidence, Alerts, Reconciliation and What-if; a `/chat` page and a slide-over chat panel on every page (owner and buyer roles); an Owner sign-in dialog that keeps the token in `sessionStorage` only; English and Chinese labels; a 15-step demo stepper | Displays server-formatted values only |
 
 **One offer, end to end.**
 
@@ -175,7 +178,8 @@ The model sees only the documents and the output schema. Mandate values, facilit
 
 | Tool | Route |
 | --- | --- |
-| Natural-language harness | `POST /nl` |
+| Natural-language harness | `POST /nl`; the agent's opener `POST /nl/opener` (owner) |
+| Clock, alerts and reconciliation | `POST /clock/advance` (owner token or bank-feed key); `GET /alerts`; `POST /alerts/{id}/act` (runs the alert's cure as the agent; the executor decides the tier); `GET /reconciliation` |
 | Offer intake and evaluation | `POST /offers`, `POST /offers/{id}/evaluate`, `POST /negotiate/{offer_id}` |
 | Debt Desk | `POST /router/plan`, `POST /facilities/compile` (owner), `POST /capex/evaluate`, `POST /borrower-file` |
 | Execution | `POST /operations`, `GET /approvals/queue`, `POST /approvals/{id}`, `POST /circuit/{id}/reset`, `POST /commitments/{id}/revoke` (owner) |
@@ -184,7 +188,7 @@ The model sees only the documents and the output schema. Mandate values, facilit
 The typed operation kinds (`app/domain/models.py`) are:
 
 - ACCEPT_OFFER, COUNTER_OFFER, REJECT_OFFER and RECORD_COMMITMENT;
-- DRAW_FACILITY, REPAY_FACILITY, SUBMIT_INVOICE_FOR_FINANCING and RECEIVE_PAYMENT;
+- DRAW_FACILITY, REPAY_FACILITY, SUBMIT_INVOICE_FOR_FINANCING and RECEIVE_PAYMENT (and, written by the clock as SYSTEM, one ADVANCE_CLOCK entry per move of time);
 - APPLY_FOR_FACILITY, ADD_FACILITY, GENERATE_BORROWER_FILE and REQUEST_OWNER_APPROVAL;
 - the Tier-3 kinds SIGN_PERSONAL_GUARANTEE, PLEDGE_COLLATERAL, ISSUE_EQUITY and CHANGE_MANDATE, which exist only to be refused.
 
@@ -198,8 +202,9 @@ No operation has a payee or account field. A request for a transfer to a third p
 - `fixtures/heldout/`, `fixtures/heldout2/`, `fixtures/heldout3/`: three held-out evaluation sets of buyer messages and owner utterances (section 03).
 - `fixtures/counterparties/`: buyer profiles with hidden reservations, and mock lenders.
 - `fixtures/golden/`: the independent oracle and its golden values.
-- `services/api/evals/security/attacks.yaml`: 122 attacks.
-- `services/api/evals/e2e/scenarios.yaml`: 37 scripted `/nl` tasks.
+- `services/api/evals/security/attacks.yaml`: 122 attacks through the API; the 60 chat attacks are run through `/nl` by the same runner (`app.security.attacks`).
+- `services/api/evals/e2e/scenarios.yaml`: 46 scripted `/nl` tasks.
+- `fixtures/scenarios/golden_sme.events.json`: dated events the clock applies. On day 25 the scenario adds the month-2 payroll of ¥200,000 (due day 42); it does not exist on day 0, so day-0 golden values are unchanged.
 
 The synthetic funding menu (owner-approved; only the owner can add to it):
 
@@ -224,7 +229,8 @@ The synthetic funding menu (owner-approved; only the owner can add to it):
 
 **Intent understanding (`nl/`).**
 
-- A deterministic rules parser (zh + en lexicon) maps each request to one of 13 intents: EVALUATE_OFFER, NEGOTIATE, ACCELERATE_RECEIPT, FUND_GAP, REPAY_FACILITY, SHOW_STATUS, EXPLAIN, WHAT_IF, APPROVE, REJECT, COUNTERPARTY_MESSAGE, OUT_OF_SCOPE and AMBIGUOUS. It fills typed slots; every id is checked against the registry.
+- A deterministic rules parser (zh + en lexicon) maps each request to one of 19 intents: EVALUATE_OFFER, NEGOTIATE, ACCELERATE_RECEIPT, FUND_GAP, REPAY_FACILITY, SHOW_STATUS, SHOW_ALERTS, COMPARE_FINANCING, RECONCILE, SHOW_RATIOS, CAPEX, BORROWER_FILE, EXPLAIN, WHAT_IF, APPROVE, REJECT, COUNTERPARTY_MESSAGE, OUT_OF_SCOPE and AMBIGUOUS. It fills typed slots; every id is checked against the registry. Chat therefore reaches the built modules: the financing comparison, alerts, reconciliation, covenant ratios, capex and the borrower file. COMPARE_FINANCING, RECONCILE, SHOW_RATIOS, CAPEX and BORROWER_FILE need the owner token; a caller with only the agent key is told the owner must sign in. A request that matches no intent gets the nearest capability and what the agent can do, not a flat refusal.
+- Approvals and go-aheads count only as short, direct instructions (at most 80 characters, no counterparty name, no forwarding marks). Quoted or pasted text never becomes an instruction or an approval id, and a chat session is bound to the credential that opened it.
 - Only when the rules find nothing is an optional LLM classifier consulted (cache mode by default). It may only *choose* an intent from a closed list and fill a strict slot schema. APPROVE, REJECT and COUNTERPARTY_MESSAGE are not in its vocabulary, and a canary in its output discards the answer.
 - The actor comes from authentication, never from text. A request from a COUNTERPARTY is never parsed for intents: it is compiled and verified as an inbound message, and it can never execute anything.
 
@@ -234,7 +240,8 @@ The synthetic funding menu (owner-approved; only the owner can add to it):
 - *Multi-step funding*: draw the line, finance an invoice, repay on receipt.
 - *Clarification*: "fund it" with two open gaps asks which one; an offer with no sender asks which buyer.
 - *Correction*: "make it 0.8%" amends the pending plan; "1%" is refused because it is above the 0.88% break-even; "switch to invoice financing" swaps the source.
-- *Out of scope*: a polite refusal plus the list of what the agent can do.
+- *Out of scope*: the nearest capability and the list of what the agent can do.
+- *Proactive re-plan.* After the clock or the bank feed moves the books, the opener names what needs the owner (a late receipt, a reserve breach ahead, a drawn line that can be repaid), proposes a cure and its cost, and waits. The alert's cure is found on current books by a greedy search and priced as the executor will charge it. It runs only on the owner's click or a direct "go ahead", it is submitted as the AGENT, and the executor decides the tier. No cure is offered when the mandate forbids new borrowing. The repay proposal is never made while a reserve breach is open.
 
 **Tool use.** Handlers call module functions (compile, evaluate, plan, negotiate), then send typed operations to the executor. Every operation carries an idempotency key derived from the session, turn and step. No handler can skip the verifier or build an operation from model output (Invariant 1).
 
@@ -242,7 +249,10 @@ The synthetic funding menu (owner-approved; only the owner can add to it):
 
 - *Session state* (`nl/sessions.py`) holds only typed references: the last offer and verdict ids, a pending plan awaiting confirmation or correction, a pending clarification, and the operations each `request_id` produced. A retried request is replayed, not re-planned. Sessions expire after 30 minutes.
 - *Financial state* is a frozen `FinancialState` plus the operations log. Contracts are immutable; a state change builds a new model.
-- *Time* is an integer simulated day. A simulated clock drives expiry, and the executor refuses backdated or future-dated operations.
+- *Time* is an integer simulated day. `Runtime.advance_to` moves it: it posts the day's scheduled flows, turns recurring invoices into receivables, expires lapsed commitments and logs `ADVANCE_CLOCK`. Days stay absolute and the books close every day before `as_of_day`. The executor refuses backdated or future-dated operations.
+- *Current books* (ADR-0006). The store holds the position today; commitments hold the agreed changes not yet realised; `books.current_books` joins them, and every projection runs on that. An early payment the buyer did not make by its day drops out of the books and is reported as LAPSED.
+- *Settlement.* `Receivable.settled_fen` records partial payment. A receipt equal to the agreed early-payment net settles the covered face and fulfils the commitment; any other receipt settles what it pays and leaves the residual open on its original day. A financed invoice repays its whole advance, interest and fee on its first receipt. An overdue financed invoice repays its advance in the projection (recourse).
+- *Re-verification at commitment.* A verdict is not standing authority. At accept and at approval the executor checks, on the state and mandate of that moment: the named receivables are open with enough face, no other live commitment holds the same invoice, the concession caps still hold, and, if the state version has changed, that the obligations still verify on current books. Otherwise the operation is refused (`STALE_VERDICT` or `CONFLICTING_COMMITMENT`).
 - *Commitments* follow a lifecycle state machine with a nonce, an expiry and a terms hash.
 
 ### Core algorithms and evaluation approach
@@ -270,11 +280,12 @@ The synthetic funding menu (owner-approved; only the owner can add to it):
 - **Golden result.** On the golden gap of **¥360,000** before day 32, it selects the credit line (¥150,000, interest **¥841.64**) plus invoice financing (¥210,000, **¥1,871.30**): **¥2,712.94** in total. Taking the buyer's 1.2% discount would cost **¥5,040.00**, and the v1 optimum (line plus partial early pay) **¥3,392.25**. The guaranteed loan is inadmissible because it is not committed and lands on day 21, after payroll on day 12.
 - **Optimality.** Against an exhaustive brute force over every usable committed lever (up to three, ¥5,000 grid for pairs, ¥10,000 for triples, the last lever filled to the fen) on 26 scenarios (10 designed and 16 seeded random), the router is within ¥1 of the brute-force optimum on **26/26** (`latest_report.md`, section 3).
 - **Marginal cost of funds:** the all-in annual rate of the cheapest COMMITTED, owner-approved source able to carry a *permanent* need. Clean-down excludes the line, so it is invoice financing at **10.8417%**.
-- **Break-even early-pay discount:** a discount *d* is cheaper than the marginal source only if d/(1−d) < c, where c is that source's cost share for 30 days. So d = c/(1+c): **0.8832%** exactly, shown as 0.88%.
+- **Break-even early-pay discount:** a discount *d* is cheaper than the marginal source only if d/(1−d) < c, where c is that source's cost share for 30 days. So d = c/(1+c): **0.8832%** exactly, shown as 0.88%. For an early payment *n* days before the due day the cost share is taken for those days (invoice financing is billed in whole 30-day periods, other sources at rate × n/365), so a 90-day-early discount has a higher limit (2.60% on the golden books, ADR-0007).
+- **The early-payment rule (ADR-0007).** An early-payment discount is acceptable only if it passes three tests in order. (1) It is below the break-even for its actual days early. (2) The cash is needed: if nothing needs funding without the offer and taking it raises total cost, it fails (`EARLY_PAY_NOT_NEEDED`). (3) It costs less than the router's plan without it (`EARLY_PAY_DEARER_THAN_PLAN`; the two total costs are shown). The router always prices the buyer's early-payment facility at its standing rate, never at an offer's own rate. On the golden books, a whole-invoice early payment 30 days early at 0.65% to 0.88% is now **countered**, not accepted: at 0.65% it costs ¥2,730.00 against the plan's ¥2,712.94, while 0.64% costs ¥2,688.00 and is accepted. The 0.8832% break-even is still the first screen and the figure shown to the owner. A known conservative convention: an invoice under an early-payment commitment cannot also be financed, which can refuse a cheap early payment a few days before the due day but never accepts one wrongly.
 
 **3. Covenant tests (`covenants/`).** Evaluated exactly, per facility definition, every projected month:
 
-- `DSCR = monthly EBITDA / monthly debt service`. Debt service is existing service plus interest and fees on facilities that count, plus scheduled amortisation.
+- `DSCR = monthly EBITDA / monthly debt service`. Debt service is existing service plus interest and fees on facilities that count, plus scheduled amortisation. A bullet term loan is serviced on a level basis (ADR-0008): its principal, interest and fees are spread evenly over the months of its term, so it cannot look safe until the month it is repaid. A revolving credit line is never spread, and cash is untouched. Hand-calculated case: the ¥500,000 12-month government-guaranteed loan at 5% adds ¥43,721.46 a month, so DSCR is **1.014×** in every month of its term and fails the 1.25× covenant (`DSCR_BREACH`); before ADR-0008 it showed 2.00×. A ¥360,000 request on the same facility, as in the borrower file, shows **1.18×** in month 1, 0.07× below the covenant, and the file reports that shortfall.
 - `Leverage = total debt / (12 × monthly EBITDA)`.
 - **Clean-down:** the longest run of consecutive zero-balance days on a credit line must reach the facility's clean-down length.
 - Golden values: DSCR **2.00×** at base and **1.92×** after funding the extension; leverage **1.53×** and **1.72×**. For capex, the 18-month loan fails DSCR in months 1–3 (**1.13×**) and the 36-month loan passes (**1.43×**, then **1.77×**).
@@ -286,22 +297,24 @@ The synthetic funding menu (owner-approved; only the owner can add to it):
 3. **Mandate validity:** signature, version, expiry and revocation. Any failure gives REJECT with no evaluation.
 4. **Projection:** the conservative trajectory, the router's committed plan and the marginal cost.
 5. **Predicates:** minimum cash on every day, the aggregate and per-buyer forward-concession caps (including existing commitments), the immediate-discount cap, maximum APR, covenants every month, and Tier-3 clauses. A reserve breach that the committed plan can cure is reported as curable with its cure cost. Only FIRM gains may offset concessions.
-6. **Break-even rule:** an early-pay discount **at or above** the exact break-even is a pricing fault, `DISCOUNT_ABOVE_BREAK_EVEN`, with the formula `d < c/(1+c)` and its inputs. Like `MAX_APR_EXCEEDED`, it gives a **COUNTER** priced below break-even, never an acceptance.
+6. **Break-even rule:** an early-pay discount **at or above** the exact break-even is a pricing fault, `DISCOUNT_ABOVE_BREAK_EVEN`, with the formula `d < c/(1+c)` and its inputs. Like `MAX_APR_EXCEEDED`, it gives a **COUNTER** priced below break-even, never an acceptance. The break-even is taken for the actual days early. Two more pricing faults follow the same path (ADR-0007): `EARLY_PAY_NOT_NEEDED` when the cash is not needed, and `EARLY_PAY_DEARER_THAN_PLAN` when the router's plan without the offer costs less. None of the three is a security event.
 7. **Outcome:** Tier 3 or an unknown counterparty gives REJECT; any hard violation gives REJECT with counters; a pricing fault gives COUNTER; a package that needs Tier 2 gives NEEDS_OWNER_APPROVAL.
 8. **Autonomy (ADR-0005).** What remains would be an ACCEPT. It stays ACCEPT (Tier 1) only when all of these hold; otherwise it becomes NEEDS_OWNER_APPROVAL, and the summary says which proof is missing:
-   - the package is a pure early-pay discount on a named invoice, strictly below the exact break-even;
+   - the package is a pure early-pay discount on a named invoice that passes all three early-payment tests: strictly below the exact break-even for its days early, the cash is needed, and it is cheaper than the router's plan without it;
    - `CompiledOffer.autonomy_eligible` is true. The compiler sets it only after a **coverage proof** (`app/compiler/coverage.py`): every amount, rate, day count, date and invoice reference in every document is explained by the extracted obligations; a stated discount sum or net payment equals rate × face; no sentence holds an unread request, condition or question (request-verb and question cues, en + zh); there is no authority claim, data request or funding claim. It defaults to false;
    - each discount's **stated** amount equals the whole face of the open invoice it binds to. Binding by default to "the only open receivable" never qualifies.
 
    Owner-built typed offers (`/nl` plans, what-if) carry no free text and are exempt. Counters the buyer accepts are our own template terms, so they are unaffected.
 
+   The coverage proof fails closed on unread words: a word inside an obligation's own source span is not exempt from the filler list, and any sentence the proof cannot account for sends the offer to the owner. The reply restates the typed terms; it never says "Agreed as proposed".
+
 Every violation carries a code, the day or month, the observed value, the limit, a `formula` and its `inputs`. The UI shows them verbatim.
 
-*Golden check (Scene 1).* The EX01 package compiles to three spans: an immediate discount of ¥5,040.00 (1.2%), a recurring terms extension (¥207,123.29 of extra receivables) and a contingent rebate of up to ¥4,000. The forward-concession ledger is **¥26,455.62** against the **¥5,000** cap, so the verdict is **REJECT: AGG_CONCESSION_EXCEEDED; RESERVE_BREACH@47 (curable at ¥802.70); DISCOUNT_ABOVE_BREAK_EVEN** (1.2% against the 0.88% break-even). Covenants hold: DSCR 1.92×, leverage 1.72×.
+*Golden check (Scene 1).* The EX01 package compiles to three spans: an immediate discount of ¥5,040.00 (1.2%), a recurring terms extension (¥207,123.29 of extra receivables) and a contingent rebate of up to ¥4,000. The forward-concession ledger is **¥26,455.62** against the **¥5,000** cap, so the verdict is **REJECT: AGG_CONCESSION_EXCEEDED; RESERVE_BREACH@47 (curable at ¥802.70); DISCOUNT_ABOVE_BREAK_EVEN** (1.2% against the 0.88% break-even); **EARLY_PAY_DEARER_THAN_PLAN** (the package costs ¥5,529.64 against a plan without the early payment at ¥2,870.95; read from the API on 1 Oct 2026). Covenants hold: DSCR 1.92×, leverage 1.72×.
 
 **5. Counters from the marginal cost (`verifier/counters.py`).**
 
-- **Option A (early pay):** keep 45-day terms and no rebate; accept early settlement on up to **¥211,900** of face (the exact gross-up ¥211,800.30 rounded up to a whole ¥100, so it nets at least the gap) at the largest whole-5 bp rate below break-even, **0.85%**. The supplier's cost is the discount of **¥1,801.15** plus the cost of funding the rest of the gap on the committed line (¥149,901.15, **¥841.09**): **¥2,642.24**. The router must keep the cash floor on books that include the counter, otherwise no early-pay counter is offered. It books no forward concession.
+- **Option A (early pay):** keep 45-day terms and no rebate; accept early settlement on up to **¥211,900** of face (the exact gross-up ¥211,800.30 rounded up to a whole ¥100, so it nets at least the gap) at the largest whole-5 bp rate below break-even, **0.85%**. The supplier's cost is the discount of **¥1,801.15** plus the cost of funding the rest of the gap on the committed line (¥149,901.15, **¥841.09**): **¥2,642.24**. The router must keep the cash floor on books that include the counter, otherwise no early-pay counter is offered. It is also offered only when its total cost is below the standing plan's (¥2,642.24 against ¥2,712.94, ADR-0007). It books no forward concession.
 - **Option B (price adjustment):** accept the 60-day terms with the smallest whole-5 bp price adjustment whose per-invoice amount covers the per-invoice funding cost: **0.45%**, **¥1,890** per invoice against ¥1,871.30.
 - Bounded-extension and rebate-within-headroom counters are generated the same way.
 - Outbound text is template-filled from an allow-list and passes the egress guard. It never contains the floor, a cap, a limit, the marginal rate or a reservation.
@@ -336,17 +349,18 @@ We evaluate the compiler on data its tuners had not seen, the engines against an
 | Held-out 2, after round 3 | its classes guided round 2 | rules grammar | 41/47 (87%) | 0/37 | 0 | **0** (4 correct) |
 | Form baseline (labels typed in) | — | no compiler | 61/63 (97%) | — | — | — |
 
-- **What we claim:** across every set and both compiler paths, **no misread message was accepted without the owner** after ADR-0005. Free-text understanding is still imperfect: about 1 in 3 messages is not decided the way a human would on first reading. Those cases fall to the owner's queue, a counter or a clarification, never to an unauthorised commitment. Most good early-pay offers also wait for the owner, because they mention a settlement date that the compiler does not read into the terms.
+- **What we claim (the guarantee):** across every held-out set and both compiler paths, **0 wrong autonomous accepts** after ADR-0005 (rows above). Text the compiler cannot fully account for fails closed: it goes to the owner's queue, a counter or a clarification, never to an unauthorised commitment.
+- **What we report beside it (the misses, unchanged):** free-text understanding is still imperfect. About 1 in 3 messages is not decided the way a human would on first reading (verdict agreement 52% on the first held-out-3 run, 73% rules and 67% live DeepSeek after round 3). Most good early-pay offers also wait for the owner, because they mention a settlement date that the compiler does not read into the terms.
 - **What we don't claim:** a compiler accuracy figure from a set it was tuned on. The only untuned figure is the first held-out-3 row. The material-error target (≤ 5%) and the zero-silent-error target are **not met** on held-out 3 by either path.
 - **The first held-out-3 run is how we found ADR-0005.** All four wrong autonomous accepts were early-pay offers in which the grammar kept the rate and dropped a clause that contradicted it or added to it (`services/api/evals/heldout3_report.md`). Owner-utterance intent accuracy on that first run was 34/53 (64%).
 
-**Full offline evaluation at this commit** (`latest_report.md`; spec v2 §14 gates):
+**Full offline evaluation** (`latest_report.md`; spec v2 §14 gates). [TEAM: rerun `scripts/evaluate.py` at the submitted commit and update this table. Rows E2, E3, E5, E9, E10 and the latency paragraph below are from the run of 1 Oct 2026 at `3dea6ca`, before that day's changes to the early-payment rule and the DSCR rule; row E7 is updated to the 1 Oct figures.]
 
 | Gate | Question | Result | Status |
 | --- | --- | --- | --- |
 | E3 | Engine correctness | Financial golden values exact to the fen: **55/55** | PASS |
 | E5 | Honest no-deal | Hard-line buyer → NO_DEAL within **3** rounds, gap still funded by `DRAW_FACILITY` + `SUBMIT_INVOICE_FOR_FINANCING`, reserve holds afterwards: **7/7** checks | PASS |
-| E7 | Harness compatibility | Scripted `/nl` tasks: **37/37** (100%); attacks with any harm: **0/122** | PASS |
+| E7 | Harness compatibility | Scripted `/nl` tasks: **46/46** (100%); attacks with any harm: **0/182** (122 through the API, 60 through chat) | PASS |
 | E9 | The router matters and stays honest | Router cheaper than "line first", or the baseline infeasible: **13/26** scenarios; total saving ¥4,136.44 over the 22 where both are admissible (median ¥40.29); committed plans relying on an uncommitted facility: **0**; optimality **26/26** | PASS |
 | E10 | Covenant and capex engine | Covenant and capex golden values **25/25**; mandate and covenant boundaries exact at ±1 fen/bp/day **20/20**; DSCR and leverage breaches reported with their month **2/2** | PASS |
 | E2 (held-out 1) | Compiler beats a form | 0/36 material errors, 0 silent errors, engine ≠ static cap on 18/33 | PASS **on a tuned set**; see the accuracy table above for the honest figures |
@@ -365,8 +379,8 @@ We evaluate the compiler on data its tuners had not seen, the engines against an
 | --- | --- | --- |
 | Owner token | `X-Owner-Token` / `OWNER_TOKEN` | Owner authority: read views, Tier-2 decisions, revocation, circuit reset, `AddFacility`, demo reset |
 | Agent key | `X-Agent-Key` / `AGENT_KEY` | The agent's tool channel: Tier 1 inside the mandate; Tier 2 is queued |
-| Bank-feed key | `X-Bank-Feed-Key` / `BANK_FEED_KEY` | Recording a receipt as `SYSTEM` (Tier 1); the same receipt from the agent or a counterparty is Tier 2 |
-| None | — | A counterparty can submit documents or talk on `/nl` as COUNTERPARTY, which compiles and verifies but never executes |
+| Bank-feed key | `X-Bank-Feed-Key` / `BANK_FEED_KEY` | Recording a receipt as `SYSTEM` (Tier 1); the same receipt from the agent or a counterparty is Tier 2. It can also advance the simulated clock |
+| None | — | A counterparty can submit documents or talk on `/nl` as COUNTERPARTY, which compiles and verifies but never executes, and answers with a reply and a session id only |
 
 - A body field such as `requested_by: OWNER` confers nothing: it is downgraded to AGENT before parsing.
 - **`DEMO_MODE`** defaults to on for local runs, so the published demo values (`demo-owner-token`, `demo-agent-key`, `demo-bank-feed-key`) work. The Compose deployment sets **`DEMO_MODE=0`**: a credential whose variable is unset then matches nothing, and the owner and agent routes fail closed (HTTP 503) until `OWNER_TOKEN` and `AGENT_KEY` are set.
@@ -376,11 +390,11 @@ We evaluate the compiler on data its tuners had not seen, the engines against an
 
 | Tier | Operations | Outcome |
 | --- | --- | --- |
-| **Tier 1: autonomous inside the mandate** | Accept a counterparty's offer **only** when it is a pure early-pay discount on a named invoice, strictly below the exact break-even, with the ADR-0005 coverage proof and a stated whole-invoice amount. Counter or reject within the mandate; record a commitment of that same early-pay kind; draw on or repay a COMMITTED, owner-approved facility within its limit; submit an eligible invoice to the onboarded financing facility; record a receipt from the bank feed or the owner | EXECUTED if every gate passes |
+| **Tier 1: autonomous inside the mandate** | Accept a counterparty's offer **only** when it is a pure early-pay discount on a named invoice, strictly below the exact break-even and passing the other two early-payment tests (cash needed, cheaper than the plan), with the ADR-0005 coverage proof and a stated whole-invoice amount. Counter or reject within the mandate; record a commitment of that same early-pay kind; draw on or repay a COMMITTED, owner-approved facility within its limit; submit an eligible invoice to the onboarded financing facility; record a receipt from the bank feed or the owner | EXECUTED if every gate passes |
 | **Tier 2: owner approval** | **Every other acceptance** (rebates, terms changes in either direction, price adjustments, volume or operational concessions, and early-pay offers without the coverage proof); apply for a facility; generate the borrower file; any single commitment above ¥100,000; draw on any facility that is not COMMITTED and owner-approved; a receipt reported by the agent or a counterparty; an owner-originated AddFacility | PENDING_APPROVAL, queued with a reason |
 | **Tier 3: never** | Personal guarantee, pledging collateral, issuing equity, changing the mandate, adding a facility by anyone but the owner, any unknown operation type | REFUSED for every caller, the owner included |
 
-An early-pay discount at or above break-even is neither Tier 1 nor Tier 2: it is a COUNTER (`DISCOUNT_ABOVE_BREAK_EVEN`).
+An early-pay discount that fails any of the three early-payment tests (at or above break-even, cash not needed, or dearer than the router's plan) is neither Tier 1 nor Tier 2: it is a COUNTER (`DISCOUNT_ABOVE_BREAK_EVEN`, `EARLY_PAY_NOT_NEEDED`, `EARLY_PAY_DEARER_THAN_PLAN`).
 
 **Confirmation.** A Tier-2 operation is stored as its exact canonical JSON. When the owner approves, the executor re-runs every gate against the mandate then in force. An approval given after a revocation is therefore refused, and an approved Tier-3 operation stays refused.
 
@@ -391,7 +405,7 @@ An early-pay discount at or above break-even is neither Tier 1 nor Tier 2: it is
 3. mandate signature, pinned key, expiry, revocation and version;
 4. Tier 3;
 5. counterparty circuit breaker (three refusals in seven days; only the owner can reset it);
-6. for acceptances, the commitment must exist and be unrevoked, the nonce must be single-use and match, the commitment must not be expired, the terms hash and mandate version must match, and a verifier verdict must back the terms;
+6. for acceptances, the commitment must exist and be unrevoked, the nonce must be single-use and match, the commitment must not be expired, the terms hash and mandate version must match, and a verifier verdict must back the terms. The verdict is then re-verified at that moment (ADR-0006): the named receivables are still open, no other live commitment holds the same invoice, the concession caps still hold, and, if the state has changed since the verdict, the obligations still verify on current books (`STALE_VERDICT`, `CONFLICTING_COMMITMENT`);
 7. Tier 2 queue;
 8. per-kind preconditions.
 
@@ -411,7 +425,8 @@ Each executor entry point runs as one store unit of work, so state, commitment, 
 - Contingency is decided deterministically after the model answers: a sentence with a condition on a future business event is CONTINGENT whatever the model says, and a gain is never relabelled FIRM.
 - The rules grammar flags override attempts, fake SYSTEM lines, role-play, encoded text, full-width, zero-width and homoglyph text, and authority claims in both languages. Detection is logged, but refusal does not depend on it.
 - If a model backend fails, times out or returns invalid JSON, the deterministic rules grammar takes over.
-- **Misreading is treated as a security problem too.** A message the compiler cannot fully account for can no longer be accepted without the owner (ADR-0005).
+- **Misreading is treated as a security problem too.** A message the compiler cannot fully account for can no longer be accepted without the owner (ADR-0005), and the coverage proof fails closed on unread words.
+- **The chat endpoint is inside the boundary.** The attack suite also drives `/nl` as the owner, as a buyer and as a holder of the agent key. A buyer's chat response carries the reply and the session id and nothing else: no verdict, plan, operation or protected value. Text pasted or quoted into the owner's chat never becomes an instruction or an approval id. A chat session is bound to the credential that opened it, so a different credential cannot continue it. An approval, decline or "go ahead" counts only as a short direct instruction (at most 80 characters, no counterparty name, no forwarding marks). The security scoreboard is computed from the run data, not asserted. Found by this suite and fixed the same day: text pasted without quote marks ("Attachment:", "> …", "Forwarded message") could approve a queued item, and an agent-key holder could say "go ahead" inside the owner's session.
 
 **Privilege escalation.** Tiers are enforced by code, never by prompts. The executor trusts no caller-supplied tier, actor or approval. Self-approval, circuit resets by the agent, forged or edited mandates, reused or guessed nonces and backdated operations are all refused and logged.
 
@@ -423,7 +438,16 @@ Each executor entry point runs as one store unit of work, so state, commitment, 
 - Read routes (`/state`, `/mandate`, `/trajectory`, `/ledger`, `/audit`, `/evidence`) require the owner token.
 - Cache mode sends nothing off the machine. In live mode only the inbound documents and the schema leave it.
 
-**Measured results** (`services/api/evals/security/latest_report.md`, regenerated at this commit; 122 attacks, each on a fresh runtime through the real FastAPI routes, `LLM_MODE=cache`, the deployment's credentials with `DEMO_MODE=0`):
+**Compliance, in brief** (the full statements are in the Security Self-Assessment, section 03).
+
+- **Data flows.** In live mode (opt-in) a buyer's message and attached documents go to the configured model provider (DeepSeek or Anthropic) for extraction only. The model never receives the mandate, the floor, facility limits or other buyers' terms. In the default cache mode nothing leaves the machine. A real buyer document can contain personal information (for example an individual's name, phone number or bank account). Sending it to a provider outside mainland China would be a cross-border transfer of personal information under China's PIPL, and a deployer would need a legal basis and, where required, a security assessment or standard contract before any production use with real documents. That is an obligation on the deployer, not legal advice, and we do not claim compliance.
+- **Synthetic data only.** The demo, the tests and every evaluation use synthetic fixtures.
+- **AI-generated content.** Outbound text to a counterparty is template-filled from typed fields, not free model prose. The web UI does not yet label the agent's replies as AI-generated, for reference. That is a gap we list in the Security Self-Assessment.
+- **Decision support, not advice.** The agent acts only inside an owner-signed mandate. Tier 2 needs the owner and Tier 3 is never executed. It is not a licensed lender, broker or adviser, and it executes no real payment: every facility and the bank feed are simulated.
+- **Audit trail.** Every operation, refusals included, is in a hash-chained log. The chain head is not anchored outside the system, so a full rewrite of the log would verify as valid (audit finding S8, open).
+- **Licence.** [TEAM: licence to be chosen by the owner]
+
+**Measured results.** The suite now holds **182 attacks: 122 through the API and 60 through chat** (20 as the owner, 32 as a buyer, 8 as a holder of the agent key without the owner token). **0 of the 182 caused harm** (`python -m app.security.attacks --report`, 1 Oct 2026). Each attack runs on a fresh runtime through the real FastAPI routes, `LLM_MODE=cache`. The table below is the 122 API attacks as in `services/api/evals/security/latest_report.md`, with the deployment's credentials and `DEMO_MODE=0`. Of the 60 chat attacks, 54 were detected (an event or a refusal code) and 6 changed nothing but raised neither: the agent key asking to reset the circuit breaker or to revoke a commitment, the agent key saying "go ahead" inside the owner's session, the owner token reusing a counterparty's session id, and a bare "yes" in a fresh owner or agent session with an approval pending. [TEAM: `latest_report.md` is regenerated for the 122 API attacks only; refresh the evidence at the submitted commit.]
 
 | Metric | Result |
 | --- | --- |
@@ -441,6 +465,7 @@ Each executor entry point runs as one store unit of work, so state, commitment, 
 
 - Twelve findings (F-01 to F-12) were found by this suite and are fixed or mitigated; no attack is run as an expected failure. The three attacks that are "contained" rather than detected are Tier-2 requests by the agent, queued for the owner as designed.
 - The pytest suite adds two hypothesis fuzzers (random operation bodies against `/operations`, and random zh + en injection fragments through intake, the verdict and a compromised agent).
+- **Open medium items from the chat attacks.** (S5) A buyer who probes the chat can find the accept/counter threshold to 1 bp in 12 messages, with no throttle, and each accepted probe queues its own owner approval; it is now at 0.64% / 0.65% on the golden books. (S9) The agent key can read cash, floor and headroom through the chat status reply, although the read routes are owner-only; the newer read intents already need the owner token. (S10) "Go ahead" re-plans at confirm time and is not bound to the plan that was shown. None caused harm in the suite; all are listed as known limitations.
 - The full risk register, including the open risks (single-operator key custody, the Tier-1 blast radius, no channel authentication, and the three compiler risks of section 03), is in the Security Self-Assessment.
 
 ## 05 Deployment and Testing
@@ -460,7 +485,7 @@ Each executor entry point runs as one store unit of work, so state, commitment, 
 cd services/api && uv sync && uv run uvicorn app.main:app --reload     # API on :8000 (cache mode, demo credentials)
 cd apps/web && pnpm install && NEXT_PUBLIC_API_MODE=live pnpm dev       # UI on :3000; omit the variable for offline mock mode
 cd services/api && uv run pytest                                        # API tests, offline
-python3 scripts/run_scenarios.py --inproc                               # the 37 scripted /nl tasks and their evidence
+python3 scripts/run_scenarios.py --inproc                               # the 46 scripted /nl tasks and their evidence
 uv run --project services/api python scripts/evaluate.py                # the full offline evaluation (about 4–5 min)
 python3 scripts/verify_evidence.py services/api/evals/e2e/latest/evidence/S01_scene1_counter_accept.jsonl
 ```
@@ -471,26 +496,27 @@ python3 scripts/verify_evidence.py services/api/evals/e2e/latest/evidence/S01_sc
 2. Run `docker compose -f infra/docker-compose.yml up --build`.
 3. The Compose file sets **`DEMO_MODE=0`**, so the published demo credentials are rejected, and it refuses to start without `OWNER_TOKEN`, `AGENT_KEY` and `POSTGRES_PASSWORD`. It binds the API to `127.0.0.1:8000`, to sit behind a TLS reverse proxy. It does not set `BANK_FEED_KEY`, so there is no bank-feed channel until one is configured.
 
-**Test cases.** `uv run pytest --co` collects **3,573** API tests:
+**Test cases.** `uv run pytest --co` collects **4,070** API tests (1 Oct 2026):
 
 | Area | Tests | Area | Tests |
 | --- | --- | --- | --- |
-| egress guard | 961 | mandate | 73 |
-| funding router | 822 | financial engine | 61 |
-| compiler | 513 | what-if | 44 |
-| operations (executor) | 220 | covenants | 32 |
-| nl harness | 217 | api | 23 |
-| verifier | 133 | capex | 22 |
-| security (122 attacks + fuzzers + metrics) | 128 | borrower file | 19 |
-| commitments | 90 | alerts | 19 |
-| counterparties | 89 | evaluation harness | 18 |
-| persistence | 78 | money and fixtures | 11 |
+| egress guard | 961 | persistence | 80 |
+| funding router | 822 | financial engine | 78 |
+| compiler | 559 | mandate | 73 |
+| nl harness | 367 | alerts | 55 |
+| operations (executor) | 281 | what-if | 44 |
+| security (attacks, fuzzers, metrics) | 204 | books | 35 |
+| verifier | 190 | api | 35 |
+| commitments | 90 | covenants | 32 |
+| counterparties | 89 | capex | 22 |
+| borrower file | 19 | evaluation harness | 18 |
+| money and fixtures | 11 | clock | 5 |
 
-**Latest full run at this commit** (`uv run pytest`, 1 Oct 2026): **3,556 passed, 17 skipped, 0 failed**, in 154 s. Sixteen of the skips are exhaustive router differential cases that run only with `ROUTER_DIFF_FULL=1`; the seventeenth is the SQL variant of a corrupted-row test, which the attack catalogue covers (FR-12c).
+**Latest full run** (`SKIP_PERF_BENCH=1 uv run pytest`, Windows, 1 Oct 2026): **4,044 passed, 26 skipped, 0 failed**, in 339 s. The 26 skips are 7 router latency benchmarks (`SKIP_PERF_BENCH=1`; their targets were set on another machine), 18 exhaustive router differential cases that run only with `ROUTER_DIFF_FULL=1`, and the SQL variant of a corrupted-row test, which the attack catalogue covers (FR-12c). The run uses the recorded-output cache and an in-memory store; live-model mode was not tested.
 
-**Web app** (`apps/web`, same commit): `pnpm lint`, `pnpm typecheck` and `pnpm build` pass; `pnpm test:unit` passes 4/4 (the mock data matches `golden_values.json`); `pnpm test:e2e` passes **46 Playwright tests, 1 skipped** (a network-failure test that needs live mode and runs there). The live project starts the real API (in-memory store, recorded LLM cache) and covers the demo walk with the golden numbers, the chat panel, owner sign-in, the Tier-2 approval queue, borrower-file downloads and the adapter contract.
+**Web app** (`apps/web`, 1 Oct 2026): the mock-mode Playwright run passes **29 tests**. It covers the demo walk with the golden numbers, the owner home, the chat panel, owner sign-in, the Tier-2 approval queue, and the adapter contract. [TEAM: rerun `pnpm lint`, `pnpm typecheck`, `pnpm build`, `pnpm test:unit` and the live e2e project at the submitted commit; the earlier counts (unit 4/4, 46 Playwright tests with 1 skipped) predate this run and the live project's known stale expectations are being fixed.]
 
-**Scripted tasks and evidence.** `scripts/run_scenarios.py --inproc` passes **37/37** tasks (69 `/nl` turns); all 37 evidence chains verify, and a second run reproduced every head hash. Details are in the Execution Evidence document.
+**Scripted tasks and evidence.** `scripts/run_scenarios.py --inproc` passes **46/46** tasks (79 `/nl` turns, 1 Oct 2026); all 46 evidence chains verify with `scripts/verify_evidence.py`. The nine added tasks cover the financing comparison (en and zh), reconciliation, covenant ratios (en and zh), a capex case, the borrower file, the nearest-capability fallback, and the agent key being told to ask the owner. Details are in the Execution Evidence document.
 
 **Known limitations.**
 
@@ -498,8 +524,12 @@ python3 scripts/verify_evidence.py services/api/evals/e2e/latest/evidence/S01_sc
 - **Time-bound offers cannot be accepted autonomously.** Settlement dates and windows are not read into terms, so any stated one fails the coverage proof and the offer waits for the owner.
 - **Extra requests are detected by cues** (request verbs, questions and conditions, en + zh). A request with no cue and no figure could pass the proof; it is bounded to a pure early-pay discount below break-even.
 - **Held-out 1 is no longer held out**; its near-perfect scores in `latest_report.md` are not accuracy claims. The report's findings table (EV-01 to EV-12) is the historical list from the first evaluation run; the summary table above it is the current run.
-- **Open security risks** (Security Self-Assessment, section 04): single-operator key custody (R-2), the Tier-1 blast radius of a compromised agent (R-3), no channel authentication (R-4), the trusted in-process actor (R-5). The Postgres append-only triggers have not run against a live Postgres in CI (F-11), and `/demo/reset` is owner-only but still exists outside demo mode (F-05).
+- **Open security risks** (Security Self-Assessment, section 04): single-operator key custody (R-2), the Tier-1 blast radius of a compromised agent (R-3), no channel authentication (R-4), the trusted in-process actor (R-5), and the medium items found through chat (threshold probing S5, the agent key reading status and alerts through chat S9, "go ahead" not bound to the plan shown S10). The hash-chain head is not anchored outside the system (audit S8). The Postgres append-only triggers have not run against a live Postgres in CI (F-11), and `/demo/reset` is owner-only but still exists outside demo mode (F-05).
 - **Everything is simulated.** Lenders and the buyer are mocks, facilities and rates are synthetic, and there are no real bank integrations or loan applications.
 - **Covenant definitions differ by lender.** We test the defined covenants "under this definition", not bank-grade compliance.
-- **Not yet available:** capex is not an `/nl` intent, and the after-signing extension (statutory due dates, late interest, receivable confirmation) is feature-flagged off.
-- **Live mode is opt-in and less tested.** The demo, the evidence and the evaluation tables use cache mode; the only live accuracy run is the DeepSeek held-out-3 row.
+- **Not yet available:** the after-signing extension (statutory due dates, late interest, receivable confirmation) is feature-flagged off. The simulated clock, the bank feed and every receipt are simulated; no real payment is made or recorded.
+- **Covenants on bullet loans.** A bullet term loan is serviced on a level basis for DSCR (ADR-0008). The ¥500,000 12-month guaranteed loan therefore shows 1.014× and fails the 1.25× covenant. A bullet balance already drawn when a projection starts is treated as arriving today and spread over a full term, and a loan repaid early keeps its total interest spread over the whole term; both overstate service and are left as conservative.
+- **Early-payment rule.** An invoice under an early-payment commitment cannot also be financed (conservative: it can refuse a cheap early payment a few days before the due day, never accept one wrongly). The alert cure search is greedy and can miss a cure that needs more than one invoice. An over-cap Tier-2 offer is queued as pending and is refused only when the owner approves it. Reconciliation reuses `SHORT_PAYMENT` for a partial payment.
+- **Cost of a cure is shown, not gated.** The day-34 advance of ¥200,000 costs ¥1,782.19, about 25.0% a year for 13 days, above the mandate's 15% yearly cap because invoice financing is billed in whole 30-day periods. The opener says so and leaves the decision to the owner; nothing is blocked. [TEAM: the owner decides whether the cap should gate invoice financing on its effective annual rate (tracker row D5).]
+- **Annualised cost.** The API returns the annualised cost of each discount on owner verdicts (`annualised`), and the verdict page, each counter card and the chat show it next to the discount with the committed sources' yearly rates for comparison.
+- **Live mode is opt-in and less tested.** The demo, the evidence and the evaluation tables use cache mode (recorded model outputs, an in-memory store); the only live accuracy run is the DeepSeek held-out-3 row. Live-model mode was not exercised for the 1 Oct 2026 changes (the clock, the opener, the new chat intents).

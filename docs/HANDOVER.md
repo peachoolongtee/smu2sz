@@ -1,4 +1,4 @@
-# Handover: TermsLedger v2, 1 Oct 2026
+# Handover: TermsLedger v2, 1 Oct 2026 (updated that evening)
 
 For a new Claude Code session on another machine. Read this file first, then the files it points to.
 Everything you need is in this repository; nothing depends on the previous machine.
@@ -11,8 +11,8 @@ cd smu2sz && git checkout dev
 cd services/api && uv sync && uv run pytest -o addopts= -q
 ```
 
-Needs `uv` (Python 3.12), Node with `pnpm`, and `gh` logged in to GitHub. Expect about 3,700 tests passing in
-3 to 4 minutes. Then, from the repo root: `python3 scripts/run_scenarios.py --inproc` (expect 37/37), followed by
+Needs `uv` (Python 3.12), Node with `pnpm`, and `gh` logged in to GitHub. Expect about 4,000 tests passing in
+4 to 6 minutes. Then, from the repo root: `python3 scripts/run_scenarios.py --inproc` (expect 46/46), followed by
 `git checkout -- services/api/evals` so regenerated evidence is not committed by accident.
 
 On Windows (confirmed 1 Oct on a second machine): `.gitattributes` keeps every text file LF, because fixture
@@ -44,6 +44,7 @@ Read, in this order:
 
 | File | Why |
 | --- | --- |
+| `docs/SYSTEM_WALKTHROUGH.md` | Every feature step by step, how the modules interact, and the end-to-end flow with real numbers |
 | `docs/research/audit-2026-10-01.md` | The independent audit this phase works from (findings S1–S11, F1–F10, changes C1–C13) |
 | `docs/NEXT_FIXES.md` | Live tracker: every fix, status, dependencies, stop conditions |
 | `docs/adr/0006-current-books-and-clock.md` | The state model: current books, the clock, settlement, re-verification at commitment |
@@ -99,36 +100,40 @@ hard-coded success metrics anywhere.
 wayfinder map is issue #1. Features the owner asked to add earlier (done): outbound leak guard with canaries,
 what-if sandbox. Team of five. A DeepSeek key exists; an Anthropic key is optional.
 
-## 4. Where things stand
+## 4. Where things stand (evening of 1 Oct)
 
-`dev` is green: 3,806 passed, 17 skipped; scenarios 37/37; attacks 182 (122 API + 60 chat), 0 with harm. Baseline before this
-phase was `6d500a9` (3,557 passed).
+`dev` is green: 4,044 passed, 26 skipped (Windows, perf benchmarks skipped); scenarios 46/46; attacks 182
+(122 API + 60 chat), 0 with harm; web mock e2e 29 passed, live e2e 27 passed. `scripts/demo_run.py` walks demo steps 1 to 17 in
+process and exits 0. Baseline before this phase was `6d500a9` (3,557 passed).
 
-**Done and merged into `dev`**
+**Merged into `dev` before this session** (waves A, B and the clock): chat boundary (S1, S2), computed scoreboard
+(S11), coverage proof (S3), re-verification at commitment (S4), current books, the clock, partial settlement,
+alerts/capex/borrower file on current books, attacks through chat, credential-bound sessions and the
+direct-command rule for approvals and go-aheads. See `docs/NEXT_FIXES.md` for each row.
 
-| Item | What changed |
-| --- | --- |
-| Chat boundary (S1, S2) | A buyer-role `/nl` response carries only reply and session fields. Quoted or pasted buyer text never becomes owner intent or an approval id; it logs an INJECTION event |
-| Computed scoreboard (S11) | `/audit` computes money moved and disclosed fields (`app/security/scoreboard.py`) |
-| Coverage proof (S3) | Any unread word sends the offer to the owner. "Agreed as proposed." replaced by a restatement of the typed terms |
-| Re-verify at commitment (S4) | Executor `_check_binding`: receivable still owed with enough outstanding, one live commitment per receivable, aggregate and per-buyer caps, and a re-verify hook when the state version moved. New codes `STALE_VERDICT`, `CONFLICTING_COMMITMENT` |
-| Current books | `FinancialState.as_of_day`, `Receivable.settled_fen`, `advance_fen`, `advance_facility_id`; engine skips closed days and counts the horizon from today; `app/books` (`current_books`); funding is requested today |
-| Clock | `app/clock`, `POST /clock/advance`, `Runtime.advance_to`. Posts scheduled flows, issues recurring invoices, expires stale commitments, applies scenario events (`fixtures/scenarios/golden_sme.events.json`), never records a receipt |
-| Partial settlement | A receipt equal to the agreed early-pay amount settles that face and marks the commitment FULFILLED; other amounts settle their own amount |
-| Capex, borrower file, alerts on current books | Alerts work past day 0, report past-due and missed early payments, and date cures today |
-
-**Nothing is in flight.** Both branches that were running when this file was first written are merged:
+**Merged on 1 Oct in this session**
 
 | Item | What changed |
 | --- | --- |
-| Verifier, router callers, `/trajectory`, what-if and chat handlers on current books (B3) | After an accepted commitment, the next verdict, plans and trajectory all include it; `/alerts` agrees with `/trajectory`. `ctx.books()` and `ctx.evaluate_accepted()` in `app/nl/context.py` |
-| Attack suite through chat (A3) | 60 attacks through `/nl` in owner, buyer and agent-key roles on top of the 122 through the API; 0 with harm. `LedgerStore.verdicts()`; the scenario runner checks buyer turns against the store (`store_outcome`, `store_codes`, `store_ops`); three new rows in `scripts/evaluate.py` |
-| Two holes A3 found, fixed | A chat session is bound to the credential that opened it (`Session.owner_auth`). An approval, decline or go-ahead counts only as a short direct instruction (`_direct_command` in `app/nl/service.py`): one line, at most 80 characters, no counterparty name, no forwarding or attachment marks. Otherwise nothing is decided, an INJECTION event is logged and the owner is told what to type |
+| Windows portability | `.gitattributes` keeps text LF; files are read as UTF-8; the offline guard allows loopback |
+| B5 Counter A | ¥211,900 at 0.85% (nets ¥210,098.85; cost ¥1,801.15 + ¥841.09 = ¥2,642.24). Offered only when the router's plan on books that include it is admissible, and (ADR-0007) only when it beats the standing plan |
+| C3 reconciliation | `ReconciliationReport.promised`: every promised early payment as AWAITED, RECEIVED, LAPSED or SETTLED_OTHERWISE |
+| C2 alert button | `POST /alerts/{id}/act` submits the alert's cure to the executor as the agent. No cure is offered when the mandate forbids new borrowing |
+| C4 opener | `POST /nl/opener` and the intent SHOW_ALERTS: the agent says what needs the owner and proposes the cure; a direct "go ahead" runs it |
+| C5 repay alert | A drawn credit line the books can afford to repay raises `ALERT-REPAY-<facility>`; the opener offers it |
+| D1/D2 early pay | ADR-0007 in the verifier: tenor-aware break-even, `EARLY_PAY_NOT_NEEDED`, `EARLY_PAY_DEARER_THAN_PLAN`. Whole-invoice early pay at 0.65% to 0.88% (30 days) now counters. The router prices the buyer's early-pay facility at its standing rate only |
+| D4 DSCR | ADR-0008: a bullet term loan is serviced on a level basis. The ¥500,000 guaranteed loan shows 1.014× and fails 1.25×; the borrower file's ¥360,000 request shows 1.18× (below covenant) |
+| E1/E2 chat | Intents COMPARE_FINANCING, RECONCILE, SHOW_RATIOS, CAPEX, BORROWER_FILE (owner token required) and a nearest-capability fallback |
+| E3 home | `/` is the owner home: the day and a demo clock, the opener with Go ahead, position, approvals, alerts with "Let the agent fix this", recent agent actions |
+| E4/E5 | Approval card with the operation, reason and terms; autonomy proof panel; no tier badge on REJECT; the stepper resumes after sign-in |
+| C6 cure cost | Every proposed cure states its cost and effective annual rate and flags a rate above the APR cap; nothing is blocked |
+| E6 and owner view fields | `annualised` and `autonomy` on owner verdict responses; shown on the verdict page, counters and chat |
+| Web mocks | Every mock file is recorded from the live API by `apps/web/scripts/record-mocks.mjs`; mock and live agree |
+| Documents | Technical document, video script, demo flow, self-assessment, deck outline and README follow today's product; compliance statements added |
 
-**Integrated demo run on 1 Oct** (evaluate EX01, deal on Counter A, bank receipt of ¥209,999.70 on day 2, clock to
-day 34): the ¥208,200 residual is reported past due and the gap peaks at ¥200,000.30 on day 42 because of the
-month-2 payroll event. No cure is offered yet for one reason: Counter A leaves cash ¥0.30 under the floor, so the
-breach starts "today". That is tracker row B5.
+Both financial rules were re-derived by hand by a second agent before merging
+(`docs/research/early-pay-handcalc-2026-10-01.md`, `docs/research/dscr-handcalc-2026-10-01.md`). The early-pay
+check found one real fault (the router used an offer's discount as a standing rate), fixed before the merge.
 
 ## 5. Decisions made in this phase that a new session must not undo
 
@@ -138,55 +143,58 @@ breach starts "today". That is tracker row B5.
 - An overdue financed invoice repays its advance today in the projection (recourse).
 - The golden scenario has no outflows after day 47, so the proactive scene relies on the scenario event that adds
   month-2 payroll (¥200,000, day 42) on day 25. It does not exist on day 0, so day-0 golden values are unchanged.
-- Coverage: words inside an obligation's source span are not exempt from the filler list. One held-out offer
-  (H3-A03) now goes to the owner instead of being accepted alone. Accepted; do not widen the list with words that
-  can carry a commercial term.
-- Buyer-role scenario expectations were moved from the response to the store.
-- Early pay (ADR-0007): accept only if below the tenor-aware break-even, the cash is needed, and total cost with
-  it is lower than the router's plan without it. This will turn some accepted whole-invoice discounts
-  (0.65%–0.88%) into counters.
+- Coverage: words inside an obligation's source span are not exempt from the filler list. Do not widen the list
+  with words that can carry a commercial term.
+- Buyer-role scenario expectations live in the store, not the response.
+- ADR-0007 and its implementation notes: `C` is read from the projection; the early-pay leg of a package is priced
+  at the margin; an offer's discount is never a standing rate; an invoice under an early-pay commitment cannot also
+  be financed (conservative).
+- ADR-0008: level service for bullet term loans; never for a revolving credit line.
+- A cure runs only on the owner's click or direct "go ahead", is submitted as the AGENT, and the executor decides
+  the tier. The repay proposal is never made while a reserve breach is open.
+- The new chat read intents need the owner token; a caller with only the agent key gets "needs the owner's sign-in".
 
 ## 6. What to do next, in order
 
-1. Confirm the baseline on the new machine (section 1 commands).
-2. **B5, Counter A rounding (F8).** The counter's face must net at least the gap after the discount: roughly
-   ¥211,900 instead of ¥211,800, rounded up to a tidy unit, and the counter must be checked against the floor.
-   Code is in `services/api/app/verifier/counters.py`. This changes a headline number in tests, mocks, the demo
-   script and the documents; update them all. Proof: no critical alert straight after the demo deal.
-3. **D1/D2, implement ADR-0007** in the verifier (`_apr_checks` and the outcome logic). One agent
-   implements; a different agent re-derives every row of the ADR's table by hand and adds cases for 3, 30 and 90
-   days early, no cash need, partial gap, and break-even ±1 bp. Check that the re-verify hook in
-   `app/api/runtime.py` still passes verified counters.
-4. **C2, alert with a button.** `POST /alerts/{id}/act` turns an alert's suggested cure into a typed operation:
-   Tier 1 executes, Tier 2 queues an approval. Proof: at day 34 the alert offers to finance about ¥200,000 of
-   invoice `RI:BUYER-1:2` and one call executes it.
-5. **C3, C4.** Reconcile against what commitments promised (partly done in `app/alerts/reconcile.py`); a proactive
-   opener in `/nl` and the UI after a clock or bank-feed event. Then run demo steps 1–17 from the technical-lead
-   brief, section 19.
-6. **D4** DSCR counts scheduled bullet principal (F6), with a second agent checking. **D5** if time.
-7. **Wave E:** chat intents for financing comparison, alerts, reconcile, ratios, capex and borrower file, with a
-   nearest-capability fallback; owner home at `/`; richer approval card; visible autonomy proof; annualised
-   column; compliance half-page and LICENSE; demo fixes (Start 401, mock/live mismatch, REJECT badge).
-8. **Close-out:** regenerate evidence (`uv run --project services/api python scripts/build_deliverables.py
-   --refresh-evidence`), update documents, demo script and web mocks for changed numbers, fast-forward `main`.
+Everything on the 1 Oct list is merged; `main` was fast-forwarded to `dev` at the end of 1 Oct. The gate at that
+commit: 4,044 backend tests passed, 26 skipped; scenarios 46/46 with 46 evidence chains VALID; attacks 182 with
+0 harm; web mock e2e 29 passed, live e2e 27 passed; `scripts/demo_run.py` exits 0. Evidence, the evaluation
+report, the security report and the three docx deliverables were regenerated at that commit.
 
-Known loose ends to fold in where convenient:
+1. Confirm the baseline (section 1 commands), then `PYTHONUTF8=1 uv run --project services/api python
+   scripts/demo_run.py` (expect exit 0). For the web app: `E2E_TARGET=mock pnpm exec playwright test` and, if another
+   program holds port 8000, `E2E_API_PORT=8010 E2E_TARGET=live pnpm exec playwright test`.
+2. **Owner decisions pending** (section 8): whether the 15% APR cap gates invoice financing on its effective annual
+   rate (D5; today the day-34 cure is disclosed as 25.0% a year and flagged, not blocked); the licence; whether the
+   borrower file's ¥360,000 request (1.18×, below the 1.25× covenant) stays as an honest shortfall or is made smaller;
+   whether the video drops the capex scene (the current script does) or Scene 2 and the chat segment instead.
+3. If the web mocks drift from the API again: start the API on a free port and run `pnpm mocks:record` (see
+   `apps/web/README.md`); never edit a mock by hand.
+4. Small items worth doing next: suggested chat prompts for the new capabilities (the recorded script now allows
+   it); an "AI-generated, for reference" label in the UI (listed as a gap in the compliance statements); S9 (make
+   status and alerts in chat owner-only, as the new read intents already are).
+5. Optional work (wave F) after that: named stresses, payment instrument, guarded supplier payment, recurring
+   outflows, Chinese server text, deployment.
+6. After any change that moves a figure: scenarios, attack report, `scripts/evaluate.py`,
+   `scripts/build_deliverables.py --refresh-evidence`, commit the regenerated files, and fast-forward `main`.
 
-- `apps/web/mocks/nl_script.json` still holds a verdict for a buyer turn; the live API now returns none. The buyer
-  chat UI needs checking and the mock regenerating.
-- `/nl` status text reports breach days from day 0 even when today is later (should start at today). Still open.
-- A consequence of credential-bound sessions: a web client that sends some turns without the owner token gets a
-  fresh session for those turns. Check the chat panel keeps the token on every owner turn.
-- `services/api/evals/latest_report.*` has not been regenerated with the three new scoreboard rows; do it in the
-  close-out.
+Known loose ends:
+
+- The EX01 evaluate benchmark is at or just over its 250 ms target on the Windows machine after the extra router
+  calls; re-measure on the Mac before deciding anything.
+- `/nl/opener` and `/clock/advance` answer 403 without the owner token where other owner routes answer 401; the
+  web client handles both.
+- `app/alerts/engine.py` imports `app.operations.log` for the repay alert's interest; it bends the module map
+  (alerts → domain, financial) without creating a cycle.
+- The approvals queue has no after-state for a pending item; the card shows none.
 - An over-cap Tier-2 offer is queued as pending and only refused when the owner approves it.
-- The alert cure search is greedy (one facility's room on the earliest invoice) and can miss a multi-invoice cure.
-- `committed_cure` does not check `mandate.allow_new_borrowing`.
-- Reconciliation reuses `SHORT_PAYMENT` for partial payments; a distinct status would need a web type change.
-- Supabase is at migration 0002; `alembic upgrade head` applies 0003. The new state fields live inside the stored
-  state JSON; confirm no migration is needed before pointing the app at Postgres.
-- Audit items deferred to after the hackathon: S6, S7, S8, C13, F9. Medium items not yet scheduled: S5 (counter
-  grid as an oracle), S9 (agent key reads status through chat), S10 (bind "go ahead" to the plan shown).
+- The alert cure search is greedy and can miss a multi-invoice cure.
+- Reconciliation reuses `SHORT_PAYMENT` for partial payments.
+- Supabase is at migration 0002; `alembic upgrade head` applies 0003. Confirm no migration is needed for the new
+  state fields before pointing the app at Postgres.
+- Audit items deferred to after the hackathon: S6, S7, S8, C13, F9. Medium items not scheduled: S5 (the
+  accept/counter threshold can be probed, now at 0.64%/0.65%), S9 (the agent key reads status and alerts through
+  chat; the new read intents are already owner-only), S10 (bind "go ahead" to the plan shown).
 
 ## 7. Stop conditions
 
@@ -199,7 +207,8 @@ Known loose ends to fold in where convenient:
 ## 8. What only the owner can do
 
 Team eligibility and registration (issue #10); the organiser email (issue #9, draft posted); team roster (#5);
-deployment region (#7); deck branding; building the deck (outline only exists) and recording the video; the
+deployment region (#7); the licence for the LICENSE file; whether the 15% APR cap should gate invoice
+financing on its effective annual rate (D5: it would refuse the demo's 13-day cure at about 25% a year); deck branding; building the deck (outline only exists) and recording the video; the
 `[TEAM:]` placeholders in the documents.
 
 ## 9. Useful commands

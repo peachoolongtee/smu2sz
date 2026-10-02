@@ -56,8 +56,19 @@ seq, hash), clarification buttons, the Go ahead / Cancel confirmation, the "Corr
 in red. A failed send keeps its `request_id`, so Retry is replay-safe; a 401 resends the turn after sign-in.
 Suggested prompts are in `lib/chat-prompts.ts` (from `services/api/evals/e2e/scenarios.yaml`).
 
-Mock mode replays replies recorded from the real API (`mocks/nl_script.json`, `lib/mock/nl.ts`). To re-record, run
-the API as above and POST each scripted text to `/nl` after `/demo/reset`.
+Mock mode replays replies recorded from the real API (`mocks/nl_script.json`, `lib/mock/nl.ts`). Every file in `mocks/`
+is recorded, none is written by hand. To re-record all of them (the chat script, the home script, the verdicts, funding,
+trajectory, what-if and the rest) start the API on port 8011 and run one command:
+
+```
+cd services/api && TERMSLEDGER_NO_DOTENV=1 DATABASE_URL=memory LLM_MODE=cache PYTHONUTF8=1 uv run uvicorn app.main:app --port 8011
+cd apps/web && node scripts/record-mocks.mjs --api http://localhost:8011      # or: pnpm mocks:record
+```
+
+`scripts/record-mocks.mjs` resets the books and replays the demo stepper, the pages' reads and the chat prompts through the
+same client code as live mode (`lib/api.ts`, `lib/live/*`), so a mock file is exactly what the live adapters return. Output is
+deterministic (re-running on a fresh API leaves `git status mocks` empty); the few volatile values it normalises (the
+commitment id and nonce and the hashes derived from them, what-if timings) are listed in the script header.
 
 ### Home (`/`)
 

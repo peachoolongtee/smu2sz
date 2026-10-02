@@ -2,72 +2,141 @@
   "request": {
     "label": "¥600k machine",
     "price_fen": 60000000,
-    "price_display": "¥600,000.00"
+    "monthly_uplift_fen": 2200000,
+    "uplift_start_month": 4,
+    "life_months": 60,
+    "hurdle_bp": 1000,
+    "payback_limit_months": 36,
+    "candidates": [
+      {
+        "facility_id": "FAC-ETL",
+        "term_months": 18
+      },
+      {
+        "facility_id": "FAC-ETL",
+        "term_months": 36
+      },
+      {
+        "facility_id": "FAC-LEASE",
+        "term_months": 48
+      }
+    ],
+    "include_cash_line": true,
+    "extension_target_terms_days": 60,
+    "extension_counterparty_id": null,
+    "price_display": "¥600,000.00",
+    "monthly_uplift_display": "¥22,000.00",
+    "hurdle_display": "10.00%"
   },
   "npv_fen": 38088577,
   "payback_month": 31,
+  "npv_positive": true,
+  "payback_within_limit": true,
+  "worth_doing": true,
+  "estimate_note": "Owner's estimate, not observed by the system: +¥22,000.00 a month of operating cash flow from month 4 through month 60.",
   "structures": [
     {
       "id": "cash_line",
       "label": "Cash + credit line",
       "kind": "CASH_LINE",
+      "facility_id": null,
       "term_months": null,
+      "rate_bp": null,
       "monthly_payment_fen": null,
       "total_interest_fen": null,
       "feasible": false,
+      "result": "INFEASIBLE",
       "violations": [
         {
           "code": "RESERVE_BREACH",
-          "message": "Cash above the reserve (¥250,000.00) plus the ¥150,000.00 line cannot fund the ¥600,000.00 price.",
+          "message": "Only ¥460,000.00 is available above the ¥300,000.00 reserve (cash plus the ¥0.00 line) for a ¥600,000.00 price; cash falls to ¥160,000.00 on purchase day.",
           "day": 0,
           "month": null,
-          "observed": "¥400,000.00",
-          "limit": "¥600,000.00",
+          "observed": "¥160,000.00",
+          "limit": "≥ ¥300,000.00",
           "curable": false,
           "cure_cost_fen": null,
           "cure_note": null,
-          "formula": "(cash − min_cash) + line_limit ≥ price",
+          "formula": "(cash − min_cash) + line_available ≥ price: (¥760,000.00 − ¥300,000.00) + ¥0.00 = ¥460,000.00 < ¥600,000.00; conservative closing cash on day 0 = ¥160,000.00",
           "inputs": {
-            "cash_above_reserve": "¥250,000.00",
-            "line_limit": "¥150,000.00",
-            "price": "¥600,000.00"
+            "cash": "¥760,000.00",
+            "min_cash": "¥300,000.00",
+            "line_available": "¥0.00",
+            "available_above_reserve": "¥460,000.00",
+            "price": "¥600,000.00",
+            "shortfall": "¥140,000.00",
+            "closing_cash": "¥160,000.00"
           },
           "spans": [],
           "cure_cost_display": null
         }
       ],
       "dscr_by_month": [],
+      "min_dscr": null,
+      "leverage": null,
       "extra_cost_vs_selected_fen": null,
-      "note": "Infeasible: not enough cash above the reserve.",
+      "note": "Infeasible: only ¥460,000.00 available above the reserve; RESERVE_BREACH on purchase day.",
+      "workings": [
+        {
+          "label": "Available above the reserve",
+          "value": "¥460,000.00",
+          "formula": "(cash − min_cash) + committed line available",
+          "inputs": {
+            "cash": "¥760,000.00",
+            "min_cash": "¥300,000.00",
+            "line_available": "¥0.00",
+            "available_above_reserve": "¥460,000.00",
+            "price": "¥600,000.00"
+          },
+          "evidence": null
+        },
+        {
+          "label": "Lowest projected cash",
+          "value": "−¥300,000.00",
+          "formula": "min over days 0..120 of the conservative closing cash on current books, with the purchase on day 0",
+          "inputs": {
+            "day": "20",
+            "min_cash": "¥300,000.00",
+            "live_obligations": "0"
+          },
+          "evidence": null
+        }
+      ],
       "monthly_payment_display": null,
       "total_interest_display": null,
       "extra_cost_vs_selected_display": null
     },
     {
       "id": "loan_18m",
-      "label": "18-month equipment loan",
+      "label": "18-month term loan, 5.60%",
       "kind": "LOAN",
+      "facility_id": "FAC-ETL",
       "term_months": 18,
+      "rate_bp": 560,
       "monthly_payment_fen": 3483060,
       "total_interest_fen": 2695084,
       "feasible": false,
+      "result": "REJECTED",
       "violations": [
         {
           "code": "DSCR_BREACH",
-          "message": "DSCR is 1.13× in month 1, below the 1.25× minimum.",
+          "message": "DSCR is 1.13× in month 1, below the 1.25× minimum (fails in months 1–3 of 18).",
           "day": null,
           "month": 1,
           "observed": "1.13×",
           "limit": "≥ 1.25×",
-          "curable": false,
+          "curable": null,
           "cure_cost_fen": null,
           "cure_note": null,
-          "formula": "EBITDA_m / DS_m = ¥90,000.00 / (¥45,000.00 + ¥34,830.60)",
+          "formula": "(EBITDA_m + uplift_m) / (existing DS_m + payment) = ¥90,000.00 / (¥45,000.00 + ¥34,830.60) = 1.13× < 1.25×",
           "inputs": {
             "EBITDA_m": "¥90,000.00",
+            "uplift_m": "¥0.00",
             "existing_debt_service": "¥45,000.00",
             "new_payment": "¥34,830.60",
-            "DS_m": "¥79,830.60"
+            "DS_m": "¥79,830.60",
+            "failing_months": "1–3",
+            "limit_source": "mandate v1"
           },
           "spans": [],
           "cure_cost_display": null
@@ -77,221 +146,1656 @@
         {
           "month": 1,
           "dscr": {
-            "num": 113,
-            "den": 100,
+            "num": 150000,
+            "den": 133051,
             "text": "1.13"
           },
-          "passes": false
+          "passes": false,
+          "ebitda_fen": 9000000,
+          "debt_service_fen": 7983060,
+          "ebitda_display": "¥90,000.00",
+          "debt_service_display": "¥79,830.60"
         },
         {
           "month": 2,
           "dscr": {
-            "num": 113,
-            "den": 100,
+            "num": 150000,
+            "den": 133051,
             "text": "1.13"
           },
-          "passes": false
+          "passes": false,
+          "ebitda_fen": 9000000,
+          "debt_service_fen": 7983060,
+          "ebitda_display": "¥90,000.00",
+          "debt_service_display": "¥79,830.60"
         },
         {
           "month": 3,
           "dscr": {
-            "num": 113,
-            "den": 100,
+            "num": 150000,
+            "den": 133051,
             "text": "1.13"
           },
-          "passes": false
+          "passes": false,
+          "ebitda_fen": 9000000,
+          "debt_service_fen": 7983060,
+          "ebitda_display": "¥90,000.00",
+          "debt_service_display": "¥79,830.60"
         },
         {
           "month": 4,
           "dscr": {
-            "num": 140,
-            "den": 100,
+            "num": 560000,
+            "den": 399153,
             "text": "1.40"
           },
-          "passes": true
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 7983060,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥79,830.60"
         },
         {
           "month": 5,
           "dscr": {
-            "num": 140,
-            "den": 100,
+            "num": 560000,
+            "den": 399153,
             "text": "1.40"
           },
-          "passes": true
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 7983060,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥79,830.60"
         },
         {
           "month": 6,
           "dscr": {
-            "num": 140,
-            "den": 100,
+            "num": 560000,
+            "den": 399153,
             "text": "1.40"
           },
-          "passes": true
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 7983060,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥79,830.60"
+        },
+        {
+          "month": 7,
+          "dscr": {
+            "num": 560000,
+            "den": 399153,
+            "text": "1.40"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 7983060,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥79,830.60"
+        },
+        {
+          "month": 8,
+          "dscr": {
+            "num": 560000,
+            "den": 399153,
+            "text": "1.40"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 7983060,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥79,830.60"
+        },
+        {
+          "month": 9,
+          "dscr": {
+            "num": 560000,
+            "den": 399153,
+            "text": "1.40"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 7983060,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥79,830.60"
+        },
+        {
+          "month": 10,
+          "dscr": {
+            "num": 560000,
+            "den": 399153,
+            "text": "1.40"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 7983060,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥79,830.60"
+        },
+        {
+          "month": 11,
+          "dscr": {
+            "num": 560000,
+            "den": 399153,
+            "text": "1.40"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 7983060,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥79,830.60"
+        },
+        {
+          "month": 12,
+          "dscr": {
+            "num": 560000,
+            "den": 399153,
+            "text": "1.40"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 7983060,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥79,830.60"
+        },
+        {
+          "month": 13,
+          "dscr": {
+            "num": 560000,
+            "den": 399153,
+            "text": "1.40"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 7983060,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥79,830.60"
+        },
+        {
+          "month": 14,
+          "dscr": {
+            "num": 560000,
+            "den": 399153,
+            "text": "1.40"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 7983060,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥79,830.60"
+        },
+        {
+          "month": 15,
+          "dscr": {
+            "num": 560000,
+            "den": 399153,
+            "text": "1.40"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 7983060,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥79,830.60"
+        },
+        {
+          "month": 16,
+          "dscr": {
+            "num": 560000,
+            "den": 399153,
+            "text": "1.40"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 7983060,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥79,830.60"
+        },
+        {
+          "month": 17,
+          "dscr": {
+            "num": 560000,
+            "den": 399153,
+            "text": "1.40"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 7983060,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥79,830.60"
+        },
+        {
+          "month": 18,
+          "dscr": {
+            "num": 1400000,
+            "den": 997883,
+            "text": "1.40"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 7983064,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥79,830.64"
         }
       ],
+      "min_dscr": {
+        "num": 150000,
+        "den": 133051,
+        "text": "1.13"
+      },
+      "leverage": {
+        "num": 25,
+        "den": 12,
+        "text": "2.08"
+      },
       "extra_cost_vs_selected_fen": null,
-      "note": "Fails the DSCR covenant in months 1 to 3.",
+      "note": "Rejected: DSCR_BREACH@month 1 (1.13× < 1.25×).",
+      "workings": [
+        {
+          "label": "Monthly payment",
+          "value": "¥34,830.60",
+          "formula": "P·r / (1 − (1 + r)^−n), r = 5.60%/12, n = 18; rounded half-up once",
+          "inputs": {
+            "P": "¥600,000.00",
+            "annual_rate": "5.60%",
+            "n": "18"
+          },
+          "evidence": null
+        },
+        {
+          "label": "Total interest",
+          "value": "¥26,950.84",
+          "formula": "Σ post(balance × 5.60%/12) over 18 months; the final payment (¥34,830.64) clears the balance",
+          "inputs": {
+            "P": "¥600,000.00",
+            "payment": "¥34,830.60",
+            "final_payment": "¥34,830.64"
+          },
+          "evidence": null
+        },
+        {
+          "label": "DSCR by month",
+          "value": "1.13× / 1.40×",
+          "formula": "(EBITDA_m + uplift_m) / (existing DS_m + payment_m), tested in every month of the term",
+          "inputs": {
+            "EBITDA_m": "¥90,000.00",
+            "existing_debt_service": "¥45,000.00",
+            "uplift_m": "¥22,000.00 from month 4",
+            "min_dscr": "1.25×",
+            "limit_source": "mandate v1"
+          },
+          "evidence": "OWNER_ESTIMATE"
+        },
+        {
+          "label": "Leverage",
+          "value": "2.08×",
+          "formula": "(debt + committed line limits + principal) / (12 × EBITDA_m) = ¥2,250,000.00 / (12 × ¥90,000.00)",
+          "inputs": {
+            "debt": "¥1,500,000.00",
+            "committed_line_limits": "¥150,000.00",
+            "principal": "¥600,000.00",
+            "max_leverage": "2.50×",
+            "limit_source": "FAC-LINE-LEV"
+          },
+          "evidence": null
+        }
+      ],
+      "rate_display": "5.60%",
       "monthly_payment_display": "¥34,830.60",
       "total_interest_display": "¥26,950.84",
       "extra_cost_vs_selected_display": null
     },
     {
       "id": "loan_36m",
-      "label": "36-month equipment loan",
+      "label": "36-month term loan, 5.60%",
       "kind": "LOAN",
+      "facility_id": "FAC-ETL",
       "term_months": 36,
+      "rate_bp": 560,
       "monthly_payment_fen": 1814462,
       "total_interest_fen": 5320614,
       "feasible": true,
+      "result": "SELECTED",
       "violations": [],
       "dscr_by_month": [
         {
           "month": 1,
           "dscr": {
-            "num": 143,
-            "den": 100,
+            "num": 4500000,
+            "den": 3157231,
             "text": "1.43"
           },
-          "passes": true
+          "passes": true,
+          "ebitda_fen": 9000000,
+          "debt_service_fen": 6314462,
+          "ebitda_display": "¥90,000.00",
+          "debt_service_display": "¥63,144.62"
         },
         {
           "month": 2,
           "dscr": {
-            "num": 143,
-            "den": 100,
+            "num": 4500000,
+            "den": 3157231,
             "text": "1.43"
           },
-          "passes": true
+          "passes": true,
+          "ebitda_fen": 9000000,
+          "debt_service_fen": 6314462,
+          "ebitda_display": "¥90,000.00",
+          "debt_service_display": "¥63,144.62"
         },
         {
           "month": 3,
           "dscr": {
-            "num": 143,
-            "den": 100,
+            "num": 4500000,
+            "den": 3157231,
             "text": "1.43"
           },
-          "passes": true
+          "passes": true,
+          "ebitda_fen": 9000000,
+          "debt_service_fen": 6314462,
+          "ebitda_display": "¥90,000.00",
+          "debt_service_display": "¥63,144.62"
         },
         {
           "month": 4,
           "dscr": {
-            "num": 177,
-            "den": 100,
+            "num": 800000,
+            "den": 451033,
             "text": "1.77"
           },
-          "passes": true
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 6314462,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥63,144.62"
         },
         {
           "month": 5,
           "dscr": {
-            "num": 177,
-            "den": 100,
+            "num": 800000,
+            "den": 451033,
             "text": "1.77"
           },
-          "passes": true
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 6314462,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥63,144.62"
         },
         {
           "month": 6,
           "dscr": {
-            "num": 177,
-            "den": 100,
+            "num": 800000,
+            "den": 451033,
             "text": "1.77"
           },
-          "passes": true
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 6314462,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥63,144.62"
+        },
+        {
+          "month": 7,
+          "dscr": {
+            "num": 800000,
+            "den": 451033,
+            "text": "1.77"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 6314462,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥63,144.62"
+        },
+        {
+          "month": 8,
+          "dscr": {
+            "num": 800000,
+            "den": 451033,
+            "text": "1.77"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 6314462,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥63,144.62"
+        },
+        {
+          "month": 9,
+          "dscr": {
+            "num": 800000,
+            "den": 451033,
+            "text": "1.77"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 6314462,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥63,144.62"
+        },
+        {
+          "month": 10,
+          "dscr": {
+            "num": 800000,
+            "den": 451033,
+            "text": "1.77"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 6314462,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥63,144.62"
+        },
+        {
+          "month": 11,
+          "dscr": {
+            "num": 800000,
+            "den": 451033,
+            "text": "1.77"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 6314462,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥63,144.62"
+        },
+        {
+          "month": 12,
+          "dscr": {
+            "num": 800000,
+            "den": 451033,
+            "text": "1.77"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 6314462,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥63,144.62"
+        },
+        {
+          "month": 13,
+          "dscr": {
+            "num": 800000,
+            "den": 451033,
+            "text": "1.77"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 6314462,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥63,144.62"
+        },
+        {
+          "month": 14,
+          "dscr": {
+            "num": 800000,
+            "den": 451033,
+            "text": "1.77"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 6314462,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥63,144.62"
+        },
+        {
+          "month": 15,
+          "dscr": {
+            "num": 800000,
+            "den": 451033,
+            "text": "1.77"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 6314462,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥63,144.62"
+        },
+        {
+          "month": 16,
+          "dscr": {
+            "num": 800000,
+            "den": 451033,
+            "text": "1.77"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 6314462,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥63,144.62"
+        },
+        {
+          "month": 17,
+          "dscr": {
+            "num": 800000,
+            "den": 451033,
+            "text": "1.77"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 6314462,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥63,144.62"
+        },
+        {
+          "month": 18,
+          "dscr": {
+            "num": 800000,
+            "den": 451033,
+            "text": "1.77"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 6314462,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥63,144.62"
+        },
+        {
+          "month": 19,
+          "dscr": {
+            "num": 800000,
+            "den": 451033,
+            "text": "1.77"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 6314462,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥63,144.62"
+        },
+        {
+          "month": 20,
+          "dscr": {
+            "num": 800000,
+            "den": 451033,
+            "text": "1.77"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 6314462,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥63,144.62"
+        },
+        {
+          "month": 21,
+          "dscr": {
+            "num": 800000,
+            "den": 451033,
+            "text": "1.77"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 6314462,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥63,144.62"
+        },
+        {
+          "month": 22,
+          "dscr": {
+            "num": 800000,
+            "den": 451033,
+            "text": "1.77"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 6314462,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥63,144.62"
+        },
+        {
+          "month": 23,
+          "dscr": {
+            "num": 800000,
+            "den": 451033,
+            "text": "1.77"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 6314462,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥63,144.62"
+        },
+        {
+          "month": 24,
+          "dscr": {
+            "num": 800000,
+            "den": 451033,
+            "text": "1.77"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 6314462,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥63,144.62"
+        },
+        {
+          "month": 25,
+          "dscr": {
+            "num": 800000,
+            "den": 451033,
+            "text": "1.77"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 6314462,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥63,144.62"
+        },
+        {
+          "month": 26,
+          "dscr": {
+            "num": 800000,
+            "den": 451033,
+            "text": "1.77"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 6314462,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥63,144.62"
+        },
+        {
+          "month": 27,
+          "dscr": {
+            "num": 800000,
+            "den": 451033,
+            "text": "1.77"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 6314462,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥63,144.62"
+        },
+        {
+          "month": 28,
+          "dscr": {
+            "num": 800000,
+            "den": 451033,
+            "text": "1.77"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 6314462,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥63,144.62"
+        },
+        {
+          "month": 29,
+          "dscr": {
+            "num": 800000,
+            "den": 451033,
+            "text": "1.77"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 6314462,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥63,144.62"
+        },
+        {
+          "month": 30,
+          "dscr": {
+            "num": 800000,
+            "den": 451033,
+            "text": "1.77"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 6314462,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥63,144.62"
+        },
+        {
+          "month": 31,
+          "dscr": {
+            "num": 800000,
+            "den": 451033,
+            "text": "1.77"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 6314462,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥63,144.62"
+        },
+        {
+          "month": 32,
+          "dscr": {
+            "num": 800000,
+            "den": 451033,
+            "text": "1.77"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 6314462,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥63,144.62"
+        },
+        {
+          "month": 33,
+          "dscr": {
+            "num": 800000,
+            "den": 451033,
+            "text": "1.77"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 6314462,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥63,144.62"
+        },
+        {
+          "month": 34,
+          "dscr": {
+            "num": 800000,
+            "den": 451033,
+            "text": "1.77"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 6314462,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥63,144.62"
+        },
+        {
+          "month": 35,
+          "dscr": {
+            "num": 800000,
+            "den": 451033,
+            "text": "1.77"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 6314462,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥63,144.62"
+        },
+        {
+          "month": 36,
+          "dscr": {
+            "num": 2800000,
+            "den": 1578611,
+            "text": "1.77"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 6314444,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥63,144.44"
         }
       ],
+      "min_dscr": {
+        "num": 4500000,
+        "den": 3157231,
+        "text": "1.43"
+      },
+      "leverage": {
+        "num": 25,
+        "den": 12,
+        "text": "2.08"
+      },
       "extra_cost_vs_selected_fen": null,
-      "note": "Selected: the cheapest structure that keeps every covenant.",
+      "note": "Selected: the cheapest structure by total interest that holds DSCR and leverage in every month.",
+      "workings": [
+        {
+          "label": "Monthly payment",
+          "value": "¥18,144.62",
+          "formula": "P·r / (1 − (1 + r)^−n), r = 5.60%/12, n = 36; rounded half-up once",
+          "inputs": {
+            "P": "¥600,000.00",
+            "annual_rate": "5.60%",
+            "n": "36"
+          },
+          "evidence": null
+        },
+        {
+          "label": "Total interest",
+          "value": "¥53,206.14",
+          "formula": "Σ post(balance × 5.60%/12) over 36 months; the final payment (¥18,144.44) clears the balance",
+          "inputs": {
+            "P": "¥600,000.00",
+            "payment": "¥18,144.62",
+            "final_payment": "¥18,144.44"
+          },
+          "evidence": null
+        },
+        {
+          "label": "DSCR by month",
+          "value": "1.43× / 1.77×",
+          "formula": "(EBITDA_m + uplift_m) / (existing DS_m + payment_m), tested in every month of the term",
+          "inputs": {
+            "EBITDA_m": "¥90,000.00",
+            "existing_debt_service": "¥45,000.00",
+            "uplift_m": "¥22,000.00 from month 4",
+            "min_dscr": "1.25×",
+            "limit_source": "mandate v1"
+          },
+          "evidence": "OWNER_ESTIMATE"
+        },
+        {
+          "label": "Leverage",
+          "value": "2.08×",
+          "formula": "(debt + committed line limits + principal) / (12 × EBITDA_m) = ¥2,250,000.00 / (12 × ¥90,000.00)",
+          "inputs": {
+            "debt": "¥1,500,000.00",
+            "committed_line_limits": "¥150,000.00",
+            "principal": "¥600,000.00",
+            "max_leverage": "2.50×",
+            "limit_source": "FAC-LINE-LEV"
+          },
+          "evidence": null
+        }
+      ],
+      "rate_display": "5.60%",
       "monthly_payment_display": "¥18,144.62",
       "total_interest_display": "¥53,206.14",
       "extra_cost_vs_selected_display": null
     },
     {
       "id": "lease_48m",
-      "label": "48-month lease",
+      "label": "48-month lease, 7.20%",
       "kind": "LEASE",
+      "facility_id": "FAC-LEASE",
       "term_months": 48,
+      "rate_bp": 720,
       "monthly_payment_fen": 1442349,
       "total_interest_fen": 9232732,
       "feasible": true,
+      "result": "ADMISSIBLE",
       "violations": [],
       "dscr_by_month": [
         {
           "month": 1,
           "dscr": {
-            "num": 151,
-            "den": 100,
+            "num": 1000000,
+            "den": 660261,
             "text": "1.51"
           },
-          "passes": true
+          "passes": true,
+          "ebitda_fen": 9000000,
+          "debt_service_fen": 5942349,
+          "ebitda_display": "¥90,000.00",
+          "debt_service_display": "¥59,423.49"
         },
         {
           "month": 2,
           "dscr": {
-            "num": 151,
-            "den": 100,
+            "num": 1000000,
+            "den": 660261,
             "text": "1.51"
           },
-          "passes": true
+          "passes": true,
+          "ebitda_fen": 9000000,
+          "debt_service_fen": 5942349,
+          "ebitda_display": "¥90,000.00",
+          "debt_service_display": "¥59,423.49"
         },
         {
           "month": 3,
           "dscr": {
-            "num": 151,
-            "den": 100,
+            "num": 1000000,
+            "den": 660261,
             "text": "1.51"
           },
-          "passes": true
+          "passes": true,
+          "ebitda_fen": 9000000,
+          "debt_service_fen": 5942349,
+          "ebitda_display": "¥90,000.00",
+          "debt_service_display": "¥59,423.49"
         },
         {
           "month": 4,
           "dscr": {
-            "num": 188,
-            "den": 100,
+            "num": 1600000,
+            "den": 848907,
             "text": "1.88"
           },
-          "passes": true
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 5942349,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥59,423.49"
         },
         {
           "month": 5,
           "dscr": {
-            "num": 188,
-            "den": 100,
+            "num": 1600000,
+            "den": 848907,
             "text": "1.88"
           },
-          "passes": true
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 5942349,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥59,423.49"
         },
         {
           "month": 6,
           "dscr": {
-            "num": 188,
-            "den": 100,
+            "num": 1600000,
+            "den": 848907,
             "text": "1.88"
           },
-          "passes": true
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 5942349,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥59,423.49"
+        },
+        {
+          "month": 7,
+          "dscr": {
+            "num": 1600000,
+            "den": 848907,
+            "text": "1.88"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 5942349,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥59,423.49"
+        },
+        {
+          "month": 8,
+          "dscr": {
+            "num": 1600000,
+            "den": 848907,
+            "text": "1.88"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 5942349,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥59,423.49"
+        },
+        {
+          "month": 9,
+          "dscr": {
+            "num": 1600000,
+            "den": 848907,
+            "text": "1.88"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 5942349,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥59,423.49"
+        },
+        {
+          "month": 10,
+          "dscr": {
+            "num": 1600000,
+            "den": 848907,
+            "text": "1.88"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 5942349,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥59,423.49"
+        },
+        {
+          "month": 11,
+          "dscr": {
+            "num": 1600000,
+            "den": 848907,
+            "text": "1.88"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 5942349,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥59,423.49"
+        },
+        {
+          "month": 12,
+          "dscr": {
+            "num": 1600000,
+            "den": 848907,
+            "text": "1.88"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 5942349,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥59,423.49"
+        },
+        {
+          "month": 13,
+          "dscr": {
+            "num": 1600000,
+            "den": 848907,
+            "text": "1.88"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 5942349,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥59,423.49"
+        },
+        {
+          "month": 14,
+          "dscr": {
+            "num": 1600000,
+            "den": 848907,
+            "text": "1.88"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 5942349,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥59,423.49"
+        },
+        {
+          "month": 15,
+          "dscr": {
+            "num": 1600000,
+            "den": 848907,
+            "text": "1.88"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 5942349,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥59,423.49"
+        },
+        {
+          "month": 16,
+          "dscr": {
+            "num": 1600000,
+            "den": 848907,
+            "text": "1.88"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 5942349,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥59,423.49"
+        },
+        {
+          "month": 17,
+          "dscr": {
+            "num": 1600000,
+            "den": 848907,
+            "text": "1.88"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 5942349,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥59,423.49"
+        },
+        {
+          "month": 18,
+          "dscr": {
+            "num": 1600000,
+            "den": 848907,
+            "text": "1.88"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 5942349,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥59,423.49"
+        },
+        {
+          "month": 19,
+          "dscr": {
+            "num": 1600000,
+            "den": 848907,
+            "text": "1.88"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 5942349,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥59,423.49"
+        },
+        {
+          "month": 20,
+          "dscr": {
+            "num": 1600000,
+            "den": 848907,
+            "text": "1.88"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 5942349,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥59,423.49"
+        },
+        {
+          "month": 21,
+          "dscr": {
+            "num": 1600000,
+            "den": 848907,
+            "text": "1.88"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 5942349,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥59,423.49"
+        },
+        {
+          "month": 22,
+          "dscr": {
+            "num": 1600000,
+            "den": 848907,
+            "text": "1.88"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 5942349,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥59,423.49"
+        },
+        {
+          "month": 23,
+          "dscr": {
+            "num": 1600000,
+            "den": 848907,
+            "text": "1.88"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 5942349,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥59,423.49"
+        },
+        {
+          "month": 24,
+          "dscr": {
+            "num": 1600000,
+            "den": 848907,
+            "text": "1.88"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 5942349,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥59,423.49"
+        },
+        {
+          "month": 25,
+          "dscr": {
+            "num": 1600000,
+            "den": 848907,
+            "text": "1.88"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 5942349,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥59,423.49"
+        },
+        {
+          "month": 26,
+          "dscr": {
+            "num": 1600000,
+            "den": 848907,
+            "text": "1.88"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 5942349,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥59,423.49"
+        },
+        {
+          "month": 27,
+          "dscr": {
+            "num": 1600000,
+            "den": 848907,
+            "text": "1.88"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 5942349,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥59,423.49"
+        },
+        {
+          "month": 28,
+          "dscr": {
+            "num": 1600000,
+            "den": 848907,
+            "text": "1.88"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 5942349,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥59,423.49"
+        },
+        {
+          "month": 29,
+          "dscr": {
+            "num": 1600000,
+            "den": 848907,
+            "text": "1.88"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 5942349,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥59,423.49"
+        },
+        {
+          "month": 30,
+          "dscr": {
+            "num": 1600000,
+            "den": 848907,
+            "text": "1.88"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 5942349,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥59,423.49"
+        },
+        {
+          "month": 31,
+          "dscr": {
+            "num": 1600000,
+            "den": 848907,
+            "text": "1.88"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 5942349,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥59,423.49"
+        },
+        {
+          "month": 32,
+          "dscr": {
+            "num": 1600000,
+            "den": 848907,
+            "text": "1.88"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 5942349,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥59,423.49"
+        },
+        {
+          "month": 33,
+          "dscr": {
+            "num": 1600000,
+            "den": 848907,
+            "text": "1.88"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 5942349,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥59,423.49"
+        },
+        {
+          "month": 34,
+          "dscr": {
+            "num": 1600000,
+            "den": 848907,
+            "text": "1.88"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 5942349,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥59,423.49"
+        },
+        {
+          "month": 35,
+          "dscr": {
+            "num": 1600000,
+            "den": 848907,
+            "text": "1.88"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 5942349,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥59,423.49"
+        },
+        {
+          "month": 36,
+          "dscr": {
+            "num": 1600000,
+            "den": 848907,
+            "text": "1.88"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 5942349,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥59,423.49"
+        },
+        {
+          "month": 37,
+          "dscr": {
+            "num": 1600000,
+            "den": 848907,
+            "text": "1.88"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 5942349,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥59,423.49"
+        },
+        {
+          "month": 38,
+          "dscr": {
+            "num": 1600000,
+            "den": 848907,
+            "text": "1.88"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 5942349,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥59,423.49"
+        },
+        {
+          "month": 39,
+          "dscr": {
+            "num": 1600000,
+            "den": 848907,
+            "text": "1.88"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 5942349,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥59,423.49"
+        },
+        {
+          "month": 40,
+          "dscr": {
+            "num": 1600000,
+            "den": 848907,
+            "text": "1.88"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 5942349,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥59,423.49"
+        },
+        {
+          "month": 41,
+          "dscr": {
+            "num": 1600000,
+            "den": 848907,
+            "text": "1.88"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 5942349,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥59,423.49"
+        },
+        {
+          "month": 42,
+          "dscr": {
+            "num": 1600000,
+            "den": 848907,
+            "text": "1.88"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 5942349,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥59,423.49"
+        },
+        {
+          "month": 43,
+          "dscr": {
+            "num": 1600000,
+            "den": 848907,
+            "text": "1.88"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 5942349,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥59,423.49"
+        },
+        {
+          "month": 44,
+          "dscr": {
+            "num": 1600000,
+            "den": 848907,
+            "text": "1.88"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 5942349,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥59,423.49"
+        },
+        {
+          "month": 45,
+          "dscr": {
+            "num": 1600000,
+            "den": 848907,
+            "text": "1.88"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 5942349,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥59,423.49"
+        },
+        {
+          "month": 46,
+          "dscr": {
+            "num": 1600000,
+            "den": 848907,
+            "text": "1.88"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 5942349,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥59,423.49"
+        },
+        {
+          "month": 47,
+          "dscr": {
+            "num": 1600000,
+            "den": 848907,
+            "text": "1.88"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 5942349,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥59,423.49"
+        },
+        {
+          "month": 48,
+          "dscr": {
+            "num": 11200000,
+            "den": 5942329,
+            "text": "1.88"
+          },
+          "passes": true,
+          "ebitda_fen": 11200000,
+          "debt_service_fen": 5942329,
+          "ebitda_display": "¥112,000.00",
+          "debt_service_display": "¥59,423.29"
         }
       ],
+      "min_dscr": {
+        "num": 1000000,
+        "den": 660261,
+        "text": "1.51"
+      },
+      "leverage": {
+        "num": 25,
+        "den": 12,
+        "text": "2.08"
+      },
       "extra_cost_vs_selected_fen": 3912118,
-      "note": "Feasible, but dearer than the selected loan.",
+      "note": "Admissible, but ¥39,121.18 dearer in total interest than the 36-month term loan, 5.60%.",
+      "workings": [
+        {
+          "label": "Monthly payment",
+          "value": "¥14,423.49",
+          "formula": "P·r / (1 − (1 + r)^−n), r = 7.20%/12, n = 48; rounded half-up once",
+          "inputs": {
+            "P": "¥600,000.00",
+            "annual_rate": "7.20%",
+            "n": "48"
+          },
+          "evidence": null
+        },
+        {
+          "label": "Total interest",
+          "value": "¥92,327.32",
+          "formula": "Σ post(balance × 7.20%/12) over 48 months; the final payment (¥14,423.29) clears the balance",
+          "inputs": {
+            "P": "¥600,000.00",
+            "payment": "¥14,423.49",
+            "final_payment": "¥14,423.29"
+          },
+          "evidence": null
+        },
+        {
+          "label": "DSCR by month",
+          "value": "1.51× / 1.88×",
+          "formula": "(EBITDA_m + uplift_m) / (existing DS_m + payment_m), tested in every month of the term",
+          "inputs": {
+            "EBITDA_m": "¥90,000.00",
+            "existing_debt_service": "¥45,000.00",
+            "uplift_m": "¥22,000.00 from month 4",
+            "min_dscr": "1.25×",
+            "limit_source": "mandate v1"
+          },
+          "evidence": "OWNER_ESTIMATE"
+        },
+        {
+          "label": "Leverage",
+          "value": "2.08×",
+          "formula": "(debt + committed line limits + principal) / (12 × EBITDA_m) = ¥2,250,000.00 / (12 × ¥90,000.00)",
+          "inputs": {
+            "debt": "¥1,500,000.00",
+            "committed_line_limits": "¥150,000.00",
+            "principal": "¥600,000.00",
+            "max_leverage": "2.50×",
+            "limit_source": "FAC-LINE-LEV"
+          },
+          "evidence": null
+        },
+        {
+          "label": "Extra cost vs the selected structure",
+          "value": "¥39,121.18",
+          "formula": "total interest − selected total interest = ¥92,327.32 − ¥53,206.14",
+          "inputs": {
+            "selected": "loan_36m"
+          },
+          "evidence": null
+        }
+      ],
+      "rate_display": "7.20%",
       "monthly_payment_display": "¥14,423.49",
       "total_interest_display": "¥92,327.32",
       "extra_cost_vs_selected_display": "¥39,121.18"
     }
   ],
   "selected_id": "loan_36m",
+  "selected_facility_id": "FAC-ETL",
   "leverage_financed": {
-    "num": 208,
-    "den": 100,
+    "num": 25,
+    "den": 12,
     "text": "2.08"
   },
   "leverage_with_extension": {
-    "num": 228,
-    "den": 100,
+    "num": 245712329,
+    "den": 108000000,
     "text": "2.28"
   },
-  "dscr_limit_display": "1.25×",
-  "leverage_limit_display": "2.50×",
+  "extension_extra_receivables_fen": 20712329,
+  "dscr_limit_bp": 12500,
+  "leverage_limit_bp": 25000,
   "required_tier": "TIER_2",
-  "approval_id": null,
-  "npv_display": "¥380,885.77"
+  "recommendation": "Worth doing on the owner's estimate: NPV ¥380,885.77 at 10.00%, payback in month 31. Finance with the 36-month term loan, 5.60% (¥18,144.62 a month). The cheaper 18-month term loan, 5.60% fails a covenant. A new facility is Tier 2: the agent recommends and the owner applies.",
+  "workings": [
+    {
+      "label": "NPV at the hurdle",
+      "value": "¥380,885.77",
+      "formula": "−price + Σ_(m=4..60) uplift / (1 + r_m)^m, r_m = (1 + 10.00%)^(1/12) − 1 = 0.797414%; 50-digit Decimal, rounded once",
+      "inputs": {
+        "price": "¥600,000.00",
+        "uplift": "¥22,000.00",
+        "start_month": "4",
+        "life_months": "60",
+        "hurdle": "10.00%"
+      },
+      "evidence": "OWNER_ESTIMATE"
+    },
+    {
+      "label": "Simple payback",
+      "value": "month 31",
+      "formula": "first month m with −price + Σ_(k≤m) uplift_k ≥ 0; limit 36 months → within the limit",
+      "inputs": {
+        "price": "¥600,000.00",
+        "uplift": "¥22,000.00",
+        "start_month": "4",
+        "payback_limit_months": "36"
+      },
+      "evidence": "OWNER_ESTIMATE"
+    },
+    {
+      "label": "Leverage, financed",
+      "value": "2.08×",
+      "formula": "(debt + committed line limits + principal) / (12 × EBITDA_m) = (¥1,500,000.00 + ¥150,000.00 + ¥600,000.00) / (12 × ¥90,000.00)",
+      "inputs": {
+        "debt": "¥1,500,000.00",
+        "committed_line_limits": "¥150,000.00",
+        "principal": "¥600,000.00",
+        "EBITDA_m": "¥90,000.00",
+        "max_leverage": "2.50×"
+      },
+      "evidence": null
+    },
+    {
+      "label": "Leverage, financed and the terms extension funded",
+      "value": "2.28×",
+      "formula": "(debt + committed line limits + principal + extra receivables) / (12 × EBITDA_m) = (¥1,650,000.00 + ¥600,000.00 + ¥207,123.29) / (12 × ¥90,000.00)",
+      "inputs": {
+        "extra_receivables": "¥207,123.29",
+        "extra_receivables_formula": "face × (horizon // every_days) × Δdays / 365, terms → 60 days",
+        "max_leverage": "2.50×"
+      },
+      "evidence": null
+    }
+  ],
+  "mandate_version": 1,
+  "state_version": 3,
+  "approval_id": "APR-000001",
+  "approval_status": "PENDING",
+  "application": {
+    "op_id": "capex-apply-7c28cc0a63b74a3e",
+    "kind": "APPLY_FOR_FACILITY",
+    "status": "PENDING_APPROVAL",
+    "tier": "TIER_2",
+    "violations": [],
+    "seq": 3,
+    "entry_hash": "1704a092745f41b9aa07597c0b5e851c9a7f3c666dfaef511c61cf079d339940",
+    "prev_hash": "a6c82c99b0d0147a711cef5d9923985b69c44f0ec957785d475a670a27180e14",
+    "effective_day": 0,
+    "approval_id": "APR-000001",
+    "message": "Queued for owner approval (APR-000001): apply for facility FAC-ETL (¥600,000.00)"
+  },
+  "npv_display": "¥380,885.77",
+  "extension_extra_receivables_display": "¥207,123.29",
+  "dscr_limit_display": "1.25×",
+  "leverage_limit_display": "2.50×"
 }

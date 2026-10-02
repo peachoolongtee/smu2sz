@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "mocks:build": "node scripts/build-mocks.mjs",
+    "mocks:record": "node scripts/record-mocks.mjs --api http://localhost:8011",
     "test:unit": "node --test scripts/check-mocks.test.mjs",
     "test:e2e": "playwright test",
     "test:e2e:mock": "E2E_TARGET=mock playwright test",

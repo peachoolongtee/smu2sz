@@ -22,7 +22,8 @@
           "kind": "INVOICE",
           "amount_fen": 42000000,
           "receivable_id": null,
-          "events_per_year": null
+          "events_per_year": null,
+          "amount_display": "¥420,000.00"
         },
         "contingency": "FIRM",
         "duration": {
@@ -39,7 +40,8 @@
           }
         ],
         "confidence": 0.9,
-        "unresolved": []
+        "unresolved": [],
+        "rate_display": "0.50%"
       }
     ],
     "abstentions": [],

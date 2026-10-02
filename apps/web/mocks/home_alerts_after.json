@@ -36,6 +36,11 @@
           "offer_id": null,
           "amount_fen": 20810000,
           "note": "chase the buyer; record the receipt when the money lands",
+          "cost_fen": null,
+          "cost_days": null,
+          "annual_rate": null,
+          "cost_formula": "",
+          "above_apr_cap": false,
           "executes_automatically": false,
           "amount_display": "¥208,100.00"
         }

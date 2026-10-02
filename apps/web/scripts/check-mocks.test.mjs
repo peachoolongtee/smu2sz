@@ -1,5 +1,6 @@
-// Guards the mocks against drift: every span matches its document, and the headline figures on screen
-// are exactly the server-formatted golden values. Run: pnpm test:unit
+// Guards the recorded mocks (scripts/record-mocks.mjs): every span matches its document, and the headline figures on
+// screen are exactly the server-formatted golden values. The mocks are read as recorded; nothing here edits them.
+// Run: pnpm test:unit
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -35,10 +36,33 @@ test("verdict figures are the golden values, server-formatted", () => {
   assert.equal(reserve.day, 47);
   assert.equal(reserve.observed, fmtYuan(golden.cash_day47_60d_terms));
   assert.equal(reserve.cure_cost_fen, golden.reserve_cure_cost_if);
-  const a = v.counters.find((c) => c.id === "CTR-A");
+  // Counter ids are the server's (CTR-<hash>), so the cards are found by label.
+  const a = v.counters.find((c) => c.label === "Option A");
   assert.equal(a.supplier_cost_fen, golden.counter_a_total);
   assert.equal(a.supplier_cost_display, "¥2,642.24");
-  assert.equal(v.counters.find((c) => c.id === "CTR-B").obligations[1].amount_fen, golden.counter_b_price_adj_per_invoice);
+  const b = v.counters.find((c) => c.label === "Option B");
+  assert.equal(b.supplier_cost_display, "¥0.00");
+  assert.ok(b.formula.includes(`${fmtYuan(golden.counter_b_price_adj_per_invoice)} per invoice`));
+});
+
+test("the EX01 verdict, the counters and the buyer turns are the live API's, as recorded", () => {
+  const v = mock("verdict_ex01.json");
+  assert.deepEqual(
+    v.violations.map((x) => x.code),
+    ["AGG_CONCESSION_EXCEEDED", "RESERVE_BREACH", "DISCOUNT_ABOVE_BREAK_EVEN", "EARLY_PAY_DEARER_THAN_PLAN"],
+  );
+  assert.equal(
+    v.counters.find((c) => c.label === "Option A").text,
+    "Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥211,900 of this invoice at 0.85%.",
+  );
+  assert.ok(Array.isArray(v.passed_checks) && v.autonomy && v.annualised);
+  // The EX01B rewording reaches the same verdict, and a buyer's turn in the chat script carries no verdict.
+  assert.deepEqual(mock("verdict_ex01b.json").violations.map((x) => x.code), v.violations.map((x) => x.code));
+  const script = mock("nl_script.json");
+  for (const k of ["fastcapital", "buyer_ex02", "buyer_rebate", "buyer_extraction", "buyer_extraction_zh", "buyer_injection_zh"]) {
+    assert.equal(script[k].verdict, null, k);
+    assert.deepEqual(script[k].operations, [], k);
+  }
 });
 
 test("funding, trajectory and capex mocks match the golden values", () => {
@@ -46,7 +70,7 @@ test("funding, trajectory and capex mocks match the golden values", () => {
   assert.equal(f.committed.total_cost_fen, golden.v2_optimum_total);
   assert.equal(f.committed.total_cost_display, "¥2,712.94");
   assert.equal(f.committed.costs.reduce((n, c) => n + c.fen, 0), f.committed.total_cost_fen);
-  assert.equal(f.expected.costs.reduce((n, c) => n + c.fen, 0), golden.extension_expected_12m);
+  assert.equal(f.marginal.extension_expected_12m_fen, golden.extension_expected_12m);
   assert.equal(f.marginal.break_even_display, golden.break_even_discount_display);
   assert.equal(f.marginal.rate_display, golden.if_all_in_rate_display);
 

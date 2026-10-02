@@ -9,18 +9,19 @@ exactly as POST /alerts/{id}/act does. Nothing here executes on its own: the pla
 
 from __future__ import annotations
 
-from app.alerts import Alert, AlertKind, Severity, alerts, cure_operations
+from app.alerts import Alert, AlertKind, Severity, SuggestedAction, alerts, cure_operations
 from app.domain.models import (
     ApplyForFacility,
     DrawFacility,
     FinancialState,
+    Mandate,
     Operation,
     OperationResult,
     OperationStatus,
     RepayFacility,
     SubmitInvoiceForFinancing,
 )
-from app.domain.money import fmt_yuan
+from app.domain.money import bp, fmt_pct, fmt_yuan
 from app.financial import EngineError
 from app.nl.context import NlContext
 from app.nl.models import Intent, Slots
@@ -55,6 +56,42 @@ def _past_due_sentence(ctx: NlContext, state: FinancialState, a: Alert) -> str:
                  f"{who} 承诺在第 {promised} 天提前支付的 {rid} 款项未到账；{amount} 仍未收到，已回到原到期日（第 {due} 天）。")
     return t(ctx, f"{who}'s {amount} on {rid} was due on day {a.day} and has not arrived.",
              f"{who} 的 {rid} 款项 {amount} 应于第 {a.day} 天到账，至今未到。")
+
+
+def _suggestion(alert: Alert | None, op: Operation) -> tuple[SuggestedAction | None, int | None]:
+    """The alert's priced suggestion that `cure_operations` turned into `op`, and the day its cost falls due."""
+    if alert is None:
+        return None, None
+    for i, s in enumerate(alert.suggested):
+        if (s.operation_kind == op.kind and s.facility_id == getattr(op, "facility_id", None)
+                and s.receivable_id == getattr(op, "receivable_id", None)):
+            end = alert.inputs.get(f"cure_end_day_{i}")
+            return s, int(end) if end else None
+    return None, None
+
+
+def _cost_clause(ctx: NlContext, op: Operation, s: SuggestedAction | None, end: int | None) -> str:
+    """Cost words appended to a cure's spoken clause; empty when the engine priced nothing."""
+    if s is None or s.cost_fen is None:
+        return ""
+    cost = fmt_yuan(s.cost_fen)
+    if s.annual_rate is None or s.cost_days is None or end is None:
+        return t(ctx, f"; it will cost {cost}", f"；费用 {cost}")
+    rate = fmt_pct(s.annual_rate.value, 1)
+    if isinstance(op, SubmitInvoiceForFinancing):
+        return t(ctx, f"; it will cost {cost} by day {end}, which is {rate} a year for those {s.cost_days} days",
+                 f"；到第 {end} 天费用为 {cost}，相当于这 {s.cost_days} 天的年化 {rate}")
+    return t(ctx, f"; {cost} interest to day {end} ({rate} a year)", f"；到第 {end} 天利息 {cost}（年化 {rate}）")
+
+
+def _cap_sentence(ctx: NlContext, mandate: Mandate, op: Operation) -> str:
+    cap = fmt_pct(bp(mandate.max_apr_bp))
+    if isinstance(op, SubmitInvoiceForFinancing):
+        return t(ctx, f" That is above your {cap} yearly cap for funding, because invoice financing is billed in whole "
+                      f"30-day periods; it is your call.",
+                 f"这高于您 {cap} 的年度融资成本上限，因为发票融资按整 30 天计费；由您决定。")
+    return t(ctx, f" That is above your {cap} yearly cap for funding; it is your call.",
+             f"这高于您 {cap} 的年度融资成本上限；由您决定。")
 
 
 def _op_clause(ctx: NlContext, state: FinancialState, op: Operation) -> tuple[str, str, str, str]:
@@ -147,12 +184,19 @@ def alerts_turn(ctx: NlContext) -> tuple[Turn, bool]:
                               state_version=state.state_version) if breach.actionable else []
         if ops:
             clauses = []
+            over_cap: Operation | None = None
             for op in ops:
                 kind, status, text, clause = _op_clause(ctx, state, op)
                 steps.add(kind, text, status)
-                clauses.append(clause)
-            parts.append(t(ctx, "I can " + " and ".join(clauses) + ". Go ahead?",
-                           "我可以" + "，并".join(clauses) + "。要执行吗？"))
+                sg, end = _suggestion(breach, op)
+                clauses.append(clause + _cost_clause(ctx, op, sg, end))
+                if sg is not None and sg.above_apr_cap and over_cap is None:
+                    over_cap = op
+            cap = _cap_sentence(ctx, mandate, over_cap) if over_cap is not None else ""
+            together = (t(ctx, f" Together they cost {breach.inputs['cure_cost']}.",
+                          f"合计费用 {breach.inputs['cure_cost']}。") if len(ops) > 1 and "cure_cost" in breach.inputs else "")
+            parts.append(t(ctx, "I can " + " and ".join(clauses) + "." + together + cap + " Go ahead?",
+                           "我可以" + "，并".join(clauses) + "。" + together + cap + "要执行吗？"))
             pending = PendingPlan(Intent.SHOW_ALERTS, Slots(), steps.items, {"alert_id": breach.id})
         else:
             parts.append(t(ctx, "No committed facility can cover it, so there is nothing I can do on my own; "

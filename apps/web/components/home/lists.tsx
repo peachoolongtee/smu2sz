@@ -6,7 +6,7 @@ import { getAlerts, getApprovals, getLedger } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
 import type { AlertSeverity } from "@/lib/types";
 import { useAsync } from "@/lib/use-async";
-import { FixButton, FixResult, useFixAlert } from "./fix-alert";
+import { FixButton, FixResult, SuggestionCost, useFixAlert } from "./fix-alert";
 import { SectionLink } from "./today-card";
 
 const severityTone: Record<AlertSeverity, Tone> = { CRITICAL: "bad", WARNING: "warn", INFO: "info" };
@@ -84,6 +84,9 @@ export function RiskCard() {
                     <span className="text-sm font-medium text-ink">{a.title}</span>
                   </div>
                   <p className="mt-1 break-words text-xs text-ink-2">{a.detail}</p>
+                  {a.suggested.map((s, i) => (
+                    <SuggestionCost key={`${s.operation_kind}-${i}`} s={s} />
+                  ))}
                   {a.actionable ? (
                     <div className="mt-2">
                       <FixButton alertId={a.id} busyId={fixer.busyId} onFix={(id) => void fixer.fix(id)} />

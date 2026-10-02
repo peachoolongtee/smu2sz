@@ -8,6 +8,7 @@ from typing import Literal
 from pydantic import Field
 
 from app.domain.models import Contract, Day, Fen
+from app.domain.money import Ratio
 
 
 class Severity(StrEnum):
@@ -54,6 +55,13 @@ class SuggestedAction(Contract):
     offer_id: str | None = None
     amount_fen: Fen | None = None
     note: str = ""
+    # What a committed cure costs, read from the engine (never a formula of its own): the interest and fees the
+    # books post over the horizon with this action minus without it. Empty when the cost is not known.
+    cost_fen: Fen | None = None
+    cost_days: int | None = None  # days the money is out: arrival to the repayment the projection shows
+    annual_rate: Ratio | None = None  # cost / amount × 365 / cost_days, exact
+    cost_formula: str = ""
+    above_apr_cap: bool = False  # annual_rate is above the mandate's max APR (disclosed only; nothing is blocked)
     executes_automatically: Literal[False] = False
 
 

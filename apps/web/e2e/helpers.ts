@@ -7,7 +7,7 @@ import { DEMO_TOKEN } from "./fixtures";
  */
 export async function resetBooks(request: APIRequestContext): Promise<void> {
   if (test.info().project.name !== "live") return;
-  const res = await request.post("http://localhost:8000/demo/reset", {
+  const res = await request.post(`http://localhost:${process.env.E2E_API_PORT ?? 8000}/demo/reset`, {
     headers: { "X-Owner-Token": DEMO_TOKEN },
   });
   expect(res.ok()).toBeTruthy();
