@@ -61,6 +61,7 @@ from app.financial import (
     recurring_receivable_id,
 )
 from app.financial.fmt import y
+from app.financial.lots import carry_draw, is_open_line
 from app.funding.rates import (
     MONTH_DAYS,
     action_rate,
@@ -507,6 +508,8 @@ class Search:
             if rv is not None:
                 ev.violations.append(rv)
         ev.violations.extend(evaluate_covenants(t, self.binding_facilities(acts), self.mandate))
+        if not ev.violations:
+            ev.violations.extend(self._carried_line_ratios(acts))
         for a in acts:
             no = self.unrunnable(a)
             if no is not None:
@@ -522,6 +525,31 @@ class Search:
             ))
         self._cache[key] = ev
         return ev
+
+    def _carried_line_ratios(self, acts: tuple[FundingAction, ...]) -> list[Violation]:
+        """DSCR and leverage as admission will judge the plan's later legs. A line draw names a repayment day here,
+        but once executed it is a lot with none: admission (and every later projection) carries it and assumes it
+        repaid on the first affordable receipt day (`carry_draw`, ADR-0010 §5), which can move its interest into
+        another month. A plan whose ratios hold only with the line held to the day it names would have a later leg
+        refused, so it is judged on that reading too. COMMITTED plans only: they are the ones the executor runs."""
+        if self.basis != "COMMITTED":
+            return []
+        today = self.pstate.as_of_day
+        lines = [a for a in acts if a.kind == FundingActionKind.DRAW and a.day == today
+                 and is_open_line(self.facilities[a.facility_id])]
+        if not lines:
+            return []
+        state = self.pstate
+        for a in lines:
+            state = carry_draw(state, next(f for f in state.facilities if f.id == a.facility_id), a.amount_fen,
+                               f"plan-line-{a.facility_id}")
+        rest = [a for a in acts if not any(a is x for x in lines)]
+        try:
+            t = project(state, self.obligations, rest, self.mode, self.mandate.horizon_days, self.floor)
+        except EngineError:
+            return []
+        return [v for v in evaluate_covenants(t, self.binding_facilities(acts), self.mandate)
+                if v.code in (ViolationCode.DSCR_BREACH, ViolationCode.LEVERAGE_BREACH)]
 
     def _breaks_rules(self, a: FundingAction) -> bool:
         """The action alone makes any plan inadmissible: new debt the mandate forbids (the same check

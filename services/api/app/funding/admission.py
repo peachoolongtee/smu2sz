@@ -34,7 +34,6 @@ from app.domain.models import (
     Mandate,
     Mode,
     RepayFacility,
-    Repayment,
     SubmitInvoiceForFinancing,
     Trajectory,
     Violation,
@@ -42,7 +41,7 @@ from app.domain.models import (
 )
 from app.domain.money import fmt_yuan
 from app.financial import EngineError, project
-from app.financial.lots import ensure_lots, landing_cash, new_lot, unique_id
+from app.financial.lots import carry_draw, is_open_line
 from app.funding.rates import action_rate, approval_reason, invoice_landing_day
 from app.funding.search import receivables
 
@@ -101,14 +100,9 @@ def _as_carried(op: object, state: FinancialState) -> FinancialState | None:
     if not isinstance(op, DrawFacility):
         return None
     f = next((x for x in state.facilities if x.id == op.facility_id), None)
-    if f is None or f.repayment != Repayment.BULLET or f.term_months:
+    if f is None or not is_open_line(f):
         return None
-    base = ensure_lots(state)
-    lot = new_lot(unique_id(base.lots, "admission-probe"), f, op.amount_fen, state.as_of_day)
-    facilities = [x.model_copy(update={"drawn_fen": x.drawn_fen + op.amount_fen}) if x.id == f.id else x
-                  for x in base.facilities]
-    cash = base.cash_fen + (landing_cash(f, lot) if lot.settled else 0)  # no lead time: the cash is in at once
-    return base.model_copy(update={"facilities": facilities, "lots": [*base.lots, lot], "cash_fen": cash})
+    return carry_draw(state, f, op.amount_fen)
 
 
 def _worst(t: Trajectory, today: int) -> int:

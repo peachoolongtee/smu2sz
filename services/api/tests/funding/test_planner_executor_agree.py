@@ -300,6 +300,14 @@ PARTLY_PAID = World(rcv_a=(42_000_000, -13, 45, 50), cash=52_000_000)
 # ¥345,000: the ¥300,000 this world was pinned with plus the existing loan's ¥45,000 day-30 payment, so the gap stays
 # ¥520,000 and a small term-loan leg still fits the DSCR (at ¥300,000 the ¥565,000 gap needs more than it can carry)
 TERM_LOAN = World(cash=34_500_000, ggl=(25_000_000, 500, 2, 3), payroll=(8, -40_000_000))
+# a line repayment day the executed books cannot keep: the router once held the line to day 62 so that its interest fell
+# in month 3, but once drawn the line is carried and assumed repaid on the first affordable receipt (day 44), its
+# interest lands in month 2 and admission refused the guaranteed-loan leg (DSCR 1.247x < 1.25x). The router now judges
+# a plan's line legs as admission will (`Search._carried_line_ratios`).
+LINE_HELD = World(day=0, cash=8_000_000, payroll=(5, -1_000_000), supplier=(10, -25_000_000), bill=None, extra=None,
+                  rcv_a=(47_000_000, 0, 44, 0), rcv_b=None, recurring=(15_000_000, 2, 30),
+                  line=(24_500_000, 547, 0, 0), iff=(14_500_000, 400, 50, 0, 30, 0, None),
+                  ggl=(25_000_000, 583, 1, 6), ebitda=9_000_000)
 
 
 @settings(PROPS)
@@ -310,6 +318,7 @@ TERM_LOAN = World(cash=34_500_000, ggl=(25_000_000, 500, 2, 3), payroll=(8, -40_
 @example(w=TERM_LOAN)
 @example(w=UNISSUED)
 @example(w=RI_CHEAPER)
+@example(w=LINE_HELD)
 def test_the_router_plan_runs_in_the_executor_as_quoted(w: World) -> None:
     rt = build(w)
     books, mandate, p = committed_plan(rt)
