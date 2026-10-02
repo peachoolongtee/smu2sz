@@ -2,7 +2,9 @@
 
 `advance(store, to_day, actor)` closes every day before `to_day` in one store transaction:
 scheduled flows dated on those days are posted to cash, recurring invoices issued on those days
-become real receivables, commitments past their expiry are marked EXPIRED, `as_of_day` moves and
+become real receivables (with the accepted adjustments in scope written on them, ADR-0009), finite
+adjustments whose invoices are all issued are consumed (an ACTIVE commitment left with nothing live becomes
+FULFILLED), commitments past their expiry are marked EXPIRED, `as_of_day` moves and
 one ADVANCE_CLOCK entry goes on the hash-chained log. It never records a receipt: receipts come
 only from the bank feed, which is what makes a missing one detectable.
 """
@@ -29,7 +31,7 @@ from app.domain.models import (
 )
 from app.domain.money import fmt_yuan
 from app.domain.ports import LedgerStore
-from app.financial.trajectory import recurring_receivable_id
+from app.financial.invoices import InvoiceRef, consumed, issue_terms, only_adjusting, recurring_receivable_id
 from app.persistence import canonical_json
 
 ADVANCE_CLOCK_KIND = "ADVANCE_CLOCK"
@@ -46,6 +48,8 @@ class ClockAdvance:
     expired_commitment_ids: list[str] = field(default_factory=list)
     added_flow_ids: list[str] = field(default_factory=list)
     result: OperationResult | None = None
+    consumed_adjustment_ids: list[str] = field(default_factory=list)
+    fulfilled_commitment_ids: list[str] = field(default_factory=list)
 
     @property
     def moved(self) -> bool:
@@ -73,15 +77,44 @@ def close_days(state: FinancialState, to_day: int) -> tuple[FinancialState, Cloc
         while ri.every_days > 0 and d < to_day:
             rid = recurring_receivable_id(ri.counterparty_id, d)
             if rid not in have:
-                receivables.append(Receivable(id=rid, counterparty_id=ri.counterparty_id, face_fen=ri.face_fen,
-                                              issue_day=d, terms_days=ri.terms_days, confirmed=True))
+                # ADR-0009: the accepted adjustments in scope are written onto the invoice as it is issued
+                terms = issue_terms(state, InvoiceRef(rid, ri.counterparty_id, d), ri.face_fen, ri.terms_days)
+                receivables.append(Receivable(id=rid, counterparty_id=ri.counterparty_id, issue_day=d,
+                                              confirmed=True, **terms))  # type: ignore[arg-type]
                 issued.append(rid)
             d += ri.every_days
         recurring.append(ri.model_copy(update={"next_issue_day": d}))
+    # ADR-0009 §7: a finite adjustment whose every invoice is now issued is consumed
+    ids = {r.id for r in receivables}
+    done = [a for a in state.invoice_adjustments if consumed(a, ids, to_day)]
+    left = [a for a in state.invoice_adjustments if a not in done]
     new = state.model_copy(update={"cash_fen": state.cash_fen + net, "flows": kept, "receivables": receivables,
                                    "recurring_invoices": recurring, "as_of_day": to_day,
-                                   "state_version": state.state_version + 1})
-    return new, ClockAdvance(today, to_day, posted, net, skipped, issued)
+                                   "invoice_adjustments": left, "state_version": state.state_version + 1})
+    return new, ClockAdvance(today, to_day, posted, net, skipped, issued,
+                             consumed_adjustment_ids=[a.id for a in done])
+
+
+def _fulfil(store: LedgerStore, state: FinancialState, consumed_ids: Sequence[str],
+            to_day: int) -> tuple[FinancialState, list[str]]:
+    """ADR-0009 §7: an ACTIVE commitment with no adjustment left and nothing else live becomes FULFILLED, and its
+    forward concession leaves the state (it is in the invoices now)."""
+    left = {a.commitment_id for a in state.invoice_adjustments}
+    fulfilled: list[str] = []
+    for c in store.commitments():
+        if c.status != CommitmentStatus.ACTIVE or c.id in left or not only_adjusting(c):
+            continue
+        if not any(i.startswith(f"{c.id}:") for i in consumed_ids):
+            continue
+        try:
+            store.put_commitment(transition(c, CommitmentStatus.FULFILLED, to_day))
+        except CommitmentError:
+            continue
+        fulfilled.append(c.id)
+    if fulfilled:
+        state = state.model_copy(update={"forward_concessions": [
+            fc for fc in state.forward_concessions if fc.commitment_id not in fulfilled]})
+    return state, fulfilled
 
 
 def apply_events(state: FinancialState, to_day: int, events: Sequence[dict[str, Any]]) -> tuple[FinancialState, list[str]]:
@@ -122,23 +155,28 @@ def advance(store: LedgerStore, to_day: int, actor: Actor = Actor.SYSTEM,
                     expired.append(c.id)
                 except CommitmentError:
                     continue
+        new, fulfilled = _fulfil(store, new, adv.consumed_adjustment_ids, to_day)
         store.put_state(new)
         op_id = f"clock-{adv.from_day}-{adv.to_day}"
         payload = {"kind": ADVANCE_CLOCK_KIND, "op_id": op_id, "from_day": adv.from_day, "to_day": adv.to_day,
                    "requested_by": actor.value, "day": adv.to_day, "posted_flow_ids": adv.posted_flow_ids,
                    "posted_net_fen": adv.posted_net_fen, "issued_receivable_ids": adv.issued_receivable_ids,
                    "expired_commitment_ids": expired, "added_flow_ids": adv.added_flow_ids}
+        if adv.consumed_adjustment_ids or fulfilled:
+            payload |= {"consumed_adjustment_ids": adv.consumed_adjustment_ids, "fulfilled_commitment_ids": fulfilled}
         msg = (f"Clock moved from day {adv.from_day} to day {adv.to_day}: {len(adv.posted_flow_ids)} scheduled "
                f"flow(s) posted (net {fmt_yuan(adv.posted_net_fen)}), {len(adv.issued_receivable_ids)} invoice(s) "
                f"issued, {len(expired)} commitment(s) expired"
-               + (f", {len(adv.added_flow_ids)} new scheduled flow(s) recorded" if adv.added_flow_ids else ""))
+               + (f", {len(adv.added_flow_ids)} new scheduled flow(s) recorded" if adv.added_flow_ids else "")
+               + (f", {len(fulfilled)} commitment(s) fulfilled (accepted terms now on every invoice in scope)"
+                  if fulfilled else ""))
         result = OperationResult(op_id=op_id, kind=ADVANCE_CLOCK_KIND, status=OperationStatus.EXECUTED,
                                  tier=Tier.TIER_1, effective_day=adv.to_day, message=msg)
         rec = store.append_operation(op_id, ADVANCE_CLOCK_KIND, op_id, canonical_json(payload), canonical_json(result))
         result = result.model_copy(update={"seq": rec.seq, "entry_hash": rec.entry_hash, "prev_hash": rec.prev_hash})
         return ClockAdvance(adv.from_day, adv.to_day, adv.posted_flow_ids, adv.posted_net_fen,
                             adv.skipped_unconfirmed_inflow_ids, adv.issued_receivable_ids, expired,
-                            adv.added_flow_ids, result)
+                            adv.added_flow_ids, result, adv.consumed_adjustment_ids, fulfilled)
 
 
 __all__ = ["ADVANCE_CLOCK_KIND", "ClockAdvance", "advance", "apply_events", "close_days"]

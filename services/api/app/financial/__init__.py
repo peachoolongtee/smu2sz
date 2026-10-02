@@ -16,6 +16,7 @@ from app.financial.charges import (
 from app.financial.concessions import if_all_in_rate, value_concessions
 from app.financial.engine import Engine
 from app.financial.errors import EngineError, FundingActionError, ObligationError, UncommittedFacilityError
+from app.financial.invoices import materialise, resolve_scope
 from app.financial.trajectory import project, recurring_receivable_id
 
 __all__ = [
@@ -33,9 +34,11 @@ __all__ = [
     "finance_invoice_charges",
     "if_all_in_rate",
     "line_interest",
+    "materialise",
     "project",
     "project_cash",
     "recurring_receivable_id",
+    "resolve_scope",
     "upfront_fee",
     "value_concessions",
     "whole_periods",

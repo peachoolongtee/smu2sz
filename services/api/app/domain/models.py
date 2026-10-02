@@ -13,7 +13,14 @@ from __future__ import annotations
 from enum import StrEnum
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    SerializerFunctionWrapHandler,
+    model_serializer,
+    model_validator,
+)
 
 from app.domain.money import Ratio
 
@@ -24,6 +31,16 @@ Day = int
 
 class Contract(BaseModel):
     model_config = ConfigDict(strict=True, extra="forbid", frozen=True)
+
+
+def _omit_empty(data: object, model: BaseModel, names: tuple[str, ...]) -> object:
+    """ADR-0009 fields are left out of the serialised form while they hold their default (None / []), so a state
+    without accepted adjustments serialises (and hashes: verdict ids, state digests) exactly as it did before."""
+    if isinstance(data, dict):
+        for n in names:
+            if getattr(model, n) in (None, []):
+                data.pop(n, None)
+    return data
 
 
 # ---------------------------------------------------------------- evidence
@@ -351,6 +368,14 @@ class Receivable(Contract):
     settled_fen: Fen = 0  # face already settled by receipts; outstanding = face_fen - settled_fen (ADR-0006)
     advance_fen: Fen = 0  # financing advance still outstanding on this invoice (0 when not FINANCED)
     advance_facility_id: str | None = None
+    # ADR-0009: face_fen / terms_days are contractual; these keep the values before accepted adjustments
+    base_face_fen: Fen | None = None
+    base_terms_days: int | None = None
+    applied: list[str] = Field(default_factory=list)  # InvoiceAdjustment ids written onto this invoice
+
+    @model_serializer(mode="wrap")
+    def _serialise(self, handler: SerializerFunctionWrapHandler):  # type: ignore[no-untyped-def]
+        return _omit_empty(handler(self), self, ("base_face_fen", "base_terms_days", "applied"))
 
     @property
     def outstanding_fen(self) -> Fen:
@@ -389,6 +414,24 @@ class ForwardConcession(Contract):
     label: str
 
 
+class InvoiceAdjustment(Contract):
+    """ADR-0009: an accepted terms extension or price adjustment, with its scope fixed at acceptance.
+
+    Scope is either an explicit list of invoice ids (`receivable_ids`) or an issue-day range
+    [`from_issue_day`, `until_issue_day`] (until None: perpetual) of the counterparty's invoices."""
+
+    id: str  # "<commitment_id>:<obligation_id>"
+    commitment_id: str
+    obligation_id: str
+    counterparty_id: str
+    days_delta: int = 0
+    price_bp: Bp = 0
+    receivable_ids: list[str] | None = None
+    from_issue_day: Day | None = None
+    until_issue_day: Day | None = None
+    contingent_gain: bool = False  # never written onto an invoice; only the EXPECTED projection applies it
+
+
 class ExpectedOrder(Contract):
     """A buyer order the supplier expects (e.g. next quarter). Rebate bases bind to it."""
 
@@ -421,9 +464,14 @@ class FinancialState(Contract):
     forward_concessions: list[ForwardConcession] = Field(default_factory=list)
     expected_orders: list[ExpectedOrder] = Field(default_factory=list)
     counterparties: list[Counterparty] = Field(default_factory=list)
+    invoice_adjustments: list[InvoiceAdjustment] = Field(default_factory=list)  # ADR-0009, in acceptance order
     monthly_ebitda_fen: Fen
     state_version: int = 1
     as_of_day: Day = 0  # the books are closed for every day before this one; cash_fen is cash at its start (ADR-0006)
+
+    @model_serializer(mode="wrap")
+    def _serialise(self, handler: SerializerFunctionWrapHandler):  # type: ignore[no-untyped-def]
+        return _omit_empty(handler(self), self, ("invoice_adjustments",))
 
 
 # ---------------------------------------------------------------- funding actions and trajectory

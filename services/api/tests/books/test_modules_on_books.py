@@ -31,7 +31,7 @@ from app.domain.models import (
     SourceSpan,
 )
 from app.domain.money import fmt_yuan
-from app.financial import project
+from app.financial import invoices, project
 from app.funding import plan
 from app.mandate.fixture import demo_owner_public_key_hex
 from app.persistence import InMemoryLedgerStore
@@ -91,6 +91,8 @@ def _live(rt: Runtime, ob: Obligation, status: CommitmentStatus = CommitmentStat
                    verdict_id="V-LIVE", terms_hash="h", obligations=[ob], status=status, nonce="n", expires_day=7,
                    mandate_version=1, forward_value_fen=0)
     rt.store.put_commitment(c)
+    if status == CommitmentStatus.ACTIVE:  # ADR-0009: what the executor writes when a commitment becomes ACTIVE
+        rt.store.put_state(invoices.accept(rt.store.get_state(), c))
     return c
 
 

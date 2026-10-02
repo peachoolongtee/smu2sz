@@ -1,7 +1,8 @@
 """Current books (ADR-0006): the one financial position every module projects from.
 
 `current_books(state, commitments)` = the stored state (the actual position today, as written by the
-executor and the clock) + the cash-relevant obligations of live commitments, in acceptance order.
+executor and the clock, including accepted terms and price changes written onto invoices, ADR-0009) + the
+cash-relevant obligations of live commitments that the state does not already carry, in acceptance order.
 Pure: no I/O, no clock. Modules pass `books.state` and `books.obligations + <what they are testing>`
 to the engine; none projects from the raw state alone.
 """
@@ -51,14 +52,15 @@ class Books:
 
 
 def cash_relevant(o: Obligation) -> bool:
-    """Obligations of a live commitment that still move cash. Rebates and operational concessions
-    without an effective day live in `state.forward_concessions` already (booked at acceptance)."""
+    """Obligations of a live commitment that the engine must still apply. Rebates and operational concessions
+    without an effective day live in `state.forward_concessions` already (booked at acceptance). Terms and
+    price changes live in the state too (ADR-0009 §5): as `state.invoice_adjustments` and on the invoices
+    themselves, so passing them again would apply them twice."""
     if o.contingency == Contingency.CLAIMED_UNEVIDENCED or o.type == ObligationType.CLAIMED_PRIOR_CONCESSION:
         return False
     if o.type in (ObligationType.CONTINGENT_REBATE, ObligationType.OPERATIONAL_CONCESSION):
         return o.effective_day is not None
-    return o.type in (ObligationType.IMMEDIATE_DISCOUNT, ObligationType.TERMS_EXTENSION,
-                      ObligationType.PRICE_ADJUSTMENT)
+    return o.type == ObligationType.IMMEDIATE_DISCOUNT
 
 
 def binds(state: FinancialState, o: Obligation) -> bool:
