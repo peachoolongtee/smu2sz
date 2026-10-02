@@ -109,6 +109,7 @@ class ReceiptMatch(Contract):
     expected_fen: Fen | None  # what the accepted terms say should arrive on this day
     difference_fen: Fen | None  # received − expected
     commitment_id: str | None = None
+    bank_reference: str | None = None  # the bank's own reference on the receipt, when the feed sent one
     status: MatchStatus
     flagged: bool
     detail: str

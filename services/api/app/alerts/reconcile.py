@@ -112,7 +112,8 @@ def _match(e: Entry, op: ReceivePayment, r: Receivable, commitments: list[Commit
     match = ReceiptMatch(
         seq=e.seq, entry_hash=e.entry_hash, op_id=op.op_id, day=day, receivable_id=r.id,
         counterparty_id=r.counterparty_id, received_fen=received, face_fen=face, agreed_discount_fen=d,
-        expected_fen=expected, difference_fen=received - expected, commitment_id=cid, status=status,
+        expected_fen=expected, difference_fen=received - expected, commitment_id=cid, bank_reference=op.bank_reference,
+        status=status,
         flagged=status != MatchStatus.MATCHED, detail=detail,
         formula=(f"expected = face − discount if paid by day {window} else outstanding = {fmt_yuan(expected)} "
                  f"(outstanding {fmt_yuan(outstanding)} of face {fmt_yuan(face)}; discount {dformula}); "
@@ -214,7 +215,7 @@ def reconcile(store: LedgerStore, day: int | None = None) -> ReconciliationRepor
             seq=e.seq, entry_hash=e.entry_hash, op_id=op.op_id, day=e.day, receivable_id=op.receivable_id,
             counterparty_id=r.counterparty_id if r else None, received_fen=op.amount_fen,
             face_fen=r.face_fen if r else None, expected_fen=None, difference_fen=None,
-            status=MatchStatus.UNMATCHED, flagged=True,
+            bank_reference=op.bank_reference, status=MatchStatus.UNMATCHED, flagged=True,
             detail=f"no open receivable or commitment explains this receipt ({why})",
             formula="receipt not booked by the executor; nothing to match it against",
         ))

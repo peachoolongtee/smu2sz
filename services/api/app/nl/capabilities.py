@@ -167,8 +167,11 @@ def reconcile_receipts(ctx: NlContext) -> Turn:
                f"截至第 {rep.as_of_day} 天对账：{rep.matched} 笔回款匹配，{rep.flagged} 笔有异常；"
                f"实收 {fmt_yuan(rep.received_total_fen)}，应收 {fmt_yuan(rep.expected_total_fen)}。")]
     for m in [m for m in rep.receipts if m.flagged][:MAX_FLAGGED]:
-        lines.append(t(ctx, f"- Flagged: {m.receivable_id} {fmt_yuan(m.received_fen)}: {m.status.value}. {m.detail}",
-                       f"- 异常：{m.receivable_id} {fmt_yuan(m.received_fen)}：{m.status.value}。{m.detail}"))
+        ref = m.bank_reference
+        lines.append(t(ctx, f"- Flagged: {m.receivable_id}{f' (bank ref {ref})' if ref else ''} {fmt_yuan(m.received_fen)}: "
+                            f"{m.status.value}. {m.detail}",
+                       f"- 异常：{m.receivable_id}{f'（银行流水号 {ref}）' if ref else ''} {fmt_yuan(m.received_fen)}："
+                       f"{m.status.value}。{m.detail}"))
     if rep.promised:
         counts = {s: sum(1 for p in rep.promised if p.status == s) for s in PromiseStatus}
         lines.append(t(ctx, "Promised early payments: " + ", ".join(f"{s.value} {n}" for s, n in counts.items() if n) + ".",

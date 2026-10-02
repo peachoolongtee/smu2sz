@@ -60,7 +60,7 @@ def main() -> int:
     r = c.post("/operations", headers=BANK, json={
         "kind": "RECEIVE_PAYMENT", "op_id": "demo-receipt-1", "idempotency_key": "demo-receipt-1",
         "mandate_version": rt.store.get_mandate().version, "requested_by": "SYSTEM",
-        "receivable_id": ob.base.receivable_id, "amount_fen": agreed}).json()
+        "receivable_id": ob.base.receivable_id, "amount_fen": agreed, "bank_reference": "BANK-DEMO-0001"}).json()
     print("\nbank receipt:", r.get("result", r).get("status"), r.get("result", r).get("message", r))
     c.post("/clock/advance", json={"to_day": 30}, headers=OWNER)
     c.post("/clock/advance", json={"to_day": 34}, headers=OWNER)
@@ -114,7 +114,7 @@ def main() -> int:
         out = c.post("/operations", headers=BANK, json={
             "kind": "RECEIVE_PAYMENT", "op_id": key, "idempotency_key": key,
             "mandate_version": rt.store.get_mandate().version, "requested_by": "SYSTEM",
-            "receivable_id": rid, "amount_fen": amount}).json()["result"]
+            "receivable_id": rid, "amount_fen": amount, "bank_reference": f"BANK-{key}"}).json()["result"]
         print(f"bank receipt {rid}: {out['status']} {out['message']}")
         return out
 
