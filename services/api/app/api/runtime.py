@@ -1,5 +1,15 @@
 """Process-wide wiring: one store, one simulated clock, the owner's pinned key, module instances.
-Owned by the main architect. Modules never import this; only app/api does."""
+Owned by the main architect. Modules never import this; only app/api does.
+
+Startup never deletes (audit A04). `get_runtime()` opens the configured store and HYDRATES from it: the clock
+is read from the stored state and nothing is written. Only an EMPTY store is seeded (demo fixture + signed demo
+mandate), and only in DEMO_MODE; with DEMO_MODE off an empty store is a startup error (the books must be
+provisioned: state plus an owner-signed mandate). With DEMO_MODE off the pinned owner key must come from
+OWNER_PUBLIC_KEY_HEX; the published demo key is never pinned silently.
+
+Not persisted, by design: the in-memory session caches (`latest_verdict`, `documents`, NL sessions). They are
+empty after a restart. The books, mandate, approvals, nonces and the operations log live in the store.
+"""
 
 from __future__ import annotations
 
@@ -15,6 +25,16 @@ from app.mandate import load_signed_mandate
 from app.mandate.fixture import demo_owner_public_key_hex
 from app.operations import Executor
 from app.persistence import InMemoryLedgerStore, SqlLedgerStore
+from app.persistence.errors import NotFound
+
+
+class StartupError(RuntimeError):
+    """The runtime cannot start safely (missing owner key, or an unprovisioned non-demo database)."""
+
+
+class ResetRefused(RuntimeError):
+    """Runtime.reset() was called against a non-demo deployment backed by a persistent store."""
+
 
 # Demo-only owner credential. The real deployment sets OWNER_TOKEN; the UI's owner console sends it
 # as X-Owner-Token. Without it, a request claiming to be the OWNER is treated as the AGENT.
@@ -74,12 +94,15 @@ class Runtime:
             return adv
 
     def reset(self, scenario: str = "golden_sme") -> None:
-        """Reload fixtures and clear the ledger (POST /demo/reset)."""
+        """Reload fixtures and clear the ledger (POST /demo/reset). Refused (ResetRefused) when DEMO_MODE is off
+        and the store is not the in-memory one: a real deployment's books are never wiped."""
+        from app.api.auth import demo_mode
+
+        if not demo_mode() and not isinstance(self.store, InMemoryLedgerStore):
+            raise ResetRefused("reset is a demo-only operation; refused because DEMO_MODE is off and the store is persistent")
         with self.lock:
             self.store.reset()
-            state, _unsigned = load_scenario(scenario)
-            self.store.put_state(state)
-            self.store.put_mandate(load_signed_mandate())
+            _seed(self.store, scenario)
             self.day = 0
             self.scenario = scenario
             self.latest_verdict.clear()
@@ -89,16 +112,67 @@ class Runtime:
             reset_sessions()
 
 
+def _seed(store: LedgerStore, scenario: str = "golden_sme") -> None:
+    """Write the demo fixture state and the signed demo mandate. Never deletes."""
+    state, _unsigned = load_scenario(scenario)
+    store.put_state(state)
+    store.put_mandate(load_signed_mandate())
+
+
+def _has(read: Any) -> bool:
+    try:
+        read()
+    except NotFound:
+        return False
+    return True
+
+
+def _owner_key_hex(s: Settings, demo: bool) -> str:
+    if demo:
+        return demo_owner_public_key_hex()
+    key = s.owner_public_key_hex.strip().lower()
+    if not key:
+        raise StartupError("DEMO_MODE is off: set OWNER_PUBLIC_KEY_HEX to the owner's Ed25519 public key (64 hex "
+                           "characters). The published demo key is never pinned outside DEMO_MODE.")
+    if len(key) != 64 or any(c not in "0123456789abcdef" for c in key):
+        raise StartupError("OWNER_PUBLIC_KEY_HEX must be 64 hex characters (an Ed25519 public key).")
+    return key
+
+
 _runtime: Runtime | None = None
 
 
 def get_runtime() -> Runtime:
+    """Open the configured store and hydrate from it. Never deletes; seeds only an empty store, in DEMO_MODE."""
     global _runtime
     if _runtime is None:
+        from app.api.auth import demo_mode
+
         s = get_settings()
+        demo = demo_mode()
+        owner_key = _owner_key_hex(s, demo)
         store: LedgerStore = InMemoryLedgerStore() if s.database_url == "memory" else SqlLedgerStore(s.database_url)
-        _runtime = Runtime(settings=s, store=store, owner_key_hex=demo_owner_public_key_hex())
-        _runtime.reset()
+        try:
+            has_state, has_mandate = _has(store.get_state), _has(store.get_mandate)
+            seedable = demo or isinstance(store, InMemoryLedgerStore)  # an in-memory store is empty by definition
+            if not has_state and not seedable:
+                raise StartupError("DEMO_MODE is off and the store holds no books: provision the database first "
+                                   "(a financial state and an owner-signed mandate); the demo fixture is not seeded "
+                                   "into a non-demo deployment.")
+            if not has_state:
+                _seed(store)
+            elif not has_mandate:
+                if not seedable:
+                    raise StartupError("the store holds a financial state but no mandate: provision the "
+                                       "owner-signed mandate before starting with DEMO_MODE off.")
+                store.put_mandate(load_signed_mandate())
+            rt = Runtime(settings=s, store=store, owner_key_hex=owner_key)
+            rt.day = store.get_state().as_of_day
+        except Exception:
+            if isinstance(store, SqlLedgerStore):
+                store.dispose()
+            raise
+        _runtime = rt
     return _runtime
 
 
