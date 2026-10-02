@@ -5,7 +5,7 @@
  * Conventions (INVARIANT 13: the UI never computes money):
  * - `*_fen` fields are integer fen. They are for plotting only; never add, subtract or format them in the UI.
  * - Read views are returned "server-formatted": every `<name>_fen` / `<name>_bp` number has a sibling
- *   `<name>_display` string ("¥26,455.62", "1.25×"), and the bare `fen` of `CostLine` has `display`.
+ *   `<name>_display` string ("¥28,326.92", "1.25×"), and the bare `fen` of `CostLine` has `display`.
  *   `Displayed<T>` expresses that rule in the type system.
  * - Ratio carries `text` (two decimals, half-up), as produced by `Ratio.text` in money.py.
  */
@@ -277,6 +277,15 @@ export interface Receivable {
   terms_days: number;
   status: "OPEN" | "FINANCED" | "SETTLED" | "FAILED";
   confirmed: boolean;
+  settled_fen?: Fen;
+  /** The financing advance still outstanding on this invoice (0 when none). */
+  advance_fen?: Fen;
+  advance_facility_id?: string | null;
+  /** Contractual terms (ADR-0009): present only when an accepted agreement changed the invoice; `face_fen` and `terms_days` are the contractual values. */
+  base_face_fen?: Fen;
+  base_terms_days?: number;
+  /** Ids of the invoice adjustments written onto this invoice. */
+  applied?: string[];
 }
 
 export interface RecurringInvoice {
@@ -310,6 +319,38 @@ export interface Counterparty {
   known: boolean;
 }
 
+/** ADR-0009: an accepted terms extension or price change, with its scope fixed at acceptance. */
+export interface InvoiceAdjustment {
+  /** "<commitment_id>:<obligation_id>" */
+  id: string;
+  commitment_id: string;
+  obligation_id: string;
+  counterparty_id: string;
+  days_delta: number;
+  price_bp: Bp;
+  /** An explicit list of invoice ids, or null when the scope is an issue-day range. */
+  receivable_ids: string[] | null;
+  from_issue_day: Day | null;
+  /** Null: perpetual. */
+  until_issue_day: Day | null;
+  contingent_gain?: boolean;
+}
+
+/** ADR-0010: one draw or invoice advance with its dates. Cash lands on `arrival_day` (request day + lead time). */
+export interface FundingLot {
+  id: string;
+  facility_id: string;
+  principal_fen: Fen;
+  remaining_fen: Fen;
+  request_day: Day;
+  arrival_day: Day;
+  receivable_id: string | null;
+  maturity_day: Day | null;
+  /** True once the cash has been credited; false while the funding is still in transit. */
+  settled: boolean;
+  assumed_date: boolean;
+}
+
 export interface FinancialState {
   org_id: string;
   as_of: string;
@@ -323,6 +364,11 @@ export interface FinancialState {
   counterparties: Counterparty[];
   monthly_ebitda_fen: Fen;
   state_version: number;
+  as_of_day?: Day;
+  /** Dated draws and advances; present only when there are any. */
+  lots?: FundingLot[];
+  /** Live agreements' scopes; present only when there are any. */
+  invoice_adjustments?: InvoiceAdjustment[];
 }
 
 // ------------------------------------------------------------------ funding and trajectory
@@ -609,6 +655,8 @@ export interface MandateView {
 export interface StateView {
   state: Displayed<FinancialState>;
   scenario_id: string;
+  /** The simulated day the books are on. */
+  day?: Day;
 }
 
 /** GET /offers/{id} and the response of POST /offers. */
@@ -951,6 +999,18 @@ export interface BorrowerFileView {
 
 export type AlertSeverity = "CRITICAL" | "WARNING" | "INFO";
 
+/** FUNDING_IN_TRANSIT is information only (never actionable): a draw or advance requested but not yet landed. */
+export type AlertKind =
+  | "RESERVE_BREACH_AHEAD"
+  | "RESERVE_HEADROOM_LOW"
+  | "COVENANT_HEADROOM_LOW"
+  | "CLEAN_DOWN_AT_RISK"
+  | "COMMITMENT_EXPIRING"
+  | "RECEIVABLE_PAST_DUE"
+  | "CONCESSIONS_NEAR_CAP"
+  | "FACILITY_REPAYABLE"
+  | "FUNDING_IN_TRANSIT";
+
 export interface SuggestedOperation {
   operation_kind: string;
   facility_id: string | null;
@@ -963,7 +1023,7 @@ export interface SuggestedOperation {
   cost_display?: string | null;
   cost_days?: number | null;
   cost_formula?: string | null;
-  /** The cure's annual rate is above the mandate's max APR (disclosed only; nothing is blocked). */
+  /** The cure's effective annual cost is above the mandate's max APR: the agent may not run it alone, it waits for the owner's approval. */
   above_apr_cap?: boolean;
   /** Always false: alerts never execute anything. */
   executes_automatically: boolean;
@@ -971,7 +1031,7 @@ export interface SuggestedOperation {
 
 export interface AlertItem {
   id: string;
-  kind: string;
+  kind: AlertKind | string;
   severity: AlertSeverity;
   title: string;
   detail: string;
@@ -981,8 +1041,10 @@ export interface AlertItem {
   amount_fen: Fen | null;
   amount_display: string | null;
   committed_cure: boolean;
+  /** Machine-readable inputs behind the alert (strings). FUNDING_IN_TRANSIT carries facility_id, lot_id, request_day and arrival_day. */
+  inputs?: Record<string, string>;
   suggested: SuggestedOperation[];
-  /** True when the agent may execute the alert's cure (POST /alerts/{id}/act). Absent in older recordings: treat as false. */
+  /** True when the agent may try the alert's cure (POST /alerts/{id}/act). A cure above the yearly cost ceiling is still tried, but waits for the owner's approval. */
   actionable: boolean;
 }
 
@@ -1055,6 +1117,31 @@ export interface ReconciliationView {
   expected_total_display: string;
   chain_head_hash: string | null;
   chain_valid: boolean;
+  /** Each early payment a live commitment promised, and what became of it. */
+  promised?: PromisedReceipt[];
+  /** How many of them lapsed (their day passed unpaid). */
+  lapsed_promises?: number;
+}
+
+export type PromiseStatus = "AWAITED" | "RECEIVED" | "LAPSED" | "SETTLED_OTHERWISE";
+
+export interface PromisedReceipt {
+  commitment_id: string;
+  obligation_id: string;
+  receivable_id: string;
+  counterparty_id: string;
+  promised_day: Day | null;
+  face_fen: Fen;
+  face_display: string;
+  discount_fen: Fen;
+  discount_display: string;
+  expected_fen: Fen;
+  expected_display: string;
+  status: PromiseStatus;
+  /** Log seq of the receipt that paid it, when RECEIVED. */
+  receipt_seq: number | null;
+  detail: string;
+  formula: string;
 }
 
 /** The closed intent set of POST /nl (services/api/app/nl/models.py). Unknown values still render, by their raw code. */

@@ -126,7 +126,7 @@ function FundingBody({ view, basis, snapshot }: { view: FundingView; basis: "COM
       </Card>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
-        <PlanCard plan={plan} id="plan" highlight />
+        <PlanCard plan={plan} id="plan" highlight leadTimes={Object.fromEntries(view.menu.map((r) => [r.facility.id, r.facility.lead_time_days]))} />
 
         <div className="min-w-0 space-y-6">
           <Card id="marginal" title={t("fund.marginal")} subtitle={t("fund.marginal.sub")}>

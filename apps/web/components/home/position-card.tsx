@@ -1,5 +1,6 @@
 "use client";
 
+import { InTransit, lotsInTransit } from "@/components/in-transit";
 import { Card, ErrorState, LoadingBlock, Stat } from "@/components/ui";
 import { getState, getTrajectory } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
@@ -19,6 +20,7 @@ export function PositionCard() {
   }, []);
   const d = view.data;
   const month1 = d?.traj.trajectory.months[0];
+  const transit = d ? lotsInTransit(d.state.state) : [];
 
   return (
     <Card id="home-position" title={t("home.position")} subtitle={t("home.position.sub")} actions={<SectionLink href="/trajectory">{t("home.position.open")}</SectionLink>}>
@@ -27,8 +29,11 @@ export function PositionCard() {
       ) : !d ? (
         <LoadingBlock rows={2} />
       ) : (
-        <dl className="grid grid-cols-2 gap-3 lg:grid-cols-5">
-          <Stat label={t("home.position.cash")} value={d.state.state.cash_display} />
+        <dl className={`grid grid-cols-2 gap-3 ${transit.length ? "lg:grid-cols-6" : "lg:grid-cols-5"}`}>
+          <Stat label={transit.length ? t("home.position.cashHand") : t("home.position.cash")} value={d.state.state.cash_display} />
+          {transit.length ? (
+            <Stat label={t("home.position.transit")} value={<InTransit lots={transit} />} className="col-span-2 lg:col-span-1" />
+          ) : null}
           <Stat label={t("home.position.floor")} value={d.traj.floor.min_cash_display} />
           <Stat
             label={t("home.position.lowest")}

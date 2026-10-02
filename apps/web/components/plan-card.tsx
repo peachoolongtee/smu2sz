@@ -1,13 +1,29 @@
 "use client";
 
 import { useI18n } from "@/lib/i18n";
-import type { Displayed, FundingPlan } from "@/lib/types";
-import { CodeBadge } from "./badges";
+import type { Displayed, FundingPlan } from "@/lib/types";import { CodeBadge } from "./badges";
 import { Badge, Card, Formula, TableWrap, tableCls, tdCls, thCls } from "./ui";
 
 /** A funding plan exactly as the router returned it: actions, priced cost lines with formulas, rejected candidates. */
-export function PlanCard({ plan, id, highlight = false }: { plan: Displayed<FundingPlan>; id: string; highlight?: boolean }) {
+export function PlanCard({
+  plan,
+  id,
+  highlight = false,
+  leadTimes,
+}: {
+  plan: Displayed<FundingPlan>;
+  id: string;
+  highlight?: boolean;
+  /** Each facility's lead time in days (from the funding menu or the books). The landing day of a draw or advance is its request day plus this. */
+  leadTimes?: Record<string, number>;
+}) {
   const { t, te } = useI18n();
+  /** The day the cash lands: only for funding that brings cash in (draw, invoice advance) on a facility whose lead time is known. */
+  const landing = (a: FundingPlan["actions"][number]): number | null => {
+    if (a.kind !== "DRAW" && a.kind !== "FINANCE_INVOICE") return null;
+    const lead = leadTimes?.[a.facility_id];
+    return lead === undefined ? null : a.day + lead;
+  };
   return (
     <Card
       id={id}
@@ -30,6 +46,7 @@ export function PlanCard({ plan, id, highlight = false }: { plan: Displayed<Fund
                 <th scope="col" className={thCls}>{t("plan.action")}</th>
                 <th scope="col" className={thCls}>{t("plan.facility")}</th>
                 <th scope="col" className={thCls}>{t("plan.requested")}</th>
+                <th scope="col" className={thCls}>{t("plan.lands")}</th>
                 <th scope="col" className={`${thCls} text-right`}>{t("common.amount")}</th>
                 <th scope="col" className={thCls}>{t("plan.repay")}</th>
               </tr>
@@ -43,6 +60,9 @@ export function PlanCard({ plan, id, highlight = false }: { plan: Displayed<Fund
                     {a.receivable_id ? ` · ${a.receivable_id}` : ""}
                   </td>
                   <td className={`${tdCls} tabular-nums`}>{t("common.dayN", { n: a.day })}</td>
+                  <td className={`${tdCls} tabular-nums`} data-testid="plan-lands">
+                    {landing(a) !== null ? t("common.dayN", { n: landing(a) ?? 0 }) : t("common.none")}
+                  </td>
                   <td className={`${tdCls} text-right tabular-nums`}>{a.amount_display}</td>
                   <td className={`${tdCls} tabular-nums`}>{a.repay_day !== null ? t("common.dayN", { n: a.repay_day }) : t("common.none")}</td>
                 </tr>
