@@ -66,9 +66,11 @@ def test_a_plan_the_executor_would_queue_is_flagged_by_the_router_with_the_reaso
 def test_the_golden_day_zero_plan_needs_no_one():
     s, m = golden()
     p = plan(s, [], m)
-    assert p.total_cost_fen == 271_294 and p.admissible and not p.needs_owner_approval
+    # line 841.64 + an advance of 255,000 (the gap includes the existing loan's day-30 payment): 1,634.79 + 637.50
+    # = 2,272.29, an effective 2,272.29 / 255,000 × 365/29 = 11.2% a year, under the 15% ceiling
+    assert p.total_cost_fen == 311_393 and p.admissible and not p.needs_owner_approval
     assert p.approval_reason == "" and not any(c.needs_owner_approval or c.approval_reason for c in p.costs)
-    assert [(c.facility_id, c.fen) for c in p.costs] == [("FAC-LINE", 84_164), ("FAC-IF", 187_130)]
+    assert [(c.facility_id, c.fen) for c in p.costs] == [("FAC-LINE", 84_164), ("FAC-IF", 227_229)]
     assert not any(r.needs_owner_approval for r in compare(s, [], m))
 
 
@@ -76,7 +78,8 @@ def _cheaper_flagged_dearer_unflagged():
     """The line (10.9%) can cover the whole gap and is under the 11% ceiling; the advance (11.22% over its 29 days) is
     flagged and cheaper. The agent can act alone with the line, so the line is the plan."""
     s, m = golden()
-    s = with_facility(without_facilities(s, "FAC-EARLYPAY"), "FAC-LINE", limit_fen=40_000_000, rate_bp=1090)
+    # ¥410,000 of line: the gap is ¥405,000 (it includes the existing loan's day-30 payment)
+    s = with_facility(without_facilities(s, "FAC-EARLYPAY"), "FAC-LINE", limit_fen=41_000_000, rate_bp=1090)
     return s, m.model_copy(update={"max_apr_bp": 1100})
 
 
@@ -98,7 +101,7 @@ def test_with_nothing_unflagged_the_cheapest_flagged_plan_is_the_plan():
     s, m = golden()
     tight = m.model_copy(update={"max_apr_bp": 1000})  # only the 6.4% line is within 10%, and it cannot cover the gap
     p = plan(s, [], tight)
-    assert p.admissible and p.needs_owner_approval and p.total_cost_fen == 271_294
+    assert p.admissible and p.needs_owner_approval and p.total_cost_fen == 311_393
     assert ViolationCode.MAX_APR_EXCEEDED not in {v.code for v in p.violations}
     assert all(ViolationCode.MAX_APR_EXCEEDED not in r.reasons for r in compare(s, [], tight))
 

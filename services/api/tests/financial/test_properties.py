@@ -9,6 +9,7 @@ from app.domain.fixtures import load_scenario
 from app.domain.models import CashFlow, Facility, FacilityKind, FacilityStatus, FlowKind, Mode, Repayment
 from app.domain.money import Ratio, bp, post
 from app.financial import project, value_concessions
+from app.financial.debts import debt_payments
 from tests.financial.builders import draw, early_pay, extension, finance, rebate
 
 STATE, _ = load_scenario("golden_sme")
@@ -58,7 +59,10 @@ def test_conservation_and_integer_money(extra_flows, actions, mode, horizon, wit
         assert p.closing_fen == p.opening_fen + sum(e.amount_fen for e in p.events)
         assert all(type(e.amount_fen) is int for e in p.events)
     assert t.min_cash_fen == min(p.closing_fen for p in t.days)
-    assert t.days[-1].debt_outstanding_fen == sum(d.principal_fen for d in state.debts)  # all repaid
+    # every facility repaid; the existing debts are down by their own scheduled principal (app.financial.debts)
+    left = sum(d.principal_fen - sum(p.principal for p in debt_payments(d, state.as_of_day, t.horizon_days + 1))
+               for d in state.debts)
+    assert t.days[-1].debt_outstanding_fen == left
     assert_no_float(t.model_dump(mode="python"))
 
 

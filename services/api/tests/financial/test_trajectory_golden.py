@@ -101,7 +101,8 @@ def test_v2_plan_line_plus_invoice_financing(state, g):
     # the advance lands on day 3 (lead time) and is repaid from RCV-A on day 32
     assert [e.kind for e in t.days[3].events] == [LedgerEventKind.ADVANCE]
     assert t.days[3].debt_outstanding_fen - t.days[2].debt_outstanding_fen == g["plan_advance"]
-    assert t.days[32].debt_outstanding_fen == t.days[0].debt_outstanding_fen - 15_000_000
+    # day 32: the line is repaid and the existing loan paid ¥45,000 on day 30
+    assert t.days[32].debt_outstanding_fen == t.days[0].debt_outstanding_fen - 15_000_000 - 4_500_000
 
 
 def test_line_interest_formula(state, g):

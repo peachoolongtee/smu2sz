@@ -36,12 +36,25 @@ from tests.funding.random_cases import random_case
 from tests.funding.test_differential import LegacyRules
 from tests.funding.variants import SPAN, golden
 
-# (case, brute-force optimum in fen, the router's cost before EV-06)
+# (case, brute-force optimum in fen, the router's cost before EV-06). Every gap includes the existing loan's
+# ¥45,000 day-30 payment (FINANCIAL_SEMANTICS §5): need = payroll + 120,000 + 45,000 + 300,000 reserve − cash.
+# R01 (need 505,000): line 150,000 × 5.5% × 32/365 = 723.29 + early pay on RI:2 netting 355,000 at 0.8%: face
+#   355,000 / 0.992 = 357,862.90, discount 2,862.90 -> 3,586.19. Before EV-06 the line ran to day 47:
+#   150,000 × 5.5% × 47/365 = 1,062.33 + 2,862.90 = 3,925.23.
+# R03 (need 515,000): line 200,000 × 6.4% × 32/365 = 1,122.19 + a bill netting 315,000 at 1.5% for 179 days:
+#   face 315,000 / (1 − 1.5% × 179/365) = 317,334.36, discount 2,334.36 -> 3,456.55. Before: the whole 400,000 bill
+#   (2,942.47) + an advance of 515,000 − 397,057.53 = 117,942.47 (581.63 + fee 294.86) -> 3,818.96.
+# R05 (need 515,000): line 300,000 × 4.5% × 32/365 = 1,183.56 + early pay 100,000 at 1.2% (1,200.00, nets 98,800)
+#   + an advance of 116,200 (116,200 × 7.8% × 30/365 = 744.95 + fee 116.20) -> 3,244.71. Before: line to day 47
+#   (1,738.36) + an advance of 215,000 (1,378.36 + 215.00) -> 3,331.72.
+# R15 (need 565,000): line 300,000 × 8% × 32/365 = 2,104.11 + early pay netting 265,000 at 0.8%: face 267,137.10,
+#   discount 2,137.10 -> 4,241.21. Before: early pay of all 420,000 (3,360.00) + an advance of 148,360
+#   (853.58 + fee 593.44) -> 4,807.02.
 EV06 = [
-    ("r01_early_line_repayment", 322_329, 356_233),
-    ("r03_early_line_repayment", 312_307, 348_455),
-    ("r05_early_line_repayment", 270_534, 299_822),
-    ("r15_early_line_repayment", 387_830, 436_811),
+    ("r01_early_line_repayment", 358_619, 392_523),
+    ("r03_early_line_repayment", 345_655, 381_896),
+    ("r05_early_line_repayment", 324_471, 333_172),
+    ("r15_early_line_repayment", 424_121, 480_702),
 ]
 
 
@@ -65,15 +78,18 @@ def test_line_may_be_repaid_before_the_baseline_recovers(name, optimum, before):
 def test_golden_plan_is_unchanged():
     s, m = golden()
     p = plan(s, [], m)
-    assert p.total_cost_fen == golden_values()["v2_optimum_total"] == 271_294
+    # line 841.64 + an advance of 405,000 − 150,000 = 255,000 (1,634.79 + fee 637.50) = 3,113.93
+    assert p.total_cost_fen == golden_values()["v2_optimum_total"] == 311_393
     assert sorted((a.facility_id, a.amount_fen, a.repay_day) for a in p.actions) == [
-        ("FAC-IF", 21_000_000, None), ("FAC-LINE", 15_000_000, 32)]
+        ("FAC-IF", 25_500_000, None), ("FAC-LINE", 15_000_000, 32)]
 
 
 def _one_fen_short():
-    """The evaluation's reserve boundary: a 1% early settlement of RCV-A with opening cash 1 fen short."""
+    """The evaluation's reserve boundary: a 1% early settlement of RCV-A with opening cash 1 fen short. The low is
+    day 30, after the existing loan's ¥45,000 payment: 389,199.99 + 415,800 − 340,000 − 120,000 − 45,000 =
+    299,999.99 (the evaluation's 344,199.99 plus that payment)."""
     s, m = golden()
-    s = s.model_copy(update={"cash_fen": 34_419_999})
+    s = s.model_copy(update={"cash_fen": 38_919_999})
     ob = Obligation(id="OB-D", type=ObligationType.IMMEDIATE_DISCOUNT, counterparty_id="BUYER-1", rate_bp=100,
                     base=ObligationBase(kind=BaseKind.INVOICE, amount_fen=42_000_000, receivable_id="RCV-A"),
                     contingency=Contingency.FIRM, duration=Duration(kind=DurationKind.ONE_OFF), spans=SPAN,
@@ -139,4 +155,4 @@ def test_committed_search_is_never_capped():
 
     p = _plan_with(Recorded, s, [], m, "COMMITTED")
     assert not runs[0].capped and len(runs[0]._probes) > _TinyBudget.EXPECTED_PROBE_BUDGET
-    assert p.total_cost_fen == 271_294 and "capped" not in p.label
+    assert p.total_cost_fen == 311_393 and "capped" not in p.label

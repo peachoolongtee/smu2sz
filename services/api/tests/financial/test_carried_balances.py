@@ -7,6 +7,7 @@ import pytest
 
 from app.domain.models import FacilityStatus, FundingAction, FundingActionKind, LedgerEventKind, Mode
 from app.financial import FundingActionError, finance_invoice_charges, line_interest, project
+from app.financial.debts import debt_payments
 from tests.financial.builders import finance
 
 C, E = Mode.CONSERVATIVE, Mode.EXPECTED
@@ -29,8 +30,11 @@ def events(t, kind: LedgerEventKind, ref: str) -> list[tuple[int, int]]:
 
 
 def debt(t, day: int, state) -> int:
-    """Facility debt outstanding on `day`: the day's total less the state's other debt positions."""
-    return t.days[day].debt_outstanding_fen - sum(d.principal_fen for d in state.debts)
+    """Facility debt outstanding on `day`: the day's total less the state's other debt positions, which are paid down
+    on their own schedule (`app.financial.debts`)."""
+    existing = sum(d.principal_fen - sum(p.principal for p in debt_payments(d, state.as_of_day, day + 1))
+                   for d in state.debts)
+    return t.days[day].debt_outstanding_fen - existing
 
 
 def fac(state, fid: str):

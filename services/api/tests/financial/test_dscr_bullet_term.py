@@ -74,14 +74,18 @@ def test_upfront_fee_is_part_of_the_level_amount(state):
 # ---------------------------------------------------------------- 2. nothing else moves (hard-coded from dev)
 
 _TWO = Fraction(2)
+# Month-end debt is after the existing loan's own ¥45,000 payments (days 30, 60, 90, 120: FINANCIAL_SEMANTICS §5):
+# the dev figures less 4,500,000 × m in month m. Debt service and DSCR do not move (the ratio keeps its fixed
+# ¥45,000 service).
+_D = [150_000_000 - 4_500_000 * m for m in (1, 2, 3, 4)]  # 145.5m, 141m, 136.5m, 132m
 _BEFORE = {
-    "none": [(4_500_000, 150_000_000, _TWO)] * 4,
-    "v2": [(4_500_000, 186_000_000, _TWO), (4_771_294, 150_000_000, Fraction(4_500_000, 2_385_647)),
-           (4_500_000, 150_000_000, _TWO), (4_500_000, 150_000_000, _TWO)],
-    "v1": [(4_500_000, 165_000_000, _TWO), (4_584_164, 150_000_000, Fraction(2_250_000, 1_146_041)),
-           (4_500_000, 150_000_000, _TWO), (4_500_000, 150_000_000, _TWO)],
-    "line45": [(4_500_000, 165_000_000, _TWO), (4_618_356, 150_000_000, Fraction(750_000, 384_863)),
-               (4_500_000, 150_000_000, _TWO), (4_500_000, 150_000_000, _TWO)],
+    "none": [(4_500_000, d, _TWO) for d in _D],
+    "v2": [(4_500_000, _D[0] + 36_000_000, _TWO), (4_771_294, _D[1], Fraction(4_500_000, 2_385_647)),
+           (4_500_000, _D[2], _TWO), (4_500_000, _D[3], _TWO)],
+    "v1": [(4_500_000, _D[0] + 15_000_000, _TWO), (4_584_164, _D[1], Fraction(2_250_000, 1_146_041)),
+           (4_500_000, _D[2], _TWO), (4_500_000, _D[3], _TWO)],
+    "line45": [(4_500_000, _D[0] + 15_000_000, _TWO), (4_618_356, _D[1], Fraction(750_000, 384_863)),
+               (4_500_000, _D[2], _TWO), (4_500_000, _D[3], _TWO)],
 }
 
 
@@ -123,8 +127,10 @@ def test_amortising_facility_is_unchanged(state):
         m = max(1, -(-(arrival + MONTH * row.month) // MONTH))
         expect[m] = expect.get(m, 0) + row.payment
     assert t.interest_posted_fen == sum(r.interest for r in amortisation_schedule(36_000_000, etl.rate_bp, etl.term_months))
+    # the existing loan's fixed service counts while its schedule runs: its 34th and last payment is on day 1,020
+    # (33 × ¥45,000 + ¥15,000), month 34; from month 35 only the ETL is serviced
     for m, p in enumerate(t.months, start=1):
-        assert p.debt_service_fen == BASE + expect.get(m, 0)
+        assert p.debt_service_fen == (BASE if m <= 34 else 0) + expect.get(m, 0)
 
 
 # ---------------------------------------------------------------- 5. 6-month bullet, 6. beyond the horizon, 7. two lots

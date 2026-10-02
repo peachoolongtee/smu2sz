@@ -16,7 +16,11 @@ def test_late_cheap_loan_is_rejected_when_cash_is_needed_earlier():
     s, m = cases.late_cheap_loan(payroll_day=12)
     p = plan(s, [], m)
     assert p.admissible
-    assert all(a.facility_id != "FAC-GGL" for a in p.actions)
+    # the loan lands on day 21: it cannot carry the gap that opens on day 12 (400,000 − 340,000 − 120,000 + 300,000
+    # = 360,000 by day 20, on the line and the advance), only the ¥45,000 the existing loan's day-30 payment adds
+    early = sum(a.amount_fen for a in p.actions if a.facility_id != "FAC-GGL" and a.kind.value != "REPAY")
+    assert early >= 36_000_000
+    assert sum(a.amount_fen for a in p.actions if a.facility_id == "FAC-GGL") <= 4_500_000
     ggl = next(r for r in menu_view(s, m, need_fen=p.need_fen, need_day=12) if r.facility_id == "FAC-GGL")
     assert ggl.reasons == [ViolationCode.LEAD_TIME_TOO_LONG] and not ggl.admissible_for_need
 

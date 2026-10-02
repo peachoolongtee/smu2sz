@@ -46,10 +46,12 @@ def no_new_borrowing() -> tuple[FinancialState, Mandate]:
 
 
 def long_gap() -> tuple[FinancialState, Mandate]:
-    """Receivable A pays on day 100; no recurring invoices and no day-47 bill: a line drawn until day 100
-    cannot rest at zero for 30 days within the 120-day horizon (clean-down)."""
+    """Receivable A pays on day 100; no recurring invoices, no day-47 bill and no existing loan (its ¥45,000 payments
+    on days 30, 60 and 90 would make the gap ¥495,000, more than any committed source can carry until day 100): a
+    line drawn until day 100 cannot rest at zero for 30 days within the 120-day horizon (clean-down)."""
     s, m = golden()
-    s = s.model_copy(update={"recurring_invoices": [], "flows": [f for f in s.flows if f.id != "F-BILL47"]})
+    s = s.model_copy(update={"recurring_invoices": [], "flows": [f for f in s.flows if f.id != "F-BILL47"],
+                             "debts": []})
     s = with_receivable(s, "RCV-A", terms_days=113)
     return s, m
 
@@ -62,7 +64,7 @@ def late_cheap_loan(payroll_day: int = 12) -> tuple[FinancialState, Mandate]:
 
 
 def uncovered_gap() -> tuple[FinancialState, Mandate]:
-    """Only the ¥150,000 line is usable: it cannot cover the ¥360,000 gap."""
+    """Only the ¥150,000 line is usable: it cannot cover the ¥405,000 gap."""
     s, m = golden()
     return without_facilities(s, "FAC-IF", "FAC-EARLYPAY"), m
 
@@ -80,7 +82,9 @@ def permanent_need() -> tuple[FinancialState, Mandate]:
     inflow arrives only on day 300). The clean-down line is cheapest (3%) but cannot carry it; a
     committed guaranteed loan (same-day, 12 months) can."""
     s, m = golden()
-    s = s.model_copy(update={"recurring_invoices": [], "receivables": [], "flows": []})
+    # the books are cleared to this one need, the existing loan included (its ¥45,000 a month would run on to the
+    # 12-month loan's maturity with nothing coming in before day 300)
+    s = s.model_copy(update={"recurring_invoices": [], "receivables": [], "flows": [], "debts": []})
     s = without_facilities(s, "FAC-IF", "FAC-EARLYPAY")
     s = with_facility(s, "FAC-LINE", rate_bp=300)
     s = with_facility(s, "FAC-GGL", status=FacilityStatus.COMMITTED, lead_time_days=0)

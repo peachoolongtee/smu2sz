@@ -58,4 +58,6 @@ def test_amortising_draw_in_the_trajectory(state, g):
     assert t.interest_posted_fen == g["capex"]["loan_36m"]["total_interest"]
     # month 2 holds the first payment (day 44): existing debt service + one full instalment
     assert t.months[1].debt_service_fen == 4_500_000 + g["capex"]["loan_36m"]["monthly_payment"]
-    assert t.days[-1].debt_outstanding_fen == 150_000_000
+    # the existing ¥1,500,000 loan is paid off by its own schedule inside this horizon: 33 × ¥45,000 then ¥15,000
+    # on day 34 × 30 = 1,020; the ETL's last instalment is on day 14 + 1,080 = 1,094
+    assert t.days[1_019].debt_outstanding_fen > 0 and t.days[-1].debt_outstanding_fen == 0

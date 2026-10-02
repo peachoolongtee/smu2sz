@@ -283,18 +283,22 @@ PROPS = settings(max_examples=int(os.environ.get("AGREE_EXAMPLES", "60")), deadl
 # the golden day-0 plan (line + advance on RCV-A, not flagged), and the review's R01: an invoice due soon, so the
 # advance is held about 10 days, costs far above the ceiling and must wait for the owner
 # the router prices an advance on a recurring invoice that is not issued yet (RI:BUYER-1:2): the executor refuses it
-UNISSUED = World(cash=23_000_000, payroll=(5, -8_000_000), supplier=(10, -3_000_000), bill=None,
+# (cash ¥275,000 in both: the ¥230,000 they were pinned with plus the existing loan's ¥45,000 day-30 payment, so the
+# gap is the ¥135,000 they were designed around)
+UNISSUED = World(cash=27_500_000, payroll=(5, -8_000_000), supplier=(10, -3_000_000), bill=None,
                  rcv_a=(5_000_000, 0, 18, 0), recurring=(15_000_000, 2, 30), line=(5_500_000, 300, 0, 0),
                  iff=(12_500_000, 400, 0, 0, 7, 0, None))
 # the same, with an invoice that exists to finance instead: a plan the agent can run beats the cheaper one that
 # relies on RI:BUYER-1:2
-RI_CHEAPER = World(cash=23_000_000, payroll=(5, -8_000_000), supplier=(10, -3_000_000), bill=None,
+RI_CHEAPER = World(cash=27_500_000, payroll=(5, -8_000_000), supplier=(10, -3_000_000), bill=None,
                    rcv_a=(15_000_000, 0, 18, 0), recurring=(15_000_000, 2, 30), line=(5_500_000, 300, 0, 0),
                    iff=(12_500_000, 400, 0, 0, 7, 0, None))
 GOLDEN = World()
 SHORT_HOLD = World(rcv_a=(42_000_000, -13, 26, 0))
 PARTLY_PAID = World(rcv_a=(42_000_000, -13, 45, 50), cash=52_000_000)
-TERM_LOAN = World(cash=30_000_000, ggl=(25_000_000, 500, 2, 3), payroll=(8, -40_000_000))
+# ¥345,000: the ¥300,000 this world was pinned with plus the existing loan's ¥45,000 day-30 payment, so the gap stays
+# ¥520,000 and a small term-loan leg still fits the DSCR (at ¥300,000 the ¥565,000 gap needs more than it can carry)
+TERM_LOAN = World(cash=34_500_000, ggl=(25_000_000, 500, 2, 3), payroll=(8, -40_000_000))
 
 
 @settings(PROPS)
@@ -314,7 +318,7 @@ def test_the_router_plan_runs_in_the_executor_as_quoted(w: World) -> None:
 
 def test_pinned_worlds_make_the_plans_they_are_pinned_for() -> None:
     _, _, golden = committed_plan(build(GOLDEN))
-    assert golden.total_cost_fen == 271_294 and not golden.needs_owner_approval  # day-0 golden plan, unchanged
+    assert golden.total_cost_fen == 311_393 and not golden.needs_owner_approval  # day-0 golden plan (¥3,113.93)
     assert {a.facility_id for a in golden.actions} == {"FAC-LINE", "FAC-IF"}
     _, _, short = committed_plan(build(SHORT_HOLD))
     assert short.admissible and short.needs_owner_approval and "held 10 days" in short.approval_reason

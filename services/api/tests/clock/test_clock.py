@@ -21,7 +21,10 @@ def test_advancing_posts_flows_and_issues_invoices_without_recording_receipts():
     s0 = load_scenario("golden_sme")[0]
     s1, adv = close_days(s0, 40)
     due = [f for f in s0.flows if f.day < 40 and (f.confirmed or f.amount_fen < 0)]
-    assert adv.posted_net_fen == sum(f.amount_fen for f in due) and s1.cash_fen == s0.cash_fen + adv.posted_net_fen
+    assert adv.posted_net_fen == sum(f.amount_fen for f in due)
+    # the existing loan's day-30 payment (¥45,000) is paid by the simulated bank as well
+    assert adv.debt_service_fen == 4_500_000 and s1.debts[0].principal_fen == s0.debts[0].principal_fen - 4_500_000
+    assert s1.cash_fen == s0.cash_fen + adv.posted_net_fen - adv.debt_service_fen
     assert s1.as_of_day == 40 and s1.state_version == s0.state_version + 1
     assert not [f for f in s1.flows if f.id in adv.posted_flow_ids]
     assert [r.status for r in s1.receivables if r.id in {x.id for x in s0.receivables}] == [r.status for r in s0.receivables]
