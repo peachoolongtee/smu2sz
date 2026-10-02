@@ -215,6 +215,8 @@ def _dispatch(ctx: NlContext, p: Parsed, text: str) -> Turn:
     llm = p.source.startswith("llm:")
     if p.correction and s.pending_plan is not None:
         return _correct(ctx, p, text)
+    if llm and p.intent in (Intent.APPROVE, Intent.REJECT):  # the classifier can never decide an approval or confirm a plan
+        return _consent_turn(ctx, p, "approval_llm", text)
     if p.intent in (Intent.APPROVE, Intent.REJECT) and not llm and not _direct_command(ctx, text):
         return _not_a_direct_command(ctx, p)
     if "confirm_unclear" in p.matched and s.pending_plan is not None:
@@ -322,7 +324,7 @@ def _consent_turn(ctx: NlContext, p: Parsed, why: str, text: str = "") -> Turn:
             ctx, "I only act on an instruction that is unconditional and for now, so I have not done anything. "
                  "When you want it, tell me plainly, for example: draw an amount on the credit line.",
             "我只执行无条件、立即生效的明确指令，因此没有执行任何操作。需要时请直接说明，例如：从授信额度提款某金额。"))
-    if not _direct_command(ctx, text):  # an approval cue inside a longer, forwarded or pasted message: log it
+    if why == "approval_unclear" and not _direct_command(ctx, text):  # a cue inside a longer, forwarded or pasted message
         return _not_a_direct_command(ctx, p.model_copy(update={"intent": Intent.APPROVE}))
     return Turn(intent=Intent.AMBIGUOUS, reply=t(
         ctx, "I have not approved or declined anything. To decide an approval, say exactly 'approve' or 'reject' "

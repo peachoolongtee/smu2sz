@@ -3,7 +3,9 @@ classifier is consulted only when these rules find nothing.
 
 Order matters and is fixed ("why"/"为什么" makes a request EXPLAIN before any decline or approval cue):
   (borrower file, financing comparison, reconciliation, ratios and capex are read before the status questions)
-  correction / confirmation of the session's pending plan, Tier-3 requests, explicit approvals,
+  correction / confirmation of the session's pending plan (a short whole-message affirmative only), Tier-3 requests,
+  explicit approvals (a full-match approve or reject sentence only; see app/nl/consent.py), the closed command grammar
+  (the only free text that executes a draw or a repay),
   EXPLAIN, WHAT_IF, fixture or quoted-offer references, ACCELERATE_RECEIPT, NEGOTIATE, REPAY_FACILITY,
   FUND_GAP, SHOW_STATUS, bare approvals, capex, vague cash requests (AMBIGUOUS).
 """
