@@ -4,7 +4,7 @@ import { useState } from "react";
 import { AnnotatedText, type Annotation } from "@/components/annotated-text";
 import { CodeBadge, OutcomeBadge } from "@/components/badges";
 import { SpanQuote } from "@/components/offer-parts";
-import { Badge, Button, Callout, Card, EmptyState, ErrorState, LoadingBlock, PageHeader, Stat } from "@/components/ui";
+import { Button, Callout, Card, EmptyState, ErrorState, LoadingBlock, PageHeader, Stat } from "@/components/ui";
 import type { AnnotationKind } from "@/lib/annotation-style";
 import { getAudit, resetCircuit } from "@/lib/api";
 import { runSecurityScene } from "@/lib/demo";
@@ -184,13 +184,13 @@ export default function SecurityPage() {
                 >
                   <div className="flex flex-wrap items-center gap-2">
                     <CodeBadge code={e.kind} tone="bad" />
-                    <Badge tone="ok">{e.action_taken}</Badge>
-                    <span className="text-xs text-ink-3">
+                    <span className="min-w-0 max-w-full break-words rounded-full border border-ok-line bg-ok-bg px-2 py-0.5 text-xs font-medium text-ok-fg">{e.action_taken}</span>
+                    <span className="min-w-0 max-w-full break-all text-xs text-ink-3">
                       {e.id} &middot; {t("common.dayN", { n: e.day })}
                       {e.trace_id ? ` · ${e.trace_id}` : ""}
                     </span>
                   </div>
-                  <p className="mt-2 text-sm">{e.detail}</p>
+                  <p className="mt-2 break-words text-sm">{e.detail}</p>
                   {e.spans.map((s) => (
                     <SpanQuote key={`${s.doc_id}:${s.start}`} text={s.text} />
                   ))}

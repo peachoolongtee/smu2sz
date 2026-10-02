@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ApprovalCard } from "@/components/approval-card";
 import { Badge, Callout, EmptyState, ErrorState, LoadingBlock, PageHeader } from "@/components/ui";
 import { ApiError, apiMode, decideApproval, getApprovals, getLedger } from "@/lib/api";
@@ -39,6 +39,13 @@ export default function ApprovalsPage() {
   }
 
   const pending = list.data?.filter((a) => a.status === "PENDING").length ?? 0;
+
+  // A link such as /approvals#approval-APR-000001 (from an alert waiting for approval) lands on that card once the queue has loaded.
+  const loaded = Boolean(list.data);
+  useEffect(() => {
+    if (!loaded || typeof window === "undefined" || !window.location.hash) return;
+    document.getElementById(decodeURIComponent(window.location.hash.slice(1)))?.scrollIntoView({ block: "center" });
+  }, [loaded]);
 
   return (
     <>

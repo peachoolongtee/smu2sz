@@ -1,12 +1,13 @@
 "use client";
 
-import { OpStatusBadge, TierBadge } from "@/components/badges";
+import { TierBadge } from "@/components/badges";
+import { OperationResultBox } from "@/components/operation-result";
 import { Badge, Card, EmptyState, ErrorState, LoadingBlock, type Tone } from "@/components/ui";
 import { getAlerts, getApprovals, getLedger } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
 import type { AlertSeverity } from "@/lib/types";
 import { useAsync } from "@/lib/use-async";
-import { FixButton, FixResult, SuggestionCost, useFixAlert } from "./fix-alert";
+import { AlertCure, FixResult, SuggestionCost, useAlertContext, useFixAlert } from "./fix-alert";
 import { SectionLink } from "./today-card";
 
 const severityTone: Record<AlertSeverity, Tone> = { CRITICAL: "bad", WARNING: "warn", INFO: "info" };
@@ -61,6 +62,7 @@ export function RiskCard() {
   const { t, te } = useI18n();
   const alerts = useAsync(getAlerts, []);
   const fixer = useFixAlert();
+  const ctx = useAlertContext();
   const top = alerts.data?.alerts.slice(0, 5) ?? [];
   return (
     <Card id="home-risk" title={t("home.risk")} subtitle={t("home.risk.sub")} actions={<SectionLink href="/alerts">{t("home.risk.open")}</SectionLink>}>
@@ -83,15 +85,11 @@ export function RiskCard() {
                     <Badge tone={severityTone[a.severity]}>{te("alertsev", a.severity)}</Badge>
                     <span className="text-sm font-medium text-ink">{a.title}</span>
                   </div>
-                  <p className="mt-1 break-words text-xs text-ink-2">{a.detail}</p>
+                  {a.kind === "FUNDING_IN_TRANSIT" ? null : <p className="mt-1 break-words text-xs text-ink-2">{a.detail}</p>}
                   {a.suggested.map((s, i) => (
                     <SuggestionCost key={`${s.operation_kind}-${i}`} s={s} />
                   ))}
-                  {a.actionable ? (
-                    <div className="mt-2">
-                      <FixButton alertId={a.id} busyId={fixer.busyId} onFix={(id) => void fixer.fix(id)} />
-                    </div>
-                  ) : null}
+                  <AlertCure alert={a} approvals={ctx.approvals} cap={ctx.cap} busyId={fixer.busyId} onFix={(id) => void fixer.fix(id)} />
                 </li>
               ))}
             </ul>
@@ -118,11 +116,12 @@ export function DoneCard() {
       ) : (
         <ul className="space-y-2" data-testid="home-done-list">
           {mine.map((o) => (
-            <li key={`${o.seq}-${o.op_id}`} className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-md border border-line px-3 py-2 text-sm" data-testid={`home-done-${o.kind}`}>
-              <span className="font-medium text-ink">{te("opkind", o.kind) || o.kind}</span>
-              <OpStatusBadge status={o.status} />
-              <TierBadge tier={o.tier} />
-              <span className="text-xs text-ink-3">{t("common.dayN", { n: o.day })}</span>
+            <li key={`${o.seq}-${o.op_id}`}>
+              <OperationResultBox status={o.status} message={o.message} testId={`home-done-${o.kind}`} kind={o.kind}>
+                <span className="text-sm font-medium text-ink">{te("opkind", o.kind) || o.kind}</span>
+                <TierBadge tier={o.tier} />
+                <span className="text-xs text-ink-3">{t("common.dayN", { n: o.day })}</span>
+              </OperationResultBox>
             </li>
           ))}
         </ul>

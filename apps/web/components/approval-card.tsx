@@ -170,7 +170,10 @@ export function ApprovalCard({
           </Button>
         </div>
       ) : (
-        <p className="mt-3 text-xs text-ink-3">{t("appr.decided", { day: a.decided_day ?? 0 })}</p>
+        // The day of a decision is shown only when the API recorded it for that decision.
+        <p className="mt-3 text-xs text-ink-3" data-testid={`approval-decided-${a.id}`}>
+          {a.decided_day !== null && a.decided_day !== undefined ? t("appr.decidedOn", { day: a.decided_day }) : t("appr.decided")}
+        </p>
       )}
       {resultMessage ? (
         <p className="mt-2 text-sm font-medium text-ink" role="status" data-testid={`approval-result-${a.id}`}>

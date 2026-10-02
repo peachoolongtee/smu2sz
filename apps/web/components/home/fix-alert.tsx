@@ -1,12 +1,15 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { OperationList } from "@/components/chat/assistant-turn";
+import { approvalHref } from "@/components/operation-result";
 import { Badge, Button, ErrorState } from "@/components/ui";
-import { actOnAlert, ApiError } from "@/lib/api";
+import { actOnAlert, ApiError, getApprovals, getMandate } from "@/lib/api";
 import { bump } from "@/lib/demo-store";
 import { useI18n } from "@/lib/i18n";
-import type { AlertActResult, SuggestedOperation } from "@/lib/types";
+import { useAsync } from "@/lib/use-async";
+import type { AlertActResult, AlertItem, ApprovalView, SuggestedOperation } from "@/lib/types";
 
 /**
  * "Let the agent fix this": POST /alerts/{id}/act, then every read refetches (bump). The answer is kept here,
@@ -37,7 +40,7 @@ export function useFixAlert(onDone?: () => void) {
   return { busyId, result, error, fix };
 }
 
-/** What a suggested cure costs, in the server's words: the cost, the formula behind it and a warning when it is above the yearly cap. Nothing when the server sent no cost. */
+/** What a suggested cure costs, in the server's words: the cost, the formula (which carries the yearly rate) and, when the cost is above the ceiling, that the owner must approve it. Nothing when the server sent no cost. */
 export function SuggestionCost({ s }: { s: SuggestedOperation }) {
   const { t } = useI18n();
   if (!s.cost_display) return null;
@@ -46,6 +49,71 @@ export function SuggestionCost({ s }: { s: SuggestedOperation }) {
       <span className="font-medium text-ink">{t("alerts.cost", { cost: s.cost_display })}</span>
       {s.cost_formula ? <span className="break-words font-mono text-ink-3">{s.cost_formula}</span> : null}
       {s.above_apr_cap ? <Badge tone="warn">{t("alerts.aboveCap")}</Badge> : null}
+    </div>
+  );
+}
+
+/** What the alert cards need besides the alerts: the approvals queue (to find a cure waiting for the owner) and the yearly cost ceiling. A failed read only hides that extra. */
+export function useAlertContext(): { approvals: ApprovalView[] | undefined; cap: string | undefined } {
+  const approvals = useAsync(getApprovals, []);
+  const mandate = useAsync(getMandate, []);
+  return { approvals: approvals.data, cap: mandate.data?.mandate.max_apr_display };
+}
+
+/** The pending approval that holds this alert's cure: the executor names its operation `alert:<alert id>:...`. */
+export function pendingApprovalFor(alert: AlertItem, approvals: ApprovalView[] | undefined): ApprovalView | null {
+  return approvals?.find((a) => a.status === "PENDING" && Boolean(a.op_id?.startsWith(`alert:${alert.id}:`))) ?? null;
+}
+
+/**
+ * What the owner can do about one alert, in one place for the home and the alerts page. Information alerts (funding in transit)
+ * get no button. A cure waiting for approval says so and links to the approval card. A cure above the cost ceiling says,
+ * before the click, that it needs the owner's approval.
+ */
+export function AlertCure({
+  alert,
+  approvals,
+  busyId,
+  onFix,
+  cap,
+}: {
+  alert: AlertItem;
+  approvals: ApprovalView[] | undefined;
+  busyId: string | null;
+  onFix: (id: string) => void;
+  /** The mandate's yearly cost ceiling, as the server wrote it (for example "15.00%"), when known. */
+  cap?: string;
+}) {
+  const { t } = useI18n();
+  if (alert.kind === "FUNDING_IN_TRANSIT") {
+    return (
+      <p className="mt-2 text-xs text-ink-3" data-testid="alert-info-only">
+        {t("alerts.transit.info")}
+      </p>
+    );
+  }
+  const waiting = pendingApprovalFor(alert, approvals);
+  if (waiting) {
+    return (
+      <div className="mt-2 rounded-md border border-warn-line bg-warn-bg px-3 py-2 text-xs text-warn-fg" role="status" data-testid={`alert-waiting-${alert.id}`}>
+        <p className="font-semibold">{t("alerts.waiting", { id: waiting.id })}</p>
+        <p className="mt-0.5">{t("alerts.waiting.body")}</p>
+        <Link href={approvalHref(waiting.id)} className="mt-1 inline-block font-medium underline underline-offset-2" data-testid={`alert-approval-link-${alert.id}`}>
+          {t("alerts.waiting.open")}
+        </Link>
+      </div>
+    );
+  }
+  if (!alert.actionable) return null;
+  const needsApproval = alert.suggested.some((s) => s.above_apr_cap);
+  return (
+    <div className="mt-2 space-y-2">
+      {needsApproval ? (
+        <p className="text-xs font-medium text-warn-fg" data-testid={`alert-needs-approval-${alert.id}`}>
+          {cap ? t("alerts.needsApproval", { cap }) : t("alerts.aboveCap")}
+        </p>
+      ) : null}
+      <FixButton alertId={alert.id} busyId={busyId} onFix={onFix} />
     </div>
   );
 }
@@ -86,7 +154,9 @@ export function FixResult({ result, error }: { result: AlertActResult | null; er
         <Badge tone={result.refused ? "bad" : "neutral"}>{t("alerts.fix.refused", { n: result.refused })}</Badge>
       </div>
       <OperationList operations={result.results} />
-      <p className="text-xs text-ink-2">{result.cured ? t("alerts.fix.cured") : t("alerts.fix.notCured")}</p>
+      <p className="text-xs text-ink-2">
+        {result.cured ? t("alerts.fix.cured") : result.pending_approval ? t("alerts.waiting.body") : t("alerts.fix.notCured")}
+      </p>
     </section>
   );
 }

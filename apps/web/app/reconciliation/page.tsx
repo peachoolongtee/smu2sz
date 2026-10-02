@@ -94,6 +94,53 @@ export default function ReconciliationPage() {
             )}
           </Card>
 
+          <Card
+            id="promised"
+            title={t("recon.promised")}
+            subtitle={t("recon.promised.sub")}
+            actions={<Badge tone={data.lapsed_promises ? "bad" : "neutral"}>{`${t("recon.lapsed")}: ${data.lapsed_promises ?? 0}`}</Badge>}
+          >
+            {data.promised?.length ? (
+              <TableWrap label={t("recon.promised")}>
+                <table className={`${tableCls} min-w-[48rem]`}>
+                  <caption className="sr-only">{t("recon.promised")}</caption>
+                  <thead>
+                    <tr>
+                      <th scope="col" className={thCls}>{t("recon.col.receivable")}</th>
+                      <th scope="col" className={thCls}>{t("recon.col.promisedDay")}</th>
+                      <th scope="col" className={`${thCls} text-right`}>{t("recon.col.face")}</th>
+                      <th scope="col" className={`${thCls} text-right`}>{t("recon.col.discount")}</th>
+                      <th scope="col" className={`${thCls} text-right`}>{t("recon.col.expected")}</th>
+                      <th scope="col" className={thCls}>{t("recon.col.status")}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.promised.map((p) => (
+                      <tr key={`${p.commitment_id}:${p.obligation_id}:${p.receivable_id}`} data-testid={`promised-${p.receivable_id}`} data-status={p.status}>
+                        <td className={tdCls}>
+                          <p className="font-medium">{p.receivable_id}</p>
+                          <p className="text-xs text-ink-2">{p.detail}</p>
+                        </td>
+                        <td className={`${tdCls} tabular-nums`}>{p.promised_day !== null ? t("common.dayN", { n: p.promised_day }) : t("common.none")}</td>
+                        <td className={`${tdCls} text-right tabular-nums`}>{p.face_display}</td>
+                        <td className={`${tdCls} text-right tabular-nums`}>{p.discount_display}</td>
+                        <td className={`${tdCls} text-right tabular-nums`}>{p.expected_display}</td>
+                        <td className={tdCls}>
+                          <Badge tone={p.status === "RECEIVED" ? "ok" : p.status === "AWAITED" ? "info" : "bad"}>
+                            <span aria-hidden>{p.status === "RECEIVED" ? "✓" : p.status === "AWAITED" ? "…" : "!"}</span>
+                            {te("promstatus", p.status)}
+                          </Badge>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </TableWrap>
+            ) : (
+              <p className="text-sm text-ink-2">{t("recon.promised.empty")}</p>
+            )}
+          </Card>
+
           <Card id="outstanding" title={t("recon.outstanding")} subtitle={t("recon.outstanding.sub")}>
             {data.outstanding.length ? (
               <TableWrap label={t("recon.outstanding")}>
