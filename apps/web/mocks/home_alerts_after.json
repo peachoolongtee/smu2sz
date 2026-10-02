@@ -5,7 +5,7 @@
   "counts": {
     "CRITICAL": 0,
     "WARNING": 2,
-    "INFO": 0
+    "INFO": 1
   },
   "alerts": [
     {
@@ -50,25 +50,49 @@
       "amount_display": "¥208,100.00"
     },
     {
-      "id": "ALERT-HEADROOM-42",
+      "id": "ALERT-HEADROOM-34",
       "kind": "RESERVE_HEADROOM_LOW",
       "severity": "WARNING",
-      "title": "Reserve headroom thin on day 42",
-      "detail": "Cash stays above the floor but only by ¥0.00 on day 42 (5 day(s) under 10% of the floor).",
+      "title": "Reserve headroom thin on day 34",
+      "detail": "Cash stays above the floor but only by ¥0.00 on day 34 (8 day(s) under 10% of the floor).",
       "formula": "closing − floor = ¥300,000.00 − ¥300,000.00 = ¥0.00 < 10% × ¥300,000.00",
-      "day": 42,
+      "day": 34,
       "month": null,
       "amount_fen": 0,
       "committed_cure": null,
       "commitment_id": null,
       "receivable_id": null,
       "inputs": {
-        "days": "42, 43, 44, 45, 46"
+        "days": "34, 35, 36, 42, 43, 44, 45, 46"
       },
       "suggested": [],
       "actionable": false,
       "basis": "CONSERVATIVE",
       "amount_display": "¥0.00"
+    },
+    {
+      "id": "ALERT-TRANSIT-alert:ALERT-RESERVE-42:v7:0",
+      "kind": "FUNDING_IN_TRANSIT",
+      "severity": "INFO",
+      "title": "¥200,000.00 requested on day 34 on Invoice financing (onboarded platform) lands on day 37",
+      "detail": "¥200,000.00 requested on day 34 on Invoice financing (onboarded platform) lands on day 37.",
+      "formula": "cash lands on request day + lead time = 34 + 3 = day 37",
+      "day": 37,
+      "month": null,
+      "amount_fen": 20000000,
+      "committed_cure": null,
+      "commitment_id": null,
+      "receivable_id": null,
+      "inputs": {
+        "facility_id": "FAC-IF",
+        "lot_id": "alert:ALERT-RESERVE-42:v7:0",
+        "request_day": "34",
+        "arrival_day": "37"
+      },
+      "suggested": [],
+      "actionable": false,
+      "basis": "CONSERVATIVE",
+      "amount_display": "¥200,000.00"
     }
   ],
   "note": "A suggested operation is executed only through POST /alerts/{id}/act or POST /operations, never by itself."

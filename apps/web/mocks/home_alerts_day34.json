@@ -13,7 +13,7 @@
       "kind": "RESERVE_BREACH_AHEAD",
       "severity": "CRITICAL",
       "title": "Reserve breach ahead on day 42",
-      "detail": "Projected cash closes at ¥100,000.00 on day 42, ¥200,000.00 below the reserve floor; the gap peaks at ¥200,000.00 on day 42 and lasts to day 46. A committed cure exists: SUBMIT_INVOICE_FOR_FINANCING FAC-IF ¥200,000.00, cost ¥1,782.19 (25.0% a year for 13 days).",
+      "detail": "Projected cash closes at ¥100,000.00 on day 42, ¥200,000.00 below the reserve floor; the gap peaks at ¥200,000.00 on day 42 and lasts to day 46. A committed cure exists: SUBMIT_INVOICE_FOR_FINANCING FAC-IF ¥200,000.00, cost ¥1,782.19 (32.5% a year for 10 days); that is above the 15.00% ceiling for what the agent may borrow alone, so it needs the owner's approval before it runs.",
       "formula": "shortfall = floor − closing_d: ¥300,000.00 − ¥100,000.00 = ¥200,000.00 (day 42); max over days 42..46 = ¥200,000.00",
       "day": 42,
       "month": null,
@@ -41,13 +41,13 @@
           "amount_fen": 20000000,
           "note": "submit today: the invoice is open, buyer-confirmed and not yet due",
           "cost_fen": 178219,
-          "cost_days": 13,
+          "cost_days": 10,
           "annual_rate": {
             "num": 13009987,
-            "den": 52000000,
-            "text": "0.25"
+            "den": 40000000,
+            "text": "0.33"
           },
-          "cost_formula": "¥1,782.19 / ¥200,000.00 × 365/13 = 25.0% a year",
+          "cost_formula": "¥1,782.19 / ¥200,000.00 × 365/10 = 32.5% a year",
           "above_apr_cap": true,
           "executes_automatically": false,
           "amount_display": "¥200,000.00",

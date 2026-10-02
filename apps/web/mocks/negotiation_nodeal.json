@@ -50,14 +50,14 @@
       "tier": "TIER_1",
       "violations": [],
       "seq": 2,
-      "entry_hash": "a6c82c99b0d0147a711cef5d9923985b69c44f0ec957785d475a670a27180e14",
+      "entry_hash": "a8bfc435247410f79380e33f065448df4473866fc5bac089dd0d02b453ec25a9",
       "prev_hash": "3a58b1c3a966bc84e131779acc8606e389118068402a963f545ca955cf9e4dd0",
       "effective_day": 0,
       "approval_id": null,
-      "message": "Advance ¥210,000.00 on RCV-A from FAC-IF on day 0",
+      "message": "Advance ¥210,000.00 on RCV-A from FAC-IF on day 0; the cash lands on day 3 after the 3-day lead time, not today",
       "day": 0,
       "requested_by": null,
-      "summary": "Advance ¥210,000.00 on RCV-A from FAC-IF on day 0"
+      "summary": "Advance ¥210,000.00 on RCV-A from FAC-IF on day 0; the cash lands on day 3 after the 3-day lead time, not today"
     }
   ],
   "plan": {
@@ -92,6 +92,10 @@
         "fen": 84164,
         "facility_id": "FAC-LINE",
         "formula": "150,000.00 × 6.4% × 32/365 = 841.64",
+        "needs_owner_approval": false,
+        "approval_reason": "",
+        "executable_now": true,
+        "not_executable_reason": "",
         "display": "¥841.64"
       },
       {
@@ -99,6 +103,10 @@
         "fen": 187130,
         "facility_id": "FAC-IF",
         "formula": "210,000.00 × 7.8% × 30/365 (29 days billed as 1 × 30-day period) = 1,346.30; 210,000.00 × 0.25% × 1 = 525.00; total ¥1,871.30",
+        "needs_owner_approval": false,
+        "approval_reason": "",
+        "executable_now": true,
+        "not_executable_reason": "",
         "display": "¥1,871.30"
       }
     ],
@@ -139,6 +147,10 @@
       }
     ],
     "label": "committed plan: ¥841.64 + ¥1,871.30 = ¥2,712.94",
+    "needs_owner_approval": false,
+    "approval_reason": "",
+    "executable_now": true,
+    "not_executable_reason": "",
     "need_display": "¥360,000.00",
     "total_cost_display": "¥2,712.94"
   },

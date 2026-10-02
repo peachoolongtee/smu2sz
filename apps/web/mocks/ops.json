@@ -28,8 +28,8 @@
     "status": "EXECUTED",
     "tier": "TIER_1",
     "requested_by": "AGENT",
-    "message": "Advance ¥210,000.00 on RCV-A from FAC-IF on day 0",
-    "summary": "Advance ¥210,000.00 on RCV-A from FAC-IF on day 0"
+    "message": "Advance ¥210,000.00 on RCV-A from FAC-IF on day 0; the cash lands on day 3 after the 3-day lead time, not today",
+    "summary": "Advance ¥210,000.00 on RCV-A from FAC-IF on day 0; the cash lands on day 3 after the 3-day lead time, not today"
   },
   "request_approval": {
     "kind": "APPLY_FOR_FACILITY",

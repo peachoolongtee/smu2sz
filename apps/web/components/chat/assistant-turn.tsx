@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { AnnualisedCompact, offerLegs } from "@/components/annualised";
 import { AutonomyPanel } from "@/components/autonomy-panel";
-import { CodeBadge, OpStatusBadge, OutcomeBadge, TierBadge, outcomeHasTier } from "@/components/badges";
+import { CodeBadge, OutcomeBadge, TierBadge, outcomeHasTier } from "@/components/badges";
+import { OperationResultBox } from "@/components/operation-result";
 import { Badge, Button, Hash, type Tone } from "@/components/ui";
 import { useI18n } from "@/lib/i18n";
 import type { DictKey } from "@/lib/dictionary";
@@ -124,15 +125,13 @@ export function OperationList({ operations }: { operations: NlOperation[] }) {
       <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-ink-3">{t("chat.ops")}</h3>
       <ul className="space-y-2">
         {operations.map((o) => (
-          <li key={o.op_id} className="rounded-md border border-line px-2.5 py-2" data-testid={`chat-op-${o.kind}`} data-status={o.status}>
-            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <li key={`${o.op_id}-${o.seq ?? ""}-${o.status}`}>
+            <OperationResultBox status={o.status} message={o.message} approvalId={o.approval_id} testId={`chat-op-${o.kind}`} kind={o.kind}>
               <span className="text-sm font-medium text-ink">{te("opkind", o.kind) || o.kind}</span>
-              <OpStatusBadge status={o.status} />
               <TierBadge tier={o.tier} />
               {o.seq !== null ? <span className="text-xs text-ink-3">{t("chat.ops.seq", { n: o.seq })}</span> : null}
               <Hash value={o.entry_hash} />
-            </div>
-            {o.message ? <p className="mt-1 break-words text-xs text-ink-2">{o.message}</p> : null}
+            </OperationResultBox>
           </li>
         ))}
       </ul>

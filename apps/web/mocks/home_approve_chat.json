@@ -1,0 +1,41 @@
+{
+  "session_id": "rec-home-go",
+  "turn": 3,
+  "reply": "Advance ¥200,000.00 on RI:BUYER-1:2 from FAC-IF on day 34; the cash lands on day 37 after the 3-day lead time, not today",
+  "intent": "APPROVE",
+  "lang": "en",
+  "plan": [
+    {
+      "step": 1,
+      "kind": "DECIDE_APPROVAL",
+      "description": "Approve APR-000001 (SUBMIT_INVOICE_FOR_FINANCING)",
+      "status": "EXECUTED",
+      "op_id": "alert:ALERT-RESERVE-42:v7:0",
+      "condition": null
+    }
+  ],
+  "verdict": null,
+  "operations": [
+    {
+      "op_id": "alert:ALERT-RESERVE-42:v7:0",
+      "kind": "SUBMIT_INVOICE_FOR_FINANCING",
+      "status": "EXECUTED",
+      "tier": "TIER_2",
+      "violations": [],
+      "seq": 8,
+      "entry_hash": "06af19301e8e3bdec142a1a01dd9c08f37e7b11f9d0f3847834431eb69fbcc38",
+      "prev_hash": "ba361ee60b03593a7bc5c080530de6dc6eff9bcb06da3e0d113ae01adb9c7f6e",
+      "effective_day": 34,
+      "approval_id": "APR-000001",
+      "message": "Advance ¥200,000.00 on RI:BUYER-1:2 from FAC-IF on day 34; the cash lands on day 37 after the 3-day lead time, not today"
+    }
+  ],
+  "clarification": null,
+  "awaiting_confirmation": false,
+  "amended": false,
+  "replayed": false,
+  "negotiation": null,
+  "security_events": [],
+  "parse_source": "rules",
+  "trace_id": "rec-home-go:3"
+}

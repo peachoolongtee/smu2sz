@@ -6,23 +6,23 @@
   "violations": [
     {
       "code": "AGG_CONCESSION_EXCEEDED",
-      "message": "Forward concessions (all buyers) would reach ¥26,455.62, above the cap",
+      "message": "Forward concessions (all buyers) would reach ¥28,326.92, above the cap",
       "day": null,
       "month": null,
-      "observed": "¥26,455.62",
+      "observed": "¥28,326.92",
       "limit": "¥5,000.00",
       "curable": null,
       "cure_cost_fen": null,
       "cure_note": null,
-      "formula": "existing + new concessions + FIRM gains <= cap: ¥0.00 + ¥26,455.62 + (¥0.00) = ¥26,455.62 > ¥5,000.00",
+      "formula": "existing + new concessions + FIRM gains <= cap: ¥0.00 + ¥28,326.92 + (¥0.00) = ¥28,326.92 > ¥5,000.00",
       "inputs": {
         "scope": "aggregate",
         "existing": "¥0.00",
-        "new_concessions": "¥26,455.62",
+        "new_concessions": "¥28,326.92",
         "firm_gains_netted": "¥0.00",
         "contingent_gains_ignored": "¥0.00",
-        "total": "¥26,455.62",
-        "total_fen": "2645562",
+        "total": "¥28,326.92",
+        "total_fen": "2832692",
         "cap": "¥5,000.00",
         "netting_rule": "only FIRM gains offset concessions; contingent gains count as zero"
       },
@@ -50,7 +50,7 @@
       "limit": "¥300,000.00",
       "curable": true,
       "cure_cost_fen": 80270,
-      "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥802.70; the extension itself costs ¥1,871.30 per invoice",
+      "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥802.70 (cannot run today); the extension itself costs ¥1,871.30 per invoice",
       "formula": "closing_cash(day 47) >= min_cash: ¥254,960.00 < ¥300,000.00, shortfall ¥45,040.00",
       "inputs": {
         "day": "47",
@@ -68,7 +68,7 @@
         "structural_cost_per_invoice": "¥1,871.30",
         "covenant_pro_forma_dscr": "1.92x",
         "covenant_pro_forma_leverage": "1.72x",
-        "cure_plan": "committed plan: ¥802.70"
+        "cure_plan": "committed plan: ¥802.70 (cannot run today)"
       },
       "spans": [],
       "cure_cost_display": "¥802.70"
@@ -245,11 +245,11 @@
     },
     {
       "obligation_id": "OFF-f806f79b6c21-O2",
-      "value_fen": 2245562,
+      "value_fen": 2432692,
       "basis": "terms extension priced as a loan: committed marginal source: Invoice financing (onboarded platform) 10.8417%",
-      "formula": "extra receivables 207,123.29 = 420,000.00 × 12 × 15/365; × ≈10.8417% × 365/365 = 22,455.62",
+      "formula": "Σ over 13 invoices (issued days 2 to 362; window days 0 to 364) of face × 15/365 × ≈10.8417% = 24,326.92",
       "per_invoice_fen": 187130,
-      "value_display": "¥22,455.62",
+      "value_display": "¥24,326.92",
       "per_invoice_display": "¥1,871.30"
     },
     {
@@ -261,7 +261,7 @@
       "value_display": "¥4,000.00"
     }
   ],
-  "forward_concession_total_fen": 2645562,
+  "forward_concession_total_fen": 2832692,
   "counters": [
     {
       "id": "CTR-6cf1543f0dde",
@@ -386,7 +386,7 @@
       "supplier_cost_fen": 0,
       "forward_value_fen": 0,
       "rationale": "The price adjustment covers the per-invoice cost of funding the longer terms on the marginal committed source, so the net forward concession is about zero.",
-      "formula": "smallest whole-5bp rate r with r × ¥420,000.00 >= per-invoice funding cost ¥1,871.30: 0.45% → ¥1,890.00 per invoice. 12-month: extension ¥22,455.62 + price adjustment −¥22,680.00 = −¥224.38 (cost to the supplier ¥0.00)",
+      "formula": "smallest whole-5bp rate r with r × ¥420,000.00 >= per-invoice funding cost ¥1,871.30: 0.45% → ¥1,890.00 per invoice. 12-month: extension ¥24,326.92 + price adjustment −¥24,570.00 = −¥243.08 (cost to the supplier ¥0.00)",
       "supplier_cost_display": "¥0.00",
       "forward_value_display": "¥0.00",
       "outbound_blocked": false
@@ -414,6 +414,10 @@
         "fen": 80270,
         "facility_id": "FAC-IF",
         "formula": "45,040.00 × 7.8% × 60/365 (57 days billed as 2 × 30-day period) = 577.50; 45,040.00 × 0.25% × 2 = 225.20; total ¥802.70",
+        "needs_owner_approval": false,
+        "approval_reason": "",
+        "executable_now": false,
+        "not_executable_reason": "RI:BUYER-1:2 is not an invoice the executor can finance today; it is issued on day 2",
         "display": "¥802.70"
       }
     ],
@@ -427,7 +431,11 @@
     },
     "marginal_facility_id": "FAC-IF",
     "rejected": [],
-    "label": "committed plan: ¥802.70",
+    "label": "committed plan: ¥802.70 (cannot run today)",
+    "needs_owner_approval": false,
+    "approval_reason": "",
+    "executable_now": false,
+    "not_executable_reason": "Invoice financing (onboarded platform): advance ¥45,040.00 on RI:BUYER-1:2: RI:BUYER-1:2 is not an invoice the executor can finance today; it is issued on day 2",
     "need_display": "¥45,040.00",
     "total_cost_display": "¥802.70"
   },
@@ -435,8 +443,8 @@
   "mandate_version": 1,
   "state_version": 1,
   "calc_version": "tl-v2.0",
-  "summary": "REJECT: AGG_CONCESSION_EXCEEDED (¥26,455.62 vs ¥5,000.00); RESERVE_BREACH@47 (curable at ¥802.70); DISCOUNT_ABOVE_BREAK_EVEN (1.20% vs < 0.88%); EARLY_PAY_DEARER_THAN_PLAN (¥5,529.64 vs < ¥2,870.95). Forward concessions ¥26,455.62 against ¥5,000.00. Covenants hold: DSCR_MIN 1.92x, LEVERAGE_MAX 1.72x. Counters: Option A, Option B.",
-  "forward_concession_total_display": "¥26,455.62",
+  "summary": "REJECT: AGG_CONCESSION_EXCEEDED (¥28,326.92 vs ¥5,000.00); RESERVE_BREACH@47 (curable at ¥802.70); DISCOUNT_ABOVE_BREAK_EVEN (1.20% vs < 0.88%); EARLY_PAY_DEARER_THAN_PLAN (¥5,529.64 vs < ¥2,870.95). Forward concessions ¥28,326.92 against ¥5,000.00. Covenants hold: DSCR_MIN 1.92x, LEVERAGE_MAX 1.72x. Counters: Option A, Option B.",
+  "forward_concession_total_display": "¥28,326.92",
   "passed_checks": [
     {
       "code": "MAX_APR",
@@ -458,13 +466,13 @@
       "label": "DSCR with the extension funded (pro forma)",
       "observed": "1.92x",
       "limit": "≥ 1.25x",
-      "formula": "EBITDA_m / (DS_m + per-invoice funding cost) = ¥90,000.00 / ¥46,871.30 = 1.92x",
+      "formula": "EBITDA_m / (DS_m + extra debt × rate / 12) = ¥90,000.00 / ¥46,897.29 = 1.92x",
       "inputs": {
         "EBITDA_m": "¥90,000.00",
-        "DS_m": "¥46,871.30",
-        "Debt": "¥1,857,123.29",
-        "extra_receivables": "¥207,123.29",
-        "extra_monthly_debt_service": "¥1,871.30",
+        "DS_m": "¥46,897.29",
+        "Debt": "¥1,860,000.00",
+        "extra_receivables": "¥210,000.00",
+        "extra_monthly_debt_service": "¥1,897.29",
         "committed_line_limits": "¥150,000.00",
         "pro_forma_dscr": "1.92x",
         "pro_forma_leverage": "1.72x",
@@ -476,13 +484,13 @@
       "label": "Leverage with the extension funded (pro forma)",
       "observed": "1.72x",
       "limit": "≤ 2.50x",
-      "formula": "(debt + committed line limits + extra receivables) / (12 × EBITDA_m) = ¥1,857,123.29 / (12 × ¥90,000.00) = 1.72x",
+      "formula": "(debt + committed line limits + extra receivables) / (12 × EBITDA_m) = ¥1,860,000.00 / (12 × ¥90,000.00) = 1.72x",
       "inputs": {
         "EBITDA_m": "¥90,000.00",
-        "DS_m": "¥46,871.30",
-        "Debt": "¥1,857,123.29",
-        "extra_receivables": "¥207,123.29",
-        "extra_monthly_debt_service": "¥1,871.30",
+        "DS_m": "¥46,897.29",
+        "Debt": "¥1,860,000.00",
+        "extra_receivables": "¥210,000.00",
+        "extra_monthly_debt_service": "¥1,897.29",
         "committed_line_limits": "¥150,000.00",
         "pro_forma_dscr": "1.92x",
         "pro_forma_leverage": "1.72x",
@@ -2819,6 +2827,10 @@
         "fen": 48964,
         "facility_id": "FAC-LINE",
         "formula": "45,040.00 × 6.4% × 62/365 = 489.64",
+        "needs_owner_approval": false,
+        "approval_reason": "",
+        "executable_now": true,
+        "not_executable_reason": "",
         "display": "¥489.64"
       }
     ],
@@ -2839,6 +2851,10 @@
       }
     ],
     "label": "committed plan: ¥489.64",
+    "needs_owner_approval": false,
+    "approval_reason": "",
+    "executable_now": true,
+    "not_executable_reason": "",
     "need_display": "¥45,040.00",
     "total_cost_display": "¥489.64"
   },
@@ -2864,6 +2880,10 @@
         "fen": 48964,
         "facility_id": "FAC-LINE",
         "formula": "45,040.00 × 6.4% × 62/365 = 489.64",
+        "needs_owner_approval": false,
+        "approval_reason": "",
+        "executable_now": true,
+        "not_executable_reason": "",
         "display": "¥489.64"
       }
     ],
@@ -2884,6 +2904,10 @@
       }
     ],
     "label": "expected plan (committed sources only): ¥489.64",
+    "needs_owner_approval": false,
+    "approval_reason": "",
+    "executable_now": true,
+    "not_executable_reason": "",
     "need_display": "¥45,040.00",
     "total_cost_display": "¥489.64"
   },
@@ -2909,6 +2933,10 @@
         "fen": 80270,
         "facility_id": "FAC-IF",
         "formula": "45,040.00 × 7.8% × 60/365 (57 days billed as 2 × 30-day period) = 577.50; 45,040.00 × 0.25% × 2 = 225.20; total ¥802.70",
+        "needs_owner_approval": false,
+        "approval_reason": "",
+        "executable_now": false,
+        "not_executable_reason": "RI:BUYER-1:2 is not an invoice the executor can finance today; it is issued on day 2",
         "display": "¥802.70"
       }
     ],
@@ -2922,7 +2950,11 @@
     },
     "marginal_facility_id": "FAC-IF",
     "rejected": [],
-    "label": "committed plan: ¥802.70",
+    "label": "committed plan: ¥802.70 (cannot run today)",
+    "needs_owner_approval": false,
+    "approval_reason": "",
+    "executable_now": false,
+    "not_executable_reason": "Invoice financing (onboarded platform): advance ¥45,040.00 on RI:BUYER-1:2: RI:BUYER-1:2 is not an invoice the executor can finance today; it is issued on day 2",
     "need_display": "¥45,040.00",
     "total_cost_display": "¥802.70"
   },
@@ -5204,7 +5236,10 @@
       "result": "ADMISSIBLE",
       "reasons": [],
       "breach_day": null,
-      "note": "cost ¥5,040.00; admissible but dearer than the selected plan"
+      "note": "cost ¥5,040.00; admissible but dearer than the selected plan",
+      "needs_owner_approval": false,
+      "approval_reason": "",
+      "executable_now": true
     },
     {
       "key": "line_partial_early_pay",
@@ -5238,7 +5273,10 @@
       "result": "ADMISSIBLE",
       "reasons": [],
       "breach_day": null,
-      "note": "cost ¥3,392.25; admissible but dearer than the selected plan"
+      "note": "cost ¥3,392.25; admissible but dearer than the selected plan",
+      "needs_owner_approval": false,
+      "approval_reason": "",
+      "executable_now": true
     },
     {
       "key": "router_optimum",
@@ -5272,7 +5310,10 @@
       "result": "SELECTED",
       "reasons": [],
       "breach_day": null,
-      "note": ""
+      "note": "",
+      "needs_owner_approval": false,
+      "approval_reason": "",
+      "executable_now": true
     },
     {
       "key": "line_guaranteed_loan",
@@ -5309,7 +5350,10 @@
         "LEAD_TIME_TOO_LONG"
       ],
       "breach_day": null,
-      "note": "not applied; cash on day 21, gap opens on day 12"
+      "note": "not applied; cash on day 21, gap opens on day 12",
+      "needs_owner_approval": false,
+      "approval_reason": "",
+      "executable_now": true
     },
     {
       "key": "line_only",
@@ -5335,12 +5379,15 @@
         "RESERVE_BREACH"
       ],
       "breach_day": 12,
-      "note": "cost ¥841.64; RESERVE_BREACH on day 12"
+      "note": "cost ¥841.64; RESERVE_BREACH on day 12",
+      "needs_owner_approval": false,
+      "approval_reason": "",
+      "executable_now": true
     }
   ],
   "forward_concession": {
-    "total_fen": 2645562,
-    "total_display": "¥26,455.62",
+    "total_fen": 2832692,
+    "total_display": "¥28,326.92",
     "cap_fen": 500000,
     "cap_display": "¥5,000.00",
     "over_cap": true

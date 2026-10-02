@@ -103,7 +103,7 @@ export function OperationsList({ ops }: { ops: OperationView[] }) {
   return (
     <ul className="divide-y divide-line rounded-lg border border-line">
       {ops.map((o) => (
-        <li key={o.op_id} className="space-y-1 px-3 py-2">
+        <li key={`${o.seq}-${o.op_id}`} className="space-y-1 px-3 py-2">
           <div className="flex flex-wrap items-center gap-2">
             <span className="font-mono text-xs text-ink-3">#{o.seq}</span>
             <span className="text-sm font-medium">{te("opkind", o.kind)}</span>

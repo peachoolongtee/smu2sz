@@ -9,9 +9,10 @@
 import { getOwnerToken, requestSignIn } from "../auth";
 import { ApiError } from "../errors";
 import type { NlRequest, NlResponse } from "../types";
+import approveChat from "../../mocks/home_approve_chat.json";
 import script from "../../mocks/nl_script.json";
-import { appendRecorded } from "./handlers";
-import { mockOpenerAnswer, openerWaiting } from "./home";
+import { appendRecorded, decideApproval, ensureHomeApproval, getApprovals } from "./handlers";
+import { markFunded, mockOpenerAnswer, openerWaiting } from "./home";
 
 type Key = keyof typeof script;
 type Recorded = Omit<NlResponse, "session_id">;
@@ -47,7 +48,7 @@ function pick(req: NlRequest, s: Session): Key | null {
     if (/^3$|early|paid/i.test(q)) return "goal";
   }
   if (s.pending && CANCEL.test(q)) return "cancel";
-  if (s.pending && CONFIRM.test(q)) return s.pending === "evaluate_ex01" ? "negotiate_ex01" : "goal_go";
+  if (s.pending && CONFIRM.test(q)) return s.pending === "evaluate_ex01" ? "negotiate_ex01" : s.pending === "fund_gap" ? "fund_gap_go" : "goal_go";
   if (s.pending === "goal") {
     if (/invoice financing|发票融资/i.test(q)) return "amend_fin";
     if (/0\.8\s?%/.test(q)) return "amend_08";
@@ -104,12 +105,30 @@ export async function mockNl(req: NlRequest): Promise<NlResponse> {
     const confirm = CONFIRM.test(req.text);
     const ran = mockOpenerAnswer(sid, confirm);
     const recorded: Recorded = ran ?? (JSON.parse(JSON.stringify(script.cancel)) as Recorded);
-    for (const o of ran?.operations ?? []) appendRecorded({ kind: o.kind, status: o.status, tier: o.tier, message: o.message, day: 34 });
+    if (ran) {
+      // As live: "go ahead" queues the cure (PENDING_APPROVAL) once; the same turn again changes nothing.
+      const first = !(await getApprovals()).some((a) => a.op_id?.startsWith("alert:"));
+      ensureHomeApproval();
+      if (first) for (const o of ran.operations) appendRecorded({ kind: o.kind, status: o.status, tier: o.tier, message: o.message, day: 34 });
+    }
     s.turn += 1;
     s.pending = null;
     s.clarifying = false;
     sessions.set(sid, s);
     return { ...recorded, session_id: sid, turn: s.turn, trace_id: `${sid}:${s.turn}` };
+  }
+  // "approve APR-…" while the day-34 cure waits: the owner's exact decision runs it (recorded). Any other mention changes nothing.
+  const approveId = req.actor === "OWNER" ? /^\s*approve\s+(APR-[A-Z0-9]+)\s*[.!]?\s*$/i.exec(req.text)?.[1].toUpperCase() : undefined;
+  if (approveId) {
+    const held = (await getApprovals()).find((a) => a.id === approveId && a.status === "PENDING" && a.op_id?.startsWith("alert:"));
+    if (held) {
+      await decideApproval(held.id, "APPROVE");
+      s.turn += 1;
+      s.pending = null;
+      s.clarifying = false;
+      sessions.set(sid, s);
+      return { ...(JSON.parse(JSON.stringify(approveChat)) as Recorded), session_id: sid, turn: s.turn, trace_id: `${sid}:${s.turn}` };
+    }
   }
   const base = pick(req, s);
   // A Chinese request replays the Chinese recording of the same scenario when there is one.
@@ -123,6 +142,8 @@ export async function mockNl(req: NlRequest): Promise<NlResponse> {
   const family = base?.startsWith("goal") || base?.startsWith("amend") ? "goal" : base;
   s.pending = recorded.awaiting_confirmation ? (family as Key) : null;
   sessions.set(sid, s);
+  // The day-0 plan ran: the books now hold the draw as cash and the advance as funding in transit.
+  if (key?.startsWith("fund_gap_go")) markFunded();
   // As live: a buyer's turn carries only the reply (the recorded buyer turns already have a null verdict; this stays as a guard).
   if (req.actor === "COUNTERPARTY") return { ...recorded, verdict: null, operations: [], security_events: [], session_id: sid, turn: s.turn, trace_id: `${sid}:${s.turn}` };
   return { ...recorded, session_id: sid, turn: s.turn, trace_id: `${sid}:${s.turn}` };

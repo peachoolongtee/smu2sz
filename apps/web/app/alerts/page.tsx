@@ -2,7 +2,7 @@
 
 import { Badge, Callout, Card, EmptyState, ErrorState, Formula, LoadingBlock, PageHeader, type Tone } from "@/components/ui";
 import { CodeBadge } from "@/components/badges";
-import { FixButton, FixResult, SuggestionCost, useFixAlert } from "@/components/home/fix-alert";
+import { AlertCure, FixResult, SuggestionCost, useAlertContext, useFixAlert } from "@/components/home/fix-alert";
 import { getAlerts } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
 import type { AlertSeverity } from "@/lib/types";
@@ -16,6 +16,7 @@ export default function AlertsPage() {
   const alerts = useAsync(getAlerts, []);
   const data = alerts.data;
   const fixer = useFixAlert();
+  const ctx = useAlertContext();
 
   return (
     <>
@@ -60,7 +61,11 @@ export default function AlertsPage() {
                   >
                     <div className="flex flex-wrap items-center gap-2">
                       <CodeBadge code={a.kind} />
-                      <Badge tone={a.committed_cure ? "ok" : "warn"}>{a.committed_cure ? t("alerts.cure.yes") : t("alerts.cure.no")}</Badge>
+                      {a.kind === "FUNDING_IN_TRANSIT" ? (
+                        <Badge tone="info">{te("alertkind", a.kind)}</Badge>
+                      ) : (
+                        <Badge tone={a.committed_cure ? "ok" : "warn"}>{a.committed_cure ? t("alerts.cure.yes") : t("alerts.cure.no")}</Badge>
+                      )}
                     </div>
                     {a.amount_display ? (
                       <p className="mt-3 text-xs text-ink-3">
@@ -95,11 +100,9 @@ export default function AlertsPage() {
                         </ul>
                       </div>
                     ) : null}
-                    {a.actionable ? (
-                      <div className="mt-4">
-                        <FixButton alertId={a.id} busyId={fixer.busyId} onFix={(id) => void fixer.fix(id)} />
-                      </div>
-                    ) : null}
+                    <div className="mt-2">
+                      <AlertCure alert={a} approvals={ctx.approvals} cap={ctx.cap} busyId={fixer.busyId} onFix={(id) => void fixer.fix(id)} />
+                    </div>
                   </Card>
                 </li>
               ))}

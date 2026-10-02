@@ -69,6 +69,10 @@
     "marginal_facility_id": "FAC-IF",
     "rejected": [],
     "label": "no funding needed",
+    "needs_owner_approval": false,
+    "approval_reason": "",
+    "executable_now": true,
+    "not_executable_reason": "",
     "need_display": "¥0.00",
     "total_cost_display": "¥0.00"
   },
@@ -2430,6 +2434,10 @@
     "marginal_facility_id": "FAC-IF",
     "rejected": [],
     "label": "no funding needed",
+    "needs_owner_approval": false,
+    "approval_reason": "",
+    "executable_now": true,
+    "not_executable_reason": "",
     "need_display": "¥0.00",
     "total_cost_display": "¥0.00"
   },
@@ -2450,6 +2458,10 @@
     "marginal_facility_id": "FAC-IF",
     "rejected": [],
     "label": "no funding needed (expected plan: shown only, never relied on (uses facilities not yet committed))",
+    "needs_owner_approval": false,
+    "approval_reason": "",
+    "executable_now": true,
+    "not_executable_reason": "",
     "need_display": "¥0.00",
     "total_cost_display": "¥0.00"
   },
@@ -2478,7 +2490,10 @@
       "result": "ADMISSIBLE",
       "reasons": [],
       "breach_day": null,
-      "note": "cost ¥2,100.00; admissible but dearer than the selected plan"
+      "note": "cost ¥2,100.00; admissible but dearer than the selected plan",
+      "needs_owner_approval": false,
+      "approval_reason": "",
+      "executable_now": true
     },
     {
       "key": "line_partial_early_pay",
@@ -2512,7 +2527,10 @@
       "result": "ADMISSIBLE",
       "reasons": [],
       "breach_day": null,
-      "note": "cost ¥1,896.92; admissible but dearer than the selected plan"
+      "note": "cost ¥1,896.92; admissible but dearer than the selected plan",
+      "needs_owner_approval": false,
+      "approval_reason": "",
+      "executable_now": true
     },
     {
       "key": "router_optimum",
@@ -2536,7 +2554,10 @@
       "result": "SELECTED",
       "reasons": [],
       "breach_day": null,
-      "note": ""
+      "note": "",
+      "needs_owner_approval": false,
+      "approval_reason": "",
+      "executable_now": true
     },
     {
       "key": "line_guaranteed_loan",
@@ -2573,7 +2594,10 @@
         "LEAD_TIME_TOO_LONG"
       ],
       "breach_day": null,
-      "note": "not applied; cash on day 21, gap opens on day 12"
+      "note": "not applied; cash on day 21, gap opens on day 12",
+      "needs_owner_approval": false,
+      "approval_reason": "",
+      "executable_now": true
     },
     {
       "key": "line_only",
@@ -2599,7 +2623,10 @@
         "RESERVE_BREACH"
       ],
       "breach_day": 12,
-      "note": "cost ¥841.64; RESERVE_BREACH on day 12"
+      "note": "cost ¥841.64; RESERVE_BREACH on day 12",
+      "needs_owner_approval": false,
+      "approval_reason": "",
+      "executable_now": true
     }
   ],
   "forward_concession": {

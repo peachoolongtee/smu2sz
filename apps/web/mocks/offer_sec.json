@@ -138,6 +138,7 @@
       "CLAIMED_PRIOR_CONCESSION leaves current_terms_days unresolved",
       "an amount in SEC-msg is not accounted for by the extracted terms",
       "a rate in SEC-msg is not accounted for by the extracted terms",
+      "a settlement date or window is stated but not read into the terms",
       "SEC-msg holds a other topic beyond the extracted terms",
       "text not read into the terms: 'urgent', 'pre', 'approved', 'fastcapital', 'reply', ..."
     ]

@@ -1,9 +1,11 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { AssistantTurn } from "@/components/chat/assistant-turn";
+import { approvalHref } from "@/components/operation-result";
 import { Badge, Button, Card, ErrorState, LoadingBlock } from "@/components/ui";
-import { nlOpener } from "@/lib/api";
+import { getApprovals, nlOpener } from "@/lib/api";
 import { appendOwnerOpener, ensureOwnerSession, sendOwnerTurn, useChat } from "@/lib/chat";
 import { bump } from "@/lib/demo-store";
 import { useI18n } from "@/lib/i18n";
@@ -21,6 +23,9 @@ export function NeedsCard({ answer, onAnswer }: { answer: NlResponse | null; onA
     if (r.has_news) appendOwnerOpener(r);
     return r;
   }, [lang]);
+  // A cure already queued for the owner (an alert's operation waiting in the approvals queue): the opener must not offer to queue it again.
+  const approvals = useAsync(getApprovals, []);
+  const queued = approvals.data?.find((a) => a.status === "PENDING" && Boolean(a.op_id?.startsWith("alert:"))) ?? null;
   const [sending, setSending] = useState(false);
   const conv = useChat().convs.OWNER;
   const last = conv.messages.at(-1);
@@ -64,7 +69,15 @@ export function NeedsCard({ answer, onAnswer }: { answer: NlResponse | null; onA
             <p className="whitespace-pre-wrap break-words text-base font-medium leading-relaxed text-ink" data-testid="home-opener-reply">
               {r.reply}
             </p>
-            {r.awaiting_confirmation ? (
+            {r.awaiting_confirmation && queued ? (
+              <div className="rounded-md border border-warn-line bg-warn-bg px-3 py-2 text-sm text-warn-fg" role="status" data-testid="home-waiting-approval">
+                <p className="font-semibold">{t("alerts.waiting", { id: queued.id })}</p>
+                <p className="mt-0.5 text-xs">{t("alerts.waiting.body")}</p>
+                <Link href={approvalHref(queued.id)} className="mt-1 inline-block text-xs font-medium underline underline-offset-2" data-testid="home-approval-link">
+                  {t("alerts.waiting.open")}
+                </Link>
+              </div>
+            ) : r.awaiting_confirmation ? (
               <div className="flex flex-wrap gap-2">
                 <Button variant="primary" loading={sending} disabled={sending} onClick={() => void send(zh ? "执行" : "go ahead", t("chat.goahead"))} data-testid="home-goahead">
                   {t("chat.goahead")}
