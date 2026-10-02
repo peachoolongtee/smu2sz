@@ -32,6 +32,10 @@ export default function CapexPage() {
   const [error, setError] = useState<string | null>(null);
   const capex = demo.capex;
   const file = demo.borrowerFile;
+  // The server selects nothing unless the project is worth doing; an illustration at another term is never selected.
+  const worth = capex?.worth_doing !== false;
+  const selectedStructure = capex?.structures.find((s) => s.id === capex.selected_id);
+  const canPrepareFile = Boolean(selectedStructure && !selectedStructure.hypothetical && selectedStructure.facility_id);
 
   async function run(kind: "capex" | "file") {
     setBusy(kind);
@@ -74,13 +78,30 @@ export default function CapexPage() {
         />
       ) : (
         <div className="space-y-6">
+          <Callout tone={worth ? "info" : "warn"}>
+            <p data-testid="capex-recommendation">{capex.recommendation ?? (worth ? null : t("capex.notWorth"))}</p>
+            {capex.estimate_note ? <p className="mt-1 text-xs">{capex.estimate_note}</p> : null}
+            {capex.as_of_day !== undefined ? (
+              <p className="mt-1 text-xs" data-testid="capex-as-of">
+                {t("capex.asOf", { day: capex.as_of_day })}
+              </p>
+            ) : null}
+          </Callout>
+
           <dl className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-            <Stat label={t("capex.npv")} value={capex.npv_display} hint={capex.request.label} tone="ok" />
-            <Stat label={t("capex.payback")} value={t("capex.paybackValue", { n: capex.payback_month })} />
-            <Stat label={t("capex.leverage")} value={`${capex.leverage_financed.text}×`} hint={t("capex.leverage.limit", { limit: capex.leverage_limit_display })} />
+            <Stat label={t("capex.npv")} value={capex.npv_display} hint={capex.request.label} tone={capex.npv_fen < 0 ? "bad" : "ok"} />
+            <Stat
+              label={t("capex.payback")}
+              value={capex.payback_month !== null ? t("capex.paybackValue", { n: capex.payback_month }) : t("common.none")}
+            />
+            <Stat
+              label={t("capex.leverage")}
+              value={capex.leverage_financed ? `${capex.leverage_financed.text}×` : t("common.none")}
+              hint={t("capex.leverage.limit", { limit: capex.leverage_limit_display })}
+            />
             <Stat
               label={t("capex.leverageExt")}
-              value={`${capex.leverage_with_extension.text}×`}
+              value={capex.leverage_with_extension ? `${capex.leverage_with_extension.text}×` : t("common.none")}
               hint={t("capex.leverageExt.hint")}
             />
           </dl>
@@ -94,6 +115,7 @@ export default function CapexPage() {
                     <th scope="col" className={`${thCls} sticky left-0 z-10`}>{t("capex.structure")}</th>
                     <th scope="col" className={`${thCls} text-right`}>{t("capex.monthly")}</th>
                     <th scope="col" className={`${thCls} text-right`}>{t("capex.interest")}</th>
+                    <th scope="col" className={`${thCls} text-right`} title={t("capex.charges.hint")}>{t("capex.charges")}</th>
                     {[1, 2, 3, 4, 5, 6].map((m) => (
                       <th key={m} scope="col" className={`${thCls} text-right`}>
                         {t("capex.dscrMonth", { n: m })}
@@ -120,6 +142,7 @@ export default function CapexPage() {
                           {s.monthly_payment_display ?? t("common.none")}
                         </td>
                         <td className={`${tdCls} whitespace-nowrap text-right tabular-nums`}>{s.total_interest_display ?? t("common.none")}</td>
+                        <td className={`${tdCls} whitespace-nowrap text-right font-medium tabular-nums`}>{s.charges_total_display ?? t("common.none")}</td>
                         {[1, 2, 3, 4, 5, 6].map((m) => {
                           const cell = s.dscr_by_month.find((d) => d.month === m);
                           return (
@@ -141,7 +164,15 @@ export default function CapexPage() {
                           );
                         })}
                         <td className={`${tdCls} min-w-48`}>
-                          <Badge tone={s.feasible ? "ok" : "bad"}>{s.feasible ? t("capex.feasible") : t("capex.infeasible")}</Badge>
+                          {s.hypothetical ? (
+                            <Badge tone="warn" title={t("capex.hypothetical.hint")}>
+                              {t("capex.hypothetical")}
+                            </Badge>
+                          ) : (
+                            <Badge tone={!s.feasible ? "bad" : selected || worth ? "ok" : "neutral"}>
+                              {!s.feasible ? t("capex.infeasible") : selected || worth ? t("capex.feasible") : t("capex.notRecommended")}
+                            </Badge>
+                          )}
                           <p className="mt-1 text-xs text-ink-2">{s.note}</p>
                           {s.extra_cost_vs_selected_display ? (
                             <p className="mt-1 text-xs font-medium text-warn-fg">
@@ -170,8 +201,18 @@ export default function CapexPage() {
 
           <Card id="tier" title={t("capex.tier")} tone="warn" actions={<TierBadge tier={capex.required_tier} />}>
             <p className="text-sm text-ink-2">{t("capex.tier.body")}</p>
+            {canPrepareFile ? null : (
+              <p className="mt-3 text-sm font-medium text-warn-fg" data-testid="capex-no-file">
+                {t("capex.noFile")}
+              </p>
+            )}
             <div className="mt-3 flex flex-wrap items-center gap-2">
-              <Button variant="primary" loading={busy === "file"} disabled={Boolean(file)} onClick={() => void run("file")}>
+              <Button
+                variant="primary"
+                loading={busy === "file"}
+                disabled={Boolean(file) || !canPrepareFile}
+                onClick={() => void run("file")}
+              >
                 {file ? t("capex.file.done") : t("capex.file.generate")}
               </Button>
               {file ? (
@@ -182,6 +223,16 @@ export default function CapexPage() {
             </div>
           </Card>
 
+          {capex.assumptions?.length ? (
+            <Card id="assumptions" title={t("capex.assumptions")}>
+              <ul className="list-disc space-y-1 pl-5 text-sm text-ink-2" data-testid="capex-assumptions">
+                {capex.assumptions.map((a) => (
+                  <li key={a}>{a}</li>
+                ))}
+              </ul>
+            </Card>
+          ) : null}
+
           {file ? (
             <Card
               id="file"
@@ -189,11 +240,21 @@ export default function CapexPage() {
               subtitle={file.style}
               actions={<Badge tone="warn">{t("capex.file.status")}</Badge>}
             >
+              <p className="mb-3 text-xs text-ink-2" data-testid="file-as-of">
+                {t("capex.file.asOf", { day: file.generated_day })}
+              </p>
               <div className="grid gap-4 md:grid-cols-2">
                 {file.sections.map((sec) => (
                   <div key={sec.title} className="rounded-lg border border-line p-3">
                     <h3 className="mb-2 text-sm font-semibold">{sec.title}</h3>
                     <KeyValueList items={sec.rows.map((r) => ({ k: r.label, v: r.value }))} />
+                    {sec.notes?.length ? (
+                      <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-ink-2">
+                        {sec.notes.map((n) => (
+                          <li key={n}>{n}</li>
+                        ))}
+                      </ul>
+                    ) : null}
                   </div>
                 ))}
               </div>

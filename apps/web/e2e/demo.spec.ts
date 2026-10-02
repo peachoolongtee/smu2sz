@@ -85,7 +85,13 @@ test("demo stepper walks Scene 1, Scene 2, Scene 3 and Security with the golden 
   await next(page, /\/capex/);
   await expect(page.getByText("¥380,885.77").first()).toBeVisible();
   await expect(page.getByTestId("structure-loan_36m")).toContainText("¥18,144.62");
-  await expect(page.getByTestId("structure-loan_18m")).toContainText("1.13");
+  // The golden 1.13× (EBITDA ¥90,000 / (¥45,000 + ¥34,830.60)) is on books with nothing drawn. By Scene 3 the demo has
+  // drawn ¥210,000 on invoice financing, whose interest-only service is ¥210,000 × 7.80% / 12 = ¥1,365.00, and the
+  // ¥150,000 line draw adds ¥150,000 × 6.40% / 12 = ¥800.00: existing service ¥47,165.00, so month 1 is
+  // 90,000 / (47,165.00 + 34,830.60) = 1.1025 -> 1.10×. The 18-month term is also an illustration (the loan is 36 months).
+  await expect(page.getByTestId("structure-loan_18m")).toContainText("1.10");
+  await expect(page.getByTestId("structure-loan_18m")).toContainText("Illustration only");
+  await expect(page.getByTestId("capex-as-of")).toContainText("day 0");
 
   await next(page, /\/approvals/);
   // The queue reason, as the server words it.

@@ -880,6 +880,12 @@ export interface CapexStructure {
   term_months: number | null;
   monthly_payment_fen: Fen | null;
   total_interest_fen: Fen | null;
+  /** Upfront fee on the principal, in fen (a financed structure; null for cash + line). */
+  upfront_fee_fen?: Fen | null;
+  /** The ranked quantity: total interest + upfront fee, not discounted. */
+  charges_total_fen?: Fen | null;
+  /** The candidate term is not the facility's actual term: an illustration, never selected or applied for. */
+  hypothetical?: boolean;
   feasible: boolean;
   violations: Violation[];
   dscr_by_month: { month: number; dscr: Ratio; passes: boolean }[];
@@ -898,15 +904,26 @@ export interface CapexRequest {
 export type CapexView = Displayed<{
   request: CapexRequest;
   npv_fen: Fen;
-  payback_month: number;
+  /** null: no payback within the life. */
+  payback_month: number | null;
+  /** False: the project is not worth doing on the owner's estimate, so no financing structure is selected. */
+  worth_doing?: boolean;
   structures: CapexStructure[];
   selected_id: string | null;
-  leverage_financed: Ratio;
-  leverage_with_extension: Ratio;
+  /** null when monthly EBITDA is zero or negative (leverage is undefined). */
+  leverage_financed: Ratio | null;
+  leverage_with_extension: Ratio | null;
   dscr_limit_display: string;
   leverage_limit_display: string;
   required_tier: Tier;
   approval_id: string | null;
+  /** The owner's own estimate, labelled as such by the server. */
+  estimate_note?: string;
+  recommendation?: string;
+  /** What the screen leaves out and the conventions it uses. */
+  assumptions?: string[];
+  /** The day the books were read: this result is a snapshot of that day. */
+  as_of_day?: Day;
 }>;
 
 export interface BorrowerFileRequest {
@@ -920,8 +937,9 @@ export interface BorrowerFileView {
   file_id: string;
   status: "PREPARED_NOT_SENT";
   style: string;
-  sections: { title: string; rows: { label: string; value: string }[] }[];
+  sections: { title: string; rows: { label: string; value: string; note?: string | null }[]; notes?: string[] }[];
   approval_id: string | null;
+  /** The day the file was generated: it is a snapshot of that day. */
   generated_day: Day;
   /** Live mode: download paths on the API. Null in mock mode (there is no file to download). */
   downloads?: { html: string; docx: string; pdf: string | null } | null;

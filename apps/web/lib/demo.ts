@@ -72,13 +72,21 @@ export async function runCapex(): Promise<void> {
   recordCapex(await capexEvaluate(CAPEX_REQUEST));
 }
 
-/** The borrower file for the financing structure the capex evaluation selected (prepared for the owner, never sent). */
+/**
+ * The borrower file for the financing structure the capex evaluation selected (prepared for the owner, never sent).
+ * No selected structure (the project is not worth doing, or nothing passes) means no file: there is no facility to
+ * borrow on, and an illustration at another term is never one. The server defaults the spend day of an equipment
+ * purchase to the day the proceeds land and says so in the file.
+ */
 export async function runBorrowerFile(): Promise<void> {
   const capex = demoStore.get().capex ?? (await capexEvaluate(CAPEX_REQUEST));
   const selected = capex.structures.find((s) => s.id === capex.selected_id);
+  if (!selected || selected.hypothetical || !selected.facility_id) {
+    throw new Error("No financing structure is selected, so there is no borrower file to prepare.");
+  }
   recordBorrowerFile(
     await borrowerFile({
-      facility_id: selected?.facility_id ?? "FAC-ETL",
+      facility_id: selected.facility_id,
       amount_fen: capex.request.price_fen,
       use_of_proceeds: "Purchase of production equipment",
     }),
