@@ -4,7 +4,7 @@
 scheduled flows dated on those days are posted to cash, recurring invoices issued on those days
 become real receivables (with the accepted adjustments in scope written on them, ADR-0009), finite
 adjustments whose invoices are all issued are consumed (an ACTIVE commitment left with nothing live becomes
-FULFILLED), commitments past their expiry are marked EXPIRED, `as_of_day` moves and
+FULFILLED once every invoice carrying its terms is SETTLED), commitments past their expiry are marked EXPIRED, `as_of_day` moves and
 one ADVANCE_CLOCK entry goes on the hash-chained log. It never records a receipt: receipts come
 only from the bank feed, which is what makes a missing one detectable.
 """
@@ -147,15 +147,24 @@ def _close_lots(state: FinancialState, to_day: int) -> tuple[list[FundingLot], l
 
 def _fulfil(store: LedgerStore, state: FinancialState, consumed_ids: Sequence[str],
             to_day: int) -> tuple[FinancialState, list[str]]:
-    """ADR-0009 §7: an ACTIVE commitment with no adjustment left and nothing else live becomes FULFILLED, and its
-    forward concession leaves the state (it is in the invoices now)."""
+    """ADR-0009 §7 (amended 3 Oct, red team F7): an ACTIVE commitment with no adjustment left and nothing else live
+    becomes FULFILLED, and its forward concession leaves the state, once every invoice in its scope is SETTLED (the
+    concession has then been paid away). Until then it still counts against the caps, so an agreement split into
+    one-invoice agreements over time cannot release its cap room as each invoice is issued.
+
+    The scope of a consumed adjustment is read from the invoices themselves: every receivable whose `applied` holds
+    `<commitment id>:...` carries it, so no extra record is kept. A commitment none of whose invoices carries it (only
+    contingent gains, never written) is fulfilled when its adjustments are consumed, as before."""
     left = {a.commitment_id for a in state.invoice_adjustments}
     fulfilled: list[str] = []
     for c in store.commitments():
         if c.status != CommitmentStatus.ACTIVE or c.id in left or not only_adjusting(c):
             continue
-        if not any(i.startswith(f"{c.id}:") for i in consumed_ids):
+        written = [r for r in state.receivables if any(i.startswith(f"{c.id}:") for i in r.applied)]
+        if not written and not any(i.startswith(f"{c.id}:") for i in consumed_ids):
             continue
+        if any(r.status != "SETTLED" for r in written):
+            continue  # a concession is still ahead on an invoice not yet paid
         try:
             store.put_commitment(transition(c, CommitmentStatus.FULFILLED, to_day))
         except CommitmentError:
@@ -224,7 +233,7 @@ def advance(store: LedgerStore, to_day: int, actor: Actor = Actor.SYSTEM,
                f"flow(s) posted (net {fmt_yuan(adv.posted_net_fen)}), {len(adv.issued_receivable_ids)} invoice(s) "
                f"issued, {len(expired)} commitment(s) expired"
                + (f", {len(adv.added_flow_ids)} new scheduled flow(s) recorded" if adv.added_flow_ids else "")
-               + (f", {len(fulfilled)} commitment(s) fulfilled (accepted terms now on every invoice in scope)"
+               + (f", {len(fulfilled)} commitment(s) fulfilled (every invoice carrying the accepted terms is settled)"
                   if fulfilled else "")
                + (f", {len(adv.settled_lot_ids)} funding request(s) landed" if adv.settled_lot_ids else "")
                + (f", {len(adv.posted_debt_payments)} loan payment(s) posted" if adv.posted_debt_payments else "")

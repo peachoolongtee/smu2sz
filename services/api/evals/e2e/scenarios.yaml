@@ -63,7 +63,7 @@ scenarios:
         expect: {intent: FUND_GAP, awaiting: true, ops_count: 0, reply_contains: ["¥360,000.00"]}
       - text: "go ahead"
         expect: {intent: FUND_GAP, ops: ["DRAW_FACILITY:EXECUTED", "SUBMIT_INVOICE_FOR_FINANCING:EXECUTED"],
-                 reply_contains: ["¥360,000.00"]}
+                 reply_contains: ["Cash in now: ¥150,000.00", "lands on day 3"]}  # not "raised ¥360,000.00": the advance is not cash yet
     after: {cash_fen: 55000000}  # ADR-0010: the advance lands on day 3
 
   - id: S05_fund_gap_zh

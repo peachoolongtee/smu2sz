@@ -327,10 +327,20 @@ _YES_PLAN = re.compile(rf"(?:(?:{_FILLER}|{_YES_EN}|{_YES_ZH})[ ,，]*)+")
 _YES_CORE = re.compile(rf"(?<![a-z])(?:{_YES_EN})(?![a-z])|{_YES_ZH}")
 _NO_EN = (r"no|nope|nah|cancel|stop|abort|don't|dont|do not|never ?mind|forget it|scrap it|hold off|not now|"
           r"that|it|this|just|anything|nothing|go ahead|proceed|do it|execute|run it|confirm")
-_NO_ZH = r"不要|别|不用|不必|取消|算了|不行|不|先不|停止|停下|撤销|作罢|不执行|不办|执行|办|做|了|吧|啊"
+_NO_ZH = (r"先不要|暂时不要|暂不要|先别|暂时别|不要|别|不用|不必|取消|算了|不行|不|先不|停止|停下|撤销|作罢|不执行|不办|"
+          r"执行|办|做|发送|发|了|吧|啊")
 _NO_PLAN = re.compile(rf"(?:(?:{_FILLER}|{_NO_EN}|{_NO_ZH})[ ,，]*)+")
 _NO_CORE = re.compile(r"(?<![a-z])(?:no|nope|nah|cancel|stop|abort|don't|dont|do not|never ?mind|forget it|scrap it|"
                       r"hold off|not now)(?![a-z])|不要|别|不用|不必|取消|算了|不行|先不|停止|停下|撤销|作罢|不执行|不办|不")
+
+
+def is_constraint(text: str) -> bool:
+    """A short message that only constrains the plan ("don't give anything away", "without conceding the rebate",
+    不要给任何让步): it negates what the plan may concede, not the plan, so it is not a refusal of it."""
+    core = _core(text)
+    if core is None or "?" in core or is_question(core):
+        return False
+    return bool(lx.ZERO_FORWARD.search(core) or lx.ZERO_FORWARD_EXTRA.search(core) or NO_CONCEDE.search(core))
 
 
 def confirmation(text: str) -> Literal["yes", "no"] | None:
@@ -344,6 +354,8 @@ def confirmation(text: str) -> Literal["yes", "no"] | None:
         return "yes"
     if _NO_PLAN.fullmatch(core) and _NO_CORE.search(core):
         return "no"
+    if is_constraint(core):
+        return None  # a constraint on the plan is neither a go-ahead nor a refusal of it
     if lx.DECLINE.search(core) and not is_question(core):
         return "no"
     return None

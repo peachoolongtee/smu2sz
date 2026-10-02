@@ -213,12 +213,17 @@ def parse(text: str, state: FinancialState, *, pending_plan: bool = False) -> Pa
             return Parsed(intent=intent, slots=s, matched=[cue, f"consent:{gate}"])
         return hit(intent, cue, tentative=True)  # a proposal that waits for the owner's confirmation
 
-    if not asks_why and not s.approval_id and not s.tier3:
+    declines_plan = pending_plan and not s.counterparty_id and consent.confirmation(text) == "no"  # "先不要发送": a decline
+    if not asks_why and not s.approval_id and not s.tier3 and not declines_plan:
         # "do not negotiate", "don't send the counters", 不要谈判, "do not get paid early": nothing is done and no plan
         # stays pending, whether or not a plan is waiting (a decline that names a buyer would otherwise be held back)
         for intent, kind in ((Intent.NEGOTIATE, "NEGOTIATE"), (Intent.ACCELERATE_RECEIPT, "ACCELERATE")):
             if consent.action_negated(kind, text):  # type: ignore[arg-type]
                 return Parsed(intent=intent, slots=s, matched=["negated_action", "consent:negated"])
+    if pending_plan and not asks_why and not s.tier3 and not s.approval_id and consent.is_constraint(text):
+        # "don't give anything away" with a plan waiting: a constraint on it, not a refusal. The plan is proposed again
+        # with the constraint applied and waits for its own go-ahead; nothing is sent and nothing is cancelled.
+        return hit(Intent.AMBIGUOUS, "constraint", correction=True)
     if pending_plan and not asks_why and lx.CORRECTION.search(text) and (s.rate_bp is not None or s.use_financing or s.counterparty_id
                                                         or s.amount_fen is not None or s.buyer_profile):
         return hit(Intent.AMBIGUOUS, "correction", correction=True)  # the service keeps the plan's intent

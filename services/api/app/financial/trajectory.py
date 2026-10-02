@@ -231,17 +231,17 @@ def _bookable(ob: Obligation, mode: Mode) -> bool:
     return not (mode == Mode.CONSERVATIVE and ob.contingency == Contingency.CONTINGENT and _is_gain(ob))
 
 
-def _apply_terms_and_prices(obs: list[Obligation], rcvs: dict[str, _Rcv]) -> None:
+def _apply_terms_and_prices(obs: list[Obligation], rcvs: dict[str, _Rcv], today: int) -> None:
     """Obligations under evaluation, applied on top of the contractual invoices with the same functions the
     clock and the executor write with (ADR-0009 §4-5). The invoices a change covers are chosen by
-    `app.financial.invoices.resolve_scope`: the named one, or the buyer's invoices issued on or after the
-    effective day (default 0), bounded by the duration."""
+    `app.financial.invoices.resolve_scope`: the named one, or the buyer's invoices issued on or after
+    max(effective day, today), bounded by the duration."""
     for ob in obs:
         if ob.type not in (ObligationType.TERMS_EXTENSION, ObligationType.PRICE_ADJUSTMENT):
             continue
         check_adjusting(ob)
         a = adjustment(ob, resolve_scope(ob, (InvoiceRef(r.id, r.counterparty_id, r.issue_day)
-                                              for r in rcvs.values())))
+                                              for r in rcvs.values()), today))
         for r in rcvs.values():
             if covers(a, InvoiceRef(r.id, r.counterparty_id, r.issue_day)):
                 if r.terms + a.days_delta < 0:
@@ -284,8 +284,8 @@ def _bind_discount_receivable(ob: Obligation, state: FinancialState, rcvs: dict[
 def _immediate_discount(ob: Obligation, state: FinancialState, rcvs: dict[str, _Rcv], book: _Book) -> None:
     r = _bind_discount_receivable(ob, state, rcvs)
     settle_day = ob.effective_day
-    if settle_day is None:
-        settle_day = _early_pay_lead(state, ob.counterparty_id)
+    if settle_day is None:  # requested today: settles today + the lead time (an absolute day, never the lead alone)
+        settle_day = state.as_of_day + _early_pay_lead(state, ob.counterparty_id)
     if settle_day < state.as_of_day or settle_day >= r.due:
         raise ObligationError(f"{ob.id}: settlement on {fday(settle_day)} is not between today "
                               f"({fday(state.as_of_day)}) and {r.id}'s due day {r.due}")
@@ -451,6 +451,9 @@ def _finance_invoice(f: Facility, a: FundingAction, r: _Rcv, book: _Book) -> Non
         raise FundingActionError(f"FINANCE_INVOICE needs an invoice-financing facility, not {f.id}")
     if r.financed:
         raise FundingActionError(f"receivable {r.id} is already financed")
+    if r.early > 0:  # FINANCIAL_SEMANTICS §2: never financed while under an early-payment agreement
+        raise FundingActionError(f"receivable {r.id} has an early settlement of {y(r.early)} booked; it cannot "
+                                 f"also be financed")
     open_face = r.face - r.early
     if f.advance_rate_bp is not None and a.amount_fen * 10_000 > f.advance_rate_bp * open_face:
         raise FundingActionError(
@@ -756,7 +759,7 @@ def _build(
     rcvs = _receivables(state, issue_bound, mode)
     book = _Book()
     obs = [ob for ob in obligations if _bookable(ob, mode)]
-    _apply_terms_and_prices(obs, rcvs)
+    _apply_terms_and_prices(obs, rcvs, state.as_of_day)
     for ob in obs:
         if ob.type == ObligationType.IMMEDIATE_DISCOUNT:
             _immediate_discount(ob, state, rcvs, book)

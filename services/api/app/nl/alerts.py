@@ -23,6 +23,7 @@ from app.domain.models import (
 )
 from app.domain.money import bp, fmt_pct, fmt_yuan
 from app.financial import EngineError
+from app.nl import landing
 from app.nl.context import NlContext
 from app.nl.models import Intent, Slots
 from app.nl.pipeline import Steps, t
@@ -107,8 +108,19 @@ def _cap_sentence(ctx: NlContext, mandate: Mandate, op: Operation) -> str:
              f"这高于您 {cap} 的年度融资成本上限，{queue_zh}")
 
 
+def _if_approved(ctx: NlContext, op: Operation) -> str:
+    """For a queued draw or advance on a facility with a lead time: when its cash would land if it ran today."""
+    if not landing.is_funding(op):
+        return ""
+    day = landing.landing_day(ctx, op, executed=False)
+    if day <= op.day:
+        return ""
+    return t(ctx, f" Once it runs, the cash lands after the lead time: day {day} if that is today.",
+             f" 执行后资金经提前期到账：若今天执行，则第 {day} 天到账。")
+
+
 def _queued_sentence(ctx: NlContext, mandate: Mandate, s: SuggestedAction | None, end: int | None,
-                     approval_id: str | None) -> str:
+                     approval_id: str | None, op: Operation | None = None) -> str:
     """After "go ahead": what the cure costs, why it did not run, and how to approve it."""
     cap = fmt_pct(bp(mandate.max_apr_bp))
     ref = approval_id or "its approval id"
@@ -120,7 +132,13 @@ def _queued_sentence(ctx: NlContext, mandate: Mandate, s: SuggestedAction | None
     return t(ctx, f"{cost_en}That is above your {cap} ceiling, so it needs your approval. I have not run it: it is "
                   f"queued as {ref}. Say \"approve {ref}\" or use the approval card.",
              f"{cost_zh}这高于您 {cap} 的上限，需要您批准。我尚未执行：已列入待批队列，编号 {ref}。"
-             f"请说“批准 {ref}”或使用审批卡。")
+             f"请说“批准 {ref}”或使用审批卡。") + (_if_approved(ctx, op) if op is not None else "")
+
+
+def _when(ctx: NlContext, op: Operation, zh: bool = False) -> str:
+    """" (requested today, cash lands on day 37)" after a proposed draw or advance whose cash is not in today."""
+    c = landing.leg_clause(ctx, op, executed=False)
+    return (f"（{c}）" if zh else f" ({c})") if c else ""
 
 
 def _op_clause(ctx: NlContext, state: FinancialState, op: Operation) -> tuple[str, str, str, str]:
@@ -131,13 +149,13 @@ def _op_clause(ctx: NlContext, state: FinancialState, op: Operation) -> tuple[st
         return (op.kind, "PROPOSED",
                 t(ctx, f"Submit {op.receivable_id} to {op.facility_id} for a {amount} advance",
                   f"将 {op.receivable_id} 提交 {op.facility_id} 融资，预付 {amount}"),
-                t(ctx, f"finance {amount} of invoice {op.receivable_id} on {fac} now",
-                  f"立即以发票 {op.receivable_id} 在 {fac} 融资 {amount}"))
+                t(ctx, f"finance {amount} of invoice {op.receivable_id} on {fac} now{_when(ctx, op)}",
+                  f"立即以发票 {op.receivable_id} 在 {fac} 融资 {amount}{_when(ctx, op, zh=True)}"))
     if isinstance(op, DrawFacility):
         fac = _facility_name(state, op.facility_id)
         amount = fmt_yuan(op.amount_fen)
         return (op.kind, "PROPOSED", t(ctx, f"Draw {amount} on {op.facility_id}", f"从 {op.facility_id} 提款 {amount}"),
-                t(ctx, f"draw {amount} on {fac} now", f"立即从 {fac} 提款 {amount}"))
+                t(ctx, f"draw {amount} on {fac} now{_when(ctx, op)}", f"立即从 {fac} 提款 {amount}{_when(ctx, op, zh=True)}"))
     if isinstance(op, RepayFacility):
         fac = _facility_name(state, op.facility_id)
         amount = fmt_yuan(op.amount_fen)
@@ -308,13 +326,14 @@ def confirm_cure(ctx: NlContext, pending: PendingPlan) -> Turn:
         waits = r.status == OperationStatus.PENDING_APPROVAL or (
             r.status == OperationStatus.DUPLICATE and r.approval_id is not None)
         if waits and sg is not None and sg.above_apr_cap and isinstance(op, DrawFacility | SubmitInvoiceForFinancing):
-            lines.append(_queued_sentence(ctx, mandate, sg, end, r.approval_id))
+            lines.append(_queued_sentence(ctx, mandate, sg, end, r.approval_id, op))
         elif r.status == OperationStatus.PENDING_APPROVAL:
             ref = f" ({r.approval_id})" if r.approval_id else ""
             lines.append(t(ctx, f"{r.message} It waits for your approval{ref}; I have not done it.",
-                           f"{r.message} 它在等您批准{ref}；我尚未执行。"))
+                           f"{r.message} 它在等您批准{ref}；我尚未执行。") + _if_approved(ctx, op))
         else:
-            lines.append(r.message)
+            note = landing.executor_note(ctx, op, r.message) if r.status == OperationStatus.EXECUTED else ""
+            lines.append(r.message + (f" ({note})" if note else ""))
     if unsent:
         lines.append(t(ctx, "Not sent: " + "; ".join(describe(ctx, o) for o in unsent) + ". Nothing else was run.",
                        "未发送：" + "；".join(describe(ctx, o) for o in unsent) + "。其余均未执行。"))

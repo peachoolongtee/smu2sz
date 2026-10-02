@@ -38,9 +38,15 @@ receives against the unadjusted face, and reconciliation reads the unadjusted du
 6. **Contingent gains.** An adjustment that is a gain and CONTINGENT is recorded with `contingent_gain = true`. The
    clock does not write it onto an invoice and the conservative projection ignores it (INVARIANT 5 unchanged);
    the expected projection applies it.
-7. **Completion.** A finite adjustment is consumed when its last invoice is issued and is then removed from the
-   state. When a commitment has no adjustment left and no other live obligation, it becomes FULFILLED and its
-   forward concession leaves `state.forward_concessions`: the concession is no longer ahead, it is in the invoices.
+7. **Completion** (amended 3 Oct 2026 after the second red team, finding F7). A finite adjustment is consumed when
+   its last invoice is issued and is then removed from `state.invoice_adjustments`; its scope stays readable on
+   the invoices themselves (each carries the adjustment id `<commitment>:<obligation>` in `applied`), so no other
+   record is kept. A commitment with no adjustment left and no other live obligation becomes FULFILLED, and its
+   forward concession leaves `state.forward_concessions`, only when every invoice carrying its terms is SETTLED
+   (or when it is revoked, §8): until the buyer has paid, the concession is still ahead and still counts against
+   the aggregate and per-buyer caps. Releasing it at issue let an agreement split into one-invoice agreements over
+   time bypass the cap. The clock applies this rule when it closes a day. A commitment that wrote nothing (only
+   contingent gains) is fulfilled when its adjustments are consumed.
 8. **Revocation** removes the commitment's remaining adjustments and its forward concession. Invoices already
    issued keep their contractual terms; changing those needs a credit or debit note, which is out of scope.
 
