@@ -122,6 +122,7 @@ def handle(req: NlRequest, *, store: LedgerStore, executor: Executor, day: int, 
         turn.pending.bind(ctx)  # the books this proposal was made on (a plan the handler did not bind itself)
         if turn.pending.intent == Intent.NEGOTIATE:
             turn.pending.data["followups"] = _followups(ctx, turn.pending.data.get("verdict_id"))
+            turn.pending.data["zero_forward"] = isinstance(ctx, _TurnContext) and ctx.zero_forward  # as it was shown
     if not turn.guarded:
         turn.reply, _ok = ctx.guard(turn.reply, turn.recipient, allow=turn.allow)
     _update_session(session, turn)
@@ -369,7 +370,8 @@ def _correct(ctx: NlContext, p: Parsed, text: str) -> Turn:
         if getattr(new, k) is not None:
             update[k] = getattr(new, k)
     slots = pending.slots.model_copy(update=update)
-    _constrain(ctx, slots)
+    if pending.intent == Intent.NEGOTIATE:
+        _constrain(ctx, slots)
     if pending.intent == Intent.ACCELERATE_RECEIPT:
         turn = accelerate(ctx, slots, text, amended=True)
     elif pending.intent == Intent.FUND_GAP:
@@ -396,7 +398,8 @@ def _confirm(ctx: NlContext, yes: bool, text: str) -> Turn:
         steps = [s.model_copy(update={"status": "SKIPPED"}) for s in pending.steps]
         return Turn(intent=Intent.REJECT, reply=t(ctx, "Cancelled. Nothing was executed.", "已取消，未执行任何操作。"),
                     plan=steps, clear_pending=True)
-    _constrain(ctx, pending.slots)
+    if pending.intent == Intent.NEGOTIATE and isinstance(ctx, _TurnContext):
+        ctx.zero_forward = bool(pending.data.get("zero_forward"))  # the constraint the counters were shown under
     fresh: list[Turn] = []  # the fresh proposal, built once if the gate needs it
 
     def rebuild() -> Turn:
