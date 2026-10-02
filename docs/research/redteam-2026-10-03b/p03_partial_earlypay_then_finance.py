@@ -53,3 +53,22 @@ check("actual cash fell below the reserve on a day the projection said it would 
       worst is not None and worst < m.min_cash_fen and t.first_breach_day is None)
 alerts = c.get("/alerts", headers=OWNER).json()
 print("alerts on day 33:", [(a.get("kind"), a.get("severity")) for a in alerts.get("alerts", [])][:8])
+
+print("\nB. Same rule without any agreement: a 1-fen receipt before landing deletes a ¥336,000 advance")
+rt, c = fresh()
+op(c, AGENT, {"kind": "SUBMIT_INVOICE_FOR_FINANCING", "op_id": "fin-A", "requested_by": "AGENT",
+              "facility_id": "FAC-IF", "receivable_id": "RCV-A", "advance_fen": 33600000})
+advance(c, 1)
+before = snap(rt, "day 1 (advance requested day 0, lands day 3)")
+lots_before = lots(rt)
+res = op(c, BANK, {"kind": "RECEIVE_PAYMENT", "op_id": "rx-1fen", "requested_by": "SYSTEM", "receivable_id": "RCV-A",
+                   "amount_fen": 1})
+print("bank feed: 1 fen from the buyer:", res["status"], res["message"])
+after = snap(rt, "after the 1-fen receipt")
+al = c.get("/alerts", headers=OWNER).json().get("alerts", [])
+print("alerts right after:", [(a.get("kind"), a.get("severity"), (a.get("title") or "")[:80]) for a in al])
+advance(c, 4)
+landed = snap(rt, "day 4 (the advance was due to land on day 3)")
+print("lots before", lots_before, "after", lots(rt))
+check("a 1-fen receipt cancelled the whole pledged ¥336,000 advance; no cash landed on day 3",
+      not lots(rt) and landed["cash"] == before["cash"] + 1)
