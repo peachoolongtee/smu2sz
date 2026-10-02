@@ -44,6 +44,7 @@ class MenuRow(Contract):
     short_term_only: bool  # a clean-down line cannot carry a permanent need
     covenant_notes: list[str] = Field(default_factory=list)
     admissible_for_need: bool
+    needs_owner_approval: bool = False  # the tariff itself is above the mandate's max APR: any use needs the owner
     reasons: list[ViolationCode] = Field(default_factory=list)
     notes: list[str] = Field(default_factory=list)
 
@@ -67,3 +68,6 @@ class ComparisonRow(Contract):
     reasons: list[ViolationCode] = Field(default_factory=list)
     breach_day: int | None = None
     note: str = ""
+    needs_owner_approval: bool = False  # admissible, but a leg is above the max APR: the owner must approve
+    approval_reason: str = ""
+    executable_now: bool = True

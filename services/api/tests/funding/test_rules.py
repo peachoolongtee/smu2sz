@@ -90,11 +90,15 @@ def test_expected_basis_may_use_the_guaranteed_loan_and_says_so():
     assert next(f for f in s.facilities if f.id == "FAC-GGL").status == FacilityStatus.NOT_APPLIED
 
 
-def test_plan_never_uses_a_source_above_max_apr():
+def test_a_plan_above_max_apr_is_admissible_but_needs_the_owner():
     s, m = golden()
     p = plan(s, [], m.model_copy(update={"max_apr_bp": 1000}))
-    assert not p.admissible  # only the 6.4% line is within 10%, and it cannot cover ¥360,000
-    assert all(a.facility_id in ("FAC-LINE",) for a in p.actions)
+    # only the 6.4% line is within 10%, and it cannot cover ¥360,000: the plan is still the cheapest cover, and the
+    # advance leg (11.22% over its 29 days) is the one the owner must approve
+    assert p.admissible and p.needs_owner_approval and "11.22%" in p.approval_reason
+    by_fac = {c.facility_id: c for c in p.costs}
+    assert by_fac["FAC-IF"].needs_owner_approval and not by_fac["FAC-LINE"].needs_owner_approval
+    assert ViolationCode.MAX_APR_EXCEEDED not in {v.code for v in p.violations}
 
 
 def test_tier3_facilities_are_never_planned():

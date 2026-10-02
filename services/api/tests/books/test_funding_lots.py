@@ -33,8 +33,8 @@ from app.domain.models import (
     SubmitInvoiceForFinancing,
     ViolationCode,
 )
-from app.financial import finance_invoice_charges, line_interest, project
-from app.financial.lots import apply_receipt, ensure_lots
+from app.financial import EngineError, finance_invoice_charges, line_interest, project
+from app.financial.lots import apply_receipt, ensure_lots, is_fixed_remainder
 from tests.operations.builders import Clock, make_executor, op, seeded_store
 
 C = Mode.CONSERVATIVE
@@ -464,3 +464,71 @@ def test_ensure_lots_dates_an_older_balance_to_today_and_states_without_lots_ser
     later = ensure_lots(drawn.model_copy(update={"as_of_day": 40})).lots[0]
     assert later.arrival_day == 40
     assert ensure_lots(s) is s
+
+
+# ---------------------------------------------------------------- 7. N03: a settled financed invoice still owes its lot
+
+
+def _fully_advanced_and_paid_in_full() -> World:
+    """A 100% advance on an invoice whose buyer then pays the face: the receipt cannot cover the charges as well, so the
+    lender takes it all and the unpaid charges stay on the lot. The invoice is FINANCED with nothing outstanding."""
+    rcv = Receivable(id="RCV-S", counterparty_id="BUYER-1", face_fen=30_000_000, issue_day=0, terms_days=40)
+    w = World([rcv])
+    s = w.state
+    w.store.put_state(s.model_copy(update={"facilities": [
+        f.model_copy(update={"advance_rate_bp": None}) if f.id == IF else f for f in s.facilities]}))
+    assert w.run(SubmitInvoiceForFinancing, Actor.OWNER, facility_id=IF, receivable_id="RCV-S",
+                 advance_fen=30_000_000).status == "EXECUTED"
+    w.move(10)
+    assert w.receive("RCV-S", 30_000_000).status == "EXECUTED"
+    return w
+
+
+def _events(t, kinds, ref):
+    return [(p.day, e.kind, -e.amount_fen) for p in t.days for e in p.events if e.kind in kinds and e.ref == ref]
+
+
+def test_an_orphaned_fixed_remainder_is_repaid_today_without_charges_not_at_the_horizon() -> None:
+    w = _fully_advanced_and_paid_in_full()
+    assert w.rcv("RCV-S").status == "SETTLED"
+    (lot,) = [x for x in w.state.lots if x.receivable_id == "RCV-S"]
+    assert is_fixed_remainder(lot) and w.fac(IF).drawn_fen == lot.remaining_fen
+    t = project(w.state, [], [], C, 120)
+    assert _events(t, (LedgerEventKind.REPAYMENT,), IF) == [(10, LedgerEventKind.REPAYMENT, lot.remaining_fen)]
+    assert _events(t, (LedgerEventKind.INTEREST, LedgerEventKind.FEE), IF) == []  # a fixed amount: nothing accrues
+
+
+def test_a_repay_action_repays_the_orphaned_lot_and_the_carried_code_does_not_project_it_again() -> None:
+    w = _fully_advanced_and_paid_in_full()
+    (lot,) = [x for x in w.state.lots if x.receivable_id == "RCV-S"]
+    part = lot.remaining_fen // 2
+    act = FundingAction(kind=FundingActionKind.REPAY, facility_id=IF, day=12, amount_fen=part)
+    t = project(w.state, [], [act], C, 120)
+    # the action's part on its own day, the rest today: together exactly the amount owed, never twice
+    assert _events(t, (LedgerEventKind.REPAYMENT,), IF) == [
+        (10, LedgerEventKind.REPAYMENT, lot.remaining_fen - part), (12, LedgerEventKind.REPAYMENT, part)]
+    too_much = act.model_copy(update={"amount_fen": lot.remaining_fen + 1})
+    with pytest.raises(EngineError):
+        project(w.state, [], [too_much], C, 120)
+    with pytest.raises(EngineError):  # nothing orphaned on a facility that has none
+        project(w.state, [], [act.model_copy(update={"facility_id": "FAC-EARLYPAY"})], C, 120)
+
+
+def test_a_financed_invoice_with_nothing_outstanding_still_repays_its_lot_with_charges_today() -> None:
+    """Older states: FINANCED with the face settled (the lot is not yet a fixed remainder). Repaid today with the
+    charges the lot has accrued, not carried to the horizon end."""
+    rcv = Receivable(id="RCV-S", counterparty_id="BUYER-1", face_fen=30_000_000, issue_day=0, terms_days=40)
+    w = World([rcv])
+    assert w.run(SubmitInvoiceForFinancing, Actor.OWNER, facility_id=IF, receivable_id="RCV-S",
+                 advance_fen=24_000_000).status == "EXECUTED"
+    w.move(10)
+    s = w.state
+    w.store.put_state(s.model_copy(update={"receivables": [
+        r.model_copy(update={"settled_fen": r.face_fen}) if r.id == "RCV-S" else r for r in s.receivables]}))
+    (lot,) = [x for x in w.state.lots if x.receivable_id == "RCV-S"]
+    t = project(w.state, [], [], C, 120)
+    assert _events(t, (LedgerEventKind.REPAYMENT,), IF) == [(10, LedgerEventKind.REPAYMENT, 24_000_000)]
+    interest, fee, _ = finance_invoice_charges(w.fac(IF), lot.principal_fen, 10 - lot.arrival_day)
+    posted = _events(t, (LedgerEventKind.INTEREST, LedgerEventKind.FEE), IF)
+    assert sorted(x[2] for x in posted) == sorted([interest, *([fee] if fee else [])])
+    assert {x[0] for x in posted} == {10}

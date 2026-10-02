@@ -54,8 +54,10 @@ def menu_row(f: Facility, state: FinancialState, mandate: Mandate, need_fen: int
     if need_day is not None and f.lead_time_days > need_day:
         reasons.append(ViolationCode.LEAD_TIME_TOO_LONG)
         notes.append(f"cash on day {f.lead_time_days}, needed by day {need_day}")
-    if f.kind != FacilityKind.EQUITY and check_apr(Ratio.of(rate), mandate, f.name) is not None:
+    over_cap = f.kind != FacilityKind.EQUITY and check_apr(Ratio.of(rate), mandate, f.name) is not None
+    if over_cap:  # shown, but not a bar: a plan that uses it needs the owner's approval
         reasons.append(ViolationCode.MAX_APR_EXCEEDED)
+        notes.append("tariff above the mandate's max APR: the agent cannot use it alone, the owner must approve")
     reasons += tier3_reasons(f)
     short_term = f.kind == FacilityKind.CREDIT_LINE and not line_can_carry_permanent_need(f)
     if f.kind == FacilityKind.BUYER_EARLY_PAY:
@@ -87,7 +89,8 @@ def menu_row(f: Facility, state: FinancialState, mandate: Mandate, need_fen: int
         is_debt=is_debt(f),
         short_term_only=short_term,
         covenant_notes=_covenant_notes(f),
-        admissible_for_need=not reasons and available > 0,
+        admissible_for_need=not [c for c in reasons if c != ViolationCode.MAX_APR_EXCEEDED] and available > 0,
+        needs_owner_approval=over_cap,
         reasons=reasons,
         notes=notes,
     )

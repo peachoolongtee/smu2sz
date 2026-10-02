@@ -44,7 +44,7 @@ SPAN = [SourceSpan(doc_id="T", start=0, end=0, text="")]
 
 # Recorded on origin/dev (cfecd72) with no commitments: sha256 of the sorted-key JSON of each response.
 GOLDEN_TRAJECTORY = "6e416d997eccbf94"
-GOLDEN_ROUTER_PLAN = "118733a57fd7900b"  # 3 Oct: extension figures on 13 dated invoices; extra receivables ¥210,000.00
+GOLDEN_ROUTER_PLAN = "60bcdca14e272842"  # 3 Oct: extension figures on 13 dated invoices; extra receivables ¥210,000.00. 118733a57fd7900b before the plan, cost lines and menu rows carried the approval and executable_now flags (every figure unchanged)
 EX01_COUNTERS = [
     "Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥211,900 of this invoice at 0.85%.",
     "60-day terms accepted with a 0.45% price adjustment on future invoices, no rebate.",
