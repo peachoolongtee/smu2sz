@@ -23,6 +23,7 @@ from collections.abc import Callable, Mapping, Sequence
 from fractions import Fraction
 from typing import Any, Literal
 
+from app.alerts.engine import past_due_invoices
 from app.books import current_books
 from app.covenants import evaluate as evaluate_covenants
 from app.covenants import fmt_x, line_balances, longest_zero_run, ratios_or_undefined
@@ -695,6 +696,8 @@ def _evaluate(
     if owner_constraints is not None:
         extra_notes.append(f"owner goal ({describe_constraints(owner_constraints)}): "
                            + ("; ".join(goal_breaches) if goal_breaches else "the package satisfies it"))
+    past_due = _buyer_past_due(offer.counterparty_id, state, commitments, mandate, day)
+    past_due_note = _past_due_note(offer.counterparty_id, past_due)
     if hard or codes & SECURITY_CODES:
         outcome, tier = Outcome.REJECT, Tier.TIER_1
     elif codes & PRICE_CODES or goal_breaches:
@@ -723,9 +726,14 @@ def _evaluate(
             if unproven:
                 outcome, tier = Outcome.NEEDS_OWNER_APPROVAL, Tier.TIER_2
                 extra_notes.append("owner approval needed: autonomy not proven (" + "; ".join(unproven) + ")")
+            elif past_due:
+                outcome, tier = Outcome.NEEDS_OWNER_APPROVAL, Tier.TIER_2
+                extra_notes.append("owner approval needed: " + past_due_note)
             else:
                 outcome, tier = Outcome.ACCEPT, Tier.TIER_1
 
+    if past_due and outcome != Outcome.NEEDS_OWNER_APPROVAL:  # the deciding note above already names it otherwise
+        extra_notes.append(past_due_note)
     extra = [f"Forward concessions {fmt_yuan(res.forward_total)} against "
              + fmt_yuan(mandate.max_aggregate_forward_concession_fen)]
     held = [f"{p.code} {p.observed}" for p in passed if p.code in ("DSCR_MIN", "LEVERAGE_MAX")]
@@ -742,6 +750,22 @@ def _evaluate(
         security_events=events, passed_checks=passed, bound_obligations=bound, notes=notes, cure_plan=cure,
         comparison=comparison,
     )
+
+
+def _buyer_past_due(buyer_id: str, state: FinancialState, commitments: Sequence[Commitment], mandate: Mandate,
+                    day: int) -> list[tuple[str, int, int]]:
+    """(invoice id, days past due, outstanding fen) of this buyer's open invoices past due on current books today
+    (the alerts' own reading of the books). Nothing is past due on day 0, so no day-0 verdict can change."""
+    today = max(day, state.as_of_day)
+    books = current_books(state, commitments)
+    found = past_due_invoices(books, today, today + mandate.horizon_days)
+    return sorted((a.receivable_id or "", today - int(a.inputs["due_day"]), a.amount_fen or 0)
+                  for a in found if a.inputs.get("counterparty_id") == buyer_id)
+
+
+def _past_due_note(buyer_id: str, past_due: list[tuple[str, int, int]]) -> str:
+    return "; ".join(f"{buyer_id} has a past-due invoice {rid}: {fmt_yuan(owed)} outstanding, {late} day(s) past due"
+                     for rid, late, owed in past_due)
 
 
 def _autonomy_gaps(offer: CompiledOffer, bound: list[Obligation], state: FinancialState) -> list[str]:

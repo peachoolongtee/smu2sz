@@ -621,6 +621,13 @@ def _past_due(books: Books, today: int, horizon: int) -> list[Alert]:
     return out
 
 
+def past_due_invoices(books: Books, today: int, horizon: int) -> list[Alert]:
+    """The invoices past due on current books, as the alerts read them (one RECEIVABLE_PAST_DUE alert per receivable,
+    `inputs` carries the counterparty and the due day). A missed early-payment promise is not an invoice past due and
+    is left out. The verifier asks this before it lets the agent accept something from that buyer alone."""
+    return [a for a in _past_due(books, today, horizon) if a.commitment_id is None]
+
+
 def _concession_alerts(state: FinancialState, mandate: Mandate, t: Trajectory) -> list[Alert]:
     out: list[Alert] = []
     cap = mandate.max_aggregate_forward_concession_fen
