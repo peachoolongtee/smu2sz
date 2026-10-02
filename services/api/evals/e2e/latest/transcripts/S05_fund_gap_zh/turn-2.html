@@ -1,0 +1,12 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>S05_fund_gap_zh turn 2</title><style>body{font:14px/1.5 system-ui,sans-serif;margin:24px;max-width:960px;color:#1d2330;background:#fff}
+.tag{display:inline-block;padding:2px 8px;border-radius:10px;background:#e3f5e8}
+pre{white-space:pre-wrap;background:#f5f6f8;padding:12px;border-radius:6px}table{border-collapse:collapse;width:100%}
+td{border-top:1px solid #e3e5e8;padding:4px 6px;vertical-align:top}</style></head><body>
+<h1>S05_fund_gap_zh · turn 2 <span class="tag">PASS</span></h1><p>Fund the gap, asked in Chinese</p>
+<p><b>OWNER</b>:</p>
+<pre>执行</pre><p><b>Intent</b> FUND_GAP · <b>Verdict</b> —
+</p><p><b>Reply</b></p><pre>从 FAC-LINE 提款 ¥150,000.00：已执行。 将 RCV-A 提交 FAC-IF 融资，预付 ¥210,000.00：已执行；今日申请，第 3 天到账。 已到账：¥150,000.00。待到账：FAC-IF ¥210,000.00，今日申请，第 3 天到账。 费用与报价一致：¥2,712.94。</pre><p><b>Plan</b></p><ol><li>[EXECUTED] DRAW_FACILITY: 从 FAC-LINE 提款 ¥150,000.00</li><li>[EXECUTED] SUBMIT_INVOICE_FOR_FINANCING: 将 RCV-A 提交 FAC-IF 融资，预付 ¥210,000.00</li></ol>
+<p><b>Operations</b></p><table><tr><td>DRAW_FACILITY</td><td>EXECUTED</td><td>TIER_1</td><td>Drew ¥150,000.00 on FAC-LINE on day 0</td></tr><tr><td>SUBMIT_INVOICE_FOR_FINANCING</td><td>EXECUTED</td><td>TIER_1</td><td>Advance ¥210,000.00 on RCV-A from FAC-IF on day 0; the cash lands on day 3 after the 3-day lead time, not today</td></tr></table>
+<p>session S05_fund_gap_zh-owner · trace S05_fund_gap_zh-owner:2 · security events 0</p>
+</body></html>

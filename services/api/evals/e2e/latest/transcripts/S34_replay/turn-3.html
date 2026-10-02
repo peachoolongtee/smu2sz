@@ -1,0 +1,12 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>S34_replay turn 3</title><style>body{font:14px/1.5 system-ui,sans-serif;margin:24px;max-width:960px;color:#1d2330;background:#fff}
+.tag{display:inline-block;padding:2px 8px;border-radius:10px;background:#e3f5e8}
+pre{white-space:pre-wrap;background:#f5f6f8;padding:12px;border-radius:6px}table{border-collapse:collapse;width:100%}
+td{border-top:1px solid #e3e5e8;padding:4px 6px;vertical-align:top}</style></head><body>
+<h1>S34_replay · turn 3 <span class="tag">PASS</span></h1><p>Replay: the same request_id twice executes once; the retry is DUPLICATE</p>
+<p><b>OWNER</b>:</p>
+<pre>go ahead</pre><p><b>Intent</b> FUND_GAP · <b>Verdict</b> —
+</p><p><b>Reply</b></p><pre>Replayed request: 2 operation(s), nothing executed twice.</pre><p><b>Plan</b></p><ol><li>[DUPLICATE] DRAW_FACILITY: Replay of NL-24741fb554bad81c</li><li>[DUPLICATE] SUBMIT_INVOICE_FOR_FINANCING: Replay of NL-9f7df632c5c7361e</li></ol>
+<p><b>Operations</b></p><table><tr><td>DRAW_FACILITY</td><td>DUPLICATE</td><td>TIER_1</td><td>Duplicate of seq 1 (status EXECUTED); nothing re-executed. Drew ¥150,000.00 on FAC-LINE on day 0</td></tr><tr><td>SUBMIT_INVOICE_FOR_FINANCING</td><td>DUPLICATE</td><td>TIER_1</td><td>Duplicate of seq 2 (status EXECUTED); nothing re-executed. Advance ¥210,000.00 on RCV-A from FAC-IF on day 0; the cash lands on day 3 after the 3-day lead time, not today</td></tr></table>
+<p>session S34_replay-owner · trace S34_replay-owner:3 · security events 0</p>
+</body></html>

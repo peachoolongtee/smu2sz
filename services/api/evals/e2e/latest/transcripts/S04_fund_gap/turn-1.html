@@ -3,10 +3,10 @@
 .tag{display:inline-block;padding:2px 8px;border-radius:10px;background:#e3f5e8}
 pre{white-space:pre-wrap;background:#f5f6f8;padding:12px;border-radius:6px}table{border-collapse:collapse;width:100%}
 td{border-top:1px solid #e3e5e8;padding:4px 6px;vertical-align:top}</style></head><body>
-<h1>S04_fund_gap · turn 1 <span class="tag">PASS</span></h1><p>Fund the projected gap with the router&#x27;s committed plan (Tier 1)</p>
+<h1>S04_fund_gap · turn 1 <span class="tag">PASS</span></h1><p>Fund the projected gap: the router&#x27;s committed plan is proposed, then run on &#x27;go ahead&#x27; (Tier 1)</p>
 <p><b>OWNER</b>:</p>
 <pre>Fund the cash gap</pre><p><b>Intent</b> FUND_GAP · <b>Verdict</b> ACCEPT
-</p><p><b>Reply</b></p><pre>Router plan (committed facilities only): committed plan: ¥841.64 + ¥1,871.30 = ¥2,712.94, need ¥360,000.00.</pre><p><b>Plan</b></p><ol><li>[DONE] VERIFY: Gap days 12–31, short ¥360,000.00 at the low on day 20. Verdict ACCEPT (TIER_1): no violations. ACCEPT. Forward concessions ¥0.00 against ¥5,000.00. Covenants hold: DSCR_MIN 1.89x, LEVERAGE_MAX 1.72x.</li><li>[EXECUTED] DRAW_FACILITY: Draw ¥150,000.00 on FAC-LINE, repay day 32</li><li>[EXECUTED] SUBMIT_INVOICE_FOR_FINANCING: Submit RCV-A to FAC-IF for a ¥210,000.00 advance</li></ol>
-<p><b>Operations</b></p><table><tr><td>DRAW_FACILITY</td><td>EXECUTED</td><td>TIER_1</td><td>Drew ¥150,000.00 on FAC-LINE on day 0</td></tr><tr><td>SUBMIT_INVOICE_FOR_FINANCING</td><td>EXECUTED</td><td>TIER_1</td><td>Advance ¥210,000.00 on RCV-A from FAC-IF on day 0</td></tr></table>
+</p><p><b>Reply</b></p><pre>Router plan (committed facilities only): committed plan: ¥841.64 + ¥1,871.30 = ¥2,712.94, need ¥360,000.00. Cash today: ¥150,000.00. Cash later: ¥210,000.00 on FAC-IF, requested today, lands on day 3. Reply &#x27;go ahead&#x27; to execute.</pre><p><b>Plan</b></p><ol><li>[DONE] VERIFY: Gap days 12–31, short ¥360,000.00 at the low on day 20. Verdict ACCEPT (TIER_1): no violations. ACCEPT. Forward concessions ¥0.00 against ¥5,000.00. Covenants hold: DSCR_MIN 1.89x, LEVERAGE_MAX 1.72x.</li><li>[PROPOSED] DRAW_FACILITY: Draw ¥150,000.00 on FAC-LINE, repay day 32</li><li>[PROPOSED] SUBMIT_INVOICE_FOR_FINANCING: Submit RCV-A to FAC-IF for a ¥210,000.00 advance (requested today, cash lands on day 3)</li></ol>
+<p><b>Operations</b></p><table><tr><td>none</td></tr></table>
 <p>session S04_fund_gap-owner · trace S04_fund_gap-owner:1 · security events 0</p>
 </body></html>
