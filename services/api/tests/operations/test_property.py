@@ -60,6 +60,7 @@ class BankModel:
         self.lots: list[list[int]] = []  # FAC-LINE draws as [day, remaining]
         # the advance on RCV-A as [arrival day, principal, remaining, landed] (ADR-0010: FAC-IF has a 3-day lead time)
         self.advance: list[int] | None = None
+        self.settled = 0  # face of RCV-A settled by receipts
 
     def apply(self, o: Any, day: int) -> None:
         if isinstance(o, DrawFacility):  # FAC-LINE has no lead time: the cash lands at once
@@ -79,11 +80,16 @@ class BankModel:
             self.advance = [day + 3, o.advance_fen, o.advance_fen, 0]  # requested, not cash
         elif isinstance(o, ReceivePayment):
             self.cash += o.amount_fen
+            self.settled += o.amount_fen
+            outstanding = 42_000_000 - self.settled  # RCV-A's face
             if self.advance is None:
                 return
             arrival, principal, remaining, landed = self.advance
-            if not landed:  # paid before the advance landed: the request is cancelled, nothing charged
-                self.advance = None
+            if not landed:
+                # paid before the advance landed (red team F1): the request is cancelled, nothing charged, only if
+                # the invoice is settled or the advance is now above 80% of what is outstanding; else it stands
+                if outstanding == 0 or remaining * 10_000 > 8_000 * outstanding:
+                    self.advance = None
                 return
             periods = max(1, -(-(day - arrival) // 30))
             claim = remaining + post(simple_interest(principal, bp(780), 30 * periods)) + post(bp(25) * principal * periods)
@@ -91,10 +97,10 @@ class BankModel:
             self.cash -= taken
             if taken == claim:
                 self.advance = None
-            elif taken < remaining:
+            elif taken < remaining and outstanding > 0:
                 self.advance = [arrival, principal, remaining - taken, 1]
-            else:  # principal repaid, unpaid charges stay due as a balance from today
-                self.advance = [day, claim - taken, claim - taken, 1]
+            else:  # red team F3: the charges are billed now; the rest is a fixed amount (principal 0, no charges)
+                self.advance = [arrival, 0, claim - taken, 1]
 
     def close(self, to_day: int, posted_flows_fen: int) -> None:
         """The clock closed every day before `to_day`: scheduled flows, and the advance if it landed."""

@@ -236,6 +236,7 @@ def test_counter_offer_uses_the_verdict_template(ex: Any, store: Any, clock: Clo
 
 
 def test_reject_offer_is_logged_only(ex: Any, store: Any, clock: Clock) -> None:
+    seed_offer(store, ex)  # red team F6: rejecting an offer that does not exist is refused
     before = store.get_state()
     r = ex.execute(op(RejectOffer, clock, offer_id="OFF-1", reason_codes=[ViolationCode.RESERVE_BREACH]))
     assert r.status == S.EXECUTED and store.get_state() == before and store.verify_chain()

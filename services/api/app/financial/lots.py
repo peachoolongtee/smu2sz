@@ -216,29 +216,47 @@ class ReceiptApplied:
     days: int = 0
 
 
-def apply_receipt(f: Facility, lot: FundingLot, amount_fen: int, day: int) -> ReceiptApplied:
-    """A buyer's receipt on a FINANCED invoice whose advance `lot` has landed goes to the lender first.
+def is_fixed_remainder(lot: FundingLot) -> bool:
+    """A lot whose charges have been billed (`principal_fen` 0): `remaining_fen` is a fixed amount due to the
+    lender and nothing accrues on it (`advance_charges` is zero). Created by `apply_receipt`."""
+    return lot.principal_fen == 0 and lot.remaining_fen > 0
+
+
+def apply_receipt(f: Facility, lot: FundingLot, amount_fen: int, day: int, final: bool = False) -> ReceiptApplied:
+    """A buyer's receipt on a FINANCED invoice whose advance `lot` has landed goes to the lender first. `final`:
+    this receipt brings the invoice's outstanding face to zero.
 
     - It clears the advance when it covers the remaining principal plus the charges (`advance_charges`): the
       lender takes exactly that and the owner keeps the rest.
-    - A smaller receipt goes wholly to the lender and reduces the remaining principal; the charges stay due on the
-      lot and are billed by the receipt that clears it, so the advance is charged once, on its original principal,
-      from landing to clearing.
-    - A receipt that covers the principal but not all the charges also goes wholly to the lender: the principal
-      is repaid and the unpaid charges stay on the lot as its remaining balance, re-dated to today (the lender
-      capitalises them; they are charged as an advance from today until cleared).
+    - A smaller receipt that is not the invoice's last goes wholly to the lender and reduces the remaining
+      principal; the charges stay due on the lot and are billed by the receipt that clears it, so the advance is
+      charged once, on its original principal, from landing to clearing.
+    - Otherwise (the receipt covers the principal but not all the charges, or it is the invoice's last and does
+      not cover the claim) it also goes wholly to the lender and the charges are billed now: what the receipt does
+      not cover stays on the lot as a FIXED amount (`is_fixed_remainder`: principal 0, nothing accrues, never
+      charged again). After a final receipt the invoice is SETTLED and the owner owes that amount directly
+      (RepayFacility on the orphaned lot).
     The owner's cash never falls because of a receipt."""
     interest, fee, periods = advance_charges(f, lot, day)
     days = day - lot.arrival_day
     claim = lot.remaining_fen + interest + fee
     if amount_fen >= claim:
         return ReceiptApplied(claim, None, lot.remaining_fen, interest, fee, periods, days)
-    if amount_fen < lot.remaining_fen:
+    if amount_fen < lot.remaining_fen and not final:
         return ReceiptApplied(amount_fen, lot.model_copy(update={"remaining_fen": lot.remaining_fen - amount_fen}),
                               amount_fen)
-    unpaid = claim - amount_fen
-    capitalised = lot.model_copy(update={"principal_fen": unpaid, "remaining_fen": unpaid, "arrival_day": day})
-    return ReceiptApplied(amount_fen, capitalised, lot.remaining_fen, amount_fen - lot.remaining_fen, 0, periods, days)
+    fixed = lot.model_copy(update={"principal_fen": 0, "remaining_fen": claim - amount_fen})
+    return ReceiptApplied(amount_fen, fixed, min(amount_fen, lot.remaining_fen), interest, fee, periods, days)
+
+
+def orphaned(state: FinancialState, facility_id: str) -> list[FundingLot]:
+    """Landed lots on `facility_id` whose invoice is SETTLED (or no longer on the books): what is left on them is
+    owed by the owner directly, as a fixed amount, oldest landed first."""
+    status = {r.id: r.status for r in state.receivables}
+    return sorted((lot for lot in state.lots if lot.facility_id == facility_id and lot.settled
+                   and lot.remaining_fen > 0 and lot.receivable_id is not None
+                   and status.get(lot.receivable_id, "SETTLED") == "SETTLED"),
+                  key=lambda lot: (lot.arrival_day, lot.id))
 
 
 __all__ = [
@@ -252,10 +270,12 @@ __all__ = [
     "ensure_lots",
     "first_unsettled",
     "has_maturity",
+    "is_fixed_remainder",
     "landed",
     "landing_cash",
     "maturity_day",
     "new_lot",
+    "orphaned",
     "repay",
     "unique_id",
 ]
