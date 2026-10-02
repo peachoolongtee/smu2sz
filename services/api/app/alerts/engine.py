@@ -274,6 +274,8 @@ def _reserve_alerts(state: FinancialState, mandate: Mandate, t: Trajectory, obs:
                 cure_inputs["cure_cost"] = fmt_yuan(cure_total)
             if any(s.above_apr_cap for s in suggested):
                 cure_inputs["cure_above_apr_cap"] = "true"
+                cure_text += (f"; that is above the {fmt_pct(bp(mandate.max_apr_bp))} ceiling for what the agent may "
+                              f"borrow alone, so it needs the owner's approval before it runs")
         elif not mandate.allow_new_borrowing:
             cure_inputs = {}
             suggested = []
