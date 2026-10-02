@@ -41,7 +41,6 @@ from app.domain.models import (
     CashFlow,
     Commitment,
     CovenantKind,
-    DurationKind,
     Facility,
     FacilityKind,
     FacilityStatus,
@@ -51,7 +50,6 @@ from app.domain.models import (
     FundingActionKind,
     Mandate,
     Mode,
-    ObligationType,
     Repayment,
     Tier,
     Violation,
@@ -243,22 +241,21 @@ def _covenant_limits(f: Facility) -> tuple[list[tuple[Fraction, str]], list[tupl
 
 def _live_extension_debt(books: Books, mandate: Mandate) -> int:
     """Receivables tied up by the live lengthening terms extensions, funded permanently: for each, the
-    buyer's recurring face × invoices in the horizon × Δdays / 365, rounded once (the verifier's pro-forma
-    rule, so capex and the verifier read a live extension the same way)."""
+    buyer's recurring face x invoices in the horizon x delta days / 365, rounded once (the verifier's pro-forma
+    rule, so capex and the verifier read a live extension the same way). ADR-0009: a live extension is an
+    invoice adjustment in the state; a finite one counts the invoices still in its scope."""
     total = Fraction(0)
-    for ob in books.obligations:
-        if ob.type != ObligationType.TERMS_EXTENSION or (ob.days_delta or 0) <= 0:
+    for adj in books.state.invoice_adjustments:
+        if adj.days_delta <= 0:
             continue
-        recs = [r for r in books.state.recurring_invoices if r.counterparty_id == ob.counterparty_id]
+        recs = [r for r in books.state.recurring_invoices if r.counterparty_id == adj.counterparty_id]
         if len(recs) != 1 or recs[0].every_days <= 0:
             continue
         rec = recs[0]
         n = mandate.forward_concession_horizon_days // rec.every_days
-        if ob.duration.kind == DurationKind.RECURRING_BOUNDED and ob.duration.invoices is not None:
-            n = min(n, ob.duration.invoices)
-        elif ob.duration.kind == DurationKind.ONE_OFF:
-            n = 1
-        total += Fraction(rec.face_fen * n * (ob.days_delta or 0), DAYS_PER_YEAR)
+        if adj.receivable_ids is not None:
+            n = min(n, len(adj.receivable_ids))
+        total += Fraction(rec.face_fen * n * adj.days_delta, DAYS_PER_YEAR)
     return post(total)
 
 

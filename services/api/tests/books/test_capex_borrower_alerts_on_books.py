@@ -165,9 +165,6 @@ def test_live_terms_extension_reaches_capex_borrower_file_and_alerts():
         a.inputs["max_shortfall"] for a in _of(plain["alerts"], AlertKind.RESERVE_BREACH_AHEAD)]
 
 
-@pytest.mark.xfail(strict=True, reason="ADR-0009: a live extension is in state.invoice_adjustments, no longer in "
-                   "books.obligations; app/capex/evaluate.py::_live_extension_debt still reads books.obligations "
-                   "(interface change request: read the state's adjustments)")
 def test_capex_leverage_counts_a_live_extension():
     store = seeded_store()
     state, mandate = store.get_state(), store.get_mandate()
