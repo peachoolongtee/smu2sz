@@ -8,16 +8,19 @@ Conventions this module adds (documented in the agent report):
 - Receivables generated from a RecurringInvoice have the id `recurring_receivable_id(cp, issue_day)`.
 - Day 0 is booked into month 1. Month m covers days 30(m-1)+1 .. 30m.
 
-Balances already drawn (`Facility.drawn_fen` > 0, e.g. after executed operations) are repaid in the
-projection, not carried for free. The state does not say when they were drawn, so each is one lot
-dated day 0 (the convention `app.operations.log.open_lots` uses for a balance no logged draw
-explains); that can only overstate interest.
-- Invoice financing: the drawn balance is allocated to the FINANCED receivables in due order (each up
-  to its advance rate); each advance is repaid on its receivable's due day with interest and fees per
-  `finance_invoice_charges`. Anything left unallocated is repaid at the horizon end.
-- Amortising facilities: the balance amortises from day 0 per `amortisation_schedule`.
-- Other bullet facilities (the credit line): a REPAY action may repay the carried lot like any draw;
-  what is left is repaid in full, with `line_interest`, on the first receipt day after which cash
+Balances already drawn (`Facility.drawn_fen` > 0) are the state's funding lots (ADR-0010,
+`app.financial.lots`); a balance no lot explains is normalised in memory into an assumed lot dated today.
+Nothing is posted before today: a lot whose cash has not landed shows its inflow (net of the upfront fee)
+on its arrival day, then its contractual payments; a settled lot shows only the payments still due.
+Interest runs from the arrival day.
+- Invoice financing: an advance lot on a FINANCED receivable is repaid on its due day (or today, if it is
+  overdue: recourse, a projection assumption) with interest and fees per `finance_invoice_charges`. A lot
+  naming no receivable is allocated to the FINANCED receivables no lot names, in due order (each up to its
+  advance rate). Anything left unallocated is repaid at the horizon end.
+- Amortising facilities and bullet term loans: the lot's remaining instalments or its maturity
+  (`app.financial.lots.contractual_payments`), the same schedule the clock posts.
+- Other bullet facilities (the credit line): a REPAY action may repay a landed lot like any draw;
+  what is left is assumed repaid in full, with `line_interest`, on the first receipt day after which cash
   stays at or above the floor (`min_cash_fen`, or zero), or else on the horizon's last day.
 """
 
@@ -36,6 +39,7 @@ from app.domain.models import (
     FinancialState,
     FundingAction,
     FundingActionKind,
+    FundingLot,
     InvoiceAdjustment,
     LedgerEvent,
     LedgerEventKind,
@@ -62,6 +66,7 @@ from app.financial.invoices import (
     recurring_receivable_id,
     resolve_scope,
 )
+from app.financial.lots import contractual_payments, ensure_lots
 
 DEFAULT_EARLY_PAY_LEAD_DAYS = 2
 MONTH_DAYS = 30
@@ -146,10 +151,10 @@ class _Book:
     funding_days: list[int] = field(default_factory=list)  # days funding cash lands
     # (from_day, until_day_or_None, amount): forward concessions outstanding on [from, until)
     forward: list[tuple[int, int | None, int]] = field(default_factory=list)
-    # balances drawn before day 0 on bullet facilities, repaid once the cash path is known
+    # the state's lots on credit lines, repaid once the cash path is known (an assumption until executed)
     carried: list[_Lot] = field(default_factory=list)
-    # invoice-financing balance no FINANCED receivable explains: (facility, amount), repaid at the horizon end
-    unallocated: list[tuple[Facility, int]] = field(default_factory=list)
+    # on-receipt balance no FINANCED receivable explains: (facility, amount, arrival), repaid at the horizon end
+    unallocated: list[tuple[Facility, int, int]] = field(default_factory=list)
     # lots on bullet term facilities, serviced on a level basis in the monthly debt service (ADR-0008)
     term_lots: list[_TermLot] = field(default_factory=list)
 
@@ -365,14 +370,14 @@ def _upfront_fee(f: Facility, arrival: int, amount: int, book: _Book) -> None:
                           f"{y(amount)} × {pct(bp(f.upfront_fee_bp))} = {y(fee)}", f.id, "fee"))
 
 
-def _bullet_repayment(lot: _Lot, amount: int, day: int, book: _Book) -> None:
+def _bullet_repayment(lot: _Lot, amount: int, day: int, book: _Book, note: str = "") -> None:
     f = lot.facility
     days = day - lot.arrival
     interest = line_interest(amount, f.rate_bp, days)
     book.add(_Posting(day, SETTLE, LedgerEventKind.INTEREST, -interest, f"Interest, {f.name}", f.id,
                       f"{y(amount)} × {pct(bp(f.rate_bp))} × {days}/365 = {y(interest)}", f.id, "interest"))
     book.add(_Posting(day, SETTLE, LedgerEventKind.REPAYMENT, -amount, f"Repay {f.name}", f.id,
-                      f"principal drawn {fday(lot.arrival)}", f.id, "principal"))
+                      f"principal drawn {fday(lot.arrival)}{note}", f.id, "principal"))
     book.balance(f.id, day, -amount)
     book.repayment_days.append(day)
 
@@ -553,66 +558,129 @@ def _apply_actions(
             raise FundingActionError(f"{fid} used {y(total)} against a limit of {y(f.limit_fen)}")
 
 
-# ---------------------------------------------------------------- balances drawn before day 0
+# ---------------------------------------------------------------- the state's funding lots (ADR-0010)
 
 _NOT_CARRIED = (FacilityKind.BUYER_EARLY_PAY, FacilityKind.BANK_ACCEPTANCE_BILL, FacilityKind.EQUITY)
 _BUYER_RECEIPTS = (LedgerEventKind.RECEIPT, LedgerEventKind.EARLY_RECEIPT)
 
 
-def _repay_carried_advance(f: Facility, r: _Rcv, advance: int, book: _Book, today: int = 0) -> None:
-    """An advance made before day 0 on a FINANCED receivable, repaid from its receipt on the due day. If the
-    receivable is already overdue the advance is repaid today without the receipt (recourse; ADR-0006)."""
+def _dated(lot: FundingLot) -> str:
+    if lot.assumed_date:
+        return f"balance before the books started, dated {fday(lot.arrival_day)}"
+    return f"landed {fday(lot.arrival_day)}"
+
+
+def _land(f: Facility, lot: FundingLot, today: int, book: _Book, r: _Rcv | None = None) -> None:
+    """A lot whose cash has not landed: its inflow on its arrival day, net of the upfront fee. The facility's
+    drawn balance already holds it (the room was taken on the request day)."""
+    day = max(today, lot.arrival_day)
+    if r is not None:
+        kind, label = LedgerEventKind.ADVANCE, f"Advance on {r.id}, {f.name}"
+    else:
+        kind, label = LedgerEventKind.DRAW, f"Draw {f.name}"
+    book.add(_Posting(day, INFLOW, kind, lot.remaining_fen, label, f.id,
+                      f"requested {fday(lot.request_day)} + {f.lead_time_days}-day lead time ({lot.id})", f.id))
+    book.funding_days.append(day)
+    _upfront_fee(f, day, lot.remaining_fen, book)
+
+
+def _repay_carried_advance(f: Facility, r: _Rcv, lot: FundingLot, advance: int, book: _Book, today: int,
+                           base: int | None = None) -> None:
+    """An advance on a FINANCED receivable: `advance` (its remaining principal) repaid from its receipt on the due
+    day, with charges on `base` (the lot's original principal: `app.financial.lots.advance_charges`, billed once
+    by the clearing receipt) from the day the cash landed. If the receivable is already overdue the advance is
+    repaid today without the receipt (recourse; ADR-0006): a projection assumption, never posted by the clock."""
     day = max(today, r.due)
     period = fee_period_days(f)
-    interest, fee, periods = finance_invoice_charges(f, advance, day)
+    base = advance if base is None else base
+    interest, fee, periods = finance_invoice_charges(f, base, day - lot.arrival_day)
     book.add(_Posting(day, SETTLE, LedgerEventKind.INTEREST, -interest, f"Interest, {f.name} on {r.id}", f.id,
-                      f"{y(advance)} × {pct(bp(f.rate_bp))} × {periods * period}/365 (advance drawn before day 0, "
-                      f"dated day 0; {periods} × {period}-day period) = {y(interest)}", f.id, "interest"))
+                      f"{y(base)} × {pct(bp(f.rate_bp))} × {periods * period}/365 ({_dated(lot)}; "
+                      f"{periods} × {period}-day period) = {y(interest)}", f.id, "interest"))
     if fee:
         book.add(_Posting(day, SETTLE, LedgerEventKind.FEE, -fee, f"Fee, {f.name} on {r.id}", f.id,
-                          f"{y(advance)} × {pct(bp(f.fee_bp_per_advance))} × {periods} = {y(fee)}", f.id, "fee"))
+                          f"{y(base)} × {pct(bp(f.fee_bp_per_advance))} × {periods} = {y(fee)}", f.id, "fee"))
     book.add(_Posting(day, SETTLE, LedgerEventKind.REPAYMENT, -advance, f"Repay advance on {r.id}", f.id,
-                      f"advance drawn before day 0, repaid from the receipt of {r.id}", f.id, "principal"))
+                      f"advance {_dated(lot)}, repaid from the receipt of {r.id}", f.id, "principal"))
     book.balance(f.id, day, -advance)
     book.repayment_days.append(day)
 
 
+def _contractual(f: Facility, lot: FundingLot, today: int, book: _Book) -> None:
+    """The lot's remaining instalments or maturity (`contractual_payments`), the schedule the clock posts. A
+    payment the clock should already have posted (a hand-built state) is posted today, never before."""
+    first = len(book.postings)
+    for pay in contractual_payments(lot, f):
+        d = max(today, pay.day)
+        if pay.month is not None:
+            book.add(_Posting(d, SETTLE, LedgerEventKind.INTEREST, -pay.interest,
+                              f"Interest, {f.name} (month {pay.month})", f.id,
+                              f"balance × {pct(bp(f.rate_bp))}/12 = {y(pay.interest)}", f.id, "interest"))
+            book.add(_Posting(d, SETTLE, LedgerEventKind.REPAYMENT, -pay.principal,
+                              f"Principal, {f.name} (month {pay.month})", f.id,
+                              f"payment {y(pay.principal + pay.interest)} − interest {y(pay.interest)}", f.id, "amort"))
+        else:
+            days = pay.day - lot.arrival_day
+            book.add(_Posting(d, SETTLE, LedgerEventKind.INTEREST, -pay.interest, f"Interest, {f.name}", f.id,
+                              f"{y(pay.principal)} × {pct(bp(f.rate_bp))} × {days}/365 = {y(pay.interest)}",
+                              f.id, "interest"))
+            book.add(_Posting(d, SETTLE, LedgerEventKind.REPAYMENT, -pay.principal, f"Repay {f.name}", f.id,
+                              f"principal drawn {fday(lot.arrival_day)}", f.id, "principal"))
+        book.balance(f.id, d, -pay.principal)
+        book.repayment_days.append(d)
+    if lot.maturity_day is not None and _is_bullet_term(f):
+        book.term_lots.append(_TermLot(lot.arrival_day, f.term_months or 0, [
+            p for p in book.postings[first:] if p.category in ("interest", "fee", "principal")]))
+
+
 def _carry_drawn_balances(state: FinancialState, rcvs: dict[str, _Rcv], book: _Book) -> None:
-    """Schedule the repayment of every balance already drawn at day 0 (module docstring)."""
-    financed = sorted((r for r in rcvs.values() if r.financed), key=lambda r: (r.due, r.id))
-    recorded = [r for r in financed if r.advance > 0]  # the executor recorded the advance on the invoice
-    financed = [r for r in financed if r.advance == 0]  # older states: allocate the balance in due order
+    """Every lot in the state: its landing if the cash has not landed, then its repayment (module docstring).
+    `state` has been through `ensure_lots`."""
+    today = state.as_of_day
+    named = {lot.receivable_id for lot in state.lots if lot.receivable_id}
+    # older states: an advance balance no lot names is allocated to the FINANCED receivables no lot names
+    pool = sorted((r for r in rcvs.values() if r.financed and r.id not in named), key=lambda r: (r.due, r.id))
+    by_facility: dict[str, list[FundingLot]] = defaultdict(list)
+    for lot in state.lots:
+        if lot.remaining_fen > 0:
+            by_facility[lot.facility_id].append(lot)
     for f in sorted(state.facilities, key=lambda x: x.id):
-        if f.drawn_fen <= 0 or f.kind in _NOT_CARRIED:
+        lots = by_facility.get(f.id, [])
+        if not lots or f.kind in _NOT_CARRIED:
             continue
-        if f.kind == FacilityKind.INVOICE_FINANCING:
-            left = f.drawn_fen
-            for r in [r for r in recorded if r.advance_facility_id == f.id]:
-                advance = min(left, r.advance)
-                if advance > 0:
-                    _repay_carried_advance(f, r, advance, book, state.as_of_day)
-                    left -= advance
-            while financed and left > 0:
-                r = financed.pop(0)
+        if f.kind != FacilityKind.INVOICE_FINANCING:
+            for lot in sorted(lots, key=lambda lot: lot.arrival_day):
+                if not lot.settled:
+                    _land(f, lot, today, book)
+                if contractual_payments(lot, f):
+                    _contractual(f, lot, today, book)
+                elif f.repayment == Repayment.ON_RECEIPT:
+                    book.unallocated.append((f, lot.remaining_fen, lot.arrival_day))
+                else:
+                    book.carried.append(_Lot(f, lot.arrival_day, lot.remaining_fen, None, lot.remaining_fen))
+            continue
+
+        def financed(lot: FundingLot) -> _Rcv | None:
+            r = rcvs.get(lot.receivable_id or "")
+            return r if r is not None and r.financed else None
+
+        for lot in sorted(lots, key=lambda lot: (0, r.due, r.id) if (r := financed(lot)) else (1, 0, "")):
+            r = financed(lot)
+            if not lot.settled:
+                _land(f, lot, today, book, r)
+            if r is not None:
+                _repay_carried_advance(f, r, lot, lot.remaining_fen, book, today, lot.principal_fen)
+                continue
+            left = lot.remaining_fen
+            while pool and left > 0:
+                r = pool.pop(0)
                 cap = r.face if f.advance_rate_bp is None else post(bp(f.advance_rate_bp) * r.face)
                 advance = min(left, cap)
                 if advance > 0:
-                    _repay_carried_advance(f, r, advance, book, state.as_of_day)
+                    _repay_carried_advance(f, r, lot, advance, book, today)
                     left -= advance
             if left > 0:
-                book.unallocated.append((f, left))
-        elif f.repayment == Repayment.AMORTISING and f.term_months:
-            _amortise(f, 0, f.drawn_fen, book)
-        elif f.repayment == Repayment.BULLET and f.term_months and f.kind != FacilityKind.CREDIT_LINE:
-            maturity = MONTH_DAYS * f.term_months  # a term bullet is repaid at maturity, as a projected draw is
-            first = len(book.postings)
-            _bullet_repayment(_Lot(f, 0, f.drawn_fen, maturity, 0), f.drawn_fen, maturity, book)
-            if _is_bullet_term(f):
-                book.term_lots.append(_TermLot(0, f.term_months, book.postings[first:]))
-        elif f.repayment == Repayment.ON_RECEIPT:
-            book.unallocated.append((f, f.drawn_fen))
-        else:
-            book.carried.append(_Lot(f, 0, f.drawn_fen, None, f.drawn_fen))
+                book.unallocated.append((f, left, lot.arrival_day))
 
 
 def _closings(opening: int, postings: list[_Posting], horizon: int) -> list[int]:
@@ -627,18 +695,19 @@ def _closings(opening: int, postings: list[_Posting], horizon: int) -> list[int]
 
 
 def _repay_carried(state: FinancialState, book: _Book, horizon: int, floor: int) -> None:
-    """Once the horizon is fixed: repay what is left of the balances drawn before day 0."""
-    for f, amount in book.unallocated:
+    """Once the horizon is fixed: repay what is left of the state's lots. A credit line's repayment day is an
+    assumption (ADR-0010 §5): only a RepayFacility operation makes it real."""
+    for f, amount, arrival in book.unallocated:
         period = fee_period_days(f)
-        interest, fee, periods = finance_invoice_charges(f, amount, horizon)
+        interest, fee, periods = finance_invoice_charges(f, amount, horizon - arrival)
         book.add(_Posting(horizon, SETTLE, LedgerEventKind.INTEREST, -interest, f"Interest, {f.name}", f.id,
-                          f"{y(amount)} × {pct(bp(f.rate_bp))} × {periods * period}/365 (balance drawn before day 0 "
-                          f"that no financed receivable repays, dated day 0) = {y(interest)}", f.id, "interest"))
+                          f"{y(amount)} × {pct(bp(f.rate_bp))} × {periods * period}/365 (balance that no financed "
+                          f"receivable repays, from {fday(arrival)}) = {y(interest)}", f.id, "interest"))
         if fee:
             book.add(_Posting(horizon, SETTLE, LedgerEventKind.FEE, -fee, f"Fee, {f.name}", f.id,
                               f"{y(amount)} × {pct(bp(f.fee_bp_per_advance))} × {periods} = {y(fee)}", f.id, "fee"))
         book.add(_Posting(horizon, SETTLE, LedgerEventKind.REPAYMENT, -amount, f"Repay {f.name}", f.id,
-                          "balance drawn before day 0, repaid at the horizon end", f.id, "principal"))
+                          "balance no financed receivable repays, repaid at the horizon end", f.id, "principal"))
         book.balance(f.id, horizon, -amount)
     for lot in book.carried:
         if lot.remaining == 0:
@@ -646,9 +715,9 @@ def _repay_carried(state: FinancialState, book: _Book, horizon: int, floor: int)
         closings = _closings(state.cash_fen, book.postings, horizon)
         receipt_days = sorted({p.day for p in book.postings if p.kind in _BUYER_RECEIPTS and 0 <= p.day <= horizon})
         rate, amount = lot.facility.rate_bp, lot.remaining
-        day = next((d for d in receipt_days
-                    if min(closings[d:]) - amount - line_interest(amount, rate, d - lot.arrival) >= floor), horizon)
-        _bullet_repayment(lot, amount, day, book)
+        day = next((d for d in receipt_days if d >= lot.arrival
+                    and min(closings[d:]) - amount - line_interest(amount, rate, d - lot.arrival) >= floor), horizon)
+        _bullet_repayment(lot, amount, day, book, "; assumed repaid on the first affordable receipt day")
         lot.remaining = 0
 
 
@@ -737,6 +806,7 @@ def _booked(
     and `app.financial.cashpath.project_cash`, so both book exactly the same postings."""
     if horizon_days < 0:
         raise ValueError("horizon_days must not be negative")
+    state = ensure_lots(state)  # a balance no lot explains is dated today, in memory only (ADR-0010)
     horizon_days += state.as_of_day  # the horizon is counted from today; days stay absolute (ADR-0006)
     bound = max([horizon_days] + [a.day for a in actions] + [a.repay_day or 0 for a in actions]
                 + [ob.effective_day or 0 for ob in obligations] + [_issue_day_of(a.receivable_id) for a in actions])
