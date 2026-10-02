@@ -10,7 +10,7 @@ def test_ex01_rejects_with_golden_numbers_and_guarded_counters(client):
     assert v["outcome"] == "REJECT"
     codes = {x["code"] for x in v["violations"]}
     assert {"AGG_CONCESSION_EXCEEDED", "RESERVE_BREACH"} <= codes
-    assert v["forward_concession"]["total_display"] == "¥26,455.62" and v["forward_concession"]["over_cap"]
+    assert v["forward_concession"]["total_display"] == "¥28,326.92" and v["forward_concession"]["over_cap"]
     assert len(v["counters"]) >= 2 and not any(c["outbound_blocked"] for c in v["counters"])
     assert v["trajectory"]["first_breach_day"] == 47
 
@@ -47,7 +47,7 @@ def test_router_plan_golden(client):
     r = client.post("/router/plan").json()
     assert r["committed"]["total_cost_display"] == "¥2,712.94"
     assert r["marginal"]["facility_id"] == "FAC-IF" and r["marginal"]["break_even_bp"] == 88
-    assert r["marginal"]["extension_committed_12m_display"] == "¥22,455.62"
+    assert r["marginal"]["extension_committed_12m_display"] == "¥24,326.92"
     assert any(row["selected"] for row in r["comparison"])
 
 

@@ -35,7 +35,7 @@ def test_extension_committed(state, g, if_rate):
     assert cv.value_fen == g["extension_committed_12m"]
     assert cv.per_invoice_fen == g["extension_committed_per_invoice"]
     assert "invoice financing" in cv.basis
-    assert "207,123.29" in cv.formula  # extra receivables, spec §7.5
+    assert "13 invoices" in cv.formula  # issue days 2, 32, ..., 362 are in W = [0, 365)
 
 
 def test_extension_notional_line(state, g):
@@ -46,7 +46,8 @@ def test_extension_notional_line(state, g):
 
 def test_shortening_is_a_gain_of_equal_size(state, g, if_rate):
     cv = one(extension(-15), state, if_rate)
-    assert cv.value_fen == -g["extension_committed_12m"]
+    # A gain is dated like a cost, on the issue day: the same 13 invoices, the mirror of the extension.
+    assert cv.value_fen == g["extension_shortening_gain_12m"] == -g["extension_committed_12m"]
     assert cv.per_invoice_fen == -g["extension_committed_per_invoice"]
 
 
@@ -73,7 +74,7 @@ def test_ex01_forward_ledger_total(state, g, if_rate):
 def test_price_adjustment_is_a_gain(state, g, if_rate):
     cv = one(ob("OB-PA", ObligationType.PRICE_ADJUSTMENT, rate_bp=45), state, if_rate)
     assert cv.per_invoice_fen == -g["counter_b_price_adj_per_invoice"]
-    assert cv.value_fen == -12 * g["counter_b_price_adj_per_invoice"]
+    assert cv.value_fen == g["counter_b_price_gain_12m"]  # 13 invoices issued in W
 
 
 def test_operational_concession(state, if_rate):

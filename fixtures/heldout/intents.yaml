@@ -54,7 +54,7 @@ intents:
   # EXPLAIN
   - {id: I26, text: "Why did you turn down the Foshan package?", intent: EXPLAIN, slots: {counterparty_id: BUYER-1}}
   - {id: I27, text: "为什么这个报价不行？", intent: EXPLAIN, slots: {}}
-  - {id: I28, text: "Explain how you got the ¥26,455.62 figure.", intent: EXPLAIN, slots: {amount_fen: 2645562}}
+  - {id: I28, text: "Explain how you got the ¥28,326.92 figure.", intent: EXPLAIN, slots: {amount_fen: 2832692}}
 
   # WHAT_IF
   - {id: I29, text: "What happens if we agree to 75-day terms?", intent: WHAT_IF, slots: {terms_days: 75}}

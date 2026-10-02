@@ -18,11 +18,11 @@ def test_oracle_matches_spec_where_spec_is_ledger_consistent():
     assert g["line_interest_150k_32d"] == 84164
     assert g["if_cost_210k_30d"] == 187130
     assert g["v1_optimum_total"] == 339225
-    assert g["extension_extra_receivables"] == 20712329
-    assert g["extension_committed_12m"] == 2245562
-    assert g["extension_notional_line_12m"] == 1325589
-    assert g["extension_expected_12m"] == 1105230
-    assert g["forward_ledger_total"] == 2645562
+    assert g["extension_extra_receivables"] == 21_000_000  # F x 15 / 30: the steady state (F-FIN-07)
+    assert g["extension_committed_12m"] == 2432692  # 13 invoices in the window
+    assert g["extension_notional_line_12m"] == 1436055
+    assert g["extension_expected_12m"] == 1197332
+    assert g["forward_ledger_total"] == 2832692
     assert g["break_even_discount_display"] == "0.88%"
     assert g["capex"]["npv"] == 38088577 and g["capex"]["payback_month"] == 31
 

@@ -44,7 +44,7 @@ SPAN = [SourceSpan(doc_id="T", start=0, end=0, text="")]
 
 # Recorded on origin/dev (cfecd72) with no commitments: sha256 of the sorted-key JSON of each response.
 GOLDEN_TRAJECTORY = "6e416d997eccbf94"
-GOLDEN_ROUTER_PLAN = "de93d3064db00850"
+GOLDEN_ROUTER_PLAN = "118733a57fd7900b"  # 3 Oct: extension figures on 13 dated invoices; extra receivables ¥210,000.00
 EX01_COUNTERS = [
     "Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥211,900 of this invoice at 0.85%.",
     "60-day terms accepted with a 0.45% price adjustment on future invoices, no rebate.",
@@ -138,6 +138,8 @@ def test_no_commitments_trajectory_and_router_plan_are_unchanged(client: TestCli
                           mandate.min_cash_fen).model_dump()
     assert t == json.loads(json.dumps(raw))
     r = client.post("/router/plan").json()
+    assert r["marginal"]["extension_extra_receivables_fen"] == 21_000_000  # F x 15 / 30, the shared pro forma
+    assert r["marginal"]["extension_committed_12m_fen"] == 2_432_692
     assert _digest(r) == GOLDEN_ROUTER_PLAN
     assert r["committed"]["total_cost_display"] == "¥2,712.94"
     assert r["committed"]["total_cost_fen"] == 271_294

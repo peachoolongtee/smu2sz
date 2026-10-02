@@ -127,6 +127,10 @@ def compute() -> dict[str, tuple[Any, str]]:
     put("extension_committed_per_invoice", lambda: committed.per_invoice_fen, "funding.extension_cost_bases()[committed]")
     put("extension_expected_12m", lambda: expected.value_fen if expected else None,
         "funding.extension_cost_bases()[expected]")
+    shortening = ext.model_copy(update={"id": "EVAL-SHORT", "days_delta": -15})
+    put("extension_shortening_gain_12m",
+        lambda: value_concessions([shortening], state, rate, "eval", m.forward_concession_horizon_days)[0].value_fen,
+        "financial.value_concessions(shortening): the mirror of the extension")
 
     # EX01 through the compiler (cache) and the verifier (spec §6.5, §7.6)
     ex01 = compile_offer(offer_documents("EX01_PACKAGE"), "BUYER-1")
@@ -152,6 +156,8 @@ def compute() -> dict[str, tuple[Any, str]]:
     lev_chk = next(pc for pc in b1.passed_checks if pc.code == "LEVERAGE_MAX")
     put("extension_extra_receivables", lambda: _fen(dscr_chk.inputs["extra_receivables"]),
         "verifier EX01 pro-forma extra_receivables")
+    put("extension_monthly_service", lambda: _fen(dscr_chk.inputs["extra_monthly_debt_service"]),
+        "verifier EX01 pro-forma extra_monthly_debt_service")
     put("dscr_after_extension", lambda: _x(dscr_chk.observed), "verifier EX01 DSCR_MIN pro forma")
     put("leverage_after_extension", lambda: _x(lev_chk.observed), "verifier EX01 LEVERAGE_MAX pro forma")
     line_limit = sum(f.limit_fen for f in state.facilities
@@ -171,6 +177,13 @@ def compute() -> dict[str, tuple[Any, str]]:
     put("counter_b_price_adj_per_invoice",
         lambda: -value_concessions([pa], state, rate, "eval", m.forward_concession_horizon_days)[0].per_invoice_fen,
         "financial.value_concessions(Option B price adjustment).per_invoice_fen")
+    put("counter_b_price_gain_12m",
+        lambda: value_concessions([pa], state, rate, "eval", m.forward_concession_horizon_days)[0].value_fen,
+        "financial.value_concessions(Option B price adjustment): the same 13 invoices as the extension")
+    put("counter_b_net_12m",
+        lambda: sum(cv.value_fen for cv in value_concessions(
+            list(opt["Option B"].obligations), state, rate, "eval", m.forward_concession_horizon_days)),
+        "financial.value_concessions(Option B): extension + price adjustment, unfloored")
 
     # EX02: line + partial early pay at the offered 1.5%
     ex02 = compile_offer(offer_documents("EX02_EARLY_1_5"), "BUYER-1")

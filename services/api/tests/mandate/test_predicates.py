@@ -118,7 +118,7 @@ def test_golden_package_breaches_the_cap():
     obs = [ob("ext"), ob("rebate", Contingency.CONTINGENT, ObligationType.CONTINGENT_REBATE)]
     vals = [cv("ext", g["extension_committed_12m"]), cv("rebate", g["rebate_max"])]
     [v] = run(obs, vals)
-    assert v.observed == "¥26,455.62" and v.limit == "¥5,000.00"
+    assert v.observed == "¥28,326.92" and v.limit == "¥5,000.00"
 
 
 def test_firm_gain_netting_is_allowed():

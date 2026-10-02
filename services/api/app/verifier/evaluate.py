@@ -25,7 +25,7 @@ from typing import Any, Literal
 
 from app.books import current_books
 from app.covenants import evaluate as evaluate_covenants
-from app.covenants import fmt_x, line_balances, longest_zero_run, pro_forma
+from app.covenants import fmt_x, line_balances, longest_zero_run, ratios_or_undefined
 from app.domain.models import (
     Commitment,
     CompiledOffer,
@@ -34,7 +34,6 @@ from app.domain.models import (
     ConcessionValue,
     Contingency,
     CovenantKind,
-    DurationKind,
     Facility,
     FacilityKind,
     FacilityStatus,
@@ -53,7 +52,7 @@ from app.domain.models import (
     ViolationCode,
 )
 from app.domain.money import DAYS_PER_YEAR, Ratio, bp, fmt_pct, fmt_yuan, post
-from app.financial import EngineError, project, value_concessions
+from app.financial import EngineError, extension_pro_forma, project, value_concessions
 from app.funding import (
     ComparisonResult,
     ComparisonRow,
@@ -65,7 +64,7 @@ from app.funding import (
 from app.funding import plan as funding_plan
 from app.funding.rates import break_even_cost_share
 from app.mandate import check_apr, check_predicates, check_validity
-from app.verifier.bind import bind, material_gaps, recurring_for
+from app.verifier.bind import bind, material_gaps
 from app.verifier.counters import counters as make_counters
 from app.verifier.display import describe_all, only_early_pay, precise
 from app.verifier.models import CALC_VERSION, OwnerConstraints, PassedCheck, VerdictBundle
@@ -356,43 +355,35 @@ def _committed(state: FinancialState) -> list[Facility]:
 
 
 def _extension_pro_forma(
-    bound: list[Obligation], values: list[ConcessionValue], state: FinancialState, mandate: Mandate
+    bound: list[Obligation], rate: Fraction, state: FinancialState, mandate: Mandate
 ) -> tuple[list[Violation], list[PassedCheck], dict[str, str]]:
-    """DSCR and leverage if every lengthening terms extension is funded permanently: extra debt =
-    extra receivables, extra monthly debt service = the per-invoice funding cost."""
-    by_id = {cv.obligation_id: cv for cv in values}
+    """DSCR and leverage if every lengthening terms extension is funded permanently at `rate`: extra debt =
+    face × delta / invoice interval; extra monthly debt service = extra debt × rate / 12
+    (`app.financial.extension_pro_forma`, shared with capex). Non-positive EBITDA gives an undefined ratio,
+    which with debt is a breach, never an exception."""
     extra_debt_exact = Fraction(0)
-    extra_ds = 0
+    extra_ds_exact = Fraction(0)
     for ob in bound:
-        if ob.type != ObligationType.TERMS_EXTENSION or (ob.days_delta or 0) <= 0:
-            continue
-        rec = recurring_for(state, ob.counterparty_id)
-        if rec is None or rec.every_days <= 0:
-            continue
-        n = mandate.forward_concession_horizon_days // rec.every_days
-        if ob.duration.kind == DurationKind.RECURRING_BOUNDED and ob.duration.invoices is not None:
-            n = min(n, ob.duration.invoices)
-        elif ob.duration.kind == DurationKind.ONE_OFF:
-            n = 1
-        extra_debt_exact += Fraction(rec.face_fen) * n * (ob.days_delta or 0) / DAYS_PER_YEAR
-        cv = by_id.get(ob.id)
-        if cv is not None and cv.per_invoice_fen:
-            extra_ds += cv.per_invoice_fen
+        pf = extension_pro_forma(ob, state, rate, mandate.forward_concession_horizon_days)
+        if pf is not None:
+            extra_debt_exact += pf.extra_debt
+            extra_ds_exact += pf.monthly_service
     if extra_debt_exact == 0:
         return [], [], {}
     extra_debt = post(extra_debt_exact)
+    extra_ds = post(extra_ds_exact)
     lines = [f for f in _committed(state) if f.kind == FacilityKind.CREDIT_LINE and f.counts_in_leverage]
     line_limits = sum(f.limit_fen for f in lines)
-    dscr, lev = pro_forma(state, extra_debt_fen=extra_debt, extra_monthly_debt_service_fen=extra_ds,
-                          base_extra_debt_fen=line_limits)
     debt = sum(d.principal_fen for d in state.debts) + line_limits + extra_debt
     ds = sum(d.monthly_debt_service_fen for d in state.debts) + extra_ds
     ebitda = state.monthly_ebitda_fen
+    dscr, lev = ratios_or_undefined(ebitda, ds, debt)
     inputs = {
         "EBITDA_m": fmt_yuan(ebitda), "DS_m": fmt_yuan(ds), "Debt": fmt_yuan(debt),
         "extra_receivables": fmt_yuan(extra_debt), "extra_monthly_debt_service": fmt_yuan(extra_ds),
         "committed_line_limits": fmt_yuan(line_limits),
-        "pro_forma_dscr": fmt_x(dscr.value) if dscr else "n/a", "pro_forma_leverage": fmt_x(lev.value),
+        "pro_forma_dscr": fmt_x(dscr.value) if dscr else "n/a",
+        "pro_forma_leverage": fmt_x(lev.value) if lev else "undefined (EBITDA is not positive)",
     }
     dscr_limits = [(bp(mandate.min_dscr_bp), f"mandate v{mandate.version}")]
     lev_limits = [(bp(mandate.max_leverage_bp), f"mandate v{mandate.version}")]
@@ -404,7 +395,7 @@ def _extension_pro_forma(
                 lev_limits.append((bp(c.threshold_bp), c.id))
     dscr_limit, dscr_src = max(dscr_limits)
     lev_limit, lev_src = min(lev_limits)
-    dscr_formula = f"EBITDA_m / (DS_m + per-invoice funding cost) = {fmt_yuan(ebitda)} / {fmt_yuan(ds)}"
+    dscr_formula = f"EBITDA_m / (DS_m + extra debt × rate / 12) = {fmt_yuan(ebitda)} / {fmt_yuan(ds)}"
     lev_formula = (f"(debt + committed line limits + extra receivables) / (12 × EBITDA_m) = "
                    f"{fmt_yuan(debt)} / (12 × {fmt_yuan(ebitda)})")
     violations: list[Violation] = []
@@ -420,13 +411,15 @@ def _extension_pro_forma(
             passed.append(PassedCheck(code="DSCR_MIN", label="DSCR with the extension funded (pro forma)",
                                       observed=text, limit=f"≥ {fmt_x(dscr_limit)}",
                                       formula=f"{dscr_formula} = {text}", inputs={**inputs, "source": dscr_src}))
-    text = fmt_x(lev.value)
-    if lev.value > lev_limit:
+    if lev is None or lev.value > lev_limit:
+        text = fmt_x(lev.value) if lev else "undefined"
+        what = f"is above {fmt_x(lev_limit)}" if lev else "cannot be tested (EBITDA is not positive) and counts as a breach"
         violations.append(Violation(
-            code=ViolationCode.LEVERAGE_BREACH, message=f"Pro-forma leverage {text} with the extension funded is above "
-            f"{fmt_x(lev_limit)}", observed=text, limit=fmt_x(lev_limit),
+            code=ViolationCode.LEVERAGE_BREACH, message=f"Pro-forma leverage {text} with the extension funded {what}",
+            observed=text, limit=fmt_x(lev_limit),
             formula=f"{lev_formula} = {text} > {fmt_x(lev_limit)}", inputs={**inputs, "source": lev_src}))
     else:
+        text = fmt_x(lev.value)
         passed.append(PassedCheck(code="LEVERAGE_MAX", label="Leverage with the extension funded (pro forma)",
                                   observed=text, limit=f"≤ {fmt_x(lev_limit)}",
                                   formula=f"{lev_formula} = {text}", inputs={**inputs, "source": lev_src}))
@@ -619,7 +612,7 @@ def _evaluate(
 
     cure: FundingPlan | None = None
     induced = induced_breach_days(offer_traj, base_traj, floor)
-    ext_violations, ext_passed, pf_inputs = _extension_pro_forma(bound, values, state, mandate)
+    ext_violations, ext_passed, pf_inputs = _extension_pro_forma(bound, rate.value, state, mandate)
     if induced:
         rv = reserve_violation(offer_traj, base_traj, floor, induced[0])
         cure = cure_plan(state, bound, mandate, offer_traj, base_traj, base_plan, planner=router.plan, live=live)

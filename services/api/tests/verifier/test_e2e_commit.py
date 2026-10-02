@@ -8,7 +8,7 @@ from typing import Any
 
 import pytest
 
-from app.domain.fixtures import load_scenario
+from app.domain.fixtures import golden_values, load_scenario
 from app.domain.models import (
     AcceptOffer,
     Actor,

@@ -10,7 +10,7 @@ offers:
       outcome: REJECT
       codes: [AGG_CONCESSION_EXCEEDED, RESERVE_BREACH, DISCOUNT_ABOVE_BREAK_EVEN, EARLY_PAY_DEARER_THAN_PLAN]
       reserve_breach_day: 47
-      forward_concession_total_fen: 2645562
+      forward_concession_total_fen: 2832692
       obligations: [IMMEDIATE_DISCOUNT, TERMS_EXTENSION, CONTINGENT_REBATE]
       counters: [Option A, Option B]
   - id: EX01B_REWORDED
@@ -44,7 +44,7 @@ offers:
       - {doc_id: EX05-msg, channel: chat, sender_id: BUYER-1, received_day: 0,
          text: "Consolidate deliveries to our Foshan DC and we'll move you to 30-day terms."}
     declared_costs: {shipment_cost_fen: 15000, shipments_per_year: 52}
-    expect: {outcome: NEEDS_OWNER_APPROVAL, obligations: [OPERATIONAL_CONCESSION, TERMS_EXTENSION], funding_saved_12m_fen: 2245562}
+    expect: {outcome: NEEDS_OWNER_APPROVAL, obligations: [OPERATIONAL_CONCESSION, TERMS_EXTENSION], funding_saved_12m_fen: 2432692}
   - id: EX06_THREE_INVOICES
     counterparty_id: BUYER-1
     documents:

@@ -55,8 +55,18 @@ from app.domain.models import (
     Violation,
     ViolationCode,
 )
-from app.domain.money import DAYS_PER_YEAR, Ratio, bp, fmt_pct, fmt_yuan, post
-from app.financial import EngineError, amortisation_schedule, line_interest, project, upfront_fee
+from app.domain.money import Ratio, bp, fmt_pct, fmt_yuan, post
+from app.financial import (
+    EngineError,
+    amortisation_schedule,
+    extension_extra_debt,
+    line_interest,
+    pro_forma_scale,
+    project,
+    recurring_issue_days,
+    upfront_fee,
+    window,
+)
 from app.financial.trajectory import MONTH_DAYS
 from app.funding import MenuRow, menu_view
 from app.mandate import check_apr, tier_for
@@ -241,28 +251,37 @@ def _covenant_limits(f: Facility) -> tuple[list[tuple[Fraction, str]], list[tupl
 
 def _live_extension_debt(books: Books, mandate: Mandate) -> int:
     """Receivables tied up by the live lengthening terms extensions, funded permanently: for each, the
-    buyer's recurring face x invoices in the horizon x delta days / 365, rounded once (the verifier's pro-forma
-    rule, so capex and the verifier read a live extension the same way). ADR-0009: a live extension is an
-    invoice adjustment in the state; a finite one counts the invoices still in its scope."""
+    buyer's recurring face × delta ÷ invoice interval, the verifier's pro-forma rule
+    (`app.financial.extension_extra_debt`, so capex and the verifier read a live extension the same way).
+    ADR-0009: a live extension is an invoice adjustment in the state; a finite one carries its share of the
+    steady state (`pro_forma_scale`): the invoices still in its scope over the invoices of the window."""
+    state = books.state
+    lo, hi = window(state, mandate.forward_concession_horizon_days)
     total = Fraction(0)
-    for adj in books.state.invoice_adjustments:
+    for adj in state.invoice_adjustments:
         if adj.days_delta <= 0:
             continue
-        recs = [r for r in books.state.recurring_invoices if r.counterparty_id == adj.counterparty_id]
+        recs = [r for r in state.recurring_invoices if r.counterparty_id == adj.counterparty_id]
         if len(recs) != 1 or recs[0].every_days <= 0:
             continue
         rec = recs[0]
-        n = mandate.forward_concession_horizon_days // rec.every_days
+        in_window = len(recurring_issue_days(rec, lo, hi))
         if adj.receivable_ids is not None:
-            n = min(n, len(adj.receivable_ids))
-        total += Fraction(rec.face_fen * n * adj.days_delta, DAYS_PER_YEAR)
+            scale = pro_forma_scale(len(adj.receivable_ids), in_window, perpetual=False)
+        elif adj.until_issue_day is not None:
+            first = max(lo, adj.from_issue_day or 0)
+            scoped = len(recurring_issue_days(rec, first, min(hi, adj.until_issue_day + 1)))
+            scale = pro_forma_scale(scoped, in_window, perpetual=False)
+        else:
+            scale = Fraction(1)
+        total += extension_extra_debt(rec.face_fen, adj.days_delta, rec.every_days, scale)
     return post(total)
 
 
 def _extension_extra_receivables(request: CapexRequest, state: FinancialState, mandate: Mandate) -> int | None:
     """Extra receivables if the recurring buyer's terms moved to `extension_target_terms_days` and
-    were funded permanently: face × (horizon // every_days) × Δdays / 365, rounded once (the
-    verifier's pro-forma rule)."""
+    were funded permanently: face × delta ÷ invoice interval, rounded once (the verifier's pro-forma rule,
+    `app.financial.extension_extra_debt`)."""
     if request.extension_target_terms_days is None:
         return None
     recs = [r for r in state.recurring_invoices
@@ -273,8 +292,7 @@ def _extension_extra_receivables(request: CapexRequest, state: FinancialState, m
     delta = request.extension_target_terms_days - rec.terms_days
     if delta <= 0:
         return None
-    n = mandate.forward_concession_horizon_days // rec.every_days
-    return post(Fraction(rec.face_fen * n * delta, DAYS_PER_YEAR))
+    return post(extension_extra_debt(rec.face_fen, delta, rec.every_days))
 
 
 # ---------------------------------------------------------------- financed structures
