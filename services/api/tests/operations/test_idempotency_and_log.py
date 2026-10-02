@@ -40,7 +40,8 @@ def test_duplicate_of_a_refusal_stays_refused(ex: Any, store: Any, clock: Clock)
     first = ex.execute(op(IssueEquity, clock, key="K-EQ", amount_fen=1))
     second = ex.execute(op(IssueEquity, clock, key="K-EQ", amount_fen=1))
     assert first.status == OperationStatus.REFUSED
-    assert second.status == OperationStatus.DUPLICATE and second.violations == first.violations
+    # a refusal changed nothing, so it is not final: the same key runs again and is refused again
+    assert second.status == OperationStatus.REFUSED and second.violations == first.violations
 
 
 def test_every_result_is_logged_with_its_chain_position(ex: Any, store: Any, clock: Clock) -> None:

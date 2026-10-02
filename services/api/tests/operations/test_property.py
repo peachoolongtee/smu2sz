@@ -134,7 +134,8 @@ def run_sequence(store: Any, steps: list[tuple]) -> None:
             if last is None:
                 continue
             result = ex.execute(last)
-            assert result.status == OperationStatus.DUPLICATE
+            # an executed or queued key is final; a refused one runs again (and may be refused again)
+            assert result.status in (OperationStatus.DUPLICATE, OperationStatus.REFUSED)
             o = last
         else:
             o = build_op(s, clock, model)
