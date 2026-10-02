@@ -76,7 +76,7 @@ def _flagged_turns(events: Iterable[SecurityEvent]) -> list[tuple[str, int]]:
 
 
 def _same_turn(op: Any, turns: list[tuple[str, int]]) -> bool:
-    """Was `op` sent by a flagged /nl turn? /nl keys an operation "nl:<session>:t<turn>:<n>:<kind>", or
+    """Was `op` sent by a flagged /nl turn? /nl keys an operation "nl:<session>:t<turn>:<session nonce>:<n>:<kind>", or
     "nl:<session>:r:<request_id>:<n>:<kind>" when the request carries a request_id; that form does not say
     which turn it belongs to, so every request-keyed operation of a flagged session counts (an over-count)."""
     key = str(getattr(op, "idempotency_key", ""))

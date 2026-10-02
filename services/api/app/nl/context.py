@@ -126,7 +126,9 @@ class NlContext:
 
     def next_key(self, kind: str) -> tuple[str, str]:
         self._n += 1
-        scope = f"r:{self.request_id}" if self.request_id else f"t{self.session.turn}"
+        # a request id is the caller's own retry handle; without one the key is scoped to this session object,
+        # so a session recreated under the same id (expiry, reset, restart) never reuses an old key
+        scope = f"r:{self.request_id}" if self.request_id else f"t{self.session.turn}:{self.session.nonce}"
         key = f"nl:{self.session.id}:{scope}:{self._n}:{kind}"
         return "NL-" + hashlib.sha256(key.encode()).hexdigest()[:16], key
 

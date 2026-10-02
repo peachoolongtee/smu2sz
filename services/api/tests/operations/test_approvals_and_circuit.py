@@ -13,6 +13,7 @@ from app.domain.models import (
     DrawFacility,
     IssueEquity,
     OperationStatus,
+    ReceivePayment,
     RequestOwnerApproval,
     SecurityEventKind,
     ViolationCode,
@@ -94,16 +95,23 @@ def test_owner_approval_executes_once(ex: Any, store: Any, clock: Clock) -> None
 
 
 def test_request_owner_approval_queues_but_tier3_stays_refused(ex: Any, store: Any, clock: Clock) -> None:
+    # Tier 3 is never queued for the owner: asking for approval of a refused equity issue is itself refused
     refused = ex.execute(op(IssueEquity, clock, amount_fen=1_000_000))
     req = ex.execute(op(RequestOwnerApproval, clock, subject="please approve the equity issue",
                         payload_op_id=refused.op_id))
+    assert req.status == OperationStatus.REFUSED and not store.approvals()
+    # an agent-reported receipt is Tier 2: it is queued under the executor's own reason, not the subject
+    reported = ex.execute(op(ReceivePayment, clock, receivable_id="RCV-A", amount_fen=1_000, day=clock.day + 1))
+    assert reported.status == OperationStatus.REFUSED  # misdated: refused before the tier gate
+    req = ex.execute(op(RequestOwnerApproval, clock, subject="routine sync, no payment", payload_op_id=reported.op_id))
     assert req.status == OperationStatus.PENDING_APPROVAL
     aid = approval_id_of(req)
-    assert store.get_approval(aid).op_id == refused.op_id
-    again = ex.execute(op(RequestOwnerApproval, clock, subject="again", payload_op_id=refused.op_id))
+    rec = store.get_approval(aid)
+    assert rec.op_id == reported.op_id and "routine sync" not in rec.reason and "reported by AGENT" in rec.reason
+    again = ex.execute(op(RequestOwnerApproval, clock, subject="again", payload_op_id=reported.op_id))
     assert approval_id_of(again) == aid and len(store.approvals()) == 1
-    r = ex.decide(aid, True, Actor.OWNER)
-    assert r.status == OperationStatus.REFUSED and codes(r) == [ViolationCode.TIER3_EQUITY]
+    r = ex.decide(aid, True, Actor.OWNER)  # the owner, told exactly what it is, may book the reported receipt
+    assert r.status == OperationStatus.EXECUTED
     assert security_summary(store)["unauthorised_executions"] == 0
 
 

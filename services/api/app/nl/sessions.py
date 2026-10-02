@@ -67,6 +67,7 @@ class Session:
     lang: str = "en"
     buyer_profile: str | None = None
     created: float = field(default_factory=time.monotonic)
+    nonce: str = field(default_factory=lambda: uuid.uuid4().hex[:12])  # distinguishes a recreated session's keys
     touched: float = field(default_factory=time.monotonic)
     turn: int = 0
     last_offer_id: str | None = None

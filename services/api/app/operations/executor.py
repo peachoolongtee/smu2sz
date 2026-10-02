@@ -1228,5 +1228,15 @@ class Executor:
         pending = [a for a in self._store.approvals(ApprovalStatus.PENDING) if a.op_id == op.payload_op_id]
         if pending:
             return _Effect(f"Already awaiting the owner ({pending[0].id})", status=PENDING, approval_id=pending[0].id)
-        return _Effect(f"Owner approval requested: {op.subject}", status=PENDING,
-                       approval=(canonical_json(target.op), op.subject))
+        # The owner must see what the operation is, in the executor's words: the requester's `subject` is
+        # untrusted text and never becomes the reason. Only an operation that is Tier 2 today can be queued.
+        now = self._clock()
+        queued = target.op.model_copy(update={"day": now})
+        tctx = self._context(queued, now)
+        if tctx.mandate is None or tctx.tier != Tier.TIER_2:
+            raise _refuse(Code.PRECONDITION_FAILED,
+                          f"Operation {op.payload_op_id} is not one the owner can approve (it is "
+                          f"{tctx.tier.value}); nothing queued")
+        reason = self._tier2_reason(tctx)
+        return _Effect(f"Owner approval requested: {reason}", status=PENDING,
+                       approval=(canonical_json(queued), reason))
