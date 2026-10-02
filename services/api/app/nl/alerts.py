@@ -203,6 +203,19 @@ def _waiting_sentence(ctx: NlContext, state: FinancialState, mandate: Mandate, a
              f"处理方案已在等待您批准（{rec.id}）{what_zh}。{cost_zh}我尚未执行。要批准，请说“批准 {rec.id}”或使用审批卡。")
 
 
+def _mandate_sentence(ctx: NlContext, a: Alert) -> str:
+    """The mandate that expires soon, or has: the agent cannot renew it, the owner signs a new one offline."""
+    day = a.inputs.get("expires_day", "?")
+    if a.severity == Severity.CRITICAL:
+        return t(ctx, f"Your mandate expired on day {day}, so I can no longer act until you sign a new one. Renewal is "
+                      f"an offline step for you.",
+                 f"您的授权已于第 {day} 天到期，在您签署新授权之前我无法再执行任何操作。续期需要您线下完成。")
+    left = a.inputs.get("days_left", "?")
+    return t(ctx, f"Your mandate expires on day {day}, in {left} day(s); after that I can no longer act. Renewal is an "
+                  f"offline step for you.",
+             f"您的授权将在第 {day} 天到期（还有 {left} 天）；之后我将无法执行任何操作。续期需要您线下完成。")
+
+
 def alerts_turn(ctx: NlContext) -> tuple[Turn, bool]:
     """(the turn, whether anything needs the owner). Reads only; sets a pending plan when the first reserve-breach
     alert has a cure the agent may submit."""
@@ -223,10 +236,14 @@ def alerts_turn(ctx: NlContext) -> tuple[Turn, bool]:
     shown = {a.id for a in past_due} | ({breach.id} if breach else set())
     repay = None if breach else next((a for a in news if a.kind == AlertKind.FACILITY_REPAYABLE), None)
     shown |= {repay.id} if repay else set()
+    mand = next((a for a in news if a.kind == AlertKind.MANDATE_EXPIRING), None)
+    shown |= {mand.id} if mand else set()
     rest = [a for a in news if a.id not in shown]
 
     parts = [t(ctx, f"Day {ctx.day}.", f"第 {ctx.day} 天。")]
     parts += [_past_due_sentence(ctx, state, a) for a in past_due]
+    if mand is not None:
+        parts.append(_mandate_sentence(ctx, mand))
     rest_sentence: list[str] = []
     if rest:  # the other alerts, in one line, before the question so that the question ends the message
         titles = "; ".join(a.title for a in rest[:MAX_TITLES]) + ("…" if len(rest) > MAX_TITLES else "")
@@ -258,10 +275,18 @@ def alerts_turn(ctx: NlContext) -> tuple[Turn, bool]:
             pending = PendingPlan(Intent.SHOW_ALERTS, Slots(), steps.items, {"alert_id": repay.id}).bind(
                 ctx, ops, _quoted_cost(repay, ops))
     else:
-        parts.append(t(ctx, f"On current books cash falls {fmt_yuan(breach.amount_fen or 0)} below your "
-                            f"{fmt_yuan(mandate.min_cash_fen)} floor on day {breach.day}.",
-                       f"按现有账目，第 {breach.day} 天现金将比 {fmt_yuan(mandate.min_cash_fen)} 的储备线低 "
-                       f"{fmt_yuan(breach.amount_fen or 0)}。"))
+        zero_day = breach.inputs.get("zero_day")
+        if zero_day is not None:  # no plan restores the reserve; cash itself goes below zero
+            parts.append(t(ctx, f"On current books cash goes below zero on day {zero_day}, and falls "
+                                f"{fmt_yuan(breach.amount_fen or 0)} below your {fmt_yuan(mandate.min_cash_fen)} floor on day "
+                                f"{breach.day}.",
+                           f"按现有账目，第 {zero_day} 天现金将降到零以下，第 {breach.day} 天比 "
+                           f"{fmt_yuan(mandate.min_cash_fen)} 的储备线低 {fmt_yuan(breach.amount_fen or 0)}。"))
+        else:
+            parts.append(t(ctx, f"On current books cash falls {fmt_yuan(breach.amount_fen or 0)} below your "
+                                f"{fmt_yuan(mandate.min_cash_fen)} floor on day {breach.day}.",
+                           f"按现有账目，第 {breach.day} 天现金将比 {fmt_yuan(mandate.min_cash_fen)} 的储备线低 "
+                           f"{fmt_yuan(breach.amount_fen or 0)}。"))
         parts += rest_sentence
         ops = cure_operations(breach, day=ctx.day, mandate_version=mandate.version,
                               state_version=state.state_version) if breach.actionable else []
@@ -279,6 +304,11 @@ def alerts_turn(ctx: NlContext) -> tuple[Turn, bool]:
                 if sg is not None and sg.above_apr_cap and over_cap is None:
                     over_cap = op
             cap = _cap_sentence(ctx, mandate, over_cap) if over_cap is not None else ""
+            if "cure_restores_reserve" in breach.inputs:  # the zero-floor fallback: say what it does not do
+                cap += t(ctx, f" This keeps cash at or above zero but does not restore your reserve: it stays "
+                              f"{breach.inputs.get('residual_shortfall', '?')} short, which needs your decision.",
+                         f" 这只能让现金保持在零以上，并不能恢复储备线：仍差 "
+                         f"{breach.inputs.get('residual_shortfall', '?')}，需要您来决定。")
             together = (t(ctx, f" Together they cost {breach.inputs['cure_cost']}.",
                           f"合计费用 {breach.inputs['cure_cost']}。") if len(ops) > 1 and "cure_cost" in breach.inputs else "")
             parts.append(t(ctx, "I can " + " and ".join(clauses) + "." + together + cap + " Go ahead?",

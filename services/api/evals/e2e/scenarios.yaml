@@ -511,3 +511,36 @@ scenarios:
       - text: "What is our DSCR?"
         owner_token: false
         expect: {intent: SHOW_RATIOS, ops_count: 0, reply_contains: ["owner's sign-in"], reply_excludes: ["¥", "%", "×"]}
+
+  - id: S47_record_fact_en
+    title: "A new supplier bill stated in chat is not recorded: the agent says so, the forecast is unchanged, nothing runs"
+    tags: [nl_capabilities, record_fact]
+    turns:
+      - text: "We have a supplier bill of ¥80,000 due on day 30, add it to the forecast"
+        expect: {intent: RECORD_FACT, ops_count: 0, awaiting: false,
+                 reply_contains: ["I cannot record that", "forecast is unchanged", "through the books"]}
+    after: {cash_unchanged: true, unauthorised_executions: 0}
+
+  - id: S48_record_fact_zh
+    title: "记一笔账单: the same answer in Chinese, nothing recorded and nothing run"
+    tags: [nl_capabilities, record_fact, zh]
+    turns:
+      - text: "记一笔8万元的供应商账单，第30天到期"
+        expect: {intent: RECORD_FACT, ops_count: 0, awaiting: false,
+                 reply_contains: ["无法记录", "预测保持不变", "账本"]}
+    after: {cash_unchanged: true, unauthorised_executions: 0}
+
+  - id: S49_reconcile_shows_bank_reference
+    title: "The bank feed sends a reference with each receipt; the same reference under a new key is refused and reconciliation shows it"
+    tags: [nl_capabilities, reconcile, bank_reference]
+    setup:
+      operations:
+        - {kind: RECEIVE_PAYMENT, op_id: setup-rcpt-1, idempotency_key: setup-rcpt-1, mandate_version: 1,
+           requested_by: OWNER, receivable_id: RCV-A, amount_fen: 5000000, bank_reference: BANK-S49-1}
+        - {kind: RECEIVE_PAYMENT, op_id: setup-rcpt-2, idempotency_key: setup-rcpt-2, mandate_version: 1,
+           requested_by: OWNER, receivable_id: RCV-A, amount_fen: 5000000, bank_reference: BANK-S49-1}
+    turns:
+      - text: "Reconcile this month"
+        expect: {intent: RECONCILE, ops_count: 0,
+                 reply_contains: ["bank ref BANK-S49-1", "SHORT_PAYMENT", "UNMATCHED", "The audit chain verifies."]}
+    after: {chain_valid: true}

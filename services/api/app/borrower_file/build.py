@@ -20,6 +20,7 @@ import json
 import re
 from collections.abc import Iterable
 from dataclasses import dataclass
+from datetime import date, timedelta
 from fractions import Fraction
 from typing import Any
 
@@ -162,7 +163,12 @@ def _entries(store: LedgerStore) -> list[_Entry]:
 # ---------------------------------------------------------------- sections
 
 
-def _summary(state: FinancialState, before: Trajectory, subs: Any) -> Section:
+def generation_date(state: FinancialState, day: int) -> str:
+    """The calendar date of generation day `day`: day 0 is `state.as_of`, every later day is one date later."""
+    return (date.fromisoformat(state.as_of) + timedelta(days=day)).isoformat()
+
+
+def _summary(state: FinancialState, before: Trajectory, subs: Any, day: int) -> Section:
     debt = sum(d.principal_fen for d in state.debts)
     ds = sum(d.monthly_debt_service_fen for d in state.debts)
     drawn = sum(f.drawn_fen for f in state.facilities)
@@ -175,7 +181,8 @@ def _summary(state: FinancialState, before: Trajectory, subs: Any) -> Section:
     billed = sum(per_30.values(), Fraction(0))
     rows = [
         Row(label="Organisation", figures=[text(state.org_id, O, "state.org_id")]),
-        Row(label="Data as of (day 0)", figures=[text(state.as_of, O, "state.as_of")]),
+        Row(label=f"Data as of (generation day {day})",
+            figures=[text(generation_date(state, day), O, "state.as_of + generation day")]),
         Row(label="Cash on hand", figures=[money(state.cash_fen, O, "state.cash_fen")]),
         Row(label="EBITDA (owner's figure), monthly",
             figures=[money(state.monthly_ebitda_fen, O, "state.monthly_ebitda_fen")],
@@ -197,10 +204,11 @@ def _summary(state: FinancialState, before: Trajectory, subs: Any) -> Section:
                                       "state.recurring_invoices")]))
     rows.append(Row(label="Forward concessions booked", figures=[
         money(sum(fc.value_fen for fc in state.forward_concessions), O, "state.forward_concessions[].value_fen")]))
-    m1 = before.months[0]
-    rows.append(Row(label="Month 1 DSCR · leverage (before the facility)", figures=[
-        ratio(_dscr(m1), P, "trajectory month 1", "EBITDA_m / DS_m", none_text="n/a (no debt service)"),
-        ratio(_lev(m1), P, "trajectory month 1", "Debt_m / (12 × EBITDA_m)")]))
+    _k, a1, b1, m1 = _rolling(before, day)[0]  # month 1 starts the day after generation, never on closed day 0
+    rows.append(Row(label=f"Month 1 (days {a1}–{b1}) DSCR · leverage (before the facility)", figures=[
+        ratio(_dscr(m1), P, f"trajectory month 1 (calendar month {m1.month})", "EBITDA_m / DS_m",
+              none_text="n/a (no debt service)"),
+        ratio(_lev(m1), P, f"trajectory month 1 (calendar month {m1.month})", "Debt_m / (12 × EBITDA_m)")]))
     return Section(key="summary", title_en="Business summary", title_zh="经营概况", rows=rows)
 
 
@@ -499,7 +507,7 @@ def _provenance_section(p: Provenance) -> Section:
         Row(label="Log entries · chain verified", figures=[text(str(p.chain_length), O, "operations log"),
                                                            text("yes" if p.chain_valid else "NO", O,
                                                                 "LedgerStore.verify_chain")]),
-        Row(label="Generated on", figures=[text(f"day {p.generated_day} (data as of {p.as_of})", O, "clock")]),
+        Row(label="Generated on", figures=[text(f"day {p.generated_day} (data as of {p.as_of}, the generation day)", O, "clock")]),
         Row(label="Projection basis", figures=[text(f"{p.basis.lower()}; {p.calc}", O, "engine")]),
     ]
     return Section(key="provenance", title_en="Data provenance", title_zh="数据来源", rows=rows)
@@ -584,11 +592,11 @@ def build(store: LedgerStore, *, facility_id: str, amount_fen: int, use_of_proce
     if f not in binding:
         binding.append(f)
     ops = store.operations()
-    prov = Provenance(org_id=state.org_id, as_of=state.as_of, state_version=state.state_version,
+    prov = Provenance(org_id=state.org_id, as_of=generation_date(state, day), state_version=state.state_version,
                       mandate_version=mandate.version, chain_head_hash=ops[-1].entry_hash if ops else None,
                       chain_length=len(ops), chain_valid=store.verify_chain(), generated_day=day)
     sections = [
-        _summary(state, before, subs),
+        _summary(state, before, subs, day),
         _request(f, amount_fen, day, after),
         _forecast(before, after, day),
         _trajectory(after, day),

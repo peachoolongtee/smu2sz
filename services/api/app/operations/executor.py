@@ -1124,11 +1124,35 @@ class Executor:
                 return done, o, portion
         return None
 
+    def _refuse_repeated_bank_event(self, op: ReceivePayment) -> None:
+        """One bank event books once. A receipt that names the bank reference of an executed receipt on the same
+        receivable, under any idempotency key, is that event again: refused as a duplicate when the amount is the
+        same, and as a conflicting event (a REPLAY security event) when it differs. No reference: no check."""
+        ref = op.bank_reference
+        if ref is None:
+            return
+        first = next((e for e in self._entries() if e.kind == op.kind and e.result.status == EXECUTED
+                      and e.payload.get("receivable_id") == op.receivable_id
+                      and e.payload.get("bank_reference") == ref), None)
+        if first is None:
+            return
+        named = f"{first.payload.get('op_id', '?')} (seq {first.seq})"
+        if first.payload.get("amount_fen") == op.amount_fen:
+            raise _refuse(Code.PRECONDITION_FAILED,
+                          f"Duplicate bank event: reference {ref} on {op.receivable_id} was already booked as {named} "
+                          f"for {fmt_yuan(op.amount_fen)}; nothing booked again",
+                          bank_reference=ref, earlier_seq=first.seq)
+        raise _refuse(Code.REPLAY,
+                      f"Conflicting bank event: reference {ref} on {op.receivable_id} was already booked as {named} for "
+                      f"{fmt_yuan(int(first.payload.get('amount_fen', 0)))}, and this receipt says {fmt_yuan(op.amount_fen)}; "
+                      f"nothing booked", SecurityEventKind.REPLAY, bank_reference=ref, earlier_seq=first.seq)
+
     def _receive(self, op: ReceivePayment, ctx: _Ctx) -> _Effect:
         state = funding_lots.ensure_lots(ctx.state)
         r = next((r for r in state.receivables if r.id == op.receivable_id), None)
         if r is None:
             raise _refuse(Code.PRECONDITION_FAILED, f"Receivable {op.receivable_id} does not exist")
+        self._refuse_repeated_bank_event(op)
         if r.status not in ("OPEN", "FINANCED") or r.outstanding_fen <= 0:
             raise _refuse(Code.PRECONDITION_FAILED, f"Receivable {r.id} is {r.status}; nothing is owed")
         matched = self._early_pay_match(op, r, ctx.now)

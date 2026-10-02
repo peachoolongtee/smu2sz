@@ -167,8 +167,11 @@ def reconcile_receipts(ctx: NlContext) -> Turn:
                f"截至第 {rep.as_of_day} 天对账：{rep.matched} 笔回款匹配，{rep.flagged} 笔有异常；"
                f"实收 {fmt_yuan(rep.received_total_fen)}，应收 {fmt_yuan(rep.expected_total_fen)}。")]
     for m in [m for m in rep.receipts if m.flagged][:MAX_FLAGGED]:
-        lines.append(t(ctx, f"- Flagged: {m.receivable_id} {fmt_yuan(m.received_fen)}: {m.status.value}. {m.detail}",
-                       f"- 异常：{m.receivable_id} {fmt_yuan(m.received_fen)}：{m.status.value}。{m.detail}"))
+        ref = m.bank_reference
+        lines.append(t(ctx, f"- Flagged: {m.receivable_id}{f' (bank ref {ref})' if ref else ''} {fmt_yuan(m.received_fen)}: "
+                            f"{m.status.value}. {m.detail}",
+                       f"- 异常：{m.receivable_id}{f'（银行流水号 {ref}）' if ref else ''} {fmt_yuan(m.received_fen)}："
+                       f"{m.status.value}。{m.detail}"))
     if rep.promised:
         counts = {s: sum(1 for p in rep.promised if p.status == s) for s in PromiseStatus}
         lines.append(t(ctx, "Promised early payments: " + ", ".join(f"{s.value} {n}" for s, n in counts.items() if n) + ".",
@@ -194,6 +197,25 @@ def reconcile_receipts(ctx: NlContext) -> Turn:
     lines.append(t(ctx, "The audit chain verifies." if rep.chain_valid else "The audit chain does NOT verify.",
                    "审计链校验通过。" if rep.chain_valid else "审计链校验未通过。"))
     return Turn(intent=Intent.RECONCILE, reply="\n".join(lines))
+
+
+# ---------------------------------------------------------------- RECORD_FACT
+
+
+def record_fact(ctx: NlContext, slots: Slots) -> Turn:
+    """The owner states a new bill, invoice, delay, EBITDA figure or similar. Chat reads and writes nothing for it: the
+    books change only through the owner's own entry, so the answer is plain that it is not recorded, what is needed
+    and that the forecast is unchanged. No operation, no pending plan."""
+    amount = f" ({fmt_yuan(slots.amount_fen)})" if slots.amount_fen else ""
+    return Turn(intent=Intent.RECORD_FACT, reply=t(
+        ctx,
+        f"I cannot record that{amount}: I do not enter bills, invoices, payment delays or figures from chat, and I have "
+        f"not recorded or run anything. The forecast is unchanged and does not include it. To have it counted, enter it "
+        f"through the books yourself (who it is with, the amount and the day it is due, or the new figure); I will "
+        f"then forecast from it and tell you what changes.",
+        f"这一项我无法记录{amount}：我不会根据聊天内容录入账单、发票、延迟付款或财务数字，也没有记录或执行任何操作。"
+        f"预测保持不变，不包含这一项。若要计入，请您自行通过账本录入（对象、金额和到期日，或新的数字）；"
+        f"录入后我会据此重新预测并告诉您有什么变化。"))
 
 
 # ---------------------------------------------------------------- SHOW_RATIOS

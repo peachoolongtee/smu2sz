@@ -272,6 +272,8 @@ def _dispatch(ctx: NlContext, p: Parsed, text: str) -> Turn:
             return repay(ctx, slots, execute=slots.execute_now and not llm)
         case Intent.SHOW_STATUS:
             return status(ctx)
+        case Intent.RECORD_FACT:
+            return cap.record_fact(ctx, slots)
         case Intent.SHOW_ALERTS:
             return alerts_intent(ctx)
         case Intent.COMPARE_FINANCING:

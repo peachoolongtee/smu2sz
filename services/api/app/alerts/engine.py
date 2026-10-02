@@ -46,6 +46,7 @@ HEADROOM_SHARE = Fraction(1, 10)  # reserve headroom below 10% of the floor
 COVENANT_HEADROOM = Fraction(1, 10)  # 0.10x
 CONCESSION_SHARE = Fraction(4, 5)  # 80% of the cap
 EXPIRY_WINDOW_DAYS = 7
+MANDATE_WARN_DAYS = 14
 
 _DRAWABLE = (FacilityKind.CREDIT_LINE, FacilityKind.GOV_GUARANTEED_LOAN, FacilityKind.EQUIPMENT_TERM_LOAN,
              FacilityKind.EQUIPMENT_LEASE)
@@ -279,9 +280,20 @@ def _reserve_alerts(state: FinancialState, mandate: Mandate, t: Trajectory, obs:
         max_short = floor - worst.closing_fen
         cure = (committed_cure(state, obs, t.horizon_days, floor, day, start, end)
                 if mandate.allow_new_borrowing else None)
-        if cure is not None:
-            suggested, cure_total, cure_due = _cure_costs(state, obs, t, cure, mandate)
-            cure_text = "a committed cure exists: " + " + ".join(
+        # No committed plan restores the reserve: fall back to the cure that keeps cash at or above ZERO (the same
+        # search with floor 0), when cash really goes below zero in this episode. It is shown with its cost and
+        # never as a reserve cure (committed_cure stays False).
+        first_negative = next((p.day for p in run if p.closing_fen < 0), None)
+        zero_cure = (committed_cure(state, obs, t.horizon_days, 0, day, start, end)
+                     if cure is None and mandate.allow_new_borrowing and first_negative is not None else None)
+        title = f"Reserve breach ahead on day {start}"
+        overdraft = ""
+        shown = cure if cure is not None else zero_cure
+        if shown is not None:
+            suggested, cure_total, cure_due = _cure_costs(state, obs, t, shown, mandate)
+            lead = ("a committed cure exists: " if cure is not None
+                    else "no committed plan restores the reserve; the cure that keeps cash at or above zero is: ")
+            cure_text = lead + " + ".join(
                 f"{s.operation_kind} {s.facility_id} {fmt_yuan(s.amount_fen or 0)}{_cost_words(s)}" for s in suggested)
             cure_inputs = {f"cure_end_day_{i}": str(d) for i, d in cure_due.items()}
             if cure_total is not None:
@@ -290,6 +302,19 @@ def _reserve_alerts(state: FinancialState, mandate: Mandate, t: Trajectory, obs:
                 cure_inputs["cure_above_apr_cap"] = "true"
                 cure_text += (f"; that is above the {fmt_pct(bp(mandate.max_apr_bp))} ceiling for what the agent may "
                               f"borrow alone, so it needs the owner's approval before it runs")
+            if cure is None:
+                try:
+                    after = project(state, obs, shown, Mode.CONSERVATIVE, t.horizon_days)
+                    still = max((floor - p.closing_fen for p in after.days if start <= p.day <= end), default=0)
+                except EngineError:
+                    still = max_short
+                title = f"cash goes below zero on day {first_negative} without action"
+                cure_inputs.update({"cure_restores_reserve": "false", "zero_day": str(first_negative),
+                                    "residual_shortfall": fmt_yuan(max(still, 0))})
+                cure_text += (f". It does not restore the reserve: cash stays at or above zero, but the reserve is still "
+                              f"{fmt_yuan(max(still, 0))} short at the worst day, which needs the owner's decision")
+                overdraft = (" The projection lets cash run below zero only as a simulation limit; the bank does not "
+                             "allow an overdraft, so a negative figure is a day the books cannot pay what falls due.")
         elif not mandate.allow_new_borrowing:
             cure_inputs = {}
             suggested = []
@@ -306,10 +331,10 @@ def _reserve_alerts(state: FinancialState, mandate: Mandate, t: Trajectory, obs:
             id=f"ALERT-RESERVE-{start}",
             kind=AlertKind.RESERVE_BREACH_AHEAD,
             severity=Severity.CRITICAL,
-            title=f"Reserve breach ahead on day {start}",
+            title=title,
             detail=(f"Projected cash closes at {fmt_yuan(run[0].closing_fen)} on day {start}, "
                     f"{fmt_yuan(first_short)} below the reserve floor; the gap peaks at {fmt_yuan(max_short)} "
-                    f"on day {worst.day} and lasts to day {end}. {cure_text[0].upper()}{cure_text[1:]}."),
+                    f"on day {worst.day} and lasts to day {end}. {cure_text[0].upper()}{cure_text[1:]}.{overdraft}"),
             formula=(f"shortfall = floor − closing_d: {fmt_yuan(floor)} − {fmt_yuan(run[0].closing_fen)} "
                      f"= {fmt_yuan(first_short)} (day {start}); max over days {start}..{end} = {fmt_yuan(max_short)}"),
             day=start,
@@ -487,6 +512,38 @@ def _expiring(store: LedgerStore, day: int) -> list[Alert]:
     return out
 
 
+def _mandate_alerts(mandate: Mandate, day: int) -> list[Alert]:
+    """The mandate expires on `expires_day` (the executor refuses from the day after). Within MANDATE_WARN_DAYS of it
+    the owner is warned; once it has passed the agent can no longer act. Renewal is an offline owner step: this alert
+    suggests no operation, because no operation can renew a mandate."""
+    left = mandate.expires_day - day
+    if left > MANDATE_WARN_DAYS:
+        return []
+    renew = ("Renewal is an offline owner step: sign a new mandate outside the agent. The agent cannot renew or "
+             "extend it, and it suggests no operation.")
+    if left < 0:
+        title = "mandate expired: the agent can no longer act"
+        detail = (f"Mandate v{mandate.version} expired on day {mandate.expires_day}, {-left} day(s) ago. Every "
+                  f"operation is refused (MANDATE_EXPIRED) until the owner signs a new mandate. {renew}")
+        severity = Severity.CRITICAL
+    else:
+        title = f"Mandate v{mandate.version} expires in {left} day(s)"
+        detail = (f"Mandate v{mandate.version} is valid to day {mandate.expires_day}; after that the agent can no "
+                  f"longer act, although the forecast horizon runs to day {mandate.horizon_days}. {renew}")
+        severity = Severity.WARNING
+    return [Alert(
+        id="ALERT-MANDATE-EXPIRY",
+        kind=AlertKind.MANDATE_EXPIRING,
+        severity=severity,
+        title=title,
+        detail=detail,
+        formula=f"expires_day − today = {mandate.expires_day} − {day} = {left} ≤ {MANDATE_WARN_DAYS}",
+        day=mandate.expires_day,
+        inputs={"mandate_version": str(mandate.version), "expires_day": str(mandate.expires_day),
+                "days_left": str(left), "horizon_days": str(mandate.horizon_days)},
+    )]
+
+
 def _books_due_days(books: Books, horizon: int) -> dict[str, int]:
     """Due day of each receivable on current books, read from the engine: the day of its RECEIPT event once
     the live obligations (terms extensions ...) are applied. The books are projected as of day 0 so a receipt
@@ -562,6 +619,13 @@ def _past_due(books: Books, today: int, horizon: int) -> list[Alert]:
                                        note="chase the buyer; record the receipt when the money lands")],
         ))
     return out
+
+
+def past_due_invoices(books: Books, today: int, horizon: int) -> list[Alert]:
+    """The invoices past due on current books, as the alerts read them (one RECEIVABLE_PAST_DUE alert per receivable,
+    `inputs` carries the counterparty and the due day). A missed early-payment promise is not an invoice past due and
+    is left out. The verifier asks this before it lets the agent accept something from that buyer alone."""
+    return [a for a in _past_due(books, today, horizon) if a.commitment_id is None]
 
 
 def _concession_alerts(state: FinancialState, mandate: Mandate, t: Trajectory) -> list[Alert]:
@@ -735,6 +799,7 @@ def alerts(state: FinancialState, mandate: Mandate, store: LedgerStore, day: int
         *_covenant_alerts(books.state, mandate, t, today),
         *_clean_down_alerts(books.state, t, today),
         *_expiring(store, today),
+        *_mandate_alerts(mandate, today),
         *_past_due(books, today, today + mandate.horizon_days),
         *_concession_alerts(books.state, mandate, t),
         *([] if any(a.kind == AlertKind.RESERVE_BREACH_AHEAD for a in reserve)  # never propose repaying in a breach
