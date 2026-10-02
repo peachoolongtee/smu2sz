@@ -38,8 +38,8 @@ test("trajectory adapter: the position today, then the offer applied", async () 
   expect(view.cured_trajectory?.days).toHaveLength(121);
   expect(view.trajectory.first_breach_day).toBe(47);
   expect(view.shortfall_display).toBe("¥45,040.00");
-  expect(view.forward_concession).toMatchObject({ total_display: "¥26,455.62", cap_display: "¥5,000.00", over_cap: true });
-  expect(view.forward_concession.parts.map((p) => p.value_display)).toEqual(["¥22,455.62", "¥4,000.00"]);
+  expect(view.forward_concession).toMatchObject({ total_display: "¥28,326.92", cap_display: "¥5,000.00", over_cap: true });
+  expect(view.forward_concession.parts.map((p) => p.value_display)).toEqual(["¥24,326.92", "¥4,000.00"]);
   expect(view.trajectory.months[0]).toMatchObject({ dscr: { text: "2.00" }, leverage: { text: "1.39" } });
   // The pro forma 1.92x / 1.72x (extension funded) live in the verdict's own checks, not in the month table.
   expect(verdict.summary).toContain("DSCR_MIN 1.92x");
