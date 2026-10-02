@@ -2,6 +2,7 @@
 
 import { useI18n } from "@/lib/i18n";
 import type { FacilityStatus, OperationStatus, Outcome, Tier, ViolationCode } from "@/lib/types";
+import { OperationStatePill } from "./operation-result";
 import { Badge, type Tone } from "./ui";
 
 const outcomeTone: Record<Outcome | "NO_DEAL", Tone> = {
@@ -38,10 +39,9 @@ export function TierBadge({ tier }: { tier: Tier }) {
   return <Badge tone={tone}>{te("tier", tier)}</Badge>;
 }
 
+/** A ledger row's state: the shared presentation of an operation result (components/operation-result.tsx). */
 export function OpStatusBadge({ status }: { status: OperationStatus }) {
-  const { te } = useI18n();
-  const tone: Tone = status === "EXECUTED" ? "ok" : status === "REFUSED" ? "bad" : status === "PENDING_APPROVAL" ? "warn" : "neutral";
-  return <Badge tone={tone}>{te("opstatus", status)}</Badge>;
+  return <OperationStatePill status={status} />;
 }
 
 export function FacilityStatusBadge({ status }: { status: FacilityStatus }) {

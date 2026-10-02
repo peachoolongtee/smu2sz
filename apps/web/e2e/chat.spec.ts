@@ -37,7 +37,7 @@ test("owner: Evaluate EX01 is a REJECT, then go ahead lists the executed operati
   await expect(first.getByTestId("chat-intent")).toHaveText("Evaluate offer");
   await expect(first.getByTestId("chat-code-AGG_CONCESSION_EXCEEDED")).toBeVisible();
   await expect(first.getByTestId("chat-code-RESERVE_BREACH")).toBeVisible();
-  await expect(first.getByTestId("chat-reply")).toContainText("¥26,455.62");
+  await expect(first.getByTestId("chat-reply")).toContainText("¥28,326.92");
   // The plan is a checklist with a status per step, and nothing has run yet.
   await expect(first.getByTestId("chat-plan").locator("li").first()).toHaveAttribute("data-status", "DONE");
   await expect(first.getByTestId("chat-plan")).toContainText("Proposed");

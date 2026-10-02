@@ -35,17 +35,21 @@ test("demo stepper walks Scene 1, Scene 2, Scene 3 and Security with the golden 
   await expect(page.getByText("Immediate discount").first()).toBeVisible();
 
   await next(page, /\/trajectory/);
-  await expect(page.getByText("¥26,455.62").first()).toBeVisible();
+  await expect(page.getByText("¥28,326.92").first()).toBeVisible();
   await expect(page.getByText(/day 47/i).first()).toBeVisible();
   await expect(page.getByText("¥254,960.00").first()).toBeVisible();
 
   await next(page, /\/funding/);
   await expect(page.getByText("10.8417%").first()).toBeVisible();
   await expect(page.getByText("0.88%").first()).toBeVisible();
+  // Each action carries the day it is requested and the day its cash lands (request day + the facility's lead time).
+  const lands = page.getByTestId("plan-lands");
+  await expect(lands).toHaveCount(2);
+  await expect(lands.filter({ hasText: "Day 3" })).toHaveCount(1);
 
   await next(page, /\/verdict/);
   await expect(page.getByTestId("outcome-badge")).toContainText("REJECT");
-  await expect(page.getByTestId("violation-AGG_CONCESSION_EXCEEDED")).toContainText("¥26,455.62");
+  await expect(page.getByTestId("violation-AGG_CONCESSION_EXCEEDED")).toContainText("¥28,326.92");
   await expect(page.getByTestId("violation-RESERVE_BREACH")).toContainText(/day 47/i);
   // Four codes in both modes (the mock is recorded from the live API).
   await expect(page.getByTestId("violation-DISCOUNT_ABOVE_BREAK_EVEN")).toBeVisible();
@@ -79,7 +83,7 @@ test("demo stepper walks Scene 1, Scene 2, Scene 3 and Security with the golden 
 
   await next(page, /\/verdict/);
   await expect(page.getByTestId("outcome-badge")).toContainText("REJECT");
-  await expect(page.getByTestId("violation-AGG_CONCESSION_EXCEEDED")).toContainText("¥26,455.62");
+  await expect(page.getByTestId("violation-AGG_CONCESSION_EXCEEDED")).toContainText("¥28,326.92");
 
   // Scene 3: capex.
   await next(page, /\/capex/);

@@ -2,6 +2,7 @@
 
 import { Badge, Card, ErrorState, Hash, KeyValueList, LoadingBlock, PageHeader, Stat, TableWrap, tableCls, tdCls, thCls } from "@/components/ui";
 import { TierBadge } from "@/components/badges";
+import { InTransit, lotsInTransit } from "@/components/in-transit";
 import { getMandate, getState } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
 import type { MandateView, Tier } from "@/lib/types";
@@ -60,7 +61,17 @@ export default function MandatePage() {
         ) : (
           <div className="space-y-4">
             <dl className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-              <Stat label={t("mandate.cash")} value={state.data.state.cash_display} />
+              <Stat
+                label={t("mandate.cash")}
+                value={state.data.state.cash_display}
+                hint={
+                  lotsInTransit(state.data.state).length ? (
+                    <span data-testid="mandate-transit">
+                      {t("transit.title")}: <InTransit lots={lotsInTransit(state.data.state)} />
+                    </span>
+                  ) : undefined
+                }
+              />
               <Stat label={t("mandate.ebitda")} value={state.data.state.monthly_ebitda_display} />
               <Stat
                 label={t("mandate.debt")}
@@ -72,7 +83,12 @@ export default function MandatePage() {
                 value={state.data.state.receivables[0]?.face_display ?? t("common.none")}
                 hint={
                   state.data.state.receivables[0]
-                    ? t("mandate.receivable.hint", { days: state.data.state.receivables[0].terms_days })
+                    ? state.data.state.receivables[0].base_terms_days !== undefined
+                      ? t("mandate.receivable.adjusted", {
+                          days: state.data.state.receivables[0].terms_days,
+                          base: state.data.state.receivables[0].base_terms_days,
+                        })
+                      : t("mandate.receivable.hint", { days: state.data.state.receivables[0].terms_days })
                     : undefined
                 }
               />

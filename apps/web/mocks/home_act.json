@@ -5,24 +5,24 @@
     {
       "op_id": "alert:ALERT-RESERVE-42:v7:0",
       "kind": "SUBMIT_INVOICE_FOR_FINANCING",
-      "status": "EXECUTED",
-      "tier": "TIER_1",
+      "status": "PENDING_APPROVAL",
+      "tier": "TIER_2",
       "violations": [],
       "seq": 7,
-      "entry_hash": "8b47633eb6752f2293a81cbd02f2f47a8229918d930f2041ddcbefd0ee002daf",
+      "entry_hash": "1b92ca97c95470e974b9877e63299c88198473a99ffd9181621fcdbb82ac41e4",
       "prev_hash": "ba361ee60b03593a7bc5c080530de6dc6eff9bcb06da3e0d113ae01adb9c7f6e",
       "effective_day": 34,
-      "approval_id": null,
-      "message": "Advance ¥200,000.00 on RI:BUYER-1:2 from FAC-IF on day 34"
+      "approval_id": "APR-000001",
+      "message": "Queued for owner approval (APR-000001): effective annual cost 32.52% is above the mandate's 15.00% ceiling for what the agent may borrow alone (all charges on ¥200,000.00 held 10 days (day 37 to day 47), annualised = 32.52%)"
     }
   ],
-  "executed": 1,
-  "pending_approval": 0,
+  "executed": 0,
+  "pending_approval": 1,
   "refused": 0,
-  "cured": true,
+  "cured": false,
   "alerts_after": {
     "counts": {
-      "CRITICAL": 0,
+      "CRITICAL": 1,
       "WARNING": 2,
       "INFO": 0
     }

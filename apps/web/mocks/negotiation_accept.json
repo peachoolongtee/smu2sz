@@ -117,6 +117,10 @@
         "fen": 84109,
         "facility_id": "FAC-LINE",
         "formula": "149,901.15 × 6.4% × 32/365 = 841.09",
+        "needs_owner_approval": false,
+        "approval_reason": "",
+        "executable_now": true,
+        "not_executable_reason": "",
         "display": "¥841.09"
       }
     ],
@@ -137,6 +141,10 @@
       }
     ],
     "label": "committed plan: ¥841.09",
+    "needs_owner_approval": false,
+    "approval_reason": "",
+    "executable_now": true,
+    "not_executable_reason": "",
     "need_display": "¥149,901.15",
     "total_cost_display": "¥841.09"
   },

@@ -1,5 +1,5 @@
 {
-  "id": "VER-e1284cad79e1",
+  "id": "VER-d81e448e064b",
   "offer_id": "OFF-833f35d497a5",
   "offer_version": 1,
   "outcome": "REJECT",
@@ -111,7 +111,7 @@
     "whole_invoice": null,
     "covered": [],
     "gaps": [
-      "the compiler could not account for every figure and request in the message: the message asserts authority or a prior agreement (URGENCY, PRE_APPROVAL, INSTRUCTION_OVERRIDE, PRIOR_AGREEMENT); the message asks for protected data; the message carries an unsolicited funding offer; a concession is claimed as previously agreed; CLAIMED_PRIOR_CONCESSION leaves current_terms_days unresolved; an amount in SEC-msg is not accounted for by the extracted terms; a rate in SEC-msg is not accounted for by the extracted terms; SEC-msg holds a other topic beyond the extracted terms; text not read into the terms: 'urgent', 'pre', 'approved', 'fastcapital', 'reply', ..."
+      "the compiler could not account for every figure and request in the message: the message asserts authority or a prior agreement (URGENCY, PRE_APPROVAL, INSTRUCTION_OVERRIDE, PRIOR_AGREEMENT); the message asks for protected data; the message carries an unsolicited funding offer; a concession is claimed as previously agreed; CLAIMED_PRIOR_CONCESSION leaves current_terms_days unresolved; an amount in SEC-msg is not accounted for by the extracted terms; a rate in SEC-msg is not accounted for by the extracted terms; a settlement date or window is stated but not read into the terms; SEC-msg holds a other topic beyond the extracted terms; text not read into the terms: 'urgent', 'pre', 'approved', 'fastcapital', 'reply', ..."
     ],
     "notes": [
       "the message asserts authority or a prior agreement (URGENCY, PRE_APPROVAL, INSTRUCTION_OVERRIDE, PRIOR_AGREEMENT)",
@@ -121,6 +121,7 @@
       "CLAIMED_PRIOR_CONCESSION leaves current_terms_days unresolved",
       "an amount in SEC-msg is not accounted for by the extracted terms",
       "a rate in SEC-msg is not accounted for by the extracted terms",
+      "a settlement date or window is stated but not read into the terms",
       "SEC-msg holds a other topic beyond the extracted terms",
       "text not read into the terms: 'urgent', 'pre', 'approved', 'fastcapital', 'reply', ..."
     ]

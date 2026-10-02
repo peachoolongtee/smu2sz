@@ -76,7 +76,33 @@ test("the EX01 verdict shows each early-pay discount as a yearly rate, the offer
   await expect(counterA).toContainText("10.43% a year for 30 days");
 });
 
-test("on day 34 the reserve alert states its cure's cost and flags the rate above the yearly cap", async ({ page, request }) => {
+test("the day-0 plan: 'go ahead' brings cash now and leaves the advance in transit until its landing day", async ({ page, request }) => {
+  const owner = { "X-Owner-Token": TOKEN };
+  expect((await request.post(`${API}/demo/reset`, { headers: owner, data: {} })).ok()).toBeTruthy();
+  await page.goto("/chat");
+  await page.getByTestId("prompt-fund").click();
+  const first = page.getByTestId("chat-turn").first();
+  // "Fund the cash gap" only proposes; every action says when its cash lands.
+  await expect(first.getByTestId("chat-reply")).toContainText("lands on day 3");
+  await expect(first.getByTestId("chat-ops")).toHaveCount(0);
+  await first.getByTestId("chat-goahead").click();
+  const second = page.getByTestId("chat-turn").nth(1);
+  await expect(second.getByTestId("chat-reply")).toContainText("Cash in now");
+  await expect(second.getByTestId("chat-reply")).toContainText("Still to land");
+
+  await page.goto("/");
+  const position = page.locator("#home-position");
+  await expect(position.getByText("¥550,000.00")).toBeVisible();
+  await expect(position.getByTestId("in-transit-lot")).toContainText("¥210,000.00 lands on day 3");
+  // Once day 3 has passed the advance is cash.
+  expect((await request.post(`${API}/clock/advance`, { headers: owner, data: { to_day: 4 } })).ok()).toBeTruthy();
+  await page.goto("/");
+  await expect(page.locator("#home-position").getByText("¥760,000.00")).toBeVisible();
+  await expect(page.locator("#home-position").getByTestId("in-transit")).toHaveCount(0);
+  await request.post(`${API}/demo/reset`, { headers: owner, data: {} });
+});
+
+test("on day 34 the cure needs the owner: the alert says so, the click queues it, approval runs it, the cash lands on day 37", async ({ page, request }) => {
   const owner = { "X-Owner-Token": TOKEN };
   const bank = { "X-Agent-Key": "demo-agent-key", "X-Bank-Feed-Key": "demo-bank-feed-key" };
   const post = async (path: string, data: object, headers: Record<string, string> = owner) => {
@@ -110,17 +136,49 @@ test("on day 34 the reserve alert states its cure's cost and flags the rate abov
   await post("/clock/advance", { to_day: 30 });
   await post("/clock/advance", { to_day: 34 });
 
+  // The agreed early payment arrived on day 2: reconciliation shows it as received (and none lapsed).
+  await page.goto("/reconciliation");
+  await expect(page.getByTestId("promised-RCV-A")).toHaveAttribute("data-status", "RECEIVED");
+  await expect(page.getByText("Lapsed promises: 0")).toBeVisible();
+
   await page.goto("/alerts");
   const card = page.locator("#alert-ALERT-RESERVE-42");
   await expect(card).toContainText("Cost ¥1,782.19");
-  await expect(card).toContainText("× 365/13 = 25.0% a year");
-  await expect(card.getByText("Above your yearly cap")).toBeVisible();
+  await expect(card).toContainText("× 365/10 = 32.5% a year");
+  await expect(card.getByText("Needs your approval").first()).toBeVisible();
+  await expect(card.getByTestId("alert-needs-approval-ALERT-RESERVE-42")).toContainText("15.00%");
   await expect(card.getByTestId("fix-ALERT-RESERVE-42")).toBeVisible();
 
   await page.goto("/");
   const risk = page.getByTestId("home-alert-ALERT-RESERVE-42");
   await expect(risk).toContainText("Cost ¥1,782.19");
-  await expect(risk.getByText("Above your yearly cap")).toBeVisible();
+  await expect(risk.getByText("Needs your approval").first()).toBeVisible();
+
+  // The click queues it: PENDING_APPROVAL with an id, never styled as success, and the alert stays open.
+  await risk.getByTestId("fix-ALERT-RESERVE-42").click();
+  const op = page.getByTestId("fix-result").getByTestId("chat-op-SUBMIT_INVOICE_FOR_FINANCING");
+  await expect(op).toHaveAttribute("data-status", "PENDING_APPROVAL");
+  await expect(op.getByTestId("op-state")).toContainText("Waiting for your approval");
+  await expect(op.getByTestId("op-state").locator(":scope > span")).not.toHaveClass(/text-ok-fg/);
+  const waiting = page.getByTestId("alert-waiting-ALERT-RESERVE-42");
+  await expect(waiting).toContainText(/Waiting for your approval \(APR-\d+\)/);
+  await expect(page.getByTestId("home-alert-ALERT-RESERVE-42")).toBeVisible();
+
+  // The owner approves on the approval card: it executes and says when the cash lands.
+  await page.getByTestId("alert-approval-link-ALERT-RESERVE-42").click();
+  await expect(page).toHaveURL(/\/approvals#approval-APR-/);
+  const approvalCard = page.locator('[id^="approval-APR-"]').first();
+  await approvalCard.getByRole("button", { name: "Approve" }).click();
+  await expect(approvalCard.locator('[data-testid^="approval-result-"]')).toContainText("the cash lands on day 37");
+  await expect(approvalCard).toContainText("Approved");
+  await expect(approvalCard.locator('[data-testid^="approval-decided-"]')).toHaveText("Decided.");
+
+  await page.goto("/");
+  await expect(page.getByTestId("home-alert-ALERT-RESERVE-42")).toHaveCount(0);
+  const transit = page.locator('[data-testid^="home-alert-ALERT-TRANSIT-"]');
+  await expect(transit).toContainText("lands on day 37");
+  await expect(transit.getByRole("button")).toHaveCount(0);
+  await expect(page.locator("#home-position").getByTestId("in-transit-lot")).toContainText("¥200,000.00 lands on day 37");
 
   await post("/demo/reset", {});
 });

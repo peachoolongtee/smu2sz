@@ -108,7 +108,7 @@ export default function LedgerPage() {
                   </thead>
                   <tbody>
                     {data.operations.map((o) => (
-                      <tr key={o.op_id} className={o.status === "REFUSED" ? "bg-bad-bg/50" : ""}>
+                      <tr key={`${o.seq}-${o.op_id}`} className={o.status === "REFUSED" ? "bg-bad-bg/50" : ""}>
                         <td className={`${tdCls} tabular-nums`}>{o.seq}</td>
                         <td className={`${tdCls} min-w-72`}>
                           <p className="font-medium">{te("opkind", o.kind)}</p>
@@ -152,7 +152,7 @@ export default function LedgerPage() {
             ) : audit.data.events.length || audit.data.refusals.length ? (
               <ul className="space-y-3">
                 {audit.data.refusals.map((o) => (
-                  <li key={o.op_id} className="rounded-lg border border-bad-line p-3">
+                  <li key={`${o.seq}-${o.op_id}`} className="rounded-lg border border-bad-line p-3">
                     <div className="flex flex-wrap items-center gap-2">
                       <OpStatusBadge status={o.status} />
                       <span className="text-sm font-medium">{te("opkind", o.kind)}</span>

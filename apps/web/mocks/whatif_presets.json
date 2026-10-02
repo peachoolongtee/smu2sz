@@ -382,19 +382,19 @@
           "DISCOUNT_ABOVE_BREAK_EVEN",
           "EARLY_PAY_DEARER_THAN_PLAN"
         ],
-        "summary": "REJECT: AGG_CONCESSION_EXCEEDED (¥26,455.62 vs ¥5,000.00); RESERVE_BREACH@47 (curable at ¥802.70); DISCOUNT_ABOVE_BREAK_EVEN (1.20% vs < 0.88%); EARLY_PAY_DEARER_THAN_PLAN (¥5,529.64 vs < ¥2,870.95). Forward concessions ¥26,455.62 against ¥5,000.00. Covenants hold: DSCR_MIN 1.92x, LEVERAGE_MAX 1.72x. Counters: Option A, Option B.",
+        "summary": "REJECT: AGG_CONCESSION_EXCEEDED (¥28,326.92 vs ¥5,000.00); RESERVE_BREACH@47 (curable at ¥802.70); DISCOUNT_ABOVE_BREAK_EVEN (1.20% vs < 0.88%); EARLY_PAY_DEARER_THAN_PLAN (¥5,529.64 vs < ¥2,870.95). Forward concessions ¥28,326.92 against ¥5,000.00. Covenants hold: DSCR_MIN 1.92x, LEVERAGE_MAX 1.72x. Counters: Option A, Option B.",
         "violations": [
           {
             "code": "AGG_CONCESSION_EXCEEDED",
-            "message": "Forward concessions (all buyers) would reach ¥26,455.62, above the cap",
+            "message": "Forward concessions (all buyers) would reach ¥28,326.92, above the cap",
             "day": null,
             "month": null,
-            "observed": "¥26,455.62",
+            "observed": "¥28,326.92",
             "limit": "¥5,000.00",
             "curable": null,
             "cure_cost_fen": null,
             "cure_note": null,
-            "formula": "existing + new concessions + FIRM gains <= cap: ¥0.00 + ¥26,455.62 + (¥0.00) = ¥26,455.62 > ¥5,000.00"
+            "formula": "existing + new concessions + FIRM gains <= cap: ¥0.00 + ¥28,326.92 + (¥0.00) = ¥28,326.92 > ¥5,000.00"
           },
           {
             "code": "RESERVE_BREACH",
@@ -405,7 +405,7 @@
             "limit": "¥300,000.00",
             "curable": true,
             "cure_cost_fen": 80270,
-            "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥802.70; the extension itself costs ¥1,871.30 per invoice",
+            "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥802.70 (cannot run today); the extension itself costs ¥1,871.30 per invoice",
             "formula": "closing_cash(day 47) >= min_cash: ¥254,960.00 < ¥300,000.00, shortfall ¥45,040.00",
             "cure_cost_display": "¥802.70"
           },
@@ -439,7 +439,7 @@
           "curable": true,
           "cure_cost_fen": 80270,
           "observed": "¥254,960.00",
-          "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥802.70; the extension itself costs ¥1,871.30 per invoice",
+          "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥802.70 (cannot run today); the extension itself costs ¥1,871.30 per invoice",
           "first_unfunded_day": 47,
           "cure_cost_display": "¥802.70"
         },
@@ -2486,10 +2486,10 @@
           ]
         },
         "forward": {
-          "total_fen": 2645562,
+          "total_fen": 2832692,
           "cap_fen": 500000,
           "existing_fen": 0,
-          "headroom_fen": -2145562,
+          "headroom_fen": -2332692,
           "over_cap": true,
           "items": [
             {
@@ -2504,11 +2504,11 @@
             {
               "obligation_type": "TERMS_EXTENSION",
               "label": "Payment-terms change",
-              "value_fen": 2245562,
+              "value_fen": 2432692,
               "per_invoice_fen": 187130,
-              "formula": "extra receivables 207,123.29 = 420,000.00 × 12 × 15/365; × ≈10.8417% × 365/365 = 22,455.62",
+              "formula": "Σ over 13 invoices (issued days 2 to 362; window days 0 to 364) of face × 15/365 × ≈10.8417% = 24,326.92",
               "basis": "terms extension priced as a loan: committed marginal source: Invoice financing (onboarded platform) 10.8417%",
-              "value_display": "¥22,455.62",
+              "value_display": "¥24,326.92",
               "per_invoice_display": "¥1,871.30"
             },
             {
@@ -2521,10 +2521,10 @@
               "value_display": "¥4,000.00"
             }
           ],
-          "total_display": "¥26,455.62",
+          "total_display": "¥28,326.92",
           "cap_display": "¥5,000.00",
           "existing_display": "¥0.00",
-          "headroom_display": "−¥21,455.62"
+          "headroom_display": "−¥23,326.92"
         },
         "covenants": [
           {
@@ -2533,7 +2533,7 @@
             "observed": "1.92x",
             "limit": "≥ 1.25x",
             "ok": true,
-            "formula": "EBITDA_m / (DS_m + per-invoice funding cost) = ¥90,000.00 / ¥46,871.30 = 1.92x"
+            "formula": "EBITDA_m / (DS_m + extra debt × rate / 12) = ¥90,000.00 / ¥46,897.29 = 1.92x"
           },
           {
             "code": "LEVERAGE_MAX",
@@ -2541,7 +2541,7 @@
             "observed": "1.72x",
             "limit": "≤ 2.50x",
             "ok": true,
-            "formula": "(debt + committed line limits + extra receivables) / (12 × EBITDA_m) = ¥1,857,123.29 / (12 × ¥90,000.00) = 1.72x"
+            "formula": "(debt + committed line limits + extra receivables) / (12 × EBITDA_m) = ¥1,860,000.00 / (12 × ¥90,000.00) = 1.72x"
           },
           {
             "code": "CLEAN_DOWN",
@@ -4900,7 +4900,7 @@
             "limit": "¥300,000.00",
             "curable": true,
             "cure_cost_fen": 76122,
-            "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥761.22; the extension itself costs ¥1,871.30 per invoice",
+            "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥761.22 (cannot run today); the extension itself costs ¥1,871.30 per invoice",
             "formula": "closing_cash(day 47) >= min_cash: ¥260,000.00 < ¥300,000.00, shortfall ¥40,000.00",
             "cure_cost_display": "¥761.22"
           }
@@ -4910,7 +4910,7 @@
           "curable": true,
           "cure_cost_fen": 76122,
           "observed": "¥260,000.00",
-          "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥761.22; the extension itself costs ¥1,871.30 per invoice",
+          "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥761.22 (cannot run today); the extension itself costs ¥1,871.30 per invoice",
           "first_unfunded_day": 12,
           "cure_cost_display": "¥761.22"
         },
@@ -6966,21 +6966,21 @@
             {
               "obligation_type": "TERMS_EXTENSION",
               "label": "Payment-terms change",
-              "value_fen": 2245562,
+              "value_fen": 2432692,
               "per_invoice_fen": 187130,
-              "formula": "extra receivables 207,123.29 = 420,000.00 × 12 × 15/365; × ≈10.8417% × 365/365 = 22,455.62",
+              "formula": "Σ over 13 invoices (issued days 2 to 362; window days 0 to 364) of face × 15/365 × ≈10.8417% = 24,326.92",
               "basis": "terms extension priced as a loan: committed marginal source: Invoice financing (onboarded platform) 10.8417%",
-              "value_display": "¥22,455.62",
+              "value_display": "¥24,326.92",
               "per_invoice_display": "¥1,871.30"
             },
             {
               "obligation_type": "PRICE_ADJUSTMENT",
               "label": "Price adjustment",
-              "value_fen": -2268000,
+              "value_fen": -2457000,
               "per_invoice_fen": -189000,
-              "formula": "−1 × 0.45% × 420,000.00 × 12 = −22,680.00",
+              "formula": "−Σ over 13 invoices (issued days 2 to 362; window days 0 to 364) of 0.45% × face = −24,570.00",
               "basis": "price adjustment on future invoices (a positive rate is a gain to the supplier)",
-              "value_display": "−¥22,680.00",
+              "value_display": "−¥24,570.00",
               "per_invoice_display": "−¥1,890.00"
             }
           ],
@@ -6996,7 +6996,7 @@
             "observed": "1.92x",
             "limit": "≥ 1.25x",
             "ok": true,
-            "formula": "EBITDA_m / (DS_m + per-invoice funding cost) = ¥90,000.00 / ¥46,871.30 = 1.92x"
+            "formula": "EBITDA_m / (DS_m + extra debt × rate / 12) = ¥90,000.00 / ¥46,897.29 = 1.92x"
           },
           {
             "code": "LEVERAGE_MAX",
@@ -7004,7 +7004,7 @@
             "observed": "1.72x",
             "limit": "≤ 2.50x",
             "ok": true,
-            "formula": "(debt + committed line limits + extra receivables) / (12 × EBITDA_m) = ¥1,857,123.29 / (12 × ¥90,000.00) = 1.72x"
+            "formula": "(debt + committed line limits + extra receivables) / (12 × EBITDA_m) = ¥1,860,000.00 / (12 × ¥90,000.00) = 1.72x"
           },
           {
             "code": "CLEAN_DOWN",
@@ -11403,11 +11403,11 @@
             {
               "obligation_type": "TERMS_EXTENSION",
               "label": "Payment-terms change",
-              "value_fen": -2245562,
+              "value_fen": -2432692,
               "per_invoice_fen": -187130,
-              "formula": "extra receivables −207,123.29 = 420,000.00 × 12 × -15/365; × ≈10.8417% × 365/365 = −22,455.62",
+              "formula": "Σ over 13 invoices (issued days 2 to 362; window days 0 to 364) of face × -15/365 × ≈10.8417% = −24,326.92",
               "basis": "shortening (gain): committed marginal source: Invoice financing (onboarded platform) 10.8417%",
-              "value_display": "−¥22,455.62",
+              "value_display": "−¥24,326.92",
               "per_invoice_display": "−¥1,871.30"
             }
           ],
@@ -13630,11 +13630,11 @@
             {
               "obligation_type": "TERMS_EXTENSION",
               "label": "Payment-terms change",
-              "value_fen": -2245562,
+              "value_fen": -2432692,
               "per_invoice_fen": -187130,
-              "formula": "extra receivables −207,123.29 = 420,000.00 × 12 × -15/365; × ≈10.8417% × 365/365 = −22,455.62",
+              "formula": "Σ over 13 invoices (issued days 2 to 362; window days 0 to 364) of face × -15/365 × ≈10.8417% = −24,326.92",
               "basis": "shortening (gain): committed marginal source: Invoice financing (onboarded platform) 10.8417%",
-              "value_display": "−¥22,455.62",
+              "value_display": "−¥24,326.92",
               "per_invoice_display": "−¥1,871.30"
             },
             {
@@ -14926,11 +14926,11 @@
             {
               "obligation_type": "TERMS_EXTENSION",
               "label": "Payment-terms change",
-              "value_fen": -2245562,
+              "value_fen": -2432692,
               "per_invoice_fen": -187130,
-              "formula": "extra receivables −207,123.29 = 420,000.00 × 12 × -15/365; × ≈10.8417% × 365/365 = −22,455.62",
+              "formula": "Σ over 13 invoices (issued days 2 to 362; window days 0 to 364) of face × -15/365 × ≈10.8417% = −24,326.92",
               "basis": "shortening (gain): committed marginal source: Invoice financing (onboarded platform) 10.8417%",
-              "value_display": "−¥22,455.62",
+              "value_display": "−¥24,326.92",
               "per_invoice_display": "−¥1,871.30"
             }
           ],
@@ -16201,11 +16201,11 @@
             {
               "obligation_type": "TERMS_EXTENSION",
               "label": "Payment-terms change",
-              "value_fen": -2245562,
+              "value_fen": -2432692,
               "per_invoice_fen": -187130,
-              "formula": "extra receivables −207,123.29 = 420,000.00 × 12 × -15/365; × ≈10.8417% × 365/365 = −22,455.62",
+              "formula": "Σ over 13 invoices (issued days 2 to 362; window days 0 to 364) of face × -15/365 × ≈10.8417% = −24,326.92",
               "basis": "shortening (gain): committed marginal source: Invoice financing (onboarded platform) 10.8417%",
-              "value_display": "−¥22,455.62",
+              "value_display": "−¥24,326.92",
               "per_invoice_display": "−¥1,871.30"
             },
             {
@@ -21071,19 +21071,19 @@
           "AGG_CONCESSION_EXCEEDED",
           "RESERVE_BREACH"
         ],
-        "summary": "REJECT: AGG_CONCESSION_EXCEEDED (¥22,455.62 vs ¥5,000.00); RESERVE_BREACH@47 (curable at ¥761.22). Forward concessions ¥22,455.62 against ¥5,000.00. Covenants hold: DSCR_MIN 1.92x, LEVERAGE_MAX 1.72x. Counters: Option A, Option B.",
+        "summary": "REJECT: AGG_CONCESSION_EXCEEDED (¥24,326.92 vs ¥5,000.00); RESERVE_BREACH@47 (curable at ¥761.22). Forward concessions ¥24,326.92 against ¥5,000.00. Covenants hold: DSCR_MIN 1.92x, LEVERAGE_MAX 1.72x. Counters: Option A, Option B.",
         "violations": [
           {
             "code": "AGG_CONCESSION_EXCEEDED",
-            "message": "Forward concessions (all buyers) would reach ¥22,455.62, above the cap",
+            "message": "Forward concessions (all buyers) would reach ¥24,326.92, above the cap",
             "day": null,
             "month": null,
-            "observed": "¥22,455.62",
+            "observed": "¥24,326.92",
             "limit": "¥5,000.00",
             "curable": null,
             "cure_cost_fen": null,
             "cure_note": null,
-            "formula": "existing + new concessions + FIRM gains <= cap: ¥0.00 + ¥22,455.62 + (¥0.00) = ¥22,455.62 > ¥5,000.00"
+            "formula": "existing + new concessions + FIRM gains <= cap: ¥0.00 + ¥24,326.92 + (¥0.00) = ¥24,326.92 > ¥5,000.00"
           },
           {
             "code": "RESERVE_BREACH",
@@ -21094,7 +21094,7 @@
             "limit": "¥300,000.00",
             "curable": true,
             "cure_cost_fen": 76122,
-            "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥761.22; the extension itself costs ¥1,871.30 per invoice",
+            "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥761.22 (cannot run today); the extension itself costs ¥1,871.30 per invoice",
             "formula": "closing_cash(day 47) >= min_cash: ¥260,000.00 < ¥300,000.00, shortfall ¥40,000.00",
             "cure_cost_display": "¥761.22"
           }
@@ -21104,7 +21104,7 @@
           "curable": true,
           "cure_cost_fen": 76122,
           "observed": "¥260,000.00",
-          "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥761.22; the extension itself costs ¥1,871.30 per invoice",
+          "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥761.22 (cannot run today); the extension itself costs ¥1,871.30 per invoice",
           "first_unfunded_day": 12,
           "cure_cost_display": "¥761.22"
         },
@@ -23151,27 +23151,27 @@
           ]
         },
         "forward": {
-          "total_fen": 2245562,
+          "total_fen": 2432692,
           "cap_fen": 500000,
           "existing_fen": 0,
-          "headroom_fen": -1745562,
+          "headroom_fen": -1932692,
           "over_cap": true,
           "items": [
             {
               "obligation_type": "TERMS_EXTENSION",
               "label": "Payment-terms change",
-              "value_fen": 2245562,
+              "value_fen": 2432692,
               "per_invoice_fen": 187130,
-              "formula": "extra receivables 207,123.29 = 420,000.00 × 12 × 15/365; × ≈10.8417% × 365/365 = 22,455.62",
+              "formula": "Σ over 13 invoices (issued days 2 to 362; window days 0 to 364) of face × 15/365 × ≈10.8417% = 24,326.92",
               "basis": "terms extension priced as a loan: committed marginal source: Invoice financing (onboarded platform) 10.8417%",
-              "value_display": "¥22,455.62",
+              "value_display": "¥24,326.92",
               "per_invoice_display": "¥1,871.30"
             }
           ],
-          "total_display": "¥22,455.62",
+          "total_display": "¥24,326.92",
           "cap_display": "¥5,000.00",
           "existing_display": "¥0.00",
-          "headroom_display": "−¥17,455.62"
+          "headroom_display": "−¥19,326.92"
         },
         "covenants": [
           {
@@ -23180,7 +23180,7 @@
             "observed": "1.92x",
             "limit": "≥ 1.25x",
             "ok": true,
-            "formula": "EBITDA_m / (DS_m + per-invoice funding cost) = ¥90,000.00 / ¥46,871.30 = 1.92x"
+            "formula": "EBITDA_m / (DS_m + extra debt × rate / 12) = ¥90,000.00 / ¥46,897.29 = 1.92x"
           },
           {
             "code": "LEVERAGE_MAX",
@@ -23188,7 +23188,7 @@
             "observed": "1.72x",
             "limit": "≤ 2.50x",
             "ok": true,
-            "formula": "(debt + committed line limits + extra receivables) / (12 × EBITDA_m) = ¥1,857,123.29 / (12 × ¥90,000.00) = 1.72x"
+            "formula": "(debt + committed line limits + extra receivables) / (12 × EBITDA_m) = ¥1,860,000.00 / (12 × ¥90,000.00) = 1.72x"
           },
           {
             "code": "CLEAN_DOWN",
@@ -23362,19 +23362,19 @@
           "AGG_CONCESSION_EXCEEDED",
           "RESERVE_BREACH"
         ],
-        "summary": "REJECT: AGG_CONCESSION_EXCEEDED (¥26,455.62 vs ¥5,000.00); RESERVE_BREACH@47 (curable at ¥761.22). Forward concessions ¥26,455.62 against ¥5,000.00. Covenants hold: DSCR_MIN 1.92x, LEVERAGE_MAX 1.72x. Counters: Option A, Option B.",
+        "summary": "REJECT: AGG_CONCESSION_EXCEEDED (¥28,326.92 vs ¥5,000.00); RESERVE_BREACH@47 (curable at ¥761.22). Forward concessions ¥28,326.92 against ¥5,000.00. Covenants hold: DSCR_MIN 1.92x, LEVERAGE_MAX 1.72x. Counters: Option A, Option B.",
         "violations": [
           {
             "code": "AGG_CONCESSION_EXCEEDED",
-            "message": "Forward concessions (all buyers) would reach ¥26,455.62, above the cap",
+            "message": "Forward concessions (all buyers) would reach ¥28,326.92, above the cap",
             "day": null,
             "month": null,
-            "observed": "¥26,455.62",
+            "observed": "¥28,326.92",
             "limit": "¥5,000.00",
             "curable": null,
             "cure_cost_fen": null,
             "cure_note": null,
-            "formula": "existing + new concessions + FIRM gains <= cap: ¥0.00 + ¥26,455.62 + (¥0.00) = ¥26,455.62 > ¥5,000.00"
+            "formula": "existing + new concessions + FIRM gains <= cap: ¥0.00 + ¥28,326.92 + (¥0.00) = ¥28,326.92 > ¥5,000.00"
           },
           {
             "code": "RESERVE_BREACH",
@@ -23385,7 +23385,7 @@
             "limit": "¥300,000.00",
             "curable": true,
             "cure_cost_fen": 76122,
-            "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥761.22; the extension itself costs ¥1,871.30 per invoice",
+            "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥761.22 (cannot run today); the extension itself costs ¥1,871.30 per invoice",
             "formula": "closing_cash(day 47) >= min_cash: ¥260,000.00 < ¥300,000.00, shortfall ¥40,000.00",
             "cure_cost_display": "¥761.22"
           }
@@ -23395,7 +23395,7 @@
           "curable": true,
           "cure_cost_fen": 76122,
           "observed": "¥260,000.00",
-          "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥761.22; the extension itself costs ¥1,871.30 per invoice",
+          "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥761.22 (cannot run today); the extension itself costs ¥1,871.30 per invoice",
           "first_unfunded_day": 12,
           "cure_cost_display": "¥761.22"
         },
@@ -25442,20 +25442,20 @@
           ]
         },
         "forward": {
-          "total_fen": 2645562,
+          "total_fen": 2832692,
           "cap_fen": 500000,
           "existing_fen": 0,
-          "headroom_fen": -2145562,
+          "headroom_fen": -2332692,
           "over_cap": true,
           "items": [
             {
               "obligation_type": "TERMS_EXTENSION",
               "label": "Payment-terms change",
-              "value_fen": 2245562,
+              "value_fen": 2432692,
               "per_invoice_fen": 187130,
-              "formula": "extra receivables 207,123.29 = 420,000.00 × 12 × 15/365; × ≈10.8417% × 365/365 = 22,455.62",
+              "formula": "Σ over 13 invoices (issued days 2 to 362; window days 0 to 364) of face × 15/365 × ≈10.8417% = 24,326.92",
               "basis": "terms extension priced as a loan: committed marginal source: Invoice financing (onboarded platform) 10.8417%",
-              "value_display": "¥22,455.62",
+              "value_display": "¥24,326.92",
               "per_invoice_display": "¥1,871.30"
             },
             {
@@ -25468,10 +25468,10 @@
               "value_display": "¥4,000.00"
             }
           ],
-          "total_display": "¥26,455.62",
+          "total_display": "¥28,326.92",
           "cap_display": "¥5,000.00",
           "existing_display": "¥0.00",
-          "headroom_display": "−¥21,455.62"
+          "headroom_display": "−¥23,326.92"
         },
         "covenants": [
           {
@@ -25480,7 +25480,7 @@
             "observed": "1.92x",
             "limit": "≥ 1.25x",
             "ok": true,
-            "formula": "EBITDA_m / (DS_m + per-invoice funding cost) = ¥90,000.00 / ¥46,871.30 = 1.92x"
+            "formula": "EBITDA_m / (DS_m + extra debt × rate / 12) = ¥90,000.00 / ¥46,897.29 = 1.92x"
           },
           {
             "code": "LEVERAGE_MAX",
@@ -25488,7 +25488,7 @@
             "observed": "1.72x",
             "limit": "≤ 2.50x",
             "ok": true,
-            "formula": "(debt + committed line limits + extra receivables) / (12 × EBITDA_m) = ¥1,857,123.29 / (12 × ¥90,000.00) = 1.72x"
+            "formula": "(debt + committed line limits + extra receivables) / (12 × EBITDA_m) = ¥1,860,000.00 / (12 × ¥90,000.00) = 1.72x"
           },
           {
             "code": "CLEAN_DOWN",
@@ -25666,19 +25666,19 @@
           "DISCOUNT_ABOVE_BREAK_EVEN",
           "EARLY_PAY_DEARER_THAN_PLAN"
         ],
-        "summary": "REJECT: AGG_CONCESSION_EXCEEDED (¥22,455.62 vs ¥5,000.00); RESERVE_BREACH@47 (curable at ¥802.70); DISCOUNT_ABOVE_BREAK_EVEN (1.20% vs < 0.88%); EARLY_PAY_DEARER_THAN_PLAN (¥5,529.64 vs < ¥2,870.95). Forward concessions ¥22,455.62 against ¥5,000.00. Covenants hold: DSCR_MIN 1.92x, LEVERAGE_MAX 1.72x. Counters: Option A, Option B.",
+        "summary": "REJECT: AGG_CONCESSION_EXCEEDED (¥24,326.92 vs ¥5,000.00); RESERVE_BREACH@47 (curable at ¥802.70); DISCOUNT_ABOVE_BREAK_EVEN (1.20% vs < 0.88%); EARLY_PAY_DEARER_THAN_PLAN (¥5,529.64 vs < ¥2,870.95). Forward concessions ¥24,326.92 against ¥5,000.00. Covenants hold: DSCR_MIN 1.92x, LEVERAGE_MAX 1.72x. Counters: Option A, Option B.",
         "violations": [
           {
             "code": "AGG_CONCESSION_EXCEEDED",
-            "message": "Forward concessions (all buyers) would reach ¥22,455.62, above the cap",
+            "message": "Forward concessions (all buyers) would reach ¥24,326.92, above the cap",
             "day": null,
             "month": null,
-            "observed": "¥22,455.62",
+            "observed": "¥24,326.92",
             "limit": "¥5,000.00",
             "curable": null,
             "cure_cost_fen": null,
             "cure_note": null,
-            "formula": "existing + new concessions + FIRM gains <= cap: ¥0.00 + ¥22,455.62 + (¥0.00) = ¥22,455.62 > ¥5,000.00"
+            "formula": "existing + new concessions + FIRM gains <= cap: ¥0.00 + ¥24,326.92 + (¥0.00) = ¥24,326.92 > ¥5,000.00"
           },
           {
             "code": "RESERVE_BREACH",
@@ -25689,7 +25689,7 @@
             "limit": "¥300,000.00",
             "curable": true,
             "cure_cost_fen": 80270,
-            "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥802.70; the extension itself costs ¥1,871.30 per invoice",
+            "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥802.70 (cannot run today); the extension itself costs ¥1,871.30 per invoice",
             "formula": "closing_cash(day 47) >= min_cash: ¥254,960.00 < ¥300,000.00, shortfall ¥45,040.00",
             "cure_cost_display": "¥802.70"
           },
@@ -25723,7 +25723,7 @@
           "curable": true,
           "cure_cost_fen": 80270,
           "observed": "¥254,960.00",
-          "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥802.70; the extension itself costs ¥1,871.30 per invoice",
+          "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥802.70 (cannot run today); the extension itself costs ¥1,871.30 per invoice",
           "first_unfunded_day": 47,
           "cure_cost_display": "¥802.70"
         },
@@ -27770,10 +27770,10 @@
           ]
         },
         "forward": {
-          "total_fen": 2245562,
+          "total_fen": 2432692,
           "cap_fen": 500000,
           "existing_fen": 0,
-          "headroom_fen": -1745562,
+          "headroom_fen": -1932692,
           "over_cap": true,
           "items": [
             {
@@ -27788,18 +27788,18 @@
             {
               "obligation_type": "TERMS_EXTENSION",
               "label": "Payment-terms change",
-              "value_fen": 2245562,
+              "value_fen": 2432692,
               "per_invoice_fen": 187130,
-              "formula": "extra receivables 207,123.29 = 420,000.00 × 12 × 15/365; × ≈10.8417% × 365/365 = 22,455.62",
+              "formula": "Σ over 13 invoices (issued days 2 to 362; window days 0 to 364) of face × 15/365 × ≈10.8417% = 24,326.92",
               "basis": "terms extension priced as a loan: committed marginal source: Invoice financing (onboarded platform) 10.8417%",
-              "value_display": "¥22,455.62",
+              "value_display": "¥24,326.92",
               "per_invoice_display": "¥1,871.30"
             }
           ],
-          "total_display": "¥22,455.62",
+          "total_display": "¥24,326.92",
           "cap_display": "¥5,000.00",
           "existing_display": "¥0.00",
-          "headroom_display": "−¥17,455.62"
+          "headroom_display": "−¥19,326.92"
         },
         "covenants": [
           {
@@ -27808,7 +27808,7 @@
             "observed": "1.92x",
             "limit": "≥ 1.25x",
             "ok": true,
-            "formula": "EBITDA_m / (DS_m + per-invoice funding cost) = ¥90,000.00 / ¥46,871.30 = 1.92x"
+            "formula": "EBITDA_m / (DS_m + extra debt × rate / 12) = ¥90,000.00 / ¥46,897.29 = 1.92x"
           },
           {
             "code": "LEVERAGE_MAX",
@@ -27816,7 +27816,7 @@
             "observed": "1.72x",
             "limit": "≤ 2.50x",
             "ok": true,
-            "formula": "(debt + committed line limits + extra receivables) / (12 × EBITDA_m) = ¥1,857,123.29 / (12 × ¥90,000.00) = 1.72x"
+            "formula": "(debt + committed line limits + extra receivables) / (12 × EBITDA_m) = ¥1,860,000.00 / (12 × ¥90,000.00) = 1.72x"
           },
           {
             "code": "CLEAN_DOWN",
@@ -27950,19 +27950,19 @@
           "AGG_CONCESSION_EXCEEDED",
           "RESERVE_BREACH"
         ],
-        "summary": "REJECT: AGG_CONCESSION_EXCEEDED (¥67,366.85 vs ¥5,000.00); RESERVE_BREACH@47 (curable at ¥1,141.84). Forward concessions ¥67,366.85 against ¥5,000.00. Covenants hold: DSCR_MIN 1.78x, LEVERAGE_MAX 2.10x. Counters: Option A, Option B.",
+        "summary": "REJECT: AGG_CONCESSION_EXCEEDED (¥72,980.75 vs ¥5,000.00); RESERVE_BREACH@47 (curable at ¥1,141.84). Forward concessions ¥72,980.75 against ¥5,000.00. Covenants hold: DSCR_MIN 1.78x, LEVERAGE_MAX 2.11x. Counters: Option A, Option B.",
         "violations": [
           {
             "code": "AGG_CONCESSION_EXCEEDED",
-            "message": "Forward concessions (all buyers) would reach ¥67,366.85, above the cap",
+            "message": "Forward concessions (all buyers) would reach ¥72,980.75, above the cap",
             "day": null,
             "month": null,
-            "observed": "¥67,366.85",
+            "observed": "¥72,980.75",
             "limit": "¥5,000.00",
             "curable": null,
             "cure_cost_fen": null,
             "cure_note": null,
-            "formula": "existing + new concessions + FIRM gains <= cap: ¥0.00 + ¥67,366.85 + (¥0.00) = ¥67,366.85 > ¥5,000.00"
+            "formula": "existing + new concessions + FIRM gains <= cap: ¥0.00 + ¥72,980.75 + (¥0.00) = ¥72,980.75 > ¥5,000.00"
           },
           {
             "code": "RESERVE_BREACH",
@@ -27973,7 +27973,7 @@
             "limit": "¥300,000.00",
             "curable": true,
             "cure_cost_fen": 114184,
-            "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥1,141.84; the extension itself costs ¥5,613.90 per invoice",
+            "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥1,141.84 (cannot run today); the extension itself costs ¥5,613.90 per invoice",
             "formula": "closing_cash(day 47) >= min_cash: ¥260,000.00 < ¥300,000.00, shortfall ¥40,000.00",
             "cure_cost_display": "¥1,141.84"
           }
@@ -27983,7 +27983,7 @@
           "curable": true,
           "cure_cost_fen": 114184,
           "observed": "¥260,000.00",
-          "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥1,141.84; the extension itself costs ¥5,613.90 per invoice",
+          "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥1,141.84 (cannot run today); the extension itself costs ¥5,613.90 per invoice",
           "first_unfunded_day": 12,
           "cure_cost_display": "¥1,141.84"
         },
@@ -30030,27 +30030,27 @@
           ]
         },
         "forward": {
-          "total_fen": 6736685,
+          "total_fen": 7298075,
           "cap_fen": 500000,
           "existing_fen": 0,
-          "headroom_fen": -6236685,
+          "headroom_fen": -6798075,
           "over_cap": true,
           "items": [
             {
               "obligation_type": "TERMS_EXTENSION",
               "label": "Payment-terms change",
-              "value_fen": 6736685,
+              "value_fen": 7298075,
               "per_invoice_fen": 561390,
-              "formula": "extra receivables 621,369.86 = 420,000.00 × 12 × 45/365; × ≈10.8417% × 365/365 = 67,366.85",
+              "formula": "Σ over 13 invoices (issued days 2 to 362; window days 0 to 364) of face × 45/365 × ≈10.8417% = 72,980.75",
               "basis": "terms extension priced as a loan: committed marginal source: Invoice financing (onboarded platform) 10.8417%",
-              "value_display": "¥67,366.85",
+              "value_display": "¥72,980.75",
               "per_invoice_display": "¥5,613.90"
             }
           ],
-          "total_display": "¥67,366.85",
+          "total_display": "¥72,980.75",
           "cap_display": "¥5,000.00",
           "existing_display": "¥0.00",
-          "headroom_display": "−¥62,366.85"
+          "headroom_display": "−¥67,980.75"
         },
         "covenants": [
           {
@@ -30059,15 +30059,15 @@
             "observed": "1.78x",
             "limit": "≥ 1.25x",
             "ok": true,
-            "formula": "EBITDA_m / (DS_m + per-invoice funding cost) = ¥90,000.00 / ¥50,613.90 = 1.78x"
+            "formula": "EBITDA_m / (DS_m + extra debt × rate / 12) = ¥90,000.00 / ¥50,691.88 = 1.78x"
           },
           {
             "code": "LEVERAGE_MAX",
             "label": "Leverage with the extension funded (pro forma)",
-            "observed": "2.10x",
+            "observed": "2.11x",
             "limit": "≤ 2.50x",
             "ok": true,
-            "formula": "(debt + committed line limits + extra receivables) / (12 × EBITDA_m) = ¥2,271,369.86 / (12 × ¥90,000.00) = 2.10x"
+            "formula": "(debt + committed line limits + extra receivables) / (12 × EBITDA_m) = ¥2,280,000.00 / (12 × ¥90,000.00) = 2.11x"
           },
           {
             "code": "CLEAN_DOWN",
@@ -30241,19 +30241,19 @@
           "AGG_CONCESSION_EXCEEDED",
           "RESERVE_BREACH"
         ],
-        "summary": "REJECT: AGG_CONCESSION_EXCEEDED (¥71,366.85 vs ¥5,000.00); RESERVE_BREACH@47 (curable at ¥1,141.84). Forward concessions ¥71,366.85 against ¥5,000.00. Covenants hold: DSCR_MIN 1.78x, LEVERAGE_MAX 2.10x. Counters: Option A, Option B.",
+        "summary": "REJECT: AGG_CONCESSION_EXCEEDED (¥76,980.75 vs ¥5,000.00); RESERVE_BREACH@47 (curable at ¥1,141.84). Forward concessions ¥76,980.75 against ¥5,000.00. Covenants hold: DSCR_MIN 1.78x, LEVERAGE_MAX 2.11x. Counters: Option A, Option B.",
         "violations": [
           {
             "code": "AGG_CONCESSION_EXCEEDED",
-            "message": "Forward concessions (all buyers) would reach ¥71,366.85, above the cap",
+            "message": "Forward concessions (all buyers) would reach ¥76,980.75, above the cap",
             "day": null,
             "month": null,
-            "observed": "¥71,366.85",
+            "observed": "¥76,980.75",
             "limit": "¥5,000.00",
             "curable": null,
             "cure_cost_fen": null,
             "cure_note": null,
-            "formula": "existing + new concessions + FIRM gains <= cap: ¥0.00 + ¥71,366.85 + (¥0.00) = ¥71,366.85 > ¥5,000.00"
+            "formula": "existing + new concessions + FIRM gains <= cap: ¥0.00 + ¥76,980.75 + (¥0.00) = ¥76,980.75 > ¥5,000.00"
           },
           {
             "code": "RESERVE_BREACH",
@@ -30264,7 +30264,7 @@
             "limit": "¥300,000.00",
             "curable": true,
             "cure_cost_fen": 114184,
-            "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥1,141.84; the extension itself costs ¥5,613.90 per invoice",
+            "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥1,141.84 (cannot run today); the extension itself costs ¥5,613.90 per invoice",
             "formula": "closing_cash(day 47) >= min_cash: ¥260,000.00 < ¥300,000.00, shortfall ¥40,000.00",
             "cure_cost_display": "¥1,141.84"
           }
@@ -30274,7 +30274,7 @@
           "curable": true,
           "cure_cost_fen": 114184,
           "observed": "¥260,000.00",
-          "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥1,141.84; the extension itself costs ¥5,613.90 per invoice",
+          "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥1,141.84 (cannot run today); the extension itself costs ¥5,613.90 per invoice",
           "first_unfunded_day": 12,
           "cure_cost_display": "¥1,141.84"
         },
@@ -32321,20 +32321,20 @@
           ]
         },
         "forward": {
-          "total_fen": 7136685,
+          "total_fen": 7698075,
           "cap_fen": 500000,
           "existing_fen": 0,
-          "headroom_fen": -6636685,
+          "headroom_fen": -7198075,
           "over_cap": true,
           "items": [
             {
               "obligation_type": "TERMS_EXTENSION",
               "label": "Payment-terms change",
-              "value_fen": 6736685,
+              "value_fen": 7298075,
               "per_invoice_fen": 561390,
-              "formula": "extra receivables 621,369.86 = 420,000.00 × 12 × 45/365; × ≈10.8417% × 365/365 = 67,366.85",
+              "formula": "Σ over 13 invoices (issued days 2 to 362; window days 0 to 364) of face × 45/365 × ≈10.8417% = 72,980.75",
               "basis": "terms extension priced as a loan: committed marginal source: Invoice financing (onboarded platform) 10.8417%",
-              "value_display": "¥67,366.85",
+              "value_display": "¥72,980.75",
               "per_invoice_display": "¥5,613.90"
             },
             {
@@ -32347,10 +32347,10 @@
               "value_display": "¥4,000.00"
             }
           ],
-          "total_display": "¥71,366.85",
+          "total_display": "¥76,980.75",
           "cap_display": "¥5,000.00",
           "existing_display": "¥0.00",
-          "headroom_display": "−¥66,366.85"
+          "headroom_display": "−¥71,980.75"
         },
         "covenants": [
           {
@@ -32359,15 +32359,15 @@
             "observed": "1.78x",
             "limit": "≥ 1.25x",
             "ok": true,
-            "formula": "EBITDA_m / (DS_m + per-invoice funding cost) = ¥90,000.00 / ¥50,613.90 = 1.78x"
+            "formula": "EBITDA_m / (DS_m + extra debt × rate / 12) = ¥90,000.00 / ¥50,691.88 = 1.78x"
           },
           {
             "code": "LEVERAGE_MAX",
             "label": "Leverage with the extension funded (pro forma)",
-            "observed": "2.10x",
+            "observed": "2.11x",
             "limit": "≤ 2.50x",
             "ok": true,
-            "formula": "(debt + committed line limits + extra receivables) / (12 × EBITDA_m) = ¥2,271,369.86 / (12 × ¥90,000.00) = 2.10x"
+            "formula": "(debt + committed line limits + extra receivables) / (12 × EBITDA_m) = ¥2,280,000.00 / (12 × ¥90,000.00) = 2.11x"
           },
           {
             "code": "CLEAN_DOWN",
@@ -32545,19 +32545,19 @@
           "DISCOUNT_ABOVE_BREAK_EVEN",
           "EARLY_PAY_DEARER_THAN_PLAN"
         ],
-        "summary": "REJECT: AGG_CONCESSION_EXCEEDED (¥67,366.85 vs ¥5,000.00); RESERVE_BREACH@47 (curable at ¥1,204.05); DISCOUNT_ABOVE_BREAK_EVEN (1.20% vs < 0.88%); EARLY_PAY_DEARER_THAN_PLAN (¥5,587.04 vs < ¥2,870.95). Forward concessions ¥67,366.85 against ¥5,000.00. Covenants hold: DSCR_MIN 1.78x, LEVERAGE_MAX 2.10x. Counters: Option A, Option B.",
+        "summary": "REJECT: AGG_CONCESSION_EXCEEDED (¥72,980.75 vs ¥5,000.00); RESERVE_BREACH@47 (curable at ¥1,204.05); DISCOUNT_ABOVE_BREAK_EVEN (1.20% vs < 0.88%); EARLY_PAY_DEARER_THAN_PLAN (¥5,587.04 vs < ¥2,870.95). Forward concessions ¥72,980.75 against ¥5,000.00. Covenants hold: DSCR_MIN 1.78x, LEVERAGE_MAX 2.11x. Counters: Option A, Option B.",
         "violations": [
           {
             "code": "AGG_CONCESSION_EXCEEDED",
-            "message": "Forward concessions (all buyers) would reach ¥67,366.85, above the cap",
+            "message": "Forward concessions (all buyers) would reach ¥72,980.75, above the cap",
             "day": null,
             "month": null,
-            "observed": "¥67,366.85",
+            "observed": "¥72,980.75",
             "limit": "¥5,000.00",
             "curable": null,
             "cure_cost_fen": null,
             "cure_note": null,
-            "formula": "existing + new concessions + FIRM gains <= cap: ¥0.00 + ¥67,366.85 + (¥0.00) = ¥67,366.85 > ¥5,000.00"
+            "formula": "existing + new concessions + FIRM gains <= cap: ¥0.00 + ¥72,980.75 + (¥0.00) = ¥72,980.75 > ¥5,000.00"
           },
           {
             "code": "RESERVE_BREACH",
@@ -32568,7 +32568,7 @@
             "limit": "¥300,000.00",
             "curable": true,
             "cure_cost_fen": 120405,
-            "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥1,204.05; the extension itself costs ¥5,613.90 per invoice",
+            "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥1,204.05 (cannot run today); the extension itself costs ¥5,613.90 per invoice",
             "formula": "closing_cash(day 47) >= min_cash: ¥254,960.00 < ¥300,000.00, shortfall ¥45,040.00",
             "cure_cost_display": "¥1,204.05"
           },
@@ -32602,7 +32602,7 @@
           "curable": true,
           "cure_cost_fen": 120405,
           "observed": "¥254,960.00",
-          "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥1,204.05; the extension itself costs ¥5,613.90 per invoice",
+          "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥1,204.05 (cannot run today); the extension itself costs ¥5,613.90 per invoice",
           "first_unfunded_day": 47,
           "cure_cost_display": "¥1,204.05"
         },
@@ -34649,10 +34649,10 @@
           ]
         },
         "forward": {
-          "total_fen": 6736685,
+          "total_fen": 7298075,
           "cap_fen": 500000,
           "existing_fen": 0,
-          "headroom_fen": -6236685,
+          "headroom_fen": -6798075,
           "over_cap": true,
           "items": [
             {
@@ -34667,18 +34667,18 @@
             {
               "obligation_type": "TERMS_EXTENSION",
               "label": "Payment-terms change",
-              "value_fen": 6736685,
+              "value_fen": 7298075,
               "per_invoice_fen": 561390,
-              "formula": "extra receivables 621,369.86 = 420,000.00 × 12 × 45/365; × ≈10.8417% × 365/365 = 67,366.85",
+              "formula": "Σ over 13 invoices (issued days 2 to 362; window days 0 to 364) of face × 45/365 × ≈10.8417% = 72,980.75",
               "basis": "terms extension priced as a loan: committed marginal source: Invoice financing (onboarded platform) 10.8417%",
-              "value_display": "¥67,366.85",
+              "value_display": "¥72,980.75",
               "per_invoice_display": "¥5,613.90"
             }
           ],
-          "total_display": "¥67,366.85",
+          "total_display": "¥72,980.75",
           "cap_display": "¥5,000.00",
           "existing_display": "¥0.00",
-          "headroom_display": "−¥62,366.85"
+          "headroom_display": "−¥67,980.75"
         },
         "covenants": [
           {
@@ -34687,15 +34687,15 @@
             "observed": "1.78x",
             "limit": "≥ 1.25x",
             "ok": true,
-            "formula": "EBITDA_m / (DS_m + per-invoice funding cost) = ¥90,000.00 / ¥50,613.90 = 1.78x"
+            "formula": "EBITDA_m / (DS_m + extra debt × rate / 12) = ¥90,000.00 / ¥50,691.88 = 1.78x"
           },
           {
             "code": "LEVERAGE_MAX",
             "label": "Leverage with the extension funded (pro forma)",
-            "observed": "2.10x",
+            "observed": "2.11x",
             "limit": "≤ 2.50x",
             "ok": true,
-            "formula": "(debt + committed line limits + extra receivables) / (12 × EBITDA_m) = ¥2,271,369.86 / (12 × ¥90,000.00) = 2.10x"
+            "formula": "(debt + committed line limits + extra receivables) / (12 × EBITDA_m) = ¥2,280,000.00 / (12 × ¥90,000.00) = 2.11x"
           },
           {
             "code": "CLEAN_DOWN",
@@ -34853,19 +34853,19 @@
           "DISCOUNT_ABOVE_BREAK_EVEN",
           "EARLY_PAY_DEARER_THAN_PLAN"
         ],
-        "summary": "REJECT: AGG_CONCESSION_EXCEEDED (¥71,366.85 vs ¥5,000.00); RESERVE_BREACH@47 (curable at ¥1,204.05); DISCOUNT_ABOVE_BREAK_EVEN (1.20% vs < 0.88%); EARLY_PAY_DEARER_THAN_PLAN (¥5,587.04 vs < ¥2,870.95). Forward concessions ¥71,366.85 against ¥5,000.00. Covenants hold: DSCR_MIN 1.78x, LEVERAGE_MAX 2.10x. Counters: Option A, Option B.",
+        "summary": "REJECT: AGG_CONCESSION_EXCEEDED (¥76,980.75 vs ¥5,000.00); RESERVE_BREACH@47 (curable at ¥1,204.05); DISCOUNT_ABOVE_BREAK_EVEN (1.20% vs < 0.88%); EARLY_PAY_DEARER_THAN_PLAN (¥5,587.04 vs < ¥2,870.95). Forward concessions ¥76,980.75 against ¥5,000.00. Covenants hold: DSCR_MIN 1.78x, LEVERAGE_MAX 2.11x. Counters: Option A, Option B.",
         "violations": [
           {
             "code": "AGG_CONCESSION_EXCEEDED",
-            "message": "Forward concessions (all buyers) would reach ¥71,366.85, above the cap",
+            "message": "Forward concessions (all buyers) would reach ¥76,980.75, above the cap",
             "day": null,
             "month": null,
-            "observed": "¥71,366.85",
+            "observed": "¥76,980.75",
             "limit": "¥5,000.00",
             "curable": null,
             "cure_cost_fen": null,
             "cure_note": null,
-            "formula": "existing + new concessions + FIRM gains <= cap: ¥0.00 + ¥71,366.85 + (¥0.00) = ¥71,366.85 > ¥5,000.00"
+            "formula": "existing + new concessions + FIRM gains <= cap: ¥0.00 + ¥76,980.75 + (¥0.00) = ¥76,980.75 > ¥5,000.00"
           },
           {
             "code": "RESERVE_BREACH",
@@ -34876,7 +34876,7 @@
             "limit": "¥300,000.00",
             "curable": true,
             "cure_cost_fen": 120405,
-            "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥1,204.05; the extension itself costs ¥5,613.90 per invoice",
+            "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥1,204.05 (cannot run today); the extension itself costs ¥5,613.90 per invoice",
             "formula": "closing_cash(day 47) >= min_cash: ¥254,960.00 < ¥300,000.00, shortfall ¥45,040.00",
             "cure_cost_display": "¥1,204.05"
           },
@@ -34910,7 +34910,7 @@
           "curable": true,
           "cure_cost_fen": 120405,
           "observed": "¥254,960.00",
-          "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥1,204.05; the extension itself costs ¥5,613.90 per invoice",
+          "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥1,204.05 (cannot run today); the extension itself costs ¥5,613.90 per invoice",
           "first_unfunded_day": 47,
           "cure_cost_display": "¥1,204.05"
         },
@@ -36957,10 +36957,10 @@
           ]
         },
         "forward": {
-          "total_fen": 7136685,
+          "total_fen": 7698075,
           "cap_fen": 500000,
           "existing_fen": 0,
-          "headroom_fen": -6636685,
+          "headroom_fen": -7198075,
           "over_cap": true,
           "items": [
             {
@@ -36975,11 +36975,11 @@
             {
               "obligation_type": "TERMS_EXTENSION",
               "label": "Payment-terms change",
-              "value_fen": 6736685,
+              "value_fen": 7298075,
               "per_invoice_fen": 561390,
-              "formula": "extra receivables 621,369.86 = 420,000.00 × 12 × 45/365; × ≈10.8417% × 365/365 = 67,366.85",
+              "formula": "Σ over 13 invoices (issued days 2 to 362; window days 0 to 364) of face × 45/365 × ≈10.8417% = 72,980.75",
               "basis": "terms extension priced as a loan: committed marginal source: Invoice financing (onboarded platform) 10.8417%",
-              "value_display": "¥67,366.85",
+              "value_display": "¥72,980.75",
               "per_invoice_display": "¥5,613.90"
             },
             {
@@ -36992,10 +36992,10 @@
               "value_display": "¥4,000.00"
             }
           ],
-          "total_display": "¥71,366.85",
+          "total_display": "¥76,980.75",
           "cap_display": "¥5,000.00",
           "existing_display": "¥0.00",
-          "headroom_display": "−¥66,366.85"
+          "headroom_display": "−¥71,980.75"
         },
         "covenants": [
           {
@@ -37004,15 +37004,15 @@
             "observed": "1.78x",
             "limit": "≥ 1.25x",
             "ok": true,
-            "formula": "EBITDA_m / (DS_m + per-invoice funding cost) = ¥90,000.00 / ¥50,613.90 = 1.78x"
+            "formula": "EBITDA_m / (DS_m + extra debt × rate / 12) = ¥90,000.00 / ¥50,691.88 = 1.78x"
           },
           {
             "code": "LEVERAGE_MAX",
             "label": "Leverage with the extension funded (pro forma)",
-            "observed": "2.10x",
+            "observed": "2.11x",
             "limit": "≤ 2.50x",
             "ok": true,
-            "formula": "(debt + committed line limits + extra receivables) / (12 × EBITDA_m) = ¥2,271,369.86 / (12 × ¥90,000.00) = 2.10x"
+            "formula": "(debt + committed line limits + extra receivables) / (12 × EBITDA_m) = ¥2,280,000.00 / (12 × ¥90,000.00) = 2.11x"
           },
           {
             "code": "CLEAN_DOWN",

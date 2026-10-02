@@ -5,7 +5,7 @@
  */
 
 import { ApiError } from "../errors";
-import type { ApprovalDecision, ApprovalOperation, ApprovalStatus, ApprovalView, OperationResult, StateView, Tier } from "../types";
+import type { ApprovalDecision, ApprovalOperation, ApprovalStatus, ApprovalView, OperationResult, Tier } from "../types";
 import { http } from "./http";
 
 interface RawApproval {
@@ -20,15 +20,15 @@ interface RawApproval {
   subject?: string;
   tier?: Tier;
   created_day?: number | null;
+  /** Not sent today; used only if the API starts recording the day of a decision. */
+  decided_day?: number | null;
   amount_fen?: number | null;
   amount_display?: string | null;
 }
 
 export async function getApprovals(): Promise<ApprovalView[]> {
   const { approvals } = await http<{ approvals: RawApproval[] }>("GET", "/approvals/queue");
-  // The queue does not record the decision day; a decided row shows the simulated clock today.
-  const decided = approvals.some((a) => a.status !== "PENDING");
-  const today = decided ? (await http<StateView & { day: number }>("GET", "/state")).day : 0;
+  // The queue does not record the day of a decision, so `decided_day` stays null: the simulated clock today is not the day a past decision was made.
   return approvals.map(
     (a) =>
       ({
@@ -47,7 +47,7 @@ export async function getApprovals(): Promise<ApprovalView[]> {
         amount_fen: a.amount_fen ?? a.operation?.amount_fen ?? null,
         amount_display: a.amount_display ?? null,
         detail: a.subject && a.reason ? a.reason : a.op_id ? `Operation ${a.op_id}` : "",
-        decided_day: a.status === "PENDING" ? null : today,
+        decided_day: a.decided_day ?? null,
       }) as ApprovalView,
   );
 }

@@ -14,7 +14,7 @@ test("what-if: moving the terms slider changes the hypothetical verdict", async 
   const outcome = page.getByTestId("whatif-outcome");
   await expect(outcome).toHaveAttribute("data-outcome", "REJECT");
   await expect(page.getByTestId("whatif-codes")).toContainText("AGG_CONCESSION_EXCEEDED");
-  await expect(page.getByTestId("whatif-forward-total")).toHaveText("¥26,455.62");
+  await expect(page.getByTestId("whatif-forward-total")).toHaveText("¥28,326.92");
   await expect(page.getByText("Breach day 47").first()).toBeVisible();
 
   // 60 -> 45 days with the arrow keys (5-day steps): no extension, so no concession breach.

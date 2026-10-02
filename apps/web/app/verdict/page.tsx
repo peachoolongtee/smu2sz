@@ -26,7 +26,8 @@ import {
   thCls,
 } from "@/components/ui";
 import { CounterCard, OperationsList, ViolationCard } from "@/components/verdict-parts";
-import { negotiate } from "@/lib/api";
+import { getState, negotiate } from "@/lib/api";
+import { useAsync } from "@/lib/use-async";
 import { evaluate as evaluateAndCache } from "@/lib/demo";
 import { recordNegotiation } from "@/lib/demo-store";
 import { useI18n } from "@/lib/i18n";
@@ -111,6 +112,9 @@ function VerdictBody({
   const { t, te } = useI18n();
   const canNegotiate = verdict.counters.length > 0;
   const plan = negotiation?.plan ?? verdict.plan;
+  // Lead times come from the books' facilities; until they load (or if the read fails) the plan shows no landing day.
+  const books = useAsync(getState, []);
+  const leadTimes = books.data ? Object.fromEntries(books.data.state.facilities.map((f) => [f.id, f.lead_time_days])) : undefined;
 
   return (
     <div className="space-y-6">
@@ -250,7 +254,7 @@ function VerdictBody({
 
       {canNegotiate ? <NegotiationPanel offerId={offerId} negotiation={negotiation} /> : null}
 
-      {plan ? <PlanCard plan={plan} id="verdict-plan" /> : null}
+      {plan ? <PlanCard plan={plan} id="verdict-plan" leadTimes={leadTimes} /> : null}
     </div>
   );
 }

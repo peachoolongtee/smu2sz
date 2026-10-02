@@ -52,23 +52,23 @@
       "violations": [
         {
           "code": "RESERVE_BREACH",
-          "message": "Only ¥460,000.00 is available above the ¥300,000.00 reserve (cash plus the ¥0.00 line) for a ¥600,000.00 price; cash falls to ¥160,000.00 on purchase day.",
+          "message": "Only ¥250,000.00 is available above the ¥300,000.00 reserve (cash plus the ¥0.00 line) for a ¥600,000.00 price; cash falls to −¥50,000.00 on purchase day.",
           "day": 0,
           "month": null,
-          "observed": "¥160,000.00",
+          "observed": "−¥50,000.00",
           "limit": "≥ ¥300,000.00",
           "curable": false,
           "cure_cost_fen": null,
           "cure_note": null,
-          "formula": "(cash − min_cash) + line_available ≥ price: (¥760,000.00 − ¥300,000.00) + ¥0.00 = ¥460,000.00 < ¥600,000.00; conservative closing cash on day 0 = ¥160,000.00",
+          "formula": "(cash − min_cash) + line_available ≥ price: (¥550,000.00 − ¥300,000.00) + ¥0.00 = ¥250,000.00 < ¥600,000.00; conservative closing cash on day 0 = −¥50,000.00",
           "inputs": {
-            "cash": "¥760,000.00",
+            "cash": "¥550,000.00",
             "min_cash": "¥300,000.00",
             "line_available": "¥0.00",
-            "available_above_reserve": "¥460,000.00",
+            "available_above_reserve": "¥250,000.00",
             "price": "¥600,000.00",
-            "shortfall": "¥140,000.00",
-            "closing_cash": "¥160,000.00"
+            "shortfall": "¥350,000.00",
+            "closing_cash": "−¥50,000.00"
           },
           "spans": [],
           "cure_cost_display": null
@@ -78,17 +78,17 @@
       "min_dscr": null,
       "leverage": null,
       "extra_cost_vs_selected_fen": null,
-      "note": "Infeasible: only ¥460,000.00 available above the reserve; RESERVE_BREACH on purchase day.",
+      "note": "Infeasible: only ¥250,000.00 available above the reserve; RESERVE_BREACH on purchase day.",
       "workings": [
         {
           "label": "Available above the reserve",
-          "value": "¥460,000.00",
+          "value": "¥250,000.00",
           "formula": "(cash − min_cash) + committed line available",
           "inputs": {
-            "cash": "¥760,000.00",
+            "cash": "¥550,000.00",
             "min_cash": "¥300,000.00",
             "line_available": "¥0.00",
-            "available_above_reserve": "¥460,000.00",
+            "available_above_reserve": "¥250,000.00",
             "price": "¥600,000.00"
           },
           "evidence": null
@@ -1845,11 +1845,11 @@
     "text": "2.28"
   },
   "leverage_with_extension": {
-    "num": 266712329,
-    "den": 108000000,
+    "num": 89,
+    "den": 36,
     "text": "2.47"
   },
-  "extension_extra_receivables_fen": 20712329,
+  "extension_extra_receivables_fen": 21000000,
   "dscr_limit_bp": 12500,
   "leverage_limit_bp": 25000,
   "required_tier": "TIER_2",
@@ -1897,9 +1897,9 @@
     {
       "label": "Leverage, financed and the terms extension funded",
       "value": "2.47×",
-      "formula": "(debt + committed line limits + principal + extra receivables) / (12 × EBITDA_m) = (¥1,860,000.00 + ¥600,000.00 + ¥207,123.29) / (12 × ¥90,000.00)",
+      "formula": "(debt + committed line limits + principal + extra receivables) / (12 × EBITDA_m) = (¥1,860,000.00 + ¥600,000.00 + ¥210,000.00) / (12 × ¥90,000.00)",
       "inputs": {
-        "extra_receivables": "¥207,123.29",
+        "extra_receivables": "¥210,000.00",
         "extra_receivables_formula": "face × (horizon // every_days) × Δdays / 365, terms → 60 days",
         "max_leverage": "2.50×"
       },
@@ -1926,14 +1926,14 @@
     "tier": "TIER_2",
     "violations": [],
     "seq": 3,
-    "entry_hash": "1704a092745f41b9aa07597c0b5e851c9a7f3c666dfaef511c61cf079d339940",
-    "prev_hash": "a6c82c99b0d0147a711cef5d9923985b69c44f0ec957785d475a670a27180e14",
+    "entry_hash": "0c610b0ef92b349f34455b72fa915be4fe4a808442b164da0a485598dc473a27",
+    "prev_hash": "a8bfc435247410f79380e33f065448df4473866fc5bac089dd0d02b453ec25a9",
     "effective_day": 0,
     "approval_id": "APR-000001",
     "message": "Queued for owner approval (APR-000001): apply for facility FAC-ETL (¥600,000.00)"
   },
   "npv_display": "¥380,885.77",
-  "extension_extra_receivables_display": "¥207,123.29",
+  "extension_extra_receivables_display": "¥210,000.00",
   "dscr_limit_display": "1.25×",
   "leverage_limit_display": "2.50×"
 }

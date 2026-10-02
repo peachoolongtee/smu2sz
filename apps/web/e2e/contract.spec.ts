@@ -38,8 +38,8 @@ test("trajectory adapter: the position today, then the offer applied", async () 
   expect(view.cured_trajectory?.days).toHaveLength(121);
   expect(view.trajectory.first_breach_day).toBe(47);
   expect(view.shortfall_display).toBe("¥45,040.00");
-  expect(view.forward_concession).toMatchObject({ total_display: "¥26,455.62", cap_display: "¥5,000.00", over_cap: true });
-  expect(view.forward_concession.parts.map((p) => p.value_display)).toEqual(["¥22,455.62", "¥4,000.00"]);
+  expect(view.forward_concession).toMatchObject({ total_display: "¥28,326.92", cap_display: "¥5,000.00", over_cap: true });
+  expect(view.forward_concession.parts.map((p) => p.value_display)).toEqual(["¥24,326.92", "¥4,000.00"]);
   expect(view.trajectory.months[0]).toMatchObject({ dscr: { text: "2.00" }, leverage: { text: "1.39" } });
   // The pro forma 1.92x / 1.72x (extension funded) live in the verdict's own checks, not in the month table.
   expect(verdict.summary).toContain("DSCR_MIN 1.92x");
@@ -92,8 +92,11 @@ test("approvals adapter: capex and borrower file queue as Tier 2, and the owner 
 
   const decided = await live.decideApproval(queue[0].id, "APPROVE");
   expect(decided.status).toBe("APPROVED");
+  // The API does not record the day of a decision, so the adapter must not invent one (not the clock's day today).
+  expect(decided.decided_day).toBeNull();
   const rejected = await live.decideApproval(queue[1].id, "REJECT");
   expect(rejected.status).toBe("REJECTED");
+  expect(rejected.decided_day).toBeNull();
 
   // A second decision is a 409, an unknown id a 404; both carry their status so the page can explain them.
   await expect(live.decideApproval(queue[0].id, "APPROVE")).rejects.toMatchObject({ status: 409 });
@@ -110,6 +113,23 @@ test("alerts and reconciliation adapters", async () => {
   const recon = await live.getReconciliation();
   expect(recon.outstanding[0]).toMatchObject({ receivable_id: "RCV-A", face_display: "¥420,000.00" });
   expect(recon.chain_valid).toBe(true);
+  expect(recon.promised).toEqual([]);
+  expect(recon.lapsed_promises).toBe(0);
+});
+
+test("state adapter: funding requested on a facility with a lead time is a lot in transit until it lands", async () => {
+  await live.demoReset();
+  const before = await live.getState();
+  expect(before.state.lots ?? []).toEqual([]);
+  const first = await live.nl({ session_id: "contract-fund", actor: "OWNER", text: "Fund the cash gap" });
+  expect(first.awaiting_confirmation).toBe(true);
+  expect(first.operations).toEqual([]);
+  await live.nl({ session_id: "contract-fund", actor: "OWNER", text: "go ahead" });
+  const after = await live.getState();
+  const transit = (after.state.lots ?? []).filter((l) => !l.settled);
+  expect(transit).toHaveLength(1);
+  expect(transit[0]).toMatchObject({ facility_id: "FAC-IF", request_day: 0, arrival_day: 3, principal_display: "¥210,000.00" });
+  expect(after.state.cash_display).toBe("¥550,000.00");
 });
 
 test("/nl: the owner channel needs the token, a buyer turn does not, and the response has the shape the chat renders", async () => {

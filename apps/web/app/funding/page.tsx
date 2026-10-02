@@ -4,6 +4,7 @@ import { useState } from "react";
 import { CodeBadge, FacilityStatusBadge } from "@/components/badges";
 import { CheckIcon, XIcon } from "@/components/icons";
 import { PlanCard } from "@/components/plan-card";
+import { PlanNotes } from "@/components/plan-notes";
 import {
   Badge,
   Callout,
@@ -115,6 +116,11 @@ function FundingBody({ view, basis, snapshot }: { view: FundingView; basis: "COM
                           <CodeBadge key={c} code={c} tone="bad" />
                         ))}
                       </div>
+                      {row.needs_owner_approval ? (
+                        <p className="mt-1" data-testid={`menu-needs-approval-${row.facility.id}`}>
+                          <Badge tone="warn">{t("plan.needsApproval")}</Badge>
+                        </p>
+                      ) : null}
                       <p className="mt-1 text-xs text-ink-2">{row.reason}</p>
                     </td>
                   </tr>
@@ -126,7 +132,7 @@ function FundingBody({ view, basis, snapshot }: { view: FundingView; basis: "COM
       </Card>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
-        <PlanCard plan={plan} id="plan" highlight />
+        <PlanCard plan={plan} id="plan" highlight leadTimes={Object.fromEntries(view.menu.map((r) => [r.facility.id, r.facility.lead_time_days]))} />
 
         <div className="min-w-0 space-y-6">
           <Card id="marginal" title={t("fund.marginal")} subtitle={t("fund.marginal.sub")}>
@@ -162,6 +168,13 @@ function FundingBody({ view, basis, snapshot }: { view: FundingView; basis: "COM
                   <div className="min-w-0">
                     <p className={`text-sm ${c.selected ? "font-semibold" : ""}`}>{c.label}</p>
                     <p className="text-xs text-ink-3">{c.note}</p>
+                    <PlanNotes
+                      className="mt-1"
+                      needsApproval={c.needs_owner_approval}
+                      approvalReason={c.approval_reason}
+                      executableNow={c.executable_now}
+                      notExecutableReason={c.not_executable_reason}
+                    />
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
                     {c.selected ? <Badge tone="brand">{te("fund", "selected")}</Badge> : null}
