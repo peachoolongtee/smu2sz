@@ -183,6 +183,8 @@ def test_replayed_request_id_is_duplicate(client, rt):
     again = c.say("go ahead", request_id="R-1")
     assert ops(first) == [("DRAW_FACILITY", "EXECUTED"), ("SUBMIT_INVOICE_FOR_FINANCING", "EXECUTED")]
     assert again["replayed"] and ops(again) == [("DRAW_FACILITY", "DUPLICATE"), ("SUBMIT_INVOICE_FOR_FINANCING", "DUPLICATE")]
+    assert rt.store.get_state().cash_fen == 55_000_000  # ADR-0010: the advance lands on day 3, once
+    rt.advance_to(4)
     assert rt.store.get_state().cash_fen == 76_000_000
 
 

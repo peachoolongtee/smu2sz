@@ -82,8 +82,13 @@ def test_the_opener_proposes_the_cure_and_go_ahead_runs_it(client, rt):
     ok = chat.say(f"approve {aid}")  # the owner's second, explicit step
     assert ops(ok) == [("SUBMIT_INVOICE_FOR_FINANCING", "EXECUTED")]
     state = rt.store.get_state()
-    assert state.cash_fen > cash and next(f.drawn_fen for f in state.facilities if f.id == "FAC-IF") > drawn
+    # ADR-0010: the advance requested on day 34 takes the facility room now; its cash lands on day 37
+    assert state.cash_fen == cash and next(f.drawn_fen for f in state.facilities if f.id == "FAC-IF") > drawn
+    assert [(lot.request_day, lot.arrival_day, lot.settled) for lot in state.lots
+            if lot.facility_id == "FAC-IF"] == [(34, 37, False)]
     assert _critical(client) == 0 and rt.store.get_approval(aid).status.value == "APPROVED"
+    rt.advance_to(38)
+    assert rt.store.get_state().cash_fen > cash and all(lot.settled for lot in rt.store.get_state().lots)
 
 
 @pytest.mark.parametrize("text", ["any alerts?", "what needs me today", "What needs my attention?",

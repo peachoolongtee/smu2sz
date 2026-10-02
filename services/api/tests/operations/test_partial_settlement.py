@@ -6,6 +6,7 @@ from typing import Any
 
 from app.alerts import MatchStatus, reconcile
 from app.books import current_books
+from app.clock import advance as advance_clock
 from app.domain.models import (
     AcceptOffer,
     Actor,
@@ -187,32 +188,37 @@ def test_agreed_amount_that_would_settle_more_than_is_outstanding_is_refused(ex:
 
 
 def test_financed_receivable_repays_the_advance_once(ex: Any, store: Any, clock: Clock) -> None:
+    """A partial receipt on a financed invoice goes to the lender and never takes the owner's cash (red-team p03);
+    the receipt that clears the advance pays its charges once, from landing to clearing."""
     advance = 21_000_000  # ¥210,000 of RCV-A's ¥420,000
     fin = ex.execute(op(SubmitInvoiceForFinancing, clock, facility_id="FAC-IF", receivable_id="RCV-A",
                         advance_fen=advance))
     assert fin.status == OperationStatus.EXECUTED, fin.message
     assert rcv(store).status == "FINANCED"
+    advance_clock(store, 4)  # the advance lands on day 3 (ADR-0010)
     fac0 = next(f for f in store.get_state().facilities if f.id == "FAC-IF")
-    interest, fee, _ = finance_invoice_charges(fac0, advance, 10)
+    interest, fee, _ = finance_invoice_charges(fac0, advance, DUE - 3)
 
     clock.day = 10
     before = cash(store)
     part = receipt(ex, clock, 10_000_000)
     assert part.status == OperationStatus.EXECUTED, part.message
-    assert "repaid advance ¥210,000.00" in part.message
+    assert "still outstanding" in part.message and "repaid advance" not in part.message
     assert f"¥{(FACE - 10_000_000) / 100:,.2f} still due on day {DUE}" in part.message
     fac1 = next(f for f in store.get_state().facilities if f.id == "FAC-IF")
-    assert fac1.drawn_fen == fac0.drawn_fen - advance
-    assert cash(store) == before + 10_000_000 - advance - interest - fee
-    assert (rcv(store).settled_fen, rcv(store).status) == (10_000_000, "OPEN")
+    assert fac1.drawn_fen == fac0.drawn_fen - 10_000_000
+    assert cash(store) == before  # all of it went to the lender
+    assert (rcv(store).settled_fen, rcv(store).status, rcv(store).advance_fen) == (10_000_000, "FINANCED",
+                                                                                 advance - 10_000_000)
 
     clock.day = DUE
     before = cash(store)
     rest = receipt(ex, clock, FACE - 10_000_000)
-    assert rest.status == OperationStatus.EXECUTED and "repaid" not in rest.message
+    assert rest.status == OperationStatus.EXECUTED and "repaid advance ¥110,000.00" in rest.message
     assert (rcv(store).settled_fen, rcv(store).status) == (FACE, "SETTLED")
-    assert cash(store) == before + FACE - 10_000_000  # no second repayment
-    assert next(f for f in store.get_state().facilities if f.id == "FAC-IF").drawn_fen == fac1.drawn_fen
+    assert cash(store) == before + FACE - 10_000_000 - (advance - 10_000_000) - interest - fee
+    assert next(f for f in store.get_state().facilities if f.id == "FAC-IF").drawn_fen == 0
+    assert store.get_state().lots == []
     assert store.verify_chain()
 
 

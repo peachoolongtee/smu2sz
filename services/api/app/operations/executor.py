@@ -77,16 +77,15 @@ from app.domain.models import (
 from app.domain.money import bp, fmt_yuan, post
 from app.domain.ports import LedgerStore
 from app.financial import invoices
+from app.financial import lots as funding_lots
 from app.financial.errors import EngineError
 from app.mandate import check_validity, tier_for
-from app.operations.charges import finance_invoice_charges, line_interest, upfront_fee
+from app.operations.charges import upfront_fee
 from app.operations.log import (
     RESET_CIRCUIT_KIND,
     REVOKE_COMMITMENT_KIND,
     LoggedEntry,
     LogReader,
-    advance_for,
-    open_lots,
     parse_operation,
 )
 from app.persistence import ApprovalAlreadyDecided, ApprovalStatus, NonceAlreadyUsed, NotFound, canonical_json
@@ -239,6 +238,33 @@ def _facility(state: FinancialState, facility_id: str) -> Facility:
 
 def _with_facility(state: FinancialState, f: Facility) -> list[Facility]:
     return [f if x.id == f.id else x for x in state.facilities]
+
+
+def _to_lender(f: Facility, lot: Any, amount_fen: int, day: int) -> tuple[int, Any, str]:
+    """(what the lender takes from a receipt on the financed invoice, the advance lot left or None, the note)."""
+    a = funding_lots.apply_receipt(f, lot, amount_fen, day)
+    if a.lot is None:
+        return a.applied, None, (f"; repaid advance {fmt_yuan(a.principal)} + interest {fmt_yuan(a.interest)} + fee "
+                                 f"{fmt_yuan(a.fee)} ({a.days} days billed as {a.periods} whole period(s)) to {f.id}")
+    if a.principal < lot.remaining_fen:
+        return a.applied, a.lot, (f"; all {fmt_yuan(a.applied)} goes to {f.id} against the advance, "
+                                  f"{fmt_yuan(a.lot.remaining_fen)} of it still outstanding; its interest and fee are "
+                                  f"billed by the receipt that clears it; the invoice stays financed")
+    return a.applied, a.lot, (f"; all {fmt_yuan(a.applied)} goes to {f.id}: advance {fmt_yuan(a.principal)} repaid and "
+                              f"{fmt_yuan(a.interest)} of its charges; {fmt_yuan(a.lot.remaining_fen)} of charges stays "
+                              f"due and the invoice stays financed")
+
+
+def _landing(f: Facility, lot: Any, cash: int) -> tuple[int, str]:
+    """ADR-0010 §2: (cash after the operation, what the result says about it). With no lead time the cash, net of
+    the upfront fee, is credited now; otherwise the clock credits it when it closes the arrival day."""
+    fee = upfront_fee(f, lot.principal_fen)
+    fee_note = f", upfront fee {fmt_yuan(fee)}" if fee else ""
+    if lot.settled:
+        return cash + lot.principal_fen - fee, fee_note
+    net = f" ({fmt_yuan(lot.principal_fen - fee)} after the upfront fee)" if fee else ""
+    return cash, (f"{fee_note}; the cash{net} lands on day {lot.arrival_day} after the {f.lead_time_days}-day "
+                  f"lead time, not today")
 
 
 class Executor:
@@ -902,38 +928,40 @@ class Executor:
                           f"Draw {fmt_yuan(op.amount_fen)} exceeds {f.id}'s available {fmt_yuan(available)}",
                           amount_fen=op.amount_fen, limit_fen=f.limit_fen, drawn_fen=f.drawn_fen)
         self._admitted(ctx)
-        fee = upfront_fee(f, op.amount_fen)
-        state = _bump(ctx.state, cash_fen=ctx.state.cash_fen + op.amount_fen - fee,
-                      facilities=_with_facility(ctx.state, f.model_copy(update={"drawn_fen": f.drawn_fen + op.amount_fen})))
-        fee_note = f", upfront fee {fmt_yuan(fee)}" if fee else ""
-        return _Effect(f"Drew {fmt_yuan(op.amount_fen)} on {f.id} on day {ctx.now}{fee_note}", state=state)
+        state = funding_lots.ensure_lots(ctx.state)
+        lot = funding_lots.new_lot(funding_lots.unique_id(state.lots, op.op_id), f, op.amount_fen, ctx.now)
+        cash, landing = _landing(f, lot, state.cash_fen)
+        state = _bump(state, cash_fen=cash, lots=[*state.lots, lot],
+                      facilities=_with_facility(state, f.model_copy(update={"drawn_fen": f.drawn_fen + op.amount_fen})))
+        return _Effect(f"Drew {fmt_yuan(op.amount_fen)} on {f.id} on day {ctx.now}{landing}", state=state)
 
     def _repay(self, op: RepayFacility, ctx: _Ctx) -> _Effect:
-        f = _facility(ctx.state, op.facility_id)
+        state = funding_lots.ensure_lots(ctx.state)
+        f = _facility(state, op.facility_id)
         if f.repayment != Repayment.BULLET:
             raise _refuse(Code.PRECONDITION_FAILED, f"Facility {f.id} is repaid {f.repayment.value}, not on demand")
         if op.amount_fen > f.drawn_fen:
             raise _refuse(Code.PRECONDITION_FAILED,
                           f"Repayment {fmt_yuan(op.amount_fen)} exceeds {f.id}'s drawn {fmt_yuan(f.drawn_fen)}",
                           amount_fen=op.amount_fen, drawn_fen=f.drawn_fen)
-        interest, left, parts = 0, op.amount_fen, []
-        for day, remaining in open_lots(self._entries(), f.id, f.drawn_fen):
-            if left == 0:
-                break
-            part = min(left, remaining)
-            lot_interest = line_interest(part, f.rate_bp, ctx.now - day)
-            interest += lot_interest
-            parts.append(f"{fmt_yuan(part)} × {f.rate_bp}bp × {ctx.now - day}/365 = {fmt_yuan(lot_interest)}")
-            left -= part
-        total = op.amount_fen + interest
-        if total > ctx.state.cash_fen:
+        landed = funding_lots.landed(state.lots, f.id)
+        pending = funding_lots.first_unsettled(state.lots, f.id)
+        if op.amount_fen > landed and pending is not None:  # ADR-0010 §6: only cash that has landed is repaid
             raise _refuse(Code.PRECONDITION_FAILED,
-                          f"Repayment plus interest {fmt_yuan(total)} exceeds cash {fmt_yuan(ctx.state.cash_fen)}")
+                          f"Repayment {fmt_yuan(op.amount_fen)} exceeds the {fmt_yuan(landed)} that has landed on "
+                          f"{f.id}: {fmt_yuan(pending.remaining_fen)} requested on day {pending.request_day} lands on "
+                          f"day {pending.arrival_day} and cannot be repaid before then",
+                          amount_fen=op.amount_fen, landed_fen=landed, arrival_day=pending.arrival_day)
+        repaid = funding_lots.repay(state.lots, f, op.amount_fen, ctx.now)
+        total = op.amount_fen + repaid.interest
+        if total > state.cash_fen:
+            raise _refuse(Code.PRECONDITION_FAILED,
+                          f"Repayment plus interest {fmt_yuan(total)} exceeds cash {fmt_yuan(state.cash_fen)}")
         self._admitted(ctx)
-        state = _bump(ctx.state, cash_fen=ctx.state.cash_fen - total,
-                      facilities=_with_facility(ctx.state, f.model_copy(update={"drawn_fen": f.drawn_fen - op.amount_fen})))
-        return _Effect(f"Repaid {fmt_yuan(op.amount_fen)} on {f.id} with interest {fmt_yuan(interest)} "
-                       f"({'; '.join(parts)})", state=state)
+        state = _bump(state, cash_fen=state.cash_fen - total, lots=repaid.lots,
+                      facilities=_with_facility(state, f.model_copy(update={"drawn_fen": f.drawn_fen - op.amount_fen})))
+        return _Effect(f"Repaid {fmt_yuan(op.amount_fen)} on {f.id} with interest {fmt_yuan(repaid.interest)} "
+                       f"({'; '.join(repaid.parts)})", state=state)
 
     def _finance(self, op: SubmitInvoiceForFinancing, ctx: _Ctx) -> _Effect:
         state = ctx.state
@@ -968,13 +996,17 @@ class Executor:
             raise _refuse(Code.PRECONDITION_FAILED,
                           f"Advance {fmt_yuan(op.advance_fen)} exceeds {f.id}'s available {fmt_yuan(available)}")
         self._admitted(ctx)
-        fee = upfront_fee(f, op.advance_fen)
+        state = funding_lots.ensure_lots(state)
+        lot = funding_lots.new_lot(funding_lots.unique_id(state.lots, op.op_id), f, op.advance_fen, ctx.now, r.id)
+        cash, landing = _landing(f, lot, state.cash_fen)
+        # ADR-0010 §6: the invoice is pledged (FINANCED) from the request, whether or not the cash has landed
         receivables = [x.model_copy(update={"status": "FINANCED", "advance_fen": op.advance_fen,
                                             "advance_facility_id": f.id}) if x.id == r.id else x
                        for x in state.receivables]
-        new_state = _bump(state, cash_fen=state.cash_fen + op.advance_fen - fee, receivables=receivables,
+        new_state = _bump(state, cash_fen=cash, receivables=receivables, lots=[*state.lots, lot],
                           facilities=_with_facility(state, f.model_copy(update={"drawn_fen": f.drawn_fen + op.advance_fen})))
-        return _Effect(f"Advance {fmt_yuan(op.advance_fen)} on {r.id} from {f.id} on day {ctx.now}", state=new_state)
+        return _Effect(f"Advance {fmt_yuan(op.advance_fen)} on {r.id} from {f.id} on day {ctx.now}{landing}",
+                       state=new_state)
 
     def _early_pay_match(self, op: ReceivePayment, r: Receivable, now: int) -> tuple[Commitment, Obligation, int] | None:
         """ADR-0006 section 4: the live early-pay obligation on `r` whose posted `P - discount` equals this
@@ -1007,7 +1039,7 @@ class Executor:
         return None
 
     def _receive(self, op: ReceivePayment, ctx: _Ctx) -> _Effect:
-        state = ctx.state
+        state = funding_lots.ensure_lots(ctx.state)
         r = next((r for r in state.receivables if r.id == op.receivable_id), None)
         if r is None:
             raise _refuse(Code.PRECONDITION_FAILED, f"Receivable {op.receivable_id} does not exist")
@@ -1021,26 +1053,35 @@ class Executor:
                           f"only {fmt_yuan(r.outstanding_fen)} outstanding",
                           amount_fen=op.amount_fen, face_settled_fen=face_settled, outstanding_fen=r.outstanding_fen)
         cash = state.cash_fen + op.amount_fen
-        facilities = state.facilities
+        facilities, lots = state.facilities, state.lots
         note = ""
+        still: Any = None  # the advance lot a FINANCED invoice still carries after this receipt
         if r.status == "FINANCED":
-            found = advance_for(self._entries(), r.id)
-            if found is None:
-                raise _refuse(Code.PRECONDITION_FAILED, f"No executed advance on record for financed {r.id}")
-            adv, adv_day = found
-            f = _facility(state, adv.facility_id)
-            days = ctx.now - adv_day
-            interest, fee, periods = finance_invoice_charges(f, adv.advance_fen, days)
-            cash -= adv.advance_fen + interest + fee
-            facilities = _with_facility(state, f.model_copy(update={"drawn_fen": max(0, f.drawn_fen - adv.advance_fen)}))
-            note = (f"; repaid advance {fmt_yuan(adv.advance_fen)} + interest {fmt_yuan(interest)} + fee "
-                    f"{fmt_yuan(fee)} ({days} days billed as {periods} whole period(s)) to {f.id}")
+            lot = next((x for x in state.lots if x.receivable_id == r.id and x.remaining_fen > 0), None)
+            if lot is None:
+                raise _refuse(Code.PRECONDITION_FAILED, f"No advance on record for financed {r.id}")
+            f = _facility(state, lot.facility_id)
+            if not lot.settled:
+                # ADR-0010: the buyer paid before the advance landed. The request is cancelled: the room is
+                # released, no cash was ever credited and nothing is charged; the receipt books as usual.
+                lots = [x for x in state.lots if x.id != lot.id]
+                facilities = _with_facility(state, f.model_copy(update={"drawn_fen": f.drawn_fen - lot.remaining_fen}))
+                note = (f"; the advance of {fmt_yuan(lot.remaining_fen)} requested on day {lot.request_day} had not "
+                        f"landed (it was due on day {lot.arrival_day}): cancelled with no charges, {f.id} room released")
+            else:
+                applied, still, note = _to_lender(f, lot, op.amount_fen, ctx.now)
+                cash -= applied  # the lender is paid first, from the receipt only: cash never falls on a receipt
+                lots = [x for x in state.lots if x.id != lot.id] + ([still] if still is not None else [])
+                drawn = f.drawn_fen - lot.remaining_fen + (still.remaining_fen if still is not None else 0)
+                facilities = _with_facility(state, f.model_copy(update={"drawn_fen": drawn}))
         settled = r.settled_fen + face_settled
-        status = "SETTLED" if settled == r.face_fen else "OPEN"
-        receivables = [x.model_copy(update={"status": status, "settled_fen": settled, "advance_fen": 0,
-                                            "advance_facility_id": None}) if x.id == r.id else x
-                       for x in state.receivables]
-        new_state = _bump(state, cash_fen=cash, receivables=receivables, facilities=facilities)
+        if still is not None:  # the advance is not cleared: the invoice stays pledged to the lender
+            update: dict[str, Any] = {"status": "FINANCED", "settled_fen": settled, "advance_fen": still.remaining_fen}
+        else:
+            update = {"status": "SETTLED" if settled == r.face_fen else "OPEN", "settled_fen": settled,
+                      "advance_fen": 0, "advance_facility_id": None}
+        receivables = [x.model_copy(update=update) if x.id == r.id else x for x in state.receivables]
+        new_state = _bump(state, cash_fen=cash, receivables=receivables, facilities=facilities, lots=lots)
         residual = r.face_fen - settled
         parts: list[str] = []
         if matched:

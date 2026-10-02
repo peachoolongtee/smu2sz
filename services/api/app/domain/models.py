@@ -450,6 +450,22 @@ class Counterparty(Contract):
     known: bool = True  # on the owner's registry
 
 
+class FundingLot(Contract):
+    """ADR-0010: one draw or invoice advance with its dates. Over a facility's lots, the sum of `remaining_fen`
+    equals its `drawn_fen`. Cash lands on `arrival_day` (request day + lead time); interest runs from it."""
+
+    id: str  # the operation id that created it ("ASSUMED:..." for a balance older than the books)
+    facility_id: str
+    principal_fen: Fen
+    remaining_fen: Fen
+    request_day: Day
+    arrival_day: Day
+    receivable_id: str | None = None  # an invoice advance: the financed invoice
+    maturity_day: Day | None = None  # bullet term loans: arrival + 30 × term months
+    settled: bool = False  # the cash has been credited
+    assumed_date: bool = False  # a balance that existed before the books started, dated to their first day
+
+
 class FinancialState(Contract):
     """Verified starting state. A fixture or the ledger writes it; the compiler never does."""
 
@@ -468,10 +484,11 @@ class FinancialState(Contract):
     monthly_ebitda_fen: Fen
     state_version: int = 1
     as_of_day: Day = 0  # the books are closed for every day before this one; cash_fen is cash at its start (ADR-0006)
+    lots: list[FundingLot] = Field(default_factory=list)  # ADR-0010, in creation order
 
     @model_serializer(mode="wrap")
     def _serialise(self, handler: SerializerFunctionWrapHandler):  # type: ignore[no-untyped-def]
-        return _omit_empty(handler(self), self, ("invoice_adjustments",))
+        return _omit_empty(handler(self), self, ("invoice_adjustments", "lots"))
 
 
 # ---------------------------------------------------------------- funding actions and trajectory

@@ -9,6 +9,7 @@ import pytest
 from hypothesis import HealthCheck, event, given, settings
 from hypothesis import strategies as st
 
+from app.clock import advance as advance_clock
 from app.domain.models import (
     Actor,
     AddFacility,
@@ -57,10 +58,11 @@ class BankModel:
     def __init__(self, cash: int) -> None:
         self.cash = cash
         self.lots: list[list[int]] = []  # FAC-LINE draws as [day, remaining]
-        self.advance: tuple[int, int] | None = None  # (day, amount) on RCV-A
+        # the advance on RCV-A as [arrival day, principal, remaining, landed] (ADR-0010: FAC-IF has a 3-day lead time)
+        self.advance: list[int] | None = None
 
     def apply(self, o: Any, day: int) -> None:
-        if isinstance(o, DrawFacility):
+        if isinstance(o, DrawFacility):  # FAC-LINE has no lead time: the cash lands at once
             self.cash += o.amount_fen
             self.lots.append([day, o.amount_fen])
         elif isinstance(o, RepayFacility):
@@ -74,15 +76,36 @@ class BankModel:
             assert left == 0
             self.cash -= o.amount_fen + interest
         elif isinstance(o, SubmitInvoiceForFinancing):
-            self.cash += o.advance_fen
-            self.advance = (day, o.advance_fen)
+            self.advance = [day + 3, o.advance_fen, o.advance_fen, 0]  # requested, not cash
         elif isinstance(o, ReceivePayment):
             self.cash += o.amount_fen
-            if self.advance is not None:
-                adv_day, adv = self.advance
-                periods = max(1, -(-(day - adv_day) // 30))
-                self.cash -= adv + post(simple_interest(adv, bp(780), 30 * periods)) + post(bp(25) * adv * periods)
+            if self.advance is None:
+                return
+            arrival, principal, remaining, landed = self.advance
+            if not landed:  # paid before the advance landed: the request is cancelled, nothing charged
                 self.advance = None
+                return
+            periods = max(1, -(-(day - arrival) // 30))
+            claim = remaining + post(simple_interest(principal, bp(780), 30 * periods)) + post(bp(25) * principal * periods)
+            taken = min(o.amount_fen, claim)  # the lender is paid first, from the receipt only
+            self.cash -= taken
+            if taken == claim:
+                self.advance = None
+            elif taken < remaining:
+                self.advance = [arrival, principal, remaining - taken, 1]
+            else:  # principal repaid, unpaid charges stay due as a balance from today
+                self.advance = [day, claim - taken, claim - taken, 1]
+
+    def close(self, to_day: int, posted_flows_fen: int) -> None:
+        """The clock closed every day before `to_day`: scheduled flows, and the advance if it landed."""
+        self.cash += posted_flows_fen
+        if self.advance is not None and not self.advance[3] and self.advance[0] < to_day:
+            self.cash += self.advance[2]
+            self.advance[3] = 1
+
+    @property
+    def advance_drawn(self) -> int:
+        return self.advance[2] if self.advance is not None else 0
 
     @property
     def line_drawn(self) -> int:
@@ -109,6 +132,12 @@ def build_op(s: tuple, clock: Clock, model: BankModel) -> Any:
     return op(RejectOffer, clock, offer_id="OFF-1", reason_codes=[])
 
 
+def check_lots(state: Any) -> None:
+    """ADR-0010: every facility's lots sum to its drawn balance."""
+    for f in state.facilities:
+        assert sum(lot.remaining_fen for lot in state.lots if lot.facility_id == f.id) == f.drawn_fen, f.id
+
+
 def run_sequence(store: Any, steps: list[tuple]) -> None:
     clock = Clock(0)
     ex = make_executor(store, clock)
@@ -117,8 +146,12 @@ def run_sequence(store: Any, steps: list[tuple]) -> None:
     for s in steps:
         name = s[0]
         o: Any = None
-        if name == "tick":
+        if name == "tick":  # the clock closes the days: flows post, funding lands (ADR-0010)
+            moved = advance_clock(store, clock.day + s[1])
+            model.close(clock.day + s[1], moved.posted_net_fen)
             clock.day += s[1]
+            assert store.get_state().cash_fen == model.cash
+            check_lots(store.get_state())
             continue
         before = store.get_state()
         if name == "decide":
@@ -153,6 +186,8 @@ def run_sequence(store: Any, steps: list[tuple]) -> None:
         assert after.cash_fen == model.cash, (name, result.message)
         line = next(f for f in after.facilities if f.id == "FAC-LINE")
         assert line.drawn_fen == model.line_drawn <= line.limit_fen
+        assert next(f for f in after.facilities if f.id == "FAC-IF").drawn_fen == model.advance_drawn
+        check_lots(after)
 
     assert store.verify_chain()
     summary = security_summary(store)
