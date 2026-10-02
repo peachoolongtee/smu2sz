@@ -35,6 +35,14 @@ def client():
     set_runtime(None)
 
 
+def test_equipment_file_without_a_spend_day_states_the_assumed_one(client):
+    body = {"facility_id": "FAC-ETL", "amount_fen": 60_000_000, "use_of_proceeds": "Purchase of production equipment"}
+    v = client.post("/borrower-file", json=body).json()
+    proceeds = next(s for s in v["sections"] if s["key"] == "proceeds")
+    assert any("no spend day was given" in n for n in proceeds["notes"])
+    assert any(r["label"] == "Proceeds spent on (assumed)" for r in proceeds["rows"])
+
+
 def test_post_queues_owner_approval_and_returns_the_displayed_file(client):
     draw = {"kind": "DRAW_FACILITY", "op_id": "OP-D1", "idempotency_key": "d1", "mandate_version": 1,
             "requested_by": "AGENT", "facility_id": "FAC-LINE", "amount_fen": 15_000_000}

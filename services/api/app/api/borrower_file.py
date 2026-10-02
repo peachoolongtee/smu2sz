@@ -51,7 +51,9 @@ class BorrowerFileIn(BaseModel):
     facility_id: str
     amount_fen: int = Field(gt=0)
     use_of_proceeds: str = Field(min_length=1, max_length=500)
-    spend_day: int | None = None  # owner estimate: the day the proceeds are spent
+    # Owner estimate: the day the proceeds are spent. For an equipment purpose it is always applied: if omitted
+    # it defaults to the day the proceeds land and the file states that assumption.
+    spend_day: int | None = None
     ebitda_uplift_fen: int | None = None  # owner estimate: shown, never projected
 
 
