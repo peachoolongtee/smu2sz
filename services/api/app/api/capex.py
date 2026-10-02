@@ -46,8 +46,10 @@ def _application_key(result: CapexResult, day: int) -> str:
 
 def _queue_application(result: CapexResult) -> OperationResult | None:
     """ApplyForFacility for the selected structure, requested by the agent and dated today."""
-    if not result.worth_doing or result.selected_facility_id is None:
-        return None
+    selected = next((s for s in result.structures if s.id == result.selected_id), None)
+    if (not result.worth_doing or result.selected_facility_id is None or selected is None
+            or selected.hypothetical or selected.result != "SELECTED"):
+        return None  # only a selected structure at its facility's real term is ever applied for
     rt = get_runtime()
     key = _application_key(result, rt.day)
     op = ApplyForFacility(

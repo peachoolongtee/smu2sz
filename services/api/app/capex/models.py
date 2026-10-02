@@ -16,6 +16,7 @@ from app.domain.money import Ratio
 StructureKind = Literal["CASH_LINE", "LOAN", "LEASE"]
 StructureResult = Literal["SELECTED", "ADMISSIBLE", "REJECTED", "INFEASIBLE"]
 
+CHARGES_BASIS = "lowest total financing charges (interest + fees, not discounted)"
 OWNER_ESTIMATE = "OWNER_ESTIMATE"  # evidence label: the owner entered it; the system did not observe it
 
 
@@ -79,12 +80,18 @@ class CapexStructure(Contract):
     rate_bp: int | None
     monthly_payment_fen: int | None
     total_interest_fen: int | None
+    upfront_fee_fen: int | None = None
+    # Ranked quantity: total interest + upfront fee, not discounted (CHARGES_BASIS). None when not computable.
+    charges_total_fen: int | None = None
+    # True when the candidate term differs from the facility's actual term_months: shown as an illustration,
+    # never selected and never applied for.
+    hypothetical: bool = False
     feasible: bool
     result: StructureResult
     violations: list[Violation] = Field(default_factory=list)
     dscr_by_month: list[DscrMonth] = Field(default_factory=list)
     min_dscr: Ratio | None = None
-    leverage: Ratio | None = None
+    leverage: Ratio | None = None  # None when EBITDA <= 0 (undefined)
     extra_cost_vs_selected_fen: int | None = None
     note: str = ""
     workings: list[Working] = Field(default_factory=list)
@@ -101,7 +108,7 @@ class CapexResult(Contract):
     structures: list[CapexStructure]
     selected_id: str | None
     selected_facility_id: str | None
-    leverage_financed: Ratio
+    leverage_financed: Ratio | None  # None when EBITDA <= 0 (undefined)
     leverage_with_extension: Ratio | None
     extension_extra_receivables_fen: int | None
     dscr_limit_bp: int
@@ -109,5 +116,7 @@ class CapexResult(Contract):
     required_tier: Tier
     recommendation: str
     workings: list[Working] = Field(default_factory=list)
+    assumptions: list[str] = Field(default_factory=list)
+    as_of_day: int = 0  # the day the books were read: this result is a snapshot of that day
     mandate_version: int
     state_version: int

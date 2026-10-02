@@ -115,3 +115,24 @@ def test_flag_off_returns_feature_disabled(client, monkeypatch):
 
 def test_unknown_field_is_rejected(client):
     assert client.post("/capex/evaluate", json={"price_fen": 60_000_000, "tier": "TIER_1"}).status_code == 422
+
+
+def test_f4_a_hypothetical_term_is_never_applied_for(client, rt):
+    # ETL's menu term is 36 months: a 360-month candidate is an illustration, so nothing is selected or queued.
+    v = client.post("/capex/evaluate", json={"candidates": [{"facility_id": "FAC-ETL", "term_months": 360}],
+                                             "include_cash_line": False}).json()
+    s = {x["id"]: x for x in v["structures"]}
+    assert s["loan_360m"]["hypothetical"] is True
+    assert v["selected_id"] is None and v["approval_id"] is None and v["application"] is None
+    assert client.get("/approvals/queue").json()["approvals"] == []
+    assert etl_status(rt) == FacilityStatus.NOT_APPLIED
+
+
+def test_view_carries_the_charges_basis_assumptions_and_day(client):
+    v = client.post("/capex/evaluate", json={}).json()
+    s = {x["id"]: x for x in v["structures"]}
+    assert s["loan_36m"]["upfront_fee_fen"] == 0 and s["loan_36m"]["charges_total_fen"] == 5_320_614
+    assert s["loan_36m"]["charges_total_display"] == "¥53,206.14" and s["loan_18m"]["hypothetical"] is True
+    assert v["as_of_day"] == 0 and v["estimate_note"].startswith("Owner's estimate")
+    assert any("nominal annual rate" in a for a in v["assumptions"])
+    assert "Finance with the 36-month term loan" in v["recommendation"]

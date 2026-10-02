@@ -44,7 +44,10 @@ def test_18_month_loan_rejected_on_dscr_in_month_1(result, g):
     assert not s.feasible and s.result == "REJECTED"
     v = s.violations[0]
     assert v.code == ViolationCode.DSCR_BREACH and v.month == 1
-    assert s.note == "Rejected: DSCR_BREACH@month 1 (1.13× < 1.25×)."
+    # the 18-month term is not the facility's (36): shown as an illustration only
+    assert s.hypothetical
+    assert s.note == ("Illustration at 18 months, not the facility's actual term; never selected or applied for. "
+                      "Rejected: DSCR_BREACH@month 1 (1.13× < 1.25×).")
     assert v.formula and v.inputs["new_payment"] == "¥34,830.60"
 
 

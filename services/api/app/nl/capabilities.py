@@ -24,6 +24,7 @@ from app.alerts import (
 )
 from app.borrower_file import BorrowerFileError, build
 from app.capex import CapexDisabled, CapexRequest, CapexResult, CapexStructure, evaluate_capex
+from app.capex.models import CHARGES_BASIS
 from app.config import get_settings
 from app.domain.models import GenerateBorrowerFile, Mode, OperationStatus
 from app.domain.money import BP_DENOM, Ratio, fmt_pct, fmt_yuan
@@ -222,6 +223,9 @@ def _structure_line(ctx: NlContext, r: CapexResult, s: CapexStructure) -> str:
         if s.leverage is not None:
             figures += t(ctx, f", leverage {s.leverage.text}×", f"，杠杆 {s.leverage.text}×")
         figures += "; "
+    if s.hypothetical:
+        tag += t(ctx, " (illustration only: not the facility's real term, never applied for)",
+                 "（仅为示例：并非该额度的实际期限，不会据此申请）")
     why = f": {s.violations[0].message}" if not s.feasible and s.violations else ""
     return f"- {s.label}: {figures}{tag}{why}"
 
@@ -251,6 +255,10 @@ def capex_intent(ctx: NlContext, slots: Slots) -> Turn:
                f"净现值 {fmt_yuan(r.npv_fen)}，{payback}。") + r.estimate_note]
     lines += [_structure_line(ctx, r, s) for s in r.structures]
     lines.append(r.recommendation)
+    lines.append(t(ctx, f"Computed on day {r.as_of_day}. Structures are ranked on the {CHARGES_BASIS}; rates are "
+                        f"nominal annual rates, and the uplift is your estimate, not an observed figure.",
+                   f"按第 {r.as_of_day} 天的账目计算。结构按融资费用合计（利息加费用，未折现）排序；利率为名义年利率；"
+                   f"增收为您的估计，并非实测数据。"))
     lines.append(t(ctx, "Nothing was applied for: the application needs the Capex screen and your approval.",
                    "尚未提交任何申请：申请需在资本支出页面进行，并经您批准。"))
     return Turn(intent=Intent.CAPEX, reply="\n".join(lines))
