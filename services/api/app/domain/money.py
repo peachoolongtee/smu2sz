@@ -102,9 +102,11 @@ class Ratio(BaseModel):
 
     @property
     def text(self) -> str:
-        """Two decimals, half-up: '1.92'."""
+        """Two decimals, half-up, signed: '1.92', '−0.50' (same minus sign as `fmt_yuan`)."""
         q = round_half_up(self.value * 100)
-        return f"{q // 100}.{abs(q) % 100:02d}"
+        sign = "−" if q < 0 else ""
+        q = abs(q)
+        return f"{sign}{q // 100}.{q % 100:02d}"
 
 
 def ratio_from_bp(n: int) -> Ratio:
