@@ -41,7 +41,6 @@ class Features:
     borrower_file: bool = field(default_factory=lambda: _flag("FEATURE_BORROWER_FILE"))
     buyer_negotiation: bool = field(default_factory=lambda: _flag("FEATURE_BUYER_NEGOTIATION"))
     security_scenes: bool = field(default_factory=lambda: _flag("FEATURE_SECURITY_SCENES"))
-    after_signing: bool = field(default_factory=lambda: _flag("FEATURE_AFTER_SIGNING", default=False))
     alerts: bool = field(default_factory=lambda: _flag("FEATURE_ALERTS"))
     expected_plans: bool = field(default_factory=lambda: _flag("FEATURE_EXPECTED_PLANS"))
 
