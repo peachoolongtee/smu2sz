@@ -33,7 +33,10 @@ def test_term_sheet_with_personal_guarantee(client):
 def test_negotiate_accept_records_commitment_and_draws_the_line(client, rt):
     c = Chat(client, "t-neg")
     c.say("Evaluate EX01")
-    r = c.say("Send the counters")
+    proposal = c.say("Send the counters")  # free text proposes; nothing is sent until the owner confirms
+    assert proposal["intent"] == "NEGOTIATE" and proposal["awaiting_confirmation"] and ops(proposal) == []
+    assert rt.store.commitments() == []
+    r = c.say("go ahead")
     assert r["intent"] == "NEGOTIATE" and r["negotiation"]["outcome"] == "ACCEPT"
     assert ops(r) == [("COUNTER_OFFER", "EXECUTED"), ("COUNTER_OFFER", "EXECUTED"), ("ACCEPT_OFFER", "EXECUTED"),
                       ("DRAW_FACILITY", "EXECUTED")]

@@ -328,15 +328,29 @@ def borrower_file(ctx: NlContext, slots: Slots, text: str, *, execute: bool) -> 
     desc = t(ctx, f"Prepare the borrower file for {fid}, {fmt_yuan(slots.amount_fen)} (prepared, not sent)",
              f"为 {fid} 准备借款人资料，{fmt_yuan(slots.amount_fen)}（仅准备，不发送）")
     steps = Steps()
+    op = GenerateBorrowerFile(**ctx.base("GENERATE_BORROWER_FILE"), facility_id=fid, amount_fen=slots.amount_fen)
     if not execute:
         steps.add("GENERATE_BORROWER_FILE", desc)
         pend = slots.model_copy(update={"facility_id": fid})
         return Turn(intent=Intent.BORROWER_FILE, plan=steps.items, awaiting=True,
-                    pending=PendingPlan(Intent.BORROWER_FILE, pend, steps.items),
+                    pending=PendingPlan(Intent.BORROWER_FILE, pend, steps.items).bind(ctx, [op]),
                     reply=desc + t(ctx, ". It needs your approval and nothing is sent to a lender. Reply 'go ahead' "
                                         "to request it.", "。需要您的批准，且不会发送给任何贷方。回复“执行”提出申请。"))
-    r = ctx.execute(GenerateBorrowerFile(**ctx.base("GENERATE_BORROWER_FILE"), facility_id=fid,
-                                         amount_fen=slots.amount_fen))
+    return send_borrower_file(ctx, op, desc)
+
+
+def reprice_borrower_file(ctx: NlContext, pending: PendingPlan) -> str | None:
+    """None when the borrower file module still accepts the stored facility and amount, else one sentence."""
+    op = pending.ops[0]
+    reason = _probe(ctx, op.facility_id, op.amount_fen)
+    return None if reason is None else t(ctx, f"the books changed and I can no longer prepare that file: {reason}",
+                                         f"账目已变化，我已无法准备该资料：{reason}")
+
+
+def send_borrower_file(ctx: NlContext, op: GenerateBorrowerFile, desc: str) -> Turn:
+    """Send the stored request for the borrower file and say how the executor answered it."""
+    steps = Steps()
+    r = ctx.execute(op)
     steps.result("GENERATE_BORROWER_FILE", desc, r)
     if r.status == OperationStatus.PENDING_APPROVAL:
         ref = f" ({r.approval_id})" if r.approval_id else ""

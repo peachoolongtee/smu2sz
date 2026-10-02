@@ -179,7 +179,8 @@ def slots_from(text: str, state: FinancialState) -> Slots:
         approval_id=appr.group(0).upper() if appr else None,
         buyer_profile="BUYER-1-HARDLINE" if lx.HARDLINE.search(text) else None,
         quoted_text=quoted(text),
-        zero_forward=bool(lx.ZERO_FORWARD.search(text) or lx.ZERO_FORWARD_EXTRA.search(text)),
+        zero_forward=bool(lx.ZERO_FORWARD.search(text) or lx.ZERO_FORWARD_EXTRA.search(text)
+                          or consent.NO_CONCEDE.search(consent.normalise(ot))),
         use_financing=bool(lx.USE_FINANCING.search(ot)),
         execute_now=False,  # only the closed command grammar (consent.parse_command) or a confirmed plan sets this
         tier3=tier3,  # type: ignore[arg-type]
@@ -197,12 +198,27 @@ def parse(text: str, state: FinancialState, *, pending_plan: bool = False) -> Pa
     def hit(intent: Intent, cue: str, **kw: bool) -> Parsed:
         return Parsed(intent=intent, slots=s, matched=[cue], **kw)
 
+    def _act(intent: Intent, cue: str) -> Parsed:
+        """A negotiation or an early-pay request: "do not negotiate", "don't send the counters", 不要谈判 and "do not get
+        paid early" negate the action itself (nothing is done, no plan stays pending); a phrase that only constrains it
+        ("don't give anything away") does not."""
+        kind = "NEGOTIATE" if intent == Intent.NEGOTIATE else "ACCELERATE"
+        if consent.action_negated(kind, text):  # type: ignore[arg-type]
+            return Parsed(intent=intent, slots=s, matched=[cue, "consent:negated"])
+        return hit(intent, cue)
+
     def _money(intent: Intent, cue: str) -> Parsed:
         gate = consent.money_gate(text)
         if gate in ("negated", "bad_amount", "deferred"):
             return Parsed(intent=intent, slots=s, matched=[cue, f"consent:{gate}"])
         return hit(intent, cue, tentative=True)  # a proposal that waits for the owner's confirmation
 
+    if not asks_why and not s.approval_id and not s.tier3:
+        # "do not negotiate", "don't send the counters", 不要谈判, "do not get paid early": nothing is done and no plan
+        # stays pending, whether or not a plan is waiting (a decline that names a buyer would otherwise be held back)
+        for intent, kind in ((Intent.NEGOTIATE, "NEGOTIATE"), (Intent.ACCELERATE_RECEIPT, "ACCELERATE")):
+            if consent.action_negated(kind, text):  # type: ignore[arg-type]
+                return Parsed(intent=intent, slots=s, matched=["negated_action", "consent:negated"])
     if pending_plan and not asks_why and lx.CORRECTION.search(text) and (s.rate_bp is not None or s.use_financing or s.counterparty_id
                                                         or s.amount_fen is not None or s.buyer_profile):
         return hit(Intent.AMBIGUOUS, "correction", correction=True)  # the service keeps the plan's intent
@@ -239,11 +255,11 @@ def parse(text: str, state: FinancialState, *, pending_plan: bool = False) -> Pa
     if lx.WHAT_IF.search(text):
         return hit(Intent.WHAT_IF, "what_if")
     if s.fixture_id == "EX12_GOAL":
-        return hit(Intent.ACCELERATE_RECEIPT, "fixture:EX12")
+        return _act(Intent.ACCELERATE_RECEIPT, "fixture:EX12")
     if s.fixture_id == "EX11_CAPEX":
         return hit(Intent.CAPEX, "fixture:EX11")
     if (s.fixture_id or s.quoted_text) and lx.NEGOTIATE.search(text):
-        return hit(Intent.NEGOTIATE, "negotiate+offer")
+        return _act(Intent.NEGOTIATE, "negotiate+offer")
     if s.fixture_id or s.quoted_text:
         return hit(Intent.EVALUATE_OFFER, "offer_reference")
     if lx.ALERTS.search(text) and not lx.ACCELERATE.search(text):
@@ -261,11 +277,11 @@ def parse(text: str, state: FinancialState, *, pending_plan: bool = False) -> Pa
     if lx.STATUS_QUESTION.search(text) and not lx.ACCELERATE.search(text):
         return hit(Intent.SHOW_STATUS, "status_question")
     if lx.NEGOTIATE_VERB.search(text):
-        return hit(Intent.NEGOTIATE, "negotiate")
+        return _act(Intent.NEGOTIATE, "negotiate")
     if lx.ACCELERATE.search(text):
-        return hit(Intent.ACCELERATE_RECEIPT, "accelerate")
+        return _act(Intent.ACCELERATE_RECEIPT, "accelerate")
     if lx.NEGOTIATE.search(text):
-        return hit(Intent.NEGOTIATE, "negotiate")
+        return _act(Intent.NEGOTIATE, "negotiate")
     if lx.REPAY.search(text):
         return _money(Intent.REPAY_FACILITY, "repay")
     if lx.FUND.search(text):

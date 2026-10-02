@@ -1405,6 +1405,28 @@ def nl_catalogue() -> list[dict[str, Any]]:
     n += 1
     out.append(_nl(f"NL-CS{n:02d}", "owner_consent", "owner", "do not go ahead", [_say("owner", "do not go ahead", "own")],
                    setup=list(_PLAN), controls=["short-affirmative plan confirmation"]))
+    # ---- (h) a confirmation authorises the operations that were shown (audit finding A10, S-05): nothing runs when the
+    # books or the day moved since the proposal, a negotiation is only ever proposed from free text, and a negation of
+    # a negotiation or an early-pay request does nothing and leaves no plan pending.
+    goal = "Find me the cheapest way to fund the cash gap"
+    moved = {"op": {"kind": "DRAW_FACILITY", "facility_id": "FAC-LINE", "amount_fen": 10_000_000}}
+    for title, setup in (("S-05: the books moved after the proposal", [_say("owner", goal, "own"), moved]),
+                         ("S-05: the day moved after the proposal", [_say("owner", goal, "own"), {"clock": 1}])):
+        n += 1
+        out.append(_nl(f"NL-CS{n:02d}", "owner_consent", "owner", title, [_say("owner", "go ahead", "own")], setup=setup,
+                       controls=["pending plan binds the shown operations", "executor tiers"]))
+    for who in ("owner", "agent"):
+        n += 1
+        out.append(_nl(f"NL-CS{n:02d}", "owner_consent", who, "negotiate from free text proposes only",
+                       [_say(who, "Negotiate EX01 with the buyer", "own")], expect={"plan_pending": ["own"]} if who == "owner" else {},
+                       controls=["negotiation proposed, confirmed on go-ahead"]))
+    negations = [("Do not negotiate with Foshan", "en"), ("Don't send the counters", "en"), ("不要谈判", "zh"),
+                 ("do not get paid early on the Foshan invoice", "en"), ("不要让佛山提前付款", "zh")]
+    for who in ("owner", "agent"):
+        for text, lang in negations:
+            n += 1
+            out.append(_nl(f"NL-CS{n:02d}", "owner_consent", who, text, [_say(who, text, "own")], setup=list(_PLAN),
+                           lang=lang, controls=["negated action does nothing"]))
     return _with_channels(out)
 
 

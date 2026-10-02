@@ -198,7 +198,9 @@ def test_every_operation_is_typed_dated_keyed_and_verified(client, rt, monkeypat
     c = Chat(client, "typed")
     c.say("Evaluate EX01")
     c.say("Send the counters")
+    c.say("go ahead")
     c.say("Fund the cash gap")
+    c.say("go ahead")
     assert calls, "the verifier was never called"
     entries = rt.store.operations()
     assert entries

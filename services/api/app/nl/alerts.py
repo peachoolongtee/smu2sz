@@ -26,6 +26,7 @@ from app.financial import EngineError
 from app.nl.context import NlContext
 from app.nl.models import Intent, Slots
 from app.nl.pipeline import Steps, t
+from app.nl.plans import books_moved, describe, signature, stale, void_notice
 from app.nl.sessions import PendingPlan
 from app.nl.turn import Turn
 
@@ -68,6 +69,14 @@ def _suggestion(alert: Alert | None, op: Operation) -> tuple[SuggestedAction | N
             end = alert.inputs.get(f"cure_end_day_{i}")
             return s, int(end) if end else None
     return None, None
+
+
+def _quoted_cost(alert: Alert, ops: list[Operation]) -> int | None:
+    """The total cost the alert's own pricing puts on the cure it proposes; None when any leg has no stated cost."""
+    priced = [_suggestion(alert, op)[0] for op in ops]
+    if not priced or any(sg is None or sg.cost_fen is None for sg in priced):
+        return None
+    return sum(sg.cost_fen for sg in priced if sg is not None and sg.cost_fen is not None)
 
 
 def _cost_clause(ctx: NlContext, op: Operation, s: SuggestedAction | None, end: int | None) -> str:
@@ -193,7 +202,8 @@ def alerts_turn(ctx: NlContext) -> tuple[Turn, bool]:
                                 f"Go ahead?",
                            f"{fac} 已提取的 {amount} 今天可以还清：现金仍高于您的储备线（最低 {low}，第 {low_day} 天）。"
                            f"截至今日利息 {interest}。我现在就可以还款。要执行吗？"))
-            pending = PendingPlan(Intent.SHOW_ALERTS, Slots(), steps.items, {"alert_id": repay.id})
+            pending = PendingPlan(Intent.SHOW_ALERTS, Slots(), steps.items, {"alert_id": repay.id}).bind(
+                ctx, ops, _quoted_cost(repay, ops))
     else:
         parts.append(t(ctx, f"On current books cash falls {fmt_yuan(breach.amount_fen or 0)} below your "
                             f"{fmt_yuan(mandate.min_cash_fen)} floor on day {breach.day}.",
@@ -217,7 +227,8 @@ def alerts_turn(ctx: NlContext) -> tuple[Turn, bool]:
                           f"合计费用 {breach.inputs['cure_cost']}。") if len(ops) > 1 and "cure_cost" in breach.inputs else "")
             parts.append(t(ctx, "I can " + " and ".join(clauses) + "." + together + cap + " Go ahead?",
                            "我可以" + "，并".join(clauses) + "。" + together + cap + "要执行吗？"))
-            pending = PendingPlan(Intent.SHOW_ALERTS, Slots(), steps.items, {"alert_id": breach.id})
+            pending = PendingPlan(Intent.SHOW_ALERTS, Slots(), steps.items, {"alert_id": breach.id}).bind(
+                ctx, ops, _quoted_cost(breach, ops))
         else:
             parts.append(t(ctx, "No committed facility can cover it, so there is nothing I can do on my own; "
                                 "this needs your decision.",
@@ -230,11 +241,24 @@ def alerts_intent(ctx: NlContext) -> Turn:
     return alerts_turn(ctx)[0]
 
 
+def _void(ctx: NlContext, why: str, fresh: Turn | None = None) -> Turn:
+    """Nothing ran: say why, and raise the alert again on today's books (its cure needs its own go-ahead)."""
+    fresh = fresh or alerts_turn(ctx)[0]
+    fresh.reply = void_notice(ctx, why) + " " + fresh.reply
+    fresh.clear_pending = True
+    return fresh
+
+
 def confirm_cure(ctx: NlContext, pending: PendingPlan) -> Turn:
-    """The owner's direct "go ahead" on a pending alert cure. The alerts are recomputed first; the cure runs only if
-    the alert is still there, and only as the operations `cure_operations` builds from its current suggestion."""
+    """The owner's direct "go ahead" on a pending alert cure. It sends the operations that were shown. If the day or
+    the mandate changed the cure is void and the alert is raised again; if the books moved, the cure is re-derived
+    only to check it: the stored operations run if the alert still calls for exactly them at no more than the quoted
+    cost, otherwise nothing runs and the new cure is proposed."""
     state, mandate = ctx.state(), ctx.mandate()
     alert_id = str(pending.data.get("alert_id", ""))
+    why = stale(ctx, pending)
+    if why is not None:
+        return _void(ctx, why)
     try:
         found = alerts(state, mandate, ctx.store, ctx.day)
     except EngineError:
@@ -244,20 +268,40 @@ def confirm_cure(ctx: NlContext, pending: PendingPlan) -> Turn:
     gone = Turn(intent=Intent.SHOW_ALERTS, clear_pending=True, reply=t(
         ctx, "That is no longer needed: the alert has cleared since I raised it. Nothing was executed.",
         "已无需处理：该提醒在我提出之后已经解除。未执行任何操作。"))
-    if alert is None:
+    ops = list(pending.ops)
+    if alert is None:  # the alert I raised is gone; if something else needs the owner now, that is a new proposal
+        fresh, _has_news = alerts_turn(ctx)
+        if fresh.pending is not None or any(a.severity == Severity.CRITICAL for a in found):
+            # something critical needs the owner, but it is not what was raised: it is said again, with its own go-ahead
+            return _void(ctx, t(ctx, "the books changed and what needs you is no longer what I raised",
+                                "账目已变化，需要您处理的事项已不再是我之前提出的"), fresh)
         return gone
-    ops = cure_operations(alert, day=ctx.day, mandate_version=mandate.version, state_version=state.state_version)
     if not ops:
         return gone
+    if books_moved(ctx, pending):
+        now = cure_operations(alert, day=ctx.day, mandate_version=mandate.version, state_version=state.state_version)
+        cost = _quoted_cost(alert, now)
+        quoted = pending.quoted_cost_fen
+        if signature(now) != signature(ops):
+            return _void(ctx, t(ctx, "the books changed and the cure would now be different from the one I showed",
+                                "账目已变化，现在的处理方案与我之前给出的不同"))
+        if quoted is not None and (cost is None or cost > quoted):
+            return _void(ctx, t(ctx, f"the books changed and the cure would now cost "
+                                     f"{fmt_yuan(cost) if cost is not None else 'more'}, above the {fmt_yuan(quoted)} I quoted",
+                                f"账目已变化，该处理现在费用为 {fmt_yuan(cost) if cost is not None else '更高'}，高于我报价的 "
+                                f"{fmt_yuan(quoted)}"))
     steps = Steps()
     results: list[OperationResult] = []
-    for op in ops:
+    for op in ops:  # exactly the operations that were shown, in order
         _kind, _status, text, _clause = _op_clause(ctx, state, op)
         r = ctx.execute(op)
         results.append(r)
         steps.result(op.kind, text, r)
-        if r.status not in (OperationStatus.EXECUTED, OperationStatus.PENDING_APPROVAL):
-            break
+        if r.status != OperationStatus.EXECUTED and not (r.status == OperationStatus.DUPLICATE and r.approval_id is None):
+            break  # queued for the owner or refused: the legs after it are not sent
+    unsent = ops[len(results):]
+    for op in unsent:
+        steps.add(op.kind, _op_clause(ctx, state, op)[2], "SKIPPED")
     lines = []
     for op, r in zip(ops, results, strict=False):
         sg, end = _suggestion(alert, op)
@@ -271,6 +315,9 @@ def confirm_cure(ctx: NlContext, pending: PendingPlan) -> Turn:
                            f"{r.message} 它在等您批准{ref}；我尚未执行。"))
         else:
             lines.append(r.message)
+    if unsent:
+        lines.append(t(ctx, "Not sent: " + "; ".join(describe(ctx, o) for o in unsent) + ". Nothing else was run.",
+                       "未发送：" + "；".join(describe(ctx, o) for o in unsent) + "。其余均未执行。"))
     try:
         after = alerts(ctx.state(), ctx.mandate(), ctx.store, ctx.day)
     except EngineError:
