@@ -116,3 +116,23 @@ before the change merges.
   first screen.
 - The verifier runs the router twice more per early-pay offer. Both runs are cached per (state,
   obligations).
+
+## Implementation note, 3 Oct 2026
+
+The "known conservative convention" above is now a rule in the code, not only a pricing convention:
+
+- An invoice under an early-pay agreement is never financed. The engine refuses to finance an invoice with an early
+  settlement booked, and the executor refuses `SubmitInvoiceForFinancing` while an early-pay agreement names the
+  invoice (second red team, finding F1; `services/api/tests/operations/test_redteam_b.py`). The router and the
+  admission check therefore agree with the executor.
+- The partial-gap hand calculation changed accordingly. For 100,000 of RCV-A at 0.5% on day 2 the gap that must
+  still be funded is 260,500. Because the residual of RCV-A cannot be financed, the rest is the line for 32 days
+  (84,164 fen) plus more early pay on RCV-A at the buyer's standing 1.2% (a face of 11,184,211 fen, discount
+  134,211 fen). C1 = 50,000 + 84,164 + 134,211 = 268,375 fen, that is ¥2,683.75, still below C0 = 271,294 fen
+  (¥2,712.94). Before the rule the plan financed the residual and C1 was 232,630 fen. The test is
+  `services/api/tests/verifier/test_early_pay_handcalc.py::test_partial_gap_c1_figure`.
+- Early-pay settlement day: when an offer names no day, it is today plus the facility's lead time (it was absolute
+  day 2, which made early-pay offers fail from day 3). The discount is earned only by a receipt on or before the
+  promised day (audit A09).
+- The rate ceiling is a separate rule: `max_apr_bp` decides who may run a plan, not whether it is admissible
+  (`docs/FINANCIAL_SEMANTICS.md` section 4).

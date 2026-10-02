@@ -5,8 +5,12 @@ The brute force is written here, independently of `app.funding.search`: it enume
 committed source as a lever (a line draw for each candidate repayment day, an advance or an early payment
 on each receivable, a bill discount, a committed term loan), every combination of up to three levers,
 a fine grid of amounts for all but one lever, and the exact minimal amount (to the fen) for the last one.
-It shares only the engine (`financial.project`), the covenant evaluator, `mandate.check_apr` and
-`funding.all_in_rate` (the common costing basis) with the router.
+It shares only the engine (`financial.project`), the covenant evaluator and `funding.rates`
+(`action_rate`, `approval_reason`: the one rate rule of docs/FINANCIAL_SEMANTICS.md section 4) with the router.
+
+Plans are ranked as the router ranks them: a plan the executor cannot run today ranks after one it can, a plan
+with a leg above the mandate's `max_apr_bp` (it needs the owner, Tier 2) ranks after one that needs nobody, then
+the cheaper plan. A rate above the ceiling no longer makes a plan inadmissible; it makes it need the owner.
 """
 
 from __future__ import annotations
@@ -141,6 +145,8 @@ class Checked:
     reserve_ok: bool
     reasons: list[str] = field(default_factory=list)
     shortfall: int = 0  # max over days of (floor − closing), 0 when the floor holds
+    approval: bool = False  # a leg costs more a year than the mandate lets the agent borrow alone
+    unrunnable: bool = False  # a leg uses an invoice the executor cannot finance today
 
 
 class Oracle:
@@ -157,6 +163,10 @@ class Oracle:
         self.need = max(0, max(mandate.min_cash_fen - p.closing_fen for p in self.base.days))
         self.cache: dict[tuple, Checked] = {}
         self.evals = 0
+        # what the executor lets a facility finance today: an issued, open, buyer-confirmed invoice of a known buyer
+        buyers = {c.id for c in state.counterparties if c.role == "BUYER" and c.known}
+        self.financeable = {r.id for r in state.receivables if r.status == "OPEN" and r.confirmed
+                            and r.issue_day <= state.as_of_day and r.counterparty_id in buyers}
 
     @staticmethod
     def _cost(t: Any) -> int:
@@ -165,10 +175,8 @@ class Oracle:
     def check(self, actions: list[Any], full: bool = True) -> Checked:
         from app.covenants import evaluate as evaluate_covenants
         from app.domain.models import FacilityKind, FacilityStatus, FundingActionKind, Mode
-        from app.domain.money import Ratio
         from app.financial import EngineError, project
-        from app.funding import all_in_rate
-        from app.mandate import check_apr
+        from app.funding.rates import action_rate, approval_reason, invoice_landing_day
 
         key = (tuple(sorted((a.kind.value, a.facility_id, a.amount_fen, a.receivable_id or "", a.repay_day or -1)
                             for a in actions)), full)
@@ -186,6 +194,16 @@ class Oracle:
         shortfall = max(0, max(self.m.min_cash_fen - p.closing_fen for p in t.days))
         reserve_ok = shortfall == 0
         reasons = [] if reserve_ok else ["RESERVE_BREACH"]
+        approval = unrunnable = False
+        for a in actions:
+            f = self.facs[a.facility_id]
+            due = self._due(a.receivable_id) if a.receivable_id else None
+            landing = invoice_landing_day(f, a.day, self._issue(a.receivable_id)) if a.receivable_id else None
+            rate, how = action_rate(f, a.kind, amount_fen=a.amount_fen, landing_day=landing, due_day=due,
+                                    rate_bp=a.rate_bp)
+            approval = approval or approval_reason(rate, how, self.m) is not None
+            unrunnable = unrunnable or (a.kind == FundingActionKind.FINANCE_INVOICE
+                                        and a.receivable_id not in self.financeable)
         if full and reserve_ok:
             used = {a.facility_id for a in actions}
             binding = [f for f in self.s.facilities if f.status == FacilityStatus.COMMITTED or f.id in used]
@@ -194,18 +212,11 @@ class Oracle:
                 f = self.facs[a.facility_id]
                 if f.status != FacilityStatus.COMMITTED:
                     reasons.append("UNCOMMITTED_FACILITY")
-                days_early = None
-                if a.kind == FundingActionKind.EARLY_PAY:
-                    due = self._due(a.receivable_id)
-                    days_early = (due - (self._issue(a.receivable_id) + f.lead_time_days)) if due is not None else None
-                rate = all_in_rate(f, discount_bp=a.rate_bp, days_early=days_early)[0] \
-                    if a.kind != FundingActionKind.DISCOUNT_BILL else Fraction(a.rate_bp or f.rate_bp, 10_000)
-                if check_apr(Ratio.of(rate), self.m, f.name) is not None:
-                    reasons.append("MAX_APR_EXCEEDED")
                 debt = f.kind not in (FacilityKind.BUYER_EARLY_PAY, FacilityKind.BANK_ACCEPTANCE_BILL)
                 if debt and not self.m.allow_new_borrowing:
                     reasons.append("NEW_BORROWING_NOT_ALLOWED")
-        out = Checked(reserve_ok and not reasons, cost, reserve_ok, sorted(set(reasons)), shortfall)
+        out = Checked(reserve_ok and not reasons, cost, reserve_ok, sorted(set(reasons)), shortfall, approval,
+                      unrunnable)
         self.cache[key] = out
         return out
 
@@ -342,14 +353,17 @@ def grid(cap: int, step: int) -> list[int]:
 
 def brute_force(o: Oracle, step2: int, step3: int, budget_s: float) -> dict[str, Any]:
     lv = levers(o)
-    best: tuple[int, list[str], list[Any]] | None = None
+    best: tuple[int, list[str], list[Any], tuple[bool, bool]] | None = None
     t0 = time.perf_counter()
     complete = True
 
     def consider(actions: list[Any], chk: Checked, labels: list[str]) -> None:
         nonlocal best
-        if chk.ok and chk.cost is not None and (best is None or chk.cost < best[0]):
-            best = (chk.cost, labels, actions)
+        if not (chk.ok and chk.cost is not None):
+            return
+        # the router's order: runnable before unrunnable, no approval before approval, then cheaper
+        if best is None or ((chk.unrunnable, chk.approval), chk.cost) < (best[3], best[0]):
+            best = (chk.cost, labels, actions, (chk.unrunnable, chk.approval))
 
     for a in lv:  # single levers
         got = min_fill(o, [], a)
@@ -373,8 +387,12 @@ def brute_force(o: Oracle, step2: int, step3: int, budget_s: float) -> dict[str,
             part = o.check(prefix, full=False)
             if part.cost is None:
                 continue
-            if best is not None and part.cost >= best[0]:
-                break
+            if best is not None:
+                # more levers only cost more and only raise the class: a prefix already ranked below the best
+                # (a worse class, or the same class and as dear) ends the branch
+                if (part.unrunnable, part.approval) > best[3] or (
+                        (part.unrunnable, part.approval) == best[3] and part.cost >= best[0]):
+                    break
             if part.reserve_ok:  # the prefix alone suffices: a smaller combination; more only costs more
                 consider(prefix, o.check(prefix, full=True), labels[:len(prefix)])
                 break
@@ -388,6 +406,7 @@ def brute_force(o: Oracle, step2: int, step3: int, budget_s: float) -> dict[str,
                 fixed = [x for x in combo if x is not filler]
                 walk(fixed, filler, [], step, [x.label for x in (*fixed, filler)])
     return {"cost": best[0] if best else None, "levers": best[1] if best else [],
+            "needs_approval": best[3][1] if best else None, "unrunnable": best[3][0] if best else None,
             "actions": [(a.kind.value, a.facility_id, a.amount_fen, a.receivable_id, a.repay_day)
                         for a in (best[2] if best else [])],
             "complete": complete, "n_levers": len(lv), "evals": o.evals}
@@ -444,6 +463,8 @@ def evaluate_scenario(spec: dict[str, Any], step2_fen: int, step3_fen: int, budg
     uncommitted = [a.facility_id for a in router_acts if status[a.facility_id] != FacilityStatus.COMMITTED]
     indep = o.check(router_acts, full=True)
     bf = brute_force(o, step2_fen, step3_fen, budget_s)
+    r_class = (not p.executable_now, p.needs_owner_approval)
+    flags_agree = (not p.admissible) or r_class == (indep.unrunnable, indep.approval)
     bl = line_first_baseline(o)
     need = p.need_fen
     r_cost = p.total_cost_fen if p.admissible else None
@@ -452,13 +473,17 @@ def evaluate_scenario(spec: dict[str, Any], step2_fen: int, step3_fen: int, budg
     elif bf["cost"] is None:
         optimal = not p.admissible  # honest: no admissible plan exists on the grid, and it says so
     else:
-        optimal = p.admissible and r_cost is not None and r_cost <= bf["cost"] + TOLERANCE_FEN
+        b_class = (bool(bf["unrunnable"]), bool(bf["needs_approval"]))
+        optimal = p.admissible and r_cost is not None and (
+            r_class < b_class or (r_class == b_class and r_cost <= bf["cost"] + TOLERANCE_FEN))
     return {
         "id": spec["id"], "why": spec["why"], "spec": spec, "need_fen": need, "router_admissible": p.admissible,
         "router_cost_fen": r_cost, "router_label": p.label,
         "router_actions": [(a.kind.value, a.facility_id, a.amount_fen, a.receivable_id, a.repay_day)
                            for a in router_acts],
         "router_independently_admissible": indep.ok if p.admissible else None,
+        "router_needs_approval": p.needs_owner_approval, "router_executable_now": p.executable_now,
+        "router_flags_agree": flags_agree, "brute_needs_approval": bf["needs_approval"],
         "router_independent_reasons": indep.reasons, "router_uses_uncommitted": uncommitted,
         "brute_cost_fen": bf["cost"], "brute_actions": bf["actions"], "brute_complete": bf["complete"],
         "brute_levers": bf["n_levers"], "brute_evals": bf["evals"],
@@ -505,6 +530,10 @@ def run(n_random: int = 16, step2_fen: int = 500_000, step3_fen: int = 1_000_000
             res.failures.append(Failure("funding", sid + ":independent",
                                         f"{sid}: the router's plan fails an independent check: "
                                         f"{row['router_independent_reasons']}", f"{REPRO} --only {sid}", row))
+        if not row["router_flags_agree"]:
+            res.failures.append(Failure("funding", sid + ":flags",
+                                        f"{sid}: the plan's needs-the-owner / runs-today flags differ from the "
+                                        f"independent classification of its actions", f"{REPRO} --only {sid}", row))
         if row["router_uses_uncommitted"]:
             res.failures.append(Failure("funding", sid + ":uncommitted",
                                         f"{sid}: the committed plan uses {row['router_uses_uncommitted']}",

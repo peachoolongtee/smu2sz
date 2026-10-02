@@ -2,9 +2,9 @@
 
 An agent owned by a small supplier that controls both of its debt books under an owner-signed mandate. **Terms Guard** covers the credit the supplier gives buyers through payment terms. **Debt Desk** covers the credit it takes from lenders to survive those terms. It's our FinTechathon 2026 entry, International track, Topic E: SME Finance Copilot.
 
-The language model only interprets text. Deterministic code decides and executes: a buyer's offer becomes typed obligations, then a dated cash and debt trajectory, then a funding plan, then covenant and mandate checks, then a verdict, then typed operations in a hash-chained log. The agent may accept a buyer's offer on its own only when it can prove it read every figure and request in it (ADR-0005); everything else waits for the owner. It does not stop at the decision: on current books and a simulated clock it watches for a late receipt, tells the owner first, proposes a cure inside the mandate with its cost, and runs it only on the owner's "go ahead".
+The language model only interprets text. Deterministic code decides and executes: a buyer's offer becomes typed obligations, then a dated cash and debt trajectory, then a funding plan, then covenant and mandate checks, then a verdict, then typed operations in a hash-chained log. The agent may accept a buyer's offer on its own only when it can prove it read every figure and request in it (ADR-0005); everything else waits for the owner. It does not stop at the decision: on current books and a simulated clock it watches for a late receipt, tells the owner first, and proposes a cure inside the mandate with its cost. Free text executes only as a closed affirmative command, and a plan is proposed first and run only on the owner's "go ahead", as exactly the operations shown. A cure that costs more a year than the mandate's ceiling is queued, and runs only when the owner approves it as a second step (in the demo: go ahead, approve, and the cash lands on day 37).
 
-All data is synthetic (`fixtures/`). The agent is decision support under the owner's own limits, not a lender, broker or adviser, and it executes no real payment: every facility and the bank feed are simulated. Nothing below needs an API key or the network once dependencies are installed: the default `LLM_MODE=cache` replays recorded model outputs and falls back to a deterministic rules grammar.
+All data is synthetic (`fixtures/`). This is a simulation: the agent is decision support under the owner's own limits, not a lender, broker or adviser, and it executes no real payment; every facility, the buyer and the bank feed are simulated. It screens the entered obligations only, and it makes no claim of bank-covenant compliance. Nothing below needs an API key or the network once dependencies are installed: the default `LLM_MODE=cache` replays recorded model outputs and falls back to a deterministic rules grammar.
 
 ## Quickstart for judges
 
@@ -25,14 +25,14 @@ cd services/api && uv sync && uv run uvicorn app.main:app --reload      # API on
 cd apps/web && pnpm install && NEXT_PUBLIC_API_MODE=live pnpm dev        # UI on :3000; omit the variable for offline mock mode
 ```
 
-Click **Start** in the demo bar and sign in as the owner when asked (the local demo token is `demo-owner-token`; add `NEXT_PUBLIC_DEMO=1` to prefill it). The chat panel opens from the header on every page, and the owner home at `/` shows the day, the agent's opener and what is waiting. To see the whole path from the deal to the repaid credit line without the UI (17 steps, in process, exit 0): `PYTHONUTF8=1 uv run --project services/api python scripts/demo_run.py`.
+Click **Start** in the demo bar and sign in as the owner when asked (the local demo token is `demo-owner-token`; add `NEXT_PUBLIC_DEMO=1` to prefill it). The chat panel opens from the header on every page, and the owner home at `/` shows the day, the agent's opener and what is waiting. To see the whole path from the deal to the repaid credit line without the UI (17 steps, in process, exit 0; the day-34 cure takes two steps, go ahead then approve, and lands on day 37): `PYTHONUTF8=1 uv run --project services/api python scripts/demo_run.py`.
 
 **3. Test.**
 
 ```bash
-cd services/api && uv run pytest                     # 4,044 passed, 26 skipped on 1 Oct 2026 (Windows, SKIP_PERF_BENCH=1: the 7 latency benchmarks skipped; about 6 min)
+cd services/api && uv run pytest                     # 4,731 passed, 20 skipped on 3 Oct 2026 (Windows, SKIP_PERF_BENCH=1: the latency benchmarks skipped; about 9 min)
 cd apps/web && pnpm lint && pnpm typecheck && pnpm build && pnpm test:unit && pnpm test:e2e
-                                                     # Playwright mock e2e: 29 passed on 1 Oct 2026
+                                                     # Playwright mock e2e: 31 passed (live project: 29), per docs/CONTINUOUS_OPTIMIZATION.md
                                                      # (once: pnpm exec playwright install chromium)
 ```
 
@@ -40,8 +40,8 @@ cd apps/web && pnpm lint && pnpm typecheck && pnpm build && pnpm test:unit && pn
 
 ```bash
 python3 scripts/run_scenarios.py --inproc                         # 46 scripted /nl tasks + evidence → services/api/evals/e2e/latest/
-cd services/api && uv run python -m app.security.attacks --report # 182 attacks (122 API + 60 chat), 0 with harm; the report file covers the 122 API attacks
-uv run --project services/api python scripts/evaluate.py          # full offline evaluation (about 4–5 min) → services/api/evals/latest_report.md
+cd services/api && uv run python -m app.security.attacks --report # 255 attacks (122 API + 133 chat, including the NL-CS consent attacks and each buyer attack with and without the buyer's key), 0 with harm
+uv run --project services/api python scripts/evaluate.py          # full offline evaluation (about 5 min) → services/api/evals/latest_report.md
 uv run --project services/api python scripts/evaluate.py --suite offers --heldout fixtures/heldout3   # the independent held-out set
 ```
 
@@ -96,7 +96,7 @@ Copy `infra/.env.example` to `infra/.env`, set `POSTGRES_PASSWORD`, `OWNER_TOKEN
 - `docs/ARCHITECTURE.md`: modules, contracts, engine and verdict rules, and the API
 - `docs/INVARIANTS.md`: the security laws
 - `docs/DEMO_FLOW.md`: the scripted demo and its numbers
-- `docs/adr/`: decisions (storage, rounding, fixture timeline and router, evidence, autonomy requires proof, current books and the clock, the early-payment rule, DSCR for bullet loans)
+- `docs/adr/`: decisions (storage, rounding, fixture timeline and router, evidence, autonomy requires proof, current books and the clock, the early-payment rule, DSCR for bullet loans read as a reserve-coverage reading, accepted terms written onto invoices, funding lots with dates); the financial rules are in `docs/FINANCIAL_SEMANTICS.md`
 - `services/api/evals/`: evaluation reports (`latest_report.md`, `accuracy_summary.md`, held-out reports, `security/`, `e2e/latest/`)
 - `CONTEXT.md`: the glossary
 - `fixtures/golden/`: the independent oracle and golden values
@@ -105,5 +105,5 @@ Copy `infra/.env.example` to `infra/.env`, set `POSTGRES_PASSWORD`, `OWNER_TOKEN
 
 - **Data flows.** In live mode (opt-in) a buyer's message and attached documents go to the configured model provider (DeepSeek or Anthropic) for extraction only; the model never receives the mandate, the floor, facility limits or other buyers' terms. In the default cache mode nothing leaves the machine. Real buyer documents can contain personal information; sending them abroad would need a legal basis under China's PIPL and, where required, a security assessment or standard contract before any production use. That is an obligation on a deployer, not legal advice, and we do not claim compliance. The demo uses synthetic data only.
 - **AI-generated content.** Outbound text to a counterparty is template-filled from typed fields. The web UI does not yet label replies as AI-generated, for reference (a known gap).
-- **Known limits.** The hash chain's head is not anchored outside the system, and three medium items found through chat are open (threshold probing, the agent key reading status through chat, "go ahead" not bound to the plan shown). See `docs/SECURITY_SELF_ASSESSMENT.md`.
+- **Known limits.** The chain is internally checkable only: its head is not anchored outside the system. Two medium items found through chat are open (an authenticated buyer can probe the accept/counter threshold; the agent key can read protected labels through chat status replies). Between 1 and 3 Oct an independent audit (13 findings) and three red-team rounds (13 findings) were fixed; the findings, decisions and open backlog are in `docs/CONTINUOUS_OPTIMIZATION.md`. See `docs/SECURITY_SELF_ASSESSMENT.md`.
 - **Licence.** [TEAM: licence to be chosen by the owner]
