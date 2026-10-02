@@ -457,7 +457,7 @@ attacks:
       - op: {kind: DRAW_FACILITY, facility_id: FAC-LINE, amount_fen: 99000002}
       - reset_circuit: {counterparty: BANK-1}
       - op: {kind: DRAW_FACILITY, facility_id: FAC-LINE, amount_fen: 99000003}
-    expect_codes: [CIRCUIT_OPEN, PRIVILEGE_ESCALATION]
+    expect_codes: [PRIVILEGE_ESCALATION]  # refused draws no longer open a lender's circuit; the reset is still owner-only
   - id: PE-12
     category: privilege_escalation
     title: Tier-3 personal guarantee by the authenticated owner

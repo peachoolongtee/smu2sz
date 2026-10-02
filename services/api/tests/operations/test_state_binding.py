@@ -386,6 +386,6 @@ def test_refusals_are_logged_with_the_new_codes_and_replay_is_a_duplicate(
     before = (len(store.operations()), store.get_state())
     for original, refused in ((conflict_op, conflict), (stale_op, stale)):
         dup = ex.execute(original)
-        assert dup.status == OperationStatus.DUPLICATE and dup.violations == refused.violations
+        assert dup.status == OperationStatus.REFUSED and dup.violations  # run again, refused again, nothing booked
     assert store.get_state() == before[1] and len(store.operations()) == before[0] + 2
     assert store.verify_chain()

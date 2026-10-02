@@ -116,6 +116,10 @@ _NOT_DRAWABLE = (
     FacilityKind.EQUITY,
 )
 
+# The circuit breaker stops a counterparty whose offers keep being refused. It gates and counts only these
+# operations: a receipt from the bank, a draw, an advance or a repayment is never blocked by it.
+_CIRCUIT_OPS = (AcceptOffer, RecordCommitment, CounterOffer, RejectOffer, AddFacility)
+
 _ACCEPTANCE_SECURITY = {
     Code.REPLAY: SecurityEventKind.REPLAY,
     Code.COMMITMENT_EXPIRED: SecurityEventKind.EXPIRED,
@@ -440,7 +444,8 @@ class Executor:
             # 3. tier ------------------------------------------------------------------
             if ctx.tier == Tier.TIER_3:
                 raise self._tier3(ctx)
-            if ctx.counterparty_id is not None and self._recent_refusals(ctx.counterparty_id, now) >= CIRCUIT_THRESHOLD:
+            if (isinstance(op, _CIRCUIT_OPS) and ctx.counterparty_id is not None
+                    and self._recent_refusals(ctx.counterparty_id, now) >= CIRCUIT_THRESHOLD):
                 raise _refuse(Code.CIRCUIT_OPEN,
                               f"Circuit open for {ctx.counterparty_id}: {CIRCUIT_THRESHOLD} refusals within "
                               f"{CIRCUIT_WINDOW_DAYS} days; the owner must reset it",
@@ -511,7 +516,9 @@ class Executor:
                    f"nothing re-executed", idempotency_key=key)
             return self._log(op, OperationResult(op_id=op.op_id, kind=op.kind, status=REFUSED, tier=Tier.TIER_3,
                                                  violations=[v], effective_day=now, message=v.message))
-        prior = [e for e in entries if e.idempotency_key == key and e.result.status != DUPLICATE]
+        # A refusal changed nothing, so it is not final: the same key may run again (a bank receipt refused for a
+        # passing reason must be bookable on retry, and nobody can burn a key by getting a refusal logged under it).
+        prior = [e for e in entries if e.idempotency_key == key and e.result.status in (EXECUTED, PENDING)]
         if approved:  # an owner-approved re-run: only a completed execution makes it a duplicate
             prior = [e for e in prior if e.result.status == EXECUTED]
         if not prior:
@@ -640,6 +647,8 @@ class Executor:
         for e in entries:
             if e.seq <= start or e.op is None or e.result.status != REFUSED or not e.result.violations:
                 continue
+            if not isinstance(e.op, _CIRCUIT_OPS):
+                continue  # only what a counterparty's own offers cause; never receipts, funding or repayments
             if e.day is None or not (now - CIRCUIT_WINDOW_DAYS < e.day <= now):
                 continue
             if self._counterparty(e.op, state) == counterparty_id:
