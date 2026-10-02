@@ -134,8 +134,9 @@ out["reserve_shortfall_day47"] = 30000000 - day47_60
 day60_60 = day47_60 - debt_paid(48, 61)
 out["cash_day60_60d_terms"] = day60_60
 out["reserve_shortfall_max"] = 30000000 - day60_60
-# cure: carry the deepest shortfall on the committed marginal permanent source (invoice financing), requested
-# on day 0 against the day-2 invoice: lands day 5 (lead 3), repaid day 62 -> 57 days -> 2 periods (ADR-0003)
+# cure: carry the deepest shortfall on the committed marginal permanent source (invoice financing) for 57 days ->
+# 2 periods (ADR-0003): against the day-2 invoice (lands day 5, repaid day 62) or, as the verifier picks, the day-32
+# invoice (lands day 35, repaid day 92 under 60-day terms): the same 57 days, the same price
 sf = F(out["reserve_shortfall_max"], 100)
 out["reserve_cure_cost_if"] = if_cost(sf, 57)
 

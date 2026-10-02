@@ -76,8 +76,10 @@ def test_ex01_reserve_breach_day_47_curable(offer_id, g, state):
     assert kinds == {FacilityKind.INVOICE_FINANCING}
     (adv,) = b.cure_plan.actions
     assert adv.amount_fen == g["reserve_shortfall_max"]  # the deepest shortfall (day 60), not day 47's
-    # requested day 0 (ADR-0003), lands day 5 against the day-2 invoice, repaid day 62: 57 days = 2 periods:
+    # On the invoice issued on day 32 (submitted on its issue day, lands day 35, due day 92 under 60-day terms):
+    # 57 days = 2 periods, the same price as on the day-2 invoice (lands day 5, due day 62, also 57 days):
     # 135,040 × 7.8% × 60/365 = 1,731.47 + 135,040 × 0.25% × 2 = 675.20 -> 2,406.67
+    assert adv.receivable_id == "RI:BUYER-1:32"
     fac = next(f for f in state.facilities if f.id == "FAC-IF")
     interest, fee, periods = finance_invoice_charges(fac, g["reserve_shortfall_max"], 62 - 5)
     assert periods == 2

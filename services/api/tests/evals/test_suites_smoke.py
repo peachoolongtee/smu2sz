@@ -40,8 +40,9 @@ def test_brute_force_finds_the_golden_optimum_and_baseline():
     s, m = funding.build({"id": "golden", "why": ""})
     o = funding.Oracle(s, m)
     bf = funding.brute_force(o, step2=3_000_000, step3=15_000_000, budget_s=8.0)
-    assert bf["cost"] == 271_294  # golden v2_optimum_total: line ¥841.64 + invoice financing ¥1,871.30
-    assert funding.line_first_baseline(o)["cost"] == 271_294
+    # golden v2_optimum_total: line ¥841.64 + invoice financing ¥2,272.29 (an advance of ¥255,000)
+    assert bf["cost"] == 311_393
+    assert funding.line_first_baseline(o)["cost"] == 311_393
 
 
 def test_min_fill_is_exact_to_the_fen():
@@ -51,7 +52,7 @@ def test_min_fill_is_exact_to_the_fen():
     line = next(x for x in lv if x.facility_id == "FAC-LINE" and x.repay_day == 32)
     fin = next(x for x in lv if x.facility_id == "FAC-IF" and x.receivable_id == "RCV-A")
     amount, chk = funding.min_fill(o, [line.action(line.cap)], fin)
-    assert amount == 21_000_000 and chk.ok
+    assert amount == 25_500_000 and chk.ok  # 405,000 − the 150,000 line
     assert not o.check([line.action(line.cap), fin.action(amount - 1)], full=False).reserve_ok
 
 
