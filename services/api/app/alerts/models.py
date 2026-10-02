@@ -23,6 +23,7 @@ class AlertKind(StrEnum):
     COVENANT_HEADROOM_LOW = "COVENANT_HEADROOM_LOW"
     CLEAN_DOWN_AT_RISK = "CLEAN_DOWN_AT_RISK"
     COMMITMENT_EXPIRING = "COMMITMENT_EXPIRING"
+    MANDATE_EXPIRING = "MANDATE_EXPIRING"  # the mandate expires within 14 days, or already has (renewal is offline)
     RECEIVABLE_PAST_DUE = "RECEIVABLE_PAST_DUE"
     CONCESSIONS_NEAR_CAP = "CONCESSIONS_NEAR_CAP"
     FACILITY_REPAYABLE = "FACILITY_REPAYABLE"  # a drawn credit-line balance the books can repay today
