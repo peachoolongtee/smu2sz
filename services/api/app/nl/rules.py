@@ -14,6 +14,7 @@ import re
 
 from app.domain.fixtures import load_offers
 from app.domain.models import FinancialState
+from app.nl import consent
 from app.nl import lexicon as lx
 from app.nl.models import Intent, Parsed, Slots
 
@@ -142,6 +143,10 @@ def bare_counterparty(text: str, state: FinancialState) -> bool:
 
 
 def _facility(text: str, state: FinancialState) -> str | None:
+    low = lx.norm(text)
+    named = [f.id for f in state.facilities if re.search(rf"(?<![a-z0-9-]){re.escape(f.id.lower())}(?![a-z0-9-])", low)]
+    if len(named) == 1:
+        return named[0]
     for kind, pat in lx.FACILITY_WORDS:
         if pat.search(text):
             found = [f.id for f in state.facilities if f.kind.value == kind]
@@ -174,7 +179,7 @@ def slots_from(text: str, state: FinancialState) -> Slots:
         quoted_text=quoted(text),
         zero_forward=bool(lx.ZERO_FORWARD.search(text) or lx.ZERO_FORWARD_EXTRA.search(text)),
         use_financing=bool(lx.USE_FINANCING.search(ot)),
-        execute_now=bool(lx.EXECUTE_NOW.search(ot)),
+        execute_now=False,  # only the closed command grammar (consent.parse_command) or a confirmed plan sets this
         tier3=tier3,  # type: ignore[arg-type]
         capex=bool(lx.CAPEX.search(ot)),
         quoted_approval=quoted_approval(spans),
@@ -190,14 +195,26 @@ def parse(text: str, state: FinancialState, *, pending_plan: bool = False) -> Pa
     def hit(intent: Intent, cue: str, **kw: bool) -> Parsed:
         return Parsed(intent=intent, slots=s, matched=[cue], **kw)
 
+    def _money(intent: Intent, cue: str) -> Parsed:
+        gate = consent.money_gate(text)
+        if gate in ("negated", "bad_amount", "deferred"):
+            return Parsed(intent=intent, slots=s, matched=[cue, f"consent:{gate}"])
+        return hit(intent, cue, tentative=True)  # a proposal that waits for the owner's confirmation
+
     if pending_plan and not asks_why and lx.CORRECTION.search(text) and (s.rate_bp is not None or s.use_financing or s.counterparty_id
                                                         or s.amount_fen is not None or s.buyer_profile):
         return hit(Intent.AMBIGUOUS, "correction", correction=True)  # the service keeps the plan's intent
     if pending_plan and not s.tier3 and not s.approval_id and not asks_why:
-        if lx.CONFIRM.search(text) and not lx.DECLINE.search(text):
+        # a short, whole-message affirmative confirms the plan; "should I go ahead?" or "do not go ahead" never does
+        verdict = consent.confirmation(text)
+        if verdict == "yes":
             return hit(Intent.APPROVE, "confirm_plan", confirm_plan=True)
-        if lx.DECLINE.search(text):
+        if verdict == "no":
             return hit(Intent.REJECT, "decline_plan", confirm_plan=True)
+        if lx.CONFIRM.search(text) and not lx.DECLINE.search(text):
+            # confirm words inside something that is not a short affirmative: it confirms nothing (the service
+            # logs it when it sat in a forwarded message, otherwise asks for a plain go-ahead)
+            return hit(Intent.APPROVE, "confirm_unclear", confirm_plan=True)
     if not pending_plan and lx.BARE_CONFIRM.search(text) and not lx.DECLINE.search(text):
         # "yes do it" with no plan in this session: it names nothing, so it may only bind to an approval the
         # session has just shown (the service checks); never to whatever happens to be in the queue
@@ -206,8 +223,15 @@ def parse(text: str, state: FinancialState, *, pending_plan: bool = False) -> Pa
         return hit(Intent.OUT_OF_SCOPE, f"tier3:{s.tier3}")
     if not asks_why and (s.approval_id or (lx.APPROVAL_REF.search(text) and (lx.CONFIRM.search(text)
                                                                             or lx.DECLINE.search(text)))):
-        return hit(Intent.REJECT if lx.DECLINE.search(text) and not lx.CONFIRM.search(text) else Intent.APPROVE,
-                   "approval")
+        # an approval is decided only by a full-match approve or reject sentence; anything else clarifies
+        decision = consent.approval_verdict(text) if s.approval_id or consent.approval_ids(text) else consent.bare_verdict(text)
+        if decision is None:
+            return hit(Intent.AMBIGUOUS, "consent:approval_unclear")
+        return hit(Intent.REJECT if decision == "reject" else Intent.APPROVE, "approval")
+    cmd = consent.parse_command(text, state)
+    if cmd is not None:  # the whole message is one affirmative command: the only free text that executes
+        s = s.model_copy(update={"amount_fen": cmd.amount_fen, "facility_id": cmd.facility_id, "execute_now": True})
+        return hit(Intent.FUND_GAP if cmd.kind == "DRAW" else Intent.REPAY_FACILITY, f"command:{cmd.kind.lower()}")
     if lx.EXPLAIN.search(text):
         return hit(Intent.EXPLAIN, "explain")
     if lx.WHAT_IF.search(text):
@@ -241,21 +265,20 @@ def parse(text: str, state: FinancialState, *, pending_plan: bool = False) -> Pa
     if lx.NEGOTIATE.search(text):
         return hit(Intent.NEGOTIATE, "negotiate")
     if lx.REPAY.search(text):
-        return hit(Intent.REPAY_FACILITY, "repay")
+        return _money(Intent.REPAY_FACILITY, "repay")
     if lx.FUND.search(text):
-        # an explicit instruction executes; a request to find or suggest a way proposes (en and zh alike)
-        explore = bool(lx.FUND_EXPLORE.search(text))
-        return hit(Intent.FUND_GAP, "fund_explore" if explore else "fund", tentative=explore)
+        # nothing here executes: a clear negation, a bad amount or a condition is answered, anything else proposes
+        return _money(Intent.FUND_GAP, "fund_explore" if lx.FUND_EXPLORE.search(text) else "fund")
     if lx.FUND_SOFT.search(text):
         return hit(Intent.FUND_GAP, "fund_need", tentative=True)
     if lx.STATUS.search(text):
         return hit(Intent.SHOW_STATUS, "status")
     if lx.EVALUATE.search(text):
         return hit(Intent.EVALUATE_OFFER, "evaluate")
-    if lx.CONFIRM.search(text) and not lx.DECLINE.search(text):
-        return hit(Intent.APPROVE, "approval")
-    if lx.DECLINE.search(text):
-        return hit(Intent.REJECT, "approval")
+    if lx.CONFIRM.search(text) or lx.DECLINE.search(text):
+        decision = consent.bare_verdict(text)  # "approve it" / 驳回这个 only; a longer sentence decides nothing
+        if decision is not None:
+            return hit(Intent.REJECT if decision == "reject" else Intent.APPROVE, "approval")
     if s.capex:
         return hit(Intent.CAPEX, "capex")
     if lx.AMBIGUOUS.search(text) or bare_counterparty(text, state):

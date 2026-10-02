@@ -53,10 +53,12 @@ scenarios:
                  ops_count: 0, reply_contains: ["¥26,455.62"]}
 
   - id: S04_fund_gap
-    title: "Fund the projected gap with the router's committed plan (Tier 1)"
+    title: "Fund the projected gap: the router's committed plan is proposed, then run on 'go ahead' (Tier 1)"
     tags: [demo, scene2, fund]
     turns:
       - text: "Fund the cash gap"
+        expect: {intent: FUND_GAP, awaiting: true, ops_count: 0, reply_contains: ["¥360,000.00"]}
+      - text: "go ahead"
         expect: {intent: FUND_GAP, ops: ["DRAW_FACILITY:EXECUTED", "SUBMIT_INVOICE_FOR_FINANCING:EXECUTED"],
                  reply_contains: ["¥360,000.00"]}
     after: {cash_fen: 76000000}
@@ -66,6 +68,8 @@ scenarios:
     tags: [fund, zh]
     turns:
       - text: "帮我补足资金缺口"
+        expect: {intent: FUND_GAP, awaiting: true, ops_count: 0}
+      - text: "执行"
         expect: {intent: FUND_GAP, ops: ["DRAW_FACILITY:EXECUTED", "SUBMIT_INVOICE_FOR_FINANCING:EXECUTED"]}
 
   - id: S06_security_fastcapital
@@ -250,6 +254,8 @@ scenarios:
       - text: "fund it"
         expect: {intent: AMBIGUOUS, clarification: true, ops_count: 0, reply_contains: ["days 12–31", "days 60–76"]}
       - text: "the first one"
+        expect: {intent: FUND_GAP, awaiting: true, ops_count: 0}
+      - text: "go ahead"
         expect: {intent: FUND_GAP, ops: ["DRAW_FACILITY:EXECUTED", "SUBMIT_INVOICE_FOR_FINANCING:EXECUTED"]}
 
   - id: S22_clarify_vague
@@ -284,6 +290,8 @@ scenarios:
     tags: [repay, fallback]
     turns:
       - text: "Fund the cash gap now"
+        expect: {intent: FUND_GAP, awaiting: true, ops_count: 0}
+      - text: "go ahead"
         expect: {intent: FUND_GAP, ops: ["DRAW_FACILITY:EXECUTED", "SUBMIT_INVOICE_FOR_FINANCING:EXECUTED"]}
       - text: "Repay the credit line"
         expect: {intent: REPAY_FACILITY, ops_count: 0, reply_contains: ["reserve"]}
@@ -295,7 +303,7 @@ scenarios:
     turns:
       - text: "Draw ¥50,000 on the credit line"
         expect: {intent: FUND_GAP, ops: ["DRAW_FACILITY:EXECUTED"]}
-      - text: "Repay the credit line"
+      - text: "Repay ¥50,000 on the credit line"
         expect: {intent: REPAY_FACILITY, ops: ["REPAY_FACILITY:EXECUTED"]}
     after: {cash_fen: 90000000}
 
@@ -380,9 +388,11 @@ scenarios:
     tags: [security, replay, idempotency]
     turns:
       - text: "Fund the cash gap"
+        expect: {intent: FUND_GAP, awaiting: true, ops_count: 0}
+      - text: "go ahead"
         request_id: REQ-FUND-1
         expect: {intent: FUND_GAP, ops: ["DRAW_FACILITY:EXECUTED", "SUBMIT_INVOICE_FOR_FINANCING:EXECUTED"]}
-      - text: "Fund the cash gap"
+      - text: "go ahead"
         request_id: REQ-FUND-1
         expect: {replayed: true, ops: ["DRAW_FACILITY:DUPLICATE", "SUBMIT_INVOICE_FOR_FINANCING:DUPLICATE"]}
     after: {cash_fen: 76000000, chain_valid: true}

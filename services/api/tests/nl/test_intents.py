@@ -47,8 +47,12 @@ def test_negotiate_without_counters_says_so(client):
     assert "no counters" in r["reply"].lower()
 
 
-def test_fund_gap_executes_the_router_plan(client, rt):
-    r = Chat(client, "t-fund").say("Fund the cash gap")
+def test_fund_gap_executes_the_router_plan_on_go_ahead(client, rt):
+    c = Chat(client, "t-fund")
+    r = c.say("Fund the cash gap")
+    assert r["intent"] == "FUND_GAP" and ops(r) == [] and r["awaiting_confirmation"]
+    assert rt.store.get_state().cash_fen == 40_000_000
+    r = c.say("go ahead")
     assert r["intent"] == "FUND_GAP"
     assert ops(r) == [("DRAW_FACILITY", "EXECUTED"), ("SUBMIT_INVOICE_FOR_FINANCING", "EXECUTED")]
     assert rt.store.get_state().cash_fen == 76_000_000
@@ -58,6 +62,7 @@ def test_fund_gap_executes_the_router_plan(client, rt):
 def test_repay_is_held_when_it_would_breach_the_reserve(client):
     c = Chat(client, "t-repay")
     c.say("Fund the cash gap")
+    c.say("go ahead")
     r = c.say("Repay the credit line")
     assert r["intent"] == "REPAY_FACILITY" and ops(r) == []
     assert "reserve" in r["reply"]
@@ -68,8 +73,12 @@ def test_repay_executes_with_headroom(client, rt):
     rt.store.put_state(st.model_copy(update={"cash_fen": 90_000_000}))
     c = Chat(client, "t-repay2")
     assert ops(c.say("Draw ¥50,000 on the credit line")) == [("DRAW_FACILITY", "EXECUTED")]
-    r = c.say("Repay the credit line")
-    assert ops(r) == [("REPAY_FACILITY", "EXECUTED")]
+    r = c.say("Repay the credit line")  # no amount: a proposal, not an instruction
+    assert ops(r) == [] and r["awaiting_confirmation"]
+    assert ops(c.say("go ahead")) == [("REPAY_FACILITY", "EXECUTED")]
+    assert rt.store.get_state().cash_fen == 90_000_000
+    assert ops(c.say("Draw ¥50,000 on the credit line")) == [("DRAW_FACILITY", "EXECUTED")]
+    assert ops(c.say("Repay ¥50,000 on the credit line")) == [("REPAY_FACILITY", "EXECUTED")]
     assert rt.store.get_state().cash_fen == 90_000_000
 
 
@@ -148,7 +157,8 @@ def test_two_gaps_clarification(client, rt):
     assert [o["id"] for o in r["clarification"]["options"]] == ["1", "2", "3"]
     assert "days 60–76" in r["clarification"]["options"][1]["label"]
     r = c.say("the first one")
-    assert r["intent"] == "FUND_GAP"
+    assert r["intent"] == "FUND_GAP" and ops(r) == [] and r["awaiting_confirmation"]
+    r = c.say("go ahead")
     assert ops(r) == [("DRAW_FACILITY", "EXECUTED"), ("SUBMIT_INVOICE_FOR_FINANCING", "EXECUTED")]
 
 

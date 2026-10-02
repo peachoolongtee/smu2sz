@@ -217,8 +217,14 @@ def _dispatch(ctx: NlContext, p: Parsed, text: str) -> Turn:
         return _correct(ctx, p, text)
     if p.intent in (Intent.APPROVE, Intent.REJECT) and not llm and not _direct_command(ctx, text):
         return _not_a_direct_command(ctx, p)
+    if "confirm_unclear" in p.matched and s.pending_plan is not None:
+        return Turn(intent=Intent.AMBIGUOUS, awaiting=True, reply=t(
+            ctx, "I have not run anything. The plan above is still waiting: reply just 'go ahead' to run it, or "
+                 "'cancel'.", "我没有执行任何操作。上面的方案仍在等待：请只回复“执行”以运行，或回复“取消”。"))
     if p.confirm_plan and s.pending_plan is not None:
         return _confirm(ctx, p.intent == Intent.APPROVE, text)
+    if not llm and (tag := next((m for m in p.matched if m.startswith("consent:")), None)):
+        return _consent_turn(ctx, p, tag.split(":", 1)[1], text)
     if p.intent == Intent.AMBIGUOUS and p.source == "clarification" and s.pending_clarification is not None:
         pc = s.pending_clarification
         t_ = ask(pc.intent, pc.slot, t(ctx, "Sorry, which one?", "抱歉，请问是哪一个？"),
@@ -237,9 +243,9 @@ def _dispatch(ctx: NlContext, p: Parsed, text: str) -> Turn:
         case Intent.ACCELERATE_RECEIPT:
             return accelerate(ctx, slots, text, execute=slots.execute_now and not llm)
         case Intent.FUND_GAP:
-            return fund_gap(ctx, slots, execute=not llm and not p.tentative)
+            return fund_gap(ctx, slots, execute=slots.execute_now and not llm and not p.tentative)
         case Intent.REPAY_FACILITY:
-            return repay(ctx, slots, execute=not llm)
+            return repay(ctx, slots, execute=slots.execute_now and not llm)
         case Intent.SHOW_STATUS:
             return status(ctx)
         case Intent.SHOW_ALERTS:
@@ -295,6 +301,33 @@ def _not_a_direct_command(ctx: NlContext, p: Parsed) -> Turn:
         ctx, "That message holds more than a short instruction from you, so I have not approved or run anything. "
              f"If you mean it, reply with just: {how}",
         f"这条消息不只是您本人的简短指令，因此我没有批准或执行任何操作。如确有此意，请只回复：{how}"))
+
+
+def _consent_turn(ctx: NlContext, p: Parsed, why: str, text: str = "") -> Turn:
+    """A financial instruction or an approval that is not in the closed consent grammar (app/nl/consent.py). It
+    runs nothing: a negation clears the plan; an unreadable amount, a condition or a later time is answered; an
+    approval that is not a plain approve or reject is clarified. No operation is sent, whatever the caller."""
+    if why == "negated":
+        return Turn(intent=p.intent, clear_pending=True, reply=t(
+            ctx, "Understood. I have not done anything, and no plan is waiting for your go-ahead.",
+            "明白，我没有执行任何操作，也没有待确认的方案。"))
+    if why == "bad_amount":
+        return Turn(intent=p.intent, reply=t(
+            ctx, "I could not read exactly one amount in RMB (at most two decimals, for example ¥ or 元 or 万) in that, so "
+                 "I have not done anything and nothing is waiting for a go-ahead. Please say it again with one RMB amount.",
+            "我无法从中读出唯一的人民币金额（最多两位小数，例如带 ¥、元或万），因此没有执行任何操作，也没有待确认的方案。"
+            "请用一个人民币金额重新说明。"))
+    if why == "deferred":
+        return Turn(intent=p.intent, reply=t(
+            ctx, "I only act on an instruction that is unconditional and for now, so I have not done anything. "
+                 "When you want it, tell me plainly, for example: draw an amount on the credit line.",
+            "我只执行无条件、立即生效的明确指令，因此没有执行任何操作。需要时请直接说明，例如：从授信额度提款某金额。"))
+    if not _direct_command(ctx, text):  # an approval cue inside a longer, forwarded or pasted message: log it
+        return _not_a_direct_command(ctx, p.model_copy(update={"intent": Intent.APPROVE}))
+    return Turn(intent=Intent.AMBIGUOUS, reply=t(
+        ctx, "I have not approved or declined anything. To decide an approval, say exactly 'approve' or 'reject' "
+             "followed by its id (for example: approve APR-nnnnnn).",
+        "我没有批准或驳回任何事项。要处理审批，请只说“批准”或“拒绝”加审批编号（例如：批准 APR-nnnnnn）。"))
 
 
 HANDLERS_WITH_PLANS = (Intent.ACCELERATE_RECEIPT, Intent.FUND_GAP, Intent.REPAY_FACILITY, Intent.NEGOTIATE,

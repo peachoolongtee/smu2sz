@@ -146,7 +146,7 @@ def test_an_event_in_the_same_nl_turn_counts_that_turns_operations(client: TestC
 
     reset_sessions()
     rt = get_runtime()
-    r = client.post("/nl", json={"session_id": "same", "actor": "OWNER", "text": "Fund the cash gap"},
+    r = client.post("/nl", json={"session_id": "same", "actor": "OWNER", "text": "draw ¥100,000 on the credit line"},
                     headers={"X-Owner-Token": "", "X-Agent-Key": "demo-agent-key"})
     assert r.status_code == 200 and any(o["status"] == "EXECUTED" for o in r.json()["operations"])
     assert money_moved_by_untrusted_fen(rt.store) == 0  # an agent-run turn with no event
