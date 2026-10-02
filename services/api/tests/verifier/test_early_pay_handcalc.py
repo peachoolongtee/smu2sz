@@ -290,11 +290,14 @@ def test_partial_gap_early_pay_still_funds_the_rest_and_is_accepted(state, manda
 
 
 def test_partial_gap_c1_figure(state, mandate, key):
-    # Funding 260,500: line 150,000 (84,164) + IF 110,500 on the residual (<= 80% x 320,000): interest
-    # 11,050,000 x 0.078 x 30/365 = 70,841.10 -> 70,841, fee 11,050,000 x 0.0025 = 27,625, IF = 98,466.
-    # C1 = 50,000 + 84,164 + 98,466 = 232,630 (2,326.30).
+    # Funding 260,500. An invoice under an early-payment agreement cannot also be financed (ADR-0007 note; enforced
+    # in the engine since the 3 Oct red team), so the rest is not an advance on RCV-A's residual. The plan is:
+    # line 150,000 for 32 days (84,164) + more early payment on RCV-A at the buyer's standing 1.2%: to net 110,500
+    # the face is 110,500 / (1 - 0.012) = 111,842.105.. -> 11,184,211 fen; discount 11,184,211 x 0.012 =
+    # 134,210.53 -> 134,211. C1 = 50,000 + 84,164 + 134,211 = 268,375 (2,683.75), still below C0 = 271,294.
+    # (Before that rule the plan financed the residual: IF 110,500 cost 98,466 and C1 was 232,630.)
     b = _ev(state, mandate, key, _leg(50, face=10_000_000))
-    assert _figures(b) == (232_630, 271_294)
+    assert _figures(b) == (268_375, 271_294)
 
 
 def test_golden_c0_is_reported_the_same_for_every_early_pay_offer(state, mandate, key):
