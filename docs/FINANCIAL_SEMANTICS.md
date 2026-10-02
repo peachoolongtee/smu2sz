@@ -74,7 +74,7 @@ year, so the owner must approve it.
 | Rule | Status |
 | --- | --- |
 | Valuation window W = [today, today + H), H = `forward_concession_horizon_days`. A cost counts when the invoice's issue day is in W and inside the frozen scope. | Open (A11) |
-| A gain offsets a cost only if it is FIRM and its cash (the invoice's due day) falls inside W. | Open (A11) |
+| A gain is dated like a cost: by the invoice's issue day in W. Only a FIRM gain offsets a cost. Window-edge convention: a gain on an invoice issued inside W counts even if its cash arrives just after W, exactly as that invoice's extension cost counts. (A stricter cash-date rule for gains was tried on 3 Oct and withdrawn: it counted 13 cost invoices against 11 gain invoices of the same agreement.) | Open (A11) |
 | The same invoices give the same value whatever the wording (bounded or perpetual). | Open (A11) |
 | Terms extension of Δ days on face F: F × Δ × r / 365 per invoice, r = the marginal tariff. Price change p: p × F per invoice. Summed over the dated invoices, posted once. | Open (A11) |
 | Pro forma of an extension: extra debt = F × Δ / invoice interval; monthly service = that × r / 12. | Open (F-FIN-07) |

@@ -101,7 +101,7 @@ Numbers are measurements on the commit named, never targets.
 2. "Go ahead" binds to the exact operations shown with the quoted cost as a ceiling. (Owner agreed.)
 3. No approval is given by code on the owner's behalf: an above-ceiling cure is queued and the owner approves it as
    a second step.
-4. Forward concessions are valued on dated invoices in [today, today + H); a gain counts only if its cash falls in
-   the window. Golden 12-month figures change (13 invoices, not 12).
+4. Forward concessions are valued on dated invoices issued in [today, today + H), gains and costs alike. Golden
+   12-month figures change (13 invoices, not 12). A cash-date rule for gains was tried and withdrawn the same day.
 5. Reserve, DSCR, leverage and the borrowing switch are hard for everyone at execution; clean-down is tested at
    plan level.
