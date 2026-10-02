@@ -39,6 +39,7 @@ from app.domain.money import DAYS_PER_YEAR, Ratio, bp, fmt_pct, fmt_yuan, round_
 from app.domain.ports import LedgerStore
 from app.financial import EngineError, project
 from app.financial.lots import ensure_lots, first_unsettled, landed, repay
+from app.funding.rates import action_rate, approval_reason
 
 MONTH_DAYS = 30
 HEADROOM_SHARE = Fraction(1, 10)  # reserve headroom below 10% of the floor
@@ -188,15 +189,25 @@ def _new_events(t: Trajectory, base: Trajectory, kind: LedgerEventKind, ref: str
 
 
 def _priced(a: FundingAction, s: SuggestedAction, alone: Trajectory, base: Trajectory,
-            mandate: Mandate) -> tuple[SuggestedAction, int | None]:
+            mandate: Mandate, facility: Facility | None = None) -> tuple[SuggestedAction, int | None]:
     """`s` with its cost read from the engine: the charges the projection posts with `a` alone minus without it,
     and the days it is out (arrival to the repayment the projection shows). Also the day that cost falls due.
+    `above_apr_cap` is not read off that quoted rate: it is the executor's own test, `funding.rates.action_rate`
+    (an advance on the days from landing to due, a draw at its tariff) against the mandate's ceiling, so the alert
+    and the router agree on whether the cure needs the owner.
     A draw the projection never repays is carried open: it posts no interest, so its cost is not stated (a
     "¥0.00" would be false) and `s` comes back unpriced."""
     cost = _charges(alone) - _charges(base)
     ref = a.facility_id
     days: int | None = None
     end: int | None = None
+
+    def needs_owner(landing: int | None, due: int | None) -> bool:
+        if facility is None:
+            return False
+        rated, how = action_rate(facility, a.kind, amount_fen=a.amount_fen, landing_day=landing, due_day=due)
+        return approval_reason(rated, how, mandate) is not None
+
     if a.kind == FundingActionKind.FINANCE_INVOICE:
         rid = a.receivable_id or ""
         arrive = [d for d, label in _new_events(alone, base, LedgerEventKind.ADVANCE, ref) if rid in label]
@@ -204,12 +215,14 @@ def _priced(a: FundingAction, s: SuggestedAction, alone: Trajectory, base: Traje
     else:
         arrive = [d for d, _ in _new_events(alone, base, LedgerEventKind.DRAW, ref)]
         repay = [d for d, _ in _new_events(alone, base, LedgerEventKind.REPAYMENT, ref)]
-        if not repay:
-            return s, None
+        if not repay:  # unpriced, but the executor still tests the draw's tariff against the ceiling
+            return s.model_copy(update={"above_apr_cap": needs_owner(None, None)}), None
     if len(arrive) == 1 and len(repay) == 1:  # one lump repayment: a schedule of instalments has no single day
         # counted from the day the cash lands: the same days the executor's rate ceiling is tested on
         days, end = repay[0] - arrive[0], repay[0]
     amount = a.amount_fen
+    over_cap = needs_owner(arrive[0] if len(arrive) == 1 else None,
+                           end if a.kind == FundingActionKind.FINANCE_INVOICE else None)
     rate: Fraction | None = Fraction(cost, amount) * DAYS_PER_YEAR / days if days is not None and days > 0 else None
     if rate is not None:
         formula = f"{fmt_yuan(cost)} / {fmt_yuan(amount)} × 365/{days} = {fmt_pct(rate, 1)} a year"
@@ -218,7 +231,7 @@ def _priced(a: FundingAction, s: SuggestedAction, alone: Trajectory, base: Traje
     priced = s.model_copy(update={
         "cost_fen": cost, "cost_days": days if rate is not None else None,
         "annual_rate": Ratio.of(rate) if rate is not None else None, "cost_formula": formula,
-        "above_apr_cap": rate is not None and rate > bp(mandate.max_apr_bp)})
+        "above_apr_cap": over_cap})
     return priced, end
 
 
@@ -234,7 +247,8 @@ def _cure_costs(state: FinancialState, obs: list[Obligation], t: Trajectory, cur
             alone = project(state, obs, [a], Mode.CONSERVATIVE, t.horizon_days)
         except EngineError:
             continue
-        suggested[i], end = _priced(a, suggested[i], alone, base, mandate)
+        suggested[i], end = _priced(a, suggested[i], alone, base, mandate,
+                                    next((f for f in state.facilities if f.id == a.facility_id), None))
         if end is not None:
             due[i] = end
     try:

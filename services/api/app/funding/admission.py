@@ -9,7 +9,9 @@ would reject cannot be executed leg by leg through `/operations`:
   financed), or it breaches DSCR or leverage, or it takes projected cash below the reserve where it was not
   below it before (or deeper below it).
 - `approval_reason`: the operation is inside the hard limits but above what the agent may do alone, so the owner
-  must approve it (Tier 2). Today: an effective annual cost above the mandate's `max_apr_bp`.
+  must approve it (Tier 2). Today: an effective annual cost above the mandate's `max_apr_bp`. The cost is
+  `funding.rates.action_rate`, the same function and the same receivable days the router prices its plans with,
+  so a plan the router presents as autonomous is admitted without the owner.
 
 Clean-down is not tested here: it is breached by failing to repay, not by one draw; the planner and the alerts
 test it over the plan.
@@ -26,19 +28,23 @@ from app.domain.models import (
     DrawFacility,
     FacilityKind,
     FacilityStatus,
+    FinancialState,
     FundingAction,
     FundingActionKind,
     Mandate,
     Mode,
     RepayFacility,
+    Repayment,
     SubmitInvoiceForFinancing,
     Trajectory,
     Violation,
     ViolationCode,
 )
-from app.domain.money import bp, fmt_pct, fmt_yuan
-from app.financial import EngineError, advance_effective_rate, project
-from app.funding.rates import all_in_rate
+from app.domain.money import fmt_yuan
+from app.financial import EngineError, project
+from app.financial.lots import ensure_lots, new_lot, unique_id
+from app.funding.rates import action_rate, approval_reason, invoice_landing_day
+from app.funding.search import receivables
 
 RATIO_CODES = (ViolationCode.DSCR_BREACH, ViolationCode.LEVERAGE_BREACH)
 
@@ -61,27 +67,47 @@ def action_for(op: object, day: int) -> FundingAction | None:
     return None
 
 
-def effective_rate(op: object, books: Books) -> tuple[Fraction, str] | None:
+def effective_rate(op: object, books: Books, baseline: Trajectory | None = None) -> tuple[Fraction, str] | None:
     """(effective annual cost, how it was computed) of a borrowing operation; None when it has none
-    (a repayment, an unknown facility or invoice: the executor's own preconditions refuse those)."""
+    (a repayment, an unknown facility or invoice: the executor's own preconditions refuse those).
+
+    The price is `funding.rates.action_rate`, as in the router. An invoice's issue and due days are the ones the
+    unfunded projection (`baseline`, the books without this operation) receives it on, as the router reads them
+    (`funding.search.receivables`); the state's own days when the projection does not show the invoice."""
     state = books.state
     f = next((x for x in state.facilities if x.id == getattr(op, "facility_id", None)), None)
     if f is None:
         return None
     if isinstance(op, DrawFacility):
-        return all_in_rate(f)
+        return action_rate(f, FundingActionKind.DRAW, amount_fen=op.amount_fen)
     if isinstance(op, SubmitInvoiceForFinancing) and f.kind == FacilityKind.INVOICE_FINANCING:
         r = next((x for x in state.receivables if x.id == op.receivable_id), None)
         if r is None or op.advance_fen <= 0:
             return None
-        arrival = state.as_of_day + f.lead_time_days
-        days = r.due_day - arrival
-        if days <= 0:
+        issue, due = r.issue_day, r.due_day
+        seen = receivables(state, baseline).get(r.id) if baseline is not None else None
+        if seen is not None:
+            issue, due = seen.issue_day, seen.due_day
+        landing = invoice_landing_day(f, books.day, issue)
+        if due <= landing:
             return None  # refused by the engine: the cash would not land before the invoice is due
-        rate = advance_effective_rate(f, op.advance_fen, days)
-        return rate, (f"all charges on {fmt_yuan(op.advance_fen)} held {days} days (day {arrival} to day "
-                      f"{r.due_day}), annualised = {fmt_pct(rate)}")
+        return action_rate(f, FundingActionKind.FINANCE_INVOICE, amount_fen=op.advance_fen,
+                           landing_day=landing, due_day=due)
     return None
+
+
+def _as_carried(op: object, state: FinancialState) -> FinancialState | None:
+    """The books as they stand right after a draw on a revolving line executes; None for anything else."""
+    if not isinstance(op, DrawFacility):
+        return None
+    f = next((x for x in state.facilities if x.id == op.facility_id), None)
+    if f is None or f.repayment != Repayment.BULLET or f.term_months:
+        return None
+    base = ensure_lots(state)
+    lot = new_lot(unique_id(base.lots, "admission-probe"), f, op.amount_fen, state.as_of_day)
+    facilities = [x.model_copy(update={"drawn_fen": x.drawn_fen + op.amount_fen}) if x.id == f.id else x
+                  for x in base.facilities]
+    return base.model_copy(update={"facilities": facilities, "lots": [*base.lots, lot]})
 
 
 def _worst(t: Trajectory, today: int) -> int:
@@ -99,6 +125,14 @@ def admit(op: object, books: Books, mandate: Mandate) -> Admission:
         after = project(state, obligations, [action], Mode.CONSERVATIVE, horizon, floor)
     except EngineError as exc:
         return Admission([Violation(code=ViolationCode.PRECONDITION_FAILED, message=str(exc))])
+    carried = _as_carried(op, state)
+    if carried is not None:
+        # A draw on a revolving line has no repayment day, so as an action it is projected open and free. Once
+        # executed it is a lot the engine repays, with interest, on the first affordable day: judge that.
+        try:
+            after = project(carried, obligations, [], Mode.CONSERVATIVE, horizon, floor)
+        except EngineError as exc:
+            return Admission([Violation(code=ViolationCode.PRECONDITION_FAILED, message=str(exc))])
     try:
         before: Trajectory | None = project(state, obligations, [], Mode.CONSERVATIVE, horizon, floor)
     except EngineError:
@@ -128,10 +162,9 @@ def admit(op: object, books: Books, mandate: Mandate) -> Admission:
         return Admission(out)
 
     reason = None
-    rated = effective_rate(op, books)
-    if rated is not None and rated[0] > bp(mandate.max_apr_bp):
-        reason = (f"effective annual cost {fmt_pct(rated[0])} is above the mandate's {fmt_pct(bp(mandate.max_apr_bp))} "
-                  f"ceiling for what the agent may borrow alone ({rated[1]})")
+    rated = effective_rate(op, books, before)
+    if rated is not None:
+        reason = approval_reason(rated[0], rated[1], mandate)
     return Admission([], reason)
 
 

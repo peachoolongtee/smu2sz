@@ -69,7 +69,7 @@ def test_pruning_does_not_change_the_optimum(name, monkeypatch):
     s, m = getattr(cases, name)()
     pruned = Search(s, [], m, "COMMITTED")
     pruned.run()
-    monkeypatch.setattr(Search, "_beaten", lambda self, bound: False)
+    monkeypatch.setattr(Search, "_beaten", lambda self, bound, flagged=False: False)
     full = Search(s, [], m, "COMMITTED")
     full.run()
     assert pruned.best is not None and full.best is not None

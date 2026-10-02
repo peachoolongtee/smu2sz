@@ -280,7 +280,8 @@ def router_plan() -> dict:
             "cost_display": r.all_in_display, "rate_basis": r.rate_basis,
             "time_to_cash_display": "same day" if r.time_to_cash_days == 0 else f"{r.time_to_cash_days} days",
             "covenant_effect": "; ".join(r.covenant_notes) or ("counts in leverage" if r.counts_in_leverage else "no debt"),
-            "admissible": r.admissible_for_need, "reason_codes": [c.value for c in r.reasons],
+            "admissible": r.admissible_for_need, "needs_owner_approval": r.needs_owner_approval,
+            "reason_codes": [c.value for c in r.reasons],
             "reason": "; ".join(r.notes), "limit_display": r.limit_display, "available_display": r.available_display,
             "committed": r.committed, "short_term_only": r.short_term_only,
         })

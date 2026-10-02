@@ -20,11 +20,12 @@ from app.domain.models import (
     FacilityKind,
     FacilityStatus,
     FinancialState,
+    FundingActionKind,
     Mandate,
     ViolationCode,
 )
-from app.domain.money import DAYS_PER_YEAR, Ratio, bp, fmt_pct, round_half_up
-from app.financial import if_all_in_rate
+from app.domain.money import DAYS_PER_YEAR, Ratio, bp, fmt_pct, fmt_yuan, round_half_up
+from app.financial import advance_effective_rate, finance_invoice_charges, if_all_in_rate
 from app.mandate import check_apr
 
 MONTH_DAYS = 30
@@ -98,6 +99,73 @@ def all_in_rate(f: Facility, *, discount_bp: int | None = None, days_early: int 
     months = f.term_months or 12
     total = rate + bp(f.upfront_fee_bp) * 12 / months
     return total, f"{pct(rate)} + {pct(bp(f.upfront_fee_bp))} × 12/{months} = {pct(total)}"
+
+
+def invoice_landing_day(f: Facility, request_day: int, issue_day: int) -> int:
+    """The day an advance requested on `request_day` lands: an unissued invoice is submitted on its issue day,
+    then the facility's lead time (the engine's rule, `financial.trajectory._finance_invoice`)."""
+    return max(request_day, issue_day) + f.lead_time_days
+
+
+def action_rate(
+    f: Facility,
+    kind: FundingActionKind,
+    *,
+    amount_fen: int = 0,
+    landing_day: int | None = None,
+    due_day: int | None = None,
+    rate_bp: int | None = None,
+) -> tuple[Fraction, str]:
+    """(annual cost, how it was computed) of one funding action: the one number the router tests against the
+    mandate's `max_apr_bp` and the executor's admission tests (docs/FINANCIAL_SEMANTICS.md, "Rates").
+
+    - invoice advance: every charge (interest, period fee, upfront fee) over the advance, annualised on the days
+      from landing to the invoice's due day (`advance_effective_rate`); the tariff when the days are unknown;
+    - early payment: d/(1-d) on the days early (landing to due);
+    - bill discount: the bill's discount rate;
+    - a draw and anything else: the tariff `all_in_rate`."""
+    match kind:
+        case FundingActionKind.FINANCE_INVOICE if (
+            f.kind == FacilityKind.INVOICE_FINANCING and amount_fen > 0 and landing_day is not None
+            and due_day is not None and due_day > landing_day
+        ):
+            days = due_day - landing_day
+            rate = advance_effective_rate(f, amount_fen, days)
+            return rate, (f"all charges on {fmt_yuan(amount_fen)} held {days} days (day {landing_day} to day "
+                          f"{due_day}), annualised = {fmt_pct(rate)}")
+        case FundingActionKind.EARLY_PAY:
+            days = due_day - landing_day if landing_day is not None and due_day is not None else None
+            return all_in_rate(f, discount_bp=rate_bp, days_early=days)
+        case FundingActionKind.DISCOUNT_BILL if rate_bp is not None:
+            return bp(rate_bp), f"bill discount rate {pct(bp(rate_bp))}"
+    return all_in_rate(f)
+
+
+def receipt_covered_advance(f: Facility, cap_fen: int, open_fen: int, days: int) -> int:
+    """The largest advance up to `cap_fen` that the buyer's receipt of the invoice's `open_fen` can repay with its
+    charges when it is held `days` days. The lender is paid from the receipt only (ADR-0010): an advance whose
+    principal and charges exceed the receipt would leave the rest of the charges owed on the lot, not paid out of
+    cash on the due day as the projection posts them, so the router never proposes one."""
+    advance = max(0, min(cap_fen, open_fen))
+    for _ in range(12):
+        if advance <= 0 or days <= 0:
+            return max(advance, 0)
+        interest, fee, _ = finance_invoice_charges(f, advance, days)
+        over = advance + interest + fee - open_fen
+        if over <= 0:
+            return advance
+        advance -= max(1, over)
+    return 0
+
+
+def approval_reason(rate: Fraction, how: str, mandate: Mandate) -> str | None:
+    """Why an action costing `rate` a year needs the owner (Tier 2), or None when it is within the mandate's
+    `max_apr_bp` ceiling for what the agent may borrow alone."""
+    cap = bp(mandate.max_apr_bp)
+    if rate <= cap:
+        return None
+    return (f"effective annual cost {fmt_pct(rate)} is above the mandate's {fmt_pct(cap)} ceiling for what the "
+            f"agent may borrow alone ({how})")
 
 
 def display_rate(f: Facility, rate: Fraction) -> str:
