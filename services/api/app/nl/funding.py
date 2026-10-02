@@ -27,14 +27,17 @@ from app.domain.models import (
     Obligation,
     ObligationBase,
     ObligationType,
+    OperationStatus,
     Outcome,
     RepayFacility,
     Repayment,
 )
 from app.domain.money import BP_DENOM, Ratio, fmt_pct, fmt_yuan
 from app.financial import project
+from app.financial.lots import ensure_lots, landed
 from app.funding import NoPermanentSourceError, break_even_discount
 from app.funding.search import Search
+from app.nl import landing
 from app.nl.context import NlContext
 from app.nl.models import Intent, Slots
 from app.nl.offers import buyer_options, owner_doc_for, verdict_line
@@ -129,15 +132,20 @@ def fund_gap(ctx: NlContext, slots: Slots, *, execute: bool = True) -> Turn:
                     reply=t(ctx, "No admissible committed plan covers this gap; nothing executed. The owner must "
                                  "decide (e.g. apply for a facility, a Tier-2 action).",
                             "没有可行的已承诺融资方案覆盖该缺口，未执行任何操作。需由业主决定。"))
-    funding_ops(ctx, steps, plan, execute=execute)
+    legs = legs_from_plan(ctx, plan)
     head = t(ctx, f"Router plan (committed facilities only): {plan.label}, need {fmt_yuan(plan.need_fen)}.",
              f"融资路由方案（仅已承诺额度）：{plan.label}，需求 {fmt_yuan(plan.need_fen)}。")
     if not execute:
+        funding_ops(ctx, steps, plan)
+        when = landing.line(ctx, legs, executed=False)
         pending = PendingPlan(Intent.FUND_GAP, slots, steps.items, {"actions": list(plan.actions)})
-        pending.bind(ctx, legs_from_plan(ctx, plan), plan.total_cost_fen)
-        return Turn(intent=Intent.FUND_GAP, reply=head + t(ctx, " Reply 'go ahead' to execute.", " 回复“执行”以执行。"),
+        pending.bind(ctx, legs, plan.total_cost_fen)
+        return Turn(intent=Intent.FUND_GAP,
+                    reply=head + (" " + when if when else "") + t(ctx, " Reply 'go ahead' to execute.", " 回复“执行”以执行。"),
                     plan=steps.items, verdict=b.verdict, awaiting=True, pending=pending)
-    return Turn(intent=Intent.FUND_GAP, reply=head, plan=steps.items, verdict=b.verdict, clear_pending=True)
+    lines, _ok = run_legs(ctx, steps, legs)  # the same leg runner as a confirmed plan
+    return Turn(intent=Intent.FUND_GAP, reply=" ".join([head, *lines]), plan=steps.items, verdict=b.verdict,
+                clear_pending=True)
 
 
 def _direct_draw(ctx: NlContext, slots: Slots, steps: Steps, *, execute: bool) -> Turn:
@@ -154,13 +162,17 @@ def _direct_draw(ctx: NlContext, slots: Slots, steps: Steps, *, execute: bool) -
     if not execute:
         steps.add("DRAW_FACILITY", desc)
         draw = DrawFacility(**ctx.base("DRAW_FACILITY"), facility_id=slots.facility_id, amount_fen=slots.amount_fen)
-        return Turn(intent=Intent.FUND_GAP, reply=desc + t(ctx, ". Reply 'go ahead' to execute.", "。回复“执行”以执行。"),
+        when = landing.leg_clause(ctx, draw, executed=False)
+        return Turn(intent=Intent.FUND_GAP,
+                    reply=desc + (f" ({when})" if when else "") + t(ctx, ". Reply 'go ahead' to execute.", "。回复“执行”以执行。"),
                     plan=steps.items, verdict=b.verdict, awaiting=True,
                     pending=PendingPlan(Intent.FUND_GAP, slots, steps.items).bind(ctx, [draw]))
-    r = ctx.execute(DrawFacility(**ctx.base("DRAW_FACILITY"), facility_id=slots.facility_id,
-                                 amount_fen=slots.amount_fen))
+    draw = DrawFacility(**ctx.base("DRAW_FACILITY"), facility_id=slots.facility_id, amount_fen=slots.amount_fen)
+    r = ctx.execute(draw)
     steps.result("DRAW_FACILITY", desc, r)
-    return Turn(intent=Intent.FUND_GAP, reply=r.message, plan=steps.items, verdict=b.verdict, clear_pending=True)
+    note = landing.executor_note(ctx, draw, r.message) if r.status == OperationStatus.EXECUTED else ""
+    return Turn(intent=Intent.FUND_GAP, reply=r.message + (f" ({note})" if note else ""), plan=steps.items,
+                verdict=b.verdict, clear_pending=True)
 
 
 # ---------------------------------------------------------------- REPAY_FACILITY
@@ -193,11 +205,19 @@ def repay(ctx: NlContext, slots: Slots, *, execute: bool = True) -> Turn:
     if fac is None or fac.drawn_fen == 0:
         return Turn(intent=Intent.REPAY_FACILITY, reply=t(ctx, "Nothing is drawn on a facility that can be repaid on demand.",
                                                           "没有可按需偿还的已提款额度。"))
+    lots = ensure_lots(state).lots
     if fac.repayment != Repayment.BULLET:
         return Turn(intent=Intent.REPAY_FACILITY, reply=t(
             ctx, f"{fac.name} is repaid {fac.repayment.value.lower().replace('_', ' ')} (from the receivable), not on demand.",
             f"{fac.name} 按回款偿还，不能随时偿还。"))
-    amount = min(slots.amount_fen or fac.drawn_fen, fac.drawn_fen)
+    # only the balance whose cash has landed can be repaid (ADR-0010): the rest waits for its landing day
+    on_hand = landed(lots, fac.id)
+    transit = landing.not_repayable(ctx, fac.id)
+    if on_hand <= 0:
+        return Turn(intent=Intent.REPAY_FACILITY, reply=t(
+            ctx, "Nothing has landed on " + fac.name + " yet, so there is nothing to repay.",
+            f"{fac.name} 上还没有资金到账，因此没有可偿还的金额。") + transit)
+    amount = min(slots.amount_fen or on_hand, on_hand)
     # the reserve check: repaying must not push any projected day below the owner's floor
     b_after, low_now, low_after = _repay_lows(ctx, state, fac.id, amount)
     floor = mandate.min_cash_fen
@@ -213,16 +233,17 @@ def repay(ctx: NlContext, slots: Slots, *, execute: bool = True) -> Turn:
                 t(ctx, " Repay when the receivable pays (the plan's repayment day).", " 请在应收款到账后（计划还款日）再偿还。"))
         return Turn(intent=Intent.REPAY_FACILITY, plan=steps.items, verdict=b_after.verdict, reply=t(
             ctx, f"Not repaid: it would take projected cash to {fmt_yuan(low_after)}, below the owner's reserve.",
-            f"未偿还：还款会使预测现金降至 {fmt_yuan(low_after)}，低于储备线。") + hint)
+            f"未偿还：还款会使预测现金降至 {fmt_yuan(low_after)}，低于储备线。") + hint + transit)
     if not execute:
         steps.add("REPAY_FACILITY", desc)
         repay_op = RepayFacility(**ctx.base("REPAY_FACILITY"), facility_id=fac.id, amount_fen=amount)
-        return Turn(intent=Intent.REPAY_FACILITY, reply=desc + t(ctx, ". Reply 'go ahead' to execute.", "。回复“执行”。"),
+        return Turn(intent=Intent.REPAY_FACILITY,
+                    reply=desc + t(ctx, ". Reply 'go ahead' to execute.", "。回复“执行”。") + transit,
                     plan=steps.items, awaiting=True,
                     pending=PendingPlan(Intent.REPAY_FACILITY, slots, steps.items).bind(ctx, [repay_op]))
     r = ctx.execute(RepayFacility(**ctx.base("REPAY_FACILITY"), facility_id=fac.id, amount_fen=amount))
     steps.result("REPAY_FACILITY", desc, r)
-    return Turn(intent=Intent.REPAY_FACILITY, reply=r.message, plan=steps.items, verdict=b_after.verdict,
+    return Turn(intent=Intent.REPAY_FACILITY, reply=r.message + transit, plan=steps.items, verdict=b_after.verdict,
                 clear_pending=True)
 
 
@@ -266,7 +287,7 @@ def reprice_repay(ctx: NlContext, pending: PendingPlan) -> str | None:
     """None when repaying the stored amount still keeps projected cash above the reserve (the check the proposal made)."""
     op = pending.ops[0]
     fac = next((f for f in ctx.state().facilities if f.id == op.facility_id), None)
-    if fac is None or fac.drawn_fen < op.amount_fen:
+    if fac is None or landed(ensure_lots(ctx.state()).lots, op.facility_id) < op.amount_fen:
         return t(ctx, "the books changed and that amount is no longer drawn on the facility",
                  "账目已变化，该额度上已没有这笔提款")
     _b, low_now, low_after = _repay_lows(ctx, ctx.state(), op.facility_id, op.amount_fen)
@@ -317,14 +338,17 @@ def accelerate(ctx: NlContext, slots: Slots, text: str, *, amended: bool = False
         if fallback is None:
             return Turn(intent=Intent.ACCELERATE_RECEIPT, plan=steps.items, verdict=sq.verdict, clear_pending=True,
                         reply=t(ctx, "No admissible committed financing plan; nothing to do.", "没有可行的已承诺融资方案。"))
-        funding_ops(ctx, steps, fallback, execute=False)
+        funding_ops(ctx, steps, fallback)
         head = t(ctx, f"Plan: finance {rcv.id} instead of asking {cp} for early payment: {fallback.label}.",
                  f"方案：以 {rcv.id} 发票融资代替向 {cp} 提前收款：{fallback.label}。")
+        legs = legs_from_plan(ctx, fallback)
+        when = landing.line(ctx, legs, executed=False)
         pending = PendingPlan(Intent.ACCELERATE_RECEIPT, slots, steps.items, {"actions": list(fallback.actions)})
-        pending.bind(ctx, legs_from_plan(ctx, fallback), fallback.total_cost_fen)
+        pending.bind(ctx, legs, fallback.total_cost_fen)
         return Turn(intent=Intent.ACCELERATE_RECEIPT, amended=amended, verdict=sq.verdict, plan=steps.items,
                     awaiting=True, pending=pending,
-                    reply=head + t(ctx, " Reply 'go ahead' to execute (Tier 1).", " 回复“执行”（一级权限）。"))
+                    reply=head + (" " + when if when else "")
+                    + t(ctx, " Reply 'go ahead' to execute (Tier 1).", " 回复“执行”（一级权限）。"))
 
     try:
         be_ratio, _ = break_even_discount(state, mandate)
@@ -361,11 +385,13 @@ def accelerate(ctx: NlContext, slots: Slots, text: str, *, amended: bool = False
               "DONE")
     if not zero:
         steps.add("VERIFY", verdict_line(ctx, v), "DONE")
+        when = ""
         if fallback is not None:
-            funding_ops(ctx, steps, fallback, execute=False, condition=if_cond)
+            funding_ops(ctx, steps, fallback, condition=if_cond)
+            when = landing.line(ctx, legs_from_plan(ctx, fallback), executed=False)
         return Turn(intent=Intent.ACCELERATE_RECEIPT, plan=steps.items, verdict=v, clear_pending=False,
                     reply=t(ctx, "No early-pay counter fits the goal; the committed financing plan applies.",
-                            "没有符合目标的提前付款反报价；适用已承诺融资方案。"))
+                            "没有符合目标的提前付款反报价；适用已承诺融资方案。") + (" " + when if when else ""))
     counter = zero[0]
     gv = v
     steps.add("COUNTER_OFFER", f"{counter.label}: {counter.text}", "PROPOSED")
@@ -373,7 +399,7 @@ def accelerate(ctx: NlContext, slots: Slots, text: str, *, amended: bool = False
     steps.add("ACCEPT_OFFER", t(ctx, "Record the commitment (nonce, expiry)", "记录承诺（随机数、到期日）"),
               condition=t(ctx, "if the buyer accepts", "若买方接受"))
     if fallback is not None:
-        funding_ops(ctx, steps, fallback, execute=False, condition=if_cond)
+        funding_ops(ctx, steps, fallback, condition=if_cond)
     # The legs that may follow, built now so that the owner sees them and a go-ahead sends exactly these: the
     # remaining gap after the buyer accepts (the package projected as agreed), or the router's plan if it refuses.
     refuse_ops = legs_from_plan(ctx, fallback) if fallback is not None else []
@@ -383,9 +409,11 @@ def accelerate(ctx: NlContext, slots: Slots, text: str, *, amended: bool = False
         accept_plan = committed_plan(ctx.evaluate_accepted(package_offer(ctx, offer, counter)))
     accept_ops = legs_from_plan(ctx, accept_plan) if accept_plan is not None else []
     if accept_plan is not None and accept_ops:
-        funding_ops(ctx, steps, accept_plan, execute=False,
+        funding_ops(ctx, steps, accept_plan,
                     condition=t(ctx, "if the buyer accepts: remaining gap after early settlement",
                                 "若买方接受：提前结算后剩余缺口"))
+    when_refuse = landing.line(ctx, refuse_ops, executed=False)
+    when_accept = landing.line(ctx, accept_ops, executed=False)
     head = t(ctx, f"Plan (Tier 1): offer {cp} early settlement on up to "
                   f"{fmt_yuan(_face(counter))} of {rcv.id} at {fmt_pct(Fraction(_rate(counter), BP_DENOM))} "
                   f"(below the {fmt_pct(be_ratio.value)} break-even), terms unchanged, no rebate: ¥0.00 of forward "
@@ -395,6 +423,8 @@ def accelerate(ctx: NlContext, slots: Slots, text: str, *, amended: bool = False
              f"{fmt_pct(Fraction(_rate(counter), BP_DENOM))} 提前结算（低于盈亏平衡 {fmt_pct(be_ratio.value)}），"
              f"账期不变、无返利：远期让步 ¥0.00。若对方拒绝：{fallback.label if fallback else '无需后备'}。"
              + (f"若对方接受，其余缺口：{accept_plan.label}。" if accept_ops and accept_plan else ""))
+    head += (t(ctx, f" If {cp} refuses: {when_refuse}", f" 若 {cp} 拒绝：{when_refuse}") if when_refuse else "")
+    head += (t(ctx, f" If {cp} accepts: {when_accept}", f" 若 {cp} 接受：{when_accept}") if when_accept else "")
     data = {"verdict_id": gv.id, "counter_id": counter.id, "cp": cp, "accept_ops": accept_ops, "refuse_ops": refuse_ops,
             "verify": steps.items[0].description, "text": text, "terms": (_face(counter), _rate(counter))}
     pending = PendingPlan(Intent.ACCELERATE_RECEIPT, slots, steps.items, data).bind(ctx, [*accept_ops, *refuse_ops])

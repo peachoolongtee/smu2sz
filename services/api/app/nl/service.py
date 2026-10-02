@@ -20,6 +20,7 @@ from app.domain.models import (
     IssueEquity,
     Mandate,
     OperationResult,
+    OperationStatus,
     PledgeCollateral,
     SecurityEventKind,
     SignPersonalGuarantee,
@@ -27,8 +28,8 @@ from app.domain.models import (
 from app.domain.ports import LedgerStore
 from app.nl import capabilities as cap
 from app.nl import classifier as clf
+from app.nl import landing, plans
 from app.nl import lexicon as lx
-from app.nl import plans
 from app.nl.alerts import alerts_intent, alerts_turn, confirm_cure
 from app.nl.context import NlContext
 from app.nl.funding import (
@@ -47,6 +48,7 @@ from app.nl.offers import (
     evaluate_offer,
     execute_decision,
     explain,
+    followup_text,
     negotiate_intent,
     what_if,
 )
@@ -55,6 +57,7 @@ from app.nl.rules import parse
 from app.nl.sessions import SESSIONS, Session, SessionStore
 from app.nl.turn import Turn, ask
 from app.operations import Executor
+from app.operations.log import parse_operation
 from app.verifier import OwnerConstraints, VerdictBundle
 
 # (bundle, offer, state, mandate) -> extra keys for an OWNER verdict; injected by the API layer, never used for
@@ -366,6 +369,8 @@ def _correct(ctx: NlContext, p: Parsed, text: str) -> Turn:
         update.update(rate_bp=new.rate_bp, use_financing=False)
     if new.use_financing:
         update["use_financing"] = True
+    if new.zero_forward:
+        update["zero_forward"] = True
     for k in ("counterparty_id", "amount_fen", "buyer_profile", "facility_id"):
         if getattr(new, k) is not None:
             update[k] = getattr(new, k)
@@ -373,7 +378,9 @@ def _correct(ctx: NlContext, p: Parsed, text: str) -> Turn:
     if pending.intent == Intent.NEGOTIATE:
         _constrain(ctx, slots)
     if pending.intent == Intent.ACCELERATE_RECEIPT:
-        turn = accelerate(ctx, slots, text, amended=True)
+        # a bare constraint carries no request of its own: the plan is built again from the owner's original words
+        again = pending.data.get("text") or text if "constraint" in p.matched else text
+        turn = accelerate(ctx, slots, again, amended=True)
     elif pending.intent == Intent.FUND_GAP:
         turn = fund_gap(ctx, slots, execute=False)
     elif pending.intent == Intent.REPAY_FACILITY:
@@ -551,9 +558,11 @@ def _negotiation_proposal(ctx: NlContext, turn: Turn) -> Turn:
     offer = ctx.store.get_offer(v.offer_id)
     who = offer.counterparty_id if offer is not None else t(ctx, "the buyer", "买方")
     listed = "; ".join(f"{c.label}: {c.text}" for c in v.counters)
-    turn.reply = t(ctx, f"I would send {len(v.counters)} counter(s) to {who}: {listed} Nothing has been sent. Reply "
-                        f"'go ahead' to send them, or 'cancel'.",
-                   f"我会向 {who} 发送 {len(v.counters)} 条反报价：{listed} 目前尚未发送任何内容。回复“执行”发送，或“取消”。")
+    follow = followup_text(ctx, turn.pending.data)  # the funding that would follow, with the day its cash lands
+    follow = (" " + follow) if follow else ""
+    turn.reply = t(ctx, f"I would send {len(v.counters)} counter(s) to {who}: {listed}{follow} Nothing has been sent. "
+                        f"Reply 'go ahead' to send them, or 'cancel'.",
+                   f"我会向 {who} 发送 {len(v.counters)} 条反报价：{listed}{follow} 目前尚未发送任何内容。回复“执行”发送，或“取消”。")
     return turn
 
 
@@ -604,6 +613,7 @@ def _decide_approval(ctx: NlContext, slots: Slots, approve: bool, text: str = ""
                        slots)
     actor = Actor.OWNER if ctx.owner_authenticated else Actor.AGENT
     steps = Steps()
+    rec = ctx.store.get_approval(aid)
     try:
         r: OperationResult = ctx.executor.decide(aid, approve, actor)
     except NotFound:
@@ -618,6 +628,9 @@ def _decide_approval(ctx: NlContext, slots: Slots, approve: bool, text: str = ""
                        "Logged.", f"已拒绝：只有业主可以审批 {aid}，此请求没有业主凭证。已记录。")
     else:
         reply = r.message
+        funded = approve and rec is not None and r.status == OperationStatus.EXECUTED  # a funding leg: when its cash lands
+        if funded and (note := landing.executor_note(ctx, parse_operation(rec.op_json), r.message)):  # type: ignore[union-attr]
+            reply += f" ({note})"
         rest = [a for a in _pending_approvals(ctx) if a.id != aid]
         if rest:
             reply += t(ctx, " Still waiting for your decision: ", " 仍待您审批：") + "; ".join(f"{a.id} ({a.reason})" for a in rest)

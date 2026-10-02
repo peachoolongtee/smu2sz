@@ -29,6 +29,7 @@ from app.domain.models import (
     SubmitInvoiceForFinancing,
 )
 from app.domain.money import fmt_yuan
+from app.nl import landing
 from app.nl.context import NlContext
 from app.nl.models import Intent
 from app.nl.pipeline import Steps, t
@@ -83,16 +84,23 @@ def describe(ctx: NlContext, op: Any) -> str:
 def run_legs(ctx: NlContext, steps: Steps, ops: Sequence[Any], condition: str | None = None) -> tuple[list[str], bool]:
     """Send the stored operations in order and say how the executor answered each leg: (lines, whether every leg
     executed). The first leg that is not executed (queued for the owner, or refused) ends the run; the legs after it
-    are not sent, and the lines name them."""
+    are not sent, and the lines name them. A draw or advance whose cash has not landed says when it lands; when every
+    leg executed, one closing line separates the cash that is in now from the cash still to land."""
     lines: list[str] = []
     sent = 0
     ok = True
+    done: list[Any] = []
     for op in ops:
         r = ctx.execute(op)
         steps.result(op.kind, describe(ctx, op), r, condition)
         sent += 1
         if r.status in SETTLED:
-            lines.append(t(ctx, f"{describe(ctx, op)}: done.", f"{describe(ctx, op)}：已执行。"))
+            done.append(op)
+            when = landing.leg_clause(ctx, op, executed=True)
+            lines.append(t(ctx, f"{describe(ctx, op)}: done" + (f"; {when}." if when else "."),
+                           f"{describe(ctx, op)}：已执行" + (f"；{when}。" if when else "。")))
+            if isinstance(op, RepayFacility) and (left := landing.not_repayable(ctx, op.facility_id)):
+                lines[-1] += left  # what is still on the facility and has not landed
             continue
         ok = False
         if r.status == OperationStatus.PENDING_APPROVAL:
@@ -109,6 +117,8 @@ def run_legs(ctx: NlContext, steps: Steps, ops: Sequence[Any], condition: str | 
         lines.insert(0, t(ctx, f"I stopped after step {sent} of {len(ops)}.", f"我在第 {sent} 步（共 {len(ops)} 步）后停止。"))
         lines.append(t(ctx, "Not sent: " + "; ".join(describe(ctx, o) for o in rest) + ". Nothing else was run.",
                        "未发送：" + "；".join(describe(ctx, o) for o in rest) + "。其余均未执行。"))
+    if ok and (total := landing.line(ctx, done, executed=True)):
+        lines.append(total)
     return lines, ok
 
 
@@ -116,14 +126,8 @@ def send(ctx: NlContext, intent: Intent, ops: Sequence[Any], quoted_cost_fen: in
     """The confirmed plan: its stored operations, sent as shown."""
     steps = Steps()
     lines, ok = run_legs(ctx, steps, ops)
-    if ok:
-        raised = sum((o.advance_fen if isinstance(o, SubmitInvoiceForFinancing) else o.amount_fen)
-                     for o in ops if isinstance(o, DrawFacility | SubmitInvoiceForFinancing))
-        if raised:
-            lines.append(t(ctx, f"Raised {fmt_yuan(raised)} in total.", f"合计融得 {fmt_yuan(raised)}。"))
-        if quoted_cost_fen is not None:
-            lines.append(t(ctx, f"Cost as quoted: {fmt_yuan(quoted_cost_fen)}.",
-                           f"费用与报价一致：{fmt_yuan(quoted_cost_fen)}。"))
+    if ok and quoted_cost_fen is not None:
+        lines.append(t(ctx, f"Cost as quoted: {fmt_yuan(quoted_cost_fen)}.", f"费用与报价一致：{fmt_yuan(quoted_cost_fen)}。"))
     return Turn(intent=intent, reply=" ".join(lines), plan=steps.items, clear_pending=True)
 
 

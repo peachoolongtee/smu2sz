@@ -29,6 +29,7 @@ from app.domain.models import (
 )
 from app.domain.money import bp, fmt_pct, fmt_yuan
 from app.egress import AllowedValue, ProtectedSet, allowed_for_counter, allowed_from_obligations, scan
+from app.nl import landing
 from app.nl import lexicon as lx
 from app.nl.context import NlContext
 from app.nl.models import Intent, Slots
@@ -45,6 +46,7 @@ from app.nl.pipeline import (
     status_quo_offer,
     t,
 )
+from app.nl.plans import legs_from_plan, run_legs
 from app.nl.sessions import PendingPlan
 from app.nl.turn import Turn, ask
 from app.verifier import REFUSAL_REPLY, VerdictBundle, evaluate_term_sheet
@@ -308,13 +310,12 @@ def evaluate_offer(ctx: NlContext, slots: Slots, *, execute: bool = False) -> Tu
     pending = None
     if proposed:
         if v.counters:
-            fallback = committed_plan(ctx.evaluate(status_quo_offer(ctx, ctx.state()), remember=False))
             steps.add("NEGOTIATE", t(ctx, "Bounded rounds with the buyer (max 3)", "与买方有限轮次谈判（最多 3 轮）"))
-            if fallback is not None:
-                funding_ops(ctx, steps, fallback, condition=t(ctx, "if the buyer refuses (NO DEAL)", "若买方拒绝"),
-                            execute=False)
+            follow = followups(ctx, steps, offer, v.counters) if offer is not None else {}
             pending = PendingPlan(intent=Intent.NEGOTIATE, slots=slots, steps=steps.items,
-                                  data={"verdict_id": v.id})
+                                  data={"verdict_id": v.id, **follow})
+            if follow_text := followup_text(ctx, follow):
+                reply.append(follow_text)
             reply.append(t(ctx, "Reply 'go ahead' to negotiate: I will then send the counters. Nothing is sent before that.",
                            "回复“执行”开始谈判，届时我才会发送反报价；在此之前不会发送任何内容。"))
         else:
@@ -323,6 +324,41 @@ def evaluate_offer(ctx: NlContext, slots: Slots, *, execute: bool = False) -> Tu
             reply.append(t(ctx, "Reply 'go ahead' to execute this, or 'cancel'.", "回复“执行”以执行，或“取消”。"))
     return Turn(intent=Intent.EVALUATE_OFFER, reply="\n".join(reply), plan=steps.items, verdict=v,
                 awaiting=pending is not None, pending=pending)
+
+
+def followups(ctx: NlContext, steps: Steps, offer: CompiledOffer, counters: list) -> dict:
+    """The funding that may follow a negotiation, built now so that the owner sees it and a go-ahead sends exactly
+    these legs (app/nl/plans.py): the router's plan if the buyer refuses, and for each counter the plan for the rest
+    of the gap if the buyer accepts it. Returns what is stored with the plan; the legs are shown as plan steps."""
+    fallback = committed_plan(ctx.evaluate(status_quo_offer(ctx, ctx.state()), remember=False))
+    out: dict = {"refuse_ops": [], "refuse_label": None, "accept_ops": {}, "accept_labels": {}}
+    if fallback is not None:
+        out["refuse_ops"] = legs_from_plan(ctx, fallback)
+        out["refuse_label"] = fallback.label
+        funding_ops(ctx, steps, fallback, condition=t(ctx, "if the buyer refuses (NO DEAL)", "若买方拒绝"))
+    for c in counters:
+        plan = committed_plan(ctx.evaluate_accepted(package_offer(ctx, offer, c)))
+        legs = legs_from_plan(ctx, plan) if plan is not None else []
+        if plan is not None and legs:
+            out["accept_ops"][c.label] = legs
+            out["accept_labels"][c.label] = plan.label
+            funding_ops(ctx, steps, plan, condition=t(ctx, f"if the buyer accepts {c.label}: remaining gap",
+                                                      f"若买方接受 {c.label}：剩余缺口"))
+    return out
+
+
+def followup_text(ctx: NlContext, follow: dict) -> str:
+    """What would follow the counters, in words, with the day each leg's cash lands."""
+    parts: list[str] = []
+    if follow.get("refuse_ops"):
+        when = landing.line(ctx, follow["refuse_ops"], executed=False)
+        parts.append(t(ctx, f"If the buyer refuses: {follow['refuse_label']}. {when}",
+                       f"若买方拒绝：{follow['refuse_label']}。{when}").strip())
+    for label, legs in follow.get("accept_ops", {}).items():
+        when = landing.line(ctx, legs, executed=False)
+        parts.append(t(ctx, f"If the buyer accepts {label}, the rest of the gap: {follow['accept_labels'][label]}. {when}",
+                       f"若买方接受 {label}，其余缺口：{follow['accept_labels'][label]}。{when}").strip())
+    return " ".join(parts)
 
 
 def execute_decision(ctx: NlContext, verdict_id: str) -> Turn:
@@ -378,30 +414,31 @@ def negotiate_intent(ctx: NlContext, slots: Slots, *, execute: bool = True, data
         for c in v.counters:
             steps.add("COUNTER_OFFER", f"{c.label}: {c.text}")
         steps.add("NEGOTIATE", t(ctx, "Bounded rounds with the buyer", "与买方有限轮次谈判"))
-        return Turn(intent=Intent.NEGOTIATE, reply=t(ctx, "Plan ready. Reply 'go ahead' to send the counters.",
-                                                     "计划已就绪。回复“执行”发送反报价。"),
-                    plan=steps.items, verdict=v, awaiting=True,
-                    pending=PendingPlan(Intent.NEGOTIATE, slots, steps.items, {"verdict_id": v.id}))
+        follow = followups(ctx, steps, offer, v.counters)
+        ready = t(ctx, "Plan ready. Reply 'go ahead' to send the counters.", "计划已就绪。回复“执行”发送反报价。")
+        return Turn(intent=Intent.NEGOTIATE, reply=ready, plan=steps.items, verdict=v, awaiting=True,
+                    pending=PendingPlan(Intent.NEGOTIATE, slots, steps.items, {"verdict_id": v.id, **follow}))
+    # The funding that follows is the one shown with the proposal and stored in it: the legs run through the same
+    # runner as every other plan, and nothing is planned again after the owner's go-ahead.
+    stored = data or {}
     neg = run_negotiation(ctx, steps, v, v.counters, profile)
     reply = [verdict_line(ctx, v)]
     if neg.accepted is not None:
         r = accept(ctx, steps, v, neg.accepted)
-        if r is not None and r.status.value in ("EXECUTED", "PENDING_APPROVAL", "DUPLICATE"):
-            pkg = ctx.evaluate_accepted(package_offer(ctx, offer, neg.accepted))
-            plan = committed_plan(pkg)
-            if plan is not None:
-                funding_ops(ctx, steps, plan, condition=t(ctx, "remaining gap after the accepted package",
-                                                          "成交后剩余缺口"))
         reply.append(t(ctx, f"The buyer accepted {neg.accepted.label}.", f"买方接受了 {neg.accepted.label}。"))
         reply.extend(awaiting_owner(ctx))
+        legs = stored.get("accept_ops", {}).get(neg.accepted.label, [])
+        if r is not None and r.status.value in ("EXECUTED", "PENDING_APPROVAL", "DUPLICATE") and legs:
+            lines, _ok = run_legs(ctx, steps, legs, t(ctx, "remaining gap after the accepted package", "成交后剩余缺口"))
+            reply.append(t(ctx, "The rest of the gap, as I showed it:", "其余缺口，按之前给出的方案："))
+            reply.extend(lines)
     elif neg.outcome == "NO_DEAL":
-        sq = ctx.evaluate(status_quo_offer(ctx, ctx.state()), remember=False)
-        plan = committed_plan(sq)
-        if plan is not None:
-            funding_ops(ctx, steps, plan, condition=t(ctx, "NO DEAL: the router's plan covers the gap",
-                                                      "未成交：由融资路由方案覆盖缺口"))
-            reply.append(t(ctx, f"NO DEAL. The gap is covered by the committed plan: {plan.label}.",
-                           f"未成交。缺口由已承诺方案覆盖：{plan.label}。"))
+        legs = stored.get("refuse_ops", [])
+        if legs:
+            lines, _ok = run_legs(ctx, steps, legs, t(ctx, "NO DEAL: the router's plan", "未成交：融资路由方案"))
+            reply.append(t(ctx, f"NO DEAL. The funding I showed for this case ({stored.get('refuse_label')}):",
+                           f"未成交。按之前给出的该情形下的融资方案（{stored.get('refuse_label')}）："))
+            reply.extend(lines)
         else:
             reply.append(t(ctx, "NO DEAL, and there is no gap to cover.", "未成交，且无资金缺口。"))
     return Turn(intent=Intent.NEGOTIATE, reply="\n".join(reply), plan=steps.items, verdict=v,
