@@ -4,7 +4,7 @@ Live document of the continuous technical owner (`docs/AGENT_MISSION.md`). Updat
 quantity are in `docs/FINANCIAL_SEMANTICS.md`. Audit ids (A01…, F-FIN-…, S-…, F1…) refer to
 `docs/research/independent-principal-audit-2026-10-03.md` and its three working papers.
 
-Last updated: 3 Oct 2026, after three red-team rounds; backend 4,731 passed; web mock e2e 31, live 29.
+Last updated: 3 Oct 2026, after three red-team rounds; backend 4,731 passed; web mock e2e 31, live 29. Evidence, the attack report, the evaluation report and the documents were regenerated and corrected on branch `docs/audit-closeout` (DOC1).
 
 ## 1. Open findings
 
@@ -27,15 +27,15 @@ Status: OPEN, IN PROGRESS (branch named), DONE (merged to `dev`, date).
 | A12 | P1 | Capex recommends while omitting fees, drawn debt, liquidity, real tenor | F-FIN-03/04/05, flows F3/F4 | subagent | | High | M | DONE 3 Oct | `tests/capex/test_audit_fixes.py` |
 | A13 | P1 | Borrower file keeps the equipment money as cash; window anchored at day 0 | flows F5, F7 | subagent | | High | S | DONE 3 Oct | Purchase deducted; rolling 12 months; day 361 works |
 | S-06 | P1 | "today" and "tomorrow" both bind to day 2 | S-06 | subagent | | Medium | S | DONE 3 Oct (fails closed; a typed settlement day would let "today" be accepted again) | Explicit timing is not accepted autonomously |
-| R01 | P1 | Router tests the rate cap on the tariff; the executor on the effective cost | 3 Oct, own finding | subagent | | Medium | S | IN PROGRESS | Router marks an above-ceiling action as needing the owner; no plan the router calls autonomous is queued by the executor |
+| R01 | P1 | Router tests the rate cap on the tariff; the executor on the effective cost | 3 Oct, own finding | subagent | | Medium | S | DONE 3 Oct (`574a04f`) | Router marks an above-ceiling action as needing the owner; no plan the router calls autonomous is queued by the executor |
 | R02 | P1 | Multi-leg plan is not one transaction: a later leg can be refused after an earlier one ran | audit §7 | owner | A10 | Medium | M | OPEN | Whole plan admitted before the first leg; partial outcome reported truthfully |
 | R03 | P1 | Same bank event with a new key settles twice | audit §7, code-inspected | subagent | | Medium | S | OPEN | External event id required on bank receipts; same id with a new key is a duplicate, different payload conflicts |
 | F-FIN-10 | P2 | Level bullet DSCR presented as the bank covenant | F-FIN-10 | owner | | Medium | S | OPEN | Label "reserve-coverage reading" everywhere it is shown; covenant text states its basis |
 | F6 | P2 | Borrower-file approval authorises nothing meaningful | flows F6 | subagent | A13 | Low | S | OPEN | Preparing the file is read-only for the owner |
-| UI1 | P2 | UI does not separate requested, awaiting approval, awaiting settlement, settled, refused | audit §11 | frontend subagent | A08 | High | M | OPEN | e2e on the demo path |
-| UI2 | P2 | Reconciliation page does not show promised payments; approvals show the current day as decision day | flows "Additional UI evidence" | frontend subagent | | Medium | S | OPEN | e2e |
-| UI3 | P3 | Phone layout: security page 6 px overflow, chat panel past the viewport | audit integration record | frontend subagent | | Low | S | OPEN | `e2e/responsive.spec.ts` phone project |
-| DOC1 | P1 | Documents, mocks, evidence, video script quote numbers that these fixes change | | owner | all P0 | High | M | OPEN (last) | `scripts/evaluate.py` clean; mocks re-recorded |
+| UI1 | P2 | UI does not separate requested, awaiting approval, awaiting settlement, settled, refused | audit §11 | frontend subagent | A08 | High | M | DONE 3 Oct (web follow-up `5fabd4a`: waiting-for-approval states, landing day, funding in transit) | e2e on the demo path |
+| UI2 | P2 | Reconciliation page does not show promised payments; approvals show the current day as decision day | flows "Additional UI evidence" | frontend subagent | | Medium | S | DONE 3 Oct (`48eb683`, `5fabd4a`) | e2e |
+| UI3 | P3 | Phone layout: security page 6 px overflow, chat panel past the viewport | audit integration record | frontend subagent | | Low | S | DONE 3 Oct (`48eb683`, phone layout guards) | `e2e/responsive.spec.ts` phone project |
+| DOC1 | P1 | Documents, mocks, evidence, video script quote numbers that these fixes change | | owner | all P0 | High | M | IN PROGRESS: documents, evidence and reports regenerated on `docs/audit-closeout`; mocks re-recorded in `781e624` (re-run after the next cash-derived change) | `scripts/evaluate.py` clean; mocks re-recorded |
 | R04 | P2 | `POST /offers` stores a compiled offer for a sender id taken from the body, unauthenticated | counterparty-channel report | owner | | Low (nothing executes) | S | OPEN | Unauthenticated intake is capped or marked untrusted; evaluate still needs the owner |
 | R05 | P2 | Unauthenticated buyer messages and wrong keys grow the offer, verdict and security-event tables without limit | same report | owner | | Low | S | OPEN | A cap per day; test |
 | R06 | P1 | Three refused agent attempts on a lender open its circuit and then block the owner's own approval | admission follow-through report | owner | | Medium | S | DONE 3 Oct (with RT1-2) | Refused approval attempts by a non-owner do not count toward the lender's circuit; owner approval still executes |
@@ -99,7 +99,7 @@ Numbers are measurements on the commit named, never targets.
 | Financial | Planner/executor mismatches reproduced by the audit probes | 6 of 6 | 0 of 6 defects; the discretionary line repayment is a labelled assumption (ADR-0010) |
 | Financial | Formula discrepancies open | 9 (F-FIN-01, 02, 03, 04, 06, 07, 09, 10, 11) | 1 (F-FIN-10: label) |
 | Financial | Accepted-terms lifecycle failures (A06, A07) | 2 | 0 |
-| Security | Catalogue attacks / with harm | 182 / 0 | 241 (122 API + 119 chat) / 0, by the suite; report not yet regenerated |
+| Security | Catalogue attacks / with harm | 182 / 0 | 255 (122 API + 133 chat) / 0, report regenerated 3 Oct |
 | Security | Audit attacks with harm (A01, A02, A03, A04, A10) | 5 of 5 | 0 of 5; three red-team rounds: 13 findings, 13 fixed |
 | Language | Wrong and financially material interpretations known | 13 texts (S-01 ×8, S-02 ×5) | 0 known |
 | Execution | Scenarios passed | 46 / 46 (79 turns) | 46 / 46 (85 turns) |
