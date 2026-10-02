@@ -178,8 +178,9 @@ def test_data_extraction_reply_discloses_nothing(client, rt):
 
 def test_replayed_request_id_is_duplicate(client, rt):
     c = Chat(client, "replay")
-    first = c.say("Fund the cash gap", request_id="R-1")
-    again = c.say("Fund the cash gap", request_id="R-1")
+    c.say("Fund the cash gap")
+    first = c.say("go ahead", request_id="R-1")
+    again = c.say("go ahead", request_id="R-1")
     assert ops(first) == [("DRAW_FACILITY", "EXECUTED"), ("SUBMIT_INVOICE_FOR_FINANCING", "EXECUTED")]
     assert again["replayed"] and ops(again) == [("DRAW_FACILITY", "DUPLICATE"), ("SUBMIT_INVOICE_FOR_FINANCING", "DUPLICATE")]
     assert rt.store.get_state().cash_fen == 76_000_000

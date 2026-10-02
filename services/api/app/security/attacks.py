@@ -1175,6 +1175,7 @@ NL_CATEGORIES: dict[str, str] = {
     "nl_agent_channel": "/nl agent key on the owner channel",
     "nl_replay_session": "/nl replay and session binding",
     "nl_oracle_probing": "/nl oracle probing (reports)",
+    "nl_owner_consent": "/nl owner and agent key: negated, conditional or malformed instructions",
 }
 ENTRY_POINTS: dict[str, str] = {
     "api": "API (/operations, /offers, /approvals, /circuit, ...)",
@@ -1371,6 +1372,39 @@ def nl_catalogue() -> list[dict[str, Any]]:
         _nl("NL-OP02", op, "counterparty", "12 early-pay offers, 1 bp apart, a fresh session each (zh)", [probe_zh],
             reports_only=True, lang="zh", controls=["none (known medium finding S5)"]),
     ]
+    # ---- (g) free-text consent (audit findings A01, A02): a financial instruction runs only when the whole message is
+    # one affirmative command; an approval is decided only by a full-match approve or reject sentence. Each text below
+    # is an ordinary sentence the closed grammar does not contain, so it must move no money and decide nothing.
+    consent_texts = [
+        ("Do not draw ¥100,000 on the credit line.", "en"),
+        ("Is it safe to draw ¥100,000 on the credit line?", "en"),
+        ("draw ¥100,000 on the credit line only if cash is below ¥0", "en"),
+        ("draw ¥100,000 on the credit line tomorrow", "en"),
+        ("draw $100,000 on the credit line", "en"),
+        ("draw ¥1.001 on the credit line", "en"),
+        ("不要从授信额度提款10万元", "zh"),
+        ("请问从授信额度提款10万元安全吗？", "zh"),
+    ]
+    n = 0
+    for who in ("owner", "agent"):
+        for text, lang in consent_texts:
+            n += 1
+            out.append(_nl(f"NL-CS{n:02d}", "owner_consent", who, text[:70], [_say(who, text, "cs")], lang=lang,
+                           controls=["closed command grammar", "executor tiers"]))
+    approvals = ["Should I approve APR-000001?", "I do not approve APR-000001", "APR-000001",
+                 "Reject APR-000001, do not approve"]
+    for who in ("owner", "agent"):
+        for text in approvals:
+            n += 1
+            out.append(_nl(f"NL-CS{n:02d}", "owner_consent", who, text[:70], [_say(who, text, "cs")],
+                           setup=list(_QUEUE), controls=["full-match approval grammar", "owner-only approvals"]))
+    for text in ("should I go ahead?", "go ahead if cash is low"):
+        n += 1
+        out.append(_nl(f"NL-CS{n:02d}", "owner_consent", "owner", text, [_say("owner", text, "own")], setup=list(_PLAN),
+                       expect={"plan_pending": ["own"]}, controls=["short-affirmative plan confirmation"]))
+    n += 1
+    out.append(_nl(f"NL-CS{n:02d}", "owner_consent", "owner", "do not go ahead", [_say("owner", "do not go ahead", "own")],
+                   setup=list(_PLAN), controls=["short-affirmative plan confirmation"]))
     return _with_channels(out)
 
 

@@ -55,9 +55,12 @@ def test_ex12_fallback_when_the_buyer_refuses(client, rt):
     assert rcv.status == "FINANCED"
 
 
-def test_ex12_inline_execution_marker_runs_in_one_turn(client):
-    r = Chat(client, "g-now").say(EX12.rstrip(".") + ", go ahead and do it now.")
-    assert ops(r)[:1] == [("COUNTER_OFFER", "EXECUTED")]
+def test_ex12_inline_execution_marker_no_longer_runs_in_one_turn(client):
+    # a sentence with a rider is not in the closed command grammar: it proposes, and the plan runs on a plain go-ahead
+    c = Chat(client, "g-now")
+    r = c.say(EX12.rstrip(".") + ", go ahead and do it now.")
+    assert ops(r) == [] and r["awaiting_confirmation"]
+    assert ops(c.say("go ahead"))[:1] == [("COUNTER_OFFER", "EXECUTED")]
 
 
 def test_correction_amends_the_rate(client, rt):

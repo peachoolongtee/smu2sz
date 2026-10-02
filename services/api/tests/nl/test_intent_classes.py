@@ -92,10 +92,10 @@ def test_zero_forward_slot(text: str) -> None:
 
 
 @pytest.mark.parametrize(("text", "tentative"), [
-    ("Cover the payroll gap", False),
-    ("把工资缺口补上", False),
-    ("Fund the cash gap", False),
-    ("帮我补足资金缺口", False),
+    ("Cover the payroll gap", True),
+    ("把工资缺口补上", True),
+    ("Fund the cash gap", True),
+    ("帮我补足资金缺口", True),
     ("Find me the cheapest way to cover the payroll gap", True),
     ("帮我找最便宜的方式补上工资缺口", True),
     ("how can we close the funding gap?", True),
@@ -103,7 +103,7 @@ def test_zero_forward_slot(text: str) -> None:
     ("payroll is short this month", True),
     ("这个月工资不够", True),
 ])
-def test_fund_gap_explicit_executes_loose_proposes(text: str, tentative: bool) -> None:
+def test_fund_gap_without_an_amount_always_proposes(text: str, tentative: bool) -> None:
     p = parse(text, STATE)
     assert p is not None and p.intent.value == "FUND_GAP" and p.tentative is tentative
 

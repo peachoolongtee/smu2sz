@@ -82,7 +82,9 @@ def test_compare_names_the_sources_and_the_routers_total(client, rt):
 
 
 def test_compare_without_a_gap_lists_the_committed_sources_and_offers_no_action(client, rt):
-    Chat(client, "cap-cmp-fund").say("Fund the cash gap")
+    funder = Chat(client, "cap-cmp-fund")
+    funder.say("Fund the cash gap")
+    funder.say("go ahead")  # a proposal first: it runs only on the owner's own go-ahead
     state, mandate = rt.store.get_state(), rt.store.get_mandate()
     books = current_books(state, rt.store.commitments())
     assert plan(books.state, books.with_([]), mandate).need_fen == 0
