@@ -17,7 +17,7 @@ REPRO = "uv run --project services/api python scripts/evaluate.py --suite financ
 
 
 def _fen(display: str) -> int:
-    """'¥207,123.29' or '−¥50,000.00' -> fen."""
+    """'¥210,000.00' or '−¥50,000.00' -> fen."""
     s = display.replace("−", "-").replace("¥", "").replace(",", "").strip()
     neg = s.startswith("-")
     whole, _, frac = s.lstrip("-").partition(".")
