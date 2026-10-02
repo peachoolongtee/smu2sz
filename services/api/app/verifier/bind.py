@@ -77,12 +77,12 @@ def open_receivables(state: FinancialState, counterparty_id: str) -> list[Receiv
 
 
 def early_pay_lead(state: FinancialState, counterparty_id: str) -> int:
-    """Settlement day of an early payment requested today (mirrors the engine's default)."""
+    """Settlement DAY of an early payment requested today: today (`state.as_of_day`) + the buyer's early-pay lead
+    time (mirrors the engine's default). Day 0 gives the lead time itself."""
     eps = [f for f in state.facilities if f.kind == FacilityKind.BUYER_EARLY_PAY]
-    for f in eps:
-        if f.lender_id == counterparty_id:
-            return f.lead_time_days
-    return eps[0].lead_time_days if eps else DEFAULT_EARLY_PAY_LEAD_DAYS
+    lead = next((f.lead_time_days for f in eps if f.lender_id == counterparty_id),
+                eps[0].lead_time_days if eps else DEFAULT_EARLY_PAY_LEAD_DAYS)
+    return state.as_of_day + lead
 
 
 def _drop(unresolved: list[str], *keys: str) -> list[str]:
