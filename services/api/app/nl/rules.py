@@ -281,6 +281,10 @@ def parse(text: str, state: FinancialState, *, pending_plan: bool = False) -> Pa
         return hit(Intent.CAPEX, "capex")
     if lx.STATUS_QUESTION.search(text) and not lx.ACCELERATE.search(text):
         return hit(Intent.SHOW_STATUS, "status_question")
+    if lx.RECORD_FACT.search(text) and not (lx.ACCELERATE.search(text) or lx.NEGOTIATE_VERB.search(text)
+                                            or lx.NEGOTIATE.search(text) or lx.REPAY.search(text)
+                                            or lx.FUND.search(text) or lx.FUND_SOFT.search(text)):
+        return hit(Intent.RECORD_FACT, "record_fact")  # read-only: it says the agent cannot book this from chat
     if lx.NEGOTIATE_VERB.search(text):
         return _act(Intent.NEGOTIATE, "negotiate")
     if lx.ACCELERATE.search(text):

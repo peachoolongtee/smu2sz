@@ -199,6 +199,25 @@ def reconcile_receipts(ctx: NlContext) -> Turn:
     return Turn(intent=Intent.RECONCILE, reply="\n".join(lines))
 
 
+# ---------------------------------------------------------------- RECORD_FACT
+
+
+def record_fact(ctx: NlContext, slots: Slots) -> Turn:
+    """The owner states a new bill, invoice, delay, EBITDA figure or similar. Chat reads and writes nothing for it: the
+    books change only through the owner's own entry, so the answer is plain that it is not recorded, what is needed
+    and that the forecast is unchanged. No operation, no pending plan."""
+    amount = f" ({fmt_yuan(slots.amount_fen)})" if slots.amount_fen else ""
+    return Turn(intent=Intent.RECORD_FACT, reply=t(
+        ctx,
+        f"I cannot record that{amount}: I do not enter bills, invoices, payment delays or figures from chat, and I have "
+        f"not recorded or run anything. The forecast is unchanged and does not include it. To have it counted, enter it "
+        f"through the books yourself (who it is with, the amount and the day it is due, or the new figure); I will "
+        f"then forecast from it and tell you what changes.",
+        f"这一项我无法记录{amount}：我不会根据聊天内容录入账单、发票、延迟付款或财务数字，也没有记录或执行任何操作。"
+        f"预测保持不变，不包含这一项。若要计入，请您自行通过账本录入（对象、金额和到期日，或新的数字）；"
+        f"录入后我会据此重新预测并告诉您有什么变化。"))
+
+
 # ---------------------------------------------------------------- SHOW_RATIOS
 
 

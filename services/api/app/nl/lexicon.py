@@ -113,6 +113,27 @@ CAPEX_ASK = _re(
     r"\b(?:machine|machinery|equipment|capex)\b.{0,40}\b(?:purchase|worth|afford|affordable|payback|npv)\b",
     r"\b(?:evaluate|assess|appraise|review)\b.{0,20}\b(?:machine|machinery|equipment|capex)\b", r"\bcapex\b",
     r"买.{0,6}(?:设备|机器)", r"(?:设备|机器).{0,8}(?:划算|值得|购置|采购|买)", r"购置.{0,4}(?:设备|机器)")
+# The owner states a fact the agent cannot book from chat: "we have a supplier bill of ¥80,000 due on day 30, add it to
+# the forecast", "record a ¥50,000 payable", "we will pay the supplier 10 days late", "EBITDA is actually ¥120,000",
+# 记一笔, 新增账单, 延迟付款. RECORD_FACT only says so; it reads and writes nothing (checked after the requests the agent
+# can act on: early payment, negotiation, repayment, funding).
+RECORD_FACT = _re(
+    r"\b(?:add|record|log|enter|book|register|insert|key in|note down)\b.{0,40}\b(?:bill|invoice|payable|expense|payment|outgoing)s?\b",
+    r"\b(?:add|record|log|enter|book|register|insert)\b.{0,30}\b(?:to|into|in|on) (?:the |our )?(?:forecast|books|ledger|projection|cash ?flow|plan)\b",
+    r"\b(?:we|i)\s+(?:have|got|owe|just got|received|will owe|need to pay|must pay)\s+(?:an?|the|another|new|our)?\s*(?:\w+\s+){0,2}"
+    r"(?:bill|invoice|payable)s?\b",
+    r"\bnew (?:supplier |vendor )?(?:bill|invoice|payable|expense)\b",
+    r"\b(?:we|i)(?:'ll|\s+will|\s+are going to|\s+plan to|\s+might|\s+may|\s+must|\s+have to|\s+need to)?\s*"
+    r"pay(?:ing)?\b.{0,40}\b(?:late|later|behind|delayed?|overdue)\b",
+    r"\b(?:delay|postpone|defer|push back)(?:ing|ed)?\b.{0,25}\b(?:payment|paying|bill|payable|supplier)s?\b",
+    r"\blate payment\b", r"\bpay(?:ing)? (?:the )?(?:supplier|vendor|landlord)s?\b.{0,20}\b(?:late|later|days late)\b",
+    r"\bebitda\b.{0,30}\b(?:is|was|will be|has (?:been|changed)|now|actually|should be)\b.{0,30}\d",
+    r"\b(?:update|change|set|correct|fix)\b.{0,20}\bebitda\b",
+    r"记(?:一|下)?笔", r"记(?:一下|下来)?(?:这笔|账)", r"新增.{0,8}(?:账单|发票|应付|支出|费用|付款|款项|欠款)",
+    r"(?:添加|录入|登记).{0,8}(?:账单|发票|应付|支出|费用|付款|款项)", r"(?:加|添加|计)(?:入|到|进)?.{0,6}(?:预测|预算|账上)",
+    r"(?:延迟|推迟|延后|拖延)(?:付款|支付|还款|货款)", r"(?:晚|迟)(?:点|些)?(?:付|支付)", r"(?:拖欠|晚付|迟付)",
+    r"(?:有|收到|来了|多了)(?:一|1)?[张笔份](?:\S{0,8})?(?:账单|发票|应付)",
+    r"(?:供应商|供货商).{0,6}(?:账单|发票|货款)", r"(?:ebitda|EBITDA).{0,10}(?:是|为|变成|调整|改成|更新|其实).{0,10}\d")
 BORROWER_FILE = _re(
     r"\b(?:borrower|lender|loan|bank)[’']?s?\s+(?:file|pack|package|dossier)\b", r"\bloan application (?:file|pack|package)\b",
     r"借款人(?:资料|文件|材料)", r"(?:贷款|申贷|授信)(?:申请)?(?:资料|材料|文件)", r"贷款包")
