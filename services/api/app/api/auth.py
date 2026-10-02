@@ -3,8 +3,10 @@
 - OWNER: the owner console, authenticated by X-Owner-Token (env OWNER_TOKEN).
 - AGENT: the agent's own tool channel (/operations, owner-actor /nl), authenticated by X-Agent-Key
   (env AGENT_KEY). An agent can do Tier 1 inside the mandate, queue Tier 2, never Tier 3.
-- Anyone else: counterparties may only submit documents (POST /offers) or talk as COUNTERPARTY on /nl,
-  which compiles and verifies but never executes.
+- COUNTERPARTY: a buyer's own channel, authenticated by X-Counterparty-Key (env COUNTERPARTY_KEYS maps id=key).
+  The sender id comes from the key, never from the request body.
+- Anyone else: may only submit documents (POST /offers) or talk as an unauthenticated COUNTERPARTY on /nl,
+  which compiles and verifies but never executes (proposal only).
 
 DEMO_MODE (default on for local demos) accepts the published demo credentials. With DEMO_MODE=0 the
 routes fail closed (503) until OWNER_TOKEN / AGENT_KEY are set (security finding F-06)."""
@@ -19,6 +21,7 @@ from fastapi import Header, HTTPException, Request
 DEMO_OWNER_TOKEN = "demo-owner-token"
 DEMO_AGENT_KEY = "demo-agent-key"
 DEMO_BANK_FEED_KEY = "demo-bank-feed-key"
+DEMO_COUNTERPARTY_KEYS = {"BUYER-1": "demo-buyer-1-key", "BUYER-2": "demo-buyer-2-key"}
 
 
 def demo_mode() -> bool:
@@ -44,7 +47,34 @@ def is_agent(key: str | None) -> bool:
     return _match(key, _expected("AGENT_KEY", DEMO_AGENT_KEY))
 
 
-def log_refusal(request: Request, why: str) -> None:
+def counterparty_keys() -> dict[str, str]:
+    """Counterparty channel keys, id -> key. Env COUNTERPARTY_KEYS ("BUYER-1=key,BUYER-2=key"); with it unset the
+    published demo keys apply under DEMO_MODE only. Without either, no counterparty can authenticate."""
+    raw = os.environ.get("COUNTERPARTY_KEYS")
+    if raw is None or not raw.strip():
+        return dict(DEMO_COUNTERPARTY_KEYS) if demo_mode() else {}
+    out: dict[str, str] = {}
+    for part in raw.split(","):
+        cid, sep, key = part.partition("=")
+        if sep and cid.strip() and key.strip():
+            out[cid.strip()] = key.strip()
+    return out
+
+
+def counterparty_for_key(key: str | None) -> str | None:
+    """The counterparty id a presented X-Counterparty-Key is bound to, else None. Constant-time per comparison;
+    every configured key is compared so a miss does not reveal how many ids match."""
+    if not key:
+        return None
+    found: str | None = None
+    given = key.encode("utf-8")
+    for cid, expected in counterparty_keys().items():
+        if hmac.compare_digest(given, expected.encode("utf-8")) and found is None:
+            found = cid
+    return found
+
+
+def log_refusal(request: Request, why: str, counterparty_id: str | None = None) -> None:
     """Every rejected credential is evidence (a probe, a misconfiguration or a stolen link)."""
     import hashlib
 
@@ -55,7 +85,7 @@ def log_refusal(request: Request, why: str) -> None:
     key = f"{request.method} {request.url.path} {why} {rt.day} {len(rt.store.security_events())}"
     rt.store.add_security_event(SecurityEvent(
         id="SEC-AUTH-" + hashlib.sha256(key.encode()).hexdigest()[:12], day=rt.day,
-        kind=SecurityEventKind.PRIVILEGE_ESCALATION, counterparty_id=None,
+        kind=SecurityEventKind.PRIVILEGE_ESCALATION, counterparty_id=counterparty_id,
         action_taken="request refused before reaching any module", detail=f"{why}: {request.method} {request.url.path}",
     ))
 

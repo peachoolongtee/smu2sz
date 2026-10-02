@@ -77,13 +77,13 @@ def _verdict(text: str):  # type: ignore[no-untyped-def]
 
 
 def test_early_pay_discount_on_the_invoice_is_tier_1() -> None:
-    v = _verdict("Deduct 0.6% and we'll settle the open ¥420,000 invoice today.")
+    v = _verdict("Deduct 0.6% and we'll settle the open ¥420,000 invoice early.")
     assert (v.outcome, v.required_tier) == (Outcome.ACCEPT, Tier.TIER_1)
 
 
 def test_early_pay_discount_without_the_invoice_amount_waits_for_the_owner() -> None:
     """ADR-0005: binding to "the only open receivable" never qualifies for autonomy."""
-    v = _verdict("Deduct 0.6% and we'll settle the open invoice today.")
+    v = _verdict("Deduct 0.6% and we'll settle the open invoice early.")
     assert (v.outcome, v.required_tier) == (Outcome.NEEDS_OWNER_APPROVAL, Tier.TIER_2)
 
 

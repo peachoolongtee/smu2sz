@@ -68,7 +68,8 @@ DATE_RE = rx(
     r"|(?:\d{2,4}\s*年\s*)?\d{1,2}\s*月\s*\d{1,2}\s*[日号]?|\d{1,2}\s*[号日](?![元]|本)"
     r"|\b(?:mon|tue|tues|wed|thu|thur|thurs|fri|sat|sun)(?:day)?\b\.?|(?:周|星期|礼拜)[一二三四五六日天]"
     r"|\b(?:january|february|march|april|june|july|august|september|october|november|december|jan|feb|aug|sept?|oct|nov|dec)\b", I)
-# A settlement time the verifier cannot assume: anything but "now / today / tomorrow" (or no time at all).
+# A settlement time the verifier cannot assume: any stated time, "now / today / tomorrow" included (the binding
+# assigns its own day, so a stated day it cannot prove equal is unread timing). No time at all is fine.
 TIMING_RE = rx(
     r"\bnext\s+(?:week|month|quarter|mon\w*|tue\w*|wed\w*|thu\w*|fri\w*|sat\w*|sun\w*)\b|\bthis\s+(?:week|month|friday|weekend)\b"
     r"|\b(?:end|close)\s+of\s+(?:the\s+)?(?:week|month|quarter|year|day)\b|\b(?:month|quarter|year|week)[- ]end\b|\beo[mwdq]\b"
@@ -76,6 +77,8 @@ TIMING_RE = rx(
     r"|\bgolden\s+week\b|\bwithin\s+(?:a|the|one|two|three|four|five|a\s+few|a\s+couple\s+of|several)\s+(?:days?|weeks?)\b"
     r"|\bin\s+(?:a|one|two|three|a\s+few|a\s+couple\s+of)\s+(?:days?|weeks?)\b|\b(?:on\s+time|when\s+due|on\s+(?:the\s+)?due\s+date|at\s+maturity)\b"
     r"|\bearly\s+next\b|\blater\s+this\b|\bsoon\b"
+    r"|\b(?:today|tomorrow|tmrw|tmr|tonight|now|immediately|right\s+away|straight\s+away|at\s+once)\b"
+    r"|今天|明天|后天|今晚|现在|马上|立即|立刻|即刻|当天"
     r"|下(?:个)?(?:周|星期|礼拜|月)|这(?:个)?(?:周|星期|礼拜)|本(?:周|月)|月(?:底|初|中)|周末|节后|节前|年底|年前|国庆|春节|过几天|几天(?:内|后)|按时|到期"
     , I)
 
@@ -417,7 +420,7 @@ we'll we're we'd you'll you're you'd i'll i'd i'm it's that's
 and or but so if then
 for of on in at by with within from as to
 pay payment invoice inv early discount disc off settle setle settel clear take give knock deduct less minus transfer remit agree
-today tomorrow tmrw now immediately full whole open days day
+full whole open days day
 happy glad able
 cny rmb yuan
 """.split())  # noqa: SIM905
@@ -425,7 +428,7 @@ _FILLER_ZH = sorted("""
 您好 你好 谢谢 多谢 感谢 辛苦了 辛苦 祝好 此致 敬礼 请 麻烦 劳烦 确认
 我方 我们 我司 我 贵方 贵司 您 你们 你
 提前 付款 付清 结清 支付 付 结算 全额 整 发票 货款 折扣 贴息 扣除 扣 按 算 个 也就是 是 也 同意 给
-这张 那张 这笔 那笔 一张 今天 明天 现在 马上 立即 立刻
+这张 那张 这笔 那笔 一张
 可以 愿意 想 能 如果 就 即可 就行 行吗 好吗 可以吗
 天 元 人民币 的 了 吗 吧 呢 啊 嘛 呀 哦 这 那
 """.split(), key=len, reverse=True)  # noqa: SIM905

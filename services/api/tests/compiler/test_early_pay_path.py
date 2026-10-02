@@ -46,8 +46,8 @@ def _verdict(offer: Any) -> tuple[str, list[str]]:
     "We will settel the 420k invoice early, 0.6% off please.",
     "we can setle the 420k inv early 0.6% off",
     # "minus" / "less" after a settle-now phrase
-    "Morning! Could remit the full ¥420,000 today, minus 0.5%? Let me know.",
-    "Pay the ¥420k invoice right now, less 0.6%?",
+    "Morning! Could remit the full ¥420,000 early, minus 0.5%? Let me know.",
+    "Pay the ¥420k invoice early, less 0.6%?",
     # mixed zh/en with a question tag
     "Pls confirm: 420,000元的invoice, early payment, discount 0.6% 行吗",
 ])

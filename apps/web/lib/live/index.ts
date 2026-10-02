@@ -4,6 +4,7 @@
  * fill fields from server strings; none of them computes money.
  */
 
+import { DEMO_BUYER_KEYS } from "../config";
 import { ApiError } from "../errors";
 import type {
   AlertActResult,
@@ -94,9 +95,14 @@ export const live = {
   getReconciliation: async (): Promise<ReconciliationView> =>
     (await http<{ reconciliation: ReconciliationView }>("GET", "/reconciliation")).reconciliation,
 
-  /** POST /nl. The owner channel sends X-Owner-Token; a counterparty turn sends no credential at all. */
+  /** POST /nl. The owner channel sends X-Owner-Token. A buyer turn never carries the owner token; in a demo build it
+   * sends the buyer's published channel key (X-Counterparty-Key), otherwise nothing, and the API treats it as a proposal. */
   nl: (req: NlRequest): Promise<NlResponse> =>
-    http<NlResponse>("POST", "/nl", { body: req, auth: req.actor === "COUNTERPARTY" ? "none" : "owner" }),
+    http<NlResponse>("POST", "/nl", {
+      body: req,
+      auth: req.actor === "COUNTERPARTY" ? "none" : "owner",
+      buyerKey: req.actor === "COUNTERPARTY" ? DEMO_BUYER_KEYS[req.counterparty_id ?? ""] : undefined,
+    }),
 
   /** POST /nl/opener. Owner only (the API answers 403 without the token, which opens the sign-in dialog). */
   nlOpener: (sessionId: string | undefined, lang: "en" | "zh"): Promise<NlOpenerResponse> =>

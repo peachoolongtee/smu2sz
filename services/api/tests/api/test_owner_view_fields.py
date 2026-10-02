@@ -6,8 +6,8 @@ from __future__ import annotations
 from app.domain.money import fmt_pct
 
 EX01 = "EX01_PACKAGE"
-CLEAN = "Deduct 0.6% and we'll settle the open ¥420,000 invoice today."
-NO_AMOUNT = "Deduct 0.6% and we'll settle the open invoice today."
+CLEAN = "Deduct 0.6% and we'll settle the open ¥420,000 invoice early."
+NO_AMOUNT = "Deduct 0.6% and we'll settle the open invoice early."
 
 
 def _doc(text: str) -> dict:

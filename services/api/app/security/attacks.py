@@ -200,10 +200,11 @@ def _canon(model: Any) -> dict[str, Any]:
 def owner_token_env(value: str | None) -> Iterator[None]:
     """Production-like credentials for one attack: DEMO_MODE off, the given owner token (or none, to
     model a deployment that forgot it) and a random agent key."""
-    keys = ("OWNER_TOKEN", "AGENT_KEY", "DEMO_MODE")
+    keys = ("OWNER_TOKEN", "AGENT_KEY", "DEMO_MODE", "COUNTERPARTY_KEYS")
     old = {k: os.environ.get(k) for k in keys}
     os.environ["DEMO_MODE"] = "0"
     os.environ["AGENT_KEY"] = "agent-" + secrets.token_hex(16)
+    os.environ["COUNTERPARTY_KEYS"] = "BUYER-1=buyer1-" + secrets.token_hex(16)  # the authenticated-buyer variants
     if value is None:
         os.environ.pop("OWNER_TOKEN", None)
     else:
@@ -1370,12 +1371,30 @@ def nl_catalogue() -> list[dict[str, Any]]:
         _nl("NL-OP02", op, "counterparty", "12 early-pay offers, 1 bp apart, a fresh session each (zh)", [probe_zh],
             reports_only=True, lang="zh", controls=["none (known medium finding S5)"]),
     ]
+    return _with_channels(out)
+
+
+def _with_channels(attacks: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Every counterparty attack runs on both channels. `NL-xxNN` is the unauthenticated sender (proposal only:
+    NOTHING may execute); `NL-xxNNK` is the same text from the registered buyer's own authenticated channel, where the
+    autonomous Tier-1 handling still applies (counters and rejections). Harm is read from the stored state."""
+    out: list[dict[str, Any]] = []
+    for a in attacks:
+        if a["role"] != "counterparty":
+            out.append(a)
+            continue
+        out.append({**a, "channel": "unauthenticated", "allow_ops": [],
+                    "vector": "POST /nl as an unauthenticated counterparty (no X-Counterparty-Key)"})
+        out.append({**a, "id": a["id"] + "K", "channel": "buyer_key", "title": a["title"] + " (buyer key)",
+                    "vector": "POST /nl as the authenticated buyer (X-Counterparty-Key)",
+                    "expected_controls": [*a["expected_controls"], "channel credential"]})
     return out
 
 
 @dataclass
 class _NlCtx(_Ctx):
     responses: list[dict[str, Any]] = field(default_factory=list)  # attack-phase responses, with their role
+    channel: str = "unauthenticated"  # counterparty attacks: "unauthenticated" (no key) or "buyer_key" (BUYER-1's key)
 
 
 class NlAttackRunner(AttackRunner):
@@ -1409,7 +1428,8 @@ class NlAttackRunner(AttackRunner):
         try:
             with owner_token_env(self.owner_token):
                 client = TestClient(app, raise_server_exceptions=False)
-                ctx = _NlCtx(attack_id=attack["id"], client=client, rt=rt, owner_token=self.owner_token)
+                ctx = _NlCtx(attack_id=attack["id"], client=client, rt=rt, owner_token=self.owner_token,
+                             channel=attack.get("channel", "unauthenticated"))
                 for step in attack.get("setup", []):
                     rec = self._step(ctx, step, obs, phase="setup")
                     rec["phase"] = "setup"
@@ -1435,6 +1455,10 @@ class NlAttackRunner(AttackRunner):
             return {"X-Owner-Token": ctx.owner_token}
         if role == "agent":
             return {"X-Agent-Key": os.environ.get("AGENT_KEY", "")}
+        if role == "counterparty" and ctx.channel == "buyer_key":
+            from app.api.auth import counterparty_keys
+
+            return {"X-Counterparty-Key": counterparty_keys()["BUYER-1"]}
         return {}
 
     def _post_nl(self, ctx: _NlCtx, arg: dict[str, Any], obs: Observation, phase: str,

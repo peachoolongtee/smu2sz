@@ -9,6 +9,8 @@ interface HttpOptions {
   as?: "json" | "text";
   /** "none" sends no credential (a counterparty's /nl turn). Default: the signed-in owner token, if any. */
   auth?: "owner" | "none";
+  /** A buyer channel key, sent as X-Counterparty-Key (demo builds only; use with auth "none"). */
+  buyerKey?: string;
   /** Try this token instead of the stored one (the sign-in dialog checks a token before keeping it). */
   token?: string;
   /** Do not open the sign-in dialog on a 401 (the caller shows the failure itself). */
@@ -57,6 +59,7 @@ function detailMessage(detail: unknown, fallback: string): string {
 
 export async function http<T>(method: "GET" | "POST", path: string, opts: HttpOptions = {}): Promise<T> {
   const headers: Record<string, string> = ownerHeaders(opts);
+  if (opts.buyerKey) headers["X-Counterparty-Key"] = opts.buyerKey;
   if (opts.body !== undefined) headers["Content-Type"] = "application/json";
   let res: Response;
   try {

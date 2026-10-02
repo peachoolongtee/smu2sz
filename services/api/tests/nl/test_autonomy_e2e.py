@@ -44,7 +44,7 @@ def test_the_tier1_failure_patterns_are_never_accepted_autonomously(client, rt, 
 
 def test_a_clean_covered_offer_below_break_even_is_accepted_at_tier1(client, rt) -> None:
     r = Chat(client, "t1-clean", actor="COUNTERPARTY", owner=False, counterparty_id="BUYER-1").say(
-        "Hi, we can pay invoice RCV-A (¥420,000) tomorrow if you give us 0.5% off. Thanks!")
+        "Hi, we can pay invoice RCV-A (¥420,000) early if you give us 0.5% off. Thanks!")
     v = stored_verdict(rt, r)
     assert v["outcome"] == "ACCEPT"
     assert stored_ops(rt) == [("ACCEPT_OFFER", "EXECUTED")]
@@ -57,6 +57,6 @@ def test_a_clean_covered_offer_below_break_even_is_accepted_at_tier1(client, rt)
 
 def test_the_same_offer_at_or_above_break_even_is_countered_not_accepted(client, rt) -> None:
     r = Chat(client, "t1-be", actor="COUNTERPARTY", owner=False, counterparty_id="BUYER-1").say(
-        "Hi, we can pay invoice RCV-A (¥420,000) tomorrow if you give us 0.9% off. Thanks!")
+        "Hi, we can pay invoice RCV-A (¥420,000) early if you give us 0.9% off. Thanks!")
     assert stored_verdict(rt, r)["outcome"] == "COUNTER"
     assert ("ACCEPT_OFFER", "EXECUTED") not in stored_ops(rt)
