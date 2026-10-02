@@ -23,7 +23,9 @@ from app.domain.models import (
     Actor,
     CashFlow,
     CommitmentStatus,
+    Facility,
     FinancialState,
+    FundingLot,
     OperationResult,
     OperationStatus,
     Receivable,
@@ -32,6 +34,7 @@ from app.domain.models import (
 from app.domain.money import fmt_yuan
 from app.domain.ports import LedgerStore
 from app.financial.invoices import InvoiceRef, consumed, issue_terms, only_adjusting, recurring_receivable_id
+from app.financial.lots import contractual_payments, ensure_lots, landing_cash
 from app.persistence import canonical_json
 
 ADVANCE_CLOCK_KIND = "ADVANCE_CLOCK"
@@ -50,6 +53,9 @@ class ClockAdvance:
     result: OperationResult | None = None
     consumed_adjustment_ids: list[str] = field(default_factory=list)
     fulfilled_commitment_ids: list[str] = field(default_factory=list)
+    settled_lot_ids: list[str] = field(default_factory=list)  # ADR-0010: funding whose cash landed
+    posted_debt_payments: list[dict[str, Any]] = field(default_factory=list)  # instalments and maturities paid
+    lots_net_fen: int = 0  # cash those moved: landings less payments
 
     @property
     def moved(self) -> bool:
@@ -61,6 +67,7 @@ def close_days(state: FinancialState, to_day: int) -> tuple[FinancialState, Cloc
     today = state.as_of_day
     if to_day <= today:
         return state, ClockAdvance(today, today)
+    state = ensure_lots(state)  # ADR-0010: a balance no lot explains is dated today
     posted, skipped, kept, net = [], [], [], 0
     for fl in state.flows:
         if fl.day >= to_day or fl.day < today:
@@ -88,11 +95,54 @@ def close_days(state: FinancialState, to_day: int) -> tuple[FinancialState, Cloc
     ids = {r.id for r in receivables}
     done = [a for a in state.invoice_adjustments if consumed(a, ids, to_day)]
     left = [a for a in state.invoice_adjustments if a not in done]
-    new = state.model_copy(update={"cash_fen": state.cash_fen + net, "flows": kept, "receivables": receivables,
+    lots, facilities, settled, payments, bank = _close_lots(state, to_day)
+    new = state.model_copy(update={"cash_fen": state.cash_fen + net + bank, "flows": kept, "receivables": receivables,
                                    "recurring_invoices": recurring, "as_of_day": to_day,
-                                   "invoice_adjustments": left, "state_version": state.state_version + 1})
+                                   "invoice_adjustments": left, "state_version": state.state_version + 1,
+                                   "lots": lots, "facilities": facilities})
     return new, ClockAdvance(today, to_day, posted, net, skipped, issued,
-                             consumed_adjustment_ids=[a.id for a in done])
+                             consumed_adjustment_ids=[a.id for a in done], settled_lot_ids=settled,
+                             posted_debt_payments=payments, lots_net_fen=bank)
+
+
+def _close_lots(state: FinancialState, to_day: int) -> tuple[list[FundingLot], list[Facility], list[str],
+                                                              list[dict[str, Any]], int]:
+    """ADR-0010 §2, §4: the simulated bank on the days being closed. A lot whose arrival day is closed lands (its
+    cash, net of the upfront fee); the contractual payments falling on closed days (amortising instalments, a bullet
+    term loan's maturity) are paid, reducing the lot and the facility's drawn balance. A credit line is never repaid
+    here (its repayment is discretionary) and an invoice advance is repaid when its receipt is recorded.
+    Returns (lots, facilities, settled lot ids, posted payments, net cash)."""
+    fac = {f.id: f for f in state.facilities}
+    drawn = {f.id: f.drawn_fen for f in state.facilities}
+    lots: list[FundingLot] = []
+    settled: list[str] = []
+    payments: list[dict[str, Any]] = []
+    cash = 0
+    for lot in state.lots:
+        f = fac.get(lot.facility_id)
+        if f is None:
+            lots.append(lot)
+            continue
+        if not lot.settled and lot.arrival_day < to_day:
+            cash += landing_cash(f, lot)
+            lot = lot.model_copy(update={"settled": True})
+            settled.append(lot.id)
+        if lot.settled:
+            remaining = lot.remaining_fen
+            for p in contractual_payments(lot, f):
+                if p.day >= to_day:
+                    break
+                cash -= p.principal + p.interest
+                remaining -= p.principal
+                drawn[f.id] -= p.principal
+                payments.append({"lot_id": lot.id, "facility_id": f.id, "day": p.day, "principal_fen": p.principal,
+                                 "interest_fen": p.interest})
+            lot = lot.model_copy(update={"remaining_fen": remaining})
+        if lot.remaining_fen > 0:
+            lots.append(lot)
+    facilities = [f.model_copy(update={"drawn_fen": drawn[f.id]}) if drawn[f.id] != f.drawn_fen else f
+                  for f in state.facilities]
+    return lots, facilities, settled, payments, cash
 
 
 def _fulfil(store: LedgerStore, state: FinancialState, consumed_ids: Sequence[str],
@@ -164,19 +214,27 @@ def advance(store: LedgerStore, to_day: int, actor: Actor = Actor.SYSTEM,
                    "expired_commitment_ids": expired, "added_flow_ids": adv.added_flow_ids}
         if adv.consumed_adjustment_ids or fulfilled:
             payload |= {"consumed_adjustment_ids": adv.consumed_adjustment_ids, "fulfilled_commitment_ids": fulfilled}
+        if adv.settled_lot_ids:  # ADR-0010: like the ADR-0009 additions, only when there is something to say
+            payload |= {"settled_lot_ids": adv.settled_lot_ids}
+        if adv.posted_debt_payments:
+            payload |= {"posted_debt_payments": adv.posted_debt_payments}
+        if adv.settled_lot_ids or adv.posted_debt_payments:
+            payload |= {"lots_net_fen": adv.lots_net_fen}
         msg = (f"Clock moved from day {adv.from_day} to day {adv.to_day}: {len(adv.posted_flow_ids)} scheduled "
                f"flow(s) posted (net {fmt_yuan(adv.posted_net_fen)}), {len(adv.issued_receivable_ids)} invoice(s) "
                f"issued, {len(expired)} commitment(s) expired"
                + (f", {len(adv.added_flow_ids)} new scheduled flow(s) recorded" if adv.added_flow_ids else "")
                + (f", {len(fulfilled)} commitment(s) fulfilled (accepted terms now on every invoice in scope)"
-                  if fulfilled else ""))
+                  if fulfilled else "")
+               + (f", {len(adv.settled_lot_ids)} funding request(s) landed" if adv.settled_lot_ids else "")
+               + (f", {len(adv.posted_debt_payments)} loan payment(s) posted" if adv.posted_debt_payments else "")
+               + (f" (funding net {fmt_yuan(adv.lots_net_fen)})"
+                  if adv.settled_lot_ids or adv.posted_debt_payments else ""))
         result = OperationResult(op_id=op_id, kind=ADVANCE_CLOCK_KIND, status=OperationStatus.EXECUTED,
                                  tier=Tier.TIER_1, effective_day=adv.to_day, message=msg)
         rec = store.append_operation(op_id, ADVANCE_CLOCK_KIND, op_id, canonical_json(payload), canonical_json(result))
         result = result.model_copy(update={"seq": rec.seq, "entry_hash": rec.entry_hash, "prev_hash": rec.prev_hash})
-        return ClockAdvance(adv.from_day, adv.to_day, adv.posted_flow_ids, adv.posted_net_fen,
-                            adv.skipped_unconfirmed_inflow_ids, adv.issued_receivable_ids, expired,
-                            adv.added_flow_ids, result, adv.consumed_adjustment_ids, fulfilled)
+        return replace(adv, expired_commitment_ids=expired, result=result, fulfilled_commitment_ids=fulfilled)
 
 
 __all__ = ["ADVANCE_CLOCK_KIND", "ClockAdvance", "advance", "apply_events", "close_days"]

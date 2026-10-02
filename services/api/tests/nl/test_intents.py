@@ -55,8 +55,11 @@ def test_fund_gap_executes_the_router_plan_on_go_ahead(client, rt):
     r = c.say("go ahead")
     assert r["intent"] == "FUND_GAP"
     assert ops(r) == [("DRAW_FACILITY", "EXECUTED"), ("SUBMIT_INVOICE_FOR_FINANCING", "EXECUTED")]
-    assert rt.store.get_state().cash_fen == 76_000_000
+    # ADR-0010: the line (no lead time) is cash at once; the advance lands after FAC-IF's 3-day lead time
+    assert rt.store.get_state().cash_fen == 55_000_000
     assert all(o["tier"] == "TIER_1" for o in r["operations"])
+    rt.advance_to(4)
+    assert rt.store.get_state().cash_fen == 76_000_000
 
 
 def test_repay_is_held_when_it_would_breach_the_reserve(client):

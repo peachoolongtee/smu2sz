@@ -1,8 +1,8 @@
 """Read-side helpers over the hash-chained operations log.
 
-The log is the simulated bank's journal: draw days (for interest), financing advances (for
-settlement) and circuit-breaker refusals are all derived from it, so both stores give the same
-answers and nothing lives only in executor memory.
+The log is the simulated bank's journal: idempotency, circuit-breaker refusals and the causal history
+are derived from it, so both stores give the same answers and nothing lives only in executor memory.
+Funding lots and their dates live in the state (ADR-0010, `app.financial.lots`), not here.
 """
 
 from __future__ import annotations
@@ -14,12 +14,9 @@ from typing import Any
 from pydantic import TypeAdapter, ValidationError
 
 from app.domain.models import (
-    DrawFacility,
     Operation,
     OperationResult,
     OperationStatus,
-    RepayFacility,
-    SubmitInvoiceForFinancing,
 )
 from app.domain.ports import OperationRecord
 
@@ -113,38 +110,3 @@ class LogReader:
 
 def executed(entries: list[LoggedEntry]) -> list[LoggedEntry]:
     return [e for e in entries if e.result.status == OperationStatus.EXECUTED and e.op is not None]
-
-
-def open_lots(entries: list[LoggedEntry], facility_id: str, drawn_fen: int) -> list[tuple[int, int]]:
-    """Outstanding draws on a facility as FIFO (day, principal_fen) lots.
-
-    Executed draws open lots and executed repayments close them oldest first. A balance already
-    drawn in the starting state that no logged draw explains is one lot dated day 0.
-    """
-    lots: list[list[int]] = []
-    for e in executed(entries):
-        op = e.op
-        if isinstance(op, DrawFacility) and op.facility_id == facility_id:
-            lots.append([e.day if e.day is not None else op.day, op.amount_fen])
-        elif isinstance(op, RepayFacility) and op.facility_id == facility_id:
-            left = op.amount_fen
-            for lot in lots:
-                part = min(left, lot[1])
-                lot[1] -= part
-                left -= part
-                if left == 0:
-                    break
-    out = [(d, amt) for d, amt in lots if amt > 0]
-    untracked = drawn_fen - sum(amt for _, amt in out)
-    if untracked > 0:
-        out.insert(0, (0, untracked))
-    return out
-
-
-def advance_for(entries: list[LoggedEntry], receivable_id: str) -> tuple[SubmitInvoiceForFinancing, int] | None:
-    """The executed financing submission for a receivable and the day it ran (the latest one)."""
-    found = None
-    for e in executed(entries):
-        if isinstance(e.op, SubmitInvoiceForFinancing) and e.op.receivable_id == receivable_id:
-            found = (e.op, e.day if e.day is not None else e.op.day)
-    return found

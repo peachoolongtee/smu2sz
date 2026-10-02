@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from app.clock import advance as advance_clock
 from app.domain.fixtures import golden_values
 from app.domain.models import (
     Actor,
@@ -77,13 +78,15 @@ def test_invoice_financing_and_settlement_match_the_financial_engine(ex: Any, st
     charges = {e.kind: -e.amount_fen for e in day32 if e.ref == "FAC-IF" and e.kind in
                (LedgerEventKind.INTEREST, LedgerEventKind.FEE)}
 
-    clock.day = 3  # the simulated bank credits the advance when the executor runs it
+    clock.day = 3  # requested on day 3: ADR-0010, the cash lands on day 6 (3-day lead time), not today
     too_much = ex.execute(op(SubmitInvoiceForFinancing, clock, facility_id="FAC-IF", receivable_id="RCV-A",
                              advance_fen=advance + 1))
     assert too_much.status == OperationStatus.REFUSED
     r = ex.execute(op(SubmitInvoiceForFinancing, clock, facility_id="FAC-IF", receivable_id="RCV-A",
                       advance_fen=advance))
-    assert r.status == OperationStatus.EXECUTED
+    assert r.status == OperationStatus.EXECUTED and "lands on day 6" in r.message
+    assert store.get_state().cash_fen == state0.cash_fen
+    advance_clock(store, 7)  # the simulated bank credits it when the clock closes day 6
     assert store.get_state().cash_fen == state0.cash_fen + advance
     assert receivable(store, "RCV-A").status == "FINANCED"
     assert facility(store, "FAC-IF").drawn_fen == advance
@@ -105,7 +108,8 @@ def test_invoice_financing_and_settlement_match_the_financial_engine(ex: Any, st
 def test_financing_bills_whole_periods(ex: Any, store: Any, clock: Clock) -> None:
     ex.execute(op(SubmitInvoiceForFinancing, clock, facility_id="FAC-IF", receivable_id="RCV-A",
                   advance_fen=10_000_000))
-    clock.day = 31  # 31 days outstanding -> two 30-day periods
+    advance_clock(store, 4)  # the advance lands on day 3 (ADR-0010)
+    clock.day = 34  # 31 days from landing -> two 30-day periods
     before = store.get_state().cash_fen
     ex.execute(op(ReceivePayment, clock, actor=Actor.SYSTEM, receivable_id="RCV-A", amount_fen=42_000_000))
     interest = post(simple_interest(10_000_000, bp(780), 60))

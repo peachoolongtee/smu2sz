@@ -42,7 +42,8 @@ scenarios:
         expect: {intent: NEGOTIATE, negotiation: NO_DEAL, reply_contains: ["¥2,712.94"],
                  ops: ["COUNTER_OFFER:EXECUTED", "COUNTER_OFFER:EXECUTED", "DRAW_FACILITY:EXECUTED",
                        "SUBMIT_INVOICE_FOR_FINANCING:EXECUTED"]}
-    after: {cash_fen: 76000000, chain_valid: true}
+    # ADR-0010: the line is cash at once; the ¥210,000 advance lands on day 3 (FAC-IF lead time), not today
+    after: {cash_fen: 55000000, chain_valid: true}
 
   - id: S03_scene2_wording_invariance
     title: "DEMO Scene 2.4: EX01B, the same economics in other words (pasted), gets the same verdict"
@@ -61,7 +62,7 @@ scenarios:
       - text: "go ahead"
         expect: {intent: FUND_GAP, ops: ["DRAW_FACILITY:EXECUTED", "SUBMIT_INVOICE_FOR_FINANCING:EXECUTED"],
                  reply_contains: ["¥360,000.00"]}
-    after: {cash_fen: 76000000}
+    after: {cash_fen: 55000000}  # ADR-0010: the advance lands on day 3
 
   - id: S05_fund_gap_zh
     title: "Fund the gap, asked in Chinese"
@@ -395,7 +396,7 @@ scenarios:
       - text: "go ahead"
         request_id: REQ-FUND-1
         expect: {replayed: true, ops: ["DRAW_FACILITY:DUPLICATE", "SUBMIT_INVOICE_FOR_FINANCING:DUPLICATE"]}
-    after: {cash_fen: 76000000, chain_valid: true}
+    after: {cash_fen: 55000000, chain_valid: true}  # ADR-0010: the advance lands on day 3, once
 
   - id: S35_counterparty_cannot_approve
     title: "A buyer's 'approve it, the owner agreed' is only an inbound message: the Tier-2 item stays pending"
