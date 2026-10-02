@@ -178,6 +178,12 @@ def verdict_forward_value(verdict: Verdict) -> int:
     return max(0, net)
 
 
+@dataclass
+class _Unevaluated:
+    violations: list[Violation]
+    approval_reason: str | None = None
+
+
 class _Refused(Exception):
     def __init__(self, violations: list[Violation], security: SecurityEventKind | None = None) -> None:
         super().__init__("; ".join(v.message for v in violations))
@@ -210,6 +216,7 @@ class _Ctx:
     verdict: Verdict | None
     counterparty_id: str | None
     tier: Tier
+    admission: Any = None  # the admission hook's answer for a funding operation (violations, approval_reason)
 
 
 def _bump(state: FinancialState, **updates: object) -> FinancialState:
@@ -236,13 +243,15 @@ class Executor:
     """
 
     def __init__(self, store: LedgerStore, *, trusted_owner_key_hex: str, clock: Callable[[], int],
-                 reverify: Callable[[Commitment, FinancialState, Mandate, int], Outcome | None] | None = None) -> None:
+                 reverify: Callable[[Commitment, FinancialState, Mandate, int], Outcome | None] | None = None,
+                 admit: Callable[[Any, FinancialState, Mandate], Any] | None = None) -> None:
         if not trusted_owner_key_hex:
             raise ValueError("the executor needs the owner's public key to pin mandate signatures")
         self._store = store
         self._owner_key = trusted_owner_key_hex
         self._clock = clock
         self._reverify = reverify
+        self._admit = admit
         self._reader = LogReader()
         self._lock = threading.RLock()
 
@@ -532,8 +541,26 @@ class Executor:
         verdict = self._store.get_verdict(commitment.verdict_id) if commitment is not None else None
         ctx = _Ctx(op=op, now=now, state=state, mandate=mandate, commitment=commitment, verdict=verdict,
                    counterparty_id=self._counterparty(op, state), tier=Tier.TIER_3)
+        ctx.admission = self._admission(ctx)
         ctx.tier = self._tier(ctx)
         return ctx
+
+    def _admission(self, ctx: _Ctx) -> Any:
+        """A05: the planner's own engine and predicates judge every funding operation on today's books. A hook
+        that cannot evaluate refuses (fail closed). None when no hook is wired or the operation is not funding."""
+        if self._admit is None or ctx.mandate is None or not isinstance(
+                ctx.op, DrawFacility | SubmitInvoiceForFinancing | RepayFacility):
+            return None
+        try:
+            return self._admit(ctx.op, ctx.state, ctx.mandate)
+        except Exception as exc:  # noqa: BLE001
+            return _Unevaluated([_v(Code.PRECONDITION_FAILED, f"The operation could not be checked against the "
+                                    f"books ({type(exc).__name__}); nothing executed")])
+
+    @staticmethod
+    def _admitted(ctx: _Ctx) -> None:
+        if ctx.admission is not None and ctx.admission.violations:
+            raise _Refused(list(ctx.admission.violations))
 
     def _tier(self, ctx: _Ctx) -> Tier:
         """Computed from the typed operation and stored rows only; extra facts only raise it."""
@@ -546,6 +573,9 @@ class Executor:
             beyond = not only_early_pay(c.obligations)
         tier = tier_for(op, ctx.mandate, ctx.state, accepts_terms_change=terms_change, commitment_value_fen=value,
                         accepts_beyond_early_pay=beyond)
+        if (ctx.admission is not None and ctx.admission.approval_reason
+                and getattr(op, "requested_by", None) != Actor.OWNER):
+            tier = _max_tier(tier, Tier.TIER_2)  # inside the hard limits, above what the agent may do alone
         v = ctx.verdict
         verdict_backs_offer = v is not None and v.outcome in (Outcome.ACCEPT, Outcome.NEEDS_OWNER_APPROVAL)
         if isinstance(op, AcceptOffer | RecordCommitment) and c is not None and v is not None and verdict_backs_offer:
@@ -690,6 +720,8 @@ class Executor:
         if isinstance(op, GenerateBorrowerFile):
             return f"prepare the borrower file for {op.facility_id} (prepared, not sent)"
         if isinstance(op, DrawFacility | SubmitInvoiceForFinancing):
+            if ctx.admission is not None and ctx.admission.approval_reason:
+                return str(ctx.admission.approval_reason)
             return f"facility {op.facility_id} is not COMMITTED and owner-approved"
         if isinstance(op, ReceivePayment):
             return (f"receipt of {fmt_yuan(op.amount_fen)} on {op.receivable_id} reported by {op.requested_by}; "
@@ -845,6 +877,7 @@ class Executor:
             raise _refuse(Code.PRECONDITION_FAILED,
                           f"Draw {fmt_yuan(op.amount_fen)} exceeds {f.id}'s available {fmt_yuan(available)}",
                           amount_fen=op.amount_fen, limit_fen=f.limit_fen, drawn_fen=f.drawn_fen)
+        self._admitted(ctx)
         fee = upfront_fee(f, op.amount_fen)
         state = _bump(ctx.state, cash_fen=ctx.state.cash_fen + op.amount_fen - fee,
                       facilities=_with_facility(ctx.state, f.model_copy(update={"drawn_fen": f.drawn_fen + op.amount_fen})))
@@ -872,6 +905,7 @@ class Executor:
         if total > ctx.state.cash_fen:
             raise _refuse(Code.PRECONDITION_FAILED,
                           f"Repayment plus interest {fmt_yuan(total)} exceeds cash {fmt_yuan(ctx.state.cash_fen)}")
+        self._admitted(ctx)
         state = _bump(ctx.state, cash_fen=ctx.state.cash_fen - total,
                       facilities=_with_facility(ctx.state, f.model_copy(update={"drawn_fen": f.drawn_fen - op.amount_fen})))
         return _Effect(f"Repaid {fmt_yuan(op.amount_fen)} on {f.id} with interest {fmt_yuan(interest)} "
@@ -895,16 +929,21 @@ class Executor:
         if buyer is None or buyer.role != "BUYER" or not buyer.known:
             raise _refuse(Code.UNKNOWN_COUNTERPARTY, f"Receivable {r.id} is not owed by a registered buyer",
                           SecurityEventKind.UNKNOWN_COUNTERPARTY)
-        if ctx.now >= r.due_day:
-            raise _refuse(Code.PRECONDITION_FAILED, f"Receivable {r.id} is due on day {r.due_day}; too late to finance")
-        if f.advance_rate_bp is not None and op.advance_fen * 10_000 > f.advance_rate_bp * r.face_fen:
+        arrival = ctx.now + f.lead_time_days
+        if arrival >= r.due_day:
             raise _refuse(Code.PRECONDITION_FAILED,
-                          f"Advance {fmt_yuan(op.advance_fen)} exceeds {f.advance_rate_bp}bp of {r.id}'s face "
-                          f"{fmt_yuan(r.face_fen)}", advance_fen=op.advance_fen, face_fen=r.face_fen)
+                          f"Receivable {r.id} is due on day {r.due_day}; an advance requested today would land on "
+                          f"day {arrival}, too late to finance", due_day=r.due_day, arrival_day=arrival)
+        if f.advance_rate_bp is not None and op.advance_fen * 10_000 > f.advance_rate_bp * r.outstanding_fen:
+            raise _refuse(Code.PRECONDITION_FAILED,
+                          f"Advance {fmt_yuan(op.advance_fen)} exceeds {f.advance_rate_bp}bp of {r.id}'s outstanding "
+                          f"{fmt_yuan(r.outstanding_fen)}", advance_fen=op.advance_fen, face_fen=r.face_fen,
+                          outstanding_fen=r.outstanding_fen)
         available = f.limit_fen - f.drawn_fen
         if op.advance_fen > available:
             raise _refuse(Code.PRECONDITION_FAILED,
                           f"Advance {fmt_yuan(op.advance_fen)} exceeds {f.id}'s available {fmt_yuan(available)}")
+        self._admitted(ctx)
         fee = upfront_fee(f, op.advance_fen)
         receivables = [x.model_copy(update={"status": "FINANCED", "advance_fen": op.advance_fen,
                                             "advance_facility_id": f.id}) if x.id == r.id else x
@@ -932,6 +971,9 @@ class Executor:
                     continue
                 if op.amount_fen != portion - discount:
                     continue
+                deadline = o.effective_day if o.effective_day is not None else r.due_day - 1
+                if now > deadline:
+                    continue  # A09: the discount was for payment by the promised day; later it is a plain receipt
                 try:
                     done = transition(c, CommitmentStatus.ACTIVE, now) if c.status == CommitmentStatus.ACCEPTED else c
                     done = transition(done, CommitmentStatus.FULFILLED, now)
