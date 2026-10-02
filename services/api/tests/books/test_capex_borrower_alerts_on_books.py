@@ -80,15 +80,15 @@ def _typed(action: Any, clock: Clock) -> Any:
 
 
 def _after_day_zero_funding(day: int) -> tuple[Any, Clock, Any]:
-    """The golden scenario with a ¥150,000 line draw and a ¥210,000 advance on RCV-A made on day 0, the clock at
-    `day` and no receipt recorded."""
+    """The golden scenario with the day-0 plan executed (a ¥150,000 line draw and a ¥255,000 advance on RCV-A: the gap
+    includes the existing loan's ¥45,000 day-30 payment), the clock at `day` and no receipt recorded."""
     store = seeded_store()
     clock = Clock(0)
     ex = make_executor(store, clock)
     assert ex.execute(op(DrawFacility, clock, facility_id="FAC-LINE", amount_fen=15_000_000)).status \
         == OperationStatus.EXECUTED
     assert ex.execute(op(SubmitInvoiceForFinancing, clock, facility_id="FAC-IF", receivable_id="RCV-A",
-                         advance_fen=21_000_000)).status == OperationStatus.EXECUTED
+                         advance_fen=25_500_000)).status == OperationStatus.EXECUTED
     advance(store, day)
     clock.day = day
     return store, clock, ex
@@ -196,8 +196,11 @@ def test_missed_receipt_on_a_financed_invoice():
                 store.get_mandate().min_cash_fen)
     [breach] = _of(found, AlertKind.RESERVE_BREACH_AHEAD)
     assert breach.day == t.first_breach_day == 34 and breach.day >= 34
-    assert breach.amount_fen == 21_374_260
-    assert breach.inputs["last_day"] == "46" and breach.inputs["max_shortfall"] == "¥213,742.60"
+    # cash 400,000 + 150,000 + 255,000 − 340,000 − 120,000 − 45,000 (day 30) = 300,000 on day 34. The overdue advance
+    # is repaid today on recourse: 255,000 + two 30-day periods from day 3 (255,000 × 7.8% × 60/365 = 3,269.59 + fees
+    # 255,000 × 0.25% × 2 = 1,275.00) = 259,544.59, the shortfall until the day-47 receipt
+    assert breach.amount_fen == 25_954_459
+    assert breach.inputs["last_day"] == "46" and breach.inputs["max_shortfall"] == "¥259,544.59"
     # the advance falls due with the missed receipt; every committed facility is spent or too slow, so no cure
     assert breach.committed_cure is False and breach.suggested == []
 
@@ -205,9 +208,10 @@ def test_missed_receipt_on_a_financed_invoice():
 def test_a_cure_after_a_missed_receipt_is_dated_today_and_the_executor_accepts_it():
     store, clock, ex = _after_day_zero_funding(34)
     state = store.get_state()
-    # more cash and a later outflow, so that a breach starts on day 40 and the committed advance can land first
+    # more cash and a later outflow, so that a breach starts on day 40 and the committed advance can land first:
+    # 300,000 + 300,000 − 259,544.59 (the advance repaid on recourse) = 340,455.41 today, 260,455.41 from day 40
     store.put_state(state.model_copy(update={
-        "cash_fen": state.cash_fen + 25_000_000,
+        "cash_fen": state.cash_fen + 30_000_000,
         "flows": [*state.flows, CashFlow(id="F-BIG", day=40, amount_fen=-8_000_000, kind=FlowKind.OTHER,
                                          label="Tooling", confirmed=True)]}))
     [breach] = _of(_run(store), AlertKind.RESERVE_BREACH_AHEAD)

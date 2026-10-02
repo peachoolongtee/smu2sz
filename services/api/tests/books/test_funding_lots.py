@@ -264,7 +264,9 @@ def test_a_lagged_draw_lands_net_of_its_upfront_fee_and_its_payload_is_logged() 
     before = w.state.cash_fen
     adv = w.move(96)  # the clock posts the maturity
     flows = adv.posted_net_fen
-    assert w.state.cash_fen == before + flows - 10_000_000 - line_interest(10_000_000, 500, 90)
+    # days 30, 60 and 90 also carry the existing loan's ¥45,000 payments (tests/books/test_debt_service.py)
+    assert adv.debt_service_fen == 3 * 4_500_000
+    assert w.state.cash_fen == before + flows - 10_000_000 - line_interest(10_000_000, 500, 90) - adv.debt_service_fen
     assert w.fac(TERM).drawn_fen == 0 and w.state.lots == []
     assert [p["day"] for p in adv.posted_debt_payments] == [95]
 
@@ -286,7 +288,7 @@ def _bare(cash: int, day: int, remaining: int) -> FinancialState:
     lot = FundingLot(id="L1", facility_id="FAC-ZERO", principal_fen=12_000_000, remaining_fen=remaining,
                      request_day=0, arrival_day=0, settled=True)
     return s.model_copy(update={"cash_fen": cash, "as_of_day": day, "flows": [], "receivables": [],
-                                "recurring_invoices": [], "facilities": [loan], "lots": [lot]})
+                                "recurring_invoices": [], "facilities": [loan], "lots": [lot], "debts": []})
 
 
 def test_ffin02_an_amortising_balance_is_not_reposted_into_closed_days() -> None:
