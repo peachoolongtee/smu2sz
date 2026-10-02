@@ -33,8 +33,8 @@ from app.domain.models import (
     SubmitInvoiceForFinancing,
     ViolationCode,
 )
-from app.financial import finance_invoice_charges, line_interest, project
-from app.financial.lots import apply_receipt, ensure_lots
+from app.financial import EngineError, finance_invoice_charges, line_interest, project
+from app.financial.lots import apply_receipt, ensure_lots, is_fixed_remainder
 from tests.operations.builders import Clock, make_executor, op, seeded_store
 
 C = Mode.CONSERVATIVE
@@ -484,17 +484,51 @@ def _fully_advanced_and_paid_in_full() -> World:
     return w
 
 
-def test_a_settled_financed_invoice_repays_its_open_lot_today_not_at_the_horizon() -> None:
+def _events(t, kinds, ref):
+    return [(p.day, e.kind, -e.amount_fen) for p in t.days for e in p.events if e.kind in kinds and e.ref == ref]
+
+
+def test_an_orphaned_fixed_remainder_is_repaid_today_without_charges_not_at_the_horizon() -> None:
     w = _fully_advanced_and_paid_in_full()
-    assert w.rcv("RCV-S").status == "FINANCED" and w.rcv("RCV-S").outstanding_fen == 0
+    assert w.rcv("RCV-S").status == "SETTLED"
     (lot,) = [x for x in w.state.lots if x.receivable_id == "RCV-S"]
-    assert lot.remaining_fen > 0 and w.fac(IF).drawn_fen == lot.remaining_fen
+    assert is_fixed_remainder(lot) and w.fac(IF).drawn_fen == lot.remaining_fen
     t = project(w.state, [], [], C, 120)
-    repaid = [(p.day, -e.amount_fen) for p in t.days for e in p.events
-              if e.kind == LedgerEventKind.REPAYMENT and e.ref == IF]
-    assert repaid == [(10, lot.remaining_fen)]  # today, by the overdue-invoice recourse convention; not day 120
-    # the charge is one period on the capitalised balance, billed once on the day it is repaid
-    interest, fee, _ = finance_invoice_charges(w.fac(IF), lot.principal_fen, 0)
-    posted = [(p.day, -e.amount_fen) for p in t.days for e in p.events
-              if e.kind in (LedgerEventKind.INTEREST, LedgerEventKind.FEE) and e.ref == IF]
-    assert posted == [(10, interest), *([(10, fee)] if fee else [])]
+    assert _events(t, (LedgerEventKind.REPAYMENT,), IF) == [(10, LedgerEventKind.REPAYMENT, lot.remaining_fen)]
+    assert _events(t, (LedgerEventKind.INTEREST, LedgerEventKind.FEE), IF) == []  # a fixed amount: nothing accrues
+
+
+def test_a_repay_action_repays_the_orphaned_lot_and_the_carried_code_does_not_project_it_again() -> None:
+    w = _fully_advanced_and_paid_in_full()
+    (lot,) = [x for x in w.state.lots if x.receivable_id == "RCV-S"]
+    part = lot.remaining_fen // 2
+    act = FundingAction(kind=FundingActionKind.REPAY, facility_id=IF, day=12, amount_fen=part)
+    t = project(w.state, [], [act], C, 120)
+    # the action's part on its own day, the rest today: together exactly the amount owed, never twice
+    assert _events(t, (LedgerEventKind.REPAYMENT,), IF) == [
+        (10, LedgerEventKind.REPAYMENT, lot.remaining_fen - part), (12, LedgerEventKind.REPAYMENT, part)]
+    too_much = act.model_copy(update={"amount_fen": lot.remaining_fen + 1})
+    with pytest.raises(EngineError):
+        project(w.state, [], [too_much], C, 120)
+    with pytest.raises(EngineError):  # nothing orphaned on a facility that has none
+        project(w.state, [], [act.model_copy(update={"facility_id": "FAC-EARLYPAY"})], C, 120)
+
+
+def test_a_financed_invoice_with_nothing_outstanding_still_repays_its_lot_with_charges_today() -> None:
+    """Older states: FINANCED with the face settled (the lot is not yet a fixed remainder). Repaid today with the
+    charges the lot has accrued, not carried to the horizon end."""
+    rcv = Receivable(id="RCV-S", counterparty_id="BUYER-1", face_fen=30_000_000, issue_day=0, terms_days=40)
+    w = World([rcv])
+    assert w.run(SubmitInvoiceForFinancing, Actor.OWNER, facility_id=IF, receivable_id="RCV-S",
+                 advance_fen=24_000_000).status == "EXECUTED"
+    w.move(10)
+    s = w.state
+    w.store.put_state(s.model_copy(update={"receivables": [
+        r.model_copy(update={"settled_fen": r.face_fen}) if r.id == "RCV-S" else r for r in s.receivables]}))
+    (lot,) = [x for x in w.state.lots if x.receivable_id == "RCV-S"]
+    t = project(w.state, [], [], C, 120)
+    assert _events(t, (LedgerEventKind.REPAYMENT,), IF) == [(10, LedgerEventKind.REPAYMENT, 24_000_000)]
+    interest, fee, _ = finance_invoice_charges(w.fac(IF), lot.principal_fen, 10 - lot.arrival_day)
+    posted = _events(t, (LedgerEventKind.INTEREST, LedgerEventKind.FEE), IF)
+    assert sorted(x[2] for x in posted) == sorted([interest, *([fee] if fee else [])])
+    assert {x[0] for x in posted} == {10}

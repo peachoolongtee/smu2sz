@@ -1,8 +1,8 @@
 """Regression tests for the second red team of 3 Oct 2026 (docs/research/redteam-2026-10-03b): F1 to F7.
 
 Each test asserts the stored state (the store's FinancialState, commitments, log and security events), not only
-the operation's message. Tests of the projection side of F3 run after `fix/router-admission-agree` merges (it
-makes the projection repay an orphaned lot today); they are skipped here with that reason.
+the operation's message. Both sides of F3 are tested here: the projection repays an orphaned lot today, and the
+engine's REPAY accepts an on-receipt facility's orphaned lots, so the runtime admission check agrees with the executor.
 """
 
 from __future__ import annotations
@@ -278,8 +278,6 @@ def test_f3_a_final_receipt_short_of_the_principal_bills_the_charges_once() -> N
     assert b.lot is not None and (b.lot.principal_fen, b.lot.remaining_fen) == (42_000_000, 2_000_000)
 
 
-@pytest.mark.skip(reason="projection side of F3: runs after fix/router-admission-agree merges (the carried-advance "
-                         "code repays an orphaned lot today, with no further charges)")
 def test_f3_the_projection_repays_an_orphaned_fixed_amount_today_without_charges() -> None:
     w = _full_face_world()
     w.receive("RCV-A", 42_000_000)
@@ -289,8 +287,6 @@ def test_f3_the_projection_repays_an_orphaned_fixed_amount_today_without_charges
     assert ev == [(32, LedgerEventKind.REPAYMENT, -owed)]
 
 
-@pytest.mark.skip(reason="admission side of F3: the engine's REPAY accepts an ON_RECEIPT facility's orphaned lots only "
-                         "after fix/router-admission-agree merges (see INTERFACE_CHANGE_REQUESTS)")
 def test_f3_repaying_an_orphaned_lot_passes_the_runtime_admission_check() -> None:
     from app.books import current_books
     from app.funding.admission import admit

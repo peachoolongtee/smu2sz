@@ -66,7 +66,7 @@ from app.financial.invoices import (
     recurring_receivable_id,
     resolve_scope,
 )
-from app.financial.lots import contractual_payments, ensure_lots
+from app.financial.lots import contractual_payments, ensure_lots, orphaned
 
 DEFAULT_EARLY_PAY_LEAD_DAYS = 2
 MONTH_DAYS = 30
@@ -157,6 +157,8 @@ class _Book:
     unallocated: list[tuple[Facility, int, int]] = field(default_factory=list)
     # lots on bullet term facilities, serviced on a level basis in the monthly debt service (ADR-0008)
     term_lots: list[_TermLot] = field(default_factory=list)
+    # per on-receipt facility: what the REPAY actions may still repay of its orphaned lots (oldest first), (lot, amount)
+    orphan_room: dict[str, list[tuple[str, int]]] = field(default_factory=dict)
 
     def add(self, p: _Posting) -> None:
         self.postings.append(p)
@@ -429,7 +431,35 @@ def _draw(f: Facility, a: FundingAction, book: _Book) -> _Lot | None:
     return lot
 
 
+def _repay_orphaned(f: Facility, a: FundingAction, book: _Book) -> None:
+    """REPAY on an on-receipt facility repays what is left on the lots whose invoice is settled, oldest first, as the
+    executor does (`Executor._repay_orphaned`): the amounts as they stand, nothing accrues."""
+    room = book.orphan_room.get(f.id, [])
+    left = a.amount_fen
+    while left and room:
+        lot_id, avail = room[0]
+        part = min(left, avail)
+        _repay_fixed(f, lot_id, part, a.day, book)
+        left -= part
+        room[0] = (lot_id, avail - part)
+        if room[0][1] == 0:
+            room.pop(0)
+    if left:
+        raise FundingActionError(f"REPAY of {y(a.amount_fen)} on {f.id} exceeds what is left on its advances whose "
+                                 f"invoices are settled by {y(left)}")
+
+
+def _repay_fixed(f: Facility, lot_id: str, amount: int, day: int, book: _Book) -> None:
+    book.add(_Posting(day, SETTLE, LedgerEventKind.REPAYMENT, -amount, f"Repay {f.name}", f.id,
+                      f"{y(amount)} left on advance {lot_id} whose invoice is settled: a fixed amount owed to the "
+                      f"lender, no further charges", f.id, "principal"))
+    book.balance(f.id, day, -amount)
+    book.repayment_days.append(day)
+
+
 def _repay(f: Facility, a: FundingAction, lots: list[_Lot], book: _Book) -> None:
+    if f.repayment == Repayment.ON_RECEIPT:
+        return _repay_orphaned(f, a, book)
     if f.repayment != Repayment.BULLET:
         raise FundingActionError(f"REPAY is only supported on bullet facilities, not {f.id}")
     left = a.amount_fen
@@ -636,7 +666,29 @@ def _contractual(f: Facility, lot: FundingLot, today: int, book: _Book) -> None:
             p for p in book.postings[first:] if p.category in ("interest", "fee", "principal")]))
 
 
-def _carry_drawn_balances(state: FinancialState, rcvs: dict[str, _Rcv], book: _Book) -> None:
+def _orphans_today(state: FinancialState, f: Facility, lots: list[FundingLot], book: _Book,
+                   by_actions: int) -> list[FundingLot]:
+    """The lots whose invoice is SETTLED (`lots.orphaned`) are owed by the owner directly, as the amount that is left,
+    with no charges (the executor's `_repay_orphaned`): the projection repays them today, except what a REPAY action
+    in the same projection repays (`by_actions`, oldest first, on its own day). Returns `lots` without them."""
+    mine = orphaned(state, f.id)
+    if not mine:
+        return lots
+    room: list[tuple[str, int]] = []
+    for lot in mine:
+        by = min(by_actions, lot.remaining_fen)
+        by_actions -= by
+        if by:
+            room.append((lot.id, by))
+        if lot.remaining_fen - by:
+            _repay_fixed(f, lot.id, lot.remaining_fen - by, state.as_of_day, book)
+    book.orphan_room[f.id] = room
+    gone = {lot.id for lot in mine}
+    return [lot for lot in lots if lot.id not in gone]
+
+
+def _carry_drawn_balances(state: FinancialState, rcvs: dict[str, _Rcv], book: _Book,
+                          repay_actions: dict[str, int] | None = None) -> None:
     """Every lot in the state: its landing if the cash has not landed, then its repayment (module docstring).
     `state` has been through `ensure_lots`."""
     today = state.as_of_day
@@ -656,6 +708,8 @@ def _carry_drawn_balances(state: FinancialState, rcvs: dict[str, _Rcv], book: _B
             by_facility[lot.facility_id].append(lot)
     for f in sorted(state.facilities, key=lambda x: x.id):
         lots = by_facility.get(f.id, [])
+        if f.kind == FacilityKind.INVOICE_FINANCING:
+            lots = _orphans_today(state, f, lots, book, (repay_actions or {}).get(f.id, 0))
         if not lots or f.kind in _NOT_CARRIED:
             continue
         if f.kind != FacilityKind.INVOICE_FINANCING:
@@ -765,7 +819,11 @@ def _build(
             _immediate_discount(ob, state, rcvs, book)
         elif ob.type in (ObligationType.CONTINGENT_REBATE, ObligationType.OPERATIONAL_CONCESSION):
             _forward_concession(ob, book)
-    _carry_drawn_balances(state, rcvs, book)
+    repay_actions: dict[str, int] = defaultdict(int)
+    for a in actions:
+        if a.kind == FundingActionKind.REPAY:
+            repay_actions[a.facility_id] += a.amount_fen
+    _carry_drawn_balances(state, rcvs, book, repay_actions)
     _apply_actions(state, actions, mode, rcvs, book)
     _check_limits(state, book)
 

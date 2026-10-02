@@ -57,6 +57,7 @@ from app.domain.models import (
     ViolationCode,
 )
 from app.financial import EngineError, project, upfront_fee
+from app.financial.lots import orphaned
 from app.funding import plan
 from app.mandate import demo_owner_public_key_hex
 from app.persistence import InMemoryLedgerStore
@@ -330,6 +331,8 @@ draw_step = st.tuples(st.just("draw"), st.sampled_from([LINE, GGL]), st.integers
 finance_step = st.tuples(st.just("finance"), st.integers(0, 2), st.integers(1, 100))
 repay_step = st.tuples(st.just("repay"), st.sampled_from([LINE, GGL]), st.integers(1, 100))
 tick_step = st.tuples(st.just("tick"), st.integers(1, 8))
+receive_step = st.tuples(st.just("receive"), st.integers(0, 2), st.integers(1, 100))  # a (partial) receipt
+orphan_step = st.tuples(st.just("orphan"), st.integers(1, 100))  # repay what is left on a settled invoice's lot
 
 
 def _operation(rt: Runtime, s: tuple) -> Any:
@@ -349,6 +352,16 @@ def _operation(rt: Runtime, s: tuple) -> Any:
         r = open_[s[1] % len(open_)]
         return op(SubmitInvoiceForFinancing, rt, facility_id=IF, receivable_id=r.id,
                   advance_fen=max(1, r.outstanding_fen * s[2] // 100))
+    if s[0] == "receive":  # the bank feed reports a receipt, possibly partial, possibly on a financed invoice
+        owed = [r for r in state.receivables if r.status in ("OPEN", "FINANCED") and r.outstanding_fen > 0]
+        if not owed:
+            return None
+        r = owed[s[1] % len(owed)]
+        return op(ReceivePayment, rt, actor=Actor.SYSTEM, receivable_id=r.id,
+                  amount_fen=max(1, r.outstanding_fen * s[2] // 100))
+    if s[0] == "orphan":
+        left = sum(lot.remaining_fen for lot in orphaned(state, IF))
+        return op(RepayFacility, rt, facility_id=IF, amount_fen=max(1, left * s[1] // 100)) if left else None
     return None
 
 
@@ -397,11 +410,26 @@ def _converse(w: World, steps: list[tuple], checked: type) -> None:
         if o is None:
             continue
         pre = rt.store.get_state()
+        owed = sum(lot.remaining_fen for lot in orphaned(pre, IF))
         res = ex.execute(o)
         if res.status == OperationStatus.PENDING_APPROVAL:
             res = ex.decide(res.approval_id, True, Actor.OWNER)  # a hard rule binds whoever approves
-        if res.status == EXECUTED and isinstance(o, checked):
-            check_executed(rt, pre, o)
+        if isinstance(o, RepayFacility) and o.facility_id == IF and 0 < o.amount_fen <= min(owed, pre.cash_fen) \
+                and res.status == OperationStatus.REFUSED:
+            # what the executor allows, admission allows: only the reserve may stand in the way, never the engine
+            assert {v.code for v in res.violations} == {ViolationCode.RESERVE_BREACH}, res.message
+        if res.status == EXECUTED:
+            post = rt.store.get_state()
+            for f in post.facilities:  # the lots always add up to what is drawn
+                assert sum(lot.remaining_fen for lot in post.lots if lot.facility_id == f.id) == f.drawn_fen, f.id
+            if isinstance(o, checked):
+                check_executed(rt, pre, o)
+            else:
+                try:
+                    project(post, list(current_books(post, rt.store.commitments()).obligations), [], C,
+                            mandate.horizon_days, mandate.min_cash_fen)
+                except EngineError as exc:
+                    pytest.fail(f"the engine cannot project the books after the executed {o.kind}: {exc}")
 
 
 # DISCOVERED DISAGREEMENT (reported, not hidden): admission projects a draw that names no repayment day as open for
@@ -431,4 +459,19 @@ def test_an_advance_the_executor_executes_the_engine_can_carry(w: World, steps: 
 @settings(PROPS)
 @given(w=worlds(), steps=st.lists(draw_step | repay_step | tick_step, min_size=2, max_size=4))
 def test_a_repayment_the_executor_executes_the_engine_can_carry(w: World, steps: list[tuple]) -> None:
+    _converse(w, steps, RepayFacility)
+
+
+# a full-face advance, the invoice paid in full on the due day (the receipt cannot cover the charges: the unpaid
+# remainder is orphaned on the lot), then the owner repays it through the runtime's admission
+ORPHAN = World(iff=(50_000_000, 780, 25, 0, 30, 3, None), cash=60_000_000)
+
+
+@settings(PROPS)
+@given(w=worlds(), steps=st.lists(finance_step | tick_step | receive_step | orphan_step, min_size=2, max_size=7))
+@example(w=ORPHAN, steps=[("finance", 0, 100), ("tick", 8), ("tick", 8), ("tick", 8), ("tick", 8),
+                          ("receive", 0, 100), ("orphan", 100)])
+@example(w=ORPHAN, steps=[("finance", 0, 100), ("tick", 8), ("receive", 0, 40), ("tick", 8), ("tick", 8),
+                          ("tick", 8), ("receive", 0, 100), ("orphan", 50), ("orphan", 100)])
+def test_partial_receipts_and_orphaned_lot_repayments_agree_with_the_engine(w: World, steps: list[tuple]) -> None:
     _converse(w, steps, RepayFacility)
