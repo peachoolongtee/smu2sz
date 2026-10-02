@@ -1,0 +1,10 @@
+2026-10-03 01:04:48 [info     ] compiler.call                  backend=cache doc_hash=5b16b87420f18f5ab8fac329f133580ecc54255762949b6661b750eb7b240c52 error=CacheMiss latency_ms=0.0 outcome=fallback prompt_version=offer-v4
+2026-10-03 01:04:48 [info     ] compiler.call                  backend=rules doc_hash=5b16b87420f18f5ab8fac329f133580ecc54255762949b6661b750eb7b240c52 latency_ms=0.6 model=rules-v1 outcome=ok prompt_version=offer-v4
+verdict NEEDS_OWNER_APPROVAL TIER_2 [('RESERVE_BREACH', 'Under this offer projected cash falls below the reserve on day 47')]
+accept PENDING_APPROVAL
+approve EXECUTED
+before [('RI:BUYER-1:2', 52), ('RI:BUYER-1:32', 82), ('RI:BUYER-1:62', 112), ('RI:BUYER-1:92', 137), ('RI:BUYER-1:122', 167), ('RI:BUYER-1:152', 197)]
+settle RI:BUYER-1:2 EXECUTED
+settle RI:BUYER-1:32 EXECUTED
+settle RI:BUYER-1:62 EXECUTED
+after3 [('RI:BUYER-1:92', 142), ('RI:BUYER-1:122', 172), ('RI:BUYER-1:152', 202), ('RI:BUYER-1:182', 227), ('RI:BUYER-1:212', 257)]

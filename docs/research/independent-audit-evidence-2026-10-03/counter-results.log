@@ -1,0 +1,7 @@
+2026-10-03 01:04:47 [info     ] compiler.call                  backend=cache doc_hash=f806f79b6c21eb88ba3fd94a4d7f1aec054fe56545175adf0bafa4271c347dec latency_ms=0.1 model=fixture-cache outcome=ok prompt_version=offer-v4
+real counter CTR-6576b0a62cbf 60-day terms accepted with a 0.45% price adjustment on future invoices, no rebate. [('TERMS_EXTENSION', None, 'RECURRING_PERPETUAL', None), ('PRICE_ADJUSTMENT', 45, 'RECURRING_PERPETUAL', None)]
+accept PENDING_APPROVAL Queued for owner approval (APR-000001): commitment CMT-5330acb01e8e4f33 lengthens payment terms
+approve EXECUTED
+issued face/due [(42000000, 47)] projected receipt [(62, 42189000)]
+agreed cash receipt REFUSED Refused: Payment ¥421,890.00 settles ¥421,890.00 of RI:BUYER-1:2, which has only ¥420,000.00 outstanding
+partial EXECUTED cash received 10000000 correct agreed residual 32189000 projected residual 32144000 economic value lost 45000

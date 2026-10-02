@@ -1,0 +1,5116 @@
+{
+  "commands": [
+    {
+      "credential": "owner",
+      "request": {
+        "actor": "OWNER",
+        "text": "Do not draw ¥100,000 on the credit line."
+      },
+      "http": 200,
+      "before": {
+        "cash_fen": 40000000,
+        "state_version": 1,
+        "facilities": {
+          "FAC-LINE": 0,
+          "FAC-IF": 0,
+          "FAC-EARLYPAY": 0,
+          "FAC-GGL": 0,
+          "FAC-ETL": 0,
+          "FAC-LEASE": 0,
+          "FAC-BILL": 0,
+          "FAC-EQUITY": 0
+        },
+        "commitments": [],
+        "operations": 0
+      },
+      "after": {
+        "cash_fen": 50000000,
+        "state_version": 2,
+        "facilities": {
+          "FAC-LINE": 10000000,
+          "FAC-IF": 0,
+          "FAC-EARLYPAY": 0,
+          "FAC-GGL": 0,
+          "FAC-ETL": 0,
+          "FAC-LEASE": 0,
+          "FAC-BILL": 0,
+          "FAC-EQUITY": 0
+        },
+        "commitments": [],
+        "operations": 1
+      },
+      "response": {
+        "session_id": "nls-4091bcb56ee44905",
+        "turn": 1,
+        "reply": "Drew ¥100,000.00 on FAC-LINE on day 0",
+        "intent": "FUND_GAP",
+        "lang": "en",
+        "plan": [
+          {
+            "step": 1,
+            "kind": "VERIFY",
+            "description": "Verdict ACCEPT (TIER_1): no violations. ACCEPT. Forward concessions ¥0.00 against ¥5,000.00. Covenants hold: DSCR_MIN 1.89x, LEVERAGE_MAX 1.72x.",
+            "status": "DONE",
+            "op_id": null,
+            "condition": null
+          },
+          {
+            "step": 2,
+            "kind": "DRAW_FACILITY",
+            "description": "Draw ¥100,000.00 on FAC-LINE",
+            "status": "EXECUTED",
+            "op_id": "NL-461d8825457d3abf",
+            "condition": null
+          }
+        ],
+        "verdict": {
+          "id": "VER-daed9e0bbdca",
+          "offer_id": "NL-SQ-d59b04cdc9e8",
+          "offer_version": 1,
+          "outcome": "ACCEPT",
+          "violations": [],
+          "bound_obligations": [],
+          "concession_values": [],
+          "forward_concession_total_fen": 0,
+          "counters": [],
+          "plan": {
+            "id": "PLAN-COM-1ec49ce46f15",
+            "basis": "COMMITTED",
+            "need_fen": 36000000,
+            "actions": [
+              {
+                "kind": "DRAW",
+                "facility_id": "FAC-LINE",
+                "day": 0,
+                "amount_fen": 15000000,
+                "receivable_id": null,
+                "repay_day": 32,
+                "rate_bp": null,
+                "amount_display": "¥150,000.00"
+              },
+              {
+                "kind": "FINANCE_INVOICE",
+                "facility_id": "FAC-IF",
+                "day": 0,
+                "amount_fen": 21000000,
+                "receivable_id": "RCV-A",
+                "repay_day": null,
+                "rate_bp": null,
+                "amount_display": "¥210,000.00"
+              }
+            ],
+            "costs": [
+              {
+                "label": "Bank credit line: draw ¥150,000.00, repaid day 32",
+                "fen": 84164,
+                "facility_id": "FAC-LINE",
+                "formula": "150,000.00 × 6.4% × 32/365 = 841.64",
+                "display": "¥841.64"
+              },
+              {
+                "label": "Invoice financing (onboarded platform): advance ¥210,000.00 on RCV-A",
+                "fen": 187130,
+                "facility_id": "FAC-IF",
+                "formula": "210,000.00 × 7.8% × 30/365 (29 days billed as 1 × 30-day period) = 1,346.30; 210,000.00 × 0.25% × 1 = 525.00; total ¥1,871.30",
+                "display": "¥1,871.30"
+              }
+            ],
+            "total_cost_fen": 271294,
+            "admissible": true,
+            "violations": [],
+            "marginal_cost_annual": {
+              "num": 1301,
+              "den": 12000,
+              "text": "0.11"
+            },
+            "marginal_facility_id": "FAC-IF",
+            "rejected": [
+              {
+                "label": "Discount the whole invoice at 1.2%",
+                "reasons": [],
+                "note": "cost ¥5,040.00; admissible but dearer than the selected plan"
+              },
+              {
+                "label": "Line + early payment on part of the invoice at 1.2%",
+                "reasons": [],
+                "note": "cost ¥3,392.25; admissible but dearer than the selected plan"
+              },
+              {
+                "label": "Line + guaranteed loan",
+                "reasons": [
+                  "UNCOMMITTED_FACILITY",
+                  "LEAD_TIME_TOO_LONG"
+                ],
+                "note": "not applied; cash on day 21, gap opens on day 12"
+              },
+              {
+                "label": "Line only",
+                "reasons": [
+                  "RESERVE_BREACH"
+                ],
+                "note": "cost ¥841.64; RESERVE_BREACH on day 12"
+              }
+            ],
+            "label": "committed plan: ¥841.64 + ¥1,871.30 = ¥2,712.94",
+            "need_display": "¥360,000.00",
+            "total_cost_display": "¥2,712.94"
+          },
+          "required_tier": "TIER_1",
+          "mandate_version": 1,
+          "state_version": 1,
+          "calc_version": "tl-v2.0",
+          "summary": "ACCEPT. Forward concessions ¥0.00 against ¥5,000.00. Covenants hold: DSCR_MIN 1.89x, LEVERAGE_MAX 1.72x.",
+          "passed_checks": [
+            {
+              "code": "MIN_CASH",
+              "label": "Minimum cash with the committed plan",
+              "observed": "¥300,000.00 on day 20",
+              "limit": "≥ ¥300,000.00",
+              "formula": "closing_cash(day) >= min_cash on every day; the offer induces no breach",
+              "inputs": {
+                "plan": "committed plan: ¥841.64 + ¥1,871.30 = ¥2,712.94",
+                "offer_lowest_without_funding": "−¥60,000.00",
+                "offer_lowest_day": "20"
+              }
+            },
+            {
+              "code": "DSCR_MIN",
+              "label": "Lowest monthly DSCR (month 2)",
+              "observed": "1.89x",
+              "limit": "≥ 1.25x",
+              "formula": "EBITDA_m / DS_m = ¥90,000.00 / ¥47,712.94",
+              "inputs": {}
+            },
+            {
+              "code": "LEVERAGE_MAX",
+              "label": "Highest monthly leverage (month 1)",
+              "observed": "1.72x",
+              "limit": "≤ 2.50x",
+              "formula": "Debt_m / (12 × EBITDA_m) = ¥1,860,000.00 / (12 × ¥90,000.00)",
+              "inputs": {}
+            },
+            {
+              "code": "CLEAN_DOWN",
+              "label": "Bank credit line: clean-down",
+              "observed": "89 days at zero",
+              "limit": "≥ 30 consecutive days",
+              "formula": "max run of days with balance = 0 >= 30",
+              "inputs": {
+                "facility_id": "FAC-LINE",
+                "run_start_day": "32",
+                "run_end_day": "120",
+                "horizon_days": "120"
+              }
+            }
+          ],
+          "autonomy": {
+            "eligible": false,
+            "accepted_alone": true,
+            "whole_invoice": null,
+            "covered": [],
+            "gaps": [],
+            "notes": []
+          },
+          "annualised": [],
+          "forward_concession_total_display": "¥0.00"
+        },
+        "operations": [
+          {
+            "op_id": "NL-461d8825457d3abf",
+            "kind": "DRAW_FACILITY",
+            "status": "EXECUTED",
+            "tier": "TIER_1",
+            "violations": [],
+            "seq": 1,
+            "entry_hash": "d66cf35d56858ddc72723b9864bc609557d6e0013222cc9bc337deb3ea105f03",
+            "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+            "effective_day": 0,
+            "approval_id": null,
+            "message": "Drew ¥100,000.00 on FAC-LINE on day 0"
+          }
+        ],
+        "clarification": null,
+        "awaiting_confirmation": false,
+        "amended": false,
+        "replayed": false,
+        "negotiation": null,
+        "security_events": [],
+        "parse_source": "rules",
+        "trace_id": "nls-4091bcb56ee44905:1"
+      }
+    },
+    {
+      "credential": "owner",
+      "request": {
+        "actor": "OWNER",
+        "text": "Is it safe to draw ¥100,000 on the credit line?"
+      },
+      "http": 200,
+      "before": {
+        "cash_fen": 40000000,
+        "state_version": 1,
+        "facilities": {
+          "FAC-LINE": 0,
+          "FAC-IF": 0,
+          "FAC-EARLYPAY": 0,
+          "FAC-GGL": 0,
+          "FAC-ETL": 0,
+          "FAC-LEASE": 0,
+          "FAC-BILL": 0,
+          "FAC-EQUITY": 0
+        },
+        "commitments": [],
+        "operations": 0
+      },
+      "after": {
+        "cash_fen": 50000000,
+        "state_version": 2,
+        "facilities": {
+          "FAC-LINE": 10000000,
+          "FAC-IF": 0,
+          "FAC-EARLYPAY": 0,
+          "FAC-GGL": 0,
+          "FAC-ETL": 0,
+          "FAC-LEASE": 0,
+          "FAC-BILL": 0,
+          "FAC-EQUITY": 0
+        },
+        "commitments": [],
+        "operations": 1
+      },
+      "response": {
+        "session_id": "nls-446f485ea59549d6",
+        "turn": 1,
+        "reply": "Drew ¥100,000.00 on FAC-LINE on day 0",
+        "intent": "FUND_GAP",
+        "lang": "en",
+        "plan": [
+          {
+            "step": 1,
+            "kind": "VERIFY",
+            "description": "Verdict ACCEPT (TIER_1): no violations. ACCEPT. Forward concessions ¥0.00 against ¥5,000.00. Covenants hold: DSCR_MIN 1.89x, LEVERAGE_MAX 1.72x.",
+            "status": "DONE",
+            "op_id": null,
+            "condition": null
+          },
+          {
+            "step": 2,
+            "kind": "DRAW_FACILITY",
+            "description": "Draw ¥100,000.00 on FAC-LINE",
+            "status": "EXECUTED",
+            "op_id": "NL-49e4110428612128",
+            "condition": null
+          }
+        ],
+        "verdict": {
+          "id": "VER-daed9e0bbdca",
+          "offer_id": "NL-SQ-d59b04cdc9e8",
+          "offer_version": 1,
+          "outcome": "ACCEPT",
+          "violations": [],
+          "bound_obligations": [],
+          "concession_values": [],
+          "forward_concession_total_fen": 0,
+          "counters": [],
+          "plan": {
+            "id": "PLAN-COM-1ec49ce46f15",
+            "basis": "COMMITTED",
+            "need_fen": 36000000,
+            "actions": [
+              {
+                "kind": "DRAW",
+                "facility_id": "FAC-LINE",
+                "day": 0,
+                "amount_fen": 15000000,
+                "receivable_id": null,
+                "repay_day": 32,
+                "rate_bp": null,
+                "amount_display": "¥150,000.00"
+              },
+              {
+                "kind": "FINANCE_INVOICE",
+                "facility_id": "FAC-IF",
+                "day": 0,
+                "amount_fen": 21000000,
+                "receivable_id": "RCV-A",
+                "repay_day": null,
+                "rate_bp": null,
+                "amount_display": "¥210,000.00"
+              }
+            ],
+            "costs": [
+              {
+                "label": "Bank credit line: draw ¥150,000.00, repaid day 32",
+                "fen": 84164,
+                "facility_id": "FAC-LINE",
+                "formula": "150,000.00 × 6.4% × 32/365 = 841.64",
+                "display": "¥841.64"
+              },
+              {
+                "label": "Invoice financing (onboarded platform): advance ¥210,000.00 on RCV-A",
+                "fen": 187130,
+                "facility_id": "FAC-IF",
+                "formula": "210,000.00 × 7.8% × 30/365 (29 days billed as 1 × 30-day period) = 1,346.30; 210,000.00 × 0.25% × 1 = 525.00; total ¥1,871.30",
+                "display": "¥1,871.30"
+              }
+            ],
+            "total_cost_fen": 271294,
+            "admissible": true,
+            "violations": [],
+            "marginal_cost_annual": {
+              "num": 1301,
+              "den": 12000,
+              "text": "0.11"
+            },
+            "marginal_facility_id": "FAC-IF",
+            "rejected": [
+              {
+                "label": "Discount the whole invoice at 1.2%",
+                "reasons": [],
+                "note": "cost ¥5,040.00; admissible but dearer than the selected plan"
+              },
+              {
+                "label": "Line + early payment on part of the invoice at 1.2%",
+                "reasons": [],
+                "note": "cost ¥3,392.25; admissible but dearer than the selected plan"
+              },
+              {
+                "label": "Line + guaranteed loan",
+                "reasons": [
+                  "UNCOMMITTED_FACILITY",
+                  "LEAD_TIME_TOO_LONG"
+                ],
+                "note": "not applied; cash on day 21, gap opens on day 12"
+              },
+              {
+                "label": "Line only",
+                "reasons": [
+                  "RESERVE_BREACH"
+                ],
+                "note": "cost ¥841.64; RESERVE_BREACH on day 12"
+              }
+            ],
+            "label": "committed plan: ¥841.64 + ¥1,871.30 = ¥2,712.94",
+            "need_display": "¥360,000.00",
+            "total_cost_display": "¥2,712.94"
+          },
+          "required_tier": "TIER_1",
+          "mandate_version": 1,
+          "state_version": 1,
+          "calc_version": "tl-v2.0",
+          "summary": "ACCEPT. Forward concessions ¥0.00 against ¥5,000.00. Covenants hold: DSCR_MIN 1.89x, LEVERAGE_MAX 1.72x.",
+          "passed_checks": [
+            {
+              "code": "MIN_CASH",
+              "label": "Minimum cash with the committed plan",
+              "observed": "¥300,000.00 on day 20",
+              "limit": "≥ ¥300,000.00",
+              "formula": "closing_cash(day) >= min_cash on every day; the offer induces no breach",
+              "inputs": {
+                "plan": "committed plan: ¥841.64 + ¥1,871.30 = ¥2,712.94",
+                "offer_lowest_without_funding": "−¥60,000.00",
+                "offer_lowest_day": "20"
+              }
+            },
+            {
+              "code": "DSCR_MIN",
+              "label": "Lowest monthly DSCR (month 2)",
+              "observed": "1.89x",
+              "limit": "≥ 1.25x",
+              "formula": "EBITDA_m / DS_m = ¥90,000.00 / ¥47,712.94",
+              "inputs": {}
+            },
+            {
+              "code": "LEVERAGE_MAX",
+              "label": "Highest monthly leverage (month 1)",
+              "observed": "1.72x",
+              "limit": "≤ 2.50x",
+              "formula": "Debt_m / (12 × EBITDA_m) = ¥1,860,000.00 / (12 × ¥90,000.00)",
+              "inputs": {}
+            },
+            {
+              "code": "CLEAN_DOWN",
+              "label": "Bank credit line: clean-down",
+              "observed": "89 days at zero",
+              "limit": "≥ 30 consecutive days",
+              "formula": "max run of days with balance = 0 >= 30",
+              "inputs": {
+                "facility_id": "FAC-LINE",
+                "run_start_day": "32",
+                "run_end_day": "120",
+                "horizon_days": "120"
+              }
+            }
+          ],
+          "autonomy": {
+            "eligible": false,
+            "accepted_alone": true,
+            "whole_invoice": null,
+            "covered": [],
+            "gaps": [],
+            "notes": []
+          },
+          "annualised": [],
+          "forward_concession_total_display": "¥0.00"
+        },
+        "operations": [
+          {
+            "op_id": "NL-49e4110428612128",
+            "kind": "DRAW_FACILITY",
+            "status": "EXECUTED",
+            "tier": "TIER_1",
+            "violations": [],
+            "seq": 1,
+            "entry_hash": "6eb3dd4eb58f9eb32189ba3cfb1015139c70c013b0ed30a920ec9309d03fe236",
+            "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+            "effective_day": 0,
+            "approval_id": null,
+            "message": "Drew ¥100,000.00 on FAC-LINE on day 0"
+          }
+        ],
+        "clarification": null,
+        "awaiting_confirmation": false,
+        "amended": false,
+        "replayed": false,
+        "negotiation": null,
+        "security_events": [],
+        "parse_source": "rules",
+        "trace_id": "nls-446f485ea59549d6:1"
+      }
+    },
+    {
+      "credential": "owner",
+      "request": {
+        "actor": "OWNER",
+        "text": "draw ¥100,000 on the credit line only if cash is below ¥0"
+      },
+      "http": 200,
+      "before": {
+        "cash_fen": 40000000,
+        "state_version": 1,
+        "facilities": {
+          "FAC-LINE": 0,
+          "FAC-IF": 0,
+          "FAC-EARLYPAY": 0,
+          "FAC-GGL": 0,
+          "FAC-ETL": 0,
+          "FAC-LEASE": 0,
+          "FAC-BILL": 0,
+          "FAC-EQUITY": 0
+        },
+        "commitments": [],
+        "operations": 0
+      },
+      "after": {
+        "cash_fen": 50000000,
+        "state_version": 2,
+        "facilities": {
+          "FAC-LINE": 10000000,
+          "FAC-IF": 0,
+          "FAC-EARLYPAY": 0,
+          "FAC-GGL": 0,
+          "FAC-ETL": 0,
+          "FAC-LEASE": 0,
+          "FAC-BILL": 0,
+          "FAC-EQUITY": 0
+        },
+        "commitments": [],
+        "operations": 1
+      },
+      "response": {
+        "session_id": "nls-59ffab91d4cd4e09",
+        "turn": 1,
+        "reply": "Drew ¥100,000.00 on FAC-LINE on day 0",
+        "intent": "FUND_GAP",
+        "lang": "en",
+        "plan": [
+          {
+            "step": 1,
+            "kind": "VERIFY",
+            "description": "Verdict ACCEPT (TIER_1): no violations. ACCEPT. Forward concessions ¥0.00 against ¥5,000.00. Covenants hold: DSCR_MIN 1.89x, LEVERAGE_MAX 1.72x.",
+            "status": "DONE",
+            "op_id": null,
+            "condition": null
+          },
+          {
+            "step": 2,
+            "kind": "DRAW_FACILITY",
+            "description": "Draw ¥100,000.00 on FAC-LINE",
+            "status": "EXECUTED",
+            "op_id": "NL-2ccdcec901fc8694",
+            "condition": null
+          }
+        ],
+        "verdict": {
+          "id": "VER-daed9e0bbdca",
+          "offer_id": "NL-SQ-d59b04cdc9e8",
+          "offer_version": 1,
+          "outcome": "ACCEPT",
+          "violations": [],
+          "bound_obligations": [],
+          "concession_values": [],
+          "forward_concession_total_fen": 0,
+          "counters": [],
+          "plan": {
+            "id": "PLAN-COM-1ec49ce46f15",
+            "basis": "COMMITTED",
+            "need_fen": 36000000,
+            "actions": [
+              {
+                "kind": "DRAW",
+                "facility_id": "FAC-LINE",
+                "day": 0,
+                "amount_fen": 15000000,
+                "receivable_id": null,
+                "repay_day": 32,
+                "rate_bp": null,
+                "amount_display": "¥150,000.00"
+              },
+              {
+                "kind": "FINANCE_INVOICE",
+                "facility_id": "FAC-IF",
+                "day": 0,
+                "amount_fen": 21000000,
+                "receivable_id": "RCV-A",
+                "repay_day": null,
+                "rate_bp": null,
+                "amount_display": "¥210,000.00"
+              }
+            ],
+            "costs": [
+              {
+                "label": "Bank credit line: draw ¥150,000.00, repaid day 32",
+                "fen": 84164,
+                "facility_id": "FAC-LINE",
+                "formula": "150,000.00 × 6.4% × 32/365 = 841.64",
+                "display": "¥841.64"
+              },
+              {
+                "label": "Invoice financing (onboarded platform): advance ¥210,000.00 on RCV-A",
+                "fen": 187130,
+                "facility_id": "FAC-IF",
+                "formula": "210,000.00 × 7.8% × 30/365 (29 days billed as 1 × 30-day period) = 1,346.30; 210,000.00 × 0.25% × 1 = 525.00; total ¥1,871.30",
+                "display": "¥1,871.30"
+              }
+            ],
+            "total_cost_fen": 271294,
+            "admissible": true,
+            "violations": [],
+            "marginal_cost_annual": {
+              "num": 1301,
+              "den": 12000,
+              "text": "0.11"
+            },
+            "marginal_facility_id": "FAC-IF",
+            "rejected": [
+              {
+                "label": "Discount the whole invoice at 1.2%",
+                "reasons": [],
+                "note": "cost ¥5,040.00; admissible but dearer than the selected plan"
+              },
+              {
+                "label": "Line + early payment on part of the invoice at 1.2%",
+                "reasons": [],
+                "note": "cost ¥3,392.25; admissible but dearer than the selected plan"
+              },
+              {
+                "label": "Line + guaranteed loan",
+                "reasons": [
+                  "UNCOMMITTED_FACILITY",
+                  "LEAD_TIME_TOO_LONG"
+                ],
+                "note": "not applied; cash on day 21, gap opens on day 12"
+              },
+              {
+                "label": "Line only",
+                "reasons": [
+                  "RESERVE_BREACH"
+                ],
+                "note": "cost ¥841.64; RESERVE_BREACH on day 12"
+              }
+            ],
+            "label": "committed plan: ¥841.64 + ¥1,871.30 = ¥2,712.94",
+            "need_display": "¥360,000.00",
+            "total_cost_display": "¥2,712.94"
+          },
+          "required_tier": "TIER_1",
+          "mandate_version": 1,
+          "state_version": 1,
+          "calc_version": "tl-v2.0",
+          "summary": "ACCEPT. Forward concessions ¥0.00 against ¥5,000.00. Covenants hold: DSCR_MIN 1.89x, LEVERAGE_MAX 1.72x.",
+          "passed_checks": [
+            {
+              "code": "MIN_CASH",
+              "label": "Minimum cash with the committed plan",
+              "observed": "¥300,000.00 on day 20",
+              "limit": "≥ ¥300,000.00",
+              "formula": "closing_cash(day) >= min_cash on every day; the offer induces no breach",
+              "inputs": {
+                "plan": "committed plan: ¥841.64 + ¥1,871.30 = ¥2,712.94",
+                "offer_lowest_without_funding": "−¥60,000.00",
+                "offer_lowest_day": "20"
+              }
+            },
+            {
+              "code": "DSCR_MIN",
+              "label": "Lowest monthly DSCR (month 2)",
+              "observed": "1.89x",
+              "limit": "≥ 1.25x",
+              "formula": "EBITDA_m / DS_m = ¥90,000.00 / ¥47,712.94",
+              "inputs": {}
+            },
+            {
+              "code": "LEVERAGE_MAX",
+              "label": "Highest monthly leverage (month 1)",
+              "observed": "1.72x",
+              "limit": "≤ 2.50x",
+              "formula": "Debt_m / (12 × EBITDA_m) = ¥1,860,000.00 / (12 × ¥90,000.00)",
+              "inputs": {}
+            },
+            {
+              "code": "CLEAN_DOWN",
+              "label": "Bank credit line: clean-down",
+              "observed": "89 days at zero",
+              "limit": "≥ 30 consecutive days",
+              "formula": "max run of days with balance = 0 >= 30",
+              "inputs": {
+                "facility_id": "FAC-LINE",
+                "run_start_day": "32",
+                "run_end_day": "120",
+                "horizon_days": "120"
+              }
+            }
+          ],
+          "autonomy": {
+            "eligible": false,
+            "accepted_alone": true,
+            "whole_invoice": null,
+            "covered": [],
+            "gaps": [],
+            "notes": []
+          },
+          "annualised": [],
+          "forward_concession_total_display": "¥0.00"
+        },
+        "operations": [
+          {
+            "op_id": "NL-2ccdcec901fc8694",
+            "kind": "DRAW_FACILITY",
+            "status": "EXECUTED",
+            "tier": "TIER_1",
+            "violations": [],
+            "seq": 1,
+            "entry_hash": "3bd4b103625729669f4bc90981cd155cb67b02f92e6176ac4ef25a0af2351e7e",
+            "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+            "effective_day": 0,
+            "approval_id": null,
+            "message": "Drew ¥100,000.00 on FAC-LINE on day 0"
+          }
+        ],
+        "clarification": null,
+        "awaiting_confirmation": false,
+        "amended": false,
+        "replayed": false,
+        "negotiation": null,
+        "security_events": [],
+        "parse_source": "rules",
+        "trace_id": "nls-59ffab91d4cd4e09:1"
+      }
+    },
+    {
+      "credential": "owner",
+      "request": {
+        "actor": "OWNER",
+        "text": "draw ¥100,000 on the credit line tomorrow"
+      },
+      "http": 200,
+      "before": {
+        "cash_fen": 40000000,
+        "state_version": 1,
+        "facilities": {
+          "FAC-LINE": 0,
+          "FAC-IF": 0,
+          "FAC-EARLYPAY": 0,
+          "FAC-GGL": 0,
+          "FAC-ETL": 0,
+          "FAC-LEASE": 0,
+          "FAC-BILL": 0,
+          "FAC-EQUITY": 0
+        },
+        "commitments": [],
+        "operations": 0
+      },
+      "after": {
+        "cash_fen": 50000000,
+        "state_version": 2,
+        "facilities": {
+          "FAC-LINE": 10000000,
+          "FAC-IF": 0,
+          "FAC-EARLYPAY": 0,
+          "FAC-GGL": 0,
+          "FAC-ETL": 0,
+          "FAC-LEASE": 0,
+          "FAC-BILL": 0,
+          "FAC-EQUITY": 0
+        },
+        "commitments": [],
+        "operations": 1
+      },
+      "response": {
+        "session_id": "nls-aac724347b514a61",
+        "turn": 1,
+        "reply": "Drew ¥100,000.00 on FAC-LINE on day 0",
+        "intent": "FUND_GAP",
+        "lang": "en",
+        "plan": [
+          {
+            "step": 1,
+            "kind": "VERIFY",
+            "description": "Verdict ACCEPT (TIER_1): no violations. ACCEPT. Forward concessions ¥0.00 against ¥5,000.00. Covenants hold: DSCR_MIN 1.89x, LEVERAGE_MAX 1.72x.",
+            "status": "DONE",
+            "op_id": null,
+            "condition": null
+          },
+          {
+            "step": 2,
+            "kind": "DRAW_FACILITY",
+            "description": "Draw ¥100,000.00 on FAC-LINE",
+            "status": "EXECUTED",
+            "op_id": "NL-a4456647b55a291e",
+            "condition": null
+          }
+        ],
+        "verdict": {
+          "id": "VER-daed9e0bbdca",
+          "offer_id": "NL-SQ-d59b04cdc9e8",
+          "offer_version": 1,
+          "outcome": "ACCEPT",
+          "violations": [],
+          "bound_obligations": [],
+          "concession_values": [],
+          "forward_concession_total_fen": 0,
+          "counters": [],
+          "plan": {
+            "id": "PLAN-COM-1ec49ce46f15",
+            "basis": "COMMITTED",
+            "need_fen": 36000000,
+            "actions": [
+              {
+                "kind": "DRAW",
+                "facility_id": "FAC-LINE",
+                "day": 0,
+                "amount_fen": 15000000,
+                "receivable_id": null,
+                "repay_day": 32,
+                "rate_bp": null,
+                "amount_display": "¥150,000.00"
+              },
+              {
+                "kind": "FINANCE_INVOICE",
+                "facility_id": "FAC-IF",
+                "day": 0,
+                "amount_fen": 21000000,
+                "receivable_id": "RCV-A",
+                "repay_day": null,
+                "rate_bp": null,
+                "amount_display": "¥210,000.00"
+              }
+            ],
+            "costs": [
+              {
+                "label": "Bank credit line: draw ¥150,000.00, repaid day 32",
+                "fen": 84164,
+                "facility_id": "FAC-LINE",
+                "formula": "150,000.00 × 6.4% × 32/365 = 841.64",
+                "display": "¥841.64"
+              },
+              {
+                "label": "Invoice financing (onboarded platform): advance ¥210,000.00 on RCV-A",
+                "fen": 187130,
+                "facility_id": "FAC-IF",
+                "formula": "210,000.00 × 7.8% × 30/365 (29 days billed as 1 × 30-day period) = 1,346.30; 210,000.00 × 0.25% × 1 = 525.00; total ¥1,871.30",
+                "display": "¥1,871.30"
+              }
+            ],
+            "total_cost_fen": 271294,
+            "admissible": true,
+            "violations": [],
+            "marginal_cost_annual": {
+              "num": 1301,
+              "den": 12000,
+              "text": "0.11"
+            },
+            "marginal_facility_id": "FAC-IF",
+            "rejected": [
+              {
+                "label": "Discount the whole invoice at 1.2%",
+                "reasons": [],
+                "note": "cost ¥5,040.00; admissible but dearer than the selected plan"
+              },
+              {
+                "label": "Line + early payment on part of the invoice at 1.2%",
+                "reasons": [],
+                "note": "cost ¥3,392.25; admissible but dearer than the selected plan"
+              },
+              {
+                "label": "Line + guaranteed loan",
+                "reasons": [
+                  "UNCOMMITTED_FACILITY",
+                  "LEAD_TIME_TOO_LONG"
+                ],
+                "note": "not applied; cash on day 21, gap opens on day 12"
+              },
+              {
+                "label": "Line only",
+                "reasons": [
+                  "RESERVE_BREACH"
+                ],
+                "note": "cost ¥841.64; RESERVE_BREACH on day 12"
+              }
+            ],
+            "label": "committed plan: ¥841.64 + ¥1,871.30 = ¥2,712.94",
+            "need_display": "¥360,000.00",
+            "total_cost_display": "¥2,712.94"
+          },
+          "required_tier": "TIER_1",
+          "mandate_version": 1,
+          "state_version": 1,
+          "calc_version": "tl-v2.0",
+          "summary": "ACCEPT. Forward concessions ¥0.00 against ¥5,000.00. Covenants hold: DSCR_MIN 1.89x, LEVERAGE_MAX 1.72x.",
+          "passed_checks": [
+            {
+              "code": "MIN_CASH",
+              "label": "Minimum cash with the committed plan",
+              "observed": "¥300,000.00 on day 20",
+              "limit": "≥ ¥300,000.00",
+              "formula": "closing_cash(day) >= min_cash on every day; the offer induces no breach",
+              "inputs": {
+                "plan": "committed plan: ¥841.64 + ¥1,871.30 = ¥2,712.94",
+                "offer_lowest_without_funding": "−¥60,000.00",
+                "offer_lowest_day": "20"
+              }
+            },
+            {
+              "code": "DSCR_MIN",
+              "label": "Lowest monthly DSCR (month 2)",
+              "observed": "1.89x",
+              "limit": "≥ 1.25x",
+              "formula": "EBITDA_m / DS_m = ¥90,000.00 / ¥47,712.94",
+              "inputs": {}
+            },
+            {
+              "code": "LEVERAGE_MAX",
+              "label": "Highest monthly leverage (month 1)",
+              "observed": "1.72x",
+              "limit": "≤ 2.50x",
+              "formula": "Debt_m / (12 × EBITDA_m) = ¥1,860,000.00 / (12 × ¥90,000.00)",
+              "inputs": {}
+            },
+            {
+              "code": "CLEAN_DOWN",
+              "label": "Bank credit line: clean-down",
+              "observed": "89 days at zero",
+              "limit": "≥ 30 consecutive days",
+              "formula": "max run of days with balance = 0 >= 30",
+              "inputs": {
+                "facility_id": "FAC-LINE",
+                "run_start_day": "32",
+                "run_end_day": "120",
+                "horizon_days": "120"
+              }
+            }
+          ],
+          "autonomy": {
+            "eligible": false,
+            "accepted_alone": true,
+            "whole_invoice": null,
+            "covered": [],
+            "gaps": [],
+            "notes": []
+          },
+          "annualised": [],
+          "forward_concession_total_display": "¥0.00"
+        },
+        "operations": [
+          {
+            "op_id": "NL-a4456647b55a291e",
+            "kind": "DRAW_FACILITY",
+            "status": "EXECUTED",
+            "tier": "TIER_1",
+            "violations": [],
+            "seq": 1,
+            "entry_hash": "32c051bfb7b6f75d05ded8a2390c48096bfafbb710ec7b3367baf35d034f93ab",
+            "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+            "effective_day": 0,
+            "approval_id": null,
+            "message": "Drew ¥100,000.00 on FAC-LINE on day 0"
+          }
+        ],
+        "clarification": null,
+        "awaiting_confirmation": false,
+        "amended": false,
+        "replayed": false,
+        "negotiation": null,
+        "security_events": [],
+        "parse_source": "rules",
+        "trace_id": "nls-aac724347b514a61:1"
+      }
+    },
+    {
+      "credential": "owner",
+      "request": {
+        "actor": "OWNER",
+        "text": "draw $100,000 on the credit line"
+      },
+      "http": 200,
+      "before": {
+        "cash_fen": 40000000,
+        "state_version": 1,
+        "facilities": {
+          "FAC-LINE": 0,
+          "FAC-IF": 0,
+          "FAC-EARLYPAY": 0,
+          "FAC-GGL": 0,
+          "FAC-ETL": 0,
+          "FAC-LEASE": 0,
+          "FAC-BILL": 0,
+          "FAC-EQUITY": 0
+        },
+        "commitments": [],
+        "operations": 0
+      },
+      "after": {
+        "cash_fen": 76000000,
+        "state_version": 3,
+        "facilities": {
+          "FAC-LINE": 15000000,
+          "FAC-IF": 21000000,
+          "FAC-EARLYPAY": 0,
+          "FAC-GGL": 0,
+          "FAC-ETL": 0,
+          "FAC-LEASE": 0,
+          "FAC-BILL": 0,
+          "FAC-EQUITY": 0
+        },
+        "commitments": [],
+        "operations": 2
+      },
+      "response": {
+        "session_id": "nls-c03c360ba74e4b22",
+        "turn": 1,
+        "reply": "Router plan (committed facilities only): committed plan: ¥841.64 + ¥1,871.30 = ¥2,712.94, need ¥360,000.00.",
+        "intent": "FUND_GAP",
+        "lang": "en",
+        "plan": [
+          {
+            "step": 1,
+            "kind": "VERIFY",
+            "description": "Gap days 12–31, short ¥360,000.00 at the low on day 20. Verdict ACCEPT (TIER_1): no violations. ACCEPT. Forward concessions ¥0.00 against ¥5,000.00. Covenants hold: DSCR_MIN 1.89x, LEVERAGE_MAX 1.72x.",
+            "status": "DONE",
+            "op_id": null,
+            "condition": null
+          },
+          {
+            "step": 2,
+            "kind": "DRAW_FACILITY",
+            "description": "Draw ¥150,000.00 on FAC-LINE, repay day 32",
+            "status": "EXECUTED",
+            "op_id": "NL-26ba506a11d2acdd",
+            "condition": null
+          },
+          {
+            "step": 3,
+            "kind": "SUBMIT_INVOICE_FOR_FINANCING",
+            "description": "Submit RCV-A to FAC-IF for a ¥210,000.00 advance",
+            "status": "EXECUTED",
+            "op_id": "NL-0ce02c2aec9f5aed",
+            "condition": null
+          }
+        ],
+        "verdict": {
+          "id": "VER-3a805c232882",
+          "offer_id": "NL-SQ1-78fedc7f05e6",
+          "offer_version": 1,
+          "outcome": "ACCEPT",
+          "violations": [],
+          "bound_obligations": [],
+          "concession_values": [],
+          "forward_concession_total_fen": 0,
+          "counters": [],
+          "plan": {
+            "id": "PLAN-COM-1ec49ce46f15",
+            "basis": "COMMITTED",
+            "need_fen": 36000000,
+            "actions": [
+              {
+                "kind": "DRAW",
+                "facility_id": "FAC-LINE",
+                "day": 0,
+                "amount_fen": 15000000,
+                "receivable_id": null,
+                "repay_day": 32,
+                "rate_bp": null,
+                "amount_display": "¥150,000.00"
+              },
+              {
+                "kind": "FINANCE_INVOICE",
+                "facility_id": "FAC-IF",
+                "day": 0,
+                "amount_fen": 21000000,
+                "receivable_id": "RCV-A",
+                "repay_day": null,
+                "rate_bp": null,
+                "amount_display": "¥210,000.00"
+              }
+            ],
+            "costs": [
+              {
+                "label": "Bank credit line: draw ¥150,000.00, repaid day 32",
+                "fen": 84164,
+                "facility_id": "FAC-LINE",
+                "formula": "150,000.00 × 6.4% × 32/365 = 841.64",
+                "display": "¥841.64"
+              },
+              {
+                "label": "Invoice financing (onboarded platform): advance ¥210,000.00 on RCV-A",
+                "fen": 187130,
+                "facility_id": "FAC-IF",
+                "formula": "210,000.00 × 7.8% × 30/365 (29 days billed as 1 × 30-day period) = 1,346.30; 210,000.00 × 0.25% × 1 = 525.00; total ¥1,871.30",
+                "display": "¥1,871.30"
+              }
+            ],
+            "total_cost_fen": 271294,
+            "admissible": true,
+            "violations": [],
+            "marginal_cost_annual": {
+              "num": 1301,
+              "den": 12000,
+              "text": "0.11"
+            },
+            "marginal_facility_id": "FAC-IF",
+            "rejected": [
+              {
+                "label": "Discount the whole invoice at 1.2%",
+                "reasons": [],
+                "note": "cost ¥5,040.00; admissible but dearer than the selected plan"
+              },
+              {
+                "label": "Line + early payment on part of the invoice at 1.2%",
+                "reasons": [],
+                "note": "cost ¥3,392.25; admissible but dearer than the selected plan"
+              },
+              {
+                "label": "Line + guaranteed loan",
+                "reasons": [
+                  "UNCOMMITTED_FACILITY",
+                  "LEAD_TIME_TOO_LONG"
+                ],
+                "note": "not applied; cash on day 21, gap opens on day 12"
+              },
+              {
+                "label": "Line only",
+                "reasons": [
+                  "RESERVE_BREACH"
+                ],
+                "note": "cost ¥841.64; RESERVE_BREACH on day 12"
+              }
+            ],
+            "label": "committed plan: ¥841.64 + ¥1,871.30 = ¥2,712.94",
+            "need_display": "¥360,000.00",
+            "total_cost_display": "¥2,712.94"
+          },
+          "required_tier": "TIER_1",
+          "mandate_version": 1,
+          "state_version": 1,
+          "calc_version": "tl-v2.0",
+          "summary": "ACCEPT. Forward concessions ¥0.00 against ¥5,000.00. Covenants hold: DSCR_MIN 1.89x, LEVERAGE_MAX 1.72x.",
+          "passed_checks": [
+            {
+              "code": "MIN_CASH",
+              "label": "Minimum cash with the committed plan",
+              "observed": "¥300,000.00 on day 20",
+              "limit": "≥ ¥300,000.00",
+              "formula": "closing_cash(day) >= min_cash on every day; the offer induces no breach",
+              "inputs": {
+                "plan": "committed plan: ¥841.64 + ¥1,871.30 = ¥2,712.94",
+                "offer_lowest_without_funding": "−¥60,000.00",
+                "offer_lowest_day": "20"
+              }
+            },
+            {
+              "code": "DSCR_MIN",
+              "label": "Lowest monthly DSCR (month 2)",
+              "observed": "1.89x",
+              "limit": "≥ 1.25x",
+              "formula": "EBITDA_m / DS_m = ¥90,000.00 / ¥47,712.94",
+              "inputs": {}
+            },
+            {
+              "code": "LEVERAGE_MAX",
+              "label": "Highest monthly leverage (month 1)",
+              "observed": "1.72x",
+              "limit": "≤ 2.50x",
+              "formula": "Debt_m / (12 × EBITDA_m) = ¥1,860,000.00 / (12 × ¥90,000.00)",
+              "inputs": {}
+            },
+            {
+              "code": "CLEAN_DOWN",
+              "label": "Bank credit line: clean-down",
+              "observed": "89 days at zero",
+              "limit": "≥ 30 consecutive days",
+              "formula": "max run of days with balance = 0 >= 30",
+              "inputs": {
+                "facility_id": "FAC-LINE",
+                "run_start_day": "32",
+                "run_end_day": "120",
+                "horizon_days": "120"
+              }
+            }
+          ],
+          "autonomy": {
+            "eligible": false,
+            "accepted_alone": true,
+            "whole_invoice": null,
+            "covered": [],
+            "gaps": [],
+            "notes": []
+          },
+          "annualised": [],
+          "forward_concession_total_display": "¥0.00"
+        },
+        "operations": [
+          {
+            "op_id": "NL-26ba506a11d2acdd",
+            "kind": "DRAW_FACILITY",
+            "status": "EXECUTED",
+            "tier": "TIER_1",
+            "violations": [],
+            "seq": 1,
+            "entry_hash": "e5d015b222c1a11f4270cd80dbf59704de1a6572863615049b047ad39409f8e5",
+            "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+            "effective_day": 0,
+            "approval_id": null,
+            "message": "Drew ¥150,000.00 on FAC-LINE on day 0"
+          },
+          {
+            "op_id": "NL-0ce02c2aec9f5aed",
+            "kind": "SUBMIT_INVOICE_FOR_FINANCING",
+            "status": "EXECUTED",
+            "tier": "TIER_1",
+            "violations": [],
+            "seq": 2,
+            "entry_hash": "6da91df78a224204aabea7a501bc1a0e6a1ae874f5904027d8218e9b4d9eb91b",
+            "prev_hash": "e5d015b222c1a11f4270cd80dbf59704de1a6572863615049b047ad39409f8e5",
+            "effective_day": 0,
+            "approval_id": null,
+            "message": "Advance ¥210,000.00 on RCV-A from FAC-IF on day 0"
+          }
+        ],
+        "clarification": null,
+        "awaiting_confirmation": false,
+        "amended": false,
+        "replayed": false,
+        "negotiation": null,
+        "security_events": [],
+        "parse_source": "rules",
+        "trace_id": "nls-c03c360ba74e4b22:1"
+      }
+    },
+    {
+      "credential": "owner",
+      "request": {
+        "actor": "OWNER",
+        "text": "draw ¥1.001 on the credit line"
+      },
+      "http": 200,
+      "before": {
+        "cash_fen": 40000000,
+        "state_version": 1,
+        "facilities": {
+          "FAC-LINE": 0,
+          "FAC-IF": 0,
+          "FAC-EARLYPAY": 0,
+          "FAC-GGL": 0,
+          "FAC-ETL": 0,
+          "FAC-LEASE": 0,
+          "FAC-BILL": 0,
+          "FAC-EQUITY": 0
+        },
+        "commitments": [],
+        "operations": 0
+      },
+      "after": {
+        "cash_fen": 76000000,
+        "state_version": 3,
+        "facilities": {
+          "FAC-LINE": 15000000,
+          "FAC-IF": 21000000,
+          "FAC-EARLYPAY": 0,
+          "FAC-GGL": 0,
+          "FAC-ETL": 0,
+          "FAC-LEASE": 0,
+          "FAC-BILL": 0,
+          "FAC-EQUITY": 0
+        },
+        "commitments": [],
+        "operations": 2
+      },
+      "response": {
+        "session_id": "nls-1651406354ab4606",
+        "turn": 1,
+        "reply": "Router plan (committed facilities only): committed plan: ¥841.64 + ¥1,871.30 = ¥2,712.94, need ¥360,000.00.",
+        "intent": "FUND_GAP",
+        "lang": "en",
+        "plan": [
+          {
+            "step": 1,
+            "kind": "VERIFY",
+            "description": "Gap days 12–31, short ¥360,000.00 at the low on day 20. Verdict ACCEPT (TIER_1): no violations. ACCEPT. Forward concessions ¥0.00 against ¥5,000.00. Covenants hold: DSCR_MIN 1.89x, LEVERAGE_MAX 1.72x.",
+            "status": "DONE",
+            "op_id": null,
+            "condition": null
+          },
+          {
+            "step": 2,
+            "kind": "DRAW_FACILITY",
+            "description": "Draw ¥150,000.00 on FAC-LINE, repay day 32",
+            "status": "EXECUTED",
+            "op_id": "NL-6b1f139857b4600c",
+            "condition": null
+          },
+          {
+            "step": 3,
+            "kind": "SUBMIT_INVOICE_FOR_FINANCING",
+            "description": "Submit RCV-A to FAC-IF for a ¥210,000.00 advance",
+            "status": "EXECUTED",
+            "op_id": "NL-d0f4af179e91b291",
+            "condition": null
+          }
+        ],
+        "verdict": {
+          "id": "VER-3a805c232882",
+          "offer_id": "NL-SQ1-78fedc7f05e6",
+          "offer_version": 1,
+          "outcome": "ACCEPT",
+          "violations": [],
+          "bound_obligations": [],
+          "concession_values": [],
+          "forward_concession_total_fen": 0,
+          "counters": [],
+          "plan": {
+            "id": "PLAN-COM-1ec49ce46f15",
+            "basis": "COMMITTED",
+            "need_fen": 36000000,
+            "actions": [
+              {
+                "kind": "DRAW",
+                "facility_id": "FAC-LINE",
+                "day": 0,
+                "amount_fen": 15000000,
+                "receivable_id": null,
+                "repay_day": 32,
+                "rate_bp": null,
+                "amount_display": "¥150,000.00"
+              },
+              {
+                "kind": "FINANCE_INVOICE",
+                "facility_id": "FAC-IF",
+                "day": 0,
+                "amount_fen": 21000000,
+                "receivable_id": "RCV-A",
+                "repay_day": null,
+                "rate_bp": null,
+                "amount_display": "¥210,000.00"
+              }
+            ],
+            "costs": [
+              {
+                "label": "Bank credit line: draw ¥150,000.00, repaid day 32",
+                "fen": 84164,
+                "facility_id": "FAC-LINE",
+                "formula": "150,000.00 × 6.4% × 32/365 = 841.64",
+                "display": "¥841.64"
+              },
+              {
+                "label": "Invoice financing (onboarded platform): advance ¥210,000.00 on RCV-A",
+                "fen": 187130,
+                "facility_id": "FAC-IF",
+                "formula": "210,000.00 × 7.8% × 30/365 (29 days billed as 1 × 30-day period) = 1,346.30; 210,000.00 × 0.25% × 1 = 525.00; total ¥1,871.30",
+                "display": "¥1,871.30"
+              }
+            ],
+            "total_cost_fen": 271294,
+            "admissible": true,
+            "violations": [],
+            "marginal_cost_annual": {
+              "num": 1301,
+              "den": 12000,
+              "text": "0.11"
+            },
+            "marginal_facility_id": "FAC-IF",
+            "rejected": [
+              {
+                "label": "Discount the whole invoice at 1.2%",
+                "reasons": [],
+                "note": "cost ¥5,040.00; admissible but dearer than the selected plan"
+              },
+              {
+                "label": "Line + early payment on part of the invoice at 1.2%",
+                "reasons": [],
+                "note": "cost ¥3,392.25; admissible but dearer than the selected plan"
+              },
+              {
+                "label": "Line + guaranteed loan",
+                "reasons": [
+                  "UNCOMMITTED_FACILITY",
+                  "LEAD_TIME_TOO_LONG"
+                ],
+                "note": "not applied; cash on day 21, gap opens on day 12"
+              },
+              {
+                "label": "Line only",
+                "reasons": [
+                  "RESERVE_BREACH"
+                ],
+                "note": "cost ¥841.64; RESERVE_BREACH on day 12"
+              }
+            ],
+            "label": "committed plan: ¥841.64 + ¥1,871.30 = ¥2,712.94",
+            "need_display": "¥360,000.00",
+            "total_cost_display": "¥2,712.94"
+          },
+          "required_tier": "TIER_1",
+          "mandate_version": 1,
+          "state_version": 1,
+          "calc_version": "tl-v2.0",
+          "summary": "ACCEPT. Forward concessions ¥0.00 against ¥5,000.00. Covenants hold: DSCR_MIN 1.89x, LEVERAGE_MAX 1.72x.",
+          "passed_checks": [
+            {
+              "code": "MIN_CASH",
+              "label": "Minimum cash with the committed plan",
+              "observed": "¥300,000.00 on day 20",
+              "limit": "≥ ¥300,000.00",
+              "formula": "closing_cash(day) >= min_cash on every day; the offer induces no breach",
+              "inputs": {
+                "plan": "committed plan: ¥841.64 + ¥1,871.30 = ¥2,712.94",
+                "offer_lowest_without_funding": "−¥60,000.00",
+                "offer_lowest_day": "20"
+              }
+            },
+            {
+              "code": "DSCR_MIN",
+              "label": "Lowest monthly DSCR (month 2)",
+              "observed": "1.89x",
+              "limit": "≥ 1.25x",
+              "formula": "EBITDA_m / DS_m = ¥90,000.00 / ¥47,712.94",
+              "inputs": {}
+            },
+            {
+              "code": "LEVERAGE_MAX",
+              "label": "Highest monthly leverage (month 1)",
+              "observed": "1.72x",
+              "limit": "≤ 2.50x",
+              "formula": "Debt_m / (12 × EBITDA_m) = ¥1,860,000.00 / (12 × ¥90,000.00)",
+              "inputs": {}
+            },
+            {
+              "code": "CLEAN_DOWN",
+              "label": "Bank credit line: clean-down",
+              "observed": "89 days at zero",
+              "limit": "≥ 30 consecutive days",
+              "formula": "max run of days with balance = 0 >= 30",
+              "inputs": {
+                "facility_id": "FAC-LINE",
+                "run_start_day": "32",
+                "run_end_day": "120",
+                "horizon_days": "120"
+              }
+            }
+          ],
+          "autonomy": {
+            "eligible": false,
+            "accepted_alone": true,
+            "whole_invoice": null,
+            "covered": [],
+            "gaps": [],
+            "notes": []
+          },
+          "annualised": [],
+          "forward_concession_total_display": "¥0.00"
+        },
+        "operations": [
+          {
+            "op_id": "NL-6b1f139857b4600c",
+            "kind": "DRAW_FACILITY",
+            "status": "EXECUTED",
+            "tier": "TIER_1",
+            "violations": [],
+            "seq": 1,
+            "entry_hash": "f954620a05f604d5316ff5484c5af3d926fbb0dfafd7d123db02e80b77d0b774",
+            "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+            "effective_day": 0,
+            "approval_id": null,
+            "message": "Drew ¥150,000.00 on FAC-LINE on day 0"
+          },
+          {
+            "op_id": "NL-d0f4af179e91b291",
+            "kind": "SUBMIT_INVOICE_FOR_FINANCING",
+            "status": "EXECUTED",
+            "tier": "TIER_1",
+            "violations": [],
+            "seq": 2,
+            "entry_hash": "5364a941d45fca727a20c5b4696b38aef811550bb4e6cb21dd8e196a8d2a0936",
+            "prev_hash": "f954620a05f604d5316ff5484c5af3d926fbb0dfafd7d123db02e80b77d0b774",
+            "effective_day": 0,
+            "approval_id": null,
+            "message": "Advance ¥210,000.00 on RCV-A from FAC-IF on day 0"
+          }
+        ],
+        "clarification": null,
+        "awaiting_confirmation": false,
+        "amended": false,
+        "replayed": false,
+        "negotiation": null,
+        "security_events": [],
+        "parse_source": "rules",
+        "trace_id": "nls-1651406354ab4606:1"
+      }
+    },
+    {
+      "credential": "owner",
+      "request": {
+        "actor": "OWNER",
+        "text": "不要从授信额度提款10万元"
+      },
+      "http": 200,
+      "before": {
+        "cash_fen": 40000000,
+        "state_version": 1,
+        "facilities": {
+          "FAC-LINE": 0,
+          "FAC-IF": 0,
+          "FAC-EARLYPAY": 0,
+          "FAC-GGL": 0,
+          "FAC-ETL": 0,
+          "FAC-LEASE": 0,
+          "FAC-BILL": 0,
+          "FAC-EQUITY": 0
+        },
+        "commitments": [],
+        "operations": 0
+      },
+      "after": {
+        "cash_fen": 50000000,
+        "state_version": 2,
+        "facilities": {
+          "FAC-LINE": 10000000,
+          "FAC-IF": 0,
+          "FAC-EARLYPAY": 0,
+          "FAC-GGL": 0,
+          "FAC-ETL": 0,
+          "FAC-LEASE": 0,
+          "FAC-BILL": 0,
+          "FAC-EQUITY": 0
+        },
+        "commitments": [],
+        "operations": 1
+      },
+      "response": {
+        "session_id": "nls-614d12b387db498c",
+        "turn": 1,
+        "reply": "Drew ¥100,000.00 on FAC-LINE on day 0",
+        "intent": "FUND_GAP",
+        "lang": "zh",
+        "plan": [
+          {
+            "step": 1,
+            "kind": "VERIFY",
+            "description": "结论 ACCEPT（TIER_1）：无违规。ACCEPT. Forward concessions ¥0.00 against ¥5,000.00. Covenants hold: DSCR_MIN 1.89x, LEVERAGE_MAX 1.72x.",
+            "status": "DONE",
+            "op_id": null,
+            "condition": null
+          },
+          {
+            "step": 2,
+            "kind": "DRAW_FACILITY",
+            "description": "从 FAC-LINE 提款 ¥100,000.00",
+            "status": "EXECUTED",
+            "op_id": "NL-0cad3688329150d7",
+            "condition": null
+          }
+        ],
+        "verdict": {
+          "id": "VER-daed9e0bbdca",
+          "offer_id": "NL-SQ-d59b04cdc9e8",
+          "offer_version": 1,
+          "outcome": "ACCEPT",
+          "violations": [],
+          "bound_obligations": [],
+          "concession_values": [],
+          "forward_concession_total_fen": 0,
+          "counters": [],
+          "plan": {
+            "id": "PLAN-COM-1ec49ce46f15",
+            "basis": "COMMITTED",
+            "need_fen": 36000000,
+            "actions": [
+              {
+                "kind": "DRAW",
+                "facility_id": "FAC-LINE",
+                "day": 0,
+                "amount_fen": 15000000,
+                "receivable_id": null,
+                "repay_day": 32,
+                "rate_bp": null,
+                "amount_display": "¥150,000.00"
+              },
+              {
+                "kind": "FINANCE_INVOICE",
+                "facility_id": "FAC-IF",
+                "day": 0,
+                "amount_fen": 21000000,
+                "receivable_id": "RCV-A",
+                "repay_day": null,
+                "rate_bp": null,
+                "amount_display": "¥210,000.00"
+              }
+            ],
+            "costs": [
+              {
+                "label": "Bank credit line: draw ¥150,000.00, repaid day 32",
+                "fen": 84164,
+                "facility_id": "FAC-LINE",
+                "formula": "150,000.00 × 6.4% × 32/365 = 841.64",
+                "display": "¥841.64"
+              },
+              {
+                "label": "Invoice financing (onboarded platform): advance ¥210,000.00 on RCV-A",
+                "fen": 187130,
+                "facility_id": "FAC-IF",
+                "formula": "210,000.00 × 7.8% × 30/365 (29 days billed as 1 × 30-day period) = 1,346.30; 210,000.00 × 0.25% × 1 = 525.00; total ¥1,871.30",
+                "display": "¥1,871.30"
+              }
+            ],
+            "total_cost_fen": 271294,
+            "admissible": true,
+            "violations": [],
+            "marginal_cost_annual": {
+              "num": 1301,
+              "den": 12000,
+              "text": "0.11"
+            },
+            "marginal_facility_id": "FAC-IF",
+            "rejected": [
+              {
+                "label": "Discount the whole invoice at 1.2%",
+                "reasons": [],
+                "note": "cost ¥5,040.00; admissible but dearer than the selected plan"
+              },
+              {
+                "label": "Line + early payment on part of the invoice at 1.2%",
+                "reasons": [],
+                "note": "cost ¥3,392.25; admissible but dearer than the selected plan"
+              },
+              {
+                "label": "Line + guaranteed loan",
+                "reasons": [
+                  "UNCOMMITTED_FACILITY",
+                  "LEAD_TIME_TOO_LONG"
+                ],
+                "note": "not applied; cash on day 21, gap opens on day 12"
+              },
+              {
+                "label": "Line only",
+                "reasons": [
+                  "RESERVE_BREACH"
+                ],
+                "note": "cost ¥841.64; RESERVE_BREACH on day 12"
+              }
+            ],
+            "label": "committed plan: ¥841.64 + ¥1,871.30 = ¥2,712.94",
+            "need_display": "¥360,000.00",
+            "total_cost_display": "¥2,712.94"
+          },
+          "required_tier": "TIER_1",
+          "mandate_version": 1,
+          "state_version": 1,
+          "calc_version": "tl-v2.0",
+          "summary": "ACCEPT. Forward concessions ¥0.00 against ¥5,000.00. Covenants hold: DSCR_MIN 1.89x, LEVERAGE_MAX 1.72x.",
+          "passed_checks": [
+            {
+              "code": "MIN_CASH",
+              "label": "Minimum cash with the committed plan",
+              "observed": "¥300,000.00 on day 20",
+              "limit": "≥ ¥300,000.00",
+              "formula": "closing_cash(day) >= min_cash on every day; the offer induces no breach",
+              "inputs": {
+                "plan": "committed plan: ¥841.64 + ¥1,871.30 = ¥2,712.94",
+                "offer_lowest_without_funding": "−¥60,000.00",
+                "offer_lowest_day": "20"
+              }
+            },
+            {
+              "code": "DSCR_MIN",
+              "label": "Lowest monthly DSCR (month 2)",
+              "observed": "1.89x",
+              "limit": "≥ 1.25x",
+              "formula": "EBITDA_m / DS_m = ¥90,000.00 / ¥47,712.94",
+              "inputs": {}
+            },
+            {
+              "code": "LEVERAGE_MAX",
+              "label": "Highest monthly leverage (month 1)",
+              "observed": "1.72x",
+              "limit": "≤ 2.50x",
+              "formula": "Debt_m / (12 × EBITDA_m) = ¥1,860,000.00 / (12 × ¥90,000.00)",
+              "inputs": {}
+            },
+            {
+              "code": "CLEAN_DOWN",
+              "label": "Bank credit line: clean-down",
+              "observed": "89 days at zero",
+              "limit": "≥ 30 consecutive days",
+              "formula": "max run of days with balance = 0 >= 30",
+              "inputs": {
+                "facility_id": "FAC-LINE",
+                "run_start_day": "32",
+                "run_end_day": "120",
+                "horizon_days": "120"
+              }
+            }
+          ],
+          "autonomy": {
+            "eligible": false,
+            "accepted_alone": true,
+            "whole_invoice": null,
+            "covered": [],
+            "gaps": [],
+            "notes": []
+          },
+          "annualised": [],
+          "forward_concession_total_display": "¥0.00"
+        },
+        "operations": [
+          {
+            "op_id": "NL-0cad3688329150d7",
+            "kind": "DRAW_FACILITY",
+            "status": "EXECUTED",
+            "tier": "TIER_1",
+            "violations": [],
+            "seq": 1,
+            "entry_hash": "177699c6470fcc8cc11e6d0c363fa77e9c43f6b97d7637fbbcced2ddd14e41ce",
+            "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+            "effective_day": 0,
+            "approval_id": null,
+            "message": "Drew ¥100,000.00 on FAC-LINE on day 0"
+          }
+        ],
+        "clarification": null,
+        "awaiting_confirmation": false,
+        "amended": false,
+        "replayed": false,
+        "negotiation": null,
+        "security_events": [],
+        "parse_source": "rules",
+        "trace_id": "nls-614d12b387db498c:1"
+      }
+    },
+    {
+      "credential": "owner",
+      "request": {
+        "actor": "OWNER",
+        "text": "请问从授信额度提款10万元安全吗？"
+      },
+      "http": 200,
+      "before": {
+        "cash_fen": 40000000,
+        "state_version": 1,
+        "facilities": {
+          "FAC-LINE": 0,
+          "FAC-IF": 0,
+          "FAC-EARLYPAY": 0,
+          "FAC-GGL": 0,
+          "FAC-ETL": 0,
+          "FAC-LEASE": 0,
+          "FAC-BILL": 0,
+          "FAC-EQUITY": 0
+        },
+        "commitments": [],
+        "operations": 0
+      },
+      "after": {
+        "cash_fen": 50000000,
+        "state_version": 2,
+        "facilities": {
+          "FAC-LINE": 10000000,
+          "FAC-IF": 0,
+          "FAC-EARLYPAY": 0,
+          "FAC-GGL": 0,
+          "FAC-ETL": 0,
+          "FAC-LEASE": 0,
+          "FAC-BILL": 0,
+          "FAC-EQUITY": 0
+        },
+        "commitments": [],
+        "operations": 1
+      },
+      "response": {
+        "session_id": "nls-3c1bee0c2c034891",
+        "turn": 1,
+        "reply": "Drew ¥100,000.00 on FAC-LINE on day 0",
+        "intent": "FUND_GAP",
+        "lang": "zh",
+        "plan": [
+          {
+            "step": 1,
+            "kind": "VERIFY",
+            "description": "结论 ACCEPT（TIER_1）：无违规。ACCEPT. Forward concessions ¥0.00 against ¥5,000.00. Covenants hold: DSCR_MIN 1.89x, LEVERAGE_MAX 1.72x.",
+            "status": "DONE",
+            "op_id": null,
+            "condition": null
+          },
+          {
+            "step": 2,
+            "kind": "DRAW_FACILITY",
+            "description": "从 FAC-LINE 提款 ¥100,000.00",
+            "status": "EXECUTED",
+            "op_id": "NL-a765a1835362d912",
+            "condition": null
+          }
+        ],
+        "verdict": {
+          "id": "VER-daed9e0bbdca",
+          "offer_id": "NL-SQ-d59b04cdc9e8",
+          "offer_version": 1,
+          "outcome": "ACCEPT",
+          "violations": [],
+          "bound_obligations": [],
+          "concession_values": [],
+          "forward_concession_total_fen": 0,
+          "counters": [],
+          "plan": {
+            "id": "PLAN-COM-1ec49ce46f15",
+            "basis": "COMMITTED",
+            "need_fen": 36000000,
+            "actions": [
+              {
+                "kind": "DRAW",
+                "facility_id": "FAC-LINE",
+                "day": 0,
+                "amount_fen": 15000000,
+                "receivable_id": null,
+                "repay_day": 32,
+                "rate_bp": null,
+                "amount_display": "¥150,000.00"
+              },
+              {
+                "kind": "FINANCE_INVOICE",
+                "facility_id": "FAC-IF",
+                "day": 0,
+                "amount_fen": 21000000,
+                "receivable_id": "RCV-A",
+                "repay_day": null,
+                "rate_bp": null,
+                "amount_display": "¥210,000.00"
+              }
+            ],
+            "costs": [
+              {
+                "label": "Bank credit line: draw ¥150,000.00, repaid day 32",
+                "fen": 84164,
+                "facility_id": "FAC-LINE",
+                "formula": "150,000.00 × 6.4% × 32/365 = 841.64",
+                "display": "¥841.64"
+              },
+              {
+                "label": "Invoice financing (onboarded platform): advance ¥210,000.00 on RCV-A",
+                "fen": 187130,
+                "facility_id": "FAC-IF",
+                "formula": "210,000.00 × 7.8% × 30/365 (29 days billed as 1 × 30-day period) = 1,346.30; 210,000.00 × 0.25% × 1 = 525.00; total ¥1,871.30",
+                "display": "¥1,871.30"
+              }
+            ],
+            "total_cost_fen": 271294,
+            "admissible": true,
+            "violations": [],
+            "marginal_cost_annual": {
+              "num": 1301,
+              "den": 12000,
+              "text": "0.11"
+            },
+            "marginal_facility_id": "FAC-IF",
+            "rejected": [
+              {
+                "label": "Discount the whole invoice at 1.2%",
+                "reasons": [],
+                "note": "cost ¥5,040.00; admissible but dearer than the selected plan"
+              },
+              {
+                "label": "Line + early payment on part of the invoice at 1.2%",
+                "reasons": [],
+                "note": "cost ¥3,392.25; admissible but dearer than the selected plan"
+              },
+              {
+                "label": "Line + guaranteed loan",
+                "reasons": [
+                  "UNCOMMITTED_FACILITY",
+                  "LEAD_TIME_TOO_LONG"
+                ],
+                "note": "not applied; cash on day 21, gap opens on day 12"
+              },
+              {
+                "label": "Line only",
+                "reasons": [
+                  "RESERVE_BREACH"
+                ],
+                "note": "cost ¥841.64; RESERVE_BREACH on day 12"
+              }
+            ],
+            "label": "committed plan: ¥841.64 + ¥1,871.30 = ¥2,712.94",
+            "need_display": "¥360,000.00",
+            "total_cost_display": "¥2,712.94"
+          },
+          "required_tier": "TIER_1",
+          "mandate_version": 1,
+          "state_version": 1,
+          "calc_version": "tl-v2.0",
+          "summary": "ACCEPT. Forward concessions ¥0.00 against ¥5,000.00. Covenants hold: DSCR_MIN 1.89x, LEVERAGE_MAX 1.72x.",
+          "passed_checks": [
+            {
+              "code": "MIN_CASH",
+              "label": "Minimum cash with the committed plan",
+              "observed": "¥300,000.00 on day 20",
+              "limit": "≥ ¥300,000.00",
+              "formula": "closing_cash(day) >= min_cash on every day; the offer induces no breach",
+              "inputs": {
+                "plan": "committed plan: ¥841.64 + ¥1,871.30 = ¥2,712.94",
+                "offer_lowest_without_funding": "−¥60,000.00",
+                "offer_lowest_day": "20"
+              }
+            },
+            {
+              "code": "DSCR_MIN",
+              "label": "Lowest monthly DSCR (month 2)",
+              "observed": "1.89x",
+              "limit": "≥ 1.25x",
+              "formula": "EBITDA_m / DS_m = ¥90,000.00 / ¥47,712.94",
+              "inputs": {}
+            },
+            {
+              "code": "LEVERAGE_MAX",
+              "label": "Highest monthly leverage (month 1)",
+              "observed": "1.72x",
+              "limit": "≤ 2.50x",
+              "formula": "Debt_m / (12 × EBITDA_m) = ¥1,860,000.00 / (12 × ¥90,000.00)",
+              "inputs": {}
+            },
+            {
+              "code": "CLEAN_DOWN",
+              "label": "Bank credit line: clean-down",
+              "observed": "89 days at zero",
+              "limit": "≥ 30 consecutive days",
+              "formula": "max run of days with balance = 0 >= 30",
+              "inputs": {
+                "facility_id": "FAC-LINE",
+                "run_start_day": "32",
+                "run_end_day": "120",
+                "horizon_days": "120"
+              }
+            }
+          ],
+          "autonomy": {
+            "eligible": false,
+            "accepted_alone": true,
+            "whole_invoice": null,
+            "covered": [],
+            "gaps": [],
+            "notes": []
+          },
+          "annualised": [],
+          "forward_concession_total_display": "¥0.00"
+        },
+        "operations": [
+          {
+            "op_id": "NL-a765a1835362d912",
+            "kind": "DRAW_FACILITY",
+            "status": "EXECUTED",
+            "tier": "TIER_1",
+            "violations": [],
+            "seq": 1,
+            "entry_hash": "18330d2c057a4a672686366890ed21904c9731473e724401273b6c11842e339b",
+            "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+            "effective_day": 0,
+            "approval_id": null,
+            "message": "Drew ¥100,000.00 on FAC-LINE on day 0"
+          }
+        ],
+        "clarification": null,
+        "awaiting_confirmation": false,
+        "amended": false,
+        "replayed": false,
+        "negotiation": null,
+        "security_events": [],
+        "parse_source": "rules",
+        "trace_id": "nls-3c1bee0c2c034891:1"
+      }
+    },
+    {
+      "credential": "agent",
+      "request": {
+        "actor": "OWNER",
+        "text": "Do not draw ¥100,000 on the credit line."
+      },
+      "http": 200,
+      "before": {
+        "cash_fen": 40000000,
+        "state_version": 1,
+        "facilities": {
+          "FAC-LINE": 0,
+          "FAC-IF": 0,
+          "FAC-EARLYPAY": 0,
+          "FAC-GGL": 0,
+          "FAC-ETL": 0,
+          "FAC-LEASE": 0,
+          "FAC-BILL": 0,
+          "FAC-EQUITY": 0
+        },
+        "commitments": [],
+        "operations": 0
+      },
+      "after": {
+        "cash_fen": 50000000,
+        "state_version": 2,
+        "facilities": {
+          "FAC-LINE": 10000000,
+          "FAC-IF": 0,
+          "FAC-EARLYPAY": 0,
+          "FAC-GGL": 0,
+          "FAC-ETL": 0,
+          "FAC-LEASE": 0,
+          "FAC-BILL": 0,
+          "FAC-EQUITY": 0
+        },
+        "commitments": [],
+        "operations": 1
+      },
+      "response": {
+        "session_id": "nls-bcdb8f8187224f86",
+        "turn": 1,
+        "reply": "Drew ¥100,000.00 on FAC-LINE on day 0",
+        "intent": "FUND_GAP",
+        "lang": "en",
+        "plan": [
+          {
+            "step": 1,
+            "kind": "VERIFY",
+            "description": "Verdict ACCEPT (TIER_1): no violations. ACCEPT. Forward concessions ¥0.00 against ¥5,000.00. Covenants hold: DSCR_MIN 1.89x, LEVERAGE_MAX 1.72x.",
+            "status": "DONE",
+            "op_id": null,
+            "condition": null
+          },
+          {
+            "step": 2,
+            "kind": "DRAW_FACILITY",
+            "description": "Draw ¥100,000.00 on FAC-LINE",
+            "status": "EXECUTED",
+            "op_id": "NL-55c4306a9eaf8870",
+            "condition": null
+          }
+        ],
+        "verdict": {
+          "id": "VER-daed9e0bbdca",
+          "offer_id": "NL-SQ-d59b04cdc9e8",
+          "offer_version": 1,
+          "outcome": "ACCEPT",
+          "violations": [],
+          "bound_obligations": [],
+          "concession_values": [],
+          "forward_concession_total_fen": 0,
+          "counters": [],
+          "plan": {
+            "id": "PLAN-COM-1ec49ce46f15",
+            "basis": "COMMITTED",
+            "need_fen": 36000000,
+            "actions": [
+              {
+                "kind": "DRAW",
+                "facility_id": "FAC-LINE",
+                "day": 0,
+                "amount_fen": 15000000,
+                "receivable_id": null,
+                "repay_day": 32,
+                "rate_bp": null,
+                "amount_display": "¥150,000.00"
+              },
+              {
+                "kind": "FINANCE_INVOICE",
+                "facility_id": "FAC-IF",
+                "day": 0,
+                "amount_fen": 21000000,
+                "receivable_id": "RCV-A",
+                "repay_day": null,
+                "rate_bp": null,
+                "amount_display": "¥210,000.00"
+              }
+            ],
+            "costs": [
+              {
+                "label": "Bank credit line: draw ¥150,000.00, repaid day 32",
+                "fen": 84164,
+                "facility_id": "FAC-LINE",
+                "formula": "150,000.00 × 6.4% × 32/365 = 841.64",
+                "display": "¥841.64"
+              },
+              {
+                "label": "Invoice financing (onboarded platform): advance ¥210,000.00 on RCV-A",
+                "fen": 187130,
+                "facility_id": "FAC-IF",
+                "formula": "210,000.00 × 7.8% × 30/365 (29 days billed as 1 × 30-day period) = 1,346.30; 210,000.00 × 0.25% × 1 = 525.00; total ¥1,871.30",
+                "display": "¥1,871.30"
+              }
+            ],
+            "total_cost_fen": 271294,
+            "admissible": true,
+            "violations": [],
+            "marginal_cost_annual": {
+              "num": 1301,
+              "den": 12000,
+              "text": "0.11"
+            },
+            "marginal_facility_id": "FAC-IF",
+            "rejected": [
+              {
+                "label": "Discount the whole invoice at 1.2%",
+                "reasons": [],
+                "note": "cost ¥5,040.00; admissible but dearer than the selected plan"
+              },
+              {
+                "label": "Line + early payment on part of the invoice at 1.2%",
+                "reasons": [],
+                "note": "cost ¥3,392.25; admissible but dearer than the selected plan"
+              },
+              {
+                "label": "Line + guaranteed loan",
+                "reasons": [
+                  "UNCOMMITTED_FACILITY",
+                  "LEAD_TIME_TOO_LONG"
+                ],
+                "note": "not applied; cash on day 21, gap opens on day 12"
+              },
+              {
+                "label": "Line only",
+                "reasons": [
+                  "RESERVE_BREACH"
+                ],
+                "note": "cost ¥841.64; RESERVE_BREACH on day 12"
+              }
+            ],
+            "label": "committed plan: ¥841.64 + ¥1,871.30 = ¥2,712.94",
+            "need_display": "¥360,000.00",
+            "total_cost_display": "¥2,712.94"
+          },
+          "required_tier": "TIER_1",
+          "mandate_version": 1,
+          "state_version": 1,
+          "calc_version": "tl-v2.0",
+          "summary": "ACCEPT. Forward concessions ¥0.00 against ¥5,000.00. Covenants hold: DSCR_MIN 1.89x, LEVERAGE_MAX 1.72x.",
+          "passed_checks": [
+            {
+              "code": "MIN_CASH",
+              "label": "Minimum cash with the committed plan",
+              "observed": "¥300,000.00 on day 20",
+              "limit": "≥ ¥300,000.00",
+              "formula": "closing_cash(day) >= min_cash on every day; the offer induces no breach",
+              "inputs": {
+                "plan": "committed plan: ¥841.64 + ¥1,871.30 = ¥2,712.94",
+                "offer_lowest_without_funding": "−¥60,000.00",
+                "offer_lowest_day": "20"
+              }
+            },
+            {
+              "code": "DSCR_MIN",
+              "label": "Lowest monthly DSCR (month 2)",
+              "observed": "1.89x",
+              "limit": "≥ 1.25x",
+              "formula": "EBITDA_m / DS_m = ¥90,000.00 / ¥47,712.94",
+              "inputs": {}
+            },
+            {
+              "code": "LEVERAGE_MAX",
+              "label": "Highest monthly leverage (month 1)",
+              "observed": "1.72x",
+              "limit": "≤ 2.50x",
+              "formula": "Debt_m / (12 × EBITDA_m) = ¥1,860,000.00 / (12 × ¥90,000.00)",
+              "inputs": {}
+            },
+            {
+              "code": "CLEAN_DOWN",
+              "label": "Bank credit line: clean-down",
+              "observed": "89 days at zero",
+              "limit": "≥ 30 consecutive days",
+              "formula": "max run of days with balance = 0 >= 30",
+              "inputs": {
+                "facility_id": "FAC-LINE",
+                "run_start_day": "32",
+                "run_end_day": "120",
+                "horizon_days": "120"
+              }
+            }
+          ],
+          "autonomy": {
+            "eligible": false,
+            "accepted_alone": true,
+            "whole_invoice": null,
+            "covered": [],
+            "gaps": [],
+            "notes": []
+          },
+          "annualised": [],
+          "forward_concession_total_display": "¥0.00"
+        },
+        "operations": [
+          {
+            "op_id": "NL-55c4306a9eaf8870",
+            "kind": "DRAW_FACILITY",
+            "status": "EXECUTED",
+            "tier": "TIER_1",
+            "violations": [],
+            "seq": 1,
+            "entry_hash": "0809907947c6b3e8e6d45b2360055840c57cfd847477858b3912429f9e32744e",
+            "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+            "effective_day": 0,
+            "approval_id": null,
+            "message": "Drew ¥100,000.00 on FAC-LINE on day 0"
+          }
+        ],
+        "clarification": null,
+        "awaiting_confirmation": false,
+        "amended": false,
+        "replayed": false,
+        "negotiation": null,
+        "security_events": [],
+        "parse_source": "rules",
+        "trace_id": "nls-bcdb8f8187224f86:1"
+      }
+    },
+    {
+      "credential": "agent",
+      "request": {
+        "actor": "OWNER",
+        "text": "Is it safe to draw ¥100,000 on the credit line?"
+      },
+      "http": 200,
+      "before": {
+        "cash_fen": 40000000,
+        "state_version": 1,
+        "facilities": {
+          "FAC-LINE": 0,
+          "FAC-IF": 0,
+          "FAC-EARLYPAY": 0,
+          "FAC-GGL": 0,
+          "FAC-ETL": 0,
+          "FAC-LEASE": 0,
+          "FAC-BILL": 0,
+          "FAC-EQUITY": 0
+        },
+        "commitments": [],
+        "operations": 0
+      },
+      "after": {
+        "cash_fen": 50000000,
+        "state_version": 2,
+        "facilities": {
+          "FAC-LINE": 10000000,
+          "FAC-IF": 0,
+          "FAC-EARLYPAY": 0,
+          "FAC-GGL": 0,
+          "FAC-ETL": 0,
+          "FAC-LEASE": 0,
+          "FAC-BILL": 0,
+          "FAC-EQUITY": 0
+        },
+        "commitments": [],
+        "operations": 1
+      },
+      "response": {
+        "session_id": "nls-583ba9f6fd3d4611",
+        "turn": 1,
+        "reply": "Drew ¥100,000.00 on FAC-LINE on day 0",
+        "intent": "FUND_GAP",
+        "lang": "en",
+        "plan": [
+          {
+            "step": 1,
+            "kind": "VERIFY",
+            "description": "Verdict ACCEPT (TIER_1): no violations. ACCEPT. Forward concessions ¥0.00 against ¥5,000.00. Covenants hold: DSCR_MIN 1.89x, LEVERAGE_MAX 1.72x.",
+            "status": "DONE",
+            "op_id": null,
+            "condition": null
+          },
+          {
+            "step": 2,
+            "kind": "DRAW_FACILITY",
+            "description": "Draw ¥100,000.00 on FAC-LINE",
+            "status": "EXECUTED",
+            "op_id": "NL-f852b694c342b8d1",
+            "condition": null
+          }
+        ],
+        "verdict": {
+          "id": "VER-daed9e0bbdca",
+          "offer_id": "NL-SQ-d59b04cdc9e8",
+          "offer_version": 1,
+          "outcome": "ACCEPT",
+          "violations": [],
+          "bound_obligations": [],
+          "concession_values": [],
+          "forward_concession_total_fen": 0,
+          "counters": [],
+          "plan": {
+            "id": "PLAN-COM-1ec49ce46f15",
+            "basis": "COMMITTED",
+            "need_fen": 36000000,
+            "actions": [
+              {
+                "kind": "DRAW",
+                "facility_id": "FAC-LINE",
+                "day": 0,
+                "amount_fen": 15000000,
+                "receivable_id": null,
+                "repay_day": 32,
+                "rate_bp": null,
+                "amount_display": "¥150,000.00"
+              },
+              {
+                "kind": "FINANCE_INVOICE",
+                "facility_id": "FAC-IF",
+                "day": 0,
+                "amount_fen": 21000000,
+                "receivable_id": "RCV-A",
+                "repay_day": null,
+                "rate_bp": null,
+                "amount_display": "¥210,000.00"
+              }
+            ],
+            "costs": [
+              {
+                "label": "Bank credit line: draw ¥150,000.00, repaid day 32",
+                "fen": 84164,
+                "facility_id": "FAC-LINE",
+                "formula": "150,000.00 × 6.4% × 32/365 = 841.64",
+                "display": "¥841.64"
+              },
+              {
+                "label": "Invoice financing (onboarded platform): advance ¥210,000.00 on RCV-A",
+                "fen": 187130,
+                "facility_id": "FAC-IF",
+                "formula": "210,000.00 × 7.8% × 30/365 (29 days billed as 1 × 30-day period) = 1,346.30; 210,000.00 × 0.25% × 1 = 525.00; total ¥1,871.30",
+                "display": "¥1,871.30"
+              }
+            ],
+            "total_cost_fen": 271294,
+            "admissible": true,
+            "violations": [],
+            "marginal_cost_annual": {
+              "num": 1301,
+              "den": 12000,
+              "text": "0.11"
+            },
+            "marginal_facility_id": "FAC-IF",
+            "rejected": [
+              {
+                "label": "Discount the whole invoice at 1.2%",
+                "reasons": [],
+                "note": "cost ¥5,040.00; admissible but dearer than the selected plan"
+              },
+              {
+                "label": "Line + early payment on part of the invoice at 1.2%",
+                "reasons": [],
+                "note": "cost ¥3,392.25; admissible but dearer than the selected plan"
+              },
+              {
+                "label": "Line + guaranteed loan",
+                "reasons": [
+                  "UNCOMMITTED_FACILITY",
+                  "LEAD_TIME_TOO_LONG"
+                ],
+                "note": "not applied; cash on day 21, gap opens on day 12"
+              },
+              {
+                "label": "Line only",
+                "reasons": [
+                  "RESERVE_BREACH"
+                ],
+                "note": "cost ¥841.64; RESERVE_BREACH on day 12"
+              }
+            ],
+            "label": "committed plan: ¥841.64 + ¥1,871.30 = ¥2,712.94",
+            "need_display": "¥360,000.00",
+            "total_cost_display": "¥2,712.94"
+          },
+          "required_tier": "TIER_1",
+          "mandate_version": 1,
+          "state_version": 1,
+          "calc_version": "tl-v2.0",
+          "summary": "ACCEPT. Forward concessions ¥0.00 against ¥5,000.00. Covenants hold: DSCR_MIN 1.89x, LEVERAGE_MAX 1.72x.",
+          "passed_checks": [
+            {
+              "code": "MIN_CASH",
+              "label": "Minimum cash with the committed plan",
+              "observed": "¥300,000.00 on day 20",
+              "limit": "≥ ¥300,000.00",
+              "formula": "closing_cash(day) >= min_cash on every day; the offer induces no breach",
+              "inputs": {
+                "plan": "committed plan: ¥841.64 + ¥1,871.30 = ¥2,712.94",
+                "offer_lowest_without_funding": "−¥60,000.00",
+                "offer_lowest_day": "20"
+              }
+            },
+            {
+              "code": "DSCR_MIN",
+              "label": "Lowest monthly DSCR (month 2)",
+              "observed": "1.89x",
+              "limit": "≥ 1.25x",
+              "formula": "EBITDA_m / DS_m = ¥90,000.00 / ¥47,712.94",
+              "inputs": {}
+            },
+            {
+              "code": "LEVERAGE_MAX",
+              "label": "Highest monthly leverage (month 1)",
+              "observed": "1.72x",
+              "limit": "≤ 2.50x",
+              "formula": "Debt_m / (12 × EBITDA_m) = ¥1,860,000.00 / (12 × ¥90,000.00)",
+              "inputs": {}
+            },
+            {
+              "code": "CLEAN_DOWN",
+              "label": "Bank credit line: clean-down",
+              "observed": "89 days at zero",
+              "limit": "≥ 30 consecutive days",
+              "formula": "max run of days with balance = 0 >= 30",
+              "inputs": {
+                "facility_id": "FAC-LINE",
+                "run_start_day": "32",
+                "run_end_day": "120",
+                "horizon_days": "120"
+              }
+            }
+          ],
+          "autonomy": {
+            "eligible": false,
+            "accepted_alone": true,
+            "whole_invoice": null,
+            "covered": [],
+            "gaps": [],
+            "notes": []
+          },
+          "annualised": [],
+          "forward_concession_total_display": "¥0.00"
+        },
+        "operations": [
+          {
+            "op_id": "NL-f852b694c342b8d1",
+            "kind": "DRAW_FACILITY",
+            "status": "EXECUTED",
+            "tier": "TIER_1",
+            "violations": [],
+            "seq": 1,
+            "entry_hash": "0f5d7ccf60794ec42b2f030e1b09335fd6480e171b11d23709f47ba8918e3efd",
+            "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+            "effective_day": 0,
+            "approval_id": null,
+            "message": "Drew ¥100,000.00 on FAC-LINE on day 0"
+          }
+        ],
+        "clarification": null,
+        "awaiting_confirmation": false,
+        "amended": false,
+        "replayed": false,
+        "negotiation": null,
+        "security_events": [],
+        "parse_source": "rules",
+        "trace_id": "nls-583ba9f6fd3d4611:1"
+      }
+    },
+    {
+      "credential": "agent",
+      "request": {
+        "actor": "OWNER",
+        "text": "draw ¥100,000 on the credit line only if cash is below ¥0"
+      },
+      "http": 200,
+      "before": {
+        "cash_fen": 40000000,
+        "state_version": 1,
+        "facilities": {
+          "FAC-LINE": 0,
+          "FAC-IF": 0,
+          "FAC-EARLYPAY": 0,
+          "FAC-GGL": 0,
+          "FAC-ETL": 0,
+          "FAC-LEASE": 0,
+          "FAC-BILL": 0,
+          "FAC-EQUITY": 0
+        },
+        "commitments": [],
+        "operations": 0
+      },
+      "after": {
+        "cash_fen": 50000000,
+        "state_version": 2,
+        "facilities": {
+          "FAC-LINE": 10000000,
+          "FAC-IF": 0,
+          "FAC-EARLYPAY": 0,
+          "FAC-GGL": 0,
+          "FAC-ETL": 0,
+          "FAC-LEASE": 0,
+          "FAC-BILL": 0,
+          "FAC-EQUITY": 0
+        },
+        "commitments": [],
+        "operations": 1
+      },
+      "response": {
+        "session_id": "nls-04e4d5325e7847c5",
+        "turn": 1,
+        "reply": "Drew ¥100,000.00 on FAC-LINE on day 0",
+        "intent": "FUND_GAP",
+        "lang": "en",
+        "plan": [
+          {
+            "step": 1,
+            "kind": "VERIFY",
+            "description": "Verdict ACCEPT (TIER_1): no violations. ACCEPT. Forward concessions ¥0.00 against ¥5,000.00. Covenants hold: DSCR_MIN 1.89x, LEVERAGE_MAX 1.72x.",
+            "status": "DONE",
+            "op_id": null,
+            "condition": null
+          },
+          {
+            "step": 2,
+            "kind": "DRAW_FACILITY",
+            "description": "Draw ¥100,000.00 on FAC-LINE",
+            "status": "EXECUTED",
+            "op_id": "NL-07f63863e8123d48",
+            "condition": null
+          }
+        ],
+        "verdict": {
+          "id": "VER-daed9e0bbdca",
+          "offer_id": "NL-SQ-d59b04cdc9e8",
+          "offer_version": 1,
+          "outcome": "ACCEPT",
+          "violations": [],
+          "bound_obligations": [],
+          "concession_values": [],
+          "forward_concession_total_fen": 0,
+          "counters": [],
+          "plan": {
+            "id": "PLAN-COM-1ec49ce46f15",
+            "basis": "COMMITTED",
+            "need_fen": 36000000,
+            "actions": [
+              {
+                "kind": "DRAW",
+                "facility_id": "FAC-LINE",
+                "day": 0,
+                "amount_fen": 15000000,
+                "receivable_id": null,
+                "repay_day": 32,
+                "rate_bp": null,
+                "amount_display": "¥150,000.00"
+              },
+              {
+                "kind": "FINANCE_INVOICE",
+                "facility_id": "FAC-IF",
+                "day": 0,
+                "amount_fen": 21000000,
+                "receivable_id": "RCV-A",
+                "repay_day": null,
+                "rate_bp": null,
+                "amount_display": "¥210,000.00"
+              }
+            ],
+            "costs": [
+              {
+                "label": "Bank credit line: draw ¥150,000.00, repaid day 32",
+                "fen": 84164,
+                "facility_id": "FAC-LINE",
+                "formula": "150,000.00 × 6.4% × 32/365 = 841.64",
+                "display": "¥841.64"
+              },
+              {
+                "label": "Invoice financing (onboarded platform): advance ¥210,000.00 on RCV-A",
+                "fen": 187130,
+                "facility_id": "FAC-IF",
+                "formula": "210,000.00 × 7.8% × 30/365 (29 days billed as 1 × 30-day period) = 1,346.30; 210,000.00 × 0.25% × 1 = 525.00; total ¥1,871.30",
+                "display": "¥1,871.30"
+              }
+            ],
+            "total_cost_fen": 271294,
+            "admissible": true,
+            "violations": [],
+            "marginal_cost_annual": {
+              "num": 1301,
+              "den": 12000,
+              "text": "0.11"
+            },
+            "marginal_facility_id": "FAC-IF",
+            "rejected": [
+              {
+                "label": "Discount the whole invoice at 1.2%",
+                "reasons": [],
+                "note": "cost ¥5,040.00; admissible but dearer than the selected plan"
+              },
+              {
+                "label": "Line + early payment on part of the invoice at 1.2%",
+                "reasons": [],
+                "note": "cost ¥3,392.25; admissible but dearer than the selected plan"
+              },
+              {
+                "label": "Line + guaranteed loan",
+                "reasons": [
+                  "UNCOMMITTED_FACILITY",
+                  "LEAD_TIME_TOO_LONG"
+                ],
+                "note": "not applied; cash on day 21, gap opens on day 12"
+              },
+              {
+                "label": "Line only",
+                "reasons": [
+                  "RESERVE_BREACH"
+                ],
+                "note": "cost ¥841.64; RESERVE_BREACH on day 12"
+              }
+            ],
+            "label": "committed plan: ¥841.64 + ¥1,871.30 = ¥2,712.94",
+            "need_display": "¥360,000.00",
+            "total_cost_display": "¥2,712.94"
+          },
+          "required_tier": "TIER_1",
+          "mandate_version": 1,
+          "state_version": 1,
+          "calc_version": "tl-v2.0",
+          "summary": "ACCEPT. Forward concessions ¥0.00 against ¥5,000.00. Covenants hold: DSCR_MIN 1.89x, LEVERAGE_MAX 1.72x.",
+          "passed_checks": [
+            {
+              "code": "MIN_CASH",
+              "label": "Minimum cash with the committed plan",
+              "observed": "¥300,000.00 on day 20",
+              "limit": "≥ ¥300,000.00",
+              "formula": "closing_cash(day) >= min_cash on every day; the offer induces no breach",
+              "inputs": {
+                "plan": "committed plan: ¥841.64 + ¥1,871.30 = ¥2,712.94",
+                "offer_lowest_without_funding": "−¥60,000.00",
+                "offer_lowest_day": "20"
+              }
+            },
+            {
+              "code": "DSCR_MIN",
+              "label": "Lowest monthly DSCR (month 2)",
+              "observed": "1.89x",
+              "limit": "≥ 1.25x",
+              "formula": "EBITDA_m / DS_m = ¥90,000.00 / ¥47,712.94",
+              "inputs": {}
+            },
+            {
+              "code": "LEVERAGE_MAX",
+              "label": "Highest monthly leverage (month 1)",
+              "observed": "1.72x",
+              "limit": "≤ 2.50x",
+              "formula": "Debt_m / (12 × EBITDA_m) = ¥1,860,000.00 / (12 × ¥90,000.00)",
+              "inputs": {}
+            },
+            {
+              "code": "CLEAN_DOWN",
+              "label": "Bank credit line: clean-down",
+              "observed": "89 days at zero",
+              "limit": "≥ 30 consecutive days",
+              "formula": "max run of days with balance = 0 >= 30",
+              "inputs": {
+                "facility_id": "FAC-LINE",
+                "run_start_day": "32",
+                "run_end_day": "120",
+                "horizon_days": "120"
+              }
+            }
+          ],
+          "autonomy": {
+            "eligible": false,
+            "accepted_alone": true,
+            "whole_invoice": null,
+            "covered": [],
+            "gaps": [],
+            "notes": []
+          },
+          "annualised": [],
+          "forward_concession_total_display": "¥0.00"
+        },
+        "operations": [
+          {
+            "op_id": "NL-07f63863e8123d48",
+            "kind": "DRAW_FACILITY",
+            "status": "EXECUTED",
+            "tier": "TIER_1",
+            "violations": [],
+            "seq": 1,
+            "entry_hash": "22660454a514249cfc1989ce92fc93b336d05ff9f0b00629de9887c935870e26",
+            "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+            "effective_day": 0,
+            "approval_id": null,
+            "message": "Drew ¥100,000.00 on FAC-LINE on day 0"
+          }
+        ],
+        "clarification": null,
+        "awaiting_confirmation": false,
+        "amended": false,
+        "replayed": false,
+        "negotiation": null,
+        "security_events": [],
+        "parse_source": "rules",
+        "trace_id": "nls-04e4d5325e7847c5:1"
+      }
+    },
+    {
+      "credential": "agent",
+      "request": {
+        "actor": "OWNER",
+        "text": "draw ¥100,000 on the credit line tomorrow"
+      },
+      "http": 200,
+      "before": {
+        "cash_fen": 40000000,
+        "state_version": 1,
+        "facilities": {
+          "FAC-LINE": 0,
+          "FAC-IF": 0,
+          "FAC-EARLYPAY": 0,
+          "FAC-GGL": 0,
+          "FAC-ETL": 0,
+          "FAC-LEASE": 0,
+          "FAC-BILL": 0,
+          "FAC-EQUITY": 0
+        },
+        "commitments": [],
+        "operations": 0
+      },
+      "after": {
+        "cash_fen": 50000000,
+        "state_version": 2,
+        "facilities": {
+          "FAC-LINE": 10000000,
+          "FAC-IF": 0,
+          "FAC-EARLYPAY": 0,
+          "FAC-GGL": 0,
+          "FAC-ETL": 0,
+          "FAC-LEASE": 0,
+          "FAC-BILL": 0,
+          "FAC-EQUITY": 0
+        },
+        "commitments": [],
+        "operations": 1
+      },
+      "response": {
+        "session_id": "nls-34d56bf06d714526",
+        "turn": 1,
+        "reply": "Drew ¥100,000.00 on FAC-LINE on day 0",
+        "intent": "FUND_GAP",
+        "lang": "en",
+        "plan": [
+          {
+            "step": 1,
+            "kind": "VERIFY",
+            "description": "Verdict ACCEPT (TIER_1): no violations. ACCEPT. Forward concessions ¥0.00 against ¥5,000.00. Covenants hold: DSCR_MIN 1.89x, LEVERAGE_MAX 1.72x.",
+            "status": "DONE",
+            "op_id": null,
+            "condition": null
+          },
+          {
+            "step": 2,
+            "kind": "DRAW_FACILITY",
+            "description": "Draw ¥100,000.00 on FAC-LINE",
+            "status": "EXECUTED",
+            "op_id": "NL-334f46d2060c20f7",
+            "condition": null
+          }
+        ],
+        "verdict": {
+          "id": "VER-daed9e0bbdca",
+          "offer_id": "NL-SQ-d59b04cdc9e8",
+          "offer_version": 1,
+          "outcome": "ACCEPT",
+          "violations": [],
+          "bound_obligations": [],
+          "concession_values": [],
+          "forward_concession_total_fen": 0,
+          "counters": [],
+          "plan": {
+            "id": "PLAN-COM-1ec49ce46f15",
+            "basis": "COMMITTED",
+            "need_fen": 36000000,
+            "actions": [
+              {
+                "kind": "DRAW",
+                "facility_id": "FAC-LINE",
+                "day": 0,
+                "amount_fen": 15000000,
+                "receivable_id": null,
+                "repay_day": 32,
+                "rate_bp": null,
+                "amount_display": "¥150,000.00"
+              },
+              {
+                "kind": "FINANCE_INVOICE",
+                "facility_id": "FAC-IF",
+                "day": 0,
+                "amount_fen": 21000000,
+                "receivable_id": "RCV-A",
+                "repay_day": null,
+                "rate_bp": null,
+                "amount_display": "¥210,000.00"
+              }
+            ],
+            "costs": [
+              {
+                "label": "Bank credit line: draw ¥150,000.00, repaid day 32",
+                "fen": 84164,
+                "facility_id": "FAC-LINE",
+                "formula": "150,000.00 × 6.4% × 32/365 = 841.64",
+                "display": "¥841.64"
+              },
+              {
+                "label": "Invoice financing (onboarded platform): advance ¥210,000.00 on RCV-A",
+                "fen": 187130,
+                "facility_id": "FAC-IF",
+                "formula": "210,000.00 × 7.8% × 30/365 (29 days billed as 1 × 30-day period) = 1,346.30; 210,000.00 × 0.25% × 1 = 525.00; total ¥1,871.30",
+                "display": "¥1,871.30"
+              }
+            ],
+            "total_cost_fen": 271294,
+            "admissible": true,
+            "violations": [],
+            "marginal_cost_annual": {
+              "num": 1301,
+              "den": 12000,
+              "text": "0.11"
+            },
+            "marginal_facility_id": "FAC-IF",
+            "rejected": [
+              {
+                "label": "Discount the whole invoice at 1.2%",
+                "reasons": [],
+                "note": "cost ¥5,040.00; admissible but dearer than the selected plan"
+              },
+              {
+                "label": "Line + early payment on part of the invoice at 1.2%",
+                "reasons": [],
+                "note": "cost ¥3,392.25; admissible but dearer than the selected plan"
+              },
+              {
+                "label": "Line + guaranteed loan",
+                "reasons": [
+                  "UNCOMMITTED_FACILITY",
+                  "LEAD_TIME_TOO_LONG"
+                ],
+                "note": "not applied; cash on day 21, gap opens on day 12"
+              },
+              {
+                "label": "Line only",
+                "reasons": [
+                  "RESERVE_BREACH"
+                ],
+                "note": "cost ¥841.64; RESERVE_BREACH on day 12"
+              }
+            ],
+            "label": "committed plan: ¥841.64 + ¥1,871.30 = ¥2,712.94",
+            "need_display": "¥360,000.00",
+            "total_cost_display": "¥2,712.94"
+          },
+          "required_tier": "TIER_1",
+          "mandate_version": 1,
+          "state_version": 1,
+          "calc_version": "tl-v2.0",
+          "summary": "ACCEPT. Forward concessions ¥0.00 against ¥5,000.00. Covenants hold: DSCR_MIN 1.89x, LEVERAGE_MAX 1.72x.",
+          "passed_checks": [
+            {
+              "code": "MIN_CASH",
+              "label": "Minimum cash with the committed plan",
+              "observed": "¥300,000.00 on day 20",
+              "limit": "≥ ¥300,000.00",
+              "formula": "closing_cash(day) >= min_cash on every day; the offer induces no breach",
+              "inputs": {
+                "plan": "committed plan: ¥841.64 + ¥1,871.30 = ¥2,712.94",
+                "offer_lowest_without_funding": "−¥60,000.00",
+                "offer_lowest_day": "20"
+              }
+            },
+            {
+              "code": "DSCR_MIN",
+              "label": "Lowest monthly DSCR (month 2)",
+              "observed": "1.89x",
+              "limit": "≥ 1.25x",
+              "formula": "EBITDA_m / DS_m = ¥90,000.00 / ¥47,712.94",
+              "inputs": {}
+            },
+            {
+              "code": "LEVERAGE_MAX",
+              "label": "Highest monthly leverage (month 1)",
+              "observed": "1.72x",
+              "limit": "≤ 2.50x",
+              "formula": "Debt_m / (12 × EBITDA_m) = ¥1,860,000.00 / (12 × ¥90,000.00)",
+              "inputs": {}
+            },
+            {
+              "code": "CLEAN_DOWN",
+              "label": "Bank credit line: clean-down",
+              "observed": "89 days at zero",
+              "limit": "≥ 30 consecutive days",
+              "formula": "max run of days with balance = 0 >= 30",
+              "inputs": {
+                "facility_id": "FAC-LINE",
+                "run_start_day": "32",
+                "run_end_day": "120",
+                "horizon_days": "120"
+              }
+            }
+          ],
+          "autonomy": {
+            "eligible": false,
+            "accepted_alone": true,
+            "whole_invoice": null,
+            "covered": [],
+            "gaps": [],
+            "notes": []
+          },
+          "annualised": [],
+          "forward_concession_total_display": "¥0.00"
+        },
+        "operations": [
+          {
+            "op_id": "NL-334f46d2060c20f7",
+            "kind": "DRAW_FACILITY",
+            "status": "EXECUTED",
+            "tier": "TIER_1",
+            "violations": [],
+            "seq": 1,
+            "entry_hash": "423871d93f8c8b564ee1fcb7e1328c62191f4ce633ec51bc62738869cfa3990b",
+            "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+            "effective_day": 0,
+            "approval_id": null,
+            "message": "Drew ¥100,000.00 on FAC-LINE on day 0"
+          }
+        ],
+        "clarification": null,
+        "awaiting_confirmation": false,
+        "amended": false,
+        "replayed": false,
+        "negotiation": null,
+        "security_events": [],
+        "parse_source": "rules",
+        "trace_id": "nls-34d56bf06d714526:1"
+      }
+    },
+    {
+      "credential": "agent",
+      "request": {
+        "actor": "OWNER",
+        "text": "draw $100,000 on the credit line"
+      },
+      "http": 200,
+      "before": {
+        "cash_fen": 40000000,
+        "state_version": 1,
+        "facilities": {
+          "FAC-LINE": 0,
+          "FAC-IF": 0,
+          "FAC-EARLYPAY": 0,
+          "FAC-GGL": 0,
+          "FAC-ETL": 0,
+          "FAC-LEASE": 0,
+          "FAC-BILL": 0,
+          "FAC-EQUITY": 0
+        },
+        "commitments": [],
+        "operations": 0
+      },
+      "after": {
+        "cash_fen": 76000000,
+        "state_version": 3,
+        "facilities": {
+          "FAC-LINE": 15000000,
+          "FAC-IF": 21000000,
+          "FAC-EARLYPAY": 0,
+          "FAC-GGL": 0,
+          "FAC-ETL": 0,
+          "FAC-LEASE": 0,
+          "FAC-BILL": 0,
+          "FAC-EQUITY": 0
+        },
+        "commitments": [],
+        "operations": 2
+      },
+      "response": {
+        "session_id": "nls-75ac417cb6fc46f7",
+        "turn": 1,
+        "reply": "Router plan (committed facilities only): committed plan: ¥841.64 + ¥1,871.30 = ¥2,712.94, need ¥360,000.00.",
+        "intent": "FUND_GAP",
+        "lang": "en",
+        "plan": [
+          {
+            "step": 1,
+            "kind": "VERIFY",
+            "description": "Gap days 12–31, short ¥360,000.00 at the low on day 20. Verdict ACCEPT (TIER_1): no violations. ACCEPT. Forward concessions ¥0.00 against ¥5,000.00. Covenants hold: DSCR_MIN 1.89x, LEVERAGE_MAX 1.72x.",
+            "status": "DONE",
+            "op_id": null,
+            "condition": null
+          },
+          {
+            "step": 2,
+            "kind": "DRAW_FACILITY",
+            "description": "Draw ¥150,000.00 on FAC-LINE, repay day 32",
+            "status": "EXECUTED",
+            "op_id": "NL-84d0b6c0949383c2",
+            "condition": null
+          },
+          {
+            "step": 3,
+            "kind": "SUBMIT_INVOICE_FOR_FINANCING",
+            "description": "Submit RCV-A to FAC-IF for a ¥210,000.00 advance",
+            "status": "EXECUTED",
+            "op_id": "NL-c40b2075131826c7",
+            "condition": null
+          }
+        ],
+        "verdict": {
+          "id": "VER-3a805c232882",
+          "offer_id": "NL-SQ1-78fedc7f05e6",
+          "offer_version": 1,
+          "outcome": "ACCEPT",
+          "violations": [],
+          "bound_obligations": [],
+          "concession_values": [],
+          "forward_concession_total_fen": 0,
+          "counters": [],
+          "plan": {
+            "id": "PLAN-COM-1ec49ce46f15",
+            "basis": "COMMITTED",
+            "need_fen": 36000000,
+            "actions": [
+              {
+                "kind": "DRAW",
+                "facility_id": "FAC-LINE",
+                "day": 0,
+                "amount_fen": 15000000,
+                "receivable_id": null,
+                "repay_day": 32,
+                "rate_bp": null,
+                "amount_display": "¥150,000.00"
+              },
+              {
+                "kind": "FINANCE_INVOICE",
+                "facility_id": "FAC-IF",
+                "day": 0,
+                "amount_fen": 21000000,
+                "receivable_id": "RCV-A",
+                "repay_day": null,
+                "rate_bp": null,
+                "amount_display": "¥210,000.00"
+              }
+            ],
+            "costs": [
+              {
+                "label": "Bank credit line: draw ¥150,000.00, repaid day 32",
+                "fen": 84164,
+                "facility_id": "FAC-LINE",
+                "formula": "150,000.00 × 6.4% × 32/365 = 841.64",
+                "display": "¥841.64"
+              },
+              {
+                "label": "Invoice financing (onboarded platform): advance ¥210,000.00 on RCV-A",
+                "fen": 187130,
+                "facility_id": "FAC-IF",
+                "formula": "210,000.00 × 7.8% × 30/365 (29 days billed as 1 × 30-day period) = 1,346.30; 210,000.00 × 0.25% × 1 = 525.00; total ¥1,871.30",
+                "display": "¥1,871.30"
+              }
+            ],
+            "total_cost_fen": 271294,
+            "admissible": true,
+            "violations": [],
+            "marginal_cost_annual": {
+              "num": 1301,
+              "den": 12000,
+              "text": "0.11"
+            },
+            "marginal_facility_id": "FAC-IF",
+            "rejected": [
+              {
+                "label": "Discount the whole invoice at 1.2%",
+                "reasons": [],
+                "note": "cost ¥5,040.00; admissible but dearer than the selected plan"
+              },
+              {
+                "label": "Line + early payment on part of the invoice at 1.2%",
+                "reasons": [],
+                "note": "cost ¥3,392.25; admissible but dearer than the selected plan"
+              },
+              {
+                "label": "Line + guaranteed loan",
+                "reasons": [
+                  "UNCOMMITTED_FACILITY",
+                  "LEAD_TIME_TOO_LONG"
+                ],
+                "note": "not applied; cash on day 21, gap opens on day 12"
+              },
+              {
+                "label": "Line only",
+                "reasons": [
+                  "RESERVE_BREACH"
+                ],
+                "note": "cost ¥841.64; RESERVE_BREACH on day 12"
+              }
+            ],
+            "label": "committed plan: ¥841.64 + ¥1,871.30 = ¥2,712.94",
+            "need_display": "¥360,000.00",
+            "total_cost_display": "¥2,712.94"
+          },
+          "required_tier": "TIER_1",
+          "mandate_version": 1,
+          "state_version": 1,
+          "calc_version": "tl-v2.0",
+          "summary": "ACCEPT. Forward concessions ¥0.00 against ¥5,000.00. Covenants hold: DSCR_MIN 1.89x, LEVERAGE_MAX 1.72x.",
+          "passed_checks": [
+            {
+              "code": "MIN_CASH",
+              "label": "Minimum cash with the committed plan",
+              "observed": "¥300,000.00 on day 20",
+              "limit": "≥ ¥300,000.00",
+              "formula": "closing_cash(day) >= min_cash on every day; the offer induces no breach",
+              "inputs": {
+                "plan": "committed plan: ¥841.64 + ¥1,871.30 = ¥2,712.94",
+                "offer_lowest_without_funding": "−¥60,000.00",
+                "offer_lowest_day": "20"
+              }
+            },
+            {
+              "code": "DSCR_MIN",
+              "label": "Lowest monthly DSCR (month 2)",
+              "observed": "1.89x",
+              "limit": "≥ 1.25x",
+              "formula": "EBITDA_m / DS_m = ¥90,000.00 / ¥47,712.94",
+              "inputs": {}
+            },
+            {
+              "code": "LEVERAGE_MAX",
+              "label": "Highest monthly leverage (month 1)",
+              "observed": "1.72x",
+              "limit": "≤ 2.50x",
+              "formula": "Debt_m / (12 × EBITDA_m) = ¥1,860,000.00 / (12 × ¥90,000.00)",
+              "inputs": {}
+            },
+            {
+              "code": "CLEAN_DOWN",
+              "label": "Bank credit line: clean-down",
+              "observed": "89 days at zero",
+              "limit": "≥ 30 consecutive days",
+              "formula": "max run of days with balance = 0 >= 30",
+              "inputs": {
+                "facility_id": "FAC-LINE",
+                "run_start_day": "32",
+                "run_end_day": "120",
+                "horizon_days": "120"
+              }
+            }
+          ],
+          "autonomy": {
+            "eligible": false,
+            "accepted_alone": true,
+            "whole_invoice": null,
+            "covered": [],
+            "gaps": [],
+            "notes": []
+          },
+          "annualised": [],
+          "forward_concession_total_display": "¥0.00"
+        },
+        "operations": [
+          {
+            "op_id": "NL-84d0b6c0949383c2",
+            "kind": "DRAW_FACILITY",
+            "status": "EXECUTED",
+            "tier": "TIER_1",
+            "violations": [],
+            "seq": 1,
+            "entry_hash": "08c5fa3aab360470c7c713fe77658cba8bf6001adab14fbdf872498167fbe323",
+            "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+            "effective_day": 0,
+            "approval_id": null,
+            "message": "Drew ¥150,000.00 on FAC-LINE on day 0"
+          },
+          {
+            "op_id": "NL-c40b2075131826c7",
+            "kind": "SUBMIT_INVOICE_FOR_FINANCING",
+            "status": "EXECUTED",
+            "tier": "TIER_1",
+            "violations": [],
+            "seq": 2,
+            "entry_hash": "9547dee0dcb548aaca92310bfe84b37f9a097775eec2d382a52c6c5e2efd024c",
+            "prev_hash": "08c5fa3aab360470c7c713fe77658cba8bf6001adab14fbdf872498167fbe323",
+            "effective_day": 0,
+            "approval_id": null,
+            "message": "Advance ¥210,000.00 on RCV-A from FAC-IF on day 0"
+          }
+        ],
+        "clarification": null,
+        "awaiting_confirmation": false,
+        "amended": false,
+        "replayed": false,
+        "negotiation": null,
+        "security_events": [],
+        "parse_source": "rules",
+        "trace_id": "nls-75ac417cb6fc46f7:1"
+      }
+    },
+    {
+      "credential": "agent",
+      "request": {
+        "actor": "OWNER",
+        "text": "draw ¥1.001 on the credit line"
+      },
+      "http": 200,
+      "before": {
+        "cash_fen": 40000000,
+        "state_version": 1,
+        "facilities": {
+          "FAC-LINE": 0,
+          "FAC-IF": 0,
+          "FAC-EARLYPAY": 0,
+          "FAC-GGL": 0,
+          "FAC-ETL": 0,
+          "FAC-LEASE": 0,
+          "FAC-BILL": 0,
+          "FAC-EQUITY": 0
+        },
+        "commitments": [],
+        "operations": 0
+      },
+      "after": {
+        "cash_fen": 76000000,
+        "state_version": 3,
+        "facilities": {
+          "FAC-LINE": 15000000,
+          "FAC-IF": 21000000,
+          "FAC-EARLYPAY": 0,
+          "FAC-GGL": 0,
+          "FAC-ETL": 0,
+          "FAC-LEASE": 0,
+          "FAC-BILL": 0,
+          "FAC-EQUITY": 0
+        },
+        "commitments": [],
+        "operations": 2
+      },
+      "response": {
+        "session_id": "nls-aa6547e70cb244e6",
+        "turn": 1,
+        "reply": "Router plan (committed facilities only): committed plan: ¥841.64 + ¥1,871.30 = ¥2,712.94, need ¥360,000.00.",
+        "intent": "FUND_GAP",
+        "lang": "en",
+        "plan": [
+          {
+            "step": 1,
+            "kind": "VERIFY",
+            "description": "Gap days 12–31, short ¥360,000.00 at the low on day 20. Verdict ACCEPT (TIER_1): no violations. ACCEPT. Forward concessions ¥0.00 against ¥5,000.00. Covenants hold: DSCR_MIN 1.89x, LEVERAGE_MAX 1.72x.",
+            "status": "DONE",
+            "op_id": null,
+            "condition": null
+          },
+          {
+            "step": 2,
+            "kind": "DRAW_FACILITY",
+            "description": "Draw ¥150,000.00 on FAC-LINE, repay day 32",
+            "status": "EXECUTED",
+            "op_id": "NL-9d796e882c98acc6",
+            "condition": null
+          },
+          {
+            "step": 3,
+            "kind": "SUBMIT_INVOICE_FOR_FINANCING",
+            "description": "Submit RCV-A to FAC-IF for a ¥210,000.00 advance",
+            "status": "EXECUTED",
+            "op_id": "NL-d709f089b433db0a",
+            "condition": null
+          }
+        ],
+        "verdict": {
+          "id": "VER-3a805c232882",
+          "offer_id": "NL-SQ1-78fedc7f05e6",
+          "offer_version": 1,
+          "outcome": "ACCEPT",
+          "violations": [],
+          "bound_obligations": [],
+          "concession_values": [],
+          "forward_concession_total_fen": 0,
+          "counters": [],
+          "plan": {
+            "id": "PLAN-COM-1ec49ce46f15",
+            "basis": "COMMITTED",
+            "need_fen": 36000000,
+            "actions": [
+              {
+                "kind": "DRAW",
+                "facility_id": "FAC-LINE",
+                "day": 0,
+                "amount_fen": 15000000,
+                "receivable_id": null,
+                "repay_day": 32,
+                "rate_bp": null,
+                "amount_display": "¥150,000.00"
+              },
+              {
+                "kind": "FINANCE_INVOICE",
+                "facility_id": "FAC-IF",
+                "day": 0,
+                "amount_fen": 21000000,
+                "receivable_id": "RCV-A",
+                "repay_day": null,
+                "rate_bp": null,
+                "amount_display": "¥210,000.00"
+              }
+            ],
+            "costs": [
+              {
+                "label": "Bank credit line: draw ¥150,000.00, repaid day 32",
+                "fen": 84164,
+                "facility_id": "FAC-LINE",
+                "formula": "150,000.00 × 6.4% × 32/365 = 841.64",
+                "display": "¥841.64"
+              },
+              {
+                "label": "Invoice financing (onboarded platform): advance ¥210,000.00 on RCV-A",
+                "fen": 187130,
+                "facility_id": "FAC-IF",
+                "formula": "210,000.00 × 7.8% × 30/365 (29 days billed as 1 × 30-day period) = 1,346.30; 210,000.00 × 0.25% × 1 = 525.00; total ¥1,871.30",
+                "display": "¥1,871.30"
+              }
+            ],
+            "total_cost_fen": 271294,
+            "admissible": true,
+            "violations": [],
+            "marginal_cost_annual": {
+              "num": 1301,
+              "den": 12000,
+              "text": "0.11"
+            },
+            "marginal_facility_id": "FAC-IF",
+            "rejected": [
+              {
+                "label": "Discount the whole invoice at 1.2%",
+                "reasons": [],
+                "note": "cost ¥5,040.00; admissible but dearer than the selected plan"
+              },
+              {
+                "label": "Line + early payment on part of the invoice at 1.2%",
+                "reasons": [],
+                "note": "cost ¥3,392.25; admissible but dearer than the selected plan"
+              },
+              {
+                "label": "Line + guaranteed loan",
+                "reasons": [
+                  "UNCOMMITTED_FACILITY",
+                  "LEAD_TIME_TOO_LONG"
+                ],
+                "note": "not applied; cash on day 21, gap opens on day 12"
+              },
+              {
+                "label": "Line only",
+                "reasons": [
+                  "RESERVE_BREACH"
+                ],
+                "note": "cost ¥841.64; RESERVE_BREACH on day 12"
+              }
+            ],
+            "label": "committed plan: ¥841.64 + ¥1,871.30 = ¥2,712.94",
+            "need_display": "¥360,000.00",
+            "total_cost_display": "¥2,712.94"
+          },
+          "required_tier": "TIER_1",
+          "mandate_version": 1,
+          "state_version": 1,
+          "calc_version": "tl-v2.0",
+          "summary": "ACCEPT. Forward concessions ¥0.00 against ¥5,000.00. Covenants hold: DSCR_MIN 1.89x, LEVERAGE_MAX 1.72x.",
+          "passed_checks": [
+            {
+              "code": "MIN_CASH",
+              "label": "Minimum cash with the committed plan",
+              "observed": "¥300,000.00 on day 20",
+              "limit": "≥ ¥300,000.00",
+              "formula": "closing_cash(day) >= min_cash on every day; the offer induces no breach",
+              "inputs": {
+                "plan": "committed plan: ¥841.64 + ¥1,871.30 = ¥2,712.94",
+                "offer_lowest_without_funding": "−¥60,000.00",
+                "offer_lowest_day": "20"
+              }
+            },
+            {
+              "code": "DSCR_MIN",
+              "label": "Lowest monthly DSCR (month 2)",
+              "observed": "1.89x",
+              "limit": "≥ 1.25x",
+              "formula": "EBITDA_m / DS_m = ¥90,000.00 / ¥47,712.94",
+              "inputs": {}
+            },
+            {
+              "code": "LEVERAGE_MAX",
+              "label": "Highest monthly leverage (month 1)",
+              "observed": "1.72x",
+              "limit": "≤ 2.50x",
+              "formula": "Debt_m / (12 × EBITDA_m) = ¥1,860,000.00 / (12 × ¥90,000.00)",
+              "inputs": {}
+            },
+            {
+              "code": "CLEAN_DOWN",
+              "label": "Bank credit line: clean-down",
+              "observed": "89 days at zero",
+              "limit": "≥ 30 consecutive days",
+              "formula": "max run of days with balance = 0 >= 30",
+              "inputs": {
+                "facility_id": "FAC-LINE",
+                "run_start_day": "32",
+                "run_end_day": "120",
+                "horizon_days": "120"
+              }
+            }
+          ],
+          "autonomy": {
+            "eligible": false,
+            "accepted_alone": true,
+            "whole_invoice": null,
+            "covered": [],
+            "gaps": [],
+            "notes": []
+          },
+          "annualised": [],
+          "forward_concession_total_display": "¥0.00"
+        },
+        "operations": [
+          {
+            "op_id": "NL-9d796e882c98acc6",
+            "kind": "DRAW_FACILITY",
+            "status": "EXECUTED",
+            "tier": "TIER_1",
+            "violations": [],
+            "seq": 1,
+            "entry_hash": "bd37045cfa83665eb6e18dd48dcaa7cb7d9fdf7c25dfd67d07fbee4a94b94f61",
+            "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+            "effective_day": 0,
+            "approval_id": null,
+            "message": "Drew ¥150,000.00 on FAC-LINE on day 0"
+          },
+          {
+            "op_id": "NL-d709f089b433db0a",
+            "kind": "SUBMIT_INVOICE_FOR_FINANCING",
+            "status": "EXECUTED",
+            "tier": "TIER_1",
+            "violations": [],
+            "seq": 2,
+            "entry_hash": "256432bad0ec336eb2ad6565c057ad239fb94daa80643a7b6dc1f5c6612a84a5",
+            "prev_hash": "bd37045cfa83665eb6e18dd48dcaa7cb7d9fdf7c25dfd67d07fbee4a94b94f61",
+            "effective_day": 0,
+            "approval_id": null,
+            "message": "Advance ¥210,000.00 on RCV-A from FAC-IF on day 0"
+          }
+        ],
+        "clarification": null,
+        "awaiting_confirmation": false,
+        "amended": false,
+        "replayed": false,
+        "negotiation": null,
+        "security_events": [],
+        "parse_source": "rules",
+        "trace_id": "nls-aa6547e70cb244e6:1"
+      }
+    },
+    {
+      "credential": "agent",
+      "request": {
+        "actor": "OWNER",
+        "text": "不要从授信额度提款10万元"
+      },
+      "http": 200,
+      "before": {
+        "cash_fen": 40000000,
+        "state_version": 1,
+        "facilities": {
+          "FAC-LINE": 0,
+          "FAC-IF": 0,
+          "FAC-EARLYPAY": 0,
+          "FAC-GGL": 0,
+          "FAC-ETL": 0,
+          "FAC-LEASE": 0,
+          "FAC-BILL": 0,
+          "FAC-EQUITY": 0
+        },
+        "commitments": [],
+        "operations": 0
+      },
+      "after": {
+        "cash_fen": 50000000,
+        "state_version": 2,
+        "facilities": {
+          "FAC-LINE": 10000000,
+          "FAC-IF": 0,
+          "FAC-EARLYPAY": 0,
+          "FAC-GGL": 0,
+          "FAC-ETL": 0,
+          "FAC-LEASE": 0,
+          "FAC-BILL": 0,
+          "FAC-EQUITY": 0
+        },
+        "commitments": [],
+        "operations": 1
+      },
+      "response": {
+        "session_id": "nls-ae60e62e3f2c4349",
+        "turn": 1,
+        "reply": "Drew ¥100,000.00 on FAC-LINE on day 0",
+        "intent": "FUND_GAP",
+        "lang": "zh",
+        "plan": [
+          {
+            "step": 1,
+            "kind": "VERIFY",
+            "description": "结论 ACCEPT（TIER_1）：无违规。ACCEPT. Forward concessions ¥0.00 against ¥5,000.00. Covenants hold: DSCR_MIN 1.89x, LEVERAGE_MAX 1.72x.",
+            "status": "DONE",
+            "op_id": null,
+            "condition": null
+          },
+          {
+            "step": 2,
+            "kind": "DRAW_FACILITY",
+            "description": "从 FAC-LINE 提款 ¥100,000.00",
+            "status": "EXECUTED",
+            "op_id": "NL-3c59816a278ecf91",
+            "condition": null
+          }
+        ],
+        "verdict": {
+          "id": "VER-daed9e0bbdca",
+          "offer_id": "NL-SQ-d59b04cdc9e8",
+          "offer_version": 1,
+          "outcome": "ACCEPT",
+          "violations": [],
+          "bound_obligations": [],
+          "concession_values": [],
+          "forward_concession_total_fen": 0,
+          "counters": [],
+          "plan": {
+            "id": "PLAN-COM-1ec49ce46f15",
+            "basis": "COMMITTED",
+            "need_fen": 36000000,
+            "actions": [
+              {
+                "kind": "DRAW",
+                "facility_id": "FAC-LINE",
+                "day": 0,
+                "amount_fen": 15000000,
+                "receivable_id": null,
+                "repay_day": 32,
+                "rate_bp": null,
+                "amount_display": "¥150,000.00"
+              },
+              {
+                "kind": "FINANCE_INVOICE",
+                "facility_id": "FAC-IF",
+                "day": 0,
+                "amount_fen": 21000000,
+                "receivable_id": "RCV-A",
+                "repay_day": null,
+                "rate_bp": null,
+                "amount_display": "¥210,000.00"
+              }
+            ],
+            "costs": [
+              {
+                "label": "Bank credit line: draw ¥150,000.00, repaid day 32",
+                "fen": 84164,
+                "facility_id": "FAC-LINE",
+                "formula": "150,000.00 × 6.4% × 32/365 = 841.64",
+                "display": "¥841.64"
+              },
+              {
+                "label": "Invoice financing (onboarded platform): advance ¥210,000.00 on RCV-A",
+                "fen": 187130,
+                "facility_id": "FAC-IF",
+                "formula": "210,000.00 × 7.8% × 30/365 (29 days billed as 1 × 30-day period) = 1,346.30; 210,000.00 × 0.25% × 1 = 525.00; total ¥1,871.30",
+                "display": "¥1,871.30"
+              }
+            ],
+            "total_cost_fen": 271294,
+            "admissible": true,
+            "violations": [],
+            "marginal_cost_annual": {
+              "num": 1301,
+              "den": 12000,
+              "text": "0.11"
+            },
+            "marginal_facility_id": "FAC-IF",
+            "rejected": [
+              {
+                "label": "Discount the whole invoice at 1.2%",
+                "reasons": [],
+                "note": "cost ¥5,040.00; admissible but dearer than the selected plan"
+              },
+              {
+                "label": "Line + early payment on part of the invoice at 1.2%",
+                "reasons": [],
+                "note": "cost ¥3,392.25; admissible but dearer than the selected plan"
+              },
+              {
+                "label": "Line + guaranteed loan",
+                "reasons": [
+                  "UNCOMMITTED_FACILITY",
+                  "LEAD_TIME_TOO_LONG"
+                ],
+                "note": "not applied; cash on day 21, gap opens on day 12"
+              },
+              {
+                "label": "Line only",
+                "reasons": [
+                  "RESERVE_BREACH"
+                ],
+                "note": "cost ¥841.64; RESERVE_BREACH on day 12"
+              }
+            ],
+            "label": "committed plan: ¥841.64 + ¥1,871.30 = ¥2,712.94",
+            "need_display": "¥360,000.00",
+            "total_cost_display": "¥2,712.94"
+          },
+          "required_tier": "TIER_1",
+          "mandate_version": 1,
+          "state_version": 1,
+          "calc_version": "tl-v2.0",
+          "summary": "ACCEPT. Forward concessions ¥0.00 against ¥5,000.00. Covenants hold: DSCR_MIN 1.89x, LEVERAGE_MAX 1.72x.",
+          "passed_checks": [
+            {
+              "code": "MIN_CASH",
+              "label": "Minimum cash with the committed plan",
+              "observed": "¥300,000.00 on day 20",
+              "limit": "≥ ¥300,000.00",
+              "formula": "closing_cash(day) >= min_cash on every day; the offer induces no breach",
+              "inputs": {
+                "plan": "committed plan: ¥841.64 + ¥1,871.30 = ¥2,712.94",
+                "offer_lowest_without_funding": "−¥60,000.00",
+                "offer_lowest_day": "20"
+              }
+            },
+            {
+              "code": "DSCR_MIN",
+              "label": "Lowest monthly DSCR (month 2)",
+              "observed": "1.89x",
+              "limit": "≥ 1.25x",
+              "formula": "EBITDA_m / DS_m = ¥90,000.00 / ¥47,712.94",
+              "inputs": {}
+            },
+            {
+              "code": "LEVERAGE_MAX",
+              "label": "Highest monthly leverage (month 1)",
+              "observed": "1.72x",
+              "limit": "≤ 2.50x",
+              "formula": "Debt_m / (12 × EBITDA_m) = ¥1,860,000.00 / (12 × ¥90,000.00)",
+              "inputs": {}
+            },
+            {
+              "code": "CLEAN_DOWN",
+              "label": "Bank credit line: clean-down",
+              "observed": "89 days at zero",
+              "limit": "≥ 30 consecutive days",
+              "formula": "max run of days with balance = 0 >= 30",
+              "inputs": {
+                "facility_id": "FAC-LINE",
+                "run_start_day": "32",
+                "run_end_day": "120",
+                "horizon_days": "120"
+              }
+            }
+          ],
+          "autonomy": {
+            "eligible": false,
+            "accepted_alone": true,
+            "whole_invoice": null,
+            "covered": [],
+            "gaps": [],
+            "notes": []
+          },
+          "annualised": [],
+          "forward_concession_total_display": "¥0.00"
+        },
+        "operations": [
+          {
+            "op_id": "NL-3c59816a278ecf91",
+            "kind": "DRAW_FACILITY",
+            "status": "EXECUTED",
+            "tier": "TIER_1",
+            "violations": [],
+            "seq": 1,
+            "entry_hash": "d1ef60f6af5963d07337e8c7a4a82ccb7e86ed92b5bd5bc7efb5fa6de245c2b2",
+            "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+            "effective_day": 0,
+            "approval_id": null,
+            "message": "Drew ¥100,000.00 on FAC-LINE on day 0"
+          }
+        ],
+        "clarification": null,
+        "awaiting_confirmation": false,
+        "amended": false,
+        "replayed": false,
+        "negotiation": null,
+        "security_events": [],
+        "parse_source": "rules",
+        "trace_id": "nls-ae60e62e3f2c4349:1"
+      }
+    },
+    {
+      "credential": "agent",
+      "request": {
+        "actor": "OWNER",
+        "text": "请问从授信额度提款10万元安全吗？"
+      },
+      "http": 200,
+      "before": {
+        "cash_fen": 40000000,
+        "state_version": 1,
+        "facilities": {
+          "FAC-LINE": 0,
+          "FAC-IF": 0,
+          "FAC-EARLYPAY": 0,
+          "FAC-GGL": 0,
+          "FAC-ETL": 0,
+          "FAC-LEASE": 0,
+          "FAC-BILL": 0,
+          "FAC-EQUITY": 0
+        },
+        "commitments": [],
+        "operations": 0
+      },
+      "after": {
+        "cash_fen": 50000000,
+        "state_version": 2,
+        "facilities": {
+          "FAC-LINE": 10000000,
+          "FAC-IF": 0,
+          "FAC-EARLYPAY": 0,
+          "FAC-GGL": 0,
+          "FAC-ETL": 0,
+          "FAC-LEASE": 0,
+          "FAC-BILL": 0,
+          "FAC-EQUITY": 0
+        },
+        "commitments": [],
+        "operations": 1
+      },
+      "response": {
+        "session_id": "nls-f714eb6ea9aa4e8c",
+        "turn": 1,
+        "reply": "Drew ¥100,000.00 on FAC-LINE on day 0",
+        "intent": "FUND_GAP",
+        "lang": "zh",
+        "plan": [
+          {
+            "step": 1,
+            "kind": "VERIFY",
+            "description": "结论 ACCEPT（TIER_1）：无违规。ACCEPT. Forward concessions ¥0.00 against ¥5,000.00. Covenants hold: DSCR_MIN 1.89x, LEVERAGE_MAX 1.72x.",
+            "status": "DONE",
+            "op_id": null,
+            "condition": null
+          },
+          {
+            "step": 2,
+            "kind": "DRAW_FACILITY",
+            "description": "从 FAC-LINE 提款 ¥100,000.00",
+            "status": "EXECUTED",
+            "op_id": "NL-eb87005197b257b3",
+            "condition": null
+          }
+        ],
+        "verdict": {
+          "id": "VER-daed9e0bbdca",
+          "offer_id": "NL-SQ-d59b04cdc9e8",
+          "offer_version": 1,
+          "outcome": "ACCEPT",
+          "violations": [],
+          "bound_obligations": [],
+          "concession_values": [],
+          "forward_concession_total_fen": 0,
+          "counters": [],
+          "plan": {
+            "id": "PLAN-COM-1ec49ce46f15",
+            "basis": "COMMITTED",
+            "need_fen": 36000000,
+            "actions": [
+              {
+                "kind": "DRAW",
+                "facility_id": "FAC-LINE",
+                "day": 0,
+                "amount_fen": 15000000,
+                "receivable_id": null,
+                "repay_day": 32,
+                "rate_bp": null,
+                "amount_display": "¥150,000.00"
+              },
+              {
+                "kind": "FINANCE_INVOICE",
+                "facility_id": "FAC-IF",
+                "day": 0,
+                "amount_fen": 21000000,
+                "receivable_id": "RCV-A",
+                "repay_day": null,
+                "rate_bp": null,
+                "amount_display": "¥210,000.00"
+              }
+            ],
+            "costs": [
+              {
+                "label": "Bank credit line: draw ¥150,000.00, repaid day 32",
+                "fen": 84164,
+                "facility_id": "FAC-LINE",
+                "formula": "150,000.00 × 6.4% × 32/365 = 841.64",
+                "display": "¥841.64"
+              },
+              {
+                "label": "Invoice financing (onboarded platform): advance ¥210,000.00 on RCV-A",
+                "fen": 187130,
+                "facility_id": "FAC-IF",
+                "formula": "210,000.00 × 7.8% × 30/365 (29 days billed as 1 × 30-day period) = 1,346.30; 210,000.00 × 0.25% × 1 = 525.00; total ¥1,871.30",
+                "display": "¥1,871.30"
+              }
+            ],
+            "total_cost_fen": 271294,
+            "admissible": true,
+            "violations": [],
+            "marginal_cost_annual": {
+              "num": 1301,
+              "den": 12000,
+              "text": "0.11"
+            },
+            "marginal_facility_id": "FAC-IF",
+            "rejected": [
+              {
+                "label": "Discount the whole invoice at 1.2%",
+                "reasons": [],
+                "note": "cost ¥5,040.00; admissible but dearer than the selected plan"
+              },
+              {
+                "label": "Line + early payment on part of the invoice at 1.2%",
+                "reasons": [],
+                "note": "cost ¥3,392.25; admissible but dearer than the selected plan"
+              },
+              {
+                "label": "Line + guaranteed loan",
+                "reasons": [
+                  "UNCOMMITTED_FACILITY",
+                  "LEAD_TIME_TOO_LONG"
+                ],
+                "note": "not applied; cash on day 21, gap opens on day 12"
+              },
+              {
+                "label": "Line only",
+                "reasons": [
+                  "RESERVE_BREACH"
+                ],
+                "note": "cost ¥841.64; RESERVE_BREACH on day 12"
+              }
+            ],
+            "label": "committed plan: ¥841.64 + ¥1,871.30 = ¥2,712.94",
+            "need_display": "¥360,000.00",
+            "total_cost_display": "¥2,712.94"
+          },
+          "required_tier": "TIER_1",
+          "mandate_version": 1,
+          "state_version": 1,
+          "calc_version": "tl-v2.0",
+          "summary": "ACCEPT. Forward concessions ¥0.00 against ¥5,000.00. Covenants hold: DSCR_MIN 1.89x, LEVERAGE_MAX 1.72x.",
+          "passed_checks": [
+            {
+              "code": "MIN_CASH",
+              "label": "Minimum cash with the committed plan",
+              "observed": "¥300,000.00 on day 20",
+              "limit": "≥ ¥300,000.00",
+              "formula": "closing_cash(day) >= min_cash on every day; the offer induces no breach",
+              "inputs": {
+                "plan": "committed plan: ¥841.64 + ¥1,871.30 = ¥2,712.94",
+                "offer_lowest_without_funding": "−¥60,000.00",
+                "offer_lowest_day": "20"
+              }
+            },
+            {
+              "code": "DSCR_MIN",
+              "label": "Lowest monthly DSCR (month 2)",
+              "observed": "1.89x",
+              "limit": "≥ 1.25x",
+              "formula": "EBITDA_m / DS_m = ¥90,000.00 / ¥47,712.94",
+              "inputs": {}
+            },
+            {
+              "code": "LEVERAGE_MAX",
+              "label": "Highest monthly leverage (month 1)",
+              "observed": "1.72x",
+              "limit": "≤ 2.50x",
+              "formula": "Debt_m / (12 × EBITDA_m) = ¥1,860,000.00 / (12 × ¥90,000.00)",
+              "inputs": {}
+            },
+            {
+              "code": "CLEAN_DOWN",
+              "label": "Bank credit line: clean-down",
+              "observed": "89 days at zero",
+              "limit": "≥ 30 consecutive days",
+              "formula": "max run of days with balance = 0 >= 30",
+              "inputs": {
+                "facility_id": "FAC-LINE",
+                "run_start_day": "32",
+                "run_end_day": "120",
+                "horizon_days": "120"
+              }
+            }
+          ],
+          "autonomy": {
+            "eligible": false,
+            "accepted_alone": true,
+            "whole_invoice": null,
+            "covered": [],
+            "gaps": [],
+            "notes": []
+          },
+          "annualised": [],
+          "forward_concession_total_display": "¥0.00"
+        },
+        "operations": [
+          {
+            "op_id": "NL-eb87005197b257b3",
+            "kind": "DRAW_FACILITY",
+            "status": "EXECUTED",
+            "tier": "TIER_1",
+            "violations": [],
+            "seq": 1,
+            "entry_hash": "0496438c7362d0bd4b47ab35c49181a86f3097263d093c1b55c3eadb55619bcb",
+            "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+            "effective_day": 0,
+            "approval_id": null,
+            "message": "Drew ¥100,000.00 on FAC-LINE on day 0"
+          }
+        ],
+        "clarification": null,
+        "awaiting_confirmation": false,
+        "amended": false,
+        "replayed": false,
+        "negotiation": null,
+        "security_events": [],
+        "parse_source": "rules",
+        "trace_id": "nls-f714eb6ea9aa4e8c:1"
+      }
+    }
+  ],
+  "approval_negation": [
+    {
+      "request": "Do not approve APR-000001",
+      "queued": {
+        "result": {
+          "op_id": "AUDIT-RECEIPT",
+          "kind": "RECEIVE_PAYMENT",
+          "status": "PENDING_APPROVAL",
+          "tier": "TIER_2",
+          "violations": [],
+          "seq": 1,
+          "entry_hash": "2c5331d168ac822bfe725fbbe7103ef25098f8c3305b40c803976844799c4e5d",
+          "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+          "effective_day": 0,
+          "approval_id": "APR-000001",
+          "message": "Queued for owner approval (APR-000001): receipt of ¥100.00 on RCV-A reported by AGENT; only the bank feed or the owner records a receipt without confirmation"
+        }
+      },
+      "before": {
+        "cash_fen": 40000000,
+        "state_version": 1,
+        "facilities": {
+          "FAC-LINE": 0,
+          "FAC-IF": 0,
+          "FAC-EARLYPAY": 0,
+          "FAC-GGL": 0,
+          "FAC-ETL": 0,
+          "FAC-LEASE": 0,
+          "FAC-BILL": 0,
+          "FAC-EQUITY": 0
+        },
+        "commitments": [],
+        "operations": 1
+      },
+      "after": {
+        "cash_fen": 40010000,
+        "state_version": 2,
+        "facilities": {
+          "FAC-LINE": 0,
+          "FAC-IF": 0,
+          "FAC-EARLYPAY": 0,
+          "FAC-GGL": 0,
+          "FAC-ETL": 0,
+          "FAC-LEASE": 0,
+          "FAC-BILL": 0,
+          "FAC-EQUITY": 0
+        },
+        "commitments": [],
+        "operations": 2
+      },
+      "response": {
+        "session_id": "nls-1cd545aaee884564",
+        "turn": 1,
+        "reply": "Received ¥100.00 on RCV-A (¥419,900.00 still due on day 32)",
+        "intent": "APPROVE",
+        "lang": "en",
+        "plan": [
+          {
+            "step": 1,
+            "kind": "DECIDE_APPROVAL",
+            "description": "Approve APR-000001 (RECEIVE_PAYMENT)",
+            "status": "EXECUTED",
+            "op_id": "AUDIT-RECEIPT",
+            "condition": null
+          }
+        ],
+        "verdict": null,
+        "operations": [
+          {
+            "op_id": "AUDIT-RECEIPT",
+            "kind": "RECEIVE_PAYMENT",
+            "status": "EXECUTED",
+            "tier": "TIER_2",
+            "violations": [],
+            "seq": 2,
+            "entry_hash": "465c5b43b310bbb9f0046779692c144f016471fc9694c58bc9ff27fc239d08d7",
+            "prev_hash": "2c5331d168ac822bfe725fbbe7103ef25098f8c3305b40c803976844799c4e5d",
+            "effective_day": 0,
+            "approval_id": "APR-000001",
+            "message": "Received ¥100.00 on RCV-A (¥419,900.00 still due on day 32)"
+          }
+        ],
+        "clarification": null,
+        "awaiting_confirmation": false,
+        "amended": false,
+        "replayed": false,
+        "negotiation": null,
+        "security_events": [],
+        "parse_source": "rules",
+        "trace_id": "nls-1cd545aaee884564:1"
+      }
+    },
+    {
+      "request": "I do not approve APR-000001",
+      "queued": {
+        "result": {
+          "op_id": "AUDIT-RECEIPT",
+          "kind": "RECEIVE_PAYMENT",
+          "status": "PENDING_APPROVAL",
+          "tier": "TIER_2",
+          "violations": [],
+          "seq": 1,
+          "entry_hash": "2c5331d168ac822bfe725fbbe7103ef25098f8c3305b40c803976844799c4e5d",
+          "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+          "effective_day": 0,
+          "approval_id": "APR-000001",
+          "message": "Queued for owner approval (APR-000001): receipt of ¥100.00 on RCV-A reported by AGENT; only the bank feed or the owner records a receipt without confirmation"
+        }
+      },
+      "before": {
+        "cash_fen": 40000000,
+        "state_version": 1,
+        "facilities": {
+          "FAC-LINE": 0,
+          "FAC-IF": 0,
+          "FAC-EARLYPAY": 0,
+          "FAC-GGL": 0,
+          "FAC-ETL": 0,
+          "FAC-LEASE": 0,
+          "FAC-BILL": 0,
+          "FAC-EQUITY": 0
+        },
+        "commitments": [],
+        "operations": 1
+      },
+      "after": {
+        "cash_fen": 40010000,
+        "state_version": 2,
+        "facilities": {
+          "FAC-LINE": 0,
+          "FAC-IF": 0,
+          "FAC-EARLYPAY": 0,
+          "FAC-GGL": 0,
+          "FAC-ETL": 0,
+          "FAC-LEASE": 0,
+          "FAC-BILL": 0,
+          "FAC-EQUITY": 0
+        },
+        "commitments": [],
+        "operations": 2
+      },
+      "response": {
+        "session_id": "nls-db74b665bc4a4326",
+        "turn": 1,
+        "reply": "Received ¥100.00 on RCV-A (¥419,900.00 still due on day 32)",
+        "intent": "APPROVE",
+        "lang": "en",
+        "plan": [
+          {
+            "step": 1,
+            "kind": "DECIDE_APPROVAL",
+            "description": "Approve APR-000001 (RECEIVE_PAYMENT)",
+            "status": "EXECUTED",
+            "op_id": "AUDIT-RECEIPT",
+            "condition": null
+          }
+        ],
+        "verdict": null,
+        "operations": [
+          {
+            "op_id": "AUDIT-RECEIPT",
+            "kind": "RECEIVE_PAYMENT",
+            "status": "EXECUTED",
+            "tier": "TIER_2",
+            "violations": [],
+            "seq": 2,
+            "entry_hash": "465c5b43b310bbb9f0046779692c144f016471fc9694c58bc9ff27fc239d08d7",
+            "prev_hash": "2c5331d168ac822bfe725fbbe7103ef25098f8c3305b40c803976844799c4e5d",
+            "effective_day": 0,
+            "approval_id": "APR-000001",
+            "message": "Received ¥100.00 on RCV-A (¥419,900.00 still due on day 32)"
+          }
+        ],
+        "clarification": null,
+        "awaiting_confirmation": false,
+        "amended": false,
+        "replayed": false,
+        "negotiation": null,
+        "security_events": [],
+        "parse_source": "rules",
+        "trace_id": "nls-db74b665bc4a4326:1"
+      }
+    },
+    {
+      "request": "Should I approve APR-000001?",
+      "queued": {
+        "result": {
+          "op_id": "AUDIT-RECEIPT",
+          "kind": "RECEIVE_PAYMENT",
+          "status": "PENDING_APPROVAL",
+          "tier": "TIER_2",
+          "violations": [],
+          "seq": 1,
+          "entry_hash": "2c5331d168ac822bfe725fbbe7103ef25098f8c3305b40c803976844799c4e5d",
+          "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+          "effective_day": 0,
+          "approval_id": "APR-000001",
+          "message": "Queued for owner approval (APR-000001): receipt of ¥100.00 on RCV-A reported by AGENT; only the bank feed or the owner records a receipt without confirmation"
+        }
+      },
+      "before": {
+        "cash_fen": 40000000,
+        "state_version": 1,
+        "facilities": {
+          "FAC-LINE": 0,
+          "FAC-IF": 0,
+          "FAC-EARLYPAY": 0,
+          "FAC-GGL": 0,
+          "FAC-ETL": 0,
+          "FAC-LEASE": 0,
+          "FAC-BILL": 0,
+          "FAC-EQUITY": 0
+        },
+        "commitments": [],
+        "operations": 1
+      },
+      "after": {
+        "cash_fen": 40010000,
+        "state_version": 2,
+        "facilities": {
+          "FAC-LINE": 0,
+          "FAC-IF": 0,
+          "FAC-EARLYPAY": 0,
+          "FAC-GGL": 0,
+          "FAC-ETL": 0,
+          "FAC-LEASE": 0,
+          "FAC-BILL": 0,
+          "FAC-EQUITY": 0
+        },
+        "commitments": [],
+        "operations": 2
+      },
+      "response": {
+        "session_id": "nls-5778c5f35406415a",
+        "turn": 1,
+        "reply": "Received ¥100.00 on RCV-A (¥419,900.00 still due on day 32)",
+        "intent": "APPROVE",
+        "lang": "en",
+        "plan": [
+          {
+            "step": 1,
+            "kind": "DECIDE_APPROVAL",
+            "description": "Approve APR-000001 (RECEIVE_PAYMENT)",
+            "status": "EXECUTED",
+            "op_id": "AUDIT-RECEIPT",
+            "condition": null
+          }
+        ],
+        "verdict": null,
+        "operations": [
+          {
+            "op_id": "AUDIT-RECEIPT",
+            "kind": "RECEIVE_PAYMENT",
+            "status": "EXECUTED",
+            "tier": "TIER_2",
+            "violations": [],
+            "seq": 2,
+            "entry_hash": "465c5b43b310bbb9f0046779692c144f016471fc9694c58bc9ff27fc239d08d7",
+            "prev_hash": "2c5331d168ac822bfe725fbbe7103ef25098f8c3305b40c803976844799c4e5d",
+            "effective_day": 0,
+            "approval_id": "APR-000001",
+            "message": "Received ¥100.00 on RCV-A (¥419,900.00 still due on day 32)"
+          }
+        ],
+        "clarification": null,
+        "awaiting_confirmation": false,
+        "amended": false,
+        "replayed": false,
+        "negotiation": null,
+        "security_events": [],
+        "parse_source": "rules",
+        "trace_id": "nls-5778c5f35406415a:1"
+      }
+    },
+    {
+      "request": "APR-000001",
+      "queued": {
+        "result": {
+          "op_id": "AUDIT-RECEIPT",
+          "kind": "RECEIVE_PAYMENT",
+          "status": "PENDING_APPROVAL",
+          "tier": "TIER_2",
+          "violations": [],
+          "seq": 1,
+          "entry_hash": "2c5331d168ac822bfe725fbbe7103ef25098f8c3305b40c803976844799c4e5d",
+          "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+          "effective_day": 0,
+          "approval_id": "APR-000001",
+          "message": "Queued for owner approval (APR-000001): receipt of ¥100.00 on RCV-A reported by AGENT; only the bank feed or the owner records a receipt without confirmation"
+        }
+      },
+      "before": {
+        "cash_fen": 40000000,
+        "state_version": 1,
+        "facilities": {
+          "FAC-LINE": 0,
+          "FAC-IF": 0,
+          "FAC-EARLYPAY": 0,
+          "FAC-GGL": 0,
+          "FAC-ETL": 0,
+          "FAC-LEASE": 0,
+          "FAC-BILL": 0,
+          "FAC-EQUITY": 0
+        },
+        "commitments": [],
+        "operations": 1
+      },
+      "after": {
+        "cash_fen": 40010000,
+        "state_version": 2,
+        "facilities": {
+          "FAC-LINE": 0,
+          "FAC-IF": 0,
+          "FAC-EARLYPAY": 0,
+          "FAC-GGL": 0,
+          "FAC-ETL": 0,
+          "FAC-LEASE": 0,
+          "FAC-BILL": 0,
+          "FAC-EQUITY": 0
+        },
+        "commitments": [],
+        "operations": 2
+      },
+      "response": {
+        "session_id": "nls-f1df8611fe234e61",
+        "turn": 1,
+        "reply": "Received ¥100.00 on RCV-A (¥419,900.00 still due on day 32)",
+        "intent": "APPROVE",
+        "lang": "en",
+        "plan": [
+          {
+            "step": 1,
+            "kind": "DECIDE_APPROVAL",
+            "description": "Approve APR-000001 (RECEIVE_PAYMENT)",
+            "status": "EXECUTED",
+            "op_id": "AUDIT-RECEIPT",
+            "condition": null
+          }
+        ],
+        "verdict": null,
+        "operations": [
+          {
+            "op_id": "AUDIT-RECEIPT",
+            "kind": "RECEIVE_PAYMENT",
+            "status": "EXECUTED",
+            "tier": "TIER_2",
+            "violations": [],
+            "seq": 2,
+            "entry_hash": "465c5b43b310bbb9f0046779692c144f016471fc9694c58bc9ff27fc239d08d7",
+            "prev_hash": "2c5331d168ac822bfe725fbbe7103ef25098f8c3305b40c803976844799c4e5d",
+            "effective_day": 0,
+            "approval_id": "APR-000001",
+            "message": "Received ¥100.00 on RCV-A (¥419,900.00 still due on day 32)"
+          }
+        ],
+        "clarification": null,
+        "awaiting_confirmation": false,
+        "amended": false,
+        "replayed": false,
+        "negotiation": null,
+        "security_events": [],
+        "parse_source": "rules",
+        "trace_id": "nls-f1df8611fe234e61:1"
+      }
+    },
+    {
+      "request": "Reject APR-000001, do not approve",
+      "queued": {
+        "result": {
+          "op_id": "AUDIT-RECEIPT",
+          "kind": "RECEIVE_PAYMENT",
+          "status": "PENDING_APPROVAL",
+          "tier": "TIER_2",
+          "violations": [],
+          "seq": 1,
+          "entry_hash": "2c5331d168ac822bfe725fbbe7103ef25098f8c3305b40c803976844799c4e5d",
+          "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+          "effective_day": 0,
+          "approval_id": "APR-000001",
+          "message": "Queued for owner approval (APR-000001): receipt of ¥100.00 on RCV-A reported by AGENT; only the bank feed or the owner records a receipt without confirmation"
+        }
+      },
+      "before": {
+        "cash_fen": 40000000,
+        "state_version": 1,
+        "facilities": {
+          "FAC-LINE": 0,
+          "FAC-IF": 0,
+          "FAC-EARLYPAY": 0,
+          "FAC-GGL": 0,
+          "FAC-ETL": 0,
+          "FAC-LEASE": 0,
+          "FAC-BILL": 0,
+          "FAC-EQUITY": 0
+        },
+        "commitments": [],
+        "operations": 1
+      },
+      "after": {
+        "cash_fen": 40010000,
+        "state_version": 2,
+        "facilities": {
+          "FAC-LINE": 0,
+          "FAC-IF": 0,
+          "FAC-EARLYPAY": 0,
+          "FAC-GGL": 0,
+          "FAC-ETL": 0,
+          "FAC-LEASE": 0,
+          "FAC-BILL": 0,
+          "FAC-EQUITY": 0
+        },
+        "commitments": [],
+        "operations": 2
+      },
+      "response": {
+        "session_id": "nls-8f1ab6eecf204258",
+        "turn": 1,
+        "reply": "Received ¥100.00 on RCV-A (¥419,900.00 still due on day 32)",
+        "intent": "APPROVE",
+        "lang": "en",
+        "plan": [
+          {
+            "step": 1,
+            "kind": "DECIDE_APPROVAL",
+            "description": "Approve APR-000001 (RECEIVE_PAYMENT)",
+            "status": "EXECUTED",
+            "op_id": "AUDIT-RECEIPT",
+            "condition": null
+          }
+        ],
+        "verdict": null,
+        "operations": [
+          {
+            "op_id": "AUDIT-RECEIPT",
+            "kind": "RECEIVE_PAYMENT",
+            "status": "EXECUTED",
+            "tier": "TIER_2",
+            "violations": [],
+            "seq": 2,
+            "entry_hash": "465c5b43b310bbb9f0046779692c144f016471fc9694c58bc9ff27fc239d08d7",
+            "prev_hash": "2c5331d168ac822bfe725fbbe7103ef25098f8c3305b40c803976844799c4e5d",
+            "effective_day": 0,
+            "approval_id": "APR-000001",
+            "message": "Received ¥100.00 on RCV-A (¥419,900.00 still due on day 32)"
+          }
+        ],
+        "clarification": null,
+        "awaiting_confirmation": false,
+        "amended": false,
+        "replayed": false,
+        "negotiation": null,
+        "security_events": [],
+        "parse_source": "rules",
+        "trace_id": "nls-8f1ab6eecf204258:1"
+      }
+    }
+  ],
+  "unauthenticated_buyer": {
+    "request": {
+      "actor": "COUNTERPARTY",
+      "counterparty_id": "BUYER-1",
+      "text": "We will pay the ¥420,000 invoice early at a 0.5% discount."
+    },
+    "headers": {},
+    "before": {
+      "cash_fen": 40000000,
+      "state_version": 1,
+      "facilities": {
+        "FAC-LINE": 0,
+        "FAC-IF": 0,
+        "FAC-EARLYPAY": 0,
+        "FAC-GGL": 0,
+        "FAC-ETL": 0,
+        "FAC-LEASE": 0,
+        "FAC-BILL": 0,
+        "FAC-EQUITY": 0
+      },
+      "commitments": [],
+      "operations": 0
+    },
+    "after": {
+      "cash_fen": 40000000,
+      "state_version": 2,
+      "facilities": {
+        "FAC-LINE": 0,
+        "FAC-IF": 0,
+        "FAC-EARLYPAY": 0,
+        "FAC-GGL": 0,
+        "FAC-ETL": 0,
+        "FAC-LEASE": 0,
+        "FAC-BILL": 0,
+        "FAC-EQUITY": 0
+      },
+      "commitments": [
+        [
+          "CMT-ce705dcea9912c9f",
+          "ACTIVE"
+        ]
+      ],
+      "operations": 1
+    },
+    "response": {
+      "session_id": "nls-6fa134bf9d3141bb",
+      "turn": 1,
+      "reply": "Agreed: payment of invoice RCV-A (¥420,000.00) on day 2 at a 0.50% discount. Nothing else in your message is agreed.",
+      "intent": "COUNTERPARTY_MESSAGE",
+      "lang": "en",
+      "trace_id": "nls-6fa134bf9d3141bb:1",
+      "plan": [],
+      "verdict": null,
+      "operations": [],
+      "clarification": null,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "actor",
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false
+    },
+    "ledger": [
+      {
+        "approval_id": null,
+        "effective_day": 0,
+        "entry_hash": null,
+        "kind": "ACCEPT_OFFER",
+        "message": "Commitment CMT-ce705dcea9912c9f is ACTIVE; forward concession ¥0.00 booked",
+        "op_id": "NL-311916a2e541340f",
+        "prev_hash": null,
+        "seq": null,
+        "status": "EXECUTED",
+        "tier": "TIER_1",
+        "violations": []
+      }
+    ]
+  },
+  "settlement_time": [
+    {
+      "request": {
+        "actor": "COUNTERPARTY",
+        "counterparty_id": "BUYER-1",
+        "text": "We will pay the ¥420,000 invoice today at a 0.5% discount."
+      },
+      "response": {
+        "session_id": "nls-28ce910f2ab94f7f",
+        "turn": 1,
+        "reply": "Agreed: payment of invoice RCV-A (¥420,000.00) on day 2 at a 0.50% discount. Nothing else in your message is agreed.",
+        "intent": "COUNTERPARTY_MESSAGE",
+        "lang": "en",
+        "trace_id": "nls-28ce910f2ab94f7f:1",
+        "plan": [],
+        "verdict": null,
+        "operations": [],
+        "clarification": null,
+        "negotiation": null,
+        "security_events": [],
+        "parse_source": "actor",
+        "awaiting_confirmation": false,
+        "amended": false,
+        "replayed": false
+      },
+      "after": {
+        "cash_fen": 40000000,
+        "state_version": 2,
+        "facilities": {
+          "FAC-LINE": 0,
+          "FAC-IF": 0,
+          "FAC-EARLYPAY": 0,
+          "FAC-GGL": 0,
+          "FAC-ETL": 0,
+          "FAC-LEASE": 0,
+          "FAC-BILL": 0,
+          "FAC-EQUITY": 0
+        },
+        "commitments": [
+          [
+            "CMT-ab1f8a5cb8ae26ff",
+            "ACTIVE"
+          ]
+        ],
+        "operations": 1
+      }
+    },
+    {
+      "request": {
+        "actor": "COUNTERPARTY",
+        "counterparty_id": "BUYER-1",
+        "text": "We will pay the ¥420,000 invoice tomorrow at a 0.5% discount."
+      },
+      "response": {
+        "session_id": "nls-5af333abfdfa47a9",
+        "turn": 1,
+        "reply": "Agreed: payment of invoice RCV-A (¥420,000.00) on day 2 at a 0.50% discount. Nothing else in your message is agreed.",
+        "intent": "COUNTERPARTY_MESSAGE",
+        "lang": "en",
+        "trace_id": "nls-5af333abfdfa47a9:1",
+        "plan": [],
+        "verdict": null,
+        "operations": [],
+        "clarification": null,
+        "negotiation": null,
+        "security_events": [],
+        "parse_source": "actor",
+        "awaiting_confirmation": false,
+        "amended": false,
+        "replayed": false
+      },
+      "after": {
+        "cash_fen": 40000000,
+        "state_version": 2,
+        "facilities": {
+          "FAC-LINE": 0,
+          "FAC-IF": 0,
+          "FAC-EARLYPAY": 0,
+          "FAC-GGL": 0,
+          "FAC-ETL": 0,
+          "FAC-LEASE": 0,
+          "FAC-BILL": 0,
+          "FAC-EQUITY": 0
+        },
+        "commitments": [
+          [
+            "CMT-2256c351ae29374c",
+            "ACTIVE"
+          ]
+        ],
+        "operations": 1
+      }
+    },
+    {
+      "request": {
+        "actor": "COUNTERPARTY",
+        "counterparty_id": "BUYER-1",
+        "text": "We will pay the ¥420,000 invoice early at a 0.5% discount."
+      },
+      "response": {
+        "session_id": "nls-571f320bd6df470a",
+        "turn": 1,
+        "reply": "Agreed: payment of invoice RCV-A (¥420,000.00) on day 2 at a 0.50% discount. Nothing else in your message is agreed.",
+        "intent": "COUNTERPARTY_MESSAGE",
+        "lang": "en",
+        "trace_id": "nls-571f320bd6df470a:1",
+        "plan": [],
+        "verdict": null,
+        "operations": [],
+        "clarification": null,
+        "negotiation": null,
+        "security_events": [],
+        "parse_source": "actor",
+        "awaiting_confirmation": false,
+        "amended": false,
+        "replayed": false
+      },
+      "after": {
+        "cash_fen": 40000000,
+        "state_version": 2,
+        "facilities": {
+          "FAC-LINE": 0,
+          "FAC-IF": 0,
+          "FAC-EARLYPAY": 0,
+          "FAC-GGL": 0,
+          "FAC-ETL": 0,
+          "FAC-LEASE": 0,
+          "FAC-BILL": 0,
+          "FAC-EQUITY": 0
+        },
+        "commitments": [
+          [
+            "CMT-45ee866474f69f7c",
+            "ACTIVE"
+          ]
+        ],
+        "operations": 1
+      }
+    }
+  ],
+  "changed_plan": {
+    "proposal": {
+      "session_id": "nls-d52cf059d4914a0a",
+      "turn": 1,
+      "reply": "Router plan (committed facilities only): committed plan: ¥841.64 + ¥1,871.30 = ¥2,712.94, need ¥360,000.00. Reply 'go ahead' to execute.",
+      "intent": "FUND_GAP",
+      "lang": "en",
+      "plan": [
+        {
+          "step": 1,
+          "kind": "VERIFY",
+          "description": "Gap days 12–31, short ¥360,000.00 at the low on day 20. Verdict ACCEPT (TIER_1): no violations. ACCEPT. Forward concessions ¥0.00 against ¥5,000.00. Covenants hold: DSCR_MIN 1.89x, LEVERAGE_MAX 1.72x.",
+          "status": "DONE",
+          "op_id": null,
+          "condition": null
+        },
+        {
+          "step": 2,
+          "kind": "DRAW_FACILITY",
+          "description": "Draw ¥150,000.00 on FAC-LINE, repay day 32",
+          "status": "PROPOSED",
+          "op_id": null,
+          "condition": null
+        },
+        {
+          "step": 3,
+          "kind": "SUBMIT_INVOICE_FOR_FINANCING",
+          "description": "Submit RCV-A to FAC-IF for a ¥210,000.00 advance",
+          "status": "PROPOSED",
+          "op_id": null,
+          "condition": null
+        }
+      ],
+      "verdict": {
+        "id": "VER-3a805c232882",
+        "offer_id": "NL-SQ1-78fedc7f05e6",
+        "offer_version": 1,
+        "outcome": "ACCEPT",
+        "violations": [],
+        "bound_obligations": [],
+        "concession_values": [],
+        "forward_concession_total_fen": 0,
+        "counters": [],
+        "plan": {
+          "id": "PLAN-COM-1ec49ce46f15",
+          "basis": "COMMITTED",
+          "need_fen": 36000000,
+          "actions": [
+            {
+              "kind": "DRAW",
+              "facility_id": "FAC-LINE",
+              "day": 0,
+              "amount_fen": 15000000,
+              "receivable_id": null,
+              "repay_day": 32,
+              "rate_bp": null,
+              "amount_display": "¥150,000.00"
+            },
+            {
+              "kind": "FINANCE_INVOICE",
+              "facility_id": "FAC-IF",
+              "day": 0,
+              "amount_fen": 21000000,
+              "receivable_id": "RCV-A",
+              "repay_day": null,
+              "rate_bp": null,
+              "amount_display": "¥210,000.00"
+            }
+          ],
+          "costs": [
+            {
+              "label": "Bank credit line: draw ¥150,000.00, repaid day 32",
+              "fen": 84164,
+              "facility_id": "FAC-LINE",
+              "formula": "150,000.00 × 6.4% × 32/365 = 841.64",
+              "display": "¥841.64"
+            },
+            {
+              "label": "Invoice financing (onboarded platform): advance ¥210,000.00 on RCV-A",
+              "fen": 187130,
+              "facility_id": "FAC-IF",
+              "formula": "210,000.00 × 7.8% × 30/365 (29 days billed as 1 × 30-day period) = 1,346.30; 210,000.00 × 0.25% × 1 = 525.00; total ¥1,871.30",
+              "display": "¥1,871.30"
+            }
+          ],
+          "total_cost_fen": 271294,
+          "admissible": true,
+          "violations": [],
+          "marginal_cost_annual": {
+            "num": 1301,
+            "den": 12000,
+            "text": "0.11"
+          },
+          "marginal_facility_id": "FAC-IF",
+          "rejected": [
+            {
+              "label": "Discount the whole invoice at 1.2%",
+              "reasons": [],
+              "note": "cost ¥5,040.00; admissible but dearer than the selected plan"
+            },
+            {
+              "label": "Line + early payment on part of the invoice at 1.2%",
+              "reasons": [],
+              "note": "cost ¥3,392.25; admissible but dearer than the selected plan"
+            },
+            {
+              "label": "Line + guaranteed loan",
+              "reasons": [
+                "UNCOMMITTED_FACILITY",
+                "LEAD_TIME_TOO_LONG"
+              ],
+              "note": "not applied; cash on day 21, gap opens on day 12"
+            },
+            {
+              "label": "Line only",
+              "reasons": [
+                "RESERVE_BREACH"
+              ],
+              "note": "cost ¥841.64; RESERVE_BREACH on day 12"
+            }
+          ],
+          "label": "committed plan: ¥841.64 + ¥1,871.30 = ¥2,712.94",
+          "need_display": "¥360,000.00",
+          "total_cost_display": "¥2,712.94"
+        },
+        "required_tier": "TIER_1",
+        "mandate_version": 1,
+        "state_version": 1,
+        "calc_version": "tl-v2.0",
+        "summary": "ACCEPT. Forward concessions ¥0.00 against ¥5,000.00. Covenants hold: DSCR_MIN 1.89x, LEVERAGE_MAX 1.72x.",
+        "passed_checks": [
+          {
+            "code": "MIN_CASH",
+            "label": "Minimum cash with the committed plan",
+            "observed": "¥300,000.00 on day 20",
+            "limit": "≥ ¥300,000.00",
+            "formula": "closing_cash(day) >= min_cash on every day; the offer induces no breach",
+            "inputs": {
+              "plan": "committed plan: ¥841.64 + ¥1,871.30 = ¥2,712.94",
+              "offer_lowest_without_funding": "−¥60,000.00",
+              "offer_lowest_day": "20"
+            }
+          },
+          {
+            "code": "DSCR_MIN",
+            "label": "Lowest monthly DSCR (month 2)",
+            "observed": "1.89x",
+            "limit": "≥ 1.25x",
+            "formula": "EBITDA_m / DS_m = ¥90,000.00 / ¥47,712.94",
+            "inputs": {}
+          },
+          {
+            "code": "LEVERAGE_MAX",
+            "label": "Highest monthly leverage (month 1)",
+            "observed": "1.72x",
+            "limit": "≤ 2.50x",
+            "formula": "Debt_m / (12 × EBITDA_m) = ¥1,860,000.00 / (12 × ¥90,000.00)",
+            "inputs": {}
+          },
+          {
+            "code": "CLEAN_DOWN",
+            "label": "Bank credit line: clean-down",
+            "observed": "89 days at zero",
+            "limit": "≥ 30 consecutive days",
+            "formula": "max run of days with balance = 0 >= 30",
+            "inputs": {
+              "facility_id": "FAC-LINE",
+              "run_start_day": "32",
+              "run_end_day": "120",
+              "horizon_days": "120"
+            }
+          }
+        ],
+        "autonomy": {
+          "eligible": false,
+          "accepted_alone": true,
+          "whole_invoice": null,
+          "covered": [],
+          "gaps": [],
+          "notes": []
+        },
+        "annualised": [],
+        "forward_concession_total_display": "¥0.00"
+      },
+      "operations": [],
+      "clarification": null,
+      "awaiting_confirmation": true,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "nls-d52cf059d4914a0a:1"
+    },
+    "state_change": "cash reduced by 10,000,000 fen; state_version +1",
+    "before_confirmation": {
+      "cash_fen": 30000000,
+      "state_version": 2,
+      "facilities": {
+        "FAC-LINE": 0,
+        "FAC-IF": 0,
+        "FAC-EARLYPAY": 0,
+        "FAC-GGL": 0,
+        "FAC-ETL": 0,
+        "FAC-LEASE": 0,
+        "FAC-BILL": 0,
+        "FAC-EQUITY": 0
+      },
+      "commitments": [],
+      "operations": 0
+    },
+    "after_confirmation": {
+      "cash_fen": 71060000,
+      "state_version": 4,
+      "facilities": {
+        "FAC-LINE": 15000000,
+        "FAC-IF": 26060000,
+        "FAC-EARLYPAY": 0,
+        "FAC-GGL": 0,
+        "FAC-ETL": 0,
+        "FAC-LEASE": 0,
+        "FAC-BILL": 0,
+        "FAC-EQUITY": 0
+      },
+      "commitments": [],
+      "operations": 2
+    },
+    "confirmation": {
+      "session_id": "nls-d52cf059d4914a0a",
+      "turn": 2,
+      "reply": "Router plan (committed facilities only): committed plan: ¥841.64 + ¥2,322.20 + ¥600.00 = ¥3,763.84, need ¥460,000.00.",
+      "intent": "FUND_GAP",
+      "lang": "en",
+      "plan": [
+        {
+          "step": 1,
+          "kind": "VERIFY",
+          "description": "Gap days 12–46, short ¥460,000.00 at the low on day 20. Verdict ACCEPT (TIER_1): no violations. ACCEPT. Forward concessions ¥0.00 against ¥5,000.00. Covenants hold: DSCR_MIN 1.87x, LEVERAGE_MAX 1.77x.",
+          "status": "DONE",
+          "op_id": null,
+          "condition": null
+        },
+        {
+          "step": 2,
+          "kind": "DRAW_FACILITY",
+          "description": "Draw ¥150,000.00 on FAC-LINE, repay day 32",
+          "status": "EXECUTED",
+          "op_id": "NL-a6e574631ffc81bf",
+          "condition": null
+        },
+        {
+          "step": 3,
+          "kind": "SUBMIT_INVOICE_FOR_FINANCING",
+          "description": "Submit RCV-A to FAC-IF for a ¥260,600.00 advance",
+          "status": "EXECUTED",
+          "op_id": "NL-980bf047dffba2b8",
+          "condition": null
+        }
+      ],
+      "verdict": {
+        "id": "VER-c99704d8f4da",
+        "offer_id": "NL-SQ1-d1aaa4b673e6",
+        "offer_version": 1,
+        "outcome": "ACCEPT",
+        "violations": [],
+        "bound_obligations": [],
+        "concession_values": [],
+        "forward_concession_total_fen": 0,
+        "counters": [],
+        "plan": {
+          "id": "PLAN-COM-d639f2944d6c",
+          "basis": "COMMITTED",
+          "need_fen": 46000000,
+          "actions": [
+            {
+              "kind": "DRAW",
+              "facility_id": "FAC-LINE",
+              "day": 0,
+              "amount_fen": 15000000,
+              "receivable_id": null,
+              "repay_day": 32,
+              "rate_bp": null,
+              "amount_display": "¥150,000.00"
+            },
+            {
+              "kind": "FINANCE_INVOICE",
+              "facility_id": "FAC-IF",
+              "day": 0,
+              "amount_fen": 26060000,
+              "receivable_id": "RCV-A",
+              "repay_day": null,
+              "rate_bp": null,
+              "amount_display": "¥260,600.00"
+            },
+            {
+              "kind": "EARLY_PAY",
+              "facility_id": "FAC-EARLYPAY",
+              "day": 0,
+              "amount_fen": 5000000,
+              "receivable_id": "RI:BUYER-1:2",
+              "repay_day": null,
+              "rate_bp": 120,
+              "amount_display": "¥50,000.00",
+              "rate_display": "1.20%"
+            }
+          ],
+          "costs": [
+            {
+              "label": "Bank credit line: draw ¥150,000.00, repaid day 32",
+              "fen": 84164,
+              "facility_id": "FAC-LINE",
+              "formula": "150,000.00 × 6.4% × 32/365 = 841.64",
+              "display": "¥841.64"
+            },
+            {
+              "label": "Invoice financing (onboarded platform): advance ¥260,600.00 on RCV-A",
+              "fen": 232220,
+              "facility_id": "FAC-IF",
+              "formula": "260,600.00 × 7.8% × 30/365 (29 days billed as 1 × 30-day period) = 1,670.70; 260,600.00 × 0.25% × 1 = 651.50; total ¥2,322.20",
+              "display": "¥2,322.20"
+            },
+            {
+              "label": "Buyer early-payment offer: early payment on ¥50,000.00 face of RI:BUYER-1:2 at 1.2%",
+              "fen": 60000,
+              "facility_id": "FAC-EARLYPAY",
+              "formula": "50,000.00 × 1.2% = 600.00",
+              "display": "¥600.00"
+            }
+          ],
+          "total_cost_fen": 376384,
+          "admissible": true,
+          "violations": [],
+          "marginal_cost_annual": {
+            "num": 1301,
+            "den": 12000,
+            "text": "0.11"
+          },
+          "marginal_facility_id": "FAC-IF",
+          "rejected": [
+            {
+              "label": "Discount the whole invoice at 1.2%",
+              "reasons": [
+                "RESERVE_BREACH"
+              ],
+              "note": "cost ¥5,040.00; RESERVE_BREACH on day 20"
+            },
+            {
+              "label": "Line + early payment on part of the invoice at 1.2%",
+              "reasons": [],
+              "note": "cost ¥5,001.34; admissible but dearer than the selected plan"
+            },
+            {
+              "label": "Line + guaranteed loan",
+              "reasons": [
+                "UNCOMMITTED_FACILITY",
+                "LEAD_TIME_TOO_LONG"
+              ],
+              "note": "not applied; cash on day 21, gap opens on day 12"
+            },
+            {
+              "label": "Line only",
+              "reasons": [
+                "RESERVE_BREACH"
+              ],
+              "note": "cost ¥1,236.16; RESERVE_BREACH on day 12"
+            }
+          ],
+          "label": "committed plan: ¥841.64 + ¥2,322.20 + ¥600.00 = ¥3,763.84",
+          "need_display": "¥460,000.00",
+          "total_cost_display": "¥3,763.84"
+        },
+        "required_tier": "TIER_1",
+        "mandate_version": 1,
+        "state_version": 2,
+        "calc_version": "tl-v2.0",
+        "summary": "ACCEPT. Forward concessions ¥0.00 against ¥5,000.00. Covenants hold: DSCR_MIN 1.87x, LEVERAGE_MAX 1.77x.",
+        "passed_checks": [
+          {
+            "code": "MIN_CASH",
+            "label": "Minimum cash with the committed plan",
+            "observed": "¥300,000.00 on day 20",
+            "limit": "≥ ¥300,000.00",
+            "formula": "closing_cash(day) >= min_cash on every day; the offer induces no breach",
+            "inputs": {
+              "plan": "committed plan: ¥841.64 + ¥2,322.20 + ¥600.00 = ¥3,763.84",
+              "offer_lowest_without_funding": "−¥160,000.00",
+              "offer_lowest_day": "20"
+            }
+          },
+          {
+            "code": "DSCR_MIN",
+            "label": "Lowest monthly DSCR (month 2)",
+            "observed": "1.87x",
+            "limit": "≥ 1.25x",
+            "formula": "EBITDA_m / DS_m = ¥90,000.00 / ¥48,163.84",
+            "inputs": {}
+          },
+          {
+            "code": "LEVERAGE_MAX",
+            "label": "Highest monthly leverage (month 1)",
+            "observed": "1.77x",
+            "limit": "≤ 2.50x",
+            "formula": "Debt_m / (12 × EBITDA_m) = ¥1,910,600.00 / (12 × ¥90,000.00)",
+            "inputs": {}
+          },
+          {
+            "code": "CLEAN_DOWN",
+            "label": "Bank credit line: clean-down",
+            "observed": "89 days at zero",
+            "limit": "≥ 30 consecutive days",
+            "formula": "max run of days with balance = 0 >= 30",
+            "inputs": {
+              "facility_id": "FAC-LINE",
+              "run_start_day": "32",
+              "run_end_day": "120",
+              "horizon_days": "120"
+            }
+          }
+        ],
+        "autonomy": {
+          "eligible": false,
+          "accepted_alone": true,
+          "whole_invoice": null,
+          "covered": [],
+          "gaps": [],
+          "notes": []
+        },
+        "annualised": [],
+        "forward_concession_total_display": "¥0.00"
+      },
+      "operations": [
+        {
+          "op_id": "NL-a6e574631ffc81bf",
+          "kind": "DRAW_FACILITY",
+          "status": "EXECUTED",
+          "tier": "TIER_1",
+          "violations": [],
+          "seq": 1,
+          "entry_hash": "565c2f2be13a8bec39af67accb02a3b572b93e2f9eb63a9e20f691fa1b2decbe",
+          "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+          "effective_day": 0,
+          "approval_id": null,
+          "message": "Drew ¥150,000.00 on FAC-LINE on day 0"
+        },
+        {
+          "op_id": "NL-980bf047dffba2b8",
+          "kind": "SUBMIT_INVOICE_FOR_FINANCING",
+          "status": "EXECUTED",
+          "tier": "TIER_1",
+          "violations": [],
+          "seq": 2,
+          "entry_hash": "979c288eaaf7e90df574186f42775fa77be98fbb803f064388a3cfc0646b96f1",
+          "prev_hash": "565c2f2be13a8bec39af67accb02a3b572b93e2f9eb63a9e20f691fa1b2decbe",
+          "effective_day": 0,
+          "approval_id": null,
+          "message": "Advance ¥260,600.00 on RCV-A from FAC-IF on day 0"
+        }
+      ],
+      "clarification": null,
+      "awaiting_confirmation": false,
+      "amended": false,
+      "replayed": false,
+      "negotiation": null,
+      "security_events": [],
+      "parse_source": "rules",
+      "trace_id": "nls-d52cf059d4914a0a:2"
+    },
+    "payloads": [
+      {
+        "amount_fen": 15000000,
+        "day": 0,
+        "facility_id": "FAC-LINE",
+        "idempotency_key": "nl:nls-d52cf059d4914a0a:t2:1:DRAW_FACILITY",
+        "kind": "DRAW_FACILITY",
+        "mandate_version": 1,
+        "op_id": "NL-a6e574631ffc81bf",
+        "requested_by": "OWNER",
+        "source_verdict_id": null
+      },
+      {
+        "advance_fen": 26060000,
+        "day": 0,
+        "facility_id": "FAC-IF",
+        "idempotency_key": "nl:nls-d52cf059d4914a0a:t2:2:SUBMIT_INVOICE_FOR_FINANCING",
+        "kind": "SUBMIT_INVOICE_FOR_FINANCING",
+        "mandate_version": 1,
+        "op_id": "NL-980bf047dffba2b8",
+        "receivable_id": "RCV-A",
+        "requested_by": "OWNER",
+        "source_verdict_id": null
+      }
+    ]
+  },
+  "restart": {
+    "DEMO_MODE": "0",
+    "before": {
+      "cash_fen": 50000000,
+      "state_version": 2,
+      "facilities": {
+        "FAC-LINE": 10000000,
+        "FAC-IF": 0,
+        "FAC-EARLYPAY": 0,
+        "FAC-GGL": 0,
+        "FAC-ETL": 0,
+        "FAC-LEASE": 0,
+        "FAC-BILL": 0,
+        "FAC-EQUITY": 0
+      },
+      "commitments": [],
+      "operations": 1
+    },
+    "after": {
+      "cash_fen": 40000000,
+      "state_version": 1,
+      "facilities": {
+        "FAC-LINE": 0,
+        "FAC-IF": 0,
+        "FAC-EARLYPAY": 0,
+        "FAC-GGL": 0,
+        "FAC-ETL": 0,
+        "FAC-LEASE": 0,
+        "FAC-BILL": 0,
+        "FAC-EQUITY": 0
+      },
+      "commitments": [],
+      "operations": 0
+    },
+    "method": "dispose; set_runtime(None); get_runtime()"
+  }
+}
