@@ -203,6 +203,12 @@ def _write(r: Receivable, adjs: Sequence[InvoiceAdjustment]) -> Receivable:
     if not todo:
         return r
     face, terms, applied = materialise(r.face_fen, r.terms_days, todo)
+    floor = max(r.settled_fen, r.advance_fen if r.status == "FINANCED" else 0)
+    if face < floor:
+        # a price cut may not take the contractual face below what is already paid or advanced against it:
+        # that needs a credit note, which is out of scope (ADR-0009 section 8)
+        raise ObligationError(f"{r.id}: the adjusted face {face} fen would be below the {floor} fen already "
+                              f"settled or advanced on it")
     return r.model_copy(update={
         "face_fen": face, "terms_days": terms, "applied": [*r.applied, *applied],
         "base_face_fen": r.base_face_fen if r.base_face_fen is not None else r.face_fen,
