@@ -99,6 +99,8 @@ def run_legs(ctx: NlContext, steps: Steps, ops: Sequence[Any], condition: str | 
             when = landing.leg_clause(ctx, op, executed=True)
             lines.append(t(ctx, f"{describe(ctx, op)}: done" + (f"; {when}." if when else "."),
                            f"{describe(ctx, op)}：已执行" + (f"；{when}。" if when else "。")))
+            if isinstance(op, RepayFacility) and (left := landing.not_repayable(ctx, op.facility_id)):
+                lines[-1] += left  # what is still on the facility and has not landed
             continue
         ok = False
         if r.status == OperationStatus.PENDING_APPROVAL:

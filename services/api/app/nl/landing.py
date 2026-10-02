@@ -13,7 +13,7 @@ from typing import Any
 
 from app.domain.models import DrawFacility, FinancialState, SubmitInvoiceForFinancing
 from app.domain.money import fmt_yuan
-from app.financial.lots import ensure_lots
+from app.financial.lots import ensure_lots, first_unsettled
 from app.nl.context import NlContext
 
 Item = tuple[str, int, int]  # (facility id, amount in fen, day the cash lands)
@@ -42,7 +42,7 @@ def landing_day(ctx: NlContext, op: Any, *, executed: bool) -> int:
     if executed:
         rid = getattr(op, "receivable_id", None)
         lots = [lot for lot in ensure_lots(state).lots
-                if lot.facility_id == op.facility_id and not lot.settled and lot.request_day == op.day
+                if lot.facility_id == op.facility_id and not lot.settled and lot.request_day >= op.day
                 and (rid is None or lot.receivable_id == rid)]
         if lots:
             return min(lot.arrival_day for lot in lots)
@@ -93,6 +93,20 @@ def line(ctx: NlContext, ops: Sequence[Any], *, executed: bool) -> str:
     return _t(ctx, f"{head_en} {later_en}{en}.", f"{head_zh}{later_zh}{zh}。")
 
 
+def not_repayable(ctx: NlContext, facility_id: str) -> str:
+    """What cannot be repaid yet on a facility: the balance whose cash has not landed, and the day it does (ADR-0010 §6).
+    Empty when everything drawn has landed."""
+    lots = ensure_lots(ctx.state()).lots
+    first = first_unsettled(lots, facility_id)
+    if first is None:
+        return ""
+    fen = sum(lot.remaining_fen for lot in lots if lot.facility_id == facility_id and not lot.settled)
+    return _t(ctx, f" A further {fmt_yuan(fen)} on {facility_id}, requested on day {first.request_day}, lands on day "
+                   f"{first.arrival_day} and cannot be repaid before then.",
+              f" {facility_id} 另有 {fmt_yuan(fen)}（第 {first.request_day} 天申请）将于第 {first.arrival_day} 天到账，"
+              f"到账前不能偿还。")
+
+
 def executor_note(ctx: NlContext, op: Any, message: str) -> str:
     """For an executed draw or advance: the landing clause when the executor's own message (English only) does not
     already say it, so a Chinese reply carries the landing day too."""
@@ -102,4 +116,4 @@ def executor_note(ctx: NlContext, op: Any, message: str) -> str:
     return c
 
 
-__all__ = ["amount_of", "clause", "executor_note", "is_funding", "items", "landing_day", "lead_days", "leg_clause", "line"]
+__all__ = ["amount_of", "clause", "executor_note", "is_funding", "items", "landing_day", "lead_days", "leg_clause", "line", "not_repayable"]

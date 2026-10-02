@@ -9,7 +9,6 @@ from __future__ import annotations
 from collections.abc import Sequence
 from dataclasses import dataclass
 from fractions import Fraction
-from typing import Any
 
 from app.counterparties import BuyerKernel
 from app.domain.models import (
@@ -35,7 +34,7 @@ from app.domain.models import (
 )
 from app.domain.money import BP_DENOM, Ratio, fmt_pct, fmt_yuan
 from app.financial import project
-from app.financial.lots import ensure_lots, first_unsettled, landed
+from app.financial.lots import ensure_lots, landed
 from app.funding import NoPermanentSourceError, break_even_discount
 from app.funding.search import Search
 from app.nl import landing
@@ -213,7 +212,7 @@ def repay(ctx: NlContext, slots: Slots, *, execute: bool = True) -> Turn:
             f"{fac.name} 按回款偿还，不能随时偿还。"))
     # only the balance whose cash has landed can be repaid (ADR-0010): the rest waits for its landing day
     on_hand = landed(lots, fac.id)
-    transit = _in_transit(ctx, fac.id, fac.drawn_fen - on_hand, first_unsettled(lots, fac.id))
+    transit = landing.not_repayable(ctx, fac.id)
     if on_hand <= 0:
         return Turn(intent=Intent.REPAY_FACILITY, reply=t(
             ctx, "Nothing has landed on " + fac.name + " yet, so there is nothing to repay.",
@@ -246,16 +245,6 @@ def repay(ctx: NlContext, slots: Slots, *, execute: bool = True) -> Turn:
     steps.result("REPAY_FACILITY", desc, r)
     return Turn(intent=Intent.REPAY_FACILITY, reply=r.message + transit, plan=steps.items, verdict=b_after.verdict,
                 clear_pending=True)
-
-
-def _in_transit(ctx: NlContext, facility_id: str, fen: int, lot: Any) -> str:
-    """What is not repayable yet: the balance whose cash has not landed, and the day it does."""
-    if fen <= 0 or lot is None:
-        return ""
-    return t(ctx, f" A further {fmt_yuan(fen)} on {facility_id}, requested on day {lot.request_day}, lands on day "
-                  f"{lot.arrival_day} and cannot be repaid before then.",
-             f" {facility_id} 另有 {fmt_yuan(fen)}（第 {lot.request_day} 天申请）将于第 {lot.arrival_day} 天到账，"
-             f"到账前不能偿还。")
 
 
 # ---------------------------------------------------------------- re-pricing a stored plan (A10)

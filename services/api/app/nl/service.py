@@ -20,6 +20,7 @@ from app.domain.models import (
     IssueEquity,
     Mandate,
     OperationResult,
+    OperationStatus,
     PledgeCollateral,
     SecurityEventKind,
     SignPersonalGuarantee,
@@ -27,8 +28,8 @@ from app.domain.models import (
 from app.domain.ports import LedgerStore
 from app.nl import capabilities as cap
 from app.nl import classifier as clf
+from app.nl import landing, plans
 from app.nl import lexicon as lx
-from app.nl import plans
 from app.nl.alerts import alerts_intent, alerts_turn, confirm_cure
 from app.nl.context import NlContext
 from app.nl.funding import (
@@ -56,6 +57,7 @@ from app.nl.rules import parse
 from app.nl.sessions import SESSIONS, Session, SessionStore
 from app.nl.turn import Turn, ask
 from app.operations import Executor
+from app.operations.log import parse_operation
 from app.verifier import OwnerConstraints, VerdictBundle
 
 # (bundle, offer, state, mandate) -> extra keys for an OWNER verdict; injected by the API layer, never used for
@@ -611,6 +613,7 @@ def _decide_approval(ctx: NlContext, slots: Slots, approve: bool, text: str = ""
                        slots)
     actor = Actor.OWNER if ctx.owner_authenticated else Actor.AGENT
     steps = Steps()
+    rec = ctx.store.get_approval(aid)
     try:
         r: OperationResult = ctx.executor.decide(aid, approve, actor)
     except NotFound:
@@ -625,6 +628,9 @@ def _decide_approval(ctx: NlContext, slots: Slots, approve: bool, text: str = ""
                        "Logged.", f"已拒绝：只有业主可以审批 {aid}，此请求没有业主凭证。已记录。")
     else:
         reply = r.message
+        funded = approve and rec is not None and r.status == OperationStatus.EXECUTED  # a funding leg: when its cash lands
+        if funded and (note := landing.executor_note(ctx, parse_operation(rec.op_json), r.message)):  # type: ignore[union-attr]
+            reply += f" ({note})"
         rest = [a for a in _pending_approvals(ctx) if a.id != aid]
         if rest:
             reply += t(ctx, " Still waiting for your decision: ", " 仍待您审批：") + "; ".join(f"{a.id} ({a.reason})" for a in rest)
