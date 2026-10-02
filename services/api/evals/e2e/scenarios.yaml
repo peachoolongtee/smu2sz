@@ -26,6 +26,8 @@ scenarios:
                  ops_count: 0, awaiting: true, plan_kinds: [COUNTER_OFFER, NEGOTIATE],
                  reply_contains: ["¥26,455.62", "¥802.70"]}
       - text: "Send the counters"
+        expect: {intent: NEGOTIATE, ops_count: 0, awaiting: true, reply_contains: ["I would send", "Option A"]}
+      - text: "go ahead"
         expect: {intent: NEGOTIATE, negotiation: ACCEPT,
                  ops: ["COUNTER_OFFER:EXECUTED", "COUNTER_OFFER:EXECUTED", "ACCEPT_OFFER:EXECUTED", "DRAW_FACILITY:EXECUTED"],
                  reply_contains: ["Option A"]}

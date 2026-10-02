@@ -222,6 +222,40 @@ def money_gate(text: str) -> Literal["negated", "bad_amount", "deferred", "quest
     return "question" if is_question(n) else "propose"
 
 
+# ---------------------------------------------------------------- negating an action (negotiate, get paid early)
+
+# "Do not negotiate with Foshan", "don't send the counters", 不要谈判, "do not get paid early on the Foshan invoice",
+# 不要让佛山提前付款: a negation that governs the ACTION. A phrase that constrains it ("don't give anything away",
+# "without conceding the rebate", 不要给任何让步) negates the concession, not the action, so it is not matched here.
+_NEG_LEAD = (r"(?<![a-z])(?:do not|don't|dont|never|stop|cancel|no need to|avoid|skip|hold off(?: on)?|refrain from|not)"
+             r"\s+(?:(?:try(?:ing)? to|bother(?:ing)? to|want to|need to|go and|start)\s+)?")
+_NEG_NEGOTIATE = re.compile(
+    _NEG_LEAD + r"(?:negotiat\w*|send(?:\s+(?:out|over|them|the|our|both|any|those|these|a|my))*\s+counter\w*|"
+                r"counter[- ]?offer\w*|counter(?=\s+(?:them|him|her|the buyer|it)\b)|haggl\w*|push\s*back|bargain\w*)"
+    r"|(?<![a-z])no\s+(?:more\s+)?(?:negotiat\w*|counter[- ]?offers?)"
+    r"|(?:不要|(?<![特区分告辞离个])别|不用|不必|取消|先不|暂不|停止|勿|不再|不)"
+    r"(?:再|去|要|(?:跟|和|与|向|对)[^，,。；;！!？?]{1,10})?"
+    r"(?:谈判|谈一下|谈谈|谈|发送|发|还价|议价|砍价|反报价|反要约)(?!\s*(?:任何|让步|让利|返点|返利|优惠))")
+_NEG_ACCELERATE = re.compile(
+    _NEG_LEAD + r"(?:get(?:ting)?|have|be|being|ask(?:ing)?|collect(?:ing)?|settle|settling|pay(?:ing)?|accelerat\w*|"
+                r"speed up|chase)\b(?:\s+\w+){0,3}?\s+(?:paid|pay|early|sooner|earlier|faster|quicker|accelerat\w*)"
+    r"|(?<![a-z])no\s+early[- ]?(?:pay\w*|settle\w*)"
+    r"|(?:不要|(?<![特区分告辞离个])别|不用|不必|取消|先不|暂不|停止|勿|不再|不)"
+    r"(?:再|去|要|让|叫|请|帮我|给我|(?:跟|和|与|向)[^，,。；;！!？?]{0,8})*"
+    r"[^，,。；;！!？?]{0,6}?(?:提前|早点|早付|提早|尽快)")
+
+
+# "without conceding the rebate", "don't concede anything": a constraint on a negotiation (no forward concessions).
+NO_CONCEDE = re.compile(r"(?<![a-z])(?:without|not)\s+conced\w+|(?<![a-z])(?:don't|dont|do not|never)\s+(?:concede|give in)(?![a-z])|"
+                        r"不要?(?:做出?)?让步|别让步")
+
+
+def action_negated(kind: Literal["NEGOTIATE", "ACCELERATE"], text: str) -> bool:
+    """The owner says NOT to do the action: nothing is done and no plan stays pending (the caller answers)."""
+    pattern = _NEG_NEGOTIATE if kind == "NEGOTIATE" else _NEG_ACCELERATE
+    return bool(pattern.search(normalise(text)))
+
+
 # ---------------------------------------------------------------- approvals
 
 _ID = r"aprid"

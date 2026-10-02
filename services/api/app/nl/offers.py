@@ -315,8 +315,8 @@ def evaluate_offer(ctx: NlContext, slots: Slots, *, execute: bool = False) -> Tu
                             execute=False)
             pending = PendingPlan(intent=Intent.NEGOTIATE, slots=slots, steps=steps.items,
                                   data={"verdict_id": v.id})
-            reply.append(t(ctx, "Reply 'send the counters' (or 'go ahead') to negotiate.",
-                           "回复“发送反报价”或“执行”开始谈判。"))
+            reply.append(t(ctx, "Reply 'go ahead' to negotiate: I will then send the counters. Nothing is sent before that.",
+                           "回复“执行”开始谈判，届时我才会发送反报价；在此之前不会发送任何内容。"))
         else:
             pending = PendingPlan(intent=Intent.EVALUATE_OFFER, slots=slots, steps=steps.items,
                                   data={"verdict_id": v.id})

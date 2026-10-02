@@ -28,9 +28,19 @@ from app.domain.ports import LedgerStore
 from app.nl import capabilities as cap
 from app.nl import classifier as clf
 from app.nl import lexicon as lx
+from app.nl import plans
 from app.nl.alerts import alerts_intent, alerts_turn, confirm_cure
 from app.nl.context import NlContext
-from app.nl.funding import accelerate, fund_gap, repay, status
+from app.nl.funding import (
+    accelerate,
+    fund_gap,
+    repay,
+    reprice_accelerate,
+    reprice_fund_gap,
+    reprice_repay,
+    run_accelerate,
+    status,
+)
 from app.nl.models import Intent, NlRequest, NlResponse, Parsed, Slots
 from app.nl.offers import (
     counterparty_message,
@@ -40,12 +50,12 @@ from app.nl.offers import (
     negotiate_intent,
     what_if,
 )
-from app.nl.pipeline import Steps, t
+from app.nl.pipeline import Steps, committed_plan, package_offer, status_quo_offer, t
 from app.nl.rules import parse
 from app.nl.sessions import SESSIONS, Session, SessionStore
 from app.nl.turn import Turn, ask
 from app.operations import Executor
-from app.verifier import VerdictBundle
+from app.verifier import OwnerConstraints, VerdictBundle
 
 # (bundle, offer, state, mandate) -> extra keys for an OWNER verdict; injected by the API layer, never used for
 # a counterparty (the counterparty response carries no verdict at all).
@@ -68,8 +78,11 @@ class _TurnContext(NlContext):
 
     extras: VerdictExtras | None = None
     seen: dict[str, tuple[VerdictBundle, CompiledOffer, FinancialState, Mandate]] = field(default_factory=dict)
+    zero_forward: bool = False  # the owner asked for a negotiation "without giving anything away": a constraint
 
     def evaluate(self, offer: CompiledOffer, **kw: Any) -> VerdictBundle:
+        if self.zero_forward and kw.get("owner_constraints") is None:
+            kw["owner_constraints"] = OwnerConstraints(zero_forward_concessions=True)
         state, mandate = kw.get("state") or self.state(), self.mandate()
         bundle = super().evaluate(offer, **kw)
         self.seen[bundle.verdict.id] = (bundle, offer, state, mandate)
@@ -105,6 +118,10 @@ def handle(req: NlRequest, *, store: LedgerStore, executor: Executor, day: int, 
         parse_source = parsed.source
         turn = _dispatch(ctx, parsed, req.text)
 
+    if turn.pending is not None and turn.pending.state_version is None:
+        turn.pending.bind(ctx)  # the books this proposal was made on (a plan the handler did not bind itself)
+        if turn.pending.intent == Intent.NEGOTIATE:
+            turn.pending.data["followups"] = _followups(ctx, turn.pending.data.get("verdict_id"))
     if not turn.guarded:
         turn.reply, _ok = ctx.guard(turn.reply, turn.recipient, allow=turn.allow)
     _update_session(session, turn)
@@ -241,9 +258,10 @@ def _dispatch(ctx: NlContext, p: Parsed, text: str) -> Turn:
         case Intent.EVALUATE_OFFER:
             return evaluate_offer(ctx, slots)
         case Intent.NEGOTIATE:
-            return negotiate_intent(ctx, slots, execute=not llm)
+            _constrain(ctx, slots)
+            return _negotiation_proposal(ctx, negotiate_intent(ctx, slots, execute=False))  # never from free text
         case Intent.ACCELERATE_RECEIPT:
-            return accelerate(ctx, slots, text, execute=slots.execute_now and not llm)
+            return accelerate(ctx, slots, text)
         case Intent.FUND_GAP:
             return fund_gap(ctx, slots, execute=slots.execute_now and not llm and not p.tentative)
         case Intent.REPAY_FACILITY:
@@ -351,14 +369,15 @@ def _correct(ctx: NlContext, p: Parsed, text: str) -> Turn:
         if getattr(new, k) is not None:
             update[k] = getattr(new, k)
     slots = pending.slots.model_copy(update=update)
+    _constrain(ctx, slots)
     if pending.intent == Intent.ACCELERATE_RECEIPT:
-        turn = accelerate(ctx, slots, text, execute=False, amended=True)
+        turn = accelerate(ctx, slots, text, amended=True)
     elif pending.intent == Intent.FUND_GAP:
         turn = fund_gap(ctx, slots, execute=False)
     elif pending.intent == Intent.REPAY_FACILITY:
         turn = repay(ctx, slots, execute=False)
     elif pending.intent == Intent.NEGOTIATE:
-        turn = negotiate_intent(ctx, slots, execute=False, data=pending.data)
+        turn = _negotiation_proposal(ctx, negotiate_intent(ctx, slots, execute=False, data=pending.data))
     else:
         turn = Turn(intent=pending.intent, reply=t(ctx, "That plan can't be amended; say 'cancel' or 'go ahead'.",
                                                    "该方案无法修改；请回复“取消”或“执行”。"), plan=pending.steps,
@@ -369,32 +388,169 @@ def _correct(ctx: NlContext, p: Parsed, text: str) -> Turn:
 
 
 def _confirm(ctx: NlContext, yes: bool, text: str) -> Turn:
+    """A direct "go ahead" on the pending plan sends the operations that were shown (app/nl/plans.py): it never
+    re-plans the goal. A void or no-longer-affordable plan runs nothing and is proposed again."""
     pending = ctx.session.pending_plan
     assert pending is not None
     if not yes:
         steps = [s.model_copy(update={"status": "SKIPPED"}) for s in pending.steps]
         return Turn(intent=Intent.REJECT, reply=t(ctx, "Cancelled. Nothing was executed.", "已取消，未执行任何操作。"),
                     plan=steps, clear_pending=True)
-    slots = pending.slots.model_copy(update={"execute_now": True})
+    _constrain(ctx, pending.slots)
+    fresh: list[Turn] = []  # the fresh proposal, built once if the gate needs it
+
+    def rebuild() -> Turn:
+        if not fresh:
+            fresh.append(_rebuild(ctx, pending))
+        return fresh[0]
+
+    def accel_check() -> str | None:
+        why, turn = reprice_accelerate(ctx, pending)
+        if turn is not None:
+            fresh.append(turn)
+        return why
+
+    check: Callable[[], str | None]
+    send: Callable[[], Turn]
     match pending.intent:
-        case Intent.ACCELERATE_RECEIPT:
-            turn = accelerate(ctx, slots, text, execute=True)
-        case Intent.FUND_GAP:
-            turn = fund_gap(ctx, slots, execute=True)
-        case Intent.REPAY_FACILITY:
-            turn = repay(ctx, slots, execute=True)
-        case Intent.NEGOTIATE:
-            turn = negotiate_intent(ctx, slots.model_copy(update={"fixture_id": None, "quoted_text": None}),
-                                    execute=True, data=pending.data)
-        case Intent.EVALUATE_OFFER:
-            turn = execute_decision(ctx, pending.data["verdict_id"])
         case Intent.SHOW_ALERTS:
-            turn = confirm_cure(ctx, pending)
+            return _closed(confirm_cure(ctx, pending))  # it gates itself: it needs the alert recomputed
+        case Intent.ACCELERATE_RECEIPT:
+            check = accel_check
+            send = (lambda: _send(ctx, pending)) if pending.slots.use_financing else (lambda: run_accelerate(ctx, pending))
+        case Intent.FUND_GAP:
+            check, send = (lambda: reprice_fund_gap(ctx, pending)), (lambda: _send(ctx, pending))
+        case Intent.REPAY_FACILITY:
+            check, send = (lambda: reprice_repay(ctx, pending)), (lambda: _send(ctx, pending))
         case Intent.BORROWER_FILE:
-            turn = cap.borrower_file(ctx, slots, "", execute=True)
+            check = lambda: cap.reprice_borrower_file(ctx, pending)
+            send = lambda: cap.send_borrower_file(
+                ctx, pending.ops[0], plans.describe(ctx, pending.ops[0]))
+        case Intent.NEGOTIATE:
+            check = lambda: _reprice_negotiation(ctx, pending)
+            send = lambda: negotiate_intent(
+                ctx, pending.slots.model_copy(update={"fixture_id": None, "quoted_text": None, "execute_now": True}),
+                execute=True, data=pending.data)
+        case Intent.EVALUATE_OFFER:
+            check = lambda: _reprice_decision(ctx, pending)
+            send = lambda: execute_decision(ctx, pending.data["verdict_id"])
         case _:
-            turn = Turn(intent=pending.intent, reply=t(ctx, "Nothing to run.", "没有可执行的内容。"))
-    turn.clear_pending = True
+            return _closed(Turn(intent=pending.intent, reply=t(ctx, "Nothing to run.", "没有可执行的内容。")))
+    return _closed(_gate(ctx, pending, rebuild, check) or send())
+
+
+def _constrain(ctx: NlContext, slots: Slots) -> None:
+    """"Don't give anything away" constrains the counters of a negotiation (zero forward concessions); it does not
+    cancel it. The constraint is part of the plan, so a confirmation applies it again."""
+    if isinstance(ctx, _TurnContext):
+        ctx.zero_forward = slots.zero_forward
+
+
+def _closed(turn: Turn) -> Turn:
+    turn.clear_pending = True  # a fresh proposal on the turn replaces the plan; otherwise nothing stays pending
+    return turn
+
+
+def _send(ctx: NlContext, pending: Any) -> Turn:
+    if not pending.ops:
+        return Turn(intent=pending.intent, clear_pending=True, reply=t(
+            ctx, "There is nothing in that plan to send.", "该方案中没有需要发送的操作。"))
+    return plans.send(ctx, pending.intent, pending.ops, pending.quoted_cost_fen)
+
+
+def _gate(ctx: NlContext, pending: Any, rebuild: Callable[[], Turn], reprice: Callable[[], str | None]) -> Turn | None:
+    """None: the stored plan may be sent. Otherwise nothing runs: the reply says what changed and shows the plan as it
+    stands on today's books, which needs its own go-ahead. The day or the mandate version moved: the plan is void.
+    Only the state moved: the same operations are re-priced and stand when still feasible at no more than the quote."""
+    why = plans.stale(ctx, pending)
+    if why is None and plans.books_moved(ctx, pending):
+        why = reprice()
+    if why is None:
+        return None
+    turn = rebuild()
+    turn.reply = plans.void_notice(ctx, why) + " " + turn.reply
+    return turn
+
+
+def _rebuild(ctx: NlContext, pending: Any) -> Turn:
+    """The proposal for the same request on today's books (nothing executes)."""
+    match pending.intent:
+        case Intent.FUND_GAP:
+            return fund_gap(ctx, pending.slots, execute=False)
+        case Intent.REPAY_FACILITY:
+            return repay(ctx, pending.slots, execute=False)
+        case Intent.ACCELERATE_RECEIPT:
+            return accelerate(ctx, pending.slots, pending.data.get("text", ""))
+        case Intent.NEGOTIATE:
+            return _negotiation_proposal(ctx, negotiate_intent(ctx, pending.slots, execute=False, data=pending.data))
+        case Intent.EVALUATE_OFFER:
+            return evaluate_offer(ctx, pending.slots)
+        case Intent.BORROWER_FILE:
+            return cap.borrower_file(ctx, pending.slots, "", execute=False)
+        case _:
+            return Turn(intent=pending.intent, reply=t(ctx, "Nothing to propose.", "没有可提出的方案。"))
+
+
+def _reprice_negotiation(ctx: NlContext, pending: Any) -> str | None:
+    """None when the offer, on today's books, still draws exactly the counters that were shown, each at no more cost."""
+    old = ctx.store.get_verdict(pending.data["verdict_id"])
+    offer = ctx.store.get_offer(old.offer_id) if old is not None else None
+    if old is None or offer is None:
+        return t(ctx, "that offer is no longer on record", "该报价已不在记录中")
+    now = ctx.evaluate(offer, remember=False).verdict
+    if _followups(ctx, old.id) != pending.data.get("followups"):  # what runs after the sends: the fallback, the remaining gap
+        return t(ctx, "the books changed and what would follow the counters is no longer what I showed",
+                 "账目已变化，发送反报价之后的后续操作已不再是我之前给出的内容")
+
+    def cost(c: Any) -> int:
+        return c.supplier_cost_fen + c.forward_value_fen
+
+    if (len(now.counters) == len(old.counters)
+            and all((a.label, a.text) == (b.label, b.text) and cost(a) <= cost(b)
+                    for a, b in zip(now.counters, old.counters, strict=True))):
+        return None
+    return t(ctx, "the books changed and the counters I showed are no longer what I would send",
+             "账目已变化，我之前给出的反报价已不再是我会发送的内容")
+
+
+def _followups(ctx: NlContext, verdict_id: str | None) -> dict[str, Any]:
+    """The funding that runs after a negotiation: the router's plan if the buyer refuses, and for each counter the
+    plan for the rest of the gap if it is accepted. Signatures only; they are compared when the books have moved."""
+    v = ctx.store.get_verdict(verdict_id) if verdict_id else None
+    offer = ctx.store.get_offer(v.offer_id) if v is not None else None
+    if v is None or offer is None:
+        return {}
+    out: dict[str, Any] = {"refuse": plans.plan_signature(committed_plan(ctx.evaluate(
+        status_quo_offer(ctx, ctx.state()), remember=False)))}
+    for c in v.counters:
+        out[f"accept:{c.label}"] = plans.plan_signature(
+            committed_plan(ctx.evaluate_accepted(package_offer(ctx, offer, c))))
+    return out
+
+
+def _reprice_decision(ctx: NlContext, pending: Any) -> str | None:
+    """None when the offer, on today's books, still gets the verdict that was shown."""
+    old = ctx.store.get_verdict(pending.data["verdict_id"])
+    offer = ctx.store.get_offer(old.offer_id) if old is not None else None
+    if old is None or offer is None:
+        return t(ctx, "that offer is no longer on record", "该报价已不在记录中")
+    if ctx.evaluate(offer, remember=False).verdict.outcome != old.outcome:
+        return t(ctx, "the books changed and the verdict on that offer is no longer the one I showed",
+                 "账目已变化，该报价的结论已不再是我之前给出的结论")
+    return None
+
+
+def _negotiation_proposal(ctx: NlContext, turn: Turn) -> Turn:
+    """A negotiation is proposed, never started from free text: say which counters would go to whom."""
+    v = turn.verdict
+    if turn.pending is None or v is None or not v.counters:
+        return turn
+    offer = ctx.store.get_offer(v.offer_id)
+    who = offer.counterparty_id if offer is not None else t(ctx, "the buyer", "买方")
+    listed = "; ".join(f"{c.label}: {c.text}" for c in v.counters)
+    turn.reply = t(ctx, f"I would send {len(v.counters)} counter(s) to {who}: {listed} Nothing has been sent. Reply "
+                        f"'go ahead' to send them, or 'cancel'.",
+                   f"我会向 {who} 发送 {len(v.counters)} 条反报价：{listed} 目前尚未发送任何内容。回复“执行”发送，或“取消”。")
     return turn
 
 

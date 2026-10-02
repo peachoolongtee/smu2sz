@@ -22,10 +22,31 @@ MAX_SESSIONS = 1_000
 
 @dataclass
 class PendingPlan:
+    """What the owner was shown and is asked to confirm. `ops` are the exact typed operations (kind, facility,
+    receivable, amount) that a "go ahead" sends, `quoted_cost_fen` the total cost quoted for them (None when the
+    plan states none), and `state_version`, `mandate_version` and `day` the books the proposal was built on. A
+    confirmation never re-plans: it sends these operations (app/nl/plans.py states the rule)."""
+
     intent: Intent
     slots: Slots
     steps: list[PlanStep]
     data: dict[str, Any] = field(default_factory=dict)  # typed ids only (verdict ids, counter ids)
+    ops: list[Any] = field(default_factory=list)
+    quoted_cost_fen: int | None = None
+    state_version: int | None = None
+    mandate_version: int | None = None
+    day: int | None = None
+
+    def bind(self, ctx: Any, ops: Any = None, cost: int | None = None) -> PendingPlan:
+        """Fix the books and the operations this plan was built on (the context supplies today's state, mandate, day)."""
+        if ops is not None:
+            self.ops = list(ops)
+        if cost is not None:
+            self.quoted_cost_fen = cost
+        self.state_version = ctx.state().state_version
+        self.mandate_version = ctx.mandate().version
+        self.day = ctx.day
+        return self
 
 
 @dataclass
