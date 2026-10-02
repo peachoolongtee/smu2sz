@@ -637,6 +637,13 @@ def _carry_drawn_balances(state: FinancialState, rcvs: dict[str, _Rcv], book: _B
     """Every lot in the state: its landing if the cash has not landed, then its repayment (module docstring).
     `state` has been through `ensure_lots`."""
     today = state.as_of_day
+    # A FINANCED invoice whose face is fully settled is no longer a receivable (the buyer has paid), but its
+    # advance lot is still open: the lender's claim (the charges the receipt did not cover). It is repaid today,
+    # by the same recourse convention as an overdue financed invoice, never carried to the horizon end.
+    cleared = {r.id: _Rcv(r.id, r.counterparty_id, 0, today, 0, r.confirmed, False, r.face_fen, financed=True,
+                          advance=r.advance_fen, advance_facility_id=r.advance_facility_id)
+               for r in state.receivables
+               if r.status == "FINANCED" and r.id not in rcvs and r.face_fen - r.settled_fen <= 0}
     named = {lot.receivable_id for lot in state.lots if lot.receivable_id}
     # older states: an advance balance no lot names is allocated to the FINANCED receivables no lot names
     pool = sorted((r for r in rcvs.values() if r.financed and r.id not in named), key=lambda r: (r.due, r.id))
@@ -662,6 +669,8 @@ def _carry_drawn_balances(state: FinancialState, rcvs: dict[str, _Rcv], book: _B
 
         def financed(lot: FundingLot) -> _Rcv | None:
             r = rcvs.get(lot.receivable_id or "")
+            if r is None:
+                r = cleared.get(lot.receivable_id or "")
             return r if r is not None and r.financed else None
 
         for lot in sorted(lots, key=lambda lot: (0, r.due, r.id) if (r := financed(lot)) else (1, 0, "")):

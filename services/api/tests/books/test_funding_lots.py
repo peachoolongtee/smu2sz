@@ -462,3 +462,37 @@ def test_ensure_lots_dates_an_older_balance_to_today_and_states_without_lots_ser
     later = ensure_lots(drawn.model_copy(update={"as_of_day": 40})).lots[0]
     assert later.arrival_day == 40
     assert ensure_lots(s) is s
+
+
+# ---------------------------------------------------------------- 7. N03: a settled financed invoice still owes its lot
+
+
+def _fully_advanced_and_paid_in_full() -> World:
+    """A 100% advance on an invoice whose buyer then pays the face: the receipt cannot cover the charges as well, so the
+    lender takes it all and the unpaid charges stay on the lot. The invoice is FINANCED with nothing outstanding."""
+    rcv = Receivable(id="RCV-S", counterparty_id="BUYER-1", face_fen=30_000_000, issue_day=0, terms_days=40)
+    w = World([rcv])
+    s = w.state
+    w.store.put_state(s.model_copy(update={"facilities": [
+        f.model_copy(update={"advance_rate_bp": None}) if f.id == IF else f for f in s.facilities]}))
+    assert w.run(SubmitInvoiceForFinancing, Actor.OWNER, facility_id=IF, receivable_id="RCV-S",
+                 advance_fen=30_000_000).status == "EXECUTED"
+    w.move(10)
+    assert w.receive("RCV-S", 30_000_000).status == "EXECUTED"
+    return w
+
+
+def test_a_settled_financed_invoice_repays_its_open_lot_today_not_at_the_horizon() -> None:
+    w = _fully_advanced_and_paid_in_full()
+    assert w.rcv("RCV-S").status == "FINANCED" and w.rcv("RCV-S").outstanding_fen == 0
+    (lot,) = [x for x in w.state.lots if x.receivable_id == "RCV-S"]
+    assert lot.remaining_fen > 0 and w.fac(IF).drawn_fen == lot.remaining_fen
+    t = project(w.state, [], [], C, 120)
+    repaid = [(p.day, -e.amount_fen) for p in t.days for e in p.events
+              if e.kind == LedgerEventKind.REPAYMENT and e.ref == IF]
+    assert repaid == [(10, lot.remaining_fen)]  # today, by the overdue-invoice recourse convention; not day 120
+    # the charge is one period on the capitalised balance, billed once on the day it is repaid
+    interest, fee, _ = finance_invoice_charges(w.fac(IF), lot.principal_fen, 0)
+    posted = [(p.day, -e.amount_fen) for p in t.days for e in p.events
+              if e.kind in (LedgerEventKind.INTEREST, LedgerEventKind.FEE) and e.ref == IF]
+    assert posted == [(10, interest), *([(10, fee)] if fee else [])]

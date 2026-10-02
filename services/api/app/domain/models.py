@@ -634,6 +634,12 @@ class CostLine(Contract):
     fen: Fen
     facility_id: str | None = None
     formula: str
+    # the leg costs more a year than the mandate lets the agent borrow alone: the owner must approve it
+    needs_owner_approval: bool = False
+    approval_reason: str = ""
+    # the executor cannot run this leg today (an advance on an invoice that is not issued yet)
+    executable_now: bool = True
+    not_executable_reason: str = ""
 
 
 class RejectedCandidate(Contract):
@@ -655,6 +661,14 @@ class FundingPlan(Contract):
     marginal_facility_id: str | None = None
     rejected: list[RejectedCandidate] = Field(default_factory=list)
     label: str = ""
+    # Admissible but not autonomous: some leg's effective annual cost is above the mandate's `max_apr_bp`, so the
+    # executor queues it for the owner. `approval_reason` names each such leg (rate, days held, ceiling).
+    needs_owner_approval: bool = False
+    approval_reason: str = ""
+    # Some leg cannot run today: the plan prices a financing the agent can only carry out once the invoice exists
+    # (it ranks after every plan that can run today). `not_executable_reason` names each such leg.
+    executable_now: bool = True
+    not_executable_reason: str = ""
 
 
 class ConcessionValue(Contract):

@@ -1,6 +1,13 @@
 """The funding router: cheapest admissible plan, the spec §7.4 comparison table, and the `Router`
 class that satisfies `app.domain.ports.FundingRouter`.
 
+A plan is admissible when the engine, the covenants, the reserve and the mandate's borrowing rule allow it. Whether
+the agent may also run it alone is a separate question: a leg whose effective annual cost is above the mandate's
+`max_apr_bp` makes the plan `needs_owner_approval` (the executor would queue that leg), and a plan that needs no
+approval always ranks before one that does. A leg the executor cannot run today (an advance on a recurring invoice
+that is not issued yet: a financing worth pricing, not one the agent can submit) makes the plan `executable_now` False
+and ranks it after every plan that can run today.
+
 COMMITTED basis (the only one a hard constraint may rely on, INVARIANT 4 and 11) uses COMMITTED
 facilities and the CONSERVATIVE trajectory. EXPECTED basis also uses owner-approved PENDING and
 NOT_APPLIED facilities on the EXPECTED trajectory; it is labelled "expected" and shown only.
@@ -115,6 +122,23 @@ def alternatives(search: Search) -> list[Alternative]:
     return out
 
 
+def _legs_text(search: Search, ev: Eval | None, why: dict[tuple, str] | None) -> str:
+    if ev is None or not why:
+        return ""
+    return "; ".join(f"{search.action_label(a)}: {why[k]}"
+                     for a in search.ordered(ev.actions) if (k := action_key([a])[0]) in why)
+
+
+def approval_text(search: Search, ev: Eval | None) -> str:
+    """Why the owner must approve the candidate `ev` (one sentence per leg above the ceiling), or ''."""
+    return _legs_text(search, ev, ev.approvals if ev is not None else None)
+
+
+def unrunnable_text(search: Search, ev: Eval | None) -> str:
+    """Why the executor cannot run the candidate `ev` today (one sentence per leg), or ''."""
+    return _legs_text(search, ev, ev.unrunnable if ev is not None else None)
+
+
 def _note(alt: Alternative, search: Search) -> str:
     parts = []
     if alt.ev is not None and alt.ev.cost is not None:
@@ -122,7 +146,10 @@ def _note(alt: Alternative, search: Search) -> str:
     if alt.ev is not None and alt.ev.breach_day is not None:
         parts.append(f"RESERVE_BREACH on day {alt.ev.breach_day}")
     if not alt.reasons and alt.ev is not None:
-        parts.append("admissible but dearer than the selected plan")
+        if alt.ev.needs_approval:
+            parts.append("admissible, but the owner must approve it: " + approval_text(search, alt.ev))
+        else:
+            parts.append("admissible but dearer than the selected plan")
     if alt.note:
         parts.append(alt.note)
     return "; ".join(parts)
@@ -165,6 +192,8 @@ def _build_plan(search: Search, state: FinancialState, mandate: Mandate) -> Fund
                            label="no admissible plan: the menu cannot cover the gap" + _capped(search), **common)
     best = search.evaluate(search.ordered(best.actions))
     lines = search.cost_lines(best)
+    approval = approval_text(search, best)
+    unrunnable = unrunnable_text(search, best)
     uses_expected = any(state_fac.status != FacilityStatus.COMMITTED
                         for state_fac in (search.facilities[a.facility_id] for a in best.actions))
     if basis == "COMMITTED":
@@ -172,9 +201,14 @@ def _build_plan(search: Search, state: FinancialState, mandate: Mandate) -> Fund
     else:
         label = (EXPECTED_LABEL if uses_expected else "expected plan (committed sources only)") + ": " + \
             cost_display(lines, best.cost) + _capped(search)
+    if approval:
+        label += " (needs the owner's approval)"
+    if unrunnable:
+        label += " (cannot run today)"
     return FundingPlan(id=plan_id(basis, list(best.actions), state, mandate), actions=list(best.actions),
                        costs=lines, total_cost_fen=best.cost or 0, admissible=True, rejected=rejected,
-                       label=label, **common)
+                       label=label, needs_owner_approval=bool(approval), approval_reason=approval,
+                       executable_now=not unrunnable, not_executable_reason=unrunnable, **common)
 
 
 def _capped(search: Search) -> str:
@@ -214,6 +248,8 @@ def _row(alt: Alternative, search: Search, result: ComparisonResult) -> Comparis
         key=alt.key, label=alt.label, components=alt.components, actions=alt.actions, cost_fen=cost,
         cost_display=cost_display(lines, cost), result=result, reasons=alt.reasons,
         breach_day=ev.breach_day if ev is not None else None, note=_note(alt, search) if result != ComparisonResult.SELECTED else "",
+        needs_owner_approval=ev is not None and ev.needs_approval, approval_reason=approval_text(search, ev),
+        executable_now=ev is None or not ev.unrunnable,
     )
 
 

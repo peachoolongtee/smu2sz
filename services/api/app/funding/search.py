@@ -6,8 +6,13 @@ what the offer alone already posts). Admissibility is decided from the same traj
 
 - closing cash >= mandate.min_cash_fen on every day;
 - no `covenants.evaluate` violation (the committed facilities plus any facility the plan uses);
-- every source's all-in annual rate <= mandate.max_apr_bp (`mandate.check_apr`);
 - `mandate.allow_new_borrowing` when any debt source is used.
+
+The rate ceiling (`mandate.max_apr_bp`) is not an admissibility rule: it decides who may run the plan. An action
+whose effective annual cost (`funding.rates.action_rate`, the number the executor's admission tests) is above the
+ceiling makes its plan `needs_approval`: still admissible, but the owner must approve that leg. A plan that needs
+no approval always ranks before one that does, whatever the cost difference (the agent must be able to act alone
+when it can); among plans of the same class the cheapest comes first.
 
 Timing follows ADR-0003: every source is requested on day 0 and lands after its lead time; the router
 searches amounts, not dates. A bullet credit line is repaid on an inflow day after the gap opens (the
@@ -16,7 +21,7 @@ No action is smaller than MIN_ACTION_FEN (EV-11).
 
 Speed: the search steers on `financial.project_cash`, which books exactly the postings `project`
 books and returns the same closing cash, peak debt and posted costs without building the display
-trajectory (a `Probe`). A probe that breaches the floor, exceeds the max APR or borrows against the
+trajectory (a `Probe`). A probe that breaches the floor or borrows against the
 mandate is inadmissible whatever the covenants say; any other probe that could become the best plan
 is re-run through the full `project` and `covenants.evaluate` (`Search.evaluate`) before it is
 accepted. So the chosen plan is the one the full evaluation of every candidate would choose.
@@ -47,7 +52,7 @@ from app.domain.models import (
     Violation,
     ViolationCode,
 )
-from app.domain.money import DAYS_PER_YEAR, Ratio, bp, fmt_yuan, gross_up_face
+from app.domain.money import DAYS_PER_YEAR, bp, fmt_yuan, gross_up_face
 from app.financial import (
     EngineError,
     UncommittedFacilityError,
@@ -55,8 +60,17 @@ from app.financial import (
     project_cash,
     recurring_receivable_id,
 )
-from app.funding.rates import MONTH_DAYS, all_in_rate, is_debt, pct, tier3_reasons
-from app.mandate import check_apr
+from app.financial.fmt import y
+from app.funding.rates import (
+    MONTH_DAYS,
+    action_rate,
+    approval_reason,
+    invoice_landing_day,
+    is_debt,
+    pct,
+    receipt_covered_advance,
+    tier3_reasons,
+)
 
 GRID_STEP_FEN = 1_000_000  # ¥10,000
 MIN_ACTION_FEN = 100_000  # ¥1,000: the smallest draw, advance, early payment or bill discount the router proposes
@@ -183,10 +197,23 @@ class Eval:
     breach_day: int | None = None
     shortfall: int = 0
     peak_debt: int = 0
+    # per action (`_akey`): why it needs the owner (effective annual cost above the max APR); empty = autonomous
+    approvals: dict[tuple, str] = field(default_factory=dict)
+    # per action (`_akey`): why the executor cannot run it today (an advance on an invoice that is not issued yet)
+    unrunnable: dict[tuple, str] = field(default_factory=dict)
 
     @property
     def admissible(self) -> bool:
         return self.traj is not None and not self.violations
+
+    @property
+    def needs_approval(self) -> bool:
+        return bool(self.approvals)
+
+    @property
+    def cls(self) -> tuple[bool, bool]:
+        """What a plan can do before cost: (cannot run today, needs the owner). False sorts first."""
+        return (bool(self.unrunnable), bool(self.approvals))
 
     @property
     def reasons(self) -> list[ViolationCode]:
@@ -197,7 +224,7 @@ class Eval:
         return seen
 
     def rank(self) -> tuple:
-        return (self.cost, len(self.actions), self.peak_debt, action_key(self.actions))
+        return (*self.cls, self.cost, len(self.actions), self.peak_debt, action_key(self.actions))
 
 
 class _BudgetSpent(Exception):
@@ -215,10 +242,16 @@ class Probe:
     breach_day: int | None = None
     shortfall: int = 0
     peak_debt: int = 0
-    blocked: bool = False  # known inadmissible (reserve breach, max APR, no new borrowing, or evaluated)
+    blocked: bool = False  # known inadmissible (reserve breach, no new borrowing, or evaluated)
+    needs_approval: bool = False  # some action is above the max APR: the owner must approve the plan
+    unrunnable: bool = False  # some action cannot run today
+
+    @property
+    def cls(self) -> tuple[bool, bool]:
+        return (self.unrunnable, self.needs_approval)
 
     def rank(self) -> tuple:
-        return (self.cost, len(self.actions), self.peak_debt, action_key(self.actions))
+        return (*self.cls, self.cost, len(self.actions), self.peak_debt, action_key(self.actions))
 
 
 def _akey(a: FundingAction) -> tuple:
@@ -302,13 +335,21 @@ class Search:
         self.facilities = {f.id: f for f in state.facilities}
         self._cache: dict[tuple, Eval] = {}
         self._probes: dict[tuple, Probe] = {}
-        self._rule_cache: dict[tuple, bool] = {}  # per action: breaks the max APR or no new borrowing
+        self._rule_cache: dict[tuple, bool] = {}  # per action: no new borrowing
+        self._approval_cache: dict[tuple, str | None] = {}  # per action: why it needs the owner
         self.baseline = project(self.pstate, obligations, [], self.mode, mandate.horizon_days, self.floor)
         self.base_cost = _cost_total(self.baseline)
         below = [p for p in self.baseline.days if p.closing_fen < self.floor and p.day >= state.as_of_day]
         self.breach_days = [p.day for p in below]
         self.need_fen = max((self.floor - p.closing_fen for p in below), default=0)
         self.rcvs = receivables(state, self.baseline)
+        self._over_cache: dict[tuple, bool] = {}
+        # what the executor lets a facility finance, and lands today: an invoice that exists and is issued (a recurring
+        # invoice not yet issued does not exist; the executor lands an advance on a future-dated one today, the
+        # engine on its issue day), is OPEN, buyer-confirmed and owed by a registered buyer
+        buyers = {c.id for c in state.counterparties if c.role == "BUYER" and c.known}
+        self.financeable = {r.id for r in state.receivables if r.status == "OPEN" and r.confirmed
+                            and r.issue_day <= state.as_of_day and r.counterparty_id in buyers}
         self.slots = self._slots() if below else []
         self.best: Eval | None = None
         self._best_effort: Eval | Probe | None = None
@@ -375,6 +416,7 @@ class Search:
                         arrival = max(today, r.issue_day) + f.lead_time_days
                         if arrival < r.due_day and arrival <= last and r.due_day > first:
                             cap = r.open_fen if f.advance_rate_bp is None else f.advance_rate_bp * r.open_fen // 10_000
+                            cap = receipt_covered_advance(f, cap, r.open_fen, r.due_day - arrival)
                             if min(cap, avail) > 0:
                                 out.append(Slot(f, FundingActionKind.FINANCE_INVOICE, arrival, min(cap, avail),
                                                 receivable_id=r.id, expected=exp, request_day=today))
@@ -402,17 +444,35 @@ class Search:
 
     # ------------------------------------------------------------ evaluation
 
-    def action_rate(self, a: FundingAction) -> Fraction:
+    def action_pricing(self, a: FundingAction) -> tuple[Fraction, str]:
+        """(annual cost, how) of one action, from `funding.rates.action_rate`: the number the executor's
+        admission compares with the mandate's ceiling (an advance on the days from landing to due)."""
         f = self.facilities[a.facility_id]
-        if a.kind == FundingActionKind.EARLY_PAY:
-            r = self.rcvs.get(a.receivable_id or "")
-            days = None
-            if r is not None:
-                days = r.due_day - (max(a.day, r.issue_day) + f.lead_time_days)
-            return all_in_rate(f, discount_bp=a.rate_bp, days_early=days)[0]
-        if a.kind == FundingActionKind.DISCOUNT_BILL and a.rate_bp is not None:
-            return bp(a.rate_bp)
-        return all_in_rate(f)[0]
+        r = self.rcvs.get(a.receivable_id or "")
+        landing = invoice_landing_day(f, a.day, r.issue_day) if r is not None else None
+        return action_rate(f, a.kind, amount_fen=a.amount_fen, landing_day=landing,
+                           due_day=r.due_day if r is not None else None, rate_bp=a.rate_bp)
+
+    def action_rate(self, a: FundingAction) -> Fraction:
+        return self.action_pricing(a)[0]
+
+    def unrunnable(self, a: FundingAction) -> str | None:
+        """Why the executor cannot run this action today: an advance needs an invoice that exists and is issued
+        (the engine lands an advance on a recurring invoice not yet issued on its issue day; the executor
+        refuses it, and lands one on a future-dated invoice today)."""
+        if a.kind != FundingActionKind.FINANCE_INVOICE or a.receivable_id in self.financeable:
+            return None
+        r = self.rcvs.get(a.receivable_id or "")
+        when = f"; it is issued on day {r.issue_day}" if r is not None and r.issue_day > self.state.as_of_day else ""
+        return f"{a.receivable_id} is not an invoice the executor can finance today{when}"
+
+    def approval(self, a: FundingAction) -> str | None:
+        """Why this action needs the owner's approval: its effective annual cost is above the mandate's ceiling."""
+        k = _akey(a)
+        if k not in self._approval_cache:
+            rate, how = self.action_pricing(a)
+            self._approval_cache[k] = approval_reason(rate, how, self.mandate)
+        return self._approval_cache[k]
 
     def binding_facilities(self, actions: tuple[FundingAction, ...]) -> list[Facility]:
         used = {a.facility_id for a in actions}
@@ -448,10 +508,12 @@ class Search:
                 ev.violations.append(rv)
         ev.violations.extend(evaluate_covenants(t, self.binding_facilities(acts), self.mandate))
         for a in acts:
-            f = self.facilities[a.facility_id]
-            v = check_apr(Ratio.of(self.action_rate(a)), self.mandate, f.name)
-            if v is not None:
-                ev.violations.append(v)
+            no = self.unrunnable(a)
+            if no is not None:
+                ev.unrunnable[_akey(a)] = no
+            why = self.approval(a)
+            if why is not None:
+                ev.approvals[_akey(a)] = why
         if not self.mandate.allow_new_borrowing and any(is_debt(self.facilities[a.facility_id]) for a in acts):
             ev.violations.append(Violation(
                 code=ViolationCode.NEW_BORROWING_NOT_ALLOWED,
@@ -462,14 +524,12 @@ class Search:
         return ev
 
     def _breaks_rules(self, a: FundingAction) -> bool:
-        """The action alone makes any plan inadmissible: max APR, or new debt the mandate forbids
-        (the same checks `evaluate` makes, without the trajectory)."""
+        """The action alone makes any plan inadmissible: new debt the mandate forbids (the same check
+        `evaluate` makes, without the trajectory)."""
         k = _akey(a)
         hit = self._rule_cache.get(k)
         if hit is None:
-            f = self.facilities[a.facility_id]
-            hit = (check_apr(Ratio.of(self.action_rate(a)), self.mandate, f.name) is not None
-                   or (not self.mandate.allow_new_borrowing and is_debt(f)))
+            hit = not self.mandate.allow_new_borrowing and is_debt(self.facilities[a.facility_id])
             self._rule_cache[k] = hit
         return hit
 
@@ -487,7 +547,8 @@ class Search:
         if full is not None:
             pr = Probe(acts, ok=full.traj is not None, cost=full.cost, breach_day=full.breach_day,
                        shortfall=full.shortfall, peak_debt=full.peak_debt,
-                       blocked=full.traj is not None and not full.admissible)
+                       blocked=full.traj is not None and not full.admissible, needs_approval=full.needs_approval,
+                       unrunnable=bool(full.unrunnable))
             self._probes[key] = pr
             return pr
         try:
@@ -504,7 +565,9 @@ class Search:
             shortfall = floor - min(path.closings)
         blocked = breach_day is not None or any(self._breaks_rules(a) for a in acts)
         pr = Probe(acts, ok=True, cost=path.cost_fen - self.base_cost, breach_day=breach_day, shortfall=shortfall,
-                   peak_debt=path.peak_debt_fen, blocked=blocked)
+                   peak_debt=path.peak_debt_fen, blocked=blocked,
+                   needs_approval=any(self.approval(a) is not None for a in acts),
+                   unrunnable=any(self.unrunnable(a) is not None for a in acts))
         self._probes[key] = pr
         return pr
 
@@ -560,7 +623,8 @@ class Search:
             base_cost, short, first = 0, self.need_fen, self.breach_days[0]
         if first < slot.arrival:
             return None  # the cash would land after the breach
-        if prune and slot in self.unit and self._beaten(base_cost + self._lb(slot, short, net=True)):
+        if prune and slot in self.unit and self._beaten(
+                base_cost + self._lb(slot, short, net=True), [*prefix, slot.action(slot.cap_fen)]):
             return None
         net = short
         ev: Probe | None = None
@@ -609,7 +673,7 @@ class Search:
                 if a is b or a.conflicts(b):
                     continue
                 for amt in self._grid(a.cap_fen):
-                    if not self._beaten(self._lb(a, amt)):
+                    if not self._beaten(self._lb(a, amt), [a.action(amt)]):
                         self.fill([a.action(amt)], b)
         for a in slots:
             for b in slots:
@@ -619,7 +683,8 @@ class Search:
                     if c is a or c is b or c.conflicts(a) or c.conflicts(b):
                         continue
                     for amt in self._grid(b.cap_fen):
-                        if not self._beaten(self._lb(a, a.cap_fen) + self._lb(b, amt)):
+                        if not self._beaten(self._lb(a, a.cap_fen) + self._lb(b, amt),
+                                            [a.action(a.cap_fen), b.action(amt)]):
                             self.fill([a.action(a.cap_fen), b.action(amt)], c)
 
     def _lb(self, slot: Slot, amount: int, net: bool = False) -> Fraction:
@@ -628,8 +693,31 @@ class Search:
         unit = self.unit[slot] if net else self.unit_amt[slot]
         return unit * amount * Fraction(98, 100) - 2
 
-    def _beaten(self, bound: Fraction) -> bool:
-        return self.best is not None and self.best.cost is not None and bound > self.best.cost
+    def _over(self, a: FundingAction) -> bool:
+        """The action is certainly above the max APR, whatever fen rounding does to its amount (1% clear of the
+        ceiling): a plan that holds it is certainly one that needs approval."""
+        k = _akey(a)
+        hit = self._over_cache.get(k)
+        if hit is None:
+            hit = self.action_rate(a) > bp(self.mandate.max_apr_bp) * Fraction(101, 100)
+            self._over_cache[k] = hit
+        return hit
+
+    def _cls(self, actions: list[FundingAction]) -> tuple[bool, bool]:
+        """The class a plan holding `actions` is certain to be in (it can only get worse as actions are added)."""
+        return (any(self.unrunnable(a) is not None for a in actions), any(self._over(a) for a in actions))
+
+    def _beaten(self, bound: Fraction, actions: list[FundingAction] = ()) -> bool:  # type: ignore[assignment]
+        """A candidate holding `actions` that posts at least `bound` cannot beat the best plan: plans rank by (cannot
+        run today, needs approval, cost). It is beaten when its certain class is worse than the best's, or the same
+        and it is dearer; a candidate not known to be in a worse class is never beaten by a better-class best."""
+        best = self.best
+        if best is None or best.cost is None:
+            return False
+        mine = self._cls(list(actions))
+        if mine != best.cls:
+            return mine > best.cls
+        return bound > best.cost
 
     # ------------------------------------------------------------ presentation helpers
 
@@ -651,7 +739,7 @@ class Search:
             for e in point.events:
                 if e.kind not in COST_KINDS:
                     continue
-                idx = self._attribute(ev.actions, e.ref, point.day)
+                idx = self._attribute(ev.actions, e.ref, point.day, e.formula)
                 if idx is not None:
                     groups[idx].append((-e.amount_fen, e.formula or e.label))
         out = []
@@ -665,15 +753,25 @@ class Search:
                 formula = "; ".join(t for _, t in items) + f"; total {fmt_yuan(fen)}"
             else:
                 formula = "no cost posted"
-            out.append(CostLine(label=self.action_label(a), fen=fen, facility_id=f.id, formula=formula))
+            why = ev.approvals.get(_akey(a), "")
+            no = ev.unrunnable.get(_akey(a), "")
+            out.append(CostLine(label=self.action_label(a), fen=fen, facility_id=f.id, formula=formula,
+                                needs_owner_approval=bool(why), approval_reason=why,
+                                executable_now=not no, not_executable_reason=no))
         return out
 
-    def _attribute(self, actions: tuple[FundingAction, ...], ref: str | None, day: int) -> int | None:
+    def _attribute(self, actions: tuple[FundingAction, ...], ref: str | None, day: int,
+                   formula: str | None = None) -> int | None:
         idx = [i for i, a in enumerate(actions) if a.facility_id == ref]
         if not idx:
             return None
         if len(idx) == 1:
             return idx[0]
+        # the engine's posting formula names the principal it is charged on first ("<amount> × <rate> ..."): that
+        # tells two advances on one facility apart where the day cannot (an upfront fee posts on the landing day)
+        named = [i for i in idx if formula and formula.startswith(f"{y(actions[i].amount_fen)} ×")]
+        if named:
+            idx = named
         for i in idx:
             a = actions[i]
             f = self.facilities[a.facility_id]
