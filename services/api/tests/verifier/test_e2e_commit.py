@@ -8,7 +8,7 @@ from typing import Any
 
 import pytest
 
-from app.domain.fixtures import load_scenario
+from app.domain.fixtures import golden_values, load_scenario
 from app.domain.models import (
     AcceptOffer,
     Actor,
@@ -121,7 +121,7 @@ def test_ex01_option_b_needs_the_owner(desk):
     b = v.counters[1]
     assert b.label == "Option B"
     c = ex.propose_commitment(v.id, counter_id=b.id, expires_day=5)
-    assert c.obligations == b.obligations and c.forward_value_fen == b.forward_value_fen == 0
+    assert c.obligations == b.obligations and c.forward_value_fen == b.forward_value_fen == golden_values()["counter_b_net_12m"]
     result = _accept(ex, clock, v, c)
     assert (result.status, result.tier) == (OperationStatus.PENDING_APPROVAL, Tier.TIER_2)
     assert "lengthens payment terms" in result.message

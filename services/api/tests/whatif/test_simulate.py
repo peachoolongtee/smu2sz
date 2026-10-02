@@ -28,8 +28,8 @@ def test_buyer_offer_preset_reproduces_ex01(run, g):
     assert r.hypothetical is True
     assert r.outcome == "REJECT"
     assert r.codes == ["AGG_CONCESSION_EXCEEDED", "RESERVE_BREACH", "DISCOUNT_ABOVE_BREAK_EVEN", "EARLY_PAY_DEARER_THAN_PLAN"]
-    assert r.forward["total_fen"] == g["forward_ledger_total"] == 2_645_562
-    assert r.forward["total_display"] == "¥26,455.62" and r.forward["cap_display"] == "¥5,000.00"
+    assert r.forward["total_fen"] == g["forward_ledger_total"] == 2_832_692
+    assert r.forward["total_display"] == "¥28,326.92" and r.forward["cap_display"] == "¥5,000.00"
     assert r.forward["over_cap"] is True
     assert r.reserve["breach_day"] == 47 and r.reserve["curable"] is True
     assert r.reserve["cure_cost_fen"] == g["reserve_cure_cost_if"]
@@ -69,10 +69,11 @@ def test_option_a_is_not_rejected_for_concessions(run):
     assert r.params["effective_face_fen"] == 21_190_000 and r.params["effective_face_display"] == "¥211,900.00"
 
 
-def test_option_b_nets_the_extension_with_the_price_adjustment(run):
+def test_option_b_nets_the_extension_with_the_price_adjustment(run, g):
     r = run("option_b")
     assert not CONCESSION_CODES & set(r.codes)
-    assert r.forward["total_fen"] == 0
+    # The price gain counts only on the invoices whose cash is inside the window (11 of 13): a small net cost.
+    assert r.forward["total_fen"] == g["counter_b_net_12m"]
     assert r.outcome == "NEEDS_OWNER_APPROVAL"  # lengthens terms: Tier 2
 
 

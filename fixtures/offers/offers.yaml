@@ -10,7 +10,7 @@ offers:
       outcome: REJECT
       codes: [AGG_CONCESSION_EXCEEDED, RESERVE_BREACH, DISCOUNT_ABOVE_BREAK_EVEN, EARLY_PAY_DEARER_THAN_PLAN]
       reserve_breach_day: 47
-      forward_concession_total_fen: 2645562
+      forward_concession_total_fen: 2832692
       obligations: [IMMEDIATE_DISCOUNT, TERMS_EXTENSION, CONTINGENT_REBATE]
       counters: [Option A, Option B]
   - id: EX01B_REWORDED

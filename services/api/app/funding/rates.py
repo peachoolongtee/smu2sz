@@ -147,14 +147,17 @@ def marginal_cost(state: FinancialState, mandate: Mandate) -> tuple[Ratio, str]:
 def break_even_cost_share(state: FinancialState, mandate: Mandate, days_early: int) -> tuple[Fraction, int | None, int | None]:
     """(c, whole periods k, period p): what the marginal committed source charges, as a share of
     principal, to carry the money for `days_early` days. Invoice financing is billed in whole
-    periods (k = ceil(days/p), c = R × p/365 × k); any other source accrues daily (c = R × days/365,
-    k and p are None)."""
+    periods, k = ceil(days/p): c = rate × p × k/365 + period fee × k + the upfront fee ONCE (the upfront
+    fee is charged when the advance is made, not again each period; F-FIN-09). Any other source accrues
+    daily (c = R × days/365, k and p are None)."""
     rate, fid = marginal_cost(state, mandate)
     facility = next((f for f in state.facilities if f.id == fid), None)
     if facility is not None and facility.kind == FacilityKind.INVOICE_FINANCING:
         period = facility.fee_period_days or MONTH_DAYS
         k = max(1, -(-days_early // period))
-        return rate.value * period * k / DAYS_PER_YEAR, k, period
+        c = (bp(facility.rate_bp) * period * k / DAYS_PER_YEAR
+             + bp(facility.fee_bp_per_advance) * k + bp(facility.upfront_fee_bp))
+        return c, k, period
     return rate.value * days_early / DAYS_PER_YEAR, None, None
 
 

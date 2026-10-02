@@ -6,7 +6,16 @@ from hypothesis import given, settings
 from hypothesis import strategies as st
 
 from app.domain.fixtures import load_scenario
-from app.domain.models import CashFlow, Facility, FacilityKind, FacilityStatus, FlowKind, Mode, Repayment
+from app.domain.models import (
+    CashFlow,
+    DurationKind,
+    Facility,
+    FacilityKind,
+    FacilityStatus,
+    FlowKind,
+    Mode,
+    Repayment,
+)
 from app.domain.money import Ratio, bp, post
 from app.financial import project, value_concessions
 from tests.financial.builders import draw, early_pay, extension, finance, rebate
@@ -84,9 +93,12 @@ def test_interest_posting_boundary_rounds_half_up(k):
 
 @given(st.integers(1, 10**9), st.integers(-120, 120), st.integers(1, 2000))
 def test_valuation_is_integer_and_antisymmetric(face, delta, rate_bp):
+    # One invoice, issued on day 2 with 200-day terms: its due day stays inside W = [0, 365) for every delta in
+    # -120..120, so a shortening (a gain, which counts only on cash inside W) is the exact mirror of the extension.
     s = STATE.model_copy(update={"recurring_invoices": [STATE.recurring_invoices[0].model_copy(
-        update={"face_fen": face})]})
+        update={"face_fen": face, "terms_days": 200})]})
     rate = Ratio.of(bp(rate_bp))
-    [up] = value_concessions([extension(delta)], s, rate, "test", 365)
-    [down] = value_concessions([extension(-delta)], s, rate, "test", 365)
+    one_off = DurationKind.ONE_OFF
+    [up] = value_concessions([extension(delta, duration=one_off)], s, rate, "test", 365)
+    [down] = value_concessions([extension(-delta, duration=one_off)], s, rate, "test", 365)
     assert type(up.value_fen) is int and up.value_fen == -down.value_fen

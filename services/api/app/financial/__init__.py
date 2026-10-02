@@ -14,7 +14,17 @@ from app.financial.charges import (
     upfront_fee,
     whole_periods,
 )
-from app.financial.concessions import if_all_in_rate, value_concessions
+from app.financial.concessions import (
+    ExtensionProForma,
+    extension_extra_debt,
+    extension_monthly_service,
+    extension_pro_forma,
+    if_all_in_rate,
+    pro_forma_scale,
+    recurring_issue_days,
+    value_concessions,
+    window,
+)
 from app.financial.engine import Engine
 from app.financial.errors import EngineError, FundingActionError, ObligationError, UncommittedFacilityError
 from app.financial.invoices import materialise, resolve_scope
@@ -26,22 +36,29 @@ __all__ = [
     "CashPath",
     "Engine",
     "EngineError",
+    "ExtensionProForma",
     "FundingActionError",
     "ObligationError",
     "UncommittedFacilityError",
     "advance_effective_rate",
     "amortisation_schedule",
     "annuity_payment",
+    "extension_extra_debt",
+    "extension_monthly_service",
+    "extension_pro_forma",
     "fee_period_days",
     "finance_invoice_charges",
     "if_all_in_rate",
     "line_interest",
     "materialise",
+    "pro_forma_scale",
     "project",
     "project_cash",
+    "recurring_issue_days",
     "recurring_receivable_id",
     "resolve_scope",
     "upfront_fee",
     "value_concessions",
     "whole_periods",
+    "window",
 ]

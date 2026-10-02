@@ -44,7 +44,7 @@ SPAN = [SourceSpan(doc_id="T", start=0, end=0, text="")]
 
 # Recorded on origin/dev (cfecd72) with no commitments: sha256 of the sorted-key JSON of each response.
 GOLDEN_TRAJECTORY = "6e416d997eccbf94"
-GOLDEN_ROUTER_PLAN = "de93d3064db00850"
+GOLDEN_ROUTER_PLAN = "f196f11367d8a317"  # 3 Oct: the extension figures in the plan moved to 13 dated invoices
 EX01_COUNTERS = [
     "Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥211,900 of this invoice at 0.85%.",
     "60-day terms accepted with a 0.45% price adjustment on future invoices, no rebate.",

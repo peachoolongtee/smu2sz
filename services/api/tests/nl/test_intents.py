@@ -15,7 +15,7 @@ def test_evaluate_offer_by_fixture_proposes_counters(client):
     assert codes(r) == ["AGG_CONCESSION_EXCEEDED", "RESERVE_BREACH", "DISCOUNT_ABOVE_BREAK_EVEN", "EARLY_PAY_DEARER_THAN_PLAN"]
     assert ops(r) == [] and r["awaiting_confirmation"]
     assert [s["kind"] for s in r["plan"]][:4] == ["VERIFY", "COUNTER_OFFER", "COUNTER_OFFER", "NEGOTIATE"]
-    assert r["verdict"]["forward_concession_total_display"] == "¥26,455.62"
+    assert r["verdict"]["forward_concession_total_display"] == "¥28,326.92"
 
 
 def test_evaluate_pasted_offer_compiles_the_quoted_text(client):

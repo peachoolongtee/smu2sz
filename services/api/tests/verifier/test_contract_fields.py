@@ -58,10 +58,11 @@ def test_ex01_counter_forward_values(offer_id, g, state, mandate):
     a, b = bundle(offer_id).verdict.counters
     # Option A: an immediate discount is not a forward concession; its cost is immediate.
     assert a.forward_value_fen == 0 and a.supplier_cost_fen == g["counter_a_total"]
-    # Option B: the extension net of the FIRM price adjustment, floored at 0 as in the aggregate.
+    # Option B: the extension (13 invoices issued in the window) net of the FIRM price adjustment, which counts
+    # only on the invoices whose cash falls inside the window (11): a net cost, floored at 0 as in the aggregate.
     ext_v, price_v = _values(b.obligations, state, mandate)
-    assert ext_v == g["extension_committed_12m"] and price_v < -ext_v
-    assert b.forward_value_fen == max(0, ext_v + price_v) == 0
+    assert ext_v == g["extension_committed_12m"] and price_v == g["counter_b_price_gain_12m"]
+    assert b.forward_value_fen == max(0, ext_v + price_v) == g["counter_b_net_12m"]
 
 
 def test_ex02_counter_books_no_forward_value(g):

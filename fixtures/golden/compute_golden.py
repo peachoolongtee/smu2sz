@@ -62,17 +62,25 @@ out["if_30d_cost_share_bp_x100"] = round(c * 1000000)   # 0.891% -> 8911 (hundre
 out["break_even_discount_bp"] = int(be * 10000)          # truncated: must be strictly below
 out["break_even_discount_display"] = f"{be*100:.2f}%"
 
-# 7.5 terms extension as a loan
-ext = Y(420000) * 12 * 15 / 365
+# 7.5 terms extension as a loan, valued on the dated invoices of the window (docs/FINANCIAL_SEMANTICS.md section 6)
+# Window W = [today, today + H), half-open. Golden: today = 0, H = 365 (mandate forward_concession_horizon_days);
+# the buyer's recurring invoice issues on day 2 and every 30 days after, face 420,000 yuan, terms 45 days.
+TODAY, HORIZON, FIRST_ISSUE, EVERY, DELTA = 0, 365, 2, 30, 15
+issue_days = [d for d in range(FIRST_ISSUE, TODAY + HORIZON, EVERY) if d >= TODAY]   # 2, 32, ..., 362
+n_inv = len(issue_days)                                  # 13 invoices in the window, not floor(365/30) = 12
+per_exact = Y(420000) * DELTA / 365                      # one invoice, exact yuan
 if_all_in = IF_RATE + IF_FEE * F(365, 30)
-out["extension_extra_receivables"] = fen(ext)
-out["extension_notional_line_per_invoice"] = fen(ext * LINE_RATE / 12)
-out["extension_notional_line_12m"] = fen(ext * LINE_RATE)
-out["extension_committed_per_invoice"] = fen(ext * if_all_in / 12)
-out["extension_committed_12m"] = fen(ext * if_all_in)
+# pro forma (steady state): extra debt = face x delta / invoice interval; monthly service = extra debt x r / 12
+extra_debt_exact = Y(420000) * DELTA / EVERY
+out["extension_extra_receivables"] = fen(extra_debt_exact)
+out["extension_monthly_service"] = fen(extra_debt_exact * if_all_in / 12)
+out["extension_notional_line_per_invoice"] = fen(per_exact * LINE_RATE)
+out["extension_notional_line_12m"] = fen(n_inv * per_exact * LINE_RATE)   # key name kept: the 12-month horizon
+out["extension_committed_per_invoice"] = fen(per_exact * if_all_in)
+out["extension_committed_12m"] = fen(n_inv * per_exact * if_all_in)
 out["if_all_in_rate_display"] = f"{if_all_in*100:.4f}%"
 # expected plan: 21-day invoice-financing bridge, then guaranteed loan for the rest of the year
-out["extension_expected_12m"] = fen(ext * if_all_in * 21 / 365 + ext * GL_RATE * (365 - 21) / 365)
+out["extension_expected_12m"] = fen(n_inv * per_exact * (if_all_in * 21 + GL_RATE * (365 - 21)) / 365)
 
 # 6.5 verdict
 rebate_max = fen(Y(400000) * bp(100))
@@ -104,11 +112,18 @@ ca_line_draw = Y(360000) - (ca_face - F(out["counter_a_discount"], 100))
 out["counter_a_total"] = out["counter_a_discount"] + fen(ca_line_draw * LINE_RATE * 32 / 365)
 # Counter B
 out["counter_b_price_adj_per_invoice"] = fen(Y(420000) * bp(45))
+# Rule 4: a gain counts only if its cash (the invoice's due day) is also inside W. A cost counts on the issue day.
+TERMS = 45                                               # golden recurring invoice terms
+shortening_days = [d for d in issue_days if d + TERMS - DELTA < TODAY + HORIZON]   # 30-day terms: 2 .. 332
+out["extension_shortening_gain_12m"] = -fen(len(shortening_days) * per_exact * if_all_in)
+price_gain_days = [d for d in issue_days if d + TERMS + DELTA < TODAY + HORIZON]   # Option B's 60-day terms: 2 .. 302
+out["counter_b_price_gain_12m"] = -len(price_gain_days) * out["counter_b_price_adj_per_invoice"]
+out["counter_b_net_12m"] = out["extension_committed_12m"] + out["counter_b_price_gain_12m"]
 
 # 7.6 covenants (exact comparisons; display 2 dp)
 ebitda_m, ds_m = Y(90000), Y(45000)
 debt_base = Y(1500000) + Y(150000)
-ext_int_m = F(out["extension_committed_per_invoice"], 100)
+ext_int_m = F(out["extension_monthly_service"], 100)
 out["dscr_base"] = ratio2(ebitda_m / ds_m)
 out["dscr_after_extension"] = ratio2(ebitda_m / (ds_m + ext_int_m))
 out["leverage_base"] = ratio2(debt_base / (ebitda_m * 12))

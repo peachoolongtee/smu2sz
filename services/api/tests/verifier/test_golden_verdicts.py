@@ -8,6 +8,7 @@ from typing import Any
 import pytest
 
 from app.domain.models import FacilityKind, ObligationType, Outcome, Tier, ViolationCode
+from app.domain.money import fmt_yuan
 from app.financial import finance_invoice_charges
 from app.verifier import CALC_VERSION, evaluate, evaluate_term_sheet
 from tests.verifier.conftest import bundle, codes, compiled, compiled_term_sheet, declared_for
@@ -36,7 +37,7 @@ def test_ex01_reject_codes_and_forward_ledger(offer_id, g):
     assert v.forward_concession_total_fen == g["forward_ledger_total"]
     agg = v.violations[0]
     assert agg.inputs["total_fen"] == str(g["forward_ledger_total"])
-    assert agg.limit == "¥5,000.00" and agg.observed == "¥26,455.62"
+    assert agg.limit == "¥5,000.00" and agg.observed == "¥28,326.92"
     assert v.calc_version == CALC_VERSION == "tl-v2.0"
     assert v.required_tier == Tier.TIER_1
     assert all(x.formula and x.inputs for x in v.violations)
@@ -49,7 +50,7 @@ def test_ex01_concession_values(offer_id, g):
     assert ext.days_delta == 15
     assert ext_v.value_fen == g["extension_committed_12m"]
     assert ext_v.per_invoice_fen == g["extension_committed_per_invoice"]
-    assert "207,123.29" in ext_v.formula  # extension_extra_receivables
+    assert "13 invoices" in ext_v.formula  # the window holds 13 invoices (issue days 2, 32, ..., 362)
     _, rebate_v = _by_type(b, ObligationType.CONTINGENT_REBATE)
     assert rebate_v.value_fen == g["rebate_max"]
     disc, disc_v = _by_type(b, ObligationType.IMMEDIATE_DISCOUNT)
@@ -89,8 +90,8 @@ def test_ex01_covenants_hold_pro_forma(offer_id, g):
     assert passed["LEVERAGE_MAX"].observed == f"{g['leverage_after_extension']}x"
     assert passed["DSCR_MIN"].limit == "≥ 1.25x" and passed["LEVERAGE_MAX"].limit == "≤ 2.50x"
     assert passed["CLEAN_DOWN"].code == "CLEAN_DOWN"
-    assert passed["DSCR_MIN"].inputs["extra_receivables"] == "¥207,123.29"
-    assert passed["DSCR_MIN"].inputs["extra_monthly_debt_service"] == "¥1,871.30"
+    assert passed["DSCR_MIN"].inputs["extra_receivables"] == fmt_yuan(g["extension_extra_receivables"])
+    assert passed["DSCR_MIN"].inputs["extra_monthly_debt_service"] == fmt_yuan(g["extension_monthly_service"])
     rb = _reserve(b.verdict)
     assert rb.inputs["covenant_pro_forma_dscr"] == "1.92x"
     assert rb.inputs["covenant_pro_forma_leverage"] == "1.72x"
@@ -124,7 +125,8 @@ def test_ex01_counter_b(offer_id, g):
     assert b.text == "60-day terms accepted with a 0.45% price adjustment on future invoices, no rebate."
     assert f"¥{g['counter_b_price_adj_per_invoice'] // 100:,}.00 per invoice" in b.formula
     assert "¥1,871.30" in b.formula
-    assert b.supplier_cost_fen == 0  # the price adjustment more than covers the funding cost
+    # The price gain counts only on the invoices whose cash is inside the window (11 of the 13): a net cost.
+    assert b.supplier_cost_fen == g["counter_b_net_12m"]
 
 
 def _normalise(x: Any, ids: set[str]) -> Any:
@@ -205,7 +207,7 @@ def test_ex05_accepts_net_firm_gain(g):
     op, op_v = _by_type(b, ObligationType.OPERATIONAL_CONCESSION)
     assert op.amount_fen == 15_000 and op.base.events_per_year == 52 and op_v.value_fen == 780_000
     ext, ext_v = _by_type(b, ObligationType.TERMS_EXTENSION)
-    assert ext.days_delta == -15 and ext_v.value_fen == -g["extension_committed_12m"]
+    assert ext.days_delta == -15 and ext_v.value_fen == g["extension_shortening_gain_12m"]
     assert v.forward_concession_total_fen == 0  # a net FIRM gain adds nothing to the ledger
 
 
