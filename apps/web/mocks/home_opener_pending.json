@@ -1,0 +1,29 @@
+{
+  "session_id": "rec-home-pending",
+  "turn": 1,
+  "reply": "Day 34. Foshan Home Retail Co.'s ¥208,100.00 on RCV-A was due on day 32 and has not arrived. On current books cash falls ¥200,000.00 below your ¥300,000.00 floor on day 42. 1 more warning: Reserve headroom thin on day 34. I can finance ¥200,000.00 of invoice RI:BUYER-1:2 on Invoice financing (onboarded platform) now (requested today, cash lands on day 37); it will cost ¥1,782.19 by day 47, which is 32.5% a year for those 10 days. That is above your 15.00% yearly ceiling for funding (invoice financing is billed in whole 30-day periods), so it needs your approval: if you say go ahead I will queue it for you to approve, and it does not run until you do. Go ahead?",
+  "intent": "SHOW_ALERTS",
+  "lang": "en",
+  "plan": [
+    {
+      "step": 1,
+      "kind": "SUBMIT_INVOICE_FOR_FINANCING",
+      "description": "Submit RI:BUYER-1:2 to FAC-IF for a ¥200,000.00 advance",
+      "status": "PROPOSED",
+      "op_id": null,
+      "condition": null
+    }
+  ],
+  "verdict": null,
+  "operations": [],
+  "clarification": null,
+  "awaiting_confirmation": true,
+  "amended": false,
+  "replayed": false,
+  "negotiation": null,
+  "security_events": [],
+  "parse_source": "opener",
+  "trace_id": "rec-home-pending:1",
+  "proactive": true,
+  "has_news": true
+}

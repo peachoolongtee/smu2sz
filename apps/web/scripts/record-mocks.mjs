@@ -15,7 +15,8 @@
 //   - whatif_presets.json: every entry's `compute_ms` -> 0 and `cached` -> false (timing and cache state of the call).
 //   - the commitment id (CMT-<16 hex>) and its nonce, which the API draws at random for every deal: replaced by one fixed
 //     id and nonce wherever they appear (negotiation_accept.json, ops.json, home_act.json, home_goahead.json).
-//   - the entry_hash / prev_hash of the operations in negotiation_accept.json, home_act.json and home_goahead.json: the
+//   - the entry_hash / prev_hash of the operations in negotiation_accept.json, home_act.json, home_goahead.json, home_approve.json
+//     and home_approve_chat.json: the
 //     server's chain includes that commitment id, so it differs on every run. They are re-derived (sha256 over the op's
 //     own seq, id, kind, status and the previous hash) so the chain stays internally consistent and repeatable. Hashes in
 //     every other file (the chat script, for one) are deterministic and are kept exactly as recorded.
@@ -57,7 +58,7 @@ const written = [];
 const sha = (t) => createHash("sha256").update(t).digest("hex");
 const FIXED_CMT = `CMT-${sha("recorded commitment").slice(0, 16)}`;
 const FIXED_NONCE = sha("recorded nonce").slice(0, 32);
-const RECHAIN = new Set(["negotiation_accept.json", "home_act.json", "home_goahead.json"]);
+const RECHAIN = new Set(["negotiation_accept.json", "home_act.json", "home_goahead.json", "home_approve.json", "home_approve_chat.json"]);
 
 function normalise(name, value) {
   if (name === "nl_script.json") return value; // deterministic (its commitment ids and hashes come from the recorded LLM cache)
@@ -251,17 +252,31 @@ await toDay34(async () => {
   files["home_opener_quiet_zh.json"] = await live.nlOpener("rec-quiet-zh", "zh");
 });
 files["home_alerts_day34.json"] = await live.getAlerts();
+files["home_state_day34.json"] = await live.getState();
 const reserve = files["home_alerts_day34.json"].alerts.find((a) => a.id.startsWith("ALERT-RESERVE") && a.actionable);
 if (!reserve) throw new Error("no actionable reserve alert on day 34: the demo path has changed");
 files["home_opener_day34.json"] = await live.nlOpener("rec-home-en", "en");
 files["home_opener_day34_zh.json"] = await live.nlOpener("rec-home-zh", "zh");
+// "Let the agent fix this": the cure is above the yearly cost ceiling (¥1,782.19 for 10 days = 32.5% a year), so the executor
+// does not run it: it answers PENDING_APPROVAL with an approval id, and the alert stays open.
 files["home_act.json"] = await live.actOnAlert(reserve.id);
+if (files["home_act.json"].results[0]?.status !== "PENDING_APPROVAL") throw new Error("the day-34 cure no longer waits for approval: the demo path has changed");
+files["home_opener_pending.json"] = await live.nlOpener("rec-home-pending", "en");
+files["home_approval_pending.json"] = (await live.getApprovals())[0];
+// The owner approves on the approval card: the same operation executes (EXECUTED, the cash lands on day 37) and the alert clears.
+files["home_approval_approved.json"] = await live.decideApproval(files["home_approval_pending.json"].id, "APPROVE");
+files["home_approve.json"] = { operations: await ledgerTail(1) };
 files["home_alerts_after.json"] = await live.getAlerts();
-files["home_opener_after_act.json"] = await live.nlOpener("rec-home-after", "en");
+files["home_state_after_approve.json"] = await live.getState();
+files["home_opener_after_approve.json"] = await live.nlOpener("rec-home-after", "en");
 
+// The same cure through the chat: "go ahead" queues it (PENDING_APPROVAL), then the owner types "approve APR-…".
 await toDay34();
 await live.nlOpener("rec-home-go", "en");
 files["home_goahead.json"] = await live.nl({ session_id: "rec-home-go", actor: "OWNER", text: "go ahead" });
+const queued = files["home_goahead.json"].operations[0]?.approval_id;
+if (!queued) throw new Error("go ahead on day 34 queued no approval: the demo path has changed");
+files["home_approve_chat.json"] = await live.nl({ session_id: "rec-home-go", actor: "OWNER", text: `approve ${queued}` });
 
 // ------------------------------------------------------------------ the chat: every scripted text the mock knows, one conversation each
 const P = (role, lang, id) => promptsFor(role, lang).find((p) => p.id === id);
@@ -281,8 +296,9 @@ const CONVERSATIONS = [
   ["goal-go-zh", "OWNER", null, [["goal_zh", o("zh", "goal")], ["goal_go_zh", "执行"]]],
   ["goal-08-zh", "OWNER", null, [[null, o("zh", "goal")], ["amend_08_zh", o("zh", "amend")]]],
   ["ex01-go-zh", "OWNER", null, [["evaluate_ex01_zh", o("zh", "evaluate")], ["negotiate_ex01_zh", "执行"]]],
-  ["fund", "OWNER", null, [["fund_gap", o("en", "fund")]]],
-  ["fund-zh", "OWNER", null, [["fund_gap_zh", o("zh", "fund")]]],
+  // "Fund the cash gap" only PROPOSES; "go ahead" runs it: the draw is cash now, the invoice advance lands on day 3.
+  ["fund", "OWNER", null, [["fund_gap", o("en", "fund")], ["fund_gap_go", "go ahead"]]],
+  ["fund-zh", "OWNER", null, [["fund_gap_zh", o("zh", "fund")], ["fund_gap_go_zh", "执行"]]],
   ["status", "OWNER", null, [["status", o("en", "status")]]],
   ["status-zh", "OWNER", null, [["status_zh", o("zh", "status")]]],
   ["vague", "OWNER", null, [["clarify_cash", o("en", "vague")]]],
@@ -301,8 +317,8 @@ const CONVERSATIONS = [
 // The order of the keys in the file (the mock looks them up by name; the order only keeps the file diffable).
 const KEY_ORDER = [
   "evaluate_ex01", "negotiate_ex01", "cancel", "explain_en", "explain_zh", "goal", "goal_go", "amend_08", "amend_1_refused", "amend_fin",
-  "fund_gap", "status", "clarify_cash", "clarify_cash_zh", "amend_08_zh", "goal_zh", "goal_go_zh", "evaluate_ex01_zh", "negotiate_ex01_zh",
-  "fund_gap_zh", "status_zh", "approve_none_zh", "approve_none", "out_of_scope", "tier3", "fastcapital", "buyer_ex02", "buyer_extraction",
+  "fund_gap", "fund_gap_go", "status", "clarify_cash", "clarify_cash_zh", "amend_08_zh", "goal_zh", "goal_go_zh", "evaluate_ex01_zh", "negotiate_ex01_zh",
+  "fund_gap_zh", "fund_gap_go_zh", "status_zh", "approve_none_zh", "approve_none", "out_of_scope", "tier3", "fastcapital", "buyer_ex02", "buyer_extraction",
   "buyer_extraction_zh", "buyer_injection_zh", "buyer_rebate",
 ];
 const script = {};
@@ -317,6 +333,8 @@ for (const [conv, role, counterparty, turns] of CONVERSATIONS) {
     });
     if (key) script[key] = r;
   }
+  // The books right after the day-0 plan ran: cash in hand, and the advance still on its way (lots).
+  if (conv === "fund") files["state_after_fund.json"] = await live.getState();
 }
 const missing = KEY_ORDER.filter((k) => !(k in script));
 if (missing.length || Object.keys(script).length !== KEY_ORDER.length) throw new Error(`nl script keys do not match: missing ${missing.join(", ")}`);

@@ -546,45 +546,45 @@
     "break_even_display": "0.88%",
     "break_even_formula": "d / (1 − d) < c, c = marginal cost share for 30 days → d < c / (1 + c)",
     "excluded_note": "The credit line is excluded: its 30-day clean-down rules out a permanent need.",
-    "extension_extra_receivables_fen": 20712329,
+    "extension_extra_receivables_fen": 21000000,
     "extension_per_invoice_fen": 187130,
-    "extension_committed_12m_fen": 2245562,
-    "extension_notional_line_12m_fen": 1325589,
-    "extension_expected_12m_fen": 1105230,
-    "extension_formula": "extra receivables 207,123.29 = 420,000.00 × 12 × 15/365; × ≈10.8417% × 365/365 = 22,455.62",
+    "extension_committed_12m_fen": 2432692,
+    "extension_notional_line_12m_fen": 1436055,
+    "extension_expected_12m_fen": 1197332,
+    "extension_formula": "Σ over 13 invoices (issued days 2 to 362; window days 0 to 364) of face × 15/365 × ≈10.8417% = 24,326.92",
     "bases": [
       {
         "obligation_id": "PROBE-EXT",
-        "value_fen": 1325589,
+        "value_fen": 1436055,
         "basis": "terms extension priced as a loan: notional Bank credit line rate 6.4% (not usable: clean-down rules out a permanent need)",
-        "formula": "extra receivables 207,123.29 = 420,000.00 × 12 × 15/365; × 6.4% × 365/365 = 13,255.89",
+        "formula": "Σ over 13 invoices (issued days 2 to 362; window days 0 to 364) of face × 15/365 × 6.4% = 14,360.55",
         "per_invoice_fen": 110466,
-        "value_display": "¥13,255.89",
+        "value_display": "¥14,360.55",
         "per_invoice_display": "¥1,104.66"
       },
       {
         "obligation_id": "PROBE-EXT",
-        "value_fen": 2245562,
+        "value_fen": 2432692,
         "basis": "terms extension priced as a loan: committed marginal source: Invoice financing (onboarded platform) ≈10.8417%",
-        "formula": "extra receivables 207,123.29 = 420,000.00 × 12 × 15/365; × ≈10.8417% × 365/365 = 22,455.62",
+        "formula": "Σ over 13 invoices (issued days 2 to 362; window days 0 to 364) of face × 15/365 × ≈10.8417% = 24,326.92",
         "per_invoice_fen": 187130,
-        "value_display": "¥22,455.62",
+        "value_display": "¥24,326.92",
         "per_invoice_display": "¥1,871.30"
       },
       {
         "obligation_id": "PROBE-EXT",
-        "value_fen": 1105230,
+        "value_fen": 1197332,
         "basis": "terms extension priced as a loan: expected plan: 21-day Invoice financing (onboarded platform) bridge at ≈10.8417%, then Government-guaranteed working-capital loan at 5% (shown only; relied on once approved)",
-        "formula": "extra receivables × (≈10.8417% × 21/365 + 5% × 344/365) × 365/365 = ¥11,052.30; extra receivables 207,123.29 = 420,000.00 × 12 × 15/365; × ≈5.3361% × 365/365 = 11,052.30",
+        "formula": "extra receivables × (≈10.8417% × 21/365 + 5% × 344/365) × 365/365 = ¥11,973.32; Σ over 13 invoices (issued days 2 to 362; window days 0 to 364) of face × 15/365 × ≈5.3361% = 11,973.32",
         "per_invoice_fen": null,
-        "value_display": "¥11,052.30"
+        "value_display": "¥11,973.32"
       }
     ],
-    "extension_extra_receivables_display": "¥207,123.29",
+    "extension_extra_receivables_display": "¥210,000.00",
     "extension_per_invoice_display": "¥1,871.30",
-    "extension_committed_12m_display": "¥22,455.62",
-    "extension_notional_line_12m_display": "¥13,255.89",
-    "extension_expected_12m_display": "¥11,052.30"
+    "extension_committed_12m_display": "¥24,326.92",
+    "extension_notional_line_12m_display": "¥14,360.55",
+    "extension_expected_12m_display": "¥11,973.32"
   },
   "comparison": [
     {

@@ -35,15 +35,15 @@
     "created_day": 0,
     "operation_kind": "GENERATE_BORROWER_FILE",
     "reason": "prepare the borrower file for FAC-ETL (prepared, not sent)",
-    "op_id": "OP-BF-485628C594A7",
+    "op_id": "OP-BF-812D1A42194A",
     "operation": {
       "amount_fen": 60000000,
       "day": 0,
       "facility_id": "FAC-ETL",
-      "idempotency_key": "borrower-file:BF-485628C594A7",
+      "idempotency_key": "borrower-file:BF-812D1A42194A",
       "kind": "GENERATE_BORROWER_FILE",
       "mandate_version": 1,
-      "op_id": "OP-BF-485628C594A7",
+      "op_id": "OP-BF-812D1A42194A",
       "requested_by": "AGENT",
       "source_verdict_id": null
     },

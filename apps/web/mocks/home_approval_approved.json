@@ -1,0 +1,28 @@
+{
+  "id": "APR-000001",
+  "subject": "submit invoice for financing FAC-IF",
+  "status": "APPROVED",
+  "tier": "TIER_2",
+  "requested_by": "AGENT",
+  "created_day": 34,
+  "operation_kind": "SUBMIT_INVOICE_FOR_FINANCING",
+  "reason": "effective annual cost 32.52% is above the mandate's 15.00% ceiling for what the agent may borrow alone (all charges on ¥200,000.00 held 10 days (day 37 to day 47), annualised = 32.52%)",
+  "op_id": "alert:ALERT-RESERVE-42:v7:0",
+  "operation": {
+    "advance_fen": 20000000,
+    "day": 34,
+    "facility_id": "FAC-IF",
+    "idempotency_key": "alert:ALERT-RESERVE-42:v7:0",
+    "kind": "SUBMIT_INVOICE_FOR_FINANCING",
+    "mandate_version": 1,
+    "op_id": "alert:ALERT-RESERVE-42:v7:0",
+    "receivable_id": "RI:BUYER-1:2",
+    "requested_by": "AGENT",
+    "source_verdict_id": null
+  },
+  "amount_fen": 20000000,
+  "amount_display": "¥200,000.00",
+  "detail": "effective annual cost 32.52% is above the mandate's 15.00% ceiling for what the agent may borrow alone (all charges on ¥200,000.00 held 10 days (day 37 to day 47), annualised = 32.52%)",
+  "decided_day": null,
+  "result_message": "Advance ¥200,000.00 on RI:BUYER-1:2 from FAC-IF on day 34; the cash lands on day 37 after the 3-day lead time, not today"
+}

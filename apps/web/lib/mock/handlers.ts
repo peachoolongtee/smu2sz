@@ -50,6 +50,9 @@ import auditSec from "../../mocks/audit_sec.json";
 import borrowerFileJson from "../../mocks/borrower_file.json";
 import capexJson from "../../mocks/capex.json";
 import fundingJson from "../../mocks/funding.json";
+import homeApprovalApproved from "../../mocks/home_approval_approved.json";
+import homeApprovalPending from "../../mocks/home_approval_pending.json";
+import homeApprove from "../../mocks/home_approve.json";
 import mandateJson from "../../mocks/mandate.json";
 import negAccept from "../../mocks/negotiation_accept.json";
 import negNoDeal from "../../mocks/negotiation_nodeal.json";
@@ -208,7 +211,8 @@ function chainValid(ops: OperationView[]): boolean {
 
 export async function getState(): Promise<StateView> {
   await delay();
-  return clone(cast<StateView>(stateJson));
+  // The books follow the recorded story: opening books, after the day-0 plan (funding in transit), day 34, after the approved cure.
+  return clone(cast<StateView>(home.mockStateJson() ?? stateJson));
 }
 
 export async function getMandate(): Promise<MandateView> {
@@ -407,12 +411,36 @@ export async function decideApproval(id: string, decision: ApprovalDecision): Pr
   const a = s.approvals.find((x) => x.id === id);
   if (!a) throw new ApiError(404, `Approval ${id} not found.`);
   if (a.status !== "PENDING") throw new ApiError(409, `Approval ${id} is already ${a.status}.`);
+  if (a.op_id?.startsWith("alert:")) {
+    // The day-34 cure the alert queued: approving runs it (recorded EXECUTED, the cash lands on day 37) and clears the alert.
+    if (decision === "REJECT") {
+      throw new ApiError(409, "Mock mode replays only the approval of the recorded cure. Set NEXT_PUBLIC_API_MODE=live to reject it.");
+    }
+    const done = cast<{ operations: { kind: string; status: OperationView["status"]; tier: OperationView["tier"]; message: string; day: number }[] }>(homeApprove).operations[0];
+    Object.assign(a, clone(cast<ApprovalView>(homeApprovalApproved)), { id: a.id });
+    appendRecorded(done);
+    home.markApproved();
+    save();
+    return { ...clone(a), result_message: done.message };
+  }
   const loan = id === APPROVAL_SEEDS.apply_loan.id;
   a.status = decision === "APPROVE" ? "APPROVED" : "REJECTED";
   const op = append(`${decision === "APPROVE" ? "approve" : "reject"}_${loan ? "apply_loan" : "borrower_file"}`);
-  a.decided_day = 0;
   save();
   return { ...clone(a), result_message: op.message };
+}
+
+/** The approval the day-34 cure waits in (recorded); added to the queue the first time the cure is queued. */
+export function ensureHomeApproval(): ApprovalView {
+  const s = load();
+  const seed = cast<ApprovalView>(homeApprovalPending);
+  const found = s.approvals.find((x) => x.op_id === seed.op_id);
+  if (found) return found;
+  // The demo's capex step queues APR-000001 too (separate live runs); keep ids unique if both happen in one mock session.
+  const clash = s.approvals.some((x) => x.id === seed.id);
+  s.approvals.push({ ...clone(seed), id: clash ? "APR-H00001" : seed.id });
+  save();
+  return s.approvals[s.approvals.length - 1];
 }
 
 export async function getAlerts(): Promise<AlertsView> {
@@ -438,7 +466,10 @@ export async function nlOpener(sessionId: string | undefined, lang: "en" | "zh")
 export async function actOnAlert(id: string): Promise<AlertActResult> {
   await delay();
   const r = home.mockAct(id);
-  for (const o of r.results) appendRecorded({ kind: o.kind, status: o.status, tier: o.tier, message: o.message, day: r.day });
+  // Once only: asking again while the cure waits changes nothing.
+  const first = !load().approvals.some((x) => x.op_id?.startsWith("alert:"));
+  ensureHomeApproval();
+  if (first) for (const o of r.results) appendRecorded({ kind: o.kind, status: o.status, tier: o.tier, message: o.message, day: r.day });
   return r;
 }
 

@@ -1,5 +1,5 @@
 {
-  "file_id": "BF-485628C594A7",
+  "file_id": "BF-812D1A42194A",
   "status": "PREPARED_NOT_SENT",
   "style": "Borrower file (micro-enterprise loan format) · lender mocked",
   "title_en": "Borrower file (micro-enterprise loan format)",
@@ -50,18 +50,18 @@
         },
         {
           "label": "Cash on hand",
-          "value": "¥760,000.00",
+          "value": "¥550,000.00",
           "evidence": "OBSERVED",
           "note": "",
           "figures": [
             {
-              "text": "¥760,000.00",
+              "text": "¥550,000.00",
               "evidence": "OBSERVED",
-              "fen": 76000000,
+              "fen": 55000000,
               "ratio": null,
               "formula": null,
               "source": "state.cash_fen",
-              "display": "¥760,000.00"
+              "display": "¥550,000.00"
             }
           ]
         },
@@ -407,18 +407,18 @@
       "rows": [
         {
           "label": "Week 1 (days 1–7)",
-          "value": "¥0.00 · ¥0.00 · ¥760,000.00 · ¥760,000.00 · ¥760,000.00",
+          "value": "¥210,000.00 · ¥0.00 · ¥760,000.00 · ¥550,000.00 · ¥760,000.00",
           "evidence": "PROJECTED",
           "note": "",
           "figures": [
             {
-              "text": "¥0.00",
+              "text": "¥210,000.00",
               "evidence": "PROJECTED",
-              "fen": 0,
+              "fen": 21000000,
               "ratio": null,
               "formula": "Σ positive events",
               "source": "conservative trajectory days 1–7",
-              "display": "¥0.00"
+              "display": "¥210,000.00"
             },
             {
               "text": "¥0.00",
@@ -439,13 +439,13 @@
               "display": "¥760,000.00"
             },
             {
-              "text": "¥760,000.00",
+              "text": "¥550,000.00",
               "evidence": "PROJECTED",
-              "fen": 76000000,
+              "fen": 55000000,
               "ratio": null,
               "formula": "lowest close, day 1",
               "source": "trajectory day 1",
-              "display": "¥760,000.00"
+              "display": "¥550,000.00"
             },
             {
               "text": "¥760,000.00",
@@ -619,7 +619,7 @@
         },
         {
           "label": "Week 5 (days 29–35)",
-          "value": "¥420,000.00 · −¥364,584.24 · ¥355,415.76 · ¥300,000.00 · ¥355,415.76",
+          "value": "¥420,000.00 · −¥362,712.94 · ¥357,287.06 · ¥300,000.00 · ¥357,287.06",
           "evidence": "PROJECTED",
           "note": "",
           "figures": [
@@ -633,22 +633,22 @@
               "display": "¥420,000.00"
             },
             {
-              "text": "−¥364,584.24",
+              "text": "−¥362,712.94",
               "evidence": "PROJECTED",
-              "fen": -36458424,
+              "fen": -36271294,
               "ratio": null,
               "formula": "Σ negative events",
               "source": "conservative trajectory days 29–35",
-              "display": "−¥364,584.24"
+              "display": "−¥362,712.94"
             },
             {
-              "text": "¥355,415.76",
+              "text": "¥357,287.06",
               "evidence": "PROJECTED",
-              "fen": 35541576,
+              "fen": 35728706,
               "ratio": null,
               "formula": null,
               "source": "trajectory day 35",
-              "display": "¥355,415.76"
+              "display": "¥357,287.06"
             },
             {
               "text": "¥300,000.00",
@@ -660,19 +660,19 @@
               "display": "¥300,000.00"
             },
             {
-              "text": "¥355,415.76",
+              "text": "¥357,287.06",
               "evidence": "PROJECTED",
-              "fen": 35541576,
+              "fen": 35728706,
               "ratio": null,
               "formula": null,
               "source": "pro-forma trajectory day 35",
-              "display": "¥355,415.76"
+              "display": "¥357,287.06"
             }
           ]
         },
         {
           "label": "Week 6 (days 36–42)",
-          "value": "¥0.00 · ¥0.00 · ¥355,415.76 · ¥355,415.76 · ¥355,415.76",
+          "value": "¥0.00 · ¥0.00 · ¥357,287.06 · ¥357,287.06 · ¥357,287.06",
           "evidence": "PROJECTED",
           "note": "",
           "figures": [
@@ -695,37 +695,37 @@
               "display": "¥0.00"
             },
             {
-              "text": "¥355,415.76",
+              "text": "¥357,287.06",
               "evidence": "PROJECTED",
-              "fen": 35541576,
+              "fen": 35728706,
               "ratio": null,
               "formula": null,
               "source": "trajectory day 42",
-              "display": "¥355,415.76"
+              "display": "¥357,287.06"
             },
             {
-              "text": "¥355,415.76",
+              "text": "¥357,287.06",
               "evidence": "PROJECTED",
-              "fen": 35541576,
+              "fen": 35728706,
               "ratio": null,
               "formula": "lowest close, day 36",
               "source": "trajectory day 36",
-              "display": "¥355,415.76"
+              "display": "¥357,287.06"
             },
             {
-              "text": "¥355,415.76",
+              "text": "¥357,287.06",
               "evidence": "PROJECTED",
-              "fen": 35541576,
+              "fen": 35728706,
               "ratio": null,
               "formula": null,
               "source": "pro-forma trajectory day 42",
-              "display": "¥355,415.76"
+              "display": "¥357,287.06"
             }
           ]
         },
         {
           "label": "Week 7 (days 43–49)",
-          "value": "¥420,000.00 · −¥100,000.00 · ¥675,415.76 · ¥355,415.76 · ¥657,271.14",
+          "value": "¥420,000.00 · −¥100,000.00 · ¥677,287.06 · ¥357,287.06 · ¥659,142.44",
           "evidence": "PROJECTED",
           "note": "",
           "figures": [
@@ -748,37 +748,37 @@
               "display": "−¥100,000.00"
             },
             {
-              "text": "¥675,415.76",
+              "text": "¥677,287.06",
               "evidence": "PROJECTED",
-              "fen": 67541576,
+              "fen": 67728706,
               "ratio": null,
               "formula": null,
               "source": "trajectory day 49",
-              "display": "¥675,415.76"
+              "display": "¥677,287.06"
             },
             {
-              "text": "¥355,415.76",
+              "text": "¥357,287.06",
               "evidence": "PROJECTED",
-              "fen": 35541576,
+              "fen": 35728706,
               "ratio": null,
               "formula": "lowest close, day 43",
               "source": "trajectory day 43",
-              "display": "¥355,415.76"
+              "display": "¥357,287.06"
             },
             {
-              "text": "¥657,271.14",
+              "text": "¥659,142.44",
               "evidence": "PROJECTED",
-              "fen": 65727114,
+              "fen": 65914244,
               "ratio": null,
               "formula": null,
               "source": "pro-forma trajectory day 49",
-              "display": "¥657,271.14"
+              "display": "¥659,142.44"
             }
           ]
         },
         {
           "label": "Week 8 (days 50–56)",
-          "value": "¥0.00 · ¥0.00 · ¥675,415.76 · ¥675,415.76 · ¥657,271.14",
+          "value": "¥0.00 · ¥0.00 · ¥677,287.06 · ¥677,287.06 · ¥659,142.44",
           "evidence": "PROJECTED",
           "note": "",
           "figures": [
@@ -801,37 +801,37 @@
               "display": "¥0.00"
             },
             {
-              "text": "¥675,415.76",
+              "text": "¥677,287.06",
               "evidence": "PROJECTED",
-              "fen": 67541576,
+              "fen": 67728706,
               "ratio": null,
               "formula": null,
               "source": "trajectory day 56",
-              "display": "¥675,415.76"
+              "display": "¥677,287.06"
             },
             {
-              "text": "¥675,415.76",
+              "text": "¥677,287.06",
               "evidence": "PROJECTED",
-              "fen": 67541576,
+              "fen": 67728706,
               "ratio": null,
               "formula": "lowest close, day 50",
               "source": "trajectory day 50",
-              "display": "¥675,415.76"
+              "display": "¥677,287.06"
             },
             {
-              "text": "¥657,271.14",
+              "text": "¥659,142.44",
               "evidence": "PROJECTED",
-              "fen": 65727114,
+              "fen": 65914244,
               "ratio": null,
               "formula": null,
               "source": "pro-forma trajectory day 56",
-              "display": "¥657,271.14"
+              "display": "¥659,142.44"
             }
           ]
         },
         {
           "label": "Week 9 (days 57–63)",
-          "value": "¥0.00 · ¥0.00 · ¥675,415.76 · ¥675,415.76 · ¥657,271.14",
+          "value": "¥0.00 · ¥0.00 · ¥677,287.06 · ¥677,287.06 · ¥659,142.44",
           "evidence": "PROJECTED",
           "note": "",
           "figures": [
@@ -854,37 +854,37 @@
               "display": "¥0.00"
             },
             {
-              "text": "¥675,415.76",
+              "text": "¥677,287.06",
               "evidence": "PROJECTED",
-              "fen": 67541576,
+              "fen": 67728706,
               "ratio": null,
               "formula": null,
               "source": "trajectory day 63",
-              "display": "¥675,415.76"
+              "display": "¥677,287.06"
             },
             {
-              "text": "¥675,415.76",
+              "text": "¥677,287.06",
               "evidence": "PROJECTED",
-              "fen": 67541576,
+              "fen": 67728706,
               "ratio": null,
               "formula": "lowest close, day 57",
               "source": "trajectory day 57",
-              "display": "¥675,415.76"
+              "display": "¥677,287.06"
             },
             {
-              "text": "¥657,271.14",
+              "text": "¥659,142.44",
               "evidence": "PROJECTED",
-              "fen": 65727114,
+              "fen": 65914244,
               "ratio": null,
               "formula": null,
               "source": "pro-forma trajectory day 63",
-              "display": "¥657,271.14"
+              "display": "¥659,142.44"
             }
           ]
         },
         {
           "label": "Week 10 (days 64–70)",
-          "value": "¥0.00 · ¥0.00 · ¥675,415.76 · ¥675,415.76 · ¥657,271.14",
+          "value": "¥0.00 · ¥0.00 · ¥677,287.06 · ¥677,287.06 · ¥659,142.44",
           "evidence": "PROJECTED",
           "note": "",
           "figures": [
@@ -907,37 +907,37 @@
               "display": "¥0.00"
             },
             {
-              "text": "¥675,415.76",
+              "text": "¥677,287.06",
               "evidence": "PROJECTED",
-              "fen": 67541576,
+              "fen": 67728706,
               "ratio": null,
               "formula": null,
               "source": "trajectory day 70",
-              "display": "¥675,415.76"
+              "display": "¥677,287.06"
             },
             {
-              "text": "¥675,415.76",
+              "text": "¥677,287.06",
               "evidence": "PROJECTED",
-              "fen": 67541576,
+              "fen": 67728706,
               "ratio": null,
               "formula": "lowest close, day 64",
               "source": "trajectory day 64",
-              "display": "¥675,415.76"
+              "display": "¥677,287.06"
             },
             {
-              "text": "¥657,271.14",
+              "text": "¥659,142.44",
               "evidence": "PROJECTED",
-              "fen": 65727114,
+              "fen": 65914244,
               "ratio": null,
               "formula": null,
               "source": "pro-forma trajectory day 70",
-              "display": "¥657,271.14"
+              "display": "¥659,142.44"
             }
           ]
         },
         {
           "label": "Week 11 (days 71–77)",
-          "value": "¥420,000.00 · ¥0.00 · ¥1,095,415.76 · ¥675,415.76 · ¥1,059,126.52",
+          "value": "¥420,000.00 · ¥0.00 · ¥1,097,287.06 · ¥677,287.06 · ¥1,060,997.82",
           "evidence": "PROJECTED",
           "note": "",
           "figures": [
@@ -960,37 +960,37 @@
               "display": "¥0.00"
             },
             {
-              "text": "¥1,095,415.76",
+              "text": "¥1,097,287.06",
               "evidence": "PROJECTED",
-              "fen": 109541576,
+              "fen": 109728706,
               "ratio": null,
               "formula": null,
               "source": "trajectory day 77",
-              "display": "¥1,095,415.76"
+              "display": "¥1,097,287.06"
             },
             {
-              "text": "¥675,415.76",
+              "text": "¥677,287.06",
               "evidence": "PROJECTED",
-              "fen": 67541576,
+              "fen": 67728706,
               "ratio": null,
               "formula": "lowest close, day 71",
               "source": "trajectory day 71",
-              "display": "¥675,415.76"
+              "display": "¥677,287.06"
             },
             {
-              "text": "¥1,059,126.52",
+              "text": "¥1,060,997.82",
               "evidence": "PROJECTED",
-              "fen": 105912652,
+              "fen": 106099782,
               "ratio": null,
               "formula": null,
               "source": "pro-forma trajectory day 77",
-              "display": "¥1,059,126.52"
+              "display": "¥1,060,997.82"
             }
           ]
         },
         {
           "label": "Week 12 (days 78–84)",
-          "value": "¥0.00 · ¥0.00 · ¥1,095,415.76 · ¥1,095,415.76 · ¥1,059,126.52",
+          "value": "¥0.00 · ¥0.00 · ¥1,097,287.06 · ¥1,097,287.06 · ¥1,060,997.82",
           "evidence": "PROJECTED",
           "note": "",
           "figures": [
@@ -1013,37 +1013,37 @@
               "display": "¥0.00"
             },
             {
-              "text": "¥1,095,415.76",
+              "text": "¥1,097,287.06",
               "evidence": "PROJECTED",
-              "fen": 109541576,
+              "fen": 109728706,
               "ratio": null,
               "formula": null,
               "source": "trajectory day 84",
-              "display": "¥1,095,415.76"
+              "display": "¥1,097,287.06"
             },
             {
-              "text": "¥1,095,415.76",
+              "text": "¥1,097,287.06",
               "evidence": "PROJECTED",
-              "fen": 109541576,
+              "fen": 109728706,
               "ratio": null,
               "formula": "lowest close, day 78",
               "source": "trajectory day 78",
-              "display": "¥1,095,415.76"
+              "display": "¥1,097,287.06"
             },
             {
-              "text": "¥1,059,126.52",
+              "text": "¥1,060,997.82",
               "evidence": "PROJECTED",
-              "fen": 105912652,
+              "fen": 106099782,
               "ratio": null,
               "formula": null,
               "source": "pro-forma trajectory day 84",
-              "display": "¥1,059,126.52"
+              "display": "¥1,060,997.82"
             }
           ]
         },
         {
           "label": "Week 13 (days 85–91)",
-          "value": "¥0.00 · ¥0.00 · ¥1,095,415.76 · ¥1,095,415.76 · ¥1,059,126.52",
+          "value": "¥0.00 · ¥0.00 · ¥1,097,287.06 · ¥1,097,287.06 · ¥1,060,997.82",
           "evidence": "PROJECTED",
           "note": "",
           "figures": [
@@ -1066,31 +1066,31 @@
               "display": "¥0.00"
             },
             {
-              "text": "¥1,095,415.76",
+              "text": "¥1,097,287.06",
               "evidence": "PROJECTED",
-              "fen": 109541576,
+              "fen": 109728706,
               "ratio": null,
               "formula": null,
               "source": "trajectory day 91",
-              "display": "¥1,095,415.76"
+              "display": "¥1,097,287.06"
             },
             {
-              "text": "¥1,095,415.76",
+              "text": "¥1,097,287.06",
               "evidence": "PROJECTED",
-              "fen": 109541576,
+              "fen": 109728706,
               "ratio": null,
               "formula": "lowest close, day 85",
               "source": "trajectory day 85",
-              "display": "¥1,095,415.76"
+              "display": "¥1,097,287.06"
             },
             {
-              "text": "¥1,059,126.52",
+              "text": "¥1,060,997.82",
               "evidence": "PROJECTED",
-              "fen": 105912652,
+              "fen": 106099782,
               "ratio": null,
               "formula": null,
               "source": "pro-forma trajectory day 91",
-              "display": "¥1,059,126.52"
+              "display": "¥1,060,997.82"
             }
           ]
         }
@@ -1163,18 +1163,18 @@
         },
         {
           "label": "Month 2 (days 31–60)",
-          "value": "¥657,271.14 · ¥2,084,655.38 · 1.33× · 1.93×",
+          "value": "¥659,142.44 · ¥2,084,655.38 · 1.37× · 1.93×",
           "evidence": "PROJECTED",
           "note": "",
           "figures": [
             {
-              "text": "¥657,271.14",
+              "text": "¥659,142.44",
               "evidence": "PROJECTED",
-              "fen": 65727114,
+              "fen": 65914244,
               "ratio": null,
               "formula": null,
               "source": "pro-forma trajectory day 60",
-              "display": "¥657,271.14"
+              "display": "¥659,142.44"
             },
             {
               "text": "¥2,084,655.38",
@@ -1186,13 +1186,13 @@
               "display": "¥2,084,655.38"
             },
             {
-              "text": "1.33×",
+              "text": "1.37×",
               "evidence": "PROJECTED",
               "fen": null,
               "ratio": {
-                "num": 4500000,
-                "den": 3386443,
-                "text": "1.33"
+                "num": 750000,
+                "den": 548813,
+                "text": "1.37"
               },
               "formula": "EBITDA_m / DS_m",
               "source": "pro-forma calendar month 2"
@@ -1213,18 +1213,18 @@
         },
         {
           "label": "Month 3 (days 61–90)",
-          "value": "¥1,059,126.52 · ¥2,069,239.15 · 1.43× · 1.92×",
+          "value": "¥1,060,997.82 · ¥2,069,239.15 · 1.43× · 1.92×",
           "evidence": "PROJECTED",
           "note": "",
           "figures": [
             {
-              "text": "¥1,059,126.52",
+              "text": "¥1,060,997.82",
               "evidence": "PROJECTED",
-              "fen": 105912652,
+              "fen": 106099782,
               "ratio": null,
               "formula": null,
               "source": "pro-forma trajectory day 90",
-              "display": "¥1,059,126.52"
+              "display": "¥1,060,997.82"
             },
             {
               "text": "¥2,069,239.15",
@@ -1263,18 +1263,18 @@
         },
         {
           "label": "Month 4 (days 91–120)",
-          "value": "¥1,460,981.90 · ¥2,053,750.98 · 1.43× · 1.90×",
+          "value": "¥1,462,853.20 · ¥2,053,750.98 · 1.43× · 1.90×",
           "evidence": "PROJECTED",
           "note": "",
           "figures": [
             {
-              "text": "¥1,460,981.90",
+              "text": "¥1,462,853.20",
               "evidence": "PROJECTED",
-              "fen": 146098190,
+              "fen": 146285320,
               "ratio": null,
               "formula": null,
               "source": "pro-forma trajectory day 120",
-              "display": "¥1,460,981.90"
+              "display": "¥1,462,853.20"
             },
             {
               "text": "¥2,053,750.98",
@@ -1313,18 +1313,18 @@
         },
         {
           "label": "Month 5 (days 121–150)",
-          "value": "¥1,862,837.28 · ¥2,038,190.53 · 1.43× · 1.89×",
+          "value": "¥1,864,708.58 · ¥2,038,190.53 · 1.43× · 1.89×",
           "evidence": "PROJECTED",
           "note": "",
           "figures": [
             {
-              "text": "¥1,862,837.28",
+              "text": "¥1,864,708.58",
               "evidence": "PROJECTED",
-              "fen": 186283728,
+              "fen": 186470858,
               "ratio": null,
               "formula": null,
               "source": "pro-forma trajectory day 150",
-              "display": "¥1,862,837.28"
+              "display": "¥1,864,708.58"
             },
             {
               "text": "¥2,038,190.53",
@@ -1363,18 +1363,18 @@
         },
         {
           "label": "Month 6 (days 151–180)",
-          "value": "¥2,264,692.66 · ¥2,022,557.47 · 1.43× · 1.87×",
+          "value": "¥2,266,563.96 · ¥2,022,557.47 · 1.43× · 1.87×",
           "evidence": "PROJECTED",
           "note": "",
           "figures": [
             {
-              "text": "¥2,264,692.66",
+              "text": "¥2,266,563.96",
               "evidence": "PROJECTED",
-              "fen": 226469266,
+              "fen": 226656396,
               "ratio": null,
               "formula": null,
               "source": "pro-forma trajectory day 180",
-              "display": "¥2,264,692.66"
+              "display": "¥2,266,563.96"
             },
             {
               "text": "¥2,022,557.47",
@@ -1413,18 +1413,18 @@
         },
         {
           "label": "Month 7 (days 181–210)",
-          "value": "¥2,666,548.04 · ¥2,006,851.45 · 1.43× · 1.86×",
+          "value": "¥2,668,419.34 · ¥2,006,851.45 · 1.43× · 1.86×",
           "evidence": "PROJECTED",
           "note": "",
           "figures": [
             {
-              "text": "¥2,666,548.04",
+              "text": "¥2,668,419.34",
               "evidence": "PROJECTED",
-              "fen": 266654804,
+              "fen": 266841934,
               "ratio": null,
               "formula": null,
               "source": "pro-forma trajectory day 210",
-              "display": "¥2,666,548.04"
+              "display": "¥2,668,419.34"
             },
             {
               "text": "¥2,006,851.45",
@@ -1463,18 +1463,18 @@
         },
         {
           "label": "Month 8 (days 211–240)",
-          "value": "¥3,068,403.42 · ¥1,991,072.14 · 1.43× · 1.84×",
+          "value": "¥3,070,274.72 · ¥1,991,072.14 · 1.43× · 1.84×",
           "evidence": "PROJECTED",
           "note": "",
           "figures": [
             {
-              "text": "¥3,068,403.42",
+              "text": "¥3,070,274.72",
               "evidence": "PROJECTED",
-              "fen": 306840342,
+              "fen": 307027472,
               "ratio": null,
               "formula": null,
               "source": "pro-forma trajectory day 240",
-              "display": "¥3,068,403.42"
+              "display": "¥3,070,274.72"
             },
             {
               "text": "¥1,991,072.14",
@@ -1513,18 +1513,18 @@
         },
         {
           "label": "Month 9 (days 241–270)",
-          "value": "¥3,470,258.80 · ¥1,975,219.19 · 1.43× · 1.83×",
+          "value": "¥3,472,130.10 · ¥1,975,219.19 · 1.43× · 1.83×",
           "evidence": "PROJECTED",
           "note": "",
           "figures": [
             {
-              "text": "¥3,470,258.80",
+              "text": "¥3,472,130.10",
               "evidence": "PROJECTED",
-              "fen": 347025880,
+              "fen": 347213010,
               "ratio": null,
               "formula": null,
               "source": "pro-forma trajectory day 270",
-              "display": "¥3,470,258.80"
+              "display": "¥3,472,130.10"
             },
             {
               "text": "¥1,975,219.19",
@@ -1563,18 +1563,18 @@
         },
         {
           "label": "Month 10 (days 271–300)",
-          "value": "¥3,872,114.18 · ¥1,959,292.26 · 1.43× · 1.81×",
+          "value": "¥3,873,985.48 · ¥1,959,292.26 · 1.43× · 1.81×",
           "evidence": "PROJECTED",
           "note": "",
           "figures": [
             {
-              "text": "¥3,872,114.18",
+              "text": "¥3,873,985.48",
               "evidence": "PROJECTED",
-              "fen": 387211418,
+              "fen": 387398548,
               "ratio": null,
               "formula": null,
               "source": "pro-forma trajectory day 300",
-              "display": "¥3,872,114.18"
+              "display": "¥3,873,985.48"
             },
             {
               "text": "¥1,959,292.26",
@@ -1613,18 +1613,18 @@
         },
         {
           "label": "Month 11 (days 301–330)",
-          "value": "¥4,273,969.56 · ¥1,943,291.00 · 1.43× · 1.80×",
+          "value": "¥4,275,840.86 · ¥1,943,291.00 · 1.43× · 1.80×",
           "evidence": "PROJECTED",
           "note": "",
           "figures": [
             {
-              "text": "¥4,273,969.56",
+              "text": "¥4,275,840.86",
               "evidence": "PROJECTED",
-              "fen": 427396956,
+              "fen": 427584086,
               "ratio": null,
               "formula": null,
               "source": "pro-forma trajectory day 330",
-              "display": "¥4,273,969.56"
+              "display": "¥4,275,840.86"
             },
             {
               "text": "¥1,943,291.00",
@@ -1663,18 +1663,18 @@
         },
         {
           "label": "Month 12 (days 331–360)",
-          "value": "¥4,675,824.94 · ¥1,927,215.07 · 1.43× · 1.78×",
+          "value": "¥4,677,696.24 · ¥1,927,215.07 · 1.43× · 1.78×",
           "evidence": "PROJECTED",
           "note": "",
           "figures": [
             {
-              "text": "¥4,675,824.94",
+              "text": "¥4,677,696.24",
               "evidence": "PROJECTED",
-              "fen": 467582494,
+              "fen": 467769624,
               "ratio": null,
               "formula": null,
               "source": "pro-forma trajectory day 360",
-              "display": "¥4,675,824.94"
+              "display": "¥4,677,696.24"
             },
             {
               "text": "¥1,927,215.07",
@@ -1812,42 +1812,42 @@
         },
         {
           "label": "Month 2 (days 31–60)",
-          "value": "1.82× · 1.33× · +0.08× · 1.39× · 1.93× · +0.57×",
+          "value": "1.89× · 1.37× · +0.12× · 1.39× · 1.93× · +0.57×",
           "evidence": "PROJECTED",
           "note": "",
           "figures": [
             {
-              "text": "1.82×",
+              "text": "1.89×",
               "evidence": "PROJECTED",
               "fen": null,
               "ratio": {
-                "num": 125000,
-                "den": 68867,
-                "text": "1.82"
+                "num": 4500000,
+                "den": 2385647,
+                "text": "1.89"
               },
               "formula": "EBITDA_m / DS_m",
               "source": "before, calendar month 2"
             },
             {
-              "text": "1.33×",
+              "text": "1.37×",
               "evidence": "PROJECTED",
               "fen": null,
               "ratio": {
-                "num": 4500000,
-                "den": 3386443,
-                "text": "1.33"
+                "num": 750000,
+                "den": 548813,
+                "text": "1.37"
               },
               "formula": "EBITDA_m / DS_m",
               "source": "after (pro forma), calendar month 2"
             },
             {
-              "text": "+0.08×",
+              "text": "+0.12×",
               "evidence": "PROJECTED",
               "fen": null,
               "ratio": {
-                "num": 1067785,
-                "den": 13545772,
-                "text": "0.08"
+                "num": 255935,
+                "den": 2195252,
+                "text": "0.12"
               },
               "formula": null,
               "source": "after − covenant minimum"
@@ -2708,12 +2708,12 @@
       "rows": [
         {
           "label": "FAC-LINE-DSCR: DSCR ≥ 1.25×",
-          "value": "pass: worst 1.82× in month 2 · pass: worst 1.33× in month 2",
+          "value": "pass: worst 1.89× in month 2 · pass: worst 1.37× in month 2",
           "evidence": "PROJECTED",
           "note": "",
           "figures": [
             {
-              "text": "pass: worst 1.82× in month 2",
+              "text": "pass: worst 1.89× in month 2",
               "evidence": "PROJECTED",
               "fen": null,
               "ratio": null,
@@ -2721,7 +2721,7 @@
               "source": "before, months 1–12"
             },
             {
-              "text": "pass: worst 1.33× in month 2",
+              "text": "pass: worst 1.37× in month 2",
               "evidence": "PROJECTED",
               "fen": null,
               "ratio": null,
@@ -2822,7 +2822,7 @@
         },
         {
           "label": "Invoice-financing advance: Invoice financing (onboarded platform) (FAC-IF), seq 2, day 0",
-          "value": "¥210,000.00 · entry hash a6c82c99b0d0147a711cef5d9923985b69c44f0ec957785d475a670a27180e14 · prev hash 3a58b1c3a966bc84e131779acc8606e389118068402a963f545ca955cf9e4dd0",
+          "value": "¥210,000.00 · entry hash a8bfc435247410f79380e33f065448df4473866fc5bac089dd0d02b453ec25a9 · prev hash 3a58b1c3a966bc84e131779acc8606e389118068402a963f545ca955cf9e4dd0",
           "evidence": "OBSERVED",
           "note": "",
           "figures": [
@@ -2836,7 +2836,7 @@
               "display": "¥210,000.00"
             },
             {
-              "text": "entry hash a6c82c99b0d0147a711cef5d9923985b69c44f0ec957785d475a670a27180e14",
+              "text": "entry hash a8bfc435247410f79380e33f065448df4473866fc5bac089dd0d02b453ec25a9",
               "evidence": "OBSERVED",
               "fen": null,
               "ratio": null,
@@ -2949,18 +2949,18 @@
         },
         {
           "label": "Projected cash after the final repayment (day 1094)",
-          "value": "¥14,302,209.62",
+          "value": "¥14,304,080.92",
           "evidence": "PROJECTED",
           "note": "",
           "figures": [
             {
-              "text": "¥14,302,209.62",
+              "text": "¥14,304,080.92",
               "evidence": "PROJECTED",
-              "fen": 1430220962,
+              "fen": 1430408092,
               "ratio": null,
               "formula": null,
               "source": "pro-forma trajectory day 1094",
-              "display": "¥14,302,209.62"
+              "display": "¥14,304,080.92"
             }
           ]
         },
@@ -3083,12 +3083,12 @@
         },
         {
           "label": "Operations log head hash",
-          "value": "1704a092745f41b9aa07597c0b5e851c9a7f3c666dfaef511c61cf079d339940",
+          "value": "0c610b0ef92b349f34455b72fa915be4fe4a808442b164da0a485598dc473a27",
           "evidence": "OBSERVED",
           "note": "",
           "figures": [
             {
-              "text": "1704a092745f41b9aa07597c0b5e851c9a7f3c666dfaef511c61cf079d339940",
+              "text": "0c610b0ef92b349f34455b72fa915be4fe4a808442b164da0a485598dc473a27",
               "evidence": "OBSERVED",
               "fen": null,
               "ratio": null,
@@ -3160,14 +3160,14 @@
   "approval_id": "APR-000002",
   "approval_status": "PENDING",
   "operation": {
-    "op_id": "OP-BF-485628C594A7",
+    "op_id": "OP-BF-812D1A42194A",
     "kind": "GENERATE_BORROWER_FILE",
     "status": "PENDING_APPROVAL",
     "tier": "TIER_2",
     "violations": [],
     "seq": 4,
-    "entry_hash": "faa87d20dba52ee07d62263aa44aefc6a6c17fd3e6aebfd12bce475c45aa2908",
-    "prev_hash": "1704a092745f41b9aa07597c0b5e851c9a7f3c666dfaef511c61cf079d339940",
+    "entry_hash": "558e7516e44bc464d97bf4e064dea8c63f89caa826d83b50bf4b45f06281881c",
+    "prev_hash": "0c610b0ef92b349f34455b72fa915be4fe4a808442b164da0a485598dc473a27",
     "effective_day": 0,
     "approval_id": "APR-000002",
     "message": "Queued for owner approval (APR-000002): prepare the borrower file for FAC-ETL (prepared, not sent)"
@@ -3178,7 +3178,7 @@
     "as_of": "2026-10-01",
     "state_version": 3,
     "mandate_version": 1,
-    "chain_head_hash": "1704a092745f41b9aa07597c0b5e851c9a7f3c666dfaef511c61cf079d339940",
+    "chain_head_hash": "0c610b0ef92b349f34455b72fa915be4fe4a808442b164da0a485598dc473a27",
     "chain_length": 3,
     "chain_valid": true,
     "generated_day": 0,
@@ -3186,8 +3186,8 @@
     "calc": "app.financial.project (integer fen, ADR-0002)"
   },
   "downloads": {
-    "html": "/borrower-file/BF-485628C594A7.html",
-    "docx": "/borrower-file/BF-485628C594A7.docx",
+    "html": "/borrower-file/BF-812D1A42194A.html",
+    "docx": "/borrower-file/BF-812D1A42194A.docx",
     "pdf": null
   },
   "pdf_note": "PDF skipped: no local PDF renderer is installed; print the HTML to PDF.",

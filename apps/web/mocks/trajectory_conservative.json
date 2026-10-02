@@ -2758,16 +2758,16 @@
     "discounts_posted_display": "¥5,040.00"
   },
   "forward_concession": {
-    "total_fen": 2645562,
-    "total_display": "¥26,455.62",
+    "total_fen": 2832692,
+    "total_display": "¥28,326.92",
     "cap_fen": 500000,
     "cap_display": "¥5,000.00",
     "over_cap": true,
     "parts": [
       {
         "label": "Terms extension, 12-month funding cost",
-        "value_fen": 2245562,
-        "value_display": "¥22,455.62"
+        "value_fen": 2432692,
+        "value_display": "¥24,326.92"
       },
       {
         "label": "Contingent rebate, at maximum",

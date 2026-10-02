@@ -30,7 +30,7 @@ test("every span in every mock offer matches its document text exactly", () => {
 test("verdict figures are the golden values, server-formatted", () => {
   const v = mock("verdict_ex01.json");
   assert.equal(v.outcome, "REJECT");
-  assert.equal(v.forward_concession_total_display, "¥26,455.62");
+  assert.equal(v.forward_concession_total_display, "¥28,326.92");
   assert.equal(v.forward_concession_total_display, fmtYuan(golden.forward_ledger_total));
   const reserve = v.violations.find((x) => x.code === "RESERVE_BREACH");
   assert.equal(reserve.day, 47);
@@ -103,4 +103,51 @@ test("alerts and reconciliation mocks are the recorded server output for the ope
   assert.equal(r.outstanding[0].receivable_id, "RCV-A");
   assert.equal(r.outstanding[0].face_display, "¥420,000.00");
   assert.equal(r.chain_valid, true);
+  // The promised early payments the API now returns: none on the opening books.
+  assert.deepEqual(r.promised, []);
+  assert.equal(r.lapsed_promises, 0);
+});
+
+test("funding lands later: the day-0 plan leaves the advance in transit, cash is only what has landed", () => {
+  const state = mock("state_after_fund.json").state;
+  const lots = state.lots;
+  assert.ok(lots.length >= 2);
+  const transit = lots.filter((l) => !l.settled);
+  assert.equal(transit.length, 1);
+  assert.equal(transit[0].facility_id, "FAC-IF");
+  assert.equal(transit[0].request_day, 0);
+  assert.equal(transit[0].arrival_day, 3);
+  assert.equal(transit[0].principal_display, "¥210,000.00");
+  assert.equal(state.cash_display, "¥550,000.00");
+  const reply = mock("nl_script.json").fund_gap_go.reply;
+  assert.ok(reply.includes("Cash in now") && reply.includes("Still to land") && reply.includes("lands on day 3"));
+});
+
+test("the day-34 cure waits for the owner: PENDING_APPROVAL, then EXECUTED on approval, cash on day 37", () => {
+  const act = mock("home_act.json");
+  assert.equal(act.results[0].status, "PENDING_APPROVAL");
+  assert.equal(act.cured, false);
+  assert.equal(act.pending_approval, 1);
+  assert.match(act.results[0].approval_id, /^APR-/);
+  const alert = mock("home_alerts_day34.json").alerts.find((a) => a.id.startsWith("ALERT-RESERVE"));
+  assert.equal(alert.suggested[0].above_apr_cap, true);
+  assert.equal(alert.suggested[0].cost_display, "¥1,782.19");
+  const pending = mock("home_approval_pending.json");
+  assert.equal(pending.status, "PENDING");
+  assert.equal(pending.id, act.results[0].approval_id);
+  assert.ok(pending.op_id.startsWith(`alert:${alert.id}:`));
+  const approved = mock("home_approval_approved.json");
+  assert.equal(approved.status, "APPROVED");
+  assert.equal(approved.decided_day, null, "the API does not record the day of a decision");
+  const done = mock("home_approve.json").operations[0];
+  assert.equal(done.status, "EXECUTED");
+  assert.ok(done.message.includes("the cash lands on day 37"));
+  const after = mock("home_alerts_after.json");
+  assert.ok(!after.alerts.some((a) => a.id.startsWith("ALERT-RESERVE")));
+  const transit = after.alerts.find((a) => a.kind === "FUNDING_IN_TRANSIT");
+  assert.equal(transit.severity, "INFO");
+  assert.equal(transit.actionable, false);
+  assert.equal(transit.day, 37);
+  const lot = mock("home_state_after_approve.json").state.lots.find((l) => !l.settled);
+  assert.equal(lot.arrival_day, 37);
 });

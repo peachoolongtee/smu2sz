@@ -1,7 +1,7 @@
 {
   "session_id": "rec-home-go",
   "turn": 2,
-  "reply": "Advance ¥200,000.00 on RI:BUYER-1:2 from FAC-IF on day 34 The reserve alert is now cleared.",
+  "reply": "It costs ¥1,782.19 by day 47, which is 32.5% a year for those 10 days. That is above your 15.00% ceiling, so it needs your approval. I have not run it: it is queued as APR-000001. Say \"approve APR-000001\" or use the approval card. Once it runs, the cash lands after the lead time: day 37 if that is today. The alert is still open.",
   "intent": "SHOW_ALERTS",
   "lang": "en",
   "plan": [
@@ -9,7 +9,7 @@
       "step": 1,
       "kind": "SUBMIT_INVOICE_FOR_FINANCING",
       "description": "Submit RI:BUYER-1:2 to FAC-IF for a ¥200,000.00 advance",
-      "status": "EXECUTED",
+      "status": "PENDING_APPROVAL",
       "op_id": "alert:ALERT-RESERVE-42:v7:0",
       "condition": null
     }
@@ -19,15 +19,15 @@
     {
       "op_id": "alert:ALERT-RESERVE-42:v7:0",
       "kind": "SUBMIT_INVOICE_FOR_FINANCING",
-      "status": "EXECUTED",
-      "tier": "TIER_1",
+      "status": "PENDING_APPROVAL",
+      "tier": "TIER_2",
       "violations": [],
       "seq": 7,
-      "entry_hash": "8b47633eb6752f2293a81cbd02f2f47a8229918d930f2041ddcbefd0ee002daf",
+      "entry_hash": "1b92ca97c95470e974b9877e63299c88198473a99ffd9181621fcdbb82ac41e4",
       "prev_hash": "ba361ee60b03593a7bc5c080530de6dc6eff9bcb06da3e0d113ae01adb9c7f6e",
       "effective_day": 34,
-      "approval_id": null,
-      "message": "Advance ¥200,000.00 on RI:BUYER-1:2 from FAC-IF on day 34"
+      "approval_id": "APR-000001",
+      "message": "Queued for owner approval (APR-000001): effective annual cost 32.52% is above the mandate's 15.00% ceiling for what the agent may borrow alone (all charges on ¥200,000.00 held 10 days (day 37 to day 47), annualised = 32.52%)"
     }
   ],
   "clarification": null,
