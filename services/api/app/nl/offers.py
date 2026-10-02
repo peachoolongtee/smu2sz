@@ -46,7 +46,7 @@ from app.nl.pipeline import (
     status_quo_offer,
     t,
 )
-from app.nl.plans import legs_from_plan, run_legs
+from app.nl.plans import run_legs, runnable_legs
 from app.nl.sessions import PendingPlan
 from app.nl.turn import Turn, ask
 from app.verifier import REFUSAL_REPLY, VerdictBundle, evaluate_term_sheet
@@ -331,33 +331,42 @@ def followups(ctx: NlContext, steps: Steps, offer: CompiledOffer, counters: list
     these legs (app/nl/plans.py): the router's plan if the buyer refuses, and for each counter the plan for the rest
     of the gap if the buyer accepts it. Returns what is stored with the plan; the legs are shown as plan steps."""
     fallback = committed_plan(ctx.evaluate(status_quo_offer(ctx, ctx.state()), remember=False))
-    out: dict = {"refuse_ops": [], "refuse_label": None, "accept_ops": {}, "accept_labels": {}}
+    out: dict = {"refuse_ops": [], "refuse_label": None, "refuse_note": "", "accept_ops": {}, "accept_labels": {},
+                 "accept_notes": {}}
     if fallback is not None:
-        out["refuse_ops"] = legs_from_plan(ctx, fallback)
+        out["refuse_ops"], out["refuse_note"] = runnable_legs(ctx, fallback)
         out["refuse_label"] = fallback.label
-        funding_ops(ctx, steps, fallback, condition=t(ctx, "if the buyer refuses (NO DEAL)", "若买方拒绝"))
+        funding_ops(ctx, steps, fallback, condition=t(ctx, "if the buyer refuses (NO DEAL)", "若买方拒绝"),
+                    status="PROPOSED" if fallback.executable_now else "SKIPPED")
     for c in counters:
         plan = committed_plan(ctx.evaluate_accepted(package_offer(ctx, offer, c)))
-        legs = legs_from_plan(ctx, plan) if plan is not None else []
-        if plan is not None and legs:
-            out["accept_ops"][c.label] = legs
+        legs, note = runnable_legs(ctx, plan)
+        if plan is not None and (legs or note):
+            if legs:
+                out["accept_ops"][c.label] = legs
             out["accept_labels"][c.label] = plan.label
+            out["accept_notes"][c.label] = note
             funding_ops(ctx, steps, plan, condition=t(ctx, f"if the buyer accepts {c.label}: remaining gap",
-                                                      f"若买方接受 {c.label}：剩余缺口"))
+                                                      f"若买方接受 {c.label}：剩余缺口"),
+                        status="PROPOSED" if plan.executable_now else "SKIPPED")
     return out
 
 
 def followup_text(ctx: NlContext, follow: dict) -> str:
-    """What would follow the counters, in words, with the day each leg's cash lands."""
+    """What would follow the counters, in words, with the day each leg's cash lands, and what the router flagged on
+    it: a leg above the ceiling waits for the owner, a plan that cannot run today is not stored and says why."""
     parts: list[str] = []
-    if follow.get("refuse_ops"):
-        when = landing.line(ctx, follow["refuse_ops"], executed=False)
+    if follow.get("refuse_ops") or follow.get("refuse_note"):
+        when = landing.line(ctx, follow["refuse_ops"], executed=False) if follow.get("refuse_ops") else ""
         parts.append(t(ctx, f"If the buyer refuses: {follow['refuse_label']}. {when}",
-                       f"若买方拒绝：{follow['refuse_label']}。{when}").strip())
-    for label, legs in follow.get("accept_ops", {}).items():
-        when = landing.line(ctx, legs, executed=False)
+                       f"若买方拒绝：{follow['refuse_label']}。{when}").strip()
+                     + (" " + follow["refuse_note"] if follow.get("refuse_note") else ""))
+    for label, note in follow.get("accept_notes", {}).items():
+        legs = follow.get("accept_ops", {}).get(label, [])
+        when = landing.line(ctx, legs, executed=False) if legs else ""
         parts.append(t(ctx, f"If the buyer accepts {label}, the rest of the gap: {follow['accept_labels'][label]}. {when}",
-                       f"若买方接受 {label}，其余缺口：{follow['accept_labels'][label]}。{when}").strip())
+                       f"若买方接受 {label}，其余缺口：{follow['accept_labels'][label]}。{when}").strip()
+                     + (" " + note if note else ""))
     return " ".join(parts)
 
 
@@ -432,6 +441,8 @@ def negotiate_intent(ctx: NlContext, slots: Slots, *, execute: bool = True, data
             lines, _ok = run_legs(ctx, steps, legs, t(ctx, "remaining gap after the accepted package", "成交后剩余缺口"))
             reply.append(t(ctx, "The rest of the gap, as I showed it:", "其余缺口，按之前给出的方案："))
             reply.extend(lines)
+        elif r is not None and (note := stored.get("accept_notes", {}).get(neg.accepted.label)):
+            reply.append(note)  # the rest of the gap has a plan, but not one that can run today
     elif neg.outcome == "NO_DEAL":
         legs = stored.get("refuse_ops", [])
         if legs:
@@ -439,6 +450,8 @@ def negotiate_intent(ctx: NlContext, slots: Slots, *, execute: bool = True, data
             reply.append(t(ctx, f"NO DEAL. The funding I showed for this case ({stored.get('refuse_label')}):",
                            f"未成交。按之前给出的该情形下的融资方案（{stored.get('refuse_label')}）："))
             reply.extend(lines)
+        elif stored.get("refuse_note"):  # a plan exists but cannot run today: nothing was stored for it
+            reply.append(t(ctx, "NO DEAL. ", "未成交。") + stored["refuse_note"])
         else:
             reply.append(t(ctx, "NO DEAL, and there is no gap to cover.", "未成交，且无资金缺口。"))
     return Turn(intent=Intent.NEGOTIATE, reply="\n".join(reply), plan=steps.items, verdict=v,

@@ -15,12 +15,14 @@ run: the remaining legs are not sent, and the reply says which ones were not.
 
 from __future__ import annotations
 
+import re
 from collections.abc import Sequence
 from typing import Any
 
 from app.domain.models import (
     ApplyForFacility,
     DrawFacility,
+    FundingAction,
     FundingActionKind,
     FundingPlan,
     GenerateBorrowerFile,
@@ -36,6 +38,11 @@ from app.nl.pipeline import Steps, t
 from app.nl.turn import Turn
 
 SETTLED = (OperationStatus.EXECUTED, OperationStatus.DUPLICATE)
+
+# The router's own reasons (`app.funding.rates.approval_reason`, `Search.unrunnable`), read only to say them in the
+# owner's language; a reason that does not read like these is quoted as the router wrote it.
+ABOVE_CEILING = re.compile(r"effective annual cost (?P<rate>\S+) is above the mandate's (?P<cap>\S+) ceiling")
+UNISSUED = re.compile(r"(?P<rid>\S+) is not an invoice the executor can finance today(?:; it is issued on day (?P<day>-?\d+))?")
 
 
 def legs_from_plan(ctx: NlContext, plan: FundingPlan) -> list[Any]:
@@ -63,6 +70,115 @@ def plan_signature(plan: FundingPlan | None) -> list[tuple[str, str, str | None,
     if plan is None:
         return None
     return [(a.kind.value, a.facility_id, a.receivable_id, a.amount_fen) for a in plan.actions]
+
+
+# ---------------------------------------------------------------- what the router flags on a plan, in words
+
+
+def _is_leg(a: FundingAction) -> bool:
+    return a.kind == FundingActionKind.DRAW or (a.kind == FundingActionKind.FINANCE_INVOICE and bool(a.receivable_id))
+
+
+def _leg_name(ctx: NlContext, plan: FundingPlan, i: int) -> str:
+    """The plan's i-th action as the step the owner sees (the cost lines run in the actions' order)."""
+    a = plan.actions[i]
+    if a.kind == FundingActionKind.DRAW:
+        return t(ctx, f"Draw {fmt_yuan(a.amount_fen)} on {a.facility_id}", f"从 {a.facility_id} 提款 {fmt_yuan(a.amount_fen)}")
+    if a.kind == FundingActionKind.FINANCE_INVOICE and a.receivable_id:
+        return t(ctx, f"Submit {a.receivable_id} to {a.facility_id} for a {fmt_yuan(a.amount_fen)} advance",
+                 f"将 {a.receivable_id} 提交 {a.facility_id} 融资，预付 {fmt_yuan(a.amount_fen)}")
+    return plan.costs[i].label if i < len(plan.costs) else a.kind.value
+
+
+def approval_sentences(ctx: NlContext, plan: FundingPlan) -> list[str]:
+    """One plain sentence per leg above the mandate's ceiling: its cost, its yearly rate and the ceiling. The numbers
+    are the router's (the cost line and the reason it wrote); the sentence only says them."""
+    out: list[str] = []
+    aligned = len(plan.costs) == len(plan.actions)
+    for i, cl in enumerate(plan.costs):
+        if not cl.needs_owner_approval:
+            continue
+        name = _leg_name(ctx, plan, i) if aligned else cl.label
+        m = ABOVE_CEILING.search(cl.approval_reason)
+        if m is None:
+            out.append(t(ctx, f"{name}: {cl.approval_reason}.", f"{name}：{cl.approval_reason}。"))
+            continue
+        cost, rate, cap = fmt_yuan(cl.fen), m["rate"], m["cap"]
+        out.append(t(ctx, f"{name} costs {cost}, which is {rate} a year, above your {cap} yearly ceiling for what I may "
+                          f"borrow alone.",
+                     f"{name}：费用 {cost}，年化 {rate}，高于您 {cap} 的年度融资成本上限（我可自行借款的范围）。"))
+    return out
+
+
+def approval_note(ctx: NlContext, plan: FundingPlan) -> str:
+    """For a plan the executor will queue: which legs are above the ceiling and what a go-ahead then does (the first
+    such leg waits for the owner as APR-nnnnnn and the legs after it are not sent). '' when no leg needs the owner."""
+    if not plan.needs_owner_approval:
+        return ""
+    sentences = approval_sentences(ctx, plan) or [t(ctx, f"{plan.approval_reason}.", f"{plan.approval_reason}。")]
+    aligned = len(plan.costs) == len(plan.actions)
+    legs = [i for i, a in enumerate(plan.actions) if _is_leg(a)]
+    first = next((i for i, cl in enumerate(plan.costs) if cl.needs_owner_approval and i in legs), None)
+    tail = ""
+    if first is not None and aligned:
+        name = _leg_name(ctx, plan, first)
+        later = any(i > first for i in legs)
+        tail = t(ctx, f" After you say go ahead, \"{name}\" will wait for your approval (APR-…) rather than run"
+                      + (", and I will not send the steps after it" if later else "") + ".",
+                 f" 您回复“执行”后，“{name}”不会直接执行，而是等待您批准（APR-…）"
+                 + ("，其后的步骤也不会发送" if later else "") + "。")
+    elif first is None:
+        tail = t(ctx, " It needs your approval before it can go ahead.", " 该方案需要您批准后才能进行。")
+    return " ".join(sentences) + tail
+
+
+def unrunnable_sentences(ctx: NlContext, plan: FundingPlan) -> list[str]:
+    """One plain sentence per leg the executor would refuse today: what it is waiting for."""
+    out: list[str] = []
+    aligned = len(plan.costs) == len(plan.actions)
+    for i, cl in enumerate(plan.costs):
+        if cl.executable_now:
+            continue
+        name = _leg_name(ctx, plan, i) if aligned else cl.label
+        m = UNISSUED.search(cl.not_executable_reason)
+        if m is None:
+            out.append(t(ctx, f"{name}: {cl.not_executable_reason}.", f"{name}：{cl.not_executable_reason}。"))
+            continue
+        rid, day = m["rid"], m["day"]
+        out.append(t(ctx, f"{name}: {rid} is not an invoice I can finance today"
+                          + (f"; it is issued on day {day}" if day else "") + ".",
+                     f"{name}：{rid} 目前还不能用来融资" + (f"，它将于第 {day} 天开出" if day else "") + "。"))
+    return out
+
+
+def unrunnable_note(ctx: NlContext, plan: FundingPlan) -> str:
+    """For a plan that cannot run today: what it is waiting for, and that it is not offered. '' when it can run."""
+    if plan.executable_now:
+        return ""
+    sentences = unrunnable_sentences(ctx, plan) or [
+        t(ctx, f"{plan.not_executable_reason}.", f"{plan.not_executable_reason}。")]
+    return (t(ctx, "It cannot run today: ", "该方案今天无法执行：") + " ".join(sentences)
+            + t(ctx, " I will not offer it for a go-ahead; ask me again once it can run.",
+                " 我不会把它作为可执行的方案提出；等它可以执行时请再问我。"))
+
+
+def runnable_legs(ctx: NlContext, plan: FundingPlan | None) -> tuple[list[Any], str]:
+    """(the legs a go-ahead may send for this plan, the words about what the router flagged on it). A plan that cannot
+    run today yields no legs and the reason; a plan that needs the owner yields its legs and the approval sentences."""
+    if plan is None:
+        return [], ""
+    if not plan.executable_now:
+        return [], unrunnable_note(ctx, plan)
+    return legs_from_plan(ctx, plan), approval_note(ctx, plan)
+
+
+def runnable_alternative(bundle: Any) -> FundingPlan | None:
+    """A plan that can run today among those the verdict carries (the router ranks every plan that can run before
+    one that cannot, so when its best cannot run it holds no other admissible plan: usually None)."""
+    for p in (bundle.plan_committed, bundle.verdict.plan):
+        if p is not None and p.admissible and p.basis == "COMMITTED" and p.executable_now and p.actions:
+            return p
+    return None
 
 
 def describe(ctx: NlContext, op: Any) -> str:
@@ -105,8 +221,13 @@ def run_legs(ctx: NlContext, steps: Steps, ops: Sequence[Any], condition: str | 
         ok = False
         if r.status == OperationStatus.PENDING_APPROVAL:
             ref = f" ({r.approval_id})" if r.approval_id else ""
-            lines.append(t(ctx, f"{describe(ctx, op)}: not done. It needs your approval{ref}; it is queued, not executed.",
-                           f"{describe(ctx, op)}：尚未执行，需要您批准{ref}，已列入待批队列。"))
+            how = (t(ctx, f" To approve it, say \"approve {r.approval_id}\" or use the approval card.",
+                     f"要批准，请说“批准 {r.approval_id}”或使用审批卡。")
+                   if r.approval_id else t(ctx, " To approve it, name its approval id in the queue.",
+                                           "要批准，请说出待批队列中的审批编号。"))
+            lines.append(t(ctx, f"{describe(ctx, op)}: not done. It needs your approval{ref}; it is queued, not executed."
+                                f"{how}",
+                           f"{describe(ctx, op)}：尚未执行，需要您批准{ref}，已列入待批队列。{how}"))
         else:
             lines.append(t(ctx, f"{describe(ctx, op)}: refused. {r.message}", f"{describe(ctx, op)}：被拒绝。{r.message}"))
         break

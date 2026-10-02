@@ -27,14 +27,16 @@ from app.capex import CapexDisabled, CapexRequest, CapexResult, CapexStructure, 
 from app.capex.models import CHARGES_BASIS
 from app.config import get_settings
 from app.domain.models import GenerateBorrowerFile, Mode, OperationStatus
-from app.domain.money import BP_DENOM, Ratio, fmt_pct, fmt_yuan
+from app.domain.money import BP_DENOM, Ratio, bp, fmt_pct, fmt_yuan
 from app.financial import EngineError, project
 from app.funding import compare, menu_view, plan
+from app.funding.models import ComparisonRow
 from app.nl import lexicon as lx
 from app.nl.context import NlContext
 from app.nl.funding import gap_label, gaps
 from app.nl.models import Intent, Slots
 from app.nl.pipeline import Steps, t
+from app.nl.plans import ABOVE_CEILING, approval_sentences, unrunnable_sentences
 from app.nl.sessions import PendingPlan
 from app.nl.turn import Turn, ask
 
@@ -60,6 +62,22 @@ def _x(r: Fraction) -> str:
 # ---------------------------------------------------------------- COMPARE_FINANCING
 
 
+def _row_line(ctx: NlContext, row: ComparisonRow) -> str:
+    """An alternative the router priced and flagged, in words; '' for one that needs no one and can run today."""
+    if row.cost_fen is None or not (row.needs_owner_approval or not row.executable_now):
+        return ""
+    en, zh = [], []
+    if row.needs_owner_approval:
+        rates = [m for m in ABOVE_CEILING.finditer(row.approval_reason)]
+        en.append("needs your approval: " + row.approval_reason)
+        zh.append("需要您批准：" + ("；".join(f"年化 {m['rate']}，高于 {m['cap']} 上限" for m in rates) or row.approval_reason))
+    if not row.executable_now:
+        en.append("cannot run today: it relies on an invoice that is not issued yet")
+        zh.append("今天无法执行：它依赖一张尚未开出的发票")
+    return t(ctx, f"Also priced: {row.label}, {row.cost_display}; " + "; ".join(en) + ".",
+             f"另有测算：{row.label}，{row.cost_display}；" + "；".join(zh) + "。")
+
+
 def compare_financing(ctx: NlContext) -> Turn:
     if not get_settings().features.debt_desk:
         return _off(ctx, Intent.COMPARE_FINANCING, "FEATURE_DEBT_DESK")
@@ -74,6 +92,7 @@ def compare_financing(ctx: NlContext) -> Turn:
             "暂时无法预测账目，无法比较融资方案。"))
     menu = [r for r in menu_view(state, mandate, need_fen=committed.need_fen or None) if r.status.value != "REFERENCE_ONLY"]
     in_plan = {c.facility_id: c.fen for c in committed.costs if c.facility_id}
+    cap = fmt_pct(bp(mandate.max_apr_bp))
     lines: list[str] = []
     gap = committed.need_fen > 0
     if gap:
@@ -94,9 +113,11 @@ def compare_financing(ctx: NlContext) -> Turn:
                                 f"{r.time_to_cash_days} 天到账"))
         state_en = "committed" if r.committed else r.status.value.lower().replace("_", " ")
         state_zh = "已承诺" if r.committed else {"NOT_APPLIED": "未申请", "PENDING": "审批中"}.get(r.status.value, state_en)
+        over = (t(ctx, f"; its rate alone is above your {cap} yearly ceiling, so any use of it needs your approval",
+                  f"；其利率本身高于您 {cap} 的年度上限，任何使用都需要您批准") if r.needs_owner_approval else "")
         if not gap:
-            lines.append(t(ctx, f"- {r.name}: {r.all_in_display} all-in a year, {cash}, up to {r.available_display}.",
-                           f"- {r.name}：综合年化 {r.all_in_display}，{cash}，可用 {r.available_display}。"))
+            lines.append(t(ctx, f"- {r.name}: {r.all_in_display} all-in a year, {cash}, up to {r.available_display}{over}.",
+                           f"- {r.name}：综合年化 {r.all_in_display}，{cash}，可用 {r.available_display}{over}。"))
             continue
         cost = (t(ctx, f"{fmt_yuan(in_plan[r.facility_id])} for this gap", f"本次缺口成本 {fmt_yuan(in_plan[r.facility_id])}")
                 if r.facility_id in in_plan else t(ctx, "not in the plan", "不在方案中"))
@@ -105,19 +126,32 @@ def compare_financing(ctx: NlContext) -> Turn:
             why = t(ctx, "; not relied on until it is committed", "；未承诺前不计入方案")
         elif not r.admissible_for_need and r.notes:
             why = t(ctx, f"; not used: {r.notes[0]}", f"；未采用：{r.notes[0]}")
-        lines.append(t(ctx, f"- {r.name}: {r.all_in_display} all-in a year, {cost}, {cash}, {state_en}{why}.",
-                       f"- {r.name}：综合年化 {r.all_in_display}，{cost}，{cash}，{state_zh}{why}。"))
+        lines.append(t(ctx, f"- {r.name}: {r.all_in_display} all-in a year, {cost}, {cash}, {state_en}{why}{over}.",
+                       f"- {r.name}：综合年化 {r.all_in_display}，{cost}，{cash}，{state_zh}{why}{over}。"))
     if gap:
         sel = next((c for c in rows if c.result.value == "SELECTED"), None)
         if committed.admissible and sel is not None:
             steps = "; ".join(c.label for c in committed.costs)
             lines.append(t(ctx, f"Selected committed plan: {steps}. Total cost {sel.cost_display}.",
                            f"选定的已承诺方案：{steps}。总成本 {sel.cost_display}。"))
+            if committed.needs_owner_approval:
+                lines.append(t(ctx, "It needs your approval: ", "该方案需要您批准：") + " ".join(approval_sentences(ctx, committed)))
+            if not committed.executable_now:
+                lines.append(t(ctx, "It cannot run today: ", "该方案今天无法执行：") + " ".join(unrunnable_sentences(ctx, committed)))
+            lines += [f"- {k}" for k in (_row_line(ctx, c) for c in rows if c is not sel) if k]
         else:
             lines.append(t(ctx, "No committed source can cover this gap on its own; the owner must decide.",
                            "没有已承诺的融资来源可以单独覆盖该缺口，需由业主决定。"))
-        lines.append(t(ctx, "Nothing was executed. Say 'fund the gap' to have me do it.",
-                       "未执行任何操作。回复“补足资金缺口”，我来办理。"))
+        if committed.admissible and not committed.executable_now:
+            lines.append(t(ctx, "Nothing was executed, and 'fund the gap' would not run this plan today.",
+                           "未执行任何操作；今天回复“补足资金缺口”也不会执行该方案。"))
+        elif committed.admissible and committed.needs_owner_approval:
+            lines.append(t(ctx, "Nothing was executed. If you say 'fund the gap', the legs above your ceiling will wait "
+                                "for your approval rather than run.",
+                           "未执行任何操作。若您回复“补足资金缺口”，高于上限的步骤会等待您批准，而不会直接执行。"))
+        else:
+            lines.append(t(ctx, "Nothing was executed. Say 'fund the gap' to have me do it.",
+                           "未执行任何操作。回复“补足资金缺口”，我来办理。"))
     return Turn(intent=Intent.COMPARE_FINANCING, reply="\n".join(lines))
 
 

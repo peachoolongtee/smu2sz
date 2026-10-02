@@ -9,6 +9,8 @@ exactly as POST /alerts/{id}/act does. Nothing here executes on its own: the pla
 
 from __future__ import annotations
 
+import json
+
 from app.alerts import Alert, AlertKind, Severity, SuggestedAction, alerts, cure_operations
 from app.domain.models import (
     ApplyForFacility,
@@ -168,6 +170,39 @@ def _op_clause(ctx: NlContext, state: FinancialState, op: Operation) -> tuple[st
             t(ctx, f"apply for {fac} (needs your approval)", f"申请 {fac}（需您批准）"))
 
 
+def _waiting_sentence(ctx: NlContext, state: FinancialState, mandate: Mandate, alert: Alert,
+                      ops: list[Operation]) -> str | None:
+    """The cure of this alert is already in the owner's approval queue (a pending approval whose operation id starts
+    `alert:<alert id>:`): say that it waits, its cost and rate, and how to approve it. None when nothing is queued."""
+    queued = [a for a in ctx.store.approvals()
+              if str(getattr(a.status, "value", a.status)) == "PENDING" and (a.op_id or "").startswith(f"alert:{alert.id}:")]
+    if not queued:
+        return None
+    rec = queued[0]
+    try:
+        body = json.loads(rec.op_json)
+    except ValueError:
+        body = {}
+    op = next((o for o in ops if o.kind == body.get("kind") and getattr(o, "facility_id", None) == body.get("facility_id")
+               and getattr(o, "receivable_id", None) == body.get("receivable_id")), None)
+    what_en = what_zh = ""
+    cost_en = cost_zh = ""
+    if op is not None:
+        _kind, _status, _text, clause = _op_clause(ctx, state, op)
+        what_en, what_zh = f" to {clause}", f"：{clause}"
+        sg, end = _suggestion(alert, op)
+        if sg is not None and sg.cost_fen is not None and sg.annual_rate is not None and sg.cost_days is not None and end:
+            cap = fmt_pct(bp(mandate.max_apr_bp))
+            cost, rate = fmt_yuan(sg.cost_fen), fmt_pct(sg.annual_rate.value, 1)
+            over_en = f", above your {cap} ceiling" if sg.above_apr_cap else ""
+            over_zh = f"，高于您 {cap} 的上限" if sg.above_apr_cap else ""
+            cost_en = f" It costs {cost} by day {end}, which is {rate} a year for those {sg.cost_days} days{over_en}."
+            cost_zh = f"到第 {end} 天费用为 {cost}，相当于这 {sg.cost_days} 天的年化 {rate}{over_zh}。"
+    return t(ctx, f"The cure is already waiting for your approval ({rec.id}){what_en}.{cost_en} I have not run it. To approve "
+                  f"it, say \"approve {rec.id}\" or use the approval card.",
+             f"处理方案已在等待您批准（{rec.id}）{what_zh}。{cost_zh}我尚未执行。要批准，请说“批准 {rec.id}”或使用审批卡。")
+
+
 def alerts_turn(ctx: NlContext) -> tuple[Turn, bool]:
     """(the turn, whether anything needs the owner). Reads only; sets a pending plan when the first reserve-breach
     alert has a cure the agent may submit."""
@@ -230,7 +265,10 @@ def alerts_turn(ctx: NlContext) -> tuple[Turn, bool]:
         parts += rest_sentence
         ops = cure_operations(breach, day=ctx.day, mandate_version=mandate.version,
                               state_version=state.state_version) if breach.actionable else []
-        if ops:
+        waiting = _waiting_sentence(ctx, state, mandate, breach, ops)
+        if waiting is not None:  # already queued: nothing to propose, nothing stored, no second approval
+            parts.append(waiting)
+        elif ops:
             clauses = []
             over_cap: Operation | None = None
             for op in ops:

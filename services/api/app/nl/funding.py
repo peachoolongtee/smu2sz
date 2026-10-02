@@ -52,7 +52,13 @@ from app.nl.pipeline import (
     status_quo_offer,
     t,
 )
-from app.nl.plans import legs_from_plan, run_legs, signature
+from app.nl.plans import (
+    run_legs,
+    runnable_alternative,
+    runnable_legs,
+    signature,
+    unrunnable_note,
+)
 from app.nl.sessions import PendingPlan
 from app.nl.turn import Turn, ask
 from app.verifier import OwnerConstraints, VerdictBundle
@@ -132,16 +138,33 @@ def fund_gap(ctx: NlContext, slots: Slots, *, execute: bool = True) -> Turn:
                     reply=t(ctx, "No admissible committed plan covers this gap; nothing executed. The owner must "
                                  "decide (e.g. apply for a facility, a Tier-2 action).",
                             "没有可行的已承诺融资方案覆盖该缺口，未执行任何操作。需由业主决定。"))
-    legs = legs_from_plan(ctx, plan)
-    head = t(ctx, f"Router plan (committed facilities only): {plan.label}, need {fmt_yuan(plan.need_fen)}.",
-             f"融资路由方案（仅已承诺额度）：{plan.label}，需求 {fmt_yuan(plan.need_fen)}。")
+    blocked = ""
+    if not plan.executable_now:
+        # a plan the executor would refuse today is never offered for a go-ahead: say what it waits for, store nothing
+        alt = runnable_alternative(b)
+        why = unrunnable_note(ctx, plan)
+        if alt is None:
+            funding_ops(ctx, steps, plan, status="SKIPPED")
+            return Turn(intent=Intent.FUND_GAP, verdict=b.verdict, plan=steps.items, clear_pending=True, reply=t(
+                ctx, f"The cheapest committed plan is {plan.label}, need {fmt_yuan(plan.need_fen)}. {why} "
+                     f"Nothing was stored and nothing was executed.",
+                f"最低成本的已承诺方案是 {plan.label}，需求 {fmt_yuan(plan.need_fen)}。{why}未保存任何操作，也未执行任何操作。"))
+        blocked = t(ctx, f"The cheapest plan, {plan.label}, cannot run today. {why} ",
+                    f"最低成本的方案 {plan.label} 今天无法执行。{why}") + t(
+            ctx, "The best plan that can run today:", "今天可以执行的最佳方案：")
+        plan = alt
+    legs, flagged = runnable_legs(ctx, plan)
+    head = (blocked + " " if blocked else "") + t(
+        ctx, f"Router plan (committed facilities only): {plan.label}, need {fmt_yuan(plan.need_fen)}.",
+        f"融资路由方案（仅已承诺额度）：{plan.label}，需求 {fmt_yuan(plan.need_fen)}。")
     if not execute:
         funding_ops(ctx, steps, plan)
         when = landing.line(ctx, legs, executed=False)
         pending = PendingPlan(Intent.FUND_GAP, slots, steps.items, {"actions": list(plan.actions)})
         pending.bind(ctx, legs, plan.total_cost_fen)
         return Turn(intent=Intent.FUND_GAP,
-                    reply=head + (" " + when if when else "") + t(ctx, " Reply 'go ahead' to execute.", " 回复“执行”以执行。"),
+                    reply=head + (" " + when if when else "") + (" " + flagged if flagged else "")
+                    + t(ctx, " Reply 'go ahead' to execute.", " 回复“执行”以执行。"),
                     plan=steps.items, verdict=b.verdict, awaiting=True, pending=pending)
     lines, _ok = run_legs(ctx, steps, legs)  # the same leg runner as a confirmed plan
     return Turn(intent=Intent.FUND_GAP, reply=" ".join([head, *lines]), plan=steps.items, verdict=b.verdict,
@@ -338,16 +361,21 @@ def accelerate(ctx: NlContext, slots: Slots, text: str, *, amended: bool = False
         if fallback is None:
             return Turn(intent=Intent.ACCELERATE_RECEIPT, plan=steps.items, verdict=sq.verdict, clear_pending=True,
                         reply=t(ctx, "No admissible committed financing plan; nothing to do.", "没有可行的已承诺融资方案。"))
-        funding_ops(ctx, steps, fallback)
         head = t(ctx, f"Plan: finance {rcv.id} instead of asking {cp} for early payment: {fallback.label}.",
                  f"方案：以 {rcv.id} 发票融资代替向 {cp} 提前收款：{fallback.label}。")
-        legs = legs_from_plan(ctx, fallback)
+        legs, flagged = runnable_legs(ctx, fallback)
+        if not fallback.executable_now:  # never offered for a go-ahead: nothing is stored
+            funding_ops(ctx, steps, fallback, status="SKIPPED")
+            return Turn(intent=Intent.ACCELERATE_RECEIPT, amended=amended, verdict=sq.verdict, plan=steps.items,
+                        clear_pending=True, reply=head + " " + flagged + t(ctx, " Nothing was stored and nothing was "
+                                                                          "executed.", "未保存任何操作，也未执行任何操作。"))
+        funding_ops(ctx, steps, fallback)
         when = landing.line(ctx, legs, executed=False)
         pending = PendingPlan(Intent.ACCELERATE_RECEIPT, slots, steps.items, {"actions": list(fallback.actions)})
         pending.bind(ctx, legs, fallback.total_cost_fen)
         return Turn(intent=Intent.ACCELERATE_RECEIPT, amended=amended, verdict=sq.verdict, plan=steps.items,
                     awaiting=True, pending=pending,
-                    reply=head + (" " + when if when else "")
+                    reply=head + (" " + when if when else "") + (" " + flagged if flagged else "")
                     + t(ctx, " Reply 'go ahead' to execute (Tier 1).", " 回复“执行”（一级权限）。"))
 
     try:
@@ -385,13 +413,15 @@ def accelerate(ctx: NlContext, slots: Slots, text: str, *, amended: bool = False
               "DONE")
     if not zero:
         steps.add("VERIFY", verdict_line(ctx, v), "DONE")
-        when = ""
+        when = flagged = ""
         if fallback is not None:
-            funding_ops(ctx, steps, fallback, condition=if_cond)
-            when = landing.line(ctx, legs_from_plan(ctx, fallback), executed=False)
+            funding_ops(ctx, steps, fallback, condition=if_cond, status="PROPOSED" if fallback.executable_now else "SKIPPED")
+            legs, flagged = runnable_legs(ctx, fallback)
+            when = landing.line(ctx, legs, executed=False)
         return Turn(intent=Intent.ACCELERATE_RECEIPT, plan=steps.items, verdict=v, clear_pending=False,
                     reply=t(ctx, "No early-pay counter fits the goal; the committed financing plan applies.",
-                            "没有符合目标的提前付款反报价；适用已承诺融资方案。") + (" " + when if when else ""))
+                            "没有符合目标的提前付款反报价；适用已承诺融资方案。") + (" " + when if when else "")
+                    + (" " + flagged if flagged else ""))
     counter = zero[0]
     gv = v
     steps.add("COUNTER_OFFER", f"{counter.label}: {counter.text}", "PROPOSED")
@@ -399,19 +429,20 @@ def accelerate(ctx: NlContext, slots: Slots, text: str, *, amended: bool = False
     steps.add("ACCEPT_OFFER", t(ctx, "Record the commitment (nonce, expiry)", "记录承诺（随机数、到期日）"),
               condition=t(ctx, "if the buyer accepts", "若买方接受"))
     if fallback is not None:
-        funding_ops(ctx, steps, fallback, condition=if_cond)
+        funding_ops(ctx, steps, fallback, condition=if_cond, status="PROPOSED" if fallback.executable_now else "SKIPPED")
     # The legs that may follow, built now so that the owner sees them and a go-ahead sends exactly these: the
     # remaining gap after the buyer accepts (the package projected as agreed), or the router's plan if it refuses.
-    refuse_ops = legs_from_plan(ctx, fallback) if fallback is not None else []
+    refuse_ops, refuse_note = runnable_legs(ctx, fallback)
     accept_plan = None
     offer = ctx.store.get_offer(gv.offer_id)
     if offer is not None:
         accept_plan = committed_plan(ctx.evaluate_accepted(package_offer(ctx, offer, counter)))
-    accept_ops = legs_from_plan(ctx, accept_plan) if accept_plan is not None else []
-    if accept_plan is not None and accept_ops:
+    accept_ops, accept_note = runnable_legs(ctx, accept_plan)
+    if accept_plan is not None and (accept_ops or accept_note):
         funding_ops(ctx, steps, accept_plan,
                     condition=t(ctx, "if the buyer accepts: remaining gap after early settlement",
-                                "若买方接受：提前结算后剩余缺口"))
+                                "若买方接受：提前结算后剩余缺口"),
+                    status="PROPOSED" if accept_plan.executable_now else "SKIPPED")
     when_refuse = landing.line(ctx, refuse_ops, executed=False)
     when_accept = landing.line(ctx, accept_ops, executed=False)
     head = t(ctx, f"Plan (Tier 1): offer {cp} early settlement on up to "
@@ -424,9 +455,12 @@ def accelerate(ctx: NlContext, slots: Slots, text: str, *, amended: bool = False
              f"账期不变、无返利：远期让步 ¥0.00。若对方拒绝：{fallback.label if fallback else '无需后备'}。"
              + (f"若对方接受，其余缺口：{accept_plan.label}。" if accept_ops and accept_plan else ""))
     head += (t(ctx, f" If {cp} refuses: {when_refuse}", f" 若 {cp} 拒绝：{when_refuse}") if when_refuse else "")
+    head += (t(ctx, f" If {cp} refuses: {refuse_note}", f" 若 {cp} 拒绝：{refuse_note}") if refuse_note else "")
     head += (t(ctx, f" If {cp} accepts: {when_accept}", f" 若 {cp} 接受：{when_accept}") if when_accept else "")
+    head += (t(ctx, f" If {cp} accepts: {accept_note}", f" 若 {cp} 接受：{accept_note}") if accept_note else "")
     data = {"verdict_id": gv.id, "counter_id": counter.id, "cp": cp, "accept_ops": accept_ops, "refuse_ops": refuse_ops,
-            "verify": steps.items[0].description, "text": text, "terms": (_face(counter), _rate(counter))}
+            "verify": steps.items[0].description, "text": text, "terms": (_face(counter), _rate(counter)),
+            "refuse_note": refuse_note, "accept_note": accept_note}
     pending = PendingPlan(Intent.ACCELERATE_RECEIPT, slots, steps.items, data).bind(ctx, [*accept_ops, *refuse_ops])
     return Turn(intent=Intent.ACCELERATE_RECEIPT, verdict=gv, plan=steps.items, awaiting=True, amended=amended,
                 pending=pending,
@@ -459,10 +493,14 @@ def run_accelerate(ctx: NlContext, pending: PendingPlan) -> Turn:
         if r is not None and r.status.value in ("EXECUTED", "PENDING_APPROVAL", "DUPLICATE") and d["accept_ops"]:
             lines, _ok = run_legs(ctx, run, d["accept_ops"], t(ctx, "remaining gap after early settlement", "提前结算后剩余缺口"))
             reply += lines
+        elif d.get("accept_note"):  # the rest of the gap has a plan, but not one that can run today
+            reply.append(d["accept_note"])
     elif d["refuse_ops"]:
         reply.append(t(ctx, f"{cp} refused.", f"{cp} 拒绝。"))
         lines, _ok = run_legs(ctx, run, d["refuse_ops"], t(ctx, "if the buyer refuses (fallback)", "若买方拒绝（后备方案）"))
         reply += lines
+    elif d.get("refuse_note"):  # a plan exists, but not one that can run today: nothing was stored for it
+        reply.append(t(ctx, f"{cp} refused. ", f"{cp} 拒绝。") + d["refuse_note"])
     else:
         reply.append(t(ctx, f"{cp} refused, and there is no gap to fund.", f"{cp} 拒绝，且无资金缺口。"))
     return Turn(intent=Intent.ACCELERATE_RECEIPT, reply="\n".join(reply), plan=run.items, verdict=gv,
