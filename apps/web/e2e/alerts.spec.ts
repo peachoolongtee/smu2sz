@@ -32,6 +32,10 @@ test("reconciliation: no receipts yet, one outstanding receivable, chain valid",
   await expect(outstanding).toContainText("RCV-A");
   await expect(outstanding).toContainText("¥420,000.00");
   await expect(page.getByText("Chain valid").first()).toBeVisible();
+  // Promised early payments (the API's `promised` and `lapsed_promises`): none on the opening books.
+  await expect(page.getByRole("heading", { name: "Promised early payments", level: 2 })).toBeVisible();
+  await expect(page.getByText("No early payment has been promised.")).toBeVisible();
+  await expect(page.getByText("Lapsed promises: 0")).toBeVisible();
 });
 
 test("alerts and reconciliation are reachable from the navigation", async ({ page }) => {

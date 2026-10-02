@@ -42,6 +42,10 @@ test("demo stepper walks Scene 1, Scene 2, Scene 3 and Security with the golden 
   await next(page, /\/funding/);
   await expect(page.getByText("10.8417%").first()).toBeVisible();
   await expect(page.getByText("0.88%").first()).toBeVisible();
+  // Each action carries the day it is requested and the day its cash lands (request day + the facility's lead time).
+  const lands = page.getByTestId("plan-lands");
+  await expect(lands).toHaveCount(2);
+  await expect(lands.filter({ hasText: "Day 3" })).toHaveCount(1);
 
   await next(page, /\/verdict/);
   await expect(page.getByTestId("outcome-badge")).toContainText("REJECT");
