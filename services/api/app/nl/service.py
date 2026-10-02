@@ -47,6 +47,7 @@ from app.nl.offers import (
     evaluate_offer,
     execute_decision,
     explain,
+    followup_text,
     negotiate_intent,
     what_if,
 )
@@ -366,6 +367,8 @@ def _correct(ctx: NlContext, p: Parsed, text: str) -> Turn:
         update.update(rate_bp=new.rate_bp, use_financing=False)
     if new.use_financing:
         update["use_financing"] = True
+    if new.zero_forward:
+        update["zero_forward"] = True
     for k in ("counterparty_id", "amount_fen", "buyer_profile", "facility_id"):
         if getattr(new, k) is not None:
             update[k] = getattr(new, k)
@@ -373,7 +376,9 @@ def _correct(ctx: NlContext, p: Parsed, text: str) -> Turn:
     if pending.intent == Intent.NEGOTIATE:
         _constrain(ctx, slots)
     if pending.intent == Intent.ACCELERATE_RECEIPT:
-        turn = accelerate(ctx, slots, text, amended=True)
+        # a bare constraint carries no request of its own: the plan is built again from the owner's original words
+        again = pending.data.get("text") or text if "constraint" in p.matched else text
+        turn = accelerate(ctx, slots, again, amended=True)
     elif pending.intent == Intent.FUND_GAP:
         turn = fund_gap(ctx, slots, execute=False)
     elif pending.intent == Intent.REPAY_FACILITY:
@@ -551,9 +556,11 @@ def _negotiation_proposal(ctx: NlContext, turn: Turn) -> Turn:
     offer = ctx.store.get_offer(v.offer_id)
     who = offer.counterparty_id if offer is not None else t(ctx, "the buyer", "买方")
     listed = "; ".join(f"{c.label}: {c.text}" for c in v.counters)
-    turn.reply = t(ctx, f"I would send {len(v.counters)} counter(s) to {who}: {listed} Nothing has been sent. Reply "
-                        f"'go ahead' to send them, or 'cancel'.",
-                   f"我会向 {who} 发送 {len(v.counters)} 条反报价：{listed} 目前尚未发送任何内容。回复“执行”发送，或“取消”。")
+    follow = followup_text(ctx, turn.pending.data)  # the funding that would follow, with the day its cash lands
+    follow = (" " + follow) if follow else ""
+    turn.reply = t(ctx, f"I would send {len(v.counters)} counter(s) to {who}: {listed}{follow} Nothing has been sent. "
+                        f"Reply 'go ahead' to send them, or 'cancel'.",
+                   f"我会向 {who} 发送 {len(v.counters)} 条反报价：{listed}{follow} 目前尚未发送任何内容。回复“执行”发送，或“取消”。")
     return turn
 
 

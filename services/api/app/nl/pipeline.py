@@ -19,7 +19,6 @@ from app.domain.models import (
     CompileStatus,
     CounterOffer,
     CounterProposal,
-    DrawFacility,
     FinancialState,
     FundingActionKind,
     FundingPlan,
@@ -29,7 +28,6 @@ from app.domain.models import (
     RejectOffer,
     SourceDocument,
     SourceSpan,
-    SubmitInvoiceForFinancing,
     Verdict,
 )
 from app.domain.money import fmt_yuan
@@ -158,36 +156,29 @@ def send_counters(ctx: NlContext, steps: Steps, verdict: Verdict, counters: Sequ
     return sent
 
 
-def funding_ops(ctx: NlContext, steps: Steps, plan: FundingPlan, condition: str | None = None,
-                execute: bool = True) -> list[OperationResult]:
-    """The router's committed plan as Tier-1 operations: DRAW -> DrawFacility, FINANCE_INVOICE ->
-    SubmitInvoiceForFinancing. Early pay is a buyer acceptance, not a funding operation; repayments
-    happen on their scheduled day."""
-    out: list[OperationResult] = []
+def funding_ops(ctx: NlContext, steps: Steps, plan: FundingPlan, condition: str | None = None) -> None:
+    """Show the router's committed plan as plan steps: DRAW -> a draw, FINANCE_INVOICE -> an invoice advance, each
+    with the day its cash lands. It sends nothing: the operations a confirmation sends are the typed legs stored with
+    the plan (`app.nl.plans.legs_from_plan`, run by `run_legs`); no path builds a funding plan after the owner's
+    go-ahead. Early pay is a buyer acceptance, not a funding operation; repayments happen on their scheduled day."""
     for a in plan.actions:
         if a.kind == FundingActionKind.DRAW:
             desc = t(ctx, f"Draw {fmt_yuan(a.amount_fen)} on {a.facility_id}" +
                      (f", repay day {a.repay_day}" if a.repay_day is not None else ""),
                      f"从 {a.facility_id} 提款 {fmt_yuan(a.amount_fen)}")
-            if not execute:
-                steps.add("DRAW_FACILITY", desc, condition=condition)
-                continue
-            r = ctx.execute(DrawFacility(**ctx.base("DRAW_FACILITY"), facility_id=a.facility_id,
-                                         amount_fen=a.amount_fen))
-            steps.result("DRAW_FACILITY", desc, r, condition)
-            out.append(r)
+            steps.add("DRAW_FACILITY", desc + _lands(ctx, a.facility_id), condition=condition)
         elif a.kind == FundingActionKind.FINANCE_INVOICE and a.receivable_id:
             desc = t(ctx, f"Submit {a.receivable_id} to {a.facility_id} for a {fmt_yuan(a.amount_fen)} advance",
                      f"将 {a.receivable_id} 提交 {a.facility_id} 融资，预付 {fmt_yuan(a.amount_fen)}")
-            if not execute:
-                steps.add("SUBMIT_INVOICE_FOR_FINANCING", desc, condition=condition)
-                continue
-            r = ctx.execute(SubmitInvoiceForFinancing(**ctx.base("SUBMIT_INVOICE_FOR_FINANCING"),
-                                                      facility_id=a.facility_id, receivable_id=a.receivable_id,
-                                                      advance_fen=a.amount_fen))
-            steps.result("SUBMIT_INVOICE_FOR_FINANCING", desc, r, condition)
-            out.append(r)
-    return out
+            steps.add("SUBMIT_INVOICE_FOR_FINANCING", desc + _lands(ctx, a.facility_id), condition=condition)
+
+
+def _lands(ctx: NlContext, facility_id: str) -> str:
+    """" (requested today, cash lands on day 3)" for a facility with a lead time, else nothing."""
+    lead = next((f.lead_time_days for f in ctx.state().facilities if f.id == facility_id), 0)
+    if lead <= 0:
+        return ""
+    return t(ctx, f" (requested today, cash lands on day {ctx.day + lead})", f"（今日申请，第 {ctx.day + lead} 天到账）")
 
 
 def committed_plan(bundle: VerdictBundle) -> FundingPlan | None:

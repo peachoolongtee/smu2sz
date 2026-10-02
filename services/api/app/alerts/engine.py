@@ -660,6 +660,48 @@ def _repay_alerts(state: FinancialState, mandate: Mandate, store: LedgerStore, o
     return out
 
 
+# ---------------------------------------------------------------- funding in transit
+
+
+def _transit_alerts(state: FinancialState, mandate: Mandate, t: Trajectory, day: int) -> list[Alert]:
+    """One alert per funding lot whose cash has not landed (ADR-0010: requested on day d, cash on d + lead time).
+    INFO: nothing for the owner to do and no suggested operation. WARNING when the conservative projection (which
+    already credits the lot on its arrival day) shows a reserve breach on the days before it lands: the alert says
+    which days are uncovered and until when."""
+    floor = mandate.min_cash_fen
+    episodes = _episodes(t, floor, day)
+    out: list[Alert] = []
+    for lot in sorted((lt for lt in ensure_lots(state).lots if not lt.settled), key=lambda lt: (lt.arrival_day, lt.id)):
+        name = next((f.name for f in state.facilities if f.id == lot.facility_id), lot.facility_id)
+        what = (f"{fmt_yuan(lot.remaining_fen)} requested on day {lot.request_day} on {name} lands on day "
+                f"{lot.arrival_day}")
+        lead = lot.arrival_day - lot.request_day
+        last_dark = lot.arrival_day - 1  # the last day the cash is not yet in
+        short = next((a for a, b in episodes if a <= last_dark <= b), None)
+        formula = f"cash lands on request day + lead time = {lot.request_day} + {lead} = day {lot.arrival_day}"
+        severity, title, detail = Severity.INFO, f"{what[:1].upper()}{what[1:]}", f"{what}."
+        if short is not None:
+            span = f"Day {short}" if short == last_dark else f"Days {short} to {last_dark}"
+            severity = Severity.WARNING
+            title = f"Reserve uncovered until {name} cash lands on day {lot.arrival_day}"
+            detail = (f"{what}. {span} {'is' if short == last_dark else 'are'} below the {fmt_yuan(floor)} reserve "
+                      f"floor until then: the cash is not in before day {lot.arrival_day}.")
+            formula += f"; closing cash < floor on days {short}..{last_dark}"
+        out.append(Alert(
+            id=f"ALERT-TRANSIT-{lot.id}",
+            kind=AlertKind.FUNDING_IN_TRANSIT,
+            severity=severity,
+            title=title,
+            detail=detail,
+            formula=formula,
+            day=lot.arrival_day,
+            amount_fen=lot.remaining_fen,
+            inputs={"facility_id": lot.facility_id, "lot_id": lot.id, "request_day": str(lot.request_day),
+                    "arrival_day": str(lot.arrival_day), **({"uncovered_from": str(short)} if short is not None else {})},
+        ))
+    return out
+
+
 # ---------------------------------------------------------------- entry point
 
 
@@ -683,5 +725,6 @@ def alerts(state: FinancialState, mandate: Mandate, store: LedgerStore, day: int
         *_concession_alerts(books.state, mandate, t),
         *([] if any(a.kind == AlertKind.RESERVE_BREACH_AHEAD for a in reserve)  # never propose repaying in a breach
           else _repay_alerts(books.state, mandate, store, obs, today)),
+        *_transit_alerts(books.state, mandate, t, today),
     ]
     return sorted(out, key=lambda a: (_RANK[a.severity], a.day if a.day is not None else 10**6, a.id))
