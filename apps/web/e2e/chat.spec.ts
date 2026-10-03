@@ -234,7 +234,7 @@ test("network and credential failures are explained in the conversation and can 
       : route.fulfill({
           status: 503,
           contentType: "application/json",
-          headers: { "access-control-allow-origin": "http://localhost:3000" },
+          headers: { "access-control-allow-origin": `http://localhost:${process.env.E2E_LIVE_PORT ?? 3000}` },
           body: JSON.stringify({ detail: { code: "OWNER_TOKEN_NOT_CONFIGURED", message: "set OWNER_TOKEN (DEMO_MODE=0)" } }),
         }),
   );

@@ -4,23 +4,23 @@
   "rounds": [
     {
       "round": 1,
-      "counter_id": "CTR-ce19415db1d4",
+      "counter_id": "CTR-193394b6ba8b",
       "counter_label": "Option A",
       "buyer_response": "ACCEPT",
       "buyer_text": "Round 1. We accept Option A as proposed."
     }
   ],
-  "accepted_counter_id": "CTR-ce19415db1d4",
+  "accepted_counter_id": "CTR-193394b6ba8b",
   "commitment": {
     "id": "CMT-a78afaa5becb5273",
     "offer_id": "OFF-f806f79b6c21",
     "offer_version": 1,
     "counterparty_id": "BUYER-1",
-    "verdict_id": "VER-df13ee3a54e2",
+    "verdict_id": "VER-a899ca66120c",
     "terms_hash": "342e81d5572b1ecd3a1b01f177dc698c8f418ef9df1fdfd17ec4d49f6f72a280",
     "obligations": [
       {
-        "id": "CTR-ce19415db1d4-O2",
+        "id": "CTR-193394b6ba8b-O2",
         "type": "IMMEDIATE_DISCOUNT",
         "counterparty_id": "BUYER-1",
         "rate_bp": 85,
@@ -43,10 +43,10 @@
         },
         "spans": [
           {
-            "doc_id": "CTR-ce19415db1d4",
+            "doc_id": "CTR-193394b6ba8b",
             "start": 34,
-            "end": 109,
-            "text": "We will accept early settlement on up to ¥257,200 of this invoice at 0.85%."
+            "end": 134,
+            "text": "We will accept early settlement on up to ¥257,200 of this invoice at 0.85%, paid on or before day 2."
           }
         ],
         "confidence": 1,
@@ -108,6 +108,7 @@
         "receivable_id": null,
         "repay_day": 32,
         "rate_bp": null,
+        "lands_day": 0,
         "amount_display": "¥149,986.20"
       }
     ],
@@ -148,6 +149,6 @@
     "need_display": "¥149,986.20",
     "total_cost_display": "¥841.57"
   },
-  "message": "CTR-ce19415db1d4 accepted; commitment recorded; remaining gap funded.",
-  "transcript_hash": "4ed5e0bef07348dcb5315a6427e12e62d452f4bbebd088083d5c079daca90f5f"
+  "message": "CTR-193394b6ba8b accepted; commitment recorded; remaining gap funded.",
+  "transcript_hash": "802cf1c4946c483e21d6c89444465751ef705a8ba4ff2bc6108d36b36cdeaf34"
 }

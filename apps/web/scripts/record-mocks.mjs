@@ -15,12 +15,15 @@
 //   - whatif_presets.json: every entry's `compute_ms` -> 0 and `cached` -> false (timing and cache state of the call).
 //   - the commitment id (CMT-<16 hex>) and its nonce, which the API draws at random for every deal: replaced by one fixed
 //     id and nonce wherever they appear (negotiation_accept.json, ops.json, home_act.json, home_goahead.json).
+//   - nl_script.json and state_after_fund.json: the NL-<16 hex> operation and lot ids, which the API derives from a random
+//     per-session nonce, become fixed ids by order of first appearance; nl_script.json and home_reconciliation_day34.json are
+//     chained again by first appearance (entry_hash / prev_hash re-derived, chain_head_hash fixed) for the same reason.
 //   - the entry_hash / prev_hash of the operations in negotiation_accept.json, home_act.json, home_goahead.json, home_approve.json
 //     and home_approve_chat.json: the
 //     server's chain includes that commitment id, so it differs on every run. They are re-derived (sha256 over the op's
 //     own seq, id, kind, status and the previous hash) so the chain stays internally consistent and repeatable. Hashes in
 //     every other file (the chat script, for one) are deterministic and are kept exactly as recorded.
-// Verified by running the recorder twice on two fresh APIs: `git status --short apps/web/mocks` is empty.
+// Verified by running the recorder twice on the same API and on two fresh APIs: `git status --short apps/web/mocks` is empty.
 
 import { createHash } from "node:crypto";
 import { register } from "node:module";
@@ -60,9 +63,45 @@ const FIXED_CMT = `CMT-${sha("recorded commitment").slice(0, 16)}`;
 const FIXED_NONCE = sha("recorded nonce").slice(0, 32);
 const RECHAIN = new Set(["negotiation_accept.json", "home_act.json", "home_goahead.json", "home_approve.json", "home_approve_chat.json"]);
 
+// Files whose operations are chained by first appearance (every other chained file uses `rechain` below): the chat script, whose
+// operation ids and commitment ids come from a per-session random nonce, and the day-34 reconciliation (one receipt).
+const RECHAIN_BY_APPEARANCE = new Set(["nl_script.json", "home_reconciliation_day34.json"]);
+const nlIds = new Map(); // NL-<16 hex> operation / lot ids, which the API derives from a random session nonce -> a fixed id by first appearance
+
+function rechainByAppearance(name, root) {
+  const memo = new Map();
+  const collect = (node) => {
+    if (Array.isArray(node)) node.forEach(collect);
+    else if (node && typeof node === "object") {
+      if (typeof node.entry_hash === "string" && !memo.has(node.entry_hash)) {
+        const prev = typeof node.prev_hash === "string" ? memo.get(node.prev_hash) : undefined;
+        const before = prev ?? (node.seq === 1 ? "0".repeat(64) : sha(`prev|${node.op_id}`));
+        memo.set(node.entry_hash, sha(`${before}|${node.seq}|${node.op_id}|${node.kind}|${node.status}`));
+      }
+      Object.values(node).forEach(collect);
+    }
+  };
+  collect(root);
+  const apply = (node) => {
+    if (Array.isArray(node)) node.forEach(apply);
+    else if (node && typeof node === "object") {
+      for (const k of ["entry_hash", "prev_hash", "chain_head_hash"]) {
+        if (typeof node[k] !== "string") continue;
+        node[k] = memo.get(node[k]) ?? (k === "prev_hash" ? sha(`prev|${node.op_id}`) : sha(`head|${name}`));
+      }
+      Object.values(node).forEach(apply);
+    }
+  };
+  apply(root);
+}
+
 function normalise(name, value) {
-  if (name === "nl_script.json") return value; // deterministic (its commitment ids and hashes come from the recorded LLM cache)
-  const text = JSON.stringify(value).replace(/CMT-[0-9a-f]{16}/g, FIXED_CMT);
+  const text = JSON.stringify(value)
+    .replace(/CMT-[0-9a-f]{16}/g, FIXED_CMT)
+    .replace(/NL-[0-9a-f]{16}/g, (id) => {
+      if (!nlIds.has(id)) nlIds.set(id, `NL-${sha(`recorded nl id ${nlIds.size}`).slice(0, 16)}`);
+      return nlIds.get(id);
+    });
   const out = JSON.parse(text, (k, v) => (k === "nonce" && typeof v === "string" && /^[0-9a-f]{32}$/.test(v) ? FIXED_NONCE : v));
   const rechain = (node) => {
     if (Array.isArray(node)) {
@@ -77,6 +116,7 @@ function normalise(name, value) {
     } else if (node && typeof node === "object") for (const v of Object.values(node)) rechain(v);
   };
   if (RECHAIN.has(name)) rechain(out);
+  if (RECHAIN_BY_APPEARANCE.has(name)) rechainByAppearance(name, out);
   return out;
 }
 

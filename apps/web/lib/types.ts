@@ -286,6 +286,8 @@ export interface Receivable {
   base_terms_days?: number;
   /** Ids of the invoice adjustments written onto this invoice. */
   applied?: string[];
+  /** Early-payment amounts already taken under each obligation (obligation id to fen); present only when there are any. */
+  early_paid_fen?: Record<string, Fen>;
 }
 
 export interface RecurringInvoice {
@@ -375,6 +377,8 @@ export interface FinancialState {
   lots?: FundingLot[];
   /** Live agreements' scopes; present only when there are any. */
   invoice_adjustments?: InvoiceAdjustment[];
+  /** The scenario the books were opened from (for example "golden_sme"); present on GET /state. */
+  scenario?: string;
 }
 
 // ------------------------------------------------------------------ funding and trajectory
@@ -389,7 +393,7 @@ export interface FundingAction {
   receivable_id: string | null;
   repay_day: Day | null;
   rate_bp: Bp | null;
-  /** The day the cash lands (DRAW and FINANCE_INVOICE in a router plan); absent or null otherwise. */
+  /** The day the cash lands (DRAW and FINANCE_INVOICE in a router plan's actions); null or absent otherwise. Comparison rows carry the key but, today, always as null. */
   lands_day?: Day | null;
 }
 
@@ -835,6 +839,8 @@ export type ComparisonRow = Displayed<{
   approval_reason?: string;
   executable_now?: boolean;
   not_executable_reason?: string;
+  /** The row's actions as the router returned them (`lands_day` is null on every comparison row today). */
+  actions?: Displayed<FundingAction>[];
 };
 
 export interface PlanRequest {
@@ -933,16 +939,18 @@ export interface ApprovalOperation {
   facility_id?: string;
   receivable_id?: string;
   term_months?: number | null;
+  /** RECEIVE_PAYMENT held for approval: the day the receipt was reported, when that is not the day it is booked. */
+  reported_day?: Day | null;
 }
 
-/** What the card needs beyond the display row: the executor's reason, the operation and, after a decision, its result message. */
+/** What the card needs beyond the display row: the executor's reason, the operation and, once decided, its result message. */
 export interface ApprovalDetail {
   /** The executor's sentence on why the owner has to decide (the queue's `reason`). */
   reason: string;
   op_id: string | null;
   operation: ApprovalOperation | null;
-  /** Set by decideApproval: the executor's message for the decision just made. */
-  result_message?: string;
+  /** The executor's message for the decision: sent by the queue on a decided item, and set by decideApproval for the decision just made. */
+  result_message?: string | null;
 }
 
 export type ApprovalDecision = "APPROVE" | "REJECT";

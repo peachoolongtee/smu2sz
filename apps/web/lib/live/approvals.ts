@@ -50,6 +50,7 @@ export async function getApprovals(): Promise<ApprovalView[]> {
         amount_display: a.amount_display ?? null,
         detail: a.subject && a.reason ? a.reason : a.op_id ? `Operation ${a.op_id}` : "",
         decided_day: a.decided_day ?? null,
+        result_message: a.result_message ?? null,
       }) as ApprovalView,
   );
 }

@@ -4,21 +4,21 @@
   "rounds": [
     {
       "round": 1,
-      "counter_id": "CTR-ce19415db1d4",
+      "counter_id": "CTR-193394b6ba8b",
       "counter_label": "Option A",
       "buyer_response": "REFUSE",
       "buyer_text": "Round 1. We have considered Option A and cannot accept as proposed. We propose: early settlement of invoice RCV-A (¥420,000.00) on day 2 at a 1.15% discount; 60-day payment terms on future invoices; a 0.50% rebate on next quarter's purchases of up to ¥400,000.00."
     },
     {
       "round": 2,
-      "counter_id": "CTR-11497d2ec759",
+      "counter_id": "CTR-6b07cbf70441",
       "counter_label": "Option B",
       "buyer_response": "REFUSE",
       "buyer_text": "Round 2. We have considered Option B and cannot accept as proposed. We propose: early settlement of invoice RCV-A (¥420,000.00) on day 2 at a 1.10% discount; 60-day payment terms on future invoices."
     },
     {
       "round": 3,
-      "counter_id": "CTR-ce19415db1d4",
+      "counter_id": "CTR-193394b6ba8b",
       "counter_label": "Option A",
       "buyer_response": "REFUSE",
       "buyer_text": "Round 3. We cannot accept Option A. This is our final round, so we will keep our existing terms."
@@ -73,6 +73,7 @@
         "receivable_id": null,
         "repay_day": 32,
         "rate_bp": null,
+        "lands_day": 0,
         "amount_display": "¥150,000.00"
       },
       {
@@ -83,6 +84,7 @@
         "receivable_id": "RCV-A",
         "repay_day": null,
         "rate_bp": null,
+        "lands_day": 3,
         "amount_display": "¥255,000.00"
       }
     ],
@@ -155,5 +157,5 @@
     "total_cost_display": "¥3,113.93"
   },
   "message": "NO DEAL after bounded rounds; the Debt Desk funds the near-term gap.",
-  "transcript_hash": "0b5b19ffd62c637ea0850d30bbdec0d533faedf857dc23b29c261158fc780112"
+  "transcript_hash": "aa83758d389c111dd347f3ccb0e13324a700213bb4eae7cd7d136150bdce8659"
 }

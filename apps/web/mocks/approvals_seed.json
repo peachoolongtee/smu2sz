@@ -24,6 +24,7 @@
     "amount_fen": 60000000,
     "amount_display": "¥600,000.00",
     "detail": "apply for facility FAC-ETL (¥600,000.00)",
-    "decided_day": null
+    "decided_day": null,
+    "result_message": null
   }
 }

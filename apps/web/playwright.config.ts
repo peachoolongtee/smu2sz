@@ -7,12 +7,12 @@ import { defineConfig, devices } from "@playwright/test";
  *   live  FastAPI (uvicorn, in-memory store, recorded LLM cache, no Supabase) on :8000 plus Next.js in
  *         NEXT_PUBLIC_API_MODE=live on :3000. The demo walk is the same spec as in mock mode.
  *
- * The live web server uses :3000 because the API's CORS allow-list is http://localhost:3000.
+ * The live web server uses :3000 (the API default CORS origin); E2E_LIVE_PORT moves it and tells the API to allow that origin.
  * E2E_TARGET=mock|live|all (default all) chooses which servers start; `pnpm test:e2e:mock` and
  * `pnpm test:e2e:live` set it. Needs `uv` for the API and `pnpm exec playwright install chromium` once.
  */
 const MOCK_PORT = Number(process.env.E2E_PORT ?? 3100);
-const LIVE_PORT = 3000;
+const LIVE_PORT = Number(process.env.E2E_LIVE_PORT ?? 3000); // override when another program holds :3000; the API is then told to allow that origin
 const API_PORT = Number(process.env.E2E_API_PORT ?? 8000); // override when another program holds :8000
 // contract.spec.ts calls the live adapters from Node: they read the API address from this variable.
 process.env.NEXT_PUBLIC_API_URL ??= `http://localhost:${API_PORT}`;
@@ -83,7 +83,7 @@ export default defineConfig({
             timeout: 120_000,
             // A server already on :8000 could hold state from a previous run or point at a real database.
             reuseExistingServer: false,
-            env: { TERMSLEDGER_NO_DOTENV: "1", DATABASE_URL: "memory", LLM_MODE: "cache" },
+            env: { TERMSLEDGER_NO_DOTENV: "1", DATABASE_URL: "memory", LLM_MODE: "cache", CORS_ORIGINS: `http://localhost:${LIVE_PORT}` },
           },
           {
             command: `pnpm build && pnpm start -p ${LIVE_PORT}`,

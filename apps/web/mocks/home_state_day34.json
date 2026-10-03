@@ -37,6 +37,9 @@
         "settled_fen": 25720000,
         "advance_fen": 0,
         "advance_facility_id": null,
+        "early_paid_fen": {
+          "CTR-193394b6ba8b-O2": 25720000
+        },
         "face_display": "¥420,000.00",
         "settled_display": "¥257,200.00",
         "advance_display": "¥0.00"
@@ -438,6 +441,7 @@
         "remaining_display": "¥149,986.20"
       }
     ],
+    "scenario": "golden_sme",
     "cash_display": "¥300,000.00",
     "monthly_ebitda_display": "¥90,000.00"
   },

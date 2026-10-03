@@ -393,6 +393,7 @@
     "monthly_ebitda_fen": 9000000,
     "state_version": 1,
     "as_of_day": 0,
+    "scenario": "golden_sme",
     "cash_display": "¥400,000.00",
     "monthly_ebitda_display": "¥90,000.00"
   },

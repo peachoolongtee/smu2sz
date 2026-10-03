@@ -1,7 +1,8 @@
 "use client";
 
 import { useI18n } from "@/lib/i18n";
-import type { Displayed, FundingPlan } from "@/lib/types";import { CodeBadge } from "./badges";
+import type { Displayed, FundingPlan } from "@/lib/types";
+import { CodeBadge } from "./badges";
 import { PlanNotes } from "./plan-notes";
 import { Badge, Card, Formula, TableWrap, tableCls, tdCls, thCls } from "./ui";
 
@@ -19,8 +20,9 @@ export function PlanCard({
   leadTimes?: Record<string, number>;
 }) {
   const { t, te } = useI18n();
-  /** The day the cash lands: only for funding that brings cash in (draw, invoice advance) on a facility whose lead time is known. */
+  /** The day the cash lands: the API's `lands_day`. Only when the field is absent (an older answer) is it derived: request day plus the facility's lead time, for a draw or advance. */
   const landing = (a: FundingPlan["actions"][number]): number | null => {
+    if (a.lands_day !== undefined) return a.lands_day;
     if (a.kind !== "DRAW" && a.kind !== "FINANCE_INVOICE") return null;
     const lead = leadTimes?.[a.facility_id];
     return lead === undefined ? null : a.day + lead;

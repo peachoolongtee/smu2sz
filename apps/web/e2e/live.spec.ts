@@ -32,7 +32,7 @@ test("a 401 from the API opens the owner sign-in dialog instead of leaving a bla
     route.fulfill({
       status: 401,
       contentType: "application/json",
-      headers: { "access-control-allow-origin": "http://localhost:3000" },
+      headers: { "access-control-allow-origin": `http://localhost:${process.env.E2E_LIVE_PORT ?? 3000}` },
       body: JSON.stringify({ detail: "owner token required" }),
     }),
   );
@@ -184,7 +184,13 @@ test("on day 34 the cure needs the owner: the alert says so, the click queues it
   await approvalCard.getByRole("button", { name: "Approve" }).click();
   await expect(approvalCard.locator('[data-testid^="approval-result-"]')).toContainText("the cash lands on day 37");
   await expect(approvalCard).toContainText("Approved");
-  await expect(approvalCard.locator('[data-testid^="approval-decided-"]')).toHaveText("Decided.");
+  // The decision day is the API's `decided_day` (the clock is on day 34).
+  await expect(approvalCard.locator('[data-testid^="approval-decided-"]')).toHaveText("Decided on day 34.");
+  // After a reload the card still has both, because the queue itself carries `decided_day` and `result_message`.
+  await page.reload();
+  const reloaded = page.locator('[id^="approval-APR-"]').first();
+  await expect(reloaded.locator('[data-testid^="approval-decided-"]')).toHaveText("Decided on day 34.");
+  await expect(reloaded.locator('[data-testid^="approval-result-"]')).toContainText("the cash lands on day 37");
 
   await page.goto("/");
   await expect(page.getByTestId("home-alert-ALERT-RESERVE-42")).toHaveCount(0);
@@ -227,4 +233,59 @@ test("an approval is refused when the server does not recognise the owner", asyn
   await page.getByRole("button", { name: "Approve" }).first().click();
   await expect(page.getByText(/only the owner may decide|rejected the owner token/i)).toBeVisible();
   await expect(page.getByText("1 pending")).toBeVisible();
+});
+
+test("the plan card shows the landing day the API sent, not one derived from the lead time", async ({ page }) => {
+  // The real answer with the advance's landing day moved to 9 (the facility's lead time would give 3).
+  await page.route(`${API}/router/plan`, async (route) => {
+    if (route.request().method() !== "POST") return route.continue();
+    const response = await route.fetch();
+    const body = await response.json();
+    for (const plan of [body.committed, body.expected]) {
+      for (const a of plan.actions) if (a.kind === "FINANCE_INVOICE") a.lands_day = 9;
+    }
+    return route.fulfill({ response, json: body });
+  });
+  await walkTo(page, 4); // reset, compile, evaluate, plan: the funding page
+  await expect(page).toHaveURL(/\/funding/);
+  const lands = page.getByTestId("plan-lands");
+  await expect(lands).toHaveCount(2);
+  await expect(lands.nth(0)).toHaveText("Day 0");
+  await expect(lands.nth(1)).toHaveText("Day 9");
+});
+
+const CONFLICT = {
+  status: 409,
+  contentType: "application/json",
+  headers: { "access-control-allow-origin": `http://localhost:${process.env.E2E_LIVE_PORT ?? 3000}`, "retry-after": "1" },
+  body: JSON.stringify({ detail: { code: "CONCURRENT_WRITE_CONFLICT", message: "busy", retry: true, retry_after_seconds: 1 } }),
+};
+
+test("a write that lost a race is sent once more after the hint, and succeeds", async ({ page }) => {
+  await walkTo(page, 13);
+  let posts = 0;
+  await page.route(`${API}/approvals/APR-*`, async (route) => {
+    if (route.request().method() !== "POST") return route.continue();
+    posts += 1;
+    return posts === 1 ? route.fulfill(CONFLICT) : route.continue();
+  });
+  await page.goto("/approvals");
+  await page.getByRole("button", { name: "Approve" }).first().click();
+  await expect(page.locator('[id^="approval-APR-"]').first()).toContainText("Approved");
+  expect(posts).toBe(2);
+});
+
+test("a second conflict is not retried again: the error says the books were busy", async ({ page }) => {
+  await walkTo(page, 13);
+  let posts = 0;
+  await page.route(`${API}/approvals/APR-*`, async (route) => {
+    if (route.request().method() !== "POST") return route.continue();
+    posts += 1;
+    return route.fulfill(CONFLICT);
+  });
+  await page.goto("/approvals");
+  await page.getByRole("button", { name: "Approve" }).first().click();
+  await expect(page.getByText(/books were busy/i)).toBeVisible();
+  await expect(page.getByText("1 pending")).toBeVisible();
+  expect(posts).toBe(2);
 });

@@ -80,13 +80,14 @@ export function ApprovalCard({
   commitments: Displayed<Commitment>[] | undefined;
   ledgerLoaded: boolean;
   busyId: string | null;
-  /** The executor's message for the decision the owner just made, kept by the page (the queue does not repeat it). */
+  /** The executor's message for the decision the owner just made, kept by the page (the queue's own `result_message` is shown when this is absent, for example after a reload). */
   resultMessage?: string;
   onDecide: (id: string, decision: ApprovalDecision) => void;
 }) {
   const { t, te } = useI18n();
   const [open, setOpen] = useState(false);
   const isPending = a.status === "PENDING";
+  const shownResult = resultMessage || a.result_message || null;
   const op = a.operation;
   const detailId = `approval-${a.id}-detail`;
   const wantsTerms = op?.kind === "ACCEPT_OFFER" || op?.kind === "RECORD_COMMITMENT";
@@ -175,9 +176,9 @@ export function ApprovalCard({
           {a.decided_day !== null && a.decided_day !== undefined ? t("appr.decidedOn", { day: a.decided_day }) : t("appr.decided")}
         </p>
       )}
-      {resultMessage ? (
+      {shownResult ? (
         <p className="mt-2 text-sm font-medium text-ink" role="status" data-testid={`approval-result-${a.id}`}>
-          {t("appr.result")}: {resultMessage}
+          {t("appr.result")}: {shownResult}
         </p>
       ) : null}
     </Card>
