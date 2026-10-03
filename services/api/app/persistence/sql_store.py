@@ -134,6 +134,7 @@ def _approval(row: Row[Any]) -> ApprovalRecord:
         reason=row.reason,
         status=ApprovalStatus(row.status),
         decided_by=row.decided_by,
+        decided_day=row.decided_day,
     )
 
 
@@ -535,6 +536,7 @@ class SqlLedgerStore:
                     reason=reason,
                     status=ApprovalStatus.PENDING.value,
                     decided_by=None,
+                    decided_day=None,
                 )
             )
             return aid
@@ -549,7 +551,7 @@ class SqlLedgerStore:
         where = [] if status is None else [t.approvals.c.status == ApprovalStatus(status).value]
         return [_approval(r) for r in self._read_all(t.approvals, t.approvals.c.row_id, *where)]
 
-    def decide_approval(self, approval_id_: str, approved: bool, by: str) -> ApprovalRecord:
+    def decide_approval(self, approval_id_: str, approved: bool, by: str, day: int | None = None) -> ApprovalRecord:
         status = ApprovalStatus.APPROVED if approved else ApprovalStatus.REJECTED
         a = t.approvals
         with self.transaction():
@@ -558,7 +560,7 @@ class SqlLedgerStore:
             res = conn.execute(
                 update(a)
                 .where(a.c.id == approval_id_, a.c.status == ApprovalStatus.PENDING.value)
-                .values(status=status.value, decided_by=str(by))
+                .values(status=status.value, decided_by=str(by), decided_day=day)
             )
             row = conn.execute(select(a).where(a.c.id == approval_id_)).first()
         if row is None:

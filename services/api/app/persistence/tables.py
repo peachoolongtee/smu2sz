@@ -192,6 +192,7 @@ approvals = Table(
     Column("reason", Text, nullable=False),
     Column("status", String(16), nullable=False, index=True),
     Column("decided_by", String(64), nullable=True),
+    Column("decided_day", Integer, nullable=True),
 )
 
 security_events = Table(

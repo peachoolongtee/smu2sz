@@ -306,6 +306,7 @@ class Executor:
         self._admit = admit
         self._reader = LogReader()
         self._lock = threading.RLock()
+        self._running_under: str | None = None  # the approval an owner-approved re-run is executing under
 
     # ================================================================ public API
 
@@ -340,14 +341,18 @@ class Executor:
                 return self._log(op, result, key=f"{op.idempotency_key}#decide:{approval_id}:{actor}")
             if rec.status != ApprovalStatus.PENDING:
                 raise ApprovalAlreadyDecided(f"approval {approval_id} is {rec.status}")
-            self._store.decide_approval(approval_id, approved, Actor.OWNER.value)
+            self._store.decide_approval(approval_id, approved, Actor.OWNER.value, now)
             if not approved:
                 result = OperationResult(op_id=op.op_id, kind=op.kind, status=REFUSED, tier=Tier.TIER_2,
                                          effective_day=now, approval_id=approval_id,
                                          message=f"Declined by the owner ({approval_id}); nothing executed")
                 return self._log(op, result)
             # Re-run at decision time: every gate except the Tier-2 queue, against today's mandate.
-            result = self._run(op.model_copy(update={"day": now}), approved=True)
+            self._running_under = approval_id  # `_log` stamps it on every row the re-run writes
+            try:
+                result = self._run(op.model_copy(update={"day": now}), approved=True)
+            finally:
+                self._running_under = None
             return result.model_copy(update={"approval_id": approval_id})
 
     def reset_circuit(self, counterparty_id: str, actor: Actor) -> OperationResult:
@@ -540,6 +545,8 @@ class Executor:
     # ---------------------------------------------------------------- logging
 
     def _log(self, op: Any, result: OperationResult, key: str | None = None) -> OperationResult:
+        if self._running_under is not None and result.approval_id is None:
+            result = result.model_copy(update={"approval_id": self._running_under})
         payload = canonical_json(op)
         rec = self._store.append_operation(op.op_id, result.kind, key or op.idempotency_key, payload,
                                            canonical_json(result))

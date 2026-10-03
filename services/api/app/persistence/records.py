@@ -55,6 +55,7 @@ class ApprovalRecord:
     reason: str
     status: ApprovalStatus
     decided_by: str | None = None
+    decided_day: int | None = None  # the clock day the owner decided; None while PENDING and on rows decided before this field
 
 
 @dataclass(frozen=True, slots=True)
