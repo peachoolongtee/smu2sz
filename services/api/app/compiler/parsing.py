@@ -254,7 +254,7 @@ RATE_RE = re.compile(
     rf"|(?:万分之\s?(?P<pt>\d+(?:\.\d+)?|{_ZH_DEC}))"
     r"|(?:(?<![\d.])(?P<bps>\d+(?:\.\d+)?)\s?(?:bps|bp|basis\s+points?|个基点)(?![A-Za-z]))"
     rf"|(?:(?<![\d.])(?P<zhe>\d{{1,2}}(?:\.\d{{1,2}})?|{_ZH_DIGIT_RUN}{{1,3}})\s?折(?!扣|算|合|叠|旧|返|现|让))"
-    r"|(?:(?P<num>\d+(?:\.\d+)?)\s?(?:%|％|\s?percent\b|\s?per\s?cent\b|\s?percentage\s+points?\b|个百分点|个点))"
+    r"|(?:(?<!\d,)(?P<num>\d+(?:\.\d+)?)\s?(?:%|％|\s?percent\b|\s?per\s?cent\b|\s?percentage\s+points?\b|个百分点|个点))"
     rf"|(?:(?P<zhp>{_ZH_DEC}|半)个点)|(?:(?P<zhh>[一二两三四五六七八九十]+)个半点)"
     rf"|(?i:(?<![A-Za-z-])(?P<en>{_EN_RATE_WORDS})\s+(?:percent|per\s?cent|percentage\s+points?)(?![A-Za-z]))"
 )

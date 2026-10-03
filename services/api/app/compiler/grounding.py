@@ -16,7 +16,7 @@ import re
 from collections.abc import Sequence
 from fractions import Fraction
 
-from app.compiler import coverage, lexicon
+from app.compiler import boundary, coverage, lexicon
 from app.compiler.parsing import (
     MONEY_PAT,
     find_money,
@@ -725,6 +725,8 @@ PARTIAL_PAYMENT_RE = rx(
     rf"\b(?:half|part|parts|portion|share|fraction|some|\d{{1,3}}(?:\.\d+)?\s*%|{MONEY_PAT})\s+of\s+"
     rf"(?:the\s+|this\s+|that\s+|your\s+|our\s+|its\s+)?(?:[^\s.;,]+\s+){{0,3}}?{_BILL}"
     rf"|{MONEY_PAT}\s+of\s+(?:the\s+|this\s+|that\s+|your\s+|our\s+)?{MONEY_PAT}"
+    rf"|{MONEY_PAT}\s+(?:of|from|out\s+of)\s+(?:it|that|this|them)\b"
+    rf"|(?:发票|货款|账单|票款?)(?:里|中|内)的?\s*{MONEY_PAT}"
     r"|\bpartial(?:ly)?\b|\bpart[- ](?:pay|payment|settle|settlement)\b|\bin\s+(?:two|2|three|3|several)\s+(?:instal+ments|tranches|parts|payments)\b"
     r"|\bsplit\s+(?:the|this|that|your|our)\s+(?:payment|invoice|bill|amount)\b"
     r"|\b(?:that|this|the\s+early|the\s+first)\s+(?:part|portion|tranche|half)\b"
@@ -948,6 +950,8 @@ def build_offer(
     ordered = dedupe_obligations(ordered, abst)
     ordered, guard_material, guard_conflict = early_pay_guard(by_id, ordered, abst)
     material_abstain |= guard_material
+    ordered, boundary_material = boundary.boundary_guard(by_id, ordered, abst)
+    material_abstain |= boundary_material
     ordered, ref_material = bind_invoice_refs(by_id, ordered, abst)
     material_abstain |= ref_material
     obligations: list[Obligation] = []
