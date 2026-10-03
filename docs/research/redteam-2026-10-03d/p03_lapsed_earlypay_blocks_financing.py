@@ -52,6 +52,12 @@ if fin:
 snap(rt, "after attempts")
 t2 = projection(rt)
 print("projection after attempts: first breach day", t2.first_breach_day, "lowest", t2.min_cash_fen, "on", t2.min_cash_day)
+al2 = c.get("/alerts", headers=OWNER).json()
+for a in al2["alerts"]:
+    if a["kind"] == "RESERVE_BREACH_AHEAD":
+        print("alert after the button:", a["id"], [(x["operation_kind"], x.get("receivable_id"), x.get("amount_fen"))
+                                                    for x in a["suggested"]])
+print("chain ok:", rt.store.verify_chain(), "| conservation:", conservation(rt) or "held")
 check("router/alert cure finances RCV-A but the executor refuses it while the lapsed agreement stays ACTIVE",
       bool(fin) and res["status"] == "REFUSED" and "early-payment agreement" in res["message"])
 check("reserve breach still ahead after the owner pressed the cure button", t2.first_breach_day is not None)
