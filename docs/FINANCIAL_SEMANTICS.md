@@ -47,6 +47,11 @@ Clean-down is a plan-level test (it is breached by not repaying, not by one draw
 The owner cannot waive a hard rule by approving; the owner changes the mandate instead. No code ever approves on the
 owner's behalf.
 
+| Rule | Status |
+| --- | --- |
+| Legs are judged in order, each on the books the legs before it leave (`app/funding/legs.py`, shared by the router and admission): a draw today on an open line becomes the lot it is, repaid by the engine on the first affordable receipt; every other leg stays an action. The router orders a plan's legs so that every prefix is admissible. | Done (3 Oct) |
+| A plan that is admissible only as a whole, in no order, cannot run today: it is flagged `executable_now` false ("cannot run today"), not "needs the owner", because the owner cannot approve past a hard rule. | Done (3 Oct) |
+
 ## 4. Rates
 
 | Name | Formula | Used for |
@@ -93,9 +98,18 @@ Derivation: `docs/research/concession-valuation-handcalc-2026-10-03.md`.
 | "Go ahead" authorises the exact operations shown (kind, facility, invoice, amount) with the quoted cost as a ceiling. If they are no longer admissible at that cost, a new proposal is shown and nothing runs. | Done (3 Oct) |
 | A counterparty is who its channel key says it is. An unauthenticated message can be read and evaluated, never agreed. | Done (3 Oct) |
 
+## 7a. Counters
+
+| Rule | Status |
+| --- | --- |
+| Every counter a verdict offers passes its own re-check: evaluated as an offer on the same books it was built from (as the commit hook re-evaluates a commitment), it gives ACCEPT or NEEDS_OWNER_APPROVAL, never REJECT, with no covenant or rate-ceiling breach. This is the curable reading: a reserve shortfall the counter causes is allowed when an admissible committed plan cures it, and a cure marked "cannot run today" may finance only invoices issued by the first day of the shortfall. A counter that fails is dropped and the summary says in one sentence why. EX01's Option B is therefore 55-day terms at 0.30% (60 days fails). | Done (3 Oct) |
+| A buyer with an open invoice past its due day on current books cannot be accepted without the owner; the verdict names the invoice and the days. | Done (3 Oct) |
+
 ## 8. Capex and the borrower file
 
 Capex is a screen, not an investment recommendation: project NPV and payback on the owner's own estimates, and
 for each real facility at its real tenor, total financing charges (interest + fees, not discounted), liquidity on
 the daily projection and covenants. No financing winner when the project is not worth doing. The borrower file
-states the use of proceeds and deducts the purchase. (Done 3 Oct.)
+states the use of proceeds and deducts the purchase. Evaluating capex writes nothing; applying is a separate owner
+step (`POST /capex/apply`, bound to the evaluation's state version). The borrower file is a read-only owner action
+with provenance (generation day, versions, evidence hash). (Done 3 Oct.)

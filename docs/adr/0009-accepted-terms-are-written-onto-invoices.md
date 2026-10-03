@@ -54,6 +54,8 @@ receives against the unadjusted face, and reconciliation reads the unadjusted du
 
 - Real Option B (60-day terms, +0.45%): `RI:BUYER-1:2` is issued at ¥421,890 due day 62; the bank receipt of
   ¥421,890 settles it; after a ¥100,000 partial receipt ¥321,890 is outstanding everywhere.
+  (Since 3 Oct, EX01's Option B is 55-day terms at 0.30%: the invoice is issued at ¥421,260, due day 57; see
+  `services/api/tests/books/test_invoice_terms.py`. The figures above are the original 60-day example.)
 - "Next 3 invoices" stays on the three invoices chosen at acceptance.
 - Day-0 evaluations of an offer do not change: the selection rule is the same, only when it is evaluated changes.
 - Stored states gain fields with defaults; no migration is needed for JSON state rows.

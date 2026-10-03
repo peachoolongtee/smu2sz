@@ -1,5 +1,12 @@
 # Owner's brief 1: main architect and integration lead (verbatim, 30 Sep to 1 Oct 2026)
 
+Editor's note, 3 Oct 2026: the text below is the owner's brief as given and is left as written. Three of its lines
+describe things that no longer exist: the `FEATURE_AFTER_SIGNING` flag (the empty `aftersign` module and its flag
+were deleted), the typed operation `GenerateBorrowerFile` (the borrower file is now a read-only owner action with
+provenance, never queued for approval) and the "mock lenders" of the counterparty module (deleted unused).
+Capex evaluation also no longer queues anything: `POST /capex/apply` is the owner's separate, explicit step. The
+current behaviour is in `docs/ARCHITECTURE.md` and `docs/SYSTEM_WALKTHROUGH.md`.
+
 ```text
 yes, commit and push to main subsequentially start taking off tickets and building where my input is not required unless its all being blocked
 
