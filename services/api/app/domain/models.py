@@ -490,10 +490,13 @@ class FinancialState(Contract):
     state_version: int = 1
     as_of_day: Day = 0  # the books are closed for every day before this one; cash_fen is cash at its start (ADR-0006)
     lots: list[FundingLot] = Field(default_factory=list)  # ADR-0010, in creation order
+    # The demo scenario these books were seeded from (its dated outside-world events apply to them in DEMO_MODE
+    # only). None for provisioned books and for a fixture loaded directly: no scenario events ever apply.
+    scenario: str | None = None
 
     @model_serializer(mode="wrap")
     def _serialise(self, handler: SerializerFunctionWrapHandler):  # type: ignore[no-untyped-def]
-        return _omit_empty(handler(self), self, ("invoice_adjustments", "lots"))
+        return _omit_empty(handler(self), self, ("invoice_adjustments", "lots", "scenario"))
 
 
 # ---------------------------------------------------------------- funding actions and trajectory
