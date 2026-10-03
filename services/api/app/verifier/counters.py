@@ -426,7 +426,9 @@ def early_pay_counter(ctx: _Ctx, label: str = "Option A") -> CounterProposal | N
         lead.append("no rebate" if lead else "No rebate is on record, so none applies")
     if lead:
         clauses.append((", ".join(lead) + ".", None))
-    settle_text = f"We will accept early settlement on up to {money_text(face)} of this invoice at {rate_text(rate_bp)}."
+    # red team e, F4: the promise names its day; any portion up to the face paid by then earns the rate
+    settle_text = (f"We will accept early settlement on up to {money_text(face)} of this invoice at "
+                   f"{rate_text(rate_bp)}, paid on or before day {settle}.")
     clauses.append((settle_text, disc_ob))
     if not lead:
         clauses.append(("Nothing else changes.", None))

@@ -124,7 +124,7 @@ def test_ex01_counter_a(offer_id, g):
     assert ob.base.amount_fen == g["counter_a_face"] == 25_720_000
     assert ob.base.receivable_id == "RCV-A" and ob.effective_day == 2
     assert a.text == ("Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥257,200 "
-                      "of this invoice at 0.85%.")
+                      "of this invoice at 0.85%, paid on or before day 2.")
     assert "¥2,186.20" in a.formula and "¥841.57" in a.formula  # counter_a_discount + the router plan's funding cost
     assert "0.8832%" in a.formula and "¥257,186.08" in a.formula
     assert all(sp.text == a.text[sp.start:sp.end] for sp in ob.spans)
@@ -192,7 +192,8 @@ def test_early_pay_offers_counter_at_85bp(offer_id, g):
     (a,) = v.counters
     assert a.obligations[0].rate_bp == 85 and a.obligations[0].base.amount_fen == g["counter_a_face"]
     assert a.supplier_cost_fen == g["counter_a_total"]
-    assert a.text == "We will accept early settlement on up to ¥257,200 of this invoice at 0.85%. Nothing else changes."
+    assert a.text == ("We will accept early settlement on up to ¥257,200 of this invoice at 0.85%, paid on or before "
+                      "day 2. Nothing else changes.")
     assert len(b.bound_obligations) == 1 and v.forward_concession_total_fen == 0
 
 

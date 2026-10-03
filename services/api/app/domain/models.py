@@ -38,7 +38,7 @@ def _omit_empty(data: object, model: BaseModel, names: tuple[str, ...]) -> objec
     without accepted adjustments serialises (and hashes: verdict ids, state digests) exactly as it did before."""
     if isinstance(data, dict):
         for n in names:
-            if getattr(model, n) in (None, []):
+            if getattr(model, n) in (None, [], {}):
                 data.pop(n, None)
     return data
 
@@ -372,10 +372,13 @@ class Receivable(Contract):
     base_face_fen: Fen | None = None
     base_terms_days: int | None = None
     applied: list[str] = Field(default_factory=list)  # InvoiceAdjustment ids written onto this invoice
+    # Red team e, F4: face settled early under each early-pay obligation (obligation id -> face), portion by portion;
+    # what an obligation still covers is its face less this. Omitted while empty.
+    early_paid_fen: dict[str, Fen] = Field(default_factory=dict)
 
     @model_serializer(mode="wrap")
     def _serialise(self, handler: SerializerFunctionWrapHandler):  # type: ignore[no-untyped-def]
-        return _omit_empty(handler(self), self, ("base_face_fen", "base_terms_days", "applied"))
+        return _omit_empty(handler(self), self, ("base_face_fen", "base_terms_days", "applied", "early_paid_fen"))
 
     @property
     def outstanding_fen(self) -> Fen:
@@ -834,6 +837,14 @@ class ReceivePayment(_OpBase):
     # The bank's own reference for the credit (a feed id, a statement line). When present, a second receipt on the same
     # receivable carrying the same reference is the same bank event under a new key and is refused, whatever its key.
     bank_reference: str | None = Field(default=None, min_length=1, max_length=64)
+    # Red team e, F6: the day the receipt was reported, when the owner approves an agent's report later. Set only by
+    # the executor when it re-runs a queued report (the request day); the early-pay deadline is tested on it, cash is
+    # booked on the approval day. Omitted while None.
+    reported_day: Day | None = None
+
+    @model_serializer(mode="wrap")
+    def _serialise(self, handler: SerializerFunctionWrapHandler):  # type: ignore[no-untyped-def]
+        return _omit_empty(handler(self), self, ("reported_day",))
 
 
 class RequestOwnerApproval(_OpBase):

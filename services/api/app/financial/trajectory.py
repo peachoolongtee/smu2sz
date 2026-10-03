@@ -32,6 +32,7 @@ and zero after the principal is cleared.
 
 from __future__ import annotations
 
+import math
 from collections import defaultdict
 from dataclasses import dataclass, field
 from fractions import Fraction
@@ -293,6 +294,52 @@ def _bind_discount_receivable(ob: Obligation, state: FinancialState, rcvs: dict[
     return matches[0]
 
 
+def early_pay_rate(ob: Obligation) -> Fraction | None:
+    """The agreed early-pay rate: the stated rate, or a fixed sum over the face it was agreed on (exact)."""
+    if ob.rate_bp is not None:
+        return bp(ob.rate_bp)
+    if ob.amount_fen is not None and ob.base.amount_fen:
+        return Fraction(ob.amount_fen, ob.base.amount_fen)
+    return None
+
+
+def early_pay_discount(ob: Obligation, portion: int) -> int:
+    """The discount on `portion` of face at the agreed terms: post(rate × P). A fixed sum on its whole face is the sum
+    itself; on part of it, the sum pro rata (the same exact rate)."""
+    if ob.rate_bp is None and ob.amount_fen is not None and ob.base.amount_fen in (None, portion):
+        return ob.amount_fen  # the sum on the face it was agreed on (or on the whole open invoice when none is named)
+    rate = early_pay_rate(ob)
+    if rate is None:
+        raise ObligationError(f"{ob.id}: immediate discount without rate_bp or amount_fen")
+    return post(rate * portion)
+
+
+def early_pay_face(ob: Obligation, receipt_fen: int, open_face: int) -> int | None:
+    """Red team e, F4: the face P (whole fen, 0 < P <= open_face) that a receipt R settles under an early-pay
+    agreement, or None when no portion fits.
+
+    The agreement is "up to F of face at rate d, paid on or before day N": any portion P <= F may be paid early, and
+    it is paid by the receipt R = P − post(d × P). g(P) = P − post(d × P) never falls and rises by at most 1 per fen
+    (0 <= d < 1), so the P with g(P) = R are a run of consecutive integers inside
+    [(R − 1) / (1 − d), (R + 1) / (1 − d)]; each candidate is verified exactly. The largest one not above `open_face`
+    is taken, so the agreed amount for the whole open face settles the whole open face, as before."""
+    rate = early_pay_rate(ob)
+    if rate is None or receipt_fen <= 0 or open_face <= 0 or not 0 <= rate < 1:
+        return None
+    lo = max(1, math.floor(Fraction(receipt_fen - 1) / (1 - rate)))
+    hi = min(open_face, math.ceil(Fraction(receipt_fen + 1) / (1 - rate)))
+    for p in range(hi, lo - 1, -1):
+        if p - early_pay_discount(ob, p) == receipt_fen:
+            return p
+    return None
+
+
+def early_paid(state: FinancialState, receivable_id: str, obligation_id: str) -> int:
+    """Face already settled early under `obligation_id` on `receivable_id` (stored by the executor)."""
+    r = next((x for x in state.receivables if x.id == receivable_id), None)
+    return r.early_paid_fen.get(obligation_id, 0) if r is not None else 0
+
+
 def _immediate_discount(ob: Obligation, state: FinancialState, rcvs: dict[str, _Rcv], book: _Book) -> None:
     r = _bind_discount_receivable(ob, state, rcvs)
     settle_day = ob.effective_day
@@ -302,18 +349,26 @@ def _immediate_discount(ob: Obligation, state: FinancialState, rcvs: dict[str, _
         raise ObligationError(f"{ob.id}: settlement on {fday(settle_day)} is not between today "
                               f"({fday(state.as_of_day)}) and {r.id}'s due day {r.due}")
     portion = r.face - r.early
+    paid_early = 0
     if ob.base.receivable_id is not None and ob.base.amount_fen is not None:
-        portion = ob.base.amount_fen
+        # F4: what the agreement still covers is its face less the portions already paid early under it
+        paid_early = early_paid(state, r.id, ob.id)
+        portion = ob.base.amount_fen - paid_early
+        if portion <= 0:
+            return
     if portion <= 0 or portion > r.face - r.early:
         raise ObligationError(f"{ob.id}: settles {y(portion)} but {r.id} has {y(r.face - r.early)} open")
     if ob.rate_bp is not None:
         disc = post(bp(ob.rate_bp) * portion)
         formula = f"{y(portion)} × {pct(bp(ob.rate_bp))} = {y(disc)}"
     elif ob.amount_fen is not None:
-        disc = ob.amount_fen
-        formula = f"fixed discount {y(disc)}"
+        disc = early_pay_discount(ob, portion)
+        formula = (f"fixed discount {y(disc)}" if not paid_early else
+                   f"fixed discount {y(ob.amount_fen)} × {y(portion)} / {y(ob.base.amount_fen or 0)} = {y(disc)}")
     else:
         raise ObligationError(f"{ob.id}: immediate discount without rate_bp or amount_fen")
+    if paid_early:
+        formula += f" (the rest of {y(ob.base.amount_fen or 0)}: {y(paid_early)} already paid early)"
     r.early += portion
     book.add(_Posting(settle_day, INFLOW, LedgerEventKind.EARLY_RECEIPT, portion,
                       f"Early settlement of {r.id} ({ob.id})", r.id,

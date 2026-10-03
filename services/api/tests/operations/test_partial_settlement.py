@@ -161,16 +161,25 @@ def test_receipt_above_face_is_refused(ex: Any, store: Any, clock: Clock) -> Non
 # ---------------------------------------------------------------- 3: a different amount is a plain partial
 
 
-def test_one_fen_off_the_agreed_amount_is_a_plain_partial_payment(ex: Any, store: Any, clock: Clock) -> None:
+def test_one_fen_less_than_the_agreed_amount_pays_a_portion_and_the_last_fen_may_follow(
+        ex: Any, store: Any, clock: Clock) -> None:
+    # Red team e, F4 (this used to be a plain partial payment): the agreement covers "up to" its face, so a receipt one
+    # fen short pays the portion P = PORTION − 1 with P − post(0.85% × P) = EARLY − 1 (the discount is unchanged at
+    # 180,115 because post(0.0085 × 21,189,999) = post(180,114.99) = 180,115)
     c = counter_a(store, ex, clock)
     clock.day = 2
     before = cash(store)
     r = receipt(ex, clock, EARLY - 1)
     assert r.status == OperationStatus.EXECUTED
-    assert "settles" not in r.message and "early-payment" not in r.message
-    assert (rcv(store).settled_fen, rcv(store).status) == (EARLY - 1, "OPEN")
-    assert store.get_commitment(c.id).status == CommitmentStatus.ACTIVE
+    assert "settles ¥211,899.99 at the agreed 0.85% early-payment discount" in r.message
+    assert (rcv(store).settled_fen, rcv(store).status) == (PORTION - 1, "OPEN")
+    assert rcv(store).early_paid_fen == {c.obligations[0].id: PORTION - 1}
+    assert store.get_commitment(c.id).status == CommitmentStatus.ACTIVE  # one fen of face is still covered
     assert cash(store) == before + EARLY - 1
+    last = ex.execute(op(ReceivePayment, clock, actor=Actor.SYSTEM, receivable_id="RCV-A", amount_fen=1))
+    assert last.status == OperationStatus.EXECUTED and "settles ¥0.01" in last.message  # 1 − post(0.0085) = 1
+    assert rcv(store).settled_fen == PORTION and rcv(store).early_paid_fen == {c.obligations[0].id: PORTION}
+    assert store.get_commitment(c.id).status == CommitmentStatus.FULFILLED
     assert store.verify_chain()
 
 

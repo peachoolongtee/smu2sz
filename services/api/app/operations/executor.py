@@ -75,11 +75,12 @@ from app.domain.models import (
     Violation,
     ViolationCode,
 )
-from app.domain.money import bp, fmt_yuan, post
+from app.domain.money import fmt_yuan
 from app.domain.ports import LedgerStore
 from app.financial import invoices
 from app.financial import lots as funding_lots
 from app.financial.errors import EngineError
+from app.financial.trajectory import early_pay_face
 from app.mandate import check_validity, tier_for
 from app.operations.charges import upfront_fee
 from app.operations.log import (
@@ -359,10 +360,15 @@ class Executor:
                 result = OperationResult(op_id=op.op_id, kind=op.kind, status=REFUSED, tier=Tier.TIER_2,
                                          violations=[v], effective_day=now, approval_id=approval_id, message=v.message)
                 return self._log(op, result)
-            # Re-run at decision time: every gate except the Tier-2 queue, against today's mandate.
+            # Re-run at decision time: every gate except the Tier-2 queue, against today's mandate. A queued receipt
+            # keeps the day it was reported (the day the queue accepted it, `op.day`) for the early-pay deadline; its
+            # cash is booked today (red team e, F6).
+            rerun: dict[str, Any] = {"day": now}
+            if isinstance(op, ReceivePayment):
+                rerun["reported_day"] = op.day  # never a day the requester wrote: the day the queue accepted it
             self._running_under = approval_id  # `_log` stamps it on every row the re-run writes
             try:
-                result = self._run(op.model_copy(update={"day": now}), approved=True)
+                result = self._run(op.model_copy(update=rerun), approved=True)
             finally:
                 self._running_under = None
             return result.model_copy(update={"approval_id": approval_id})
@@ -1121,45 +1127,68 @@ class Executor:
                        state=new_state)
 
     def _early_pay_match(self, op: ReceivePayment, r: Receivable, now: int,
-                         state: FinancialState) -> tuple[Commitment, Obligation, int] | None:
-        """ADR-0006 section 4: the live early-pay obligation on `r` whose posted `P - discount` equals this
-        receipt to the fen, as (its commitment, the obligation, the face P it settles). The commitment moves to
-        FULFILLED only when nothing else in it is live (red team d, F5): no invoice adjustment of its own left in the
-        state and no other cash-relevant obligation not yet paid. Otherwise it stays ACTIVE, still revocable, and
-        only this obligation is recorded as paid (`settled_obligations`), so no later receipt is matched to it again.
-        Same arithmetic as `_immediate_discount` in app/financial/trajectory.py. None when there is none."""
+                         state: FinancialState) -> tuple[Commitment, Obligation, int, int] | None:
+        """ADR-0006 section 4 and red team e, F4: the live early-pay obligation on `r` this receipt pays, as (its
+        commitment, the obligation, the face P it settles, the discount on P). None when there is none.
+
+        The agreement is "early settlement on up to F of face at rate d, paid on or before day N". A receipt R on or
+        before day N pays the whole-fen portion P <= what the agreement still covers (F less the portions already paid
+        early under it, `Receivable.early_paid_fen`, capped at what is outstanding) with R = P − post(d × P): P is
+        solved from R and verified exactly (`early_pay_face`; a fixed sum is the exact rate sum / F). It settles P of
+        face. A second portion may follow until F is used or day N passes. The deadline is tested on the day the
+        receipt was reported (`reported_day`, set when the owner approves an agent's report later, F6), else today.
+
+        When F is used up the obligation is paid: the commitment moves to FULFILLED only when nothing else in it is
+        live (red team d, F5): no invoice adjustment of its own left in the state and no other cash-relevant
+        obligation not yet paid. Otherwise it stays ACTIVE, still revocable, and the obligation is recorded as paid
+        (`settled_obligations`), so no later receipt is matched to it again. Same arithmetic as `_immediate_discount`
+        in app/financial/trajectory.py."""
+        day = op.reported_day if op.reported_day is not None else now
         for c in self._store.commitments():
-            if c.status not in (CommitmentStatus.ACCEPTED, CommitmentStatus.ACTIVE):
+            # F6: a receipt reported on time and approved after the clock closed the promised day finds its
+            # agreement lapsed by the clock (EXPIRED, the obligation in `lapsed_obligations`): it is still the
+            # agreed early payment. The commitment stays EXPIRED (terminal); the obligation moves to
+            # `settled_obligations` when its face is used up.
+            revived = c.status == CommitmentStatus.EXPIRED and op.reported_day is not None
+            if c.status not in (CommitmentStatus.ACCEPTED, CommitmentStatus.ACTIVE) and not revived:
                 continue
             for o in c.obligations:
                 if o.type != ObligationType.IMMEDIATE_DISCOUNT or o.base.receivable_id != r.id:
                     continue
                 if o.id in c.settled_obligations:
                     continue  # already paid on time: a second receipt is a plain receipt
-                portion = o.base.amount_fen if o.base.amount_fen else r.outstanding_fen
-                if o.rate_bp is not None:
-                    discount = post(bp(o.rate_bp) * portion)
-                elif o.amount_fen is not None:
-                    discount = o.amount_fen
-                else:
-                    continue
-                if op.amount_fen != portion - discount:
+                if revived and o.id not in c.lapsed_obligations:
                     continue
                 deadline = o.effective_day if o.effective_day is not None else r.due_day - 1
-                if now > deadline:
+                if day > deadline:
                     continue  # A09: the discount was for payment by the promised day; later it is a plain receipt
-                paid = [*c.settled_obligations, o.id]
-                rest = any(a.commitment_id == c.id for a in state.invoice_adjustments) or any(
-                    x.id not in paid and cash_relevant(x) for x in c.obligations)
+                face = o.base.amount_fen if o.base.amount_fen else r.outstanding_fen
+                calc = o if o.base.amount_fen else o.model_copy(
+                    update={"base": o.base.model_copy(update={"amount_fen": face})})
+                used = r.early_paid_fen.get(o.id, 0)
+                portion = early_pay_face(calc, op.amount_fen, min(face - used, r.outstanding_fen))
+                if portion is None:
+                    continue
+                discount = portion - op.amount_fen
+                if revived:
+                    if used + portion < face:
+                        return c, o, portion, discount  # the rest of the face lapsed with the day
+                    return c.model_copy(update={
+                        "settled_obligations": [*c.settled_obligations, o.id],
+                        "lapsed_obligations": [x for x in c.lapsed_obligations if x != o.id]}), o, portion, discount
                 try:
                     done = transition(c, CommitmentStatus.ACTIVE, now) if c.status == CommitmentStatus.ACCEPTED else c
-                    if rest:
-                        done = done.model_copy(update={"settled_obligations": paid})
-                    else:
-                        done = transition(done, CommitmentStatus.FULFILLED, now)
+                    if used + portion >= face:
+                        paid = [*c.settled_obligations, o.id]
+                        rest = any(a.commitment_id == c.id for a in state.invoice_adjustments) or any(
+                            x.id not in paid and cash_relevant(x) for x in c.obligations)
+                        if rest:
+                            done = done.model_copy(update={"settled_obligations": paid})
+                        else:
+                            done = transition(done, CommitmentStatus.FULFILLED, now)
                 except CommitmentError:
                     continue  # cannot be fulfilled (e.g. expired before activation): a plain receipt
-                return done, o, portion
+                return done, o, portion, discount
         return None
 
     def _refuse_repeated_bank_event(self, op: ReceivePayment) -> None:
@@ -1193,6 +1222,10 @@ class Executor:
         self._refuse_repeated_bank_event(op)
         if r.status not in ("OPEN", "FINANCED") or r.outstanding_fen <= 0:
             raise _refuse(Code.PRECONDITION_FAILED, f"Receivable {r.id} is {r.status}; nothing is owed")
+        if op.reported_day is not None and (self._running_under is None or not 0 <= op.reported_day <= ctx.now):
+            # F6: only the executor dates a receipt to its report, when the owner approves a queued report
+            raise _refuse(Code.PRECONDITION_FAILED, "reported_day is set by the executor when the owner approves a "
+                          "queued receipt; a request may not carry it", reported_day=op.reported_day)
         matched = self._early_pay_match(op, r, ctx.now, state)
         face_settled = matched[2] if matched else op.amount_fen
         if face_settled > r.outstanding_fen:
@@ -1243,14 +1276,23 @@ class Executor:
             # nothing outstanding: SETTLED whatever is left on the lot (that lot is then owed by the owner directly)
             update = {"status": "SETTLED" if outstanding_after == 0 else "OPEN", "settled_fen": settled,
                       "advance_fen": 0, "advance_facility_id": None}
+        if matched:  # F4: the face paid early under the obligation, so a later portion is matched to what is left
+            mo = matched[1]
+            update["early_paid_fen"] = {**r.early_paid_fen, mo.id: r.early_paid_fen.get(mo.id, 0) + matched[2]}
         receivables = [x.model_copy(update=update) if x.id == r.id else x for x in state.receivables]
         new_state = _bump(state, cash_fen=cash, receivables=receivables, facilities=facilities, lots=lots)
         residual = r.face_fen - settled
         parts: list[str] = []
+        if op.reported_day is not None and op.reported_day != ctx.now:
+            parts.append(f"reported on day {op.reported_day}, booked on day {ctx.now}")
         if matched:
-            _, o, portion = matched
+            _, o, portion, _discount = matched
             terms = f"{o.rate_bp / 100:g}%" if o.rate_bp is not None else fmt_yuan(o.amount_fen or 0)
             parts.append(f"settles {fmt_yuan(portion)} at the agreed {terms} early-payment discount")
+            face = o.base.amount_fen or 0
+            left = face - (r.early_paid_fen.get(o.id, 0) + portion)
+            if face and left > 0 and o.effective_day is not None:
+                parts.append(f"up to {fmt_yuan(left)} more may be settled early by day {o.effective_day}")
         if residual:
             parts.append(f"{fmt_yuan(residual)} still due on day {r.due_day}")
         detail = f" ({'; '.join(parts)})" if parts else ""
