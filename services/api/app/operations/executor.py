@@ -582,8 +582,7 @@ class Executor:
     def _put_state(self, state: FinancialState, *, read: FinancialState) -> None:
         """Write the books computed from `read`, compare-and-swap on its version: if another writer moved
         the books since they were read, the store refuses and the unit of work runs again."""
-        # LedgerStore.put_state declares no `expected_version` yet (ports.py: interface change request)
-        self._store.put_state(state, expected_version=read.state_version)  # type: ignore[call-arg]
+        self._store.put_state(state, expected_version=read.state_version)
 
     @staticmethod
     def _misdated(op: Any, now: int) -> _Refused:

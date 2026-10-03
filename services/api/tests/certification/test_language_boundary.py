@@ -21,11 +21,17 @@ ROOT = Path(__file__).resolve().parents[4]
 SCRIPT = ROOT / "scripts" / "certify_language_boundary.py"
 
 # A real WRONG_MATERIAL found by this harness in cache and fake mode, kept visible instead of relabelled. Remove an
-# entry when the finding is fixed (the strict xfail below then reports XPASS and says so).
-KNOWN_FINDINGS = {
-    "BO-012": "a decimal comma (0,5%) is read as 500 bp; the executed counter-offer then offers 0.85%, more than the "
-              "buyer's 0.5% ask",
-}
+# entry when the finding is fixed (the strict xfail below then reports XPASS and says so). BO-012 (a decimal comma,
+# "0,5%", read as 500 bp) was fixed by the rate-form guard in app/compiler/boundary.py and parsing.py; none is open.
+KNOWN_FINDINGS: dict[str, str] = {}
+
+# Wrong readings that did nothing: no operation, no commitment, at most an approval queued for the owner. These are the
+# ones left after the boundary guard (offers that name no invoice at all are bound to the sender's one open invoice by
+# the verifier, owner decision pending; OC-018 is an owner-side conditional; MM-015 and MM-025 need a scripted model).
+KNOWN_WRONG_HARMLESS = {"OC-018", "MM-015", "MM-025", "MM-026", "MM-027"}
+# Items the compiler must answer with a question or an abstention, never a proposal (A1 and the A2 classes).
+ABSTAIN_ITEMS = ("BO-012", "BO-022", "BO-035", "BO-036", "BO-037", "BO-039", "BO-040", "BO-046", "BO-048", "BO-063",
+                 "BO-064", "BO-068", "BO-069", "BO-073", "BO-074", "BO-075", "BO-076", "MM-024")
 
 
 def _load():
@@ -327,6 +333,26 @@ def test_cache_mode_reports_what_the_cache_could_not_answer(cache_results):
     assert all(r["model_path"]["answered_by_model"] == 0 for r in cache_results)
 
 
+def _classes(results, ids):
+    by = {r["id"]: r["class"] for r in results}
+    return {i: by[i] for i in ids}
+
+
+@pytest.mark.parametrize("which", ["fake", "cache"])
+def test_boundary_items_abstain_and_queue_nothing(which, request):
+    results = request.getfixturevalue(f"{which}_results")
+    got = _classes(results, ABSTAIN_ITEMS)
+    assert all(c in ("SAFE_CLARIFICATION", "SAFE_ABSTENTION") for c in got.values()), got
+    assert all(not r["queued"] for r in results if r["id"] in ABSTAIN_ITEMS)
+
+
+@pytest.mark.parametrize("which", ["fake", "cache"])
+def test_wrong_harmless_is_down_to_the_known_few(which, request):
+    results = request.getfixturevalue(f"{which}_results")
+    harmless = {r["id"] for r in results if r["class"] == "WRONG_HARMLESS"}
+    assert harmless <= KNOWN_WRONG_HARMLESS, harmless - KNOWN_WRONG_HARMLESS
+
+
 def test_every_class_is_a_known_class(fake_results, cache_results):
     for r in [*fake_results, *cache_results]:
         assert r["class"] in cert.CLASSES
@@ -348,8 +374,8 @@ def test_reports_are_written_with_the_required_fields(fixture, fake_results, tmp
         assert key in first
     assert {"ops", "commitments_touched", "approvals_decided", "state_version", "events", "leaks"} <= set(first["diff"])
     md = mp.read_text(encoding="utf-8")
-    assert "WRONG_MATERIAL evidence" in md and "BO-012" in md and "Wrong proposals queued for the owner" in md
-    assert data["meta"]["exit_code"] == 1  # the known finding keeps the exit status non-zero
+    assert "Wrong proposals queued for the owner" in md and "WRONG_MATERIAL: **0**" in md
+    assert data["meta"]["exit_code"] == (1 if KNOWN_FINDINGS else 0)  # an open finding keeps the exit status non-zero
 
 
 def test_cli_runs_a_subset_and_exits_zero_when_nothing_is_material(tmp_path, capsys):
@@ -359,8 +385,14 @@ def test_cli_runs_a_subset_and_exits_zero_when_nothing_is_material(tmp_path, cap
     assert "WRONG_MATERIAL=0" in capsys.readouterr().out
 
 
-def test_cli_exits_one_on_the_known_finding(tmp_path):
-    assert cert.main(["--backend", "cache", "--only", "BO-012", "--out", str(tmp_path)]) == 1
+def test_cli_exits_zero_on_the_fixed_decimal_comma_finding(tmp_path):
+    """BO-012 used to exit 1 (a 0,5% ask read as 500 bp and countered); it is now a question and exits 0."""
+    assert cert.main(["--backend", "cache", "--only", "BO-012", "--out", str(tmp_path)]) == 0
+
+
+def test_a_material_item_still_exits_one():
+    single = cert.CacheMode()
+    assert cert.exit_code({"by_pass": {"run": {"wrong_material": 1, "model_path": {"answered_rate": None}}}}, single) == 1
 
 
 def test_live_without_a_key_refuses_to_run(monkeypatch, tmp_path, capsys):
