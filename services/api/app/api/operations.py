@@ -11,9 +11,10 @@ from pydantic import BaseModel, TypeAdapter, ValidationError
 
 from app.api.auth import is_bank_feed, log_refusal, require_owner, require_owner_or_agent
 from app.api.runtime import get_runtime
-from app.domain.models import Actor, Operation
+from app.domain.models import Actor, Operation, OperationStatus
 from app.domain.money import fmt_yuan
 from app.operations import security_summary
+from app.operations.log import read_entries
 from app.persistence import ApprovalAlreadyDecided
 
 router = APIRouter()
@@ -41,10 +42,23 @@ def post_operation(body: dict, x_owner_token: str | None = Header(default=None),
         return {"result": _result(rt.executor.execute(op))}
 
 
+def _decision_runs(records) -> dict:
+    """Per approval id, the log entry of the owner's decision run: the first non-PENDING row that ran under it
+    (an owner-approved re-run or a decline). A non-owner's refused attempt (key `#decide:`) is not the decision."""
+    entries, _ = read_entries(records)
+    out: dict = {}
+    for e in entries:
+        aid = e.result.approval_id
+        if aid and aid not in out and e.result.status != OperationStatus.PENDING_APPROVAL and "#decide:" not in e.idempotency_key:
+            out[aid] = e
+    return out
+
+
 @router.get("/approvals/queue", dependencies=[Depends(require_owner)])
 def approvals_queue() -> dict:
     rt = get_runtime()
     out = []
+    ran = _decision_runs(rt.store.operations())
     for a in rt.store.approvals():
         d = asdict(a)
         d["status"] = str(getattr(a.status, "value", a.status))
@@ -57,6 +71,10 @@ def approvals_queue() -> dict:
         d.update({"tier": "TIER_2", "created_day": op.get("day"), "amount_fen": amt,
                   "amount_display": fmt_yuan(amt) if isinstance(amt, int) else None,
                   "subject": f"{(a.kind or '').replace('_', ' ').lower()} {op.get('facility_id', '')}".strip()})
+        run = ran.get(a.id)
+        if d.get("decided_day") is None and run is not None:  # decided before the record kept the day
+            d["decided_day"] = run.result.effective_day
+        d["result_message"] = run.result.message if run is not None else None
         out.append(d)
     return {"approvals": out}
 
