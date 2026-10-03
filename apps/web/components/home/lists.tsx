@@ -7,7 +7,7 @@ import { getAlerts, getApprovals, getLedger } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
 import type { AlertSeverity } from "@/lib/types";
 import { useAsync } from "@/lib/use-async";
-import { AlertCure, FixResult, SuggestionCost, useAlertContext, useFixAlert } from "./fix-alert";
+import { AlertCure, FixResult, SuggestionCost, useAlertContext, useFixAlert, ZeroFloorNote } from "./fix-alert";
 import { SectionLink } from "./today-card";
 
 const severityTone: Record<AlertSeverity, Tone> = { CRITICAL: "bad", WARNING: "warn", INFO: "info" };
@@ -72,7 +72,7 @@ export function RiskCard() {
         <LoadingBlock rows={2} />
       ) : (
         <>
-          <FixResult result={fixer.result} error={fixer.error} />
+          <FixResult result={fixer.result} error={fixer.error} changed={fixer.changed} />
           {top.length === 0 ? (
             <p className="mt-1 text-sm text-ink-3" data-testid="home-risk-empty">
               {t("home.risk.empty")}
@@ -89,7 +89,8 @@ export function RiskCard() {
                   {a.suggested.map((s, i) => (
                     <SuggestionCost key={`${s.operation_kind}-${i}`} s={s} />
                   ))}
-                  <AlertCure alert={a} approvals={ctx.approvals} cap={ctx.cap} busyId={fixer.busyId} onFix={(id) => void fixer.fix(id)} />
+                  <ZeroFloorNote alert={a} />
+                  <AlertCure alert={a} approvals={ctx.approvals} cap={ctx.cap} busyId={fixer.busyId} onFix={(al) => void fixer.fix(al, alerts.data!.state_version)} />
                 </li>
               ))}
             </ul>

@@ -12,7 +12,10 @@
 import { API_MODE } from "./config";
 import { ApiError } from "./errors";
 import type {
+  ActRequest,
   AlertActResult,
+  AlertChangedDetail,
+  AlertItem,
   AlertsView,
   ApprovalDecision,
   ApprovalView,
@@ -171,9 +174,29 @@ export async function advanceClock(days: number): Promise<ClockView> {
   return isMock ? (await mock()).advanceClock(days) : (await live()).advanceClock(days);
 }
 
-/** POST /alerts/{id}/act: execute the alert's cure as the agent (Tier 1 runs, Tier 2 waits for approval). Owner action. */
-export async function actOnAlert(id: string): Promise<AlertActResult> {
-  return isMock ? (await mock()).actOnAlert(id) : (await live()).actOnAlert(id);
+/**
+ * POST /alerts/{id}/act: execute the alert's cure as the agent (Tier 1 runs, Tier 2 waits for approval). Owner action.
+ * The request is always bound to what the owner was shown: the `state_version` of the GET /alerts that listed the alert and
+ * the alert's suggestions as shown, in order. When the books moved the API answers 409 ALERT_CHANGED (see `alertChanged`) and nothing runs.
+ */
+export async function actOnAlert(alert: AlertItem, stateVersion: number): Promise<AlertActResult> {
+  const bound: ActRequest = {
+    state_version: stateVersion,
+    suggestions: alert.suggested.map((s) => ({
+      operation_kind: s.operation_kind,
+      facility_id: s.facility_id,
+      receivable_id: s.receivable_id,
+      amount_fen: s.amount_fen,
+    })),
+  };
+  return isMock ? (await mock()).actOnAlert(alert.id, bound) : (await live()).actOnAlert(alert.id, bound);
+}
+
+/** The detail of a 409 ALERT_CHANGED answer, or null for any other error. */
+export function alertChanged(e: unknown): AlertChangedDetail | null {
+  if (!(e instanceof ApiError) || e.status !== 409) return null;
+  const d = e.detail as Partial<AlertChangedDetail> | undefined;
+  return d && d.code === "ALERT_CHANGED" ? (d as AlertChangedDetail) : null;
 }
 
 /** POST /whatif: a hypothetical verdict for slider positions. Display-only; nothing is booked or executed. */

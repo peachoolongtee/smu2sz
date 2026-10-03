@@ -22,10 +22,17 @@ interface Props {
   checksInReply?: boolean;
 }
 
-/** The server's own reason line when it withheld autonomy: "owner approval needed: autonomy not proven (...)". */
+/**
+ * The server's own reason line when it withheld autonomy: "owner approval needed: autonomy not proven (...)", or, when the buyer
+ * has an invoice past due, "owner approval needed: BUYER-1 has a past-due invoice RCV-A: ... outstanding, N day(s) past due".
+ */
 function notProvenLine(summary: string | undefined): string | null {
   if (!summary) return null;
-  return summary.split(". ").find((p) => p.startsWith("owner approval needed: autonomy not proven")) ?? null;
+  return (
+    summary
+      .split(". ")
+      .find((p) => p.startsWith("owner approval needed: autonomy not proven") || /^owner approval needed: .* has a past-due invoice /.test(p)) ?? null
+  );
 }
 
 export function autonomyPanelKind(outcome: Outcome, tier: Tier | undefined, summary: string | undefined): "ok" | "warn" | null {

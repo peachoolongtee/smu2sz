@@ -10,10 +10,12 @@
 
 import { getOwnerToken, requestSignIn } from "../auth";
 import { ApiError } from "../errors";
-import type { AlertActResult, AlertsView, ClockView, NlOpenerResponse, NlResponse } from "../types";
+import type { ActRequest, AlertActResult, AlertChangedDetail, AlertsView, ClockView, NlOpenerResponse, NlResponse } from "../types";
 import act from "../../mocks/home_act.json";
 import alertsAfter from "../../mocks/home_alerts_after.json";
 import alertsDay34 from "../../mocks/home_alerts_day34.json";
+import alertsMandateExpired from "../../mocks/home_alerts_mandate_expired.json";
+import alertsMandateWarning from "../../mocks/home_alerts_mandate_warning.json";
 import goAhead from "../../mocks/home_goahead.json";
 import openerAfter from "../../mocks/home_opener_after_approve.json";
 import openerDay34 from "../../mocks/home_opener_day34.json";
@@ -21,13 +23,20 @@ import openerDay34Zh from "../../mocks/home_opener_day34_zh.json";
 import openerPending from "../../mocks/home_opener_pending.json";
 import openerQuiet from "../../mocks/home_opener_quiet.json";
 import openerQuietZh from "../../mocks/home_opener_quiet_zh.json";
+import reconciliationDay34 from "../../mocks/home_reconciliation_day34.json";
 import stateAfterApprove from "../../mocks/home_state_after_approve.json";
 import stateDay34 from "../../mocks/home_state_day34.json";
 import stateAfterFund from "../../mocks/state_after_fund.json";
 
 /** The day the recording was taken on. */
 export const NEWS_DAY = 34;
-const KEY = "tl-mock-home-v2";
+const KEY = "tl-mock-home-v3";
+/**
+ * The mock variant of the 409 ALERT_CHANGED path. Set this sessionStorage key to "1" (the books move, the alert is still there
+ * with its recorded cure) or "gone" (the books move and the alert no longer exists) just before pressing "Let the agent fix this":
+ * the next act answers 409 ALERT_CHANGED, once, and the state_version the mock serves advances by one.
+ */
+export const MOVE_BOOKS_KEY = "tl-mock-books-moved";
 
 export type CureStage = "open" | "pending" | "approved";
 
@@ -37,11 +46,13 @@ interface HomeState {
   stage: CureStage;
   /** The day-0 funding plan ("Fund the cash gap", then "go ahead") has run. */
   funded: boolean;
+  /** How many times the books moved behind the owner's back (the mock variant below): added to the recorded state_version. */
+  moved: number;
 }
 
 let memory: HomeState | null = null;
 
-const fresh = (): HomeState => ({ day: 0, stage: "open", funded: false });
+const fresh = (): HomeState => ({ day: 0, stage: "open", funded: false, moved: 0 });
 
 function load(): HomeState {
   if (memory) return memory;
@@ -102,12 +113,30 @@ function newsIsOpen(): boolean {
   return s.day >= NEWS_DAY && s.stage !== "approved";
 }
 
+/** The mandate's last day is 90: the alerts warn 14 days ahead (from day 76) and turn CRITICAL once it has passed. These two recordings were taken at day 80 and day 95. */
+export const MANDATE_WARN_FROM_DAY = 76;
+export const MANDATE_LAST_DAY = 90;
+
 export function mockAlerts(): AlertsView | null {
   const s = load();
   if (s.day < NEWS_DAY) return null;
-  const view = clone<AlertsView>(s.stage === "approved" ? alertsAfter : alertsDay34);
-  return { ...view, day: s.day };
+  const recorded =
+    s.day > MANDATE_LAST_DAY ? alertsMandateExpired : s.day >= MANDATE_WARN_FROM_DAY ? alertsMandateWarning : s.stage === "approved" ? alertsAfter : alertsDay34;
+  const view = clone<AlertsView>(recorded);
+  return { ...view, day: s.day, state_version: view.state_version + s.moved };
 }
+
+/** GET /reconciliation once the day-2 bank receipt has been recorded (the home path reaches day 34 with it); null before. */
+export function mockReconciliation(): unknown {
+  return load().day >= NEWS_DAY ? clone(reconciliationDay34) : null;
+}
+
+const sameSuggestions = (a: ActRequest["suggestions"], b: ActRequest["suggestions"]): boolean =>
+  a.length === b.length &&
+  a.every(
+    (x, i) =>
+      x.operation_kind === b[i].operation_kind && x.facility_id === b[i].facility_id && x.receivable_id === b[i].receivable_id && x.amount_fen === b[i].amount_fen,
+  );
 
 export function mockOpener(sessionId: string | undefined, lang: "en" | "zh"): NlOpenerResponse {
   requireOwner();
@@ -182,10 +211,38 @@ export function mockStateJson(): unknown {
 }
 
 /** POST /alerts/{id}/act. Only the recorded reserve alert has a cure; others answer 409 like the server. The cure waits for the owner's approval (PENDING_APPROVAL). */
-export function mockAct(id: string): AlertActResult {
+export function mockAct(id: string, bound: ActRequest): AlertActResult {
   requireOwner();
+  // The books move behind the owner's back (the mock variant): the version advances, and the act below is bound to the old one.
+  let variant: string | null = null;
+  if (typeof window !== "undefined") {
+    try {
+      variant = window.sessionStorage.getItem(MOVE_BOOKS_KEY);
+      if (variant) window.sessionStorage.removeItem(MOVE_BOOKS_KEY);
+    } catch {
+      /* no storage: no variant */
+    }
+  }
+  if (variant) {
+    load().moved += 1;
+    save();
+  }
+  const current = mockAlerts();
+  const alert = current?.alerts.find((a) => a.id === id) ?? null;
+  const shown = alert?.suggested.map((x) => ({ operation_kind: x.operation_kind, facility_id: x.facility_id, receivable_id: x.receivable_id, amount_fen: x.amount_fen }));
+  const version = current ? current.state_version : bound.state_version;
+  if (bound.state_version !== version || (shown !== undefined && !sameSuggestions(bound.suggestions, shown))) {
+    const detail: AlertChangedDetail = {
+      code: "ALERT_CHANGED",
+      alert_id: id,
+      state_version: version,
+      message: "The alert changed since you read it; nothing was run. Review the current cure.",
+      alert: variant === "gone" ? null : alert,
+    };
+    throw new ApiError(409, detail.message, detail);
+  }
   if (!newsIsOpen() || !id.startsWith("ALERT-RESERVE")) {
-    throw new ApiError(409, "This alert suggests nothing the agent may execute.");
+    throw new ApiError(409, "This alert suggests nothing the agent may execute.", { code: "NO_EXECUTABLE_CURE", alert_id: id });
   }
   queueCure();
   return { ...clone<AlertActResult>(act), alert_id: id, day: load().day };

@@ -2,7 +2,7 @@
 
 import { Badge, Callout, Card, EmptyState, ErrorState, Formula, LoadingBlock, PageHeader, type Tone } from "@/components/ui";
 import { CodeBadge } from "@/components/badges";
-import { AlertCure, FixResult, SuggestionCost, useAlertContext, useFixAlert } from "@/components/home/fix-alert";
+import { AlertCure, FixResult, SuggestionCost, useAlertContext, useFixAlert, ZeroFloorNote } from "@/components/home/fix-alert";
 import { getAlerts } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
 import type { AlertSeverity } from "@/lib/types";
@@ -45,7 +45,7 @@ export default function AlertsPage() {
       ) : (
         <div className="space-y-4">
           <p className="text-xs text-ink-3">{t("alerts.basis", { basis: te("traj.modeName", data.basis), day: data.day })}</p>
-          <FixResult result={fixer.result} error={fixer.error} />
+          <FixResult result={fixer.result} error={fixer.error} changed={fixer.changed} />
           {data.alerts.length === 0 ? (
             <EmptyState title={t("alerts.empty.title")} body={t("alerts.empty.body")} />
           ) : (
@@ -61,7 +61,7 @@ export default function AlertsPage() {
                   >
                     <div className="flex flex-wrap items-center gap-2">
                       <CodeBadge code={a.kind} />
-                      {a.kind === "FUNDING_IN_TRANSIT" ? (
+                      {a.kind === "FUNDING_IN_TRANSIT" || a.kind === "MANDATE_EXPIRING" ? (
                         <Badge tone="info">{te("alertkind", a.kind)}</Badge>
                       ) : (
                         <Badge tone={a.committed_cure ? "ok" : "warn"}>{a.committed_cure ? t("alerts.cure.yes") : t("alerts.cure.no")}</Badge>
@@ -100,8 +100,9 @@ export default function AlertsPage() {
                         </ul>
                       </div>
                     ) : null}
+                    <ZeroFloorNote alert={a} />
                     <div className="mt-2">
-                      <AlertCure alert={a} approvals={ctx.approvals} cap={ctx.cap} busyId={fixer.busyId} onFix={(id) => void fixer.fix(id)} />
+                      <AlertCure alert={a} approvals={ctx.approvals} cap={ctx.cap} busyId={fixer.busyId} onFix={(al) => void fixer.fix(al, data.state_version)} />
                     </div>
                   </Card>
                 </li>

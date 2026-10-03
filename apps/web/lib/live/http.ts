@@ -74,16 +74,18 @@ export async function http<T>(method: "GET" | "POST", path: string, opts: HttpOp
   if (res.status === 401) throw unauthorized(opts);
   if (!res.ok) {
     let message = `${res.status} ${res.statusText}`;
+    let detail: unknown;
     try {
       const data = (await res.json()) as { detail?: unknown };
       if (res.status === 403 && opts.ownerOn403 && !/FEATURE_DISABLED/.test(JSON.stringify(data.detail))) throw unauthorized(opts);
       if (res.status === 503 && /NOT_CONFIGURED/.test(JSON.stringify(data.detail))) throw new ApiError(503, NOT_CONFIGURED);
       message = detailMessage(data.detail, message);
+      detail = data.detail;
     } catch (e) {
       if (e instanceof ApiError) throw e;
       /* keep the status line */
     }
-    throw new ApiError(res.status, message);
+    throw new ApiError(res.status, message, detail);
   }
   return (opts.as === "text" ? await res.text() : await res.json()) as T;
 }

@@ -9,6 +9,7 @@ import { getOwnerToken, requestSignIn } from "../auth";
 import { MOCK_LATENCY_MS } from "../config";
 import { ApiError } from "../errors";
 import type {
+  ActRequest,
   AlertActResult,
   AlertsView,
   ClockView,
@@ -467,9 +468,9 @@ export async function nlOpener(sessionId: string | undefined, lang: "en" | "zh")
   return home.mockOpener(sessionId, lang);
 }
 
-export async function actOnAlert(id: string): Promise<AlertActResult> {
+export async function actOnAlert(id: string, bound: ActRequest): Promise<AlertActResult> {
   await delay();
-  const r = home.mockAct(id);
+  const r = home.mockAct(id, bound);
   // Once only: asking again while the cure waits changes nothing.
   const first = !load().approvals.some((x) => x.op_id?.startsWith("alert:"));
   ensureHomeApproval();
@@ -479,7 +480,7 @@ export async function actOnAlert(id: string): Promise<AlertActResult> {
 
 export async function getReconciliation(): Promise<ReconciliationView> {
   await delay();
-  return clone(cast<ReconciliationView>(reconciliationJson));
+  return clone(cast<ReconciliationView>(home.mockReconciliation() ?? reconciliationJson));
 }
 
 /** Owner action; the mock has no circuit breaker state, so it only acknowledges. */
