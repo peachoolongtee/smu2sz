@@ -10,6 +10,7 @@ import pytest
 
 from app.domain.models import Mode
 from app.financial import project, project_cash
+from app.financial.cashpath import CashProjector
 from app.funding import plan
 from tests.funding.random_cases import random_actions, random_case
 
@@ -43,6 +44,27 @@ def test_cash_path_equals_project(seed):
         for _ in range(4):
             actions = random_actions(rng, c.state)
             assert _fast(c, actions, mode) == _full(c, actions, mode)
+
+
+def _projected(proj, actions):
+    try:
+        p = proj.run(actions)
+    except Exception as e:  # noqa: BLE001
+        return "raise", type(e).__name__, str(e)
+    return "ok", p.horizon_days, p.closings, p.peak_debt_fen, p.interest_posted_fen, p.fees_posted_fen,         p.discounts_posted_fen
+
+
+@pytest.mark.parametrize("seed", SEEDS)
+def test_projector_equals_project(seed):
+    """One `CashProjector` over the same books answers many action lists exactly as the full `project` does (the
+    books it reuses between calls are never changed by a call, an error included)."""
+    c = random_case(seed)
+    rng = Random(seed)
+    for mode in (Mode.CONSERVATIVE, Mode.EXPECTED):
+        proj = CashProjector(c.state, c.obligations, mode, c.mandate.horizon_days, c.mandate.min_cash_fen)
+        lists = [random_actions(rng, c.state) for _ in range(6)]
+        for actions in [*lists, *reversed(lists)]:  # the second pass runs on books every call has already used
+            assert _projected(proj, actions) == _full(c, actions, mode)
 
 
 @pytest.mark.parametrize("seed", range(0, 300, 5))

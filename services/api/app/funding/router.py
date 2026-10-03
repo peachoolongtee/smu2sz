@@ -15,7 +15,11 @@ NOT_APPLIED facilities on the EXPECTED trajectory; it is labelled "expected" and
 
 from __future__ import annotations
 
+from collections.abc import Iterator
+from contextlib import contextmanager
+from contextvars import ContextVar
 from dataclasses import dataclass
+from typing import Any
 
 from app.domain.models import (
     FacilityKind,
@@ -165,9 +169,44 @@ def _marginal(state: FinancialState, mandate: Mandate) -> tuple[Ratio | None, st
         return None, None
 
 
+# One evaluation asks the router the same question of the same books more than once (the standing plan is also
+# the comparison's search). Inside `shared_runs()` a finished search is kept under its full input (state,
+# obligations, mandate, basis) and handed to the next caller that asks for exactly that; outside it every call
+# runs its own search. The memo belongs to the context that opened it (one evaluation), never to the process.
+_RUNS: ContextVar[dict[tuple, tuple[Search, Any, Any]] | None] = ContextVar("funding_runs", default=None)
+
+
+@contextmanager
+def shared_runs() -> Iterator[None]:
+    """Share finished router searches between the calls made inside this block (see `_RUNS`)."""
+    if _RUNS.get() is not None:
+        yield
+        return
+    token = _RUNS.set({})
+    try:
+        yield
+    finally:
+        _RUNS.reset(token)
+
+
 def _run(state: FinancialState, obligations: list[Obligation], mandate: Mandate, basis: str) -> Search:
-    search = Search(state, obligations, mandate, basis)
-    search.run()
+    memo = _RUNS.get()
+    if memo is None:
+        search = Search(state, obligations, mandate, basis)
+        search.run()
+        return search
+    key = (Search, state.model_dump_json(), tuple(o.model_dump_json() for o in obligations),
+           mandate.model_dump_json(), basis)
+    hit = memo.get(key)
+    if hit is None:
+        search = Search(state, obligations, mandate, basis)
+        search.run()
+        memo[key] = (search, search.best, search._best_effort)
+        return search
+    search, best, best_effort = hit
+    # Presenting a search (`alternatives`) may probe further and so move these; each caller starts from what the
+    # search itself found.
+    search.best, search._best_effort = best, best_effort
     return search
 
 

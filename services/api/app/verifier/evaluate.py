@@ -75,6 +75,7 @@ from app.funding import (
 )
 from app.funding import plan as funding_plan
 from app.funding.rates import break_even_cost_share
+from app.funding.router import shared_runs
 from app.mandate import check_apr, check_predicates, check_validity
 from app.verifier.bind import bind, material_gaps
 from app.verifier.counters import Recheck, flag_inputs, plan_flags
@@ -1002,9 +1003,10 @@ def evaluate(
     the committed plan; the Verdict is identical either way (conservative mode alone decides)."""
     router = _Router(mandate)
     try:
-        return _evaluate(offer, state, mandate, trusted_owner_key_hex=trusted_owner_key_hex, day=day,
-                         owner_declared=owner_declared, commitments=commitments,
-                         owner_constraints=owner_constraints, plans=plans, router=router)
+        with shared_runs():
+            return _evaluate(offer, state, mandate, trusted_owner_key_hex=trusted_owner_key_hex, day=day,
+                             owner_declared=owner_declared, commitments=commitments,
+                             owner_constraints=owner_constraints, plans=plans, router=router)
     except EngineError as e:
         res = _Result(offer.offer_id, offer.version, state, mandate, day, owner_constraints)
         res.violations = [Violation(
