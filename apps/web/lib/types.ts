@@ -302,6 +302,12 @@ export interface DebtPosition {
   label: string;
   principal_fen: Fen;
   monthly_debt_service_fen: Fen;
+  /** Yearly interest rate in basis points on the principal since the last payment (0: the whole payment is principal). */
+  rate_bp?: number;
+  /** A payment falls due every this many days, from `next_payment_day`. */
+  payment_every_days?: number;
+  /** The day of the next scheduled payment. */
+  next_payment_day?: Day;
 }
 
 export interface ForwardConcession {
@@ -1035,7 +1041,11 @@ export interface BorrowerFileView {
 
 export type AlertSeverity = "CRITICAL" | "WARNING" | "INFO";
 
-/** FUNDING_IN_TRANSIT is information only (never actionable): a draw or advance requested but not yet landed. */
+/**
+ * FUNDING_IN_TRANSIT is information only (never actionable): a draw or advance requested but not yet landed.
+ * MANDATE_EXPIRING is information only too: WARNING within 14 days of the mandate's expiry, CRITICAL once it has passed;
+ * it suggests no operation, because renewing a mandate is an offline owner step.
+ */
 export type AlertKind =
   | "RESERVE_BREACH_AHEAD"
   | "RESERVE_HEADROOM_LOW"
@@ -1045,7 +1055,8 @@ export type AlertKind =
   | "RECEIVABLE_PAST_DUE"
   | "CONCESSIONS_NEAR_CAP"
   | "FACILITY_REPAYABLE"
-  | "FUNDING_IN_TRANSIT";
+  | "FUNDING_IN_TRANSIT"
+  | "MANDATE_EXPIRING";
 
 export interface SuggestedOperation {
   operation_kind: string;
@@ -1077,7 +1088,11 @@ export interface AlertItem {
   amount_fen: Fen | null;
   amount_display: string | null;
   committed_cure: boolean;
-  /** Machine-readable inputs behind the alert (strings). FUNDING_IN_TRANSIT carries facility_id, lot_id, request_day and arrival_day. */
+  /**
+   * Machine-readable inputs behind the alert (strings). FUNDING_IN_TRANSIT carries facility_id, lot_id, request_day and arrival_day.
+   * A reserve alert whose cure only keeps cash at or above zero (the title reads "cash goes below zero on day X without action")
+   * carries cure_restores_reserve "false", zero_day and residual_shortfall (a display string): the cure does not restore the reserve.
+   */
   inputs?: Record<string, string>;
   suggested: SuggestedOperation[];
   /** True when the agent may try the alert's cure (POST /alerts/{id}/act). A cure above the yearly cost ceiling is still tried, but waits for the owner's approval. */
@@ -1088,9 +1103,35 @@ export interface AlertItem {
 export interface AlertsView {
   day: Day;
   basis: Mode;
+  /** The version of the books these alerts were computed on. POST /alerts/{id}/act must send it back. */
+  state_version: number;
   counts: Record<AlertSeverity, number>;
   alerts: AlertItem[];
   note: string;
+}
+
+/** The suggestions of an alert as shown, the part of them that binds an act to what the owner saw. */
+export interface ActSuggestion {
+  operation_kind: string;
+  facility_id: string | null;
+  receivable_id: string | null;
+  amount_fen: Fen | null;
+}
+
+/** POST /alerts/{id}/act body: always sent. `suggestions` are the alert's own, exactly as shown and in order. */
+export interface ActRequest {
+  state_version: number;
+  suggestions: ActSuggestion[];
+}
+
+/** The detail of a 409 ALERT_CHANGED: the books moved since the alert was shown, and nothing ran. */
+export interface AlertChangedDetail {
+  code: "ALERT_CHANGED";
+  alert_id: string;
+  state_version: number;
+  message: string;
+  /** The alert as it stands now, or null when it is gone. */
+  alert: AlertItem | null;
 }
 
 /** POST /alerts/{id}/act: the alert's cure submitted as the agent. Tier 1 executes, Tier 2 waits in the approvals queue. */
@@ -1134,6 +1175,8 @@ export interface ReceiptRow {
   difference_fen: Fen | null;
   difference_display: string | null;
   commitment_id: string | null;
+  /** The bank's own reference on the receipt, when the feed sent one. */
+  bank_reference?: string | null;
   status: MatchStatus;
   flagged: boolean;
   detail: string;
@@ -1190,6 +1233,7 @@ export type NlIntent =
   | "SHOW_STATUS"
   | "EXPLAIN"
   | "WHAT_IF"
+  | "RECORD_FACT"
   | "APPROVE"
   | "REJECT"
   | "COUNTERPARTY_MESSAGE"

@@ -1,6 +1,6 @@
 // Records apps/web/mocks/*.json from a running API. Run: pnpm mocks:record   (or: node scripts/record-mocks.mjs --api http://localhost:8011)
 //
-//   cd services/api && TERMSLEDGER_NO_DOTENV=1 DATABASE_URL=memory LLM_MODE=cache PYTHONUTF8=1 uv run uvicorn app.main:app --port 8011
+//   cd services/api && TERMSLEDGER_NO_DOTENV=1 DATABASE_URL=memory LLM_MODE=cache DEMO_MODE=1 PYTHONUTF8=1 uv run uvicorn app.main:app --port 8011
 //
 // Mock-authoring tooling only (never imported by the app). It resets the books and replays the sequences the demo
 // stepper (lib/demo.ts), the pages and the chat (lib/chat-prompts.ts) perform, through the SAME client code the browser
@@ -223,6 +223,7 @@ async function bankReceipt() {
       requested_by: "SYSTEM",
       receivable_id: promised.receivable_id,
       amount_fen: promised.expected_fen,
+      bank_reference: "DEMO-RCPT-1", // the demo's bank feed carries the bank's own reference on every receipt
     }),
   });
   if (!res.ok) throw new Error(`bank receipt failed: ${res.status} ${await res.text()}`);
@@ -246,13 +247,19 @@ await toDay34(async () => {
 });
 files["home_alerts_day34.json"] = await live.getAlerts();
 files["home_state_day34.json"] = await live.getState();
+// The reconciliation after the day-2 bank receipt (it carries the bank's reference).
+files["home_reconciliation_day34.json"] = await live.getReconciliation();
 const reserve = files["home_alerts_day34.json"].alerts.find((a) => a.id.startsWith("ALERT-RESERVE") && a.actionable);
 if (!reserve) throw new Error("no actionable reserve alert on day 34: the demo path has changed");
 files["home_opener_day34.json"] = await live.nlOpener("rec-home-en", "en");
 files["home_opener_day34_zh.json"] = await live.nlOpener("rec-home-zh", "zh");
 // "Let the agent fix this": the cure is above the yearly cost ceiling (¥1,782.19 for 10 days = 32.5% a year), so the executor
 // does not run it: it answers PENDING_APPROVAL with an approval id, and the alert stays open.
-files["home_act.json"] = await live.actOnAlert(reserve.id);
+// The act is bound to what the owner was shown: the state_version of the alerts read and the alert's suggestions.
+files["home_act.json"] = await live.actOnAlert(reserve.id, {
+  state_version: files["home_alerts_day34.json"].state_version,
+  suggestions: reserve.suggested.map((x) => ({ operation_kind: x.operation_kind, facility_id: x.facility_id, receivable_id: x.receivable_id, amount_fen: x.amount_fen })),
+});
 if (files["home_act.json"].results[0]?.status !== "PENDING_APPROVAL") throw new Error("the day-34 cure no longer waits for approval: the demo path has changed");
 files["home_opener_pending.json"] = await live.nlOpener("rec-home-pending", "en");
 files["home_approval_pending.json"] = (await live.getApprovals())[0];
@@ -262,6 +269,11 @@ files["home_approve.json"] = { operations: await ledgerTail(1) };
 files["home_alerts_after.json"] = await live.getAlerts();
 files["home_state_after_approve.json"] = await live.getState();
 files["home_opener_after_approve.json"] = await live.nlOpener("rec-home-after", "en");
+// The mandate's last day is 90: MANDATE_EXPIRING is a WARNING 14 days before (recorded at day 80) and CRITICAL once it has passed (day 95).
+await live.advanceClock(80 - 34);
+files["home_alerts_mandate_warning.json"] = await live.getAlerts();
+await live.advanceClock(95 - 80);
+files["home_alerts_mandate_expired.json"] = await live.getAlerts();
 
 // The same cure through the chat: "go ahead" queues it (PENDING_APPROVAL), then the owner types "approve APR-…".
 await toDay34();

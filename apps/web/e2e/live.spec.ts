@@ -1,4 +1,4 @@
-import type { Page } from "@playwright/test";
+import type { APIRequestContext, Page } from "@playwright/test";
 import { DEMO_TOKEN, expect, test } from "./fixtures";
 
 /** Live-mode only: owner-token handling, the 401 state, borrower-file downloads and owner approval. */
@@ -100,7 +100,8 @@ test("the day-0 plan: 'go ahead' brings cash now and leaves the advance in trans
   await request.post(`${API}/demo/reset`, { headers: owner, data: {} });
 });
 
-test("on day 34 the cure needs the owner: the alert says so, the click queues it, approval runs it, the cash lands on day 37", async ({ page, request }) => {
+/** The same calls scripts/demo_run.py makes: the deal, the receipt on day 2 (with the bank's reference), then the clock to day 34. */
+async function toDay34(request: APIRequestContext) {
   const owner = { "X-Owner-Token": TOKEN };
   const bank = { "X-Agent-Key": "demo-agent-key", "X-Bank-Feed-Key": "demo-bank-feed-key" };
   const post = async (path: string, data: object, headers: Record<string, string> = owner) => {
@@ -108,7 +109,6 @@ test("on day 34 the cure needs the owner: the alert says so, the click queues it
     expect(res.ok(), path).toBeTruthy();
     return res.json();
   };
-  // The same calls scripts/demo_run.py makes: the deal, the receipt on day 2, then the clock to day 34.
   await post("/demo/reset", {});
   const { offer } = await post("/offers", { fixture_id: "EX01_PACKAGE" });
   await post(`/offers/${offer.offer_id}/evaluate`, { fixture_id: "EX01_PACKAGE" });
@@ -128,16 +128,23 @@ test("on day 34 the cure needs the owner: the alert says so, the click queues it
       requested_by: "SYSTEM",
       receivable_id: promised.receivable_id,
       amount_fen: promised.expected_fen,
+      bank_reference: "E2E-RCPT-1",
     },
     bank,
   );
   await post("/clock/advance", { to_day: 30 });
   await post("/clock/advance", { to_day: 34 });
+  return { post };
+}
+
+test("on day 34 the cure needs the owner: the alert says so, the click queues it, approval runs it, the cash lands on day 37", async ({ page, request }) => {
+  const { post } = await toDay34(request);
 
   // The agreed early payment arrived on day 2: reconciliation shows it as received (and none lapsed).
   await page.goto("/reconciliation");
   await expect(page.getByTestId("promised-RCV-A")).toHaveAttribute("data-status", "RECEIVED");
   await expect(page.getByText("Lapsed promises: 0")).toBeVisible();
+  await expect(page.getByTestId("receipt-ref-e2e-receipt-1")).toContainText("E2E-RCPT-1");
 
   await page.goto("/alerts");
   const card = page.locator("#alert-ALERT-RESERVE-42");
@@ -147,6 +154,11 @@ test("on day 34 the cure needs the owner: the alert says so, the click queues it
   await expect(card.getByTestId("alert-needs-approval-ALERT-RESERVE-42")).toContainText("15.00%");
   await expect(card.getByTestId("fix-ALERT-RESERVE-42")).toBeVisible();
 
+  // The act is always bound to what was shown: state_version and the alert's suggestions, in order.
+  const acts: { state_version: unknown; suggestions: { operation_kind: string; amount_fen: number | null }[] }[] = [];
+  page.on("request", (r) => {
+    if (r.method() === "POST" && /\/alerts\/[^/]+\/act$/.test(r.url())) acts.push(r.postDataJSON());
+  });
   await page.goto("/");
   const risk = page.getByTestId("home-alert-ALERT-RESERVE-42");
   await expect(risk).toContainText("Cost ¥1,782.19");
@@ -154,6 +166,9 @@ test("on day 34 the cure needs the owner: the alert says so, the click queues it
 
   // The click queues it: PENDING_APPROVAL with an id, never styled as success, and the alert stays open.
   await risk.getByTestId("fix-ALERT-RESERVE-42").click();
+  await expect.poll(() => acts.length).toBe(1);
+  expect(typeof acts[0].state_version).toBe("number");
+  expect(acts[0].suggestions.some((x) => x.operation_kind === "SUBMIT_INVOICE_FOR_FINANCING" && typeof x.amount_fen === "number")).toBeTruthy();
   const op = page.getByTestId("fix-result").getByTestId("chat-op-SUBMIT_INVOICE_FOR_FINANCING");
   await expect(op).toHaveAttribute("data-status", "PENDING_APPROVAL");
   await expect(op.getByTestId("op-state")).toContainText("Waiting for your approval");
@@ -178,6 +193,25 @@ test("on day 34 the cure needs the owner: the alert says so, the click queues it
   await expect(transit.getByRole("button")).toHaveCount(0);
   await expect(page.locator("#home-position").getByTestId("in-transit-lot")).toContainText("¥200,000.00 lands on day 37");
 
+  await post("/demo/reset", {});
+});
+
+test("when the books move after the alert was shown, the act answers 409 and the page says so without success styling", async ({ page, request }) => {
+  const { post } = await toDay34(request);
+  await page.goto("/");
+  const fix = page.getByTestId("fix-ALERT-RESERVE-42");
+  await expect(fix).toBeVisible();
+  // The books move behind the page's back (the clock), so the state_version the page holds is stale.
+  await post("/clock/advance", { to_day: 35 });
+  await fix.click();
+  const changed = page.getByTestId("fix-changed");
+  await expect(changed).toContainText("The books changed since this was shown");
+  await expect(changed).toContainText("Nothing was run");
+  await expect(page.getByTestId("fix-result")).toHaveCount(0);
+  await expect(changed).not.toHaveClass(/text-ok-fg|bg-ok-bg/);
+  // Nothing was queued: no approval holds an alert cure.
+  const queue = await (await request.get(`${API}/approvals`, { headers: { "X-Owner-Token": TOKEN } })).json();
+  expect(JSON.stringify(queue)).not.toContain("alert:");
   await post("/demo/reset", {});
 });
 

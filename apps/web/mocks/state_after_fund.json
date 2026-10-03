@@ -395,7 +395,7 @@
     "as_of_day": 0,
     "lots": [
       {
-        "id": "NL-b5dd1816eae4c5f4",
+        "id": "NL-dc2123483a6b9012",
         "facility_id": "FAC-LINE",
         "principal_fen": 15000000,
         "remaining_fen": 15000000,
@@ -409,7 +409,7 @@
         "remaining_display": "¥150,000.00"
       },
       {
-        "id": "NL-a43ee071c70c43f9",
+        "id": "NL-3cc077f932eaf1d4",
         "facility_id": "FAC-IF",
         "principal_fen": 25500000,
         "remaining_fen": 25500000,

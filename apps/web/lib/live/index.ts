@@ -7,6 +7,7 @@
 import { DEMO_BUYER_KEYS } from "../config";
 import { ApiError } from "../errors";
 import type {
+  ActRequest,
   AlertActResult,
   AlertsView,
   ClockView,
@@ -120,8 +121,8 @@ export const live = {
     return { day: r.day, message: r.result?.message ?? null };
   },
 
-  /** POST /alerts/{id}/act: executes the alert's cure as the agent. */
-  actOnAlert: (id: string) => http<AlertActResult>("POST", `/alerts/${enc(id)}/act`, { ownerOn403: true }),
+  /** POST /alerts/{id}/act: executes the alert's cure as the agent. The body always binds the act to what was shown (409 ALERT_CHANGED when the books moved). */
+  actOnAlert: (id: string, bound: ActRequest) => http<AlertActResult>("POST", `/alerts/${enc(id)}/act`, { body: bound, ownerOn403: true }),
 
   whatIf: (params: WhatIfParams) => http<WhatIfResult>("POST", "/whatif", { body: params }),
 

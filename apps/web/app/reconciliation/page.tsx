@@ -76,6 +76,11 @@ export default function ReconciliationPage() {
                         <td className={tdCls}>
                           <p className="font-medium">{r.receivable_id}</p>
                           <p className="text-xs text-ink-2">{r.detail}</p>
+                          {r.bank_reference ? (
+                            <p className="mt-0.5 break-all font-mono text-xs text-ink-3" data-testid={`receipt-ref-${r.op_id}`}>
+                              {t("recon.bankRef", { ref: r.bank_reference })}
+                            </p>
+                          ) : null}
                         </td>
                         <td className={`${tdCls} tabular-nums`}>{r.day ?? t("common.none")}</td>
                         <td className={`${tdCls} text-right tabular-nums`}>{r.received_display}</td>

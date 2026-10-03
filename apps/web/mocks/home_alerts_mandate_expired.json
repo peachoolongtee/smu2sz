@@ -1,0 +1,248 @@
+{
+  "day": 95,
+  "basis": "CONSERVATIVE",
+  "state_version": 10,
+  "projected_offer_id": null,
+  "counts": {
+    "CRITICAL": 4,
+    "WARNING": 3,
+    "INFO": 0
+  },
+  "alerts": [
+    {
+      "id": "ALERT-PASTDUE-RI:BUYER-1:2",
+      "kind": "RECEIVABLE_PAST_DUE",
+      "severity": "CRITICAL",
+      "title": "Receivable RI:BUYER-1:2 is 48 day(s) past due",
+      "detail": "¥420,000.00 outstanding from BUYER-1 was due on day 47 and is still FINANCED. The conservative trajectory no longer counts on a dated receipt. The financing advance falls due with it.",
+      "formula": "today − due_day = 95 − 47 = 48 > 0",
+      "day": 47,
+      "month": null,
+      "amount_fen": 42000000,
+      "committed_cure": null,
+      "commitment_id": null,
+      "receivable_id": "RI:BUYER-1:2",
+      "inputs": {
+        "receivable_id": "RI:BUYER-1:2",
+        "counterparty_id": "BUYER-1",
+        "due_day": "47",
+        "outstanding": "¥420,000.00"
+      },
+      "suggested": [
+        {
+          "operation_kind": "RECEIVE_PAYMENT",
+          "facility_id": null,
+          "receivable_id": "RI:BUYER-1:2",
+          "commitment_id": null,
+          "offer_id": null,
+          "amount_fen": 42000000,
+          "note": "chase the buyer; record the receipt when the money lands",
+          "cost_fen": null,
+          "cost_days": null,
+          "annual_rate": null,
+          "cost_formula": "",
+          "above_apr_cap": false,
+          "executes_automatically": false,
+          "amount_display": "¥420,000.00"
+        }
+      ],
+      "actionable": false,
+      "basis": "CONSERVATIVE",
+      "amount_display": "¥420,000.00"
+    },
+    {
+      "id": "ALERT-MANDATE-EXPIRY",
+      "kind": "MANDATE_EXPIRING",
+      "severity": "CRITICAL",
+      "title": "mandate expired: the agent can no longer act",
+      "detail": "Mandate v1 expired on day 90, 5 day(s) ago. Every operation is refused (MANDATE_EXPIRED) until the owner signs a new mandate. Renewal is an offline owner step: sign a new mandate outside the agent. The agent cannot renew or extend it, and it suggests no operation.",
+      "formula": "expires_day − today = 90 − 95 = -5 ≤ 14",
+      "day": 90,
+      "month": null,
+      "amount_fen": null,
+      "committed_cure": null,
+      "commitment_id": null,
+      "receivable_id": null,
+      "inputs": {
+        "mandate_version": "1",
+        "expires_day": "90",
+        "days_left": "-5",
+        "horizon_days": "120"
+      },
+      "suggested": [],
+      "actionable": false,
+      "basis": "CONSERVATIVE"
+    },
+    {
+      "id": "ALERT-RESERVE-95",
+      "kind": "RESERVE_BREACH_AHEAD",
+      "severity": "CRITICAL",
+      "title": "Reserve breach ahead on day 95",
+      "detail": "Projected cash closes at −¥93,564.38 on day 95, ¥393,564.38 below the reserve floor; the gap peaks at ¥393,564.38 on day 95 and lasts to day 106. No committed facility can cure it; uncommitted facilities count as zero.",
+      "formula": "shortfall = floor − closing_d: ¥300,000.00 − −¥93,564.38 = ¥393,564.38 (day 95); max over days 95..106 = ¥393,564.38",
+      "day": 95,
+      "month": null,
+      "amount_fen": 39356438,
+      "committed_cure": false,
+      "commitment_id": null,
+      "receivable_id": null,
+      "inputs": {
+        "floor": "¥300,000.00",
+        "closing": "−¥93,564.38",
+        "last_day": "106",
+        "worst_day": "95",
+        "max_shortfall": "¥393,564.38"
+      },
+      "suggested": [],
+      "actionable": false,
+      "basis": "CONSERVATIVE",
+      "amount_display": "¥393,564.38"
+    },
+    {
+      "id": "ALERT-RESERVE-120",
+      "kind": "RESERVE_BREACH_AHEAD",
+      "severity": "CRITICAL",
+      "title": "Reserve breach ahead on day 120",
+      "detail": "Projected cash closes at ¥281,435.62 on day 120, ¥18,564.38 below the reserve floor; the gap peaks at ¥18,564.38 on day 120 and lasts to day 136. No committed facility can cure it; uncommitted facilities count as zero.",
+      "formula": "shortfall = floor − closing_d: ¥300,000.00 − ¥281,435.62 = ¥18,564.38 (day 120); max over days 120..136 = ¥18,564.38",
+      "day": 120,
+      "month": null,
+      "amount_fen": 1856438,
+      "committed_cure": false,
+      "commitment_id": null,
+      "receivable_id": null,
+      "inputs": {
+        "floor": "¥300,000.00",
+        "closing": "¥281,435.62",
+        "last_day": "136",
+        "worst_day": "120",
+        "max_shortfall": "¥18,564.38"
+      },
+      "suggested": [
+        {
+          "operation_kind": "APPLY_FOR_FACILITY",
+          "facility_id": "FAC-LEASE",
+          "receivable_id": null,
+          "commitment_id": null,
+          "offer_id": null,
+          "amount_fen": 1856438,
+          "note": "Tier 2: the owner applies; zero until committed",
+          "cost_fen": null,
+          "cost_days": null,
+          "annual_rate": null,
+          "cost_formula": "",
+          "above_apr_cap": false,
+          "executes_automatically": false,
+          "amount_display": "¥18,564.38"
+        }
+      ],
+      "actionable": true,
+      "basis": "CONSERVATIVE",
+      "amount_display": "¥18,564.38"
+    },
+    {
+      "id": "ALERT-PASTDUE-RCV-A",
+      "kind": "RECEIVABLE_PAST_DUE",
+      "severity": "WARNING",
+      "title": "Receivable RCV-A is 63 day(s) past due",
+      "detail": "¥162,800.00 outstanding from BUYER-1 was due on day 32 and is still OPEN. The conservative trajectory no longer counts on a dated receipt.",
+      "formula": "today − due_day = 95 − 32 = 63 > 0",
+      "day": 32,
+      "month": null,
+      "amount_fen": 16280000,
+      "committed_cure": null,
+      "commitment_id": null,
+      "receivable_id": "RCV-A",
+      "inputs": {
+        "receivable_id": "RCV-A",
+        "counterparty_id": "BUYER-1",
+        "due_day": "32",
+        "outstanding": "¥162,800.00"
+      },
+      "suggested": [
+        {
+          "operation_kind": "RECEIVE_PAYMENT",
+          "facility_id": null,
+          "receivable_id": "RCV-A",
+          "commitment_id": null,
+          "offer_id": null,
+          "amount_fen": 16280000,
+          "note": "chase the buyer; record the receipt when the money lands",
+          "cost_fen": null,
+          "cost_days": null,
+          "annual_rate": null,
+          "cost_formula": "",
+          "above_apr_cap": false,
+          "executes_automatically": false,
+          "amount_display": "¥162,800.00"
+        }
+      ],
+      "actionable": false,
+      "basis": "CONSERVATIVE",
+      "amount_display": "¥162,800.00"
+    },
+    {
+      "id": "ALERT-PASTDUE-RI:BUYER-1:32",
+      "kind": "RECEIVABLE_PAST_DUE",
+      "severity": "WARNING",
+      "title": "Receivable RI:BUYER-1:32 is 18 day(s) past due",
+      "detail": "¥420,000.00 outstanding from BUYER-1 was due on day 77 and is still OPEN. The conservative trajectory no longer counts on a dated receipt.",
+      "formula": "today − due_day = 95 − 77 = 18 > 0",
+      "day": 77,
+      "month": null,
+      "amount_fen": 42000000,
+      "committed_cure": null,
+      "commitment_id": null,
+      "receivable_id": "RI:BUYER-1:32",
+      "inputs": {
+        "receivable_id": "RI:BUYER-1:32",
+        "counterparty_id": "BUYER-1",
+        "due_day": "77",
+        "outstanding": "¥420,000.00"
+      },
+      "suggested": [
+        {
+          "operation_kind": "RECEIVE_PAYMENT",
+          "facility_id": null,
+          "receivable_id": "RI:BUYER-1:32",
+          "commitment_id": null,
+          "offer_id": null,
+          "amount_fen": 42000000,
+          "note": "chase the buyer; record the receipt when the money lands",
+          "cost_fen": null,
+          "cost_days": null,
+          "annual_rate": null,
+          "cost_formula": "",
+          "above_apr_cap": false,
+          "executes_automatically": false,
+          "amount_display": "¥420,000.00"
+        }
+      ],
+      "actionable": false,
+      "basis": "CONSERVATIVE",
+      "amount_display": "¥420,000.00"
+    },
+    {
+      "id": "ALERT-HEADROOM-107",
+      "kind": "RESERVE_HEADROOM_LOW",
+      "severity": "WARNING",
+      "title": "Reserve headroom thin on day 107",
+      "detail": "Cash stays above the floor but only by ¥26,435.62 on day 107 (13 day(s) under 10% of the floor).",
+      "formula": "closing − floor = ¥326,435.62 − ¥300,000.00 = ¥26,435.62 < 10% × ¥300,000.00",
+      "day": 107,
+      "month": null,
+      "amount_fen": 2643562,
+      "committed_cure": null,
+      "commitment_id": null,
+      "receivable_id": null,
+      "inputs": {
+        "days": "107, 108, 109, 110, 111, 112, 113, 114, 115, 116"
+      },
+      "suggested": [],
+      "actionable": false,
+      "basis": "CONSERVATIVE",
+      "amount_display": "¥26,435.62"
+    }
+  ],
+  "note": "A suggested operation is executed only through POST /alerts/{id}/act or POST /operations, never by itself."
+}

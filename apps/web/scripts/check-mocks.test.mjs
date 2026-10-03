@@ -42,7 +42,10 @@ test("verdict figures are the golden values, server-formatted", () => {
   assert.equal(a.supplier_cost_display, "¥3,027.77");
   const b = v.counters.find((c) => c.label === "Option B");
   assert.equal(b.supplier_cost_display, "¥0.00");
-  assert.ok(b.formula.includes(`${fmtYuan(golden.counter_b_price_adj_per_invoice)} per invoice`));
+  // EX01 Option B is now 55-day terms at 0.30% (0.30% x 420,000.00 = 1,260.00 per invoice). fixtures/golden still holds the old
+  // 60-day figure (counter_b_price_adj_per_invoice), so the new per-invoice figure is pinned here as the server wrote it.
+  assert.ok(b.formula.includes("0.30% → ¥1,260.00 per invoice"));
+  assert.equal(b.text, "55-day terms accepted with a 0.30% price adjustment on future invoices, no rebate.");
 });
 
 test("the EX01 verdict, the counters and the buyer turns are the live API's, as recorded", () => {

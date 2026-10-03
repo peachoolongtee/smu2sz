@@ -316,7 +316,7 @@
     {
       "id": "CTR-618e70abeba8",
       "label": "Option B",
-      "text": "60-day terms accepted with a 0.45% price adjustment on future invoices, no rebate.",
+      "text": "55-day terms accepted with a 0.30% price adjustment on future invoices, no rebate.",
       "obligations": [
         {
           "id": "CTR-618e70abeba8-O1",
@@ -324,8 +324,8 @@
           "counterparty_id": "BUYER-1",
           "rate_bp": null,
           "amount_fen": null,
-          "days_delta": 15,
-          "target_terms_days": 60,
+          "days_delta": 10,
+          "target_terms_days": 55,
           "effective_day": null,
           "base": {
             "kind": "FUTURE_INVOICES",
@@ -344,7 +344,7 @@
               "doc_id": "CTR-618e70abeba8",
               "start": 0,
               "end": 21,
-              "text": "60-day terms accepted"
+              "text": "55-day terms accepted"
             }
           ],
           "confidence": 1,
@@ -354,7 +354,7 @@
           "id": "CTR-618e70abeba8-O2",
           "type": "PRICE_ADJUSTMENT",
           "counterparty_id": "BUYER-1",
-          "rate_bp": 45,
+          "rate_bp": 30,
           "amount_fen": null,
           "days_delta": null,
           "target_terms_days": null,
@@ -377,18 +377,18 @@
               "doc_id": "CTR-618e70abeba8",
               "start": 22,
               "end": 82,
-              "text": "with a 0.45% price adjustment on future invoices, no rebate."
+              "text": "with a 0.30% price adjustment on future invoices, no rebate."
             }
           ],
           "confidence": 1,
           "unresolved": [],
-          "rate_display": "0.45%"
+          "rate_display": "0.30%"
         }
       ],
       "supplier_cost_fen": 0,
       "forward_value_fen": 0,
-      "rationale": "The price adjustment covers the per-invoice cost of funding the longer terms on the marginal committed source, so the net forward concession is about zero.",
-      "formula": "smallest whole-5bp rate r with r × ¥420,000.00 >= per-invoice funding cost ¥1,871.30: 0.45% → ¥1,890.00 per invoice. 12-month: extension ¥24,326.92 + price adjustment −¥24,570.00 = −¥243.08 (cost to the supplier ¥0.00)",
+      "rationale": "The price adjustment covers the per-invoice cost of funding the longer terms on the marginal committed source, so the net forward concession is about zero; on current books with these terms the router's committed plan (committed plan: ¥841.64 + ¥1,479.93 + ¥1,080.00 = ¥3,401.57) keeps the reserve. The offered 60-day terms fail their own re-check; 55 days is the longest that passes. Re-checked as an offer, its terms leave a shortfall of ¥85,000.00 on day 47, funded by the plan: committed plan: ¥1,570.36 (cannot run today).",
+      "formula": "smallest whole-5bp rate r with r × ¥420,000.00 >= per-invoice funding cost ¥1,247.53: 0.30% → ¥1,260.00 per invoice. 12-month: extension ¥16,217.95 + price adjustment −¥16,380.00 = −¥162.05 (cost to the supplier ¥0.00). Funded on current books with these terms by the router's committed plan (committed plan: ¥841.64 + ¥1,479.93 + ¥1,080.00 = ¥3,401.57), cost ¥3,401.57. Re-check: its terms leave a shortfall of ¥85,000.00 on day 47, funded by the plan: committed plan: ¥1,570.36 (cannot run today)",
       "supplier_cost_display": "¥0.00",
       "forward_value_display": "¥0.00",
       "outbound_blocked": false
@@ -445,7 +445,7 @@
   "mandate_version": 1,
   "state_version": 1,
   "calc_version": "tl-v2.0",
-  "summary": "REJECT: AGG_CONCESSION_EXCEEDED (¥28,326.92 vs ¥5,000.00); RESERVE_BREACH@47 (curable at ¥2,406.67; the cure cannot run today); DISCOUNT_ABOVE_BREAK_EVEN (1.20% vs < 0.88%); EARLY_PAY_DEARER_THAN_PLAN (¥6,508.05 vs < ¥3,550.64). Forward concessions ¥28,326.92 against ¥5,000.00. Covenants hold: DSCR_MIN 1.92x, LEVERAGE_MAX 1.72x. Counters: Option A, Option B.",
+  "summary": "REJECT: AGG_CONCESSION_EXCEEDED (¥28,326.92 vs ¥5,000.00); RESERVE_BREACH@47 (curable at ¥2,406.67; the cure cannot run today); DISCOUNT_ABOVE_BREAK_EVEN (1.20% vs < 0.88%); EARLY_PAY_DEARER_THAN_PLAN (¥6,508.05 vs < ¥3,550.64). Forward concessions ¥28,326.92 against ¥5,000.00. Covenants hold: DSCR_MIN 1.92x, LEVERAGE_MAX 1.72x. Price-adjustment counter at 55 days, not 60: 60-day terms cannot be funded from committed sources: the shortfall of ¥85,000.00 on day 47 has no cure. Option B passes its own re-check: its terms leave a shortfall of ¥85,000.00 on day 47, funded by the plan: committed plan: ¥1,570.36 (cannot run today). Counters: Option A, Option B.",
   "forward_concession_total_display": "¥28,326.92",
   "passed_checks": [
     {
