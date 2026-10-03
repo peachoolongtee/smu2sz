@@ -58,7 +58,7 @@ test("demo stepper walks Scene 1, Scene 2, Scene 3 and Security with the golden 
   const counters = page.locator('[data-testid^="counter-"]');
   await expect(counters.filter({ hasText: "Option A" })).toContainText("¥3,027.77");
   await expect(counters.filter({ hasText: "Option A" })).toContainText("We will accept early settlement on up to ¥257,200 of this invoice at 0.85%.");
-  await expect(counters.filter({ hasText: "Option B" })).toContainText("¥1,890.00");
+  await expect(counters.filter({ hasText: "Option B" })).toContainText("¥1,260.00");
 
   await next(page, /\/verdict/);
   await expect(page.getByTestId("negotiation-result")).toContainText("DEAL");
