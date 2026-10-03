@@ -250,7 +250,7 @@ class InMemoryLedgerStore:
         wanted = ApprovalStatus(status)
         return [a for a in rows if a.status == wanted]
 
-    def decide_approval(self, approval_id_: str, approved: bool, by: str) -> ApprovalRecord:
+    def decide_approval(self, approval_id_: str, approved: bool, by: str, day: int | None = None) -> ApprovalRecord:
         with self._lock:
             current = self._approvals.get(approval_id_)
             if current is None:
@@ -258,7 +258,7 @@ class InMemoryLedgerStore:
             if current.status != ApprovalStatus.PENDING:
                 raise ApprovalAlreadyDecided(f"approval {approval_id_} is {current.status}")
             status = ApprovalStatus.APPROVED if approved else ApprovalStatus.REJECTED
-            decided = replace(current, status=status, decided_by=str(by))
+            decided = replace(current, status=status, decided_by=str(by), decided_day=day)
             self._approvals[approval_id_] = decided
             return decided
 

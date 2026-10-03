@@ -32,7 +32,7 @@ from app.domain.models import (
 )
 from app.domain.money import Ratio, fmt_yuan
 from app.funding.models import ComparisonResult, ComparisonRow
-from app.funding.rates import NoPermanentSourceError, marginal_cost
+from app.funding.rates import NoPermanentSourceError, invoice_landing_day, marginal_cost
 from app.funding.search import Eval, Search, Slot, action_key, cost_display, plan_id, reserve_violation
 
 EXPECTED_LABEL = "expected plan: shown only, never relied on (uses facilities not yet committed)"
@@ -205,10 +205,25 @@ def _build_plan(search: Search, state: FinancialState, mandate: Mandate) -> Fund
         label += " (needs the owner's approval)"
     if unrunnable:
         label += " (cannot run today)"
-    return FundingPlan(id=plan_id(basis, list(best.actions), state, mandate), actions=list(best.actions),
+    actions = _with_landing(search, list(best.actions))
+    return FundingPlan(id=plan_id(basis, list(best.actions), state, mandate), actions=actions,
                        costs=lines, total_cost_fen=best.cost or 0, admissible=True, rejected=rejected,
                        label=label, needs_owner_approval=bool(approval), approval_reason=approval,
                        executable_now=not unrunnable, not_executable_reason=unrunnable, **common)
+
+
+def _with_landing(search: Search, actions: list[FundingAction]) -> list[FundingAction]:
+    """Stamp each DRAW and FINANCE_INVOICE with the day its cash lands. One rule, `rates.invoice_landing_day`
+    (the engine's: an unissued invoice is submitted on its issue day, then the facility's lead time; a draw has no
+    issue day, so it is the request day plus the lead time). Display only; nothing else reads it."""
+    out = []
+    for a in actions:
+        if a.kind in (FundingActionKind.DRAW, FundingActionKind.FINANCE_INVOICE):
+            r = next((r for r in search.state.receivables if r.id == a.receivable_id), None)
+            issue = r.issue_day if r is not None and a.kind == FundingActionKind.FINANCE_INVOICE else a.day
+            a = a.model_copy(update={"lands_day": invoice_landing_day(search.facilities[a.facility_id], a.day, issue)})
+        out.append(a)
+    return out
 
 
 def _capped(search: Search) -> str:

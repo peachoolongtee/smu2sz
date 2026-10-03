@@ -20,15 +20,17 @@ interface RawApproval {
   subject?: string;
   tier?: Tier;
   created_day?: number | null;
-  /** Not sent today; used only if the API starts recording the day of a decision. */
+  /** The clock day the owner decided; null while pending (and on rows decided before the API kept it). */
   decided_day?: number | null;
+  /** The executor's message for the decision run, when there is one. */
+  result_message?: string | null;
   amount_fen?: number | null;
   amount_display?: string | null;
 }
 
 export async function getApprovals(): Promise<ApprovalView[]> {
   const { approvals } = await http<{ approvals: RawApproval[] }>("GET", "/approvals/queue");
-  // The queue does not record the day of a decision, so `decided_day` stays null: the simulated clock today is not the day a past decision was made.
+  // `decided_day` is the API's, never the simulated clock today (that is not the day a past decision was made).
   return approvals.map(
     (a) =>
       ({
