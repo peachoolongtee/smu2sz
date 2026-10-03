@@ -1,4 +1,4 @@
-# Handover: TermsLedger v2, 3 Oct 2026 (sections 4 to 6 and 8 updated after the audit fixes and the cash-corrected books)
+# Handover: TermsLedger v2, 3 Oct 2026 (sections 4 to 6 updated at the gate checkpoint, `dev` at `db097e0`)
 
 For a new Claude Code session on another machine. Read this file first, then the files it points to.
 Everything you need is in this repository; nothing depends on the previous machine.
@@ -11,13 +11,13 @@ cd smu2sz && git checkout dev
 cd services/api && uv sync && uv run pytest -o addopts= -q
 ```
 
-Needs `uv` (Python 3.12), Node with `pnpm`, and `gh` logged in to GitHub. Expect about 4,817 tests passing in
-about 9 minutes on Windows. Then, from the repo root: `python3 scripts/run_scenarios.py --inproc` (expect 49/49),
+Needs `uv` (Python 3.12), Node with `pnpm`, and `gh` logged in to GitHub. Expect about 5,446 tests passing in
+about 14 minutes on Windows (two sequential chunks, section 6). Then, from the repo root: `python3 scripts/run_scenarios.py --inproc` (expect 49/49),
 followed by `git checkout -- services/api/evals` so regenerated evidence is not committed by accident.
 
 On Windows (confirmed 1 Oct on a second machine): `.gitattributes` keeps every text file LF, because fixture
 text is hashed and span-matched byte for byte. Run the suite as `SKIP_PERF_BENCH=1 uv run pytest -o addopts= -q`
-(the latency targets were set on the Mac; expect about 4,817 passed, 22 skipped) and prefix scripts that print
+(the latency targets were set on the Mac; expect about 5,446 passed, 33 skipped) and prefix scripts that print
 with `PYTHONUTF8=1`, for example
 `PYTHONUTF8=1 uv run --project services/api python scripts/run_scenarios.py --inproc`.
 
@@ -46,7 +46,8 @@ Read, in this order:
 | --- | --- |
 | `docs/SYSTEM_WALKTHROUGH.md` | Every feature step by step, how the modules interact, and the end-to-end flow with real numbers |
 | `docs/AGENT_MISSION.md`, `docs/CONTINUOUS_OPTIMIZATION.md`, `docs/FINANCIAL_SEMANTICS.md` | The three mission documents of 3 Oct: the role, the live backlog and scorecard, and the contract for every financial quantity |
-| `docs/research/independent-principal-audit-2026-10-03.md` and the three `docs/research/redteam-2026-10-03*` folders | The audit and the red-team rounds whose findings were fixed on 3 Oct |
+| `docs/research/independent-principal-audit-2026-10-03.md` and the five `docs/research/redteam-2026-10-03*` folders (`-03`, `-03b` to `-03e`; rounds 4 and 5 hold probes only) | The audit and the red-team rounds whose findings were fixed on 3 Oct |
+| `docs/research/concurrency-certification-2026-10-03.md`, `docs/research/language-boundary-certification-2026-10-03.md` | The two certifications: what was proven, what is pending (the language-boundary file's section 5 is the first dry run; the latest reports are under `services/api/evals/certification/`) |
 | `docs/NEXT_FIXES.md` | History up to the audit; the live tracker is `docs/CONTINUOUS_OPTIMIZATION.md` |
 | `docs/research/audit-2026-10-01.md` | The 1 Oct audit (findings S1–S11, F1–F10, changes C1–C13) |
 | `docs/adr/0006-current-books-and-clock.md` | The state model: current books, the clock, settlement, re-verification at commitment |
@@ -104,14 +105,30 @@ what-if sandbox. Team of five. A DeepSeek key exists; an Anthropic key is option
 
 ## 4. Where things stand (3 Oct 2026)
 
-`dev` carries the fixes for an independent audit's 13 findings and three red-team rounds' 13 findings, and the
-business review's items (BC1 to BC11 and S1 to S3), all fixed on 3 Oct (`git log --oneline b0e0ab6..origin/dev`
-lists the merges; the findings, decisions and scorecard are in `docs/CONTINUOUS_OPTIMIZATION.md` sections 1, 3 and
-5). `main` is at `c25ff08` (the earlier document close-out), 41 commits behind `dev`. The gate on `dev` at
-`1bc96ba`: backend 4,817 passed (22 skipped; Windows, `SKIP_PERF_BENCH=1`), scenarios 49/49 (87 turns),
-web mock e2e 35, live e2e 30 (the web counts are as recorded in `docs/CONTINUOUS_OPTIMIZATION.md`, not re-run for the
-document pass), 255 attacks (122 API + 133 chat) with 0 harm, `scripts/demo_run.py` exits 0. This is a simulation:
-lenders, the buyer and the bank feed are simulated, and nothing is a bank covenant test.
+`dev` carries the fixes for an independent audit's 13 findings, five red-team rounds' 26 findings and the business
+review's items (BC1 to BC11 and S1 to S3), all fixed on 3 Oct (`git log --oneline b0e0ab6..origin/dev` lists the
+merges; the findings, decisions and scorecard are in `docs/CONTINUOUS_OPTIMIZATION.md` sections 0, 1, 3 and 5).
+`main` is at `34a58ad` (the cash-figure document pass), 48 commits behind `dev`. The gate on `dev` at `db097e0`:
+backend 5,446 passed (33 skipped; Windows, `SKIP_PERF_BENCH=1`, two sequential chunks), scenarios 49/49 (87
+turns, 49 evidence chains VALID), 255 attacks (122 API + 133 chat) with 0 harm, `scripts/evaluate.py` with every
+target passing (runnable optimality 26/26, priced 26/26), `scripts/demo_run.py` exits 0, language-boundary
+certification WRONG_MATERIAL 0 on 231 items (cache and fake runs), concurrency 20 passed and 10 skipped (the
+PostgreSQL cases). The web counts are the last known ones: mock e2e 35, live e2e 30; the web mock refresh is in
+progress, so they were not re-run. This is a simulation: lenders, the buyer and the bank feed are simulated, and
+nothing is a bank covenant test.
+
+**The owner stopped the red-team rounds on 3 Oct.** Five rounds (3, 7, 3, 7 and 6 findings) are done and all fixed.
+The engine is in **stability mode**: fix regressions, keep the evidence regenerated, rehearse the demo, keep the
+documents true. No broad features and no more red-team rounds unless the owner asks.
+
+**Two things are pending a credential, each with one command:**
+
+| Pending | Needs | Command |
+| --- | --- | --- |
+| Concurrency invariants on PostgreSQL (gate G4, backlog PG1, U-002) | An empty dedicated PostgreSQL database URL | `cd services/api && TERMSLEDGER_TEST_DATABASE_URL=postgresql+psycopg://user:pass@host/termsledger_ci SKIP_PERF_BENCH=1 uv run pytest -o addopts= -q -p no:cacheprovider tests/concurrency` |
+| Language-boundary certification against a live model (gate G3, backlog LC1, U-001) | `ANTHROPIC_API_KEY` and `DEEPSEEK_API_KEY` in the root `.env` | `PYTHONUTF8=1 uv run --project services/api python scripts/certify_language_boundary.py --backend live` |
+
+Until the first runs, deploy one worker, and do not claim that the live model or PostgreSQL concurrency is certified.
 
 **Merged on 3 Oct** (the changes with their test files are in `docs/SYSTEM_WALKTHROUGH.md` section 11):
 
@@ -143,6 +160,20 @@ lenders, the buyer and the bank feed are simulated, and nothing is a bank covena
 | `635d13b` web catch-up | The bound alert act and its 409, RECORD_FACT, mandate expiry, bank references, the 55-day Option B; mocks re-recorded |
 | `3edf1b6` leg ordering | The router orders legs so every prefix is admissible, with one leg rule shared with admission; a plan admissible only as a whole is flagged cannot run today |
 
+**Merged after the first gate `1bc96ba`** (each with its test file in the second table of section 11 of the walkthrough):
+
+| Merge | What changed |
+| --- | --- |
+| `92b7b0f` API gaps | `decided_day` and `result_message` on approvals, `lands_day` on plan actions, the approval id on executed ledger rows, the `short_facilities` demo scenario |
+| `4b180ec` one leverage definition | Actual drawn debt over annual EBITDA, one function read from a projection by the verifier, capex, the borrower file and chat; EX01 1.72× to 1.47×, capex 2.08× / 2.28× to 1.90× / 2.10× |
+| `557645b` fourth red team (7 findings) | Unrunnable early-pay legs flagged, no double-booked approved receipt, a lapsed early-pay agreement no longer blocks financing, consent grammar, package fulfilment, reconciliation window, term-lot fee |
+| `919de9f` evaluation speed-up | EX01 evaluates in about 0.5 to 0.9 s (3.3 s before); verdicts byte-identical |
+| `3649b24` concurrency | Compare-and-swap on the state version and the log head, `BEGIN IMMEDIATE`, executor retry; eight two-process invariants proven on SQLite, PostgreSQL pending |
+| `82b2628` language-boundary certification harness | 231 items scored on stored state; cache and fake runs; the live run is ready and pending a key |
+| `5eb299a` fifth red team (6 findings) | Fixed-sum discounts checked by rate, terms in force, scenario events only for the stored demo scenario, counters name their day and honour portions, owner repayment after expiry, reported day on queued receipts |
+| `bb30265` boundary abstentions | Unusual number forms, per-day rates, discount codes, foreign currency, hedges, post-due discounts and riders abstain; the clock retries on a conflict; conflicts answer 409 |
+| `db097e0` evaluation oracle | The oracle classifies runnable levers itself: runnable optimality 26/26, priced 26/26; the owner terms constraint reads the terms in force |
+
 Earlier merges (1 Oct): the chat boundary, the computed scoreboard, the coverage proof, re-verification at
 commitment, current books, the clock, partial settlement, attacks through chat, credential-bound sessions,
 reconciliation of promised receipts, the alert button and opener, the early-pay rule (ADR-0007), DSCR on bullet
@@ -151,8 +182,9 @@ by a second agent (`docs/research/early-pay-handcalc-2026-10-01.md`, `dscr-handc
 forward-concession valuation of 3 Oct likewise (`docs/research/concession-valuation-handcalc-2026-10-03.md`).
 
 The evidence (`services/api/evals/e2e/latest`, `latest_report.*`, `security/latest_report.*`) and the docx
-deliverables were regenerated on `docs/cash-figures` at `1bc96ba`; if a later change moves a cash-derived figure,
-regenerate them again (section 6, step 6). `scripts/evaluate.py` reports 15 item-level misses (all targets pass):
+deliverables were regenerated on `docs/gate-checkpoint` at `db097e0`; if a later change moves a cash-derived figure,
+regenerate them again (section 6, step 6). The web mocks are the exception: they predate the one-leverage change and
+Counter A's day, and their refresh is in progress (backlog WEB1). `scripts/evaluate.py` reports 15 item-level misses (all targets pass):
 four held-out 60-day-terms offers (H09a, H09b, H12a, H39), labelled NEEDS_OWNER_APPROVAL, now return REJECT with
 RESERVE_BREACH on the cash-corrected books, so the label file `fixtures/heldout/offers.yaml` needs an owner decision
 (relabel, or leave as a record that the verdict moved); the other misses were already there.
@@ -194,34 +226,53 @@ RESERVE_BREACH on the cash-corrected books, so the label file `fixtures/heldout/
   state version and the suggestions shown and gets 409 `ALERT_CHANGED` when they moved.
 - A plan admissible only as a whole is "cannot run today", not "needs the owner": the owner cannot approve past a
   hard rule.
+- Leverage is one definition (month-end drawn debt over annual EBITDA, `covenants.ratios_for`); do not reintroduce a
+  line-limit variant.
+- The standing plan C0 is the cheapest plan the agent can run; a buyer's early payment and a bill are never in it
+  (ADR-0007 note).
+- Terms in force are the template plus the accepted adjustments; a fixed-sum discount is judged at its exact rate; an
+  early-pay agreement is settled by portions up to its face by its day; an owner repayment is a fact that survives
+  the mandate's expiry (`docs/FINANCIAL_SEMANTICS.md`).
+- The store enforces concurrency (compare-and-swap, retry, 409); keep one worker until the PostgreSQL run is done.
+- A reading the typed rows cannot carry abstains with a reason; never round it to a whole-invoice discount.
+- Stability mode (section 4): no broad features, no new red-team rounds unless the owner asks.
 
 ## 6. What to do next, in order
 
 1. Read the three mission documents first: `docs/AGENT_MISSION.md`, `docs/CONTINUOUS_OPTIMIZATION.md` (the live
    tracker; `docs/NEXT_FIXES.md` is history) and `docs/FINANCIAL_SEMANTICS.md`.
-2. Run the gate. From `services/api`: `SKIP_PERF_BENCH=1 uv run pytest -o addopts= -q` (about 9 minutes on
-   Windows; expect about 4,817 passed, 22 skipped). From the repo root, with `PYTHONUTF8=1`:
-   `uv run --project services/api python scripts/run_scenarios.py --inproc` (49/49),
+2. Run the gate. From `services/api`, as two sequential chunks (about 8 and 6 minutes on Windows; expect
+   about 5,446 passed, 33 skipped in all), each `SKIP_PERF_BENCH=1 uv run pytest -o addopts= -q -p no:cacheprovider`:
+   chunk A = `tests/alerts tests/api tests/books tests/borrower_file tests/capex tests/clock tests/commitments
+   tests/compiler tests/counterparties tests/covenants tests/egress tests/evals tests/financial tests/funding`;
+   chunk B = `tests/mandate tests/nl tests/operations tests/persistence tests/security tests/verifier tests/whatif
+   tests/concurrency tests/certification tests/test_fixtures.py tests/test_money.py`. From the repo root, with
+   `PYTHONUTF8=1`: `uv run --project services/api python scripts/run_scenarios.py --inproc` (49/49),
    `uv run --project services/api python scripts/demo_run.py` (exit 0, 14 ledger entries),
-   `cd services/api && uv run python -m app.security.attacks --report` (255 attacks, 0 with harm), and for the web
-   app `E2E_TARGET=mock pnpm exec playwright test` (35) and, if another program holds port 8000,
-   `E2E_API_PORT=8010 E2E_TARGET=live pnpm exec playwright test` (30). Scenario, attack and evaluation runs rewrite
-   tracked files under `services/api/evals/`; commit them only when the task is to refresh evidence.
-3. Open rows of the backlog (`docs/CONTINUOUS_OPTIMIZATION.md` section 1): R02 (a multi-leg plan is not one
-   transaction), R04 and R05 (unauthenticated intake is not capped), R07 (a backfill for stores that hold
-   commitments from before ADR-0009), F-FIN-10 (label the level DSCR as a reserve-coverage reading on every
-   screen), W01 (approval decision day and landing day on queue rows), W02 (accepted), D1 (covenant ratios in four
-   places), EV1, MW1 (several workers), and the uncertainty debt U-001 to U-012. Closed since the last handover: R03
-   for receipts that carry a bank reference, F6 (the borrower file is read-only), BC1 to BC11, DOC1.
+   `cd services/api && uv run python -m app.security.attacks --report` (255 attacks, 0 with harm),
+   `uv run --project services/api python scripts/evaluate.py` (every target PASS; about 6 minutes), and
+   `uv run --project services/api python scripts/certify_language_boundary.py --backend cache` and `--backend fake`
+   (WRONG_MATERIAL 0). For the web app `E2E_TARGET=mock pnpm exec playwright test` (35 when last run) and, if another
+   program holds port 8000, `E2E_API_PORT=8010 E2E_TARGET=live pnpm exec playwright test` (30 when last run); the web
+   refresh is in progress. Scenario, attack, evaluation and certification runs rewrite tracked files under
+   `services/api/evals/`; commit them only when the task is to refresh evidence.
+3. Open rows of the backlog (`docs/CONTINUOUS_OPTIMIZATION.md` section 1): PG1 (PostgreSQL run, needs a URL), LC1 (live
+   certification, needs a key), NR1 (the "no runnable plan" worlds: should the agent propose drawing the line and
+   asking the buyer or the owner? an owner decision), WEB1 (web mock refresh, in progress), EO2 (the
+   `line_first_baseline` metric still uses early pay), R02 (a multi-leg plan is not one transaction), R04 and R05
+   (unauthenticated intake is not capped), R07 (a backfill for stores that hold commitments from before ADR-0009),
+   F-FIN-10 (label the level DSCR as a reserve-coverage reading on every screen), W02 (accepted), EV1, and the
+   uncertainty debt U-001 to U-013. Closed since the last handover: W01, D1, MW1 on SQLite, RT4, RT5, BA1, CERT1
+   (harness), EO1, PF1, BC11.
 4. If the web mocks drift from the API again: start the API on a free port and run `pnpm mocks:record` (see
    `apps/web/README.md`); never edit a mock by hand.
 5. Small items worth doing next: an "AI-generated, for reference" label in the UI (a listed gap); suggested chat
-   prompts for the newer capabilities.
+   prompts for the newer capabilities. These are small; in stability mode do not start anything broad.
 6. After any change that moves a figure: scenarios, attack report, `scripts/evaluate.py`,
    `scripts/build_deliverables.py --refresh-evidence`, `scripts/verify_evidence.py` on each per-task chain, then
    the documents that quote the figure, then commit the regenerated files.
-7. Optional work (wave F) only after the P0 and P1 rows are closed: named stresses, payment instrument, guarded
-   supplier payment, recurring outflows, Chinese server text, deployment.
+7. Optional work (wave F) only after the P0 and P1 rows are closed and the owner lifts stability mode: named stresses,
+   payment instrument, guarded supplier payment, recurring outflows, Chinese server text, deployment.
 
 Known loose ends:
 
@@ -248,7 +299,7 @@ Known loose ends:
 
 ## 8. What only the owner can do
 
-Team eligibility and registration (issue #10); the organiser email (issue #9, draft posted); team roster (#5);
+Supply a PostgreSQL URL (an empty dedicated database) and the API keys (`ANTHROPIC_API_KEY`, `DEEPSEEK_API_KEY`) so the two pending certification runs in section 4 can be made; decide NR1 (should the agent propose drawing the line and asking the buyer or owner when no runnable plan closes the gap); team eligibility and registration (issue #10); the organiser email (issue #9, draft posted); team roster (#5);
 deployment region (#7); the licence for the LICENSE file; whether the borrower file's ¥360,000 request stays as an
 honest shortfall or is made smaller; whether the video drops the capex scene or Scene 2 and the chat segment;
 deck branding; building the deck (outline only exists) and recording the video; the `[TEAM:]` placeholders in the
@@ -257,7 +308,7 @@ documents.
 ## 9. Useful commands
 
 ```bash
-cd services/api && uv run pytest -o addopts= -q                  # full suite with a summary line
+cd services/api && uv run pytest -o addopts= -q                  # full suite with a summary line (SKIP_PERF_BENCH=1 on Windows; two chunks, section 6)
 python3 scripts/run_scenarios.py --inproc                        # 49 chat scenarios (repo root)
 cd services/api && uv run python -m app.security.attacks --report
 uv run --project services/api python scripts/evaluate.py         # scoreboard rows
