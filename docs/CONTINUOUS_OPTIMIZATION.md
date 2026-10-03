@@ -4,7 +4,7 @@ Live document of the continuous technical owner (`docs/AGENT_MISSION.md`). Updat
 quantity are in `docs/FINANCIAL_SEMANTICS.md`. Audit ids (A01…, F-FIN-…, S-…, F1…) refer to
 `docs/research/independent-principal-audit-2026-10-03.md` and its three working papers.
 
-Last updated: 3 Oct 2026, after three red-team rounds; backend 4,731 passed; web mock e2e 31, live 29. Evidence, the attack report, the evaluation report and the documents were regenerated and corrected on branch `docs/audit-closeout` (DOC1).
+Last updated: 3 Oct 2026 (late): debt service as cash, review gaps, simplifications and counter feasibility merged; backend 4,817 passed.
 
 ## 1. Open findings
 
@@ -63,6 +63,20 @@ Status: OPEN, IN PROGRESS (branch named), DONE (merged to `dev`, date).
 | C01 | P1 | Owner-session chat ran an above-ceiling leg directly while the agent channel queued it | plan-flags report | owner | | Medium | S | DONE 3 Oct: chat funding legs are the agent's act in every session | |
 | W01 | P2 | Approvals queue has no decision day; plan actions carry no landing day; executed ledger rows lack the approval id they ran under | web report | subagent | | Low | S | OPEN | |
 | W02 | P3 | 1-fen receipt before landing cancels an advance sitting exactly at the advance-rate limit (by rule; harsh) | third red team | owner | | Low | S | OPEN (accepted) | |
+| BC1 | P0 | Existing loan's ¥45,000 monthly service counted in DSCR but never left cash: every cash conclusion optimistic by ¥45,000 a month | business review A1 | subagent | | Very high | M | DONE 3 Oct (`tests/books/test_debt_service.py`); golden figures moved (gap ¥405,000, plan ¥3,113.93, Counter A ¥257,200) | |
+| BC2 | P1 | No fallback cure when the reserve cannot be restored even though cash can be kept above zero | review A2 | subagent | | High | S | DONE 3 Oct | |
+| BC3 | P1 | Chat answered "we have a bill of ¥80,000" with the cash status as if recorded | review A3 | subagent | | High | S | DONE 3 Oct (RECORD_FACT, read-only) | |
+| BC4 | P1 | Mandate expiry had no warning; owner's own draw refused on day 91 | review A4 | subagent | | Medium | S | DONE 3 Oct (alert; renewal offline) | |
+| BC5 | P1 | Same bank event under a new key settled twice (R03) | review A5 | subagent | | Medium | S | DONE 3 Oct (`bank_reference`) | |
+| BC6 | P1 | Borrower file dated to day 0 whatever the generation day | review A6 | subagent | | Medium | S | DONE 3 Oct | |
+| BC7 | P1 | An offer from a buyer with a past-due invoice was judged on cash and caps only | review A7 | subagent | | Medium | S | DONE 3 Oct (needs the owner, invoice named) | |
+| BC8 | P1 | Alert button not bound to the cure shown | review A8 | subagent | | Medium | S | DONE 3 Oct (409 ALERT_CHANGED; web sends the body: in progress) | |
+| BC9 | P1 | Counters the verifier offered did not pass their own re-check (Option B failed on reserve once debt service left cash) | debt-service report | subagent | | High | M | DONE 3 Oct (`tests/verifier/test_counter_property.py`, curable reading) | |
+| BC10 | P1 | Router and executor disagreed on a line draw held past the first affordable receipt (found by the agreement test) | agreement test | subagent | | High | S | DONE 3 Oct (`carry_draw` shared) | |
+| BC11 | P1 | Router admits an advance leg that admission refuses on the reserve (pinned Hypothesis world) | agreement test | subagent | | High | S | IN PROGRESS `fix/agree-advance` | |
+| S1–S3 | P2 | Capex evaluation queued an application; borrower-file approval authorised nothing; dead weight (aftersign, mock lender) | review D2–D4 | subagent | | Medium | S | DONE 3 Oct | |
+| D1 | P2 | Covenant ratios computed in four places with two leverage definitions (line at limit vs drawn) | review D1 | owner | | Medium | M | OPEN: label now, merge after the deadline | |
+| EV1 | P2 | Evidence chain heads are not reproducible run to run (session nonce, commitment nonces) | close-out report | owner | | Low | S | OPEN (claim narrowed to "integrity-checkable") | |
 | MW1 | P1 | Several API workers: process-local lock, no state-version compare-and-swap | audit §7, unverified | owner | | Medium | M | OPEN | SQLite two-connection interleaving test; PostgreSQL test when a database is available |
 
 Not doing before the deadline (audit §14 agrees): supplier payments, lender connectors, tax, FX, calendars, lease
@@ -95,14 +109,14 @@ Numbers are measurements on the commit named, never targets.
 
 | Area | Measure | `beb8c66` (audit baseline) | Latest `dev` |
 | --- | --- | --- | --- |
-| Financial | Backend tests passed | 4,042 (26 skipped) | 4,731 (20 skipped) |
+| Financial | Backend tests passed | 4,042 (26 skipped) | 4,817 (22 skipped) |
 | Financial | Planner/executor mismatches reproduced by the audit probes | 6 of 6 | 0 of 6 defects; the discretionary line repayment is a labelled assumption (ADR-0010) |
 | Financial | Formula discrepancies open | 9 (F-FIN-01, 02, 03, 04, 06, 07, 09, 10, 11) | 1 (F-FIN-10: label) |
 | Financial | Accepted-terms lifecycle failures (A06, A07) | 2 | 0 |
 | Security | Catalogue attacks / with harm | 182 / 0 | 255 (122 API + 133 chat) / 0, report regenerated 3 Oct |
 | Security | Audit attacks with harm (A01, A02, A03, A04, A10) | 5 of 5 | 0 of 5; three red-team rounds: 13 findings, 13 fixed |
 | Language | Wrong and financially material interpretations known | 13 texts (S-01 ×8, S-02 ×5) | 0 known |
-| Execution | Scenarios passed | 46 / 46 (79 turns) | 46 / 46 (85 turns) |
+| Execution | Scenarios passed | 46 / 46 (79 turns) | 49 / 49 (87 turns) |
 | Execution | Restart preserves state | No | Yes |
 | Product | Demo path (`scripts/demo_run.py`) | exit 0 | exit 0 (cure queued → approved → lands day 37) |
 | Product | Web e2e mock / live | 29 / 27 | 31 / 29 |
