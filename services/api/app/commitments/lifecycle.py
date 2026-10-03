@@ -28,7 +28,9 @@ S = CommitmentStatus
 ALLOWED: dict[CommitmentStatus, frozenset[CommitmentStatus]] = {
     S.PROPOSED: frozenset({S.ACCEPTED, S.EXPIRED, S.REVOKED}),
     S.ACCEPTED: frozenset({S.ACTIVE, S.EXPIRED, S.REVOKED}),
-    S.ACTIVE: frozenset({S.FULFILLED, S.REVOKED}),
+    # ACTIVE -> EXPIRED: the clock ends a commitment whose only obligations are early payments whose day passed unpaid
+    # (red team d, F3); nothing in it binds any more
+    S.ACTIVE: frozenset({S.FULFILLED, S.REVOKED, S.EXPIRED}),
     S.EXPIRED: frozenset(),
     S.REVOKED: frozenset(),
     S.FULFILLED: frozenset(),

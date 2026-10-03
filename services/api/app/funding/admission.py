@@ -31,6 +31,7 @@ from app.domain.models import (
     FundingActionKind,
     Mandate,
     Mode,
+    ObligationType,
     RepayFacility,
     SubmitInvoiceForFinancing,
     Trajectory,
@@ -98,11 +99,31 @@ def _as_carried(op: object, state: FinancialState) -> FinancialState | None:
     return as_executed(state, [action])[0]
 
 
+def early_pay_hold(op: object, books: Books) -> Violation | None:
+    """FINANCIAL_SEMANTICS §2: an invoice is not financed while a LIVE early-payment agreement names it (an obligation
+    in `books.obligations`). One whose promised day passed unpaid has lapsed out of the books and holds nothing: the
+    books, the router and the alert cures already read the invoice as back on its due day (red team d, F3)."""
+    if not isinstance(op, SubmitInvoiceForFinancing):
+        return None
+    for o in books.obligations:
+        if o.type == ObligationType.IMMEDIATE_DISCOUNT and o.base.receivable_id == op.receivable_id:
+            cid = books.owner_of(o)
+            who = f"commitment {cid}" if cid else f"obligation {o.id}"
+            return Violation(code=ViolationCode.PRECONDITION_FAILED,
+                             message=(f"Receivable {op.receivable_id} is under the live early-payment agreement of "
+                                      f"{who} (payment promised for day {o.effective_day}); it cannot also be "
+                                      f"financed (the owner may revoke {cid or 'it'} first)"))
+    return None
+
+
 def admit(op: object, books: Books, mandate: Mandate) -> Admission:
     state, today = books.state, books.day
     action = action_for(op, today)
     if action is None:
         return Admission()
+    held = early_pay_hold(op, books)
+    if held is not None:
+        return Admission([held])
     obligations = list(books.obligations)
     floor, horizon = mandate.min_cash_fen, mandate.horizon_days
     try:
@@ -131,4 +152,4 @@ def admit(op: object, books: Books, mandate: Mandate) -> Admission:
     return Admission([], reason)
 
 
-__all__ = ["RATIO_CODES", "Admission", "action_for", "admit", "effective_rate"]
+__all__ = ["RATIO_CODES", "Admission", "action_for", "admit", "early_pay_hold", "effective_rate"]

@@ -41,6 +41,10 @@ class Books:
     state: FinancialState
     obligations: tuple[Obligation, ...]
     lapsed: tuple[Lapsed, ...] = ()
+    owners: tuple[str, ...] = ()  # the commitment id of each live obligation, in the same order (may be empty)
+
+    def owner_of(self, o: Obligation) -> str | None:
+        return next((c for x, c in zip(self.obligations, self.owners, strict=False) if x is o), None)
 
     @property
     def day(self) -> int:
@@ -84,20 +88,30 @@ def _why_unbound(state: FinancialState, o: Obligation) -> str:
 def current_books(state: FinancialState, commitments: Sequence[Commitment]) -> Books:
     """State + the live obligations that still bind to it. An early-pay obligation whose day has passed
     unpaid, or whose receivable is settled, is reported in `lapsed` and left out of the projection (the
-    receivable then falls back to its original due day)."""
+    receivable then falls back to its original due day).
+
+    Red team d: an early payment already received on time (`settled_obligations`, its commitment kept ACTIVE for
+    other terms) is neither live nor lapsed; a commitment the clock ended because its early payments lapsed
+    (EXPIRED, `lapsed_obligations`) still reports them as lapsed, so the owner keeps seeing what did not arrive."""
     live: list[Obligation] = []
+    owners: list[str] = []
     lapsed: list[Lapsed] = []
     for c in commitments:
+        if c.status == CommitmentStatus.EXPIRED and c.lapsed_obligations:
+            lapsed.extend(Lapsed(c.id, o, _why_unbound(state, o)) for o in c.obligations
+                          if o.id in c.lapsed_obligations)
+            continue
         if c.status not in LIVE:
             continue
         for o in c.obligations:
-            if not cash_relevant(o):
+            if not cash_relevant(o) or o.id in c.settled_obligations:
                 continue
             if binds(state, o):
                 live.append(o)
+                owners.append(c.id)
             else:
                 lapsed.append(Lapsed(c.id, o, _why_unbound(state, o)))
-    return Books(state=state, obligations=tuple(live), lapsed=tuple(lapsed))
+    return Books(state=state, obligations=tuple(live), lapsed=tuple(lapsed), owners=tuple(owners))
 
 
 def books_from_store(store: LedgerStore) -> Books:

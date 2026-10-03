@@ -1074,13 +1074,8 @@ class Executor:
             raise _refuse(Code.PRECONDITION_FAILED, f"Receivable {r.id} is {r.status}, not OPEN")
         if not r.confirmed:
             raise _refuse(Code.PRECONDITION_FAILED, f"Receivable {r.id} is not buyer-confirmed (确权)")
-        for c in self._store.commitments():  # FINANCIAL_SEMANTICS §2: not while under an early-payment agreement
-            if c.status in (CommitmentStatus.ACCEPTED, CommitmentStatus.ACTIVE) and any(
-                    o.type == ObligationType.IMMEDIATE_DISCOUNT and o.base.receivable_id == r.id for o in c.obligations):
-                raise _refuse(Code.PRECONDITION_FAILED,
-                              f"Receivable {r.id} is under the early-payment agreement of {c.status.value} commitment "
-                              f"{c.id}; it cannot also be financed (the owner may revoke {c.id} first)",
-                              receivable_id=r.id, commitment_id=c.id)
+        # FINANCIAL_SEMANTICS §2 (not while under a LIVE early-payment agreement) is judged by admission on the current
+        # books (`app.funding.admission.early_pay_hold`): a lapsed agreement no longer holds the invoice (red team d F3)
         buyer = next((c for c in state.counterparties if c.id == r.counterparty_id), None)
         if buyer is None or buyer.role != "BUYER" or not buyer.known:
             raise _refuse(Code.UNKNOWN_COUNTERPARTY, f"Receivable {r.id} is not owed by a registered buyer",

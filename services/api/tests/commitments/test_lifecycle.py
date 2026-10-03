@@ -29,6 +29,7 @@ LEGAL = {
     (S.ACCEPTED, S.REVOKED),
     (S.ACTIVE, S.FULFILLED),
     (S.ACTIVE, S.REVOKED),
+    (S.ACTIVE, S.EXPIRED),  # red team d, F3: the clock ends an early-pay commitment whose early payments lapsed
 }
 ALL_PAIRS = list(itertools.product(S, S))
 
@@ -82,7 +83,7 @@ def test_expiring_after_the_expiry_day_is_allowed(src):
     assert transition(f.commitment(status=src, expires_day=10), S.EXPIRED, day=30).status == S.EXPIRED
 
 
-@pytest.mark.parametrize("dst", [S.FULFILLED, S.REVOKED])
+@pytest.mark.parametrize("dst", [S.FULFILLED, S.REVOKED, S.EXPIRED])
 def test_an_active_commitment_can_still_close_after_its_acceptance_expiry(dst):
     assert transition(f.commitment(status=S.ACTIVE, expires_day=10), dst, day=400).status == dst
 

@@ -24,10 +24,12 @@ from app.domain.models import (
     Actor,
     CashFlow,
     CommitmentStatus,
+    Contingency,
     DebtPosition,
     Facility,
     FinancialState,
     FundingLot,
+    ObligationType,
     OperationResult,
     OperationStatus,
     Receivable,
@@ -61,6 +63,7 @@ class ClockAdvance:
     lots_net_fen: int = 0  # cash those moved: landings less payments
     posted_debt_service: list[dict[str, Any]] = field(default_factory=list)  # existing debts' scheduled payments
     debt_service_fen: int = 0  # the cash they took (positive)
+    lapsed_commitment_ids: list[str] = field(default_factory=list)  # early-pay commitments ended (EXPIRED) on lapse
 
     @property
     def moved(self) -> bool:
@@ -204,6 +207,40 @@ def _fulfil(store: LedgerStore, state: FinancialState, consumed_ids: Sequence[st
     return state, fulfilled
 
 
+def _end_lapsed(store: LedgerStore, state: FinancialState, to_day: int) -> tuple[FinancialState, list[str]]:
+    """Red team d, F3: a live commitment whose only obligations are early payments, every one of them either paid
+    on time (`settled_obligations`) or lapsed on the books just closed (its day passed unpaid, or the invoice was
+    settled otherwise), is over: it moves to EXPIRED with the lapsed obligation ids recorded on it, so the owner sees
+    it ended and `current_books` keeps reporting what did not arrive. Its forward concession leaves the state, as on
+    revocation. A commitment with any other obligation stays as it is (the owner may revoke it)."""
+    from app.books import current_books  # the books module projects with the engine; imported where it is used
+
+    commitments = store.commitments()
+    lapsed: dict[str, list[str]] = {}
+    for lp in current_books(state, commitments).lapsed:
+        lapsed.setdefault(lp.commitment_id, []).append(lp.obligation.id)
+    ended: list[str] = []
+    for c in commitments:
+        if c.status not in (CommitmentStatus.ACCEPTED, CommitmentStatus.ACTIVE) or c.id not in lapsed:
+            continue
+        booked = [o for o in c.obligations
+                  if o.type != ObligationType.CLAIMED_PRIOR_CONCESSION and o.contingency != Contingency.CLAIMED_UNEVIDENCED]
+        if not booked or any(o.type != ObligationType.IMMEDIATE_DISCOUNT or not o.base.receivable_id for o in booked):
+            continue
+        if any(o.id not in lapsed[c.id] and o.id not in c.settled_obligations for o in booked):
+            continue
+        try:
+            done = transition(c, CommitmentStatus.EXPIRED, to_day)
+        except CommitmentError:
+            continue
+        store.put_commitment(done.model_copy(update={"lapsed_obligations": list(lapsed[c.id])}))
+        ended.append(c.id)
+    if ended:
+        state = state.model_copy(update={"forward_concessions": [
+            fc for fc in state.forward_concessions if fc.commitment_id not in ended]})
+    return state, ended
+
+
 def apply_events(state: FinancialState, to_day: int, events: Sequence[dict[str, Any]]) -> tuple[FinancialState, list[str]]:
     """Pure: scheduled flows the outside world added on the days being closed (ADD_FLOW events dated in
     [as_of_day, to_day)). A flow already on the books, or dated before its own event, is ignored."""
@@ -243,6 +280,7 @@ def advance(store: LedgerStore, to_day: int, actor: Actor = Actor.SYSTEM,
                 except CommitmentError:
                     continue
         new, fulfilled = _fulfil(store, new, adv.consumed_adjustment_ids, to_day)
+        new, lapsed = _end_lapsed(store, new, to_day)
         store.put_state(new)
         op_id = f"clock-{adv.from_day}-{adv.to_day}"
         payload = {"kind": ADVANCE_CLOCK_KIND, "op_id": op_id, "from_day": adv.from_day, "to_day": adv.to_day,
@@ -251,6 +289,8 @@ def advance(store: LedgerStore, to_day: int, actor: Actor = Actor.SYSTEM,
                    "expired_commitment_ids": expired, "added_flow_ids": adv.added_flow_ids}
         if adv.consumed_adjustment_ids or fulfilled:
             payload |= {"consumed_adjustment_ids": adv.consumed_adjustment_ids, "fulfilled_commitment_ids": fulfilled}
+        if lapsed:  # red team d, F3: early-pay commitments ended because their early payments lapsed
+            payload |= {"lapsed_commitment_ids": lapsed}
         if adv.settled_lot_ids:  # ADR-0010: like the ADR-0009 additions, only when there is something to say
             payload |= {"settled_lot_ids": adv.settled_lot_ids}
         if adv.posted_debt_payments:
@@ -265,6 +305,8 @@ def advance(store: LedgerStore, to_day: int, actor: Actor = Actor.SYSTEM,
                + (f", {len(adv.added_flow_ids)} new scheduled flow(s) recorded" if adv.added_flow_ids else "")
                + (f", {len(fulfilled)} commitment(s) fulfilled (every invoice carrying the accepted terms is settled)"
                   if fulfilled else "")
+               + (f", {len(lapsed)} early-payment commitment(s) ended: the promised payment did not arrive "
+                  f"({', '.join(lapsed)}, now EXPIRED)" if lapsed else "")
                + (f", {len(adv.settled_lot_ids)} funding request(s) landed" if adv.settled_lot_ids else "")
                + (f", {len(adv.posted_debt_payments)} loan payment(s) posted" if adv.posted_debt_payments else "")
                + (f" (funding net {fmt_yuan(adv.lots_net_fen)})"
@@ -275,7 +317,8 @@ def advance(store: LedgerStore, to_day: int, actor: Actor = Actor.SYSTEM,
                                  tier=Tier.TIER_1, effective_day=adv.to_day, message=msg)
         rec = store.append_operation(op_id, ADVANCE_CLOCK_KIND, op_id, canonical_json(payload), canonical_json(result))
         result = result.model_copy(update={"seq": rec.seq, "entry_hash": rec.entry_hash, "prev_hash": rec.prev_hash})
-        return replace(adv, expired_commitment_ids=expired, result=result, fulfilled_commitment_ids=fulfilled)
+        return replace(adv, expired_commitment_ids=expired, result=result, fulfilled_commitment_ids=fulfilled,
+                       lapsed_commitment_ids=lapsed)
 
 
 __all__ = ["ADVANCE_CLOCK_KIND", "ClockAdvance", "advance", "apply_events", "close_days"]
