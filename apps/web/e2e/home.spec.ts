@@ -112,8 +112,8 @@ test("day 34: approving on the approval card runs the cure, shows when the cash 
   await card.getByRole("button", { name: "Approve" }).click();
   await expect(card.getByTestId("approval-result-APR-000001")).toContainText("the cash lands on day 37");
   await expect(card).toContainText("Approved");
-  // The queue does not record the day of a decision, so none is shown (not the simulated day today).
-  await expect(card.getByTestId("approval-decided-APR-000001")).toHaveText("Decided.");
+  // The decision day is the API's `decided_day` (the cure was queued and approved on day 34).
+  await expect(card.getByTestId("approval-decided-APR-000001")).toHaveText("Decided on day 34.");
 
   // Home again: the critical alert is gone, funding in transit says when it lands, and the ledger shows it executed.
   await page.getByRole("navigation").getByRole("link", { name: "Home", exact: true }).first().click();

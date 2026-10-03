@@ -41,7 +41,7 @@ test("trajectory adapter: the position today, then the offer applied", async () 
   expect(view.forward_concession).toMatchObject({ total_display: "¥28,326.92", cap_display: "¥5,000.00", over_cap: true });
   expect(view.forward_concession.parts.map((p) => p.value_display)).toEqual(["¥24,326.92", "¥4,000.00"]);
   expect(view.trajectory.months[0]).toMatchObject({ dscr: { text: "2.00" }, leverage: { text: "1.35" } });
-  // The pro forma 1.92x / 1.72x (extension funded) live in the verdict's own checks, not in the month table.
+  // The pro forma 1.92x / 1.47x (the offer and its committed plan) live in the verdict's own checks, not in the month table.
   expect(verdict.summary).toContain("DSCR_MIN 1.92x");
   expect(view.covenant_limits).toEqual({ min_dscr_display: "1.25×", max_leverage_display: "2.50×" });
   // Integer fen rides along for chart axes only.
@@ -101,8 +101,10 @@ test("approvals adapter: evaluating and the borrower file queue nothing, the cap
 
   const decided = await live.decideApproval(queue[0].id, "APPROVE");
   expect(decided.status).toBe("APPROVED");
-  // The API does not record the day of a decision, so the adapter must not invent one (not the clock's day today).
-  expect(decided.decided_day).toBeNull();
+  // The decision day and the executor's message are the API's own (the clock is on day 0 here).
+  expect(decided.decided_day).toBe(0);
+  expect(decided.result_message).toBeTruthy();
+  expect((await live.getApprovals())[0]).toMatchObject({ status: "APPROVED", decided_day: 0 });
 
   // A second decision is a 409, an unknown id a 404; both carry their status so the page can explain them.
   await expect(live.decideApproval(queue[0].id, "APPROVE")).rejects.toMatchObject({ status: 409 });
