@@ -161,7 +161,7 @@ Numbers are measurements on the commit named, never targets. "Latest `dev`" is `
 | Execution | Concurrency: two-process invariants | 16 of 20 SQLite cases failed on the old store | 20 passed, 10 skipped on SQLite (`tests/concurrency`); PostgreSQL PENDING a URL |
 | Execution | Restart preserves state | No | Yes |
 | Product | Demo path (`scripts/demo_run.py`) | exit 0 | exit 0 (cure queued → approved → lands day 37) |
-| Product | Web e2e mock / live | 29 / 27 | 35 / 30, the last known counts: not re-run at this commit, and the web refresh is in progress (WEB1) |
+| Product | Web e2e mock / live | 29 / 27 | 35 / 33 (mock / live, after the web refresh `2fc5aa9`)|
 
 ## 4. New questions
 
