@@ -1,8 +1,8 @@
 {
  "meta": {
-  "generated_at": "2026-10-02T21:47:14Z",
-  "git_commit": "5305d9a",
-  "git_branch": "docs/audit-closeout",
+  "generated_at": "2026-10-03T02:41:31Z",
+  "git_commit": "1bc96ba",
+  "git_branch": "docs/cash-figures",
   "llm_mode": "cache",
   "suites": [
    "offers",
@@ -32,7 +32,7 @@
    }
   },
   "command": "uv run --project services/api python scripts/evaluate.py",
-  "seconds": 309.8,
+  "seconds": 449.9,
   "not_measured": [
    "E2 “≥25% less handling than a form”: needs timed human operators; not measurable offline.",
    "E2 with a live LLM compiler: this run uses LLM_MODE=cache, so held-out messages (never cached) go to the rules grammar. `scripts/evaluate.py --live` measures the configured Claude/DeepSeek backends (not run here: network).",
@@ -96,8 +96,8 @@
    "suite": "offers",
    "key": "wording_invariance_near_miss",
    "label": "Near-miss pairs → different verdicts",
-   "value": 0.7143,
-   "display": "5/7",
+   "value": 0.5714,
+   "display": "4/7",
    "target": "informational",
    "status": "INFO",
    "note": ""
@@ -106,8 +106,8 @@
    "suite": "offers",
    "key": "verdict_agreement",
    "label": "Verdict agreement with labels (compiler)",
-   "value": 0.98,
-   "display": "49/50 (98%)",
+   "value": 0.9,
+   "display": "45/50 (90%)",
    "target": "informational",
    "status": "INFO",
    "note": ""
@@ -116,8 +116,8 @@
    "suite": "offers",
    "key": "verdict_agreement_form",
    "label": "Verdict agreement with labels (form baseline: labels as input)",
-   "value": 0.98,
-   "display": "49/50 (98%); gap +0%",
+   "value": 0.9,
+   "display": "45/50 (90%); gap +0%",
    "target": "informational",
    "status": "INFO",
    "note": ""
@@ -126,8 +126,8 @@
    "suite": "offers",
    "key": "engine_vs_cap",
    "label": "E2 engine ≠ static cap (form inputs)",
-   "value": 0.5455,
-   "display": "18/33",
+   "value": 0.6667,
+   "display": "22/33",
    "target": "≥ 35% (7/20)",
    "status": "PASS",
    "note": ""
@@ -137,7 +137,7 @@
    "key": "financial_exactness",
    "label": "Financial exactness (golden values, to the fen)",
    "value": 1.0,
-   "display": "59/59 (100.0%)",
+   "display": "67/67 (100.0%)",
    "target": "100%",
    "status": "PASS",
    "note": ""
@@ -147,7 +147,7 @@
    "key": "e10_covenant_capex_exactness",
    "label": "E10 covenant + capex golden values",
    "value": 1.0,
-   "display": "25/25",
+   "display": "27/27",
    "target": "100%",
    "status": "PASS",
    "note": ""
@@ -160,7 +160,7 @@
    "display": "26/26 (100%)",
    "target": "≥ 95%",
    "status": "PASS",
-   "note": ""
+   "note": "brute force incomplete on 2"
   },
   {
    "suite": "funding",
@@ -176,8 +176,8 @@
    "suite": "funding",
    "key": "router_saving_total",
    "label": "Total saving vs 'line first' (where both admissible)",
-   "value": 372548,
-   "display": "¥3,725.48 over 21 scenarios (median ¥0.00)",
+   "value": 364270,
+   "display": "¥3,642.70 over 21 scenarios (median ¥0.00)",
    "target": "informational",
    "status": "INFO",
    "note": ""
@@ -197,10 +197,10 @@
    "key": "router_latency",
    "label": "Router latency p50 / p95",
    "value": {
-    "p50": 83.31,
-    "p95": 262.24
+    "p50": 133.26,
+    "p95": 381.21
    },
-   "display": "83 / 262 ms",
+   "display": "133 / 381 ms",
    "target": "informational",
    "status": "INFO",
    "note": ""
@@ -209,8 +209,8 @@
    "suite": "covenants",
    "key": "verifier_slowest_call",
    "label": "Slowest verifier.evaluate on these states (plans=all)",
-   "value": 552.5,
-   "display": "0.6 s (reserve_unsafe_1fen)",
+   "value": 878.6,
+   "display": "0.9 s (reserve_unsafe_1fen)",
    "target": "informational",
    "status": "INFO",
    "note": ""
@@ -299,8 +299,8 @@
    "suite": "security",
    "key": "security_detection_rate",
    "label": "Attacks detected (SecurityEvent or refusal code)",
-   "value": 0.9754,
-   "display": "97.5%",
+   "value": 0.9836,
+   "display": "98.4%",
    "target": "informational",
    "status": "INFO",
    "note": "security-event rate 72.1%"
@@ -340,7 +340,7 @@
    "key": "task_completion_rate",
    "label": "Task completion rate (scripted /nl tasks)",
    "value": 1.0,
-   "display": "46/46 (100%)",
+   "display": "49/49 (100%)",
    "target": "≥ 95%",
    "status": "PASS",
    "note": ""
@@ -350,10 +350,10 @@
    "key": "turn_latency",
    "label": "/nl turn latency p50 / p95",
    "value": {
-    "p50": 7.8,
-    "p95": 812.4
+    "p50": 7.3,
+    "p95": 1648.8
    },
-   "display": "8 / 812 ms (85 turns)",
+   "display": "7 / 1649 ms (87 turns)",
    "target": "informational",
    "status": "INFO",
    "note": ""
@@ -363,10 +363,10 @@
    "key": "scene1_latency",
    "label": "E2E latency, golden Scene 1 (compile → evaluate → negotiate → execute)",
    "value": {
-    "p50": 721.3,
-    "p95": 835.8
+    "p50": 1580.5,
+    "p95": 1623.9
    },
-   "display": "p50 721 ms, p95 836 ms over 5 cold runs",
+   "display": "p50 1580 ms, p95 1624 ms over 5 cold runs",
    "target": "completes",
    "status": "PASS",
    "note": ""
@@ -417,14 +417,14 @@
    "gate": "E2",
    "what": "Compiler beats a form; engine differs from a cap",
    "criterion": "0 silent material errors; engine ≠ cap on ≥ 7/20 (handling time not measured)",
-   "evidence": "E2 silent material errors (incl. booked on must-abstain): 0; E2 engine ≠ static cap (form inputs): 18/33",
+   "evidence": "E2 silent material errors (incl. booked on must-abstain): 0; E2 engine ≠ static cap (form inputs): 22/33",
    "status": "PASS"
   },
   {
    "gate": "E3",
    "what": "Engine correctness",
    "criterion": "every golden case exact",
-   "evidence": "Financial exactness (golden values, to the fen): 59/59 (100.0%)",
+   "evidence": "Financial exactness (golden values, to the fen): 67/67 (100.0%)",
    "status": "PASS"
   },
   {
@@ -445,7 +445,7 @@
    "gate": "E7",
    "what": "Harness compatibility",
    "criterion": "/nl → plan → verdict → operation log; injected requests refused",
-   "evidence": "Task completion rate (scripted /nl tasks): 46/46 (100%); Attacks with any harm (money, facility, disclosure, integrity): 0/122",
+   "evidence": "Task completion rate (scripted /nl tasks): 49/49 (100%); Attacks with any harm (money, facility, disclosure, integrity): 0/122",
    "status": "PASS"
   },
   {
@@ -459,11 +459,185 @@
    "gate": "E10",
    "what": "Covenant and capex engine",
    "criterion": "all exact; every breach reported with its month",
-   "evidence": "E10 covenant + capex golden values: 25/25; Covenant/mandate boundaries (exact, ±1 fen/bp/day): 20/20; DSCR/leverage breaches reported with their month: 2/2",
+   "evidence": "E10 covenant + capex golden values: 27/27; Covenant/mandate boundaries (exact, ±1 fen/bp/day): 20/20; DSCR/leverage breaches reported with their month: 2/2",
    "status": "PASS"
   }
  ],
  "failures": [
+  {
+   "suite": "offers",
+   "id": "H09a_two_invoices_60",
+   "what": "H09a_two_invoices_60 [pair] 'For the next two invoices, give us 60 days instead of the usual 45.': outcome REJECT != NEEDS_OWNER_APPROVAL | FORM baseline outcome REJECT != label NEEDS_OWNER_APPROVAL (['RESERVE_BREACH'])",
+   "repro": "uv run --project services/api python scripts/evaluate.py --suite offers --only H09a_two_invoices_60",
+   "detail": {
+    "id": "H09a_two_invoices_60",
+    "kind": "pair",
+    "lang": "en",
+    "counterparty_id": "BUYER-1",
+    "text": "For the next two invoices, give us 60 days instead of the usual 45.",
+    "compiler": "rules-v1",
+    "compile_status": "COMPILED",
+    "expect_abstain": false,
+    "abstained": false,
+    "expect_outcome": "NEEDS_OWNER_APPROVAL",
+    "labelled": true,
+    "outcome": "REJECT",
+    "outcome_ok": false,
+    "expect_codes": [],
+    "codes": [
+     "RESERVE_BREACH"
+    ],
+    "codes_ok": true,
+    "booked": [
+     {
+      "type": "TERMS_EXTENSION",
+      "rate_bp": null,
+      "base_amount_fen": null,
+      "amount_fen": null,
+      "days_delta": 15,
+      "duration": "RECURRING_BOUNDED",
+      "invoices": 2,
+      "contingency": "FIRM"
+     }
+    ],
+    "compiled": [
+     {
+      "type": "TERMS_EXTENSION",
+      "rate_bp": null,
+      "target_terms_days": 60,
+      "days_delta": 15,
+      "base_amount_fen": null,
+      "contingency": "FIRM",
+      "duration": "RECURRING_BOUNDED",
+      "invoices": 2
+     }
+    ],
+    "abstentions": [],
+    "material_errors": [],
+    "form_outcome": "REJECT",
+    "form_ok": false,
+    "form_codes": [
+     "RESERVE_BREACH"
+    ],
+    "compile_ms": 2.4
+   }
+  },
+  {
+   "suite": "offers",
+   "id": "H09b_two_invoices_60_reworded",
+   "what": "H09b_two_invoices_60_reworded [pair] \"Could the next 2 invoices go on 60-day terms? At the moment they're on 45.\": outcome REJECT != NEEDS_OWNER_APPROVAL | FORM baseline outcome REJECT != label NEEDS_OWNER_APPROVAL (['RESERVE_BREACH'])",
+   "repro": "uv run --project services/api python scripts/evaluate.py --suite offers --only H09b_two_invoices_60_reworded",
+   "detail": {
+    "id": "H09b_two_invoices_60_reworded",
+    "kind": "pair",
+    "lang": "en",
+    "counterparty_id": "BUYER-1",
+    "text": "Could the next 2 invoices go on 60-day terms? At the moment they're on 45.",
+    "compiler": "rules-v1",
+    "compile_status": "COMPILED",
+    "expect_abstain": false,
+    "abstained": false,
+    "expect_outcome": "NEEDS_OWNER_APPROVAL",
+    "labelled": true,
+    "outcome": "REJECT",
+    "outcome_ok": false,
+    "expect_codes": [],
+    "codes": [
+     "RESERVE_BREACH"
+    ],
+    "codes_ok": true,
+    "booked": [
+     {
+      "type": "TERMS_EXTENSION",
+      "rate_bp": null,
+      "base_amount_fen": null,
+      "amount_fen": null,
+      "days_delta": 15,
+      "duration": "RECURRING_BOUNDED",
+      "invoices": 2,
+      "contingency": "FIRM"
+     }
+    ],
+    "compiled": [
+     {
+      "type": "TERMS_EXTENSION",
+      "rate_bp": null,
+      "target_terms_days": 60,
+      "days_delta": null,
+      "base_amount_fen": null,
+      "contingency": "FIRM",
+      "duration": "RECURRING_BOUNDED",
+      "invoices": 2
+     }
+    ],
+    "abstentions": [],
+    "material_errors": [],
+    "form_outcome": "REJECT",
+    "form_ok": false,
+    "form_codes": [
+     "RESERVE_BREACH"
+    ],
+    "compile_ms": 2.5
+   }
+  },
+  {
+   "suite": "offers",
+   "id": "H12a_next_invoice_60",
+   "what": "H12a_next_invoice_60 [near_miss] 'Give us 60 days on the next invoice instead of 45.': outcome REJECT != NEEDS_OWNER_APPROVAL | FORM baseline outcome REJECT != label NEEDS_OWNER_APPROVAL (['RESERVE_BREACH'])",
+   "repro": "uv run --project services/api python scripts/evaluate.py --suite offers --only H12a_next_invoice_60",
+   "detail": {
+    "id": "H12a_next_invoice_60",
+    "kind": "near_miss",
+    "lang": "en",
+    "counterparty_id": "BUYER-1",
+    "text": "Give us 60 days on the next invoice instead of 45.",
+    "compiler": "rules-v1",
+    "compile_status": "COMPILED",
+    "expect_abstain": false,
+    "abstained": false,
+    "expect_outcome": "NEEDS_OWNER_APPROVAL",
+    "labelled": true,
+    "outcome": "REJECT",
+    "outcome_ok": false,
+    "expect_codes": [],
+    "codes": [
+     "RESERVE_BREACH"
+    ],
+    "codes_ok": true,
+    "booked": [
+     {
+      "type": "TERMS_EXTENSION",
+      "rate_bp": null,
+      "base_amount_fen": null,
+      "amount_fen": null,
+      "days_delta": 15,
+      "duration": "RECURRING_BOUNDED",
+      "invoices": 1,
+      "contingency": "FIRM"
+     }
+    ],
+    "compiled": [
+     {
+      "type": "TERMS_EXTENSION",
+      "rate_bp": null,
+      "target_terms_days": 60,
+      "days_delta": 15,
+      "base_amount_fen": null,
+      "contingency": "FIRM",
+      "duration": "RECURRING_BOUNDED",
+      "invoices": 1
+     }
+    ],
+    "abstentions": [],
+    "material_errors": [],
+    "form_outcome": "REJECT",
+    "form_ok": false,
+    "form_codes": [
+     "RESERVE_BREACH"
+    ],
+    "compile_ms": 2.0
+   }
+  },
   {
    "suite": "offers",
    "id": "H17_conflict_amount_zh",
@@ -638,7 +812,85 @@
      "DISCOUNT_ABOVE_BREAK_EVEN",
      "EARLY_PAY_DEARER_THAN_PLAN"
     ],
-    "compile_ms": 3.6
+    "compile_ms": 3.9
+   }
+  },
+  {
+   "suite": "offers",
+   "id": "H39_price_up_for_terms",
+   "what": "H39_price_up_for_terms [plain] 'Our price goes up 0.5% on future invoices if you give us 60-day terms.': outcome REJECT != NEEDS_OWNER_APPROVAL | FORM baseline outcome REJECT != label NEEDS_OWNER_APPROVAL (['RESERVE_BREACH'])",
+   "repro": "uv run --project services/api python scripts/evaluate.py --suite offers --only H39_price_up_for_terms",
+   "detail": {
+    "id": "H39_price_up_for_terms",
+    "kind": "plain",
+    "lang": "en",
+    "counterparty_id": "BUYER-1",
+    "text": "Our price goes up 0.5% on future invoices if you give us 60-day terms.",
+    "compiler": "rules-v1",
+    "compile_status": "COMPILED",
+    "expect_abstain": false,
+    "abstained": false,
+    "expect_outcome": "NEEDS_OWNER_APPROVAL",
+    "labelled": true,
+    "outcome": "REJECT",
+    "outcome_ok": false,
+    "expect_codes": [],
+    "codes": [
+     "RESERVE_BREACH"
+    ],
+    "codes_ok": true,
+    "booked": [
+     {
+      "type": "PRICE_ADJUSTMENT",
+      "rate_bp": 50,
+      "base_amount_fen": 42000000,
+      "amount_fen": null,
+      "days_delta": null,
+      "duration": "RECURRING_PERPETUAL",
+      "invoices": null,
+      "contingency": "FIRM"
+     },
+     {
+      "type": "TERMS_EXTENSION",
+      "rate_bp": null,
+      "base_amount_fen": null,
+      "amount_fen": null,
+      "days_delta": 15,
+      "duration": "RECURRING_PERPETUAL",
+      "invoices": null,
+      "contingency": "FIRM"
+     }
+    ],
+    "compiled": [
+     {
+      "type": "PRICE_ADJUSTMENT",
+      "rate_bp": 50,
+      "target_terms_days": null,
+      "days_delta": null,
+      "base_amount_fen": null,
+      "contingency": "FIRM",
+      "duration": "RECURRING_PERPETUAL",
+      "invoices": null
+     },
+     {
+      "type": "TERMS_EXTENSION",
+      "rate_bp": null,
+      "target_terms_days": 60,
+      "days_delta": null,
+      "base_amount_fen": null,
+      "contingency": "FIRM",
+      "duration": "RECURRING_PERPETUAL",
+      "invoices": null
+     }
+    ],
+    "abstentions": [],
+    "material_errors": [],
+    "form_outcome": "REJECT",
+    "form_ok": false,
+    "form_codes": [
+     "RESERVE_BREACH"
+    ],
+    "compile_ms": 2.6
    }
   },
   {
@@ -672,6 +924,21 @@
    }
   },
   {
+   "suite": "offers",
+   "id": "pair:H12a_next_invoice_60~H12b_every_invoice_60",
+   "what": "different pair H12a_next_invoice_60 (REJECT) vs H12b_every_invoice_60 (REJECT)",
+   "repro": "uv run --project services/api python scripts/evaluate.py --suite offers --only H12a_next_invoice_60,H12b_every_invoice_60",
+   "detail": {
+    "a": "H12a_next_invoice_60",
+    "b": "H12b_every_invoice_60",
+    "relation": "different",
+    "ok": false,
+    "outcome_a": "REJECT",
+    "outcome_b": "REJECT",
+    "same_terms": false
+   }
+  },
+  {
    "suite": "intent",
    "id": "I08",
    "what": "I08 '跟佛山那边还个价。': intent OUT_OF_SCOPE != NEGOTIATE (source fallback)",
@@ -697,7 +964,7 @@
     },
     "executed": [],
     "reply": "这个我做不了。我可以评估买家报价、发送反报价谈判、提前收款、为资金缺口融资、偿还额度、查看现金状况、解释结论、做假设分析、比较融资方案、核对回款、查看契约指标、评估设备购置、准备借款人资料，以及批准或驳回待审批操作。",
-    "latency_ms": 6.9
+    "latency_ms": 6.7
    }
   },
   {
@@ -749,7 +1016,7 @@
     },
     "executed": [],
     "reply": "Which buyer is this for? (1) Foshan Home Retail Co. (BUYER-1) (2) Dongguan Office Supplies Ltd. (BUYER-2)",
-    "latency_ms": 2.8
+    "latency_ms": 2.5
    }
   },
   {
@@ -813,7 +1080,7 @@
  ],
  "suites": {
   "offers": {
-   "seconds": 26.02,
+   "seconds": 43.24,
    "error": null,
    "metrics": [
     {
@@ -869,8 +1136,8 @@
     {
      "key": "wording_invariance_near_miss",
      "label": "Near-miss pairs → different verdicts",
-     "value": 0.7143,
-     "display": "5/7",
+     "value": 0.5714,
+     "display": "4/7",
      "target": "informational",
      "passed": null,
      "suite": "offers",
@@ -879,8 +1146,8 @@
     {
      "key": "verdict_agreement",
      "label": "Verdict agreement with labels (compiler)",
-     "value": 0.98,
-     "display": "49/50 (98%)",
+     "value": 0.9,
+     "display": "45/50 (90%)",
      "target": "informational",
      "passed": null,
      "suite": "offers",
@@ -889,8 +1156,8 @@
     {
      "key": "verdict_agreement_form",
      "label": "Verdict agreement with labels (form baseline: labels as input)",
-     "value": 0.98,
-     "display": "49/50 (98%); gap +0%",
+     "value": 0.9,
+     "display": "45/50 (90%); gap +0%",
      "target": "informational",
      "passed": null,
      "suite": "offers",
@@ -899,8 +1166,8 @@
     {
      "key": "engine_vs_cap",
      "label": "E2 engine ≠ static cap (form inputs)",
-     "value": 0.5455,
-     "display": "18/33",
+     "value": 0.6667,
+     "display": "22/33",
      "target": "≥ 35% (7/20)",
      "passed": true,
      "suite": "offers",
@@ -1008,7 +1275,7 @@
        "DISCOUNT_ABOVE_BREAK_EVEN",
        "EARLY_PAY_DEARER_THAN_PLAN"
       ],
-      "compile_ms": 6.6
+      "compile_ms": 6.8
      },
      {
       "id": "H02_ex01_paraphrase_zh",
@@ -1109,7 +1376,7 @@
        "DISCOUNT_ABOVE_BREAK_EVEN",
        "EARLY_PAY_DEARER_THAN_PLAN"
       ],
-      "compile_ms": 3.2
+      "compile_ms": 3.4
      },
      {
       "id": "H03_ex02_paraphrase_zh",
@@ -1275,7 +1542,7 @@
        "DISCOUNT_ABOVE_BREAK_EVEN",
        "EARLY_PAY_DEARER_THAN_PLAN"
       ],
-      "compile_ms": 2.3
+      "compile_ms": 2.4
      },
      {
       "id": "H05b_early_1pct_reworded",
@@ -1329,7 +1596,7 @@
        "DISCOUNT_ABOVE_BREAK_EVEN",
        "EARLY_PAY_DEARER_THAN_PLAN"
       ],
-      "compile_ms": 2.4
+      "compile_ms": 2.5
      },
      {
       "id": "H06_early_1pct_zh",
@@ -1383,7 +1650,7 @@
        "DISCOUNT_ABOVE_BREAK_EVEN",
        "EARLY_PAY_DEARER_THAN_PLAN"
       ],
-      "compile_ms": 1.4
+      "compile_ms": 1.7
      },
      {
       "id": "H07a_net60_all_en",
@@ -1440,7 +1707,7 @@
        "AGG_CONCESSION_EXCEEDED",
        "RESERVE_BREACH"
       ],
-      "compile_ms": 2.0
+      "compile_ms": 2.1
      },
      {
       "id": "H07b_net60_all_zh",
@@ -1497,7 +1764,7 @@
        "AGG_CONCESSION_EXCEEDED",
        "RESERVE_BREACH"
       ],
-      "compile_ms": 1.0
+      "compile_ms": 1.1
      },
      {
       "id": "H08a_rebate_half_pct",
@@ -1593,7 +1860,7 @@
       "form_outcome": "NEEDS_OWNER_APPROVAL",
       "form_ok": true,
       "form_codes": [],
-      "compile_ms": 2.5
+      "compile_ms": 2.8
      },
      {
       "id": "H09a_two_invoices_60",
@@ -1607,8 +1874,8 @@
       "abstained": false,
       "expect_outcome": "NEEDS_OWNER_APPROVAL",
       "labelled": true,
-      "outcome": "NEEDS_OWNER_APPROVAL",
-      "outcome_ok": true,
+      "outcome": "REJECT",
+      "outcome_ok": false,
       "expect_codes": [],
       "codes": [
        "RESERVE_BREACH"
@@ -1640,12 +1907,12 @@
       ],
       "abstentions": [],
       "material_errors": [],
-      "form_outcome": "NEEDS_OWNER_APPROVAL",
-      "form_ok": true,
+      "form_outcome": "REJECT",
+      "form_ok": false,
       "form_codes": [
        "RESERVE_BREACH"
       ],
-      "compile_ms": 2.5
+      "compile_ms": 2.4
      },
      {
       "id": "H09b_two_invoices_60_reworded",
@@ -1659,8 +1926,8 @@
       "abstained": false,
       "expect_outcome": "NEEDS_OWNER_APPROVAL",
       "labelled": true,
-      "outcome": "NEEDS_OWNER_APPROVAL",
-      "outcome_ok": true,
+      "outcome": "REJECT",
+      "outcome_ok": false,
       "expect_codes": [],
       "codes": [
        "RESERVE_BREACH"
@@ -1692,12 +1959,12 @@
       ],
       "abstentions": [],
       "material_errors": [],
-      "form_outcome": "NEEDS_OWNER_APPROVAL",
-      "form_ok": true,
+      "form_outcome": "REJECT",
+      "form_ok": false,
       "form_codes": [
        "RESERVE_BREACH"
       ],
-      "compile_ms": 2.4
+      "compile_ms": 2.5
      },
      {
       "id": "H10a_today_1pct",
@@ -1751,7 +2018,7 @@
        "DISCOUNT_ABOVE_BREAK_EVEN",
        "EARLY_PAY_DEARER_THAN_PLAN"
       ],
-      "compile_ms": 2.4
+      "compile_ms": 2.5
      },
      {
       "id": "H10b_today_1_6pct",
@@ -1937,8 +2204,8 @@
       "abstained": false,
       "expect_outcome": "NEEDS_OWNER_APPROVAL",
       "labelled": true,
-      "outcome": "NEEDS_OWNER_APPROVAL",
-      "outcome_ok": true,
+      "outcome": "REJECT",
+      "outcome_ok": false,
       "expect_codes": [],
       "codes": [
        "RESERVE_BREACH"
@@ -1970,12 +2237,12 @@
       ],
       "abstentions": [],
       "material_errors": [],
-      "form_outcome": "NEEDS_OWNER_APPROVAL",
-      "form_ok": true,
+      "form_outcome": "REJECT",
+      "form_ok": false,
       "form_codes": [
        "RESERVE_BREACH"
       ],
-      "compile_ms": 1.9
+      "compile_ms": 2.0
      },
      {
       "id": "H12b_every_invoice_60",
@@ -2031,7 +2298,7 @@
        "AGG_CONCESSION_EXCEEDED",
        "RESERVE_BREACH"
       ],
-      "compile_ms": 1.7
+      "compile_ms": 1.8
      },
      {
       "id": "H13a_rebate_0_5",
@@ -2079,7 +2346,7 @@
       "form_outcome": "NEEDS_OWNER_APPROVAL",
       "form_ok": true,
       "form_codes": [],
-      "compile_ms": 1.7
+      "compile_ms": 1.8
      },
      {
       "id": "H13b_rebate_1_5",
@@ -2133,7 +2400,7 @@
       "form_codes": [
        "AGG_CONCESSION_EXCEEDED"
       ],
-      "compile_ms": 1.7
+      "compile_ms": 1.8
      },
      {
       "id": "H14a_rebate_0_8_zh",
@@ -2181,7 +2448,7 @@
       "form_outcome": "NEEDS_OWNER_APPROVAL",
       "form_ok": true,
       "form_codes": [],
-      "compile_ms": 1.0
+      "compile_ms": 1.1
      },
      {
       "id": "H14b_rebate_2_zh",
@@ -2283,7 +2550,7 @@
       "form_outcome": "NEEDS_OWNER_APPROVAL",
       "form_ok": true,
       "form_codes": [],
-      "compile_ms": 1.7
+      "compile_ms": 1.9
      },
      {
       "id": "H15b_lengthen_to_60",
@@ -2340,7 +2607,7 @@
        "AGG_CONCESSION_EXCEEDED",
        "RESERVE_BREACH"
       ],
-      "compile_ms": 1.7
+      "compile_ms": 1.8
      },
      {
       "id": "H16_conflict_rate",
@@ -2393,7 +2660,7 @@
       "form_outcome": "NO_VERDICT",
       "form_ok": true,
       "form_codes": [],
-      "compile_ms": 5.1
+      "compile_ms": 5.0
      },
      {
       "id": "H17_conflict_amount_zh",
@@ -2584,7 +2851,7 @@
       "form_outcome": "NO_VERDICT",
       "form_ok": true,
       "form_codes": [],
-      "compile_ms": 1.2
+      "compile_ms": 1.3
      },
      {
       "id": "H22_usual_discount",
@@ -2614,7 +2881,7 @@
       "form_outcome": "NO_VERDICT",
       "form_ok": true,
       "form_codes": [],
-      "compile_ms": 1.0
+      "compile_ms": 1.2
      },
      {
       "id": "H23_one_pct_off_what",
@@ -2712,7 +2979,7 @@
       "form_outcome": "NO_VERDICT",
       "form_ok": true,
       "form_codes": [],
-      "compile_ms": 0.5
+      "compile_ms": 0.4
      },
      {
       "id": "H26_if_discount_right",
@@ -2772,7 +3039,7 @@
       "form_outcome": "NO_VERDICT",
       "form_ok": true,
       "form_codes": [],
-      "compile_ms": 1.7
+      "compile_ms": 1.8
      },
      {
       "id": "H28_buyer2_no_invoice",
@@ -3019,7 +3286,7 @@
       "form_codes": [
        "UNKNOWN_COUNTERPARTY"
       ],
-      "compile_ms": 3.1
+      "compile_ms": 3.4
      },
      {
       "id": "H34_words_en",
@@ -3073,7 +3340,7 @@
        "DISCOUNT_ABOVE_BREAK_EVEN",
        "EARLY_PAY_DEARER_THAN_PLAN"
       ],
-      "compile_ms": 3.5
+      "compile_ms": 3.4
      },
      {
       "id": "H35_words_zh",
@@ -3127,7 +3394,7 @@
        "DISCOUNT_ABOVE_BREAK_EVEN",
        "EARLY_PAY_DEARER_THAN_PLAN"
       ],
-      "compile_ms": 1.3
+      "compile_ms": 1.4
      },
      {
       "id": "H36_buyer2_rebate_ok",
@@ -3175,7 +3442,7 @@
       "form_outcome": "NEEDS_OWNER_APPROVAL",
       "form_ok": true,
       "form_codes": [],
-      "compile_ms": 2.1
+      "compile_ms": 2.2
      },
      {
       "id": "H37_buyer2_rebate_over_cap",
@@ -3229,7 +3496,7 @@
       "form_codes": [
        "AGG_CONCESSION_EXCEEDED"
       ],
-      "compile_ms": 2.3
+      "compile_ms": 2.7
      },
      {
       "id": "H38_early_plus_small_rebate",
@@ -3303,7 +3570,7 @@
        "DISCOUNT_ABOVE_BREAK_EVEN",
        "EARLY_PAY_DEARER_THAN_PLAN"
       ],
-      "compile_ms": 3.6
+      "compile_ms": 3.9
      },
      {
       "id": "H39_price_up_for_terms",
@@ -3317,8 +3584,8 @@
       "abstained": false,
       "expect_outcome": "NEEDS_OWNER_APPROVAL",
       "labelled": true,
-      "outcome": "NEEDS_OWNER_APPROVAL",
-      "outcome_ok": true,
+      "outcome": "REJECT",
+      "outcome_ok": false,
       "expect_codes": [],
       "codes": [
        "RESERVE_BREACH"
@@ -3370,12 +3637,12 @@
       ],
       "abstentions": [],
       "material_errors": [],
-      "form_outcome": "NEEDS_OWNER_APPROVAL",
-      "form_ok": true,
+      "form_outcome": "REJECT",
+      "form_ok": false,
       "form_codes": [
        "RESERVE_BREACH"
       ],
-      "compile_ms": 2.4
+      "compile_ms": 2.6
      },
      {
       "id": "H40_weekly_run_30_days",
@@ -3443,7 +3710,7 @@
       "form_outcome": "NEEDS_OWNER_APPROVAL",
       "form_ok": true,
       "form_codes": [],
-      "compile_ms": 2.6
+      "compile_ms": 2.7
      }
     ],
     "pairs": [
@@ -3542,8 +3809,8 @@
       "b": "H09b_two_invoices_60_reworded",
       "relation": "same",
       "ok": true,
-      "outcome_a": "NEEDS_OWNER_APPROVAL",
-      "outcome_b": "NEEDS_OWNER_APPROVAL",
+      "outcome_a": "REJECT",
+      "outcome_b": "REJECT",
       "same_terms": true
      },
      {
@@ -3568,8 +3835,8 @@
       "a": "H12a_next_invoice_60",
       "b": "H12b_every_invoice_60",
       "relation": "different",
-      "ok": true,
-      "outcome_a": "NEEDS_OWNER_APPROVAL",
+      "ok": false,
+      "outcome_a": "REJECT",
       "outcome_b": "REJECT",
       "same_terms": false
      },
@@ -3614,7 +3881,7 @@
     "backends": {
      "rules-v1": 50
     },
-    "source": "C:\\Users\\ian\\Documents\\Projects\\smu2sz\\.claude\\worktrees\\agent-a7176070c227a2244\\fixtures\\heldout\\offers.yaml",
+    "source": "C:\\Users\\ian\\Documents\\Projects\\smu2sz\\.claude\\worktrees\\agent-adfa8fa6fa5bee193\\fixtures\\heldout\\offers.yaml",
     "counts": {
      "items": 50,
      "must_abstain": 14,
@@ -3624,20 +3891,20 @@
      "zh": 11
     },
     "compile_ms": {
-     "p50": 1.95,
-     "p95": 3.69
+     "p50": 2.01,
+     "p95": 3.86
     }
    }
   },
   "financial": {
-   "seconds": 0.69,
+   "seconds": 1.53,
    "error": null,
    "metrics": [
     {
      "key": "financial_exactness",
      "label": "Financial exactness (golden values, to the fen)",
      "value": 1.0,
-     "display": "59/59 (100.0%)",
+     "display": "67/67 (100.0%)",
      "target": "100%",
      "passed": true,
      "suite": "financial",
@@ -3647,7 +3914,7 @@
      "key": "e10_covenant_capex_exactness",
      "label": "E10 covenant + capex golden values",
      "value": 1.0,
-     "display": "25/25",
+     "display": "27/27",
      "target": "100%",
      "passed": true,
      "suite": "financial",
@@ -3818,6 +4085,13 @@
       "exact": true
      },
      {
+      "key": "capex.selected",
+      "golden": "lease_48m",
+      "computed": "lease_48m",
+      "source": "capex.evaluate_capex().selected_id",
+      "exact": true
+     },
+     {
       "key": "cash_day20",
       "golden": 35496000,
       "computed": 35496000,
@@ -3826,16 +4100,23 @@
      },
      {
       "key": "cash_day47_45d_terms",
-      "golden": 67496000,
-      "computed": 67496000,
+      "golden": 62996000,
+      "computed": 62996000,
       "source": "financial.project(EX01 without the extension) day 47",
       "exact": true
      },
      {
       "key": "cash_day47_60d_terms",
-      "golden": 25496000,
-      "computed": 25496000,
+      "golden": 20996000,
+      "computed": 20996000,
       "source": "verifier EX01 trajectory day 47",
+      "exact": true
+     },
+     {
+      "key": "cash_day60_60d_terms",
+      "golden": 16496000,
+      "computed": 16496000,
+      "source": "verifier EX01 trajectory day 60",
       "exact": true
      },
      {
@@ -3847,15 +4128,22 @@
      },
      {
       "key": "counter_a_discount",
-      "golden": 180115,
-      "computed": 180115,
+      "golden": 218620,
+      "computed": 218620,
       "source": "financial.project(Option A).discounts_posted_fen",
       "exact": true
      },
      {
+      "key": "counter_a_face",
+      "golden": 25720000,
+      "computed": 25720000,
+      "source": "verifier EX01 Option A early-settlement face",
+      "exact": true
+     },
+     {
       "key": "counter_a_total",
-      "golden": 264224,
-      "computed": 264224,
+      "golden": 302777,
+      "computed": 302777,
       "source": "verifier EX01 Option A supplier_cost_fen",
       "exact": true
      },
@@ -3863,21 +4151,45 @@
       "key": "counter_b_net_12m",
       "golden": -24308,
       "computed": -24308,
-      "source": "financial.value_concessions(Option B): extension + price adjustment, unfloored",
+      "source": "financial.value_concessions(+15 days and 0.45%): extension + price adjustment, unfloored",
       "exact": true
      },
      {
       "key": "counter_b_price_adj_per_invoice",
       "golden": 189000,
       "computed": 189000,
-      "source": "financial.value_concessions(Option B price adjustment).per_invoice_fen",
+      "source": "financial.value_concessions(60-day package's 0.45% price adjustment).per_invoice_fen",
       "exact": true
      },
      {
       "key": "counter_b_price_gain_12m",
       "golden": -2457000,
       "computed": -2457000,
-      "source": "financial.value_concessions(Option B price adjustment): the same 13 invoices as the extension",
+      "source": "financial.value_concessions(60-day package's price adjustment): the same 13 invoices as the extension",
+      "exact": true
+     },
+     {
+      "key": "debt_payments_to_day120",
+      "golden": [
+       30,
+       60,
+       90,
+       120
+      ],
+      "computed": [
+       30,
+       60,
+       90,
+       120
+      ],
+      "source": "financial.project() days with D-EQUIP events",
+      "exact": true
+     },
+     {
+      "key": "debt_service_day30",
+      "golden": 4500000,
+      "computed": 4500000,
+      "source": "financial.project() day 30 D-EQUIP events",
       "exact": true
      },
      {
@@ -3896,8 +4208,8 @@
      },
      {
       "key": "example2_line_plus_partial_1_5pct",
-      "golden": 403961,
-      "computed": 403961,
+      "golden": 472489,
+      "computed": 472489,
       "source": "verifier EX02 comparison line_partial_early_pay",
       "exact": true
      },
@@ -3973,8 +4285,8 @@
      },
      {
       "key": "funding_need_before_day_32",
-      "golden": 36000000,
-      "computed": 36000000,
+      "golden": 40500000,
+      "computed": 40500000,
       "source": "funding.plan().need_fen",
       "exact": true
      },
@@ -3993,9 +4305,9 @@
       "exact": true
      },
      {
-      "key": "if_cost_210k_30d",
-      "golden": 187130,
-      "computed": 187130,
+      "key": "if_cost_plan_advance",
+      "golden": 227229,
+      "computed": 227229,
       "source": "funding.plan().costs[FAC-IF]",
       "exact": true
      },
@@ -4014,10 +4326,24 @@
       "exact": true
      },
      {
+      "key": "leverage_month1_line_drawn",
+      "golden": "1.49",
+      "computed": "1.49",
+      "source": "financial.project(line drawn) month 1 leverage",
+      "exact": true
+     },
+     {
       "key": "line_interest_150k_32d",
       "golden": 84164,
       "computed": 84164,
       "source": "funding.plan().costs[FAC-LINE]",
+      "exact": true
+     },
+     {
+      "key": "plan_advance",
+      "golden": 25500000,
+      "computed": 25500000,
+      "source": "funding.plan() FINANCE_INVOICE amount",
       "exact": true
      },
      {
@@ -4029,43 +4355,50 @@
      },
      {
       "key": "reserve_cure_cost_if",
-      "golden": 80270,
-      "computed": 80270,
+      "golden": 240667,
+      "computed": 240667,
       "source": "verifier EX01 RESERVE_BREACH cure_cost_fen",
       "exact": true
      },
      {
       "key": "reserve_shortfall_day47",
-      "golden": 4504000,
-      "computed": 4504000,
+      "golden": 9004000,
+      "computed": 9004000,
       "source": "verifier EX01 RESERVE_BREACH shortfall",
       "exact": true
      },
      {
+      "key": "reserve_shortfall_max",
+      "golden": 13504000,
+      "computed": 13504000,
+      "source": "verifier EX01 RESERVE_BREACH max_shortfall",
+      "exact": true
+     },
+     {
       "key": "v1_optimum_total",
-      "golden": 339225,
-      "computed": 339225,
+      "golden": 393881,
+      "computed": 393881,
       "source": "funding.compare() line_partial_early_pay",
       "exact": true
      },
      {
       "key": "v1_partial_discount",
-      "golden": 255061,
-      "computed": 255061,
+      "golden": 309717,
+      "computed": 309717,
       "source": "financial.project(early-pay face).discounts_posted_fen",
       "exact": true
      },
      {
       "key": "v1_partial_face",
-      "golden": 21255061,
-      "computed": 21255061,
+      "golden": 25809717,
+      "computed": 25809717,
       "source": "funding.compare() early-pay face",
       "exact": true
      },
      {
       "key": "v2_optimum_total",
-      "golden": 271294,
-      "computed": 271294,
+      "golden": 311393,
+      "computed": 311393,
       "source": "funding.plan().total_cost_fen",
       "exact": true
      }
@@ -4074,7 +4407,7 @@
    }
   },
   "funding": {
-   "seconds": 261.02,
+   "seconds": 369.06,
    "error": null,
    "metrics": [
     {
@@ -4085,7 +4418,7 @@
      "target": "≥ 95%",
      "passed": true,
      "suite": "funding",
-     "note": ""
+     "note": "brute force incomplete on 2"
     },
     {
      "key": "router_beats_line_first",
@@ -4100,8 +4433,8 @@
     {
      "key": "router_saving_total",
      "label": "Total saving vs 'line first' (where both admissible)",
-     "value": 372548,
-     "display": "¥3,725.48 over 21 scenarios (median ¥0.00)",
+     "value": 364270,
+     "display": "¥3,642.70 over 21 scenarios (median ¥0.00)",
      "target": "informational",
      "passed": null,
      "suite": "funding",
@@ -4121,10 +4454,10 @@
      "key": "router_latency",
      "label": "Router latency p50 / p95",
      "value": {
-      "p50": 83.31,
-      "p95": 262.24
+      "p50": 133.26,
+      "p95": 381.21
      },
-     "display": "83 / 262 ms",
+     "display": "133 / 381 ms",
      "target": "informational",
      "passed": null,
      "suite": "funding",
@@ -4140,10 +4473,10 @@
        "id": "F00_golden",
        "why": "golden fixture: line + invoice financing (¥2,712.94)"
       },
-      "need_fen": 36000000,
+      "need_fen": 40500000,
       "router_admissible": true,
-      "router_cost_fen": 271294,
-      "router_label": "committed plan: ¥841.64 + ¥1,871.30 = ¥2,712.94",
+      "router_cost_fen": 311393,
+      "router_label": "committed plan: ¥841.64 + ¥2,272.29 = ¥3,113.93",
       "router_actions": [
        [
         "DRAW",
@@ -4155,7 +4488,7 @@
        [
         "FINANCE_INVOICE",
         "FAC-IF",
-        21000000,
+        25500000,
         "RCV-A",
         null
        ]
@@ -4167,7 +4500,7 @@
       "brute_needs_approval": false,
       "router_independent_reasons": [],
       "router_uses_uncommitted": [],
-      "brute_cost_fen": 271294,
+      "brute_cost_fen": 311393,
       "brute_actions": [
        [
         "DRAW",
@@ -4179,15 +4512,15 @@
        [
         "FINANCE_INVOICE",
         "FAC-IF",
-        21000000,
+        25500000,
         "RCV-A",
         null
        ]
       ],
       "brute_complete": true,
       "brute_levers": 12,
-      "brute_evals": 84445,
-      "baseline_cost_fen": 271294,
+      "brute_evals": 99002,
+      "baseline_cost_fen": 311393,
       "baseline_admissible": true,
       "baseline_actions": [
        [
@@ -4200,7 +4533,7 @@
        [
         "FINANCE_INVOICE",
         "FAC-IF",
-        21000000,
+        25500000,
         "RCV-A",
         null
        ]
@@ -4208,8 +4541,8 @@
       "optimal": true,
       "gap_to_brute_fen": 0,
       "saving_vs_baseline_fen": 0,
-      "eval_s": 47.2,
-      "router_ms": 85.9
+      "eval_s": 71.4,
+      "router_ms": 119.7
      },
      {
       "id": "F01_dear_line",
@@ -4223,15 +4556,15 @@
         }
        }
       },
-      "need_fen": 36000000,
+      "need_fen": 40500000,
       "router_admissible": true,
-      "router_cost_fen": 323605,
-      "router_label": "committed plan: ¥241.97 + ¥2,994.08 = ¥3,236.05",
+      "router_cost_fen": 368975,
+      "router_label": "committed plan: ¥695.67 + ¥2,994.08 = ¥3,689.75",
       "router_actions": [
        [
         "DRAW",
         "FAC-LINE",
-        2400000,
+        6900000,
         null,
         32
        ],
@@ -4250,7 +4583,7 @@
       "brute_needs_approval": false,
       "router_independent_reasons": [],
       "router_uses_uncommitted": [],
-      "brute_cost_fen": 323605,
+      "brute_cost_fen": 368975,
       "brute_actions": [
        [
         "FINANCE_INVOICE",
@@ -4262,15 +4595,15 @@
        [
         "DRAW",
         "FAC-LINE",
-        2400000,
+        6900000,
         null,
         32
        ]
       ],
       "brute_complete": true,
       "brute_levers": 12,
-      "brute_evals": 95277,
-      "baseline_cost_fen": 338363,
+      "brute_evals": 113255,
+      "baseline_cost_fen": 378462,
       "baseline_admissible": true,
       "baseline_actions": [
        [
@@ -4283,16 +4616,16 @@
        [
         "FINANCE_INVOICE",
         "FAC-IF",
-        21000000,
+        25500000,
         "RCV-A",
         null
        ]
       ],
       "optimal": true,
       "gap_to_brute_fen": 0,
-      "saving_vs_baseline_fen": 14758,
-      "eval_s": 53.5,
-      "router_ms": 84.4
+      "saving_vs_baseline_fen": 9487,
+      "eval_s": 81.8,
+      "router_ms": 133.1
      },
      {
       "id": "F02_cheap_early_pay",
@@ -4306,15 +4639,15 @@
         }
        }
       },
-      "need_fen": 36000000,
+      "need_fen": 40500000,
       "router_admissible": true,
-      "router_cost_fen": 108325,
-      "router_label": "committed plan: ¥1,083.25",
+      "router_cost_fen": 121866,
+      "router_label": "committed plan: ¥1,218.66",
       "router_actions": [
        [
         "EARLY_PAY",
         "FAC-EARLYPAY",
-        36108325,
+        40621866,
         "RCV-A",
         null
        ]
@@ -4326,20 +4659,20 @@
       "brute_needs_approval": false,
       "router_independent_reasons": [],
       "router_uses_uncommitted": [],
-      "brute_cost_fen": 108325,
+      "brute_cost_fen": 121866,
       "brute_actions": [
        [
         "EARLY_PAY",
         "FAC-EARLYPAY",
-        36108325,
+        40621866,
         "RCV-A",
         null
        ]
       ],
       "brute_complete": true,
       "brute_levers": 12,
-      "brute_evals": 97763,
-      "baseline_cost_fen": 147354,
+      "brute_evals": 113466,
+      "baseline_cost_fen": 160894,
       "baseline_admissible": true,
       "baseline_actions": [
        [
@@ -4352,16 +4685,16 @@
        [
         "EARLY_PAY",
         "FAC-EARLYPAY",
-        21063190,
+        25576730,
         "RCV-A",
         null
        ]
       ],
       "optimal": true,
       "gap_to_brute_fen": 0,
-      "saving_vs_baseline_fen": 39029,
-      "eval_s": 54.4,
-      "router_ms": 67.2
+      "saving_vs_baseline_fen": 39028,
+      "eval_s": 82.8,
+      "router_ms": 84.8
      },
      {
       "id": "F03_bill_held",
@@ -4375,15 +4708,22 @@
         }
        }
       },
-      "need_fen": 36000000,
+      "need_fen": 40500000,
       "router_admissible": true,
-      "router_cost_fen": 102690,
-      "router_label": "committed plan: ¥1,026.90",
+      "router_cost_fen": 117219,
+      "router_label": "committed plan: ¥34.44 + ¥1,137.75 = ¥1,172.19",
       "router_actions": [
+       [
+        "DRAW",
+        "FAC-LINE",
+        613775,
+        null,
+        32
+       ],
        [
         "DISCOUNT_BILL",
         "FAC-BILL",
-        36102690,
+        40000000,
         null,
         180
        ]
@@ -4395,20 +4735,27 @@
       "brute_needs_approval": false,
       "router_independent_reasons": [],
       "router_uses_uncommitted": [],
-      "brute_cost_fen": 102690,
+      "brute_cost_fen": 117219,
       "brute_actions": [
        [
         "DISCOUNT_BILL",
         "FAC-BILL",
-        36102690,
+        40000000,
         null,
         180
+       ],
+       [
+        "DRAW",
+        "FAC-LINE",
+        613775,
+        null,
+        32
        ]
       ],
       "brute_complete": true,
       "brute_levers": 13,
-      "brute_evals": 70875,
-      "baseline_cost_fen": 144066,
+      "brute_evals": 86953,
+      "baseline_cost_fen": 156903,
       "baseline_admissible": true,
       "baseline_actions": [
        [
@@ -4421,16 +4768,16 @@
        [
         "DISCOUNT_BILL",
         "FAC-BILL",
-        21059902,
+        25572739,
         null,
         180
        ]
       ],
       "optimal": true,
       "gap_to_brute_fen": 0,
-      "saving_vs_baseline_fen": 41376,
-      "eval_s": 43.7,
-      "router_ms": 94.8
+      "saving_vs_baseline_fen": 39684,
+      "eval_s": 71.5,
+      "router_ms": 229.6
      },
      {
       "id": "F04_no_new_borrowing",
@@ -4442,15 +4789,15 @@
         "allow_new_borrowing": false
        }
       },
-      "need_fen": 36000000,
+      "need_fen": 40500000,
       "router_admissible": true,
-      "router_cost_fen": 437247,
-      "router_label": "committed plan: ¥4,372.47",
+      "router_cost_fen": 491903,
+      "router_label": "committed plan: ¥4,919.03",
       "router_actions": [
        [
         "EARLY_PAY",
         "FAC-EARLYPAY",
-        36437247,
+        40991903,
         "RCV-A",
         null
        ]
@@ -4462,19 +4809,19 @@
       "brute_needs_approval": false,
       "router_independent_reasons": [],
       "router_uses_uncommitted": [],
-      "brute_cost_fen": 437247,
+      "brute_cost_fen": 491903,
       "brute_actions": [
        [
         "EARLY_PAY",
         "FAC-EARLYPAY",
-        36437247,
+        40991903,
         "RCV-A",
         null
        ]
       ],
       "brute_complete": true,
       "brute_levers": 12,
-      "brute_evals": 177645,
+      "brute_evals": 200383,
       "baseline_cost_fen": null,
       "baseline_admissible": false,
       "baseline_actions": [
@@ -4488,7 +4835,7 @@
        [
         "FINANCE_INVOICE",
         "FAC-IF",
-        21000000,
+        25500000,
         "RCV-A",
         null
        ]
@@ -4496,8 +4843,8 @@
       "optimal": true,
       "gap_to_brute_fen": 0,
       "saving_vs_baseline_fen": null,
-      "eval_s": 99.2,
-      "router_ms": 21.5
+      "eval_s": 146.0,
+      "router_ms": 34.4
      },
      {
       "id": "F05_pending_cheap_ggl",
@@ -4513,10 +4860,10 @@
         }
        }
       },
-      "need_fen": 36000000,
+      "need_fen": 40500000,
       "router_admissible": true,
-      "router_cost_fen": 271294,
-      "router_label": "committed plan: ¥841.64 + ¥1,871.30 = ¥2,712.94",
+      "router_cost_fen": 311393,
+      "router_label": "committed plan: ¥841.64 + ¥2,272.29 = ¥3,113.93",
       "router_actions": [
        [
         "DRAW",
@@ -4528,7 +4875,7 @@
        [
         "FINANCE_INVOICE",
         "FAC-IF",
-        21000000,
+        25500000,
         "RCV-A",
         null
        ]
@@ -4540,7 +4887,7 @@
       "brute_needs_approval": false,
       "router_independent_reasons": [],
       "router_uses_uncommitted": [],
-      "brute_cost_fen": 271294,
+      "brute_cost_fen": 311393,
       "brute_actions": [
        [
         "DRAW",
@@ -4552,15 +4899,15 @@
        [
         "FINANCE_INVOICE",
         "FAC-IF",
-        21000000,
+        25500000,
         "RCV-A",
         null
        ]
       ],
       "brute_complete": true,
       "brute_levers": 12,
-      "brute_evals": 84445,
-      "baseline_cost_fen": 271294,
+      "brute_evals": 99002,
+      "baseline_cost_fen": 311393,
       "baseline_admissible": true,
       "baseline_actions": [
        [
@@ -4573,7 +4920,7 @@
        [
         "FINANCE_INVOICE",
         "FAC-IF",
-        21000000,
+        25500000,
         "RCV-A",
         null
        ]
@@ -4581,8 +4928,8 @@
       "optimal": true,
       "gap_to_brute_fen": 0,
       "saving_vs_baseline_fen": 0,
-      "eval_s": 46.2,
-      "router_ms": 84.9
+      "eval_s": 70.7,
+      "router_ms": 118.7
      },
      {
       "id": "F06_uncovered",
@@ -4595,7 +4942,7 @@
         "FAC-EARLYPAY"
        ]
       },
-      "need_fen": 36000000,
+      "need_fen": 40500000,
       "router_admissible": false,
       "router_cost_fen": null,
       "router_label": "no admissible plan: the menu cannot cover the gap",
@@ -4629,7 +4976,7 @@
       "gap_to_brute_fen": null,
       "saving_vs_baseline_fen": null,
       "eval_s": 0.0,
-      "router_ms": 1.6
+      "router_ms": 1.8
      },
      {
       "id": "F07_big_line_clean_down",
@@ -4643,15 +4990,15 @@
         }
        }
       },
-      "need_fen": 36000000,
+      "need_fen": 40500000,
       "router_admissible": true,
-      "router_cost_fen": 201995,
-      "router_label": "committed plan: ¥2,019.95",
+      "router_cost_fen": 227244,
+      "router_label": "committed plan: ¥2,272.44",
       "router_actions": [
        [
         "DRAW",
         "FAC-LINE",
-        36000000,
+        40500000,
         null,
         32
        ]
@@ -4663,26 +5010,26 @@
       "brute_needs_approval": false,
       "router_independent_reasons": [],
       "router_uses_uncommitted": [],
-      "brute_cost_fen": 201995,
+      "brute_cost_fen": 227244,
       "brute_actions": [
        [
         "DRAW",
         "FAC-LINE",
-        36000000,
+        40500000,
         null,
         32
        ]
       ],
       "brute_complete": true,
       "brute_levers": 12,
-      "brute_evals": 74817,
-      "baseline_cost_fen": 201995,
+      "brute_evals": 90849,
+      "baseline_cost_fen": 227244,
       "baseline_admissible": true,
       "baseline_actions": [
        [
         "DRAW",
         "FAC-LINE",
-        36000000,
+        40500000,
         null,
         32
        ]
@@ -4690,8 +5037,8 @@
       "optimal": true,
       "gap_to_brute_fen": 0,
       "saving_vs_baseline_fen": 0,
-      "eval_s": 45.0,
-      "router_ms": 80.2
+      "eval_s": 71.6,
+      "router_ms": 86.6
      },
      {
       "id": "F08_late_payroll",
@@ -4705,10 +5052,10 @@
         }
        }
       },
-      "need_fen": 36000000,
+      "need_fen": 40500000,
       "router_admissible": true,
-      "router_cost_fen": 271294,
-      "router_label": "committed plan: ¥841.64 + ¥1,871.30 = ¥2,712.94",
+      "router_cost_fen": 311393,
+      "router_label": "committed plan: ¥841.64 + ¥2,272.29 = ¥3,113.93",
       "router_actions": [
        [
         "DRAW",
@@ -4720,7 +5067,7 @@
        [
         "FINANCE_INVOICE",
         "FAC-IF",
-        21000000,
+        25500000,
         "RCV-A",
         null
        ]
@@ -4732,7 +5079,7 @@
       "brute_needs_approval": false,
       "router_independent_reasons": [],
       "router_uses_uncommitted": [],
-      "brute_cost_fen": 271294,
+      "brute_cost_fen": 311393,
       "brute_actions": [
        [
         "DRAW",
@@ -4744,15 +5091,15 @@
        [
         "FINANCE_INVOICE",
         "FAC-IF",
-        21000000,
+        25500000,
         "RCV-A",
         null
        ]
       ],
       "brute_complete": true,
       "brute_levers": 12,
-      "brute_evals": 84445,
-      "baseline_cost_fen": 271294,
+      "brute_evals": 99002,
+      "baseline_cost_fen": 311393,
       "baseline_admissible": true,
       "baseline_actions": [
        [
@@ -4765,7 +5112,7 @@
        [
         "FINANCE_INVOICE",
         "FAC-IF",
-        21000000,
+        25500000,
         "RCV-A",
         null
        ]
@@ -4773,8 +5120,8 @@
       "optimal": true,
       "gap_to_brute_fen": 0,
       "saving_vs_baseline_fen": 0,
-      "eval_s": 47.0,
-      "router_ms": 84.3
+      "eval_s": 69.7,
+      "router_ms": 133.4
      },
      {
       "id": "F09_committed_cheap_loan_late",
@@ -4790,10 +5137,10 @@
         }
        }
       },
-      "need_fen": 36000000,
+      "need_fen": 40500000,
       "router_admissible": true,
-      "router_cost_fen": 271294,
-      "router_label": "committed plan: ¥841.64 + ¥1,871.30 = ¥2,712.94",
+      "router_cost_fen": 291171,
+      "router_label": "committed plan: ¥841.64 + ¥2,049.52 + ¥20.55 = ¥2,911.71",
       "router_actions": [
        [
         "DRAW",
@@ -4805,8 +5152,15 @@
        [
         "FINANCE_INVOICE",
         "FAC-IF",
-        21000000,
+        23000000,
         "RCV-A",
+        null
+       ],
+       [
+        "DRAW",
+        "FAC-GGL",
+        2500000,
+        null,
         null
        ]
       ],
@@ -4817,8 +5171,15 @@
       "brute_needs_approval": false,
       "router_independent_reasons": [],
       "router_uses_uncommitted": [],
-      "brute_cost_fen": 271294,
+      "brute_cost_fen": 291171,
       "brute_actions": [
+       [
+        "FINANCE_INVOICE",
+        "FAC-IF",
+        23000000,
+        "RCV-A",
+        null
+       ],
        [
         "DRAW",
         "FAC-LINE",
@@ -4827,16 +5188,16 @@
         32
        ],
        [
-        "FINANCE_INVOICE",
-        "FAC-IF",
-        21000000,
-        "RCV-A",
+        "DRAW",
+        "FAC-GGL",
+        2500000,
+        null,
         null
        ]
       ],
-      "brute_complete": true,
+      "brute_complete": false,
       "brute_levers": 13,
-      "brute_evals": 234672,
+      "brute_evals": 239069,
       "baseline_cost_fen": null,
       "baseline_admissible": false,
       "baseline_actions": [
@@ -4865,8 +5226,8 @@
       "optimal": true,
       "gap_to_brute_fen": 0,
       "saving_vs_baseline_fen": null,
-      "eval_s": 141.0,
-      "router_ms": 183.4
+      "eval_s": 180.0,
+      "router_ms": 299.4
      },
      {
       "id": "R01",
@@ -4903,10 +5264,10 @@
         }
        }
       },
-      "need_fen": 46000000,
+      "need_fen": 50500000,
       "router_admissible": true,
-      "router_cost_fen": 322329,
-      "router_label": "committed plan: ¥723.29 + ¥2,500.00 = ¥3,223.29",
+      "router_cost_fen": 358619,
+      "router_label": "committed plan: ¥723.29 + ¥2,862.90 = ¥3,586.19",
       "router_actions": [
        [
         "DRAW",
@@ -4918,7 +5279,7 @@
        [
         "EARLY_PAY",
         "FAC-EARLYPAY",
-        31250000,
+        35786290,
         "RI:BUYER-1:2",
         null
        ]
@@ -4930,7 +5291,7 @@
       "brute_needs_approval": false,
       "router_independent_reasons": [],
       "router_uses_uncommitted": [],
-      "brute_cost_fen": 322329,
+      "brute_cost_fen": 358619,
       "brute_actions": [
        [
         "DRAW",
@@ -4942,15 +5303,15 @@
        [
         "EARLY_PAY",
         "FAC-EARLYPAY",
-        31250000,
+        35786290,
         "RI:BUYER-1:2",
         null
        ]
       ],
       "brute_complete": true,
       "brute_levers": 12,
-      "brute_evals": 115977,
-      "baseline_cost_fen": 356233,
+      "brute_evals": 129432,
+      "baseline_cost_fen": 392523,
       "baseline_admissible": true,
       "baseline_actions": [
        [
@@ -4963,7 +5324,7 @@
        [
         "EARLY_PAY",
         "FAC-EARLYPAY",
-        31250000,
+        35786290,
         "RCV-A",
         null
        ]
@@ -4971,8 +5332,8 @@
       "optimal": true,
       "gap_to_brute_fen": 0,
       "saving_vs_baseline_fen": 33904,
-      "eval_s": 58.8,
-      "router_ms": 211.9
+      "eval_s": 81.8,
+      "router_ms": 306.4
      },
      {
       "id": "R02",
@@ -5004,10 +5365,10 @@
         }
        }
       },
-      "need_fen": 41000000,
+      "need_fen": 45500000,
       "router_admissible": true,
-      "router_cost_fen": 337525,
-      "router_label": "committed plan: ¥561.10 + ¥194.33 + ¥2,619.82 = ¥3,375.25",
+      "router_cost_fen": 392181,
+      "router_label": "committed plan: ¥561.10 + ¥740.89 + ¥2,619.82 = ¥3,921.81",
       "router_actions": [
        [
         "DRAW",
@@ -5019,7 +5380,7 @@
        [
         "EARLY_PAY",
         "FAC-EARLYPAY",
-        1619433,
+        6174089,
         "RI:BUYER-1:2",
         null
        ],
@@ -5038,7 +5399,7 @@
       "brute_needs_approval": false,
       "router_independent_reasons": [],
       "router_uses_uncommitted": [],
-      "brute_cost_fen": 337525,
+      "brute_cost_fen": 392181,
       "brute_actions": [
        [
         "FINANCE_INVOICE",
@@ -5057,14 +5418,14 @@
        [
         "EARLY_PAY",
         "FAC-EARLYPAY",
-        1619433,
+        6174089,
         "RI:BUYER-1:2",
         null
        ]
       ],
       "brute_complete": true,
       "brute_levers": 12,
-      "brute_evals": 98943,
+      "brute_evals": 118205,
       "baseline_cost_fen": null,
       "baseline_admissible": false,
       "baseline_actions": [
@@ -5073,7 +5434,7 @@
         "FAC-LINE",
         10000000,
         null,
-        32
+        47
        ],
        [
         "FINANCE_INVOICE",
@@ -5107,8 +5468,8 @@
       "optimal": true,
       "gap_to_brute_fen": 0,
       "saving_vs_baseline_fen": null,
-      "eval_s": 51.6,
-      "router_ms": 107.6
+      "eval_s": 79.7,
+      "router_ms": 325.0
      },
      {
       "id": "R03",
@@ -5145,10 +5506,10 @@
        },
        "clean_down_days": 60
       },
-      "need_fen": 47000000,
+      "need_fen": 51500000,
       "router_admissible": true,
-      "router_cost_fen": 312307,
-      "router_label": "committed plan: ¥1,122.19 + ¥2,000.88 = ¥3,123.07",
+      "router_cost_fen": 345655,
+      "router_label": "committed plan: ¥1,122.19 + ¥2,334.36 = ¥3,456.55",
       "router_actions": [
        [
         "DRAW",
@@ -5160,7 +5521,7 @@
        [
         "DISCOUNT_BILL",
         "FAC-BILL",
-        27200088,
+        31733436,
         null,
         180
        ]
@@ -5172,7 +5533,7 @@
       "brute_needs_approval": false,
       "router_independent_reasons": [],
       "router_uses_uncommitted": [],
-      "brute_cost_fen": 312307,
+      "brute_cost_fen": 345655,
       "brute_actions": [
        [
         "DRAW",
@@ -5184,15 +5545,15 @@
        [
         "DISCOUNT_BILL",
         "FAC-BILL",
-        27200088,
+        31733436,
         null,
         180
        ]
       ],
-      "brute_complete": true,
+      "brute_complete": false,
       "brute_levers": 13,
-      "brute_evals": 262393,
-      "baseline_cost_fen": 364910,
+      "brute_evals": 213892,
+      "baseline_cost_fen": 398258,
       "baseline_admissible": true,
       "baseline_actions": [
        [
@@ -5205,7 +5566,7 @@
        [
         "DISCOUNT_BILL",
         "FAC-BILL",
-        27200088,
+        31733436,
         null,
         180
        ]
@@ -5213,8 +5574,8 @@
       "optimal": true,
       "gap_to_brute_fen": 0,
       "saving_vs_baseline_fen": 52603,
-      "eval_s": 158.3,
-      "router_ms": 368.3
+      "eval_s": 180.0,
+      "router_ms": 545.0
      },
      {
       "id": "R04",
@@ -5247,10 +5608,10 @@
        },
        "clean_down_days": 0
       },
-      "need_fen": 35000000,
+      "need_fen": 39500000,
       "router_admissible": true,
-      "router_cost_fen": 204863,
-      "router_label": "committed plan: ¥789.04 + ¥1,259.59 = ¥2,048.63",
+      "router_cost_fen": 242651,
+      "router_label": "committed plan: ¥789.04 + ¥1,637.47 = ¥2,426.51",
       "router_actions": [
        [
         "DRAW",
@@ -5262,7 +5623,7 @@
        [
         "FINANCE_INVOICE",
         "FAC-IF",
-        15000000,
+        19500000,
         "RCV-A",
         null
        ]
@@ -5274,7 +5635,7 @@
       "brute_needs_approval": false,
       "router_independent_reasons": [],
       "router_uses_uncommitted": [],
-      "brute_cost_fen": 204863,
+      "brute_cost_fen": 242651,
       "brute_actions": [
        [
         "DRAW",
@@ -5286,15 +5647,15 @@
        [
         "FINANCE_INVOICE",
         "FAC-IF",
-        15000000,
+        19500000,
         "RCV-A",
         null
        ]
       ],
       "brute_complete": true,
       "brute_levers": 12,
-      "brute_evals": 48632,
-      "baseline_cost_fen": 204863,
+      "brute_evals": 60309,
+      "baseline_cost_fen": 242651,
       "baseline_admissible": true,
       "baseline_actions": [
        [
@@ -5307,7 +5668,7 @@
        [
         "FINANCE_INVOICE",
         "FAC-IF",
-        15000000,
+        19500000,
         "RCV-A",
         null
        ]
@@ -5315,8 +5676,8 @@
       "optimal": true,
       "gap_to_brute_fen": 0,
       "saving_vs_baseline_fen": 0,
-      "eval_s": 26.7,
-      "router_ms": 69.8
+      "eval_s": 44.3,
+      "router_ms": 93.9
      },
      {
       "id": "R05",
@@ -5348,10 +5709,10 @@
         }
        }
       },
-      "need_fen": 47000000,
+      "need_fen": 51500000,
       "router_admissible": true,
-      "router_cost_fen": 270534,
-      "router_label": "committed plan: ¥1,183.56 + ¥632.46 + ¥889.32 = ¥2,705.34",
+      "router_cost_fen": 324471,
+      "router_label": "committed plan: ¥1,183.56 + ¥1,200.00 + ¥861.15 = ¥3,244.71",
       "router_actions": [
        [
         "DRAW",
@@ -5363,14 +5724,14 @@
        [
         "EARLY_PAY",
         "FAC-EARLYPAY",
-        5270534,
+        10000000,
         "RI:BUYER-1:2",
         null
        ],
        [
         "FINANCE_INVOICE",
         "FAC-IF",
-        12000000,
+        11620000,
         "RCV-A",
         null
        ]
@@ -5382,13 +5743,13 @@
       "brute_needs_approval": false,
       "router_independent_reasons": [],
       "router_uses_uncommitted": [],
-      "brute_cost_fen": 270534,
+      "brute_cost_fen": 324471,
       "brute_actions": [
        [
-        "FINANCE_INVOICE",
-        "FAC-IF",
-        12000000,
-        "RCV-A",
+        "EARLY_PAY",
+        "FAC-EARLYPAY",
+        10000000,
+        "RI:BUYER-1:2",
         null
        ],
        [
@@ -5399,17 +5760,17 @@
         32
        ],
        [
-        "EARLY_PAY",
-        "FAC-EARLYPAY",
-        5270534,
-        "RI:BUYER-1:2",
+        "FINANCE_INVOICE",
+        "FAC-IF",
+        11620000,
+        "RCV-A",
         null
        ]
       ],
       "brute_complete": true,
       "brute_levers": 12,
-      "brute_evals": 123415,
-      "baseline_cost_fen": 299822,
+      "brute_evals": 146634,
+      "baseline_cost_fen": 333172,
       "baseline_admissible": true,
       "baseline_actions": [
        [
@@ -5422,16 +5783,16 @@
        [
         "FINANCE_INVOICE",
         "FAC-IF",
-        17000000,
+        21500000,
         "RCV-A",
         null
        ]
       ],
       "optimal": true,
       "gap_to_brute_fen": 0,
-      "saving_vs_baseline_fen": 29288,
-      "eval_s": 65.3,
-      "router_ms": 234.4
+      "saving_vs_baseline_fen": 8701,
+      "eval_s": 100.5,
+      "router_ms": 325.8
      },
      {
       "id": "R06",
@@ -5463,10 +5824,10 @@
         }
        }
       },
-      "need_fen": 31000000,
+      "need_fen": 35500000,
       "router_admissible": true,
-      "router_cost_fen": 218476,
-      "router_label": "committed plan: ¥2,104.11 + ¥80.65 = ¥2,184.76",
+      "router_cost_fen": 254766,
+      "router_label": "committed plan: ¥2,104.11 + ¥443.55 = ¥2,547.66",
       "router_actions": [
        [
         "DRAW",
@@ -5478,7 +5839,7 @@
        [
         "EARLY_PAY",
         "FAC-EARLYPAY",
-        1008065,
+        5544355,
         "RCV-A",
         null
        ]
@@ -5490,7 +5851,7 @@
       "brute_needs_approval": false,
       "router_independent_reasons": [],
       "router_uses_uncommitted": [],
-      "brute_cost_fen": 218476,
+      "brute_cost_fen": 254766,
       "brute_actions": [
        [
         "DRAW",
@@ -5502,15 +5863,15 @@
        [
         "EARLY_PAY",
         "FAC-EARLYPAY",
-        1008065,
+        5544355,
         "RCV-A",
         null
        ]
       ],
       "brute_complete": true,
       "brute_levers": 12,
-      "brute_evals": 115516,
-      "baseline_cost_fen": 218476,
+      "brute_evals": 145641,
+      "baseline_cost_fen": 254766,
       "baseline_admissible": true,
       "baseline_actions": [
        [
@@ -5523,7 +5884,7 @@
        [
         "EARLY_PAY",
         "FAC-EARLYPAY",
-        1008065,
+        5544355,
         "RCV-A",
         null
        ]
@@ -5531,8 +5892,8 @@
       "optimal": true,
       "gap_to_brute_fen": 0,
       "saving_vs_baseline_fen": 0,
-      "eval_s": 66.9,
-      "router_ms": 73.0
+      "eval_s": 109.7,
+      "router_ms": 98.1
      },
      {
       "id": "R07",
@@ -5569,10 +5930,10 @@
        },
        "clean_down_days": 60
       },
-      "need_fen": 30000000,
+      "need_fen": 34500000,
       "router_admissible": true,
-      "router_cost_fen": 144658,
-      "router_label": "committed plan: ¥1,446.58",
+      "router_cost_fen": 178006,
+      "router_label": "committed plan: ¥1,446.58 + ¥333.48 = ¥1,780.06",
       "router_actions": [
        [
         "DRAW",
@@ -5580,6 +5941,13 @@
         30000000,
         null,
         32
+       ],
+       [
+        "DISCOUNT_BILL",
+        "FAC-BILL",
+        4533348,
+        null,
+        180
        ]
       ],
       "router_independently_admissible": true,
@@ -5589,7 +5957,7 @@
       "brute_needs_approval": false,
       "router_independent_reasons": [],
       "router_uses_uncommitted": [],
-      "brute_cost_fen": 144658,
+      "brute_cost_fen": 178006,
       "brute_actions": [
        [
         "DRAW",
@@ -5597,12 +5965,19 @@
         30000000,
         null,
         32
+       ],
+       [
+        "DISCOUNT_BILL",
+        "FAC-BILL",
+        4533348,
+        null,
+        180
        ]
       ],
       "brute_complete": true,
       "brute_levers": 13,
-      "brute_evals": 108879,
-      "baseline_cost_fen": 144658,
+      "brute_evals": 145037,
+      "baseline_cost_fen": 178006,
       "baseline_admissible": true,
       "baseline_actions": [
        [
@@ -5611,13 +5986,20 @@
         30000000,
         null,
         32
+       ],
+       [
+        "DISCOUNT_BILL",
+        "FAC-BILL",
+        4533348,
+        null,
+        180
        ]
       ],
       "optimal": true,
       "gap_to_brute_fen": 0,
       "saving_vs_baseline_fen": 0,
-      "eval_s": 65.9,
-      "router_ms": 103.9
+      "eval_s": 116.4,
+      "router_ms": 164.6
      },
      {
       "id": "R08",
@@ -5658,10 +6040,10 @@
         }
        }
       },
-      "need_fen": 35000000,
+      "need_fen": 39500000,
       "router_admissible": true,
-      "router_cost_fen": 205382,
-      "router_label": "committed plan: ¥1,683.29 + ¥370.53 = ¥2,053.82",
+      "router_cost_fen": 238730,
+      "router_label": "committed plan: ¥1,683.29 + ¥704.01 = ¥2,387.30",
       "router_actions": [
        [
         "DRAW",
@@ -5673,7 +6055,7 @@
        [
         "DISCOUNT_BILL",
         "FAC-BILL",
-        5037053,
+        9570401,
         null,
         180
        ]
@@ -5685,7 +6067,7 @@
       "brute_needs_approval": false,
       "router_independent_reasons": [],
       "router_uses_uncommitted": [],
-      "brute_cost_fen": 205382,
+      "brute_cost_fen": 238730,
       "brute_actions": [
        [
         "DRAW",
@@ -5697,15 +6079,15 @@
        [
         "DISCOUNT_BILL",
         "FAC-BILL",
-        5037053,
+        9570401,
         null,
         180
        ]
       ],
       "brute_complete": true,
       "brute_levers": 13,
-      "brute_evals": 155476,
-      "baseline_cost_fen": 205382,
+      "brute_evals": 180470,
+      "baseline_cost_fen": 238730,
       "baseline_admissible": true,
       "baseline_actions": [
        [
@@ -5718,7 +6100,7 @@
        [
         "DISCOUNT_BILL",
         "FAC-BILL",
-        5037053,
+        9570401,
         null,
         180
        ]
@@ -5726,8 +6108,8 @@
       "optimal": true,
       "gap_to_brute_fen": 0,
       "saving_vs_baseline_fen": 0,
-      "eval_s": 92.6,
-      "router_ms": 132.4
+      "eval_s": 141.5,
+      "router_ms": 239.8
      },
      {
       "id": "R09",
@@ -5759,15 +6141,15 @@
         }
        }
       },
-      "need_fen": 35000000,
+      "need_fen": 39500000,
       "router_admissible": true,
-      "router_cost_fen": 140562,
-      "router_label": "committed plan: ¥1,405.62",
+      "router_cost_fen": 158635,
+      "router_label": "committed plan: ¥1,586.35",
       "router_actions": [
        [
         "EARLY_PAY",
         "FAC-EARLYPAY",
-        35140562,
+        39658635,
         "RCV-A",
         null
        ]
@@ -5779,20 +6161,20 @@
       "brute_needs_approval": false,
       "router_independent_reasons": [],
       "router_uses_uncommitted": [],
-      "brute_cost_fen": 140562,
+      "brute_cost_fen": 158635,
       "brute_actions": [
        [
         "EARLY_PAY",
         "FAC-EARLYPAY",
-        35140562,
+        39658635,
         "RCV-A",
         null
        ]
       ],
       "brute_complete": true,
       "brute_levers": 12,
-      "brute_evals": 115283,
-      "baseline_cost_fen": 172460,
+      "brute_evals": 133690,
+      "baseline_cost_fen": 190532,
       "baseline_admissible": true,
       "baseline_actions": [
        [
@@ -5805,16 +6187,16 @@
        [
         "EARLY_PAY",
         "FAC-EARLYPAY",
-        15060241,
+        19578313,
         "RCV-A",
         null
        ]
       ],
       "optimal": true,
       "gap_to_brute_fen": 0,
-      "saving_vs_baseline_fen": 31898,
-      "eval_s": 64.6,
-      "router_ms": 79.1
+      "saving_vs_baseline_fen": 31897,
+      "eval_s": 98.0,
+      "router_ms": 88.3
      },
      {
       "id": "R10",
@@ -5851,10 +6233,10 @@
         }
        }
       },
-      "need_fen": 42000000,
+      "need_fen": 46500000,
       "router_admissible": true,
-      "router_cost_fen": 512982,
-      "router_label": "committed plan: ¥5,040.00 + ¥89.82 = ¥5,129.82 (needs the owner's approval) (cannot run today)",
+      "router_cost_fen": 593181,
+      "router_label": "committed plan: ¥5,040.00 + ¥891.81 = ¥5,931.81 (needs the owner's approval) (cannot run today)",
       "router_actions": [
        [
         "EARLY_PAY",
@@ -5866,7 +6248,7 @@
        [
         "FINANCE_INVOICE",
         "FAC-IF",
-        504000,
+        5004000,
         "RI:BUYER-1:2",
         null
        ]
@@ -5878,7 +6260,7 @@
       "brute_needs_approval": true,
       "router_independent_reasons": [],
       "router_uses_uncommitted": [],
-      "brute_cost_fen": 512982,
+      "brute_cost_fen": 593181,
       "brute_actions": [
        [
         "EARLY_PAY",
@@ -5890,14 +6272,14 @@
        [
         "FINANCE_INVOICE",
         "FAC-IF",
-        504000,
+        5004000,
         "RI:BUYER-1:2",
         null
        ]
       ],
       "brute_complete": true,
       "brute_levers": 8,
-      "brute_evals": 102646,
+      "brute_evals": 115591,
       "baseline_cost_fen": null,
       "baseline_admissible": false,
       "baseline_actions": [
@@ -5933,8 +6315,8 @@
       "optimal": true,
       "gap_to_brute_fen": 0,
       "saving_vs_baseline_fen": null,
-      "eval_s": 41.2,
-      "router_ms": 33.5
+      "eval_s": 59.7,
+      "router_ms": 138.8
      },
      {
       "id": "R11",
@@ -5966,10 +6348,10 @@
         }
        }
       },
-      "need_fen": 30000000,
+      "need_fen": 34500000,
       "router_admissible": true,
-      "router_cost_fen": 185753,
-      "router_label": "committed plan: ¥964.38 + ¥893.15 = ¥1,857.53",
+      "router_cost_fen": 225945,
+      "router_label": "committed plan: ¥964.38 + ¥1,295.07 = ¥2,259.45",
       "router_actions": [
        [
         "DRAW",
@@ -5981,7 +6363,7 @@
        [
         "FINANCE_INVOICE",
         "FAC-IF",
-        10000000,
+        14500000,
         "RCV-A",
         null
        ]
@@ -5993,7 +6375,7 @@
       "brute_needs_approval": false,
       "router_independent_reasons": [],
       "router_uses_uncommitted": [],
-      "brute_cost_fen": 185753,
+      "brute_cost_fen": 225945,
       "brute_actions": [
        [
         "DRAW",
@@ -6005,15 +6387,15 @@
        [
         "FINANCE_INVOICE",
         "FAC-IF",
-        10000000,
+        14500000,
         "RCV-A",
         null
        ]
       ],
       "brute_complete": true,
       "brute_levers": 12,
-      "brute_evals": 38742,
-      "baseline_cost_fen": 185753,
+      "brute_evals": 53405,
+      "baseline_cost_fen": 225945,
       "baseline_admissible": true,
       "baseline_actions": [
        [
@@ -6026,7 +6408,7 @@
        [
         "FINANCE_INVOICE",
         "FAC-IF",
-        10000000,
+        14500000,
         "RCV-A",
         null
        ]
@@ -6034,8 +6416,8 @@
       "optimal": true,
       "gap_to_brute_fen": 0,
       "saving_vs_baseline_fen": 0,
-      "eval_s": 22.1,
-      "router_ms": 63.9
+      "eval_s": 40.0,
+      "router_ms": 86.8
      },
      {
       "id": "R12",
@@ -6068,10 +6450,10 @@
        },
        "clean_down_days": 60
       },
-      "need_fen": 25000000,
+      "need_fen": 29500000,
       "router_admissible": true,
-      "router_cost_fen": 151698,
-      "router_label": "committed plan: ¥841.64 + ¥675.34 = ¥1,516.98",
+      "router_cost_fen": 182089,
+      "router_label": "committed plan: ¥841.64 + ¥979.25 = ¥1,820.89",
       "router_actions": [
        [
         "DRAW",
@@ -6083,7 +6465,7 @@
        [
         "FINANCE_INVOICE",
         "FAC-IF",
-        10000000,
+        14500000,
         "RCV-A",
         null
        ]
@@ -6095,7 +6477,7 @@
       "brute_needs_approval": false,
       "router_independent_reasons": [],
       "router_uses_uncommitted": [],
-      "brute_cost_fen": 151698,
+      "brute_cost_fen": 182089,
       "brute_actions": [
        [
         "DRAW",
@@ -6107,15 +6489,15 @@
        [
         "FINANCE_INVOICE",
         "FAC-IF",
-        10000000,
+        14500000,
         "RCV-A",
         null
        ]
       ],
       "brute_complete": true,
       "brute_levers": 12,
-      "brute_evals": 58330,
-      "baseline_cost_fen": 151698,
+      "brute_evals": 80001,
+      "baseline_cost_fen": 182089,
       "baseline_admissible": true,
       "baseline_actions": [
        [
@@ -6128,7 +6510,7 @@
        [
         "FINANCE_INVOICE",
         "FAC-IF",
-        10000000,
+        14500000,
         "RCV-A",
         null
        ]
@@ -6136,8 +6518,8 @@
       "optimal": true,
       "gap_to_brute_fen": 0,
       "saving_vs_baseline_fen": 0,
-      "eval_s": 33.7,
-      "router_ms": 64.0
+      "eval_s": 61.6,
+      "router_ms": 86.5
      },
      {
       "id": "R13",
@@ -6178,15 +6560,15 @@
         }
        }
       },
-      "need_fen": 37000000,
+      "need_fen": 41500000,
       "router_admissible": true,
-      "router_cost_fen": 251191,
-      "router_label": "committed plan: ¥148.21 + ¥2,363.70 = ¥2,511.91",
+      "router_cost_fen": 284539,
+      "router_label": "committed plan: ¥481.69 + ¥2,363.70 = ¥2,845.39",
       "router_actions": [
        [
         "DISCOUNT_BILL",
         "FAC-BILL",
-        2014821,
+        6548169,
         null,
         180
        ],
@@ -6205,7 +6587,7 @@
       "brute_needs_approval": false,
       "router_independent_reasons": [],
       "router_uses_uncommitted": [],
-      "brute_cost_fen": 251191,
+      "brute_cost_fen": 284539,
       "brute_actions": [
        [
         "FINANCE_INVOICE",
@@ -6217,30 +6599,37 @@
        [
         "DISCOUNT_BILL",
         "FAC-BILL",
-        2014821,
+        6548169,
         null,
         180
        ]
       ],
       "brute_complete": true,
       "brute_levers": 9,
-      "brute_evals": 84518,
-      "baseline_cost_fen": 274195,
+      "brute_evals": 98262,
+      "baseline_cost_fen": 306364,
       "baseline_admissible": true,
       "baseline_actions": [
        [
         "DISCOUNT_BILL",
         "FAC-BILL",
-        37274195,
+        40000000,
         null,
         180
+       ],
+       [
+        "FINANCE_INVOICE",
+        "FAC-IF",
+        1794247,
+        "RCV-A",
+        null
        ]
       ],
       "optimal": true,
       "gap_to_brute_fen": 0,
-      "saving_vs_baseline_fen": 23004,
-      "eval_s": 47.3,
-      "router_ms": 33.3
+      "saving_vs_baseline_fen": 21825,
+      "eval_s": 73.5,
+      "router_ms": 146.3
      },
      {
       "id": "R14",
@@ -6278,16 +6667,23 @@
        },
        "clean_down_days": 60
       },
-      "need_fen": 40000000,
+      "need_fen": 44500000,
       "router_admissible": true,
-      "router_cost_fen": 160643,
-      "router_label": "committed plan: ¥1,606.43",
+      "router_cost_fen": 180865,
+      "router_label": "committed plan: ¥128.65 + ¥1,680.00 = ¥1,808.65",
       "router_actions": [
+       [
+        "DRAW",
+        "FAC-LINE",
+        2668000,
+        null,
+        32
+       ],
        [
         "EARLY_PAY",
         "FAC-EARLYPAY",
-        40160643,
-        "RCV-A",
+        42000000,
+        "RI:BUYER-1:2",
         null
        ]
       ],
@@ -6298,20 +6694,27 @@
       "brute_needs_approval": false,
       "router_independent_reasons": [],
       "router_uses_uncommitted": [],
-      "brute_cost_fen": 160643,
+      "brute_cost_fen": 180865,
       "brute_actions": [
        [
         "EARLY_PAY",
         "FAC-EARLYPAY",
-        40160643,
-        "RCV-A",
+        42000000,
+        "RI:BUYER-1:2",
         null
+       ],
+       [
+        "DRAW",
+        "FAC-LINE",
+        2668000,
+        null,
+        32
        ]
       ],
       "brute_complete": true,
       "brute_levers": 12,
-      "brute_evals": 110034,
-      "baseline_cost_fen": 168701,
+      "brute_evals": 125480,
+      "baseline_cost_fen": 209376,
       "baseline_admissible": true,
       "baseline_actions": [
        [
@@ -6319,21 +6722,21 @@
         "FAC-LINE",
         10000000,
         null,
-        32
+        47
        ],
        [
         "EARLY_PAY",
         "FAC-EARLYPAY",
-        30120482,
+        34638554,
         "RCV-A",
         null
        ]
       ],
       "optimal": true,
       "gap_to_brute_fen": 0,
-      "saving_vs_baseline_fen": 8058,
-      "eval_s": 56.2,
-      "router_ms": 82.4
+      "saving_vs_baseline_fen": 28511,
+      "eval_s": 76.8,
+      "router_ms": 337.3
      },
      {
       "id": "R15",
@@ -6366,10 +6769,10 @@
        },
        "clean_down_days": 0
       },
-      "need_fen": 52000000,
+      "need_fen": 56500000,
       "router_admissible": true,
-      "router_cost_fen": 387830,
-      "router_label": "committed plan: ¥2,104.11 + ¥1,774.19 = ¥3,878.30",
+      "router_cost_fen": 424121,
+      "router_label": "committed plan: ¥2,104.11 + ¥2,137.10 = ¥4,241.21",
       "router_actions": [
        [
         "DRAW",
@@ -6381,7 +6784,7 @@
        [
         "EARLY_PAY",
         "FAC-EARLYPAY",
-        22177419,
+        26713710,
         "RI:BUYER-1:2",
         null
        ]
@@ -6393,7 +6796,7 @@
       "brute_needs_approval": false,
       "router_independent_reasons": [],
       "router_uses_uncommitted": [],
-      "brute_cost_fen": 387830,
+      "brute_cost_fen": 424121,
       "brute_actions": [
        [
         "DRAW",
@@ -6405,15 +6808,15 @@
        [
         "EARLY_PAY",
         "FAC-EARLYPAY",
-        22177419,
+        26713710,
         "RI:BUYER-1:2",
         null
        ]
       ],
       "brute_complete": true,
       "brute_levers": 12,
-      "brute_evals": 233741,
-      "baseline_cost_fen": 486460,
+      "brute_evals": 242462,
+      "baseline_cost_fen": 522751,
       "baseline_admissible": true,
       "baseline_actions": [
        [
@@ -6426,7 +6829,7 @@
        [
         "EARLY_PAY",
         "FAC-EARLYPAY",
-        22177419,
+        26713710,
         "RCV-A",
         null
        ]
@@ -6434,8 +6837,8 @@
       "optimal": true,
       "gap_to_brute_fen": 0,
       "saving_vs_baseline_fen": 98630,
-      "eval_s": 111.1,
-      "router_ms": 262.2
+      "eval_s": 129.6,
+      "router_ms": 381.2
      },
      {
       "id": "R16",
@@ -6467,10 +6870,10 @@
         }
        }
       },
-      "need_fen": 36000000,
+      "need_fen": 40500000,
       "router_admissible": true,
-      "router_cost_fen": 198247,
-      "router_label": "committed plan: ¥1,446.58 + ¥535.89 = ¥1,982.47",
+      "router_cost_fen": 238439,
+      "router_label": "committed plan: ¥1,446.58 + ¥937.81 = ¥2,384.39",
       "router_actions": [
        [
         "DRAW",
@@ -6482,7 +6885,7 @@
        [
         "FINANCE_INVOICE",
         "FAC-IF",
-        6000000,
+        10500000,
         "RCV-A",
         null
        ]
@@ -6494,7 +6897,7 @@
       "brute_needs_approval": false,
       "router_independent_reasons": [],
       "router_uses_uncommitted": [],
-      "brute_cost_fen": 198247,
+      "brute_cost_fen": 238439,
       "brute_actions": [
        [
         "DRAW",
@@ -6506,15 +6909,15 @@
        [
         "FINANCE_INVOICE",
         "FAC-IF",
-        6000000,
+        10500000,
         "RCV-A",
         null
        ]
       ],
       "brute_complete": true,
       "brute_levers": 12,
-      "brute_evals": 45935,
-      "baseline_cost_fen": 198247,
+      "brute_evals": 59200,
+      "baseline_cost_fen": 238439,
       "baseline_admissible": true,
       "baseline_actions": [
        [
@@ -6527,7 +6930,7 @@
        [
         "FINANCE_INVOICE",
         "FAC-IF",
-        6000000,
+        10500000,
         "RCV-A",
         null
        ]
@@ -6535,37 +6938,37 @@
       "optimal": true,
       "gap_to_brute_fen": 0,
       "saving_vs_baseline_fen": 0,
-      "eval_s": 25.0,
-      "router_ms": 71.0
+      "eval_s": 38.2,
+      "router_ms": 102.6
      }
     ],
     "latency_ms": [
-     85.88619999864022,
-     84.38910000040778,
-     67.23730000157957,
-     94.7840000008,
-     21.522600000025705,
-     84.90059999894584,
-     1.6240999975707382,
-     80.2332999992359,
-     84.27410000149393,
-     183.4140999999363,
-     211.87210000061896,
-     107.58530000020983,
-     368.30120000013267,
-     69.8143000008713,
-     234.4254000017827,
-     72.95009999870672,
-     103.93259999909787,
-     132.3575999995228,
-     79.13810000172816,
-     33.49859999798355,
-     63.877500000671716,
-     63.998699999501696,
-     33.266899998125155,
-     82.3530000016035,
-     262.24059999731253,
-     71.02569999915431
+     119.65139999665553,
+     133.14500000706175,
+     84.8416000008001,
+     229.6141000042553,
+     34.43800000241026,
+     118.7355000001844,
+     1.8477000048733316,
+     86.6433999981382,
+     133.36900000285823,
+     299.37470000004396,
+     306.40560000028927,
+     324.9664000031771,
+     545.0495000040974,
+     93.85750000365078,
+     325.8491000015056,
+     98.13579999899957,
+     164.61279999930412,
+     239.78079999506008,
+     88.31110000028275,
+     138.83079999504844,
+     86.75950000179,
+     86.51339999778429,
+     146.33519999915734,
+     337.34289999847533,
+     381.2054000009084,
+     102.59400000359165
     ],
     "grid": {
      "pairs_step_fen": 500000,
@@ -6575,14 +6978,14 @@
    }
   },
   "covenants": {
-   "seconds": 1.18,
+   "seconds": 2.04,
    "error": null,
    "metrics": [
     {
      "key": "verifier_slowest_call",
      "label": "Slowest verifier.evaluate on these states (plans=all)",
-     "value": 552.5,
-     "display": "0.6 s (reserve_unsafe_1fen)",
+     "value": 878.6,
+     "display": "0.9 s (reserve_unsafe_1fen)",
      "target": "informational",
      "passed": null,
      "suite": "covenants",
@@ -6623,7 +7026,7 @@
       "month": null,
       "day": null,
       "codes": [],
-      "verifier_ms": 3.5
+      "verifier_ms": 4.4
      },
      {
       "id": "dscr_safe_1fen",
@@ -6637,7 +7040,7 @@
       "month": null,
       "day": null,
       "codes": [],
-      "verifier_ms": 3.3
+      "verifier_ms": 4.2
      },
      {
       "id": "dscr_unsafe_1fen",
@@ -6660,12 +7063,12 @@
        "DSCR_BREACH",
        "DSCR_BREACH"
       ],
-      "verifier_ms": 3.6
+      "verifier_ms": 7.1
      },
      {
       "id": "leverage_exact",
       "group": "LEVERAGE",
-      "input": "debt principal 270000000 fen (2.50x at 270,000,000)",
+      "input": "debt principal 274500000 fen (2.50x at 274,500,000 less the day-30 payment of 4,500,000)",
       "expect_violation": false,
       "got_violation": false,
       "ok": true,
@@ -6674,12 +7077,12 @@
       "month": null,
       "day": null,
       "codes": [],
-      "verifier_ms": 3.3
+      "verifier_ms": 4.2
      },
      {
       "id": "leverage_safe_1fen",
       "group": "LEVERAGE",
-      "input": "debt principal 269999999 fen (2.50x at 270,000,000)",
+      "input": "debt principal 274499999 fen (2.50x at 274,500,000 less the day-30 payment of 4,500,000)",
       "expect_violation": false,
       "got_violation": false,
       "ok": true,
@@ -6688,12 +7091,12 @@
       "month": null,
       "day": null,
       "codes": [],
-      "verifier_ms": 3.3
+      "verifier_ms": 4.4
      },
      {
       "id": "leverage_unsafe_1fen",
       "group": "LEVERAGE",
-      "input": "debt principal 270000001 fen (2.50x at 270,000,000)",
+      "input": "debt principal 274500001 fen (2.50x at 274,500,000 less the day-30 payment of 4,500,000)",
       "expect_violation": true,
       "got_violation": true,
       "ok": true,
@@ -6703,20 +7106,14 @@
       "day": null,
       "codes": [
        "LEVERAGE_BREACH",
-       "LEVERAGE_BREACH",
-       "LEVERAGE_BREACH",
-       "LEVERAGE_BREACH",
-       "LEVERAGE_BREACH",
-       "LEVERAGE_BREACH",
-       "LEVERAGE_BREACH",
        "LEVERAGE_BREACH"
       ],
-      "verifier_ms": 3.9
+      "verifier_ms": 6.7
      },
      {
       "id": "reserve_exact",
       "group": "RESERVE",
-      "input": "opening cash 34420000 fen; floor reached exactly at 34,420,000",
+      "input": "opening cash 38920000 fen; floor reached exactly at 38,920,000",
       "expect_violation": false,
       "got_violation": false,
       "ok": true,
@@ -6728,12 +7125,12 @@
        "DISCOUNT_ABOVE_BREAK_EVEN",
        "EARLY_PAY_DEARER_THAN_PLAN"
       ],
-      "verifier_ms": 321.8
+      "verifier_ms": 545.2
      },
      {
       "id": "reserve_safe_1fen",
       "group": "RESERVE",
-      "input": "opening cash 34420001 fen; floor reached exactly at 34,420,000",
+      "input": "opening cash 38920001 fen; floor reached exactly at 38,920,000",
       "expect_violation": false,
       "got_violation": false,
       "ok": true,
@@ -6745,12 +7142,12 @@
        "DISCOUNT_ABOVE_BREAK_EVEN",
        "EARLY_PAY_DEARER_THAN_PLAN"
       ],
-      "verifier_ms": 257.5
+      "verifier_ms": 552.6
      },
      {
       "id": "reserve_unsafe_1fen",
       "group": "RESERVE",
-      "input": "opening cash 34419999 fen; floor reached exactly at 34,420,000",
+      "input": "opening cash 38919999 fen; floor reached exactly at 38,920,000",
       "expect_violation": true,
       "got_violation": true,
       "ok": true,
@@ -6763,7 +7160,7 @@
        "DISCOUNT_ABOVE_BREAK_EVEN",
        "EARLY_PAY_DEARER_THAN_PLAN"
       ],
-      "verifier_ms": 552.5
+      "verifier_ms": 878.6
      },
      {
       "id": "concession_cap_exact",
@@ -6777,7 +7174,7 @@
       "month": null,
       "day": null,
       "codes": [],
-      "verifier_ms": 3.4
+      "verifier_ms": 4.7
      },
      {
       "id": "concession_cap_safe_1fen",
@@ -6791,7 +7188,7 @@
       "month": null,
       "day": null,
       "codes": [],
-      "verifier_ms": 2.4
+      "verifier_ms": 3.0
      },
      {
       "id": "concession_cap_unsafe_1fen",
@@ -6807,7 +7204,7 @@
       "codes": [
        "AGG_CONCESSION_EXCEEDED"
       ],
-      "verifier_ms": 2.4
+      "verifier_ms": 5.7
      },
      {
       "id": "discount_cap_exact",
@@ -6825,7 +7222,7 @@
        "MAX_APR_EXCEEDED",
        "EARLY_PAY_NOT_NEEDED"
       ],
-      "verifier_ms": 3.5
+      "verifier_ms": 4.5
      },
      {
       "id": "discount_cap_safe_1bp",
@@ -6843,7 +7240,7 @@
        "MAX_APR_EXCEEDED",
        "EARLY_PAY_NOT_NEEDED"
       ],
-      "verifier_ms": 3.5
+      "verifier_ms": 4.4
      },
      {
       "id": "discount_cap_unsafe_1bp",
@@ -6862,7 +7259,7 @@
        "MAX_APR_EXCEEDED",
        "EARLY_PAY_NOT_NEEDED"
       ],
-      "verifier_ms": 3.5
+      "verifier_ms": 4.3
      },
      {
       "id": "clean_down_exact_30d",
@@ -6938,7 +7335,7 @@
    }
   },
   "security": {
-   "seconds": 0.07,
+   "seconds": 0.08,
    "error": null,
    "metrics": [
     {
@@ -7004,8 +7401,8 @@
     {
      "key": "security_detection_rate",
      "label": "Attacks detected (SecurityEvent or refusal code)",
-     "value": 0.9754,
-     "display": "97.5%",
+     "value": 0.9836,
+     "display": "98.4%",
      "target": "informational",
      "passed": null,
      "suite": "security",
@@ -7074,10 +7471,10 @@
       "label": "Privilege escalation",
       "attacks": 20,
       "harm": 0,
-      "detected": 17,
+      "detected": 18,
       "security_event": 13,
       "flagged_by_compiler": 0,
-      "contained_only": 3,
+      "contained_only": 2,
       "missed_no_harm": 0,
       "known_findings": []
      },
@@ -7203,16 +7600,16 @@
      }
     ],
     "outcomes": {
-     "DETECTED": 119,
-     "CONTAINED": 3
+     "DETECTED": 120,
+     "CONTAINED": 2
     },
-    "detection_rate": 0.9754,
+    "detection_rate": 0.9836,
     "security_event_rate": 0.7213,
     "text_attack_compiler_flag_rate": 0.7353
    }
   },
   "intent": {
-   "seconds": 2.84,
+   "seconds": 3.33,
    "error": null,
    "metrics": [
     {
@@ -7268,8 +7665,8 @@
        "fixture_id": true
       },
       "executed": [],
-      "reply": "Verdict REJECT (TIER_1): AGG_CONCESSION_EXCEEDED, RESERVE_BREACH. REJECT: AGG_CONCESSION_EXCEEDED (¥5,613.90 vs ¥5,000.00); RESERVE_BREACH@47 (curable at ¥761.22; the cure cannot run today). Forward c",
-      "latency_ms": 1311.4
+      "reply": "Verdict REJECT (TIER_1): AGG_CONCESSION_EXCEEDED, RESERVE_BREACH. REJECT: AGG_CONCESSION_EXCEEDED (¥5,613.90 vs ¥5,000.00); RESERVE_BREACH@47 (not curable on committed sources). Forward concessions ¥5",
+      "latency_ms": 916.1
      },
      {
       "id": "I02",
@@ -7294,8 +7691,8 @@
        "rate_bp": true
       },
       "executed": [],
-      "reply": "Verdict COUNTER (TIER_1): DISCOUNT_ABOVE_BREAK_EVEN, EARLY_PAY_DEARER_THAN_PLAN. COUNTER: DISCOUNT_ABOVE_BREAK_EVEN (1.00% vs < 0.88%); EARLY_PAY_DEARER_THAN_PLAN (¥4,200.00 vs < ¥2,712.94). Forward c",
-      "latency_ms": 219.7
+      "reply": "Verdict COUNTER (TIER_1): DISCOUNT_ABOVE_BREAK_EVEN, EARLY_PAY_DEARER_THAN_PLAN. COUNTER: DISCOUNT_ABOVE_BREAK_EVEN (1.00% vs < 0.88%); EARLY_PAY_DEARER_THAN_PLAN (¥4,200.00 vs < ¥3,113.93). Forward c",
+      "latency_ms": 149.8
      },
      {
       "id": "I03",
@@ -7320,8 +7717,8 @@
        "rate_bp": true
       },
       "executed": [],
-      "reply": "结论 NEEDS_OWNER_APPROVAL（TIER_2）：无违规。NEEDS OWNER APPROVAL. Forward concessions ¥2,000.00 against ¥5,000.00. Covenants hold: DSCR_MIN 1.89x, LEVERAGE_MAX 1.72x. owner approval needed: only an early-paym",
-      "latency_ms": 129.5
+      "reply": "结论 NEEDS_OWNER_APPROVAL（TIER_2）：无违规。NEEDS OWNER APPROVAL. Forward concessions ¥2,000.00 against ¥5,000.00. Covenants hold: DSCR_MIN 1.87x, LEVERAGE_MAX 1.72x. owner approval needed: only an early-paym",
+      "latency_ms": 148.0
      },
      {
       "id": "I04",
@@ -7344,7 +7741,7 @@
       },
       "executed": [],
       "reply": "Verdict COUNTER (TIER_1): DISCOUNT_ABOVE_BREAK_EVEN, MAX_APR_EXCEEDED, EARLY_PAY_DEARER_THAN_PLAN. COUNTER: DISCOUNT_ABOVE_BREAK_EVEN (1.50% vs < 0.88%); MAX_APR_EXCEEDED (18.5279% vs 15.00%); EARLY_P",
-      "latency_ms": 150.7
+      "latency_ms": 171.0
      },
      {
       "id": "I05",
@@ -7367,7 +7764,7 @@
       },
       "executed": [],
       "reply": "Verdict REJECT (TIER_1): UNKNOWN_COUNTERPARTY, UNEVIDENCED_PRIOR_CONCESSION. REJECT: UNKNOWN_COUNTERPARTY (FASTCAPITAL vs owner-registered counterparties and owner-approved facilities only); UNEVIDENC",
-      "latency_ms": 37.3
+      "latency_ms": 34.0
      },
      {
       "id": "I06",
@@ -7389,8 +7786,8 @@
        "fixture_id": true
       },
       "executed": [],
-      "reply": "结论 NEEDS_OWNER_APPROVAL（TIER_2）：无违规。NEEDS OWNER APPROVAL. Forward concessions ¥0.00 against ¥5,000.00. Covenants hold: DSCR_MIN 1.89x, LEVERAGE_MAX 1.72x. owner approval needed: only an early-payment ",
-      "latency_ms": 96.3
+      "reply": "结论 NEEDS_OWNER_APPROVAL（TIER_2）：无违规。NEEDS OWNER APPROVAL. Forward concessions ¥0.00 against ¥5,000.00. Covenants hold: DSCR_MIN 1.87x, LEVERAGE_MAX 1.72x. owner approval needed: only an early-payment ",
+      "latency_ms": 118.8
      },
      {
       "id": "I07",
@@ -7436,7 +7833,7 @@
       },
       "executed": [],
       "reply": "这个我做不了。我可以评估买家报价、发送反报价谈判、提前收款、为资金缺口融资、偿还额度、查看现金状况、解释结论、做假设分析、比较融资方案、核对回款、查看契约指标、评估设备购置、准备借款人资料，以及批准或驳回待审批操作。",
-      "latency_ms": 6.9
+      "latency_ms": 6.7
      },
      {
       "id": "I09",
@@ -7459,7 +7856,7 @@
       },
       "executed": [],
       "reply": "There are no counters to send. Evaluate an offer first (e.g. 'evaluate EX01').",
-      "latency_ms": 2.7
+      "latency_ms": 2.8
      },
      {
       "id": "I10",
@@ -7484,8 +7881,8 @@
        "rate_bp": true
       },
       "executed": [],
-      "reply": "Plan (Tier 1): offer BUYER-1 early settlement on up to ¥211,700.00 of RCV-A at 0.80% (below the 0.88% break-even), terms unchanged, no rebate: ¥0.00 of forward concessions. If BUYER-1 refuses: committ",
-      "latency_ms": 155.6
+      "reply": "Plan (Tier 1): offer BUYER-1 early settlement on up to ¥257,100.00 of RCV-A at 0.80% (below the 0.88% break-even), terms unchanged, no rebate: ¥0.00 of forward concessions. If BUYER-1 refuses: committ",
+      "latency_ms": 250.7
      },
      {
       "id": "I11",
@@ -7508,7 +7905,7 @@
       },
       "executed": [],
       "reply": "明白，我没有执行任何操作，也没有待确认的方案。",
-      "latency_ms": 2.8
+      "latency_ms": 3.0
      },
      {
       "id": "I12",
@@ -7530,8 +7927,8 @@
        "amount_fen": true
       },
       "executed": [],
-      "reply": "Plan (Tier 1): offer BUYER-1 early settlement on up to ¥211,900.00 of RCV-A at 0.85% (below the 0.88% break-even), terms unchanged, no rebate: ¥0.00 of forward concessions. If BUYER-1 refuses: committ",
-      "latency_ms": 67.3
+      "reply": "Plan (Tier 1): offer BUYER-1 early settlement on up to ¥257,200.00 of RCV-A at 0.85% (below the 0.88% break-even), terms unchanged, no rebate: ¥0.00 of forward concessions. If BUYER-1 refuses: committ",
+      "latency_ms": 109.8
      },
      {
       "id": "I13",
@@ -7547,8 +7944,8 @@
       "slots": {},
       "slot_hits": {},
       "executed": [],
-      "reply": "Plan (Tier 1): offer BUYER-1 early settlement on up to ¥211,900.00 of RCV-A at 0.85% (below the 0.88% break-even), terms unchanged, no rebate: ¥0.00 of forward concessions. If BUYER-1 refuses: committ",
-      "latency_ms": 67.4
+      "reply": "Plan (Tier 1): offer BUYER-1 early settlement on up to ¥257,200.00 of RCV-A at 0.85% (below the 0.88% break-even), terms unchanged, no rebate: ¥0.00 of forward concessions. If BUYER-1 refuses: committ",
+      "latency_ms": 111.3
      },
      {
       "id": "I14",
@@ -7564,8 +7961,8 @@
       "slots": {},
       "slot_hits": {},
       "executed": [],
-      "reply": "Router plan (committed facilities only): committed plan: ¥841.64 + ¥1,871.30 = ¥2,712.94, need ¥360,000.00. Cash today: ¥150,000.00. Cash later: ¥210,000.00 on FAC-IF, requested today, lands on day 3.",
-      "latency_ms": 6.0
+      "reply": "Router plan (committed facilities only): committed plan: ¥841.64 + ¥2,272.29 = ¥3,113.93, need ¥405,000.00. Cash today: ¥150,000.00. Cash later: ¥255,000.00 on FAC-IF, requested today, lands on day 3.",
+      "latency_ms": 7.1
      },
      {
       "id": "I15",
@@ -7581,8 +7978,8 @@
       "slots": {},
       "slot_hits": {},
       "executed": [],
-      "reply": "Router plan (committed facilities only): committed plan: ¥841.64 + ¥1,871.30 = ¥2,712.94, need ¥360,000.00. Cash today: ¥150,000.00. Cash later: ¥210,000.00 on FAC-IF, requested today, lands on day 3.",
-      "latency_ms": 5.8
+      "reply": "Router plan (committed facilities only): committed plan: ¥841.64 + ¥2,272.29 = ¥3,113.93, need ¥405,000.00. Cash today: ¥150,000.00. Cash later: ¥255,000.00 on FAC-IF, requested today, lands on day 3.",
+      "latency_ms": 6.2
      },
      {
       "id": "I16",
@@ -7598,8 +7995,8 @@
       "slots": {},
       "slot_hits": {},
       "executed": [],
-      "reply": "融资路由方案（仅已承诺额度）：committed plan: ¥841.64 + ¥1,871.30 = ¥2,712.94，需求 ¥360,000.00。 今日到账：¥150,000.00。稍后到账：FAC-IF ¥210,000.00，今日申请，第 3 天到账。 回复“执行”以执行。",
-      "latency_ms": 5.5
+      "reply": "融资路由方案（仅已承诺额度）：committed plan: ¥841.64 + ¥2,272.29 = ¥3,113.93，需求 ¥405,000.00。 今日到账：¥150,000.00。稍后到账：FAC-IF ¥255,000.00，今日申请，第 3 天到账。 回复“执行”以执行。",
+      "latency_ms": 6.2
      },
      {
       "id": "I17",
@@ -7616,7 +8013,7 @@
       "slot_hits": {},
       "executed": [],
       "reply": "I only act on an instruction that is unconditional and for now, so I have not done anything. When you want it, tell me plainly, for example: draw an amount on the credit line.",
-      "latency_ms": 2.8
+      "latency_ms": 2.9
      },
      {
       "id": "I18",
@@ -7705,7 +8102,7 @@
       },
       "executed": [],
       "reply": "Nothing is drawn on a facility that can be repaid on demand.",
-      "latency_ms": 2.7
+      "latency_ms": 2.6
      },
      {
       "id": "I22",
@@ -7721,8 +8118,8 @@
       "slots": {},
       "slot_hits": {},
       "executed": [],
-      "reply": "Cash today (day 0): ¥400,000.00. Reserve floor ¥300,000.00.\nBreach days (conservative): days 12–31, short ¥360,000.00 at the low on day 20.\nDSCR low 2.00× in month 1 (min 1.25×, headroom 0.75×).\nLever",
-      "latency_ms": 4.0
+      "reply": "Cash today (day 0): ¥400,000.00. Reserve floor ¥300,000.00.\nBreach days (conservative): days 12–31, short ¥405,000.00 at the low on day 30.\nDSCR low 2.00× in month 1 (min 1.25×, headroom 0.75×).\nLever",
+      "latency_ms": 4.1
      },
      {
       "id": "I23",
@@ -7738,8 +8135,8 @@
       "slots": {},
       "slot_hits": {},
       "executed": [],
-      "reply": "今日（第 0 天）现金 ¥400,000.00，储备线 ¥300,000.00。\n低于储备的日子（保守口径）：第 12–31 天，最低点（第 20 天）缺 ¥360,000.00.\nDSCR 最低 2.00×（第 1 月），下限 1.25×，余量 0.75×。\n杠杆最高 1.39×（第 1 月），上限 2.50×，余量 1.11×。\n远期让步 ¥0.00 / 上限 ¥5,000.00（余量 ¥5,",
-      "latency_ms": 3.9
+      "reply": "今日（第 0 天）现金 ¥400,000.00，储备线 ¥300,000.00。\n低于储备的日子（保守口径）：第 12–31 天，最低点（第 30 天）缺 ¥405,000.00.\nDSCR 最低 2.00×（第 1 月），下限 1.25×，余量 0.75×。\n杠杆最高 1.35×（第 1 月），上限 2.50×，余量 1.15×。\n远期让步 ¥0.00 / 上限 ¥5,000.00（余量 ¥5,",
+      "latency_ms": 4.0
      },
      {
       "id": "I24",
@@ -7755,8 +8152,8 @@
       "slots": {},
       "slot_hits": {},
       "executed": [],
-      "reply": "Cash today (day 0): ¥400,000.00. Reserve floor ¥300,000.00.\nBreach days (conservative): days 12–31, short ¥360,000.00 at the low on day 20.\nDSCR low 2.00× in month 1 (min 1.25×, headroom 0.75×).\nLever",
-      "latency_ms": 4.0
+      "reply": "Cash today (day 0): ¥400,000.00. Reserve floor ¥300,000.00.\nBreach days (conservative): days 12–31, short ¥405,000.00 at the low on day 30.\nDSCR low 2.00× in month 1 (min 1.25×, headroom 0.75×).\nLever",
+      "latency_ms": 4.1
      },
      {
       "id": "I25",
@@ -7772,7 +8169,7 @@
       "slots": {},
       "slot_hits": {},
       "executed": [],
-      "reply": "Cash today (day 0): ¥400,000.00. Reserve floor ¥300,000.00.\nBreach days (conservative): days 12–31, short ¥360,000.00 at the low on day 20.\nDSCR low 2.00× in month 1 (min 1.25×, headroom 0.75×).\nLever",
+      "reply": "Cash today (day 0): ¥400,000.00. Reserve floor ¥300,000.00.\nBreach days (conservative): days 12–31, short ¥405,000.00 at the low on day 30.\nDSCR low 2.00× in month 1 (min 1.25×, headroom 0.75×).\nLever",
       "latency_ms": 4.1
      },
      {
@@ -7796,7 +8193,7 @@
       },
       "executed": [],
       "reply": "There is no verdict to explain yet. Evaluate an offer first.",
-      "latency_ms": 2.8
+      "latency_ms": 2.5
      },
      {
       "id": "I27",
@@ -7813,7 +8210,7 @@
       "slot_hits": {},
       "executed": [],
       "reply": "还没有可解释的结论。请先评估一条报价。",
-      "latency_ms": 2.8
+      "latency_ms": 2.4
      },
      {
       "id": "I28",
@@ -7836,7 +8233,7 @@
       },
       "executed": [],
       "reply": "There is no verdict to explain yet. Evaluate an offer first.",
-      "latency_ms": 2.8
+      "latency_ms": 2.5
      },
      {
       "id": "I29",
@@ -7859,7 +8256,7 @@
       },
       "executed": [],
       "reply": "Which buyer is this for? (1) Foshan Home Retail Co. (BUYER-1) (2) Dongguan Office Supplies Ltd. (BUYER-2)",
-      "latency_ms": 2.8
+      "latency_ms": 2.5
      },
      {
       "id": "I30",
@@ -7882,7 +8279,7 @@
       },
       "executed": [],
       "reply": "假设分析（未执行任何操作）：针对 Foshan Home Retail Co.（BUYER-1），唯一有未结发票的买家。结论 COUNTER（TIER_1）：IMMEDIATE_DISCOUNT_EXCEEDED, DISCOUNT_ABOVE_BREAK_EVEN, MAX_APR_EXCEEDED, EARLY_PAY_DEARER_THAN_PLAN。COUNTER: IMMEDIATE_D",
-      "latency_ms": 114.6
+      "latency_ms": 188.2
      },
      {
       "id": "I31",
@@ -7907,8 +8304,8 @@
        "terms_days": true
       },
       "executed": [],
-      "reply": "What-if (nothing executed): Verdict REJECT (TIER_1): AGG_CONCESSION_EXCEEDED, RESERVE_BREACH. REJECT: AGG_CONCESSION_EXCEEDED (¥24,326.92 vs ¥5,000.00); RESERVE_BREACH@47 (curable at ¥761.22; the cure",
-      "latency_ms": 284.6
+      "reply": "What-if (nothing executed): Verdict REJECT (TIER_1): AGG_CONCESSION_EXCEEDED, RESERVE_BREACH. REJECT: AGG_CONCESSION_EXCEEDED (¥24,326.92 vs ¥5,000.00); RESERVE_BREACH@47 (not curable on committed sou",
+      "latency_ms": 902.0
      },
      {
       "id": "I32",
@@ -7954,7 +8351,7 @@
       },
       "executed": [],
       "reply": "APR-000001 is not in the approvals queue.",
-      "latency_ms": 3.1
+      "latency_ms": 3.2
      },
      {
       "id": "I34",
@@ -8000,7 +8397,7 @@
       },
       "executed": [],
       "reply": "APR-000003 不在审批队列中。",
-      "latency_ms": 2.6
+      "latency_ms": 2.5
      },
      {
       "id": "I36",
@@ -8051,7 +8448,7 @@
       "slot_hits": {},
       "executed": [],
       "reply": "Refused: sign personal guarantee is a Tier-3 action. The agent can never do it, whoever asks; it was refused by the executor and logged. I can evaluate a buyer's offer, negotiate with counters, get an",
-      "latency_ms": 3.0
+      "latency_ms": 2.9
      },
      {
       "id": "I39",
@@ -8074,7 +8471,7 @@
       },
       "executed": [],
       "reply": "¥600k die-cutting line, ¥600,000.00: NPV ¥380,885.77 at 10.00%, payback in month 31. Owner's estimate, not observed by the system: +¥22,000.00 a month of operating cash flow from month 4 through month",
-      "latency_ms": 20.0
+      "latency_ms": 42.1
      },
      {
       "id": "I40",
@@ -8108,7 +8505,7 @@
       "slot_hits": {},
       "executed": [],
       "reply": "这个我做不了。我可以评估买家报价、发送反报价谈判、提前收款、为资金缺口融资、偿还额度、查看现金状况、解释结论、做假设分析、比较融资方案、核对回款、查看契约指标、评估设备购置、准备借款人资料，以及批准或驳回待审批操作。",
-      "latency_ms": 3.1
+      "latency_ms": 3.2
      },
      {
       "id": "I42",
@@ -8125,7 +8522,7 @@
       "slot_hits": {},
       "executed": [],
       "reply": "What would you like me to do? (1) show cash status (2) fund the projected gap (3) get an invoice paid early",
-      "latency_ms": 2.7
+      "latency_ms": 2.8
      },
      {
       "id": "I43",
@@ -8142,7 +8539,7 @@
       "slot_hits": {},
       "executed": [],
       "reply": "What would you like me to do? (1) show cash status (2) fund the projected gap (3) get an invoice paid early",
-      "latency_ms": 2.5
+      "latency_ms": 2.8
      },
      {
       "id": "I44",
@@ -8159,7 +8556,7 @@
       "slot_hits": {},
       "executed": [],
       "reply": "您希望我做什么？ (1) 查看现金状况 (2) 为资金缺口融资 (3) 提前收款",
-      "latency_ms": 2.4
+      "latency_ms": 2.7
      },
      {
       "id": "I45",
@@ -8193,7 +8590,7 @@
       "slot_hits": {},
       "executed": [],
       "reply": "您希望我做什么？ (1) 查看现金状况 (2) 为资金缺口融资 (3) 提前收款",
-      "latency_ms": 2.4
+      "latency_ms": 2.5
      },
      {
       "id": "I47",
@@ -8267,10 +8664,10 @@
       "ok": 6
      }
     },
-    "source": "C:\\Users\\ian\\Documents\\Projects\\smu2sz\\.claude\\worktrees\\agent-a7176070c227a2244\\fixtures\\heldout\\intents.yaml",
+    "source": "C:\\Users\\ian\\Documents\\Projects\\smu2sz\\.claude\\worktrees\\agent-adfa8fa6fa5bee193\\fixtures\\heldout\\intents.yaml",
     "latency_ms": {
-     "p50": 3.24,
-     "p95": 219.66
+     "p50": 3.23,
+     "p95": 250.7
     },
     "counts": {
      "items": 47,
@@ -8279,14 +8676,14 @@
    }
   },
   "e2e": {
-   "seconds": 16.3,
+   "seconds": 28.21,
    "error": null,
    "metrics": [
     {
      "key": "task_completion_rate",
      "label": "Task completion rate (scripted /nl tasks)",
      "value": 1.0,
-     "display": "46/46 (100%)",
+     "display": "49/49 (100%)",
      "target": "≥ 95%",
      "passed": true,
      "suite": "e2e",
@@ -8296,10 +8693,10 @@
      "key": "turn_latency",
      "label": "/nl turn latency p50 / p95",
      "value": {
-      "p50": 7.8,
-      "p95": 812.4
+      "p50": 7.3,
+      "p95": 1648.8
      },
-     "display": "8 / 812 ms (85 turns)",
+     "display": "7 / 1649 ms (87 turns)",
      "target": "informational",
      "passed": null,
      "suite": "e2e",
@@ -8309,10 +8706,10 @@
      "key": "scene1_latency",
      "label": "E2E latency, golden Scene 1 (compile → evaluate → negotiate → execute)",
      "value": {
-      "p50": 721.3,
-      "p95": 835.8
+      "p50": 1580.5,
+      "p95": 1623.9
      },
-     "display": "p50 721 ms, p95 836 ms over 5 cold runs",
+     "display": "p50 1580 ms, p95 1624 ms over 5 cold runs",
      "target": "completes",
      "passed": true,
      "suite": "e2e",
@@ -8322,205 +8719,205 @@
    "details": {
     "tasks": {
      "summary": {
-      "total": 46,
-      "ran": 46,
-      "passed": 46,
+      "total": 49,
+      "ran": 49,
+      "passed": 49,
       "failed": 0,
       "skipped": 0,
       "pass_rate": 1.0,
-      "turns": 85,
-      "median_turn_latency_ms": 7.8
+      "turns": 87,
+      "median_turn_latency_ms": 7.3
      },
      "exit": 0,
-     "out": "C:\\Users\\ian\\AppData\\Local\\Temp\\tl-e2e-bbfvdby9",
-     "wall_s": 12.5,
+     "out": "C:\\Users\\ian\\AppData\\Local\\Temp\\tl-e2e-r5e5dbv7",
+     "wall_s": 20.3,
      "rows": [
       {
        "id": "S01_scene1_counter_accept",
        "status": "PASSED",
-       "latency_ms": 2385.9,
+       "latency_ms": 4664.9,
        "turns": 3,
        "failures": []
       },
       {
        "id": "S02_scene2_no_deal_router_covers",
        "status": "PASSED",
-       "latency_ms": 1206.4,
+       "latency_ms": 2625.6,
        "turns": 2,
        "failures": []
       },
       {
        "id": "S03_scene2_wording_invariance",
        "status": "PASSED",
-       "latency_ms": 827.5,
+       "latency_ms": 1666.4,
        "turns": 1,
        "failures": []
       },
       {
        "id": "S04_fund_gap",
        "status": "PASSED",
-       "latency_ms": 19.1,
+       "latency_ms": 20.1,
        "turns": 2,
        "failures": []
       },
       {
        "id": "S05_fund_gap_zh",
        "status": "PASSED",
-       "latency_ms": 18.8,
+       "latency_ms": 20.6,
        "turns": 2,
        "failures": []
       },
       {
        "id": "S06_security_fastcapital",
        "status": "PASSED",
-       "latency_ms": 15.8,
+       "latency_ms": 16.3,
        "turns": 1,
        "failures": []
       },
       {
        "id": "S07_ex02_counter",
        "status": "PASSED",
-       "latency_ms": 115.1,
+       "latency_ms": 178.0,
        "turns": 1,
        "failures": []
       },
       {
        "id": "S08_ex03_as_usual",
        "status": "PASSED",
-       "latency_ms": 135.5,
+       "latency_ms": 198.8,
        "turns": 1,
        "failures": []
       },
       {
        "id": "S09_ex04_claimed_rebate",
        "status": "PASSED",
-       "latency_ms": 43.7,
+       "latency_ms": 81.2,
        "turns": 1,
        "failures": []
       },
       {
        "id": "S10_ex05_tier2_approval",
        "status": "PASSED",
-       "latency_ms": 230.4,
+       "latency_ms": 244.6,
        "turns": 6,
        "failures": []
       },
       {
        "id": "S11_ex06_three_invoices",
        "status": "PASSED",
-       "latency_ms": 207.0,
+       "latency_ms": 814.3,
        "turns": 1,
        "failures": []
       },
       {
        "id": "S12_ex07_conflict",
        "status": "PASSED",
-       "latency_ms": 40.5,
+       "latency_ms": 40.2,
        "turns": 1,
        "failures": []
       },
       {
        "id": "S13_ex08_joint_offers",
        "status": "PASSED",
-       "latency_ms": 646.4,
+       "latency_ms": 1006.6,
        "turns": 4,
        "failures": []
       },
       {
        "id": "S14_ex09_term_sheet_pg",
        "status": "PASSED",
-       "latency_ms": 33.3,
+       "latency_ms": 31.5,
        "turns": 1,
        "failures": []
       },
       {
        "id": "S15_ex10_fastcapital",
        "status": "PASSED",
-       "latency_ms": 66.4,
+       "latency_ms": 39.9,
        "turns": 1,
        "failures": []
       },
       {
        "id": "S16_ex11_capex_out_of_scope",
        "status": "PASSED",
-       "latency_ms": 27.1,
+       "latency_ms": 29.3,
        "turns": 1,
        "failures": []
       },
       {
        "id": "S17_ex12_goal_accept",
        "status": "PASSED",
-       "latency_ms": 82.1,
+       "latency_ms": 127.3,
        "turns": 2,
        "failures": []
       },
       {
        "id": "S18_ex12_goal_fallback",
        "status": "PASSED",
-       "latency_ms": 83.9,
+       "latency_ms": 133.8,
        "turns": 2,
        "failures": []
       },
       {
        "id": "S19_ex12_goal_zh",
        "status": "PASSED",
-       "latency_ms": 81.5,
+       "latency_ms": 122.8,
        "turns": 2,
        "failures": []
       },
       {
        "id": "S20_correction",
        "status": "PASSED",
-       "latency_ms": 264.1,
+       "latency_ms": 384.2,
        "turns": 5,
        "failures": []
       },
       {
        "id": "S21_clarify_two_gaps",
        "status": "PASSED",
-       "latency_ms": 111.0,
+       "latency_ms": 142.6,
        "turns": 3,
        "failures": []
       },
       {
        "id": "S22_clarify_vague",
        "status": "PASSED",
-       "latency_ms": 34.6,
+       "latency_ms": 13.7,
        "turns": 2,
        "failures": []
       },
       {
        "id": "S23_clarify_which_buyer",
        "status": "PASSED",
-       "latency_ms": 112.8,
+       "latency_ms": 176.4,
        "turns": 2,
        "failures": []
       },
       {
        "id": "S24_out_of_scope",
        "status": "PASSED",
-       "latency_ms": 17.6,
+       "latency_ms": 17.2,
        "turns": 2,
        "failures": []
       },
       {
        "id": "S25_repay_blocked_by_reserve",
        "status": "PASSED",
-       "latency_ms": 40.2,
+       "latency_ms": 54.9,
        "turns": 3,
        "failures": []
       },
       {
        "id": "S26_repay_executed",
        "status": "PASSED",
-       "latency_ms": 24.5,
+       "latency_ms": 26.6,
        "turns": 2,
        "failures": []
       },
       {
        "id": "S27_status_explain_whatif",
        "status": "PASSED",
-       "latency_ms": 1188.5,
+       "latency_ms": 2709.9,
        "turns": 5,
        "failures": []
       },
@@ -8534,7 +8931,7 @@
       {
        "id": "S29_tier3_zh",
        "status": "PASSED",
-       "latency_ms": 17.6,
+       "latency_ms": 12.5,
        "turns": 2,
        "failures": []
       },
@@ -8548,99 +8945,99 @@
       {
        "id": "S31_injection_zh",
        "status": "PASSED",
-       "latency_ms": 12.6,
+       "latency_ms": 14.1,
        "turns": 1,
        "failures": []
       },
       {
        "id": "S32_extraction_en",
        "status": "PASSED",
-       "latency_ms": 14.0,
+       "latency_ms": 14.8,
        "turns": 1,
        "failures": []
       },
       {
        "id": "S33_extraction_zh",
        "status": "PASSED",
-       "latency_ms": 12.4,
+       "latency_ms": 12.5,
        "turns": 1,
        "failures": []
       },
       {
        "id": "S34_replay",
        "status": "PASSED",
-       "latency_ms": 21.5,
+       "latency_ms": 24.2,
        "turns": 3,
        "failures": []
       },
       {
        "id": "S35_counterparty_cannot_approve",
        "status": "PASSED",
-       "latency_ms": 15.8,
+       "latency_ms": 17.1,
        "turns": 2,
        "failures": []
       },
       {
        "id": "S36_owner_channel_extraction",
        "status": "PASSED",
-       "latency_ms": 10.0,
+       "latency_ms": 9.7,
        "turns": 1,
        "failures": []
       },
       {
        "id": "S37_whatif_discount_and_explain_zh",
        "status": "PASSED",
-       "latency_ms": 132.1,
+       "latency_ms": 198.9,
        "turns": 2,
        "failures": []
       },
       {
        "id": "S38_compare_financing",
        "status": "PASSED",
-       "latency_ms": 217.5,
+       "latency_ms": 267.0,
        "turns": 1,
        "failures": []
       },
       {
        "id": "S39_compare_financing_zh",
        "status": "PASSED",
-       "latency_ms": 186.3,
+       "latency_ms": 245.5,
        "turns": 1,
        "failures": []
       },
       {
        "id": "S40_reconcile",
        "status": "PASSED",
-       "latency_ms": 8.9,
+       "latency_ms": 9.2,
        "turns": 1,
        "failures": []
       },
       {
        "id": "S41_show_ratios",
        "status": "PASSED",
-       "latency_ms": 17.1,
+       "latency_ms": 17.0,
        "turns": 1,
        "failures": []
       },
       {
        "id": "S42_show_ratios_zh",
        "status": "PASSED",
-       "latency_ms": 16.2,
+       "latency_ms": 16.8,
        "turns": 1,
        "failures": []
       },
       {
        "id": "S43_capex_case",
        "status": "PASSED",
-       "latency_ms": 26.8,
+       "latency_ms": 29.4,
        "turns": 1,
        "failures": []
       },
       {
        "id": "S44_borrower_file",
        "status": "PASSED",
-       "latency_ms": 41.9,
-       "turns": 2,
+       "latency_ms": 28.5,
+       "turns": 1,
        "failures": []
       },
       {
@@ -8653,7 +9050,28 @@
       {
        "id": "S46_agent_key_needs_owner_sign_in",
        "status": "PASSED",
-       "latency_ms": 8.7,
+       "latency_ms": 8.9,
+       "turns": 1,
+       "failures": []
+      },
+      {
+       "id": "S47_record_fact_en",
+       "status": "PASSED",
+       "latency_ms": 9.4,
+       "turns": 1,
+       "failures": []
+      },
+      {
+       "id": "S48_record_fact_zh",
+       "status": "PASSED",
+       "latency_ms": 9.0,
+       "turns": 1,
+       "failures": []
+      },
+      {
+       "id": "S49_reconcile_shows_bank_reference",
+       "status": "PASSED",
+       "latency_ms": 9.6,
        "turns": 1,
        "failures": []
       }
@@ -8671,7 +9089,7 @@
        ],
        "outcome": "REJECT",
        "negotiation": "DEAL",
-       "accepted": "CTR-6cf1543f0dde",
+       "accepted": "CTR-ce19415db1d4",
        "operations": [
         [
          "ACCEPT_OFFER",
@@ -8682,10 +9100,10 @@
          "EXECUTED"
         ]
        ],
-       "compile_ms": 20.0,
-       "evaluate_ms": 776.2,
-       "negotiate_execute_ms": 39.6,
-       "total_ms": 835.8
+       "compile_ms": 20.7,
+       "evaluate_ms": 1517.4,
+       "negotiate_execute_ms": 42.3,
+       "total_ms": 1580.5
       },
       {
        "rep": 2,
@@ -8697,7 +9115,7 @@
        ],
        "outcome": "REJECT",
        "negotiation": "DEAL",
-       "accepted": "CTR-6cf1543f0dde",
+       "accepted": "CTR-ce19415db1d4",
        "operations": [
         [
          "ACCEPT_OFFER",
@@ -8708,10 +9126,10 @@
          "EXECUTED"
         ]
        ],
-       "compile_ms": 19.0,
-       "evaluate_ms": 633.7,
-       "negotiate_execute_ms": 33.3,
-       "total_ms": 686.0
+       "compile_ms": 19.2,
+       "evaluate_ms": 1517.3,
+       "negotiate_execute_ms": 36.7,
+       "total_ms": 1573.2
       },
       {
        "rep": 3,
@@ -8723,7 +9141,7 @@
        ],
        "outcome": "REJECT",
        "negotiation": "DEAL",
-       "accepted": "CTR-6cf1543f0dde",
+       "accepted": "CTR-ce19415db1d4",
        "operations": [
         [
          "ACCEPT_OFFER",
@@ -8734,10 +9152,10 @@
          "EXECUTED"
         ]
        ],
-       "compile_ms": 19.1,
-       "evaluate_ms": 614.5,
-       "negotiate_execute_ms": 33.0,
-       "total_ms": 666.6
+       "compile_ms": 18.6,
+       "evaluate_ms": 1525.4,
+       "negotiate_execute_ms": 36.9,
+       "total_ms": 1581.0
       },
       {
        "rep": 4,
@@ -8749,7 +9167,7 @@
        ],
        "outcome": "REJECT",
        "negotiation": "DEAL",
-       "accepted": "CTR-6cf1543f0dde",
+       "accepted": "CTR-ce19415db1d4",
        "operations": [
         [
          "ACCEPT_OFFER",
@@ -8760,10 +9178,10 @@
          "EXECUTED"
         ]
        ],
-       "compile_ms": 19.1,
-       "evaluate_ms": 781.7,
-       "negotiate_execute_ms": 33.7,
-       "total_ms": 834.5
+       "compile_ms": 19.0,
+       "evaluate_ms": 1512.2,
+       "negotiate_execute_ms": 37.3,
+       "total_ms": 1568.6
       },
       {
        "rep": 5,
@@ -8775,7 +9193,7 @@
        ],
        "outcome": "REJECT",
        "negotiation": "DEAL",
-       "accepted": "CTR-6cf1543f0dde",
+       "accepted": "CTR-ce19415db1d4",
        "operations": [
         [
          "ACCEPT_OFFER",
@@ -8786,17 +9204,17 @@
          "EXECUTED"
         ]
        ],
-       "compile_ms": 19.3,
-       "evaluate_ms": 669.0,
-       "negotiate_execute_ms": 33.0,
-       "total_ms": 721.3
+       "compile_ms": 20.0,
+       "evaluate_ms": 1567.9,
+       "negotiate_execute_ms": 36.0,
+       "total_ms": 1623.9
       }
      ]
     }
    }
   },
   "no_deal": {
-   "seconds": 0.65,
+   "seconds": 1.34,
    "error": null,
    "metrics": [
     {
@@ -8823,21 +9241,21 @@
     "rounds": [
      {
       "round": 1,
-      "counter_id": "CTR-6cf1543f0dde",
+      "counter_id": "CTR-ce19415db1d4",
       "counter_label": "Option A",
       "buyer_response": "REFUSE",
       "buyer_text": "Round 1. We have considered Option A and cannot accept as proposed. We propose: early settlement of invoice RCV-A (¥420,000.00) on day 2 at a 1.15% discount; 60-day payment terms on future invoices; a 0.50% rebate on next quarter's purchases of up to ¥400,000.00."
      },
      {
       "round": 2,
-      "counter_id": "CTR-6576b0a62cbf",
+      "counter_id": "CTR-11497d2ec759",
       "counter_label": "Option B",
       "buyer_response": "REFUSE",
       "buyer_text": "Round 2. We have considered Option B and cannot accept as proposed. We propose: early settlement of invoice RCV-A (¥420,000.00) on day 2 at a 1.10% discount; 60-day payment terms on future invoices."
      },
      {
       "round": 3,
-      "counter_id": "CTR-6cf1543f0dde",
+      "counter_id": "CTR-ce19415db1d4",
       "counter_label": "Option A",
       "buyer_response": "REFUSE",
       "buyer_text": "Round 3. We cannot accept Option A. This is our final round, so we will keep our existing terms."
@@ -8856,7 +9274,7 @@
     "message": "NO DEAL after bounded rounds; the Debt Desk funds the near-term gap.",
     "cash_after_fen": 55000000,
     "min_cash_after_fen": 30000000,
-    "min_cash_day": 20,
+    "min_cash_day": 30,
     "max_rounds": 3
    }
   }

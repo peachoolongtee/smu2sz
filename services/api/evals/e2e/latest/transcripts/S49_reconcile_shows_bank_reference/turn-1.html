@@ -1,0 +1,16 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>S49_reconcile_shows_bank_reference turn 1</title><style>body{font:14px/1.5 system-ui,sans-serif;margin:24px;max-width:960px;color:#1d2330;background:#fff}
+.tag{display:inline-block;padding:2px 8px;border-radius:10px;background:#e3f5e8}
+pre{white-space:pre-wrap;background:#f5f6f8;padding:12px;border-radius:6px}table{border-collapse:collapse;width:100%}
+td{border-top:1px solid #e3e5e8;padding:4px 6px;vertical-align:top}</style></head><body>
+<h1>S49_reconcile_shows_bank_reference · turn 1 <span class="tag">PASS</span></h1><p>The bank feed sends a reference with each receipt; the same reference under a new key is refused and reconciliation shows it</p>
+<p><b>OWNER</b>:</p>
+<pre>Reconcile this month</pre><p><b>Intent</b> RECONCILE · <b>Verdict</b> —
+</p><p><b>Reply</b></p><pre>Reconciliation to day 0: 0 receipt(s) matched, 2 flagged; received ¥50,000.00 of ¥420,000.00 expected.
+- Flagged: RCV-A (bank ref BANK-S49-1) ¥50,000.00: SHORT_PAYMENT. partial payment: short by ¥370,000.00 against what is outstanding; ¥370,000.00 of RCV-A still due
+- Flagged: RCV-A (bank ref BANK-S49-1) ¥50,000.00: UNMATCHED. no open receivable or commitment explains this receipt (Duplicate bank event: reference BANK-S49-1 on RCV-A was already booked as setup-rcpt-1 (seq 1) for ¥50,000.00; nothing booked again)
+Outstanding receivables, past due first: RCV-A (BUYER-1) ¥370,000.00 due day 32.
+The audit chain verifies.</pre><p><b>Plan</b></p><ol></ol>
+<p><b>Operations</b></p><table><tr><td>none</td></tr></table>
+<p>session S49_reconcile_shows_bank_reference-owner · trace S49_reconcile_shows_bank_reference-owner:1 · security events 0</p>
+</body></html>
