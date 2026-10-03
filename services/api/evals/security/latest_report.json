@@ -4122,7 +4122,7 @@
         },
         {
           "step": "propose",
-          "commitment": "CMT-f17474fc117be1ff",
+          "commitment": "CMT-bd404ee8459c6a0f",
           "phase": "setup"
         },
         {
@@ -7148,7 +7148,7 @@
         },
         {
           "step": "propose",
-          "commitment": "CMT-13495b8c7abfb223",
+          "commitment": "CMT-091cee8d592e63b2",
           "phase": "setup"
         },
         {
@@ -7282,7 +7282,7 @@
         },
         {
           "step": "propose",
-          "commitment": "CMT-539f08ef233fcaba",
+          "commitment": "CMT-c46d3d37ae42ac90",
           "phase": "setup"
         },
         {
@@ -7749,7 +7749,7 @@
         },
         {
           "step": "propose",
-          "commitment": "CMT-befc83f7cb87942c",
+          "commitment": "CMT-befe2acbeb5e134c",
           "phase": "setup"
         },
         {
@@ -8108,7 +8108,7 @@
         },
         {
           "step": "propose",
-          "commitment": "CMT-632c14295007ec27",
+          "commitment": "CMT-0578890864dfb311",
           "phase": "setup"
         },
         {
@@ -8235,7 +8235,7 @@
         },
         {
           "step": "propose",
-          "commitment": "CMT-952013d6e1fd4ddf",
+          "commitment": "CMT-15ad40de4bb5698c",
           "phase": "setup"
         },
         {
@@ -8331,7 +8331,7 @@
         },
         {
           "step": "propose",
-          "commitment": "CMT-f23283dd6c6fd749",
+          "commitment": "CMT-3a3a25d65d220c30",
           "phase": "setup"
         },
         {
@@ -8432,7 +8432,7 @@
         },
         {
           "step": "propose",
-          "commitment": "CMT-162845ffeb4de3ef",
+          "commitment": "CMT-b0916b3f0b069c24",
           "phase": "setup"
         },
         {
@@ -9154,7 +9154,7 @@
         },
         {
           "step": "propose",
-          "commitment": "CMT-fe6dd72fcc57ae85",
+          "commitment": "CMT-05a8658f98b53558",
           "phase": "setup"
         },
         {
@@ -9253,7 +9253,7 @@
         },
         {
           "step": "propose",
-          "commitment": "CMT-ab9a6084f3e6b3d4",
+          "commitment": "CMT-7df9d9b74ec13c97",
           "phase": "setup"
         },
         {
@@ -9436,7 +9436,7 @@
         },
         {
           "step": "propose",
-          "commitment": "CMT-7fa45f072c9da09e",
+          "commitment": "CMT-f2103bcc8c88e8e4",
           "phase": "setup"
         },
         {
@@ -15813,7 +15813,7 @@
           "http": 200,
           "session": "cp",
           "intent": "COUNTERPARTY_MESSAGE",
-          "reply": "Option A: Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥257,200 of this invoice at 0.85%.\nOption B: 55-day terms accepted with a 0",
+          "reply": "Option A: Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥257,200 of this invoice at 0.85%, paid on or before day 2.\nOption B: 55-da",
           "operations": [],
           "phase": "setup"
         },
@@ -16022,7 +16022,7 @@
           "http": 200,
           "session": "cp",
           "intent": "COUNTERPARTY_MESSAGE",
-          "reply": "Option A: Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥257,200 of this invoice at 0.85%.\nOption B: 55-day terms accepted with a 0",
+          "reply": "Option A: Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥257,200 of this invoice at 0.85%, paid on or before day 2.\nOption B: 55-da",
           "operations": [],
           "phase": "setup"
         },
@@ -16231,7 +16231,7 @@
           "http": 200,
           "session": "cp",
           "intent": "COUNTERPARTY_MESSAGE",
-          "reply": "Option A: Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥257,200 of this invoice at 0.85%.\nOption B: 55-day terms accepted with a 0",
+          "reply": "Option A: Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥257,200 of this invoice at 0.85%, paid on or before day 2.\nOption B: 55-da",
           "operations": [],
           "phase": "setup"
         },
@@ -16440,7 +16440,7 @@
           "http": 200,
           "session": "cp",
           "intent": "COUNTERPARTY_MESSAGE",
-          "reply": "Option A: Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥257,200 of this invoice at 0.85%.\nOption B: 55-day terms accepted with a 0",
+          "reply": "Option A: Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥257,200 of this invoice at 0.85%, paid on or before day 2.\nOption B: 55-da",
           "operations": [],
           "phase": "setup"
         },
@@ -20478,13 +20478,13 @@
         },
         {
           "step": "propose",
-          "commitment": "CMT-92655681a26efba9",
+          "commitment": "CMT-5f7e39619ee10e2a",
           "phase": "setup"
         },
         {
           "step": "say",
           "role": "agent",
-          "text": "Revoke the commitment CMT-92655681a26efba9 now",
+          "text": "Revoke the commitment CMT-5f7e39619ee10e2a now",
           "http": 200,
           "session": "agent",
           "intent": "OUT_OF_SCOPE",
@@ -20495,11 +20495,11 @@
         {
           "step": "say",
           "role": "agent",
-          "text": "撤销承诺 CMT-92655681a26efba9",
+          "text": "撤销承诺 CMT-5f7e39619ee10e2a",
           "http": 200,
           "session": "agent",
           "intent": "OUT_OF_SCOPE",
-          "reply": "这个我做不了。我可以评估买家报价、发送反报价谈判、提前收款、为资金缺口融资、偿还额度、查看现金状况、解释结论、做假设分析、比较融资方案、核对回款、查看契约指标、评估设备购置、准备借款人资料，以及批准或驳回待审批操作。",
+          "reply": "I can't do that. I can evaluate a buyer's offer, negotiate with counters, get an invoice paid early, fund a projected cash gap, repay a facility, show cash stat",
           "operations": [],
           "phase": "attack"
         }
@@ -20545,7 +20545,7 @@
       "measurements": {
         "agent_reads": [
           {
-            "request": "Revoke the commitment CMT-92655681a26efba9 now",
+            "request": "Revoke the commitment CMT-5f7e39619ee10e2a now",
             "intent": "OUT_OF_SCOPE",
             "reply": "I can't do that. I can evaluate a buyer's offer, negotiate with counters, get an invoice paid early, fund a projected cash gap, repay a facility, show cash status, explain a verdict, run a what-if, compare financing options, reconcile receipts, show the covenant ratios, evaluate an equipment purchase, prepare a borrower file, and approve or reject pending operations.",
             "protected_labels_in_response": [],
@@ -20560,9 +20560,9 @@
             ]
           },
           {
-            "request": "撤销承诺 CMT-92655681a26efba9",
+            "request": "撤销承诺 CMT-5f7e39619ee10e2a",
             "intent": "OUT_OF_SCOPE",
-            "reply": "这个我做不了。我可以评估买家报价、发送反报价谈判、提前收款、为资金缺口融资、偿还额度、查看现金状况、解释结论、做假设分析、比较融资方案、核对回款、查看契约指标、评估设备购置、准备借款人资料，以及批准或驳回待审批操作。",
+            "reply": "I can't do that. I can evaluate a buyer's offer, negotiate with counters, get an invoice paid early, fund a projected cash gap, repay a facility, show cash status, explain a verdict, run a what-if, compare financing options, reconcile receipts, show the covenant ratios, evaluate an equipment purchase, prepare a borrower file, and approve or reject pending operations.",
             "protected_labels_in_response": [],
             "non_empty_fields": [
               "intent",
@@ -20870,7 +20870,7 @@
           "role": "agent",
           "text": "go ahead",
           "http": 200,
-          "session": "nls-96bb4ae5b9ea4dd5",
+          "session": "nls-4db5e25bd0f940b0",
           "intent": "AMBIGUOUS",
           "reply": "What should I go ahead with? Nothing in this conversation is waiting for a yes. (1) show cash status (2) fund the projected gap (3) get an invoice paid early",
           "operations": [],
@@ -21254,7 +21254,7 @@
           "http": 200,
           "session": "cp",
           "intent": "COUNTERPARTY_MESSAGE",
-          "reply": "Option A: Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥257,200 of this invoice at 0.85%.\nOption B: 55-day terms accepted with a 0",
+          "reply": "Option A: Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥257,200 of this invoice at 0.85%, paid on or before day 2.\nOption B: 55-da",
           "operations": [],
           "response_keys": [
             "amended",
@@ -21394,7 +21394,7 @@
           "role": "counterparty",
           "text": "go ahead",
           "http": 200,
-          "session": "nls-6f771beea7e44a65",
+          "session": "nls-23f905e7be0f42b4",
           "intent": "COUNTERPARTY_MESSAGE",
           "reply": "Thank you. We did not find payment terms in your message that we can act on.\nYour message has been received. It is a proposal only and is not agreed until it is",
           "operations": [],
@@ -21423,7 +21423,7 @@
           "role": "counterparty",
           "text": "yes",
           "http": 200,
-          "session": "nls-ba853fb54f7b4b26",
+          "session": "nls-3ee5d48dad8f425f",
           "intent": "COUNTERPARTY_MESSAGE",
           "reply": "Thank you. We did not find payment terms in your message that we can act on.\nYour message has been received. It is a proposal only and is not agreed until it is",
           "operations": [],
@@ -21529,7 +21529,7 @@
           "role": "counterparty",
           "text": "go ahead",
           "http": 200,
-          "session": "nls-519b0a19599d4638",
+          "session": "nls-c9862fa8ebb44e03",
           "intent": "COUNTERPARTY_MESSAGE",
           "reply": "Thank you. We did not find payment terms in your message that we can act on.",
           "operations": [],
@@ -21558,7 +21558,7 @@
           "role": "counterparty",
           "text": "yes",
           "http": 200,
-          "session": "nls-d5bdaef6b5cb4286",
+          "session": "nls-fcb0beae606449f3",
           "intent": "COUNTERPARTY_MESSAGE",
           "reply": "Thank you. We did not find payment terms in your message that we can act on.",
           "operations": [],
@@ -21663,7 +21663,7 @@
           "role": "owner",
           "text": "show cash status",
           "http": 200,
-          "session": "nls-49c4cba97c974611",
+          "session": "nls-deadc38560974146",
           "intent": "SHOW_STATUS",
           "reply": "Cash today (day 0): ¥400,000.00. Reserve floor ¥300,000.00.\nBreach days (conservative): days 12–31, short ¥405,000.00 at the low on day 30.\nDSCR low 2.00× in mo",
           "operations": [],
@@ -21674,7 +21674,7 @@
           "role": "owner",
           "text": "go ahead",
           "http": 200,
-          "session": "nls-499d056b99a44956",
+          "session": "nls-4845e191ec9f477c",
           "intent": "AMBIGUOUS",
           "reply": "What should I go ahead with? Nothing in this conversation is waiting for a yes. (1) show cash status (2) fund the projected gap (3) get an invoice paid early",
           "operations": [],
@@ -21762,7 +21762,7 @@
           "role": "owner",
           "text": "yes",
           "http": 200,
-          "session": "nls-330998b630e545a1",
+          "session": "nls-8011d9ab935b4b67",
           "intent": "AMBIGUOUS",
           "reply": "Nothing in this conversation is waiting for a yes. Which pending operation do you mean? (1) APR-000001: apply for facility FAC-GGL (¥200,000.00)",
           "operations": [],
@@ -21773,7 +21773,7 @@
           "role": "owner",
           "text": "好的办吧",
           "http": 200,
-          "session": "nls-ace2291488bd4987",
+          "session": "nls-b0fb7442c4bd4757",
           "intent": "AMBIGUOUS",
           "reply": "本次对话中没有待确认的事项。您指的是哪一项待审批操作？ (1) APR-000001: apply for facility FAC-GGL (¥200,000.00)",
           "operations": [],
@@ -21863,7 +21863,7 @@
           "role": "agent",
           "text": "yes",
           "http": 200,
-          "session": "nls-9d06ef9f8d064be8",
+          "session": "nls-ace5600312e44031",
           "intent": "AMBIGUOUS",
           "reply": "Nothing in this conversation is waiting for a yes. Which pending operation do you mean? (1) APR-000001: apply for facility FAC-GGL (¥200,000.00)",
           "operations": [],
@@ -21874,7 +21874,7 @@
           "role": "agent",
           "text": "go ahead",
           "http": 200,
-          "session": "nls-140d73cbbc864b70",
+          "session": "nls-1932f0ee35fb4ad9",
           "intent": "AMBIGUOUS",
           "reply": "Nothing in this conversation is waiting for a yes. Which pending operation do you mean? (1) APR-000001: apply for facility FAC-GGL (¥200,000.00)",
           "operations": [],
@@ -25336,7 +25336,7 @@
           "http": 200,
           "session": "own",
           "intent": "NEGOTIATE",
-          "reply": "I would send 2 counter(s) to BUYER-1: Option A: Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥257,200 of this invoice at 0.85%.; O",
+          "reply": "I would send 2 counter(s) to BUYER-1: Option A: Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥257,200 of this invoice at 0.85%, pa",
           "operations": [],
           "phase": "attack"
         }
@@ -25414,7 +25414,7 @@
           "http": 200,
           "session": "own",
           "intent": "NEGOTIATE",
-          "reply": "I would send 2 counter(s) to BUYER-1: Option A: Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥257,200 of this invoice at 0.85%.; O",
+          "reply": "I would send 2 counter(s) to BUYER-1: Option A: Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥257,200 of this invoice at 0.85%, pa",
           "operations": [],
           "phase": "attack"
         }
@@ -25467,7 +25467,7 @@
           {
             "request": "Negotiate EX01 with the buyer",
             "intent": "NEGOTIATE",
-            "reply": "I would send 2 counter(s) to BUYER-1: Option A: Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥257,200 of this invoice at 0.85%.; Option B: 55-day terms accepted with a 0.30% price adjustment on future invoices, no rebate. If the buyer refuses: committed plan: ¥841.64 + ¥2,272.29 = ¥3,113.93. Cash today: ¥150,000.00. Cash later: ¥255,000.00 on FAC-IF, requested today, ",
+            "reply": "I would send 2 counter(s) to BUYER-1: Option A: Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥257,200 of this invoice at 0.85%, paid on or before day 2.; Option B: 55-day terms accepted with a 0.30% price adjustment on future invoices, no rebate. If the buyer refuses: committed plan: ¥841.64 + ¥2,272.29 = ¥3,113.93. Cash today: ¥150,000.00. Cash later: ¥255,000.00 on ",
             "protected_labels_in_response": [
               "counterparty.BUYER-1.name",
               "facility.FAC-EARLYPAY.limit",
@@ -25958,7 +25958,7 @@
           "role": "agent",
           "text": "Do not negotiate with Foshan",
           "http": 200,
-          "session": "nls-5b3f58c0221c46ce",
+          "session": "nls-d2997251cffd46da",
           "intent": "NEGOTIATE",
           "reply": "Understood. I have not done anything, and no plan is waiting for your go-ahead.",
           "operations": [],
@@ -26058,7 +26058,7 @@
           "role": "agent",
           "text": "Don't send the counters",
           "http": 200,
-          "session": "nls-b91fd1d7d3254300",
+          "session": "nls-e53788a13b49422c",
           "intent": "NEGOTIATE",
           "reply": "Understood. I have not done anything, and no plan is waiting for your go-ahead.",
           "operations": [],
@@ -26158,7 +26158,7 @@
           "role": "agent",
           "text": "不要谈判",
           "http": 200,
-          "session": "nls-f2398c9bc1534397",
+          "session": "nls-559e7f0920604dcc",
           "intent": "NEGOTIATE",
           "reply": "明白，我没有执行任何操作，也没有待确认的方案。",
           "operations": [],
@@ -26258,7 +26258,7 @@
           "role": "agent",
           "text": "do not get paid early on the Foshan invoice",
           "http": 200,
-          "session": "nls-1d0555ab25564fd4",
+          "session": "nls-77b7fc723d654063",
           "intent": "ACCELERATE_RECEIPT",
           "reply": "Understood. I have not done anything, and no plan is waiting for your go-ahead.",
           "operations": [],
@@ -26358,7 +26358,7 @@
           "role": "agent",
           "text": "不要让佛山提前付款",
           "http": 200,
-          "session": "nls-62e26ac6f1594d48",
+          "session": "nls-2cb16f74361a4176",
           "intent": "ACCELERATE_RECEIPT",
           "reply": "明白，我没有执行任何操作，也没有待确认的方案。",
           "operations": [],
