@@ -64,11 +64,13 @@ def grid(face_max_fen: int) -> dict[str, dict[str, int]]:
     }
 
 
-# The buyer's actual offer (EX01) and the two counters the verifier generates for it (DEMO_FLOW §1.6).
+# The buyer's actual offer (EX01) and the two counters the verifier generates for it (DEMO_FLOW §1.6). Option B is
+# 55-day terms + 0.30%: 60 days fails the counter's own re-check since existing debt service leaves cash (day 47 is
+# ¥85,000 below the reserve with no admissible cure), 55 days is curable in time.
 PRESETS: dict[str, WhatIfParams] = {
     "actual": WhatIfParams(terms_days=60, discount_bp=120, rebate_bp=100),
     # Option A's face nets the gap less the line, which includes the existing loan's day-30 payment (¥257,200)
     "option_a": WhatIfParams(terms_days=45, discount_bp=85, rebate_bp=0, settle_face_fen=25_720_000),
-    "option_b": WhatIfParams(terms_days=60, discount_bp=0, rebate_bp=0, price_adjustment_bp=45),
+    "option_b": WhatIfParams(terms_days=55, discount_bp=0, rebate_bp=0, price_adjustment_bp=30),
     "status_quo": WhatIfParams(terms_days=45, discount_bp=0, rebate_bp=0),
 }

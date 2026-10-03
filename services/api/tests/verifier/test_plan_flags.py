@@ -12,6 +12,7 @@ from app.compiler import compile_offer
 from app.domain.fixtures import load_offers, load_scenario, offer_documents
 from app.mandate import demo_owner_public_key_hex, load_signed_mandate
 from app.verifier import evaluate
+from app.verifier.counters import counters
 from tests.funding.variants import with_receivable, without_facilities
 
 
@@ -107,7 +108,14 @@ def test_the_plan_without_the_early_payment_is_said_to_need_the_owner(monkeypatc
     dearer = next(v for v in flagged.verdict.violations if v.code.value == "EARLY_PAY_DEARER_THAN_PLAN")
     assert "the plan without it needs the owner's approval: " in dearer.message
     assert "32.53%" in dearer.message and dearer.inputs["plan_without_offer_needs_owner_approval"] == "true"
-    counter = flagged.verdict.counters[0]
+    # The early-pay counter (0.85% for the 10 days RCV-A has left) fails its own re-check on these books: its all-in
+    # rate is above the 15% ceiling, so it is not offered (the counter property). As built, it states the flags.
+    assert flagged.verdict.counters == []
+    assert ("No early-pay counter (early settlement of ¥90,800 at 0.85%): it is above the mandate's rate ceiling: "
+            "28.4463% against 15.00%") in flagged.verdict.summary
+    offer = compile_offer(offer_documents("EX02_EARLY_1_5"), "BUYER-1")
+    mandate = load_signed_mandate()
+    (counter,) = counters(offer, flagged.verdict, state, mandate, bound=flagged.bound_obligations)
     assert "the standing plan it is compared with needs the owner's approval" in counter.formula
     assert "the standing plan it is compared with needs the owner's approval" in counter.rationale
     assert "approval" not in counter.text  # what goes to the buyer is untouched
@@ -115,7 +123,8 @@ def test_the_plan_without_the_early_payment_is_said_to_need_the_owner(monkeypatc
     disable_flags(monkeypatch)
     plain = run("EX02_EARLY_1_5", state)
     assert figures(flagged) == figures(plain)
-    assert [c.text for c in flagged.verdict.counters] == [c.text for c in plain.verdict.counters]
+    (unflagged,) = counters(offer, plain.verdict, state, mandate, bound=plain.bound_obligations)
+    assert unflagged.text == counter.text and unflagged.obligations == counter.obligations
 
 
 def test_a_passed_check_that_leans_on_a_flagged_standing_plan_says_so():

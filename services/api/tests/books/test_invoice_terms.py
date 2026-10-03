@@ -50,6 +50,10 @@ from tests.operations.builders import Clock, make_executor, op, seeded_store
 RI2 = "RI:BUYER-1:2"
 FACE = 42_000_000  # BUYER-1's recurring invoice, every 30 days from day 2, 45-day terms
 AGREED = FACE + post(bp(45) * FACE)  # +0.45%: ¥421,890
+# EX01 Option B on the golden books: 55-day terms and +0.30% (60 days fails the counter's own re-check, see
+# tests/verifier/test_counter_property.py): 420,000 × 0.30% = ¥1,260 → ¥421,260, due day 2 + 55 = 57
+B_FACE = FACE + post(bp(30) * FACE)
+B_DUE = 57
 SPAN = [SourceSpan(doc_id="T", start=0, end=0, text="")]
 MANDATE_LAST_DAY = 89
 
@@ -80,7 +84,8 @@ def _accept(rt: Runtime, verdict_id: str, counter_id: str | None = None, *, dela
 
 
 def _option_b(rt: Runtime, *, delay: int = 0) -> Commitment:
-    """EX01 Option B: the counter of 60-day terms with a +0.45% price adjustment on future invoices."""
+    """EX01 Option B, built by the verifier: on the golden books 55-day terms with a +0.30% price adjustment on future
+    invoices (with more cash, the buyer's 60 days with +0.45%)."""
     o = compile_offer(offer_documents("EX01_PACKAGE"), "BUYER-1")
     rt.store.put_offer(o)
     b = evaluate(o, rt.store.get_state(), rt.store.get_mandate(), trusted_owner_key_hex=rt.owner_key_hex)
@@ -142,18 +147,18 @@ def test_option_b_invoice_is_issued_at_the_agreed_face_and_due_day_and_the_agree
     rt = _runtime()
     c = _option_b(rt)
     [terms, price] = [a for a in rt.store.get_state().invoice_adjustments if a.commitment_id == c.id]
-    assert terms.days_delta == 15 and terms.receivable_ids is None and terms.until_issue_day is None  # perpetual
-    assert price.price_bp == 45 and price.from_issue_day == 0
+    assert terms.days_delta == 10 and terms.receivable_ids is None and terms.until_issue_day is None  # perpetual
+    assert price.price_bp == 30 and price.from_issue_day == 0
     rt.advance_to(3)
     r = _rcv(rt, RI2)
-    assert (r.face_fen, r.due_day, r.terms_days) == (AGREED, 62, 60) == (42_189_000, 62, 60)
+    assert (r.face_fen, r.due_day, r.terms_days) == (B_FACE, B_DUE, 55) == (42_126_000, 57, 55)
     assert (r.base_face_fen, r.base_terms_days) == (FACE, 45)
     assert r.applied == [terms.id, price.id]
-    assert _receipts(_projection(rt))[RI2] == (62, AGREED)
-    result = _receive(rt, RI2, AGREED, "recv")
+    assert _receipts(_projection(rt))[RI2] == (B_DUE, B_FACE)
+    result = _receive(rt, RI2, B_FACE, "recv")
     assert result.status == OperationStatus.EXECUTED, result.message
     r = _rcv(rt, RI2)
-    assert r.status == "SETTLED" and r.settled_fen == r.face_fen == AGREED
+    assert r.status == "SETTLED" and r.settled_fen == r.face_fen == B_FACE
     assert RI2 not in _receipts(_projection(rt))
 
 
@@ -162,15 +167,15 @@ def test_option_b_partial_receipt_loses_no_value_anywhere() -> None:
     _option_b(rt)
     rt.advance_to(3)
     assert _receive(rt, RI2, 10_000_000, "part").status == OperationStatus.EXECUTED
-    left = AGREED - 10_000_000
-    assert left == 32_189_000
+    left = B_FACE - 10_000_000
+    assert left == 32_126_000
     r = _rcv(rt, RI2)
-    assert (r.outstanding_fen, r.face_fen, r.settled_fen, r.status) == (left, AGREED, 10_000_000, "OPEN")
-    assert _receipts(_projection(rt))[RI2] == (62, left)  # nothing recomputed on the balance
+    assert (r.outstanding_fen, r.face_fen, r.settled_fen, r.status) == (left, B_FACE, 10_000_000, "OPEN")
+    assert _receipts(_projection(rt))[RI2] == (B_DUE, left)  # nothing recomputed on the balance
     rt.advance_to(50)
     report = reconcile(rt.store, 50)
     row = next(o for o in report.outstanding if o.receivable_id == RI2)
-    assert (row.face_fen, row.due_day, row.past_due) == (left, 62, False)
+    assert (row.face_fen, row.due_day, row.past_due) == (left, B_DUE, False)
     state = rt.store.get_state()
     late = [a for a in alerts(state, rt.store.get_mandate(), rt.store, 50) if a.receivable_id == RI2]
     assert not [a for a in late if a.kind == AlertKind.RECEIVABLE_PAST_DUE]
@@ -178,9 +183,9 @@ def test_option_b_partial_receipt_loses_no_value_anywhere() -> None:
     state = rt.store.get_state()
     [past] = [a for a in alerts(state, rt.store.get_mandate(), rt.store, 63)
               if a.kind == AlertKind.RECEIVABLE_PAST_DUE and a.receivable_id == RI2]
-    assert (past.day, past.amount_fen) == (62, left)
+    assert (past.day, past.amount_fen) == (B_DUE, left)
     row = next(o for o in reconcile(rt.store, 63).outstanding if o.receivable_id == RI2)
-    assert (row.face_fen, row.due_day, row.past_due) == (left, 62, True)
+    assert (row.face_fen, row.due_day, row.past_due) == (left, B_DUE, True)
 
 
 # ---------------------------------------------------------------- 2. "the next 3 invoices" (audit A07)
@@ -306,7 +311,7 @@ def test_revocation_removes_what_is_left_and_issued_invoices_keep_their_terms() 
     assert not [a for a in state.invoice_adjustments if a.commitment_id == c.id]
     assert not [fc for fc in state.forward_concessions if fc.commitment_id == c.id]
     r = _rcv(rt, RI2)
-    assert (r.face_fen, r.due_day) == (AGREED, 62)  # a credit or debit note would be needed to change it
+    assert (r.face_fen, r.due_day) == (B_FACE, B_DUE)  # a credit or debit note would be needed to change it
     rt.advance_to(33)
     r32 = _rcv(rt, "RI:BUYER-1:32")
     assert (r32.face_fen, r32.due_day, r32.applied) == (FACE, 77, [])
@@ -357,10 +362,10 @@ def test_adjusted_state_round_trips_through_the_sql_store_and_old_states_seriali
 
 def test_an_accepted_commitment_is_applied_once_also_after_reverification() -> None:
     rt = _runtime()
-    # Option B's 60-day terms move RI:2's receipt to day 62, past the existing loan's day-60 payment: on the golden
-    # books the re-verification finds a reserve shortfall (¥130,000 at most) that the committed sources cannot cure
-    # (FAC-IF's limit is held by the day-0 plan's ¥255,000 advance), so it is refused. What this test checks is that
-    # the terms are applied once, so the books get ¥150,000 more cash to keep the commitment verifiable.
+    # With ¥150,000 more cash the buyer's 60-day terms keep the reserve with no new funding (day 47: 215,000 +
+    # 150,000 = ¥365,000; day 60, after the loan's ¥45,000: ¥320,000), so Option B is the 60-day counter at +0.45%
+    # (15 days: 420,000 × 15/365 × 10.8417% = ¥1,871.30 per invoice → 0.45%, ¥1,890). This test checks that the terms
+    # are applied once.
     s = rt.store.get_state()
     rt.store.put_state(s.model_copy(update={"cash_fen": s.cash_fen + 15_000_000}))
     c = _option_b(rt, delay=1)  # the books move before acceptance: the executor re-verifies the commitment

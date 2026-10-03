@@ -51,7 +51,9 @@ EX01_COUNTERS = [
     # face 255,000 / (1 − 0.85%) = 257,186.08, rounded up to a whole ¥100 (the gap net of the line includes the
     # existing loan's ¥45,000 day-30 payment; compute_golden.py counter_a_face)
     "Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥257,200 of this invoice at 0.85%.",
-    "60-day terms accepted with a 0.45% price adjustment on future invoices, no rebate.",
+    # 60-day terms fail the counter's own re-check (day 47 ¥85,000 below the reserve, no admissible cure); 55 days is
+    # curable in time. +10 days: 420,000 × 10/365 × 10.8417% = ¥1,247.53 per invoice → 0.30% (¥1,260.00)
+    "55-day terms accepted with a 0.30% price adjustment on future invoices, no rebate.",
 ]
 
 
@@ -276,8 +278,11 @@ def test_verdict_and_counters_carry_only_the_offers_obligations(client: TestClie
                                                         "OFF-f806f79b6c21-O3"]
     assert all(o.id.startswith("CTR-") for c in stored.counters for o in c.obligations)
     # each counter's text is the offer's own terms. With 15 more days already live, an early payment at 0.85% no
-    # longer beats the standing plan (ADR-0007), so only the price-adjustment counter is offered on these books.
-    assert [c.text for c in stored.counters] == [EX01_COUNTERS[1]]
+    # longer beats the standing plan (ADR-0007), so only the price-adjustment counter is offered on these books. The
+    # live +15 days are part of these books (and of the no-offer baseline the re-check compares with), and here the
+    # buyer's 60 days pass the counter's own re-check: 0.45% (420,000 × 15/365 × 10.8417% = ¥1,871.30 → ¥1,890).
+    assert [c.text for c in stored.counters] == [
+        "60-day terms accepted with a 0.45% price adjustment on future invoices, no rebate."]
 
 
 def test_a_commitment_carries_what_the_counter_bound(client: TestClient, rt: Runtime) -> None:

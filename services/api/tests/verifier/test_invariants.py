@@ -13,7 +13,7 @@ from app.domain.fixtures import FIXTURES
 from app.domain.money import bp, fmt_pct, fmt_yuan
 from app.funding import break_even_discount, marginal_cost
 from app.verifier import evaluate, evaluate_many
-from app.verifier.counters import money_text
+from app.verifier.counters import counters, money_text
 from tests.verifier.conftest import bundle, compiled
 
 VERIFIER = Path(__file__).resolve().parents[2] / "app" / "verifier"
@@ -129,6 +129,13 @@ def _all_counters(state, mandate, key):
                      "EX06_THREE_INVOICES"):
         out += [(bundle(offer_id).verdict.offer_id, compiled(offer_id).counterparty_id, c)
                 for c in bundle(offer_id).verdict.counters]
+    # The texts the builders write for counters that fail their own re-check on the golden books (EX01's price
+    # adjustment, EX06's bounded extensions): never offered, but the same allow-list applies to them.
+    for offer_id in ("EX01_PACKAGE", "EX01B_REWORDED", "EX06_THREE_INVOICES"):
+        b = bundle(offer_id)
+        out += [(b.verdict.offer_id, compiled(offer_id).counterparty_id, c)
+                for c in counters(compiled(offer_id), b.verdict, state, mandate, bound=b.bound_obligations)
+                if c.label not in {x.label for x in b.verdict.counters}]
     for b in evaluate_many([compiled("EX08A_JOINT_BUYER1"), compiled("EX08B_JOINT_BUYER2")], state, mandate,
                            trusted_owner_key_hex=key):
         out += [(b.verdict.offer_id, "", c) for c in b.verdict.counters]

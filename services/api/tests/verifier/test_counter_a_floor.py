@@ -101,6 +101,22 @@ def test_face_nets_at_least_the_gap_and_is_a_whole_100_yuan(state, mandate, key,
     assert t.first_breach_day is None
 
 
+def test_an_early_pay_counter_whose_discount_deepens_a_curable_shortfall_is_offered_and_says_what_funds_it(
+        state, mandate, key):
+    """The counter property, curable reading. With ¥20,000 less cash, day 32 closes below the reserve even without
+    the counter: 400,000 − 20,000 − 340,000 − 120,000 − 45,000 + 420,000 = 295,000. The counter's face is
+    (425,000 − 150,000) / (1 − 0.85%) = 277,357.54 → ¥277,400, discount 277,400 × 0.85% = ¥2,357.90; the invoice still
+    pays 420,000 by day 32 in total, so day 32 closes at 295,000 − 2,357.90 = ¥292,642.10 with no new funding: a
+    shortfall of ¥7,357.90 the re-check charges to the counter. It is curable, so the counter is offered and the
+    summary names the plan that funds it."""
+    s = state.model_copy(update={"cash_fen": state.cash_fen - 2_000_000})
+    b = _evaluate_ex01(s, mandate, key)
+    a = _option_a(b)
+    assert a is not None and a.obligations[0].base.amount_fen == 27_740_000
+    assert ("Option A passes its own re-check: its terms leave a shortfall of ¥7,357.90 on day 32, funded by the plan: "
+            "committed plan: ") in b.verdict.summary
+
+
 def test_no_early_pay_counter_when_the_floor_cannot_be_kept(state, mandate, key):
     s = state.model_copy(update={"cash_fen": state.cash_fen - 30_000_000})  # need ¥705,000 > line + whole invoice
     _, base_plan = baseline(s, mandate)

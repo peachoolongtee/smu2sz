@@ -225,6 +225,12 @@ def test_the_proposal_names_the_landing_day_of_the_follow_up_funding(client, rt)
     assert rt.store.get_state().cash_fen == 40_000_000 and rt.store.get_state().lots == []
 
 
+def said(reply: str) -> str:
+    """What the reply says about the run, lower-cased: without the verdict line, whose summary may say which plan
+    funds a counter's own shortfall (the counter property), which is not a claim that the gap was funded."""
+    return "\n".join(line for line in reply.splitlines() if not line.startswith("Verdict ")).lower()
+
+
 def test_a_refused_second_follow_up_leg_is_reported_and_the_gap_is_not_called_funded(client, rt):
     c = _hardline(client, "ng-refuse")
     plan = pending("ng-refuse")
@@ -239,7 +245,7 @@ def test_a_refused_second_follow_up_leg_is_reported_and_the_gap_is_not_called_fu
     reply = r["reply"].lower()
     assert "draw ¥150,000.00 on fac-line: done" in reply and "refused" in reply
     for word in ("funded", "raised", "covered", "cash in now"):
-        assert word not in reply
+        assert word not in said(r["reply"])
     assert [s["status"] for s in r["plan"]][-2:] == ["EXECUTED", "REFUSED"]
     assert pending_of("ng-refuse") is None
 
@@ -252,7 +258,7 @@ def test_a_refused_first_follow_up_leg_stops_the_run_and_names_the_legs_not_sent
     r = c.say("go ahead")
     assert ops(r)[-1] == ("SUBMIT_INVOICE_FOR_FINANCING", "REFUSED") and ("DRAW_FACILITY", "EXECUTED") not in ops(r)
     assert books(rt)["drawn"]["FAC-LINE"] == 0 and "Not sent: Draw ¥150,000.00 on FAC-LINE" in r["reply"]
-    assert "stopped after step 1 of 2" in r["reply"] and "funded" not in r["reply"].lower()
+    assert "stopped after step 1 of 2" in r["reply"] and "funded" not in said(r["reply"])
     assert [s["status"] for s in r["plan"]][-2:] == ["REFUSED", "SKIPPED"]
 
 
@@ -279,7 +285,7 @@ def test_a_refused_remaining_gap_leg_is_reported_and_not_called_funded(client, r
     assert ops(r)[-1] == ("DRAW_FACILITY", "REFUSED") and ("ACCEPT_OFFER", "EXECUTED") in ops(r)
     assert books(rt)["drawn"]["FAC-LINE"] == 0 and "refused" in r["reply"].lower()
     for word in ("funded", "raised", "covered"):
-        assert word not in r["reply"].lower()
+        assert word not in said(r["reply"])
 
 
 def test_a_negotiation_gone_stale_runs_nothing_and_proposes_the_follow_up_again(client, rt):
