@@ -49,3 +49,19 @@ clock posts scheduled flows but no loan instalment or maturity. Three modules ho
   remaining suffix of the earlier projection when nothing else changed (new property test).
 - A funding request that has not settled is visible as such, which lets the alerts say when expected cash has not
   arrived.
+
+## Implementation note, 3 Oct 2026 (one unit per operation, compare-and-swap, term-lot fee)
+
+`docs/research/concurrency-certification-2026-10-03.md`; tests in `services/api/tests/concurrency/`,
+`services/api/tests/persistence/test_concurrency_cas.py`, `services/api/tests/clock/test_clock_conflict.py` and
+`services/api/tests/api/test_write_conflict_409.py`.
+
+- Lots, cash and the log are one unit of work per operation, and the books of one organisation are one serialisation
+  boundary, enforced by the store: `put_state(state, expected_version=v)` refuses unless the stored state is version
+  `v`; an append to the log must land on the head the unit began with; a unit that lost a race keeps nothing and is
+  rerun on the books as they now are, at most 8 times, by the executor and by the clock's advance. A conflict that
+  survives answers HTTP 409. File SQLite takes the write lock when a unit begins (`BEGIN IMMEDIATE`). So two draws
+  against the last room cannot both execute and a receipt on a financed invoice still repays the lender from the
+  receipt once. Proven with two processes on SQLite; not yet run on PostgreSQL.
+- A bullet term lot's upfront fee stays in its level debt service before and after its cash lands (fourth red team,
+  F7; `services/api/tests/operations/test_redteam_d.py::test_f7_*`).

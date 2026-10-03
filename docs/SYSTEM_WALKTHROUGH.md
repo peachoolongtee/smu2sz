@@ -1,7 +1,8 @@
 # TermsLedger v2: full system walkthrough
 
-State of `dev` at `1bc96ba`, 3 Oct 2026, after the independent audit's 13 findings, three red-team rounds and the
-business review's items were fixed (section 11 lists each change with its test file). Written from the code, the
+State of `dev` at `db097e0`, 3 Oct 2026, after the independent audit's 13 findings, five red-team rounds (26
+findings) and the business review's items were fixed, and after the concurrency and language-boundary certification
+work (section 11 lists each change with its test file; the owner stopped the red-team rounds on 3 Oct). Written from the code, the
 ADRs, `docs/FINANCIAL_SEMANTICS.md` and a fresh run of `scripts/demo_run.py`; every figure in section 7 is that
 run's output. Other figures say which
 test or evidence file they come from. This is a simulation: lenders, the buyer and the bank feed are simulated
@@ -393,12 +394,12 @@ rates beside it). A counterparty receives none of it.
 and give 1% off next quarter". Compiled into a 1.2% discount on RCV-A, a perpetual +15-day extension and a
 contingent rebate. Forward concessions ¥28,326.92 (rebate ¥4,000 + the extension's funding cost on the 13
 invoices issued in the 365-day window, ¥24,326.92) against a ¥5,000 cap. The extension adds ¥210,000.00 of
-receivables and ¥1,897.29 a month of debt service (DSCR 1.92×, leverage 1.72×). Before the dated valuation of 3
+receivables and ¥1,897.29 a month of debt service (DSCR 1.92×, leverage 1.47× on drawn debt; it was 1.72× while the committed line's limit counted as debt). Before the dated valuation of 3
 Oct these were ¥26,455.62, ¥22,455.62 on 12 invoices, ¥207,123.29 and ¥1,871.30 (these forward figures do not
 depend on cash and did not move when the existing loan's payments became cash). Cash falls below the floor on day
 47; 1.2% is above the 0.8832% break-even and is dearer than the plan without the early-pay leg (¥6,508.05 against
 ¥3,550.64). Verdict REJECT with four codes and two counters: A (keep 45-day terms, no rebate, early settlement on a
-whole-¥100 face, ¥257,200, at 0.85%) and B ("55-day terms accepted with a 0.30% price adjustment on future
+whole-¥100 face, ¥257,200, at 0.85%, "paid on or before day 2") and B ("55-day terms accepted with a 0.30% price adjustment on future
 invoices, no rebate"). B is 55 days, not the 60 the buyer asked for, because the 60-day terms fail their own
 re-check: the invoice issued on day 2 would be paid on day 62, after the day-60 loan payment, and the shortfall has
 no committed cure; at 55 days (paid day 57) it is ¥85,000 short on days 47 to 56 and an advance cures it. B's price
@@ -756,8 +757,8 @@ happened but no event or refusal code marked the attempt (39 of them are consent
 that nothing runs and no code is raised). The report also records, as findings and not as harm, that the agent
 key can read protected labels through chat status replies (NL-AC05, NL-CS10, NL-CS16, NL-CS31) and that an
 authenticated buyer can find the accept/counter threshold to 1 bp (NL-OP01K, NL-OP02K). Between 1 Oct and 3 Oct
-an independent audit and three red-team rounds found 13 and 13 issues, all fixed (reports under
-`docs/research/`; `docs/CONTINUOUS_OPTIMIZATION.md` sections 1 and 3).
+an independent audit and then five red-team rounds found 13 and 26 issues, all fixed (reports and probes under
+`docs/research/`; `docs/CONTINUOUS_OPTIMIZATION.md` sections 1 and 3). The owner stopped the red-team rounds on 3 Oct.
 
 `GET /audit` computes its scoreboard from the run: money moved by operations tied to security events, and an
 outbound scan of every counter text. Nothing in it is a constant.
@@ -802,7 +803,7 @@ approval → the FastCapital message → evidence.
 
 ## 7. The end-to-end flow, with the real numbers
 
-Output of `scripts/demo_run.py` at `1bc96ba`, 3 Oct 2026 (in process, in-memory store, recorded model outputs; exit
+Output of `scripts/demo_run.py` at `db097e0`, 3 Oct 2026 (in process, in-memory store, recorded model outputs; exit
 0). The 14 ledger entries below are that run's. Everything is simulated: the bank feed, the buyer and the lenders.
 
 **Figures that depend on the day-0 cash books.** These move whenever the cash a scenario starts with, or the debt
@@ -810,19 +811,19 @@ service charged against it, changes. In this file they appear only in this table
 below, so a change to them is a change to those two places. The existing loan's ¥45,000 monthly payment leaves
 cash since the change described in section 5.3; every figure below that depends on cash moved with it.
 
-| Figure | Value at `1bc96ba` | Source |
+| Figure | Value at `db097e0` | Source |
 | --- | --- | --- |
 | Day-0 gap before day 32; router plan | ¥405,000; line ¥150,000 (¥841.64) + advance ¥255,000 on RCV-A (¥2,272.29) = ¥3,113.93 | `fixtures/golden/golden_values.json`, `tests/api/test_decide.py` |
 | Cash after "go ahead" on day 0; after day 3 | ¥550,000; ¥805,000 | `tests/nl/test_intents.py::test_fund_gap_executes_the_router_plan_on_go_ahead` |
 | EX01 cash on day 47; shortfall; cure | ¥209,960.00; ¥90,040.00; ¥2,406.67 | `golden_values.json`, `tests/verifier/test_golden_verdicts.py`, evaluated 3 Oct |
 | EX01 package cost against the plan without early pay | ¥6,508.05 against ¥3,550.64 | `EARLY_PAY_DEARER_THAN_PLAN`, evaluated 3 Oct |
 | EX01 forward concessions | ¥28,326.92 (unchanged: the forward valuation does not depend on cash) | `golden_values.json` |
-| Counter A | up to ¥257,200 at 0.85%; discount ¥2,186.20 + line ¥841.57 = ¥3,027.77; receipt ¥255,013.80 | `tests/verifier/test_counter_property.py`, `tests/verifier/test_counter_a_floor.py` |
-| Option B | "55-day terms accepted with a 0.30% price adjustment on future invoices"; needs the owner; ¥1,260.00 per invoice; 12-month net −¥162.05 | `tests/verifier/test_counter_property.py` |
+| Counter A | "We will accept early settlement on up to ¥257,200 of this invoice at 0.85%, paid on or before day 2." Discount ¥2,186.20 + line ¥841.57 = ¥3,027.77; receipt ¥255,013.80; any portion of the face paid by day 2 earns the rate | `tests/verifier/test_counter_property.py`, `tests/verifier/test_counter_a_floor.py`, `tests/verifier/test_golden_verdicts.py`, `tests/operations/test_redteam_e.py::test_f4_*` |
+| Option B | "55-day terms accepted with a 0.30% price adjustment on future invoices, no rebate" (55 days, not the 60 asked for); needs the owner; ¥1,260.00 per invoice; 12-month net −¥162.05 | `tests/verifier/test_counter_property.py` |
 | Day-34 cure | ¥200,000 on RI:BUYER-1:2, cost ¥1,782.19, 32.5% a year for 10 days, queued, approved, lands day 37 (unchanged) | `scripts/demo_run.py` |
 | Existing debt D-EQUIP | ¥1,500,000 at a 0% fixture rate, ¥45,000 on days 30, 60, 90, ... | `fixtures/scenarios/golden_sme.json`, `tests/books/test_debt_service.py` |
-| Capex on untouched books: 18-month illustration; 36-month loan; lease | DSCR 1.13×; 1.43×; 1.51×; leverage 2.08×, 2.28× with the extension; selection: the 48-month lease (the loan's first instalment, day 44, takes cash below the reserve) | `golden_values.json`, `tests/capex/test_evaluate.py` |
-| Capex after the day-0 plan: the same three; leverage | DSCR 1.09×; 1.37×; 1.45×; leverage 2.32×, 2.51× with the extension; selection: the 36-month loan, because the plan's cash lifts its first instalment above the reserve | a probe of the demo path on 3 Oct; `apps/web/e2e/demo.spec.ts` checks the 1.09× |
+| Capex on untouched books: 18-month illustration; 36-month loan; lease | DSCR 1.13×; 1.43×; 1.51×; leverage 1.90×, 2.10× with the extension (drawn debt only; it was 2.08× and 2.28× with the line limit); selection: the 48-month lease (the loan's first instalment, day 44, takes cash below the reserve) | `golden_values.json`, `tests/capex/test_evaluate.py` |
+| Capex after the day-0 plan: the same three; leverage | DSCR 1.09×; 1.37×; 1.45×; leverage 2.28×, 2.47× with the extension; selection: the 36-month loan, because the plan's cash lifts its first instalment above the reserve | a probe of the demo path on 3 Oct at `db097e0` (Scene 2's reset, EX01, hard-line negotiation, then `POST /capex/evaluate`); `apps/web/e2e/demo.spec.ts` checks the 1.09× |
 | Borrower file, ¥360,000 guaranteed-loan request | DSCR 1.18× against 1.25× (unchanged); month-1 leverage 1.49× before and 1.82× with the request | `tests/borrower_file/test_build.py`, `tests/financial/test_dscr_bullet_handcalc.py` |
 
 **Day 0: the offer.** The buyer's package is compiled and evaluated: REJECT with four codes and two counters
@@ -940,12 +941,18 @@ for other money.
 
 ## 9. Tests, evidence and how to run everything
 
-At `1bc96ba` on the Windows machine: 4,817 backend tests passed, 22 skipped (7 latency benchmarks, 14
-exhaustive router comparisons, 1 SQL variant), run as two sequential chunks; 49 of 49 scripted chat scenarios (87
-turns), 49 evidence chains valid; 255 attacks (122 API, 133 chat), 0 with harm; `scripts/evaluate.py` with every
-target passing; web mock e2e 35 passed, live e2e 30 passed (the web counts as recorded in
-`docs/CONTINUOUS_OPTIMIZATION.md`; the Playwright runs were not repeated for this document pass). Runs use recorded model outputs and an
-in-memory store; live-model mode and Postgres were not exercised.
+At `db097e0` on the Windows machine: 5,446 backend tests passed, 33 skipped (7 router latency benchmarks (`SKIP_PERF_BENCH=1`; their targets were set on another machine), 15 exhaustive router differential cases that run only with `ROUTER_DIFF_FULL=1`, 10 PostgreSQL concurrency cases that need `TERMSLEDGER_TEST_DATABASE_URL`, and the SQL variant of a corrupted-row test, which the attack catalogue covers (FR-12c)), run as
+two sequential chunks (chunk A: `tests/alerts tests/api tests/books tests/borrower_file tests/capex tests/clock
+tests/commitments tests/compiler tests/counterparties tests/covenants tests/egress tests/evals tests/financial
+tests/funding`; chunk B: `tests/mandate tests/nl tests/operations tests/persistence tests/security tests/verifier
+tests/whatif tests/concurrency tests/certification tests/test_fixtures.py tests/test_money.py`); 49 of 49 scripted
+chat scenarios (87 turns), 49 evidence chains valid; 255 attacks (122 API, 133 chat), 0 with harm;
+`scripts/evaluate.py` with every target passing (runnable optimality 26/26, priced 26/26); the language-boundary
+certification at WRONG_MATERIAL 0 on 231 items in the cache and fake runs; the concurrency suite at 20 passed and 10
+skipped (the PostgreSQL cases) on SQLite; web mock e2e 35 passed, live e2e 30 passed (the last known counts: the web
+refresh is in progress and the Playwright runs were not repeated for this document pass). Runs use recorded model
+outputs and an in-memory store (the concurrency suite uses SQLite files); live-model mode and PostgreSQL were not
+exercised.
 
 ```bash
 cd services/api && uv sync && SKIP_PERF_BENCH=1 uv run pytest -o addopts= -q
@@ -983,6 +990,32 @@ The scenario, attack and evaluation runs rewrite tracked files under `services/a
 | `scripts/build_deliverables.py` | The three official docx files under `docs/deliverables/out` |
 | `scripts/demo_run.py` | The 17-step path printed to the terminal; writes nothing |
 | `apps/web/scripts/record-mocks.mjs` | Every web mock file, from a running API |
+| `scripts/certify_language_boundary.py` | Language-boundary certification reports under `services/api/evals/certification/` (`--backend cache`, `fake`, `live`) |
+
+
+### Concurrency certification
+
+The store, not a process lock, keeps one organisation's books consistent (`docs/research/concurrency-certification-2026-10-03.md`).
+`tests/concurrency/` starts two spawned worker processes on one database and proves eight invariants (two draws on
+the last room; receipt versus financing; accept versus revoke; one bank event twice; a failed log append; a restart in
+the middle of an approval; two writers from one state version; chain integrity, with the committed actions replayed
+serially to byte-identical books) on three engines: file SQLite with `BEGIN IMMEDIATE`, file SQLite with deferred
+transactions (the worst interleaving, so only the compare-and-swap holds), and PostgreSQL. The first two pass. The
+PostgreSQL cases are skipped until `TERMSLEDGER_TEST_DATABASE_URL` is set; the run is pending a database URL. Run it with
+`cd services/api && SKIP_PERF_BENCH=1 uv run pytest -o addopts= -q -p no:cacheprovider tests/concurrency`.
+
+### Language-boundary certification
+
+`scripts/certify_language_boundary.py --backend cache|fake|live` runs the 231-item adversarial set
+(`fixtures/certification/language_boundary.yaml`: 76 buyer offers, 90 owner commands, 15 agent-key messages, 50
+malformed-model outputs) through the real `POST /nl` on fresh books and scores each item from stored state (the log,
+the books and mandate hashes, commitments, approvals, security events, an egress scan), never from the reply alone;
+the target is zero WRONG_MATERIAL. Latest reports are under `services/api/evals/certification/`:
+`language_boundary_cache_20261003T075236Z` (63 correct-executable, 6 read-only, 63 clarification, 98 abstention, 1
+wrong-harmless, WRONG_MATERIAL 0) and `language_boundary_fake_20261003T075307Z` (57, 7, 76, 88, 3, WRONG_MATERIAL 0).
+`tests/certification/test_language_boundary.py` is the regression guard. The live run (the real Claude and DeepSeek
+paths) is pending a key: `PYTHONUTF8=1 uv run --project services/api python scripts/certify_language_boundary.py
+--backend live`.
 
 ---
 
@@ -1019,8 +1052,12 @@ decision.
 - **Bank events.** A bank receipt is identified by its idempotency key, and by its `bank_reference` when the feed
   sends one; a receipt with no reference cannot be told from a second payment (R03, closed for receipts that carry
   one). Unauthenticated buyer messages and offer intake are not rate-limited (R04, R05).
-- **Several workers.** The lock is process-local and there is no state-version compare-and-swap; deploy one worker
-  (MW1, uncertainty debt U-002).
+- **Several workers.** The store now enforces the invariants itself (compare-and-swap on the state version and the
+  log head, `BEGIN IMMEDIATE` on file SQLite, a lost unit reruns, a conflict that survives answers 409), proven with
+  two processes on SQLite (section 9). PostgreSQL has not been run: the same suite needs `TERMSLEDGER_TEST_DATABASE_URL`.
+  Deploy one worker until it has (PG1, uncertainty debt U-002). Reads outside a unit of work can straddle a commit,
+  and writers outside the executor (offers, verdicts, security events) are not covered by the log-head check; none of
+  them changes the books.
 - **Security items open.** An authenticated buyer can find the accept/counter threshold to 1 bp by probing
   (NL-OP01K, NL-OP02K); a caller with only the agent key can read protected labels through chat status replies
   (NL-AC05, NL-CS10, NL-CS16, NL-CS31); the hash-chain head is not anchored outside the system, so the chain is
@@ -1038,15 +1075,28 @@ decision.
 - **Not built.** Named stress scenarios, payment by acceptance bill, recurring outflows, Chinese server text,
   deployment, an "AI-generated" label in the UI, a LICENSE file. The statutory-due-date module and the mock
   lender were deleted rather than left empty.
-- **Not verified.** Live-model mode (the 3 Oct rewrites were not run against live Claude, U-001), the Postgres
-  path, and a person clicking through the new screens.
+- **Not verified.** Live-model mode: the language-boundary certification harness is built and passes in cache and fake
+  modes (WRONG_MATERIAL 0 on 231 items) but has not run against a real model, which needs a key (LC1, U-001); the
+  PostgreSQL concurrency run needs a database URL (PG1, U-002); and a person has not clicked through the new screens.
+  The web mocks and e2e expectations predate the later figure changes, and their refresh is in progress (WEB1; the
+  last known counts are mock 35 and live 30).
+- **No runnable plan.** In six of the evaluation's 26 worlds (F04, R01, R02, R10, R13, R14) the cheapest plan that closes
+  the gap uses a buyer's early payment or a bill, which no operation runs; the router then flags the plan as unable to
+  run and offers nothing the agent can run. Whether the agent should instead propose drawing the line and asking the
+  buyer or the owner is an open product question (NR1).
+- **The evaluation's optimum is grid-bounded.** Runnable optimality 26/26 compares the router with a brute force on a
+  grid; a plan both missed is invisible (U-013). The `line_first_baseline` metric still uses early pay among its
+  levers (EO2).
+- **Over-abstention.** The boundary abstentions fail closed: an informal clean offer such as "release the full ¥420,000
+  on 8 Oct, taking 0.5% off" is answered with a clarification (certification item BO-002).
 
 ---
 
 ## 11. The 3 Oct 2026 changes, each with its test file
 
-An independent audit (13 findings), three red-team rounds (13 findings) and the business review's items (BC1 to
-BC11 and the simplifications S1 to S3) were fixed on 3 Oct. The rules are in
+An independent audit (13 findings), five red-team rounds (26 findings: 3, 7, 3, 7 and 6) and the business review's
+items (BC1 to BC11 and the simplifications S1 to S3) were fixed on 3 Oct; the owner then stopped the red-team rounds.
+The first table is the state at the first gate (`1bc96ba`); the second is what merged after it, up to `db097e0`. The rules are in
 `docs/FINANCIAL_SEMANTICS.md`; ADR-0009 and ADR-0010 record the two design decisions; the findings, decisions and
 scorecard are in `docs/CONTINUOUS_OPTIMIZATION.md` sections 1, 3 and 5; the reports are under `docs/research/`.
 Test paths are under `services/api/tests/` unless they start with `apps/`.
@@ -1082,3 +1132,24 @@ Test paths are under `services/api/tests/` unless they start with `apps/`.
 | The alert button is bound: `act` carries the state version and the suggestions shown, and answers 409 `ALERT_CHANGED` when either moved | 5.10, 6 | `alerts/test_review_gaps.py` |
 | Bank references: one bank event books once whatever the key; a different amount under the same reference is a conflicting event; reconciliation shows the reference | 5.6, 5.9, 5.11 | `operations/test_bank_reference.py` |
 | A buyer with a past-due invoice needs the owner, with the invoice and days named | 5.5 | `verifier/test_past_due_buyer.py` |
+
+### After the first gate (`1bc96ba` to `db097e0`)
+
+| Change | Where it is described | Test file |
+| --- | --- | --- |
+| API gaps: the approvals queue returns `decided_day` and the decision run's `result_message`; plan actions carry `lands_day` for draws and invoice advances; an owner-approved run is logged under its approval id; a `short_facilities` demo scenario (the golden books with the line and the invoice-financing limits cut to ¥60,000 each, loaded by `POST /demo/reset?scenario=short_facilities`) that fires the zero-floor fallback cure | 5.6, 5.10, 6 | `api/test_api_gaps.py`, `persistence/test_approval_decided_day.py`, `operations/test_approval_log.py`, `alerts/test_review_gaps.py` |
+| One leverage definition: month-end drawn debt over annual EBITDA, `covenants.ratios_for` read from a projection by the verifier, capex, the borrower file and chat; EX01 1.72× to 1.47×, capex 2.08× / 2.28× to 1.90× / 2.10× | 5.3, 5.5, 5.14, 5.15 | `covenants/test_one_leverage_property.py`, `covenants/test_ratios.py`, `capex/test_evaluate.py` |
+| Fourth red team F1: a plan with an early-pay or bill leg cannot run today and is never sent with the leg dropped; the standing plan C0 is the cheapest plan the agent can run (the 90-day, 1.2% case is now ACCEPT: ¥5,040.00 against a plan of ¥8,053.04) | 5.4, 5.5, 5.12 | `operations/test_redteam_d.py`, `verifier/test_early_pay_handcalc.py`, `verifier/test_early_pay_rule.py` |
+| Fourth red team F2, F3: an approved agent receipt is refused when that receivable was booked since it was queued; a lapsed early-pay agreement no longer blocks financing and the clock closes an early-pay-only commitment whose promises all lapsed | 5.6, 5.9 | `operations/test_redteam_d.py` |
+| Fourth red team F4: a past-tense statement is not a repayment and a tag question never confirms a plan | 5.12 | `nl/test_consent.py` |
+| Fourth red team F5, F6, F7: an early receipt fulfils a commitment only when nothing else in it is live; a late discounted receipt is a plain receipt in the reconciliation; a bullet term lot's upfront fee stays in its level debt service before and after the cash lands | 5.7, 5.9, 5.11, 5.3 | `operations/test_redteam_d.py`, `alerts/test_reconcile_promises.py` |
+| Fifth red team F1: a fixed-sum discount is tested at its exact rate on its portion (discount cap, break-even, rate ceiling, plan comparison) | 5.5 | `verifier/test_redteam_e.py` |
+| Fifth red team F2: a stated target term binds against the terms in force (the template plus the accepted adjustments) for the next invoice; counters quote them; the owner's terms constraint reads the same | 5.1, 5.2, 5.5 | `verifier/test_redteam_e.py`, `verifier/test_owner_constraints.py` |
+| Fifth red team F3: scenario events (the month-2 payroll) apply only in `DEMO_MODE` to the books seeded from that scenario; the scenario is stored with the books and hydrated on restart | 4, 5.9 | `operations/test_redteam_e.py` |
+| Fifth red team F4: Counter A names its day ("paid on or before day 2"); an early-pay agreement settles any portion up to its face by that day; the projection and the reconciliation follow the portions | 5.5, 5.9, 5.11 | `operations/test_redteam_e.py`, `alerts/test_reconcile_promises.py` |
+| Fifth red team F5, F6: an owner-requested facility repayment skips the mandate's expiry, revocation and version checks (signature and admission still apply); a queued receipt keeps the day it was reported | 5.6, 5.9 | `operations/test_redteam_e.py` |
+| Boundary abstentions: an unusual number form (a decimal comma), a per-day rate, 2/10 net 30, a foreign currency, a partial amount, another party's invoice, a hedge, a payment after the due date and a price freeze each abstain with a reason; the buyer gets a question and nothing is created. "Pay early, 0.3% off" with one open invoice binds to it and queues for the owner | 5.1, 5.12 | `compiler/test_boundary_abstentions.py`, `nl/test_boundary_abstentions.py` |
+| Evaluation speed-up: books are booked once per search, an exact integer pruning bound, and the router's searches are shared within one evaluation; EX01 evaluates in about 0.5 to 0.9 s (3.3 s before, from the commit message); verdicts are byte-identical | 5.5 | `funding/test_shared_runs.py` |
+| Concurrency: compare-and-swap on the state version and the log head, `BEGIN IMMEDIATE` on file SQLite, the executor and the clock rerun a lost unit (at most 8 times), a surviving conflict answers 409; eight invariants proven with two processes on SQLite, PostgreSQL pending | 9 | `concurrency/test_invariants.py`, `persistence/test_concurrency_cas.py`, `clock/test_clock_conflict.py`, `api/test_write_conflict_409.py` |
+| Language-boundary certification: a 231-item adversarial set scored on stored state through the real `POST /nl`, cache, fake and live backends; WRONG_MATERIAL 0 in the cache and fake runs, live run pending a key | 9 | `certification/test_language_boundary.py`, `scripts/certify_language_boundary.py` |
+| The evaluation oracle on the runnable rule: it classifies runnable levers itself and reports runnable optimality (the gate, 26/26) and priced optimality (26/26) separately | 9 | `evals/test_funding_oracle.py`, `evals/test_suites_smoke.py` |

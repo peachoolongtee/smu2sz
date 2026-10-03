@@ -59,3 +59,22 @@ receives against the unadjusted face, and reconciliation reads the unadjusted du
 - "Next 3 invoices" stays on the three invoices chosen at acceptance.
 - Day-0 evaluations of an offer do not change: the selection rule is the same, only when it is evaluated changes.
 - Stored states gain fields with defaults; no migration is needed for JSON state rows.
+
+## Implementation note, 3 Oct 2026 (terms in force, release on payment, portions)
+
+Fourth and fifth red teams (`services/api/tests/operations/test_redteam_d.py`, `services/api/tests/verifier/test_redteam_e.py`,
+`services/api/tests/operations/test_redteam_e.py`).
+
+- **Terms in force.** The terms in force for a buyer are the template's base terms plus the accepted adjustments (45 days
+  plus an accepted +10 days is 55). A stated target ("40 days") binds against the terms in force for the buyer's next
+  invoice, not against the template, so a second agreement cannot stack on the first (40 against 55 is a gain of 15
+  days). The counter texts quote the terms in force, and the owner's terms constraint reads the same terms.
+- **Release on payment (§7).** A finite adjustment leaves `state.invoice_adjustments` when its last invoice is issued, but
+  its forward concession is released only when every invoice carrying its terms is settled; revocation releases both
+  at once. A commitment closes only when nothing in it is live: an early receipt settles its own obligation and a
+  package with live terms stays ACTIVE and revocable, and an early-pay-only commitment whose promises all lapsed is
+  closed by the clock as EXPIRED with its lapsed obligations listed.
+- **Portions.** An early-pay obligation is settled by any portion of its face received on or before its day, each
+  portion earning the rate on that portion; the rest may follow by the same day, and the projection and the
+  reconciliation follow the portions. A receipt after the day is a plain receipt. A queued receipt keeps the day it was
+  reported, so one reported on time and approved late still earns the rate.

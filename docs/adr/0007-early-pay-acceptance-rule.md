@@ -153,3 +153,26 @@ fen). Re-derived in `services/api/tests/verifier/test_early_pay_handcalc.py`:
   below C0, so it is offered.
 - The other worked figures in this ADR (the hand-calculated table and the 90-day example) were derived on the 1 Oct
   books and are not re-derived here.
+
+## Implementation note, 3 Oct 2026 (the plan C0 is the plan the agent can run)
+
+Fourth red team, finding F1 (`services/api/tests/operations/test_redteam_d.py`). A buyer's early payment and a bill are
+not legs any operation runs: the agent cannot make the buyer pay early. So `C0`, the plan an early payment is compared
+with, is the cheapest plan the agent can run (the line and the invoice advances), never a plan that depends on the
+buyer's early-pay facility or a bill. A plan that needs one of those legs is flagged "cannot run today", and chat and
+`/negotiate` never drop such a leg silently.
+
+- The 90-day case now accepts. On the 90-day books of `services/api/tests/verifier/test_early_pay_handcalc.py` the
+  plan that can run is the line to day 47 (123,616 fen) plus the invoice advance for 89 days, billed as one posting
+  (681,688 fen): `C0` = 805,304 fen, ¥8,053.04 (it was 433,333 fen when the buyer's early pay was in the plan). The
+  whole invoice at 1.2% costs ¥5,040.00 and now beats `C0`, so it gives no early-pay code and is accepted; 0.85% (¥3,570.00)
+  is accepted as before. The earlier statement in this ADR that 1.2% for 90 days is countered, and its ¥3,786.77 plan,
+  were derived on the 1 Oct books and are superseded.
+- The buyer's standing early-pay rate still prices the rest of the gap inside `C1`, the plan with the offer, as before.
+  With the buyer's programme at 0.40% the router no longer plans on it (the plan stays ¥3,113.93), the whole-invoice
+  0.85% offer is dearer than the plan, and Counter A (¥3,027.77) beats it and is offered
+  (`test_the_buyers_cheap_standing_early_pay_is_not_a_plan_the_router_can_run`).
+- A fixed-sum discount (fifth red team, F1) is tested at its exact rate on its portion, so ¥3,108.00 on ¥420,000 (0.74%)
+  is accepted and ¥3,150.00 (0.75%) is countered, exactly as the rates are. Counter A names its day ("paid on or
+  before day 2"), and any portion of its face paid by that day earns the rate
+  (`services/api/tests/verifier/test_redteam_e.py`, `services/api/tests/operations/test_redteam_e.py`).

@@ -30,9 +30,9 @@ Click **Start** in the demo bar and sign in as the owner when asked (the local d
 **3. Test.**
 
 ```bash
-cd services/api && uv run pytest                     # 4,817 passed, 22 skipped on 3 Oct 2026 (Windows, SKIP_PERF_BENCH=1: the latency benchmarks skipped; about 9 min)
+cd services/api && uv run pytest                     # 5,446 passed, 33 skipped on 3 Oct 2026 (Windows, SKIP_PERF_BENCH=1: the latency benchmarks skipped; two sequential chunks, about 14 min)
 cd apps/web && pnpm lint && pnpm typecheck && pnpm build && pnpm test:unit && pnpm test:e2e
-                                                     # Playwright mock e2e: 35 passed (live project: 30), per docs/CONTINUOUS_OPTIMIZATION.md
+                                                     # Playwright mock e2e: 35 passed (live project: 30) when last run, per docs/CONTINUOUS_OPTIMIZATION.md; the web mock refresh is in progress
                                                      # (once: pnpm exec playwright install chromium)
 ```
 
@@ -43,6 +43,8 @@ python3 scripts/run_scenarios.py --inproc                         # 49 scripted 
 cd services/api && uv run python -m app.security.attacks --report # 255 attacks (122 API + 133 chat, including the NL-CS consent attacks and each buyer attack with and without the buyer's key), 0 with harm
 uv run --project services/api python scripts/evaluate.py          # full offline evaluation (about 5 min) → services/api/evals/latest_report.md
 uv run --project services/api python scripts/evaluate.py --suite offers --heldout fixtures/heldout3   # the independent held-out set
+PYTHONUTF8=1 uv run --project services/api python scripts/certify_language_boundary.py --backend cache   # 231-item language-boundary certification; also --backend fake; WRONG_MATERIAL 0 in both. --backend live is pending an API key
+cd services/api && SKIP_PERF_BENCH=1 uv run pytest -o addopts= -q -p no:cacheprovider tests/concurrency   # two-process invariants on SQLite; the PostgreSQL cases run when TERMSLEDGER_TEST_DATABASE_URL is set (pending a database URL)
 ```
 
 What we claim about the compiler, and what we don't, is in `services/api/evals/accuracy_summary.md`. In short: since ADR-0005 there are 0 wrong autonomous accepts on the held-out sets and both compiler paths, and text the compiler cannot fully read fails closed and goes to the owner. The figures behind that, unchanged: on the only set nobody had tuned for, the first run (before ADR-0005) accepted 8 offers without the owner and 4 were wrong, and about 1 message in 3 is still decided differently from the labels (it goes to the owner, a counter or a clarification).
@@ -104,5 +106,5 @@ Copy `infra/.env.example` to `infra/.env`, set `POSTGRES_PASSWORD`, `OWNER_TOKEN
 
 - **Data flows.** In live mode (opt-in) a buyer's message and attached documents go to the configured model provider (DeepSeek or Anthropic) for extraction only; the model never receives the mandate, the floor, facility limits or other buyers' terms. In the default cache mode nothing leaves the machine. Real buyer documents can contain personal information; sending them abroad would need a legal basis under China's PIPL and, where required, a security assessment or standard contract before any production use. That is an obligation on a deployer, not legal advice, and we do not claim compliance. The demo uses synthetic data only.
 - **AI-generated content.** Outbound text to a counterparty is template-filled from typed fields. The web UI does not yet label replies as AI-generated, for reference (a known gap).
-- **Known limits.** The chain is internally checkable only: its head is not anchored outside the system. Two medium items found through chat are open (an authenticated buyer can probe the accept/counter threshold; the agent key can read protected labels through chat status replies). Between 1 and 3 Oct an independent audit (13 findings) and three red-team rounds (13 findings) were fixed; the findings, decisions and open backlog are in `docs/CONTINUOUS_OPTIMIZATION.md`. See `docs/SECURITY_SELF_ASSESSMENT.md`.
+- **Known limits.** The chain is internally checkable only: its head is not anchored outside the system. Two medium items found through chat are open (an authenticated buyer can probe the accept/counter threshold; the agent key can read protected labels through chat status replies). Between 1 and 3 Oct an independent audit (13 findings) and five red-team rounds (26 findings) were fixed, and the owner then stopped the red-team rounds; the findings, decisions and open backlog are in `docs/CONTINUOUS_OPTIMIZATION.md`. Two certifications are built but not yet run: the concurrency suite on PostgreSQL (needs a database URL) and the language-boundary certification against a live model (needs an API key). See `docs/SECURITY_SELF_ASSESSMENT.md`.
 - **Licence.** [TEAM: licence to be chosen by the owner]
