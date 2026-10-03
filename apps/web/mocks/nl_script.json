@@ -682,7 +682,7 @@
         "kind": "COUNTER_OFFER",
         "description": "Option A: Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥257,200 of this invoice at 0.85%, paid on or before day 2.",
         "status": "EXECUTED",
-        "op_id": "NL-0a416ed5c28a64d6",
+        "op_id": "NL-ec8e426389722d8f",
         "condition": null
       },
       {
@@ -690,7 +690,7 @@
         "kind": "COUNTER_OFFER",
         "description": "Option B: 55-day terms accepted with a 0.30% price adjustment on future invoices, no rebate.",
         "status": "EXECUTED",
-        "op_id": "NL-385adc8d32c1d3af",
+        "op_id": "NL-2450bc46bd435ca0",
         "condition": null
       },
       {
@@ -704,9 +704,9 @@
       {
         "step": 5,
         "kind": "ACCEPT_OFFER",
-        "description": "Record commitment CMT-147ba2ead4b00218 (Option A nonce, expires day 14)",
+        "description": "Record commitment CMT-a78afaa5becb5273 (Option A nonce, expires day 14)",
         "status": "EXECUTED",
-        "op_id": "NL-a1d96be0e6eae6fa",
+        "op_id": "NL-51fc8fff62c5daf9",
         "condition": null
       },
       {
@@ -714,7 +714,7 @@
         "kind": "DRAW_FACILITY",
         "description": "Draw ¥149,986.20 on FAC-LINE",
         "status": "EXECUTED",
-        "op_id": "NL-0a94252a335da827",
+        "op_id": "NL-76db55c020e1e21c",
         "condition": "remaining gap after the accepted package"
       }
     ],
@@ -1293,53 +1293,53 @@
     },
     "operations": [
       {
-        "op_id": "NL-0a416ed5c28a64d6",
+        "op_id": "NL-ec8e426389722d8f",
         "kind": "COUNTER_OFFER",
         "status": "EXECUTED",
         "tier": "TIER_1",
         "violations": [],
         "seq": 1,
-        "entry_hash": "13ce2070f5aa169329ebf4cdc336672139a7170bb10e772205d14d18de3bcc19",
-        "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+        "entry_hash": "e40f61b88c3c8cc90270548bfecf0c1c637733e541cf555d5776335fa26c75e4",
+        "prev_hash": "96710b63fb1c9acde3db54d7a3874f476efe2fe28962286bad0d6da369903bd9",
         "effective_day": 0,
         "approval_id": null,
         "message": "Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥257,200 of this invoice at 0.85%, paid on or before day 2."
       },
       {
-        "op_id": "NL-385adc8d32c1d3af",
+        "op_id": "NL-2450bc46bd435ca0",
         "kind": "COUNTER_OFFER",
         "status": "EXECUTED",
         "tier": "TIER_1",
         "violations": [],
         "seq": 2,
-        "entry_hash": "196e92142aceb9f5aa8f831b17ccc99f65f354ea7e0117d772f2b3593cbd9d97",
-        "prev_hash": "13ce2070f5aa169329ebf4cdc336672139a7170bb10e772205d14d18de3bcc19",
+        "entry_hash": "f5ab6c40b560aa0a6911495f58801aa3d88df414dbacc0c51cff2a4a17ba3dd1",
+        "prev_hash": "e40f61b88c3c8cc90270548bfecf0c1c637733e541cf555d5776335fa26c75e4",
         "effective_day": 0,
         "approval_id": null,
         "message": "55-day terms accepted with a 0.30% price adjustment on future invoices, no rebate."
       },
       {
-        "op_id": "NL-a1d96be0e6eae6fa",
+        "op_id": "NL-51fc8fff62c5daf9",
         "kind": "ACCEPT_OFFER",
         "status": "EXECUTED",
         "tier": "TIER_1",
         "violations": [],
         "seq": 3,
-        "entry_hash": "449fc97aad94b4b69e28baec1f538b9c320194c1049b1f0d7c6bd52a508708e8",
-        "prev_hash": "196e92142aceb9f5aa8f831b17ccc99f65f354ea7e0117d772f2b3593cbd9d97",
+        "entry_hash": "e288eca695c88f161bf6f9ea942fd8448ef24ed8cf13f95a59a81d8adb50474f",
+        "prev_hash": "f5ab6c40b560aa0a6911495f58801aa3d88df414dbacc0c51cff2a4a17ba3dd1",
         "effective_day": 0,
         "approval_id": null,
-        "message": "Commitment CMT-147ba2ead4b00218 is ACTIVE; forward concession ¥0.00 booked"
+        "message": "Commitment CMT-a78afaa5becb5273 is ACTIVE; forward concession ¥0.00 booked"
       },
       {
-        "op_id": "NL-0a94252a335da827",
+        "op_id": "NL-76db55c020e1e21c",
         "kind": "DRAW_FACILITY",
         "status": "EXECUTED",
         "tier": "TIER_1",
         "violations": [],
         "seq": 4,
-        "entry_hash": "a2786c677b4f192ae2225783f1817b5f8d0ba73e061c9e13d7224b2827179b10",
-        "prev_hash": "449fc97aad94b4b69e28baec1f538b9c320194c1049b1f0d7c6bd52a508708e8",
+        "entry_hash": "152ca7b81e4bb51b1a9908c37161aab63edb4988810b3c80f6f63b1e8ec00533",
+        "prev_hash": "e288eca695c88f161bf6f9ea942fd8448ef24ed8cf13f95a59a81d8adb50474f",
         "effective_day": 0,
         "approval_id": null,
         "message": "Drew ¥149,986.20 on FAC-LINE on day 0"
@@ -2790,7 +2790,7 @@
         "kind": "COUNTER_OFFER",
         "description": "Option A: We will accept early settlement on up to ¥257,200 of this invoice at 0.85%, paid on or before day 2. Nothing else changes.",
         "status": "EXECUTED",
-        "op_id": "NL-9054608caa8b5174",
+        "op_id": "NL-2160d50686903c41",
         "condition": null
       },
       {
@@ -2804,9 +2804,9 @@
       {
         "step": 4,
         "kind": "ACCEPT_OFFER",
-        "description": "Record commitment CMT-f380ca21d43737c8 (Option A nonce, expires day 14)",
+        "description": "Record commitment CMT-a78afaa5becb5273 (Option A nonce, expires day 14)",
         "status": "EXECUTED",
-        "op_id": "NL-d285c78c210d7e5e",
+        "op_id": "NL-5dcc8a48739e27e1",
         "condition": null
       },
       {
@@ -2814,7 +2814,7 @@
         "kind": "DRAW_FACILITY",
         "description": "Draw ¥149,986.20 on FAC-LINE",
         "status": "EXECUTED",
-        "op_id": "NL-76537bfef79df5f0",
+        "op_id": "NL-ab988e1ea7302b43",
         "condition": "remaining gap after early settlement"
       }
     ],
@@ -3012,40 +3012,40 @@
     },
     "operations": [
       {
-        "op_id": "NL-9054608caa8b5174",
+        "op_id": "NL-2160d50686903c41",
         "kind": "COUNTER_OFFER",
         "status": "EXECUTED",
         "tier": "TIER_1",
         "violations": [],
         "seq": 1,
-        "entry_hash": "821896dc801b3f0c080d8d986baae9b72bf84460e917cbe14bd1538660a1023b",
-        "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+        "entry_hash": "e2e8ef95853c7207eafcb4ac989c712692ade0d177f56462528762ccf016565d",
+        "prev_hash": "80476e9976575a11acf84fe2bb83b1ba22b963261c31db2146e6fad7f52393c9",
         "effective_day": 0,
         "approval_id": null,
         "message": "We will accept early settlement on up to ¥257,200 of this invoice at 0.85%, paid on or before day 2. Nothing else changes."
       },
       {
-        "op_id": "NL-d285c78c210d7e5e",
+        "op_id": "NL-5dcc8a48739e27e1",
         "kind": "ACCEPT_OFFER",
         "status": "EXECUTED",
         "tier": "TIER_1",
         "violations": [],
         "seq": 2,
-        "entry_hash": "04955f4e73cd4e4d2ceaf72d1db535a30d08813f0d3f157d1f7a32c5b45fe27f",
-        "prev_hash": "821896dc801b3f0c080d8d986baae9b72bf84460e917cbe14bd1538660a1023b",
+        "entry_hash": "4f781e37288e19eff8ad85d9d92fb3cb356bd437ea024c579e7f15a446139c68",
+        "prev_hash": "e2e8ef95853c7207eafcb4ac989c712692ade0d177f56462528762ccf016565d",
         "effective_day": 0,
         "approval_id": null,
-        "message": "Commitment CMT-f380ca21d43737c8 is ACTIVE; forward concession ¥0.00 booked"
+        "message": "Commitment CMT-a78afaa5becb5273 is ACTIVE; forward concession ¥0.00 booked"
       },
       {
-        "op_id": "NL-76537bfef79df5f0",
+        "op_id": "NL-ab988e1ea7302b43",
         "kind": "DRAW_FACILITY",
         "status": "EXECUTED",
         "tier": "TIER_1",
         "violations": [],
         "seq": 3,
-        "entry_hash": "e966b9fa7da90fe100c223d24274664845bfaf893be166c1b0f77f2e8cb81f97",
-        "prev_hash": "04955f4e73cd4e4d2ceaf72d1db535a30d08813f0d3f157d1f7a32c5b45fe27f",
+        "entry_hash": "f5868f2be6f93efcec46fab1a459e7c2b07b7233502088e35edd7f3ff82d0b8b",
+        "prev_hash": "4f781e37288e19eff8ad85d9d92fb3cb356bd437ea024c579e7f15a446139c68",
         "effective_day": 0,
         "approval_id": null,
         "message": "Drew ¥149,986.20 on FAC-LINE on day 0"
@@ -3960,7 +3960,7 @@
         "kind": "DRAW_FACILITY",
         "description": "Draw ¥150,000.00 on FAC-LINE",
         "status": "EXECUTED",
-        "op_id": "NL-a77fe7c500551eb7",
+        "op_id": "NL-eeb144533adbcb74",
         "condition": null
       },
       {
@@ -3968,34 +3968,34 @@
         "kind": "SUBMIT_INVOICE_FOR_FINANCING",
         "description": "Submit RCV-A to FAC-IF for a ¥255,000.00 advance",
         "status": "EXECUTED",
-        "op_id": "NL-b7a5a9598d8167f7",
+        "op_id": "NL-2a82868ad77d87cb",
         "condition": null
       }
     ],
     "verdict": null,
     "operations": [
       {
-        "op_id": "NL-a77fe7c500551eb7",
+        "op_id": "NL-eeb144533adbcb74",
         "kind": "DRAW_FACILITY",
         "status": "EXECUTED",
         "tier": "TIER_1",
         "violations": [],
         "seq": 1,
-        "entry_hash": "e3339d66aa950b27870a70564cb74c0f9c67da4b403bf2f78a8d88021ceb03dd",
-        "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+        "entry_hash": "2d64f5524b33a3f7bcd2913e0ee49c35e46600023e295e57edf5f889c4142d44",
+        "prev_hash": "2c46823fb2791ae3ed9f68de70094b544d9132b81a70d6918ab4d3d94fe2f5e4",
         "effective_day": 0,
         "approval_id": null,
         "message": "Drew ¥150,000.00 on FAC-LINE on day 0"
       },
       {
-        "op_id": "NL-b7a5a9598d8167f7",
+        "op_id": "NL-2a82868ad77d87cb",
         "kind": "SUBMIT_INVOICE_FOR_FINANCING",
         "status": "EXECUTED",
         "tier": "TIER_1",
         "violations": [],
         "seq": 2,
-        "entry_hash": "8533e4cb1322bc48c43d9487ca75735ef9c7f8aa52633c40edf30cef3d6cae63",
-        "prev_hash": "e3339d66aa950b27870a70564cb74c0f9c67da4b403bf2f78a8d88021ceb03dd",
+        "entry_hash": "c0b640d4a9c0a6c9728c5d338280d7ee6d1032b15632af599eb96029c3f2c35c",
+        "prev_hash": "2d64f5524b33a3f7bcd2913e0ee49c35e46600023e295e57edf5f889c4142d44",
         "effective_day": 0,
         "approval_id": null,
         "message": "Advance ¥255,000.00 on RCV-A from FAC-IF on day 0; the cash lands on day 3 after the 3-day lead time, not today"
@@ -4872,7 +4872,7 @@
         "kind": "COUNTER_OFFER",
         "description": "Option A: We will accept early settlement on up to ¥257,200 of this invoice at 0.85%, paid on or before day 2. Nothing else changes.",
         "status": "EXECUTED",
-        "op_id": "NL-9c1aa007086688ef",
+        "op_id": "NL-d5085a71875f9726",
         "condition": null
       },
       {
@@ -4886,9 +4886,9 @@
       {
         "step": 4,
         "kind": "ACCEPT_OFFER",
-        "description": "记录承诺 CMT-17be024ca5df2d6f（Option A 一次性随机数，第 14 天到期）",
+        "description": "记录承诺 CMT-a78afaa5becb5273（Option A 一次性随机数，第 14 天到期）",
         "status": "EXECUTED",
-        "op_id": "NL-49de22213756ff69",
+        "op_id": "NL-0dc3de787661a4ef",
         "condition": null
       },
       {
@@ -4896,7 +4896,7 @@
         "kind": "DRAW_FACILITY",
         "description": "从 FAC-LINE 提款 ¥149,986.20",
         "status": "EXECUTED",
-        "op_id": "NL-c76035980c05bbf0",
+        "op_id": "NL-383adeb31c305b93",
         "condition": "提前结算后剩余缺口"
       }
     ],
@@ -5094,40 +5094,40 @@
     },
     "operations": [
       {
-        "op_id": "NL-9c1aa007086688ef",
+        "op_id": "NL-d5085a71875f9726",
         "kind": "COUNTER_OFFER",
         "status": "EXECUTED",
         "tier": "TIER_1",
         "violations": [],
         "seq": 1,
-        "entry_hash": "7e2c91fdbf66003d42cb11f1d78a5c0df4e95d454c267b9080a445df36159e2c",
-        "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+        "entry_hash": "60a6ba97977ea357ef58fca1ff2c4c9dce450ed99837e2c7a3bfba2e69bde9e3",
+        "prev_hash": "9240704893b5b3dbc8912ce803cf4ee3a81d48478dcc9f5afccf3121bc428598",
         "effective_day": 0,
         "approval_id": null,
         "message": "We will accept early settlement on up to ¥257,200 of this invoice at 0.85%, paid on or before day 2. Nothing else changes."
       },
       {
-        "op_id": "NL-49de22213756ff69",
+        "op_id": "NL-0dc3de787661a4ef",
         "kind": "ACCEPT_OFFER",
         "status": "EXECUTED",
         "tier": "TIER_1",
         "violations": [],
         "seq": 2,
-        "entry_hash": "d4d194d19b3fa8eb2067fdf29863915e9508f7c1ef934467bf33423f5476f9a6",
-        "prev_hash": "7e2c91fdbf66003d42cb11f1d78a5c0df4e95d454c267b9080a445df36159e2c",
+        "entry_hash": "3edec772201062bed78900c94d28021d30493cb355a1bd28285dcbd71a50ecc7",
+        "prev_hash": "60a6ba97977ea357ef58fca1ff2c4c9dce450ed99837e2c7a3bfba2e69bde9e3",
         "effective_day": 0,
         "approval_id": null,
-        "message": "Commitment CMT-17be024ca5df2d6f is ACTIVE; forward concession ¥0.00 booked"
+        "message": "Commitment CMT-a78afaa5becb5273 is ACTIVE; forward concession ¥0.00 booked"
       },
       {
-        "op_id": "NL-c76035980c05bbf0",
+        "op_id": "NL-383adeb31c305b93",
         "kind": "DRAW_FACILITY",
         "status": "EXECUTED",
         "tier": "TIER_1",
         "violations": [],
         "seq": 3,
-        "entry_hash": "8ec0a14c27c8de3f775c7c3754a191fe6b6ef33722fa100242532553f3ff913c",
-        "prev_hash": "d4d194d19b3fa8eb2067fdf29863915e9508f7c1ef934467bf33423f5476f9a6",
+        "entry_hash": "1d2d68ef881e40dbdc4336b8df9e6b88276b642392567031fd6ef907bcf07fd1",
+        "prev_hash": "3edec772201062bed78900c94d28021d30493cb355a1bd28285dcbd71a50ecc7",
         "effective_day": 0,
         "approval_id": null,
         "message": "Drew ¥149,986.20 on FAC-LINE on day 0"
@@ -5834,7 +5834,7 @@
         "kind": "COUNTER_OFFER",
         "description": "Option A: Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥257,200 of this invoice at 0.85%, paid on or before day 2.",
         "status": "EXECUTED",
-        "op_id": "NL-bc2d692c70329712",
+        "op_id": "NL-84f2d241847627cf",
         "condition": null
       },
       {
@@ -5842,7 +5842,7 @@
         "kind": "COUNTER_OFFER",
         "description": "Option B: 55-day terms accepted with a 0.30% price adjustment on future invoices, no rebate.",
         "status": "EXECUTED",
-        "op_id": "NL-bb978706c23fcde8",
+        "op_id": "NL-81207adc69ea410f",
         "condition": null
       },
       {
@@ -5856,9 +5856,9 @@
       {
         "step": 5,
         "kind": "ACCEPT_OFFER",
-        "description": "记录承诺 CMT-8b681999fd3242c9（Option A 一次性随机数，第 14 天到期）",
+        "description": "记录承诺 CMT-a78afaa5becb5273（Option A 一次性随机数，第 14 天到期）",
         "status": "EXECUTED",
-        "op_id": "NL-44eb0499b3903964",
+        "op_id": "NL-e52511d8deec25ae",
         "condition": null
       },
       {
@@ -5866,7 +5866,7 @@
         "kind": "DRAW_FACILITY",
         "description": "从 FAC-LINE 提款 ¥149,986.20",
         "status": "EXECUTED",
-        "op_id": "NL-ffe152a011dd4739",
+        "op_id": "NL-f1481e2324f99f91",
         "condition": "成交后剩余缺口"
       }
     ],
@@ -6445,53 +6445,53 @@
     },
     "operations": [
       {
-        "op_id": "NL-bc2d692c70329712",
+        "op_id": "NL-84f2d241847627cf",
         "kind": "COUNTER_OFFER",
         "status": "EXECUTED",
         "tier": "TIER_1",
         "violations": [],
         "seq": 1,
-        "entry_hash": "9cdef43d1199cf9da7b7100c64a5408aa3b64d5d8db2348acea76d5ac5acc269",
-        "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+        "entry_hash": "5d8a2bce4b4c11028a2c2453f499d0db82c8d6a44d4ba587515bcf380f452068",
+        "prev_hash": "800012b397def2a539191c2b3bc01b6477093419dc03914902553e1f83654ae5",
         "effective_day": 0,
         "approval_id": null,
         "message": "Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥257,200 of this invoice at 0.85%, paid on or before day 2."
       },
       {
-        "op_id": "NL-bb978706c23fcde8",
+        "op_id": "NL-81207adc69ea410f",
         "kind": "COUNTER_OFFER",
         "status": "EXECUTED",
         "tier": "TIER_1",
         "violations": [],
         "seq": 2,
-        "entry_hash": "c169fdec6ca8fdcbb6e292b5f1c7a165c8a1b5540c8f5b065b3276bd90915cff",
-        "prev_hash": "9cdef43d1199cf9da7b7100c64a5408aa3b64d5d8db2348acea76d5ac5acc269",
+        "entry_hash": "7ab4d0df1da3a2a430359339fe51d78b510ce79ba5c9be91d3c364af76dbc0c6",
+        "prev_hash": "5d8a2bce4b4c11028a2c2453f499d0db82c8d6a44d4ba587515bcf380f452068",
         "effective_day": 0,
         "approval_id": null,
         "message": "55-day terms accepted with a 0.30% price adjustment on future invoices, no rebate."
       },
       {
-        "op_id": "NL-44eb0499b3903964",
+        "op_id": "NL-e52511d8deec25ae",
         "kind": "ACCEPT_OFFER",
         "status": "EXECUTED",
         "tier": "TIER_1",
         "violations": [],
         "seq": 3,
-        "entry_hash": "3e15874418749d3fd3046871d2959a2f31615176a747d8aa4e1f6d62cd790275",
-        "prev_hash": "c169fdec6ca8fdcbb6e292b5f1c7a165c8a1b5540c8f5b065b3276bd90915cff",
+        "entry_hash": "b9ddbf180b943d8528b702039f075146ec6bd17f1fa6ff90e3116ccc2682c5da",
+        "prev_hash": "7ab4d0df1da3a2a430359339fe51d78b510ce79ba5c9be91d3c364af76dbc0c6",
         "effective_day": 0,
         "approval_id": null,
-        "message": "Commitment CMT-8b681999fd3242c9 is ACTIVE; forward concession ¥0.00 booked"
+        "message": "Commitment CMT-a78afaa5becb5273 is ACTIVE; forward concession ¥0.00 booked"
       },
       {
-        "op_id": "NL-ffe152a011dd4739",
+        "op_id": "NL-f1481e2324f99f91",
         "kind": "DRAW_FACILITY",
         "status": "EXECUTED",
         "tier": "TIER_1",
         "violations": [],
         "seq": 4,
-        "entry_hash": "26ed24726daafa10e2bd26f4c597802c82787af0d36c75729094e1b4f5d926cc",
-        "prev_hash": "3e15874418749d3fd3046871d2959a2f31615176a747d8aa4e1f6d62cd790275",
+        "entry_hash": "2d011e8186a5ef0813fac8a093913cd50d8dbdb4cea4c0cfd3725c0b6aee24ae",
+        "prev_hash": "b9ddbf180b943d8528b702039f075146ec6bd17f1fa6ff90e3116ccc2682c5da",
         "effective_day": 0,
         "approval_id": null,
         "message": "Drew ¥149,986.20 on FAC-LINE on day 0"
@@ -6740,7 +6740,7 @@
         "kind": "DRAW_FACILITY",
         "description": "从 FAC-LINE 提款 ¥150,000.00",
         "status": "EXECUTED",
-        "op_id": "NL-5ed2a0dfba19d5a6",
+        "op_id": "NL-cd3575dc9eba5dcd",
         "condition": null
       },
       {
@@ -6748,34 +6748,34 @@
         "kind": "SUBMIT_INVOICE_FOR_FINANCING",
         "description": "将 RCV-A 提交 FAC-IF 融资，预付 ¥255,000.00",
         "status": "EXECUTED",
-        "op_id": "NL-cfd05b306d027925",
+        "op_id": "NL-8d9842f122135fcc",
         "condition": null
       }
     ],
     "verdict": null,
     "operations": [
       {
-        "op_id": "NL-5ed2a0dfba19d5a6",
+        "op_id": "NL-cd3575dc9eba5dcd",
         "kind": "DRAW_FACILITY",
         "status": "EXECUTED",
         "tier": "TIER_1",
         "violations": [],
         "seq": 1,
-        "entry_hash": "e484c4a1e7e70412903db14dc35212013de4a90285f742781df397c3fb33cb19",
-        "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+        "entry_hash": "069d7f5482a56f01db11586b99fa6455a15cc97d5dcc27582bc538092c74c4c7",
+        "prev_hash": "b46888f564527368cdde8d4a66fcfbe47c4d0be85d03c0d782bf567d1bf6dea8",
         "effective_day": 0,
         "approval_id": null,
         "message": "Drew ¥150,000.00 on FAC-LINE on day 0"
       },
       {
-        "op_id": "NL-cfd05b306d027925",
+        "op_id": "NL-8d9842f122135fcc",
         "kind": "SUBMIT_INVOICE_FOR_FINANCING",
         "status": "EXECUTED",
         "tier": "TIER_1",
         "violations": [],
         "seq": 2,
-        "entry_hash": "bb8412de7c3b0afc95ab4e6a8f76dac185dfb38148e6cd1f153f3b933c51cf27",
-        "prev_hash": "e484c4a1e7e70412903db14dc35212013de4a90285f742781df397c3fb33cb19",
+        "entry_hash": "c4f3d3aa835db5f92de4978cf289a3a404d35cd6bc373e7ca1b8a816d294491b",
+        "prev_hash": "069d7f5482a56f01db11586b99fa6455a15cc97d5dcc27582bc538092c74c4c7",
         "effective_day": 0,
         "approval_id": null,
         "message": "Advance ¥255,000.00 on RCV-A from FAC-IF on day 0; the cash lands on day 3 after the 3-day lead time, not today"
@@ -6874,14 +6874,14 @@
         "kind": "SIGN_PERSONAL_GUARANTEE",
         "description": "SIGN_PERSONAL_GUARANTEE requested — refused: Refused: SIGN_PERSONAL_GUARANTEE is Tier 3 and is never executed, whoever asks (OWNER)",
         "status": "REFUSED",
-        "op_id": "NL-4dcbc1cf3df2bcac",
+        "op_id": "NL-13d22938c572994c",
         "condition": null
       }
     ],
     "verdict": null,
     "operations": [
       {
-        "op_id": "NL-4dcbc1cf3df2bcac",
+        "op_id": "NL-13d22938c572994c",
         "kind": "SIGN_PERSONAL_GUARANTEE",
         "status": "REFUSED",
         "tier": "TIER_3",
@@ -6902,8 +6902,8 @@
           }
         ],
         "seq": 1,
-        "entry_hash": "f195333c362e5fe685d4592ea61d45cc72fe791219059c7b8c95b2ab82d234ba",
-        "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+        "entry_hash": "69f3ddde520c83a146c94280b5af714c410b985ef663024ea8245374473cc371",
+        "prev_hash": "fee5eff99b2675da68ea9de30a86d1350138f6144ac19b073a1b94ef4fbf36a3",
         "effective_day": 0,
         "approval_id": null,
         "message": "Refused: SIGN_PERSONAL_GUARANTEE is Tier 3 and is never executed, whoever asks (OWNER)"

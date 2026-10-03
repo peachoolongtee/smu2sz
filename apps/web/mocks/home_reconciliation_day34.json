@@ -3,7 +3,7 @@
   "receipts": [
     {
       "seq": 4,
-      "entry_hash": "0739e21c50eda0971dba2d173632a5004a3683ddfc41c7d7f6da598ac38188ac",
+      "entry_hash": "d20bba505b63bb84a3d6964cf2960a32c672e7867d2b0a26917f9d63f329f579",
       "op_id": "rec-receipt-1",
       "day": 2,
       "receivable_id": "RCV-A",
@@ -59,7 +59,7 @@
   "flagged": 0,
   "received_total_fen": 25501380,
   "expected_total_fen": 25501380,
-  "chain_head_hash": "b2b1865f6b54d78fe0046b6e400b6ac37b8a2e92510e7c934885e3ab485a3ff3",
+  "chain_head_hash": "5eecacc1d392fa7071706a4b83e0e0b7f68fbfeb0a1eead828eeccb66a5b0a09",
   "chain_valid": true,
   "promised": [
     {
