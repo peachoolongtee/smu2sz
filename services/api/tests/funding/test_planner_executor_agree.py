@@ -4,7 +4,9 @@ Over random admissible states derived from the golden fixture (cash, outflow dat
 and partial settlements, a recurring invoice, facility limits, rates, fee periods, lead times, the day), the router's
 best COMMITTED plan is run leg by leg through the real executor, with the admission hook the runtime wires in:
 
-1. every leg, in the router's order, ends EXECUTED when the plan is not flagged, and is never REFUSED;
+1. every leg, in the router's order, ends EXECUTED when the plan is not flagged, and is never REFUSED (unless the plan
+   flagged that leg "only admissible as a whole", quoting the executor's own reason: no order of its legs lets each
+   run alone on the books the legs before it leave);
 2. a leg that waits for the owner is a leg the plan flagged `needs_owner_approval`, with the reason the executor gives;
    (the test then plays the owner and approves it, so the rest of the plan can be checked);
 3. the cash the executor's books show after every day of the plan equals the projection's closing cash on that day,
@@ -346,6 +348,11 @@ def test_pinned_worlds_make_the_plans_they_are_pinned_for() -> None:
     assert committed_plan(build(RI_CHEAPER))[2].executable_now
     _, _, unissued = committed_plan(build(UNISSUED))
     assert unissued.admissible and not unissued.executable_now and "RI:BUYER-1:2" in unissued.not_executable_reason
+    # by landing day the advance would run second, on books where the carried line alone leaves day 30 at ¥222,500
+    # (below the reserve) and its ¥61.37 charge deepens that: the router runs the guaranteed loan first
+    _, _, legs = committed_plan(build(ADVANCE_LEG))
+    assert [a.facility_id for a in legs.actions] == [LINE, GGL, IF]
+    assert legs.executable_now and not legs.needs_owner_approval
 
 
 # ---------------------------------------------------------------- the converse, one operation at a time
