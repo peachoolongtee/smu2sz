@@ -30,7 +30,7 @@ import threading
 from collections.abc import Callable
 from contextlib import AbstractContextManager, nullcontext
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, TypeVar
 
 from app.books import cash_relevant
 from app.commitments import CommitmentError, check_acceptance, terms_hash, transition
@@ -89,7 +89,17 @@ from app.operations.log import (
     LogReader,
     parse_operation,
 )
-from app.persistence import ApprovalAlreadyDecided, ApprovalStatus, NonceAlreadyUsed, NotFound, canonical_json
+from app.persistence import (
+    ApprovalAlreadyDecided,
+    ApprovalStatus,
+    NonceAlreadyUsed,
+    NotFound,
+    canonical_json,
+    is_retryable,
+)
+
+_T = TypeVar("_T")
+_CAS_ATTEMPTS = 8  # a unit of work that lost a compare-and-swap runs again, at most this many times in all
 
 Code = ViolationCode
 EXECUTED = OperationStatus.EXECUTED
@@ -317,59 +327,74 @@ class Executor:
         tx = getattr(self._store, "transaction", None)
         return tx() if callable(tx) else nullcontext()
 
+    def _atomically(self, fn: Callable[[], _T]) -> _T:
+        """Run `fn` as one unit of work. The process lock only orders this process's callers; across
+        processes the store's compare-and-swap (log head, state version, unique keys) decides who
+        committed first. The unit that lost kept nothing, so it runs again on the books as they now
+        are: two concurrent callers end exactly as some serial order of the two would."""
+        for attempt in range(_CAS_ATTEMPTS):
+            try:
+                with self._lock, self._unit_of_work():
+                    return fn()
+            except Exception as exc:
+                if attempt == _CAS_ATTEMPTS - 1 or not is_retryable(exc):
+                    raise
+        raise AssertionError("unreachable")  # pragma: no cover
+
     def execute(self, op: Any) -> OperationResult:
-        with self._lock, self._unit_of_work():
-            return self._run(op, approved=False)
+        return self._atomically(lambda: self._run(op, approved=False))
 
     def decide(self, approval_id: str, approved: bool, actor: Actor) -> OperationResult:
         """Owner decision on a queued Tier-2 operation. Anyone else is refused and logged."""
-        with self._lock, self._unit_of_work():
-            rec = self._store.get_approval(approval_id)
-            if rec is None:
-                raise NotFound(f"approval {approval_id} not found")
-            op = parse_operation(rec.op_json)
-            if op is None:
-                raise ValueError(f"approval {approval_id} does not hold a typed operation")
-            now = self._clock()
-            if actor != Actor.OWNER:
-                v = _v(Code.INSUFFICIENT_AUTHORITY, f"Only the owner may decide {approval_id}; {actor} may not",
-                       approval_id=approval_id, actor=actor)
-                self._security(SecurityEventKind.PRIVILEGE_ESCALATION, op, now, None,
-                               f"{actor} tried to decide approval {approval_id} ({op.kind})")
-                result = OperationResult(op_id=op.op_id, kind=op.kind, status=REFUSED, tier=Tier.TIER_2,
-                                         violations=[v], effective_day=now, approval_id=approval_id,
-                                         message=v.message)
-                return self._log(op, result, key=f"{op.idempotency_key}#decide:{approval_id}:{actor}")
-            if rec.status != ApprovalStatus.PENDING:
-                raise ApprovalAlreadyDecided(f"approval {approval_id} is {rec.status}")
-            self._store.decide_approval(approval_id, approved, Actor.OWNER.value, now)
-            if not approved:
-                result = OperationResult(op_id=op.op_id, kind=op.kind, status=REFUSED, tier=Tier.TIER_2,
-                                         effective_day=now, approval_id=approval_id,
-                                         message=f"Declined by the owner ({approval_id}); nothing executed")
-                return self._log(op, result)
-            booked = self._booked_since_queued(op, approval_id) if isinstance(op, ReceivePayment) else None
-            if booked is not None:
-                v = _v(Code.PRECONDITION_FAILED,
-                       f"Not booked: since {approval_id} was queued, {booked.payload.get('requested_by')} recorded "
-                       f"{fmt_yuan(int(booked.payload.get('amount_fen', 0)))} on {op.receivable_id} "
-                       f"({booked.payload.get('op_id', '?')}, seq {booked.seq}); this report may be that same money. "
-                       f"If anything is still owed, record it again from the bank feed or as the owner",
-                       approval_id=approval_id, receivable_id=op.receivable_id, earlier_seq=booked.seq)
-                result = OperationResult(op_id=op.op_id, kind=op.kind, status=REFUSED, tier=Tier.TIER_2,
-                                         violations=[v], effective_day=now, approval_id=approval_id, message=v.message)
-                return self._log(op, result)
-            # Re-run at decision time: every gate except the Tier-2 queue, against today's mandate.
-            self._running_under = approval_id  # `_log` stamps it on every row the re-run writes
-            try:
-                result = self._run(op.model_copy(update={"day": now}), approved=True)
-            finally:
-                self._running_under = None
-            return result.model_copy(update={"approval_id": approval_id})
+        return self._atomically(lambda: self._decide(approval_id, approved, actor))
+
+    def _decide(self, approval_id: str, approved: bool, actor: Actor) -> OperationResult:
+        rec = self._store.get_approval(approval_id)
+        if rec is None:
+            raise NotFound(f"approval {approval_id} not found")
+        op = parse_operation(rec.op_json)
+        if op is None:
+            raise ValueError(f"approval {approval_id} does not hold a typed operation")
+        now = self._clock()
+        if actor != Actor.OWNER:
+            v = _v(Code.INSUFFICIENT_AUTHORITY, f"Only the owner may decide {approval_id}; {actor} may not",
+                   approval_id=approval_id, actor=actor)
+            self._security(SecurityEventKind.PRIVILEGE_ESCALATION, op, now, None,
+                           f"{actor} tried to decide approval {approval_id} ({op.kind})")
+            result = OperationResult(op_id=op.op_id, kind=op.kind, status=REFUSED, tier=Tier.TIER_2,
+                                     violations=[v], effective_day=now, approval_id=approval_id,
+                                     message=v.message)
+            return self._log(op, result, key=f"{op.idempotency_key}#decide:{approval_id}:{actor}")
+        if rec.status != ApprovalStatus.PENDING:
+            raise ApprovalAlreadyDecided(f"approval {approval_id} is {rec.status}")
+        self._store.decide_approval(approval_id, approved, Actor.OWNER.value, now)
+        if not approved:
+            result = OperationResult(op_id=op.op_id, kind=op.kind, status=REFUSED, tier=Tier.TIER_2,
+                                     effective_day=now, approval_id=approval_id,
+                                     message=f"Declined by the owner ({approval_id}); nothing executed")
+            return self._log(op, result)
+        booked = self._booked_since_queued(op, approval_id) if isinstance(op, ReceivePayment) else None
+        if booked is not None:
+            v = _v(Code.PRECONDITION_FAILED,
+                   f"Not booked: since {approval_id} was queued, {booked.payload.get('requested_by')} recorded "
+                   f"{fmt_yuan(int(booked.payload.get('amount_fen', 0)))} on {op.receivable_id} "
+                   f"({booked.payload.get('op_id', '?')}, seq {booked.seq}); this report may be that same money. "
+                   f"If anything is still owed, record it again from the bank feed or as the owner",
+                   approval_id=approval_id, receivable_id=op.receivable_id, earlier_seq=booked.seq)
+            result = OperationResult(op_id=op.op_id, kind=op.kind, status=REFUSED, tier=Tier.TIER_2,
+                                     violations=[v], effective_day=now, approval_id=approval_id, message=v.message)
+            return self._log(op, result)
+        # Re-run at decision time: every gate except the Tier-2 queue, against today's mandate.
+        self._running_under = approval_id  # `_log` stamps it on every row the re-run writes
+        try:
+            result = self._run(op.model_copy(update={"day": now}), approved=True)
+        finally:
+            self._running_under = None
+        return result.model_copy(update={"approval_id": approval_id})
 
     def reset_circuit(self, counterparty_id: str, actor: Actor) -> OperationResult:
         """Close a counterparty's circuit breaker. Owner only; logged either way."""
-        with self._lock, self._unit_of_work():
+        def once() -> OperationResult:
             now = self._clock()
             op_id = f"RESET-{counterparty_id}-{now}-{len(self._store.operations()) + 1}"
             payload = {"kind": RESET_CIRCUIT_KIND, "op_id": op_id, "counterparty_id": counterparty_id,
@@ -388,6 +413,8 @@ class Executor:
                                                canonical_json(payload), canonical_json(result))
             return result.model_copy(update={"seq": rec.seq, "entry_hash": rec.entry_hash, "prev_hash": rec.prev_hash})
 
+        return self._atomically(once)
+
     def revoke_commitment(self, commitment_id: str, actor: Actor) -> OperationResult:
         """Revoke a commitment (the compensating action for a booked concession). Owner only.
 
@@ -396,7 +423,7 @@ class Executor:
         leaves the state, in one unit of work with the log entry. Anyone else is refused with a
         PRIVILEGE_ESCALATION event; an unknown, expired, fulfilled or already revoked commitment
         is refused with PRECONDITION_FAILED."""
-        with self._lock, self._unit_of_work():
+        def once() -> OperationResult:
             now = self._clock()
             op_id = f"REVOKE-{commitment_id}-{now}-{len(self._store.operations()) + 1}"
             payload = {"kind": REVOKE_COMMITMENT_KIND, "op_id": op_id, "commitment_id": commitment_id,
@@ -436,10 +463,12 @@ class Executor:
             after = invoices.revoke(state, c.id)
             dropped = len(state.invoice_adjustments) - len(after.invoice_adjustments)
             if len(kept) != len(state.forward_concessions) or dropped:
-                self._store.put_state(_bump(after, forward_concessions=kept))
+                self._put_state(_bump(after, forward_concessions=kept), read=state)
             extra = f"; {dropped} invoice adjustment(s) removed" if dropped else ""
             return done(EXECUTED, f"Commitment {c.id} revoked by the owner ({c.status.value} -> REVOKED); "
                                   f"forward concession {fmt_yuan(removed)} removed{extra}")
+
+        return self._atomically(once)
 
     def circuit_open(self, counterparty_id: str) -> bool:
         return self._recent_refusals(counterparty_id, self._clock()) >= CIRCUIT_THRESHOLD
@@ -455,7 +484,7 @@ class Executor:
         forward value), never a counter's immediate `supplier_cost_fen`."""
         from app.commitments import new_commitment
 
-        with self._lock, self._unit_of_work():
+        def once() -> Commitment:
             verdict = self._store.get_verdict(verdict_id)
             if verdict is None:
                 raise NotFound(f"verdict {verdict_id} not found")
@@ -477,6 +506,8 @@ class Executor:
             c = new_commitment(offer, verdict_id, obligations, verdict.mandate_version, expires_day, value, **kwargs)
             self._store.put_commitment(c)
             return c
+
+        return self._atomically(once)
 
     # ================================================================ the pipeline
 
@@ -534,13 +565,19 @@ class Executor:
         if effect.commitment is not None:
             self._store.put_commitment(effect.commitment)
         if effect.state is not None:
-            self._store.put_state(effect.state)
+            self._put_state(effect.state, read=ctx.state)
         message, queued = effect.message, effect.approval_id
         if effect.approval is not None:
             queued = self._store.add_approval(*effect.approval)
             message = f"{message} ({queued})"
         return self._log(op, OperationResult(op_id=op.op_id, kind=kind, status=effect.status, tier=ctx.tier,
                                              effective_day=now, approval_id=queued, message=message))
+
+    def _put_state(self, state: FinancialState, *, read: FinancialState) -> None:
+        """Write the books computed from `read`, compare-and-swap on its version: if another writer moved
+        the books since they were read, the store refuses and the unit of work runs again."""
+        # LedgerStore.put_state declares no `expected_version` yet (ports.py: interface change request)
+        self._store.put_state(state, expected_version=read.state_version)  # type: ignore[call-arg]
 
     @staticmethod
     def _misdated(op: Any, now: int) -> _Refused:
