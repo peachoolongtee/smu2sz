@@ -135,7 +135,7 @@ _DRAW = [
 _REPAY = [
     re.compile(rf"{_EN_PRE}{_REPAY_VERB} (?P<amt>{AMOUNT}) (?:on|of|to|towards?|from) {_THE}{_FAC_EN}{_EN_POST}"),
     re.compile(rf"{_EN_PRE}{_REPAY_VERB} {_THE}{_FAC_EN} (?:by |with |for |of )?(?P<amt>{AMOUNT}){_EN_POST}"),
-    re.compile(rf"{_ZH_PRE}{_ZH_REPAY}(?:了)?{_FAC_ZH}(?:里|中|上)? ?(?P<amt>{AMOUNT}){_ZH_POST}"),
+    re.compile(rf"{_ZH_PRE}{_ZH_REPAY}{_FAC_ZH}(?:里|中|上)? ?(?P<amt>{AMOUNT}){_ZH_POST}"),
     re.compile(rf"{_ZH_PRE}(?:向|给|对)?{_FAC_ZH}(?:里|中|上)?{_ZH_REPAY} ?(?P<amt>{AMOUNT}){_ZH_POST}"),
     re.compile(rf"{_ZH_PRE}{_ZH_REPAY} ?(?P<amt>{AMOUNT}) ?(?:到|给|向|至|回)?{_FAC_ZH}{_ZH_POST}"),
 ]
@@ -199,22 +199,30 @@ _QUESTION = re.compile(
     r"may|might|what|how|whether|why|which|who|where|any chance)(?![a-z])|"
     r"(?<![a-z])(?:wondering|do you think|let me know (?:if|whether)|tell me (?:if|whether))(?![a-z])|"
     r"吗|嘛|(?<!什)么|是否|能不能|可不可以|要不要|会不会|行不行|好不好|对不对|有没有|是不是|请问|呢")
+# A tag question ("对吧", "是吧", "好吧", "行吧", "可以吧": "right?", "OK?"): an assent word followed by 吧 asks, it does
+# not agree. The do-verbs 办吧 / 做吧 / 弄吧 ("do it") are imperatives, not assent words, and are not matched.
+TAG_QUESTION = re.compile(r"(?:好的?|行|可以|同意|确认|确定|执行|是的?|对|没问题|继续|开始|批准|按这个来)[ ,，]*吧")
+# A statement about the past ("还了额度10万元", "I repaid ¥100,000 on the line", "已经提款"): a fact, not an instruction.
+PAST = re.compile(
+    r"(?<![a-z])(?:repaid|paid (?:back|off|down)|drew|drawn|withdrew|withdrawn|took out|pulled|already|did|"
+    r"have (?:repaid|drawn|paid)|has (?:repaid|drawn|paid))(?![a-z])"
+    r"|已经|已(?=还|偿|归|提|支|借|取)|(?:偿还|归还|还款|还|提款|提取|提现|支取|提用|支用|提|取|借)了")
 
 
 def is_question(text: str) -> bool:
     n = normalise(text)
-    return "?" in n or bool(_QUESTION.search(n))
+    return "?" in n or bool(_QUESTION.search(n)) or bool(TAG_QUESTION.search(n))
 
 
 def money_gate(text: str) -> Literal["negated", "bad_amount", "deferred", "question", "propose"]:
     """How a financial instruction that is NOT the executable grammar is treated. Nothing here executes:
     negated -> nothing is done and the plan is cleared; bad_amount -> a clarification (never the default funding
-    bundle); deferred (a condition or a time other than now) -> an answer, nothing proposed; question and
-    propose -> a proposal that waits for the owner's confirmation."""
+    bundle); deferred (a condition or a time other than now, including a statement of what was already done) ->
+    an answer, nothing proposed; question and propose -> a proposal that waits for the owner's confirmation."""
     n = normalise(text)
     if NEGATION.search(n):
         return "negated"
-    if CONDITION.search(n) or FUTURE.search(n):
+    if CONDITION.search(n) or FUTURE.search(n) or PAST.search(n):
         return "deferred"
     amounts = scan_amounts(n)
     if len(amounts) > 1 or any(a is None for a in amounts):
@@ -348,8 +356,8 @@ def confirmation(text: str) -> Literal["yes", "no"] | None:
     "confirm", "好的", "确认" ...), "no" for a short cancellation or any plain refusal that is not a question, and None
     for everything else ("should I go ahead?", "go ahead if cash is low", a longer sentence): it decides nothing."""
     core = _core(text)
-    if core is None or "?" in core:
-        return None
+    if core is None or "?" in core or TAG_QUESTION.search(core):
+        return None  # "对吧" / "是吧" / "好吧": a tag question asks, it confirms and cancels nothing
     if _YES_PLAN.fullmatch(core) and _YES_CORE.search(core) and not _NO_CORE.search(core):
         return "yes"
     if _NO_PLAN.fullmatch(core) and _NO_CORE.search(core):
