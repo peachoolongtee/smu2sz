@@ -27,8 +27,9 @@ KNOWN_FINDINGS: dict[str, str] = {}
 
 # Wrong readings that did nothing: no operation, no commitment, at most an approval queued for the owner. These are the
 # ones left after the boundary guard (offers that name no invoice at all are bound to the sender's one open invoice by
-# the verifier, owner decision pending; OC-018 is an owner-side conditional; MM-015 and MM-025 need a scripted model).
-KNOWN_WRONG_HARMLESS = {"OC-018", "MM-015", "MM-025", "MM-026", "MM-027"}
+# the verifier, owner decision pending: MM-026 and MM-027 are labelled that way now and no longer appear here;
+# OC-018 is an owner-side conditional; MM-015 and MM-025 need a scripted model).
+KNOWN_WRONG_HARMLESS = {"OC-018", "MM-015", "MM-025"}
 # Items the compiler must answer with a question or an abstention, never a proposal (A1 and the A2 classes).
 ABSTAIN_ITEMS = ("BO-012", "BO-022", "BO-035", "BO-036", "BO-037", "BO-039", "BO-040", "BO-046", "BO-048", "BO-063",
                  "BO-064", "BO-068", "BO-069", "BO-073", "BO-074", "BO-075", "BO-076", "MM-024")
