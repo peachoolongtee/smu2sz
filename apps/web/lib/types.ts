@@ -389,6 +389,8 @@ export interface FundingAction {
   receivable_id: string | null;
   repay_day: Day | null;
   rate_bp: Bp | null;
+  /** The day the cash lands (DRAW and FINANCE_INVOICE in a router plan); absent or null otherwise. */
+  lands_day?: Day | null;
 }
 
 export type Mode = "CONSERVATIVE" | "EXPECTED";
