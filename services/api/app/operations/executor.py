@@ -32,6 +32,7 @@ from contextlib import AbstractContextManager, nullcontext
 from dataclasses import dataclass
 from typing import Any
 
+from app.books import cash_relevant
 from app.commitments import CommitmentError, check_acceptance, terms_hash, transition
 from app.domain.models import (
     AcceptOffer,
@@ -1107,9 +1108,13 @@ class Executor:
         return _Effect(f"Advance {fmt_yuan(op.advance_fen)} on {r.id} from {f.id} on day {ctx.now}{landing}",
                        state=new_state)
 
-    def _early_pay_match(self, op: ReceivePayment, r: Receivable, now: int) -> tuple[Commitment, Obligation, int] | None:
+    def _early_pay_match(self, op: ReceivePayment, r: Receivable, now: int,
+                         state: FinancialState) -> tuple[Commitment, Obligation, int] | None:
         """ADR-0006 section 4: the live early-pay obligation on `r` whose posted `P - discount` equals this
-        receipt to the fen, as (its commitment moved to FULFILLED, the obligation, the face P it settles).
+        receipt to the fen, as (its commitment, the obligation, the face P it settles). The commitment moves to
+        FULFILLED only when nothing else in it is live (red team d, F5): no invoice adjustment of its own left in the
+        state and no other cash-relevant obligation not yet paid. Otherwise it stays ACTIVE, still revocable, and
+        only this obligation is recorded as paid (`settled_obligations`), so no later receipt is matched to it again.
         Same arithmetic as `_immediate_discount` in app/financial/trajectory.py. None when there is none."""
         for c in self._store.commitments():
             if c.status not in (CommitmentStatus.ACCEPTED, CommitmentStatus.ACTIVE):
@@ -1117,6 +1122,8 @@ class Executor:
             for o in c.obligations:
                 if o.type != ObligationType.IMMEDIATE_DISCOUNT or o.base.receivable_id != r.id:
                     continue
+                if o.id in c.settled_obligations:
+                    continue  # already paid on time: a second receipt is a plain receipt
                 portion = o.base.amount_fen if o.base.amount_fen else r.outstanding_fen
                 if o.rate_bp is not None:
                     discount = post(bp(o.rate_bp) * portion)
@@ -1129,9 +1136,15 @@ class Executor:
                 deadline = o.effective_day if o.effective_day is not None else r.due_day - 1
                 if now > deadline:
                     continue  # A09: the discount was for payment by the promised day; later it is a plain receipt
+                paid = [*c.settled_obligations, o.id]
+                rest = any(a.commitment_id == c.id for a in state.invoice_adjustments) or any(
+                    x.id not in paid and cash_relevant(x) for x in c.obligations)
                 try:
                     done = transition(c, CommitmentStatus.ACTIVE, now) if c.status == CommitmentStatus.ACCEPTED else c
-                    done = transition(done, CommitmentStatus.FULFILLED, now)
+                    if rest:
+                        done = done.model_copy(update={"settled_obligations": paid})
+                    else:
+                        done = transition(done, CommitmentStatus.FULFILLED, now)
                 except CommitmentError:
                     continue  # cannot be fulfilled (e.g. expired before activation): a plain receipt
                 return done, o, portion
@@ -1168,7 +1181,7 @@ class Executor:
         self._refuse_repeated_bank_event(op)
         if r.status not in ("OPEN", "FINANCED") or r.outstanding_fen <= 0:
             raise _refuse(Code.PRECONDITION_FAILED, f"Receivable {r.id} is {r.status}; nothing is owed")
-        matched = self._early_pay_match(op, r, ctx.now)
+        matched = self._early_pay_match(op, r, ctx.now, state)
         face_settled = matched[2] if matched else op.amount_fen
         if face_settled > r.outstanding_fen:
             raise _refuse(Code.PRECONDITION_FAILED,

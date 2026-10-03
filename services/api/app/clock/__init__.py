@@ -189,7 +189,9 @@ def _fulfil(store: LedgerStore, state: FinancialState, consumed_ids: Sequence[st
     left = {a.commitment_id for a in state.invoice_adjustments}
     fulfilled: list[str] = []
     for c in store.commitments():
-        if c.status != CommitmentStatus.ACTIVE or c.id in left or not only_adjusting(c):
+        # an early payment already received on time (red team d, F5) no longer keeps the commitment live
+        rest = c.model_copy(update={"obligations": [o for o in c.obligations if o.id not in c.settled_obligations]})
+        if c.status != CommitmentStatus.ACTIVE or c.id in left or not only_adjusting(rest):
             continue
         written = [r for r in state.receivables if any(i.startswith(f"{c.id}:") for i in r.applied)]
         if not written and not any(i.startswith(f"{c.id}:") for i in consumed_ids):
