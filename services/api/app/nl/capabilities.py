@@ -26,6 +26,7 @@ from app.borrower_file import BorrowerFileError, build, remember
 from app.capex import CapexDisabled, CapexRequest, CapexResult, CapexStructure, evaluate_capex
 from app.capex.models import CHARGES_BASIS
 from app.config import get_settings
+from app.covenants import ratios_for, worst_dscr, worst_leverage
 from app.domain.models import Mode
 from app.domain.money import BP_DENOM, Ratio, bp, fmt_pct, fmt_yuan
 from app.financial import EngineError, project
@@ -234,22 +235,19 @@ def show_ratios(ctx: NlContext) -> Turn:
     lev_limit, lev_src = min(lev_limits, key=lambda z: z[0])
     lines: list[str] = []
     inside = True
-    dscr = [m for m in traj.months if m.dscr is not None]
-    lev = [m for m in traj.months if m.leverage is not None]
-    if dscr:
-        w = min(dscr, key=lambda m: m.dscr.value)  # type: ignore[union-attr]
-        head = w.dscr.value - dscr_limit  # type: ignore[union-attr]
+    # The one definition (app.covenants.ratios) on the projection's month points, as the verifier and capex read it.
+    if (wd := worst_dscr(traj.months)) is not None and (d := ratios_for(wd)[0]) is not None:
+        head = d.value - dscr_limit
         inside &= head >= 0
-        lines.append(t(ctx, f"Lowest DSCR {w.dscr.text}× in month {w.month}, against the {_x(dscr_limit)}× minimum "  # type: ignore[union-attr]
+        lines.append(t(ctx, f"Lowest DSCR {d.text}× in month {wd.month}, against the {_x(dscr_limit)}× minimum "
                             f"({dscr_src}): headroom {_x(head)}×.",
-                       f"最低 DSCR {w.dscr.text}×（第 {w.month} 月），下限 {_x(dscr_limit)}×（{dscr_src}）：余量 {_x(head)}×。"))  # type: ignore[union-attr]
-    if lev:
-        w = max(lev, key=lambda m: m.leverage.value)  # type: ignore[union-attr]
-        head = lev_limit - w.leverage.value  # type: ignore[union-attr]
+                       f"最低 DSCR {d.text}×（第 {wd.month} 月），下限 {_x(dscr_limit)}×（{dscr_src}）：余量 {_x(head)}×。"))
+    if (wl := worst_leverage(traj.months)) is not None and (lv := ratios_for(wl)[1]) is not None:
+        head = lev_limit - lv.value
         inside &= head >= 0
-        lines.append(t(ctx, f"Highest leverage {w.leverage.text}× in month {w.month}, against the {_x(lev_limit)}× maximum "  # type: ignore[union-attr]
+        lines.append(t(ctx, f"Highest leverage {lv.text}× in month {wl.month}, against the {_x(lev_limit)}× maximum "
                             f"({lev_src}): headroom {_x(head)}×.",
-                       f"最高杠杆 {w.leverage.text}×（第 {w.month} 月），上限 {_x(lev_limit)}×（{lev_src}）：余量 {_x(head)}×。"))  # type: ignore[union-attr]
+                       f"最高杠杆 {lv.text}×（第 {wl.month} 月），上限 {_x(lev_limit)}×（{lev_src}）：余量 {_x(head)}×。"))
     if not lines:
         lines.append(t(ctx, "No month of the projection carries debt service or debt, so there is no ratio to show.",
                        "预测期内没有债务或还本付息，没有可显示的指标。"))

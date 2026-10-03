@@ -71,7 +71,10 @@ def test_f_fin_03_existing_drawn_loan_counts_in_dscr_and_leverage(clean, permiss
     # Existing zero-rate 12-month amortising loan drawn ¥1,200,000 -> ¥100,000 a month of service.
     # New zero-rate 12-month ¥600,000 loan -> ¥50,000 a month. EBITDA ¥100,000 + ¥20,000 uplift from month 1.
     #   DSCR 1 = 120,000 / (100,000 + 50,000) = 0.80 (was 2.40: the existing service was dropped)
-    #   leverage = (1,200,000 + 600,000) / (12 × 100,000) = 1.50 (was 0.50)
+    #   leverage at month-1 end (day 30) of the structure's projection, both loans after their first ¥100,000 and
+    #   ¥50,000 payments: (1,100,000 + 550,000) / (12 × 100,000) = 1.375 -> 1.38 (was 1.50, today's 1,800,000
+    #   read as month-end debt; 0.50 before F-FIN-03). The estimate before the structure is projected: the current
+    #   books' month-1 debt 1,100,000 + the 600,000 principal = 1,700,000 / 1,200,000 = 1.417 -> 1.42.
     existing = loan.model_copy(update={"id": "EXISTING", "drawn_fen": 1_200_000 * YUAN, "limit_fen": 1_200_000 * YUAN})
     new = loan.model_copy(update={"id": "NEW"})
     r = evaluate_capex(request(CapexCandidate(facility_id="NEW", term_months=12)),
@@ -79,7 +82,7 @@ def test_f_fin_03_existing_drawn_loan_counts_in_dscr_and_leverage(clean, permiss
     s = by_id(r)["loan_12m"]
     assert s.dscr_by_month[0].dscr.text == "0.80"
     assert s.dscr_by_month[0].debt_service_fen == 150_000 * YUAN
-    assert s.leverage.text == "1.50" and r.leverage_financed.text == "1.50"
+    assert s.leverage.text == "1.38" and r.leverage_financed.text == "1.42"
     assert not s.feasible and ViolationCode.DSCR_BREACH in [v.code for v in s.violations]
     assert r.selected_id is None
     assert "Finance with" not in r.recommendation

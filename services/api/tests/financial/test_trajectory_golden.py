@@ -176,10 +176,10 @@ def test_months_debt_service_and_leverage(state, g):
 
 
 def test_leverage_with_the_line_drawn_matches_the_covenant_base(state, g):
-    # spec §7.6 base leverage counts the ¥150,000 line as drawn: (1,500,000 + 150,000) / (12 × 90,000) = 1.53 on
-    # today's books; the projection's month-1 end (day 30) is after the first ¥45,000 payment:
-    # (1,455,000 + 150,000) / 1,080,000 = 1.486 -> 1.49
+    # Leverage counts drawn balances only (FINANCIAL_SEMANTICS §5). Untouched books, month-1 end (day 30), after the
+    # first ¥45,000 payment: 1,455,000 / 1,080,000 = 1.347 -> 1.35 (the old 1.53 counted the undrawn ¥150,000 limit).
+    # With the line drawn: (1,455,000 + 150,000) / 1,080,000 = 1.486 -> 1.49
+    assert project(state, [], [], C, 120).months[0].leverage.text == g["leverage_base"] == "1.35"
     t = project(state, [], [draw(repay_day=45)], C, 120)
     assert t.days[0].debt_outstanding_fen == 165_000_000
-    assert g["leverage_base"] == "1.53"
-    assert t.months[0].leverage.text == g["leverage_month1_line_drawn"]
+    assert t.months[0].leverage.text == g["leverage_month1_line_drawn"] == "1.49"

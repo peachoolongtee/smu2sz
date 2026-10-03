@@ -11,7 +11,7 @@ from __future__ import annotations
 from fractions import Fraction
 
 from app.covenants.clean_down import check_clean_down
-from app.covenants.ratios import dscr_value, fmt_exact, fmt_x, leverage_value
+from app.covenants.ratios import fmt_exact, fmt_x, ratios_for
 from app.domain.models import (
     Covenant,
     CovenantKind,
@@ -40,7 +40,8 @@ def _month_inputs(m: MonthPoint) -> dict[str, str]:
 def _dscr_check(
     m: MonthPoint, limit: Fraction, source: str, source_id: str, definition: str, formula_text: str
 ) -> Violation | None:
-    d = dscr_value(m.ebitda_fen, m.debt_service_fen)
+    dr, _ = ratios_for(m)
+    d = dr.value if dr is not None else None
     if d is None or d >= limit:
         return None
     return Violation(
@@ -67,7 +68,8 @@ def _dscr_check(
 def _leverage_check(
     m: MonthPoint, limit: Fraction, source: str, source_id: str, definition: str, formula_text: str
 ) -> Violation | None:
-    lev = leverage_value(m.total_debt_fen, m.ebitda_fen)
+    _, lr = ratios_for(m)
+    lev = lr.value if lr is not None else None
     if lev is None:
         if m.total_debt_fen <= 0:
             return None

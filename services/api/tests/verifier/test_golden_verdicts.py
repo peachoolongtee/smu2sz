@@ -99,10 +99,18 @@ def test_ex01_covenants_hold_pro_forma(offer_id, g):
     assert passed["CLEAN_DOWN"].code == "CLEAN_DOWN"
     assert passed["DSCR_MIN"].inputs["extra_receivables"] == fmt_yuan(g["extension_extra_receivables"])
     assert passed["DSCR_MIN"].inputs["extra_monthly_debt_service"] == fmt_yuan(g["extension_monthly_service"])
+    assert passed["DSCR_MIN"].inputs["extra_receivables_basis"].startswith("estimate")
+    # Leverage is read from the projection with the offer and its committed plan (the line carries the ¥135,040
+    # deepest shortfall from day 0 to day 62): month 1 = (1,455,000 + 135,040) / 1,080,000 = 1.472 -> 1.47. It was
+    # 1.72 = (1,500,000 + ¥150,000 undrawn line limit + ¥210,000 steady-state receivables) / 1,080,000.
+    lev = passed["LEVERAGE_MAX"]
+    assert lev.label == "Highest monthly leverage (month 1)" and lev.inputs["Debt_m"] == "¥1,590,040.00"
+    assert b.plan_committed is not None and [(a.facility_id, a.amount_fen) for a in b.plan_committed.actions] == [
+        ("FAC-LINE", g["reserve_shortfall_max"])]
     rb = _reserve(b.verdict)
     assert rb.inputs["covenant_pro_forma_dscr"] == "1.92x"
-    assert rb.inputs["covenant_pro_forma_leverage"] == "1.72x"
-    assert "DSCR_MIN 1.92x" in b.verdict.summary and "LEVERAGE_MAX 1.72x" in b.verdict.summary
+    assert rb.inputs["covenant_pro_forma_leverage"] == "1.47x" and rb.inputs["covenant_pro_forma_leverage_month"] == "1"
+    assert "DSCR_MIN 1.92x" in b.verdict.summary and "LEVERAGE_MAX 1.47x" in b.verdict.summary
     assert "MAX_APR" in passed  # 1.2% for 30 days ≈ 14.78% a year, inside the 15% maximum
 
 

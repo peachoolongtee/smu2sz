@@ -81,9 +81,16 @@ def test_lease_selected_though_dearer(result, g):
 
 
 def test_leverage_financed_and_with_extension(result, g):
-    assert result.leverage_financed.text == g["leverage_financed"] == "2.08"
-    assert result.leverage_with_extension.text == g["leverage_financed_plus_extension"] == "2.28"
-    assert all(s.leverage.text == "2.08" for s in result.structures if s.kind != "CASH_LINE")
+    # Month-end debt, the undrawn line not counted: (1,455,000 + 600,000) / 1,080,000 = 1.90 (was 2.08 with the
+    # ¥150,000 line limit); + the ¥210,000 steady-state extension estimate: 2,265,000 / 1,080,000 = 2.10 (was 2.28).
+    assert result.leverage_financed.text == g["leverage_financed"] == "1.90"
+    assert result.leverage_with_extension.text == g["leverage_financed_plus_extension"] == "2.10"
+    # each structure's own projection: the principal counts from day 0, the first instalment falls after day 30
+    for s in result.structures:
+        if s.kind != "CASH_LINE":
+            w = next(w for w in s.workings if w.label == "Leverage")
+            assert s.leverage.text == "1.90" and w.inputs["month"] == "1" and w.inputs["Debt_m"] == "¥2,055,000.00"
+    assert all("estimate" in w.label for w in result.workings if w.label.startswith("Leverage"))
 
 
 def test_cash_plus_line_infeasible_with_reserve_breach(result, g):
@@ -143,12 +150,16 @@ def test_weak_estimate_is_not_worth_doing(state, mandate):
 
 
 def test_leverage_breach_rejects_every_financed_structure(state, mandate):
+    # Month 1 of each structure's projection: 1,455,000 + 700,000 (D-X, no service) + 600,000 = 2,755,000;
+    # 2,755,000 / 1,080,000 = 2.551 > 2.50. (¥600,000 of D-X no longer breaches: 2,655,000 / 1,080,000 = 2.458; it
+    # did when the undrawn ¥150,000 line limit was counted.)
     heavy = state.model_copy(update={"debts": [*state.debts, DebtPosition(
-        id="D-X", facility_id=None, label="Other loan", principal_fen=60_000_000, monthly_debt_service_fen=0)]})
+        id="D-X", facility_id=None, label="Other loan", principal_fen=70_000_000, monthly_debt_service_fen=0)]})
     r = evaluate_capex(CapexRequest(), heavy, mandate)
     for s in r.structures:
         if s.kind != "CASH_LINE":
-            assert ViolationCode.LEVERAGE_BREACH in [v.code for v in s.violations]
+            v = next(v for v in s.violations if v.code == ViolationCode.LEVERAGE_BREACH)
+            assert v.observed == "2.55×" and v.month == 1 and v.inputs["Debt_m"] == "¥2,755,000.00"
     assert r.selected_id is None
 
 

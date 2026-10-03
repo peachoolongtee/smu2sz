@@ -33,8 +33,15 @@ from app.capex.models import (
     Working,
 )
 from app.config import Settings, get_settings
-from app.covenants import line_can_carry_permanent_need, ratios_or_undefined
-from app.covenants.ratios import leverage_value
+from app.covenants import (
+    Basis,
+    book_basis,
+    line_can_carry_permanent_need,
+    ratios_for,
+    with_extra,
+    worst_leverage,
+)
+from app.covenants.ratios import RatioBasis
 from app.domain.models import (
     Actor,
     ApplyForFacility,
@@ -52,6 +59,7 @@ from app.domain.models import (
     Mode,
     Repayment,
     Tier,
+    Trajectory,
     Violation,
     ViolationCode,
 )
@@ -61,11 +69,8 @@ from app.financial import (
     amortisation_schedule,
     extension_extra_debt,
     line_interest,
-    pro_forma_scale,
     project,
-    recurring_issue_days,
     upfront_fee,
-    window,
 )
 from app.financial.debts import service_months_end
 from app.financial.trajectory import MONTH_DAYS
@@ -75,6 +80,7 @@ from app.mandate import check_apr, tier_for
 CASH_LINE_ID = "cash_line"
 _USABLE_STATUSES = (FacilityStatus.NOT_APPLIED, FacilityStatus.PENDING, FacilityStatus.COMMITTED)
 _TIER3_CODES = (ViolationCode.TIER3_EQUITY, ViolationCode.TIER3_PERSONAL_GUARANTEE, ViolationCode.TIER3_COLLATERAL)
+_LEV_FORMULA = ("month-end debt (DebtPosition principal + drawn balances counted in leverage) / (12 × EBITDA_m)")
 
 
 class CapexDisabled(Exception):
@@ -137,12 +143,13 @@ _DEBT_MONTHS = 600  # how far ahead an existing debt's schedule is read for the 
 
 class _Base:
     """The current books every structure is tested against: the stored state plus the live commitments'
-    obligations (ADR-0006), with every facility balance already drawn counted in debt and debt service."""
+    obligations (ADR-0006), with every facility balance already drawn counted in debt service. Leverage is read
+    from projections only (`covenants.ratios_for` on month points): a structure's own, or, for an estimate made
+    before a structure is projected, the current books' month with the highest leverage (`lev_basis`)."""
 
     def __init__(self, books: Books, mandate: Mandate) -> None:
         state = books.state
         self.obligations = list(books.obligations)
-        self.live_extension_debt = _live_extension_debt(books, mandate)
         self.ebitda = state.monthly_ebitda_fen
         # Existing debt: its fixed service for the months its schedule (`app.financial.debts`, the cash the projection
         # below already pays) covers, counted from today's month; None: not cleared in the horizon of any structure.
@@ -153,38 +160,32 @@ class _Base:
                 end = 0 if d.principal_fen <= 0 else max(1, -(-(end - state.as_of_day) // MONTH_DAYS))
             self._fixed.append((d.monthly_debt_service_fen, end))
         committed = [f for f in state.facilities if f.status == FacilityStatus.COMMITTED and f.owner_approved]
-        # A committed credit line counts at its full limit, as in the verifier's pro-forma test (ASSUMPTIONS).
         self.lines = [f for f in committed if f.kind == FacilityKind.CREDIT_LINE]
-        counted_lines = {f.id for f in self.lines if f.counts_in_leverage}
-        self.line_limits = sum(f.limit_fen for f in self.lines if f.counts_in_leverage)
-        # Balances already drawn on any other facility (F-FIN-03): the debt and the contractual monthly service.
+        # Balances already drawn on any facility (F-FIN-03): their contractual monthly service.
         # A drawn balance a DebtPosition already carries is not counted twice.
         covered = {d.facility_id for d in state.debts if d.facility_id}
-        self.carried_debt = 0
         self._carried: list[tuple[list[int], int]] = []
         for f in state.facilities:
             if f.drawn_fen <= 0 or f.id in covered:
                 continue
-            if f.counts_in_leverage and f.id not in counted_lines:
-                self.carried_debt += f.drawn_fen
             if f.counts_in_debt_service:
                 self._carried.append(_carried_service(f))
-        self.debt = sum(d.principal_fen for d in state.debts) + self.carried_debt
         # Current books without the purchase: the daily cash a structure is compared with (see _breach_day).
         self.reserve = mandate.min_cash_fen
         self.today = state.as_of_day
         try:
             traj = project(state, self.obligations, [], Mode.CONSERVATIVE, mandate.horizon_days, mandate.min_cash_fen)
             self._baseline = {p.day: p.closing_fen for p in traj.days}
+            months = list(traj.months)
         except EngineError:
             self._baseline = {}
-        # Debt the pro-forma ratios start from: committed line limits, plus the receivables the live terms
-        # extensions tie up, funded permanently (the verifier's pro-forma rule). Zero without such commitments.
-        self.base_extra_debt = self.line_limits + self.live_extension_debt
-        self.extension_inputs = ({"live_terms_extension_receivables": fmt_yuan(self.live_extension_debt)}
-                                 if self.live_extension_debt else {})
-        self.extension_term = f" + {fmt_yuan(self.live_extension_debt)}" if self.live_extension_debt else ""
-        self.drawn_inputs = {"drawn_facility_debt": fmt_yuan(self.carried_debt)} if self.carried_debt else {}
+            months = []
+        # The leverage basis of an estimate made before a structure is projected: the current books' month with the
+        # highest month-end leverage (the books today when they cannot be projected).
+        point = worst_leverage(months) or (months[0] if months else None)
+        self.lev_basis: RatioBasis = point if point is not None else book_basis(state)
+        self.lev_basis_text = (f"current books, month {point.month} (highest month-end leverage of the projection)"
+                               if point is not None else "the books today (they cannot be projected)")
         dscr = [(bp(mandate.min_dscr_bp), f"mandate v{mandate.version}")]
         lev = [(bp(mandate.max_leverage_bp), f"mandate v{mandate.version}")]
         for f in committed:
@@ -247,6 +248,37 @@ class _Base:
         l_lim, l_src = min(lev)
         return d_lim, d_src, l_lim, l_src
 
+    def leverage_estimate(self, extra_debt: int) -> _Leverage:
+        """Leverage before a structure is projected: `lev_basis` + `extra_debt` (an estimate), `covenants.pro_forma`."""
+        b = with_extra(self.lev_basis, extra_debt)
+        _, lev = ratios_for(b)
+        month = getattr(self.lev_basis, "month", None)
+        return _Leverage(lev, month, b.total_debt_fen,
+                         f"estimate: {self.lev_basis_text}, debt {fmt_yuan(self.lev_basis.total_debt_fen)} + "
+                         f"{fmt_yuan(extra_debt)}")
+
+
+class _Leverage(NamedTuple):
+    """One leverage reading: the ratio (None when EBITDA <= 0), its month, the month-end debt, and its basis."""
+
+    ratio: Ratio | None
+    month: int | None
+    debt: int
+    basis: str
+
+
+def _projected_leverage(traj: Trajectory | None, base: _Base, extra_debt: int, what: str) -> _Leverage:
+    """The highest month-end leverage of a structure's own projection (`ratios_for` on its month points). When the
+    structure cannot be projected, the estimate on the current books plus `extra_debt`."""
+    point = worst_leverage(traj.months) if traj is not None else None
+    if point is None:
+        if traj is not None and traj.months:  # EBITDA <= 0: undefined in every month
+            m = traj.months[0]
+            return _Leverage(None, m.month, max(p.total_debt_fen for p in traj.months), f"projection with {what}")
+        return base.leverage_estimate(extra_debt)
+    _, lev = ratios_for(point)
+    return _Leverage(lev, point.month, point.total_debt_fen, f"projection with {what}, month {point.month}")
+
 
 def _covenant_limits(f: Facility) -> tuple[list[tuple[Fraction, str]], list[tuple[Fraction, str]]]:
     dscr, lev = [], []
@@ -260,39 +292,10 @@ def _covenant_limits(f: Facility) -> tuple[list[tuple[Fraction, str]], list[tupl
     return dscr, lev
 
 
-def _live_extension_debt(books: Books, mandate: Mandate) -> int:
-    """Receivables tied up by the live lengthening terms extensions, funded permanently: for each, the
-    buyer's recurring face × delta ÷ invoice interval, the verifier's pro-forma rule
-    (`app.financial.extension_extra_debt`, so capex and the verifier read a live extension the same way).
-    ADR-0009: a live extension is an invoice adjustment in the state; a finite one carries its share of the
-    steady state (`pro_forma_scale`): the invoices still in its scope over the invoices of the window."""
-    state = books.state
-    lo, hi = window(state, mandate.forward_concession_horizon_days)
-    total = Fraction(0)
-    for adj in state.invoice_adjustments:
-        if adj.days_delta <= 0:
-            continue
-        recs = [r for r in state.recurring_invoices if r.counterparty_id == adj.counterparty_id]
-        if len(recs) != 1 or recs[0].every_days <= 0:
-            continue
-        rec = recs[0]
-        in_window = len(recurring_issue_days(rec, lo, hi))
-        if adj.receivable_ids is not None:
-            scale = pro_forma_scale(len(adj.receivable_ids), in_window, perpetual=False)
-        elif adj.until_issue_day is not None:
-            first = max(lo, adj.from_issue_day or 0)
-            scoped = len(recurring_issue_days(rec, first, min(hi, adj.until_issue_day + 1)))
-            scale = pro_forma_scale(scoped, in_window, perpetual=False)
-        else:
-            scale = Fraction(1)
-        total += extension_extra_debt(rec.face_fen, adj.days_delta, rec.every_days, scale)
-    return post(total)
-
-
 def _extension_extra_receivables(request: CapexRequest, state: FinancialState, mandate: Mandate) -> int | None:
     """Extra receivables if the recurring buyer's terms moved to `extension_target_terms_days` and
-    were funded permanently: face × delta ÷ invoice interval, rounded once (the verifier's pro-forma rule,
-    `app.financial.extension_extra_debt`)."""
+    were funded permanently: face × delta ÷ invoice interval, rounded once (`app.financial.extension_extra_debt`,
+    the steady-state estimate the verifier's DSCR pro forma uses). An estimate: no plan funds it."""
     if request.extension_target_terms_days is None:
         return None
     recs = [r for r in state.recurring_invoices
@@ -353,17 +356,18 @@ def _no_ratio_violation(base: _Base) -> Violation:
                  f"financing cannot be tested against the covenants; it is treated as infeasible."),
         observed=fmt_yuan(base.ebitda), limit="> ¥0.00", curable=False,
         formula="DSCR = EBITDA_m / debt service and leverage = debt / (12 × EBITDA_m) need EBITDA_m > 0",
-        inputs={"EBITDA_m": fmt_yuan(base.ebitda), "debt": fmt_yuan(base.debt + base.base_extra_debt)})
+        inputs={"EBITDA_m": fmt_yuan(base.ebitda), "debt": fmt_yuan(base.lev_basis.total_debt_fen)})
 
 
 def _liquidity(
     f: Facility, term: int, fee: int, request: CapexRequest, state: FinancialState, mandate: Mandate, base: _Base,
-) -> tuple[list[Violation], list[Working]]:
+) -> tuple[list[Violation], list[Working], Trajectory | None]:
     """The daily cash test of a financed structure, on current books (the engine, not a second model): the
     purchase goes out on the day the proceeds land (request day + the facility's lead time), the proceeds and
     the upfront fee post, and every scheduled payment follows. Cash must stay at or above the mandate reserve.
     The facility is projected as if granted (COMMITTED): capex asks what happens if the owner gets it. The
-    owner's uplift is deliberately not counted as cash here."""
+    owner's uplift is deliberately not counted as cash here. Also returns the projection (the structure's
+    leverage is read from its month points), None when the engine refuses it."""
     price = request.price_fen
     today = state.as_of_day
     land = today + f.lead_time_days
@@ -379,7 +383,7 @@ def _liquidity(
     except EngineError as exc:
         return [Violation(code=ViolationCode.PRECONDITION_FAILED,
                           message=f"Cash cannot be projected with {f.name}: {exc}",
-                          inputs={"facility_id": f.id})], []
+                          inputs={"facility_id": f.id})], [], None
     days = [p for p in traj.days if p.day >= today]
     low = min(days, key=lambda p: (p.closing_fen, p.day))
     inputs = {"price": fmt_yuan(price), "proceeds": fmt_yuan(price), "upfront_fee": fmt_yuan(fee),
@@ -393,7 +397,7 @@ def _liquidity(
         inputs={**inputs, "day": str(low.day)})
     breach_day = base.breach_day(days)
     if breach_day is None:
-        return [], [working]
+        return [], [working], traj
     closing = next(p.closing_fen for p in days if p.day == breach_day)
     before = base.baseline_close(breach_day)
     return [Violation(
@@ -408,7 +412,7 @@ def _liquidity(
                  f"fee and payments = {fmt_yuan(closing)} < {fmt_yuan(mandate.min_cash_fen)}"
                  + (f" and < {fmt_yuan(before)} without them" if before is not None else "")),
         inputs={**inputs, "closing_cash": fmt_yuan(closing),
-                **({"closing_cash_without_purchase": fmt_yuan(before)} if before is not None else {})})], [working]
+                **({"closing_cash_without_purchase": fmt_yuan(before)} if before is not None else {})})], [working], traj
 
 
 def _financed(
@@ -449,12 +453,17 @@ def _financed(
     fee = upfront_fee(f, price)
     charges = total_interest + fee
     d_lim, d_src, l_lim, l_src = base.limits_with(f)
-    debt = base.debt + base.base_extra_debt + price
+
+    low_cash: list[Working] = []
+    liq: list[Violation] = []
+    traj: Trajectory | None = None
+    if not over_limit:
+        liq, low_cash, traj = _liquidity(f, c.term_months, fee, request, state, mandate, base)
+    lev = _projected_leverage(traj, base, price, f"the {fmt_yuan(price)} {kind.lower()} drawn from its request day")
+    leverage = lev.ratio
 
     months: list[DscrMonth] = []
     failing: list[DscrMonth] = []
-    leverage_exact = leverage_value(debt, base.ebitda)
-    leverage = Ratio.of(leverage_exact) if leverage_exact is not None else None
     if base.ebitda <= 0:
         violations.append(_no_ratio_violation(base))
     else:
@@ -462,7 +471,7 @@ def _financed(
             ebitda_m = base.ebitda + uplift_in_month(row.month, request.monthly_uplift_fen,
                                                      request.uplift_start_month, request.life_months)
             ds_m = base.debt_service(row.month) + row.payment
-            dscr, _ = ratios_or_undefined(ebitda_m, ds_m, debt)
+            dscr, _ = ratios_for(Basis(ebitda_m, ds_m, 0))
             passes = dscr is None or dscr.value >= d_lim
             point = DscrMonth(month=row.month, dscr=dscr, passes=passes, ebitda_fen=ebitda_m, debt_service_fen=ds_m)
             months.append(point)
@@ -487,21 +496,17 @@ def _financed(
                     "existing_debt_service": fmt_yuan(existing),
                     "new_payment": fmt_yuan(first.debt_service_fen - existing),
                     "DS_m": fmt_yuan(first.debt_service_fen), "failing_months": span, "limit_source": d_src}))
+    lev_inputs = {"Debt_m": fmt_yuan(lev.debt), "EBITDA_m": fmt_yuan(base.ebitda), "principal": fmt_yuan(price),
+                  "basis": lev.basis, **({"month": str(lev.month)} if lev.month is not None else {})}
     if leverage is not None and leverage.value > l_lim:
         violations.append(Violation(
             code=ViolationCode.LEVERAGE_BREACH,
             message=f"Leverage is {x(leverage)} with the {fmt_yuan(price)} principal, above the {x(l_lim)} maximum",
-            month=1, observed=x(leverage), limit=f"≤ {x(l_lim)}",
-            formula=f"(debt incl. drawn facilities + committed line limits + principal) / (12 × EBITDA_m) = "
-                    f"{fmt_yuan(debt)} / (12 × {fmt_yuan(base.ebitda)}) = {x(leverage)} > {x(l_lim)}",
-            inputs={"debt": fmt_yuan(base.debt), "committed_line_limits": fmt_yuan(base.line_limits),
-                    **base.drawn_inputs, **base.extension_inputs,
-                    "principal": fmt_yuan(price), "EBITDA_m": fmt_yuan(base.ebitda), "limit_source": l_src}))
-
-    low_cash: list[Working] = []
-    if not over_limit:
-        liq, low_cash = _liquidity(f, c.term_months, fee, request, state, mandate, base)
-        violations.extend(liq)
+            month=lev.month, observed=x(leverage), limit=f"≤ {x(l_lim)}",
+            formula=f"{_LEV_FORMULA} = {fmt_yuan(lev.debt)} / (12 × {fmt_yuan(base.ebitda)}) = {x(leverage)} > "
+                    f"{x(l_lim)}",
+            inputs={**lev_inputs, "limit_source": l_src}))
+    violations.extend(liq)
 
     dscrs = [p.dscr.value for p in months if p.dscr is not None]
     pay_formula = (f"P·r / (1 − (1 + r)^−n), r = {r_text}/12 (nominal annual rate ÷ 12), n = {c.term_months}; "
@@ -535,11 +540,8 @@ def _financed(
             evidence=OWNER_ESTIMATE))
     workings.append(Working(
         label="Leverage", value=x(leverage),
-        formula=f"(debt incl. drawn facilities + committed line limits + principal) / (12 × EBITDA_m) = "
-                f"{fmt_yuan(debt)} / (12 × {fmt_yuan(base.ebitda)})",
-        inputs={"debt": fmt_yuan(base.debt), "committed_line_limits": fmt_yuan(base.line_limits),
-                **base.drawn_inputs, **base.extension_inputs,
-                "principal": fmt_yuan(price), "max_leverage": x(l_lim), "limit_source": l_src}))
+        formula=f"{_LEV_FORMULA}, highest month = {fmt_yuan(lev.debt)} / (12 × {fmt_yuan(base.ebitda)})",
+        inputs={**lev_inputs, "max_leverage": x(l_lim), "limit_source": l_src}))
     workings.extend(low_cash)
     return CapexStructure(
         id=sid, label=label, kind=kind, facility_id=f.id, term_months=c.term_months, rate_bp=f.rate_bp,
@@ -568,6 +570,7 @@ def _month_ranges(ms: list[int]) -> str:
 
 def _line_authority_violations(
     used: list[tuple[Facility, int]], request: CapexRequest, mandate: Mandate, base: _Base, rows: dict[str, MenuRow],
+    traj: Trajectory | None,
 ) -> list[Violation]:
     """The checks any plan that draws on a line must pass (F-FIN-05): new borrowing allowed, the line's all-in
     rate within the APR cap, and DSCR and leverage inside the covenants with the draw's interest in the service."""
@@ -590,8 +593,10 @@ def _line_authority_violations(
     ebitda_1 = base.ebitda + uplift_in_month(1, request.monthly_uplift_fen, request.uplift_start_month,
                                              request.life_months)
     ds_1 = base.debt_service(1) + new_interest
-    debt = base.debt + base.base_extra_debt
-    dscr, lev = ratios_or_undefined(ebitda_1, ds_1, debt)
+    dscr, _ = ratios_for(Basis(ebitda_1, ds_1, 0))
+    drawn = sum(amt for _, amt in used)
+    reading = _projected_leverage(traj, base, drawn, f"the purchase and the {fmt_yuan(drawn)} line draw")
+    lev = reading.ratio
     if dscr is not None and dscr.value < d_lim:
         out.append(Violation(
             code=ViolationCode.DSCR_BREACH,
@@ -604,14 +609,12 @@ def _line_authority_violations(
     if lev is not None and lev.value > l_lim:
         out.append(Violation(
             code=ViolationCode.LEVERAGE_BREACH,
-            message=f"Leverage is {x(lev)} with the committed lines counted at their limits, above the "
-                    f"{x(l_lim)} maximum",
-            month=1, observed=x(lev), limit=f"≤ {x(l_lim)}",
-            formula=(f"(debt incl. drawn facilities + committed line limits) / (12 × EBITDA_m) = {fmt_yuan(debt)} / "
-                     f"(12 × {fmt_yuan(base.ebitda)}) = {x(lev)} > {x(l_lim)}"),
-            inputs={"debt": fmt_yuan(base.debt), "committed_line_limits": fmt_yuan(base.line_limits),
-                    **base.drawn_inputs, **base.extension_inputs, "EBITDA_m": fmt_yuan(base.ebitda),
-                    "limit_source": l_src}))
+            message=f"Leverage is {x(lev)} with the line drawn for the purchase, above the {x(l_lim)} maximum",
+            month=reading.month, observed=x(lev), limit=f"≤ {x(l_lim)}",
+            formula=(f"{_LEV_FORMULA} = {fmt_yuan(reading.debt)} / (12 × {fmt_yuan(base.ebitda)}) = {x(lev)} > "
+                     f"{x(l_lim)}"),
+            inputs={"Debt_m": fmt_yuan(reading.debt), "EBITDA_m": fmt_yuan(base.ebitda), "line_draw": fmt_yuan(drawn),
+                    "basis": reading.basis, "limit_source": l_src}))
     return out
 
 
@@ -674,7 +677,7 @@ def _cash_line(
                         f"permanent purchase",
                 formula="a clean-down line cannot fund a permanent need", inputs={"facility_id": f.id}))
     if used:
-        violations.extend(_line_authority_violations(used, request, mandate, base, rows))
+        violations.extend(_line_authority_violations(used, request, mandate, base, rows, traj))
     lowest: list[Working] = []
     if traj is not None:
         low = min((p for p in traj.days if p.day >= today), key=lambda p: (p.closing_fen, p.day))
@@ -716,10 +719,12 @@ ASSUMPTIONS: tuple[str, ...] = (
      "A day below the reserve fails a structure when the structure makes that day's cash lower than the same day "
      "on current books without the purchase; a shortfall the books already have is reported beside it, not "
      "blamed on the structure. The owner's uplift is not counted as cash in that test."),
-    ("Debt and monthly debt service include every balance already drawn on a facility that counts in leverage / "
-     "debt service: an amortising facility at its annuity payment over its term, a bullet term loan at (principal + "
-     "interest) / term (ADR-0008), a revolving line interest-only. A committed credit line counts at its full "
-     "limit in leverage, as the verifier's pro-forma test does. The upfront fee is a cash cost, not debt service."),
+    ("Monthly debt service includes every balance already drawn on a facility that counts in debt service: an "
+     "amortising facility at its annuity payment over its term, a bullet term loan at (principal + interest) / term "
+     "(ADR-0008), a revolving line interest-only. Leverage is month-end debt (principal of existing debt + drawn "
+     "balances that count in leverage) / (12 × monthly EBITDA), read from each structure's own projection; a "
+     "committed line's undrawn room is not debt. The leverage figures before a structure is projected (financed, "
+     "and with a terms extension funded) are labelled estimates. The upfront fee is a cash cost, not debt service."),
     ("Rates are nominal annual rates divided by 12 for monthly schedules, leases included; they are not "
      "effective annual rates."),
     ("The uplift is the owner's estimate and is treated as EBITDA in the DSCR test and as cash in NPV and payback; "
@@ -796,12 +801,11 @@ def evaluate_capex(
         final.append(s)
 
     d_lim, _, l_lim, _ = base.limits_with(None)
-    debt_fin = base.debt + base.base_extra_debt + price
-    lev_fin_v = leverage_value(debt_fin, base.ebitda)
-    lev_fin = Ratio.of(lev_fin_v) if lev_fin_v is not None else None
+    fin = base.leverage_estimate(price)
+    lev_fin = fin.ratio
     ext = _extension_extra_receivables(request, state, mandate)
-    lev_ext_v = leverage_value(debt_fin + ext, base.ebitda) if ext is not None else None
-    lev_ext = Ratio.of(lev_ext_v) if lev_ext_v is not None else None
+    with_ext = base.leverage_estimate(price + ext) if ext is not None else None
+    lev_ext = with_ext.ratio if with_ext is not None else None
 
     sel_fac = selected.facility_id if selected else None
     if sel_fac is not None:
@@ -813,7 +817,7 @@ def evaluate_capex(
         tier = Tier.TIER_2  # capex spend is the owner's decision even without a new facility
 
     recommendation = _recommendation(worth, npv, payback, request, final, selected, tier)
-    debt_all = base.debt + base.base_extra_debt
+    base_debt = base.lev_basis.total_debt_fen
     workings = [
         Working(label="NPV at the hurdle", value=fmt_yuan(npv),
                 formula=(f"−price + Σ_(m={request.uplift_start_month}..{request.life_months}) uplift / (1 + r_m)^m, "
@@ -830,22 +834,21 @@ def evaluate_capex(
                         "start_month": str(request.uplift_start_month),
                         "payback_limit_months": str(request.payback_limit_months)},
                 evidence=OWNER_ESTIMATE),
-        Working(label="Leverage, financed", value=x(lev_fin),
-                formula=(f"(debt incl. drawn facilities + committed line limits + principal) / (12 × EBITDA_m) = "
-                         f"({fmt_yuan(base.debt)} + {fmt_yuan(base.line_limits)}{base.extension_term} + "
-                         f"{fmt_yuan(price)}) / (12 × {fmt_yuan(base.ebitda)})"),
-                inputs={"debt": fmt_yuan(base.debt), "committed_line_limits": fmt_yuan(base.line_limits),
-                        **base.drawn_inputs, **base.extension_inputs,
-                        "principal": fmt_yuan(price), "EBITDA_m": fmt_yuan(base.ebitda), "max_leverage": x(l_lim)}),
+        Working(label="Leverage, financed (estimate)", value=x(lev_fin),
+                formula=(f"(current books' highest month-end debt + principal) / (12 × EBITDA_m) = "
+                         f"({fmt_yuan(base_debt)} + {fmt_yuan(price)}) / (12 × {fmt_yuan(base.ebitda)}); an estimate "
+                         f"before a structure is projected: each structure's own leverage is read from its projection"),
+                inputs={"Debt_m": fmt_yuan(base_debt), "basis": fin.basis, "principal": fmt_yuan(price),
+                        "EBITDA_m": fmt_yuan(base.ebitda), "max_leverage": x(l_lim)}),
     ]
-    if lev_ext is not None and ext is not None:
+    if lev_ext is not None and ext is not None and with_ext is not None:
         workings.append(Working(
-            label="Leverage, financed and the terms extension funded", value=x(lev_ext),
-            formula=(f"(debt + committed line limits + principal + extra receivables) / (12 × EBITDA_m) = "
-                     f"({fmt_yuan(debt_all)} + {fmt_yuan(price)} + {fmt_yuan(ext)}) / (12 × {fmt_yuan(base.ebitda)})"),
-            inputs={"extra_receivables": fmt_yuan(ext),
-                    "extra_receivables_formula": (f"face × (horizon // every_days) × Δdays / 365, terms → "
-                                                  f"{request.extension_target_terms_days} days"),
+            label="Leverage, financed and the terms extension funded (estimate)", value=x(lev_ext),
+            formula=(f"(current books' highest month-end debt + principal + extra receivables) / (12 × EBITDA_m) = "
+                     f"({fmt_yuan(base_debt)} + {fmt_yuan(price)} + {fmt_yuan(ext)}) / (12 × {fmt_yuan(base.ebitda)})"),
+            inputs={"extra_receivables": fmt_yuan(ext), "basis": with_ext.basis,
+                    "extra_receivables_formula": (f"estimate: face × Δdays / invoice interval, terms → "
+                                                  f"{request.extension_target_terms_days} days, funded permanently"),
                     "max_leverage": x(l_lim)}))
 
     return CapexResult(

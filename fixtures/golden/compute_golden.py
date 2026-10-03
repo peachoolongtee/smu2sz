@@ -156,16 +156,24 @@ out["extension_shortening_gain_12m"] = -out["extension_committed_12m"]
 out["counter_b_price_gain_12m"] = -n_inv * out["counter_b_price_adj_per_invoice"]
 out["counter_b_net_12m"] = out["extension_committed_12m"] + out["counter_b_price_gain_12m"]
 
-# 7.6 covenants (exact comparisons; display 2 dp)
+# 7.6 covenants (exact comparisons; display 2 dp). FINANCIAL_SEMANTICS section 5: leverage = month-end debt /
+# (12 x monthly EBITDA), debt = existing debt principal + drawn balances of facilities that count in leverage (a draw
+# counts from its request day). A committed line's undrawn room is NOT debt (the old reading added the 150,000 limit).
 ebitda_m, ds_m = Y(90000), Y(45000)
-debt_base = Y(1500000) + Y(150000)
+debt_m1 = Y(1500000) - F(debt_paid(0, 30), 100)  # month-1 end (day 30), after the day-30 payment: 1,455,000
 ext_int_m = F(out["extension_monthly_service"], 100)
 out["dscr_base"] = ratio2(ebitda_m / ds_m)
-out["dscr_after_extension"] = ratio2(ebitda_m / (ds_m + ext_int_m))
-out["leverage_base"] = ratio2(debt_base / (ebitda_m * 12))
-# the projection's month-1 leverage with the line drawn: the month-end debt is after the day-30 payment
-out["leverage_month1_line_drawn"] = ratio2((debt_base - F(debt_paid(0, 30), 100)) / (ebitda_m * 12))
-out["leverage_after_extension"] = ratio2((debt_base + F(out["extension_extra_receivables"], 100)) / (ebitda_m * 12))
+out["dscr_after_extension"] = ratio2(ebitda_m / (ds_m + ext_int_m))  # an estimate (steady state); unchanged
+# untouched books, highest month = month 1: 1,455,000 / 1,080,000 = 1.347 -> 1.35 (was 1.53 = 1,650,000 / 1,080,000)
+out["leverage_base"] = ratio2(debt_m1 / (ebitda_m * 12))
+# the line drawn 150,000 on day 0: (1,455,000 + 150,000) / 1,080,000 = 1.486 -> 1.49
+out["leverage_month1_line_drawn"] = ratio2((debt_m1 + Y(150000)) / (ebitda_m * 12))
+# EX01 read from the projection with the offer and its committed plan: the plan draws the deepest shortfall
+# (reserve_shortfall_max, 135,040, day 60) on the line from day 0, repaid on day 62 (135,040 x 6.4% x 62/365 =
+# 1,468.05, the cheapest committed source). Month 1: 1,455,000 + 135,040 = 1,590,040 -> 1.472 -> 1.47; month 2:
+# 1,410,000 + 135,040 = 1,545,040 -> 1.43; month 3 (line repaid): 1,365,000 -> 1.26. Highest: month 1, 1.47
+# (was 1.72 = (1,500,000 + 150,000 line limit + 210,000 steady-state extension receivables) / 1,080,000).
+out["leverage_after_extension"] = ratio2((debt_m1 + F(out["reserve_shortfall_max"], 100)) / (ebitda_m * 12))
 
 # 7.7 capex
 def pmt(p, annual, n):
@@ -208,8 +216,13 @@ for m in range(1, 61):
     if m >= 4: cum += 22000
     if cum >= 0 and payback is None: payback = m
 cap["payback_month"] = payback
-cap["leverage_financed"] = ratio2((debt_base + Y(600000)) / (ebitda_m * 12))
-cap["leverage_financed_plus_extension"] = ratio2((debt_base + Y(600000) + F(out["extension_extra_receivables"], 100)) / (ebitda_m * 12))
+# Each structure's own projection: the 600,000 counts from its request day (day 0); the first instalment is on day 40
+# (lease) or 44 (loan), after month 1's end, so the highest month is month 1: (1,455,000 + 600,000) / 1,080,000 =
+# 2,055,000 / 1,080,000 = 1.903 -> 1.90. The result-level estimate (current books' highest month + principal) is the
+# same 1.90 (was 2.08 = (1,500,000 + 150,000 line limit + 600,000) / 1,080,000). With the extension's steady-state
+# receivables (an estimate): (2,055,000 + 210,000) / 1,080,000 = 2.097 -> 2.10 (was 2.28 = 2,460,000 / 1,080,000).
+cap["leverage_financed"] = ratio2((debt_m1 + Y(600000)) / (ebitda_m * 12))
+cap["leverage_financed_plus_extension"] = ratio2((debt_m1 + Y(600000) + F(out["extension_extra_receivables"], 100)) / (ebitda_m * 12))
 cap["cash_above_reserve"] = 40000000 - 30000000 + 15000000
 # Liquidity on the daily projection (requested day 0; proceeds land and the machine is paid on the same day, so the
 # purchase is cash-neutral). Before the first instalment the books close at 400,000 - 340,000 (day 12) - 120,000
