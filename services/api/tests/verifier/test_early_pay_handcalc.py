@@ -242,19 +242,23 @@ def test_ninety_days_early_at_1_2pct_passes_the_first_screen_but_not_the_plan(st
     # Line 150,000 to day 47: 15,000,000 x 0.064 x 47/365 = 123,616.44 -> 123,616. The other 255,000 net:
     #   IF, arrival day 3 to repayment day 92 = 89 days = 3 periods: 3 x 227,229 = 681,687;
     #   the buyer's own early pay at 1.2% (FAC-EARLYPAY): face = 25,500,000/0.988 = 25,809,716.6 -> 25,809,717,
-    #   discount 309,717 (3,097.17). Early pay is cheaper, so C0 = 123,616 + 309,717 = 433,333.
+    #   discount 309,717 (3,097.17). Early pay is cheaper, so C0 was 123,616 + 309,717 = 433,333.
+    # Red team d, F1: no operation asks the buyer to pay early, so the router's plan is the cheapest one that can run:
+    # the line and the advance. The IF charges for the 89 days post as one 90-day posting: 25,500,000 x 0.078 x
+    # 90/365 = 490,438 + fees 3 x 63,750 = 191,250 -> 681,688. C0 = 123,616 + 681,688 = 805,304.
     # C1: the whole invoice at 1.2%: 42,000,000 x 0.012 = 504,000; cash stays >= 354,960 - 45,000 = 309,960; no
-    # funding. 504,000 >= 433,333.
-    assert _figures(b) == (504_000, 123_616 + 309_717) == (504_000, 433_333)
-    assert codes(b.verdict.violations) == ["EARLY_PAY_DEARER_THAN_PLAN"]
+    # funding. 504,000 < 805,304: the offer now beats the plan that can run (before: 504,000 >= 433,333, rejected).
+    assert _figures(b) == (504_000, 123_616 + 681_688) == (504_000, 805_304)
+    assert codes(b.verdict.violations) == []
 
 
 def test_ninety_days_early_a_discount_that_beats_the_plan_is_accepted(state, mandate, key):
-    # Same books (C0 = 433,333). 0.85% whole: 42,000,000 x 0.0085 = 357,000 < 433,333, and 85 bp < 260.37 bp.
+    # Same books (C0 = 805,304 since red team d F1; 433,333 before). 0.85% whole: 42,000,000 x 0.0085 = 357,000 < C0,
+    # and 85 bp < 260.37 bp.
     s = _due_in(state, 90)
     b = _ev(s, mandate, key, _leg(85))
     assert _early_codes(b) == []
-    assert _figures(b) == (357_000, 433_333)
+    assert _figures(b) == (357_000, 805_304)
     assert b.verdict.outcome == Outcome.ACCEPT
 
 
@@ -262,11 +266,13 @@ def test_ninety_days_early_the_plan_cost_tie_fails_the_strict_inequality(state, 
     # 21,255,061 at 1.2%: disc round(21,255,061 x 0.012) = round(255,060.73) = 255,061; net exactly 21,000,000.
     # Remaining gap 195,000: the line to day 47 (123,616) + 45,000 net of the buyer's early pay at the same 1.2%
     # (face 45,000/0.988 = 45,546.56, discount 546.56 = 54,656). C1 = 255,061 + 123,616 + 54,656 = 433,333 = C0
-    # (255,061 + 54,656 = 309,717, the discount on the one face C0 uses): test 3 needs C1 < C0.
+    # (255,061 + 54,656 = 309,717, the discount on the one face C0 used): test 3 needs C1 < C0, and the tie failed it.
+    # Red team d, F1: C0 is now the plan that can run (805,304, see the 1.2% test above), so C1 = 433,333 beats it.
+    # C1 itself is unchanged: with the offer the buyer's early pay is part of the deal, priced as before.
     s = _due_in(state, 90)
     b = _ev(s, mandate, key, _leg(120, face=21_255_061))
-    assert _figures(b) == (433_333, 433_333)
-    assert _early_codes(b) == ["EARLY_PAY_DEARER_THAN_PLAN"]
+    assert _figures(b) == (433_333, 805_304)
+    assert _early_codes(b) == []
 
 
 def test_the_break_even_violation_states_the_tenor(state, mandate, key):

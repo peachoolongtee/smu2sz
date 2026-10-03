@@ -20,9 +20,9 @@ from tests.nl.test_alerts_opener import _day34, _opener
 LINE_DRAW = ("DRAW_FACILITY", "FAC-LINE", None, 15_000_000)
 # the day-0 plan's advance: the ¥405,000 gap (it includes the existing loan's ¥45,000 day-30 payment) less the line
 ADVANCE_PLAN = ("SUBMIT_INVOICE_FOR_FINANCING", "FAC-IF", "RCV-A", 25_500_000)
-# after the books lose ¥100,000 the gap is ¥505,000: the line, an advance of 266,080 on RCV-A and an early payment of
-# 90,000 face on RI:BUYER-1:2 at 1.2% (1,080.00, netting 88,920) that is shown but is not an operation of this plan
-ADVANCE_MOVED = ("SUBMIT_INVOICE_FOR_FINANCING", "FAC-IF", "RCV-A", 26_608_000)
+# after the books lose ¥50,000 the gap is ¥455,000: the line and an advance of 305,000 on RCV-A. (Red team d, F1: with
+# ¥100,000 lost the only plan also needs the buyer's early payment, which no operation runs; see the test below.)
+ADVANCE_MOVED = ("SUBMIT_INVOICE_FOR_FINANCING", "FAC-IF", "RCV-A", 30_500_000)
 GOAL = "Find me the cheapest way to fund the cash gap"
 
 
@@ -67,22 +67,41 @@ def test_a_proposal_stores_the_operations_the_cost_and_the_books(client, rt):
 def test_s05_go_ahead_after_the_books_moved_runs_nothing_and_shows_the_new_plan(client, rt):
     c = Chat(client, "s05")
     c.say(GOAL)
-    move_books(rt, -10_000_000)  # cash down by ¥100,000, state_version + 1
+    move_books(rt, -5_000_000)  # cash down by ¥50,000, state_version + 1
     before = books(rt)
     r = c.say("go ahead")
     assert ops(r) == [] and books(rt) == before  # no operation, no change of cash, no drawn balance moved
-    # 841.64 + 266,080 × 7.8% × 30/365 = 1,705.83 + fee 665.20 (2,371.03) + 1,080.00 = 4,292.67
-    assert r["awaiting_confirmation"] and "I did not run it" in r["reply"] and "¥4,292.67" in r["reply"]
+    # gap 455,000: the line to day 47, 150,000 × 6.4% × 47/365 = 1,236.16; an advance of 305,000 on RCV-A,
+    # 305,000 × 7.8% × 30/365 = 1,955.34 + fee 762.50 = 2,717.84. Total 3,954.00
+    assert r["awaiting_confirmation"] and "I did not run it" in r["reply"] and "¥3,954.00" in r["reply"]
     assert "Raised" not in r["reply"] and "funded" not in r["reply"].lower()
     new = pending("s05")
-    assert signature(new.ops) == [LINE_DRAW, ADVANCE_MOVED] and new.quoted_cost_fen == 429_267
+    assert signature(new.ops) == [LINE_DRAW, ADVANCE_MOVED] and new.quoted_cost_fen == 395_400
     # the new plan needs its own go-ahead, and then runs exactly its own operations
     r = c.say("go ahead")
     assert ops(r) == [("DRAW_FACILITY", "EXECUTED"), ("SUBMIT_INVOICE_FOR_FINANCING", "EXECUTED")]
     after = books(rt)
-    assert after["executed"] == [("DRAW_FACILITY", 15_000_000), ("SUBMIT_INVOICE_FOR_FINANCING", 26_608_000)]
-    assert after["drawn"]["FAC-LINE"] == 15_000_000 and after["drawn"]["FAC-IF"] == 26_608_000
+    assert after["executed"] == [("DRAW_FACILITY", 15_000_000), ("SUBMIT_INVOICE_FOR_FINANCING", 30_500_000)]
+    assert after["drawn"]["FAC-LINE"] == 15_000_000 and after["drawn"]["FAC-IF"] == 30_500_000
     assert SESSIONS.get("s05").pending_plan is None
+
+
+def test_s05_a_new_plan_that_relies_on_the_buyer_paying_early_is_shown_not_offered(client, rt):
+    """Red team d, F1: after the books lose ¥100,000 the gap is ¥505,000 and only a plan with the buyer's early payment
+    covers it (the line, an advance of 266,080 on RCV-A and 90,000 face of RI:BUYER-1:2 at 1.2%: 841.64 + 2,371.03 +
+    1,080.00 = 4,292.67). No operation asks the buyer to pay early, so it is shown as not runnable today, nothing is
+    stored for a go-ahead and nothing runs (a go-ahead used to send the line and the advance and drop the early pay)."""
+    c = Chat(client, "s05-ep")
+    c.say(GOAL)
+    move_books(rt, -10_000_000)
+    before = books(rt)
+    r = c.say("go ahead")
+    assert ops(r) == [] and books(rt) == before
+    assert "I did not run it" in r["reply"] and "¥4,292.67" in r["reply"] and "cannot run today" in r["reply"]
+    assert "needs the buyer's agreement to pay early" in r["reply"] and "Cost as quoted" not in r["reply"]
+    assert not r["awaiting_confirmation"] and SESSIONS.get("s05-ep").pending_plan is None
+    r = c.say("go ahead")
+    assert ops(r) == [] and books(rt) == before
 
 
 def test_the_same_operations_still_feasible_at_no_higher_cost_run_as_shown(client, rt):
@@ -428,7 +447,7 @@ def test_the_chinese_confirmation_sends_the_stored_operations(client, rt):
     r = c.say("帮我补足资金缺口")
     assert r["awaiting_confirmation"] and ops(r) == []
     stored = signature(pending("pb-zh").ops)
-    move_books(rt, -10_000_000)
+    move_books(rt, -5_000_000)  # ¥100,000 would leave only a plan with the buyer's early payment (red team d, F1)
     before = books(rt)
     r = c.say("执行")
     assert ops(r) == [] and books(rt) == before and "没有执行" in r["reply"] and r["awaiting_confirmation"]

@@ -294,11 +294,28 @@ def test_the_counter_states_the_tenor_of_its_break_even(state, mandate, key):
         assert "× 30/365 × 3 =" in a.formula
 
 
-def test_no_early_pay_counter_when_none_beats_the_plan_and_the_offer_is_rejected(state, mandate, key):
-    cheap = _with(state, **{"FAC-EARLYPAY": {"rate_bp": 40}})  # the router can take early pay at 0.40% itself
+def test_the_buyers_cheap_standing_early_pay_is_not_a_plan_the_router_can_run(state, mandate, key):
+    # Red team d, F1: the buyer's programme at 0.40% needs the buyer's agreement to pay early; no operation runs it, so
+    # the router's plan is the line and the advance (¥3,113.93). Before, it planned on the programme, no counter beat
+    # that plan and the offer was rejected with no counter. Now the offer (0.85% on the whole invoice, ¥3,570.00) is
+    # still dearer than the plan, and Counter A (¥3,027.77, as on the golden books) beats it and is offered.
+    cheap = _with(state, **{"FAC-EARLYPAY": {"rate_bp": 40}})
     b = _ev(cheap, mandate, key, _leg(85))
     assert codes(b.verdict.violations) == ["EARLY_PAY_DEARER_THAN_PLAN"]
-    assert b.verdict.counters == [] and b.verdict.outcome == Outcome.REJECT
+    assert b.plan_committed is not None
+    [a] = b.verdict.counters
+    assert a.label == "Option A" and a.supplier_cost_fen == 302_777 and b.verdict.outcome == Outcome.COUNTER
+
+
+def test_no_early_pay_counter_when_none_beats_the_plan_and_the_offer_is_rejected(state, mandate, key):
+    # the same rule where the plan that can run is cheap: a line at 0.50% carries the whole gap
+    s = _with(state, **{"FAC-LINE": {"rate_bp": 50, "limit_fen": 60_000_000}})
+    p = plan(s, [], mandate, "COMMITTED")
+    assert p.admissible and p.executable_now
+    b = _ev(s, mandate, key, _leg(85))
+    assert "EARLY_PAY_DEARER_THAN_PLAN" in codes(b.verdict.violations)
+    assert not [c for c in b.verdict.counters if c.obligations[0].type == ObligationType.IMMEDIATE_DISCOUNT]
+    assert b.verdict.outcome != Outcome.ACCEPT
 
 
 # ---------------------------------------------------------------- 8. re-verification of Counter A
