@@ -40,9 +40,10 @@ from app.domain.ports import LedgerStore
 from app.financial.debts import debt_payments, first_payment_day
 from app.financial.invoices import InvoiceRef, consumed, issue_terms, only_adjusting, recurring_receivable_id
 from app.financial.lots import contractual_payments, ensure_lots, landing_cash
-from app.persistence import canonical_json
+from app.persistence import canonical_json, is_retryable
 
 ADVANCE_CLOCK_KIND = "ADVANCE_CLOCK"
+_CAS_ATTEMPTS = 8  # a unit of work that lost a compare-and-swap runs again, at most this many times in all
 
 
 @dataclass(frozen=True, slots=True)
@@ -264,10 +265,26 @@ def apply_events(state: FinancialState, to_day: int, events: Sequence[dict[str, 
 def advance(store: LedgerStore, to_day: int, actor: Actor = Actor.SYSTEM,
             events: Sequence[dict[str, Any]] = ()) -> ClockAdvance:
     """Move the books to `to_day`. A day already reached is a no-op (nothing logged). `events` are the
-    scenario's dated outside-world events (new scheduled flows); they are applied before the days close."""
+    scenario's dated outside-world events (new scheduled flows); they are applied before the days close.
+
+    One unit of work, run through the same retry as an executor unit (`Executor._atomically`): the new books are
+    written compare-and-swap on the version they were computed from, so a writer that committed first makes this
+    unit keep nothing (`ConcurrentWriteConflict`) and it runs again on the books as they now are. A conflict that
+    survives `_CAS_ATTEMPTS` runs is raised to the caller."""
+    for attempt in range(_CAS_ATTEMPTS):
+        try:
+            return _advance_once(store, to_day, actor, events)
+        except Exception as exc:
+            if attempt == _CAS_ATTEMPTS - 1 or not is_retryable(exc):
+                raise
+    raise AssertionError("unreachable")  # pragma: no cover
+
+
+def _advance_once(store: LedgerStore, to_day: int, actor: Actor, events: Sequence[dict[str, Any]]) -> ClockAdvance:
     tx = getattr(store, "transaction", None)
     with tx() if callable(tx) else nullcontext():
         state = store.get_state()
+        read_version = state.state_version
         if to_day <= state.as_of_day:
             return ClockAdvance(state.as_of_day, state.as_of_day)
         state, added = apply_events(state, to_day, events)
@@ -283,7 +300,7 @@ def advance(store: LedgerStore, to_day: int, actor: Actor = Actor.SYSTEM,
                     continue
         new, fulfilled = _fulfil(store, new, adv.consumed_adjustment_ids, to_day)
         new, lapsed = _end_lapsed(store, new, to_day)
-        store.put_state(new)
+        store.put_state(new, expected_version=read_version)
         op_id = f"clock-{adv.from_day}-{adv.to_day}"
         payload = {"kind": ADVANCE_CLOCK_KIND, "op_id": op_id, "from_day": adv.from_day, "to_day": adv.to_day,
                    "requested_by": actor.value, "day": adv.to_day, "posted_flow_ids": adv.posted_flow_ids,
