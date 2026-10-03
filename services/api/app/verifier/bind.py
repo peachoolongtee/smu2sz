@@ -15,6 +15,7 @@ Claimed prior concessions are never bound or booked (INVARIANT 5); the security 
 from __future__ import annotations
 
 from collections.abc import Mapping
+from fractions import Fraction
 from typing import Any
 
 from app.domain.models import (
@@ -29,7 +30,7 @@ from app.domain.models import (
     Receivable,
     RecurringInvoice,
 )
-from app.domain.money import fmt_yuan
+from app.domain.money import fmt_pct, fmt_yuan
 from app.verifier.models import BindNote
 
 DEFAULT_EARLY_PAY_LEAD_DAYS = 2  # the engine's default when the buyer has no early-pay facility
@@ -139,6 +140,18 @@ class _Binder:
             upd["effective_day"] = early_pay_lead(self.state, cp)
         if ob.rate_bp is None and ob.amount_fen is None:
             self.note(ob, "rate_bp", False, True, "immediate discount without a rate or amount")
+        elif ob.rate_bp is None:
+            # A fixed sum ("take ¥8,000 off") is tested at its exact rate on the portion it applies to
+            # (mandate.predicates.discount_rate); the sum itself stays the booked amount.
+            sum_fen = ob.amount_fen or 0
+            if sum_fen <= 0 or sum_fen >= amount:
+                self.note(ob, "amount_fen", False, True,
+                          f"a discount of {fmt_yuan(sum_fen)} on {fmt_yuan(amount)} of {receivable.id} is not a "
+                          f"discount on that portion")
+                return ob
+            self.note(ob, "rate_bp", True, True,
+                      f"fixed-sum discount {fmt_yuan(sum_fen)} on {fmt_yuan(amount)} of {receivable.id} = exact rate "
+                      f"{fmt_pct(Fraction(sum_fen, amount), 4)}")
         return ob.model_copy(update=upd)
 
     def terms(self, ob: Obligation) -> Obligation:

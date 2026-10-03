@@ -9,6 +9,7 @@ Positive values always count in full.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from fractions import Fraction
 
 from app.domain.models import (
     ConcessionValue,
@@ -173,26 +174,51 @@ def check_concession_caps(
     return out
 
 
+def discount_rate(ob: Obligation) -> Fraction | None:
+    """The exact discount rate of an IMMEDIATE_DISCOUNT: its stated rate, or, for a discount stated as a fixed sum,
+    the sum over the portion it applies to (`amount_fen / base.amount_fen`, an exact Fraction; binding sets the
+    portion to the named invoice's face or the stated base). None when neither is known: the obligation is then
+    unbound and the verdict is UNRESOLVED_SCOPE. Every early-pay check (the mandate's discount cap, ADR-0007's
+    three tests, the rate ceiling) runs on this rate, so "take ¥8,000 off ¥420,000" is tested as 8,000/420,000."""
+    if ob.type != ObligationType.IMMEDIATE_DISCOUNT:
+        return None
+    if ob.rate_bp is not None:
+        return bp(ob.rate_bp)
+    if ob.amount_fen is not None and ob.base.amount_fen:
+        return Fraction(ob.amount_fen, ob.base.amount_fen)
+    return None
+
+
+def _rate_text(ob: Obligation, rate: Fraction) -> str:
+    if ob.rate_bp is not None:
+        return f"{ob.rate_bp} bp"
+    return f"{fmt_yuan(ob.amount_fen or 0)} / {fmt_yuan(ob.base.amount_fen or 0)} = {fmt_pct(rate, 4)}"
+
+
 def check_immediate_discounts(obligations: list[Obligation], mandate: Mandate) -> list[Violation]:
     if mandate.max_immediate_discount_bp is None:
         return []
     cap = mandate.max_immediate_discount_bp
     out = []
     for ob in obligations:
-        if ob.type != ObligationType.IMMEDIATE_DISCOUNT or ob.rate_bp is None or ob.rate_bp <= cap:
+        rate = discount_rate(ob)
+        if rate is None or rate <= bp(cap):  # exact: a fixed sum is compared as its exact Fraction
             continue
+        shown = fmt_pct(rate) if ob.rate_bp is not None else fmt_pct(rate, 4)
         out.append(
             Violation(
                 code=ViolationCode.IMMEDIATE_DISCOUNT_EXCEEDED,
-                message=f"Immediate discount {fmt_pct(bp(ob.rate_bp))} exceeds the mandate cap",
+                message=f"Immediate discount {shown} exceeds the mandate cap",
                 day=ob.effective_day,
-                observed=fmt_pct(bp(ob.rate_bp)),
+                observed=shown,
                 limit=fmt_pct(bp(cap)),
-                formula=f"discount_rate <= max_immediate_discount: {ob.rate_bp} bp > {cap} bp",
+                formula=f"discount_rate <= max_immediate_discount: {_rate_text(ob, rate)} > {cap} bp",
                 inputs={
                     "obligation_id": ob.id,
                     "counterparty_id": ob.counterparty_id,
-                    "rate_bp": str(ob.rate_bp),
+                    **({"rate_bp": str(ob.rate_bp)} if ob.rate_bp is not None else
+                       {"amount_fen": str(ob.amount_fen), "portion_fen": str(ob.base.amount_fen),
+                        "exact_rate": f"{rate.numerator}/{rate.denominator}"}),
                     "cap_bp": str(cap),
                 },
                 spans=ob.spans,

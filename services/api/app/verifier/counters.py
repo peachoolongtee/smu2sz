@@ -39,6 +39,7 @@ reservation value (INVARIANT 7). `rationale` and `formula` are supplier-side onl
 from __future__ import annotations
 
 import hashlib
+import math
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from fractions import Fraction
@@ -71,6 +72,7 @@ from app.financial import project, value_concessions
 from app.funding import NoPermanentSourceError, break_even_discount, marginal_cost
 from app.funding import plan as funding_plan
 from app.funding.rates import break_even_cost_share
+from app.mandate.predicates import discount_rate
 from app.verifier.bind import bind, early_pay_lead, is_claimed, is_gain, open_receivables, recurring_for
 from app.verifier.models import OwnerConstraints
 from app.verifier.owner import breaches as owner_breaches
@@ -359,9 +361,10 @@ def early_pay_counter(ctx: _Ctx, label: str = "Option A") -> CounterProposal | N
     except NoPermanentSourceError:
         return None
     rate_bp = largest_step_below(d_ratio.value)
-    offered = [o.rate_bp for o in ctx.of_type(ObligationType.IMMEDIATE_DISCOUNT) if o.rate_bp is not None]
+    # never above the buyer's offered rate; a fixed sum offers its exact rate on its portion, floored to whole bp
+    offered = [x for x in map(discount_rate, ctx.of_type(ObligationType.IMMEDIATE_DISCOUNT)) if x is not None]
     if offered:
-        rate_bp = min(rate_bp, min(offered))
+        rate_bp = min(rate_bp, math.floor(min(offered) * BP_DENOM))
     if ctx.mandate.max_immediate_discount_bp is not None:
         rate_bp = min(rate_bp, ctx.mandate.max_immediate_discount_bp)
     if ctx.constraints is not None and ctx.constraints.max_early_pay_bp is not None:
