@@ -44,7 +44,7 @@ def compute() -> dict[str, tuple[Any, str]]:
     """{golden key: (value computed by the modules, which module produced it)}."""
     from app.capex import CapexRequest, evaluate_capex
     from app.compiler import compile_offer
-    from app.covenants import pro_forma
+    from app.covenants import pro_forma, ratios_for
     from app.domain.fixtures import load_scenario, offer_documents
     from app.domain.models import (
         BaseKind,
@@ -170,12 +170,15 @@ def compute() -> dict[str, tuple[Any, str]]:
     put("extension_monthly_service", lambda: _fen(dscr_chk.inputs["extra_monthly_debt_service"]),
         "verifier EX01 pro-forma extra_monthly_debt_service")
     put("dscr_after_extension", lambda: _x(dscr_chk.observed), "verifier EX01 DSCR_MIN pro forma")
-    put("leverage_after_extension", lambda: _x(lev_chk.observed), "verifier EX01 LEVERAGE_MAX pro forma")
+    put("leverage_after_extension", lambda: _x(lev_chk.observed),
+        "verifier EX01 LEVERAGE_MAX (projection with the committed plan)")
     line_limit = sum(f.limit_fen for f in state.facilities
                      if f.kind == FacilityKind.CREDIT_LINE and f.status == FacilityStatus.COMMITTED)
-    dscr_b, lev_b = pro_forma(state, base_extra_debt_fen=line_limit)
-    put("dscr_base", lambda: dscr_b.text if dscr_b else None, "covenants.pro_forma(state + committed line)")
-    put("leverage_base", lambda: lev_b.text, "covenants.pro_forma(state + committed line)")
+    dscr_b, _ = pro_forma(state)
+    _, lev_b = ratios_for(project(state, [], [], Mode.CONSERVATIVE, H).months[0])
+    put("dscr_base", lambda: dscr_b.text if dscr_b else None, "covenants.pro_forma(state)")
+    put("leverage_base", lambda: lev_b.text if lev_b else None,
+        "covenants.ratios_for(financial.project(untouched books) month 1)")
     line_drawn = FundingAction(kind=FundingActionKind.DRAW, facility_id="FAC-LINE", day=0, amount_fen=line_limit,
                                repay_day=45)
     put("leverage_month1_line_drawn",

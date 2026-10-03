@@ -44,7 +44,8 @@ def test_view_matches_capex_view(client, g):
     # the 36-month loan's first payment (day 44) would take cash to ¥296,855.38 once the day-30 debt payment is
     # cash: the 48-month lease is selected (compute_golden.py, capex "selected")
     assert v["selected_id"] == g["selected"] == "lease_48m" and v["required_tier"] == "TIER_2"
-    assert v["leverage_financed"]["text"] == "2.08" and v["leverage_with_extension"]["text"] == "2.28"
+    # (1,455,000 + 600,000) / 1,080,000 = 1.90; + 210,000 extension estimate = 2.10 (compute_golden.py, capex)
+    assert v["leverage_financed"]["text"] == "1.90" and v["leverage_with_extension"]["text"] == "2.10"
     assert v["dscr_limit_display"] == "1.25×" and v["leverage_limit_display"] == "2.50×"
     assert v["request"]["price_display"] == "¥600,000.00"
     s = {x["id"]: x for x in v["structures"]}

@@ -25,8 +25,18 @@ from typing import Any, Literal
 
 from app.alerts.engine import past_due_invoices
 from app.books import current_books
+from app.covenants import (
+    book_basis,
+    fmt_x,
+    line_balances,
+    longest_zero_run,
+    ratios_for,
+    with_extra,
+    worst_dscr,
+    worst_leverage,
+)
 from app.covenants import evaluate as evaluate_covenants
-from app.covenants import fmt_x, line_balances, longest_zero_run, ratios_or_undefined
+from app.covenants.ratios import fmt_exact
 from app.domain.models import (
     Commitment,
     CompiledOffer,
@@ -367,13 +377,33 @@ def _committed(state: FinancialState) -> list[Facility]:
     return [f for f in state.facilities if f.status == FacilityStatus.COMMITTED and f.owner_approved]
 
 
+_EXTENSION_ESTIMATE = ("estimate: the steady-state receivables the extension ties up (face × Δdays / invoice "
+                       "interval), funded permanently at the marginal rate; no plan funds that steady state yet")
+
+
+def _leverage_reading(funded: Trajectory) -> dict[str, str]:
+    """The leverage the verdict reports: the highest month-end leverage of the projection that carries the offer's
+    obligations and the committed plan that funds them (`ratios_for` on its month points, the one definition)."""
+    worst = worst_leverage(funded.months)
+    if worst is None:
+        debt = max((m.total_debt_fen for m in funded.months), default=0)
+        return {"pro_forma_leverage": "undefined (EBITDA is not positive)" if debt > 0 else "n/a (no debt)"}
+    _, lev = ratios_for(worst)
+    assert lev is not None
+    return {"pro_forma_leverage": fmt_x(lev.value), "pro_forma_leverage_month": str(worst.month),
+            "pro_forma_leverage_debt": fmt_yuan(worst.total_debt_fen),
+            "pro_forma_leverage_basis": "projection with the offer and its committed plan: highest month-end "
+                                        "debt / (12 × EBITDA_m)"}
+
+
 def _extension_pro_forma(
-    bound: list[Obligation], rate: Fraction, state: FinancialState, mandate: Mandate
+    bound: list[Obligation], rate: Fraction, state: FinancialState, mandate: Mandate, funded: Trajectory,
 ) -> tuple[list[Violation], list[PassedCheck], dict[str, str]]:
-    """DSCR and leverage if every lengthening terms extension is funded permanently at `rate`: extra debt =
-    face × delta / invoice interval; extra monthly debt service = extra debt × rate / 12
-    (`app.financial.extension_pro_forma`, shared with capex). Non-positive EBITDA gives an undefined ratio,
-    which with debt is a breach, never an exception."""
+    """DSCR if every lengthening terms extension is funded permanently at `rate`: an estimate, since no plan funds
+    the steady state (extra monthly debt service = extra debt × rate / 12, extra debt = face × delta / invoice
+    interval, `app.financial.extension_pro_forma`), computed by `covenants.pro_forma` on the books' debt service.
+    Leverage is not estimated: the inputs carry the funded projection's reading (`_leverage_reading`), which
+    `_covenant_checks` tests. Non-positive EBITDA leaves DSCR defined only by its sign; it is never an exception."""
     extra_debt_exact = Fraction(0)
     extra_ds_exact = Fraction(0)
     for ob in bound:
@@ -385,62 +415,43 @@ def _extension_pro_forma(
         return [], [], {}
     extra_debt = post(extra_debt_exact)
     extra_ds = post(extra_ds_exact)
-    lines = [f for f in _committed(state) if f.kind == FacilityKind.CREDIT_LINE and f.counts_in_leverage]
-    line_limits = sum(f.limit_fen for f in lines)
-    debt = sum(d.principal_fen for d in state.debts) + line_limits + extra_debt
-    ds = sum(d.monthly_debt_service_fen for d in state.debts) + extra_ds
-    ebitda = state.monthly_ebitda_fen
-    dscr, lev = ratios_or_undefined(ebitda, ds, debt)
+    basis = with_extra(book_basis(state), extra_debt, extra_ds)
+    dscr, _ = ratios_for(basis)
     inputs = {
-        "EBITDA_m": fmt_yuan(ebitda), "DS_m": fmt_yuan(ds), "Debt": fmt_yuan(debt),
+        "EBITDA_m": fmt_yuan(basis.ebitda_fen), "DS_m": fmt_yuan(basis.debt_service_fen),
         "extra_receivables": fmt_yuan(extra_debt), "extra_monthly_debt_service": fmt_yuan(extra_ds),
-        "committed_line_limits": fmt_yuan(line_limits),
+        "extra_receivables_basis": _EXTENSION_ESTIMATE,
         "pro_forma_dscr": fmt_x(dscr.value) if dscr else "n/a",
-        "pro_forma_leverage": fmt_x(lev.value) if lev else "undefined (EBITDA is not positive)",
+        **_leverage_reading(funded),
     }
     dscr_limits = [(bp(mandate.min_dscr_bp), f"mandate v{mandate.version}")]
-    lev_limits = [(bp(mandate.max_leverage_bp), f"mandate v{mandate.version}")]
     for f in _committed(state):
         for c in f.covenants:
             if c.kind == CovenantKind.DSCR_MIN and c.threshold_bp is not None:
                 dscr_limits.append((bp(c.threshold_bp), c.id))
-            if c.kind == CovenantKind.LEVERAGE_MAX and c.threshold_bp is not None:
-                lev_limits.append((bp(c.threshold_bp), c.id))
     dscr_limit, dscr_src = max(dscr_limits)
-    lev_limit, lev_src = min(lev_limits)
-    dscr_formula = f"EBITDA_m / (DS_m + extra debt × rate / 12) = {fmt_yuan(ebitda)} / {fmt_yuan(ds)}"
-    lev_formula = (f"(debt + committed line limits + extra receivables) / (12 × EBITDA_m) = "
-                   f"{fmt_yuan(debt)} / (12 × {fmt_yuan(ebitda)})")
+    dscr_formula = (f"EBITDA_m / (DS_m + extra debt × rate / 12) = {fmt_yuan(basis.ebitda_fen)} / "
+                    f"{fmt_yuan(basis.debt_service_fen)} (estimate)")
     violations: list[Violation] = []
     passed: list[PassedCheck] = []
     if dscr is not None:
         text = fmt_x(dscr.value)
         if dscr.value < dscr_limit:
             violations.append(Violation(
-                code=ViolationCode.DSCR_BREACH, message=f"Pro-forma DSCR {text} with the extension funded is below "
-                f"{fmt_x(dscr_limit)}", observed=text, limit=fmt_x(dscr_limit),
+                code=ViolationCode.DSCR_BREACH, message=f"Pro-forma DSCR {text} with the extension funded (an "
+                f"estimate) is below {fmt_x(dscr_limit)}", observed=text, limit=fmt_x(dscr_limit),
                 formula=f"{dscr_formula} = {text} < {fmt_x(dscr_limit)}", inputs={**inputs, "source": dscr_src}))
         else:
-            passed.append(PassedCheck(code="DSCR_MIN", label="DSCR with the extension funded (pro forma)",
+            passed.append(PassedCheck(code="DSCR_MIN", label="DSCR with the extension funded (pro-forma estimate)",
                                       observed=text, limit=f"≥ {fmt_x(dscr_limit)}",
                                       formula=f"{dscr_formula} = {text}", inputs={**inputs, "source": dscr_src}))
-    if lev is None or lev.value > lev_limit:
-        text = fmt_x(lev.value) if lev else "undefined"
-        what = f"is above {fmt_x(lev_limit)}" if lev else "cannot be tested (EBITDA is not positive) and counts as a breach"
-        violations.append(Violation(
-            code=ViolationCode.LEVERAGE_BREACH, message=f"Pro-forma leverage {text} with the extension funded {what}",
-            observed=text, limit=fmt_x(lev_limit),
-            formula=f"{lev_formula} = {text} > {fmt_x(lev_limit)}", inputs={**inputs, "source": lev_src}))
-    else:
-        text = fmt_x(lev.value)
-        passed.append(PassedCheck(code="LEVERAGE_MAX", label="Leverage with the extension funded (pro forma)",
-                                  observed=text, limit=f"≤ {fmt_x(lev_limit)}",
-                                  formula=f"{lev_formula} = {text}", inputs={**inputs, "source": lev_src}))
     return violations, passed, inputs
 
 
 def _covenant_checks(traj: Trajectory, state: FinancialState, mandate: Mandate,
-                     skip_ratios: bool) -> tuple[list[Violation], list[PassedCheck]]:
+                     skip_dscr: bool) -> tuple[list[Violation], list[PassedCheck]]:
+    """Every month of `traj` (the offer with its committed plan) against the covenants. `skip_dscr`: the DSCR pass
+    is reported by the extension's pro-forma estimate instead; leverage is always read here, from the projection."""
     facilities = _committed(state)
     violations = [precise(v) for v in evaluate_covenants(traj, facilities, mandate)]
     if not mandate.require_clean_down:
@@ -448,24 +459,24 @@ def _covenant_checks(traj: Trajectory, state: FinancialState, mandate: Mandate,
     codes = {v.code for v in violations}
     passed: list[PassedCheck] = []
     months = list(traj.months)
-    if not skip_ratios and months:
-        dscrs = [m for m in months if m.dscr is not None]
-        if dscrs and ViolationCode.DSCR_BREACH not in codes:
-            worst = min(dscrs, key=lambda m: (m.dscr.value if m.dscr else 0, m.month))
-            assert worst.dscr is not None
-            passed.append(PassedCheck(
-                code="DSCR_MIN", label=f"Lowest monthly DSCR (month {worst.month})", observed=fmt_x(worst.dscr.value),
-                limit=f"≥ {fmt_x(bp(mandate.min_dscr_bp))}",
-                formula=f"EBITDA_m / DS_m = {fmt_yuan(worst.ebitda_fen)} / {fmt_yuan(worst.debt_service_fen)}"))
-        levs = [m for m in months if m.leverage is not None]
-        if levs and ViolationCode.LEVERAGE_BREACH not in codes:
-            worst = max(levs, key=lambda m: (m.leverage.value if m.leverage else 0, -m.month))
-            assert worst.leverage is not None
-            passed.append(PassedCheck(
-                code="LEVERAGE_MAX", label=f"Highest monthly leverage (month {worst.month})",
-                observed=fmt_x(worst.leverage.value), limit=f"≤ {fmt_x(bp(mandate.max_leverage_bp))}",
-                formula=f"Debt_m / (12 × EBITDA_m) = {fmt_yuan(worst.total_debt_fen)} / "
-                        f"(12 × {fmt_yuan(worst.ebitda_fen)})"))
+    if not skip_dscr and ViolationCode.DSCR_BREACH not in codes and (worst := worst_dscr(months)) is not None:
+        dscr, _ = ratios_for(worst)
+        assert dscr is not None
+        passed.append(PassedCheck(
+            code="DSCR_MIN", label=f"Lowest monthly DSCR (month {worst.month})", observed=fmt_x(dscr.value),
+            limit=f"≥ {fmt_x(bp(mandate.min_dscr_bp))}",
+            formula=f"EBITDA_m / DS_m = {fmt_yuan(worst.ebitda_fen)} / {fmt_yuan(worst.debt_service_fen)}"))
+    if ViolationCode.LEVERAGE_BREACH not in codes and (worst := worst_leverage(months)) is not None:
+        _, lev = ratios_for(worst)
+        assert lev is not None
+        passed.append(PassedCheck(
+            code="LEVERAGE_MAX", label=f"Highest monthly leverage (month {worst.month})",
+            observed=fmt_x(lev.value), limit=f"≤ {fmt_x(bp(mandate.max_leverage_bp))}",
+            formula=f"Debt_m / (12 × EBITDA_m) = {fmt_yuan(worst.total_debt_fen)} / "
+                    f"(12 × {fmt_yuan(worst.ebitda_fen)})",
+            inputs={"month": str(worst.month), "Debt_m": fmt_yuan(worst.total_debt_fen),
+                    "EBITDA_m": fmt_yuan(worst.ebitda_fen), "leverage_exact": fmt_exact(lev.value),
+                    "definition": "DebtPosition principal + drawn balances counted in leverage, at month end"}))
     for f in facilities:
         for c in f.covenants:
             if c.kind != CovenantKind.CLEAN_DOWN or c.clean_down_days is None:
@@ -626,7 +637,7 @@ def _evaluate(
 
     cure: FundingPlan | None = None
     induced = induced_breach_days(offer_traj, base_traj, floor)
-    ext_violations, ext_passed, pf_inputs = _extension_pro_forma(bound, rate.value, state, mandate)
+    ext_violations, ext_passed, pf_inputs = _extension_pro_forma(bound, rate.value, state, mandate, funded)
     if induced:
         rv = reserve_violation(offer_traj, base_traj, floor, induced[0])
         cure = cure_plan(state, bound, mandate, offer_traj, base_traj, base_plan, planner=router.plan, live=live)
@@ -679,7 +690,7 @@ def _evaluate(
     violations += ep_v
     passed += ep_passed
 
-    cov_v, cov_passed = _covenant_checks(funded, state, mandate, skip_ratios=bool(ext_passed or ext_violations))
+    cov_v, cov_passed = _covenant_checks(funded, state, mandate, skip_dscr=bool(ext_passed or ext_violations))
     violations += cov_v + ext_violations
     passed += ext_passed + cov_passed
     violations += sec_violations

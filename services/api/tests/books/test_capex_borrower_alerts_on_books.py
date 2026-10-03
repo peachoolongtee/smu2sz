@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from fractions import Fraction
 from typing import Any
 
 import pytest
@@ -165,16 +166,19 @@ def test_live_terms_extension_reaches_capex_borrower_file_and_alerts():
         a.inputs["max_shortfall"] for a in _of(plain["alerts"], AlertKind.RESERVE_BREACH_AHEAD)]
 
 
-def test_capex_leverage_counts_a_live_extension():
+def test_capex_leverage_does_not_count_a_live_extension_as_debt():
+    # Leverage counts drawn balances only (FINANCIAL_SEMANTICS §5): a live extension delays receipts but adds no debt
+    # until a plan draws on a facility, and capex projects no funding plan. The old reading added the extension's
+    # steady-state receivables (face × 15 / 30) as debt. Both readings: month 1 = (1,455,000 + 100,000) / 1,080,000.
     store = seeded_store()
     state, mandate = store.get_state(), store.get_mandate()
     plain = evaluate_capex(CapexRequest(price_fen=10_000_000), state, mandate)
     commitments = _with(store, extension())
     result = evaluate_capex(CapexRequest(price_fen=10_000_000), store.get_state(), mandate, commitments=commitments)
-    assert result.leverage_financed.value > plain.leverage_financed.value  # less covenant headroom
-    assert all(s.leverage.value > p.leverage.value for s, p in zip(
-        [s for s in result.structures if s.kind != "CASH_LINE"],
-        [s for s in plain.structures if s.kind != "CASH_LINE"], strict=True))
+    assert result.leverage_financed == plain.leverage_financed
+    assert result.leverage_financed.value == Fraction(145_500_000 + 10_000_000, 108_000_000)
+    assert [s.leverage for s in result.structures if s.kind != "CASH_LINE"] == [
+        s.leverage for s in plain.structures if s.kind != "CASH_LINE"]
 
 
 # ---------------------------------------------------------------- 3. the missed receipt

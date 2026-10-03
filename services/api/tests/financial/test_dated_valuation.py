@@ -21,19 +21,20 @@ from hypothesis import given, settings
 from hypothesis import strategies as st
 
 from app.domain.fixtures import load_scenario
-from app.domain.models import ConcessionValue, Contingency, DurationKind, ObligationType, ViolationCode
+from app.domain.models import ConcessionValue, Contingency, DurationKind, Mode, ObligationType, ViolationCode
 from app.domain.money import Ratio, bp, fmt_pct, fmt_yuan, post
 from app.financial import (
     extension_pro_forma,
     finance_invoice_charges,
     if_all_in_rate,
     pro_forma_scale,
+    project,
     upfront_fee,
     value_concessions,
 )
 from app.funding.rates import break_even_cost_share, break_even_discount
 from app.mandate.predicates import check_concession_caps
-from app.verifier.evaluate import _extension_pro_forma
+from app.verifier.evaluate import _covenant_checks, _extension_pro_forma
 from tests.financial.builders import extension, ob
 
 STATE0, MANDATE = load_scenario("golden_sme")
@@ -264,10 +265,17 @@ def test_pro_forma_tables(every, svc_10, svc_golden, debt):
         assert post(pf.extra_debt * rate.value / 12) == svc  # the identity: service = extra debt x r / 12
 
 
+def _traj(state):
+    return project(state, [], [], Mode.CONSERVATIVE, MANDATE.horizon_days)
+
+
 def test_golden_pro_forma_in_the_verifier():
-    _, _, inputs = _extension_pro_forma([extension(15)], R2.value, STATE0, MANDATE)
+    _, _, inputs = _extension_pro_forma([extension(15)], R2.value, STATE0, MANDATE, _traj(STATE0))
     assert inputs["extra_receivables"] == fmt_yuan(21_000_000) == "¥210,000.00"
     assert inputs["extra_monthly_debt_service"] == fmt_yuan(189_729) == "¥1,897.29"
+    assert inputs["extra_receivables_basis"].startswith("estimate")
+    # leverage is not estimated: it is the projection's (here no plan: 1,455,000 / 1,080,000 = 1.35 in month 1)
+    assert inputs["pro_forma_leverage"] == "1.35x" and inputs["pro_forma_leverage_month"] == "1"
 
 
 @settings(max_examples=60, deadline=None)
@@ -306,10 +314,13 @@ def test_pro_forma_scope_rules():
 @pytest.mark.parametrize("ebitda", [0, -9_000_000])
 def test_pro_forma_with_non_positive_ebitda_is_a_breach_not_an_exception(ebitda):
     state = STATE0.model_copy(update={"monthly_ebitda_fen": ebitda})
-    violations, passed, inputs = _extension_pro_forma([extension(15)], R2.value, state, MANDATE)
-    codes = {v.code for v in violations}
-    assert ViolationCode.LEVERAGE_BREACH in codes
+    traj = _traj(state)
+    _, passed, inputs = _extension_pro_forma([extension(15)], R2.value, state, MANDATE, traj)
     assert inputs["pro_forma_leverage"].startswith("undefined")
+    assert all(p.code != "LEVERAGE_MAX" for p in passed)
+    # the leverage test itself reads the projection: undefined with debt is a breach in every month
+    violations, passed = _covenant_checks(traj, state, MANDATE, skip_dscr=True)
+    assert ViolationCode.LEVERAGE_BREACH in {v.code for v in violations}
     assert all(p.code != "LEVERAGE_MAX" for p in passed)
 
 
@@ -365,22 +376,11 @@ def test_property_an_upfront_fee_never_lowers_the_break_even(n, upfront_bp):
 
 
 def test_capex_extension_debt_uses_the_shared_pro_forma():
+    # Only the requested extension's steady-state receivables remain, as a labelled estimate. A live extension is
+    # no longer added to leverage debt (its receivables are not debt until a plan draws on them).
     from types import SimpleNamespace
 
-    from app.capex.evaluate import _extension_extra_receivables, _live_extension_debt
-    from app.domain.models import InvoiceAdjustment
+    from app.capex.evaluate import _extension_extra_receivables
 
-    def adj(**kw):
-        return InvoiceAdjustment(id="A", commitment_id="C", obligation_id="O", counterparty_id="BUYER-1",
-                                 days_delta=15, **kw)
-
-    def live(a):
-        state = STATE0.model_copy(update={"invoice_adjustments": [a]})
-        return _live_extension_debt(SimpleNamespace(state=state), MANDATE)
-
-    assert live(adj(from_issue_day=0)) == 21_000_000  # perpetual: F x 15 / 30, not 12 x F x 15 / 365
-    ids = ["RI:BUYER-1:2", "RI:BUYER-1:32", "RI:BUYER-1:62"]
-    assert live(adj(receivable_ids=ids)) == post(Fraction(21_000_000 * 3, 13))
-    assert live(adj(from_issue_day=0, until_issue_day=100)) == post(Fraction(21_000_000 * 4, 13))  # issues 2, 32, 62, 92
     request = SimpleNamespace(extension_target_terms_days=60, extension_counterparty_id="BUYER-1")
     assert _extension_extra_receivables(request, STATE0, MANDATE) == 21_000_000

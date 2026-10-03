@@ -36,7 +36,7 @@ from app.borrower_file.models import (
     Row,
     Section,
 )
-from app.covenants import line_balances, longest_zero_run
+from app.covenants import line_balances, longest_zero_run, ratios_for
 from app.domain.models import (
     AcceptOffer,
     CashFlow,
@@ -270,11 +270,13 @@ def _forecast(before: Trajectory, after: Trajectory, day: int) -> Section:
 
 
 def _dscr(m: MonthPoint) -> Fraction | None:
-    return Fraction(m.ebitda_fen, m.debt_service_fen) if m.debt_service_fen > 0 else None
+    d, _ = ratios_for(m)  # the one definition (app.covenants.ratios)
+    return d.value if d is not None else None
 
 
 def _lev(m: MonthPoint) -> Fraction | None:
-    return Fraction(m.total_debt_fen, 12 * m.ebitda_fen) if m.ebitda_fen > 0 else None
+    _, lev = ratios_for(m)
+    return lev.value if lev is not None else None
 
 
 def _rolling(t: Trajectory, day: int) -> list[tuple[int, int, int, MonthPoint]]:
