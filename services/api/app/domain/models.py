@@ -752,6 +752,15 @@ class Commitment(Contract):
     expires_day: Day
     mandate_version: int
     forward_value_fen: Fen
+    # Red team d, F5: early-pay obligations already paid on time while the commitment stays ACTIVE for its other
+    # live terms (a receipt is matched to an obligation once). F3: early-pay obligations whose day passed unpaid
+    # when the clock ended the commitment (EXPIRED); they are still reported as lapsed. Omitted while empty.
+    settled_obligations: list[str] = Field(default_factory=list)
+    lapsed_obligations: list[str] = Field(default_factory=list)
+
+    @model_serializer(mode="wrap")
+    def _serialise(self, handler: SerializerFunctionWrapHandler):  # type: ignore[no-untyped-def]
+        return _omit_empty(handler(self), self, ("settled_obligations", "lapsed_obligations"))
 
 
 class Actor(StrEnum):

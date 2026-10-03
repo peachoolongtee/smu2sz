@@ -2,14 +2,18 @@
 
 from __future__ import annotations
 
+from unittest.mock import patch
+
 import pytest
 
+import app.funding.router as router_mod
 from app.domain.models import FundingActionKind, Mode
 from app.financial import project
 from app.funding import plan
 from app.funding.search import Search
 from tests.funding import cases
 from tests.funding.baseline import line_first_then_cheapest
+from tests.funding.variants import pricing_only
 
 # (case, expected router cost in fen, baseline admissible?). The golden gap is ¥405,000: 340,000 + 120,000 + the
 # existing loan's ¥45,000 day-30 payment + the 300,000 reserve − 400,000 cash (FINANCIAL_SEMANTICS §5).
@@ -33,10 +37,18 @@ DESIGNED = [
 ]
 
 
+PRICING = pricing_only(Search)  # the search's arithmetic, with early pay and bills priced as runnable legs
+
+
+def _priced(s, m):
+    with patch.object(router_mod, "Search", PRICING):
+        return plan(s, [], m)
+
+
 @pytest.mark.parametrize("name,cost,baseline_ok", DESIGNED)
 def test_router_beats_line_first(name, cost, baseline_ok):
     s, m = getattr(cases, name)()
-    p = plan(s, [], m)
+    p = _priced(s, m)
     assert p.admissible
     assert p.total_cost_fen == cost
     assert sum(c.fen for c in p.costs) == p.total_cost_fen
@@ -50,10 +62,31 @@ def test_router_beats_line_first(name, cost, baseline_ok):
 
 def test_bill_held_uses_the_whole_bill_and_the_line_only_for_the_rest():
     s, m = cases.bill_held()
-    p = plan(s, [], m)
+    p = _priced(s, m)
     # the ¥400,000 of bills nets 398,862.25 < the 405,000 gap: the line carries the 6,137.75 left
     assert sorted((a.kind, a.amount_fen) for a in p.actions) == [
         (FundingActionKind.DISCOUNT_BILL, 40_000_000), (FundingActionKind.DRAW, 613_775)]
+
+
+# Red team d, F1: no operation discounts a bill or asks a buyer to pay early, so a plan holding such a leg cannot run
+# today; the router ranks a plan that can run first. Where one exists (the line and the invoice advance) it is the
+# plan, at the golden ¥3,113.93; where none does, the cheapest plan is still shown, flagged "cannot run today".
+RUNNABLE = [("bill_held", 311_393, True), ("cheap_early_pay", 311_393, True), ("dear_line", 368_975, True),
+            ("leverage_tight", 364_768, False), ("no_new_borrowing", 491_903, False), ("long_gap", 437_247, False)]
+
+
+@pytest.mark.parametrize("name,cost,runnable", RUNNABLE)
+def test_a_plan_that_can_run_ranks_before_a_cheaper_one_that_cannot(name, cost, runnable):
+    s, m = getattr(cases, name)()
+    p = plan(s, [], m)
+    assert p.admissible and p.total_cost_fen == cost and p.executable_now is runnable
+    priced = (FundingActionKind.EARLY_PAY, FundingActionKind.DISCOUNT_BILL)
+    assert any(a.kind in priced for a in p.actions) is (not runnable)
+    if not runnable:
+        assert "needs the buyer's agreement to pay early" in p.not_executable_reason
+        assert all(c.executable_now == (c.facility_id != "FAC-EARLYPAY") for c in p.costs)
+    t = project(s, [], p.actions, Mode.CONSERVATIVE, m.horizon_days, m.min_cash_fen)
+    assert t.first_breach_day is None
 
 
 def test_dear_line_puts_most_of_the_gap_on_invoice_financing():

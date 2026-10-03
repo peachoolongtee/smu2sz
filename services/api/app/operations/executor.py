@@ -32,6 +32,7 @@ from contextlib import AbstractContextManager, nullcontext
 from dataclasses import dataclass
 from typing import Any
 
+from app.books import cash_relevant
 from app.commitments import CommitmentError, check_acceptance, terms_hash, transition
 from app.domain.models import (
     AcceptOffer,
@@ -347,6 +348,17 @@ class Executor:
                                          effective_day=now, approval_id=approval_id,
                                          message=f"Declined by the owner ({approval_id}); nothing executed")
                 return self._log(op, result)
+            booked = self._booked_since_queued(op, approval_id) if isinstance(op, ReceivePayment) else None
+            if booked is not None:
+                v = _v(Code.PRECONDITION_FAILED,
+                       f"Not booked: since {approval_id} was queued, {booked.payload.get('requested_by')} recorded "
+                       f"{fmt_yuan(int(booked.payload.get('amount_fen', 0)))} on {op.receivable_id} "
+                       f"({booked.payload.get('op_id', '?')}, seq {booked.seq}); this report may be that same money. "
+                       f"If anything is still owed, record it again from the bank feed or as the owner",
+                       approval_id=approval_id, receivable_id=op.receivable_id, earlier_seq=booked.seq)
+                result = OperationResult(op_id=op.op_id, kind=op.kind, status=REFUSED, tier=Tier.TIER_2,
+                                         violations=[v], effective_day=now, approval_id=approval_id, message=v.message)
+                return self._log(op, result)
             # Re-run at decision time: every gate except the Tier-2 queue, against today's mandate.
             self._running_under = approval_id  # `_log` stamps it on every row the re-run writes
             try:
@@ -554,6 +566,19 @@ class Executor:
 
     def _entries(self) -> list[LoggedEntry]:
         return self._reader.entries(self._store.operations())
+
+    def _booked_since_queued(self, op: ReceivePayment, approval_id: str) -> LoggedEntry | None:
+        """Red team d, F2: a receipt reported by the agent and queued for the owner may be the same money the bank
+        feed (or the owner) has booked since. The first EXECUTED receipt by SYSTEM or OWNER on the same receivable
+        logged after the queue entry, whatever its amount; None when there is none."""
+        log = self._entries()
+        queued = next((e.seq for e in log if e.result.approval_id == approval_id
+                       and e.result.status == PENDING), None)
+        if queued is None:
+            return None
+        return next((e for e in log if e.seq > queued and e.kind == op.kind and e.result.status == EXECUTED
+                     and e.payload.get("receivable_id") == op.receivable_id
+                     and e.payload.get("requested_by") in (Actor.SYSTEM.value, Actor.OWNER.value)), None)
 
     def _duplicate(self, op: Any, approved: bool) -> OperationResult | None:
         key = op.idempotency_key
@@ -1057,13 +1082,8 @@ class Executor:
             raise _refuse(Code.PRECONDITION_FAILED, f"Receivable {r.id} is {r.status}, not OPEN")
         if not r.confirmed:
             raise _refuse(Code.PRECONDITION_FAILED, f"Receivable {r.id} is not buyer-confirmed (确权)")
-        for c in self._store.commitments():  # FINANCIAL_SEMANTICS §2: not while under an early-payment agreement
-            if c.status in (CommitmentStatus.ACCEPTED, CommitmentStatus.ACTIVE) and any(
-                    o.type == ObligationType.IMMEDIATE_DISCOUNT and o.base.receivable_id == r.id for o in c.obligations):
-                raise _refuse(Code.PRECONDITION_FAILED,
-                              f"Receivable {r.id} is under the early-payment agreement of {c.status.value} commitment "
-                              f"{c.id}; it cannot also be financed (the owner may revoke {c.id} first)",
-                              receivable_id=r.id, commitment_id=c.id)
+        # FINANCIAL_SEMANTICS §2 (not while under a LIVE early-payment agreement) is judged by admission on the current
+        # books (`app.funding.admission.early_pay_hold`): a lapsed agreement no longer holds the invoice (red team d F3)
         buyer = next((c for c in state.counterparties if c.id == r.counterparty_id), None)
         if buyer is None or buyer.role != "BUYER" or not buyer.known:
             raise _refuse(Code.UNKNOWN_COUNTERPARTY, f"Receivable {r.id} is not owed by a registered buyer",
@@ -1095,9 +1115,13 @@ class Executor:
         return _Effect(f"Advance {fmt_yuan(op.advance_fen)} on {r.id} from {f.id} on day {ctx.now}{landing}",
                        state=new_state)
 
-    def _early_pay_match(self, op: ReceivePayment, r: Receivable, now: int) -> tuple[Commitment, Obligation, int] | None:
+    def _early_pay_match(self, op: ReceivePayment, r: Receivable, now: int,
+                         state: FinancialState) -> tuple[Commitment, Obligation, int] | None:
         """ADR-0006 section 4: the live early-pay obligation on `r` whose posted `P - discount` equals this
-        receipt to the fen, as (its commitment moved to FULFILLED, the obligation, the face P it settles).
+        receipt to the fen, as (its commitment, the obligation, the face P it settles). The commitment moves to
+        FULFILLED only when nothing else in it is live (red team d, F5): no invoice adjustment of its own left in the
+        state and no other cash-relevant obligation not yet paid. Otherwise it stays ACTIVE, still revocable, and
+        only this obligation is recorded as paid (`settled_obligations`), so no later receipt is matched to it again.
         Same arithmetic as `_immediate_discount` in app/financial/trajectory.py. None when there is none."""
         for c in self._store.commitments():
             if c.status not in (CommitmentStatus.ACCEPTED, CommitmentStatus.ACTIVE):
@@ -1105,6 +1129,8 @@ class Executor:
             for o in c.obligations:
                 if o.type != ObligationType.IMMEDIATE_DISCOUNT or o.base.receivable_id != r.id:
                     continue
+                if o.id in c.settled_obligations:
+                    continue  # already paid on time: a second receipt is a plain receipt
                 portion = o.base.amount_fen if o.base.amount_fen else r.outstanding_fen
                 if o.rate_bp is not None:
                     discount = post(bp(o.rate_bp) * portion)
@@ -1117,9 +1143,15 @@ class Executor:
                 deadline = o.effective_day if o.effective_day is not None else r.due_day - 1
                 if now > deadline:
                     continue  # A09: the discount was for payment by the promised day; later it is a plain receipt
+                paid = [*c.settled_obligations, o.id]
+                rest = any(a.commitment_id == c.id for a in state.invoice_adjustments) or any(
+                    x.id not in paid and cash_relevant(x) for x in c.obligations)
                 try:
                     done = transition(c, CommitmentStatus.ACTIVE, now) if c.status == CommitmentStatus.ACCEPTED else c
-                    done = transition(done, CommitmentStatus.FULFILLED, now)
+                    if rest:
+                        done = done.model_copy(update={"settled_obligations": paid})
+                    else:
+                        done = transition(done, CommitmentStatus.FULFILLED, now)
                 except CommitmentError:
                     continue  # cannot be fulfilled (e.g. expired before activation): a plain receipt
                 return done, o, portion
@@ -1156,7 +1188,7 @@ class Executor:
         self._refuse_repeated_bank_event(op)
         if r.status not in ("OPEN", "FINANCED") or r.outstanding_fen <= 0:
             raise _refuse(Code.PRECONDITION_FAILED, f"Receivable {r.id} is {r.status}; nothing is owed")
-        matched = self._early_pay_match(op, r, ctx.now)
+        matched = self._early_pay_match(op, r, ctx.now, state)
         face_settled = matched[2] if matched else op.amount_fen
         if face_settled > r.outstanding_fen:
             raise _refuse(Code.PRECONDITION_FAILED,

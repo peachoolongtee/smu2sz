@@ -51,12 +51,18 @@ from app.domain.ports import LedgerStore
 _AGREED = (CommitmentStatus.ACCEPTED, CommitmentStatus.ACTIVE, CommitmentStatus.FULFILLED)
 
 
+def _agreed(c: Commitment) -> bool:
+    """An agreement whose early payments are reconciled: a live or fulfilled one, or one the clock ended because its
+    early payments lapsed (EXPIRED with `lapsed_obligations`, red team d F3); never an offer that expired unaccepted."""
+    return c.status in _AGREED or (c.status == CommitmentStatus.EXPIRED and bool(c.lapsed_obligations))
+
+
 def _discount(r: Receivable, commitments: list[Commitment], outstanding: int,
               used: set[str]) -> tuple[int, int, int | None, str | None, str]:
     """(agreed discount fen, portion P it covers, settlement day, commitment id, formula) for the unused
     accepted discount on receivable r whose portion still fits inside what is outstanding."""
     for c in commitments:
-        if c.status not in _AGREED or c.id in used:
+        if not _agreed(c) or c.id in used:
             continue
         for o in c.obligations:
             if o.type != ObligationType.IMMEDIATE_DISCOUNT:
@@ -106,7 +112,9 @@ def _match(e: Entry, op: ReceivePayment, r: Receivable, commitments: list[Commit
                   f"(commitment {cid})")
     else:
         status, detail = MatchStatus.UNEXPECTED_AMOUNT, "amount matches neither the face nor the discounted face"
-    agreed = cid is not None and bool(d) and received == floor  # the executor fulfils the commitment on this amount
+    # the executor fulfils the commitment on this amount, and only inside the window: a late receipt of the discounted
+    # amount is a plain receipt that leaves the difference due (FINANCIAL_SEMANTICS §2), not the agreed payment
+    agreed = cid is not None and bool(d) and received == floor and in_window
     if agreed and cid is not None:
         used.add(cid)
     match = ReceiptMatch(
@@ -131,7 +139,7 @@ def _promises(state: FinancialState, commitments: list[Commitment],
     lapsed = {(lp.commitment_id, lp.obligation.id): lp.reason for lp in books.lapsed}
     rows: list[PromisedReceipt] = []
     for c in commitments:
-        if c.status not in _AGREED:
+        if not _agreed(c):
             continue
         for o in c.obligations:
             rid = o.base.receivable_id

@@ -336,6 +336,74 @@ def test_money_gate(text, gate):
     assert consent.money_gate(text) == gate
 
 
+# ---------------------------------------------------------------- red team d, F4: the p04 fuzz cases
+
+# (message, the command it executes as (kind, fen, facility) or None)
+P04_COMMANDS = [
+    ("draw ¥100,000 on the line", ("DRAW", 10_000_000, "FAC-LINE")),
+    ("draw ¥100,000 on the line now", ("DRAW", 10_000_000, "FAC-LINE")),
+    ("draw ¥100,000 on the line tomorrow", None), ("don't draw ¥100,000 on the line", None),
+    ("draw ¥100,000 on the line?", None), ("draw ¥100,000.001 on the line", None),
+    ("draw 10万元 on the line", ("DRAW", 10_000_000, "FAC-LINE")), ("从授信额度提款10万元", ("DRAW", 10_000_000, "FAC-LINE")),
+    ("从额度提10万", ("DRAW", 10_000_000, "FAC-LINE")), ("不从额度提款10万元", None), ("从授信额度提款10万元吗", None),
+    ("还额度10万元", ("REPAY", 10_000_000, "FAC-LINE")),
+    ("还了额度10万元", None),  # "I repaid ¥100,000 on the line": a statement of the past, not an instruction
+    ("别还额度10万元", None), ("repay ¥150,000 on the line", ("REPAY", 15_000_000, "FAC-LINE")),
+    ("draw ¥100 000 on the line", None), ("draw ¥100,000 on our line, then", None), ("提款 10 万元 从 授信额度", None),
+    ("向额度还10万元", ("REPAY", 10_000_000, "FAC-LINE")), ("don’t draw ¥100,000 on the line", None),
+]
+
+
+@pytest.mark.parametrize(("text", "expected"), P04_COMMANDS)
+def test_p04_commands(rt, text, expected):
+    cmd = consent.parse_command(text, rt.store.get_state())
+    assert (None if cmd is None else (cmd.kind, cmd.amount_fen, cmd.facility_id)) == expected
+
+
+@pytest.mark.parametrize("text", ["还了额度10万元", "我已经还额度10万元", "I repaid ¥100,000 on the line",
+                                  "we already drew ¥100,000 on the credit line", "偿还了授信额度5万元"])
+def test_a_statement_of_the_past_is_not_an_instruction(text):
+    assert consent.money_gate(text) == "deferred"  # answered "I have not done anything"; nothing proposed
+
+
+# (message, confirmation verdict): the tag questions 对吧 / 是吧 / 好吧 / 行吧 / 可以吧 and any assent word + 吧 or ？ ask,
+# they never confirm; the do-verbs 办吧 / 做吧 ("do it") still do.
+P04_CONFIRMATIONS = [
+    ("go ahead", "yes"), ("yes", "yes"), ("好的", "yes"), ("确认", "yes"), ("行吧", None), ("对吧", None), ("是吧", None),
+    ("好吧", None), ("可以吧", None), ("确定吧", None), ("执行吧", None), ("对吧？", None), ("好的？", None), ("可以？", None),
+    ("不", "no"), ("不行", "no"), ("go ahead?", None), ("go ahead if cash is low", None), ("yes, not now", None),
+    ("执行", "yes"), ("不执行", "no"), ("办吧", "yes"), ("做吧", "yes"), ("好的办吧", "yes"), ("对", "yes"),
+    ("yes yes no", None), ("go ahead, cancel", "no"), ("嗯", None), ("yes 不", None), ("行不", None), ("确定吗", None),
+    ("就这么办", "yes"), ("ok 👍", None), ("ok?", None), ("好的，谢谢", "yes"),
+]
+
+
+@pytest.mark.parametrize(("text", "verdict"), P04_CONFIRMATIONS)
+def test_p04_confirmations(text, verdict):
+    assert consent.confirmation(text) == verdict
+
+
+@pytest.mark.parametrize("tag", ["对吧", "是吧", "好吧", "行吧", "可以吧"])
+def test_a_tag_question_runs_nothing_and_leaves_the_plan_waiting(client, rt, tag):
+    c = Chat(client, "consent-tag")
+    assert c.say("帮我补足现金缺口")["awaiting_confirmation"]
+    before = books(rt)
+    r = c.say(tag)
+    assert r["operations"] == [] and books(rt) == before, r["reply"]
+    assert SESSIONS.get("consent-tag").pending_plan is not None  # a question cancels nothing either
+
+
+def test_a_past_tense_repayment_statement_repays_nothing(client, rt):
+    rt.store.put_state(rt.store.get_state().model_copy(update={"cash_fen": 90_000_000}))
+    c = Chat(client, "consent-past")
+    assert ops(c.say("Draw ¥150,000 on the credit line")) == [("DRAW_FACILITY", "EXECUTED")]
+    before = books(rt)
+    r = c.say("还了额度10万元")
+    assert r["operations"] == [] and books(rt) == before, r["reply"]
+    assert before["drawn"][FACILITY] == 15_000_000
+    assert ops(c.say("go ahead")) == [] and books(rt) == before  # nothing was proposed either
+
+
 def test_rates_days_and_ids_are_not_amounts():
     assert consent.scan_amounts("fund the gap at 1.2% for 30 days, APR-000001, EX01, RCV-A, on day 12, 2nd one") == []
     assert consent.scan_amounts("¥100,000 at 0.5%") == [10_000_000]

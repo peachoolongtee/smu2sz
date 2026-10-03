@@ -46,7 +46,10 @@ SPAN = [SourceSpan(doc_id="T", start=0, end=0, text="")]
 # 3 Oct (existing debt is cash): the existing loan's ¥45,000 payments on days 30, 60, 90 and 120 are in the
 # trajectory, and the plan carries a ¥255,000 advance (cost ¥3,113.93); before: 6e416d997eccbf94 and 60bcdca14e272842
 GOLDEN_TRAJECTORY = "0437cc43e3b22800"
-GOLDEN_ROUTER_PLAN = "493c984b5e9e9321"  # actions (and comparison rows) carry `lands_day`; with it stripped the digest is still 2479590b9ee26e83, every figure unchanged. Earlier, 3 Oct: extension figures on 13 dated invoices; extra receivables ¥210,000.00. 118733a57fd7900b before the plan, cost lines and menu rows carried the approval and executable_now flags (every figure unchanged)
+# Red team d, F1: the two comparison rows that rely on the buyer paying early ("Discount the whole invoice at 1.2%",
+# "Line + early payment on part of the invoice") are flagged executable_now false ("needs the buyer's agreement to pay
+# early"); every figure and the selected plan (¥3,113.93) unchanged. Before: 2479590b9ee26e83.
+GOLDEN_ROUTER_PLAN = "252b9812e99b4aee"  # also: actions and comparison rows carry `lands_day` (API gaps). Earlier, 3 Oct: extension figures on 13 dated invoices; extra receivables ¥210,000.00. 118733a57fd7900b before the plan, cost lines and menu rows carried the approval and executable_now flags (every figure unchanged)
 EX01_COUNTERS = [
     # face 255,000 / (1 − 0.85%) = 257,186.08, rounded up to a whole ¥100 (the gap net of the line includes the
     # existing loan's ¥45,000 day-30 payment; compute_golden.py counter_a_face)
@@ -280,9 +283,14 @@ def test_verdict_and_counters_carry_only_the_offers_obligations(client: TestClie
     # each counter's text is the offer's own terms. With 15 more days already live, an early payment at 0.85% no
     # longer beats the standing plan (ADR-0007), so only the price-adjustment counter is offered on these books. The
     # live +15 days are part of these books (and of the no-offer baseline the re-check compares with), and here the
-    # buyer's 60 days pass the counter's own re-check: 0.45% (420,000 × 15/365 × 10.8417% = ¥1,871.30 → ¥1,890).
+    # buyer's 60 days passed the counter's own re-check: 0.45% (420,000 × 15/365 × 10.8417% = ¥1,871.30 → ¥1,890).
+    # Red team d, F1: on these books the standing plan used to rely on the buyer's early-pay programme, which no
+    # operation can run; the standing plan that can run is the line and an invoice advance. It takes committed room
+    # the cure of a longer extension needed, so 60-, 55- and 50-day terms leave the day-62 shortfall with no cure and
+    # no price-adjustment counter is offered; against that dearer standing plan the early payment at 0.85% is offered.
     assert [c.text for c in stored.counters] == [
-        "60-day terms accepted with a 0.45% price adjustment on future invoices, no rebate."]
+        "Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥257,200 of this invoice at 0.85%."]
+    assert "No price-adjustment counter: 60-, 55- or 50-day terms cannot be funded from committed sources" in stored.summary
 
 
 def test_a_commitment_carries_what_the_counter_bound(client: TestClient, rt: Runtime) -> None:

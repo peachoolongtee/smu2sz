@@ -118,6 +118,30 @@ def test_a_missing_early_payment_is_reported_as_lapsed(store: Any, ex: Any, cloc
     assert rep.flagged == 0  # flagged still counts receipts only
 
 
+def test_a_late_discounted_receipt_is_a_plain_receipt_not_the_agreed_payment(store: Any, ex: Any,
+                                                                             clock: Clock) -> None:
+    """Red team d, F6: the executor books P − d after the promised day as a plain receipt (the difference stays due);
+    reconciliation must not call it the agreed early payment or settle the whole portion in its replay."""
+    c = accepted(store, ex, clock)
+    p, d, expected, day = terms(c)
+    assert day is not None
+    advance(store, day + 1)
+    clock.day = day + 1
+    assert pay(ex, clock, expected).status == OperationStatus.EXECUTED
+    assert receivable(store).settled_fen == expected  # booked as what it is
+    ended = store.get_commitment(c.id)
+    assert ended.status == CommitmentStatus.EXPIRED and ended.lapsed_obligations == ["OB-P"]  # F3
+    assert pay(ex, clock, d).status == OperationStatus.EXECUTED  # the buyer pays the difference
+    rep = reconcile(store, day=clock.day)
+    [late, rest] = rep.receipts
+    assert late.status.value == "DISCOUNT_IGNORED" and late.expected_fen == receivable(store).face_fen
+    # replayed on what was booked: face − (P − d) outstanding, not face − P as if the portion had been settled
+    assert rest.expected_fen == receivable(store).face_fen - expected
+    assert rest.status.value == "SHORT_PAYMENT"  # the portion covers part of RCV-A: the rest of the face is still due
+    [row] = rep.promised
+    assert row.status == PromiseStatus.LAPSED and row.receipt_seq is None
+
+
 def test_the_day_itself_is_not_yet_lapsed(store: Any, ex: Any, clock: Clock) -> None:
     c = accepted(store, ex, clock)
     day = terms(c)[3]

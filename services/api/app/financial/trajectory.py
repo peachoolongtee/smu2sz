@@ -138,6 +138,7 @@ class _TermLot:
     arrival: int
     term_months: int
     postings: list[_Posting]
+    paid_fee: int = 0  # the upfront fee of a lot that has landed: paid already, still part of the level total
 
 
 def _is_bullet_term(f: Facility) -> bool:
@@ -648,10 +649,16 @@ def _repay_carried_advance(f: Facility, r: _Rcv, lot: FundingLot, advance: int, 
     book.repayment_days.append(day)
 
 
-def _contractual(f: Facility, lot: FundingLot, today: int, book: _Book) -> None:
+def _contractual(f: Facility, lot: FundingLot, today: int, book: _Book, first: int | None = None) -> None:
     """The lot's remaining instalments or maturity (`contractual_payments`), the schedule the clock posts. A
-    payment the clock should already have posted (a hand-built state) is posted today, never before."""
-    first = len(book.postings)
+    payment the clock should already have posted (a hand-built state) is posted today, never before.
+
+    A bullet term lot is serviced on a level basis (ADR-0008) over principal, interest and its upfront fee, as
+    admission read it when the draw was requested (`_draw`): `first` is where the lot's postings start, so the
+    landing fee of a lot not yet landed (posted by `_land` just before) is one of its level postings, and the fee of
+    a lot that has landed (paid, not posted again) is still in its level total (red team d, F7). The monthly debt
+    service is then the same the day before and the day after the cash lands."""
+    first = len(book.postings) if first is None else first
     for pay in contractual_payments(lot, f):
         d = max(today, pay.day)
         if pay.month is not None:
@@ -671,8 +678,9 @@ def _contractual(f: Facility, lot: FundingLot, today: int, book: _Book) -> None:
         book.balance(f.id, d, -pay.principal)
         book.repayment_days.append(d)
     if lot.maturity_day is not None and _is_bullet_term(f):
+        paid = upfront_fee(f, lot.remaining_fen) if lot.settled and f.upfront_fee_bp else 0
         book.term_lots.append(_TermLot(lot.arrival_day, f.term_months or 0, [
-            p for p in book.postings[first:] if p.category in ("interest", "fee", "principal")]))
+            p for p in book.postings[first:] if p.category in ("interest", "fee", "principal")], paid))
 
 
 def _orphans_today(state: FinancialState, f: Facility, lots: list[FundingLot], book: _Book,
@@ -723,10 +731,11 @@ def _carry_drawn_balances(state: FinancialState, rcvs: dict[str, _Rcv], book: _B
             continue
         if f.kind != FacilityKind.INVOICE_FINANCING:
             for lot in sorted(lots, key=lambda lot: lot.arrival_day):
+                first = len(book.postings)  # the landing fee belongs to a bullet term lot's level postings (F7)
                 if not lot.settled:
                     _land(f, lot, today, book)
                 if contractual_payments(lot, f):
-                    _contractual(f, lot, today, book)
+                    _contractual(f, lot, today, book, first)
                 elif f.repayment == Repayment.ON_RECEIPT:
                     book.unallocated.append((f, lot.remaining_fen, lot.arrival_day))
                 else:
@@ -955,7 +964,8 @@ def project(
     # bullet term lots: level amount in each month of the term, their own postings left out below
     level_posted = {id(p) for lot in book.term_lots for p in lot.postings}
     for lot in book.term_lots:
-        total = -sum(p.amount for p in lot.postings)  # principal + interest + fees, as the engine posted them
+        # principal + interest + fees, as the engine posted them (+ the upfront fee a landed lot already paid)
+        total = -sum(p.amount for p in lot.postings) + lot.paid_fee
         level, rest = divmod(total, lot.term_months)
         first_month = _month_of(lot.arrival)
         for i in range(lot.term_months):

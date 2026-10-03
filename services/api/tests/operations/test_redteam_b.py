@@ -12,6 +12,7 @@ from typing import Any
 import pytest
 
 from app.alerts import AlertKind, alerts
+from app.books import current_books
 from app.domain.models import (
     AcceptOffer,
     Actor,
@@ -38,7 +39,10 @@ from app.financial import EngineError, finance_invoice_charges, project
 from app.financial.concessions import scoped_invoices
 from app.financial.invoices import scope_at
 from app.financial.lots import apply_receipt, is_fixed_remainder, landing_cash
+from app.funding.admission import admit
 from app.mandate import load_demo_owner_key, load_signed_mandate, revoke, sign
+from app.mandate.fixture import demo_owner_public_key_hex
+from app.operations.executor import Executor
 from app.verifier.bind import early_pay_lead
 from tests.books.test_funding_lots import IF, World, check_lots
 from tests.operations.builders import Clock, early_pay, extension, make_executor, op, seed_offer, seeded_store
@@ -81,6 +85,9 @@ def rcv(state: FinancialState, rid: str) -> Any:
 
 def test_f1_financing_is_refused_while_an_early_pay_agreement_names_the_invoice() -> None:
     w = World()
+    # the check is admission's since red team d F3 (a live agreement on the current books): wire it as the runtime does
+    w.ex = Executor(w.store, trusted_owner_key_hex=demo_owner_public_key_hex(), clock=w.clock,
+                    admit=lambda o, s, m: admit(o, current_books(s, w.store.commitments()), m))
     c = seed_offer(w.store, w.ex, "OFF-EP", obligations=[early_pay(receivable_id="RCV-A").model_copy(
         update={"base": ObligationBase(kind=BaseKind.INVOICE, receivable_id="RCV-A", amount_fen=21_190_000)})])
     assert w.ex.execute(accept(w.clock, c)).status == EXECUTED
