@@ -34,6 +34,7 @@ import json
 from dataclasses import dataclass, field, replace
 from fractions import Fraction
 from itertools import permutations
+from typing import NamedTuple
 
 from app.covenants import evaluate as evaluate_covenants
 from app.domain.models import (
@@ -58,9 +59,9 @@ from app.financial import (
     EngineError,
     UncommittedFacilityError,
     project,
-    project_cash,
     recurring_receivable_id,
 )
+from app.financial.cashpath import CashProjector
 from app.financial.fmt import y
 from app.funding.legs import as_executed, carries, leg_violations
 from app.funding.rates import (
@@ -228,6 +229,10 @@ class Eval:
     def rank(self) -> tuple:
         return (*self.cls, self.cost, len(self.actions), self.peak_debt, action_key(self.actions))
 
+    def rank_head(self) -> tuple:
+        """`rank()` without its last element (the action key): enough to order two candidates unless they tie."""
+        return (*self.cls, self.cost, len(self.actions), self.peak_debt)
+
 
 class _BudgetSpent(Exception):
     """The EXPECTED search has tried its budget of candidates."""
@@ -254,6 +259,53 @@ class Probe:
 
     def rank(self) -> tuple:
         return (*self.cls, self.cost, len(self.actions), self.peak_debt, action_key(self.actions))
+
+    def rank_head(self) -> tuple:
+        return (*self.cls, self.cost, len(self.actions), self.peak_debt)
+
+
+def _rank_not_before(a: Eval | Probe, b: Eval | Probe) -> bool:
+    """`a.rank() >= b.rank()`, building the action keys only when everything before them ties."""
+    ha, hb = a.rank_head(), b.rank_head()
+    if ha != hb:
+        return ha > hb
+    return action_key(a.actions) >= action_key(b.actions)
+
+
+def _rank_before(a: Eval | Probe, b: Eval | Probe) -> bool:
+    """`a.rank() < b.rank()`."""
+    return not _rank_not_before(a, b)
+
+
+class _Class(NamedTuple):
+    """What a plan holding some actions is certain to be (see `Search._cls`): it can only get worse as actions are
+    added, so the class of a union is the join of the parts'."""
+
+    unrunnable: bool
+    over: bool
+
+    def joined(self, other: _Class) -> _Class:
+        return _Class(self.unrunnable or other.unrunnable, self.over or other.over)
+
+
+class _Bound:
+    """An exact lower bound n/d (d > 0), left unreduced: cheap to build and to add, and compared with an integer
+    cost by cross-multiplying, so the search's pruning does no `Fraction` arithmetic."""
+
+    __slots__ = ("d", "n")
+
+    def __init__(self, n: int, d: int) -> None:
+        self.n, self.d = n, d
+
+    def __add__(self, other: int | _Bound) -> _Bound:
+        if isinstance(other, _Bound):
+            return _Bound(self.n * other.d + other.n * self.d, self.d * other.d)
+        return _Bound(self.n + other * self.d, self.d)
+
+    __radd__ = __add__
+
+    def __gt__(self, cost: int) -> bool:
+        return self.n > cost * self.d
 
 
 def _akey(a: FundingAction) -> tuple:
@@ -334,6 +386,7 @@ class Search:
         self.obligations = obligations
         self.mandate = mandate
         self.floor = mandate.min_cash_fen
+        self._cash = CashProjector(self.pstate, obligations, self.mode, mandate.horizon_days, self.floor)
         self.facilities = {f.id: f for f in state.facilities}
         self._cache: dict[tuple, Eval] = {}
         self._probes: dict[tuple, Probe] = {}
@@ -348,6 +401,10 @@ class Search:
         self.need_fen = max((self.floor - p.closing_fen for p in below), default=0)
         self.rcvs = receivables(state, self.baseline)
         self._over_cache: dict[tuple, bool] = {}
+        self._pricing: dict[tuple, tuple[Fraction, str]] = {}  # per action: `action_pricing`
+        self._acts: dict[tuple[Slot, int], FundingAction] = {}  # one frozen action per (slot, amount)
+        self._flags: dict[int, tuple[FundingAction, bool | None, bool | None]] = {}  # per action object: (a, unrunnable, over)
+        self._akeys: dict[int, tuple[FundingAction, tuple]] = {}  # action identity -> (action, `_akey`)
         # what the executor lets a facility finance, and lands today: an invoice that exists and is issued (a recurring
         # invoice not yet issued does not exist; the executor lands an advance on a future-dated one today, the
         # engine on its issue day), is OPEN, buyer-confirmed and owed by a registered buyer
@@ -388,6 +445,25 @@ class Search:
     def ticket(self, slot: Slot, amount: int) -> int:
         """`amount` raised to the minimum ticket and capped at the slot's capacity."""
         return min(slot.cap_fen, max(self.MIN_ACTION_FEN, amount))
+
+    def act(self, slot: Slot, amount: int) -> FundingAction:
+        """`slot.action(amount)`, built once per (slot, amount): actions are frozen, so the grid search can share them."""
+        k = (slot, amount)
+        a = self._acts.get(k)
+        if a is None:
+            a = self._acts[k] = slot.action(amount)
+        return a
+
+    def akey(self, a: FundingAction) -> tuple:
+        """`_akey(a)`, computed once per action object (the search re-keys the same few actions thousands of times)."""
+        e = self._akeys.get(id(a))
+        if e is None or e[0] is not a:
+            e = self._akeys[id(a)] = (a, _akey(a))
+        return e[1]
+
+    def key(self, actions: tuple[FundingAction, ...] | list[FundingAction]) -> tuple:
+        """`action_key(actions)` on the cached per-action keys."""
+        return tuple(sorted([self.akey(a) for a in actions]))
 
     def early_pay_bp(self, f: Facility) -> int:
         """The buyer's standing early-payment rate. A discount an offer puts on one invoice is not a standing
@@ -451,11 +527,15 @@ class Search:
     def action_pricing(self, a: FundingAction) -> tuple[Fraction, str]:
         """(annual cost, how) of one action, from `funding.rates.action_rate`: the number the executor's
         admission compares with the mandate's ceiling (an advance on the days from landing to due)."""
-        f = self.facilities[a.facility_id]
-        r = self.rcvs.get(a.receivable_id or "")
-        landing = invoice_landing_day(f, a.day, r.issue_day) if r is not None else None
-        return action_rate(f, a.kind, amount_fen=a.amount_fen, landing_day=landing,
-                           due_day=r.due_day if r is not None else None, rate_bp=a.rate_bp)
+        k = self.akey(a)
+        hit = self._pricing.get(k)
+        if hit is None:
+            f = self.facilities[a.facility_id]
+            r = self.rcvs.get(a.receivable_id or "")
+            landing = invoice_landing_day(f, a.day, r.issue_day) if r is not None else None
+            hit = self._pricing[k] = action_rate(f, a.kind, amount_fen=a.amount_fen, landing_day=landing,
+                                                 due_day=r.due_day if r is not None else None, rate_bp=a.rate_bp)
+        return hit
 
     def action_rate(self, a: FundingAction) -> Fraction:
         return self.action_pricing(a)[0]
@@ -472,7 +552,7 @@ class Search:
 
     def approval(self, a: FundingAction) -> str | None:
         """Why this action needs the owner's approval: its effective annual cost is above the mandate's ceiling."""
-        k = _akey(a)
+        k = self.akey(a)
         if k not in self._approval_cache:
             rate, how = self.action_pricing(a)
             self._approval_cache[k] = approval_reason(rate, how, self.mandate)
@@ -484,7 +564,7 @@ class Search:
 
     def evaluate(self, actions: list[FundingAction] | tuple[FundingAction, ...]) -> Eval:
         acts = tuple(actions)
-        key = action_key(acts)
+        key = self.key(acts)
         hit = self._cache.get(key)
         if hit is not None:
             return hit if hit.actions == acts else replace(hit, actions=acts)
@@ -607,7 +687,7 @@ class Search:
     def _breaks_rules(self, a: FundingAction) -> bool:
         """The action alone makes any plan inadmissible: new debt the mandate forbids (the same check
         `evaluate` makes, without the trajectory)."""
-        k = _akey(a)
+        k = self.akey(a)
         hit = self._rule_cache.get(k)
         if hit is None:
             hit = not self.mandate.allow_new_borrowing and is_debt(self.facilities[a.facility_id])
@@ -618,7 +698,7 @@ class Search:
         """`evaluate` on the cash-only fast path (no covenants): the same cost, breach day,
         shortfall and peak debt, and whether the engine accepts the actions at all."""
         acts = tuple(actions)
-        key = action_key(acts)
+        key = self.key(acts)
         hit = self._probes.get(key)
         if hit is not None:
             return hit if hit.actions == acts else replace(hit, actions=acts)
@@ -633,8 +713,7 @@ class Search:
             self._probes[key] = pr
             return pr
         try:
-            path = project_cash(self.pstate, self.obligations, list(acts), self.mode, self.mandate.horizon_days,
-                                self.floor)
+            path = self._cash.run(list(acts))
         except EngineError:  # includes UncommittedFacilityError; `evaluate` gives no trajectory either
             pr = Probe(acts, ok=False)
             self._probes[key] = pr
@@ -669,13 +748,13 @@ class Search:
             if ev.blocked:
                 self._keep_best_effort(ev)
                 return
-            if self.best is not None and ev.rank() >= self.best.rank():
+            if self.best is not None and _rank_not_before(ev, self.best):
                 return  # it cannot become the best, and the best effort no longer matters
             ev = self.evaluate(ev.actions)  # it could become the best: the full evaluation decides
         if ev.traj is None:
             return
         if ev.admissible:
-            if self.best is None or ev.rank() < self.best.rank():
+            if self.best is None or _rank_before(ev, self.best):
                 self.best = ev
         else:
             self._keep_best_effort(ev)
@@ -705,13 +784,13 @@ class Search:
         if first < slot.arrival:
             return None  # the cash would land after the breach
         if prune and slot in self.unit and self._beaten(
-                base_cost + self._lb(slot, short, net=True), [*prefix, slot.action(slot.cap_fen)]):
+                base_cost + self._lb(slot, short, net=True), [*prefix, self.act(slot, slot.cap_fen)]):
             return None
         net = short
         ev: Probe | None = None
         for _ in range(4):
             amount = self.ticket(slot, slot.amount_for_net(net))
-            ev = self.probe([*prefix, slot.action(amount)])
+            ev = self.probe([*prefix, self.act(slot, amount)])
             self.consider(ev)
             if not ev.ok or ev.breach_day is None or amount == slot.cap_fen or ev.breach_day < slot.arrival:
                 break
@@ -724,7 +803,7 @@ class Search:
     def _probe_units(self) -> None:
         for s in self.slots:
             amount = self.ticket(s, s.amount_for_net(self.need_fen))
-            ev = self.probe([s.action(amount)])
+            ev = self.probe([self.act(s, amount)])
             self.consider(ev)
             if not ev.ok or ev.cost is None:
                 continue
@@ -750,54 +829,93 @@ class Search:
         for s in slots:
             self.fill([], s)
         for a in slots:
+            singles = [(self._lb(a, amt), [self.act(a, amt)]) for amt in self._grid(a.cap_fen)]
             for b in slots:
                 if a is b or a.conflicts(b):
                     continue
-                for amt in self._grid(a.cap_fen):
-                    if not self._beaten(self._lb(a, amt), [a.action(amt)]):
-                        self.fill([a.action(amt)], b)
+                for bound, one in singles:
+                    if not self._beaten(bound, one):
+                        self.fill(one, b)
         for a in slots:
+            first = self.act(a, a.cap_fen)
+            lb_a = self._lb(a, a.cap_fen)
+            cls_a = self._class_of(first)
             for b in slots:
                 if a is b or a.conflicts(b):
                     continue
+                pairs = None  # what (a at its cap, b at each grid amount) is, whichever slot comes third
                 for c in slots:
                     if c is a or c is b or c.conflicts(a) or c.conflicts(b):
                         continue
-                    for amt in self._grid(b.cap_fen):
-                        if not self._beaten(self._lb(a, a.cap_fen) + self._lb(b, amt),
-                                            [a.action(a.cap_fen), b.action(amt)]):
-                            self.fill([a.action(a.cap_fen), b.action(amt)], c)
+                    if pairs is None:
+                        pairs = []
+                        for amt in self._grid(b.cap_fen):
+                            act_b = self.act(b, amt)
+                            pairs.append((lb_a + self._lb(b, amt), cls_a.joined(self._class_of(act_b)),
+                                          [first, act_b]))
+                    for bound, certain, two in pairs:
+                        if not self._beaten(bound, certain):
+                            self.fill(two, c)
 
-    def _lb(self, slot: Slot, amount: int, net: bool = False) -> Fraction:
+    def _lb(self, slot: Slot, amount: int, net: bool = False) -> _Bound:
         """A lower bound on what `slot` posts for an action `amount` (or, with `net`, for raising
-        that much cash): its probed unit cost, less a 2% margin and 2 fen for rounding."""
+        that much cash): its probed unit cost, less a 2% margin and 2 fen for rounding. Exact:
+        unit × amount × 98/100 − 2, kept as an unreduced fraction."""
         unit = self.unit[slot] if net else self.unit_amt[slot]
-        return unit * amount * Fraction(98, 100) - 2
+        d = unit.denominator * 100
+        return _Bound(unit.numerator * amount * 98 - 2 * d, d)
 
     def _over(self, a: FundingAction) -> bool:
         """The action is certainly above the max APR, whatever fen rounding does to its amount (1% clear of the
         ceiling): a plan that holds it is certainly one that needs approval."""
-        k = _akey(a)
+        e = self._flags.get(id(a))
+        if e is not None and e[0] is a and e[2] is not None:
+            return e[2]
+        k = self.akey(a)
         hit = self._over_cache.get(k)
         if hit is None:
             hit = self.action_rate(a) > bp(self.mandate.max_apr_bp) * Fraction(101, 100)
             self._over_cache[k] = hit
+        self._flags[id(a)] = (a, e[1] if e is not None and e[0] is a else None, hit)
+        return hit
+
+    def _cannot_run(self, a: FundingAction) -> bool:
+        """`unrunnable(a) is not None`, once per action object."""
+        e = self._flags.get(id(a))
+        if e is not None and e[0] is a and e[1] is not None:
+            return e[1]
+        hit = self.unrunnable(a) is not None
+        self._flags[id(a)] = (a, hit, e[2] if e is not None and e[0] is a else None)
         return hit
 
     def _cls(self, actions: list[FundingAction]) -> tuple[bool, bool]:
         """The class a plan holding `actions` is certain to be in (it can only get worse as actions are added)."""
-        return (any(self.unrunnable(a) is not None for a in actions), any(self._over(a) for a in actions))
+        unrunnable = over = False
+        for a in actions:
+            if self._cannot_run(a):
+                unrunnable = True
+                break
+        for a in actions:
+            if self._over(a):
+                over = True
+                break
+        return (unrunnable, over)
 
-    def _beaten(self, bound: Fraction, actions: list[FundingAction] = ()) -> bool:  # type: ignore[assignment]
-        """A candidate holding `actions` that posts at least `bound` cannot beat the best plan: plans rank by (cannot
-        run today, needs approval, cost). It is beaten when its certain class is worse than the best's, or the same
-        and it is dearer; a candidate not known to be in a worse class is never beaten by a better-class best."""
+    def _class_of(self, a: FundingAction) -> _Class:
+        return _Class(self._cannot_run(a), self._over(a))
+
+    def _beaten(self, bound: Fraction, actions: list[FundingAction] | _Class = ()) -> bool:  # type: ignore[assignment]
+        """A candidate holding `actions` (or, as a `_Class`, certain to be in that class) that posts at least `bound`
+        cannot beat the best plan: plans rank by (cannot run today, needs approval, cost). It is beaten when its certain
+        class is worse than the best's, or the same and it is dearer; a candidate not known to be in a worse class is
+        never beaten by a better-class best."""
         best = self.best
         if best is None or best.cost is None:
             return False
-        mine = self._cls(list(actions))
-        if mine != best.cls:
-            return mine > best.cls
+        mine = actions if isinstance(actions, _Class) else self._cls(actions)
+        theirs = best.cls
+        if mine != theirs:
+            return mine > theirs
         return bound > best.cost
 
     # ------------------------------------------------------------ presentation helpers
