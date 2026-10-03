@@ -1,5 +1,6 @@
 import {
   borrowerFile,
+  capexApply,
   capexEvaluate,
   demoReset,
   evaluateOffer,
@@ -13,6 +14,7 @@ import {
   demoStore,
   recordBorrowerFile,
   recordCapex,
+  recordCapexApplication,
   recordFunding,
   recordNegotiation,
   recordOffer,
@@ -68,12 +70,34 @@ const noop = async () => {};
 /** The machine from docs/DEMO_FLOW.md Scene 3. The request is a typed input; the API does all the maths. */
 const CAPEX_REQUEST = { label: "\u00a5600k machine", price_fen: 60000000 };
 
+/** Evaluating writes nothing: no operation, no approval. */
 export async function runCapex(): Promise<void> {
   recordCapex(await capexEvaluate(CAPEX_REQUEST));
 }
 
 /**
+ * The owner's explicit application for the structure the evaluation selected: POST /capex/apply queues one Tier-2
+ * application, which then waits for the owner in Approvals. Nothing is applied for until the owner approves it. The
+ * server refuses (409) when the books moved since the evaluation, and for any structure that is not the selected one.
+ */
+export async function runCapexApply(): Promise<void> {
+  const capex = demoStore.get().capex ?? (await capexEvaluate(CAPEX_REQUEST));
+  const selected = capex.structures.find((s) => s.id === capex.selected_id);
+  if (!selected || selected.hypothetical || !selected.facility_id) {
+    throw new Error("No financing structure is selected, so there is nothing to apply for.");
+  }
+  recordCapexApplication(
+    await capexApply({
+      facility_id: selected.facility_id,
+      amount_fen: capex.request.price_fen,
+      state_version: capex.state_version,
+    }),
+  );
+}
+
+/**
  * The borrower file for the financing structure the capex evaluation selected (prepared for the owner, never sent).
+ * Generating it is read-only: nothing is queued and nothing waits for approval; the provenance is in the file.
  * No selected structure (the project is not worth doing, or nothing passes) means no file: there is no facility to
  * borrow on, and an illustration at another term is never one. The server defaults the spend day of an equipment
  * purchase to the day the proceeds land and says so in the file.
@@ -172,6 +196,7 @@ export const DEMO_STEPS: DemoStep[] = [
     scene: "s3",
     route: "/approvals",
     run: async () => {
+      await runCapexApply();
       await runBorrowerFile();
     },
   },

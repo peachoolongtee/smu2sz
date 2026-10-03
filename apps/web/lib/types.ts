@@ -596,7 +596,6 @@ export type OperationKind =
   | "REPAY_FACILITY"
   | "SUBMIT_INVOICE_FOR_FINANCING"
   | "RECEIVE_PAYMENT"
-  | "GENERATE_BORROWER_FILE"
   | "REQUEST_OWNER_APPROVAL"
   | "APPLY_FOR_FACILITY"
   | "SIGN_PERSONAL_GUARANTEE"
@@ -967,7 +966,7 @@ export interface CapexRequest {
   price_fen: Fen;
 }
 
-/** POST /capex/evaluate */
+/** POST /capex/evaluate: side-effect free, writes nothing. */
 export type CapexView = Displayed<{
   request: CapexRequest;
   npv_fen: Fen;
@@ -983,7 +982,10 @@ export type CapexView = Displayed<{
   dscr_limit_display: string;
   leverage_limit_display: string;
   required_tier: Tier;
-  approval_id: string | null;
+  /** The books the evaluation read: POST /capex/apply must quote it, and is refused (409) once it has moved. */
+  state_version: number;
+  /** The facility of the selected structure; null when nothing is selected. */
+  selected_facility_id?: string | null;
   /** The owner's own estimate, labelled as such by the server. */
   estimate_note?: string;
   recommendation?: string;
@@ -993,21 +995,36 @@ export type CapexView = Displayed<{
   as_of_day?: Day;
 }>;
 
+/** POST /capex/apply (owner only): queues the Tier-2 application for the selected structure; the owner then approves it. */
+export interface CapexApplyRequest {
+  facility_id: string;
+  amount_fen: Fen;
+  state_version: number;
+}
+
+export interface CapexApplyResult {
+  approval_id: string | null;
+  approval_status: string | null;
+  state_version: number;
+  application: { status: string; tier: Tier; message: string };
+}
+
 export interface BorrowerFileRequest {
   facility_id: string;
   amount_fen: Fen;
   use_of_proceeds: string;
 }
 
-/** POST /borrower-file */
+/** POST /borrower-file: a read-only owner action; nothing is queued or approved, the provenance is in the file. */
 export interface BorrowerFileView {
   file_id: string;
   status: "PREPARED_NOT_SENT";
   style: string;
   sections: { title: string; rows: { label: string; value: string; note?: string | null }[]; notes?: string[] }[];
-  approval_id: string | null;
   /** The day the file was generated: it is a snapshot of that day. */
   generated_day: Day;
+  /** Where the file came from: the books and mandate it read, and the hash of its inputs. */
+  provenance?: { generated_day: Day; state_version: number; mandate_version: number; evidence_hash: string };
   /** Live mode: download paths on the API. Null in mock mode (there is no file to download). */
   downloads?: { html: string; docx: string; pdf: string | null } | null;
   pdf_note?: string | null;

@@ -30,28 +30,28 @@ test("trajectory adapter: the position today, then the offer applied", async () 
   expect(verdict.outcome).toBe("REJECT");
 
   const view = await live.getTrajectory("CONSERVATIVE", verdict);
-  expect(view.trajectory.min_cash_display).toBe("¥254,960.00");
-  expect(view.trajectory.min_cash_day).toBe(47);
+  expect(view.trajectory.min_cash_display).toBe("¥164,960.00");
+  expect(view.trajectory.min_cash_day).toBe(60);
   // The committed cure lifts day 47 back to the floor; it is drawn as the dashed line.
   expect(view.cured_trajectory?.min_cash_display).toBe("¥300,000.00");
   expect(view.cured_trajectory?.first_breach_day).toBeNull();
   expect(view.cured_trajectory?.days).toHaveLength(121);
   expect(view.trajectory.first_breach_day).toBe(47);
-  expect(view.shortfall_display).toBe("¥45,040.00");
+  expect(view.shortfall_display).toBe("¥135,040.00");
   expect(view.forward_concession).toMatchObject({ total_display: "¥28,326.92", cap_display: "¥5,000.00", over_cap: true });
   expect(view.forward_concession.parts.map((p) => p.value_display)).toEqual(["¥24,326.92", "¥4,000.00"]);
-  expect(view.trajectory.months[0]).toMatchObject({ dscr: { text: "2.00" }, leverage: { text: "1.39" } });
+  expect(view.trajectory.months[0]).toMatchObject({ dscr: { text: "2.00" }, leverage: { text: "1.35" } });
   // The pro forma 1.92x / 1.72x (extension funded) live in the verdict's own checks, not in the month table.
   expect(verdict.summary).toContain("DSCR_MIN 1.92x");
   expect(view.covenant_limits).toEqual({ min_dscr_display: "1.25×", max_leverage_display: "2.50×" });
   // Integer fen rides along for chart axes only.
-  expect(view.trajectory.days[47].closing_fen).toBe(25496000);
-  expect(view.trajectory.days[47].closing_display).toBe("¥254,960.00");
+  expect(view.trajectory.days[47].closing_fen).toBe(20996000);
+  expect(view.trajectory.days[47].closing_display).toBe("¥209,960.00");
 });
 
 test("funding, negotiation and ledger adapters keep the golden numbers and fill the operation fields", async () => {
   const plan = await live.planFunding({});
-  expect(plan.committed.total_cost_display).toBe("¥2,712.94");
+  expect(plan.committed.total_cost_display).toBe("¥3,113.93");
   expect(plan.marginal.rate_display).toBe("10.8417%");
 
   await live.demoReset();
@@ -59,7 +59,7 @@ test("funding, negotiation and ledger adapters keep the golden numbers and fill 
   await live.evaluateOffer(offer.offer.offer_id, "EX01_PACKAGE");
   const neg = await live.negotiate(offer.offer.offer_id, { buyer_profile: "hard_line" });
   expect(neg.outcome).toBe("NO_DEAL");
-  expect(neg.plan?.total_cost_display).toBe("¥2,712.94");
+  expect(neg.plan?.total_cost_display).toBe("¥3,113.93");
   for (const op of neg.operations) {
     expect(op.summary).not.toBe("");
     expect(op.day).toBe(0);
@@ -69,24 +69,33 @@ test("funding, negotiation and ledger adapters keep the golden numbers and fill 
   expect(ledger.operations.map((o) => o.kind)).toEqual(["DRAW_FACILITY", "SUBMIT_INVOICE_FOR_FINANCING"]);
 });
 
-test("approvals adapter: capex and borrower file queue as Tier 2, and the owner token decides", async () => {
+test("approvals adapter: evaluating and the borrower file queue nothing, the capex application queues as Tier 2, and the owner token decides", async () => {
   await live.demoReset();
   const capex = await live.capexEvaluate({ label: "machine", price_fen: 60000000 });
   expect(capex.npv_display).toBe("¥380,885.77");
   const selected = capex.structures.find((s) => s.id === capex.selected_id);
-  expect(selected?.facility_id).toBe("FAC-ETL");
+  // On the opening books the 48-month lease is the selected structure (the demo walk reaches the term loan instead).
+  expect(selected?.facility_id).toBe("FAC-LEASE");
+  expect(await live.getApprovals()).toEqual([]); // evaluating writes nothing
 
   const file = await live.borrowerFile({ facility_id: "FAC-ETL", amount_fen: 60000000, use_of_proceeds: "Purchase of production equipment" });
   expect(file.status).toBe("PREPARED_NOT_SENT");
   expect(file.downloads?.html).toBe(`/borrower-file/${file.file_id}.html`);
   expect(file.downloads?.docx).toBe(`/borrower-file/${file.file_id}.docx`);
+  expect(file.provenance?.evidence_hash).toHaveLength(64);
+  expect(await live.getApprovals()).toEqual([]); // the borrower file is read-only: nothing queued, nothing to approve
+
+  // A stale state version is refused (409); the explicit application then queues one Tier-2 approval.
+  await expect(
+    live.capexApply({ facility_id: "FAC-LEASE", amount_fen: 60000000, state_version: capex.state_version - 1 }),
+  ).rejects.toMatchObject({ status: 409 });
+  const applied = await live.capexApply({ facility_id: "FAC-LEASE", amount_fen: 60000000, state_version: capex.state_version });
+  expect(applied.application.status).toBe("PENDING_APPROVAL");
+  expect(applied.approval_id).toMatch(/^APR-/);
 
   const queue = await live.getApprovals();
-  expect(queue.map((a) => [a.tier, a.status])).toEqual([
-    ["TIER_2", "PENDING"],
-    ["TIER_2", "PENDING"],
-  ]);
-  expect(queue[0].subject).toMatch(/FAC-ETL/);
+  expect(queue.map((a) => [a.tier, a.status])).toEqual([["TIER_2", "PENDING"]]);
+  expect(queue[0].subject).toMatch(/FAC-LEASE/);
   // The queue rows are display-ready: amount, day and tier come from the server.
   expect(queue[0]).toMatchObject({ amount_display: "¥600,000.00", created_day: 0, tier: "TIER_2" });
 
@@ -94,9 +103,6 @@ test("approvals adapter: capex and borrower file queue as Tier 2, and the owner 
   expect(decided.status).toBe("APPROVED");
   // The API does not record the day of a decision, so the adapter must not invent one (not the clock's day today).
   expect(decided.decided_day).toBeNull();
-  const rejected = await live.decideApproval(queue[1].id, "REJECT");
-  expect(rejected.status).toBe("REJECTED");
-  expect(rejected.decided_day).toBeNull();
 
   // A second decision is a 409, an unknown id a 404; both carry their status so the page can explain them.
   await expect(live.decideApproval(queue[0].id, "APPROVE")).rejects.toMatchObject({ status: 409 });
@@ -128,7 +134,7 @@ test("state adapter: funding requested on a facility with a lead time is a lot i
   const after = await live.getState();
   const transit = (after.state.lots ?? []).filter((l) => !l.settled);
   expect(transit).toHaveLength(1);
-  expect(transit[0]).toMatchObject({ facility_id: "FAC-IF", request_day: 0, arrival_day: 3, principal_display: "¥210,000.00" });
+  expect(transit[0]).toMatchObject({ facility_id: "FAC-IF", request_day: 0, arrival_day: 3, principal_display: "¥255,000.00" });
   expect(after.state.cash_display).toBe("¥550,000.00");
 });
 

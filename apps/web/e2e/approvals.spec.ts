@@ -37,13 +37,18 @@ test("a Tier 1 ACCEPT shows why the agent may accept it alone, with the server's
     await expect(row).toBeVisible();
     await expect(row).not.toContainText("not reported");
   }
-  await expect(panel.getByTestId("autonomy-check-MIN_CASH")).toContainText("¥357,900.00 on day 20");
+  await expect(panel.getByTestId("autonomy-check-MIN_CASH")).toContainText("¥312,900.00 on day 30");
 });
 
 test("an approval card expands in place to the operation, the reason, the amount and who asked", async ({ page }) => {
   await page.goto("/mandate");
-  await page.getByRole("button", { name: "Scene 3" }).click(); // runs the capex evaluation, which queues the loan application
+  await page.getByRole("button", { name: "Scene 3" }).click(); // runs the capex evaluation, which writes nothing
   await expect(page).toHaveURL(/\/capex/);
+  await page.goto("/approvals");
+  await expect(page.getByText("0 pending")).toBeVisible();
+  await page.goto("/capex");
+  await page.getByTestId("capex-apply").click(); // the owner's explicit application queues the loan application
+  await expect(page.getByTestId("capex-applied")).toBeVisible();
   await page.goto("/approvals");
   const card = page.locator("#approval-APR-000001");
   await expect(card).toContainText("¥600,000.00");

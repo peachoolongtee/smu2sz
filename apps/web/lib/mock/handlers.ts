@@ -17,6 +17,8 @@ import type {
   AuditView,
   BorrowerFileRequest,
   BorrowerFileView,
+  CapexApplyRequest,
+  CapexApplyResult,
   CapexRequest,
   CapexView,
   FundingView,
@@ -48,6 +50,7 @@ import alertsJson from "../../mocks/alerts.json";
 import approvalsSeed from "../../mocks/approvals_seed.json";
 import auditSec from "../../mocks/audit_sec.json";
 import borrowerFileJson from "../../mocks/borrower_file.json";
+import capexApplyJson from "../../mocks/capex_apply.json";
 import capexJson from "../../mocks/capex.json";
 import fundingJson from "../../mocks/funding.json";
 import homeApprovalApproved from "../../mocks/home_approval_approved.json";
@@ -368,9 +371,9 @@ export async function negotiate(offerId: string, req: NegotiateRequest): Promise
   return clone(result);
 }
 
-const APPROVAL_SEEDS = cast<Record<"apply_loan" | "borrower_file", ApprovalView>>(approvalsSeed);
+const APPROVAL_SEEDS = cast<Record<"apply_loan", ApprovalView>>(approvalsSeed);
 
-function ensureApproval(key: "apply_loan" | "borrower_file"): ApprovalView {
+function ensureApproval(key: "apply_loan"): ApprovalView {
   const s = load();
   const seed = cast<Record<string, ApprovalView>>(approvalsSeed)[key];
   const found = s.approvals.find((a) => a.id === seed.id);
@@ -379,7 +382,15 @@ function ensureApproval(key: "apply_loan" | "borrower_file"): ApprovalView {
   return s.approvals[s.approvals.length - 1];
 }
 
+/** Side-effect free, as on the API: nothing is queued. */
 export async function capexEvaluate(_req: CapexRequest): Promise<CapexView> {
+  void _req;
+  await delay();
+  return clone(cast<CapexView>(capexJson));
+}
+
+/** The owner's explicit application: queues the recorded Tier-2 application once. */
+export async function capexApply(_req: CapexApplyRequest): Promise<CapexApplyResult> {
   void _req;
   await delay();
   const s = load();
@@ -387,22 +398,16 @@ export async function capexEvaluate(_req: CapexRequest): Promise<CapexView> {
   const approval = ensureApproval("apply_loan");
   if (first) append("request_approval");
   save();
-  const res = clone(cast<CapexView>(capexJson));
+  const res = clone(cast<CapexApplyResult>(capexApplyJson));
   res.approval_id = approval.id;
   return res;
 }
 
+/** Read-only, as on the API: no operation, no approval. */
 export async function borrowerFile(_req: BorrowerFileRequest): Promise<BorrowerFileView> {
   void _req;
   await delay();
-  const s = load();
-  const first = !s.approvals.some((a) => a.id === APPROVAL_SEEDS.borrower_file.id);
-  const approval = ensureApproval("borrower_file");
-  if (first) append("borrower_file");
-  save();
-  const res = clone(cast<BorrowerFileView>(borrowerFileJson));
-  res.approval_id = approval.id;
-  return res;
+  return clone(cast<BorrowerFileView>(borrowerFileJson));
 }
 
 export async function decideApproval(id: string, decision: ApprovalDecision): Promise<ApprovalView> {
@@ -423,9 +428,8 @@ export async function decideApproval(id: string, decision: ApprovalDecision): Pr
     save();
     return { ...clone(a), result_message: done.message };
   }
-  const loan = id === APPROVAL_SEEDS.apply_loan.id;
   a.status = decision === "APPROVE" ? "APPROVED" : "REJECTED";
-  const op = append(`${decision === "APPROVE" ? "approve" : "reject"}_${loan ? "apply_loan" : "borrower_file"}`);
+  const op = append(decision === "APPROVE" ? "approve_apply_loan" : "reject_apply_loan");
   save();
   return { ...clone(a), result_message: op.message };
 }

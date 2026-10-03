@@ -1,7 +1,7 @@
 "use client";
 
 import { createStore } from "./create-store";
-import type { BorrowerFileView, CapexView, FundingView, NegotiationView, OfferView, VerdictView } from "./types";
+import type { BorrowerFileView, CapexApplyResult, CapexView, FundingView, NegotiationView, OfferView, VerdictView } from "./types";
 
 /**
  * Client-side session for the guided demo: which step we are on, which offer is "current", and the
@@ -17,6 +17,8 @@ export interface DemoState {
   verdicts: Record<string, VerdictView>;
   negotiations: Record<string, NegotiationView>;
   capex: CapexView | null;
+  /** The application POST /capex/apply queued for the selected structure (waiting for the owner in Approvals). */
+  capexApplication: CapexApplyResult | null;
   borrowerFile: BorrowerFileView | null;
   /**
    * The Debt Desk view as it stood when the decision was made. Executing a plan changes the books, so
@@ -39,6 +41,7 @@ export const INITIAL_DEMO: DemoState = {
   verdicts: {},
   negotiations: {},
   capex: null,
+  capexApplication: null,
   borrowerFile: null,
   funding: null,
   rewordedId: null,
@@ -77,6 +80,10 @@ export function recordVerdict(verdict: VerdictView): void {
 
 export function recordNegotiation(n: NegotiationView): void {
   demoStore.set((s) => ({ ...s, negotiations: { ...s.negotiations, [n.offer_id]: n }, version: s.version + 1 }));
+}
+
+export function recordCapexApplication(capexApplication: CapexApplyResult): void {
+  demoStore.set((s) => ({ ...s, capexApplication, version: s.version + 1 }));
 }
 
 export function recordCapex(capex: CapexView): void {

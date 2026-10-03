@@ -48,7 +48,7 @@ process.env.NEXT_PUBLIC_API_URL = API;
 process.env.NEXT_PUBLIC_API_MODE = "live";
 const { setOwnerToken } = await import("../lib/auth.ts");
 const { live } = await import("../lib/live/index.ts");
-const { DEMO_STEPS, runBorrowerFile, runCapex } = await import("../lib/demo.ts");
+const { DEMO_STEPS, runCapex, runCapexApply } = await import("../lib/demo.ts");
 const { demoStore, clearDemo } = await import("../lib/demo-store.ts");
 const { promptsFor } = await import("../lib/chat-prompts.ts");
 setOwnerToken(OWNER_TOKEN);
@@ -137,15 +137,14 @@ for (const s of DEMO_STEPS) {
     ops.draw_line_hard_line = template(draw);
     ops.submit_invoice = template(invoice);
   }
-  if (s.id === "capex") {
-    files["capex.json"] = d.capex;
+  // The capex evaluation writes nothing; the approval step is the owner's explicit application (POST /capex/apply, one
+  // Tier-2 operation waiting in the queue) and the read-only borrower file (no operation, no approval).
+  if (s.id === "capex") files["capex.json"] = d.capex;
+  if (s.id === "approval") {
+    files["capex_apply.json"] = d.capexApplication;
     ops.request_approval = template((await ledgerTail(1))[0]);
     files["approvals_seed.json"] = { apply_loan: (await live.getApprovals())[0] };
-  }
-  if (s.id === "approval") {
     files["borrower_file.json"] = d.borrowerFile;
-    ops.borrower_file = template((await ledgerTail(1))[0]);
-    files["approvals_seed.json"].borrower_file = (await live.getApprovals())[1];
   }
   if (s.id === "fastcapital") {
     const sec = Object.values(d.offers).find((o) => o.offer.counterparty_id !== "BUYER-1");
@@ -156,24 +155,18 @@ for (const s of DEMO_STEPS) {
 }
 
 // ------------------------------------------------------------------ the owner's decisions in the approval queue (ledger rows)
-async function queueTwo() {
+async function queueOne() {
   await reset();
   await runCapex();
-  await runBorrowerFile();
+  await runCapexApply();
   return live.getApprovals();
 }
-let q = await queueTwo();
+let q = await queueOne();
 await live.decideApproval(q[0].id, "APPROVE");
-await live.decideApproval(q[1].id, "APPROVE");
-let tail = await ledgerTail(2);
-ops.approve_apply_loan = template(tail[0]);
-ops.approve_borrower_file = template(tail[1]);
-q = await queueTwo();
+ops.approve_apply_loan = template((await ledgerTail(1))[0]);
+q = await queueOne();
 await live.decideApproval(q[0].id, "REJECT");
-await live.decideApproval(q[1].id, "REJECT");
-tail = await ledgerTail(2);
-ops.reject_apply_loan = template(tail[0]);
-ops.reject_borrower_file = template(tail[1]);
+ops.reject_apply_loan = template((await ledgerTail(1))[0]);
 files["ops.json"] = ops;
 
 // ------------------------------------------------------------------ a typed offer (no server fixture): early payment inside every limit
