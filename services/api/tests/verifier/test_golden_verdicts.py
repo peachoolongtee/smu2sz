@@ -123,17 +123,20 @@ def test_ex01_counter_a(offer_id, g):
 
 
 @pytest.mark.parametrize("offer_id", EX01)
-def test_ex01_offers_no_price_adjustment_counter(offer_id, g):
-    """The price-adjustment counter (60-day terms + 0.45%, then 55 and 50 days) is not offered: each leaves the
-    day-2 invoice unpaid on day 47, ¥85,000 below the reserve (hand derivation in
-    tests/verifier/test_counter_property.py::test_ex01_offers_option_a_only). The verdict says so in one sentence."""
-    v = bundle(offer_id).verdict
-    assert [c.label for c in v.counters] == ["Option A"]
-    assert not any(o.type == ObligationType.PRICE_ADJUSTMENT for c in v.counters for o in c.obligations)
-    assert ("No price-adjustment counter: 60-day terms would take cash below the reserve with no new funding: "
-            "a shortfall of ¥85,000.00 on day 47 (at most ¥130,000.00, day 60); 55- or 50-day terms would take cash "
-            "below the reserve with no new funding: a shortfall of ¥85,000.00 on day 47.") in v.summary
-    assert g["counter_b_net_12m"] < 0  # the 60-day price adjustment would still more than cover its cost
+def test_ex01_counter_b(offer_id, g):
+    """Option B is the 55-day counter: 60-day terms fail their own re-check (¥85,000 short on day 47, ¥130,000 by day
+    60, no admissible cure); 55 days is curable in time. Hand derivation in
+    tests/verifier/test_counter_property.py::test_ex01_offers_option_b_at_55_days."""
+    b = bundle(offer_id).verdict.counters[1]
+    assert b.label == "Option B"
+    terms, price = b.obligations
+    assert terms.type == ObligationType.TERMS_EXTENSION and terms.days_delta == 10
+    assert price.type == ObligationType.PRICE_ADJUSTMENT and price.rate_bp == 30
+    assert price.base.amount_fen == 42_000_000 and price.contingency.value == "FIRM"
+    assert b.text == "55-day terms accepted with a 0.30% price adjustment on future invoices, no rebate."
+    assert "¥1,260.00 per invoice" in b.formula and "¥1,247.53" in b.formula  # 420,000 × 10/365 × 10.8417%
+    assert b.supplier_cost_fen == 0
+    assert g["counter_b_net_12m"] < 0  # the oracle's 60-day package, too, more than covers its cost
 
 
 def _normalise(x: Any, ids: set[str]) -> Any:
@@ -223,13 +226,12 @@ def test_ex06_bounded_extension(g):
     assert v.outcome == Outcome.REJECT and "AGG_CONCESSION_EXCEEDED" in codes(v.violations)
     assert v.forward_concession_total_fen == 561_390 == 3 * g["extension_committed_per_invoice"]
     # Neither bounded counter is offered: +15 days on the day-2 invoice moves its ¥420,000 from day 47 to day 62, so
-    # day 47 closes at ¥215,000 (¥85,000 below the reserve) and day 60, after the loan's ¥45,000, at ¥170,000.
+    # day 47 closes at ¥215,000 (¥85,000 below the reserve) and day 60, after the loan's ¥45,000, at ¥170,000; the
+    # re-check finds no admissible cure, as for EX01's 60-day terms.
     assert v.counters == []
-    shortfall = "a shortfall of ¥85,000.00 on day 47 (at most ¥130,000.00, day 60)"
-    assert (f"No bounded-extension counter (+15 days on the next two invoices): it would take cash below the reserve "
-            f"with no new funding: {shortfall}") in v.summary
-    assert (f"No bounded-extension counter (+15 days on the next three invoices, a 0.50% credit): it would take cash "
-            f"below the reserve with no new funding: {shortfall}") in v.summary
+    why = "it cannot be funded from committed sources: the shortfall of ¥85,000.00 on day 47 has no cure"
+    assert f"No bounded-extension counter (+15 days on the next two invoices): {why}" in v.summary
+    assert f"No bounded-extension counter (+15 days on the next three invoices, a 0.50% credit): {why}" in v.summary
 
 
 # ---------------------------------------------------------------- EX09 term sheet

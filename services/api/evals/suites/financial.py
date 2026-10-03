@@ -192,17 +192,23 @@ def compute() -> dict[str, tuple[Any, str]]:
     put("counter_a_discount",
         lambda: project(state, list(a.obligations), [], Mode.CONSERVATIVE, H).discounts_posted_fen,
         "financial.project(Option A).discounts_posted_fen")
-    pa = next(o for o in opt["Option B"].obligations if o.type == ObligationType.PRICE_ADJUSTMENT)
+    # The golden counter_b_* values are the 60-day + 0.45% package (the oracle's Option B). Since the counter
+    # property, the verifier offers Option B at 55 days + 0.30% on these books (60 days fails its own re-check), so the
+    # 60-day package is built here directly, as the what-if `option_b` preset builds it, and valued by the engine.
+    pa = Obligation(id="EVAL-PRICE", type=ObligationType.PRICE_ADJUSTMENT, counterparty_id="BUYER-1", rate_bp=45,
+                    base=ObligationBase(kind=BaseKind.FUTURE_INVOICES, amount_fen=42_000_000),
+                    contingency=Contingency.FIRM, duration=Duration(kind=DurationKind.RECURRING_PERPETUAL),
+                    spans=span, confidence=1.0)
     put("counter_b_price_adj_per_invoice",
         lambda: -value_concessions([pa], state, rate, "eval", m.forward_concession_horizon_days)[0].per_invoice_fen,
-        "financial.value_concessions(Option B price adjustment).per_invoice_fen")
+        "financial.value_concessions(60-day package's 0.45% price adjustment).per_invoice_fen")
     put("counter_b_price_gain_12m",
         lambda: value_concessions([pa], state, rate, "eval", m.forward_concession_horizon_days)[0].value_fen,
-        "financial.value_concessions(Option B price adjustment): the same 13 invoices as the extension")
+        "financial.value_concessions(60-day package's price adjustment): the same 13 invoices as the extension")
     put("counter_b_net_12m",
         lambda: sum(cv.value_fen for cv in value_concessions(
-            list(opt["Option B"].obligations), state, rate, "eval", m.forward_concession_horizon_days)),
-        "financial.value_concessions(Option B): extension + price adjustment, unfloored")
+            [ext, pa], state, rate, "eval", m.forward_concession_horizon_days)),
+        "financial.value_concessions(+15 days and 0.45%): extension + price adjustment, unfloored")
 
     # EX02: line + partial early pay at the offered 1.5%
     ex02 = compile_offer(offer_documents("EX02_EARLY_1_5"), "BUYER-1")

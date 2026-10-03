@@ -315,8 +315,8 @@ def test_every_golden_counter_reverifies_on_unchanged_books(client: TestClient, 
         for counter in verdict.counters:
             c = runtime.executor.propose_commitment(verdict.id, expires_day=7, counter_id=counter.id)
             got = runtime.reverify(c, runtime.store.get_state(), runtime.store.get_mandate(), 0)
-            # every counter offered passes, EX01's included: the verifier no longer offers a price-adjustment
-            # counter whose terms fail this same re-check (60/55/50 days leave day 47 ¥85,000 below the reserve)
+            # every counter offered passes, EX01's Option B included: the verifier offers it at 55 days, the longest
+            # terms that pass this same re-check (60 days leaves day 47 ¥85,000 below the reserve with no cure)
             assert got in (Outcome.ACCEPT, Outcome.NEEDS_OWNER_APPROVAL), (fixture, counter.id, got)
 
 

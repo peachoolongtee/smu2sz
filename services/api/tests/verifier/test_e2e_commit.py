@@ -69,7 +69,7 @@ def _accept(ex: Executor, clock: _Clock, verdict: Any, c: Any) -> Any:
 def test_ex01_option_a_then_line_draw_executes_at_tier1(desk):
     store, ex, clock = desk
     v = _verdict(store, "EX01_PACKAGE")  # no owner declarations: the rebate base comes from expected orders
-    assert v.outcome == Outcome.REJECT and [c.label for c in v.counters] == ["Option A"]
+    assert v.outcome == Outcome.REJECT and [c.label for c in v.counters] == ["Option A", "Option B"]
     a = v.counters[0]
 
     c = ex.propose_commitment(v.id, counter_id=a.id, expires_day=5)
@@ -115,13 +115,20 @@ def test_ex05_accept_waits_for_the_owner_then_executes(desk):
     assert store.verify_chain()
 
 
-def test_ex01_offers_no_terms_counter_to_commit(desk):
-    """The price-adjustment counter fails its own re-check on these books, so the verdict carries none and no
-    commitment on longer terms can be proposed from it."""
-    store, _, _ = desk
+def test_ex01_option_b_needs_the_owner(desk):
+    """Option B is the 55-day counter (60 days fails its own re-check); it lengthens terms, so the owner decides."""
+    store, ex, clock = desk
     v = _verdict(store, "EX01_PACKAGE")
-    assert not any(o.type == ObligationType.TERMS_EXTENSION for c in v.counters for o in c.obligations)
-    assert "No price-adjustment counter: 60-day terms would take cash below the reserve" in v.summary
+    b = v.counters[1]
+    assert b.label == "Option B" and b.text.startswith("55-day terms accepted")
+    c = ex.propose_commitment(v.id, counter_id=b.id, expires_day=5)
+    assert c.obligations == b.obligations and c.forward_value_fen == b.forward_value_fen == 0
+    result = _accept(ex, clock, v, c)
+    assert (result.status, result.tier) == (OperationStatus.PENDING_APPROVAL, Tier.TIER_2)
+    assert "lengthens payment terms" in result.message
+    assert store.get_commitment(c.id).status == CommitmentStatus.PROPOSED
+    assert store.get_state().forward_concessions == []
+    assert store.verify_chain()
 
 
 def test_ex01_verdict_itself_cannot_be_committed(desk):

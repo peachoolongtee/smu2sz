@@ -111,8 +111,8 @@ def test_the_plan_without_the_early_payment_is_said_to_need_the_owner(monkeypatc
     # The early-pay counter (0.85% for the 10 days RCV-A has left) fails its own re-check on these books: its all-in
     # rate is above the 15% ceiling, so it is not offered (the counter property). As built, it states the flags.
     assert flagged.verdict.counters == []
-    assert ("No early-pay counter (early settlement of ¥90,800 at 0.85%): it fails its own re-check "
-            "(REJECT: MAX_APR_EXCEEDED)") in flagged.verdict.summary
+    assert ("No early-pay counter (early settlement of ¥90,800 at 0.85%): it is above the mandate's rate ceiling: "
+            "28.4463% against 15.00%") in flagged.verdict.summary
     offer = compile_offer(offer_documents("EX02_EARLY_1_5"), "BUYER-1")
     mandate = load_signed_mandate()
     (counter,) = counters(offer, flagged.verdict, state, mandate, bound=flagged.bound_obligations)

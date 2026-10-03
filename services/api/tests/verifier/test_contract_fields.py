@@ -56,11 +56,16 @@ def _values(obs, state, mandate):
 
 @pytest.mark.parametrize("offer_id", ["EX01_PACKAGE", "EX01B_REWORDED"])
 def test_ex01_counter_forward_values(offer_id, g, state, mandate):
-    # Option A only: the price-adjustment counter fails its own re-check on these books (tests/verifier/
-    # test_counter_property.py derives the day-47 shortfall), so it is not offered.
-    (a,) = bundle(offer_id).verdict.counters
+    a, b = bundle(offer_id).verdict.counters
     # Option A: an immediate discount is not a forward concession; its cost is immediate.
     assert a.forward_value_fen == 0 and a.supplier_cost_fen == g["counter_a_total"]
+    # Option B (55 days + 0.30%; 60 days fails its own re-check, tests/verifier/test_counter_property.py): the
+    # extension net of the FIRM price adjustment on the same 13 invoices of the window. Extension: 13 × 420,000 ×
+    # 10/365 × 10.8417% = 16,217.945 → ¥16,217.95; price: 13 × 420,000 × 0.30% = ¥16,380.00; net −¥162.05, floored at 0.
+    ext_v, price_v = _values(b.obligations, state, mandate)
+    assert (ext_v, price_v) == (1_621_795, -1_638_000)
+    assert ext_v + price_v == -16_205
+    assert b.forward_value_fen == max(0, ext_v + price_v) == 0
 
 
 def test_ex02_counter_books_no_forward_value(g):
@@ -70,7 +75,8 @@ def test_ex02_counter_books_no_forward_value(g):
 
 def test_ex06_bounded_counters_are_valued_but_not_offered(g, state, mandate):
     """Both bounded-extension counters are still valued as before; neither is offered, because each fails its own
-    re-check on these books (a +15-day extension of the day-2 invoice leaves day 47 ¥85,000 below the reserve)."""
+    re-check on these books (a +15-day extension of the day-2 invoice leaves day 47 ¥85,000 below the reserve, with
+    no admissible cure)."""
     b = bundle("EX06_THREE_INVOICES")
     assert b.verdict.counters == []
     a, firm = counters(compiled("EX06_THREE_INVOICES"), b.verdict, state, mandate, bound=b.bound_obligations)

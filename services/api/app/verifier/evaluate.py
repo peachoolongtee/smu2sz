@@ -939,23 +939,34 @@ def counter_recheck(
 ) -> Recheck:
     """The counter property's re-check: a counter's obligations evaluated as an offer on these same books (the
     commitments in force stay live), as the commit hook will evaluate them. The re-check generates no counters of
-    its own. A counter whose terms the ledger cannot carry gets NO_VERDICT."""
-    shared = router or _Router(mandate)
+    its own. A counter whose terms the ledger cannot carry gets NO_VERDICT. Its `plan` is the router behind its
+    memo, so a counter builder that prices liquidity on the counter's obligations shares the re-check's search."""
+    return _CounterRecheck(state, mandate, trusted_owner_key_hex, day, commitments, router or _Router(mandate))
 
-    def check(c: CounterProposal) -> Verdict:
-        offer = counter_offer(c, day)
+
+class _CounterRecheck:
+    def __init__(self, state: FinancialState, mandate: Mandate, key: str, day: int,
+                 commitments: Sequence[Commitment], router: _Router) -> None:
+        self.state, self.mandate, self.key, self.day = state, mandate, key, day
+        self.commitments, self.router = commitments, router
+
+    def plan(self, state: FinancialState, obligations: Sequence[Obligation], mandate: Mandate,
+             basis: str = "COMMITTED") -> FundingPlan:
+        return self.router.plan(state, list(obligations), mandate, basis)
+
+    def __call__(self, c: CounterProposal) -> Verdict:
+        offer = counter_offer(c, self.day)
         try:
-            return _evaluate(offer, state, mandate, trusted_owner_key_hex=trusted_owner_key_hex, day=day,
-                             commitments=commitments, plans="committed", router=shared, with_counters=False).verdict
+            return _evaluate(offer, self.state, self.mandate, trusted_owner_key_hex=self.key, day=self.day,
+                             commitments=self.commitments, plans="committed", router=self.router,
+                             with_counters=False).verdict
         except EngineError as e:
-            res = _Result(offer.offer_id, offer.version, state, mandate, day)
+            res = _Result(offer.offer_id, offer.version, self.state, self.mandate, self.day)
             res.violations = [Violation(
                 code=ViolationCode.UNRESOLVED_SCOPE, message="The counter's terms are inconsistent with the ledger",
                 observed=type(e).__name__, limit="terms the ledger can carry",
                 formula="project(state, obligations) succeeds", inputs={"reason": str(e)[:200]})]
             return res.verdict(Outcome.NO_VERDICT, Tier.TIER_1, _summary(Outcome.NO_VERDICT, res.violations))
-
-    return check
 
 
 def evaluate(

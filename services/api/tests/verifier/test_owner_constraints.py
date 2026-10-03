@@ -86,8 +86,7 @@ def test_constraints_never_loosen_a_reject_and_filter_its_counters(state, mandat
     ex01 = compiled("EX01_PACKAGE")
     kw = {"owner_declared": declared_for("EX01_PACKAGE")}
     plain = _eval(ex01, state, mandate, **kw).verdict
-    assert plain.outcome == Outcome.REJECT and [c.label for c in plain.counters] == ["Option A"]  # no Option B: its
-    # 60/55/50-day terms fail their own re-check (tests/verifier/test_counter_property.py)
+    assert plain.outcome == Outcome.REJECT and [c.label for c in plain.counters] == ["Option A", "Option B"]
     v = _eval(ex01, state, mandate, owner_constraints=OwnerConstraints(zero_forward_concessions=True), **kw).verdict
     assert v.outcome == Outcome.REJECT and v.violations == plain.violations
     assert [c.label for c in v.counters] == ["Option A"]
