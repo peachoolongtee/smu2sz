@@ -1,7 +1,7 @@
 {
   "session_id": "rec-quiet-en",
   "turn": 1,
-  "reply": "Day 0. 1 warning: Reserve headroom thin on day 20.",
+  "reply": "Day 0. 1 warning: Reserve headroom thin on day 30.",
   "intent": "SHOW_ALERTS",
   "lang": "en",
   "plan": [],

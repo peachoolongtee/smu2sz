@@ -1,10 +1,11 @@
 {
   "day": 0,
   "basis": "CONSERVATIVE",
+  "state_version": 1,
   "projected_offer_id": null,
   "counts": {
     "CRITICAL": 1,
-    "WARNING": 0,
+    "WARNING": 1,
     "INFO": 0
   },
   "alerts": [
@@ -13,8 +14,8 @@
       "kind": "RESERVE_BREACH_AHEAD",
       "severity": "CRITICAL",
       "title": "Reserve breach ahead on day 12",
-      "detail": "Projected cash closes at ¥60,000.00 on day 12, ¥240,000.00 below the reserve floor; the gap peaks at ¥360,000.00 on day 20 and lasts to day 31. A committed cure exists: DRAW_FACILITY FAC-LINE ¥150,000.00 + SUBMIT_INVOICE_FOR_FINANCING FAC-IF ¥336,000.00, cost ¥2,994.08 (11.2% a year for 29 days).",
-      "formula": "shortfall = floor − closing_d: ¥300,000.00 − ¥60,000.00 = ¥240,000.00 (day 12); max over days 12..31 = ¥360,000.00",
+      "detail": "Projected cash closes at ¥60,000.00 on day 12, ¥240,000.00 below the reserve floor; the gap peaks at ¥405,000.00 on day 30 and lasts to day 31. A committed cure exists: DRAW_FACILITY FAC-LINE ¥150,000.00 + SUBMIT_INVOICE_FOR_FINANCING FAC-IF ¥336,000.00, cost ¥2,994.08 (11.2% a year for 29 days).",
+      "formula": "shortfall = floor − closing_d: ¥300,000.00 − ¥60,000.00 = ¥240,000.00 (day 12); max over days 12..31 = ¥405,000.00",
       "day": 12,
       "month": null,
       "amount_fen": 24000000,
@@ -25,8 +26,8 @@
         "floor": "¥300,000.00",
         "closing": "¥60,000.00",
         "last_day": "31",
-        "worst_day": "20",
-        "max_shortfall": "¥360,000.00",
+        "worst_day": "30",
+        "max_shortfall": "¥405,000.00",
         "cure_end_day_1": "32"
       },
       "suggested": [
@@ -71,6 +72,27 @@
       "actionable": true,
       "basis": "CONSERVATIVE",
       "amount_display": "¥240,000.00"
+    },
+    {
+      "id": "ALERT-HEADROOM-32",
+      "kind": "RESERVE_HEADROOM_LOW",
+      "severity": "WARNING",
+      "title": "Reserve headroom thin on day 32",
+      "detail": "Cash stays above the floor but only by ¥15,000.00 on day 32 (15 day(s) under 10% of the floor).",
+      "formula": "closing − floor = ¥315,000.00 − ¥300,000.00 = ¥15,000.00 < 10% × ¥300,000.00",
+      "day": 32,
+      "month": null,
+      "amount_fen": 1500000,
+      "committed_cure": null,
+      "commitment_id": null,
+      "receivable_id": null,
+      "inputs": {
+        "days": "32, 33, 34, 35, 36, 37, 38, 39, 40, 41"
+      },
+      "suggested": [],
+      "actionable": false,
+      "basis": "CONSERVATIVE",
+      "amount_display": "¥15,000.00"
     }
   ],
   "note": "A suggested operation is executed only through POST /alerts/{id}/act or POST /operations, never by itself."

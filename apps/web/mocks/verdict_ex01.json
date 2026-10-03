@@ -1,5 +1,5 @@
 {
-  "id": "VER-a4d828a7825e",
+  "id": "VER-df13ee3a54e2",
   "offer_id": "OFF-f806f79b6c21",
   "offer_version": 1,
   "outcome": "REJECT",
@@ -46,21 +46,21 @@
       "message": "Under this offer projected cash falls below the reserve on day 47",
       "day": 47,
       "month": null,
-      "observed": "¥254,960.00",
+      "observed": "¥209,960.00",
       "limit": "¥300,000.00",
       "curable": true,
-      "cure_cost_fen": 80270,
-      "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥802.70 (cannot run today); the extension itself costs ¥1,871.30 per invoice",
-      "formula": "closing_cash(day 47) >= min_cash: ¥254,960.00 < ¥300,000.00, shortfall ¥45,040.00",
+      "cure_cost_fen": 240667,
+      "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥2,406.67 (cannot run today); the extension itself costs ¥1,871.30 per invoice; the cure cannot run today: Invoice financing (onboarded platform): advance ¥135,040.00 on RI:BUYER-1:32: RI:BUYER-1:32 is not an invoice the executor can finance today; it is issued on day 32",
+      "formula": "closing_cash(day 47) >= min_cash: ¥209,960.00 < ¥300,000.00, shortfall ¥90,040.00",
       "inputs": {
         "day": "47",
-        "closing_cash": "¥254,960.00",
-        "baseline_closing_cash": "¥680,000.00",
+        "closing_cash": "¥209,960.00",
+        "baseline_closing_cash": "¥635,000.00",
         "min_cash": "¥300,000.00",
-        "shortfall": "¥45,040.00",
-        "shortfall_fen": "4504000",
-        "max_shortfall": "¥45,040.00",
-        "max_shortfall_day": "47",
+        "shortfall": "¥90,040.00",
+        "shortfall_fen": "9004000",
+        "max_shortfall": "¥135,040.00",
+        "max_shortfall_day": "60",
         "recovery_day": "62",
         "days_below_floor": "15",
         "mode": "CONSERVATIVE",
@@ -68,10 +68,12 @@
         "structural_cost_per_invoice": "¥1,871.30",
         "covenant_pro_forma_dscr": "1.92x",
         "covenant_pro_forma_leverage": "1.72x",
-        "cure_plan": "committed plan: ¥802.70 (cannot run today)"
+        "cure_plan": "committed plan: ¥2,406.67 (cannot run today)",
+        "cure_executable_now": "false",
+        "cure_not_executable_reason": "Invoice financing (onboarded platform): advance ¥135,040.00 on RI:BUYER-1:32: RI:BUYER-1:32 is not an invoice the executor can finance today; it is issued on day 32"
       },
       "spans": [],
-      "cure_cost_display": "¥802.70"
+      "cure_cost_display": "¥2,406.67"
     },
     {
       "code": "DISCOUNT_ABOVE_BREAK_EVEN",
@@ -89,8 +91,8 @@
         "days_early": "30",
         "receivable_id": "RCV-A",
         "implied_annual_rate": "14.7773%",
-        "line_plus_partial_at_offered_rate": "¥841.64 + ¥2,550.61 = ¥3,392.25",
-        "router_optimum": "¥841.64 + ¥1,871.30 = ¥2,712.94",
+        "line_plus_partial_at_offered_rate": "¥841.64 + ¥3,097.17 = ¥3,938.81",
+        "router_optimum": "¥841.64 + ¥2,272.29 = ¥3,113.93",
         "break_even": "0.8832%",
         "break_even_bp_floor": "88",
         "break_even_days": "30"
@@ -106,20 +108,20 @@
     },
     {
       "code": "EARLY_PAY_DEARER_THAN_PLAN",
-      "message": "The early payment costs ¥5,529.64, not less than the plan without it (¥2,870.95)",
+      "message": "The early payment costs ¥6,508.05, not less than the plan without it (¥3,550.64)",
       "day": null,
       "month": null,
-      "observed": "¥5,529.64",
-      "limit": "< ¥2,870.95",
+      "observed": "¥6,508.05",
+      "limit": "< ¥3,550.64",
       "curable": null,
       "cure_cost_fen": null,
       "cure_note": null,
-      "formula": "C1 = interest + fees + discounts with the offer = ¥5,529.64; C0 = the same without the early payment = ¥2,870.95; C1 < C0 required",
+      "formula": "C1 = interest + fees + discounts with the offer = ¥6,508.05; C0 = the same without the early payment = ¥3,550.64; C1 < C0 required",
       "inputs": {
-        "plan_with_offer": "committed plan: ¥489.64",
-        "plan_without_offer": "committed plan: ¥841.64 + ¥1,514.86 + ¥514.45 = ¥2,870.95",
-        "cost_with_offer": "¥5,529.64",
-        "cost_without_offer": "¥2,870.95",
+        "plan_with_offer": "committed plan: ¥1,468.05",
+        "plan_without_offer": "committed plan: ¥841.64 + ¥1,069.32 + ¥1,639.68 = ¥3,550.64",
+        "cost_with_offer": "¥6,508.05",
+        "cost_without_offer": "¥3,550.64",
         "legs": "RCV-A at 1.20%"
       },
       "spans": [
@@ -264,12 +266,12 @@
   "forward_concession_total_fen": 2832692,
   "counters": [
     {
-      "id": "CTR-6cf1543f0dde",
+      "id": "CTR-ce19415db1d4",
       "label": "Option A",
-      "text": "Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥211,900 of this invoice at 0.85%.",
+      "text": "Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥257,200 of this invoice at 0.85%.",
       "obligations": [
         {
-          "id": "CTR-6cf1543f0dde-O2",
+          "id": "CTR-ce19415db1d4-O2",
           "type": "IMMEDIATE_DISCOUNT",
           "counterparty_id": "BUYER-1",
           "rate_bp": 85,
@@ -279,10 +281,10 @@
           "effective_day": 2,
           "base": {
             "kind": "INVOICE",
-            "amount_fen": 21190000,
+            "amount_fen": 25720000,
             "receivable_id": "RCV-A",
             "events_per_year": null,
-            "amount_display": "¥211,900.00"
+            "amount_display": "¥257,200.00"
           },
           "contingency": "FIRM",
           "duration": {
@@ -292,10 +294,10 @@
           },
           "spans": [
             {
-              "doc_id": "CTR-6cf1543f0dde",
+              "doc_id": "CTR-ce19415db1d4",
               "start": 34,
               "end": 109,
-              "text": "We will accept early settlement on up to ¥211,900 of this invoice at 0.85%."
+              "text": "We will accept early settlement on up to ¥257,200 of this invoice at 0.85%."
             }
           ],
           "confidence": 1,
@@ -303,21 +305,21 @@
           "rate_display": "0.85%"
         }
       ],
-      "supplier_cost_fen": 264224,
+      "supplier_cost_fen": 302777,
       "forward_value_fen": 0,
       "rationale": "Early settlement at 0.85% is cheaper than financing the invoice on the marginal committed source; the line covers the rest of the near-term gap.",
-      "formula": "break-even: d/(1−d) < c, c = 10.8417% × 30/365 = 0.8911% → d < 0.8832%; largest whole-5bp rate below it = 0.85%. Face: (near-term need ¥360,000.00 − committed line ¥150,000.00) / (1 − 0.85%) = ¥211,800.30 → up to ¥211,900.00 (rounded up to a whole ¥100, at most the invoice). Cost: discount ¥1,801.15 + funding the rest of the gap ¥841.09 (committed plan: ¥841.09) = ¥2,642.24",
-      "supplier_cost_display": "¥2,642.24",
+      "formula": "break-even: d/(1−d) < c, c = 10.8417% × 30/365 = 0.8911% → d < 0.8832%; largest whole-5bp rate below it = 0.85%. Face: (near-term need ¥405,000.00 − committed line ¥150,000.00) / (1 − 0.85%) = ¥257,186.08 → up to ¥257,200.00 (rounded up to a whole ¥100, at most the invoice). Cost: discount ¥2,186.20 + funding the rest of the gap ¥841.57 (committed plan: ¥841.57) = ¥3,027.77",
+      "supplier_cost_display": "¥3,027.77",
       "forward_value_display": "¥0.00",
       "outbound_blocked": false
     },
     {
-      "id": "CTR-6576b0a62cbf",
+      "id": "CTR-11497d2ec759",
       "label": "Option B",
       "text": "60-day terms accepted with a 0.45% price adjustment on future invoices, no rebate.",
       "obligations": [
         {
-          "id": "CTR-6576b0a62cbf-O1",
+          "id": "CTR-11497d2ec759-O1",
           "type": "TERMS_EXTENSION",
           "counterparty_id": "BUYER-1",
           "rate_bp": null,
@@ -339,7 +341,7 @@
           },
           "spans": [
             {
-              "doc_id": "CTR-6576b0a62cbf",
+              "doc_id": "CTR-11497d2ec759",
               "start": 0,
               "end": 21,
               "text": "60-day terms accepted"
@@ -349,7 +351,7 @@
           "unresolved": []
         },
         {
-          "id": "CTR-6576b0a62cbf-O2",
+          "id": "CTR-11497d2ec759-O2",
           "type": "PRICE_ADJUSTMENT",
           "counterparty_id": "BUYER-1",
           "rate_bp": 45,
@@ -372,7 +374,7 @@
           },
           "spans": [
             {
-              "doc_id": "CTR-6576b0a62cbf",
+              "doc_id": "CTR-11497d2ec759",
               "start": 22,
               "end": 82,
               "text": "with a 0.45% price adjustment on future invoices, no rebate."
@@ -393,35 +395,35 @@
     }
   ],
   "plan": {
-    "id": "PLAN-COM-736507ffd113",
+    "id": "PLAN-COM-98b519315a32",
     "basis": "COMMITTED",
-    "need_fen": 4504000,
+    "need_fen": 13504000,
     "actions": [
       {
         "kind": "FINANCE_INVOICE",
         "facility_id": "FAC-IF",
         "day": 0,
-        "amount_fen": 4504000,
-        "receivable_id": "RI:BUYER-1:2",
+        "amount_fen": 13504000,
+        "receivable_id": "RI:BUYER-1:32",
         "repay_day": null,
         "rate_bp": null,
-        "amount_display": "¥45,040.00"
+        "amount_display": "¥135,040.00"
       }
     ],
     "costs": [
       {
-        "label": "Invoice financing (onboarded platform): advance ¥45,040.00 on RI:BUYER-1:2",
-        "fen": 80270,
+        "label": "Invoice financing (onboarded platform): advance ¥135,040.00 on RI:BUYER-1:32",
+        "fen": 240667,
         "facility_id": "FAC-IF",
-        "formula": "45,040.00 × 7.8% × 60/365 (57 days billed as 2 × 30-day period) = 577.50; 45,040.00 × 0.25% × 2 = 225.20; total ¥802.70",
+        "formula": "135,040.00 × 7.8% × 60/365 (57 days billed as 2 × 30-day period) = 1,731.47; 135,040.00 × 0.25% × 2 = 675.20; total ¥2,406.67",
         "needs_owner_approval": false,
         "approval_reason": "",
         "executable_now": false,
-        "not_executable_reason": "RI:BUYER-1:2 is not an invoice the executor can finance today; it is issued on day 2",
-        "display": "¥802.70"
+        "not_executable_reason": "RI:BUYER-1:32 is not an invoice the executor can finance today; it is issued on day 32",
+        "display": "¥2,406.67"
       }
     ],
-    "total_cost_fen": 80270,
+    "total_cost_fen": 240667,
     "admissible": true,
     "violations": [],
     "marginal_cost_annual": {
@@ -431,19 +433,19 @@
     },
     "marginal_facility_id": "FAC-IF",
     "rejected": [],
-    "label": "committed plan: ¥802.70 (cannot run today)",
+    "label": "committed plan: ¥2,406.67 (cannot run today)",
     "needs_owner_approval": false,
     "approval_reason": "",
     "executable_now": false,
-    "not_executable_reason": "Invoice financing (onboarded platform): advance ¥45,040.00 on RI:BUYER-1:2: RI:BUYER-1:2 is not an invoice the executor can finance today; it is issued on day 2",
-    "need_display": "¥45,040.00",
-    "total_cost_display": "¥802.70"
+    "not_executable_reason": "Invoice financing (onboarded platform): advance ¥135,040.00 on RI:BUYER-1:32: RI:BUYER-1:32 is not an invoice the executor can finance today; it is issued on day 32",
+    "need_display": "¥135,040.00",
+    "total_cost_display": "¥2,406.67"
   },
   "required_tier": "TIER_1",
   "mandate_version": 1,
   "state_version": 1,
   "calc_version": "tl-v2.0",
-  "summary": "REJECT: AGG_CONCESSION_EXCEEDED (¥28,326.92 vs ¥5,000.00); RESERVE_BREACH@47 (curable at ¥802.70); DISCOUNT_ABOVE_BREAK_EVEN (1.20% vs < 0.88%); EARLY_PAY_DEARER_THAN_PLAN (¥5,529.64 vs < ¥2,870.95). Forward concessions ¥28,326.92 against ¥5,000.00. Covenants hold: DSCR_MIN 1.92x, LEVERAGE_MAX 1.72x. Counters: Option A, Option B.",
+  "summary": "REJECT: AGG_CONCESSION_EXCEEDED (¥28,326.92 vs ¥5,000.00); RESERVE_BREACH@47 (curable at ¥2,406.67; the cure cannot run today); DISCOUNT_ABOVE_BREAK_EVEN (1.20% vs < 0.88%); EARLY_PAY_DEARER_THAN_PLAN (¥6,508.05 vs < ¥3,550.64). Forward concessions ¥28,326.92 against ¥5,000.00. Covenants hold: DSCR_MIN 1.92x, LEVERAGE_MAX 1.72x. Counters: Option A, Option B.",
   "forward_concession_total_display": "¥28,326.92",
   "passed_checks": [
     {
@@ -457,8 +459,8 @@
         "days_early": "30",
         "receivable_id": "RCV-A",
         "implied_annual_rate": "14.7773%",
-        "line_plus_partial_at_offered_rate": "¥841.64 + ¥2,550.61 = ¥3,392.25",
-        "router_optimum": "¥841.64 + ¥1,871.30 = ¥2,712.94"
+        "line_plus_partial_at_offered_rate": "¥841.64 + ¥3,097.17 = ¥3,938.81",
+        "router_optimum": "¥841.64 + ¥2,272.29 = ¥3,113.93"
       }
     },
     {
@@ -550,7 +552,7 @@
       ]
     },
     {
-      "obligation_id": "CTR-6cf1543f0dde-O2",
+      "obligation_id": "CTR-ce19415db1d4-O2",
       "receivable_id": "RCV-A",
       "discount_display": "0.85%",
       "days_early": 30,
@@ -598,10 +600,10 @@
       "text": "¥300,000.00"
     },
     "min_cash": {
-      "fen": 25496000,
-      "text": "¥254,960.00"
+      "fen": 16496000,
+      "text": "¥164,960.00"
     },
-    "min_cash_day": 47,
+    "min_cash_day": 60,
     "first_breach_day": 47,
     "days": [
       {
@@ -1160,29 +1162,40 @@
       {
         "day": 30,
         "closing": {
-          "fen": 35496000,
-          "text": "¥354,960.00"
+          "fen": 30996000,
+          "text": "¥309,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 145500000,
+          "text": "¥1,455,000.00"
         },
         "forward_concession": {
           "fen": 400000,
           "text": "¥4,000.00"
         },
         "below_floor": false,
-        "events": []
+        "events": [
+          {
+            "kind": "FLOW",
+            "amount": {
+              "fen": -4500000,
+              "text": "−¥45,000.00"
+            },
+            "label": "Debt service (principal), Existing equipment loan (rate 0%: a fixture assumption)",
+            "ref": "D-EQUIP",
+            "formula": "debt_service: payment 45,000.00 − interest 0.00; principal left 1,455,000.00"
+          }
+        ]
       },
       {
         "day": 31,
         "closing": {
-          "fen": 35496000,
-          "text": "¥354,960.00"
+          "fen": 30996000,
+          "text": "¥309,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 145500000,
+          "text": "¥1,455,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -1194,12 +1207,12 @@
       {
         "day": 32,
         "closing": {
-          "fen": 35496000,
-          "text": "¥354,960.00"
+          "fen": 30996000,
+          "text": "¥309,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 145500000,
+          "text": "¥1,455,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -1211,12 +1224,12 @@
       {
         "day": 33,
         "closing": {
-          "fen": 35496000,
-          "text": "¥354,960.00"
+          "fen": 30996000,
+          "text": "¥309,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 145500000,
+          "text": "¥1,455,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -1228,12 +1241,12 @@
       {
         "day": 34,
         "closing": {
-          "fen": 35496000,
-          "text": "¥354,960.00"
+          "fen": 30996000,
+          "text": "¥309,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 145500000,
+          "text": "¥1,455,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -1245,12 +1258,12 @@
       {
         "day": 35,
         "closing": {
-          "fen": 35496000,
-          "text": "¥354,960.00"
+          "fen": 30996000,
+          "text": "¥309,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 145500000,
+          "text": "¥1,455,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -1262,12 +1275,12 @@
       {
         "day": 36,
         "closing": {
-          "fen": 35496000,
-          "text": "¥354,960.00"
+          "fen": 30996000,
+          "text": "¥309,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 145500000,
+          "text": "¥1,455,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -1279,12 +1292,12 @@
       {
         "day": 37,
         "closing": {
-          "fen": 35496000,
-          "text": "¥354,960.00"
+          "fen": 30996000,
+          "text": "¥309,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 145500000,
+          "text": "¥1,455,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -1296,12 +1309,12 @@
       {
         "day": 38,
         "closing": {
-          "fen": 35496000,
-          "text": "¥354,960.00"
+          "fen": 30996000,
+          "text": "¥309,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 145500000,
+          "text": "¥1,455,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -1313,12 +1326,12 @@
       {
         "day": 39,
         "closing": {
-          "fen": 35496000,
-          "text": "¥354,960.00"
+          "fen": 30996000,
+          "text": "¥309,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 145500000,
+          "text": "¥1,455,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -1330,12 +1343,12 @@
       {
         "day": 40,
         "closing": {
-          "fen": 35496000,
-          "text": "¥354,960.00"
+          "fen": 30996000,
+          "text": "¥309,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 145500000,
+          "text": "¥1,455,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -1347,12 +1360,12 @@
       {
         "day": 41,
         "closing": {
-          "fen": 35496000,
-          "text": "¥354,960.00"
+          "fen": 30996000,
+          "text": "¥309,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 145500000,
+          "text": "¥1,455,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -1364,12 +1377,12 @@
       {
         "day": 42,
         "closing": {
-          "fen": 35496000,
-          "text": "¥354,960.00"
+          "fen": 30996000,
+          "text": "¥309,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 145500000,
+          "text": "¥1,455,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -1381,12 +1394,12 @@
       {
         "day": 43,
         "closing": {
-          "fen": 35496000,
-          "text": "¥354,960.00"
+          "fen": 30996000,
+          "text": "¥309,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 145500000,
+          "text": "¥1,455,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -1398,12 +1411,12 @@
       {
         "day": 44,
         "closing": {
-          "fen": 35496000,
-          "text": "¥354,960.00"
+          "fen": 30996000,
+          "text": "¥309,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 145500000,
+          "text": "¥1,455,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -1415,12 +1428,12 @@
       {
         "day": 45,
         "closing": {
-          "fen": 35496000,
-          "text": "¥354,960.00"
+          "fen": 30996000,
+          "text": "¥309,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 145500000,
+          "text": "¥1,455,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -1432,12 +1445,12 @@
       {
         "day": 46,
         "closing": {
-          "fen": 35496000,
-          "text": "¥354,960.00"
+          "fen": 30996000,
+          "text": "¥309,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 145500000,
+          "text": "¥1,455,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -1449,12 +1462,12 @@
       {
         "day": 47,
         "closing": {
-          "fen": 25496000,
-          "text": "¥254,960.00"
+          "fen": 20996000,
+          "text": "¥209,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 145500000,
+          "text": "¥1,455,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -1477,12 +1490,12 @@
       {
         "day": 48,
         "closing": {
-          "fen": 25496000,
-          "text": "¥254,960.00"
+          "fen": 20996000,
+          "text": "¥209,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 145500000,
+          "text": "¥1,455,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -1494,12 +1507,12 @@
       {
         "day": 49,
         "closing": {
-          "fen": 25496000,
-          "text": "¥254,960.00"
+          "fen": 20996000,
+          "text": "¥209,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 145500000,
+          "text": "¥1,455,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -1511,12 +1524,12 @@
       {
         "day": 50,
         "closing": {
-          "fen": 25496000,
-          "text": "¥254,960.00"
+          "fen": 20996000,
+          "text": "¥209,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 145500000,
+          "text": "¥1,455,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -1528,12 +1541,12 @@
       {
         "day": 51,
         "closing": {
-          "fen": 25496000,
-          "text": "¥254,960.00"
+          "fen": 20996000,
+          "text": "¥209,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 145500000,
+          "text": "¥1,455,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -1545,12 +1558,12 @@
       {
         "day": 52,
         "closing": {
-          "fen": 25496000,
-          "text": "¥254,960.00"
+          "fen": 20996000,
+          "text": "¥209,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 145500000,
+          "text": "¥1,455,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -1562,12 +1575,12 @@
       {
         "day": 53,
         "closing": {
-          "fen": 25496000,
-          "text": "¥254,960.00"
+          "fen": 20996000,
+          "text": "¥209,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 145500000,
+          "text": "¥1,455,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -1579,12 +1592,12 @@
       {
         "day": 54,
         "closing": {
-          "fen": 25496000,
-          "text": "¥254,960.00"
+          "fen": 20996000,
+          "text": "¥209,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 145500000,
+          "text": "¥1,455,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -1596,12 +1609,12 @@
       {
         "day": 55,
         "closing": {
-          "fen": 25496000,
-          "text": "¥254,960.00"
+          "fen": 20996000,
+          "text": "¥209,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 145500000,
+          "text": "¥1,455,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -1613,12 +1626,12 @@
       {
         "day": 56,
         "closing": {
-          "fen": 25496000,
-          "text": "¥254,960.00"
+          "fen": 20996000,
+          "text": "¥209,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 145500000,
+          "text": "¥1,455,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -1630,12 +1643,12 @@
       {
         "day": 57,
         "closing": {
-          "fen": 25496000,
-          "text": "¥254,960.00"
+          "fen": 20996000,
+          "text": "¥209,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 145500000,
+          "text": "¥1,455,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -1647,12 +1660,12 @@
       {
         "day": 58,
         "closing": {
-          "fen": 25496000,
-          "text": "¥254,960.00"
+          "fen": 20996000,
+          "text": "¥209,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 145500000,
+          "text": "¥1,455,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -1664,12 +1677,12 @@
       {
         "day": 59,
         "closing": {
-          "fen": 25496000,
-          "text": "¥254,960.00"
+          "fen": 20996000,
+          "text": "¥209,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 145500000,
+          "text": "¥1,455,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -1681,29 +1694,40 @@
       {
         "day": 60,
         "closing": {
-          "fen": 25496000,
-          "text": "¥254,960.00"
+          "fen": 16496000,
+          "text": "¥164,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 141000000,
+          "text": "¥1,410,000.00"
         },
         "forward_concession": {
           "fen": 400000,
           "text": "¥4,000.00"
         },
         "below_floor": true,
-        "events": []
+        "events": [
+          {
+            "kind": "FLOW",
+            "amount": {
+              "fen": -4500000,
+              "text": "−¥45,000.00"
+            },
+            "label": "Debt service (principal), Existing equipment loan (rate 0%: a fixture assumption)",
+            "ref": "D-EQUIP",
+            "formula": "debt_service: payment 45,000.00 − interest 0.00; principal left 1,410,000.00"
+          }
+        ]
       },
       {
         "day": 61,
         "closing": {
-          "fen": 25496000,
-          "text": "¥254,960.00"
+          "fen": 16496000,
+          "text": "¥164,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 141000000,
+          "text": "¥1,410,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -1715,12 +1739,12 @@
       {
         "day": 62,
         "closing": {
-          "fen": 67496000,
-          "text": "¥674,960.00"
+          "fen": 58496000,
+          "text": "¥584,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 141000000,
+          "text": "¥1,410,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -1743,12 +1767,12 @@
       {
         "day": 63,
         "closing": {
-          "fen": 67496000,
-          "text": "¥674,960.00"
+          "fen": 58496000,
+          "text": "¥584,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 141000000,
+          "text": "¥1,410,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -1760,12 +1784,12 @@
       {
         "day": 64,
         "closing": {
-          "fen": 67496000,
-          "text": "¥674,960.00"
+          "fen": 58496000,
+          "text": "¥584,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 141000000,
+          "text": "¥1,410,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -1777,12 +1801,12 @@
       {
         "day": 65,
         "closing": {
-          "fen": 67496000,
-          "text": "¥674,960.00"
+          "fen": 58496000,
+          "text": "¥584,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 141000000,
+          "text": "¥1,410,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -1794,12 +1818,12 @@
       {
         "day": 66,
         "closing": {
-          "fen": 67496000,
-          "text": "¥674,960.00"
+          "fen": 58496000,
+          "text": "¥584,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 141000000,
+          "text": "¥1,410,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -1811,12 +1835,12 @@
       {
         "day": 67,
         "closing": {
-          "fen": 67496000,
-          "text": "¥674,960.00"
+          "fen": 58496000,
+          "text": "¥584,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 141000000,
+          "text": "¥1,410,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -1828,12 +1852,12 @@
       {
         "day": 68,
         "closing": {
-          "fen": 67496000,
-          "text": "¥674,960.00"
+          "fen": 58496000,
+          "text": "¥584,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 141000000,
+          "text": "¥1,410,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -1845,12 +1869,12 @@
       {
         "day": 69,
         "closing": {
-          "fen": 67496000,
-          "text": "¥674,960.00"
+          "fen": 58496000,
+          "text": "¥584,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 141000000,
+          "text": "¥1,410,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -1862,12 +1886,12 @@
       {
         "day": 70,
         "closing": {
-          "fen": 67496000,
-          "text": "¥674,960.00"
+          "fen": 58496000,
+          "text": "¥584,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 141000000,
+          "text": "¥1,410,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -1879,12 +1903,12 @@
       {
         "day": 71,
         "closing": {
-          "fen": 67496000,
-          "text": "¥674,960.00"
+          "fen": 58496000,
+          "text": "¥584,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 141000000,
+          "text": "¥1,410,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -1896,12 +1920,12 @@
       {
         "day": 72,
         "closing": {
-          "fen": 67496000,
-          "text": "¥674,960.00"
+          "fen": 58496000,
+          "text": "¥584,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 141000000,
+          "text": "¥1,410,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -1913,12 +1937,12 @@
       {
         "day": 73,
         "closing": {
-          "fen": 67496000,
-          "text": "¥674,960.00"
+          "fen": 58496000,
+          "text": "¥584,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 141000000,
+          "text": "¥1,410,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -1930,12 +1954,12 @@
       {
         "day": 74,
         "closing": {
-          "fen": 67496000,
-          "text": "¥674,960.00"
+          "fen": 58496000,
+          "text": "¥584,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 141000000,
+          "text": "¥1,410,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -1947,12 +1971,12 @@
       {
         "day": 75,
         "closing": {
-          "fen": 67496000,
-          "text": "¥674,960.00"
+          "fen": 58496000,
+          "text": "¥584,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 141000000,
+          "text": "¥1,410,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -1964,12 +1988,12 @@
       {
         "day": 76,
         "closing": {
-          "fen": 67496000,
-          "text": "¥674,960.00"
+          "fen": 58496000,
+          "text": "¥584,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 141000000,
+          "text": "¥1,410,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -1981,12 +2005,12 @@
       {
         "day": 77,
         "closing": {
-          "fen": 67496000,
-          "text": "¥674,960.00"
+          "fen": 58496000,
+          "text": "¥584,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 141000000,
+          "text": "¥1,410,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -1998,12 +2022,12 @@
       {
         "day": 78,
         "closing": {
-          "fen": 67496000,
-          "text": "¥674,960.00"
+          "fen": 58496000,
+          "text": "¥584,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 141000000,
+          "text": "¥1,410,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -2015,12 +2039,12 @@
       {
         "day": 79,
         "closing": {
-          "fen": 67496000,
-          "text": "¥674,960.00"
+          "fen": 58496000,
+          "text": "¥584,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 141000000,
+          "text": "¥1,410,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -2032,12 +2056,12 @@
       {
         "day": 80,
         "closing": {
-          "fen": 67496000,
-          "text": "¥674,960.00"
+          "fen": 58496000,
+          "text": "¥584,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 141000000,
+          "text": "¥1,410,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -2049,12 +2073,12 @@
       {
         "day": 81,
         "closing": {
-          "fen": 67496000,
-          "text": "¥674,960.00"
+          "fen": 58496000,
+          "text": "¥584,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 141000000,
+          "text": "¥1,410,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -2066,12 +2090,12 @@
       {
         "day": 82,
         "closing": {
-          "fen": 67496000,
-          "text": "¥674,960.00"
+          "fen": 58496000,
+          "text": "¥584,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 141000000,
+          "text": "¥1,410,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -2083,12 +2107,12 @@
       {
         "day": 83,
         "closing": {
-          "fen": 67496000,
-          "text": "¥674,960.00"
+          "fen": 58496000,
+          "text": "¥584,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 141000000,
+          "text": "¥1,410,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -2100,12 +2124,12 @@
       {
         "day": 84,
         "closing": {
-          "fen": 67496000,
-          "text": "¥674,960.00"
+          "fen": 58496000,
+          "text": "¥584,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 141000000,
+          "text": "¥1,410,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -2117,12 +2141,12 @@
       {
         "day": 85,
         "closing": {
-          "fen": 67496000,
-          "text": "¥674,960.00"
+          "fen": 58496000,
+          "text": "¥584,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 141000000,
+          "text": "¥1,410,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -2134,12 +2158,12 @@
       {
         "day": 86,
         "closing": {
-          "fen": 67496000,
-          "text": "¥674,960.00"
+          "fen": 58496000,
+          "text": "¥584,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 141000000,
+          "text": "¥1,410,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -2151,12 +2175,12 @@
       {
         "day": 87,
         "closing": {
-          "fen": 67496000,
-          "text": "¥674,960.00"
+          "fen": 58496000,
+          "text": "¥584,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 141000000,
+          "text": "¥1,410,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -2168,12 +2192,12 @@
       {
         "day": 88,
         "closing": {
-          "fen": 67496000,
-          "text": "¥674,960.00"
+          "fen": 58496000,
+          "text": "¥584,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 141000000,
+          "text": "¥1,410,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -2185,12 +2209,12 @@
       {
         "day": 89,
         "closing": {
-          "fen": 67496000,
-          "text": "¥674,960.00"
+          "fen": 58496000,
+          "text": "¥584,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 141000000,
+          "text": "¥1,410,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -2202,29 +2226,40 @@
       {
         "day": 90,
         "closing": {
-          "fen": 67496000,
-          "text": "¥674,960.00"
+          "fen": 53996000,
+          "text": "¥539,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 136500000,
+          "text": "¥1,365,000.00"
         },
         "forward_concession": {
           "fen": 400000,
           "text": "¥4,000.00"
         },
         "below_floor": false,
-        "events": []
+        "events": [
+          {
+            "kind": "FLOW",
+            "amount": {
+              "fen": -4500000,
+              "text": "−¥45,000.00"
+            },
+            "label": "Debt service (principal), Existing equipment loan (rate 0%: a fixture assumption)",
+            "ref": "D-EQUIP",
+            "formula": "debt_service: payment 45,000.00 − interest 0.00; principal left 1,365,000.00"
+          }
+        ]
       },
       {
         "day": 91,
         "closing": {
-          "fen": 67496000,
-          "text": "¥674,960.00"
+          "fen": 53996000,
+          "text": "¥539,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 136500000,
+          "text": "¥1,365,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -2236,12 +2271,12 @@
       {
         "day": 92,
         "closing": {
-          "fen": 109496000,
-          "text": "¥1,094,960.00"
+          "fen": 95996000,
+          "text": "¥959,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 136500000,
+          "text": "¥1,365,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -2264,12 +2299,12 @@
       {
         "day": 93,
         "closing": {
-          "fen": 109496000,
-          "text": "¥1,094,960.00"
+          "fen": 95996000,
+          "text": "¥959,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 136500000,
+          "text": "¥1,365,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -2281,12 +2316,12 @@
       {
         "day": 94,
         "closing": {
-          "fen": 109496000,
-          "text": "¥1,094,960.00"
+          "fen": 95996000,
+          "text": "¥959,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 136500000,
+          "text": "¥1,365,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -2298,12 +2333,12 @@
       {
         "day": 95,
         "closing": {
-          "fen": 109496000,
-          "text": "¥1,094,960.00"
+          "fen": 95996000,
+          "text": "¥959,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 136500000,
+          "text": "¥1,365,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -2315,12 +2350,12 @@
       {
         "day": 96,
         "closing": {
-          "fen": 109496000,
-          "text": "¥1,094,960.00"
+          "fen": 95996000,
+          "text": "¥959,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 136500000,
+          "text": "¥1,365,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -2332,12 +2367,12 @@
       {
         "day": 97,
         "closing": {
-          "fen": 109496000,
-          "text": "¥1,094,960.00"
+          "fen": 95996000,
+          "text": "¥959,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 136500000,
+          "text": "¥1,365,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -2349,12 +2384,12 @@
       {
         "day": 98,
         "closing": {
-          "fen": 109496000,
-          "text": "¥1,094,960.00"
+          "fen": 95996000,
+          "text": "¥959,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 136500000,
+          "text": "¥1,365,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -2366,12 +2401,12 @@
       {
         "day": 99,
         "closing": {
-          "fen": 109496000,
-          "text": "¥1,094,960.00"
+          "fen": 95996000,
+          "text": "¥959,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 136500000,
+          "text": "¥1,365,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -2383,12 +2418,12 @@
       {
         "day": 100,
         "closing": {
-          "fen": 109496000,
-          "text": "¥1,094,960.00"
+          "fen": 95996000,
+          "text": "¥959,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 136500000,
+          "text": "¥1,365,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -2400,12 +2435,12 @@
       {
         "day": 101,
         "closing": {
-          "fen": 109496000,
-          "text": "¥1,094,960.00"
+          "fen": 95996000,
+          "text": "¥959,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 136500000,
+          "text": "¥1,365,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -2417,12 +2452,12 @@
       {
         "day": 102,
         "closing": {
-          "fen": 109496000,
-          "text": "¥1,094,960.00"
+          "fen": 95996000,
+          "text": "¥959,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 136500000,
+          "text": "¥1,365,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -2434,12 +2469,12 @@
       {
         "day": 103,
         "closing": {
-          "fen": 109496000,
-          "text": "¥1,094,960.00"
+          "fen": 95996000,
+          "text": "¥959,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 136500000,
+          "text": "¥1,365,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -2451,12 +2486,12 @@
       {
         "day": 104,
         "closing": {
-          "fen": 109496000,
-          "text": "¥1,094,960.00"
+          "fen": 95996000,
+          "text": "¥959,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 136500000,
+          "text": "¥1,365,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -2468,12 +2503,12 @@
       {
         "day": 105,
         "closing": {
-          "fen": 109496000,
-          "text": "¥1,094,960.00"
+          "fen": 95996000,
+          "text": "¥959,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 136500000,
+          "text": "¥1,365,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -2485,12 +2520,12 @@
       {
         "day": 106,
         "closing": {
-          "fen": 109496000,
-          "text": "¥1,094,960.00"
+          "fen": 95996000,
+          "text": "¥959,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 136500000,
+          "text": "¥1,365,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -2502,12 +2537,12 @@
       {
         "day": 107,
         "closing": {
-          "fen": 109496000,
-          "text": "¥1,094,960.00"
+          "fen": 95996000,
+          "text": "¥959,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 136500000,
+          "text": "¥1,365,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -2519,12 +2554,12 @@
       {
         "day": 108,
         "closing": {
-          "fen": 109496000,
-          "text": "¥1,094,960.00"
+          "fen": 95996000,
+          "text": "¥959,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 136500000,
+          "text": "¥1,365,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -2536,12 +2571,12 @@
       {
         "day": 109,
         "closing": {
-          "fen": 109496000,
-          "text": "¥1,094,960.00"
+          "fen": 95996000,
+          "text": "¥959,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 136500000,
+          "text": "¥1,365,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -2553,12 +2588,12 @@
       {
         "day": 110,
         "closing": {
-          "fen": 109496000,
-          "text": "¥1,094,960.00"
+          "fen": 95996000,
+          "text": "¥959,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 136500000,
+          "text": "¥1,365,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -2570,12 +2605,12 @@
       {
         "day": 111,
         "closing": {
-          "fen": 109496000,
-          "text": "¥1,094,960.00"
+          "fen": 95996000,
+          "text": "¥959,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 136500000,
+          "text": "¥1,365,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -2587,12 +2622,12 @@
       {
         "day": 112,
         "closing": {
-          "fen": 109496000,
-          "text": "¥1,094,960.00"
+          "fen": 95996000,
+          "text": "¥959,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 136500000,
+          "text": "¥1,365,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -2604,12 +2639,12 @@
       {
         "day": 113,
         "closing": {
-          "fen": 109496000,
-          "text": "¥1,094,960.00"
+          "fen": 95996000,
+          "text": "¥959,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 136500000,
+          "text": "¥1,365,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -2621,12 +2656,12 @@
       {
         "day": 114,
         "closing": {
-          "fen": 109496000,
-          "text": "¥1,094,960.00"
+          "fen": 95996000,
+          "text": "¥959,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 136500000,
+          "text": "¥1,365,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -2638,12 +2673,12 @@
       {
         "day": 115,
         "closing": {
-          "fen": 109496000,
-          "text": "¥1,094,960.00"
+          "fen": 95996000,
+          "text": "¥959,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 136500000,
+          "text": "¥1,365,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -2655,12 +2690,12 @@
       {
         "day": 116,
         "closing": {
-          "fen": 109496000,
-          "text": "¥1,094,960.00"
+          "fen": 95996000,
+          "text": "¥959,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 136500000,
+          "text": "¥1,365,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -2672,12 +2707,12 @@
       {
         "day": 117,
         "closing": {
-          "fen": 109496000,
-          "text": "¥1,094,960.00"
+          "fen": 95996000,
+          "text": "¥959,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 136500000,
+          "text": "¥1,365,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -2689,12 +2724,12 @@
       {
         "day": 118,
         "closing": {
-          "fen": 109496000,
-          "text": "¥1,094,960.00"
+          "fen": 95996000,
+          "text": "¥959,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 136500000,
+          "text": "¥1,365,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -2706,12 +2741,12 @@
       {
         "day": 119,
         "closing": {
-          "fen": 109496000,
-          "text": "¥1,094,960.00"
+          "fen": 95996000,
+          "text": "¥959,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 136500000,
+          "text": "¥1,365,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -2723,72 +2758,83 @@
       {
         "day": 120,
         "closing": {
-          "fen": 109496000,
-          "text": "¥1,094,960.00"
+          "fen": 91496000,
+          "text": "¥914,960.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 132000000,
+          "text": "¥1,320,000.00"
         },
         "forward_concession": {
           "fen": 400000,
           "text": "¥4,000.00"
         },
         "below_floor": false,
-        "events": []
+        "events": [
+          {
+            "kind": "FLOW",
+            "amount": {
+              "fen": -4500000,
+              "text": "−¥45,000.00"
+            },
+            "label": "Debt service (principal), Existing equipment loan (rate 0%: a fixture assumption)",
+            "ref": "D-EQUIP",
+            "formula": "debt_service: payment 45,000.00 − interest 0.00; principal left 1,320,000.00"
+          }
+        ]
       }
     ],
     "months": [
       {
         "month": 1,
         "dscr": "2.00x",
-        "leverage": "1.39x",
+        "leverage": "1.35x",
         "debt_service": {
           "fen": 4500000,
           "text": "¥45,000.00"
         },
         "total_debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 145500000,
+          "text": "¥1,455,000.00"
         }
       },
       {
         "month": 2,
         "dscr": "2.00x",
-        "leverage": "1.39x",
+        "leverage": "1.31x",
         "debt_service": {
           "fen": 4500000,
           "text": "¥45,000.00"
         },
         "total_debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 141000000,
+          "text": "¥1,410,000.00"
         }
       },
       {
         "month": 3,
         "dscr": "2.00x",
-        "leverage": "1.39x",
+        "leverage": "1.26x",
         "debt_service": {
           "fen": 4500000,
           "text": "¥45,000.00"
         },
         "total_debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 136500000,
+          "text": "¥1,365,000.00"
         }
       },
       {
         "month": 4,
         "dscr": "2.00x",
-        "leverage": "1.39x",
+        "leverage": "1.22x",
         "debt_service": {
           "fen": 4500000,
           "text": "¥45,000.00"
         },
         "total_debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 132000000,
+          "text": "¥1,320,000.00"
         }
       }
     ],
@@ -2806,35 +2852,35 @@
     }
   },
   "plan_committed": {
-    "id": "PLAN-COM-4753b1b127bb",
+    "id": "PLAN-COM-36424bfaa9ca",
     "basis": "COMMITTED",
-    "need_fen": 4504000,
+    "need_fen": 13504000,
     "actions": [
       {
         "kind": "DRAW",
         "facility_id": "FAC-LINE",
         "day": 0,
-        "amount_fen": 4504000,
+        "amount_fen": 13504000,
         "receivable_id": null,
         "repay_day": 62,
         "rate_bp": null,
-        "amount_display": "¥45,040.00"
+        "amount_display": "¥135,040.00"
       }
     ],
     "costs": [
       {
-        "label": "Bank credit line: draw ¥45,040.00, repaid day 62",
-        "fen": 48964,
+        "label": "Bank credit line: draw ¥135,040.00, repaid day 62",
+        "fen": 146805,
         "facility_id": "FAC-LINE",
-        "formula": "45,040.00 × 6.4% × 62/365 = 489.64",
+        "formula": "135,040.00 × 6.4% × 62/365 = 1,468.05",
         "needs_owner_approval": false,
         "approval_reason": "",
         "executable_now": true,
         "not_executable_reason": "",
-        "display": "¥489.64"
+        "display": "¥1,468.05"
       }
     ],
-    "total_cost_fen": 48964,
+    "total_cost_fen": 146805,
     "admissible": true,
     "violations": [],
     "marginal_cost_annual": {
@@ -2850,44 +2896,44 @@
         "note": "cost ¥5,040.00; admissible but dearer than the selected plan"
       }
     ],
-    "label": "committed plan: ¥489.64",
+    "label": "committed plan: ¥1,468.05",
     "needs_owner_approval": false,
     "approval_reason": "",
     "executable_now": true,
     "not_executable_reason": "",
-    "need_display": "¥45,040.00",
-    "total_cost_display": "¥489.64"
+    "need_display": "¥135,040.00",
+    "total_cost_display": "¥1,468.05"
   },
   "plan_expected": {
-    "id": "PLAN-EXP-0fcb62398048",
+    "id": "PLAN-EXP-b2efe8e2b235",
     "basis": "EXPECTED",
-    "need_fen": 4504000,
+    "need_fen": 13504000,
     "actions": [
       {
         "kind": "DRAW",
         "facility_id": "FAC-LINE",
         "day": 0,
-        "amount_fen": 4504000,
+        "amount_fen": 13504000,
         "receivable_id": null,
         "repay_day": 62,
         "rate_bp": null,
-        "amount_display": "¥45,040.00"
+        "amount_display": "¥135,040.00"
       }
     ],
     "costs": [
       {
-        "label": "Bank credit line: draw ¥45,040.00, repaid day 62",
-        "fen": 48964,
+        "label": "Bank credit line: draw ¥135,040.00, repaid day 62",
+        "fen": 146805,
         "facility_id": "FAC-LINE",
-        "formula": "45,040.00 × 6.4% × 62/365 = 489.64",
+        "formula": "135,040.00 × 6.4% × 62/365 = 1,468.05",
         "needs_owner_approval": false,
         "approval_reason": "",
         "executable_now": true,
         "not_executable_reason": "",
-        "display": "¥489.64"
+        "display": "¥1,468.05"
       }
     ],
-    "total_cost_fen": 48964,
+    "total_cost_fen": 146805,
     "admissible": true,
     "violations": [],
     "marginal_cost_annual": {
@@ -2903,44 +2949,44 @@
         "note": "cost ¥5,040.00; admissible but dearer than the selected plan"
       }
     ],
-    "label": "expected plan (committed sources only): ¥489.64",
+    "label": "expected plan (committed sources only): ¥1,468.05",
     "needs_owner_approval": false,
     "approval_reason": "",
     "executable_now": true,
     "not_executable_reason": "",
-    "need_display": "¥45,040.00",
-    "total_cost_display": "¥489.64"
+    "need_display": "¥135,040.00",
+    "total_cost_display": "¥1,468.05"
   },
   "cure_plan": {
-    "id": "PLAN-COM-736507ffd113",
+    "id": "PLAN-COM-98b519315a32",
     "basis": "COMMITTED",
-    "need_fen": 4504000,
+    "need_fen": 13504000,
     "actions": [
       {
         "kind": "FINANCE_INVOICE",
         "facility_id": "FAC-IF",
         "day": 0,
-        "amount_fen": 4504000,
-        "receivable_id": "RI:BUYER-1:2",
+        "amount_fen": 13504000,
+        "receivable_id": "RI:BUYER-1:32",
         "repay_day": null,
         "rate_bp": null,
-        "amount_display": "¥45,040.00"
+        "amount_display": "¥135,040.00"
       }
     ],
     "costs": [
       {
-        "label": "Invoice financing (onboarded platform): advance ¥45,040.00 on RI:BUYER-1:2",
-        "fen": 80270,
+        "label": "Invoice financing (onboarded platform): advance ¥135,040.00 on RI:BUYER-1:32",
+        "fen": 240667,
         "facility_id": "FAC-IF",
-        "formula": "45,040.00 × 7.8% × 60/365 (57 days billed as 2 × 30-day period) = 577.50; 45,040.00 × 0.25% × 2 = 225.20; total ¥802.70",
+        "formula": "135,040.00 × 7.8% × 60/365 (57 days billed as 2 × 30-day period) = 1,731.47; 135,040.00 × 0.25% × 2 = 675.20; total ¥2,406.67",
         "needs_owner_approval": false,
         "approval_reason": "",
         "executable_now": false,
-        "not_executable_reason": "RI:BUYER-1:2 is not an invoice the executor can finance today; it is issued on day 2",
-        "display": "¥802.70"
+        "not_executable_reason": "RI:BUYER-1:32 is not an invoice the executor can finance today; it is issued on day 32",
+        "display": "¥2,406.67"
       }
     ],
-    "total_cost_fen": 80270,
+    "total_cost_fen": 240667,
     "admissible": true,
     "violations": [],
     "marginal_cost_annual": {
@@ -2950,13 +2996,13 @@
     },
     "marginal_facility_id": "FAC-IF",
     "rejected": [],
-    "label": "committed plan: ¥802.70 (cannot run today)",
+    "label": "committed plan: ¥2,406.67 (cannot run today)",
     "needs_owner_approval": false,
     "approval_reason": "",
     "executable_now": false,
-    "not_executable_reason": "Invoice financing (onboarded platform): advance ¥45,040.00 on RI:BUYER-1:2: RI:BUYER-1:2 is not an invoice the executor can finance today; it is issued on day 2",
-    "need_display": "¥45,040.00",
-    "total_cost_display": "¥802.70"
+    "not_executable_reason": "Invoice financing (onboarded platform): advance ¥135,040.00 on RI:BUYER-1:32: RI:BUYER-1:32 is not an invoice the executor can finance today; it is issued on day 32",
+    "need_display": "¥135,040.00",
+    "total_cost_display": "¥2,406.67"
   },
   "cured_trajectory": {
     "mode": "CONSERVATIVE",
@@ -2968,7 +3014,7 @@
       "fen": 30000000,
       "text": "¥300,000.00"
     },
-    "min_cash_day": 47,
+    "min_cash_day": 60,
     "first_breach_day": null,
     "days": [
       {
@@ -3080,40 +3126,29 @@
       {
         "day": 5,
         "closing": {
-          "fen": 86000000,
-          "text": "¥860,000.00"
+          "fen": 81496000,
+          "text": "¥814,960.00"
         },
         "debt": {
-          "fen": 154504000,
-          "text": "¥1,545,040.00"
+          "fen": 150000000,
+          "text": "¥1,500,000.00"
         },
         "forward_concession": {
           "fen": 400000,
           "text": "¥4,000.00"
         },
         "below_floor": false,
-        "events": [
-          {
-            "kind": "ADVANCE",
-            "amount": {
-              "fen": 4504000,
-              "text": "¥45,040.00"
-            },
-            "label": "Advance on RI:BUYER-1:2, Invoice financing (onboarded platform)",
-            "ref": "FAC-IF",
-            "formula": "requested day 2 + 3-day lead time"
-          }
-        ]
+        "events": []
       },
       {
         "day": 6,
         "closing": {
-          "fen": 86000000,
-          "text": "¥860,000.00"
+          "fen": 81496000,
+          "text": "¥814,960.00"
         },
         "debt": {
-          "fen": 154504000,
-          "text": "¥1,545,040.00"
+          "fen": 150000000,
+          "text": "¥1,500,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -3125,12 +3160,12 @@
       {
         "day": 7,
         "closing": {
-          "fen": 86000000,
-          "text": "¥860,000.00"
+          "fen": 81496000,
+          "text": "¥814,960.00"
         },
         "debt": {
-          "fen": 154504000,
-          "text": "¥1,545,040.00"
+          "fen": 150000000,
+          "text": "¥1,500,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -3142,12 +3177,12 @@
       {
         "day": 8,
         "closing": {
-          "fen": 86000000,
-          "text": "¥860,000.00"
+          "fen": 81496000,
+          "text": "¥814,960.00"
         },
         "debt": {
-          "fen": 154504000,
-          "text": "¥1,545,040.00"
+          "fen": 150000000,
+          "text": "¥1,500,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -3159,12 +3194,12 @@
       {
         "day": 9,
         "closing": {
-          "fen": 86000000,
-          "text": "¥860,000.00"
+          "fen": 81496000,
+          "text": "¥814,960.00"
         },
         "debt": {
-          "fen": 154504000,
-          "text": "¥1,545,040.00"
+          "fen": 150000000,
+          "text": "¥1,500,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -3176,12 +3211,12 @@
       {
         "day": 10,
         "closing": {
-          "fen": 86000000,
-          "text": "¥860,000.00"
+          "fen": 81496000,
+          "text": "¥814,960.00"
         },
         "debt": {
-          "fen": 154504000,
-          "text": "¥1,545,040.00"
+          "fen": 150000000,
+          "text": "¥1,500,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -3193,12 +3228,12 @@
       {
         "day": 11,
         "closing": {
-          "fen": 86000000,
-          "text": "¥860,000.00"
+          "fen": 81496000,
+          "text": "¥814,960.00"
         },
         "debt": {
-          "fen": 154504000,
-          "text": "¥1,545,040.00"
+          "fen": 150000000,
+          "text": "¥1,500,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -3210,12 +3245,12 @@
       {
         "day": 12,
         "closing": {
-          "fen": 52000000,
-          "text": "¥520,000.00"
+          "fen": 47496000,
+          "text": "¥474,960.00"
         },
         "debt": {
-          "fen": 154504000,
-          "text": "¥1,545,040.00"
+          "fen": 150000000,
+          "text": "¥1,500,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -3238,12 +3273,12 @@
       {
         "day": 13,
         "closing": {
-          "fen": 52000000,
-          "text": "¥520,000.00"
+          "fen": 47496000,
+          "text": "¥474,960.00"
         },
         "debt": {
-          "fen": 154504000,
-          "text": "¥1,545,040.00"
+          "fen": 150000000,
+          "text": "¥1,500,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -3255,12 +3290,12 @@
       {
         "day": 14,
         "closing": {
-          "fen": 52000000,
-          "text": "¥520,000.00"
+          "fen": 47496000,
+          "text": "¥474,960.00"
         },
         "debt": {
-          "fen": 154504000,
-          "text": "¥1,545,040.00"
+          "fen": 150000000,
+          "text": "¥1,500,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -3272,12 +3307,12 @@
       {
         "day": 15,
         "closing": {
-          "fen": 52000000,
-          "text": "¥520,000.00"
+          "fen": 47496000,
+          "text": "¥474,960.00"
         },
         "debt": {
-          "fen": 154504000,
-          "text": "¥1,545,040.00"
+          "fen": 150000000,
+          "text": "¥1,500,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -3289,12 +3324,12 @@
       {
         "day": 16,
         "closing": {
-          "fen": 52000000,
-          "text": "¥520,000.00"
+          "fen": 47496000,
+          "text": "¥474,960.00"
         },
         "debt": {
-          "fen": 154504000,
-          "text": "¥1,545,040.00"
+          "fen": 150000000,
+          "text": "¥1,500,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -3306,12 +3341,12 @@
       {
         "day": 17,
         "closing": {
-          "fen": 52000000,
-          "text": "¥520,000.00"
+          "fen": 47496000,
+          "text": "¥474,960.00"
         },
         "debt": {
-          "fen": 154504000,
-          "text": "¥1,545,040.00"
+          "fen": 150000000,
+          "text": "¥1,500,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -3323,12 +3358,12 @@
       {
         "day": 18,
         "closing": {
-          "fen": 52000000,
-          "text": "¥520,000.00"
+          "fen": 47496000,
+          "text": "¥474,960.00"
         },
         "debt": {
-          "fen": 154504000,
-          "text": "¥1,545,040.00"
+          "fen": 150000000,
+          "text": "¥1,500,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -3340,12 +3375,12 @@
       {
         "day": 19,
         "closing": {
-          "fen": 52000000,
-          "text": "¥520,000.00"
+          "fen": 47496000,
+          "text": "¥474,960.00"
         },
         "debt": {
-          "fen": 154504000,
-          "text": "¥1,545,040.00"
+          "fen": 150000000,
+          "text": "¥1,500,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -3357,12 +3392,12 @@
       {
         "day": 20,
         "closing": {
-          "fen": 40000000,
-          "text": "¥400,000.00"
+          "fen": 35496000,
+          "text": "¥354,960.00"
         },
         "debt": {
-          "fen": 154504000,
-          "text": "¥1,545,040.00"
+          "fen": 150000000,
+          "text": "¥1,500,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -3385,12 +3420,12 @@
       {
         "day": 21,
         "closing": {
-          "fen": 40000000,
-          "text": "¥400,000.00"
+          "fen": 35496000,
+          "text": "¥354,960.00"
         },
         "debt": {
-          "fen": 154504000,
-          "text": "¥1,545,040.00"
+          "fen": 150000000,
+          "text": "¥1,500,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -3402,12 +3437,12 @@
       {
         "day": 22,
         "closing": {
-          "fen": 40000000,
-          "text": "¥400,000.00"
+          "fen": 35496000,
+          "text": "¥354,960.00"
         },
         "debt": {
-          "fen": 154504000,
-          "text": "¥1,545,040.00"
+          "fen": 150000000,
+          "text": "¥1,500,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -3419,12 +3454,12 @@
       {
         "day": 23,
         "closing": {
-          "fen": 40000000,
-          "text": "¥400,000.00"
+          "fen": 35496000,
+          "text": "¥354,960.00"
         },
         "debt": {
-          "fen": 154504000,
-          "text": "¥1,545,040.00"
+          "fen": 150000000,
+          "text": "¥1,500,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -3436,12 +3471,12 @@
       {
         "day": 24,
         "closing": {
-          "fen": 40000000,
-          "text": "¥400,000.00"
+          "fen": 35496000,
+          "text": "¥354,960.00"
         },
         "debt": {
-          "fen": 154504000,
-          "text": "¥1,545,040.00"
+          "fen": 150000000,
+          "text": "¥1,500,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -3453,12 +3488,12 @@
       {
         "day": 25,
         "closing": {
-          "fen": 40000000,
-          "text": "¥400,000.00"
+          "fen": 35496000,
+          "text": "¥354,960.00"
         },
         "debt": {
-          "fen": 154504000,
-          "text": "¥1,545,040.00"
+          "fen": 150000000,
+          "text": "¥1,500,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -3470,12 +3505,12 @@
       {
         "day": 26,
         "closing": {
-          "fen": 40000000,
-          "text": "¥400,000.00"
+          "fen": 35496000,
+          "text": "¥354,960.00"
         },
         "debt": {
-          "fen": 154504000,
-          "text": "¥1,545,040.00"
+          "fen": 150000000,
+          "text": "¥1,500,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -3487,12 +3522,12 @@
       {
         "day": 27,
         "closing": {
-          "fen": 40000000,
-          "text": "¥400,000.00"
+          "fen": 35496000,
+          "text": "¥354,960.00"
         },
         "debt": {
-          "fen": 154504000,
-          "text": "¥1,545,040.00"
+          "fen": 150000000,
+          "text": "¥1,500,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -3504,12 +3539,12 @@
       {
         "day": 28,
         "closing": {
-          "fen": 40000000,
-          "text": "¥400,000.00"
+          "fen": 35496000,
+          "text": "¥354,960.00"
         },
         "debt": {
-          "fen": 154504000,
-          "text": "¥1,545,040.00"
+          "fen": 150000000,
+          "text": "¥1,500,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -3521,12 +3556,12 @@
       {
         "day": 29,
         "closing": {
-          "fen": 40000000,
-          "text": "¥400,000.00"
+          "fen": 35496000,
+          "text": "¥354,960.00"
         },
         "debt": {
-          "fen": 154504000,
-          "text": "¥1,545,040.00"
+          "fen": 150000000,
+          "text": "¥1,500,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -3538,29 +3573,40 @@
       {
         "day": 30,
         "closing": {
-          "fen": 40000000,
-          "text": "¥400,000.00"
+          "fen": 30996000,
+          "text": "¥309,960.00"
         },
         "debt": {
-          "fen": 154504000,
-          "text": "¥1,545,040.00"
+          "fen": 145500000,
+          "text": "¥1,455,000.00"
         },
         "forward_concession": {
           "fen": 400000,
           "text": "¥4,000.00"
         },
         "below_floor": false,
-        "events": []
+        "events": [
+          {
+            "kind": "FLOW",
+            "amount": {
+              "fen": -4500000,
+              "text": "−¥45,000.00"
+            },
+            "label": "Debt service (principal), Existing equipment loan (rate 0%: a fixture assumption)",
+            "ref": "D-EQUIP",
+            "formula": "debt_service: payment 45,000.00 − interest 0.00; principal left 1,455,000.00"
+          }
+        ]
       },
       {
         "day": 31,
         "closing": {
-          "fen": 40000000,
-          "text": "¥400,000.00"
+          "fen": 30996000,
+          "text": "¥309,960.00"
         },
         "debt": {
-          "fen": 154504000,
-          "text": "¥1,545,040.00"
+          "fen": 145500000,
+          "text": "¥1,455,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -3572,12 +3618,12 @@
       {
         "day": 32,
         "closing": {
-          "fen": 40000000,
-          "text": "¥400,000.00"
+          "fen": 30996000,
+          "text": "¥309,960.00"
         },
         "debt": {
-          "fen": 154504000,
-          "text": "¥1,545,040.00"
+          "fen": 145500000,
+          "text": "¥1,455,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -3589,12 +3635,12 @@
       {
         "day": 33,
         "closing": {
-          "fen": 40000000,
-          "text": "¥400,000.00"
+          "fen": 30996000,
+          "text": "¥309,960.00"
         },
         "debt": {
-          "fen": 154504000,
-          "text": "¥1,545,040.00"
+          "fen": 145500000,
+          "text": "¥1,455,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -3606,12 +3652,12 @@
       {
         "day": 34,
         "closing": {
-          "fen": 40000000,
-          "text": "¥400,000.00"
+          "fen": 30996000,
+          "text": "¥309,960.00"
         },
         "debt": {
-          "fen": 154504000,
-          "text": "¥1,545,040.00"
+          "fen": 145500000,
+          "text": "¥1,455,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -3623,29 +3669,40 @@
       {
         "day": 35,
         "closing": {
-          "fen": 40000000,
-          "text": "¥400,000.00"
+          "fen": 44500000,
+          "text": "¥445,000.00"
         },
         "debt": {
-          "fen": 154504000,
-          "text": "¥1,545,040.00"
+          "fen": 159004000,
+          "text": "¥1,590,040.00"
         },
         "forward_concession": {
           "fen": 400000,
           "text": "¥4,000.00"
         },
         "below_floor": false,
-        "events": []
+        "events": [
+          {
+            "kind": "ADVANCE",
+            "amount": {
+              "fen": 13504000,
+              "text": "¥135,040.00"
+            },
+            "label": "Advance on RI:BUYER-1:32, Invoice financing (onboarded platform)",
+            "ref": "FAC-IF",
+            "formula": "requested day 32 + 3-day lead time"
+          }
+        ]
       },
       {
         "day": 36,
         "closing": {
-          "fen": 40000000,
-          "text": "¥400,000.00"
+          "fen": 44500000,
+          "text": "¥445,000.00"
         },
         "debt": {
-          "fen": 154504000,
-          "text": "¥1,545,040.00"
+          "fen": 159004000,
+          "text": "¥1,590,040.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -3657,12 +3714,12 @@
       {
         "day": 37,
         "closing": {
-          "fen": 40000000,
-          "text": "¥400,000.00"
+          "fen": 44500000,
+          "text": "¥445,000.00"
         },
         "debt": {
-          "fen": 154504000,
-          "text": "¥1,545,040.00"
+          "fen": 159004000,
+          "text": "¥1,590,040.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -3674,12 +3731,12 @@
       {
         "day": 38,
         "closing": {
-          "fen": 40000000,
-          "text": "¥400,000.00"
+          "fen": 44500000,
+          "text": "¥445,000.00"
         },
         "debt": {
-          "fen": 154504000,
-          "text": "¥1,545,040.00"
+          "fen": 159004000,
+          "text": "¥1,590,040.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -3691,12 +3748,12 @@
       {
         "day": 39,
         "closing": {
-          "fen": 40000000,
-          "text": "¥400,000.00"
+          "fen": 44500000,
+          "text": "¥445,000.00"
         },
         "debt": {
-          "fen": 154504000,
-          "text": "¥1,545,040.00"
+          "fen": 159004000,
+          "text": "¥1,590,040.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -3708,12 +3765,12 @@
       {
         "day": 40,
         "closing": {
-          "fen": 40000000,
-          "text": "¥400,000.00"
+          "fen": 44500000,
+          "text": "¥445,000.00"
         },
         "debt": {
-          "fen": 154504000,
-          "text": "¥1,545,040.00"
+          "fen": 159004000,
+          "text": "¥1,590,040.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -3725,12 +3782,12 @@
       {
         "day": 41,
         "closing": {
-          "fen": 40000000,
-          "text": "¥400,000.00"
+          "fen": 44500000,
+          "text": "¥445,000.00"
         },
         "debt": {
-          "fen": 154504000,
-          "text": "¥1,545,040.00"
+          "fen": 159004000,
+          "text": "¥1,590,040.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -3742,12 +3799,12 @@
       {
         "day": 42,
         "closing": {
-          "fen": 40000000,
-          "text": "¥400,000.00"
+          "fen": 44500000,
+          "text": "¥445,000.00"
         },
         "debt": {
-          "fen": 154504000,
-          "text": "¥1,545,040.00"
+          "fen": 159004000,
+          "text": "¥1,590,040.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -3759,12 +3816,12 @@
       {
         "day": 43,
         "closing": {
-          "fen": 40000000,
-          "text": "¥400,000.00"
+          "fen": 44500000,
+          "text": "¥445,000.00"
         },
         "debt": {
-          "fen": 154504000,
-          "text": "¥1,545,040.00"
+          "fen": 159004000,
+          "text": "¥1,590,040.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -3776,12 +3833,12 @@
       {
         "day": 44,
         "closing": {
-          "fen": 40000000,
-          "text": "¥400,000.00"
+          "fen": 44500000,
+          "text": "¥445,000.00"
         },
         "debt": {
-          "fen": 154504000,
-          "text": "¥1,545,040.00"
+          "fen": 159004000,
+          "text": "¥1,590,040.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -3793,12 +3850,12 @@
       {
         "day": 45,
         "closing": {
-          "fen": 40000000,
-          "text": "¥400,000.00"
+          "fen": 44500000,
+          "text": "¥445,000.00"
         },
         "debt": {
-          "fen": 154504000,
-          "text": "¥1,545,040.00"
+          "fen": 159004000,
+          "text": "¥1,590,040.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -3810,12 +3867,12 @@
       {
         "day": 46,
         "closing": {
-          "fen": 40000000,
-          "text": "¥400,000.00"
+          "fen": 44500000,
+          "text": "¥445,000.00"
         },
         "debt": {
-          "fen": 154504000,
-          "text": "¥1,545,040.00"
+          "fen": 159004000,
+          "text": "¥1,590,040.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -3827,12 +3884,12 @@
       {
         "day": 47,
         "closing": {
-          "fen": 30000000,
-          "text": "¥300,000.00"
+          "fen": 34500000,
+          "text": "¥345,000.00"
         },
         "debt": {
-          "fen": 154504000,
-          "text": "¥1,545,040.00"
+          "fen": 159004000,
+          "text": "¥1,590,040.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -3855,12 +3912,12 @@
       {
         "day": 48,
         "closing": {
-          "fen": 30000000,
-          "text": "¥300,000.00"
+          "fen": 34500000,
+          "text": "¥345,000.00"
         },
         "debt": {
-          "fen": 154504000,
-          "text": "¥1,545,040.00"
+          "fen": 159004000,
+          "text": "¥1,590,040.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -3872,12 +3929,12 @@
       {
         "day": 49,
         "closing": {
-          "fen": 30000000,
-          "text": "¥300,000.00"
+          "fen": 34500000,
+          "text": "¥345,000.00"
         },
         "debt": {
-          "fen": 154504000,
-          "text": "¥1,545,040.00"
+          "fen": 159004000,
+          "text": "¥1,590,040.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -3889,12 +3946,12 @@
       {
         "day": 50,
         "closing": {
-          "fen": 30000000,
-          "text": "¥300,000.00"
+          "fen": 34500000,
+          "text": "¥345,000.00"
         },
         "debt": {
-          "fen": 154504000,
-          "text": "¥1,545,040.00"
+          "fen": 159004000,
+          "text": "¥1,590,040.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -3906,12 +3963,12 @@
       {
         "day": 51,
         "closing": {
-          "fen": 30000000,
-          "text": "¥300,000.00"
+          "fen": 34500000,
+          "text": "¥345,000.00"
         },
         "debt": {
-          "fen": 154504000,
-          "text": "¥1,545,040.00"
+          "fen": 159004000,
+          "text": "¥1,590,040.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -3923,12 +3980,12 @@
       {
         "day": 52,
         "closing": {
-          "fen": 30000000,
-          "text": "¥300,000.00"
+          "fen": 34500000,
+          "text": "¥345,000.00"
         },
         "debt": {
-          "fen": 154504000,
-          "text": "¥1,545,040.00"
+          "fen": 159004000,
+          "text": "¥1,590,040.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -3940,12 +3997,12 @@
       {
         "day": 53,
         "closing": {
-          "fen": 30000000,
-          "text": "¥300,000.00"
+          "fen": 34500000,
+          "text": "¥345,000.00"
         },
         "debt": {
-          "fen": 154504000,
-          "text": "¥1,545,040.00"
+          "fen": 159004000,
+          "text": "¥1,590,040.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -3957,12 +4014,12 @@
       {
         "day": 54,
         "closing": {
-          "fen": 30000000,
-          "text": "¥300,000.00"
+          "fen": 34500000,
+          "text": "¥345,000.00"
         },
         "debt": {
-          "fen": 154504000,
-          "text": "¥1,545,040.00"
+          "fen": 159004000,
+          "text": "¥1,590,040.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -3974,12 +4031,12 @@
       {
         "day": 55,
         "closing": {
-          "fen": 30000000,
-          "text": "¥300,000.00"
+          "fen": 34500000,
+          "text": "¥345,000.00"
         },
         "debt": {
-          "fen": 154504000,
-          "text": "¥1,545,040.00"
+          "fen": 159004000,
+          "text": "¥1,590,040.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -3991,12 +4048,12 @@
       {
         "day": 56,
         "closing": {
-          "fen": 30000000,
-          "text": "¥300,000.00"
+          "fen": 34500000,
+          "text": "¥345,000.00"
         },
         "debt": {
-          "fen": 154504000,
-          "text": "¥1,545,040.00"
+          "fen": 159004000,
+          "text": "¥1,590,040.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -4008,12 +4065,12 @@
       {
         "day": 57,
         "closing": {
-          "fen": 30000000,
-          "text": "¥300,000.00"
+          "fen": 34500000,
+          "text": "¥345,000.00"
         },
         "debt": {
-          "fen": 154504000,
-          "text": "¥1,545,040.00"
+          "fen": 159004000,
+          "text": "¥1,590,040.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -4025,12 +4082,12 @@
       {
         "day": 58,
         "closing": {
-          "fen": 30000000,
-          "text": "¥300,000.00"
+          "fen": 34500000,
+          "text": "¥345,000.00"
         },
         "debt": {
-          "fen": 154504000,
-          "text": "¥1,545,040.00"
+          "fen": 159004000,
+          "text": "¥1,590,040.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -4042,12 +4099,12 @@
       {
         "day": 59,
         "closing": {
-          "fen": 30000000,
-          "text": "¥300,000.00"
+          "fen": 34500000,
+          "text": "¥345,000.00"
         },
         "debt": {
-          "fen": 154504000,
-          "text": "¥1,545,040.00"
+          "fen": 159004000,
+          "text": "¥1,590,040.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -4071,7 +4128,18 @@
           "text": "¥4,000.00"
         },
         "below_floor": false,
-        "events": []
+        "events": [
+          {
+            "kind": "FLOW",
+            "amount": {
+              "fen": -4500000,
+              "text": "−¥45,000.00"
+            },
+            "label": "Debt service (principal), Existing equipment loan (rate 0%: a fixture assumption)",
+            "ref": "D-EQUIP",
+            "formula": "debt_service: payment 45,000.00 − interest 0.00; principal left 1,410,000.00"
+          }
+        ]
       },
       {
         "day": 61,
@@ -4093,12 +4161,12 @@
       {
         "day": 62,
         "closing": {
-          "fen": 67415730,
-          "text": "¥674,157.30"
+          "fen": 72000000,
+          "text": "¥720,000.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 154504000,
+          "text": "¥1,545,040.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -4115,48 +4183,18 @@
             "label": "Receipt RI:BUYER-1:2 from BUYER-1",
             "ref": "RI:BUYER-1:2",
             "formula": "face 420,000.00: issued day 2 + 60-day terms; terms +15 days (OFF-f806f79b6c21-O2)"
-          },
-          {
-            "kind": "INTEREST",
-            "amount": {
-              "fen": -57750,
-              "text": "−¥577.50"
-            },
-            "label": "Interest, Invoice financing (onboarded platform) on RI:BUYER-1:2",
-            "ref": "FAC-IF",
-            "formula": "45,040.00 × 7.8% × 60/365 (57 days billed as 2 × 30-day period) = 577.50"
-          },
-          {
-            "kind": "FEE",
-            "amount": {
-              "fen": -22520,
-              "text": "−¥225.20"
-            },
-            "label": "Fee, Invoice financing (onboarded platform) on RI:BUYER-1:2",
-            "ref": "FAC-IF",
-            "formula": "45,040.00 × 0.25% × 2 = 225.20"
-          },
-          {
-            "kind": "REPAYMENT",
-            "amount": {
-              "fen": -4504000,
-              "text": "−¥45,040.00"
-            },
-            "label": "Repay advance on RI:BUYER-1:2",
-            "ref": "FAC-IF",
-            "formula": "repaid from the receipt of RI:BUYER-1:2"
           }
         ]
       },
       {
         "day": 63,
         "closing": {
-          "fen": 67415730,
-          "text": "¥674,157.30"
+          "fen": 72000000,
+          "text": "¥720,000.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 154504000,
+          "text": "¥1,545,040.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -4168,12 +4206,12 @@
       {
         "day": 64,
         "closing": {
-          "fen": 67415730,
-          "text": "¥674,157.30"
+          "fen": 72000000,
+          "text": "¥720,000.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 154504000,
+          "text": "¥1,545,040.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -4185,12 +4223,12 @@
       {
         "day": 65,
         "closing": {
-          "fen": 67415730,
-          "text": "¥674,157.30"
+          "fen": 72000000,
+          "text": "¥720,000.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 154504000,
+          "text": "¥1,545,040.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -4202,12 +4240,12 @@
       {
         "day": 66,
         "closing": {
-          "fen": 67415730,
-          "text": "¥674,157.30"
+          "fen": 72000000,
+          "text": "¥720,000.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 154504000,
+          "text": "¥1,545,040.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -4219,12 +4257,12 @@
       {
         "day": 67,
         "closing": {
-          "fen": 67415730,
-          "text": "¥674,157.30"
+          "fen": 72000000,
+          "text": "¥720,000.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 154504000,
+          "text": "¥1,545,040.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -4236,12 +4274,12 @@
       {
         "day": 68,
         "closing": {
-          "fen": 67415730,
-          "text": "¥674,157.30"
+          "fen": 72000000,
+          "text": "¥720,000.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 154504000,
+          "text": "¥1,545,040.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -4253,12 +4291,12 @@
       {
         "day": 69,
         "closing": {
-          "fen": 67415730,
-          "text": "¥674,157.30"
+          "fen": 72000000,
+          "text": "¥720,000.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 154504000,
+          "text": "¥1,545,040.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -4270,12 +4308,12 @@
       {
         "day": 70,
         "closing": {
-          "fen": 67415730,
-          "text": "¥674,157.30"
+          "fen": 72000000,
+          "text": "¥720,000.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 154504000,
+          "text": "¥1,545,040.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -4287,12 +4325,12 @@
       {
         "day": 71,
         "closing": {
-          "fen": 67415730,
-          "text": "¥674,157.30"
+          "fen": 72000000,
+          "text": "¥720,000.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 154504000,
+          "text": "¥1,545,040.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -4304,12 +4342,12 @@
       {
         "day": 72,
         "closing": {
-          "fen": 67415730,
-          "text": "¥674,157.30"
+          "fen": 72000000,
+          "text": "¥720,000.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 154504000,
+          "text": "¥1,545,040.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -4321,12 +4359,12 @@
       {
         "day": 73,
         "closing": {
-          "fen": 67415730,
-          "text": "¥674,157.30"
+          "fen": 72000000,
+          "text": "¥720,000.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 154504000,
+          "text": "¥1,545,040.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -4338,12 +4376,12 @@
       {
         "day": 74,
         "closing": {
-          "fen": 67415730,
-          "text": "¥674,157.30"
+          "fen": 72000000,
+          "text": "¥720,000.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 154504000,
+          "text": "¥1,545,040.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -4355,12 +4393,12 @@
       {
         "day": 75,
         "closing": {
-          "fen": 67415730,
-          "text": "¥674,157.30"
+          "fen": 72000000,
+          "text": "¥720,000.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 154504000,
+          "text": "¥1,545,040.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -4372,12 +4410,12 @@
       {
         "day": 76,
         "closing": {
-          "fen": 67415730,
-          "text": "¥674,157.30"
+          "fen": 72000000,
+          "text": "¥720,000.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 154504000,
+          "text": "¥1,545,040.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -4389,12 +4427,12 @@
       {
         "day": 77,
         "closing": {
-          "fen": 67415730,
-          "text": "¥674,157.30"
+          "fen": 72000000,
+          "text": "¥720,000.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 154504000,
+          "text": "¥1,545,040.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -4406,12 +4444,12 @@
       {
         "day": 78,
         "closing": {
-          "fen": 67415730,
-          "text": "¥674,157.30"
+          "fen": 72000000,
+          "text": "¥720,000.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 154504000,
+          "text": "¥1,545,040.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -4423,12 +4461,12 @@
       {
         "day": 79,
         "closing": {
-          "fen": 67415730,
-          "text": "¥674,157.30"
+          "fen": 72000000,
+          "text": "¥720,000.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 154504000,
+          "text": "¥1,545,040.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -4440,12 +4478,12 @@
       {
         "day": 80,
         "closing": {
-          "fen": 67415730,
-          "text": "¥674,157.30"
+          "fen": 72000000,
+          "text": "¥720,000.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 154504000,
+          "text": "¥1,545,040.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -4457,12 +4495,12 @@
       {
         "day": 81,
         "closing": {
-          "fen": 67415730,
-          "text": "¥674,157.30"
+          "fen": 72000000,
+          "text": "¥720,000.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 154504000,
+          "text": "¥1,545,040.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -4474,12 +4512,12 @@
       {
         "day": 82,
         "closing": {
-          "fen": 67415730,
-          "text": "¥674,157.30"
+          "fen": 72000000,
+          "text": "¥720,000.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 154504000,
+          "text": "¥1,545,040.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -4491,12 +4529,12 @@
       {
         "day": 83,
         "closing": {
-          "fen": 67415730,
-          "text": "¥674,157.30"
+          "fen": 72000000,
+          "text": "¥720,000.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 154504000,
+          "text": "¥1,545,040.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -4508,12 +4546,12 @@
       {
         "day": 84,
         "closing": {
-          "fen": 67415730,
-          "text": "¥674,157.30"
+          "fen": 72000000,
+          "text": "¥720,000.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 154504000,
+          "text": "¥1,545,040.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -4525,12 +4563,12 @@
       {
         "day": 85,
         "closing": {
-          "fen": 67415730,
-          "text": "¥674,157.30"
+          "fen": 72000000,
+          "text": "¥720,000.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 154504000,
+          "text": "¥1,545,040.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -4542,12 +4580,12 @@
       {
         "day": 86,
         "closing": {
-          "fen": 67415730,
-          "text": "¥674,157.30"
+          "fen": 72000000,
+          "text": "¥720,000.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 154504000,
+          "text": "¥1,545,040.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -4559,12 +4597,12 @@
       {
         "day": 87,
         "closing": {
-          "fen": 67415730,
-          "text": "¥674,157.30"
+          "fen": 72000000,
+          "text": "¥720,000.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 154504000,
+          "text": "¥1,545,040.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -4576,12 +4614,12 @@
       {
         "day": 88,
         "closing": {
-          "fen": 67415730,
-          "text": "¥674,157.30"
+          "fen": 72000000,
+          "text": "¥720,000.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 154504000,
+          "text": "¥1,545,040.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -4593,12 +4631,12 @@
       {
         "day": 89,
         "closing": {
-          "fen": 67415730,
-          "text": "¥674,157.30"
+          "fen": 72000000,
+          "text": "¥720,000.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 154504000,
+          "text": "¥1,545,040.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -4610,29 +4648,40 @@
       {
         "day": 90,
         "closing": {
-          "fen": 67415730,
-          "text": "¥674,157.30"
+          "fen": 67500000,
+          "text": "¥675,000.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 150004000,
+          "text": "¥1,500,040.00"
         },
         "forward_concession": {
           "fen": 400000,
           "text": "¥4,000.00"
         },
         "below_floor": false,
-        "events": []
+        "events": [
+          {
+            "kind": "FLOW",
+            "amount": {
+              "fen": -4500000,
+              "text": "−¥45,000.00"
+            },
+            "label": "Debt service (principal), Existing equipment loan (rate 0%: a fixture assumption)",
+            "ref": "D-EQUIP",
+            "formula": "debt_service: payment 45,000.00 − interest 0.00; principal left 1,365,000.00"
+          }
+        ]
       },
       {
         "day": 91,
         "closing": {
-          "fen": 67415730,
-          "text": "¥674,157.30"
+          "fen": 67500000,
+          "text": "¥675,000.00"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 150004000,
+          "text": "¥1,500,040.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -4644,12 +4693,12 @@
       {
         "day": 92,
         "closing": {
-          "fen": 109415730,
-          "text": "¥1,094,157.30"
+          "fen": 95755333,
+          "text": "¥957,553.33"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 136500000,
+          "text": "¥1,365,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -4666,18 +4715,48 @@
             "label": "Receipt RI:BUYER-1:32 from BUYER-1",
             "ref": "RI:BUYER-1:32",
             "formula": "face 420,000.00: issued day 32 + 60-day terms; terms +15 days (OFF-f806f79b6c21-O2)"
+          },
+          {
+            "kind": "INTEREST",
+            "amount": {
+              "fen": -173147,
+              "text": "−¥1,731.47"
+            },
+            "label": "Interest, Invoice financing (onboarded platform) on RI:BUYER-1:32",
+            "ref": "FAC-IF",
+            "formula": "135,040.00 × 7.8% × 60/365 (57 days billed as 2 × 30-day period) = 1,731.47"
+          },
+          {
+            "kind": "FEE",
+            "amount": {
+              "fen": -67520,
+              "text": "−¥675.20"
+            },
+            "label": "Fee, Invoice financing (onboarded platform) on RI:BUYER-1:32",
+            "ref": "FAC-IF",
+            "formula": "135,040.00 × 0.25% × 2 = 675.20"
+          },
+          {
+            "kind": "REPAYMENT",
+            "amount": {
+              "fen": -13504000,
+              "text": "−¥135,040.00"
+            },
+            "label": "Repay advance on RI:BUYER-1:32",
+            "ref": "FAC-IF",
+            "formula": "repaid from the receipt of RI:BUYER-1:32"
           }
         ]
       },
       {
         "day": 93,
         "closing": {
-          "fen": 109415730,
-          "text": "¥1,094,157.30"
+          "fen": 95755333,
+          "text": "¥957,553.33"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 136500000,
+          "text": "¥1,365,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -4689,12 +4768,12 @@
       {
         "day": 94,
         "closing": {
-          "fen": 109415730,
-          "text": "¥1,094,157.30"
+          "fen": 95755333,
+          "text": "¥957,553.33"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 136500000,
+          "text": "¥1,365,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -4706,12 +4785,12 @@
       {
         "day": 95,
         "closing": {
-          "fen": 109415730,
-          "text": "¥1,094,157.30"
+          "fen": 95755333,
+          "text": "¥957,553.33"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 136500000,
+          "text": "¥1,365,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -4723,12 +4802,12 @@
       {
         "day": 96,
         "closing": {
-          "fen": 109415730,
-          "text": "¥1,094,157.30"
+          "fen": 95755333,
+          "text": "¥957,553.33"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 136500000,
+          "text": "¥1,365,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -4740,12 +4819,12 @@
       {
         "day": 97,
         "closing": {
-          "fen": 109415730,
-          "text": "¥1,094,157.30"
+          "fen": 95755333,
+          "text": "¥957,553.33"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 136500000,
+          "text": "¥1,365,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -4757,12 +4836,12 @@
       {
         "day": 98,
         "closing": {
-          "fen": 109415730,
-          "text": "¥1,094,157.30"
+          "fen": 95755333,
+          "text": "¥957,553.33"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 136500000,
+          "text": "¥1,365,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -4774,12 +4853,12 @@
       {
         "day": 99,
         "closing": {
-          "fen": 109415730,
-          "text": "¥1,094,157.30"
+          "fen": 95755333,
+          "text": "¥957,553.33"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 136500000,
+          "text": "¥1,365,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -4791,12 +4870,12 @@
       {
         "day": 100,
         "closing": {
-          "fen": 109415730,
-          "text": "¥1,094,157.30"
+          "fen": 95755333,
+          "text": "¥957,553.33"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 136500000,
+          "text": "¥1,365,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -4808,12 +4887,12 @@
       {
         "day": 101,
         "closing": {
-          "fen": 109415730,
-          "text": "¥1,094,157.30"
+          "fen": 95755333,
+          "text": "¥957,553.33"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 136500000,
+          "text": "¥1,365,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -4825,12 +4904,12 @@
       {
         "day": 102,
         "closing": {
-          "fen": 109415730,
-          "text": "¥1,094,157.30"
+          "fen": 95755333,
+          "text": "¥957,553.33"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 136500000,
+          "text": "¥1,365,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -4842,12 +4921,12 @@
       {
         "day": 103,
         "closing": {
-          "fen": 109415730,
-          "text": "¥1,094,157.30"
+          "fen": 95755333,
+          "text": "¥957,553.33"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 136500000,
+          "text": "¥1,365,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -4859,12 +4938,12 @@
       {
         "day": 104,
         "closing": {
-          "fen": 109415730,
-          "text": "¥1,094,157.30"
+          "fen": 95755333,
+          "text": "¥957,553.33"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 136500000,
+          "text": "¥1,365,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -4876,12 +4955,12 @@
       {
         "day": 105,
         "closing": {
-          "fen": 109415730,
-          "text": "¥1,094,157.30"
+          "fen": 95755333,
+          "text": "¥957,553.33"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 136500000,
+          "text": "¥1,365,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -4893,12 +4972,12 @@
       {
         "day": 106,
         "closing": {
-          "fen": 109415730,
-          "text": "¥1,094,157.30"
+          "fen": 95755333,
+          "text": "¥957,553.33"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 136500000,
+          "text": "¥1,365,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -4910,12 +4989,12 @@
       {
         "day": 107,
         "closing": {
-          "fen": 109415730,
-          "text": "¥1,094,157.30"
+          "fen": 95755333,
+          "text": "¥957,553.33"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 136500000,
+          "text": "¥1,365,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -4927,12 +5006,12 @@
       {
         "day": 108,
         "closing": {
-          "fen": 109415730,
-          "text": "¥1,094,157.30"
+          "fen": 95755333,
+          "text": "¥957,553.33"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 136500000,
+          "text": "¥1,365,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -4944,12 +5023,12 @@
       {
         "day": 109,
         "closing": {
-          "fen": 109415730,
-          "text": "¥1,094,157.30"
+          "fen": 95755333,
+          "text": "¥957,553.33"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 136500000,
+          "text": "¥1,365,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -4961,12 +5040,12 @@
       {
         "day": 110,
         "closing": {
-          "fen": 109415730,
-          "text": "¥1,094,157.30"
+          "fen": 95755333,
+          "text": "¥957,553.33"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 136500000,
+          "text": "¥1,365,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -4978,12 +5057,12 @@
       {
         "day": 111,
         "closing": {
-          "fen": 109415730,
-          "text": "¥1,094,157.30"
+          "fen": 95755333,
+          "text": "¥957,553.33"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 136500000,
+          "text": "¥1,365,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -4995,12 +5074,12 @@
       {
         "day": 112,
         "closing": {
-          "fen": 109415730,
-          "text": "¥1,094,157.30"
+          "fen": 95755333,
+          "text": "¥957,553.33"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 136500000,
+          "text": "¥1,365,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -5012,12 +5091,12 @@
       {
         "day": 113,
         "closing": {
-          "fen": 109415730,
-          "text": "¥1,094,157.30"
+          "fen": 95755333,
+          "text": "¥957,553.33"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 136500000,
+          "text": "¥1,365,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -5029,12 +5108,12 @@
       {
         "day": 114,
         "closing": {
-          "fen": 109415730,
-          "text": "¥1,094,157.30"
+          "fen": 95755333,
+          "text": "¥957,553.33"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 136500000,
+          "text": "¥1,365,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -5046,12 +5125,12 @@
       {
         "day": 115,
         "closing": {
-          "fen": 109415730,
-          "text": "¥1,094,157.30"
+          "fen": 95755333,
+          "text": "¥957,553.33"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 136500000,
+          "text": "¥1,365,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -5063,12 +5142,12 @@
       {
         "day": 116,
         "closing": {
-          "fen": 109415730,
-          "text": "¥1,094,157.30"
+          "fen": 95755333,
+          "text": "¥957,553.33"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 136500000,
+          "text": "¥1,365,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -5080,12 +5159,12 @@
       {
         "day": 117,
         "closing": {
-          "fen": 109415730,
-          "text": "¥1,094,157.30"
+          "fen": 95755333,
+          "text": "¥957,553.33"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 136500000,
+          "text": "¥1,365,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -5097,12 +5176,12 @@
       {
         "day": 118,
         "closing": {
-          "fen": 109415730,
-          "text": "¥1,094,157.30"
+          "fen": 95755333,
+          "text": "¥957,553.33"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 136500000,
+          "text": "¥1,365,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -5114,12 +5193,12 @@
       {
         "day": 119,
         "closing": {
-          "fen": 109415730,
-          "text": "¥1,094,157.30"
+          "fen": 95755333,
+          "text": "¥957,553.33"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 136500000,
+          "text": "¥1,365,000.00"
         },
         "forward_concession": {
           "fen": 400000,
@@ -5131,33 +5210,44 @@
       {
         "day": 120,
         "closing": {
-          "fen": 109415730,
-          "text": "¥1,094,157.30"
+          "fen": 91255333,
+          "text": "¥912,553.33"
         },
         "debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 132000000,
+          "text": "¥1,320,000.00"
         },
         "forward_concession": {
           "fen": 400000,
           "text": "¥4,000.00"
         },
         "below_floor": false,
-        "events": []
+        "events": [
+          {
+            "kind": "FLOW",
+            "amount": {
+              "fen": -4500000,
+              "text": "−¥45,000.00"
+            },
+            "label": "Debt service (principal), Existing equipment loan (rate 0%: a fixture assumption)",
+            "ref": "D-EQUIP",
+            "formula": "debt_service: payment 45,000.00 − interest 0.00; principal left 1,320,000.00"
+          }
+        ]
       }
     ],
     "months": [
       {
         "month": 1,
         "dscr": "2.00x",
-        "leverage": "1.43x",
+        "leverage": "1.35x",
         "debt_service": {
           "fen": 4500000,
           "text": "¥45,000.00"
         },
         "total_debt": {
-          "fen": 154504000,
-          "text": "¥1,545,040.00"
+          "fen": 145500000,
+          "text": "¥1,455,000.00"
         }
       },
       {
@@ -5175,19 +5265,6 @@
       },
       {
         "month": 3,
-        "dscr": "1.96x",
-        "leverage": "1.39x",
-        "debt_service": {
-          "fen": 4580270,
-          "text": "¥45,802.70"
-        },
-        "total_debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
-        }
-      },
-      {
-        "month": 4,
         "dscr": "2.00x",
         "leverage": "1.39x",
         "debt_service": {
@@ -5195,18 +5272,31 @@
           "text": "¥45,000.00"
         },
         "total_debt": {
-          "fen": 150000000,
-          "text": "¥1,500,000.00"
+          "fen": 150004000,
+          "text": "¥1,500,040.00"
+        }
+      },
+      {
+        "month": 4,
+        "dscr": "1.90x",
+        "leverage": "1.22x",
+        "debt_service": {
+          "fen": 4740667,
+          "text": "¥47,406.67"
+        },
+        "total_debt": {
+          "fen": 132000000,
+          "text": "¥1,320,000.00"
         }
       }
     ],
     "interest": {
-      "fen": 57750,
-      "text": "¥577.50"
+      "fen": 173147,
+      "text": "¥1,731.47"
     },
     "fees": {
-      "fen": 22520,
-      "text": "¥225.20"
+      "fen": 67520,
+      "text": "¥675.20"
     },
     "discounts": {
       "fen": 504000,
@@ -5246,7 +5336,7 @@
       "label": "Line + early payment on part of the invoice at 1.2%",
       "components": [
         "Bank credit line: draw ¥150,000.00, repaid day 32",
-        "Buyer early-payment offer: early payment on ¥212,550.61 face of RCV-A at 1.2%"
+        "Buyer early-payment offer: early payment on ¥258,097.17 face of RCV-A at 1.2%"
       ],
       "actions": [
         {
@@ -5262,18 +5352,18 @@
           "kind": "EARLY_PAY",
           "facility_id": "FAC-EARLYPAY",
           "day": 0,
-          "amount_fen": 21255061,
+          "amount_fen": 25809717,
           "receivable_id": "RCV-A",
           "repay_day": null,
           "rate_bp": 120
         }
       ],
-      "cost_fen": 339225,
-      "cost_display": "¥841.64 + ¥2,550.61 = ¥3,392.25",
+      "cost_fen": 393881,
+      "cost_display": "¥841.64 + ¥3,097.17 = ¥3,938.81",
       "result": "ADMISSIBLE",
       "reasons": [],
       "breach_day": null,
-      "note": "cost ¥3,392.25; admissible but dearer than the selected plan",
+      "note": "cost ¥3,938.81; admissible but dearer than the selected plan",
       "needs_owner_approval": false,
       "approval_reason": "",
       "executable_now": true
@@ -5283,7 +5373,7 @@
       "label": "Router optimum",
       "components": [
         "Bank credit line: draw ¥150,000.00, repaid day 32",
-        "Invoice financing (onboarded platform): advance ¥210,000.00 on RCV-A"
+        "Invoice financing (onboarded platform): advance ¥255,000.00 on RCV-A"
       ],
       "actions": [
         {
@@ -5299,14 +5389,14 @@
           "kind": "FINANCE_INVOICE",
           "facility_id": "FAC-IF",
           "day": 0,
-          "amount_fen": 21000000,
+          "amount_fen": 25500000,
           "receivable_id": "RCV-A",
           "repay_day": null,
           "rate_bp": null
         }
       ],
-      "cost_fen": 271294,
-      "cost_display": "¥841.64 + ¥1,871.30 = ¥2,712.94",
+      "cost_fen": 311393,
+      "cost_display": "¥841.64 + ¥2,272.29 = ¥3,113.93",
       "result": "SELECTED",
       "reasons": [],
       "breach_day": null,
@@ -5320,7 +5410,7 @@
       "label": "Line + guaranteed loan",
       "components": [
         "Bank credit line: draw ¥150,000.00, repaid day 32",
-        "Government-guaranteed working-capital loan: draw ¥210,000.00 (arrives day 21)"
+        "Government-guaranteed working-capital loan: draw ¥255,000.00 (arrives day 21)"
       ],
       "actions": [
         {
@@ -5336,7 +5426,7 @@
           "kind": "DRAW",
           "facility_id": "FAC-GGL",
           "day": 0,
-          "amount_fen": 21000000,
+          "amount_fen": 25500000,
           "receivable_id": null,
           "repay_day": null,
           "rate_bp": null

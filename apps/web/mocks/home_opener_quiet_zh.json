@@ -1,7 +1,7 @@
 {
   "session_id": "rec-quiet-zh",
   "turn": 1,
-  "reply": "第 0 天。 1 项警告：Reserve headroom thin on day 20。",
+  "reply": "第 0 天。 1 项警告：Reserve headroom thin on day 30。",
   "intent": "SHOW_ALERTS",
   "lang": "zh",
   "plan": [],

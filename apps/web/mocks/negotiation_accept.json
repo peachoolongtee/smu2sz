@@ -4,23 +4,23 @@
   "rounds": [
     {
       "round": 1,
-      "counter_id": "CTR-6cf1543f0dde",
+      "counter_id": "CTR-ce19415db1d4",
       "counter_label": "Option A",
       "buyer_response": "ACCEPT",
       "buyer_text": "Round 1. We accept Option A as proposed."
     }
   ],
-  "accepted_counter_id": "CTR-6cf1543f0dde",
+  "accepted_counter_id": "CTR-ce19415db1d4",
   "commitment": {
     "id": "CMT-a78afaa5becb5273",
     "offer_id": "OFF-f806f79b6c21",
     "offer_version": 1,
     "counterparty_id": "BUYER-1",
-    "verdict_id": "VER-a4d828a7825e",
-    "terms_hash": "967aa05f00a80b603139fe775dfa0101850e7e912131f5b1e23d2f6879c100d5",
+    "verdict_id": "VER-df13ee3a54e2",
+    "terms_hash": "342e81d5572b1ecd3a1b01f177dc698c8f418ef9df1fdfd17ec4d49f6f72a280",
     "obligations": [
       {
-        "id": "CTR-6cf1543f0dde-O2",
+        "id": "CTR-ce19415db1d4-O2",
         "type": "IMMEDIATE_DISCOUNT",
         "counterparty_id": "BUYER-1",
         "rate_bp": 85,
@@ -30,10 +30,10 @@
         "effective_day": 2,
         "base": {
           "kind": "INVOICE",
-          "amount_fen": 21190000,
+          "amount_fen": 25720000,
           "receivable_id": "RCV-A",
           "events_per_year": null,
-          "amount_display": "¥211,900.00"
+          "amount_display": "¥257,200.00"
         },
         "contingency": "FIRM",
         "duration": {
@@ -43,10 +43,10 @@
         },
         "spans": [
           {
-            "doc_id": "CTR-6cf1543f0dde",
+            "doc_id": "CTR-ce19415db1d4",
             "start": 34,
             "end": 109,
-            "text": "We will accept early settlement on up to ¥211,900 of this invoice at 0.85%."
+            "text": "We will accept early settlement on up to ¥257,200 of this invoice at 0.85%."
           }
         ],
         "confidence": 1,
@@ -89,42 +89,42 @@
       "prev_hash": "66567bfd6f7f5561422a246d5eb7f1c6f3a862f0a31699335e54e54f5f266752",
       "effective_day": 0,
       "approval_id": null,
-      "message": "Drew ¥149,901.15 on FAC-LINE on day 0",
+      "message": "Drew ¥149,986.20 on FAC-LINE on day 0",
       "day": 0,
       "requested_by": null,
-      "summary": "Drew ¥149,901.15 on FAC-LINE on day 0"
+      "summary": "Drew ¥149,986.20 on FAC-LINE on day 0"
     }
   ],
   "plan": {
-    "id": "PLAN-COM-f54179c4dab9",
+    "id": "PLAN-COM-6967b1df72ef",
     "basis": "COMMITTED",
-    "need_fen": 14990115,
+    "need_fen": 14998620,
     "actions": [
       {
         "kind": "DRAW",
         "facility_id": "FAC-LINE",
         "day": 0,
-        "amount_fen": 14990115,
+        "amount_fen": 14998620,
         "receivable_id": null,
         "repay_day": 32,
         "rate_bp": null,
-        "amount_display": "¥149,901.15"
+        "amount_display": "¥149,986.20"
       }
     ],
     "costs": [
       {
-        "label": "Bank credit line: draw ¥149,901.15, repaid day 32",
-        "fen": 84109,
+        "label": "Bank credit line: draw ¥149,986.20, repaid day 32",
+        "fen": 84157,
         "facility_id": "FAC-LINE",
-        "formula": "149,901.15 × 6.4% × 32/365 = 841.09",
+        "formula": "149,986.20 × 6.4% × 32/365 = 841.57",
         "needs_owner_approval": false,
         "approval_reason": "",
         "executable_now": true,
         "not_executable_reason": "",
-        "display": "¥841.09"
+        "display": "¥841.57"
       }
     ],
-    "total_cost_fen": 84109,
+    "total_cost_fen": 84157,
     "admissible": true,
     "violations": [],
     "marginal_cost_annual": {
@@ -137,17 +137,17 @@
       {
         "label": "Discount the whole invoice at 1.2%",
         "reasons": [],
-        "note": "cost ¥2,497.20; admissible but dearer than the selected plan"
+        "note": "cost ¥1,953.60; admissible but dearer than the selected plan"
       }
     ],
-    "label": "committed plan: ¥841.09",
+    "label": "committed plan: ¥841.57",
     "needs_owner_approval": false,
     "approval_reason": "",
     "executable_now": true,
     "not_executable_reason": "",
-    "need_display": "¥149,901.15",
-    "total_cost_display": "¥841.09"
+    "need_display": "¥149,986.20",
+    "total_cost_display": "¥841.57"
   },
-  "message": "CTR-6cf1543f0dde accepted; commitment recorded; remaining gap funded.",
-  "transcript_hash": "6e879b3b6637abaa7578f63f99a370ddd4a9bbd6c0201f190c0e1d3ba81ec69a"
+  "message": "CTR-ce19415db1d4 accepted; commitment recorded; remaining gap funded.",
+  "transcript_hash": "f1e939028f893b10110003ee65c7ba33bc006ed6d4edbd917a9e302044945a37"
 }
