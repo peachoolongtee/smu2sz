@@ -1,6 +1,7 @@
 {
   "day": 34,
   "basis": "CONSERVATIVE",
+  "state_version": 8,
   "projected_offer_id": null,
   "counts": {
     "CRITICAL": 0,
@@ -13,11 +14,11 @@
       "kind": "RECEIVABLE_PAST_DUE",
       "severity": "WARNING",
       "title": "Receivable RCV-A is 2 day(s) past due",
-      "detail": "¥208,100.00 outstanding from BUYER-1 was due on day 32 and is still OPEN. The conservative trajectory no longer counts on a dated receipt.",
+      "detail": "¥162,800.00 outstanding from BUYER-1 was due on day 32 and is still OPEN. The conservative trajectory no longer counts on a dated receipt.",
       "formula": "today − due_day = 34 − 32 = 2 > 0",
       "day": 32,
       "month": null,
-      "amount_fen": 20810000,
+      "amount_fen": 16280000,
       "committed_cure": null,
       "commitment_id": null,
       "receivable_id": "RCV-A",
@@ -25,7 +26,7 @@
         "receivable_id": "RCV-A",
         "counterparty_id": "BUYER-1",
         "due_day": "32",
-        "outstanding": "¥208,100.00"
+        "outstanding": "¥162,800.00"
       },
       "suggested": [
         {
@@ -34,7 +35,7 @@
           "receivable_id": "RCV-A",
           "commitment_id": null,
           "offer_id": null,
-          "amount_fen": 20810000,
+          "amount_fen": 16280000,
           "note": "chase the buyer; record the receipt when the money lands",
           "cost_fen": null,
           "cost_days": null,
@@ -42,12 +43,12 @@
           "cost_formula": "",
           "above_apr_cap": false,
           "executes_automatically": false,
-          "amount_display": "¥208,100.00"
+          "amount_display": "¥162,800.00"
         }
       ],
       "actionable": false,
       "basis": "CONSERVATIVE",
-      "amount_display": "¥208,100.00"
+      "amount_display": "¥162,800.00"
     },
     {
       "id": "ALERT-HEADROOM-34",

@@ -19,6 +19,8 @@ import type {
   AuditView,
   BorrowerFileRequest,
   BorrowerFileView,
+  CapexApplyRequest,
+  CapexApplyResult,
   CapexRequest,
   CapexView,
   ClockView,
@@ -129,7 +131,12 @@ export async function capexEvaluate(req: CapexRequest): Promise<CapexView> {
   return isMock ? (await mock()).capexEvaluate(req) : (await live()).capexEvaluate(req);
 }
 
-/** POST /borrower-file (flag `borrower_file`) */
+/** POST /capex/apply (owner only): queues the application for the selected structure; refused (409) if the books moved. */
+export async function capexApply(req: CapexApplyRequest): Promise<CapexApplyResult> {
+  return isMock ? (await mock()).capexApply(req) : (await live()).capexApply(req);
+}
+
+/** POST /borrower-file (flag `borrower_file`): read-only, nothing is queued */
 export async function borrowerFile(req: BorrowerFileRequest): Promise<BorrowerFileView> {
   return isMock ? (await mock()).borrowerFile(req) : (await live()).borrowerFile(req);
 }

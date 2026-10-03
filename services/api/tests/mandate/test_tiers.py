@@ -34,7 +34,6 @@ CASES = [
     ),
     (op(m.ReceivePayment, receivable_id="RCV-A", amount_fen=42_000_000), Tier.TIER_2),
     (op(m.RequestOwnerApproval, subject="s", payload_op_id="p"), Tier.TIER_1),
-    (op(m.GenerateBorrowerFile, facility_id="FAC-GGL", amount_fen=1), Tier.TIER_2),
     (op(m.ApplyForFacility, facility_id="FAC-GGL", amount_fen=1), Tier.TIER_2),
     (op(m.SignPersonalGuarantee, actor=Actor.OWNER, facility_id="FAC-LINE"), Tier.TIER_3),
     (op(m.PledgeCollateral, actor=Actor.OWNER, facility_id="FAC-LINE"), Tier.TIER_3),

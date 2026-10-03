@@ -45,11 +45,11 @@
         "status": "FINANCED",
         "confirmed": true,
         "settled_fen": 0,
-        "advance_fen": 21000000,
+        "advance_fen": 25500000,
         "advance_facility_id": "FAC-IF",
         "face_display": "¥420,000.00",
         "settled_display": "¥0.00",
-        "advance_display": "¥210,000.00"
+        "advance_display": "¥255,000.00"
       }
     ],
     "recurring_invoices": [
@@ -129,7 +129,7 @@
         "status": "COMMITTED",
         "owner_approved": true,
         "limit_fen": 35000000,
-        "drawn_fen": 21000000,
+        "drawn_fen": 25500000,
         "advance_rate_bp": 8000,
         "rate_bp": 780,
         "fee_bp_per_advance": 25,
@@ -145,7 +145,7 @@
         "covenants": [],
         "source_note": "synthetic fixture (spec v2 §7.2)",
         "limit_display": "¥350,000.00",
-        "drawn_display": "¥210,000.00",
+        "drawn_display": "¥255,000.00",
         "advance_rate_display": "80.00%",
         "rate_display": "7.80%",
         "upfront_fee_display": "0.00%"
@@ -323,11 +323,15 @@
       {
         "id": "D-EQUIP",
         "facility_id": null,
-        "label": "Existing equipment loan",
+        "label": "Existing equipment loan (rate 0%: a fixture assumption)",
         "principal_fen": 150000000,
         "monthly_debt_service_fen": 4500000,
+        "rate_bp": 0,
+        "payment_every_days": 30,
+        "next_payment_day": 30,
         "principal_display": "¥1,500,000.00",
-        "monthly_debt_service_display": "¥45,000.00"
+        "monthly_debt_service_display": "¥45,000.00",
+        "rate_display": "0.00%"
       }
     ],
     "forward_concessions": [],
@@ -391,7 +395,7 @@
     "as_of_day": 0,
     "lots": [
       {
-        "id": "NL-3ef573f07dab9b91",
+        "id": "NL-b5dd1816eae4c5f4",
         "facility_id": "FAC-LINE",
         "principal_fen": 15000000,
         "remaining_fen": 15000000,
@@ -405,18 +409,18 @@
         "remaining_display": "¥150,000.00"
       },
       {
-        "id": "NL-5a12d348b0b4a01b",
+        "id": "NL-a43ee071c70c43f9",
         "facility_id": "FAC-IF",
-        "principal_fen": 21000000,
-        "remaining_fen": 21000000,
+        "principal_fen": 25500000,
+        "remaining_fen": 25500000,
         "request_day": 0,
         "arrival_day": 3,
         "receivable_id": "RCV-A",
         "maturity_day": null,
         "settled": false,
         "assumed_date": false,
-        "principal_display": "¥210,000.00",
-        "remaining_display": "¥210,000.00"
+        "principal_display": "¥255,000.00",
+        "remaining_display": "¥255,000.00"
       }
     ],
     "cash_display": "¥550,000.00",

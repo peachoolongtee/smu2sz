@@ -323,11 +323,15 @@
       {
         "id": "D-EQUIP",
         "facility_id": null,
-        "label": "Existing equipment loan",
+        "label": "Existing equipment loan (rate 0%: a fixture assumption)",
         "principal_fen": 150000000,
         "monthly_debt_service_fen": 4500000,
+        "rate_bp": 0,
+        "payment_every_days": 30,
+        "next_payment_day": 30,
         "principal_display": "¥1,500,000.00",
-        "monthly_debt_service_display": "¥45,000.00"
+        "monthly_debt_service_display": "¥45,000.00",
+        "rate_display": "0.00%"
       }
     ],
     "forward_concessions": [],

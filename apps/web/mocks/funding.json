@@ -1,8 +1,8 @@
 {
   "committed": {
-    "id": "PLAN-COM-1ec49ce46f15",
+    "id": "PLAN-COM-c224771dfe08",
     "basis": "COMMITTED",
-    "need_fen": 36000000,
+    "need_fen": 40500000,
     "actions": [
       {
         "kind": "DRAW",
@@ -18,11 +18,11 @@
         "kind": "FINANCE_INVOICE",
         "facility_id": "FAC-IF",
         "day": 0,
-        "amount_fen": 21000000,
+        "amount_fen": 25500000,
         "receivable_id": "RCV-A",
         "repay_day": null,
         "rate_bp": null,
-        "amount_display": "¥210,000.00"
+        "amount_display": "¥255,000.00"
       }
     ],
     "costs": [
@@ -38,18 +38,18 @@
         "display": "¥841.64"
       },
       {
-        "label": "Invoice financing (onboarded platform): advance ¥210,000.00 on RCV-A",
-        "fen": 187130,
+        "label": "Invoice financing (onboarded platform): advance ¥255,000.00 on RCV-A",
+        "fen": 227229,
         "facility_id": "FAC-IF",
-        "formula": "210,000.00 × 7.8% × 30/365 (29 days billed as 1 × 30-day period) = 1,346.30; 210,000.00 × 0.25% × 1 = 525.00; total ¥1,871.30",
+        "formula": "255,000.00 × 7.8% × 30/365 (29 days billed as 1 × 30-day period) = 1,634.79; 255,000.00 × 0.25% × 1 = 637.50; total ¥2,272.29",
         "needs_owner_approval": false,
         "approval_reason": "",
         "executable_now": true,
         "not_executable_reason": "",
-        "display": "¥1,871.30"
+        "display": "¥2,272.29"
       }
     ],
-    "total_cost_fen": 271294,
+    "total_cost_fen": 311393,
     "admissible": true,
     "violations": [],
     "marginal_cost_annual": {
@@ -67,7 +67,7 @@
       {
         "label": "Line + early payment on part of the invoice at 1.2%",
         "reasons": [],
-        "note": "cost ¥3,392.25; admissible but dearer than the selected plan"
+        "note": "cost ¥3,938.81; admissible but dearer than the selected plan"
       },
       {
         "label": "Line + guaranteed loan",
@@ -85,18 +85,18 @@
         "note": "cost ¥841.64; RESERVE_BREACH on day 12"
       }
     ],
-    "label": "committed plan: ¥841.64 + ¥1,871.30 = ¥2,712.94",
+    "label": "committed plan: ¥841.64 + ¥2,272.29 = ¥3,113.93",
     "needs_owner_approval": false,
     "approval_reason": "",
     "executable_now": true,
     "not_executable_reason": "",
-    "need_display": "¥360,000.00",
-    "total_cost_display": "¥2,712.94"
+    "need_display": "¥405,000.00",
+    "total_cost_display": "¥3,113.93"
   },
   "expected": {
-    "id": "PLAN-EXP-0ae145a84747",
+    "id": "PLAN-EXP-a39a566c48da",
     "basis": "EXPECTED",
-    "need_fen": 36000000,
+    "need_fen": 40500000,
     "actions": [
       {
         "kind": "DRAW",
@@ -112,11 +112,11 @@
         "kind": "FINANCE_INVOICE",
         "facility_id": "FAC-IF",
         "day": 0,
-        "amount_fen": 21000000,
+        "amount_fen": 25500000,
         "receivable_id": "RCV-A",
         "repay_day": null,
         "rate_bp": null,
-        "amount_display": "¥210,000.00"
+        "amount_display": "¥255,000.00"
       }
     ],
     "costs": [
@@ -132,18 +132,18 @@
         "display": "¥841.64"
       },
       {
-        "label": "Invoice financing (onboarded platform): advance ¥210,000.00 on RCV-A",
-        "fen": 187130,
+        "label": "Invoice financing (onboarded platform): advance ¥255,000.00 on RCV-A",
+        "fen": 227229,
         "facility_id": "FAC-IF",
-        "formula": "210,000.00 × 7.8% × 30/365 (29 days billed as 1 × 30-day period) = 1,346.30; 210,000.00 × 0.25% × 1 = 525.00; total ¥1,871.30",
+        "formula": "255,000.00 × 7.8% × 30/365 (29 days billed as 1 × 30-day period) = 1,634.79; 255,000.00 × 0.25% × 1 = 637.50; total ¥2,272.29",
         "needs_owner_approval": false,
         "approval_reason": "",
         "executable_now": true,
         "not_executable_reason": "",
-        "display": "¥1,871.30"
+        "display": "¥2,272.29"
       }
     ],
-    "total_cost_fen": 271294,
+    "total_cost_fen": 311393,
     "admissible": true,
     "violations": [],
     "marginal_cost_annual": {
@@ -161,7 +161,7 @@
       {
         "label": "Line + early payment on part of the invoice at 1.2%",
         "reasons": [],
-        "note": "cost ¥3,392.25; admissible but dearer than the selected plan"
+        "note": "cost ¥3,938.81; admissible but dearer than the selected plan"
       },
       {
         "label": "Line + guaranteed loan",
@@ -169,7 +169,7 @@
           "LEAD_TIME_TOO_LONG",
           "RESERVE_BREACH"
         ],
-        "note": "cost ¥11,197.80; RESERVE_BREACH on day 12; not applied; cash on day 21, gap opens on day 12"
+        "note": "cost ¥13,416.98; RESERVE_BREACH on day 12; not applied; cash on day 21, gap opens on day 12"
       },
       {
         "label": "Line only",
@@ -179,13 +179,13 @@
         "note": "cost ¥841.64; RESERVE_BREACH on day 12"
       }
     ],
-    "label": "expected plan (committed sources only): ¥841.64 + ¥1,871.30 = ¥2,712.94",
+    "label": "expected plan (committed sources only): ¥841.64 + ¥2,272.29 = ¥3,113.93",
     "needs_owner_approval": false,
     "approval_reason": "",
     "executable_now": true,
     "not_executable_reason": "",
-    "need_display": "¥360,000.00",
-    "total_cost_display": "¥2,712.94"
+    "need_display": "¥405,000.00",
+    "total_cost_display": "¥3,113.93"
   },
   "menu": [
     {
@@ -254,7 +254,7 @@
       "admissible": true,
       "needs_owner_approval": false,
       "reason_codes": [],
-      "reason": "covers at most ¥150,000.00 of the ¥360,000.00 need; synthetic fixture (spec v2 §7.2)",
+      "reason": "covers at most ¥150,000.00 of the ¥405,000.00 need; synthetic fixture (spec v2 §7.2)",
       "limit_display": "¥150,000.00",
       "available_display": "¥150,000.00",
       "committed": true,
@@ -297,7 +297,7 @@
       "admissible": true,
       "needs_owner_approval": false,
       "reason_codes": [],
-      "reason": "covers at most ¥350,000.00 of the ¥360,000.00 need; synthetic fixture (spec v2 §7.2)",
+      "reason": "covers at most ¥350,000.00 of the ¥405,000.00 need; synthetic fixture (spec v2 §7.2)",
       "limit_display": "¥350,000.00",
       "available_display": "¥350,000.00",
       "committed": true,
@@ -654,7 +654,7 @@
       "label": "Line + early payment on part of the invoice at 1.2%",
       "components": [
         "Bank credit line: draw ¥150,000.00, repaid day 32",
-        "Buyer early-payment offer: early payment on ¥212,550.61 face of RCV-A at 1.2%"
+        "Buyer early-payment offer: early payment on ¥258,097.17 face of RCV-A at 1.2%"
       ],
       "actions": [
         {
@@ -670,23 +670,23 @@
           "kind": "EARLY_PAY",
           "facility_id": "FAC-EARLYPAY",
           "day": 0,
-          "amount_fen": 21255061,
+          "amount_fen": 25809717,
           "receivable_id": "RCV-A",
           "repay_day": null,
           "rate_bp": 120
         }
       ],
-      "cost_fen": 339225,
-      "cost_display": "¥841.64 + ¥2,550.61 = ¥3,392.25",
+      "cost_fen": 393881,
+      "cost_display": "¥841.64 + ¥3,097.17 = ¥3,938.81",
       "result": "ADMISSIBLE",
       "reasons": [],
       "breach_day": null,
-      "note": "cost ¥3,392.25; admissible but dearer than the selected plan",
+      "note": "cost ¥3,938.81; admissible but dearer than the selected plan",
       "needs_owner_approval": false,
       "approval_reason": "",
       "executable_now": true,
-      "total_fen": 339225,
-      "total_display": "¥841.64 + ¥2,550.61 = ¥3,392.25",
+      "total_fen": 393881,
+      "total_display": "¥841.64 + ¥3,097.17 = ¥3,938.81",
       "selected": false
     },
     {
@@ -694,7 +694,7 @@
       "label": "Router optimum",
       "components": [
         "Bank credit line: draw ¥150,000.00, repaid day 32",
-        "Invoice financing (onboarded platform): advance ¥210,000.00 on RCV-A"
+        "Invoice financing (onboarded platform): advance ¥255,000.00 on RCV-A"
       ],
       "actions": [
         {
@@ -710,14 +710,14 @@
           "kind": "FINANCE_INVOICE",
           "facility_id": "FAC-IF",
           "day": 0,
-          "amount_fen": 21000000,
+          "amount_fen": 25500000,
           "receivable_id": "RCV-A",
           "repay_day": null,
           "rate_bp": null
         }
       ],
-      "cost_fen": 271294,
-      "cost_display": "¥841.64 + ¥1,871.30 = ¥2,712.94",
+      "cost_fen": 311393,
+      "cost_display": "¥841.64 + ¥2,272.29 = ¥3,113.93",
       "result": "SELECTED",
       "reasons": [],
       "breach_day": null,
@@ -725,8 +725,8 @@
       "needs_owner_approval": false,
       "approval_reason": "",
       "executable_now": true,
-      "total_fen": 271294,
-      "total_display": "¥841.64 + ¥1,871.30 = ¥2,712.94",
+      "total_fen": 311393,
+      "total_display": "¥841.64 + ¥2,272.29 = ¥3,113.93",
       "selected": true
     },
     {
@@ -734,7 +734,7 @@
       "label": "Line + guaranteed loan",
       "components": [
         "Bank credit line: draw ¥150,000.00, repaid day 32",
-        "Government-guaranteed working-capital loan: draw ¥210,000.00 (arrives day 21)"
+        "Government-guaranteed working-capital loan: draw ¥255,000.00 (arrives day 21)"
       ],
       "actions": [
         {
@@ -750,7 +750,7 @@
           "kind": "DRAW",
           "facility_id": "FAC-GGL",
           "day": 0,
-          "amount_fen": 21000000,
+          "amount_fen": 25500000,
           "receivable_id": null,
           "repay_day": null,
           "rate_bp": null

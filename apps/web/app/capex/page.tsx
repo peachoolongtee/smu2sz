@@ -21,27 +21,28 @@ import {
   thCls,
 } from "@/components/ui";
 import { downloadFile } from "@/lib/api";
-import { runBorrowerFile, runCapex } from "@/lib/demo";
+import { runBorrowerFile, runCapex, runCapexApply } from "@/lib/demo";
 import { useDemo } from "@/lib/demo-store";
 import { useI18n } from "@/lib/i18n";
 
 export default function CapexPage() {
   const { t } = useI18n();
   const demo = useDemo();
-  const [busy, setBusy] = useState<"capex" | "file" | string | null>(null);
+  const [busy, setBusy] = useState<"capex" | "file" | "apply" | string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const capex = demo.capex;
   const file = demo.borrowerFile;
+  const application = demo.capexApplication;
   // The server selects nothing unless the project is worth doing; an illustration at another term is never selected.
   const worth = capex?.worth_doing !== false;
   const selectedStructure = capex?.structures.find((s) => s.id === capex.selected_id);
   const canPrepareFile = Boolean(selectedStructure && !selectedStructure.hypothetical && selectedStructure.facility_id);
 
-  async function run(kind: "capex" | "file") {
+  async function run(kind: "capex" | "file" | "apply") {
     setBusy(kind);
     setError(null);
     try {
-      await (kind === "capex" ? runCapex() : runBorrowerFile());
+      await (kind === "capex" ? runCapex() : kind === "apply" ? runCapexApply() : runBorrowerFile());
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -206,21 +207,39 @@ export default function CapexPage() {
                 {t("capex.noFile")}
               </p>
             )}
+            <p className="mt-3 text-xs text-ink-2">{t("capex.apply.hint")}</p>
             <div className="mt-3 flex flex-wrap items-center gap-2">
               <Button
                 variant="primary"
+                loading={busy === "apply"}
+                disabled={Boolean(application) || !canPrepareFile || !worth}
+                onClick={() => void run("apply")}
+                data-testid="capex-apply"
+              >
+                {application ? t("capex.applied") : t("capex.apply")}
+              </Button>
+              <Button
+                variant="secondary"
                 loading={busy === "file"}
                 disabled={Boolean(file) || !canPrepareFile}
                 onClick={() => void run("file")}
+                data-testid="capex-file"
               >
                 {file ? t("capex.file.done") : t("capex.file.generate")}
               </Button>
-              {file ? (
-                <Link href="/approvals" className="text-sm font-medium text-brand-700 underline underline-offset-2">
-                  {t("capex.file.approvals")}
+              {application ? (
+                <Link
+                  href="/approvals"
+                  className="text-sm font-medium text-brand-700 underline underline-offset-2"
+                  data-testid="capex-applied"
+                >
+                  {t("capex.applied.review")}
                 </Link>
               ) : null}
             </div>
+            {application?.approval_id ? (
+              <p className="mt-2 text-xs text-ink-2">{t("capex.applied.body", { id: application.approval_id })}</p>
+            ) : null}
           </Card>
 
           {capex.assumptions?.length ? (
@@ -288,7 +307,16 @@ export default function CapexPage() {
                   <p className="text-xs text-ink-3">{t("capex.file.mockDownload")}</p>
                 )}
               </div>
-              {file.approval_id ? <p className="mt-2 text-xs text-ink-2">{t("capex.file.approval", { id: file.approval_id })}</p> : null}
+              {file.provenance ? (
+                <p className="mt-2 text-xs text-ink-2" data-testid="file-provenance">
+                  {t("capex.file.provenance", {
+                    day: file.provenance.generated_day,
+                    state: file.provenance.state_version,
+                    mandate: file.provenance.mandate_version,
+                    hash: file.provenance.evidence_hash.slice(0, 12),
+                  })}
+                </p>
+              ) : null}
               <div className="mt-3">
                 <Callout tone="info">{file.lender_note ?? t("capex.file.note")}</Callout>
               </div>
