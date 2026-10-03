@@ -3,10 +3,10 @@ reconciliation, the covenant ratios, the capex case and the borrower file; and t
 replaces the flat "outside what I can do".
 
 Every handler READS through the module function the HTTP route uses, on current books, and speaks the figures the
-module formatted (`fmt_yuan`, the modules' own display strings); none re-implements a calculation. Only
-BORROWER_FILE produces an operation: a typed GenerateBorrowerFile, proposed first and sent to the executor on the
-owner's direct "go ahead"; the executor decides the tier. All five disclose protected figures, so they are for the
-owner (the owner token) only.
+module formatted (`fmt_yuan`, the modules' own display strings); none re-implements a calculation.
+BORROWER_FILE builds the file for the owner and returns its download id: a read-only action with its provenance in
+the file, no operation and no approval. None of the five produces an operation, and all five disclose protected
+figures, so they are for the owner (the owner token) only.
 """
 
 from __future__ import annotations
@@ -22,11 +22,11 @@ from app.alerts import (
     covenant_limits,  # the covenant thresholds as the covenant alerts take them
     reconcile,
 )
-from app.borrower_file import BorrowerFileError, build
+from app.borrower_file import BorrowerFileError, build, remember
 from app.capex import CapexDisabled, CapexRequest, CapexResult, CapexStructure, evaluate_capex
 from app.capex.models import CHARGES_BASIS
 from app.config import get_settings
-from app.domain.models import GenerateBorrowerFile, Mode, OperationStatus
+from app.domain.models import Mode
 from app.domain.money import BP_DENOM, Ratio, bp, fmt_pct, fmt_yuan
 from app.financial import EngineError, project
 from app.funding import compare, menu_view, plan
@@ -35,9 +35,8 @@ from app.nl import lexicon as lx
 from app.nl.context import NlContext
 from app.nl.funding import gap_label, gaps
 from app.nl.models import Intent, Slots
-from app.nl.pipeline import Steps, t
+from app.nl.pipeline import t
 from app.nl.plans import ABOVE_CEILING, approval_sentences, unrunnable_sentences
-from app.nl.sessions import PendingPlan
 from app.nl.turn import Turn, ask
 
 OWNER_ONLY = (Intent.COMPARE_FINANCING, Intent.RECONCILE, Intent.SHOW_RATIOS, Intent.CAPEX, Intent.BORROWER_FILE)
@@ -315,8 +314,8 @@ def capex_intent(ctx: NlContext, slots: Slots) -> Turn:
                         f"nominal annual rates, and the uplift is your estimate, not an observed figure.",
                    f"按第 {r.as_of_day} 天的账目计算。结构按融资费用合计（利息加费用，未折现）排序；利率为名义年利率；"
                    f"增收为您的估计，并非实测数据。"))
-    lines.append(t(ctx, "Nothing was applied for: the application needs the Capex screen and your approval.",
-                   "尚未提交任何申请：申请需在资本支出页面进行，并经您批准。"))
+    lines.append(t(ctx, "Nothing was applied for: evaluating changes nothing here; you apply on the Capex screen.",
+                   "尚未提交任何申请：评估不会改动任何内容；申请请由您在资本支出页面提交。"))
     return Turn(intent=Intent.CAPEX, reply="\n".join(lines))
 
 
@@ -355,7 +354,7 @@ def _probe(ctx: NlContext, facility_id: str, amount_fen: int) -> str | None:
     return None
 
 
-def borrower_file(ctx: NlContext, slots: Slots, text: str, *, execute: bool) -> Turn:
+def borrower_file(ctx: NlContext, slots: Slots, text: str) -> Turn:
     if not get_settings().features.borrower_file:
         return _off(ctx, Intent.BORROWER_FILE, "FEATURE_BORROWER_FILE")
     state = ctx.state()
@@ -381,41 +380,22 @@ def borrower_file(ctx: NlContext, slots: Slots, text: str, *, execute: bool) -> 
     if reason is not None:
         return Turn(intent=Intent.BORROWER_FILE, clear_pending=True, reply=t(
             ctx, f"I cannot prepare that file: {reason}.", f"无法准备该资料：{reason}。"))
-    desc = t(ctx, f"Prepare the borrower file for {fid}, {fmt_yuan(slots.amount_fen)} (prepared, not sent)",
-             f"为 {fid} 准备借款人资料，{fmt_yuan(slots.amount_fen)}（仅准备，不发送）")
-    steps = Steps()
-    op = GenerateBorrowerFile(**ctx.base("GENERATE_BORROWER_FILE"), facility_id=fid, amount_fen=slots.amount_fen)
-    if not execute:
-        steps.add("GENERATE_BORROWER_FILE", desc)
-        pend = slots.model_copy(update={"facility_id": fid})
-        return Turn(intent=Intent.BORROWER_FILE, plan=steps.items, awaiting=True,
-                    pending=PendingPlan(Intent.BORROWER_FILE, pend, steps.items).bind(ctx, [op]),
-                    reply=desc + t(ctx, ". It needs your approval and nothing is sent to a lender. Reply 'go ahead' "
-                                        "to request it.", "。需要您的批准，且不会发送给任何贷方。回复“执行”提出申请。"))
-    return send_borrower_file(ctx, op, desc)
-
-
-def reprice_borrower_file(ctx: NlContext, pending: PendingPlan) -> str | None:
-    """None when the borrower file module still accepts the stored facility and amount, else one sentence."""
-    op = pending.ops[0]
-    reason = _probe(ctx, op.facility_id, op.amount_fen)
-    return None if reason is None else t(ctx, f"the books changed and I can no longer prepare that file: {reason}",
-                                         f"账目已变化，我已无法准备该资料：{reason}")
-
-
-def send_borrower_file(ctx: NlContext, op: GenerateBorrowerFile, desc: str) -> Turn:
-    """Send the stored request for the borrower file and say how the executor answered it."""
-    steps = Steps()
-    r = ctx.execute(op)
-    steps.result("GENERATE_BORROWER_FILE", desc, r)
-    if r.status == OperationStatus.PENDING_APPROVAL:
-        ref = f" ({r.approval_id})" if r.approval_id else ""
-        said = r.message.rstrip(". ")
-        reply = t(ctx, f"{said}. It waits for your approval{ref}; the file is prepared, not sent.",
-                  f"{said}。它在等您批准{ref}；资料仅准备，不会发送。")
-    else:
-        reply = r.message
-    return Turn(intent=Intent.BORROWER_FILE, reply=reply, plan=steps.items, clear_pending=True)
+    try:
+        bf = remember(build(ctx.store, facility_id=fid, amount_fen=slots.amount_fen,
+                            use_of_proceeds="owner request in chat", day=ctx.day))
+    except BorrowerFileError as exc:
+        return Turn(intent=Intent.BORROWER_FILE, clear_pending=True, reply=t(
+            ctx, f"I cannot prepare that file: {exc}.", f"无法准备该资料：{exc}。"))
+    p = bf.provenance
+    return Turn(intent=Intent.BORROWER_FILE, clear_pending=True, reply=t(
+        ctx, f"Prepared the borrower file {bf.file_id} for {fid}, {fmt_yuan(slots.amount_fen)}: generated on day "
+             f"{p.generated_day}, state version {p.state_version}, mandate version {p.mandate_version}, evidence hash "
+             f"{p.evidence_hash[:12]}. Download it at /borrower-file/{bf.file_id}.html (also .docx). It is prepared, "
+             f"not sent: nothing was queued and nothing needs approval; you submit it to the lender yourself.",
+        f"已准备借款人资料 {bf.file_id}，对应 {fid}，{fmt_yuan(slots.amount_fen)}：第 {p.generated_day} 天生成，"
+        f"状态版本 {p.state_version}，授权版本 {p.mandate_version}，证据哈希 {p.evidence_hash[:12]}。"
+        f"请在 /borrower-file/{bf.file_id}.html 下载（另有 .docx）。资料仅准备，不发送：没有排队任何操作，"
+        f"也无需批准；由您自行提交给贷方。"))
 
 
 # ---------------------------------------------------------------- the nearest capability (E2)

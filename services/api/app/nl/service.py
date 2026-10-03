@@ -285,7 +285,7 @@ def _dispatch(ctx: NlContext, p: Parsed, text: str) -> Turn:
         case Intent.CAPEX:
             return cap.capex_intent(ctx, slots)
         case Intent.BORROWER_FILE:
-            return cap.borrower_file(ctx, slots, text, execute=False)  # proposed first; runs on a direct go-ahead
+            return cap.borrower_file(ctx, slots, text)
         case Intent.EXPLAIN:
             return explain(ctx, slots, text)
         case Intent.WHAT_IF:
@@ -434,10 +434,6 @@ def _confirm(ctx: NlContext, yes: bool, text: str) -> Turn:
             check, send = (lambda: reprice_fund_gap(ctx, pending)), (lambda: _send(ctx, pending))
         case Intent.REPAY_FACILITY:
             check, send = (lambda: reprice_repay(ctx, pending)), (lambda: _send(ctx, pending))
-        case Intent.BORROWER_FILE:
-            check = lambda: cap.reprice_borrower_file(ctx, pending)
-            send = lambda: cap.send_borrower_file(
-                ctx, pending.ops[0], plans.describe(ctx, pending.ops[0]))
         case Intent.NEGOTIATE:
             check = lambda: _reprice_negotiation(ctx, pending)
             send = lambda: negotiate_intent(
@@ -497,8 +493,6 @@ def _rebuild(ctx: NlContext, pending: Any) -> Turn:
             return _negotiation_proposal(ctx, negotiate_intent(ctx, pending.slots, execute=False, data=pending.data))
         case Intent.EVALUATE_OFFER:
             return evaluate_offer(ctx, pending.slots)
-        case Intent.BORROWER_FILE:
-            return cap.borrower_file(ctx, pending.slots, "", execute=False)
         case _:
             return Turn(intent=pending.intent, reply=t(ctx, "Nothing to propose.", "没有可提出的方案。"))
 

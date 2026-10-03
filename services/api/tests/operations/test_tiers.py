@@ -13,7 +13,6 @@ from app.domain.models import (
     ChangeMandate,
     DrawFacility,
     FacilityStatus,
-    GenerateBorrowerFile,
     IssueEquity,
     OperationStatus,
     PledgeCollateral,
@@ -118,18 +117,11 @@ def test_draw_on_uncommitted_facility_goes_to_owner(ex: Any, store: Any, clock: 
     assert store.get_state() == before
 
 
-@pytest.mark.parametrize(("cls", "fields"), [
-    (ApplyForFacility, {"facility_id": "FAC-GGL", "amount_fen": 30_000_000}),
-    (GenerateBorrowerFile, {"facility_id": "FAC-GGL", "amount_fen": 30_000_000}),
-])
-def test_always_tier2_operations_queue_and_run_on_approval(
-    ex: Any, store: Any, clock: Clock, cls: type, fields: dict
-) -> None:
-    pending = ex.execute(op(cls, clock, **fields))
+def test_apply_for_facility_is_always_tier2_and_runs_on_approval(ex: Any, store: Any, clock: Clock) -> None:
+    pending = ex.execute(op(ApplyForFacility, clock, facility_id="FAC-GGL", amount_fen=30_000_000))
     assert pending.status == OperationStatus.PENDING_APPROVAL and pending.tier == Tier.TIER_2
     done = ex.decide(approval_id_of(pending), True, Actor.OWNER)
     assert done.status == OperationStatus.EXECUTED
     ggl = next(f for f in store.get_state().facilities if f.id == "FAC-GGL")
-    expected = FacilityStatus.PENDING if cls is ApplyForFacility else FacilityStatus.NOT_APPLIED
-    assert ggl.status == expected
+    assert ggl.status == FacilityStatus.PENDING
     assert security_summary(store)["unauthorised_executions"] == 0

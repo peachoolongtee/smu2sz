@@ -50,7 +50,6 @@ from app.domain.models import (
     FacilityStatus,
     FinancialState,
     ForwardConcession,
-    GenerateBorrowerFile,
     IssueEquity,
     Mandate,
     Obligation,
@@ -796,8 +795,6 @@ class Executor:
             return f"owner request to add facility {op.facility.id} ({op.facility.lender_id})"
         if isinstance(op, ApplyForFacility):
             return f"apply for facility {op.facility_id} ({fmt_yuan(op.amount_fen)})"
-        if isinstance(op, GenerateBorrowerFile):
-            return f"prepare the borrower file for {op.facility_id} (prepared, not sent)"
         if isinstance(op, DrawFacility | SubmitInvoiceForFinancing):
             if ctx.admission is not None and ctx.admission.approval_reason:
                 return str(ctx.admission.approval_reason)
@@ -839,9 +836,6 @@ class Executor:
                 return self._add_facility(op, ctx)
             case ApplyForFacility():
                 return self._apply(op, ctx)
-            case GenerateBorrowerFile():
-                _facility(ctx.state, op.facility_id)
-                return _Effect(f"Borrower file for {op.facility_id} authorised: prepared, not sent")
             case RequestOwnerApproval():
                 return self._request_approval(op)
         raise _refuse(Code.INSUFFICIENT_AUTHORITY, f"No handler for {getattr(op, 'kind', type(op).__name__)}")

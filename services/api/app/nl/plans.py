@@ -25,7 +25,6 @@ from app.domain.models import (
     FundingAction,
     FundingActionKind,
     FundingPlan,
-    GenerateBorrowerFile,
     OperationStatus,
     RepayFacility,
     SubmitInvoiceForFinancing,
@@ -191,9 +190,6 @@ def describe(ctx: NlContext, op: Any) -> str:
         return t(ctx, f"Repay {fmt_yuan(op.amount_fen)} on {op.facility_id}", f"偿还 {op.facility_id} {fmt_yuan(op.amount_fen)}")
     if isinstance(op, ApplyForFacility):
         return t(ctx, f"Apply for {op.facility_id}", f"申请 {op.facility_id}")
-    if isinstance(op, GenerateBorrowerFile):
-        return t(ctx, f"Prepare the borrower file for {op.facility_id}, {fmt_yuan(op.amount_fen)} (prepared, not sent)",
-                 f"为 {op.facility_id} 准备借款人资料，{fmt_yuan(op.amount_fen)}（仅准备，不发送）")
     return str(op.kind)
 
 

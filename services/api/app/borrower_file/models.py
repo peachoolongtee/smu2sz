@@ -82,6 +82,9 @@ class Provenance(Contract):
     chain_length: int
     chain_valid: bool
     generated_day: Day
+    # sha256 of the inputs the file depends on (request, state and mandate versions, executed log and
+    # commitments ledger); the file id is its first 12 hex characters
+    evidence_hash: str
     basis: Literal["CONSERVATIVE"] = "CONSERVATIVE"
     calc: str = "app.financial.project (integer fen, ADR-0002)"
 

@@ -27,7 +27,6 @@ from app.domain.models import (
     DrawFacility,
     FacilityStatus,
     FinancialState,
-    GenerateBorrowerFile,
     IssueEquity,
     Mandate,
     PledgeCollateral,
@@ -42,7 +41,7 @@ from app.domain.models import (
 )
 
 _ALWAYS_TIER3 = (SignPersonalGuarantee, PledgeCollateral, IssueEquity, ChangeMandate)
-_ALWAYS_TIER2 = (ApplyForFacility, GenerateBorrowerFile)
+_ALWAYS_TIER2 = (ApplyForFacility,)
 _TIER1_BASE = (
     AcceptOffer,
     CounterOffer,
@@ -72,7 +71,7 @@ def _commitment_amount(operation: object) -> int | None:
     (draw, invoice submission) is Tier 1 at any size within its owner-approved limit (spec v2
     §5.3); the size threshold applies to new commitments. Repayments and receipts reduce
     exposure and are not commitments."""
-    if isinstance(operation, ApplyForFacility | GenerateBorrowerFile):
+    if isinstance(operation, ApplyForFacility):
         return operation.amount_fen
     return None
 

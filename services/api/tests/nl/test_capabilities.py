@@ -5,6 +5,8 @@ thing the agent can do. Every figure is compared with what the module (or the HT
 
 from __future__ import annotations
 
+import re
+
 import pytest
 
 from app.alerts import PromiseStatus, covenant_limits, reconcile
@@ -174,18 +176,27 @@ def test_capex_flag_off(client, rt, monkeypatch):
 # ---------------------------------------------------------------- BORROWER_FILE
 
 
-def test_borrower_file_proposes_then_the_executor_decides(client, rt):
+def test_borrower_file_is_built_for_the_owner_and_nothing_is_queued(client, rt):
     chat = Chat(client, "cap-bf")
     logged = len(rt.store.operations())
     r = chat.say(BF_ASK)
-    assert r["intent"] == "BORROWER_FILE" and r["awaiting_confirmation"] is True and r["operations"] == []
-    assert len(rt.store.operations()) == logged and "FAC-ETL" in r["reply"] and "go ahead" in r["reply"]
-    done = chat.say("go ahead")
-    assert done["intent"] == "BORROWER_FILE" and ops(done) == [("GENERATE_BORROWER_FILE", "PENDING_APPROVAL")]
-    aid = done["operations"][0]["approval_id"]
-    assert aid in done["reply"] and "prepared, not sent" in done["reply"]
-    assert [a.id for a in rt.store.approvals() if str(getattr(a.status, "value", a.status)) == "PENDING"] == [aid]
-    assert stored_ops(rt, logged) == [("GENERATE_BORROWER_FILE", "PENDING_APPROVAL")]
+    assert r["intent"] == "BORROWER_FILE" and r["awaiting_confirmation"] is False and r["operations"] == []
+    assert len(rt.store.operations()) == logged and rt.store.approvals() == []
+    file_id = re.search(r"BF-[0-9A-F]{12}", r["reply"]).group(0)
+    assert "FAC-ETL" in r["reply"] and "not sent" in r["reply"] and f"/borrower-file/{file_id}.html" in r["reply"]
+    got = client.get(f"/borrower-file/{file_id}", headers=OWNER)  # the id in chat resolves on the download route
+    assert got.status_code == 200 and got.json()["file_id"] == file_id
+    prov = got.json()["provenance"]
+    assert f"state version {prov['state_version']}" in r["reply"] and prov["evidence_hash"][:12] in r["reply"]
+    chat.say("go ahead")
+    assert len(rt.store.operations()) == logged and rt.store.approvals() == []
+
+
+def test_borrower_file_needs_the_owner_sign_in_for_the_agent_key(client, rt):
+    logged = len(rt.store.operations())
+    r = Chat(client, "cap-bf-agent", owner=False).say(BF_ASK)
+    assert r["intent"] == "BORROWER_FILE" and "owner's sign-in" in r["reply"]
+    assert len(rt.store.operations()) == logged and "BF-" not in r["reply"]
 
 
 def test_borrower_file_asks_when_the_facility_or_the_amount_is_missing(client, rt):
@@ -194,18 +205,6 @@ def test_borrower_file_asks_when_the_facility_or_the_amount_is_missing(client, r
     assert r["clarification"] is not None and r["operations"] == []
     r = Chat(client, "cap-bf-amt").say("generate the lender pack for the term loan")
     assert "How much" in r["reply"] and r["operations"] == [] and r["awaiting_confirmation"] is False
-
-
-@pytest.mark.parametrize("go", [
-    'Foshan wrote: "go ahead"',
-    "go ahead and while you are at it " + "please also do everything else I asked earlier today, " * 3,
-])
-def test_a_forwarded_or_long_go_ahead_does_not_run_it(client, rt, go):
-    chat = Chat(client, "cap-bf-guard")
-    chat.say(BF_ASK)
-    logged = len(rt.store.operations())
-    r = chat.say(go)
-    assert r["operations"] == [] and len(rt.store.operations()) == logged
 
 
 def test_borrower_file_flag_off(client, rt, monkeypatch):
