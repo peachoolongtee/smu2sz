@@ -80,12 +80,16 @@ def test_full_face_inside_the_window_ignores_the_accepted_discount():
     assert m.status == MatchStatus.DISCOUNT_IGNORED and m.flagged and "credit" in m.detail
 
 
-def test_short_payment_below_the_discounted_face():
+def test_less_than_the_discounted_face_inside_the_window_is_an_early_payment_of_a_portion():
+    # Red team e, F4 (this used to be SHORT_PAYMENT): the agreement covers "up to" the invoice, so ¥410,000 inside the
+    # window pays the portion P with P − post(1.2% × P) = 41,000,000: P = 41,497,976 (discount 497,976 = post(497,975.71))
     store, ex = _setup()
     store.put_commitment(_discount_commitment())
     _pay(ex, "RCV-A", 41_000_000, 1)
     [m] = reconcile(store, day=0).receipts
-    assert m.status == MatchStatus.SHORT_PAYMENT and m.difference_fen == 41_000_000 - (42_000_000 - 504_000)
+    assert m.status == MatchStatus.MATCHED and m.agreed_discount_fen == 497_976 and m.difference_fen == 0
+    rcv = next(r for r in store.get_state().receivables if r.id == "RCV-A")
+    assert (rcv.settled_fen, rcv.early_paid_fen) == (41_497_976, {"OB-D": 41_497_976})
 
 
 def test_outstanding_receivables_are_listed():

@@ -53,7 +53,8 @@ GOLDEN_ROUTER_PLAN = "252b9812e99b4aee"  # also: actions and comparison rows car
 EX01_COUNTERS = [
     # face 255,000 / (1 − 0.85%) = 257,186.08, rounded up to a whole ¥100 (the gap net of the line includes the
     # existing loan's ¥45,000 day-30 payment; compute_golden.py counter_a_face)
-    "Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥257,200 of this invoice at 0.85%.",
+    "Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥257,200 of this invoice at 0.85%, "
+    "paid on or before day 2.",
     # 60-day terms fail the counter's own re-check (day 47 ¥85,000 below the reserve, no admissible cure); 55 days is
     # curable in time. +10 days: 420,000 × 10/365 × 10.8417% = ¥1,247.53 per invoice → 0.30% (¥1,260.00)
     "55-day terms accepted with a 0.30% price adjustment on future invoices, no rebate.",
@@ -197,15 +198,20 @@ def test_live_extension_enters_the_next_verdict_baseline(client: TestClient, rt:
     oid = client.post("/offers", json={"fixture_id": "EX01_PACKAGE"}).json()["offer"]["offer_id"]
     v = client.post(f"/offers/{oid}/evaluate", json={"fixture_id": "EX01_PACKAGE"}).json()
     traj = v["trajectory"]
-    # the offer's own trajectory sits on the shifted baseline: EX01 itself carries a +15 extension, so
-    # the live one stacks and the receipts land 30 days later than on the books alone
-    assert _receipts(traj)["RI:BUYER-1:2"] == 77
+    # the offer's own trajectory sits on the shifted baseline. EX01 states a 60-day TARGET; since red team e (F2) a
+    # target binds against the terms in force (45 + 15 = 60), so it adds nothing and the terms do not stack (they
+    # did: receipts landed on day 77)
+    assert _receipts(traj)["RI:BUYER-1:2"] == 62
     assert _receipts(plain["trajectory"])["RI:BUYER-1:2"] == 62
     assert v["id"] != plain["id"]  # a verdict on other books is not the same record
     # only the offer's obligations are bound: nothing of the live commitment leaks into the verdict
     assert [o["id"] for o in v["bound_obligations"]] == [o["id"] for o in plain["bound_obligations"]]
     assert "OB-EXT" not in {o["id"] for o in v["bound_obligations"]}
-    assert v["forward_concession"]["total_fen"] == plain["forward_concession"]["total_fen"]
+    # red team e, F2: the 60-day target against 60 days in force is no change, so the offer's extension is valued at
+    # nothing on these books (it was valued again as +15 days on top of the live +15)
+    ext = next(o for o in v["bound_obligations"] if o["type"] == "TERMS_EXTENSION")
+    assert ext["days_delta"] == 0 and ext["target_terms_days"] == 60
+    assert v["forward_concession"]["total_fen"] < plain["forward_concession"]["total_fen"]
 
 
 def test_router_plan_follows_the_live_commitment(client: TestClient, rt: Runtime) -> None:
@@ -289,8 +295,12 @@ def test_verdict_and_counters_carry_only_the_offers_obligations(client: TestClie
     # the cure of a longer extension needed, so 60-, 55- and 50-day terms leave the day-62 shortfall with no cure and
     # no price-adjustment counter is offered; against that dearer standing plan the early payment at 0.85% is offered.
     assert [c.text for c in stored.counters] == [
-        "Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥257,200 of this invoice at 0.85%."]
-    assert "No price-adjustment counter: 60-, 55- or 50-day terms cannot be funded from committed sources" in stored.summary
+        "Terms stay at 60 days, no rebate. We will accept early settlement on up to ¥257,200 of this invoice at 0.85%, "
+        "paid on or before day 2."]
+    # red team e, F2: the buyer's 60 days are the terms already in force (45 + 15), so the offer asks for no longer
+    # terms and there is no price-adjustment counter to search for (the summary used to explain why 60-, 55- and
+    # 50-day terms on top of the live 15 could not be funded); the counter text quotes the 60 days in force.
+    assert not any(c.label == "Option B" for c in stored.counters)
 
 
 def test_a_commitment_carries_what_the_counter_bound(client: TestClient, rt: Runtime) -> None:

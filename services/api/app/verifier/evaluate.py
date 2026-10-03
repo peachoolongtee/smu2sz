@@ -77,6 +77,7 @@ from app.funding import plan as funding_plan
 from app.funding.rates import break_even_cost_share
 from app.funding.router import shared_runs
 from app.mandate import check_apr, check_predicates, check_validity
+from app.mandate.predicates import discount_rate
 from app.verifier.bind import bind, material_gaps
 from app.verifier.counters import Recheck, flag_inputs, plan_flags
 from app.verifier.counters import counters_explained as make_counters
@@ -261,7 +262,8 @@ def _apr_checks(bound: list[Obligation], state: FinancialState, mandate: Mandate
     out: list[Violation] = []
     passed: list[PassedCheck] = []
     for ob in bound:
-        if ob.type != ObligationType.IMMEDIATE_DISCOUNT or ob.rate_bp is None or ob.base.receivable_id is None:
+        exact = discount_rate(ob)  # a fixed sum is tested at its exact rate on its portion (F1)
+        if exact is None or ob.base.receivable_id is None:
             continue
         r = next((r for r in state.receivables if r.id == ob.base.receivable_id), None)
         if r is None or ob.effective_day is None:
@@ -269,11 +271,14 @@ def _apr_checks(bound: list[Obligation], state: FinancialState, mandate: Mandate
         days = r.due_day - ob.effective_day
         if days <= 0:
             continue
-        d = bp(ob.rate_bp)
+        d = exact
         rate = d / (1 - d) * DAYS_PER_YEAR / days
         formula = f"d/(1−d) × 365/days_early = {fmt_pct(d)}/(1 − {fmt_pct(d)}) × 365/{days} = {fmt_pct(rate, 4)}"
         inputs = {"discount": fmt_pct(d), "days_early": str(days), "receivable_id": r.id,
                   "implied_annual_rate": fmt_pct(rate, 4)}
+        if ob.rate_bp is None:
+            inputs["fixed_sum"] = f"{fmt_yuan(ob.amount_fen or 0)} on {fmt_yuan(ob.base.amount_fen or 0)}"
+            inputs["exact_discount"] = f"{d.numerator}/{d.denominator}"
         rows = {row.key: row for row in comparison}
         if "line_partial_early_pay" in rows:
             inputs["line_plus_partial_at_offered_rate"] = rows["line_partial_early_pay"].cost_display
@@ -313,7 +318,7 @@ def _apr_checks(bound: list[Obligation], state: FinancialState, mandate: Mandate
 def _early_pay_legs(bound: Sequence[Obligation], state: FinancialState) -> list[Obligation]:
     """The offer's early-payment legs: an immediate discount on a named open invoice, settled before it is due."""
     due = {r.id: r.due_day for r in state.receivables}
-    return [o for o in bound if o.type == ObligationType.IMMEDIATE_DISCOUNT and o.rate_bp is not None
+    return [o for o in bound if o.type == ObligationType.IMMEDIATE_DISCOUNT and discount_rate(o) is not None
             and o.base.receivable_id in due and o.effective_day is not None
             and due[o.base.receivable_id] - o.effective_day > 0]
 
@@ -331,7 +336,7 @@ def _early_pay_vs_plan(bound: list[Obligation], live: Sequence[Obligation], stat
     others = [o for o in bound if o.id not in leg_ids]
     plan0 = base_plan if not others else router.plan(state, [*live, *others], mandate, "COMMITTED")
     spans = [sp for o in legs for sp in o.spans]
-    label = ", ".join(f"{o.base.receivable_id} at {fmt_pct(bp(o.rate_bp or 0))}" for o in legs)
+    label = ", ".join(f"{o.base.receivable_id} at {fmt_pct(discount_rate(o) or 0)}" for o in legs)
 
     def cost(obs: list[Obligation], plan: FundingPlan) -> int:
         t = project(state, obs, plan.actions, Mode.CONSERVATIVE, horizon, floor)

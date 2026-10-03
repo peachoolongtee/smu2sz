@@ -20,6 +20,13 @@ def load_scenario(name: str = "golden_sme") -> tuple[FinancialState, Mandate]:
     return state, mandate
 
 
+def seed_state(name: str = "golden_sme") -> FinancialState:
+    """A scenario's state as the demo seeds it: the scenario's name is stored with the books, so the clock applies
+    that scenario's events (and no other's) to them, also after a restart."""
+    state, _ = load_scenario(name)
+    return state.model_copy(update={"scenario": name})
+
+
 @lru_cache
 def scenario_events(name: str = "golden_sme") -> list[dict]:
     """Dated events the outside world adds to a scenario's books as the clock passes them (may be none)."""

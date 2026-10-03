@@ -18,7 +18,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from app.config import Settings, get_settings
-from app.domain.fixtures import load_scenario
+from app.domain.fixtures import seed_state
 from app.domain.models import Commitment, CompiledOffer, CompileStatus, FinancialState, Mandate, Outcome
 from app.domain.ports import LedgerStore
 from app.mandate import load_signed_mandate
@@ -87,6 +87,13 @@ class Runtime:
         except Exception:  # noqa: BLE001  fail closed: the executor refuses on None
             return None
 
+    def hydrate(self) -> None:
+        """Read the clock and the seeded scenario from the stored books (start-up; nothing is written)."""
+        state = self.store.get_state()
+        self.day = state.as_of_day
+        if state.scenario:
+            self.scenario = state.scenario
+
     def is_owner(self, token: str | None) -> bool:
         from app.api.auth import is_owner
 
@@ -98,9 +105,14 @@ class Runtime:
         from app.domain.models import Actor
 
         with self.lock:
+            from app.api.auth import demo_mode
             from app.domain.fixtures import scenario_events
 
-            adv = advance(self.store, day, Actor.SYSTEM, events=scenario_events(self.scenario))
+            # Scenario events (the golden demo's day-42 payroll) belong to the demo books they were written for:
+            # only in DEMO_MODE and only the scenario the stored books name. Provisioned books name none.
+            name = self.store.get_state().scenario
+            events = scenario_events(name) if demo_mode() and name else []
+            adv = advance(self.store, day, Actor.SYSTEM, events=events)
             self.day = self.store.get_state().as_of_day
             return adv
 
@@ -125,8 +137,7 @@ class Runtime:
 
 def _seed(store: LedgerStore, scenario: str = "golden_sme") -> None:
     """Write the demo fixture state and the signed demo mandate. Never deletes."""
-    state, _unsigned = load_scenario(scenario)
-    store.put_state(state)
+    store.put_state(seed_state(scenario))  # the scenario's name is stored with the books
     store.put_mandate(load_signed_mandate())
 
 
@@ -178,7 +189,7 @@ def get_runtime() -> Runtime:
                                        "owner-signed mandate before starting with DEMO_MODE off.")
                 store.put_mandate(load_signed_mandate())
             rt = Runtime(settings=s, store=store, owner_key_hex=owner_key)
-            rt.day = store.get_state().as_of_day
+            rt.hydrate()
         except Exception:
             if isinstance(store, SqlLedgerStore):
                 store.dispose()

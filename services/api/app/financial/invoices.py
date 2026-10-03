@@ -253,6 +253,21 @@ def issue_terms(state: FinancialState, ref: InvoiceRef, face: int, terms: int) -
     return {"face_fen": f, "terms_days": t, "base_face_fen": face, "base_terms_days": terms, "applied": applied}
 
 
+def terms_in_force(state: FinancialState, counterparty_id: str) -> int | None:
+    """The payment terms (days) the buyer's NEXT recurring invoice will be issued with: the recurring template's base
+    terms with the accepted adjustments in scope for its next issue day written on (`issue_terms`, the clock's own
+    function). None when the buyer has no single recurring invoice. A stated target term ("40 days going forward") is
+    a change against these terms, not against the template's base terms, so agreed changes never stack."""
+    found = [r for r in state.recurring_invoices if r.counterparty_id == counterparty_id]
+    if len(found) != 1:
+        return None
+    ri = found[0]
+    ref = InvoiceRef(recurring_receivable_id(counterparty_id, ri.next_issue_day), counterparty_id, ri.next_issue_day)
+    terms = issue_terms(state, ref, ri.face_fen, ri.terms_days)["terms_days"]
+    assert isinstance(terms, int)
+    return terms
+
+
 def consumed(a: InvoiceAdjustment, issued_ids: set[str], to_day: int) -> bool:
     """ADR-0009 §7: a finite adjustment is consumed once every invoice in its scope has been issued."""
     if a.receivable_ids is not None:
@@ -284,4 +299,5 @@ __all__ = [
     "revoke",
     "scope_at",
     "scope_start",
+    "terms_in_force",
 ]

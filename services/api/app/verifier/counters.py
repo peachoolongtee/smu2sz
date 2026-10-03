@@ -39,6 +39,7 @@ reservation value (INVARIANT 7). `rationale` and `formula` are supplier-side onl
 from __future__ import annotations
 
 import hashlib
+import math
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from fractions import Fraction
@@ -68,9 +69,11 @@ from app.domain.models import (
 )
 from app.domain.money import BP_DENOM, Ratio, bp, fmt_pct, fmt_yuan, post
 from app.financial import project, value_concessions
+from app.financial.invoices import terms_in_force
 from app.funding import NoPermanentSourceError, break_even_discount, marginal_cost
 from app.funding import plan as funding_plan
 from app.funding.rates import break_even_cost_share
+from app.mandate.predicates import discount_rate
 from app.verifier.bind import bind, early_pay_lead, is_claimed, is_gain, open_receivables, recurring_for
 from app.verifier.models import OwnerConstraints
 from app.verifier.owner import breaches as owner_breaches
@@ -202,9 +205,10 @@ class _Ctx:
         return self.net_forward(obs) <= self.mandate.max_aggregate_forward_concession_fen
 
     def current_terms(self) -> int | None:
-        rec = recurring_for(self.state, self.cp)
-        if rec is not None:
-            return rec.terms_days
+        """The terms in force for the buyer's next invoice (accepted adjustments applied), which counter texts quote."""
+        terms = terms_in_force(self.state, self.cp)
+        if terms is not None:
+            return terms
         rcvs = open_receivables(self.state, self.cp)
         return rcvs[0].terms_days if rcvs else None
 
@@ -359,9 +363,10 @@ def early_pay_counter(ctx: _Ctx, label: str = "Option A") -> CounterProposal | N
     except NoPermanentSourceError:
         return None
     rate_bp = largest_step_below(d_ratio.value)
-    offered = [o.rate_bp for o in ctx.of_type(ObligationType.IMMEDIATE_DISCOUNT) if o.rate_bp is not None]
+    # never above the buyer's offered rate; a fixed sum offers its exact rate on its portion, floored to whole bp
+    offered = [x for x in map(discount_rate, ctx.of_type(ObligationType.IMMEDIATE_DISCOUNT)) if x is not None]
     if offered:
-        rate_bp = min(rate_bp, min(offered))
+        rate_bp = min(rate_bp, math.floor(min(offered) * BP_DENOM))
     if ctx.mandate.max_immediate_discount_bp is not None:
         rate_bp = min(rate_bp, ctx.mandate.max_immediate_discount_bp)
     if ctx.constraints is not None and ctx.constraints.max_early_pay_bp is not None:
@@ -421,7 +426,9 @@ def early_pay_counter(ctx: _Ctx, label: str = "Option A") -> CounterProposal | N
         lead.append("no rebate" if lead else "No rebate is on record, so none applies")
     if lead:
         clauses.append((", ".join(lead) + ".", None))
-    settle_text = f"We will accept early settlement on up to {money_text(face)} of this invoice at {rate_text(rate_bp)}."
+    # red team e, F4: the promise names its day; any portion up to the face paid by then earns the rate
+    settle_text = (f"We will accept early settlement on up to {money_text(face)} of this invoice at "
+                   f"{rate_text(rate_bp)}, paid on or before day {settle}.")
     clauses.append((settle_text, disc_ob))
     if not lead:
         clauses.append(("Nothing else changes.", None))
@@ -459,12 +466,13 @@ def price_adjustment_counter(ctx: _Ctx, ext: Obligation, label: str = "Option B"
     current terms + 5) whose counter the router can fund on current books and that passes its own re-check.
     None, with one sentence in `ctx.notes`, when no terms in that range can be."""
     rec = recurring_for(ctx.state, ctx.cp)
-    if rec is None or ext.days_delta is None or ext.days_delta <= 0:
+    current = ctx.current_terms()
+    if rec is None or current is None or ext.days_delta is None or ext.days_delta <= 0:
         return None
-    offered = rec.terms_days + ext.days_delta
+    offered = current + ext.days_delta  # days_delta was bound against the terms in force (bind.terms)
     refused: list[tuple[list[int], str]] = []  # runs of consecutive targets refused for the same reason
-    for target in range(offered, rec.terms_days, -TERMS_STEP_DAYS):
-        c, why = _price_adjustment_at(ctx, ext, rec.terms_days, target, rec.face_fen, label)
+    for target in range(offered, current, -TERMS_STEP_DAYS):
+        c, why = _price_adjustment_at(ctx, ext, current, target, rec.face_fen, label)
         if c is not None:
             if refused:
                 ctx.notes.append(f"Price-adjustment counter at {target} days, not {offered}: " + "; ".join(
