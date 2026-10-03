@@ -11,6 +11,7 @@ Dependency direction (no cycles):
 
 from __future__ import annotations
 
+from contextlib import AbstractContextManager
 from typing import Any, Protocol
 
 from app.domain.models import (
@@ -182,6 +183,9 @@ class LedgerStore(Protocol):
     """app.persistence -- storage only, no business decisions. The executor is the only caller
     of the write methods for commitments and operations."""
 
+    # unit of work: every write inside the block is kept together or none is; a nested block joins the open one
+    def transaction(self) -> AbstractContextManager[Any]: ...
+
     # operations log: append-only, hash-chained
     def append_operation(self, op_id: str, kind: str, idempotency_key: str, payload_json: str, result_json: str) -> OperationRecord: ...
     def find_by_idempotency_key(self, key: str) -> OperationRecord | None: ...
@@ -197,7 +201,10 @@ class LedgerStore(Protocol):
 
     # state, mandate, menu (owner/fixture writes only)
     def get_state(self) -> FinancialState: ...
-    def put_state(self, state: FinancialState) -> None: ...
+    def put_state(self, state: FinancialState, expected_version: int | None = None) -> None:
+        """Store a new version of the books. With `expected_version` a compare-and-swap: it raises
+        `StateVersionConflict` (a `ConcurrentWriteConflict`), writing nothing, unless the stored state has that version."""
+        ...
     def get_mandate(self) -> Mandate: ...
     def put_mandate(self, mandate: Mandate) -> None: ...
 
