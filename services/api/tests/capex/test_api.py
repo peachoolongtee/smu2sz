@@ -1,4 +1,4 @@
-"""POST /capex/evaluate: the displayed view, and the Tier-2 application queued but never executed."""
+"""POST /capex/evaluate: the displayed view, side-effect free; POST /capex/apply: the explicit Tier-2 application."""
 
 import pytest
 from fastapi import FastAPI
@@ -71,12 +71,30 @@ def test_default_body_is_the_spec_case(client, g):
     assert v["npv_fen"] == g["npv"] and v["selected_id"] == g["selected"] == "lease_48m"
 
 
-def test_application_is_pending_and_nothing_executes_without_the_owner(client, rt):
+def apply_body(rt, **over):
+    return {"facility_id": "FAC-LEASE", "amount_fen": 60_000_000,
+            "state_version": rt.store.get_state().state_version, **over}
+
+
+def test_evaluate_is_side_effect_free(client, rt):
+    state, log = rt.store.get_state(), len(rt.store.operations())
+    for body in ({}, {"monthly_uplift_fen": 1_000_000}):
+        v = client.post("/capex/evaluate", json=body).json()
+        assert "approval_id" not in v and "approval_status" not in v and "application" not in v
+    assert rt.store.get_state() == state and len(rt.store.operations()) == log and rt.store.approvals() == []
+    assert client.get("/approvals/queue").json()["approvals"] == []
+
+
+def test_apply_is_pending_and_nothing_executes_without_the_owner(client, rt):
     v = client.post("/capex/evaluate", json={}).json()
-    assert v["application"]["status"] == "PENDING_APPROVAL" and v["application"]["tier"] == "TIER_2"
-    assert v["application"]["kind"] == "APPLY_FOR_FACILITY"
-    aid = v["approval_id"]
-    assert aid and v["approval_status"] == "PENDING"
+    r = client.post("/capex/apply", json={"facility_id": v["selected_facility_id"], "amount_fen": 60_000_000,
+                                          "state_version": v["state_version"]})
+    assert r.status_code == 200
+    applied = r.json()
+    assert applied["application"]["status"] == "PENDING_APPROVAL" and applied["application"]["tier"] == "TIER_2"
+    assert applied["application"]["kind"] == "APPLY_FOR_FACILITY"
+    aid = applied["approval_id"]
+    assert aid and applied["approval_status"] == "PENDING"
     queue = client.get("/approvals/queue").json()["approvals"]
     queued = [a for a in queue if a["id"] == aid]
     assert queued and queued[0]["operation"]["facility_id"] == "FAC-LEASE"
@@ -93,18 +111,42 @@ def test_application_is_pending_and_nothing_executes_without_the_owner(client, r
     assert etl_status(rt, "FAC-LEASE") == FacilityStatus.PENDING  # applied: still counts as zero until committed
 
 
-def test_repeat_evaluation_does_not_queue_twice(client):
-    first = client.post("/capex/evaluate", json={}).json()
-    again = client.post("/capex/evaluate", json={}).json()
+def test_apply_is_owner_only(client, rt):
+    r = client.post("/capex/apply", json=apply_body(rt), headers={"X-Owner-Token": "not-the-owner"})
+    assert r.status_code == 401 and rt.store.approvals() == []
+
+
+def test_apply_refuses_409_when_the_state_version_moved(client, rt):
+    stale = apply_body(rt, state_version=rt.store.get_state().state_version - 1)
+    r = client.post("/capex/apply", json=stale)
+    assert r.status_code == 409 and r.json()["detail"]["code"] == "STATE_VERSION_MOVED"
+    assert rt.store.approvals() == [] and len(rt.store.operations()) == 0
+
+
+def test_repeat_apply_does_not_queue_twice(client, rt):
+    first = client.post("/capex/apply", json=apply_body(rt)).json()
+    again = client.post("/capex/apply", json=apply_body(rt)).json()
     assert again["application"]["status"] == "DUPLICATE"
     assert again["approval_id"] == first["approval_id"]
     queue = client.get("/approvals/queue").json()["approvals"]
     assert len([a for a in queue if a["kind"] == "APPLY_FOR_FACILITY"]) == 1
 
 
-def test_not_worth_doing_queues_nothing(client):
-    v = client.post("/capex/evaluate", json={"monthly_uplift_fen": 1_000_000}).json()
-    assert v["worth_doing"] is False and v["approval_id"] is None and v["application"] is None
+def test_apply_only_for_the_selected_structures_facility(client, rt):
+    for body in (apply_body(rt, facility_id="FAC-ETL"), apply_body(rt, facility_id="FAC-NOPE")):
+        r = client.post("/capex/apply", json=body)
+        assert r.status_code == 422 and r.json()["detail"]["code"] == "NOT_SELECTED"
+    mismatch = client.post("/capex/apply", json=apply_body(rt, request={"price_fen": 50_000_000}))
+    assert mismatch.status_code == 422 and mismatch.json()["detail"]["code"] == "AMOUNT_MISMATCH"
+    assert client.get("/approvals/queue").json()["approvals"] == []
+
+
+def test_not_worth_doing_cannot_be_applied_for(client, rt):
+    req = {"monthly_uplift_fen": 1_000_000}
+    v = client.post("/capex/evaluate", json=req).json()
+    assert v["worth_doing"] is False
+    r = client.post("/capex/apply", json=apply_body(rt, request={**req, "price_fen": 60_000_000}))
+    assert r.status_code == 422 and r.json()["detail"]["code"] == "NOT_SELECTED"
     assert client.get("/approvals/queue").json()["approvals"] == []
 
 
@@ -126,7 +168,12 @@ def test_f4_a_hypothetical_term_is_never_applied_for(client, rt):
                                              "include_cash_line": False}).json()
     s = {x["id"]: x for x in v["structures"]}
     assert s["loan_360m"]["hypothetical"] is True
-    assert v["selected_id"] is None and v["approval_id"] is None and v["application"] is None
+    assert v["selected_id"] is None and v["selected_facility_id"] is None
+    r = client.post("/capex/apply", json={"facility_id": "FAC-ETL", "amount_fen": 60_000_000,
+                                          "state_version": v["state_version"],
+                                          "request": {"candidates": [{"facility_id": "FAC-ETL", "term_months": 360}],
+                                                      "include_cash_line": False}})
+    assert r.status_code == 422
     assert client.get("/approvals/queue").json()["approvals"] == []
     assert etl_status(rt) == FacilityStatus.NOT_APPLIED
 
