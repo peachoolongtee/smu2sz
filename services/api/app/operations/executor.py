@@ -756,6 +756,11 @@ class Executor:
             # signature is still required (it pins the books to the owner). An agent-reported receipt is checked
             # in full (and is Tier 2).
             violations = [v for v in violations if v.code == Code.BAD_SIGNATURE]
+        elif isinstance(ctx.op, RepayFacility) and ctx.op.requested_by == Actor.OWNER:
+            # Red team e, F5: the owner repaying their own debt is not an exercise of the agent's mandate either; an
+            # expired, revoked or newer mandate must not keep interest running. The signature is still required and
+            # admission still judges the repayment on today's books. An agent-requested repayment stays gated.
+            violations = [v for v in violations if v.code == Code.BAD_SIGNATURE]
         if violations:
             kinds = [_MANDATE_SECURITY[v.code] for v in violations if v.code in _MANDATE_SECURITY]
             raise _Refused(violations, kinds[0] if kinds else None)
