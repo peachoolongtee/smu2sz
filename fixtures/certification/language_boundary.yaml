@@ -830,12 +830,18 @@ items:
      invariant: "A model that leaves the base unspecified and unflagged for an offer naming no invoice does not get it bound to the buyer's one open invoice and accepted",
      text: "Hi 李小姐，我们可以提前付，discount 0.5% 可以吗？",
      fake: {compiler: {primary: {extraction: {obligations: [{quote: "discount 0.5%", rate_text: "0.5%", base_kind: UNSPECIFIED, unresolved: []}]}}}},
-     expect: *NOTHING}
+     note: "one open invoice: the binding is unambiguous; the owner approves",
+     expect: {<<: *ACC, executed: [{kind: ACCEPT_OFFER, status: PENDING_APPROVAL}],
+              required: [{kind: ACCEPT_OFFER, status: PENDING_APPROVAL}],
+              commitment_terms: [{type: IMMEDIATE_DISCOUNT, rate_bp: 50, base_amount_fen: 42000000}]}}
   - {id: MM-027, group: malformed_model, kind: unbound_base, actor: buyer, lang: en,
      invariant: "A model that marks an invoice base with no amount and no unresolved key for 'pay early, 0.3% off' does not get a whole-invoice acceptance",
      text: "Pay early, 0.3% off, thanks.",
      fake: {compiler: {primary: {extraction: {obligations: [{quote: "Pay early, 0.3% off", rate_text: "0.3%", base_kind: INVOICE, unresolved: []}]}}}},
-     expect: *NOTHING}
+     note: "one open invoice: the binding is unambiguous; the owner approves",
+     expect: {<<: *ACC, executed: [{kind: ACCEPT_OFFER, status: PENDING_APPROVAL}],
+              required: [{kind: ACCEPT_OFFER, status: PENDING_APPROVAL}],
+              commitment_terms: [{type: IMMEDIATE_DISCOUNT, rate_bp: 30, base_amount_fen: 42000000}]}}
   - {id: MM-028, group: malformed_model, kind: fragment_rate, actor: buyer, lang: en,
      invariant: "A rate fragment that sits inside the quote but is not the stated number (5% inside 0.5%) is never booked or countered as 5%",
      text: "We can pay the full ¥420,000 invoice early next week for 0.5% off.",

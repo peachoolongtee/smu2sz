@@ -234,15 +234,37 @@ def to_markdown(rep: dict[str, Any]) -> str:
                  f"for triples on all but one lever, the last filled exactly to the fen; budget {g.get('budget_s')} s "
                  f"per scenario. Baseline: draw the line first, then the cheapest other source by nominal rate.")
         L.append("")
-        L += _md_table(["Scenario", "Need", "Router", "Brute force", "Line first", "Optimal", "Router plan", "ms"],
+        L.append("Two readings. Runnable (the gate): the router's plan against the brute force over the levers the agent "
+                 "can pull today (no buyer early pay, no bill, an advance only on an issued invoice). Priced "
+                 "(informational): the router on the pricing reading (early pay and bills ranked as runnable legs) "
+                 "against the brute force over every lever. \"inconclusive\": the brute force ran out of its budget "
+                 "and the row cannot be called either way.")
+        L.append("")
+
+        def _status(r: dict, key: str) -> str:
+            v = r.get(key + "_status", "ok" if r.get("optimal") else "miss")
+            return {"ok": "yes", "miss": "**no**"}.get(v, v)
+
+        def _brute(r: dict, cost: str, done: str) -> str:
+            return _yuan(r.get(cost)) + ("" if r.get(done, True) else " (budget hit)")
+
+        L += _md_table(["Scenario", "Need", "Router", "Brute force (runnable)", "Line first", "Runnable optimal",
+                        "Priced: router / brute force", "Priced optimal", "Router plan", "ms"],
                        [[r["id"], _yuan(r["need_fen"]), _yuan(r["router_cost_fen"]),
-                         _yuan(r["brute_cost_fen"]) + ("" if r["brute_complete"] else " (budget hit)"),
-                         _yuan(r["baseline_cost_fen"]), "yes" if r["optimal"] else "**no**",
+                         _brute(r, "brute_cost_fen", "brute_complete"),
+                         _yuan(r["baseline_cost_fen"]), _status(r, "optimal"),
+                         f"{_yuan(r.get('priced_router_cost_fen'))} / "
+                         f"{_brute(r, 'priced_brute_cost_fen', 'priced_brute_complete')}",
+                         _status(r, "priced"),
                          (" + ".join(f"{a[0]} {a[1]} {_yuan(a[2])}{' ' + a[3] if a[3] else ''}"
                                      f"{' →d' + str(a[4]) if a[4] else ''}" for a in r["router_actions"]) or "—")
                          + (" (needs the owner)" if r.get("router_needs_approval") else "")
                          + (" (cannot run today)" if r.get("router_executable_now") is False else ""),
                          r.get("router_ms")] for r in d.get("rows", [])])
+        notes = [f"- {r['id']}: {r['optimal_note']}" for r in d.get("rows", [])
+                 if r.get("optimal_status") in ("miss", "inconclusive") and r.get("optimal_note")]
+        if notes:
+            L += ["", "Runnable reading, rows not confirmed optimal:", *notes]
         L.append("")
     if "covenants" in s:
         d = s["covenants"]["details"]

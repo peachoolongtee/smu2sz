@@ -105,6 +105,35 @@ def test_constrained_verdict_is_deterministic(state, mandate) -> None:
     assert other.id != a.id
 
 
+# ---------------------------------------------------------------- owner terms constraint: terms in force
+
+
+def _extension(days_delta: int) -> Obligation:
+    return Obligation(
+        id="OWN-T1", type=ObligationType.TERMS_EXTENSION, counterparty_id="BUYER-1", days_delta=days_delta,
+        effective_day=1, base=ObligationBase(kind=BaseKind.FUTURE_INVOICES), contingency=Contingency.FIRM,
+        duration=Duration(kind=DurationKind.RECURRING_PERPETUAL),
+        spans=[SourceSpan(doc_id="OWNER-DOC", start=0, end=4, text="test")], confidence=1.0)
+
+
+def test_owner_terms_constraint_is_evaluated_against_the_terms_in_force(state) -> None:
+    from app.domain.models import InvoiceAdjustment
+    from app.verifier.owner import _current_terms, breaches, terms_after
+
+    cap = OwnerConstraints(max_terms_days=57)
+    ob = _extension(5)
+    # template base terms are 45 days: +5 is 50, inside the owner's 57-day cap
+    assert _current_terms(state, "BUYER-1") == 45 and terms_after(ob, state) == 50
+    assert breaches([ob], [], state, cap) == []
+    # after an accepted +10-day perpetual extension 55-day terms are in force: +5 is 60, above the cap
+    adj = InvoiceAdjustment(id="CMT-X:O1", commitment_id="CMT-X", obligation_id="O1", counterparty_id="BUYER-1",
+                            days_delta=10, price_bp=0, from_issue_day=0)
+    extended = state.model_copy(update={"invoice_adjustments": [adj]})
+    assert _current_terms(extended, "BUYER-1") == 55 and terms_after(ob, extended) == 60
+    (why,) = breaches([ob], [], extended, cap)
+    assert "payment terms 60 days above the owner's 57 days" in why
+
+
 # ---------------------------------------------------------------- plans= and the router memo
 
 

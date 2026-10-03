@@ -11,6 +11,16 @@ It shares only the engine (`financial.project`), the covenant evaluator and `fun
 Plans are ranked as the router ranks them: a plan the executor cannot run today ranks after one it can, a plan
 with a leg above the mandate's `max_apr_bp` (it needs the owner, Tier 2) ranks after one that needs nobody, then
 the cheaper plan. A rate above the ceiling no longer makes a plan inadmissible; it makes it need the owner.
+
+Which levers the agent can pull today is classified here too, independently of `Search.unrunnable` (the product's
+rule, written again): no operation asks a buyer to pay early or discounts a bill, so EARLY_PAY and DISCOUNT_BILL
+levers are never runnable today; an advance runs only on an invoice that exists (issued, OPEN, buyer-confirmed, a
+registered buyer), so an advance on an invoice not yet issued is not runnable today; a leg above the rate ceiling is
+runnable but needs the owner. Two readings are scored:
+
+- Runnable optimality (the gate): the router's plan against a brute force over the runnable levers only.
+- Priced optimality (informational): the router's plan under the pricing reading `tests.funding.variants.pricing_only`
+  (early pay and bills ranked as runnable legs) against a brute force over every lever.
 """
 
 from __future__ import annotations
@@ -146,7 +156,8 @@ class Checked:
     reasons: list[str] = field(default_factory=list)
     shortfall: int = 0  # max over days of (floor − closing), 0 when the floor holds
     approval: bool = False  # a leg costs more a year than the mandate lets the agent borrow alone
-    unrunnable: bool = False  # a leg uses an invoice the executor cannot finance today
+    unrunnable: bool = False  # a leg the agent cannot run today: a buyer's early pay, a bill, an advance on no invoice
+    unrunnable_priced: bool = False  # the same on the pricing reading: only an advance on an invoice that is not there
 
 
 class Oracle:
@@ -194,7 +205,7 @@ class Oracle:
         shortfall = max(0, max(self.m.min_cash_fen - p.closing_fen for p in t.days))
         reserve_ok = shortfall == 0
         reasons = [] if reserve_ok else ["RESERVE_BREACH"]
-        approval = unrunnable = False
+        approval = unrunnable = priced_unrunnable = False
         for a in actions:
             f = self.facs[a.facility_id]
             due = self._due(a.receivable_id) if a.receivable_id else None
@@ -202,8 +213,9 @@ class Oracle:
             rate, how = action_rate(f, a.kind, amount_fen=a.amount_fen, landing_day=landing, due_day=due,
                                     rate_bp=a.rate_bp)
             approval = approval or approval_reason(rate, how, self.m) is not None
-            unrunnable = unrunnable or (a.kind == FundingActionKind.FINANCE_INVOICE
-                                        and a.receivable_id not in self.financeable)
+            no_invoice = a.kind == FundingActionKind.FINANCE_INVOICE and a.receivable_id not in self.financeable
+            priced_unrunnable = priced_unrunnable or no_invoice
+            unrunnable = unrunnable or no_invoice or self.kind_unrunnable(a.kind.value)
         if full and reserve_ok:
             used = {a.facility_id for a in actions}
             binding = [f for f in self.s.facilities if f.status == FacilityStatus.COMMITTED or f.id in used]
@@ -216,9 +228,21 @@ class Oracle:
                 if debt and not self.m.allow_new_borrowing:
                     reasons.append("NEW_BORROWING_NOT_ALLOWED")
         out = Checked(reserve_ok and not reasons, cost, reserve_ok, sorted(set(reasons)), shortfall, approval,
-                      unrunnable)
+                      unrunnable, priced_unrunnable)
         self.cache[key] = out
         return out
+
+    @staticmethod
+    def kind_unrunnable(kind: str) -> bool:
+        """No operation asks a buyer to pay early or discounts a bill: those legs are prices, not executions."""
+        return kind in ("EARLY_PAY", "DISCOUNT_BILL")
+
+    def lever_runnable(self, lv: Lever) -> bool:
+        """The agent can pull this lever today: not a buyer's early pay, not a bill, and an advance only on an
+        invoice that exists (issued, open, confirmed, a registered buyer)."""
+        if self.kind_unrunnable(lv.kind):
+            return False
+        return lv.kind != "FINANCE_INVOICE" or lv.receivable_id in self.financeable
 
     # receivables as the baseline sees them
     def receipts(self) -> dict[str, tuple[int, int]]:
@@ -256,7 +280,13 @@ class Oracle:
         return [p.day for p in self.base.days if p.closing_fen < self.m.min_cash_fen]
 
 
-def levers(o: Oracle) -> list[Lever]:
+def levers(o: Oracle, runnable_only: bool = False) -> list[Lever]:
+    """Every usable committed source as a lever; with `runnable_only`, those the agent can pull today."""
+    out = _all_levers(o)
+    return [x for x in out if o.lever_runnable(x)] if runnable_only else out
+
+
+def _all_levers(o: Oracle) -> list[Lever]:
     from app.domain.models import FacilityKind, FacilityStatus, Repayment
 
     breaches = o.breach_days
@@ -351,19 +381,25 @@ def grid(cap: int, step: int) -> list[int]:
     return sorted({*range(step, cap, step), cap})
 
 
-def brute_force(o: Oracle, step2: int, step3: int, budget_s: float) -> dict[str, Any]:
-    lv = levers(o)
+def brute_force(o: Oracle, step2: int, step3: int, budget_s: float, reading: str = "runnable") -> dict[str, Any]:
+    """Cheapest admissible plan over the levers of one reading. "runnable": only the levers the agent can pull today
+    (see the module docstring). "priced": every lever, ranked as the pricing reading ranks (only an advance on an
+    invoice that is not there is unrunnable)."""
+    lv = levers(o, runnable_only=reading == "runnable")
     best: tuple[int, list[str], list[Any], tuple[bool, bool]] | None = None
     t0 = time.perf_counter()
     complete = True
+
+    def cls(chk: Checked) -> tuple[bool, bool]:
+        return (chk.unrunnable if reading == "runnable" else chk.unrunnable_priced, chk.approval)
 
     def consider(actions: list[Any], chk: Checked, labels: list[str]) -> None:
         nonlocal best
         if not (chk.ok and chk.cost is not None):
             return
         # the router's order: runnable before unrunnable, no approval before approval, then cheaper
-        if best is None or ((chk.unrunnable, chk.approval), chk.cost) < (best[3], best[0]):
-            best = (chk.cost, labels, actions, (chk.unrunnable, chk.approval))
+        if best is None or (cls(chk), chk.cost) < (best[3], best[0]):
+            best = (chk.cost, labels, actions, cls(chk))
 
     for a in lv:  # single levers
         got = min_fill(o, [], a)
@@ -390,8 +426,7 @@ def brute_force(o: Oracle, step2: int, step3: int, budget_s: float) -> dict[str,
             if best is not None:
                 # more levers only cost more and only raise the class: a prefix already ranked below the best
                 # (a worse class, or the same class and as dear) ends the branch
-                if (part.unrunnable, part.approval) > best[3] or (
-                        (part.unrunnable, part.approval) == best[3] and part.cost >= best[0]):
+                if cls(part) > best[3] or (cls(part) == best[3] and part.cost >= best[0]):
                     break
             if part.reserve_ok:  # the prefix alone suffices: a smaller combination; more only costs more
                 consider(prefix, o.check(prefix, full=True), labels[:len(prefix)])
@@ -448,6 +483,47 @@ def line_first_baseline(o: Oracle) -> dict[str, Any]:
 # ---------------------------------------------------------------- run
 
 
+def _priced_plan(s: Any, m: Any) -> Any:
+    """The router's plan on the pricing reading (`tests.funding.variants.pricing_only`: a buyer's early payment or a
+    bill discount is priced like any leg and not flagged "cannot run today")."""
+    from unittest.mock import patch
+
+    import app.funding.router as router_mod
+    from app.funding import plan
+    from tests.funding.variants import pricing_only
+
+    with patch.object(router_mod, "Search", pricing_only(router_mod.Search)):
+        return plan(s, [], m)
+
+
+def judge(p: Any, bf: dict[str, Any], reading: str) -> tuple[str, str]:
+    """("ok" | "miss" | "inconclusive", note): the router's plan `p` against the brute force `bf` of one reading.
+
+    The plan is ranked as the router ranks: runs-today before not, needs-nobody before needs-the-owner, then cost
+    within ¥1. A brute force that ran out of its budget has only found plans that exist, so a router plan worse than
+    one of them is a miss all the same; but when it found none, or the router is not worse than what it found, the
+    row cannot be called either way when the router has a plan the brute force never reached: "inconclusive"."""
+    r_cost = p.total_cost_fen if p.admissible else None
+    r_class = (not p.executable_now, p.needs_owner_approval)
+    router_acts = list(p.actions)
+    if p.need_fen == 0:
+        return ("ok", "") if p.admissible and not router_acts else ("miss", "no gap, yet the router plans actions")
+    if bf["cost"] is None:
+        if not p.admissible:
+            return "ok", "no admissible plan on the grid, and the router says so"
+        if reading == "runnable" and r_class[0]:
+            return "ok", "no runnable plan found; the router's own plan cannot run today"
+        if not bf["complete"]:
+            return "inconclusive", "brute force hit its budget before it found any plan"
+        return "miss", "the router has an admissible plan the brute force did not find"
+    b_class = (bool(bf["unrunnable"]), bool(bf["needs_approval"]))
+    if not p.admissible or r_cost is None:
+        return "miss", "the brute force found an admissible plan; the router found none"
+    if r_class < b_class or (r_class == b_class and r_cost <= bf["cost"] + TOLERANCE_FEN):
+        return "ok", "" if bf["complete"] else "brute force hit its budget; the router is no worse than what it found"
+    return "miss", (f"router class {r_class} cost {r_cost} vs brute force class {b_class} cost {bf['cost']}")
+
+
 def evaluate_scenario(spec: dict[str, Any], step2_fen: int, step3_fen: int, budget_s: float) -> dict[str, Any]:
     """Router plan, independent re-check, brute force and baseline for one scenario (runs in a worker)."""
     quiet()
@@ -462,20 +538,19 @@ def evaluate_scenario(spec: dict[str, Any], step2_fen: int, step3_fen: int, budg
     status = {f.id: f.status for f in s.facilities}
     uncommitted = [a.facility_id for a in router_acts if status[a.facility_id] != FacilityStatus.COMMITTED]
     indep = o.check(router_acts, full=True)
-    bf = brute_force(o, step2_fen, step3_fen, budget_s)
+    bf = brute_force(o, step2_fen, step3_fen, budget_s, "runnable")
     r_class = (not p.executable_now, p.needs_owner_approval)
+    # the router's flags against this oracle's own classification of the plan's legs
     flags_agree = (not p.admissible) or r_class == (indep.unrunnable, indep.approval)
     bl = line_first_baseline(o)
     need = p.need_fen
     r_cost = p.total_cost_fen if p.admissible else None
-    if need == 0:
-        optimal = p.admissible and not router_acts
-    elif bf["cost"] is None:
-        optimal = not p.admissible  # honest: no admissible plan exists on the grid, and it says so
-    else:
-        b_class = (bool(bf["unrunnable"]), bool(bf["needs_approval"]))
-        optimal = p.admissible and r_cost is not None and (
-            r_class < b_class or (r_class == b_class and r_cost <= bf["cost"] + TOLERANCE_FEN))
+    optimal, optimal_note = judge(p, bf, "runnable")
+    # the pricing reading: the router with early pay and bills ranked as runnable legs, against every lever
+    priced_plan = _priced_plan(s, m)
+    same_levers = len(levers(o)) == len(levers(o, runnable_only=True))
+    pbf = bf if same_levers else brute_force(o, step2_fen, step3_fen, budget_s, "priced")
+    priced, priced_note = judge(priced_plan, pbf, "priced")
     return {
         "id": spec["id"], "why": spec["why"], "spec": spec, "need_fen": need, "router_admissible": p.admissible,
         "router_cost_fen": r_cost, "router_label": p.label,
@@ -488,7 +563,16 @@ def evaluate_scenario(spec: dict[str, Any], step2_fen: int, step3_fen: int, budg
         "brute_cost_fen": bf["cost"], "brute_actions": bf["actions"], "brute_complete": bf["complete"],
         "brute_levers": bf["n_levers"], "brute_evals": bf["evals"],
         "baseline_cost_fen": bl["cost"], "baseline_admissible": bl["admissible"], "baseline_actions": bl["actions"],
-        "optimal": optimal,
+        "optimal": optimal == "ok", "optimal_status": optimal, "optimal_note": optimal_note,
+        "brute_unrunnable": bf["unrunnable"],
+        "priced_status": priced, "priced_note": priced_note, "priced_router_cost_fen":
+            priced_plan.total_cost_fen if priced_plan.admissible else None,
+        "priced_router_actions": [(a.kind.value, a.facility_id, a.amount_fen, a.receivable_id, a.repay_day)
+                                  for a in priced_plan.actions],
+        "priced_router_needs_approval": priced_plan.needs_owner_approval,
+        "priced_router_executable_now": priced_plan.executable_now,
+        "priced_brute_cost_fen": pbf["cost"], "priced_brute_actions": pbf["actions"],
+        "priced_brute_complete": pbf["complete"],
         "gap_to_brute_fen": (r_cost - bf["cost"]) if (r_cost is not None and bf["cost"] is not None) else None,
         "saving_vs_baseline_fen": (bl["cost"] - r_cost) if (r_cost is not None and bl["cost"] is not None) else None,
         "eval_s": round(time.perf_counter() - tb, 1),
@@ -521,10 +605,11 @@ def run(n_random: int = 16, step2_fen: int = 500_000, step3_fen: int = 1_000_000
     for row, ms in zip(rows, latencies, strict=True):
         row["router_ms"] = round(ms, 1)
         sid = row["id"]
-        if not row["optimal"]:
+        if row["optimal_status"] == "miss":
             res.failures.append(Failure("funding", sid,
                                         f"{sid}: router {row['router_cost_fen']} (admissible={row['router_admissible']}) "
-                                        f"vs brute force {row['brute_cost_fen']} fen ({row['why']})",
+                                        f"vs brute force over runnable levers {row['brute_cost_fen']} fen "
+                                        f"({row['why']}): {row['optimal_note']}",
                                         f"{REPRO} --only {sid}", row))
         if row["router_admissible"] and not row["router_independently_admissible"]:
             res.failures.append(Failure("funding", sid + ":independent",
@@ -532,15 +617,23 @@ def run(n_random: int = 16, step2_fen: int = 500_000, step3_fen: int = 1_000_000
                                         f"{row['router_independent_reasons']}", f"{REPRO} --only {sid}", row))
         if not row["router_flags_agree"]:
             res.failures.append(Failure("funding", sid + ":flags",
-                                        f"{sid}: the plan's needs-the-owner / runs-today flags differ from the "
-                                        f"independent classification of its actions", f"{REPRO} --only {sid}", row))
+                                        f"{sid}: the plan's needs-the-owner / runs-today flags (needs owner "
+                                        f"{row['router_needs_approval']}, runs today {row['router_executable_now']}) "
+                                        f"differ from the oracle's classification of its actions",
+                                        f"{REPRO} --only {sid}", row))
         if row["router_uses_uncommitted"]:
             res.failures.append(Failure("funding", sid + ":uncommitted",
                                         f"{sid}: the committed plan uses {row['router_uses_uncommitted']}",
                                         f"{REPRO} --only {sid}", row))
     n = len(rows)
     with_need = [r for r in rows if r["need_fen"] > 0]
-    opt = sum(r["optimal"] for r in rows)
+    opt = sum(r["optimal_status"] == "ok" for r in rows)
+    inconclusive = sum(r["optimal_status"] == "inconclusive" for r in rows)
+    judged = n - inconclusive  # an inconclusive row (the brute force ran out of budget) is neither a hit nor a miss
+    popt = sum(r["priced_status"] == "ok" for r in rows)
+    pinconclusive = sum(r["priced_status"] == "inconclusive" for r in rows)
+    pjudged = n - pinconclusive
+    flags_ok = sum(bool(r["router_flags_agree"]) for r in rows)
     differs_lower = [r for r in with_need if r["router_cost_fen"] is not None and (
         r["baseline_cost_fen"] is None or r["router_cost_fen"] < r["baseline_cost_fen"])]
     savings = [r["saving_vs_baseline_fen"] for r in with_need if r["saving_vs_baseline_fen"] is not None]
@@ -550,9 +643,19 @@ def run(n_random: int = 16, step2_fen: int = 500_000, step3_fen: int = 1_000_000
                                                                    "triples_step_fen": step3_fen,
                                                                    "budget_s": budget_s}}
     res.metrics += [
-        Metric("router_optimality", "Router optimality (within ¥1 of brute force)", ratio(opt, n),
-               f"{opt}/{n} ({(ratio(opt, n) or 0):.0%})", "≥ 95%", (ratio(opt, n) or 0) >= 0.95, "funding",
+        Metric("router_optimality", "Runnable optimality (router's best runnable plan within ¥1 of brute force over "
+               "runnable levers)", ratio(opt, judged),
+               f"{opt}/{judged} ({(ratio(opt, judged) or 0):.0%})"
+               + (f"; {inconclusive} inconclusive (brute force budget hit)" if inconclusive else ""),
+               "≥ 95%", (ratio(opt, judged) or 0) >= 0.95, "funding",
                f"brute force incomplete on {incomplete}" if incomplete else ""),
+        Metric("router_priced_optimality", "Priced optimality (router on the pricing reading vs brute force over all "
+               "levers)", ratio(popt, pjudged),
+               f"{popt}/{pjudged} ({(ratio(popt, pjudged) or 0):.0%})"
+               + (f"; {pinconclusive} inconclusive (brute force budget hit)" if pinconclusive else ""),
+               "informational", None, "funding"),
+        Metric("router_flags", "Router's runs-today / needs-the-owner flags agree with the oracle's classification",
+               ratio(flags_ok, n), f"{flags_ok}/{n}", "all", flags_ok == n, "funding"),
         Metric("router_beats_line_first", "E9 router cheaper than 'line first' baseline (or baseline infeasible)",
                len(differs_lower), f"{len(differs_lower)}/{len(with_need)} scenarios with a gap", "≥ 5/20",
                len(differs_lower) * 20 >= 5 * max(1, len(with_need)), "funding"),
