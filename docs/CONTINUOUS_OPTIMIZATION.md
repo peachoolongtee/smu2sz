@@ -6,6 +6,20 @@ quantity are in `docs/FINANCIAL_SEMANTICS.md`. Audit ids (A01…, F-FIN-…, S-�
 
 Last updated: 3 Oct 2026 (late): debt service as cash, review gaps, simplifications and counter feasibility merged; backend 4,817 passed.
 
+## 0. Engine Stability Gate (set by the owner, 3 Oct, late)
+
+The financial engine is declared stable, and broad new financial features may be considered, only when all of these
+hold. Until then the queue below is correctness and certification only; capex stays as a supporting demo scene; the
+explicit Tier-2 approval for an above-ceiling rate stays.
+
+| Condition | Status |
+| --- | --- |
+| G1. A fourth unanchored red team on the checkpoint finds no P0 or high-confidence P1 | IN PROGRESS `redteam/fresh-4` |
+| G2. One leverage definition (actual drawn debt) used by the projection, the verifier's pro forma, capex, the borrower file and chat | IN PROGRESS (`fix/one-leverage`) |
+| G3. Live-model fail-closed certification: with the real compiler backend (and its fallback), a fresh adversarial and malformed-output set produces zero wrong-and-material executable interpretations; abstentions and clarifications counted separately | QUEUED after G1 |
+| G4. PostgreSQL concurrency invariants: forced interleavings (concurrent draws against the last room, receipt vs finance, accept vs revoke, duplicate external event, rollback on log failure, restart) on a real database; no double booking; one serialization boundary per organisation | QUEUED after G1 |
+| G5. Planner/executor agreement test green at 500 examples on three seeds, counter property green | DONE 3 Oct (re-run at the gate) |
+
 ## 1. Open findings
 
 Status: OPEN, IN PROGRESS (branch named), DONE (merged to `dev`, date).
@@ -61,7 +75,7 @@ Status: OPEN, IN PROGRESS (branch named), DONE (merged to `dev`, date).
 | RT3-2 | P0 | Admission (my own fix 11acc56) omitted a line draw's cash, so a runnable plan was refused for everyone | p03, p05 | owner | | High | S | DONE 3 Oct | |
 | RT3-3 | P1 | A recreated chat session reused old idempotency keys: a later command was a DUPLICATE or a REPLAY | p07 | owner | | Medium | S | DONE 3 Oct | |
 | C01 | P1 | Owner-session chat ran an above-ceiling leg directly while the agent channel queued it | plan-flags report | owner | | Medium | S | DONE 3 Oct: chat funding legs are the agent's act in every session | |
-| W01 | P2 | Approvals queue has no decision day; plan actions carry no landing day; executed ledger rows lack the approval id they ran under | web report | subagent | | Low | S | OPEN | |
+| W01 | P2 | Approvals queue has no decision day; plan actions carry no landing day; executed ledger rows lack the approval id they ran under; no demo scenario for the zero-floor cure | web report | subagent | | Low | S | IN PROGRESS `fix/api-gaps` | |
 | W02 | P3 | 1-fen receipt before landing cancels an advance sitting exactly at the advance-rate limit (by rule; harsh) | third red team | owner | | Low | S | OPEN (accepted) | |
 | BC1 | P0 | Existing loan's ¥45,000 monthly service counted in DSCR but never left cash: every cash conclusion optimistic by ¥45,000 a month | business review A1 | subagent | | Very high | M | DONE 3 Oct (`tests/books/test_debt_service.py`); golden figures moved (gap ¥405,000, plan ¥3,113.93, Counter A ¥257,200) | |
 | BC2 | P1 | No fallback cure when the reserve cannot be restored even though cash can be kept above zero | review A2 | subagent | | High | S | DONE 3 Oct | |
@@ -75,7 +89,7 @@ Status: OPEN, IN PROGRESS (branch named), DONE (merged to `dev`, date).
 | BC10 | P1 | Router and executor disagreed on a line draw held past the first affordable receipt (found by the agreement test) | agreement test | subagent | | High | S | DONE 3 Oct (`carry_draw` shared) | |
 | BC11 | P1 | Router admits an advance leg that admission refuses on the reserve (pinned Hypothesis world) | agreement test | subagent | | High | S | IN PROGRESS `fix/agree-advance` | |
 | S1–S3 | P2 | Capex evaluation queued an application; borrower-file approval authorised nothing; dead weight (aftersign, mock lender) | review D2–D4 | subagent | | Medium | S | DONE 3 Oct | |
-| D1 | P2 | Covenant ratios computed in four places with two leverage definitions (line at limit vs drawn) | review D1 | owner | | Medium | M | OPEN: label now, merge after the deadline | |
+| D1 | P1 | Covenant ratios computed in four places with two leverage definitions (line at limit vs drawn) | review D1 | subagent | | High | M | IN PROGRESS `fix/one-leverage` (gate G2) | One function; identical figures from every caller on identical books |
 | EV1 | P2 | Evidence chain heads are not reproducible run to run (session nonce, commitment nonces) | close-out report | owner | | Low | S | OPEN (claim narrowed to "integrity-checkable") | |
 | MW1 | P1 | Several API workers: process-local lock, no state-version compare-and-swap | audit §7, unverified | owner | | Medium | M | OPEN | SQLite two-connection interleaving test; PostgreSQL test when a database is available |
 
