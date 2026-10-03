@@ -1,5 +1,5 @@
 {
-  "id": "VER-b86ea034820c",
+  "id": "VER-8dc4bff4cdd9",
   "offer_id": "OFF-8e944bff0cc9",
   "offer_version": 1,
   "outcome": "ACCEPT",
@@ -107,7 +107,7 @@
         "receivable_id": "RCV-A",
         "implied_annual_rate": "6.1139%",
         "line_plus_partial_at_offered_rate": "¥841.64 + ¥1,281.41 = ¥2,123.05",
-        "router_optimum": "¥2,035.18"
+        "router_optimum": "¥841.64 + ¥2,272.29 = ¥3,113.93"
       }
     },
     {
@@ -138,7 +138,13 @@
       "observed": "1.35x",
       "limit": "≤ 2.50x",
       "formula": "Debt_m / (12 × EBITDA_m) = ¥1,455,000.00 / (12 × ¥90,000.00)",
-      "inputs": {}
+      "inputs": {
+        "month": "1",
+        "Debt_m": "¥1,455,000.00",
+        "EBITDA_m": "¥90,000.00",
+        "leverage_exact": "97/72",
+        "definition": "DebtPosition principal + drawn balances counted in leverage, at month end"
+      }
     },
     {
       "code": "CLEAN_DOWN",
@@ -2526,7 +2532,8 @@
           "amount_fen": 42000000,
           "receivable_id": "RCV-A",
           "repay_day": null,
-          "rate_bp": 50
+          "rate_bp": 50,
+          "lands_day": null
         }
       ],
       "cost_fen": 210000,
@@ -2537,7 +2544,7 @@
       "note": "cost ¥2,100.00; admissible but dearer than the selected plan",
       "needs_owner_approval": false,
       "approval_reason": "",
-      "executable_now": true
+      "executable_now": false
     },
     {
       "key": "line_partial_early_pay",
@@ -2554,7 +2561,8 @@
           "amount_fen": 15000000,
           "receivable_id": null,
           "repay_day": 32,
-          "rate_bp": null
+          "rate_bp": null,
+          "lands_day": null
         },
         {
           "kind": "EARLY_PAY",
@@ -2563,7 +2571,8 @@
           "amount_fen": 25628141,
           "receivable_id": "RCV-A",
           "repay_day": null,
-          "rate_bp": 50
+          "rate_bp": 50,
+          "lands_day": null
         }
       ],
       "cost_fen": 212305,
@@ -2574,27 +2583,39 @@
       "note": "cost ¥2,123.05; admissible but dearer than the selected plan",
       "needs_owner_approval": false,
       "approval_reason": "",
-      "executable_now": true
+      "executable_now": false
     },
     {
       "key": "router_optimum",
       "label": "Router optimum",
       "components": [
-        "Buyer early-payment offer: early payment on ¥407,035.18 face of RCV-A at 0.5%"
+        "Bank credit line: draw ¥150,000.00, repaid day 32",
+        "Invoice financing (onboarded platform): advance ¥255,000.00 on RCV-A"
       ],
       "actions": [
         {
-          "kind": "EARLY_PAY",
-          "facility_id": "FAC-EARLYPAY",
+          "kind": "DRAW",
+          "facility_id": "FAC-LINE",
           "day": 0,
-          "amount_fen": 40703518,
+          "amount_fen": 15000000,
+          "receivable_id": null,
+          "repay_day": 32,
+          "rate_bp": null,
+          "lands_day": null
+        },
+        {
+          "kind": "FINANCE_INVOICE",
+          "facility_id": "FAC-IF",
+          "day": 0,
+          "amount_fen": 25500000,
           "receivable_id": "RCV-A",
           "repay_day": null,
-          "rate_bp": 50
+          "rate_bp": null,
+          "lands_day": null
         }
       ],
-      "cost_fen": 203518,
-      "cost_display": "¥2,035.18",
+      "cost_fen": 311393,
+      "cost_display": "¥841.64 + ¥2,272.29 = ¥3,113.93",
       "result": "SELECTED",
       "reasons": [],
       "breach_day": null,
@@ -2618,7 +2639,8 @@
           "amount_fen": 15000000,
           "receivable_id": null,
           "repay_day": 32,
-          "rate_bp": null
+          "rate_bp": null,
+          "lands_day": null
         },
         {
           "kind": "DRAW",
@@ -2627,7 +2649,8 @@
           "amount_fen": 25500000,
           "receivable_id": null,
           "repay_day": null,
-          "rate_bp": null
+          "rate_bp": null,
+          "lands_day": null
         }
       ],
       "cost_fen": null,
@@ -2657,7 +2680,8 @@
           "amount_fen": 15000000,
           "receivable_id": null,
           "repay_day": 32,
-          "rate_bp": null
+          "rate_bp": null,
+          "lands_day": null
         }
       ],
       "cost_fen": 84164,

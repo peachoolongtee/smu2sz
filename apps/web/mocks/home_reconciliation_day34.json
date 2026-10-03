@@ -3,7 +3,7 @@
   "receipts": [
     {
       "seq": 4,
-      "entry_hash": "0cb61ac80fc81edb053aaa445dfd689b335f249b229f3058c5504c3498f5462c",
+      "entry_hash": "0739e21c50eda0971dba2d173632a5004a3683ddfc41c7d7f6da598ac38188ac",
       "op_id": "rec-receipt-1",
       "day": 2,
       "receivable_id": "RCV-A",
@@ -17,8 +17,8 @@
       "bank_reference": "DEMO-RCPT-1",
       "status": "MATCHED",
       "flagged": false,
-      "detail": "amount equals what the accepted terms say is owed",
-      "formula": "expected = face − discount if paid by day 2 else outstanding = ¥255,013.80 (outstanding ¥420,000.00 of face ¥420,000.00; discount ¥257,200.00 × 85 bp = ¥2,186.20); received ¥255,013.80",
+      "detail": "agreed early payment for ¥257,200.00 of face (commitment CMT-a78afaa5becb5273)",
+      "formula": "P − post(d × P) = received, paid by day 2 (day 2): ¥257,200.00 × 85 bp = ¥2,186.20; ¥257,200.00 − ¥2,186.20 = ¥255,013.80",
       "received_display": "¥255,013.80",
       "face_display": "¥420,000.00",
       "agreed_discount_display": "¥2,186.20",
@@ -59,12 +59,12 @@
   "flagged": 0,
   "received_total_fen": 25501380,
   "expected_total_fen": 25501380,
-  "chain_head_hash": "de7c0fe94c6b6b03f65774b4f9e101fee329ead88d2c92a91be4f62ffed1af06",
+  "chain_head_hash": "b2b1865f6b54d78fe0046b6e400b6ac37b8a2e92510e7c934885e3ab485a3ff3",
   "chain_valid": true,
   "promised": [
     {
       "commitment_id": "CMT-a78afaa5becb5273",
-      "obligation_id": "CTR-ce19415db1d4-O2",
+      "obligation_id": "CTR-193394b6ba8b-O2",
       "receivable_id": "RCV-A",
       "counterparty_id": "BUYER-1",
       "promised_day": 2,

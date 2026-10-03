@@ -56,9 +56,16 @@ test("the EX01 verdict, the counters and the buyer turns are the live API's, as 
   );
   assert.equal(
     v.counters.find((c) => c.label === "Option A").text,
-    "Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥257,200 of this invoice at 0.85%.",
+    "Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥257,200 of this invoice at 0.85%, paid on or before day 2.",
   );
   assert.ok(Array.isArray(v.passed_checks) && v.autonomy && v.annualised);
+  // Leverage is one definition now (actual drawn debt): the pro forma is 1.47x and the inputs name the month, the debt and the basis.
+  const lev = v.passed_checks.find((c) => c.inputs && "pro_forma_leverage" in c.inputs)?.inputs;
+  assert.equal(lev.pro_forma_leverage, "1.47x");
+  assert.equal(lev.pro_forma_leverage_month, "1");
+  assert.ok(lev.pro_forma_leverage_debt && lev.pro_forma_leverage_basis);
+  assert.ok(!("committed_line_limits" in lev), "committed line limits are no longer in the verdict inputs");
+  assert.ok(v.summary.includes("LEVERAGE_MAX 1.47x"));
   // The EX01B rewording reaches the same verdict, and a buyer's turn in the chat script carries no verdict.
   assert.deepEqual(mock("verdict_ex01b.json").violations.map((x) => x.code), v.violations.map((x) => x.code));
   const script = mock("nl_script.json");
@@ -73,6 +80,8 @@ test("funding, trajectory and capex mocks match the golden values", () => {
   assert.equal(f.committed.total_cost_fen, golden.v2_optimum_total);
   assert.equal(f.committed.total_cost_display, "¥3,113.93");
   assert.equal(f.committed.costs.reduce((n, c) => n + c.fen, 0), f.committed.total_cost_fen);
+  // The API's landing day is on the plan's cash-in actions: the line lands the same day, the invoice advance on day 3.
+  assert.deepEqual(f.committed.actions.map((a) => [a.kind, a.lands_day]), [["DRAW", 0], ["FINANCE_INVOICE", 3]]);
   assert.equal(f.marginal.extension_expected_12m_fen, golden.extension_expected_12m);
   assert.equal(f.marginal.break_even_display, golden.break_even_discount_display);
   assert.equal(f.marginal.rate_display, golden.if_all_in_rate_display);
@@ -89,6 +98,9 @@ test("funding, trajectory and capex mocks match the golden values", () => {
   const s36 = c.structures.find((s) => s.id === "loan_36m");
   assert.equal(s36.monthly_payment_display, "¥18,144.62");
   assert.equal(c.selected_id, "loan_36m");
+  // The capex leverage inputs carry the month-end debt, the month and the basis; no committed line limits.
+  const inputs = c.structures.flatMap((x) => x.workings).filter((w) => w.inputs && "Debt_m" in w.inputs).map((w) => w.inputs);
+  assert.ok(inputs.length > 0 && inputs.every((i) => i.month && i.basis && !("committed_line_limits" in i)));
 });
 
 test("alerts and reconciliation mocks are the recorded server output for the opening books", () => {
@@ -141,7 +153,9 @@ test("the day-34 cure waits for the owner: PENDING_APPROVAL, then EXECUTED on ap
   assert.ok(pending.op_id.startsWith(`alert:${alert.id}:`));
   const approved = mock("home_approval_approved.json");
   assert.equal(approved.status, "APPROVED");
-  assert.equal(approved.decided_day, null, "the API does not record the day of a decision");
+  assert.equal(approved.decided_day, 34, "the API records the day of the decision");
+  assert.ok(approved.result_message.includes("the cash lands on day 37"));
+  assert.equal(pending.decided_day, null);
   const done = mock("home_approve.json").operations[0];
   assert.equal(done.status, "EXECUTED");
   assert.ok(done.message.includes("the cash lands on day 37"));

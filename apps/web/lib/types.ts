@@ -393,7 +393,7 @@ export interface FundingAction {
   receivable_id: string | null;
   repay_day: Day | null;
   rate_bp: Bp | null;
-  /** The day the cash lands (DRAW and FINANCE_INVOICE in a router plan and its comparison rows); null or absent otherwise. */
+  /** The day the cash lands (DRAW and FINANCE_INVOICE in a router plan's actions); null or absent otherwise. Comparison rows carry the key but, today, always as null. */
   lands_day?: Day | null;
 }
 
@@ -839,7 +839,7 @@ export type ComparisonRow = Displayed<{
   approval_reason?: string;
   executable_now?: boolean;
   not_executable_reason?: string;
-  /** The row's actions as the router returned them, each with `lands_day` where cash lands. */
+  /** The row's actions as the router returned them (`lands_day` is null on every comparison row today). */
   actions?: Displayed<FundingAction>[];
 };
 

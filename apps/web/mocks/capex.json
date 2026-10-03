@@ -392,9 +392,9 @@
         "text": "1.09"
       },
       "leverage": {
-        "num": 167,
-        "den": 72,
-        "text": "2.32"
+        "num": 41,
+        "den": 18,
+        "text": "2.28"
       },
       "extra_cost_vs_selected_fen": null,
       "note": "Illustration at 18 months, not the facility's actual term; never selected or applied for. Rejected: DSCR_BREACH@month 1 (1.09× < 1.25×).",
@@ -456,13 +456,14 @@
         },
         {
           "label": "Leverage",
-          "value": "2.32×",
-          "formula": "(debt incl. drawn facilities + committed line limits + principal) / (12 × EBITDA_m) = ¥2,505,000.00 / (12 × ¥90,000.00)",
+          "value": "2.28×",
+          "formula": "month-end debt (DebtPosition principal + drawn balances counted in leverage) / (12 × EBITDA_m), highest month = ¥2,460,000.00 / (12 × ¥90,000.00)",
           "inputs": {
-            "debt": "¥1,755,000.00",
-            "committed_line_limits": "¥150,000.00",
-            "drawn_facility_debt": "¥255,000.00",
+            "Debt_m": "¥2,460,000.00",
+            "EBITDA_m": "¥90,000.00",
             "principal": "¥600,000.00",
+            "basis": "projection with the ¥600,000.00 loan drawn from its request day, month 1",
+            "month": "1",
             "max_leverage": "2.50×",
             "limit_source": "FAC-LINE-LEV"
           },
@@ -982,9 +983,9 @@
         "text": "1.37"
       },
       "leverage": {
-        "num": 167,
-        "den": 72,
-        "text": "2.32"
+        "num": 41,
+        "den": 18,
+        "text": "2.28"
       },
       "extra_cost_vs_selected_fen": null,
       "note": "Selected: lowest total financing charges (interest + fees, not discounted) among the structures that hold DSCR and leverage in every month and do not push daily cash below the reserve.",
@@ -1046,13 +1047,14 @@
         },
         {
           "label": "Leverage",
-          "value": "2.32×",
-          "formula": "(debt incl. drawn facilities + committed line limits + principal) / (12 × EBITDA_m) = ¥2,505,000.00 / (12 × ¥90,000.00)",
+          "value": "2.28×",
+          "formula": "month-end debt (DebtPosition principal + drawn balances counted in leverage) / (12 × EBITDA_m), highest month = ¥2,460,000.00 / (12 × ¥90,000.00)",
           "inputs": {
-            "debt": "¥1,755,000.00",
-            "committed_line_limits": "¥150,000.00",
-            "drawn_facility_debt": "¥255,000.00",
+            "Debt_m": "¥2,460,000.00",
+            "EBITDA_m": "¥90,000.00",
             "principal": "¥600,000.00",
+            "basis": "projection with the ¥600,000.00 loan drawn from its request day, month 1",
+            "month": "1",
             "max_leverage": "2.50×",
             "limit_source": "FAC-LINE-LEV"
           },
@@ -1728,9 +1730,9 @@
         "text": "1.45"
       },
       "leverage": {
-        "num": 167,
-        "den": 72,
-        "text": "2.32"
+        "num": 41,
+        "den": 18,
+        "text": "2.28"
       },
       "extra_cost_vs_selected_fen": 3912118,
       "note": "Admissible, but ¥39,121.18 more in total financing charges (interest + fees) than the 36-month term loan, 5.60%.",
@@ -1792,13 +1794,14 @@
         },
         {
           "label": "Leverage",
-          "value": "2.32×",
-          "formula": "(debt incl. drawn facilities + committed line limits + principal) / (12 × EBITDA_m) = ¥2,505,000.00 / (12 × ¥90,000.00)",
+          "value": "2.28×",
+          "formula": "month-end debt (DebtPosition principal + drawn balances counted in leverage) / (12 × EBITDA_m), highest month = ¥2,460,000.00 / (12 × ¥90,000.00)",
           "inputs": {
-            "debt": "¥1,755,000.00",
-            "committed_line_limits": "¥150,000.00",
-            "drawn_facility_debt": "¥255,000.00",
+            "Debt_m": "¥2,460,000.00",
+            "EBITDA_m": "¥90,000.00",
             "principal": "¥600,000.00",
+            "basis": "projection with the ¥600,000.00 lease drawn from its request day, month 1",
+            "month": "1",
             "max_leverage": "2.50×",
             "limit_source": "FAC-LINE-LEV"
           },
@@ -1840,14 +1843,14 @@
   "selected_id": "loan_36m",
   "selected_facility_id": "FAC-ETL",
   "leverage_financed": {
-    "num": 167,
-    "den": 72,
-    "text": "2.32"
+    "num": 41,
+    "den": 18,
+    "text": "2.28"
   },
   "leverage_with_extension": {
-    "num": 181,
-    "den": 72,
-    "text": "2.51"
+    "num": 89,
+    "den": 36,
+    "text": "2.47"
   },
   "extension_extra_receivables_fen": 21000000,
   "dscr_limit_bp": 12500,
@@ -1881,13 +1884,12 @@
       "evidence": "OWNER_ESTIMATE"
     },
     {
-      "label": "Leverage, financed",
-      "value": "2.32×",
-      "formula": "(debt incl. drawn facilities + committed line limits + principal) / (12 × EBITDA_m) = (¥1,755,000.00 + ¥150,000.00 + ¥600,000.00) / (12 × ¥90,000.00)",
+      "label": "Leverage, financed (estimate)",
+      "value": "2.28×",
+      "formula": "(current books' highest month-end debt + principal) / (12 × EBITDA_m) = (¥1,860,000.00 + ¥600,000.00) / (12 × ¥90,000.00); an estimate before a structure is projected: each structure's own leverage is read from its projection",
       "inputs": {
-        "debt": "¥1,755,000.00",
-        "committed_line_limits": "¥150,000.00",
-        "drawn_facility_debt": "¥255,000.00",
+        "Debt_m": "¥1,860,000.00",
+        "basis": "estimate: current books, month 1 (highest month-end leverage of the projection), debt ¥1,860,000.00 + ¥600,000.00",
         "principal": "¥600,000.00",
         "EBITDA_m": "¥90,000.00",
         "max_leverage": "2.50×"
@@ -1895,12 +1897,13 @@
       "evidence": null
     },
     {
-      "label": "Leverage, financed and the terms extension funded",
-      "value": "2.51×",
-      "formula": "(debt + committed line limits + principal + extra receivables) / (12 × EBITDA_m) = (¥1,905,000.00 + ¥600,000.00 + ¥210,000.00) / (12 × ¥90,000.00)",
+      "label": "Leverage, financed and the terms extension funded (estimate)",
+      "value": "2.47×",
+      "formula": "(current books' highest month-end debt + principal + extra receivables) / (12 × EBITDA_m) = (¥1,860,000.00 + ¥600,000.00 + ¥210,000.00) / (12 × ¥90,000.00)",
       "inputs": {
         "extra_receivables": "¥210,000.00",
-        "extra_receivables_formula": "face × (horizon // every_days) × Δdays / 365, terms → 60 days",
+        "basis": "estimate: current books, month 1 (highest month-end leverage of the projection), debt ¥1,860,000.00 + ¥810,000.00",
+        "extra_receivables_formula": "estimate: face × Δdays / invoice interval, terms → 60 days, funded permanently",
         "max_leverage": "2.50×"
       },
       "evidence": null
@@ -1910,7 +1913,7 @@
     "Structures are ranked on lowest total financing charges (interest + fees, not discounted). Residual value, tax, discounting of financing flows and per-period fees are not modelled; this is a screen, not an investment appraisal.",
     "A structure is evaluated only at its facility's actual term. Any other term is a hypothetical illustration: it is never selected and never applied for.",
     "Liquidity is tested day by day on current books: the purchase is paid on the day the loan proceeds land (request day + the facility's lead time), and the proceeds, the upfront fee and every scheduled payment post. A day below the reserve fails a structure when the structure makes that day's cash lower than the same day on current books without the purchase; a shortfall the books already have is reported beside it, not blamed on the structure. The owner's uplift is not counted as cash in that test.",
-    "Debt and monthly debt service include every balance already drawn on a facility that counts in leverage / debt service: an amortising facility at its annuity payment over its term, a bullet term loan at (principal + interest) / term (ADR-0008), a revolving line interest-only. A committed credit line counts at its full limit in leverage, as the verifier's pro-forma test does. The upfront fee is a cash cost, not debt service.",
+    "Monthly debt service includes every balance already drawn on a facility that counts in debt service: an amortising facility at its annuity payment over its term, a bullet term loan at (principal + interest) / term (ADR-0008), a revolving line interest-only. Leverage is month-end debt (principal of existing debt + drawn balances that count in leverage) / (12 × monthly EBITDA), read from each structure's own projection; a committed line's undrawn room is not debt. The leverage figures before a structure is projected (financed, and with a terms extension funded) are labelled estimates. The upfront fee is a cash cost, not debt service.",
     "Rates are nominal annual rates divided by 12 for monthly schedules, leases included; they are not effective annual rates.",
     "The uplift is the owner's estimate and is treated as EBITDA in the DSCR test and as cash in NPV and payback; the system has not observed it."
   ],

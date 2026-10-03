@@ -23,5 +23,6 @@
   "amount_fen": 20000000,
   "amount_display": "¥200,000.00",
   "detail": "effective annual cost 32.52% is above the mandate's 15.00% ceiling for what the agent may borrow alone (all charges on ¥200,000.00 held 10 days (day 37 to day 47), annualised = 32.52%)",
-  "decided_day": null
+  "decided_day": null,
+  "result_message": null
 }

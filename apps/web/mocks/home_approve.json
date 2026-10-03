@@ -1,7 +1,7 @@
 {
   "operations": [
     {
-      "approval_id": null,
+      "approval_id": "APR-000001",
       "effective_day": 34,
       "entry_hash": "06af19301e8e3bdec142a1a01dd9c08f37e7b11f9d0f3847834431eb69fbcc38",
       "kind": "SUBMIT_INVOICE_FOR_FINANCING",

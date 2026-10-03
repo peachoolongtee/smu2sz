@@ -12,6 +12,7 @@
         "receivable_id": null,
         "repay_day": 32,
         "rate_bp": null,
+        "lands_day": 0,
         "amount_display": "¥150,000.00"
       },
       {
@@ -22,6 +23,7 @@
         "receivable_id": "RCV-A",
         "repay_day": null,
         "rate_bp": null,
+        "lands_day": 3,
         "amount_display": "¥255,000.00"
       }
     ],
@@ -106,6 +108,7 @@
         "receivable_id": null,
         "repay_day": 32,
         "rate_bp": null,
+        "lands_day": 0,
         "amount_display": "¥150,000.00"
       },
       {
@@ -116,6 +119,7 @@
         "receivable_id": "RCV-A",
         "repay_day": null,
         "rate_bp": null,
+        "lands_day": 3,
         "amount_display": "¥255,000.00"
       }
     ],
@@ -633,7 +637,8 @@
           "amount_fen": 42000000,
           "receivable_id": "RCV-A",
           "repay_day": null,
-          "rate_bp": 120
+          "rate_bp": 120,
+          "lands_day": null
         }
       ],
       "cost_fen": 504000,
@@ -644,7 +649,7 @@
       "note": "cost ¥5,040.00; admissible but dearer than the selected plan",
       "needs_owner_approval": false,
       "approval_reason": "",
-      "executable_now": true,
+      "executable_now": false,
       "total_fen": 504000,
       "total_display": "¥5,040.00",
       "selected": false
@@ -664,7 +669,8 @@
           "amount_fen": 15000000,
           "receivable_id": null,
           "repay_day": 32,
-          "rate_bp": null
+          "rate_bp": null,
+          "lands_day": null
         },
         {
           "kind": "EARLY_PAY",
@@ -673,7 +679,8 @@
           "amount_fen": 25809717,
           "receivable_id": "RCV-A",
           "repay_day": null,
-          "rate_bp": 120
+          "rate_bp": 120,
+          "lands_day": null
         }
       ],
       "cost_fen": 393881,
@@ -684,7 +691,7 @@
       "note": "cost ¥3,938.81; admissible but dearer than the selected plan",
       "needs_owner_approval": false,
       "approval_reason": "",
-      "executable_now": true,
+      "executable_now": false,
       "total_fen": 393881,
       "total_display": "¥841.64 + ¥3,097.17 = ¥3,938.81",
       "selected": false
@@ -704,7 +711,8 @@
           "amount_fen": 15000000,
           "receivable_id": null,
           "repay_day": 32,
-          "rate_bp": null
+          "rate_bp": null,
+          "lands_day": null
         },
         {
           "kind": "FINANCE_INVOICE",
@@ -713,7 +721,8 @@
           "amount_fen": 25500000,
           "receivable_id": "RCV-A",
           "repay_day": null,
-          "rate_bp": null
+          "rate_bp": null,
+          "lands_day": null
         }
       ],
       "cost_fen": 311393,
@@ -744,7 +753,8 @@
           "amount_fen": 15000000,
           "receivable_id": null,
           "repay_day": 32,
-          "rate_bp": null
+          "rate_bp": null,
+          "lands_day": null
         },
         {
           "kind": "DRAW",
@@ -753,7 +763,8 @@
           "amount_fen": 25500000,
           "receivable_id": null,
           "repay_day": null,
-          "rate_bp": null
+          "rate_bp": null,
+          "lands_day": null
         }
       ],
       "cost_fen": null,
@@ -786,7 +797,8 @@
           "amount_fen": 15000000,
           "receivable_id": null,
           "repay_day": 32,
-          "rate_bp": null
+          "rate_bp": null,
+          "lands_day": null
         }
       ],
       "cost_fen": 84164,
