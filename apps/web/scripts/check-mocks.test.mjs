@@ -39,7 +39,7 @@ test("verdict figures are the golden values, server-formatted", () => {
   // Counter ids are the server's (CTR-<hash>), so the cards are found by label.
   const a = v.counters.find((c) => c.label === "Option A");
   assert.equal(a.supplier_cost_fen, golden.counter_a_total);
-  assert.equal(a.supplier_cost_display, "¥2,642.24");
+  assert.equal(a.supplier_cost_display, "¥3,027.77");
   const b = v.counters.find((c) => c.label === "Option B");
   assert.equal(b.supplier_cost_display, "¥0.00");
   assert.ok(b.formula.includes(`${fmtYuan(golden.counter_b_price_adj_per_invoice)} per invoice`));
@@ -53,7 +53,7 @@ test("the EX01 verdict, the counters and the buyer turns are the live API's, as 
   );
   assert.equal(
     v.counters.find((c) => c.label === "Option A").text,
-    "Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥211,900 of this invoice at 0.85%.",
+    "Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥257,200 of this invoice at 0.85%.",
   );
   assert.ok(Array.isArray(v.passed_checks) && v.autonomy && v.annualised);
   // The EX01B rewording reaches the same verdict, and a buyer's turn in the chat script carries no verdict.
@@ -68,7 +68,7 @@ test("the EX01 verdict, the counters and the buyer turns are the live API's, as 
 test("funding, trajectory and capex mocks match the golden values", () => {
   const f = mock("funding.json");
   assert.equal(f.committed.total_cost_fen, golden.v2_optimum_total);
-  assert.equal(f.committed.total_cost_display, "¥2,712.94");
+  assert.equal(f.committed.total_cost_display, "¥3,113.93");
   assert.equal(f.committed.costs.reduce((n, c) => n + c.fen, 0), f.committed.total_cost_fen);
   assert.equal(f.marginal.extension_expected_12m_fen, golden.extension_expected_12m);
   assert.equal(f.marginal.break_even_display, golden.break_even_discount_display);
@@ -78,7 +78,7 @@ test("funding, trajectory and capex mocks match the golden values", () => {
   assert.equal(t.first_breach_day, 47);
   assert.equal(t.days[20].closing_fen, golden.cash_day20);
   assert.equal(t.days[47].closing_fen, golden.cash_day47_60d_terms);
-  assert.equal(t.days[47].closing_display, "¥254,960.00");
+  assert.equal(t.days[47].closing_display, "¥209,960.00");
 
   const c = mock("capex.json");
   assert.equal(c.npv_fen, golden.capex.npv);
@@ -117,7 +117,7 @@ test("funding lands later: the day-0 plan leaves the advance in transit, cash is
   assert.equal(transit[0].facility_id, "FAC-IF");
   assert.equal(transit[0].request_day, 0);
   assert.equal(transit[0].arrival_day, 3);
-  assert.equal(transit[0].principal_display, "¥210,000.00");
+  assert.equal(transit[0].principal_display, "¥255,000.00");
   assert.equal(state.cash_display, "¥550,000.00");
   const reply = mock("nl_script.json").fund_gap_go.reply;
   assert.ok(reply.includes("Cash in now") && reply.includes("Still to land") && reply.includes("lands on day 3"));

@@ -821,12 +821,6 @@ class ReceivePayment(_OpBase):
     bank_reference: str | None = Field(default=None, min_length=1, max_length=64)
 
 
-class GenerateBorrowerFile(_OpBase):
-    kind: Literal["GENERATE_BORROWER_FILE"] = "GENERATE_BORROWER_FILE"
-    facility_id: str
-    amount_fen: Fen
-
-
 class RequestOwnerApproval(_OpBase):
     kind: Literal["REQUEST_OWNER_APPROVAL"] = "REQUEST_OWNER_APPROVAL"
     subject: str
@@ -878,7 +872,6 @@ Operation = Annotated[
     | RepayFacility
     | SubmitInvoiceForFinancing
     | ReceivePayment
-    | GenerateBorrowerFile
     | RequestOwnerApproval
     | ApplyForFacility
     | SignPersonalGuarantee

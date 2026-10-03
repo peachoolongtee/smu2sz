@@ -414,26 +414,6 @@ def test_an_early_pay_plan_whose_books_moved_is_proposed_again(client, rt):
 # ---------------------------------------------------------------- the borrower file, an offer decision, Chinese
 
 
-def test_a_borrower_file_request_is_the_stored_operation(client, rt):
-    c = Chat(client, "pb-bf")
-    c.say("prepare the borrower file for the term loan, ¥600,000")
-    plan = pending("pb-bf")
-    assert signature(plan.ops) == [("GENERATE_BORROWER_FILE", "FAC-ETL", None, 60_000_000)]
-    move_books(rt, +100)  # the books moved but the file is still possible: the stored request is sent
-    r = c.say("go ahead")
-    assert ops(r) == [("GENERATE_BORROWER_FILE", "PENDING_APPROVAL")]
-    assert json.loads(rt.store.operations()[-1].payload_json)["amount_fen"] == 60_000_000
-    assert [a[1] for a in books(rt)["approvals"]] == ["PENDING"]
-
-
-def test_a_borrower_file_request_is_void_on_a_new_day(client, rt):
-    c = Chat(client, "pb-bf2")
-    c.say("prepare the borrower file for the term loan, ¥600,000")
-    client.post("/clock/advance", json={"to_day": 1}, headers=OWNER)
-    r = c.say("go ahead")
-    assert ops(r) == [] and rt.store.approvals() == [] and "I did not run it" in r["reply"]
-
-
 def test_accepting_an_offer_is_not_run_when_its_verdict_changed(client, rt):
     c = Chat(client, "pb-eval")
     r = c.say("Evaluate EX02")

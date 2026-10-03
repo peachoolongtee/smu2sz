@@ -41,8 +41,8 @@ test("a 401 from the API opens the owner sign-in dialog instead of leaving a bla
   await expect(page.getByRole("dialog", { name: "Owner sign-in" })).toBeVisible();
 });
 
-test("the borrower file downloads as HTML and Word, and the owner approves both pending requests", async ({ page }) => {
-  await walkTo(page, 13); // through the borrower file: capex apply + borrower file are both pending
+test("the borrower file downloads as HTML and Word, and the owner approves the one pending application", async ({ page }) => {
+  await walkTo(page, 13); // through the capex application (pending) and the read-only borrower file (nothing pending)
   await expect(page).toHaveURL(/\/approvals/);
 
   await page.goto("/capex");
@@ -53,13 +53,11 @@ test("the borrower file downloads as HTML and Word, and the owner approves both 
   expect(docx.suggestedFilename()).toMatch(/^BF-.*\.docx$/);
 
   await page.goto("/approvals");
-  await expect(page.getByText("2 pending")).toBeVisible();
+  await expect(page.getByText("1 pending")).toBeVisible();
   const approve = page.getByRole("button", { name: "Approve" });
   await approve.first().click();
-  await expect(page.getByText("1 pending")).toBeVisible();
-  await approve.first().click();
   await expect(page.getByText("0 pending")).toBeVisible();
-  await expect(page.getByText("Approved")).toHaveCount(2);
+  await expect(page.getByText("Approved")).toHaveCount(1);
 
   await page.goto("/ledger");
   await expect(page.getByTestId("chain-status")).toContainText("Chain valid");
@@ -93,11 +91,11 @@ test("the day-0 plan: 'go ahead' brings cash now and leaves the advance in trans
   await page.goto("/");
   const position = page.locator("#home-position");
   await expect(position.getByText("¥550,000.00")).toBeVisible();
-  await expect(position.getByTestId("in-transit-lot")).toContainText("¥210,000.00 lands on day 3");
+  await expect(position.getByTestId("in-transit-lot")).toContainText("¥255,000.00 lands on day 3");
   // Once day 3 has passed the advance is cash.
   expect((await request.post(`${API}/clock/advance`, { headers: owner, data: { to_day: 4 } })).ok()).toBeTruthy();
   await page.goto("/");
-  await expect(page.locator("#home-position").getByText("¥760,000.00")).toBeVisible();
+  await expect(page.locator("#home-position").getByText("¥805,000.00")).toBeVisible();
   await expect(page.locator("#home-position").getByTestId("in-transit")).toHaveCount(0);
   await request.post(`${API}/demo/reset`, { headers: owner, data: {} });
 });
@@ -194,5 +192,5 @@ test("an approval is refused when the server does not recognise the owner", asyn
   await page.goto("/approvals");
   await page.getByRole("button", { name: "Approve" }).first().click();
   await expect(page.getByText(/only the owner may decide|rejected the owner token/i)).toBeVisible();
-  await expect(page.getByText("2 pending")).toBeVisible();
+  await expect(page.getByText("1 pending")).toBeVisible();
 });

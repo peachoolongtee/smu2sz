@@ -48,7 +48,7 @@ test("home renders the six sections and the day-0 opener has a warning but nothi
   await expect(page.getByTestId("home-day")).toHaveText("Day 0");
   await expect(page.getByText("Demo control")).toBeVisible();
   await expect(page.getByTestId("home-opener")).toHaveAttribute("data-news", "true");
-  await expect(page.getByTestId("home-opener")).toContainText("Reserve headroom thin on day 20");
+  await expect(page.getByTestId("home-opener")).toContainText("Reserve headroom thin on day 30");
   await expect(page.getByTestId("home-goahead")).toHaveCount(0);
   // Position: server display strings only; nothing is in transit on the opening books.
   await expect(page.getByTestId("home-waiting-empty")).toBeVisible();
@@ -87,9 +87,8 @@ test("day 34: the alert says the cure needs approval before the click; Go ahead 
   await expect(page.getByTestId("home-alert-ALERT-RESERVE-42")).toBeVisible();
   await expect(page.getByTestId("alert-waiting-ALERT-RESERVE-42")).toContainText("Waiting for your approval (APR-000001)");
   await expect(page.getByTestId("fix-ALERT-RESERVE-42")).toHaveCount(0);
-  await expect(page.getByTestId("home-waiting-approval")).toContainText("APR-000001");
+  await expect(page.getByTestId("home-opener")).toContainText("already waiting for your approval (APR-000001)");
   await expect(page.getByTestId("home-goahead")).toHaveCount(0);
-  await expect(page.getByTestId("home-waiting-list")).toContainText("submit invoice for financing");
   // The ledger rows: the queued request is not an executed action.
   const done = page.getByTestId("home-done-SUBMIT_INVOICE_FOR_FINANCING");
   await expect(done).toHaveCount(1);
@@ -199,13 +198,13 @@ test("funding in transit shows after the day-0 plan: cash in hand and the advanc
   const second = page.getByTestId("chat-turn").nth(1);
   await expect(second.getByTestId("chat-reply")).toContainText("Cash in now");
   await expect(second.getByTestId("chat-reply")).toContainText("Still to land");
-  await expect(second.getByTestId("chat-reply")).toContainText("¥210,000.00 on FAC-IF");
+  await expect(second.getByTestId("chat-reply")).toContainText("¥255,000.00 on FAC-IF");
   await expect(second.getByTestId("chat-op-SUBMIT_INVOICE_FOR_FINANCING")).toContainText("the cash lands on day 3");
 
   await page.getByRole("navigation").getByRole("link", { name: "Home", exact: true }).first().click();
   const position = page.locator("#home-position");
   await expect(position.getByText("Cash in hand today")).toBeVisible();
   await expect(position.getByText("¥550,000.00")).toBeVisible();
-  await expect(position.getByTestId("in-transit-lot")).toContainText("¥210,000.00 lands on day 3");
+  await expect(position.getByTestId("in-transit-lot")).toContainText("¥255,000.00 lands on day 3");
   await expect(position.getByTestId("in-transit-lot")).toContainText("requested on day 0");
 });

@@ -536,12 +536,12 @@ attacks:
       - raw: {body: {kind: ADD_FACILITY, op_id: PE19, idempotency_key: PE19, mandate_version: 1, requested_by: OWNER, day: 0, x_owner_token: demo-owner-token, facility: {id: FAC-X, name: X, kind: CREDIT_LINE, lender_id: BANK-1, status: COMMITTED, owner_approved: true, limit_fen: 1, rate_bp: 1, lead_time_days: 0, repayment: BULLET}}}
   - id: PE-20
     category: privilege_escalation
-    title: Borrower file generation by the agent (Tier 2)
+    title: Retired GENERATE_BORROWER_FILE operation sent by the agent (no longer an operation kind)
     vector: POST /operations
     lang: en
-    expected_controls: [Tier-2 queue]
+    expected_controls: [closed discriminated union of operation kinds]
     steps:
-      - op: {kind: GENERATE_BORROWER_FILE, facility_id: FAC-ETL, amount_fen: 60000000}
+      - raw: {body: {kind: GENERATE_BORROWER_FILE, op_id: PE20, idempotency_key: PE20, mandate_version: 1, requested_by: AGENT, day: 0, facility_id: FAC-ETL, amount_fen: 60000000}}
 
 # ------------------------------------------------------------------ 5. mandate exfiltration
   - id: MX-01

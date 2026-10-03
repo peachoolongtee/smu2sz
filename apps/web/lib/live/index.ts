@@ -14,6 +14,8 @@ import type {
   AuditView,
   BorrowerFileRequest,
   BorrowerFileView,
+  CapexApplyRequest,
+  CapexApplyResult,
   CapexRequest,
   CapexView,
   FundingView,
@@ -89,6 +91,7 @@ export const live = {
   decideApproval: (id: string, decision: ApprovalDecision) => approvals.decideApproval(id, decision),
 
   capexEvaluate: (req: CapexRequest) => http<CapexView>("POST", "/capex/evaluate", { body: req }),
+  capexApply: (req: CapexApplyRequest) => http<CapexApplyResult>("POST", "/capex/apply", { body: req }),
   borrowerFile: (req: BorrowerFileRequest) => http<BorrowerFileView>("POST", "/borrower-file", { body: req }),
 
   getAlerts: () => http<AlertsView>("GET", "/alerts"),

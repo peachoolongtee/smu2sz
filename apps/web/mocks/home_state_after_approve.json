@@ -34,11 +34,11 @@
         "terms_days": 45,
         "status": "OPEN",
         "confirmed": true,
-        "settled_fen": 21190000,
+        "settled_fen": 25720000,
         "advance_fen": 0,
         "advance_facility_id": null,
         "face_display": "¥420,000.00",
-        "settled_display": "¥211,900.00",
+        "settled_display": "¥257,200.00",
         "advance_display": "¥0.00"
       },
       {
@@ -91,7 +91,7 @@
         "status": "COMMITTED",
         "owner_approved": true,
         "limit_fen": 15000000,
-        "drawn_fen": 14990115,
+        "drawn_fen": 14998620,
         "advance_rate_bp": null,
         "rate_bp": 640,
         "fee_bp_per_advance": 0,
@@ -137,7 +137,7 @@
         ],
         "source_note": "synthetic fixture (spec v2 §7.2)",
         "limit_display": "¥150,000.00",
-        "drawn_display": "¥149,901.15",
+        "drawn_display": "¥149,986.20",
         "rate_display": "6.40%",
         "upfront_fee_display": "0.00%"
       },
@@ -343,11 +343,15 @@
       {
         "id": "D-EQUIP",
         "facility_id": null,
-        "label": "Existing equipment loan",
-        "principal_fen": 150000000,
+        "label": "Existing equipment loan (rate 0%: a fixture assumption)",
+        "principal_fen": 145500000,
         "monthly_debt_service_fen": 4500000,
-        "principal_display": "¥1,500,000.00",
-        "monthly_debt_service_display": "¥45,000.00"
+        "rate_bp": 0,
+        "payment_every_days": 30,
+        "next_payment_day": 60,
+        "principal_display": "¥1,455,000.00",
+        "monthly_debt_service_display": "¥45,000.00",
+        "rate_display": "0.00%"
       }
     ],
     "forward_concessions": [
@@ -422,16 +426,16 @@
       {
         "id": "fund-OFF-f806f79b6c21-cooperative-0",
         "facility_id": "FAC-LINE",
-        "principal_fen": 14990115,
-        "remaining_fen": 14990115,
+        "principal_fen": 14998620,
+        "remaining_fen": 14998620,
         "request_day": 0,
         "arrival_day": 0,
         "receivable_id": null,
         "maturity_day": null,
         "settled": true,
         "assumed_date": false,
-        "principal_display": "¥149,901.15",
-        "remaining_display": "¥149,901.15"
+        "principal_display": "¥149,986.20",
+        "remaining_display": "¥149,986.20"
       },
       {
         "id": "alert:ALERT-RESERVE-42:v7:0",

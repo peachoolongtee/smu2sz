@@ -1,8 +1,9 @@
 """Borrower file endpoints (flag `borrower_file`). To be mounted by the main architect.
 
-POST /borrower-file builds the file from verified state and queues a typed GenerateBorrowerFile
-through the executor, which makes it Tier 2 (PENDING_APPROVAL). The file is prepared, never sent:
-the owner downloads and submits it. Downloads: GET /borrower-file/{file_id}.html | .docx | .pdf.
+POST /borrower-file builds the file from verified state for the owner. It is a read-only action: nothing
+is logged, queued or approved, and the provenance (generation day, state version, mandate version, evidence
+hash of the inputs) is recorded in the file itself. The file is prepared, never sent: the owner downloads and
+submits it. Downloads: GET /borrower-file/{file_id}.html | .docx | .pdf.
 """
 
 from __future__ import annotations
@@ -22,19 +23,15 @@ from app.borrower_file import (
     BorrowerFile,
     BorrowerFileError,
     build,
+    lookup,
     pdf_renderer,
+    remember,
     render_docx,
     render_html,
     render_pdf,
 )
-from app.domain.models import Actor, GenerateBorrowerFile, OperationResult
 
 router = APIRouter(dependencies=[Depends(require_owner)])
-
-# Files built in this process, by id. A file is a snapshot of verified state with its own provenance
-# footer (state version, mandate version, chain head); rebuilding with the same request on the same
-# state gives the same id.
-_FILES: dict[str, tuple[BorrowerFile, OperationResult]] = {}
 
 DOCX_MEDIA = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 
@@ -57,14 +54,7 @@ class BorrowerFileIn(BaseModel):
     ebitda_uplift_fen: int | None = None  # owner estimate: shown, never projected
 
 
-def _approval_status(rt: Runtime, result: OperationResult) -> str | None:
-    if not result.approval_id:
-        return None
-    rec = rt.store.get_approval(result.approval_id)
-    return str(getattr(rec.status, "value", rec.status)) if rec is not None else None
-
-
-def _view(rt: Runtime, bf: BorrowerFile, result: OperationResult) -> dict[str, Any]:
+def _view(bf: BorrowerFile) -> dict[str, Any]:
     sections = []
     for s in bf.sections:
         sections.append({
@@ -89,9 +79,6 @@ def _view(rt: Runtime, bf: BorrowerFile, result: OperationResult) -> dict[str, A
         "amount_fen": bf.amount_fen,
         "use_of_proceeds": bf.use_of_proceeds,
         "sections": sections,
-        "approval_id": result.approval_id,
-        "approval_status": _approval_status(rt, result),
-        "operation": json.loads(result.model_dump_json()),
         "generated_day": bf.generated_day,
         "provenance": json.loads(bf.provenance.model_dump_json()),
         "downloads": {
@@ -114,20 +101,13 @@ def post_borrower_file(body: BorrowerFileIn) -> dict[str, Any]:
                        ebitda_uplift_fen=body.ebitda_uplift_fen)
         except BorrowerFileError as exc:
             raise HTTPException(422, str(exc)) from None
-        op = GenerateBorrowerFile(op_id=f"OP-{bf.file_id}", idempotency_key=f"borrower-file:{bf.file_id}",
-                                  mandate_version=rt.store.get_mandate().version, requested_by=Actor.AGENT,
-                                  day=rt.day, facility_id=bf.facility_id, amount_fen=bf.amount_fen)
-        result = rt.executor.execute(op)  # Tier 2: PENDING_APPROVAL; the executor computes the tier
-        if bf.file_id in _FILES:  # the same request on the same verified state: keep the first snapshot
-            bf = _FILES[bf.file_id][0]
-        else:
-            _FILES[bf.file_id] = (bf, result)
-        return _view(rt, bf, result)
+        bf = remember(bf)  # the same request on the same verified state: keep the first snapshot
+        return _view(bf)
 
 
-def _get(rt: Runtime, file_id: str) -> tuple[BorrowerFile, OperationResult]:
+def _get(rt: Runtime, file_id: str) -> BorrowerFile:
     _require_enabled(rt)
-    found = _FILES.get(file_id)
+    found = lookup(file_id)
     if found is None:
         raise HTTPException(404, "borrower file not found; POST /borrower-file first")
     return found
@@ -139,19 +119,19 @@ def _attachment(file_id: str, ext: str) -> dict[str, str]:
 
 @router.get("/borrower-file/{file_id}.html", response_class=HTMLResponse)
 def get_borrower_file_html(file_id: str) -> HTMLResponse:
-    bf, _ = _get(get_runtime(), file_id)
+    bf = _get(get_runtime(), file_id)
     return HTMLResponse(render_html(bf))
 
 
 @router.get("/borrower-file/{file_id}.docx")
 def get_borrower_file_docx(file_id: str) -> Response:
-    bf, _ = _get(get_runtime(), file_id)
+    bf = _get(get_runtime(), file_id)
     return Response(render_docx(bf), media_type=DOCX_MEDIA, headers=_attachment(bf.file_id, "docx"))
 
 
 @router.get("/borrower-file/{file_id}.pdf")
 def get_borrower_file_pdf(file_id: str) -> Response:
-    bf, _ = _get(get_runtime(), file_id)
+    bf = _get(get_runtime(), file_id)
     pdf = render_pdf(bf)
     if pdf is None:
         raise HTTPException(501, "PDF skipped: no local PDF renderer is installed; download the HTML and print it")
@@ -160,6 +140,4 @@ def get_borrower_file_pdf(file_id: str) -> Response:
 
 @router.get("/borrower-file/{file_id}")
 def get_borrower_file(file_id: str) -> dict[str, Any]:
-    rt = get_runtime()
-    bf, result = _get(rt, file_id)
-    return _view(rt, bf, result)
+    return _view(_get(get_runtime(), file_id))

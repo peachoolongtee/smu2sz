@@ -508,6 +508,7 @@ def _provenance_section(p: Provenance) -> Section:
                                                            text("yes" if p.chain_valid else "NO", O,
                                                                 "LedgerStore.verify_chain")]),
         Row(label="Generated on", figures=[text(f"day {p.generated_day} (data as of {p.as_of}, the generation day)", O, "clock")]),
+        Row(label="Evidence hash of the inputs", figures=[text(p.evidence_hash, O, "request, state, mandate, ledger")]),
         Row(label="Projection basis", figures=[text(f"{p.basis.lower()}; {p.calc}", O, "engine")]),
     ]
     return Section(key="provenance", title_en="Data provenance", title_zh="数据来源", rows=rows)
@@ -518,7 +519,7 @@ def _provenance_section(p: Provenance) -> Section:
 
 def _ledger_digest(commitments: list[Commitment], log: list[_Entry]) -> str:
     """What the file's content depends on in the log and commitments. The chain head itself is left
-    out so that queuing the file (a new log entry) does not change the file's id."""
+    out: it moves with every entry, executed or not, while the figures move only with these rows."""
     rows = [f"{c.id}:{c.status.value}:{c.terms_hash}" for c in commitments]
     rows += [e.entry_hash for e in log if e.result.status == OperationStatus.EXECUTED
              and isinstance(e.op, DrawFacility | RepayFacility | SubmitInvoiceForFinancing | AcceptOffer
@@ -526,9 +527,9 @@ def _ledger_digest(commitments: list[Commitment], log: list[_Entry]) -> str:
     return hashlib.sha256("|".join(rows).encode()).hexdigest()
 
 
-def _file_id(parts: dict[str, Any]) -> str:
+def _evidence_hash(parts: dict[str, Any]) -> str:
     raw = json.dumps(parts, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
-    return "BF-" + hashlib.sha256(raw.encode()).hexdigest()[:12].upper()
+    return hashlib.sha256(raw.encode()).hexdigest()
 
 
 _EQUIPMENT_USE = re.compile(r"equipment|machine|machinery|capex|设备|机器", re.IGNORECASE)
@@ -592,9 +593,14 @@ def build(store: LedgerStore, *, facility_id: str, amount_fen: int, use_of_proce
     if f not in binding:
         binding.append(f)
     ops = store.operations()
+    evidence_hash = _evidence_hash({"facility_id": f.id, "amount_fen": amount_fen, "use": use, "day": day,
+                                    "spend_day": spend_day, "uplift": ebitda_uplift_fen,
+                                    "state_version": state.state_version, "mandate_version": mandate.version,
+                                    "org": state.org_id, "ledger": _ledger_digest(commitments, log)})
     prov = Provenance(org_id=state.org_id, as_of=generation_date(state, day), state_version=state.state_version,
                       mandate_version=mandate.version, chain_head_hash=ops[-1].entry_hash if ops else None,
-                      chain_length=len(ops), chain_valid=store.verify_chain(), generated_day=day)
+                      chain_length=len(ops), chain_valid=store.verify_chain(), generated_day=day,
+                      evidence_hash=evidence_hash)
     sections = [
         _summary(state, before, subs, day),
         _request(f, amount_fen, day, after),
@@ -607,9 +613,5 @@ def build(store: LedgerStore, *, facility_id: str, amount_fen: int, use_of_proce
     ]
     sections.append(_legend(sections))
     sections.append(_provenance_section(prov))
-    file_id = _file_id({"facility_id": f.id, "amount_fen": amount_fen, "use": use, "day": day,
-                        "spend_day": spend_day, "uplift": ebitda_uplift_fen, "state_version": state.state_version,
-                        "mandate_version": mandate.version, "org": state.org_id,
-                        "ledger": _ledger_digest(commitments, log)})
-    return BorrowerFile(file_id=file_id, facility_id=f.id, amount_fen=amount_fen, use_of_proceeds=use,
+    return BorrowerFile(file_id="BF-" + evidence_hash[:12].upper(), facility_id=f.id, amount_fen=amount_fen, use_of_proceeds=use,
                         generated_day=day, sections=sections, provenance=prov)
