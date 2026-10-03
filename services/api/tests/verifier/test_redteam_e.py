@@ -8,7 +8,13 @@ discount cap 150 bp, rate ceiling 15%, standing plan C0 = 311,393 fen.
 from __future__ import annotations
 
 from fractions import Fraction
+from typing import Any
 
+import pytest
+from fastapi.testclient import TestClient
+
+from app.api.runtime import Runtime, set_runtime
+from app.config import get_settings
 from app.domain.models import (
     BaseKind,
     CompiledOffer,
@@ -16,16 +22,24 @@ from app.domain.models import (
     Contingency,
     Duration,
     DurationKind,
+    InvoiceAdjustment,
     Obligation,
     ObligationBase,
     ObligationType,
     Outcome,
     SourceSpan,
 )
+from app.financial.invoices import terms_in_force
+from app.mandate.fixture import demo_owner_public_key_hex
 from app.mandate.predicates import discount_rate
+from app.nl import reset_sessions
+from app.persistence import InMemoryLedgerStore
 from app.verifier import evaluate
-from app.verifier.bind import bind
-from tests.verifier.conftest import codes
+from app.verifier.bind import bind, is_gain
+from tests.verifier.conftest import codes, compiled, declared_for
+
+OWNER = {"X-Owner-Token": "demo-owner-token"}
+BUYER1 = {"X-Counterparty-Key": "demo-buyer-1-key"}
 
 SPAN = [SourceSpan(doc_id="OWNER-DOC", start=0, end=0, text="")]
 WHOLE = 42_000_000
@@ -104,3 +118,76 @@ def test_f1_fixed_sum_on_a_stated_portion_is_rated_on_that_portion(state, mandat
 def test_f1_a_sum_not_below_its_portion_is_unbound(state, mandate, key):
     b = _ev(state, mandate, key, _leg(sum_fen=WHOLE))
     assert "UNRESOLVED_SCOPE" in codes(b.verdict.violations)
+
+
+# ---------------------------------------------------------------- F2: a target term is against the terms in force
+
+
+def _with_55_days(state):  # type: ignore[no-untyped-def]
+    """The golden books after an accepted +10-day perpetual extension (55-day terms in force for BUYER-1)."""
+    adj = InvoiceAdjustment(id="CMT-X:O1", commitment_id="CMT-X", obligation_id="O1", counterparty_id="BUYER-1",
+                            days_delta=10, price_bp=0, from_issue_day=0)
+    return state.model_copy(update={"invoice_adjustments": [adj]})
+
+
+def _target(days: int) -> Obligation:
+    return Obligation(
+        id="RE-T1", type=ObligationType.TERMS_EXTENSION, counterparty_id="BUYER-1", target_terms_days=days,
+        effective_day=1, base=ObligationBase(kind=BaseKind.FUTURE_INVOICES), contingency=Contingency.FIRM,
+        duration=Duration(kind=DurationKind.RECURRING_PERPETUAL), spans=SPAN, confidence=1.0)
+
+
+def test_f2_terms_in_force_apply_the_accepted_adjustments_to_the_next_invoice(state):
+    assert terms_in_force(state, "BUYER-1") == 45
+    assert terms_in_force(_with_55_days(state), "BUYER-1") == 55
+    assert terms_in_force(state, "NOBODY") is None
+
+
+def test_f2_a_target_of_40_against_55_in_force_binds_minus_15_a_gain(state):
+    (b,), notes = bind(_offer(_target(40)), _with_55_days(state))
+    assert b.days_delta == -15 and is_gain(b)
+    assert any("40 days − current 55 days" in n.message for n in notes)
+    (base,), _ = bind(_offer(_target(40)), state)
+    assert base.days_delta == -5  # unchanged on books without an adjustment
+
+
+def test_f2_counter_a_quotes_the_terms_in_force(state, mandate, key):
+    b = evaluate(compiled("EX01_PACKAGE"), _with_55_days(state), mandate, trusted_owner_key_hex=key,
+                 owner_declared=declared_for("EX01_PACKAGE"))
+    a = next(c for c in b.verdict.counters if c.label == "Option A")
+    assert a.text.startswith("Terms stay at 55 days") and "45 days" not in a.text
+
+
+@pytest.fixture
+def rt() -> Any:
+    r = Runtime(settings=get_settings(), store=InMemoryLedgerStore(), owner_key_hex=demo_owner_public_key_hex())
+    r.reset()
+    set_runtime(r)
+    reset_sessions()
+    yield r
+    set_runtime(None)
+    reset_sessions()
+
+
+def _buyer_agrees(client: TestClient, text: str, session: str) -> None:
+    r = client.post("/nl", headers=BUYER1, json={"text": text, "actor": "COUNTERPARTY", "session_id": session})
+    assert r.status_code == 200, r.text
+    [a] = [a for a in client.get("/approvals/queue", headers=OWNER).json()["approvals"] if a["status"] == "PENDING"]
+    d = client.post(f"/approvals/{a['id']}", json={"decision": "APPROVE"}, headers=OWNER).json()["result"]
+    assert d["status"] == "EXECUTED", d["message"]
+
+
+def test_f2_stored_invoices_carry_the_last_agreed_terms_not_a_stack(rt: Runtime) -> None:
+    from app.main import app
+
+    client = TestClient(app)
+    _buyer_agrees(client, "We accept 55-day terms with a 0.30% price adjustment on future invoices.", "re-f2-1")
+    assert client.post("/clock/advance", json={"to_day": 1}, headers=OWNER).status_code == 200
+    _buyer_agrees(client, "Standard terms going forward: 40 days.", "re-f2-2")
+    s = rt.store.get_state()
+    assert [a.days_delta for a in s.invoice_adjustments if a.days_delta] == [10, -15]
+    assert terms_in_force(s, "BUYER-1") == 40
+    assert client.post("/clock/advance", json={"to_day": 3}, headers=OWNER).status_code == 200
+    ri = next(r for r in rt.store.get_state().receivables if r.id == "RI:BUYER-1:2")
+    assert (ri.terms_days, ri.base_terms_days, ri.due_day) == (40, 45, 42)
+    assert len([c for c in rt.store.commitments() if c.status.value == "ACTIVE"]) == 2

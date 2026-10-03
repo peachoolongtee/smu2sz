@@ -31,6 +31,7 @@ from app.domain.models import (
     RecurringInvoice,
 )
 from app.domain.money import fmt_pct, fmt_yuan
+from app.financial.invoices import terms_in_force
 from app.verifier.models import BindNote
 
 DEFAULT_EARLY_PAY_LEAD_DAYS = 2  # the engine's default when the buyer has no early-pay facility
@@ -169,7 +170,11 @@ class _Binder:
             if r is not None:
                 current, source = r.terms_days, f"receivable {r.id}"
         elif rec is not None:
-            current, source = rec.terms_days, f"recurring invoice to {ob.counterparty_id}"
+            # the terms in force for the buyer's next invoice (accepted adjustments applied), never the template's
+            # base terms: a second agreement must not stack on the first (fifth red team, F2)
+            current = terms_in_force(self.state, ob.counterparty_id)
+            source = (f"recurring invoice to {ob.counterparty_id}" if current == rec.terms_days else
+                      f"terms in force for the next invoice to {ob.counterparty_id} (base {rec.terms_days} days)")
         if current is None:
             self.note(ob, "days_delta", False, True,
                       f"current terms of {ob.counterparty_id} are not in the ledger (no single recurring invoice)")

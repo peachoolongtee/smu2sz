@@ -69,6 +69,7 @@ from app.domain.models import (
 )
 from app.domain.money import BP_DENOM, Ratio, bp, fmt_pct, fmt_yuan, post
 from app.financial import project, value_concessions
+from app.financial.invoices import terms_in_force
 from app.funding import NoPermanentSourceError, break_even_discount, marginal_cost
 from app.funding import plan as funding_plan
 from app.funding.rates import break_even_cost_share
@@ -204,9 +205,10 @@ class _Ctx:
         return self.net_forward(obs) <= self.mandate.max_aggregate_forward_concession_fen
 
     def current_terms(self) -> int | None:
-        rec = recurring_for(self.state, self.cp)
-        if rec is not None:
-            return rec.terms_days
+        """The terms in force for the buyer's next invoice (accepted adjustments applied), which counter texts quote."""
+        terms = terms_in_force(self.state, self.cp)
+        if terms is not None:
+            return terms
         rcvs = open_receivables(self.state, self.cp)
         return rcvs[0].terms_days if rcvs else None
 
@@ -462,12 +464,13 @@ def price_adjustment_counter(ctx: _Ctx, ext: Obligation, label: str = "Option B"
     current terms + 5) whose counter the router can fund on current books and that passes its own re-check.
     None, with one sentence in `ctx.notes`, when no terms in that range can be."""
     rec = recurring_for(ctx.state, ctx.cp)
-    if rec is None or ext.days_delta is None or ext.days_delta <= 0:
+    current = ctx.current_terms()
+    if rec is None or current is None or ext.days_delta is None or ext.days_delta <= 0:
         return None
-    offered = rec.terms_days + ext.days_delta
+    offered = current + ext.days_delta  # days_delta was bound against the terms in force (bind.terms)
     refused: list[tuple[list[int], str]] = []  # runs of consecutive targets refused for the same reason
-    for target in range(offered, rec.terms_days, -TERMS_STEP_DAYS):
-        c, why = _price_adjustment_at(ctx, ext, rec.terms_days, target, rec.face_fen, label)
+    for target in range(offered, current, -TERMS_STEP_DAYS):
+        c, why = _price_adjustment_at(ctx, ext, current, target, rec.face_fen, label)
         if c is not None:
             if refused:
                 ctx.notes.append(f"Price-adjustment counter at {target} days, not {offered}: " + "; ".join(
