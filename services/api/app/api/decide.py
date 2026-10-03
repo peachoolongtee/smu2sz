@@ -155,7 +155,9 @@ class NegotiateIn(BaseModel):
 
 
 def _ops_for_plan(rt: Runtime, actions: list[FundingAction], key: str) -> list[dict]:
-    """Turn a committed funding plan into Tier-1 operations for the executor."""
+    """Turn a committed funding plan into Tier-1 operations for the executor. Only a plan whose every leg is a draw or
+    an advance gets here (`_runnable`): a buyer's early payment or a bill discount has no operation, and dropping it
+    would run part of a plan and call the gap funded."""
     results = []
     m = rt.store.get_mandate()
     for i, a in enumerate(actions):
@@ -166,10 +168,23 @@ def _ops_for_plan(rt: Runtime, actions: list[FundingAction], key: str) -> list[d
         elif a.kind == FundingActionKind.FINANCE_INVOICE and a.receivable_id:
             op = SubmitInvoiceForFinancing(facility_id=a.facility_id, receivable_id=a.receivable_id,
                                            advance_fen=a.amount_fen, **common)
-        else:
-            continue  # early pay / bills are executed through the offer, not as a draw
+        else:  # pragma: no cover - `_runnable` keeps such a plan out
+            raise ValueError(f"{a.kind.value} on {a.facility_id} is not an operation the executor can run")
         results.append(json.loads(rt.executor.execute(op).model_dump_json()))
     return results
+
+
+def _runnable(gap_plan) -> str | None:
+    """Why the gap plan is not run today ('' never): the router's own "cannot run today" reason, or a leg no
+    operation can run. None when every leg can be sent."""
+    if not gap_plan.actions:
+        return None
+    if not gap_plan.executable_now:
+        return gap_plan.not_executable_reason or "it cannot run today"
+    if any(a.kind not in (FundingActionKind.DRAW, FundingActionKind.FINANCE_INVOICE) or
+           (a.kind == FundingActionKind.FINANCE_INVOICE and not a.receivable_id) for a in gap_plan.actions):
+        return "it relies on a step no operation can run (a buyer paying early or a bill discount)"
+    return None
 
 
 @router.post("/negotiate/{offer_id}", dependencies=[Depends(require_feature("terms_guard")),
@@ -232,7 +247,13 @@ def negotiate_offer(offer_id: str, body: NegotiateIn) -> dict:
             books = current_books(state, rt.store.commitments())
             gap_plan = plan(books.state, books.with_([]), mandate)
             message = "NO DEAL after bounded rounds; the Debt Desk funds the near-term gap."
-        operations += _ops_for_plan(rt, list(gap_plan.actions), f"fund-{offer_id}-{body.buyer_profile}")
+        blocked = _runnable(gap_plan)
+        if blocked is not None:
+            head = message.rsplit(";", 1)[0]
+            message = (f"{head}; the near-term gap is not funded: the router's plan cannot run today ({blocked}). "
+                       f"Nothing was executed from it.")
+        else:
+            operations += _ops_for_plan(rt, list(gap_plan.actions), f"fund-{offer_id}-{body.buyer_profile}")
     return {
         "offer_id": offer_id,
         "outcome": "DEAL" if t.outcome == Outcome.ACCEPT else "NO_DEAL",

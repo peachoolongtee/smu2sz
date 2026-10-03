@@ -25,6 +25,23 @@ def golden() -> tuple[FinancialState, Mandate]:
     return load_scenario("golden_sme")
 
 
+def pricing_only(base: type) -> type:
+    """`base` (the router's Search or a variant of it) ranking as it did before red team d, F1: a buyer early payment
+    or a bill discount is priced like any leg and not flagged "cannot run today". Today's router flags both (no
+    operation runs them), so a runnable plan ranks first; the tests of the search's arithmetic (EV-06, EV-11, the
+    designed cases) keep their figures by running on this reading."""
+    from app.domain.models import FundingActionKind as K
+
+    class PricingOnly(base):  # type: ignore[misc, valid-type]
+        def unrunnable(self, a):  # type: ignore[no-untyped-def]
+            if a.kind in (K.EARLY_PAY, K.DISCOUNT_BILL):
+                return None
+            return super().unrunnable(a)
+
+    PricingOnly.__name__ = f"PricingOnly{base.__name__}"
+    return PricingOnly
+
+
 def with_facility(state: FinancialState, fid: str, **update) -> FinancialState:
     facilities = [f.model_copy(update=update) if f.id == fid else f for f in state.facilities]
     return state.model_copy(update={"facilities": facilities})

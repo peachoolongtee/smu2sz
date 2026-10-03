@@ -381,7 +381,12 @@ class Search:
     def unrunnable(self, a: FundingAction) -> str | None:
         """Why the executor cannot run this action today: an advance needs an invoice that exists and is issued
         (the engine lands an advance on a recurring invoice not yet issued on its issue day; the executor
-        refuses it, and lands one on a future-dated invoice today)."""
+        refuses it, and lands one on a future-dated invoice today). Red team d, F1 (a rule, not a speed-up, so the
+        reference follows it): no operation asks a buyer to pay early or discounts a bill."""
+        if a.kind == FundingActionKind.EARLY_PAY:
+            return "needs the buyer's agreement to pay early"
+        if a.kind == FundingActionKind.DISCOUNT_BILL:
+            return "needs a bill in hand"
         if a.kind != FundingActionKind.FINANCE_INVOICE or a.receivable_id in self.financeable:
             return None
         r = self.rcvs.get(a.receivable_id or "")

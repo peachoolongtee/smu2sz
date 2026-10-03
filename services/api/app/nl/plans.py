@@ -42,11 +42,15 @@ SETTLED = (OperationStatus.EXECUTED, OperationStatus.DUPLICATE)
 # owner's language; a reason that does not read like these is quoted as the router wrote it.
 ABOVE_CEILING = re.compile(r"effective annual cost (?P<rate>\S+) is above the mandate's (?P<cap>\S+) ceiling")
 UNISSUED = re.compile(r"(?P<rid>\S+) is not an invoice the executor can finance today(?:; it is issued on day (?P<day>-?\d+))?")
+NO_OPERATION_ZH = {"needs the buyer's agreement to pay early": "需要买方同意提前付款",
+                   "needs a bill in hand": "需要手中持有票据"}
 
 
 def legs_from_plan(ctx: NlContext, plan: FundingPlan) -> list[Any]:
-    """The router's committed plan as the typed Tier-1 operations a confirmation will send, in plan order. Early pay
-    is a buyer's acceptance, not a funding operation, and repayments happen on their day: neither is a leg."""
+    """The router's committed plan as the typed Tier-1 operations a confirmation will send, in plan order (repayments
+    happen on their day and are not legs). Early pay is a buyer's acceptance and a bill discount needs a bill in hand:
+    no operation runs either, so a plan holding one has no legs at all (ValueError) rather than losing that leg
+    silently; `runnable_legs` says why it cannot run today instead."""
     ops: list[Any] = []
     for a in plan.actions:
         if a.kind == FundingActionKind.DRAW:
@@ -54,6 +58,8 @@ def legs_from_plan(ctx: NlContext, plan: FundingPlan) -> list[Any]:
         elif a.kind == FundingActionKind.FINANCE_INVOICE and a.receivable_id:
             ops.append(SubmitInvoiceForFinancing(**ctx.base("SUBMIT_INVOICE_FOR_FINANCING"), facility_id=a.facility_id,
                                                  receivable_id=a.receivable_id, advance_fen=a.amount_fen))
+        else:
+            raise ValueError(f"{a.kind.value} on {a.facility_id} is not an operation the executor can run")
     return ops
 
 
@@ -140,6 +146,10 @@ def unrunnable_sentences(ctx: NlContext, plan: FundingPlan) -> list[str]:
             continue
         name = _leg_name(ctx, plan, i) if aligned else cl.label
         m = UNISSUED.search(cl.not_executable_reason)
+        if m is None and cl.not_executable_reason in NO_OPERATION_ZH:
+            out.append(t(ctx, f"{name}: {cl.not_executable_reason}; no operation of mine can do that.",
+                         f"{name}：{NO_OPERATION_ZH[cl.not_executable_reason]}，我无法通过任何操作完成。"))
+            continue
         if m is None:
             out.append(t(ctx, f"{name}: {cl.not_executable_reason}.", f"{name}：{cl.not_executable_reason}。"))
             continue
@@ -168,6 +178,11 @@ def runnable_legs(ctx: NlContext, plan: FundingPlan | None) -> tuple[list[Any], 
         return [], ""
     if not plan.executable_now:
         return [], unrunnable_note(ctx, plan)
+    if not all(_is_leg(a) for a in plan.actions):  # the router flags these; never drop one if it did not
+        return [], (t(ctx, "It cannot run today: it relies on a step no operation can run (a buyer paying early or a "
+                           "bill discount).", "该方案今天无法执行：它依赖无法通过操作执行的步骤（买方提前付款或票据贴现）。")
+                    + t(ctx, " I will not offer it for a go-ahead; ask me again once it can run.",
+                        " 我不会把它作为可执行的方案提出；等它可以执行时请再问我。"))
     return legs_from_plan(ctx, plan), approval_note(ctx, plan)
 
 

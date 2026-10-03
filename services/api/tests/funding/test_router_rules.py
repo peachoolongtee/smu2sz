@@ -34,7 +34,7 @@ from app.funding.search import MIN_ACTION_FEN, Search
 from tests.funding import cases
 from tests.funding.random_cases import random_case
 from tests.funding.test_differential import LegacyRules
-from tests.funding.variants import SPAN, golden
+from tests.funding.variants import SPAN, golden, pricing_only
 
 # (case, brute-force optimum in fen, the router's cost before EV-06). Every gap includes the existing loan's
 # ¥45,000 day-30 payment (FINANCIAL_SEMANTICS §5): need = payroll + 120,000 + 45,000 + 300,000 reserve − cash.
@@ -65,14 +65,20 @@ def _plan_with(search_cls, *args):
 
 @pytest.mark.parametrize("name,optimum,before", EV06)
 def test_line_may_be_repaid_before_the_baseline_recovers(name, optimum, before):
+    # the EV-06 arithmetic, on the pricing reading (early pay and bills ranked as runnable legs, `pricing_only`):
+    # since red team d F1 the router ranks a runnable plan first, which for R03/R05/R15 is a line and an advance
     s, m = getattr(cases, name)()
-    p = plan(s, [], m)
+    p = _plan_with(pricing_only(Search), s, [], m)
     assert p.admissible and p.total_cost_fen == optimum
     line = next(a for a in p.actions if a.facility_id == "FAC-LINE")
     assert line.repay_day == 32  # RCV-A's receipt; the unfunded baseline recovers only on day 47
     t = project(s, [], p.actions, Mode.CONSERVATIVE, m.horizon_days, m.min_cash_fen)
     assert t.first_breach_day is None
-    assert _plan_with(LegacyRules, s, [], m).total_cost_fen == before
+    assert _plan_with(pricing_only(LegacyRules), s, [], m).total_cost_fen == before
+    now = plan(s, [], m)  # today's router: the cheapest plan that can run, else the cheapest one flagged
+    assert now.admissible and now.total_cost_fen >= optimum
+    assert now.executable_now is not any(a.kind in (FundingActionKind.EARLY_PAY, FundingActionKind.DISCOUNT_BILL)
+                                         for a in now.actions)
 
 
 def test_golden_plan_is_unchanged():
@@ -99,7 +105,7 @@ def _one_fen_short():
 
 def test_a_one_fen_gap_gets_a_minimum_ticket_not_a_one_fen_early_payment():
     s, obs, m = _one_fen_short()
-    old = _plan_with(LegacyRules, s, obs, m, "COMMITTED")
+    old = _plan_with(pricing_only(LegacyRules), s, obs, m, "COMMITTED")  # the 1-fen early pay EV-11 removed
     assert [(a.kind, a.amount_fen) for a in old.actions] == [(FundingActionKind.EARLY_PAY, 1)]
     p = plan(s, obs, m, "COMMITTED")
     assert p.admissible and p.need_fen == 1
