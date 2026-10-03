@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import pytest
 
-from app.clock import ADVANCE_CLOCK_KIND, _CAS_ATTEMPTS, advance
+from app.clock import _CAS_ATTEMPTS, ADVANCE_CLOCK_KIND, advance
 from app.domain.fixtures import load_scenario
 from app.persistence import ConcurrentWriteConflict, InMemoryLedgerStore, StateVersionConflict
 
