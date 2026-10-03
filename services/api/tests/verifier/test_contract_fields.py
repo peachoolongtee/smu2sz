@@ -9,6 +9,7 @@ from app.domain.models import Contingency, ObligationType, Outcome
 from app.financial import value_concessions
 from app.funding import marginal_cost
 from app.verifier import evaluate
+from app.verifier.counters import counters
 from tests.verifier.conftest import bundle, compiled
 
 T = ObligationType
@@ -55,15 +56,11 @@ def _values(obs, state, mandate):
 
 @pytest.mark.parametrize("offer_id", ["EX01_PACKAGE", "EX01B_REWORDED"])
 def test_ex01_counter_forward_values(offer_id, g, state, mandate):
-    a, b = bundle(offer_id).verdict.counters
+    # Option A only: the price-adjustment counter fails its own re-check on these books (tests/verifier/
+    # test_counter_property.py derives the day-47 shortfall), so it is not offered.
+    (a,) = bundle(offer_id).verdict.counters
     # Option A: an immediate discount is not a forward concession; its cost is immediate.
     assert a.forward_value_fen == 0 and a.supplier_cost_fen == g["counter_a_total"]
-    # Option B: the extension net of the FIRM price adjustment, both on the same 13 invoices issued in the window:
-    # a net gain of 243.08 yuan, floored at 0 as in the aggregate.
-    ext_v, price_v = _values(b.obligations, state, mandate)
-    assert ext_v == g["extension_committed_12m"] and price_v == g["counter_b_price_gain_12m"] < -ext_v
-    assert ext_v + price_v == g["counter_b_net_12m"] == -24_308
-    assert b.forward_value_fen == max(0, ext_v + price_v) == 0
 
 
 def test_ex02_counter_books_no_forward_value(g):
@@ -71,12 +68,16 @@ def test_ex02_counter_books_no_forward_value(g):
     assert a.forward_value_fen == 0 and a.supplier_cost_fen == g["counter_a_total"]
 
 
-def test_ex06_counter_forward_values(g, state, mandate):
-    a, b = bundle("EX06_THREE_INVOICES").verdict.counters
+def test_ex06_bounded_counters_are_valued_but_not_offered(g, state, mandate):
+    """Both bounded-extension counters are still valued as before; neither is offered, because each fails its own
+    re-check on these books (a +15-day extension of the day-2 invoice leaves day 47 ¥85,000 below the reserve)."""
+    b = bundle("EX06_THREE_INVOICES")
+    assert b.verdict.counters == []
+    a, firm = counters(compiled("EX06_THREE_INVOICES"), b.verdict, state, mandate, bound=b.bound_obligations)
     assert a.forward_value_fen == 2 * g["extension_committed_per_invoice"] == a.supplier_cost_fen
-    net = sum(_values(b.obligations, state, mandate))
-    assert b.forward_value_fen == max(0, net) == b.supplier_cost_fen
-    assert all(o.contingency == Contingency.FIRM for o in b.obligations)
+    net = sum(_values(firm.obligations, state, mandate))
+    assert firm.forward_value_fen == max(0, net) == firm.supplier_cost_fen
+    assert all(o.contingency == Contingency.FIRM for o in firm.obligations)
 
 
 def test_counters_fit_the_cap_with_their_forward_value(mandate):

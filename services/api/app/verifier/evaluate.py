@@ -34,6 +34,7 @@ from app.domain.models import (
     CompileStatus,
     ConcessionValue,
     Contingency,
+    CounterProposal,
     CovenantKind,
     Facility,
     FacilityKind,
@@ -66,8 +67,8 @@ from app.funding import plan as funding_plan
 from app.funding.rates import break_even_cost_share
 from app.mandate import check_apr, check_predicates, check_validity
 from app.verifier.bind import bind, material_gaps
-from app.verifier.counters import counters as make_counters
-from app.verifier.counters import flag_inputs, plan_flags
+from app.verifier.counters import Recheck, flag_inputs, plan_flags
+from app.verifier.counters import counters_explained as make_counters
 from app.verifier.display import describe_all, only_early_pay, precise
 from app.verifier.models import CALC_VERSION, OwnerConstraints, PassedCheck, VerdictBundle
 from app.verifier.owner import breaches as owner_breaches
@@ -511,6 +512,7 @@ def _evaluate(
     owner_constraints: OwnerConstraints | None = None,
     plans: Plans = "all",
     router: _Router | None = None,
+    with_counters: bool = True,
 ) -> VerdictBundle:
     # Current books (ADR-0006): every projection runs on `live + <what is tested>`. `live` is never part of
     # the verdict's bound obligations, the concession values, the forward total or a counter's obligations.
@@ -689,10 +691,16 @@ def _evaluate(
     draft = res.verdict(Outcome.REJECT, Tier.TIER_1, "")
     # The owner's goal (if any) only tightens: a package that breaks it cannot be accepted as offered.
     goal_breaches = owner_breaches(bound, values, state, owner_constraints) if owner_constraints else []
-    counter_list = []
-    if hard or (codes & PRICE_CODES) or goal_breaches:
-        counter_list = make_counters(offer, draft, state, mandate, bound=bound, owner_declared=owner_declared,
-                                     owner_constraints=owner_constraints, live=live)
+    counter_list: list[CounterProposal] = []
+    if with_counters and (hard or (codes & PRICE_CODES) or goal_breaches):
+        # The counter property: each counter, re-checked as an offer on these same books (as the commit hook will),
+        # must pass; one that fails is not offered and a note says why no counter of that kind is possible.
+        recheck = counter_recheck(state, mandate, trusted_owner_key_hex=trusted_owner_key_hex, day=day,
+                                  commitments=commitments)
+        counter_list, no_counter = make_counters(offer, draft, state, mandate, bound=bound,
+                                                 owner_declared=owner_declared, owner_constraints=owner_constraints,
+                                                 live=live, check=recheck)
+        extra_notes += no_counter
     if owner_constraints is not None:
         extra_notes.append(f"owner goal ({describe_constraints(owner_constraints)}): "
                            + ("; ".join(goal_breaches) if goal_breaches else "the package satisfies it"))
@@ -908,6 +916,46 @@ def evaluate_term_sheet(
     summary = _summary(outcome, res.violations, [f"All-in {all_in} over 12 months (headline {headline})",
                                                  "Only the owner can add a facility"])
     return res.verdict(outcome, tier, summary)
+
+
+def counter_offer(c: CounterProposal, day: int = 0) -> CompiledOffer:
+    """A counter's obligations as an offer, built as the commit hook builds a commitment's
+    (`app.api.runtime.Runtime.reverify`)."""
+    return CompiledOffer(offer_id=f"RECHECK-{c.id}",
+                         counterparty_id=c.obligations[0].counterparty_id if c.obligations else "",
+                         doc_ids=sorted({sp.doc_id for o in c.obligations for sp in o.spans}), received_day=day,
+                         status=CompileStatus.COMPILED, obligations=list(c.obligations), compiler="whatif-reverify",
+                         prompt_version="reverify-v1")
+
+
+def counter_recheck(
+    state: FinancialState,
+    mandate: Mandate,
+    *,
+    trusted_owner_key_hex: str,
+    day: int = 0,
+    commitments: Sequence[Commitment] = (),
+    router: _Router | None = None,
+) -> Recheck:
+    """The counter property's re-check: a counter's obligations evaluated as an offer on these same books (the
+    commitments in force stay live), as the commit hook will evaluate them. The re-check generates no counters of
+    its own. A counter whose terms the ledger cannot carry gets NO_VERDICT."""
+    shared = router or _Router(mandate)
+
+    def check(c: CounterProposal) -> Verdict:
+        offer = counter_offer(c, day)
+        try:
+            return _evaluate(offer, state, mandate, trusted_owner_key_hex=trusted_owner_key_hex, day=day,
+                             commitments=commitments, plans="committed", router=shared, with_counters=False).verdict
+        except EngineError as e:
+            res = _Result(offer.offer_id, offer.version, state, mandate, day)
+            res.violations = [Violation(
+                code=ViolationCode.UNRESOLVED_SCOPE, message="The counter's terms are inconsistent with the ledger",
+                observed=type(e).__name__, limit="terms the ledger can carry",
+                formula="project(state, obligations) succeeds", inputs={"reason": str(e)[:200]})]
+            return res.verdict(Outcome.NO_VERDICT, Tier.TIER_1, _summary(Outcome.NO_VERDICT, res.violations))
+
+    return check
 
 
 def evaluate(

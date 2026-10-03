@@ -12,7 +12,7 @@ offers:
       reserve_breach_day: 47
       forward_concession_total_fen: 2832692
       obligations: [IMMEDIATE_DISCOUNT, TERMS_EXTENSION, CONTINGENT_REBATE]
-      counters: [Option A, Option B]
+      counters: [Option A]  # no price-adjustment counter: 60/55/50-day terms leave day 47 ¥85,000 below the reserve
   - id: EX01B_REWORDED
     counterparty_id: BUYER-1
     documents:

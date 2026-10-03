@@ -7,6 +7,14 @@
   keep the floor (else no Option A). Supplier cost = discount + that plan's cost.
 - **Price-adjustment counter (Option B).** Accept a perpetual terms extension with the smallest
   whole-5bp PRICE_ADJUSTMENT whose per-invoice amount covers the per-invoice funding cost, no rebate.
+  The offered terms are tried first, then shorter ones in 5-day steps down to the current terms + 5
+  (60, 55, 50 days for 45-day terms going to 60); the longest that the router can fund on current books
+  and that passes its own re-check is offered, otherwise none.
+
+**Every counter passes its own re-check** (the counter property): its obligations, evaluated as an offer
+on the same books by the caller's `check`, give ACCEPT or NEEDS_OWNER_APPROVAL with no RESERVE_BREACH
+(curable or not) and no covenant breach. A counter that fails is not offered, and one sentence says why
+no counter of that kind is possible.
 - **Bounded extension.** Fewer invoices (the most that fit the cap), or the same invoices with the
   buyer's contingent credit made firm.
 - **Rebate over the cap.** The largest whole-5bp rebate rate that fits the remaining headroom.
@@ -24,8 +32,8 @@ reservation value (INVARIANT 7). `rationale` and `formula` are supplier-side onl
 from __future__ import annotations
 
 import hashlib
-from collections.abc import Mapping, Sequence
-from dataclasses import dataclass
+from collections.abc import Callable, Mapping, Sequence
+from dataclasses import dataclass, field
 from fractions import Fraction
 from typing import Any
 
@@ -44,20 +52,21 @@ from app.domain.models import (
     Obligation,
     ObligationBase,
     ObligationType,
+    Outcome,
     Receivable,
     SourceSpan,
     Verdict,
     ViolationCode,
 )
 from app.domain.money import BP_DENOM, Ratio, bp, fmt_pct, fmt_yuan, post
-from app.financial import project, value_concessions
+from app.financial import EngineError, project, value_concessions
 from app.funding import NoPermanentSourceError, break_even_discount, marginal_cost
 from app.funding import plan as funding_plan
 from app.funding.rates import break_even_cost_share
 from app.verifier.bind import bind, early_pay_lead, is_claimed, is_gain, open_receivables, recurring_for
 from app.verifier.models import OwnerConstraints
 from app.verifier.owner import breaches as owner_breaches
-from app.verifier.reserve import baseline
+from app.verifier.reserve import baseline, induced_breach_days, reserve_violation
 
 STEP_BP = 5
 NO_COUNTER_CODES = frozenset({
@@ -73,6 +82,17 @@ NO_COUNTER_CODES = frozenset({
     ViolationCode.MANDATE_VERSION_MISMATCH,
     ViolationCode.BAD_SIGNATURE,
 })
+# The counter property: a counter re-checked as an offer on the same books gives one of these outcomes and none of
+# these codes (a curable RESERVE_BREACH counts: the counter's own terms would take cash below the reserve).
+FEASIBLE_OUTCOMES = frozenset({Outcome.ACCEPT, Outcome.NEEDS_OWNER_APPROVAL})
+INFEASIBLE_CODES = frozenset({
+    ViolationCode.RESERVE_BREACH,
+    ViolationCode.DSCR_BREACH,
+    ViolationCode.LEVERAGE_BREACH,
+    ViolationCode.CLEAN_DOWN_BREACH,
+})
+TERMS_STEP_DAYS = 5  # shorter extensions the price-adjustment counter tries, in steps of this many days
+Recheck = Callable[[CounterProposal], Verdict]  # the counter's obligations evaluated as an offer on the same books
 _WORDS = {1: "one", 2: "two", 3: "three", 4: "four", 5: "five", 6: "six", 7: "seven", 8: "eight", 9: "nine",
           10: "ten", 11: "eleven", 12: "twelve"}
 
@@ -121,6 +141,37 @@ class _Ctx:
     rate_label: str
     constraints: OwnerConstraints | None = None  # the owner's goal for this evaluation, if any
     live: tuple[Obligation, ...] = ()  # obligations of commitments in force: part of the books, not of any counter
+    check: Recheck | None = None  # the counter property's re-check; None: counters are not re-checked
+    notes: list[str] = field(default_factory=list)  # why no counter of a kind is possible (one sentence each)
+
+    def why_not(self, c: CounterProposal) -> str | None:
+        """None when `c` passes its own re-check (or there is no re-check); else why it fails, as a predicate.
+        The reserve test runs first, without the router: a breach the counter's own terms induce fails the
+        property whatever the cure, so the full re-check is run only for a counter that keeps the reserve."""
+        if self.check is None:
+            return None
+        return self.induced_shortfall(c.obligations) or infeasibility(self.check(c))
+
+    def induced_shortfall(self, obs: Sequence[Obligation]) -> str | None:
+        """The re-check's reserve test (`app.verifier.reserve`): the counter's obligations on current books with no
+        new funding, against the no-offer baseline. None when they induce no breach of the reserve."""
+        if self.check is None:
+            return None
+        floor = self.mandate.min_cash_fen
+        try:
+            traj = project(self.state, [*self.live, *obs], [], Mode.CONSERVATIVE, self.mandate.horizon_days, floor)
+        except EngineError:
+            return None  # the full re-check reports it
+        base_traj, _ = baseline(self.state, self.mandate, self.live)
+        days = induced_breach_days(traj, base_traj, floor)
+        if not days:
+            return None
+        rv = reserve_violation(traj, base_traj, floor, days[0])
+        worst = rv.inputs.get("max_shortfall", "")
+        deepest = (f" (at most {worst}, day {rv.inputs.get('max_shortfall_day')})"
+                   if worst and worst != rv.inputs.get("shortfall") else "")
+        return (f"would take cash below the reserve with no new funding: a shortfall of {rv.inputs.get('shortfall')} "
+                f"on day {days[0]}{deepest}")
 
     @property
     def cp(self) -> str:
@@ -156,6 +207,25 @@ class _Ctx:
             return rec.terms_days
         rcvs = open_receivables(self.state, self.cp)
         return rcvs[0].terms_days if rcvs else None
+
+
+def infeasibility(v: Verdict) -> str | None:
+    """Why a counter's re-check verdict `v` breaks the counter property, as a predicate ("cannot be funded from
+    committed sources: ..."), or None when it holds."""
+    for x in v.violations:
+        if x.code == ViolationCode.RESERVE_BREACH:
+            shortfall = x.inputs.get("shortfall") or x.observed or "a shortfall"
+            if x.curable:
+                return f"would take cash below the reserve: the shortfall of {shortfall} on day {x.day} needs a cure plan"
+            return f"cannot be funded from committed sources: the shortfall of {shortfall} on day {x.day} has no cure"
+    for x in v.violations:
+        if x.code in INFEASIBLE_CODES:
+            what = {ViolationCode.DSCR_BREACH: "DSCR", ViolationCode.LEVERAGE_BREACH: "leverage"}.get(x.code, "clean-down")
+            return f"would breach a covenant: {what} {x.observed} against {x.limit}"
+    if v.outcome not in FEASIBLE_OUTCOMES:
+        codes = ", ".join(dict.fromkeys(x.code.value for x in v.violations)) or "no code"
+        return f"fails its own re-check ({v.outcome.value}: {codes})"
+    return None
 
 
 def plan_flags(plan: Any, subject: str) -> str:
@@ -344,38 +414,88 @@ def early_pay_counter(ctx: _Ctx, label: str = "Option A") -> CounterProposal | N
 
 
 def price_adjustment_counter(ctx: _Ctx, ext: Obligation, label: str = "Option B") -> CounterProposal | None:
+    """The offered terms with a compensating price, else the longest shorter terms (5-day steps, down to the
+    current terms + 5) whose counter the router can fund on current books and that passes its own re-check.
+    None, with one sentence in `ctx.notes`, when no terms in that range can be."""
     rec = recurring_for(ctx.state, ctx.cp)
-    if rec is None or ext.days_delta is None:
+    if rec is None or ext.days_delta is None or ext.days_delta <= 0:
         return None
-    cv = value_concessions([ext], ctx.state, _ratio(ctx.rate), ctx.rate_label,
+    offered = rec.terms_days + ext.days_delta
+    refused: list[tuple[list[int], str]] = []  # runs of consecutive targets refused for the same reason
+    for target in range(offered, rec.terms_days, -TERMS_STEP_DAYS):
+        c, why = _price_adjustment_at(ctx, ext, rec.terms_days, target, rec.face_fen, label)
+        if c is not None:
+            return c
+        if refused and refused[-1][1] == why:
+            refused[-1][0].append(target)
+        else:
+            refused.append(([target], why))
+    if refused:
+        ctx.notes.append("No price-adjustment counter: " + "; ".join(
+            f"{_days_text(targets)} terms {why}" for targets, why in refused))
+    return None
+
+
+def _days_text(targets: list[int]) -> str:
+    """'60-day', '55- or 50-day', '55-, 50- or 45-day'."""
+    if len(targets) == 1:
+        return f"{targets[0]}-day"
+    return ", ".join(f"{t}-" for t in targets[:-1]) + f" or {targets[-1]}-day"
+
+
+def _price_adjustment_at(ctx: _Ctx, ext: Obligation, current: int, target: int, face: int,
+                         label: str) -> tuple[CounterProposal | None, str]:
+    """The price-adjustment counter at `target`-day terms, or (None, why not)."""
+    delta = target - current
+    update: dict[str, Any] = {"contingency": Contingency.FIRM, "days_delta": delta}
+    if ext.target_terms_days is not None:
+        update["target_terms_days"] = target
+    terms = ext.model_copy(update=update)
+    cv = value_concessions([terms], ctx.state, _ratio(ctx.rate), ctx.rate_label,
                            ctx.mandate.forward_concession_horizon_days)[0]
     per_invoice = cv.per_invoice_fen or 0
-    rate_bp = smallest_step_covering(per_invoice, rec.face_fen)
+    rate_bp = smallest_step_covering(per_invoice, face)
     price = _obligation(
         ctx.cp, ObligationType.PRICE_ADJUSTMENT, rate_bp=rate_bp,
-        base=ObligationBase(kind=BaseKind.FUTURE_INVOICES, amount_fen=rec.face_fen),
+        base=ObligationBase(kind=BaseKind.FUTURE_INVOICES, amount_fen=face),
         duration=Duration(kind=DurationKind.RECURRING_PERPETUAL),
     )
-    terms = ext.model_copy(update={"contingency": Contingency.FIRM})
     if not ctx.fits([terms, price]):
-        return None
+        return None, f"with a {rate_text(rate_bp)} price adjustment exceed the forward-concession budget"
+    if why := ctx.induced_shortfall([terms, price]):
+        return None, why
+    # Liquidity: the router's committed plan on current books with the counter's obligations, the same call the
+    # early-pay counter makes. A counter that cannot keep the floor is not offered.
+    plan = funding_plan(ctx.state, [*ctx.live, terms, price], ctx.mandate, "COMMITTED")
+    if not plan.admissible:
+        return None, "cannot be funded from committed sources: no committed plan keeps cash at the reserve"
     ext_v, price_v = ctx.value([terms, price])
     net = ext_v + price_v
-    per_price = post(bp(rate_bp) * rec.face_fen)
-    target = rec.terms_days + ext.days_delta
+    per_price = post(bp(rate_bp) * face)
     clauses: list[tuple[str, Obligation | None]] = [
         (f"{target}-day terms accepted", terms),
         (f"with a {rate_text(rate_bp)} price adjustment on future invoices, no rebate.", price),
     ]
     formula = (
-        f"smallest whole-5bp rate r with r × {fmt_yuan(rec.face_fen)} >= per-invoice funding cost "
+        f"smallest whole-5bp rate r with r × {fmt_yuan(face)} >= per-invoice funding cost "
         f"{fmt_yuan(per_invoice)}: {rate_text(rate_bp)} → {fmt_yuan(per_price)} per invoice. "
         f"12-month: extension {fmt_yuan(ext_v)} + price adjustment {fmt_yuan(price_v)} = {fmt_yuan(net)} "
-        f"(cost to the supplier {fmt_yuan(max(0, net))})"
+        f"(cost to the supplier {fmt_yuan(max(0, net))}). "
+        f"Funded on current books with these terms by the router's committed plan ({plan.label}), "
+        f"cost {fmt_yuan(plan.total_cost_fen)}"
     )
     rationale = ("The price adjustment covers the per-invoice cost of funding the longer terms on the marginal "
-                 "committed source, so the net forward concession is about zero.")
-    return _proposal(ctx, label, clauses, max(0, net), rationale, formula)
+                 "committed source, so the net forward concession is about zero; on current books with these terms "
+                 f"the router's committed plan ({plan.label}) keeps the reserve.")
+    if target != current + (ext.days_delta or 0):
+        rationale += (f" The offered {current + (ext.days_delta or 0)}-day terms fail their own re-check; {target} days "
+                      "is the longest that passes.")
+    if flags := plan_flags(plan, "the committed plan that funds these terms"):
+        formula += f". Flagged: {flags}"
+        rationale += f" Note: {flags}."
+    c = _proposal(ctx, label, clauses, max(0, net), rationale, formula)
+    why = None if ctx.check is None else infeasibility(ctx.check(c))  # the reserve test above already passed
+    return (None, why) if why else (c, "")
 
 
 # ---------------------------------------------------------------- bounded extension
@@ -464,32 +584,95 @@ def counters(
     owner_declared: Mapping[str, Any] | None = None,
     owner_constraints: OwnerConstraints | None = None,
     live: Sequence[Obligation] = (),
+    check: Recheck | None = None,
 ) -> list[CounterProposal]:
     """Counters for a verdict that needs one. Empty when no counter is possible or appropriate.
     `live` are the obligations of commitments in force (current books); the counters' own obligations,
     texts and forward values never include them.
 
     With `owner_constraints`, the early-pay rate is capped at the owner's maximum and every counter that
-    still breaks a constraint is dropped."""
+    still breaks a constraint is dropped. With `check` (the verifier's re-check of a counter as an offer on the
+    same books), a counter that fails it is not offered (the counter property)."""
+    return counters_explained(offer, verdict, state, mandate, bound=bound, owner_declared=owner_declared,
+                              owner_constraints=owner_constraints, live=live, check=check)[0]
+
+
+def counters_explained(
+    offer: CompiledOffer,
+    verdict: Verdict,
+    state: FinancialState,
+    mandate: Mandate,
+    *,
+    bound: Sequence[Obligation] | None = None,
+    owner_declared: Mapping[str, Any] | None = None,
+    owner_constraints: OwnerConstraints | None = None,
+    live: Sequence[Obligation] = (),
+    check: Recheck | None = None,
+) -> tuple[list[CounterProposal], list[str]]:
+    """`counters()` and, for each kind of counter that cannot be offered because it fails its own re-check,
+    one sentence saying why."""
     codes = {v.code for v in verdict.violations}
     if codes & NO_COUNTER_CODES:
-        return []
+        return [], []
     if bound is None:
         bound, _ = bind(offer, state, owner_declared)
     try:
         rate_ratio, fid = marginal_cost(state, mandate)
     except NoPermanentSourceError:
-        return []
+        return [], []
     fac = next(f for f in state.facilities if f.id == fid)
     ctx = _Ctx(offer, verdict, state, mandate, list(bound), rate_ratio.value,
                f"committed marginal source: {fac.name} {fmt_pct(rate_ratio.value, 4)}", owner_constraints,
-               tuple(live))
+               tuple(live), check)
     out = _counters(ctx, offer)
     if owner_constraints is None:
-        return out
+        return out, ctx.notes
     return [c for c in out if not owner_breaches(
         c.obligations, value_concessions(c.obligations, state, _ratio(ctx.rate), ctx.rate_label,
-                                         mandate.forward_concession_horizon_days), state, owner_constraints)]
+                                         mandate.forward_concession_horizon_days), state, owner_constraints)], ctx.notes
+
+
+_KIND = {"early_pay": "early-pay", "bounded": "bounded-extension", "rebate": "rebate"}
+
+
+def _passes(ctx: _Ctx, kind: str, c: CounterProposal | None) -> CounterProposal | None:
+    """`c` when it passes its own re-check; else None, and one sentence in `ctx.notes`."""
+    if c is None:
+        return None
+    why = ctx.why_not(c)
+    if why is None:
+        return c
+    ctx.notes.append(f"No {_KIND[kind]} counter ({_terms_text(c)}): it {why}")
+    return None
+
+
+def _terms_text(c: CounterProposal) -> str:
+    """The counter's own terms, from its typed obligations (never its text)."""
+    out: list[str] = []
+    for o in c.obligations:
+        if o.type == ObligationType.IMMEDIATE_DISCOUNT:
+            out.append(f"early settlement of {money_text(o.base.amount_fen or 0)} at {rate_text(o.rate_bp or 0)}")
+        elif o.type == ObligationType.TERMS_EXTENSION:
+            n = o.duration.invoices
+            out.append(f"+{o.days_delta or 0} days on " + (invoices_text(n) if n else "future invoices"))
+        elif o.type == ObligationType.PRICE_ADJUSTMENT:
+            out.append(f"a {rate_text(o.rate_bp or 0)} {'credit' if is_gain(o) else 'price adjustment'}")
+        elif o.type == ObligationType.CONTINGENT_REBATE:
+            out.append(f"a {rate_text(o.rate_bp or 0)} rebate")
+        else:
+            out.append(o.type.value.lower().replace("_", " "))
+    return ", ".join(out)
+
+
+def _relabel(ctx: _Ctx, c: CounterProposal, label: str) -> CounterProposal:
+    """`c` under `label` (its id, its obligations' ids and spans follow the label, as `_proposal` builds them)."""
+    if c.label == label:
+        return c
+    cid = _counter_id(ctx.verdict, label)
+    obs = [o.model_copy(update={"id": cid + o.id.removeprefix(c.id),
+                                "spans": [s.model_copy(update={"doc_id": cid}) for s in o.spans]})
+           for o in c.obligations]
+    return c.model_copy(update={"id": cid, "label": label, "obligations": obs})
 
 
 def _counters(ctx: _Ctx, offer: CompiledOffer) -> list[CounterProposal]:
@@ -502,17 +685,19 @@ def _counters(ctx: _Ctx, offer: CompiledOffer) -> list[CounterProposal]:
 
     out: list[CounterProposal] = []
     if has_discount or perpetual or (claimed and not ctx.bound):
-        a = early_pay_counter(ctx)
+        a = _passes(ctx, "early_pay", early_pay_counter(ctx))
         if a is not None:
             out.append(a)
-        if len(perpetual) == 1:
+        if len(perpetual) == 1:  # re-checked inside, so that shorter terms can be tried
             b = price_adjustment_counter(ctx, perpetual[0], "Option B" if out else "Option A")
             if b is not None:
                 out.append(b)
     elif len(bounded) == 1:
-        out.extend(bounded_extension_counters(ctx, bounded[0]))
+        kept = [c for c in (_passes(ctx, "bounded", c) for c in bounded_extension_counters(ctx, bounded[0]))
+                if c is not None]
+        out.extend(_relabel(ctx, c, f"Option {'AB'[i]}") for i, c in enumerate(kept))
     elif ctx.of_type(ObligationType.CONTINGENT_REBATE):
-        r = rebate_counter(ctx)
+        r = _passes(ctx, "rebate", rebate_counter(ctx))
         if r is not None:
             out.append(r)
     return out

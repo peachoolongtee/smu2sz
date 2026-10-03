@@ -81,7 +81,7 @@ def test_cost_is_the_discount_plus_the_plan_and_the_plan_adds_no_early_pay(state
     assert f"discount ¥2,186.20 + funding the rest of the gap ¥841.57 ({p.label}) = ¥3,027.77" in a.formula
 
 
-@pytest.mark.parametrize("drop_fen", [1, 3_733, 99_999, 500_000, 2_000_000])
+@pytest.mark.parametrize("drop_fen", [1, 3_733, 99_999, 500_000, 1_000_000])
 def test_face_nets_at_least_the_gap_and_is_a_whole_100_yuan(state, mandate, key, drop_fen):
     s = state.model_copy(update={"cash_fen": state.cash_fen - drop_fen})
     a = _option_a(_evaluate_ex01(s, mandate, key))
@@ -99,6 +99,21 @@ def test_face_nets_at_least_the_gap_and_is_a_whole_100_yuan(state, mandate, key,
     assert p.admissible
     t = project(s, [ob], p.actions, Mode.CONSERVATIVE, mandate.horizon_days, mandate.min_cash_fen)
     assert t.first_breach_day is None
+
+
+def test_no_early_pay_counter_when_its_discount_deepens_a_shortfall_on_the_due_day(state, mandate, key):
+    """The counter property (no RESERVE_BREACH on its own re-check, curable or not). With ¥20,000 less cash, day 32
+    closes below the reserve even without the counter: 400,000 − 20,000 − 340,000 − 120,000 − 45,000 + 420,000 =
+    295,000. The counter's face is (425,000 − 150,000) / (1 − 0.85%) = 277,357.54 → ¥277,400, discount
+    277,400 × 0.85% = ¥2,357.90; the invoice still pays 420,000 by day 32 in total, so day 32 closes at
+    295,000 − 2,357.90 = ¥292,642.10, below both the reserve and the no-counter day: a shortfall of ¥7,357.90 that the
+    counter's own terms cause. It is not offered. (At ¥10,000 less: face 265,000 / 0.9915 = 267,271.81 → ¥267,300,
+    discount ¥2,272.05, day 32 closes at 305,000 − 2,272.05 = ¥302,727.95 and it is offered.)"""
+    s = state.model_copy(update={"cash_fen": state.cash_fen - 2_000_000})
+    v = _evaluate_ex01(s, mandate, key).verdict
+    assert _option_a(_evaluate_ex01(s, mandate, key)) is None
+    assert ("No early-pay counter (early settlement of ¥277,400 at 0.85%): it would take cash below the reserve with "
+            "no new funding: a shortfall of ¥7,357.90 on day 32") in v.summary
 
 
 def test_no_early_pay_counter_when_the_floor_cannot_be_kept(state, mandate, key):

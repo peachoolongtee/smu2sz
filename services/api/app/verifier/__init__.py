@@ -19,6 +19,7 @@ from app.verifier.counters import counters
 from app.verifier.evaluate import (
     autonomy_gaps,
     clear_caches,
+    counter_recheck,
     evaluate,
     evaluate_many,
     evaluate_term_sheet,
@@ -60,7 +61,9 @@ class Verifier:
         from app.books import current_books
 
         return counters(offer, verdict, state, mandate, owner_declared=self.owner_declared,
-                        live=current_books(state, self.commitments).obligations)
+                        live=current_books(state, self.commitments).obligations,
+                        check=counter_recheck(state, mandate, trusted_owner_key_hex=self.trusted_owner_key_hex,
+                                              day=self.day, commitments=self.commitments))
 
 
 __all__ = [

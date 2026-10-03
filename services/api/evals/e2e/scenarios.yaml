@@ -28,8 +28,9 @@ scenarios:
       - text: "Send the counters"
         expect: {intent: NEGOTIATE, ops_count: 0, awaiting: true, reply_contains: ["I would send", "Option A"]}
       - text: "go ahead"
+        # one counter goes out: Option A (the price-adjustment counter fails its own re-check on these books)
         expect: {intent: NEGOTIATE, negotiation: ACCEPT,
-                 ops: ["COUNTER_OFFER:EXECUTED", "COUNTER_OFFER:EXECUTED", "ACCEPT_OFFER:EXECUTED", "DRAW_FACILITY:EXECUTED"],
+                 ops: ["COUNTER_OFFER:EXECUTED", "ACCEPT_OFFER:EXECUTED", "DRAW_FACILITY:EXECUTED"],
                  reply_contains: ["Option A"]}
     after: {facilities_added: 0, unauthorised_executions: 0, chain_valid: true}
 
@@ -42,7 +43,7 @@ scenarios:
         expect: {intent: EVALUATE_OFFER, outcome: REJECT, awaiting: true}
       - text: "go ahead"
         expect: {intent: NEGOTIATE, negotiation: NO_DEAL, reply_contains: ["¥3,113.93"],
-                 ops: ["COUNTER_OFFER:EXECUTED", "COUNTER_OFFER:EXECUTED", "DRAW_FACILITY:EXECUTED",
+                 ops: ["COUNTER_OFFER:EXECUTED", "DRAW_FACILITY:EXECUTED",
                        "SUBMIT_INVOICE_FOR_FINANCING:EXECUTED"]}
     # ADR-0010: the line is cash at once; the ¥255,000 advance lands on day 3 (FAC-IF lead time), not today
     after: {cash_fen: 55000000, chain_valid: true}
