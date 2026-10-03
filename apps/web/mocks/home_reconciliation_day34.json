@@ -1,0 +1,86 @@
+{
+  "as_of_day": 34,
+  "receipts": [
+    {
+      "seq": 4,
+      "entry_hash": "0cb61ac80fc81edb053aaa445dfd689b335f249b229f3058c5504c3498f5462c",
+      "op_id": "rec-receipt-1",
+      "day": 2,
+      "receivable_id": "RCV-A",
+      "counterparty_id": "BUYER-1",
+      "received_fen": 25501380,
+      "face_fen": 42000000,
+      "agreed_discount_fen": 218620,
+      "expected_fen": 25501380,
+      "difference_fen": 0,
+      "commitment_id": "CMT-a78afaa5becb5273",
+      "bank_reference": "DEMO-RCPT-1",
+      "status": "MATCHED",
+      "flagged": false,
+      "detail": "amount equals what the accepted terms say is owed",
+      "formula": "expected = face − discount if paid by day 2 else outstanding = ¥255,013.80 (outstanding ¥420,000.00 of face ¥420,000.00; discount ¥257,200.00 × 85 bp = ¥2,186.20); received ¥255,013.80",
+      "received_display": "¥255,013.80",
+      "face_display": "¥420,000.00",
+      "agreed_discount_display": "¥2,186.20",
+      "expected_display": "¥255,013.80",
+      "difference_display": "¥0.00"
+    }
+  ],
+  "outstanding": [
+    {
+      "receivable_id": "RCV-A",
+      "counterparty_id": "BUYER-1",
+      "face_fen": 16280000,
+      "due_day": 32,
+      "status": "OPEN",
+      "past_due": true,
+      "face_display": "¥162,800.00"
+    },
+    {
+      "receivable_id": "RI:BUYER-1:2",
+      "counterparty_id": "BUYER-1",
+      "face_fen": 42000000,
+      "due_day": 47,
+      "status": "OPEN",
+      "past_due": false,
+      "face_display": "¥420,000.00"
+    },
+    {
+      "receivable_id": "RI:BUYER-1:32",
+      "counterparty_id": "BUYER-1",
+      "face_fen": 42000000,
+      "due_day": 77,
+      "status": "OPEN",
+      "past_due": false,
+      "face_display": "¥420,000.00"
+    }
+  ],
+  "matched": 1,
+  "flagged": 0,
+  "received_total_fen": 25501380,
+  "expected_total_fen": 25501380,
+  "chain_head_hash": "de7c0fe94c6b6b03f65774b4f9e101fee329ead88d2c92a91be4f62ffed1af06",
+  "chain_valid": true,
+  "promised": [
+    {
+      "commitment_id": "CMT-a78afaa5becb5273",
+      "obligation_id": "CTR-ce19415db1d4-O2",
+      "receivable_id": "RCV-A",
+      "counterparty_id": "BUYER-1",
+      "promised_day": 2,
+      "face_fen": 25720000,
+      "discount_fen": 218620,
+      "expected_fen": 25501380,
+      "status": "RECEIVED",
+      "receipt_seq": 4,
+      "detail": "the agreed ¥255,013.80 for RCV-A arrived (commitment CMT-a78afaa5becb5273)",
+      "formula": "¥257,200.00 × 85 bp = ¥2,186.20; ¥257,200.00 − ¥2,186.20 = ¥255,013.80",
+      "face_display": "¥257,200.00",
+      "discount_display": "¥2,186.20",
+      "expected_display": "¥255,013.80"
+    }
+  ],
+  "lapsed_promises": 0,
+  "received_total_display": "¥255,013.80",
+  "expected_total_display": "¥255,013.80"
+}

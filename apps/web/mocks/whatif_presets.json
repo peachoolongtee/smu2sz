@@ -25,14 +25,14 @@
         "settle_face_display": "¥257,200.00"
       },
       "option_b": {
-        "terms_days": 60,
+        "terms_days": 55,
         "discount_bp": 0,
         "rebate_bp": 0,
-        "price_adjustment_bp": 45,
+        "price_adjustment_bp": 30,
         "settle_face_fen": null,
         "discount_display": "0.00%",
         "rebate_display": "0.00%",
-        "price_adjustment_display": "0.45%"
+        "price_adjustment_display": "0.30%"
       },
       "status_quo": {
         "terms_days": 45,
@@ -382,7 +382,7 @@
           "DISCOUNT_ABOVE_BREAK_EVEN",
           "EARLY_PAY_DEARER_THAN_PLAN"
         ],
-        "summary": "REJECT: AGG_CONCESSION_EXCEEDED (¥28,326.92 vs ¥5,000.00); RESERVE_BREACH@47 (curable at ¥2,406.67; the cure cannot run today); DISCOUNT_ABOVE_BREAK_EVEN (1.20% vs < 0.88%); EARLY_PAY_DEARER_THAN_PLAN (¥6,508.05 vs < ¥3,550.64). Forward concessions ¥28,326.92 against ¥5,000.00. Covenants hold: DSCR_MIN 1.92x, LEVERAGE_MAX 1.72x. Counters: Option A, Option B.",
+        "summary": "REJECT: AGG_CONCESSION_EXCEEDED (¥28,326.92 vs ¥5,000.00); RESERVE_BREACH@47 (curable at ¥2,406.67; the cure cannot run today); DISCOUNT_ABOVE_BREAK_EVEN (1.20% vs < 0.88%); EARLY_PAY_DEARER_THAN_PLAN (¥6,508.05 vs < ¥3,550.64). Forward concessions ¥28,326.92 against ¥5,000.00. Covenants hold: DSCR_MIN 1.92x, LEVERAGE_MAX 1.72x. Price-adjustment counter at 55 days, not 60: 60-day terms cannot be funded from committed sources: the shortfall of ¥85,000.00 on day 47 has no cure. Option B passes its own re-check: its terms leave a shortfall of ¥85,000.00 on day 47, funded by the plan: committed plan: ¥1,570.36 (cannot run today). Counters: Option A, Option B.",
         "violations": [
           {
             "code": "AGG_CONCESSION_EXCEEDED",
@@ -2600,10 +2600,10 @@
           },
           {
             "label": "Option B",
-            "text": "60-day terms accepted with a 0.45% price adjustment on future invoices, no rebate.",
+            "text": "55-day terms accepted with a 0.30% price adjustment on future invoices, no rebate.",
             "supplier_cost_fen": 0,
             "forward_value_fen": 0,
-            "rationale": "The price adjustment covers the per-invoice cost of funding the longer terms on the marginal committed source, so the net forward concession is about zero.",
+            "rationale": "The price adjustment covers the per-invoice cost of funding the longer terms on the marginal committed source, so the net forward concession is about zero; on current books with these terms the router's committed plan (committed plan: ¥841.64 + ¥1,479.93 + ¥1,080.00 = ¥3,401.57) keeps the reserve. The offered 60-day terms fail their own re-check; 55 days is the longest that passes. Re-checked as an offer, its terms leave a shortfall of ¥85,000.00 on day 47, funded by the plan: committed plan: ¥1,570.36 (cannot run today).",
             "supplier_cost_display": "¥0.00",
             "forward_value_display": "¥0.00"
           }
@@ -4821,10 +4821,10 @@
     {
       "id": "option_b",
       "params": {
-        "terms_days": 60,
+        "terms_days": 55,
         "discount_bp": 0,
         "rebate_bp": 0,
-        "price_adjustment_bp": 45,
+        "price_adjustment_bp": 30,
         "settle_face_fen": null,
         "current_terms_days": 45,
         "receivable_id": "RCV-A",
@@ -4833,19 +4833,19 @@
         "order_fen": 40000000,
         "discount_display": "0.00%",
         "rebate_display": "0.00%",
-        "price_adjustment_display": "0.45%",
+        "price_adjustment_display": "0.30%",
         "receivable_face_display": "¥420,000.00",
         "order_display": "¥400,000.00"
       },
       "result": {
         "hypothetical": true,
         "note": "Hypothetical: nothing is booked, sent or executed. The same verifier decides real offers.",
-        "key": "7a0e6411217497c06549",
+        "key": "4bf269f75d316719f173",
         "params": {
-          "terms_days": 60,
+          "terms_days": 55,
           "discount_bp": 0,
           "rebate_bp": 0,
-          "price_adjustment_bp": 45,
+          "price_adjustment_bp": 30,
           "settle_face_fen": null,
           "current_terms_days": 45,
           "receivable_id": "RCV-A",
@@ -4854,13 +4854,13 @@
           "order_fen": 40000000,
           "discount_display": "0.00%",
           "rebate_display": "0.00%",
-          "price_adjustment_display": "0.45%",
+          "price_adjustment_display": "0.30%",
           "receivable_face_display": "¥420,000.00",
           "order_display": "¥400,000.00"
         },
         "description": {
           "doc_id": "WHATIF",
-          "text": "What-if (hypothetical, nothing is booked): payment terms 60 days going forward (now 45 days). 0.45% price adjustment on future invoices of ¥420,000.00.",
+          "text": "What-if (hypothetical, nothing is booked): payment terms 55 days going forward (now 45 days). 0.30% price adjustment on future invoices of ¥420,000.00.",
           "obligations": [
             {
               "obligation_type": "TERMS_EXTENSION",
@@ -4869,7 +4869,7 @@
                 "doc_id": "WHATIF",
                 "start": 43,
                 "end": 93,
-                "text": "payment terms 60 days going forward (now 45 days)."
+                "text": "payment terms 55 days going forward (now 45 days)."
               }
             },
             {
@@ -4879,17 +4879,17 @@
                 "doc_id": "WHATIF",
                 "start": 94,
                 "end": 151,
-                "text": "0.45% price adjustment on future invoices of ¥420,000.00."
+                "text": "0.30% price adjustment on future invoices of ¥420,000.00."
               }
             }
           ]
         },
-        "outcome": "REJECT",
-        "required_tier": "TIER_1",
+        "outcome": "NEEDS_OWNER_APPROVAL",
+        "required_tier": "TIER_2",
         "codes": [
           "RESERVE_BREACH"
         ],
-        "summary": "REJECT: RESERVE_BREACH@47 (not curable on committed sources). Forward concessions ¥0.00 against ¥5,000.00. Covenants hold: DSCR_MIN 1.92x, LEVERAGE_MAX 1.72x. Counters: Option A, Option B.",
+        "summary": "NEEDS OWNER APPROVAL: RESERVE_BREACH@47 (curable at ¥1,570.36; the cure cannot run today). Forward concessions ¥0.00 against ¥5,000.00. Covenants hold: DSCR_MIN 1.95x, LEVERAGE_MAX 1.66x. owner approval needed: the package lengthens payment terms.",
         "violations": [
           {
             "code": "RESERVE_BREACH",
@@ -4898,19 +4898,21 @@
             "month": null,
             "observed": "¥215,000.00",
             "limit": "¥300,000.00",
-            "curable": false,
-            "cure_cost_fen": null,
-            "cure_note": "no admissible plan on sources able to carry a permanent need",
-            "formula": "closing_cash(day 47) >= min_cash: ¥215,000.00 < ¥300,000.00, shortfall ¥85,000.00"
+            "curable": true,
+            "cure_cost_fen": 157036,
+            "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥1,570.36 (cannot run today); the extension itself costs ¥1,247.53 per invoice; the cure cannot run today: Invoice financing (onboarded platform): advance ¥88,113.93 on RI:BUYER-1:32: RI:BUYER-1:32 is not an invoice the executor can finance today; it is issued on day 32",
+            "formula": "closing_cash(day 47) >= min_cash: ¥215,000.00 < ¥300,000.00, shortfall ¥85,000.00",
+            "cure_cost_display": "¥1,570.36"
           }
         ],
         "reserve": {
           "breach_day": 47,
-          "curable": false,
-          "cure_cost_fen": null,
+          "curable": true,
+          "cure_cost_fen": 157036,
           "observed": "¥215,000.00",
-          "cure_note": "no admissible plan on sources able to carry a permanent need",
-          "first_unfunded_day": 12
+          "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥1,570.36 (cannot run today); the extension itself costs ¥1,247.53 per invoice; the cure cannot run today: Invoice financing (onboarded platform): advance ¥88,113.93 on RI:BUYER-1:32: RI:BUYER-1:32 is not an invoice the executor can finance today; it is issued on day 32",
+          "first_unfunded_day": 12,
+          "cure_cost_display": "¥1,570.36"
         },
         "trajectory": {
           "mode": "CONSERVATIVE",
@@ -5463,519 +5465,519 @@
             {
               "day": 57,
               "closing": {
-                "fen": 21500000,
-                "text": "¥215,000.00"
+                "fen": 63626000,
+                "text": "¥636,260.00"
               },
-              "below_floor": true
+              "below_floor": false
             },
             {
               "day": 58,
               "closing": {
-                "fen": 21500000,
-                "text": "¥215,000.00"
+                "fen": 63626000,
+                "text": "¥636,260.00"
               },
-              "below_floor": true
+              "below_floor": false
             },
             {
               "day": 59,
               "closing": {
-                "fen": 21500000,
-                "text": "¥215,000.00"
+                "fen": 63626000,
+                "text": "¥636,260.00"
               },
-              "below_floor": true
+              "below_floor": false
             },
             {
               "day": 60,
               "closing": {
-                "fen": 17000000,
-                "text": "¥170,000.00"
+                "fen": 59126000,
+                "text": "¥591,260.00"
               },
-              "below_floor": true
+              "below_floor": false
             },
             {
               "day": 61,
               "closing": {
-                "fen": 17000000,
-                "text": "¥170,000.00"
+                "fen": 59126000,
+                "text": "¥591,260.00"
               },
-              "below_floor": true
+              "below_floor": false
             },
             {
               "day": 62,
               "closing": {
-                "fen": 59189000,
-                "text": "¥591,890.00"
+                "fen": 59126000,
+                "text": "¥591,260.00"
               },
               "below_floor": false
             },
             {
               "day": 63,
               "closing": {
-                "fen": 59189000,
-                "text": "¥591,890.00"
+                "fen": 59126000,
+                "text": "¥591,260.00"
               },
               "below_floor": false
             },
             {
               "day": 64,
               "closing": {
-                "fen": 59189000,
-                "text": "¥591,890.00"
+                "fen": 59126000,
+                "text": "¥591,260.00"
               },
               "below_floor": false
             },
             {
               "day": 65,
               "closing": {
-                "fen": 59189000,
-                "text": "¥591,890.00"
+                "fen": 59126000,
+                "text": "¥591,260.00"
               },
               "below_floor": false
             },
             {
               "day": 66,
               "closing": {
-                "fen": 59189000,
-                "text": "¥591,890.00"
+                "fen": 59126000,
+                "text": "¥591,260.00"
               },
               "below_floor": false
             },
             {
               "day": 67,
               "closing": {
-                "fen": 59189000,
-                "text": "¥591,890.00"
+                "fen": 59126000,
+                "text": "¥591,260.00"
               },
               "below_floor": false
             },
             {
               "day": 68,
               "closing": {
-                "fen": 59189000,
-                "text": "¥591,890.00"
+                "fen": 59126000,
+                "text": "¥591,260.00"
               },
               "below_floor": false
             },
             {
               "day": 69,
               "closing": {
-                "fen": 59189000,
-                "text": "¥591,890.00"
+                "fen": 59126000,
+                "text": "¥591,260.00"
               },
               "below_floor": false
             },
             {
               "day": 70,
               "closing": {
-                "fen": 59189000,
-                "text": "¥591,890.00"
+                "fen": 59126000,
+                "text": "¥591,260.00"
               },
               "below_floor": false
             },
             {
               "day": 71,
               "closing": {
-                "fen": 59189000,
-                "text": "¥591,890.00"
+                "fen": 59126000,
+                "text": "¥591,260.00"
               },
               "below_floor": false
             },
             {
               "day": 72,
               "closing": {
-                "fen": 59189000,
-                "text": "¥591,890.00"
+                "fen": 59126000,
+                "text": "¥591,260.00"
               },
               "below_floor": false
             },
             {
               "day": 73,
               "closing": {
-                "fen": 59189000,
-                "text": "¥591,890.00"
+                "fen": 59126000,
+                "text": "¥591,260.00"
               },
               "below_floor": false
             },
             {
               "day": 74,
               "closing": {
-                "fen": 59189000,
-                "text": "¥591,890.00"
+                "fen": 59126000,
+                "text": "¥591,260.00"
               },
               "below_floor": false
             },
             {
               "day": 75,
               "closing": {
-                "fen": 59189000,
-                "text": "¥591,890.00"
+                "fen": 59126000,
+                "text": "¥591,260.00"
               },
               "below_floor": false
             },
             {
               "day": 76,
               "closing": {
-                "fen": 59189000,
-                "text": "¥591,890.00"
+                "fen": 59126000,
+                "text": "¥591,260.00"
               },
               "below_floor": false
             },
             {
               "day": 77,
               "closing": {
-                "fen": 59189000,
-                "text": "¥591,890.00"
+                "fen": 59126000,
+                "text": "¥591,260.00"
               },
               "below_floor": false
             },
             {
               "day": 78,
               "closing": {
-                "fen": 59189000,
-                "text": "¥591,890.00"
+                "fen": 59126000,
+                "text": "¥591,260.00"
               },
               "below_floor": false
             },
             {
               "day": 79,
               "closing": {
-                "fen": 59189000,
-                "text": "¥591,890.00"
+                "fen": 59126000,
+                "text": "¥591,260.00"
               },
               "below_floor": false
             },
             {
               "day": 80,
               "closing": {
-                "fen": 59189000,
-                "text": "¥591,890.00"
+                "fen": 59126000,
+                "text": "¥591,260.00"
               },
               "below_floor": false
             },
             {
               "day": 81,
               "closing": {
-                "fen": 59189000,
-                "text": "¥591,890.00"
+                "fen": 59126000,
+                "text": "¥591,260.00"
               },
               "below_floor": false
             },
             {
               "day": 82,
               "closing": {
-                "fen": 59189000,
-                "text": "¥591,890.00"
+                "fen": 59126000,
+                "text": "¥591,260.00"
               },
               "below_floor": false
             },
             {
               "day": 83,
               "closing": {
-                "fen": 59189000,
-                "text": "¥591,890.00"
+                "fen": 59126000,
+                "text": "¥591,260.00"
               },
               "below_floor": false
             },
             {
               "day": 84,
               "closing": {
-                "fen": 59189000,
-                "text": "¥591,890.00"
+                "fen": 59126000,
+                "text": "¥591,260.00"
               },
               "below_floor": false
             },
             {
               "day": 85,
               "closing": {
-                "fen": 59189000,
-                "text": "¥591,890.00"
+                "fen": 59126000,
+                "text": "¥591,260.00"
               },
               "below_floor": false
             },
             {
               "day": 86,
               "closing": {
-                "fen": 59189000,
-                "text": "¥591,890.00"
+                "fen": 59126000,
+                "text": "¥591,260.00"
               },
               "below_floor": false
             },
             {
               "day": 87,
               "closing": {
-                "fen": 59189000,
-                "text": "¥591,890.00"
+                "fen": 101252000,
+                "text": "¥1,012,520.00"
               },
               "below_floor": false
             },
             {
               "day": 88,
               "closing": {
-                "fen": 59189000,
-                "text": "¥591,890.00"
+                "fen": 101252000,
+                "text": "¥1,012,520.00"
               },
               "below_floor": false
             },
             {
               "day": 89,
               "closing": {
-                "fen": 59189000,
-                "text": "¥591,890.00"
+                "fen": 101252000,
+                "text": "¥1,012,520.00"
               },
               "below_floor": false
             },
             {
               "day": 90,
               "closing": {
-                "fen": 54689000,
-                "text": "¥546,890.00"
+                "fen": 96752000,
+                "text": "¥967,520.00"
               },
               "below_floor": false
             },
             {
               "day": 91,
               "closing": {
-                "fen": 54689000,
-                "text": "¥546,890.00"
+                "fen": 96752000,
+                "text": "¥967,520.00"
               },
               "below_floor": false
             },
             {
               "day": 92,
               "closing": {
-                "fen": 96878000,
-                "text": "¥968,780.00"
+                "fen": 96752000,
+                "text": "¥967,520.00"
               },
               "below_floor": false
             },
             {
               "day": 93,
               "closing": {
-                "fen": 96878000,
-                "text": "¥968,780.00"
+                "fen": 96752000,
+                "text": "¥967,520.00"
               },
               "below_floor": false
             },
             {
               "day": 94,
               "closing": {
-                "fen": 96878000,
-                "text": "¥968,780.00"
+                "fen": 96752000,
+                "text": "¥967,520.00"
               },
               "below_floor": false
             },
             {
               "day": 95,
               "closing": {
-                "fen": 96878000,
-                "text": "¥968,780.00"
+                "fen": 96752000,
+                "text": "¥967,520.00"
               },
               "below_floor": false
             },
             {
               "day": 96,
               "closing": {
-                "fen": 96878000,
-                "text": "¥968,780.00"
+                "fen": 96752000,
+                "text": "¥967,520.00"
               },
               "below_floor": false
             },
             {
               "day": 97,
               "closing": {
-                "fen": 96878000,
-                "text": "¥968,780.00"
+                "fen": 96752000,
+                "text": "¥967,520.00"
               },
               "below_floor": false
             },
             {
               "day": 98,
               "closing": {
-                "fen": 96878000,
-                "text": "¥968,780.00"
+                "fen": 96752000,
+                "text": "¥967,520.00"
               },
               "below_floor": false
             },
             {
               "day": 99,
               "closing": {
-                "fen": 96878000,
-                "text": "¥968,780.00"
+                "fen": 96752000,
+                "text": "¥967,520.00"
               },
               "below_floor": false
             },
             {
               "day": 100,
               "closing": {
-                "fen": 96878000,
-                "text": "¥968,780.00"
+                "fen": 96752000,
+                "text": "¥967,520.00"
               },
               "below_floor": false
             },
             {
               "day": 101,
               "closing": {
-                "fen": 96878000,
-                "text": "¥968,780.00"
+                "fen": 96752000,
+                "text": "¥967,520.00"
               },
               "below_floor": false
             },
             {
               "day": 102,
               "closing": {
-                "fen": 96878000,
-                "text": "¥968,780.00"
+                "fen": 96752000,
+                "text": "¥967,520.00"
               },
               "below_floor": false
             },
             {
               "day": 103,
               "closing": {
-                "fen": 96878000,
-                "text": "¥968,780.00"
+                "fen": 96752000,
+                "text": "¥967,520.00"
               },
               "below_floor": false
             },
             {
               "day": 104,
               "closing": {
-                "fen": 96878000,
-                "text": "¥968,780.00"
+                "fen": 96752000,
+                "text": "¥967,520.00"
               },
               "below_floor": false
             },
             {
               "day": 105,
               "closing": {
-                "fen": 96878000,
-                "text": "¥968,780.00"
+                "fen": 96752000,
+                "text": "¥967,520.00"
               },
               "below_floor": false
             },
             {
               "day": 106,
               "closing": {
-                "fen": 96878000,
-                "text": "¥968,780.00"
+                "fen": 96752000,
+                "text": "¥967,520.00"
               },
               "below_floor": false
             },
             {
               "day": 107,
               "closing": {
-                "fen": 96878000,
-                "text": "¥968,780.00"
+                "fen": 96752000,
+                "text": "¥967,520.00"
               },
               "below_floor": false
             },
             {
               "day": 108,
               "closing": {
-                "fen": 96878000,
-                "text": "¥968,780.00"
+                "fen": 96752000,
+                "text": "¥967,520.00"
               },
               "below_floor": false
             },
             {
               "day": 109,
               "closing": {
-                "fen": 96878000,
-                "text": "¥968,780.00"
+                "fen": 96752000,
+                "text": "¥967,520.00"
               },
               "below_floor": false
             },
             {
               "day": 110,
               "closing": {
-                "fen": 96878000,
-                "text": "¥968,780.00"
+                "fen": 96752000,
+                "text": "¥967,520.00"
               },
               "below_floor": false
             },
             {
               "day": 111,
               "closing": {
-                "fen": 96878000,
-                "text": "¥968,780.00"
+                "fen": 96752000,
+                "text": "¥967,520.00"
               },
               "below_floor": false
             },
             {
               "day": 112,
               "closing": {
-                "fen": 96878000,
-                "text": "¥968,780.00"
+                "fen": 96752000,
+                "text": "¥967,520.00"
               },
               "below_floor": false
             },
             {
               "day": 113,
               "closing": {
-                "fen": 96878000,
-                "text": "¥968,780.00"
+                "fen": 96752000,
+                "text": "¥967,520.00"
               },
               "below_floor": false
             },
             {
               "day": 114,
               "closing": {
-                "fen": 96878000,
-                "text": "¥968,780.00"
+                "fen": 96752000,
+                "text": "¥967,520.00"
               },
               "below_floor": false
             },
             {
               "day": 115,
               "closing": {
-                "fen": 96878000,
-                "text": "¥968,780.00"
+                "fen": 96752000,
+                "text": "¥967,520.00"
               },
               "below_floor": false
             },
             {
               "day": 116,
               "closing": {
-                "fen": 96878000,
-                "text": "¥968,780.00"
+                "fen": 96752000,
+                "text": "¥967,520.00"
               },
               "below_floor": false
             },
             {
               "day": 117,
               "closing": {
-                "fen": 96878000,
-                "text": "¥968,780.00"
+                "fen": 138878000,
+                "text": "¥1,388,780.00"
               },
               "below_floor": false
             },
             {
               "day": 118,
               "closing": {
-                "fen": 96878000,
-                "text": "¥968,780.00"
+                "fen": 138878000,
+                "text": "¥1,388,780.00"
               },
               "below_floor": false
             },
             {
               "day": 119,
               "closing": {
-                "fen": 96878000,
-                "text": "¥968,780.00"
+                "fen": 138878000,
+                "text": "¥1,388,780.00"
               },
               "below_floor": false
             },
             {
               "day": 120,
               "closing": {
-                "fen": 92378000,
-                "text": "¥923,780.00"
+                "fen": 134378000,
+                "text": "¥1,343,780.00"
               },
               "below_floor": false
             }
           ]
         },
         "funded": {
-          "label": "committed plan: ¥841.64 + ¥1,069.32 + ¥1,639.68 = ¥3,550.64",
+          "label": "committed plan: ¥841.64 + ¥1,479.93 + ¥1,080.00 = ¥3,401.57",
           "min_cash": {
             "fen": 30000000,
             "text": "¥300,000.00",
@@ -6011,8 +6013,8 @@
             {
               "day": 3,
               "closing": {
-                "fen": 67000000,
-                "text": "¥670,000.00"
+                "fen": 71608000,
+                "text": "¥716,080.00"
               },
               "below_floor": false
             },
@@ -6243,712 +6245,712 @@
             {
               "day": 32,
               "closing": {
-                "fen": 44808904,
-                "text": "¥448,089.04"
+                "fen": 40159843,
+                "text": "¥401,598.43"
               },
               "below_floor": false
             },
             {
               "day": 33,
               "closing": {
-                "fen": 44808904,
-                "text": "¥448,089.04"
+                "fen": 40159843,
+                "text": "¥401,598.43"
               },
               "below_floor": false
             },
             {
               "day": 34,
               "closing": {
-                "fen": 44808904,
-                "text": "¥448,089.04"
+                "fen": 40159843,
+                "text": "¥401,598.43"
               },
               "below_floor": false
             },
             {
               "day": 35,
               "closing": {
-                "fen": 44808904,
-                "text": "¥448,089.04"
+                "fen": 40159843,
+                "text": "¥401,598.43"
               },
               "below_floor": false
             },
             {
               "day": 36,
               "closing": {
-                "fen": 44808904,
-                "text": "¥448,089.04"
+                "fen": 40159843,
+                "text": "¥401,598.43"
               },
               "below_floor": false
             },
             {
               "day": 37,
               "closing": {
-                "fen": 44808904,
-                "text": "¥448,089.04"
+                "fen": 40159843,
+                "text": "¥401,598.43"
               },
               "below_floor": false
             },
             {
               "day": 38,
               "closing": {
-                "fen": 44808904,
-                "text": "¥448,089.04"
+                "fen": 40159843,
+                "text": "¥401,598.43"
               },
               "below_floor": false
             },
             {
               "day": 39,
               "closing": {
-                "fen": 44808904,
-                "text": "¥448,089.04"
+                "fen": 40159843,
+                "text": "¥401,598.43"
               },
               "below_floor": false
             },
             {
               "day": 40,
               "closing": {
-                "fen": 44808904,
-                "text": "¥448,089.04"
+                "fen": 40159843,
+                "text": "¥401,598.43"
               },
               "below_floor": false
             },
             {
               "day": 41,
               "closing": {
-                "fen": 44808904,
-                "text": "¥448,089.04"
+                "fen": 40159843,
+                "text": "¥401,598.43"
               },
               "below_floor": false
             },
             {
               "day": 42,
               "closing": {
-                "fen": 44808904,
-                "text": "¥448,089.04"
+                "fen": 40159843,
+                "text": "¥401,598.43"
               },
               "below_floor": false
             },
             {
               "day": 43,
               "closing": {
-                "fen": 44808904,
-                "text": "¥448,089.04"
+                "fen": 40159843,
+                "text": "¥401,598.43"
               },
               "below_floor": false
             },
             {
               "day": 44,
               "closing": {
-                "fen": 44808904,
-                "text": "¥448,089.04"
+                "fen": 40159843,
+                "text": "¥401,598.43"
               },
               "below_floor": false
             },
             {
               "day": 45,
               "closing": {
-                "fen": 44808904,
-                "text": "¥448,089.04"
+                "fen": 40159843,
+                "text": "¥401,598.43"
               },
               "below_floor": false
             },
             {
               "day": 46,
               "closing": {
-                "fen": 44808904,
-                "text": "¥448,089.04"
+                "fen": 40159843,
+                "text": "¥401,598.43"
               },
               "below_floor": false
             },
             {
               "day": 47,
               "closing": {
-                "fen": 34808904,
-                "text": "¥348,089.04"
+                "fen": 30159843,
+                "text": "¥301,598.43"
               },
               "below_floor": false
             },
             {
               "day": 48,
               "closing": {
-                "fen": 34808904,
-                "text": "¥348,089.04"
+                "fen": 30159843,
+                "text": "¥301,598.43"
               },
               "below_floor": false
             },
             {
               "day": 49,
               "closing": {
-                "fen": 34808904,
-                "text": "¥348,089.04"
+                "fen": 30159843,
+                "text": "¥301,598.43"
               },
               "below_floor": false
             },
             {
               "day": 50,
               "closing": {
-                "fen": 34808904,
-                "text": "¥348,089.04"
+                "fen": 30159843,
+                "text": "¥301,598.43"
               },
               "below_floor": false
             },
             {
               "day": 51,
               "closing": {
-                "fen": 34808904,
-                "text": "¥348,089.04"
+                "fen": 30159843,
+                "text": "¥301,598.43"
               },
               "below_floor": false
             },
             {
               "day": 52,
               "closing": {
-                "fen": 34808904,
-                "text": "¥348,089.04"
+                "fen": 30159843,
+                "text": "¥301,598.43"
               },
               "below_floor": false
             },
             {
               "day": 53,
               "closing": {
-                "fen": 34808904,
-                "text": "¥348,089.04"
+                "fen": 30159843,
+                "text": "¥301,598.43"
               },
               "below_floor": false
             },
             {
               "day": 54,
               "closing": {
-                "fen": 34808904,
-                "text": "¥348,089.04"
+                "fen": 30159843,
+                "text": "¥301,598.43"
               },
               "below_floor": false
             },
             {
               "day": 55,
               "closing": {
-                "fen": 34808904,
-                "text": "¥348,089.04"
+                "fen": 30159843,
+                "text": "¥301,598.43"
               },
               "below_floor": false
             },
             {
               "day": 56,
               "closing": {
-                "fen": 34808904,
-                "text": "¥348,089.04"
+                "fen": 30159843,
+                "text": "¥301,598.43"
               },
               "below_floor": false
             },
             {
               "day": 57,
               "closing": {
-                "fen": 34808904,
-                "text": "¥348,089.04"
+                "fen": 63285843,
+                "text": "¥632,858.43"
               },
               "below_floor": false
             },
             {
               "day": 58,
               "closing": {
-                "fen": 34808904,
-                "text": "¥348,089.04"
+                "fen": 63285843,
+                "text": "¥632,858.43"
               },
               "below_floor": false
             },
             {
               "day": 59,
               "closing": {
-                "fen": 34808904,
-                "text": "¥348,089.04"
+                "fen": 63285843,
+                "text": "¥632,858.43"
               },
               "below_floor": false
             },
             {
               "day": 60,
               "closing": {
-                "fen": 30308904,
-                "text": "¥303,089.04"
+                "fen": 58785843,
+                "text": "¥587,858.43"
               },
               "below_floor": false
             },
             {
               "day": 61,
               "closing": {
-                "fen": 30308904,
-                "text": "¥303,089.04"
+                "fen": 58785843,
+                "text": "¥587,858.43"
               },
               "below_floor": false
             },
             {
               "day": 62,
               "closing": {
-                "fen": 58833936,
-                "text": "¥588,339.36"
+                "fen": 58785843,
+                "text": "¥587,858.43"
               },
               "below_floor": false
             },
             {
               "day": 63,
               "closing": {
-                "fen": 58833936,
-                "text": "¥588,339.36"
+                "fen": 58785843,
+                "text": "¥587,858.43"
               },
               "below_floor": false
             },
             {
               "day": 64,
               "closing": {
-                "fen": 58833936,
-                "text": "¥588,339.36"
+                "fen": 58785843,
+                "text": "¥587,858.43"
               },
               "below_floor": false
             },
             {
               "day": 65,
               "closing": {
-                "fen": 58833936,
-                "text": "¥588,339.36"
+                "fen": 58785843,
+                "text": "¥587,858.43"
               },
               "below_floor": false
             },
             {
               "day": 66,
               "closing": {
-                "fen": 58833936,
-                "text": "¥588,339.36"
+                "fen": 58785843,
+                "text": "¥587,858.43"
               },
               "below_floor": false
             },
             {
               "day": 67,
               "closing": {
-                "fen": 58833936,
-                "text": "¥588,339.36"
+                "fen": 58785843,
+                "text": "¥587,858.43"
               },
               "below_floor": false
             },
             {
               "day": 68,
               "closing": {
-                "fen": 58833936,
-                "text": "¥588,339.36"
+                "fen": 58785843,
+                "text": "¥587,858.43"
               },
               "below_floor": false
             },
             {
               "day": 69,
               "closing": {
-                "fen": 58833936,
-                "text": "¥588,339.36"
+                "fen": 58785843,
+                "text": "¥587,858.43"
               },
               "below_floor": false
             },
             {
               "day": 70,
               "closing": {
-                "fen": 58833936,
-                "text": "¥588,339.36"
+                "fen": 58785843,
+                "text": "¥587,858.43"
               },
               "below_floor": false
             },
             {
               "day": 71,
               "closing": {
-                "fen": 58833936,
-                "text": "¥588,339.36"
+                "fen": 58785843,
+                "text": "¥587,858.43"
               },
               "below_floor": false
             },
             {
               "day": 72,
               "closing": {
-                "fen": 58833936,
-                "text": "¥588,339.36"
+                "fen": 58785843,
+                "text": "¥587,858.43"
               },
               "below_floor": false
             },
             {
               "day": 73,
               "closing": {
-                "fen": 58833936,
-                "text": "¥588,339.36"
+                "fen": 58785843,
+                "text": "¥587,858.43"
               },
               "below_floor": false
             },
             {
               "day": 74,
               "closing": {
-                "fen": 58833936,
-                "text": "¥588,339.36"
+                "fen": 58785843,
+                "text": "¥587,858.43"
               },
               "below_floor": false
             },
             {
               "day": 75,
               "closing": {
-                "fen": 58833936,
-                "text": "¥588,339.36"
+                "fen": 58785843,
+                "text": "¥587,858.43"
               },
               "below_floor": false
             },
             {
               "day": 76,
               "closing": {
-                "fen": 58833936,
-                "text": "¥588,339.36"
+                "fen": 58785843,
+                "text": "¥587,858.43"
               },
               "below_floor": false
             },
             {
               "day": 77,
               "closing": {
-                "fen": 58833936,
-                "text": "¥588,339.36"
+                "fen": 58785843,
+                "text": "¥587,858.43"
               },
               "below_floor": false
             },
             {
               "day": 78,
               "closing": {
-                "fen": 58833936,
-                "text": "¥588,339.36"
+                "fen": 58785843,
+                "text": "¥587,858.43"
               },
               "below_floor": false
             },
             {
               "day": 79,
               "closing": {
-                "fen": 58833936,
-                "text": "¥588,339.36"
+                "fen": 58785843,
+                "text": "¥587,858.43"
               },
               "below_floor": false
             },
             {
               "day": 80,
               "closing": {
-                "fen": 58833936,
-                "text": "¥588,339.36"
+                "fen": 58785843,
+                "text": "¥587,858.43"
               },
               "below_floor": false
             },
             {
               "day": 81,
               "closing": {
-                "fen": 58833936,
-                "text": "¥588,339.36"
+                "fen": 58785843,
+                "text": "¥587,858.43"
               },
               "below_floor": false
             },
             {
               "day": 82,
               "closing": {
-                "fen": 58833936,
-                "text": "¥588,339.36"
+                "fen": 58785843,
+                "text": "¥587,858.43"
               },
               "below_floor": false
             },
             {
               "day": 83,
               "closing": {
-                "fen": 58833936,
-                "text": "¥588,339.36"
+                "fen": 58785843,
+                "text": "¥587,858.43"
               },
               "below_floor": false
             },
             {
               "day": 84,
               "closing": {
-                "fen": 58833936,
-                "text": "¥588,339.36"
+                "fen": 58785843,
+                "text": "¥587,858.43"
               },
               "below_floor": false
             },
             {
               "day": 85,
               "closing": {
-                "fen": 58833936,
-                "text": "¥588,339.36"
+                "fen": 58785843,
+                "text": "¥587,858.43"
               },
               "below_floor": false
             },
             {
               "day": 86,
               "closing": {
-                "fen": 58833936,
-                "text": "¥588,339.36"
+                "fen": 58785843,
+                "text": "¥587,858.43"
               },
               "below_floor": false
             },
             {
               "day": 87,
               "closing": {
-                "fen": 58833936,
-                "text": "¥588,339.36"
+                "fen": 100911843,
+                "text": "¥1,009,118.43"
               },
               "below_floor": false
             },
             {
               "day": 88,
               "closing": {
-                "fen": 58833936,
-                "text": "¥588,339.36"
+                "fen": 100911843,
+                "text": "¥1,009,118.43"
               },
               "below_floor": false
             },
             {
               "day": 89,
               "closing": {
-                "fen": 58833936,
-                "text": "¥588,339.36"
+                "fen": 100911843,
+                "text": "¥1,009,118.43"
               },
               "below_floor": false
             },
             {
               "day": 90,
               "closing": {
-                "fen": 54333936,
-                "text": "¥543,339.36"
+                "fen": 96411843,
+                "text": "¥964,118.43"
               },
               "below_floor": false
             },
             {
               "day": 91,
               "closing": {
-                "fen": 54333936,
-                "text": "¥543,339.36"
+                "fen": 96411843,
+                "text": "¥964,118.43"
               },
               "below_floor": false
             },
             {
               "day": 92,
               "closing": {
-                "fen": 96522936,
-                "text": "¥965,229.36"
+                "fen": 96411843,
+                "text": "¥964,118.43"
               },
               "below_floor": false
             },
             {
               "day": 93,
               "closing": {
-                "fen": 96522936,
-                "text": "¥965,229.36"
+                "fen": 96411843,
+                "text": "¥964,118.43"
               },
               "below_floor": false
             },
             {
               "day": 94,
               "closing": {
-                "fen": 96522936,
-                "text": "¥965,229.36"
+                "fen": 96411843,
+                "text": "¥964,118.43"
               },
               "below_floor": false
             },
             {
               "day": 95,
               "closing": {
-                "fen": 96522936,
-                "text": "¥965,229.36"
+                "fen": 96411843,
+                "text": "¥964,118.43"
               },
               "below_floor": false
             },
             {
               "day": 96,
               "closing": {
-                "fen": 96522936,
-                "text": "¥965,229.36"
+                "fen": 96411843,
+                "text": "¥964,118.43"
               },
               "below_floor": false
             },
             {
               "day": 97,
               "closing": {
-                "fen": 96522936,
-                "text": "¥965,229.36"
+                "fen": 96411843,
+                "text": "¥964,118.43"
               },
               "below_floor": false
             },
             {
               "day": 98,
               "closing": {
-                "fen": 96522936,
-                "text": "¥965,229.36"
+                "fen": 96411843,
+                "text": "¥964,118.43"
               },
               "below_floor": false
             },
             {
               "day": 99,
               "closing": {
-                "fen": 96522936,
-                "text": "¥965,229.36"
+                "fen": 96411843,
+                "text": "¥964,118.43"
               },
               "below_floor": false
             },
             {
               "day": 100,
               "closing": {
-                "fen": 96522936,
-                "text": "¥965,229.36"
+                "fen": 96411843,
+                "text": "¥964,118.43"
               },
               "below_floor": false
             },
             {
               "day": 101,
               "closing": {
-                "fen": 96522936,
-                "text": "¥965,229.36"
+                "fen": 96411843,
+                "text": "¥964,118.43"
               },
               "below_floor": false
             },
             {
               "day": 102,
               "closing": {
-                "fen": 96522936,
-                "text": "¥965,229.36"
+                "fen": 96411843,
+                "text": "¥964,118.43"
               },
               "below_floor": false
             },
             {
               "day": 103,
               "closing": {
-                "fen": 96522936,
-                "text": "¥965,229.36"
+                "fen": 96411843,
+                "text": "¥964,118.43"
               },
               "below_floor": false
             },
             {
               "day": 104,
               "closing": {
-                "fen": 96522936,
-                "text": "¥965,229.36"
+                "fen": 96411843,
+                "text": "¥964,118.43"
               },
               "below_floor": false
             },
             {
               "day": 105,
               "closing": {
-                "fen": 96522936,
-                "text": "¥965,229.36"
+                "fen": 96411843,
+                "text": "¥964,118.43"
               },
               "below_floor": false
             },
             {
               "day": 106,
               "closing": {
-                "fen": 96522936,
-                "text": "¥965,229.36"
+                "fen": 96411843,
+                "text": "¥964,118.43"
               },
               "below_floor": false
             },
             {
               "day": 107,
               "closing": {
-                "fen": 96522936,
-                "text": "¥965,229.36"
+                "fen": 96411843,
+                "text": "¥964,118.43"
               },
               "below_floor": false
             },
             {
               "day": 108,
               "closing": {
-                "fen": 96522936,
-                "text": "¥965,229.36"
+                "fen": 96411843,
+                "text": "¥964,118.43"
               },
               "below_floor": false
             },
             {
               "day": 109,
               "closing": {
-                "fen": 96522936,
-                "text": "¥965,229.36"
+                "fen": 96411843,
+                "text": "¥964,118.43"
               },
               "below_floor": false
             },
             {
               "day": 110,
               "closing": {
-                "fen": 96522936,
-                "text": "¥965,229.36"
+                "fen": 96411843,
+                "text": "¥964,118.43"
               },
               "below_floor": false
             },
             {
               "day": 111,
               "closing": {
-                "fen": 96522936,
-                "text": "¥965,229.36"
+                "fen": 96411843,
+                "text": "¥964,118.43"
               },
               "below_floor": false
             },
             {
               "day": 112,
               "closing": {
-                "fen": 96522936,
-                "text": "¥965,229.36"
+                "fen": 96411843,
+                "text": "¥964,118.43"
               },
               "below_floor": false
             },
             {
               "day": 113,
               "closing": {
-                "fen": 96522936,
-                "text": "¥965,229.36"
+                "fen": 96411843,
+                "text": "¥964,118.43"
               },
               "below_floor": false
             },
             {
               "day": 114,
               "closing": {
-                "fen": 96522936,
-                "text": "¥965,229.36"
+                "fen": 96411843,
+                "text": "¥964,118.43"
               },
               "below_floor": false
             },
             {
               "day": 115,
               "closing": {
-                "fen": 96522936,
-                "text": "¥965,229.36"
+                "fen": 96411843,
+                "text": "¥964,118.43"
               },
               "below_floor": false
             },
             {
               "day": 116,
               "closing": {
-                "fen": 96522936,
-                "text": "¥965,229.36"
+                "fen": 96411843,
+                "text": "¥964,118.43"
               },
               "below_floor": false
             },
             {
               "day": 117,
               "closing": {
-                "fen": 96522936,
-                "text": "¥965,229.36"
+                "fen": 138537843,
+                "text": "¥1,385,378.43"
               },
               "below_floor": false
             },
             {
               "day": 118,
               "closing": {
-                "fen": 96522936,
-                "text": "¥965,229.36"
+                "fen": 138537843,
+                "text": "¥1,385,378.43"
               },
               "below_floor": false
             },
             {
               "day": 119,
               "closing": {
-                "fen": 96522936,
-                "text": "¥965,229.36"
+                "fen": 138537843,
+                "text": "¥1,385,378.43"
               },
               "below_floor": false
             },
             {
               "day": 120,
               "closing": {
-                "fen": 92022936,
-                "text": "¥920,229.36"
+                "fen": 134037843,
+                "text": "¥1,340,378.43"
               },
               "below_floor": false
             }
@@ -6964,22 +6966,22 @@
             {
               "obligation_type": "TERMS_EXTENSION",
               "label": "Payment-terms change",
-              "value_fen": 2432692,
-              "per_invoice_fen": 187130,
-              "formula": "Σ over 13 invoices (issued days 2 to 362; window days 0 to 364) of face × 15/365 × ≈10.8417% = 24,326.92",
+              "value_fen": 1621795,
+              "per_invoice_fen": 124753,
+              "formula": "Σ over 13 invoices (issued days 2 to 362; window days 0 to 364) of face × 10/365 × ≈10.8417% = 16,217.95",
               "basis": "terms extension priced as a loan: committed marginal source: Invoice financing (onboarded platform) 10.8417%",
-              "value_display": "¥24,326.92",
-              "per_invoice_display": "¥1,871.30"
+              "value_display": "¥16,217.95",
+              "per_invoice_display": "¥1,247.53"
             },
             {
               "obligation_type": "PRICE_ADJUSTMENT",
               "label": "Price adjustment",
-              "value_fen": -2457000,
-              "per_invoice_fen": -189000,
-              "formula": "−Σ over 13 invoices (issued days 2 to 362; window days 0 to 364) of 0.45% × face = −24,570.00",
+              "value_fen": -1638000,
+              "per_invoice_fen": -126000,
+              "formula": "−Σ over 13 invoices (issued days 2 to 362; window days 0 to 364) of 0.3% × face = −16,380.00",
               "basis": "price adjustment on future invoices (a positive rate is a gain to the supplier)",
-              "value_display": "−¥24,570.00",
-              "per_invoice_display": "−¥1,890.00"
+              "value_display": "−¥16,380.00",
+              "per_invoice_display": "−¥1,260.00"
             }
           ],
           "total_display": "¥0.00",
@@ -6991,18 +6993,18 @@
           {
             "code": "DSCR_MIN",
             "label": "DSCR with the extension funded (pro forma)",
-            "observed": "1.92x",
+            "observed": "1.95x",
             "limit": "≥ 1.25x",
             "ok": true,
-            "formula": "EBITDA_m / (DS_m + extra debt × rate / 12) = ¥90,000.00 / ¥46,897.29 = 1.92x"
+            "formula": "EBITDA_m / (DS_m + extra debt × rate / 12) = ¥90,000.00 / ¥46,264.86 = 1.95x"
           },
           {
             "code": "LEVERAGE_MAX",
             "label": "Leverage with the extension funded (pro forma)",
-            "observed": "1.72x",
+            "observed": "1.66x",
             "limit": "≤ 2.50x",
             "ok": true,
-            "formula": "(debt + committed line limits + extra receivables) / (12 × EBITDA_m) = ¥1,860,000.00 / (12 × ¥90,000.00) = 1.72x"
+            "formula": "(debt + committed line limits + extra receivables) / (12 × EBITDA_m) = ¥1,790,000.00 / (12 × ¥90,000.00) = 1.66x"
           },
           {
             "code": "CLEAN_DOWN",
@@ -7014,11 +7016,11 @@
           }
         ],
         "plan": {
-          "label": "committed plan: ¥841.64 + ¥1,069.32 + ¥1,639.68 = ¥3,550.64",
+          "label": "committed plan: ¥841.64 + ¥1,479.93 + ¥1,080.00 = ¥3,401.57",
           "basis": "COMMITTED",
           "admissible": true,
           "need_fen": 40500000,
-          "total_cost_fen": 355064,
+          "total_cost_fen": 340157,
           "actions": [
             {
               "kind": "DRAW",
@@ -7034,18 +7036,18 @@
               "facility_id": "FAC-IF",
               "facility": "Invoice financing (onboarded platform)",
               "day": 0,
-              "amount_fen": 12000000,
+              "amount_fen": 16608000,
               "repay_day": null,
-              "amount_display": "¥120,000.00"
+              "amount_display": "¥166,080.00"
             },
             {
               "kind": "EARLY_PAY",
               "facility_id": "FAC-EARLYPAY",
               "facility": "Buyer early-payment offer",
               "day": 0,
-              "amount_fen": 13663968,
+              "amount_fen": 9000000,
               "repay_day": null,
-              "amount_display": "¥136,639.68"
+              "amount_display": "¥90,000.00"
             }
           ],
           "costs": [
@@ -7056,20 +7058,20 @@
               "display": "¥841.64"
             },
             {
-              "label": "Invoice financing (onboarded platform): advance ¥120,000.00 on RCV-A",
-              "fen": 106932,
-              "formula": "120,000.00 × 7.8% × 30/365 (29 days billed as 1 × 30-day period) = 769.32; 120,000.00 × 0.25% × 1 = 300.00; total ¥1,069.32",
-              "display": "¥1,069.32"
+              "label": "Invoice financing (onboarded platform): advance ¥166,080.00 on RCV-A",
+              "fen": 147993,
+              "formula": "166,080.00 × 7.8% × 30/365 (29 days billed as 1 × 30-day period) = 1,064.73; 166,080.00 × 0.25% × 1 = 415.20; total ¥1,479.93",
+              "display": "¥1,479.93"
             },
             {
-              "label": "Buyer early-payment offer: early payment on ¥136,639.68 face of RI:BUYER-1:2 at 1.2%",
-              "fen": 163968,
-              "formula": "136,639.68 × 1.2% = 1,639.68",
-              "display": "¥1,639.68"
+              "label": "Buyer early-payment offer: early payment on ¥90,000.00 face of RI:BUYER-1:2 at 1.2%",
+              "fen": 108000,
+              "formula": "90,000.00 × 1.2% = 1,080.00",
+              "display": "¥1,080.00"
             }
           ],
           "need_display": "¥405,000.00",
-          "total_cost_display": "¥3,550.64"
+          "total_cost_display": "¥3,401.57"
         },
         "break_even": {
           "bp": 88,
@@ -7079,26 +7081,7 @@
           "discount_above": false,
           "formula": "d/(1−d) < c, c = marginal all-in rate × 30/365; d = c/(1+c)"
         },
-        "counters": [
-          {
-            "label": "Option A",
-            "text": "Terms stay at 45 days. We will accept early settlement on up to ¥257,200 of this invoice at 0.85%.",
-            "supplier_cost_fen": 302777,
-            "forward_value_fen": 0,
-            "rationale": "Early settlement at 0.85% is cheaper than financing the invoice on the marginal committed source; the line covers the rest of the near-term gap.",
-            "supplier_cost_display": "¥3,027.77",
-            "forward_value_display": "¥0.00"
-          },
-          {
-            "label": "Option B",
-            "text": "60-day terms accepted with a 0.45% price adjustment on future invoices, no rebate.",
-            "supplier_cost_fen": 0,
-            "forward_value_fen": 0,
-            "rationale": "The price adjustment covers the per-invoice cost of funding the longer terms on the marginal committed source, so the net forward concession is about zero.",
-            "supplier_cost_display": "¥0.00",
-            "forward_value_display": "¥0.00"
-          }
-        ],
+        "counters": [],
         "notes": [],
         "compute_ms": 0,
         "cached": false
@@ -21088,7 +21071,7 @@
           "AGG_CONCESSION_EXCEEDED",
           "RESERVE_BREACH"
         ],
-        "summary": "REJECT: AGG_CONCESSION_EXCEEDED (¥24,326.92 vs ¥5,000.00); RESERVE_BREACH@47 (not curable on committed sources). Forward concessions ¥24,326.92 against ¥5,000.00. Covenants hold: DSCR_MIN 1.92x, LEVERAGE_MAX 1.72x. Counters: Option A, Option B.",
+        "summary": "REJECT: AGG_CONCESSION_EXCEEDED (¥24,326.92 vs ¥5,000.00); RESERVE_BREACH@47 (not curable on committed sources). Forward concessions ¥24,326.92 against ¥5,000.00. Covenants hold: DSCR_MIN 1.92x, LEVERAGE_MAX 1.72x. Price-adjustment counter at 55 days, not 60: 60-day terms cannot be funded from committed sources: the shortfall of ¥85,000.00 on day 47 has no cure. Option B passes its own re-check: its terms leave a shortfall of ¥85,000.00 on day 47, funded by the plan: committed plan: ¥1,570.36 (cannot run today). Counters: Option A, Option B.",
         "violations": [
           {
             "code": "AGG_CONCESSION_EXCEEDED",
@@ -23292,10 +23275,10 @@
           },
           {
             "label": "Option B",
-            "text": "60-day terms accepted with a 0.45% price adjustment on future invoices, no rebate.",
+            "text": "55-day terms accepted with a 0.30% price adjustment on future invoices, no rebate.",
             "supplier_cost_fen": 0,
             "forward_value_fen": 0,
-            "rationale": "The price adjustment covers the per-invoice cost of funding the longer terms on the marginal committed source, so the net forward concession is about zero.",
+            "rationale": "The price adjustment covers the per-invoice cost of funding the longer terms on the marginal committed source, so the net forward concession is about zero; on current books with these terms the router's committed plan (committed plan: ¥841.64 + ¥1,479.93 + ¥1,080.00 = ¥3,401.57) keeps the reserve. The offered 60-day terms fail their own re-check; 55 days is the longest that passes. Re-checked as an offer, its terms leave a shortfall of ¥85,000.00 on day 47, funded by the plan: committed plan: ¥1,570.36 (cannot run today).",
             "supplier_cost_display": "¥0.00",
             "forward_value_display": "¥0.00"
           }
@@ -23377,7 +23360,7 @@
           "AGG_CONCESSION_EXCEEDED",
           "RESERVE_BREACH"
         ],
-        "summary": "REJECT: AGG_CONCESSION_EXCEEDED (¥28,326.92 vs ¥5,000.00); RESERVE_BREACH@47 (not curable on committed sources). Forward concessions ¥28,326.92 against ¥5,000.00. Covenants hold: DSCR_MIN 1.92x, LEVERAGE_MAX 1.72x. Counters: Option A, Option B.",
+        "summary": "REJECT: AGG_CONCESSION_EXCEEDED (¥28,326.92 vs ¥5,000.00); RESERVE_BREACH@47 (not curable on committed sources). Forward concessions ¥28,326.92 against ¥5,000.00. Covenants hold: DSCR_MIN 1.92x, LEVERAGE_MAX 1.72x. Price-adjustment counter at 55 days, not 60: 60-day terms cannot be funded from committed sources: the shortfall of ¥85,000.00 on day 47 has no cure. Option B passes its own re-check: its terms leave a shortfall of ¥85,000.00 on day 47, funded by the plan: committed plan: ¥1,570.36 (cannot run today). Counters: Option A, Option B.",
         "violations": [
           {
             "code": "AGG_CONCESSION_EXCEEDED",
@@ -25590,10 +25573,10 @@
           },
           {
             "label": "Option B",
-            "text": "60-day terms accepted with a 0.45% price adjustment on future invoices, no rebate.",
+            "text": "55-day terms accepted with a 0.30% price adjustment on future invoices, no rebate.",
             "supplier_cost_fen": 0,
             "forward_value_fen": 0,
-            "rationale": "The price adjustment covers the per-invoice cost of funding the longer terms on the marginal committed source, so the net forward concession is about zero.",
+            "rationale": "The price adjustment covers the per-invoice cost of funding the longer terms on the marginal committed source, so the net forward concession is about zero; on current books with these terms the router's committed plan (committed plan: ¥841.64 + ¥1,479.93 + ¥1,080.00 = ¥3,401.57) keeps the reserve. The offered 60-day terms fail their own re-check; 55 days is the longest that passes. Re-checked as an offer, its terms leave a shortfall of ¥85,000.00 on day 47, funded by the plan: committed plan: ¥1,570.36 (cannot run today).",
             "supplier_cost_display": "¥0.00",
             "forward_value_display": "¥0.00"
           }
@@ -25679,7 +25662,7 @@
           "DISCOUNT_ABOVE_BREAK_EVEN",
           "EARLY_PAY_DEARER_THAN_PLAN"
         ],
-        "summary": "REJECT: AGG_CONCESSION_EXCEEDED (¥24,326.92 vs ¥5,000.00); RESERVE_BREACH@47 (curable at ¥2,406.67; the cure cannot run today); DISCOUNT_ABOVE_BREAK_EVEN (1.20% vs < 0.88%); EARLY_PAY_DEARER_THAN_PLAN (¥6,508.05 vs < ¥3,550.64). Forward concessions ¥24,326.92 against ¥5,000.00. Covenants hold: DSCR_MIN 1.92x, LEVERAGE_MAX 1.72x. Counters: Option A, Option B.",
+        "summary": "REJECT: AGG_CONCESSION_EXCEEDED (¥24,326.92 vs ¥5,000.00); RESERVE_BREACH@47 (curable at ¥2,406.67; the cure cannot run today); DISCOUNT_ABOVE_BREAK_EVEN (1.20% vs < 0.88%); EARLY_PAY_DEARER_THAN_PLAN (¥6,508.05 vs < ¥3,550.64). Forward concessions ¥24,326.92 against ¥5,000.00. Covenants hold: DSCR_MIN 1.92x, LEVERAGE_MAX 1.72x. Price-adjustment counter at 55 days, not 60: 60-day terms cannot be funded from committed sources: the shortfall of ¥85,000.00 on day 47 has no cure. Option B passes its own re-check: its terms leave a shortfall of ¥85,000.00 on day 47, funded by the plan: committed plan: ¥1,570.36 (cannot run today). Counters: Option A, Option B.",
         "violations": [
           {
             "code": "AGG_CONCESSION_EXCEEDED",
@@ -27888,10 +27871,10 @@
           },
           {
             "label": "Option B",
-            "text": "60-day terms accepted with a 0.45% price adjustment on future invoices, no rebate.",
+            "text": "55-day terms accepted with a 0.30% price adjustment on future invoices, no rebate.",
             "supplier_cost_fen": 0,
             "forward_value_fen": 0,
-            "rationale": "The price adjustment covers the per-invoice cost of funding the longer terms on the marginal committed source, so the net forward concession is about zero.",
+            "rationale": "The price adjustment covers the per-invoice cost of funding the longer terms on the marginal committed source, so the net forward concession is about zero; on current books with these terms the router's committed plan (committed plan: ¥841.64 + ¥1,479.93 + ¥1,080.00 = ¥3,401.57) keeps the reserve. The offered 60-day terms fail their own re-check; 55 days is the longest that passes. Re-checked as an offer, its terms leave a shortfall of ¥85,000.00 on day 47, funded by the plan: committed plan: ¥1,570.36 (cannot run today).",
             "supplier_cost_display": "¥0.00",
             "forward_value_display": "¥0.00"
           }
@@ -27963,7 +27946,7 @@
           "AGG_CONCESSION_EXCEEDED",
           "RESERVE_BREACH"
         ],
-        "summary": "REJECT: AGG_CONCESSION_EXCEEDED (¥72,980.75 vs ¥5,000.00); RESERVE_BREACH@47 (not curable on committed sources). Forward concessions ¥72,980.75 against ¥5,000.00. Covenants hold: DSCR_MIN 1.78x, LEVERAGE_MAX 2.11x. Counters: Option A, Option B.",
+        "summary": "REJECT: AGG_CONCESSION_EXCEEDED (¥72,980.75 vs ¥5,000.00); RESERVE_BREACH@47 (not curable on committed sources). Forward concessions ¥72,980.75 against ¥5,000.00. Covenants hold: DSCR_MIN 1.78x, LEVERAGE_MAX 2.11x. Price-adjustment counter at 55 days, not 90: 90-, 85-, 80-, 75-, 70-, 65- or 60-day terms cannot be funded from committed sources: the shortfall of ¥85,000.00 on day 47 has no cure. Option B passes its own re-check: its terms leave a shortfall of ¥85,000.00 on day 47, funded by the plan: committed plan: ¥1,570.36 (cannot run today). Counters: Option A, Option B.",
         "violations": [
           {
             "code": "AGG_CONCESSION_EXCEEDED",
@@ -30167,10 +30150,10 @@
           },
           {
             "label": "Option B",
-            "text": "90-day terms accepted with a 1.35% price adjustment on future invoices, no rebate.",
+            "text": "55-day terms accepted with a 0.30% price adjustment on future invoices, no rebate.",
             "supplier_cost_fen": 0,
             "forward_value_fen": 0,
-            "rationale": "The price adjustment covers the per-invoice cost of funding the longer terms on the marginal committed source, so the net forward concession is about zero.",
+            "rationale": "The price adjustment covers the per-invoice cost of funding the longer terms on the marginal committed source, so the net forward concession is about zero; on current books with these terms the router's committed plan (committed plan: ¥841.64 + ¥1,479.93 + ¥1,080.00 = ¥3,401.57) keeps the reserve. The offered 90-day terms fail their own re-check; 55 days is the longest that passes. Re-checked as an offer, its terms leave a shortfall of ¥85,000.00 on day 47, funded by the plan: committed plan: ¥1,570.36 (cannot run today).",
             "supplier_cost_display": "¥0.00",
             "forward_value_display": "¥0.00"
           }
@@ -30252,7 +30235,7 @@
           "AGG_CONCESSION_EXCEEDED",
           "RESERVE_BREACH"
         ],
-        "summary": "REJECT: AGG_CONCESSION_EXCEEDED (¥76,980.75 vs ¥5,000.00); RESERVE_BREACH@47 (not curable on committed sources). Forward concessions ¥76,980.75 against ¥5,000.00. Covenants hold: DSCR_MIN 1.78x, LEVERAGE_MAX 2.11x. Counters: Option A, Option B.",
+        "summary": "REJECT: AGG_CONCESSION_EXCEEDED (¥76,980.75 vs ¥5,000.00); RESERVE_BREACH@47 (not curable on committed sources). Forward concessions ¥76,980.75 against ¥5,000.00. Covenants hold: DSCR_MIN 1.78x, LEVERAGE_MAX 2.11x. Price-adjustment counter at 55 days, not 90: 90-, 85-, 80-, 75-, 70-, 65- or 60-day terms cannot be funded from committed sources: the shortfall of ¥85,000.00 on day 47 has no cure. Option B passes its own re-check: its terms leave a shortfall of ¥85,000.00 on day 47, funded by the plan: committed plan: ¥1,570.36 (cannot run today). Counters: Option A, Option B.",
         "violations": [
           {
             "code": "AGG_CONCESSION_EXCEEDED",
@@ -32465,10 +32448,10 @@
           },
           {
             "label": "Option B",
-            "text": "90-day terms accepted with a 1.35% price adjustment on future invoices, no rebate.",
+            "text": "55-day terms accepted with a 0.30% price adjustment on future invoices, no rebate.",
             "supplier_cost_fen": 0,
             "forward_value_fen": 0,
-            "rationale": "The price adjustment covers the per-invoice cost of funding the longer terms on the marginal committed source, so the net forward concession is about zero.",
+            "rationale": "The price adjustment covers the per-invoice cost of funding the longer terms on the marginal committed source, so the net forward concession is about zero; on current books with these terms the router's committed plan (committed plan: ¥841.64 + ¥1,479.93 + ¥1,080.00 = ¥3,401.57) keeps the reserve. The offered 90-day terms fail their own re-check; 55 days is the longest that passes. Re-checked as an offer, its terms leave a shortfall of ¥85,000.00 on day 47, funded by the plan: committed plan: ¥1,570.36 (cannot run today).",
             "supplier_cost_display": "¥0.00",
             "forward_value_display": "¥0.00"
           }
@@ -32554,7 +32537,7 @@
           "DISCOUNT_ABOVE_BREAK_EVEN",
           "EARLY_PAY_DEARER_THAN_PLAN"
         ],
-        "summary": "REJECT: AGG_CONCESSION_EXCEEDED (¥72,980.75 vs ¥5,000.00); RESERVE_BREACH@47 (curable at ¥4,812.99; the cure cannot run today); DISCOUNT_ABOVE_BREAK_EVEN (1.20% vs < 0.88%); EARLY_PAY_DEARER_THAN_PLAN (¥7,226.72 vs < ¥3,689.21). Forward concessions ¥72,980.75 against ¥5,000.00. Covenants hold: DSCR_MIN 1.78x, LEVERAGE_MAX 2.11x. Counters: Option A, Option B.",
+        "summary": "REJECT: AGG_CONCESSION_EXCEEDED (¥72,980.75 vs ¥5,000.00); RESERVE_BREACH@47 (curable at ¥4,812.99; the cure cannot run today); DISCOUNT_ABOVE_BREAK_EVEN (1.20% vs < 0.88%); EARLY_PAY_DEARER_THAN_PLAN (¥7,226.72 vs < ¥3,689.21). Forward concessions ¥72,980.75 against ¥5,000.00. Covenants hold: DSCR_MIN 1.78x, LEVERAGE_MAX 2.11x. Price-adjustment counter at 55 days, not 90: 90-, 85-, 80-, 75-, 70-, 65- or 60-day terms cannot be funded from committed sources: the shortfall of ¥85,000.00 on day 47 has no cure. Option B passes its own re-check: its terms leave a shortfall of ¥85,000.00 on day 47, funded by the plan: committed plan: ¥1,570.36 (cannot run today). Counters: Option A, Option B.",
         "violations": [
           {
             "code": "AGG_CONCESSION_EXCEEDED",
@@ -34763,10 +34746,10 @@
           },
           {
             "label": "Option B",
-            "text": "90-day terms accepted with a 1.35% price adjustment on future invoices, no rebate.",
+            "text": "55-day terms accepted with a 0.30% price adjustment on future invoices, no rebate.",
             "supplier_cost_fen": 0,
             "forward_value_fen": 0,
-            "rationale": "The price adjustment covers the per-invoice cost of funding the longer terms on the marginal committed source, so the net forward concession is about zero.",
+            "rationale": "The price adjustment covers the per-invoice cost of funding the longer terms on the marginal committed source, so the net forward concession is about zero; on current books with these terms the router's committed plan (committed plan: ¥841.64 + ¥1,479.93 + ¥1,080.00 = ¥3,401.57) keeps the reserve. The offered 90-day terms fail their own re-check; 55 days is the longest that passes. Re-checked as an offer, its terms leave a shortfall of ¥85,000.00 on day 47, funded by the plan: committed plan: ¥1,570.36 (cannot run today).",
             "supplier_cost_display": "¥0.00",
             "forward_value_display": "¥0.00"
           }
@@ -34862,7 +34845,7 @@
           "DISCOUNT_ABOVE_BREAK_EVEN",
           "EARLY_PAY_DEARER_THAN_PLAN"
         ],
-        "summary": "REJECT: AGG_CONCESSION_EXCEEDED (¥76,980.75 vs ¥5,000.00); RESERVE_BREACH@47 (curable at ¥4,812.99; the cure cannot run today); DISCOUNT_ABOVE_BREAK_EVEN (1.20% vs < 0.88%); EARLY_PAY_DEARER_THAN_PLAN (¥7,226.72 vs < ¥3,689.21). Forward concessions ¥76,980.75 against ¥5,000.00. Covenants hold: DSCR_MIN 1.78x, LEVERAGE_MAX 2.11x. Counters: Option A, Option B.",
+        "summary": "REJECT: AGG_CONCESSION_EXCEEDED (¥76,980.75 vs ¥5,000.00); RESERVE_BREACH@47 (curable at ¥4,812.99; the cure cannot run today); DISCOUNT_ABOVE_BREAK_EVEN (1.20% vs < 0.88%); EARLY_PAY_DEARER_THAN_PLAN (¥7,226.72 vs < ¥3,689.21). Forward concessions ¥76,980.75 against ¥5,000.00. Covenants hold: DSCR_MIN 1.78x, LEVERAGE_MAX 2.11x. Price-adjustment counter at 55 days, not 90: 90-, 85-, 80-, 75-, 70-, 65- or 60-day terms cannot be funded from committed sources: the shortfall of ¥85,000.00 on day 47 has no cure. Option B passes its own re-check: its terms leave a shortfall of ¥85,000.00 on day 47, funded by the plan: committed plan: ¥1,570.36 (cannot run today). Counters: Option A, Option B.",
         "violations": [
           {
             "code": "AGG_CONCESSION_EXCEEDED",
@@ -37080,10 +37063,10 @@
           },
           {
             "label": "Option B",
-            "text": "90-day terms accepted with a 1.35% price adjustment on future invoices, no rebate.",
+            "text": "55-day terms accepted with a 0.30% price adjustment on future invoices, no rebate.",
             "supplier_cost_fen": 0,
             "forward_value_fen": 0,
-            "rationale": "The price adjustment covers the per-invoice cost of funding the longer terms on the marginal committed source, so the net forward concession is about zero.",
+            "rationale": "The price adjustment covers the per-invoice cost of funding the longer terms on the marginal committed source, so the net forward concession is about zero; on current books with these terms the router's committed plan (committed plan: ¥841.64 + ¥1,479.93 + ¥1,080.00 = ¥3,401.57) keeps the reserve. The offered 90-day terms fail their own re-check; 55 days is the longest that passes. Re-checked as an offer, its terms leave a shortfall of ¥85,000.00 on day 47, funded by the plan: committed plan: ¥1,570.36 (cannot run today).",
             "supplier_cost_display": "¥0.00",
             "forward_value_display": "¥0.00"
           }
