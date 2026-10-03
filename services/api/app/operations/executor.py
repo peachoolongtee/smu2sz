@@ -346,6 +346,17 @@ class Executor:
                                          effective_day=now, approval_id=approval_id,
                                          message=f"Declined by the owner ({approval_id}); nothing executed")
                 return self._log(op, result)
+            booked = self._booked_since_queued(op, approval_id) if isinstance(op, ReceivePayment) else None
+            if booked is not None:
+                v = _v(Code.PRECONDITION_FAILED,
+                       f"Not booked: since {approval_id} was queued, {booked.payload.get('requested_by')} recorded "
+                       f"{fmt_yuan(int(booked.payload.get('amount_fen', 0)))} on {op.receivable_id} "
+                       f"({booked.payload.get('op_id', '?')}, seq {booked.seq}); this report may be that same money. "
+                       f"If anything is still owed, record it again from the bank feed or as the owner",
+                       approval_id=approval_id, receivable_id=op.receivable_id, earlier_seq=booked.seq)
+                result = OperationResult(op_id=op.op_id, kind=op.kind, status=REFUSED, tier=Tier.TIER_2,
+                                         violations=[v], effective_day=now, approval_id=approval_id, message=v.message)
+                return self._log(op, result)
             # Re-run at decision time: every gate except the Tier-2 queue, against today's mandate.
             result = self._run(op.model_copy(update={"day": now}), approved=True)
             return result.model_copy(update={"approval_id": approval_id})
@@ -547,6 +558,19 @@ class Executor:
 
     def _entries(self) -> list[LoggedEntry]:
         return self._reader.entries(self._store.operations())
+
+    def _booked_since_queued(self, op: ReceivePayment, approval_id: str) -> LoggedEntry | None:
+        """Red team d, F2: a receipt reported by the agent and queued for the owner may be the same money the bank
+        feed (or the owner) has booked since. The first EXECUTED receipt by SYSTEM or OWNER on the same receivable
+        logged after the queue entry, whatever its amount; None when there is none."""
+        log = self._entries()
+        queued = next((e.seq for e in log if e.result.approval_id == approval_id
+                       and e.result.status == PENDING), None)
+        if queued is None:
+            return None
+        return next((e for e in log if e.seq > queued and e.kind == op.kind and e.result.status == EXECUTED
+                     and e.payload.get("receivable_id") == op.receivable_id
+                     and e.payload.get("requested_by") in (Actor.SYSTEM.value, Actor.OWNER.value)), None)
 
     def _duplicate(self, op: Any, approved: bool) -> OperationResult | None:
         key = op.idempotency_key
