@@ -17,12 +17,12 @@
 **Topic E: SME Finance Copilot.** The scenario is `golden_sme`, a synthetic packaging supplier:
 
 - cash of ¥400,000;
-- payroll of ¥340,000 on day 12 and a supplier payment of ¥120,000 on day 20;
+- payroll of ¥340,000 on day 12, a supplier payment of ¥120,000 on day 20 and the existing equipment loan's ¥45,000 payment on day 30 (and every 30 days after: it leaves cash);
 - Receivable A of ¥420,000 due on day 32;
 - a committed ¥150,000 credit line and a committed invoice-financing facility;
 - an owner-signed mandate v1 (cash floor ¥300,000, forward-concession cap ¥5,000, DSCR at least 1.25×, leverage at most 2.5×).
 
-The evidence comes from **46 scripted tasks** (85 `/nl` turns, run on 3 Oct 2026 at the commit named in the run header) driven through the agent's natural-language harness (`POST /nl`) by `scripts/run_scenarios.py`. Each task starts from `POST /demo/reset` and fresh sessions, then checks the expected intent, verdict and reason codes, and the kinds and statuses of the operations. The tasks cover:
+The evidence comes from **49 scripted tasks** (87 `/nl` turns, run on 3 Oct 2026 at the commit named in the run header) driven through the agent's natural-language harness (`POST /nl`) by `scripts/run_scenarios.py`. Each task starts from `POST /demo/reset` and fresh sessions, then checks the expected intent, verdict and reason codes, and the kinds and statuses of the operations. The tasks cover:
 
 - **the three demo scenes:**
   - the buyer's packaged offer is rejected and countered, and the buyer accepts Option A (S01);
@@ -31,14 +31,14 @@ The evidence comes from **46 scripted tasks** (85 `/nl` turns, run on 3 Oct 2026
 - **the worked examples of spec v2 §8** (S07 to S19): early-pay counters, "as usual" references, claimed rebates, an acceptance that waits for the owner (Tier 2), a bounded extension, conflicting sources, joint offers against one cap, a term sheet with a personal guarantee, an unknown lender, capex out of scope, and goal-to-plan with a fallback in English and Chinese;
 - **interaction** (S20 to S27 and S37): correction, clarification, out of scope, repay held by the reserve, repay executed, status, explain, and what-if (including a 1% early-pay discount explained in Chinese);
 - **security** (S06 and S28 to S36): the FastCapital fake lender, Tier-3 requests in English and Chinese, prompt injection and data extraction in both languages, replay, a counterparty trying to approve, and an attempt to extract the owner-channel secret;
-- **capabilities added later** (S38 to S46): the financing comparison in English and Chinese, reconciliation, covenant ratios in English and Chinese, a capex case, the borrower file, the nearest-capability fallback, and the agent key being told the owner must sign in. Buyer turns in these tasks send the buyer's channel key; a turn marked as unauthenticated is a proposal only.
+- **capabilities added later** (S38 to S49): the financing comparison in English and Chinese, reconciliation, covenant ratios in English and Chinese, a capex case, the borrower file (built at once, read-only), the nearest-capability fallback, the agent key being told the owner must sign in, chat declining to record a stated bill or figure in English and Chinese, and reconciliation showing the bank reference on each receipt. Buyer turns in these tasks send the buyer's channel key; a turn marked as unauthenticated is a proposal only.
 
 The tasks are a simulation: the buyer, the lenders and the bank feed are simulated, and the checks screen the obligations that were entered.
 
 ### What the evidence demonstrates
 
-1. **Task completion.** 46 of 46 scripted tasks pass. Every operation was built by code from a verifier verdict or a router plan and sent through the executor; none comes from model text.
-2. **Real financial operations in the simulated ledger.** Counters are sent, offers are accepted as commitments with a nonce and a terms hash, the credit line is drawn and repaid, and invoices are submitted to invoice financing, all as typed operations through the executor. For example, in S01 the buyer accepts Counter A (early settlement at 0.85%, no forward concession booked) and the agent draws the rest of the gap on the line (¥149,901.15). S02 draws ¥150,000 on the line and advances ¥210,000 against Receivable A, the ¥2,712.94 plan; the line is cash at once and the advance lands on day 3 (ADR-0010).
+1. **Task completion.** 49 of 49 scripted tasks pass. Every operation was built by code from a verifier verdict or a router plan and sent through the executor; none comes from model text.
+2. **Real financial operations in the simulated ledger.** Counters are sent, offers are accepted as commitments with a nonce and a terms hash, the credit line is drawn and repaid, and invoices are submitted to invoice financing, all as typed operations through the executor. For example, in S01 the buyer accepts Counter A (early settlement at 0.85%, no forward concession booked) and the agent draws the rest of the gap on the line (¥149,986.20). S02 draws ¥150,000 on the line and advances ¥255,000 against Receivable A, the ¥3,113.93 plan; the line is cash at once and the advance lands on day 3 (ADR-0010).
 3. **Permission tiers hold.**
    - Accepting a buyer's package that is not a pure early-pay discount waits for the owner: EX05 (shorter terms) and EX08's Buyer 1 package are queued as Tier 2 (PENDING_APPROVAL) and execute only with the owner token (S10, S13).
    - The agent's attempt to decide a queued item is REFUSED (`INSUFFICIENT_AUTHORITY`) and logged as a privilege-escalation event.
@@ -60,7 +60,7 @@ The attack-suite results (255 attacks: 122 through the API and 133 through chat,
 | --- | --- |
 | `summary.md` | The one-page table judges read first |
 | `results.json` | Pass or fail and latency per task and per turn |
-| `evidence.jsonl` | All 46 task segments concatenated |
+| `evidence.jsonl` | All 49 task segments concatenated |
 | `evidence/<task>.jsonl` | One task's segment: its own hash chain, verifiable alone |
 | `transcripts/<task>/turn-<n>.html` | A readable card per `/nl` turn, linked from each operation line |
 
@@ -286,9 +286,9 @@ python3 scripts/verify_evidence.py services/api/evals/e2e/latest/evidence/S01_sc
 for f in services/api/evals/e2e/latest/evidence/*.jsonl; do python3 scripts/verify_evidence.py "$f"; done
 ```
 
-Expected: every file prints `VALID: <n> operations, <m> security events, head <hash>…` and exits 0; 46 files, 46 VALID. The script recomputes every `entry_hash` from `prev_hash + payload_json + result_json`, checks the links and the sequence, and compares the chain line's `head_hash`. Editing any payload, result or hash makes it print `INVALID` and exit 1.
+Expected: every file prints `VALID: <n> operations, <m> security events, head <hash>…` and exits 0; 49 files, 49 VALID. The script recomputes every `entry_hash` from `prev_hash + payload_json + result_json`, checks the links and the sequence, and compares the chain line's `head_hash`. Editing any payload, result or hash makes it print `INVALID` and exit 1.
 
-Verify the per-task files, not the concatenated `evidence.jsonl`. That file holds 46 independent chains one after another, so the verifier (which expects one chain) reports it as INVALID.
+Verify the per-task files, not the concatenated `evidence.jsonl`. That file holds 49 independent chains one after another, so the verifier (which expects one chain) reports it as INVALID.
 
 **B. Re-run everything in-process** (reset → run → export → verify in one command; each task resets itself):
 
@@ -298,7 +298,7 @@ python3 scripts/run_scenarios.py --inproc --out /tmp/tl-e2e
 for f in /tmp/tl-e2e/evidence/*.jsonl; do python3 scripts/verify_evidence.py "$f"; done
 ```
 
-Expected: `46/46 scenarios passed (0 skipped)`, then 46 VALID lines. Wall-clock timestamps, latencies and head hashes differ from run to run (ADR-0004, note of 3 Oct); every chain still verifies.
+Expected: `49/49 scenarios passed (0 skipped)`, then 49 VALID lines. Wall-clock timestamps, latencies and head hashes differ from run to run (ADR-0004, note of 3 Oct); every chain still verifies.
 
 **C. Against a running server** (the same path a harness or the web app uses):
 
@@ -320,19 +320,19 @@ Expected:
 
 `GET /evidence` requires the owner token (it returns 401 without it). `demo-owner-token` is a published **demo-only** credential, accepted only while `DEMO_MODE` is on (the default for local runs; the Docker Compose deployment turns it off).
 
-Running all 46 tasks over HTTP gives `42/42 passed, 4 skipped` (checked on 3 Oct 2026 against a server on port 8011). The runner skips S10, S21, S26 and S35 over HTTP because they need in-process set-up; use run B for the full set.
+Running all 49 tasks over HTTP gives `44/44 passed, 5 skipped` (checked on 3 Oct 2026 against a server on port 8011). The runner skips S10, S21, S26, S35 and S49 over HTTP because they need in-process set-up; use run B for the full set.
 
-**Reference values from our own check** (3 Oct 2026, branch `docs/audit-closeout`; the application code is that of `dev` at `5305d9a`):
+**Reference values from our own check** (3 Oct 2026, branch `docs/cash-figures`; the application code is that of `dev` at `1bc96ba`):
 
-- all 46 per-task files in `evals/e2e/latest/evidence/` verify (46 VALID);
+- all 49 per-task files in `evals/e2e/latest/evidence/` verify (49 VALID);
 - run C against a live server gave S01 a VALID chain of 4 operations with its own head; a fresh in-process run gave another VALID chain with a different head (heads are not reproducible, see ADR-0004);
 - changing one amount in S01's payload makes the verifier print `INVALID … entry_hash mismatch` and exit 1.
 
 **D. Other checks** (optional):
 
 ```
-cd services/api && uv run pytest                       # the full API test suite: 4,731 passed, 20 skipped at this commit (Windows, `SKIP_PERF_BENCH=1`)
+cd services/api && uv run pytest                       # the full API test suite: 4,817 passed, 22 skipped at this commit (Windows, `SKIP_PERF_BENCH=1`)
 cd services/api && uv run python -m app.security.attacks   # the 122-attack catalogue plus the 133 chat attacks; prints the zero-harm metrics
 ```
 
-For the second command, expect every zero-harm metric at 0, a detection rate of 0.9754 and a security-event rate of 0.7213 (for the 122 API attacks, `LLM_MODE=cache`), and 0 with harm among the 133 chat attacks. It exits 0, and 1 if any attack causes harm that is not a documented finding. `--report` also rewrites `services/api/evals/security/latest_report.{json,md}`.
+For the second command, expect every zero-harm metric at 0, a detection rate of 0.9836 and a security-event rate of 0.7213 (for the 122 API attacks, `LLM_MODE=cache`), and 0 with harm among the 133 chat attacks. It exits 0, and 1 if any attack causes harm that is not a documented finding. `--report` also rewrites `services/api/evals/security/latest_report.{json,md}`.

@@ -22,7 +22,7 @@ flowchart LR
     ROUTER["funding/: grid-search router,<br/>marginal cost of funds,<br/>break-even discount"]
     COV["covenants/: DSCR, leverage,<br/>clean-down per facility"]
     VERIFIER["verifier/: screen, predicates,<br/>break-even rule, verdict + formulas,<br/>counters (reads no free text)"]
-    KERNEL["counterparties/: deterministic<br/>buyer kernel (hidden reservation),<br/>mock lenders, template verbaliser"]
+    KERNEL["counterparties/: deterministic<br/>buyer kernel (hidden reservation),<br/>template verbaliser"]
     EXEC["operations/: executor<br/>tier, mandate, nonce, idempotency,<br/>circuit breaker"]
     EGRESS["egress/: outbound guard<br/>(protected values, canaries)"]
     LOG[("Append-only hash-chained<br/>operations log + commitments<br/>+ security events")]
