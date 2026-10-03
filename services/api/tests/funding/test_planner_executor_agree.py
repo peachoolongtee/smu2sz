@@ -4,9 +4,9 @@ Over random admissible states derived from the golden fixture (cash, outflow dat
 and partial settlements, a recurring invoice, facility limits, rates, fee periods, lead times, the day), the router's
 best COMMITTED plan is run leg by leg through the real executor, with the admission hook the runtime wires in:
 
-1. every leg, in the router's order, ends EXECUTED when the plan is not flagged, and is never REFUSED (unless the plan
-   flagged that leg "only admissible as a whole", quoting the executor's own reason: no order of its legs lets each
-   run alone on the books the legs before it leave);
+1. every leg, in the router's order, ends EXECUTED when the plan is not flagged, and is never REFUSED (a plan whose
+   legs are only admissible as a whole is flagged "cannot run today" on that leg, quoting the executor's own reason:
+   the owner cannot approve past a hard rule);
 2. a leg that waits for the owner is a leg the plan flagged `needs_owner_approval`, with the reason the executor gives;
    (the test then plays the owner and approves it, so the rest of the plan can be checked);
 3. the cash the executor's books show after every day of the plan equals the projection's closing cash on that day,
@@ -236,10 +236,9 @@ def run_plan(rt: Runtime, books: Any, mandate: Any, p: Any) -> None:
         if res.status == OperationStatus.REFUSED:  # only a plan that said it cannot run today (a leg it relies on
             # does not exist yet, so the legs before it may not clear the reserve alone either), or one that said it
             # is only admissible as a whole, on this leg, for the reason the executor gives
-            if p.executable_now:
-                assert "only admissible as a whole" in line.approval_reason, f"leg {i} {a} was refused: {res.message}"
-                assert p.needs_owner_approval and res.violations[0].message in line.approval_reason, \
-                    (line.approval_reason, res.message)
+            assert not p.executable_now, f"leg {i} {a} was refused: {res.message}"
+            if "only admissible as a whole" in line.not_executable_reason:  # the owner cannot approve past a hard rule
+                assert res.violations[0].message in line.not_executable_reason, (line.not_executable_reason, res.message)
             return
         if not line.executable_now:  # flagged in advance (a future-dated invoice: the executor lands it today)
             assert not p.executable_now

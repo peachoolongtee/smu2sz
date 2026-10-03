@@ -525,9 +525,10 @@ class Search:
             if order is None and refused is not None:
                 a, why = refused
                 k = _akey(a)
+                # the owner cannot approve past a hard rule, so this is "cannot run today", not "needs approval"
                 note = (f"only admissible as a whole: no order of its legs lets each run alone on the books the legs "
                         f"before it leave (admission refuses this one: {why})")
-                ev.approvals[k] = f"{ev.approvals[k]}; {note}" if k in ev.approvals else note
+                ev.unrunnable[k] = f"{ev.unrunnable[k]}; {note}" if k in ev.unrunnable else note
         if not self.mandate.allow_new_borrowing and any(is_debt(self.facilities[a.facility_id]) for a in acts):
             ev.violations.append(Violation(
                 code=ViolationCode.NEW_BORROWING_NOT_ALLOWED,
