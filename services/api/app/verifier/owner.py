@@ -7,14 +7,17 @@ from collections.abc import Sequence
 
 from app.domain.models import ConcessionValue, FinancialState, Obligation, ObligationType
 from app.domain.money import bp, fmt_pct
-from app.verifier.bind import open_receivables, recurring_for
+from app.financial.invoices import terms_in_force
+from app.verifier.bind import open_receivables
 from app.verifier.models import OwnerConstraints
 
 
 def _current_terms(state: FinancialState, counterparty_id: str) -> int | None:
-    rec = recurring_for(state, counterparty_id)
-    if rec is not None:
-        return rec.terms_days
+    """The buyer's terms now: those in force for the next recurring invoice (accepted adjustments applied, as the
+    verifier's bind and counters read them), else the first open invoice's."""
+    in_force = terms_in_force(state, counterparty_id)
+    if in_force is not None:
+        return in_force
     rcvs = open_receivables(state, counterparty_id)
     return rcvs[0].terms_days if rcvs else None
 
