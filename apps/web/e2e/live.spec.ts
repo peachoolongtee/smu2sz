@@ -32,7 +32,7 @@ test("a 401 from the API opens the owner sign-in dialog instead of leaving a bla
     route.fulfill({
       status: 401,
       contentType: "application/json",
-      headers: { "access-control-allow-origin": "http://localhost:3000" },
+      headers: { "access-control-allow-origin": `http://localhost:${process.env.E2E_LIVE_PORT ?? 3000}` },
       body: JSON.stringify({ detail: "owner token required" }),
     }),
   );
@@ -257,7 +257,7 @@ test("the plan card shows the landing day the API sent, not one derived from the
 const CONFLICT = {
   status: 409,
   contentType: "application/json",
-  headers: { "access-control-allow-origin": "http://localhost:3000", "retry-after": "1" },
+  headers: { "access-control-allow-origin": `http://localhost:${process.env.E2E_LIVE_PORT ?? 3000}`, "retry-after": "1" },
   body: JSON.stringify({ detail: { code: "CONCURRENT_WRITE_CONFLICT", message: "busy", retry: true, retry_after_seconds: 1 } }),
 };
 
