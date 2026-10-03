@@ -16,7 +16,7 @@ Requirements: Python 3.12 with [`uv`](https://docs.astral.sh/uv/); for the web a
 for f in services/api/evals/e2e/latest/evidence/*.jsonl; do python3 scripts/verify_evidence.py "$f"; done
 ```
 
-Expect 46 lines starting `VALID`, one per scripted task. Each file is one task's hash chain; the script recomputes every `entry_hash = sha256(prev_hash + payload_json + result_json)`. (The concatenated `evidence.jsonl` holds 46 separate chains, so verify the per-task files.)
+Expect 49 lines starting `VALID`, one per scripted task. Each file is one task's hash chain; the script recomputes every `entry_hash = sha256(prev_hash + payload_json + result_json)`. (The concatenated `evidence.jsonl` holds 49 separate chains, so verify the per-task files.)
 
 **2. Run it.**
 
@@ -30,16 +30,16 @@ Click **Start** in the demo bar and sign in as the owner when asked (the local d
 **3. Test.**
 
 ```bash
-cd services/api && uv run pytest                     # 4,731 passed, 20 skipped on 3 Oct 2026 (Windows, SKIP_PERF_BENCH=1: the latency benchmarks skipped; about 9 min)
+cd services/api && uv run pytest                     # 4,817 passed, 22 skipped on 3 Oct 2026 (Windows, SKIP_PERF_BENCH=1: the latency benchmarks skipped; about 9 min)
 cd apps/web && pnpm lint && pnpm typecheck && pnpm build && pnpm test:unit && pnpm test:e2e
-                                                     # Playwright mock e2e: 31 passed (live project: 29), per docs/CONTINUOUS_OPTIMIZATION.md
+                                                     # Playwright mock e2e: 35 passed (live project: 30), per docs/CONTINUOUS_OPTIMIZATION.md
                                                      # (once: pnpm exec playwright install chromium)
 ```
 
 **4. Evaluate.**
 
 ```bash
-python3 scripts/run_scenarios.py --inproc                         # 46 scripted /nl tasks + evidence → services/api/evals/e2e/latest/
+python3 scripts/run_scenarios.py --inproc                         # 49 scripted /nl tasks + evidence → services/api/evals/e2e/latest/
 cd services/api && uv run python -m app.security.attacks --report # 255 attacks (122 API + 133 chat, including the NL-CS consent attacks and each buyer attack with and without the buyer's key), 0 with harm
 uv run --project services/api python scripts/evaluate.py          # full offline evaluation (about 5 min) → services/api/evals/latest_report.md
 uv run --project services/api python scripts/evaluate.py --suite offers --heldout fixtures/heldout3   # the independent held-out set
@@ -62,12 +62,12 @@ Flags are environment variables read by `services/api/app/config.py` (`1` on, `0
 | Terms Guard | Compile a buyer's offer (zh + en, message and attachments) into typed obligations with exact spans; verdict with formulas; counters priced from the marginal cost of funds; break-even rule; the early-payment rule (break-even for the actual days early, the cash must be needed, cheaper than the router's plan; ADR-0007); ADR-0005 autonomy proof | core (`FEATURE_TERMS_GUARD`) | on |
 | Debt Desk | Grid-search funding router over committed facilities, marginal cost of funds, break-even discount | core (`FEATURE_DEBT_DESK`) | on |
 | Buyer negotiation | Deterministic buyer kernel with a hidden reservation; bounded rounds; NO DEAL | core (`FEATURE_BUYER_NEGOTIATION`) | on |
-| Natural-language harness and chat | `POST /nl`: 19 intents (including financing comparison, alerts, reconciliation, covenant ratios, capex and the borrower file), plans, clarification, correction, nearest-capability fallback; `POST /nl/opener` (the agent speaks first); `/chat` page and slide-over panel | core | on |
+| Natural-language harness and chat | `POST /nl`: 20 intents (including financing comparison, alerts, reconciliation, covenant ratios, capex, the borrower file, and a read-only RECORD_FACT that says chat cannot record a stated bill or figure), plans, clarification, correction, nearest-capability fallback; `POST /nl/opener` (the agent speaks first); `/chat` page and slide-over panel | core | on |
 | Permission tiers and executor | Tier 1 / 2 / 3, signed mandate, nonce, idempotency, circuit breaker, hash-chained log, `GET /evidence` | core | on |
 | Security scenes | FastCapital and other hostile-message scenes in the demo | `FEATURE_SECURITY_SCENES` | on |
 | What-if sandbox | Read-only hypothetical verdicts (terms slider, discounts) | core | on |
-| Capex | NPV, payback and financing-structure comparison | `FEATURE_CAPEX` | on |
-| Borrower file | Lender-ready file from verified state (HTML / DOCX), Tier 2; a bullet term loan is serviced on a level basis for DSCR (ADR-0008), so a request that misses the covenant says so | `FEATURE_BORROWER_FILE` | on |
+| Capex | NPV, payback and financing-structure comparison; evaluating writes nothing, and `POST /capex/apply` is the owner's explicit step that queues the Tier-2 application | `FEATURE_CAPEX` | on |
+| Borrower file | Lender-ready file from verified state (HTML / DOCX), a read-only owner action with provenance and an evidence hash, never queued for approval; a bullet term loan is serviced on a level basis for DSCR (ADR-0008), so a request that misses the covenant says so | `FEATURE_BORROWER_FILE` | on |
 | Alerts and reconciliation | Cash-flow alerts from the conservative trajectory, each with an executable cure (`POST /alerts/{id}/act`); receipt reconciliation, including promised early payments (AWAITED, RECEIVED, LAPSED, SETTLED_OTHERWISE) | `FEATURE_ALERTS` | on |
 | Current books and clock | Accepted commitments change every later projection; a simulated clock (`POST /clock/advance`); partial settlement; re-verification of a verdict at the moment of commitment (ADR-0006) | core | on |
 | Expected-mode plans | Display-only expected-basis funding plan beside the committed one | `FEATURE_EXPECTED_PLANS` | on |
