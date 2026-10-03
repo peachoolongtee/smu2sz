@@ -1,4 +1,4 @@
-# Handover: TermsLedger v2, 3 Oct 2026 (sections 4 to 6 and 8 updated after the audit fixes)
+# Handover: TermsLedger v2, 3 Oct 2026 (sections 4 to 6 and 8 updated after the audit fixes and the cash-corrected books)
 
 For a new Claude Code session on another machine. Read this file first, then the files it points to.
 Everything you need is in this repository; nothing depends on the previous machine.
@@ -11,13 +11,13 @@ cd smu2sz && git checkout dev
 cd services/api && uv sync && uv run pytest -o addopts= -q
 ```
 
-Needs `uv` (Python 3.12), Node with `pnpm`, and `gh` logged in to GitHub. Expect about 4,730 tests passing in
-about 9 minutes on Windows. Then, from the repo root: `python3 scripts/run_scenarios.py --inproc` (expect 46/46),
+Needs `uv` (Python 3.12), Node with `pnpm`, and `gh` logged in to GitHub. Expect about 4,817 tests passing in
+about 9 minutes on Windows. Then, from the repo root: `python3 scripts/run_scenarios.py --inproc` (expect 49/49),
 followed by `git checkout -- services/api/evals` so regenerated evidence is not committed by accident.
 
 On Windows (confirmed 1 Oct on a second machine): `.gitattributes` keeps every text file LF, because fixture
 text is hashed and span-matched byte for byte. Run the suite as `SKIP_PERF_BENCH=1 uv run pytest -o addopts= -q`
-(the latency targets were set on the Mac; expect about 4,730 passed, 20 skipped) and prefix scripts that print
+(the latency targets were set on the Mac; expect about 4,817 passed, 22 skipped) and prefix scripts that print
 with `PYTHONUTF8=1`, for example
 `PYTHONUTF8=1 uv run --project services/api python scripts/run_scenarios.py --inproc`.
 
@@ -104,13 +104,14 @@ what-if sandbox. Team of five. A DeepSeek key exists; an Anthropic key is option
 
 ## 4. Where things stand (3 Oct 2026)
 
-`dev` carries the fixes for an independent audit's 13 findings and three red-team rounds' 13 findings, all fixed on
-3 Oct (`git log --oneline b0e0ab6..origin/dev` lists the merges; the findings, decisions and scorecard are in
-`docs/CONTINUOUS_OPTIMIZATION.md` sections 1, 3 and 5). `main` is still at `beb8c66`, 90 commits behind `dev`: it
-was fast-forwarded last at the audit merge and not since. The gate on `dev` at `5305d9a`: backend about 4,730
-passed (20 skipped; Windows, `SKIP_PERF_BENCH=1`), scenarios 46/46 (85 turns), web mock e2e 31, live e2e 29,
-255 attacks (122 API + 133 chat) with 0 harm, `scripts/demo_run.py` exits 0. This is a simulation: lenders, the
-buyer and the bank feed are simulated, and nothing is a bank covenant test.
+`dev` carries the fixes for an independent audit's 13 findings and three red-team rounds' 13 findings, and the
+business review's items (BC1 to BC11 and S1 to S3), all fixed on 3 Oct (`git log --oneline b0e0ab6..origin/dev`
+lists the merges; the findings, decisions and scorecard are in `docs/CONTINUOUS_OPTIMIZATION.md` sections 1, 3 and
+5). `main` is at `c25ff08` (the earlier document close-out), 41 commits behind `dev`. The gate on `dev` at
+`1bc96ba`: backend 4,817 passed (22 skipped; Windows, `SKIP_PERF_BENCH=1`), scenarios 49/49 (87 turns),
+web mock e2e 35, live e2e 30 (the web counts are as recorded in `docs/CONTINUOUS_OPTIMIZATION.md`, not re-run for the
+document pass), 255 attacks (122 API + 133 chat) with 0 harm, `scripts/demo_run.py` exits 0. This is a simulation:
+lenders, the buyer and the bank feed are simulated, and nothing is a bank covenant test.
 
 **Merged on 3 Oct** (the changes with their test files are in `docs/SYSTEM_WALKTHROUGH.md` section 11):
 
@@ -131,6 +132,17 @@ buyer and the bank feed are simulated, and nothing is a bank covenant test.
 | `5fabd4a` web follow-up | Landing days, waiting-for-approval states, funding in transit, promised payments; mocks re-recorded |
 | `8358ae0` and the plan-flag merges | Third red team's probes; owner sees the operation's own reason; chat funding is the agent's act in every session |
 
+**Merged after the document close-out `c25ff08`** (also in section 11 of the walkthrough):
+
+| Merge | What changed |
+| --- | --- |
+| `ffb89f8` existing debt service as cash | The equipment loan's ¥45,000 a month leaves cash in the projection and the clock; the day-0 gap is ¥405,000, the plan ¥3,113.93, Counter A ¥257,200 at 0.85% |
+| `abbf439` review gaps | Chat refuses to record facts (RECORD_FACT); a mandate-expiry alert; a zero-floor fallback cure; the alert button bound to the state version and the suggestions shown; bank references on receipts; borrower file dated by its generation day; a buyer with a past-due invoice needs the owner |
+| `094319e` simplifications | Capex evaluation is side-effect free with `POST /capex/apply`; the borrower file is read-only with provenance and an evidence hash; the aftersign stub and the mock lender were deleted |
+| `3db68b0` counter feasibility | Every counter passes its own re-check (curable reading); EX01's Option B is 55-day terms at 0.30% |
+| `635d13b` web catch-up | The bound alert act and its 409, RECORD_FACT, mandate expiry, bank references, the 55-day Option B; mocks re-recorded |
+| `3edf1b6` leg ordering | The router orders legs so every prefix is admissible, with one leg rule shared with admission; a plan admissible only as a whole is flagged cannot run today |
+
 Earlier merges (1 Oct): the chat boundary, the computed scoreboard, the coverage proof, re-verification at
 commitment, current books, the clock, partial settlement, attacks through chat, credential-bound sessions,
 reconciliation of promised receipts, the alert button and opener, the early-pay rule (ADR-0007), DSCR on bullet
@@ -139,8 +151,11 @@ by a second agent (`docs/research/early-pay-handcalc-2026-10-01.md`, `dscr-handc
 forward-concession valuation of 3 Oct likewise (`docs/research/concession-valuation-handcalc-2026-10-03.md`).
 
 The evidence (`services/api/evals/e2e/latest`, `latest_report.*`, `security/latest_report.*`) and the docx
-deliverables were regenerated for the document close-out branch `docs/audit-closeout`; if a later change moves a
-cash-derived figure, regenerate them again (section 6, step 6).
+deliverables were regenerated on `docs/cash-figures` at `1bc96ba`; if a later change moves a cash-derived figure,
+regenerate them again (section 6, step 6). `scripts/evaluate.py` reports 15 item-level misses (all targets pass):
+four held-out 60-day-terms offers (H09a, H09b, H12a, H39), labelled NEEDS_OWNER_APPROVAL, now return REJECT with
+RESERVE_BREACH on the cash-corrected books, so the label file `fixtures/heldout/offers.yaml` needs an owner decision
+(relabel, or leave as a record that the verdict moved); the other misses were already there.
 
 ## 5. Decisions made that a new session must not undo
 
@@ -169,24 +184,35 @@ cash-derived figure, regenerate them again (section 6, step 6).
   DSCR, "cheapest within the bounded search", "internally checkable chain". Do not claim bank-covenant compliance
   or "safe by construction".
 - The chat read intents need the owner token; a caller with only the agent key gets "needs the owner's sign-in".
+- Existing debt is cash: one schedule (`app/financial/debts.py`) for the projection, the clock and the capex ratios.
+  The golden D-EQUIP's 0% rate is a fixture assumption.
+- Every counter a verdict offers passes its own re-check on the same books (curable reading); a counter that fails is
+  dropped with one sentence why. EX01's Option B is therefore 55 days, not 60.
+- Capex evaluation writes nothing; `POST /capex/apply` is the owner's separate step. The borrower file is read-only
+  and is never queued; there is no GENERATE_BORROWER_FILE operation.
+- Chat does not record facts: RECORD_FACT answers "cannot record it, forecast unchanged". The alert button sends the
+  state version and the suggestions shown and gets 409 `ALERT_CHANGED` when they moved.
+- A plan admissible only as a whole is "cannot run today", not "needs the owner": the owner cannot approve past a
+  hard rule.
 
 ## 6. What to do next, in order
 
 1. Read the three mission documents first: `docs/AGENT_MISSION.md`, `docs/CONTINUOUS_OPTIMIZATION.md` (the live
    tracker; `docs/NEXT_FIXES.md` is history) and `docs/FINANCIAL_SEMANTICS.md`.
 2. Run the gate. From `services/api`: `SKIP_PERF_BENCH=1 uv run pytest -o addopts= -q` (about 9 minutes on
-   Windows; expect about 4,730 passed, 20 skipped). From the repo root, with `PYTHONUTF8=1`:
-   `uv run --project services/api python scripts/run_scenarios.py --inproc` (46/46),
+   Windows; expect about 4,817 passed, 22 skipped). From the repo root, with `PYTHONUTF8=1`:
+   `uv run --project services/api python scripts/run_scenarios.py --inproc` (49/49),
    `uv run --project services/api python scripts/demo_run.py` (exit 0, 14 ledger entries),
    `cd services/api && uv run python -m app.security.attacks --report` (255 attacks, 0 with harm), and for the web
-   app `E2E_TARGET=mock pnpm exec playwright test` (31) and, if another program holds port 8000,
-   `E2E_API_PORT=8010 E2E_TARGET=live pnpm exec playwright test` (29). Scenario, attack and evaluation runs rewrite
+   app `E2E_TARGET=mock pnpm exec playwright test` (35) and, if another program holds port 8000,
+   `E2E_API_PORT=8010 E2E_TARGET=live pnpm exec playwright test` (30). Scenario, attack and evaluation runs rewrite
    tracked files under `services/api/evals/`; commit them only when the task is to refresh evidence.
 3. Open rows of the backlog (`docs/CONTINUOUS_OPTIMIZATION.md` section 1): R02 (a multi-leg plan is not one
-   transaction), R03 (a bank event is identified by its key only), R04 and R05 (unauthenticated intake is not
-   capped), R07 (a backfill for stores that hold commitments from before ADR-0009), F-FIN-10 (label the level DSCR
-   as a reserve-coverage reading on every screen), F6 (borrower-file approval), W01 (approval decision day and
-   landing day on queue rows), W02 (accepted), MW1 (several workers), and the uncertainty debt U-001 to U-012.
+   transaction), R04 and R05 (unauthenticated intake is not capped), R07 (a backfill for stores that hold
+   commitments from before ADR-0009), F-FIN-10 (label the level DSCR as a reserve-coverage reading on every
+   screen), W01 (approval decision day and landing day on queue rows), W02 (accepted), D1 (covenant ratios in four
+   places), EV1, MW1 (several workers), and the uncertainty debt U-001 to U-012. Closed since the last handover: R03
+   for receipts that carry a bank reference, F6 (the borrower file is read-only), BC1 to BC11, DOC1.
 4. If the web mocks drift from the API again: start the API on a free port and run `pnpm mocks:record` (see
    `apps/web/README.md`); never edit a mock by hand.
 5. Small items worth doing next: an "AI-generated, for reference" label in the UI (a listed gap); suggested chat
@@ -232,7 +258,7 @@ documents.
 
 ```bash
 cd services/api && uv run pytest -o addopts= -q                  # full suite with a summary line
-python3 scripts/run_scenarios.py --inproc                        # 46 chat scenarios (repo root)
+python3 scripts/run_scenarios.py --inproc                        # 49 chat scenarios (repo root)
 cd services/api && uv run python -m app.security.attacks --report
 uv run --project services/api python scripts/evaluate.py         # scoreboard rows
 git checkout -- services/api/evals                               # drop regenerated evidence

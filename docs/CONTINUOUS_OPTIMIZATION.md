@@ -4,7 +4,7 @@ Live document of the continuous technical owner (`docs/AGENT_MISSION.md`). Updat
 quantity are in `docs/FINANCIAL_SEMANTICS.md`. Audit ids (A01…, F-FIN-…, S-…, F1…) refer to
 `docs/research/independent-principal-audit-2026-10-03.md` and its three working papers.
 
-Last updated: 3 Oct 2026 (late): debt service as cash, review gaps, simplifications and counter feasibility merged; backend 4,817 passed.
+Last updated: 3 Oct 2026 (late): debt service as cash, review gaps, simplifications, counter feasibility, the web catch-up and leg ordering merged; documents and evidence regenerated on the cash-corrected books (`docs/cash-figures`); backend 4,817 passed.
 
 ## 1. Open findings
 
@@ -29,13 +29,13 @@ Status: OPEN, IN PROGRESS (branch named), DONE (merged to `dev`, date).
 | S-06 | P1 | "today" and "tomorrow" both bind to day 2 | S-06 | subagent | | Medium | S | DONE 3 Oct (fails closed; a typed settlement day would let "today" be accepted again) | Explicit timing is not accepted autonomously |
 | R01 | P1 | Router tests the rate cap on the tariff; the executor on the effective cost | 3 Oct, own finding | subagent | | Medium | S | DONE 3 Oct (`574a04f`) | Router marks an above-ceiling action as needing the owner; no plan the router calls autonomous is queued by the executor |
 | R02 | P1 | Multi-leg plan is not one transaction: a later leg can be refused after an earlier one ran | audit §7 | owner | A10 | Medium | M | OPEN | Whole plan admitted before the first leg; partial outcome reported truthfully |
-| R03 | P1 | Same bank event with a new key settles twice | audit §7, code-inspected | subagent | | Medium | S | OPEN | External event id required on bank receipts; same id with a new key is a duplicate, different payload conflicts |
+| R03 | P1 | Same bank event with a new key settles twice | audit §7, code-inspected | subagent | | Medium | S | DONE 3 Oct for receipts that carry a `bank_reference` (BC5); a receipt without one is still identified by its key only | External event id on bank receipts; same id with a new key is a duplicate, different payload conflicts (`tests/operations/test_bank_reference.py`) |
 | F-FIN-10 | P2 | Level bullet DSCR presented as the bank covenant | F-FIN-10 | owner | | Medium | S | OPEN | Label "reserve-coverage reading" everywhere it is shown; covenant text states its basis |
-| F6 | P2 | Borrower-file approval authorises nothing meaningful | flows F6 | subagent | A13 | Low | S | OPEN | Preparing the file is read-only for the owner |
+| F6 | P2 | Borrower-file approval authorises nothing meaningful | flows F6 | subagent | A13 | Low | S | DONE 3 Oct (S1–S3: the file is read-only with provenance; no approval) | Preparing the file is read-only for the owner |
 | UI1 | P2 | UI does not separate requested, awaiting approval, awaiting settlement, settled, refused | audit §11 | frontend subagent | A08 | High | M | DONE 3 Oct (web follow-up `5fabd4a`: waiting-for-approval states, landing day, funding in transit) | e2e on the demo path |
 | UI2 | P2 | Reconciliation page does not show promised payments; approvals show the current day as decision day | flows "Additional UI evidence" | frontend subagent | | Medium | S | DONE 3 Oct (`48eb683`, `5fabd4a`) | e2e |
 | UI3 | P3 | Phone layout: security page 6 px overflow, chat panel past the viewport | audit integration record | frontend subagent | | Low | S | DONE 3 Oct (`48eb683`, phone layout guards) | `e2e/responsive.spec.ts` phone project |
-| DOC1 | P1 | Documents, mocks, evidence, video script quote numbers that these fixes change | | owner | all P0 | High | M | IN PROGRESS: documents, evidence and reports regenerated on `docs/audit-closeout`; mocks re-recorded in `781e624` (re-run after the next cash-derived change) | `scripts/evaluate.py` clean; mocks re-recorded |
+| DOC1 | P1 | Documents, mocks, evidence, video script quote numbers that these fixes change | | owner | all P0 | High | M | DONE 3 Oct: documents, evidence and reports regenerated on `docs/audit-closeout` and again on `docs/cash-figures` after the debt-service change; mocks re-recorded in `ed4a5c4` (re-run after the next cash-derived change) | `scripts/evaluate.py` targets all pass (15 item-level misses, 4 of them new, see the scorecard note); all 49 evidence chains VALID; mocks re-recorded |
 | R04 | P2 | `POST /offers` stores a compiled offer for a sender id taken from the body, unauthenticated | counterparty-channel report | owner | | Low (nothing executes) | S | OPEN | Unauthenticated intake is capped or marked untrusted; evaluate still needs the owner |
 | R05 | P2 | Unauthenticated buyer messages and wrong keys grow the offer, verdict and security-event tables without limit | same report | owner | | Low | S | OPEN | A cap per day; test |
 | R06 | P1 | Three refused agent attempts on a lender open its circuit and then block the owner's own approval | admission follow-through report | owner | | Medium | S | DONE 3 Oct (with RT1-2) | Refused approval attempts by a non-owner do not count toward the lender's circuit; owner approval still executes |
@@ -70,10 +70,10 @@ Status: OPEN, IN PROGRESS (branch named), DONE (merged to `dev`, date).
 | BC5 | P1 | Same bank event under a new key settled twice (R03) | review A5 | subagent | | Medium | S | DONE 3 Oct (`bank_reference`) | |
 | BC6 | P1 | Borrower file dated to day 0 whatever the generation day | review A6 | subagent | | Medium | S | DONE 3 Oct | |
 | BC7 | P1 | An offer from a buyer with a past-due invoice was judged on cash and caps only | review A7 | subagent | | Medium | S | DONE 3 Oct (needs the owner, invoice named) | |
-| BC8 | P1 | Alert button not bound to the cure shown | review A8 | subagent | | Medium | S | DONE 3 Oct (409 ALERT_CHANGED; web sends the body: in progress) | |
+| BC8 | P1 | Alert button not bound to the cure shown | review A8 | subagent | | Medium | S | DONE 3 Oct (409 ALERT_CHANGED; the web sends the body, `0ea2471`) | |
 | BC9 | P1 | Counters the verifier offered did not pass their own re-check (Option B failed on reserve once debt service left cash) | debt-service report | subagent | | High | M | DONE 3 Oct (`tests/verifier/test_counter_property.py`, curable reading) | |
 | BC10 | P1 | Router and executor disagreed on a line draw held past the first affordable receipt (found by the agreement test) | agreement test | subagent | | High | S | DONE 3 Oct (`carry_draw` shared) | |
-| BC11 | P1 | Router admits an advance leg that admission refuses on the reserve (pinned Hypothesis world) | agreement test | subagent | | High | S | IN PROGRESS `fix/agree-advance` | |
+| BC11 | P1 | Router admits an advance leg that admission refuses on the reserve (pinned Hypothesis world) | agreement test | subagent | | High | S | DONE 3 Oct (`fbbc7d3`, `3edf1b6`, `1bc96ba`: legs ordered so every prefix is admissible, one leg rule shared with admission; a plan admissible only as a whole is flagged cannot run today) | `tests/funding/test_planner_executor_agree.py` |
 | S1–S3 | P2 | Capex evaluation queued an application; borrower-file approval authorised nothing; dead weight (aftersign, mock lender) | review D2–D4 | subagent | | Medium | S | DONE 3 Oct | |
 | D1 | P2 | Covenant ratios computed in four places with two leverage definitions (line at limit vs drawn) | review D1 | owner | | Medium | M | OPEN: label now, merge after the deadline | |
 | EV1 | P2 | Evidence chain heads are not reproducible run to run (session nonce, commitment nonces) | close-out report | owner | | Low | S | OPEN (claim narrowed to "integrity-checkable") | |
@@ -99,7 +99,7 @@ to the user, or the claim is removed.
 | U-008 | The hash chain's head is not anchored outside the store | Truncation of the tail is undetectable | Claim "internally checkable" only; external checkpoint after the hackathon | Open (claim narrowed) |
 | U-009 | The effective-rate ceiling uses simple annualisation over the days held | A lender or regulator may define APR differently | Named "effective annual cost" with its formula on screen | Open (label) |
 | U-010 | The search for the cheapest plan is bounded (three actions, ¥10,000 grid) | "Cheapest" is cheapest within that search | Say so where the plan is shown; differential test against a finer grid exists | Open (label) |
-| U-011 | The mock e2e and recorded mocks describe the pre-audit behaviour until re-recorded | UI tests can pass against stale shapes | Re-record at DOC1 | Open |
+| U-011 | The mock e2e and recorded mocks describe the pre-audit behaviour until re-recorded | UI tests can pass against stale shapes | Re-record at DOC1 | Paid down 3 Oct: mocks re-recorded from the live API (`ed4a5c4`), mock e2e 35 and live e2e 30 pass; re-record after any change to a cash-derived figure |
 | U-012 | Chinese negation and consent coverage is by rule lists | A phrasing outside the list must fail closed, not open | Closed grammar (A01) makes unknown phrasing non-executable; property test | In progress |
 
 ## 3. Scorecard
@@ -115,11 +115,11 @@ Numbers are measurements on the commit named, never targets.
 | Financial | Accepted-terms lifecycle failures (A06, A07) | 2 | 0 |
 | Security | Catalogue attacks / with harm | 182 / 0 | 255 (122 API + 133 chat) / 0, report regenerated 3 Oct |
 | Security | Audit attacks with harm (A01, A02, A03, A04, A10) | 5 of 5 | 0 of 5; three red-team rounds: 13 findings, 13 fixed |
-| Language | Wrong and financially material interpretations known | 13 texts (S-01 ×8, S-02 ×5) | 0 known |
-| Execution | Scenarios passed | 46 / 46 (79 turns) | 49 / 49 (87 turns) |
+| Language | Wrong and financially material interpretations known | 13 texts (S-01 ×8, S-02 ×5) | 0 known; held-out offer labels agree 45 of 50 (the four 60-day-terms items H09a, H09b, H12a, H39 now return REJECT on the cash-corrected books and their labels were not changed) |
+| Execution | Scenarios passed | 46 / 46 (79 turns) | 49 / 49 (87 turns); 49 of 49 evidence chains VALID |
 | Execution | Restart preserves state | No | Yes |
 | Product | Demo path (`scripts/demo_run.py`) | exit 0 | exit 0 (cure queued → approved → lands day 37) |
-| Product | Web e2e mock / live | 29 / 27 | 31 / 29 |
+| Product | Web e2e mock / live | 29 / 27 | 35 / 30 |
 
 ## 4. New questions
 
