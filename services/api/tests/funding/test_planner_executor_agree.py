@@ -4,7 +4,9 @@ Over random admissible states derived from the golden fixture (cash, outflow dat
 and partial settlements, a recurring invoice, facility limits, rates, fee periods, lead times, the day), the router's
 best COMMITTED plan is run leg by leg through the real executor, with the admission hook the runtime wires in:
 
-1. every leg, in the router's order, ends EXECUTED when the plan is not flagged, and is never REFUSED;
+1. every leg, in the router's order, ends EXECUTED when the plan is not flagged, and is never REFUSED (unless the plan
+   flagged that leg "only admissible as a whole", quoting the executor's own reason: no order of its legs lets each
+   run alone on the books the legs before it leave);
 2. a leg that waits for the owner is a leg the plan flagged `needs_owner_approval`, with the reason the executor gives;
    (the test then plays the owner and approves it, so the rest of the plan can be checked);
 3. the cash the executor's books show after every day of the plan equals the projection's closing cash on that day,
@@ -232,8 +234,12 @@ def run_plan(rt: Runtime, books: Any, mandate: Any, p: Any) -> None:
         res = ex.execute(o)
         line = p.costs[i]
         if res.status == OperationStatus.REFUSED:  # only a plan that said it cannot run today (a leg it relies on
-            # does not exist yet, so the legs before it may not clear the reserve alone either)
-            assert not p.executable_now, f"leg {i} {a} was refused: {res.message}"
+            # does not exist yet, so the legs before it may not clear the reserve alone either), or one that said it
+            # is only admissible as a whole, on this leg, for the reason the executor gives
+            if p.executable_now:
+                assert "only admissible as a whole" in line.approval_reason, f"leg {i} {a} was refused: {res.message}"
+                assert p.needs_owner_approval and res.violations[0].message in line.approval_reason, \
+                    (line.approval_reason, res.message)
             return
         if not line.executable_now:  # flagged in advance (a future-dated invoice: the executor lands it today)
             assert not p.executable_now
@@ -308,6 +314,10 @@ LINE_HELD = World(day=0, cash=8_000_000, payroll=(5, -1_000_000), supplier=(10, 
                   rcv_a=(47_000_000, 0, 44, 0), rcv_b=None, recurring=(15_000_000, 2, 30),
                   line=(24_500_000, 547, 0, 0), iff=(14_500_000, 400, 50, 0, 30, 0, None),
                   ggl=(25_000_000, 583, 1, 6), ebitda=9_000_000)
+ADVANCE_LEG = World(day=0, cash=8_000_000, payroll=(5, -1_000_000), supplier=(10, -3_000_000), bill=None,
+                    extra=(14, -20_500_000), rcv_a=(33_000_000, 0, 14, 25), rcv_b=None, recurring=(15_000_000, 2, 30),
+                    line=(18_500_000, 300, 0, 0), iff=(10_000_000, 400, 0, 0, 7, 0, None), ggl=(8_000_000, 300, 1, 6),
+                    ebitda=9_000_000)
 
 
 @settings(PROPS)
@@ -319,6 +329,7 @@ LINE_HELD = World(day=0, cash=8_000_000, payroll=(5, -1_000_000), supplier=(10, 
 @example(w=UNISSUED)
 @example(w=RI_CHEAPER)
 @example(w=LINE_HELD)
+@example(w=ADVANCE_LEG)
 def test_the_router_plan_runs_in_the_executor_as_quoted(w: World) -> None:
     rt = build(w)
     books, mandate, p = committed_plan(rt)
@@ -337,6 +348,11 @@ def test_pinned_worlds_make_the_plans_they_are_pinned_for() -> None:
     assert committed_plan(build(RI_CHEAPER))[2].executable_now
     _, _, unissued = committed_plan(build(UNISSUED))
     assert unissued.admissible and not unissued.executable_now and "RI:BUYER-1:2" in unissued.not_executable_reason
+    # by landing day the advance would run second, on books where the carried line alone leaves day 30 at ¥222,500
+    # (below the reserve) and its ¥61.37 charge deepens that: the router runs the guaranteed loan first
+    _, _, legs = committed_plan(build(ADVANCE_LEG))
+    assert [a.facility_id for a in legs.actions] == [LINE, GGL, IF]
+    assert legs.executable_now and not legs.needs_owner_approval
 
 
 # ---------------------------------------------------------------- the converse, one operation at a time
