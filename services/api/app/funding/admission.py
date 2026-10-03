@@ -23,11 +23,9 @@ from dataclasses import dataclass, field
 from fractions import Fraction
 
 from app.books import Books
-from app.covenants import evaluate as evaluate_covenants
 from app.domain.models import (
     DrawFacility,
     FacilityKind,
-    FacilityStatus,
     FinancialState,
     FundingAction,
     FundingActionKind,
@@ -39,13 +37,10 @@ from app.domain.models import (
     Violation,
     ViolationCode,
 )
-from app.domain.money import fmt_yuan
 from app.financial import EngineError, project
-from app.financial.lots import carry_draw, is_open_line
+from app.funding.legs import RATIO_CODES, as_executed, carries, leg_violations
 from app.funding.rates import action_rate, approval_reason, invoice_landing_day
 from app.funding.search import receivables
-
-RATIO_CODES = (ViolationCode.DSCR_BREACH, ViolationCode.LEVERAGE_BREACH)
 
 
 @dataclass(frozen=True, slots=True)
@@ -97,16 +92,10 @@ def effective_rate(op: object, books: Books, baseline: Trajectory | None = None)
 
 def _as_carried(op: object, state: FinancialState) -> FinancialState | None:
     """The books as they stand right after a draw on a revolving line executes; None for anything else."""
-    if not isinstance(op, DrawFacility):
+    action = action_for(op, state.as_of_day)
+    if not isinstance(op, DrawFacility) or action is None or not carries(action, state):
         return None
-    f = next((x for x in state.facilities if x.id == op.facility_id), None)
-    if f is None or not is_open_line(f):
-        return None
-    return carry_draw(state, f, op.amount_fen)
-
-
-def _worst(t: Trajectory, today: int) -> int:
-    return min(p.closing_fen for p in t.days if p.day >= today)
+    return as_executed(state, [action])[0]
 
 
 def admit(op: object, books: Books, mandate: Mandate) -> Admission:
@@ -118,41 +107,20 @@ def admit(op: object, books: Books, mandate: Mandate) -> Admission:
     floor, horizon = mandate.min_cash_fen, mandate.horizon_days
     try:
         after = project(state, obligations, [action], Mode.CONSERVATIVE, horizon, floor)
+        if carries(action, state):
+            # A draw on a revolving line has no repayment day, so as an action it is projected open and free. Once
+            # executed it is a lot the engine repays, with interest, on the first affordable day: judge that
+            # (`legs.as_executed`, the reading the router plans every prefix of its plan by).
+            carried, rest = as_executed(state, [action])
+            after = project(carried, obligations, rest, Mode.CONSERVATIVE, horizon, floor)
     except EngineError as exc:
         return Admission([Violation(code=ViolationCode.PRECONDITION_FAILED, message=str(exc))])
-    carried = _as_carried(op, state)
-    if carried is not None:
-        # A draw on a revolving line has no repayment day, so as an action it is projected open and free. Once
-        # executed it is a lot the engine repays, with interest, on the first affordable day: judge that.
-        try:
-            after = project(carried, obligations, [], Mode.CONSERVATIVE, horizon, floor)
-        except EngineError as exc:
-            return Admission([Violation(code=ViolationCode.PRECONDITION_FAILED, message=str(exc))])
     try:
         before: Trajectory | None = project(state, obligations, [], Mode.CONSERVATIVE, horizon, floor)
     except EngineError:
         before = None  # the books do not project without the operation; judge the result alone
 
-    out: list[Violation] = []
-    if action.kind != FundingActionKind.REPAY:
-        binding = [f for f in state.facilities if f.status == FacilityStatus.COMMITTED]
-        seen: set[tuple[ViolationCode, str | None]] = set()
-        for v in evaluate_covenants(after, binding, mandate):
-            key = (v.code, v.inputs.get("facility_id"))
-            if v.code in RATIO_CODES and key not in seen:
-                seen.add(key)
-                out.append(v)
-    worst_after = _worst(after, today)
-    allowed = floor if before is None else min(floor, _worst(before, today))
-    if worst_after < allowed:
-        day = next(p.day for p in after.days if p.day >= today and p.closing_fen == worst_after)
-        out.append(Violation(
-            code=ViolationCode.RESERVE_BREACH,
-            message=(f"After this operation projected cash would fall to {fmt_yuan(worst_after)} on day {day}, "
-                     f"below the reserve {fmt_yuan(floor)}"),
-            day=day, observed=fmt_yuan(worst_after), limit=fmt_yuan(floor),
-            formula=(f"lowest projected closing after the operation >= min(reserve, lowest before): "
-                     f"{fmt_yuan(worst_after)} < {fmt_yuan(allowed)}")))
+    out = leg_violations(state, before, after, action.kind, mandate)
     if out:
         return Admission(out)
 
@@ -163,4 +131,4 @@ def admit(op: object, books: Books, mandate: Mandate) -> Admission:
     return Admission([], reason)
 
 
-__all__ = ["Admission", "action_for", "admit", "effective_rate"]
+__all__ = ["RATIO_CODES", "Admission", "action_for", "admit", "effective_rate"]

@@ -232,8 +232,12 @@ def run_plan(rt: Runtime, books: Any, mandate: Any, p: Any) -> None:
         res = ex.execute(o)
         line = p.costs[i]
         if res.status == OperationStatus.REFUSED:  # only a plan that said it cannot run today (a leg it relies on
-            # does not exist yet, so the legs before it may not clear the reserve alone either)
-            assert not p.executable_now, f"leg {i} {a} was refused: {res.message}"
+            # does not exist yet, so the legs before it may not clear the reserve alone either), or one that said it
+            # is only admissible as a whole, on this leg, for the reason the executor gives
+            if p.executable_now:
+                assert "only admissible as a whole" in line.approval_reason, f"leg {i} {a} was refused: {res.message}"
+                assert p.needs_owner_approval and res.violations[0].message in line.approval_reason, \
+                    (line.approval_reason, res.message)
             return
         if not line.executable_now:  # flagged in advance (a future-dated invoice: the executor lands it today)
             assert not p.executable_now
@@ -308,6 +312,10 @@ LINE_HELD = World(day=0, cash=8_000_000, payroll=(5, -1_000_000), supplier=(10, 
                   rcv_a=(47_000_000, 0, 44, 0), rcv_b=None, recurring=(15_000_000, 2, 30),
                   line=(24_500_000, 547, 0, 0), iff=(14_500_000, 400, 50, 0, 30, 0, None),
                   ggl=(25_000_000, 583, 1, 6), ebitda=9_000_000)
+ADVANCE_LEG = World(day=0, cash=8_000_000, payroll=(5, -1_000_000), supplier=(10, -3_000_000), bill=None,
+                    extra=(14, -20_500_000), rcv_a=(33_000_000, 0, 14, 25), rcv_b=None, recurring=(15_000_000, 2, 30),
+                    line=(18_500_000, 300, 0, 0), iff=(10_000_000, 400, 0, 0, 7, 0, None), ggl=(8_000_000, 300, 1, 6),
+                    ebitda=9_000_000)
 
 
 @settings(PROPS)
@@ -319,6 +327,7 @@ LINE_HELD = World(day=0, cash=8_000_000, payroll=(5, -1_000_000), supplier=(10, 
 @example(w=UNISSUED)
 @example(w=RI_CHEAPER)
 @example(w=LINE_HELD)
+@example(w=ADVANCE_LEG)
 def test_the_router_plan_runs_in_the_executor_as_quoted(w: World) -> None:
     rt = build(w)
     books, mandate, p = committed_plan(rt)

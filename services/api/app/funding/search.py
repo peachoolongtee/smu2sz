@@ -33,6 +33,7 @@ import hashlib
 import json
 from dataclasses import dataclass, field, replace
 from fractions import Fraction
+from itertools import permutations
 
 from app.covenants import evaluate as evaluate_covenants
 from app.domain.models import (
@@ -61,7 +62,7 @@ from app.financial import (
     recurring_receivable_id,
 )
 from app.financial.fmt import y
-from app.financial.lots import carry_draw, is_open_line
+from app.funding.legs import as_executed, carries, leg_violations
 from app.funding.rates import (
     MONTH_DAYS,
     action_rate,
@@ -338,6 +339,8 @@ class Search:
         self._probes: dict[tuple, Probe] = {}
         self._rule_cache: dict[tuple, bool] = {}  # per action: no new borrowing
         self._approval_cache: dict[tuple, str | None] = {}  # per action: why it needs the owner
+        self._executed: dict[tuple, Trajectory | None] = {}  # per set of legs: the books right after they execute
+        self._orders: dict[tuple, tuple[list[FundingAction] | None, tuple[FundingAction, str] | None]] = {}
         self.baseline = project(self.pstate, obligations, [], self.mode, mandate.horizon_days, self.floor)
         self.base_cost = _cost_total(self.baseline)
         below = [p for p in self.baseline.days if p.closing_fen < self.floor and p.day >= state.as_of_day]
@@ -517,6 +520,14 @@ class Search:
             why = self.approval(a)
             if why is not None:
                 ev.approvals[_akey(a)] = why
+        if self.basis == "COMMITTED" and not ev.violations and acts:
+            order, refused = self.executable_order(acts)
+            if order is None and refused is not None:
+                a, why = refused
+                k = _akey(a)
+                note = (f"only admissible as a whole: no order of its legs lets each run alone on the books the legs "
+                        f"before it leave (admission refuses this one: {why})")
+                ev.approvals[k] = f"{ev.approvals[k]}; {note}" if k in ev.approvals else note
         if not self.mandate.allow_new_borrowing and any(is_debt(self.facilities[a.facility_id]) for a in acts):
             ev.violations.append(Violation(
                 code=ViolationCode.NEW_BORROWING_NOT_ALLOWED,
@@ -531,25 +542,66 @@ class Search:
         but once executed it is a lot with none: admission (and every later projection) carries it and assumes it
         repaid on the first affordable receipt day (`carry_draw`, ADR-0010 §5), which can move its interest into
         another month. A plan whose ratios hold only with the line held to the day it names would have a later leg
-        refused, so it is judged on that reading too. COMMITTED plans only: they are the ones the executor runs."""
-        if self.basis != "COMMITTED":
+        refused, so it is judged on that reading too (`legs.as_executed`). COMMITTED plans only: they are the ones
+        the executor runs."""
+        if self.basis != "COMMITTED" or not any(carries(a, self.pstate) for a in acts):
             return []
-        today = self.pstate.as_of_day
-        lines = [a for a in acts if a.kind == FundingActionKind.DRAW and a.day == today
-                 and is_open_line(self.facilities[a.facility_id])]
-        if not lines:
-            return []
-        state = self.pstate
-        for a in lines:
-            state = carry_draw(state, next(f for f in state.facilities if f.id == a.facility_id), a.amount_fen,
-                               f"plan-line-{a.facility_id}")
-        rest = [a for a in acts if not any(a is x for x in lines)]
-        try:
-            t = project(state, self.obligations, rest, self.mode, self.mandate.horizon_days, self.floor)
-        except EngineError:
+        t = self.executed(acts)
+        if t is None:
             return []
         return [v for v in evaluate_covenants(t, self.binding_facilities(acts), self.mandate)
                 if v.code in (ViolationCode.DSCR_BREACH, ViolationCode.LEVERAGE_BREACH)]
+
+    def executed(self, acts: tuple[FundingAction, ...] | list[FundingAction]) -> Trajectory | None:
+        """The projection of the books right after `acts` execute today, as admission reads them
+        (`legs.as_executed`: a line draw is a carried lot); None when the engine cannot project them."""
+        key = action_key(acts)
+        if key not in self._executed:
+            if not acts:
+                self._executed[key] = self.baseline
+            else:
+                state, rest = as_executed(self.pstate, acts, "plan-line")
+                try:
+                    self._executed[key] = project(state, self.obligations, rest, self.mode,
+                                                  self.mandate.horizon_days, self.floor)
+                except EngineError:
+                    self._executed[key] = None
+        return self._executed[key]
+
+    def refused(self, earlier: tuple[FundingAction, ...], a: FundingAction) -> str | None:
+        """Why admission refuses leg `a` run on the books the `earlier` legs leave (`legs.leg_violations`, the rule
+        admission applies); None when it admits it."""
+        after = self.executed((*earlier, a))
+        if after is None:
+            return "the engine cannot project the books after it"
+        found = leg_violations(self.pstate, self.executed(earlier), after, a.kind, self.mandate)
+        return found[0].message if found else None
+
+    def executable_order(self, acts: tuple[FundingAction, ...] | list[FundingAction]
+                         ) -> tuple[list[FundingAction] | None, tuple[FundingAction, str] | None]:
+        """(an order in which every leg is admitted on the books the legs before it leave, None when there is none;
+        the first leg refused in presentation order and why, when there is none). The executor admits a plan leg by
+        leg, so a plan is presented in such an order: by landing day where that works, else the first permutation
+        of it that does."""
+        key = action_key(acts)
+        if key not in self._orders:
+            first: tuple[FundingAction, str] | None = None
+            found: list[FundingAction] | None = None
+            for perm in permutations(self._by_landing(acts)):
+                for i, a in enumerate(perm):
+                    why = self.refused(perm[:i], a)
+                    if why is not None:
+                        first = first or (a, why)
+                        break
+                else:
+                    found = list(perm)
+                    break
+            self._orders[key] = (found, None if found is not None else first)
+        found, first = self._orders[key]
+        if found is None:
+            return None, first
+        by_key = {_akey(a): a for a in acts}
+        return [by_key[_akey(a)] for a in found], None
 
     def _breaks_rules(self, a: FundingAction) -> bool:
         """The action alone makes any plan inadmissible: new debt the mandate forbids (the same check
@@ -754,9 +806,18 @@ class Search:
         r = self.rcvs.get(a.receivable_id or "")
         return max(a.day, r.issue_day if r is not None else a.day) + f.lead_time_days
 
-    def ordered(self, actions: tuple[FundingAction, ...] | list[FundingAction]) -> list[FundingAction]:
-        """Presentation order: by the day the cash lands, then facility id."""
+    def _by_landing(self, actions: tuple[FundingAction, ...] | list[FundingAction]) -> list[FundingAction]:
         return sorted(actions, key=lambda a: (self.landing_day(a), _akey(a)))
+
+    def ordered(self, actions: tuple[FundingAction, ...] | list[FundingAction]) -> list[FundingAction]:
+        """Presentation order: by the day the cash lands, then facility id; for an admissible COMMITTED plan, the
+        first such order in which every leg is admitted on the books the legs before it leave
+        (`executable_order`), since the executor runs the legs in the order shown."""
+        if self.basis == "COMMITTED" and actions and self.evaluate(self._by_landing(actions)).admissible:
+            order, _ = self.executable_order(actions)
+            if order is not None:
+                return order
+        return self._by_landing(actions)
 
     def cost_lines(self, ev: Eval) -> list[CostLine]:
         """One CostLine per action: its posted interest, fees and discounts, with the engine's formulas."""
