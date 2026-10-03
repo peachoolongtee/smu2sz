@@ -136,3 +136,20 @@ The "known conservative convention" above is now a rule in the code, not only a 
   promised day (audit A09).
 - The rate ceiling is a separate rule: `max_apr_bp` decides who may run a plan, not whether it is admissible
   (`docs/FINANCIAL_SEMANTICS.md` section 4).
+
+## Implementation note, 3 Oct 2026 (the existing loan's payments are cash)
+
+The equipment loan's ¥45,000 payments now leave cash (`docs/FINANCIAL_SEMANTICS.md` section 5), so the golden gap
+before day 32 is ¥405,000 and the standing plan is C0 = ¥3,113.93 (line 84,164 fen + an advance of ¥255,000, 227,229
+fen). Re-derived in `services/api/tests/verifier/test_early_pay_handcalc.py`:
+
+- The 3 Oct note above is superseded for the partial-gap case. For ¥100,000 of RCV-A at 0.5% on day 2 the gap still to
+  be funded is ¥305,500, and the rest is the line plus more early pay at the buyer's standing 1.2% (a face of
+  ¥157,388.66, discount ¥1,888.66): C1 = 50,000 + 84,164 + 188,866 = 323,030 fen, **¥3,230.30**, which is above C0, so
+  the offer is now COUNTERED (`EARLY_PAY_DEARER_THAN_PLAN`), not accepted as the ¥2,683.75 figure above had it.
+- A whole-invoice early payment 30 days early is accepted at 0.74% (420,000 × 0.0074 = ¥3,108.00 < ¥3,113.93) and
+  countered at 0.75% (¥3,150.00); the 0.64% and 0.65% boundary quoted earlier moved with the plan's cost.
+- Counter A is ¥257,200 at 0.85%: discount ¥2,186.20 plus the line (¥149,986.20 × 6.4% × 32/365 = ¥841.57), ¥3,027.77,
+  below C0, so it is offered.
+- The other worked figures in this ADR (the hand-calculated table and the 90-day example) were derived on the 1 Oct
+  books and are not re-derived here.

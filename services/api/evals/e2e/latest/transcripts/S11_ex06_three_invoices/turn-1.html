@@ -6,8 +6,7 @@ td{border-top:1px solid #e3e5e8;padding:4px 6px;vertical-align:top}</style></hea
 <h1>S11_ex06_three_invoices · turn 1 <span class="tag">PASS</span></h1><p>EX06 from the buyer: bounded extension + loyalty credit exceeds the concession cap</p>
 <p><b>COUNTERPARTY</b> (BUYER-1):</p>
 <pre>Take 45 days on the next three invoices instead of 30 and we&#x27;ll add a 0.5% loyalty credit.</pre><p><b>Intent</b> COUNTERPARTY_MESSAGE · <b>Verdict</b> —
-</p><p><b>Reply</b></p><pre>Option A: We can extend terms by 15 days on the next two invoices.
-Option B: We can extend terms by 15 days on the next three invoices if the 0.50% credit is firm on each of them.</pre><p><b>Stored (withheld from the sender)</b> verdict REJECT AGG_CONCESSION_EXCEEDED, RESERVE_BREACH · operations COUNTER_OFFER:EXECUTED, COUNTER_OFFER:EXECUTED · security events 0</p><p><b>Plan</b></p><ol></ol>
+</p><p><b>Reply</b></p><pre>We are not able to accept these terms.</pre><p><b>Stored (withheld from the sender)</b> verdict REJECT AGG_CONCESSION_EXCEEDED, RESERVE_BREACH · operations REJECT_OFFER:EXECUTED · security events 0</p><p><b>Plan</b></p><ol></ol>
 <p><b>Operations</b></p><table><tr><td>none</td></tr></table>
 <p>session S11_ex06_three_invoices-counterparty · trace S11_ex06_three_invoices-counterparty:1 · security events 0</p>
 </body></html>

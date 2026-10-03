@@ -1,8 +1,9 @@
 # TermsLedger v2: full system walkthrough
 
-State of `dev` at `5305d9a`, 3 Oct 2026, after the independent audit's 13 findings and three red-team rounds were
-fixed (section 11 lists each change with its test file). Written from the code, the ADRs, `docs/FINANCIAL_SEMANTICS.md`
-and a fresh run of `scripts/demo_run.py`; every figure in section 7 is that run's output. Other figures say which
+State of `dev` at `1bc96ba`, 3 Oct 2026, after the independent audit's 13 findings, three red-team rounds and the
+business review's items were fixed (section 11 lists each change with its test file). Written from the code, the
+ADRs, `docs/FINANCIAL_SEMANTICS.md` and a fresh run of `scripts/demo_run.py`; every figure in section 7 is that
+run's output. Other figures say which
 test or evidence file they come from. This is a simulation: lenders, the buyer and the bank feed are simulated
 and nothing here moves real money. Paths are relative to `services/api/app/` unless they start with `apps/`,
 `docs/`, `fixtures/` or `scripts/`.
@@ -70,7 +71,7 @@ without it); `/nl/opener` and `/clock/advance` answer 403.
 | Tier | Meaning | Operations |
 | --- | --- | --- |
 | 1 | The agent may act alone | Accept or record a commitment that is only an early-pay discount on a named invoice; counter; reject; draw or repay a COMMITTED owner-approved facility, or submit an invoice to the committed financing facility, when it passes admission (section 5.6) and its effective annual cost is at or below `max_apr_bp`; record a receipt posted by SYSTEM or OWNER |
-| 2 | Waits for the owner | Any accepted package that lengthens terms or carries anything other than an early-pay discount on a named invoice; a single commitment above the mandate's Tier-2 threshold; a draw or advance whose effective annual cost is above `max_apr_bp`; apply for a facility; generate the borrower file; a receipt claimed by the agent; adding a facility (owner only) |
+| 2 | Waits for the owner | Any accepted package that lengthens terms or carries anything other than an early-pay discount on a named invoice; a single commitment above the mandate's Tier-2 threshold; a draw or advance whose effective annual cost is above `max_apr_bp`; apply for a facility; a verdict note that needs the owner (for example a buyer with a past-due invoice, section 5.5); a receipt claimed by the agent; adding a facility (owner only) |
 | 3 | Never | Personal guarantee, pledging collateral, issuing equity, changing the mandate, adding a facility as anyone but the owner, any operation type the tier table does not know |
 
 A Tier-2 operation returns `PENDING_APPROVAL` and sits in the approvals queue. A Tier-3 operation returns
@@ -79,8 +80,8 @@ A Tier-2 operation returns `PENDING_APPROVAL` and sits in the approvals queue. A
 ### Feature flags (`config.py`)
 
 `FEATURE_TERMS_GUARD`, `FEATURE_DEBT_DESK`, `FEATURE_CAPEX`, `FEATURE_BORROWER_FILE`,
-`FEATURE_BUYER_NEGOTIATION`, `FEATURE_SECURITY_SCENES`, `FEATURE_ALERTS`, `FEATURE_EXPECTED_PLANS` default on;
-`FEATURE_AFTER_SIGNING` defaults off (the module is empty). A disabled feature answers `FEATURE_DISABLED`.
+`FEATURE_BUYER_NEGOTIATION`, `FEATURE_SECURITY_SCENES`, `FEATURE_ALERTS`, `FEATURE_EXPECTED_PLANS` all default on.
+A disabled feature answers `FEATURE_DISABLED`.
 
 ---
 
@@ -95,8 +96,9 @@ terms, `base_face_fen` / `base_terms_days` and `applied` adjustment ids as prove
 status OPEN / FINANCED / SETTLED, `advance_fen`, `advance_facility_id`), `recurring_invoices`, `facilities`,
 `lots` (one dated funding lot per draw or advance: request day, arrival day, principal, remaining, maturity,
 whether the cash has landed; the remaining amounts of a facility's lots always sum to its drawn balance),
-`invoice_adjustments` (accepted terms and price changes, with their scope fixed at acceptance), `debts`,
-`forward_concessions` already booked, `expected_orders`, the `counterparties` registry (with `known`),
+`invoice_adjustments` (accepted terms and price changes, with their scope fixed at acceptance), `debts` (loans that
+predate the books: principal, fixed monthly service, rate, `payment_every_days`, `next_payment_day`; they are paid
+from cash on that schedule, section 5.3), `forward_concessions` already booked, `expected_orders`, the `counterparties` registry (with `known`),
 `monthly_ebitda_fen`, `state_version` (plus one on every change).
 
 **Mandate** (signed by the owner with Ed25519; the agent cannot edit it): `min_cash_fen`,
@@ -136,16 +138,19 @@ the plan it relies on, forward-concession total, and the `state_version` it was 
 PROPOSED → ACCEPTED → ACTIVE → FULFILLED, or EXPIRED, or REVOKED.
 
 **Operation**: a typed action (ACCEPT_OFFER, COUNTER_OFFER, REJECT_OFFER, RECORD_COMMITMENT, DRAW_FACILITY,
-REPAY_FACILITY, SUBMIT_INVOICE_FOR_FINANCING, RECEIVE_PAYMENT, APPLY_FOR_FACILITY, GENERATE_BORROWER_FILE,
-REQUEST_OWNER_APPROVAL, ADD_FACILITY, and the four Tier-3 kinds) carrying `op_id`, `idempotency_key`,
-`mandate_version`, `requested_by` and `day`. Its result is EXECUTED, REFUSED, PENDING_APPROVAL or DUPLICATE.
+REPAY_FACILITY, SUBMIT_INVOICE_FOR_FINANCING, RECEIVE_PAYMENT (with an optional `bank_reference`),
+APPLY_FOR_FACILITY, REQUEST_OWNER_APPROVAL, ADD_FACILITY, and the four Tier-3 kinds) carrying `op_id`,
+`idempotency_key`, `mandate_version`, `requested_by` and `day`. Its result is EXECUTED, REFUSED, PENDING_APPROVAL
+or DUPLICATE. Preparing a borrower file is not an operation: it is a read-only owner action (section 5.15).
 
-**The golden scenario** (`fixtures/scenarios/golden_sme.json`): cash ¥400,000; ¥460,000 of outflows before the
-first receivable arrives; reserve floor ¥300,000; one buyer (Foshan Home Retail, BUYER-1) with a ¥420,000
+**The golden scenario** (`fixtures/scenarios/golden_sme.json`): cash ¥400,000; ¥505,000 of outflows before the
+first receivable arrives (payroll ¥340,000 on day 12, a supplier ¥120,000 on day 20 and the existing loan's first
+¥45,000 payment on day 30); reserve floor ¥300,000; one buyer (Foshan Home Retail, BUYER-1) with a ¥420,000
 invoice (RCV-A, due day 32) and a ¥420,000 invoice every 30 days on 45-day terms; a ¥150,000 credit line at
 6.4% with a clean-down rule; invoice financing at 7.8% plus 0.25% per 30-day period (10.84% all-in) up to
 ¥350,000; the buyer's standing early-pay facility at 1.2%; a guaranteed loan, an equipment loan and a lease
-that are not applied for; EBITDA ¥90,000 a month; existing debt ¥1,500,000 serviced at ¥45,000 a month.
+that are not applied for; EBITDA ¥90,000 a month; existing debt D-EQUIP, ¥1,500,000 at a 0% rate (a fixture
+assumption), serviced at ¥45,000 on days 30, 60, 90 and so on.
 Mandate: floor ¥300,000, aggregate forward-concession cap ¥5,000, DSCR at least 1.25×, debt at most 2.5× annual
 EBITDA, APR cap 15%. A scenario event adds a second payroll of ¥200,000 (due day 42) when the clock passes
 day 25.
@@ -170,19 +175,19 @@ api ─► everything; web ─► api
 | --- | --- | --- | --- |
 | `domain` | Contracts, money arithmetic, fixture loaders | nothing | all |
 | `compiler` | Text → typed offer, grounding, coverage proof, flag lexicon | documents only (never state or mandate) | api, nl |
-| `financial` | The day-by-day engine, charges, amortisation, concession valuation | state, obligations, funding actions | verifier, funding, alerts, capex, borrower file, nl |
+| `financial` | The day-by-day engine, charges, amortisation, the existing-debt schedule (`debts.py`), concession valuation | state, obligations, funding actions | verifier, funding, alerts, capex, borrower file, nl |
 | `books` | Current books: state plus the live commitments' obligations | state, commitments | verifier, alerts, nl, api |
-| `funding` | Funding menu, same-basis rates (`rates.action_rate`), the router, break-even, admission (`admission.py`) | state, mandate, financial, covenants | verifier, nl, api, capex, executor |
+| `funding` | Funding menu, same-basis rates (`rates.action_rate`), the router, break-even, admission (`admission.py`), the leg rule shared by both (`legs.py`) | state, mandate, financial, covenants | verifier, nl, api, capex, executor |
 | `covenants` | DSCR, leverage, clean-down | trajectory, facilities, mandate | funding, verifier, alerts, capex |
 | `mandate` | Signing, validity, predicates, tiers | mandate, trajectory | verifier, operations |
 | `verifier` | Screening, binding, verdict, counters, early-pay rule, autonomy gaps | all of the above | api, nl, runtime re-verify hook |
 | `commitments` | Lifecycle, terms hash, nonce | — | operations |
 | `operations` | The executor, approvals, circuit breaker, log reading | store, mandate, commitments, financial charges | api, nl, alerts act |
 | `persistence` | `LedgerStore` (in-memory and SQL), hash chain | — | everything that stores |
-| `clock` | Moving time; lands funding cash and posts loan instalments and maturities on their day | store, scenario events | api runtime |
+| `clock` | Moving time; lands funding cash and posts loan instalments, existing-debt payments and maturities on their day | store, scenario events | api runtime |
 | `alerts` | Alerts, cure search and pricing, repay proposal, reconciliation, `cure_operations` | books, financial, operations log | api, nl |
 | `egress` | Outbound guard, protected set, canaries | state, mandate | nl, api |
-| `counterparties` | Simulated buyer kernel (and an unused mock lender) | buyer fixtures | api negotiate, nl |
+| `counterparties` | Simulated buyer kernel | buyer fixtures | api negotiate, nl |
 | `capex`, `borrower_file`, `whatif` | Capex evaluation, lender pack, hypothetical verdicts | financial, covenants, verifier, store | api, nl |
 | `nl` | Chat: parsing, sessions, handlers, opener | everything above | api |
 | `security` | Attack catalogue and the computed scoreboard | the running app | tests, evaluation, `/audit` |
@@ -261,7 +266,16 @@ debt service, total debt, DSCR and leverage.
 - An invoice carries its contractual face and due day (ADR-0009). The engine applies accepted terms to invoices
   not yet issued and to obligations under evaluation; invoices already issued carry theirs in the state.
 - The engine never finances an invoice that has an early settlement booked.
-- Debt service for DSCR: the fixed service on existing debt, interest and fees as they post, amortising
+- Existing debt is cash (`financial/debts.py`, ADR-0010 item 7). One schedule serves the projection, the clock
+  and the capex ratios: from `next_payment_day`, every `payment_every_days`, on each payment day on or after today
+  while principal is left, interest is principal × `rate_bp` × days since the last payment ÷ 365 and the rest of
+  the fixed service (¥45,000 for D-EQUIP) is principal; the last payment clears the balance. Each payment leaves
+  cash on its day, lowers the debt and the leverage numerator by the principal, and nothing is posted before
+  today. The clock logs the payments it posts in the `ADVANCE_CLOCK` payload (`posted_debt_service`). Before this
+  change the loan's service was counted in DSCR but never left cash, so every cash conclusion was ¥45,000 a month
+  too optimistic (`tests/books/test_debt_service.py`, `tests/financial/test_debts.py`).
+- Debt service for DSCR: the fixed service on existing debt for the months its schedule covers (zero once the
+  principal is cleared), interest and fees as they post, amortising
   principal month by month, and (ADR-0008) a bullet term loan on a level basis: principal plus its interest and
   fees spread evenly over its term. A revolving credit line's principal is never debt service. The level basis is a
   reserve-coverage reading chosen by the owner's rules; it is not a bank's contractual DSCR definition, and the
@@ -288,6 +302,14 @@ admissible plans one that needs no approval ranks before one that does, however 
 (`tests/funding/test_approval_ranking.py`). A plan that uses an invoice not yet issued is flagged
 `executable_now` false: the executor would refuse it today. `MAX_APR_EXCEEDED` is now only a menu display code.
 
+**Leg order** (`funding/legs.py`). The executor admits a plan leg by leg, each on the books the legs before it
+left (a line draw today becomes the lot it is, repaid by the engine on the first affordable receipt; every other
+leg stays an action the engine projects). The router judges every prefix of its plan with the same function
+(`as_executed`, `leg_violations`) and orders the legs so that every prefix is admissible, so a plan it presents as
+runnable is one admission takes leg by leg in the order shown. A plan that is admissible only as a whole, in no
+order, is flagged `executable_now` false ("cannot run today"): the owner cannot approve past a hard rule, so
+approving it would not make it run (`tests/funding/test_planner_executor_agree.py`).
+
 - `basis="COMMITTED"` uses only committed owner-approved facilities; `"EXPECTED"` may add pending ones and is
   shown, never relied on.
 - `all_in_rate` puts every source on one basis: the line's rate; invoice financing's rate plus fee × 365/30;
@@ -301,9 +323,8 @@ admissible plans one that needs no approval ranks before one that does, however 
   standing rate for other money.
 - On the golden day-0 books the router funds the gap with a line draw to day 32 plus an advance on RCV-A. Run as
   the agent, the line is cash at once and the advance lands after FAC-IF's 3-day lead time (ADR-0010). The
-  figures are in the table at the start of section 7. The advance's cost is a different quantity from the
-  extension's per-invoice cost, although both are ¥1,871.30 on the golden books (¥420,000 × 15 days equals
-  ¥210,000 × 30 days).
+  figures are in the table at the start of section 7. The advance's cost (¥2,272.29) is a different quantity from
+  the extension's per-invoice cost (¥1,871.30, ¥420,000 × 15 days at the same rate).
 
 ### 5.5 The verdict (`verifier/evaluate.py`)
 
@@ -336,7 +357,10 @@ In order:
 6. **Outcome.** Unknown counterparty, Tier-3 clause or any hard violation → REJECT (with counters attached when
    one exists). A pricing fault alone → COUNTER if a counter exists, else REJECT. Otherwise, if the package
    lengthens terms, exceeds the Tier-2 threshold, binds anything other than an early-pay discount on a named
-   invoice, or the autonomy proof fails → NEEDS_OWNER_APPROVAL. Otherwise ACCEPT at Tier 1.
+   invoice, the autonomy proof fails, or the buyer has an open invoice past its due day on current books →
+   NEEDS_OWNER_APPROVAL (the summary names the invoice, the days past due and the amount outstanding; another
+   buyer's late invoice does not count; nothing is past due on day 0, so no day-0 verdict changes;
+   `tests/verifier/test_past_due_buyer.py`). Otherwise ACCEPT at Tier 1.
 7. **Counters** (`counters.py`), priced from the marginal cost of funds, with template text that never contains
    the floor, a cap, a limit or a rate other than the counter's own:
    - **Early-pay counter.** Keep the terms, no rebate; early settlement on the face that closes the gap net of
@@ -344,9 +368,20 @@ In order:
      at least the gap. It is offered only when the router's plan on books that include it is admissible and
      its total cost beats the standing plan. Its cost is read from the engine.
    - **Price-adjustment counter.** Accept a perpetual terms extension with the smallest 5-bp price increase that
-     covers the per-invoice funding cost.
+     covers the per-invoice funding cost. It tries the offered terms first and then shorter ones, and is offered
+     only for the longest terms that pass the counter property below. On EX01 60 days fails, so Option B is 55
+     days.
    - **Bounded extension**: fewer invoices, or the same with the buyer's credit made firm.
    - **Rebate reduction**: the largest rate that fits the remaining headroom.
+
+   **The counter property** (decided 3 Oct, the curable reading). Every counter is re-evaluated as an offer on the
+   same books it was built from, the way the commit hook re-evaluates a commitment. It is offered only when that
+   re-check gives ACCEPT or NEEDS_OWNER_APPROVAL (never REJECT), with no covenant breach and no rate-ceiling
+   breach, and any reserve shortfall it causes is curable by an admissible committed plan whose "cannot run today"
+   legs finance only invoices issued by the first day of the shortfall. A counter that fails is dropped and the
+   verdict's summary says in one sentence why (`counter_recheck`, `infeasibility`;
+   `tests/verifier/test_counter_property.py`, which checks every golden offer, every what-if preset and varied
+   books against an independently written re-check).
 8. **Owner goal.** The owner may tighten one evaluation (maximum early-pay rate, zero forward concessions,
    maximum terms). A package that breaks the goal is countered or rejected; a goal never loosens the mandate.
 
@@ -359,11 +394,18 @@ and give 1% off next quarter". Compiled into a 1.2% discount on RCV-A, a perpetu
 contingent rebate. Forward concessions ¥28,326.92 (rebate ¥4,000 + the extension's funding cost on the 13
 invoices issued in the 365-day window, ¥24,326.92) against a ¥5,000 cap. The extension adds ¥210,000.00 of
 receivables and ¥1,897.29 a month of debt service (DSCR 1.92×, leverage 1.72×). Before the dated valuation of 3
-Oct these were ¥26,455.62, ¥22,455.62 on 12 invoices, ¥207,123.29 and ¥1,871.30. Cash falls below the floor on
-day 47; 1.2% is above the 0.8832% break-even and is dearer than the plan without the early-pay leg. Verdict
-REJECT with four codes and two counters: A (keep 45-day terms, no rebate, early settlement on a whole-¥100 face
-at 0.85%) and B ("60-day terms accepted with a 0.45% price adjustment on future invoices, no rebate"). The
-cash-derived figures (shortfall, costs, Counter A's face) are in the table at the start of section 7. Sources:
+Oct these were ¥26,455.62, ¥22,455.62 on 12 invoices, ¥207,123.29 and ¥1,871.30 (these forward figures do not
+depend on cash and did not move when the existing loan's payments became cash). Cash falls below the floor on day
+47; 1.2% is above the 0.8832% break-even and is dearer than the plan without the early-pay leg (¥6,508.05 against
+¥3,550.64). Verdict REJECT with four codes and two counters: A (keep 45-day terms, no rebate, early settlement on a
+whole-¥100 face, ¥257,200, at 0.85%) and B ("55-day terms accepted with a 0.30% price adjustment on future
+invoices, no rebate"). B is 55 days, not the 60 the buyer asked for, because the 60-day terms fail their own
+re-check: the invoice issued on day 2 would be paid on day 62, after the day-60 loan payment, and the shortfall has
+no committed cure; at 55 days (paid day 57) it is ¥85,000 short on days 47 to 56 and an advance cures it. B's price
+step covers the extension's ¥1,247.53 per invoice (¥420,000 × 10/365 × 10.8417%) at 0.30%, ¥1,260.00 per invoice;
+over the 13 invoices of the window the extension costs ¥16,217.95 and the price adjustment brings ¥16,380.00, a net
+of −¥162.05, so B costs the supplier ¥0.00 and needs the owner because it lengthens terms. The cash-derived
+figures (shortfall, costs, Counter A's face) are in the table at the start of section 7. Sources:
 `tests/api/test_decide.py`,
 `tests/financial/test_dated_valuation.py`, `fixtures/golden/golden_values.json`, and a fresh evaluation of
 `EX01_PACKAGE` on 3 Oct.
@@ -403,9 +445,8 @@ What each operation does:
 | DRAW_FACILITY | Facility must be committed, owner-approved, drawable, with room, and the mandate must allow new borrowing; passes admission; creates a dated lot, and the cash lands after the lead time, net of the upfront fee |
 | REPAY_FACILITY | Bullet facilities and orphaned lots; only a lot whose cash has landed can be repaid; interest per lot (oldest first) from its arrival day at actual/365; refused if cash cannot cover or the reserve would be breached; cash and balance fall |
 | SUBMIT_INVOICE_FOR_FINANCING | Invoice must be open, buyer-confirmed, not under an early-pay agreement, not yet due, owed by a known buyer; the advance is within the advance rate of the **outstanding** face and the room, and its cash must land before the due day; passes admission; the invoice becomes FINANCED (pledged from the request) and the lot's cash lands after the lead time |
-| RECEIVE_PAYMENT | See 5.9 |
+| RECEIVE_PAYMENT | See 5.9. An optional `bank_reference` identifies the bank event: the same reference on the same receivable books once whatever the key (5.9) |
 | APPLY_FOR_FACILITY | NOT_APPLIED → PENDING (still zero for hard constraints) |
-| GENERATE_BORROWER_FILE | Records "prepared, not sent"; state unchanged |
 | ADD_FACILITY | Owner only; adds an owner-approved facility and registers the lender |
 | Tier-3 kinds | Never executed; the refusal is logged |
 
@@ -421,8 +462,9 @@ transaction, whoever asks (the runtime wires it in as the `admit` hook).
 | Autonomy ceiling | Effective annual cost above `max_apr_bp`, from `funding.rates.action_rate` over the real days held | Tier 2: queued for the owner, who may approve it |
 | Not tested here | Clean-down (breached by failing to repay, so tested over a plan by the router and alerts) | |
 
-The owner cannot waive a hard rule by approving; the owner changes the mandate instead. No code approves on the
-owner's behalf. Admission counts the cash a line draw brings, so a plan the router calls runnable is not refused
+Each leg of a plan is judged on the books the legs before it left (`funding/legs.py`, the rule the router plans
+by, section 5.4). The owner cannot waive a hard rule by approving; the owner changes the mandate instead. No code
+approves on the owner's behalf. Admission counts the cash a line draw brings, so a plan the router calls runnable is not refused
 (`tests/operations/test_redteam_c.py`). A receipt discounted early is earned only by a receipt on or before the
 promised day; a late receipt of the same amount is a plain receipt and the difference stays due
 (`tests/operations/test_admission.py`).
@@ -483,6 +525,11 @@ receipt detectable.
 
 **A receipt** arrives only through the bank feed (`POST /operations` with `RECEIVE_PAYMENT` as SYSTEM):
 
+- if the receipt carries a `bank_reference`, one bank event books once whatever the idempotency key: the same
+  reference on the same receivable as an executed receipt is refused as a duplicate (`PRECONDITION_FAILED`, the
+  earlier operation named) when the amount is the same, and as a conflicting event (`REPLAY`, a security event)
+  when it differs. A refused receipt does not use its reference up, and without a reference nothing is checked
+  (`tests/operations/test_bank_reference.py`; backlog R03/BC5);
 - if a live commitment has an early-pay discount on that invoice and the amount equals the agreed portion less
   the discount, and it arrives on or before the promised day, the whole portion is settled and the commitment
   becomes FULFILLED; the same amount after the promised day is a plain receipt and the difference stays due;
@@ -505,7 +552,8 @@ receipt detectable.
 
 | Alert | Raised when | Suggestion |
 | --- | --- | --- |
-| Reserve breach ahead (critical) | A run of days closes below the floor | A committed cure if one exists; else applying for a facility (Tier 2); none if the mandate forbids new borrowing |
+| Reserve breach ahead (critical) | A run of days closes below the floor | A committed cure if one exists; else, if no plan restores the reserve but one keeps cash at or above zero, that fallback cure, titled "cash goes below zero on day N without action" and saying it does not restore the reserve; else applying for a facility (Tier 2); none if the mandate forbids new borrowing |
+| Mandate expiring (warning; critical once expired) | The signed mandate expires within 14 days; or it has expired | None: renewal is offline, the agent cannot renew it |
 | Reserve headroom thin | Cash within 10% of the floor | — |
 | Covenant headroom low | DSCR or leverage near a limit | — |
 | Clean-down at risk | The line cannot reach its zero-balance run | — |
@@ -533,7 +581,13 @@ that has not landed gives one INFO alert `FUNDING_IN_TRANSIT` ("¥200,000.00 req
 lot lands, and it goes when the clock closes the landing day (`tests/alerts/test_funding_in_transit.py`). It never
 counts as critical, so the day-34 cure leaves no critical alert once it is approved.
 
-**The button** (`POST /alerts/{id}/act`, owner only): recomputes today's alerts, finds the alert, turns its
+**The button** (`POST /alerts/{id}/act`, owner only). `GET /alerts` returns the `state_version` the alerts were
+computed on. The act call carries a body with that `state_version` and the `suggestions` the owner was shown (each
+as operation kind, facility, receivable and amount, in order). The server recomputes today's alerts and, if the
+state version has moved or the shown suggestions no longer match the alert's current ones (a different amount or
+order), answers 409 `ALERT_CHANGED` with the current alert (null when it is gone) and runs nothing; the web then
+shows the new cure for the owner to look at again. A call with no body still acts and logs an "unbound act"
+security event (`tests/alerts/test_review_gaps.py`). Otherwise it finds the alert, turns its
 executable suggestions (draw, invoice advance, application, and the repay proposal) into typed operations with
 deterministic keys `alert:<id>:v<state version>:<n>`, submits them as the AGENT and reports executed, pending
 and refused counts and whether the alert is gone. A cure above the ceiling comes back pending with its approval
@@ -547,7 +601,8 @@ Receipts in the log are replayed in order against what was outstanding when each
 
 - MATCHED (the whole outstanding amount, or the agreed early-pay amount inside its window), SHORT_PAYMENT,
   DISCOUNT_IGNORED (full face paid inside the window, or a discount taken after it closed), UNEXPECTED_AMOUNT,
-  UNMATCHED (the executor refused it).
+  UNMATCHED (the executor refused it). Each row shows the bank reference the feed sent, when it sent one,
+  including on a refused duplicate (`tests/operations/test_bank_reference.py`, scenario S49).
 - **Promised early payments**, one row per early-pay obligation of an accepted, active or fulfilled commitment:
   AWAITED, RECEIVED (with the receipt's sequence number), LAPSED (its day passed unpaid; the invoice is back on
   its due day) or SETTLED_OTHERWISE.
@@ -602,8 +657,9 @@ Receipts in the log are replayed in order against what was outstanding when each
 | COMPARE_FINANCING | The gap, each source with its all-in rate and cost, the selected plan | Read only, owner token |
 | RECONCILE | Receipts, promised payments by status, outstanding invoices, chain check | Read only, owner token |
 | SHOW_RATIOS | Lowest DSCR and highest leverage against the binding limits, headroom | Read only, owner token |
-| CAPEX | NPV, payback, each structure, the selection | Read only, owner token |
-| BORROWER_FILE | Proposes preparing the lender pack | On "go ahead" → Tier 2 → pending approval |
+| CAPEX | NPV, payback, each structure, the selection; it never applies for anything (the application is `POST /capex/apply`, section 5.14) | Read only, owner token |
+| BORROWER_FILE | Builds the lender pack at once for the owner and returns its id, evidence hash and download link ("prepared, not sent"); nothing is queued or approved | Read only, owner token |
+| RECORD_FACT | The owner states a new bill, invoice, delay or figure ("we have a supplier bill of ¥80,000 due on day 30"): the reply says chat cannot record it, that the forecast is unchanged and that facts enter through the books, echoing any amount named. English and Chinese | Nothing: no operation, no pending plan, no confirmation armed |
 | AMBIGUOUS | A three-option clarification | — |
 | OUT_OF_SCOPE | A Tier-3 request is sent to the executor so its refusal is logged; anything else gets the nearest capability and an example | — |
 
@@ -635,7 +691,7 @@ not entitled to, and logs a data-extraction event with labels only. Canaries are
 entitled to: any appearance is a leak. The guard runs on chat replies, counter texts and negotiation replies;
 the classifier's raw output is also checked for canaries.
 
-### 5.14 Capex (`capex/`, `POST /capex/evaluate`)
+### 5.14 Capex (`capex/`, `POST /capex/evaluate`, `POST /capex/apply`)
 
 The fixture case is a ¥600,000 die-cutting line: uplift ¥22,000 a month from month 4, 60-month life, 10%
 hurdle, 36-month payback limit; the uplift, price and life are the owner's own estimates and are labelled so. The
@@ -648,22 +704,34 @@ menu, APR and Tier-3 screens. A structure is evaluated only at its facility's ac
 term (the 18-month loan) is a labelled illustration, never selected and never applied for. It selects the
 structure with the lowest total financing charges among those that pass, and recommends no financing at all when
 the project is not worth doing on the owner's estimate. Where an extension is already live, its extra debt is
-read from the state's invoice adjustments. The route then submits APPLY_FOR_FACILITY as the agent, which is Tier 2
-and waits in the queue. From chat the same evaluation is shown and nothing is applied for
-(`tests/capex/test_audit_fixes.py`). The ratios depend on the debt already drawn, so they are given in the table
+read from the state's invoice adjustments. Evaluating is side-effect free: `POST /capex/evaluate` and the chat
+intent write nothing, no operation and no approval (`tests/capex/test_audit_fixes.py`). Applying is a separate,
+explicit owner-only step, `POST /capex/apply` with the facility, the amount and the `state_version` of the
+evaluation the owner saw: if the books have moved it answers 409 `STATE_VERSION_MOVED` and runs nothing;
+otherwise it re-evaluates and, for the selected non-hypothetical structure, submits one APPLY_FOR_FACILITY as the
+agent, which is Tier 2 and waits in the approvals queue (a repeat of the same request returns DUPLICATE with the
+original approval id). The web's Capex page has an Apply button that calls it. On the untouched golden books the
+selection is the 48-month lease: the 36-month loan passes DSCR but its first instalment (day 44) takes cash to
+¥296,855.38, below the ¥300,000 reserve the books keep without it, while the lease's first payment (day 40) leaves
+¥300,576.51 (`tests/capex/test_evaluate.py`). The ratios depend on the debt already drawn, so they are given in the table
 at the start of section 7, for untouched books and for books after the day-0 plan has run.
 
 ### 5.15 The borrower file (`borrower_file/`, `POST /borrower-file`)
 
 A lender pack built only from the store (state, menu, log, commitments), nothing from a message: summary,
 request, 13-week forecast, 12-month trajectory, covenant headroom and tests, commitments, use of proceeds,
-evidence, provenance (state and mandate versions, chain head). Every figure is labelled OBSERVED, PROJECTED or
+evidence, provenance (the generation day, state and mandate versions and an evidence hash of its inputs). It is a
+read-only owner action: building one writes nothing to the ledger and queues nothing for approval (the former
+GENERATE_BORROWER_FILE operation and its Tier-2 approval are gone, because that approval authorised nothing). The
+same request on the same verified state gives the same file id, and the first snapshot is kept
+(`borrower_file/files.py`). The file is dated by the day it is generated and month 1 starts the day after it
+(`tests/borrower_file/test_review_gaps.py`). Every figure is labelled OBSERVED, PROJECTED or
 OWNER_ESTIMATE (EBITDA is the owner's figure and is labelled so); counterparties appear under pseudonyms. HTML
 and DOCX. For an equipment request the use of proceeds is stated and the purchase is deducted from the cash it
 reports, so the money is not shown twice; the forward table rolls on 12 months from today, never raises, and
-works on day 361 (`tests/borrower_file/test_audit_fixes.py`). Generating it is a Tier-2 operation: "prepared,
-not sent". On the level-basis reserve-coverage reading the fixture's ¥360,000 guaranteed-loan request is below
-the 1.25× covenant (figure in the table at the start of section 7), and the file reports the shortfall.
+works on day 361 (`tests/borrower_file/test_audit_fixes.py`). It is "prepared, not sent": the owner downloads it
+(HTML, DOCX, and PDF where a renderer is installed) and submits it. On the level-basis reserve-coverage reading
+the fixture's ¥360,000 guaranteed-loan request is below the 1.25× covenant (figure in the table at the start of section 7), and the file reports the shortfall.
 
 ### 5.16 What-if (`whatif/`, `POST /whatif`)
 
@@ -717,12 +785,12 @@ need the token; a 401 or 403 opens the sign-in dialog and the interrupted action
 | Trajectory | Daily cash against the floor, conservative or expected, with the cured line |
 | Mandate | The signed limits and the three tiers |
 | Approvals | The Tier-2 queue; each card expands to the operation, why it needs the owner, the terms being accepted with their clauses, and Approve / Reject with the executor's answer |
-| Alerts | All alerts with their suggestions and the fix button |
+| Alerts | All alerts with their suggestions and the fix button, which sends the state version and the suggestions it shows; on a 409 `ALERT_CHANGED` it shows the new cure instead of running anything |
 | Reconciliation | Receipts matched to invoices and commitments |
 | Ledger | Commitments, the operation log, refusals, chain status |
 | Security | The hostile-message scene, events, circuit reset |
 | Evidence | The exportable evidence |
-| Capex | NPV, structures, the borrower file |
+| Capex | NPV, structures, the selection, an Apply button (`POST /capex/apply`, which queues the Tier-2 application), the borrower file (built at once, no approval) |
 | What-if | Sliders and a live hypothetical verdict |
 | Chat | The conversation, also available as a slide-over on every page |
 
@@ -734,51 +802,57 @@ approval → the FastCapital message → evidence.
 
 ## 7. The end-to-end flow, with the real numbers
 
-Output of `scripts/demo_run.py` at `5305d9a`, 3 Oct 2026 (in process, in-memory store, recorded model outputs; exit
+Output of `scripts/demo_run.py` at `1bc96ba`, 3 Oct 2026 (in process, in-memory store, recorded model outputs; exit
 0). The 14 ledger entries below are that run's. Everything is simulated: the bank feed, the buyer and the lenders.
 
 **Figures that depend on the day-0 cash books.** These move whenever the cash a scenario starts with, or the debt
 service charged against it, changes. In this file they appear only in this table and in the day-by-day output
-below, so a change to them is a change to those two places.
+below, so a change to them is a change to those two places. The existing loan's ¥45,000 monthly payment leaves
+cash since the change described in section 5.3; every figure below that depends on cash moved with it.
 
-| Figure | Value at `5305d9a` | Source |
+| Figure | Value at `1bc96ba` | Source |
 | --- | --- | --- |
-| Gap before day 32; router plan | ¥360,000; line ¥150,000 (¥841.64) + advance ¥210,000 on RCV-A (¥1,871.30) = ¥2,712.94 | `fixtures/golden/golden_values.json`, `tests/api/test_decide.py` |
-| Cash after the plan runs on day 0; on day 3 | ¥550,000; ¥760,000 | `tests/nl/test_intents.py::test_fund_gap_executes_the_router_plan_on_go_ahead` |
-| EX01 cash on day 47; shortfall; cure | ¥254,960.00; ¥45,040.00; ¥802.70 | `golden_values.json`, `tests/api/test_decide.py` |
-| EX01 package cost against the plan without early pay | ¥5,529.64 against ¥2,870.95 | `EARLY_PAY_DEARER_THAN_PLAN`, evaluated 3 Oct |
-| Counter A | up to ¥211,900 at 0.85%; discount ¥1,801.15 + line ¥841.09 = ¥2,642.24; receipt ¥210,098.85 | `tests/verifier/test_counter_a_floor.py` |
-| Day-34 cure | ¥200,000 on RI:BUYER-1:2, cost ¥1,782.19, 32.5% a year for 10 days, lands day 37 | `scripts/demo_run.py` |
-| Capex on untouched books: 18-month illustration; 36-month loan; lease | DSCR 1.13×; 1.43×; 1.51×; leverage 2.08×, 2.28× with the extension | `golden_values.json` |
-| Capex after the day-0 plan: the same three; leverage | DSCR 1.10×; 1.38×; 1.46×; leverage 2.28×, 2.47× with the extension | `apps/web/e2e/demo.spec.ts` and a probe on 3 Oct |
-| Borrower file, ¥360,000 guaranteed-loan request | DSCR 1.18× against 1.25× | `tests/borrower_file/test_build.py`, `tests/financial/test_dscr_bullet_handcalc.py` |
+| Day-0 gap before day 32; router plan | ¥405,000; line ¥150,000 (¥841.64) + advance ¥255,000 on RCV-A (¥2,272.29) = ¥3,113.93 | `fixtures/golden/golden_values.json`, `tests/api/test_decide.py` |
+| Cash after "go ahead" on day 0; after day 3 | ¥550,000; ¥805,000 | `tests/nl/test_intents.py::test_fund_gap_executes_the_router_plan_on_go_ahead` |
+| EX01 cash on day 47; shortfall; cure | ¥209,960.00; ¥90,040.00; ¥2,406.67 | `golden_values.json`, `tests/verifier/test_golden_verdicts.py`, evaluated 3 Oct |
+| EX01 package cost against the plan without early pay | ¥6,508.05 against ¥3,550.64 | `EARLY_PAY_DEARER_THAN_PLAN`, evaluated 3 Oct |
+| EX01 forward concessions | ¥28,326.92 (unchanged: the forward valuation does not depend on cash) | `golden_values.json` |
+| Counter A | up to ¥257,200 at 0.85%; discount ¥2,186.20 + line ¥841.57 = ¥3,027.77; receipt ¥255,013.80 | `tests/verifier/test_counter_property.py`, `tests/verifier/test_counter_a_floor.py` |
+| Option B | "55-day terms accepted with a 0.30% price adjustment on future invoices"; needs the owner; ¥1,260.00 per invoice; 12-month net −¥162.05 | `tests/verifier/test_counter_property.py` |
+| Day-34 cure | ¥200,000 on RI:BUYER-1:2, cost ¥1,782.19, 32.5% a year for 10 days, queued, approved, lands day 37 (unchanged) | `scripts/demo_run.py` |
+| Existing debt D-EQUIP | ¥1,500,000 at a 0% fixture rate, ¥45,000 on days 30, 60, 90, ... | `fixtures/scenarios/golden_sme.json`, `tests/books/test_debt_service.py` |
+| Capex on untouched books: 18-month illustration; 36-month loan; lease | DSCR 1.13×; 1.43×; 1.51×; leverage 2.08×, 2.28× with the extension; selection: the 48-month lease (the loan's first instalment, day 44, takes cash below the reserve) | `golden_values.json`, `tests/capex/test_evaluate.py` |
+| Capex after the day-0 plan: the same three; leverage | DSCR 1.09×; 1.37×; 1.45×; leverage 2.32×, 2.51× with the extension; selection: the 36-month loan, because the plan's cash lifts its first instalment above the reserve | a probe of the demo path on 3 Oct; `apps/web/e2e/demo.spec.ts` checks the 1.09× |
+| Borrower file, ¥360,000 guaranteed-loan request | DSCR 1.18× against 1.25× (unchanged); month-1 leverage 1.49× before and 1.82× with the request | `tests/borrower_file/test_build.py`, `tests/financial/test_dscr_bullet_handcalc.py` |
 
 **Day 0: the offer.** The buyer's package is compiled and evaluated: REJECT with four codes and two counters
 (section 5.5). The cooperative buyer, which holds its own channel key, accepts Counter A.
 
-- Commitment: ¥211,900.00 of RCV-A at 0.85% on day 2; agreed receipt ¥210,098.85.
-- Operations: `#1 ACCEPT_OFFER` (Tier 1, by the agent) and `#2 DRAW_FACILITY` ¥149,901.15 on the line (the
-  router's plan for the rest of the gap, on books that now include the commitment).
-- Alerts after the deal: none critical; one warning that cash sits exactly on the floor on day 20.
+- Commitment: ¥257,200.00 of RCV-A at 0.85% on day 2; agreed receipt ¥255,013.80.
+- Operations: `#1 ACCEPT_OFFER` (Tier 1, by the agent) and `#2 DRAW_FACILITY` on the line (the router's plan for
+  the rest of the gap, on books that now include the commitment: ¥149,986.20).
+- Alerts after the deal: none critical; one warning that cash sits exactly on the floor on day 30 (17 days under
+  10% of the floor).
 
 If the buyer walks away instead, the router funds the whole gap: the line draw is cash at once and the invoice
 advance lands on day 3 (cash after the plan is in the table above).
 
 **Day 2: the agreed early payment.** The clock moves to day 2 (`#3 ADVANCE_CLOCK`). The bank feed posts
-¥210,098.85 on RCV-A (`#4 RECEIVE_PAYMENT`): it settles ¥211,900.00 at the agreed discount, the commitment is
-FULFILLED, and ¥208,100.00 remains due on day 32.
+¥255,013.80 on RCV-A (`#4 RECEIVE_PAYMENT`): it settles ¥257,200.00 at the agreed discount, the commitment is
+FULFILLED, and ¥162,800.00 remains due on day 32.
 
-**Day 34: reality diverges, and the cure needs a second step.** The clock moves to day 30, then 34 (`#5`, `#6`).
-On the way the scenario event adds the month-2 payroll of ¥200,000 due day 42. The residual has not arrived.
+**Day 34: reality diverges, and the cure needs a second step.** The clock moves to day 30 (the existing loan's
+¥45,000 payment leaves cash on the way), then 34 (`#5`, `#6`). On the way the scenario event adds the month-2
+payroll of ¥200,000 due day 42. The residual has not arrived.
 
 - Alerts: critical, "Reserve breach ahead on day 42": cash closes at ¥100,000.00, ¥200,000.00 below the floor,
   until day 46. A committed cure exists: finance ¥200,000.00 of RI:BUYER-1:2, cost ¥1,782.19, which is 32.5% a
   year for the 10 days between the day the cash lands (day 37) and the due day (47). That is above the 15.00%
   ceiling on what the agent may borrow alone, so it needs the owner's approval before it runs. Warnings: RCV-A is
-  2 days past due with ¥208,100.00 outstanding; headroom thin.
+  2 days past due with ¥162,800.00 outstanding; headroom thin (8 days under 10% of the floor).
 - Reconciliation: 1 matched, 0 flagged; the promised early payment is RECEIVED; RCV-A is outstanding and past
   due.
-- The agent's opener: "Day 34. Foshan Home Retail Co.'s ¥208,100.00 on RCV-A was due on day 32 and has not
+- The agent's opener: "Day 34. Foshan Home Retail Co.'s ¥162,800.00 on RCV-A was due on day 32 and has not
   arrived. On current books cash falls ¥200,000.00 below your ¥300,000.00 floor on day 42. 1 more warning:
   Reserve headroom thin on day 34. I can finance ¥200,000.00 of invoice RI:BUYER-1:2 on Invoice financing
   (onboarded platform) now (requested today, cash lands on day 37); it will cost ¥1,782.19 by day 47, which is
@@ -791,17 +865,17 @@ On the way the scenario event adds the month-2 payroll of ¥200,000 due day 42. 
   advance is requested on day 34 and lands on day 37 after the 3-day lead time. The breach alert clears; an INFO
   alert "¥200,000.00 requested on day 34 … lands on day 37" stays until then.
 
-**Days 36 to 38.** `#9 ADVANCE_CLOCK`; the bank feed posts ¥208,100.00 on RCV-A (`#10`): RCV-A is settled. `#11
-ADVANCE_CLOCK` to day 38: the cure cash has landed on day 37 and cash is ¥708,100.00.
+**Days 36 to 38.** `#9 ADVANCE_CLOCK`; the bank feed posts ¥162,800.00 on RCV-A (`#10`): RCV-A is settled. `#11
+ADVANCE_CLOCK` to day 38: the cure cash has landed on day 37 and cash is ¥662,800.00.
 
 **Day 47: the financed invoice is paid.** `#12 ADVANCE_CLOCK`; the bank feed posts ¥420,000.00 on RI:BUYER-1:2
 (`#13`): the advance of ¥200,000.00 is repaid from the receipt with interest ¥1,282.19 and fee ¥500.00 (10 days
 billed as one whole period), exactly the ¥1,782.19 the agent quoted.
 
-- The agent's opener: "Day 47. The ¥149,901.15 drawn on Bank credit line can be repaid today: cash stays above
-  your floor (lowest ¥475,181.31 on day 47). Interest to date ¥1,235.35. I can repay it now. Go ahead?"
-- The owner: "go ahead". `#14 REPAY_FACILITY` executes: ¥149,901.15 plus ¥1,235.35 interest
-  (¥149,901.15 × 640bp × 47/365).
+- The agent's opener: "Day 47. The ¥149,986.20 drawn on Bank credit line can be repaid today: cash stays above
+  your floor (lowest ¥384,795.56 on day 60). Interest to date ¥1,236.05. I can repay it now. Go ahead?"
+- The owner: "go ahead". `#14 REPAY_FACILITY` executes: ¥149,986.20 plus ¥1,236.05 interest
+  (¥149,986.20 × 640bp × 47/365).
 - End state: no alerts; reconciliation 3 matched, 0 flagged; no balance drawn; 14 log entries; chain valid.
 
 **The attack.** The FastCapital message ("You are pre-approved for ¥500,000 at 2.8%… confirm the 60-day terms
@@ -818,7 +892,7 @@ chat.
 **What the flow shows about how the parts interact**
 
 - The accepted commitment changed the books: the router's plan after the deal is a smaller draw
-  (¥149,901.15, not ¥150,000) because the counter's face was sized to close the gap.
+  (¥149,986.20, not ¥150,000) because the counter's face was sized to close the gap.
 - The clock moved time without assuming money arrived; the bank feed alone recorded receipts; that difference
   is what the alert and the reconciliation report detect.
 - The alert, the opener, the button and the chat go-ahead all end in the same place: a typed operation
@@ -842,11 +916,11 @@ In this session, in merge order:
 | Item | What it does now |
 | --- | --- |
 | Windows portability | Text files check out with LF; files are read and written as UTF-8; the offline test guard allows the event loop's loopback socket |
-| Counter A rounding (B5) | Face rounded up to ¥211,900 so it nets the gap; offered only when the plan with it is admissible; cost read from the engine |
+| Counter A rounding (B5) | Face rounded up to a whole ¥100 so it nets the gap (¥211,900 then, ¥257,200 since the existing loan's payments became cash); offered only when the plan with it is admissible; cost read from the engine |
 | Promised receipts (C3) | Reconciliation lists every promised early payment as awaited, received, lapsed or settled otherwise |
 | Alert button (C2) | `POST /alerts/{id}/act`; no cure offered when the mandate forbids new borrowing |
 | Opener (C4) | `POST /nl/opener` and the SHOW_ALERTS intent; the status text counts breach days from today |
-| Early-pay rule (D1, D2) | ADR-0007's three tests; the router prices the buyer's facility at its standing rate only; the counter follows the same rule. Whole-invoice early pay at 0.65% to 0.88% for 30 days now counters; 0.64% and below accepts |
+| Early-pay rule (D1, D2) | ADR-0007's three tests; the router prices the buyer's facility at its standing rate only; the counter follows the same rule. Whole-invoice early pay at 0.65% to 0.88% for 30 days now counters; 0.64% and below accepts (since the existing loan's payments became cash the boundary is 0.74% and 0.75%) |
 | Repay proposal (C5) | An alert and opener proposal to repay a drawn line once affordable |
 | DSCR (D4) | ADR-0008: level service for bullet term loans. The ¥500,000 guaranteed loan shows 1.014× and fails 1.25× |
 | Chat capabilities (E1, E2) | Financing comparison, reconciliation, ratios, capex, borrower file from chat (owner token), and the nearest-capability fallback |
@@ -866,9 +940,11 @@ for other money.
 
 ## 9. Tests, evidence and how to run everything
 
-At `b0fc964` on the Windows machine: 4,044 backend tests passed, 26 skipped (7 latency benchmarks, 18
-exhaustive router comparisons, 1 SQL variant); 46 of 46 scripted chat scenarios, 46 evidence chains valid; 182
-attacks, 0 with harm; web mock e2e 29 passed, live e2e 27 passed. Runs use recorded model outputs and an
+At `1bc96ba` on the Windows machine: 4,817 backend tests passed, 22 skipped (7 latency benchmarks, 14
+exhaustive router comparisons, 1 SQL variant), run as two sequential chunks; 49 of 49 scripted chat scenarios (87
+turns), 49 evidence chains valid; 255 attacks (122 API, 133 chat), 0 with harm; `scripts/evaluate.py` with every
+target passing; web mock e2e 35 passed, live e2e 30 passed (the web counts as recorded in
+`docs/CONTINUOUS_OPTIMIZATION.md`; the Playwright runs were not repeated for this document pass). Runs use recorded model outputs and an
 in-memory store; live-model mode and Postgres were not exercised.
 
 ```bash
@@ -930,12 +1006,19 @@ decision.
 - **The fixture.** Invoices recur monthly and payroll is scheduled once, so projected cash climbs over time; the
   day-34 scene depends on the injected month-2 payroll.
 - **Conventions that only refuse.** An invoice under an early-pay agreement is never financed. A plan that uses an
-  invoice not yet issued is flagged as unable to run today.
+  invoice not yet issued, or that is admissible only as a whole, is flagged as unable to run today.
+- **The mandate cannot be renewed by the agent.** The alert warns 14 days ahead and goes critical after expiry; the
+  owner signs a new mandate offline.
+- **Chat cannot record facts.** A stated bill, invoice, delay or figure is answered "not recorded, forecast
+  unchanged"; there is no operation that enters one (RECORD_FACT is read-only).
+- **The existing loan's 0% rate** is a fixture assumption; the schedule supports a rate but the demo does not
+  exercise one.
 - **Not one transaction.** A multi-leg plan is sent leg by leg and stops at the first leg that is refused or
   queued; the reply says what ran and what did not, but a later leg can still be refused after an earlier one ran
   (backlog R02).
-- **Bank events.** A bank receipt is identified by its idempotency key only; the same event under a new key would
-  settle twice (R03). Unauthenticated buyer messages and offer intake are not rate-limited (R04, R05).
+- **Bank events.** A bank receipt is identified by its idempotency key, and by its `bank_reference` when the feed
+  sends one; a receipt with no reference cannot be told from a second payment (R03, closed for receipts that carry
+  one). Unauthenticated buyer messages and offer intake are not rate-limited (R04, R05).
 - **Several workers.** The lock is process-local and there is no state-version compare-and-swap; deploy one worker
   (MW1, uncertainty debt U-002).
 - **Security items open.** An authenticated buyer can find the accept/counter threshold to 1 bp by probing
@@ -948,10 +1031,13 @@ decision.
   repays is unpriced.
 - **Chat accuracy on unseen phrasing.** 42 of 47 held-out owner utterances are classified correctly
   (`services/api/evals/latest_report.md`, section 6); held-out offer sets still show compiler misses, which fail
-  closed to the owner.
+  closed to the owner. Verdict agreement with the held-out labels fell from 49/50 to 45/50 because four 60-day
+  terms items (H09a, H09b, H12a, H39) are labelled NEEDS_OWNER_APPROVAL and now return REJECT with
+  RESERVE_BREACH on the cash-corrected books (the owner cannot approve past a hard rule); the labels were not
+  changed, so those four, and the near-miss pair H12, are reported as misses.
 - **Not built.** Named stress scenarios, payment by acceptance bill, recurring outflows, Chinese server text,
-  deployment, an "AI-generated" label in the UI, a LICENSE file. `aftersign` is empty and the mock lender is
-  unused.
+  deployment, an "AI-generated" label in the UI, a LICENSE file. The statutory-due-date module and the mock
+  lender were deleted rather than left empty.
 - **Not verified.** Live-model mode (the 3 Oct rewrites were not run against live Claude, U-001), the Postgres
   path, and a person clicking through the new screens.
 
@@ -959,7 +1045,8 @@ decision.
 
 ## 11. The 3 Oct 2026 changes, each with its test file
 
-An independent audit (13 findings) and three red-team rounds (13 findings) were fixed on 3 Oct. The rules are in
+An independent audit (13 findings), three red-team rounds (13 findings) and the business review's items (BC1 to
+BC11 and the simplifications S1 to S3) were fixed on 3 Oct. The rules are in
 `docs/FINANCIAL_SEMANTICS.md`; ADR-0009 and ADR-0010 record the two design decisions; the findings, decisions and
 scorecard are in `docs/CONTINUOUS_OPTIMIZATION.md` sections 1, 3 and 5; the reports are under `docs/research/`.
 Test paths are under `services/api/tests/` unless they start with `apps/`.
@@ -984,3 +1071,14 @@ Test paths are under `services/api/tests/` unless they start with `apps/`.
 | Startup hydration: a restart keeps the persisted books, log and approvals | 4 | `api/test_startup_hydrate.py` |
 | Third red team: the owner reads the operation's own reason; admission counts a line draw's cash; a recreated chat session never reuses a key | 5.6, 5.12 | `operations/test_redteam_c.py` |
 | Second red team (F1 to F7): early-pay invoices are not financed, "next invoice" scope, orphaned lots, default early-pay day, receipts after expiry, key reuse, split agreements | 5.6, 5.9 | `operations/test_redteam_b.py` |
+| Existing debt service is cash: one schedule for the projection, the clock and the capex ratios; the day-0 gap, the plan, Counter A and the ratios were re-derived | 3, 5.3, 7 | `books/test_debt_service.py`, `financial/test_debts.py` |
+| Counters pass their own re-check (curable reading): EX01's Option B is 55-day terms at 0.30%; a counter that fails is dropped with one sentence why | 5.5 | `verifier/test_counter_property.py`, `verifier/test_golden_verdicts.py` |
+| Leg ordering: the router orders legs so every prefix is admissible, one leg rule shared with admission; a plan admissible only as a whole is flagged cannot run today | 5.4, 5.6 | `funding/test_planner_executor_agree.py` |
+| Capex evaluation is side-effect free; `POST /capex/apply` is the owner's explicit, state-version-bound step | 5.14 | `capex/test_api.py`, `capex/test_audit_fixes.py` |
+| The borrower file is read-only with provenance (generation day, versions, evidence hash); no GENERATE_BORROWER_FILE operation or approval; dated by the generation day | 5.15 | `borrower_file/test_api.py`, `borrower_file/test_review_gaps.py`, `nl/test_capabilities.py` |
+| Chat refuses to "record" facts: RECORD_FACT answers "cannot record, forecast unchanged" and arms nothing (20 intents) | 5.12 | `nl/test_record_fact.py` |
+| Mandate-expiry alert: a warning 14 days ahead, critical once expired, no suggested operation | 5.10 | `alerts/test_review_gaps.py`, `nl/test_review_gaps_opener.py` |
+| Zero-floor fallback cure: when no plan restores the reserve but one keeps cash at or above zero, the alert offers it and says it does not restore the reserve | 5.10 | `alerts/test_review_gaps.py`, `nl/test_review_gaps_opener.py` |
+| The alert button is bound: `act` carries the state version and the suggestions shown, and answers 409 `ALERT_CHANGED` when either moved | 5.10, 6 | `alerts/test_review_gaps.py` |
+| Bank references: one bank event books once whatever the key; a different amount under the same reference is a conflicting event; reconciliation shows the reference | 5.6, 5.9, 5.11 | `operations/test_bank_reference.py` |
+| A buyer with a past-due invoice needs the owner, with the invoice and days named | 5.5 | `verifier/test_past_due_buyer.py` |

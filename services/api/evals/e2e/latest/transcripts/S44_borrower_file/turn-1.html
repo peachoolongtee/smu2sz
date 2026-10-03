@@ -3,10 +3,10 @@
 .tag{display:inline-block;padding:2px 8px;border-radius:10px;background:#e3f5e8}
 pre{white-space:pre-wrap;background:#f5f6f8;padding:12px;border-radius:6px}table{border-collapse:collapse;width:100%}
 td{border-top:1px solid #e3e5e8;padding:4px 6px;vertical-align:top}</style></head><body>
-<h1>S44_borrower_file · turn 1 <span class="tag">PASS</span></h1><p>Prepare the borrower file: proposed first, then queued for the owner&#x27;s approval on a direct go-ahead (prepared, not sent)</p>
+<h1>S44_borrower_file · turn 1 <span class="tag">PASS</span></h1><p>Prepare the borrower file: built at once for the owner with its provenance and a download id; nothing is queued or approved (prepared, not sent)</p>
 <p><b>OWNER</b>:</p>
 <pre>prepare the borrower file for the term loan, ¥600,000</pre><p><b>Intent</b> BORROWER_FILE · <b>Verdict</b> —
-</p><p><b>Reply</b></p><pre>Prepare the borrower file for FAC-ETL, ¥600,000.00 (prepared, not sent). It needs your approval and nothing is sent to a lender. Reply &#x27;go ahead&#x27; to request it.</pre><p><b>Plan</b></p><ol><li>[PROPOSED] GENERATE_BORROWER_FILE: Prepare the borrower file for FAC-ETL, ¥600,000.00 (prepared, not sent)</li></ol>
+</p><p><b>Reply</b></p><pre>Prepared the borrower file BF-B00FAAF279D5 for FAC-ETL, ¥600,000.00: generated on day 0, state version 1, mandate version 1, evidence hash b00faaf279d5. Download it at /borrower-file/BF-B00FAAF279D5.html (also .docx). It is prepared, not sent: nothing was queued and nothing needs approval; you submit it to the lender yourself.</pre><p><b>Plan</b></p><ol></ol>
 <p><b>Operations</b></p><table><tr><td>none</td></tr></table>
 <p>session S44_borrower_file-owner · trace S44_borrower_file-owner:1 · security events 0</p>
 </body></html>

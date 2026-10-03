@@ -38,12 +38,11 @@ Everything lives under `services/api/app/`.
 | `verifier/` | verdict algorithm, reason codes, formulas, counter generation (priced from marginal cost) | `evaluate()`, `counters()` | domain, financial, covenants, mandate, funding |
 | `operations/` | the executor: tier check, mandate version/signature/expiry, nonce, idempotency, circuit breaker | `Executor.execute()`, `decide()`, `propose_commitment()` | domain, financial (charge helpers), mandate, commitments, persistence |
 | `security/` | attack catalogue, security-event logging helpers, refusal templates | `refuse()`, attack runners | domain, persistence |
-| `counterparties/` | deterministic buyer kernel (hidden reservation), mock lenders, template verbaliser | `BuyerKernel`, `MockLender` | domain |
+| `counterparties/` | deterministic buyer kernel (hidden reservation), template verbaliser | `BuyerKernel` | domain |
 | `nl/` | intent parsing, sessions (multi-turn: clarification, correction, fallback), plan → operations | `handle()` | everything above except compiler internals |
-| `capex/` (flag) | NPV, payback, structure comparison | `evaluate_capex()` | domain, financial, covenants |
-| `borrower_file/` (flag) | 微业贷-style borrower file from verified state (HTML, then PDF/DOCX) | `build()` | domain, financial, covenants, persistence |
+| `capex/` (flag) | NPV, payback, structure comparison; evaluation is side-effect free (`POST /capex/apply` is the separate owner step) | `evaluate_capex()` | domain, financial, covenants |
+| `borrower_file/` (flag) | 微业贷-style borrower file from verified state (HTML, then PDF/DOCX); read-only, with provenance (generation day, versions, evidence hash); queues nothing | `build()` | domain, financial, covenants, persistence |
 | `alerts/` (flag) | cash-flow alerts from the conservative trajectory; receipt reconciliation | `alerts()`, `reconcile()` | domain, financial |
-| `aftersign/` (flag, off) | statutory due dates, late interest, 确权 draft | — | domain |
 | `api/` | FastAPI routers, dependency wiring | HTTP | everything |
 
 A module may not import another module's internals, only its public functions. **Cycles are forbidden.**
@@ -76,7 +75,7 @@ A module may not import another module's internals, only its public functions. *
 7. **Horizon.** The horizon always runs past the last repayment. The default is the mandate's `horizon_days`, extended to the last repayment day plus 1.
 9. **Months.**
    - EBITDA is flat at `monthly_ebitda_fen`.
-   - Debt service = existing `monthly_debt_service_fen` + interest and fees posted in the month on facilities with `counts_in_debt_service` + scheduled amortisation.
+   - Debt service = existing `monthly_debt_service_fen` (the same payments leave cash on their days, `financial/debts.py`) + interest and fees posted in the month on facilities with `counts_in_debt_service` + scheduled amortisation.
    - Total debt = debt principal + month-end facility balances with `counts_in_leverage`.
 
 ## Verdict algorithm (binding for `verifier/`)
@@ -112,7 +111,7 @@ A module may not import another module's internals, only its public functions. *
    - The buyer refusing every counter within the bounded rounds → `NO_DEAL`, and the router's plan covers the gap.
 7. **Counters.**
    - An early-pay counter is priced below the break-even discount: `d/(1−d) < c`, where `c` is the invoice-financing cost share for 30 days, giving 0.88%. Option A uses 0.85%, up to the face that closes the gap net of the line.
-   - A terms counter uses a `PRICE_ADJUSTMENT` that covers the per-invoice funding cost (Option B, 0.45%).
+   - A terms counter uses a `PRICE_ADJUSTMENT` that covers the per-invoice funding cost (Option B, 0.30% at 55 days on EX01).
    - The outbound text is template-filled and never reveals the floor, caps, menu or reservation values.
 
 Every violation carries a `formula` and `inputs` the UI can show verbatim.
@@ -123,9 +122,10 @@ Every violation carries a `formula` and `inputs` the UI can show verbatim.
 - **Tier 2:**
   - apply for a facility;
   - accept or record any package other than an early-pay discount on a named invoice (rebates, terms changes in either direction, price adjustments, volume or operational concessions);
-  - capex financing;
-  - any single commitment above `tier2_single_commitment_fen`;
-  - generate the borrower file (prepared, not sent).
+  - the capex application (`POST /capex/apply`, the owner's explicit step: evaluating capex queues nothing);
+  - any single commitment above `tier2_single_commitment_fen`.
+
+  Preparing the borrower file is not an operation: it is a read-only owner action (prepared, not sent) and queues nothing.
 
   The executor returns `PENDING_APPROVAL` and queues a `RequestOwnerApproval`.
 - **Tier 3:** personal guarantee, pledging collateral, equity, mandate change, and adding a facility by anyone but the owner. Always `REFUSED`.
@@ -150,8 +150,9 @@ Every violation carries a `formula` and `inputs` the UI can show verbatim.
 | `POST` | `/negotiate/{offer_id}` | bounded rounds with the buyer kernel |
 | `POST` | `/router/plan` | → `FundingPlan` (committed + expected) |
 | `POST` | `/facilities/compile` | term sheet → `CompiledTermSheet` (owner must approve) |
-| `POST` | `/capex/evaluate` | flag `capex` |
-| `POST` | `/borrower-file` | flag `borrower_file` |
+| `POST` | `/capex/evaluate` | flag `capex`; writes nothing |
+| `POST` | `/capex/apply` | flag `capex`; owner only, bound to the evaluation's state version; queues the Tier-2 application |
+| `POST` | `/borrower-file` | flag `borrower_file`; read-only owner action |
 | `POST` | `/operations` | typed operation → `OperationResult` |
 | `GET`/`POST` | `/approvals`, `/approvals/{id}` | the Tier-2 queue |
 | `GET` | `/state`, `/trajectory`, `/ledger`, `/audit`, `/mandate` | read views; money pre-formatted on the server |
