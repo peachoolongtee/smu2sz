@@ -98,7 +98,8 @@ reprioritise. The scorecard is generated or reproducible and never hard-codes su
 
 - **Fresh red team** after every 3 to 5 substantial changes or a major architecture change: a new subagent with
   minimal context, told "assume this system contains a serious hidden flaw; find something the team has missed",
-  without the backlog.
+  without the backlog. **Stopped by the owner on 3 Oct 2026** after five rounds (26 findings, all fixed): no further
+  round unless the owner asks, and the project is in stability mode (below).
 - **First principles** every few cycles: "designing this today with what we now know, would we build it this
   way?" for funding, receivables, commitments, mandates, approvals, current books, covenants, alerts, capex and
   natural-language execution. Refactor only where it materially reduces risk or duplication.
