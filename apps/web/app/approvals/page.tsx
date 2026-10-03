@@ -5,6 +5,7 @@ import { ApprovalCard } from "@/components/approval-card";
 import { Badge, Callout, EmptyState, ErrorState, LoadingBlock, PageHeader } from "@/components/ui";
 import { ApiError, apiMode, decideApproval, getApprovals, getLedger } from "@/lib/api";
 import { bump } from "@/lib/demo-store";
+import { isWriteConflictDetail } from "@/lib/live/retry";
 import { useI18n } from "@/lib/i18n";
 import type { ApprovalDecision } from "@/lib/types";
 import { useAsync } from "@/lib/use-async";
@@ -26,7 +27,7 @@ export default function ApprovalsPage() {
       if (decided.result_message) setResults((r) => ({ ...r, [id]: decided.result_message ?? "" }));
       bump();
     } catch (e) {
-      if (e instanceof ApiError && (e.status === 404 || e.status === 409)) {
+      if (e instanceof ApiError && (e.status === 404 || e.status === 409) && !isWriteConflictDetail(e.detail)) {
         // The row is gone or already decided: say so in plain words and show the server's current queue.
         setError(t(e.status === 404 ? "appr.err.404" : "appr.err.409"));
         list.reload();

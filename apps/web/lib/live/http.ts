@@ -3,6 +3,7 @@
 import { API_URL } from "../config";
 import { getOwnerToken, requestSignIn } from "../auth";
 import { ApiError } from "../errors";
+import { BOOKS_BUSY, isWriteConflictDetail, sendWriteWithRetry } from "./retry";
 
 interface HttpOptions {
   body?: unknown;
@@ -62,12 +63,15 @@ export async function http<T>(method: "GET" | "POST", path: string, opts: HttpOp
   if (opts.buyerKey) headers["X-Counterparty-Key"] = opts.buyerKey;
   if (opts.body !== undefined) headers["Content-Type"] = "application/json";
   let res: Response;
-  try {
-    res = await fetch(`${API_URL}${path}`, {
+  const send = () =>
+    fetch(`${API_URL}${path}`, {
       method,
       headers,
       body: opts.body === undefined ? undefined : JSON.stringify(opts.body),
     });
+  try {
+    // A write that lost a race (409 CONCURRENT_WRITE_CONFLICT) is sent once more after the API's Retry-After hint.
+    res = method === "POST" ? await sendWriteWithRetry(send) : await send();
   } catch {
     throw new ApiError(0, `Cannot reach the API at ${API_URL}. Is the service running?`);
   }
@@ -79,7 +83,7 @@ export async function http<T>(method: "GET" | "POST", path: string, opts: HttpOp
       const data = (await res.json()) as { detail?: unknown };
       if (res.status === 403 && opts.ownerOn403 && !/FEATURE_DISABLED/.test(JSON.stringify(data.detail))) throw unauthorized(opts);
       if (res.status === 503 && /NOT_CONFIGURED/.test(JSON.stringify(data.detail))) throw new ApiError(503, NOT_CONFIGURED);
-      message = detailMessage(data.detail, message);
+      message = res.status === 409 && isWriteConflictDetail(data.detail) ? BOOKS_BUSY : detailMessage(data.detail, message);
       detail = data.detail;
     } catch (e) {
       if (e instanceof ApiError) throw e;
