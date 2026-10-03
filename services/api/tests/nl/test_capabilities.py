@@ -20,7 +20,7 @@ from app.funding import compare, menu_view, plan
 from app.nl import Intent
 from app.nl.capabilities import CAPABILITY_TABLE, OWNER_ONLY, closest_capability
 from app.nl.rules import parse
-from tests.nl.conftest import OWNER, Chat, ops, stored_ops
+from tests.nl.conftest import OWNER, Chat, ops
 
 STATE = load_scenario()[0]
 BF_ASK = "prepare the borrower file for the term loan, ¥600,000"
