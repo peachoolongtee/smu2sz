@@ -515,6 +515,9 @@ class FundingAction(Contract):
     receivable_id: str | None = None
     repay_day: Day | None = None
     rate_bp: Bp | None = None  # EARLY_PAY discount rate
+    # The day the cash lands, filled by the router for DRAW and FINANCE_INVOICE (request day + the facility's lead
+    # time, the engine's own rule). Display only: no figure depends on it, and the engine ignores it.
+    lands_day: Day | None = None
 
 
 class Mode(StrEnum):

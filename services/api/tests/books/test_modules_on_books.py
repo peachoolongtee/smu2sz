@@ -46,7 +46,7 @@ SPAN = [SourceSpan(doc_id="T", start=0, end=0, text="")]
 # 3 Oct (existing debt is cash): the existing loan's ¥45,000 payments on days 30, 60, 90 and 120 are in the
 # trajectory, and the plan carries a ¥255,000 advance (cost ¥3,113.93); before: 6e416d997eccbf94 and 60bcdca14e272842
 GOLDEN_TRAJECTORY = "0437cc43e3b22800"
-GOLDEN_ROUTER_PLAN = "2479590b9ee26e83"  # earlier, 3 Oct: extension figures on 13 dated invoices; extra receivables ¥210,000.00. 118733a57fd7900b before the plan, cost lines and menu rows carried the approval and executable_now flags (every figure unchanged)
+GOLDEN_ROUTER_PLAN = "493c984b5e9e9321"  # actions (and comparison rows) carry `lands_day`; with it stripped the digest is still 2479590b9ee26e83, every figure unchanged. Earlier, 3 Oct: extension figures on 13 dated invoices; extra receivables ¥210,000.00. 118733a57fd7900b before the plan, cost lines and menu rows carried the approval and executable_now flags (every figure unchanged)
 EX01_COUNTERS = [
     # face 255,000 / (1 − 0.85%) = 257,186.08, rounded up to a whole ¥100 (the gap net of the line includes the
     # existing loan's ¥45,000 day-30 payment; compute_golden.py counter_a_face)
