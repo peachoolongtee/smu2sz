@@ -34,7 +34,7 @@ TOLERANCE_FEN = 100  # ¥1
 def scenarios(n_random: int = 16, seed: int = 20261001) -> list[dict[str, Any]]:
     """Designed cases plus seeded random variants of the golden fixture. Each item is a dict of changes."""
     designed: list[dict[str, Any]] = [
-        {"id": "F00_golden", "why": "golden fixture: line + invoice financing (¥2,712.94)"},
+        {"id": "F00_golden", "why": "golden fixture: line + invoice financing (¥3,113.93)"},
         {"id": "F01_dear_line", "why": "line at 11.5%: invoice financing is cheaper for part of the gap",
          "fac": {"FAC-LINE": {"rate_bp": 1150}}},
         {"id": "F02_cheap_early_pay", "why": "buyer offers 0.3% for 30 days early",
