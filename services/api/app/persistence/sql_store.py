@@ -8,6 +8,22 @@ in Python, so a row edited behind the store's back is caught by `verify_chain()`
 
 `transaction()` is the unit of work (F-01): every store call made inside it on the same thread runs
 on one connection in one database transaction, committed together or rolled back together.
+
+Concurrency (docs/research/concurrency-certification-2026-10-03.md). The serialisation boundary is the
+organisation's books, enforced by the database, not by a process-local lock:
+
+- compare-and-swap on the log head: a unit of work records the head `seq` when it begins, and its
+  append must land on that head. Two units that overlap and both append cannot both commit: the
+  later one gets `ConcurrentWriteConflict` (a moved head, or the `seq` primary key) and nothing of it
+  is kept, so the chain's `prev_hash` stays contiguous and every unit sees what committed before it;
+- compare-and-swap on the state: `put_state(state, expected_version=v)` refuses
+  (`StateVersionConflict`) unless the current stored state is version `v`;
+- inside a unit, a unique key another writer claimed between this unit's check and its write (a nonce,
+  an approval id) is a `ConcurrentWriteConflict`, not a business answer; the caller runs the unit again;
+- on a file SQLite database a unit of work starts with `BEGIN IMMEDIATE`, so writers queue on the
+  database lock and the compare-and-swap is the backstop. `sqlite_begin="deferred"` turns that off: reads
+  then take no lock (like PostgreSQL READ COMMITTED) and the compare-and-swap alone must hold; the
+  concurrency tests run both.
 """
 
 from __future__ import annotations
@@ -62,10 +78,12 @@ from app.persistence.chain import (
 from app.persistence.errors import (
     AppendOnlyViolation,
     ApprovalAlreadyDecided,
+    ConcurrentWriteConflict,
     NonceAlreadyUsed,
     NotFound,
     OfferVersionConflict,
     PersistenceError,
+    StateVersionConflict,
 )
 from app.persistence.records import (
     ApprovalRecord,
@@ -83,11 +101,15 @@ _RETRIES = 5
 T = TypeVar("T")
 
 
+def _sqlite_memory(database_url: str) -> bool:
+    return database_url in {"sqlite://", "sqlite:///:memory:"} or "mode=memory" in database_url
+
+
 def _make_engine(database_url: str) -> Engine:
     kwargs: dict[str, Any] = {}
     if database_url.startswith("sqlite"):
         kwargs["connect_args"] = {"check_same_thread": False, "timeout": 30}
-        if database_url in {"sqlite://", "sqlite:///:memory:"} or "mode=memory" in database_url:
+        if _sqlite_memory(database_url):
             kwargs["poolclass"] = StaticPool
     return create_engine(database_url, **kwargs)
 
@@ -146,10 +168,24 @@ class SqlLedgerStore:
     """
 
     def __init__(
-        self, database_url: str, *, create_tables: bool = True, engine: Engine | None = None
+        self,
+        database_url: str,
+        *,
+        create_tables: bool = True,
+        engine: Engine | None = None,
+        sqlite_begin: str = "immediate",
     ) -> None:
+        if sqlite_begin not in {"immediate", "deferred"}:
+            raise ValueError("sqlite_begin must be 'immediate' or 'deferred'")
         self.database_url = database_url
         self.engine = engine if engine is not None else _make_engine(database_url)
+        # A file SQLite database shared by several connections or processes: a unit of work takes the
+        # write lock when it begins. An in-memory one (one shared connection) cannot be contended.
+        self._begin_immediate = (
+            sqlite_begin == "immediate"
+            and self.engine.dialect.name == "sqlite"
+            and not _sqlite_memory(database_url)
+        )
         self._local = threading.local()
         event.listen(self.engine, "before_execute", _guard_append_only)
         if create_tables:
@@ -170,16 +206,28 @@ class SqlLedgerStore:
         """One database transaction for every store call made inside the block on this thread.
 
         Commits when the block exits normally and rolls everything back if it raises. A nested
-        block joins the open transaction (it does not commit on its own)."""
+        block joins the open transaction (it does not commit on its own).
+
+        The log head is read when the unit begins: an append inside the unit must land on it
+        (compare-and-swap), so a unit that overlapped another committed writer fails with
+        `ConcurrentWriteConflict` instead of committing decisions made on books that moved."""
         if self._tx() is not None:
             yield
             return
         with self.engine.begin() as conn:
+            if self._begin_immediate:
+                conn.exec_driver_sql("BEGIN IMMEDIATE")
             self._local.conn = conn
+            self._local.head = self._head_seq(conn)
             try:
                 yield
             finally:
                 self._local.conn = None
+                self._local.head = None
+
+    @staticmethod
+    def _head_seq(conn: Connection) -> int:
+        return int(conn.execute(select(func.max(t.operations.c.seq))).scalar() or 0)
 
     @contextmanager
     def _reading(self) -> Iterator[Connection]:
@@ -202,7 +250,8 @@ class SqlLedgerStore:
             except IntegrityError as exc:
                 if on_conflict is not None:
                     raise on_conflict(exc) from exc
-                raise
+                # A unique key the unit's own reads found free was claimed by another writer.
+                raise ConcurrentWriteConflict(f"a concurrent writer claimed a key first: {exc.orig}") from exc
         for attempt in range(_RETRIES):
             try:
                 with self.engine.begin() as conn:
@@ -242,6 +291,11 @@ class SqlLedgerStore:
                 select(ops.c.seq, ops.c.entry_hash).order_by(ops.c.seq.desc()).limit(1)
             ).first()
             seq = 1 if last is None else int(last.seq) + 1
+            in_unit = self._tx() is conn
+            if in_unit and seq - 1 != self._local.head:
+                raise ConcurrentWriteConflict(
+                    f"the log head moved from seq {self._local.head} to seq {seq - 1} while this unit of work ran"
+                )
             prev = GENESIS_HASH if last is None else last.entry_hash
             entry = LedgerEntry(
                 seq=seq,
@@ -265,6 +319,8 @@ class SqlLedgerStore:
                     entry_hash=entry.entry_hash,
                 )
             )
+            if in_unit:
+                self._local.head = seq
             return entry
 
         return self._retry(_append)
@@ -301,7 +357,14 @@ class SqlLedgerStore:
                 raise NonceAlreadyUsed(nonce)
             conn.execute(insert(nonces).values(nonce=nonce))
 
-        self._retry(_mark, on_conflict=lambda _exc: NonceAlreadyUsed(nonce))
+        def _conflict(_exc: IntegrityError) -> Exception:
+            # Inside a unit of work the check above found the nonce free, so the primary key was
+            # claimed by a concurrent writer: run the unit again (it then sees the nonce as used).
+            if self._tx() is not None:
+                return ConcurrentWriteConflict(f"nonce {nonce} was claimed by a concurrent writer")
+            return NonceAlreadyUsed(nonce)
+
+        self._retry(_mark, on_conflict=_conflict)
 
     # ------------------------------------------------------------ commitments
 
@@ -345,8 +408,19 @@ class SqlLedgerStore:
             for r in self._read_all(t.states, t.states.c.row_id)
         ]
 
-    def put_state(self, state: FinancialState) -> None:
+    def put_state(self, state: FinancialState, expected_version: int | None = None) -> None:
+        """Store a new version of the books. With `expected_version` this is a compare-and-swap: it
+        refuses (`StateVersionConflict`, nothing written) unless the current stored state is that
+        version. Without it (fixtures, seeding) the write is unconditional, as before."""
+
         def _put(conn: Connection) -> None:
+            if expected_version is not None:
+                # PostgreSQL: the organisation's row lock queues compare-and-swap writers, so the check
+                # below sees the state a concurrent writer committed. SQLite renders no FOR UPDATE: the
+                # INSERT takes the database write lock before the check runs.
+                conn.execute(
+                    select(t.organizations.c.id).where(t.organizations.c.id == state.org_id).with_for_update()
+                )
             res = conn.execute(
                 insert(t.states).values(
                     org_id=state.org_id,
@@ -358,6 +432,17 @@ class SqlLedgerStore:
                 )
             )
             state_row_id = _inserted_id(res)
+            if expected_version is not None:
+                current = conn.execute(
+                    select(t.states.c.state_version)
+                    .where(t.states.c.row_id != state_row_id)
+                    .order_by(t.states.c.row_id.desc())
+                    .limit(1)
+                ).scalar()
+                if current != expected_version:
+                    raise StateVersionConflict(
+                        f"state version {expected_version} expected but the stored books are version {current}"
+                    )
             self._upsert(conn, t.organizations, {"id": state.org_id}, {})
             for cp in state.counterparties:
                 self._upsert(

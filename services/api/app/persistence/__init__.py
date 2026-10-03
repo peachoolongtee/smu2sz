@@ -5,11 +5,14 @@ from app.persistence.chain import GENESIS_HASH, compute_entry_hash, verify_entri
 from app.persistence.errors import (
     AppendOnlyViolation,
     ApprovalAlreadyDecided,
+    ConcurrentWriteConflict,
     InvalidPayload,
     NonceAlreadyUsed,
     NotFound,
     OfferVersionConflict,
     PersistenceError,
+    StateVersionConflict,
+    is_retryable,
 )
 from app.persistence.memory_store import InMemoryLedgerStore
 from app.persistence.records import (
@@ -28,6 +31,7 @@ __all__ = [
     "ApprovalAlreadyDecided",
     "ApprovalRecord",
     "ApprovalStatus",
+    "ConcurrentWriteConflict",
     "EvaluationRunRecord",
     "EvidenceExportRecord",
     "InMemoryLedgerStore",
@@ -39,7 +43,9 @@ __all__ = [
     "OfferVersionConflict",
     "PersistenceError",
     "SqlLedgerStore",
+    "StateVersionConflict",
     "canonical_json",
     "compute_entry_hash",
+    "is_retryable",
     "verify_entries",
 ]

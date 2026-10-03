@@ -32,7 +32,13 @@ from app.persistence.chain import (
     parse_json,
     verify_entries,
 )
-from app.persistence.errors import ApprovalAlreadyDecided, NonceAlreadyUsed, NotFound, OfferVersionConflict
+from app.persistence.errors import (
+    ApprovalAlreadyDecided,
+    NonceAlreadyUsed,
+    NotFound,
+    OfferVersionConflict,
+    StateVersionConflict,
+)
 from app.persistence.records import (
     ApprovalRecord,
     ApprovalStatus,
@@ -165,8 +171,16 @@ class InMemoryLedgerStore:
                 raise NotFound("no financial state stored")
             return self._states[-1]
 
-    def put_state(self, state: FinancialState) -> None:
+    def put_state(self, state: FinancialState, expected_version: int | None = None) -> None:
+        """Compare-and-swap with `expected_version`, as `SqlLedgerStore.put_state`. The store lock makes
+        the check and the append one step; a unit of work holds the lock for its whole run."""
         with self._lock:
+            if expected_version is not None:
+                current = self._states[-1].state_version if self._states else None
+                if current != expected_version:
+                    raise StateVersionConflict(
+                        f"state version {expected_version} expected but the stored books are version {current}"
+                    )
             self._states.append(state)
 
     def state_history(self) -> list[FinancialState]:
