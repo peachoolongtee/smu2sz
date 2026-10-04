@@ -137,6 +137,7 @@ class Observation:
     cash_delta_fen: int = 0
     drawn_delta_fen: int = 0
     receivables_changed: list[str] = field(default_factory=list)
+    documents_confirmed: list[str] = field(default_factory=list)  # contract records CONFIRMED during the attack
     money_moved_fen: int = 0
     mandate_changed: bool = False
     final_forward_concessions_fen: int = 0
@@ -349,6 +350,7 @@ class _Ctx:
     last_body: dict[str, Any] | None = None
     last_result: dict[str, Any] | None = None
     last_approval: str | None = None
+    last_document: dict[str, Any] | None = None  # the last POST /documents view
     approvals: list[str] = field(default_factory=list)
     halted: str | None = None  # set when a control refused the attack's premise; later steps are skipped
     rebaseline: bool = False  # set by a step that judged its own legitimate effects (db_fail)
@@ -433,6 +435,7 @@ class AttackRunner:
             "state": s.get_state(),
             "mandate": s.get_mandate(),
             "commitments": {c.id: c.status.value for c in s.commitments()},
+            "documents": {r.id: r.status.value for r in s.contract_records()},
             "log_len": len(s.operations()),
             "events": len(s.security_events()),
             "summary": security_summary(s),
@@ -455,6 +458,8 @@ class AttackRunner:
         obs.drawn_delta_fen = sum(f.drawn_fen for f in after.facilities) - sum(f.drawn_fen for f in before.facilities)
         rb = {r.id: r.status for r in before.receivables}
         obs.receivables_changed = sorted(r.id for r in after.receivables if rb.get(r.id) != r.status)
+        obs.documents_confirmed = sorted(r.id for r in s.contract_records() if r.status.value == "CONFIRMED"
+                                         and snap.get("documents", {}).get(r.id) != "CONFIRMED")
         new_fc = [fc for fc in after.forward_concessions if fc.id not in {x.id for x in before.forward_concessions}]
         obs.concessions_booked_fen = sum(fc.value_fen for fc in new_fc)
         for c in s.commitments():
@@ -523,6 +528,8 @@ class AttackRunner:
             h.append(f"money moved: cash {obs.cash_delta_fen:+d} fen, drawn {obs.drawn_delta_fen:+d} fen")
         if obs.receivables_changed:
             h.append(f"receivables changed: {obs.receivables_changed}")
+        if obs.documents_confirmed and not attack.get("confirm_expected"):
+            h.append(f"documents confirmed during the attack: {obs.documents_confirmed}")
         if obs.mandate_changed and not attack.get("mandate_change_expected"):
             h.append("mandate changed")
         if obs.leaks:
@@ -1151,6 +1158,76 @@ class AttackRunner:
         """A deployment that forgot to set OWNER_TOKEN: the published demo value becomes the owner."""
         os.environ.pop("OWNER_TOKEN", None)
         rec["owner_token_env"] = "unset"
+
+    # -- contract ingestion (brief 03): the attacker writes the document; the owner uploads what it was sent
+
+    def _do_document(self, ctx: _Ctx, arg: dict[str, Any], obs: Observation, rec: dict[str, Any], phase: str) -> None:
+        """POST /documents: a demo fixture (optionally with `inject`, a clause inserted before clause 8) or `text` with
+        `kind` and `counterparty_id`. `token` defaults to the owner's: uploading is the owner's act; the text is the
+        attacker's. An injected clause must never be read as a term (an integrity failure if it is)."""
+        from app.domain.fixtures import contract_fixture_bytes, load_contract_fixtures
+
+        inject = arg.get("inject")
+        if arg.get("fixture_id") and inject:
+            fx = load_contract_fixtures()[arg["fixture_id"]]
+            text = contract_fixture_bytes(arg["fixture_id"])[1].decode("utf-8")
+            body: dict[str, Any] = {"kind": fx["kind"], "counterparty_id": fx["counterparty_id"],
+                                    "text": text.replace("8. CONFIDENTIALITY", f"{inject}\n\n8. CONFIDENTIALITY")}
+        elif arg.get("fixture_id"):
+            body = {"fixture_id": arg["fixture_id"]}
+        else:
+            body = {"kind": arg["kind"], "counterparty_id": arg["counterparty_id"], "text": arg["text"]}
+        r = ctx.client.post("/documents", json=body, headers=self._headers(ctx, arg.get("token", "owner")))
+        rec["http"] = [r.status_code]
+        if phase == "attack":
+            obs.http_status.append(r.status_code)
+        if r.status_code != 200:
+            ctx.last_document = None
+            if phase == "attack" and r.status_code == 422:
+                obs.refusal_codes.append(r.json()["detail"]["code"])
+            return
+        d = r.json()["document"]
+        ctx.last_document = d
+        rec.update(document=d["id"], status=d["status"], flags=[f["kind"] for f in d["flags"]], blocked=d["blocked"])
+        if phase != "attack":
+            return
+        obs.compiler_flags += [f"DOC:{f['kind']}" for f in d["flags"]]
+        if inject:
+            text = d["document"]["text"]
+            s = text.find(inject)
+            e = s + len(inject)
+            read = [t["field"] for t in d.get("terms", []) if s >= 0 and t["span"]["start"] < e and s < t["span"]["end"]]
+            if read:
+                obs.integrity_failures.append(f"injected clause read as terms: {read}")
+            rec["injected_clause_read_as"] = read
+
+    def _do_decide_document(self, ctx: _Ctx, arg: dict[str, Any], obs: Observation, rec: dict[str, Any],
+                            phase: str) -> None:
+        """Confirm or reject the last uploaded document: over HTTP with `token` (owner | none | wrong | demo |
+        padded), or straight at the executor as `direct_actor` (a compromised agent calling it in process).
+        `hash: wrong` presents a hash that is not the document's; `link` names a facility to link."""
+        d = ctx.last_document
+        if d is None:
+            rec["skipped"] = "no document to decide"
+            return
+        decision = arg.get("decision", "confirm")
+        doc_hash = d["doc_hash"] if arg.get("hash", "correct") == "correct" else "0" * 64
+        if arg.get("direct_actor"):
+            from app.domain.models import Actor
+
+            res = ctx.rt.executor.decide_document(d["id"], Actor(arg["direct_actor"]), confirm=decision == "confirm",
+                                                  doc_hash=doc_hash, link_facility_id=arg.get("link"))
+            rec["results"] = [{"status": res.status.value, "codes": [v.code.value for v in res.violations]}]
+            return
+        body = {"doc_hash": doc_hash, **({"link_facility_id": arg["link"]} if arg.get("link") else {})}
+        r = ctx.client.post(f"/documents/{d['id']}/{decision}", json=body,
+                            headers=self._headers(ctx, arg.get("token", "owner")))
+        rec["http"] = [r.status_code]
+        if phase == "attack":
+            obs.http_status.append(r.status_code)
+        if r.status_code == 200:
+            res_json = r.json()["result"]
+            rec["results"] = [{"status": res_json["status"], "codes": [v["code"] for v in res_json["violations"]]}]
 
 
 # ============================================================================ /nl attacks
