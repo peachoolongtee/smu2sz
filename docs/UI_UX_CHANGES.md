@@ -224,6 +224,20 @@ their wording; the plain sentence beside them explains them.
 
 ## 5. Change log
 
+### 2026-10-04: Correction: the "Technical summary and reference numbers" label
+
+Commit: "Decision page: the folded summary label now says it holds the technical summary" (branch `test/ui-ux`)
+Goal: the entry "The deal journey and a decision page that answers first" says the server summary moved under
+"Technical summary and reference numbers", but the label stayed "Reference numbers", because the wording script
+listed the key twice and the older value won. The toggle now says what it holds.
+
+| Change | Where |
+| --- | --- |
+| `verdict.refs` set to "Technical summary and reference numbers" (zh 技术摘要与参考编号) | `lib/dictionary.ts` |
+
+Tests: no spec uses this label; typecheck clean.
+Follow-ups: none.
+
 ### 2026-10-04: A Next step bar on the deal pages (UX-2)
 
 Commit: "Next step bar on the offer and decision pages" (branch `test/ui-ux`)
