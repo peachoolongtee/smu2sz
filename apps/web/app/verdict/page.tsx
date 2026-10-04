@@ -6,6 +6,7 @@ import { AnnualisedCard, offerLegs } from "@/components/annualised";
 import { AutonomyPanel } from "@/components/autonomy-panel";
 import { CheckIcon } from "@/components/icons";
 import { DealSteps } from "@/components/deal-steps";
+import { NextStep, nextLinkCls } from "@/components/next-step";
 import { OutcomeBadge, TierBadge, outcomeHasTier } from "@/components/badges";
 import { PlanCard } from "@/components/plan-card";
 import {
@@ -156,6 +157,8 @@ function VerdictBody({
         </div>
       </Card>
 
+      <VerdictNextStep verdict={verdict} negotiation={negotiation} />
+
       <AutonomyPanel
         outcome={verdict.outcome}
         tier={verdict.required_tier}
@@ -274,6 +277,33 @@ function VerdictBody({
   );
 }
 
+/** What to do after reading the decision. Shown only where the next move is clear; otherwise the page speaks for itself. */
+function VerdictNextStep({ verdict, negotiation }: { verdict: VerdictView; negotiation: NegotiationView | null }) {
+  const { t } = useI18n();
+  if (negotiation?.commitment) {
+    return (
+      <NextStep label={t("next.label")} action={<Link href="/#home-agreements" className={nextLinkCls} data-testid="next-home">{t("next.seeHome")}</Link>}>
+        {t("next.agreed")}
+      </NextStep>
+    );
+  }
+  if (negotiation) {
+    return (
+      <NextStep label={t("next.label")} action={<Link href="/inbox" className={nextLinkCls}>{t("next.backToOffers")}</Link>}>
+        {t("next.noDeal")}
+      </NextStep>
+    );
+  }
+  if (verdict.counters.length) {
+    return (
+      <NextStep label={t("next.label")} action={<a href="#counters-title" className={nextLinkCls}>{t("next.toCounters")}</a>}>
+        {t("next.counter")}
+      </NextStep>
+    );
+  }
+  return null;
+}
+
 function NegotiationPanel({ offerId, negotiation }: { offerId: string; negotiation: NegotiationView | null }) {
   const { t } = useI18n();
   const [profile, setProfile] = useState<BuyerProfile>("cooperative");
@@ -354,6 +384,14 @@ function NegotiationPanel({ offerId, negotiation }: { offerId: string; negotiati
             <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-ink-3">{t("neg.operations")}</p>
             <OperationsList ops={negotiation.operations} />
             <p className="mt-2 text-xs">
+              {negotiation.commitment ? (
+                <>
+                  <Link href="/#home-agreements" className="font-medium text-brand-700 underline underline-offset-2" data-testid="neg-see-home">
+                    {t("next.seeHome")}
+                  </Link>
+                  {" · "}
+                </>
+              ) : null}
               <Link href="/ledger" className="font-medium text-brand-700 underline underline-offset-2">
                 {t("neg.openLedger")}
               </Link>

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useId, useState } from "react";
 import { AnnotatedText } from "@/components/annotated-text";
 import { DealSteps } from "@/components/deal-steps";
+import { NextStep } from "@/components/next-step";
 import { OfferItemCard } from "@/components/offer-parts";
 import { ArrowRightIcon } from "@/components/icons";
 import { Badge, Button, Callout, Card, EmptyState, ErrorState, LoadingBlock, PageHeader, Segmented } from "@/components/ui";
@@ -122,6 +123,23 @@ export default function InboxPage() {
           }
         />
       ) : (
+        <>
+        <NextStep
+          label={t("next.label")}
+          action={
+            <>
+              <Button variant="primary" loading={busy === "evaluate"} onClick={() => void evaluate(offer.offer.offer_id)}>
+                {t("inbox.evaluate")}
+                <ArrowRightIcon />
+              </Button>
+              <Link href="/trajectory" className="text-sm font-medium text-brand-700 underline underline-offset-2">
+                {t("inbox.seeTrajectory")}
+              </Link>
+            </>
+          }
+        >
+          {t("next.inbox")}
+        </NextStep>
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
           <div className="min-w-0 space-y-4">
             {offer.documents.map((doc) => (
@@ -156,15 +174,6 @@ export default function InboxPage() {
                 </p>
               </Card>
             ))}
-            <div className="flex flex-wrap items-center gap-2">
-              <Button variant="primary" loading={busy === "evaluate"} onClick={() => void evaluate(offer.offer.offer_id)}>
-                {t("inbox.evaluate")}
-                <ArrowRightIcon />
-              </Button>
-              <Link href="/trajectory" className="text-sm font-medium text-brand-700 underline underline-offset-2">
-                {t("inbox.seeTrajectory")}
-              </Link>
-            </div>
           </div>
 
           <div className="min-w-0 space-y-4">
@@ -205,6 +214,7 @@ export default function InboxPage() {
             </Card>
           </div>
         </div>
+        </>
       )}
     </>
   );

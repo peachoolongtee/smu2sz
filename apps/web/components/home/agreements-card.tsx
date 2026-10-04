@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { Badge, Card, EmptyState, ErrorState, LoadingBlock, type Tone } from "@/components/ui";
 import { getLedger, getReconciliation, getState } from "@/lib/api";
 import { useI18n, type I18n } from "@/lib/i18n";
@@ -206,6 +207,12 @@ export function AgreementsCard() {
     return { ledger, state, recon };
   }, []);
   const d = view.data;
+
+  // Arriving from "See it on your home page" (/#home-agreements): scroll once the card has its content.
+  const loaded = Boolean(d);
+  useEffect(() => {
+    if (loaded && window.location.hash === "#home-agreements") document.getElementById("home-agreements")?.scrollIntoView({ block: "start" });
+  }, [loaded]);
 
   let body;
   if (view.error) body = <ErrorState error={view.error} onRetry={view.reload} />;

@@ -1127,6 +1127,14 @@ export const en = {
   "violation.CONFLICTING_COMMITMENT": "It clashes with a deal already agreed",
   "alerts.inOpener": "The agent has already proposed this fix in its message to you.",
   "alerts.inOpener.link": "Answer it in What needs you",
+  "next.label": "Next step",
+  "next.inbox": "the agent has read the message. Check what it would cost us and whether it fits your limits.",
+  "next.counter": "choose what to offer back below, then send it to the buyer.",
+  "next.toCounters": "See what we'd offer back",
+  "next.agreed": "the buyer agreed. The deal and its progress are on your home page.",
+  "next.seeHome": "See it on your home page",
+  "next.noDeal": "the buyer refused every counter-offer, so nothing was agreed.",
+  "next.backToOffers": "Back to Buyer offers",
 } as const;
 
 export type DictKey = keyof typeof en;
@@ -2254,4 +2262,12 @@ export const zh: Record<DictKey, string> = {
   "violation.CONFLICTING_COMMITMENT": "与已达成的协议冲突",
   "alerts.inOpener": "代理已在给您的消息中提出了这个解决办法。",
   "alerts.inOpener.link": "在“需要您处理的事”中回复",
+  "next.label": "下一步",
+  "next.inbox": "代理已读完消息。检查它会让我们付出什么代价，以及是否在您的上限内。",
+  "next.counter": "在下方选择还价方案，然后发送给买家。",
+  "next.toCounters": "查看我们的还价",
+  "next.agreed": "买家已同意。协议及其进展显示在您的首页。",
+  "next.seeHome": "在首页查看",
+  "next.noDeal": "买家拒绝了所有还价，未达成任何协议。",
+  "next.backToOffers": "返回买家报价",
 };

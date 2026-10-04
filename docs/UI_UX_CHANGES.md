@@ -114,22 +114,29 @@ The offer and decision pages show the deal step bar ([deal-steps.tsx](../apps/we
 **1 Read the offer → 2 Check it → 3 Respond → 4 Agreed**. Steps are worked out from the session's current offer,
 verdict and negotiation. Finished steps get a tick, and the current one is highlighted.
 
-**Buyer offers** (`/inbox`): paste or pick a message → **Read this message** → highlighted text, with "What the
-buyer is asking for" and "Warnings" beside it → **Check against my limits**.
+Each page in the journey shows a **Next step** bar at the top when the next move is clear
+([next-step.tsx](../apps/web/components/next-step.tsx)).
+
+**Buyer offers** (`/inbox`): paste or pick a message → **Read this message** → a Next step bar with **Check
+against my limits** and "See what it does to our cash" → the highlighted text, with "What the buyer is asking for"
+and "Warnings" beside it.
 
 **Our decision** (`/verdict`), top to bottom:
 
 1. The answer: outcome badge plus one plain sentence per outcome (`verdict.plain.*`). The server summary and
    the IDs are folded under "Technical summary and reference numbers".
-2. Why the agent may or may not accept alone (autonomy panel).
-3. **Rules this breaks**: each card leads with the plain rule name, then the server's message, then "This
+2. The Next step bar: with counter-offers, "choose what to offer back" (jumps to them); once the buyer agrees,
+   "See it on your home page" (opens home scrolled to Your agreements); after no deal, "Back to Buyer offers".
+   When the next move is not clear (for example a rejection with nothing to offer back), there is no bar.
+3. Why the agent may or may not accept alone (autonomy panel).
+4. **Rules this breaks**: each card leads with the plain rule name, then the server's message, then "This
    offer" against "Your limit". The formula and inputs sit behind "Show the calculation"; the cost of a fix
    and the quoted clause stay visible.
-4. **What we would offer back**: counter-offers with their cost to us. Their pricing formula is behind "Show the
+5. **What we would offer back**: counter-offers with their cost to us. Their pricing formula is behind "Show the
    calculation".
-5. **Send our response**: the "Demo: how the simulated buyer reacts" switch and **Send our counter-offer**.
-6. The plan to cover the shortfall.
-7. **The working behind this decision**, for the finance team: early-pay discounts as yearly rates, the rules
+6. **Send our response**: the "Demo: how the simulated buyer reacts" switch and **Send our counter-offer**.
+7. The plan to cover the shortfall.
+8. **The working behind this decision**, for the finance team: early-pay discounts as yearly rates, the rules
    the offer keeps, and what each promise gives the buyer.
 
 ---
@@ -217,6 +224,25 @@ their wording; the plain sentence beside them explains them.
 
 ## 5. Change log
 
+### 2026-10-04: A Next step bar on the deal pages (UX-2)
+
+Commit: "Next step bar on the offer and decision pages" (branch `test/ui-ux`)
+Goal: after the agent read an offer, the button to continue sat below a long message; on the decision page,
+nothing said what to do once the answer was read, or where the agreed deal went.
+
+| Change | Where |
+| --- | --- |
+| Reusable Next step bar: one sentence and the action that does it | [next-step.tsx](../apps/web/components/next-step.tsx) |
+| Buyer offers: "Check against my limits" and "See what it does to our cash" moved from below the message into the bar at the top of the results (moved, not duplicated) | [inbox/page.tsx](../apps/web/app/inbox/page.tsx) |
+| Our decision: a bar under the answer for three states: counter-offers to choose, deal agreed, no deal | `VerdictNextStep` in [verdict/page.tsx](../apps/web/app/verdict/page.tsx) |
+| The negotiation result links to "See it on your home page" beside "Open the ledger" | [verdict/page.tsx](../apps/web/app/verdict/page.tsx) |
+| Home scrolls to Your agreements when opened at `/#home-agreements`, once the card has loaded (also fixes the step bar's "Agreed" link) | [agreements-card.tsx](../apps/web/components/home/agreements-card.tsx) |
+
+Tests: `demo.spec.ts` checks the bar before the negotiation ("choose what to offer back") and after it ("the buyer
+agreed", the home link and its target). Mock e2e 35 passed, 1 skipped; unit 13 passed; typecheck and lint clean.
+Not checked: the live e2e project (the demo spec also runs there).
+Follow-ups: closed UX-2.
+
 ### 2026-10-04: One cure, one button on home (UX-1)
 
 Commit: "One cure, one button on home: the Warnings card points to the agent's message" (branch `test/ui-ux`)
@@ -291,7 +317,6 @@ Follow-ups: UX-6 (Chinese review).
 
 | ID | Item | Size | Notes |
 | --- | --- | --- | --- |
-| UX-2 | A "Next step" button at the top of each step: after reading an offer, "Check against my limits" sits below a long message; the decision page should end with "See it on your home page" | Small | |
 | UX-3 | Fold Cash forecast and Borrowing options into the decision page as "Why?" sections, so the deal path is two pages | Large | Do after the video is recorded; the project is in stability mode |
 | UX-4 | Hide "Waiting for you" when nothing is waiting | Small | `home.spec.ts` uses `home-waiting-empty`; update the test with it |
 | UX-5 | Link chat answers to the matching screen (a decision in chat opens Our decision) | Medium | |
@@ -305,3 +330,4 @@ Follow-ups: UX-6 (Chinese review).
 | ID | Item | Closed by |
 | --- | --- | --- |
 | UX-1 | Merge the two fix buttons on home | 2026-10-04: One cure, one button on home |
+| UX-2 | A Next step bar on each step of the deal | 2026-10-04: A Next step bar on the deal pages |

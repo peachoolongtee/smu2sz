@@ -52,6 +52,8 @@ test("demo stepper walks Scene 1, Scene 2, Scene 3 and Security with the golden 
 
   await next(page, /\/verdict/);
   await expect(page.getByTestId("outcome-badge")).toContainText("REJECT");
+  // UX-2: the next step points to the counter-offers.
+  await expect(page.getByTestId("next-step")).toContainText("choose what to offer back");
   await expect(page.getByTestId("violation-AGG_CONCESSION_EXCEEDED")).toContainText("¥28,326.92");
   await expect(page.getByTestId("violation-RESERVE_BREACH")).toContainText(/day 47/i);
   // Four codes in both modes (the mock is recorded from the live API).
@@ -66,6 +68,10 @@ test("demo stepper walks Scene 1, Scene 2, Scene 3 and Security with the golden 
   await next(page, /\/verdict/);
   await expect(page.getByTestId("negotiation-result")).toContainText("DEAL");
   await expect(page.getByTestId("negotiation-result")).toContainText("Option A");
+  // UX-2: once agreed, the next step and the negotiation result both lead to the deal on the home page.
+  await expect(page.getByTestId("next-step")).toContainText("the buyer agreed");
+  await expect(page.getByTestId("next-home")).toHaveAttribute("href", "/#home-agreements");
+  await expect(page.getByTestId("neg-see-home")).toBeVisible();
 
   await next(page, /\/ledger/);
   await expect(page.getByTestId("chain-status")).toContainText("Chain valid");
