@@ -9,6 +9,12 @@ import { expect, test } from "./fixtures";
 
 const MOVE_BOOKS_KEY = "tl-mock-books-moved";
 
+/** On home the cure is offered in the agent's message (UX-1), so the alert's own button is pressed on the alerts page. */
+async function openAlerts(page: Page) {
+  await page.getByRole("navigation").getByRole("link", { name: "Alerts", exact: true }).first().click();
+  await expect(page).toHaveURL(/\/alerts/);
+}
+
 /** The home's clock control moves the clock by days (from `from`), and the day it reaches is shown. */
 async function advanceTo(page: Page, day: number, from = 0) {
   await page.getByTestId("home-days").fill(String(day - from));
@@ -20,6 +26,7 @@ test("the books move after the alert was shown: 409 says so, shows the current a
   await page.goto("/");
   await advanceTo(page, 34);
   await page.evaluate((k) => sessionStorage.setItem(k, "1"), MOVE_BOOKS_KEY);
+  await openAlerts(page);
   await page.getByTestId("fix-ALERT-RESERVE-42").click();
 
   const changed = page.getByTestId("fix-changed");
@@ -35,7 +42,11 @@ test("the books move after the alert was shown: 409 says so, shows the current a
   await expect(changed).not.toHaveClass(/text-ok-fg|bg-ok-bg/);
   await expect(page.getByTestId("fix-result")).toHaveCount(0);
   await expect(page.getByTestId("alert-waiting-ALERT-RESERVE-42")).toHaveCount(0);
+  // Nothing queued: home shows nothing waiting for approval and no financing request among the agent's actions.
+  await page.getByRole("navigation").getByRole("link", { name: "Home", exact: true }).first().click();
+  await expect(page.getByTestId("home-waiting-empty")).toBeVisible();
   await expect(page.getByTestId("home-done-SUBMIT_INVOICE_FOR_FINANCING")).toHaveCount(0);
+  await openAlerts(page);
 
   // The list was refetched with the new version, so pressing again acts on what is shown now: it queues the cure, still not as success.
   await page.getByTestId("fix-ALERT-RESERVE-42").click();
@@ -50,6 +61,7 @@ test("the books move and the alert is gone: the 409 says the alert no longer app
   await page.goto("/");
   await advanceTo(page, 34);
   await page.evaluate((k) => sessionStorage.setItem(k, "gone"), MOVE_BOOKS_KEY);
+  await openAlerts(page);
   await page.getByTestId("fix-ALERT-RESERVE-42").click();
   await expect(page.getByTestId("fix-changed")).toContainText("The books changed since this was shown");
   await expect(page.getByTestId("fix-changed-gone")).toContainText("That alert is gone");

@@ -78,7 +78,9 @@ test("day 34: the alert says the cure needs approval before the click; Go ahead 
   await expect(critical).toContainText("32.5% a year");
   await expect(critical.getByTestId("alert-needs-approval-ALERT-RESERVE-42")).toContainText("above your 15.00% yearly ceiling");
   await expect(critical.getByText("Needs your approval").first()).toBeVisible();
-  await expect(page.getByTestId("fix-ALERT-RESERVE-42")).toBeVisible();
+  // One cure, one button (UX-1): the agent's message offers it, so the alert points there instead of a second button.
+  await expect(critical.getByTestId("alert-in-opener-ALERT-RESERVE-42")).toBeVisible();
+  await expect(page.getByTestId("fix-ALERT-RESERVE-42")).toHaveCount(0);
 
   await page.getByTestId("home-goahead").click();
   const op = page.getByTestId("home-answer").getByTestId("chat-op-SUBMIT_INVOICE_FOR_FINANCING");
@@ -100,7 +102,7 @@ test("day 34: the alert says the cure needs approval before the click; Go ahead 
 test("day 34: approving on the approval card runs the cure, shows when the cash lands, and clears the alert", async ({ page }) => {
   await page.goto("/");
   await advanceTo34(page);
-  await page.getByTestId("fix-ALERT-RESERVE-42").click();
+  await page.getByTestId("home-goahead").click();
   await expect(page.getByTestId("alert-waiting-ALERT-RESERVE-42")).toContainText("APR-000001");
 
   await page.getByTestId("alert-approval-link-ALERT-RESERVE-42").click();

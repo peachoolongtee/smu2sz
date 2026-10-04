@@ -7,7 +7,7 @@ import { getAlerts, getApprovals, getLedger } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
 import type { AlertSeverity } from "@/lib/types";
 import { useAsync } from "@/lib/use-async";
-import { AlertCure, FixResult, SuggestionCost, useAlertContext, useFixAlert, ZeroFloorNote } from "./fix-alert";
+import { AlertCure, FixResult, openerAlertId, openerOfferStore, SuggestionCost, useAlertContext, useFixAlert, ZeroFloorNote } from "./fix-alert";
 import { SectionLink } from "./today-card";
 
 const severityTone: Record<AlertSeverity, Tone> = { CRITICAL: "bad", WARNING: "warn", INFO: "info" };
@@ -64,6 +64,9 @@ export function RiskCard() {
   const fixer = useFixAlert();
   const ctx = useAlertContext();
   const top = alerts.data?.alerts.slice(0, 5) ?? [];
+  // One cure, one button: the alert the agent's message above is offering is answered there.
+  const { offering } = openerOfferStore.useValue();
+  const inOpener = openerAlertId(alerts.data?.alerts ?? [], offering);
   return (
     <Card id="home-risk" title={t("home.risk")} subtitle={t("home.risk.sub")} actions={<SectionLink href="/alerts">{t("home.risk.open")}</SectionLink>}>
       {alerts.error ? (
@@ -90,7 +93,14 @@ export function RiskCard() {
                     <SuggestionCost key={`${s.operation_kind}-${i}`} s={s} />
                   ))}
                   <ZeroFloorNote alert={a} />
-                  <AlertCure alert={a} approvals={ctx.approvals} cap={ctx.cap} busyId={fixer.busyId} onFix={(al) => void fixer.fix(al, alerts.data!.state_version)} />
+                  <AlertCure
+                    alert={a}
+                    approvals={ctx.approvals}
+                    cap={ctx.cap}
+                    busyId={fixer.busyId}
+                    onFix={(al) => void fixer.fix(al, alerts.data!.state_version)}
+                    inOpener={a.id === inOpener}
+                  />
                 </li>
               ))}
             </ul>

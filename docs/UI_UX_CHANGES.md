@@ -101,7 +101,9 @@ hover hint (`nav.hint.*`), and the logo opens Home.
    given to the buyer, expiry and days left, progress on promised payments, invoices whose terms changed, and
    the exact wording behind a toggle. Past deals are folded away.
    [agreements-card.tsx](../apps/web/components/home/agreements-card.tsx)
-5. **Warnings**: alerts from the cautious forecast, each with its fix button.
+5. **Warnings**: alerts from the cautious forecast, each with its fix button. The alert whose cure the agent's
+   message is already offering shows "Answer it in What needs you" instead, so one cure has one button on home.
+   The Alerts page keeps every button.
 6. **What the agent did**: the last five operations.
 7. **Demo clock**: move the simulated calendar forward.
 8. **Words you'll see**: a folded glossary of 10 terms. [glossary.tsx](../apps/web/components/home/glossary.tsx)
@@ -215,6 +217,29 @@ their wording; the plain sentence beside them explains them.
 
 ## 5. Change log
 
+### 2026-10-04: One cure, one button on home (UX-1)
+
+Commit: "One cure, one button on home: the Warnings card points to the agent's message" (branch `test/ui-ux`)
+Goal: on day 34 home offered the same cure twice, "Go ahead" in What needs you and "Let the agent fix this" in
+Warnings, and it was not clear whether they were the same thing or whether to press both.
+
+| Change | Where |
+| --- | --- |
+| What needs you publishes whether its message is offering a cure (not when the cure is already queued) | [needs-card.tsx](../apps/web/components/home/needs-card.tsx), `openerOfferStore` in [fix-alert.tsx](../apps/web/components/home/fix-alert.tsx) |
+| On home, that alert shows "The agent has already proposed this fix in its message to you. Answer it in What needs you" instead of its button; other alerts keep theirs | [lists.tsx](../apps/web/components/home/lists.tsx), `AlertCure` in [fix-alert.tsx](../apps/web/components/home/fix-alert.tsx) |
+| The Alerts page is unchanged: every actionable alert keeps "Let the agent fix this" | [alerts/page.tsx](../apps/web/app/alerts/page.tsx) |
+
+The opener does not return the id of the alert it is curing, so `openerAlertId` mirrors the API's rule in
+`services/api/app/nl/alerts.py` (`alerts_turn`): among critical and warning alerts, the first
+`RESERVE_BREACH_AHEAD`, otherwise the first `FACILITY_REPAYABLE`. **If that rule changes, change both.** A
+cleaner fix is for the API to return the alert id (UX-9).
+
+Tests: `home.spec.ts` now expects the pointer instead of the button on day 34 and starts the approval test with
+Go ahead. The two "books moved" tests in `catchup.spec.ts` press the button on the Alerts page, and check on home
+that nothing is waiting for approval. Mock e2e 35 passed, 1 skipped; unit 13 passed; typecheck and lint clean.
+Not checked: the live e2e project.
+Follow-ups: closed UX-1; opened UX-9.
+
 ### 2026-10-04: The deal journey and a decision page that answers first
 
 Commits: `8218314` changes, `2274fb0` new interface (branch `test/ui-ux`)
@@ -266,7 +291,6 @@ Follow-ups: UX-6 (Chinese review).
 
 | ID | Item | Size | Notes |
 | --- | --- | --- | --- |
-| UX-1 | Merge the two fix buttons on home: "Go ahead" in What needs you and "Let the agent fix this" in Warnings offer the same cure | Small | Warnings should point to the agent's message |
 | UX-2 | A "Next step" button at the top of each step: after reading an offer, "Check against my limits" sits below a long message; the decision page should end with "See it on your home page" | Small | |
 | UX-3 | Fold Cash forecast and Borrowing options into the decision page as "Why?" sections, so the deal path is two pages | Large | Do after the video is recorded; the project is in stability mode |
 | UX-4 | Hide "Waiting for you" when nothing is waiting | Small | `home.spec.ts` uses `home-waiting-empty`; update the test with it |
@@ -274,9 +298,10 @@ Follow-ups: UX-6 (Chinese review).
 | UX-6 | Native review of the Chinese strings added on 4 Oct | Small | Written by the agent, not reviewed |
 | UX-7 | Run the live e2e project after both 4 Oct passes | Small | Needs the API running; see `apps/web/README.md` |
 | UX-8 | "AI-generated, for reference" label on agent replies | Small | A gap listed in the README and `docs/HANDOVER.md` |
+| UX-9 | Have `POST /nl/opener` return the id of the alert it proposes to cure, and drop the mirrored rule in `openerAlertId` | Small | An API change; wait until stability mode is lifted |
 
 ### Closed
 
 | ID | Item | Closed by |
 | --- | --- | --- |
-| *(none yet)* | | |
+| UX-1 | Merge the two fix buttons on home | 2026-10-04: One cure, one button on home |

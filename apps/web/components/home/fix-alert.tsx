@@ -6,12 +6,30 @@ import { OperationList } from "@/components/chat/assistant-turn";
 import { approvalHref } from "@/components/operation-result";
 import { Badge, Button, ErrorState } from "@/components/ui";
 import { actOnAlert, alertChanged, ApiError, getApprovals, getMandate } from "@/lib/api";
+import { createStore } from "@/lib/create-store";
 import { bump } from "@/lib/demo-store";
 import type { DictKey } from "@/lib/dictionary";
 import { useI18n } from "@/lib/i18n";
 import { isWriteConflictDetail } from "@/lib/live/retry";
 import { useAsync } from "@/lib/use-async";
 import type { AlertActResult, AlertChangedDetail, AlertItem, ApprovalView, SuggestedOperation } from "@/lib/types";
+
+/**
+ * Whether the agent's opening message on the home page is offering a cure right now (it waits for "Go ahead").
+ * NeedsCard writes it; RiskCard reads it so the same cure is not offered twice on one screen.
+ */
+export const openerOfferStore = createStore<{ offering: boolean }>({ offering: false });
+
+/**
+ * The alert whose cure the opener is offering. POST /nl/opener does not return the alert id, so this mirrors its rule
+ * (services/api/app/nl/alerts.py, alerts_turn): among CRITICAL and WARNING alerts, the first RESERVE_BREACH_AHEAD;
+ * failing that, the first FACILITY_REPAYABLE. Change the two together.
+ */
+export function openerAlertId(alerts: AlertItem[], offering: boolean): string | null {
+  if (!offering) return null;
+  const news = alerts.filter((a) => a.severity === "CRITICAL" || a.severity === "WARNING");
+  return (news.find((a) => a.kind === "RESERVE_BREACH_AHEAD") ?? news.find((a) => a.kind === "FACILITY_REPAYABLE"))?.id ?? null;
+}
 
 /** Information alerts: nothing to press. FUNDING_IN_TRANSIT lands by itself; renewing a mandate is an offline owner step. */
 const INFO_ONLY: Record<string, DictKey> = { FUNDING_IN_TRANSIT: "alerts.transit.info", MANDATE_EXPIRING: "alerts.mandate.info" };
@@ -98,6 +116,7 @@ export function AlertCure({
   busyId,
   onFix,
   cap,
+  inOpener = false,
 }: {
   alert: AlertItem;
   approvals: ApprovalView[] | undefined;
@@ -105,6 +124,8 @@ export function AlertCure({
   onFix: (alert: AlertItem) => void;
   /** The mandate's yearly cost ceiling, as the server wrote it (for example "15.00%"), when known. */
   cap?: string;
+  /** The home page's agent message is already offering this cure: point there instead of a second button. */
+  inOpener?: boolean;
 }) {
   const { t } = useI18n();
   const infoKey = INFO_ONLY[alert.kind];
@@ -136,7 +157,16 @@ export function AlertCure({
           {cap ? t("alerts.needsApproval", { cap }) : t("alerts.aboveCap")}
         </p>
       ) : null}
-      <FixButton alertId={alert.id} busyId={busyId} onFix={() => onFix(alert)} />
+      {inOpener ? (
+        <p className="text-xs text-ink-2" data-testid={`alert-in-opener-${alert.id}`}>
+          {t("alerts.inOpener")}{" "}
+          <Link href="#home-needs" className="font-medium text-brand-700 underline underline-offset-2">
+            {t("alerts.inOpener.link")}
+          </Link>
+        </p>
+      ) : (
+        <FixButton alertId={alert.id} busyId={busyId} onFix={() => onFix(alert)} />
+      )}
     </div>
   );
 }

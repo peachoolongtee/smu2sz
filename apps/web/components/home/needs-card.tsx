@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AssistantTurn } from "@/components/chat/assistant-turn";
 import { approvalHref } from "@/components/operation-result";
 import { Badge, Button, Card, ErrorState, LoadingBlock } from "@/components/ui";
 import { getApprovals, nlOpener } from "@/lib/api";
 import { appendOwnerOpener, ensureOwnerSession, sendOwnerTurn, useChat } from "@/lib/chat";
 import { bump } from "@/lib/demo-store";
+import { openerOfferStore } from "./fix-alert";
 import { useI18n } from "@/lib/i18n";
 import type { NlResponse } from "@/lib/types";
 import { useAsync } from "@/lib/use-async";
@@ -31,6 +32,12 @@ export function NeedsCard({ answer, onAnswer }: { answer: NlResponse | null; onA
   const last = conv.messages.at(-1);
   const sendError = last?.from === "error" ? last.text : null;
   const r = opener.data;
+  // Tell the Warnings card when this message is the place to answer the cure (not when it is already queued).
+  const offering = Boolean(r?.has_news && r.awaiting_confirmation && !queued);
+  useEffect(() => {
+    openerOfferStore.set({ offering });
+    return () => openerOfferStore.set({ offering: false });
+  }, [offering]);
 
   async function send(text: string, display: string) {
     setSending(true);

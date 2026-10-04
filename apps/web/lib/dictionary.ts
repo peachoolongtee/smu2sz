@@ -1125,6 +1125,8 @@ export const en = {
   "violation.STALE_OPERATION": "The books changed since this was prepared",
   "violation.STALE_VERDICT": "The books changed since this decision; it must be checked again",
   "violation.CONFLICTING_COMMITMENT": "It clashes with a deal already agreed",
+  "alerts.inOpener": "The agent has already proposed this fix in its message to you.",
+  "alerts.inOpener.link": "Answer it in What needs you",
 } as const;
 
 export type DictKey = keyof typeof en;
@@ -2250,4 +2252,6 @@ export const zh: Record<DictKey, string> = {
   "violation.STALE_OPERATION": "准备之后账目已发生变化",
   "violation.STALE_VERDICT": "做出决定后账目已变化，需要重新检查",
   "violation.CONFLICTING_COMMITMENT": "与已达成的协议冲突",
+  "alerts.inOpener": "代理已在给您的消息中提出了这个解决办法。",
+  "alerts.inOpener.link": "在“需要您处理的事”中回复",
 };
