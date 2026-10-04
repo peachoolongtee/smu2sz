@@ -81,7 +81,7 @@ test("MANDATE_EXPIRING: a warning 14 days before, critical once expired; informa
 test("reconciliation lists the bank's reference on a receipt that carries one", async ({ page }) => {
   await page.goto("/");
   await advanceTo(page, 34);
-  await page.getByRole("link", { name: "Reconciliation", exact: true }).click();
+  await page.getByRole("link", { name: "Payments received", exact: true }).click();
   await expect(page).toHaveURL(/\/reconciliation/);
   const receipts = page.getByRole("table", { name: "Receipts" }).or(page.locator("#receipts"));
   await expect(receipts.getByTestId("receipt-rec-receipt-1")).toContainText("RCV-A");

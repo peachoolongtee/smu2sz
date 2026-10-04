@@ -42,7 +42,7 @@ async function expectWaitingNotSuccess(row: ReturnType<Page["getByTestId"]>) {
 test("home renders the six sections and the day-0 opener has a warning but nothing to approve", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "Home", level: 1 })).toBeVisible();
-  for (const name of ["Today", "What needs you", "Position", "Waiting for you", "At risk", "Done by the agent"]) {
+  for (const name of ["Today", "What needs you", "Where we stand", "Your agreements", "Waiting for you", "Warnings", "What the agent did"]) {
     await expect(page.getByRole("heading", { name, level: 2 })).toBeVisible();
   }
   await expect(page.getByTestId("home-day")).toHaveText("Day 0");

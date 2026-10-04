@@ -33,10 +33,10 @@ test("the stepper and navigation are reachable", async ({ page }) => {
   const menu = page.getByRole("button", { name: "Open navigation" });
   if (await menu.isVisible()) {
     await menu.click();
-    await page.getByRole("link", { name: "Funding" }).click();
+    await page.getByRole("link", { name: "Borrowing options" }).click();
     await expect(page).toHaveURL(/\/funding/);
   } else {
-    await page.getByRole("link", { name: "Funding" }).click();
+    await page.getByRole("link", { name: "Borrowing options" }).click();
     await expect(page).toHaveURL(/\/funding/);
   }
 });

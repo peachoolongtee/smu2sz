@@ -25,7 +25,7 @@ test("alerts: the day-12 reserve breach shows its amounts, formula and committed
 test("reconciliation: no receipts yet, one outstanding receivable, chain valid", async ({ page, request }) => {
   await resetBooks(request);
   await page.goto("/reconciliation");
-  await expect(page.getByRole("heading", { name: "Receipt reconciliation", level: 1 })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Payments received", level: 1 })).toBeVisible();
 
   await expect(page.getByText("No receipts in the log yet")).toBeVisible();
   const outstanding = page.getByRole("table", { name: "Outstanding receivables" });
@@ -42,6 +42,6 @@ test("alerts and reconciliation are reachable from the navigation", async ({ pag
   await page.goto("/mandate");
   await page.getByRole("link", { name: "Alerts" }).click();
   await expect(page).toHaveURL(/\/alerts/);
-  await page.getByRole("link", { name: "Reconciliation" }).click();
+  await page.getByRole("link", { name: "Payments received" }).click();
   await expect(page).toHaveURL(/\/reconciliation/);
 });

@@ -24,7 +24,7 @@ test("demo stepper walks Scene 1, Scene 2, Scene 3 and Security with the golden 
 
   // Setup: reset, then the signed mandate and its three tiers.
   await next(page, /\/mandate/);
-  await expect(page.getByRole("heading", { name: "Mandate", level: 1 })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Your limits", level: 1 })).toBeVisible();
   await expect(page.getByText("Signature valid")).toBeVisible();
   await expect(page.getByText("¥300,000.00").first()).toBeVisible();
   await expect(page.getByText("¥5,000.00").first()).toBeVisible();
@@ -69,7 +69,7 @@ test("demo stepper walks Scene 1, Scene 2, Scene 3 and Security with the golden 
 
   await next(page, /\/ledger/);
   await expect(page.getByTestId("chain-status")).toContainText("Chain valid");
-  await expect(page.getByText("Draw facility").first()).toBeVisible();
+  await expect(page.getByText("Borrow from a credit line").first()).toBeVisible();
 
   // Scene 2: the buyer walks, the gap is still covered.
   await next(page, /\/verdict/);
@@ -81,7 +81,7 @@ test("demo stepper walks Scene 1, Scene 2, Scene 3 and Security with the golden 
   await expect(page.getByText("¥3,938.81").first()).toBeVisible();
 
   await next(page, /\/ledger/);
-  await expect(page.getByText("Submit invoice for financing").first()).toBeVisible();
+  await expect(page.getByText("Get cash early on an invoice").first()).toBeVisible();
   await expect(page.getByTestId("chain-status")).toContainText("Chain valid");
 
   await next(page, /\/verdict/);
@@ -144,9 +144,9 @@ test("Tier 2 approval queue approves the capex loan and logs it", async ({ page 
 test("the label toggle switches the UI to Chinese and back", async ({ page }) => {
   await page.goto("/mandate");
   await page.getByLabel("中文").check();
-  await expect(page.getByRole("heading", { name: "授权书", level: 1 })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "您的授权上限", level: 1 })).toBeVisible();
   await page.getByLabel("English").check();
-  await expect(page.getByRole("heading", { name: "Mandate", level: 1 })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Your limits", level: 1 })).toBeVisible();
 });
 
 test("reset clears the session", async ({ page }) => {

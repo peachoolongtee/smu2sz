@@ -12,28 +12,37 @@ import { MenuIcon, ShieldIcon, XIcon } from "./icons";
 import { OwnerSessionControl, OwnerSignInDialog } from "./owner-auth";
 import { Badge, Segmented } from "./ui";
 
-const NAV: { href: string; key: DictKey; group: "screens" | "more" }[] = [
-  { href: "/", key: "nav.home", group: "screens" },
-  { href: "/chat", key: "nav.chat", group: "screens" },
-  { href: "/mandate", key: "nav.mandate", group: "screens" },
-  { href: "/inbox", key: "nav.inbox", group: "screens" },
-  { href: "/trajectory", key: "nav.trajectory", group: "screens" },
-  { href: "/funding", key: "nav.funding", group: "screens" },
-  { href: "/verdict", key: "nav.verdict", group: "screens" },
-  { href: "/whatif", key: "nav.whatif", group: "screens" },
-  { href: "/capex", key: "nav.capex", group: "screens" },
-  { href: "/ledger", key: "nav.ledger", group: "screens" },
-  { href: "/approvals", key: "nav.approvals", group: "more" },
-  { href: "/alerts", key: "nav.alerts", group: "more" },
-  { href: "/reconciliation", key: "nav.reconciliation", group: "more" },
-  { href: "/security", key: "nav.security", group: "more" },
-  { href: "/evidence", key: "nav.evidence", group: "more" },
+type NavGroup = "today" | "deals" | "cash" | "records";
+
+/** Grouped by the job the owner is doing, not by module. Each link's hint says in one line what is behind it. */
+const NAV: { href: string; key: DictKey; hint: DictKey; group: NavGroup }[] = [
+  { href: "/", key: "nav.home", hint: "nav.hint.home", group: "today" },
+  { href: "/chat", key: "nav.chat", hint: "nav.hint.chat", group: "today" },
+  { href: "/approvals", key: "nav.approvals", hint: "nav.hint.approvals", group: "today" },
+  { href: "/alerts", key: "nav.alerts", hint: "nav.hint.alerts", group: "today" },
+  { href: "/inbox", key: "nav.inbox", hint: "nav.hint.inbox", group: "deals" },
+  { href: "/verdict", key: "nav.verdict", hint: "nav.hint.verdict", group: "deals" },
+  { href: "/whatif", key: "nav.whatif", hint: "nav.hint.whatif", group: "deals" },
+  { href: "/ledger", key: "nav.ledger", hint: "nav.hint.ledger", group: "deals" },
+  { href: "/trajectory", key: "nav.trajectory", hint: "nav.hint.trajectory", group: "cash" },
+  { href: "/funding", key: "nav.funding", hint: "nav.hint.funding", group: "cash" },
+  { href: "/reconciliation", key: "nav.reconciliation", hint: "nav.hint.reconciliation", group: "cash" },
+  { href: "/capex", key: "nav.capex", hint: "nav.hint.capex", group: "cash" },
+  { href: "/mandate", key: "nav.mandate", hint: "nav.hint.mandate", group: "records" },
+  { href: "/security", key: "nav.security", hint: "nav.hint.security", group: "records" },
+  { href: "/evidence", key: "nav.evidence", hint: "nav.hint.evidence", group: "records" },
 ];
+
+const GROUP_LABEL: Record<Exclude<NavGroup, "today">, DictKey> = {
+  deals: "nav.group.deals",
+  cash: "nav.group.cash",
+  records: "nav.group.records",
+};
 
 function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
   const { t } = useI18n();
   const pathname = usePathname();
-  const render = (group: "screens" | "more") => (
+  const render = (group: NavGroup) => (
     <ul className="space-y-0.5">
       {NAV.filter((n) => n.group === group).map((n) => {
         const active = pathname === n.href;
@@ -42,6 +51,7 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
             <Link
               href={n.href}
               onClick={onNavigate}
+              title={t(n.hint)}
               aria-current={active ? "page" : undefined}
               className={`flex min-h-10 items-center rounded-md px-3 text-sm font-medium ${
                 active ? "bg-brand-50 text-brand-700" : "text-ink-2 hover:bg-subtle hover:text-ink"
@@ -56,11 +66,13 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
   );
   return (
     <nav aria-label={t("nav.label")} className="space-y-4">
-      {render("screens")}
-      <div>
-        <p className="px-3 pb-1 text-xs font-semibold uppercase tracking-wide text-ink-3">{t("nav.more")}</p>
-        {render("more")}
-      </div>
+      {render("today")}
+      {(["deals", "cash", "records"] as const).map((g) => (
+        <div key={g}>
+          <p className="px-3 pb-1 text-xs font-semibold uppercase tracking-wide text-ink-3">{t(GROUP_LABEL[g])}</p>
+          {render(g)}
+        </div>
+      ))}
     </nav>
   );
 }
@@ -68,7 +80,7 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
 function Brand() {
   const { t } = useI18n();
   return (
-    <Link href="/mandate" className="flex items-center gap-2 font-semibold text-ink">
+    <Link href="/" className="flex items-center gap-2 font-semibold text-ink">
       <span className="grid size-7 place-items-center rounded-md bg-brand-600 text-white">
         <ShieldIcon />
       </span>
