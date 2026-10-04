@@ -19,6 +19,7 @@ from app.domain.models import (
     CompiledOffer,
     CompiledTermSheet,
     ConcessionValue,
+    ContractRecord,
     CounterProposal,
     Facility,
     FinancialState,
@@ -223,6 +224,18 @@ class LedgerStore(Protocol):
     def get_approval(self, approval_id_: str) -> Any: ...
     def approvals(self, status: Any = None) -> list[Any]: ...
     def decide_approval(self, approval_id_: str, approved: bool, by: str, day: int | None = None) -> Any: ...
+
+    # contract records: documents the agent read (brief 03). Only the executor decides one (CONFIRM_DOCUMENT).
+    def add_contract_record(self, record: ContractRecord) -> str:
+        """Store a PROPOSED record under a new id ("DOC-000001"), which it returns; the record's own id is ignored."""
+        ...
+    def get_contract_record(self, record_id: str) -> ContractRecord | None: ...
+    def contract_records(self) -> list[ContractRecord]: ...  # in upload order
+    def decide_contract_record(self, record: ContractRecord) -> ContractRecord:
+        """Replace a PROPOSED record by its decided version. Compare-and-swap on the status: a record already decided
+        raises `DocumentAlreadyDecided`, an unknown one `NotFound`, and a decision that changes anything but the
+        decision fields (status, day, log seq, linked facility) raises `ValueError`."""
+        ...
 
     # evidence
     def export_evidence(self) -> str: ...

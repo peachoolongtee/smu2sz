@@ -27,7 +27,7 @@ from app.domain.models import (
     SourceSpan,
 )
 from app.domain.ports import LedgerStore
-from app.egress import AllowedValue, ProtectedSet, guard
+from app.egress import AllowedValue, guard, protected_for
 from app.nl.sessions import Session
 from app.operations import Executor
 from app.verifier import OwnerConstraints, VerdictBundle
@@ -169,7 +169,7 @@ class NlContext:
 
     def guard(self, text: str, recipient_id: str, allow: Iterable[AllowedValue] = ()) -> tuple[str, bool]:
         """(text to send, ok). A blocked text is replaced whole by the guard's safe template."""
-        protected = ProtectedSet.build(self.state(), self.mandate())
+        protected = protected_for(self.store)  # the books, the mandate, the canaries and every contract record
         res = guard(text, protected, recipient_id=recipient_id, allow=list(allow), day=self.day,
                     trace_id=self.trace_id, lang=self.lang if self.lang in ("en", "zh") else None)  # type: ignore[arg-type]
         if res.security_event is not None:

@@ -43,6 +43,7 @@ class Features:
     security_scenes: bool = field(default_factory=lambda: _flag("FEATURE_SECURITY_SCENES"))
     alerts: bool = field(default_factory=lambda: _flag("FEATURE_ALERTS"))
     expected_plans: bool = field(default_factory=lambda: _flag("FEATURE_EXPECTED_PLANS"))
+    contracts: bool = field(default_factory=lambda: _flag("FEATURE_CONTRACTS"))  # contract ingestion + deal summary
 
 
 @dataclass(frozen=True)

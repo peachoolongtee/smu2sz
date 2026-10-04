@@ -9,6 +9,7 @@ Depends on `app.domain` only.
 """
 
 from app.egress.canaries import CANARIES_YAML, Canary, canary, load_canaries
+from app.egress.contracts import contract_private_values, protected_for
 from app.egress.guard import (
     ACTION_TAKEN,
     SAFE_TEMPLATES,
@@ -40,10 +41,12 @@ __all__ = [
     "assert_no_leak",
     "canary",
     "canary_tripped",
+    "contract_private_values",
     "counterparty_aliases",
     "guard",
     "load_canaries",
     "normalise",
+    "protected_for",
     "renderings",
     "scan",
 ]

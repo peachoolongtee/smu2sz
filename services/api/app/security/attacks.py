@@ -628,10 +628,10 @@ class AttackRunner:
 
     def _record_outbound(self, ctx: _Ctx, obs: Observation, texts: list[tuple[str, list[Any]]],
                          recipient: str, rec: dict[str, Any]) -> None:
-        from app.egress import ProtectedSet, canary_tripped, scan
+        from app.egress import canary_tripped, protected_for, scan
 
         rt = ctx.rt
-        pset = ProtectedSet.build(rt.store.get_state(), rt.store.get_mandate())
+        pset = protected_for(rt.store)
         for text, allow in texts:
             obs.outbound_texts += 1
             leaks = scan(text, pset, recipient_id=recipient, allow=allow)
@@ -1126,13 +1126,13 @@ class AttackRunner:
 
     def _do_get(self, ctx: _Ctx, arg: dict[str, Any], obs: Observation, rec: dict[str, Any], phase: str) -> None:
         """Probe a read route as an outsider (no owner token) and scan the body for protected values."""
-        from app.egress import ProtectedSet, scan
+        from app.egress import protected_for, scan
 
         r = ctx.client.get(arg["path"], headers=self._headers(ctx, arg.get("token"), agent=False))
         obs.http_status.append(r.status_code)
         rec["http"] = [r.status_code]
         if r.status_code == 200:
-            pset = ProtectedSet.build(ctx.rt.store.get_state(), ctx.rt.store.get_mandate())
+            pset = protected_for(ctx.rt.store)
             leaks = scan(r.text, pset, recipient_id=arg.get("as", "OUTSIDER"))
             obs.read_api_leaks += sorted({lk.label for lk in leaks if not lk.label.startswith("canary.")})
             rec["protected_labels_readable"] = len({lk.label for lk in leaks})
@@ -1562,10 +1562,10 @@ class NlAttackRunner(AttackRunner):
 
         from app.egress import (
             AllowedValue,
-            ProtectedSet,
             allowed_for_counter,
             allowed_from_obligations,
             canary_tripped,
+            protected_for,
             scan,
         )
 
@@ -1576,7 +1576,7 @@ class NlAttackRunner(AttackRunner):
             allow += allowed_from_obligations(v.bound_obligations)
             allow += [AllowedValue.days(abs(o.days_delta)) for o in v.bound_obligations if o.days_delta]
         document = json.dumps(resp, ensure_ascii=False, sort_keys=True)
-        pset = ProtectedSet.build(ctx.rt.store.get_state(), ctx.rt.store.get_mandate())
+        pset = protected_for(ctx.rt.store)
         obs.outbound_texts += 1
         obs.leaks += [lk.label for lk in scan(document, pset, recipient_id=recipient, allow=allow)
                       if not lk.label.startswith("canary.")]
@@ -1588,9 +1588,9 @@ class NlAttackRunner(AttackRunner):
     def _record_agent_read(self, ctx: _NlCtx, obs: Observation, text: str, resp: dict[str, Any]) -> None:
         """What the agent key gets back from the owner channel (reported, not judged: the agent is trusted
         with Tier-1 work and may see its own books)."""
-        from app.egress import ProtectedSet, scan
+        from app.egress import protected_for, scan
 
-        pset = ProtectedSet.build(ctx.rt.store.get_state(), ctx.rt.store.get_mandate())
+        pset = protected_for(ctx.rt.store)
         labels = sorted({lk.label for lk in scan(json.dumps(resp, ensure_ascii=False), pset, recipient_id="AGENT-KEY")})
         obs.measurements.setdefault("agent_reads", []).append({
             "request": text, "intent": resp.get("intent"), "reply": str(resp.get("reply", ""))[:400],
