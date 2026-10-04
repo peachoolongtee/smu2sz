@@ -76,11 +76,21 @@ def test_every_fixture_document_set_is_recorded_and_current(cache_path: Path, oi
 
 
 def test_no_orphan_cache_files(cache_path: Path) -> None:
+    from app.compiler.contract import chunk_document, chunk_source
+    from app.compiler.prompts import CONTRACT_PROMPT_VERSION
+    from app.compiler.record_cache import contract_documents
+    from app.domain.models import DocumentKind
+
     keys = set()
     for oid, o in OFFERS.items():
         docs = offer_documents(oid)
         pv = TERM_SHEET_PROMPT_VERSION if o.get("kind") == "term_sheet" else PROMPT_VERSION
         keys.add(cache_key(pv, docs))
+    for _fid, kind, doc in contract_documents(cache_path.parent):  # the demo contracts (brief 03 §6.6)
+        if kind == DocumentKind.LENDER_AGREEMENT:
+            keys.add(cache_key(TERM_SHEET_PROMPT_VERSION, [doc]))
+        else:
+            keys |= {cache_key(CONTRACT_PROMPT_VERSION, [chunk_source(doc, c)]) for c in chunk_document(doc)}
     assert {p.stem for p in cache_path.glob("*.json")} == keys
 
 

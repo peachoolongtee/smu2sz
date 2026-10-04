@@ -10,7 +10,7 @@ import re
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 
-from app.compiler.base import OfferResult, TermSheetResult
+from app.compiler.base import ContractResult, OfferResult, TermSheetResult
 from app.compiler.lexicon import (
     AS_USUAL_RE,
     clauses,
@@ -367,6 +367,11 @@ class RulesBackend:
 
     def extract_term_sheet(self, doc: SourceDocument) -> TermSheetResult:
         return TermSheetResult(_term_sheet(doc), RULES_MODEL_ID)
+
+    def extract_contract(self, chunk: SourceDocument) -> ContractResult:
+        from app.compiler.contract_rules import rules_contract  # the contract grammar lives in its own module
+
+        return ContractResult(rules_contract(chunk), RULES_MODEL_ID)
 
 
 def rules_offer(docs: Sequence[SourceDocument]) -> OfferExtraction:
@@ -895,6 +900,8 @@ _TS_RATE = rx(
     rf"(?:\bat\s+|\b(?:interest\s+)?rate\s*(?:of\s+|is\s+)?[:：]?\s*|\binterest\s+(?:of\s+|at\s+)?|(?:年化)?(?:年)?利率\s*[:：为]?\s*|年化\s*)"
     rf"(?P<v>{RATE})(?:\s*(?:p\.?a\.?|per\s+annum|a\s+year|annual(?:ly)?|APR))?", I)
 _TS_PRINCIPAL = [
+    # "a facility limit of RMB 150,000", "Credit limit: ¥500,000" (an agreement states its limit this way)
+    rx(rf"\b(?:facility|credit|loan|financing|borrowing)\s+(?:limit|amount)\s*(?:of\s+|is\s+|[:：]\s*)?(?:up\s+to\s+)?(?P<v>{AMT})", I),
     rx(rf"\b(?:[\w-]+\s+){{0,3}}(?:loan|facility|line|credit|financing|advance)\s+(?:of\s+|for\s+|amount\s+)?(?:up\s+to\s+)?[:：]?\s*(?P<v>{AMT})", I),
     rx(rf"(?P<v>{AMT})\s+(?:[\w-]+\s+){{0,3}}(?:loan|facility|credit\s+line|line|financing)", I),
     rx(rf"(?:贷款|额度|授信|融资)(?:金额)?\s*[:：为]?\s*(?P<v>{AMT})|(?P<vz>{AMT})\s*(?:的)?(?:贷款|额度|授信|融资)"),
@@ -903,13 +910,22 @@ _TS_TENOR = rx(
     r"\b(?:tenor|term|maturity|duration|for|over|repayable\s+(?:over|within|in))\s*(?:of\s+)?[:：]?\s*(?P<v>\d+\s*[-‑]?\s*(?:months?|years?|yrs?|mos?)\b|(?:one|a)\s+year)"
     r"|(?P<v2>\d+\s*[-‑]?\s*(?:months?|years?))\s+(?:tenor|term|loan)"
     r"|(?:期限|贷款期限)\s*[:：为]?\s*(?P<vz>\d+\s*(?:个月|年))|(?P<vz2>\d+\s*(?:个月|年))期", I)
+_TS_COUNT = r"(?:[a-z]+(?:-[a-z]+)?\s+)?\(?\d+\)?"  # "3" or, as agreements write it, "three (3)"
 _TS_LEAD = rx(
-    r"\b(?:disburse(?:ment|d)?|funds?\s+(?:available|released)|drawdown|funding)\s*(?:within|in|after)\s+(?P<v>\d+\s*(?:business\s+|working\s+)?days?)"
-    r"|(?P<vz>\d+\s*(?:个)?(?:工作日|天))(?:内)?放款", I)
+    rf"\b(?:disburse(?:ment|d)?|funds?\s+(?:available|released)|drawdown|funding)\s*(?:within|in|after)\s+(?P<v>{_TS_COUNT}\s*(?:business\s+|working\s+|calendar\s+)?days?)"
+    r"|(?P<vz>\d+\s*(?:个)?(?:工作日|天))(?:内)?放款"
+    # "Drawdowns are funded on the same day as the request": no lead time
+    rf"|\b(?:disburse\w*|funded|paid\s+out|drawdowns?|advances?)\b{G(40)}\b(?P<v0>(?:on\s+)?the\s+same\s+(?:business\s+|working\s+)?day|same[- ]day)", I)
+# The share of an invoice a financier advances: "Advance rate: the Financier advances 80% of ...", "advances up to 80% of the face".
+_TS_ADVANCE = rx(
+    rf"\badvance\s+rate\b{G(40)}(?P<v>{RATE})"
+    rf"|\badvances?\s+(?:of\s+)?(?:up\s+to\s+)?(?P<v2>{RATE})\s+of\s+(?:the\s+)?(?:face|invoice|outstanding|eligible)"
+    rf"|(?:融资比例|预付比例|垫付比例|融资额度为发票金额的)\s*[:：为]?\s*(?P<vz>{RATE})", I)
 _TS_GUARANTEE = rx(r"\bpersonal(?:ly)?\s+guarant\w*|\bguarantor\b|\bjoint\s+and\s+several\b|个人(?:连带)?(?:担保|保证)|连带责任保证|实际控制人.{0,6}担保", I)
 _TS_COLLATERAL = rx(r"\bcollateral\b|\bpledg\w*|\bmortgag\w*|\bsecured\s+(?:on|against|by)\b|\bcharge\s+over\b|抵押|质押", I)
 _TS_EQUITY = rx(r"\bequity\b|\bwarrants?\b|\bshares\s+(?:in|of)\b|\bconvertible\b|股权|入股|认股|对赌", I)
-_TS_COVENANT = rx(r"\bDSCR\b|\bdebt\s+service\s+coverage\b|\bleverage\b|\bclean[- ]?down\b|\bcovenant\w*|资产负债率|偿债覆盖|清零", I)
+_TS_COVENANT = rx(r"\bDSCR\b|\bdebt\s+service\s+coverage\b|\bleverage\b|\bclean[- ]?down\b|\bcovenant\w*"
+                  r"|\bdebt\s*(?:/|to)\s*EBITDA\b|资产负债率|偿债覆盖|清零", I)
 _TS_KIND: list[tuple[FacilityKind, re.Pattern[str]]] = [
     (FacilityKind.INVOICE_FINANCING, rx(r"invoice\s+(?:financ|discount)|factoring|receivables?\s+financ|保理|应收账款融资|发票贷", I)),
     (FacilityKind.EQUIPMENT_LEASE, rx(r"\blease\b|leasing|融资租赁|租赁", I)),
@@ -947,7 +963,10 @@ def _term_sheet(d: SourceDocument) -> TermSheetExtraction:
     for m in _TS_FEE.finditer(t):
         add("fee", m.start(), m.end(), m.group("v") or m.group("vz"))
     for m in _TS_LEAD.finditer(t):
-        add("lead_time", m.start(), m.end(), m.group("v") or m.group("vz"))
+        add("lead_time", m.start(), m.end(), m.group("v") or m.group("vz") or m.group("v0"))
+    for m in _TS_ADVANCE.finditer(t):  # before the interest rate: "advance rate" is not an interest rate
+        if free(m.start(), m.end()):
+            add("advance_rate", m.start(), m.end(), m.group("v") or m.group("v2") or m.group("vz"))
     for m in _TS_TENOR.finditer(t):
         if free(m.start(), m.end()):
             add("tenor", m.start(), m.end(), next(v for v in (m.group("v"), m.group("v2"), m.group("vz"), m.group("vz2")) if v))

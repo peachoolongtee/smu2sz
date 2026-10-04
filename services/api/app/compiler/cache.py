@@ -13,10 +13,10 @@ from pathlib import Path
 
 from pydantic import ValidationError
 
-from app.compiler.base import CacheMiss, OfferResult, TermSheetResult
+from app.compiler.base import CacheMiss, ContractResult, OfferResult, TermSheetResult
 from app.compiler.grounding import canonical_docs
-from app.compiler.prompts import PROMPT_VERSION, TERM_SHEET_PROMPT_VERSION
-from app.compiler.schema import OfferExtraction, TermSheetExtraction
+from app.compiler.prompts import CONTRACT_PROMPT_VERSION, PROMPT_VERSION, TERM_SHEET_PROMPT_VERSION
+from app.compiler.schema import ContractExtraction, OfferExtraction, TermSheetExtraction
 from app.domain.models import SourceDocument
 
 CACHE_MODEL_ID = "fixture-cache"
@@ -34,22 +34,26 @@ def write_entry(
     cache_dir: Path,
     prompt_version: str,
     docs: Sequence[SourceDocument],
-    extraction: OfferExtraction | TermSheetExtraction,
+    extraction: OfferExtraction | TermSheetExtraction | ContractExtraction,
     source_model: str,
     label: str = "",
 ) -> Path:
     cache_dir.mkdir(parents=True, exist_ok=True)
     path = entry_path(cache_dir, prompt_version, docs)
+    kind = ("term_sheet" if isinstance(extraction, TermSheetExtraction)
+            else "contract" if isinstance(extraction, ContractExtraction) else "offer")
     entry = {
         "key": path.stem,
         "label": label,
         "prompt_version": prompt_version,
-        "kind": "term_sheet" if isinstance(extraction, TermSheetExtraction) else "offer",
+        "kind": kind,
         "doc_ids": [d.doc_id for d in docs],
         "source_model": source_model,
         "extraction": extraction.model_dump(mode="json"),
     }
-    path.write_text(json.dumps(entry, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    # LF on every platform (.gitattributes keeps fixtures LF; a Windows recorder must not rewrite them as CRLF)
+    path.write_text(json.dumps(entry, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8",
+                    newline="\n")
     return path
 
 
@@ -87,3 +91,11 @@ class CacheBackend:
         except (ValidationError, KeyError) as e:
             raise CacheMiss("invalid cache entry") from e
         return TermSheetResult(ex, CACHE_MODEL_ID)
+
+    def extract_contract(self, chunk: SourceDocument) -> ContractResult:
+        entry = _read(self.cache_dir, CONTRACT_PROMPT_VERSION, [chunk])
+        try:
+            ex = ContractExtraction.model_validate(entry["extraction"])
+        except (ValidationError, KeyError) as e:
+            raise CacheMiss("invalid cache entry") from e
+        return ContractResult(ex, CACHE_MODEL_ID)

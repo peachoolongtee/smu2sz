@@ -30,9 +30,9 @@
     "lender_name": null,
     "repayment": null
   },
-  "key": "a1082a32454a6cd1e44945a28705dddd0b8faa8187e15029e1c310b89201b3e2",
+  "key": "5397296b3f126505edcedca11ab832aee284524efcbbdc0cdadf139ed508cfe2",
   "kind": "term_sheet",
   "label": "EX09_TERM_SHEET_PG",
-  "prompt_version": "termsheet-v2",
+  "prompt_version": "termsheet-v3",
   "source_model": "rules-v1"
 }
