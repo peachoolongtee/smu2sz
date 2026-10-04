@@ -97,6 +97,7 @@ Copy `infra/.env.example` to `infra/.env`, set `POSTGRES_PASSWORD`, `OWNER_TOKEN
 - `docs/ARCHITECTURE.md`: modules, contracts, engine and verdict rules, and the API
 - `docs/INVARIANTS.md`: the security laws
 - `docs/DEMO_FLOW.md`: the scripted demo and its numbers
+- `docs/UI_UX_CHANGES.md`: the living record of interface changes, the label map (old → new) and the open UX items
 - `docs/adr/`: decisions (storage, rounding, fixture timeline and router, evidence, autonomy requires proof, current books and the clock, the early-payment rule, DSCR for bullet loans read as a reserve-coverage reading, accepted terms written onto invoices, funding lots with dates); the financial rules are in `docs/FINANCIAL_SEMANTICS.md`
 - `services/api/evals/`: evaluation reports (`latest_report.md`, `accuracy_summary.md`, held-out reports, `security/`, `e2e/latest/`)
 - `CONTEXT.md`: the glossary
