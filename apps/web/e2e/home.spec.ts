@@ -42,7 +42,7 @@ async function expectWaitingNotSuccess(row: ReturnType<Page["getByTestId"]>) {
 test("home renders the six sections and the day-0 opener has a warning but nothing to approve", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "Home", level: 1 })).toBeVisible();
-  for (const name of ["Demo clock", "What needs you", "Where we stand", "Your agreements", "Waiting for you", "Warnings", "What the agent did"]) {
+  for (const name of ["Demo clock", "What needs you", "Where we stand", "Your agreements", "Warnings", "What the agent did"]) {
     await expect(page.getByRole("heading", { name, level: 2 })).toBeVisible();
   }
   await expect(page.getByTestId("home-day")).toHaveText("Day 0");
@@ -91,6 +91,10 @@ test("day 34: the alert says the cure needs approval before the click; Go ahead 
   await expect(page.getByTestId("fix-ALERT-RESERVE-42")).toHaveCount(0);
   await expect(page.getByTestId("home-opener")).toContainText("already waiting for your approval (APR-000001)");
   await expect(page.getByTestId("home-goahead")).toHaveCount(0);
+  // UX-4: with something queued the full "Waiting for you" card is back, listing it; the one-line empty state is gone.
+  await expect(page.getByRole("heading", { name: "Waiting for you" })).toBeVisible();
+  await expect(page.getByTestId("home-waiting-list")).toContainText("¥200,000.00");
+  await expect(page.getByTestId("home-waiting-empty")).toHaveCount(0);
   // The ledger rows: the queued request is not an executed action.
   const done = page.getByTestId("home-done-SUBMIT_INVOICE_FOR_FINANCING");
   await expect(done).toHaveCount(1);

@@ -93,7 +93,8 @@ hover hint (`nav.hint.*`), and the logo opens Home.
 [app/page.tsx](../apps/web/app/page.tsx). The header carries a "Today is day N" badge. Cards in order:
 
 1. **What needs you**: the agent's opening message, with Go ahead / Not now.
-2. **Waiting for you**: approvals waiting for the owner.
+2. **Waiting for you**: approvals waiting for the owner. With nothing waiting it shrinks to one quiet line, "✓
+   Nothing is waiting for your approval", with a link to Approvals. The full card returns when something waits.
 3. **Where we stand**: a one-line verdict in green or red ("All clear…" or "Heads up: cash is forecast to
    drop below your safety minimum on day N, by up to ¥X"), then cash, safety minimum, lowest cash ahead,
    loan payments covered and debt ÷ yearly earnings, each with which way is safer.
@@ -224,6 +225,27 @@ their wording; the plain sentence beside them explains them.
 
 ## 5. Change log
 
+### 2026-10-04: An empty "Waiting for you" shrinks to one line (UX-4)
+
+Commit: "Home: an empty Waiting for you shrinks to one line" (branch `test/ui-ux`)
+Goal: on most days nothing waits for the owner, yet a full card near the top of home said so, pushing the cash
+position and agreements down.
+
+| Change | Where |
+| --- | --- |
+| With no pending approvals, the card becomes one line with a tick, "Nothing is waiting for your approval", and the Approvals link; with any pending, the full card as before | `WaitingCard` in [lists.tsx](../apps/web/components/home/lists.tsx) |
+
+Decision: the item said "hide" the card. It shrinks to a line instead, so the owner still sees confirmation that
+nothing needs approval, rather than having to infer it from a missing card. While loading, or after an error, the
+full card shows as before.
+
+Tests: `home.spec.ts` no longer expects the "Waiting for you" heading at day 0, and now checks that after Go ahead
+on day 34 the full card is back, lists the ¥200,000.00 request and the one-line state is gone. The
+`home-waiting-empty` test id is kept on the line, so `catchup.spec.ts` is unchanged. Mock e2e 35 passed, 1 skipped;
+unit 13 passed; typecheck and lint clean.
+Not checked: the live e2e project.
+Follow-ups: closed UX-4.
+
 ### 2026-10-04: Correction: the "Technical summary and reference numbers" label
 
 Commit: "Decision page: the folded summary label now says it holds the technical summary" (branch `test/ui-ux`)
@@ -332,7 +354,6 @@ Follow-ups: UX-6 (Chinese review).
 | ID | Item | Size | Notes |
 | --- | --- | --- | --- |
 | UX-3 | Fold Cash forecast and Borrowing options into the decision page as "Why?" sections, so the deal path is two pages | Large | Do after the video is recorded; the project is in stability mode |
-| UX-4 | Hide "Waiting for you" when nothing is waiting | Small | `home.spec.ts` uses `home-waiting-empty`; update the test with it |
 | UX-5 | Link chat answers to the matching screen (a decision in chat opens Our decision) | Medium | |
 | UX-6 | Native review of the Chinese strings added on 4 Oct | Small | Written by the agent, not reviewed |
 | UX-7 | Run the live e2e project after both 4 Oct passes | Small | Needs the API running; see `apps/web/README.md` |
@@ -345,3 +366,4 @@ Follow-ups: UX-6 (Chinese review).
 | --- | --- | --- |
 | UX-1 | Merge the two fix buttons on home | 2026-10-04: One cure, one button on home |
 | UX-2 | A Next step bar on each step of the deal | 2026-10-04: A Next step bar on the deal pages |
+| UX-4 | Hide "Waiting for you" when nothing is waiting | 2026-10-04: An empty "Waiting for you" shrinks to one line |

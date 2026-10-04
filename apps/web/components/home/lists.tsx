@@ -1,6 +1,7 @@
 "use client";
 
 import { TierBadge } from "@/components/badges";
+import { CheckIcon } from "@/components/icons";
 import { OperationResultBox } from "@/components/operation-result";
 import { Badge, Card, EmptyState, ErrorState, LoadingBlock, type Tone } from "@/components/ui";
 import { getAlerts, getApprovals, getLedger } from "@/lib/api";
@@ -12,11 +13,31 @@ import { SectionLink } from "./today-card";
 
 const severityTone: Record<AlertSeverity, Tone> = { CRITICAL: "bad", WARNING: "warn", INFO: "info" };
 
-/** The Tier-2 approvals queue: how many are waiting and the first three. */
+/**
+ * The Tier-2 approvals queue: how many are waiting and the first three. With nothing waiting it shrinks to one quiet
+ * line (UX-4), so an empty card does not sit near the top of home; the full card returns as soon as something waits.
+ */
 export function WaitingCard() {
   const { t, te } = useI18n();
   const list = useAsync(getApprovals, []);
   const pending = list.data?.filter((a) => a.status === "PENDING") ?? [];
+  if (list.data && !list.error && pending.length === 0) {
+    return (
+      <p
+        id="home-waiting"
+        className="flex flex-wrap items-center gap-2 rounded-lg border border-line bg-surface px-4 py-2.5 text-sm text-ink-2"
+        data-testid="home-waiting-empty"
+      >
+        <span className="text-ok-fg">
+          <CheckIcon />
+        </span>
+        {t("home.waiting.empty")}
+        <span className="ml-auto">
+          <SectionLink href="/approvals">{t("home.waiting.open")}</SectionLink>
+        </span>
+      </p>
+    );
+  }
   return (
     <Card
       id="home-waiting"
@@ -33,10 +54,6 @@ export function WaitingCard() {
         <ErrorState error={list.error} onRetry={list.reload} />
       ) : !list.data ? (
         <LoadingBlock rows={1} />
-      ) : pending.length === 0 ? (
-        <p className="text-sm text-ink-3" data-testid="home-waiting-empty">
-          {t("home.waiting.empty")}
-        </p>
       ) : (
         <ul className="space-y-2" data-testid="home-waiting-list">
           {pending.slice(0, 3).map((a) => (
