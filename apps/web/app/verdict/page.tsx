@@ -5,6 +5,7 @@ import { useState } from "react";
 import { AnnualisedCard, offerLegs } from "@/components/annualised";
 import { AutonomyPanel } from "@/components/autonomy-panel";
 import { CheckIcon } from "@/components/icons";
+import { DealSteps } from "@/components/deal-steps";
 import { OutcomeBadge, TierBadge, outcomeHasTier } from "@/components/badges";
 import { PlanCard } from "@/components/plan-card";
 import {
@@ -56,6 +57,7 @@ export default function VerdictPage() {
   return (
     <>
       <PageHeader title={t("verdict.title")} subtitle={t("verdict.subtitle")} />
+      <DealSteps />
       {cur.error ? (
         <ErrorState error={cur.error} onRetry={cur.reload} />
       ) : cur.loading ? (
@@ -127,10 +129,16 @@ function VerdictBody({
             </span>
           </div>
           <div className="min-w-0 flex-1 basis-72">
-            <p className="text-sm leading-relaxed">{verdict.summary}</p>
-            <p className="mt-2 font-mono text-xs text-ink-3">
-              {verdict.id} &middot; {offerId} &middot; {t("verdict.versions", { m: verdict.mandate_version, s: verdict.state_version, c: verdict.calc_version })}
+            <p className="text-lg font-semibold leading-snug text-ink" data-testid="verdict-plain">
+              {te("verdict.plain", verdict.outcome)}
             </p>
+            <p className="mt-1 text-sm leading-relaxed text-ink-2">{verdict.summary}</p>
+            <details className="mt-2 text-xs text-ink-3">
+              <summary className="cursor-pointer">{t("verdict.refs")}</summary>
+              <p className="mt-1 font-mono">
+                {verdict.id} &middot; {offerId} &middot; {t("verdict.versions", { m: verdict.mandate_version, s: verdict.state_version, c: verdict.calc_version })}
+              </p>
+            </details>
           </div>
           <div className="min-w-44">
             {outcomeHasTier(verdict.outcome) ? <p className="mb-1 text-xs font-medium text-ink-3">{t("verdict.tier")}</p> : null}
@@ -158,11 +166,9 @@ function VerdictBody({
         autonomy={verdict.autonomy}
       />
 
-      <AnnualisedCard legs={offerLegs(verdict.annualised, verdict.counters)} />
-
       <section aria-labelledby="violations-title">
         <h2 id="violations-title" className="mb-2 text-sm font-semibold">
-          {t("verdict.violations", { n: verdict.violations.length })}
+          {verdict.violations.length ? t("verdict.violations", { n: verdict.violations.length }) : t("verdict.why")}
         </h2>
         {verdict.violations.length ? (
           <ul className="grid gap-4 xl:grid-cols-2">
@@ -174,68 +180,6 @@ function VerdictBody({
           <Callout tone="ok">{t("verdict.noViolations")}</Callout>
         )}
       </section>
-
-      {verdict.passed_checks.length ? (
-        <Card id="passed" title={t("verdict.passed", { n: verdict.passed_checks.length })} subtitle={t("verdict.passed.sub")}>
-          <ul className="divide-y divide-line">
-            {verdict.passed_checks.map((c) => (
-              <li key={c.code} className="flex flex-wrap items-start justify-between gap-x-4 gap-y-1 py-2">
-                <div className="min-w-0 flex-1 basis-64">
-                  <p className="flex items-center gap-1.5 text-sm font-medium">
-                    <span className="text-ok-fg">
-                      <CheckIcon />
-                    </span>
-                    {c.label}
-                  </p>
-                  {c.formula ? <p className="mt-0.5 font-mono text-xs text-ink-3">{c.formula}</p> : null}
-                </div>
-                <p className="text-sm tabular-nums">
-                  <span className="font-semibold">{c.observed}</span>
-                  <span className="text-ink-3"> &nbsp;{c.limit}</span>
-                </p>
-              </li>
-            ))}
-          </ul>
-        </Card>
-      ) : null}
-
-      {verdict.concession_values.length ? (
-        <Card
-          id="valuation"
-          title={t("verdict.valuation")}
-          subtitle={t("verdict.valuation.sub")}
-          actions={<Badge tone="bad">{t("verdict.total", { total: verdict.forward_concession_total_display })}</Badge>}
-        >
-          <TableWrap label={t("verdict.valuation")}>
-            <table className={tableCls}>
-              <caption className="sr-only">{t("verdict.valuation")}</caption>
-              <thead>
-                <tr>
-                  <th scope="col" className={thCls}>{t("verdict.obligation")}</th>
-                  <th scope="col" className={`${thCls} text-right`}>{t("verdict.value")}</th>
-                  <th scope="col" className={`${thCls} text-right`}>{t("verdict.perInvoice")}</th>
-                  <th scope="col" className={thCls}>{t("verdict.basis")}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {verdict.concession_values.map((c) => (
-                  <tr key={c.obligation_id}>
-                    <td className={`${tdCls} font-mono text-xs`}>{c.obligation_id}</td>
-                    <td className={`${tdCls} text-right font-medium tabular-nums`}>{c.value_display}</td>
-                    <td className={`${tdCls} text-right tabular-nums`}>{c.per_invoice_display ?? t("common.none")}</td>
-                    <td className={`${tdCls} min-w-72`}>
-                      <p>{c.basis}</p>
-                      <div className="mt-1.5">
-                        <Formula>{c.formula}</Formula>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </TableWrap>
-        </Card>
-      ) : null}
 
       <section aria-labelledby="counters-title">
         <h2 id="counters-title" className="mb-2 text-sm font-semibold">
@@ -255,6 +199,77 @@ function VerdictBody({
       {canNegotiate ? <NegotiationPanel offerId={offerId} negotiation={negotiation} /> : null}
 
       {plan ? <PlanCard plan={plan} id="verdict-plan" leadTimes={leadTimes} /> : null}
+
+      <section aria-labelledby="working-title" className="space-y-6 border-t border-line pt-6">
+        <div>
+          <h2 id="working-title" className="text-sm font-semibold">{t("verdict.working")}</h2>
+          <p className="mt-0.5 text-xs text-ink-3">{t("verdict.working.sub")}</p>
+        </div>
+        <AnnualisedCard legs={offerLegs(verdict.annualised, verdict.counters)} />
+
+        {verdict.passed_checks.length ? (
+          <Card id="passed" title={t("verdict.passed", { n: verdict.passed_checks.length })} subtitle={t("verdict.passed.sub")}>
+            <ul className="divide-y divide-line">
+              {verdict.passed_checks.map((c) => (
+                <li key={c.code} className="flex flex-wrap items-start justify-between gap-x-4 gap-y-1 py-2">
+                  <div className="min-w-0 flex-1 basis-64">
+                    <p className="flex items-center gap-1.5 text-sm font-medium">
+                      <span className="text-ok-fg">
+                        <CheckIcon />
+                      </span>
+                      {c.label}
+                    </p>
+                    {c.formula ? <p className="mt-0.5 font-mono text-xs text-ink-3">{c.formula}</p> : null}
+                  </div>
+                  <p className="text-sm tabular-nums">
+                    <span className="font-semibold">{c.observed}</span>
+                    <span className="text-ink-3"> &nbsp;{c.limit}</span>
+                  </p>
+                </li>
+              ))}
+            </ul>
+          </Card>
+        ) : null}
+
+        {verdict.concession_values.length ? (
+          <Card
+            id="valuation"
+            title={t("verdict.valuation")}
+            subtitle={t("verdict.valuation.sub")}
+            actions={<Badge tone="bad">{t("verdict.total", { total: verdict.forward_concession_total_display })}</Badge>}
+          >
+            <TableWrap label={t("verdict.valuation")}>
+              <table className={tableCls}>
+                <caption className="sr-only">{t("verdict.valuation")}</caption>
+                <thead>
+                  <tr>
+                    <th scope="col" className={thCls}>{t("verdict.obligation")}</th>
+                    <th scope="col" className={`${thCls} text-right`}>{t("verdict.value")}</th>
+                    <th scope="col" className={`${thCls} text-right`}>{t("verdict.perInvoice")}</th>
+                    <th scope="col" className={thCls}>{t("verdict.basis")}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {verdict.concession_values.map((c) => (
+                    <tr key={c.obligation_id}>
+                      <td className={`${tdCls} font-mono text-xs`}>{c.obligation_id}</td>
+                      <td className={`${tdCls} text-right font-medium tabular-nums`}>{c.value_display}</td>
+                      <td className={`${tdCls} text-right tabular-nums`}>{c.per_invoice_display ?? t("common.none")}</td>
+                      <td className={`${tdCls} min-w-72`}>
+                        <p>{c.basis}</p>
+                        <div className="mt-1.5">
+                          <Formula>{c.formula}</Formula>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </TableWrap>
+          </Card>
+        ) : null}
+
+      </section>
     </div>
   );
 }

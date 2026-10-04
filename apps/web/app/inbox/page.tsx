@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useId, useState } from "react";
 import { AnnotatedText } from "@/components/annotated-text";
+import { DealSteps } from "@/components/deal-steps";
 import { OfferItemCard } from "@/components/offer-parts";
 import { ArrowRightIcon } from "@/components/icons";
 import { Badge, Button, Callout, Card, EmptyState, ErrorState, LoadingBlock, PageHeader, Segmented } from "@/components/ui";
@@ -70,6 +71,7 @@ export default function InboxPage() {
   return (
     <>
       <PageHeader title={t("inbox.title")} subtitle={t("inbox.subtitle")} />
+      <DealSteps />
 
       <Card id="compose" title={t("inbox.compose")} subtitle={t("inbox.compose.sub")} className="mb-6">
         <div className="space-y-3">

@@ -20,8 +20,8 @@ export function ViolationCard({ v }: { v: Displayed<Violation> }) {
         {v.curable === true ? <Badge tone="warn">{t("verdict.curable")}</Badge> : null}
         {v.curable === false ? <Badge>{t("verdict.notCurable")}</Badge> : null}
       </div>
-      <p className="mt-2 text-sm font-medium">{v.message}</p>
-      <p className="text-xs text-ink-3">{te("violation", v.code)}</p>
+      <p className="mt-2 text-base font-semibold text-ink">{te("violation", v.code)}</p>
+      <p className="mt-0.5 text-sm text-ink-2">{v.message}</p>
 
       {v.observed || v.limit ? (
         <dl className="mt-3 grid grid-cols-2 gap-3">
@@ -36,6 +36,9 @@ export function ViolationCard({ v }: { v: Displayed<Violation> }) {
         </dl>
       ) : null}
 
+      {v.formula || inputs.length ? (
+        <details className="mt-3">
+          <summary className="cursor-pointer text-xs font-medium text-brand-700">{t("verdict.showCalc")}</summary>
       {v.formula ? (
         <div className="mt-3">
           <p className="mb-1 text-xs font-semibold text-ink-3">{t("common.formula")}</p>
@@ -55,6 +58,8 @@ export function ViolationCard({ v }: { v: Displayed<Violation> }) {
             ))}
           </dl>
         </div>
+      ) : null}
+        </details>
       ) : null}
 
       {v.curable && v.cure_cost_display ? (
@@ -89,10 +94,11 @@ export function CounterCard({ c, legs = [] }: { c: Displayed<CounterProposal>; l
           <AnnualisedLine leg={l} />
         </div>
       ))}
-      <div className="mt-3">
-        <p className="mb-1 text-xs font-semibold text-ink-3">{t("verdict.counter.priced")}</p>
+      <details className="mt-3">
+        <summary className="cursor-pointer text-xs font-medium text-brand-700">{t("verdict.showCalc")}</summary>
+        <p className="mb-1 mt-2 text-xs font-semibold text-ink-3">{t("verdict.counter.priced")}</p>
         <Formula>{c.formula}</Formula>
-      </div>
+      </details>
     </li>
   );
 }
