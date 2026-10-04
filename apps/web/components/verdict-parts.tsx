@@ -39,26 +39,26 @@ export function ViolationCard({ v }: { v: Displayed<Violation> }) {
       {v.formula || inputs.length ? (
         <details className="mt-3">
           <summary className="cursor-pointer text-xs font-medium text-brand-700">{t("verdict.showCalc")}</summary>
-      {v.formula ? (
-        <div className="mt-3">
-          <p className="mb-1 text-xs font-semibold text-ink-3">{t("common.formula")}</p>
-          <Formula>{v.formula}</Formula>
-        </div>
-      ) : null}
+          {v.formula ? (
+            <div className="mt-3">
+              <p className="mb-1 text-xs font-semibold text-ink-3">{t("common.formula")}</p>
+              <Formula>{v.formula}</Formula>
+            </div>
+          ) : null}
 
-      {inputs.length ? (
-        <div className="mt-3">
-          <p className="mb-1 text-xs font-semibold text-ink-3">{t("verdict.inputs")}</p>
-          <dl className="grid grid-cols-[minmax(0,max-content)_minmax(0,1fr)] gap-x-4 gap-y-1 rounded-md border border-line bg-subtle px-3 py-2 font-mono text-xs">
-            {inputs.map(([k, val]) => (
-              <div key={k} className="contents">
-                <dt className="text-ink-3">{k}</dt>
-                <dd className="min-w-0 break-words text-ink">{val}</dd>
-              </div>
-            ))}
-          </dl>
-        </div>
-      ) : null}
+          {inputs.length ? (
+            <div className="mt-3">
+              <p className="mb-1 text-xs font-semibold text-ink-3">{t("verdict.inputs")}</p>
+              <dl className="grid grid-cols-[minmax(0,max-content)_minmax(0,1fr)] gap-x-4 gap-y-1 rounded-md border border-line bg-subtle px-3 py-2 font-mono text-xs">
+                {inputs.map(([k, val]) => (
+                  <div key={k} className="contents">
+                    <dt className="text-ink-3">{k}</dt>
+                    <dd className="min-w-0 break-words text-ink">{val}</dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+          ) : null}
         </details>
       ) : null}
 

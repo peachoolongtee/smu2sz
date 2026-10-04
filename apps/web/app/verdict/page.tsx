@@ -132,9 +132,9 @@ function VerdictBody({
             <p className="text-lg font-semibold leading-snug text-ink" data-testid="verdict-plain">
               {te("verdict.plain", verdict.outcome)}
             </p>
-            <p className="mt-1 text-sm leading-relaxed text-ink-2">{verdict.summary}</p>
             <details className="mt-2 text-xs text-ink-3">
               <summary className="cursor-pointer">{t("verdict.refs")}</summary>
+              <p className="mt-1 text-sm leading-relaxed text-ink-2">{verdict.summary}</p>
               <p className="mt-1 font-mono">
                 {verdict.id} &middot; {offerId} &middot; {t("verdict.versions", { m: verdict.mandate_version, s: verdict.state_version, c: verdict.calc_version })}
               </p>

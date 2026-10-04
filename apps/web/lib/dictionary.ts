@@ -1117,6 +1117,14 @@ export const en = {
   "verdict.working": "The working behind this decision",
   "verdict.working.sub": "For your finance team: yearly rates, the rules it keeps and what each promise is worth.",
   "home.dayBadge": "Today is day {n}",
+  "violation.DISCOUNT_ABOVE_BREAK_EVEN": "The discount costs more than borrowing against the invoice",
+  "violation.EARLY_PAY_NOT_NEEDED": "We don't need the cash early, so the discount is wasted",
+  "violation.EARLY_PAY_DEARER_THAN_PLAN": "Getting paid early costs more than our cheapest borrowing plan",
+  "violation.NEW_BORROWING_NOT_ALLOWED": "Your limits don't allow new borrowing",
+  "violation.PRECONDITION_FAILED": "Something it depends on isn't in place yet",
+  "violation.STALE_OPERATION": "The books changed since this was prepared",
+  "violation.STALE_VERDICT": "The books changed since this decision; it must be checked again",
+  "violation.CONFLICTING_COMMITMENT": "It clashes with a deal already agreed",
 } as const;
 
 export type DictKey = keyof typeof en;
@@ -2234,4 +2242,12 @@ export const zh: Record<DictKey, string> = {
   "verdict.working": "这项决定的计算依据",
   "verdict.working.sub": "供财务团队参考：年化利率、符合的规则以及每项承诺的价值。",
   "home.dayBadge": "今天是第 {n} 天",
+  "violation.DISCOUNT_ABOVE_BREAK_EVEN": "折扣比用发票融资更贵",
+  "violation.EARLY_PAY_NOT_NEEDED": "我们并不急需这笔现金，折扣不划算",
+  "violation.EARLY_PAY_DEARER_THAN_PLAN": "提前收款比我们最便宜的借款方案更贵",
+  "violation.NEW_BORROWING_NOT_ALLOWED": "您的上限不允许新增借款",
+  "violation.PRECONDITION_FAILED": "所依赖的前提尚未满足",
+  "violation.STALE_OPERATION": "准备之后账目已发生变化",
+  "violation.STALE_VERDICT": "做出决定后账目已变化，需要重新检查",
+  "violation.CONFLICTING_COMMITMENT": "与已达成的协议冲突",
 };

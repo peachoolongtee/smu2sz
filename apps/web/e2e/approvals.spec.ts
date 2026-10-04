@@ -11,8 +11,8 @@ const ACCEPT_TEXT = "We will pay the full ¥420,000 invoice early at 0.5%.";
 
 test("a REJECT verdict shows the outcome only, no tier badge, and says nothing is executed", async ({ page }) => {
   await page.goto("/inbox");
-  await page.getByRole("button", { name: "Compile" }).click();
-  await page.getByRole("button", { name: "Evaluate against the mandate" }).click();
+  await page.getByRole("button", { name: "Read this message" }).click();
+  await page.getByRole("button", { name: "Check against my limits" }).click();
   await expect(page).toHaveURL(/\/verdict/);
   await expect(page.getByTestId("outcome-badge")).toContainText("REJECT");
   await expect(page.getByTestId("nothing-executed")).toHaveText("Nothing is executed");
@@ -25,8 +25,8 @@ test("a REJECT verdict shows the outcome only, no tier badge, and says nothing i
 test("a Tier 1 ACCEPT shows why the agent may accept it alone, with the server's three tests", async ({ page }) => {
   await page.goto("/inbox");
   await page.getByRole("textbox").fill(ACCEPT_TEXT);
-  await page.getByRole("button", { name: "Compile" }).click();
-  await page.getByRole("button", { name: "Evaluate against the mandate" }).click();
+  await page.getByRole("button", { name: "Read this message" }).click();
+  await page.getByRole("button", { name: "Check against my limits" }).click();
   await expect(page).toHaveURL(/\/verdict/);
   await expect(page.getByTestId("outcome-badge")).toContainText("ACCEPT");
   const panel = page.getByTestId("autonomy-panel");
