@@ -980,12 +980,22 @@ export interface CapexStructure {
 export interface CapexRequest {
   label: string;
   price_fen: Fen;
+  /** The owner's estimate of the extra operating cash the purchase brings each month (API default ¥22,000). */
+  monthly_uplift_fen?: Fen;
+  /** The month that extra cash starts (API default 4). */
+  uplift_start_month?: number;
+  /** Months the purchase keeps earning (API default 60). */
+  life_months?: number;
+  /** The owner's target return (API default 10%): the appraisal discounts the gains at it. */
+  hurdle_bp?: number;
 }
 
 /** POST /capex/evaluate: side-effect free, writes nothing. */
 export type CapexView = Displayed<{
   request: CapexRequest;
   npv_fen: Fen;
+  /** The server's reading of the sign of the value added (the UI never compares amounts). */
+  npv_positive?: boolean;
   /** null: no payback within the life. */
   payback_month: number | null;
   /** False: the project is not worth doing on the owner's estimate, so no financing structure is selected. */

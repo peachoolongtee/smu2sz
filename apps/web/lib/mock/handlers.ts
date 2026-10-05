@@ -384,10 +384,21 @@ function ensureApproval(key: "apply_loan"): ApprovalView {
 }
 
 /** Side-effect free, as on the API: nothing is queued. */
-export async function capexEvaluate(_req: CapexRequest): Promise<CapexView> {
-  void _req;
+export async function capexEvaluate(req: CapexRequest): Promise<CapexView> {
   await delay();
-  return clone(cast<CapexView>(capexJson));
+  const recorded = cast<CapexView>(capexJson);
+  // Mock mode has one recorded answer; any other estimate needs the live API rather than a wrong figure.
+  const r = recorded.request;
+  const differs = (["price_fen", "monthly_uplift_fen", "uplift_start_month", "life_months"] as const).some(
+    (k) => req[k] !== undefined && r[k] !== undefined && req[k] !== r[k],
+  );
+  if (differs) {
+    throw new ApiError(
+      422,
+      `Mock mode answers only the recorded purchase (${r.label}, ${r.price_display}). Set NEXT_PUBLIC_API_MODE=live to check other figures.`,
+    );
+  }
+  return clone(recorded);
 }
 
 /** The owner's explicit application: queues the recorded Tier-2 application once. */

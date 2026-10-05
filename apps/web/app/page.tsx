@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { AgreementsCard } from "@/components/home/agreements-card";
+import { CapexCard } from "@/components/home/capex-card";
 import { Glossary } from "@/components/home/glossary";
 import { NeedsCard } from "@/components/home/needs-card";
 import { DoneCard, RiskCard, WaitingCard } from "@/components/home/lists";
@@ -33,6 +34,7 @@ export default function HomePage() {
         <WaitingCard />
         <PositionCard />
         <AgreementsCard />
+        <CapexCard />
         <RiskCard />
         <DoneCard />
         <TodayCard onAdvanced={() => setAnswer(null)} />

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { CapexForm, lenderOf, useLenders } from "@/components/capex-form";
 import { CheckIcon, XIcon } from "@/components/icons";
 import { ViolationCard } from "@/components/verdict-parts";
 import {
@@ -20,16 +21,17 @@ import {
   thCls,
 } from "@/components/ui";
 import { downloadFile } from "@/lib/api";
-import { runBorrowerFile, runCapex, runCapexApply } from "@/lib/demo";
+import { runBorrowerFile, runCapexApply } from "@/lib/demo";
 import { useDemo } from "@/lib/demo-store";
 import { useI18n } from "@/lib/i18n";
 
 export default function CapexPage() {
   const { t } = useI18n();
   const demo = useDemo();
-  const [busy, setBusy] = useState<"capex" | "file" | "apply" | string | null>(null);
+  const [busy, setBusy] = useState<"file" | "apply" | string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const capex = demo.capex;
+  const lender = useLenders();
   const file = demo.borrowerFile;
   const application = demo.capexApplication;
   // The server selects nothing unless the project is worth doing; an illustration at another term is never selected.
@@ -37,11 +39,11 @@ export default function CapexPage() {
   const selectedStructure = capex?.structures.find((s) => s.id === capex.selected_id);
   const canPrepareFile = Boolean(selectedStructure && !selectedStructure.hypothetical && selectedStructure.facility_id);
 
-  async function run(kind: "capex" | "file" | "apply") {
+  async function run(kind: "file" | "apply") {
     setBusy(kind);
     setError(null);
     try {
-      await (kind === "capex" ? runCapex() : kind === "apply" ? runCapexApply() : runBorrowerFile());
+      await (kind === "apply" ? runCapexApply() : runBorrowerFile());
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -66,16 +68,12 @@ export default function CapexPage() {
       <PageHeader title={t("capex.title")} subtitle={t("capex.subtitle")} />
       {error ? <ErrorState error={error} /> : null}
 
+      <Card id="capex-question" title={t("capex.question")} subtitle={t("capex.question.sub")} className="mb-6">
+        <CapexForm />
+      </Card>
+
       {!capex ? (
-        <EmptyState
-          title={t("capex.empty.title")}
-          body={t("capex.empty.body")}
-          action={
-            <Button variant="primary" loading={busy === "capex"} onClick={() => void run("capex")}>
-              {t("capex.evaluate")}
-            </Button>
-          }
-        />
+        <EmptyState title={t("capex.empty.title")} body={t("capex.empty.body")} />
       ) : (
         <div className="space-y-6">
           <Callout tone={worth ? "info" : "warn"}>
@@ -113,6 +111,7 @@ export default function CapexPage() {
                 <thead>
                   <tr>
                     <th scope="col" className={`${thCls} sticky left-0 z-10`}>{t("capex.structure")}</th>
+                    <th scope="col" className={thCls}>{t("capex.lender")}</th>
                     <th scope="col" className={`${thCls} text-right`}>{t("capex.monthly")}</th>
                     <th scope="col" className={`${thCls} text-right`}>{t("capex.interest")}</th>
                     <th scope="col" className={`${thCls} text-right`} title={t("capex.charges.hint")}>{t("capex.charges")}</th>
@@ -138,6 +137,10 @@ export default function CapexPage() {
                             </Badge>
                           ) : null}
                         </th>
+                        <td className={`${tdCls} min-w-36`} data-testid={`lender-${s.id}`}>
+                          <span className="font-medium">{lenderOf(s, lender, t("capex.lender.cash"))}</span>
+                          {s.facility_id ? <span className="block font-mono text-xs text-ink-3">{s.facility_id}</span> : null}
+                        </td>
                         <td className={`${tdCls} whitespace-nowrap text-right font-medium tabular-nums`}>
                           {s.monthly_payment_display ?? t("common.none")}
                         </td>

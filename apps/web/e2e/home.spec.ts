@@ -214,3 +214,21 @@ test("funding in transit shows after the day-0 plan: cash in hand and the advanc
   await expect(position.getByTestId("in-transit-lot")).toContainText("¥255,000.00 lands on day 3");
   await expect(position.getByTestId("in-transit-lot")).toContainText("requested on day 0");
 });
+
+test("big purchase on home: the owner's entry gives the room on the price and each lender's terms", async ({ page }) => {
+  await page.goto("/");
+  const card = page.locator("#home-capex");
+  await card.getByTestId("capex-check").click();
+  await expect(card.getByTestId("home-capex-room")).toContainText("up to ¥380,885.77 higher");
+  const lenders = card.getByTestId("home-capex-lenders");
+  await expect(lenders).toContainText("Main bank");
+  await expect(lenders).toContainText("Equipment lessor");
+  await expect(lenders).toContainText("Best that passes");
+  // The same answer is on Big purchases, with the lender beside each structure.
+  await page.goto("/capex");
+  await expect(page.getByTestId("lender-loan_36m")).toContainText("Main bank");
+  // Mock mode has one recorded answer: other figures are refused rather than answered wrongly.
+  await page.getByTestId("capex-price").fill("500,000");
+  await page.getByTestId("capex-check").click();
+  await expect(page.getByText(/Mock mode answers only the recorded purchase/)).toBeVisible();
+});

@@ -22,6 +22,7 @@ import {
   selectOffer,
 } from "./demo-store";
 import { SAMPLES, type SampleId } from "./samples";
+import type { CapexRequest } from "./types";
 
 /**
  * The guided demo, in the order of docs/DEMO_FLOW.md: setup, Scene 1, Scene 2, Scene 3, Security.
@@ -68,11 +69,11 @@ export async function evaluate(offerId: string): Promise<void> {
 const noop = async () => {};
 
 /** The machine from docs/DEMO_FLOW.md Scene 3. The request is a typed input; the API does all the maths. */
-const CAPEX_REQUEST = { label: "\u00a5600k machine", price_fen: 60000000 };
+export const CAPEX_REQUEST: CapexRequest = { label: "\u00a5600k machine", price_fen: 60000000 };
 
-/** Evaluating writes nothing: no operation, no approval. */
-export async function runCapex(): Promise<void> {
-  recordCapex(await capexEvaluate(CAPEX_REQUEST));
+/** Evaluating writes nothing: no operation, no approval. The owner's own entry replaces the demo machine when given. */
+export async function runCapex(req: CapexRequest = CAPEX_REQUEST): Promise<void> {
+  recordCapex(await capexEvaluate(req));
 }
 
 /**
