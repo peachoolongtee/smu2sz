@@ -52,7 +52,9 @@ test("an approval card expands in place to the operation, the reason, the amount
   await page.goto("/approvals");
   const card = page.locator("#approval-APR-000001");
   await expect(card).toContainText("¥600,000.00");
-  await expect(card.getByTestId("approval-reason")).toContainText("apply for facility FAC-ETL");
+  // The card speaks in business words (the facility's name); the executor's own sentence with the id is an audit detail.
+  await expect(card.getByTestId("approval-headline")).toHaveText("Approve ¥600,000.00 of facility application?");
+  await expect(card.getByTestId("approval-reason")).toContainText("apply for facility Equipment term loan");
   await expect(card.getByTestId("approval-detail-APR-000001")).toHaveCount(0);
   await card.getByTestId("approval-toggle-APR-000001").click();
   const detail = card.getByTestId("approval-detail-APR-000001");

@@ -23,6 +23,7 @@ import type {
   CapexRequest,
   CapexView,
   FundingView,
+  HomeView,
   LedgerView,
   MandateView,
   Mode,
@@ -453,6 +454,18 @@ export async function getAlerts(): Promise<AlertsView> {
   return home.mockAlerts() ?? clone(cast<AlertsView>(alertsJson));
 }
 
+/** GET /home: the recorded summary for this point of the story (see lib/mock/home.ts). Owner only, as live. */
+export async function getHome(lang: "en" | "zh"): Promise<HomeView> {
+  await delay();
+  if (!getOwnerToken()) {
+    requestSignIn("required");
+    throw new ApiError(401, "Owner sign-in required (401). Sign in with the owner token to use this.");
+  }
+  void lang; // the recordings are English; the labels around them follow the dictionary
+  const dealt = Object.values(load().negotiated).some((n) => n.outcome === "DEAL");
+  return home.mockHome(dealt);
+}
+
 export async function getClock(): Promise<ClockView> {
   await delay();
   return home.mockClock();
@@ -470,6 +483,11 @@ export async function nlOpener(sessionId: string | undefined, lang: "en" | "zh")
 
 export async function actOnAlert(id: string, bound: ActRequest): Promise<AlertActResult> {
   await delay();
+  if (id === "ALERT-RESERVE-12") {
+    const r0 = home.mockActDay0();
+    for (const op of r0.results) appendRecorded({ kind: op.kind, status: op.status, tier: op.tier, message: op.message, day: 0 });
+    return clone(r0);
+  }
   const r = home.mockAct(id, bound);
   // Once only: asking again while the cure waits changes nothing.
   const first = !load().approvals.some((x) => x.op_id?.startsWith("alert:"));
@@ -545,7 +563,8 @@ export async function whatIf(params: WhatIfParams): Promise<WhatIfResult> {
   } as WhatIfResult);
 }
 
-export async function demoReset(): Promise<void> {
+export async function demoReset(scenario?: string): Promise<void> {
+  void scenario; // the mock holds one recorded scenario
   await delay();
   // Like the live API, the reset is an owner action: without a token the sign-in dialog opens and the caller retries after sign-in.
   if (!getOwnerToken()) {

@@ -1,0 +1,43 @@
+{
+  "alert_id": "ALERT-RESERVE-12",
+  "day": 0,
+  "results": [
+    {
+      "op_id": "alert:ALERT-RESERVE-12:v1:0",
+      "kind": "DRAW_FACILITY",
+      "status": "EXECUTED",
+      "tier": "TIER_1",
+      "violations": [],
+      "seq": 1,
+      "entry_hash": "1f5b144e075e17b7929aa0d155deacb57e633d5cc553f2eac7c74578e9598118",
+      "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+      "effective_day": 0,
+      "approval_id": null,
+      "message": "Drew ¥150,000.00 on FAC-LINE on day 0"
+    },
+    {
+      "op_id": "alert:ALERT-RESERVE-12:v1:1",
+      "kind": "SUBMIT_INVOICE_FOR_FINANCING",
+      "status": "EXECUTED",
+      "tier": "TIER_1",
+      "violations": [],
+      "seq": 2,
+      "entry_hash": "9e51304d2322dffb96d8ddf3f5e8c43b3cde5ce3f4dfcdbcd5a0e6877c6d6b5a",
+      "prev_hash": "1f5b144e075e17b7929aa0d155deacb57e633d5cc553f2eac7c74578e9598118",
+      "effective_day": 0,
+      "approval_id": null,
+      "message": "Advance ¥336,000.00 on RCV-A from FAC-IF on day 0; the cash lands on day 3 after the 3-day lead time, not today"
+    }
+  ],
+  "executed": 2,
+  "pending_approval": 0,
+  "refused": 0,
+  "cured": true,
+  "alerts_after": {
+    "counts": {
+      "CRITICAL": 0,
+      "WARNING": 1,
+      "INFO": 1
+    }
+  }
+}

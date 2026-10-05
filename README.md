@@ -25,14 +25,14 @@ cd services/api && uv sync && uv run uvicorn app.main:app --reload      # API on
 cd apps/web && pnpm install && NEXT_PUBLIC_API_MODE=live pnpm dev        # UI on :3000; omit the variable for offline mock mode
 ```
 
-Click **Start** in the demo bar and sign in as the owner when asked (the local demo token is `demo-owner-token`; add `NEXT_PUBLIC_DEMO=1` to prefill it). The chat panel opens from the header on every page, and the owner home at `/` shows the day, the agent's opener and what is waiting. To see the whole path from the deal to the repaid credit line without the UI (17 steps, in process, exit 0; the day-34 cure takes two steps, go ahead then approve, and lands on day 37): `PYTHONUTF8=1 uv run --project services/api python scripts/demo_run.py`.
+Switch to **Demo** in the header, click **Start demo** and sign in as the owner when asked (the local demo token is `demo-owner-token`; add `NEXT_PUBLIC_DEMO=1` to prefill it). The chat panel opens from the header on every page, and the owner home at `/` shows the day, the agent's opener and what is waiting. To see the whole path from the deal to the repaid credit line without the UI (17 steps, in process, exit 0; the day-34 cure takes two steps, go ahead then approve, and lands on day 37): `PYTHONUTF8=1 uv run --project services/api python scripts/demo_run.py`.
 
 **3. Test.**
 
 ```bash
 cd services/api && uv run pytest                     # 5,446 passed, 33 skipped on 3 Oct 2026 (Windows, SKIP_PERF_BENCH=1: the latency benchmarks skipped; two sequential chunks, about 14 min)
 cd apps/web && pnpm lint && pnpm typecheck && pnpm build && pnpm test:unit && pnpm test:e2e
-                                                     # Playwright mock e2e: 35 passed, live project 33 (3 Oct 2026, after the web refresh); on macOS Chromium one phone-layout test fails, see docs/HANDOVER.md
+                                                     # Playwright mock e2e: 36 passed, 1 skipped (5 Oct 2026, after the UI redesign); the live project needs uv
                                                      # (once: pnpm exec playwright install chromium)
 ```
 

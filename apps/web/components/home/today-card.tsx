@@ -10,7 +10,7 @@ import { useAsync } from "@/lib/use-async";
 
 const MAX_DAYS = 366;
 
-/** The day, and the demo control that moves the simulated clock. Every section refetches after an advance. */
+/** The simulated day and the demo control that moves it (Demo mode only). Every read refetches after an advance. */
 export function TodayCard({ onAdvanced }: { onAdvanced: () => void }) {
   const { t } = useI18n();
   const clock = useAsync(getClock, []);

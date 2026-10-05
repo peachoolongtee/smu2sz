@@ -24,5 +24,19 @@
   "amount_display": "¥200,000.00",
   "detail": "effective annual cost 32.52% is above the mandate's 15.00% ceiling for what the agent may borrow alone (all charges on ¥200,000.00 held 10 days (day 37 to day 47), annualised = 32.52%)",
   "decided_day": null,
-  "result_message": null
+  "result_message": null,
+  "presentation": {
+    "headline": "Approve ¥200,000.00 of invoice financing?",
+    "what": "Finance ¥200,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. on Invoice financing (onboarded platform)",
+    "facility_name": "Invoice financing (onboarded platform)",
+    "buyer_name": "Foshan Home Retail Co.",
+    "invoice": "the ¥420,000.00 invoice to Foshan Home Retail Co.",
+    "cost_display": "¥1,782.19",
+    "rate_text": "32.5%",
+    "cost_due_day": 47,
+    "lands_day": 37,
+    "protects": "It keeps cash above your safe level through day 46.",
+    "reason": "effective annual cost 32.52% is above the mandate's 15.00% ceiling for what the agent may borrow alone (all charges on ¥200,000.00 held 10 days (day 37 to day 47), annualised = 32.52%)",
+    "result_message": null
+  }
 }

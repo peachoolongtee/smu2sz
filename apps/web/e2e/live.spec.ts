@@ -88,15 +88,15 @@ test("the day-0 plan: 'go ahead' brings cash now and leaves the advance in trans
   await expect(second.getByTestId("chat-reply")).toContainText("Cash in now");
   await expect(second.getByTestId("chat-reply")).toContainText("Still to land");
 
+  // The Business home keeps cash in hand apart from the advance on its way (both are the server's strings).
   await page.goto("/");
-  const position = page.locator("#home-position");
-  await expect(position.getByText("¥550,000.00")).toBeVisible();
-  await expect(position.getByTestId("in-transit-lot")).toContainText("¥255,000.00 lands on day 3");
+  await expect(page.getByTestId("home-cash")).toHaveText("¥550,000.00");
+  await expect(page.getByTestId("home-in-transit")).toContainText("¥255,000.00 on its way");
   // Once day 3 has passed the advance is cash.
   expect((await request.post(`${API}/clock/advance`, { headers: owner, data: { to_day: 4 } })).ok()).toBeTruthy();
   await page.goto("/");
-  await expect(page.locator("#home-position").getByText("¥805,000.00")).toBeVisible();
-  await expect(page.locator("#home-position").getByTestId("in-transit")).toHaveCount(0);
+  await expect(page.getByTestId("home-cash")).toHaveText("¥805,000.00");
+  await expect(page.getByTestId("home-in-transit")).toHaveCount(0);
   await request.post(`${API}/demo/reset`, { headers: owner, data: {} });
 });
 
@@ -160,11 +160,12 @@ test("on day 34 the cure needs the owner: the alert says so, the click queues it
     if (r.method() === "POST" && /\/alerts\/[^/]+\/act$/.test(r.url())) acts.push(r.postDataJSON());
   });
   await page.goto("/");
-  const risk = page.getByTestId("home-alert-ALERT-RESERVE-42");
-  await expect(risk).toContainText("Cost ¥1,782.19");
-  await expect(risk.getByText("Needs your approval").first()).toBeVisible();
+  const risk = page.getByTestId("home-next-action");
+  await expect(risk).toContainText("¥1,782.19");
+  await expect(risk.getByTestId("next-action-needs-owner")).toContainText("15.00%");
+  await expect(risk.getByTestId("fix-ALERT-RESERVE-42")).toHaveText("Queue it for my approval");
 
-  // The click queues it: PENDING_APPROVAL with an id, never styled as success, and the alert stays open.
+  // The click queues it: PENDING_APPROVAL with an id, never styled as success, and the action stays on the home.
   await risk.getByTestId("fix-ALERT-RESERVE-42").click();
   await expect.poll(() => acts.length).toBe(1);
   expect(typeof acts[0].state_version).toBe("number");
@@ -175,7 +176,8 @@ test("on day 34 the cure needs the owner: the alert says so, the click queues it
   await expect(op.getByTestId("op-state").locator(":scope > span")).not.toHaveClass(/text-ok-fg/);
   const waiting = page.getByTestId("alert-waiting-ALERT-RESERVE-42");
   await expect(waiting).toContainText(/Waiting for your approval \(APR-\d+\)/);
-  await expect(page.getByTestId("home-alert-ALERT-RESERVE-42")).toBeVisible();
+  await expect(page.getByTestId("home-next-action")).toBeVisible();
+  await expect(page.locator('[data-testid^="home-approval-APR-"]').first()).toContainText("Approve ¥200,000.00 of invoice financing?");
 
   // The owner approves on the approval card: it executes and says when the cash lands.
   await page.getByTestId("alert-approval-link-ALERT-RESERVE-42").click();
@@ -193,11 +195,10 @@ test("on day 34 the cure needs the owner: the alert says so, the click queues it
   await expect(reloaded.locator('[data-testid^="approval-result-"]')).toContainText("the cash lands on day 37");
 
   await page.goto("/");
-  await expect(page.getByTestId("home-alert-ALERT-RESERVE-42")).toHaveCount(0);
-  const transit = page.locator('[data-testid^="home-alert-ALERT-TRANSIT-"]');
-  await expect(transit).toContainText("lands on day 37");
-  await expect(transit.getByRole("button")).toHaveCount(0);
-  await expect(page.locator("#home-position").getByTestId("in-transit-lot")).toContainText("¥200,000.00 lands on day 37");
+  await expect(page.getByTestId("home-next-action")).toHaveCount(0);
+  await expect(page.getByTestId("home-status")).toHaveAttribute("data-status", "WATCH");
+  await expect(page.getByTestId("home-in-transit")).toContainText("¥200,000.00 on its way");
+  await expect(page.getByTestId("home-changes-list")).toContainText("lands on day 37");
 
   await post("/demo/reset", {});
 });

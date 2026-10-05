@@ -1,0 +1,168 @@
+{
+  "day": 34,
+  "state_version": 7,
+  "lang": "en",
+  "status": "ACTION_NEEDED",
+  "headline": "Cash falls ¥200,000.00 below your ¥300,000.00 safe level on day 42 (in 8 days).",
+  "note": "The agent has a fix ready. It needs your approval because of its cost.",
+  "cash": {
+    "cash_fen": 30000000,
+    "floor_fen": 30000000,
+    "lowest_fen": 10000000,
+    "lowest_day": 42,
+    "first_breach_day": 42,
+    "horizon_days": 120,
+    "in_transit": null,
+    "dscr_text": "2.00×",
+    "leverage_text": "1.49×",
+    "min_dscr_bp": 12500,
+    "max_leverage_bp": 25000,
+    "cash_display": "¥300,000.00",
+    "floor_display": "¥300,000.00",
+    "lowest_display": "¥100,000.00",
+    "min_dscr_display": "1.25×",
+    "max_leverage_display": "2.50×"
+  },
+  "next_action": {
+    "alert_id": "ALERT-RESERVE-42",
+    "kind": "RESERVE_BREACH_AHEAD",
+    "title": "Finance ¥200,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. on Invoice financing (onboarded platform)",
+    "legs": [
+      {
+        "index": 0,
+        "operation_kind": "SUBMIT_INVOICE_FOR_FINANCING",
+        "label": "Finance ¥200,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. on Invoice financing (onboarded platform)",
+        "facility_id": "FAC-IF",
+        "facility_name": "Invoice financing (onboarded platform)",
+        "receivable_id": "RI:BUYER-1:2",
+        "buyer_name": "Foshan Home Retail Co.",
+        "amount_fen": 20000000,
+        "amount_display": "¥200,000.00",
+        "cost_fen": 178219,
+        "cost_display": "¥1,782.19",
+        "rate_text": "32.5%",
+        "cost_days": 10,
+        "cost_due_day": 47,
+        "lands_day": 37,
+        "above_apr_cap": true
+      }
+    ],
+    "receive_fen": 20000000,
+    "receive_display": "¥200,000.00",
+    "cost_display": "¥1,782.19",
+    "cost_note": null,
+    "rate_text": "32.5%",
+    "cost_days": 10,
+    "lands_day": 37,
+    "needs_owner": true,
+    "needs_owner_reason": "The yearly cost of 32.5% is above your 15.00% limit for what the agent may borrow alone.",
+    "if_nothing": "¥200,000.00 below your safe level on day 42; the gap peaks at ¥200,000.00 on day 42.",
+    "after": "Cash stays above your safe level through day 46.",
+    "why": "The cheapest committed funding that covers the whole gap in time.",
+    "detail": "Projected cash closes at ¥100,000.00 on day 42, ¥200,000.00 below the reserve floor; the gap peaks at ¥200,000.00 on day 42 and lasts to day 46. A committed cure exists: SUBMIT_INVOICE_FOR_FINANCING Invoice financing (onboarded platform) ¥200,000.00, cost ¥1,782.19 (32.5% a year for 10 days); that is above the 15.00% ceiling for what the agent may borrow alone, so it needs the owner's approval before it runs.",
+    "formula": "shortfall = floor − closing_d: ¥300,000.00 − ¥100,000.00 = ¥200,000.00 (day 42); max over days 42..46 = ¥200,000.00",
+    "pending_approval_id": null,
+    "state_version": 7,
+    "suggestions": [
+      {
+        "operation_kind": "SUBMIT_INVOICE_FOR_FINANCING",
+        "facility_id": "FAC-IF",
+        "receivable_id": "RI:BUYER-1:2",
+        "amount_fen": 20000000,
+        "amount_display": "¥200,000.00"
+      }
+    ]
+  },
+  "approvals": [],
+  "pending_count": 0,
+  "changes": [
+    {
+      "day": 32,
+      "seq": null,
+      "kind": "LATE",
+      "actor": "",
+      "text": "¥162,800.00 outstanding from Foshan Home Retail Co. was due on day 32 and is still OPEN."
+    }
+  ],
+  "receivables": {
+    "open_count": 3,
+    "open_total_display": "¥1,002,800.00",
+    "past_due": [
+      {
+        "receivable_id": "RCV-A",
+        "buyer_id": "BUYER-1",
+        "buyer_name": "Foshan Home Retail Co.",
+        "face_fen": 16280000,
+        "face_display": "¥162,800.00",
+        "due_day": 32,
+        "past_due": true,
+        "days_late": 2,
+        "invoice": "the ¥420,000.00 invoice to Foshan Home Retail Co."
+      }
+    ],
+    "next_receipt": {
+      "receivable_id": "RI:BUYER-1:2",
+      "buyer_id": "BUYER-1",
+      "buyer_name": "Foshan Home Retail Co.",
+      "face_fen": 42000000,
+      "face_display": "¥420,000.00",
+      "due_day": 47,
+      "past_due": false,
+      "days_late": 0,
+      "invoice": "the ¥420,000.00 invoice to Foshan Home Retail Co."
+    },
+    "promised": null,
+    "lapsed_promises": 0
+  },
+  "warnings": [
+    {
+      "id": "ALERT-PASTDUE-RCV-A",
+      "kind": "RECEIVABLE_PAST_DUE",
+      "title": "Receivable RCV-A is 2 day(s) past due",
+      "detail": "¥162,800.00 outstanding from Foshan Home Retail Co. was due on day 32 and is still OPEN. The conservative trajectory no longer counts on a dated receipt.",
+      "day": 32
+    },
+    {
+      "id": "ALERT-HEADROOM-34",
+      "kind": "RESERVE_HEADROOM_LOW",
+      "title": "Reserve headroom thin on day 34",
+      "detail": "Cash stays above the floor but only by ¥0.00 on day 34 (8 day(s) under 10% of the floor).",
+      "day": 34
+    }
+  ],
+  "facilities": [
+    {
+      "id": "FAC-LINE",
+      "name": "Bank credit line",
+      "status": "COMMITTED",
+      "limit_display": "¥150,000.00",
+      "drawn_display": "¥149,986.20",
+      "available_display": "¥13.80",
+      "lead_time_days": 0
+    },
+    {
+      "id": "FAC-IF",
+      "name": "Invoice financing (onboarded platform)",
+      "status": "COMMITTED",
+      "limit_display": "¥350,000.00",
+      "drawn_display": "¥0.00",
+      "available_display": "¥350,000.00",
+      "lead_time_days": 3
+    },
+    {
+      "id": "FAC-EARLYPAY",
+      "name": "Buyer early-payment offer",
+      "status": "COMMITTED",
+      "limit_display": "¥420,000.00",
+      "drawn_display": "¥0.00",
+      "available_display": "¥420,000.00",
+      "lead_time_days": 2
+    }
+  ],
+  "counts": {
+    "CRITICAL": 1,
+    "WARNING": 2,
+    "INFO": 0
+  },
+  "note_basis": "Conservative projection of today's books: unconfirmed receipts are not counted."
+}

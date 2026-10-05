@@ -102,7 +102,7 @@ test("demo stepper walks Scene 1, Scene 2, Scene 3 and Security with the golden 
 
   await next(page, /\/approvals/);
   // The queue reason, as the server words it.
-  await expect(page.getByText(/apply for facility FAC-ETL/i).first()).toBeVisible();
+  await expect(page.getByText(/apply for facility Equipment term loan/i).first()).toBeVisible();
 
   // Security: the FastCapital message.
   await next(page, /\/security/);
@@ -156,7 +156,7 @@ test("reset clears the session", async ({ page }) => {
   await page.getByTestId("demo-next").click();
   await expect(page).toHaveURL(/\/inbox/);
   await page.getByTestId("demo-reset").click();
-  await expect(page).toHaveURL(/\/mandate/);
+  await expect(page).toHaveURL(/\/demo/);
   await page.goto("/ledger");
   await expect(page.getByText("No operations yet")).toBeVisible();
 });

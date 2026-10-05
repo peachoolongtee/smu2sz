@@ -70,19 +70,30 @@ same client code as live mode (`lib/api.ts`, `lib/live/*`), so a mock file is ex
 deterministic (re-running on a fresh API leaves `git status mocks` empty); the few volatile values it normalises (the
 commitment id and nonce and the hashes derived from them, what-if timings) are listed in the script header.
 
+### Business and Demo modes
+
+Two shells, chosen with the switch in the header and remembered in `localStorage` (`tl-mode`, `lib/mode.ts`). **Business** is
+the product the owner uses: a top navigation of six questions (Home, Deals, Cash & funding, Receivables, Approvals, Activity,
+plus Limits), no clock, no stepper, no mock or sample controls. **Demo** is for judges: the story page (`/demo`) with the
+fifteen steps, the clock, the scenario switch and the side doors, the story bar on every page, and the engine views (Mandate,
+Inbox, Trajectory, Funding, Verdict, What-if, Capex, Ledger, Alerts, Reconciliation, Security, Evidence). Engine routes
+always render the Demo shell; business routes render the Demo shell only while Demo mode is on (running a step or Reset
+turns it on, so the walk through `/approvals` keeps its bar). `docs/UX_AUDIT.md` is the audit behind the split.
+
 ### Home (`/`)
 
-The owner home answers "what needs me today". Six cards, each reading through `lib/api.ts`: **Today** (GET `/clock` and a
-labelled demo control, POST `/clock/advance {days}`), **What needs you** (POST `/nl/opener`; "Go ahead" / "Not now" send
-"go ahead" / "cancel" through `lib/chat.ts` in the owner's session, so the opener and the answer also show in the chat
-panel), **Position** (cash from `/state`; floor, lowest cash, month-1 DSCR and leverage and their limits from
-`/trajectory`), **Waiting for you** (`/approvals/queue`), **At risk** (`/alerts`, with "Let the agent fix this" on
-`actionable` alerts, POST `/alerts/{id}/act`; the same button is on `/alerts`) and **Done by the agent** (`/ledger`,
-`requested_by = AGENT`). Every section refetches after a clock advance or an executed action (`bump()`). The owner calls
-answer 403 without the token; `ownerOn403` in `lib/live/http.ts` opens the sign-in dialog for that too.
+The Business home is one owner read, `GET /home?lang=` (`services/api/app/api/home.py`): a status word (SAFE, WATCH,
+ACTION_NEEDED, CRITICAL) with one sentence, the three figures (cash today, safe level, lowest cash ahead), the best next
+action (the cure of the first actionable critical alert, with what the owner receives, what it costs and at what yearly
+rate, the day the money lands, who decides and why, what happens if nothing is done, and the after-state), the pending
+approvals as questions, what changed in the last week, who has not paid and the next expected receipt, and the details
+(funding in transit, warnings, facilities, the debt readings). Every sentence and figure is the server's; the page renders
+and never computes. "Go ahead" sends the same bound act as the alerts page (`POST /alerts/{id}/act` with the state version
+and the suggestions shown); when the cost is above the owner's yearly limit the server queues it and the home says it waits.
+The approval cards (`/approvals`) read the queue's `presentation` fields (the question, names, cost, landing day).
 
-Mock mode replays a script recorded from the real API on the demo path (`mocks/home_*.json`, `lib/mock/home.ts`): day 0 to 33
-"nothing needs you"; from day 34 the opener has news and the reserve alert is actionable until it is cured.
+Mock mode replays summaries recorded on the demo path (`mocks/home_summary_*.json`, `lib/mock/home.ts`): the opening books,
+after the day-0 fix ran, after the deal (quiet), day 34 with the late invoice, the queued fix and the approved fix.
 
 ### Live-mode notes
 
@@ -98,7 +109,7 @@ Mock mode replays a script recorded from the real API on the demo path (`mocks/h
 
 ## Tests
 
-`playwright.config.ts` has three projects. `desktop` and `phone` run against a mock-mode build on :3100.
+`playwright.config.ts` has three projects (`PW_CHROMIUM_PATH` points them at a pre-installed Chromium when the pinned build cannot be downloaded). `desktop` and `phone` run against a mock-mode build on :3100.
 `live` runs `demo`, `whatif`, `alerts`, `chat`, `contract` and `live` specs against uvicorn (:8000, in-memory store,
 recorded LLM cache, no Supabase) and a live-mode build on :3000. `demo.spec.ts` and `chat.spec.ts` are the same files in both
 modes and asserts the same golden numbers. `contract.spec.ts` calls the live adapters from Node against the

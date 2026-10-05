@@ -20,6 +20,7 @@ import type {
   CapexRequest,
   CapexView,
   FundingView,
+  HomeView,
   LedgerView,
   MandateView,
   Mode,
@@ -96,6 +97,8 @@ export const live = {
   borrowerFile: (req: BorrowerFileRequest) => http<BorrowerFileView>("POST", "/borrower-file", { body: req }),
 
   getAlerts: () => http<AlertsView>("GET", "/alerts"),
+  /** The owner's home read: written by the server in the language asked for; the owner token is required. */
+  getHome: (lang: "en" | "zh") => http<HomeView>("GET", `/home?lang=${lang}`),
   getReconciliation: async (): Promise<ReconciliationView> =>
     (await http<{ reconciliation: ReconciliationView }>("GET", "/reconciliation")).reconciliation,
 
@@ -126,8 +129,8 @@ export const live = {
 
   whatIf: (params: WhatIfParams) => http<WhatIfResult>("POST", "/whatif", { body: params }),
 
-  demoReset: async (): Promise<void> => {
-    await http("POST", "/demo/reset", { body: {} });
+  demoReset: async (scenario?: string): Promise<void> => {
+    await http("POST", scenario ? `/demo/reset?scenario=${encodeURIComponent(scenario)}` : "/demo/reset", { body: {} });
   },
 
   getEvidence: () => http<string>("GET", "/evidence", { as: "text" }),

@@ -1,0 +1,166 @@
+{
+  "day": 0,
+  "state_version": 1,
+  "lang": "en",
+  "status": "ACTION_NEEDED",
+  "headline": "Cash falls ¥240,000.00 below your ¥300,000.00 safe level on day 12 (in 12 days).",
+  "note": "The agent has a fix ready and can run it alone.",
+  "cash": {
+    "cash_fen": 40000000,
+    "floor_fen": 30000000,
+    "lowest_fen": -10500000,
+    "lowest_day": 30,
+    "first_breach_day": 12,
+    "horizon_days": 120,
+    "in_transit": null,
+    "dscr_text": "2.00×",
+    "leverage_text": "1.35×",
+    "min_dscr_bp": 12500,
+    "max_leverage_bp": 25000,
+    "cash_display": "¥400,000.00",
+    "floor_display": "¥300,000.00",
+    "lowest_display": "−¥105,000.00",
+    "min_dscr_display": "1.25×",
+    "max_leverage_display": "2.50×"
+  },
+  "next_action": {
+    "alert_id": "ALERT-RESERVE-12",
+    "kind": "RESERVE_BREACH_AHEAD",
+    "title": "Draw ¥150,000.00 on Bank credit line and finance ¥336,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. on Invoice financing (onboarded platform)",
+    "legs": [
+      {
+        "index": 0,
+        "operation_kind": "DRAW_FACILITY",
+        "label": "Draw ¥150,000.00 on Bank credit line",
+        "facility_id": "FAC-LINE",
+        "facility_name": "Bank credit line",
+        "receivable_id": null,
+        "buyer_name": null,
+        "amount_fen": 15000000,
+        "amount_display": "¥150,000.00",
+        "cost_fen": null,
+        "cost_display": null,
+        "rate_text": null,
+        "cost_days": null,
+        "cost_due_day": null,
+        "lands_day": 0,
+        "above_apr_cap": false
+      },
+      {
+        "index": 1,
+        "operation_kind": "SUBMIT_INVOICE_FOR_FINANCING",
+        "label": "Finance ¥336,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. on Invoice financing (onboarded platform)",
+        "facility_id": "FAC-IF",
+        "facility_name": "Invoice financing (onboarded platform)",
+        "receivable_id": "RCV-A",
+        "buyer_name": "Foshan Home Retail Co.",
+        "amount_fen": 33600000,
+        "amount_display": "¥336,000.00",
+        "cost_fen": 299408,
+        "cost_display": "¥2,994.08",
+        "rate_text": "11.2%",
+        "cost_days": 29,
+        "cost_due_day": 32,
+        "lands_day": 3,
+        "above_apr_cap": false
+      }
+    ],
+    "receive_fen": 48600000,
+    "receive_display": "¥486,000.00",
+    "cost_display": "¥2,994.08",
+    "cost_note": "Interest on the Bank credit line draw is not included: it runs only while the balance stays drawn.",
+    "rate_text": "11.2%",
+    "cost_days": 29,
+    "lands_day": 3,
+    "needs_owner": false,
+    "needs_owner_reason": null,
+    "if_nothing": "¥240,000.00 below your safe level on day 12; the gap peaks at ¥405,000.00 on day 30.",
+    "after": "Cash stays above your safe level through day 31.",
+    "why": "The cheapest committed funding that covers the whole gap in time.",
+    "detail": "Projected cash closes at ¥60,000.00 on day 12, ¥240,000.00 below the reserve floor; the gap peaks at ¥405,000.00 on day 30 and lasts to day 31. A committed cure exists: DRAW_FACILITY Bank credit line ¥150,000.00 + SUBMIT_INVOICE_FOR_FINANCING Invoice financing (onboarded platform) ¥336,000.00, cost ¥2,994.08 (11.2% a year for 29 days).",
+    "formula": "shortfall = floor − closing_d: ¥300,000.00 − ¥60,000.00 = ¥240,000.00 (day 12); max over days 12..31 = ¥405,000.00",
+    "pending_approval_id": null,
+    "state_version": 1,
+    "suggestions": [
+      {
+        "operation_kind": "DRAW_FACILITY",
+        "facility_id": "FAC-LINE",
+        "receivable_id": null,
+        "amount_fen": 15000000,
+        "amount_display": "¥150,000.00"
+      },
+      {
+        "operation_kind": "SUBMIT_INVOICE_FOR_FINANCING",
+        "facility_id": "FAC-IF",
+        "receivable_id": "RCV-A",
+        "amount_fen": 33600000,
+        "amount_display": "¥336,000.00"
+      }
+    ]
+  },
+  "approvals": [],
+  "pending_count": 0,
+  "changes": [],
+  "receivables": {
+    "open_count": 1,
+    "open_total_display": "¥420,000.00",
+    "past_due": [],
+    "next_receipt": {
+      "receivable_id": "RCV-A",
+      "buyer_id": "BUYER-1",
+      "buyer_name": "Foshan Home Retail Co.",
+      "face_fen": 42000000,
+      "face_display": "¥420,000.00",
+      "due_day": 32,
+      "past_due": false,
+      "days_late": 0,
+      "invoice": "the ¥420,000.00 invoice to Foshan Home Retail Co."
+    },
+    "promised": null,
+    "lapsed_promises": 0
+  },
+  "warnings": [
+    {
+      "id": "ALERT-HEADROOM-32",
+      "kind": "RESERVE_HEADROOM_LOW",
+      "title": "Reserve headroom thin on day 32",
+      "detail": "Cash stays above the floor but only by ¥15,000.00 on day 32 (15 day(s) under 10% of the floor).",
+      "day": 32
+    }
+  ],
+  "facilities": [
+    {
+      "id": "FAC-LINE",
+      "name": "Bank credit line",
+      "status": "COMMITTED",
+      "limit_display": "¥150,000.00",
+      "drawn_display": "¥0.00",
+      "available_display": "¥150,000.00",
+      "lead_time_days": 0
+    },
+    {
+      "id": "FAC-IF",
+      "name": "Invoice financing (onboarded platform)",
+      "status": "COMMITTED",
+      "limit_display": "¥350,000.00",
+      "drawn_display": "¥0.00",
+      "available_display": "¥350,000.00",
+      "lead_time_days": 3
+    },
+    {
+      "id": "FAC-EARLYPAY",
+      "name": "Buyer early-payment offer",
+      "status": "COMMITTED",
+      "limit_display": "¥420,000.00",
+      "drawn_display": "¥0.00",
+      "available_display": "¥420,000.00",
+      "lead_time_days": 2
+    }
+  ],
+  "counts": {
+    "CRITICAL": 1,
+    "WARNING": 1,
+    "INFO": 0
+  },
+  "note_basis": "Conservative projection of today's books: unconfirmed receipts are not counted."
+}

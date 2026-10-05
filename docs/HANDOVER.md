@@ -119,6 +119,8 @@ nothing is a bank covenant test.
 
 Re-run on the Mac on 5 Oct 2026 at `bac61f3` (the application code is unchanged since `db097e0`; only the web refresh and documents merged after it): backend 5,452 passed, 26 skipped, 1 failed (the EX01 evaluate benchmark at 270 ms against a 250 ms target, full suite in 8 min 15 s without `SKIP_PERF_BENCH`); scenarios 49/49 (87 turns); `scripts/demo_run.py` exit 0; attacks 255 (122 API + 133 chat), 0 with harm; language-boundary certification (cache) WRONG_MATERIAL 0; `scripts/evaluate.py` every target passing (0 missed in all eight suites; runnable optimality 26/26, 67/67 golden values, 264 chat texts scanned, 0 disclosed); web mock e2e 34 passed, 1 skipped, 1 failed (`responsive.spec.ts` phone project: the chat slide-over measures 431 px on a 412 px viewport; it fails on every rerun on macOS Chromium, while the other phone tests pass). A five-item live smoke of the certification with DeepSeek as the only provider gave 5 CORRECT_EXECUTABLE, WRONG_MATERIAL 0 (exit 3: the fallback provider is not certified).
 
+Re-run in the cloud on 5 Oct 2026 after the UI redesign (`feat/ux-redesign`, Linux, `SKIP_PERF_BENCH=1`, two chunks): backend 5,452 passed, 33 skipped, 0 failed; scenarios 49/49 (87 turns); `scripts/demo_run.py` exit 0; attacks 255 (122 API + 133 chat), 0 with harm; web mock e2e 36 passed, 1 skipped; web live e2e 31 passed (the `live.spec.ts` home checks rewritten for the Business home). The application engine is unchanged by the redesign; `GET /home` and the queue's `presentation` fields are presentation reads.
+
 **The owner stopped the red-team rounds on 3 Oct.** Five rounds (3, 7, 3, 7 and 6 findings) are done and all fixed.
 The engine is in **stability mode**: fix regressions, keep the evidence regenerated, rehearse the demo, keep the
 documents true. No broad features and no more red-team rounds unless the owner asks.
@@ -241,10 +243,12 @@ RESERVE_BREACH on the cash-corrected books, so the label file `fixtures/heldout/
 
 ## 6. What to do next, in order
 
-**From 5 Oct the active task is the UI/UX audit and redesign in `docs/handover/03_ux_redesign_brief.md`.** Its
-sequence: run the app, audit every screen, write `docs/UX_AUDIT.md`, report the checkpoint (brief section 28), then
-implement. Backend changes are limited to narrow presentation fields the UI needs (brief section 22). The list below
-remains the backlog for the engine, in stability mode.
+**The UI/UX audit and redesign of `docs/handover/03_ux_redesign_brief.md` was done on 5 Oct** (`docs/UX_AUDIT.md`, then
+the merge `feat/ux-redesign`): two shells (Business and Demo), the Business home on the presentation read `GET /home`
+(`services/api/app/api/home.py`, tests in `tests/api/test_home.py`), approval cards as questions on the queue's
+`presentation` fields, the Deals, Cash & funding, Receivables, Activity and Limits pages, the story page `/demo`; mocks
+re-recorded; `home.spec.ts`, `catchup.spec.ts` and `responsive.spec.ts` rewritten. The engine is unchanged. Remaining UX
+debt is listed at the end of `docs/UX_AUDIT.md`. The list below remains the backlog for the engine, in stability mode.
 
 1. Read the three mission documents first: `docs/AGENT_MISSION.md`, `docs/CONTINUOUS_OPTIMIZATION.md` (the live
    tracker; `docs/NEXT_FIXES.md` is history) and `docs/FINANCIAL_SEMANTICS.md`.
@@ -259,8 +263,8 @@ remains the backlog for the engine, in stability mode.
    `cd services/api && uv run python -m app.security.attacks --report` (255 attacks, 0 with harm),
    `uv run --project services/api python scripts/evaluate.py` (every target PASS; about 6 minutes), and
    `uv run --project services/api python scripts/certify_language_boundary.py --backend cache` and `--backend fake`
-   (WRONG_MATERIAL 0). For the web app `E2E_TARGET=mock pnpm exec playwright test` (35 when last run) and, if another
-   program holds port 8000, `E2E_API_PORT=8010 E2E_TARGET=live pnpm exec playwright test` (33 after the refresh). Scenario, attack, evaluation and certification runs rewrite tracked files under
+   (WRONG_MATERIAL 0). For the web app `E2E_TARGET=mock pnpm exec playwright test` (36 passed, 1 skipped after the redesign) and, if another
+   program holds port 8000, `E2E_API_PORT=8010 E2E_TARGET=live pnpm exec playwright test`. Scenario, attack, evaluation and certification runs rewrite tracked files under
    `services/api/evals/`; commit them only when the task is to refresh evidence.
 3. Open rows of the backlog (`docs/CONTINUOUS_OPTIMIZATION.md` section 1): PG1 (PostgreSQL run, needs a URL), LC1 (live
    certification, needs a key; a five-item DeepSeek-only smoke passed on the Mac on 5 Oct), NR1 (the "no runnable plan" worlds: should the agent propose drawing the line and
