@@ -129,3 +129,4 @@ The official template reuses last year's file. The **2025** FinTechathon logo is
 - **Diagram.** Render `docs/deliverables/architecture.mmd` to PNG (for example `npx -p @mermaid-js/mermaid-cli mmdc -i architecture.mmd -o architecture.png -w 2000`). `scripts/build_deliverables.py` embeds the same PNG in the Technical Document when it exists.
 - **Live demo.** Have a fallback: keep the demo video's Scene 1 and 2 clips on the laptop and run the app in mock mode offline.
 - **Rehearse to 9:30** with a timer. If you run over, cut slide 4 first, then the chat half of slide 10.
+- **Contract ingestion.** If the deal card or the documents page appears on a slide or in the live demo, say plainly that the demo contract and lender agreements were written to match the synthetic scenario, that the held-out contract set is pending (no accuracy figure is quoted), and "the agent read it, you confirmed it": a confirmed contract changes no books.

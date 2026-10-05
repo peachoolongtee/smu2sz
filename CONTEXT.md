@@ -32,3 +32,5 @@
   - 3: never.
 - **NO DEAL**: bounded negotiation ended without an acceptable package. It's a first-class outcome.
 - **Borrower file**: the lender-ready pack built from verified state only, mocked in the style of WeBank 微业贷.
+- **Contract record**: a signed contract or lender agreement the owner uploaded, with the agent's reading (every term quoting its clause), its flags and the hash of its text. It is PROPOSED until the owner confirms or rejects it. A confirmed contract is displayed, never booked: the agent read it, the owner confirmed it.
+- **Deal**: one buyer's confirmed contract shown beside the live books: what changed since signing, the terms in force, the invoices, what the supplier owes and the next action.

@@ -117,6 +117,14 @@ PostgreSQL cases). The web counts are the last known ones: mock e2e 35, live e2e
 progress, so they were not re-run. This is a simulation: lenders, the buyer and the bank feed are simulated, and
 nothing is a bank covenant test.
 
+**Contract ingestion (5 Oct 2026, branch `feat/contract-ingestion` from `experiments`, local commits).** Brief 03
+(`docs/handover/03_contract_ingestion_brief.md`) is built: document upload and reading, owner confirmation logged in the
+chain, the deal card and the documents card on the home page, the documents page, `SHOW_DEAL` in chat, four attacks, the
+golden equality test and the held-out harness (the set itself is pending). `docs/SYSTEM_WALKTHROUGH.md` sections 5.19 and
+12 describe it. Its gate: backend 5,664 passed, 33 skipped; scenarios 49/49; 259 attacks (126 API + 133 chat) with
+0 harm; `scripts/demo_run.py` exit 0; `scripts/evaluate.py` every target PASS; language-boundary certification WRONG_MATERIAL 0
+(cache and fake, unchanged); web mock e2e 44 passed (1 skipped), live e2e 39 passed (2 skipped).
+
 **The owner stopped the red-team rounds on 3 Oct.** Five rounds (3, 7, 3, 7 and 6 findings) are done and all fixed.
 The engine is in **stability mode**: fix regressions, keep the evidence regenerated, rehearse the demo, keep the
 documents true. No broad features and no more red-team rounds unless the owner asks.
@@ -242,19 +250,20 @@ RESERVE_BREACH on the cash-corrected books, so the label file `fixtures/heldout/
 1. Read the three mission documents first: `docs/AGENT_MISSION.md`, `docs/CONTINUOUS_OPTIMIZATION.md` (the live
    tracker; `docs/NEXT_FIXES.md` is history) and `docs/FINANCIAL_SEMANTICS.md`.
 2. Run the gate. From `services/api`, as two sequential chunks (about 8 and 6 minutes on Windows; expect
-   about 5,446 passed, 33 skipped in all), each `SKIP_PERF_BENCH=1 uv run pytest -o addopts= -q -p no:cacheprovider`:
+   about 5,664 passed, 33 skipped in all), each `SKIP_PERF_BENCH=1 uv run pytest -o addopts= -q -p no:cacheprovider`:
    chunk A = `tests/alerts tests/api tests/books tests/borrower_file tests/capex tests/clock tests/commitments
-   tests/compiler tests/counterparties tests/covenants tests/egress tests/evals tests/financial tests/funding`;
+   tests/compiler tests/contracts tests/counterparties tests/covenants tests/egress tests/evals tests/financial
+   tests/funding tests/ingest`;
    chunk B = `tests/mandate tests/nl tests/operations tests/persistence tests/security tests/verifier tests/whatif
    tests/concurrency tests/certification tests/test_fixtures.py tests/test_money.py`. From the repo root, with
    `PYTHONUTF8=1`: `uv run --project services/api python scripts/run_scenarios.py --inproc` (49/49),
    `uv run --project services/api python scripts/demo_run.py` (exit 0, 14 ledger entries),
-   `cd services/api && uv run python -m app.security.attacks --report` (255 attacks, 0 with harm),
+   `cd services/api && uv run python -m app.security.attacks --report` (259 attacks, 0 with harm),
    `uv run --project services/api python scripts/evaluate.py` (every target PASS; about 6 minutes), and
    `uv run --project services/api python scripts/certify_language_boundary.py --backend cache` and `--backend fake`
-   (WRONG_MATERIAL 0). For the web app `E2E_TARGET=mock pnpm exec playwright test` (35 when last run) and, if another
-   program holds port 8000, `E2E_API_PORT=8010 E2E_TARGET=live pnpm exec playwright test` (30 when last run); the web
-   refresh is in progress. Scenario, attack, evaluation and certification runs rewrite tracked files under
+   (WRONG_MATERIAL 0). For the web app `E2E_TARGET=mock pnpm exec playwright test` (44 passed, 1 skipped on 5 Oct) and,
+   if another program holds port 8000, `E2E_API_PORT=8010 E2E_TARGET=live pnpm exec playwright test` (39 passed, 2
+   skipped on 5 Oct). Scenario, attack, evaluation and certification runs rewrite tracked files under
    `services/api/evals/`; commit them only when the task is to refresh evidence.
 3. Open rows of the backlog (`docs/CONTINUOUS_OPTIMIZATION.md` section 1): PG1 (PostgreSQL run, needs a URL), LC1 (live
    certification, needs a key), NR1 (the "no runnable plan" worlds: should the agent propose drawing the line and
