@@ -7,49 +7,56 @@ import { CodeBadge, OpStatusBadge } from "./badges";
 import { SpanQuote } from "./offer-parts";
 import { Badge, Formula, Hash } from "./ui";
 
-/** One violation with its formula and inputs shown verbatim from the server. */
+/**
+ * One broken rule: its plain name and the server's one-line message stay in view; the figures (this offer against your
+ * limit), the formula, the inputs, the rule code and the quoted clause open in a dropdown, so a page of rules stays short.
+ */
 export function ViolationCard({ v }: { v: Displayed<Violation> }) {
   const { t, te } = useI18n();
   const inputs = Object.entries(v.inputs);
+  const hasDetail = Boolean(v.observed || v.limit || v.formula || inputs.length || v.spans.length || v.cure_note);
   return (
     <li className="min-w-0 rounded-lg border border-bad-line bg-surface p-4" data-testid={`violation-${v.code}`}>
-      <div className="flex flex-wrap items-center gap-2">
-        <CodeBadge code={v.code} tone="bad" />
-        {v.day !== null ? <Badge tone="bad">{t("common.dayN", { n: v.day })}</Badge> : null}
-        {v.month !== null ? <Badge>{t("common.monthN", { n: v.month })}</Badge> : null}
-        {v.curable === true ? <Badge tone="warn">{t("verdict.curable")}</Badge> : null}
-        {v.curable === false ? <Badge>{t("verdict.notCurable")}</Badge> : null}
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <p className="min-w-0 flex-1 basis-48 text-base font-semibold text-ink">{te("violation", v.code)}</p>
+        <div className="flex flex-wrap items-center gap-1.5">
+          {v.day !== null ? <Badge tone="bad">{t("common.dayN", { n: v.day })}</Badge> : null}
+          {v.month !== null ? <Badge>{t("common.monthN", { n: v.month })}</Badge> : null}
+          {v.curable === true ? <Badge tone="warn">{t("verdict.curable")}</Badge> : null}
+          {v.curable === false ? <Badge>{t("verdict.notCurable")}</Badge> : null}
+        </div>
       </div>
-      <p className="mt-2 text-base font-semibold text-ink">{te("violation", v.code)}</p>
       <p className="mt-0.5 text-sm text-ink-2">{v.message}</p>
-
-      {v.observed || v.limit ? (
-        <dl className="mt-3 grid grid-cols-2 gap-3">
-          <div>
-            <dt className="text-xs text-ink-3">{t("verdict.observed")}</dt>
-            <dd className="text-lg font-semibold tabular-nums text-bad-fg">{v.observed ?? t("common.none")}</dd>
-          </div>
-          <div>
-            <dt className="text-xs text-ink-3">{t("verdict.limit")}</dt>
-            <dd className="text-lg font-semibold tabular-nums">{v.limit ?? t("common.none")}</dd>
-          </div>
-        </dl>
+      {v.curable && v.cure_cost_display ? (
+        <p className="mt-2 text-sm font-medium text-warn-fg">{t("verdict.cureCost", { cost: v.cure_cost_display })}</p>
       ) : null}
 
-      {v.formula || inputs.length ? (
-        <details className="mt-3">
-          <summary className="cursor-pointer text-xs font-medium text-brand-700">{t("verdict.showCalc")}</summary>
+      {hasDetail ? (
+        <details className="mt-3 rounded-md border border-line bg-subtle/60 px-3 py-2">
+          <summary className="cursor-pointer text-xs font-medium text-brand-700">{t("verdict.details")}</summary>
+          {v.observed || v.limit ? (
+            <dl className="mt-3 grid grid-cols-2 gap-3">
+              <div>
+                <dt className="text-xs text-ink-3">{t("verdict.observed")}</dt>
+                <dd className="text-base font-semibold tabular-nums text-bad-fg">{v.observed ?? t("common.none")}</dd>
+              </div>
+              <div>
+                <dt className="text-xs text-ink-3">{t("verdict.limit")}</dt>
+                <dd className="text-base font-semibold tabular-nums">{v.limit ?? t("common.none")}</dd>
+              </div>
+            </dl>
+          ) : null}
+          {v.cure_note ? <p className="mt-3 text-xs text-warn-fg">{v.cure_note}</p> : null}
           {v.formula ? (
             <div className="mt-3">
               <p className="mb-1 text-xs font-semibold text-ink-3">{t("common.formula")}</p>
               <Formula>{v.formula}</Formula>
             </div>
           ) : null}
-
           {inputs.length ? (
             <div className="mt-3">
               <p className="mb-1 text-xs font-semibold text-ink-3">{t("verdict.inputs")}</p>
-              <dl className="grid grid-cols-[minmax(0,max-content)_minmax(0,1fr)] gap-x-4 gap-y-1 rounded-md border border-line bg-subtle px-3 py-2 font-mono text-xs">
+              <dl className="grid grid-cols-[minmax(0,max-content)_minmax(0,1fr)] gap-x-4 gap-y-1 rounded-md border border-line bg-surface px-3 py-2 font-mono text-xs">
                 {inputs.map(([k, val]) => (
                   <div key={k} className="contents">
                     <dt className="text-ink-3">{k}</dt>
@@ -59,19 +66,14 @@ export function ViolationCard({ v }: { v: Displayed<Violation> }) {
               </dl>
             </div>
           ) : null}
+          {v.spans.map((s) => (
+            <SpanQuote key={`${s.doc_id}:${s.start}`} text={s.text} />
+          ))}
+          <p className="mt-3">
+            <CodeBadge code={v.code} tone="bad" />
+          </p>
         </details>
       ) : null}
-
-      {v.curable && v.cure_cost_display ? (
-        <div className="mt-3 rounded-md border border-warn-line bg-warn-bg px-3 py-2 text-sm text-warn-fg">
-          <p className="font-semibold">{t("verdict.cureCost", { cost: v.cure_cost_display })}</p>
-          {v.cure_note ? <p className="mt-0.5 text-xs">{v.cure_note}</p> : null}
-        </div>
-      ) : null}
-
-      {v.spans.map((s) => (
-        <SpanQuote key={`${s.doc_id}:${s.start}`} text={s.text} />
-      ))}
     </li>
   );
 }

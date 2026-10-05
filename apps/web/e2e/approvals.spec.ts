@@ -20,6 +20,17 @@ test("a REJECT verdict shows the outcome only, no tier badge, and says nothing i
   await expect(outcome).not.toContainText("Agent can act");
   await expect(outcome).not.toContainText("the agent may act");
   await expect(page.getByTestId("autonomy-panel")).toHaveCount(0);
+  // The answer card holds the key points: the asks, each broken rule with its figure, the counters and their cost.
+  const glance = page.getByTestId("verdict-glance");
+  await expect(glance).toContainText("settle the ¥420k early at 1.2%");
+  await expect(page.getByTestId("glance-RESERVE_BREACH")).toContainText("¥209,960.00 on day 47, against your limit of ¥300,000.00");
+  await expect(glance).toContainText("Option A · costs us");
+  await expect(page.getByTestId("glance-footnote")).toContainText("¥28,326.92");
+  // A rule card keeps "this offer / your limit" in its dropdown until opened.
+  const rule = page.getByTestId("violation-RESERVE_BREACH");
+  await expect(rule.getByText("Your limit", { exact: true })).toBeHidden();
+  await rule.locator("summary").click();
+  await expect(rule.getByText("Your limit", { exact: true })).toBeVisible();
 });
 
 test("a Tier 1 ACCEPT shows why the agent may accept it alone, with the server's three tests", async ({ page }) => {

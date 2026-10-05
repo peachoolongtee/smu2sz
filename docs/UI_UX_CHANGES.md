@@ -124,15 +124,16 @@ and "Warnings" beside it.
 
 **Our decision** (`/verdict`), top to bottom:
 
-1. The answer: outcome badge plus one plain sentence per outcome (`verdict.plain.*`). The server summary and
-   the IDs are folded under "Technical summary and reference numbers".
+1. The answer: outcome badge plus one plain sentence per outcome (`verdict.plain.*`), then the decision at a glance:
+   what they asked for, why we can't say yes (or why it is safe), what we would offer back, and a footnote with the
+   yearly value given to the buyer and the cost of each fix. The server summary and the IDs are folded under
+   "Technical summary and reference numbers".
 2. The Next step bar: with counter-offers, "choose what to offer back" (jumps to them); once the buyer agrees,
    "See it on your home page" (opens home scrolled to Your agreements); after no deal, "Back to Buyer offers".
    When the next move is not clear (for example a rejection with nothing to offer back), there is no bar.
 3. Why the agent may or may not accept alone (autonomy panel).
-4. **Rules this breaks**: each card leads with the plain rule name, then the server's message, then "This
-   offer" against "Your limit". The formula and inputs sit behind "Show the calculation"; the cost of a fix
-   and the quoted clause stay visible.
+4. **Rules this breaks**: each card shows the plain rule name, the server's message and the cost of a fix. "This
+   offer" against "Your limit", the formula, the inputs and the quoted clause open in a dropdown.
 5. **What we would offer back**: counter-offers with their cost to us. Their pricing formula is behind "Show the
    calculation".
 6. **Send our response**: the "Demo: how the simulated buyer reacts" switch and **Send our counter-offer**.
@@ -227,6 +228,29 @@ their wording; the plain sentence beside them explains them.
 ---
 
 ## 5. Change log
+
+### 2026-10-05: The decision at a glance; rule figures in a dropdown
+
+Commit: "Our decision: the key points at a glance, and each rule's figures in a dropdown" (branch `test/ui-ux`)
+Goal: two points from the owner's review of 5 Oct. The decision should be easy to understand while still covering every
+key point; and "This offer / Your limit" (Observed / Limit) should sit in a dropdown so the page is less cluttered. Before,
+the answer was one sentence, and the points behind it were spread over four large rule cards, two counter cards and a
+plan, about three screens long.
+
+| Change | Where |
+| --- | --- |
+| The answer card gains three columns under the sentence: **What they asked for** (each ask with the buyer's words), **Why we can't say yes** (each broken rule in plain words with "¥209,960.00 on day 47, against your limit of ¥300,000.00"), or **Why it is safe** for an accept (the rules it keeps), and **What we would offer back** (each counter, what it costs us, its wording). A footnote gives the yearly value the offer gives the buyer and what each fixable rule costs to fix | [verdict-glance.tsx](../apps/web/components/verdict-glance.tsx), [verdict/page.tsx](../apps/web/app/verdict/page.tsx) |
+| Rule cards show the plain rule name, day and fixable badges, the server's one-line message and "Fixing it costs …". This offer against your limit, the fix's note, the formula, the inputs, the quoted clause and the rule code open under "This offer against your limit, and how it was worked out" | `ViolationCard` in [verdict-parts.tsx](../apps/web/components/verdict-parts.tsx) (also used on Big purchases) |
+| Rules it keeps: one line per rule with a tick; the figures and formula open under "Show the figures" | [verdict/page.tsx](../apps/web/app/verdict/page.tsx) |
+
+Every figure is a server display string; the summary only picks and orders them.
+
+Tests: `approvals.spec.ts` (REJECT) checks the summary's ask, the reserve line, Option A's cost and the ¥28,326.92
+footnote, and that a rule's "Your limit" stays hidden until its dropdown opens. The demo spec's `toContainText` checks on
+rule cards still pass because the text is in the page, only folded. Mock e2e for approvals, chat, demo and what-if: 17
+passed, 1 skipped; typecheck and lint clean.
+Not checked: the live e2e project.
+Follow-ups: none.
 
 ### 2026-10-05: A simulated inbox that says where each message came from; opening a message reads it
 

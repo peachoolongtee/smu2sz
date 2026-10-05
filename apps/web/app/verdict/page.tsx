@@ -28,6 +28,7 @@ import {
   thCls,
 } from "@/components/ui";
 import { CounterCard, OperationsList, ViolationCard } from "@/components/verdict-parts";
+import { VerdictGlance } from "@/components/verdict-glance";
 import { getState, negotiate } from "@/lib/api";
 import { useAsync } from "@/lib/use-async";
 import { evaluate as evaluateAndCache } from "@/lib/demo";
@@ -151,6 +152,7 @@ function VerdictBody({
             )}
           </div>
         </div>
+        <VerdictGlance verdict={verdict} />
       </Card>
 
       <VerdictNextStep verdict={verdict} negotiation={negotiation} />
@@ -210,20 +212,23 @@ function VerdictBody({
           <Card id="passed" title={t("verdict.passed", { n: verdict.passed_checks.length })} subtitle={t("verdict.passed.sub")}>
             <ul className="divide-y divide-line">
               {verdict.passed_checks.map((c) => (
-                <li key={c.code} className="flex flex-wrap items-start justify-between gap-x-4 gap-y-1 py-2">
-                  <div className="min-w-0 flex-1 basis-64">
-                    <p className="flex items-center gap-1.5 text-sm font-medium">
+                <li key={c.code} className="py-2">
+                  <details>
+                    <summary className="flex cursor-pointer list-none items-center gap-1.5 text-sm font-medium [&::-webkit-details-marker]:hidden">
                       <span className="text-ok-fg">
                         <CheckIcon />
                       </span>
-                      {c.label}
+                      <span className="min-w-0 flex-1">{c.label}</span>
+                      <span className="text-xs font-normal text-brand-700">{t("verdict.passed.show")}</span>
+                    </summary>
+                    <p className="mt-1.5 pl-6 text-sm tabular-nums">
+                      <span className="text-ink-3">{t("verdict.observed")}: </span>
+                      <span className="font-semibold">{c.observed}</span>
+                      <span className="text-ink-3"> · {t("verdict.limit")}: </span>
+                      <span>{c.limit}</span>
                     </p>
-                    {c.formula ? <p className="mt-0.5 font-mono text-xs text-ink-3">{c.formula}</p> : null}
-                  </div>
-                  <p className="text-sm tabular-nums">
-                    <span className="font-semibold">{c.observed}</span>
-                    <span className="text-ink-3"> &nbsp;{c.limit}</span>
-                  </p>
+                    {c.formula ? <p className="mt-0.5 pl-6 font-mono text-xs text-ink-3">{c.formula}</p> : null}
+                  </details>
                 </li>
               ))}
             </ul>
