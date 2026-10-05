@@ -3,7 +3,7 @@ import { expect, test } from "./fixtures";
 
 /** Runs on a phone viewport (and desktop): no page may scroll sideways, and the stepper stays reachable. */
 
-const ROUTES = ["/chat", "/mandate", "/inbox", "/trajectory", "/funding", "/verdict", "/capex", "/ledger", "/approvals", "/security", "/evidence"];
+const ROUTES = ["/documents", "/chat", "/mandate", "/inbox", "/trajectory", "/funding", "/verdict", "/capex", "/ledger", "/approvals", "/security", "/evidence"];
 
 async function overflowX(page: Page): Promise<number> {
   return page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);

@@ -83,7 +83,7 @@ hover hint (`nav.hint.*`), and the logo opens Home.
 
 | Group | Links (route) |
 | --- | --- |
-| *(no heading)* | Home `/`, Chat `/chat`, Approvals `/approvals`, Alerts `/alerts` |
+| *(no heading)* | Home `/`, Your documents `/documents`, Chat `/chat`, Approvals `/approvals`, Alerts `/alerts` |
 | Deals with buyers | Buyer offers `/inbox`, Our decision `/verdict`, Try other terms `/whatif`, Agreements and log `/ledger` |
 | Cash and borrowing | Cash forecast `/trajectory`, Borrowing options `/funding`, Payments received `/reconciliation`, Big purchases `/capex` |
 | Rules and records | Your limits `/mandate`, Blocked messages `/security`, Audit trail `/evidence` |
@@ -232,6 +232,30 @@ their wording; the plain sentence beside them explains them.
 ---
 
 ## 5. Change log
+
+### 2026-10-05: Your documents: one place for the owner's paperwork, with the agent's feedback in plain words
+
+Commit: "Your documents: the owner adds paperwork and sees what the agent found" (branch `test/ui-ux`)
+Goal: the owner's review of 5 Oct asked for a section where a business owner inputs all their documents, and a
+simplified view of the evaluated data and the agent's feedback.
+
+| Change | Where |
+| --- | --- |
+| New page **Your documents** (`/documents`), second in the sidebar under Home | [documents/page.tsx](../apps/web/app/documents/page.tsx), [app-shell.tsx](../apps/web/components/app-shell.tsx) |
+| **Add a document**: what it is (Buyer offer or message, Lender term sheet, Invoice, Contract, Other), a text file (.txt, .md, .eml, .csv) or pasted text, a name, and who it is from (the registry). A PDF or Word file is refused with "open it and paste the text" | `AddDocument` |
+| A buyer offer or message is read (`POST /offers`, channel `attachment`, with the file name) and checked (`POST /offers/{id}/evaluate`) in one step: **Add and let the agent check it**. "Use the demo buyer message" fills in the story's offer | `AddDocument` |
+| Other kinds are **filed, not read**, and the page says so before and after: the agent does not read them yet, so they change nothing in the books or forecast | `DocResult` |
+| **What the agent found**: one card per document, newest first, plus every message read in Buyer offers. Each card shows a status (Checked, Read not checked, Filed not read), a quote of the text, the outcome and its plain sentence, **The agent's feedback** (each broken rule in plain words, or "It breaks none of your rules"; what we would offer back and what it costs; the yearly value given to the buyer), and **Open the full decision**. A message read but not checked has **Check against my limits** | `OfferResult` |
+| The shared switch (`Segmented`) wraps on a narrow screen instead of overflowing | [ui.tsx](../apps/web/components/ui.tsx) |
+
+Added documents live in the demo session (`documents` in `lib/demo-store.ts`), so Reset clears them. The term-sheet reader
+(`POST /facilities/compile`) exists in the API but has no recorded mock and only proposes a facility. Wiring it is UX-11.
+
+Tests: new `documents.spec.ts` (the demo offer is checked with its feedback and opens the decision; an invoice is filed,
+not read; an inbox message shows up and can be checked). `/documents` added to the overflow check in
+`responsive.spec.ts`. Full mock e2e 39 passed, 1 skipped; unit 13 passed; typecheck and lint clean.
+Not checked: the live e2e project; a live run with an owner's own offer text.
+Follow-ups: opened UX-11.
 
 ### 2026-10-05: Big purchase on home, with the owner's own figures, the room on the price and the lenders by name
 
@@ -463,6 +487,7 @@ Follow-ups: UX-6 (Chinese review).
 | UX-6 | Native review of the Chinese strings added on 4 Oct | Small | Written by the agent, not reviewed |
 | UX-7 | Run the live e2e project after both 4 Oct passes | Small | Needs the API running; see `apps/web/README.md` |
 | UX-8 | "AI-generated, for reference" label on agent replies | Small | A gap listed in the README and `docs/HANDOVER.md` |
+| UX-11 | Read lender term sheets on Your documents through `POST /facilities/compile` (record its mock first), and show the proposed facility for the owner to approve | Medium | Feature work; after stability mode |
 | UX-10 | Reword the capex recommendation sentence from the API, which still says "A new facility is Tier 2" | Small | An API change; wait until stability mode is lifted |
 | UX-9 | Have `POST /nl/opener` return the id of the alert it proposes to cure, and drop the mirrored rule in `openerAlertId` | Small | An API change; wait until stability mode is lifted |
 

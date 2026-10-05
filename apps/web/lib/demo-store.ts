@@ -7,6 +7,22 @@ import type { BorrowerFileView, CapexApplyResult, CapexView, FundingView, Negoti
  * Client-side session for the guided demo: which step we are on, which offer is "current", and the
  * responses the API already gave us (so screens do not re-trigger server side effects).
  */
+/** What the owner says a document is. Only buyer offers and messages are read by the agent; the rest are filed. */
+export type OwnerDocKind = "offer" | "term_sheet" | "invoice" | "contract" | "other";
+
+/** A document the owner added on Your documents. `offerId` is set once the agent has read it as an offer. */
+export interface OwnerDocument {
+  id: string;
+  name: string;
+  kind: OwnerDocKind;
+  /** A counterparty id from the registry, or "OTHER". */
+  from: string;
+  text: string;
+  /** The simulated day it was added. */
+  day: number;
+  offerId: string | null;
+}
+
 export interface DemoState {
   /** -1 until the stepper has started. */
   step: number;
@@ -27,6 +43,8 @@ export interface DemoState {
   funding: FundingView | null;
   /** The reworded offer (EX01B), evaluated on the same books as EX01 before any operation executes. */
   rewordedId: string | null;
+  /** Documents the owner added on Your documents, newest first. */
+  documents: OwnerDocument[];
   /** Bumped after every write so read hooks refetch. */
   version: number;
   busy: boolean;
@@ -45,6 +63,7 @@ export const INITIAL_DEMO: DemoState = {
   borrowerFile: null,
   funding: null,
   rewordedId: null,
+  documents: [],
   version: 0,
   busy: false,
   error: null,
@@ -105,4 +124,8 @@ export function selectOffer(offerId: string, rewordedId?: string): void {
 
 export function clearDemo(): void {
   demoStore.set((s) => ({ ...INITIAL_DEMO, version: s.version + 1 }));
+}
+
+export function recordDocument(doc: OwnerDocument): void {
+  demoStore.set((s) => ({ ...s, documents: [doc, ...(s.documents ?? [])], version: s.version + 1 }));
 }

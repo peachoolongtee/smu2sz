@@ -250,7 +250,7 @@ export function Segmented<T extends string>({
   return (
     <fieldset className="min-w-0">
       <legend className="sr-only">{label}</legend>
-      <div className="inline-flex rounded-md border border-line-strong bg-subtle p-0.5">
+      <div className="inline-flex max-w-full flex-wrap rounded-md border border-line-strong bg-subtle p-0.5">
         {options.map((o) => (
           <label
             key={o.value}
