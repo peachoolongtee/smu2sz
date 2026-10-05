@@ -317,3 +317,63 @@ any click; the approval reason names the ceiling; the executor's result says whe
 with numbered spans is the right level-4 view of a message. Every page has loading, error and empty states; owner actions
 open a sign-in dialog on 401; the chat retries safely; no page overflows horizontally on a phone; the palette is calm; the
 labels are bilingual in one file. The redesign keeps all of it and changes where it is shown and in what order.
+
+## 17. After implementation (5 Oct, `feat/ux-redesign`)
+
+**Before vs after.** Before: one shell, fifteen navigation entries named after engine modules, the stepper bar and the
+clock control on the owner's screens, a home of six cards whose answer was inside a 70-word paragraph, approval cards
+titled with the operation and the facility id, formulas and codes at level 1 on every page. After: two shells chosen in
+the header. Business: six sections named after questions (Home, Deals, Cash & funding, Receivables, Approvals, Activity,
+plus Limits), no clock, no stepper, no mock pill. The home opens with a status word and one sentence ("Cash falls
+¥200,000.00 below your ¥300,000.00 safe level on day 42 (in 8 days)."), then the best next action with what the owner
+receives, the cost and its yearly rate, the day the money lands, who decides and why, what happens if nothing is done and
+the after-state, then what needs a decision as questions, what changed, who has not paid, and the details behind one
+disclosure. Approval cards ask "Approve ¥200,000.00 of invoice financing?" with amount, cost, landing day, source,
+invoice, why, after, and what declining does; ids, tier and terms are under Show details. Demo: the story page with the
+fifteen steps, the clock, the scenario switch and the side doors; the story bar on every page; the engine views unchanged.
+On a phone the first screen holds the status, the sentence and the three figures; the next action follows.
+
+**Key UX decisions.** The mode is a persisted choice, and running a story step switches it on, so the demo walk keeps its
+bar on the approvals page. The engine views were kept, not deleted: they are the judge's level 4 and the specs and
+documents quote them. Every new sentence is written by the server (`GET /home`, the queue's `presentation`), so the
+browser still computes nothing. The home's "Go ahead" is the same bound act as the alerts page; when the cost is above the
+owner's limit the button says "Queue it for my approval" and the server queues. The cash chart is on Cash & funding, not
+the home: the home gives the answer, the chart proves it. Day numbers stay, with a distance in days.
+
+**Files changed.** Backend: `services/api/app/api/home.py` (new), `app/api/presentation.py` (new), `app/api/operations.py`
+(the queue's `presentation` fields), `app/main.py`, `tests/api/test_home.py` (new). Web: `components/app-shell.tsx` (two
+shells), `lib/mode.ts`, `lib/demo-control.ts` (new), `components/demo-stepper.tsx`, `app/demo/page.tsx` (new),
+`app/page.tsx` and `components/business/*` (new home), `components/approval-card.tsx`, `app/deals`, `app/cash`,
+`app/receivables`, `app/activity`, `app/limits` (new pages), `components/home/today-card.tsx` (moved to the story page),
+`lib/types.ts`, `lib/api.ts`, `lib/live/*`, `lib/mock/*`, `lib/dictionary.ts` (English and Chinese), `scripts/record-mocks.mjs`,
+seven new mock recordings and the re-recorded approvals, `e2e/home.spec.ts`, `catchup.spec.ts`, `responsive.spec.ts`
+(rewritten), `approvals.spec.ts` and `demo.spec.ts` (wording). Documents: this file, `apps/web/README.md`,
+`docs/SYSTEM_WALKTHROUGH.md` section 6, `docs/ARCHITECTURE.md`, `docs/HANDOVER.md`, `docs/CONTINUOUS_OPTIMIZATION.md`
+(UX1), `docs/NEXT_FIXES.md`, `README.md`.
+
+**API changes.** `GET /home?lang=en|zh` (owner): status, headline, note, cash figures, next action, approvals, changes,
+receivables, warnings, facilities. `GET /approvals/queue`: each row gains `presentation` (headline, what, facility and
+buyer names, invoice, cost, rate, cost due day, landing day, protects, reason and result in business words).
+`POST /demo/reset?scenario=` is now reachable from the story page. No engine module changed.
+
+**User task results** (the brief's section 24, on the day-34 books, live mode): A "Is this business going to run out of
+money?": the status word and the sentence, first screen. B "What should I do?": the best next action, one block. C "How
+much does that option cost?": the Cost row, with the yearly rate. D "Why are you recommending this?": "Why this", one
+click. E "What happens if I do nothing?": the "If you do nothing" row, visible. F "What requires my approval?": "Needs
+your decision", with the question. G "Who has not paid me?": "Who owes you", by name with the days late. H "What changed
+since yesterday?": "What changed", the last week. I "Show me the actual calculation": "Show the calculation" and the
+engine views. J "Run the hackathon demo": the Demo switch and the story page.
+
+**Responsive results.** Pixel 7 project: no horizontal overflow on any of the seven Business routes nor the twelve engine
+routes after the demo; the status and the headline are in the first viewport; the chat slide-over fits. The macOS-only
+431 px measurement of the slide-over was not reproduced on Linux Chromium.
+
+**Remaining UX debt.** The engine views keep their old density by design, and the Demo nav still names them by module.
+The chat turn still opens with the intent badge and the plan pills. The Deals page lists the session's latest offer only.
+"What changed" has no "since my last visit" marker, only the last week. The server's sentences carry ids in a few places
+(an invoice id such as RI:BUYER-1:2 inside the executor's message), replaced by names where the books know them.
+Terminology inside the engine views (Tier, DSCR, forward concession) is unchanged there.
+
+**Deliberately not built.** A calendar, sparklines and period comparisons (no history series exists in a simulation that
+starts on day 0), animations, a dark theme, any money arithmetic in the browser, any change to alert, verdict or approval
+semantics, removal of the engine views, a rewrite of the chat.
