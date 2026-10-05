@@ -102,12 +102,15 @@ hover hint (`nav.hint.*`), and the logo opens Home.
    given to the buyer, expiry and days left, progress on promised payments, invoices whose terms changed, and
    the exact wording behind a toggle. Past deals are folded away.
    [agreements-card.tsx](../apps/web/components/home/agreements-card.tsx)
-5. **Warnings**: alerts from the cautious forecast, each with its fix button. The alert whose cure the agent's
+5. **Big purchase**: the owner enters a purchase (what, price, extra cash a month, from which month, for how long)
+   and sees whether it pays off, the room to negotiate the price, and each lender's terms by name.
+   [capex-card.tsx](../apps/web/components/home/capex-card.tsx)
+6. **Warnings**: alerts from the cautious forecast, each with its fix button. The alert whose cure the agent's
    message is already offering shows "Answer it in What needs you" instead, so one cure has one button on home.
    The Alerts page keeps every button.
-6. **What the agent did**: the last five operations.
-7. **Demo clock**: move the simulated calendar forward.
-8. **Words you'll see**: a folded glossary of 10 terms. [glossary.tsx](../apps/web/components/home/glossary.tsx)
+7. **What the agent did**: the last five operations.
+8. **Demo clock**: move the simulated calendar forward.
+9. **Words you'll see**: a folded glossary of 10 terms. [glossary.tsx](../apps/web/components/home/glossary.tsx)
 
 ### The deal journey
 
@@ -159,6 +162,7 @@ The old label is what the screens said before 4 Oct 2026. Translation keys are i
 | Verdict | Our decision | `nav.verdict`, `verdict.title` |
 | What-if | Try other terms | `nav.whatif` |
 | Capex | Big purchases | `nav.capex`, `capex.title` |
+| Evaluate the ¥600k machine (button) | Check this purchase (with the owner's own figures) | `capexForm.check` |
 | Ledger | Agreements and log | `nav.ledger`, `ledger.title` |
 | Reconciliation / Receipt reconciliation | Payments received | `nav.reconciliation`, `recon.title` |
 | Security / Security and audit | Blocked messages | `nav.security`, `sec.title` |
@@ -228,6 +232,32 @@ their wording; the plain sentence beside them explains them.
 ---
 
 ## 5. Change log
+
+### 2026-10-05: Big purchase on home, with the owner's own figures, the room on the price and the lenders by name
+
+Commit: "Big purchase on home: the owner enters the purchase, sees the room on the price and each lender's terms" (branch `test/ui-ux`)
+Goal: two points from the owner's review of 5 Oct. Capex belongs on home, because it is something the owner enters and
+negotiates from; and the Big purchases page should be kept, but say where each option comes from (which company lends).
+Before, capex was a single fixed button ("Evaluate the ¥600k machine") on its own page.
+
+| Change | Where |
+| --- | --- |
+| A shared form: what, price, extra cash it brings each month, starting month, months it earns. Sent to `POST /capex/evaluate` as `label`, `price_fen`, `monthly_uplift_fen`, `uplift_start_month`, `life_months` (the API's own fields; the defaults are the story's machine). The yuan entry is turned into fen by string handling only | [capex-form.tsx](../apps/web/components/capex-form.tsx) |
+| Home: a **Big purchase** card after Your agreements. It holds the form, then the answer: worth buying or not, value it adds, payback month, debt ÷ yearly earnings; **Your room to negotiate the price** ("…it still pays off if the seller's price is up to ¥380,885.77 higher"); and **Lenders' terms to negotiate from**: each real option with the lender's name, its monthly payment and whether it passes | [home/capex-card.tsx](../apps/web/components/home/capex-card.tsx), [app/page.tsx](../apps/web/app/page.tsx) |
+| Big purchases: the form replaces the fixed button at the top; the table gains a **Who lends** column (Main bank, Equipment lessor, or your cash + the bank credit line), from the books' facilities and the counterparty registry | [capex/page.tsx](../apps/web/app/capex/page.tsx) |
+| Mock mode refuses any figures other than the recorded machine with a 422 that says so, instead of showing the recorded answer for a different purchase | `capexEvaluate` in [lib/mock/handlers.ts](../apps/web/lib/mock/handlers.ts) |
+| The rule-card dropdown label now reads "The figures against your limit, and how they were worked out", which fits the capex cards too | `lib/dictionary.ts` |
+
+Why the price room is exact: the server's appraisal is −price + the gains discounted at the target return
+(`services/api/app/capex/appraisal.py`), so a higher price lowers it by the same amount. The card shows the server's
+figure and its `npv_positive` flag; the UI compares nothing. The home card and the page share one result (the demo
+session), so Apply and the borrower file still act on what the owner checked.
+
+Tests: new home test (the price room shows ¥380,885.77, the lenders are named, Big purchases shows the lender column,
+and mock mode refuses another price). Mock e2e for home, demo and approvals: 15 passed; typecheck and lint clean.
+Not checked: the live e2e project, and a live run with figures other than the defaults.
+Follow-ups: the server's recommendation sentence still says "A new facility is Tier 2"; changing it is an API change
+(UX-10).
 
 ### 2026-10-05: The decision at a glance; rule figures in a dropdown
 
@@ -433,6 +463,7 @@ Follow-ups: UX-6 (Chinese review).
 | UX-6 | Native review of the Chinese strings added on 4 Oct | Small | Written by the agent, not reviewed |
 | UX-7 | Run the live e2e project after both 4 Oct passes | Small | Needs the API running; see `apps/web/README.md` |
 | UX-8 | "AI-generated, for reference" label on agent replies | Small | A gap listed in the README and `docs/HANDOVER.md` |
+| UX-10 | Reword the capex recommendation sentence from the API, which still says "A new facility is Tier 2" | Small | An API change; wait until stability mode is lifted |
 | UX-9 | Have `POST /nl/opener` return the id of the alert it proposes to cure, and drop the mirrored rule in `openerAlertId` | Small | An API change; wait until stability mode is lifted |
 
 ### Closed
