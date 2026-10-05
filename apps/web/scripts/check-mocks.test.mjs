@@ -168,3 +168,68 @@ test("the day-34 cure waits for the owner: PENDING_APPROVAL, then EXECUTED on ap
   const lot = mock("home_state_after_approve.json").state.lots.find((l) => !l.settled);
   assert.equal(lot.arrival_day, 37);
 });
+
+test("every term, clause and flag in the recorded document readings quotes its document exactly", () => {
+  const docs = mock("documents.json");
+  assert.deepEqual(Object.keys(docs), mock("contracts_fixtures.json").map((f) => f.id));
+  for (const [id, r] of Object.entries(docs)) {
+    for (const view of [r.proposed, r.confirmed.document, r.rejected.document]) {
+      const text = view.document.text;
+      const spans = [...(view.terms ?? []), ...(view.clauses ?? []), ...view.flags];
+      assert.ok(spans.length > 0, id);
+      for (const s of spans) assert.equal(text.slice(s.span.start, s.span.end), s.quote, `${id}: ${s.quote}`);
+      assert.equal(view.doc_hash, r.proposed.doc_hash, `${id}: one text throughout`);
+    }
+    // Until the owner confirms it, a reading is labelled as AI output; confirming is a logged owner operation that writes no books.
+    assert.equal(r.proposed.status, "PROPOSED");
+    assert.equal(r.proposed.ai_label, "AI-generated, for reference");
+    assert.equal(r.proposed.can_confirm, true);
+    assert.equal(r.confirmed.result.kind, "CONFIRM_DOCUMENT");
+    assert.equal(r.confirmed.result.status, "EXECUTED");
+    assert.equal(r.confirmed.result.tier, "TIER_2");
+    assert.ok(r.confirmed.result.message.includes("nothing in the books changed"), id);
+    assert.equal(r.confirmed.document.status, "CONFIRMED");
+    assert.equal(r.confirmed.document.label, "Read by the agent, confirmed by you");
+    assert.equal(r.rejected.result.kind, "REJECT_DOCUMENT");
+    assert.equal(r.rejected.document.status, "REJECTED");
+  }
+});
+
+test("the demo documents read as the demo books: the supply agreement's terms and both lender agreements against their facilities", () => {
+  const docs = mock("documents.json");
+  const fhr = docs.FHR_SUPPLY_AGREEMENT.proposed;
+  const term = (f) => fhr.terms.find((t) => t.field === f);
+  assert.equal(term("PRICE").amount_display, "¥420,000.00");
+  assert.deepEqual([term("PAYMENT_TERMS").days, term("PAYMENT_TERMS").basis], [45, "INVOICE"]);
+  assert.deepEqual([term("EARLY_PAYMENT").rate_bp, term("EARLY_PAYMENT").days], [120, 2]);
+  assert.deepEqual([term("INVOICING").days, term("INVOICING").day], [30, 2]);
+  assert.deepEqual([term("SCHEDULED_INVOICE").reference, term("SCHEDULED_INVOICE").day], ["RCV-A", -13]);
+  assert.deepEqual(fhr.blanks.map((b) => b.field), ["MILESTONE", "RETENTION", "LATE_INTEREST"]);
+  for (const [id, facility] of [["MB_CREDIT_LINE_AGREEMENT", "FAC-LINE"], ["GBR_INVOICE_FINANCING_AGREEMENT", "FAC-IF"]]) {
+    const view = docs[id].proposed;
+    assert.equal(view.compared_with, facility, id);
+    assert.ok(view.comparison.length > 0 && view.comparison.every((r) => r.same), `${id} differs from ${facility}`);
+    assert.equal(docs[id].confirmed.document.linked_facility_id, facility);
+  }
+  assert.equal(docs.GBR_INVOICE_FINANCING_AGREEMENT.proposed.facility.all_in_rate_display, "10.84%");
+});
+
+test("the deal card: nothing before the contract is confirmed, then the day-34 story as the prototype shows it", () => {
+  assert.ok(mock("deals_unconfirmed.json").deals.every((d) => !d.has_contract && d.pending_documents.length === 0));
+  const day0 = mock("deals_day0.json").deals.find((d) => d.counterparty_id === "BUYER-1");
+  assert.deepEqual(day0.pills.map((p) => p.label), ["On track"]);
+  assert.deepEqual(day0.changes.map((c) => c.label), ["You confirmed"]);
+  const deal = mock("deals_day34_pending.json").deals.find((d) => d.counterparty_id === "BUYER-1");
+  assert.deepEqual(deal.pills.map((p) => p.label), ["Payment overdue", "1 approval waiting"]);
+  assert.deepEqual(deal.stages.map((s) => s.state), ["done", "done", "done", "now", "todo"]);
+  assert.ok(deal.changes.some((c) => c.label === "Buyer accepted" && c.text.includes(fmtYuan(golden.counter_a_face))));
+  const rcvA = deal.invoices.find((i) => i.id === "RCV-A");
+  assert.deepEqual([rcvA.status, rcvA.outstanding_display, rcvA.status_text], ["LATE", "¥162,800.00", "2 days late"]);
+  assert.equal(deal.invoices.find((i) => i.status === "ADVANCE_WAITING").label, "Invoice of day 2");
+  assert.ok(deal.next_action.text.includes("Review APR-000001"));
+  assert.ok(deal.checks.every((c) => c.status === "ok"));
+  assert.equal(deal.owed_by_us.display_only, true);
+  // Before the button the cure is not queued; after the owner approves it the invoice is financed.
+  assert.deepEqual(mock("deals_day34_open.json").deals[0].pills.map((p) => p.label), ["Payment overdue"]);
+  assert.equal(mock("deals_day34_approved.json").deals[0].invoices.find((i) => i.label === "Invoice of day 2").status, "FINANCED");
+});

@@ -72,17 +72,32 @@ commitment id and nonce and the hashes derived from them, what-if timings) are l
 
 ### Home (`/`)
 
-The owner home answers "what needs me today". Six cards, each reading through `lib/api.ts`: **Today** (GET `/clock` and a
+The owner home answers "what needs me today". Eight cards, each reading through `lib/api.ts`: **Today** (GET `/clock` and a
 labelled demo control, POST `/clock/advance {days}`), **What needs you** (POST `/nl/opener`; "Go ahead" / "Not now" send
 "go ahead" / "cancel" through `lib/chat.ts` in the owner's session, so the opener and the answer also show in the chat
 panel), **Position** (cash from `/state`; floor, lowest cash, month-1 DSCR and leverage and their limits from
-`/trajectory`), **Waiting for you** (`/approvals/queue`), **At risk** (`/alerts`, with "Let the agent fix this" on
+`/trajectory`), **Your deals** (`/deals`: each buyer's confirmed contract beside the books, as in the brief-03 prototype),
+**Documents the agent has read** (`/documents`), **Waiting for you** (`/approvals/queue`), **At risk** (`/alerts`, with "Let the agent fix this" on
 `actionable` alerts, POST `/alerts/{id}/act`; the same button is on `/alerts`) and **Done by the agent** (`/ledger`,
 `requested_by = AGENT`). Every section refetches after a clock advance or an executed action (`bump()`). The owner calls
 answer 403 without the token; `ownerOn403` in `lib/live/http.ts` opens the sign-in dialog for that too.
 
 Mock mode replays a script recorded from the real API on the demo path (`mocks/home_*.json`, `lib/mock/home.ts`): day 0 to 33
 "nothing needs you"; from day 34 the opener has news and the reserve alert is actionable until it is cured.
+
+### Documents (`/documents`)
+
+Contract ingestion (brief 03). Read a demo document (`POST /documents {fixture_id, format}`, Markdown, Word or PDF) or upload
+a file (`{kind, counterparty_id, filename, content_base64}`); the review screen (`?id=DOC-…`) highlights every clause the agent
+read with `components/annotated-text.tsx` beside the term it gave, lists the fields left blank and the flags, sets a lender
+agreement against the facility on the books, and labels the reading "AI-generated, for reference" until the owner confirms
+or rejects it (`POST /documents/{id}/confirm|reject {doc_hash, link_facility_id?}`). Confirming is logged on the chain and
+changes no books.
+
+Mock mode (`lib/mock/documents.ts`) serves the three demo documents as the live API read them, with their recorded
+confirmation and rejection (`mocks/documents.json`), and the deal card for each point of the story (`mocks/deals_*.json`:
+no contract, confirmed on day 0, then day 34 before the cure is queued, while it waits for approval and after approval). Any
+other file needs live mode.
 
 ### Live-mode notes
 
@@ -99,7 +114,7 @@ Mock mode replays a script recorded from the real API on the demo path (`mocks/h
 ## Tests
 
 `playwright.config.ts` has three projects. `desktop` and `phone` run against a mock-mode build on :3100.
-`live` runs `demo`, `whatif`, `alerts`, `chat`, `contract` and `live` specs against uvicorn (:8000, in-memory store,
+`live` runs `demo`, `whatif`, `alerts`, `chat`, `contract`, `documents` and `live` specs against uvicorn (:8000, in-memory store,
 recorded LLM cache, no Supabase) and a live-mode build on :3000. `demo.spec.ts` and `chat.spec.ts` are the same files in both
 modes and asserts the same golden numbers. `contract.spec.ts` calls the live adapters from Node against the
 running API. Mock and live builds use separate `NEXT_DIST_DIR`s (`.next-e2e-mock`, `.next-e2e-live`).

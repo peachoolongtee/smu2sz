@@ -2,7 +2,7 @@ import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
 
 /**
- * The owner home (`/`) in mock mode: six sections, the agent's opener after the clock reaches day 34, and the day-34 cure,
+ * The owner home (`/`) in mock mode: eight sections (the deal and documents cards are in documents.spec.ts), the agent's opener after the clock reaches day 34, and the day-34 cure,
  * which is above the yearly cost ceiling (¥1,782.19 for 10 days = 32.5% a year): "Let the agent fix this" and "Go ahead" only
  * QUEUE it (PENDING_APPROVAL, the alert stays open); the owner approves on the approval card (or "approve APR-…" in the chat);
  * only then does it execute, the cash lands on day 37 and the alert clears. The mock replays answers recorded from the real API
@@ -39,10 +39,10 @@ async function expectWaitingNotSuccess(row: ReturnType<Page["getByTestId"]>) {
   await expect(row.getByTestId("op-waiting")).toContainText("APR-000001");
 }
 
-test("home renders the six sections and the day-0 opener has a warning but nothing to approve", async ({ page }) => {
+test("home renders the eight sections and the day-0 opener has a warning but nothing to approve", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "Home", level: 1 })).toBeVisible();
-  for (const name of ["Today", "What needs you", "Position", "Waiting for you", "At risk", "Done by the agent"]) {
+  for (const name of ["Today", "What needs you", "Position", "Your deals", "Documents the agent has read", "Waiting for you", "At risk", "Done by the agent"]) {
     await expect(page.getByRole("heading", { name, level: 2 })).toBeVisible();
   }
   await expect(page.getByTestId("home-day")).toHaveText("Day 0");

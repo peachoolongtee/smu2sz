@@ -22,6 +22,11 @@ import type {
   CapexApplyResult,
   CapexRequest,
   CapexView,
+  ContractFixture,
+  DealsView,
+  DocumentDecision,
+  DocumentsList,
+  DocumentView,
   FundingView,
   LedgerView,
   MandateView,
@@ -36,6 +41,7 @@ import type {
   PlanRequest,
   ReconciliationView,
   StateView,
+  SubmitDocumentRequest,
   SubmitOfferRequest,
   TrajectoryView,
   VerdictView,
@@ -46,6 +52,7 @@ import type {
   WhatIfResult,
 } from "../types";
 
+import * as documents from "./documents";
 import * as home from "./home";
 import alertsJson from "../../mocks/alerts.json";
 import approvalsSeed from "../../mocks/approvals_seed.json";
@@ -181,8 +188,15 @@ function append(
   return op;
 }
 
-/** Books an operation the recorded API answer reports (a cure the agent ran), on the same hash chain as the rest. */
-export function appendRecorded(r: { kind: string; status: OperationView["status"]; tier: OperationView["tier"]; message: string; day: number }): void {
+/** Books an operation the recorded API answer reports (a cure the agent ran, a document the owner decided), on the same hash chain as the rest. */
+export function appendRecorded(r: {
+  kind: string;
+  status: OperationView["status"];
+  tier: OperationView["tier"];
+  message: string;
+  day: number;
+  requested_by?: OperationView["requested_by"];
+}): OperationView {
   const s = load();
   const seq = s.ops.length + 1;
   const prev = s.ops.length ? (s.ops[s.ops.length - 1].entry_hash ?? GENESIS) : GENESIS;
@@ -195,11 +209,13 @@ export function appendRecorded(r: { kind: string; status: OperationView["status"
     seq,
     message: r.message,
     day: r.day,
-    requested_by: "AGENT" as const,
+    requested_by: r.requested_by ?? ("AGENT" as const),
     summary: r.message,
   };
-  s.ops.push({ ...base, prev_hash: prev, entry_hash: entryHash(base, prev) });
+  const op: OperationView = { ...base, prev_hash: prev, entry_hash: entryHash(base, prev) };
+  s.ops.push(op);
   save();
+  return op;
 }
 
 function chainValid(ops: OperationView[]): boolean {
@@ -555,4 +571,38 @@ export async function demoReset(): Promise<void> {
   memory = emptyStore();
   save();
   home.resetHome();
+  documents.resetDocuments();
+}
+
+// ------------------------------------------------------------------ contract ingestion and the deal card (brief 03)
+
+export async function getDeals(): Promise<DealsView> {
+  await delay();
+  return documents.mockDeals();
+}
+
+export async function getDocuments(): Promise<DocumentsList> {
+  await delay();
+  return documents.mockDocuments();
+}
+
+export async function getDocument(id: string): Promise<DocumentView> {
+  await delay();
+  return documents.mockDocument(id);
+}
+
+export async function submitDocument(req: SubmitDocumentRequest): Promise<DocumentView> {
+  await delay();
+  return documents.mockSubmit(req);
+}
+
+/** The owner's decision is an owner operation on the same chain as the rest (CONFIRM_DOCUMENT / REJECT_DOCUMENT, Tier 2). */
+export async function decideDocument(id: string, decision: "confirm" | "reject", docHash: string, linkFacilityId: string | null): Promise<DocumentDecision> {
+  await delay();
+  return documents.mockDecide(id, decision, docHash, linkFacilityId, (r) => appendRecorded({ ...r, requested_by: "OWNER" }));
+}
+
+export async function getContractFixtures(): Promise<ContractFixture[]> {
+  await delay();
+  return documents.mockContractFixtures();
 }

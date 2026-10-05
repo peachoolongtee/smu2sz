@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { DealsCard } from "@/components/home/deals-card";
+import { DocumentsCard } from "@/components/home/documents-card";
 import { NeedsCard } from "@/components/home/needs-card";
 import { DoneCard, RiskCard, WaitingCard } from "@/components/home/lists";
 import { PositionCard } from "@/components/home/position-card";
@@ -27,6 +29,8 @@ export default function HomePage() {
         <TodayCard onAdvanced={() => setAnswer(null)} />
         <NeedsCard answer={answer} onAnswer={setAnswer} />
         <PositionCard />
+        <DealsCard />
+        <DocumentsCard />
         <WaitingCard />
         <RiskCard />
         <DoneCard />

@@ -3,7 +3,7 @@ import { expect, test } from "./fixtures";
 
 /** Runs on a phone viewport (and desktop): no page may scroll sideways, and the stepper stays reachable. */
 
-const ROUTES = ["/chat", "/mandate", "/inbox", "/trajectory", "/funding", "/verdict", "/capex", "/ledger", "/approvals", "/security", "/evidence"];
+const ROUTES = ["/chat", "/mandate", "/inbox", "/documents", "/trajectory", "/funding", "/verdict", "/capex", "/ledger", "/approvals", "/security", "/evidence"];
 
 async function overflowX(page: Page): Promise<number> {
   return page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
@@ -25,6 +25,18 @@ test("no page overflows horizontally after the demo has run", async ({ page }) =
     // Tables scroll inside their own region; the page itself must not.
     expect(await overflowX(page), `${route} overflows horizontally`).toBeLessThanOrEqual(1);
   }
+});
+
+test("the document review and the deal card fit the viewport", async ({ page }) => {
+  await page.goto("/documents");
+  await page.getByTestId("fixture-read-FHR_SUPPLY_AGREEMENT").click();
+  await expect(page.getByTestId("doc-review")).toHaveAttribute("data-status", "PROPOSED");
+  expect(await overflowX(page), "the review screen overflows horizontally").toBeLessThanOrEqual(1);
+  await page.getByTestId("doc-confirm").click();
+  await expect(page.getByTestId("doc-review")).toHaveAttribute("data-status", "CONFIRMED");
+  await page.goto("/");
+  await expect(page.getByTestId("home-deal-BUYER-1")).toHaveAttribute("data-has-contract", "true");
+  expect(await overflowX(page), "the home overflows horizontally").toBeLessThanOrEqual(1);
 });
 
 test("the stepper and navigation are reachable", async ({ page }) => {

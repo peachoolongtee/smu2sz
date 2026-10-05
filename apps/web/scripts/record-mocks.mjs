@@ -323,6 +323,59 @@ const queued = files["home_goahead.json"].operations[0]?.approval_id;
 if (!queued) throw new Error("go ahead on day 34 queued no approval: the demo path has changed");
 files["home_approve_chat.json"] = await live.nl({ session_id: "rec-home-go", actor: "OWNER", text: `approve ${queued}` });
 
+// ------------------------------------------------------------------ contract ingestion (brief 03): the demo documents and the deal card
+// Each demo document as the agent read it, then confirmed (a lender agreement linked to its facility) and rejected. Both passes read
+// the documents in fixture order from fresh books, so the ids (DOC-000001..) are the same in each. Confirming writes no books.
+files["contracts_fixtures.json"] = await live.getContractFixtures();
+const CONTRACT_FIXTURES = files["contracts_fixtures.json"];
+async function readAllDocuments() {
+  const out = {};
+  for (const f of CONTRACT_FIXTURES) out[f.id] = await live.submitDocument({ fixture_id: f.id });
+  return out;
+}
+await reset();
+files["deals_unconfirmed.json"] = await live.getDeals();
+const documentsRecorded = {};
+{
+  const read = await readAllDocuments();
+  for (const f of CONTRACT_FIXTURES) {
+    documentsRecorded[f.id] = { proposed: read[f.id] };
+    documentsRecorded[f.id].rejected = await live.decideDocument(read[f.id].id, "reject", read[f.id].doc_hash, null);
+  }
+}
+await reset();
+{
+  const read = await readAllDocuments();
+  for (const f of CONTRACT_FIXTURES) {
+    if (read[f.id].id !== documentsRecorded[f.id].proposed.id) throw new Error(`${f.id} was read as ${read[f.id].id} in one pass only`);
+    documentsRecorded[f.id].confirmed = await live.decideDocument(read[f.id].id, "confirm", read[f.id].doc_hash, f.link_facility_id);
+    if (documentsRecorded[f.id].confirmed.result.status !== "EXECUTED") throw new Error(`${f.id} was not confirmed: ${documentsRecorded[f.id].confirmed.result.message}`);
+  }
+}
+files["documents.json"] = documentsRecorded;
+files["deals_day0.json"] = await live.getDeals();
+// The deal on the home path (as above): the supply agreement confirmed on day 0, the receipt on day 2, the clock to day 34; then the
+// cure queued for approval (the button), then approved.
+await toDay34(async () => {
+  const supply = await live.submitDocument({ fixture_id: "FHR_SUPPLY_AGREEMENT" });
+  await live.decideDocument(supply.id, "confirm", supply.doc_hash, null);
+});
+files["deals_day34_open.json"] = await live.getDeals();
+{
+  const alerts = await live.getAlerts();
+  const cure = alerts.alerts.find((a) => a.id.startsWith("ALERT-RESERVE") && a.actionable);
+  if (!cure) throw new Error("no actionable reserve alert on day 34 with the contract confirmed: the demo path has changed");
+  await live.actOnAlert(cure.id, {
+    state_version: alerts.state_version,
+    suggestions: cure.suggested.map((x) => ({ operation_kind: x.operation_kind, facility_id: x.facility_id, receivable_id: x.receivable_id, amount_fen: x.amount_fen })),
+  });
+  files["deals_day34_pending.json"] = await live.getDeals();
+  const waiting = (await live.getApprovals()).find((a) => a.status === "PENDING");
+  if (!waiting) throw new Error("the day-34 cure did not wait for approval: the demo path has changed");
+  await live.decideApproval(waiting.id, "APPROVE");
+  files["deals_day34_approved.json"] = await live.getDeals();
+}
+
 // ------------------------------------------------------------------ the chat: every scripted text the mock knows, one conversation each
 const P = (role, lang, id) => promptsFor(role, lang).find((p) => p.id === id);
 const o = (lang, id) => P("OWNER", lang, id).text;

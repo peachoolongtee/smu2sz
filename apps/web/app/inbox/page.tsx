@@ -166,7 +166,12 @@ export default function InboxPage() {
           </div>
 
           <div className="min-w-0 space-y-4">
-            <Card id="obligations" title={t("inbox.obligations", { n: obligations.length })} subtitle={t("inbox.obligations.sub")}>
+            <Card
+              id="obligations"
+              title={t("inbox.obligations", { n: obligations.length })}
+              subtitle={t("inbox.obligations.sub")}
+              actions={<Badge tone="info">{t("docs.aiLabel")}</Badge>}
+            >
               {obligations.length ? (
                 <ul className="space-y-3">
                   {obligations.map((i) => (
