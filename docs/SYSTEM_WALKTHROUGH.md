@@ -949,8 +949,8 @@ tests/whatif tests/concurrency tests/certification tests/test_fixtures.py tests/
 chat scenarios (87 turns), 49 evidence chains valid; 255 attacks (122 API, 133 chat), 0 with harm;
 `scripts/evaluate.py` with every target passing (runnable optimality 26/26, priced 26/26); the language-boundary
 certification at WRONG_MATERIAL 0 on 231 items in the cache and fake runs; the concurrency suite at 20 passed and 10
-skipped (the PostgreSQL cases) on SQLite; web mock e2e 35 passed, live e2e 30 passed (the last known counts: the web
-refresh is in progress and the Playwright runs were not repeated for this document pass). Runs use recorded model
+skipped (the PostgreSQL cases) on SQLite; web mock e2e 35 passed, live e2e 33 passed after the web refresh `2fc5aa9`
+(on macOS Chromium, 5 Oct, one phone-layout test fails; see `docs/HANDOVER.md`). Runs use recorded model
 outputs and an in-memory store (the concurrency suite uses SQLite files); live-model mode and PostgreSQL were not
 exercised.
 
@@ -1078,8 +1078,7 @@ decision.
 - **Not verified.** Live-model mode: the language-boundary certification harness is built and passes in cache and fake
   modes (WRONG_MATERIAL 0 on 231 items) but has not run against a real model, which needs a key (LC1, U-001); the
   PostgreSQL concurrency run needs a database URL (PG1, U-002); and a person has not clicked through the new screens.
-  The web mocks and e2e expectations predate the later figure changes, and their refresh is in progress (WEB1; the
-  last known counts are mock 35 and live 30).
+  The web mocks and e2e expectations were re-recorded in the web refresh `2fc5aa9` (WEB1 done; mock 35, live 33).
 - **No runnable plan.** In six of the evaluation's 26 worlds (F04, R01, R02, R10, R13, R14) the cheapest plan that closes
   the gap uses a buyer's early payment or a bill, which no operation runs; the router then flags the plan as unable to
   run and offers nothing the agent can run. Whether the agent should instead propose drawing the line and asking the

@@ -32,7 +32,7 @@ Click **Start** in the demo bar and sign in as the owner when asked (the local d
 ```bash
 cd services/api && uv run pytest                     # 5,446 passed, 33 skipped on 3 Oct 2026 (Windows, SKIP_PERF_BENCH=1: the latency benchmarks skipped; two sequential chunks, about 14 min)
 cd apps/web && pnpm lint && pnpm typecheck && pnpm build && pnpm test:unit && pnpm test:e2e
-                                                     # Playwright mock e2e: 35 passed (live project: 30) when last run, per docs/CONTINUOUS_OPTIMIZATION.md; the web mock refresh is in progress
+                                                     # Playwright mock e2e: 35 passed, live project 33 (3 Oct 2026, after the web refresh); on macOS Chromium one phone-layout test fails, see docs/HANDOVER.md
                                                      # (once: pnpm exec playwright install chromium)
 ```
 
