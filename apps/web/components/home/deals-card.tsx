@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { ClauseQuote, contractsOff, DEAL_TONE } from "@/components/documents";
+import { ClauseLabel, ClauseQuote, contractsOff, DEAL_TONE } from "@/components/documents";
 import { Badge, Card, ErrorState, LoadingBlock, TableWrap, tableCls, tdCls, thCls } from "@/components/ui";
 import { getDeals } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
@@ -316,7 +316,11 @@ function Owed({ title, items }: { title: string; items: { text: string | null; c
               </span>
               <span className="min-w-0">
                 {it.text ?? it.quote}
-                {it.clause ? <span className="ml-1 font-mono text-[11px] text-brand-700">{t("deal.clause", { n: it.clause })}</span> : null}
+                {it.clause ? (
+                  <span className="ml-1">
+                    <ClauseLabel clause={it.clause} />
+                  </span>
+                ) : null}
               </span>
             </li>
           ))}

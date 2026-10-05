@@ -50,12 +50,22 @@ export function contractsOff(e: Error | undefined): boolean {
   return e instanceof ApiError && e.status === 403 && JSON.stringify(e.detail ?? "").includes("FEATURE_DISABLED");
 }
 
+/** A clause label as the contract numbers it: "§4.2" for a numbered clause, "Schedule 1, 1" as written. */
+export function ClauseLabel({ clause }: { clause: string }) {
+  const { t } = useI18n();
+  return <span className="font-mono text-[11px] text-brand-700">{/^\d/.test(clause) ? t("deal.clause", { n: clause }) : clause}</span>;
+}
+
 /** A term's clause and its exact words in the document. */
 export function ClauseQuote({ clause, quote }: { clause: string | null; quote: string }) {
-  const { t } = useI18n();
   return (
     <span className="mt-1 block border-l-2 border-brand-100 pl-2 text-xs font-normal text-ink-3">
-      {clause ? <span className="mr-1 font-mono text-[11px] text-brand-700">{t("deal.clause", { n: clause })}</span> : null}“{quote}”
+      {clause ? (
+        <span className="mr-1">
+          <ClauseLabel clause={clause} />
+        </span>
+      ) : null}
+      “{quote}”
     </span>
   );
 }

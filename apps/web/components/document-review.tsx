@@ -136,8 +136,9 @@ export function DocumentReview({ id }: { id: string }) {
       </Card>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
-        <Card id="doc-text" title={t("docs.text")} subtitle={t("docs.review.sub")}>
-          <div className="max-h-[75vh] overflow-y-auto">
+        {/* The text stays in view on a wide screen while the owner walks down the terms beside it. */}
+        <Card id="doc-text" title={t("docs.text")} subtitle={t("docs.review.sub")} className="lg:sticky lg:top-28 lg:self-start">
+          <div className="max-h-[60vh] overflow-y-auto">
             <AnnotatedText
               ariaLabel={t("docs.annotated")}
               text={d.document.text}
