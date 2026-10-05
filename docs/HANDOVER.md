@@ -55,6 +55,7 @@ Read, in this order:
 | `docs/adr/0001`–`0005`, `docs/ARCHITECTURE.md`, `docs/INVARIANTS.md`, `CONTEXT.md` | Earlier decisions and vocabulary |
 | `docs/handover/01_main_architect_brief.md` | The owner's first long brief, verbatim |
 | `docs/handover/02_technical_lead_brief.md` | The owner's second long brief, verbatim (the one in force now) |
+| `docs/handover/03_ux_redesign_brief.md` and `03_ux_reference_dashboard.webp` | The owner's third brief, 5 Oct, verbatim: the UI/UX audit and redesign (Business vs Demo modes, the home answering "am I safe, what should I do, what does it cost"), with the design reference. It lifts stability mode for the frontend only; the engine stays frozen |
 
 ## 3. Standing instructions from the owner (all still in force)
 
@@ -239,6 +240,11 @@ RESERVE_BREACH on the cash-corrected books, so the label file `fixtures/heldout/
 - Stability mode (section 4): no broad features, no new red-team rounds unless the owner asks.
 
 ## 6. What to do next, in order
+
+**From 5 Oct the active task is the UI/UX audit and redesign in `docs/handover/03_ux_redesign_brief.md`.** Its
+sequence: run the app, audit every screen, write `docs/UX_AUDIT.md`, report the checkpoint (brief section 28), then
+implement. Backend changes are limited to narrow presentation fields the UI needs (brief section 22). The list below
+remains the backlog for the engine, in stability mode.
 
 1. Read the three mission documents first: `docs/AGENT_MISSION.md`, `docs/CONTINUOUS_OPTIMIZATION.md` (the live
    tracker; `docs/NEXT_FIXES.md` is history) and `docs/FINANCIAL_SEMANTICS.md`.
