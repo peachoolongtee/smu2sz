@@ -943,8 +943,26 @@ export interface ApprovalOperation {
   reported_day?: Day | null;
 }
 
+/** Business words the API writes for an approval card (operations.py `presentation`): the question, the names behind the ids, the cost the alert priced and the day the cash lands. */
+export interface ApprovalPresentation {
+  headline: string;
+  what: string;
+  facility_name: string | null;
+  buyer_name: string | null;
+  invoice: string | null;
+  cost_display: string | null;
+  rate_text: string | null;
+  cost_due_day: number | null;
+  lands_day: number | null;
+  protects: string | null;
+  reason: string;
+  result_message: string | null;
+}
+
 /** What the card needs beyond the display row: the executor's reason, the operation and, once decided, its result message. */
 export interface ApprovalDetail {
+  /** Absent in older recordings: the card then falls back to the subject and the reason. */
+  presentation?: ApprovalPresentation;
   /** The executor's sentence on why the owner has to decide (the queue's `reason`). */
   reason: string;
   op_id: string | null;
@@ -1518,4 +1536,125 @@ export interface WhatIfResult {
   controls: WhatIfControls;
   /** Mock mode only: the nearest precomputed position, shown when the exact one was not precomputed. */
   mock_nearest?: { id: string; params: WhatIfParams } | null;
+}
+
+// ------------------------------------------------------------------ the owner's home (GET /home)
+
+export type HomeStatus = "SAFE" | "WATCH" | "ACTION_NEEDED" | "CRITICAL";
+
+export interface HomeLeg {
+  index: number;
+  operation_kind: string;
+  label: string;
+  facility_id: string | null;
+  facility_name: string;
+  receivable_id: string | null;
+  buyer_name: string | null;
+  amount_fen: Fen | null;
+  amount_display: string | null;
+  cost_fen: Fen | null;
+  cost_display: string | null;
+  rate_text: string | null;
+  cost_days: number | null;
+  cost_due_day: Day | null;
+  lands_day: Day | null;
+  above_apr_cap: boolean;
+}
+
+/** The one thing to do now: the cure of the first actionable critical alert, in the server's words. */
+export interface HomeNextAction {
+  alert_id: string;
+  kind: AlertKind | string;
+  title: string;
+  legs: HomeLeg[];
+  receive_fen: Fen | null;
+  receive_display: string | null;
+  cost_display: string | null;
+  cost_note: string | null;
+  rate_text: string | null;
+  cost_days: number | null;
+  lands_day: Day | null;
+  needs_owner: boolean;
+  needs_owner_reason: string | null;
+  if_nothing: string;
+  after: string;
+  why: string;
+  detail: string;
+  formula: string | null;
+  pending_approval_id: string | null;
+  state_version: number;
+  suggestions: ActSuggestion[];
+}
+
+export interface HomeApproval extends ApprovalPresentation {
+  id: string;
+  kind: string;
+  created_day: Day | null;
+  amount_fen: Fen | null;
+  amount_display: string | null;
+}
+
+export type HomeChangeKind = "OPERATION" | "RECEIPT" | "WAITING" | "REFUSED" | "LATE" | "LANDED";
+
+export interface HomeChange {
+  day: Day | null;
+  seq: number | null;
+  kind: HomeChangeKind | string;
+  actor: string;
+  text: string;
+}
+
+export interface HomeReceivable {
+  receivable_id: string;
+  buyer_id: string;
+  buyer_name: string;
+  face_fen: Fen;
+  face_display: string;
+  due_day: Day;
+  past_due: boolean;
+  days_late: number;
+  invoice: string;
+}
+
+export interface HomeReceivables {
+  open_count: number;
+  open_total_display: string;
+  past_due: HomeReceivable[];
+  next_receipt: HomeReceivable | null;
+  promised: { receivable_id: string; buyer_name: string; expected_display: string; promised_day: Day | null } | null;
+  lapsed_promises: number;
+}
+
+export interface HomeView {
+  day: Day;
+  state_version: number;
+  lang: "en" | "zh";
+  status: HomeStatus;
+  headline: string;
+  note: string;
+  cash: {
+    cash_fen: Fen;
+    cash_display: string;
+    floor_fen: Fen;
+    floor_display: string;
+    lowest_fen: Fen;
+    lowest_display: string;
+    lowest_day: Day;
+    first_breach_day: Day | null;
+    horizon_days: number;
+    in_transit: { total_display: string; lots: { facility_name: string; amount_display: string; arrival_day: Day }[] } | null;
+    dscr_text: string | null;
+    leverage_text: string | null;
+    min_dscr_display: string;
+    max_leverage_display: string;
+  };
+  next_action: HomeNextAction | null;
+  approvals: HomeApproval[];
+  pending_count: number;
+  changes: HomeChange[];
+  receivables: HomeReceivables;
+  warnings: { id: string; kind: string; title: string; detail: string; day: Day | null }[];
+  facilities: { id: string; name: string; status: string; limit_display: string; drawn_display: string; available_display: string; lead_time_days: number }[];
+  counts: Record<AlertSeverity, number>;
+  note_basis: string;
 }

@@ -10,8 +10,15 @@
 
 import { getOwnerToken, requestSignIn } from "../auth";
 import { ApiError } from "../errors";
-import type { ActRequest, AlertActResult, AlertChangedDetail, AlertsView, ClockView, NlOpenerResponse, NlResponse } from "../types";
+import type { ActRequest, AlertActResult, AlertChangedDetail, AlertsView, ClockView, HomeView, NlOpenerResponse, NlResponse } from "../types";
 import act from "../../mocks/home_act.json";
+import actDay0 from "../../mocks/home_act_day0.json";
+import summaryAfter from "../../mocks/home_summary_after.json";
+import summaryAfterFund from "../../mocks/home_summary_after_fund.json";
+import summaryDay0 from "../../mocks/home_summary_day0.json";
+import summaryDay34 from "../../mocks/home_summary_day34.json";
+import summaryPending from "../../mocks/home_summary_pending.json";
+import summaryQuiet from "../../mocks/home_summary_quiet.json";
 import alertsAfter from "../../mocks/home_alerts_after.json";
 import alertsDay34 from "../../mocks/home_alerts_day34.json";
 import alertsMandateExpired from "../../mocks/home_alerts_mandate_expired.json";
@@ -195,6 +202,41 @@ export function markApproved(): void {
 
 export function cureStage(): CureStage {
   return load().stage;
+}
+
+/**
+ * GET /home for this point of the story, recorded from the real API: the opening books (the fix can run alone), the quiet
+ * books after the deal, the books after the day-0 plan ran (funding in transit), day 34 with the late invoice (the fix
+ * needs approval), the queued fix, and the approved fix. `dealt` says whether the Scene 1 deal was made in this session.
+ */
+export function mockHome(dealt: boolean): HomeView {
+  const s = load();
+  const recorded =
+    s.day >= NEWS_DAY
+      ? s.stage === "approved"
+        ? summaryAfter
+        : s.stage === "pending"
+          ? summaryPending
+          : summaryDay34
+      : s.funded
+        ? summaryAfterFund
+        : dealt
+          ? summaryQuiet
+          : summaryDay0;
+  const view = clone<HomeView>(recorded);
+  return { ...view, day: s.day, state_version: view.state_version + s.moved };
+}
+
+/** The day-0 fix (the line draw and the invoice advance) runs alone: the recorded answer, and the books are then "funded". */
+export function mockActDay0(): AlertActResult {
+  requireOwner();
+  const s = load();
+  if (s.day >= NEWS_DAY || s.funded) {
+    throw new ApiError(409, "This alert suggests nothing the agent may execute.", { code: "NO_EXECUTABLE_CURE", alert_id: "ALERT-RESERVE-12" });
+  }
+  s.funded = true;
+  save();
+  return { ...clone<AlertActResult>(actDay0), day: s.day };
 }
 
 /** The day-0 funding plan ran in the chat. */
