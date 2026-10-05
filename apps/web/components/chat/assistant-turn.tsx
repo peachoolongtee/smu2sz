@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { AnnualisedCompact, offerLegs } from "@/components/annualised";
 import { AutonomyPanel } from "@/components/autonomy-panel";
-import { CodeBadge, OutcomeBadge, TierBadge, outcomeHasTier } from "@/components/badges";
+import { CodeBadge, OutcomeBadge } from "@/components/badges";
 import { OperationResultBox } from "@/components/operation-result";
 import { Badge, Button, Hash, type Tone } from "@/components/ui";
 import { useI18n } from "@/lib/i18n";
@@ -82,7 +82,6 @@ function VerdictBlock({ verdict }: { verdict: NlVerdict }) {
         <span data-testid="chat-outcome">
           <OutcomeBadge outcome={verdict.outcome} />
         </span>
-        {verdict.required_tier && verdict.required_tier !== "TIER_1" && outcomeHasTier(verdict.outcome) ? <TierBadge tier={verdict.required_tier} /> : null}
         {verdict.violations.map((v) => (
           <span key={v.code} data-testid={`chat-code-${v.code}`}>
             <CodeBadge code={v.code} tone={bad ? "bad" : "warn"} />
@@ -128,7 +127,6 @@ export function OperationList({ operations }: { operations: NlOperation[] }) {
           <li key={`${o.op_id}-${o.seq ?? ""}-${o.status}`}>
             <OperationResultBox status={o.status} message={o.message} approvalId={o.approval_id} testId={`chat-op-${o.kind}`} kind={o.kind}>
               <span className="text-sm font-medium text-ink">{te("opkind", o.kind) || o.kind}</span>
-              <TierBadge tier={o.tier} />
               {o.seq !== null ? <span className="text-xs text-ink-3">{t("chat.ops.seq", { n: o.seq })}</span> : null}
               <Hash value={o.entry_hash} />
             </OperationResultBox>

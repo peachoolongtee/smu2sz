@@ -1,7 +1,7 @@
 "use client";
 
 import { useI18n } from "@/lib/i18n";
-import type { FacilityStatus, OperationStatus, Outcome, Tier, ViolationCode } from "@/lib/types";
+import type { FacilityStatus, OperationStatus, Outcome, ViolationCode } from "@/lib/types";
 import { OperationStatePill } from "./operation-result";
 import { Badge, type Tone } from "./ui";
 
@@ -31,12 +31,6 @@ export function OutcomeBadge({ outcome, large = false }: { outcome: Outcome; lar
 /** A REJECT or NO_VERDICT executes nothing, so a tier-of-action badge on it would mislead. */
 export function outcomeHasTier(outcome: Outcome | "NO_DEAL"): boolean {
   return outcome === "ACCEPT" || outcome === "COUNTER" || outcome === "NEEDS_OWNER_APPROVAL";
-}
-
-export function TierBadge({ tier }: { tier: Tier }) {
-  const { te } = useI18n();
-  const tone: Tone = tier === "TIER_1" ? "ok" : tier === "TIER_2" ? "warn" : "bad";
-  return <Badge tone={tone}>{te("tier", tier)}</Badge>;
 }
 
 /** A ledger row's state: the shared presentation of an operation result (components/operation-result.tsx). */

@@ -1,7 +1,6 @@
 "use client";
 
 import { Badge, Card, ErrorState, Hash, KeyValueList, LoadingBlock, PageHeader, Stat, TableWrap, tableCls, tdCls, thCls } from "@/components/ui";
-import { TierBadge } from "@/components/badges";
 import { InTransit, lotsInTransit } from "@/components/in-transit";
 import { getMandate, getState } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
@@ -32,12 +31,7 @@ export default function MandatePage() {
           <Card
             key={tier}
             id={`tier-${tier}`}
-            title={
-              <span className="flex items-center gap-2">
-                <TierBadge tier={tier} />
-                {te("tier.title", tier)}
-              </span>
-            }
+            title={te("tier.title", tier)}
             tone={tier === "TIER_1" ? "ok" : tier === "TIER_2" ? "warn" : "bad"}
             className={tier === "TIER_3" ? "lg:col-span-2" : ""}
           >

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { TierBadge } from "@/components/badges";
 import { Badge, Button, Callout, Card, KeyValueList, type Tone } from "@/components/ui";
 import { useI18n } from "@/lib/i18n";
 import type { ApprovalDecision, ApprovalOperation, ApprovalView, Commitment, Displayed } from "@/lib/types";
@@ -107,7 +106,6 @@ export function ApprovalCard({
       actions={<Badge tone={statusTone[a.status]}>{te("apprstatus", a.status)}</Badge>}
     >
       <div className="flex flex-wrap items-center gap-2">
-        <TierBadge tier={a.tier} />
         {a.amount_display ? <span className="text-lg font-semibold tabular-nums">{a.amount_display}</span> : null}
       </div>
       <p className="mt-2 text-sm text-ink-2" data-testid="approval-reason">
@@ -147,9 +145,6 @@ export function ApprovalCard({
           <section aria-label={t("appr.why")}>
             <h3 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-ink-3">{t("appr.why")}</h3>
             <p className="text-sm">{a.reason}</p>
-            <p className="mt-1 text-xs text-ink-2">
-              {te("tier", a.tier)} · {te("tier.short", a.tier)}
-            </p>
           </section>
 
           {wantsTerms && op ? (

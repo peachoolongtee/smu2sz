@@ -52,7 +52,7 @@ test("owner: Evaluate EX01 is a REJECT, then go ahead lists the executed operati
   await expect(ops).toBeVisible();
   await expect(ops.locator('[data-status="EXECUTED"]')).toHaveCount(4);
   await expect(second.getByTestId("chat-op-ACCEPT_OFFER")).toContainText("Executed");
-  await expect(second.getByTestId("chat-op-ACCEPT_OFFER")).toContainText("Agent can act");
+  await expect(second.getByTestId("chat-op-ACCEPT_OFFER")).not.toContainText("Agent can act");
   await expect(second.getByTestId("chat-op-ACCEPT_OFFER")).toContainText(/seq \d+/);
   await expect(second.getByTestId("chat-negotiation")).toContainText("Option A");
   // The confirmation buttons on the answered turn are history now.

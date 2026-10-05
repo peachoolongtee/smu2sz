@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useState } from "react";
 import { CheckIcon, XIcon } from "@/components/icons";
-import { TierBadge } from "@/components/badges";
 import { ViolationCard } from "@/components/verdict-parts";
 import {
   Badge,
@@ -200,7 +199,7 @@ export default function CapexPage() {
             </ul>
           </section>
 
-          <Card id="tier" title={t("capex.tier")} tone="warn" actions={<TierBadge tier={capex.required_tier} />}>
+          <Card id="tier" title={t("capex.tier")} tone="warn">
             <p className="text-sm text-ink-2">{t("capex.tier.body")}</p>
             {canPrepareFile ? null : (
               <p className="mt-3 text-sm font-medium text-warn-fg" data-testid="capex-no-file">

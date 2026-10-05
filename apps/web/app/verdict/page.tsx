@@ -7,7 +7,7 @@ import { AutonomyPanel } from "@/components/autonomy-panel";
 import { CheckIcon } from "@/components/icons";
 import { DealSteps } from "@/components/deal-steps";
 import { NextStep, nextLinkCls } from "@/components/next-step";
-import { OutcomeBadge, TierBadge, outcomeHasTier } from "@/components/badges";
+import { OutcomeBadge, outcomeHasTier } from "@/components/badges";
 import { PlanCard } from "@/components/plan-card";
 import {
   Badge,
@@ -142,12 +142,8 @@ function VerdictBody({
             </details>
           </div>
           <div className="min-w-44">
-            {outcomeHasTier(verdict.outcome) ? <p className="mb-1 text-xs font-medium text-ink-3">{t("verdict.tier")}</p> : null}
             {outcomeHasTier(verdict.outcome) ? (
-              <>
-                <TierBadge tier={verdict.required_tier} />
-                <p className="mt-1 max-w-56 text-xs text-ink-2">{te("tier.short", verdict.required_tier)}</p>
-              </>
+              <p className="max-w-56 text-sm text-ink-2">{te("tier.short", verdict.required_tier)}</p>
             ) : (
               <p className="max-w-56 text-sm text-ink-2" data-testid="nothing-executed">
                 {t("verdict.nothingExecuted")}

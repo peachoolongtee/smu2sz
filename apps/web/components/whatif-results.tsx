@@ -1,7 +1,7 @@
 "use client";
 
 import { CashChart, ConcessionMeter } from "@/components/charts";
-import { CodeBadge, OutcomeBadge, TierBadge, outcomeHasTier } from "@/components/badges";
+import { CodeBadge, OutcomeBadge, outcomeHasTier } from "@/components/badges";
 import { Spinner } from "@/components/icons";
 import { Badge, Card, Formula, type Tone } from "@/components/ui";
 import type { CashRow } from "@/lib/chart-helpers";
@@ -74,7 +74,7 @@ export function WhatIfVerdictCard({ r, loading }: { r: WhatIfResult; loading: bo
         <span data-testid="whatif-outcome" data-outcome={r.outcome}>
           <OutcomeBadge outcome={r.outcome} large />
         </span>
-        {outcomeHasTier(r.outcome) ? <TierBadge tier={r.required_tier} /> : <span className="text-sm text-ink-2">{t("verdict.nothingExecuted")}</span>}
+        {outcomeHasTier(r.outcome) ? null : <span className="text-sm text-ink-2">{t("verdict.nothingExecuted")}</span>}
       </div>
       <div className="mt-3 flex flex-wrap gap-1.5" data-testid="whatif-codes">
         {r.codes.length ? (

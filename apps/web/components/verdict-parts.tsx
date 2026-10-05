@@ -3,7 +3,7 @@
 import { useI18n } from "@/lib/i18n";
 import { AnnualisedLine } from "@/components/annualised";
 import type { AnnualisedLeg, Displayed, CounterProposal, OperationView, Violation } from "@/lib/types";
-import { CodeBadge, OpStatusBadge, TierBadge } from "./badges";
+import { CodeBadge, OpStatusBadge } from "./badges";
 import { SpanQuote } from "./offer-parts";
 import { Badge, Formula, Hash } from "./ui";
 
@@ -113,7 +113,6 @@ export function OperationsList({ ops }: { ops: OperationView[] }) {
           <div className="flex flex-wrap items-center gap-2">
             <span className="font-mono text-xs text-ink-3">#{o.seq}</span>
             <span className="text-sm font-medium">{te("opkind", o.kind)}</span>
-            <TierBadge tier={o.tier} />
             <OpStatusBadge status={o.status} />
           </div>
           <p className="text-sm text-ink-2">{o.summary}</p>

@@ -1,6 +1,5 @@
 "use client";
 
-import { TierBadge } from "@/components/badges";
 import { CheckIcon } from "@/components/icons";
 import { OperationResultBox } from "@/components/operation-result";
 import { Badge, Card, EmptyState, ErrorState, LoadingBlock, type Tone } from "@/components/ui";
@@ -63,7 +62,6 @@ export function WaitingCard() {
                 <span className="ml-2 text-xs text-ink-3">{te("opkind", a.operation_kind)}</span>
               </span>
               <span className="flex items-center gap-2">
-                <TierBadge tier={a.tier} />
                 {a.amount_display ? <span className="font-semibold tabular-nums">{a.amount_display}</span> : null}
               </span>
             </li>
@@ -147,7 +145,6 @@ export function DoneCard() {
             <li key={`${o.seq}-${o.op_id}`}>
               <OperationResultBox status={o.status} message={o.message} testId={`home-done-${o.kind}`} kind={o.kind}>
                 <span className="text-sm font-medium text-ink">{te("opkind", o.kind) || o.kind}</span>
-                <TierBadge tier={o.tier} />
                 <span className="text-xs text-ink-3">{t("common.dayN", { n: o.day })}</span>
               </OperationResultBox>
             </li>

@@ -1,7 +1,7 @@
 "use client";
 
 import { CheckIcon, XIcon } from "@/components/icons";
-import { CodeBadge, OpStatusBadge, TierBadge } from "@/components/badges";
+import { CodeBadge, OpStatusBadge } from "@/components/badges";
 import { SpanQuote } from "@/components/offer-parts";
 import {
   Badge,
@@ -100,7 +100,6 @@ export default function LedgerPage() {
                       <th scope="col" className={thCls}>{t("ledger.seq")}</th>
                       <th scope="col" className={thCls}>{t("ledger.operation")}</th>
                       <th scope="col" className={thCls}>{t("common.status")}</th>
-                      <th scope="col" className={thCls}>{t("ledger.tier")}</th>
                       <th scope="col" className={thCls}>{t("ledger.actor")}</th>
                       <th scope="col" className={thCls}>{t("ledger.prevHash")}</th>
                       <th scope="col" className={thCls}>{t("ledger.hash")}</th>
@@ -123,9 +122,6 @@ export default function LedgerPage() {
                         </td>
                         <td className={tdCls}>
                           <OpStatusBadge status={o.status} />
-                        </td>
-                        <td className={tdCls}>
-                          <TierBadge tier={o.tier} />
                         </td>
                         <td className={tdCls}>{te("actor", o.requested_by)}</td>
                         <td className={tdCls}>

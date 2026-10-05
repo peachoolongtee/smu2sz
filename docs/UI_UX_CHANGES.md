@@ -184,6 +184,8 @@ Home, Chat, Approvals and Alerts kept their names. The Alerts page title stays "
 | Tier 2 | Needs your OK | `tier.TIER_2` |
 | Tier 3 | Never allowed | `tier.TIER_3` |
 
+Since 5 Oct 2026 no screen shows a permission-level badge; the labels above survive only in the autonomy panel's wording.
+
 ### Home cards and figures
 
 | Old | New | Key |
@@ -224,6 +226,28 @@ their wording; the plain sentence beside them explains them.
 ---
 
 ## 5. Change log
+
+### 2026-10-05: No permission-level (tier) badges on screen
+
+Commit: "Screens no longer show Tier 1, 2 and 3" (branch `test/ui-ux`)
+Goal: the owner's review of 5 Oct: "Tier 1, 2, 3 don't need to be in the actual frontend". The badges repeated what the
+status pill and the plain sentences already say (done, waiting for your approval, refused), and "Tier" is internal
+vocabulary.
+
+| Change | Where |
+| --- | --- |
+| The tier badge is gone from operations (home, chat, decision page, ledger), approvals (home and the approval card), the what-if result and the capex card; the `TierBadge` component is deleted | [badges.tsx](../apps/web/components/badges.tsx) and its former callers |
+| Our decision: the "Who decides" column becomes one plain sentence ("Needs the owner's approval.") | [verdict/page.tsx](../apps/web/app/verdict/page.tsx) |
+| Ledger: the Tier column is removed | [ledger/page.tsx](../apps/web/app/ledger/page.tsx) |
+| Your limits: the three permission cards keep their plain titles ("The agent asks you first"…) without a badge | [mandate/page.tsx](../apps/web/app/mandate/page.tsx) |
+| Every visible "Tier N" in English and Chinese reworded: "You approve this one", "(never allowed)", "Actions inside your limits can run" | `lib/dictionary.ts` |
+
+The engine still decides by tier; only the label is gone. The `tier.*` keys stay for the autonomy panel's wording.
+
+Tests: `chat.spec.ts` now checks that the chat operation does not show "Agent can act". Mock e2e 35 passed, 1 skipped;
+typecheck and lint clean.
+Not checked: the live e2e project.
+Follow-ups: none.
 
 ### 2026-10-04: An empty "Waiting for you" shrinks to one line (UX-4)
 
