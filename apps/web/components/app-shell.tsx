@@ -123,7 +123,7 @@ function BusinessShell({ children }: { children: ReactNode }) {
               href={n.href}
               onClick={onNavigate}
               aria-current={active ? "page" : undefined}
-              className={`flex min-h-10 items-center rounded-md px-3 text-sm font-medium ${
+              className={`flex min-h-10 items-center whitespace-nowrap rounded-md px-3 text-sm font-medium ${
                 active ? "bg-brand-50 text-brand-700" : "text-ink-2 hover:bg-subtle hover:text-ink"
               }`}
             >
@@ -140,7 +140,7 @@ function BusinessShell({ children }: { children: ReactNode }) {
       <OwnerSignInDialog />
       <ChatPanel />
       <header className="sticky top-0 z-30 border-b border-line bg-surface">
-        <div className="mx-auto flex max-w-[1180px] items-center justify-between gap-3 px-4 py-2 lg:px-6">
+        <div className="mx-auto flex max-w-[1280px] items-center justify-between gap-3 px-4 py-2 lg:px-6">
           <div className="flex items-center gap-3">
             <button
               type="button"
@@ -157,7 +157,7 @@ function BusinessShell({ children }: { children: ReactNode }) {
           <nav aria-label={t("nav.label")} className="hidden lg:block">
             {links()}
           </nav>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 whitespace-nowrap">
             <div className="hidden sm:block">
               <ModeSwitch />
             </div>

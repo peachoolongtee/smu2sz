@@ -28,8 +28,8 @@ export function StatusBlock({ h }: { h: HomeView }) {
       <p className="mt-1.5 max-w-3xl text-sm text-ink-2" data-testid="home-note">
         {h.note}
       </p>
-      <dl className="mt-5 grid grid-cols-3 gap-3 border-t border-line pt-4">
-        <div className="min-w-0">
+      <dl className="mt-5 grid grid-cols-1 gap-3 border-t border-line pt-4 sm:grid-cols-3">
+        <div className="flex min-w-0 flex-wrap items-baseline justify-between gap-x-3 sm:block">
           <dt className="text-xs font-medium text-ink-3">{t("biz.cashToday")}</dt>
           <dd className="mt-0.5 break-words text-base font-semibold tabular-nums text-ink lg:text-lg" data-testid="home-cash">
             {h.cash.cash_display}
@@ -40,11 +40,11 @@ export function StatusBlock({ h }: { h: HomeView }) {
             </dd>
           ) : null}
         </div>
-        <div className="min-w-0">
+        <div className="flex min-w-0 items-baseline justify-between gap-3 sm:block">
           <dt className="text-xs font-medium text-ink-3">{t("biz.safeLevel")}</dt>
           <dd className="mt-0.5 break-words text-base font-semibold tabular-nums text-ink lg:text-lg">{h.cash.floor_display}</dd>
         </div>
-        <div className="min-w-0">
+        <div className="flex min-w-0 flex-wrap items-baseline justify-between gap-x-3 sm:block">
           <dt className="text-xs font-medium text-ink-3">{t("biz.lowestAhead")}</dt>
           <dd className={`mt-0.5 break-words text-base font-semibold tabular-nums lg:text-lg ${h.cash.first_breach_day !== null ? "text-bad-fg" : "text-ink"}`} data-testid="home-lowest">
             {h.cash.lowest_display}

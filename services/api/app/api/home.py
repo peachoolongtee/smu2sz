@@ -246,6 +246,13 @@ def _changes(state: FinancialState, store: Any, found: list[Alert], today: int, 
             "WAITING" if e.result.status == OperationStatus.PENDING_APPROVAL else
             ("RECEIPT" if e.kind == "RECEIVE_PAYMENT" else "OPERATION"))
         text = in_words(state, e.result.message or e.kind.replace("_", " ").lower())
+        if e.kind in ("ACCEPT_OFFER", "RECORD_COMMITMENT") and e.result.status == OperationStatus.EXECUTED:
+            cmt = next((c for c in store.commitments() if c.id in (e.result.message or "")), None)
+            if cmt is not None:
+                text = t(lang, f"Agreement with {party_name(state, cmt.counterparty_id)} recorded; future give-aways booked: "
+                               f"{fmt_yuan(cmt.forward_value_fen)}.",
+                         f"已记录与{party_name(state, cmt.counterparty_id)}的协议；已入账的未来让利：{fmt_yuan(cmt.forward_value_fen)}。")
+                kind = "AGREEMENT"
         items.append({"day": day, "seq": e.seq, "kind": kind, "actor": who, "text": text})
     for a in found:
         if a.kind == AlertKind.RECEIVABLE_PAST_DUE:
@@ -262,7 +269,7 @@ def _changes(state: FinancialState, store: Any, found: list[Alert], today: int, 
 
 def _receivables(state: FinancialState, store: Any, today: int, lang: str) -> dict[str, Any]:
     report = reconcile(store, day=today)
-    rows = []
+    rows: list[dict[str, Any]] = []
     for o in report.outstanding:
         rows.append({"receivable_id": o.receivable_id, "buyer_id": o.counterparty_id,
                      "buyer_name": party_name(state, o.counterparty_id), "face_fen": o.face_fen,
@@ -322,6 +329,10 @@ def get_home(lang: str = "en") -> dict[str, Any]:
                        "lead_time_days": f.lead_time_days}
                       for f in state.facilities if f.status.value == "COMMITTED" and f.limit_fen > 0]
     month1 = traj.months[0] if traj.months else None
+    dscr = month1.dscr if month1 is not None else None
+    dscr_text = f"{dscr.text}×" if dscr is not None else None
+    lev = month1.leverage if month1 is not None else None
+    leverage_text = f"{lev.text}×" if lev is not None else None
     return displayed({
         "day": today,
         "state_version": state.state_version,
@@ -337,8 +348,8 @@ def get_home(lang: str = "en") -> dict[str, Any]:
             "first_breach_day": traj.first_breach_day,
             "horizon_days": mandate.horizon_days,
             "in_transit": in_transit,
-            "dscr_text": month1.dscr.text + "×" if month1 is not None and month1.dscr is not None else None,
-            "leverage_text": month1.leverage.text + "×" if month1 is not None else None,
+            "dscr_text": dscr_text,
+            "leverage_text": leverage_text,
             "min_dscr_bp": mandate.min_dscr_bp,
             "max_leverage_bp": mandate.max_leverage_bp,
         },

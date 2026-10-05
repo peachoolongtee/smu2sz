@@ -1594,7 +1594,7 @@ export interface HomeApproval extends ApprovalPresentation {
   amount_display: string | null;
 }
 
-export type HomeChangeKind = "OPERATION" | "RECEIPT" | "WAITING" | "REFUSED" | "LATE" | "LANDED";
+export type HomeChangeKind = "OPERATION" | "RECEIPT" | "WAITING" | "REFUSED" | "LATE" | "LANDED" | "AGREEMENT";
 
 export interface HomeChange {
   day: Day | null;

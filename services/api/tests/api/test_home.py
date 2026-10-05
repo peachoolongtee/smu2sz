@@ -85,8 +85,8 @@ def test_a_priced_cure_in_the_queue_carries_its_cost_and_landing_day(client):
     # cap the agent's rate ceiling below the invoice platform's tariff: the day-0 cure then needs the owner, priced
     rt = get_runtime()
     m = rt.store.get_mandate()
-    from app.mandate.fixture import load_demo_owner_key  # noqa: PLC0415
-    from app.mandate.signing import sign  # noqa: PLC0415
+    from app.mandate.fixture import load_demo_owner_key
+    from app.mandate.signing import sign
     rt.store.put_mandate(sign(m.model_copy(update={"max_apr_bp": 500}), load_demo_owner_key()["private_key_hex"]))
     h = client.get("/home").json()
     a = h["next_action"]
@@ -112,6 +112,7 @@ def test_a_late_buyer_is_named_in_receivables_and_changes(client):
     client.post(f"/negotiate/{o}", json={"buyer_profile": "cooperative"})
     h = client.get("/home").json()
     assert h["status"] == "WATCH" and h["receivables"]["promised"]["expected_display"] == "¥255,013.80"
+    assert any(c["kind"] == "AGREEMENT" and c["text"].startswith("Agreement with Foshan Home Retail Co. recorded") for c in h["changes"])
     client.post("/clock/advance", json={"days": 2})
     promised = client.get("/reconciliation").json()["reconciliation"]["promised"][0]
     mv = client.get("/mandate").json()["mandate"]["version"]

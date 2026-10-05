@@ -37,9 +37,9 @@
     {
       "day": 0,
       "seq": 1,
-      "kind": "OPERATION",
+      "kind": "AGREEMENT",
       "actor": "AGENT",
-      "text": "Commitment CMT-a78afaa5becb5273 is ACTIVE; forward concession ¥0.00 booked"
+      "text": "Agreement with Foshan Home Retail Co. recorded; future give-aways booked: ¥0.00."
     }
   ],
   "receivables": {

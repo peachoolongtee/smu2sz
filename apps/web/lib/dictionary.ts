@@ -561,9 +561,9 @@ export const en = {
 
   // ---- approvals
   "appr.title": "Approvals",
-  "appr.subtitle": "The Tier 2 queue. Nothing here executes until the owner decides.",
+  "appr.subtitle": "Decisions only you can make. Nothing here runs until you decide.",
   "appr.pending": "{n} pending",
-  "appr.note": "The executor returns PENDING_APPROVAL and queues the request. Approving runs the typed operation and logs it.",
+  "appr.note": "Approving runs the operation and records it; declining records that too and runs nothing.",
   "appr.empty.title": "Nothing waiting for approval",
   "appr.empty.body": "Tier 2 requests, such as the capex loan, appear here.",
   "appr.approve": "Approve",
@@ -1745,9 +1745,9 @@ export const zh: Record<DictKey, string> = {
 
   // ---- approvals
   "appr.title": "审批",
-  "appr.subtitle": "第 2 层队列。在老板决定之前，这里的任何事项都不会执行。",
+  "appr.subtitle": "只有您能做的决定。在您决定之前，这里的任何事项都不会执行。",
   "appr.pending": "{n} 项待处理",
-  "appr.note": "执行器返回 PENDING_APPROVAL 并将请求排队。批准后才会执行类型化操作并记入日志。",
+  "appr.note": "批准会执行该操作并记录；拒绝同样会记录，但不执行任何操作。",
   "appr.empty.title": "没有待批事项",
   "appr.empty.body": "资本开支贷款等第 2 层请求会出现在这里。",
   "appr.approve": "批准",

@@ -6,7 +6,7 @@ import { Card, TableWrap, tableCls, tdCls, thCls } from "@/components/ui";
 import { useI18n } from "@/lib/i18n";
 import type { HomeApproval, HomeChange, HomeReceivables, HomeView } from "@/lib/types";
 
-const CHANGE_GLYPH: Record<string, string> = { RECEIPT: "↓", LATE: "!", WAITING: "…", REFUSED: "✕", LANDED: "↓", OPERATION: "✓" };
+const CHANGE_GLYPH: Record<string, string> = { RECEIPT: "↓", LATE: "!", WAITING: "…", REFUSED: "✕", LANDED: "↓", OPERATION: "✓", AGREEMENT: "✓" };
 const CHANGE_TONE: Record<string, string> = {
   RECEIPT: "bg-ok-bg text-ok-fg",
   LANDED: "bg-ok-bg text-ok-fg",
@@ -14,6 +14,7 @@ const CHANGE_TONE: Record<string, string> = {
   WAITING: "bg-warn-bg text-warn-fg",
   REFUSED: "bg-bad-bg text-bad-fg",
   OPERATION: "bg-subtle text-ink-2",
+  AGREEMENT: "bg-ok-bg text-ok-fg",
 };
 
 /** Level 2: what requires the owner's decision, as questions. The buttons are on the approval card, never here. */

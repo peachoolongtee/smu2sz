@@ -777,23 +777,24 @@ access is in `lib/api.ts`; `NEXT_PUBLIC_API_MODE` selects live or mock. Mock fil
 API made by `scripts/record-mocks.mjs` (`pnpm mocks:record`), so both modes show the same figures. Owner routes
 need the token; a 401 or 403 opens the sign-in dialog and the interrupted action resumes after sign-in.
 
-| Page | Shows |
+Since 5 Oct the app has two shells (`docs/UX_AUDIT.md`, the owner's third brief): **Business**, the owner's product, and
+**Demo**, the judge's story with the engine views. The switch is in the header.
+
+Business mode (navigation by question):
+
+| Page | Answers |
 | --- | --- |
-| `/` Home | The day and a demo clock control; the agent's opener with Go ahead / Not now; position (cash, floor, lowest projected cash, covenant ratios); approvals waiting; alerts with cost, formula, an "above your yearly cap" badge and "Let the agent fix this"; the agent's recent actions |
-| Inbox | The message with each extracted obligation highlighted on its source words |
-| Verdict | Outcome, violations with formulas, counters, each discount as a yearly rate beside the funding rates, the autonomy panel on a Tier-1 accept, the negotiation card. A REJECT shows no tier badge |
-| Funding | The menu on one basis and the cheapest admissible plan |
-| Trajectory | Daily cash against the floor, conservative or expected, with the cured line |
-| Mandate | The signed limits and the three tiers |
-| Approvals | The Tier-2 queue; each card expands to the operation, why it needs the owner, the terms being accepted with their clauses, and Approve / Reject with the executor's answer |
-| Alerts | All alerts with their suggestions and the fix button, which sends the state version and the suggestions it shows; on a 409 `ALERT_CHANGED` it shows the new cure instead of running anything |
-| Reconciliation | Receipts matched to invoices and commitments |
-| Ledger | Commitments, the operation log, refusals, chain status |
-| Security | The hostile-message scene, events, circuit reset |
-| Evidence | The exportable evidence |
-| Capex | NPV, structures, the selection, an Apply button (`POST /capex/apply`, which queues the Tier-2 application), the borrower file (built at once, no approval) |
-| What-if | Sliders and a live hypothetical verdict |
-| Chat | The conversation, also available as a slide-over on every page |
+| `/` Home | Am I safe (a status word and one sentence from `GET /home`), what should I do (the best next action with what is received, the cost and rate, the landing day, who decides, what if nothing, the after-state; Go ahead sends the bound act), what needs my decision (approvals as questions), what changed, who has not paid, and the details (in transit, warnings, facilities, debt readings) behind a disclosure |
+| Deals | What the buyer asks for, the recommendation in two words, future give-aways against the cap, the cash effect, the counters; Why, Calculation and Original message as disclosures |
+| Cash & funding | The answer sentence, the cash line against the safe level, the ways to cover the gap with their total cost, doors to the what-if sandbox and the equipment purchase, the monthly readings as a disclosure |
+| Receivables | Open invoices by buyer name with days late, promised early payments, what arrived with the bank reference |
+| Approvals | Each pending item as a question ("Approve ¥200,000.00 of invoice financing?") with amount, cost, landing day, source, invoice, why it needs the owner, after, if declined; ids, tier and terms under Show details |
+| Activity | The timeline in the executor's sentences with names for ids, agreements, refusals and flagged messages; hashes under audit details; the evidence export |
+| Limits | The mandate as sentences; the signature under details |
+
+Demo mode: the story page `/demo` (the fifteen steps with Run/Show, the clock, the scenario switch, the side doors), the
+story bar on every page, and the engine views as before (Mandate, Inbox, Trajectory, Funding, Verdict, What-if, Capex,
+Ledger, Alerts, Reconciliation, Security, Evidence, Chat), unchanged in content.
 
 The demo stepper walks: mandate → inbox (EX01) → trajectory → funding → verdict → negotiate (cooperative) →
 ledger → the hard-line walk-away → the router covering the gap → ledger → the reworded offer → capex → the
