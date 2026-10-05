@@ -118,7 +118,7 @@ verdict and negotiation. Finished steps get a tick, and the current one is highl
 Each page in the journey shows a **Next step** bar at the top when the next move is clear
 ([next-step.tsx](../apps/web/components/next-step.tsx)).
 
-**Buyer offers** (`/inbox`): paste or pick a message → **Read this message** → a Next step bar with **Check
+**Buyer offers** (`/inbox`): a simulated **Inbox** (WeChat, Email; company, contact, time). Opening a message reads it; a pasted message (folded box) has **Read this message** → a Next step bar with **Check
 against my limits** and "See what it does to our cash" → the highlighted text, with "What the buyer is asking for"
 and "Warnings" beside it.
 
@@ -170,7 +170,8 @@ Home, Chat, Approvals and Alerts kept their names. The Alerts page title stays "
 
 | Old | New | Key |
 | --- | --- | --- |
-| Compile | Read this message | `inbox.compile` |
+| Compile | Read this message (only for a pasted message; opening an inbox message reads it) | `inbox.compile` |
+| Demo message switch (Package offer, Same offer reworded, FastCapital) | Inbox, labelled Simulated | `inbox.list` |
 | Evaluate against the mandate / Evaluate | Check against my limits | `inbox.evaluate`, `verdict.evaluate` |
 | Run the negotiation | Send our counter-offer | `neg.run` |
 | Buyer behaviour: Buyer accepts / Buyer refuses every counter | Demo: how the simulated buyer reacts: Agrees to a counter / Refuses every counter | `neg.profile`, `neg.cooperative`, `neg.hardLine` |
@@ -226,6 +227,32 @@ their wording; the plain sentence beside them explains them.
 ---
 
 ## 5. Change log
+
+### 2026-10-05: A simulated inbox that says where each message came from; opening a message reads it
+
+Commit: "Buyer offers: a simulated inbox with source and sender, and opening a message reads it" (branch `test/ui-ux`)
+Goal: three points from the owner's review of 5 Oct. WeChat and email have no API we can use in the demo, so the inbox
+must be simulated; the inbox should show where each message came from and who sent it; and the separate "Read this
+message" (formerly Compile) step should be streamlined or removed.
+
+| Change | Where |
+| --- | --- |
+| An **Inbox** card, labelled "Simulated", lists four messages newest first: source (WeChat, Email), company, contact and role, subject for emails, a one-line preview, and the day and time | `InboxList` in [inbox/page.tsx](../apps/web/app/inbox/page.tsx), data in [lib/inbox.ts](../apps/web/lib/inbox.ts) |
+| **Opening a message reads it**: there is no read button for inbox messages. A message already read is shown again from the session without another server call; rows say "Click to read", "Reading…", "Showing below" or "Read" | [inbox/page.tsx](../apps/web/app/inbox/page.tsx) |
+| A sender missing from the owner's registry (FastCapital) is marked "Not in your contacts", read from `GET /state` | `InboxList` |
+| The message card is titled with the company and contact and says the source and time, instead of "Received from BUYER-1 · Chat" | [inbox/page.tsx](../apps/web/app/inbox/page.tsx) |
+| Pasting a message is folded under "Got a message somewhere else? Paste it here", with "Came in by" (WeChat, Email, Portal) and "From" (the two known buyers). Only this path keeps the "Read this message" button | `PasteMessage` in [inbox/page.tsx](../apps/web/app/inbox/page.tsx) |
+| The demo-message switch (Package offer, Same offer reworded, FastCapital) and the "Load the package offer" empty state are replaced by the inbox | `lib/dictionary.ts` |
+
+The message texts are the verbatim demo fixtures (EX01, EX01B, SEC) plus the recorded Tier-1 accept message, so mock and
+live answer exactly as before. The company names come from the fixture registry; the contacts, subjects and times are
+presentation only and live in `lib/inbox.ts`. WeChat maps to the server channel `chat`.
+
+Tests: new `inbox.spec.ts` (source and sender shown, opening reads, reopening does not re-read, unknown sender marked).
+`approvals.spec.ts` opens the EX01 message instead of pressing "Read this message", and pastes the accept message
+through the folded paste box. Mock e2e for these specs passed; typecheck and lint clean.
+Not checked: the live e2e project.
+Follow-ups: none.
 
 ### 2026-10-05: No permission-level (tier) badges on screen
 
