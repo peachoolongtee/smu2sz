@@ -3,25 +3,24 @@
 import { useI18n } from "@/lib/i18n";
 import { AnnualisedLine } from "@/components/annualised";
 import type { AnnualisedLeg, Displayed, CounterProposal, OperationView, Violation } from "@/lib/types";
-import { CodeBadge, OpStatusBadge, TierBadge } from "./badges";
+import { OpStatusBadge, PlainCode, TierBadge } from "./badges";
 import { SpanQuote } from "./offer-parts";
 import { Badge, Formula, Hash } from "./ui";
 
 /** One violation with its formula and inputs shown verbatim from the server. */
 export function ViolationCard({ v }: { v: Displayed<Violation> }) {
-  const { t, te } = useI18n();
+  const { t } = useI18n();
   const inputs = Object.entries(v.inputs);
   return (
     <li className="min-w-0 rounded-lg border border-bad-line bg-surface p-4" data-testid={`violation-${v.code}`}>
       <div className="flex flex-wrap items-center gap-2">
-        <CodeBadge code={v.code} tone="bad" />
+        <PlainCode code={v.code} tone="bad" />
         {v.day !== null ? <Badge tone="bad">{t("common.dayN", { n: v.day })}</Badge> : null}
         {v.month !== null ? <Badge>{t("common.monthN", { n: v.month })}</Badge> : null}
         {v.curable === true ? <Badge tone="warn">{t("verdict.curable")}</Badge> : null}
         {v.curable === false ? <Badge>{t("verdict.notCurable")}</Badge> : null}
       </div>
       <p className="mt-2 text-sm font-medium">{v.message}</p>
-      <p className="text-xs text-ink-3">{te("violation", v.code)}</p>
       {v.code === "DSCR_BREACH" ? <p className="text-xs text-ink-3">{t("dscr.readingNote")}</p> : null}
 
       {v.observed || v.limit ? (
@@ -108,7 +107,7 @@ export function OperationsList({ ops }: { ops: OperationView[] }) {
           <div className="flex flex-wrap items-center gap-2">
             <span className="font-mono text-xs text-ink-3">#{o.seq}</span>
             <span className="text-sm font-medium">{te("opkind", o.kind)}</span>
-            <TierBadge tier={o.tier} />
+            <TierBadge tier={o.tier} explain />
             <OpStatusBadge status={o.status} />
           </div>
           <p className="text-sm text-ink-2">{o.summary}</p>

@@ -201,7 +201,7 @@ export default function CapexPage() {
             </ul>
           </section>
 
-          <Card id="tier" title={t("capex.tier")} tone="warn" actions={<TierBadge tier={capex.required_tier} />}>
+          <Card id="tier" title={t("capex.tier")} tone="warn" actions={<TierBadge tier={capex.required_tier} explain />}>
             <p className="text-sm text-ink-2">{t("capex.tier.body")}</p>
             {canPrepareFile ? null : (
               <p className="mt-3 text-sm font-medium text-warn-fg" data-testid="capex-no-file">

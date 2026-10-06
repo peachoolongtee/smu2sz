@@ -14,6 +14,7 @@ test("what-if: moving the terms slider changes the hypothetical verdict", async 
   const outcome = page.getByTestId("whatif-outcome");
   await expect(outcome).toHaveAttribute("data-outcome", "REJECT");
   await expect(page.getByTestId("whatif-codes")).toContainText("AGG_CONCESSION_EXCEEDED");
+  await expect(page.getByTestId("whatif-codes")).toContainText("Gives buyers more than your limit allows");
   await expect(page.getByTestId("whatif-forward-total")).toHaveText("¥28,326.92");
   await expect(page.getByText("Breach day 47").first()).toBeVisible();
 

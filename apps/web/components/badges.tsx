@@ -33,10 +33,18 @@ export function outcomeHasTier(outcome: Outcome | "NO_DEAL"): boolean {
   return outcome === "ACCEPT" || outcome === "COUNTER" || outcome === "NEEDS_OWNER_APPROVAL";
 }
 
-export function TierBadge({ tier }: { tier: Tier }) {
+/** The tier badge; `explain` puts the plain sentence (tier.short) beside it for the engine views. */
+export function TierBadge({ tier, explain = false }: { tier: Tier; explain?: boolean }) {
   const { te } = useI18n();
   const tone: Tone = tier === "TIER_1" ? "ok" : tier === "TIER_2" ? "warn" : "bad";
-  return <Badge tone={tone}>{te("tier", tier)}</Badge>;
+  const badge = <Badge tone={tone}>{te("tier", tier)}</Badge>;
+  if (!explain) return badge;
+  return (
+    <span className="inline-flex flex-wrap items-center gap-x-2 gap-y-1">
+      {badge}
+      <span className="text-xs text-ink-2">{te("tier.short", tier)}</span>
+    </span>
+  );
 }
 
 /** A ledger row's state: the shared presentation of an operation result (components/operation-result.tsx). */
@@ -56,6 +64,27 @@ export function CodeBadge({ code, tone = "neutral" }: { code: ViolationCode | st
     <Badge tone={tone} title={te("violation", code)} className="font-mono">
       {code}
     </Badge>
+  );
+}
+
+const codeText: Partial<Record<Tone, string>> = { bad: "text-bad-fg", warn: "text-warn-fg", ok: "text-ok-fg" };
+
+/**
+ * A reason code in plain words (violation.* or alertkind.*), with the code itself behind the same `<details>`
+ * disclosure the Business pages use. A code with no plain name is shown as the code badge.
+ */
+export function PlainCode({ code, tone = "neutral", kind = "violation" }: { code: ViolationCode | string; tone?: Tone; kind?: "violation" | "alertkind" }) {
+  const { t, te } = useI18n();
+  const label = te(kind, code);
+  if (label === code) return <CodeBadge code={code} tone={tone} />;
+  return (
+    <span className="inline-flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1">
+      <span className={`min-w-0 break-words text-sm font-medium ${codeText[tone] ?? "text-ink"}`}>{label}</span>
+      <details className="inline-block">
+        <summary className="cursor-pointer text-xs text-ink-3">{t("common.code")}</summary>
+        <CodeBadge code={code} tone={tone} />
+      </details>
+    </span>
   );
 }
 
