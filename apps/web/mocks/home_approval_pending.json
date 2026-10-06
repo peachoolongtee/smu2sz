@@ -36,6 +36,7 @@
     "cost_due_day": 47,
     "lands_day": 37,
     "lands_when": "in 3 days",
+    "if_decline": "¥200,000.00 below your minimum cash reserve in 8 days; the gap peaks at ¥200,000.00 in 8 days.",
     "protects": "It keeps cash above your minimum cash reserve for the next 12 days.",
     "reason": "effective annual cost 32.52% is above the mandate's 15.00% ceiling for what the agent may borrow alone (all charges on ¥200,000.00 held 10 days (day 37 to day 47), annualised = 32.52%)",
     "result_message": null,

@@ -52,13 +52,13 @@ export default function ActivityPage() {
               <ol className="space-y-2" data-testid="activity-list">
                 {ops.map((o) => (
                   <li key={`${o.seq}-${o.op_id}`} className={`rounded-md border px-3 py-2 ${o.status === "REFUSED" ? "border-bad-line bg-bad-bg/40" : "border-line"}`} data-testid={`activity-${o.kind}`} data-status={o.status}>
-                    <div className="flex flex-wrap items-center gap-2">
+                    <p className="break-words text-sm font-medium text-ink">{words(o.summary) || te("opkind", o.kind) || o.kind}</p>
+                    <div className="mt-1 flex flex-wrap items-center gap-2">
                       <span className="text-xs text-ink-3">{whenText(o.day, today, t)}</span>
-                      <span className="text-sm font-medium text-ink">{te("opkind", o.kind) || o.kind}</span>
+                      <span className="text-xs text-ink-3" data-testid="activity-op">{te("opkind", o.kind) || o.kind}</span>
                       <OpStatusBadge status={o.status} />
                       <span className="text-xs text-ink-3">{te("actor", o.requested_by)}</span>
                     </div>
-                    <p className="mt-1 break-words text-sm text-ink-2">{words(o.summary)}</p>
                     {o.violations.length ? (
                       <div className="mt-1 flex flex-wrap gap-1">
                         {o.violations.map((v) => (

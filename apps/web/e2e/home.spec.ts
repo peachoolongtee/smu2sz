@@ -19,6 +19,13 @@ test.beforeEach(async ({ context }, testInfo) => {
   });
 });
 
+
+/** The Business header keeps the language switch and sign-out inside the account menu; open it when it is there. */
+async function openAccountMenu(page: Page) {
+  const menu = page.getByTestId("account-menu");
+  if ((await menu.count()) && !(await menu.evaluate((el) => (el as HTMLDetailsElement).open))) await menu.locator("> summary").click();
+}
+
 /** The story page's clock moves the simulated day; the home is then opened through the mode switch. */
 async function advanceTo34(page: Page) {
   await page.goto("/demo");
@@ -53,6 +60,12 @@ test("the Business home answers safe, do and cost on the opening books, without 
   await expect(page.getByTestId("home-breach-cash")).toHaveText("¥60k");
   await expect(page.getByTestId("home-lowest-when")).toHaveText("in 30 days");
   await expect(page.getByTestId("demo-data-indicator")).toHaveCount(1);
+  // One product in the header, Approvals as an attention badge (absent while nothing waits), one account menu.
+  await expect(page.getByRole("banner").getByRole("link", { name: /FLOW/ })).toBeVisible();
+  await expect(page.getByRole("banner")).not.toContainText("Terms Guard");
+  await expect(page.getByTestId("approvals-badge")).toHaveCount(0);
+  await expect(page.getByRole("navigation", { name: "Main navigation" }).getByRole("link", { name: "Approvals" })).toHaveCount(0);
+  await expect(page.getByTestId("account-menu")).toBeVisible();
   await expect(page.locator("body")).not.toContainText(/\bDay \d/);
   await expect(page.getByTestId("home-cash")).toHaveText("¥400k");
   await expect(page.getByTestId("home-lowest")).toHaveText("−¥105k");
@@ -130,6 +143,7 @@ test("day 34: the fix needs approval; queuing it from the home runs nothing and 
   const op = page.getByTestId("fix-result").getByTestId("chat-op-SUBMIT_INVOICE_FOR_FINANCING");
   await expectWaitingNotSuccess(op);
   await expect(page.getByTestId("alert-waiting-ALERT-RESERVE-42")).toContainText("Waiting for your approval (APR-000001)");
+  await expect(page.getByTestId("approvals-badge")).toContainText("1 approval(s) waiting");
   await expect(page.getByTestId("fix-ALERT-RESERVE-42")).toHaveCount(0);
   // Needs your decision: the question, the cost and the landing day, and a link to the card.
   const decision = page.getByTestId("home-approval-APR-000001");
@@ -174,9 +188,11 @@ test("day 34: the approval card is a question with the cost, the landing day and
 
 test("the Chinese labels switch while the server's sentences stay", async ({ page }) => {
   await page.goto("/");
+  await openAccountMenu(page);
   await page.getByLabel("中文").check();
   await expect(page.getByTestId("home-status-word")).toHaveText("需要行动");
   await expect(page.getByRole("navigation").getByRole("link", { name: "现金与融资" })).toBeVisible();
+  await openAccountMenu(page);
   await page.getByLabel("English").check();
   await expect(page.getByTestId("home-status-word")).toHaveText("Action needed");
 });

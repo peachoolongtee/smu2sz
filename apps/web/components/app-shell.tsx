@@ -3,13 +3,15 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, type ReactNode } from "react";
-import { apiMode } from "@/lib/api";
+import { apiMode, getApprovals } from "@/lib/api";
+import { useAsync } from "@/lib/use-async";
 import { setLang, useI18n } from "@/lib/i18n";
 import { setMode, shellFor, useMode, type Mode } from "@/lib/mode";
 import type { DictKey } from "@/lib/dictionary";
 import { ChatPanel } from "./chat/chat-panel";
 import { DemoStepper } from "./demo-stepper";
 import { MenuIcon, ShieldIcon, XIcon } from "./icons";
+import { useAuth } from "@/lib/auth";
 import { OwnerSessionControl, OwnerSignInDialog } from "./owner-auth";
 import { Badge, Segmented } from "./ui";
 
@@ -19,7 +21,6 @@ const BUSINESS_NAV: { href: string; key: DictKey }[] = [
   { href: "/deals", key: "nav.deals" },
   { href: "/cash", key: "nav.cash" },
   { href: "/receivables", key: "nav.receivables" },
-  { href: "/approvals", key: "nav.approvals" },
   { href: "/activity", key: "nav.activity" },
 ];
 
@@ -88,7 +89,7 @@ function Brand({ href }: { href: string }) {
         <ShieldIcon />
       </span>
       <span className="leading-tight">
-        TermsLedger
+        {t("brand.name")}
         <span className="block text-[0.7rem] font-normal text-ink-3">{t("brand.tagline")}</span>
       </span>
     </Link>
@@ -106,6 +107,64 @@ const SkipLink = () => {
     </a>
   );
 };
+
+/**
+ * Approval is an attention state, not a destination: the bar carries a badge only while something waits for the owner,
+ * and the badge opens the Approvals page. The count is the queue's (refetched on every action), never derived.
+ */
+function ApprovalsBadge() {
+  const { t } = useI18n();
+  const { token } = useAuth();
+  const list = useAsync(() => (token ? getApprovals().catch(() => []) : Promise.resolve([])), [Boolean(token)]);
+  const pending = list.data?.filter((a) => a.status === "PENDING").length ?? 0;
+  if (!pending) return null;
+  return (
+    <Link href="/approvals" className="inline-flex min-h-8 items-center rounded-full border border-warn-line bg-warn-bg px-3 text-xs font-semibold text-warn-fg hover:brightness-95" data-testid="approvals-badge" title={t("approvals.badge", { n: pending })}>
+      <span className="sm:hidden">{pending}</span>
+      <span className="hidden sm:inline">{t("approvals.badge", { n: pending })}</span>
+    </Link>
+  );
+}
+
+/**
+ * One compact place for the account once the owner is signed in: the signed-in state and sign-out, the language, and
+ * what this data is. Signed out, the Sign in button stays in the header itself: it is an action the owner needs.
+ */
+function AccountMenu() {
+  const { t } = useI18n();
+  const { token } = useAuth();
+  if (!token) {
+    return (
+      <div className="flex items-center gap-2">
+        <OwnerSessionControl />
+        <details className="relative" data-testid="account-menu">
+          <summary className="flex min-h-8 cursor-pointer list-none items-center rounded-md border border-line-strong px-2 text-xs font-medium text-ink-2 hover:bg-subtle [&::-webkit-details-marker]:hidden" aria-label={t("account.menu")}>
+            {t("account.menu")}
+          </summary>
+          <div className="absolute right-0 z-40 mt-1 w-72 space-y-3 rounded-lg border border-line bg-surface p-3 shadow-lg">
+            <LangSwitch />
+            <p className="text-xs text-ink-3">{t("biz.demoData.hint")}</p>
+          </div>
+        </details>
+      </div>
+    );
+  }
+  return (
+    <details className="relative" data-testid="account-menu">
+      <summary className="flex min-h-8 cursor-pointer list-none items-center gap-1.5 rounded-md border border-line-strong px-2.5 text-xs font-medium text-ink-2 hover:bg-subtle [&::-webkit-details-marker]:hidden">
+        <span aria-hidden className="grid size-5 place-items-center rounded-full bg-ok-bg text-[0.65rem] font-bold text-ok-fg">
+          {t("account.initial")}
+        </span>
+        {t("account.owner")}
+      </summary>
+      <div className="absolute right-0 z-40 mt-1 w-72 space-y-3 rounded-lg border border-line bg-surface p-3 shadow-lg">
+        <OwnerSessionControl />
+        <LangSwitch />
+        <p className="text-xs text-ink-3">{t("biz.demoData.hint")}</p>
+      </div>
+    </details>
+  );
+}
 
 // ---------------------------------------------------------------- Business
 
@@ -158,6 +217,7 @@ function BusinessShell({ children }: { children: ReactNode }) {
             {links()}
           </nav>
           <div className="flex items-center gap-2 whitespace-nowrap">
+            <ApprovalsBadge />
             <span className="hidden sm:inline-flex" data-testid="demo-data-indicator">
               <Badge tone="neutral" title={t("biz.demoData.hint")}>
                 {t("biz.demoData")}
@@ -166,10 +226,7 @@ function BusinessShell({ children }: { children: ReactNode }) {
             <div className="hidden sm:block">
               <ModeSwitch />
             </div>
-            <OwnerSessionControl />
-            <div className="hidden md:block">
-              <LangSwitch />
-            </div>
+            <AccountMenu />
           </div>
         </div>
         {open ? (
@@ -177,7 +234,6 @@ function BusinessShell({ children }: { children: ReactNode }) {
             {links(() => setOpen(false), true)}
             <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-line pt-3">
               <ModeSwitch />
-              <LangSwitch />
               <Badge tone="neutral" title={t("biz.demoData.hint")}>
                 {t("biz.demoData")}
               </Badge>

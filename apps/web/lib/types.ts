@@ -959,6 +959,8 @@ export interface ApprovalPresentation {
   /** Distances from today, written by the server ("in 3 days", "2 days ago"); absent in older recordings. */
   lands_when?: string | null;
   decided_when?: string | null;
+  /** What declining leaves, in the server's words (the alert's shortfall written relative to today, or "Nothing runs; the request is closed."). */
+  if_decline: string;
   protects: string | null;
   reason: string;
   result_message: string | null;

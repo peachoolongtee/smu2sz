@@ -37,6 +37,7 @@
       "cost_due_day": null,
       "lands_day": null,
       "lands_when": null,
+      "if_decline": "Nothing runs; the request is closed.",
       "protects": null,
       "reason": "apply for facility Equipment term loan (¥600,000.00)",
       "result_message": null,
