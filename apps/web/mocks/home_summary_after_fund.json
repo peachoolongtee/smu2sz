@@ -55,7 +55,7 @@
         "events": [
           {
             "kind": "ADVANCE",
-            "label": "Advance on RCV-A, Invoice financing (onboarded platform)",
+            "label": "Advance on the ¥420,000.00 invoice to Foshan Home Retail Co. due day 32, Invoice financing (onboarded platform)",
             "amount_fen": 25500000,
             "amount_display": "¥255,000.00"
           }
@@ -257,25 +257,25 @@
         "events": [
           {
             "kind": "RECEIPT",
-            "label": "Receipt RCV-A from Foshan Home Retail Co.",
+            "label": "Receipt the ¥420,000.00 invoice to Foshan Home Retail Co. due day 32 from Foshan Home Retail Co.",
             "amount_fen": 42000000,
             "amount_display": "¥420,000.00"
           },
           {
             "kind": "INTEREST",
-            "label": "Interest, Invoice financing (onboarded platform) on RCV-A",
+            "label": "Interest, Invoice financing (onboarded platform) on the ¥420,000.00 invoice to Foshan Home Retail Co. due day 32",
             "amount_fen": -163479,
             "amount_display": "−¥1,634.79"
           },
           {
             "kind": "FEE",
-            "label": "Fee, Invoice financing (onboarded platform) on RCV-A",
+            "label": "Fee, Invoice financing (onboarded platform) on the ¥420,000.00 invoice to Foshan Home Retail Co. due day 32",
             "amount_fen": -63750,
             "amount_display": "−¥637.50"
           },
           {
             "kind": "REPAYMENT",
-            "label": "Repay advance on RCV-A",
+            "label": "Repay advance on the ¥420,000.00 invoice to Foshan Home Retail Co. due day 32",
             "amount_fen": -25500000,
             "amount_display": "−¥255,000.00"
           },
@@ -384,7 +384,7 @@
         "events": [
           {
             "kind": "RECEIPT",
-            "label": "Receipt RI:BUYER-1:2 from Foshan Home Retail Co.",
+            "label": "Receipt the ¥420,000.00 invoice to Foshan Home Retail Co. due day 47 from Foshan Home Retail Co.",
             "amount_fen": 42000000,
             "amount_display": "¥420,000.00"
           },
@@ -584,7 +584,7 @@
         "events": [
           {
             "kind": "RECEIPT",
-            "label": "Receipt RI:BUYER-1:32 from Foshan Home Retail Co.",
+            "label": "Receipt the ¥420,000.00 invoice to Foshan Home Retail Co. due day 77 from Foshan Home Retail Co.",
             "amount_fen": 42000000,
             "amount_display": "¥420,000.00"
           }
@@ -778,7 +778,7 @@
         "events": [
           {
             "kind": "RECEIPT",
-            "label": "Receipt RI:BUYER-1:62 from Foshan Home Retail Co.",
+            "label": "Receipt the ¥420,000.00 invoice to Foshan Home Retail Co. due day 107 from Foshan Home Retail Co.",
             "amount_fen": 42000000,
             "amount_display": "¥420,000.00"
           }
@@ -886,7 +886,7 @@
       "seq": 2,
       "kind": "OPERATION",
       "actor": "AGENT",
-      "text": "Advance ¥255,000.00 on RCV-A from Invoice financing (onboarded platform) today; the cash lands in 3 days after the 3-day lead time, not today",
+      "text": "Advance ¥255,000.00 on the ¥420,000.00 invoice to Foshan Home Retail Co. due in 32 days from Invoice financing (onboarded platform) today; the cash lands in 3 days after the 3-day lead time, not today",
       "when": "today"
     },
     {
