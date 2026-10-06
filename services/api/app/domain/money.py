@@ -77,6 +77,17 @@ def fmt_yuan(fen: int) -> str:
     return f"{sign}¥{y:,}.{f:02d}"
 
 
+def fmt_yuan_short(fen: int) -> str:
+    """Overview precision, half-up to whole thousands of yuan: 24000000 -> '¥240k', -10500000 -> '−¥105k'; under
+    ¥1,000 the exact figure. For a glance only, never for a cost or a ledger figure, which keep the fen."""
+    sign = "−" if fen < 0 else ""
+    yuan = abs(fen) // FEN_PER_YUAN
+    if yuan < 1000:
+        return fmt_yuan(fen)
+    thousands = (yuan + 500) // 1000
+    return f"{sign}¥{thousands:,}k"
+
+
 def fmt_pct(x: Fraction, places: int = 2) -> str:
     """Exact fraction to a half-up percentage string: 0.108417 -> '10.84%'."""
     scaled = round_half_up(x * 100 * 10**places)

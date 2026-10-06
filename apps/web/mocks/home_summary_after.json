@@ -1116,7 +1116,7 @@
       "seq": 7,
       "kind": "WAITING",
       "actor": "AGENT",
-      "text": "Queued for owner approval (APR-000001): effective annual cost 32.52% is above the mandate's 15.00% ceiling for what the agent may borrow alone (all charges on ¥200,000.00 held 10 days (day 37 to day 47), annualised = 32.52%)",
+      "text": "Queued for owner approval (APR-000001): effective annual cost 32.52% is above the mandate's 15.00% ceiling for what the agent may borrow alone (all charges on ¥200,000.00 held 10 days (day 37 until in 13 days), annualised = 32.52%)",
       "when": "today"
     },
     {

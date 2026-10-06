@@ -12,7 +12,7 @@ from typing import Any
 
 from app.alerts import Alert, AlertKind
 from app.domain.models import FinancialState, Mandate
-from app.domain.money import bp, fmt_pct, fmt_yuan
+from app.domain.money import bp, fmt_pct, fmt_yuan, fmt_yuan_short
 from app.financial.invoices import InvoiceRef, issue_terms
 
 Lang = str  # "en" | "zh"
@@ -134,14 +134,8 @@ def in_words(state: FinancialState, text: str) -> str:
 
 
 def fmt_short(fen: int) -> str:
-    """Overview precision: whole thousands of yuan ("¥240k", "−¥105k"); under ¥1,000 the exact figure. For a glance,
-    never for a cost or a ledger figure, which keep the fen."""
-    sign = "−" if fen < 0 else ""
-    yuan = abs(fen) // 100
-    if yuan < 1000:
-        return fmt_yuan(fen)
-    thousands = (yuan + 500) // 1000
-    return f"{sign}¥{thousands:,}k"
+    """Overview precision ("¥240k"); the rounding rule lives in app.domain.money (INVARIANT 9)."""
+    return fmt_yuan_short(fen)
 
 
 # ---------------------------------------------------------------- days, as the owner reads them
@@ -164,26 +158,31 @@ def when_text(day: int | None, today: int, lang: Lang) -> str:
 
 
 def relative_days(text: str, today: int, lang: Lang) -> str:
-    """Server sentences written with day numbers ("lands on day 37", "by day 47", "through day 46", "第 37 天"),
-    re-said as distances from today for the Business pages. The Demo views show the originals."""
+    """Server sentences written with day numbers ("lands on day 37", "by day 47", "lasts to day 41", "(day 12)", "第 37 天"),
+    re-said as distances from today for the Business pages. The Demo views show the originals. English engine text inside a
+    Chinese page is rewritten too, since the engine writes English."""
     def on(m: re.Match[str]) -> str:
-        return when_text(int(m.group(1)), today, lang)
+        return when_text(int(m.group(1)), today, "en")
 
     def by(m: re.Match[str]) -> str:
         n = int(m.group(1)) - today
-        return "by today" if n <= 0 else f"within {n} days"
+        if n <= 0:
+            return "by today"
+        return "within 1 day" if n == 1 else f"within {n} days"
 
     def through(m: re.Match[str]) -> str:
-        n = int(m.group(1)) - today
-        return f"for the next {max(n, 0)} days"
+        return f"for the next {max(int(m.group(1)) - today, 0)} days"
 
     if lang == "zh":
-        return re.sub(r"第 (\d+) 天", lambda m: when_text(int(m.group(1)), today, "zh"), text)
-    text = re.sub(r"\brepaid day (\d+)\b", lambda m: "repaid " + on(m), text)
-    text = re.sub(r"\bdue day (\d+)\b", lambda m: "due " + on(m), text)
+        text = re.sub(r"第 (\d+) 天", lambda m: when_text(int(m.group(1)), today, "zh"), text)
     text = re.sub(r"\bthrough day (\d+)\b", through, text)
     text = re.sub(r"\bby day (\d+)\b", by, text)
+    text = re.sub(r"\brepaid day (\d+)\b", lambda m: "repaid " + on(m), text)
+    text = re.sub(r"\bdue day (\d+)\b", lambda m: "due " + on(m), text)
     text = re.sub(r"\b(?:on|for) day (\d+)\b", on, text)
+    text = re.sub(r"\bto day (\d+)\b", lambda m: "until " + on(m), text)
+    text = re.sub(r"\(day (\d+)\)", lambda m: "(" + on(m) + ")", text)
+    text = re.sub(r", day (\d+)\b", lambda m: ", " + on(m), text)
     return text
 
 

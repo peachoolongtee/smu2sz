@@ -73,8 +73,12 @@ commitment id and nonce and the hashes derived from them, what-if timings) are l
 ### Business and Demo modes
 
 Two shells, chosen with the switch in the header and remembered in `localStorage` (`tl-mode`, `lib/mode.ts`). **Business** is
-the product the owner uses: a top navigation of six questions (Home, Deals, Cash & funding, Receivables, Approvals, Activity,
-plus Limits), no clock, no stepper, no mock or sample controls. **Demo** is for judges: the story page (`/demo`) with the
+the product the owner uses: the brand FLOW 流 · AI working-capital agent, a top navigation of five questions (Home, Deals,
+Cash & funding, Receivables, Activity, plus Limits from the account menu), an Approvals badge that appears in the header only
+while something waits for the owner (the `/approvals` route stays), one account menu (signed-in state, sign out, language, what
+the data is; Sign in stays visible when signed out), one "Demo data" pill, no clock, no stepper, no mock or sample controls.
+Business pages speak in distances from today ("in 12 days", `lib/when.ts` or the server's `*_when` strings), never "Day N";
+the reserve is the "minimum cash reserve"; authority copy is the owner's signed limits. **Demo** is for judges: the story page (`/demo`) with the
 fifteen steps, the clock, the scenario switch and the side doors, the story bar on every page, and the engine views (Mandate,
 Inbox, Trajectory, Funding, Verdict, What-if, Capex, Ledger, Alerts, Reconciliation, Security, Evidence). Engine routes
 always render the Demo shell; business routes render the Demo shell only while Demo mode is on (running a step or Reset

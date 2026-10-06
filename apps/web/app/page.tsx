@@ -22,7 +22,8 @@ const LAST_VISIT_KEY = "tl-last-visit";
 function readLastVisit(): number | null {
   try {
     const raw = window.localStorage.getItem(LAST_VISIT_KEY);
-    return raw === null ? null : Number(raw);
+    const n = raw === null ? NaN : Number(raw);
+    return Number.isInteger(n) && n >= 0 ? n : null;
   } catch {
     return null;
   }

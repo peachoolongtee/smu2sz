@@ -48,3 +48,35 @@ def test_operation_hash_and_unknown_ids_are_left_alone(golden: FinancialState):
         assert in_words(golden, text) == text
     assert in_words(golden, "Run alert:RI:BUYER-1:2:plan:0 for RCV-A").startswith("Run alert:RI:BUYER-1:2:plan:0 for the ")
     assert in_words(golden, "Drawn on BANK-1 for BUYER-1") == f"Drawn on Main bank for {BUYER}"
+
+
+# ---------------------------------------------------------------- overview figures and distances
+
+
+def test_fmt_short_rounds_half_up_to_whole_thousands_and_keeps_small_figures_exact():
+    from app.api.presentation import fmt_short
+
+    assert fmt_short(24_000_000) == "¥240k" and fmt_short(-10_500_000) == "−¥105k" and fmt_short(40_500_000) == "¥405k"
+    assert fmt_short(49_950_000) == "¥500k" and fmt_short(49_949_999) == "¥499k" and fmt_short(145_500_000) == "¥1,455k"
+    assert fmt_short(84_164) == "¥841.64" and fmt_short(0) == "¥0.00"
+
+
+def test_when_text_is_a_distance_from_today():
+    from app.api.presentation import when_text
+
+    assert [when_text(d, 34, "en") for d in (34, 35, 33, 37, 32, None)] == ["today", "tomorrow", "yesterday", "in 3 days", "2 days ago", ""]
+    assert [when_text(d, 34, "zh") for d in (34, 37, 32)] == ["今天", "3 天后", "2 天前"]
+
+
+def test_relative_days_rewrites_the_engine_phrases_and_leaves_counts_alone():
+    from app.api.presentation import relative_days
+
+    r = lambda text: relative_days(text, 34, "en")  # noqa: E731
+    assert r("the cash lands on day 37 after the 3-day lead time") == "the cash lands in 3 days after the 3-day lead time"
+    assert r("it will cost ¥1,782.19 by day 47") == "it will cost ¥1,782.19 within 13 days"
+    assert r("by day 35") == "by day 35".replace("by day 35", "within 1 day") and r("by day 30") == "by today"
+    assert r("the gap lasts to day 41") == "the gap lasts until in 7 days".replace("until in 7 days", "until in 7 days")
+    assert r("repaid day 32, draw ¥150,000.00 (day 12)") == "repaid 2 days ago, draw ¥150,000.00 (22 days ago)"
+    assert r("due day 47; stays above the floor for 90 days; day 0 opening") == "due in 13 days; stays above the floor for 90 days; day 0 opening"
+    # English engine text inside a Chinese page is rewritten too, and the Chinese day form as well
+    assert relative_days("第 37 天 lands on day 37", 34, "zh") == "3 天后 lands in 3 days"

@@ -291,8 +291,12 @@ export default function DealsPage() {
                   <p className="text-lg font-semibold text-ink" data-testid="deal-recommendation">
                     {t(recommendationKey(v.outcome))}
                   </p>
-                  <p className="mt-1.5 text-sm text-ink-2">{v.summary}</p>
                   <VerdictGlance verdict={v} today={today} />
+                  {/* The verifier's own summary, with its codes, is level 4: behind a disclosure, never the first thing read. */}
+                  <details className="mt-3" data-testid="deal-technical-summary">
+                    <summary className="cursor-pointer text-xs font-medium text-brand-700">{t("biz.deals.technical")}</summary>
+                    <p className="mt-1.5 text-sm text-ink-2">{v.summary}</p>
+                  </details>
                   <p className="mt-3 text-xs text-ink-3">
                     {t("biz.deals.checks")}: {t("biz.deals.checksValue", { failed: v.violations.length, passed: v.passed_checks.length })}
                   </p>

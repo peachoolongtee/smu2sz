@@ -377,3 +377,41 @@ Terminology inside the engine views (Tier, DSCR, forward concession) is unchange
 **Deliberately not built.** A calendar, sparklines and period comparisons (no history series exists in a simulation that
 starts on day 0), animations, a dark theme, any money arithmetic in the browser, any change to alert, verdict or approval
 semantics, removal of the engine views, a rewrite of the chat.
+
+
+## 18. The integration of 6 and 7 October (`feat/ux-integration`, Waves 1 to 8)
+
+The owner's fourth brief (6 Oct) asked for the best of `dev` and `test/ui-ux`, feature by feature, with financial presentation
+truth first. The decisions and the comparison are in `docs/UX_INTEGRATION_BRIEF.md`; the work was charted and resolved as the
+wayfinder map, GitHub issue #13 (one ticket per wave, each closed with its files, tests and follow-ups). In short:
+
+- **One canonical trajectory and an all-in cost.** `GET /home` now carries the projection it quotes (`cash.series`, and
+  `cash.plan_series` with the recommended plan applied); the Cash & funding chart draws only these and its axis goes below
+  zero, so the −¥105,000 trough on day 30 is visible under the headline that quotes it. The recommendation is the router's
+  cheapest runnable plan priced all-in on the router's own convention (`app/funding/recommend.py`; day 0: ¥405,000 at
+  ¥3,113.93, the figure the documents quote), the alert's cure when the router has none, and the single-approval cure when the
+  cheaper plan would need several approvals (day 34), with the cheaper option named. "Run funding plan" binds to the legs shown
+  (`POST /alerts/{id}/act` accepts the recomputed router plan). An independent agent checked every figure against the golden
+  values and the router.
+- **Business language.** Distances from today instead of "Day N" (server `*_when` strings, `relative_days`, a counting helper in
+  the browser), "minimum cash reserve" instead of "safe cash level", authority as the owner's signed limits, one Demo data pill
+  instead of a footer on every page; Demo mode keeps "Day N" and the engine views.
+- **The home as one decision story.** Conclusion first ("Your cash reserve becomes unsafe in 12 days."), the detail, the worst
+  point, three short figures, what is driving it from the projection's own events, then the recommendation led by its outcome
+  ("Secure ¥405k of funding") with components, estimated total cost and its lines and basis, funds available, lowest cash after
+  action, the authority line and buttons that say what they do; empty sections are hidden; "You're covered." when healthy;
+  changes since the owner's last visit.
+- **Cash & funding** in the owner's order (risk, plan, options in business names, forecast) with the `test/ui-ux` chart ported
+  onto the home's series (danger zone, annotations, 30 / 60 / 120 horizon) and the facility explainer. **Receivables** leads with
+  outstanding, overdue and the next payment; the early-payment and payments-received sections appear only with data.
+- **Navigation and header.** Home · Deals · Cash & funding · Receivables · Activity; Approvals is a header badge present only
+  while something waits; one account menu; the brand is FLOW 流 · AI working-capital agent (the TermsLedger engine behind it).
+- **Deals, Approvals, Activity.** Consequence first on Deals with the `test/ui-ux` glance, step and next-step bars, simulated
+  inbox and active commitments; approval buttons name the amount and "If you decline" is a server sentence; Activity leads with
+  the executor's sentence. From the delegation handoff: the chat turn answers first, the Deals offer list, invoice ids in words,
+  the DSCR reading label, the engine-view terminology, the intake cap and the benchmark target.
+
+Taken from `test/ui-ux`: the cash chart, the Verdict glance, the Next step bar, the deal step bar, the simulated inbox, the
+plain names for rule codes, alert kinds and operations, the tier-badge removal, the plain-sentence agreements, the facility
+explainer, the Segmented wrap fix. Left behind: the single shell, the `/simple` fourth home, the capex card and the clock on the
+home, `/documents` (fog on the map). Remaining debt is listed on the map's open items and in `docs/UX_INTEGRATION_REPORT.md`.
