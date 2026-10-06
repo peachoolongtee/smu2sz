@@ -56,6 +56,7 @@ Read, in this order:
 | `docs/handover/01_main_architect_brief.md` | The owner's first long brief, verbatim |
 | `docs/handover/02_technical_lead_brief.md` | The owner's second long brief, verbatim (the one in force now) |
 | `docs/handover/03_ux_redesign_brief.md` and `03_ux_reference_dashboard.webp` | The owner's third brief, 5 Oct, verbatim: the UI/UX audit and redesign (Business vs Demo modes, the home answering "am I safe, what should I do, what does it cost"), with the design reference. It lifts stability mode for the frontend only; the engine stays frozen |
+| `docs/handover/04_subagent_handoff.md` | The delegation handoff of 6 Oct: the state, the lead's rules, and eight bounded subagent briefs for the remaining UX debt and the delegable engine rows |
 
 ## 3. Standing instructions from the owner (all still in force)
 
