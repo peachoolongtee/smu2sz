@@ -48,7 +48,14 @@ from app.domain.models import (
 from app.domain.money import fmt_yuan
 from app.financial import EngineError, project
 from app.financial.lots import ensure_lots
-from app.funding.recommend import KIND_OF, Recommendation, plan_suggestions, recommend
+from app.funding.recommend import (
+    KIND_OF,
+    Recommendation,
+    cost_lines_by_leg,
+    plan_suggestions,
+    recommend,
+    runnable_plan,
+)
 from app.operations.log import read_entries
 
 router = APIRouter(dependencies=[Depends(require_owner)])
@@ -369,8 +376,13 @@ def _next_action(state: FinancialState, obs: list[Any], mandate: Mandate, found:
         "plan_series": plan_series,
     }
 
-def _approvals(state: FinancialState, approvals: list[Any], found: list[Alert], today: int, lang: str) -> list[dict[str, Any]]:
+def _approvals(state: FinancialState, obs: list[Any], mandate: Mandate, approvals: list[Any], found: list[Alert],
+               today: int, lang: str, *, use_router: bool = True) -> list[dict[str, Any]]:
     by_id = {a.id: a for a in found}
+    plan_costs: dict = {}
+    if use_router and any(str(getattr(a.status, "value", a.status)) == "PENDING" for a in approvals):
+        plan = runnable_plan(state, obs, mandate)
+        plan_costs = cost_lines_by_leg(plan) if plan is not None else {}
     out = []
     for a in approvals:
         if str(getattr(a.status, "value", a.status)) != "PENDING":
@@ -382,7 +394,7 @@ def _approvals(state: FinancialState, approvals: list[Any], found: list[Alert], 
         alert = None
         if (a.op_id or "").startswith("alert:"):
             alert = by_id.get(a.op_id.split(":")[1])
-        words = approval_words(state, op, a.kind, today, alert, lang)
+        words = approval_words(state, op, a.kind, today, alert, lang, plan_costs)
         amount = op.get("amount_fen", op.get("advance_fen"))
         out.append({"id": a.id, "kind": a.kind, "reason": in_words(state, a.reason), "created_day": op.get("day"),
                     "amount_fen": amount if isinstance(amount, int) else None,
@@ -481,7 +493,8 @@ def get_home(lang: str = "en") -> dict[str, Any]:
                               use_router=rt.settings.features.debt_desk)
         plan_series = action.pop("plan_series") if action is not None else None
         series = _series(books.state, traj)
-        queue = _approvals(books.state, approvals, found, today, lang)
+        queue = _approvals(books.state, books.with_([]), mandate, approvals, found, today, lang,
+                           use_router=rt.settings.features.debt_desk)
         changes = _changes(books.state, rt.store, found, today, lang)
         receivables = _receivables(books.state, rt.store, today, lang)
         in_transit = _in_transit(books.state)

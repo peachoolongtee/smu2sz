@@ -170,9 +170,10 @@ def needs_owner_reason(mandate: Mandate, legs: list[dict[str, Any]], lang: Lang)
 
 
 def approval_words(state: FinancialState, op: dict[str, Any], kind: str | None, today: int, alert: Alert | None,
-                   lang: Lang) -> dict[str, Any]:
+                   lang: Lang, plan_costs: dict[tuple[str, str, str | None, int], Any] | None = None) -> dict[str, Any]:
     """Business fields for one queued operation: the question, the amount, what it costs (from the alert whose cure
-    it is, when that alert is still open), when the cash lands, and the names behind the ids."""
+    it is, when that alert is still open; or from the router's cost line when the operation is a leg of the recommended
+    plan, `plan_costs` keyed by kind, facility, receivable and amount), when the cash lands, and the names behind the ids."""
     kind = kind or str(op.get("kind") or "")
     facility_id = op.get("facility_id")
     receivable_id = op.get("receivable_id")
@@ -187,7 +188,13 @@ def approval_words(state: FinancialState, op: dict[str, Any], kind: str | None, 
              if kind in ("DRAW_FACILITY", "SUBMIT_INVOICE_FOR_FINANCING") else None)
     cost_display = rate_text = None
     cost_due_day = None
-    if alert is not None:
+    is_plan_leg = ":plan:" in str(op.get("op_id") or "")
+    line = (plan_costs or {}).get((kind, facility_id or "", receivable_id, amount)) if is_plan_leg else None
+    if line is not None:
+        cost_display = fmt_yuan(line.fen)
+        m = re.search(r"effective annual cost (\S+) is above", line.approval_reason or "")
+        rate_text = m.group(1) if m else None
+    elif alert is not None and not is_plan_leg:
         for i, s in enumerate(alert.suggested):
             if (s.operation_kind == kind and s.facility_id == facility_id and s.receivable_id == receivable_id
                     and s.amount_fen == amount):

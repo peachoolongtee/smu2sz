@@ -1559,18 +1559,52 @@ export interface HomeLeg {
   cost_due_day: Day | null;
   lands_day: Day | null;
   above_apr_cap: boolean;
+  /** The router's cost formula for a leg of the recommended plan (absent on an alert-cure leg). */
+  formula?: string | null;
 }
 
-/** The one thing to do now: the cure of the first actionable critical alert, in the server's words. */
+/** One line of the all-in estimate: the router's cost line for a leg, or a priced alert leg. */
+export interface HomeCostLine {
+  label: string;
+  display: string | null;
+  formula: string | null;
+}
+
+/** A cheaper runnable plan the server did not recommend because it would need several separate approvals. */
+export interface HomeCheaperOption {
+  label: string;
+  cost_total_display: string;
+  approvals: number;
+  legs: string[];
+}
+
+/** One day of a projection the server already ran: closing cash (fen for the axis only) and the events that moved it. */
+export interface HomeSeriesPoint {
+  day: Day;
+  closing_fen: Fen;
+  closing_display: string;
+  events: { kind: string; label: string; amount_fen: Fen; amount_display: string }[];
+}
+
+/**
+ * The one thing to do now, in the server's words: the router's cheapest runnable plan priced all-in (`plan_source`
+ * "router"), else the alert's own cure ("alert"). "Go ahead" binds to `suggestions` exactly as shown.
+ */
 export interface HomeNextAction {
   alert_id: string;
   kind: AlertKind | string;
+  plan_source: "router" | "alert";
   title: string;
   legs: HomeLeg[];
   receive_fen: Fen | null;
   receive_display: string | null;
   cost_display: string | null;
+  /** The all-in estimate, its lines and what it assumes (the line repaid on the first receipt that can; advances in 30-day periods). */
+  cost_total_display: string | null;
+  cost_breakdown: HomeCostLine[];
+  cost_basis: string | null;
   cost_note: string | null;
+  cheaper_option: HomeCheaperOption | null;
   rate_text: string | null;
   cost_days: number | null;
   lands_day: Day | null;
@@ -1647,6 +1681,9 @@ export interface HomeView {
     leverage_text: string | null;
     min_dscr_display: string;
     max_leverage_display: string;
+    /** The baseline projection ("if you do nothing") and the same books with the recommended plan applied. The chart draws these. */
+    series: HomeSeriesPoint[];
+    plan_series: HomeSeriesPoint[] | null;
   };
   next_action: HomeNextAction | null;
   approvals: HomeApproval[];

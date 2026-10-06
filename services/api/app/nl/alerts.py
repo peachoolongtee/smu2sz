@@ -25,6 +25,7 @@ from app.domain.models import (
 )
 from app.domain.money import bp, fmt_pct, fmt_yuan
 from app.financial import EngineError
+from app.funding.recommend import cost_lines_by_leg, plan_operations, recommend
 from app.nl import landing
 from app.nl.context import NlContext
 from app.nl.models import Intent, Slots
@@ -170,8 +171,26 @@ def _op_clause(ctx: NlContext, state: FinancialState, op: Operation) -> tuple[st
             t(ctx, f"apply for {fac} (needs your approval)", f"申请 {fac}（需您批准）"))
 
 
+def _plan_line(plan_costs: dict | None, op: Operation):
+    """The router's cost line for a leg of the recommended plan (None for an alert-cure operation)."""
+    if not plan_costs:
+        return None
+    amount = getattr(op, "advance_fen", None) if isinstance(op, SubmitInvoiceForFinancing) else getattr(op, "amount_fen", None)
+    return plan_costs.get((op.kind, op.facility_id, getattr(op, "receivable_id", None), amount))
+
+
+def _plan_cost_clause(ctx: NlContext, line, action_repay_day: int | None) -> str:
+    """Cost words for a plan leg, from the router's cost line: the amount, and for a line draw the repayment day
+    the estimate assumes (the first receipt that can repay it)."""
+    cost = fmt_yuan(line.fen)
+    if action_repay_day is not None:
+        return t(ctx, f"; about {cost} interest if it is repaid on day {action_repay_day} as expected",
+                 f"；若如预期在第 {action_repay_day} 天还款，利息约 {cost}")
+    return t(ctx, f"; it will cost {cost}", f"；费用 {cost}")
+
+
 def _waiting_sentence(ctx: NlContext, state: FinancialState, mandate: Mandate, alert: Alert,
-                      ops: list[Operation]) -> str | None:
+                      ops: list[Operation], plan_costs: dict | None = None) -> str | None:
     """The cure of this alert is already in the owner's approval queue (a pending approval whose operation id starts
     `alert:<alert id>:`): say that it waits, its cost and rate, and how to approve it. None when nothing is queued."""
     queued = [a for a in ctx.store.approvals()
@@ -190,8 +209,12 @@ def _waiting_sentence(ctx: NlContext, state: FinancialState, mandate: Mandate, a
     if op is not None:
         _kind, _status, _text, clause = _op_clause(ctx, state, op)
         what_en, what_zh = f" to {clause}", f"：{clause}"
-        sg, end = _suggestion(alert, op)
-        if sg is not None and sg.cost_fen is not None and sg.annual_rate is not None and sg.cost_days is not None and end:
+        line = _plan_line(plan_costs, op)
+        sg, end = (None, None) if line is not None else _suggestion(alert, op)
+        if line is not None:
+            cost_en = f" It costs {fmt_yuan(line.fen)}" + (f", above your {fmt_pct(bp(mandate.max_apr_bp))} ceiling" if line.needs_owner_approval else "") + "."
+            cost_zh = f"费用 {fmt_yuan(line.fen)}" + (f"，高于您 {fmt_pct(bp(mandate.max_apr_bp))} 的上限" if line.needs_owner_approval else "") + "。"
+        elif sg is not None and sg.cost_fen is not None and sg.annual_rate is not None and sg.cost_days is not None and end:
             cap = fmt_pct(bp(mandate.max_apr_bp))
             cost, rate = fmt_yuan(sg.cost_fen), fmt_pct(sg.annual_rate.value, 1)
             over_en = f", above your {cap} ceiling" if sg.above_apr_cap else ""
@@ -288,33 +311,64 @@ def alerts_turn(ctx: NlContext) -> tuple[Turn, bool]:
                            f"按现有账目，第 {breach.day} 天现金将比 {fmt_yuan(mandate.min_cash_fen)} 的储备线低 "
                            f"{fmt_yuan(breach.amount_fen or 0)}。"))
         parts += rest_sentence
-        ops = cure_operations(breach, day=ctx.day, mandate_version=mandate.version,
-                              state_version=state.state_version) if breach.actionable else []
-        waiting = _waiting_sentence(ctx, state, mandate, breach, ops)
+        # The plan proposed is the recommendation the home shows (app.funding.recommend): the router's cheapest
+        # runnable plan priced all-in, else the alert's own cure. Both bind "go ahead" to the exact legs spoken.
+        plan = None
+        plan_costs: dict = {}
+        cheaper = None
+        if breach.actionable and breach.inputs.get("cure_restores_reserve") != "false":
+            books = ctx.books(state)
+            cure_approvals = sum(1 for sg in breach.suggested if sg.above_apr_cap)
+            rec = recommend(books.state, books.with_([]), mandate, cure_exists=bool(breach.suggested),
+                            cure_approvals=cure_approvals)
+            plan, cheaper = rec.plan, rec.cheaper
+        if plan is not None:
+            ops = plan_operations(breach.id, plan, day=ctx.day, mandate_version=mandate.version,
+                                  state_version=state.state_version)
+            plan_costs = cost_lines_by_leg(plan)
+        else:
+            ops = cure_operations(breach, day=ctx.day, mandate_version=mandate.version,
+                                  state_version=state.state_version) if breach.actionable else []
+        waiting = _waiting_sentence(ctx, state, mandate, breach, ops, plan_costs)
         if waiting is not None:  # already queued: nothing to propose, nothing stored, no second approval
             parts.append(waiting)
         elif ops:
             clauses = []
             over_cap: Operation | None = None
-            for op in ops:
+            for i, op in enumerate(ops):
                 kind, status, text, clause = _op_clause(ctx, state, op)
                 steps.add(kind, text, status)
-                sg, end = _suggestion(breach, op)
-                clauses.append(clause + _cost_clause(ctx, op, sg, end))
-                if sg is not None and sg.above_apr_cap and over_cap is None:
-                    over_cap = op
+                line = _plan_line(plan_costs, op)
+                if line is not None and plan is not None:
+                    clauses.append(clause + _plan_cost_clause(ctx, line, plan.actions[i].repay_day))
+                    if line.needs_owner_approval and over_cap is None:
+                        over_cap = op
+                else:
+                    sg, end = _suggestion(breach, op)
+                    clauses.append(clause + _cost_clause(ctx, op, sg, end))
+                    if sg is not None and sg.above_apr_cap and over_cap is None:
+                        over_cap = op
             cap = _cap_sentence(ctx, mandate, over_cap) if over_cap is not None else ""
+            if cheaper is not None:
+                n = sum(1 for cl in cheaper.costs if cl.needs_owner_approval)
+                cap += t(ctx, f" A cheaper plan exists, {fmt_yuan(cheaper.total_cost_fen)} in all, but it would need {n} "
+                              f"separate approvals; this one needs one.",
+                         f" 还有更便宜的方案（合计 {fmt_yuan(cheaper.total_cost_fen)}），但需要 {n} 次单独批准；此方案只需一次。")
             if "cure_restores_reserve" in breach.inputs:  # the zero-floor fallback: say what it does not do
                 cap += t(ctx, f" This keeps cash at or above zero but does not restore your reserve: it stays "
                               f"{breach.inputs.get('residual_shortfall', '?')} short, which needs your decision.",
                          f" 这只能让现金保持在零以上，并不能恢复储备线：仍差 "
                          f"{breach.inputs.get('residual_shortfall', '?')}，需要您来决定。")
-            together = (t(ctx, f" Together they cost {breach.inputs['cure_cost']}.",
-                          f"合计费用 {breach.inputs['cure_cost']}。") if len(ops) > 1 and "cure_cost" in breach.inputs else "")
+            if plan is not None:
+                together = (t(ctx, f" Together they cost about {fmt_yuan(plan.total_cost_fen)} in all.",
+                              f"合计费用约 {fmt_yuan(plan.total_cost_fen)}。") if len(ops) > 1 else "")
+            else:
+                together = (t(ctx, f" Together they cost {breach.inputs['cure_cost']}.",
+                              f"合计费用 {breach.inputs['cure_cost']}。") if len(ops) > 1 and "cure_cost" in breach.inputs else "")
             parts.append(t(ctx, "I can " + " and ".join(clauses) + "." + together + cap + " Go ahead?",
                            "我可以" + "，并".join(clauses) + "。" + together + cap + "要执行吗？"))
             pending = PendingPlan(Intent.SHOW_ALERTS, Slots(), steps.items, {"alert_id": breach.id}).bind(
-                ctx, ops, _quoted_cost(breach, ops))
+                ctx, ops, plan.total_cost_fen if plan is not None else _quoted_cost(breach, ops))
         else:
             parts.append(t(ctx, "No committed facility can cover it, so there is nothing I can do on my own; "
                                 "this needs your decision.",

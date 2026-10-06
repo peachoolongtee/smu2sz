@@ -50,14 +50,19 @@ test("the Business home answers safe, do and cost on the opening books, without 
   await expect(page.getByTestId("home-lowest")).toHaveText("−¥105,000.00");
   // The best next action: what, how much, cost, when, who decides, what if nothing, after.
   const action = page.getByTestId("home-next-action");
-  await expect(action.getByTestId("next-action-title")).toContainText("Draw ¥150,000.00 on Bank credit line and finance ¥336,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co.");
-  await expect(action).toContainText("¥486,000.00");
-  await expect(action).toContainText("¥2,994.08");
-  await expect(action).toContainText("11.2% a year for 29 days");
+  // The recommendation is the router's cheapest runnable plan, priced all-in (every leg, the basis in words): the
+  // same figure the Cash & funding options, the chat and the documents quote.
+  await expect(action.getByTestId("next-action-title")).toContainText("Draw ¥150,000.00 on Bank credit line and finance ¥255,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co.");
+  await expect(action).toContainText("¥405,000.00");
+  await expect(action.getByTestId("next-action-cost")).toContainText("¥3,113.93");
+  await expect(action.getByTestId("next-action-cost-breakdown")).toContainText("¥841.64");
+  await expect(action.getByTestId("next-action-cost-breakdown")).toContainText("¥2,272.29");
+  await expect(action.getByTestId("next-action-cost-basis")).toContainText("expected repayment of the Bank credit line on day 32");
+  await expect(action).not.toContainText("not included");
   await expect(action).toContainText("Day 3");
   await expect(action).toContainText("The agent can do this alone");
   await expect(action.getByTestId("next-action-if-nothing")).toContainText("¥240,000.00 below your safe level on day 12");
-  await expect(action.getByTestId("next-action-after")).toContainText("Cash stays above your safe level through day 31");
+  await expect(action.getByTestId("next-action-after")).toContainText("Cash stays above your safe level for the next 120 days");
   await expect(page.getByTestId("fix-ALERT-RESERVE-12")).toHaveText("Go ahead");
   // Nothing from the demo on the owner's screen: no stepper, no clock, no mock pill, no engine navigation.
   await expect(page.getByRole("region", { name: "Guided demo" })).toHaveCount(0);
@@ -77,7 +82,7 @@ test("Go ahead on the opening books runs the fix alone, and the home turns calm 
   await expect(page.getByTestId("home-status")).toHaveAttribute("data-status", "WATCH");
   await expect(page.getByTestId("home-headline")).toHaveText("Cash stays above your ¥300,000.00 safe level for the next 120 days.");
   await expect(page.getByTestId("home-next-action")).toHaveCount(0);
-  await expect(page.getByTestId("home-in-transit")).toContainText("¥336,000.00 on its way");
+  await expect(page.getByTestId("home-in-transit")).toContainText("¥255,000.00 on its way");
   await expect(page.getByTestId("home-changes-list")).toContainText("Bank credit line");
   await expect(page.getByTestId("home-waiting-empty")).toBeVisible();
 });
@@ -93,7 +98,10 @@ test("day 34: the fix needs approval; queuing it from the home runs nothing and 
   await expect(action).toContainText("32.5% a year for 10 days");
   await expect(action).toContainText("Day 37");
   await expect(action.getByTestId("next-action-needs-owner")).toContainText("above your 15.00% limit");
-  await expect(action.getByTestId("next-action-after")).toContainText("through day 46");
+  await expect(action.getByTestId("next-action-after")).toContainText("for the next 120 days");
+  // The router's cheaper two-invoice plan would need two approvals, so the one-approval cure is recommended and the option named.
+  await expect(action.getByTestId("next-action-cheaper")).toContainText("¥1,706.10");
+  await expect(action.getByTestId("next-action-cheaper")).toContainText("2 separate approvals");
   // Who has not paid: the late buyer by name, with the days late.
   await expect(page.getByTestId("home-late-RCV-A")).toContainText("Foshan Home Retail Co.");
   await expect(page.getByTestId("home-late-RCV-A")).toContainText("2 day(s) late");

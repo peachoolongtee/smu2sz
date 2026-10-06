@@ -6,7 +6,7 @@
  * which is plotting, not reporting: it never reaches a table, a label or a tooltip.
  */
 
-import type { Displayed, Trajectory } from "./types";
+import type { Displayed, HomeSeriesPoint, Trajectory } from "./types";
 
 export interface CashRow {
   day: number;
@@ -39,6 +39,38 @@ export function toCashRows(base: Displayed<Trajectory>, cured: Displayed<Traject
       events: d.events.map((e) => `${e.label}: ${e.amount_display}`),
     };
   });
+}
+
+/**
+ * The home's two projections (GET /home `cash.series` and `cash.plan_series`) as chart rows: the same server points
+ * the headline, the lowest cash and the first unsafe day are read from, so the chart cannot disagree with them.
+ */
+export function toHomeCashRows(base: HomeSeriesPoint[], plan: HomeSeriesPoint[] | null): CashRow[] {
+  return base.map((d, i) => {
+    const p = plan?.[i];
+    return {
+      day: d.day,
+      cash: d.closing_fen,
+      cashDisplay: d.closing_display,
+      cured: p ? p.closing_fen : null,
+      curedDisplay: p ? p.closing_display : null,
+      debt: 0,
+      debtDisplay: "",
+      curedDebt: null,
+      curedDebtDisplay: null,
+      events: d.events.map((e) => `${e.label}: ${e.amount_display}`),
+    };
+  });
+}
+
+/** The lowest plotted fen across the drawn series, for the y axis only: a trough below zero must stay in the picture. */
+export function axisFloor(rows: CashRow[]): number {
+  let low = 0;
+  for (const r of rows) {
+    if (r.cash < low) low = r.cash;
+    if (r.cured !== null && r.cured < low) low = r.cured;
+  }
+  return low;
 }
 
 /** Axis tick label in thousands of yuan ("¥300k"). Axis scale only; never shown as a figure. */

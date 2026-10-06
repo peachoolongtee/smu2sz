@@ -84,13 +84,21 @@ turns it on, so the walk through `/approvals` keeps its bar). `docs/UX_AUDIT.md`
 
 The Business home is one owner read, `GET /home?lang=` (`services/api/app/api/home.py`): a status word (SAFE, WATCH,
 ACTION_NEEDED, CRITICAL) with one sentence, the three figures (cash today, safe level, lowest cash ahead), the best next
-action (the cure of the first actionable critical alert, with what the owner receives, what it costs and at what yearly
-rate, the day the money lands, who decides and why, what happens if nothing is done, and the after-state), the pending
+action (for a reserve breach, the router's cheapest runnable plan priced all-in on the router's own convention, with every
+cost line and the basis in words; the alert's own cure when the router has none, or when the cheaper plan would need
+several separate approvals, in which case the cheaper option is named; `services/api/app/funding/recommend.py`), with what
+the owner receives, what it costs, the day the money lands, who decides and why, what happens if nothing is done, and the
+after-state read from the plan's own projection, the pending
 approvals as questions, what changed in the last week, who has not paid and the next expected receipt, and the details
 (funding in transit, warnings, facilities, the debt readings). Every sentence and figure is the server's; the page renders
 and never computes. "Go ahead" sends the same bound act as the alerts page (`POST /alerts/{id}/act` with the state version
 and the suggestions shown); when the cost is above the owner's yearly limit the server queues it and the home says it waits.
 The approval cards (`/approvals`) read the queue's `presentation` fields (the question, names, cost, landing day).
+
+The read also carries the projection behind every figure as `cash.series` (the baseline) and `cash.plan_series` (the same
+books with the recommended plan applied); the Cash & funding chart draws these two series and nothing else, so it cannot
+disagree with the headline, and its y axis extends below zero when a projection does. "Go ahead" sends the plan's legs as
+shown; `POST /alerts/{id}/act` accepts them when they equal the plan the server recomputes (409 `ALERT_CHANGED` otherwise).
 
 Mock mode replays summaries recorded on the demo path (`mocks/home_summary_*.json`, `lib/mock/home.ts`): the opening books,
 after the day-0 fix ran, after the deal (quiet), day 34 with the late invoice, the queued fix and the approved fix.

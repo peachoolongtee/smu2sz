@@ -25,17 +25,31 @@ def test_day_zero_answers_safe_do_cost(client):
     assert h["cash"]["cash_display"] == "¥400,000.00" and h["cash"]["floor_display"] == "¥300,000.00"
     assert h["cash"]["lowest_display"] == "−¥105,000.00" and h["cash"]["lowest_day"] == 30
     a = h["next_action"]
-    assert a["title"] == ("Draw ¥150,000.00 on Bank credit line and finance ¥336,000.00 of the ¥420,000.00 invoice to "
+    # The recommendation is the router's cheapest runnable plan (wayfinder #15), the figure the documents quote
+    assert a["plan_source"] == "router"
+    assert a["title"] == ("Draw ¥150,000.00 on Bank credit line and finance ¥255,000.00 of the ¥420,000.00 invoice to "
                           "Foshan Home Retail Co. on Invoice financing (onboarded platform)")
-    assert a["receive_display"] == "¥486,000.00" and a["needs_owner"] is False
-    # the invoice leg is priced by the alert; the open-ended draw is not, and the note says so
-    assert a["cost_display"] == "¥2,994.08" and a["rate_text"] == "11.2%" and "not included" in a["cost_note"]
+    assert a["receive_display"] == "¥405,000.00" and a["needs_owner"] is False and a["cheaper_option"] is None
+    # all-in: every leg priced on the router's own convention, the basis said in words, nothing left to a footnote
+    assert a["cost_total_display"] == "¥3,113.93" and a["cost_display"] == "¥3,113.93" and a["cost_note"] is None
+    assert [(c["label"], c["display"]) for c in a["cost_breakdown"]] == [
+        ("Bank credit line: draw ¥150,000.00, repaid day 32", "¥841.64"),
+        ("Invoice financing (onboarded platform): advance ¥255,000.00 on RCV-A", "¥2,272.29")]
+    assert a["cost_basis"].startswith("Estimated through the expected repayment of the Bank credit line on day 32")
     assert a["lands_day"] == 3 and [leg["lands_day"] for leg in a["legs"]] == [0, 3]
+    assert [leg["cost_display"] for leg in a["legs"]] == ["¥841.64", "¥2,272.29"]
     assert a["if_nothing"].startswith("¥240,000.00 below your safe level on day 12")
-    assert a["after"] == "Cash stays above your safe level through day 31."
+    assert a["after"] == "Cash stays above your safe level for the next 120 days."
+    assert a["why"].startswith("The cheapest plan your committed facilities can fund in time")
     s1 = a["suggestions"][1]
     assert (s1["operation_kind"], s1["facility_id"], s1["receivable_id"], s1["amount_fen"]) == (
-        "SUBMIT_INVOICE_FOR_FINANCING", "FAC-IF", "RCV-A", 33600000)
+        "SUBMIT_INVOICE_FOR_FINANCING", "FAC-IF", "RCV-A", 25500000)
+    # one projection for every figure and the chart: the baseline and the same books with the plan applied
+    series, plan_series = h["cash"]["series"], h["cash"]["plan_series"]
+    assert len(series) == 121 and series[12]["closing_display"] == "¥60,000.00" and series[30]["closing_display"] == "−¥105,000.00"
+    assert series[12]["events"][0]["label"] == "Payroll" and series[12]["events"][0]["amount_display"] == "−¥340,000.00"
+    assert min(d["closing_fen"] for d in series) == h["cash"]["lowest_fen"]
+    assert len(plan_series) == 121 and min(d["closing_fen"] for d in plan_series) >= h["cash"]["floor_fen"]
     assert h["approvals"] == [] and h["pending_count"] == 0 and h["changes"] == []
     r = h["receivables"]
     assert r["past_due"] == [] and r["next_receipt"]["buyer_name"] == "Foshan Home Retail Co."
@@ -52,7 +66,8 @@ def test_the_fix_is_bound_to_what_the_home_showed_and_the_home_turns_calm(client
     assert h["status"] == "WATCH" and h["next_action"] is None
     assert h["headline"] == "Cash stays above your ¥300,000.00 safe level for the next 120 days."
     assert h["cash"]["in_transit"]["lots"] == [{"facility_name": "Invoice financing (onboarded platform)",
-                                                "amount_display": "¥336,000.00", "arrival_day": 3}]
+                                                "amount_display": "¥255,000.00", "arrival_day": 3}]
+    assert h["cash"]["plan_series"] is None
     kinds = [c["kind"] for c in h["changes"]]
     assert kinds == ["OPERATION", "OPERATION"] and "Bank credit line" in h["changes"][1]["text"]
 
@@ -94,9 +109,16 @@ def test_a_priced_cure_in_the_queue_carries_its_cost_and_landing_day(client):
     r = client.post(f"/alerts/{a['alert_id']}/act", json={"state_version": a["state_version"], "suggestions": a["suggestions"]}).json()
     assert r["pending_approval"] >= 1
     rows = client.get("/approvals/queue").json()["approvals"]
+    # both legs of the router plan are above a 5% ceiling; each queued leg carries the router's own cost line
+    assert [x["op_id"].split(":")[-2] for x in rows] == ["plan", "plan"]
     priced = [x["presentation"] for x in rows if x["kind"] == "SUBMIT_INVOICE_FOR_FINANCING"]
-    assert priced and priced[0]["cost_display"] == "¥2,994.08" and priced[0]["lands_day"] == 3
-    assert priced[0]["headline"] == "Approve ¥336,000.00 of invoice financing?"
+    assert priced and priced[0]["cost_display"] == "¥2,272.29" and priced[0]["lands_day"] == 3
+    assert priced[0]["headline"] == "Approve ¥255,000.00 of invoice financing?"
+    drawn = [x["presentation"] for x in rows if x["kind"] == "DRAW_FACILITY"]
+    assert drawn[0]["cost_display"] == "¥841.64"
+    [card_if] = [c for c in h["approvals"] if c["kind"] == "SUBMIT_INVOICE_FOR_FINANCING"] if h["approvals"] else [None]
+    h = client.get("/home").json()
+    assert {c["cost_display"] for c in h["approvals"]} == {"¥841.64", "¥2,272.29"}
 
 
 def test_chinese_sentences(client):
@@ -134,6 +156,28 @@ def test_a_late_buyer_is_named_in_receivables_and_changes(client):
     assert any(c["kind"] == "LATE" and "Foshan Home Retail Co." in c["text"] for c in h["changes"])
     assert not any("Clock moved" in c["text"] for c in h["changes"])
     a = h["next_action"]
-    assert a["cost_display"] == "¥1,782.19" and a["rate_text"] == "32.5%" and a["lands_day"] == 37
+    assert a["cost_display"] == "¥1,782.19" and a["cost_total_display"] == "¥1,782.19" and a["rate_text"] == "32.5%" and a["lands_day"] == 37
     assert a["needs_owner_reason"] == "The yearly cost of 32.5% is above your 15.00% limit for what the agent may borrow alone."
-    assert a["after"] == "Cash stays above your safe level through day 46."
+    assert a["after"] == "Cash stays above your safe level for the next 120 days."
+    # The router's cheapest plan (¥80,000 on RI:BUYER-1:32 + ¥120,000 on RI:BUYER-1:2) needs two approvals, so the
+    # single-approval cure is shown and the cheaper option is named (wayfinder #15 refinement)
+    assert a["plan_source"] == "alert" and a["cheaper_option"]["approvals"] == 2
+    assert a["cheaper_option"]["cost_total_display"] == "¥1,706.10"
+    assert a["why"].startswith("The cheapest option, ¥1,706.10 in all, needs 2 separate approvals; this one needs one.")
+
+
+def test_run_funding_plan_binds_to_the_plan_shown_and_refuses_a_stale_one(client):
+    h = client.get("/home").json()
+    a = h["next_action"]
+    assert a["plan_source"] == "router"
+    stale = [dict(x, amount_fen=x["amount_fen"] + 100) for x in a["suggestions"]]
+    r = client.post(f"/alerts/{a['alert_id']}/act", json={"state_version": a["state_version"], "suggestions": stale})
+    assert r.status_code == 409 and r.json()["detail"]["code"] == "ALERT_CHANGED"
+    r = client.post(f"/alerts/{a['alert_id']}/act", json={"state_version": a["state_version"], "suggestions": a["suggestions"]}).json()
+    assert [x["kind"] + ":" + x["status"] for x in r["results"]] == ["DRAW_FACILITY:EXECUTED", "SUBMIT_INVOICE_FOR_FINANCING:EXECUTED"]
+    assert r["executed"] == 2 and r["cured"]
+    ops = client.get("/ledger").json()["operations"]
+    assert [o["op_id"] for o in ops[-2:]] == [f"alert:{a['alert_id']}:v{a['state_version']}:plan:0",
+                                               f"alert:{a['alert_id']}:v{a['state_version']}:plan:1"]
+    plan = client.post("/router/plan").json()["committed"]
+    assert plan["actions"] == [] and client.get("/home").json()["next_action"] is None

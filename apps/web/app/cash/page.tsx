@@ -5,7 +5,7 @@ import { CashChart } from "@/components/charts";
 import { PlanNotes } from "@/components/plan-notes";
 import { Badge, Card, ErrorState, Formula, LoadingBlock, PageHeader, TableWrap, tableCls, tdCls, thCls } from "@/components/ui";
 import { getHome, getTrajectory, planFunding } from "@/lib/api";
-import { toCashRows } from "@/lib/chart-helpers";
+import { toHomeCashRows } from "@/lib/chart-helpers";
 import { useDemo } from "@/lib/demo-store";
 import { useI18n } from "@/lib/i18n";
 import { useAsync } from "@/lib/use-async";
@@ -15,9 +15,10 @@ import { useAsync } from "@/lib/use-async";
  * words, then the what-if sandbox and the equipment purchase as doors. The monthly readings sit under details.
  */
 export default function CashPage() {
-  const { t, te } = useI18n();
+  const { t, te, lang } = useI18n();
   const demo = useDemo();
-  const home = useAsync(() => getHome("en"), []);
+  const home = useAsync(() => getHome(lang), [lang]);
+  // The monthly readings only; the chart draws the home's own series so it cannot disagree with the headline.
   const traj = useAsync(() => getTrajectory("CONSERVATIVE"), []);
   // The router's plan for today's gap; after the plan executed a fresh plan is empty, so the decision-time snapshot wins.
   const snapshot = demo.funding;
@@ -56,35 +57,35 @@ export default function CashPage() {
         )}
 
         <Card id="cash-chart" title={t("biz.cash.chart")} subtitle={t("biz.cash.chart.sub")}>
-          {traj.error ? (
-            <ErrorState error={traj.error} onRetry={traj.reload} />
-          ) : !view ? (
+          {home.error ? (
+            <ErrorState error={home.error} onRetry={home.reload} />
+          ) : !h ? (
             <LoadingBlock rows={2} />
           ) : (
             <>
-              <div role="img" aria-label={t("traj.chartSummary", { min: view.trajectory.min_cash_display, day: view.trajectory.min_cash_day, floor: view.floor.min_cash_display })}>
+              <div role="img" aria-label={t("traj.chartSummary", { min: h.cash.lowest_display, day: h.cash.lowest_day, floor: h.cash.floor_display })} data-testid="cash-forecast" data-lowest={h.cash.lowest_fen}>
                 <CashChart
-                  rows={toCashRows(view.trajectory, view.cured_trajectory)}
-                  floorFen={view.floor.min_cash_fen}
-                  floorLabel={`${t("biz.safeLevel")} ${view.floor.min_cash_display}`}
-                  breachDay={view.trajectory.first_breach_day}
-                  breachLabel={view.trajectory.first_breach_day !== null ? t("common.dayN", { n: view.trajectory.first_breach_day }) : ""}
-                  horizon={view.trajectory.horizon_days}
+                  rows={toHomeCashRows(h.cash.series, h.cash.plan_series)}
+                  floorFen={h.cash.floor_fen}
+                  floorLabel={`${t("biz.safeLevel")} ${h.cash.floor_display}`}
+                  breachDay={h.cash.first_breach_day}
+                  breachLabel={h.cash.first_breach_day !== null ? t("common.dayN", { n: h.cash.first_breach_day }) : ""}
+                  horizon={h.cash.horizon_days}
                   dayLabel={t("common.day")}
-                  cashLabel={t("biz.cash.line")}
-                  curedLabel={t("traj.legend.cured")}
-                  showCured={Boolean(view.cured_trajectory)}
+                  cashLabel={t("biz.forecast.nothing")}
+                  curedLabel={t("biz.forecast.plan")}
+                  showCured={Boolean(h.cash.plan_series)}
                 />
               </div>
               <ul className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-xs text-ink-2">
                 <li className="flex items-center gap-1.5">
                   <span className="inline-block h-0.5 w-5 bg-brand-600" aria-hidden />
-                  {t("biz.cash.line")}
+                  {t("biz.forecast.nothing")}
                 </li>
-                {view.cured_trajectory ? (
+                {h.cash.plan_series ? (
                   <li className="flex items-center gap-1.5">
                     <span className="inline-block w-5 border-t-2 border-dashed border-ok-fg" aria-hidden />
-                    {t("traj.legend.cured")}
+                    {t("biz.forecast.plan")}
                   </li>
                 ) : null}
                 <li className="flex items-center gap-1.5">

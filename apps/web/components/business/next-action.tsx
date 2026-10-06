@@ -20,13 +20,25 @@ export function NextActionBlock({ a, stateVersion, fixer }: { a: HomeNextAction;
 
   const rows: { k: string; v: React.ReactNode }[] = [];
   if (a.receive_display) rows.push({ k: t("biz.receive"), v: a.receive_display });
-  if (a.cost_display) {
+  const costTotal = a.cost_total_display ?? a.cost_display;
+  if (costTotal) {
     rows.push({
-      k: t("biz.cost"),
+      k: t("biz.costTotal"),
       v: (
-        <span>
-          {a.cost_display}
+        <span data-testid="next-action-cost">
+          {costTotal}
           {a.rate_text && a.cost_days ? <span className="ml-1 font-normal text-ink-3">{t("biz.costRate", { rate: a.rate_text, days: a.cost_days })}</span> : null}
+          {a.rate_text && !a.cost_days ? <span className="ml-1 font-normal text-ink-3">{t("biz.costRateOnly", { rate: a.rate_text })}</span> : null}
+          {a.cost_breakdown.length > 1 ? (
+            <span className="mt-1 block text-xs font-normal text-ink-2" data-testid="next-action-cost-breakdown">
+              {a.cost_breakdown.map((c) => `${c.label}: ${c.display ?? ""}`).join(" · ")}
+            </span>
+          ) : null}
+          {a.cost_basis ? (
+            <span className="mt-0.5 block text-xs font-normal text-ink-3" data-testid="next-action-cost-basis">
+              {a.cost_basis}
+            </span>
+          ) : null}
         </span>
       ),
     });
@@ -67,7 +79,11 @@ export function NextActionBlock({ a, stateVersion, fixer }: { a: HomeNextAction;
           </div>
         </dl>
       </div>
-      {a.cost_note ? <p className="mt-2 text-xs text-ink-3">{a.cost_note}</p> : null}
+      {a.cheaper_option ? (
+        <p className="mt-2 text-xs text-ink-2" data-testid="next-action-cheaper">
+          {t("biz.cheaper", { cost: a.cheaper_option.cost_total_display, n: a.cheaper_option.approvals })}
+        </p>
+      ) : null}
 
       <div className="mt-4 flex flex-wrap items-center gap-2">
         {waiting ? (
