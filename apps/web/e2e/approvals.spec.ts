@@ -63,9 +63,33 @@ test("an approval card expands in place to the operation, the reason, the amount
   await expect(detail).toContainText("¥600,000.00");
   await expect(detail).toContainText("Day 0, by Agent");
   await expect(detail).toContainText("apply for facility FAC-ETL");
-  await card.getByRole("button", { name: "Approve" }).click();
+  // The buttons say what they do: the amount to approve, and "Decline"; an approval no alert asked for is simply closed by declining.
+  await expect(card.getByTestId("approval-if-decline")).toHaveText("Nothing runs; the request is closed.");
+  await expect(card.getByRole("button", { name: "Decline", exact: true })).toBeVisible();
+  await card.getByRole("button", { name: "Approve ¥600,000.00", exact: true }).click();
   await expect(card.getByTestId("approval-result-APR-000001")).toContainText("Result:");
   await expect(card).toContainText("Approved");
+});
+
+test("an approval born of the reserve alert says what declining leaves, in days from today", async ({ page }) => {
+  await page.goto("/demo");
+  await page.getByTestId("home-days").fill("34");
+  await page.getByTestId("home-advance").click();
+  await expect(page.getByTestId("home-day")).toHaveText("Day 34");
+  await page.goto("/");
+  await page.getByTestId("fix-ALERT-RESERVE-42").click();
+  await page.getByTestId("alert-approval-link-ALERT-RESERVE-42").click();
+  await expect(page).toHaveURL(/\/approvals#approval-APR-000001/);
+  const card = page.locator("#approval-APR-000001");
+  // The server's sentence, not a static one: the shortfall and the day it peaks, never "Day N".
+  await expect(card.getByTestId("approval-if-decline")).toHaveText(
+    "¥200,000.00 below your minimum cash reserve in 8 days; the gap peaks at ¥200,000.00 in 8 days.",
+  );
+  await expect(card.getByRole("button", { name: "Approve ¥200,000.00", exact: true })).toBeVisible();
+  // The tier is an audit detail, closed by default.
+  await expect(card).not.toContainText("Tier");
+  await card.getByTestId("approval-toggle-APR-000001").click();
+  await expect(card.getByTestId("approval-detail-APR-000001")).toContainText("Tier 2");
 });
 
 signedOut("the stepper's Start resumes by itself after the owner signs in from the dialog it opened", async ({ page }) => {
