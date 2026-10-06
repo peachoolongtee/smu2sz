@@ -50,6 +50,7 @@ def test_day_zero_answers_safe_do_cost(client):
     assert a["after"] == "Cash stays above your minimum cash reserve for the next 120 days."
     assert a["authority_text"] == "Within your signed limits. No additional approval required." and a["lands_when"] == "in 3 days"
     assert h["cash"]["lowest_when"] == "in 30 days" and h["cash"]["first_breach_when"] == "in 12 days"
+    assert h["receivables"]["open_total_display"] == "¥420,000.00" and h["receivables"]["overdue_total_display"] == "¥0.00"
     assert a["cost_basis"].startswith("Estimated through the expected repayment of the Bank credit line in 32 days")
     assert a["why"].startswith("The cheapest plan your committed facilities can fund in time")
     s1 = a["suggestions"][1]
@@ -168,6 +169,7 @@ def test_a_late_buyer_is_named_in_receivables_and_changes(client):
     [late] = h["receivables"]["past_due"]
     assert late["buyer_name"] == "Foshan Home Retail Co." and late["face_display"] == "¥162,800.00" and late["days_late"] == 2
     assert late["due_when"] == "2 days ago"
+    assert h["receivables"]["overdue_total_display"] == "¥162,800.00"
     assert all("day " not in c["text"] or "days" in c["text"] for c in h["changes"]), [c["text"] for c in h["changes"]]
     assert all(c["when"] for c in h["changes"])
     assert any(c["kind"] == "LATE" and "Foshan Home Retail Co." in c["text"] for c in h["changes"])
