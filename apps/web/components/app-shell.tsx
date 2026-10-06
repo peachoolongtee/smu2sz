@@ -16,6 +16,7 @@ type NavGroup = "today" | "deals" | "cash" | "records";
 
 /** Grouped by the job the owner is doing, not by module. Each link's hint says in one line what is behind it. */
 const NAV: { href: string; key: DictKey; hint: DictKey; group: NavGroup }[] = [
+  { href: "/simple", key: "nav.simple", hint: "nav.hint.simple", group: "today" },
   { href: "/", key: "nav.home", hint: "nav.hint.home", group: "today" },
   { href: "/documents", key: "nav.documents", hint: "nav.hint.documents", group: "today" },
   { href: "/chat", key: "nav.chat", hint: "nav.hint.chat", group: "today" },
