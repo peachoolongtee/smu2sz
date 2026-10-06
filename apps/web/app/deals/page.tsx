@@ -8,10 +8,12 @@ import { PlanCard } from "@/components/plan-card";
 import { Button, Callout, Card, EmptyState, ErrorState, Formula, KeyValueList, LoadingBlock, PageHeader } from "@/components/ui";
 import { CounterCard, ViolationCard } from "@/components/verdict-parts";
 import { evaluate as evaluateAndCache } from "@/lib/demo";
-import { useDemo } from "@/lib/demo-store";
+import { getState } from "@/lib/api";
+import { selectOffer, useDemo } from "@/lib/demo-store";
 import { useI18n } from "@/lib/i18n";
 import { annotationsFor, offerItems } from "@/lib/offer-items";
 import type { Outcome, VerdictView } from "@/lib/types";
+import { useAsync } from "@/lib/use-async";
 import { useCurrentOffer } from "@/lib/use-current";
 
 /** The recommendation in two words: what the owner should answer the buyer. */
@@ -34,6 +36,8 @@ export default function DealsPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [active, setActive] = useState<string | null>(null);
+  const books = useAsync(getState, []);
+  const buyerName = (id: string) => books.data?.state.counterparties.find((c) => c.id === id)?.name ?? id;
 
   async function evaluate() {
     if (!cur.offerId) return;
@@ -48,7 +52,8 @@ export default function DealsPage() {
     }
   }
 
-  const offers = Object.values(demo.offers);
+  // Newest first: the offers are recorded in the order they were received.
+  const offers = Object.values(demo.offers).reverse();
   const offer = cur.offer;
   const v: VerdictView | null = cur.verdict;
   const items = offer ? offerItems(offer.offer) : [];
@@ -66,10 +71,38 @@ export default function DealsPage() {
       ) : (
         <div className="space-y-5">
           {offers.length > 1 ? (
-            <p className="text-xs text-ink-3">{t("biz.deals.count", { n: offers.length })}</p>
+            <Card id="deal-list" title={t("biz.deals.list")} subtitle={t("biz.deals.list.sub", { n: offers.length })}>
+              <ul className="space-y-2" data-testid="deal-list">
+                {offers.map((o) => {
+                  const id = o.offer.offer_id;
+                  const selected = id === cur.offerId;
+                  const verdict = demo.verdicts[id];
+                  return (
+                    <li key={id}>
+                      <button
+                        type="button"
+                        aria-pressed={selected}
+                        onClick={() => selectOffer(id)}
+                        data-testid="deal-row"
+                        data-offer-id={id}
+                        className={`flex min-h-11 w-full flex-wrap items-center justify-between gap-x-4 gap-y-1.5 rounded-md border px-3 py-2 text-left text-sm ${selected ? "border-brand-700 bg-brand-50" : "border-line hover:bg-subtle"}`}
+                      >
+                        <span className="min-w-0">
+                          <span className="block break-words font-medium text-ink">{buyerName(o.offer.counterparty_id)}</span>
+                          <span className="block break-all font-mono text-xs text-ink-3">
+                            {t("common.dayN", { n: o.offer.received_day })} &middot; {id}
+                          </span>
+                        </span>
+                        {verdict ? <OutcomeBadge outcome={verdict.outcome} /> : <span className="text-xs text-ink-3">{t("biz.deals.notEvaluated")}</span>}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </Card>
           ) : null}
 
-          <Card id="deal-ask" title={t("biz.deals.ask", { buyer: offer.offer.counterparty_id })} subtitle={`${te("channel", offer.documents[0]?.channel ?? "chat")} · ${t("common.dayN", { n: offer.offer.received_day })}`}>
+          <Card id="deal-ask" title={t("biz.deals.ask", { buyer: buyerName(offer.offer.counterparty_id) })} subtitle={`${te("channel", offer.documents[0]?.channel ?? "chat")} · ${t("common.dayN", { n: offer.offer.received_day })}`}>
             {asks.length ? (
               <ul className="space-y-1.5 text-sm">
                 {asks.map((i) => {
