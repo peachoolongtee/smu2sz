@@ -108,6 +108,7 @@ export default function CapexPage() {
           </dl>
 
           <Card id="structures" title={t("capex.structures")} subtitle={t("capex.structures.sub", { limit: capex.dscr_limit_display })}>
+            <p className="mb-2 text-xs text-ink-3">{t("dscr.readingNote")}</p>
             <TableWrap label={t("capex.structures")}>
               <table className={`${tableCls} min-w-[50rem]`}>
                 <caption className="sr-only">{t("capex.structures")}</caption>

@@ -208,6 +208,9 @@ export function WhatIfCovenantsCard({ r }: { r: WhatIfResult }) {
           </li>
         ))}
       </ul>
+      {r.covenants.some((c) => c.code === "DSCR_MIN") ? (
+        <p className="mt-2 text-xs text-ink-3">{t("dscr.readingNote")}</p>
+      ) : null}
     </Card>
   );
 }
