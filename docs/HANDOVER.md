@@ -244,6 +244,11 @@ RESERVE_BREACH on the cash-corrected books, so the label file `fixtures/heldout/
 
 ## 6. What to do next, in order
 
+**The integration of 6 and 7 Oct (the owner's fourth brief) is done:** `docs/UX_INTEGRATION_BRIEF.md`, the wayfinder map
+(GitHub issue #13) and `docs/UX_AUDIT.md` section 18 record it; `docs/UX_INTEGRATION_REPORT.md` is the final report. The
+recommendation shown to the owner is the router's runnable plan (`services/api/app/funding/recommend.py`), the home carries its
+own projection series, Business mode speaks in distances from today and the minimum cash reserve, the brand is FLOW 流.
+
 **The UI/UX audit and redesign of `docs/handover/03_ux_redesign_brief.md` was done on 5 Oct** (`docs/UX_AUDIT.md`, then
 the merge `feat/ux-redesign`): two shells (Business and Demo), the Business home on the presentation read `GET /home`
 (`services/api/app/api/home.py`, tests in `tests/api/test_home.py`), approval cards as questions on the queue's
