@@ -115,7 +115,9 @@ const SkipLink = () => {
 function ApprovalsBadge() {
   const { t } = useI18n();
   const { token } = useAuth();
-  const list = useAsync(() => (token ? getApprovals().catch(() => []) : Promise.resolve([])), [Boolean(token)]);
+  const pathname = usePathname();
+  // Refetched on every action (`bump`), on sign-in and on navigation, so a fix queued from the chat shows up on the next page.
+  const list = useAsync(() => (token ? getApprovals().catch(() => []) : Promise.resolve([])), [Boolean(token), pathname]);
   const pending = list.data?.filter((a) => a.status === "PENDING").length ?? 0;
   if (!pending) return null;
   return (

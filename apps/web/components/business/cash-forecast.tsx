@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Area, AreaChart, CartesianGrid, ReferenceArea, ReferenceDot, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { axisFloor, axisYuanK } from "@/lib/chart-helpers";
 import { useI18n } from "@/lib/i18n";
 import type { HomeSeriesPoint, HomeView } from "@/lib/types";
 
@@ -57,11 +58,7 @@ export function CashForecast({ h }: { h: HomeView }) {
   const data = rows(h.cash.series, h.cash.plan_series, today, to);
   const floor = h.cash.floor_fen;
   // Axis scale only: from zero, or lower when a projection goes below zero, so the trough the headline quotes is drawn.
-  let yMin = 0;
-  for (const r of data) {
-    if (r.cash < yMin) yMin = r.cash;
-    if (r.plan !== null && r.plan < yMin) yMin = r.plan;
-  }
+  const yMin = axisFloor(data.map((r) => ({ cash: r.cash, cured: r.plan })) as Parameters<typeof axisFloor>[0]);
   const breach = h.cash.first_breach_day !== null && h.cash.first_breach_day <= to ? h.cash.first_breach_day : null;
   const breachRow = breach === null ? undefined : data.find((r) => r.day === breach);
   const lowestRow = h.cash.lowest_day <= to ? data.find((r) => r.day === h.cash.lowest_day) : undefined;
@@ -110,7 +107,7 @@ export function CashForecast({ h }: { h: HomeView }) {
             <ReferenceArea y1={yMin} y2={floor} fill={ZONE} fillOpacity={0.8} stroke="none" ifOverflow="extendDomain" />
             {yMin < 0 ? <ReferenceLine y={0} stroke={AXIS} strokeWidth={1} /> : null}
             <XAxis dataKey="day" type="number" domain={[today, to]} ticks={ticks} tickFormatter={tick} stroke={AXIS} fontSize={12} tickLine={false} />
-            <YAxis width={56} tickFormatter={(fen: number) => `¥${Math.round(fen / 100000)}k`} domain={[yMin, "auto"]} stroke={AXIS} fontSize={12} tickLine={false} axisLine={false} />
+            <YAxis width={56} tickFormatter={axisYuanK} domain={[yMin, "auto"]} stroke={AXIS} fontSize={12} tickLine={false} axisLine={false} />
             <Tooltip content={<ForecastTooltip today={today} />} cursor={{ stroke: AXIS, strokeDasharray: "3 3" }} />
             <ReferenceLine y={floor} stroke={SERIES.floor.stroke} strokeWidth={2} strokeDasharray="6 4" label={{ value: `${t("biz.reserveMin")} ${h.cash.floor_short}`, position: "insideBottomRight", fill: SERIES.floor.stroke, fontSize: 11 }} />
             {breach !== null ? (

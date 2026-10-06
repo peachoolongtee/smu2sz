@@ -21,7 +21,7 @@ from app.api.runtime import Runtime, get_runtime
 from app.books import current_books
 from app.domain.models import Obligation, OperationStatus, SecurityEvent, SecurityEventKind
 from app.financial import EngineError
-from app.funding.recommend import plan_operations, plan_suggestions, runnable_plan
+from app.funding.recommend import plan_operations, plan_suggestions, recommend_for_alert
 from app.verifier import bind
 
 router = APIRouter(dependencies=[Depends(require_owner)])
@@ -134,12 +134,11 @@ def act_on_alert(alert_id: str, body: ActRequest | None = None) -> dict[str, Any
             # What was shown is either the alert's own cure or the router's runnable plan the home recommends
             # (app.funding.recommend); both are recomputed now and compared leg by leg (kind, facility, receivable,
             # amount, in order). Anything else means the books moved since the owner read it.
-            if (shown_suggestions is not None and alert is not None and shown_suggestions != _signature(alert)
-                    and rt.settings.features.debt_desk):
+            if shown_suggestions is not None and alert is not None and shown_suggestions != _signature(alert):
                 books = current_books(state, rt.store.commitments())
-                candidate = runnable_plan(books.state, books.with_([]), mandate)
-                if candidate is not None and shown_suggestions == plan_suggestions(candidate):
-                    plan = candidate
+                rec = recommend_for_alert(alert, books.state, books.with_([]), mandate, enabled=rt.settings.features.debt_desk)
+                if rec.plan is not None and shown_suggestions == plan_suggestions(rec.plan):
+                    plan = rec.plan
             changed = ((shown_version is not None and shown_version != state.state_version)
                        or (shown_suggestions is not None
                            and (alert is None or (shown_suggestions != _signature(alert) and plan is None))))
@@ -150,6 +149,14 @@ def act_on_alert(alert_id: str, body: ActRequest | None = None) -> dict[str, Any
                     "alert": displayed(json.loads(alert.model_dump_json())) if alert is not None else None})
         if alert is None:
             raise HTTPException(404, detail={"code": "ALERT_NOT_FOUND", "alert_id": alert_id})
+        # One fix per alert. A repeat of the same fix replays the executor's DUPLICATE (idempotent, as before); the OTHER
+        # family (the router plan while the cure waits, or the cure while the plan waits) carries different operation ids,
+        # so it is refused here rather than queued beside the first.
+        waiting = next((a for a in rt.store.approvals() if str(getattr(a.status, "value", a.status)) == "PENDING"
+                        and (a.op_id or "").startswith(f"alert:{alert.id}:")), None)
+        if waiting is not None and (":plan:" in (waiting.op_id or "")) != (plan is not None):
+            raise HTTPException(409, detail={"code": "ALREADY_QUEUED", "alert_id": alert_id, "approval_id": waiting.id,
+                                             "message": "Another fix for this alert is already waiting for your approval; nothing was run."})
         ops = (plan_operations(alert.id, plan, day=rt.day, mandate_version=mandate.version, state_version=state.state_version)
                if plan is not None else
                cure_operations(alert, day=rt.day, mandate_version=mandate.version, state_version=state.state_version))

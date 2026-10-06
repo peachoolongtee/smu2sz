@@ -53,14 +53,7 @@ from app.domain.models import (
 from app.domain.money import fmt_yuan
 from app.financial import EngineError, project
 from app.financial.lots import ensure_lots
-from app.funding.recommend import (
-    KIND_OF,
-    Recommendation,
-    cost_lines_by_leg,
-    plan_suggestions,
-    recommend,
-    runnable_plan,
-)
+from app.funding.recommend import KIND_OF, cost_lines_by_leg, plan_suggestions, recommend_for_alert, runnable_plan
 from app.operations.log import read_entries
 
 router = APIRouter(dependencies=[Depends(require_owner)])
@@ -192,7 +185,7 @@ def _plan_lines(state: FinancialState, p: FundingPlan, lang: str) -> list[dict[s
               "formula": cl.formula} for cl in p.costs]
     offset = p.total_cost_fen - sum(cl.fen for cl in p.costs)
     if offset != 0:
-        lines.append({"label": t(lang, "Change in interest on balances already drawn", "已提款余额的利息变化"),
+        lines.append({"label": t(lang, "Change in other interest and fees across the forecast", "预测期内其他利息与费用的变化"),
                       "display": fmt_yuan(offset), "formula": None})
     return lines
 
@@ -290,11 +283,7 @@ def _next_action(state: FinancialState, obs: list[Any], mandate: Mandate, found:
     horizon = mandate.horizon_days
     floor = mandate.min_cash_fen
 
-    rec = Recommendation("alert", None, None)
-    reserve_cure = alert.kind == AlertKind.RESERVE_BREACH_AHEAD and alert.inputs.get("cure_restores_reserve") != "false"
-    if use_router and reserve_cure:
-        rec = recommend(state, obs, mandate, cure_exists=bool(cure_legs_),
-                        cure_approvals=sum(1 for leg in cure_legs_ if leg["above_apr_cap"]))
+    rec = recommend_for_alert(alert, state, obs, mandate, enabled=use_router)
 
     if rec.source == "router" and rec.plan is not None:
         p = rec.plan
@@ -340,8 +329,8 @@ def _next_action(state: FinancialState, obs: list[Any], mandate: Mandate, found:
             n = sum(1 for cl in c.costs if cl.needs_owner_approval)
             words = [leg_words(state, KIND_OF[a.kind], a.facility_id, a.receivable_id, a.amount_fen, lang) for a in c.actions]
             offset = c.total_cost_fen - sum(cl.fen for cl in c.costs)
-            saving = (t(lang, f" (including {fmt_yuan(-offset)} less interest on balances already drawn)",
-                        f"（含已提款余额少付的利息 {fmt_yuan(-offset)}）") if offset < 0 else "")
+            saving = (t(lang, f" (including {fmt_yuan(-offset)} less in other interest and fees across the forecast)",
+                        f"（含预测期内其他利息与费用少付的 {fmt_yuan(-offset)}）") if offset < 0 else "")
             cheaper = {"label": t(lang, " and ".join(words), "，".join(words)), "cost_total_display": fmt_yuan(c.total_cost_fen),
                        "approvals": n, "legs": [f"{x['label']}: {x['display']}" for x in _plan_lines(state, c, lang)]}
             why = t(lang, f"The cheapest option, {fmt_yuan(c.total_cost_fen)} in all{saving}, needs {n} separate approvals; "
@@ -353,7 +342,7 @@ def _next_action(state: FinancialState, obs: list[Any], mandate: Mandate, found:
         elif alert.kind == AlertKind.RESERVE_BREACH_AHEAD:
             why = t(lang, "A committed funding that covers the whole gap in time.", "能及时覆盖整个缺口的已承诺融资。")
         else:
-            why = in_words(state, alert.detail)
+            why = relative_days(in_words(state, alert.detail), today, lang)
 
     if len(legs) == 1:
         title = legs[0]["label"]
@@ -379,10 +368,11 @@ def _next_action(state: FinancialState, obs: list[Any], mandate: Mandate, found:
         else:
             what = leg["label"]
         components.append({"amount_short": fmt_short(leg["amount_fen"] or 0), "what": what, "lands_when": leg.get("lands_when")})
+    repay = sum(leg["amount_fen"] or 0 for leg in legs if leg["operation_kind"] == "REPAY_FACILITY")
     if alert.kind == AlertKind.RESERVE_BREACH_AHEAD and receive:
         outcome_title = t(lang, f"Secure {receive_short} of funding", f"筹措 {receive_short} 资金")
-    elif alert.kind == AlertKind.FACILITY_REPAYABLE and receive:
-        outcome_title = t(lang, f"Repay {receive_short} of the credit line", f"偿还信用额度 {receive_short}")
+    elif alert.kind == AlertKind.FACILITY_REPAYABLE and repay:
+        outcome_title = t(lang, f"Repay {fmt_short(repay)} of the credit line", f"偿还信用额度 {fmt_short(repay)}")
     else:
         outcome_title = title
     plan_series: list[dict[str, Any]] | None = None
@@ -582,6 +572,8 @@ def get_home(lang: str = "en", since_day: int | None = None) -> dict[str, Any]:
         approvals = rt.store.approvals()
         pending = [a for a in approvals if str(getattr(a.status, "value", a.status)) == "PENDING"]
         status = _status(found, len(pending))
+        if since_day is not None and since_day > today:  # a marker from before a reset: the last week instead
+            since_day = None
         words = _headline(found, mandate, traj, mandate.horizon_days, today, lang)
         headline, note = words["headline"], words["note"]
         drivers = _drivers(books.state, traj, today, traj.first_breach_day, lang)
@@ -589,6 +581,12 @@ def get_home(lang: str = "en", since_day: int | None = None) -> dict[str, Any]:
         action = _next_action(books.state, books.with_([]), mandate, found, approvals, today, state.state_version, lang,
                               use_router=rt.settings.features.debt_desk)
         plan_series = action.pop("plan_series") if action is not None else None
+        if action is not None and action["kind"] == "RESERVE_BREACH_AHEAD" and words["plan_note"] is not None:
+            # The readiness note follows the plan actually shown (router plan or cure), never the alert's own flag
+            words["plan_note"] = (t(lang, "A funding plan is ready. It needs your approval because of its cost.",
+                                    "融资方案已准备好，因其成本需要您批准。") if action["needs_owner"]
+                                  else t(lang, "A funding plan is ready, within your signed limits. No approval is needed.",
+                                         "融资方案已准备好，在您签署的授权内，无需批准。"))
         series = _series(books.state, traj)
         queue = _approvals(books.state, books.with_([]), mandate, approvals, found, today, lang,
                            use_router=rt.settings.features.debt_desk)
@@ -599,7 +597,8 @@ def get_home(lang: str = "en", since_day: int | None = None) -> dict[str, Any]:
                      "detail": relative_days(in_words(state, a.detail), today, lang), "day": a.day,
                      "when": when_text(a.day, today, lang)} for a in found if a.severity == Severity.WARNING]
         facilities = [{"id": f.id, "name": f.name, "status": f.status.value, "limit_display": fmt_yuan(f.limit_fen),
-                       "drawn_display": fmt_yuan(f.drawn_fen), "available_display": fmt_yuan(max(f.limit_fen - f.drawn_fen, 0)),
+                       "drawn_display": fmt_yuan(f.drawn_fen),
+                       "available_display": fmt_yuan(max(f.limit_fen - f.drawn_fen, 0) if f.owner_approved else 0),
                        "lead_time_days": f.lead_time_days}
                       for f in state.facilities if f.status.value == "COMMITTED" and f.limit_fen > 0]
     month1 = traj.months[0] if traj.months else None

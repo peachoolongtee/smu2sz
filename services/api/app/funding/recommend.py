@@ -17,6 +17,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Literal
 
+from app.config import get_settings
 from app.domain.models import (
     Actor,
     DrawFacility,
@@ -105,3 +106,22 @@ def cost_lines_by_leg(p: FundingPlan) -> dict[tuple[str, str, str | None, int], 
     """Each cost line keyed by the operation it prices (kind, facility, receivable, amount), for the queue's cards."""
     return {(KIND_OF[a.kind], a.facility_id, a.receivable_id, a.amount_fen): cl
             for a, cl in zip(p.actions, p.costs, strict=True)}
+
+
+def offers_plan(alert: Any) -> bool:
+    """Whether an alert is one the owner is shown a funding plan for: a reserve breach with a committed cure the agent may
+    submit (not the zero-floor fallback, which never restores the reserve). The one guard every caller uses."""
+    kind = getattr(getattr(alert, "kind", None), "value", getattr(alert, "kind", None))
+    return (kind == "RESERVE_BREACH_AHEAD" and bool(getattr(alert, "actionable", False))
+            and bool(getattr(alert, "committed_cure", False)) and alert.inputs.get("cure_restores_reserve") != "false")
+
+
+def recommend_for_alert(alert: Any, state: FinancialState, obligations: list[Obligation], mandate: Mandate, *,
+                        enabled: bool | None = None) -> Recommendation:
+    """`recommend` behind the shared guard and the Debt Desk feature flag (off: the alert's cure, as before)."""
+    if enabled is None:
+        enabled = get_settings().features.debt_desk
+    if not enabled or not offers_plan(alert):
+        return Recommendation("alert", None, None)
+    return recommend(state, obligations, mandate, cure_exists=bool(alert.suggested),
+                     cure_approvals=sum(1 for s in alert.suggested if getattr(s, "above_apr_cap", False)))

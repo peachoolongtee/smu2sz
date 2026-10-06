@@ -87,10 +87,33 @@ re-recorded after every wave. Documents: this file, `docs/UX_INTEGRATION_BRIEF.m
 `docs/research/ex01-benchmark-profile-2026-10-06.md`, `docs/UX_AUDIT.md` section 18, `docs/CONTINUOUS_OPTIMIZATION.md` (UX2),
 `docs/HANDOVER.md` section 6, `apps/web/README.md`.
 
-## Test results (the gate on `dev`, 7 Oct)
+## Test results (the gate on `dev` at `30bf4ca`, then the Wave 8 fixes, 7 Oct, Mac, `SKIP_PERF_BENCH=1`)
 
-See the last section; every wave also ran its own loop (API tests, typecheck, lint, mock and live e2e, scenarios, demo run) before
-its merge, recorded on its ticket.
+| Check | Result |
+| --- | --- |
+| Backend chunk A (alerts, api, books, borrower file, capex, clock, commitments, compiler, counterparties, covenants, egress, evals, financial, funding) | 3,460 passed, 22 skipped |
+| Backend chunk B (mandate, nl, operations, persistence, security, verifier, what-if, concurrency, certification, fixtures, money) | 2,017 passed, 11 skipped |
+| `scripts/run_scenarios.py --inproc` | 49/49 scenarios, 87 turns |
+| `scripts/demo_run.py` | exit 0 |
+| `python -m app.security.attacks --report` | 0 attacks with harm, 0 commitments activated by attacks |
+| `scripts/evaluate.py` | every target PASS (task completion 49/49, attacks through /nl 0/133, protected fields disclosed 0, unauthorised operations 0) |
+| Web mock e2e (desktop + phone) | 42 to 43 passed, 1 skipped, the one known slide-over width failure (see technical debt) |
+| Web live e2e (uvicorn + live build on 3005/8005) | 34 passed |
+| `pnpm typecheck`, `pnpm lint`, `ruff check app` (the touched files) | clean |
+| `tests/api tests/alerts tests/nl` after the review fixes | 1,019 passed |
+
+Every wave also ran its own loop (API tests, typecheck, lint, mock and live e2e, scenarios, demo run) before its merge,
+recorded on its ticket. The independent code review of the whole diff (`53cd1cc..30bf4ca`) returned five major and ten minor
+findings; the fixes are in Wave 8: one shared guard and the Debt Desk flag for every caller of the recommendation (the chat
+had none), the readiness note follows the plan actually shown, the other fix family is refused with 409 `ALREADY_QUEUED`
+while one waits (a repeat of the same fix still replays the executor's DUPLICATE), one documented axis-label formatter with
+the right minus sign (the browser still computes no money a reader is asked to trust), the live spec's queue assertion now hits
+the real route, the overview rounding lives in `app/domain/money.py` with unit tests for `fmt_yuan_short`, `when_text` and
+`relative_days` (which now also rewrites "to day N", "(day N)", ", day N" and English text inside Chinese pages), the
+last-visit marker is validated and a marker later than today falls back to the week, the approvals badge refetches on
+navigation, a facility that is not owner-approved shows ¥0 available as the funding menu does, the repay recommendation's
+title and why are relative. Left as noted debt: the rate scraped from the router's prose, the Activity page's unbounded id
+replacement (pre-existing), the account menu remounting on sign-out, the badge's silent fallback on an API error.
 
 ## Screenshot and user-task review
 

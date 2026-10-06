@@ -216,7 +216,9 @@ def _end_lapsed(store: LedgerStore, state: FinancialState, to_day: int) -> tuple
     settled otherwise), is over: it moves to EXPIRED with the lapsed obligation ids recorded on it, so the owner sees
     it ended and `current_books` keeps reporting what did not arrive. Its forward concession leaves the state, as on
     revocation. A commitment with any other obligation stays as it is (the owner may revoke it)."""
-    from app.books import current_books  # the books module projects with the engine; imported where it is used
+    from app.books import (
+        current_books,  # the books module projects with the engine; imported where it is used
+    )
 
     commitments = store.commitments()
     lapsed: dict[str, list[str]] = {}

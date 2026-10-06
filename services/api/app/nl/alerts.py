@@ -25,7 +25,7 @@ from app.domain.models import (
 )
 from app.domain.money import bp, fmt_pct, fmt_yuan
 from app.financial import EngineError
-from app.funding.recommend import cost_lines_by_leg, plan_operations, recommend
+from app.funding.recommend import cost_lines_by_leg, plan_operations, recommend_for_alert
 from app.nl import landing
 from app.nl.context import NlContext
 from app.nl.models import Intent, Slots
@@ -316,12 +316,9 @@ def alerts_turn(ctx: NlContext) -> tuple[Turn, bool]:
         plan = None
         plan_costs: dict = {}
         cheaper = None
-        if breach.actionable and breach.inputs.get("cure_restores_reserve") != "false":
-            books = ctx.books(state)
-            cure_approvals = sum(1 for sg in breach.suggested if sg.above_apr_cap)
-            rec = recommend(books.state, books.with_([]), mandate, cure_exists=bool(breach.suggested),
-                            cure_approvals=cure_approvals)
-            plan, cheaper = rec.plan, rec.cheaper
+        books = ctx.books(state)
+        rec = recommend_for_alert(breach, books.state, books.with_([]), mandate)
+        plan, cheaper = rec.plan, rec.cheaper
         if plan is not None:
             ops = plan_operations(breach.id, plan, day=ctx.day, mandate_version=mandate.version,
                                   state_version=state.state_version)

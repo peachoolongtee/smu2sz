@@ -217,8 +217,10 @@ test("when the books move after the alert was shown, the act answers 409 and the
   await expect(page.getByTestId("fix-result")).toHaveCount(0);
   await expect(changed).not.toHaveClass(/text-ok-fg|bg-ok-bg/);
   // Nothing was queued: no approval holds an alert cure.
-  const queue = await (await request.get(`${API}/approvals`, { headers: { "X-Owner-Token": TOKEN } })).json();
-  expect(JSON.stringify(queue)).not.toContain("alert:");
+  const res = await request.get(`${API}/approvals/queue`, { headers: { "X-Owner-Token": TOKEN } });
+  expect(res.ok()).toBeTruthy();
+  const queue = (await res.json()) as { approvals: { op_id: string | null }[] };
+  expect(queue.approvals.filter((a) => (a.op_id ?? "").startsWith("alert:"))).toEqual([]);
   await post("/demo/reset", {});
 });
 

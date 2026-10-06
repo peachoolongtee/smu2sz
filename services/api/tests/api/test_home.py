@@ -129,7 +129,6 @@ def test_a_priced_cure_in_the_queue_carries_its_cost_and_landing_day(client):
     assert priced[0]["headline"] == "Approve ¥255,000.00 of invoice financing?"
     drawn = [x["presentation"] for x in rows if x["kind"] == "DRAW_FACILITY"]
     assert drawn[0]["cost_display"] == "¥841.64"
-    [card_if] = [c for c in h["approvals"] if c["kind"] == "SUBMIT_INVOICE_FOR_FINANCING"] if h["approvals"] else [None]
     h = client.get("/home").json()
     assert {c["cost_display"] for c in h["approvals"]} == {"¥841.64", "¥2,272.29"}
 
@@ -170,7 +169,8 @@ def test_a_late_buyer_is_named_in_receivables_and_changes(client):
     assert late["buyer_name"] == "Foshan Home Retail Co." and late["face_display"] == "¥162,800.00" and late["days_late"] == 2
     assert late["due_when"] == "2 days ago"
     assert h["receivables"]["overdue_total_display"] == "¥162,800.00"
-    assert all("day " not in c["text"] or "days" in c["text"] for c in h["changes"]), [c["text"] for c in h["changes"]]
+    import re as _re
+    assert not any(_re.search(r"\bday \d", c["text"]) for c in h["changes"]), [c["text"] for c in h["changes"]]
     assert all(c["when"] for c in h["changes"])
     assert any(c["kind"] == "LATE" and "Foshan Home Retail Co." in c["text"] for c in h["changes"])
     assert not any("Clock moved" in c["text"] for c in h["changes"])
@@ -188,15 +188,15 @@ def test_a_late_buyer_is_named_in_receivables_and_changes(client):
     # so the lines shown add up to the total and the saving is named rather than hidden in an equation
     assert c["label"] == ("Finance ¥80,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. on Invoice financing (onboarded platform) and "
                           "Finance ¥120,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. on Invoice financing (onboarded platform)")
-    assert c["legs"][-1] == "Change in interest on balances already drawn: −¥788.97"
+    assert c["legs"][-1] == "Change in other interest and fees across the forecast: −¥788.97"
     # no invoice id is left in the sentences; the two invoices of the same buyer and face stay apart by their due day
     assert c["legs"][:2] == [
         "Invoice financing (onboarded platform): advance ¥80,000.00 on the ¥420,000.00 invoice to Foshan Home Retail Co. due in 43 days: ¥1,425.75",
         "Invoice financing (onboarded platform): advance ¥120,000.00 on the ¥420,000.00 invoice to Foshan Home Retail Co. due in 13 days: ¥1,069.32"]
     assert not any("RI:BUYER-1" in c_["text"] for c_ in h["changes"]) and not any("RI:BUYER-1" in leg for leg in c["legs"])
     assert any("¥162,800.00 outstanding from Foshan Home Retail Co." in c_["text"] for c_ in h["changes"])
-    assert a["why"].startswith("The cheapest option, ¥1,706.10 in all (including ¥788.97 less interest on balances already drawn), "
-                               "needs 2 separate approvals; this one needs one.")
+    assert a["why"].startswith("The cheapest option, ¥1,706.10 in all (including ¥788.97 less in other interest and fees across the "
+                               "forecast), needs 2 separate approvals; this one needs one.")
     # queued for the owner, the approval says what declining leaves: the alert's shortfall sentence, relative to today
     client.post(f"/alerts/{a['alert_id']}/act", json={"state_version": a["state_version"], "suggestions": a["suggestions"]})
     [card] = client.get("/home").json()["approvals"]
@@ -238,3 +238,31 @@ def test_what_changed_since_the_owners_last_visit(client):
     since = client.get("/home?since_day=3").json()
     assert since["since_day"] == 3 and not any(c["kind"] == "RECEIPT" for c in since["changes"])
     assert client.get("/home?since_day=0").json()["changes"] == week["changes"]
+
+
+def test_one_fix_per_alert_the_other_family_is_refused_while_the_first_waits(client):
+    # a 5% ceiling: the router plan needs the owner, so "Run funding plan" queues its two legs
+    rt = get_runtime()
+    from app.mandate.fixture import load_demo_owner_key
+    from app.mandate.signing import sign
+    rt.store.put_mandate(sign(rt.store.get_mandate().model_copy(update={"max_apr_bp": 500}), load_demo_owner_key()["private_key_hex"]))
+    h = client.get("/home").json()
+    a = h["next_action"]
+    assert a["plan_source"] == "router" and a["needs_owner"] is True
+    first = client.post(f"/alerts/{a['alert_id']}/act", json={"state_version": a["state_version"], "suggestions": a["suggestions"]}).json()
+    assert first["pending_approval"] == 2
+    # the same plan again: the executor's DUPLICATE, nothing new queued (the contract the alerts page relies on)
+    again = client.post(f"/alerts/{a['alert_id']}/act", json={"state_version": a["state_version"], "suggestions": a["suggestions"]})
+    assert again.status_code == 200 and {x["status"] for x in again.json()["results"]} == {"DUPLICATE"}
+    # the alert's own cure (the alerts page's suggestions) while the plan waits: refused, not queued beside it
+    alert = next(x for x in client.get("/alerts").json()["alerts"] if x["id"] == a["alert_id"])
+    cure = [{"operation_kind": s["operation_kind"], "facility_id": s["facility_id"], "receivable_id": s["receivable_id"],
+             "amount_fen": s["amount_fen"]} for s in alert["suggested"]]
+    other = client.post(f"/alerts/{a['alert_id']}/act", json={"state_version": a["state_version"], "suggestions": cure})
+    assert other.status_code == 409 and other.json()["detail"]["code"] == "ALREADY_QUEUED"
+    assert len([x for x in client.get("/approvals/queue").json()["approvals"] if x["status"] == "PENDING"]) == 2
+
+
+def test_since_day_after_a_reset_falls_back_to_the_week(client):
+    h = client.get("/home?since_day=34").json()  # a visit marker from a previous run, later than today
+    assert h["since_day"] is None and h["changes"] == client.get("/home").json()["changes"]
