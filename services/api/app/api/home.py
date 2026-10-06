@@ -542,6 +542,7 @@ def _receivables(state: FinancialState, store: Any, today: int, lang: str) -> di
     upcoming = sorted((r for r in rows if not r["past_due"]), key=lambda r: (r["due_day"], r["receivable_id"]))
     nxt = upcoming[0] if upcoming else None
     total = sum(r["face_fen"] for r in rows)
+    overdue = sum(r["face_fen"] for r in past_due)
     awaited = [p for p in report.promised if p.status.value == "AWAITED"]
     promise = None
     if awaited:
@@ -549,7 +550,8 @@ def _receivables(state: FinancialState, store: Any, today: int, lang: str) -> di
         promise = {"receivable_id": p.receivable_id, "buyer_name": party_name(state, p.counterparty_id),
                    "expected_display": fmt_yuan(p.expected_fen), "promised_day": p.promised_day,
                    "when": when_text(p.promised_day, today, lang) if p.promised_day is not None else None}
-    return {"open_count": len(rows), "open_total_display": fmt_yuan(total), "past_due": past_due,
+    return {"open_count": len(rows), "open_total_display": fmt_yuan(total),
+            "overdue_total_display": fmt_yuan(overdue), "past_due": past_due,
             "next_receipt": nxt, "promised": promise, "lapsed_promises": report.lapsed_promises}
 
 

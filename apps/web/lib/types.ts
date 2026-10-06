@@ -1672,6 +1672,8 @@ export interface HomeReceivable {
 export interface HomeReceivables {
   open_count: number;
   open_total_display: string;
+  /** The server's sum of the past-due invoices' face amounts. */
+  overdue_total_display: string;
   past_due: HomeReceivable[];
   next_receipt: HomeReceivable | null;
   promised: { receivable_id: string; buyer_name: string; expected_display: string; promised_day: Day | null; when: string | null } | null;

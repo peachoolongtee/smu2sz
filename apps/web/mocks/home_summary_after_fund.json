@@ -927,6 +927,7 @@
   "receivables": {
     "open_count": 1,
     "open_total_display": "¥420,000.00",
+    "overdue_total_display": "¥0.00",
     "past_due": [],
     "next_receipt": {
       "receivable_id": "RCV-A",
