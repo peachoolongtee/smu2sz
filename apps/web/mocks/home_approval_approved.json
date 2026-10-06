@@ -35,8 +35,10 @@
     "rate_text": null,
     "cost_due_day": null,
     "lands_day": 37,
+    "lands_when": "in 3 days",
     "protects": null,
     "reason": "effective annual cost 32.52% is above the mandate's 15.00% ceiling for what the agent may borrow alone (all charges on ¥200,000.00 held 10 days (day 37 to day 47), annualised = 32.52%)",
-    "result_message": "Advance ¥200,000.00 on RI:BUYER-1:2 from Invoice financing (onboarded platform) on day 34; the cash lands on day 37 after the 3-day lead time, not today"
+    "result_message": "Advance ¥200,000.00 on RI:BUYER-1:2 from Invoice financing (onboarded platform) today; the cash lands in 3 days after the 3-day lead time, not today",
+    "decided_when": "today"
   }
 }

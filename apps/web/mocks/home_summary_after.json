@@ -3,14 +3,16 @@
   "state_version": 8,
   "lang": "en",
   "status": "WATCH",
-  "headline": "Cash stays above your ¥300,000.00 safe level for the next 120 days.",
-  "note": "It comes close: cash sits exactly on the safe level on day 34 (today).",
+  "headline": "Cash stays above your ¥300,000.00 minimum cash reserve for the next 120 days.",
+  "note": "It comes close: cash sits exactly on the minimum cash reserve today.",
   "cash": {
     "cash_fen": 30000000,
     "floor_fen": 30000000,
     "lowest_fen": 30000000,
     "lowest_day": 0,
     "first_breach_day": null,
+    "lowest_when": "34 days ago",
+    "first_breach_when": null,
     "horizon_days": 120,
     "in_transit": {
       "total_display": "¥200,000.00",
@@ -18,7 +20,8 @@
         {
           "facility_name": "Invoice financing (onboarded platform)",
           "amount_display": "¥200,000.00",
-          "arrival_day": 37
+          "arrival_day": 37,
+          "arrival_when": "in 3 days"
         }
       ]
     },
@@ -1080,21 +1083,24 @@
       "seq": 8,
       "kind": "OPERATION",
       "actor": "AGENT",
-      "text": "Advance ¥200,000.00 on RI:BUYER-1:2 from Invoice financing (onboarded platform) on day 34; the cash lands on day 37 after the 3-day lead time, not today"
+      "text": "Advance ¥200,000.00 on RI:BUYER-1:2 from Invoice financing (onboarded platform) today; the cash lands in 3 days after the 3-day lead time, not today",
+      "when": "today"
     },
     {
       "day": 34,
       "seq": 7,
       "kind": "WAITING",
       "actor": "AGENT",
-      "text": "Queued for owner approval (APR-000001): effective annual cost 32.52% is above the mandate's 15.00% ceiling for what the agent may borrow alone (all charges on ¥200,000.00 held 10 days (day 37 to day 47), annualised = 32.52%)"
+      "text": "Queued for owner approval (APR-000001): effective annual cost 32.52% is above the mandate's 15.00% ceiling for what the agent may borrow alone (all charges on ¥200,000.00 held 10 days (day 37 to day 47), annualised = 32.52%)",
+      "when": "today"
     },
     {
       "day": 32,
       "seq": null,
       "kind": "LATE",
       "actor": "",
-      "text": "¥162,800.00 outstanding from Foshan Home Retail Co. was due on day 32 and is still OPEN."
+      "text": "¥162,800.00 outstanding from Foshan Home Retail Co. was due 2 days ago and is still OPEN.",
+      "when": "2 days ago"
     }
   ],
   "receivables": {
@@ -1108,6 +1114,7 @@
         "face_fen": 16280000,
         "face_display": "¥162,800.00",
         "due_day": 32,
+        "due_when": "2 days ago",
         "past_due": true,
         "days_late": 2,
         "invoice": "the ¥420,000.00 invoice to Foshan Home Retail Co."
@@ -1120,6 +1127,7 @@
       "face_fen": 42000000,
       "face_display": "¥420,000.00",
       "due_day": 47,
+      "due_when": "in 13 days",
       "past_due": false,
       "days_late": 0,
       "invoice": "the ¥420,000.00 invoice to Foshan Home Retail Co."
@@ -1132,15 +1140,17 @@
       "id": "ALERT-PASTDUE-RCV-A",
       "kind": "RECEIVABLE_PAST_DUE",
       "title": "Receivable RCV-A is 2 day(s) past due",
-      "detail": "¥162,800.00 outstanding from Foshan Home Retail Co. was due on day 32 and is still OPEN. The conservative trajectory no longer counts on a dated receipt.",
-      "day": 32
+      "detail": "¥162,800.00 outstanding from Foshan Home Retail Co. was due 2 days ago and is still OPEN. The conservative trajectory no longer counts on a dated receipt.",
+      "day": 32,
+      "when": "2 days ago"
     },
     {
       "id": "ALERT-HEADROOM-34",
       "kind": "RESERVE_HEADROOM_LOW",
-      "title": "Reserve headroom thin on day 34",
-      "detail": "Cash stays above the floor but only by ¥0.00 on day 34 (8 day(s) under 10% of the floor).",
-      "day": 34
+      "title": "Reserve headroom thin today",
+      "detail": "Cash stays above the floor but only by ¥0.00 today (8 day(s) under 10% of the floor).",
+      "day": 34,
+      "when": "today"
     }
   ],
   "facilities": [

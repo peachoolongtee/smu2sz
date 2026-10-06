@@ -29,7 +29,9 @@ from app.api.presentation import (
     lead_days,
     leg_words,
     party_name,
+    relative_days,
     t,
+    when_text,
 )
 from app.api.presentation import (
     needs_owner_reason as needs_owner_reason_words,
@@ -88,14 +90,7 @@ def _status(found: list[Alert], pending: int) -> str:
 
 
 def _distance(day: int | None, today: int, lang: str) -> str:
-    if day is None:
-        return ""
-    n = day - today
-    if n <= 0:
-        return t(lang, "today", "今天")
-    if n == 1:
-        return t(lang, "tomorrow", "明天")
-    return t(lang, f"in {n} days", f"{n} 天后")
+    return when_text(day, today, lang)
 
 
 def _headline(found: list[Alert], mandate: Mandate, t_min_fen: int, t_min_day: int, horizon: int, today: int,
@@ -107,19 +102,20 @@ def _headline(found: list[Alert], mandate: Mandate, t_min_fen: int, t_min_day: i
         when = _distance(breach.day, today, lang)
         if breach.inputs.get("cure_restores_reserve") == "false":
             zero = breach.inputs.get("zero_day", "")
-            head = t(lang, f"Cash goes below zero on day {zero} ({_distance(int(zero), today, lang)}) if nothing is done.",
-                     f"若不采取行动，现金将在第 {zero} 天（{_distance(int(zero), today, lang)}）跌破零。")
-            note = t(lang, f"The agent can keep cash at or above zero, but no committed funding restores your {floor} "
-                           f"safe level: that needs your decision.",
-                     f"代理可以让现金保持在零以上，但没有已承诺的融资能恢复您 {floor} 的安全线，需要您决定。")
+            head = t(lang, f"Cash goes below zero {_distance(int(zero), today, lang)} if nothing is done.",
+                     f"若不采取行动，现金将在{_distance(int(zero), today, lang)}跌破零。")
+            note = t(lang, f"Cash can be kept at or above zero, but no committed funding restores your {floor} "
+                           f"minimum cash reserve: that needs your decision.",
+                     f"现金可以保持在零以上，但没有已承诺的融资能恢复您 {floor} 的最低现金储备，需要您决定。")
             return head, note
-        head = t(lang, f"Cash falls {short} below your {floor} safe level on day {breach.day} ({when}).",
-                 f"现金将在第 {breach.day} 天（{when}）比您 {floor} 的安全线低 {short}。")
+        head = t(lang, f"Cash falls {short} below your {floor} minimum cash reserve {when}.",
+                 f"现金将在{when}比您 {floor} 的最低现金储备低 {short}。")
         if breach.committed_cure and any(s.above_apr_cap for s in breach.suggested):
-            note = t(lang, "The agent has a fix ready. It needs your approval because of its cost.",
-                     "代理已准备好解决方案，因其成本需要您批准。")
+            note = t(lang, "A funding plan is ready. It needs your approval because of its cost.",
+                     "融资方案已准备好，因其成本需要您批准。")
         elif breach.committed_cure:
-            note = t(lang, "The agent has a fix ready and can run it alone.", "代理已准备好解决方案，可自行执行。")
+            note = t(lang, "A funding plan is ready, within your signed limits. No approval is needed.",
+                     "融资方案已准备好，在您签署的授权内，无需批准。")
         elif not mandate.allow_new_borrowing:
             note = t(lang, "Your limits do not allow new borrowing, so no funding can fix it.",
                      "您的授权不允许新增借款，因此无法通过融资解决。")
@@ -128,24 +124,22 @@ def _headline(found: list[Alert], mandate: Mandate, t_min_fen: int, t_min_day: i
                      "没有已承诺的融资能解决它，需要您决定。")
         return head, note
     warnings = [a for a in found if a.severity == Severity.WARNING]
-    head = t(lang, f"Cash stays above your {floor} safe level for the next {horizon} days.",
-             f"未来 {horizon} 天现金都保持在您 {floor} 的安全线以上。")
+    head = t(lang, f"Cash stays above your {floor} minimum cash reserve for the next {horizon} days.",
+             f"未来 {horizon} 天现金都保持在您 {floor} 的最低现金储备以上。")
     if warnings:
         thin = next((a for a in warnings if a.kind == AlertKind.RESERVE_HEADROOM_LOW), None)
         if thin is not None and thin.day is not None and not thin.amount_fen:
-            note = t(lang, f"It comes close: cash sits exactly on the safe level on day {thin.day} "
-                           f"({_distance(thin.day, today, lang)}).",
-                     f"但会很接近：第 {thin.day} 天（{_distance(thin.day, today, lang)}）现金恰好等于安全线。")
+            note = t(lang, f"It comes close: cash sits exactly on the minimum cash reserve {_distance(thin.day, today, lang)}.",
+                     f"但会很接近：{_distance(thin.day, today, lang)}现金恰好等于最低现金储备。")
         elif thin is not None and thin.day is not None:
-            note = t(lang, f"It comes close: only {fmt_yuan(thin.amount_fen or 0)} above the safe level on day {thin.day} "
-                           f"({_distance(thin.day, today, lang)}).",
-                     f"但会很接近：第 {thin.day} 天（{_distance(thin.day, today, lang)}）仅高出安全线 "
-                     f"{fmt_yuan(thin.amount_fen or 0)}。")
+            note = t(lang, f"It comes close: only {fmt_yuan(thin.amount_fen or 0)} above the minimum cash reserve "
+                           f"{_distance(thin.day, today, lang)}.",
+                     f"但会很接近：{_distance(thin.day, today, lang)}仅高出最低现金储备 {fmt_yuan(thin.amount_fen or 0)}。")
         else:
             note = warnings[0].title
         return head, note
-    return head, t(lang, f"Lowest cash ahead is {fmt_yuan(t_min_fen)} on day {t_min_day}.",
-                   f"未来最低现金为第 {t_min_day} 天的 {fmt_yuan(t_min_fen)}。")
+    return head, t(lang, f"Lowest cash ahead is {fmt_yuan(t_min_fen)}, {_distance(t_min_day, today, lang)}.",
+                   f"未来最低现金为 {fmt_yuan(t_min_fen)}（{_distance(t_min_day, today, lang)}）。")
 
 
 def _rate_in(reason: str) -> str | None:
@@ -158,7 +152,8 @@ def _plan_lines(state: FinancialState, p: FundingPlan, lang: str) -> list[dict[s
     """The router's cost lines, in words, plus one more line when its total is not their sum: the router's total is
     the net change in charges the plan makes to the whole projection, so a plan that lets an existing balance be
     repaid sooner carries that saving as a negative line here, and the lines always add up to the total shown."""
-    lines = [{"label": in_words(state, cl.label), "display": fmt_yuan(cl.fen), "formula": cl.formula} for cl in p.costs]
+    lines = [{"label": relative_days(in_words(state, cl.label), state.as_of_day, lang), "display": fmt_yuan(cl.fen),
+              "formula": cl.formula} for cl in p.costs]
     offset = p.total_cost_fen - sum(cl.fen for cl in p.costs)
     if offset != 0:
         lines.append({"label": t(lang, "Change in interest on balances already drawn", "已提款余额的利息变化"),
@@ -187,6 +182,7 @@ def _plan_legs(state: FinancialState, p: FundingPlan, today: int, lang: str) -> 
             "cost_days": None,
             "cost_due_day": a.repay_day,
             "lands_day": a.lands_day if a.lands_day is not None else today + lead_days(state, a.facility_id),
+            "lands_when": when_text(a.lands_day if a.lands_day is not None else today + lead_days(state, a.facility_id), today, lang),
             "above_apr_cap": cl.needs_owner_approval,
             "formula": cl.formula,
         })
@@ -200,9 +196,10 @@ def _plan_basis(state: FinancialState, p: FundingPlan, lang: str) -> str:
     for a in p.actions:
         if a.kind == FundingActionKind.DRAW and a.repay_day is not None:
             name = facility_name(state, a.facility_id)
-            parts.append(t(lang, f"Estimated through the expected repayment of the {name} on day {a.repay_day}, the first "
+            when = when_text(a.repay_day, state.as_of_day, lang)
+            parts.append(t(lang, f"Estimated through the expected repayment of the {name} {when}, the first "
                                  f"receipt that can repay it; the final interest depends on the actual repayment day.",
-                           f"按预计第 {a.repay_day} 天（第一笔足以还款的收款）偿还{name}估算；最终利息取决于实际还款日。"))
+                           f"按预计{when}（第一笔足以还款的收款）偿还{name}估算；最终利息取决于实际还款日。"))
     if any(a.kind == FundingActionKind.FINANCE_INVOICE for a in p.actions):
         parts.append(t(lang, "Invoice financing is billed in whole 30-day periods until the invoice is paid.",
                        "发票融资按整 30 天计费，直至发票付清。"))
@@ -234,10 +231,10 @@ def _after_words(after: Any, floor: int, today: int, horizon: int, lang: str) ->
     """The after-state of a plan from its own projection: the first day cash is below the reserve, if any."""
     first = next((d.day for d in after.days if d.day >= today and d.closing_fen < floor), None)
     if first is None:
-        return t(lang, f"Cash stays above your safe level for the next {horizon} days.",
-                 f"未来 {horizon} 天现金都保持在您的安全线以上。")
-    return t(lang, f"Cash stays above your safe level through day {first - 1}.",
-             f"现金在第 {first - 1} 天前都保持在安全线以上。")
+        return t(lang, f"Cash stays above your minimum cash reserve for the next {horizon} days.",
+                 f"未来 {horizon} 天现金都保持在您的最低现金储备以上。")
+    return t(lang, f"Cash stays above your minimum cash reserve for the next {max(first - 1 - today, 0)} days.",
+             f"未来 {max(first - 1 - today, 0)} 天现金都保持在最低现金储备以上。")
 
 
 def _next_action(state: FinancialState, obs: list[Any], mandate: Mandate, found: list[Alert], approvals: list[Any],
@@ -274,8 +271,8 @@ def _next_action(state: FinancialState, obs: list[Any], mandate: Mandate, found:
         cost_note = None
         actions = list(p.actions)
         suggestions = plan_suggestions(p)
-        why = t(lang, "The cheapest plan your committed facilities can fund in time, within the agent's search.",
-                "在代理的搜索范围内，您已承诺的额度能及时覆盖缺口的最便宜方案。")
+        why = t(lang, "The cheapest plan your committed facilities can fund in time, within the bounded search.",
+                "在有界搜索范围内，您已承诺的额度能及时覆盖缺口的最便宜方案。")
         cheaper = None
     else:
         legs = cure_legs_
@@ -342,21 +339,23 @@ def _next_action(state: FinancialState, obs: list[Any], mandate: Mandate, found:
     if alert.kind == AlertKind.RESERVE_BREACH_AHEAD:
         short = fmt_yuan(alert.amount_fen or 0)
         if alert.inputs.get("cure_restores_reserve") == "false":
-            if_nothing = t(lang, f"Cash goes below zero on day {alert.inputs.get('zero_day')}.",
-                           f"现金将在第 {alert.inputs.get('zero_day')} 天跌破零。")
-            after = t(lang, f"Cash stays at or above zero, but your safe level is still {alert.inputs.get('residual_shortfall')} "
-                            f"short on the worst day.",
-                      f"现金保持在零以上，但最差的一天仍比安全线低 {alert.inputs.get('residual_shortfall')}。")
+            zero_when = when_text(int(alert.inputs.get("zero_day", today)), today, lang)
+            if_nothing = t(lang, f"Cash goes below zero {zero_when}.", f"现金将在{zero_when}跌破零。")
+            after = t(lang, f"Cash stays at or above zero, but your minimum cash reserve is still "
+                            f"{alert.inputs.get('residual_shortfall')} short on the worst day.",
+                      f"现金保持在零以上，但最差的一天仍比最低现金储备低 {alert.inputs.get('residual_shortfall')}。")
         else:
-            if_nothing = t(lang, f"{short} below your safe level on day {alert.day}; the gap peaks at "
-                                 f"{alert.inputs.get('max_shortfall', short)} on day {alert.inputs.get('worst_day', alert.day)}.",
-                           f"第 {alert.day} 天比安全线低 {short}；缺口在第 {alert.inputs.get('worst_day', alert.day)} 天最大，为 "
+            worst_when = when_text(int(alert.inputs.get("worst_day", alert.day or today)), today, lang)
+            if_nothing = t(lang, f"{short} below your minimum cash reserve {when_text(alert.day, today, lang)}; the gap peaks at "
+                                 f"{alert.inputs.get('max_shortfall', short)} {worst_when}.",
+                           f"{when_text(alert.day, today, lang)}比最低现金储备低 {short}；缺口在{worst_when}最大，为 "
                            f"{alert.inputs.get('max_shortfall', short)}。")
             if after_traj is not None:
                 after = _after_words(after_traj, floor, today, horizon, lang)
             else:
-                after = t(lang, f"Cash stays above your safe level through day {alert.inputs.get('last_day', alert.day)}.",
-                          f"现金在第 {alert.inputs.get('last_day', alert.day)} 天前都保持在安全线以上。")
+                last = int(alert.inputs.get("last_day", alert.day or today))
+                after = t(lang, f"Cash stays above your minimum cash reserve for the next {max(last - today, 0)} days.",
+                          f"未来 {max(last - today, 0)} 天现金都保持在最低现金储备以上。")
     else:
         if_nothing = t(lang, "Interest keeps running on the drawn balance.", "已提款余额将继续产生利息。")
         after = t(lang, "The balance is repaid and the interest stops.", "余额还清，利息停止。")
@@ -378,12 +377,17 @@ def _next_action(state: FinancialState, obs: list[Any], mandate: Mandate, found:
         "rate_text": next((leg["rate_text"] for leg in legs if leg["rate_text"]), None),
         "cost_days": next((leg["cost_days"] for leg in legs if leg["cost_days"]), None),
         "lands_day": max(lands) if lands else None,
+        "lands_when": when_text(max(lands), today, lang) if lands else None,
         "needs_owner": needs_owner,
         "needs_owner_reason": needs_owner_reason,
+        "authority_text": (t(lang, f"Needs your approval: {needs_owner_reason}" if needs_owner_reason else "Needs your approval.",
+                             f"需要您批准：{needs_owner_reason}" if needs_owner_reason else "需要您批准。") if needs_owner
+                           else t(lang, "Within your signed limits. No additional approval required.",
+                                  "在您签署的授权内，无需额外批准。")),
         "if_nothing": if_nothing,
         "after": after,
         "why": why,
-        "detail": in_words(state, alert.detail),
+        "detail": relative_days(in_words(state, alert.detail), today, lang),
         "formula": alert.formula,
         "pending_approval_id": queued.id if queued is not None else None,
         "state_version": state_version,
@@ -411,7 +415,7 @@ def _approvals(state: FinancialState, obs: list[Any], mandate: Mandate, approval
             alert = by_id.get(a.op_id.split(":")[1])
         words = approval_words(state, op, a.kind, today, alert, lang, plan_costs)
         amount = op.get("amount_fen", op.get("advance_fen"))
-        out.append({"id": a.id, "kind": a.kind, "reason": in_words(state, a.reason), "created_day": op.get("day"),
+        out.append({"id": a.id, "kind": a.kind, "reason": relative_days(in_words(state, a.reason), today, lang), "created_day": op.get("day"),
                     "amount_fen": amount if isinstance(amount, int) else None,
                     "amount_display": fmt_yuan(amount) if isinstance(amount, int) else None, **words})
     return out
@@ -440,16 +444,19 @@ def _changes(state: FinancialState, store: Any, found: list[Alert], today: int, 
                                f"{fmt_yuan(cmt.forward_value_fen)}.",
                          f"已记录与{party_name(state, cmt.counterparty_id)}的协议；已入账的未来让利：{fmt_yuan(cmt.forward_value_fen)}。")
                 kind = "AGREEMENT"
-        items.append({"day": day, "seq": e.seq, "kind": kind, "actor": who, "text": text})
+        items.append({"day": day, "seq": e.seq, "kind": kind, "actor": who, "text": relative_days(text, today, lang),
+                      "when": when_text(day, today, lang)})
     for a in found:
         if a.kind == AlertKind.RECEIVABLE_PAST_DUE:
             items.append({"day": a.day, "seq": None, "kind": "LATE", "actor": "",
-                          "text": in_words(state, a.detail.split(". ")[0] + ".")})
+                          "text": relative_days(in_words(state, a.detail.split(". ")[0] + "."), today, lang),
+                          "when": when_text(a.day, today, lang)})
     for lot in ensure_lots(state).lots:
         if lot.settled and since <= lot.arrival_day <= today and lot.arrival_day != lot.request_day:
             items.append({"day": lot.arrival_day, "seq": None, "kind": "LANDED", "actor": "",
-                          "text": t(lang, f"{fmt_yuan(lot.principal_fen)} from {facility_name(state, lot.facility_id)} landed on day {lot.arrival_day}.",
-                                    f"来自{facility_name(state, lot.facility_id)}的 {fmt_yuan(lot.principal_fen)} 已于第 {lot.arrival_day} 天到账。")})
+                          "when": when_text(lot.arrival_day, today, lang),
+                          "text": t(lang, f"{fmt_yuan(lot.principal_fen)} from {facility_name(state, lot.facility_id)} landed {when_text(lot.arrival_day, today, lang)}.",
+                                    f"来自{facility_name(state, lot.facility_id)}的 {fmt_yuan(lot.principal_fen)} 已于{when_text(lot.arrival_day, today, lang)}到账。")})
     items.sort(key=lambda x: (-(x["day"] or 0), -(x["seq"] or 0)))
     return items[:MAX_CHANGES]
 
@@ -460,7 +467,8 @@ def _receivables(state: FinancialState, store: Any, today: int, lang: str) -> di
     for o in report.outstanding:
         rows.append({"receivable_id": o.receivable_id, "buyer_id": o.counterparty_id,
                      "buyer_name": party_name(state, o.counterparty_id), "face_fen": o.face_fen,
-                     "face_display": fmt_yuan(o.face_fen), "due_day": o.due_day, "past_due": o.past_due,
+                     "face_display": fmt_yuan(o.face_fen), "due_day": o.due_day, "due_when": when_text(o.due_day, today, lang),
+                     "past_due": o.past_due,
                      "days_late": max(0, today - o.due_day) if o.past_due else 0,
                      "invoice": invoice_words(state, o.receivable_id, lang)})
     past_due = [r for r in rows if r["past_due"]]
@@ -472,19 +480,21 @@ def _receivables(state: FinancialState, store: Any, today: int, lang: str) -> di
     if awaited:
         p = min(awaited, key=lambda p: (p.promised_day if p.promised_day is not None else 10**6))
         promise = {"receivable_id": p.receivable_id, "buyer_name": party_name(state, p.counterparty_id),
-                   "expected_display": fmt_yuan(p.expected_fen), "promised_day": p.promised_day}
+                   "expected_display": fmt_yuan(p.expected_fen), "promised_day": p.promised_day,
+                   "when": when_text(p.promised_day, today, lang) if p.promised_day is not None else None}
     return {"open_count": len(rows), "open_total_display": fmt_yuan(total), "past_due": past_due,
             "next_receipt": nxt, "promised": promise, "lapsed_promises": report.lapsed_promises}
 
 
-def _in_transit(state: FinancialState) -> dict[str, Any] | None:
+def _in_transit(state: FinancialState, today: int, lang: str) -> dict[str, Any] | None:
     lots = [lot for lot in ensure_lots(state).lots if not lot.settled]
     if not lots:
         return None
     total = sum(lot.remaining_fen for lot in lots)
     return {"total_display": fmt_yuan(total), "lots": [
         {"facility_name": facility_name(state, lot.facility_id), "amount_display": fmt_yuan(lot.remaining_fen),
-         "arrival_day": lot.arrival_day} for lot in sorted(lots, key=lambda lt: (lt.arrival_day, lt.id))]}
+         "arrival_day": lot.arrival_day, "arrival_when": when_text(lot.arrival_day, today, lang)}
+        for lot in sorted(lots, key=lambda lt: (lt.arrival_day, lt.id))]}
 
 
 @router.get("/home")
@@ -512,9 +522,10 @@ def get_home(lang: str = "en") -> dict[str, Any]:
                            use_router=rt.settings.features.debt_desk)
         changes = _changes(books.state, rt.store, found, today, lang)
         receivables = _receivables(books.state, rt.store, today, lang)
-        in_transit = _in_transit(books.state)
-        warnings = [{"id": a.id, "kind": a.kind.value, "title": in_words(state, a.title), "detail": in_words(state, a.detail),
-                     "day": a.day} for a in found if a.severity == Severity.WARNING]
+        in_transit = _in_transit(books.state, today, lang)
+        warnings = [{"id": a.id, "kind": a.kind.value, "title": relative_days(in_words(state, a.title), today, lang),
+                     "detail": relative_days(in_words(state, a.detail), today, lang), "day": a.day,
+                     "when": when_text(a.day, today, lang)} for a in found if a.severity == Severity.WARNING]
         facilities = [{"id": f.id, "name": f.name, "status": f.status.value, "limit_display": fmt_yuan(f.limit_fen),
                        "drawn_display": fmt_yuan(f.drawn_fen), "available_display": fmt_yuan(max(f.limit_fen - f.drawn_fen, 0)),
                        "lead_time_days": f.lead_time_days}
@@ -537,6 +548,8 @@ def get_home(lang: str = "en") -> dict[str, Any]:
             "lowest_fen": traj.min_cash_fen,
             "lowest_day": traj.min_cash_day,
             "first_breach_day": traj.first_breach_day,
+            "lowest_when": when_text(traj.min_cash_day, today, lang),
+            "first_breach_when": when_text(traj.first_breach_day, today, lang) if traj.first_breach_day is not None else None,
             "horizon_days": mandate.horizon_days,
             "in_transit": in_transit,
             "dscr_text": dscr_text,

@@ -32,7 +32,7 @@ export function DecisionsBlock({ approvals }: { approvals: HomeApproval[] }) {
             <li key={a.id} className="rounded-md border border-warn-line bg-warn-bg/40 px-3 py-2" data-testid={`home-approval-${a.id}`}>
               <p className="text-sm font-semibold text-ink">{a.headline}</p>
               <p className="mt-0.5 text-xs text-ink-2">
-                {[a.cost_display ? t("alerts.cost", { cost: a.cost_display }) : null, a.lands_day !== null ? t("biz.landsShort", { n: a.lands_day }) : null, a.protects]
+                {[a.cost_display ? t("alerts.cost", { cost: a.cost_display }) : null, a.lands_day !== null ? t("biz.landsShort", { when: a.lands_when ?? "" }) : null, a.protects]
                   .filter(Boolean)
                   .join(" · ")}
               </p>
@@ -65,7 +65,7 @@ export function ChangesBlock({ changes }: { changes: HomeChange[] }) {
               </span>
               <span className="min-w-0">
                 <span className="block break-words text-sm text-ink">{c.text}</span>
-                <span className="block text-xs text-ink-3">{c.day !== null ? t("common.dayN", { n: c.day }) : ""}</span>
+                <span className="block text-xs text-ink-3">{c.when}</span>
               </span>
             </li>
           ))}
@@ -85,7 +85,7 @@ export function ReceivablesBlock({ r }: { r: HomeReceivables }) {
           {r.past_due.map((x) => (
             <li key={x.receivable_id} className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-bad-line bg-bad-bg/40 px-3 py-2 text-sm" data-testid={`home-late-${x.receivable_id}`}>
               <span className="font-medium text-ink">{x.buyer_name}</span>
-              <span className="text-ink-2">{t("biz.late", { amount: x.face_display, days: x.days_late, due: x.due_day })}</span>
+              <span className="text-ink-2">{t("biz.late", { amount: x.face_display, days: x.days_late, when: x.due_when })}</span>
             </li>
           ))}
         </ul>
@@ -96,9 +96,9 @@ export function ReceivablesBlock({ r }: { r: HomeReceivables }) {
       )}
       <p className="mt-3 text-sm text-ink-2" data-testid="home-next-receipt">
         {r.promised
-          ? t("biz.promised", { amount: r.promised.expected_display, buyer: r.promised.buyer_name, day: r.promised.promised_day ?? "" })
+          ? t("biz.promised", { amount: r.promised.expected_display, buyer: r.promised.buyer_name, when: r.promised.when ?? "" })
           : r.next_receipt
-            ? t("biz.nextReceipt", { amount: r.next_receipt.face_display, buyer: r.next_receipt.buyer_name, day: r.next_receipt.due_day })
+            ? t("biz.nextReceipt", { amount: r.next_receipt.face_display, buyer: r.next_receipt.buyer_name, when: r.next_receipt.due_when })
             : t("biz.nextReceipt.none")}
       </p>
     </Card>
@@ -118,7 +118,7 @@ export function DetailsBlock({ h }: { h: HomeView }) {
             <ul className="text-sm">
               {h.cash.in_transit.lots.map((l, i) => (
                 <li key={i} data-testid="in-transit-lot">
-                  {t("transit.lands", { amount: l.amount_display, n: l.arrival_day })} <span className="text-ink-3">· {l.facility_name}</span>
+                  {t("biz.transit.lands", { amount: l.amount_display, when: l.arrival_when })} <span className="text-ink-3">· {l.facility_name}</span>
                 </li>
               ))}
             </ul>

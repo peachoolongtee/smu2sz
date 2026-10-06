@@ -11,7 +11,7 @@ from pydantic import BaseModel, TypeAdapter, ValidationError
 
 from app.alerts import alerts
 from app.api.auth import is_bank_feed, log_refusal, require_owner, require_owner_or_agent
-from app.api.presentation import approval_words, in_words
+from app.api.presentation import approval_words, in_words, relative_days
 from app.api.runtime import get_runtime
 from app.books import current_books
 from app.domain.models import Actor, Operation, OperationStatus
@@ -97,8 +97,11 @@ def approvals_queue() -> dict:
         # Presentation fields (business words) for the owner's card: the question, names, cost and landing day.
         alert = open_alerts.get((a.op_id or "").split(":")[1]) if (a.op_id or "").startswith("alert:") else None
         d["presentation"] = approval_words(state, op, a.kind, rt.day, alert, "en", plan_costs)
-        d["presentation"]["reason"] = in_words(state, a.reason)
-        d["presentation"]["result_message"] = in_words(state, d["result_message"]) if d["result_message"] else None
+        d["presentation"]["reason"] = relative_days(in_words(state, a.reason), rt.day, "en")
+        d["presentation"]["result_message"] = (relative_days(in_words(state, d["result_message"]), rt.day, "en")
+                                               if d["result_message"] else None)
+        d["presentation"]["decided_when"] = (relative_days(f"on day {d['decided_day']}", rt.day, "en")
+                                             if d.get("decided_day") is not None else None)
         out.append(d)
     return {"approvals": out}
 

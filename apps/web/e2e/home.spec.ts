@@ -44,8 +44,12 @@ test("the Business home answers safe, do and cost on the opening books, without 
   await page.goto("/");
   await expect(page.getByTestId("home-status")).toHaveAttribute("data-status", "ACTION_NEEDED");
   await expect(page.getByTestId("home-status-word")).toHaveText("Action needed");
-  await expect(page.getByTestId("home-headline")).toHaveText("Cash falls ¥240,000.00 below your ¥300,000.00 safe level on day 12 (in 12 days).");
-  await expect(page.getByTestId("home-note")).toContainText("can run it alone");
+  // Business words: the reserve, days as distances from today, authority as the owner's signed limits; no "Day N" anywhere.
+  await expect(page.getByTestId("home-headline")).toHaveText("Cash falls ¥240,000.00 below your ¥300,000.00 minimum cash reserve in 12 days.");
+  await expect(page.getByTestId("home-note")).toContainText("within your signed limits");
+  await expect(page.getByTestId("home-lowest-when")).toHaveText("in 30 days");
+  await expect(page.getByTestId("demo-data-indicator")).toHaveCount(1);
+  await expect(page.locator("body")).not.toContainText(/\bDay \d/);
   await expect(page.getByTestId("home-cash")).toHaveText("¥400,000.00");
   await expect(page.getByTestId("home-lowest")).toHaveText("−¥105,000.00");
   // The best next action: what, how much, cost, when, who decides, what if nothing, after.
@@ -57,12 +61,13 @@ test("the Business home answers safe, do and cost on the opening books, without 
   await expect(action.getByTestId("next-action-cost")).toContainText("¥3,113.93");
   await expect(action.getByTestId("next-action-cost-breakdown")).toContainText("¥841.64");
   await expect(action.getByTestId("next-action-cost-breakdown")).toContainText("¥2,272.29");
-  await expect(action.getByTestId("next-action-cost-basis")).toContainText("expected repayment of the Bank credit line on day 32");
+  await expect(action.getByTestId("next-action-cost-basis")).toContainText("expected repayment of the Bank credit line in 32 days");
   await expect(action).not.toContainText("not included");
-  await expect(action).toContainText("Day 3");
-  await expect(action).toContainText("The agent can do this alone");
-  await expect(action.getByTestId("next-action-if-nothing")).toContainText("¥240,000.00 below your safe level on day 12");
-  await expect(action.getByTestId("next-action-after")).toContainText("Cash stays above your safe level for the next 120 days");
+  await expect(action.getByTestId("next-action-lands")).toHaveText("in 3 days");
+  await expect(action.getByTestId("next-action-within-limits")).toHaveText("Within your signed limits. No additional approval required.");
+  await expect(action).not.toContainText("agent");
+  await expect(action.getByTestId("next-action-if-nothing")).toContainText("¥240,000.00 below your minimum cash reserve in 12 days");
+  await expect(action.getByTestId("next-action-after")).toContainText("Cash stays above your minimum cash reserve for the next 120 days");
   await expect(page.getByTestId("fix-ALERT-RESERVE-12")).toHaveText("Go ahead");
   // Nothing from the demo on the owner's screen: no stepper, no clock, no mock pill, no engine navigation.
   await expect(page.getByRole("region", { name: "Guided demo" })).toHaveCount(0);
@@ -70,7 +75,7 @@ test("the Business home answers safe, do and cost on the opening books, without 
   await expect(page.getByText("Mock data")).toHaveCount(0);
   await expect(page.getByRole("navigation").getByRole("link", { name: "Trajectory" })).toHaveCount(0);
   await expect(page.getByTestId("home-waiting-empty")).toBeVisible();
-  await expect(page.getByTestId("home-next-receipt")).toContainText("¥420,000.00 from Foshan Home Retail Co. on day 32");
+  await expect(page.getByTestId("home-next-receipt")).toContainText("¥420,000.00 from Foshan Home Retail Co. in 32 days");
 });
 
 test("Go ahead on the opening books runs the fix alone, and the home turns calm with the advance on its way", async ({ page }) => {
@@ -80,7 +85,7 @@ test("Go ahead on the opening books runs the fix alone, and the home turns calm 
   await expect(result).toContainText("2 executed");
   await expect(result).toContainText("The alert is cleared.");
   await expect(page.getByTestId("home-status")).toHaveAttribute("data-status", "WATCH");
-  await expect(page.getByTestId("home-headline")).toHaveText("Cash stays above your ¥300,000.00 safe level for the next 120 days.");
+  await expect(page.getByTestId("home-headline")).toHaveText("Cash stays above your ¥300,000.00 minimum cash reserve for the next 120 days.");
   await expect(page.getByTestId("home-next-action")).toHaveCount(0);
   await expect(page.getByTestId("home-in-transit")).toContainText("¥255,000.00 on its way");
   await expect(page.getByTestId("home-changes-list")).toContainText("Bank credit line");
@@ -90,22 +95,23 @@ test("Go ahead on the opening books runs the fix alone, and the home turns calm 
 test("day 34: the fix needs approval; queuing it from the home runs nothing and the home says it waits", async ({ page }) => {
   await advanceTo34(page);
   await expect(page.getByTestId("home-status")).toHaveAttribute("data-status", "ACTION_NEEDED");
-  await expect(page.getByTestId("home-headline")).toHaveText("Cash falls ¥200,000.00 below your ¥300,000.00 safe level on day 42 (in 8 days).");
+  await expect(page.getByTestId("home-headline")).toHaveText("Cash falls ¥200,000.00 below your ¥300,000.00 minimum cash reserve in 8 days.");
+  await expect(page.locator("body")).not.toContainText(/\bDay \d/);
   await expect(page.getByTestId("home-note")).toContainText("needs your approval because of its cost");
   const action = page.getByTestId("home-next-action");
   await expect(action.getByTestId("next-action-title")).toContainText("Finance ¥200,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co.");
   await expect(action).toContainText("¥1,782.19");
   await expect(action).toContainText("32.5% a year for 10 days");
-  await expect(action).toContainText("Day 37");
-  await expect(action.getByTestId("next-action-needs-owner")).toContainText("above your 15.00% limit");
-  await expect(action.getByTestId("next-action-after")).toContainText("for the next 120 days");
+  await expect(action.getByTestId("next-action-lands")).toHaveText("in 3 days");
+  await expect(action.getByTestId("next-action-needs-owner")).toContainText("above the 15.00% limit you signed");
+  await expect(action.getByTestId("next-action-after")).toContainText("Cash stays above your minimum cash reserve for the next 120 days");
   // The router's cheaper two-invoice plan would need two approvals, so the one-approval cure is recommended and the option named.
   await expect(action.getByTestId("next-action-cheaper")).toContainText("¥1,706.10");
   await expect(action.getByTestId("next-action-cheaper")).toContainText("2 separate approvals");
   // Who has not paid: the late buyer by name, with the days late.
   await expect(page.getByTestId("home-late-RCV-A")).toContainText("Foshan Home Retail Co.");
   await expect(page.getByTestId("home-late-RCV-A")).toContainText("2 day(s) late");
-  await expect(page.getByTestId("home-change-LATE")).toContainText("was due on day 32");
+  await expect(page.getByTestId("home-change-LATE")).toContainText("was due 2 days ago");
 
   const button = page.getByTestId("fix-ALERT-RESERVE-42");
   await expect(button).toHaveText("Queue it for my approval");
@@ -118,7 +124,7 @@ test("day 34: the fix needs approval; queuing it from the home runs nothing and 
   const decision = page.getByTestId("home-approval-APR-000001");
   await expect(decision).toContainText("Approve ¥200,000.00 of invoice financing?");
   await expect(decision).toContainText("Cost ¥1,782.19");
-  await expect(decision).toContainText("lands day 37");
+  await expect(decision).toContainText("lands in 3 days");
   await expect(page.getByTestId("home-change-WAITING")).toBeVisible();
   await expect(page.getByTestId("home-in-transit")).toHaveCount(0);
 });
@@ -132,9 +138,9 @@ test("day 34: the approval card is a question with the cost, the landing day and
   await expect(card.getByTestId("approval-headline")).toHaveText("Approve ¥200,000.00 of invoice financing?");
   await expect(card).toContainText("Finance ¥200,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co.");
   await expect(card.getByTestId("approval-cost")).toContainText("¥1,782.19");
-  await expect(card.getByTestId("approval-lands")).toHaveText("Day 37");
+  await expect(card.getByTestId("approval-lands")).toHaveText("in 3 days");
   await expect(card.getByTestId("approval-reason")).toContainText("32.52%");
-  await expect(card.getByTestId("approval-after")).toContainText("through day 46");
+  await expect(card.getByTestId("approval-after")).toContainText("for the next 12 days");
   await expect(card).toContainText("If you decline");
   // The ids and the tier are audit details, closed by default.
   await expect(card.getByTestId("approval-detail-APR-000001")).toHaveCount(0);
@@ -143,16 +149,16 @@ test("day 34: the approval card is a question with the cost, the landing day and
   await expect(card.getByTestId("approval-detail-APR-000001")).toContainText("alert:ALERT-RESERVE-42:v7:0");
 
   await card.getByRole("button", { name: "Approve" }).click();
-  await expect(card.getByTestId("approval-result-APR-000001")).toContainText("the cash lands on day 37");
+  await expect(card.getByTestId("approval-result-APR-000001")).toContainText("the cash lands in 3 days");
   await expect(card).toContainText("Approved");
-  await expect(card.getByTestId("approval-decided-APR-000001")).toHaveText("Decided on day 34.");
+  await expect(card.getByTestId("approval-decided-APR-000001")).toHaveText("Decided today.");
 
   await page.getByRole("navigation").getByRole("link", { name: "Home", exact: true }).first().click();
   await expect(page.getByTestId("home-status")).toHaveAttribute("data-status", "WATCH");
   await expect(page.getByTestId("home-next-action")).toHaveCount(0);
   await expect(page.getByTestId("home-in-transit")).toContainText("¥200,000.00 on its way");
   await expect(page.getByTestId("home-waiting-empty")).toBeVisible();
-  await expect(page.getByTestId("home-changes-list")).toContainText("lands on day 37");
+  await expect(page.getByTestId("home-changes-list")).toContainText("lands in 3 days");
 });
 
 test("the Chinese labels switch while the server's sentences stay", async ({ page }) => {

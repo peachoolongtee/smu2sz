@@ -3,6 +3,7 @@
 import { Badge, Card, EmptyState, ErrorState, LoadingBlock, PageHeader, TableWrap, tableCls, tdCls, thCls } from "@/components/ui";
 import { getReconciliation, getState } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
+import { whenText } from "@/lib/when";
 import { useAsync } from "@/lib/use-async";
 
 /** Receivables: who owes what, who is late, what was promised early, what arrived. Names from the books; ids beside them. */
@@ -15,7 +16,7 @@ export default function ReceivablesPage() {
 
   return (
     <>
-      <PageHeader title={t("nav.receivables")} subtitle={t("biz.recv.subtitle")} actions={data ? <span className="text-xs text-ink-3">{t("recon.asof", { day: data.as_of_day })}</span> : undefined} />
+      <PageHeader title={t("nav.receivables")} subtitle={t("biz.recv.subtitle")} />
       {recon.error ? (
         <ErrorState error={recon.error} onRetry={recon.reload} />
       ) : !data ? (
@@ -41,7 +42,7 @@ export default function ReceivablesPage() {
                         <td className={`${tdCls} font-medium`}>{name(o.counterparty_id)}</td>
                         <td className={`${tdCls} font-mono text-xs text-ink-2`}>{o.receivable_id}</td>
                         <td className={`${tdCls} text-right tabular-nums`}>{o.face_display}</td>
-                        <td className={`${tdCls} tabular-nums`}>{t("common.dayN", { n: o.due_day })}</td>
+                        <td className={`${tdCls} tabular-nums`}>{whenText(o.due_day, data.as_of_day, t)}</td>
                         <td className={tdCls}>
                           <Badge tone={o.past_due ? "bad" : "neutral"}>{o.past_due ? t("biz.recv.late", { days: Math.max(0, data.as_of_day - o.due_day) }) : t("recon.onTime")}</Badge>
                         </td>
@@ -91,7 +92,7 @@ export default function ReceivablesPage() {
                       </span>
                     </div>
                     <p className="mt-0.5 text-xs text-ink-2">
-                      {r.day !== null ? `${t("common.dayN", { n: r.day })} · ` : ""}
+                      {r.day !== null ? `${whenText(r.day, data.as_of_day, t)} · ` : ""}
                       {r.detail}
                     </p>
                     {r.bank_reference ? (

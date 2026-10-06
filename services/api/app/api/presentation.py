@@ -88,6 +88,48 @@ def in_words(state: FinancialState, text: str) -> str:
     return out
 
 
+# ---------------------------------------------------------------- days, as the owner reads them
+
+def when_text(day: int | None, today: int, lang: Lang) -> str:
+    """A simulated day as a distance from today ("in 12 days", "today", "3 days ago"): Business mode never says
+    "day N"; the Demo views keep the day numbers."""
+    if day is None:
+        return ""
+    n = day - today
+    if n == 0:
+        return t(lang, "today", "今天")
+    if n == 1:
+        return t(lang, "tomorrow", "明天")
+    if n == -1:
+        return t(lang, "yesterday", "昨天")
+    if n > 0:
+        return t(lang, f"in {n} days", f"{n} 天后")
+    return t(lang, f"{-n} days ago", f"{-n} 天前")
+
+
+def relative_days(text: str, today: int, lang: Lang) -> str:
+    """Server sentences written with day numbers ("lands on day 37", "by day 47", "through day 46", "第 37 天"),
+    re-said as distances from today for the Business pages. The Demo views show the originals."""
+    def on(m: re.Match[str]) -> str:
+        return when_text(int(m.group(1)), today, lang)
+
+    def by(m: re.Match[str]) -> str:
+        n = int(m.group(1)) - today
+        return "by today" if n <= 0 else f"within {n} days"
+
+    def through(m: re.Match[str]) -> str:
+        n = int(m.group(1)) - today
+        return f"for the next {max(n, 0)} days"
+
+    if lang == "zh":
+        return re.sub(r"第 (\d+) 天", lambda m: when_text(int(m.group(1)), today, "zh"), text)
+    text = re.sub(r"\brepaid day (\d+)\b", lambda m: "repaid " + on(m), text)
+    text = re.sub(r"\bthrough day (\d+)\b", through, text)
+    text = re.sub(r"\bby day (\d+)\b", by, text)
+    text = re.sub(r"\b(?:on|for) day (\d+)\b", on, text)
+    return text
+
+
 # ---------------------------------------------------------------- one funding leg
 
 
@@ -160,10 +202,10 @@ def needs_owner_reason(mandate: Mandate, legs: list[dict[str, Any]], lang: Lang)
     cap = fmt_pct(bp(mandate.max_apr_bp))
     rate = next((leg["rate_text"] for leg in over if leg["rate_text"]), None)
     if rate:
-        return t(lang, f"The yearly cost of {rate} is above your {cap} limit for what the agent may borrow alone.",
-                 f"年化成本 {rate} 高于您允许代理自行借款的 {cap} 上限。")
-    return t(lang, f"The yearly cost is above your {cap} limit for what the agent may borrow alone.",
-             f"年化成本高于您允许代理自行借款的 {cap} 上限。")
+        return t(lang, f"The yearly cost of {rate} is above the {cap} limit you signed for funding without your approval.",
+                 f"年化成本 {rate} 高于您签署的无需批准融资上限 {cap}。")
+    return t(lang, f"The yearly cost is above the {cap} limit you signed for funding without your approval.",
+             f"年化成本高于您签署的无需批准融资上限 {cap}。")
 
 
 # ---------------------------------------------------------------- an approval row
@@ -216,7 +258,9 @@ def approval_words(state: FinancialState, op: dict[str, Any], kind: str | None, 
         "rate_text": rate_text,
         "cost_due_day": cost_due_day,
         "lands_day": lands,
-        "protects": (t(lang, f"It keeps cash above your safe level through day {alert.inputs.get('last_day')}.",
-                       f"它使现金在第 {alert.inputs.get('last_day')} 天前保持在安全线以上。")
+        "lands_when": when_text(lands, today, lang) if lands is not None else None,
+        "protects": (t(lang, f"It keeps cash above your minimum cash reserve for the next "
+                             f"{max(int(alert.inputs['last_day']) - today, 0)} days.",
+                       f"它使现金在未来 {max(int(alert.inputs['last_day']) - today, 0)} 天保持在最低现金储备以上。")
                      if alert is not None and alert.inputs.get("last_day") and alert.committed_cure else None),
     }

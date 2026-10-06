@@ -44,8 +44,8 @@ export default function CashPage() {
               {[
                 [t("biz.cashToday"), h.cash.cash_display],
                 [t("biz.safeLevel"), h.cash.floor_display],
-                [t("biz.lowestAhead"), `${h.cash.lowest_display} · ${t("common.dayN", { n: h.cash.lowest_day })}`],
-                [t("biz.firstUnsafeDay"), h.cash.first_breach_day !== null ? t("common.dayN", { n: h.cash.first_breach_day }) : t("biz.none")],
+                [t("biz.lowestAhead"), `${h.cash.lowest_display} · ${h.cash.lowest_when}`],
+                [t("biz.firstUnsafeDay"), h.cash.first_breach_when ?? t("biz.none")],
               ].map(([k, v]) => (
                 <div key={k} className="min-w-0">
                   <dt className="text-xs font-medium text-ink-3">{k}</dt>
@@ -69,7 +69,7 @@ export default function CashPage() {
                   floorFen={h.cash.floor_fen}
                   floorLabel={`${t("biz.safeLevel")} ${h.cash.floor_display}`}
                   breachDay={h.cash.first_breach_day}
-                  breachLabel={h.cash.first_breach_day !== null ? t("common.dayN", { n: h.cash.first_breach_day }) : ""}
+                  breachLabel={h.cash.first_breach_when ?? ""}
                   horizon={h.cash.horizon_days}
                   dayLabel={t("common.day")}
                   cashLabel={t("biz.forecast.nothing")}

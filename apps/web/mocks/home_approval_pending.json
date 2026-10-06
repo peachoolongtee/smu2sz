@@ -35,8 +35,10 @@
     "rate_text": "32.5%",
     "cost_due_day": 47,
     "lands_day": 37,
-    "protects": "It keeps cash above your safe level through day 46.",
+    "lands_when": "in 3 days",
+    "protects": "It keeps cash above your minimum cash reserve for the next 12 days.",
     "reason": "effective annual cost 32.52% is above the mandate's 15.00% ceiling for what the agent may borrow alone (all charges on ¥200,000.00 held 10 days (day 37 to day 47), annualised = 32.52%)",
-    "result_message": null
+    "result_message": null,
+    "decided_when": null
   }
 }
