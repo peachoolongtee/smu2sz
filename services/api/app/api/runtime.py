@@ -51,6 +51,8 @@ class Runtime:
     lock: threading.RLock = field(default_factory=threading.RLock)
     latest_verdict: dict[str, str] = field(default_factory=dict)  # offer_id -> verdict_id
     documents: dict[str, Any] = field(default_factory=dict)  # doc_id -> SourceDocument (inbound, untrusted)
+    intake_day: int = 0  # the simulated day `intake_count` belongs to (R04, R05; in memory, like the caches above)
+    intake_count: int = 0  # offers and buyer turns admitted without a channel key on `intake_day`
 
     def clock(self) -> int:
         return self.day
@@ -86,6 +88,17 @@ class Runtime:
                                     commitments=others).outcome
         except Exception:  # noqa: BLE001  fail closed: the executor refuses on None
             return None
+
+    def take_intake_slot(self) -> bool:
+        """Count one unauthenticated intake (an offer or a buyer turn without a channel key) against today's cap.
+        False, without counting, once the cap is reached. The count restarts when the day changes."""
+        with self.lock:
+            if self.intake_day != self.day:
+                self.intake_day, self.intake_count = self.day, 0
+            if self.intake_count >= self.settings.intake_cap_per_day:
+                return False
+            self.intake_count += 1
+            return True
 
     def hydrate(self) -> None:
         """Read the clock and the seeded scenario from the stored books (start-up; nothing is written)."""
@@ -130,6 +143,7 @@ class Runtime:
             self.scenario = scenario
             self.latest_verdict.clear()
             self.documents.clear()
+            self.intake_day, self.intake_count = 0, 0
             from app.nl import reset_sessions
 
             reset_sessions()
