@@ -259,7 +259,7 @@ def _series(state: FinancialState, traj: Any) -> list[dict[str, Any]]:
     reader) and the events that moved it, with ids replaced by names."""
     return [{"day": d.day, "closing_fen": d.closing_fen, "closing_display": fmt_yuan(d.closing_fen),
              "events": [{"kind": e.kind.value, "label": in_words(state, e.label), "amount_fen": e.amount_fen,
-                         "amount_display": fmt_yuan(e.amount_fen)} for e in d.events]}
+                         "amount_display": fmt_yuan(e.amount_fen), "amount_short": fmt_short(e.amount_fen)} for e in d.events]}
             for d in traj.days]
 
 

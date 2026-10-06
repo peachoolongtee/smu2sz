@@ -830,6 +830,8 @@ export type MarginalCostView = Displayed<{
 }> & { rate_display: string };
 
 export type ComparisonRow = Displayed<{
+  /** The router's stable id for the row: "full_discount", "line_partial_early_pay", "router_optimum", "line_guaranteed_loan", "line_only". */
+  key?: string;
   label: string;
   total_fen: Fen;
   note: string;
@@ -1588,7 +1590,7 @@ export interface HomeSeriesPoint {
   day: Day;
   closing_fen: Fen;
   closing_display: string;
-  events: { kind: string; label: string; amount_fen: Fen; amount_display: string }[];
+  events: { kind: string; label: string; amount_fen: Fen; amount_display: string; amount_short: string }[];
 }
 
 /**
