@@ -98,7 +98,8 @@ export const live = {
 
   getAlerts: () => http<AlertsView>("GET", "/alerts"),
   /** The owner's home read: written by the server in the language asked for; the owner token is required. */
-  getHome: (lang: "en" | "zh") => http<HomeView>("GET", `/home?lang=${lang}`),
+  getHome: (lang: "en" | "zh", sinceDay: number | null = null) =>
+    http<HomeView>("GET", `/home?lang=${lang}${sinceDay !== null ? `&since_day=${sinceDay}` : ""}`),
   getReconciliation: async (): Promise<ReconciliationView> =>
     (await http<{ reconciliation: ReconciliationView }>("GET", "/reconciliation")).reconciliation,
 

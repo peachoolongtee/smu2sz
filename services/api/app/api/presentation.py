@@ -133,6 +133,17 @@ def in_words(state: FinancialState, text: str) -> str:
     return out
 
 
+def fmt_short(fen: int) -> str:
+    """Overview precision: whole thousands of yuan ("¥240k", "−¥105k"); under ¥1,000 the exact figure. For a glance,
+    never for a cost or a ledger figure, which keep the fen."""
+    sign = "−" if fen < 0 else ""
+    yuan = abs(fen) // 100
+    if yuan < 1000:
+        return fmt_yuan(fen)
+    thousands = (yuan + 500) // 1000
+    return f"{sign}¥{thousands:,}k"
+
+
 # ---------------------------------------------------------------- days, as the owner reads them
 
 def when_text(day: int | None, today: int, lang: Lang) -> str:
@@ -236,6 +247,7 @@ def cure_legs(state: FinancialState, alert: Alert, today: int, lang: Lang) -> li
             "cost_days": s.cost_days,
             "cost_due_day": int(end) if end else None,
             "lands_day": lands,
+            "lands_when": when_text(lands, today, lang) if lands is not None else None,
             "above_apr_cap": s.above_apr_cap,
         })
     return legs

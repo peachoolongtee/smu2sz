@@ -3,14 +3,26 @@
   "state_version": 1,
   "lang": "en",
   "status": "ACTION_NEEDED",
-  "headline": "Cash falls ¥240,000.00 below your ¥300,000.00 minimum cash reserve in 12 days.",
-  "note": "A funding plan is ready, within your signed limits. No approval is needed.",
+  "headline": "Your cash reserve becomes unsafe in 12 days.",
+  "note": "Cash falls to ¥60k, ¥240k below your ¥300k minimum cash reserve.",
+  "worst": "Worst point: −¥105k in 30 days if you do nothing.",
+  "plan_note": "A funding plan is ready, within your signed limits. No approval is needed.",
+  "since_day": null,
   "cash": {
     "cash_fen": 40000000,
     "floor_fen": 30000000,
     "lowest_fen": -10500000,
     "lowest_day": 30,
     "first_breach_day": 12,
+    "first_breach_cash_fen": 6000000,
+    "first_breach_cash_short": "¥60k",
+    "cash_short": "¥400k",
+    "floor_short": "¥300k",
+    "lowest_short": "−¥105k",
+    "drivers": [
+      "Payroll of ¥340k falls due in 12 days.",
+      "The next receipt, ¥420k, lands only in 32 days."
+    ],
     "lowest_when": "in 30 days",
     "first_breach_when": "in 12 days",
     "horizon_days": 120,
@@ -1674,6 +1686,7 @@
     "cash_display": "¥400,000.00",
     "floor_display": "¥300,000.00",
     "lowest_display": "−¥105,000.00",
+    "first_breach_cash_display": "¥60,000.00",
     "min_dscr_display": "1.25×",
     "max_leverage_display": "2.50×"
   },
@@ -1682,6 +1695,22 @@
     "kind": "RESERVE_BREACH_AHEAD",
     "plan_source": "router",
     "title": "Draw ¥150,000.00 on Bank credit line and finance ¥255,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. on Invoice financing (onboarded platform)",
+    "outcome_title": "Secure ¥405k of funding",
+    "components": [
+      {
+        "amount_short": "¥150k",
+        "what": "Bank credit line",
+        "lands_when": "today"
+      },
+      {
+        "amount_short": "¥255k",
+        "what": "against the ¥420k invoice to Foshan Home Retail Co.",
+        "lands_when": "in 3 days"
+      }
+    ],
+    "receive_short": "¥405k",
+    "after_lowest_fen": 30000000,
+    "after_lowest_short": "¥300k",
     "legs": [
       {
         "index": 0,
@@ -1772,7 +1801,8 @@
         "amount_fen": 25500000,
         "amount_display": "¥255,000.00"
       }
-    ]
+    ],
+    "after_lowest_display": "¥300,000.00"
   },
   "approvals": [],
   "pending_count": 0,

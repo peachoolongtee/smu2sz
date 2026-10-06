@@ -48,10 +48,10 @@ export function DecisionsBlock({ approvals }: { approvals: HomeApproval[] }) {
 }
 
 /** Level 1 news: receipts, late payers, what ran, what waits, what landed. Server sentences, newest first. */
-export function ChangesBlock({ changes }: { changes: HomeChange[] }) {
+export function ChangesBlock({ changes, sinceWhen }: { changes: HomeChange[]; sinceWhen?: string | null }) {
   const { t } = useI18n();
   return (
-    <Card id="home-changes" title={t("biz.changes")} subtitle={t("biz.changes.sub")} actions={<Link href="/activity" className="text-xs font-medium text-brand-700 underline underline-offset-2">{t("biz.changes.open")}</Link>}>
+    <Card id="home-changes" title={t("biz.recent")} subtitle={sinceWhen ? t("biz.recent.since", { when: sinceWhen }) : t("biz.recent.week")} actions={<Link href="/activity" className="text-xs font-medium text-brand-700 underline underline-offset-2">{t("biz.changes.open")}</Link>}>
       {changes.length === 0 ? (
         <p className="text-sm text-ink-3" data-testid="home-changes-empty">
           {t("biz.changes.none")}

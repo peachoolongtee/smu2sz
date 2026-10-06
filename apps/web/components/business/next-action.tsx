@@ -19,7 +19,7 @@ export function NextActionBlock({ a, stateVersion, fixer }: { a: HomeNextAction;
   const waiting = a.pending_approval_id;
 
   const rows: { k: string; v: React.ReactNode }[] = [];
-  if (a.receive_display) rows.push({ k: t("biz.receive"), v: a.receive_display });
+  if (a.receive_display) rows.push({ k: t("biz.receive"), v: <span data-testid="next-action-receive">{a.receive_display}</span> });
   const costTotal = a.cost_total_display ?? a.cost_display;
   if (costTotal) {
     rows.push({
@@ -43,7 +43,8 @@ export function NextActionBlock({ a, stateVersion, fixer }: { a: HomeNextAction;
       ),
     });
   }
-  if (a.lands_day !== null) rows.push({ k: t("biz.lands"), v: <span data-testid="next-action-lands">{a.lands_when ?? ""}</span> });
+  if (a.lands_day !== null) rows.push({ k: t("biz.fundsAvailable"), v: <span data-testid="next-action-lands">{a.lands_when ?? ""}</span> });
+  if (a.after_lowest_short) rows.push({ k: t("biz.lowestAfter"), v: <span data-testid="next-action-after-lowest">{a.after_lowest_short}</span> });
   rows.push({
     k: t("biz.authority"),
     v: a.needs_owner ? (
@@ -58,10 +59,19 @@ export function NextActionBlock({ a, stateVersion, fixer }: { a: HomeNextAction;
 
   return (
     <section aria-labelledby="home-action-title" className="rounded-(--radius-card) border border-line bg-surface p-5 shadow-(--shadow-card) lg:p-6" data-testid="home-next-action" data-alert={a.alert_id}>
-      <p className="text-xs font-semibold uppercase tracking-wide text-ink-3">{t("biz.nextAction")}</p>
-      <h2 id="home-action-title" className="mt-1.5 text-lg font-semibold leading-snug text-ink" data-testid="next-action-title">
-        {a.title}
+      <p className="text-xs font-semibold uppercase tracking-wide text-ink-3">{t("biz.recommended")}</p>
+      <h2 id="home-action-title" className="mt-1.5 text-xl font-semibold leading-snug text-ink" data-testid="next-action-title">
+        {a.outcome_title}
       </h2>
+      <ul className="mt-2 flex flex-wrap gap-x-6 gap-y-1 text-sm" data-testid="next-action-components">
+        {a.components.map((c, i) => (
+          <li key={i} className="flex items-baseline gap-2">
+            <span className="text-base font-semibold tabular-nums text-ink">{c.amount_short}</span>
+            <span className="text-ink-2">{c.what}</span>
+          </li>
+        ))}
+      </ul>
+      <p className="mt-1 text-xs text-ink-3" data-testid="next-action-operation">{a.title}</p>
       <div className="mt-4 grid gap-4 lg:grid-cols-2">
         <KeyValueList items={rows} />
         <dl className="space-y-2 text-sm">
@@ -96,11 +106,11 @@ export function NextActionBlock({ a, stateVersion, fixer }: { a: HomeNextAction;
           </div>
         ) : (
           <Button variant="primary" loading={fixer.busyId === a.alert_id} disabled={fixer.busyId !== null} onClick={() => void fixer.fix(asAlert, stateVersion)} data-testid={`fix-${a.alert_id}`}>
-            {a.needs_owner ? t("biz.queueForMe") : t("biz.goAhead")}
+            {a.needs_owner ? t("biz.queueForMe") : t("biz.runPlan")}
           </Button>
         )}
         <Link href="/cash" className="inline-flex min-h-10 items-center rounded-md border border-line-strong px-3.5 text-sm font-medium text-ink hover:bg-subtle" data-testid="next-action-alternatives">
-          {t("biz.alternatives")}
+          {t("biz.compare")}
         </Link>
       </div>
 

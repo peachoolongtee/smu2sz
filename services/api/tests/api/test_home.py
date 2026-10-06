@@ -21,8 +21,13 @@ def test_day_zero_answers_safe_do_cost(client):
     h = client.get("/home").json()
     assert h["day"] == 0 and h["status"] == "ACTION_NEEDED"
     # Business words: the reserve is the "minimum cash reserve", days are distances from today, authority is the owner's
-    assert h["headline"] == "Cash falls ¥240,000.00 below your ¥300,000.00 minimum cash reserve in 12 days."
-    assert h["note"] == "A funding plan is ready, within your signed limits. No approval is needed."
+    assert h["headline"] == "Your cash reserve becomes unsafe in 12 days."
+    assert h["note"] == "Cash falls to ¥60k, ¥240k below your ¥300k minimum cash reserve."
+    assert h["worst"] == "Worst point: −¥105k in 30 days if you do nothing."
+    assert h["plan_note"] == "A funding plan is ready, within your signed limits. No approval is needed."
+    assert h["cash"]["first_breach_cash_short"] == "¥60k" and h["cash"]["lowest_short"] == "−¥105k" and h["cash"]["floor_short"] == "¥300k"
+    # what is driving it, from the projection's own events
+    assert h["cash"]["drivers"] == ["Payroll of ¥340k falls due in 12 days.", "The next receipt, ¥420k, lands only in 32 days."]
     assert h["cash"]["cash_display"] == "¥400,000.00" and h["cash"]["floor_display"] == "¥300,000.00"
     assert h["cash"]["lowest_display"] == "−¥105,000.00" and h["cash"]["lowest_day"] == 30
     a = h["next_action"]
@@ -31,6 +36,9 @@ def test_day_zero_answers_safe_do_cost(client):
     assert a["title"] == ("Draw ¥150,000.00 on Bank credit line and finance ¥255,000.00 of the ¥420,000.00 invoice to "
                           "Foshan Home Retail Co. on Invoice financing (onboarded platform)")
     assert a["receive_display"] == "¥405,000.00" and a["needs_owner"] is False and a["cheaper_option"] is None
+    assert a["outcome_title"] == "Secure ¥405k of funding" and a["after_lowest_short"] == "¥300k"
+    assert a["components"] == [{"amount_short": "¥150k", "what": "Bank credit line", "lands_when": "today"},
+                               {"amount_short": "¥255k", "what": "against the ¥420k invoice to Foshan Home Retail Co.", "lands_when": "in 3 days"}]
     # all-in: every leg priced on the router's own convention, the basis said in words, nothing left to a footnote
     assert a["cost_total_display"] == "¥3,113.93" and a["cost_display"] == "¥3,113.93" and a["cost_note"] is None
     assert [(c["label"], c["display"]) for c in a["cost_breakdown"]] == [
@@ -67,7 +75,8 @@ def test_the_fix_is_bound_to_what_the_home_showed_and_the_home_turns_calm(client
     assert r["executed"] == 2 and r["cured"]
     h = client.get("/home").json()
     assert h["status"] == "WATCH" and h["next_action"] is None
-    assert h["headline"] == "Cash stays above your ¥300,000.00 minimum cash reserve for the next 120 days."
+    assert h["headline"] == "You're covered." and h["plan_note"] is None
+    assert h["note"].startswith("Cash stays above your ¥300k minimum cash reserve for the next 120 days.")
     assert h["cash"]["in_transit"]["lots"] == [{"facility_name": "Invoice financing (onboarded platform)",
                                                 "amount_display": "¥255,000.00", "arrival_day": 3, "arrival_when": "in 3 days"}]
     assert h["cash"]["plan_series"] is None
@@ -126,7 +135,7 @@ def test_a_priced_cure_in_the_queue_carries_its_cost_and_landing_day(client):
 
 def test_chinese_sentences(client):
     h = client.get("/home?lang=zh").json()
-    assert h["lang"] == "zh" and h["headline"].startswith("现金将在12 天后比您")
+    assert h["lang"] == "zh" and h["headline"] == "您的现金储备将在12 天后不再安全。"
     assert h["next_action"]["title"].startswith("从Bank credit line提款 ¥150,000.00")
 
 
@@ -152,8 +161,10 @@ def test_a_late_buyer_is_named_in_receivables_and_changes(client):
     client.post("/clock/advance", json={"days": 4})
     h = client.get("/home").json()
     assert h["status"] == "ACTION_NEEDED"
-    assert h["headline"] == "Cash falls ¥200,000.00 below your ¥300,000.00 minimum cash reserve in 8 days."
-    assert h["note"] == "A funding plan is ready. It needs your approval because of its cost."
+    assert h["headline"] == "Your cash reserve becomes unsafe in 8 days."
+    assert h["note"] == "Cash falls to ¥100k, ¥200k below your ¥300k minimum cash reserve."
+    assert h["plan_note"] == "A funding plan is ready. It needs your approval because of its cost."
+    assert h["cash"]["drivers"][0] == "Payroll of ¥200k falls due in 8 days."
     [late] = h["receivables"]["past_due"]
     assert late["buyer_name"] == "Foshan Home Retail Co." and late["face_display"] == "¥162,800.00" and late["days_late"] == 2
     assert late["due_when"] == "2 days ago"
@@ -201,3 +212,23 @@ def test_run_funding_plan_binds_to_the_plan_shown_and_refuses_a_stale_one(client
                                                f"alert:{a['alert_id']}:v{a['state_version']}:plan:1"]
     plan = client.post("/router/plan").json()["committed"]
     assert plan["actions"] == [] and client.get("/home").json()["next_action"] is None
+
+
+def test_what_changed_since_the_owners_last_visit(client):
+    # the deal on day 0, the receipt on day 2; a visit marker after the receipt leaves nothing to report
+    o = client.post("/offers", json={"fixture_id": "EX01_PACKAGE"}).json()["offer"]["offer_id"]
+    client.post(f"/offers/{o}/evaluate", json={"fixture_id": "EX01_PACKAGE"})
+    client.post(f"/negotiate/{o}", json={"buyer_profile": "cooperative"})
+    client.post("/clock/advance", json={"days": 2})
+    promised = client.get("/reconciliation").json()["reconciliation"]["promised"][0]
+    mv = client.get("/mandate").json()["mandate"]["version"]
+    client.post("/operations", headers=BANK, json={
+        "kind": "RECEIVE_PAYMENT", "op_id": "t-r2", "idempotency_key": "t-r2", "mandate_version": mv,
+        "requested_by": "SYSTEM", "receivable_id": promised["receivable_id"], "amount_fen": promised["expected_fen"],
+        "bank_reference": "T-RCPT-2"})
+    client.post("/clock/advance", json={"days": 3})
+    week = client.get("/home").json()
+    assert week["since_day"] is None and any(c["kind"] == "RECEIPT" for c in week["changes"])
+    since = client.get("/home?since_day=3").json()
+    assert since["since_day"] == 3 and not any(c["kind"] == "RECEIPT" for c in since["changes"])
+    assert client.get("/home?since_day=0").json()["changes"] == week["changes"]

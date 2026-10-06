@@ -166,8 +166,8 @@ export async function nlOpener(sessionId: string | undefined, lang: "en" | "zh")
 }
 
 /** GET /home: the owner's home in business words (owner only). Every sentence and figure is the server's. */
-export async function getHome(lang: "en" | "zh"): Promise<HomeView> {
-  return isMock ? (await mock()).getHome(lang) : (await live()).getHome(lang);
+export async function getHome(lang: "en" | "zh", sinceDay: number | null = null): Promise<HomeView> {
+  return isMock ? (await mock()).getHome(lang) : (await live()).getHome(lang, sinceDay);
 }
 
 /** GET /clock: the simulated day. */

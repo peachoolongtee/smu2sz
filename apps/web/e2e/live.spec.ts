@@ -90,12 +90,12 @@ test("the day-0 plan: 'go ahead' brings cash now and leaves the advance in trans
 
   // The Business home keeps cash in hand apart from the advance on its way (both are the server's strings).
   await page.goto("/");
-  await expect(page.getByTestId("home-cash")).toHaveText("¥550,000.00");
+  await expect(page.getByTestId("home-cash")).toHaveText("¥550k");
   await expect(page.getByTestId("home-in-transit")).toContainText("¥255,000.00 on its way");
   // Once day 3 has passed the advance is cash.
   expect((await request.post(`${API}/clock/advance`, { headers: owner, data: { to_day: 4 } })).ok()).toBeTruthy();
   await page.goto("/");
-  await expect(page.getByTestId("home-cash")).toHaveText("¥805,000.00");
+  await expect(page.getByTestId("home-cash")).toHaveText("¥805k");
   await expect(page.getByTestId("home-in-transit")).toHaveCount(0);
   await request.post(`${API}/demo/reset`, { headers: owner, data: {} });
 });
