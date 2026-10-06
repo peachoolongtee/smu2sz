@@ -37,13 +37,13 @@
         "events": [
           {
             "kind": "EARLY_RECEIPT",
-            "label": "Early settlement of RCV-A (CTR-193394b6ba8b-O2)",
+            "label": "Early settlement of the ¥420,000.00 invoice to Foshan Home Retail Co. due day 32 (CTR-193394b6ba8b-O2)",
             "amount_fen": 25720000,
             "amount_display": "¥257,200.00"
           },
           {
             "kind": "DISCOUNT",
-            "label": "Discount on early settlement of RCV-A (CTR-193394b6ba8b-O2)",
+            "label": "Discount on early settlement of the ¥420,000.00 invoice to Foshan Home Retail Co. due day 32 (CTR-193394b6ba8b-O2)",
             "amount_fen": -218620,
             "amount_display": "−¥2,186.20"
           }
@@ -251,7 +251,7 @@
         "events": [
           {
             "kind": "RECEIPT",
-            "label": "Receipt RCV-A from Foshan Home Retail Co.",
+            "label": "Receipt the ¥420,000.00 invoice to Foshan Home Retail Co. due day 32 from Foshan Home Retail Co.",
             "amount_fen": 16280000,
             "amount_display": "¥162,800.00"
           },
@@ -360,7 +360,7 @@
         "events": [
           {
             "kind": "RECEIPT",
-            "label": "Receipt RI:BUYER-1:2 from Foshan Home Retail Co.",
+            "label": "Receipt the ¥420,000.00 invoice to Foshan Home Retail Co. due day 47 from Foshan Home Retail Co.",
             "amount_fen": 42000000,
             "amount_display": "¥420,000.00"
           },
@@ -560,7 +560,7 @@
         "events": [
           {
             "kind": "RECEIPT",
-            "label": "Receipt RI:BUYER-1:32 from Foshan Home Retail Co.",
+            "label": "Receipt the ¥420,000.00 invoice to Foshan Home Retail Co. due day 77 from Foshan Home Retail Co.",
             "amount_fen": 42000000,
             "amount_display": "¥420,000.00"
           }
@@ -754,7 +754,7 @@
         "events": [
           {
             "kind": "RECEIPT",
-            "label": "Receipt RI:BUYER-1:62 from Foshan Home Retail Co.",
+            "label": "Receipt the ¥420,000.00 invoice to Foshan Home Retail Co. due day 107 from Foshan Home Retail Co.",
             "amount_fen": 42000000,
             "amount_display": "¥420,000.00"
           }

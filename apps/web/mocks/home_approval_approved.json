@@ -37,6 +37,6 @@
     "lands_day": 37,
     "protects": null,
     "reason": "effective annual cost 32.52% is above the mandate's 15.00% ceiling for what the agent may borrow alone (all charges on ¥200,000.00 held 10 days (day 37 to day 47), annualised = 32.52%)",
-    "result_message": "Advance ¥200,000.00 on RI:BUYER-1:2 from Invoice financing (onboarded platform) on day 34; the cash lands on day 37 after the 3-day lead time, not today"
+    "result_message": "Advance ¥200,000.00 on the ¥420,000.00 invoice to Foshan Home Retail Co. due day 47 from Invoice financing (onboarded platform) on day 34; the cash lands on day 37 after the 3-day lead time, not today"
   }
 }

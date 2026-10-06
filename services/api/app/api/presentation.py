@@ -13,6 +13,7 @@ from typing import Any
 from app.alerts import Alert
 from app.domain.models import FinancialState, Mandate
 from app.domain.money import bp, fmt_pct, fmt_yuan
+from app.financial.invoices import InvoiceRef, issue_terms
 
 Lang = str  # "en" | "zh"
 
@@ -77,9 +78,53 @@ def invoice_words(state: FinancialState, receivable_id: str | None, lang: Lang) 
     return t(lang, f"invoice {receivable_id}", f"发票 {receivable_id}")
 
 
+_RI_TOKEN = re.compile(r"(?<![\w:-])RI:[\w-]+:\d+(?![\w:-])")
+
+
+def invoice_due_day(state: FinancialState, receivable_id: str) -> int | None:
+    """The day an invoice falls due: issue day plus its terms. For a recurring invoice not issued yet ("RI:<buyer>:<n>",
+    n its issue day) the terms are the ones the clock will write on it (`issue_terms`)."""
+    r = next((r for r in state.receivables if r.id == receivable_id), None)
+    if r is not None:
+        return r.issue_day + r.terms_days
+    parts = receivable_id.split(":")
+    if parts[0] != "RI" or len(parts) != 3 or not parts[2].isdigit():
+        return None
+    ri = next((x for x in state.recurring_invoices if x.counterparty_id == parts[1]), None)
+    if ri is None:
+        return None
+    day = int(parts[2])
+    terms = issue_terms(state, InvoiceRef(receivable_id, ri.counterparty_id, day), ri.face_fen, ri.terms_days)["terms_days"]
+    return day + terms if isinstance(terms, int) else None
+
+
+def _shares_face(state: FinancialState, receivable_id: str) -> bool:
+    """Whether the books hold another invoice to the same buyer for the same face: another open invoice, or a recurring
+    invoice that keeps generating them."""
+    buyer, face = buyer_of_receivable(state, receivable_id), receivable_face(state, receivable_id)
+    if any(r.id != receivable_id and r.counterparty_id == buyer and r.face_fen == face and r.status in ("OPEN", "FINANCED")
+           for r in state.receivables):
+        return True
+    return any(x.counterparty_id == buyer and x.face_fen == face and x.every_days > 0 for x in state.recurring_invoices)
+
+
+def _invoice_in_words(state: FinancialState, receivable_id: str) -> str | None:
+    """The business words for an invoice id the books know (with its due day when another invoice looks the same)."""
+    if receivable_face(state, receivable_id) is None:
+        return None
+    words = invoice_words(state, receivable_id, "en")
+    due = invoice_due_day(state, receivable_id)
+    if due is not None and _shares_face(state, receivable_id):
+        words += f" due day {due}"
+    return words
+
+
 def in_words(state: FinancialState, text: str) -> str:
-    """Server text with facility and buyer ids replaced by their names (ids are on the audit level)."""
+    """Server text with invoice, facility and buyer ids replaced by their names (ids are on the audit level)."""
     out = text
+    out = _RI_TOKEN.sub(lambda m: _invoice_in_words(state, m.group(0)) or m.group(0), out)
+    for rid in sorted((r.id for r in state.receivables if not r.id.startswith("RI:")), key=len, reverse=True):
+        out = re.sub(rf"(?<![\w:-]){re.escape(rid)}(?![\w:-])", lambda m: _invoice_in_words(state, m.group(0)) or m.group(0), out)
     for f in state.facilities:
         out = re.sub(rf"(?<![\w:-]){re.escape(f.id)}(?![\w:-])", f.name, out)
     for c in state.counterparties:
