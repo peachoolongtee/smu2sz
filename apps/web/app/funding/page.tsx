@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CodeBadge, FacilityStatusBadge } from "@/components/badges";
+import { FacilityStatusBadge, PlainCode } from "@/components/badges";
 import { CheckIcon, XIcon } from "@/components/icons";
 import { PlanCard } from "@/components/plan-card";
 import { PlanNotes } from "@/components/plan-notes";
@@ -113,7 +113,7 @@ function FundingBody({ view, basis, snapshot }: { view: FundingView; basis: "COM
                           {row.admissible ? t("fund.yes") : t("fund.no")}
                         </Badge>
                         {row.reason_codes.map((c) => (
-                          <CodeBadge key={c} code={c} tone="bad" />
+                          <PlainCode key={c} code={c} tone="bad" />
                         ))}
                       </div>
                       {row.needs_owner_approval ? (

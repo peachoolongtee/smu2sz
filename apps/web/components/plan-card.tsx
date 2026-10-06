@@ -2,7 +2,7 @@
 
 import { useI18n } from "@/lib/i18n";
 import type { Displayed, FundingPlan } from "@/lib/types";
-import { CodeBadge } from "./badges";
+import { PlainCode } from "./badges";
 import { PlanNotes } from "./plan-notes";
 import { Badge, Card, Formula, TableWrap, tableCls, tdCls, thCls } from "./ui";
 
@@ -111,7 +111,7 @@ export function PlanCard({
           <ul className="space-y-2">
             {plan.violations.map((v) => (
               <li key={v.code} className="rounded-lg border border-warn-line bg-warn-bg px-3 py-2 text-sm text-warn-fg">
-                <CodeBadge code={v.code} tone="warn" /> <span className="ml-1">{v.message}</span>
+                <PlainCode code={v.code} tone="warn" /> <span className="ml-1">{v.message}</span>
                 {v.cure_note ? <p className="mt-1 text-xs">{v.cure_note}</p> : null}
               </li>
             ))}
@@ -129,7 +129,7 @@ export function PlanCard({
                   {r.reasons.length ? (
                     <div className="mt-1 flex flex-wrap gap-1">
                       {r.reasons.map((c) => (
-                        <CodeBadge key={c} code={c} tone="bad" />
+                        <PlainCode key={c} code={c} tone="bad" />
                       ))}
                     </div>
                   ) : null}

@@ -33,6 +33,13 @@ def _flag(name: str, default: bool = True) -> bool:
     return os.environ.get(name, "1" if default else "0").strip().lower() in {"1", "true", "yes", "on"}
 
 
+def _int(name: str, default: int) -> int:
+    try:
+        return max(0, int(os.environ.get(name, str(default)).strip()))
+    except ValueError:
+        return default
+
+
 @dataclass(frozen=True)
 class Features:
     terms_guard: bool = field(default_factory=lambda: _flag("FEATURE_TERMS_GUARD"))
@@ -60,6 +67,8 @@ class Settings:
         )
     )
     features: Features = field(default_factory=Features)
+    # Offers and buyer turns that arrive without a channel key, per simulated day (R04, R05).
+    intake_cap_per_day: int = field(default_factory=lambda: _int("INTAKE_CAP_PER_DAY", 200))
 
 
 def get_settings() -> Settings:
