@@ -3,14 +3,26 @@
   "state_version": 7,
   "lang": "en",
   "status": "ACTION_NEEDED",
-  "headline": "Cash falls ¥200,000.00 below your ¥300,000.00 minimum cash reserve in 8 days.",
-  "note": "A funding plan is ready. It needs your approval because of its cost.",
+  "headline": "Your cash reserve becomes unsafe in 8 days.",
+  "note": "Cash falls to ¥100k, ¥200k below your ¥300k minimum cash reserve.",
+  "worst": "Worst point: ¥100k in 8 days if you do nothing.",
+  "plan_note": "A funding plan is ready. It needs your approval because of its cost.",
+  "since_day": null,
   "cash": {
     "cash_fen": 30000000,
     "floor_fen": 30000000,
     "lowest_fen": 10000000,
     "lowest_day": 42,
     "first_breach_day": 42,
+    "first_breach_cash_fen": 10000000,
+    "first_breach_cash_short": "¥100k",
+    "cash_short": "¥300k",
+    "floor_short": "¥300k",
+    "lowest_short": "¥100k",
+    "drivers": [
+      "Payroll of ¥200k falls due in 8 days.",
+      "The next receipt, ¥420k, lands only in 13 days."
+    ],
     "lowest_when": "in 8 days",
     "first_breach_when": "in 8 days",
     "horizon_days": 120,
@@ -2073,6 +2085,7 @@
     "cash_display": "¥300,000.00",
     "floor_display": "¥300,000.00",
     "lowest_display": "¥100,000.00",
+    "first_breach_cash_display": "¥100,000.00",
     "min_dscr_display": "1.25×",
     "max_leverage_display": "2.50×"
   },
@@ -2081,6 +2094,17 @@
     "kind": "RESERVE_BREACH_AHEAD",
     "plan_source": "alert",
     "title": "Finance ¥200,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. on Invoice financing (onboarded platform)",
+    "outcome_title": "Secure ¥200k of funding",
+    "components": [
+      {
+        "amount_short": "¥200k",
+        "what": "against the ¥420k invoice to Foshan Home Retail Co.",
+        "lands_when": "in 3 days"
+      }
+    ],
+    "receive_short": "¥200k",
+    "after_lowest_fen": 30000000,
+    "after_lowest_short": "¥300k",
     "legs": [
       {
         "index": 0,
@@ -2098,6 +2122,7 @@
         "cost_days": 10,
         "cost_due_day": 47,
         "lands_day": 37,
+        "lands_when": "in 3 days",
         "above_apr_cap": true
       }
     ],
@@ -2146,7 +2171,8 @@
         "amount_fen": 20000000,
         "amount_display": "¥200,000.00"
       }
-    ]
+    ],
+    "after_lowest_display": "¥300,000.00"
   },
   "approvals": [
     {

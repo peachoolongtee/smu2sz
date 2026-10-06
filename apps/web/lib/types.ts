@@ -1600,6 +1600,12 @@ export interface HomeNextAction {
   kind: AlertKind | string;
   plan_source: "router" | "alert";
   title: string;
+  /** The business outcome ("Secure ¥405k of funding") and its components, in overview precision. */
+  outcome_title: string;
+  components: { amount_short: string; what: string; lands_when: string | null }[];
+  receive_short: string | null;
+  after_lowest_fen: Fen | null;
+  after_lowest_short: string | null;
   legs: HomeLeg[];
   receive_fen: Fen | null;
   receive_display: string | null;
@@ -1675,8 +1681,13 @@ export interface HomeView {
   state_version: number;
   lang: "en" | "zh";
   status: HomeStatus;
+  /** Level 1: the conclusion, the detail behind it, the worst point if nothing is done, and whether a plan is ready. */
   headline: string;
   note: string;
+  worst: string | null;
+  plan_note: string | null;
+  /** Echo of the `since_day` the web sent for "what changed since my last visit"; null for the last week. */
+  since_day: number | null;
   cash: {
     cash_fen: Fen;
     cash_display: string;
@@ -1686,6 +1697,13 @@ export interface HomeView {
     lowest_display: string;
     lowest_day: Day;
     first_breach_day: Day | null;
+    first_breach_cash_fen: Fen | null;
+    first_breach_cash_short: string | null;
+    cash_short: string;
+    floor_short: string;
+    lowest_short: string;
+    /** What is driving the risk, from the projection's own events (at most two sentences). */
+    drivers: string[];
     lowest_when: string;
     first_breach_when: string | null;
     horizon_days: number;

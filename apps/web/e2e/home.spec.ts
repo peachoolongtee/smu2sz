@@ -45,18 +45,26 @@ test("the Business home answers safe, do and cost on the opening books, without 
   await expect(page.getByTestId("home-status")).toHaveAttribute("data-status", "ACTION_NEEDED");
   await expect(page.getByTestId("home-status-word")).toHaveText("Action needed");
   // Business words: the reserve, days as distances from today, authority as the owner's signed limits; no "Day N" anywhere.
-  await expect(page.getByTestId("home-headline")).toHaveText("Cash falls ¥240,000.00 below your ¥300,000.00 minimum cash reserve in 12 days.");
-  await expect(page.getByTestId("home-note")).toContainText("within your signed limits");
+  // Conclusion first, then the detail, the worst point and what is driving it; figures in overview precision.
+  await expect(page.getByTestId("home-headline")).toHaveText("Your cash reserve becomes unsafe in 12 days.");
+  await expect(page.getByTestId("home-note")).toHaveText("Cash falls to ¥60k, ¥240k below your ¥300k minimum cash reserve.");
+  await expect(page.getByTestId("home-worst")).toHaveText("Worst point: −¥105k in 30 days if you do nothing.");
+  await expect(page.getByTestId("home-drivers")).toContainText("Payroll of ¥340k falls due in 12 days.");
+  await expect(page.getByTestId("home-breach-cash")).toHaveText("¥60k");
   await expect(page.getByTestId("home-lowest-when")).toHaveText("in 30 days");
   await expect(page.getByTestId("demo-data-indicator")).toHaveCount(1);
   await expect(page.locator("body")).not.toContainText(/\bDay \d/);
-  await expect(page.getByTestId("home-cash")).toHaveText("¥400,000.00");
-  await expect(page.getByTestId("home-lowest")).toHaveText("−¥105,000.00");
+  await expect(page.getByTestId("home-cash")).toHaveText("¥400k");
+  await expect(page.getByTestId("home-lowest")).toHaveText("−¥105k");
   // The best next action: what, how much, cost, when, who decides, what if nothing, after.
   const action = page.getByTestId("home-next-action");
   // The recommendation is the router's cheapest runnable plan, priced all-in (every leg, the basis in words): the
   // same figure the Cash & funding options, the chat and the documents quote.
-  await expect(action.getByTestId("next-action-title")).toContainText("Draw ¥150,000.00 on Bank credit line and finance ¥255,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co.");
+  await expect(action.getByTestId("next-action-title")).toHaveText("Secure ¥405k of funding");
+  await expect(action.getByTestId("next-action-components")).toContainText("¥150k");
+  await expect(action.getByTestId("next-action-components")).toContainText("¥255k");
+  await expect(action.getByTestId("next-action-operation")).toContainText("Draw ¥150,000.00 on Bank credit line and finance ¥255,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co.");
+  await expect(action.getByTestId("next-action-after-lowest")).toHaveText("¥300k");
   await expect(action).toContainText("¥405,000.00");
   await expect(action.getByTestId("next-action-cost")).toContainText("¥3,113.93");
   await expect(action.getByTestId("next-action-cost-breakdown")).toContainText("¥841.64");
@@ -68,13 +76,14 @@ test("the Business home answers safe, do and cost on the opening books, without 
   await expect(action).not.toContainText("agent");
   await expect(action.getByTestId("next-action-if-nothing")).toContainText("¥240,000.00 below your minimum cash reserve in 12 days");
   await expect(action.getByTestId("next-action-after")).toContainText("Cash stays above your minimum cash reserve for the next 120 days");
-  await expect(page.getByTestId("fix-ALERT-RESERVE-12")).toHaveText("Go ahead");
+  await expect(page.getByTestId("fix-ALERT-RESERVE-12")).toHaveText("Run funding plan");
   // Nothing from the demo on the owner's screen: no stepper, no clock, no mock pill, no engine navigation.
   await expect(page.getByRole("region", { name: "Guided demo" })).toHaveCount(0);
   await expect(page.getByTestId("home-advance")).toHaveCount(0);
   await expect(page.getByText("Mock data")).toHaveCount(0);
   await expect(page.getByRole("navigation").getByRole("link", { name: "Trajectory" })).toHaveCount(0);
-  await expect(page.getByTestId("home-waiting-empty")).toBeVisible();
+  // Nothing needs a decision, so the section is not there at all.
+  await expect(page.locator("#home-decisions")).toHaveCount(0);
   await expect(page.getByTestId("home-next-receipt")).toContainText("¥420,000.00 from Foshan Home Retail Co. in 32 days");
 });
 
@@ -85,21 +94,23 @@ test("Go ahead on the opening books runs the fix alone, and the home turns calm 
   await expect(result).toContainText("2 executed");
   await expect(result).toContainText("The alert is cleared.");
   await expect(page.getByTestId("home-status")).toHaveAttribute("data-status", "WATCH");
-  await expect(page.getByTestId("home-headline")).toHaveText("Cash stays above your ¥300,000.00 minimum cash reserve for the next 120 days.");
+  await expect(page.getByTestId("home-headline")).toHaveText("You're covered.");
+  await expect(page.getByTestId("home-note")).toContainText("Cash stays above your ¥300k minimum cash reserve for the next 120 days.");
   await expect(page.getByTestId("home-next-action")).toHaveCount(0);
   await expect(page.getByTestId("home-in-transit")).toContainText("¥255,000.00 on its way");
   await expect(page.getByTestId("home-changes-list")).toContainText("Bank credit line");
-  await expect(page.getByTestId("home-waiting-empty")).toBeVisible();
+  await expect(page.locator("#home-decisions")).toHaveCount(0);
 });
 
 test("day 34: the fix needs approval; queuing it from the home runs nothing and the home says it waits", async ({ page }) => {
   await advanceTo34(page);
   await expect(page.getByTestId("home-status")).toHaveAttribute("data-status", "ACTION_NEEDED");
-  await expect(page.getByTestId("home-headline")).toHaveText("Cash falls ¥200,000.00 below your ¥300,000.00 minimum cash reserve in 8 days.");
+  await expect(page.getByTestId("home-headline")).toHaveText("Your cash reserve becomes unsafe in 8 days.");
   await expect(page.locator("body")).not.toContainText(/\bDay \d/);
-  await expect(page.getByTestId("home-note")).toContainText("needs your approval because of its cost");
+  await expect(page.getByTestId("home-note")).toHaveText("Cash falls to ¥100k, ¥200k below your ¥300k minimum cash reserve.");
   const action = page.getByTestId("home-next-action");
-  await expect(action.getByTestId("next-action-title")).toContainText("Finance ¥200,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co.");
+  await expect(action.getByTestId("next-action-title")).toHaveText("Secure ¥200k of funding");
+  await expect(action.getByTestId("next-action-operation")).toContainText("Finance ¥200,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co.");
   await expect(action).toContainText("¥1,782.19");
   await expect(action).toContainText("32.5% a year for 10 days");
   await expect(action.getByTestId("next-action-lands")).toHaveText("in 3 days");
@@ -157,7 +168,7 @@ test("day 34: the approval card is a question with the cost, the landing day and
   await expect(page.getByTestId("home-status")).toHaveAttribute("data-status", "WATCH");
   await expect(page.getByTestId("home-next-action")).toHaveCount(0);
   await expect(page.getByTestId("home-in-transit")).toContainText("¥200,000.00 on its way");
-  await expect(page.getByTestId("home-waiting-empty")).toBeVisible();
+  await expect(page.locator("#home-decisions")).toHaveCount(0);
   await expect(page.getByTestId("home-changes-list")).toContainText("lands in 3 days");
 });
 

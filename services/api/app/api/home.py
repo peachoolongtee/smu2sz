@@ -24,11 +24,13 @@ from app.api.presentation import (
     buyer_of_receivable,
     cure_legs,
     facility_name,
+    fmt_short,
     in_words,
     invoice_words,
     lead_days,
     leg_words,
     party_name,
+    receivable_face,
     relative_days,
     t,
     when_text,
@@ -43,6 +45,7 @@ from app.domain.models import (
     FundingAction,
     FundingActionKind,
     FundingPlan,
+    LedgerEventKind,
     Mandate,
     Mode,
     OperationStatus,
@@ -93,13 +96,19 @@ def _distance(day: int | None, today: int, lang: str) -> str:
     return when_text(day, today, lang)
 
 
-def _headline(found: list[Alert], mandate: Mandate, t_min_fen: int, t_min_day: int, horizon: int, today: int,
-              lang: str) -> tuple[str, str]:
-    floor = fmt_yuan(mandate.min_cash_fen)
+def _headline(found: list[Alert], mandate: Mandate, traj: Any, horizon: int, today: int,
+              lang: str) -> dict[str, str | None]:
+    """Level 1, conclusion first: the one-line answer, the detail that explains it (where cash goes, against the
+    reserve), the worst point if nothing is done, and the plan's readiness as a separate note."""
+    floor = fmt_short(mandate.min_cash_fen)
     breach = _breach(found)
+    low_when = _distance(traj.min_cash_day, today, lang)
     if breach is not None:
-        short = fmt_yuan(breach.amount_fen or 0)
+        short = fmt_short(breach.amount_fen or 0)
         when = _distance(breach.day, today, lang)
+        at = next((d.closing_fen for d in traj.days if d.day == breach.day), None)
+        worst = t(lang, f"Worst point: {fmt_short(traj.min_cash_fen)} {low_when} if you do nothing.",
+                  f"若不采取行动，最低点为{low_when}的 {fmt_short(traj.min_cash_fen)}。")
         if breach.inputs.get("cure_restores_reserve") == "false":
             zero = breach.inputs.get("zero_day", "")
             head = t(lang, f"Cash goes below zero {_distance(int(zero), today, lang)} if nothing is done.",
@@ -107,40 +116,67 @@ def _headline(found: list[Alert], mandate: Mandate, t_min_fen: int, t_min_day: i
             note = t(lang, f"Cash can be kept at or above zero, but no committed funding restores your {floor} "
                            f"minimum cash reserve: that needs your decision.",
                      f"现金可以保持在零以上，但没有已承诺的融资能恢复您 {floor} 的最低现金储备，需要您决定。")
-            return head, note
-        head = t(lang, f"Cash falls {short} below your {floor} minimum cash reserve {when}.",
-                 f"现金将在{when}比您 {floor} 的最低现金储备低 {short}。")
+            return {"headline": head, "note": note, "worst": worst, "plan_note": None}
+        head = t(lang, f"Your cash reserve becomes unsafe {when}.", f"您的现金储备将在{when}不再安全。")
+        note = (t(lang, f"Cash falls to {fmt_short(at)}, {short} below your {floor} minimum cash reserve.",
+                  f"现金将降至 {fmt_short(at)}，比您 {floor} 的最低现金储备低 {short}。") if at is not None
+                else t(lang, f"Cash falls {short} below your {floor} minimum cash reserve.",
+                       f"现金将比您 {floor} 的最低现金储备低 {short}。"))
         if breach.committed_cure and any(s.above_apr_cap for s in breach.suggested):
-            note = t(lang, "A funding plan is ready. It needs your approval because of its cost.",
-                     "融资方案已准备好，因其成本需要您批准。")
+            plan_note = t(lang, "A funding plan is ready. It needs your approval because of its cost.",
+                          "融资方案已准备好，因其成本需要您批准。")
         elif breach.committed_cure:
-            note = t(lang, "A funding plan is ready, within your signed limits. No approval is needed.",
-                     "融资方案已准备好，在您签署的授权内，无需批准。")
+            plan_note = t(lang, "A funding plan is ready, within your signed limits. No approval is needed.",
+                          "融资方案已准备好，在您签署的授权内，无需批准。")
         elif not mandate.allow_new_borrowing:
-            note = t(lang, "Your limits do not allow new borrowing, so no funding can fix it.",
-                     "您的授权不允许新增借款，因此无法通过融资解决。")
+            plan_note = t(lang, "Your limits do not allow new borrowing, so no funding can fix it.",
+                          "您的授权不允许新增借款，因此无法通过融资解决。")
         else:
-            note = t(lang, "No committed funding can fix it: this needs your decision.",
-                     "没有已承诺的融资能解决它，需要您决定。")
-        return head, note
+            plan_note = t(lang, "No committed funding can fix it: this needs your decision.",
+                          "没有已承诺的融资能解决它，需要您决定。")
+        return {"headline": head, "note": note, "worst": worst, "plan_note": plan_note}
     warnings = [a for a in found if a.severity == Severity.WARNING]
-    head = t(lang, f"Cash stays above your {floor} minimum cash reserve for the next {horizon} days.",
+    head = t(lang, "You're covered.", "您的现金是安全的。")
+    note = t(lang, f"Cash stays above your {floor} minimum cash reserve for the next {horizon} days.",
              f"未来 {horizon} 天现金都保持在您 {floor} 的最低现金储备以上。")
-    if warnings:
-        thin = next((a for a in warnings if a.kind == AlertKind.RESERVE_HEADROOM_LOW), None)
-        if thin is not None and thin.day is not None and not thin.amount_fen:
-            note = t(lang, f"It comes close: cash sits exactly on the minimum cash reserve {_distance(thin.day, today, lang)}.",
-                     f"但会很接近：{_distance(thin.day, today, lang)}现金恰好等于最低现金储备。")
-        elif thin is not None and thin.day is not None:
-            note = t(lang, f"It comes close: only {fmt_yuan(thin.amount_fen or 0)} above the minimum cash reserve "
-                           f"{_distance(thin.day, today, lang)}.",
-                     f"但会很接近：{_distance(thin.day, today, lang)}仅高出最低现金储备 {fmt_yuan(thin.amount_fen or 0)}。")
-        else:
-            note = warnings[0].title
-        return head, note
-    return head, t(lang, f"Lowest cash ahead is {fmt_yuan(t_min_fen)}, {_distance(t_min_day, today, lang)}.",
-                   f"未来最低现金为 {fmt_yuan(t_min_fen)}（{_distance(t_min_day, today, lang)}）。")
+    thin = next((a for a in warnings if a.kind == AlertKind.RESERVE_HEADROOM_LOW), None)
+    if thin is not None and thin.day is not None and not thin.amount_fen:
+        note += " " + t(lang, f"It comes close: cash sits exactly on the minimum cash reserve {_distance(thin.day, today, lang)}.",
+                        f"但会很接近：{_distance(thin.day, today, lang)}现金恰好等于最低现金储备。")
+    elif thin is not None and thin.day is not None:
+        note += " " + t(lang, f"It comes close: only {fmt_yuan(thin.amount_fen or 0)} above the minimum cash reserve "
+                              f"{_distance(thin.day, today, lang)}.",
+                        f"但会很接近：{_distance(thin.day, today, lang)}仅高出最低现金储备 {fmt_yuan(thin.amount_fen or 0)}。")
+    elif warnings:
+        note += " " + relative_days(warnings[0].title, today, lang)
+    worst = t(lang, f"Lowest cash ahead: {fmt_short(traj.min_cash_fen)} {low_when}.",
+              f"未来最低现金：{low_when}的 {fmt_short(traj.min_cash_fen)}。")
+    return {"headline": head, "note": note, "worst": worst, "plan_note": None}
 
+
+def _drivers(state: FinancialState, traj: Any, today: int, breach_day: int | None, lang: str) -> list[str]:
+    """What is driving the cash risk, from the projection's own events: the largest outflows between today and the
+    first unsafe day, and the receipt that arrives only after it. At most two sentences; nothing is computed, the
+    events are the engine's."""
+    if breach_day is None:
+        return []
+    out: list[tuple[int, str]] = []
+    for d in traj.days:
+        if today <= d.day <= breach_day:
+            for e in d.events:
+                if e.amount_fen < 0 and e.kind in (LedgerEventKind.FLOW,):
+                    label = in_words(state, e.label.split(" (")[0].split(",")[0])
+                    out.append((e.amount_fen, t(lang, f"{label} of {fmt_short(-e.amount_fen)} falls due {when_text(d.day, today, lang)}.",
+                                                 f"{label} {fmt_short(-e.amount_fen)} 将于{when_text(d.day, today, lang)}到期。")))
+    out.sort(key=lambda x: x[0])
+    sentences = [text for _, text in out[:2]]
+    nxt = next(((d.day, e) for d in traj.days if d.day > breach_day for e in d.events
+                if e.amount_fen > 0 and e.kind in (LedgerEventKind.RECEIPT, LedgerEventKind.EARLY_RECEIPT)), None)
+    if nxt is not None and len(sentences) < 2:
+        day, e = nxt
+        sentences.append(t(lang, f"The next receipt, {fmt_short(e.amount_fen)}, lands only {when_text(day, today, lang)}.",
+                           f"下一笔收款 {fmt_short(e.amount_fen)} 要到{when_text(day, today, lang)}才到账。"))
+    return sentences
 
 def _rate_in(reason: str) -> str | None:
     """The effective yearly rate the router's approval reason names ("effective annual cost 16.26% is above ...")."""
@@ -327,12 +363,36 @@ def _next_action(state: FinancialState, obs: list[Any], mandate: Mandate, found:
     lands = [leg["lands_day"] for leg in legs if leg["lands_day"] is not None]
     receive = sum(leg["amount_fen"] or 0 for leg in legs if leg["operation_kind"] in ("DRAW_FACILITY", "SUBMIT_INVOICE_FOR_FINANCING"))
 
+    receive_short = fmt_short(receive) if receive else None
+    components = []
+    for leg in legs:
+        if leg["operation_kind"] == "DRAW_FACILITY":
+            what = leg["facility_name"]
+        elif leg["operation_kind"] == "SUBMIT_INVOICE_FOR_FINANCING":
+            face = receivable_face(state, leg["receivable_id"])
+            buyer = leg["buyer_name"] or ""
+            inv = (t(lang, f"the {fmt_short(face)} invoice to {buyer}", f"{buyer} 的 {fmt_short(face)} 发票") if face is not None and buyer
+                   else invoice_words(state, leg["receivable_id"], lang))
+            what = t(lang, f"against {inv}", f"以{inv}融资")
+        elif leg["operation_kind"] == "REPAY_FACILITY":
+            what = t(lang, f"repay {leg['facility_name']}", f"偿还{leg['facility_name']}")
+        else:
+            what = leg["label"]
+        components.append({"amount_short": fmt_short(leg["amount_fen"] or 0), "what": what, "lands_when": leg.get("lands_when")})
+    if alert.kind == AlertKind.RESERVE_BREACH_AHEAD and receive:
+        outcome_title = t(lang, f"Secure {receive_short} of funding", f"筹措 {receive_short} 资金")
+    elif alert.kind == AlertKind.FACILITY_REPAYABLE and receive:
+        outcome_title = t(lang, f"Repay {receive_short} of the credit line", f"偿还信用额度 {receive_short}")
+    else:
+        outcome_title = title
     plan_series: list[dict[str, Any]] | None = None
     after_traj = None
+    after_lowest = None
     if actions:
         try:
             after_traj = project(state, obs, actions, Mode.CONSERVATIVE, horizon, floor)
             plan_series = _series(state, after_traj)
+            after_lowest = min((d.closing_fen for d in after_traj.days if d.day >= today), default=None)
         except EngineError:
             after_traj = None
 
@@ -365,6 +425,11 @@ def _next_action(state: FinancialState, obs: list[Any], mandate: Mandate, found:
         "kind": alert.kind.value,
         "plan_source": rec.source,
         "title": title,
+        "outcome_title": outcome_title,
+        "components": components,
+        "receive_short": receive_short,
+        "after_lowest_fen": after_lowest,
+        "after_lowest_short": fmt_short(after_lowest) if after_lowest is not None else None,
         "legs": legs,
         "receive_fen": receive or None,
         "receive_display": fmt_yuan(receive) if receive else None,
@@ -421,8 +486,10 @@ def _approvals(state: FinancialState, obs: list[Any], mandate: Mandate, approval
     return out
 
 
-def _changes(state: FinancialState, store: Any, found: list[Alert], today: int, lang: str) -> list[dict[str, Any]]:
-    since = today - RECENT_DAYS
+def _changes(state: FinancialState, store: Any, found: list[Alert], today: int, lang: str,
+             since_day: int | None = None) -> list[dict[str, Any]]:
+    """Since the owner's last visit when the web says when that was (`since_day`), else the last week of the clock."""
+    since = since_day if since_day is not None else today - RECENT_DAYS
     items: list[dict[str, Any]] = []
     entries, _ = read_entries(store.operations())
     for e in entries:
@@ -498,7 +565,7 @@ def _in_transit(state: FinancialState, today: int, lang: str) -> dict[str, Any] 
 
 
 @router.get("/home")
-def get_home(lang: str = "en") -> dict[str, Any]:
+def get_home(lang: str = "en", since_day: int | None = None) -> dict[str, Any]:
     rt = get_runtime()
     lang = "zh" if lang == "zh" else "en"
     with rt.lock:
@@ -513,14 +580,17 @@ def get_home(lang: str = "en") -> dict[str, Any]:
         approvals = rt.store.approvals()
         pending = [a for a in approvals if str(getattr(a.status, "value", a.status)) == "PENDING"]
         status = _status(found, len(pending))
-        headline, note = _headline(found, mandate, traj.min_cash_fen, traj.min_cash_day, mandate.horizon_days, today, lang)
+        words = _headline(found, mandate, traj, mandate.horizon_days, today, lang)
+        headline, note = words["headline"], words["note"]
+        drivers = _drivers(books.state, traj, today, traj.first_breach_day, lang)
+        at_breach = next((d.closing_fen for d in traj.days if d.day == traj.first_breach_day), None) if traj.first_breach_day is not None else None
         action = _next_action(books.state, books.with_([]), mandate, found, approvals, today, state.state_version, lang,
                               use_router=rt.settings.features.debt_desk)
         plan_series = action.pop("plan_series") if action is not None else None
         series = _series(books.state, traj)
         queue = _approvals(books.state, books.with_([]), mandate, approvals, found, today, lang,
                            use_router=rt.settings.features.debt_desk)
-        changes = _changes(books.state, rt.store, found, today, lang)
+        changes = _changes(books.state, rt.store, found, today, lang, since_day)
         receivables = _receivables(books.state, rt.store, today, lang)
         in_transit = _in_transit(books.state, today, lang)
         warnings = [{"id": a.id, "kind": a.kind.value, "title": relative_days(in_words(state, a.title), today, lang),
@@ -542,12 +612,21 @@ def get_home(lang: str = "en") -> dict[str, Any]:
         "status": status,
         "headline": headline,
         "note": note,
+        "worst": words["worst"],
+        "plan_note": words["plan_note"],
+        "since_day": since_day,
         "cash": {
             "cash_fen": state.cash_fen,
             "floor_fen": mandate.min_cash_fen,
             "lowest_fen": traj.min_cash_fen,
             "lowest_day": traj.min_cash_day,
             "first_breach_day": traj.first_breach_day,
+            "first_breach_cash_fen": at_breach,
+            "first_breach_cash_short": fmt_short(at_breach) if at_breach is not None else None,
+            "cash_short": fmt_short(state.cash_fen),
+            "floor_short": fmt_short(mandate.min_cash_fen),
+            "lowest_short": fmt_short(traj.min_cash_fen),
+            "drivers": drivers,
             "lowest_when": when_text(traj.min_cash_day, today, lang),
             "first_breach_when": when_text(traj.first_breach_day, today, lang) if traj.first_breach_day is not None else None,
             "horizon_days": mandate.horizon_days,
