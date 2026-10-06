@@ -1,7 +1,7 @@
 "use client";
 
 import { Badge, Callout, Card, EmptyState, ErrorState, Formula, LoadingBlock, PageHeader, type Tone } from "@/components/ui";
-import { CodeBadge } from "@/components/badges";
+import { PlainCode } from "@/components/badges";
 import { AlertCure, FixResult, SuggestionCost, useAlertContext, useFixAlert, ZeroFloorNote } from "@/components/home/fix-alert";
 import { getAlerts } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
@@ -60,10 +60,8 @@ export default function AlertsPage() {
                     actions={<Badge tone={severityTone[a.severity]}>{te("alertsev", a.severity)}</Badge>}
                   >
                     <div className="flex flex-wrap items-center gap-2">
-                      <CodeBadge code={a.kind} />
-                      {a.kind === "FUNDING_IN_TRANSIT" || a.kind === "MANDATE_EXPIRING" ? (
-                        <Badge tone="info">{te("alertkind", a.kind)}</Badge>
-                      ) : (
+                      <PlainCode code={a.kind} kind="alertkind" tone={severityTone[a.severity]} />
+                      {a.kind === "FUNDING_IN_TRANSIT" || a.kind === "MANDATE_EXPIRING" ? null : (
                         <Badge tone={a.committed_cure ? "ok" : "warn"}>{a.committed_cure ? t("alerts.cure.yes") : t("alerts.cure.no")}</Badge>
                       )}
                     </div>

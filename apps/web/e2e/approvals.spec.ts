@@ -58,7 +58,7 @@ test("an approval card expands in place to the operation, the reason, the amount
   await expect(card.getByTestId("approval-detail-APR-000001")).toHaveCount(0);
   await card.getByTestId("approval-toggle-APR-000001").click();
   const detail = card.getByTestId("approval-detail-APR-000001");
-  await expect(detail).toContainText("Apply for facility");
+  await expect(detail).toContainText("Apply for a loan");
   await expect(detail).toContainText("FAC-ETL");
   await expect(detail).toContainText("¥600,000.00");
   await expect(detail).toContainText("Day 0, by Agent");

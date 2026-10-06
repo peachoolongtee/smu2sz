@@ -1,7 +1,7 @@
 "use client";
 
 import { CheckIcon, XIcon } from "@/components/icons";
-import { CodeBadge, OpStatusBadge, TierBadge } from "@/components/badges";
+import { CodeBadge, OpStatusBadge, PlainCode, TierBadge } from "@/components/badges";
 import { SpanQuote } from "@/components/offer-parts";
 import {
   Badge,
@@ -116,7 +116,7 @@ export default function LedgerPage() {
                           {o.violations.length ? (
                             <div className="mt-1 flex flex-wrap gap-1">
                               {o.violations.map((v) => (
-                                <CodeBadge key={v.code} code={v.code} tone="bad" />
+                                <PlainCode key={v.code} code={v.code} tone="bad" />
                               ))}
                             </div>
                           ) : null}
@@ -125,7 +125,7 @@ export default function LedgerPage() {
                           <OpStatusBadge status={o.status} />
                         </td>
                         <td className={tdCls}>
-                          <TierBadge tier={o.tier} />
+                          <TierBadge tier={o.tier} explain />
                         </td>
                         <td className={tdCls}>{te("actor", o.requested_by)}</td>
                         <td className={tdCls}>
