@@ -155,6 +155,7 @@ export function AssistantTurn({
   const hasSecurity = r.security_events.length > 0;
   const ranNothing = r.operations.length === 0 && (hasSecurity || r.plan.length > 0);
   const zh = r.lang === "zh";
+  const refused = r.operations.some((o) => o.status === "REFUSED");
 
   return (
     <div
@@ -162,25 +163,24 @@ export function AssistantTurn({
       data-testid="chat-turn"
       data-intent={r.intent}
     >
-      <div className="flex flex-wrap items-center gap-2">
-        <span data-testid="chat-intent">
-          <Badge tone="brand">{te("nlintent", r.intent) || r.intent}</Badge>
-        </span>
-        {r.amended ? (
-          <span data-testid="chat-corrected">
-            <Badge tone="info" title={t("chat.corrected.hint")}>
-              {t("chat.corrected")}
-            </Badge>
-          </span>
-        ) : null}
-        {r.replayed ? (
-          <span data-testid="chat-replayed">
-            <Badge tone="neutral" title={t("chat.replayed.hint")}>
-              {t("chat.replayed")}
-            </Badge>
-          </span>
-        ) : null}
-      </div>
+      {r.amended || r.replayed ? (
+        <div className="flex flex-wrap items-center gap-2">
+          {r.amended ? (
+            <span data-testid="chat-corrected">
+              <Badge tone="info" title={t("chat.corrected.hint")}>
+                {t("chat.corrected")}
+              </Badge>
+            </span>
+          ) : null}
+          {r.replayed ? (
+            <span data-testid="chat-replayed">
+              <Badge tone="neutral" title={t("chat.replayed.hint")}>
+                {t("chat.replayed")}
+              </Badge>
+            </span>
+          ) : null}
+        </div>
+      ) : null}
 
       <p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-ink" data-testid="chat-reply">
         {r.reply}
@@ -223,15 +223,6 @@ export function AssistantTurn({
         </p>
       ) : null}
 
-      {r.plan.length ? <PlanList plan={r.plan} /> : null}
-
-      {r.operations.length ? <OperationList operations={r.operations} /> : null}
-      {ranNothing ? (
-        <p className="text-xs font-medium text-ink-2" data-testid="chat-nothing-executed">
-          {t("chat.ops.none")}
-        </p>
-      ) : null}
-
       {r.clarification ? (
         <section aria-label={t("chat.clarify")} className="rounded-md border border-info-line bg-info-bg px-3 py-2" data-testid="chat-clarify">
           <p className="text-sm font-medium text-info-fg">{r.clarification.question}</p>
@@ -266,6 +257,22 @@ export function AssistantTurn({
           </div>
         </section>
       ) : null}
+
+      <details className="rounded-md border border-line px-3 py-2" open={hasSecurity || refused} data-testid="chat-details">
+        <summary className="cursor-pointer text-xs font-medium text-ink-2">{t("chat.details")}</summary>
+        <div className="mt-2 space-y-3">
+          <span data-testid="chat-intent" className="inline-block">
+            <Badge tone="brand">{te("nlintent", r.intent) || r.intent}</Badge>
+          </span>
+          {r.plan.length ? <PlanList plan={r.plan} /> : null}
+          {r.operations.length ? <OperationList operations={r.operations} /> : null}
+          {ranNothing ? (
+            <p className="text-xs font-medium text-ink-2" data-testid="chat-nothing-executed">
+              {t("chat.ops.none")}
+            </p>
+          ) : null}
+        </div>
+      </details>
     </div>
   );
 }
