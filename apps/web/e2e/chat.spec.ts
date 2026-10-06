@@ -43,12 +43,19 @@ test("owner: Evaluate EX01 is a REJECT, then go ahead lists the executed operati
   await expect(first.getByTestId("chat-plan")).toContainText("Proposed");
   await expect(first.getByTestId("chat-ops")).toHaveCount(0);
   await expect(first.getByTestId("chat-awaiting")).toContainText("Nothing has run yet");
+  // The confirmation stays at level 1 while the plan waits behind Details.
+  await expect(first.getByTestId("chat-awaiting")).toBeVisible();
+  await expect(first.getByTestId("chat-plan")).toBeHidden();
 
   await first.getByTestId("chat-goahead").click();
   await expect(turns(page)).toHaveCount(2);
   const second = turns(page).nth(1);
   await expect(second.getByTestId("chat-intent")).toHaveText("Negotiate");
   const ops = second.getByTestId("chat-ops");
+  // The trace sits behind the Details disclosure: closed until the reader opens it.
+  await expect(second.getByTestId("chat-details")).not.toHaveAttribute("open", "");
+  await expect(ops).toBeHidden();
+  await second.getByTestId("chat-details").locator("summary").first().click();
   await expect(ops).toBeVisible();
   await expect(ops.locator('[data-status="EXECUTED"]')).toHaveCount(4);
   await expect(second.getByTestId("chat-op-ACCEPT_OFFER")).toContainText("Executed");
@@ -57,6 +64,27 @@ test("owner: Evaluate EX01 is a REJECT, then go ahead lists the executed operati
   await expect(second.getByTestId("chat-negotiation")).toContainText("Option A");
   // The confirmation buttons on the answered turn are history now.
   await expect(turns(page).first().getByTestId("chat-goahead")).toBeDisabled();
+});
+
+test("details are closed on a plain reply and open when the turn has a security event or a refused operation", async ({ page, request }) => {
+  await resetBooks(request);
+  await page.goto("/chat");
+  await signIn(page);
+
+  await send(page, "status");
+  const plain = turns(page).nth(0);
+  await expect(plain.getByTestId("chat-reply")).toBeVisible();
+  await expect(plain.getByTestId("chat-details")).not.toHaveAttribute("open", "");
+  await expect(plain.getByTestId("chat-intent")).toBeHidden();
+
+  // A Tier-3 request is refused and logged as a security event: the trace is open without a click.
+  await send(page, "Sign a personal guarantee for the bank loan");
+  const refused = turns(page).nth(1);
+  await expect(refused.getByTestId("chat-op-SIGN_PERSONAL_GUARANTEE")).toContainText("Refused");
+  await expect(refused.getByTestId("chat-details")).toHaveAttribute("open", "");
+  await expect(refused.getByTestId("chat-security")).toBeVisible();
+  await expect(refused.getByTestId("chat-ops")).toBeVisible();
+  await expect(refused.getByTestId("chat-nothing-executed")).toHaveCount(0);
 });
 
 test("buyer: the FastCapital message gets only the refusal reply, no verdict, and sends no credential", async ({ page, request }) => {
