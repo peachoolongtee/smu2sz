@@ -18,8 +18,10 @@ from app.alerts import Alert, Severity, alerts, cure_operations, reconcile
 from app.api.auth import require_owner
 from app.api.display import displayed
 from app.api.runtime import Runtime, get_runtime
+from app.books import current_books
 from app.domain.models import Obligation, OperationStatus, SecurityEvent, SecurityEventKind
 from app.financial import EngineError
+from app.funding.recommend import plan_operations, plan_suggestions, runnable_plan
 from app.verifier import bind
 
 router = APIRouter(dependencies=[Depends(require_owner)])
@@ -120,6 +122,7 @@ def act_on_alert(alert_id: str, body: ActRequest | None = None) -> dict[str, Any
         shown_version = body.state_version if body is not None else None
         shown_suggestions = ([s.model_dump() for s in body.suggestions]
                              if body is not None and body.suggestions is not None else None)
+        plan = None
         if shown_version is None and shown_suggestions is None:
             key = f"unbound-act|{alert_id}|{rt.day}|{len(rt.store.security_events())}"
             rt.store.add_security_event(SecurityEvent(
@@ -128,9 +131,18 @@ def act_on_alert(alert_id: str, body: ActRequest | None = None) -> dict[str, Any
                 action_taken="acted on the recomputed alert; the request was not bound to what the owner was shown",
                 detail=f"unbound act: POST /alerts/{alert_id}/act carried no state_version and no suggestions"))
         else:
+            # What was shown is either the alert's own cure or the router's runnable plan the home recommends
+            # (app.funding.recommend); both are recomputed now and compared leg by leg (kind, facility, receivable,
+            # amount, in order). Anything else means the books moved since the owner read it.
+            if (shown_suggestions is not None and alert is not None and shown_suggestions != _signature(alert)
+                    and rt.settings.features.debt_desk):
+                books = current_books(state, rt.store.commitments())
+                candidate = runnable_plan(books.state, books.with_([]), mandate)
+                if candidate is not None and shown_suggestions == plan_suggestions(candidate):
+                    plan = candidate
             changed = ((shown_version is not None and shown_version != state.state_version)
                        or (shown_suggestions is not None
-                           and (alert is None or shown_suggestions != _signature(alert))))
+                           and (alert is None or (shown_suggestions != _signature(alert) and plan is None))))
             if changed:
                 raise HTTPException(409, detail={
                     "code": "ALERT_CHANGED", "alert_id": alert_id, "state_version": state.state_version,
@@ -138,7 +150,9 @@ def act_on_alert(alert_id: str, body: ActRequest | None = None) -> dict[str, Any
                     "alert": displayed(json.loads(alert.model_dump_json())) if alert is not None else None})
         if alert is None:
             raise HTTPException(404, detail={"code": "ALERT_NOT_FOUND", "alert_id": alert_id})
-        ops = cure_operations(alert, day=rt.day, mandate_version=mandate.version, state_version=state.state_version)
+        ops = (plan_operations(alert.id, plan, day=rt.day, mandate_version=mandate.version, state_version=state.state_version)
+               if plan is not None else
+               cure_operations(alert, day=rt.day, mandate_version=mandate.version, state_version=state.state_version))
         if not ops:
             raise HTTPException(409, detail={"code": "NO_EXECUTABLE_CURE", "alert_id": alert_id,
                                              "message": "This alert suggests nothing the agent may execute."})

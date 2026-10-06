@@ -103,7 +103,10 @@ def test_a_cure_under_the_cap_is_not_flagged_and_has_no_cap_sentence(client, rt)
             in b.detail)
     r = client.post("/nl/opener", json={"session_id": "uc-1"}, headers=OWNER).json()  # day 0: the golden gap
     assert r["has_news"] and "yearly ceiling" not in r["reply"] and "needs your approval" not in r["reply"]
-    assert fmt_yuan(inv.cost_fen) in r["reply"] and "a year for those" in r["reply"]
+    # the opener proposes the recommendation the home shows (wayfinder #15): the router's plan, priced all-in
+    assert "finance ¥255,000.00 of invoice RCV-A" in r["reply"] and "it will cost ¥2,272.29" in r["reply"]
+    assert "about ¥841.64 interest if it is repaid on day 32 as expected" in r["reply"]
+    assert "Together they cost about ¥3,113.93 in all." in r["reply"]
     assert r["reply"].endswith("Go ahead?")
 
 
@@ -127,7 +130,9 @@ def test_the_opener_states_the_price_and_go_ahead_still_runs_one_operation(clien
     assert s["cost_days"] == 10 and rate == "32.5%"
     assert (f"That is above your {cap} yearly ceiling for funding (invoice financing is billed in whole 30-day "
             f"periods), so it needs your approval: if you say go ahead I will queue it for you to approve, and it "
-            f"does not run until you do. Go ahead?") in en
+            f"does not run until you do.") in en
+    # the router's cheaper two-invoice plan would need two approvals: the cure is proposed and the option is named
+    assert "A cheaper plan exists, ¥1,706.10 in all, but it would need 2 separate approvals; this one needs one. Go ahead?" in en
     assert en.endswith("Go ahead?") and en.index("a year") < en.index("yearly ceiling")
     zh = client.post("/nl/opener", json={"session_id": "pc-2", "lang": "zh"}, headers=OWNER).json()["reply"]
     for figure in (cost, rate, str(s["cost_days"]), cap, "47", "需要您批准"):

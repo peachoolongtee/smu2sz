@@ -11,6 +11,7 @@ amount, day and rate is copied from an engine result.
 from __future__ import annotations
 
 import json
+import re
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -20,20 +21,41 @@ from app.api.auth import require_owner
 from app.api.display import displayed
 from app.api.presentation import (
     approval_words,
+    buyer_of_receivable,
     cure_legs,
     facility_name,
     in_words,
     invoice_words,
-    needs_owner_reason,
+    lead_days,
+    leg_words,
     party_name,
     t,
 )
+from app.api.presentation import (
+    needs_owner_reason as needs_owner_reason_words,
+)
 from app.api.runtime import get_runtime
 from app.books import current_books
-from app.domain.models import FinancialState, Mandate, Mode, OperationStatus
+from app.domain.models import (
+    FinancialState,
+    FundingAction,
+    FundingActionKind,
+    FundingPlan,
+    Mandate,
+    Mode,
+    OperationStatus,
+)
 from app.domain.money import fmt_yuan
 from app.financial import EngineError, project
 from app.financial.lots import ensure_lots
+from app.funding.recommend import (
+    KIND_OF,
+    Recommendation,
+    cost_lines_by_leg,
+    plan_suggestions,
+    recommend,
+    runnable_plan,
+)
 from app.operations.log import read_entries
 
 router = APIRouter(dependencies=[Depends(require_owner)])
@@ -126,40 +148,197 @@ def _headline(found: list[Alert], mandate: Mandate, t_min_fen: int, t_min_day: i
                    f"未来最低现金为第 {t_min_day} 天的 {fmt_yuan(t_min_fen)}。")
 
 
-def _next_action(state: FinancialState, mandate: Mandate, found: list[Alert], approvals: list[Any], today: int,
-                 state_version: int, lang: str) -> dict[str, Any] | None:
-    """The one thing to do now: the cure of the first actionable critical alert (a reserve breach), else a repayment
-    the books can afford. Its cost, rate, landing day and after-state are the alert's own."""
+def _rate_in(reason: str) -> str | None:
+    """The effective yearly rate the router's approval reason names ("effective annual cost 16.26% is above ...")."""
+    m = re.search(r"effective annual cost (\S+) is above", reason or "")
+    return m.group(1) if m else None
+
+
+def _plan_lines(state: FinancialState, p: FundingPlan, lang: str) -> list[dict[str, Any]]:
+    """The router's cost lines, in words, plus one more line when its total is not their sum: the router's total is
+    the net change in charges the plan makes to the whole projection, so a plan that lets an existing balance be
+    repaid sooner carries that saving as a negative line here, and the lines always add up to the total shown."""
+    lines = [{"label": in_words(state, cl.label), "display": fmt_yuan(cl.fen), "formula": cl.formula} for cl in p.costs]
+    offset = p.total_cost_fen - sum(cl.fen for cl in p.costs)
+    if offset != 0:
+        lines.append({"label": t(lang, "Change in interest on balances already drawn", "已提款余额的利息变化"),
+                      "display": fmt_yuan(offset), "formula": None})
+    return lines
+
+
+def _plan_legs(state: FinancialState, p: FundingPlan, today: int, lang: str) -> list[dict[str, Any]]:
+    """The router plan's legs as business legs: amounts, the cost line the router wrote for each, its landing day."""
+    legs: list[dict[str, Any]] = []
+    for i, (a, cl) in enumerate(zip(p.actions, p.costs, strict=True)):
+        kind = KIND_OF[a.kind]
+        legs.append({
+            "index": i,
+            "operation_kind": kind,
+            "label": leg_words(state, kind, a.facility_id, a.receivable_id, a.amount_fen, lang),
+            "facility_id": a.facility_id,
+            "facility_name": facility_name(state, a.facility_id),
+            "receivable_id": a.receivable_id,
+            "buyer_name": party_name(state, buyer_of_receivable(state, a.receivable_id)) or None,
+            "amount_fen": a.amount_fen,
+            "amount_display": fmt_yuan(a.amount_fen),
+            "cost_fen": cl.fen,
+            "cost_display": fmt_yuan(cl.fen),
+            "rate_text": _rate_in(cl.approval_reason),
+            "cost_days": None,
+            "cost_due_day": a.repay_day,
+            "lands_day": a.lands_day if a.lands_day is not None else today + lead_days(state, a.facility_id),
+            "above_apr_cap": cl.needs_owner_approval,
+            "formula": cl.formula,
+        })
+    return legs
+
+
+def _plan_basis(state: FinancialState, p: FundingPlan, lang: str) -> str:
+    """What the all-in estimate assumes, in words: the line is priced to the day the baseline first recovers (the
+    router's own convention), an advance in whole 30-day periods until the invoice is paid."""
+    parts: list[str] = []
+    for a in p.actions:
+        if a.kind == FundingActionKind.DRAW and a.repay_day is not None:
+            name = facility_name(state, a.facility_id)
+            parts.append(t(lang, f"Estimated through the expected repayment of the {name} on day {a.repay_day}, the first "
+                                 f"receipt that can repay it; the final interest depends on the actual repayment day.",
+                           f"按预计第 {a.repay_day} 天（第一笔足以还款的收款）偿还{name}估算；最终利息取决于实际还款日。"))
+    if any(a.kind == FundingActionKind.FINANCE_INVOICE for a in p.actions):
+        parts.append(t(lang, "Invoice financing is billed in whole 30-day periods until the invoice is paid.",
+                       "发票融资按整 30 天计费，直至发票付清。"))
+    return " ".join(parts)
+
+
+def _alert_actions(state: FinancialState, alert: Alert, today: int) -> list[FundingAction]:
+    """The alert's suggested cure as projection actions (for the after-state series only; nothing runs)."""
+    out: list[FundingAction] = []
+    for s in alert.suggested:
+        if s.operation_kind == "DRAW_FACILITY" and s.facility_id and s.amount_fen:
+            out.append(FundingAction(kind=FundingActionKind.DRAW, facility_id=s.facility_id, day=today, amount_fen=s.amount_fen))
+        elif s.operation_kind == "SUBMIT_INVOICE_FOR_FINANCING" and s.facility_id and s.receivable_id and s.amount_fen:
+            out.append(FundingAction(kind=FundingActionKind.FINANCE_INVOICE, facility_id=s.facility_id, day=today,
+                                     amount_fen=s.amount_fen, receivable_id=s.receivable_id))
+    return out
+
+
+def _series(state: FinancialState, traj: Any) -> list[dict[str, Any]]:
+    """One projection as the chart's rows: the day, its closing cash (fen for the axis, the display string for the
+    reader) and the events that moved it, with ids replaced by names."""
+    return [{"day": d.day, "closing_fen": d.closing_fen, "closing_display": fmt_yuan(d.closing_fen),
+             "events": [{"kind": e.kind.value, "label": in_words(state, e.label), "amount_fen": e.amount_fen,
+                         "amount_display": fmt_yuan(e.amount_fen)} for e in d.events]}
+            for d in traj.days]
+
+
+def _after_words(after: Any, floor: int, today: int, horizon: int, lang: str) -> str:
+    """The after-state of a plan from its own projection: the first day cash is below the reserve, if any."""
+    first = next((d.day for d in after.days if d.day >= today and d.closing_fen < floor), None)
+    if first is None:
+        return t(lang, f"Cash stays above your safe level for the next {horizon} days.",
+                 f"未来 {horizon} 天现金都保持在您的安全线以上。")
+    return t(lang, f"Cash stays above your safe level through day {first - 1}.",
+             f"现金在第 {first - 1} 天前都保持在安全线以上。")
+
+
+def _next_action(state: FinancialState, obs: list[Any], mandate: Mandate, found: list[Alert], approvals: list[Any],
+                 today: int, state_version: int, lang: str, *, use_router: bool = True) -> dict[str, Any] | None:
+    """The one thing to do now, for the first actionable critical alert (a reserve breach), else a repayment the books
+    can afford. For a reserve breach the plan shown is the recommendation of `app.funding.recommend`: the router's
+    cheapest runnable plan, priced all-in on the router's convention, else the alert's own cure. Its cost, landing day
+    and after-state are the engine's; "Go ahead" binds to the exact legs listed in `suggestions`."""
     alert = next((a for a in found if a.actionable and a.severity == Severity.CRITICAL), None)
     if alert is None:
         alert = next((a for a in found if a.actionable and a.kind == AlertKind.FACILITY_REPAYABLE), None)
     if alert is None:
         return None
-    legs = cure_legs(state, alert, today, lang)
+    cure_legs_ = cure_legs(state, alert, today, lang)
     queued = next((a for a in approvals if str(getattr(a.status, "value", a.status)) == "PENDING"
                    and (a.op_id or "").startswith(f"alert:{alert.id}:")), None)
-    needs_owner = any(leg["above_apr_cap"] for leg in legs) or any(
-        leg["operation_kind"] == "APPLY_FOR_FACILITY" for leg in legs)
+    horizon = mandate.horizon_days
+    floor = mandate.min_cash_fen
+
+    rec = Recommendation("alert", None, None)
+    reserve_cure = alert.kind == AlertKind.RESERVE_BREACH_AHEAD and alert.inputs.get("cure_restores_reserve") != "false"
+    if use_router and reserve_cure:
+        rec = recommend(state, obs, mandate, cure_exists=bool(cure_legs_),
+                        cure_approvals=sum(1 for leg in cure_legs_ if leg["above_apr_cap"]))
+
+    if rec.source == "router" and rec.plan is not None:
+        p = rec.plan
+        legs = _plan_legs(state, p, today, lang)
+        needs_owner = p.needs_owner_approval
+        needs_owner_reason = in_words(state, p.approval_reason) if needs_owner else None
+        cost_total = fmt_yuan(p.total_cost_fen)
+        cost_breakdown = _plan_lines(state, p, lang)
+        cost_basis = _plan_basis(state, p, lang)
+        cost_note = None
+        actions = list(p.actions)
+        suggestions = plan_suggestions(p)
+        why = t(lang, "The cheapest plan your committed facilities can fund in time, within the agent's search.",
+                "在代理的搜索范围内，您已承诺的额度能及时覆盖缺口的最便宜方案。")
+        cheaper = None
+    else:
+        legs = cure_legs_
+        needs_owner = any(leg["above_apr_cap"] for leg in legs) or any(
+            leg["operation_kind"] == "APPLY_FOR_FACILITY" for leg in legs)
+        needs_owner_reason = needs_owner_reason_words(mandate, legs, lang) if needs_owner else None
+        # The engine states the whole cure's cost only when every leg is priced; otherwise the priced legs are quoted
+        # and the basis says what is left out: an open-ended draw posts no interest until it is repaid.
+        cost_total = alert.inputs.get("cure_cost")
+        cost_note = None
+        priced = [leg for leg in legs if leg["cost_display"]]
+        if cost_total is None and len(priced) == 1:
+            cost_total = priced[0]["cost_display"]
+        unpriced_draw = [leg for leg in legs if leg["operation_kind"] == "DRAW_FACILITY" and not leg["cost_display"]]
+        if unpriced_draw and cost_total:
+            names = ", ".join(leg["facility_name"] for leg in unpriced_draw)
+            cost_note = t(lang, f"Interest on the {names} draw is not included: it runs only while the balance stays drawn.",
+                          f"不含{names}提款的利息：利息只在余额未还期间产生。")
+        cost_breakdown = [{"label": leg["label"], "display": leg["cost_display"], "formula": None} for leg in priced]
+        cost_basis = cost_note or (t(lang, "Invoice financing is billed in whole 30-day periods until the invoice is paid.",
+                                     "发票融资按整 30 天计费，直至发票付清。")
+                                   if any(leg["operation_kind"] == "SUBMIT_INVOICE_FOR_FINANCING" for leg in priced) else "")
+        actions = _alert_actions(state, alert, today)
+        suggestions = [{"operation_kind": s.operation_kind, "facility_id": s.facility_id,
+                        "receivable_id": s.receivable_id, "amount_fen": s.amount_fen} for s in alert.suggested]
+        cheaper = None
+        if rec.cheaper is not None:
+            c = rec.cheaper
+            n = sum(1 for cl in c.costs if cl.needs_owner_approval)
+            words = [leg_words(state, KIND_OF[a.kind], a.facility_id, a.receivable_id, a.amount_fen, lang) for a in c.actions]
+            offset = c.total_cost_fen - sum(cl.fen for cl in c.costs)
+            saving = (t(lang, f" (including {fmt_yuan(-offset)} less interest on balances already drawn)",
+                        f"（含已提款余额少付的利息 {fmt_yuan(-offset)}）") if offset < 0 else "")
+            cheaper = {"label": t(lang, " and ".join(words), "，".join(words)), "cost_total_display": fmt_yuan(c.total_cost_fen),
+                       "approvals": n, "legs": [f"{x['label']}: {x['display']}" for x in _plan_lines(state, c, lang)]}
+            why = t(lang, f"The cheapest option, {fmt_yuan(c.total_cost_fen)} in all{saving}, needs {n} separate approvals; "
+                          f"this one needs one. Both are on Compare options.",
+                    f"最便宜的方案合计 {fmt_yuan(c.total_cost_fen)}{saving}，但需要 {n} 次单独批准；此方案只需一次。两者都在“比较方案”中。")
+        elif alert.kind == AlertKind.RESERVE_BREACH_AHEAD and alert.inputs.get("cure_restores_reserve") == "false":
+            why = t(lang, "No committed funding restores the reserve; this is the cheapest way to stay above zero.",
+                    "没有已承诺的融资能恢复安全线；这是保持在零以上最便宜的方式。")
+        elif alert.kind == AlertKind.RESERVE_BREACH_AHEAD:
+            why = t(lang, "A committed funding that covers the whole gap in time.", "能及时覆盖整个缺口的已承诺融资。")
+        else:
+            why = in_words(state, alert.detail)
+
     if len(legs) == 1:
         title = legs[0]["label"]
     else:
         title = t(lang, " and ".join([legs[0]["label"]] + [leg["label"][0].lower() + leg["label"][1:] for leg in legs[1:]]),
                   "，".join(leg["label"] for leg in legs))
-    # The engine states the whole cure's cost only when every leg is priced; otherwise the priced legs are quoted (as the
-    # opener does) and the note says what is left out: an open-ended draw posts no interest until it is repaid.
-    cost_display = alert.inputs.get("cure_cost")
-    cost_note = None
-    if cost_display is None:
-        priced = [leg for leg in legs if leg["cost_display"]]
-        if len(priced) == 1:
-            cost_display = priced[0]["cost_display"]
-        unpriced_draw = [leg for leg in legs if leg["operation_kind"] == "DRAW_FACILITY" and not leg["cost_display"]]
-        if unpriced_draw and cost_display:
-            names = ", ".join(leg["facility_name"] for leg in unpriced_draw)
-            cost_note = t(lang, f"Interest on the {names} draw is not included: it runs only while the balance stays drawn.",
-                          f"不含{names}提款的利息：利息只在余额未还期间产生。")
     lands = [leg["lands_day"] for leg in legs if leg["lands_day"] is not None]
     receive = sum(leg["amount_fen"] or 0 for leg in legs if leg["operation_kind"] in ("DRAW_FACILITY", "SUBMIT_INVOICE_FOR_FINANCING"))
+
+    plan_series: list[dict[str, Any]] | None = None
+    after_traj = None
+    if actions:
+        try:
+            after_traj = project(state, obs, actions, Mode.CONSERVATIVE, horizon, floor)
+            plan_series = _series(state, after_traj)
+        except EngineError:
+            after_traj = None
+
     if alert.kind == AlertKind.RESERVE_BREACH_AHEAD:
         short = fmt_yuan(alert.amount_fen or 0)
         if alert.inputs.get("cure_restores_reserve") == "false":
@@ -168,35 +347,39 @@ def _next_action(state: FinancialState, mandate: Mandate, found: list[Alert], ap
             after = t(lang, f"Cash stays at or above zero, but your safe level is still {alert.inputs.get('residual_shortfall')} "
                             f"short on the worst day.",
                       f"现金保持在零以上，但最差的一天仍比安全线低 {alert.inputs.get('residual_shortfall')}。")
-            why = t(lang, "No committed funding restores the reserve; this is the cheapest way to stay above zero.",
-                    "没有已承诺的融资能恢复安全线；这是保持在零以上最便宜的方式。")
         else:
             if_nothing = t(lang, f"{short} below your safe level on day {alert.day}; the gap peaks at "
                                  f"{alert.inputs.get('max_shortfall', short)} on day {alert.inputs.get('worst_day', alert.day)}.",
                            f"第 {alert.day} 天比安全线低 {short}；缺口在第 {alert.inputs.get('worst_day', alert.day)} 天最大，为 "
                            f"{alert.inputs.get('max_shortfall', short)}。")
-            after = t(lang, f"Cash stays above your safe level through day {alert.inputs.get('last_day', alert.day)}.",
-                      f"现金在第 {alert.inputs.get('last_day', alert.day)} 天前都保持在安全线以上。")
-            why = t(lang, "The cheapest committed funding that covers the whole gap in time.",
-                    "能及时覆盖整个缺口的最便宜的已承诺融资。")
+            if after_traj is not None:
+                after = _after_words(after_traj, floor, today, horizon, lang)
+            else:
+                after = t(lang, f"Cash stays above your safe level through day {alert.inputs.get('last_day', alert.day)}.",
+                          f"现金在第 {alert.inputs.get('last_day', alert.day)} 天前都保持在安全线以上。")
     else:
         if_nothing = t(lang, "Interest keeps running on the drawn balance.", "已提款余额将继续产生利息。")
         after = t(lang, "The balance is repaid and the interest stops.", "余额还清，利息停止。")
-        why = in_words(state, alert.detail)
+
     return {
         "alert_id": alert.id,
         "kind": alert.kind.value,
+        "plan_source": rec.source,
         "title": title,
         "legs": legs,
         "receive_fen": receive or None,
         "receive_display": fmt_yuan(receive) if receive else None,
-        "cost_display": cost_display,
+        "cost_display": cost_total,
+        "cost_total_display": cost_total,
+        "cost_breakdown": cost_breakdown,
+        "cost_basis": cost_basis or None,
         "cost_note": cost_note,
+        "cheaper_option": cheaper,
         "rate_text": next((leg["rate_text"] for leg in legs if leg["rate_text"]), None),
         "cost_days": next((leg["cost_days"] for leg in legs if leg["cost_days"]), None),
         "lands_day": max(lands) if lands else None,
         "needs_owner": needs_owner,
-        "needs_owner_reason": needs_owner_reason(mandate, legs, lang) if needs_owner else None,
+        "needs_owner_reason": needs_owner_reason,
         "if_nothing": if_nothing,
         "after": after,
         "why": why,
@@ -204,13 +387,17 @@ def _next_action(state: FinancialState, mandate: Mandate, found: list[Alert], ap
         "formula": alert.formula,
         "pending_approval_id": queued.id if queued is not None else None,
         "state_version": state_version,
-        "suggestions": [{"operation_kind": s.operation_kind, "facility_id": s.facility_id,
-                         "receivable_id": s.receivable_id, "amount_fen": s.amount_fen} for s in alert.suggested],
+        "suggestions": suggestions,
+        "plan_series": plan_series,
     }
 
-
-def _approvals(state: FinancialState, approvals: list[Any], found: list[Alert], today: int, lang: str) -> list[dict[str, Any]]:
+def _approvals(state: FinancialState, obs: list[Any], mandate: Mandate, approvals: list[Any], found: list[Alert],
+               today: int, lang: str, *, use_router: bool = True) -> list[dict[str, Any]]:
     by_id = {a.id: a for a in found}
+    plan_costs: dict = {}
+    if use_router and any(str(getattr(a.status, "value", a.status)) == "PENDING" for a in approvals):
+        plan = runnable_plan(state, obs, mandate)
+        plan_costs = cost_lines_by_leg(plan) if plan is not None else {}
     out = []
     for a in approvals:
         if str(getattr(a.status, "value", a.status)) != "PENDING":
@@ -222,7 +409,7 @@ def _approvals(state: FinancialState, approvals: list[Any], found: list[Alert], 
         alert = None
         if (a.op_id or "").startswith("alert:"):
             alert = by_id.get(a.op_id.split(":")[1])
-        words = approval_words(state, op, a.kind, today, alert, lang)
+        words = approval_words(state, op, a.kind, today, alert, lang, plan_costs)
         amount = op.get("amount_fen", op.get("advance_fen"))
         out.append({"id": a.id, "kind": a.kind, "reason": in_words(state, a.reason), "created_day": op.get("day"),
                     "amount_fen": amount if isinstance(amount, int) else None,
@@ -317,8 +504,12 @@ def get_home(lang: str = "en") -> dict[str, Any]:
         pending = [a for a in approvals if str(getattr(a.status, "value", a.status)) == "PENDING"]
         status = _status(found, len(pending))
         headline, note = _headline(found, mandate, traj.min_cash_fen, traj.min_cash_day, mandate.horizon_days, today, lang)
-        action = _next_action(books.state, mandate, found, approvals, today, state.state_version, lang)
-        queue = _approvals(books.state, approvals, found, today, lang)
+        action = _next_action(books.state, books.with_([]), mandate, found, approvals, today, state.state_version, lang,
+                              use_router=rt.settings.features.debt_desk)
+        plan_series = action.pop("plan_series") if action is not None else None
+        series = _series(books.state, traj)
+        queue = _approvals(books.state, books.with_([]), mandate, approvals, found, today, lang,
+                           use_router=rt.settings.features.debt_desk)
         changes = _changes(books.state, rt.store, found, today, lang)
         receivables = _receivables(books.state, rt.store, today, lang)
         in_transit = _in_transit(books.state)
@@ -352,6 +543,10 @@ def get_home(lang: str = "en") -> dict[str, Any]:
             "leverage_text": leverage_text,
             "min_dscr_bp": mandate.min_dscr_bp,
             "max_leverage_bp": mandate.max_leverage_bp,
+            # One projection for every figure and the chart: the baseline ("if you do nothing") and the same books with
+            # the recommended plan applied ("with the recommended plan"). The browser draws these and computes nothing.
+            "series": series,
+            "plan_series": plan_series,
         },
         "next_action": action,
         "approvals": queue,
