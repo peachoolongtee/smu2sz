@@ -197,6 +197,10 @@ def test_a_late_buyer_is_named_in_receivables_and_changes(client):
     assert any("¥162,800.00 outstanding from Foshan Home Retail Co." in c_["text"] for c_ in h["changes"])
     assert a["why"].startswith("The cheapest option, ¥1,706.10 in all (including ¥788.97 less interest on balances already drawn), "
                                "needs 2 separate approvals; this one needs one.")
+    # queued for the owner, the approval says what declining leaves: the alert's shortfall sentence, relative to today
+    client.post(f"/alerts/{a['alert_id']}/act", json={"state_version": a["state_version"], "suggestions": a["suggestions"]})
+    [card] = client.get("/home").json()["approvals"]
+    assert card["if_decline"] == "¥200,000.00 below your minimum cash reserve in 8 days; the gap peaks at ¥200,000.00 in 8 days."
 
 
 def test_run_funding_plan_binds_to_the_plan_shown_and_refuses_a_stale_one(client):

@@ -148,7 +148,7 @@ export function ApprovalCard({
         {isPending ? (
           <div>
             <dt className="text-xs font-medium text-ink-3">{t("biz.ifDecline")}</dt>
-            <dd className="text-ink-2">{t("biz.ifDecline.body")}</dd>
+            <dd className="text-ink-2" data-testid="approval-if-decline">{p?.if_decline || t("biz.ifDecline.body")}</dd>
           </div>
         ) : null}
       </dl>
@@ -156,7 +156,7 @@ export function ApprovalCard({
       {isPending ? (
         <div className="mt-4 flex flex-wrap gap-2">
           <Button variant="primary" loading={busyId === `${a.id}:APPROVE`} disabled={busyId !== null} onClick={() => onDecide(a.id, "APPROVE")}>
-            {t("appr.approve")}
+            {a.amount_display ? t("appr.approveAmount", { amount: a.amount_display }) : t("appr.approve")}
           </Button>
           <Button variant="secondary" loading={busyId === `${a.id}:REJECT`} disabled={busyId !== null} onClick={() => onDecide(a.id, "REJECT")}>
             {t("appr.reject")}

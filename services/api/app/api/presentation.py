@@ -10,7 +10,7 @@ from __future__ import annotations
 import re
 from typing import Any
 
-from app.alerts import Alert
+from app.alerts import Alert, AlertKind
 from app.domain.models import FinancialState, Mandate
 from app.domain.money import bp, fmt_pct, fmt_yuan
 from app.financial.invoices import InvoiceRef, issue_terms
@@ -306,6 +306,20 @@ def approval_words(state: FinancialState, op: dict[str, Any], kind: str | None, 
                 cost_due_day = int(end) if end else None
                 break
     buyer = party_name(state, buyer_of_receivable(state, receivable_id)) or None
+    # What happens if the owner declines: for an approval born of a reserve alert, the alert's own shortfall sentence
+    # (the same inputs the home reads), written relative to today; otherwise the request is simply closed.
+    if_decline = t(lang, "Nothing runs; the request is closed.", "不会执行任何操作；该请求关闭。")
+    if alert is not None and alert.kind == AlertKind.RESERVE_BREACH_AHEAD:
+        short = fmt_yuan(alert.amount_fen or 0)
+        if alert.inputs.get("cure_restores_reserve") == "false":
+            zero_when = when_text(int(alert.inputs.get("zero_day", today)), today, lang)
+            if_decline = t(lang, f"Cash goes below zero {zero_when}.", f"现金将在{zero_when}跌破零。")
+        else:
+            worst_when = when_text(int(alert.inputs.get("worst_day", alert.day or today)), today, lang)
+            if_decline = t(lang, f"{short} below your minimum cash reserve {when_text(alert.day, today, lang)}; the gap peaks at "
+                                 f"{alert.inputs.get('max_shortfall', short)} {worst_when}.",
+                           f"{when_text(alert.day, today, lang)}比最低现金储备低 {short}；缺口在{worst_when}最大，为 "
+                           f"{alert.inputs.get('max_shortfall', short)}。")
     return {
         "headline": headline,
         "what": leg_words(state, kind, facility_id, receivable_id, amount if isinstance(amount, int) else None, lang),
@@ -317,6 +331,7 @@ def approval_words(state: FinancialState, op: dict[str, Any], kind: str | None, 
         "cost_due_day": cost_due_day,
         "lands_day": lands,
         "lands_when": when_text(lands, today, lang) if lands is not None else None,
+        "if_decline": if_decline,
         "protects": (t(lang, f"It keeps cash above your minimum cash reserve for the next "
                              f"{max(int(alert.inputs['last_day']) - today, 0)} days.",
                        f"它使现金在未来 {max(int(alert.inputs['last_day']) - today, 0)} 天保持在最低现金储备以上。")
