@@ -18,6 +18,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from app.api.auth import counterparty_for_key, is_agent
 from app.api.display import displayed
+from app.api.offers import enforce_intake_cap
 from app.api.runtime import get_runtime
 from app.api.views import owner_verdict_extras
 from app.nl import NlRequest, handle, opener, reset_sessions
@@ -74,7 +75,9 @@ def post_nl(body: NlRequest, x_owner_token: str | None = Header(default=None),
                                           "message": "the channel key does not belong to the stated counterparty"})
             body = body.model_copy(update={"counterparty_id": bound})
             channel_authenticated = True
-        elif x_counterparty_key:
+        elif not (rt.is_owner(x_owner_token) or is_agent(x_agent_key)):
+            enforce_intake_cap(rt, "POST /nl", body.counterparty_id)  # R04, R05: 429 over the daily cap
+        if bound is None and x_counterparty_key:
             with rt.lock:
                 _security_event(rt, "wrong-key", body.counterparty_id, "treated as an unauthenticated proposal; nothing executed",
                                 "counterparty message with an unknown X-Counterparty-Key")
