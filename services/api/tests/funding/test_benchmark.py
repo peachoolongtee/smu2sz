@@ -1,7 +1,10 @@
 """Latency targets for the router on the golden fixture (cold: every cross-evaluation cache cleared).
 
 - every what-if preset, uncached: under 400 ms;
-- golden EX01 (the buyer's package) through `evaluate`: under 250 ms;
+- golden EX01 (the buyer's package) through `evaluate`: under 350 ms (250 ms until 6 Oct 2026; the EX01
+  evaluation runs 12 distinct router searches, about 280 ms steady state since the ADR-0007 early-pay rule and the
+  counter re-checks of 1 to 3 Oct, so 250 ms left no headroom for machine noise; the profile is
+  docs/research/ex01-benchmark-profile-2026-10-06.md);
 - the golden committed plan and comparison: under 100 ms each.
 
 Each figure is the best of three cold runs. Set SKIP_PERF_BENCH=1 to skip on slow CI runners.
@@ -50,13 +53,13 @@ def test_whatif_preset_uncached_under_400ms(golden, preset):
     assert ms < 400, f"{preset}: {ms:.0f} ms"
 
 
-def test_ex01_evaluate_under_250ms(golden):
+def test_ex01_evaluate_under_350ms(golden):
     state, mandate, key = golden
     o = load_offers()["EX01_PACKAGE"]
     offer = compile_offer(offer_documents("EX01_PACKAGE"), o["counterparty_id"])
     declared = dict(o.get("declared_costs") or {})
     ms = _cold_ms(lambda: evaluate(offer, state, mandate, trusted_owner_key_hex=key, owner_declared=declared))
-    assert ms < 250, f"EX01 evaluate: {ms:.0f} ms"
+    assert ms < 350, f"EX01 evaluate: {ms:.0f} ms"
 
 
 @pytest.mark.parametrize("fn", [plan, compare], ids=["plan", "compare"])
