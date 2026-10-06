@@ -2113,12 +2113,13 @@
     "cost_basis": "Invoice financing is billed in whole 30-day periods until the invoice is paid.",
     "cost_note": null,
     "cheaper_option": {
-      "label": "committed plan: ¥1,425.75 + ¥1,069.32 = ¥1,706.10 (needs the owner's approval)",
+      "label": "Finance ¥80,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. on Invoice financing (onboarded platform) and Finance ¥120,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. on Invoice financing (onboarded platform)",
       "cost_total_display": "¥1,706.10",
       "approvals": 2,
       "legs": [
-        "Invoice financing (onboarded platform): advance ¥80,000.00 on RI:BUYER-1:32",
-        "Invoice financing (onboarded platform): advance ¥120,000.00 on RI:BUYER-1:2"
+        "Invoice financing (onboarded platform): advance ¥80,000.00 on RI:BUYER-1:32: ¥1,425.75",
+        "Invoice financing (onboarded platform): advance ¥120,000.00 on RI:BUYER-1:2: ¥1,069.32",
+        "Change in interest on balances already drawn: −¥788.97"
       ]
     },
     "rate_text": "32.5%",
@@ -2128,7 +2129,7 @@
     "needs_owner_reason": "The yearly cost of 32.5% is above your 15.00% limit for what the agent may borrow alone.",
     "if_nothing": "¥200,000.00 below your safe level on day 42; the gap peaks at ¥200,000.00 on day 42.",
     "after": "Cash stays above your safe level for the next 120 days.",
-    "why": "The cheapest option, ¥1,706.10 in all, needs 2 separate approvals; this one needs one. Both are on Compare options.",
+    "why": "The cheapest option, ¥1,706.10 in all (including ¥788.97 less interest on balances already drawn), needs 2 separate approvals; this one needs one. Both are on Compare options.",
     "detail": "Projected cash closes at ¥100,000.00 on day 42, ¥200,000.00 below the reserve floor; the gap peaks at ¥200,000.00 on day 42 and lasts to day 46. A committed cure exists: SUBMIT_INVOICE_FOR_FINANCING Invoice financing (onboarded platform) ¥200,000.00, cost ¥1,782.19 (32.5% a year for 10 days); that is above the 15.00% ceiling for what the agent may borrow alone, so it needs the owner's approval before it runs.",
     "formula": "shortfall = floor − closing_d: ¥300,000.00 − ¥100,000.00 = ¥200,000.00 (day 42); max over days 42..46 = ¥200,000.00",
     "pending_approval_id": "APR-000001",

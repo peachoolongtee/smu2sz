@@ -154,6 +154,18 @@ def _rate_in(reason: str) -> str | None:
     return m.group(1) if m else None
 
 
+def _plan_lines(state: FinancialState, p: FundingPlan, lang: str) -> list[dict[str, Any]]:
+    """The router's cost lines, in words, plus one more line when its total is not their sum: the router's total is
+    the net change in charges the plan makes to the whole projection, so a plan that lets an existing balance be
+    repaid sooner carries that saving as a negative line here, and the lines always add up to the total shown."""
+    lines = [{"label": in_words(state, cl.label), "display": fmt_yuan(cl.fen), "formula": cl.formula} for cl in p.costs]
+    offset = p.total_cost_fen - sum(cl.fen for cl in p.costs)
+    if offset != 0:
+        lines.append({"label": t(lang, "Change in interest on balances already drawn", "已提款余额的利息变化"),
+                      "display": fmt_yuan(offset), "formula": None})
+    return lines
+
+
 def _plan_legs(state: FinancialState, p: FundingPlan, today: int, lang: str) -> list[dict[str, Any]]:
     """The router plan's legs as business legs: amounts, the cost line the router wrote for each, its landing day."""
     legs: list[dict[str, Any]] = []
@@ -257,8 +269,7 @@ def _next_action(state: FinancialState, obs: list[Any], mandate: Mandate, found:
         needs_owner = p.needs_owner_approval
         needs_owner_reason = in_words(state, p.approval_reason) if needs_owner else None
         cost_total = fmt_yuan(p.total_cost_fen)
-        cost_breakdown = [{"label": in_words(state, cl.label), "display": fmt_yuan(cl.fen), "formula": cl.formula}
-                          for cl in p.costs]
+        cost_breakdown = _plan_lines(state, p, lang)
         cost_basis = _plan_basis(state, p, lang)
         cost_note = None
         actions = list(p.actions)
@@ -294,11 +305,15 @@ def _next_action(state: FinancialState, obs: list[Any], mandate: Mandate, found:
         if rec.cheaper is not None:
             c = rec.cheaper
             n = sum(1 for cl in c.costs if cl.needs_owner_approval)
-            cheaper = {"label": in_words(state, c.label), "cost_total_display": fmt_yuan(c.total_cost_fen),
-                       "approvals": n, "legs": [in_words(state, cl.label) for cl in c.costs]}
-            why = t(lang, f"The cheapest option, {fmt_yuan(c.total_cost_fen)} in all, needs {n} separate approvals; this one "
-                          f"needs one. Both are on Compare options.",
-                    f"最便宜的方案合计 {fmt_yuan(c.total_cost_fen)}，但需要 {n} 次单独批准；此方案只需一次。两者都在“比较方案”中。")
+            words = [leg_words(state, KIND_OF[a.kind], a.facility_id, a.receivable_id, a.amount_fen, lang) for a in c.actions]
+            offset = c.total_cost_fen - sum(cl.fen for cl in c.costs)
+            saving = (t(lang, f" (including {fmt_yuan(-offset)} less interest on balances already drawn)",
+                        f"（含已提款余额少付的利息 {fmt_yuan(-offset)}）") if offset < 0 else "")
+            cheaper = {"label": t(lang, " and ".join(words), "，".join(words)), "cost_total_display": fmt_yuan(c.total_cost_fen),
+                       "approvals": n, "legs": [f"{x['label']}: {x['display']}" for x in _plan_lines(state, c, lang)]}
+            why = t(lang, f"The cheapest option, {fmt_yuan(c.total_cost_fen)} in all{saving}, needs {n} separate approvals; "
+                          f"this one needs one. Both are on Compare options.",
+                    f"最便宜的方案合计 {fmt_yuan(c.total_cost_fen)}{saving}，但需要 {n} 次单独批准；此方案只需一次。两者都在“比较方案”中。")
         elif alert.kind == AlertKind.RESERVE_BREACH_AHEAD and alert.inputs.get("cure_restores_reserve") == "false":
             why = t(lang, "No committed funding restores the reserve; this is the cheapest way to stay above zero.",
                     "没有已承诺的融资能恢复安全线；这是保持在零以上最便宜的方式。")

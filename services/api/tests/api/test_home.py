@@ -162,8 +162,15 @@ def test_a_late_buyer_is_named_in_receivables_and_changes(client):
     # The router's cheapest plan (¥80,000 on RI:BUYER-1:32 + ¥120,000 on RI:BUYER-1:2) needs two approvals, so the
     # single-approval cure is shown and the cheaper option is named (wayfinder #15 refinement)
     assert a["plan_source"] == "alert" and a["cheaper_option"]["approvals"] == 2
-    assert a["cheaper_option"]["cost_total_display"] == "¥1,706.10"
-    assert a["why"].startswith("The cheapest option, ¥1,706.10 in all, needs 2 separate approvals; this one needs one.")
+    c = a["cheaper_option"]
+    assert c["cost_total_display"] == "¥1,706.10"
+    # the router's total is net: the two advances cost ¥2,495.07 and the plan repays the drawn line 30 days sooner,
+    # so the lines shown add up to the total and the saving is named rather than hidden in an equation
+    assert c["label"] == ("Finance ¥80,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. on Invoice financing (onboarded platform) and "
+                          "Finance ¥120,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. on Invoice financing (onboarded platform)")
+    assert c["legs"][-1] == "Change in interest on balances already drawn: −¥788.97"
+    assert a["why"].startswith("The cheapest option, ¥1,706.10 in all (including ¥788.97 less interest on balances already drawn), "
+                               "needs 2 separate approvals; this one needs one.")
 
 
 def test_run_funding_plan_binds_to_the_plan_shown_and_refuses_a_stale_one(client):
