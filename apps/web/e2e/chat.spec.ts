@@ -26,6 +26,12 @@ async function send(page: Page, text: string) {
 
 const turns = (page: Page) => page.getByTestId("chat-turn");
 
+/** The Business header keeps the language switch and sign-out inside the account menu; open it when it is there. */
+async function openAccountMenu(page: Page) {
+  const menu = page.getByTestId("account-menu");
+  if ((await menu.count()) && !(await menu.evaluate((el) => (el as HTMLDetailsElement).open))) await menu.locator("> summary").click();
+}
+
 test("owner: Evaluate EX01 is a REJECT, then go ahead lists the executed operations", async ({ page, request }) => {
   await resetBooks(request);
   await page.goto("/chat");
@@ -186,6 +192,7 @@ test("a 401 opens the owner sign-in dialog, and signing in resends the refused m
   // The token is kept for this tab only (sessionStorage), and signing out removes it.
   expect(await page.evaluate(() => window.sessionStorage.getItem("tl-owner-auth"))).toContain(DEMO_TOKEN);
   expect(await page.evaluate(() => window.localStorage.getItem("tl-owner-auth"))).toBeNull();
+  await openAccountMenu(page);
   await page.getByTestId("owner-signout").click();
   await expect(page.getByTestId("owner-signin-open")).toBeVisible();
   expect(await page.evaluate(() => window.sessionStorage.getItem("tl-owner-auth"))).not.toContain(DEMO_TOKEN);
@@ -227,6 +234,7 @@ test("the Chinese UI offers Chinese prompts and gets a Chinese answer", async ({
   await resetBooks(request);
   await page.goto("/chat");
   await signIn(page);
+  await openAccountMenu(page);
   await page.getByLabel("中文").check();
   await page.getByTestId("prompt-evaluate").click();
   const turn = turns(page).last();
