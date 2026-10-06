@@ -20,8 +20,9 @@ def _exhaust_line(rt) -> None:
 def test_day_zero_answers_safe_do_cost(client):
     h = client.get("/home").json()
     assert h["day"] == 0 and h["status"] == "ACTION_NEEDED"
-    assert h["headline"] == "Cash falls ¥240,000.00 below your ¥300,000.00 safe level on day 12 (in 12 days)."
-    assert h["note"] == "The agent has a fix ready and can run it alone."
+    # Business words: the reserve is the "minimum cash reserve", days are distances from today, authority is the owner's
+    assert h["headline"] == "Cash falls ¥240,000.00 below your ¥300,000.00 minimum cash reserve in 12 days."
+    assert h["note"] == "A funding plan is ready, within your signed limits. No approval is needed."
     assert h["cash"]["cash_display"] == "¥400,000.00" and h["cash"]["floor_display"] == "¥300,000.00"
     assert h["cash"]["lowest_display"] == "−¥105,000.00" and h["cash"]["lowest_day"] == 30
     a = h["next_action"]
@@ -33,13 +34,15 @@ def test_day_zero_answers_safe_do_cost(client):
     # all-in: every leg priced on the router's own convention, the basis said in words, nothing left to a footnote
     assert a["cost_total_display"] == "¥3,113.93" and a["cost_display"] == "¥3,113.93" and a["cost_note"] is None
     assert [(c["label"], c["display"]) for c in a["cost_breakdown"]] == [
-        ("Bank credit line: draw ¥150,000.00, repaid day 32", "¥841.64"),
+        ("Bank credit line: draw ¥150,000.00, repaid in 32 days", "¥841.64"),
         ("Invoice financing (onboarded platform): advance ¥255,000.00 on RCV-A", "¥2,272.29")]
-    assert a["cost_basis"].startswith("Estimated through the expected repayment of the Bank credit line on day 32")
     assert a["lands_day"] == 3 and [leg["lands_day"] for leg in a["legs"]] == [0, 3]
     assert [leg["cost_display"] for leg in a["legs"]] == ["¥841.64", "¥2,272.29"]
-    assert a["if_nothing"].startswith("¥240,000.00 below your safe level on day 12")
-    assert a["after"] == "Cash stays above your safe level for the next 120 days."
+    assert a["if_nothing"] == "¥240,000.00 below your minimum cash reserve in 12 days; the gap peaks at ¥405,000.00 in 30 days."
+    assert a["after"] == "Cash stays above your minimum cash reserve for the next 120 days."
+    assert a["authority_text"] == "Within your signed limits. No additional approval required." and a["lands_when"] == "in 3 days"
+    assert h["cash"]["lowest_when"] == "in 30 days" and h["cash"]["first_breach_when"] == "in 12 days"
+    assert a["cost_basis"].startswith("Estimated through the expected repayment of the Bank credit line in 32 days")
     assert a["why"].startswith("The cheapest plan your committed facilities can fund in time")
     s1 = a["suggestions"][1]
     assert (s1["operation_kind"], s1["facility_id"], s1["receivable_id"], s1["amount_fen"]) == (
@@ -64,9 +67,9 @@ def test_the_fix_is_bound_to_what_the_home_showed_and_the_home_turns_calm(client
     assert r["executed"] == 2 and r["cured"]
     h = client.get("/home").json()
     assert h["status"] == "WATCH" and h["next_action"] is None
-    assert h["headline"] == "Cash stays above your ¥300,000.00 safe level for the next 120 days."
+    assert h["headline"] == "Cash stays above your ¥300,000.00 minimum cash reserve for the next 120 days."
     assert h["cash"]["in_transit"]["lots"] == [{"facility_name": "Invoice financing (onboarded platform)",
-                                                "amount_display": "¥255,000.00", "arrival_day": 3}]
+                                                "amount_display": "¥255,000.00", "arrival_day": 3, "arrival_when": "in 3 days"}]
     assert h["cash"]["plan_series"] is None
     kinds = [c["kind"] for c in h["changes"]]
     assert kinds == ["OPERATION", "OPERATION"] and "Bank credit line" in h["changes"][1]["text"]
@@ -123,7 +126,7 @@ def test_a_priced_cure_in_the_queue_carries_its_cost_and_landing_day(client):
 
 def test_chinese_sentences(client):
     h = client.get("/home?lang=zh").json()
-    assert h["lang"] == "zh" and h["headline"].startswith("现金将在第 12 天")
+    assert h["lang"] == "zh" and h["headline"].startswith("现金将在12 天后比您")
     assert h["next_action"]["title"].startswith("从Bank credit line提款 ¥150,000.00")
 
 
@@ -149,16 +152,20 @@ def test_a_late_buyer_is_named_in_receivables_and_changes(client):
     client.post("/clock/advance", json={"days": 4})
     h = client.get("/home").json()
     assert h["status"] == "ACTION_NEEDED"
-    assert h["headline"] == "Cash falls ¥200,000.00 below your ¥300,000.00 safe level on day 42 (in 8 days)."
-    assert h["note"] == "The agent has a fix ready. It needs your approval because of its cost."
+    assert h["headline"] == "Cash falls ¥200,000.00 below your ¥300,000.00 minimum cash reserve in 8 days."
+    assert h["note"] == "A funding plan is ready. It needs your approval because of its cost."
     [late] = h["receivables"]["past_due"]
     assert late["buyer_name"] == "Foshan Home Retail Co." and late["face_display"] == "¥162,800.00" and late["days_late"] == 2
+    assert late["due_when"] == "2 days ago"
+    assert all("day " not in c["text"] or "days" in c["text"] for c in h["changes"]), [c["text"] for c in h["changes"]]
+    assert all(c["when"] for c in h["changes"])
     assert any(c["kind"] == "LATE" and "Foshan Home Retail Co." in c["text"] for c in h["changes"])
     assert not any("Clock moved" in c["text"] for c in h["changes"])
     a = h["next_action"]
     assert a["cost_display"] == "¥1,782.19" and a["cost_total_display"] == "¥1,782.19" and a["rate_text"] == "32.5%" and a["lands_day"] == 37
-    assert a["needs_owner_reason"] == "The yearly cost of 32.5% is above your 15.00% limit for what the agent may borrow alone."
-    assert a["after"] == "Cash stays above your safe level for the next 120 days."
+    assert a["needs_owner_reason"] == "The yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval."
+    assert a["authority_text"].startswith("Needs your approval: The yearly cost of 32.5%")
+    assert a["lands_when"] == "in 3 days" and a["after"] == "Cash stays above your minimum cash reserve for the next 120 days."
     # The router's cheapest plan (¥80,000 on RI:BUYER-1:32 + ¥120,000 on RI:BUYER-1:2) needs two approvals, so the
     # single-approval cure is shown and the cheaper option is named (wayfinder #15 refinement)
     assert a["plan_source"] == "alert" and a["cheaper_option"]["approvals"] == 2

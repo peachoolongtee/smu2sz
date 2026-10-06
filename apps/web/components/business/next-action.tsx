@@ -43,7 +43,7 @@ export function NextActionBlock({ a, stateVersion, fixer }: { a: HomeNextAction;
       ),
     });
   }
-  if (a.lands_day !== null) rows.push({ k: t("biz.lands"), v: t("common.dayN", { n: a.lands_day }) });
+  if (a.lands_day !== null) rows.push({ k: t("biz.lands"), v: <span data-testid="next-action-lands">{a.lands_when ?? ""}</span> });
   rows.push({
     k: t("biz.authority"),
     v: a.needs_owner ? (
@@ -52,7 +52,7 @@ export function NextActionBlock({ a, stateVersion, fixer }: { a: HomeNextAction;
         {a.needs_owner_reason ? <span className="block text-xs font-normal">{a.needs_owner_reason}</span> : null}
       </span>
     ) : (
-      <span className="text-ok-fg">{t("biz.agentAlone")}</span>
+      <span className="text-ok-fg" data-testid="next-action-within-limits">{a.authority_text || t("biz.agentAlone")}</span>
     ),
   });
 
@@ -120,7 +120,7 @@ export function NextActionBlock({ a, stateVersion, fixer }: { a: HomeNextAction;
                   <span>{leg.label}</span>
                   <span className="text-xs text-ink-3">
                     {leg.cost_display ? t("alerts.cost", { cost: leg.cost_display }) : t("biz.noStatedCost")}
-                    {leg.lands_day !== null ? ` · ${t("biz.landsShort", { n: leg.lands_day })}` : ""}
+                    {leg.lands_day !== null ? ` · ${t("biz.landsShort", { when: leg.lands_when ?? "" })}` : ""}
                   </span>
                 </li>
               ))}

@@ -3,14 +3,16 @@
   "state_version": 7,
   "lang": "en",
   "status": "ACTION_NEEDED",
-  "headline": "Cash falls ¥200,000.00 below your ¥300,000.00 safe level on day 42 (in 8 days).",
-  "note": "The agent has a fix ready. It needs your approval because of its cost.",
+  "headline": "Cash falls ¥200,000.00 below your ¥300,000.00 minimum cash reserve in 8 days.",
+  "note": "A funding plan is ready. It needs your approval because of its cost.",
   "cash": {
     "cash_fen": 30000000,
     "floor_fen": 30000000,
     "lowest_fen": 10000000,
     "lowest_day": 42,
     "first_breach_day": 42,
+    "lowest_when": "in 8 days",
+    "first_breach_when": "in 8 days",
     "horizon_days": 120,
     "in_transit": null,
     "dscr_text": "2.00×",
@@ -2125,12 +2127,14 @@
     "rate_text": "32.5%",
     "cost_days": 10,
     "lands_day": 37,
+    "lands_when": "in 3 days",
     "needs_owner": true,
-    "needs_owner_reason": "The yearly cost of 32.5% is above your 15.00% limit for what the agent may borrow alone.",
-    "if_nothing": "¥200,000.00 below your safe level on day 42; the gap peaks at ¥200,000.00 on day 42.",
-    "after": "Cash stays above your safe level for the next 120 days.",
+    "needs_owner_reason": "The yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval.",
+    "authority_text": "Needs your approval: The yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval.",
+    "if_nothing": "¥200,000.00 below your minimum cash reserve in 8 days; the gap peaks at ¥200,000.00 in 8 days.",
+    "after": "Cash stays above your minimum cash reserve for the next 120 days.",
     "why": "The cheapest option, ¥1,706.10 in all (including ¥788.97 less interest on balances already drawn), needs 2 separate approvals; this one needs one. Both are on Compare options.",
-    "detail": "Projected cash closes at ¥100,000.00 on day 42, ¥200,000.00 below the reserve floor; the gap peaks at ¥200,000.00 on day 42 and lasts to day 46. A committed cure exists: SUBMIT_INVOICE_FOR_FINANCING Invoice financing (onboarded platform) ¥200,000.00, cost ¥1,782.19 (32.5% a year for 10 days); that is above the 15.00% ceiling for what the agent may borrow alone, so it needs the owner's approval before it runs.",
+    "detail": "Projected cash closes at ¥100,000.00 in 8 days, ¥200,000.00 below the reserve floor; the gap peaks at ¥200,000.00 in 8 days and lasts to day 46. A committed cure exists: SUBMIT_INVOICE_FOR_FINANCING Invoice financing (onboarded platform) ¥200,000.00, cost ¥1,782.19 (32.5% a year for 10 days); that is above the 15.00% ceiling for what the agent may borrow alone, so it needs the owner's approval before it runs.",
     "formula": "shortfall = floor − closing_d: ¥300,000.00 − ¥100,000.00 = ¥200,000.00 (day 42); max over days 42..46 = ¥200,000.00",
     "pending_approval_id": null,
     "state_version": 7,
@@ -2152,7 +2156,8 @@
       "seq": null,
       "kind": "LATE",
       "actor": "",
-      "text": "¥162,800.00 outstanding from Foshan Home Retail Co. was due on day 32 and is still OPEN."
+      "text": "¥162,800.00 outstanding from Foshan Home Retail Co. was due 2 days ago and is still OPEN.",
+      "when": "2 days ago"
     }
   ],
   "receivables": {
@@ -2166,6 +2171,7 @@
         "face_fen": 16280000,
         "face_display": "¥162,800.00",
         "due_day": 32,
+        "due_when": "2 days ago",
         "past_due": true,
         "days_late": 2,
         "invoice": "the ¥420,000.00 invoice to Foshan Home Retail Co."
@@ -2178,6 +2184,7 @@
       "face_fen": 42000000,
       "face_display": "¥420,000.00",
       "due_day": 47,
+      "due_when": "in 13 days",
       "past_due": false,
       "days_late": 0,
       "invoice": "the ¥420,000.00 invoice to Foshan Home Retail Co."
@@ -2190,15 +2197,17 @@
       "id": "ALERT-PASTDUE-RCV-A",
       "kind": "RECEIVABLE_PAST_DUE",
       "title": "Receivable RCV-A is 2 day(s) past due",
-      "detail": "¥162,800.00 outstanding from Foshan Home Retail Co. was due on day 32 and is still OPEN. The conservative trajectory no longer counts on a dated receipt.",
-      "day": 32
+      "detail": "¥162,800.00 outstanding from Foshan Home Retail Co. was due 2 days ago and is still OPEN. The conservative trajectory no longer counts on a dated receipt.",
+      "day": 32,
+      "when": "2 days ago"
     },
     {
       "id": "ALERT-HEADROOM-34",
       "kind": "RESERVE_HEADROOM_LOW",
-      "title": "Reserve headroom thin on day 34",
-      "detail": "Cash stays above the floor but only by ¥0.00 on day 34 (8 day(s) under 10% of the floor).",
-      "day": 34
+      "title": "Reserve headroom thin today",
+      "detail": "Cash stays above the floor but only by ¥0.00 today (8 day(s) under 10% of the floor).",
+      "day": 34,
+      "when": "today"
     }
   ],
   "facilities": [

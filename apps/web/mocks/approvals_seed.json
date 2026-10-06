@@ -36,9 +36,11 @@
       "rate_text": null,
       "cost_due_day": null,
       "lands_day": null,
+      "lands_when": null,
       "protects": null,
       "reason": "apply for facility Equipment term loan (¥600,000.00)",
-      "result_message": null
+      "result_message": null,
+      "decided_when": null
     }
   }
 }

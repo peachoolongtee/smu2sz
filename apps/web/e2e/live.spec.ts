@@ -184,21 +184,21 @@ test("on day 34 the cure needs the owner: the alert says so, the click queues it
   await expect(page).toHaveURL(/\/approvals#approval-APR-/);
   const approvalCard = page.locator('[id^="approval-APR-"]').first();
   await approvalCard.getByRole("button", { name: "Approve" }).click();
-  await expect(approvalCard.locator('[data-testid^="approval-result-"]')).toContainText("the cash lands on day 37");
+  await expect(approvalCard.locator('[data-testid^="approval-result-"]')).toContainText("the cash lands in 3 days");
   await expect(approvalCard).toContainText("Approved");
   // The decision day is the API's `decided_day` (the clock is on day 34).
-  await expect(approvalCard.locator('[data-testid^="approval-decided-"]')).toHaveText("Decided on day 34.");
+  await expect(approvalCard.locator('[data-testid^="approval-decided-"]')).toHaveText("Decided today.");
   // After a reload the card still has both, because the queue itself carries `decided_day` and `result_message`.
   await page.reload();
   const reloaded = page.locator('[id^="approval-APR-"]').first();
-  await expect(reloaded.locator('[data-testid^="approval-decided-"]')).toHaveText("Decided on day 34.");
-  await expect(reloaded.locator('[data-testid^="approval-result-"]')).toContainText("the cash lands on day 37");
+  await expect(reloaded.locator('[data-testid^="approval-decided-"]')).toHaveText("Decided today.");
+  await expect(reloaded.locator('[data-testid^="approval-result-"]')).toContainText("the cash lands in 3 days");
 
   await page.goto("/");
   await expect(page.getByTestId("home-next-action")).toHaveCount(0);
   await expect(page.getByTestId("home-status")).toHaveAttribute("data-status", "WATCH");
   await expect(page.getByTestId("home-in-transit")).toContainText("¥200,000.00 on its way");
-  await expect(page.getByTestId("home-changes-list")).toContainText("lands on day 37");
+  await expect(page.getByTestId("home-changes-list")).toContainText("lands in 3 days");
 
   await post("/demo/reset", {});
 });

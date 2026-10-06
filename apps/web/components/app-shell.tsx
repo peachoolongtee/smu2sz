@@ -158,6 +158,11 @@ function BusinessShell({ children }: { children: ReactNode }) {
             {links()}
           </nav>
           <div className="flex items-center gap-2 whitespace-nowrap">
+            <span className="hidden sm:inline-flex" data-testid="demo-data-indicator">
+              <Badge tone="neutral" title={t("biz.demoData.hint")}>
+                {t("biz.demoData")}
+              </Badge>
+            </span>
             <div className="hidden sm:block">
               <ModeSwitch />
             </div>
@@ -173,6 +178,9 @@ function BusinessShell({ children }: { children: ReactNode }) {
             <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-line pt-3">
               <ModeSwitch />
               <LangSwitch />
+              <Badge tone="neutral" title={t("biz.demoData.hint")}>
+                {t("biz.demoData")}
+              </Badge>
             </div>
           </nav>
         ) : null}
@@ -180,7 +188,6 @@ function BusinessShell({ children }: { children: ReactNode }) {
       <main id="main" tabIndex={-1} className="mx-auto w-full max-w-[1180px] px-4 pb-24 pt-5 lg:px-6 lg:pb-10 lg:pt-6">
         {children}
       </main>
-      <p className="mx-auto max-w-[1180px] px-4 pb-6 text-xs text-ink-3 lg:px-6">{t("common.simulation")}</p>
     </div>
   );
 }

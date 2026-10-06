@@ -6,6 +6,7 @@ import { SpanQuote } from "@/components/offer-parts";
 import { Badge, Card, EmptyState, ErrorState, Hash, LoadingBlock, PageHeader } from "@/components/ui";
 import { getAudit, getLedger, getState } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
+import { whenText } from "@/lib/when";
 import { useAsync } from "@/lib/use-async";
 
 /** Activity: everything that happened, in order, in the executor's own sentences; the hashes and codes under audit details. */
@@ -23,6 +24,8 @@ export default function ActivityPage() {
     return out;
   };
   const ops = data ? [...data.operations].reverse() : [];
+  // Today, for the distances the Business pages show instead of day numbers (the books read carries the clock).
+  const today = books.data?.day ?? ops[0]?.day ?? 0;
 
   return (
     <>
@@ -50,7 +53,7 @@ export default function ActivityPage() {
                 {ops.map((o) => (
                   <li key={`${o.seq}-${o.op_id}`} className={`rounded-md border px-3 py-2 ${o.status === "REFUSED" ? "border-bad-line bg-bad-bg/40" : "border-line"}`} data-testid={`activity-${o.kind}`} data-status={o.status}>
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-xs text-ink-3">{t("common.dayN", { n: o.day })}</span>
+                      <span className="text-xs text-ink-3">{whenText(o.day, today, t)}</span>
                       <span className="text-sm font-medium text-ink">{te("opkind", o.kind) || o.kind}</span>
                       <OpStatusBadge status={o.status} />
                       <span className="text-xs text-ink-3">{te("actor", o.requested_by)}</span>
@@ -98,7 +101,7 @@ export default function ActivityPage() {
                     <span>
                       <span className="font-medium text-ink">{words(c.counterparty_id)}</span>
                       <span className="block text-xs text-ink-3">
-                        {t("ledger.expires")}: {t("common.dayN", { n: c.expires_day })} · {t("biz.deals.giveaways")}: {c.forward_value_display}
+                        {t("ledger.expires")}: {whenText(c.expires_day, today, t)} · {t("biz.deals.giveaways")}: {c.forward_value_display}
                       </span>
                     </span>
                     <span className="flex items-center gap-2">

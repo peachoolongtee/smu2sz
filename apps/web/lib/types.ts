@@ -954,6 +954,9 @@ export interface ApprovalPresentation {
   rate_text: string | null;
   cost_due_day: number | null;
   lands_day: number | null;
+  /** Distances from today, written by the server ("in 3 days", "2 days ago"); absent in older recordings. */
+  lands_when?: string | null;
+  decided_when?: string | null;
   protects: string | null;
   reason: string;
   result_message: string | null;
@@ -1558,6 +1561,8 @@ export interface HomeLeg {
   cost_days: number | null;
   cost_due_day: Day | null;
   lands_day: Day | null;
+  /** The landing day as a distance from today ("in 3 days"), written by the server. */
+  lands_when?: string | null;
   above_apr_cap: boolean;
   /** The router's cost formula for a leg of the recommended plan (absent on an alert-cure leg). */
   formula?: string | null;
@@ -1608,8 +1613,11 @@ export interface HomeNextAction {
   rate_text: string | null;
   cost_days: number | null;
   lands_day: Day | null;
+  lands_when: string | null;
   needs_owner: boolean;
   needs_owner_reason: string | null;
+  /** The authority line in the owner's words: within the signed limits, or needs approval and why. */
+  authority_text: string;
   if_nothing: string;
   after: string;
   why: string;
@@ -1632,6 +1640,8 @@ export type HomeChangeKind = "OPERATION" | "RECEIPT" | "WAITING" | "REFUSED" | "
 
 export interface HomeChange {
   day: Day | null;
+  /** The day as a distance from today, written by the server. */
+  when: string;
   seq: number | null;
   kind: HomeChangeKind | string;
   actor: string;
@@ -1645,6 +1655,7 @@ export interface HomeReceivable {
   face_fen: Fen;
   face_display: string;
   due_day: Day;
+  due_when: string;
   past_due: boolean;
   days_late: number;
   invoice: string;
@@ -1655,7 +1666,7 @@ export interface HomeReceivables {
   open_total_display: string;
   past_due: HomeReceivable[];
   next_receipt: HomeReceivable | null;
-  promised: { receivable_id: string; buyer_name: string; expected_display: string; promised_day: Day | null } | null;
+  promised: { receivable_id: string; buyer_name: string; expected_display: string; promised_day: Day | null; when: string | null } | null;
   lapsed_promises: number;
 }
 
@@ -1675,8 +1686,10 @@ export interface HomeView {
     lowest_display: string;
     lowest_day: Day;
     first_breach_day: Day | null;
+    lowest_when: string;
+    first_breach_when: string | null;
     horizon_days: number;
-    in_transit: { total_display: string; lots: { facility_name: string; amount_display: string; arrival_day: Day }[] } | null;
+    in_transit: { total_display: string; lots: { facility_name: string; amount_display: string; arrival_day: Day; arrival_when: string }[] } | null;
     dscr_text: string | null;
     leverage_text: string | null;
     min_dscr_display: string;
@@ -1690,7 +1703,7 @@ export interface HomeView {
   pending_count: number;
   changes: HomeChange[];
   receivables: HomeReceivables;
-  warnings: { id: string; kind: string; title: string; detail: string; day: Day | null }[];
+  warnings: { id: string; kind: string; title: string; detail: string; day: Day | null; when: string }[];
   facilities: { id: string; name: string; status: string; limit_display: string; drawn_display: string; available_display: string; lead_time_days: number }[];
   counts: Record<AlertSeverity, number>;
   note_basis: string;

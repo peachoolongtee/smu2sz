@@ -91,7 +91,9 @@ export function ApprovalCard({
   const [open, setOpen] = useState(false);
   const isPending = a.status === "PENDING";
   const p = a.presentation;
-  const shownResult = resultMessage || p?.result_message || a.result_message || null;
+  // The queue's presentation says the result in business words (names, distances from today); the raw executor message
+  // the page kept from the decision is the fallback until the queue has been read again.
+  const shownResult = p?.result_message || resultMessage || a.result_message || null;
   const op = a.operation;
   const detailId = `approval-${a.id}-detail`;
   const wantsTerms = op?.kind === "ACCEPT_OFFER" || op?.kind === "RECORD_COMMITMENT";
@@ -115,7 +117,7 @@ export function ApprovalCard({
       ),
     });
   }
-  if (p?.lands_day !== null && p?.lands_day !== undefined) facts.push({ k: t("biz.lands"), v: <span data-testid="approval-lands">{t("common.dayN", { n: p.lands_day })}</span> });
+  if (p?.lands_day !== null && p?.lands_day !== undefined) facts.push({ k: t("biz.lands"), v: <span data-testid="approval-lands">{p.lands_when ?? t("common.dayN", { n: p.lands_day })}</span> });
   if (p?.facility_name) facts.push({ k: t("biz.source"), v: p.facility_name });
   if (p?.invoice) facts.push({ k: t("biz.invoice"), v: p.invoice });
 
@@ -163,7 +165,7 @@ export function ApprovalCard({
       ) : (
         // The day of a decision is shown only when the API recorded it for that decision.
         <p className="mt-3 text-xs text-ink-3" data-testid={`approval-decided-${a.id}`}>
-          {a.decided_day !== null && a.decided_day !== undefined ? t("appr.decidedOn", { day: a.decided_day }) : t("appr.decided")}
+          {p?.decided_when ? t("appr.decidedWhen", { when: p.decided_when }) : a.decided_day !== null && a.decided_day !== undefined ? t("appr.decidedOn", { day: a.decided_day }) : t("appr.decided")}
         </p>
       )}
       {shownResult ? (

@@ -20,7 +20,6 @@ export function StatusBlock({ h }: { h: HomeView }) {
         <span className={`inline-flex items-center rounded-full border px-3 py-1 text-sm font-bold uppercase tracking-wide ${tone.badge}`} data-testid="home-status-word">
           {te("homestatus", h.status)}
         </span>
-        <span className="text-xs text-ink-3">{t("common.dayN", { n: h.day })}</span>
       </div>
       <h1 id="home-status-title" className="mt-3 text-xl font-semibold leading-snug text-ink lg:text-2xl" data-testid="home-headline">
         {h.headline}
@@ -49,7 +48,7 @@ export function StatusBlock({ h }: { h: HomeView }) {
           <dd className={`mt-0.5 break-words text-base font-semibold tabular-nums lg:text-lg ${h.cash.first_breach_day !== null ? "text-bad-fg" : "text-ink"}`} data-testid="home-lowest">
             {h.cash.lowest_display}
           </dd>
-          <dd className="text-xs text-ink-3">{t("common.dayN", { n: h.cash.lowest_day })}</dd>
+          <dd className="text-xs text-ink-3" data-testid="home-lowest-when">{h.cash.lowest_when}</dd>
         </div>
       </dl>
     </section>
