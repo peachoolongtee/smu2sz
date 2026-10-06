@@ -22,6 +22,7 @@ export function ViolationCard({ v }: { v: Displayed<Violation> }) {
       </div>
       <p className="mt-2 text-sm font-medium">{v.message}</p>
       <p className="text-xs text-ink-3">{te("violation", v.code)}</p>
+      {v.code === "DSCR_BREACH" ? <p className="text-xs text-ink-3">{t("dscr.readingNote")}</p> : null}
 
       {v.observed || v.limit ? (
         <dl className="mt-3 grid grid-cols-2 gap-3">
