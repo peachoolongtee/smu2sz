@@ -35,7 +35,7 @@ def test_day_zero_answers_safe_do_cost(client):
     assert a["cost_total_display"] == "¥3,113.93" and a["cost_display"] == "¥3,113.93" and a["cost_note"] is None
     assert [(c["label"], c["display"]) for c in a["cost_breakdown"]] == [
         ("Bank credit line: draw ¥150,000.00, repaid in 32 days", "¥841.64"),
-        ("Invoice financing (onboarded platform): advance ¥255,000.00 on RCV-A", "¥2,272.29")]
+        ("Invoice financing (onboarded platform): advance ¥255,000.00 on the ¥420,000.00 invoice to Foshan Home Retail Co. due in 32 days", "¥2,272.29")]
     assert a["lands_day"] == 3 and [leg["lands_day"] for leg in a["legs"]] == [0, 3]
     assert [leg["cost_display"] for leg in a["legs"]] == ["¥841.64", "¥2,272.29"]
     assert a["if_nothing"] == "¥240,000.00 below your minimum cash reserve in 12 days; the gap peaks at ¥405,000.00 in 30 days."
@@ -176,6 +176,12 @@ def test_a_late_buyer_is_named_in_receivables_and_changes(client):
     assert c["label"] == ("Finance ¥80,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. on Invoice financing (onboarded platform) and "
                           "Finance ¥120,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. on Invoice financing (onboarded platform)")
     assert c["legs"][-1] == "Change in interest on balances already drawn: −¥788.97"
+    # no invoice id is left in the sentences; the two invoices of the same buyer and face stay apart by their due day
+    assert c["legs"][:2] == [
+        "Invoice financing (onboarded platform): advance ¥80,000.00 on the ¥420,000.00 invoice to Foshan Home Retail Co. due in 43 days: ¥1,425.75",
+        "Invoice financing (onboarded platform): advance ¥120,000.00 on the ¥420,000.00 invoice to Foshan Home Retail Co. due in 13 days: ¥1,069.32"]
+    assert not any("RI:BUYER-1" in c_["text"] for c_ in h["changes"]) and not any("RI:BUYER-1" in leg for leg in c["legs"])
+    assert any("¥162,800.00 outstanding from Foshan Home Retail Co." in c_["text"] for c_ in h["changes"])
     assert a["why"].startswith("The cheapest option, ¥1,706.10 in all (including ¥788.97 less interest on balances already drawn), "
                                "needs 2 separate approvals; this one needs one.")
 
