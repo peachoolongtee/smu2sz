@@ -1,8 +1,11 @@
 @import "tailwindcss";
 
-/* Design tokens. Calm light fintech theme: neutral surfaces, one blue accent, semantic status colours.
-   Every colour used by components comes from here or from the default Tailwind palette (annotation tones). */
-@theme {
+/* Design tokens. Calm light fintech theme: neutral surfaces, one blue accent, semantic status colours, and one deep
+   navy block (the Home hero, the Demo strip). Every colour used by components comes from here (the annotation tones in
+   lib/annotation-style.ts are the one exception). Status tokens mean a status and nothing else; the -solid tokens are for
+   marks that must be seen (dots, rails, chart marks: 3:1), the -bright tokens for pills and figures on the deep block.
+   `static` so a chart can read a token with var() from a plain string. See docs/research/colour-direction-2026-10-08.md. */
+@theme static {
   --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", "PingFang SC", "Hiragino Sans GB",
     "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
   --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
@@ -11,7 +14,8 @@
   --color-surface: #ffffff;
   --color-subtle: #eef2f6;
   --color-line: #dde3ea;
-  --color-line-strong: #c3cdd9;
+  --color-line-strong: #c3cdd9; /* dividers between dense rows: decoration, not a boundary that must be seen */
+  --color-line-ui: #7f8ea3; /* borders that must be seen (inputs, secondary buttons, the account button): 3.3:1 on white */
 
   --color-ink: #0f1c2e;
   --color-ink-2: #3f5068;
@@ -21,19 +25,42 @@
   --color-brand-100: #d6e4f9;
   --color-brand-600: #1558c0;
   --color-brand-700: #0f479c;
+  --color-brand-900: #0b1f4d; /* the deep block: the Home hero, the Demo strip */
+  --color-on-deep: #ffffff; /* text on the deep block: 15.9:1 */
+  --color-on-deep-muted: #b7c3d9; /* captions on the deep block: 9:1 */
 
   --color-ok-fg: #0b6b48;
   --color-ok-bg: #e5f5ed;
   --color-ok-line: #b2dec6;
+  --color-ok-solid: #1a8a5a;
+  --color-ok-bright: #6fdcae;
   --color-warn-fg: #82490a;
   --color-warn-bg: #fdf2d9;
   --color-warn-line: #ecd092;
+  --color-warn-solid: #b7791f;
+  --color-warn-bright: #f5b942;
   --color-bad-fg: #a3241a;
   --color-bad-bg: #fdecea;
   --color-bad-line: #f1b9b2;
+  --color-bad-solid: #d2362a;
+  --color-bad-bright: #ffb4ab;
   --color-info-fg: #1447a6;
   --color-info-bg: #e8f0fd;
   --color-info-line: #b9cff4;
+  --color-info-solid: #2f6fe0;
+  --color-info-bright: #a9c8ff;
+
+  /* The cash chart's marks and nothing else: the line you read, the plan, the reserve, the danger band, the worst point. */
+  --color-chart-base: #1558c0;
+  --color-chart-plan: #0b6b48;
+  --color-chart-reserve: #a3241a;
+  --color-chart-danger: #fdecea;
+  --color-chart-worst: #b7791f;
+  --color-chart-grid: #dde3ea;
+  --color-chart-axis: #5d6e84;
+
+  --color-focus: #1558c0;
+  --color-focus-on-deep: #ffffff; /* brand blue on the deep block is 2.4:1: the ring turns white inside it */
 
   --shadow-card: 0 1px 2px rgb(15 28 46 / 0.04);
   --radius-card: 0.625rem;
@@ -54,9 +81,14 @@ body {
 }
 
 :focus-visible {
-  outline: 2px solid var(--color-brand-600);
+  outline: 2px solid var(--color-focus);
   outline-offset: 2px;
   border-radius: 4px;
+}
+
+/* Inside the deep block the ring is white. */
+.on-deep :focus-visible {
+  outline-color: var(--color-focus-on-deep);
 }
 
 @keyframes tl-slide-in {
