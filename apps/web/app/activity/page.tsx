@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useMode } from "@/lib/mode";
 import { CodeBadge, OpStatusBadge, TierBadge } from "@/components/badges";
 import { SpanQuote } from "@/components/offer-parts";
 import { Badge, Card, EmptyState, ErrorState, Hash, LoadingBlock, PageHeader } from "@/components/ui";
@@ -16,6 +17,7 @@ import { useAsync } from "@/lib/use-async";
  */
 export default function ActivityPage() {
   const { t, te } = useI18n();
+  const mode = useMode();
   const ledger = useAsync(getLedger, []);
   const audit = useAsync(getAudit, []);
   const books = useAsync(getState, []);
@@ -159,12 +161,14 @@ export default function ActivityPage() {
             )}
           </Card>
 
-          <p className="text-xs text-ink-3">
-            {t("biz.activity.trail")}{" "}
-            <Link href="/evidence" className="font-medium text-brand-700 underline underline-offset-2">
-              {t("biz.activity.trail.open")}
-            </Link>
-          </p>
+          {mode === "demo" ? (
+            <p className="text-xs text-ink-3">
+              {t("biz.activity.trail")}{" "}
+              <Link href="/evidence" className="font-medium text-brand-700 underline underline-offset-2">
+                {t("biz.activity.trail.open")}
+              </Link>
+            </p>
+          ) : null}
         </div>
       )}
     </>

@@ -26,7 +26,7 @@ async function send(page: Page, text: string) {
 
 const turns = (page: Page) => page.getByTestId("chat-turn");
 
-/** The Business header keeps the language switch and sign-out inside the account menu; open it when it is there. */
+/** The Business header keeps sign-out inside the account menu (the language switch is in the header itself); open it when it is there. */
 async function openAccountMenu(page: Page) {
   const menu = page.getByTestId("account-menu");
   if ((await menu.count()) && !(await menu.evaluate((el) => (el as HTMLDetailsElement).open))) await menu.locator("> summary").click();

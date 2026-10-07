@@ -24,7 +24,9 @@ export function DealSteps() {
   const agreed = Boolean(cur.negotiation?.commitment) || cur.verdict?.outcome === "ACCEPT";
   const responded = Boolean(cur.negotiation) || cur.verdict?.outcome === "ACCEPT";
   // How many steps are complete; the next one is the current step.
-  const done = !cur.offer ? 0 : !cur.verdict ? 1 : !responded ? 2 : agreed ? 4 : 3;
+  // A refused negotiation ends the deal too: the last step then reads "No deal" instead of waiting forever on "Agreed".
+  const noDeal = cur.negotiation?.outcome === "NO_DEAL";
+  const done = !cur.offer ? 0 : !cur.verdict ? 1 : !responded ? 2 : agreed || noDeal ? 4 : 3;
   return (
     <nav aria-label={t("steps.label")} className="mb-4" data-testid="deal-steps">
       <ol className="flex flex-wrap items-center gap-x-1 gap-y-1 text-xs">
@@ -34,9 +36,9 @@ export function DealSteps() {
           return (
             <li key={s.key} className="flex items-center gap-1">
               {i > 0 ? <span className="text-ink-3">·</span> : null}
-              <Link href={s.href} aria-current={state === "current" ? "step" : undefined} className={`inline-flex items-center gap-1 rounded px-1.5 py-1 ${tone}`}>
+              <Link href={noDeal && s.key === "steps.agreed" ? "/deals#counters" : s.href} aria-current={state === "current" ? "step" : undefined} className={`inline-flex items-center gap-1 rounded px-1.5 py-1 ${tone}`}>
                 {state === "done" ? <CheckIcon width={12} height={12} /> : null}
-                {t(s.key)}
+                {noDeal && s.key === "steps.agreed" ? t("steps.noDeal") : t(s.key)}
               </Link>
             </li>
           );

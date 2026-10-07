@@ -42,7 +42,8 @@ test("the inbox groups a buyer's messages into one thread and names each evaluat
   await expect(reworded).not.toHaveAttribute("aria-current", "true");
   await expect(page.getByTestId("deal-recommendation")).toHaveText("Counter recommended");
   await expect(page.getByTestId("deal-steps").getByRole("link", { name: /Respond/ })).toHaveAttribute("href", "/deals#counters");
-  await expect(page.getByTestId("deal-steps").getByRole("link", { name: /Agreed/ })).toHaveAttribute("href", "/deals#commitments");
+  // The story's hard-line buyer refused every counter on this offer: the last step ends the deal as "No deal", at the replies.
+  await expect(page.getByTestId("deal-steps").getByRole("link", { name: /No deal/ })).toHaveAttribute("href", "/deals#counters");
   const originalId = await page.evaluate(() => JSON.parse(sessionStorage.getItem("tl-demo-v2") ?? "{}").offerId);
   // Picking the latest message folded the thread; the earlier ones are one click away.
   await expect(reworded).toBeHidden();
@@ -134,7 +135,7 @@ test("opening a message reads it, and the evaluated deal reads in the owner's or
   const items = page.getByTestId("deal-calc-item");
   await expect(items.nth(1)).toContainText("60-day terms add 15 days of financing to 13 expected invoices");
   await expect(items.nth(1)).toContainText("¥24,326.92");
-  await expect(items.nth(1).locator("details > summary")).toHaveText("Formula");
+  await expect(items.nth(1).locator("details > summary")).toHaveText("Show the working");
   await page.getByTestId("deal-calc").locator("> summary").click();
   // No empty commitments card; the page fits about two screens with the disclosures closed.
   await expect(page.locator("#commitments")).toHaveCount(0);

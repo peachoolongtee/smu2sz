@@ -2,10 +2,11 @@
 
 import { useEffect } from "react";
 import { ChangesBlock, DecisionsBlock, DetailsBlock, ReceivablesBlock } from "@/components/business/blocks";
+import { CashFlowChart } from "@/components/business/cash-flow-chart";
 import { NextActionBlock } from "@/components/business/next-action";
 import { FixResult, useFixAlert } from "@/components/home/fix-alert";
 import { StatusBlock } from "@/components/business/status-block";
-import { ErrorState, LoadingBlock } from "@/components/ui";
+import { Card, ErrorState, LoadingBlock } from "@/components/ui";
 import { getHome } from "@/lib/api";
 import { onSignedIn } from "@/lib/auth";
 import { bump } from "@/lib/demo-store";
@@ -59,6 +60,12 @@ export default function HomePage() {
           <StatusBlock h={h} />
           <FixResult result={fixer.result} error={fixer.error} changed={fixer.changed} />
           {h.next_action ? <NextActionBlock a={h.next_action} stateVersion={h.state_version} fixer={fixer} /> : null}
+          {/* The cash flow as a picture, not only figures: what lands, what leaves, and the balance it leaves you with. */}
+          {h.cash.series.length ? (
+            <Card id="home-flow" title={t("biz.flow.title")} subtitle={t("biz.flow.sub")}>
+              <CashFlowChart h={h} />
+            </Card>
+          ) : null}
           {/* An empty section is hidden: the absence of decisions or news is not itself news. */}
           {h.pending_count > 0 ? <DecisionsBlock approvals={h.approvals} /> : null}
           <div className="grid gap-5 lg:grid-cols-2">

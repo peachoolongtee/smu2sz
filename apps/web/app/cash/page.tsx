@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useMode } from "@/lib/mode";
 import { useEffect } from "react";
 import { CashForecast } from "@/components/business/cash-forecast";
 import { CurrentFunding } from "@/components/business/current-funding";
@@ -26,6 +27,7 @@ import { useAsync } from "@/lib/use-async";
  */
 export default function CashPage() {
   const { t, lang } = useI18n();
+  const mode = useMode();
   const demo = useDemo();
   const home = useAsync(() => getHome(lang), [lang]);
   // The monthly readings only; the chart draws the home's own series so it cannot disagree with the headline.
@@ -77,11 +79,13 @@ export default function CashPage() {
               </li>
             ))}
           </ul>
-          <p className="text-xs text-ink-3">
-            <Link href="/funding" className="font-medium text-brand-700 underline underline-offset-2">
-              {t("biz.cash.fullDesk")}
-            </Link>
-          </p>
+          {mode === "demo" ? (
+            <p className="text-xs text-ink-3">
+              <Link href="/funding" className="font-medium text-brand-700 underline underline-offset-2">
+                {t("biz.cash.fullDesk")}
+              </Link>
+            </p>
+          ) : null}
         </div>
       </details>
       <details className="mt-3" data-testid="cash-sources">
@@ -152,6 +156,8 @@ export default function CashPage() {
           {home.error ? <ErrorState error={home.error} onRetry={home.reload} /> : !h ? <LoadingBlock rows={2} /> : <CashForecast h={h} />}
         </Card>
 
+        {/* What-if and equipment purchase are Demo-mode tools: Business mode never leaves Business. */}
+        {mode === "demo" ? (
         <div className="grid gap-5 lg:grid-cols-2">
           <Card id="cash-whatif" title={t("biz.cash.whatif")} subtitle={t("biz.cash.whatif.sub")}>
             <Link href="/whatif" className="inline-flex min-h-10 items-center rounded-md border border-line-strong px-3.5 text-sm font-medium text-ink hover:bg-subtle">
@@ -164,6 +170,7 @@ export default function CashPage() {
             </Link>
           </Card>
         </div>
+        ) : null}
 
         {view?.trajectory.months.length ? (
           <details className="rounded-(--radius-card) border border-line bg-surface shadow-(--shadow-card)" data-testid="cash-readings">

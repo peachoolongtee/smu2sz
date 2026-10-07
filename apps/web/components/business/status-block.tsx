@@ -1,5 +1,6 @@
 "use client";
 
+import type React from "react";
 import { useI18n } from "@/lib/i18n";
 import type { HomeStatus, HomeView } from "@/lib/types";
 
@@ -11,6 +12,28 @@ const TONE: Record<HomeStatus, { badge: string; ring: string }> = {
 };
 
 /**
+ * One colour per kind of figure, so the breakdown reads at a glance and matches the cash chart: blue is cash you have or
+ * is arriving, the dashed red edge is the minimum cash reserve (the chart's dashed red line), green is room above it,
+ * and the lowest point takes the colour of how close it comes (green clear, amber close, red below the reserve).
+ */
+type FigureTone = "cash" | "reserve" | "room" | "close" | "below";
+const FIGURE_TONE: Record<FigureTone, string> = {
+  cash: "border-info-line border-l-info-fg bg-info-bg/60",
+  reserve: "border-line border-l-bad-fg [border-left-style:dashed] bg-subtle",
+  room: "border-ok-line border-l-ok-fg bg-ok-bg/60",
+  close: "border-warn-line border-l-warn-fg bg-warn-bg/60",
+  below: "border-bad-line border-l-bad-fg bg-bad-bg/60",
+};
+
+function Figure({ tone, className = "", children, testid }: { tone: FigureTone; className?: string; children: React.ReactNode; testid?: string }) {
+  return (
+    <div className={`flex min-w-0 flex-wrap items-baseline justify-between gap-x-3 rounded-lg border border-l-4 px-3 py-2.5 sm:block ${FIGURE_TONE[tone]} ${className}`} data-tone={tone} data-testid={testid}>
+      {children}
+    </div>
+  );
+}
+
+/**
  * Level 1, conclusion first: the word, the one-line answer ("Your cash reserve becomes unsafe in 12 days."), the detail
  * behind it, the worst point if nothing is done, three figures in overview precision, and what is driving it. Every
  * sentence and figure is the server's; the healthy state is three short lines.
@@ -19,10 +42,10 @@ const TONE: Record<HomeStatus, { badge: string; ring: string }> = {
 function Arriving({ total }: { total: string }) {
   const { t } = useI18n();
   return (
-    <div className="flex min-w-0 items-baseline justify-between gap-3 sm:block">
-      <dt className="text-xs font-medium text-ink-3">{t("biz.arriving")}</dt>
+    <Figure tone="cash">
+      <dt className="text-xs font-medium text-ink-2">{t("biz.arriving")}</dt>
       <dd className="mt-0.5 text-lg font-semibold tabular-nums text-ink" data-testid="home-arriving">{total}</dd>
-    </div>
+    </Figure>
   );
 }
 
@@ -40,6 +63,8 @@ export function StatusBlock({ h }: { h: HomeView }) {
   const { t, te } = useI18n();
   const tone = TONE[h.status] ?? TONE.WATCH;
   const unsafe = h.cash.first_breach_day !== null;
+  // The lowest point is "close" when the home is not plainly safe; below the reserve it is red.
+  const lowTone: FigureTone = unsafe ? "below" : h.status === "SAFE" ? "room" : "close";
   return (
     <section aria-labelledby="home-status-title" className={`rounded-(--radius-card) border bg-surface p-5 shadow-(--shadow-card) lg:p-6 ${tone.ring}`} data-testid="home-status" data-status={h.status}>
       <span className={`inline-flex items-center rounded-full border px-3 py-1 text-sm font-bold uppercase tracking-wide ${tone.badge}`} data-testid="home-status-word">
@@ -57,48 +82,48 @@ export function StatusBlock({ h }: { h: HomeView }) {
         </p>
       ) : null}
 
-      <dl className="mt-5 grid grid-cols-1 gap-3 border-t border-line pt-4 sm:grid-cols-3">
+      <dl className="mt-5 grid grid-cols-1 gap-3 border-t border-line pt-4 sm:grid-cols-[repeat(auto-fit,minmax(10rem,1fr))]" data-testid="home-figures">
         {unsafe ? (
-          <div className="flex min-w-0 flex-wrap items-baseline justify-between gap-x-3 sm:block">
-            <dt className="text-xs font-medium text-ink-3">{t("biz.breachCash")}</dt>
+          <Figure tone="below">
+            <dt className="text-xs font-medium text-ink-2">{t("biz.breachCash")}</dt>
             <dd className="mt-0.5 text-lg font-semibold tabular-nums text-ink" data-testid="home-breach-cash">
               {h.cash.first_breach_cash_short}
             </dd>
             <dd className="text-xs text-ink-3">{h.cash.first_breach_when}</dd>
-          </div>
+          </Figure>
         ) : (
-          <div className="flex min-w-0 flex-wrap items-baseline justify-between gap-x-3 sm:block">
-            <dt className="text-xs font-medium text-ink-3">{t("biz.cashToday")}</dt>
+          <Figure tone="cash">
+            <dt className="text-xs font-medium text-ink-2">{t("biz.cashToday")}</dt>
             <dd className="mt-0.5 text-lg font-semibold tabular-nums text-ink" data-testid="home-cash">
               {h.cash.cash_short}
             </dd>
             {h.cash.in_transit ? <InTransitLines transit={h.cash.in_transit} /> : null}
-          </div>
+          </Figure>
         )}
         {h.cash.in_transit && !unsafe ? <Arriving total={h.cash.in_transit.total_display} /> : null}
-        <div className="flex min-w-0 items-baseline justify-between gap-3 sm:block">
-          <dt className="text-xs font-medium text-ink-3">{t("biz.reserveMin")}</dt>
+        <Figure tone="reserve">
+          <dt className="text-xs font-medium text-ink-2">{t("biz.reserveMin")}</dt>
           <dd className="mt-0.5 text-lg font-semibold tabular-nums text-ink" data-testid="home-floor">{h.cash.floor_short}</dd>
-        </div>
+        </Figure>
         {h.cash.headroom_short !== undefined ? (
-          <div className="flex min-w-0 items-baseline justify-between gap-3 sm:block">
-            <dt className="text-xs font-medium text-ink-3">{t("biz.headroom")}</dt>
+          <Figure tone="room">
+            <dt className="text-xs font-medium text-ink-2">{t("biz.headroom")}</dt>
             <dd className="mt-0.5 text-lg font-semibold tabular-nums text-ink" data-testid="home-headroom">{h.cash.headroom_short}</dd>
-          </div>
+          </Figure>
         ) : null}
         {h.cash.lowest_headroom_short !== undefined ? (
-          <div className="flex min-w-0 items-baseline justify-between gap-3 sm:block">
-            <dt className="text-xs font-medium text-ink-3">{t("biz.lowestHeadroom")}</dt>
+          <Figure tone={lowTone}>
+            <dt className="text-xs font-medium text-ink-2">{t("biz.lowestHeadroom")}</dt>
             <dd className="mt-0.5 text-lg font-semibold tabular-nums text-ink" data-testid="home-headroom-lowest">{h.cash.lowest_headroom_short}</dd>
-          </div>
+          </Figure>
         ) : null}
-        <div className="flex min-w-0 flex-wrap items-baseline justify-between gap-x-3 sm:block">
-          <dt className="text-xs font-medium text-ink-3">{unsafe ? t("biz.worstPoint") : t("biz.lowestAhead")}</dt>
+        <Figure tone={lowTone}>
+          <dt className="text-xs font-medium text-ink-2">{unsafe ? t("biz.worstPoint") : t("biz.lowestAhead")}</dt>
           <dd className={`mt-0.5 text-lg font-semibold tabular-nums ${unsafe ? "text-bad-fg" : "text-ink"}`} data-testid="home-lowest">
             {h.cash.lowest_short}
           </dd>
           <dd className="text-xs text-ink-3" data-testid="home-lowest-when">{h.cash.lowest_when}</dd>
-        </div>
+        </Figure>
       </dl>
       {unsafe ? (
         <dl className="mt-4 flex flex-wrap items-baseline gap-x-4 gap-y-1 text-sm">

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useMode } from "@/lib/mode";
 import { Badge, Card, ErrorState, Hash, LoadingBlock, PageHeader, Stat } from "@/components/ui";
 import { getMandate } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
@@ -9,6 +10,7 @@ import { useAsync } from "@/lib/use-async";
 /** Limits: what the agent may do alone, in sentences; the signed mandate's fields and signature under details. */
 export default function LimitsPage() {
   const { t, te } = useI18n();
+  const mode = useMode();
   const mandate = useAsync(getMandate, []);
   const v = mandate.data;
   const m = v?.mandate;
@@ -49,11 +51,13 @@ export default function LimitsPage() {
                 {t("mandate.sig")}: <Hash value={m.signature_hex} />
               </p>
               <p>{t("mandate.org", { org: m.org_id })}</p>
-              <p>
-                <Link href="/mandate" className="font-medium text-brand-700 underline underline-offset-2">
-                  {t("biz.limits.full")}
-                </Link>
-              </p>
+              {mode === "demo" ? (
+                <p>
+                  <Link href="/mandate" className="font-medium text-brand-700 underline underline-offset-2">
+                    {t("biz.limits.full")}
+                  </Link>
+                </p>
+              ) : null}
             </div>
           </details>
         </div>

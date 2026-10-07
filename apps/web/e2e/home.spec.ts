@@ -20,12 +20,6 @@ test.beforeEach(async ({ context }, testInfo) => {
 });
 
 
-/** The Business header keeps the language switch and sign-out inside the account menu; open it when it is there. */
-async function openAccountMenu(page: Page) {
-  const menu = page.getByTestId("account-menu");
-  if ((await menu.count()) && !(await menu.evaluate((el) => (el as HTMLDetailsElement).open))) await menu.locator("> summary").click();
-}
-
 /** The story page's clock moves the simulated day; the home is then opened through the mode switch. */
 async function advanceTo34(page: Page) {
   await page.goto("/demo");
@@ -221,15 +215,14 @@ test("day 34: the approval card is a question with the cost, the landing day and
   expect(await proseOf(page)).not.toMatch(/\bday \d/i);
 });
 
-test("the Chinese labels switch while the server's sentences stay", async ({ page }) => {
+test("the language switch sits in the Business header and the server's sentences follow it", async ({ page }) => {
   await page.goto("/");
-  await openAccountMenu(page);
   await page.getByLabel("中文").check();
-  // The status word is the server's own label (`status_text`), so the mock's recorded English summary keeps it.
-  await expect(page.getByTestId("home-status-word")).toHaveText("Action needed");
+  // The home is recorded in both languages (GET /home?lang=), so the server's status word and headline switch too.
+  await expect(page.getByTestId("home-status-word")).toHaveText("需要行动");
+  await expect(page.getByTestId("home-headline")).toContainText("现金储备");
   await expect(page.getByRole("navigation").getByRole("link", { name: "现金与融资" })).toBeVisible();
   await expect(page.getByTestId("chat-open")).toContainText("问 FLOW");
-  await openAccountMenu(page);
   await page.getByLabel("English").check();
   await expect(page.getByTestId("chat-open")).toContainText("Ask FLOW");
 });

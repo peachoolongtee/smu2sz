@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useMode } from "@/lib/mode";
 import { AnnualisedCompact, offerLegs } from "@/components/annualised";
 import { AutonomyPanel } from "@/components/autonomy-panel";
 import { CodeBadge, OutcomeBadge, TierBadge, outcomeHasTier } from "@/components/badges";
@@ -152,6 +153,7 @@ export function AssistantTurn({
   onSend: (text: string, display?: string) => void;
 }) {
   const { t, te } = useI18n();
+  const mode = useMode();
   const hasSecurity = r.security_events.length > 0;
   const ranNothing = r.operations.length === 0 && (hasSecurity || r.plan.length > 0);
   const zh = r.lang === "zh";
@@ -191,9 +193,11 @@ export function AssistantTurn({
           <p className="font-semibold">{t("chat.security.title", { n: r.security_events.length })}</p>
           <p className="mt-0.5">{t("chat.security.body")}</p>
           <p className="mt-1 break-all font-mono text-xs">{r.security_events.join(", ")}</p>
-          <Link href="/security" className="mt-1 inline-block text-xs font-medium underline">
-            {t("chat.security.open")}
-          </Link>
+          {mode === "demo" ? (
+            <Link href="/security" className="mt-1 inline-block text-xs font-medium underline">
+              {t("chat.security.open")}
+            </Link>
+          ) : null}
         </div>
       ) : null}
 

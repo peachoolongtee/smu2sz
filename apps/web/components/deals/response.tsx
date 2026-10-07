@@ -113,9 +113,14 @@ export function RecommendedResponse({ v, offerId, today, mode, negotiation }: { 
     !negotiation && mode === "business" ? (
       <div className="flex flex-wrap items-center gap-3">
         <Button variant="primary" loading={sending} onClick={() => void send()} data-testid="deal-send">
-          {sending ? t("biz.deals.sending") : t("biz.deals.send")}
+          {sending ? t("biz.deals.sending") : t("biz.deals.send", { label: first.label })}
         </Button>
         <span className="text-xs text-ink-3">{t("biz.deals.send.simulated")}</span>
+        {rest.length ? (
+          <p className="basis-full text-xs text-ink-2" data-testid="deal-send-fallback">
+            {t("biz.deals.send.fallback", { first: first.label, next: rest[0].label })}
+          </p>
+        ) : null}
       </div>
     ) : undefined;
   return (
@@ -136,11 +141,27 @@ export function RecommendedResponse({ v, offerId, today, mode, negotiation }: { 
           </Button>
         ) : null}
         {negotiation ? (
-          <p className="text-sm text-ink" data-testid="deal-negotiation">
-            {negotiation.outcome === "DEAL"
-              ? t("biz.deals.dealDone", { counter: negotiation.rounds.find((r) => r.buyer_response === "ACCEPT")?.counter_label ?? "" })
-              : t("biz.deals.noDeal")}
-          </p>
+          <div className="basis-full space-y-2" data-testid="deal-negotiation-thread">
+            <p className="text-xs font-semibold uppercase tracking-wide text-ink-3">{t("biz.deals.reply")}</p>
+            <ol className="space-y-1.5">
+              {negotiation.rounds.map((r) => (
+                <li key={r.round} className={`rounded-md border px-3 py-2 text-sm ${r.buyer_response === "ACCEPT" ? "border-ok-line bg-ok-bg/50" : "border-line bg-subtle"}`}>
+                  <span className="font-medium text-ink">{t("biz.deals.round", { label: r.counter_label ?? "" })}</span>
+                  <span className={r.buyer_response === "ACCEPT" ? "text-ok-fg" : "text-bad-fg"}> · {t(r.buyer_response === "ACCEPT" ? "biz.deals.round.accept" : "biz.deals.round.refuse")}</span>
+                  {/* The buyer's own words, verbatim (they may name absolute days), one click away. */}
+                  <details className="mt-0.5">
+                    <summary className="cursor-pointer text-xs font-medium text-brand-700">{t("biz.deals.reply.words")}</summary>
+                    <p className="mt-1 text-ink-2">&ldquo;{r.buyer_text}&rdquo;</p>
+                  </details>
+                </li>
+              ))}
+            </ol>
+            <p className={`text-sm font-medium ${negotiation.outcome === "DEAL" ? "text-ok-fg" : "text-ink"}`} data-testid="deal-negotiation">
+              {negotiation.outcome === "DEAL"
+                ? t("biz.deals.dealDone", { counter: negotiation.rounds.find((r) => r.buyer_response === "ACCEPT")?.counter_label ?? "" })
+                : t("biz.deals.noDeal")}
+            </p>
+          </div>
         ) : mode === "demo" ? (
           <p className="text-xs text-ink-3">
             {t("biz.deals.negotiateHint")}{" "}

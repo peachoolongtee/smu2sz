@@ -1,6 +1,7 @@
 "use client";
 
 import { useI18n } from "@/lib/i18n";
+import { useMode } from "@/lib/mode";
 import type { Displayed, FundingPlan } from "@/lib/types";
 import { useBusinessToday } from "@/lib/use-business-today";
 import { whenText } from "@/lib/when";
@@ -29,6 +30,8 @@ export function PlanCard({
   today?: number;
 }) {
   const { t, te } = useI18n();
+  // Business mode names the figure and folds the formula; the Demo views keep the working in plain sight.
+  const fold = useMode() === "business";
   const { business, today } = useBusinessToday(todayProp);
   /** "Day 37" in Demo; "in 3 days" on a Business page once the clock is known. */
   const dayText = (day: number): string => (today === null ? t("common.dayN", { n: day }) : whenText(day, today, t));
@@ -105,7 +108,16 @@ export function PlanCard({
                   <span className="text-sm">{said(c.label, c.label_when)}</span>
                   <span className="font-medium tabular-nums">{c.display}</span>
                 </div>
-                <Formula>{c.formula}</Formula>
+                {fold ? (
+                  <details>
+                    <summary className="cursor-pointer text-xs font-medium text-brand-700">{t("biz.calc.working")}</summary>
+                    <div className="mt-1">
+                      <Formula>{c.formula}</Formula>
+                    </div>
+                  </details>
+                ) : (
+                  <Formula>{c.formula}</Formula>
+                )}
                 <PlanNotes
                   needsApproval={c.needs_owner_approval}
                   approvalReason={said(c.approval_reason, c.approval_reason_when)}

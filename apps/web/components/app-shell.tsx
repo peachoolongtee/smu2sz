@@ -74,7 +74,8 @@ function LangSwitch() {
       value={lang}
       onChange={setLang}
       options={[
-        { value: "en", label: "English" },
+        // On a phone "EN" is shown; the accessible name stays "English" either way.
+        { value: "en", label: <><span aria-hidden className="sm:hidden">EN</span><span className="max-sm:sr-only">English</span></> },
         { value: "zh", label: "中文" },
       ]}
     />
@@ -144,7 +145,6 @@ function AccountMenu() {
             {t("account.menu")}
           </summary>
           <div className="absolute right-0 z-40 mt-1 w-72 space-y-3 rounded-lg border border-line bg-surface p-3 shadow-lg">
-            <LangSwitch />
             <p className="text-xs text-ink-3">{t("biz.demoData.hint")}</p>
           </div>
         </details>
@@ -167,7 +167,6 @@ function AccountMenu() {
             {t("auth.signout")}
           </Button>
         </div>
-        <LangSwitch />
         <p className="text-xs text-ink-3">{t("biz.demoData.hint")}</p>
       </div>
     </details>
@@ -234,6 +233,8 @@ function BusinessShell({ children }: { children: ReactNode }) {
             <div className="hidden sm:block">
               <ModeSwitch />
             </div>
+            {/* The language is a first-class switch in Business mode, not a setting buried in the account menu. */}
+            <LangSwitch />
             <AccountMenu />
           </div>
         </div>

@@ -20,7 +20,7 @@ import { useI18n } from "@/lib/i18n";
 import type { InboxMessage } from "@/lib/inbox";
 import { useMode } from "@/lib/mode";
 import { annotationsFor, offerItems } from "@/lib/offer-items";
-import type { VerdictView } from "@/lib/types";
+import type { AnnualisedLeg, CounterProposal, Displayed, VerdictView } from "@/lib/types";
 import { useAsync } from "@/lib/use-async";
 import { useCurrentOffer } from "@/lib/use-current";
 import { whenText } from "@/lib/when";
@@ -219,6 +219,7 @@ export default function DealsPage() {
                   <details className="rounded-(--radius-card) border border-line bg-surface shadow-(--shadow-card)" data-testid="deal-calc">
                     <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-ink">{t("biz.deals.calc")}</summary>
                     <div className="space-y-4 border-t border-line p-4">
+                      <BreakEven v={v} />
                       {v.concession_values.length ? (
                         <ul className="space-y-2">
                           {v.concession_values.map((c) => (
@@ -228,7 +229,7 @@ export default function DealsPage() {
                                 <span className="font-semibold tabular-nums">{c.value_display}</span>
                               </div>
                               <details className="mt-1.5">
-                                <summary className="cursor-pointer text-xs font-medium text-brand-700">{t("common.formula")}</summary>
+                                <summary className="cursor-pointer text-xs font-medium text-brand-700">{t("biz.calc.working")}</summary>
                                 <p className="mt-1 text-xs text-ink-3">{c.basis}</p>
                                 <div className="mt-1">
                                   <Formula>{c.formula}</Formula>
@@ -239,19 +240,17 @@ export default function DealsPage() {
                         </ul>
                       ) : null}
                       {v.counters.map((c) => (
-                        <div key={c.id} className="rounded-md border border-line px-3 py-2 text-sm">
-                          <p className="font-medium text-ink">{c.label}</p>
-                          <div className="mt-1.5">
-                            <Formula>{c.formula}</Formula>
-                          </div>
-                        </div>
+                        <CounterFigures key={c.id} c={c} legs={v.annualised ?? []} />
                       ))}
                       {v.plan ? <PlanCard plan={v.plan} id="deal-plan" /> : null}
-                      <p className="text-xs text-ink-3">
-                        <Link href="/verdict" className="font-medium text-brand-700 underline underline-offset-2">
-                          {t("biz.deals.fullVerdict")}
-                        </Link>
-                      </p>
+                      {/* Business mode never leaves Business: the engine's full verdict view is a Demo-mode page. */}
+                      {mode === "demo" ? (
+                        <p className="text-xs text-ink-3">
+                          <Link href="/verdict" className="font-medium text-brand-700 underline underline-offset-2">
+                            {t("biz.deals.fullVerdict")}
+                          </Link>
+                        </p>
+                      ) : null}
                     </div>
                   </details>
                 </div>
@@ -261,5 +260,80 @@ export default function DealsPage() {
         )}
       </div>
     </>
+  );
+}
+
+/** One figure as "Term: value", the way the owner reads it; the working sits behind its own disclosure. */
+function Figure({ term, value, note, testid }: { term: string; value: string; note?: string; testid?: string }) {
+  return (
+    <div className="flex flex-wrap items-baseline justify-between gap-x-3" data-testid={testid}>
+      <dt className="text-ink-2">
+        {term}
+        {note ? <span className="block text-xs text-ink-3">{note}</span> : null}
+      </dt>
+      <dd className="font-semibold tabular-nums text-ink">{value}</dd>
+    </div>
+  );
+}
+
+/** The break-even discount, from the verifier's own check (its limit), when the buyer asked for an early-payment discount. */
+function BreakEven({ v }: { v: VerdictView }) {
+  const { t } = useI18n();
+  const be = v.violations.find((x) => x.code === "DISCOUNT_ABOVE_BREAK_EVEN") ?? v.passed_checks.find((x) => x.code === "DISCOUNT_ABOVE_BREAK_EVEN");
+  const limit = be && "limit" in be ? (be.limit ?? "").replace(/^<\s*/, "") : "";
+  if (!limit) return null;
+  return (
+    <dl className="rounded-md border border-line px-3 py-2 text-sm" data-testid="deal-calc-break-even">
+      <Figure term={t("biz.calc.breakEven")} note={t("biz.calc.breakEven.note")} value={limit} />
+    </dl>
+  );
+}
+
+/**
+ * A counter's numbers named, not derived: what it costs us, the discount and how much it applies to, the terms, the price
+ * adjustment, and the discount's yearly rate against the committed funding. All server strings; the formula is behind
+ * "Show the working".
+ */
+function CounterFigures({ c, legs }: { c: Displayed<CounterProposal>; legs: AnnualisedLeg[] }) {
+  const { t } = useI18n();
+  const e = c.economics ?? null;
+  const rows: { term: string; value: string; note?: string }[] = [];
+  if (e?.is_net) {
+    rows.push({ term: t("biz.deals.netCost"), value: e.net_fen <= 0 ? "≈ ¥0" : e.net_display });
+    rows.push({ term: t("biz.deals.fundingCost"), value: e.funding_cost_display });
+    rows.push({ term: t("biz.deals.offset"), value: `−${e.offset_display}` });
+  } else {
+    rows.push({ term: t("biz.calc.cost"), value: c.supplier_cost_display });
+  }
+  for (const o of c.obligations) {
+    if (o.type === "IMMEDIATE_DISCOUNT" && o.rate_display) {
+      rows.push({ term: t("biz.calc.discount"), value: o.rate_display });
+      if (o.base.amount_display) rows.push({ term: t("biz.calc.upTo"), value: o.base.amount_display });
+    } else if (o.type === "TERMS_EXTENSION" && typeof o.target_terms_days === "number") {
+      rows.push({ term: t("biz.calc.terms"), value: t("common.days", { n: o.target_terms_days }) });
+    } else if (o.type === "PRICE_ADJUSTMENT" && o.rate_display) {
+      rows.push({ term: t("biz.calc.priceAdj"), value: o.rate_display });
+    }
+    const leg = legs.find((l) => l.obligation_id === o.id);
+    if (leg) {
+      rows.push({ term: t("biz.calc.yearly"), value: leg.annual_rate_display });
+      for (const x of leg.compare_to) rows.push({ term: x.label, value: x.annual_rate_display });
+    }
+  }
+  return (
+    <div className="rounded-md border border-line px-3 py-2 text-sm" data-testid="deal-calc-counter">
+      <p className="font-medium text-ink">{c.label}</p>
+      <dl className="mt-1.5 space-y-1">
+        {rows.map((r, i) => (
+          <Figure key={`${r.term}-${i}`} term={r.term} value={r.value} note={r.note} />
+        ))}
+      </dl>
+      <details className="mt-1.5">
+        <summary className="cursor-pointer text-xs font-medium text-brand-700">{t("biz.calc.working")}</summary>
+        <div className="mt-1">
+          <Formula>{c.formula}</Formula>
+        </div>
+      </details>
+    </div>
   );
 }
