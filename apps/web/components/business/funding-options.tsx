@@ -22,6 +22,9 @@ export function optionName(c: ComparisonRow, menu: MenuRow[], t: I18n["t"]): str
   return key ? t(key) : c.label;
 }
 
+/** The row's grid: rank, name, [cost cell], chevron. Under the small breakpoint the cost cell drops to a second line so the name keeps the width. */
+const rowGrid = "grid min-h-12 grid-cols-[1.5rem_minmax(0,1fr)_1rem] items-start gap-x-3 gap-y-1 py-2.5 sm:grid-cols-[1.5rem_minmax(0,1fr)_auto_1rem]";
+
 /**
  * One option as a row that opens: the name, its status and its total on one line; what it leaves uncovered stays on the
  * line (it is the fact that decides), and why it ranks where it does (the server's note, the buyer it needs, what stops it
@@ -39,8 +42,8 @@ function Row({ c, n, name, today, recommended }: { c: ComparisonRow; n: number |
   const hasMore = Boolean(why) || needsBuyer || Boolean(c.needs_owner_approval) || c.executable_now === false;
   const head = (
     <>
-      <span className="mt-0.5 w-6 shrink-0 text-xs font-semibold tabular-nums text-ink-3">{n !== null ? t("biz.option.rank", { n }) : ""}</span>
-      <span className="min-w-0 flex-1">
+      <span className="mt-0.5 text-xs font-semibold tabular-nums text-ink-3">{n !== null ? t("biz.option.rank", { n }) : ""}</span>
+      <span className="min-w-0">
         <span className={`block text-sm ${c.selected ? "font-semibold text-ink" : "text-ink"}`}>{name}</span>
         {status === "insufficient" ? (
           <span className="block text-xs text-bad-fg" data-testid="cash-option-uncovered">
@@ -48,21 +51,22 @@ function Row({ c, n, name, today, recommended }: { c: ComparisonRow; n: number |
           </span>
         ) : null}
       </span>
-      <span className="flex shrink-0 items-center gap-2">
+      {/* Narrow: the badges and the cost sit on a second line, right-aligned; wide: beside the name. */}
+      <span className="col-span-2 col-start-2 row-start-2 flex flex-wrap items-center justify-end gap-2 sm:col-span-1 sm:col-start-3 sm:row-start-1 sm:flex-nowrap">
         {recommended ? <Badge tone="brand">{t("biz.option.recommended")}</Badge> : null}
         {status === "insufficient" ? <Badge tone="bad">{t("biz.option.insufficient")}</Badge> : null}
         {status === "unavailable" ? <Badge tone="neutral">{t("biz.option.notPossible")}</Badge> : null}
         {status === "blocked" ? <Badge tone="bad">{t("biz.option.blocked")}</Badge> : null}
         <span className="text-sm font-semibold tabular-nums">{c.total_display}</span>
-        {hasMore ? <ChevronRightIcon className="shrink-0 text-ink-3 transition-transform group-open:rotate-90" /> : <span className="w-4 shrink-0" aria-hidden />}
       </span>
+      {hasMore ? <ChevronRightIcon className="col-start-3 row-start-1 mt-0.5 text-ink-3 transition-transform group-open:rotate-90 sm:col-start-4" /> : <span className="col-start-3 row-start-1 w-4 sm:col-start-4" aria-hidden />}
     </>
   );
   return (
     <li data-testid={`cash-option-${c.selected ? "selected" : "other"}`} data-key={c.key ?? ""} data-status={status}>
       {hasMore ? (
         <details className="group" data-testid="cash-option-details">
-          <summary className="flex min-h-12 cursor-pointer list-none items-start gap-3 py-2.5 [&::-webkit-details-marker]:hidden">{head}</summary>
+          <summary className={`${rowGrid} cursor-pointer list-none [&::-webkit-details-marker]:hidden`}>{head}</summary>
           <div className="space-y-1.5 pb-3 pl-9 text-xs text-ink-2" data-testid="cash-option-why">
             {why ? <p data-testid={status === "unavailable" || status === "blocked" ? "cash-option-unavailable-note" : status === "alternative" ? "cash-option-alternative-note" : undefined}>{why}</p> : null}
             {needsBuyer ? <p>{t("biz.option.needsBuyer")}</p> : null}
@@ -70,7 +74,7 @@ function Row({ c, n, name, today, recommended }: { c: ComparisonRow; n: number |
           </div>
         </details>
       ) : (
-        <div className="flex min-h-12 items-start gap-3 py-2.5">{head}</div>
+        <div className={rowGrid}>{head}</div>
       )}
     </li>
   );

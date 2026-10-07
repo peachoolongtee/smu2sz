@@ -21,7 +21,7 @@ export function CurrentFunding({ h }: { h: HomeView }) {
         <ul className="motion-rise divide-y divide-line" data-testid="cash-current-lots">
           {lots.map((lot, i) => (
             <li key={`${lot.facility_name}-${lot.arrival_day}-${i}`} className="flex flex-wrap items-center justify-between gap-2 py-2.5" data-testid={`cash-lot-${lot.landed ? "landed" : "transit"}`}>
-              <div className="min-w-0">
+              <div className="min-w-0 basis-full sm:basis-0 sm:flex-1">
                 <p className="text-sm font-semibold tabular-nums text-ink">
                   {lot.remaining_display ?? lot.amount_display} <span className="font-normal text-ink-2">{lot.facility_name}</span>
                   {lot.remaining_display && lot.remaining_display !== lot.amount_display ? (
@@ -33,7 +33,7 @@ export function CurrentFunding({ h }: { h: HomeView }) {
                 </p>
 
               </div>
-              <Badge tone={lot.landed ? "ok" : "info"}>{lot.landed ? t("biz.cash.lot.received") : t("biz.cash.lot.inTransit")}</Badge>
+              <Badge className="ml-auto" tone={lot.landed ? "ok" : "info"}>{lot.landed ? t("biz.cash.lot.received") : t("biz.cash.lot.inTransit")}</Badge>
             </li>
           ))}
         </ul>
