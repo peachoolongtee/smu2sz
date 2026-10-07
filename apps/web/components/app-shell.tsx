@@ -12,6 +12,7 @@ import { ChatPanel } from "./chat/chat-panel";
 import { DemoStepper } from "./demo-stepper";
 import { MenuIcon, ShieldCheckIcon, ShieldIcon, SparkIcon, XIcon } from "./icons";
 import { signOut, useAuth } from "@/lib/auth";
+import { Backdrop } from "./business/backdrop";
 import { Tour, startTour } from "./business/tour";
 import { OwnerSessionControl, OwnerSignInDialog } from "./owner-auth";
 import { SECTIONS, type Section } from "./section";
@@ -227,6 +228,7 @@ function BusinessShell({ children }: { children: ReactNode }) {
       <OwnerSignInDialog />
       <ChatPanel />
       <Tour />
+      <Backdrop />
       <header className="sticky top-0 z-30 border-b border-line bg-surface">
         <div className="mx-auto flex max-w-[1280px] items-center justify-between gap-3 px-4 py-2 lg:grid lg:grid-cols-[auto_minmax(0,1fr)_auto] lg:gap-6 lg:px-6">
           <Brand href="/" />

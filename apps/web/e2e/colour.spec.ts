@@ -12,7 +12,7 @@ test.beforeEach(async ({}, testInfo) => {
 });
 
 const BRAND_900 = "rgb(11, 31, 77)";
-const BRAND_600 = "rgb(21, 88, 192)";
+const BRAND_600 = "rgb(26, 95, 224)";
 const BAD_BRIGHT = "rgb(255, 180, 171)";
 
 const bg = (l: Locator) => l.evaluate((el) => getComputedStyle(el).backgroundColor);
@@ -88,7 +88,7 @@ test("one filled brand button per Business page, no gradient anywhere, the deep 
   await expect(page.getByTestId("deal-send")).toBeVisible();
   expect(await filledBrand(page)).toBe(1);
   // The channel chip is neutral, not the "fine" green.
-  expect(await bg(page.getByTestId("inbox-msg-EX01").locator("span").first())).toBe("rgb(238, 242, 246)");
+  expect(await bg(page.getByTestId("inbox-msg-EX01").locator("span").first())).toBe("rgb(234, 240, 247)");
 });
 
 test("the day-34 pending home has one primary: the decision, and the owner's disc is brand, not green", async ({ page }) => {
@@ -102,7 +102,7 @@ test("the day-34 pending home has one primary: the decision, and the owner's dis
   await expect(page.getByTestId("home-review-primary")).toBeVisible();
   expect(await filledBrand(page)).toBe(1);
   const disc = page.getByTestId("account-menu").locator("summary span").first();
-  expect(await bg(disc)).toBe("rgb(234, 241, 252)");
+  expect(await bg(disc)).toBe("rgb(232, 240, 254)");
 });
 
 test("the Demo shell says so in its own deep strip; the Business shell has none", async ({ page }) => {

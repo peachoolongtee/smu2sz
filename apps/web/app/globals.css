@@ -12,21 +12,21 @@
     "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
   --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
 
-  --color-canvas: #f5f7fa;
+  --color-canvas: #f3f6fb;
   --color-surface: #ffffff;
-  --color-subtle: #eef2f6;
-  --color-line: #dde3ea;
-  --color-line-strong: #c3cdd9; /* dividers between dense rows: decoration, not a boundary that must be seen */
-  --color-line-ui: #7f8ea3; /* borders that must be seen (inputs, secondary buttons, the account button): 3.3:1 on white */
+  --color-subtle: #eaf0f7;
+  --color-line: #dbe3ee;
+  --color-line-strong: #c2cddc; /* dividers between dense rows: decoration, not a boundary that must be seen */
+  --color-line-ui: #74849b; /* borders that must be seen (inputs, secondary buttons, the segmented track): 3.8:1 on white, 3.3:1 on subtle */
 
   --color-ink: #0f1c2e;
   --color-ink-2: #3f5068;
   --color-ink-3: #5d6e84;
 
-  --color-brand-50: #eaf1fc;
-  --color-brand-100: #d6e4f9;
-  --color-brand-600: #1558c0;
-  --color-brand-700: #0f479c;
+  --color-brand-50: #e8f0fe;
+  --color-brand-100: #d3e2fc;
+  --color-brand-600: #1a5fe0; /* white on it: 5.6:1 */
+  --color-brand-700: #124bb8;
   --color-brand-900: #0b1f4d; /* the deep block: the Home hero, the Demo strip */
   --color-on-deep: #ffffff; /* text on the deep block: 15.9:1 */
   --color-on-deep-muted: #b7c3d9; /* captions on the deep block: 9:1 */
@@ -71,15 +71,15 @@
   --color-sec-activity-solid: #c7366e;
 
   /* The cash chart's marks and nothing else: the line you read, the plan, the reserve, the danger band, the worst point. */
-  --color-chart-base: #1558c0;
+  --color-chart-base: #1a5fe0;
   --color-chart-plan: #0b6b48;
   --color-chart-reserve: #a3241a;
   --color-chart-danger: #fdecea;
   --color-chart-worst: #b7791f;
-  --color-chart-grid: #dde3ea;
+  --color-chart-grid: #dbe3ee;
   --color-chart-axis: #5d6e84;
 
-  --color-focus: #1558c0;
+  --color-focus: #1a5fe0;
   --color-focus-on-deep: #ffffff; /* brand blue on the deep block is 2.4:1: the ring turns white inside it */
 
   /* Shadows: a card rests on a hairline; a lifted row, tile or option takes one step; a sheet or menu takes the pop. */
@@ -363,6 +363,15 @@ details[open]:not(.menu, :has(> .disclosure-body))::details-content {
     animation-delay: 0s !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
+    transition-delay: 0s !important;
+    scroll-behavior: auto !important;
+  }
+  .motion-lift:hover,
+  .motion-press:not(:disabled):active {
+    transform: none !important;
+  }
+  .biz-disc {
+    animation: none !important;
   }
 }
 
