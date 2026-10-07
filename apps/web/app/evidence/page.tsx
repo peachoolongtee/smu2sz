@@ -98,7 +98,7 @@ function EvidenceBody({ text, onDownload }: { text: string; onDownload: () => vo
         <pre
           tabIndex={0}
           aria-label={t("evid.preview")}
-          className="max-h-96 overflow-auto rounded-md border border-line bg-subtle p-3 font-mono text-xs leading-relaxed"
+          className="max-h-96 overflow-auto rounded-tile border border-line bg-subtle p-3 font-mono text-xs leading-relaxed"
         >
           {lines.join("\n")}
         </pre>

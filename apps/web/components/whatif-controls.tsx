@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import { useI18n } from "@/lib/i18n";
 import type { WhatIfControls, WhatIfParams, WhatIfPresetId, WhatIfSlider } from "@/lib/types";
-import { Card } from "./ui";
+import { Card, toggleClass } from "./ui";
 
 /**
  * The owner's levers. Sliders move integer days, integer bp and a server-listed face stop; every
@@ -117,13 +117,7 @@ export function WhatIfControlsCard({
                     settle_face_fen: p.settle_face_fen,
                   })
                 }
-                className={`min-h-10 rounded-md border px-2.5 py-1.5 text-left text-xs font-medium transition-colors ${
-                  id === "actual" ? "col-span-2" : ""
-                } ${
-                  active
-                    ? "border-brand-600 bg-brand-50 text-brand-700"
-                    : "border-line-ui bg-surface text-ink hover:bg-subtle"
-                }`}
+                className={toggleClass(active, "md", `text-xs ${id === "actual" ? "col-span-2" : ""}`)}
               >
                 {t(`whatif.preset.${id}`)}
               </button>
@@ -150,7 +144,7 @@ export function WhatIfControlsCard({
           readout={params.discount_bp === 0 ? t("whatif.discount.off") : rate(params.discount_bp)}
           onChange={(v) => set({ discount_bp: v })}
         />
-        <div className="rounded-lg border border-line bg-subtle/60 p-3">
+        <div className="rounded-tile border border-line bg-subtle/60 p-3">
           <label className="flex min-h-8 cursor-pointer items-center gap-2 text-sm text-ink-2">
             <input
               type="checkbox"

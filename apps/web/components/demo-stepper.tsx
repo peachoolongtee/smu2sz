@@ -8,7 +8,7 @@ import { demoStore, useDemo } from "@/lib/demo-store";
 import { DEMO_STEPS, SCENES } from "@/lib/demo";
 import { useI18n } from "@/lib/i18n";
 import { ArrowLeftIcon, ArrowRightIcon, ResetIcon } from "./icons";
-import { Button } from "./ui";
+import { Button, toggleClass } from "./ui";
 
 /** The guided story's control bar, Demo mode only: Scene 1 -> Scene 2 -> Scene 3 -> Security, with reset. */
 export function DemoStepper() {
@@ -45,7 +45,7 @@ export function DemoStepper() {
     <div className="border-t border-line bg-brand-50 px-4 py-2 lg:px-8" aria-label={t("demo.region")} role="region">
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
         <div className="flex items-center gap-2">
-          <span className="rounded bg-brand-600 px-1.5 py-0.5 text-[0.7rem] font-bold uppercase tracking-wide text-white">
+          <span className="rounded-pill bg-brand-600 px-2 py-0.5 text-[0.7rem] font-bold uppercase tracking-wide text-white">
             {t("demo.label")}
           </span>
           <ol className="flex items-center gap-1" aria-label={t("demo.scenes")}>
@@ -59,11 +59,7 @@ export function DemoStepper() {
                     onClick={() => void goTo(s.first)}
                     aria-current={active ? "step" : undefined}
                     title={t("demo.jump", { scene: te("scene", s.id) })}
-                    className={`min-h-8 whitespace-nowrap rounded-md border px-2 text-xs font-medium disabled:opacity-50 ${
-                      active
-                        ? "border-brand-600 bg-brand-600 text-white"
-                        : "border-line-ui bg-surface text-ink-2 hover:bg-subtle"
-                    }`}
+                    className={toggleClass(active, "sm")}
                   >
                     {te("scene.short", s.id)}
                   </button>
@@ -112,7 +108,7 @@ export function DemoStepper() {
         </div>
       </div>
       {demo.error ? (
-        <p role="alert" className="mt-1.5 rounded-md border border-bad-line bg-bad-bg px-2.5 py-1.5 text-xs text-bad-fg">
+        <p role="alert" className="mt-1.5 rounded-tile border border-bad-line bg-bad-bg px-2.5 py-1.5 text-xs text-bad-fg">
           {demo.error}
         </p>
       ) : null}

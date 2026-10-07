@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { ApprovalCard } from "@/components/approval-card";
+import { ShieldCheckIcon } from "@/components/icons";
 import { NextStep } from "@/components/next-step";
 import { Badge, Callout, EmptyState, ErrorState, LoadingBlock, PageHeader } from "@/components/ui";
 import { ApiError, apiMode, decideApproval, getApprovals, getLedger } from "@/lib/api";
@@ -52,6 +53,8 @@ export default function ApprovalsPage() {
   return (
     <>
       <PageHeader
+        section="home"
+        icon={ShieldCheckIcon}
         title={t("appr.title")}
         subtitle={t("appr.subtitle")}
         actions={list.data ? <Badge tone={pending ? "warn" : "neutral"}>{t("appr.pending", { n: pending })}</Badge> : undefined}

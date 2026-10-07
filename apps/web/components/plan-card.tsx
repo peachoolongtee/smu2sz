@@ -103,7 +103,7 @@ export function PlanCard({
 
         <div>
           <h3 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-ink-3">{t("plan.costs")}</h3>
-          <ul className="divide-y divide-line rounded-lg border border-line">
+          <ul className="divide-y divide-line rounded-tile border border-line">
             {plan.costs.map((c) => (
               <li key={c.label} className="space-y-1.5 px-3 py-2">
                 <div className="flex items-baseline justify-between gap-3">
@@ -131,7 +131,7 @@ export function PlanCard({
         {plan.violations.length ? (
           <ul className="space-y-2">
             {plan.violations.map((v) => (
-              <li key={v.code} className="rounded-lg border border-warn-line bg-warn-bg px-3 py-2 text-sm text-warn-fg">
+              <li key={v.code} className="rounded-tile border border-warn-line bg-warn-bg px-3 py-2 text-sm text-warn-fg">
                 <PlainCode code={v.code} tone="warn" /> <span className="ml-1">{said(v.message, v.message_when)}</span>
                 {v.cure_note ? <p className="mt-1 text-xs">{said(v.cure_note, v.cure_note_when)}</p> : null}
               </li>
@@ -144,7 +144,7 @@ export function PlanCard({
             <h3 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-ink-3">{t("plan.rejected")}</h3>
             <ul className="space-y-2">
               {plan.rejected.map((r) => (
-                <li key={r.label} className="rounded-lg border border-line px-3 py-2 text-sm">
+                <li key={r.label} className="rounded-tile border border-line px-3 py-2 text-sm">
                   <p className="font-medium">{r.label}</p>
                   <p className="text-ink-2">{said(r.note, r.note_when)}</p>
                   {r.reasons.length ? (

@@ -57,7 +57,7 @@ export function AnnotatedText({
     <div
       role="group"
       aria-label={ariaLabel}
-      className="whitespace-pre-wrap break-words rounded-lg border border-line bg-surface p-4 text-base leading-8 text-ink"
+      className="whitespace-pre-wrap break-words rounded-tile border border-line bg-surface p-4 text-base leading-8 text-ink"
     >
       {segments.map((seg) => {
         const chunk = text.slice(seg.from, seg.to);
@@ -83,7 +83,7 @@ export function AnnotatedText({
             {startsHere.map((a) => (
               <sup
                 key={a.id}
-                className="mr-0.5 inline-block rounded bg-ink px-1 align-top text-[0.6rem] font-bold leading-4 text-white"
+                className="mr-0.5 inline-block rounded-pill bg-ink px-1 align-top text-[0.6rem] font-bold leading-4 text-white"
               >
                 {a.n}
               </sup>

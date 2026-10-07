@@ -19,7 +19,7 @@ export function ViolationCard({ v, today: todayProp }: { v: Displayed<Violation>
   const { business, today } = useBusinessToday(todayProp);
   const inputs = Object.entries(v.inputs);
   return (
-    <li className="min-w-0 rounded-lg border border-bad-line bg-surface p-4" data-testid={`violation-${v.code}`}>
+    <li className="min-w-0 rounded-tile border border-bad-line bg-surface p-4" data-testid={`violation-${v.code}`}>
       <div className="flex flex-wrap items-center gap-2">
         <PlainCode code={v.code} tone="bad" />
         {v.day !== null ? <Badge tone="bad">{today === null ? t("common.dayN", { n: v.day }) : whenText(v.day, today, t)}</Badge> : null}
@@ -53,7 +53,7 @@ export function ViolationCard({ v, today: todayProp }: { v: Displayed<Violation>
       {inputs.length ? (
         <div className="mt-3">
           <p className="mb-1 text-xs font-semibold text-ink-3">{t("verdict.inputs")}</p>
-          <dl className="grid grid-cols-[minmax(0,max-content)_minmax(0,1fr)] gap-x-4 gap-y-1 rounded-md border border-line bg-subtle px-3 py-2 font-mono text-xs">
+          <dl className="grid grid-cols-[minmax(0,max-content)_minmax(0,1fr)] gap-x-4 gap-y-1 rounded-tile border border-line bg-subtle px-3 py-2 font-mono text-xs">
             {inputs.map(([k, val]) => (
               <div key={k} className="contents">
                 <dt className="text-ink-3">{k}</dt>
@@ -65,7 +65,7 @@ export function ViolationCard({ v, today: todayProp }: { v: Displayed<Violation>
       ) : null}
 
       {v.curable && v.cure_cost_display ? (
-        <div className="mt-3 rounded-md border border-warn-line bg-warn-bg px-3 py-2 text-sm text-warn-fg">
+        <div className="mt-3 rounded-tile border border-warn-line bg-warn-bg px-3 py-2 text-sm text-warn-fg">
           <p className="font-semibold">{t("verdict.cureCost", { cost: v.cure_cost_display })}</p>
           {v.cure_note ? <p className="mt-0.5 text-xs">{business && v.cure_note_when ? v.cure_note_when : v.cure_note}</p> : null}
         </div>
@@ -83,7 +83,7 @@ export function CounterCard({ c, legs = [] }: { c: Displayed<CounterProposal>; l
   const { t } = useI18n();
   const business = useBusinessShell();
   return (
-    <li className="flex min-w-0 flex-col rounded-lg border border-warn-line bg-surface p-4" data-testid={`counter-${c.id}`}>
+    <li className="flex min-w-0 flex-col rounded-tile border border-warn-line bg-surface p-4" data-testid={`counter-${c.id}`}>
       <div className="flex items-start justify-between gap-3">
         <h3 className="text-base font-semibold">{c.label}</h3>
         <div className="text-right">
@@ -91,7 +91,7 @@ export function CounterCard({ c, legs = [] }: { c: Displayed<CounterProposal>; l
           <p className="text-lg font-semibold tabular-nums">{c.supplier_cost_display}</p>
         </div>
       </div>
-      <blockquote className="mt-3 rounded-md border-l-4 border-warn-line bg-warn-bg/60 px-3 py-2 text-sm">{business && c.text_when ? c.text_when : c.text}</blockquote>
+      <blockquote className="mt-3 rounded-tile border border-warn-line bg-warn-bg/60 px-3 py-2 text-sm">{business && c.text_when ? c.text_when : c.text}</blockquote>
       <p className="mt-3 text-sm text-ink-2">{business && c.rationale_when ? c.rationale_when : c.rationale}</p>
       {legs.map((l) => (
         <div key={l.obligation_id} className="mt-3">
@@ -110,7 +110,7 @@ export function OperationsList({ ops }: { ops: OperationView[] }) {
   const { t, te } = useI18n();
   if (!ops.length) return <p className="text-sm text-ink-2">{t("ledger.ops.empty")}</p>;
   return (
-    <ul className="divide-y divide-line rounded-lg border border-line">
+    <ul className="divide-y divide-line rounded-tile border border-line">
       {ops.map((o) => (
         <li key={`${o.seq}-${o.op_id}`} className="space-y-1 px-3 py-2">
           <div className="flex flex-wrap items-center gap-2">

@@ -1,30 +1,32 @@
 @import "tailwindcss";
 
-/* Design tokens. Calm light fintech theme: neutral surfaces, one blue accent, semantic status colours, and one deep
-   navy block (the Home hero, the Demo strip). Every colour used by components comes from here (the annotation tones in
-   lib/annotation-style.ts are the one exception). Status tokens mean a status and nothing else; the -solid tokens are for
-   marks that must be seen (dots, rails, chart marks: 3:1), the -bright tokens for pills and figures on the deep block.
+/* Design tokens (the reference is apps/web/DESIGN.md). A light fintech theme: a faintly cool canvas under white cards, one
+   confident blue, semantic status colours, five section hues for wayfinding, and one deep navy block (the Home hero, the
+   Demo strip). Every colour used by components comes from here (the annotation tones in lib/annotation-style.ts are the one
+   exception). Status tokens mean a status and nothing else; the -solid tokens are for marks that must be seen (dots, rails,
+   chart marks, a white icon on a chip: 3:1), the -bright tokens for pills and figures on the deep block. The sec-* tokens
+   say where you are (a page's icon chip, a tab, a shortcut, an avatar) and never how things are going.
    `static` so a chart can read a token with var() from a plain string. See docs/research/colour-direction-2026-10-08.md. */
 @theme static {
   --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", "PingFang SC", "Hiragino Sans GB",
     "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
   --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
 
-  --color-canvas: #f5f7fa;
+  --color-canvas: #f3f6fb;
   --color-surface: #ffffff;
-  --color-subtle: #eef2f6;
-  --color-line: #dde3ea;
-  --color-line-strong: #c3cdd9; /* dividers between dense rows: decoration, not a boundary that must be seen */
-  --color-line-ui: #7f8ea3; /* borders that must be seen (inputs, secondary buttons, the account button): 3.3:1 on white */
+  --color-subtle: #eaf0f7;
+  --color-line: #dbe3ee;
+  --color-line-strong: #c2cddc; /* dividers between dense rows: decoration, not a boundary that must be seen */
+  --color-line-ui: #74849b; /* borders that must be seen (inputs, secondary buttons, the segmented track): 3.8:1 on white, 3.3:1 on subtle */
 
   --color-ink: #0f1c2e;
   --color-ink-2: #3f5068;
   --color-ink-3: #5d6e84;
 
-  --color-brand-50: #eaf1fc;
-  --color-brand-100: #d6e4f9;
-  --color-brand-600: #1558c0;
-  --color-brand-700: #0f479c;
+  --color-brand-50: #e8f0fe;
+  --color-brand-100: #d3e2fc;
+  --color-brand-600: #1a5fe0; /* white on it: 5.6:1 */
+  --color-brand-700: #124bb8;
   --color-brand-900: #0b1f4d; /* the deep block: the Home hero, the Demo strip */
   --color-on-deep: #ffffff; /* text on the deep block: 15.9:1 */
   --color-on-deep-muted: #b7c3d9; /* captions on the deep block: 9:1 */
@@ -50,20 +52,51 @@
   --color-info-solid: #2f6fe0;
   --color-info-bright: #a9c8ff;
 
+  /* Section hues, for wayfinding only: bg is the tint, fg the text on the tint (4.5:1), solid the fill behind a white icon or
+     an icon on white (3:1). Never a status. Teal and orange are pushed away from ok-green and warn-amber on purpose. */
+  --color-sec-home-bg: #e8f0fe;
+  --color-sec-home-fg: #124bb8;
+  --color-sec-home-solid: #1a5fe0;
+  --color-sec-deals-bg: #f0ebfd;
+  --color-sec-deals-fg: #5532bf;
+  --color-sec-deals-solid: #6d4ad8;
+  --color-sec-cash-bg: #e1f4f6;
+  --color-sec-cash-fg: #07616e;
+  --color-sec-cash-solid: #0a8190;
+  --color-sec-recv-bg: #fdeee0;
+  --color-sec-recv-fg: #8f3f05;
+  --color-sec-recv-solid: #c4570c;
+  --color-sec-activity-bg: #fce9f1;
+  --color-sec-activity-fg: #a3225a;
+  --color-sec-activity-solid: #c7366e;
+
   /* The cash chart's marks and nothing else: the line you read, the plan, the reserve, the danger band, the worst point. */
-  --color-chart-base: #1558c0;
+  --color-chart-base: #1a5fe0;
   --color-chart-plan: #0b6b48;
   --color-chart-reserve: #a3241a;
   --color-chart-danger: #fdecea;
   --color-chart-worst: #b7791f;
-  --color-chart-grid: #dde3ea;
+  --color-chart-grid: #dbe3ee;
   --color-chart-axis: #5d6e84;
 
-  --color-focus: #1558c0;
+  --color-focus: #1a5fe0;
   --color-focus-on-deep: #ffffff; /* brand blue on the deep block is 2.4:1: the ring turns white inside it */
 
-  --shadow-card: 0 1px 2px rgb(15 28 46 / 0.04);
-  --radius-card: 0.625rem;
+  /* Shadows: a card rests on a hairline; a lifted row, tile or option takes one step; a sheet or menu takes the pop. */
+  --shadow-card: 0 1px 2px rgb(15 28 46 / 0.05), 0 6px 14px -10px rgb(15 28 46 / 0.12);
+  --shadow-lift: 0 2px 4px rgb(15 28 46 / 0.06), 0 12px 22px -14px rgb(15 28 46 / 0.22);
+  --shadow-pop: 0 4px 8px rgb(15 28 46 / 0.06), 0 18px 36px -12px rgb(15 28 46 / 0.24);
+
+  /* One radius scale: pills for everything you press or type into, 16 px cards, 12 px inner tiles and rows. */
+  --radius-pill: 9999px;
+  --radius-card: 16px;
+  --radius-tile: 12px;
+
+  /* Motion scale: ease-out, under 300 ms, transform and opacity only (the one exception is a disclosure's height). */
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --dur-fast: 120ms;
+  --dur: 200ms;
+  --dur-slow: 280ms;
 }
 
 html {
@@ -80,10 +113,11 @@ body {
   line-height: 1.45;
 }
 
+/* Focus: a 2 px ring, 2 px off the edge, in the focus token (3:1 on the canvas and on white). It follows the element's own
+   radius, so a pill gets a round ring. */
 :focus-visible {
   outline: 2px solid var(--color-focus);
   outline-offset: 2px;
-  border-radius: 4px;
 }
 
 /* Inside the deep block the ring is white. */
@@ -91,6 +125,10 @@ body {
   outline-color: var(--color-focus-on-deep);
 }
 
+/* ------------------------------------------------------------------ Motion kit
+   Ease-out, 120 / 200 / 280 ms, transform and opacity only, so nothing moves the layout (a disclosure's height is the one
+   deliberate exception). Everything is a class so a component names what it wants and the reduced-motion block at the end
+   can switch the lot off. */
 @keyframes tl-slide-in {
   from {
     transform: translateX(2rem);
@@ -102,12 +140,238 @@ body {
   }
 }
 
+/* The walkthrough card's entrance (opacity and scale only, so its own translate is left alone). */
+@keyframes tour-in {
+  from {
+    opacity: 0;
+    scale: 0.96;
+  }
+  to {
+    opacity: 1;
+    scale: 1;
+  }
+}
+
+/* A card or block arriving: fades in and rises 6 px. */
+@keyframes biz-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* A row arriving in a list: the same rise, staggered 30 ms per row. */
+@keyframes biz-rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* A menu or sheet opening from its button: a short drop. */
+@keyframes sheet-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* The soft background's slow drift. */
+@keyframes biz-drift {
+  from {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    transform: translate3d(3rem, 2rem, 0) scale(1.08);
+  }
+}
+
+/* The status dot's one pulse: a ring that grows out of the dot and fades. */
+@keyframes dot-pulse {
+  from {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(3);
+  }
+}
+
+@layer components {
+  /* Blocks and cards fade in and rise once when they mount. `backwards` so nothing is left animating afterwards. */
+  .motion-reveal {
+    animation: biz-reveal var(--dur-slow) var(--ease-out) backwards;
+  }
+
+  /* Rows of a list (up to eight) rise one after the other; a ninth row and beyond just appear. */
+  .motion-rise > * {
+    animation: biz-rise var(--dur-slow) var(--ease-out) backwards;
+  }
+  .motion-rise > :nth-child(2) { animation-delay: 30ms; }
+  .motion-rise > :nth-child(3) { animation-delay: 60ms; }
+  .motion-rise > :nth-child(4) { animation-delay: 90ms; }
+  .motion-rise > :nth-child(5) { animation-delay: 120ms; }
+  .motion-rise > :nth-child(6) { animation-delay: 150ms; }
+  .motion-rise > :nth-child(7) { animation-delay: 180ms; }
+  .motion-rise > :nth-child(8) { animation-delay: 210ms; }
+  .motion-rise > :nth-child(n + 9) { animation: none; }
+
+  /* Rows, tiles and option rows that lead somewhere lift 1 px and take the next shadow step, on devices that really hover. */
+  .motion-lift {
+    transition:
+      transform var(--dur) var(--ease-out),
+      box-shadow var(--dur) var(--ease-out),
+      background-color var(--dur) var(--ease-out);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .motion-lift:hover {
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-lift);
+    }
+  }
+
+  /* Pill buttons answer the press, and ease their colour. */
+  .motion-press {
+    transition:
+      transform var(--dur-fast) var(--ease-out),
+      background-color var(--dur) var(--ease-out),
+      border-color var(--dur) var(--ease-out),
+      color var(--dur) var(--ease-out),
+      box-shadow var(--dur) var(--ease-out),
+      opacity var(--dur) var(--ease-out);
+  }
+  .motion-press:not(:disabled):active {
+    transform: scale(0.98);
+  }
+
+  /* A dialog card arriving (the walkthrough): opacity and scale only, so its own placement is left alone. */
+  .motion-pop {
+    animation: tour-in var(--dur) var(--ease-out) backwards;
+  }
+
+  /* The chat slide-over and any panel that enters from the right edge. */
+  .motion-panel[open] {
+    animation: tl-slide-in var(--dur-slow) var(--ease-out) backwards;
+  }
+
+  /* The sheet under the account button, and any menu that drops from a button. */
+  .motion-sheet {
+    transform-origin: top right;
+    animation: sheet-in var(--dur) var(--ease-out) backwards;
+  }
+
+  /* The status dot's single pulse (ACTION_NEEDED and CRITICAL only; the class is not set for the others). */
+  .motion-pulse::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: var(--radius-pill);
+    background: currentColor;
+    animation: dot-pulse 900ms var(--ease-out) 400ms 1 backwards;
+  }
+
+  /* A sliding thumb or indicator: it moves by transform only. */
+  .motion-slide {
+    transition: transform var(--dur) var(--ease-out);
+  }
+}
+
+/* Disclosures: the body is a one-row grid that opens from 0fr to 1fr (the same height animation for every <details>; the
+   inner box clips while it moves). `@starting-style` covers browsers that render a closed <details> as display: none. */
+.disclosure-body {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition:
+    grid-template-rows var(--dur) var(--ease-out),
+    opacity var(--dur) var(--ease-out);
+  opacity: 0;
+}
+details[open] > .disclosure-body {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  @starting-style {
+    grid-template-rows: 0fr;
+    opacity: 0;
+  }
+}
+.disclosure-body > .disclosure-inner {
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Any <details> that is not a Disclosure (a transcript's fold, an inline audit row) gets the browser's own height animation where
+   `::details-content` exists; elsewhere it simply opens. The account menu (`.menu`) is a sheet, not a fold. */
+details:not(.menu, :has(> .disclosure-body)) {
+  interpolate-size: allow-keywords;
+}
+details:not(.menu, :has(> .disclosure-body))::details-content {
+  block-size: 0;
+  overflow: clip;
+  transition:
+    block-size var(--dur) var(--ease-out),
+    content-visibility var(--dur) allow-discrete;
+}
+details[open]:not(.menu, :has(> .disclosure-body))::details-content {
+  block-size: auto;
+}
+
+/* The soft background behind the Business pages (components/business/backdrop.tsx): two blurred discs, in the Home and
+   Cash tints, far below the text's contrast limit (ink-3 stays above 4.5:1 on the strongest point of either). They drift
+   very slowly. Cards stay solid on top. */
+.biz-disc {
+  position: absolute;
+  border-radius: var(--radius-pill);
+  filter: blur(64px);
+  opacity: 0.35;
+  animation: biz-drift 40s ease-in-out infinite alternate;
+}
+.biz-disc-home {
+  top: -8rem;
+  left: -10rem;
+  width: 38rem;
+  height: 32rem;
+  background: color-mix(in srgb, var(--color-sec-home-solid) 12%, var(--color-canvas));
+}
+.biz-disc-cash {
+  right: -12rem;
+  bottom: -10rem;
+  width: 40rem;
+  height: 30rem;
+  background: color-mix(in srgb, var(--color-sec-cash-solid) 12%, var(--color-canvas));
+  animation-delay: -20s;
+}
+
+/* Reduced motion: no transforms, no waiting, no looping. Durations drop to 0.001 ms so a finished state is the only state. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
     animation-duration: 0.001ms !important;
+    animation-delay: 0s !important;
+    animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
+    transition-delay: 0s !important;
+    scroll-behavior: auto !important;
+  }
+  .motion-lift:hover,
+  .motion-press:not(:disabled):active {
+    transform: none !important;
+  }
+  .biz-disc {
+    animation: none !important;
   }
 }
 

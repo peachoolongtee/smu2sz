@@ -10,10 +10,12 @@ import { setMode, shellFor, useMode, type Mode } from "@/lib/mode";
 import type { DictKey } from "@/lib/dictionary";
 import { ChatPanel } from "./chat/chat-panel";
 import { DemoStepper } from "./demo-stepper";
-import { ActivityIcon, DealsIcon, HomeIcon, InboxInIcon, MenuIcon, ShieldCheckIcon, ShieldIcon, SparkIcon, WalletIcon, XIcon } from "./icons";
+import { MenuIcon, ShieldCheckIcon, ShieldIcon, SparkIcon, XIcon } from "./icons";
 import { signOut, useAuth } from "@/lib/auth";
+import { Backdrop } from "./business/backdrop";
 import { Tour, startTour } from "./business/tour";
 import { OwnerSessionControl, OwnerSignInDialog } from "./owner-auth";
+import { SECTIONS, type Section } from "./section";
 import { Badge, Button, Segmented } from "./ui";
 
 /** Business mode: six sections, each a question the owner asks. */
@@ -86,7 +88,7 @@ function Brand({ href }: { href: string }) {
   const { t } = useI18n();
   return (
     <Link href={href} className="flex items-center gap-2 font-semibold text-ink">
-      <span className="grid size-7 place-items-center rounded-md bg-brand-600 text-white">
+      <span className="grid size-8 place-items-center rounded-pill bg-brand-600 text-white">
         <ShieldIcon />
       </span>
       <span className="leading-tight">
@@ -102,7 +104,7 @@ const SkipLink = () => {
   return (
     <a
       href="#main"
-      className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-50 focus:rounded-md focus:bg-surface focus:px-3 focus:py-2 focus:shadow-lg"
+      className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-50 focus:rounded-pill focus:bg-surface focus:px-4 focus:py-2 focus:shadow-pop"
     >
       {t("common.skip")}
     </a>
@@ -122,7 +124,7 @@ function ApprovalsBadge() {
   const pending = list.data?.filter((a) => a.status === "PENDING").length ?? 0;
   if (!pending) return null;
   return (
-    <Link href="/approvals" className="inline-flex min-h-8 items-center rounded-full border border-warn-line bg-warn-bg px-3 text-xs font-semibold text-warn-fg hover:brightness-95" data-testid="approvals-badge" title={t("approvals.badge", { n: pending })}>
+    <Link href="/approvals" className="motion-press inline-flex min-h-8 items-center rounded-pill border border-warn-line bg-warn-bg px-3 text-xs font-semibold text-warn-fg hover:brightness-95" data-testid="approvals-badge" title={t("approvals.badge", { n: pending })}>
       <span className="sm:hidden">{pending}</span>
       <span className="hidden sm:inline">{t("approvals.badge", { n: pending })}</span>
     </Link>
@@ -145,18 +147,18 @@ function AccountMenu() {
     return (
       <div className="flex items-center gap-2">
         <OwnerSessionControl />
-        <details className="relative" data-testid="account-menu">
-          <summary className="flex min-h-8 cursor-pointer list-none items-center rounded-md border border-line-ui px-2 text-xs font-medium text-ink-2 hover:bg-subtle [&::-webkit-details-marker]:hidden" aria-label={t("account.menu")}>
+        <details className="menu relative" data-testid="account-menu">
+          <summary className="motion-press flex min-h-8 cursor-pointer list-none items-center rounded-pill border border-line-ui px-3 text-xs font-medium text-ink-2 hover:bg-subtle [&::-webkit-details-marker]:hidden" aria-label={t("account.menu")}>
             {t("account.menu")}
           </summary>
-          <div className="absolute right-0 z-40 mt-1 w-72 space-y-3 rounded-lg border border-line bg-surface p-3 shadow-lg">
+          <div className="motion-sheet absolute right-0 z-40 mt-1 w-72 space-y-3 rounded-card border border-line bg-surface p-3 shadow-pop">
             <button
               type="button"
               onClick={(e) => {
                 closeMenu(e);
                 startTour();
               }}
-              className="flex min-h-10 w-full items-center gap-2.5 rounded-md px-2 text-left text-sm font-medium text-ink hover:bg-subtle"
+              className="motion-press flex min-h-10 w-full items-center gap-2.5 rounded-pill px-3 text-left text-sm font-medium text-ink hover:bg-subtle"
               data-testid="account-tour"
             >
               <SparkIcon className="text-brand-600" />
@@ -170,13 +172,13 @@ function AccountMenu() {
     );
   }
   return (
-    <details className="relative" data-testid="account-menu">
-      <summary className="flex min-h-8 cursor-pointer list-none items-center rounded-md border border-line-ui px-2 text-xs font-medium text-ink-2 hover:bg-subtle [&::-webkit-details-marker]:hidden" aria-label={t("account.menu")}>
-        <span aria-hidden className="grid size-5 place-items-center rounded-full bg-brand-50 text-[0.65rem] font-bold text-brand-700">
+    <details className="menu relative" data-testid="account-menu">
+      <summary className="motion-press flex min-h-8 cursor-pointer list-none items-center rounded-pill border border-line-ui px-3 text-xs font-medium text-ink-2 hover:bg-subtle [&::-webkit-details-marker]:hidden" aria-label={t("account.menu")}>
+        <span aria-hidden className="grid size-5 place-items-center rounded-pill bg-brand-50 text-[0.65rem] font-bold text-brand-700">
           {t("account.initial")}
         </span>
       </summary>
-      <div className="absolute right-0 z-40 mt-1 w-72 space-y-3 rounded-lg border border-line bg-surface p-3 shadow-lg">
+      <div className="motion-sheet absolute right-0 z-40 mt-1 w-72 space-y-3 rounded-card border border-line bg-surface p-3 shadow-pop">
         <div className="flex items-center justify-between gap-2">
           <p className="text-sm font-medium text-ink" data-testid="account-identity">
             {t("account.signedInAs", { name: t("account.owner") })}
@@ -185,7 +187,7 @@ function AccountMenu() {
             {t("auth.signout")}
           </Button>
         </div>
-        <Link href="/limits" onClick={closeMenu} className="flex min-h-10 items-center gap-2.5 rounded-md px-2 text-sm font-medium text-ink hover:bg-subtle" data-testid="account-limits">
+        <Link href="/limits" onClick={closeMenu} className="motion-press flex min-h-10 items-center gap-2.5 rounded-pill px-3 text-sm font-medium text-ink hover:bg-subtle" data-testid="account-limits">
           <ShieldCheckIcon className="text-brand-600" />
           {t("nav.limits.menu")}
         </Link>
@@ -195,7 +197,7 @@ function AccountMenu() {
             closeMenu(e);
             startTour();
           }}
-          className="flex min-h-10 w-full items-center gap-2.5 rounded-md px-2 text-left text-sm font-medium text-ink hover:bg-subtle"
+          className="motion-press flex min-h-10 w-full items-center gap-2.5 rounded-pill px-3 text-left text-sm font-medium text-ink hover:bg-subtle"
           data-testid="account-tour"
         >
           <SparkIcon className="text-brand-600" />
@@ -210,32 +212,29 @@ function AccountMenu() {
 
 // ---------------------------------------------------------------- Business
 
-/** The phone tab bar: one icon and word per section, the current one in the brand blue. */
-const TAB_ICON: Record<string, (p: { width?: number; height?: number }) => ReactNode> = {
-  "/": HomeIcon,
-  "/deals": DealsIcon,
-  "/cash": WalletIcon,
-  "/receivables": InboxInIcon,
-  "/activity": ActivityIcon,
-};
+/** The phone tab bar: one icon and word per section. The current tab's icon takes its section's hue, its word stays in ink, and a bar slides to it. */
+const TAB_SECTION: Record<string, Section> = { "/": "home", "/deals": "deals", "/cash": "cash", "/receivables": "recv", "/activity": "activity" };
 /** A tab is a fifth of a phone's width: two sections have a shorter word there (the link keeps its full name for assistive tools). */
 const TAB_LABEL: Partial<Record<string, DictKey>> = { "/cash": "nav.short.cash" };
 
 function BusinessShell({ children }: { children: ReactNode }) {
   const { t } = useI18n();
   const pathname = usePathname();
+  const activeIdx = BUSINESS_NAV.findIndex((n) => n.href === pathname);
+  const activeSection = activeIdx < 0 ? null : TAB_SECTION[BUSINESS_NAV[activeIdx].href];
   return (
     <div className="min-h-dvh">
       <SkipLink />
       <OwnerSignInDialog />
       <ChatPanel />
       <Tour />
+      <Backdrop />
       <header className="sticky top-0 z-30 border-b border-line bg-surface">
         <div className="mx-auto flex max-w-[1280px] items-center justify-between gap-3 px-4 py-2 lg:grid lg:grid-cols-[auto_minmax(0,1fr)_auto] lg:gap-6 lg:px-6">
           <Brand href="/" />
           {/* Desktop: the five sections as pills on a quiet track. Phones get the tab bar at the bottom instead. */}
           <nav aria-label={t("nav.label")} className="hidden min-w-0 lg:block" data-testid="nav-pills">
-            <ul className="mx-auto flex w-max items-center gap-1 rounded-full bg-subtle p-1">
+            <ul className="mx-auto flex w-max items-center gap-1 rounded-pill bg-subtle p-1">
               {BUSINESS_NAV.map((n) => {
                 const active = pathname === n.href;
                 return (
@@ -243,7 +242,7 @@ function BusinessShell({ children }: { children: ReactNode }) {
                     <Link
                       href={n.href}
                       aria-current={active ? "page" : undefined}
-                      className={`flex min-h-9 items-center whitespace-nowrap rounded-full px-4 text-sm font-medium ${
+                      className={`motion-press flex min-h-9 items-center whitespace-nowrap rounded-pill px-4 text-sm font-medium ${
                         active ? "bg-brand-50 text-brand-700" : "text-ink-2 hover:bg-line hover:text-ink"
                       }`}
                     >
@@ -271,25 +270,35 @@ function BusinessShell({ children }: { children: ReactNode }) {
       </main>
       {/* Phones: a tab bar with the same five sections, as in a banking app. */}
       <nav aria-label={t("nav.label")} className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] lg:hidden" data-testid="tab-bar">
-        <ul className="mx-auto grid max-w-xl grid-cols-5">
-          {BUSINESS_NAV.map((n) => {
-            const active = pathname === n.href;
-            const Icon = TAB_ICON[n.href];
-            return (
-              <li key={n.href}>
-                <Link
-                  href={n.href}
-                  aria-current={active ? "page" : undefined}
-                  aria-label={t(n.key)}
-                  className={`flex min-h-14 flex-col items-center justify-center gap-0.5 px-1 text-[0.6875rem] font-medium ${active ? "text-brand-600" : "text-ink-3 hover:text-ink"}`}
-                >
-                  {Icon ? <Icon width={21} height={21} /> : null}
-                  <span className="max-w-full truncate">{t(TAB_LABEL[n.href] ?? n.key)}</span>
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
+        <div className="relative mx-auto max-w-xl">
+          <span
+            aria-hidden
+            className={`motion-slide pointer-events-none absolute left-0 top-0 h-0.5 w-1/5 ${activeIdx < 0 ? "opacity-0" : ""}`}
+            style={{ transform: `translateX(${Math.max(activeIdx, 0) * 100}%)` }}
+          >
+            <span className={`mx-auto block h-full w-10 rounded-pill transition-colors duration-(--dur) ${activeSection ? SECTIONS[activeSection].solid : ""}`} />
+          </span>
+          <ul className="grid grid-cols-5">
+            {BUSINESS_NAV.map((n) => {
+              const active = pathname === n.href;
+              const section = TAB_SECTION[n.href];
+              const Icon = SECTIONS[section].icon;
+              return (
+                <li key={n.href}>
+                  <Link
+                    href={n.href}
+                    aria-current={active ? "page" : undefined}
+                    aria-label={t(n.key)}
+                    className={`motion-press flex min-h-14 flex-col items-center justify-center gap-0.5 px-1 text-[0.6875rem] font-medium ${active ? "text-ink" : "text-ink-3 hover:text-ink"}`}
+                  >
+                    <Icon width={20} height={20} className={`transition-colors duration-(--dur) ${active ? SECTIONS[section].solidText : ""}`} />
+                    <span className="max-w-full truncate">{t(TAB_LABEL[n.href] ?? n.key)}</span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
       </nav>
     </div>
   );
@@ -310,7 +319,7 @@ function DemoNavLinks({ onNavigate }: { onNavigate?: () => void }) {
               href={n.href}
               onClick={onNavigate}
               aria-current={active ? "page" : undefined}
-              className={`flex min-h-10 items-center rounded-md px-3 text-sm font-medium ${
+              className={`motion-press flex min-h-10 items-center rounded-pill px-4 text-sm font-medium ${
                 active ? "bg-brand-50 text-brand-700" : "text-ink-2 hover:bg-subtle hover:text-ink"
               }`}
             >
@@ -367,7 +376,7 @@ function DemoShell({ children }: { children: ReactNode }) {
                   aria-controls="mobile-nav"
                   aria-label={open ? t("nav.close") : t("nav.open")}
                   onClick={() => setOpen((v) => !v)}
-                  className="grid size-10 place-items-center rounded-md border border-line-ui text-ink-2 hover:bg-subtle"
+                  className="motion-press grid size-10 place-items-center rounded-pill border border-line-ui text-ink-2 hover:bg-subtle"
                 >
                   {open ? <XIcon /> : <MenuIcon />}
                 </button>

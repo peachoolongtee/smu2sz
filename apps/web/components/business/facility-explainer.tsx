@@ -36,7 +36,7 @@ export function FacilityExplainer({ menu, inPlan }: { menu: MenuRow[]; inPlan: S
         const hasRate = r.cost_display && r.cost_display !== "—";
         return (
           <li key={f.id}>
-            <details className="group rounded-lg border border-line open:border-line-strong" data-testid={`facility-${f.id}`}>
+            <details className="group rounded-tile border border-line open:border-line-strong" data-testid={`facility-${f.id}`}>
               <summary className="flex cursor-pointer list-none flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2.5 hover:bg-subtle [&::-webkit-details-marker]:hidden">
                 <span className="min-w-0 flex-1 basis-56">
                   <span className="block text-sm font-medium text-ink">{f.name}</span>

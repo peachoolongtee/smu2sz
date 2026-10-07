@@ -9,13 +9,14 @@ import { FundingOptions } from "@/components/business/funding-options";
 import { FactTile } from "@/components/business/kit";
 import { NextActionBlock } from "@/components/business/next-action";
 import { FixResult, useFixAlert } from "@/components/home/fix-alert";
-import { Badge, Card, ErrorState, Formula, LoadingBlock, PageHeader, TableWrap, tableCls, tdCls, thCls } from "@/components/ui";
+import { Badge, Card, ErrorState, Formula, LoadingBlock, PageHeader, TableWrap, tableCls, tdCls, thCls, ButtonLink } from "@/components/ui";
 import { getHome, getTrajectory, planFunding } from "@/lib/api";
 import { onSignedIn } from "@/lib/auth";
 import { bump, useDemo } from "@/lib/demo-store";
 import { useI18n } from "@/lib/i18n";
 import type { FundingView } from "@/lib/types";
 import { useAsync } from "@/lib/use-async";
+import { Disclosure } from "@/components/business/kit";
 
 /**
  * Cash & funding, in the owner's order: how bad is it (with headroom said directly), what is the plan, what else
@@ -67,13 +68,12 @@ export default function CashPage() {
           {t("biz.cheaper", { cost: h.next_action.cheaper_option.cost_total_display, n: h.next_action.cheaper_option.approvals })}
         </p>
       ) : null}
-      <details className="mt-3" data-testid="cash-plan-detail">
-        <summary className="cursor-pointer text-sm font-medium text-brand-700">{covered ? t("biz.cash.whySelected") : t("biz.calculation")}</summary>
+      <Disclosure testId="cash-plan-detail" className="mt-3" summary={covered ? t("biz.cash.whySelected") : t("biz.calculation")}>
         <div className="mt-2 space-y-2 text-sm">
           <p className="text-ink-2">{t("plan.need", { need: plan.data.committed.need_display })}</p>
           <ul className="space-y-1.5">
             {plan.data.committed.costs.map((c) => (
-              <li key={c.label} className="rounded-md border border-line px-3 py-1.5">
+              <li key={c.label} className="rounded-tile border border-line px-3 py-1.5">
                 <div className="flex items-baseline justify-between gap-3">
                   <span>{c.label_when ?? c.label}</span>
                   <span className="font-medium tabular-nums">{c.display}</span>
@@ -90,19 +90,18 @@ export default function CashPage() {
             </Link>
           </p>
         </div>
-      </details>
-      <details className="mt-3" data-testid="cash-sources">
-        <summary className="cursor-pointer text-sm font-medium text-brand-700">{t("biz.cash.sources")}</summary>
+      </Disclosure>
+      <Disclosure testId="cash-sources" className="mt-3" summary={t("biz.cash.sources")}>
         <div className="mt-2">
           <FacilityExplainer menu={plan.data.menu} inPlan={new Set(plan.data.committed.actions.map((a) => a.facility_id))} />
         </div>
-      </details>
+      </Disclosure>
     </>
   );
 
   return (
     <>
-      <PageHeader title={t("nav.cash")} subtitle={t("biz.cash.subtitle")} />
+      <PageHeader section="cash" title={t("nav.cash")} subtitle={t("biz.cash.subtitle")} />
       <div className="space-y-5">
         {home.error ? (
           <ErrorState error={home.error} onRetry={home.reload} />
@@ -166,10 +165,9 @@ export default function CashPage() {
 
         {covered ? (
           !plan.loading && (!plan.data || !comparison(plan.data).length) ? null : (
-            <details className="rounded-(--radius-card) border border-line bg-surface shadow-(--shadow-card)" data-testid="cash-options">
-              <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-ink">{t("biz.cash.options.considered")}</summary>
-              <div className="border-t border-line p-4">{options}</div>
-            </details>
+            <Disclosure card testId="cash-options" summary={t("biz.cash.options.considered")}>
+              <div>{options}</div>
+            </Disclosure>
           )
         ) : (
           <Card id="cash-options" title={t("biz.cash.options.title")} subtitle={t("biz.cash.options.sub3")}>
@@ -183,21 +181,16 @@ export default function CashPage() {
 
         <div className="grid gap-5 lg:grid-cols-2">
           <Card id="cash-whatif" title={t("biz.cash.whatif")} subtitle={t("biz.cash.whatif.sub")}>
-            <Link href="/whatif" className="inline-flex min-h-10 items-center rounded-md border border-line-ui px-3.5 text-sm font-medium text-ink hover:bg-subtle">
-              {t("biz.cash.whatif.open")}
-            </Link>
+            <ButtonLink href="/whatif">{t("biz.cash.whatif.open")}</ButtonLink>
           </Card>
           <Card id="cash-capex" title={t("biz.cash.capex")} subtitle={t("biz.cash.capex.sub")}>
-            <Link href="/capex" className="inline-flex min-h-10 items-center rounded-md border border-line-ui px-3.5 text-sm font-medium text-ink hover:bg-subtle">
-              {t("biz.cash.capex.open")}
-            </Link>
+            <ButtonLink href="/capex">{t("biz.cash.capex.open")}</ButtonLink>
           </Card>
         </div>
 
         {view?.trajectory.months.length ? (
-          <details className="rounded-(--radius-card) border border-line bg-surface shadow-(--shadow-card)" data-testid="cash-readings">
-            <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-ink">{t("biz.readings")}</summary>
-            <div className="border-t border-line p-4">
+          <Disclosure card testId="cash-readings" summary={t("biz.readings")}>
+            <div>
               {/* The first line is the home's own reading (the same projection as the table's first month). */}
               {h?.cash.dscr_text || h?.cash.leverage_text ? (
                 <p className="mb-2 text-sm text-ink" data-testid="cash-readings-now">
@@ -230,7 +223,7 @@ export default function CashPage() {
                 </table>
               </TableWrap>
             </div>
-          </details>
+          </Disclosure>
         ) : null}
       </div>
     </>

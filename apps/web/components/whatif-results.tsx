@@ -43,7 +43,7 @@ function codeTone(r: WhatIfResult, code: string): Tone {
 
 function Shimmer({ active }: { active: boolean }) {
   return (
-    <div aria-hidden className="h-0.5 w-full overflow-hidden rounded-full bg-transparent">
+    <div aria-hidden className="h-0.5 w-full overflow-hidden rounded-pill bg-transparent">
       {active ? <div className="h-full w-full animate-pulse bg-brand-600" /> : null}
     </div>
   );
@@ -99,7 +99,7 @@ const RESULT_TEXT: Partial<Record<Tone, string>> = { ok: "text-ok-fg", warn: "te
 
 function SummaryFigure({ label, value, sub, tone, testId }: { label: string; value: string; sub?: string | null; tone?: Tone; testId?: string }) {
   return (
-    <div className="min-w-0 rounded-lg border border-line bg-subtle px-3.5 py-3">
+    <div className="min-w-0 rounded-tile border border-line bg-subtle px-3.5 py-3">
       <dt className="text-xs font-medium text-ink-3">{label}</dt>
       <dd className={`mt-0.5 break-words text-lg font-semibold tabular-nums ${(tone && RESULT_TEXT[tone]) ?? "text-ink"}`} data-testid={testId}>
         {value}
@@ -276,7 +276,7 @@ export function WhatIfCovenantsCard({ r }: { r: WhatIfResult }) {
           <li
             key={c.code}
             title={`${c.label}: ${c.formula}`}
-            className={`min-w-28 flex-1 rounded-lg border px-3 py-2 ${c.ok ? "border-ok-line bg-ok-bg" : "border-bad-line bg-bad-bg"}`}
+            className={`min-w-28 flex-1 rounded-tile border px-3 py-2 ${c.ok ? "border-ok-line bg-ok-bg" : "border-bad-line bg-bad-bg"}`}
           >
             <p className="text-xs font-medium text-ink-3">{t(`whatif.covenant.${c.code}`)}</p>
             <p className={`text-lg font-semibold tabular-nums ${c.ok ? "text-ok-fg" : "text-bad-fg"}`}>{c.observed}</p>
@@ -338,7 +338,7 @@ export function WhatIfCountersCard({ r }: { r: WhatIfResult }) {
     <Card id="whatif-counters" title={t("whatif.counters")}>
       <ul className="grid gap-3 sm:grid-cols-2">
         {r.counters.map((c) => (
-          <li key={c.label} className="rounded-lg border border-line p-3">
+          <li key={c.label} className="rounded-tile border border-line p-3">
             <div className="flex items-center justify-between gap-2">
               <p className="font-semibold text-ink">{c.label}</p>
               <span className="text-sm font-medium tabular-nums text-ink-2">{c.supplier_cost_display}</span>

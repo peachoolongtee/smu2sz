@@ -5,6 +5,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProp
 import { createStore } from "@/lib/create-store";
 import type { DictKey } from "@/lib/dictionary";
 import { useI18n } from "@/lib/i18n";
+import { Button } from "../ui";
 
 /**
  * "Show me around": a short tour of the page the owner is on, started from the account sheet and never by itself (no
@@ -161,7 +162,7 @@ function TourCard({ steps }: { steps: Step[] }) {
       {hole ? (
         <div
           aria-hidden
-          className="pointer-events-none fixed rounded-(--radius-card) ring-2 ring-surface transition-[top,left,width,height] duration-300 ease-out"
+          className="pointer-events-none fixed rounded-card ring-2 ring-surface transition-[top,left,width,height] duration-(--dur-slow) ease-out"
           style={{ ...hole, boxShadow: "0 0 0 9999px color-mix(in srgb, var(--color-ink) 60%, transparent)" }}
         />
       ) : (
@@ -175,7 +176,7 @@ function TourCard({ steps }: { steps: Step[] }) {
         aria-labelledby="tour-title"
         aria-describedby="tour-body"
         key={step}
-        className="fixed w-[min(24rem,calc(100vw-2rem))] rounded-(--radius-card) border border-line bg-surface p-5 text-ink shadow-lg"
+        className="motion-pop fixed w-[min(24rem,calc(100vw-2rem))] rounded-card border border-line bg-surface p-5 text-ink shadow-pop"
         style={place}
       >
         <p className="text-xs font-semibold uppercase tracking-wide text-ink-3">{t("tour.step", { n: step + 1, total: steps.length })}</p>
@@ -196,18 +197,16 @@ function TourCard({ steps }: { steps: Step[] }) {
         ) : null}
         <div className="mt-5 flex items-center justify-end gap-2">
           {last ? null : (
-            <button type="button" onClick={close} className="min-h-10 rounded-md px-3 text-sm font-medium text-ink-3 hover:text-ink" data-testid="tour-skip">
+            <Button variant="ghost" onClick={close} data-testid="tour-skip">
               {t("tour.skip")}
-            </button>
+            </Button>
           )}
           {step > 0 ? (
-            <button type="button" onClick={() => setStep(step - 1)} className="min-h-10 rounded-md border border-line-ui px-3.5 text-sm font-medium text-ink hover:bg-subtle">
-              {t("tour.back")}
-            </button>
+            <Button onClick={() => setStep(step - 1)}>{t("tour.back")}</Button>
           ) : null}
-          <button ref={nextRef} type="button" onClick={() => (last ? close() : setStep(step + 1))} className="min-h-10 rounded-md bg-brand-600 px-3.5 text-sm font-medium text-white hover:bg-brand-700" data-testid="tour-next">
+          <Button ref={nextRef} variant="primary" onClick={() => (last ? close() : setStep(step + 1))} data-testid="tour-next">
             {last ? t("tour.finish") : t("tour.next")}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

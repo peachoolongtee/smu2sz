@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Badge, Button, Card, ErrorState } from "@/components/ui";
+import { Badge, Button, Card, ErrorState, textLinkClass, inputClass } from "@/components/ui";
 import { advanceClock, getClock } from "@/lib/api";
 import { bump } from "@/lib/demo-store";
 import { useI18n } from "@/lib/i18n";
@@ -62,7 +62,7 @@ export function TodayCard({ onAdvanced }: { onAdvanced: () => void }) {
               step={1}
               value={days}
               onChange={(e) => setDays(e.target.value)}
-              className="mt-1 block min-h-10 w-24 rounded-md border border-line-ui bg-surface px-2 text-sm tabular-nums text-ink"
+              className={`mt-1 block w-24 tabular-nums ${inputClass}`}
               data-testid="home-days"
             />
           </label>
@@ -100,7 +100,7 @@ export function TodayCard({ onAdvanced }: { onAdvanced: () => void }) {
 
 export function SectionLink({ href, children }: { href: string; children: string }) {
   return (
-    <Link href={href} className="text-xs font-medium text-brand-700 underline underline-offset-2">
+    <Link href={href} className={textLinkClass}>
       {children}
     </Link>
   );

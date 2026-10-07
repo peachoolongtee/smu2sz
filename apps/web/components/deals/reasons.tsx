@@ -7,6 +7,7 @@ import type { DictKey } from "@/lib/dictionary";
 import { useI18n, type I18n } from "@/lib/i18n";
 import type { Displayed, VerdictView, Violation, ViolationCode } from "@/lib/types";
 import { whenText } from "@/lib/when";
+import { Disclosure } from "@/components/business/kit";
 
 /** The checks that matter most to an owner come first; the rest follow the verifier's order. */
 const ORDER: ViolationCode[] = ["AGG_CONCESSION_EXCEEDED", "PER_BUYER_CAP_EXCEEDED", "RESERVE_BREACH", "DISCOUNT_ABOVE_BREAK_EVEN", "EARLY_PAY_DEARER_THAN_PLAN"];
@@ -56,8 +57,7 @@ export function WhyRecommended({ v, today }: { v: VerdictView; today: number }) 
       ) : (
         <Callout tone="ok">{t("verdict.noViolations")}</Callout>
       )}
-      <details data-testid="deal-all-checks">
-        <summary className="cursor-pointer text-sm font-medium text-brand-700">{t("biz.deals.allChecks", { n: all.length + v.passed_checks.length })}</summary>
+      <Disclosure testId="deal-all-checks" summary={<>{t("biz.deals.allChecks", { n: all.length + v.passed_checks.length })}</>}>
         <div className="mt-3 space-y-4">
           {all.length ? (
             <ul className="grid gap-4 xl:grid-cols-2">
@@ -71,7 +71,7 @@ export function WhyRecommended({ v, today }: { v: VerdictView; today: number }) 
             <span className="font-medium">{t("biz.deals.engineVerdict")}:</span> <OutcomeBadge outcome={v.outcome} /> <span>{v.summary}</span>
           </div>
         </div>
-      </details>
+      </Disclosure>
     </div>
   );
 }

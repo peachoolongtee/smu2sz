@@ -119,7 +119,7 @@ export function AlertCure({
   const waiting = pendingApprovalFor(alert, approvals);
   if (waiting) {
     return (
-      <div className="mt-2 rounded-md border border-warn-line bg-warn-bg px-3 py-2 text-xs text-warn-fg" role="status" data-testid={`alert-waiting-${alert.id}`}>
+      <div className="mt-2 rounded-tile border border-warn-line bg-warn-bg px-3 py-2 text-xs text-warn-fg" role="status" data-testid={`alert-waiting-${alert.id}`}>
         <p className="font-semibold">{t("alerts.waiting", { id: waiting.id })}</p>
         <p className="mt-0.5">{t("alerts.waiting.body")}</p>
         <Link href={approvalHref(waiting.id)} className="mt-1 inline-block font-medium underline underline-offset-2" data-testid={`alert-approval-link-${alert.id}`}>
@@ -176,7 +176,7 @@ export function FixResult({ result, error, changed }: { result: AlertActResult |
   }
   if (!result) return null;
   return (
-    <section aria-label={t("alerts.fix.title")} className="mt-3 space-y-2 rounded-lg border border-line bg-surface p-3 shadow-(--shadow-card)" data-testid="fix-result" role="status">
+    <section aria-label={t("alerts.fix.title")} className="mt-3 space-y-2 rounded-tile border border-line bg-surface p-3 shadow-card" data-testid="fix-result" role="status">
       <div className="flex flex-wrap items-center gap-2">
         <h3 className="text-xs font-semibold uppercase tracking-wide text-ink-3">{t("alerts.fix.title")}</h3>
         {/* On a Business page only the counts that are not zero: "0 refused" is noise. */}
@@ -203,14 +203,14 @@ function AlertChanged({ changed }: { changed: AlertChangedDetail }) {
   return (
     <section
       aria-label={t("alerts.changed.title")}
-      className="mt-3 space-y-2 rounded-lg border border-warn-line bg-warn-bg p-3 text-warn-fg"
+      className="mt-3 space-y-2 rounded-tile border border-warn-line bg-warn-bg p-3 text-warn-fg"
       role="alert"
       data-testid="fix-changed"
     >
       <h3 className="text-sm font-semibold">{t("alerts.changed.title")}</h3>
       <p className="text-xs">{t("alerts.changed.body")}</p>
       {now ? (
-        <div className="rounded-md border border-warn-line bg-surface px-3 py-2 text-ink" data-testid="fix-changed-alert">
+        <div className="rounded-tile border border-warn-line bg-surface px-3 py-2 text-ink" data-testid="fix-changed-alert">
           <p className="text-xs font-semibold uppercase tracking-wide text-ink-3">{t("alerts.changed.now")}</p>
           <p className="mt-1 text-sm font-medium">{now.title}</p>
           <p className="mt-1 break-words text-xs text-ink-2">{now.detail}</p>

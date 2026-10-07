@@ -50,7 +50,7 @@ function Terms({ op, commitment, loaded }: { op: ApprovalOperation; commitment: 
           rows.push({ k: t("item.effective"), v: o.effective_day !== null ? t("common.dayN", { n: o.effective_day }) : t("common.none") });
           const unformatted = (o.base.amount_fen !== null && !o.base.amount_display) || (o.amount_fen !== null && !o.amount_display);
           return (
-            <li key={o.id} className="rounded-md border border-line px-3 py-2" data-testid={`approval-obligation-${o.type}`}>
+            <li key={o.id} className="rounded-tile border border-line px-3 py-2" data-testid={`approval-obligation-${o.type}`}>
               <p className="mb-1.5 text-sm font-semibold">{te("obligation", o.type)}</p>
               <KeyValueList items={rows} />
               {unformatted ? <p className="mt-1.5 text-xs text-ink-3">{t("appr.terms.noDisplay")}</p> : null}
@@ -174,9 +174,10 @@ export function ApprovalCard({
         </p>
       ) : null}
 
-      <button
-        type="button"
-        className="mt-4 inline-flex min-h-8 items-center gap-1 text-sm font-medium text-brand-700 underline underline-offset-2"
+      <Button
+        variant="ghost"
+        size="sm"
+        className="mt-3 -ml-3"
         aria-expanded={open}
         aria-controls={detailId}
         onClick={() => setOpen((v) => !v)}
@@ -184,7 +185,7 @@ export function ApprovalCard({
       >
         <span aria-hidden>{open ? "▾" : "▸"}</span>
         {open ? t("appr.hide") : t("appr.show")}
-      </button>
+      </Button>
 
       {open ? (
         <div id={detailId} className="mt-3 space-y-4 border-t border-line pt-3" data-testid={`approval-detail-${a.id}`}>

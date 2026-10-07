@@ -1,14 +1,26 @@
 "use client";
 
 import Link from "next/link";
+import type { ReactNode } from "react";
+import { AlertIcon, ArrowDownIcon, CheckIcon, ClockIcon, XIcon } from "@/components/icons";
 import { approvalHref } from "@/components/operation-result";
-import { Avatar, Disclosure, Row, initials, type AvatarTone } from "@/components/business/kit";
+import { Avatar, Disclosure, Row, initials, toneFor, type AvatarTone } from "@/components/business/kit";
 import { Card, TableWrap, tableCls, tdCls, thCls } from "@/components/ui";
 import { useI18n } from "@/lib/i18n";
+import { buttonClass, textLinkClass } from "@/components/ui";
 import { daysLate } from "@/lib/when";
 import type { HomeApproval, HomeChange, HomeReceivables, HomeView } from "@/lib/types";
 
-const CHANGE_GLYPH: Record<string, string> = { RECEIPT: "↓", LATE: "!", WAITING: "…", REFUSED: "✕", LANDED: "↓", OPERATION: "✓", AGREEMENT: "✓" };
+/** A change row's icon sits on the status tint it has always had: money in is ok, late or refused is bad, waiting is warn. */
+const CHANGE_ICON: Record<string, ReactNode> = {
+  RECEIPT: <ArrowDownIcon />,
+  LANDED: <ArrowDownIcon />,
+  LATE: <AlertIcon />,
+  WAITING: <ClockIcon />,
+  REFUSED: <XIcon />,
+  OPERATION: <CheckIcon />,
+  AGREEMENT: <CheckIcon />,
+};
 const CHANGE_TONE: Record<string, AvatarTone> = {
   RECEIPT: "ok",
   LANDED: "ok",
@@ -29,19 +41,19 @@ const CHANGES_SHOWN = 3;
 export function DecisionsBlock({ approvals, primary = false }: { approvals: HomeApproval[]; primary?: boolean }) {
   const { t } = useI18n();
   return (
-    <Card id="home-decisions" title={t("biz.decisions")} subtitle={t("biz.decisions.sub")} actions={<Link href="/approvals" className="text-xs font-medium text-brand-700 underline underline-offset-2">{t("home.waiting.open")}</Link>}>
+    <Card id="home-decisions" title={t("biz.decisions")} subtitle={t("biz.decisions.sub")} actions={<Link href="/approvals" className={textLinkClass}>{t("home.waiting.open")}</Link>}>
       {approvals.length === 0 ? (
         <p className="text-sm text-ink-3" data-testid="home-waiting-empty">
           {t("biz.decisions.none")}
         </p>
       ) : (
-        <ul className="-my-1 divide-y divide-line" data-testid="home-waiting-list">
+        <ul className="motion-rise -my-1 divide-y divide-line" data-testid="home-waiting-list">
           {approvals.map((a) => (
             <li key={a.id}>
               <Row
                 testId={`home-approval-${a.id}`}
                 href={approvalHref(a.id)}
-                avatar={<Avatar tone="warn">…</Avatar>}
+                avatar={<Avatar tone="warn"><ClockIcon /></Avatar>}
                 title={a.headline}
                 sub={[a.cost_display ? t("alerts.cost", { cost: a.cost_display }) : null, a.lands_day !== null ? t("biz.landsShort", { when: a.lands_when ?? "" }) : null, a.protects]
                   .filter(Boolean)
@@ -49,7 +61,7 @@ export function DecisionsBlock({ approvals, primary = false }: { approvals: Home
                 right={
                   // The page's one primary action while no plan waits to be run: the question is the thing to answer.
                   primary ? (
-                    <span className="inline-flex min-h-10 items-center rounded-md bg-brand-600 px-3.5 text-sm font-medium text-white" data-testid="home-review-primary">
+                    <span className={buttonClass("primary")} data-testid="home-review-primary">
                       {t("biz.review")}
                     </span>
                   ) : (
@@ -70,19 +82,19 @@ export function ChangesBlock({ changes, sinceWhen }: { changes: HomeChange[]; si
   const { t } = useI18n();
   const row = (c: HomeChange, i: number) => (
     <li key={`${c.day}-${c.seq}-${i}`}>
-      <Row testId={`home-change-${c.kind}`} titleTestId="home-change-text" avatar={<Avatar tone={CHANGE_TONE[c.kind] ?? "neutral"}>{CHANGE_GLYPH[c.kind] ?? "•"}</Avatar>} title={c.event_text ?? c.text} sub={c.when} />
+      <Row testId={`home-change-${c.kind}`} titleTestId="home-change-text" avatar={<Avatar tone={CHANGE_TONE[c.kind] ?? "neutral"}>{CHANGE_ICON[c.kind] ?? <CheckIcon />}</Avatar>} title={c.event_text ?? c.text} sub={c.when} />
     </li>
   );
   const rest = changes.slice(CHANGES_SHOWN);
   return (
-    <Card id="home-changes" title={t("biz.recent")} subtitle={sinceWhen ? t("biz.recent.since", { when: sinceWhen }) : t("biz.recent.week")} actions={<Link href="/activity" className="text-xs font-medium text-brand-700 underline underline-offset-2">{t("biz.changes.open")}</Link>}>
+    <Card id="home-changes" title={t("biz.recent")} subtitle={sinceWhen ? t("biz.recent.since", { when: sinceWhen }) : t("biz.recent.week")} actions={<Link href="/activity" className={textLinkClass}>{t("biz.changes.open")}</Link>}>
       {changes.length === 0 ? (
         <p className="text-sm text-ink-3" data-testid="home-changes-empty">
           {t("biz.changes.none")}
         </p>
       ) : (
         <div className="-my-1" data-testid="home-changes-list">
-          <ul className="divide-y divide-line">{changes.slice(0, CHANGES_SHOWN).map(row)}</ul>
+          <ul className="motion-rise divide-y divide-line">{changes.slice(0, CHANGES_SHOWN).map(row)}</ul>
           {rest.length ? (
             <Disclosure summary={t("biz.showMore", { n: rest.length })} testId="home-changes-more" className="border-t border-line">
               <ul className="divide-y divide-line">{rest.map((c, i) => row(c, i + CHANGES_SHOWN))}</ul>
@@ -103,13 +115,13 @@ export function ReceivablesBlock({ r }: { r: HomeReceivables }) {
       ? { buyer: r.next_receipt.buyer_name, amount: r.next_receipt.face_display, when: r.next_receipt.due_when }
       : null;
   return (
-    <Card id="home-receivables" title={t("biz.receivables")} subtitle={t("biz.receivables.sub", { total: r.open_total_display, n: r.open_count })} actions={<Link href="/receivables" className="text-xs font-medium text-brand-700 underline underline-offset-2">{t("biz.receivables.open")}</Link>}>
+    <Card id="home-receivables" title={t("biz.receivables")} subtitle={t("biz.receivables.sub", { total: r.open_total_display, n: r.open_count })} actions={<Link href="/receivables" className={textLinkClass}>{t("biz.receivables.open")}</Link>}>
       <div className="-my-1 divide-y divide-line">
         {r.past_due.length ? (
-          <ul className="divide-y divide-line" data-testid="home-late-list">
+          <ul className="motion-rise divide-y divide-line" data-testid="home-late-list">
             {r.past_due.map((x) => (
               <li key={x.receivable_id}>
-                <Row testId={`home-late-${x.receivable_id}`} avatar={<Avatar tone="bad">{initials(x.buyer_name)}</Avatar>} title={x.buyer_name} sub={daysLate(x.days_late, t)} tone="bad" right={x.face_display} />
+                <Row testId={`home-late-${x.receivable_id}`} avatar={<Avatar tone={toneFor(x.buyer_name)}>{initials(x.buyer_name)}</Avatar>} title={x.buyer_name} sub={daysLate(x.days_late, t)} tone="bad" right={x.face_display} />
               </li>
             ))}
           </ul>
@@ -119,7 +131,7 @@ export function ReceivablesBlock({ r }: { r: HomeReceivables }) {
           </p>
         )}
         {next ? (
-          <Row testId="home-next-receipt" avatar={<Avatar>{initials(next.buyer)}</Avatar>} title={next.buyer} sub={r.promised ? t("biz.promised.short") : t("biz.nextReceipt.short")} right={next.amount} rightSub={next.when} />
+          <Row testId="home-next-receipt" avatar={<Avatar tone={toneFor(next.buyer)}>{initials(next.buyer)}</Avatar>} title={next.buyer} sub={r.promised ? t("biz.promised.short") : t("biz.nextReceipt.short")} right={next.amount} rightSub={next.when} />
         ) : (
           <p className="py-2.5 text-sm text-ink-3" data-testid="home-next-receipt">
             {t("biz.nextReceipt.none")}
@@ -134,9 +146,8 @@ export function ReceivablesBlock({ r }: { r: HomeReceivables }) {
 export function DetailsBlock({ h }: { h: HomeView }) {
   const { t } = useI18n();
   return (
-    <details className="rounded-(--radius-card) border border-line bg-surface shadow-(--shadow-card)" data-testid="home-details">
-      <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-ink">{t("biz.details")}</summary>
-      <div className="space-y-5 border-t border-line p-4">
+    <Disclosure card testId="home-details" summary={t("biz.details")}>
+      <div className="space-y-5">
         {h.cash.in_transit ? (
           <section>
             <h3 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-ink-3">{t("transit.title")}</h3>
@@ -212,6 +223,6 @@ export function DetailsBlock({ h }: { h: HomeView }) {
           </Link>
         </p>
       </div>
-    </details>
+    </Disclosure>
   );
 }

@@ -5,6 +5,7 @@ import { useEffect, useRef } from "react";
 import { XIcon, ChatIcon } from "@/components/icons";
 import { setPanelOpen, useChat } from "@/lib/chat";
 import { useI18n } from "@/lib/i18n";
+import { buttonClass } from "@/components/ui";
 import { ChatView } from "./chat-view";
 
 /**
@@ -34,7 +35,7 @@ export function ChatPanel() {
           aria-haspopup="dialog"
           onClick={() => setPanelOpen(true)}
           data-testid="chat-open"
-          className="fixed bottom-28 right-4 z-40 inline-flex min-h-11 items-center gap-2 rounded-full bg-brand-600 px-4 text-sm font-semibold text-white shadow-lg hover:bg-brand-700 lg:bottom-6 lg:right-6"
+          className={buttonClass("primary", "md", "fixed bottom-28 right-4 z-40 shadow-pop lg:bottom-6 lg:right-6")}
         >
           <ChatIcon />
           {t("chat.open")}
@@ -48,7 +49,7 @@ export function ChatPanel() {
         onClick={(e) => {
           if (e.target === e.currentTarget) setPanelOpen(false);
         }}
-        className="fixed inset-y-0 left-auto right-0 m-0 h-dvh max-h-dvh w-full max-w-[min(32rem,100vw)] overflow-x-hidden border-l border-line bg-surface p-0 text-ink shadow-2xl backdrop:bg-ink/30 open:animate-[tl-slide-in_0.18s_ease-out]"
+        className="fixed inset-y-0 left-auto right-0 m-0 h-dvh max-h-dvh w-full max-w-[min(32rem,100vw)] overflow-x-hidden border-l border-line bg-surface p-0 text-ink shadow-pop backdrop:bg-ink/30 motion-panel"
       >
         {panelOpen ? (
           <div className="flex h-full flex-col">
@@ -61,7 +62,7 @@ export function ChatPanel() {
                 onClick={() => setPanelOpen(false)}
                 aria-label={t("chat.close")}
                 data-testid="chat-close"
-                className="grid size-10 place-items-center rounded-md border border-line-ui text-ink-2 hover:bg-subtle"
+                className="motion-press grid size-10 place-items-center rounded-pill border border-line-ui text-ink-2 hover:bg-subtle"
               >
                 <XIcon />
               </button>

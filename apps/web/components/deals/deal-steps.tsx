@@ -37,8 +37,8 @@ export function DealSteps() {
           return (
             <li key={s.key} className="flex items-center gap-1">
               {i > 0 ? <span className="text-ink-3">·</span> : null}
-              <Link href={noDeal && last ? "/deals#counters" : s.href} aria-current={state === "current" ? "step" : undefined} className={`inline-flex items-center gap-1 rounded px-1.5 py-1 ${tone}`}>
-                {state === "done" && !(noDeal && last) ? <CheckIcon width={12} height={12} /> : null}
+              <Link href={noDeal && last ? "/deals#counters" : s.href} aria-current={state === "current" ? "step" : undefined} className={`inline-flex items-center gap-1 rounded-pill px-2 py-1 ${tone}`}>
+                {state === "done" && !(noDeal && last) ? <CheckIcon /> : null}
                 {noDeal && last ? t("steps.noDeal") : t(s.key)}
               </Link>
             </li>

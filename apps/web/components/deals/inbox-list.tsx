@@ -111,7 +111,7 @@ export function InboxList({
             </span>
           ) : read ? (
             <span className="flex items-center gap-1 text-ok-fg">
-              <CheckIcon width={12} height={12} />
+              <CheckIcon />
               {t("inbox.readDone")}
             </span>
           ) : (
@@ -154,8 +154,7 @@ export function InboxList({
       title={business ? t("biz.deals.inbox") : t("biz.deals.simulatedInbox")}
       subtitle={business ? undefined : t("inbox.list.sub")}
     >
-      <ul className=
-"-m-4 divide-y divide-line" aria-label={business ? t("biz.deals.inbox") : t("biz.deals.simulatedInbox")} data-testid="inbox-list">
+      <ul className="motion-rise -m-4 divide-y divide-line overflow-hidden rounded-b-card" aria-label={business ? t("biz.deals.inbox") : t("biz.deals.simulatedInbox")} data-testid="inbox-list">
         {current ? thread(current) : null}
         {current && others.length ? (
           <li>
@@ -169,7 +168,7 @@ export function InboxList({
         )}
         {blocked ? (
           <li className="flex items-start gap-2 px-4 py-3 text-xs text-ink-2" data-testid="inbox-blocked">
-            <span aria-hidden className="mt-1 size-1.5 shrink-0 rounded-full bg-bad-solid" />
+            <span aria-hidden className="mt-1 size-1.5 shrink-0 rounded-pill bg-bad-solid" />
             <span>
               {t("biz.deals.blocked", { n: blocked })}{" "}
               <Link href="/activity#refused" className="font-medium text-brand-700 underline underline-offset-2">
