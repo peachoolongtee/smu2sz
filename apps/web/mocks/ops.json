@@ -6,7 +6,9 @@
     "requested_by": "AGENT",
     "message": "Commitment CMT-a78afaa5becb5273 is ACTIVE; forward concession ¥0.00 booked",
     "summary": "Commitment CMT-a78afaa5becb5273 is ACTIVE; forward concession ¥0.00 booked",
-    "message_when": "Commitment CMT-a78afaa5becb5273 is ACTIVE; forward concession ¥0.00 booked"
+    "message_when": "Commitment CMT-a78afaa5becb5273 is ACTIVE; forward concession ¥0.00 booked",
+    "event_text": "Agreement with Foshan Home Retail Co. recorded; future give-aways booked: ¥0.00.",
+    "event_detail": null
   },
   "draw_line": {
     "kind": "DRAW_FACILITY",
@@ -15,7 +17,9 @@
     "requested_by": "AGENT",
     "message": "Drew ¥149,986.20 on FAC-LINE on day 0",
     "summary": "Drew ¥149,986.20 on FAC-LINE on day 0",
-    "message_when": "Drew ¥149,986.20 on Bank credit line today"
+    "message_when": "Drew ¥149,986.20 on Bank credit line today",
+    "event_text": "¥149,986.20 drawn on the Bank credit line. Cash received today.",
+    "event_detail": null
   },
   "draw_line_hard_line": {
     "kind": "DRAW_FACILITY",
@@ -24,7 +28,9 @@
     "requested_by": "AGENT",
     "message": "Drew ¥150,000.00 on FAC-LINE on day 0",
     "summary": "Drew ¥150,000.00 on FAC-LINE on day 0",
-    "message_when": "Drew ¥150,000.00 on Bank credit line today"
+    "message_when": "Drew ¥150,000.00 on Bank credit line today",
+    "event_text": "¥150,000.00 drawn on the Bank credit line. Cash received today.",
+    "event_detail": null
   },
   "submit_invoice": {
     "kind": "SUBMIT_INVOICE_FOR_FINANCING",
@@ -33,7 +39,9 @@
     "requested_by": "AGENT",
     "message": "Advance ¥255,000.00 on RCV-A from FAC-IF on day 0; the cash lands on day 3 after the 3-day lead time, not today",
     "summary": "Advance ¥255,000.00 on RCV-A from FAC-IF on day 0; the cash lands on day 3 after the 3-day lead time, not today",
-    "message_when": "Advance ¥255,000.00 on the ¥420,000.00 invoice to Foshan Home Retail Co. due in 32 days from Invoice financing (onboarded platform) today; the cash lands in 3 days after the 3-day lead time, not today"
+    "message_when": "Advance ¥255,000.00 on the ¥420,000.00 invoice to Foshan Home Retail Co. due in 32 days from Invoice financing (onboarded platform) today; the cash lands in 3 days after the 3-day lead time, not today",
+    "event_text": "¥255,000.00 of invoice financing drawn against the Foshan Home Retail Co. invoice. Funds arrive in 3 days.",
+    "event_detail": "Financed through Invoice financing (onboarded platform)."
   },
   "request_approval": {
     "kind": "APPLY_FOR_FACILITY",
@@ -42,7 +50,9 @@
     "requested_by": "AGENT",
     "message": "Queued for owner approval (APR-000001): apply for facility FAC-ETL (¥600,000.00)",
     "summary": "Queued for owner approval (APR-000001): apply for facility FAC-ETL (¥600,000.00)",
-    "message_when": "Queued for owner approval (APR-000001): apply for facility Equipment term loan (¥600,000.00)"
+    "message_when": "Queued for owner approval (APR-000001): apply for facility Equipment term loan (¥600,000.00)",
+    "event_text": "Waiting for your approval: an application for ¥600,000.00 on Equipment term loan.",
+    "event_detail": "Apply for facility Equipment term loan (¥600,000.00)."
   },
   "approve_apply_loan": {
     "kind": "APPLY_FOR_FACILITY",
@@ -51,7 +61,9 @@
     "requested_by": "AGENT",
     "message": "Applied for ¥600,000.00 on FAC-LEASE; it is PENDING and counts as zero until committed",
     "summary": "Applied for ¥600,000.00 on FAC-LEASE; it is PENDING and counts as zero until committed",
-    "message_when": "Applied for ¥600,000.00 on Equipment lease; it is PENDING and counts as zero until committed"
+    "message_when": "Applied for ¥600,000.00 on Equipment lease; it is PENDING and counts as zero until committed",
+    "event_text": "You approved an application for ¥600,000.00 on Equipment lease.",
+    "event_detail": null
   },
   "reject_apply_loan": {
     "kind": "APPLY_FOR_FACILITY",
@@ -60,6 +72,8 @@
     "requested_by": "AGENT",
     "message": "Declined by the owner (APR-000001); nothing executed",
     "summary": "Declined by the owner (APR-000001); nothing executed",
-    "message_when": "Declined by the owner (APR-000001); nothing executed"
+    "message_when": "Declined by the owner (APR-000001); nothing executed",
+    "event_text": "You declined an application for ¥600,000.00 on Equipment lease.",
+    "event_detail": null
   }
 }

@@ -74,15 +74,32 @@ def test_the_fix_is_bound_to_what_the_home_showed_and_the_home_turns_calm(client
     a = h["next_action"]
     r = client.post(f"/alerts/{a['alert_id']}/act", json={"state_version": a["state_version"], "suggestions": a["suggestions"]}).json()
     assert r["executed"] == 2 and r["cured"]
+    # the act's own results carry the same business sentences (the mock ledger replays them)
+    assert [x["event_text"] for x in r["results"]] == [
+        "¥150,000.00 drawn on the Bank credit line. Cash received today.",
+        "¥255,000.00 of invoice financing drawn against the Foshan Home Retail Co. invoice. Funds arrive in 3 days."]
     h = client.get("/home").json()
     assert h["status"] == "WATCH" and h["next_action"] is None
     assert h["headline"] == "You're covered." and h["plan_note"] is None
     assert h["note"].startswith("Cash stays above your ¥300k minimum cash reserve for the next 120 days.")
     assert h["cash"]["in_transit"]["lots"] == [{"facility_name": "Invoice financing (onboarded platform)",
-                                                "amount_display": "¥255,000.00", "arrival_day": 3, "arrival_when": "in 3 days"}]
+                                                "amount_display": "¥255,000.00", "arrival_day": 3, "arrival_when": "in 3 days",
+                                                "headline": "¥255k funding arriving in 3 days"}]
     assert h["cash"]["plan_series"] is None
     kinds = [c["kind"] for c in h["changes"]]
     assert kinds == ["OPERATION", "OPERATION"] and "Bank credit line" in h["changes"][1]["text"]
+    # the changes lead with a business sentence; the executor's own sentence stays in `text` for the audit level
+    assert [c["event_text"] for c in h["changes"]] == [
+        "¥255,000.00 of invoice financing drawn against the Foshan Home Retail Co. invoice. Funds arrive in 3 days.",
+        "¥150,000.00 drawn on the Bank credit line. Cash received today."]
+    assert h["changes"][0]["event_detail"] == "Financed through Invoice financing (onboarded platform)."
+    assert h["changes"][1]["event_detail"] is None
+    assert h["changes"][0]["text"].startswith("Advance ¥255,000.00 on ")
+    # on its way: the headline, in both languages, beside the cash that is already here
+    assert h["cash"]["in_transit"]["lots"][0]["headline"] == "¥255k funding arriving in 3 days"
+    zh = client.get("/home?lang=zh").json()
+    assert zh["cash"]["in_transit"]["lots"][0]["headline"] == "¥255k 资金将于3 天后到账"
+    assert zh["changes"][1]["event_text"] == "已从Bank credit line提取 ¥150,000.00。资金今天已到账。"
 
 
 def test_a_queued_cure_is_a_question_with_its_cost_and_landing_day(client):
@@ -201,6 +218,17 @@ def test_a_late_buyer_is_named_in_receivables_and_changes(client):
     client.post(f"/alerts/{a['alert_id']}/act", json={"state_version": a["state_version"], "suggestions": a["suggestions"]})
     [card] = client.get("/home").json()["approvals"]
     assert card["if_decline"] == "¥200,000.00 below your minimum cash reserve in 8 days; the gap peaks at ¥200,000.00 in 8 days."
+    # the queued fix reads as a business event in the changes, never as the executor's "Queued for owner approval (APR-…)"
+    waiting = next(c for c in client.get("/home").json()["changes"] if c["kind"] == "WAITING")
+    assert waiting["event_text"] == ("Waiting for your approval: ¥200,000.00 of invoice financing at 32.5% a year, above the "
+                                     "15.00% limit you signed for funding without your approval.")
+    assert waiting["text"].startswith("Queued for owner approval (APR-000001): ")
+    assert "APR-" not in waiting["event_text"] and "mandate" not in waiting["event_text"]
+    # once approved the same fix reads "You approved …" with its landing as a distance from today
+    assert client.post(f"/approvals/{card['id']}", json={"decision": "APPROVE"}).json()["result"]["status"] == "EXECUTED"
+    approved = client.get("/home").json()["changes"]
+    assert approved[0]["event_text"] == "You approved ¥200,000.00 of invoice financing. Funds arrive in 3 days."
+    assert not any(c["event_text"].startswith("Advance ") for c in approved)
 
 
 def test_run_funding_plan_binds_to_the_plan_shown_and_refuses_a_stale_one(client):

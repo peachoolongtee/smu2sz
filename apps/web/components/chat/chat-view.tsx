@@ -1,5 +1,6 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { Badge, Button, EmptyState, Segmented } from "@/components/ui";
 import { Spinner } from "@/components/icons";
@@ -123,7 +124,8 @@ export function ChatView({ variant }: { variant: "page" | "panel" }) {
   const logRef = useRef<HTMLDivElement>(null);
   const lastRef = useRef<HTMLDivElement>(null);
   const last = conv.messages.at(-1);
-  const prompts = promptsFor(chat.role, lang);
+  const pathname = usePathname();
+  const prompts = promptsFor(chat.role, lang, pathname);
   const signedOut = chat.role === "OWNER" && !token;
 
   useEffect(() => {

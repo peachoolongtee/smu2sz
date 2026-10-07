@@ -13,3 +13,8 @@ export function whenText(day: number | null | undefined, today: number, t: I18n[
   if (n === -1) return t("biz.when.yesterday");
   return n > 0 ? t("biz.when.inDays", { n }) : t("biz.when.daysAgo", { n: -n });
 }
+
+/** "1 day late" / "2 days late": the badge on a late invoice, with its plural. */
+export function daysLate(days: number, t: I18n["t"]): string {
+  return t(days === 1 ? "biz.recv.late.one" : "biz.recv.late", { days });
+}

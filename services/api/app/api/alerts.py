@@ -17,10 +17,17 @@ from pydantic import BaseModel, ConfigDict
 from app.alerts import Alert, Severity, alerts, cure_operations, reconcile
 from app.api.auth import require_owner
 from app.api.display import displayed
-from app.api.presentation import business_text
+from app.api.presentation import business_text, event_words
 from app.api.runtime import Runtime, get_runtime
 from app.books import current_books
-from app.domain.models import Obligation, OperationStatus, SecurityEvent, SecurityEventKind
+from app.domain.models import (
+    FinancialState,
+    Obligation,
+    OperationResult,
+    OperationStatus,
+    SecurityEvent,
+    SecurityEventKind,
+)
 from app.financial import EngineError
 from app.funding.recommend import plan_operations, plan_suggestions, recommend_for_alert
 from app.verifier import bind
@@ -184,14 +191,22 @@ def act_on_alert(alert_id: str, body: ActRequest | None = None) -> dict[str, Any
         "day": rt.day,
         # `message` is the executor's sentence; `message_when` says it as the Business home does (names, the owner's
         # words for the ceiling, distances from today). A presentation read, English only.
-        "results": [{**json.loads(r.model_dump_json()), "message_when": business_text(books_now, r.message, rt.day, "en")}
-                    for r in results],
+        # `event_text` / `event_detail`: the business sentence for what the operation did (`event_words`).
+        "results": [{**json.loads(r.model_dump_json()), "message_when": business_text(books_now, r.message, rt.day, "en"),
+                     **_event(books_now, op, r, rt.day)} for op, r in zip(ops, results, strict=False)],
         "executed": n(OperationStatus.EXECUTED),
         "pending_approval": n(OperationStatus.PENDING_APPROVAL),
         "refused": n(OperationStatus.REFUSED),
         "cured": all(a.id != alert_id for a in after),
         "alerts_after": {"counts": _counts(after)},
     }
+
+
+def _event(state: FinancialState, op: Any, r: OperationResult, today: int) -> dict[str, Any]:
+    """The business sentence for one result of an act (`event_words`), from the operation that ran and its result."""
+    words = event_words(state, kind=r.kind, status=r.status.value, payload=json.loads(op.model_dump_json()), message=r.message,
+                        approval_id=r.approval_id, day=r.effective_day, today=today, lang="en")
+    return {"event_text": words["event_text"] or business_text(state, r.message, today, "en"), "event_detail": words["event_detail"]}
 
 
 @router.get("/reconciliation")

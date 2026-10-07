@@ -2258,6 +2258,8 @@
       "kind": "LATE",
       "actor": "",
       "text": "¥162,800.00 outstanding from Foshan Home Retail Co. was due 2 days ago and is still OPEN.",
+      "event_text": "¥162,800.00 outstanding from Foshan Home Retail Co. was due 2 days ago and is still OPEN.",
+      "event_detail": null,
       "when": "2 days ago"
     }
   ],

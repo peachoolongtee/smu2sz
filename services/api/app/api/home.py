@@ -20,9 +20,11 @@ from app.alerts import Alert, AlertKind, Severity, alerts, reconcile
 from app.api.auth import require_owner
 from app.api.display import displayed
 from app.api.presentation import (
+    agreement_words,
     approval_words,
     buyer_of_receivable,
     cure_legs,
+    event_words,
     facility_name,
     fmt_short,
     in_words,
@@ -561,23 +563,27 @@ def _changes(state: FinancialState, store: Any, found: list[Alert], today: int, 
         if e.kind in ("ACCEPT_OFFER", "RECORD_COMMITMENT") and e.result.status == OperationStatus.EXECUTED:
             cmt = next((c for c in store.commitments() if c.id in (e.result.message or "")), None)
             if cmt is not None:
-                text = t(lang, f"Agreement with {party_name(state, cmt.counterparty_id)} recorded; future give-aways booked: "
-                               f"{fmt_yuan(cmt.forward_value_fen)}.",
-                         f"已记录与{party_name(state, cmt.counterparty_id)}的协议；已入账的未来让利：{fmt_yuan(cmt.forward_value_fen)}。")
+                text = agreement_words(state, cmt.counterparty_id, cmt.forward_value_fen, lang)
                 kind = "AGREEMENT"
-        items.append({"day": day, "seq": e.seq, "kind": kind, "actor": who, "text": relative_days(text, today, lang),
+        shown = relative_days(text, today, lang)
+        words = (event_words(state, kind=e.kind, status=e.result.status.value, payload=e.payload, message=e.result.message,
+                             approval_id=e.result.approval_id, day=day, today=today, lang=lang)
+                 if kind != "AGREEMENT" else {"event_text": None, "event_detail": None})
+        items.append({"day": day, "seq": e.seq, "kind": kind, "actor": who, "text": shown,
+                      "event_text": words["event_text"] or shown, "event_detail": words["event_detail"],
                       "when": when_text(day, today, lang)})
     for a in found:
         if a.kind == AlertKind.RECEIVABLE_PAST_DUE:
-            items.append({"day": a.day, "seq": None, "kind": "LATE", "actor": "",
-                          "text": relative_days(in_words(state, a.detail.split(". ")[0] + "."), today, lang),
-                          "when": when_text(a.day, today, lang)})
+            late = relative_days(in_words(state, a.detail.split(". ")[0] + "."), today, lang)
+            items.append({"day": a.day, "seq": None, "kind": "LATE", "actor": "", "text": late,
+                          "event_text": late, "event_detail": None, "when": when_text(a.day, today, lang)})
     for lot in ensure_lots(state).lots:
         if lot.settled and since <= lot.arrival_day <= today and lot.arrival_day != lot.request_day:
+            landed = t(lang, f"{fmt_yuan(lot.principal_fen)} from {facility_name(state, lot.facility_id)} landed {when_text(lot.arrival_day, today, lang)}.",
+                       f"来自{facility_name(state, lot.facility_id)}的 {fmt_yuan(lot.principal_fen)} 已于{when_text(lot.arrival_day, today, lang)}到账。")
             items.append({"day": lot.arrival_day, "seq": None, "kind": "LANDED", "actor": "",
-                          "when": when_text(lot.arrival_day, today, lang),
-                          "text": t(lang, f"{fmt_yuan(lot.principal_fen)} from {facility_name(state, lot.facility_id)} landed {when_text(lot.arrival_day, today, lang)}.",
-                                    f"来自{facility_name(state, lot.facility_id)}的 {fmt_yuan(lot.principal_fen)} 已于{when_text(lot.arrival_day, today, lang)}到账。")})
+                          "when": when_text(lot.arrival_day, today, lang), "text": landed,
+                          "event_text": landed, "event_detail": None})
     items.sort(key=lambda x: (-(x["day"] or 0), -(x["seq"] or 0)))
     return items[:MAX_CHANGES]
 
@@ -616,7 +622,9 @@ def _in_transit(state: FinancialState, today: int, lang: str) -> dict[str, Any] 
     total = sum(lot.remaining_fen for lot in lots)
     return {"total_display": fmt_yuan(total), "lots": [
         {"facility_name": facility_name(state, lot.facility_id), "amount_display": fmt_yuan(lot.remaining_fen),
-         "arrival_day": lot.arrival_day, "arrival_when": when_text(lot.arrival_day, today, lang)}
+         "arrival_day": lot.arrival_day, "arrival_when": when_text(lot.arrival_day, today, lang),
+         "headline": t(lang, f"{fmt_short(lot.remaining_fen)} funding arriving {when_text(lot.arrival_day, today, lang)}",
+                       f"{fmt_short(lot.remaining_fen)} 资金将于{when_text(lot.arrival_day, today, lang)}到账")}
         for lot in sorted(lots, key=lambda lt: (lt.arrival_day, lt.id))]}
 
 

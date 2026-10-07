@@ -35,7 +35,8 @@
           "facility_name": "Invoice financing (onboarded platform)",
           "amount_display": "¥255,000.00",
           "arrival_day": 3,
-          "arrival_when": "in 3 days"
+          "arrival_when": "in 3 days",
+          "headline": "¥255k funding arriving in 3 days"
         }
       ]
     },
@@ -959,6 +960,8 @@
       "kind": "OPERATION",
       "actor": "AGENT",
       "text": "Advance ¥255,000.00 on the ¥420,000.00 invoice to Foshan Home Retail Co. due in 32 days from Invoice financing (onboarded platform) today; the cash lands in 3 days after the 3-day lead time, not today",
+      "event_text": "¥255,000.00 of invoice financing drawn against the Foshan Home Retail Co. invoice. Funds arrive in 3 days.",
+      "event_detail": "Financed through Invoice financing (onboarded platform).",
       "when": "today"
     },
     {
@@ -967,6 +970,8 @@
       "kind": "OPERATION",
       "actor": "AGENT",
       "text": "Drew ¥150,000.00 on Bank credit line today",
+      "event_text": "¥150,000.00 drawn on the Bank credit line. Cash received today.",
+      "event_detail": null,
       "when": "today"
     }
   ],

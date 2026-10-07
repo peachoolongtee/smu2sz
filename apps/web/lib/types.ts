@@ -813,6 +813,9 @@ export interface OperationView extends Displayed<OperationResult> {
   summary: string;
   /** The executor's sentence as a Business page reads it (names, the owner's words, distances from today), written by GET /ledger; `summary` stays the audit sentence. Absent in older recordings. */
   message_when?: string | null;
+  /** The business sentence for what the operation did (GET /ledger); `summary` stays the executor's own sentence. Absent in older recordings. */
+  event_text?: string | null;
+  event_detail?: string | null;
 }
 
 export type BuyerProfile = "cooperative" | "hard_line";
@@ -1407,6 +1410,9 @@ export interface NlOperation {
   message: string;
   /** `message` as the Business home reads it (POST /alerts/{id}/act adds it); absent elsewhere and in older recordings. */
   message_when?: string | null;
+  /** The business sentence for what the operation did (the act adds it); absent elsewhere and in older recordings. */
+  event_text?: string | null;
+  event_detail?: string | null;
 }
 
 export interface NlNegotiation {
@@ -1721,7 +1727,12 @@ export interface HomeChange {
   seq: number | null;
   kind: HomeChangeKind | string;
   actor: string;
+  /** The executor's own sentence (names and distances from today, but still the audit wording); the home leads with `event_text`. */
   text: string;
+  /** The business sentence for what happened ("¥150,000.00 drawn on the Bank credit line. Cash received today."); absent in older recordings. */
+  event_text?: string;
+  /** One more sentence when there is more to say, else null. */
+  event_detail?: string | null;
 }
 
 export interface HomeReceivable {
@@ -1781,7 +1792,7 @@ export interface HomeView {
     lowest_when: string;
     first_breach_when: string | null;
     horizon_days: number;
-    in_transit: { total_display: string; lots: { facility_name: string; amount_display: string; arrival_day: Day; arrival_when: string }[] } | null;
+    in_transit: { total_display: string; lots: { facility_name: string; amount_display: string; arrival_day: Day; arrival_when: string; /** "¥255k funding arriving in 3 days" */ headline?: string }[] } | null;
     /** Every funding lot on the books, landed or still arriving, for the current funding position. */
     funding_lots?: { facility_name: string; amount_display: string; remaining_display: string; landed: boolean; arrival_day: Day; arrival_when: string; maturity_day: Day | null; maturity_when: string | null }[];
     /** Cash minus the minimum cash reserve, today and at the lowest point ahead; short figures from the server. */

@@ -228,7 +228,7 @@ Two modes, chosen with one switch in the header and remembered: **Business** and
 | Approvals | `/approvals` | What requires my decision, exactly | approvals queue with the new presentation fields |
 | Activity | `/activity` | What happened, what did the agent do, what was refused | ledger, audit, alerts history |
 
-Plus **Limits** (`/limits`, from the account menu), the chat slide-over ("Ask the agent") on every page, and sign-in.
+Plus **Limits** (`/limits`, from the account menu), the chat slide-over ("Ask FLOW", with the current Business page's own questions first) on every page, and sign-in.
 
 **Demo** (for judges): a different shell. The story page `/demo` lists the fifteen steps as the brief's narrative (buyer asks
 → read → consequences → recommendation → commitment → time passes → late payment → unsafe cash → detection → funding →

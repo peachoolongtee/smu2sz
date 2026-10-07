@@ -10,9 +10,9 @@ import { whenText } from "@/lib/when";
 import { useAsync } from "@/lib/use-async";
 
 /**
- * Activity: everything that happened, in order. Each row leads with the server's Business sentence (`message_when`: names,
- * the owner's words, distances from today); an older recording without it gets the executor's sentence with ids named.
- * The hashes and codes are under audit details.
+ * Activity: everything that happened, in order. Each row leads with the server's business sentence (`event_text`: what happened, in the owner's
+ * words); an older recording without it gets `message_when`, then the executor's sentence with ids named. The executor's own
+ * sentence, the operation id, the tier and the hashes are under audit details.
  */
 export default function ActivityPage() {
   const { t, te } = useI18n();
@@ -56,7 +56,8 @@ export default function ActivityPage() {
               <ol className="space-y-2" data-testid="activity-list">
                 {ops.map((o) => (
                   <li key={`${o.seq}-${o.op_id}`} className={`rounded-md border px-3 py-2 ${o.status === "REFUSED" ? "border-bad-line bg-bad-bg/40" : "border-line"}`} data-testid={`activity-${o.kind}`} data-status={o.status}>
-                    <p className="break-words text-sm font-medium text-ink">{o.message_when || words(o.summary) || te("opkind", o.kind) || o.kind}</p>
+                    <p className="break-words text-sm font-medium text-ink" data-testid="activity-event">{o.event_text || o.message_when || words(o.summary) || te("opkind", o.kind) || o.kind}</p>
+                    {o.event_detail ? <p className="break-words text-xs text-ink-2" data-testid="activity-detail">{o.event_detail}</p> : null}
                     <div className="mt-1 flex flex-wrap items-center gap-2">
                       <span className="text-xs text-ink-3">{whenText(o.day, today, t)}</span>
                       <span className="text-xs text-ink-3" data-testid="activity-op">{te("opkind", o.kind) || o.kind}</span>
@@ -73,6 +74,10 @@ export default function ActivityPage() {
                     <details className="mt-1">
                       <summary className="cursor-pointer text-xs text-ink-3">{t("biz.auditDetails")}</summary>
                       <dl className="mt-1 grid grid-cols-[max-content_minmax(0,1fr)] gap-x-3 gap-y-0.5 text-xs text-ink-2">
+                        <dt>{t("audit.executor")}</dt>
+                        <dd className="break-words" data-testid="activity-raw">{o.summary}</dd>
+                        <dt>{t("audit.opId")}</dt>
+                        <dd className="break-all font-mono">{o.op_id}</dd>
                         <dt>{t("ledger.seq")}</dt>
                         <dd className="tabular-nums">{o.seq}</dd>
                         <dt>{t("ledger.tier")}</dt>
@@ -133,7 +138,7 @@ export default function ActivityPage() {
                       <OpStatusBadge status={o.status} />
                       <span className="font-medium">{te("opkind", o.kind)}</span>
                     </div>
-                    <p className="mt-1 text-ink-2">{o.message_when || words(o.summary)}</p>
+                    <p className="mt-1 text-ink-2">{o.event_text || o.message_when || words(o.summary)}</p>
                   </li>
                 ))}
                 {audit.data.events.map((e) => (

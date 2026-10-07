@@ -14,7 +14,9 @@
       "effective_day": 0,
       "approval_id": null,
       "message": "Drew ¥150,000.00 on FAC-LINE on day 0",
-      "message_when": "Drew ¥150,000.00 on Bank credit line today"
+      "message_when": "Drew ¥150,000.00 on Bank credit line today",
+      "event_text": "¥150,000.00 drawn on the Bank credit line. Cash received today.",
+      "event_detail": null
     },
     {
       "op_id": "alert:ALERT-RESERVE-12:v1:plan:1",
@@ -28,7 +30,9 @@
       "effective_day": 0,
       "approval_id": null,
       "message": "Advance ¥255,000.00 on RCV-A from FAC-IF on day 0; the cash lands on day 3 after the 3-day lead time, not today",
-      "message_when": "Advance ¥255,000.00 on the ¥420,000.00 invoice to Foshan Home Retail Co. due in 32 days from Invoice financing (onboarded platform) today; the cash lands in 3 days after the 3-day lead time, not today"
+      "message_when": "Advance ¥255,000.00 on the ¥420,000.00 invoice to Foshan Home Retail Co. due in 32 days from Invoice financing (onboarded platform) today; the cash lands in 3 days after the 3-day lead time, not today",
+      "event_text": "¥255,000.00 of invoice financing drawn against the Foshan Home Retail Co. invoice. Funds arrive in 3 days.",
+      "event_detail": "Financed through Invoice financing (onboarded platform)."
     }
   ],
   "executed": 2,

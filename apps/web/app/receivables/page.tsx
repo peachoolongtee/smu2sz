@@ -3,7 +3,7 @@
 import { Badge, Card, ErrorState, LoadingBlock, PageHeader, Stat, TableWrap, tableCls, tdCls, thCls } from "@/components/ui";
 import { getHome, getReconciliation, getState } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
-import { whenText } from "@/lib/when";
+import { daysLate, whenText } from "@/lib/when";
 import { useAsync } from "@/lib/use-async";
 
 /**
@@ -67,12 +67,12 @@ export default function ReceivablesPage() {
                       <tr key={o.receivable_id} className={o.past_due ? "bg-bad-bg/40" : ""} data-testid={`recv-${o.receivable_id}`}>
                         <td className={`${tdCls} font-medium`}>
                           {name(o.counterparty_id)}
-                          <span className="ml-2 font-mono text-xs font-normal text-ink-3">{o.receivable_id}</span>
+                          <span className="block font-mono text-xs font-normal text-ink-3">{o.receivable_id}</span>
                         </td>
                         <td className={`${tdCls} text-right tabular-nums`}>{o.face_display}</td>
                         <td className={`${tdCls} tabular-nums`}>{whenText(o.due_day, data.as_of_day, t)}</td>
                         <td className={tdCls}>
-                          <Badge tone={o.past_due ? "bad" : "neutral"}>{o.past_due ? t("biz.recv.late", { days: Math.max(0, data.as_of_day - o.due_day) }) : t("recon.onTime")}</Badge>
+                          <Badge tone={o.past_due ? "bad" : "neutral"}>{o.past_due ? daysLate(Math.max(0, data.as_of_day - o.due_day), t) : t("recon.onTime")}</Badge>
                         </td>
                       </tr>
                     ))}

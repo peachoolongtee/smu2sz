@@ -64,7 +64,7 @@ export function ChangesBlock({ changes, sinceWhen }: { changes: HomeChange[]; si
                 {CHANGE_GLYPH[c.kind] ?? "•"}
               </span>
               <span className="min-w-0">
-                <span className="block break-words text-sm text-ink">{c.text}</span>
+                <span className="block break-words text-sm text-ink" data-testid="home-change-text">{c.event_text ?? c.text}</span>
                 <span className="block text-xs text-ink-3">{c.when}</span>
               </span>
             </li>

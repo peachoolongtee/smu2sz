@@ -1,6 +1,7 @@
 import type { DictKey } from "./dictionary";
 import type { CounterpartyId } from "./chat";
 import type { Lang } from "./i18n";
+import { isBusinessRoute } from "./mode";
 import type { NlActor } from "./types";
 
 /**
@@ -71,6 +72,60 @@ const BUYER: Record<Lang, Prompt[]> = {
   ],
 };
 
-export function promptsFor(role: NlActor, lang: Lang): Prompt[] {
-  return (role === "OWNER" ? OWNER : BUYER)[lang];
+/**
+ * What the owner may ask about the page they are on (Business routes only). Each wording is one the rules parser already
+ * reads (services/api/tests/nl/test_business_page_prompts.py holds the same list): "Am I safe this month?" and "What should I
+ * do today?" have no intent as written, so the chips say "Do we have enough cash this month?" (SHOW_STATUS) and "What
+ * should I deal with today?" (SHOW_ALERTS); "When is my next payment?" and "What happens if this invoice pays late?" have
+ * none (there is no late-payment what-if), so Receivables offers "Who owes us money?" and Cash & funding "Compare our
+ * financing options" instead.
+ */
+const PAGE: Record<string, Record<Lang, Prompt[]>> = {
+  "/": {
+    en: [
+      { id: "page-safe", label: "chat.p.page.safe", text: "Do we have enough cash this month?" },
+      { id: "page-today", label: "chat.p.page.today", text: "What should I deal with today?" },
+    ],
+    zh: [
+      { id: "page-safe", label: "chat.p.page.safe", text: "会不会缺钱？" },
+      { id: "page-today", label: "chat.p.page.today", text: "今天有什么需要我处理的？" },
+    ],
+  },
+  "/deals": {
+    en: [
+      { id: "page-counter", label: "chat.p.page.counter", text: "Why are we countering this?" },
+      { id: "page-accept", label: "chat.p.page.accept", text: "What would happen if I accepted?" },
+    ],
+    zh: [
+      { id: "page-counter", label: "chat.p.page.counter", text: "为什么要还价？" },
+      { id: "page-accept", label: "chat.p.page.accept", text: "如果我接受会怎样？" },
+    ],
+  },
+  "/cash": {
+    en: [
+      { id: "page-cheapest", label: "chat.p.page.cheapest", text: "Why is this the cheapest plan?" },
+      { id: "page-compare", label: "chat.p.page.compare", text: "Compare our financing options" },
+    ],
+    zh: [
+      { id: "page-cheapest", label: "chat.p.page.cheapest", text: "为什么这是最便宜的方案？" },
+      { id: "page-compare", label: "chat.p.page.compare", text: "比较一下融资方案" },
+    ],
+  },
+  "/receivables": {
+    en: [
+      { id: "page-late", label: "chat.p.page.late", text: "Which payments are late?" },
+      { id: "page-owes", label: "chat.p.page.owes", text: "Who owes us money?" },
+    ],
+    zh: [
+      { id: "page-late", label: "chat.p.page.late", text: "哪些回款没到？" },
+      { id: "page-owes", label: "chat.p.page.owes", text: "谁欠我们钱？" },
+    ],
+  },
+};
+
+/** The owner's prompts, with the current Business page's own questions first; the buyer channel has no page prompts. */
+export function promptsFor(role: NlActor, lang: Lang, pathname?: string | null): Prompt[] {
+  if (role !== "OWNER") return BUYER[lang];
+  const page = pathname && isBusinessRoute(pathname) ? PAGE[pathname]?.[lang] : undefined;
+  return page ? [...page, ...OWNER[lang]] : OWNER[lang];
 }
