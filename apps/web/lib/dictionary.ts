@@ -1597,6 +1597,7 @@ export const en = {
   "tour.limits.body": "The limits you signed. Anything beyond them waits for you.",
   "biz.readings.now": "Now, as on the Home: debt service cover {dscr}, debt to earnings {lev}.",
   "biz.forecast.projected": "Projected cash",
+  "alerts.waiting.short": "Waiting for your approval",
 } as const;
 
 export type DictKey = keyof typeof en;
@@ -3193,4 +3194,5 @@ export const zh: Record<DictKey, string> = {
   "tour.limits.body": "您签署的上限。超出这些上限的事项都会等您决定。",
   "biz.readings.now": "当前，与首页一致：偿债覆盖 {dscr}，负债/收益 {lev}。",
   "biz.forecast.projected": "预计现金",
+  "alerts.waiting.short": "等待您批准",
 };

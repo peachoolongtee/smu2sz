@@ -257,6 +257,8 @@ _ADMISSIBLE = (
 )
 
 
+# "(commitment CMT-a78afaa5becb5273)": a record id, which belongs to the audit level.
+_COMMITMENT_REF = re.compile(r"\s*\(commitment CMT-[0-9a-f]+\)")
 # "… the cash lands in 3 days after the 3-day lead time": the landing is said once, as a distance from today.
 _LEAD_TIME = re.compile(r" after the \d+-day lead time")
 
@@ -274,7 +276,7 @@ def business_text(state: FinancialState, text: str | None, today: int, lang: Lan
     sentence stays beside it for the audit level."""
     if text is None:
         return None
-    return _LEAD_TIME.sub("", limits_words(relative_days(in_words(state, text), today, lang)))
+    return _COMMITMENT_REF.sub("", _LEAD_TIME.sub("", limits_words(relative_days(in_words(state, text), today, lang))))
 
 
 # The executor's working behind a rate: "(all charges on ¥200,000.00 held 10 days (day 37 to day 47), annualised = 32.52%)".

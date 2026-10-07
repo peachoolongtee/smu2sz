@@ -108,7 +108,7 @@ export default function ReceivablesPage() {
                   <li key={`${p.commitment_id}:${p.obligation_id}:${p.receivable_id}`} className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-line px-3 py-2 text-sm" data-testid={`promised-${p.receivable_id}`} data-status={p.status}>
                     <span>
                       <span className="font-medium text-ink">{name(p.counterparty_id)}</span>
-                      <span className="block text-xs text-ink-2">{p.detail}</span>
+                      <span className="block text-xs text-ink-2">{p.detail_when ?? p.detail}</span>
                     </span>
                     <span className="flex items-center gap-2">
                       <span className="font-semibold tabular-nums">{p.expected_display}</span>
@@ -126,9 +126,7 @@ export default function ReceivablesPage() {
                 {data.receipts.map((x) => (
                   <li key={x.entry_hash} className={`rounded-md border px-3 py-2 text-sm ${x.flagged ? "border-bad-line bg-bad-bg/40" : "border-line"}`} data-testid={`receipt-${x.op_id}`}>
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <span className="font-medium text-ink">
-                        {name(x.counterparty_id)} · {x.receivable_id}
-                      </span>
+                      <span className="font-medium text-ink">{name(x.counterparty_id)}</span>
                       <span className="flex items-center gap-2">
                         <span className="font-semibold tabular-nums">{x.received_display}</span>
                         <Badge tone={x.flagged ? "bad" : "ok"}>{te("recstatus", x.status)}</Badge>
@@ -136,13 +134,21 @@ export default function ReceivablesPage() {
                     </div>
                     <p className="mt-0.5 text-xs text-ink-2">
                       {x.day !== null ? `${whenText(x.day, data.as_of_day, t)} · ` : ""}
-                      {x.detail}
+                      {x.detail_when ?? x.detail}
                     </p>
-                    {x.bank_reference ? (
-                      <p className="mt-0.5 font-mono text-xs text-ink-3" data-testid={`receipt-ref-${x.op_id}`}>
-                        {t("recon.bankRef", { ref: x.bank_reference })}
+                    {/* The record ids (invoice, bank reference) are the audit level. */}
+                    <details className="mt-1" data-testid={`receipt-audit-${x.op_id}`}>
+                      <summary className="cursor-pointer text-xs text-ink-3">{t("biz.auditDetails")}</summary>
+                      <p className="mt-1 text-xs text-ink-3">
+                        {x.receivable_id}
+                        {x.bank_reference ? (
+                          <span data-testid={`receipt-ref-${x.op_id}`}>
+                            {" · "}
+                            {t("recon.bankRef", { ref: x.bank_reference })}
+                          </span>
+                        ) : null}
                       </p>
-                    ) : null}
+                    </details>
                   </li>
                 ))}
               </ul>

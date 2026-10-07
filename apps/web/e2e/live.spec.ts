@@ -176,7 +176,7 @@ test("on day 34 the cure needs the owner: the alert says so, the click queues it
   await expect(op.getByTestId("op-state")).toContainText("Waiting for your approval");
   await expect(op.getByTestId("op-state").locator(":scope > span")).not.toHaveClass(/text-ok-fg/);
   const waiting = page.getByTestId("alert-waiting-ALERT-RESERVE-42");
-  await expect(waiting).toContainText(/Waiting for your approval \(APR-\d+\)/);
+  await expect(waiting).toHaveText(/^Waiting for your approval\s*Open the approval card$/);
   await expect(page.getByTestId("home-next-action")).toBeVisible();
   await expect(page.locator('[data-testid^="home-approval-APR-"]').first()).toContainText("Approve ¥200,000.00 of invoice financing?");
 

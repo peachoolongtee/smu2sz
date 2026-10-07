@@ -45,7 +45,8 @@ async function expectWaitingNotSuccess(row: ReturnType<Page["getByTestId"]>) {
   await expect(pill.locator(":scope > span")).toHaveClass(/text-warn-fg/);
   await expect(pill.locator(":scope > span")).not.toHaveClass(/text-ok-fg/);
   await expect(row).not.toContainText("Executed");
-  await expect(row.getByTestId("op-waiting")).toContainText("APR-000001");
+  // The status and its link; the approval's number is on the approval card only.
+  await expect(row.getByTestId("op-waiting")).toHaveText("Open the approval card");
 }
 
 test("the Business home answers safe, do and cost on the opening books, without a demo control", async ({ page }) => {
@@ -217,7 +218,7 @@ test("day 34: the fix needs approval; queuing it from the home runs nothing and 
   await runPlan(page, "ALERT-RESERVE-42");
   const op = page.getByTestId("fix-result").getByTestId("chat-op-SUBMIT_INVOICE_FOR_FINANCING");
   await expectWaitingNotSuccess(op);
-  await expect(page.getByTestId("alert-waiting-ALERT-RESERVE-42")).toHaveText(/^Waiting for your approval \(APR-000001\)\s*Open the approval card$/);
+  await expect(page.getByTestId("alert-waiting-ALERT-RESERVE-42")).toHaveText(/^Waiting for your approval\s*Open the approval card$/);
   await expect(page.getByTestId("approvals-badge")).toContainText("1 approval waiting");
   await expect(page.getByTestId("fix-open-ALERT-RESERVE-42")).toHaveCount(0);
   // Needs your decision: the question, the cost and the landing day, and a link to the card.
@@ -231,7 +232,7 @@ test("day 34: the fix needs approval; queuing it from the home runs nothing and 
   // Level 1 is the business sentence and the status pill; the tier, sequence, operation id and hash are under "Audit details".
   // The agent's answer says it once, as a status with a link and no sentence; the question is on the decision card and in the recent changes.
   await expect(op.getByTestId("op-sentence")).toHaveCount(0);
-  await expect(op.getByTestId("op-waiting")).toContainText("APR-000001");
+  await expect(op.getByTestId("op-waiting")).not.toContainText("APR-");
   await expect(op.getByTestId("op-approval-link")).toHaveText("Open the approval card");
   await expect(page.getByTestId("fix-result")).not.toContainText("Nothing has run yet");
   await expect(page.getByTestId("fix-result")).not.toContainText("0 refused");

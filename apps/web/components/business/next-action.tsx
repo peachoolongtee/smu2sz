@@ -95,7 +95,7 @@ export function NextActionBlock({ a, stateVersion, fixer }: { a: HomeNextAction;
       <div className="mt-4 flex flex-wrap items-center gap-2">
         {waiting ? (
           <div className="rounded-md border border-warn-line bg-warn-bg px-3 py-2 text-sm text-warn-fg" role="status" data-testid={`alert-waiting-${a.alert_id}`}>
-            <p className="font-semibold">{t("alerts.waiting", { id: waiting })}</p>
+            <p className="font-semibold">{t("alerts.waiting.short")}</p>
             <Link href={approvalHref(waiting)} className="mt-0.5 inline-block font-medium underline underline-offset-2" data-testid={`alert-approval-link-${a.alert_id}`}>
               {t("alerts.waiting.open")}
             </Link>

@@ -1291,6 +1291,8 @@ export interface ReceiptRow {
   status: MatchStatus;
   flagged: boolean;
   detail: string;
+  /** `detail` as a Business page reads it (names, no commitment id, distances from today); absent in older recordings. */
+  detail_when?: string | null;
   formula: string;
 }
 
@@ -1331,6 +1333,8 @@ export interface PromisedReceipt {
   /** Log seq of the receipt that paid it, when RECEIVED. */
   receipt_seq: number | null;
   detail: string;
+  /** `detail` as a Business page reads it (names, no commitment id, distances from today); absent in older recordings. */
+  detail_when?: string | null;
   formula: string;
 }
 

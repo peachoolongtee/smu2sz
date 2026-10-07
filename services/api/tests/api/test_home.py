@@ -176,6 +176,12 @@ def test_a_late_buyer_is_named_in_receivables_and_changes(client):
         "requested_by": "SYSTEM", "receivable_id": promised["receivable_id"], "amount_fen": promised["expected_fen"],
         "bank_reference": "T-RCPT-1"})
     assert res.json()["result"]["status"] == "EXECUTED"
+    rec = client.get("/reconciliation").json()["reconciliation"]
+    # the Business sentences carry names, never the commitment or invoice ids; the engine's sentence stays beside them
+    assert all("CMT-" not in r["detail_when"] and "RCV-" not in r["detail_when"] for r in rec["promised"] + rec["receipts"])
+    assert rec["promised"][0]["detail_when"].startswith("the agreed ¥255,013.80 for the ¥420,000.00 invoice to Foshan Home Retail Co.")
+    assert rec["promised"][0]["detail_when"].endswith(" arrived")
+    assert "CMT-" in rec["promised"][0]["detail"]
     h = client.get("/home").json()
     assert h["changes"][0]["kind"] == "RECEIPT" and h["changes"][0]["text"].startswith("Received ¥255,013.80")
     client.post("/clock/advance", json={"days": 28})

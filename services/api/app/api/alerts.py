@@ -215,4 +215,10 @@ def get_reconciliation() -> dict[str, Any]:
     _require_enabled(rt)
     with rt.lock:
         report = reconcile(rt.store, day=rt.day)
-    return {"reconciliation": displayed(json.loads(report.model_dump_json()))}
+        state = rt.store.get_state()
+    out = displayed(json.loads(report.model_dump_json()))
+    # `detail_when`: each promise's and receipt's sentence as a Business page reads it (names for ids, no commitment id,
+    # distances from today). `detail` stays the engine's sentence for the audit level.
+    for row in [*out.get("promised", []), *out.get("receipts", [])]:
+        row["detail_when"] = business_text(state, row.get("detail"), rt.day, "en") if row.get("detail") else None
+    return {"reconciliation": out}
