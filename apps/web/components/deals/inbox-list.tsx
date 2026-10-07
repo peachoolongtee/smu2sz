@@ -98,7 +98,8 @@ export function InboxList({
             {unknown(m) ? <Badge tone="bad">{t("inbox.unknownSender")}</Badge> : null}
           </span>
           {m.subject ? <span className="mt-0.5 block text-sm text-ink">{m.subject}</span> : null}
-          <span className="mt-0.5 block truncate text-sm text-ink-2">{m.document.text.replace(/\s+/g, " ")}</span>
+          {/* The message being read is shown whole; the others keep to one line. */}
+          <span className={`mt-0.5 block text-sm text-ink-2 ${isCurrent ? "break-words" : "truncate"}`}>{m.document.text.replace(/\s+/g, " ")}</span>
         </span>
         <span className="flex shrink-0 flex-col items-end gap-1 text-xs text-ink-3">
           <span>{t("inbox.at", { when: whenText(m.document.received_day, today, t), time: m.time })}</span>

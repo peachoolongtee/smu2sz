@@ -82,6 +82,8 @@ export default function DealsPage() {
   /** The recommendation words for a message already evaluated in this session, for its inbox row. */
   function statusFor(docId: string): string | null {
     const o = Object.values(demo.offers).find((x) => x.documents[0]?.doc_id === docId);
+    const negotiation = o ? demo.negotiations[o.offer.offer_id] : undefined;
+    if (negotiation) return t(negotiation.outcome === "DEAL" ? "biz.deals.action.agreed" : "biz.deals.action.noDeal");
     const verdict = o ? demo.verdicts[o.offer.offer_id] : undefined;
     return verdict ? t(ACTION_KEY[businessAction(verdict)]) : null;
   }
@@ -194,7 +196,7 @@ export default function DealsPage() {
               commitments
             ) : (
               <>
-                <DealDecision v={v} today={today} />
+                <DealDecision v={v} today={today} negotiation={cur.negotiation} />
                 <RecommendedResponse v={v} offerId={offer.offer.offer_id} today={today} mode={mode} negotiation={cur.negotiation} />
                 {commitments}
 
