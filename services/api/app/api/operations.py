@@ -12,7 +12,7 @@ from pydantic import BaseModel, TypeAdapter, ValidationError
 from app.alerts import alerts
 from app.api.auth import is_bank_feed, log_refusal, require_owner, require_owner_or_agent
 from app.api.home import cure_after_words
-from app.api.presentation import approval_words, in_words, relative_days, when_text
+from app.api.presentation import approval_reason_words, approval_words, in_words, relative_days, when_text
 from app.api.runtime import get_runtime
 from app.books import current_books
 from app.domain.models import Actor, Operation, OperationStatus
@@ -101,7 +101,7 @@ def approvals_queue() -> dict:
         alert = open_alerts.get((a.op_id or "").split(":")[1]) if (a.op_id or "").startswith("alert:") else None
         d["presentation"] = approval_words(state, op, a.kind, rt.day, alert, "en", plan_costs,
                                            after=cure_after_words(state, obs, rt.store.get_mandate(), alert, rt.day, "en") if alert is not None else None)
-        d["presentation"]["reason"] = relative_days(in_words(state, a.reason), rt.day, "en")
+        d["presentation"]["reason"] = approval_reason_words(state, a.reason, rt.day, "en")
         d["presentation"]["result_message"] = (relative_days(in_words(state, d["result_message"]), rt.day, "en")
                                                if d["result_message"] else None)
         d["presentation"]["decided_when"] = (relative_days(f"on day {d['decided_day']}", rt.day, "en")

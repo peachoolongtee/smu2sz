@@ -21,6 +21,7 @@ from app.api.auth import require_owner
 from app.api.display import displayed
 from app.api.presentation import (
     agreement_words,
+    approval_reason_words,
     approval_words,
     buyer_of_receivable,
     cure_legs,
@@ -561,7 +562,7 @@ def _approvals(state: FinancialState, obs: list[Any], mandate: Mandate, approval
         words = approval_words(state, op, a.kind, today, alert, lang, plan_costs,
                                after=cure_after_words(state, obs, mandate, alert, today, lang))
         amount = op.get("amount_fen", op.get("advance_fen"))
-        out.append({"id": a.id, "kind": a.kind, "reason": relative_days(in_words(state, a.reason), today, lang), "created_day": op.get("day"),
+        out.append({"id": a.id, "kind": a.kind, "reason": approval_reason_words(state, a.reason, today, lang), "created_day": op.get("day"),
                     "amount_fen": amount if isinstance(amount, int) else None,
                     "amount_display": fmt_yuan(amount) if isinstance(amount, int) else None, **words})
     return out

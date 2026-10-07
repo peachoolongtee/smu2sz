@@ -34,7 +34,7 @@ function Row({ c, n, name, today, recommended }: { c: ComparisonRow; n: number |
   const why =
     status === "insufficient" ? null : status === "unavailable" || status === "blocked" ? (c.note_when ?? c.note) : recommended && c.executable_now !== false ? t("biz.option.recommendedWhy") : status === "alternative" ? (c.note_when ?? c.note) : null;
   const notes = needsBuyer ? null : (
-    <PlanNotes needsApproval={c.needs_owner_approval} approvalReason={c.approval_reason} executableNow={c.executable_now} notExecutableReason={c.not_executable_reason_when ?? c.not_executable_reason} />
+    <PlanNotes needsApproval={c.needs_owner_approval} approvalReason={c.approval_reason_when ?? c.approval_reason} executableNow={c.executable_now} notExecutableReason={c.not_executable_reason_when ?? c.not_executable_reason} />
   );
   const hasMore = Boolean(why) || needsBuyer || Boolean(c.needs_owner_approval) || c.executable_now === false;
   const head = (

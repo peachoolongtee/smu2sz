@@ -225,6 +225,8 @@ def test_a_late_buyer_is_named_in_receivables_and_changes(client):
     # one cure, one horizon: the approval card says what the home says (the plan projected on the books), on the home and in the queue
     assert card["protects"] == a["after"] == "Cash stays above your minimum cash reserve for the next 120 days."
     [row] = client.get("/approvals/queue").json()["approvals"]
+    assert row["presentation"]["reason"] == ("the yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval")
+    assert card["reason"] == row["presentation"]["reason"]
     assert row["presentation"]["protects"] == a["after"]
     assert client.get("/home?lang=zh").json()["approvals"][0]["protects"] == client.get("/home?lang=zh").json()["next_action"]["after"]
     # the queued fix reads as a business event in the changes, never as the executor's "Queued for owner approval (APR-…)"

@@ -71,7 +71,7 @@
         "label": "Discount the whole invoice at 1.2%",
         "reasons": [],
         "note": "cost ¥5,040.00; admissible, but the owner must approve it: Buyer early-payment offer: early payment on ¥420,000.00 face of RI:BUYER-1:2 at 1.2%: effective annual cost 40.30% is above the mandate's 15.00% ceiling for what the agent may borrow alone (1.2%/(1 − 1.2%) × 365/11 = ≈40.3018%)",
-        "note_when": "cost ¥5,040.00; admissible, but the owner must approve it: Buyer early-payment offer: early payment on ¥420,000.00 face of the ¥420,000.00 invoice to Foshan Home Retail Co. due in 13 days at 1.2%: the yearly cost of 40.30% is above the 15.00% limit you signed for funding without your approval (1.2%/(1 − 1.2%) × 365/11 = ≈40.3018%)"
+        "note_when": "cost ¥5,040.00; within your limits, but you must approve it: Buyer early-payment offer: early payment on ¥420,000.00 face of the ¥420,000.00 invoice to Foshan Home Retail Co. due in 13 days at 1.2%: the yearly cost of 40.30% is above the 15.00% limit you signed for funding without your approval (1.2%/(1 − 1.2%) × 365/11 = ≈40.3018%)"
       }
     ],
     "label": "committed plan: ¥1,425.75 + ¥1,069.32 = ¥1,706.10 (needs the owner's approval)",
@@ -156,7 +156,7 @@
         "label": "Discount the whole invoice at 1.2%",
         "reasons": [],
         "note": "cost ¥5,040.00; admissible, but the owner must approve it: Buyer early-payment offer: early payment on ¥420,000.00 face of RI:BUYER-1:2 at 1.2%: effective annual cost 40.30% is above the mandate's 15.00% ceiling for what the agent may borrow alone (1.2%/(1 − 1.2%) × 365/11 = ≈40.3018%)",
-        "note_when": "cost ¥5,040.00; admissible, but the owner must approve it: Buyer early-payment offer: early payment on ¥420,000.00 face of the ¥420,000.00 invoice to Foshan Home Retail Co. due in 13 days at 1.2%: the yearly cost of 40.30% is above the 15.00% limit you signed for funding without your approval (1.2%/(1 − 1.2%) × 365/11 = ≈40.3018%)"
+        "note_when": "cost ¥5,040.00; within your limits, but you must approve it: Buyer early-payment offer: early payment on ¥420,000.00 face of the ¥420,000.00 invoice to Foshan Home Retail Co. due in 13 days at 1.2%: the yearly cost of 40.30% is above the 15.00% limit you signed for funding without your approval (1.2%/(1 − 1.2%) × 365/11 = ≈40.3018%)"
       }
     ],
     "label": "expected plan (committed sources only): ¥1,425.75 + ¥1,069.32 = ¥1,706.10 (needs the owner's approval)",
@@ -635,8 +635,9 @@
       "status": "alternative",
       "reason_kind": "buyer_early_pay",
       "shortfall_display": null,
-      "note_when": "cost ¥5,040.00; admissible, but the owner must approve it: Buyer early-payment offer: early payment on ¥420,000.00 face of the ¥420,000.00 invoice to Foshan Home Retail Co. due in 13 days at 1.2%: the yearly cost of 40.30% is above the 15.00% limit you signed for funding without your approval (1.2%/(1 − 1.2%) × 365/11 = ≈40.3018%)",
+      "note_when": "cost ¥5,040.00; within your limits, but you must approve it: Buyer early-payment offer: early payment on ¥420,000.00 face of the ¥420,000.00 invoice to Foshan Home Retail Co. due in 13 days at 1.2%: the yearly cost of 40.30% is above the 15.00% limit you signed for funding without your approval (1.2%/(1 − 1.2%) × 365/11 = ≈40.3018%)",
       "not_executable_reason_when": "Buyer early-payment offer: early payment on ¥420,000.00 face of the ¥420,000.00 invoice to Foshan Home Retail Co. due in 13 days at 1.2%: needs the buyer's agreement to pay early",
+      "approval_reason_when": "Buyer early-payment offer: early payment on ¥420,000.00 face of the ¥420,000.00 invoice to Foshan Home Retail Co. due in 13 days at 1.2%: the yearly cost of 40.3% is above the 15.00% limit you signed for funding without your approval (1.2%/(1 − 1.2%) × 365/11 = ≈40.3018%)",
       "components_when": [
         "Buyer early-payment offer: early payment on ¥420,000.00 face of the ¥420,000.00 invoice to Foshan Home Retail Co. due in 13 days at 1.2%"
       ],
@@ -692,6 +693,7 @@
       "shortfall_display": null,
       "note_when": null,
       "not_executable_reason_when": null,
+      "approval_reason_when": "Invoice financing (onboarded platform): advance ¥80,000.00 on RI:BUYER-1:32: the yearly cost of 16.3% is above the 15.00% limit you signed for funding without your approval; Invoice financing (onboarded platform): advance ¥120,000.00 on RI:BUYER-1:2: the yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval",
       "components_when": [
         "Invoice financing (onboarded platform): advance ¥80,000.00 on the ¥420,000.00 invoice to Foshan Home Retail Co. due in 43 days",
         "Invoice financing (onboarded platform): advance ¥120,000.00 on the ¥420,000.00 invoice to Foshan Home Retail Co. due in 13 days"

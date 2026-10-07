@@ -250,12 +250,47 @@ def fallback_words(text: str) -> str:
     return _CURE_CLAUSE.sub(say, text)
 
 
+_ADMISSIBLE = (
+    (re.compile(r"\bnot admissible\b"), "not within your limits"),
+    (re.compile(r"\badmissible, but the owner must approve it"), "within your limits, but you must approve it"),
+    (re.compile(r"\badmissible\b"), "within your limits"),
+)
+
+
+# "… the cash lands in 3 days after the 3-day lead time": the landing is said once, as a distance from today.
+_LEAD_TIME = re.compile(r" after the \d+-day lead time")
+
+
+def limits_words(text: str) -> str:
+    """The router's "admissible" is the engine's word for a plan inside the owner's signed limits: Business strings say so."""
+    for pattern, words in _ADMISSIBLE:
+        text = pattern.sub(words, text)
+    return text
+
+
 def business_text(state: FinancialState, text: str | None, today: int, lang: Lang = "en") -> str | None:
-    """One engine sentence as a Business page shows it: names for ids, the owner's words for the ceiling clause and
-    distances from today for its day numbers. None stays None; the raw sentence stays beside it for the audit level."""
+    """One engine sentence as a Business page shows it: names for ids, the owner's words for the ceiling clause, distances
+    from today for its day numbers and "within your limits" for the engine's "admissible". None stays None; the raw
+    sentence stays beside it for the audit level."""
     if text is None:
         return None
-    return relative_days(in_words(state, text), today, lang)
+    return _LEAD_TIME.sub("", limits_words(relative_days(in_words(state, text), today, lang)))
+
+
+# The executor's working behind a rate: "(all charges on ¥200,000.00 held 10 days (day 37 to day 47), annualised = 32.52%)".
+_FORMULA_PAREN = re.compile(r"\s*\(all charges on [^()]*(?:\([^()]*\)[^()]*)*\)")
+_YEARLY_COST = re.compile(r"\b(yearly cost of )(\d+(?:\.\d+)?)%")
+
+
+def approval_reason_words(state: FinancialState, text: str | None, today: int, lang: Lang = "en") -> str | None:
+    """Why a request needs the owner, for the card: the Business sentence without the executor's working (the "all charges on
+    ¥… annualised = …" parenthesis stays at the audit level) and the yearly cost to one decimal, as the home says it
+    ("32.5% a year"), never 32.52% beside 32.5%."""
+    out = business_text(state, text, today, lang)
+    if out is None:
+        return None
+    out = _FORMULA_PAREN.sub("", out)
+    return _YEARLY_COST.sub(lambda m: f"{m.group(1)}{fmt_pct(Fraction(m.group(2)) / 100, 1)}", out)
 
 
 def plan_when(state: FinancialState, plan: dict[str, Any] | None, today: int, lang: Lang = "en") -> dict[str, Any] | None:

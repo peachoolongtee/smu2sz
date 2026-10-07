@@ -91,14 +91,22 @@ test("an approval born of the reserve alert says what declining leaves, in days 
   // The reason the owner approves against is on the pending card itself, not behind a click.
   await expect(card.getByTestId("approval-reason")).toBeVisible();
   await expect(card.getByTestId("approval-reason").locator("xpath=preceding-sibling::dt")).toHaveText("Why it needs you");
-  await expect(card.getByTestId("approval-reason")).toContainText("the yearly cost of 32.52% is above the 15.00% limit you signed for funding without your approval");
-  await expect(card.getByTestId("approval-reason")).toContainText("(from in 3 days to in 13 days)");
+  await expect(card.getByTestId("approval-reason")).toContainText("the yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval");
+  // The executor's working ("all charges on ¥200,000.00 held 10 days, annualised = 32.52%") is not in the sentence.
+  await expect(card.getByTestId("approval-reason")).not.toContainText("annualised");
+  await expect(card.getByTestId("approval-reason")).not.toContainText("32.52");
+  await expect(card.getByTestId("approval-result-APR-000001")).toHaveCount(0);
   expect(await proseOf(page)).not.toMatch(/\bday \d/i);
   await expect(card.getByRole("button", { name: "Approve ¥200,000.00", exact: true })).toBeVisible();
-  // The tier is an audit detail, closed by default.
+  // The tier is an audit detail, closed by default; so are the working behind the rate and the facility's lead time.
   await expect(card).not.toContainText("Tier");
+  const visible = await card.innerText();
+  expect(visible).not.toMatch(/annualised|lead time|Tier 2/);
+  await expect(card.getByTestId("approval-reason")).toContainText("32.5%");
   await card.getByTestId("approval-toggle-APR-000001").click();
   await expect(card.getByTestId("approval-detail-APR-000001")).toContainText("Tier 2");
+  // The working is one level down, in the executor's own words.
+  await expect(card.getByTestId("approval-detail-APR-000001")).toContainText("annualised = 32.52%");
 });
 
 signedOut("the stepper's Start resumes by itself after the owner signs in from the dialog it opened", async ({ page }) => {

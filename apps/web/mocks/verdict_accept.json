@@ -2560,8 +2560,9 @@
       "status": "alternative",
       "reason_kind": "buyer_early_pay",
       "shortfall_display": null,
-      "note_when": "cost ¥2,100.00; admissible but dearer than the selected plan",
+      "note_when": "cost ¥2,100.00; within your limits but dearer than the selected plan",
       "not_executable_reason_when": "Buyer early-payment offer: early payment on ¥420,000.00 face of the ¥420,000.00 invoice to Foshan Home Retail Co. due in 32 days at 0.5%: needs the buyer's agreement to pay early",
+      "approval_reason_when": null,
       "components_when": [
         "Buyer early-payment offer: early payment on ¥420,000.00 face of the ¥420,000.00 invoice to Foshan Home Retail Co. due in 32 days at 0.5%"
       ]
@@ -2612,8 +2613,9 @@
       "status": "alternative",
       "reason_kind": "buyer_early_pay",
       "shortfall_display": null,
-      "note_when": "cost ¥2,123.05; admissible but dearer than the selected plan",
+      "note_when": "cost ¥2,123.05; within your limits but dearer than the selected plan",
       "not_executable_reason_when": "Buyer early-payment offer: early payment on ¥256,281.41 face of the ¥420,000.00 invoice to Foshan Home Retail Co. due in 32 days at 0.5%: needs the buyer's agreement to pay early",
+      "approval_reason_when": null,
       "components_when": [
         "Bank credit line: draw ¥150,000.00, repaid in 32 days",
         "Buyer early-payment offer: early payment on ¥256,281.41 face of the ¥420,000.00 invoice to Foshan Home Retail Co. due in 32 days at 0.5%"
@@ -2667,6 +2669,7 @@
       "shortfall_display": null,
       "note_when": null,
       "not_executable_reason_when": null,
+      "approval_reason_when": null,
       "components_when": [
         "Bank credit line: draw ¥150,000.00, repaid in 32 days",
         "Invoice financing (onboarded platform): advance ¥255,000.00 on the ¥420,000.00 invoice to Foshan Home Retail Co. due in 32 days"
@@ -2723,6 +2726,7 @@
       "shortfall_display": null,
       "note_when": "not applied; cash in 21 days, gap opens in 12 days",
       "not_executable_reason_when": null,
+      "approval_reason_when": null,
       "components_when": [
         "Bank credit line: draw ¥150,000.00, repaid in 32 days",
         "Government-guaranteed working-capital loan: draw ¥255,000.00 (arrives in 21 days)"
@@ -2766,6 +2770,7 @@
       "shortfall_display": "¥255,000.00",
       "note_when": "cost ¥841.64; RESERVE_BREACH in 12 days",
       "not_executable_reason_when": null,
+      "approval_reason_when": null,
       "components_when": [
         "Bank credit line: draw ¥150,000.00, repaid in 32 days"
       ]

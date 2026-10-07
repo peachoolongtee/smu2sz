@@ -2254,7 +2254,7 @@
     {
       "id": "APR-000001",
       "kind": "SUBMIT_INVOICE_FOR_FINANCING",
-      "reason": "the yearly cost of 32.52% is above the 15.00% limit you signed for funding without your approval (all charges on ¥200,000.00 held 10 days (from in 3 days to in 13 days), annualised = 32.52%)",
+      "reason": "the yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval",
       "created_day": 34,
       "amount_fen": 20000000,
       "amount_display": "¥200,000.00",

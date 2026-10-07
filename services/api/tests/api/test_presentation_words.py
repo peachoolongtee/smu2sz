@@ -93,3 +93,26 @@ def test_the_alerts_own_cure_reads_as_a_fallback_beside_a_different_recommendati
     assert "committed cure" not in out
     # a sentence with no cure clause is left alone
     assert fallback_words("Projected cash closes at ¥60,000.00 in 12 days.") == "Projected cash closes at ¥60,000.00 in 12 days."
+
+
+def test_the_cards_reason_has_no_working_and_says_the_yearly_cost_as_the_home_does():
+    from app.api.presentation import approval_reason_words
+    from app.domain.fixtures import load_scenario
+
+    state, _ = load_scenario()
+    raw = ("effective annual cost 32.52% is above the mandate's 15.00% ceiling for what the agent may borrow alone "
+           "(all charges on ¥200,000.00 held 10 days (day 37 to day 47), annualised = 32.52%)")
+    out = approval_reason_words(state, raw, 34, "en")
+    assert out == "the yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval"
+    assert "annualised" not in out and "day 37" not in out and "agent" not in out
+
+
+def test_the_engines_admissible_reads_as_within_your_limits_in_business_text():
+    from app.api.presentation import business_text
+    from app.domain.fixtures import load_scenario
+
+    state, _ = load_scenario()
+    assert business_text(state, "admissible but dearer than the selected plan", 0) == "within your limits but dearer than the selected plan"
+    assert business_text(state, "cost ¥5,040.00; admissible, but the owner must approve it: x", 0) == (
+        "cost ¥5,040.00; within your limits, but you must approve it: x")
+    assert business_text(state, "NOT_ADMISSIBLE: RESERVE_BREACH", 0) == "NOT_ADMISSIBLE: RESERVE_BREACH"

@@ -267,7 +267,8 @@ test("day 34: the approval card is a question with the cost, the landing day and
   await expect(card).toContainText("Finance ¥200,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co.");
   await expect(card.getByTestId("approval-cost")).toContainText("¥1,782.19");
   await expect(card.getByTestId("approval-lands")).toHaveText("in 3 days");
-  await expect(card.getByTestId("approval-reason")).toContainText("32.52%");
+  await expect(card.getByTestId("approval-reason")).toContainText("32.5%");
+  await expect(card.getByTestId("approval-reason")).not.toContainText("annualised");
   await expect(card.getByTestId("approval-after")).toContainText("for the next 120 days");
   await expect(card).toContainText("If you decline");
   // No day number anywhere on the card as the owner first sees it (the executor's own sentence is an audit detail, below).

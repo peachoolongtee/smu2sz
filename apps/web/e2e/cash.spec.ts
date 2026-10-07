@@ -51,7 +51,7 @@ test("risk, plan, options, forecast: one set of figures, in the owner's order", 
   // Words with no cost claim the browser cannot make: the recommended row says it protects cash and can run today, the
   // dearer ones say the server's note ("admissible but dearer than the selected plan").
   await expect(full.getByTestId("cash-option-selected")).toContainText("Fully protects your cash and can run today");
-  await expect(full.getByTestId("cash-option-alternative-note").first()).toContainText("admissible but dearer than the selected plan");
+  await expect(full.getByTestId("cash-option-alternative-note").first()).toContainText("within your limits but dearer than the selected plan");
   await expect(full).not.toContainText("at a higher cost");
 
   await expect(full.getByTestId("cash-option-selected")).toContainText("¥3,113.93");
@@ -61,7 +61,7 @@ test("risk, plan, options, forecast: one set of figures, in the owner's order", 
   await expect(alt.getByTestId("cash-option-why")).toBeHidden();
   await alt.locator("summary").click();
   await expect(alt.getByTestId("cash-option-why")).toBeVisible();
-  await expect(alt.getByTestId("cash-option-why")).toContainText("admissible but dearer than the selected plan");
+  await expect(alt.getByTestId("cash-option-why")).toContainText("within your limits but dearer than the selected plan");
   await expect(full.locator("li")).toHaveCount(3);
   // The recommended plan is #1, then the dearer alternatives in ascending cost.
   const first = full.locator("li").first();
@@ -175,6 +175,7 @@ test("day 34 with a gap open: the options are today's plan, never the day-0 comp
   await expect(options).not.toContainText(" ago");
   await expect(options).toContainText("¥1,706.10");
   await expect(page.getByTestId("cash-cheaper-option")).toContainText("¥1,706.10");
+  expect(await proseOf(page)).not.toMatch(/\bday \d/i);
 });
 
 test("day 34: the first breach is also the worst point, so the figures row says it once", async ({ page }) => {
@@ -205,4 +206,18 @@ test("the doors lead to Capex and the what-if without a day number in their pros
   await expect(page.getByTestId("whatif-outcome")).toHaveText("Breaks your limits");
   // The engine's own sentences (with their day numbers) are one disclosure down, closed.
   expect(await proseOf(page, ["details"])).not.toMatch(/\bday \d/i);
+});
+
+test("engine words stay out of level 1 on Cash & funding and Activity", async ({ page }) => {
+  await page.goto("/cash");
+  // Visible text only (closed disclosures hold the audit level).
+  const cash = await page.locator("main").innerText();
+  for (const word of [/\bverdict\b/i, /sandbox/i, /admissible/i, /\bexecutor\b/i, /hash/i]) expect(cash, String(word)).not.toMatch(word);
+  await expect(page.locator("#cash-whatif")).toContainText("see the answer and the cash line");
+  await expect(page.locator("#cash-whatif").getByRole("link")).toHaveText("Try different terms");
+  await page.goto("/activity");
+  const activity = await page.locator("main").innerText();
+  for (const word of [/hash-chained/i, /\bexecutor\b/i, /operations the/i]) expect(activity, String(word)).not.toMatch(word);
+  await expect(page.locator("#activity-timeline")).toContainText("Each entry is sealed to the one before it.");
+  await expect(page.locator("#activity-refused")).toContainText("What FLOW refused");
 });

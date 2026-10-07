@@ -875,6 +875,8 @@ export type ComparisonRow = Displayed<{
 }> & {
   needs_owner_approval?: boolean;
   approval_reason?: string;
+  /** `approval_reason` as a Business page reads it (distances from today, one-decimal rate, no working). */
+  approval_reason_when?: string | null;
   executable_now?: boolean;
   not_executable_reason?: string;
   /** `not_executable_reason` with its day numbers said as distances from today. */
