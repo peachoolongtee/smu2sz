@@ -211,7 +211,15 @@ export default function DealsPage() {
             ) : (
               <>
                 <DealDecision v={v} today={today} negotiation={cur.negotiation} />
-                <RecommendedResponse v={v} negotiation={cur.negotiation} today={today} />
+                <RecommendedResponse
+                  v={v}
+                  offerId={cur.offerId}
+                  negotiation={cur.negotiation}
+                  today={today}
+                  mode={mode}
+                  buyer={offer ? buyerName(offer.offer.counterparty_id) : ""}
+                  named={[...(books.data?.state.facilities ?? []), ...(books.data?.state.counterparties ?? [])].map((x) => ({ id: x.id, name: x.name }))}
+                />
                 {commitments}
 
                 <div className="space-y-2">
