@@ -1514,6 +1514,9 @@ export const en = {
   "biz.confirm.goQueue": "Yes, send it",
   "biz.confirm.cancel": "Cancel",
   "biz.hero.why": "Why",
+  "biz.showMore": "Show {n} more",
+  "biz.nextReceipt.short": "Next payment expected",
+  "biz.promised.short": "Payment expected early",
 } as const;
 
 export type DictKey = keyof typeof en;
@@ -3027,4 +3030,7 @@ export const zh: Record<DictKey, string> = {
   "biz.confirm.goQueue": "确认",
   "biz.confirm.cancel": "取消",
   "biz.hero.why": "原因",
+  "biz.showMore": "再显示 {n} 条",
+  "biz.nextReceipt.short": "下一笔预计到账",
+  "biz.promised.short": "预计提前到账",
 };

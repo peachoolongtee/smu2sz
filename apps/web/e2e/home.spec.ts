@@ -106,7 +106,9 @@ test("the Business home answers safe, do and cost on the opening books, without 
   await expect(page.getByRole("navigation").getByRole("link", { name: "Trajectory" })).toHaveCount(0);
   // Nothing needs a decision, so the section is not there at all.
   await expect(page.locator("#home-decisions")).toHaveCount(0);
-  await expect(page.getByTestId("home-next-receipt")).toContainText("¥420,000.00 from Foshan Home Retail Co. in 32 days");
+  await expect(page.getByTestId("home-next-receipt")).toContainText("Foshan Home Retail Co.");
+  await expect(page.getByTestId("home-next-receipt")).toContainText("¥420,000.00");
+  await expect(page.getByTestId("home-next-receipt")).toContainText("in 32 days");
 });
 
 test("the next step is three facts and a Details fold; the first press asks, Cancel runs nothing", async ({ page }) => {
@@ -211,7 +213,7 @@ test("day 34: the fix needs approval; queuing it from the home runs nothing and 
   await runPlan(page, "ALERT-RESERVE-42");
   const op = page.getByTestId("fix-result").getByTestId("chat-op-SUBMIT_INVOICE_FOR_FINANCING");
   await expectWaitingNotSuccess(op);
-  await expect(page.getByTestId("alert-waiting-ALERT-RESERVE-42")).toContainText("Waiting for your approval (APR-000001)");
+  await expect(page.getByTestId("alert-waiting-ALERT-RESERVE-42")).toHaveText(/^Waiting for your approval \(APR-000001\)\s*Open the approval card$/);
   await expect(page.getByTestId("approvals-badge")).toContainText("1 approval(s) waiting");
   await expect(page.getByTestId("fix-open-ALERT-RESERVE-42")).toHaveCount(0);
   // Needs your decision: the question, the cost and the landing day, and a link to the card.
@@ -223,8 +225,12 @@ test("day 34: the fix needs approval; queuing it from the home runs nothing and 
   await expect(page.getByTestId("home-in-transit")).toHaveCount(0);
   // The agent's answer and "Recent changes" say the queued cure in the owner's words: the signed limit, days from today, never "day N".
   // Level 1 is the business sentence and the status pill; the tier, sequence, operation id and hash are under "Audit details".
-  await expect(op.getByTestId("op-sentence")).toHaveText("Waiting for your approval: ¥200,000.00 of invoice financing at 32.5% a year, above the 15.00% limit you signed for funding without your approval.");
-  await expect(op).toContainText("above the 15.00% limit you signed for funding without your approval");
+  // The agent's answer says it once, as a status with a link and no sentence; the question is on the decision card and in the recent changes.
+  await expect(op.getByTestId("op-sentence")).toHaveCount(0);
+  await expect(op.getByTestId("op-waiting")).toContainText("APR-000001");
+  await expect(op.getByTestId("op-approval-link")).toHaveText("Open the approval card");
+  await expect(page.getByTestId("fix-result")).not.toContainText("Nothing has run yet");
+  await expect(page.getByTestId("fix-result")).not.toContainText("0 refused");
   await expect(op).not.toContainText("what the agent may borrow alone");
   await expect(op.getByText("Tier 2")).toBeHidden();
   await expect(op.getByTestId("op-raw")).toBeHidden();
@@ -235,6 +241,10 @@ test("day 34: the fix needs approval; queuing it from the home runs nothing and 
   await expect(op.getByTestId("op-audit")).toContainText(/[0-9a-f]{8}/);
 
   await expect(page.getByTestId("home-change-WAITING")).toContainText("limit you signed");
+  // The pending approval is spelled out twice on the page, not four times: the decision card and the recent changes.
+  const shown = await page.locator("main").innerText();
+  expect(shown.split("¥200,000.00 of invoice financing").length - 1).toBe(2);
+  expect(shown.split("Waiting for your approval").length - 1).toBeLessThanOrEqual(3); // the status pill, the next step's box, the recent changes
   // ... and as a business sentence, not the executor's "Queued for owner approval (APR-000001): effective annual cost …".
   const waiting = page.getByTestId("home-change-WAITING").getByTestId("home-change-text");
   await expect(waiting).toHaveText("Waiting for your approval: ¥200,000.00 of invoice financing at 32.5% a year, above the 15.00% limit you signed for funding without your approval.");
