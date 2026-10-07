@@ -289,6 +289,9 @@ test("day 34: the approval card is a question with the cost, the landing day and
   await expect(page.getByTestId("home-headroom-lowest")).toHaveText("¥0.00");
   await expect(page.locator("#home-decisions")).toHaveCount(0);
   await expect(page.getByTestId("home-changes-list")).toContainText("You approved ¥200,000.00 of invoice financing. Funds arrive in 3 days.");
+  // The decision is the news: the entry that waited for it is not repeated beside it.
+  await expect(page.getByTestId("home-changes-list")).not.toContainText("Waiting for your approval");
+  await expect(page.getByTestId("home-change-WAITING")).toHaveCount(0);
   await expect(page.getByTestId("home-changes-list")).not.toContainText("Advance ¥");
   expect(await proseOf(page)).not.toMatch(/\bday \d/i);
 });

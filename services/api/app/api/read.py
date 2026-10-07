@@ -25,7 +25,7 @@ from app.verifier import REFUSAL_REPLY
 router = APIRouter(dependencies=[Depends(require_owner)])
 
 
-def _op_view(o, state=None, today: int | None = None, commitments=()) -> dict:
+def _op_view(o, state=None, today: int | None = None, commitments=(), decided=frozenset()) -> dict:
     """One log entry as the ledger shows it. `message` and `summary` are the executor's own sentence (the audit level);
     `message_when` is the same sentence as a Business page reads it (names, the owner's words, distances from today) and
     `event_text` / `event_detail` the business sentence for what happened (`event_words`), presentation reads added when
@@ -44,7 +44,8 @@ def _op_view(o, state=None, today: int | None = None, commitments=()) -> dict:
         v["message_when"] = business_text(state, summary, today, "en")
         words = event_words(state, kind=o.kind, status=str(res.get("status") or ""), payload=op if isinstance(op, dict) else {},
                             message=str(res.get("message") or ""), approval_id=res.get("approval_id"),
-                            day=v["day"] if isinstance(v["day"], int) else None, today=today, lang="en")
+                            day=v["day"] if isinstance(v["day"], int) else None, today=today, lang="en",
+                            decided=res.get("approval_id") in decided)
         text = words["event_text"] or v["message_when"]
         if o.kind in ("ACCEPT_OFFER", "RECORD_COMMITMENT") and res.get("status") == "EXECUTED":
             cmt = next((c for c in commitments if c.id in summary), None)
@@ -104,9 +105,11 @@ def get_ledger() -> dict:
     ops = rt.store.operations()
     state = rt.store.get_state()
     commitments = rt.store.commitments()
+    # approvals the owner has answered: their "waiting" entries read in the past
+    decided = frozenset(a.id for a in rt.store.approvals() if str(getattr(a.status, "value", a.status)) != "PENDING")
     return {
         "commitments": [displayed(json.loads(c.model_dump_json())) for c in commitments],
-        "operations": [_op_view(o, state, rt.day, commitments) for o in ops],
+        "operations": [_op_view(o, state, rt.day, commitments, decided) for o in ops],
         "chain_valid": rt.store.verify_chain(),
         "chain_length": len(ops),
         "head_hash": ops[-1].entry_hash if ops else None,

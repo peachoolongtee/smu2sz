@@ -16,7 +16,8 @@
 //   - the commitment id (CMT-<16 hex>) and its nonce, which the API draws at random for every deal: replaced by one fixed
 //     id and nonce wherever they appear (negotiation_accept.json, ops.json, home_act.json, home_goahead.json).
 //   - nl_script.json and state_after_fund.json: the NL-<16 hex> operation and lot ids, which the API derives from a random
-//     per-session nonce, become fixed ids by order of first appearance; nl_script.json and home_reconciliation_day34.json are
+//     per-session nonce, become fixed ids by order of first appearance; nl_script.json, home_reconciliation_day34.json and the two
+//     home ledgers (home_ledger_day34.json, home_ledger_approved.json) are
 //     chained again by first appearance (entry_hash / prev_hash re-derived, chain_head_hash fixed) for the same reason.
 //   - the entry_hash / prev_hash of the operations in negotiation_accept.json, home_act.json, home_goahead.json, home_approve.json
 //     and home_approve_chat.json: the
@@ -65,7 +66,7 @@ const RECHAIN = new Set(["negotiation_accept.json", "home_act.json", "home_act_d
 
 // Files whose operations are chained by first appearance (every other chained file uses `rechain` below): the chat script, whose
 // operation ids and commitment ids come from a per-session random nonce, and the day-34 reconciliation (one receipt).
-const RECHAIN_BY_APPEARANCE = new Set(["nl_script.json", "home_reconciliation_day34.json"]);
+const RECHAIN_BY_APPEARANCE = new Set(["nl_script.json", "home_reconciliation_day34.json", "home_ledger_day34.json", "home_ledger_approved.json"]);
 const nlIds = new Map(); // NL-<16 hex> operation / lot ids, which the API derives from a random session nonce -> a fixed id by first appearance
 
 function rechainByAppearance(name, root) {
@@ -85,7 +86,7 @@ function rechainByAppearance(name, root) {
   const apply = (node) => {
     if (Array.isArray(node)) node.forEach(apply);
     else if (node && typeof node === "object") {
-      for (const k of ["entry_hash", "prev_hash", "chain_head_hash"]) {
+      for (const k of ["entry_hash", "prev_hash", "chain_head_hash", "head_hash"]) {
         if (typeof node[k] !== "string") continue;
         node[k] = memo.get(node[k]) ?? (k === "prev_hash" ? sha(`prev|${node.op_id}`) : sha(`head|${name}`));
       }
@@ -331,6 +332,8 @@ files["home_approval_pending.json"] = (await live.getApprovals())[0];
 // The owner approves on the approval card: the same operation executes (EXECUTED, the cash lands on day 37) and the alert clears.
 files["home_approval_approved.json"] = await live.decideApproval(files["home_approval_pending.json"].id, "APPROVE");
 files["home_approve.json"] = { operations: await ledgerTail(1) };
+// The log after the decision: the earlier "waiting" entry now reads in the past, beside "You approved ..." (the mock replays that).
+files["home_ledger_approved.json"] = await live.getLedger();
 files["home_alerts_after.json"] = await live.getAlerts();
 files["home_state_after_approve.json"] = await live.getState();
 files["home_opener_after_approve.json"] = await live.nlOpener("rec-home-after", "en");

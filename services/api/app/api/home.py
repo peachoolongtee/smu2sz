@@ -571,12 +571,19 @@ def _changes(state: FinancialState, store: Any, found: list[Alert], today: int, 
     since = since_day if since_day is not None else today - RECENT_DAYS
     items: list[dict[str, Any]] = []
     entries, _ = read_entries(store.operations())
+    # An approval the owner has answered: its "waiting" entry is history, and when the decision itself is in the window the
+    # decision is the news (one operation never reads "You approved" and "Waiting for your approval" together).
+    decided_ids = {a.id for a in store.approvals() if str(getattr(a.status, "value", a.status)) != "PENDING"}
+    answered = {e.result.approval_id for e in entries
+                if e.result.approval_id and e.result.status != OperationStatus.PENDING_APPROVAL and e.day is not None and e.day >= since}
     for e in entries:
         day = e.day
         if day is None or day < since:
             continue
         if e.result.status == OperationStatus.DUPLICATE or "CLOCK" in e.kind.upper():
             continue  # a clock step is not news; what it posted shows as receipts, landings and alerts
+        if e.result.status == OperationStatus.PENDING_APPROVAL and e.result.approval_id in decided_ids and e.result.approval_id in answered:
+            continue
         who = (getattr(e.op, "requested_by", None) or "") if e.op is not None else ""
         who = str(getattr(who, "value", who))
         kind = "REFUSED" if e.result.status == OperationStatus.REFUSED else (
@@ -590,7 +597,8 @@ def _changes(state: FinancialState, store: Any, found: list[Alert], today: int, 
                 kind = "AGREEMENT"
         shown = relative_days(text, today, lang)
         words = (event_words(state, kind=e.kind, status=e.result.status.value, payload=e.payload, message=e.result.message,
-                             approval_id=e.result.approval_id, day=day, today=today, lang=lang)
+                             approval_id=e.result.approval_id, day=day, today=today, lang=lang,
+                             decided=e.result.approval_id in decided_ids)
                  if kind != "AGREEMENT" else {"event_text": None, "event_detail": None})
         items.append({"day": day, "seq": e.seq, "kind": kind, "actor": who, "text": shown,
                       "event_text": words["event_text"] or shown, "event_detail": words["event_detail"],

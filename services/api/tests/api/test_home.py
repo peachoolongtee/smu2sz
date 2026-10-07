@@ -234,6 +234,9 @@ def test_a_late_buyer_is_named_in_receivables_and_changes(client):
     approved = client.get("/home").json()["changes"]
     assert approved[0]["event_text"] == "You approved ¥200,000.00 of invoice financing. Funds arrive in 3 days."
     assert not any(c["event_text"].startswith("Advance ") for c in approved)
+    # one operation, one story: the decision is the news, and the earlier "waiting" entry is not repeated beside it
+    assert not any(c["kind"] == "WAITING" or "Waiting for your approval" in c["event_text"] for c in approved)
+    assert sum("¥200,000.00 of invoice financing" in c["event_text"] for c in approved) == 1
 
 
 def test_run_funding_plan_binds_to_the_plan_shown_and_refuses_a_stale_one(client):

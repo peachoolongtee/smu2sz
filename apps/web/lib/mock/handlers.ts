@@ -59,6 +59,7 @@ import fundingDay34Json from "../../mocks/funding_day34.json";
 import homeApprovalApproved from "../../mocks/home_approval_approved.json";
 import homeApprovalPending from "../../mocks/home_approval_pending.json";
 import homeApprove from "../../mocks/home_approve.json";
+import ledgerApproved from "../../mocks/home_ledger_approved.json";
 import ledgerDay34 from "../../mocks/home_ledger_day34.json";
 import mandateJson from "../../mocks/mandate.json";
 import negAccept from "../../mocks/negotiation_accept.json";
@@ -466,6 +467,10 @@ export async function decideApproval(id: string, decision: ApprovalDecision): Pr
     const done = cast<{ operations: Recorded[] }>(homeApprove).operations[0];
     Object.assign(a, clone(cast<ApprovalView>(homeApprovalApproved)), { id: a.id });
     appendRecorded(done);
+    // The entry that waited for this approval now reads as the server words it once the decision is made (recorded).
+    const waited = cast<LedgerView>(ledgerApproved).operations.find((o) => o.status === "PENDING_APPROVAL" && o.kind === done.kind);
+    const row = s.ops.find((o) => o.status === "PENDING_APPROVAL" && o.kind === done.kind);
+    if (waited && row && waited.event_text) row.event_text = waited.event_text;
     home.markApproved();
     save();
     return { ...clone(a), result_message: done.message };

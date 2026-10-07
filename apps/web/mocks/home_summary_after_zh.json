@@ -1162,16 +1162,6 @@
       "when": "今天"
     },
     {
-      "day": 34,
-      "seq": 7,
-      "kind": "WAITING",
-      "actor": "AGENT",
-      "text": "Queued for owner approval (APR-000001): the yearly cost of 32.52% is above the 15.00% limit you signed for funding without your approval (all charges on ¥200,000.00 held 10 days (from in 3 days to in 13 days), annualised = 32.52%)",
-      "event_text": "等待您批准：¥200,000.00 的发票融资，年化成本 32.5%，高于您签署的无需批准融资上限 15.00%。",
-      "event_detail": null,
-      "when": "今天"
-    },
-    {
       "day": 32,
       "seq": null,
       "kind": "LATE",

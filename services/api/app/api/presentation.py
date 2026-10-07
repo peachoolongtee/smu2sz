@@ -496,12 +496,15 @@ def agreement_words(state: FinancialState, counterparty_id: str, forward_value_f
 
 
 def event_words(state: FinancialState, *, kind: str, status: str, payload: dict[str, Any], message: str,
-                approval_id: str | None, day: int | None, today: int, lang: Lang = "en") -> dict[str, str | None]:
+                approval_id: str | None, day: int | None, today: int, lang: Lang = "en",
+                decided: bool = False) -> dict[str, str | None]:
     """One operations-log entry as a business sentence: what happened in the owner's words, never the executor's own
     sentence. `event_text` is the sentence (the landing of a draw or advance is its second sentence) and `event_detail`
     one more sentence when there is something more to say, else None. Every figure is the operation's own amount, the
     executor's own rate and the funding lot's own landing day; nothing is priced here. An entry with no business reading
-    (anything the executor says in its own words only) returns `event_text` None and the caller keeps the sentence it has."""
+    (anything the executor says in its own words only) returns `event_text` None and the caller keeps the sentence it has.
+    `decided` says the owner has since answered the approval a PENDING_APPROVAL entry waited on: the entry then reads in the
+    past ("Queued for your approval"), never "Waiting", beside the entry of the decision."""
     none: dict[str, str | None] = {"event_text": None, "event_detail": None}
     amount = _op_amount(payload)
     receivable_id = payload.get("receivable_id")
@@ -525,16 +528,18 @@ def event_words(state: FinancialState, *, kind: str, status: str, payload: dict[
 
     asked = _asked_words(state, kind, payload, lang)
     if status == "PENDING_APPROVAL" and asked is not None:
+        lead = t(lang, "Queued for your approval" if decided else "Waiting for your approval",
+                 "已提交请您批准" if decided else "等待您批准")
         reason = message.split("): ", 1)[1] if "): " in message else ""
         m = _RATE_IN_REASON.search(reason)
         if m:
             rate = fmt_pct(Fraction(m.group(1)) / 100, 1)
-            return {"event_text": t(lang, f"Waiting for your approval: {asked} at {rate} a year, above the {m.group(2)} limit you "
+            return {"event_text": t(lang, f"{lead}: {asked} at {rate} a year, above the {m.group(2)} limit you "
                                           f"signed for funding without your approval.",
-                                    f"等待您批准：{asked}，年化成本 {rate}，高于您签署的无需批准融资上限 {m.group(2)}。"),
+                                    f"{lead}：{asked}，年化成本 {rate}，高于您签署的无需批准融资上限 {m.group(2)}。"),
                     "event_detail": None}
         detail = _sentence(business_text(state, reason, today, lang) or "") if reason else None
-        return {"event_text": _stop(t(lang, f"Waiting for your approval: {asked}", f"等待您批准：{asked}"), lang), "event_detail": detail or None}
+        return {"event_text": _stop(f"{lead}: {asked}" if lang == "en" else f"{lead}：{asked}", lang), "event_detail": detail or None}
 
     if approved and asked is not None:
         landing = _landing_sentence(_landing_day(state, payload, day), today, lang) if money else None
