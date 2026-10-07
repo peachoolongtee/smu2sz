@@ -111,3 +111,18 @@ signedOut("the stepper's Start resumes by itself after the owner signs in from t
   await expect(dialog).toBeHidden();
   await expect(page.getByRole("region", { name: "Guided demo" }).locator("[aria-live=polite]")).toContainText("1/15");
 });
+
+signedOut("signed out, an owner page asks for the sign-in in words, not an error code, and opens the dialog", async ({ page }) => {
+  await page.goto("/");
+  const ask = page.getByTestId("signin-needed");
+  await expect(ask).toBeVisible();
+  await expect(ask).toContainText("Sign in to see your books");
+  await expect(ask).not.toContainText("401");
+  // The refused read opened the dialog; once it is cancelled the page's own button brings it back.
+  const dialog = page.getByRole("dialog", { name: "Owner sign-in" });
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole("button", { name: "Cancel" }).click();
+  await expect(dialog).toBeHidden();
+  await ask.getByRole("button", { name: "Owner sign-in" }).click();
+  await expect(dialog).toBeVisible();
+});

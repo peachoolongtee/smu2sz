@@ -301,6 +301,7 @@ test("the Chinese labels switch while the server's sentences stay", async ({ pag
   await expect(page.getByTestId("home-status-word")).toHaveText("Action needed");
   await expect(page.getByRole("navigation").getByRole("link", { name: "现金与融资" })).toBeVisible();
   await expect(page.getByTestId("chat-open")).toContainText("问 FLOW");
+  await expect(page.locator("html")).toHaveAttribute("lang", "zh-CN");
   await openAccountMenu(page);
   await page.getByLabel("English").check();
   await expect(page.getByTestId("chat-open")).toContainText("Ask FLOW");

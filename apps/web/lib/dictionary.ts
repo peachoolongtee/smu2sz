@@ -1552,6 +1552,14 @@ export const en = {
   "whatif.fig.beBelow": "Discount below the {x} break-even",
   "whatif.details": "How this was worked out",
   "whatif.engine": "Engine verdict",
+  "biz.activity.chainOk": "Records verified",
+  "biz.activity.chainBroken": "Records do not verify",
+  "biz.limits.aprLabel": "Borrow alone up to",
+  "biz.limits.tier2Label": "Needs you above",
+  "biz.limits.tier2": "Any single commitment above {amount} waits for your approval.",
+  "auth.signinToSee": "Sign in to see your books",
+  "auth.signinToSee.body": "Your cash, deals and approvals are for the owner only.",
+  "auth.signinToSee.forbidden": "This needs the owner's sign-in.",
 } as const;
 
 export type DictKey = keyof typeof en;
@@ -3103,4 +3111,12 @@ export const zh: Record<DictKey, string> = {
   "whatif.fig.beBelow": "折扣低于盈亏平衡点 {x}",
   "whatif.details": "推演过程",
   "whatif.engine": "引擎裁决",
+  "biz.activity.chainOk": "记录已核验",
+  "biz.activity.chainBroken": "记录核验未通过",
+  "biz.limits.aprLabel": "可自行借款的年化成本上限",
+  "biz.limits.tier2Label": "超过此金额需您批准",
+  "biz.limits.tier2": "任何单笔超过 {amount} 的承诺都需要您批准。",
+  "auth.signinToSee": "登录后查看您的账簿",
+  "auth.signinToSee.body": "现金、交易和审批仅对老板开放。",
+  "auth.signinToSee.forbidden": "此操作需要老板登录。",
 };

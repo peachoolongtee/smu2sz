@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, type ButtonHTMLAttributes, type ReactNode } from "react";
+import { requestSignIn } from "@/lib/auth";
+import { ApiError } from "@/lib/errors";
 import { useI18n } from "@/lib/i18n";
 import { CheckIcon, CopyIcon, Spinner } from "./icons";
 
@@ -193,6 +195,18 @@ export function LoadingBlock({ rows = 3, label }: { rows?: number; label?: strin
 export function ErrorState({ error, onRetry }: { error: Error | string; onRetry?: () => void }) {
   const { t } = useI18n();
   const message = typeof error === "string" ? error : error.message;
+  // Being signed out is not a failure: the owner's pages ask for the sign-in in words instead of showing an error code.
+  if (error instanceof ApiError && (error.status === 401 || error.status === 403)) {
+    return (
+      <div role="status" className="rounded-lg border border-line bg-surface p-5 text-center shadow-(--shadow-card)" data-testid="signin-needed">
+        <p className="font-semibold text-ink">{t("auth.signinToSee")}</p>
+        <p className="mx-auto mt-1 max-w-md text-sm text-ink-2">{error.status === 401 ? t("auth.signinToSee.body") : t("auth.signinToSee.forbidden")}</p>
+        <Button className="mt-3" variant="primary" onClick={() => requestSignIn("required")}>
+          {t("auth.signin")}
+        </Button>
+      </div>
+    );
+  }
   return (
     <div role="alert" className="rounded-lg border border-bad-line bg-bad-bg p-4 text-bad-fg">
       <p className="font-semibold">{t("common.error")}</p>
@@ -326,10 +340,11 @@ export function Formula({ children }: { children: ReactNode }) {
 
 export function KeyValueList({ items }: { items: { k: ReactNode; v: ReactNode }[] }) {
   return (
-    <dl className="grid grid-cols-[minmax(0,max-content)_minmax(0,1fr)] gap-x-4 gap-y-1.5 text-sm">
+    <dl className="grid grid-cols-1 gap-x-4 gap-y-0.5 text-sm sm:grid-cols-[minmax(0,max-content)_minmax(0,1fr)] sm:gap-y-1.5">
       {items.map((it, i) => (
         <div key={i} className="contents">
-          <dt className="text-ink-3">{it.k}</dt>
+          {/* Stacked on a phone (the label above its value), side by side from the small breakpoint up. */}
+          <dt className={`text-ink-3 ${i > 0 ? "mt-1.5 sm:mt-0" : ""}`}>{it.k}</dt>
           <dd className="min-w-0 break-words font-medium tabular-nums text-ink">{it.v}</dd>
         </div>
       ))}

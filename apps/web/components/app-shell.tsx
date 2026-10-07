@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { apiMode, getApprovals } from "@/lib/api";
 import { useAsync } from "@/lib/use-async";
 import { setLang, useI18n } from "@/lib/i18n";
@@ -368,9 +368,27 @@ function DemoShell({ children }: { children: ReactNode }) {
   );
 }
 
+/** The page's name for the browser tab: the navigation label of the route. */
+const TITLE_KEY: Record<string, DictKey> = {
+  ...Object.fromEntries([...BUSINESS_NAV, ...DEMO_NAV].map((n) => [n.href, n.key])),
+  "/approvals": "nav.approvals",
+  "/limits": "nav.limits",
+};
+
+/** Sets the tab title ("Cash & funding · FLOW 流") and the document language, so a tab is findable and read aloud in the right language. */
+function useDocumentMeta(pathname: string) {
+  const { t, lang } = useI18n();
+  useEffect(() => {
+    const key = TITLE_KEY[pathname];
+    document.title = key && pathname !== "/" ? `${t(key)} · ${t("brand.name")}` : t("brand.name");
+    document.documentElement.lang = lang === "zh" ? "zh-CN" : "en";
+  }, [pathname, t, lang]);
+}
+
 /** Two shells. The owner's Business shell has no demo control; the Demo shell carries the story bar and the engine views. */
 export function AppShell({ children }: { children: ReactNode }) {
   const mode = useMode();
   const pathname = usePathname();
+  useDocumentMeta(pathname);
   return shellFor(pathname, mode) === "demo" ? <DemoShell>{children}</DemoShell> : <BusinessShell>{children}</BusinessShell>;
 }

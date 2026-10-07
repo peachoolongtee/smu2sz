@@ -77,6 +77,9 @@ test("Business navigation: five pills on a desktop, the same five tabs on a phon
   }
   await bar.getByRole("link", { name: "Deals", exact: true }).click();
   await expect(page).toHaveURL(/\/deals/);
+  // Each page names its tab, and the document says its language.
+  await expect(page).toHaveTitle("Deals · FLOW 流");
+  await expect(page.locator("html")).toHaveAttribute("lang", "en");
   await expect(page.getByTestId(phone ? "tab-bar" : "nav-pills").locator('[aria-current="page"]')).toHaveText("Deals");
   // The account sheet carries the identity and the limits.
   await page.getByTestId("account-menu").locator("> summary").click();

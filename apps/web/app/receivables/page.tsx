@@ -52,6 +52,24 @@ export default function ReceivablesPage() {
 
           {invoices.length ? (
             <Card id="recv-open" title={t("biz.recv.open")} subtitle={t("biz.recv.open.sub")}>
+              {/* On a phone the invoices are a list; the table needs the width of a larger screen. */}
+              <ul className="divide-y divide-line sm:hidden" data-testid="recv-open-list">
+                {invoices.map((o) => (
+                  <li key={o.receivable_id} className="py-2.5 text-sm">
+                    <div className="flex items-baseline justify-between gap-3">
+                      <span className="min-w-0 font-medium text-ink">{name(o.counterparty_id)}</span>
+                      <span className="shrink-0 font-semibold tabular-nums">{o.face_display}</span>
+                    </div>
+                    <div className="mt-1 flex flex-wrap items-center justify-between gap-2 text-xs text-ink-3">
+                      <span>
+                        {t("biz.due")} {whenText(o.due_day, data.as_of_day, t)}
+                      </span>
+                      <Badge tone={o.past_due ? "bad" : "neutral"}>{o.past_due ? daysLate(Math.max(0, data.as_of_day - o.due_day), t) : t("recon.onTime")}</Badge>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+              <div className="hidden sm:block">
               <TableWrap label={t("biz.recv.open")}>
                 <table className={tableCls}>
                   <thead>
@@ -79,6 +97,7 @@ export default function ReceivablesPage() {
                   </tbody>
                 </table>
               </TableWrap>
+              </div>
             </Card>
           ) : null}
 
