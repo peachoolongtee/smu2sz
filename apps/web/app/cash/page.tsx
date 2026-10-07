@@ -102,7 +102,7 @@ export default function CashPage() {
 
   return (
     <>
-      <PageHeader title={t("nav.cash")} subtitle={t("biz.cash.subtitle")} />
+      <PageHeader section="cash" title={t("nav.cash")} subtitle={t("biz.cash.subtitle")} />
       <div className="space-y-5">
         {home.error ? (
           <ErrorState error={home.error} onRetry={home.reload} />

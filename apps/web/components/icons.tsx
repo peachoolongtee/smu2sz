@@ -67,6 +67,22 @@ export const Spinner = (p: P) => (
     <path d="M8 2a6 6 0 1 0 6 6" />
   </svg>
 );
+export const ArrowDownIcon = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M8 2.5v10M4 8.5l4 4 4-4" />
+  </svg>
+);
+export const AlertIcon = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M8 3v6M8 12.2v.1" />
+  </svg>
+);
+export const ClockIcon = (p: P) => (
+  <svg {...base(p)}>
+    <circle cx="8" cy="8" r="5.5" />
+    <path d="M8 5v3.2l2 1.3" />
+  </svg>
+);
 export const ChatIcon = (p: P) => (
   <svg {...base(p)}>
     <path d="M2.5 3.5h11a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H7l-3 2.5v-2.5H2.5a1 1 0 0 1-1-1v-6a1 1 0 0 1 1-1z" />

@@ -63,21 +63,37 @@ export function initials(name: string): string {
   return (words[0]?.[0] ?? "?").toUpperCase() + (words[1]?.[0] ?? "").toUpperCase();
 }
 
-export type AvatarTone = "neutral" | "ok" | "warn" | "bad";
+/** An avatar's tint: a status (what a change row says) or a hue (who a buyer is). A hue says "this one", never "how it is going". */
+export type AvatarTone = "neutral" | "ok" | "warn" | "bad" | "home" | "deals" | "cash" | "activity";
 const avatarTone: Record<AvatarTone, string> = {
   neutral: "bg-subtle text-ink-2",
   ok: "bg-ok-bg text-ok-fg",
   warn: "bg-warn-bg text-warn-fg",
   bad: "bg-bad-bg text-bad-fg",
+  home: "bg-sec-home-bg text-sec-home-fg",
+  deals: "bg-sec-deals-bg text-sec-deals-fg",
+  cash: "bg-sec-cash-bg text-sec-cash-fg",
+  activity: "bg-sec-activity-bg text-sec-activity-fg",
 };
 
 /** A small round disc: one or two letters or a glyph, tinted by what it means (never by decoration). */
 export function Avatar({ children, tone = "neutral" }: { children: ReactNode; tone?: AvatarTone }) {
   return (
-    <span aria-hidden className={`grid size-8 shrink-0 place-items-center rounded-full text-xs font-bold ${avatarTone[tone]}`}>
+    <span aria-hidden className={`grid size-9 shrink-0 place-items-center rounded-pill text-xs font-bold ${avatarTone[tone]}`}>
       {children}
     </span>
   );
+}
+
+/**
+ * A stable hue for a name, so each buyer keeps the same avatar everywhere. Four of the five section tints: the orange is left
+ * out because it sits next to the warning amber and an avatar must never look like a status.
+ */
+export function toneFor(name: string): AvatarTone {
+  const hues: AvatarTone[] = ["home", "deals", "cash", "activity"];
+  let h = 0;
+  for (const ch of name) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return hues[h % hues.length];
 }
 
 /**

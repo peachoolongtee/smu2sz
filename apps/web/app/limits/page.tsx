@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { ShieldCheckIcon } from "@/components/icons";
 import { Badge, Card, ErrorState, Hash, LoadingBlock, PageHeader, Stat } from "@/components/ui";
 import { getMandate } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
@@ -15,7 +16,7 @@ export default function LimitsPage() {
 
   return (
     <>
-      <PageHeader title={t("nav.limits")} subtitle={t("biz.limits.subtitle")} />
+      <PageHeader section="home" icon={ShieldCheckIcon} title={t("nav.limits")} subtitle={t("biz.limits.subtitle")} />
       {mandate.error ? (
         <ErrorState error={mandate.error} onRetry={mandate.reload} />
       ) : !v || !m ? (

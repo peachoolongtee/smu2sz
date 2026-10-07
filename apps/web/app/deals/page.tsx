@@ -119,7 +119,7 @@ export default function DealsPage() {
 
   return (
     <>
-      <PageHeader title={t("nav.deals")} subtitle={t("biz.deals.subtitle")} />
+      <PageHeader section="deals" title={t("nav.deals")} subtitle={t("biz.deals.subtitle")} />
       {offer ? <DealSteps /> : null}
       {next ? (
         <NextStep label={t("next.label")} action={next.action}>

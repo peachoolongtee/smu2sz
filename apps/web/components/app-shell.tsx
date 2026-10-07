@@ -10,10 +10,11 @@ import { setMode, shellFor, useMode, type Mode } from "@/lib/mode";
 import type { DictKey } from "@/lib/dictionary";
 import { ChatPanel } from "./chat/chat-panel";
 import { DemoStepper } from "./demo-stepper";
-import { ActivityIcon, DealsIcon, HomeIcon, InboxInIcon, MenuIcon, ShieldCheckIcon, ShieldIcon, SparkIcon, WalletIcon, XIcon } from "./icons";
+import { MenuIcon, ShieldCheckIcon, ShieldIcon, SparkIcon, XIcon } from "./icons";
 import { signOut, useAuth } from "@/lib/auth";
 import { Tour, startTour } from "./business/tour";
 import { OwnerSessionControl, OwnerSignInDialog } from "./owner-auth";
+import { SECTIONS, type Section } from "./section";
 import { Badge, Button, Segmented } from "./ui";
 
 /** Business mode: six sections, each a question the owner asks. */
@@ -210,20 +211,16 @@ function AccountMenu() {
 
 // ---------------------------------------------------------------- Business
 
-/** The phone tab bar: one icon and word per section, the current one in the brand blue. */
-const TAB_ICON: Record<string, (p: { width?: number; height?: number }) => ReactNode> = {
-  "/": HomeIcon,
-  "/deals": DealsIcon,
-  "/cash": WalletIcon,
-  "/receivables": InboxInIcon,
-  "/activity": ActivityIcon,
-};
+/** The phone tab bar: one icon and word per section. The current tab's icon takes its section's hue, its word stays in ink, and a bar slides to it. */
+const TAB_SECTION: Record<string, Section> = { "/": "home", "/deals": "deals", "/cash": "cash", "/receivables": "recv", "/activity": "activity" };
 /** A tab is a fifth of a phone's width: two sections have a shorter word there (the link keeps its full name for assistive tools). */
 const TAB_LABEL: Partial<Record<string, DictKey>> = { "/cash": "nav.short.cash" };
 
 function BusinessShell({ children }: { children: ReactNode }) {
   const { t } = useI18n();
   const pathname = usePathname();
+  const activeIdx = BUSINESS_NAV.findIndex((n) => n.href === pathname);
+  const activeSection = activeIdx < 0 ? null : TAB_SECTION[BUSINESS_NAV[activeIdx].href];
   return (
     <div className="min-h-dvh">
       <SkipLink />
@@ -271,25 +268,35 @@ function BusinessShell({ children }: { children: ReactNode }) {
       </main>
       {/* Phones: a tab bar with the same five sections, as in a banking app. */}
       <nav aria-label={t("nav.label")} className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] lg:hidden" data-testid="tab-bar">
-        <ul className="mx-auto grid max-w-xl grid-cols-5">
-          {BUSINESS_NAV.map((n) => {
-            const active = pathname === n.href;
-            const Icon = TAB_ICON[n.href];
-            return (
-              <li key={n.href}>
-                <Link
-                  href={n.href}
-                  aria-current={active ? "page" : undefined}
-                  aria-label={t(n.key)}
-                  className={`flex min-h-14 flex-col items-center justify-center gap-0.5 px-1 text-[0.6875rem] font-medium ${active ? "text-brand-600" : "text-ink-3 hover:text-ink"}`}
-                >
-                  {Icon ? <Icon width={21} height={21} /> : null}
-                  <span className="max-w-full truncate">{t(TAB_LABEL[n.href] ?? n.key)}</span>
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
+        <div className="relative mx-auto max-w-xl">
+          <span
+            aria-hidden
+            className={`motion-slide pointer-events-none absolute left-0 top-0 h-0.5 w-1/5 ${activeIdx < 0 ? "opacity-0" : ""}`}
+            style={{ transform: `translateX(${Math.max(activeIdx, 0) * 100}%)` }}
+          >
+            <span className={`mx-auto block h-full w-10 rounded-pill transition-colors duration-(--dur) ${activeSection ? SECTIONS[activeSection].solid : ""}`} />
+          </span>
+          <ul className="grid grid-cols-5">
+            {BUSINESS_NAV.map((n) => {
+              const active = pathname === n.href;
+              const section = TAB_SECTION[n.href];
+              const Icon = SECTIONS[section].icon;
+              return (
+                <li key={n.href}>
+                  <Link
+                    href={n.href}
+                    aria-current={active ? "page" : undefined}
+                    aria-label={t(n.key)}
+                    className={`motion-press flex min-h-14 flex-col items-center justify-center gap-0.5 px-1 text-[0.6875rem] font-medium ${active ? "text-ink" : "text-ink-3 hover:text-ink"}`}
+                  >
+                    <Icon width={20} height={20} className={`transition-colors duration-(--dur) ${active ? SECTIONS[section].solidText : ""}`} />
+                    <span className="max-w-full truncate">{t(TAB_LABEL[n.href] ?? n.key)}</span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
       </nav>
     </div>
   );

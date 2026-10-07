@@ -5,6 +5,7 @@ import { ChangesBlock, DecisionsBlock, DetailsBlock, ReceivablesBlock } from "@/
 import { NextActionBlock } from "@/components/business/next-action";
 import { FixResult, useFixAlert } from "@/components/home/fix-alert";
 import { StatusBlock } from "@/components/business/status-block";
+import { WhereNext } from "@/components/home/where-next";
 import { ErrorState, LoadingBlock } from "@/components/ui";
 import { getHome } from "@/lib/api";
 import { onSignedIn } from "@/lib/auth";
@@ -57,6 +58,7 @@ export default function HomePage() {
       ) : (
         <div className="space-y-5" aria-busy={view.loading}>
           <StatusBlock h={h} />
+          <WhereNext />
           <FixResult result={fixer.result} error={fixer.error} changed={fixer.changed} />
           {h.next_action ? <NextActionBlock a={h.next_action} stateVersion={h.state_version} fixer={fixer} /> : null}
           {/* An empty section is hidden: the absence of decisions or news is not itself news. */}

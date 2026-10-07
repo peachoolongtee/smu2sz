@@ -31,6 +31,7 @@ export default function ActivityPage() {
   return (
     <>
       <PageHeader
+        section="activity"
         title={t("nav.activity")}
         subtitle={t("biz.activity.subtitle")}
         actions={

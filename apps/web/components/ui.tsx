@@ -4,7 +4,10 @@ import { useState, type ButtonHTMLAttributes, type ReactNode } from "react";
 import { requestSignIn } from "@/lib/auth";
 import { ApiError } from "@/lib/errors";
 import { useI18n } from "@/lib/i18n";
+import { usePathname } from "next/navigation";
+import { shellFor, useMode } from "@/lib/mode";
 import { CheckIcon, CopyIcon, Spinner } from "./icons";
+import { PageIcon, type Section, type SectionIcon } from "./section";
 
 export type Tone = "neutral" | "ok" | "warn" | "bad" | "info" | "brand";
 
@@ -89,16 +92,27 @@ export function PageHeader({
   title,
   subtitle,
   actions,
+  section,
+  icon,
 }: {
   title: ReactNode;
   subtitle?: ReactNode;
   actions?: ReactNode;
+  section?: Section;
+  /** The chip's glyph when the page is not the section's own (Approvals and Limits sit under Home). */
+  icon?: SectionIcon;
 }) {
+  const mode = useMode();
+  const pathname = usePathname();
+  const chip = section && shellFor(pathname, mode) === "business";
   return (
-    <header className="mb-5 flex flex-wrap items-start justify-between gap-3">
-      <div className="min-w-0">
-        <h1 className="text-xl font-semibold tracking-tight text-ink">{title}</h1>
-        {subtitle ? <p className="mt-1 max-w-3xl text-sm text-ink-2">{subtitle}</p> : null}
+    <header className="motion-reveal mb-5 flex flex-wrap items-start justify-between gap-3">
+      <div className="flex min-w-0 items-start gap-3">
+        {chip ? <PageIcon section={section} icon={icon} /> : null}
+        <div className="min-w-0">
+          <h1 className={`text-xl font-semibold tracking-tight text-ink ${chip ? "leading-10" : ""}`}>{title}</h1>
+          {subtitle ? <p className="mt-1 max-w-3xl text-sm text-ink-2">{subtitle}</p> : null}
+        </div>
       </div>
       {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
     </header>

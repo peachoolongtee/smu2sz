@@ -1,14 +1,25 @@
 "use client";
 
 import Link from "next/link";
+import type { ReactNode } from "react";
+import { AlertIcon, ArrowDownIcon, CheckIcon, ClockIcon, XIcon } from "@/components/icons";
 import { approvalHref } from "@/components/operation-result";
-import { Avatar, Disclosure, Row, initials, type AvatarTone } from "@/components/business/kit";
+import { Avatar, Disclosure, Row, initials, toneFor, type AvatarTone } from "@/components/business/kit";
 import { Card, TableWrap, tableCls, tdCls, thCls } from "@/components/ui";
 import { useI18n } from "@/lib/i18n";
 import { daysLate } from "@/lib/when";
 import type { HomeApproval, HomeChange, HomeReceivables, HomeView } from "@/lib/types";
 
-const CHANGE_GLYPH: Record<string, string> = { RECEIPT: "↓", LATE: "!", WAITING: "…", REFUSED: "✕", LANDED: "↓", OPERATION: "✓", AGREEMENT: "✓" };
+/** A change row's icon sits on the status tint it has always had: money in is ok, late or refused is bad, waiting is warn. */
+const CHANGE_ICON: Record<string, ReactNode> = {
+  RECEIPT: <ArrowDownIcon />,
+  LANDED: <ArrowDownIcon />,
+  LATE: <AlertIcon />,
+  WAITING: <ClockIcon />,
+  REFUSED: <XIcon />,
+  OPERATION: <CheckIcon />,
+  AGREEMENT: <CheckIcon />,
+};
 const CHANGE_TONE: Record<string, AvatarTone> = {
   RECEIPT: "ok",
   LANDED: "ok",
@@ -41,7 +52,7 @@ export function DecisionsBlock({ approvals, primary = false }: { approvals: Home
               <Row
                 testId={`home-approval-${a.id}`}
                 href={approvalHref(a.id)}
-                avatar={<Avatar tone="warn">…</Avatar>}
+                avatar={<Avatar tone="warn"><ClockIcon /></Avatar>}
                 title={a.headline}
                 sub={[a.cost_display ? t("alerts.cost", { cost: a.cost_display }) : null, a.lands_day !== null ? t("biz.landsShort", { when: a.lands_when ?? "" }) : null, a.protects]
                   .filter(Boolean)
@@ -70,7 +81,7 @@ export function ChangesBlock({ changes, sinceWhen }: { changes: HomeChange[]; si
   const { t } = useI18n();
   const row = (c: HomeChange, i: number) => (
     <li key={`${c.day}-${c.seq}-${i}`}>
-      <Row testId={`home-change-${c.kind}`} titleTestId="home-change-text" avatar={<Avatar tone={CHANGE_TONE[c.kind] ?? "neutral"}>{CHANGE_GLYPH[c.kind] ?? "•"}</Avatar>} title={c.event_text ?? c.text} sub={c.when} />
+      <Row testId={`home-change-${c.kind}`} titleTestId="home-change-text" avatar={<Avatar tone={CHANGE_TONE[c.kind] ?? "neutral"}>{CHANGE_ICON[c.kind] ?? <CheckIcon />}</Avatar>} title={c.event_text ?? c.text} sub={c.when} />
     </li>
   );
   const rest = changes.slice(CHANGES_SHOWN);
@@ -109,7 +120,7 @@ export function ReceivablesBlock({ r }: { r: HomeReceivables }) {
           <ul className="divide-y divide-line" data-testid="home-late-list">
             {r.past_due.map((x) => (
               <li key={x.receivable_id}>
-                <Row testId={`home-late-${x.receivable_id}`} avatar={<Avatar tone="bad">{initials(x.buyer_name)}</Avatar>} title={x.buyer_name} sub={daysLate(x.days_late, t)} tone="bad" right={x.face_display} />
+                <Row testId={`home-late-${x.receivable_id}`} avatar={<Avatar tone={toneFor(x.buyer_name)}>{initials(x.buyer_name)}</Avatar>} title={x.buyer_name} sub={daysLate(x.days_late, t)} tone="bad" right={x.face_display} />
               </li>
             ))}
           </ul>
@@ -119,7 +130,7 @@ export function ReceivablesBlock({ r }: { r: HomeReceivables }) {
           </p>
         )}
         {next ? (
-          <Row testId="home-next-receipt" avatar={<Avatar>{initials(next.buyer)}</Avatar>} title={next.buyer} sub={r.promised ? t("biz.promised.short") : t("biz.nextReceipt.short")} right={next.amount} rightSub={next.when} />
+          <Row testId="home-next-receipt" avatar={<Avatar tone={toneFor(next.buyer)}>{initials(next.buyer)}</Avatar>} title={next.buyer} sub={r.promised ? t("biz.promised.short") : t("biz.nextReceipt.short")} right={next.amount} rightSub={next.when} />
         ) : (
           <p className="py-2.5 text-sm text-ink-3" data-testid="home-next-receipt">
             {t("biz.nextReceipt.none")}

@@ -25,7 +25,7 @@ export default function ReceivablesPage() {
 
   return (
     <>
-      <PageHeader title={t("nav.receivables")} subtitle={t("biz.recv.subtitle")} />
+      <PageHeader section="recv" title={t("nav.receivables")} subtitle={t("biz.recv.subtitle")} />
       {error ? (
         <ErrorState error={error} onRetry={() => { recon.reload(); home.reload(); }} />
       ) : !data || !r ? (
