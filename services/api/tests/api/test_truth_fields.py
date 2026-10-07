@@ -88,6 +88,8 @@ def test_comparison_rows_carry_a_status_and_what_an_insufficient_one_leaves_unco
     assert line["shortfall_display"] == "¥255,000.00" and line["worst_day"] == 30
     ggl = rows["line_guaranteed_loan"]
     assert ggl["status"] == "unavailable" and ggl["shortfall_display"] is None and ggl["reason_kind"] is None
+    assert "in 21 days" in ggl["note_when"] and "in 12 days" in ggl["note_when"] and "day 2" not in ggl["note_when"]
+    assert "day 21" in ggl["note"]  # the engine's own note is unchanged
     # a plan that does not fully protect cash is never one of the ranked solutions
     assert all(r["status"] in ("recommended", "alternative") for r in rows.values() if r["result"] in ("SELECTED", "ADMISSIBLE"))
     assert all(r["status"] in ("insufficient", "unavailable") for r in rows.values() if r["result"] == "NOT_ADMISSIBLE")

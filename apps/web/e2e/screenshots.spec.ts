@@ -70,7 +70,8 @@ test("Business pages on the opening books, after the deal is read and checked, a
   await page.goto("/");
   await shoot(page, "09-home-funded", p);
   await page.goto("/cash");
-  await expect(page.getByTestId("cash-options-list")).toBeVisible();
+  // The plan ran, so the page states the current funding; the comparison is folded away.
+  await expect(page.locator("#cash-current")).toBeVisible();
   await shoot(page, "10-cash-funded", p);
   await page.goto("/activity");
   await shoot(page, "11-activity-funded", p);
@@ -96,7 +97,8 @@ test("Business pages on day 34: the fix needs approval, waits, then is approved"
   await page.goto("/");
   await shoot(page, "17-home-day34-approved", p);
   await page.goto("/cash");
-  await expect(page.getByTestId("cash-options-list")).toBeVisible();
+  // The plan ran, so the page states the current funding; the comparison is folded away.
+  await expect(page.locator("#cash-current")).toBeVisible();
   await shoot(page, "18-cash-day34-approved", p);
   await page.goto("/activity");
   await shoot(page, "19-activity-day34-approved", p);

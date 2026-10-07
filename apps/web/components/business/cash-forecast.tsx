@@ -118,7 +118,7 @@ export function CashForecast({ h }: { h: HomeView }) {
               <Area type="stepAfter" dataKey="plan" name={t("biz.forecast.plan")} stroke={SERIES.plan.stroke} strokeWidth={2} strokeDasharray="9 5" fill="none" isAnimationActive={false} connectNulls />
             ) : null}
             {annotations.map((a, i) => (
-              <ReferenceDot key={`${a.day}-${i}`} x={a.day} y={a.cash} r={4} fill="#fff" stroke={a.e.amount_fen < 0 ? SERIES.floor.stroke : SERIES.plan.stroke} strokeWidth={2} label={{ value: `${a.e.label.split(" (")[0].split(",")[0]} ${a.e.amount_short}`, position: a.e.amount_fen < 0 ? "bottom" : "top", fill: "#3f5068", fontSize: 10 }} />
+              <ReferenceDot key={`${a.day}-${i}`} x={a.day} y={a.cash} r={4} fill="#fff" stroke={a.e.amount_fen < 0 ? SERIES.floor.stroke : SERIES.plan.stroke} strokeWidth={2} label={{ value: `${a.e.label_short ?? a.e.label} ${a.e.amount_short}`, position: a.e.amount_fen < 0 ? "bottom" : "top", fill: "#3f5068", fontSize: 10 }} />
             ))}
             {breachRow ? <ReferenceDot x={breachRow.day} y={breachRow.cash} r={6} fill={SERIES.floor.stroke} stroke="#fff" strokeWidth={2} /> : null}
             {lowestRow && lowestRow.day !== breach ? (
