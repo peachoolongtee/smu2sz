@@ -1,0 +1,184 @@
+[
+  {
+    "name": "01-home-day0",
+    "url": "/",
+    "viewport": "412x839",
+    "height": 1851,
+    "screens": 2.2
+  },
+  {
+    "name": "02-deals-inbox",
+    "url": "/deals",
+    "viewport": "412x839",
+    "height": 839,
+    "screens": 1
+  },
+  {
+    "name": "03-deals-read",
+    "url": "/deals",
+    "viewport": "412x839",
+    "height": 1094,
+    "screens": 1.3
+  },
+  {
+    "name": "04-deals-evaluated",
+    "url": "/deals",
+    "viewport": "412x839",
+    "height": 2141,
+    "screens": 2.6
+  },
+  {
+    "name": "05-cash-day0",
+    "url": "/cash",
+    "viewport": "412x839",
+    "height": 3407,
+    "screens": 4.1
+  },
+  {
+    "name": "06-receivables-day0",
+    "url": "/receivables",
+    "viewport": "412x839",
+    "height": 839,
+    "screens": 1
+  },
+  {
+    "name": "07-activity-day0",
+    "url": "/activity",
+    "viewport": "412x839",
+    "height": 896,
+    "screens": 1.1
+  },
+  {
+    "name": "08-home-after-go-ahead",
+    "url": "/",
+    "viewport": "412x839",
+    "height": 1871,
+    "screens": 2.2
+  },
+  {
+    "name": "09-home-funded",
+    "url": "/",
+    "viewport": "412x839",
+    "height": 1515,
+    "screens": 1.8
+  },
+  {
+    "name": "10-cash-funded",
+    "url": "/cash",
+    "viewport": "412x839",
+    "height": 2132,
+    "screens": 2.5
+  },
+  {
+    "name": "11-activity-funded",
+    "url": "/activity",
+    "viewport": "412x839",
+    "height": 1124,
+    "screens": 1.3
+  },
+  {
+    "name": "12-home-day34",
+    "url": "/",
+    "viewport": "412x839",
+    "height": 2042,
+    "screens": 2.4
+  },
+  {
+    "name": "13-receivables-day34",
+    "url": "/receivables",
+    "viewport": "412x839",
+    "height": 1388,
+    "screens": 1.7
+  },
+  {
+    "name": "14-home-day34-pending",
+    "url": "/",
+    "viewport": "412x839",
+    "height": 2680,
+    "screens": 3.2
+  },
+  {
+    "name": "15-approvals-pending",
+    "url": "/approvals#approval-APR-000001",
+    "viewport": "412x839",
+    "height": 1174,
+    "screens": 1.4
+  },
+  {
+    "name": "16-approvals-approved",
+    "url": "/approvals#approval-APR-000001",
+    "viewport": "412x839",
+    "height": 990,
+    "screens": 1.2
+  },
+  {
+    "name": "17-home-day34-approved",
+    "url": "/",
+    "viewport": "412x839",
+    "height": 1533,
+    "screens": 1.8
+  },
+  {
+    "name": "18-cash-day34-approved",
+    "url": "/cash",
+    "viewport": "412x839",
+    "height": 2132,
+    "screens": 2.5
+  },
+  {
+    "name": "19-activity-day34-approved",
+    "url": "/activity",
+    "viewport": "412x839",
+    "height": 2244,
+    "screens": 2.7
+  },
+  {
+    "name": "20-demo-story",
+    "url": "/demo",
+    "viewport": "412x839",
+    "height": 3457,
+    "screens": 4.1
+  },
+  {
+    "name": "21-demo-mandate-start",
+    "url": "/mandate",
+    "viewport": "412x839",
+    "height": 3149,
+    "screens": 3.8
+  },
+  {
+    "name": "22-demo-mandate-step11",
+    "url": "/verdict",
+    "viewport": "412x839",
+    "height": 8281,
+    "screens": 9.9
+  },
+  {
+    "name": "23-demo-verdict",
+    "url": "/verdict",
+    "viewport": "412x839",
+    "height": 8281,
+    "screens": 9.9
+  },
+  {
+    "name": "24-demo-funding",
+    "url": "/funding",
+    "viewport": "412x839",
+    "height": 4899,
+    "screens": 5.8
+  },
+  {
+    "name": "25-demo-trajectory",
+    "url": "/trajectory",
+    "viewport": "412x839",
+    "height": 2962,
+    "screens": 3.5
+  },
+  {
+    "name": "26-deals-two-offers-demo-walked",
+    "url": "/deals",
+    "viewport": "412x839",
+    "height": 2551,
+    "screens": 3
+  }
+]
