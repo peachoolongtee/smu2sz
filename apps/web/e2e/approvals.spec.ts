@@ -1,5 +1,5 @@
 import { expect, test as signedOut } from "@playwright/test";
-import { test } from "./fixtures";
+import { proseOf, test } from "./fixtures";
 
 /**
  * Mock-mode specs for the owner's decision surfaces: no tier badge on a REJECT, the approval card, the autonomy proof
@@ -61,7 +61,8 @@ test("an approval card expands in place to the operation, the reason, the amount
   await expect(detail).toContainText("Apply for a loan");
   await expect(detail).toContainText("FAC-ETL");
   await expect(detail).toContainText("¥600,000.00");
-  await expect(detail).toContainText("Day 0, by Agent");
+  // The request day is a distance from today, even inside the audit details.
+  await expect(detail).toContainText("today, by Agent");
   await expect(detail).toContainText("apply for facility FAC-ETL");
   // The buttons say what they do: the amount to approve, and "Decline"; an approval no alert asked for is simply closed by declining.
   await expect(card.getByTestId("approval-if-decline")).toHaveText("Nothing runs; the request is closed.");
@@ -85,6 +86,10 @@ test("an approval born of the reserve alert says what declining leaves, in days 
   await expect(card.getByTestId("approval-if-decline")).toHaveText(
     "¥200,000.00 below your minimum cash reserve in 8 days; the gap peaks at ¥200,000.00 in 8 days.",
   );
+  // "Why it needs you" in the owner's words: the signed limit and the holding period from today, never the agent's ceiling or "day N".
+  await expect(card.getByTestId("approval-reason")).toContainText("the yearly cost of 32.52% is above the 15.00% limit you signed for funding without your approval");
+  await expect(card.getByTestId("approval-reason")).toContainText("(from in 3 days to in 13 days)");
+  expect(await proseOf(page)).not.toMatch(/\bday \d/i);
   await expect(card.getByRole("button", { name: "Approve ¥200,000.00", exact: true })).toBeVisible();
   // The tier is an audit detail, closed by default.
   await expect(card).not.toContainText("Tier");

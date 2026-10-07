@@ -1,4 +1,4 @@
-import { expect, test } from "./fixtures";
+import { expect, proseOf, test } from "./fixtures";
 
 /**
  * The Business Activity page in mock mode: every row leads with the executor's sentence in business words (names, not ids,
@@ -26,6 +26,10 @@ test("each row leads with the executor's sentence, the operation name is a muted
   // The sentence is the row's heading line; the operation's plain name sits beside the day as a label.
   const sentence = row.locator("p").first();
   await expect(sentence).toContainText("Queued for owner approval (APR-000001)");
+  // The server's Business sentence: the signed limit in the owner's words and the holding period as distances from today.
+  await expect(sentence).toContainText("above the 15.00% limit you signed for funding without your approval");
+  await expect(sentence).toContainText("(from in 3 days to in 13 days)");
+  await expect(sentence).not.toContainText("what the agent may borrow alone");
   await expect(row.getByTestId("activity-op")).toHaveText("Get cash early on an invoice");
   await expect(row).toContainText("today");
   // Codes and hashes stay under Audit details, closed until opened.
@@ -34,4 +38,5 @@ test("each row leads with the executor's sentence, the operation name is a muted
   await audit.locator("summary").click();
   await expect(audit).toContainText("Tier 2");
   await expect(page.locator("body")).not.toContainText(/\bDay \d/);
+  expect(await proseOf(page)).not.toMatch(/\bday \d/i);
 });

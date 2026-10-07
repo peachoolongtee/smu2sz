@@ -1,5 +1,5 @@
 import type { Page } from "@playwright/test";
-import { expect, test } from "./fixtures";
+import { expect, proseOf, test } from "./fixtures";
 
 /**
  * The Business home (`/`) in mock mode: one server read (GET /home) answers "am I safe", "what should I do", "what does it
@@ -67,6 +67,7 @@ test("the Business home answers safe, do and cost on the opening books, without 
   await expect(page.getByRole("navigation", { name: "Main navigation" }).getByRole("link", { name: "Approvals" })).toHaveCount(0);
   await expect(page.getByTestId("account-menu")).toBeVisible();
   await expect(page.locator("body")).not.toContainText(/\bDay \d/);
+  expect(await proseOf(page)).not.toMatch(/\bday \d/i);
   await expect(page.getByTestId("home-cash")).toHaveText("¥400k");
   await expect(page.getByTestId("home-lowest")).toHaveText("−¥105k");
   // The best next action: what, how much, cost, when, who decides, what if nothing, after.
@@ -113,6 +114,8 @@ test("Go ahead on the opening books runs the fix alone, and the home turns calm 
   await expect(page.getByTestId("home-in-transit")).toContainText("¥255,000.00 on its way");
   await expect(page.getByTestId("home-changes-list")).toContainText("Bank credit line");
   await expect(page.locator("#home-decisions")).toHaveCount(0);
+  // The agent's answer and the changes carry no day numbers either: the executor's "on day 0; lands on day 3" is said from today.
+  expect(await proseOf(page)).not.toMatch(/\bday \d/i);
 });
 
 test("day 34: the fix needs approval; queuing it from the home runs nothing and the home says it waits", async ({ page }) => {
@@ -120,6 +123,7 @@ test("day 34: the fix needs approval; queuing it from the home runs nothing and 
   await expect(page.getByTestId("home-status")).toHaveAttribute("data-status", "ACTION_NEEDED");
   await expect(page.getByTestId("home-headline")).toHaveText("Your cash reserve becomes unsafe in 8 days.");
   await expect(page.locator("body")).not.toContainText(/\bDay \d/);
+  expect(await proseOf(page)).not.toMatch(/\bday \d/i);
   await expect(page.getByTestId("home-note")).toHaveText("Cash falls to ¥100k, ¥200k below your ¥300k minimum cash reserve.");
   const action = page.getByTestId("home-next-action");
   await expect(action.getByTestId("next-action-title")).toHaveText("Secure ¥200k of funding");
@@ -152,6 +156,12 @@ test("day 34: the fix needs approval; queuing it from the home runs nothing and 
   await expect(decision).toContainText("lands in 3 days");
   await expect(page.getByTestId("home-change-WAITING")).toBeVisible();
   await expect(page.getByTestId("home-in-transit")).toHaveCount(0);
+  // The agent's answer and "Recent changes" say the queued cure in the owner's words: the signed limit, days from today, never "day N".
+  await expect(op).toContainText("above the 15.00% limit you signed for funding without your approval");
+  await expect(op).toContainText("(from in 3 days to in 13 days)");
+  await expect(op).not.toContainText("what the agent may borrow alone");
+  await expect(page.getByTestId("home-change-WAITING")).toContainText("limit you signed");
+  expect(await proseOf(page)).not.toMatch(/\bday \d/i);
 });
 
 test("day 34: the approval card is a question with the cost, the landing day and the after-state; approving clears the home", async ({ page }) => {
@@ -167,6 +177,8 @@ test("day 34: the approval card is a question with the cost, the landing day and
   await expect(card.getByTestId("approval-reason")).toContainText("32.52%");
   await expect(card.getByTestId("approval-after")).toContainText("for the next 12 days");
   await expect(card).toContainText("If you decline");
+  // No day number anywhere on the card as the owner first sees it (the executor's own sentence is an audit detail, below).
+  expect(await proseOf(page)).not.toMatch(/\bday \d/i);
   // The ids and the tier are audit details, closed by default.
   await expect(card.getByTestId("approval-detail-APR-000001")).toHaveCount(0);
   await card.getByTestId("approval-toggle-APR-000001").click();
@@ -184,6 +196,7 @@ test("day 34: the approval card is a question with the cost, the landing day and
   await expect(page.getByTestId("home-in-transit")).toContainText("¥200,000.00 on its way");
   await expect(page.locator("#home-decisions")).toHaveCount(0);
   await expect(page.getByTestId("home-changes-list")).toContainText("lands in 3 days");
+  expect(await proseOf(page)).not.toMatch(/\bday \d/i);
 });
 
 test("the Chinese labels switch while the server's sentences stay", async ({ page }) => {

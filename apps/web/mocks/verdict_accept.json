@@ -84,6 +84,7 @@
   "summary": "ACCEPT. Forward concessions ¥0.00 against ¥5,000.00. Covenants hold: DSCR_MIN 2.00x, LEVERAGE_MAX 1.35x.",
   "forward_concession_total_display": "¥0.00",
   "business_action": "accept",
+  "summary_when": "ACCEPT. Forward concessions ¥0.00 against ¥5,000.00. Covenants hold: DSCR_MIN 2.00x, LEVERAGE_MAX 1.35x.",
   "passed_checks": [
     {
       "code": "MIN_CASH",
@@ -198,7 +199,8 @@
       "field": "base.receivable_id",
       "resolved": true,
       "material": true,
-      "message": "bound to RCV-A (face ¥420,000.00, due day 32)"
+      "message": "bound to RCV-A (face ¥420,000.00, due day 32)",
+      "message_when": "bound to the ¥420,000.00 invoice to Foshan Home Retail Co. due in 32 days (face ¥420,000.00, due in 32 days)"
     }
   ],
   "trajectory": {
@@ -2555,7 +2557,11 @@
       "worst_day": null,
       "status": "alternative",
       "reason_kind": "buyer_early_pay",
-      "shortfall_display": null
+      "shortfall_display": null,
+      "note_when": "cost ¥2,100.00; admissible but dearer than the selected plan",
+      "components_when": [
+        "Buyer early-payment offer: early payment on ¥420,000.00 face of the ¥420,000.00 invoice to Foshan Home Retail Co. due in 32 days at 0.5%"
+      ]
     },
     {
       "key": "line_partial_early_pay",
@@ -2601,7 +2607,12 @@
       "worst_day": null,
       "status": "alternative",
       "reason_kind": "buyer_early_pay",
-      "shortfall_display": null
+      "shortfall_display": null,
+      "note_when": "cost ¥2,123.05; admissible but dearer than the selected plan",
+      "components_when": [
+        "Bank credit line: draw ¥150,000.00, repaid in 32 days",
+        "Buyer early-payment offer: early payment on ¥256,281.41 face of the ¥420,000.00 invoice to Foshan Home Retail Co. due in 32 days at 0.5%"
+      ]
     },
     {
       "key": "router_optimum",
@@ -2647,7 +2658,12 @@
       "worst_day": null,
       "status": "recommended",
       "reason_kind": null,
-      "shortfall_display": null
+      "shortfall_display": null,
+      "note_when": null,
+      "components_when": [
+        "Bank credit line: draw ¥150,000.00, repaid in 32 days",
+        "Invoice financing (onboarded platform): advance ¥255,000.00 on the ¥420,000.00 invoice to Foshan Home Retail Co. due in 32 days"
+      ]
     },
     {
       "key": "line_guaranteed_loan",
@@ -2696,7 +2712,12 @@
       "worst_day": null,
       "status": "unavailable",
       "reason_kind": null,
-      "shortfall_display": null
+      "shortfall_display": null,
+      "note_when": "not applied; cash in 21 days, gap opens in 12 days",
+      "components_when": [
+        "Bank credit line: draw ¥150,000.00, repaid in 32 days",
+        "Government-guaranteed working-capital loan: draw ¥255,000.00 (arrives in 21 days)"
+      ]
     },
     {
       "key": "line_only",
@@ -2732,7 +2753,11 @@
       "worst_day": 30,
       "status": "insufficient",
       "reason_kind": null,
-      "shortfall_display": "¥255,000.00"
+      "shortfall_display": "¥255,000.00",
+      "note_when": "cost ¥841.64; RESERVE_BREACH in 12 days",
+      "components_when": [
+        "Bank credit line: draw ¥150,000.00, repaid in 32 days"
+      ]
     }
   ],
   "forward_concession": {

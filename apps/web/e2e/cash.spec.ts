@@ -1,4 +1,4 @@
-import { expect, test } from "./fixtures";
+import { expect, proseOf, test } from "./fixtures";
 
 /**
  * Cash & funding (mock mode): the risk, the plan, the other options and then the forecast, in that order; the plan's figures
@@ -42,6 +42,9 @@ test("risk, plan, options, forecast: one set of figures, in the owner's order", 
   await page.getByTestId("forecast-horizon-120").click();
   await expect(chart).toHaveAttribute("data-horizon", "120");
   await expect(page.locator("body")).not.toContainText(/\bDay \d/);
+  // No "day N" in the prose. The "Other options" section still quotes the router's own lines ("cash on day 21", "repaid day 32"):
+  // that section is Wave 5's (#34); the API already sends `note_when` and `components_when` beside them.
+  expect(await proseOf(page, ["#cash-options"])).not.toMatch(/\bday \d/i);
   // The sources explainer opens on demand and names each facility in plain words.
   await page.getByTestId("cash-sources").locator("> summary").click();
   await expect(page.getByTestId("facility-FAC-LINE")).toContainText("Ready to use");

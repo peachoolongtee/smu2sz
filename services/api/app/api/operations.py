@@ -11,7 +11,7 @@ from pydantic import BaseModel, TypeAdapter, ValidationError
 
 from app.alerts import alerts
 from app.api.auth import is_bank_feed, log_refusal, require_owner, require_owner_or_agent
-from app.api.presentation import approval_words, in_words, relative_days
+from app.api.presentation import approval_words, in_words, relative_days, when_text
 from app.api.runtime import get_runtime
 from app.books import current_books
 from app.domain.models import Actor, Operation, OperationStatus
@@ -102,6 +102,8 @@ def approvals_queue() -> dict:
                                                if d["result_message"] else None)
         d["presentation"]["decided_when"] = (relative_days(f"on day {d['decided_day']}", rt.day, "en")
                                              if d.get("decided_day") is not None else None)
+        d["presentation"]["created_when"] = (when_text(int(d["created_day"]), rt.day, "en")
+                                             if d.get("created_day") is not None else None)
         out.append(d)
     return {"approvals": out}
 

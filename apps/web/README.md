@@ -77,7 +77,9 @@ the product the owner uses: the brand FLOW 流 · AI working-capital agent, a to
 Cash & funding, Receivables, Activity, plus Limits from the account menu), an Approvals badge that appears in the header only
 while something waits for the owner (the `/approvals` route stays), one account menu (signed-in state, sign out, language, what
 the data is; Sign in stays visible when signed out), one "Demo data" pill, no clock, no stepper, no mock or sample controls.
-Business pages speak in distances from today ("in 12 days", `lib/when.ts` or the server's `*_when` strings), never "Day N";
+Business pages speak in distances from today ("in 12 days", `lib/when.ts` or the server's `*_when` strings), never "Day N"
+(the shared plan, violation and counter cards decide this with `lib/use-business-today.ts`: the Demo views keep "Day N", a
+Business page gets `whenText` and the server's `*_when` twins such as the ledger's `message_when` and a counter's `text_when`);
 the reserve is the "minimum cash reserve"; authority copy is the owner's signed limits. **Demo** is for judges: the story page (`/demo`) with the
 fifteen steps, the clock, the scenario switch and the side doors, the story bar on every page, and the engine views (Mandate,
 Inbox, Trajectory, Funding, Verdict, What-if, Capex, Ledger, Alerts, Reconciliation, Security, Evidence). Engine routes
