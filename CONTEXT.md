@@ -32,3 +32,8 @@
   - 3: never.
 - **NO DEAL**: bounded negotiation ended without an acceptable package. It's a first-class outcome.
 - **Borrower file**: the lender-ready pack built from verified state only, mocked in the style of WeBank 微业贷.
+- **Headroom**: cash minus the minimum cash reserve on a day. "Available headroom" is today's; "lowest forecast headroom" is the smallest on the trajectory. Owners read headroom, not the subtraction.
+- **First breach / worst point**: two different days on one trajectory. The first breach is the first day cash is below the reserve; the worst point is the day cash is lowest. They are named separately wherever both are shown.
+- **Business action**: what the owner should do about an offer (accept, counter, decline, wait for approval), as distinct from the verifier's **verdict** (ACCEPT, COUNTER, REJECT, NEEDS_OWNER_APPROVAL). A REJECT verdict with counters is the business action "counter".
+- **Net economic cost**: a counter's cost to the supplier after any compensating term (a price adjustment) is netted against the funding cost it offsets. Gross funding cost and the offset are always shown beside a net figure.
+- **In transit**: funding or a payment that is committed or approved but has not yet settled; it is not cash on hand until it lands.
