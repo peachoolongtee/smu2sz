@@ -66,6 +66,7 @@ const ZH_NAMES: [RegExp, string][] = [
   [/Bank acceptance bill discounting/g, "银行承兑汇票贴现"],
   [/Buyer early-payment offer/g, "买方提前付款"],
   [/Owner equity or outside investor/g, "股东或外部投资"],
+  [/(¥[\d,.]+k?) machine/g, "$1 设备"],
   [/Equipment term loan/g, "设备定期贷款"],
   [/Equipment lease/g, "设备租赁"],
   [/Bank credit line/g, "银行信用额度"],

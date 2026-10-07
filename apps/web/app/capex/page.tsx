@@ -3,15 +3,25 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Avatar, BizCard, BizPageHeader, Chip, Disclosure, PageIcon, SectionHead, pillSecondary } from "@/components/business/kit";
-import { CartIcon, CheckIcon, ChevronRightIcon, ClockIcon, ShieldCheckIcon, SlidersIcon, XIcon } from "@/components/icons";
-import { ViolationCard } from "@/components/verdict-parts";
+import { CartIcon, CheckIcon, ChevronRightIcon, ClockIcon, ShieldCheckIcon, XIcon } from "@/components/icons";
 import { Button, ErrorState, KeyValueList } from "@/components/ui";
 import { downloadFile, getApprovals, getState } from "@/lib/api";
 import { idsToNames, localNames, plainDays, sentenceCase } from "@/lib/business-words";
 import { useAsync } from "@/lib/use-async";
 import { runBorrowerFile, runCapex, runCapexApply } from "@/lib/demo";
 import { useDemo } from "@/lib/demo-store";
-import { useI18n } from "@/lib/i18n";
+import { useI18n, type I18n } from "@/lib/i18n";
+import type { CapexStructure } from "@/lib/types";
+
+/**
+ * A way to pay named from its typed fields, so it reads in either language: "36-month term loan at 5.60%". The rate is
+ * the server's own percentage, taken from its label; nothing is computed.
+ */
+function wayName(s: CapexStructure, t: I18n["t"]): string {
+  const rate = s.label.match(/\d+(?:\.\d+)?%/)?.[0] ?? "";
+  if (s.kind === "CASH_LINE") return t("biz.capex.kind.CASH_LINE");
+  return t(s.kind === "LEASE" ? "biz.capex.kind.LEASE" : "biz.capex.kind.LOAN", { n: s.term_months ?? "", rate });
+}
 
 /**
  * Buy equipment (capex), as the owner asks it: is the machine worth it (one verdict card with the net present value, the
@@ -20,7 +30,7 @@ import { useI18n } from "@/lib/i18n";
  * assumptions and the file itself wait behind disclosures. Every figure is the server's; evaluating writes nothing.
  */
 export default function CapexPage() {
-  const { t, lang } = useI18n();
+  const { t, te, lang } = useI18n();
   const demo = useDemo();
   const [busy, setBusy] = useState<"capex" | "file" | "apply" | string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -95,20 +105,6 @@ export default function CapexPage() {
               {t("capex.evaluate")}
             </Button>
           </section>
-          <ul className="grid gap-3 sm:grid-cols-3">
-            {(
-              [
-                [<CheckIcon key="i" width={18} height={18} />, "biz.capex.how1", "ok"],
-                [<SlidersIcon key="i" width={18} height={18} />, "biz.capex.how2", "brand"],
-                [<ShieldCheckIcon key="i" width={18} height={18} />, "biz.capex.how3", "violet"],
-              ] as const
-            ).map(([icon, key, tone]) => (
-              <li key={key} className="flex items-start gap-3 rounded-(--radius-card) border border-line bg-surface p-4 shadow-(--shadow-card)">
-                <Avatar tone={tone}>{icon}</Avatar>
-                <p className="text-sm text-ink-2">{t(key)}</p>
-              </li>
-            ))}
-          </ul>
         </div>
       ) : (
         <div className="rise space-y-8">
@@ -117,16 +113,19 @@ export default function CapexPage() {
             <div className={`px-5 pb-5 pt-5 lg:px-6 ${worth ? "bg-linear-to-br from-ok-bg to-surface" : "bg-linear-to-br from-warn-bg to-surface"}`}>
               <Chip tone={worth ? "ok" : "warn"}>{worth ? t("biz.capex.worth") : t("biz.capex.notWorth")}</Chip>
               <p className="mt-3 max-w-3xl text-lg font-semibold leading-snug tracking-tight text-ink" data-testid="capex-recommendation">
-                {capex.recommendation ?? (worth ? null : t("capex.notWorth"))}
+                {worth && selectedStructure
+                  ? t("biz.capex.headline", { month: capex.payback_month ?? "", way: wayName(selectedStructure, t), monthly: selectedStructure.monthly_payment_display ?? "" })
+                  : worth
+                    ? t("biz.capex.headline.noWay")
+                    : t("biz.capex.headline.not")}
               </p>
             </div>
-            <dl className="grid grid-cols-2 gap-px border-t border-line bg-line sm:grid-cols-4">
+            <dl className="grid grid-cols-1 gap-px border-t border-line bg-line sm:grid-cols-3">
               {(
                 [
-                  [t("capex.npv"), capex.npv_display, capex.request.label, capex.npv_fen < 0 ? "text-bad-fg" : "text-ok-fg"],
+                  [t("capex.npv"), capex.npv_display, localNames(capex.request.label, lang), capex.npv_fen < 0 ? "text-bad-fg" : "text-ok-fg"],
                   [t("capex.payback"), capex.payback_month !== null ? t("capex.paybackValue", { n: capex.payback_month }) : t("common.none"), null, "text-ink"],
                   [t("capex.leverage"), capex.leverage_financed ? `${capex.leverage_financed.text}×` : t("common.none"), t("capex.leverage.limit", { limit: capex.leverage_limit_display }), "text-ink"],
-                  [t("capex.leverageExt"), capex.leverage_with_extension ? `${capex.leverage_with_extension.text}×` : t("common.none"), t("capex.leverageExt.hint"), "text-ink"],
                 ] as const
               ).map(([k, v, hint, tone]) => (
                 <div key={k} className="min-w-0 bg-surface px-5 py-4">
@@ -137,9 +136,16 @@ export default function CapexPage() {
               ))}
             </dl>
             <Disclosure summary={t("biz.capex.basis")} className="border-t border-line px-5">
-              <div className="space-y-1 text-sm text-ink-2">
+              <div className="space-y-2 text-sm text-ink-2">
                 {capex.estimate_note ? <p>{capex.estimate_note}</p> : null}
-                {capex.as_of_day !== undefined ? <p data-testid="capex-as-of">{t("capex.asOf", { day: capex.as_of_day })}</p> : null}
+                {capex.assumptions?.length ? (
+                  <ul className="list-disc space-y-1 pl-5" data-testid="capex-assumptions">
+                    {capex.assumptions.map((a) => (
+                      <li key={a}>{a}</li>
+                    ))}
+                  </ul>
+                ) : null}
+                {capex.as_of_day !== undefined ? <p className="text-xs text-ink-3" data-testid="capex-as-of">{t("capex.asOf", { day: capex.as_of_day })}</p> : null}
               </div>
             </Disclosure>
           </BizCard>
@@ -164,7 +170,7 @@ export default function CapexPage() {
                         <summary className="flex min-h-16 items-center gap-3 rounded-2xl px-4 py-3 hover:bg-subtle">
                           <Avatar tone={selected ? "ok" : !s.feasible ? "bad" : "neutral"}>{selected ? <CheckIcon width={16} height={16} /> : !s.feasible ? <XIcon width={14} height={14} /> : <ClockIcon width={18} height={18} />}</Avatar>
                           <span className="min-w-0 flex-1">
-                            <span className="block font-semibold text-ink">{localNames(s.label, lang)}</span>
+                            <span className="block font-semibold text-ink">{wayName(s, t)}</span>
                             <span className="mt-1 flex flex-wrap items-center gap-1.5">
                               <Chip tone={verdict.tone}>{verdict.label}</Chip>
                             </span>
@@ -206,7 +212,6 @@ export default function CapexPage() {
                               <p className="mt-1.5 text-xs text-ink-3">{t("dscr.readingNote")}</p>
                             </div>
                           ) : null}
-                          {s.note ? <p className="text-ink-2">{localNames(plainDays(s.note, books.data?.day ?? 0, t), lang)}</p> : null}
                           {s.extra_cost_vs_selected_display ? <p className="font-medium text-warn-fg">{t("capex.dearer", { amount: s.extra_cost_vs_selected_display })}</p> : null}
                           {s.hypothetical ? <p className="text-xs text-ink-3">{t("capex.hypothetical.hint")}</p> : null}
                         </div>
@@ -273,9 +278,6 @@ export default function CapexPage() {
                 ) : null}
               </div>
             ) : null}
-            <Disclosure summary={t("capex.tier")} className="mt-3 border-t border-line pt-1">
-              <p className="text-sm text-ink-2">{t("capex.tier.body")}</p>
-            </Disclosure>
           </BizCard>
 
           {file ? (
@@ -343,22 +345,21 @@ export default function CapexPage() {
             </BizCard>
           ) : null}
 
-          <div className="space-y-3">
-            {failing.length ? (
-              <Disclosure card summary={t("capex.why")} testId="capex-why">
-                <ul className="grid gap-4 xl:grid-cols-2">{failing.flatMap((s) => s.violations.map((v) => <ViolationCard key={`${s.id}-${v.code}`} v={v} />))}</ul>
-              </Disclosure>
-            ) : null}
-            {capex.assumptions?.length ? (
-              <Disclosure card summary={t("capex.assumptions")}>
-                <ul className="list-disc space-y-1.5 pl-5 text-sm text-ink-2" data-testid="capex-assumptions">
-                  {capex.assumptions.map((a) => (
-                    <li key={a}>{a}</li>
-                  ))}
-                </ul>
-              </Disclosure>
-            ) : null}
-          </div>
+          {failing.length ? (
+            <Disclosure card summary={t("capex.why")} testId="capex-why">
+              <ul className="space-y-2 text-sm">
+                {failing.flatMap((st) =>
+                  st.violations.map((v) => (
+                    <li key={`${st.id}-${v.code}`} className="flex flex-wrap items-baseline gap-x-2" data-testid={`capex-why-${st.id}`}>
+                      <span className="font-medium text-ink">{wayName(st, t)}</span>
+                      <span className="text-bad-fg">{te("violation", v.code)}</span>
+                      {v.observed && v.limit ? <span className="text-ink-3">{t("glance.vs", { observed: v.observed, limit: v.limit })}</span> : null}
+                    </li>
+                  )),
+                )}
+              </ul>
+            </Disclosure>
+          ) : null}
         </div>
       )}
     </>

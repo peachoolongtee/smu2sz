@@ -16,7 +16,9 @@ test("what-if: moving the terms slider changes the hypothetical verdict", async 
   await expect(page.getByTestId("whatif-codes")).toContainText("AGG_CONCESSION_EXCEEDED");
   await expect(page.getByTestId("whatif-codes")).toContainText("Gives buyers more than your limit allows");
   await expect(page.getByTestId("whatif-forward-total")).toHaveText("¥28,326.92");
-  await expect(page.getByText("Breach day 47").first()).toBeVisible();
+  // Days are distances from today in Business mode; the verdict is in words, the figures are the server's.
+  await expect(page.getByTestId("whatif-outcome")).toHaveText("Breaks your limits");
+  await expect(page.getByTestId("whatif-cash-fig")).toHaveText("Below it in 47 days");
 
   // 60 -> 45 days with the arrow keys (5-day steps): no extension, so no concession breach.
   const terms = page.getByRole("slider", { name: "Payment terms" });

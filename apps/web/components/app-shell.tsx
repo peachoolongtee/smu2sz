@@ -127,9 +127,10 @@ function ApprovalsBadge() {
   const pending = list.data?.filter((a) => a.status === "PENDING").length ?? 0;
   if (!pending) return null;
   return (
-    <Link href="/approvals" className="press inline-flex min-h-9 items-center gap-1.5 rounded-full bg-warn-bg px-3.5 text-xs font-semibold text-warn-fg hover:brightness-95" data-testid="approvals-badge" title={t("approvals.badge", { n: pending })}>
-      <span className="sm:hidden">{pending}</span>
-      <span className="hidden sm:inline">{t("approvals.badge", { n: pending })}</span>
+    <Link href="/approvals" className="press inline-flex min-h-9 min-w-9 items-center justify-center gap-1.5 rounded-full bg-warn-bg px-3.5 text-xs font-semibold text-warn-fg hover:brightness-95" data-testid="approvals-badge" title={t("approvals.badge", { n: pending })} aria-label={t("approvals.badge", { n: pending })}>
+      {/* The count alone until the header has room for the words, so the badge never pushes the nav into the logo. */}
+      <span aria-hidden className="sm:hidden lg:inline xl:hidden">{pending}</span>
+      <span aria-hidden className="hidden sm:inline lg:hidden xl:inline">{t("approvals.badge", { n: pending })}</span>
     </Link>
   );
 }
@@ -222,10 +223,14 @@ function BusinessShell({ children }: { children: ReactNode }) {
       <ChatPanel />
       <header className="sticky top-0 z-30 border-b border-line/70 bg-canvas/85 backdrop-blur-md">
         <div className="mx-auto flex max-w-[1180px] items-center justify-between gap-3 px-4 py-2.5 lg:grid lg:grid-cols-[auto_minmax(0,1fr)_auto] lg:gap-6 lg:px-6">
-          <Brand href="/" />
+          <div className="shrink-0">
+            <Brand href="/" />
+          </div>
           {/* Desktop: the five questions as pills on a white track. Phones get the tab bar at the bottom instead. */}
-          <nav aria-label={t("nav.label")} className="hidden min-w-0 justify-self-center lg:block" data-tour="nav">
-            <ul className="flex items-center gap-1 rounded-full bg-surface p-1 shadow-(--shadow-card)">
+          {/* The nav stays inside its own grid column: when something appears on the right (the Approvals badge), it can
+              never slide over the logo; on a tight screen it scrolls sideways instead. The padding keeps the shadow visible. */}
+          <nav aria-label={t("nav.label")} className="-my-1.5 hidden min-w-0 overflow-x-auto px-1 py-1.5 [scrollbar-width:none] lg:block [&::-webkit-scrollbar]:hidden" data-tour="nav">
+            <ul className="mx-auto flex w-max items-center gap-1 rounded-full bg-surface p-1 shadow-(--shadow-card)">
               {BUSINESS_NAV.map((n) => {
                 const active = pathname === n.href;
                 return (
@@ -233,7 +238,7 @@ function BusinessShell({ children }: { children: ReactNode }) {
                     <Link
                       href={n.href}
                       aria-current={active ? "page" : undefined}
-                      className={`press flex min-h-9 items-center whitespace-nowrap rounded-full px-4 text-sm font-semibold ${
+                      className={`press flex min-h-9 items-center whitespace-nowrap rounded-full px-3 text-sm font-semibold xl:px-4 ${
                         active ? "bg-ink text-white" : "text-ink-2 hover:bg-subtle hover:text-ink"
                       }`}
                     >

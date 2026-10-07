@@ -87,7 +87,6 @@ export function WhatIfControlsCard({
   const partial = params.settle_face_fen !== null;
   const faceIndex = partial ? stops.findIndex((s) => s.fen === params.settle_face_fen) : stops.length - 1;
   const faceStop = stops[faceIndex >= 0 ? faceIndex : stops.length - 1];
-  const middle = stops[Math.floor(stops.length / 2)];
 
   const termsHint =
     params.terms_days === controls.current_terms_days
@@ -95,7 +94,7 @@ export function WhatIfControlsCard({
       : t("whatif.terms.now", { n: controls.current_terms_days });
 
   return (
-    <Card id="whatif-controls" title={t("whatif.controls")} subtitle={t("whatif.controls.sub")}>
+    <Card id="whatif-controls" title={t("whatif.controls")}>
       <fieldset>
         <legend className="text-xs font-semibold uppercase tracking-wide text-ink-3">{t("whatif.presets")}</legend>
         <div className="mt-2 grid grid-cols-2 gap-2">
@@ -150,33 +149,16 @@ export function WhatIfControlsCard({
           readout={params.discount_bp === 0 ? t("whatif.discount.off") : rate(params.discount_bp)}
           onChange={(v) => set({ discount_bp: v })}
         />
-        <div className="rounded-lg border border-line bg-subtle/60 p-3">
-          <label className="flex min-h-8 cursor-pointer items-center gap-2 text-sm text-ink-2">
-            <input
-              type="checkbox"
-              checked={partial}
-              disabled={params.discount_bp === 0}
-              onChange={(e) => set({ settle_face_fen: e.target.checked ? middle.fen : null })}
-              className="size-4 accent-brand-600"
-            />
-            {t("whatif.partial", { id: controls.receivable_id })}
-          </label>
+        {/* A preset may settle only part of the invoice early (Option A); the amount is shown, not a separate control. */}
+        <p className="-mt-3 text-xs text-ink-3">
           {partial ? (
-            <div className="mt-2">
-              <Slider
-                id="whatif-face"
-                label={t("whatif.face")}
-                grid={{ min: 0, max: stops.length - 1, step: 1 }}
-                value={faceIndex >= 0 ? faceIndex : stops.length - 1}
-                readout={faceStop.display}
-                disabled={params.discount_bp === 0}
-                onChange={(i) => set({ settle_face_fen: stops[i].fen })}
-              />
-            </div>
+            <>
+              {t("whatif.face")}: <output data-testid="whatif-face-readout" className="font-medium text-ink-2">{faceStop.display}</output>
+            </>
           ) : (
-            <p className="mt-1 text-xs text-ink-3">{t("whatif.face.whole", { face: controls.receivable_face_display })}</p>
+            t("whatif.face.whole", { face: controls.receivable_face_display })
           )}
-        </div>
+        </p>
         <Slider
           id="whatif-rebate"
           label={t("whatif.rebate")}
