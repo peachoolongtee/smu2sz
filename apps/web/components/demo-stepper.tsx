@@ -62,7 +62,7 @@ export function DemoStepper() {
                     className={`min-h-8 whitespace-nowrap rounded-md border px-2 text-xs font-medium disabled:opacity-50 ${
                       active
                         ? "border-brand-600 bg-brand-600 text-white"
-                        : "border-line-strong bg-surface text-ink-2 hover:bg-subtle"
+                        : "border-line-ui bg-surface text-ink-2 hover:bg-subtle"
                     }`}
                   >
                     {te("scene.short", s.id)}

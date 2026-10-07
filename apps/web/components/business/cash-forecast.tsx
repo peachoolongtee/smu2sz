@@ -14,14 +14,16 @@ import type { HomeSeriesPoint, HomeView } from "@/lib/types";
  * Ported from the `test/ui-ux` owner overview and fed by `GET /home` so it cannot disagree with the headline.
  */
 const SERIES = {
-  cash: { stroke: "#1558c0" },
-  plan: { stroke: "#0b6b48" },
-  floor: { stroke: "#a3241a" },
-  lowest: { stroke: "#b7791f" },
+  cash: { stroke: "var(--color-chart-base)" },
+  plan: { stroke: "var(--color-chart-plan)" },
+  floor: { stroke: "var(--color-chart-reserve)" },
+  lowest: { stroke: "var(--color-chart-worst)" },
 } as const;
-const GRID = "#dde3ea";
-const AXIS = "#5d6e84";
-const ZONE = "#fdecea";
+const GRID = "var(--color-chart-grid)";
+const AXIS = "var(--color-chart-axis)";
+const ZONE = "var(--color-chart-danger)";
+const RING = "var(--color-surface)";
+const LABEL = "var(--color-ink-2)";
 const HORIZONS = [30, 60, 120] as const;
 type Horizon = (typeof HORIZONS)[number];
 const MAX_ANNOTATIONS = 4;
@@ -102,7 +104,7 @@ export function CashForecast({ h }: { h: HomeView }) {
     <figure className="space-y-3" data-testid="cash-forecast" data-horizon={horizon} data-lowest={h.cash.lowest_fen}>
       <figcaption className="flex flex-wrap items-center justify-between gap-2">
         <span className="text-sm text-ink-2">{t("biz.forecast.caption", { n: horizon })}</span>
-        <div className="inline-flex rounded-md border border-line-strong bg-subtle p-0.5" role="group" aria-label={t("biz.forecast.horizon")}>
+        <div className="inline-flex rounded-md border border-line-ui bg-subtle p-0.5" role="group" aria-label={t("biz.forecast.horizon")}>
           {HORIZONS.map((n) => (
             <button
               key={n}
@@ -121,12 +123,6 @@ export function CashForecast({ h }: { h: HomeView }) {
       <div className="h-64 w-full sm:h-80" role="img" aria-label={t("traj.chartSummary", { min: h.cash.lowest_display, day: h.cash.lowest_day, floor: h.cash.floor_display })}>
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={data} margin={{ top: 22, right: 16, bottom: 4, left: 0 }}>
-            <defs>
-              <linearGradient id="cash-forecast-fill" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={SERIES.cash.stroke} stopOpacity={0.18} />
-                <stop offset="100%" stopColor={SERIES.cash.stroke} stopOpacity={0.02} />
-              </linearGradient>
-            </defs>
             <CartesianGrid stroke={GRID} vertical={false} />
             {/* The danger zone: anything plotted in here is below the minimum cash reserve. */}
             <ReferenceArea y1={yMin} y2={floor} fill={ZONE} fillOpacity={0.8} stroke="none" ifOverflow="extendDomain" />
@@ -138,16 +134,16 @@ export function CashForecast({ h }: { h: HomeView }) {
             {breach !== null ? (
               <ReferenceLine x={breach} stroke={SERIES.floor.stroke} strokeDasharray="2 3" label={{ value: t("biz.forecast.unsafe", { when: h.cash.first_breach_when ?? "" }), position: "top", fill: SERIES.floor.stroke, fontSize: 11, fontWeight: 600 }} />
             ) : null}
-            <Area type="stepAfter" dataKey="cash" name={baseName} stroke={SERIES.cash.stroke} strokeWidth={2} fill="url(#cash-forecast-fill)" isAnimationActive={false} activeDot={{ r: 5, stroke: "#fff", strokeWidth: 2, fill: SERIES.cash.stroke }} />
+            <Area type="stepAfter" dataKey="cash" name={baseName} stroke={SERIES.cash.stroke} strokeWidth={2} fill={SERIES.cash.stroke} fillOpacity={0.08} isAnimationActive={false} activeDot={{ r: 5, stroke: RING, strokeWidth: 2, fill: SERIES.cash.stroke }} />
             {h.cash.plan_series ? (
               <Area type="stepAfter" dataKey="plan" name={t("biz.forecast.plan")} stroke={SERIES.plan.stroke} strokeWidth={2} strokeDasharray="9 5" fill="none" isAnimationActive={false} connectNulls />
             ) : null}
             {annotations.map((a, i) => (
-              <ReferenceDot key={`${a.day}-${i}`} x={a.day} y={a.cash} r={4} fill="#fff" stroke={a.e.amount_fen < 0 ? SERIES.floor.stroke : SERIES.plan.stroke} strokeWidth={2} label={{ value: `${a.e.label_short ?? a.e.label} ${a.e.amount_short}`, position: a.e.amount_fen < 0 ? "bottom" : "top", fill: "#3f5068", fontSize: 10 }} />
+              <ReferenceDot key={`${a.day}-${i}`} x={a.day} y={a.cash} r={4} fill={RING} stroke={a.e.amount_fen < 0 ? SERIES.floor.stroke : SERIES.plan.stroke} strokeWidth={2} label={{ value: `${a.e.label_short ?? a.e.label} ${a.e.amount_short}`, position: a.e.amount_fen < 0 ? "bottom" : "top", fill: LABEL, fontSize: 10 }} />
             ))}
-            {breachRow ? <ReferenceDot x={breachRow.day} y={breachRow.cash} r={6} fill={SERIES.floor.stroke} stroke="#fff" strokeWidth={2} /> : null}
+            {breachRow ? <ReferenceDot x={breachRow.day} y={breachRow.cash} r={6} fill={SERIES.floor.stroke} stroke={RING} strokeWidth={2} /> : null}
             {lowestRow && lowestRow.day !== breach ? (
-              <ReferenceDot x={lowestRow.day} y={lowestRow.cash} r={6} fill={SERIES.lowest.stroke} stroke="#fff" strokeWidth={2} label={{ value: `${t("biz.worstPoint")} ${h.cash.lowest_short}`, position: "bottom", fill: "#3f5068", fontSize: 11, fontWeight: 600 }} />
+              <ReferenceDot x={lowestRow.day} y={lowestRow.cash} r={6} fill={SERIES.lowest.stroke} stroke={RING} strokeWidth={2} label={{ value: `${t("biz.worstPoint")} ${h.cash.lowest_short}`, position: "bottom", fill: LABEL, fontSize: 11, fontWeight: 600 }} />
             ) : null}
           </AreaChart>
         </ResponsiveContainer>
@@ -170,7 +166,7 @@ function ForecastTooltip({ active, payload, today, baseName }: { active?: boolea
   const row = payload[0].payload;
   const when = row.day === today ? t("biz.when.today") : t("biz.when.inDays", { n: row.day - today });
   return (
-    <div className="max-w-64 rounded-lg border border-line-strong bg-surface p-2.5 text-xs shadow-md">
+    <div className="max-w-64 rounded-lg border border-line-ui bg-surface p-2.5 text-xs shadow-md">
       <p className="font-semibold text-ink">{when}</p>
       <p className="mt-1 flex items-center justify-between gap-3 tabular-nums"><span className="text-ink-2">{baseName}</span><span className="font-medium text-ink">{row.cashDisplay}</span></p>
       {row.planDisplay ? <p className="flex items-center justify-between gap-3 tabular-nums"><span className="text-ink-2">{t("biz.forecast.plan")}</span><span className="font-medium text-ink">{row.planDisplay}</span></p> : null}

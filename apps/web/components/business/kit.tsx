@@ -23,16 +23,17 @@ const factTone: Record<FactTone, { box: string; value: string }> = {
  * One fact as a tile: a quiet label, the value large, an optional note beneath. The tile is a `<div>` inside a `<dl>`;
  * `testId` goes on the value so a spec can read the figure itself.
  */
-export function FactTile({ label, children, tone = "neutral", valueTone, testId, note, noteTestId }: { label: ReactNode; children: ReactNode; tone?: FactTone; valueTone?: "bad"; testId?: string; note?: ReactNode; noteTestId?: string }) {
+export function FactTile({ label, children, tone = "neutral", valueTone, testId, note, noteTestId, deep = false }: { label: ReactNode; children: ReactNode; tone?: FactTone; valueTone?: "bad"; testId?: string; note?: ReactNode; noteTestId?: string; deep?: boolean }) {
   const c = factTone[tone];
+  // On the deep block (the Home hero) the tile is translucent white, its figure white, and a figure that is the status takes the bright red.
   return (
-    <div className={`min-w-0 rounded-lg border px-3.5 py-3 ${c.box}`}>
-      <dt className="text-xs font-medium text-ink-3">{label}</dt>
-      <dd className={`mt-0.5 break-words text-base font-semibold tabular-nums ${valueTone === "bad" ? factTone.bad.value : c.value}`} data-testid={testId}>
+    <div className={`min-w-0 rounded-lg px-3.5 py-3 ${deep ? "bg-on-deep/10" : `border ${c.box}`}`}>
+      <dt className={`text-xs font-medium ${deep ? "text-on-deep-muted" : "text-ink-3"}`}>{label}</dt>
+      <dd className={`mt-0.5 break-words text-base font-semibold tabular-nums ${deep ? (valueTone === "bad" ? "text-bad-bright" : "text-on-deep") : valueTone === "bad" ? factTone.bad.value : c.value}`} data-testid={testId}>
         {children}
       </dd>
       {note ? (
-        <dd className="text-xs font-normal text-ink-3" data-testid={noteTestId}>
+        <dd className={`text-xs font-normal ${deep ? "text-on-deep-muted" : "text-ink-3"}`} data-testid={noteTestId}>
           {note}
         </dd>
       ) : null}
@@ -44,11 +45,11 @@ export function FactTile({ label, children, tone = "neutral", valueTone, testId,
  * Details behind a click: a native `<details>` (keyboard and screen-reader friendly, the open state lives in the DOM)
  * with a chevron that turns when open. Inside a card it is a quiet row; `card` gives it a card of its own.
  */
-export function Disclosure({ summary, children, testId, card = false, className = "", defaultOpen = false }: { summary: ReactNode; children: ReactNode; testId?: string; card?: boolean; className?: string; defaultOpen?: boolean }) {
+export function Disclosure({ summary, children, testId, card = false, className = "", defaultOpen = false, deep = false }: { summary: ReactNode; children: ReactNode; testId?: string; card?: boolean; className?: string; defaultOpen?: boolean; deep?: boolean }) {
   return (
     <details open={defaultOpen || undefined} data-testid={testId} className={`group ${card ? "rounded-(--radius-card) border border-line bg-surface shadow-(--shadow-card)" : ""} ${className}`}>
-      <summary className={`flex min-h-10 cursor-pointer list-none items-center gap-2 text-sm font-medium text-brand-700 [&::-webkit-details-marker]:hidden ${card ? "px-4 py-3 font-semibold text-ink" : ""}`}>
-        <ChevronRightIcon className="shrink-0 text-ink-3 transition-transform group-open:rotate-90" />
+      <summary className={`flex min-h-10 cursor-pointer list-none items-center gap-2 text-sm font-medium [&::-webkit-details-marker]:hidden ${deep ? "text-on-deep" : card ? "px-4 py-3 font-semibold text-ink" : "text-brand-700"}`}>
+        <ChevronRightIcon className={`shrink-0 transition-transform group-open:rotate-90 ${deep ? "text-on-deep-muted" : "text-ink-3"}`} />
         <span className="min-w-0 flex-1">{summary}</span>
       </summary>
       <div className={card ? "border-t border-line p-4" : "pb-1 pt-2"}>{children}</div>

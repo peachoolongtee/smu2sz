@@ -201,7 +201,7 @@ function TourCard({ steps }: { steps: Step[] }) {
             </button>
           )}
           {step > 0 ? (
-            <button type="button" onClick={() => setStep(step - 1)} className="min-h-10 rounded-md border border-line-strong px-3.5 text-sm font-medium text-ink hover:bg-subtle">
+            <button type="button" onClick={() => setStep(step - 1)} className="min-h-10 rounded-md border border-line-ui px-3.5 text-sm font-medium text-ink hover:bg-subtle">
               {t("tour.back")}
             </button>
           ) : null}

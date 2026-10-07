@@ -106,7 +106,7 @@ export function NextActionBlock({ a, stateVersion, fixer }: { a: HomeNextAction;
           </Button>
         )}
         {pathname === "/cash" ? null : (
-          <Link href="/cash#cash-options" className="inline-flex min-h-10 items-center rounded-md border border-line-strong px-3.5 text-sm font-medium text-ink hover:bg-subtle" data-testid="next-action-alternatives">
+          <Link href="/cash#cash-options" className="inline-flex min-h-10 items-center rounded-md border border-line-ui px-3.5 text-sm font-medium text-ink hover:bg-subtle" data-testid="next-action-alternatives">
             {t("biz.compare")}
           </Link>
         )}

@@ -9,7 +9,7 @@ import { FundingOptions } from "@/components/business/funding-options";
 import { FactTile } from "@/components/business/kit";
 import { NextActionBlock } from "@/components/business/next-action";
 import { FixResult, useFixAlert } from "@/components/home/fix-alert";
-import { Card, ErrorState, Formula, LoadingBlock, PageHeader, TableWrap, tableCls, tdCls, thCls } from "@/components/ui";
+import { Badge, Card, ErrorState, Formula, LoadingBlock, PageHeader, TableWrap, tableCls, tdCls, thCls } from "@/components/ui";
 import { getHome, getTrajectory, planFunding } from "@/lib/api";
 import { onSignedIn } from "@/lib/auth";
 import { bump, useDemo } from "@/lib/demo-store";
@@ -26,7 +26,7 @@ import { useAsync } from "@/lib/use-async";
  * router's comparison, the chart draws the home's series.
  */
 export default function CashPage() {
-  const { t, lang } = useI18n();
+  const { t, te, lang } = useI18n();
   const demo = useDemo();
   const home = useAsync(() => getHome(lang), [lang]);
   // The monthly readings only; the chart draws the home's own series so it cannot disagree with the headline.
@@ -110,7 +110,12 @@ export default function CashPage() {
           <LoadingBlock rows={2} />
         ) : (
           <>
-            <Card id="cash-answer" title={t("biz.cash.risk")} tone={h.status === "CRITICAL" ? "bad" : h.status === "SAFE" ? "ok" : "warn"}>
+            <Card
+              id="cash-answer"
+              title={t("biz.cash.risk")}
+              tone={h.status === "CRITICAL" ? "bad" : h.status === "SAFE" ? "ok" : "warn"}
+              actions={<Badge tone={h.status === "CRITICAL" ? "bad" : h.status === "SAFE" ? "ok" : "warn"}>{h.status_text ?? te("homestatus", h.status)}</Badge>}
+            >
               <p className="text-xl font-semibold text-ink" data-testid="cash-headline">
                 {h.headline}
               </p>
@@ -178,12 +183,12 @@ export default function CashPage() {
 
         <div className="grid gap-5 lg:grid-cols-2">
           <Card id="cash-whatif" title={t("biz.cash.whatif")} subtitle={t("biz.cash.whatif.sub")}>
-            <Link href="/whatif" className="inline-flex min-h-10 items-center rounded-md border border-line-strong px-3.5 text-sm font-medium text-ink hover:bg-subtle">
+            <Link href="/whatif" className="inline-flex min-h-10 items-center rounded-md border border-line-ui px-3.5 text-sm font-medium text-ink hover:bg-subtle">
               {t("biz.cash.whatif.open")}
             </Link>
           </Card>
           <Card id="cash-capex" title={t("biz.cash.capex")} subtitle={t("biz.cash.capex.sub")}>
-            <Link href="/capex" className="inline-flex min-h-10 items-center rounded-md border border-line-strong px-3.5 text-sm font-medium text-ink hover:bg-subtle">
+            <Link href="/capex" className="inline-flex min-h-10 items-center rounded-md border border-line-ui px-3.5 text-sm font-medium text-ink hover:bg-subtle">
               {t("biz.cash.capex.open")}
             </Link>
           </Card>

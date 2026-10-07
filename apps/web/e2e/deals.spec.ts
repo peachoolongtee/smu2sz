@@ -198,7 +198,7 @@ test("a buyer who refuses every counter ends in No deal, with what happens next,
   await expect(page.getByTestId("deal-recommendation")).toHaveAttribute("data-outcome", "NO_DEAL");
   await expect(page.getByTestId("deal-if-accept")).toHaveText("If you had accepted the offer as asked:");
   await expect(page.getByTestId("deal-steps")).toContainText("No deal");
-  await expect(page.getByTestId("deal-steps").getByRole("link", { name: "No deal" })).toHaveClass(/text-bad-fg/);
+  await expect(page.getByTestId("deal-steps").getByRole("link", { name: "No deal" })).toHaveClass(/text-ink-2/);
   const outcome = page.locator("#counters");
   await expect(outcome.getByTestId("deal-negotiation")).toContainText("The buyer refused every counter. Nothing was agreed.");
   await expect(outcome.getByTestId("deal-rounds").locator("li")).toHaveCount(3);

@@ -91,7 +91,7 @@ export default function DemoPage() {
                 <select
                   value={scenario}
                   onChange={(e) => setScenario(e.target.value as "golden_sme" | "short_facilities")}
-                  className="min-h-10 w-full rounded-md border border-line-strong bg-surface px-2 text-sm"
+                  className="min-h-10 w-full rounded-md border border-line-ui bg-surface px-2 text-sm"
                   data-testid="story-scenario"
                 >
                   <option value="golden_sme">{t("story.scenario.golden")}</option>

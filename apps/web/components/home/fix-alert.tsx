@@ -176,7 +176,7 @@ export function FixResult({ result, error, changed }: { result: AlertActResult |
   }
   if (!result) return null;
   return (
-    <section aria-label={t("alerts.fix.title")} className="mt-3 space-y-2 rounded-lg border border-line bg-subtle p-3" data-testid="fix-result" role="status">
+    <section aria-label={t("alerts.fix.title")} className="mt-3 space-y-2 rounded-lg border border-line bg-surface p-3 shadow-(--shadow-card)" data-testid="fix-result" role="status">
       <div className="flex flex-wrap items-center gap-2">
         <h3 className="text-xs font-semibold uppercase tracking-wide text-ink-3">{t("alerts.fix.title")}</h3>
         {/* On a Business page only the counts that are not zero: "0 refused" is noise. */}

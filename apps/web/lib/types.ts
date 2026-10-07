@@ -1827,7 +1827,7 @@ export interface HomeView {
   changes: HomeChange[];
   receivables: HomeReceivables;
   warnings: { id: string; kind: string; title: string; detail: string; day: Day | null; when: string }[];
-  facilities: { id: string; name: string; status: string; limit_display: string; drawn_fen?: Fen; drawn_display: string; available_display: string; lead_time_days: number }[];
+  facilities: { id: string; name: string; status: string; limit_display: string; limit_fen?: Fen; drawn_fen?: Fen; drawn_display: string; available_display: string; lead_time_days: number }[];
 
   counts: Record<AlertSeverity, number>;
   note_basis: string;

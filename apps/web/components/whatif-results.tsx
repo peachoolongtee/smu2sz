@@ -44,7 +44,7 @@ function codeTone(r: WhatIfResult, code: string): Tone {
 function Shimmer({ active }: { active: boolean }) {
   return (
     <div aria-hidden className="h-0.5 w-full overflow-hidden rounded-full bg-transparent">
-      {active ? <div className="h-full w-full animate-pulse bg-linear-to-r from-transparent via-brand-600 to-transparent" /> : null}
+      {active ? <div className="h-full w-full animate-pulse bg-brand-600" /> : null}
     </div>
   );
 }

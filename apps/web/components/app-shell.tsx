@@ -146,7 +146,7 @@ function AccountMenu() {
       <div className="flex items-center gap-2">
         <OwnerSessionControl />
         <details className="relative" data-testid="account-menu">
-          <summary className="flex min-h-8 cursor-pointer list-none items-center rounded-md border border-line-strong px-2 text-xs font-medium text-ink-2 hover:bg-subtle [&::-webkit-details-marker]:hidden" aria-label={t("account.menu")}>
+          <summary className="flex min-h-8 cursor-pointer list-none items-center rounded-md border border-line-ui px-2 text-xs font-medium text-ink-2 hover:bg-subtle [&::-webkit-details-marker]:hidden" aria-label={t("account.menu")}>
             {t("account.menu")}
           </summary>
           <div className="absolute right-0 z-40 mt-1 w-72 space-y-3 rounded-lg border border-line bg-surface p-3 shadow-lg">
@@ -171,8 +171,8 @@ function AccountMenu() {
   }
   return (
     <details className="relative" data-testid="account-menu">
-      <summary className="flex min-h-8 cursor-pointer list-none items-center rounded-md border border-line-strong px-2 text-xs font-medium text-ink-2 hover:bg-subtle [&::-webkit-details-marker]:hidden" aria-label={t("account.menu")}>
-        <span aria-hidden className="grid size-5 place-items-center rounded-full bg-ok-bg text-[0.65rem] font-bold text-ok-fg">
+      <summary className="flex min-h-8 cursor-pointer list-none items-center rounded-md border border-line-ui px-2 text-xs font-medium text-ink-2 hover:bg-subtle [&::-webkit-details-marker]:hidden" aria-label={t("account.menu")}>
+        <span aria-hidden className="grid size-5 place-items-center rounded-full bg-brand-50 text-[0.65rem] font-bold text-brand-700">
           {t("account.initial")}
         </span>
       </summary>
@@ -244,7 +244,7 @@ function BusinessShell({ children }: { children: ReactNode }) {
                       href={n.href}
                       aria-current={active ? "page" : undefined}
                       className={`flex min-h-9 items-center whitespace-nowrap rounded-full px-4 text-sm font-medium ${
-                        active ? "bg-brand-600 text-white" : "text-ink-2 hover:bg-line hover:text-ink"
+                        active ? "bg-brand-50 text-brand-700" : "text-ink-2 hover:bg-line hover:text-ink"
                       }`}
                     >
                       {t(n.key)}
@@ -336,7 +336,14 @@ function DemoShell({ children }: { children: ReactNode }) {
   const { t } = useI18n();
   const [open, setOpen] = useState(false);
   return (
-    <div className="min-h-dvh lg:grid lg:grid-cols-[14.5rem_minmax(0,1fr)]">
+    <div className="min-h-dvh">
+      {/* The Demo is visibly not the product: a deep strip across the top says so (the deep hero is the Business home's alone). */}
+      <div className="on-deep flex min-h-9 items-center justify-center gap-2 bg-brand-900 px-4 py-1.5 text-center text-xs" data-testid="demo-strip">
+        <span className="font-bold tracking-wide text-info-bright">{t("demo.strip.label")}</span>
+        <span aria-hidden className="text-on-deep-muted">·</span>
+        <span className="text-on-deep-muted">{t("demo.strip.text")}</span>
+      </div>
+      <div className="lg:grid lg:grid-cols-[14.5rem_minmax(0,1fr)]">
       <SkipLink />
       <aside className="sticky top-0 hidden h-dvh flex-col gap-6 overflow-y-auto border-r border-line bg-surface px-3 py-4 lg:flex">
         <div className="px-2">
@@ -360,7 +367,7 @@ function DemoShell({ children }: { children: ReactNode }) {
                   aria-controls="mobile-nav"
                   aria-label={open ? t("nav.close") : t("nav.open")}
                   onClick={() => setOpen((v) => !v)}
-                  className="grid size-10 place-items-center rounded-md border border-line-strong text-ink-2 hover:bg-subtle"
+                  className="grid size-10 place-items-center rounded-md border border-line-ui text-ink-2 hover:bg-subtle"
                 >
                   {open ? <XIcon /> : <MenuIcon />}
                 </button>
@@ -389,6 +396,7 @@ function DemoShell({ children }: { children: ReactNode }) {
         <main id="main" tabIndex={-1} className="mx-auto w-full max-w-[1280px] px-4 pb-36 pt-5 lg:px-8 lg:pb-6 lg:pt-6">
           {children}
         </main>
+      </div>
       </div>
     </div>
   );

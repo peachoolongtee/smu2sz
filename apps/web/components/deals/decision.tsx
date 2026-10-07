@@ -15,9 +15,10 @@ export const ACTION_KEY: Record<BusinessAction, DictKey> = {
   cannot: "biz.deals.action.cannot",
 };
 
-const ACTION_TONE: Record<BusinessAction, "ok" | "warn" | "bad" | undefined> = {
+const ACTION_TONE: Record<BusinessAction, "ok" | "warn" | "bad" | "brand" | undefined> = {
   accept: "ok",
-  counter: "warn",
+  // A recommendation is the brand's, not a status: it is the thing to do.
+  counter: "brand",
   decline: "bad",
   needs_owner: "warn",
   cannot: undefined,
@@ -35,7 +36,8 @@ export function DealDecision({ v, today, negotiation = null }: { v: VerdictView;
   // Once the buyer has answered, the headline is the outcome, not the recommendation that preceded it.
   const outcome = negotiation?.outcome ?? null;
   const headline = outcome === "DEAL" ? t("biz.deals.action.agreed") : outcome === "NO_DEAL" ? t("biz.deals.action.noDeal") : t(ACTION_KEY[action]);
-  const tone = outcome === "DEAL" ? "ok" : outcome === "NO_DEAL" ? "bad" : ACTION_TONE[action];
+  // An agreement is fine (ok); no deal is a closed matter, not an alarm (neutral).
+  const tone = outcome === "DEAL" ? "ok" : outcome === "NO_DEAL" ? undefined : ACTION_TONE[action];
   const tr = v.trajectory ?? null;
   const breach = tr?.first_breach_day ?? null;
   const dearer = v.violations.find((x) => x.code === "DISCOUNT_ABOVE_BREAK_EVEN");

@@ -122,7 +122,7 @@ export function WhatIfControlsCard({
                 } ${
                   active
                     ? "border-brand-600 bg-brand-50 text-brand-700"
-                    : "border-line-strong bg-surface text-ink hover:bg-subtle"
+                    : "border-line-ui bg-surface text-ink hover:bg-subtle"
                 }`}
               >
                 {t(`whatif.preset.${id}`)}

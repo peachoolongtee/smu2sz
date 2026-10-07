@@ -33,7 +33,7 @@ export function DealSteps() {
         {STEPS.map((s, i) => {
           const state = i < done ? "done" : i === done ? "current" : "todo";
           const last = i === STEPS.length - 1;
-          const tone = noDeal && last ? "font-semibold text-bad-fg" : state === "done" ? "text-ok-fg" : state === "current" ? "font-semibold text-brand-700" : "text-ink-3";
+          const tone = noDeal && last ? "font-semibold text-ink-2" : state === "done" ? "text-ok-fg" : state === "current" ? "font-semibold text-brand-700" : "text-ink-3";
           return (
             <li key={s.key} className="flex items-center gap-1">
               {i > 0 ? <span className="text-ink-3">·</span> : null}

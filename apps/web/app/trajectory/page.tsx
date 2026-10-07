@@ -181,7 +181,7 @@ function TrajectoryBody({
             {fwd.parts.map((p, i) => (
               <li key={p.label} className="flex items-center justify-between gap-3">
                 <span className="flex items-center gap-2 text-ink-2">
-                  <span aria-hidden className={`size-2.5 rounded-sm ${i === 0 ? "bg-warn-fg" : "bg-violet-600"}`} />
+                  <span aria-hidden className={`size-2.5 rounded-sm ${i === 0 ? "bg-warn-fg" : "bg-info-solid"}`} />
                   {p.label}
                 </span>
                 <span className="font-medium tabular-nums">{p.value_display}</span>

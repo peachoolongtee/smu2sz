@@ -1598,6 +1598,8 @@ export const en = {
   "biz.readings.now": "Now, as on the Home: debt service cover {dscr}, debt to earnings {lev}.",
   "biz.forecast.projected": "Projected cash",
   "alerts.waiting.short": "Waiting for your approval",
+  "demo.strip.label": "DEMO",
+  "demo.strip.text": "Synthetic data. No real funds move.",
 } as const;
 
 export type DictKey = keyof typeof en;
@@ -3195,4 +3197,6 @@ export const zh: Record<DictKey, string> = {
   "biz.readings.now": "当前，与首页一致：偿债覆盖 {dscr}，负债/收益 {lev}。",
   "biz.forecast.projected": "预计现金",
   "alerts.waiting.short": "等待您批准",
+  "demo.strip.label": "演示",
+  "demo.strip.text": "合成数据，不会动用任何真实资金。",
 };

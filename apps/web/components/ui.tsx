@@ -17,6 +17,16 @@ const toneBadge: Record<Tone, string> = {
   brand: "bg-brand-50 text-brand-700 border-brand-100",
 };
 
+/** A callout's surface: the tone's tint and line; its title takes the tone's fg and its body stays in ink-2. */
+const toneSurface: Record<Tone, string> = {
+  neutral: "bg-subtle border-line",
+  ok: "bg-ok-bg border-ok-line",
+  warn: "bg-warn-bg border-warn-line",
+  bad: "bg-bad-bg border-bad-line",
+  info: "bg-info-bg border-info-line",
+  brand: "bg-brand-50 border-brand-100",
+};
+
 const toneBorder: Record<Tone, string> = {
   neutral: "border-line",
   ok: "border-ok-line",
@@ -24,6 +34,16 @@ const toneBorder: Record<Tone, string> = {
   bad: "border-bad-line",
   info: "border-info-line",
   brand: "border-brand-100",
+};
+
+/** A card that carries a status or a recommendation wears a 3 px rail in the tone's solid colour (a mark that must be seen). */
+const toneRail: Record<Tone, string> = {
+  neutral: "",
+  ok: "border-l-[3px] border-l-ok-solid",
+  warn: "border-l-[3px] border-l-warn-solid",
+  bad: "border-l-[3px] border-l-bad-solid",
+  info: "border-l-[3px] border-l-info-solid",
+  brand: "border-l-[3px] border-l-brand-600",
 };
 
 const toneText: Record<Tone, string> = {
@@ -35,22 +55,31 @@ const toneText: Record<Tone, string> = {
   brand: "text-brand-700",
 };
 
+/** The solid mark beside a status word: a 6 px dot that must be seen on its own tint (3:1). Colour never speaks alone: the word is always there. */
+const toneDot: Partial<Record<Tone, string>> = { ok: "bg-ok-solid", warn: "bg-warn-solid", bad: "bg-bad-solid", info: "bg-info-solid" };
+
+/** A tinted status pill (bg, line, fg) with its solid dot; neutral and brand badges (a tier, a count, "Recommended") carry no status and no dot. */
 export function Badge({
   tone = "neutral",
   children,
   title,
   className = "",
+  dot = true,
 }: {
   tone?: Tone;
   children: ReactNode;
   title?: string;
   className?: string;
+  /** False where the label has its own mark (a glyph). */
+  dot?: boolean;
 }) {
+  const mark = dot ? toneDot[tone] : undefined;
   return (
     <span
       title={title}
       className={`inline-flex items-center gap-1 whitespace-nowrap rounded-full border px-2 py-0.5 text-xs font-medium ${toneBadge[tone]} ${className}`}
     >
+      {mark ? <span aria-hidden className={`size-1.5 shrink-0 rounded-full ${mark}`} /> : null}
       {children}
     </span>
   );
@@ -93,7 +122,7 @@ export function Card({
   id?: string;
   tone?: Tone;
 }) {
-  const border = tone ? toneBorder[tone] : "border-line";
+  const border = tone ? `${toneBorder[tone]} ${toneRail[tone]}` : "border-line";
   return (
     <section
       id={id}
@@ -142,9 +171,9 @@ type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
 
 const variantClass: Record<ButtonVariant, string> = {
   primary: "bg-brand-600 text-white hover:bg-brand-700 border-transparent",
-  secondary: "bg-surface text-ink border-line-strong hover:bg-subtle",
+  secondary: "bg-surface text-ink border-line-ui hover:bg-subtle",
   ghost: "bg-transparent text-ink-2 border-transparent hover:bg-subtle",
-  danger: "bg-bad-fg text-white border-transparent hover:opacity-90",
+  danger: "bg-bad-solid text-white border-transparent hover:opacity-90",
 };
 
 export function Button({
@@ -208,9 +237,9 @@ export function ErrorState({ error, onRetry }: { error: Error | string; onRetry?
     );
   }
   return (
-    <div role="alert" className="rounded-lg border border-bad-line bg-bad-bg p-4 text-bad-fg">
-      <p className="font-semibold">{t("common.error")}</p>
-      <p className="mt-1 break-words text-sm">{message}</p>
+    <div role="alert" className="rounded-lg border border-bad-line bg-bad-bg p-4">
+      <p className="font-semibold text-bad-fg">{t("common.error")}</p>
+      <p className="mt-1 break-words text-sm text-ink-2">{message}</p>
       {onRetry ? (
         <Button className="mt-3" size="sm" onClick={onRetry}>
           {t("common.retry")}
@@ -240,9 +269,9 @@ export function EmptyState({
 
 export function Callout({ tone = "info", title, children }: { tone?: Tone; title?: ReactNode; children: ReactNode }) {
   return (
-    <div className={`rounded-lg border px-3.5 py-3 text-sm ${toneBadge[tone]}`}>
-      {title ? <p className="font-semibold">{title}</p> : null}
-      <div className={title ? "mt-0.5" : ""}>{children}</div>
+    <div className={`rounded-lg border px-3.5 py-3 text-sm ${toneSurface[tone]}`}>
+      {title ? <p className={`font-semibold ${toneText[tone]}`}>{title}</p> : null}
+      <div className={`text-ink-2 ${title ? "mt-0.5" : ""}`}>{children}</div>
     </div>
   );
 }
@@ -264,7 +293,7 @@ export function Segmented<T extends string>({
   return (
     <fieldset className="min-w-0">
       <legend className="sr-only">{label}</legend>
-      <div className="inline-flex rounded-md border border-line-strong bg-subtle p-0.5">
+      <div className="inline-flex rounded-md border border-line-ui bg-subtle p-0.5">
         {options.map((o) => (
           <label
             key={o.value}

@@ -154,7 +154,7 @@ export default function DealsPage() {
           <LoadingBlock rows={3} />
         ) : !offer ? (
           <>
-            <EmptyState title={t("biz.deals.empty")} body={t("biz.deals.empty.body")} action={<Link href="/chat" className="inline-flex min-h-10 items-center rounded-md border border-line-strong px-3.5 text-sm font-medium text-ink hover:bg-subtle">{t("chat.open")}</Link>} />
+            <EmptyState title={t("biz.deals.empty")} body={t("biz.deals.empty.body")} action={<Link href="/chat" className="inline-flex min-h-10 items-center rounded-md border border-line-ui px-3.5 text-sm font-medium text-ink hover:bg-subtle">{t("chat.open")}</Link>} />
             {commitments}
           </>
         ) : (
@@ -174,7 +174,7 @@ export default function DealsPage() {
                       ))}
                     </ul>
                     <div className="mt-2 flex flex-wrap items-center gap-3">
-                      <Link href="/chat" className="inline-flex min-h-10 items-center rounded-md border border-line-strong bg-surface px-3.5 text-sm font-medium text-ink hover:bg-subtle">
+                      <Link href="/chat" className="inline-flex min-h-10 items-center rounded-md border border-line-ui bg-surface px-3.5 text-sm font-medium text-ink hover:bg-subtle">
                         {t("biz.deals.clarify")}
                       </Link>
                       <details className="text-xs">

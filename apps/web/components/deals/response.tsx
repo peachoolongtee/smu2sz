@@ -22,7 +22,7 @@ function CounterBusinessCard({ c, recommended, today, action }: { c: Counter; re
   const { t, te } = useI18n();
   const e = c.economics ?? null;
   return (
-    <li className={`rounded-lg border p-4 ${recommended ? "border-brand-600 bg-brand-50/40" : "border-line"}`} data-testid={`deal-option-${c.label.replace(/\s+/g, "-")}`}>
+    <li className={`rounded-lg border p-4 ${recommended ? "border-line border-l-[3px] border-l-brand-600 bg-brand-50" : "border-line bg-surface"}`} data-testid={`deal-option-${c.label.replace(/\s+/g, "-")}`}>
       <div className="flex flex-wrap items-center gap-2">
         <h3 className="text-base font-semibold text-ink">{c.label}</h3>
         {recommended ? <Badge tone="brand">{t("biz.deals.option.recommended")}</Badge> : null}
@@ -88,7 +88,7 @@ function NegotiationOutcome({ v, negotiation, today }: { v: VerdictView; negotia
   const ran = negotiation.operations.filter((o) => o.status === "EXECUTED");
   const words = negotiation.rounds.filter((r) => r.buyer_text);
   return (
-    <Card id="counters" title={t("biz.deals.answerTitle")} tone={deal ? "ok" : "bad"}>
+    <Card id="counters" title={t("biz.deals.answerTitle")} tone={deal ? "ok" : undefined}>
       {deal ? (
         <>
           <p className="text-base font-semibold text-ink" data-testid="deal-negotiation">
@@ -121,14 +121,14 @@ function NegotiationOutcome({ v, negotiation, today }: { v: VerdictView; negotia
               <li key={r.round} className="flex flex-wrap items-center gap-2 text-sm">
                 <span className="font-medium text-ink">{t("biz.deals.round", { n: r.round })}</span>
                 {r.counter_label ? <span className="text-ink-2">{r.counter_label}</span> : null}
-                <Badge tone={r.buyer_response === "ACCEPT" ? "ok" : "bad"}>{r.buyer_response === "ACCEPT" ? t("biz.deals.accepted") : t("biz.deals.refused")}</Badge>
+                <Badge tone={r.buyer_response === "ACCEPT" ? "ok" : "neutral"}>{r.buyer_response === "ACCEPT" ? t("biz.deals.accepted") : t("biz.deals.refused")}</Badge>
               </li>
             ))}
           </ol>
           {ran.length ? (
-            <div className="mt-3 rounded-md border border-ok-line bg-ok-bg px-3 py-2 text-sm text-ok-fg" data-testid="deal-gap-funded">
-              <p className="font-medium">{t("biz.deals.gapFunded")}</p>
-              <Link href="/cash" className="mt-1 inline-block font-medium underline underline-offset-2">
+            <div className="mt-3 rounded-md border border-ok-line bg-ok-bg px-3 py-2 text-sm" data-testid="deal-gap-funded">
+              <p className="font-medium text-ok-fg">{t("biz.deals.gapFunded")}</p>
+              <Link href="/cash" className="mt-1 inline-block font-medium text-brand-700 underline underline-offset-2">
                 {t("biz.deals.seeCash")}
               </Link>
             </div>

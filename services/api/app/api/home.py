@@ -704,7 +704,7 @@ def get_home(lang: str = "en", since_day: int | None = None) -> dict[str, Any]:
         warnings = [{"id": a.id, "kind": a.kind.value, "title": relative_days(in_words(state, a.title), today, lang),
                      "detail": relative_days(in_words(state, a.detail), today, lang), "day": a.day,
                      "when": when_text(a.day, today, lang)} for a in found if a.severity == Severity.WARNING]
-        facilities = [{"id": f.id, "name": f.name, "status": f.status.value, "limit_display": fmt_yuan(f.limit_fen),
+        facilities = [{"id": f.id, "name": f.name, "status": f.status.value, "limit_display": fmt_yuan(f.limit_fen), "limit_fen": f.limit_fen,
                        "drawn_fen": f.drawn_fen, "drawn_display": fmt_yuan(f.drawn_fen),
                        "available_display": fmt_yuan(max(f.limit_fen - f.drawn_fen, 0) if f.owner_approved else 0),
                        "lead_time_days": f.lead_time_days}

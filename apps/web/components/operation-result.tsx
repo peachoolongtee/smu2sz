@@ -25,7 +25,7 @@ export function OperationStatePill({ status }: { status: OperationStatus }) {
   const { te } = useI18n();
   return (
     <span data-testid="op-state" data-state={status}>
-      <Badge tone={TONE[status]}>
+      <Badge tone={TONE[status]} dot={false}>
         <span aria-hidden>{GLYPH[status]}</span>
         {te("opstatus", status)}
       </Badge>
@@ -67,7 +67,7 @@ export function OperationResultBox({
         <OperationStatePill status={status} />
       </div>
       {waiting && approvalId ? (
-        <p className="mt-1 text-xs font-medium text-warn-fg" data-testid="op-waiting">
+        <p className="mt-1 text-xs font-medium text-ink-2" data-testid="op-waiting">
           {showId ? <>{t("opstate.approval", { id: approvalId })} · </> : null}
           <Link href={approvalHref(approvalId)} className="underline underline-offset-2" data-testid="op-approval-link">
             {t("opstate.open")}
@@ -75,7 +75,7 @@ export function OperationResultBox({
         </p>
       ) : null}
       {message ? (
-        <p className={`mt-1 break-words text-xs ${status === "REFUSED" ? "font-medium text-bad-fg" : waiting ? "text-warn-fg" : "text-ink-2"}`} data-testid={status === "REFUSED" ? "op-reason" : undefined}>
+        <p className={`mt-1 break-words text-xs ${status === "REFUSED" ? "font-medium text-ink" : "text-ink-2"}`} data-testid={status === "REFUSED" ? "op-reason" : undefined}>
           {status === "REFUSED" ? `${t("opstate.reason")}: ` : ""}
           {message}
         </p>
