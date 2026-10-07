@@ -1519,6 +1519,7 @@ export const en = {
   "biz.promised.short": "Payment expected early",
   "nav.short.cash": "Cash",
   "nav.limits.menu": "Your limits",
+  "biz.cash.neverUnsafe": "Not in the next {n} days",
 } as const;
 
 export type DictKey = keyof typeof en;
@@ -3037,4 +3038,5 @@ export const zh: Record<DictKey, string> = {
   "biz.promised.short": "预计提前到账",
   "nav.short.cash": "现金",
   "nav.limits.menu": "您的上限",
+  "biz.cash.neverUnsafe": "未来 {n} 天内不会",
 };

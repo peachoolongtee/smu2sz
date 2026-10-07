@@ -6,6 +6,7 @@ import { CashForecast } from "@/components/business/cash-forecast";
 import { CurrentFunding } from "@/components/business/current-funding";
 import { FacilityExplainer } from "@/components/business/facility-explainer";
 import { FundingOptions } from "@/components/business/funding-options";
+import { FactTile } from "@/components/business/kit";
 import { NextActionBlock } from "@/components/business/next-action";
 import { FixResult, useFixAlert } from "@/components/home/fix-alert";
 import { Card, ErrorState, Formula, LoadingBlock, PageHeader, TableWrap, tableCls, tdCls, thCls } from "@/components/ui";
@@ -113,26 +114,41 @@ export default function CashPage() {
               </p>
               <p className="mt-1 text-sm text-ink-2">{h.note}</p>
               {h.worst ? <p className={`mt-1 text-sm ${unsafe ? "text-bad-fg" : "text-ink-3"}`}>{h.worst}</p> : null}
-              <dl className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3" data-testid="cash-figures">
-                {(
-                  [
-                    [t("biz.cashToday"), h.cash.cash_short],
-                    [t("biz.reserveMin"), h.cash.floor_short],
-                    [t("biz.headroom"), h.cash.headroom_short ?? ""],
-                    [breachIsWorst ? t("biz.firstBreachIsWorst") : unsafe ? t("biz.worstPoint") : t("biz.lowestAhead"), `${h.cash.lowest_short} · ${h.cash.lowest_when}`],
-                    [t("biz.lowestHeadroom"), h.cash.lowest_headroom_short ?? ""],
-                    [t("biz.firstUnsafeDay"), breachIsWorst ? "" : (h.cash.first_breach_when ?? t("biz.none"))],
-
-                  ] as const
-                ).map(([k, v]) =>
-                  v ? (
-                    <div key={k} className="min-w-0">
-                      <dt className="text-xs font-medium text-ink-3">{k}</dt>
-                      <dd className="break-words text-sm font-semibold tabular-nums text-ink">{v}</dd>
-                    </div>
-                  ) : null,
+              {/* Four facts: today's cash, the reserve, when cash becomes unsafe, the worst point. Headroom in one quieter line. */}
+              <dl className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4" data-testid="cash-figures">
+                <FactTile label={t("biz.cashToday")}>{h.cash.cash_short}</FactTile>
+                <FactTile label={t("biz.reserveMin")}>{h.cash.floor_short}</FactTile>
+                {breachIsWorst ? (
+                  <FactTile label={t("biz.firstBreachIsWorst")} valueTone="bad" note={h.cash.first_breach_when}>
+                    {h.cash.first_breach_cash_short}
+                  </FactTile>
+                ) : (
+                  <>
+                    <FactTile label={t("biz.firstUnsafeDay")} valueTone={unsafe ? "bad" : undefined} testId="cash-unsafe-when">
+                      {h.cash.first_breach_when ?? t("biz.cash.neverUnsafe", { n: h.cash.horizon_days })}
+                    </FactTile>
+                    <FactTile label={unsafe ? t("biz.worstPoint") : t("biz.lowestAhead")} valueTone={unsafe ? "bad" : undefined} note={h.cash.lowest_when}>
+                      {h.cash.lowest_short}
+                    </FactTile>
+                  </>
                 )}
               </dl>
+              {h.cash.headroom_short !== undefined || h.cash.lowest_headroom_short !== undefined ? (
+                <dl className="mt-3 flex flex-wrap items-baseline gap-x-8 gap-y-1 text-sm" data-testid="cash-headroom">
+                  {h.cash.headroom_short !== undefined ? (
+                    <div className="flex items-baseline gap-2">
+                      <dt className="text-ink-3">{t("biz.headroom")}</dt>
+                      <dd className="font-semibold tabular-nums text-ink">{h.cash.headroom_short}</dd>
+                    </div>
+                  ) : null}
+                  {h.cash.lowest_headroom_short !== undefined ? (
+                    <div className="flex items-baseline gap-2">
+                      <dt className="text-ink-3">{t("biz.lowestHeadroom")}</dt>
+                      <dd className="font-semibold tabular-nums text-ink">{h.cash.lowest_headroom_short}</dd>
+                    </div>
+                  ) : null}
+                </dl>
+              ) : null}
             </Card>
 
             <FixResult result={fixer.result} error={fixer.error} changed={fixer.changed} />

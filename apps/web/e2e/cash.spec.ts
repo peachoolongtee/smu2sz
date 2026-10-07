@@ -23,11 +23,15 @@ test("risk, plan, options, forecast: one set of figures, in the owner's order", 
   await page.goto("/cash");
   await expect(page.getByTestId("cash-headline")).toHaveText("Your cash reserve becomes unsafe in 12 days.");
   // Headroom is said directly: cash minus the reserve, today and at the lowest point ahead.
+  // Four fact tiles (cash today, the reserve, when cash becomes unsafe, the worst point) and the headroom in one quiet line.
   const figures = page.getByTestId("cash-figures");
-  await expect(figures).toContainText("Available headroom");
-  await expect(figures).toContainText("¥100k");
-  await expect(figures).toContainText("Lowest forecast headroom");
-  await expect(figures).toContainText("−¥405k");
+  await expect(figures.locator("dt")).toHaveText(["Cash today", "Minimum cash reserve", "Cash becomes unsafe", "Worst point"]);
+  await expect(page.getByTestId("cash-unsafe-when")).toHaveText("in 12 days");
+  const headroom = page.getByTestId("cash-headroom");
+  await expect(headroom).toContainText("Available headroom");
+  await expect(headroom).toContainText("¥100k");
+  await expect(headroom).toContainText("Lowest forecast headroom");
+  await expect(headroom).toContainText("−¥405k");
   const action = page.getByTestId("home-next-action");
   await expect(action.getByTestId("next-action-title")).toHaveText("Secure ¥405k of funding");
   await expect(action.getByTestId("next-action-cost")).toContainText("¥3,113.93");
@@ -51,6 +55,13 @@ test("risk, plan, options, forecast: one set of figures, in the owner's order", 
   await expect(full).not.toContainText("at a higher cost");
 
   await expect(full.getByTestId("cash-option-selected")).toContainText("¥3,113.93");
+  // Each row opens to why it ranks where it does: closed first, the server's note once it is tapped; what is uncovered stays on the line.
+  const alt = full.locator("li").nth(1);
+  await expect(alt.getByTestId("cash-option-details")).not.toHaveAttribute("open", "");
+  await expect(alt.getByTestId("cash-option-why")).toBeHidden();
+  await alt.locator("summary").click();
+  await expect(alt.getByTestId("cash-option-why")).toBeVisible();
+  await expect(alt.getByTestId("cash-option-why")).toContainText("admissible but dearer than the selected plan");
   await expect(full.locator("li")).toHaveCount(3);
   // The recommended plan is #1, then the dearer alternatives in ascending cost.
   const first = full.locator("li").first();
@@ -95,6 +106,7 @@ test("after the plan ran, the page states the current funding and folds the comp
   await page.goto("/cash");
   await expect(page.getByTestId("cash-headline")).toHaveText("You're covered.");
   await expect(page.getByTestId("home-next-action")).toHaveCount(0);
+  await expect(page.getByTestId("cash-unsafe-when")).toHaveText("Not in the next 120 days");
   const current = page.locator("#cash-current");
   await expect(current).toContainText("Current funding");
   await expect(current.getByTestId("cash-lot-landed")).toContainText("¥150,000.00");
@@ -121,7 +133,8 @@ test("day 34: the first breach is also the worst point, so the figures row says 
   await page.goto("/cash");
   const figures = page.getByTestId("cash-figures");
   await expect(figures).toContainText("Cash at first breach (also the lowest point)");
-  await expect(figures).toContainText("¥100k · in 8 days");
+  await expect(figures).toContainText("¥100k");
+  await expect(figures).toContainText("in 8 days");
   await expect(figures).not.toContainText("Worst point");
   await expect(figures).not.toContainText("Cash becomes unsafe");
   await expect(figures.getByText("in 8 days")).toHaveCount(1);

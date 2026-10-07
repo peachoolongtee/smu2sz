@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Area, AreaChart, CartesianGrid, ReferenceArea, ReferenceDot, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { axisFloor, axisYuanK } from "@/lib/chart-helpers";
 import { useI18n } from "@/lib/i18n";
@@ -50,8 +50,22 @@ function defaultHorizon(h: HomeView): Horizon {
   return HORIZONS.find((n) => span <= n) ?? 120;
 }
 
+/** True on a phone-width screen, where the chart has room for fewer labels. */
+function useNarrow(): boolean {
+  const [narrow, setNarrow] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 639px)");
+    const update = () => setNarrow(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
+  return narrow;
+}
+
 export function CashForecast({ h }: { h: HomeView }) {
   const { t } = useI18n();
+  const narrow = useNarrow();
   const [horizon, setHorizon] = useState<Horizon>(() => defaultHorizon(h));
   const today = h.day;
   const to = Math.min(today + horizon, today + h.cash.horizon_days);
@@ -63,11 +77,20 @@ export function CashForecast({ h }: { h: HomeView }) {
   const breachRow = breach === null ? undefined : data.find((r) => r.day === breach);
   const lowestRow = h.cash.lowest_day <= to ? data.find((r) => r.day === h.cash.lowest_day) : undefined;
   // The largest movements in the window, by the server's own event amounts (ordering fen is plotting, not reporting).
+  // Labels that would sit on top of each other are dropped: at most one per stretch of the axis, and none beside the first
+  // unsafe day or the lowest point, which carry their own marker. A phone has room for two.
+  const gap = Math.max(2, Math.round((to - today) / (narrow ? 5 : 10)));
+  const taken: number[] = [breach, lowestRow?.day ?? null].filter((d): d is number => d !== null);
   const annotations = data
     .flatMap((r) => r.events.map((e) => ({ day: r.day, cash: r.cash, e })))
     .filter((x) => x.e.kind === "FLOW" || x.e.kind === "RECEIPT" || x.e.kind === "EARLY_RECEIPT" || x.e.kind === "ADVANCE" || x.e.kind === "DRAW")
     .sort((a, b) => Math.abs(b.e.amount_fen) - Math.abs(a.e.amount_fen))
-    .slice(0, MAX_ANNOTATIONS);
+    .filter((x) => {
+      if (to - x.day < gap || taken.some((d) => Math.abs(d - x.day) < gap)) return false;
+      taken.push(x.day);
+      return true;
+    })
+    .slice(0, narrow ? 2 : MAX_ANNOTATIONS);
   const ticks: number[] = [];
   const step = horizon <= 30 ? 5 : horizon <= 60 ? 10 : 20;
   for (let d = today; d <= to; d += step) ticks.push(d);
@@ -109,7 +132,7 @@ export function CashForecast({ h }: { h: HomeView }) {
             <XAxis dataKey="day" type="number" domain={[today, to]} ticks={ticks} tickFormatter={tick} stroke={AXIS} fontSize={12} tickLine={false} />
             <YAxis width={56} tickFormatter={axisYuanK} domain={[yMin, "auto"]} stroke={AXIS} fontSize={12} tickLine={false} axisLine={false} />
             <Tooltip content={<ForecastTooltip today={today} />} cursor={{ stroke: AXIS, strokeDasharray: "3 3" }} />
-            <ReferenceLine y={floor} stroke={SERIES.floor.stroke} strokeWidth={2} strokeDasharray="6 4" label={{ value: `${t("biz.reserveMin")} ${h.cash.floor_short}`, position: "insideBottomRight", fill: SERIES.floor.stroke, fontSize: 11 }} />
+            <ReferenceLine y={floor} stroke={SERIES.floor.stroke} strokeWidth={2} strokeDasharray="6 4" label={narrow ? undefined : { value: `${t("biz.reserveMin")} ${h.cash.floor_short}`, position: "insideBottomRight", fill: SERIES.floor.stroke, fontSize: 11 }} />
             {breach !== null ? (
               <ReferenceLine x={breach} stroke={SERIES.floor.stroke} strokeDasharray="2 3" label={{ value: t("biz.forecast.unsafe", { when: h.cash.first_breach_when ?? "" }), position: "top", fill: SERIES.floor.stroke, fontSize: 11, fontWeight: 600 }} />
             ) : null}
