@@ -26,7 +26,7 @@ const CHANGES_SHOWN = 3;
  * Level 2: what requires the owner's decision, as a question with its cost and landing. The one place the pending
  * approval is spelled out on the home (the recent changes keep its row). The buttons are on the approval card, never here.
  */
-export function DecisionsBlock({ approvals }: { approvals: HomeApproval[] }) {
+export function DecisionsBlock({ approvals, primary = false }: { approvals: HomeApproval[]; primary?: boolean }) {
   const { t } = useI18n();
   return (
     <Card id="home-decisions" title={t("biz.decisions")} subtitle={t("biz.decisions.sub")} actions={<Link href="/approvals" className="text-xs font-medium text-brand-700 underline underline-offset-2">{t("home.waiting.open")}</Link>}>
@@ -46,7 +46,16 @@ export function DecisionsBlock({ approvals }: { approvals: HomeApproval[] }) {
                 sub={[a.cost_display ? t("alerts.cost", { cost: a.cost_display }) : null, a.lands_day !== null ? t("biz.landsShort", { when: a.lands_when ?? "" }) : null, a.protects]
                   .filter(Boolean)
                   .join(" · ")}
-                right={<span className="text-xs font-medium text-brand-700">{t("biz.review")}</span>}
+                right={
+                  // The page's one primary action while no plan waits to be run: the question is the thing to answer.
+                  primary ? (
+                    <span className="inline-flex min-h-10 items-center rounded-md bg-brand-600 px-3.5 text-sm font-medium text-white" data-testid="home-review-primary">
+                      {t("biz.review")}
+                    </span>
+                  ) : (
+                    <span className="text-xs font-medium text-brand-700">{t("biz.review")}</span>
+                  )
+                }
               />
             </li>
           ))}

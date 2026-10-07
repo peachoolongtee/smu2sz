@@ -222,6 +222,10 @@ test("day 34: the fix needs approval; queuing it from the home runs nothing and 
   await expect(page.getByTestId("approvals-badge")).toContainText("1 approval waiting");
   await expect(page.getByTestId("fix-open-ALERT-RESERVE-42")).toHaveCount(0);
   // Needs your decision: the question, the cost and the landing day, and a link to the card.
+  // The decision card's button is the page's one primary action (nothing else is left to run), filled like "Run funding plan".
+  await expect(page.getByTestId("home-review-primary")).toHaveText("Review and decide");
+  await expect(page.getByTestId("home-review-primary")).toHaveClass(/bg-brand-600/);
+  await expect(page.locator("main button.bg-brand-600")).toHaveCount(0);
   const decision = page.getByTestId("home-approval-APR-000001");
   await expect(decision).toContainText("Approve ¥200,000.00 of invoice financing?");
   await expect(decision).toContainText("Cost ¥1,782.19");

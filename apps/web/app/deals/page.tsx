@@ -10,7 +10,7 @@ import { ACTION_KEY, DealDecision } from "@/components/deals/decision";
 import { WhyRecommended } from "@/components/deals/reasons";
 import { InboxList } from "@/components/deals/inbox-list";
 import { RecommendedResponse } from "@/components/deals/response";
-import { NextStep, nextLinkCls } from "@/components/next-step";
+import { NextStep, nextLinkCls, nextLinkSecondaryCls } from "@/components/next-step";
 import { PlanCard } from "@/components/plan-card";
 import { Button, Callout, Card, EmptyState, ErrorState, Formula, LoadingBlock, PageHeader } from "@/components/ui";
 import { evaluate as evaluateAndCache } from "@/lib/demo";
@@ -111,7 +111,8 @@ export default function DealsPage() {
         ? { text: t("next.agreed"), action: <a href="#commitments" className={nextLinkCls}>{t("next.seeHome")}</a> }
         : { text: t("next.noDeal"), action: <a href="#inbox-list" className={nextLinkCls}>{t("next.backToOffers")}</a> };
   } else if (offer && v && v.counters.length) {
-    next = { text: t("next.counter"), action: <a href="#counters" className={nextLinkCls}>{t("next.toCounters")}</a> };
+    // The response card below carries the page's one primary action ("Send this counter"); this link only leads to it.
+    next = { text: t("next.counter"), action: <a href="#counters" className={nextLinkSecondaryCls}>{t("next.toCounters")}</a> };
   }
 
   const commitments = <ActiveCommitments today={today} buyerName={buyerName} hideEmpty />;

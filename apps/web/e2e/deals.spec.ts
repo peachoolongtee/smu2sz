@@ -115,6 +115,9 @@ test("opening a message reads it, and the evaluated deal reads in the owner's or
 
   // The next step points at the response; the disclosures are closed and hold the evidence.
   await expect(next.getByRole("link", { name: "See what we'd offer back" })).toHaveAttribute("href", "#counters");
+  // One filled call to action on the page ("Send this counter"); the next-step link is the secondary style.
+  await expect(next.getByRole("link", { name: "See what we'd offer back" })).not.toHaveClass(/bg-brand-600/);
+  await expect(response.getByTestId("deal-send")).toHaveClass(/bg-brand-600/);
   for (const id of ["deal-why", "deal-original", "deal-calc"]) {
     await expect(page.getByTestId(id)).not.toHaveAttribute("open", "");
   }

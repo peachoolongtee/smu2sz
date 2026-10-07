@@ -60,7 +60,7 @@ export default function HomePage() {
           <FixResult result={fixer.result} error={fixer.error} changed={fixer.changed} />
           {h.next_action ? <NextActionBlock a={h.next_action} stateVersion={h.state_version} fixer={fixer} /> : null}
           {/* An empty section is hidden: the absence of decisions or news is not itself news. */}
-          {h.pending_count > 0 ? <DecisionsBlock approvals={h.approvals} /> : null}
+          {h.pending_count > 0 ? <DecisionsBlock approvals={h.approvals} primary={!h.next_action || Boolean(h.next_action.pending_approval_id)} /> : null}
           <div className="grid gap-5 lg:grid-cols-2">
             <ReceivablesBlock r={h.receivables} />
             {h.changes.length ? (

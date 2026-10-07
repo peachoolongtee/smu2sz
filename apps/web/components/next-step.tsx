@@ -27,5 +27,8 @@ export function NextStep({ label, children, action, testId = "next-step" }: { la
   );
 }
 
+/** The same link as a secondary button, for a page whose own card carries the primary action (a counter to send). */
+export const nextLinkSecondaryCls = "inline-flex min-h-10 items-center gap-1.5 rounded-md border border-line-strong bg-surface px-3.5 text-sm font-medium text-ink hover:bg-subtle";
+
 /** A link styled as the primary button, for a next step that is a navigation. */
 export const nextLinkCls = "inline-flex min-h-10 items-center gap-1.5 rounded-md bg-brand-600 px-3.5 text-sm font-medium text-white hover:bg-brand-700";
