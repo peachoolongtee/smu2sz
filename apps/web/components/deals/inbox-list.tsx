@@ -111,7 +111,7 @@ export function InboxList({
             </span>
           ) : read ? (
             <span className="flex items-center gap-1 text-ok-fg">
-              <CheckIcon width={12} height={12} />
+              <CheckIcon />
               {t("inbox.readDone")}
             </span>
           ) : (

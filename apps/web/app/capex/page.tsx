@@ -161,7 +161,7 @@ export default function CapexPage() {
                                   }`}
                                   title={cell.passes ? t("capex.passes") : t("capex.fails")}
                                 >
-                                  {cell.passes ? <CheckIcon width={12} height={12} /> : <XIcon width={12} height={12} />}
+                                  {cell.passes ? <CheckIcon /> : <XIcon />}
                                   {cell.dscr.text}&times;
                                 </span>
                               ) : (

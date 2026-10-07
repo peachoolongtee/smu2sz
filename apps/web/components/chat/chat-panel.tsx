@@ -49,7 +49,7 @@ export function ChatPanel() {
         onClick={(e) => {
           if (e.target === e.currentTarget) setPanelOpen(false);
         }}
-        className="fixed inset-y-0 left-auto right-0 m-0 h-dvh max-h-dvh w-full max-w-[min(32rem,100vw)] overflow-x-hidden border-l border-line bg-surface p-0 text-ink shadow-2xl backdrop:bg-ink/30 open:animate-[tl-slide-in_0.18s_ease-out]"
+        className="fixed inset-y-0 left-auto right-0 m-0 h-dvh max-h-dvh w-full max-w-[min(32rem,100vw)] overflow-x-hidden border-l border-line bg-surface p-0 text-ink shadow-pop backdrop:bg-ink/30 motion-panel"
       >
         {panelOpen ? (
           <div className="flex h-full flex-col">

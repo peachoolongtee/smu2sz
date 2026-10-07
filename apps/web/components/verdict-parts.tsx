@@ -91,7 +91,7 @@ export function CounterCard({ c, legs = [] }: { c: Displayed<CounterProposal>; l
           <p className="text-lg font-semibold tabular-nums">{c.supplier_cost_display}</p>
         </div>
       </div>
-      <blockquote className="mt-3 rounded-md border-l-4 border-warn-line bg-warn-bg/60 px-3 py-2 text-sm">{business && c.text_when ? c.text_when : c.text}</blockquote>
+      <blockquote className="mt-3 rounded-tile border border-warn-line bg-warn-bg/60 px-3 py-2 text-sm">{business && c.text_when ? c.text_when : c.text}</blockquote>
       <p className="mt-3 text-sm text-ink-2">{business && c.rationale_when ? c.rationale_when : c.rationale}</p>
       {legs.map((l) => (
         <div key={l.obligation_id} className="mt-3">

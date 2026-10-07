@@ -146,7 +146,7 @@ export default function SecurityPage() {
 
           {data.summary.reply_text ? (
             <Card id="sec-reply" title={t("sec.reply")} subtitle={t("sec.reply.sub")}>
-              <blockquote className="rounded-md border-l-4 border-line-strong bg-subtle px-3 py-2 text-sm">{data.summary.reply_text}</blockquote>
+              <blockquote className="rounded-tile border border-line bg-subtle px-3 py-2 text-sm">{data.summary.reply_text}</blockquote>
             </Card>
           ) : null}
 
