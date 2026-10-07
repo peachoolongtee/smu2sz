@@ -142,7 +142,8 @@ def _lowest(traj: dict[str, Any]) -> tuple[int, int]:
 # Display-only fields the simplification map added to the router plan's comparison rows and legs (they never feed the
 # engine, see tests/funding/test_display_fields_inert.py). The golden digest is of the payload without them.
 _ROW_DISPLAY = ("status", "reason_kind", "shortfall_fen", "shortfall_display", "worst_day", "not_executable_reason",
-                "not_executable_reason_when", "note_when", "components_when")
+                "not_executable_reason_when", "note_when", "components_when",
+                "approval_reason_when")  # approval_reason_when: the comparison rows' approval-reason sentence (Wave 4/7)
 
 
 def _strip_when(plan: dict[str, Any]) -> None:
