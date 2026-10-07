@@ -4,7 +4,7 @@ import { Card } from "@/components/ui";
 import type { DictKey } from "@/lib/dictionary";
 import { useI18n } from "@/lib/i18n";
 import { businessAction } from "@/lib/presentation-fallbacks";
-import type { BusinessAction, VerdictView } from "@/lib/types";
+import type { BusinessAction, NegotiationView, VerdictView } from "@/lib/types";
 import { whenText } from "@/lib/when";
 
 export const ACTION_KEY: Record<BusinessAction, DictKey> = {
@@ -15,9 +15,10 @@ export const ACTION_KEY: Record<BusinessAction, DictKey> = {
   cannot: "biz.deals.action.cannot",
 };
 
-const ACTION_TONE: Record<BusinessAction, "ok" | "warn" | "bad" | undefined> = {
+const ACTION_TONE: Record<BusinessAction, "ok" | "warn" | "bad" | "brand" | undefined> = {
   accept: "ok",
-  counter: "warn",
+  // A recommendation is the brand's, not a status: it is the thing to do.
+  counter: "brand",
   decline: "bad",
   needs_owner: "warn",
   cannot: undefined,
@@ -29,20 +30,31 @@ const ACTION_TONE: Record<BusinessAction, "ok" | "warn" | "bad" | undefined> = {
  * cash that day) and the worst point (a different day), plus one sentence when the early-payment discount is dearer
  * than funding. Every figure is a server display string; days are distances from today.
  */
-export function DealDecision({ v, today }: { v: VerdictView; today: number }) {
+export function DealDecision({ v, today, negotiation = null }: { v: VerdictView; today: number; negotiation?: NegotiationView | null }) {
   const { t } = useI18n();
   const action = businessAction(v);
+  // Once the buyer has answered, the headline is the outcome, not the recommendation that preceded it.
+  const outcome = negotiation?.outcome ?? null;
+  const headline = outcome === "DEAL" ? t("biz.deals.action.agreed") : outcome === "NO_DEAL" ? t("biz.deals.action.noDeal") : t(ACTION_KEY[action]);
+  // An agreement is fine (ok); no deal is a closed matter, not an alarm (neutral).
+  const tone = outcome === "DEAL" ? "ok" : outcome === "NO_DEAL" ? undefined : ACTION_TONE[action];
   const tr = v.trajectory ?? null;
   const breach = tr?.first_breach_day ?? null;
   const dearer = v.violations.find((x) => x.code === "DISCOUNT_ABOVE_BREAK_EVEN");
   const fc = v.forward_concession;
   return (
-    <Card id="deal-recommendation-card" tone={ACTION_TONE[action]}>
+    <Card id="deal-recommendation-card" tone={tone}>
       <p className="text-xs font-semibold uppercase tracking-wide text-ink-3">{t("biz.deals.recommendation")}</p>
-      <p className="mt-1 text-2xl font-semibold text-ink" data-testid="deal-recommendation">
-        {t(ACTION_KEY[action])}
+      <p className="mt-1 text-2xl font-semibold text-ink" data-testid="deal-recommendation" data-outcome={outcome ?? ""}>
+        {headline}
       </p>
-      <dl className="mt-4 grid gap-4 sm:grid-cols-3">
+      {/* The three numbers are about the offer as the buyer asked for it, not about a counter: the line says so. */}
+      {action !== "accept" && (tr || fc) ? (
+        <p className="mt-3 text-sm text-ink-2" data-testid="deal-if-accept">
+          {outcome ? t("biz.deals.ifAccepted") : t("biz.deals.ifAccept")}
+        </p>
+      ) : null}
+      <dl className="mt-2 grid gap-4 sm:grid-cols-3">
         {v.concession_values.length || fc ? (
           <div data-testid="deal-fact-cost">
             <dt className="text-xs font-medium text-ink-3">{t("biz.deals.fact.concessions")}</dt>

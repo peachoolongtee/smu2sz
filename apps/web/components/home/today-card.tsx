@@ -62,7 +62,7 @@ export function TodayCard({ onAdvanced }: { onAdvanced: () => void }) {
               step={1}
               value={days}
               onChange={(e) => setDays(e.target.value)}
-              className="mt-1 block min-h-10 w-24 rounded-md border border-line-strong bg-surface px-2 text-sm tabular-nums text-ink"
+              className="mt-1 block min-h-10 w-24 rounded-md border border-line-ui bg-surface px-2 text-sm tabular-nums text-ink"
               data-testid="home-days"
             />
           </label>

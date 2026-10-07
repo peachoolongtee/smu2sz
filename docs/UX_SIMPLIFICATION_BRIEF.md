@@ -115,6 +115,33 @@ The page never says "no funding is needed" and "ways to cover the gap" together.
 | Ask the agent | Ask FLOW | shell |
 | Read the offer · Check it · Respond · Agreed | Received · Analysed · Respond · Agreed | Deals stepper |
 | Day N anywhere in Business mode (plan card, badges, counter text "on or before day 2") | distances or dates | Deals, Cash, Activity, Approvals |
+| Run funding plan (a button that ran at once) | Run funding plan, then "Run this plan now? You receive ¥405,000.00; the estimated total cost is ¥3,113.93." with Yes, run it / Cancel | Home, Cash |
+| Recommended / a block of ten figures and sentences | Recommended next step: the outcome, three tiles (Estimated total cost, Funds available, Who decides), the buttons, then "Details" | Home, Cash |
+| Why / worst-point sentence in red under the note | "Why" folds the worst-point sentence and the drivers; the Worst point is a tile | Home |
+| Waiting for your approval (APR-000001) + "Nothing has run yet…" + the full question, four times | Waiting for your approval, with the link; the question once on the decision card and once in Recent changes | Home, Cash |
+| Review and decide (a text link) | Review and decide, the page's one filled button while nothing is left to run | Home |
+| Recent changes / Who owes you as boxes | Rows with the amount on the right; three shown, "Show N more" | Home |
+| View parsed terms | How the agent read it | Deals |
+| 1 suspicious message was blocked | 1 message from an unknown sender was set aside. The agent does not act on messages from senders that are not on your books. | Deals |
+| Recommendation (after a counter was sent) | Agreed with the buyer / No deal, with "The buyer's answer" card, the agreed terms as sentences or what happens next | Deals |
+| (no line above the three numbers) | If you accept the offer as asked: | Deals |
+| Computed on day 0 / Generated on day 0 | Computed today / Generated 3 days ago | Capex |
+| Hypothetical verdict: REJECT badge, six cards | Breaks your limits, three figures; "How this was worked out" folds the engine's cards | What-if |
+| Open the what-if sandbox; see the verdict and the cash line | Try different terms; see the answer and the cash line | Cash & funding |
+| Each entry is hash-chained to the one before it | Each entry is sealed to the one before it | Activity |
+| Chain valid, 2 entries | Records verified | Activity |
+| Operations the executor refused | What FLOW refused | Activity |
+| Tier 2 requests, such as the capex loan | Requests that need your approval, such as a loan application | Approvals |
+| the yearly cost of 32.52% … (all charges … annualised = 32.52%) | the yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval (the working is under the card's details) | Approvals |
+| It keeps cash above your minimum cash reserve for the next 12 days (the card) / 120 days (the home) | One sentence for one cure: the home's, on the card too | Approvals |
+| admissible but dearer than the selected plan | within your limits but dearer than the selected plan | Cash |
+| #1 …#5 over the day-0 comparison on day 34 | Today's plan while a gap is open; the decision-time comparison only once covered, under "Other plans considered" | Cash |
+| If you do nothing (a funded line) | Projected cash | Cash |
+| A committed cure exists: … ¥336,000.00, cost ¥2,994.08 (under a ¥255,000 plan) | A fallback also exists: … for ¥336,000.00, at ¥2,994.08 (…); FLOW recommends the plan above. | Home, Cash |
+| RCV-A · commitment CMT-… · DEMO-RCPT-1 beside a receipt | The buyer's name and the sentence; the record ids under Audit details | Receivables |
+| {n} invoice(s), {n} approval(s), {n} round(s) | 1 invoice / 2 invoices (one plural template for every count) | everywhere |
+| Borrow alone / Tier 2 threshold | Borrow alone up to / Needs you above | Limits |
+| (no tour) | Show me around, in the account sheet: two steps per page, off by default | every page |
 
 Chinese strings follow for every new key.
 
@@ -154,3 +181,7 @@ As charted on map #26, one ticket per wave, each merged into `dev` with `--no-ff
 | 7 | #36 | Responsive and regression pass, cold-user test, review, gate, final report | 3, 5, 6 |
 
 Screenshots are retaken after every wave with the same spec and reviewed by the questions of the brief's section 44 before the ticket closes.
+
+## 11. What came from feat/upgrading (Wave 8, ticket #38)
+
+Ported by component, never merged: the next-step card (three facts, Details, a confirm step), the Home hero shape (now the deep block of the colour direction), rows with "Show N more", pill navigation and the phone tab bar, Cash & funding's options that open and its four figures, the Deals outcome card, the No deal step and the set-aside sentence, the What-if summary, plural templates, the 401/403 sign-in state, "¥1M" ticks, stacked key values, page titles and `<html lang>`, `idsToNames`, the tour (re-keyed, off by default), and the Chinese home recordings. Left: the backdrop, the gradient hero and buttons, the rainbow shortcuts and avatars, `plainDays` and `localNames` (the server says it: `*_when`, `event_text`, `label_short`), "Cheapest committed plan", engine chips at level 1, Buy equipment in the navigation, Google Fonts, the header-check spec, and the branch's `mocks/`. The colour is `docs/research/colour-direction-2026-10-08.md`, option C. The cold-user walk's contradictions were fixed in the same wave (items 12 to 21 of the spec): the stale day-0 comparison, the two horizons for one cure, "No commitments yet" beside a commitment, "waiting" beside "approved", a cure quoted under a different plan, two debt readings, the funded chart's label, engine words and ids at level 1, and two primary buttons.

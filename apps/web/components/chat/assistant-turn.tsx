@@ -161,10 +161,13 @@ export function OperationList({ operations, business = false }: { operations: Nl
         {operations.map((o) => (
           <li key={`${o.op_id}-${o.seq ?? ""}-${o.status}`}>
             {business ? (
-              <OperationResultBox status={o.status} message="" approvalId={o.approval_id} testId={`chat-op-${o.kind}`} kind={o.kind} details={<OperationAudit o={o} />}>
-                <span className="min-w-0 break-words text-sm font-medium text-ink" data-testid="op-sentence">
-                  {o.event_text || o.message_when || o.message}
-                </span>
+              <OperationResultBox status={o.status} message="" approvalId={o.approval_id} testId={`chat-op-${o.kind}`} kind={o.kind} details={<OperationAudit o={o} />} showId={false}>
+                {/* A request that waits is said once, by the status and its link; the question is on the decision card and in the recent changes. */}
+                {o.status === "PENDING_APPROVAL" ? null : (
+                  <span className="min-w-0 break-words text-sm font-medium text-ink" data-testid="op-sentence">
+                    {o.event_text || o.message_when || o.message}
+                  </span>
+                )}
               </OperationResultBox>
             ) : (
               <OperationResultBox status={o.status} message={o.message} approvalId={o.approval_id} testId={`chat-op-${o.kind}`} kind={o.kind}>

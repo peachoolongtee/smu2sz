@@ -10,7 +10,7 @@ import { ACTION_KEY, DealDecision } from "@/components/deals/decision";
 import { WhyRecommended } from "@/components/deals/reasons";
 import { InboxList } from "@/components/deals/inbox-list";
 import { RecommendedResponse } from "@/components/deals/response";
-import { NextStep, nextLinkCls } from "@/components/next-step";
+import { NextStep, nextLinkCls, nextLinkSecondaryCls } from "@/components/next-step";
 import { PlanCard } from "@/components/plan-card";
 import { Button, Callout, Card, EmptyState, ErrorState, Formula, LoadingBlock, PageHeader } from "@/components/ui";
 import { evaluate as evaluateAndCache } from "@/lib/demo";
@@ -82,6 +82,8 @@ export default function DealsPage() {
   /** The recommendation words for a message already evaluated in this session, for its inbox row. */
   function statusFor(docId: string): string | null {
     const o = Object.values(demo.offers).find((x) => x.documents[0]?.doc_id === docId);
+    const negotiation = o ? demo.negotiations[o.offer.offer_id] : undefined;
+    if (negotiation) return t(negotiation.outcome === "DEAL" ? "biz.deals.action.agreed" : "biz.deals.action.noDeal");
     const verdict = o ? demo.verdicts[o.offer.offer_id] : undefined;
     return verdict ? t(ACTION_KEY[businessAction(verdict)]) : null;
   }
@@ -109,7 +111,8 @@ export default function DealsPage() {
         ? { text: t("next.agreed"), action: <a href="#commitments" className={nextLinkCls}>{t("next.seeHome")}</a> }
         : { text: t("next.noDeal"), action: <a href="#inbox-list" className={nextLinkCls}>{t("next.backToOffers")}</a> };
   } else if (offer && v && v.counters.length) {
-    next = { text: t("next.counter"), action: <a href="#counters" className={nextLinkCls}>{t("next.toCounters")}</a> };
+    // The response card below carries the page's one primary action ("Send this counter"); this link only leads to it.
+    next = { text: t("next.counter"), action: <a href="#counters" className={nextLinkSecondaryCls}>{t("next.toCounters")}</a> };
   }
 
   const commitments = <ActiveCommitments today={today} buyerName={buyerName} hideEmpty />;
@@ -151,7 +154,7 @@ export default function DealsPage() {
           <LoadingBlock rows={3} />
         ) : !offer ? (
           <>
-            <EmptyState title={t("biz.deals.empty")} body={t("biz.deals.empty.body")} action={<Link href="/chat" className="inline-flex min-h-10 items-center rounded-md border border-line-strong px-3.5 text-sm font-medium text-ink hover:bg-subtle">{t("chat.open")}</Link>} />
+            <EmptyState title={t("biz.deals.empty")} body={t("biz.deals.empty.body")} action={<Link href="/chat" className="inline-flex min-h-10 items-center rounded-md border border-line-ui px-3.5 text-sm font-medium text-ink hover:bg-subtle">{t("chat.open")}</Link>} />
             {commitments}
           </>
         ) : (
@@ -171,7 +174,7 @@ export default function DealsPage() {
                       ))}
                     </ul>
                     <div className="mt-2 flex flex-wrap items-center gap-3">
-                      <Link href="/chat" className="inline-flex min-h-10 items-center rounded-md border border-line-strong bg-surface px-3.5 text-sm font-medium text-ink hover:bg-subtle">
+                      <Link href="/chat" className="inline-flex min-h-10 items-center rounded-md border border-line-ui bg-surface px-3.5 text-sm font-medium text-ink hover:bg-subtle">
                         {t("biz.deals.clarify")}
                       </Link>
                       <details className="text-xs">
@@ -194,7 +197,7 @@ export default function DealsPage() {
               commitments
             ) : (
               <>
-                <DealDecision v={v} today={today} />
+                <DealDecision v={v} today={today} negotiation={cur.negotiation} />
                 <RecommendedResponse v={v} offerId={offer.offer.offer_id} today={today} mode={mode} negotiation={cur.negotiation} />
                 {commitments}
 

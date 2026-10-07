@@ -16,6 +16,7 @@ from pydantic import BaseModel
 from app.api.auth import require_feature, require_owner
 from app.api.display import displayed
 from app.api.presentation import (
+    approval_reason_words,
     business_action,
     business_text,
     comparison_reason,
@@ -117,6 +118,7 @@ def _row_view(r, state=None, today: int | None = None) -> dict:
         d["not_executable_reason_when"] = (business_text(state, r.not_executable_reason, today, "en")
                                            if r.not_executable_reason else None)
 
+        d["approval_reason_when"] = approval_reason_words(state, r.approval_reason, today, "en") if r.approval_reason else None
         d["components_when"] = [business_text(state, c, today, "en") for c in r.components]
     return d
 

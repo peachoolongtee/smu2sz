@@ -6,9 +6,10 @@ import { CashForecast } from "@/components/business/cash-forecast";
 import { CurrentFunding } from "@/components/business/current-funding";
 import { FacilityExplainer } from "@/components/business/facility-explainer";
 import { FundingOptions } from "@/components/business/funding-options";
+import { FactTile } from "@/components/business/kit";
 import { NextActionBlock } from "@/components/business/next-action";
 import { FixResult, useFixAlert } from "@/components/home/fix-alert";
-import { Card, ErrorState, Formula, LoadingBlock, PageHeader, TableWrap, tableCls, tdCls, thCls } from "@/components/ui";
+import { Badge, Card, ErrorState, Formula, LoadingBlock, PageHeader, TableWrap, tableCls, tdCls, thCls } from "@/components/ui";
 import { getHome, getTrajectory, planFunding } from "@/lib/api";
 import { onSignedIn } from "@/lib/auth";
 import { bump, useDemo } from "@/lib/demo-store";
@@ -25,14 +26,11 @@ import { useAsync } from "@/lib/use-async";
  * router's comparison, the chart draws the home's series.
  */
 export default function CashPage() {
-  const { t, lang } = useI18n();
+  const { t, te, lang } = useI18n();
   const demo = useDemo();
   const home = useAsync(() => getHome(lang), [lang]);
   // The monthly readings only; the chart draws the home's own series so it cannot disagree with the headline.
   const traj = useAsync(() => getTrajectory("CONSERVATIVE"), []);
-  // The router's comparison for today's gap; after the plan executed a fresh plan is empty, so the decision-time snapshot wins.
-  const snapshot = demo.funding;
-  const plan = useAsync(() => (snapshot ? Promise.resolve(snapshot) : planFunding()), [Boolean(snapshot)]);
   const fixer = useFixAlert();
   useEffect(() => onSignedIn(() => bump()), []);
   const h = home.data;
@@ -41,6 +39,11 @@ export default function CashPage() {
   // Covered means no action is needed AND no breach is ahead: a critical alert with no runnable fix has no next action
   // either, and the page must not then say "no additional funding is needed".
   const covered = Boolean(h) && !h?.next_action && h?.cash.first_breach_day === null;
+  // The router's comparison. While a gap is open it is a fresh plan for today's gap, never an older one (a day-0 comparison
+  // beside a day-34 recommendation contradicts it). Once covered, a fresh plan is empty (the plan executed), so the decision-time
+  // snapshot is "Other plans considered", and without a snapshot there is nothing to show.
+  const snapshot = demo.funding;
+  const plan = useAsync(async () => (!h ? null : covered ? (snapshot ?? null) : await planFunding()), [Boolean(h), covered, Boolean(snapshot), h?.state_version]);
   // When the first breach is also the lowest point it is one fact: one tile, not the same figure and day twice.
   const breachIsWorst = unsafe && h?.cash.first_breach_day === h?.cash.lowest_day;
   const today = h?.day ?? 0;
@@ -53,11 +56,11 @@ export default function CashPage() {
 
   const options = plan.error ? (
     <ErrorState error={plan.error} onRetry={plan.reload} />
-  ) : !plan.data ? (
+  ) : plan.loading || !plan.data ? (
     <LoadingBlock rows={2} />
   ) : (
     <>
-      {snapshot ? <p className="mb-3 text-xs text-ink-3">{t("fund.snapshot")}</p> : null}
+      {covered && snapshot ? <p className="mb-3 text-xs text-ink-3">{t("fund.snapshot")}</p> : null}
       <FundingOptions rows={comparison(plan.data)} menu={plan.data.menu} today={today} recommendedKey={h?.next_action?.plan_source === "router" ? "router_optimum" : null} />
       {h?.next_action?.cheaper_option ? (
         <p className="mt-3 text-xs text-ink-3" data-testid="cash-cheaper-option">
@@ -107,32 +110,52 @@ export default function CashPage() {
           <LoadingBlock rows={2} />
         ) : (
           <>
-            <Card id="cash-answer" title={t("biz.cash.risk")} tone={h.status === "CRITICAL" ? "bad" : h.status === "SAFE" ? "ok" : "warn"}>
+            <Card
+              id="cash-answer"
+              title={t("biz.cash.risk")}
+              tone={h.status === "CRITICAL" ? "bad" : h.status === "SAFE" ? "ok" : "warn"}
+              actions={<Badge tone={h.status === "CRITICAL" ? "bad" : h.status === "SAFE" ? "ok" : "warn"}>{h.status_text ?? te("homestatus", h.status)}</Badge>}
+            >
               <p className="text-xl font-semibold text-ink" data-testid="cash-headline">
                 {h.headline}
               </p>
               <p className="mt-1 text-sm text-ink-2">{h.note}</p>
               {h.worst ? <p className={`mt-1 text-sm ${unsafe ? "text-bad-fg" : "text-ink-3"}`}>{h.worst}</p> : null}
-              <dl className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3" data-testid="cash-figures">
-                {(
-                  [
-                    [t("biz.cashToday"), h.cash.cash_short],
-                    [t("biz.reserveMin"), h.cash.floor_short],
-                    [t("biz.headroom"), h.cash.headroom_short ?? ""],
-                    [breachIsWorst ? t("biz.firstBreachIsWorst") : unsafe ? t("biz.worstPoint") : t("biz.lowestAhead"), `${h.cash.lowest_short} · ${h.cash.lowest_when}`],
-                    [t("biz.lowestHeadroom"), h.cash.lowest_headroom_short ?? ""],
-                    [t("biz.firstUnsafeDay"), breachIsWorst ? "" : (h.cash.first_breach_when ?? t("biz.none"))],
-
-                  ] as const
-                ).map(([k, v]) =>
-                  v ? (
-                    <div key={k} className="min-w-0">
-                      <dt className="text-xs font-medium text-ink-3">{k}</dt>
-                      <dd className="break-words text-sm font-semibold tabular-nums text-ink">{v}</dd>
-                    </div>
-                  ) : null,
+              {/* Four facts: today's cash, the reserve, when cash becomes unsafe, the worst point. Headroom in one quieter line. */}
+              <dl className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4" data-testid="cash-figures">
+                <FactTile label={t("biz.cashToday")}>{h.cash.cash_short}</FactTile>
+                <FactTile label={t("biz.reserveMin")}>{h.cash.floor_short}</FactTile>
+                {breachIsWorst ? (
+                  <FactTile label={t("biz.firstBreachIsWorst")} valueTone="bad" note={h.cash.first_breach_when}>
+                    {h.cash.first_breach_cash_short}
+                  </FactTile>
+                ) : (
+                  <>
+                    <FactTile label={t("biz.firstUnsafeDay")} valueTone={unsafe ? "bad" : undefined} testId="cash-unsafe-when">
+                      {h.cash.first_breach_when ?? t("biz.cash.neverUnsafe", { n: h.cash.horizon_days })}
+                    </FactTile>
+                    <FactTile label={unsafe ? t("biz.worstPoint") : t("biz.lowestAhead")} valueTone={unsafe ? "bad" : undefined} note={h.cash.lowest_when}>
+                      {h.cash.lowest_short}
+                    </FactTile>
+                  </>
                 )}
               </dl>
+              {h.cash.headroom_short !== undefined || h.cash.lowest_headroom_short !== undefined ? (
+                <dl className="mt-3 flex flex-wrap items-baseline gap-x-8 gap-y-1 text-sm" data-testid="cash-headroom">
+                  {h.cash.headroom_short !== undefined ? (
+                    <div className="flex items-baseline gap-2">
+                      <dt className="text-ink-3">{t("biz.headroom")}</dt>
+                      <dd className="font-semibold tabular-nums text-ink">{h.cash.headroom_short}</dd>
+                    </div>
+                  ) : null}
+                  {h.cash.lowest_headroom_short !== undefined ? (
+                    <div className="flex items-baseline gap-2">
+                      <dt className="text-ink-3">{t("biz.lowestHeadroom")}</dt>
+                      <dd className="font-semibold tabular-nums text-ink">{h.cash.lowest_headroom_short}</dd>
+                    </div>
+                  ) : null}
+                </dl>
+              ) : null}
             </Card>
 
             <FixResult result={fixer.result} error={fixer.error} changed={fixer.changed} />
@@ -142,7 +165,7 @@ export default function CashPage() {
         )}
 
         {covered ? (
-          plan.data && !comparison(plan.data).length ? null : (
+          !plan.loading && (!plan.data || !comparison(plan.data).length) ? null : (
             <details className="rounded-(--radius-card) border border-line bg-surface shadow-(--shadow-card)" data-testid="cash-options">
               <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-ink">{t("biz.cash.options.considered")}</summary>
               <div className="border-t border-line p-4">{options}</div>
@@ -160,12 +183,12 @@ export default function CashPage() {
 
         <div className="grid gap-5 lg:grid-cols-2">
           <Card id="cash-whatif" title={t("biz.cash.whatif")} subtitle={t("biz.cash.whatif.sub")}>
-            <Link href="/whatif" className="inline-flex min-h-10 items-center rounded-md border border-line-strong px-3.5 text-sm font-medium text-ink hover:bg-subtle">
+            <Link href="/whatif" className="inline-flex min-h-10 items-center rounded-md border border-line-ui px-3.5 text-sm font-medium text-ink hover:bg-subtle">
               {t("biz.cash.whatif.open")}
             </Link>
           </Card>
           <Card id="cash-capex" title={t("biz.cash.capex")} subtitle={t("biz.cash.capex.sub")}>
-            <Link href="/capex" className="inline-flex min-h-10 items-center rounded-md border border-line-strong px-3.5 text-sm font-medium text-ink hover:bg-subtle">
+            <Link href="/capex" className="inline-flex min-h-10 items-center rounded-md border border-line-ui px-3.5 text-sm font-medium text-ink hover:bg-subtle">
               {t("biz.cash.capex.open")}
             </Link>
           </Card>
@@ -175,6 +198,12 @@ export default function CashPage() {
           <details className="rounded-(--radius-card) border border-line bg-surface shadow-(--shadow-card)" data-testid="cash-readings">
             <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-ink">{t("biz.readings")}</summary>
             <div className="border-t border-line p-4">
+              {/* The first line is the home's own reading (the same projection as the table's first month). */}
+              {h?.cash.dscr_text || h?.cash.leverage_text ? (
+                <p className="mb-2 text-sm text-ink" data-testid="cash-readings-now">
+                  {t("biz.readings.now", { dscr: h.cash.dscr_text ?? t("common.none"), lev: h.cash.leverage_text ?? t("common.none") })}
+                </p>
+              ) : null}
               <p className="mb-3 text-xs text-ink-3">{t("biz.readings.note")}</p>
               <TableWrap label={t("biz.readings")}>
                 <table className={tableCls}>

@@ -102,7 +102,7 @@ export async function planFunding(req: PlanRequest = {}): Promise<FundingView> {
  * without one the screen shows the position today.
  */
 export async function getTrajectory(mode: Mode = "CONSERVATIVE", verdict?: VerdictView | null): Promise<TrajectoryView> {
-  return isMock ? (await mock()).getTrajectory(mode) : (await live()).getTrajectory(mode, verdict);
+  return isMock ? (await mock()).getTrajectory(mode, verdict) : (await live()).getTrajectory(mode, verdict);
 }
 
 /** GET /ledger */

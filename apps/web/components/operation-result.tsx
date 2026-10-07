@@ -25,7 +25,7 @@ export function OperationStatePill({ status }: { status: OperationStatus }) {
   const { te } = useI18n();
   return (
     <span data-testid="op-state" data-state={status}>
-      <Badge tone={TONE[status]}>
+      <Badge tone={TONE[status]} dot={false}>
         <span aria-hidden>{GLYPH[status]}</span>
         {te("opstatus", status)}
       </Badge>
@@ -45,6 +45,7 @@ export function OperationResultBox({
   testId,
   kind,
   details,
+  showId = true,
 }: {
   status: OperationStatus;
   message: string;
@@ -54,6 +55,8 @@ export function OperationResultBox({
   kind?: string;
   /** Audit-level facts (executor sentence, operation id, tier, sequence, hash), rendered last, behind a disclosure by the caller. */
   details?: React.ReactNode;
+  /** A Business page leaves the approval's number to the approval card: the status and the link say it. */
+  showId?: boolean;
 }) {
   const { t } = useI18n();
   const waiting = status === "PENDING_APPROVAL";
@@ -64,15 +67,15 @@ export function OperationResultBox({
         <OperationStatePill status={status} />
       </div>
       {waiting && approvalId ? (
-        <p className="mt-1 text-xs font-medium text-warn-fg" data-testid="op-waiting">
-          {t("opstate.approval", { id: approvalId })} ·{" "}
+        <p className="mt-1 text-xs font-medium text-ink-2" data-testid="op-waiting">
+          {showId ? <>{t("opstate.approval", { id: approvalId })} · </> : null}
           <Link href={approvalHref(approvalId)} className="underline underline-offset-2" data-testid="op-approval-link">
             {t("opstate.open")}
           </Link>
         </p>
       ) : null}
       {message ? (
-        <p className={`mt-1 break-words text-xs ${status === "REFUSED" ? "font-medium text-bad-fg" : waiting ? "text-warn-fg" : "text-ink-2"}`} data-testid={status === "REFUSED" ? "op-reason" : undefined}>
+        <p className={`mt-1 break-words text-xs ${status === "REFUSED" ? "font-medium text-ink" : "text-ink-2"}`} data-testid={status === "REFUSED" ? "op-reason" : undefined}>
           {status === "REFUSED" ? `${t("opstate.reason")}: ` : ""}
           {message}
         </p>

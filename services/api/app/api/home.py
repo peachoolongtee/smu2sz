@@ -21,11 +21,13 @@ from app.api.auth import require_owner
 from app.api.display import displayed
 from app.api.presentation import (
     agreement_words,
+    approval_reason_words,
     approval_words,
     buyer_of_receivable,
     cure_legs,
     event_words,
     facility_name,
+    fallback_words,
     fmt_short,
     in_words,
     invoice_words,
@@ -336,6 +338,24 @@ def _after_words(after: Any, floor: int, today: int, horizon: int, lang: str) ->
              f"未来 {max(first - 1 - today, 0)} 天现金都保持在最低现金储备以上。")
 
 
+def cure_after_words(state: FinancialState, obs: list[Any], mandate: Mandate, alert: Alert | None, today: int,
+                     lang: str) -> str | None:
+    """The after-state sentence for an alert's own cure, projected on the books like the home's next action: the same
+    words on the home and on the approval card, so one cure never says two horizons. None when the alert has no committed
+    cure that restores the reserve."""
+    if (alert is None or alert.kind != AlertKind.RESERVE_BREACH_AHEAD or not alert.committed_cure
+            or alert.inputs.get("cure_restores_reserve") == "false"):
+        return None
+    actions = _alert_actions(state, alert, today)
+    if not actions:
+        return None
+    try:
+        traj = project(state, obs, actions, Mode.CONSERVATIVE, mandate.horizon_days, mandate.min_cash_fen)
+    except EngineError:
+        return None
+    return _after_words(traj, mandate.min_cash_fen, today, mandate.horizon_days, lang)
+
+
 def _next_action(state: FinancialState, obs: list[Any], mandate: Mandate, found: list[Alert], approvals: list[Any],
                  today: int, state_version: int, lang: str, *, use_router: bool = True) -> dict[str, Any] | None:
     """The one thing to do now, for the first actionable critical alert (a reserve breach), else a repayment the books
@@ -512,7 +532,8 @@ def _next_action(state: FinancialState, obs: list[Any], mandate: Mandate, found:
         "if_nothing": if_nothing,
         "after": after,
         "why": why,
-        "detail": relative_days(in_words(state, alert.detail), today, lang),
+        "detail": (fallback_words(relative_days(in_words(state, alert.detail), today, lang)) if rec.source == "router"
+                   else relative_days(in_words(state, alert.detail), today, lang)),
         "formula": alert.formula,
         "pending_approval_id": queued.id if queued is not None else None,
         "state_version": state_version,
@@ -538,9 +559,10 @@ def _approvals(state: FinancialState, obs: list[Any], mandate: Mandate, approval
         alert = None
         if (a.op_id or "").startswith("alert:"):
             alert = by_id.get(a.op_id.split(":")[1])
-        words = approval_words(state, op, a.kind, today, alert, lang, plan_costs)
+        words = approval_words(state, op, a.kind, today, alert, lang, plan_costs,
+                               after=cure_after_words(state, obs, mandate, alert, today, lang))
         amount = op.get("amount_fen", op.get("advance_fen"))
-        out.append({"id": a.id, "kind": a.kind, "reason": relative_days(in_words(state, a.reason), today, lang), "created_day": op.get("day"),
+        out.append({"id": a.id, "kind": a.kind, "reason": approval_reason_words(state, a.reason, today, lang), "created_day": op.get("day"),
                     "amount_fen": amount if isinstance(amount, int) else None,
                     "amount_display": fmt_yuan(amount) if isinstance(amount, int) else None, **words})
     return out
@@ -552,12 +574,19 @@ def _changes(state: FinancialState, store: Any, found: list[Alert], today: int, 
     since = since_day if since_day is not None else today - RECENT_DAYS
     items: list[dict[str, Any]] = []
     entries, _ = read_entries(store.operations())
+    # An approval the owner has answered: its "waiting" entry is history, and when the decision itself is in the window the
+    # decision is the news (one operation never reads "You approved" and "Waiting for your approval" together).
+    decided_ids = {a.id for a in store.approvals() if str(getattr(a.status, "value", a.status)) != "PENDING"}
+    answered = {e.result.approval_id for e in entries
+                if e.result.approval_id and e.result.status != OperationStatus.PENDING_APPROVAL and e.day is not None and e.day >= since}
     for e in entries:
         day = e.day
         if day is None or day < since:
             continue
         if e.result.status == OperationStatus.DUPLICATE or "CLOCK" in e.kind.upper():
             continue  # a clock step is not news; what it posted shows as receipts, landings and alerts
+        if e.result.status == OperationStatus.PENDING_APPROVAL and e.result.approval_id in decided_ids and e.result.approval_id in answered:
+            continue
         who = (getattr(e.op, "requested_by", None) or "") if e.op is not None else ""
         who = str(getattr(who, "value", who))
         kind = "REFUSED" if e.result.status == OperationStatus.REFUSED else (
@@ -571,7 +600,8 @@ def _changes(state: FinancialState, store: Any, found: list[Alert], today: int, 
                 kind = "AGREEMENT"
         shown = relative_days(text, today, lang)
         words = (event_words(state, kind=e.kind, status=e.result.status.value, payload=e.payload, message=e.result.message,
-                             approval_id=e.result.approval_id, day=day, today=today, lang=lang)
+                             approval_id=e.result.approval_id, day=day, today=today, lang=lang,
+                             decided=e.result.approval_id in decided_ids)
                  if kind != "AGREEMENT" else {"event_text": None, "event_detail": None})
         items.append({"day": day, "seq": e.seq, "kind": kind, "actor": who, "text": shown,
                       "event_text": words["event_text"] or shown, "event_detail": words["event_detail"],
@@ -674,7 +704,7 @@ def get_home(lang: str = "en", since_day: int | None = None) -> dict[str, Any]:
         warnings = [{"id": a.id, "kind": a.kind.value, "title": relative_days(in_words(state, a.title), today, lang),
                      "detail": relative_days(in_words(state, a.detail), today, lang), "day": a.day,
                      "when": when_text(a.day, today, lang)} for a in found if a.severity == Severity.WARNING]
-        facilities = [{"id": f.id, "name": f.name, "status": f.status.value, "limit_display": fmt_yuan(f.limit_fen),
+        facilities = [{"id": f.id, "name": f.name, "status": f.status.value, "limit_display": fmt_yuan(f.limit_fen), "limit_fen": f.limit_fen,
                        "drawn_fen": f.drawn_fen, "drawn_display": fmt_yuan(f.drawn_fen),
                        "available_display": fmt_yuan(max(f.limit_fen - f.drawn_fen, 0) if f.owner_approved else 0),
                        "lead_time_days": f.lead_time_days}

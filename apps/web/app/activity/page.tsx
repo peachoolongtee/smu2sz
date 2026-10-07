@@ -5,6 +5,7 @@ import { CodeBadge, OpStatusBadge, TierBadge } from "@/components/badges";
 import { SpanQuote } from "@/components/offer-parts";
 import { Badge, Card, EmptyState, ErrorState, Hash, LoadingBlock, PageHeader } from "@/components/ui";
 import { getAudit, getLedger, getState } from "@/lib/api";
+import { idsToNames } from "@/lib/business-words";
 import { useI18n } from "@/lib/i18n";
 import { whenText } from "@/lib/when";
 import { useAsync } from "@/lib/use-async";
@@ -21,12 +22,8 @@ export default function ActivityPage() {
   const books = useAsync(getState, []);
   const data = ledger.data;
   // Ids in the executor's sentences become names on this screen (the ids stay in the audit details).
-  const words = (text: string) => {
-    let out = text;
-    for (const f of books.data?.state.facilities ?? []) out = out.split(f.id).join(f.name);
-    for (const c of books.data?.state.counterparties ?? []) if (c.id !== c.name) out = out.split(c.id).join(c.name);
-    return out;
-  };
+  const named = [...(books.data?.state.facilities ?? []), ...(books.data?.state.counterparties ?? [])].map((x) => ({ id: x.id, name: x.name }));
+  const words = (text: string) => idsToNames(text, named);
   const ops = data ? [...data.operations].reverse() : [];
   // Today, for the distances the Business pages show instead of day numbers (the books read carries the clock).
   const today = books.data?.day ?? ops[0]?.day ?? 0;
@@ -39,8 +36,9 @@ export default function ActivityPage() {
         actions={
           data?.chain_length ? (
             <div className="flex items-center gap-2" data-testid="chain-status">
-              <Badge tone={data.chain_valid ? "ok" : "bad"}>{data.chain_valid ? t("ledger.chainValid") : t("ledger.chainBroken")}</Badge>
-              <span className="text-xs text-ink-3">{t("ledger.entries", { n: data.chain_length })}</span>
+              <Badge tone={data.chain_valid ? "ok" : "bad"} title={`${data.chain_valid ? t("ledger.chainValid") : t("ledger.chainBroken")} · ${t("ledger.entries", { n: data.chain_length })}`}>
+                {data.chain_valid ? t("biz.activity.chainOk") : t("biz.activity.chainBroken")}
+              </Badge>
             </div>
           ) : undefined
         }

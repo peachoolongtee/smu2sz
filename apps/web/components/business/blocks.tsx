@@ -2,24 +2,31 @@
 
 import Link from "next/link";
 import { approvalHref } from "@/components/operation-result";
+import { Avatar, Disclosure, Row, initials, type AvatarTone } from "@/components/business/kit";
 import { Card, TableWrap, tableCls, tdCls, thCls } from "@/components/ui";
 import { useI18n } from "@/lib/i18n";
 import { daysLate } from "@/lib/when";
 import type { HomeApproval, HomeChange, HomeReceivables, HomeView } from "@/lib/types";
 
 const CHANGE_GLYPH: Record<string, string> = { RECEIPT: "↓", LATE: "!", WAITING: "…", REFUSED: "✕", LANDED: "↓", OPERATION: "✓", AGREEMENT: "✓" };
-const CHANGE_TONE: Record<string, string> = {
-  RECEIPT: "bg-ok-bg text-ok-fg",
-  LANDED: "bg-ok-bg text-ok-fg",
-  LATE: "bg-bad-bg text-bad-fg",
-  WAITING: "bg-warn-bg text-warn-fg",
-  REFUSED: "bg-bad-bg text-bad-fg",
-  OPERATION: "bg-subtle text-ink-2",
-  AGREEMENT: "bg-ok-bg text-ok-fg",
+const CHANGE_TONE: Record<string, AvatarTone> = {
+  RECEIPT: "ok",
+  LANDED: "ok",
+  LATE: "bad",
+  WAITING: "warn",
+  REFUSED: "bad",
+  OPERATION: "neutral",
+  AGREEMENT: "ok",
 };
 
-/** Level 2: what requires the owner's decision, as questions. The buttons are on the approval card, never here. */
-export function DecisionsBlock({ approvals }: { approvals: HomeApproval[] }) {
+/** How many recent changes show before "Show more". */
+const CHANGES_SHOWN = 3;
+
+/**
+ * Level 2: what requires the owner's decision, as a question with its cost and landing. The one place the pending
+ * approval is spelled out on the home (the recent changes keep its row). The buttons are on the approval card, never here.
+ */
+export function DecisionsBlock({ approvals, primary = false }: { approvals: HomeApproval[]; primary?: boolean }) {
   const { t } = useI18n();
   return (
     <Card id="home-decisions" title={t("biz.decisions")} subtitle={t("biz.decisions.sub")} actions={<Link href="/approvals" className="text-xs font-medium text-brand-700 underline underline-offset-2">{t("home.waiting.open")}</Link>}>
@@ -28,18 +35,28 @@ export function DecisionsBlock({ approvals }: { approvals: HomeApproval[] }) {
           {t("biz.decisions.none")}
         </p>
       ) : (
-        <ul className="space-y-2" data-testid="home-waiting-list">
+        <ul className="-my-1 divide-y divide-line" data-testid="home-waiting-list">
           {approvals.map((a) => (
-            <li key={a.id} className="rounded-md border border-warn-line bg-warn-bg/40 px-3 py-2" data-testid={`home-approval-${a.id}`}>
-              <p className="text-sm font-semibold text-ink">{a.headline}</p>
-              <p className="mt-0.5 text-xs text-ink-2">
-                {[a.cost_display ? t("alerts.cost", { cost: a.cost_display }) : null, a.lands_day !== null ? t("biz.landsShort", { when: a.lands_when ?? "" }) : null, a.protects]
+            <li key={a.id}>
+              <Row
+                testId={`home-approval-${a.id}`}
+                href={approvalHref(a.id)}
+                avatar={<Avatar tone="warn">…</Avatar>}
+                title={a.headline}
+                sub={[a.cost_display ? t("alerts.cost", { cost: a.cost_display }) : null, a.lands_day !== null ? t("biz.landsShort", { when: a.lands_when ?? "" }) : null, a.protects]
                   .filter(Boolean)
                   .join(" · ")}
-              </p>
-              <Link href={approvalHref(a.id)} className="mt-1 inline-block text-xs font-medium text-brand-700 underline underline-offset-2">
-                {t("biz.review")}
-              </Link>
+                right={
+                  // The page's one primary action while no plan waits to be run: the question is the thing to answer.
+                  primary ? (
+                    <span className="inline-flex min-h-10 items-center rounded-md bg-brand-600 px-3.5 text-sm font-medium text-white" data-testid="home-review-primary">
+                      {t("biz.review")}
+                    </span>
+                  ) : (
+                    <span className="text-xs font-medium text-brand-700">{t("biz.review")}</span>
+                  )
+                }
+              />
             </li>
           ))}
         </ul>
@@ -48,9 +65,15 @@ export function DecisionsBlock({ approvals }: { approvals: HomeApproval[] }) {
   );
 }
 
-/** Level 1 news: receipts, late payers, what ran, what waits, what landed. Server sentences, newest first. */
+/** Level 1 news: receipts, late payers, what ran, what waits, what landed. Server sentences, newest first; three show, the rest wait behind "Show more". */
 export function ChangesBlock({ changes, sinceWhen }: { changes: HomeChange[]; sinceWhen?: string | null }) {
   const { t } = useI18n();
+  const row = (c: HomeChange, i: number) => (
+    <li key={`${c.day}-${c.seq}-${i}`}>
+      <Row testId={`home-change-${c.kind}`} titleTestId="home-change-text" avatar={<Avatar tone={CHANGE_TONE[c.kind] ?? "neutral"}>{CHANGE_GLYPH[c.kind] ?? "•"}</Avatar>} title={c.event_text ?? c.text} sub={c.when} />
+    </li>
+  );
+  const rest = changes.slice(CHANGES_SHOWN);
   return (
     <Card id="home-changes" title={t("biz.recent")} subtitle={sinceWhen ? t("biz.recent.since", { when: sinceWhen }) : t("biz.recent.week")} actions={<Link href="/activity" className="text-xs font-medium text-brand-700 underline underline-offset-2">{t("biz.changes.open")}</Link>}>
       {changes.length === 0 ? (
@@ -58,51 +81,51 @@ export function ChangesBlock({ changes, sinceWhen }: { changes: HomeChange[]; si
           {t("biz.changes.none")}
         </p>
       ) : (
-        <ul className="space-y-2" data-testid="home-changes-list">
-          {changes.map((c, i) => (
-            <li key={`${c.day}-${c.seq}-${i}`} className="flex items-start gap-3" data-testid={`home-change-${c.kind}`}>
-              <span className={`mt-0.5 grid size-6 shrink-0 place-items-center rounded-full text-xs font-bold ${CHANGE_TONE[c.kind] ?? CHANGE_TONE.OPERATION}`} aria-hidden>
-                {CHANGE_GLYPH[c.kind] ?? "•"}
-              </span>
-              <span className="min-w-0">
-                <span className="block break-words text-sm text-ink" data-testid="home-change-text">{c.event_text ?? c.text}</span>
-                <span className="block text-xs text-ink-3">{c.when}</span>
-              </span>
-            </li>
-          ))}
-        </ul>
+        <div className="-my-1" data-testid="home-changes-list">
+          <ul className="divide-y divide-line">{changes.slice(0, CHANGES_SHOWN).map(row)}</ul>
+          {rest.length ? (
+            <Disclosure summary={t("biz.showMore", { n: rest.length })} testId="home-changes-more" className="border-t border-line">
+              <ul className="divide-y divide-line">{rest.map((c, i) => row(c, i + CHANGES_SHOWN))}</ul>
+            </Disclosure>
+          ) : null}
+        </div>
       )}
     </Card>
   );
 }
 
-/** Who has not paid, and what comes in next. */
+/** Who has not paid, and what comes in next, as rows: the buyer, then the amount. */
 export function ReceivablesBlock({ r }: { r: HomeReceivables }) {
   const { t } = useI18n();
+  const next = r.promised
+    ? { buyer: r.promised.buyer_name, amount: r.promised.expected_display, when: r.promised.when ?? "" }
+    : r.next_receipt
+      ? { buyer: r.next_receipt.buyer_name, amount: r.next_receipt.face_display, when: r.next_receipt.due_when }
+      : null;
   return (
     <Card id="home-receivables" title={t("biz.receivables")} subtitle={t("biz.receivables.sub", { total: r.open_total_display, n: r.open_count })} actions={<Link href="/receivables" className="text-xs font-medium text-brand-700 underline underline-offset-2">{t("biz.receivables.open")}</Link>}>
-      {r.past_due.length ? (
-        <ul className="space-y-2" data-testid="home-late-list">
-          {r.past_due.map((x) => (
-            <li key={x.receivable_id} className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-bad-line bg-bad-bg/40 px-3 py-2 text-sm" data-testid={`home-late-${x.receivable_id}`}>
-              <span className="font-medium text-ink">{x.buyer_name}</span>
-              <span className="text-ink-2">{t("biz.late", { amount: x.face_display, late: daysLate(x.days_late, t), when: x.due_when })}
-</span>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="text-sm text-ink-3" data-testid="home-late-none">
-          {t("biz.late.none")}
-        </p>
-      )}
-      <p className="mt-3 text-sm text-ink-2" data-testid="home-next-receipt">
-        {r.promised
-          ? t("biz.promised", { amount: r.promised.expected_display, buyer: r.promised.buyer_name, when: r.promised.when ?? "" })
-          : r.next_receipt
-            ? t("biz.nextReceipt", { amount: r.next_receipt.face_display, buyer: r.next_receipt.buyer_name, when: r.next_receipt.due_when })
-            : t("biz.nextReceipt.none")}
-      </p>
+      <div className="-my-1 divide-y divide-line">
+        {r.past_due.length ? (
+          <ul className="divide-y divide-line" data-testid="home-late-list">
+            {r.past_due.map((x) => (
+              <li key={x.receivable_id}>
+                <Row testId={`home-late-${x.receivable_id}`} avatar={<Avatar tone="bad">{initials(x.buyer_name)}</Avatar>} title={x.buyer_name} sub={daysLate(x.days_late, t)} tone="bad" right={x.face_display} />
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="py-2.5 text-sm text-ink-3" data-testid="home-late-none">
+            {t("biz.late.none")}
+          </p>
+        )}
+        {next ? (
+          <Row testId="home-next-receipt" avatar={<Avatar>{initials(next.buyer)}</Avatar>} title={next.buyer} sub={r.promised ? t("biz.promised.short") : t("biz.nextReceipt.short")} right={next.amount} rightSub={next.when} />
+        ) : (
+          <p className="py-2.5 text-sm text-ink-3" data-testid="home-next-receipt">
+            {t("biz.nextReceipt.none")}
+          </p>
+        )}
+      </div>
     </Card>
   );
 }
@@ -171,12 +194,12 @@ export function DetailsBlock({ h }: { h: HomeView }) {
           <dl className="grid grid-cols-2 gap-3 text-sm">
             <div>
               <dt className="text-xs text-ink-3">{t("biz.dscr")}</dt>
-              <dd className="font-semibold tabular-nums">{h.cash.dscr_text ?? t("common.none")}</dd>
+              <dd className="font-semibold tabular-nums" data-testid="home-dscr">{h.cash.dscr_text ?? t("common.none")}</dd>
               <dd className="text-xs text-ink-3">{t("home.position.limitMin", { limit: h.cash.min_dscr_display })}</dd>
             </div>
             <div>
               <dt className="text-xs text-ink-3">{t("biz.leverage")}</dt>
-              <dd className="font-semibold tabular-nums">{h.cash.leverage_text ?? t("common.none")}</dd>
+              <dd className="font-semibold tabular-nums" data-testid="home-leverage">{h.cash.leverage_text ?? t("common.none")}</dd>
               <dd className="text-xs text-ink-3">{t("home.position.limitMax", { limit: h.cash.max_leverage_display })}</dd>
             </div>
           </dl>

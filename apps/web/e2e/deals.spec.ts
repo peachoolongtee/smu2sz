@@ -1,4 +1,4 @@
-import { expect, test } from "./fixtures";
+import { expect, proseOf, test } from "./fixtures";
 
 /**
  * Deals in Business mode, in the owner's order: one inbox thread per buyer, the ask in plain words, the business action
@@ -28,21 +28,22 @@ test("the inbox groups a buyer's messages into one thread and names each evaluat
   await expect(page.getByRole("heading", { name: "Inbox", exact: true })).toBeVisible();
   await expect(page.getByTestId("inbox-thread-BUYER-1")).toHaveCount(1);
   await expect(inbox.getByTestId("inbox-msg-SEC")).toHaveCount(0);
-  await expect(page.getByTestId("inbox-blocked")).toContainText("1 suspicious message was blocked");
+  await expect(page.getByTestId("inbox-blocked")).toContainText("1 message from an unknown sender was set aside. The agent does not act on messages from senders that are not on your books.");
   await expect(page.getByTestId("inbox-blocked").getByRole("link", { name: "See what was refused" })).toHaveAttribute("href", "/activity#refused");
   // Step 11 selected the reworded offer; the original is in the thread, evaluated, with its recommendation in words, no code.
   const reworded = inbox.getByTestId("inbox-msg-EX01B");
   const original = inbox.getByTestId("inbox-msg-EX01");
   await expect(reworded).toHaveAttribute("aria-current", "true");
-  await expect(original).toContainText("Counter recommended");
+  // The story's step 11 negotiated this offer with a buyer who refused: the row says the outcome, not the earlier recommendation.
+  await expect(original).toContainText("No deal");
   await expect(original).not.toContainText("REJECT");
   await expect(page.locator("body")).not.toContainText(/\bDay \d/);
   await original.click();
   await expect(original).toHaveAttribute("aria-current", "true");
   await expect(reworded).not.toHaveAttribute("aria-current", "true");
-  await expect(page.getByTestId("deal-recommendation")).toHaveText("Counter recommended");
+  await expect(page.getByTestId("deal-recommendation")).toHaveText("No deal");
   await expect(page.getByTestId("deal-steps").getByRole("link", { name: /Respond/ })).toHaveAttribute("href", "/deals#counters");
-  await expect(page.getByTestId("deal-steps").getByRole("link", { name: /Agreed/ })).toHaveAttribute("href", "/deals#commitments");
+  await expect(page.getByTestId("deal-steps").getByRole("link", { name: /No deal/ })).toHaveAttribute("href", "/deals#counters");
   const originalId = await page.evaluate(() => JSON.parse(sessionStorage.getItem("tl-demo-v2") ?? "{}").offerId);
   // Picking the latest message folded the thread; the earlier ones are one click away.
   await expect(reworded).toBeHidden();
@@ -89,6 +90,9 @@ test("opening a message reads it, and the evaluated deal reads in the owner's or
   await expect(worst).toContainText("Worst point");
   await expect(worst).toContainText("¥164,960.00");
   await expect(worst).toContainText("in 60 days");
+  // The three numbers are about the offer as the buyer asked for it, and the page says so.
+  await expect(page.getByTestId("deal-if-accept")).toHaveText("If you accept the offer as asked:");
+  await expect(page.getByTestId("deal-parsed-terms").locator("> summary")).toHaveText("How the agent read it");
   await expect(page.getByTestId("deal-discount-dearer")).toContainText("1.20% early-payment discount also costs more");
   // No engine count or code at level 1.
   await expect(page.locator("body")).not.toContainText("failed,");
@@ -111,6 +115,9 @@ test("opening a message reads it, and the evaluated deal reads in the owner's or
 
   // The next step points at the response; the disclosures are closed and hold the evidence.
   await expect(next.getByRole("link", { name: "See what we'd offer back" })).toHaveAttribute("href", "#counters");
+  // One filled call to action on the page ("Send this counter"); the next-step link is the secondary style.
+  await expect(next.getByRole("link", { name: "See what we'd offer back" })).not.toHaveClass(/bg-brand-600/);
+  await expect(response.getByTestId("deal-send")).toHaveClass(/bg-brand-600/);
   for (const id of ["deal-why", "deal-original", "deal-calc"]) {
     await expect(page.getByTestId(id)).not.toHaveAttribute("open", "");
   }
@@ -149,6 +156,13 @@ test("opening a message reads it, and the evaluated deal reads in the owner's or
   await response.getByTestId("deal-send").click();
   await expect(page.getByTestId("deal-negotiation")).toContainText("The buyer accepted Option A. The agreement is on your books.");
   await expect(response.getByTestId("deal-send")).toHaveCount(0);
+  // The outcome card: the buyer's answer, the agreement with its terms as sentences; the headline, the step and the inbox row follow.
+  await expect(response.getByRole("heading", { name: "The buyer's answer" })).toBeVisible();
+  await expect(response.getByTestId("deal-agreed-terms")).toContainText("0.85% off the ¥257,200.00 invoice");
+  await expect(page.getByTestId("deal-recommendation")).toHaveText("Agreed with the buyer");
+  await expect(page.getByTestId("deal-steps")).toContainText("Agreed");
+  await expect(inbox.getByTestId("inbox-msg-EX01").getByTestId("inbox-msg-status")).toHaveCount(0); // the message being read says "Showing below"
+  await expect(response.getByTestId("deal-option-Option-A")).toHaveCount(0);
   await expect(next).toContainText(/agree|books/i);
 });
 
@@ -163,6 +177,39 @@ test("Business mode never shows a sender the books have not vouched for, not eve
   });
   await page.goto("/deals");
   await expect(page.getByTestId("inbox-thread-BUYER-1")).toBeVisible();
-  await expect(page.getByTestId("inbox-blocked")).toContainText("1 suspicious message was blocked");
+  await expect(page.getByTestId("inbox-blocked")).toContainText("1 message from an unknown sender was set aside. The agent does not act on messages from senders that are not on your books.");
   expect(await page.evaluate(() => (window as unknown as { __sawSec: boolean }).__sawSec)).toBe(false);
+});
+
+test("a buyer who refuses every counter ends in No deal, with what happens next, and nothing sounds like an agreement", async ({ page }) => {
+  await page.goto("/deals");
+  const inbox = page.getByTestId("inbox-list");
+  await inbox.getByTestId("inbox-msg-EX01").click();
+  await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
+  await expect(page.getByTestId("deal-recommendation")).toHaveText("Counter recommended");
+  // The demo's negotiation panel runs a buyer who refuses (Demo views; the Business page only sends to a buyer who accepts).
+  await page.goto("/verdict");
+  await page.getByLabel("Buyer refuses every counter").check();
+  await page.getByRole("button", { name: "Run the negotiation" }).click();
+  await expect(page.getByTestId("negotiation-result")).toContainText("NO DEAL");
+  await page.evaluate(() => localStorage.setItem("tl-mode", JSON.stringify({ mode: "business" })));
+  await page.goto("/deals");
+  await expect(page.getByTestId("deal-recommendation")).toHaveText("No deal");
+  await expect(page.getByTestId("deal-recommendation")).toHaveAttribute("data-outcome", "NO_DEAL");
+  await expect(page.getByTestId("deal-if-accept")).toHaveText("If you had accepted the offer as asked:");
+  await expect(page.getByTestId("deal-steps")).toContainText("No deal");
+  await expect(page.getByTestId("deal-steps").getByRole("link", { name: "No deal" })).toHaveClass(/text-ink-2/);
+  const outcome = page.locator("#counters");
+  await expect(outcome.getByTestId("deal-negotiation")).toContainText("The buyer refused every counter. Nothing was agreed.");
+  await expect(outcome.getByTestId("deal-rounds").locator("li")).toHaveCount(3);
+  await expect(outcome.getByTestId("deal-rounds")).toContainText("Refused");
+  // What happens next: the funding for the gap still ran, and the way to see it.
+  await expect(outcome.getByTestId("deal-gap-funded")).toContainText("The funding for your cash gap still ran on your books.");
+  await expect(outcome.getByRole("link", { name: "See it in Cash & funding" })).toHaveAttribute("href", "/cash");
+  await expect(outcome.getByTestId("deal-send")).toHaveCount(0);
+  await expect(page.locator("#commitments")).toHaveCount(0);
+  // The buyer's own words (which carry the engine's days) are one fold away; the prose has no "day N".
+  await expect(outcome.getByTestId("deal-buyer-words")).not.toHaveAttribute("open", "");
+  expect(await proseOf(page, ['[data-testid="deal-buyer-words"]', '[data-testid="deal-why"]', '[data-testid="deal-calc"]', '[data-testid="deal-original"]'])).not.toMatch(/\bday \d/i);
+  await expect(inbox.getByTestId("inbox-msg-EX01")).toContainText("Showing below");
 });

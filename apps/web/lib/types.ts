@@ -875,6 +875,8 @@ export type ComparisonRow = Displayed<{
 }> & {
   needs_owner_approval?: boolean;
   approval_reason?: string;
+  /** `approval_reason` as a Business page reads it (distances from today, one-decimal rate, no working). */
+  approval_reason_when?: string | null;
   executable_now?: boolean;
   not_executable_reason?: string;
   /** `not_executable_reason` with its day numbers said as distances from today. */
@@ -1289,6 +1291,8 @@ export interface ReceiptRow {
   status: MatchStatus;
   flagged: boolean;
   detail: string;
+  /** `detail` as a Business page reads it (names, no commitment id, distances from today); absent in older recordings. */
+  detail_when?: string | null;
   formula: string;
 }
 
@@ -1329,6 +1333,8 @@ export interface PromisedReceipt {
   /** Log seq of the receipt that paid it, when RECEIVED. */
   receipt_seq: number | null;
   detail: string;
+  /** `detail` as a Business page reads it (names, no commitment id, distances from today); absent in older recordings. */
+  detail_when?: string | null;
   formula: string;
 }
 
@@ -1821,7 +1827,7 @@ export interface HomeView {
   changes: HomeChange[];
   receivables: HomeReceivables;
   warnings: { id: string; kind: string; title: string; detail: string; day: Day | null; when: string }[];
-  facilities: { id: string; name: string; status: string; limit_display: string; drawn_fen?: Fen; drawn_display: string; available_display: string; lead_time_days: number }[];
+  facilities: { id: string; name: string; status: string; limit_display: string; limit_fen?: Fen; drawn_fen?: Fen; drawn_display: string; available_display: string; lead_time_days: number }[];
 
   counts: Record<AlertSeverity, number>;
   note_basis: string;

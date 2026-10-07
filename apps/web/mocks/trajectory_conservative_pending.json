@@ -1,0 +1,1798 @@
+{
+  "mode": "CONSERVATIVE",
+  "floor": {
+    "min_cash_fen": 30000000,
+    "min_cash_display": "¥300,000.00"
+  },
+  "shortfall_fen": null,
+  "shortfall_display": null,
+  "trajectory": {
+    "mode": "CONSERVATIVE",
+    "horizon_days": 120,
+    "days": [
+      {
+        "day": 0,
+        "closing_fen": 30000000,
+        "closing_display": "¥300,000.00",
+        "debt_outstanding_fen": 160498620,
+        "debt_outstanding_display": "¥1,604,986.20",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 1,
+        "closing_fen": 30000000,
+        "closing_display": "¥300,000.00",
+        "debt_outstanding_fen": 160498620,
+        "debt_outstanding_display": "¥1,604,986.20",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 2,
+        "closing_fen": 30000000,
+        "closing_display": "¥300,000.00",
+        "debt_outstanding_fen": 160498620,
+        "debt_outstanding_display": "¥1,604,986.20",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 3,
+        "closing_fen": 30000000,
+        "closing_display": "¥300,000.00",
+        "debt_outstanding_fen": 160498620,
+        "debt_outstanding_display": "¥1,604,986.20",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 4,
+        "closing_fen": 30000000,
+        "closing_display": "¥300,000.00",
+        "debt_outstanding_fen": 160498620,
+        "debt_outstanding_display": "¥1,604,986.20",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 5,
+        "closing_fen": 30000000,
+        "closing_display": "¥300,000.00",
+        "debt_outstanding_fen": 160498620,
+        "debt_outstanding_display": "¥1,604,986.20",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 6,
+        "closing_fen": 30000000,
+        "closing_display": "¥300,000.00",
+        "debt_outstanding_fen": 160498620,
+        "debt_outstanding_display": "¥1,604,986.20",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 7,
+        "closing_fen": 30000000,
+        "closing_display": "¥300,000.00",
+        "debt_outstanding_fen": 160498620,
+        "debt_outstanding_display": "¥1,604,986.20",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 8,
+        "closing_fen": 30000000,
+        "closing_display": "¥300,000.00",
+        "debt_outstanding_fen": 160498620,
+        "debt_outstanding_display": "¥1,604,986.20",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 9,
+        "closing_fen": 30000000,
+        "closing_display": "¥300,000.00",
+        "debt_outstanding_fen": 160498620,
+        "debt_outstanding_display": "¥1,604,986.20",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 10,
+        "closing_fen": 30000000,
+        "closing_display": "¥300,000.00",
+        "debt_outstanding_fen": 160498620,
+        "debt_outstanding_display": "¥1,604,986.20",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 11,
+        "closing_fen": 30000000,
+        "closing_display": "¥300,000.00",
+        "debt_outstanding_fen": 160498620,
+        "debt_outstanding_display": "¥1,604,986.20",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 12,
+        "closing_fen": 30000000,
+        "closing_display": "¥300,000.00",
+        "debt_outstanding_fen": 160498620,
+        "debt_outstanding_display": "¥1,604,986.20",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 13,
+        "closing_fen": 30000000,
+        "closing_display": "¥300,000.00",
+        "debt_outstanding_fen": 160498620,
+        "debt_outstanding_display": "¥1,604,986.20",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 14,
+        "closing_fen": 30000000,
+        "closing_display": "¥300,000.00",
+        "debt_outstanding_fen": 160498620,
+        "debt_outstanding_display": "¥1,604,986.20",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 15,
+        "closing_fen": 30000000,
+        "closing_display": "¥300,000.00",
+        "debt_outstanding_fen": 160498620,
+        "debt_outstanding_display": "¥1,604,986.20",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 16,
+        "closing_fen": 30000000,
+        "closing_display": "¥300,000.00",
+        "debt_outstanding_fen": 160498620,
+        "debt_outstanding_display": "¥1,604,986.20",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 17,
+        "closing_fen": 30000000,
+        "closing_display": "¥300,000.00",
+        "debt_outstanding_fen": 160498620,
+        "debt_outstanding_display": "¥1,604,986.20",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 18,
+        "closing_fen": 30000000,
+        "closing_display": "¥300,000.00",
+        "debt_outstanding_fen": 160498620,
+        "debt_outstanding_display": "¥1,604,986.20",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 19,
+        "closing_fen": 30000000,
+        "closing_display": "¥300,000.00",
+        "debt_outstanding_fen": 160498620,
+        "debt_outstanding_display": "¥1,604,986.20",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 20,
+        "closing_fen": 30000000,
+        "closing_display": "¥300,000.00",
+        "debt_outstanding_fen": 160498620,
+        "debt_outstanding_display": "¥1,604,986.20",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 21,
+        "closing_fen": 30000000,
+        "closing_display": "¥300,000.00",
+        "debt_outstanding_fen": 160498620,
+        "debt_outstanding_display": "¥1,604,986.20",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 22,
+        "closing_fen": 30000000,
+        "closing_display": "¥300,000.00",
+        "debt_outstanding_fen": 160498620,
+        "debt_outstanding_display": "¥1,604,986.20",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 23,
+        "closing_fen": 30000000,
+        "closing_display": "¥300,000.00",
+        "debt_outstanding_fen": 160498620,
+        "debt_outstanding_display": "¥1,604,986.20",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 24,
+        "closing_fen": 30000000,
+        "closing_display": "¥300,000.00",
+        "debt_outstanding_fen": 160498620,
+        "debt_outstanding_display": "¥1,604,986.20",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 25,
+        "closing_fen": 30000000,
+        "closing_display": "¥300,000.00",
+        "debt_outstanding_fen": 160498620,
+        "debt_outstanding_display": "¥1,604,986.20",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 26,
+        "closing_fen": 30000000,
+        "closing_display": "¥300,000.00",
+        "debt_outstanding_fen": 160498620,
+        "debt_outstanding_display": "¥1,604,986.20",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 27,
+        "closing_fen": 30000000,
+        "closing_display": "¥300,000.00",
+        "debt_outstanding_fen": 160498620,
+        "debt_outstanding_display": "¥1,604,986.20",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 28,
+        "closing_fen": 30000000,
+        "closing_display": "¥300,000.00",
+        "debt_outstanding_fen": 160498620,
+        "debt_outstanding_display": "¥1,604,986.20",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 29,
+        "closing_fen": 30000000,
+        "closing_display": "¥300,000.00",
+        "debt_outstanding_fen": 160498620,
+        "debt_outstanding_display": "¥1,604,986.20",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 30,
+        "closing_fen": 30000000,
+        "closing_display": "¥300,000.00",
+        "debt_outstanding_fen": 160498620,
+        "debt_outstanding_display": "¥1,604,986.20",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 31,
+        "closing_fen": 30000000,
+        "closing_display": "¥300,000.00",
+        "debt_outstanding_fen": 160498620,
+        "debt_outstanding_display": "¥1,604,986.20",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 32,
+        "closing_fen": 30000000,
+        "closing_display": "¥300,000.00",
+        "debt_outstanding_fen": 160498620,
+        "debt_outstanding_display": "¥1,604,986.20",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 33,
+        "closing_fen": 30000000,
+        "closing_display": "¥300,000.00",
+        "debt_outstanding_fen": 160498620,
+        "debt_outstanding_display": "¥1,604,986.20",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 34,
+        "closing_fen": 30000000,
+        "closing_display": "¥300,000.00",
+        "debt_outstanding_fen": 160498620,
+        "debt_outstanding_display": "¥1,604,986.20",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 35,
+        "closing_fen": 30000000,
+        "closing_display": "¥300,000.00",
+        "debt_outstanding_fen": 160498620,
+        "debt_outstanding_display": "¥1,604,986.20",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 36,
+        "closing_fen": 30000000,
+        "closing_display": "¥300,000.00",
+        "debt_outstanding_fen": 160498620,
+        "debt_outstanding_display": "¥1,604,986.20",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 37,
+        "closing_fen": 30000000,
+        "closing_display": "¥300,000.00",
+        "debt_outstanding_fen": 160498620,
+        "debt_outstanding_display": "¥1,604,986.20",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 38,
+        "closing_fen": 30000000,
+        "closing_display": "¥300,000.00",
+        "debt_outstanding_fen": 160498620,
+        "debt_outstanding_display": "¥1,604,986.20",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 39,
+        "closing_fen": 30000000,
+        "closing_display": "¥300,000.00",
+        "debt_outstanding_fen": 160498620,
+        "debt_outstanding_display": "¥1,604,986.20",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 40,
+        "closing_fen": 30000000,
+        "closing_display": "¥300,000.00",
+        "debt_outstanding_fen": 160498620,
+        "debt_outstanding_display": "¥1,604,986.20",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 41,
+        "closing_fen": 30000000,
+        "closing_display": "¥300,000.00",
+        "debt_outstanding_fen": 160498620,
+        "debt_outstanding_display": "¥1,604,986.20",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 42,
+        "closing_fen": 10000000,
+        "closing_display": "¥100,000.00",
+        "debt_outstanding_fen": 160498620,
+        "debt_outstanding_display": "¥1,604,986.20",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": [
+          {
+            "day": 42,
+            "kind": "FLOW",
+            "amount_fen": -20000000,
+            "amount_display": "−¥200,000.00",
+            "label": "Payroll, month 2",
+            "ref": "F-PAYROLL-M2",
+            "formula": "payroll −200,000.00"
+          }
+        ]
+      },
+      {
+        "day": 43,
+        "closing_fen": 10000000,
+        "closing_display": "¥100,000.00",
+        "debt_outstanding_fen": 160498620,
+        "debt_outstanding_display": "¥1,604,986.20",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 44,
+        "closing_fen": 10000000,
+        "closing_display": "¥100,000.00",
+        "debt_outstanding_fen": 160498620,
+        "debt_outstanding_display": "¥1,604,986.20",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 45,
+        "closing_fen": 10000000,
+        "closing_display": "¥100,000.00",
+        "debt_outstanding_fen": 160498620,
+        "debt_outstanding_display": "¥1,604,986.20",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 46,
+        "closing_fen": 10000000,
+        "closing_display": "¥100,000.00",
+        "debt_outstanding_fen": 160498620,
+        "debt_outstanding_display": "¥1,604,986.20",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 47,
+        "closing_fen": 42000000,
+        "closing_display": "¥420,000.00",
+        "debt_outstanding_fen": 160498620,
+        "debt_outstanding_display": "¥1,604,986.20",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": [
+          {
+            "day": 47,
+            "kind": "RECEIPT",
+            "amount_fen": 42000000,
+            "amount_display": "¥420,000.00",
+            "label": "Receipt RI:BUYER-1:2 from BUYER-1",
+            "ref": "RI:BUYER-1:2",
+            "formula": "face 420,000.00: issued day 2 + 45-day terms"
+          },
+          {
+            "day": 47,
+            "kind": "FLOW",
+            "amount_fen": -10000000,
+            "amount_display": "−¥100,000.00",
+            "label": "Operating bill",
+            "ref": "F-BILL47",
+            "formula": "operating −100,000.00"
+          }
+        ]
+      },
+      {
+        "day": 48,
+        "closing_fen": 42000000,
+        "closing_display": "¥420,000.00",
+        "debt_outstanding_fen": 160498620,
+        "debt_outstanding_display": "¥1,604,986.20",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 49,
+        "closing_fen": 42000000,
+        "closing_display": "¥420,000.00",
+        "debt_outstanding_fen": 160498620,
+        "debt_outstanding_display": "¥1,604,986.20",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 50,
+        "closing_fen": 42000000,
+        "closing_display": "¥420,000.00",
+        "debt_outstanding_fen": 160498620,
+        "debt_outstanding_display": "¥1,604,986.20",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 51,
+        "closing_fen": 42000000,
+        "closing_display": "¥420,000.00",
+        "debt_outstanding_fen": 160498620,
+        "debt_outstanding_display": "¥1,604,986.20",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 52,
+        "closing_fen": 42000000,
+        "closing_display": "¥420,000.00",
+        "debt_outstanding_fen": 160498620,
+        "debt_outstanding_display": "¥1,604,986.20",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 53,
+        "closing_fen": 42000000,
+        "closing_display": "¥420,000.00",
+        "debt_outstanding_fen": 160498620,
+        "debt_outstanding_display": "¥1,604,986.20",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 54,
+        "closing_fen": 42000000,
+        "closing_display": "¥420,000.00",
+        "debt_outstanding_fen": 160498620,
+        "debt_outstanding_display": "¥1,604,986.20",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 55,
+        "closing_fen": 42000000,
+        "closing_display": "¥420,000.00",
+        "debt_outstanding_fen": 160498620,
+        "debt_outstanding_display": "¥1,604,986.20",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 56,
+        "closing_fen": 42000000,
+        "closing_display": "¥420,000.00",
+        "debt_outstanding_fen": 160498620,
+        "debt_outstanding_display": "¥1,604,986.20",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 57,
+        "closing_fen": 42000000,
+        "closing_display": "¥420,000.00",
+        "debt_outstanding_fen": 160498620,
+        "debt_outstanding_display": "¥1,604,986.20",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 58,
+        "closing_fen": 42000000,
+        "closing_display": "¥420,000.00",
+        "debt_outstanding_fen": 160498620,
+        "debt_outstanding_display": "¥1,604,986.20",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 59,
+        "closing_fen": 42000000,
+        "closing_display": "¥420,000.00",
+        "debt_outstanding_fen": 160498620,
+        "debt_outstanding_display": "¥1,604,986.20",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 60,
+        "closing_fen": 37500000,
+        "closing_display": "¥375,000.00",
+        "debt_outstanding_fen": 155998620,
+        "debt_outstanding_display": "¥1,559,986.20",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": [
+          {
+            "day": 60,
+            "kind": "FLOW",
+            "amount_fen": -4500000,
+            "amount_display": "−¥45,000.00",
+            "label": "Debt service (principal), Existing equipment loan (rate 0%: a fixture assumption)",
+            "ref": "D-EQUIP",
+            "formula": "debt_service: payment 45,000.00 − interest 0.00; principal left 1,410,000.00"
+          }
+        ]
+      },
+      {
+        "day": 61,
+        "closing_fen": 37500000,
+        "closing_display": "¥375,000.00",
+        "debt_outstanding_fen": 155998620,
+        "debt_outstanding_display": "¥1,559,986.20",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 62,
+        "closing_fen": 37500000,
+        "closing_display": "¥375,000.00",
+        "debt_outstanding_fen": 155998620,
+        "debt_outstanding_display": "¥1,559,986.20",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 63,
+        "closing_fen": 37500000,
+        "closing_display": "¥375,000.00",
+        "debt_outstanding_fen": 155998620,
+        "debt_outstanding_display": "¥1,559,986.20",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 64,
+        "closing_fen": 37500000,
+        "closing_display": "¥375,000.00",
+        "debt_outstanding_fen": 155998620,
+        "debt_outstanding_display": "¥1,559,986.20",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 65,
+        "closing_fen": 37500000,
+        "closing_display": "¥375,000.00",
+        "debt_outstanding_fen": 155998620,
+        "debt_outstanding_display": "¥1,559,986.20",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 66,
+        "closing_fen": 37500000,
+        "closing_display": "¥375,000.00",
+        "debt_outstanding_fen": 155998620,
+        "debt_outstanding_display": "¥1,559,986.20",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 67,
+        "closing_fen": 37500000,
+        "closing_display": "¥375,000.00",
+        "debt_outstanding_fen": 155998620,
+        "debt_outstanding_display": "¥1,559,986.20",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 68,
+        "closing_fen": 37500000,
+        "closing_display": "¥375,000.00",
+        "debt_outstanding_fen": 155998620,
+        "debt_outstanding_display": "¥1,559,986.20",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 69,
+        "closing_fen": 37500000,
+        "closing_display": "¥375,000.00",
+        "debt_outstanding_fen": 155998620,
+        "debt_outstanding_display": "¥1,559,986.20",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 70,
+        "closing_fen": 37500000,
+        "closing_display": "¥375,000.00",
+        "debt_outstanding_fen": 155998620,
+        "debt_outstanding_display": "¥1,559,986.20",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 71,
+        "closing_fen": 37500000,
+        "closing_display": "¥375,000.00",
+        "debt_outstanding_fen": 155998620,
+        "debt_outstanding_display": "¥1,559,986.20",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 72,
+        "closing_fen": 37500000,
+        "closing_display": "¥375,000.00",
+        "debt_outstanding_fen": 155998620,
+        "debt_outstanding_display": "¥1,559,986.20",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 73,
+        "closing_fen": 37500000,
+        "closing_display": "¥375,000.00",
+        "debt_outstanding_fen": 155998620,
+        "debt_outstanding_display": "¥1,559,986.20",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 74,
+        "closing_fen": 37500000,
+        "closing_display": "¥375,000.00",
+        "debt_outstanding_fen": 155998620,
+        "debt_outstanding_display": "¥1,559,986.20",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 75,
+        "closing_fen": 37500000,
+        "closing_display": "¥375,000.00",
+        "debt_outstanding_fen": 155998620,
+        "debt_outstanding_display": "¥1,559,986.20",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 76,
+        "closing_fen": 37500000,
+        "closing_display": "¥375,000.00",
+        "debt_outstanding_fen": 155998620,
+        "debt_outstanding_display": "¥1,559,986.20",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 77,
+        "closing_fen": 64298878,
+        "closing_display": "¥642,988.78",
+        "debt_outstanding_fen": 141000000,
+        "debt_outstanding_display": "¥1,410,000.00",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": [
+          {
+            "day": 77,
+            "kind": "RECEIPT",
+            "amount_fen": 42000000,
+            "amount_display": "¥420,000.00",
+            "label": "Receipt RI:BUYER-1:32 from BUYER-1",
+            "ref": "RI:BUYER-1:32",
+            "formula": "face 420,000.00: issued day 32 + 45-day terms"
+          },
+          {
+            "day": 77,
+            "kind": "INTEREST",
+            "amount_fen": -202502,
+            "amount_display": "−¥2,025.02",
+            "label": "Interest, Bank credit line",
+            "ref": "FAC-LINE",
+            "formula": "149,986.20 × 6.4% × 77/365 = 2,025.02"
+          },
+          {
+            "day": 77,
+            "kind": "REPAYMENT",
+            "amount_fen": -14998620,
+            "amount_display": "−¥149,986.20",
+            "label": "Repay Bank credit line",
+            "ref": "FAC-LINE",
+            "formula": "principal drawn day 0; assumed repaid on the first affordable receipt day"
+          }
+        ]
+      },
+      {
+        "day": 78,
+        "closing_fen": 64298878,
+        "closing_display": "¥642,988.78",
+        "debt_outstanding_fen": 141000000,
+        "debt_outstanding_display": "¥1,410,000.00",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 79,
+        "closing_fen": 64298878,
+        "closing_display": "¥642,988.78",
+        "debt_outstanding_fen": 141000000,
+        "debt_outstanding_display": "¥1,410,000.00",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 80,
+        "closing_fen": 64298878,
+        "closing_display": "¥642,988.78",
+        "debt_outstanding_fen": 141000000,
+        "debt_outstanding_display": "¥1,410,000.00",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 81,
+        "closing_fen": 64298878,
+        "closing_display": "¥642,988.78",
+        "debt_outstanding_fen": 141000000,
+        "debt_outstanding_display": "¥1,410,000.00",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 82,
+        "closing_fen": 64298878,
+        "closing_display": "¥642,988.78",
+        "debt_outstanding_fen": 141000000,
+        "debt_outstanding_display": "¥1,410,000.00",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 83,
+        "closing_fen": 64298878,
+        "closing_display": "¥642,988.78",
+        "debt_outstanding_fen": 141000000,
+        "debt_outstanding_display": "¥1,410,000.00",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 84,
+        "closing_fen": 64298878,
+        "closing_display": "¥642,988.78",
+        "debt_outstanding_fen": 141000000,
+        "debt_outstanding_display": "¥1,410,000.00",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 85,
+        "closing_fen": 64298878,
+        "closing_display": "¥642,988.78",
+        "debt_outstanding_fen": 141000000,
+        "debt_outstanding_display": "¥1,410,000.00",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 86,
+        "closing_fen": 64298878,
+        "closing_display": "¥642,988.78",
+        "debt_outstanding_fen": 141000000,
+        "debt_outstanding_display": "¥1,410,000.00",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 87,
+        "closing_fen": 64298878,
+        "closing_display": "¥642,988.78",
+        "debt_outstanding_fen": 141000000,
+        "debt_outstanding_display": "¥1,410,000.00",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 88,
+        "closing_fen": 64298878,
+        "closing_display": "¥642,988.78",
+        "debt_outstanding_fen": 141000000,
+        "debt_outstanding_display": "¥1,410,000.00",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 89,
+        "closing_fen": 64298878,
+        "closing_display": "¥642,988.78",
+        "debt_outstanding_fen": 141000000,
+        "debt_outstanding_display": "¥1,410,000.00",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 90,
+        "closing_fen": 59798878,
+        "closing_display": "¥597,988.78",
+        "debt_outstanding_fen": 136500000,
+        "debt_outstanding_display": "¥1,365,000.00",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": [
+          {
+            "day": 90,
+            "kind": "FLOW",
+            "amount_fen": -4500000,
+            "amount_display": "−¥45,000.00",
+            "label": "Debt service (principal), Existing equipment loan (rate 0%: a fixture assumption)",
+            "ref": "D-EQUIP",
+            "formula": "debt_service: payment 45,000.00 − interest 0.00; principal left 1,365,000.00"
+          }
+        ]
+      },
+      {
+        "day": 91,
+        "closing_fen": 59798878,
+        "closing_display": "¥597,988.78",
+        "debt_outstanding_fen": 136500000,
+        "debt_outstanding_display": "¥1,365,000.00",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 92,
+        "closing_fen": 59798878,
+        "closing_display": "¥597,988.78",
+        "debt_outstanding_fen": 136500000,
+        "debt_outstanding_display": "¥1,365,000.00",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 93,
+        "closing_fen": 59798878,
+        "closing_display": "¥597,988.78",
+        "debt_outstanding_fen": 136500000,
+        "debt_outstanding_display": "¥1,365,000.00",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 94,
+        "closing_fen": 59798878,
+        "closing_display": "¥597,988.78",
+        "debt_outstanding_fen": 136500000,
+        "debt_outstanding_display": "¥1,365,000.00",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 95,
+        "closing_fen": 59798878,
+        "closing_display": "¥597,988.78",
+        "debt_outstanding_fen": 136500000,
+        "debt_outstanding_display": "¥1,365,000.00",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 96,
+        "closing_fen": 59798878,
+        "closing_display": "¥597,988.78",
+        "debt_outstanding_fen": 136500000,
+        "debt_outstanding_display": "¥1,365,000.00",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 97,
+        "closing_fen": 59798878,
+        "closing_display": "¥597,988.78",
+        "debt_outstanding_fen": 136500000,
+        "debt_outstanding_display": "¥1,365,000.00",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 98,
+        "closing_fen": 59798878,
+        "closing_display": "¥597,988.78",
+        "debt_outstanding_fen": 136500000,
+        "debt_outstanding_display": "¥1,365,000.00",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 99,
+        "closing_fen": 59798878,
+        "closing_display": "¥597,988.78",
+        "debt_outstanding_fen": 136500000,
+        "debt_outstanding_display": "¥1,365,000.00",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 100,
+        "closing_fen": 59798878,
+        "closing_display": "¥597,988.78",
+        "debt_outstanding_fen": 136500000,
+        "debt_outstanding_display": "¥1,365,000.00",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 101,
+        "closing_fen": 59798878,
+        "closing_display": "¥597,988.78",
+        "debt_outstanding_fen": 136500000,
+        "debt_outstanding_display": "¥1,365,000.00",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 102,
+        "closing_fen": 59798878,
+        "closing_display": "¥597,988.78",
+        "debt_outstanding_fen": 136500000,
+        "debt_outstanding_display": "¥1,365,000.00",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 103,
+        "closing_fen": 59798878,
+        "closing_display": "¥597,988.78",
+        "debt_outstanding_fen": 136500000,
+        "debt_outstanding_display": "¥1,365,000.00",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 104,
+        "closing_fen": 59798878,
+        "closing_display": "¥597,988.78",
+        "debt_outstanding_fen": 136500000,
+        "debt_outstanding_display": "¥1,365,000.00",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 105,
+        "closing_fen": 59798878,
+        "closing_display": "¥597,988.78",
+        "debt_outstanding_fen": 136500000,
+        "debt_outstanding_display": "¥1,365,000.00",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 106,
+        "closing_fen": 59798878,
+        "closing_display": "¥597,988.78",
+        "debt_outstanding_fen": 136500000,
+        "debt_outstanding_display": "¥1,365,000.00",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 107,
+        "closing_fen": 101798878,
+        "closing_display": "¥1,017,988.78",
+        "debt_outstanding_fen": 136500000,
+        "debt_outstanding_display": "¥1,365,000.00",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": [
+          {
+            "day": 107,
+            "kind": "RECEIPT",
+            "amount_fen": 42000000,
+            "amount_display": "¥420,000.00",
+            "label": "Receipt RI:BUYER-1:62 from BUYER-1",
+            "ref": "RI:BUYER-1:62",
+            "formula": "face 420,000.00: issued day 62 + 45-day terms"
+          }
+        ]
+      },
+      {
+        "day": 108,
+        "closing_fen": 101798878,
+        "closing_display": "¥1,017,988.78",
+        "debt_outstanding_fen": 136500000,
+        "debt_outstanding_display": "¥1,365,000.00",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 109,
+        "closing_fen": 101798878,
+        "closing_display": "¥1,017,988.78",
+        "debt_outstanding_fen": 136500000,
+        "debt_outstanding_display": "¥1,365,000.00",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 110,
+        "closing_fen": 101798878,
+        "closing_display": "¥1,017,988.78",
+        "debt_outstanding_fen": 136500000,
+        "debt_outstanding_display": "¥1,365,000.00",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 111,
+        "closing_fen": 101798878,
+        "closing_display": "¥1,017,988.78",
+        "debt_outstanding_fen": 136500000,
+        "debt_outstanding_display": "¥1,365,000.00",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 112,
+        "closing_fen": 101798878,
+        "closing_display": "¥1,017,988.78",
+        "debt_outstanding_fen": 136500000,
+        "debt_outstanding_display": "¥1,365,000.00",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 113,
+        "closing_fen": 101798878,
+        "closing_display": "¥1,017,988.78",
+        "debt_outstanding_fen": 136500000,
+        "debt_outstanding_display": "¥1,365,000.00",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 114,
+        "closing_fen": 101798878,
+        "closing_display": "¥1,017,988.78",
+        "debt_outstanding_fen": 136500000,
+        "debt_outstanding_display": "¥1,365,000.00",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 115,
+        "closing_fen": 101798878,
+        "closing_display": "¥1,017,988.78",
+        "debt_outstanding_fen": 136500000,
+        "debt_outstanding_display": "¥1,365,000.00",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 116,
+        "closing_fen": 101798878,
+        "closing_display": "¥1,017,988.78",
+        "debt_outstanding_fen": 136500000,
+        "debt_outstanding_display": "¥1,365,000.00",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 117,
+        "closing_fen": 101798878,
+        "closing_display": "¥1,017,988.78",
+        "debt_outstanding_fen": 136500000,
+        "debt_outstanding_display": "¥1,365,000.00",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 118,
+        "closing_fen": 101798878,
+        "closing_display": "¥1,017,988.78",
+        "debt_outstanding_fen": 136500000,
+        "debt_outstanding_display": "¥1,365,000.00",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 119,
+        "closing_fen": 101798878,
+        "closing_display": "¥1,017,988.78",
+        "debt_outstanding_fen": 136500000,
+        "debt_outstanding_display": "¥1,365,000.00",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 120,
+        "closing_fen": 97298878,
+        "closing_display": "¥972,988.78",
+        "debt_outstanding_fen": 132000000,
+        "debt_outstanding_display": "¥1,320,000.00",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": [
+          {
+            "day": 120,
+            "kind": "FLOW",
+            "amount_fen": -4500000,
+            "amount_display": "−¥45,000.00",
+            "label": "Debt service (principal), Existing equipment loan (rate 0%: a fixture assumption)",
+            "ref": "D-EQUIP",
+            "formula": "debt_service: payment 45,000.00 − interest 0.00; principal left 1,320,000.00"
+          }
+        ]
+      },
+      {
+        "day": 121,
+        "closing_fen": 97298878,
+        "closing_display": "¥972,988.78",
+        "debt_outstanding_fen": 132000000,
+        "debt_outstanding_display": "¥1,320,000.00",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 122,
+        "closing_fen": 97298878,
+        "closing_display": "¥972,988.78",
+        "debt_outstanding_fen": 132000000,
+        "debt_outstanding_display": "¥1,320,000.00",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 123,
+        "closing_fen": 97298878,
+        "closing_display": "¥972,988.78",
+        "debt_outstanding_fen": 132000000,
+        "debt_outstanding_display": "¥1,320,000.00",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 124,
+        "closing_fen": 97298878,
+        "closing_display": "¥972,988.78",
+        "debt_outstanding_fen": 132000000,
+        "debt_outstanding_display": "¥1,320,000.00",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 125,
+        "closing_fen": 97298878,
+        "closing_display": "¥972,988.78",
+        "debt_outstanding_fen": 132000000,
+        "debt_outstanding_display": "¥1,320,000.00",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 126,
+        "closing_fen": 97298878,
+        "closing_display": "¥972,988.78",
+        "debt_outstanding_fen": 132000000,
+        "debt_outstanding_display": "¥1,320,000.00",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 127,
+        "closing_fen": 97298878,
+        "closing_display": "¥972,988.78",
+        "debt_outstanding_fen": 132000000,
+        "debt_outstanding_display": "¥1,320,000.00",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 128,
+        "closing_fen": 97298878,
+        "closing_display": "¥972,988.78",
+        "debt_outstanding_fen": 132000000,
+        "debt_outstanding_display": "¥1,320,000.00",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 129,
+        "closing_fen": 97298878,
+        "closing_display": "¥972,988.78",
+        "debt_outstanding_fen": 132000000,
+        "debt_outstanding_display": "¥1,320,000.00",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 130,
+        "closing_fen": 97298878,
+        "closing_display": "¥972,988.78",
+        "debt_outstanding_fen": 132000000,
+        "debt_outstanding_display": "¥1,320,000.00",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 131,
+        "closing_fen": 97298878,
+        "closing_display": "¥972,988.78",
+        "debt_outstanding_fen": 132000000,
+        "debt_outstanding_display": "¥1,320,000.00",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 132,
+        "closing_fen": 97298878,
+        "closing_display": "¥972,988.78",
+        "debt_outstanding_fen": 132000000,
+        "debt_outstanding_display": "¥1,320,000.00",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 133,
+        "closing_fen": 97298878,
+        "closing_display": "¥972,988.78",
+        "debt_outstanding_fen": 132000000,
+        "debt_outstanding_display": "¥1,320,000.00",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 134,
+        "closing_fen": 97298878,
+        "closing_display": "¥972,988.78",
+        "debt_outstanding_fen": 132000000,
+        "debt_outstanding_display": "¥1,320,000.00",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 135,
+        "closing_fen": 97298878,
+        "closing_display": "¥972,988.78",
+        "debt_outstanding_fen": 132000000,
+        "debt_outstanding_display": "¥1,320,000.00",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 136,
+        "closing_fen": 97298878,
+        "closing_display": "¥972,988.78",
+        "debt_outstanding_fen": 132000000,
+        "debt_outstanding_display": "¥1,320,000.00",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 137,
+        "closing_fen": 139298878,
+        "closing_display": "¥1,392,988.78",
+        "debt_outstanding_fen": 132000000,
+        "debt_outstanding_display": "¥1,320,000.00",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": [
+          {
+            "day": 137,
+            "kind": "RECEIPT",
+            "amount_fen": 42000000,
+            "amount_display": "¥420,000.00",
+            "label": "Receipt RI:BUYER-1:92 from BUYER-1",
+            "ref": "RI:BUYER-1:92",
+            "formula": "face 420,000.00: issued day 92 + 45-day terms"
+          }
+        ]
+      },
+      {
+        "day": 138,
+        "closing_fen": 139298878,
+        "closing_display": "¥1,392,988.78",
+        "debt_outstanding_fen": 132000000,
+        "debt_outstanding_display": "¥1,320,000.00",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 139,
+        "closing_fen": 139298878,
+        "closing_display": "¥1,392,988.78",
+        "debt_outstanding_fen": 132000000,
+        "debt_outstanding_display": "¥1,320,000.00",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 140,
+        "closing_fen": 139298878,
+        "closing_display": "¥1,392,988.78",
+        "debt_outstanding_fen": 132000000,
+        "debt_outstanding_display": "¥1,320,000.00",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 141,
+        "closing_fen": 139298878,
+        "closing_display": "¥1,392,988.78",
+        "debt_outstanding_fen": 132000000,
+        "debt_outstanding_display": "¥1,320,000.00",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 142,
+        "closing_fen": 139298878,
+        "closing_display": "¥1,392,988.78",
+        "debt_outstanding_fen": 132000000,
+        "debt_outstanding_display": "¥1,320,000.00",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 143,
+        "closing_fen": 139298878,
+        "closing_display": "¥1,392,988.78",
+        "debt_outstanding_fen": 132000000,
+        "debt_outstanding_display": "¥1,320,000.00",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 144,
+        "closing_fen": 139298878,
+        "closing_display": "¥1,392,988.78",
+        "debt_outstanding_fen": 132000000,
+        "debt_outstanding_display": "¥1,320,000.00",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 145,
+        "closing_fen": 139298878,
+        "closing_display": "¥1,392,988.78",
+        "debt_outstanding_fen": 132000000,
+        "debt_outstanding_display": "¥1,320,000.00",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 146,
+        "closing_fen": 139298878,
+        "closing_display": "¥1,392,988.78",
+        "debt_outstanding_fen": 132000000,
+        "debt_outstanding_display": "¥1,320,000.00",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 147,
+        "closing_fen": 139298878,
+        "closing_display": "¥1,392,988.78",
+        "debt_outstanding_fen": 132000000,
+        "debt_outstanding_display": "¥1,320,000.00",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 148,
+        "closing_fen": 139298878,
+        "closing_display": "¥1,392,988.78",
+        "debt_outstanding_fen": 132000000,
+        "debt_outstanding_display": "¥1,320,000.00",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 149,
+        "closing_fen": 139298878,
+        "closing_display": "¥1,392,988.78",
+        "debt_outstanding_fen": 132000000,
+        "debt_outstanding_display": "¥1,320,000.00",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 150,
+        "closing_fen": 134798878,
+        "closing_display": "¥1,347,988.78",
+        "debt_outstanding_fen": 127500000,
+        "debt_outstanding_display": "¥1,275,000.00",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": [
+          {
+            "day": 150,
+            "kind": "FLOW",
+            "amount_fen": -4500000,
+            "amount_display": "−¥45,000.00",
+            "label": "Debt service (principal), Existing equipment loan (rate 0%: a fixture assumption)",
+            "ref": "D-EQUIP",
+            "formula": "debt_service: payment 45,000.00 − interest 0.00; principal left 1,275,000.00"
+          }
+        ]
+      },
+      {
+        "day": 151,
+        "closing_fen": 134798878,
+        "closing_display": "¥1,347,988.78",
+        "debt_outstanding_fen": 127500000,
+        "debt_outstanding_display": "¥1,275,000.00",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 152,
+        "closing_fen": 134798878,
+        "closing_display": "¥1,347,988.78",
+        "debt_outstanding_fen": 127500000,
+        "debt_outstanding_display": "¥1,275,000.00",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 153,
+        "closing_fen": 134798878,
+        "closing_display": "¥1,347,988.78",
+        "debt_outstanding_fen": 127500000,
+        "debt_outstanding_display": "¥1,275,000.00",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      },
+      {
+        "day": 154,
+        "closing_fen": 134798878,
+        "closing_display": "¥1,347,988.78",
+        "debt_outstanding_fen": 127500000,
+        "debt_outstanding_display": "¥1,275,000.00",
+        "forward_concession_fen": 0,
+        "forward_concession_display": "¥0.00",
+        "events": []
+      }
+    ],
+    "months": [
+      {
+        "month": 1,
+        "ebitda_fen": 9000000,
+        "ebitda_display": "¥90,000.00",
+        "debt_service_fen": 4500000,
+        "debt_service_display": "¥45,000.00",
+        "total_debt_fen": 160498620,
+        "total_debt_display": "¥1,604,986.20",
+        "dscr": {
+          "text": "2.00"
+        },
+        "leverage": {
+          "text": "1.49"
+        }
+      },
+      {
+        "month": 2,
+        "ebitda_fen": 9000000,
+        "ebitda_display": "¥90,000.00",
+        "debt_service_fen": 4500000,
+        "debt_service_display": "¥45,000.00",
+        "total_debt_fen": 155998620,
+        "total_debt_display": "¥1,559,986.20",
+        "dscr": {
+          "text": "2.00"
+        },
+        "leverage": {
+          "text": "1.44"
+        }
+      },
+      {
+        "month": 3,
+        "ebitda_fen": 9000000,
+        "ebitda_display": "¥90,000.00",
+        "debt_service_fen": 4702502,
+        "debt_service_display": "¥47,025.02",
+        "total_debt_fen": 136500000,
+        "total_debt_display": "¥1,365,000.00",
+        "dscr": {
+          "text": "1.91"
+        },
+        "leverage": {
+          "text": "1.26"
+        }
+      },
+      {
+        "month": 4,
+        "ebitda_fen": 9000000,
+        "ebitda_display": "¥90,000.00",
+        "debt_service_fen": 4500000,
+        "debt_service_display": "¥45,000.00",
+        "total_debt_fen": 132000000,
+        "total_debt_display": "¥1,320,000.00",
+        "dscr": {
+          "text": "2.00"
+        },
+        "leverage": {
+          "text": "1.22"
+        }
+      },
+      {
+        "month": 5,
+        "ebitda_fen": 9000000,
+        "ebitda_display": "¥90,000.00",
+        "debt_service_fen": 4500000,
+        "debt_service_display": "¥45,000.00",
+        "total_debt_fen": 127500000,
+        "total_debt_display": "¥1,275,000.00",
+        "dscr": {
+          "text": "2.00"
+        },
+        "leverage": {
+          "text": "1.18"
+        }
+      },
+      {
+        "month": 6,
+        "ebitda_fen": 9000000,
+        "ebitda_display": "¥90,000.00",
+        "debt_service_fen": 4500000,
+        "debt_service_display": "¥45,000.00",
+        "total_debt_fen": 127500000,
+        "total_debt_display": "¥1,275,000.00",
+        "dscr": {
+          "text": "2.00"
+        },
+        "leverage": {
+          "text": "1.18"
+        }
+      }
+    ],
+    "min_cash_fen": 10000000,
+    "min_cash_display": "¥100,000.00",
+    "min_cash_day": 42,
+    "first_breach_day": 42,
+    "interest_posted_fen": 202502,
+    "interest_posted_display": "¥2,025.02",
+    "fees_posted_fen": 0,
+    "fees_posted_display": "¥0.00",
+    "discounts_posted_fen": 0,
+    "discounts_posted_display": "¥0.00"
+  },
+  "cured_trajectory": null,
+  "forward_concession": {
+    "total_fen": 0,
+    "total_display": "¥0.00",
+    "cap_fen": 500000,
+    "cap_display": "¥5,000.00",
+    "over_cap": false,
+    "parts": []
+  },
+  "covenant_limits": {
+    "min_dscr_display": "1.25×",
+    "max_leverage_display": "2.50×"
+  },
+  "note": "Conservative mode decides. Unconfirmed inflows are ignored and only COMMITTED facilities can be used. The monthly ratios are the projection itself; the pro forma ratios with a terms extension funded are in the verdict's covenant checks."
+}

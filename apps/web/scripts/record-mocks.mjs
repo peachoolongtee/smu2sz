@@ -16,7 +16,8 @@
 //   - the commitment id (CMT-<16 hex>) and its nonce, which the API draws at random for every deal: replaced by one fixed
 //     id and nonce wherever they appear (negotiation_accept.json, ops.json, home_act.json, home_goahead.json).
 //   - nl_script.json and state_after_fund.json: the NL-<16 hex> operation and lot ids, which the API derives from a random
-//     per-session nonce, become fixed ids by order of first appearance; nl_script.json and home_reconciliation_day34.json are
+//     per-session nonce, become fixed ids by order of first appearance; nl_script.json, home_reconciliation_day34.json and the two
+//     home ledgers (home_ledger_day34.json, home_ledger_approved.json) are
 //     chained again by first appearance (entry_hash / prev_hash re-derived, chain_head_hash fixed) for the same reason.
 //   - the entry_hash / prev_hash of the operations in negotiation_accept.json, home_act.json, home_goahead.json, home_approve.json
 //     and home_approve_chat.json: the
@@ -51,7 +52,7 @@ process.env.NEXT_PUBLIC_API_URL = API;
 process.env.NEXT_PUBLIC_API_MODE = "live";
 const { setOwnerToken } = await import("../lib/auth.ts");
 const { live } = await import("../lib/live/index.ts");
-const { DEMO_STEPS, runCapex, runCapexApply } = await import("../lib/demo.ts");
+const { DEMO_STEPS } = await import("../lib/demo.ts");
 const { demoStore, clearDemo } = await import("../lib/demo-store.ts");
 const { promptsFor } = await import("../lib/chat-prompts.ts");
 setOwnerToken(OWNER_TOKEN);
@@ -65,7 +66,7 @@ const RECHAIN = new Set(["negotiation_accept.json", "home_act.json", "home_act_d
 
 // Files whose operations are chained by first appearance (every other chained file uses `rechain` below): the chat script, whose
 // operation ids and commitment ids come from a per-session random nonce, and the day-34 reconciliation (one receipt).
-const RECHAIN_BY_APPEARANCE = new Set(["nl_script.json", "home_reconciliation_day34.json"]);
+const RECHAIN_BY_APPEARANCE = new Set(["nl_script.json", "home_reconciliation_day34.json", "home_ledger_day34.json", "home_ledger_approved.json"]);
 const nlIds = new Map(); // NL-<16 hex> operation / lot ids, which the API derives from a random session nonce -> a fixed id by first appearance
 
 function rechainByAppearance(name, root) {
@@ -85,7 +86,7 @@ function rechainByAppearance(name, root) {
   const apply = (node) => {
     if (Array.isArray(node)) node.forEach(apply);
     else if (node && typeof node === "object") {
-      for (const k of ["entry_hash", "prev_hash", "chain_head_hash"]) {
+      for (const k of ["entry_hash", "prev_hash", "chain_head_hash", "head_hash"]) {
         if (typeof node[k] !== "string") continue;
         node[k] = memo.get(node[k]) ?? (k === "prev_hash" ? sha(`prev|${node.op_id}`) : sha(`head|${name}`));
       }
@@ -150,12 +151,16 @@ files["mandate.json"] = await live.getMandate();
 files["alerts.json"] = await live.getAlerts();
 files["reconciliation.json"] = await live.getReconciliation();
 files["home_summary_day0.json"] = await live.getHome("en");
+files["home_summary_day0_zh.json"] = await live.getHome("zh");
+files["trajectory_conservative_day0.json"] = await live.getTrajectory("CONSERVATIVE"); // the Cash page's readings, on the books this home was read on
 // The day-0 fix runs alone (Tier 1): the home's "Go ahead" on the opening books, bound to what the home showed.
 {
   const a = files["home_summary_day0.json"].next_action;
   files["home_act_day0.json"] = await live.actOnAlert(a.alert_id, { state_version: a.state_version, suggestions: a.suggestions });
   if (files["home_act_day0.json"].executed !== 2) throw new Error("the day-0 fix no longer runs alone: the demo path has changed");
   files["home_summary_after_fund.json"] = await live.getHome("en");
+  files["home_summary_after_fund_zh.json"] = await live.getHome("zh");
+  files["trajectory_conservative_after_fund.json"] = await live.getTrajectory("CONSERVATIVE"); // the Cash page's readings, on the books this home was read on
 }
 
 let verdictEx01 = null;
@@ -203,10 +208,15 @@ for (const s of DEMO_STEPS) {
 }
 
 // ------------------------------------------------------------------ the owner's decisions in the approval queue (ledger rows)
+// The decision is recorded on the same books as the stepper's approval step (the stepper replayed up to it), so the
+// approved application names the structure the queued one does (the 36-month loan); on untouched books the evaluation
+// would select the lease and the approved row would disagree with the queued request.
 async function queueOne() {
   await reset();
-  await runCapex();
-  await runCapexApply();
+  for (const s of DEMO_STEPS) {
+    await s.run();
+    if (s.id === "approval") break;
+  }
   return live.getApprovals();
 }
 let q = await queueOne();
@@ -293,10 +303,18 @@ await toDay34(async () => {
   files["home_opener_quiet.json"] = await live.nlOpener("rec-quiet-en", "en");
   files["home_opener_quiet_zh.json"] = await live.nlOpener("rec-quiet-zh", "zh");
   files["home_summary_quiet.json"] = await live.getHome("en");
+  files["home_summary_quiet_zh.json"] = await live.getHome("zh");
+  files["trajectory_conservative_quiet.json"] = await live.getTrajectory("CONSERVATIVE"); // the Cash page's readings, on the books this home was read on
 });
 files["home_alerts_day34.json"] = await live.getAlerts();
 files["home_summary_day34.json"] = await live.getHome("en");
+files["home_summary_day34_zh.json"] = await live.getHome("zh");
+files["trajectory_conservative_day34.json"] = await live.getTrajectory("CONSERVATIVE"); // the Cash page's readings, on the books this home was read on
 files["home_state_day34.json"] = await live.getState();
+// The books' history at day 34 (the deal, the funding, the day-2 receipt): the mock replays it when the clock is moved to day 34 without the walk.
+files["home_ledger_day34.json"] = await live.getLedger();
+// The router's comparison for day 34's gap (the Cash page shows a fresh plan while a gap is open, never the day-0 one).
+files["funding_day34.json"] = await live.planFunding({});
 // The reconciliation after the day-2 bank receipt (it carries the bank's reference).
 files["home_reconciliation_day34.json"] = await live.getReconciliation();
 const reserve = files["home_alerts_day34.json"].alerts.find((a) => a.id.startsWith("ALERT-RESERVE") && a.actionable);
@@ -313,14 +331,20 @@ files["home_act.json"] = await live.actOnAlert(reserve.id, {
 if (files["home_act.json"].results[0]?.status !== "PENDING_APPROVAL") throw new Error("the day-34 cure no longer waits for approval: the demo path has changed");
 files["home_opener_pending.json"] = await live.nlOpener("rec-home-pending", "en");
 files["home_summary_pending.json"] = await live.getHome("en");
+files["home_summary_pending_zh.json"] = await live.getHome("zh");
+files["trajectory_conservative_pending.json"] = await live.getTrajectory("CONSERVATIVE"); // the Cash page's readings, on the books this home was read on
 files["home_approval_pending.json"] = (await live.getApprovals())[0];
 // The owner approves on the approval card: the same operation executes (EXECUTED, the cash lands on day 37) and the alert clears.
 files["home_approval_approved.json"] = await live.decideApproval(files["home_approval_pending.json"].id, "APPROVE");
 files["home_approve.json"] = { operations: await ledgerTail(1) };
+// The log after the decision: the earlier "waiting" entry now reads in the past, beside "You approved ..." (the mock replays that).
+files["home_ledger_approved.json"] = await live.getLedger();
 files["home_alerts_after.json"] = await live.getAlerts();
 files["home_state_after_approve.json"] = await live.getState();
 files["home_opener_after_approve.json"] = await live.nlOpener("rec-home-after", "en");
 files["home_summary_after.json"] = await live.getHome("en");
+files["home_summary_after_zh.json"] = await live.getHome("zh");
+files["trajectory_conservative_after.json"] = await live.getTrajectory("CONSERVATIVE"); // the Cash page's readings, on the books this home was read on
 // The mandate's last day is 90: MANDATE_EXPIRING is a WARNING 14 days before (recorded at day 80) and CRITICAL once it has passed (day 95).
 await live.advanceClock(80 - 34);
 files["home_alerts_mandate_warning.json"] = await live.getAlerts();

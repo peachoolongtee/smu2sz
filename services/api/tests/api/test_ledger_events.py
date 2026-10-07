@@ -95,3 +95,28 @@ def test_a_queued_and_a_declined_application_are_nouns_not_commands(client):
     client.post(f"/approvals/{res['approval_id']}", json={"decision": "REJECT"})
     declined = next(o for o in _ops(client) if o["status"] == "REFUSED")
     assert declined["event_text"].startswith("You declined an application for ¥200,000.00 on ")
+
+
+def test_an_approval_that_was_answered_no_longer_reads_waiting(client):
+    # day 0's plan runs alone; cap the ceiling so the same plan waits for the owner
+    rt = get_runtime()
+    m = rt.store.get_mandate()
+    from app.mandate.fixture import load_demo_owner_key
+    from app.mandate.signing import sign
+    rt.store.put_mandate(sign(m.model_copy(update={"max_apr_bp": 500}), load_demo_owner_key()["private_key_hex"]))
+    a = client.get("/home").json()["next_action"]
+    client.post(f"/alerts/{a['alert_id']}/act", json={"state_version": a["state_version"], "suggestions": a["suggestions"]})
+    pending = [o for o in _ops(client) if o["status"] == "PENDING_APPROVAL"]
+    assert pending and all(o["event_text"].startswith("Waiting for your approval: ") for o in pending)
+    aid = next(o["approval_id"] for o in pending if o["kind"] == "SUBMIT_INVOICE_FOR_FINANCING")
+    assert client.post(f"/approvals/{aid}", json={"decision": "APPROVE"}).json()["result"]["status"] == "EXECUTED"
+    ops = _ops(client)
+    waiting_then = next(o for o in ops if o["status"] == "PENDING_APPROVAL" and o["approval_id"] == aid)
+    assert waiting_then["event_text"].startswith("Queued for your approval: ")
+    assert any(o["event_text"].startswith("You approved ") for o in ops if o["approval_id"] == aid and o["status"] == "EXECUTED")
+    # the other leg is still waiting, and still says so
+    others = [o for o in ops if o["status"] == "PENDING_APPROVAL" and o["approval_id"] != aid]
+    assert all(o["event_text"].startswith("Waiting for your approval: ") for o in others)
+    # the home leaves the answered "waiting" entry out of the changes
+    changes = client.get("/home").json()["changes"]
+    assert not any(c["kind"] == "WAITING" and "invoice financing" in c["event_text"] for c in changes)

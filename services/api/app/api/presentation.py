@@ -224,18 +224,75 @@ def relative_days(text: str, today: int, lang: Lang) -> str:
     text = re.sub(r"\barrives day (\d+)\b", lambda m: "arrives " + on(m), text)
     text = re.sub(r"\bdue day (\d+)\b", lambda m: "due " + on(m), text)
     text = re.sub(r"\b(?:on|for) day (\d+)\b", on, text)
-    text = re.sub(r"\bto day (\d+)\b", lambda m: "until " + on(m), text)
+    def until(m: re.Match[str]) -> str:
+        when = on(m)
+        return "until " + (when[3:] + " from now" if when.startswith("in ") else when)
+
+    text = re.sub(r"\bto day (\d+)\b", until, text)
     text = re.sub(r"\(day (\d+)\)", lambda m: "(" + on(m) + ")", text)
     text = re.sub(r", day (\d+)\b", lambda m: ", " + on(m), text)
     return text
 
 
+_CURE_CLAUSE = re.compile(r"A committed cure exists: (?P<legs>.+?), cost (?P<cost>¥[\d,.]+) \((?P<rate>[^()]*)\)(?P<rest>[^.]*)\.")
+
+
+def fallback_words(text: str) -> str:
+    """The alert's own cure, said as a fallback beside a recommended plan that is not it. The alert detail quotes its cure
+    ("A committed cure exists: draw on … + finance an invoice on … ¥336,000.00, cost ¥2,994.08 (11.2% a year for 29 days).");
+    under a recommendation of a different plan that sentence contradicts the plan's own amounts and cost, so on the Business
+    home it reads as what it is: another way, priced on its own basis, and not the one recommended. Business strings only:
+    the raw alert detail is untouched."""
+    def say(m: re.Match[str]) -> str:
+        legs = m.group("legs").replace(" + ", " and ")
+        legs = re.sub(r"(finance an invoice on [^+]*?) (¥[\d,.]+)(?= and |$)", r"\1 for \2", legs)
+        return f"A fallback also exists: {legs}, at {m.group('cost')} ({m.group('rate')}); FLOW recommends the plan above."
+    return _CURE_CLAUSE.sub(say, text)
+
+
+_ADMISSIBLE = (
+    (re.compile(r"\bnot admissible\b"), "not within your limits"),
+    (re.compile(r"\badmissible, but the owner must approve it"), "within your limits, but you must approve it"),
+    (re.compile(r"\badmissible\b"), "within your limits"),
+)
+
+
+# "(commitment CMT-a78afaa5becb5273)": a record id, which belongs to the audit level.
+_COMMITMENT_REF = re.compile(r"\s*\(commitment CMT-[0-9a-f]+\)")
+# "… the cash lands in 3 days after the 3-day lead time": the landing is said once, as a distance from today.
+_LEAD_TIME = re.compile(r" after the \d+-day lead time")
+
+
+def limits_words(text: str) -> str:
+    """The router's "admissible" is the engine's word for a plan inside the owner's signed limits: Business strings say so."""
+    for pattern, words in _ADMISSIBLE:
+        text = pattern.sub(words, text)
+    return text
+
+
 def business_text(state: FinancialState, text: str | None, today: int, lang: Lang = "en") -> str | None:
-    """One engine sentence as a Business page shows it: names for ids, the owner's words for the ceiling clause and
-    distances from today for its day numbers. None stays None; the raw sentence stays beside it for the audit level."""
+    """One engine sentence as a Business page shows it: names for ids, the owner's words for the ceiling clause, distances
+    from today for its day numbers and "within your limits" for the engine's "admissible". None stays None; the raw
+    sentence stays beside it for the audit level."""
     if text is None:
         return None
-    return relative_days(in_words(state, text), today, lang)
+    return _COMMITMENT_REF.sub("", _LEAD_TIME.sub("", limits_words(relative_days(in_words(state, text), today, lang))))
+
+
+# The executor's working behind a rate: "(all charges on ¥200,000.00 held 10 days (day 37 to day 47), annualised = 32.52%)".
+_FORMULA_PAREN = re.compile(r"\s*\(all charges on [^()]*(?:\([^()]*\)[^()]*)*\)")
+_YEARLY_COST = re.compile(r"\b(yearly cost of )(\d+(?:\.\d+)?)%")
+
+
+def approval_reason_words(state: FinancialState, text: str | None, today: int, lang: Lang = "en") -> str | None:
+    """Why a request needs the owner, for the card: the Business sentence without the executor's working (the "all charges on
+    ¥… annualised = …" parenthesis stays at the audit level) and the yearly cost to one decimal, as the home says it
+    ("32.5% a year"), never 32.52% beside 32.5%."""
+    out = business_text(state, text, today, lang)
+    if out is None:
+        return None
+    out = _FORMULA_PAREN.sub("", out)
+    return _YEARLY_COST.sub(lambda m: f"{m.group(1)}{fmt_pct(Fraction(m.group(2)) / 100, 1)}", out)
 
 
 def plan_when(state: FinancialState, plan: dict[str, Any] | None, today: int, lang: Lang = "en") -> dict[str, Any] | None:
@@ -341,10 +398,12 @@ def needs_owner_reason(mandate: Mandate, legs: list[dict[str, Any]], lang: Lang)
 
 
 def approval_words(state: FinancialState, op: dict[str, Any], kind: str | None, today: int, alert: Alert | None,
-                   lang: Lang, plan_costs: dict[tuple[str, str, str | None, int], Any] | None = None) -> dict[str, Any]:
+                   lang: Lang, plan_costs: dict[tuple[str, str, str | None, int], Any] | None = None,
+                   after: str | None = None) -> dict[str, Any]:
     """Business fields for one queued operation: the question, the amount, what it costs (from the alert whose cure
     it is, when that alert is still open; or from the router's cost line when the operation is a leg of the recommended
-    plan, `plan_costs` keyed by kind, facility, receivable and amount), when the cash lands, and the names behind the ids."""
+    plan, `plan_costs` keyed by kind, facility, receivable and amount), when the cash lands, and the names behind the ids.
+    `after` is the cure's after-state sentence, the one the home says (`home.cure_after_words`); `protects` carries it."""
     kind = kind or str(op.get("kind") or "")
     facility_id = op.get("facility_id")
     receivable_id = op.get("receivable_id")
@@ -403,10 +462,7 @@ def approval_words(state: FinancialState, op: dict[str, Any], kind: str | None, 
         "lands_day": lands,
         "lands_when": when_text(lands, today, lang) if lands is not None else None,
         "if_decline": if_decline,
-        "protects": (t(lang, f"It keeps cash above your minimum cash reserve for the next "
-                             f"{max(int(alert.inputs['last_day']) - today, 0)} days.",
-                       f"它使现金在未来 {max(int(alert.inputs['last_day']) - today, 0)} 天保持在最低现金储备以上。")
-                     if alert is not None and alert.inputs.get("last_day") and alert.committed_cure else None),
+        "protects": after,
     }
 
 
@@ -497,12 +553,15 @@ def agreement_words(state: FinancialState, counterparty_id: str, forward_value_f
 
 
 def event_words(state: FinancialState, *, kind: str, status: str, payload: dict[str, Any], message: str,
-                approval_id: str | None, day: int | None, today: int, lang: Lang = "en") -> dict[str, str | None]:
+                approval_id: str | None, day: int | None, today: int, lang: Lang = "en",
+                decided: bool = False) -> dict[str, str | None]:
     """One operations-log entry as a business sentence: what happened in the owner's words, never the executor's own
     sentence. `event_text` is the sentence (the landing of a draw or advance is its second sentence) and `event_detail`
     one more sentence when there is something more to say, else None. Every figure is the operation's own amount, the
     executor's own rate and the funding lot's own landing day; nothing is priced here. An entry with no business reading
-    (anything the executor says in its own words only) returns `event_text` None and the caller keeps the sentence it has."""
+    (anything the executor says in its own words only) returns `event_text` None and the caller keeps the sentence it has.
+    `decided` says the owner has since answered the approval a PENDING_APPROVAL entry waited on: the entry then reads in the
+    past ("Queued for your approval"), never "Waiting", beside the entry of the decision."""
     none: dict[str, str | None] = {"event_text": None, "event_detail": None}
     amount = _op_amount(payload)
     receivable_id = payload.get("receivable_id")
@@ -526,16 +585,18 @@ def event_words(state: FinancialState, *, kind: str, status: str, payload: dict[
 
     asked = _asked_words(state, kind, payload, lang)
     if status == "PENDING_APPROVAL" and asked is not None:
+        lead = t(lang, "Queued for your approval" if decided else "Waiting for your approval",
+                 "已提交请您批准" if decided else "等待您批准")
         reason = message.split("): ", 1)[1] if "): " in message else ""
         m = _RATE_IN_REASON.search(reason)
         if m:
             rate = fmt_pct(Fraction(m.group(1)) / 100, 1)
-            return {"event_text": t(lang, f"Waiting for your approval: {asked} at {rate} a year, above the {m.group(2)} limit you "
+            return {"event_text": t(lang, f"{lead}: {asked} at {rate} a year, above the {m.group(2)} limit you "
                                           f"signed for funding without your approval.",
-                                    f"等待您批准：{asked}，年化成本 {rate}，高于您签署的无需批准融资上限 {m.group(2)}。"),
+                                    f"{lead}：{asked}，年化成本 {rate}，高于您签署的无需批准融资上限 {m.group(2)}。"),
                     "event_detail": None}
         detail = _sentence(business_text(state, reason, today, lang) or "") if reason else None
-        return {"event_text": _stop(t(lang, f"Waiting for your approval: {asked}", f"等待您批准：{asked}"), lang), "event_detail": detail or None}
+        return {"event_text": _stop(f"{lead}: {asked}" if lang == "en" else f"{lead}：{asked}", lang), "event_detail": detail or None}
 
     if approved and asked is not None:
         landing = _landing_sentence(_landing_day(state, payload, day), today, lang) if money else None

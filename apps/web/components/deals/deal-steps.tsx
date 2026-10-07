@@ -22,21 +22,24 @@ export function DealSteps() {
   const { t } = useI18n();
   const cur = useCurrentOffer();
   const agreed = Boolean(cur.negotiation?.commitment) || cur.verdict?.outcome === "ACCEPT";
+  // A negotiation that ended without agreement closes the line too: the last step says so instead of "Agreed".
+  const noDeal = cur.negotiation?.outcome === "NO_DEAL";
   const responded = Boolean(cur.negotiation) || cur.verdict?.outcome === "ACCEPT";
   // How many steps are complete; the next one is the current step.
-  const done = !cur.offer ? 0 : !cur.verdict ? 1 : !responded ? 2 : agreed ? 4 : 3;
+  const done = !cur.offer ? 0 : !cur.verdict ? 1 : !responded ? 2 : agreed || noDeal ? 4 : 3;
   return (
     <nav aria-label={t("steps.label")} className="mb-4" data-testid="deal-steps">
       <ol className="flex flex-wrap items-center gap-x-1 gap-y-1 text-xs">
         {STEPS.map((s, i) => {
           const state = i < done ? "done" : i === done ? "current" : "todo";
-          const tone = state === "done" ? "text-ok-fg" : state === "current" ? "font-semibold text-brand-700" : "text-ink-3";
+          const last = i === STEPS.length - 1;
+          const tone = noDeal && last ? "font-semibold text-ink-2" : state === "done" ? "text-ok-fg" : state === "current" ? "font-semibold text-brand-700" : "text-ink-3";
           return (
             <li key={s.key} className="flex items-center gap-1">
               {i > 0 ? <span className="text-ink-3">·</span> : null}
-              <Link href={s.href} aria-current={state === "current" ? "step" : undefined} className={`inline-flex items-center gap-1 rounded px-1.5 py-1 ${tone}`}>
-                {state === "done" ? <CheckIcon width={12} height={12} /> : null}
-                {t(s.key)}
+              <Link href={noDeal && last ? "/deals#counters" : s.href} aria-current={state === "current" ? "step" : undefined} className={`inline-flex items-center gap-1 rounded px-1.5 py-1 ${tone}`}>
+                {state === "done" && !(noDeal && last) ? <CheckIcon width={12} height={12} /> : null}
+                {noDeal && last ? t("steps.noDeal") : t(s.key)}
               </Link>
             </li>
           );

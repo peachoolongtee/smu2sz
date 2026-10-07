@@ -17,16 +17,16 @@ import {
 } from "recharts";
 import { axisFloor, axisYuanK, dayTicks, type CashRow } from "@/lib/chart-helpers";
 
-/** Same values as the tokens in app/globals.css (SVG props cannot read Tailwind classes). */
+/** The chart tokens in app/globals.css, read by var() (SVG props cannot read Tailwind classes): five marks and the greys. */
 const C = {
-  ink2: "#3f5068",
-  ink3: "#5d6e84",
-  line: "#dde3ea",
-  brand: "#1558c0",
-  bad: "#a3241a",
-  ok: "#0b6b48",
-  warn: "#b7791f",
-  violet: "#7c3aed",
+  ink2: "var(--color-ink-2)",
+  ink3: "var(--color-chart-axis)",
+  line: "var(--color-chart-grid)",
+  brand: "var(--color-chart-base)",
+  bad: "var(--color-chart-reserve)",
+  ok: "var(--color-chart-plan)",
+  warn: "var(--color-chart-worst)",
+  violet: "var(--color-info-solid)",
 };
 
 const axisProps = { stroke: C.ink3, fontSize: 12, tickLine: false } as const;
@@ -139,7 +139,7 @@ export function CashChart({
               y={breachRow.cash}
               r={7}
               fill={C.bad}
-              stroke="#fff"
+              stroke="var(--color-surface)"
               strokeWidth={2}
               label={{ value: breachLabel, position: "bottom", fill: C.bad, fontSize: 12, fontWeight: 600 }}
             />

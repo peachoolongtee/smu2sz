@@ -4,9 +4,11 @@ import { CashChart, ConcessionMeter } from "@/components/charts";
 import { OutcomeBadge, PlainCode, TierBadge, outcomeHasTier } from "@/components/badges";
 import { Spinner } from "@/components/icons";
 import { Badge, Card, Formula, type Tone } from "@/components/ui";
+import type { DictKey } from "@/lib/dictionary";
 import type { CashRow } from "@/lib/chart-helpers";
 import { useI18n } from "@/lib/i18n";
-import type { WhatIfDay, WhatIfResult } from "@/lib/types";
+import type { Outcome, WhatIfDay, WhatIfResult } from "@/lib/types";
+import { whenText } from "@/lib/when";
 
 /**
  * Hypothetical verdict panels. Everything shown is a server string; `*_fen` / `.fen` values feed chart
@@ -42,17 +44,21 @@ function codeTone(r: WhatIfResult, code: string): Tone {
 function Shimmer({ active }: { active: boolean }) {
   return (
     <div aria-hidden className="h-0.5 w-full overflow-hidden rounded-full bg-transparent">
-      {active ? <div className="h-full w-full animate-pulse bg-linear-to-r from-transparent via-brand-600 to-transparent" /> : null}
+      {active ? <div className="h-full w-full animate-pulse bg-brand-600" /> : null}
     </div>
   );
 }
 
+/**
+ * The engine's own verdict (the outcome badge, its tier, every code and the engine's summary sentence), kept for the
+ * reader who wants it: it sits behind "How this was worked out" and not at level 1.
+ */
 export function WhatIfVerdictCard({ r, loading }: { r: WhatIfResult; loading: boolean }) {
   const { t } = useI18n();
   return (
     <Card
-      id="whatif-verdict"
-      title={t("whatif.verdict")}
+      id="whatif-engine"
+      title={t("whatif.engine")}
       actions={
         <span className="flex items-center gap-2 text-xs text-ink-3" aria-live="polite">
           {loading ? (
@@ -71,25 +77,95 @@ export function WhatIfVerdictCard({ r, loading }: { r: WhatIfResult; loading: bo
     >
       <Shimmer active={loading} />
       <div className="mt-2 flex flex-wrap items-center gap-3">
-        <span data-testid="whatif-outcome" data-outcome={r.outcome}>
+        <span data-testid="whatif-engine-outcome" data-outcome={r.outcome}>
           <OutcomeBadge outcome={r.outcome} large />
         </span>
         {outcomeHasTier(r.outcome) ? <TierBadge tier={r.required_tier} explain /> : <span className="text-sm text-ink-2">{t("verdict.nothingExecuted")}</span>}
       </div>
-      <div className="mt-3 flex flex-wrap gap-1.5" data-testid="whatif-codes">
-        {r.codes.length ? (
-          r.codes.map((c) => <PlainCode key={c} code={c} tone={codeTone(r, c)} />)
-        ) : (
-          <Badge tone="ok">{t("whatif.codes.none")}</Badge>
-        )}
-      </div>
       <p className="mt-3 text-sm leading-relaxed text-ink-2">{r.summary}</p>
-      <p className="mt-2 text-xs text-ink-3">{t("whatif.hypothetical.note")}</p>
     </Card>
   );
 }
 
-export function WhatIfCashCard({ r }: { r: WhatIfResult }) {
+const RESULT: Record<Outcome, { key: DictKey; tone: Tone }> = {
+  ACCEPT: { key: "whatif.result.ACCEPT", tone: "ok" },
+  COUNTER: { key: "whatif.result.COUNTER", tone: "warn" },
+  REJECT: { key: "whatif.result.REJECT", tone: "bad" },
+  NEEDS_OWNER_APPROVAL: { key: "whatif.result.NEEDS_OWNER_APPROVAL", tone: "warn" },
+  NO_DEAL: { key: "whatif.result.REJECT", tone: "bad" },
+  NO_VERDICT: { key: "whatif.result.NO_VERDICT", tone: "neutral" },
+};
+const RESULT_TEXT: Partial<Record<Tone, string>> = { ok: "text-ok-fg", warn: "text-warn-fg", bad: "text-bad-fg" };
+
+function SummaryFigure({ label, value, sub, tone, testId }: { label: string; value: string; sub?: string | null; tone?: Tone; testId?: string }) {
+  return (
+    <div className="min-w-0 rounded-lg border border-line bg-subtle px-3.5 py-3">
+      <dt className="text-xs font-medium text-ink-3">{label}</dt>
+      <dd className={`mt-0.5 break-words text-lg font-semibold tabular-nums ${(tone && RESULT_TEXT[tone]) ?? "text-ink"}`} data-testid={testId}>
+        {value}
+      </dd>
+      {sub ? <dd className="text-xs text-ink-3">{sub}</dd> : null}
+    </div>
+  );
+}
+
+/**
+ * The what-if answer at level 1: the verdict in words, what it breaks (the codes as plain words), and three figures
+ * (give-aways against the limit, cash against the reserve, what covering the gap costs). Every label is in the
+ * dictionary and every figure a server display string; days are distances from today. The detail cards follow
+ * behind "How this was worked out".
+ */
+export function WhatIfSummaryCard({ r, loading, today }: { r: WhatIfResult; loading: boolean; today: number }) {
+  const { t } = useI18n();
+  const result = RESULT[r.outcome] ?? RESULT.NO_VERDICT;
+  const f = r.forward;
+  const breach = r.reserve.breach_day;
+  const p = r.plan;
+  const needsFunding = Boolean(p && p.actions.length);
+  const be = r.break_even;
+  return (
+    <Card
+      id="whatif-verdict"
+      title={t("whatif.verdict")}
+      actions={
+        loading ? (
+          <span className="flex items-center gap-2 text-xs text-ink-3" aria-live="polite">
+            <Spinner /> {t("whatif.updating")}
+          </span>
+        ) : (
+          <Badge tone="info">{t("whatif.hypothetical")}</Badge>
+        )
+      }
+    >
+      <p className={`text-xl font-semibold ${RESULT_TEXT[result.tone] ?? "text-ink"}`} data-testid="whatif-outcome" data-outcome={r.outcome}>
+        {t(result.key)}
+      </p>
+      <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1.5" data-testid="whatif-codes">
+        {r.codes.length ? r.codes.map((c) => <PlainCode key={c} code={c} tone={codeTone(r, c)} />) : <Badge tone="ok">{t("whatif.codes.none")}</Badge>}
+      </div>
+      <dl className="mt-4 grid gap-2 sm:grid-cols-3">
+        <SummaryFigure label={t("whatif.fig.giveaways")} value={f.total_display} sub={t("whatif.fig.limit", { cap: f.cap_display })} tone={f.over_cap ? "bad" : undefined} testId="whatif-forward-total" />
+        <SummaryFigure
+          label={t("whatif.fig.cash")}
+          value={breach !== null ? t("whatif.fig.below", { when: whenText(breach, today, t) }) : t("whatif.fig.above")}
+          sub={r.trajectory ? t("whatif.fig.lowest", { amount: r.trajectory.min_cash.text }) : null}
+          tone={breach !== null ? (r.reserve.curable ? "warn" : "bad") : "ok"}
+          testId="whatif-cash-fig"
+        />
+        <SummaryFigure
+          label={t("whatif.fig.fund")}
+          value={needsFunding && p ? p.total_cost_display : t("whatif.plan.none")}
+          sub={be && r.params.discount_bp > 0 ? t(be.discount_above ? "whatif.fig.beAbove" : "whatif.fig.beBelow", { x: be.display }) : be ? t("whatif.breakEven", { x: be.display }) : null}
+          tone={be && r.params.discount_bp > 0 && be.discount_above ? "warn" : undefined}
+          testId="whatif-plan-cost"
+        />
+      </dl>
+      <p className="mt-3 text-xs text-ink-3">{t("whatif.hypothetical.note")}</p>
+    </Card>
+  );
+}
+
+export function WhatIfCashCard({ r, today }: { r: WhatIfResult; today: number }) {
   const { t } = useI18n();
   const tr = r.trajectory;
   if (!tr) return null;
@@ -105,7 +181,7 @@ export function WhatIfCashCard({ r }: { r: WhatIfResult }) {
       actions={
         breach !== null ? (
           <Badge tone={r.reserve.curable ? "warn" : "bad"}>
-            {t("whatif.breach", { n: breach })}
+            {t("whatif.breach", { when: whenText(breach, today, t) })}
             {r.reserve.curable && r.reserve.cure_cost_display
               ? ` · ${t("whatif.breach.curable", { cost: r.reserve.cure_cost_display })}`
               : ""}
@@ -117,14 +193,14 @@ export function WhatIfCashCard({ r }: { r: WhatIfResult }) {
     >
       <div
         role="img"
-        aria-label={t("whatif.chartSummary", { min: tr.min_cash.text, day: tr.min_cash_day, floor: tr.floor.text })}
+        aria-label={t("whatif.chartSummary", { min: tr.min_cash.text, when: whenText(tr.min_cash_day, today, t), floor: tr.floor.text })}
       >
         <CashChart
           rows={rows}
           floorFen={tr.floor.fen}
           floorLabel={`${t("whatif.legend.floor")} ${tr.floor.text}`}
           breachDay={breach}
-          breachLabel={breach !== null ? t("common.dayN", { n: breach }) : ""}
+          breachLabel={breach !== null ? whenText(breach, today, t) : ""}
           horizon={horizon}
           dayLabel={t("common.day")}
           cashLabel={t("whatif.legend.cash")}
@@ -161,7 +237,7 @@ export function WhatIfMeterCard({ r }: { r: WhatIfResult }) {
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
         <p
           className={`text-2xl font-semibold tabular-nums ${f.over_cap ? "text-bad-fg" : "text-ink"}`}
-          data-testid="whatif-forward-total"
+          data-testid="whatif-meter-total"
         >
           {f.total_display}
         </p>
@@ -222,7 +298,7 @@ export function WhatIfPlanCard({ r }: { r: WhatIfResult }) {
   const needsFunding = Boolean(p && p.actions.length);
   return (
     <Card id="whatif-plan" title={t("whatif.plan")}>
-      <p className="text-2xl font-semibold tabular-nums text-ink" data-testid="whatif-plan-cost">
+      <p className="text-2xl font-semibold tabular-nums text-ink" data-testid="whatif-plan-total">
         {needsFunding && p ? p.total_cost_display : t("whatif.plan.none")}
       </p>
       {needsFunding && p ? (

@@ -92,7 +92,7 @@ export default function InboxPage() {
               value={text}
               onChange={(e) => setText(e.target.value)}
               rows={3}
-              className="w-full rounded-md border border-line-strong bg-surface px-3 py-2 text-sm leading-relaxed"
+              className="w-full rounded-md border border-line-ui bg-surface px-3 py-2 text-sm leading-relaxed"
             />
           </div>
           <div className="flex flex-wrap items-center gap-2">

@@ -78,7 +78,7 @@ function Composer({ role, counterpartyId, busy }: { role: NlActor; counterpartyI
           onChange={(e) => setText(e.target.value)}
           onKeyDown={onKeyDown}
           placeholder={role === "OWNER" ? t("chat.placeholder.owner") : t("chat.placeholder.buyer", { who: counterpartyId })}
-          className="block max-h-40 min-h-[3.25rem] w-full resize-y rounded-md border border-line-strong bg-surface px-3 py-2 text-sm text-ink placeholder:text-ink-3"
+          className="block max-h-40 min-h-[3.25rem] w-full resize-y rounded-md border border-line-ui bg-surface px-3 py-2 text-sm text-ink placeholder:text-ink-3"
         />
       </div>
       <Button type="submit" variant="primary" disabled={!text.trim() || busy} loading={busy} data-testid="chat-send">
@@ -104,7 +104,7 @@ function Suggestions({ prompts, disabled, compact }: { prompts: Prompt[]; disabl
                 if (p.counterparty) setCounterparty(p.counterparty);
                 void sendMessage(p.text, p.text);
               }}
-              className="max-w-72 rounded-full border border-line-strong bg-surface px-3 py-1.5 text-left text-xs font-medium text-ink-2 hover:bg-subtle hover:text-ink disabled:cursor-not-allowed disabled:opacity-50"
+              className="max-w-72 rounded-full border border-line-ui bg-surface px-3 py-1.5 text-left text-xs font-medium text-ink-2 hover:bg-subtle hover:text-ink disabled:cursor-not-allowed disabled:opacity-50"
             >
               <span className="line-clamp-2 break-words">{t(p.label)}</span>
             </button>
@@ -164,7 +164,7 @@ export function ChatView({ variant }: { variant: "page" | "panel" }) {
               id={`chat-cp-${variant}`}
               value={chat.counterpartyId}
               onChange={(e) => setCounterparty(e.target.value as CounterpartyId)}
-              className="min-h-9 rounded-md border border-line-strong bg-surface px-2 text-sm text-ink"
+              className="min-h-9 rounded-md border border-line-ui bg-surface px-2 text-sm text-ink"
               data-testid="chat-counterparty"
             >
               {COUNTERPARTIES.map((id) => (

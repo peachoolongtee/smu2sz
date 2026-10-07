@@ -1,5 +1,6 @@
 import { expect, test as signedOut } from "@playwright/test";
 import { proseOf, test } from "./fixtures";
+import { runPlan } from "./helpers";
 
 /**
  * Mock-mode specs for the owner's decision surfaces: no tier badge on a REJECT, the approval card, the autonomy proof
@@ -78,7 +79,7 @@ test("an approval born of the reserve alert says what declining leaves, in days 
   await page.getByTestId("home-advance").click();
   await expect(page.getByTestId("home-day")).toHaveText("Day 34");
   await page.goto("/");
-  await page.getByTestId("fix-ALERT-RESERVE-42").click();
+  await runPlan(page, "ALERT-RESERVE-42");
   await page.getByTestId("alert-approval-link-ALERT-RESERVE-42").click();
   await expect(page).toHaveURL(/\/approvals#approval-APR-000001/);
   const card = page.locator("#approval-APR-000001");
@@ -87,14 +88,25 @@ test("an approval born of the reserve alert says what declining leaves, in days 
     "¥200,000.00 below your minimum cash reserve in 8 days; the gap peaks at ¥200,000.00 in 8 days.",
   );
   // "Why it needs you" in the owner's words: the signed limit and the holding period from today, never the agent's ceiling or "day N".
-  await expect(card.getByTestId("approval-reason")).toContainText("the yearly cost of 32.52% is above the 15.00% limit you signed for funding without your approval");
-  await expect(card.getByTestId("approval-reason")).toContainText("(from in 3 days to in 13 days)");
+  // The reason the owner approves against is on the pending card itself, not behind a click.
+  await expect(card.getByTestId("approval-reason")).toBeVisible();
+  await expect(card.getByTestId("approval-reason").locator("xpath=preceding-sibling::dt")).toHaveText("Why it needs you");
+  await expect(card.getByTestId("approval-reason")).toContainText("the yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval");
+  // The executor's working ("all charges on ¥200,000.00 held 10 days, annualised = 32.52%") is not in the sentence.
+  await expect(card.getByTestId("approval-reason")).not.toContainText("annualised");
+  await expect(card.getByTestId("approval-reason")).not.toContainText("32.52");
+  await expect(card.getByTestId("approval-result-APR-000001")).toHaveCount(0);
   expect(await proseOf(page)).not.toMatch(/\bday \d/i);
   await expect(card.getByRole("button", { name: "Approve ¥200,000.00", exact: true })).toBeVisible();
-  // The tier is an audit detail, closed by default.
+  // The tier is an audit detail, closed by default; so are the working behind the rate and the facility's lead time.
   await expect(card).not.toContainText("Tier");
+  const visible = await card.innerText();
+  expect(visible).not.toMatch(/annualised|lead time|Tier 2/);
+  await expect(card.getByTestId("approval-reason")).toContainText("32.5%");
   await card.getByTestId("approval-toggle-APR-000001").click();
   await expect(card.getByTestId("approval-detail-APR-000001")).toContainText("Tier 2");
+  // The working is one level down, in the executor's own words.
+  await expect(card.getByTestId("approval-detail-APR-000001")).toContainText("annualised = 32.52%");
 });
 
 signedOut("the stepper's Start resumes by itself after the owner signs in from the dialog it opened", async ({ page }) => {
@@ -106,4 +118,19 @@ signedOut("the stepper's Start resumes by itself after the owner signs in from t
   await dialog.getByRole("button", { name: "Sign in" }).click();
   await expect(dialog).toBeHidden();
   await expect(page.getByRole("region", { name: "Guided demo" }).locator("[aria-live=polite]")).toContainText("1/15");
+});
+
+signedOut("signed out, an owner page asks for the sign-in in words, not an error code, and opens the dialog", async ({ page }) => {
+  await page.goto("/");
+  const ask = page.getByTestId("signin-needed");
+  await expect(ask).toBeVisible();
+  await expect(ask).toContainText("Sign in to see your books");
+  await expect(ask).not.toContainText("401");
+  // The refused read opened the dialog; once it is cancelled the page's own button brings it back.
+  const dialog = page.getByRole("dialog", { name: "Owner sign-in" });
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole("button", { name: "Cancel" }).click();
+  await expect(dialog).toBeHidden();
+  await ask.getByRole("button", { name: "Owner sign-in" }).click();
+  await expect(dialog).toBeVisible();
 });

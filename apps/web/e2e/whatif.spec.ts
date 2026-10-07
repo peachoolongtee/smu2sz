@@ -16,7 +16,18 @@ test("what-if: moving the terms slider changes the hypothetical verdict", async 
   await expect(page.getByTestId("whatif-codes")).toContainText("AGG_CONCESSION_EXCEEDED");
   await expect(page.getByTestId("whatif-codes")).toContainText("Gives buyers more than your limit allows");
   await expect(page.getByTestId("whatif-forward-total")).toHaveText("¥28,326.92");
-  await expect(page.getByText("Breach day 47").first()).toBeVisible();
+  await expect(page.getByText("Reserve breach in 47 days").first()).toBeVisible();
+  // Level 1 is the summary: the verdict in words and three figures; the engine's cards wait behind one disclosure.
+  await expect(outcome).toHaveText("Breaks your limits");
+  await expect(page.getByTestId("whatif-cash-fig")).toContainText("Below it in 47 days");
+  await expect(page.getByTestId("whatif-plan-cost")).toContainText("¥1,468.05");
+  const details = page.getByTestId("whatif-details");
+  await expect(details).not.toHaveAttribute("open", "");
+  await expect(page.locator("#whatif-meter")).toBeHidden();
+  await details.locator("> summary").click();
+  await expect(page.locator("#whatif-meter")).toBeVisible();
+  await expect(page.getByTestId("whatif-engine-outcome")).toHaveAttribute("data-outcome", "REJECT");
+  await details.locator("> summary").click();
 
   // 60 -> 45 days with the arrow keys (5-day steps): no extension, so no concession breach.
   const terms = page.getByRole("slider", { name: "Payment terms" });

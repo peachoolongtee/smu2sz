@@ -71,12 +71,48 @@ def test_when_text_is_a_distance_from_today():
 def test_relative_days_rewrites_the_engine_phrases_and_leaves_counts_alone():
     from app.api.presentation import relative_days
 
-    r = lambda text: relative_days(text, 34, "en")  # noqa: E731
+    r = lambda text: relative_days(text, 34, "en")
     assert r("the cash lands on day 37 after the 3-day lead time") == "the cash lands in 3 days after the 3-day lead time"
     assert r("it will cost ¥1,782.19 by day 47") == "it will cost ¥1,782.19 within 13 days"
     assert r("by day 35") == "by day 35".replace("by day 35", "within 1 day") and r("by day 30") == "by today"
-    assert r("the gap lasts to day 41") == "the gap lasts until in 7 days".replace("until in 7 days", "until in 7 days")
+    assert r("the gap lasts to day 41") == "the gap lasts until 7 days from now"
     assert r("repaid day 32, draw ¥150,000.00 (day 12)") == "repaid 2 days ago, draw ¥150,000.00 (22 days ago)"
     assert r("due day 47; stays above the floor for 90 days; day 0 opening") == "due in 13 days; stays above the floor for 90 days; day 0 opening"
     # English engine text inside a Chinese page is rewritten too, and the Chinese day form as well
     assert relative_days("第 37 天 lands on day 37", 34, "zh") == "3 天后 lands in 3 days"
+
+
+def test_the_alerts_own_cure_reads_as_a_fallback_beside_a_different_recommendation():
+    from app.api.presentation import fallback_words
+
+    raw = ("Projected cash closes at ¥60,000.00 in 12 days. A committed cure exists: draw on Bank credit line ¥150,000.00 + finance "
+           "an invoice on Invoice financing (onboarded platform) ¥336,000.00, cost ¥2,994.08 (11.2% a year for 29 days).")
+    out = fallback_words(raw)
+    assert out.endswith("A fallback also exists: draw on Bank credit line ¥150,000.00 and finance an invoice on Invoice financing "
+                        "(onboarded platform) for ¥336,000.00, at ¥2,994.08 (11.2% a year for 29 days); FLOW recommends the plan above.")
+    assert "committed cure" not in out
+    # a sentence with no cure clause is left alone
+    assert fallback_words("Projected cash closes at ¥60,000.00 in 12 days.") == "Projected cash closes at ¥60,000.00 in 12 days."
+
+
+def test_the_cards_reason_has_no_working_and_says_the_yearly_cost_as_the_home_does():
+    from app.api.presentation import approval_reason_words
+    from app.domain.fixtures import load_scenario
+
+    state, _ = load_scenario()
+    raw = ("effective annual cost 32.52% is above the mandate's 15.00% ceiling for what the agent may borrow alone "
+           "(all charges on ¥200,000.00 held 10 days (day 37 to day 47), annualised = 32.52%)")
+    out = approval_reason_words(state, raw, 34, "en")
+    assert out == "the yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval"
+    assert "annualised" not in out and "day 37" not in out and "agent" not in out
+
+
+def test_the_engines_admissible_reads_as_within_your_limits_in_business_text():
+    from app.api.presentation import business_text
+    from app.domain.fixtures import load_scenario
+
+    state, _ = load_scenario()
+    assert business_text(state, "admissible but dearer than the selected plan", 0) == "within your limits but dearer than the selected plan"
+    assert business_text(state, "cost ¥5,040.00; admissible, but the owner must approve it: x", 0) == (
+        "cost ¥5,040.00; within your limits, but you must approve it: x")
+    assert business_text(state, "NOT_ADMISSIBLE: RESERVE_BREACH", 0) == "NOT_ADMISSIBLE: RESERVE_BREACH"

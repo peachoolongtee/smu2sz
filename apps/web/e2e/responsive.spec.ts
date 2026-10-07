@@ -54,6 +54,40 @@ test("the Business home puts the status and the next action in the first screen,
   await expect(page).toHaveURL(/\/cash/);
 });
 
+test("Business navigation: five pills on a desktop, the same five tabs on a phone, the mode switch and Ask FLOW always visible", async ({ page }) => {
+  await page.goto("/");
+  const phone = (page.viewportSize()?.width ?? 1440) < 1024;
+  const names = ["Home", "Deals", "Cash & funding", "Receivables", "Activity"];
+  const bar = page.getByTestId(phone ? "tab-bar" : "nav-pills");
+  await expect(bar).toBeVisible();
+  await expect(page.getByTestId(phone ? "nav-pills" : "tab-bar")).toBeHidden();
+  await expect(bar.getByRole("link")).toHaveText(phone ? ["Home", "Deals", "Cash", "Receivables", "Activity"] : names);
+  for (const n of names) await expect(bar.getByRole("link", { name: n, exact: true })).toBeVisible();
+  await expect(bar.locator('[aria-current="page"]')).toHaveText(phone ? "Home" : "Home");
+  // Buy equipment and What-if are doors from Cash & funding, not sections; no hamburger in Business mode.
+  await expect(page.getByRole("button", { name: "Open navigation" })).toHaveCount(0);
+  await expect(page.getByRole("radio", { name: "Business" })).toBeAttached();
+  await expect(page.getByTestId("chat-open")).toContainText("Ask FLOW");
+  await expect(page.getByTestId("chat-open")).toBeInViewport();
+  // The tab bar never hides the last content: the bar sits below the page's end.
+  if (phone) {
+    const barBox = await bar.boundingBox();
+    const chat = await page.getByTestId("chat-open").boundingBox();
+    expect(chat && barBox && chat.y + chat.height <= barBox.y + 1).toBeTruthy();
+  }
+  await bar.getByRole("link", { name: "Deals", exact: true }).click();
+  await expect(page).toHaveURL(/\/deals/);
+  // Each page names its tab, and the document says its language.
+  await expect(page).toHaveTitle("Deals · FLOW 流");
+  await expect(page.locator("html")).toHaveAttribute("lang", "en");
+  await expect(page.getByTestId(phone ? "tab-bar" : "nav-pills").locator('[aria-current="page"]')).toHaveText("Deals");
+  // The account sheet carries the identity and the limits.
+  await page.getByTestId("account-menu").locator("> summary").click();
+  await expect(page.getByTestId("account-identity")).toBeVisible();
+  await page.getByTestId("account-limits").click();
+  await expect(page).toHaveURL(/\/limits/);
+});
+
 test("the stepper and navigation are reachable in Demo mode", async ({ page }) => {
   await page.goto("/mandate");
   await expect(page.getByTestId("demo-next")).toBeInViewport();
@@ -76,6 +110,8 @@ test("the slide-over chat fits the viewport with a long reply", async ({ page })
   await expect(panel).toBeVisible();
   await page.getByTestId("prompt-evaluate").click();
   await expect(panel.getByTestId("chat-awaiting")).toBeVisible();
+  // The panel slides in (0.18 s) and the mock answers in 10 ms: measure once the slide has finished, not mid-way.
+  await expect.poll(() => panel.evaluate((el) => el.getAnimations().every((a) => a.playState === "finished"))).toBe(true);
   const viewport = page.viewportSize()!;
   const box = (await panel.boundingBox())!;
   expect(box.x + box.width).toBeLessThanOrEqual(viewport.width + 1);

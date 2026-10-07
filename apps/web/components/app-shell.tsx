@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { apiMode, getApprovals } from "@/lib/api";
 import { useAsync } from "@/lib/use-async";
 import { setLang, useI18n } from "@/lib/i18n";
@@ -10,8 +10,9 @@ import { setMode, shellFor, useMode, type Mode } from "@/lib/mode";
 import type { DictKey } from "@/lib/dictionary";
 import { ChatPanel } from "./chat/chat-panel";
 import { DemoStepper } from "./demo-stepper";
-import { MenuIcon, ShieldIcon, XIcon } from "./icons";
+import { ActivityIcon, DealsIcon, HomeIcon, InboxInIcon, MenuIcon, ShieldCheckIcon, ShieldIcon, SparkIcon, WalletIcon, XIcon } from "./icons";
 import { signOut, useAuth } from "@/lib/auth";
+import { Tour, startTour } from "./business/tour";
 import { OwnerSessionControl, OwnerSignInDialog } from "./owner-auth";
 import { Badge, Button, Segmented } from "./ui";
 
@@ -90,7 +91,7 @@ function Brand({ href }: { href: string }) {
       </span>
       <span className="leading-tight">
         {t("brand.name")}
-        <span className="block text-[0.7rem] font-normal text-ink-3">{t("brand.tagline")}</span>
+        <span className="hidden text-[0.7rem] font-normal text-ink-3 sm:block">{t("brand.tagline")}</span>
       </span>
     </Link>
   );
@@ -132,6 +133,11 @@ function ApprovalsBadge() {
  * One compact place for the account once the owner is signed in: the signed-in state and sign-out, the language, and
  * what this data is. Signed out, the Sign in button stays in the header itself: it is an action the owner needs.
  */
+/** A row in the sheet that navigates closes the sheet (a native `<details>` stays open otherwise). */
+function closeMenu(e: React.MouseEvent<HTMLElement>) {
+  (e.currentTarget.closest("details") as HTMLDetailsElement | null)?.removeAttribute("open");
+}
+
 function AccountMenu() {
   const { t } = useI18n();
   const { token } = useAuth();
@@ -140,10 +146,22 @@ function AccountMenu() {
       <div className="flex items-center gap-2">
         <OwnerSessionControl />
         <details className="relative" data-testid="account-menu">
-          <summary className="flex min-h-8 cursor-pointer list-none items-center rounded-md border border-line-strong px-2 text-xs font-medium text-ink-2 hover:bg-subtle [&::-webkit-details-marker]:hidden" aria-label={t("account.menu")}>
+          <summary className="flex min-h-8 cursor-pointer list-none items-center rounded-md border border-line-ui px-2 text-xs font-medium text-ink-2 hover:bg-subtle [&::-webkit-details-marker]:hidden" aria-label={t("account.menu")}>
             {t("account.menu")}
           </summary>
           <div className="absolute right-0 z-40 mt-1 w-72 space-y-3 rounded-lg border border-line bg-surface p-3 shadow-lg">
+            <button
+              type="button"
+              onClick={(e) => {
+                closeMenu(e);
+                startTour();
+              }}
+              className="flex min-h-10 w-full items-center gap-2.5 rounded-md px-2 text-left text-sm font-medium text-ink hover:bg-subtle"
+              data-testid="account-tour"
+            >
+              <SparkIcon className="text-brand-600" />
+              {t("tour.replay")}
+            </button>
             <LangSwitch />
             <p className="text-xs text-ink-3">{t("biz.demoData.hint")}</p>
           </div>
@@ -153,8 +171,8 @@ function AccountMenu() {
   }
   return (
     <details className="relative" data-testid="account-menu">
-      <summary className="flex min-h-8 cursor-pointer list-none items-center rounded-md border border-line-strong px-2 text-xs font-medium text-ink-2 hover:bg-subtle [&::-webkit-details-marker]:hidden" aria-label={t("account.menu")}>
-        <span aria-hidden className="grid size-5 place-items-center rounded-full bg-ok-bg text-[0.65rem] font-bold text-ok-fg">
+      <summary className="flex min-h-8 cursor-pointer list-none items-center rounded-md border border-line-ui px-2 text-xs font-medium text-ink-2 hover:bg-subtle [&::-webkit-details-marker]:hidden" aria-label={t("account.menu")}>
+        <span aria-hidden className="grid size-5 place-items-center rounded-full bg-brand-50 text-[0.65rem] font-bold text-brand-700">
           {t("account.initial")}
         </span>
       </summary>
@@ -167,6 +185,22 @@ function AccountMenu() {
             {t("auth.signout")}
           </Button>
         </div>
+        <Link href="/limits" onClick={closeMenu} className="flex min-h-10 items-center gap-2.5 rounded-md px-2 text-sm font-medium text-ink hover:bg-subtle" data-testid="account-limits">
+          <ShieldCheckIcon className="text-brand-600" />
+          {t("nav.limits.menu")}
+        </Link>
+        <button
+          type="button"
+          onClick={(e) => {
+            closeMenu(e);
+            startTour();
+          }}
+          className="flex min-h-10 w-full items-center gap-2.5 rounded-md px-2 text-left text-sm font-medium text-ink hover:bg-subtle"
+          data-testid="account-tour"
+        >
+          <SparkIcon className="text-brand-600" />
+          {t("tour.replay")}
+        </button>
         <LangSwitch />
         <p className="text-xs text-ink-3">{t("biz.demoData.hint")}</p>
       </div>
@@ -176,82 +210,87 @@ function AccountMenu() {
 
 // ---------------------------------------------------------------- Business
 
+/** The phone tab bar: one icon and word per section, the current one in the brand blue. */
+const TAB_ICON: Record<string, (p: { width?: number; height?: number }) => ReactNode> = {
+  "/": HomeIcon,
+  "/deals": DealsIcon,
+  "/cash": WalletIcon,
+  "/receivables": InboxInIcon,
+  "/activity": ActivityIcon,
+};
+/** A tab is a fifth of a phone's width: two sections have a shorter word there (the link keeps its full name for assistive tools). */
+const TAB_LABEL: Partial<Record<string, DictKey>> = { "/cash": "nav.short.cash" };
+
 function BusinessShell({ children }: { children: ReactNode }) {
   const { t } = useI18n();
   const pathname = usePathname();
-  const [open, setOpen] = useState(false);
-  const links = (onNavigate?: () => void, vertical = false) => (
-    <ul className={vertical ? "space-y-0.5" : "flex items-center gap-1"}>
-      {BUSINESS_NAV.map((n) => {
-        const active = pathname === n.href;
-        return (
-          <li key={n.href}>
-            <Link
-              href={n.href}
-              onClick={onNavigate}
-              aria-current={active ? "page" : undefined}
-              className={`flex min-h-10 items-center whitespace-nowrap rounded-md px-3 text-sm font-medium ${
-                active ? "bg-brand-50 text-brand-700" : "text-ink-2 hover:bg-subtle hover:text-ink"
-              }`}
-            >
-              {t(n.key)}
-            </Link>
-          </li>
-        );
-      })}
-    </ul>
-  );
   return (
     <div className="min-h-dvh">
       <SkipLink />
       <OwnerSignInDialog />
       <ChatPanel />
+      <Tour />
       <header className="sticky top-0 z-30 border-b border-line bg-surface">
-        <div className="mx-auto flex max-w-[1280px] items-center justify-between gap-3 px-4 py-2 lg:px-6">
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              aria-expanded={open}
-              aria-controls="mobile-nav"
-              aria-label={open ? t("nav.close") : t("nav.open")}
-              onClick={() => setOpen((v) => !v)}
-              className="grid size-10 place-items-center rounded-md border border-line-strong text-ink-2 hover:bg-subtle lg:hidden"
-            >
-              {open ? <XIcon /> : <MenuIcon />}
-            </button>
-            <Brand href="/" />
-          </div>
-          <nav aria-label={t("nav.label")} className="hidden lg:block">
-            {links()}
+        <div className="mx-auto flex max-w-[1280px] items-center justify-between gap-3 px-4 py-2 lg:grid lg:grid-cols-[auto_minmax(0,1fr)_auto] lg:gap-6 lg:px-6">
+          <Brand href="/" />
+          {/* Desktop: the five sections as pills on a quiet track. Phones get the tab bar at the bottom instead. */}
+          <nav aria-label={t("nav.label")} className="hidden min-w-0 lg:block" data-testid="nav-pills">
+            <ul className="mx-auto flex w-max items-center gap-1 rounded-full bg-subtle p-1">
+              {BUSINESS_NAV.map((n) => {
+                const active = pathname === n.href;
+                return (
+                  <li key={n.href}>
+                    <Link
+                      href={n.href}
+                      aria-current={active ? "page" : undefined}
+                      className={`flex min-h-9 items-center whitespace-nowrap rounded-full px-4 text-sm font-medium ${
+                        active ? "bg-brand-50 text-brand-700" : "text-ink-2 hover:bg-line hover:text-ink"
+                      }`}
+                    >
+                      {t(n.key)}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
           </nav>
-          <div className="flex items-center gap-2 whitespace-nowrap">
+          <div className="flex items-center justify-end gap-2 whitespace-nowrap">
             <ApprovalsBadge />
             <span className="hidden sm:inline-flex" data-testid="demo-data-indicator">
               <Badge tone="neutral" title={t("biz.demoData.hint")}>
                 {t("biz.demoData")}
               </Badge>
             </span>
-            <div className="hidden sm:block">
-              <ModeSwitch />
-            </div>
+            <ModeSwitch />
             <AccountMenu />
           </div>
         </div>
-        {open ? (
-          <nav id="mobile-nav" aria-label={t("nav.label")} className="border-t border-line bg-surface px-3 py-3 lg:hidden">
-            {links(() => setOpen(false), true)}
-            <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-line pt-3">
-              <ModeSwitch />
-              <Badge tone="neutral" title={t("biz.demoData.hint")}>
-                {t("biz.demoData")}
-              </Badge>
-            </div>
-          </nav>
-        ) : null}
       </header>
-      <main id="main" tabIndex={-1} className="mx-auto w-full max-w-[1180px] px-4 pb-24 pt-5 lg:px-6 lg:pb-10 lg:pt-6">
+      <main id="main" tabIndex={-1} className="mx-auto w-full max-w-[1180px] px-4 pb-28 pt-5 lg:px-6 lg:pb-10 lg:pt-6">
         {children}
       </main>
+      {/* Phones: a tab bar with the same five sections, as in a banking app. */}
+      <nav aria-label={t("nav.label")} className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] lg:hidden" data-testid="tab-bar">
+        <ul className="mx-auto grid max-w-xl grid-cols-5">
+          {BUSINESS_NAV.map((n) => {
+            const active = pathname === n.href;
+            const Icon = TAB_ICON[n.href];
+            return (
+              <li key={n.href}>
+                <Link
+                  href={n.href}
+                  aria-current={active ? "page" : undefined}
+                  aria-label={t(n.key)}
+                  className={`flex min-h-14 flex-col items-center justify-center gap-0.5 px-1 text-[0.6875rem] font-medium ${active ? "text-brand-600" : "text-ink-3 hover:text-ink"}`}
+                >
+                  {Icon ? <Icon width={21} height={21} /> : null}
+                  <span className="max-w-full truncate">{t(TAB_LABEL[n.href] ?? n.key)}</span>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
     </div>
   );
 }
@@ -297,7 +336,14 @@ function DemoShell({ children }: { children: ReactNode }) {
   const { t } = useI18n();
   const [open, setOpen] = useState(false);
   return (
-    <div className="min-h-dvh lg:grid lg:grid-cols-[14.5rem_minmax(0,1fr)]">
+    <div className="min-h-dvh">
+      {/* The Demo is visibly not the product: a deep strip across the top says so (the deep hero is the Business home's alone). */}
+      <div className="on-deep flex min-h-9 items-center justify-center gap-2 bg-brand-900 px-4 py-1.5 text-center text-xs" data-testid="demo-strip">
+        <span className="font-bold tracking-wide text-info-bright">{t("demo.strip.label")}</span>
+        <span aria-hidden className="text-on-deep-muted">·</span>
+        <span className="text-on-deep-muted">{t("demo.strip.text")}</span>
+      </div>
+      <div className="lg:grid lg:grid-cols-[14.5rem_minmax(0,1fr)]">
       <SkipLink />
       <aside className="sticky top-0 hidden h-dvh flex-col gap-6 overflow-y-auto border-r border-line bg-surface px-3 py-4 lg:flex">
         <div className="px-2">
@@ -321,7 +367,7 @@ function DemoShell({ children }: { children: ReactNode }) {
                   aria-controls="mobile-nav"
                   aria-label={open ? t("nav.close") : t("nav.open")}
                   onClick={() => setOpen((v) => !v)}
-                  className="grid size-10 place-items-center rounded-md border border-line-strong text-ink-2 hover:bg-subtle"
+                  className="grid size-10 place-items-center rounded-md border border-line-ui text-ink-2 hover:bg-subtle"
                 >
                   {open ? <XIcon /> : <MenuIcon />}
                 </button>
@@ -351,13 +397,32 @@ function DemoShell({ children }: { children: ReactNode }) {
           {children}
         </main>
       </div>
+      </div>
     </div>
   );
+}
+
+/** The page's name for the browser tab: the navigation label of the route. */
+const TITLE_KEY: Record<string, DictKey> = {
+  ...Object.fromEntries([...BUSINESS_NAV, ...DEMO_NAV].map((n) => [n.href, n.key])),
+  "/approvals": "nav.approvals",
+  "/limits": "nav.limits",
+};
+
+/** Sets the tab title ("Cash & funding · FLOW 流") and the document language, so a tab is findable and read aloud in the right language. */
+function useDocumentMeta(pathname: string) {
+  const { t, lang } = useI18n();
+  useEffect(() => {
+    const key = TITLE_KEY[pathname];
+    document.title = key && pathname !== "/" ? `${t(key)} · ${t("brand.name")}` : t("brand.name");
+    document.documentElement.lang = lang === "zh" ? "zh-CN" : "en";
+  }, [pathname, t, lang]);
 }
 
 /** Two shells. The owner's Business shell has no demo control; the Demo shell carries the story bar and the engine views. */
 export function AppShell({ children }: { children: ReactNode }) {
   const mode = useMode();
   const pathname = usePathname();
+  useDocumentMeta(pathname);
   return shellFor(pathname, mode) === "demo" ? <DemoShell>{children}</DemoShell> : <BusinessShell>{children}</BusinessShell>;
 }

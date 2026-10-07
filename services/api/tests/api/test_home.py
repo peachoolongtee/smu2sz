@@ -48,6 +48,10 @@ def test_day_zero_answers_safe_do_cost(client):
     assert [leg["cost_display"] for leg in a["legs"]] == ["¥841.64", "¥2,272.29"]
     assert a["if_nothing"] == "¥240,000.00 below your minimum cash reserve in 12 days; the gap peaks at ¥405,000.00 in 30 days."
     assert a["after"] == "Cash stays above your minimum cash reserve for the next 120 days."
+    # the alert's own cure (a different plan, priced on its own basis) is a fallback beside the recommendation, not its figures
+    assert "A committed cure exists" not in a["detail"] and "lasts until in" not in a["detail"]
+    assert ("A fallback also exists: draw on Bank credit line ¥150,000.00 and finance an invoice on Invoice financing (onboarded platform) "
+            "for ¥336,000.00, at ¥2,994.08 (11.2% a year for 29 days); FLOW recommends the plan above.") in a["detail"]
     assert a["authority_text"] == "Within your signed limits. No additional approval required." and a["lands_when"] == "in 3 days"
     assert h["cash"]["lowest_when"] == "in 30 days" and h["cash"]["first_breach_when"] == "in 12 days"
     assert h["receivables"]["open_total_display"] == "¥420,000.00" and h["receivables"]["overdue_total_display"] == "¥0.00"
@@ -172,6 +176,12 @@ def test_a_late_buyer_is_named_in_receivables_and_changes(client):
         "requested_by": "SYSTEM", "receivable_id": promised["receivable_id"], "amount_fen": promised["expected_fen"],
         "bank_reference": "T-RCPT-1"})
     assert res.json()["result"]["status"] == "EXECUTED"
+    rec = client.get("/reconciliation").json()["reconciliation"]
+    # the Business sentences carry names, never the commitment or invoice ids; the engine's sentence stays beside them
+    assert all("CMT-" not in r["detail_when"] and "RCV-" not in r["detail_when"] for r in rec["promised"] + rec["receipts"])
+    assert rec["promised"][0]["detail_when"].startswith("the agreed ¥255,013.80 for the ¥420,000.00 invoice to Foshan Home Retail Co.")
+    assert rec["promised"][0]["detail_when"].endswith(" arrived")
+    assert "CMT-" in rec["promised"][0]["detail"]
     h = client.get("/home").json()
     assert h["changes"][0]["kind"] == "RECEIPT" and h["changes"][0]["text"].startswith("Received ¥255,013.80")
     client.post("/clock/advance", json={"days": 28})
@@ -218,6 +228,13 @@ def test_a_late_buyer_is_named_in_receivables_and_changes(client):
     client.post(f"/alerts/{a['alert_id']}/act", json={"state_version": a["state_version"], "suggestions": a["suggestions"]})
     [card] = client.get("/home").json()["approvals"]
     assert card["if_decline"] == "¥200,000.00 below your minimum cash reserve in 8 days; the gap peaks at ¥200,000.00 in 8 days."
+    # one cure, one horizon: the approval card says what the home says (the plan projected on the books), on the home and in the queue
+    assert card["protects"] == a["after"] == "Cash stays above your minimum cash reserve for the next 120 days."
+    [row] = client.get("/approvals/queue").json()["approvals"]
+    assert row["presentation"]["reason"] == ("the yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval")
+    assert card["reason"] == row["presentation"]["reason"]
+    assert row["presentation"]["protects"] == a["after"]
+    assert client.get("/home?lang=zh").json()["approvals"][0]["protects"] == client.get("/home?lang=zh").json()["next_action"]["after"]
     # the queued fix reads as a business event in the changes, never as the executor's "Queued for owner approval (APR-…)"
     waiting = next(c for c in client.get("/home").json()["changes"] if c["kind"] == "WAITING")
     assert waiting["event_text"] == ("Waiting for your approval: ¥200,000.00 of invoice financing at 32.5% a year, above the "
@@ -229,6 +246,9 @@ def test_a_late_buyer_is_named_in_receivables_and_changes(client):
     approved = client.get("/home").json()["changes"]
     assert approved[0]["event_text"] == "You approved ¥200,000.00 of invoice financing. Funds arrive in 3 days."
     assert not any(c["event_text"].startswith("Advance ") for c in approved)
+    # one operation, one story: the decision is the news, and the earlier "waiting" entry is not repeated beside it
+    assert not any(c["kind"] == "WAITING" or "Waiting for your approval" in c["event_text"] for c in approved)
+    assert sum("¥200,000.00 of invoice financing" in c["event_text"] for c in approved) == 1
 
 
 def test_run_funding_plan_binds_to_the_plan_shown_and_refuses_a_stale_one(client):

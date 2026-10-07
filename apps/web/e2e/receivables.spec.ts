@@ -60,5 +60,13 @@ test("day 34: the late invoice leads, the overdue total is the server's, and the
   await expect(page.getByTestId("promised-RCV-A")).toContainText("¥255,013.80");
   await expect(page.getByRole("heading", { name: "Payments received" })).toBeVisible();
   await expect(page.getByTestId("receipt-rec-receipt-1")).toContainText("Foshan Home Retail Co.");
+  // The record ids (the invoice, the bank's reference) are one fold down; the sentences use names.
+  const receipts = page.locator("#recv-receipts");
+  await expect(receipts.getByTestId("receipt-audit-rec-receipt-1")).not.toHaveAttribute("open", "");
+  await expect(receipts.getByTestId("receipt-audit-rec-receipt-1")).toContainText("DEMO-RCPT-1");
   await expect(page.getByTestId("receipt-ref-rec-receipt-1")).toContainText("DEMO-RCPT-1");
+  const promised = await page.locator("#recv-promised").innerText();
+  const received = await receipts.innerText();
+  expect(promised + received).not.toMatch(/CMT-|RI:|DEMO-RCPT/);
+  await expect(page.getByTestId("promised-RCV-A")).toContainText("the ¥420,000.00 invoice to Foshan Home Retail Co.");
 });

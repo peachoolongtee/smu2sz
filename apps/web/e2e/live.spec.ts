@@ -1,5 +1,6 @@
 import type { APIRequestContext, Page } from "@playwright/test";
 import { DEMO_TOKEN, expect, test } from "./fixtures";
+import { runPlan } from "./helpers";
 
 /** Live-mode only: owner-token handling, the 401 state, borrower-file downloads and owner approval. */
 
@@ -37,7 +38,9 @@ test("a 401 from the API opens the owner sign-in dialog instead of leaving a bla
     }),
   );
   await page.goto("/mandate");
-  await expect(page.getByText(/rejected the owner token/i).first()).toBeVisible();
+  // In words, not an error code: the page asks for the sign-in, and the dialog is open.
+  await expect(page.getByTestId("signin-needed")).toContainText("Sign in to see your books");
+  await expect(page.getByTestId("signin-needed")).not.toContainText("401");
   await expect(page.getByRole("dialog", { name: "Owner sign-in" })).toBeVisible();
 });
 
@@ -163,10 +166,10 @@ test("on day 34 the cure needs the owner: the alert says so, the click queues it
   const risk = page.getByTestId("home-next-action");
   await expect(risk).toContainText("¥1,782.19");
   await expect(risk.getByTestId("next-action-needs-owner")).toContainText("15.00%");
-  await expect(risk.getByTestId("fix-ALERT-RESERVE-42")).toHaveText("Queue it for my approval");
+  await expect(risk.getByTestId("fix-open-ALERT-RESERVE-42")).toHaveText("Queue it for my approval");
 
   // The click queues it: PENDING_APPROVAL with an id, never styled as success, and the action stays on the home.
-  await risk.getByTestId("fix-ALERT-RESERVE-42").click();
+  await runPlan(risk, "ALERT-RESERVE-42");
   await expect.poll(() => acts.length).toBe(1);
   expect(typeof acts[0].state_version).toBe("number");
   expect(acts[0].suggestions.some((x) => x.operation_kind === "SUBMIT_INVOICE_FOR_FINANCING" && typeof x.amount_fen === "number")).toBeTruthy();
@@ -175,7 +178,7 @@ test("on day 34 the cure needs the owner: the alert says so, the click queues it
   await expect(op.getByTestId("op-state")).toContainText("Waiting for your approval");
   await expect(op.getByTestId("op-state").locator(":scope > span")).not.toHaveClass(/text-ok-fg/);
   const waiting = page.getByTestId("alert-waiting-ALERT-RESERVE-42");
-  await expect(waiting).toContainText(/Waiting for your approval \(APR-\d+\)/);
+  await expect(waiting).toHaveText(/^Waiting for your approval\s*Open the approval card$/);
   await expect(page.getByTestId("home-next-action")).toBeVisible();
   await expect(page.locator('[data-testid^="home-approval-APR-"]').first()).toContainText("Approve ¥200,000.00 of invoice financing?");
 
@@ -206,11 +209,12 @@ test("on day 34 the cure needs the owner: the alert says so, the click queues it
 test("when the books move after the alert was shown, the act answers 409 and the page says so without success styling", async ({ page, request }) => {
   const { post } = await toDay34(request);
   await page.goto("/");
-  const fix = page.getByTestId("fix-ALERT-RESERVE-42");
+  const fix = page.getByTestId("fix-open-ALERT-RESERVE-42");
   await expect(fix).toBeVisible();
   // The books move behind the page's back (the clock), so the state_version the page holds is stale.
   await post("/clock/advance", { to_day: 35 });
   await fix.click();
+  await page.getByTestId("fix-ALERT-RESERVE-42").click();
   const changed = page.getByTestId("fix-changed");
   await expect(changed).toContainText("The books changed since this was shown");
   await expect(changed).toContainText("Nothing was run");
@@ -304,7 +308,7 @@ test("the Business inbox waits for the books before it shows any sender, and say
   await expect(page.locator('[data-testid^="inbox-msg-"]')).toHaveCount(0);
   await expect(page.getByTestId("inbox-thread-BUYER-1")).toBeVisible();
   await expect(page.getByTestId("inbox-msg-SEC")).toHaveCount(0);
-  await expect(page.getByTestId("inbox-blocked")).toContainText("1 suspicious message was blocked");
+  await expect(page.getByTestId("inbox-blocked")).toContainText("1 message from an unknown sender was set aside.");
   // The books fail to load: the error, never the unchecked list.
   await page.unroute(`${API}/state`);
   await page.route(`${API}/state`, (route) =>

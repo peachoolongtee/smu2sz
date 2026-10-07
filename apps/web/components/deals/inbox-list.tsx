@@ -2,13 +2,11 @@
 
 import Link from "next/link";
 import { CheckIcon } from "@/components/icons";
-import { Badge, Card, ErrorState, LoadingBlock, type Tone } from "@/components/ui";
+import { Badge, Card, ErrorState, LoadingBlock } from "@/components/ui";
 import { useI18n } from "@/lib/i18n";
-import { INBOX, type InboxMessage, type InboxSource } from "@/lib/inbox";
+import { INBOX, type InboxMessage } from "@/lib/inbox";
 import type { Mode } from "@/lib/mode";
 import { whenText } from "@/lib/when";
-
-const sourceTone: Record<InboxSource, Tone> = { wechat: "ok", email: "info", portal: "neutral" };
 
 /** One buyer's messages, newest first; the first is the thread's row. */
 interface Thread {
@@ -86,7 +84,7 @@ export function InboxList({
           isCurrent ? "bg-brand-50 shadow-[inset_3px_0_0_var(--color-brand-600)]" : ""
         } ${inThread ? "pl-8" : ""}`}
       >
-        <Badge tone={sourceTone[m.source]} className="mt-0.5 w-16 justify-center">
+        <Badge className="mt-0.5 w-16 justify-center">
           {te("inbox.source", m.source)}
         </Badge>
         <span className="min-w-0 flex-1 basis-56">
@@ -98,7 +96,8 @@ export function InboxList({
             {unknown(m) ? <Badge tone="bad">{t("inbox.unknownSender")}</Badge> : null}
           </span>
           {m.subject ? <span className="mt-0.5 block text-sm text-ink">{m.subject}</span> : null}
-          <span className="mt-0.5 block truncate text-sm text-ink-2">{m.document.text.replace(/\s+/g, " ")}</span>
+          {/* The message being read is shown whole; the others keep to one line. */}
+          <span className={`mt-0.5 block text-sm text-ink-2 ${isCurrent ? "break-words" : "truncate"}`}>{m.document.text.replace(/\s+/g, " ")}</span>
         </span>
         <span className="flex shrink-0 flex-col items-end gap-1 text-xs text-ink-3">
           <span>{t("inbox.at", { when: whenText(m.document.received_day, today, t), time: m.time })}</span>
@@ -169,11 +168,14 @@ export function InboxList({
           others.map(thread)
         )}
         {blocked ? (
-          <li className="px-4 py-3 text-xs text-ink-3" data-testid="inbox-blocked">
-            {t("biz.deals.blocked", { n: blocked })}{" "}
-            <Link href="/activity#refused" className="font-medium text-brand-700 underline underline-offset-2">
+          <li className="flex items-start gap-2 px-4 py-3 text-xs text-ink-2" data-testid="inbox-blocked">
+            <span aria-hidden className="mt-1 size-1.5 shrink-0 rounded-full bg-bad-solid" />
+            <span>
+              {t("biz.deals.blocked", { n: blocked })}{" "}
+              <Link href="/activity#refused" className="font-medium text-brand-700 underline underline-offset-2">
               {t("biz.deals.blocked.link")}
             </Link>
+            </span>
           </li>
         ) : null}
       </ul>

@@ -55,9 +55,12 @@ import borrowerFileJson from "../../mocks/borrower_file.json";
 import capexApplyJson from "../../mocks/capex_apply.json";
 import capexJson from "../../mocks/capex.json";
 import fundingJson from "../../mocks/funding.json";
+import fundingDay34Json from "../../mocks/funding_day34.json";
 import homeApprovalApproved from "../../mocks/home_approval_approved.json";
 import homeApprovalPending from "../../mocks/home_approval_pending.json";
 import homeApprove from "../../mocks/home_approve.json";
+import ledgerApproved from "../../mocks/home_ledger_approved.json";
+import ledgerDay34 from "../../mocks/home_ledger_day34.json";
 import mandateJson from "../../mocks/mandate.json";
 import negAccept from "../../mocks/negotiation_accept.json";
 import negNoDeal from "../../mocks/negotiation_nodeal.json";
@@ -193,6 +196,7 @@ function append(
 /** Books an operation the recorded API answer reports (a cure the agent ran), on the same hash chain as the rest. */
 type Recorded = { kind: string; status: OperationView["status"]; tier: OperationView["tier"]; message: string; message_when?: string | null; event_text?: string | null; event_detail?: string | null; day: number };
 export function appendRecorded(r: Recorded): void {
+  seedStory();
   const s = load();
   const seq = s.ops.length + 1;
   const prev = s.ops.length ? (s.ops[s.ops.length - 1].entry_hash ?? GENESIS) : GENESIS;
@@ -211,6 +215,26 @@ export function appendRecorded(r: Recorded): void {
     ...(r.event_text ? { event_text: r.event_text, event_detail: r.event_detail ?? null } : {}),
   };
   s.ops.push({ ...base, prev_hash: prev, entry_hash: entryHash(base, prev) });
+  save();
+}
+
+/**
+ * The recorded day-34 books carry the deal, its funding and the day-2 receipt. A session that moves the clock to day 34
+ * without walking the story has none of that in its own ledger, so Activity would say "no commitments yet" beside a
+ * Receivables page that lists one: the recorded history is booked first (re-chained on the mock's hashes), once.
+ */
+function seedStory(): void {
+  const s = load();
+  if (home.mockClock().day < home.NEWS_DAY || s.ops.length || s.commitments.length) return;
+  const rec = cast<LedgerView>(ledgerDay34);
+  let prev = GENESIS;
+  for (const o of rec.operations) {
+    const base = { ...clone(o), seq: s.ops.length + 1 };
+    const entry_hash = entryHash(base, prev);
+    s.ops.push({ ...base, prev_hash: prev, entry_hash });
+    prev = entry_hash;
+  }
+  s.commitments = clone(rec.commitments);
   save();
 }
 
@@ -236,19 +260,26 @@ export async function getMandate(): Promise<MandateView> {
   return clone(cast<MandateView>(mandateJson));
 }
 
-export async function getTrajectory(mode: Mode): Promise<TrajectoryView> {
+export async function getTrajectory(mode: Mode, verdict?: VerdictView | null): Promise<TrajectoryView> {
   await delay();
-  return clone(cast<TrajectoryView>(mode === "EXPECTED" ? trajExp : trajCons));
+  if (mode === "EXPECTED") return clone(cast<TrajectoryView>(trajExp));
+  // With a verdict the screen shows the package's projection (recorded with the verdict); without one, the books today:
+  // those follow the recorded story like the home does (one projection, read on the books the home was read on).
+  if (verdict) return clone(cast<TrajectoryView>(trajCons));
+  const dealt = Object.values(load().negotiated).some((n) => n.outcome === "DEAL");
+  return cast<TrajectoryView>(home.mockTrajectory(dealt));
 }
 
 export async function planFunding(_req: PlanRequest): Promise<FundingView> {
   void _req;
   await delay();
-  return clone(cast<FundingView>(fundingJson));
+  // The router's comparison for today's gap: the opening books' (day 0) or day 34's (the late invoice and the cure above the ceiling).
+  return clone(cast<FundingView>(home.mockClock().day >= home.NEWS_DAY ? fundingDay34Json : fundingJson));
 }
 
 export async function getLedger(): Promise<LedgerView> {
   await delay();
+  seedStory();
   const s = load();
   const head = s.ops.length ? s.ops[s.ops.length - 1].entry_hash : null;
   return clone({
@@ -262,6 +293,7 @@ export async function getLedger(): Promise<LedgerView> {
 
 export async function getAudit(): Promise<AuditView> {
   await delay();
+  seedStory();
   const s = load();
   const scene = cast<AuditView>(auditSec);
   const refusals = s.ops.filter((o) => o.status === "REFUSED");
@@ -290,6 +322,7 @@ export async function getApprovals(): Promise<ApprovalView[]> {
 
 export async function getEvidence(): Promise<string> {
   await delay();
+  seedStory();
   const s = load();
   if (!s.ops.length) return "";
   const lines = s.ops.map((o) =>
@@ -378,6 +411,8 @@ export async function negotiate(offerId: string, req: NegotiateRequest): Promise
     res.offer_id = offerId;
     res.operations = ops;
     result = res;
+    // The gap is funded anyway (the line draw and the invoice advance ran): the home must say so from now on, as live.
+    home.markFunded();
   }
   s.negotiated[offerId] = result;
   save();
@@ -437,6 +472,10 @@ export async function decideApproval(id: string, decision: ApprovalDecision): Pr
     const done = cast<{ operations: Recorded[] }>(homeApprove).operations[0];
     Object.assign(a, clone(cast<ApprovalView>(homeApprovalApproved)), { id: a.id });
     appendRecorded(done);
+    // The entry that waited for this approval now reads as the server words it once the decision is made (recorded).
+    const waited = cast<LedgerView>(ledgerApproved).operations.find((o) => o.status === "PENDING_APPROVAL" && o.kind === done.kind);
+    const row = s.ops.find((o) => o.status === "PENDING_APPROVAL" && o.kind === done.kind);
+    if (waited && row && waited.event_text) row.event_text = waited.event_text;
     home.markApproved();
     save();
     return { ...clone(a), result_message: done.message };
@@ -472,9 +511,8 @@ export async function getHome(lang: "en" | "zh"): Promise<HomeView> {
     requestSignIn("required");
     throw new ApiError(401, "Owner sign-in required (401). Sign in with the owner token to use this.");
   }
-  void lang; // the recordings are English; the labels around them follow the dictionary
   const dealt = Object.values(load().negotiated).some((n) => n.outcome === "DEAL");
-  return home.mockHome(dealt);
+  return home.mockHome(dealt, lang);
 }
 
 export async function getClock(): Promise<ClockView> {
