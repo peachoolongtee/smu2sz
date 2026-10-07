@@ -866,6 +866,8 @@ export type ComparisonRow = Displayed<{
   shortfall_fen?: Fen | null;
   shortfall_display?: string | null;
   worst_day?: Day | null;
+  /** The row's note with its day numbers said as distances from today; `note` is the engine's original. */
+  note_when?: string;
 };
 
 export type ComparisonStatus = "recommended" | "alternative" | "insufficient" | "unavailable";

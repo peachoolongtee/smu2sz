@@ -46,6 +46,11 @@ test("risk, plan, options, forecast: one set of figures, in the owner's order", 
   await expect(full.getByTestId("cash-option-selected")).toContainText("Cheapest plan that fully protects your cash");
   await expect(full.getByTestId("cash-option-selected")).toContainText("¥3,113.93");
   await expect(full.locator("li")).toHaveCount(3);
+  // The recommended plan is #1, then the dearer alternatives in ascending cost.
+  const first = full.locator("li").first();
+  await expect(first).toHaveAttribute("data-testid", "cash-option-selected");
+  await expect(first).toContainText("#1");
+  await expect(full.locator("li").nth(1)).toContainText("#2");
   await expect(full).toContainText("Only if the buyer agrees to pay early");
   await expect(full).not.toContainText("Cannot run until the invoice is issued");
   const rest = page.getByTestId("cash-options-rest");
@@ -55,6 +60,8 @@ test("risk, plan, options, forecast: one set of figures, in the owner's order", 
   await expect(rest.locator("li[data-key=line_only]")).toContainText("¥255,000.00 short at the worst point");
   await expect(rest.locator("li[data-key=line_only]")).toContainText("in 12 days");
   await expect(rest.locator("li[data-key=line_guaranteed_loan]")).toContainText("Not available");
+  await expect(rest.locator("li[data-key=line_guaranteed_loan]")).toContainText("in 12 days");
+  await expect(rest.locator("li[data-key=line_guaranteed_loan]")).not.toContainText(/\bday \d/i);
   await expect(rest).not.toContainText("#");
   // The forecast is the home's own series: the trough the headline quotes is inside the drawn range, with short labels.
   const chart = page.getByTestId("cash-forecast");

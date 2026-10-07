@@ -5402,7 +5402,8 @@
       "worst_day": null,
       "status": "alternative",
       "reason_kind": "buyer_early_pay",
-      "shortfall_display": null
+      "shortfall_display": null,
+      "note_when": "cost ¥5,040.00; admissible but dearer than the selected plan"
     },
     {
       "key": "line_partial_early_pay",
@@ -5448,7 +5449,8 @@
       "worst_day": null,
       "status": "alternative",
       "reason_kind": "buyer_early_pay",
-      "shortfall_display": null
+      "shortfall_display": null,
+      "note_when": "cost ¥3,938.81; admissible but dearer than the selected plan"
     },
     {
       "key": "router_optimum",
@@ -5494,7 +5496,8 @@
       "worst_day": null,
       "status": "recommended",
       "reason_kind": null,
-      "shortfall_display": null
+      "shortfall_display": null,
+      "note_when": ""
     },
     {
       "key": "line_guaranteed_loan",
@@ -5543,7 +5546,8 @@
       "worst_day": null,
       "status": "unavailable",
       "reason_kind": null,
-      "shortfall_display": null
+      "shortfall_display": null,
+      "note_when": "not applied; cash in 21 days, gap opens in 12 days"
     },
     {
       "key": "line_only",
@@ -5579,7 +5583,8 @@
       "worst_day": 30,
       "status": "insufficient",
       "reason_kind": null,
-      "shortfall_display": "¥255,000.00"
+      "shortfall_display": "¥255,000.00",
+      "note_when": "cost ¥841.64; RESERVE_BREACH in 12 days"
     }
   ],
   "forward_concession": {

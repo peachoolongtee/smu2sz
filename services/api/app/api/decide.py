@@ -21,6 +21,7 @@ from app.api.presentation import (
     comparison_status,
     concession_interpretation,
     counter_economics,
+    relative_days,
 )
 from app.api.runtime import Runtime, get_runtime
 from app.api.views import owner_verdict_extras, trajectory_view
@@ -97,13 +98,15 @@ def _guarded_counters(rt: Runtime, offer: CompiledOffer, counters: list[CounterP
     return out
 
 
-def _row_view(r) -> dict:
+def _row_view(r, today: int) -> dict:
     """A comparison row with its presentation status (recommended, alternative, insufficient, unavailable), the
-    uncovered amount of an insufficient candidate and why an admissible one cannot run today."""
+    uncovered amount of an insufficient candidate and why an admissible one cannot run today. `note_when` is the
+    router's note with its day numbers said as distances from today; `note` stays the engine's original."""
     d = json.loads(r.model_dump_json())
     d["status"] = comparison_status(r.result.value, [c.value for c in r.reasons], r.breach_day)
     d["reason_kind"] = comparison_reason(d.get("actions") or [], r.executable_now)
     d["shortfall_display"] = fmt_yuan(r.shortfall_fen) if r.shortfall_fen is not None else None
+    d["note_when"] = relative_days(r.note, today, "en")
     return d
 
 
@@ -147,7 +150,7 @@ def evaluate_offer(offer_id: str, body: EvaluateIn | None = None) -> dict:
         "plan_expected": displayed(json.loads(bundle.plan_expected.model_dump_json())) if bundle.plan_expected else None,
         "cure_plan": displayed(json.loads(bundle.cure_plan.model_dump_json())) if bundle.cure_plan else None,
         "cured_trajectory": _cured(bundle, current_books(state, rt.store.commitments()), mandate),
-        "comparison": [_row_view(r) for r in bundle.comparison],
+        "comparison": [_row_view(r, rt.day) for r in bundle.comparison],
         "forward_concession": {
             "total_fen": v.forward_concession_total_fen, "total_display": fmt_yuan(v.forward_concession_total_fen),
             "cap_fen": mandate.max_aggregate_forward_concession_fen,
@@ -353,7 +356,7 @@ def router_plan() -> dict:
             "bases": [json.loads(b.model_dump_json()) for b in by_label.values()],
         }),
         "comparison": [
-            {**_row_view(r), "total_fen": r.cost_fen, "total_display": r.cost_display,
+            {**_row_view(r, rt.day), "total_fen": r.cost_fen, "total_display": r.cost_display,
              "selected": r.result.value == "SELECTED"}
             for r in compare(books.state, books.with_([]), mandate)
         ],

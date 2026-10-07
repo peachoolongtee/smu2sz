@@ -662,6 +662,7 @@
       "status": "alternative",
       "reason_kind": "buyer_early_pay",
       "shortfall_display": null,
+      "note_when": "cost ¥5,040.00; admissible but dearer than the selected plan",
       "total_fen": 504000,
       "total_display": "¥5,040.00",
       "selected": false
@@ -711,6 +712,7 @@
       "status": "alternative",
       "reason_kind": "buyer_early_pay",
       "shortfall_display": null,
+      "note_when": "cost ¥3,938.81; admissible but dearer than the selected plan",
       "total_fen": 393881,
       "total_display": "¥841.64 + ¥3,097.17 = ¥3,938.81",
       "selected": false
@@ -760,6 +762,7 @@
       "status": "recommended",
       "reason_kind": null,
       "shortfall_display": null,
+      "note_when": "",
       "total_fen": 311393,
       "total_display": "¥841.64 + ¥2,272.29 = ¥3,113.93",
       "selected": true
@@ -812,6 +815,7 @@
       "status": "unavailable",
       "reason_kind": null,
       "shortfall_display": null,
+      "note_when": "not applied; cash in 21 days, gap opens in 12 days",
       "total_fen": null,
       "total_display": "—",
       "selected": false
@@ -851,6 +855,7 @@
       "status": "insufficient",
       "reason_kind": null,
       "shortfall_display": "¥255,000.00",
+      "note_when": "cost ¥841.64; RESERVE_BREACH in 12 days",
       "total_fen": 84164,
       "total_display": "¥841.64",
       "selected": false

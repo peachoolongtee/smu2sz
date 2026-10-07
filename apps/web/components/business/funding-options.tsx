@@ -38,7 +38,7 @@ function Row({ c, n, name, today, recommended }: { c: ComparisonRow; n: number |
               {c.shortfall_display ? t("biz.option.uncovered", { amount: c.shortfall_display, when: whenText(c.breach_day ?? 0, today, t) }) : c.note}
             </p>
           ) : status === "unavailable" ? (
-            <p className="text-xs text-ink-3">{c.note}</p>
+            <p className="text-xs text-ink-3" data-testid="cash-option-unavailable-note">{c.note_when ?? c.note}</p>
           ) : recommended ? (
             <p className="text-xs text-ink-3">{t("biz.option.cheapestFull")}</p>
           ) : status === "alternative" ? (
@@ -69,7 +69,10 @@ function Row({ c, n, name, today, recommended }: { c: ComparisonRow; n: number |
  */
 export function FundingOptions({ rows, menu, today, recommendedKey }: { rows: ComparisonRow[]; menu: MenuRow[]; today: number; recommendedKey: string | null }) {
   const { t } = useI18n();
-  const full = rows.filter((c) => ["recommended", "alternative"].includes(statusOf(c)));
+  // The recommended plan is #1; the dearer alternatives follow by ascending total (ordering only, no arithmetic).
+  const full = rows
+    .filter((c) => ["recommended", "alternative"].includes(statusOf(c)))
+    .sort((a, b) => Number(statusOf(b) === "recommended") - Number(statusOf(a) === "recommended") || a.total_fen - b.total_fen);
   const rest = rows.filter((c) => !["recommended", "alternative"].includes(statusOf(c)));
   return (
     <div className="space-y-4" data-testid="cash-options-list">
