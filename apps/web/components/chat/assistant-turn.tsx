@@ -94,7 +94,7 @@ function VerdictBlock({ verdict }: { verdict: NlVerdict }) {
           <summary className="cursor-pointer text-xs font-medium text-ink-2">{t("chat.verdict.why")}</summary>
           <ul className="mt-1.5 space-y-2">
             {verdict.violations.map((v) => (
-              <li key={v.code} className="rounded-md border border-line bg-subtle px-2.5 py-2">
+              <li key={v.code} className="rounded-tile border border-line bg-subtle px-2.5 py-2">
                 <p className="font-mono text-xs font-semibold text-ink">{v.code}</p>
                 <p className="mt-0.5 break-words text-ink-2">{v.message}</p>
                 {v.observed || v.limit ? (
@@ -205,7 +205,7 @@ export function AssistantTurn({
 
   return (
     <div
-      className={`space-y-3 rounded-lg border bg-surface p-3 ${hasSecurity ? "border-bad-line" : "border-line"}`}
+      className={`space-y-3 rounded-tile border bg-surface p-3 ${hasSecurity ? "border-bad-line" : "border-line"}`}
       data-testid="chat-turn"
       data-intent={r.intent}
     >
@@ -233,7 +233,7 @@ export function AssistantTurn({
       </p>
 
       {hasSecurity ? (
-        <div role="alert" className="rounded-md border border-bad-line bg-bad-bg px-3 py-2 text-sm text-bad-fg" data-testid="chat-security">
+        <div role="alert" className="rounded-tile border border-bad-line bg-bad-bg px-3 py-2 text-sm text-bad-fg" data-testid="chat-security">
           <p className="font-semibold">{t("chat.security.title", { n: r.security_events.length })}</p>
           <p className="mt-0.5">{t("chat.security.body")}</p>
           <p className="mt-1 break-all font-mono text-xs">{r.security_events.join(", ")}</p>
@@ -270,7 +270,7 @@ export function AssistantTurn({
       ) : null}
 
       {r.clarification ? (
-        <section aria-label={t("chat.clarify")} className="rounded-md border border-info-line bg-info-bg px-3 py-2" data-testid="chat-clarify">
+        <section aria-label={t("chat.clarify")} className="rounded-tile border border-info-line bg-info-bg px-3 py-2" data-testid="chat-clarify">
           <p className="text-sm font-medium text-info-fg">{r.clarification.question}</p>
           <div className="mt-2 flex flex-wrap gap-2" role="group" aria-label={t("chat.clarify.pick")}>
             {r.clarification.options.map((o) => (
@@ -290,7 +290,7 @@ export function AssistantTurn({
       ) : null}
 
       {r.awaiting_confirmation ? (
-        <section className="rounded-md border border-warn-line bg-warn-bg px-3 py-2" data-testid="chat-awaiting" aria-label={t("chat.awaiting")}>
+        <section className="rounded-tile border border-warn-line bg-warn-bg px-3 py-2" data-testid="chat-awaiting" aria-label={t("chat.awaiting")}>
           <p className="text-sm font-medium text-warn-fg">{t("chat.awaiting")}</p>
           <p className="mt-0.5 text-xs text-warn-fg">{t("chat.awaiting.hint")}</p>
           <div className="mt-2 flex flex-wrap gap-2">

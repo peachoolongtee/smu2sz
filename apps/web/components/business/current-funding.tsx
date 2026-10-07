@@ -50,8 +50,8 @@ export function CurrentFunding({ h }: { h: HomeView }) {
               <dd className="tabular-nums text-ink">{t("biz.cash.facility.drawn", { drawn: f.drawn_display, available: f.available_display })}</dd>
               {/* How much of the limit is in use, as a bar (geometry only; the words above carry the figures). Over the limit it turns red. */}
               {f.limit_fen && f.drawn_fen !== undefined ? (
-                <dd className="mt-1 h-1.5 overflow-hidden rounded-full bg-subtle" aria-hidden data-testid="cash-utilisation">
-                  <span className={`block h-full rounded-full ${f.drawn_fen > f.limit_fen ? "bg-bad-solid" : "bg-brand-600"}`} style={{ width: `${Math.min(100, Math.round((f.drawn_fen / f.limit_fen) * 100))}%` }} />
+                <dd className="mt-1 h-1.5 overflow-hidden rounded-pill bg-subtle" aria-hidden data-testid="cash-utilisation">
+                  <span className={`block h-full rounded-pill ${f.drawn_fen > f.limit_fen ? "bg-bad-solid" : "bg-brand-600"}`} style={{ width: `${Math.min(100, Math.round((f.drawn_fen / f.limit_fen) * 100))}%` }} />
                 </dd>
               ) : null}
             </div>

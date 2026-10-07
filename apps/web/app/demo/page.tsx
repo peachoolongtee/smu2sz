@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { TodayCard } from "@/components/home/today-card";
 import { ArrowRightIcon, ResetIcon } from "@/components/icons";
-import { Badge, Button, Callout, Card, PageHeader } from "@/components/ui";
+import { Badge, Button, Callout, Card, PageHeader, inputClass } from "@/components/ui";
 import { goToStep, resetDemo } from "@/lib/demo-control";
 import { useDemo } from "@/lib/demo-store";
 import { DEMO_STEPS, SCENES, type SceneId } from "@/lib/demo";
@@ -46,8 +46,8 @@ export default function DemoPage() {
                         const done = i <= current;
                         const active = i === current;
                         return (
-                          <li key={s.id} className={`flex items-start gap-3 rounded-md border px-3 py-2 ${active ? "border-brand-600 bg-brand-50" : "border-line"}`} data-testid={`story-step-${i + 1}`} data-done={done}>
-                            <span className={`mt-0.5 grid size-6 shrink-0 place-items-center rounded-full text-xs font-bold ${done ? "bg-brand-600 text-white" : "bg-subtle text-ink-3"}`} aria-hidden>
+                          <li key={s.id} className={`flex items-start gap-3 rounded-tile border px-3 py-2 ${active ? "border-brand-600 bg-brand-50" : "border-line"}`} data-testid={`story-step-${i + 1}`} data-done={done}>
+                            <span className={`mt-0.5 grid size-6 shrink-0 place-items-center rounded-pill text-xs font-bold ${done ? "bg-brand-600 text-white" : "bg-subtle text-ink-3"}`} aria-hidden>
                               {i + 1}
                             </span>
                             <span className="min-w-0 flex-1">
@@ -65,7 +65,7 @@ export default function DemoPage() {
               ))}
             </ol>
             {demo.error ? (
-              <p role="alert" className="mt-3 rounded-md border border-bad-line bg-bad-bg px-2.5 py-1.5 text-xs text-bad-fg">
+              <p role="alert" className="mt-3 rounded-tile border border-bad-line bg-bad-bg px-2.5 py-1.5 text-xs text-bad-fg">
                 {demo.error}
               </p>
             ) : null}
@@ -91,7 +91,7 @@ export default function DemoPage() {
                 <select
                   value={scenario}
                   onChange={(e) => setScenario(e.target.value as "golden_sme" | "short_facilities")}
-                  className="min-h-10 w-full rounded-md border border-line-ui bg-surface px-2 text-sm"
+                  className={`w-full ${inputClass}`}
                   data-testid="story-scenario"
                 >
                   <option value="golden_sme">{t("story.scenario.golden")}</option>

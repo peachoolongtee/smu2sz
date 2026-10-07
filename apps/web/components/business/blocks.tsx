@@ -7,6 +7,7 @@ import { approvalHref } from "@/components/operation-result";
 import { Avatar, Disclosure, Row, initials, toneFor, type AvatarTone } from "@/components/business/kit";
 import { Card, TableWrap, tableCls, tdCls, thCls } from "@/components/ui";
 import { useI18n } from "@/lib/i18n";
+import { buttonClass, textLinkClass } from "@/components/ui";
 import { daysLate } from "@/lib/when";
 import type { HomeApproval, HomeChange, HomeReceivables, HomeView } from "@/lib/types";
 
@@ -40,7 +41,7 @@ const CHANGES_SHOWN = 3;
 export function DecisionsBlock({ approvals, primary = false }: { approvals: HomeApproval[]; primary?: boolean }) {
   const { t } = useI18n();
   return (
-    <Card id="home-decisions" title={t("biz.decisions")} subtitle={t("biz.decisions.sub")} actions={<Link href="/approvals" className="text-xs font-medium text-brand-700 underline underline-offset-2">{t("home.waiting.open")}</Link>}>
+    <Card id="home-decisions" title={t("biz.decisions")} subtitle={t("biz.decisions.sub")} actions={<Link href="/approvals" className={textLinkClass}>{t("home.waiting.open")}</Link>}>
       {approvals.length === 0 ? (
         <p className="text-sm text-ink-3" data-testid="home-waiting-empty">
           {t("biz.decisions.none")}
@@ -60,7 +61,7 @@ export function DecisionsBlock({ approvals, primary = false }: { approvals: Home
                 right={
                   // The page's one primary action while no plan waits to be run: the question is the thing to answer.
                   primary ? (
-                    <span className="inline-flex min-h-10 items-center rounded-md bg-brand-600 px-3.5 text-sm font-medium text-white" data-testid="home-review-primary">
+                    <span className={buttonClass("primary")} data-testid="home-review-primary">
                       {t("biz.review")}
                     </span>
                   ) : (
@@ -86,7 +87,7 @@ export function ChangesBlock({ changes, sinceWhen }: { changes: HomeChange[]; si
   );
   const rest = changes.slice(CHANGES_SHOWN);
   return (
-    <Card id="home-changes" title={t("biz.recent")} subtitle={sinceWhen ? t("biz.recent.since", { when: sinceWhen }) : t("biz.recent.week")} actions={<Link href="/activity" className="text-xs font-medium text-brand-700 underline underline-offset-2">{t("biz.changes.open")}</Link>}>
+    <Card id="home-changes" title={t("biz.recent")} subtitle={sinceWhen ? t("biz.recent.since", { when: sinceWhen }) : t("biz.recent.week")} actions={<Link href="/activity" className={textLinkClass}>{t("biz.changes.open")}</Link>}>
       {changes.length === 0 ? (
         <p className="text-sm text-ink-3" data-testid="home-changes-empty">
           {t("biz.changes.none")}
@@ -114,7 +115,7 @@ export function ReceivablesBlock({ r }: { r: HomeReceivables }) {
       ? { buyer: r.next_receipt.buyer_name, amount: r.next_receipt.face_display, when: r.next_receipt.due_when }
       : null;
   return (
-    <Card id="home-receivables" title={t("biz.receivables")} subtitle={t("biz.receivables.sub", { total: r.open_total_display, n: r.open_count })} actions={<Link href="/receivables" className="text-xs font-medium text-brand-700 underline underline-offset-2">{t("biz.receivables.open")}</Link>}>
+    <Card id="home-receivables" title={t("biz.receivables")} subtitle={t("biz.receivables.sub", { total: r.open_total_display, n: r.open_count })} actions={<Link href="/receivables" className={textLinkClass}>{t("biz.receivables.open")}</Link>}>
       <div className="-my-1 divide-y divide-line">
         {r.past_due.length ? (
           <ul className="divide-y divide-line" data-testid="home-late-list">

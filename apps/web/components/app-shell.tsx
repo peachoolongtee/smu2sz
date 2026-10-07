@@ -87,7 +87,7 @@ function Brand({ href }: { href: string }) {
   const { t } = useI18n();
   return (
     <Link href={href} className="flex items-center gap-2 font-semibold text-ink">
-      <span className="grid size-7 place-items-center rounded-md bg-brand-600 text-white">
+      <span className="grid size-8 place-items-center rounded-pill bg-brand-600 text-white">
         <ShieldIcon />
       </span>
       <span className="leading-tight">
@@ -103,7 +103,7 @@ const SkipLink = () => {
   return (
     <a
       href="#main"
-      className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-50 focus:rounded-md focus:bg-surface focus:px-3 focus:py-2 focus:shadow-lg"
+      className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-50 focus:rounded-pill focus:bg-surface focus:px-4 focus:py-2 focus:shadow-pop"
     >
       {t("common.skip")}
     </a>
@@ -232,7 +232,7 @@ function BusinessShell({ children }: { children: ReactNode }) {
           <Brand href="/" />
           {/* Desktop: the five sections as pills on a quiet track. Phones get the tab bar at the bottom instead. */}
           <nav aria-label={t("nav.label")} className="hidden min-w-0 lg:block" data-testid="nav-pills">
-            <ul className="mx-auto flex w-max items-center gap-1 rounded-full bg-subtle p-1">
+            <ul className="mx-auto flex w-max items-center gap-1 rounded-pill bg-subtle p-1">
               {BUSINESS_NAV.map((n) => {
                 const active = pathname === n.href;
                 return (

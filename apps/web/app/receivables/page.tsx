@@ -105,7 +105,7 @@ export default function ReceivablesPage() {
             <Card id="recv-promised" title={t("biz.recv.promised")} subtitle={t("biz.recv.promised.sub")} actions={data.lapsed_promises ? <Badge tone="bad">{`${t("recon.lapsed")}: ${data.lapsed_promises}`}</Badge> : undefined}>
               <ul className="space-y-2">
                 {data.promised.map((p) => (
-                  <li key={`${p.commitment_id}:${p.obligation_id}:${p.receivable_id}`} className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-line px-3 py-2 text-sm" data-testid={`promised-${p.receivable_id}`} data-status={p.status}>
+                  <li key={`${p.commitment_id}:${p.obligation_id}:${p.receivable_id}`} className="flex flex-wrap items-center justify-between gap-2 rounded-tile border border-line px-3 py-2 text-sm" data-testid={`promised-${p.receivable_id}`} data-status={p.status}>
                     <span>
                       <span className="font-medium text-ink">{name(p.counterparty_id)}</span>
                       <span className="block text-xs text-ink-2">{p.detail_when ?? p.detail}</span>
@@ -124,7 +124,7 @@ export default function ReceivablesPage() {
             <Card id="recv-receipts" title={t("biz.recv.receipts")} subtitle={t("biz.recv.receipts.sub", { matched: data.matched, flagged: data.flagged })}>
               <ul className="space-y-2">
                 {data.receipts.map((x) => (
-                  <li key={x.entry_hash} className={`rounded-md border px-3 py-2 text-sm ${x.flagged ? "border-bad-line bg-bad-bg/40" : "border-line"}`} data-testid={`receipt-${x.op_id}`}>
+                  <li key={x.entry_hash} className={`rounded-tile border px-3 py-2 text-sm ${x.flagged ? "border-bad-line bg-bad-bg/40" : "border-line"}`} data-testid={`receipt-${x.op_id}`}>
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <span className="font-medium text-ink">{name(x.counterparty_id)}</span>
                       <span className="flex items-center gap-2">

@@ -54,7 +54,7 @@ export default function ActivityPage() {
             {ops.length ? (
               <ol className="space-y-2" data-testid="activity-list">
                 {ops.map((o) => (
-                  <li key={`${o.seq}-${o.op_id}`} className={`rounded-md border px-3 py-2 ${o.status === "REFUSED" ? "border-bad-line bg-bad-bg/40" : "border-line"}`} data-testid={`activity-${o.kind}`} data-status={o.status}>
+                  <li key={`${o.seq}-${o.op_id}`} className={`rounded-tile border px-3 py-2 ${o.status === "REFUSED" ? "border-bad-line bg-bad-bg/40" : "border-line"}`} data-testid={`activity-${o.kind}`} data-status={o.status}>
                     <p className="break-words text-sm font-medium text-ink" data-testid="activity-event">{o.event_text || o.message_when || words(o.summary) || te("opkind", o.kind) || o.kind}</p>
                     {o.event_detail ? <p className="break-words text-xs text-ink-2" data-testid="activity-detail">{o.event_detail}</p> : null}
                     <div className="mt-1 flex flex-wrap items-center gap-2">
@@ -105,7 +105,7 @@ export default function ActivityPage() {
             {data.commitments.length ? (
               <ul className="space-y-2">
                 {data.commitments.map((c) => (
-                  <li key={c.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-line px-3 py-2 text-sm">
+                  <li key={c.id} className="flex flex-wrap items-center justify-between gap-2 rounded-tile border border-line px-3 py-2 text-sm">
                     <span>
                       <span className="font-medium text-ink">{words(c.counterparty_id)}</span>
                       <span className="block text-xs text-ink-3">
@@ -132,7 +132,7 @@ export default function ActivityPage() {
             ) : audit.data.events.length || audit.data.refusals.length ? (
               <ul className="space-y-2">
                 {audit.data.refusals.map((o) => (
-                  <li key={`${o.seq}-${o.op_id}`} className="rounded-md border border-bad-line px-3 py-2 text-sm">
+                  <li key={`${o.seq}-${o.op_id}`} className="rounded-tile border border-bad-line px-3 py-2 text-sm">
                     <div className="flex flex-wrap items-center gap-2">
                       <OpStatusBadge status={o.status} />
                       <span className="font-medium">{te("opkind", o.kind)}</span>
@@ -141,7 +141,7 @@ export default function ActivityPage() {
                   </li>
                 ))}
                 {audit.data.events.map((e) => (
-                  <li key={e.id} className="rounded-md border border-bad-line px-3 py-2 text-sm">
+                  <li key={e.id} className="rounded-tile border border-bad-line px-3 py-2 text-sm">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="font-medium">{te("secevent", e.kind)}</span>
                       <span className="text-xs text-ink-3">{e.action_taken}</span>

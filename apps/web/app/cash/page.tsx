@@ -9,7 +9,7 @@ import { FundingOptions } from "@/components/business/funding-options";
 import { FactTile } from "@/components/business/kit";
 import { NextActionBlock } from "@/components/business/next-action";
 import { FixResult, useFixAlert } from "@/components/home/fix-alert";
-import { Badge, Card, ErrorState, Formula, LoadingBlock, PageHeader, TableWrap, tableCls, tdCls, thCls } from "@/components/ui";
+import { Badge, Card, ErrorState, Formula, LoadingBlock, PageHeader, TableWrap, tableCls, tdCls, thCls, ButtonLink } from "@/components/ui";
 import { getHome, getTrajectory, planFunding } from "@/lib/api";
 import { onSignedIn } from "@/lib/auth";
 import { bump, useDemo } from "@/lib/demo-store";
@@ -73,7 +73,7 @@ export default function CashPage() {
           <p className="text-ink-2">{t("plan.need", { need: plan.data.committed.need_display })}</p>
           <ul className="space-y-1.5">
             {plan.data.committed.costs.map((c) => (
-              <li key={c.label} className="rounded-md border border-line px-3 py-1.5">
+              <li key={c.label} className="rounded-tile border border-line px-3 py-1.5">
                 <div className="flex items-baseline justify-between gap-3">
                   <span>{c.label_when ?? c.label}</span>
                   <span className="font-medium tabular-nums">{c.display}</span>
@@ -183,14 +183,10 @@ export default function CashPage() {
 
         <div className="grid gap-5 lg:grid-cols-2">
           <Card id="cash-whatif" title={t("biz.cash.whatif")} subtitle={t("biz.cash.whatif.sub")}>
-            <Link href="/whatif" className="inline-flex min-h-10 items-center rounded-md border border-line-ui px-3.5 text-sm font-medium text-ink hover:bg-subtle">
-              {t("biz.cash.whatif.open")}
-            </Link>
+            <ButtonLink href="/whatif">{t("biz.cash.whatif.open")}</ButtonLink>
           </Card>
           <Card id="cash-capex" title={t("biz.cash.capex")} subtitle={t("biz.cash.capex.sub")}>
-            <Link href="/capex" className="inline-flex min-h-10 items-center rounded-md border border-line-ui px-3.5 text-sm font-medium text-ink hover:bg-subtle">
-              {t("biz.cash.capex.open")}
-            </Link>
+            <ButtonLink href="/capex">{t("biz.cash.capex.open")}</ButtonLink>
           </Card>
         </div>
 

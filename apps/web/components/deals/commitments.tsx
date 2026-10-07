@@ -81,7 +81,7 @@ export function obligationSentence(o: Ob, t: I18n["t"], te: I18n["te"], today: n
 function CommitmentItem({ c, buyer, today }: { c: Displayed<Commitment>; buyer: string; today: number }) {
   const { t, te } = useI18n();
   return (
-    <li className="rounded-lg border border-line px-4 py-3" data-testid={`commitment-${c.id}`}>
+    <li className="rounded-tile border border-line px-4 py-3" data-testid={`commitment-${c.id}`}>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="min-w-0 break-words text-sm font-semibold text-ink">{t("deal.with", { buyer })}</p>
         <Badge tone={statusTone[c.status]}>{te("deal.status", c.status)}</Badge>

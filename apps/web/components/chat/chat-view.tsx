@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
-import { Badge, Button, EmptyState, Segmented } from "@/components/ui";
+import { Badge, Button, EmptyState, Segmented, inputClass } from "@/components/ui";
 import { Spinner } from "@/components/icons";
 import { requestSignIn, useAuth } from "@/lib/auth";
 import {
@@ -26,7 +26,7 @@ function Bubble({ from, children, label }: { from: "user" | "error"; children: R
   return (
     <div className={`flex ${from === "user" ? "justify-end" : "justify-start"}`}>
       <div
-        className={`max-w-[92%] rounded-lg px-3 py-2 text-sm ${
+        className={`max-w-[92%] rounded-card px-4 py-2.5 text-sm ${
           from === "user" ? "bg-brand-600 text-white" : "border border-bad-line bg-bad-bg text-bad-fg"
         }`}
       >
@@ -78,7 +78,7 @@ function Composer({ role, counterpartyId, busy }: { role: NlActor; counterpartyI
           onChange={(e) => setText(e.target.value)}
           onKeyDown={onKeyDown}
           placeholder={role === "OWNER" ? t("chat.placeholder.owner") : t("chat.placeholder.buyer", { who: counterpartyId })}
-          className="block max-h-40 min-h-[3.25rem] w-full resize-y rounded-md border border-line-ui bg-surface px-3 py-2 text-sm text-ink placeholder:text-ink-3"
+          className="block max-h-40 min-h-13 w-full resize-none rounded-pill border border-line-ui bg-surface px-5 py-3 text-sm text-ink placeholder:text-ink-3"
         />
       </div>
       <Button type="submit" variant="primary" disabled={!text.trim() || busy} loading={busy} data-testid="chat-send">
@@ -164,7 +164,7 @@ export function ChatView({ variant }: { variant: "page" | "panel" }) {
               id={`chat-cp-${variant}`}
               value={chat.counterpartyId}
               onChange={(e) => setCounterparty(e.target.value as CounterpartyId)}
-              className="min-h-9 rounded-md border border-line-ui bg-surface px-2 text-sm text-ink"
+              className={inputClass}
               data-testid="chat-counterparty"
             >
               {COUNTERPARTIES.map((id) => (
@@ -190,7 +190,7 @@ export function ChatView({ variant }: { variant: "page" | "panel" }) {
         aria-relevant="additions"
         tabIndex={0}
         data-testid="chat-log"
-        className={`min-h-48 space-y-3 overflow-y-auto rounded-lg border border-line bg-canvas p-3 ${
+        className={`min-h-48 space-y-3 overflow-y-auto rounded-tile border border-line bg-canvas p-3 ${
           variant === "panel" ? "flex-1" : "max-h-[60dvh] min-h-[20rem]"
         }`}
       >
@@ -239,7 +239,7 @@ export function ChatView({ variant }: { variant: "page" | "panel" }) {
       </div>
 
       {signedOut ? (
-        <div className="flex flex-wrap items-center gap-2 rounded-md border border-warn-line bg-warn-bg px-3 py-2 text-sm text-warn-fg" data-testid="chat-signed-out">
+        <div className="flex flex-wrap items-center gap-2 rounded-tile border border-warn-line bg-warn-bg px-3 py-2 text-sm text-warn-fg" data-testid="chat-signed-out">
           <Badge tone="warn">{t("auth.signedIn")}</Badge>
           <span className="min-w-0 flex-1">{t("chat.signinBanner")}</span>
           <Button size="sm" variant="secondary" onClick={() => requestSignIn("required")}>

@@ -126,7 +126,7 @@ function NegotiationOutcome({ v, negotiation, today }: { v: VerdictView; negotia
             ))}
           </ol>
           {ran.length ? (
-            <div className="mt-3 rounded-md border border-ok-line bg-ok-bg px-3 py-2 text-sm" data-testid="deal-gap-funded">
+            <div className="mt-3 rounded-tile border border-ok-line bg-ok-bg px-3 py-2 text-sm" data-testid="deal-gap-funded">
               <p className="font-medium text-ok-fg">{t("biz.deals.gapFunded")}</p>
               <Link href="/cash" className="mt-1 inline-block font-medium text-brand-700 underline underline-offset-2">
                 {t("biz.deals.seeCash")}

@@ -177,14 +177,14 @@ export default function SecurityPage() {
               {data.events.map((e) => (
                 <li
                   key={e.id}
-                  className={`rounded-lg border p-3 ${active === e.id ? "border-ink ring-2 ring-ink/15" : "border-bad-line"}`}
+                  className={`rounded-tile border p-3 ${active === e.id ? "border-ink ring-2 ring-ink/15" : "border-bad-line"}`}
                   onMouseEnter={() => setActive(e.id)}
                   onMouseLeave={() => setActive(null)}
                   data-testid={`event-${e.id}`}
                 >
                   <div className="flex flex-wrap items-center gap-2">
                     <CodeBadge code={e.kind} tone="bad" />
-                    <span className="min-w-0 max-w-full break-words rounded-full border border-ok-line bg-ok-bg px-2 py-0.5 text-xs font-medium text-ok-fg">{e.action_taken}</span>
+                    <span className="min-w-0 max-w-full break-words rounded-pill border border-ok-line bg-ok-bg px-2 py-0.5 text-xs font-medium text-ok-fg">{e.action_taken}</span>
                     <span className="min-w-0 max-w-full break-all text-xs text-ink-3">
                       {e.id} &middot; {t("common.dayN", { n: e.day })}
                       {e.trace_id ? ` · ${e.trace_id}` : ""}

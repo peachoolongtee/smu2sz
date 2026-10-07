@@ -6,7 +6,7 @@ import { closeSignIn, requestSignIn, setOwnerToken, signOut, useAuth } from "@/l
 import { DEMO_BUILD, DEMO_OWNER_TOKEN } from "@/lib/config";
 import { bump } from "@/lib/demo-store";
 import { useI18n } from "@/lib/i18n";
-import { Badge, Button } from "./ui";
+import { Badge, Button, inputClass } from "./ui";
 
 function SignInForm() {
   const { t } = useI18n();
@@ -52,7 +52,7 @@ function SignInForm() {
       </div>
       <p className="text-sm text-ink-2">{t("auth.body")}</p>
       {notice ? (
-        <p role={error ? "alert" : "status"} className={`rounded-md border px-3 py-2 text-sm ${error ? "border-bad-line bg-bad-bg text-bad-fg" : "border-info-line bg-info-bg text-info-fg"}`}>
+        <p role={error ? "alert" : "status"} className={`rounded-tile border px-3 py-2 text-sm ${error ? "border-bad-line bg-bad-bg text-bad-fg" : "border-info-line bg-info-bg text-info-fg"}`}>
           {notice}
         </p>
       ) : null}
@@ -70,7 +70,7 @@ function SignInForm() {
           value={token}
           onChange={(e) => setToken(e.target.value)}
           aria-invalid={error ? true : undefined}
-          className="mt-1 min-h-10 w-full rounded-md border border-line-ui bg-surface px-3 font-mono text-sm text-ink"
+          className={`mt-1 w-full font-mono ${inputClass}`}
         />
         <p className="mt-1 text-xs text-ink-3">
           {DEMO_BUILD ? t("auth.demo.hint") : apiMode === "mock" ? t("auth.mock.hint") : null}

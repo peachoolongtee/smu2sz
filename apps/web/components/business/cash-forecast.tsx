@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Area, AreaChart, CartesianGrid, ReferenceArea, ReferenceDot, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { axisFloor, axisYuanK } from "@/lib/chart-helpers";
 import { useI18n } from "@/lib/i18n";
+import { SegmentedButtons } from "@/components/ui";
 import type { HomeSeriesPoint, HomeView } from "@/lib/types";
 
 /**
@@ -104,20 +105,12 @@ export function CashForecast({ h }: { h: HomeView }) {
     <figure className="space-y-3" data-testid="cash-forecast" data-horizon={horizon} data-lowest={h.cash.lowest_fen}>
       <figcaption className="flex flex-wrap items-center justify-between gap-2">
         <span className="text-sm text-ink-2">{t("biz.forecast.caption", { n: horizon })}</span>
-        <div className="inline-flex rounded-md border border-line-ui bg-subtle p-0.5" role="group" aria-label={t("biz.forecast.horizon")}>
-          {HORIZONS.map((n) => (
-            <button
-              key={n}
-              type="button"
-              onClick={() => setHorizon(n)}
-              aria-pressed={horizon === n}
-              className={`min-h-8 rounded px-2.5 text-xs font-medium ${horizon === n ? "bg-surface text-ink shadow-sm" : "text-ink-2 hover:text-ink"}`}
-              data-testid={`forecast-horizon-${n}`}
-            >
-              {t("biz.forecast.days", { n })}
-            </button>
-          ))}
-        </div>
+        <SegmentedButtons
+          label={t("biz.forecast.horizon")}
+          value={horizon}
+          onChange={setHorizon}
+          options={HORIZONS.map((n) => ({ value: n, label: t("biz.forecast.days", { n }), testId: `forecast-horizon-${n}` }))}
+        />
       </figcaption>
 
       <div className="h-64 w-full sm:h-80" role="img" aria-label={t("traj.chartSummary", { min: h.cash.lowest_display, day: h.cash.lowest_day, floor: h.cash.floor_display })}>
@@ -166,7 +159,7 @@ function ForecastTooltip({ active, payload, today, baseName }: { active?: boolea
   const row = payload[0].payload;
   const when = row.day === today ? t("biz.when.today") : t("biz.when.inDays", { n: row.day - today });
   return (
-    <div className="max-w-64 rounded-lg border border-line-ui bg-surface p-2.5 text-xs shadow-md">
+    <div className="max-w-64 rounded-tile border border-line-ui bg-surface p-2.5 text-xs shadow-md">
       <p className="font-semibold text-ink">{when}</p>
       <p className="mt-1 flex items-center justify-between gap-3 tabular-nums"><span className="text-ink-2">{baseName}</span><span className="font-medium text-ink">{row.cashDisplay}</span></p>
       {row.planDisplay ? <p className="flex items-center justify-between gap-3 tabular-nums"><span className="text-ink-2">{t("biz.forecast.plan")}</span><span className="font-medium text-ink">{row.planDisplay}</span></p> : null}

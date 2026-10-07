@@ -6,7 +6,7 @@ import { useId, useState } from "react";
 import { AnnotatedText } from "@/components/annotated-text";
 import { OfferItemCard } from "@/components/offer-parts";
 import { ArrowRightIcon } from "@/components/icons";
-import { Badge, Button, Callout, Card, EmptyState, ErrorState, LoadingBlock, PageHeader, Segmented } from "@/components/ui";
+import { Badge, Button, Callout, Card, EmptyState, ErrorState, LoadingBlock, PageHeader, Segmented, textareaClass } from "@/components/ui";
 import { ANNOTATION_STYLE, type AnnotationKind } from "@/lib/annotation-style";
 import { submitOffer } from "@/lib/api";
 import { evaluate as evaluateAndCache } from "@/lib/demo";
@@ -92,7 +92,7 @@ export default function InboxPage() {
               value={text}
               onChange={(e) => setText(e.target.value)}
               rows={3}
-              className="w-full rounded-md border border-line-ui bg-surface px-3 py-2 text-sm leading-relaxed"
+              className={`w-full ${textareaClass}`}
             />
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -143,7 +143,7 @@ export default function InboxPage() {
                   {legendKinds.map((k) => (
                     <li
                       key={k}
-                      className={`rounded-md border px-1.5 py-0.5 text-xs font-medium ${ANNOTATION_STYLE[k].chip}`}
+                      className={`rounded-pill border px-2 py-0.5 text-xs font-medium ${ANNOTATION_STYLE[k].chip}`}
                     >
                       {items.find((i) => i.kind === k)?.group === "obligation" ? te("obligation", k) : te("flag", k)}
                     </li>

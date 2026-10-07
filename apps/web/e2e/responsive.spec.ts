@@ -49,7 +49,8 @@ test("the Business home puts the status and the next action in the first screen,
     await menu.click();
     await page.getByRole("link", { name: "Cash & funding" }).click();
   } else {
-    await page.getByRole("link", { name: "Cash & funding" }).click();
+    // The main navigation (pills or tab bar); the phone home also offers "Where to next" chips to the same place.
+    await page.getByRole("navigation", { name: "Main navigation" }).getByRole("link", { name: "Cash & funding" }).click();
   }
   await expect(page).toHaveURL(/\/cash/);
 });

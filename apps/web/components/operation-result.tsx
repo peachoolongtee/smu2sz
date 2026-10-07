@@ -61,7 +61,7 @@ export function OperationResultBox({
   const { t } = useI18n();
   const waiting = status === "PENDING_APPROVAL";
   return (
-    <div className={`rounded-md border px-2.5 py-2 ${BORDER[status]}`} data-testid={testId} data-status={status} data-kind={kind}>
+    <div className={`rounded-tile border px-2.5 py-2 ${BORDER[status]}`} data-testid={testId} data-status={status} data-kind={kind}>
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
         {children}
         <OperationStatePill status={status} />

@@ -169,7 +169,7 @@ export function InboxList({
         )}
         {blocked ? (
           <li className="flex items-start gap-2 px-4 py-3 text-xs text-ink-2" data-testid="inbox-blocked">
-            <span aria-hidden className="mt-1 size-1.5 shrink-0 rounded-full bg-bad-solid" />
+            <span aria-hidden className="mt-1 size-1.5 shrink-0 rounded-pill bg-bad-solid" />
             <span>
               {t("biz.deals.blocked", { n: blocked })}{" "}
               <Link href="/activity#refused" className="font-medium text-brand-700 underline underline-offset-2">

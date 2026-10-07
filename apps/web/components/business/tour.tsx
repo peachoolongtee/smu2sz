@@ -5,6 +5,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProp
 import { createStore } from "@/lib/create-store";
 import type { DictKey } from "@/lib/dictionary";
 import { useI18n } from "@/lib/i18n";
+import { Button } from "../ui";
 
 /**
  * "Show me around": a short tour of the page the owner is on, started from the account sheet and never by itself (no
@@ -196,18 +197,16 @@ function TourCard({ steps }: { steps: Step[] }) {
         ) : null}
         <div className="mt-5 flex items-center justify-end gap-2">
           {last ? null : (
-            <button type="button" onClick={close} className="min-h-10 rounded-md px-3 text-sm font-medium text-ink-3 hover:text-ink" data-testid="tour-skip">
+            <Button variant="ghost" onClick={close} data-testid="tour-skip">
               {t("tour.skip")}
-            </button>
+            </Button>
           )}
           {step > 0 ? (
-            <button type="button" onClick={() => setStep(step - 1)} className="min-h-10 rounded-md border border-line-ui px-3.5 text-sm font-medium text-ink hover:bg-subtle">
-              {t("tour.back")}
-            </button>
+            <Button onClick={() => setStep(step - 1)}>{t("tour.back")}</Button>
           ) : null}
-          <button ref={nextRef} type="button" onClick={() => (last ? close() : setStep(step + 1))} className="min-h-10 rounded-md bg-brand-600 px-3.5 text-sm font-medium text-white hover:bg-brand-700" data-testid="tour-next">
+          <Button ref={nextRef} variant="primary" onClick={() => (last ? close() : setStep(step + 1))} data-testid="tour-next">
             {last ? t("tour.finish") : t("tour.next")}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

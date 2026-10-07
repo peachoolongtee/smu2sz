@@ -7,24 +7,7 @@ import { AutonomyPanel } from "@/components/autonomy-panel";
 import { CheckIcon } from "@/components/icons";
 import { OutcomeBadge, TierBadge, outcomeHasTier } from "@/components/badges";
 import { PlanCard } from "@/components/plan-card";
-import {
-  Badge,
-  Button,
-  Callout,
-  Card,
-  EmptyState,
-  ErrorState,
-  Formula,
-  Hash,
-  KeyValueList,
-  LoadingBlock,
-  PageHeader,
-  Segmented,
-  TableWrap,
-  tableCls,
-  tdCls,
-  thCls,
-} from "@/components/ui";
+import { Badge, Button, Callout, Card, EmptyState, ErrorState, Formula, Hash, KeyValueList, LoadingBlock, PageHeader, Segmented, TableWrap, tableCls, tdCls, thCls, ButtonLink } from "@/components/ui";
 import { CounterCard, OperationsList, ViolationCard } from "@/components/verdict-parts";
 import { getState, negotiate } from "@/lib/api";
 import { useAsync } from "@/lib/use-async";
@@ -65,9 +48,9 @@ export default function VerdictPage() {
           title={t("verdict.noOffer.title")}
           body={t("verdict.noOffer.body")}
           action={
-            <Link href="/inbox" className="inline-flex min-h-10 items-center rounded-md bg-brand-600 px-3.5 text-sm font-medium text-white hover:bg-brand-700">
+            <ButtonLink href="/inbox" variant="primary">
               {t("verdict.noOffer.cta")}
-            </Link>
+            </ButtonLink>
           }
         />
       ) : !cur.verdict ? (
@@ -311,7 +294,7 @@ function NegotiationPanel({ offerId, negotiation }: { offerId: string; negotiati
 
           <ol className="space-y-2" aria-label={t("neg.rounds")}>
             {negotiation.rounds.map((r) => (
-              <li key={r.round} className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border border-line px-3 py-2 text-sm">
+              <li key={r.round} className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-tile border border-line px-3 py-2 text-sm">
                 <span className="font-mono text-xs text-ink-3">{t("neg.round", { n: r.round })}</span>
                 <span className="font-medium">{r.counter_label ?? t("common.none")}</span>
                 <Badge tone={r.buyer_response === "ACCEPT" ? "ok" : "bad"}>{r.buyer_response === "ACCEPT" ? t("neg.accepted") : t("neg.refused")}</Badge>
@@ -321,7 +304,7 @@ function NegotiationPanel({ offerId, negotiation }: { offerId: string; negotiati
           </ol>
 
           {negotiation.commitment ? (
-            <div className="rounded-lg border border-ok-line bg-ok-bg/50 p-3">
+            <div className="rounded-tile border border-ok-line bg-ok-bg/50 p-3">
               <p className="mb-2 text-sm font-semibold text-ok-fg">{t("neg.commitment")}</p>
               <KeyValueList
                 items={[

@@ -27,7 +27,7 @@ export function FactTile({ label, children, tone = "neutral", valueTone, testId,
   const c = factTone[tone];
   // On the deep block (the Home hero) the tile is translucent white, its figure white, and a figure that is the status takes the bright red.
   return (
-    <div className={`min-w-0 rounded-lg px-3.5 py-3 ${deep ? "bg-on-deep/10" : `border ${c.box}`}`}>
+    <div className={`min-w-0 rounded-tile px-3.5 py-3 ${deep ? "bg-on-deep/10" : `border ${c.box}`}`}>
       <dt className={`text-xs font-medium ${deep ? "text-on-deep-muted" : "text-ink-3"}`}>{label}</dt>
       <dd className={`mt-0.5 break-words text-base font-semibold tabular-nums ${deep ? (valueTone === "bad" ? "text-bad-bright" : "text-on-deep") : valueTone === "bad" ? factTone.bad.value : c.value}`} data-testid={testId}>
         {children}
@@ -57,7 +57,7 @@ export function Disclosure({ summary, children, testId, card = false, className 
   );
 }
 
-/** The first letters of a name, for a quiet round avatar ("Foshan Home Retail Co." becomes "FH"). */
+/** The first letters of a name, for a round avatar ("Foshan Home Retail Co." becomes "FH"). */
 export function initials(name: string): string {
   const words = name.replace(/[^\p{L}\p{N}\s]/gu, " ").split(/\s+/).filter(Boolean);
   return (words[0]?.[0] ?? "?").toUpperCase() + (words[1]?.[0] ?? "").toUpperCase();
@@ -76,7 +76,7 @@ const avatarTone: Record<AvatarTone, string> = {
   activity: "bg-sec-activity-bg text-sec-activity-fg",
 };
 
-/** A small round disc: one or two letters or a glyph, tinted by what it means (never by decoration). */
+/** A small round disc: one or two letters or a glyph, tinted by what it means (a status) or whose it is (a hue). */
 export function Avatar({ children, tone = "neutral" }: { children: ReactNode; tone?: AvatarTone }) {
   return (
     <span aria-hidden className={`grid size-9 shrink-0 place-items-center rounded-pill text-xs font-bold ${avatarTone[tone]}`}>

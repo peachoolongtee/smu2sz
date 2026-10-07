@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, type ButtonHTMLAttributes, type ReactNode } from "react";
+import Link from "next/link";
+import { useState, type ComponentProps, type ReactNode } from "react";
 import { requestSignIn } from "@/lib/auth";
 import { ApiError } from "@/lib/errors";
 import { useI18n } from "@/lib/i18n";
@@ -80,7 +81,7 @@ export function Badge({
   return (
     <span
       title={title}
-      className={`inline-flex items-center gap-1 whitespace-nowrap rounded-full border px-2 py-0.5 text-xs font-medium ${toneBadge[tone]} ${className}`}
+      className={`inline-flex items-center gap-1 whitespace-nowrap rounded-pill border px-2.5 py-0.5 text-xs font-medium ${toneBadge[tone]} ${className}`}
     >
       {mark ? <span aria-hidden className={`size-1.5 shrink-0 rounded-full ${mark}`} /> : null}
       {children}
@@ -88,6 +89,19 @@ export function Badge({
   );
 }
 
+/** A small tag that carries no status (a channel, a kind, a count): a Badge without the dot. Same pill, same tones. */
+export function Chip({ tone = "neutral", children, title, className = "" }: { tone?: Tone; children: ReactNode; title?: string; className?: string }) {
+  return (
+    <Badge tone={tone} title={title} dot={false} className={className}>
+      {children}
+    </Badge>
+  );
+}
+
+/**
+ * A page's title. With `section` (the Business pages and Approvals) the title takes its section's round icon chip, in the
+ * Business shell only: the Demo shell keeps the flat look.
+ */
 export function PageHeader({
   title,
   subtitle,
@@ -173,7 +187,7 @@ export function Stat({
   className?: string;
 }) {
   return (
-    <div className={`min-w-0 rounded-lg border border-line bg-surface px-3.5 py-3 ${className}`}>
+    <div className={`min-w-0 rounded-tile border border-line bg-surface px-3.5 py-3 ${className}`}>
       <dt className="text-xs font-medium text-ink-3">{label}</dt>
       <dd className={`mt-1 break-words text-lg font-semibold tabular-nums ${toneText[tone]}`}>{value}</dd>
       {hint ? <p className="mt-0.5 text-xs text-ink-3">{hint}</p> : null}
@@ -182,13 +196,25 @@ export function Stat({
 }
 
 type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
+type ButtonSize = "sm" | "md";
 
 const variantClass: Record<ButtonVariant, string> = {
   primary: "bg-brand-600 text-white hover:bg-brand-700 border-transparent",
   secondary: "bg-surface text-ink border-line-ui hover:bg-subtle",
-  ghost: "bg-transparent text-ink-2 border-transparent hover:bg-subtle",
-  danger: "bg-bad-solid text-white border-transparent hover:opacity-90",
+  ghost: "bg-transparent text-ink-2 border-transparent hover:bg-subtle hover:text-ink",
+  danger: "bg-bad-solid text-white border-transparent hover:brightness-90",
 };
+
+/**
+ * The one button shape: a pill, 40 px tall (32 px compact), 16 px of padding, medium weight. Primary is the brand fill (one per
+ * page); secondary a line-ui outline; ghost text only; danger is the destructive fill. `Button` and `ButtonLink` both wear it,
+ * so a link that looks like a button is the same button.
+ */
+export function buttonClass(variant: ButtonVariant = "secondary", size: ButtonSize = "md", className = ""): string {
+  return `motion-press inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-pill border font-medium disabled:cursor-not-allowed disabled:opacity-50 ${
+    size === "sm" ? "min-h-8 px-3 text-xs" : "min-h-10 px-4 text-sm"
+  } ${variantClass[variant]} ${className}`;
+}
 
 export function Button({
   variant = "secondary",
@@ -198,29 +224,40 @@ export function Button({
   children,
   disabled,
   ...rest
-}: ButtonHTMLAttributes<HTMLButtonElement> & {
+}: ComponentProps<"button"> & {
   variant?: ButtonVariant;
-  size?: "sm" | "md";
+  size?: ButtonSize;
   loading?: boolean;
 }) {
   return (
-    <button
-      type="button"
-      {...rest}
-      disabled={disabled || loading}
-      aria-busy={loading || undefined}
-      className={`inline-flex items-center justify-center gap-1.5 rounded-md border font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
-        size === "sm" ? "min-h-8 px-2.5 text-xs" : "min-h-10 px-3.5 text-sm"
-      } ${variantClass[variant]} ${className}`}
-    >
+    <button type="button" {...rest} disabled={disabled || loading} aria-busy={loading || undefined} className={buttonClass(variant, size, className)}>
       {loading ? <Spinner /> : null}
       {children}
     </button>
   );
 }
 
+/** A pill that toggles (a preset, a scene): the selected one takes the brand tint and a brand boundary, the rest are secondary buttons. */
+export function toggleClass(active: boolean, size: ButtonSize = "md", className = ""): string {
+  return `motion-press inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-pill border font-medium disabled:cursor-not-allowed disabled:opacity-50 ${
+    size === "sm" ? "min-h-8 px-3 text-xs" : "min-h-10 px-4 text-sm"
+  } ${active ? "border-brand-600 bg-brand-50 text-brand-700" : "border-line-ui bg-surface text-ink hover:bg-subtle"} ${className}`;
+}
+
+/** A quiet text link in a card's header or a sentence (the "open" links): brand-700 on white is 7.7:1. */
+export const textLinkClass = "motion-press inline-flex min-h-8 items-center rounded-pill px-2 text-xs font-medium text-brand-700 underline underline-offset-2 hover:bg-brand-50";
+
+/** A link in a button's shape (a navigation that is the page's next step). */
+export function ButtonLink({ variant = "secondary", size = "md", className = "", ...rest }: ComponentProps<typeof Link> & { variant?: ButtonVariant; size?: ButtonSize }) {
+  return <Link {...rest} className={buttonClass(variant, size, className)} />;
+}
+
+/** Text fields: a pill, 40 px tall, a line-ui boundary (3:1). A multi-line field takes `textareaClass`. */
+export const inputClass = "min-h-10 rounded-pill border border-line-ui bg-surface px-4 text-sm text-ink placeholder:text-ink-3";
+export const textareaClass = "rounded-card border border-line-ui bg-surface px-4 py-2.5 text-sm leading-relaxed text-ink placeholder:text-ink-3";
+
 export function Skeleton({ className = "" }: { className?: string }) {
-  return <div aria-hidden className={`animate-pulse rounded-md bg-subtle ${className}`} />;
+  return <div aria-hidden className={`animate-pulse rounded-tile bg-subtle ${className}`} />;
 }
 
 export function LoadingBlock({ rows = 3, label }: { rows?: number; label?: string }) {
@@ -283,12 +320,36 @@ export function EmptyState({
 
 export function Callout({ tone = "info", title, children }: { tone?: Tone; title?: ReactNode; children: ReactNode }) {
   return (
-    <div className={`rounded-lg border px-3.5 py-3 text-sm ${toneSurface[tone]}`}>
+    <div className={`rounded-tile border px-3.5 py-3 text-sm ${toneSurface[tone]}`}>
       {title ? <p className={`font-semibold ${toneText[tone]}`}>{title}</p> : null}
       <div className={`text-ink-2 ${title ? "mt-0.5" : ""}`}>{children}</div>
     </div>
   );
 }
+
+/**
+ * The pill track of a segmented control, with its sliding pill thumb. The thumb is one option wide (the options share the width
+ * equally) and moves by transform to the selected option; with nothing selected it hides.
+ */
+function SegmentedTrack({ count, index, role, label, children }: { count: number; index: number; role?: "group"; label?: string; children: ReactNode }) {
+  return (
+    <div
+      role={role}
+      aria-label={label}
+      className="relative inline-grid auto-cols-fr grid-flow-col rounded-pill border border-line-ui bg-subtle p-0.5"
+      style={{ ["--n" as string]: count }}
+    >
+      <span
+        aria-hidden
+        className={`motion-slide pointer-events-none absolute inset-y-0.5 left-0.5 w-[calc((100%-0.25rem)/var(--n))] rounded-pill bg-surface shadow-card ${index < 0 ? "opacity-0" : ""}`}
+        style={{ transform: `translateX(${Math.max(index, 0) * 100}%)` }}
+      />
+      {children}
+    </div>
+  );
+}
+
+const segmentedOption = "relative z-10 grid min-h-8 cursor-pointer place-items-center whitespace-nowrap rounded-pill px-3.5 text-xs font-medium transition-colors";
 
 /** Radio-group segmented control. Native radios give arrow-key navigation for free. */
 export function Segmented<T extends string>({
@@ -307,11 +368,11 @@ export function Segmented<T extends string>({
   return (
     <fieldset className="min-w-0">
       <legend className="sr-only">{label}</legend>
-      <div className="inline-flex rounded-md border border-line-ui bg-subtle p-0.5">
+      <SegmentedTrack count={options.length} index={options.findIndex((o) => o.value === value)}>
         {options.map((o) => (
           <label
             key={o.value}
-            className="relative cursor-pointer whitespace-nowrap rounded px-3 py-1.5 text-xs font-medium text-ink-2 has-checked:bg-surface has-checked:text-ink has-checked:shadow-sm has-focus-visible:outline-2 has-focus-visible:outline-brand-600"
+            className={`${segmentedOption} has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-focus ${value === o.value ? "text-ink" : "text-ink-2 hover:text-ink"}`}
           >
             <input
               type="radio"
@@ -324,8 +385,38 @@ export function Segmented<T extends string>({
             {o.label}
           </label>
         ))}
-      </div>
+      </SegmentedTrack>
     </fieldset>
+  );
+}
+
+/** The same pill track made of toggle buttons (`aria-pressed`), for a choice that is a view (a horizon), not a form field. */
+export function SegmentedButtons<T extends string | number>({
+  label,
+  value,
+  onChange,
+  options,
+}: {
+  label: string;
+  value: T;
+  onChange: (v: T) => void;
+  options: { value: T; label: ReactNode; testId?: string }[];
+}) {
+  return (
+    <SegmentedTrack role="group" label={label} count={options.length} index={options.findIndex((o) => o.value === value)}>
+      {options.map((o) => (
+        <button
+          key={String(o.value)}
+          type="button"
+          onClick={() => onChange(o.value)}
+          aria-pressed={value === o.value}
+          data-testid={o.testId}
+          className={`${segmentedOption} ${value === o.value ? "text-ink" : "text-ink-2 hover:text-ink"}`}
+        >
+          {o.label}
+        </button>
+      ))}
+    </SegmentedTrack>
   );
 }
 
@@ -336,7 +427,7 @@ export function TableWrap({ label, children }: { label: string; children: ReactN
       role="region"
       aria-label={label}
       tabIndex={0}
-      className="overflow-x-auto rounded-lg border border-line bg-surface"
+      className="overflow-x-auto rounded-card border border-line bg-surface"
     >
       {children}
     </div>
@@ -359,7 +450,7 @@ export function Hash({ value, className = "" }: { value: string | null; classNam
       <button
         type="button"
         aria-label={t("common.copy")}
-        className="rounded p-1 text-ink-3 hover:bg-subtle hover:text-ink"
+        className="rounded-pill p-1 text-ink-3 hover:bg-subtle hover:text-ink"
         onClick={() => {
           void navigator.clipboard?.writeText(value).then(() => {
             setCopied(true);
@@ -375,7 +466,7 @@ export function Hash({ value, className = "" }: { value: string | null; classNam
 
 export function Formula({ children }: { children: ReactNode }) {
   return (
-    <code className="block break-words rounded-md border border-line bg-subtle px-2.5 py-1.5 font-mono text-xs leading-relaxed text-ink">
+    <code className="block break-words rounded-tile border border-line bg-subtle px-2.5 py-1.5 font-mono text-xs leading-relaxed text-ink">
       {children}
     </code>
   );

@@ -156,7 +156,7 @@ export default function CapexPage() {
                             <td key={m} className={`${tdCls} text-right tabular-nums`}>
                               {cell ? (
                                 <span
-                                  className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs font-semibold ${
+                                  className={`inline-flex items-center gap-1 rounded-pill px-2 py-0.5 text-xs font-semibold ${
                                     cell.passes ? "bg-ok-bg text-ok-fg" : "bg-bad-bg text-bad-fg"
                                   }`}
                                   title={cell.passes ? t("capex.passes") : t("capex.fails")}
@@ -270,7 +270,7 @@ export default function CapexPage() {
               </p>
               <div className="grid gap-4 md:grid-cols-2">
                 {file.sections.map((sec) => (
-                  <div key={sec.title} className="rounded-lg border border-line p-3">
+                  <div key={sec.title} className="rounded-tile border border-line p-3">
                     <h3 className="mb-2 text-sm font-semibold">{sec.title}</h3>
                     <KeyValueList items={sec.rows.map((r) => ({ k: r.label, v: r.value }))} />
                     {sec.notes?.length ? (

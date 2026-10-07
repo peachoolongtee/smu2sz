@@ -6,7 +6,7 @@ import { useState } from "react";
 import { Disclosure, FactTile } from "@/components/business/kit";
 import type { useFixAlert } from "@/components/home/fix-alert";
 import { approvalHref } from "@/components/operation-result";
-import { Button, Formula } from "@/components/ui";
+import { Button, Formula, ButtonLink } from "@/components/ui";
 import { useI18n } from "@/lib/i18n";
 import type { AlertItem, HomeNextAction } from "@/lib/types";
 
@@ -36,7 +36,7 @@ export function NextActionBlock({ a, stateVersion, fixer }: { a: HomeNextAction;
         : "";
 
   return (
-    <section aria-labelledby="home-action-title" className="rounded-(--radius-card) border border-line bg-surface p-5 shadow-(--shadow-card) lg:p-6" data-testid="home-next-action" data-alert={a.alert_id}>
+    <section aria-labelledby="home-action-title" className="rounded-card border border-line bg-surface p-5 shadow-card lg:p-6" data-testid="home-next-action" data-alert={a.alert_id}>
       <p className="text-xs font-semibold uppercase tracking-wide text-ink-3">{t("biz.recommended.short")}</p>
       <h2 id="home-action-title" className="mt-1.5 text-xl font-semibold leading-snug text-ink" data-testid="next-action-title">
         {a.outcome_title}
@@ -76,7 +76,7 @@ export function NextActionBlock({ a, stateVersion, fixer }: { a: HomeNextAction;
       </dl>
 
       {confirming && !waiting ? (
-        <div className="mt-4 rounded-lg border border-brand-100 bg-brand-50 p-4" role="group" aria-labelledby={`confirm-${a.alert_id}-title`} data-testid={`fix-confirm-${a.alert_id}`}>
+        <div className="mt-4 rounded-tile border border-brand-100 bg-brand-50 p-4" role="group" aria-labelledby={`confirm-${a.alert_id}-title`} data-testid={`fix-confirm-${a.alert_id}`}>
           <p id={`confirm-${a.alert_id}-title`} className="font-semibold text-ink">
             {a.needs_owner ? t("biz.confirm.titleQueue") : t("biz.confirm.title")}
           </p>
@@ -94,7 +94,7 @@ export function NextActionBlock({ a, stateVersion, fixer }: { a: HomeNextAction;
 
       <div className="mt-4 flex flex-wrap items-center gap-2">
         {waiting ? (
-          <div className="rounded-md border border-warn-line bg-warn-bg px-3 py-2 text-sm text-warn-fg" role="status" data-testid={`alert-waiting-${a.alert_id}`}>
+          <div className="rounded-tile border border-warn-line bg-warn-bg px-3 py-2 text-sm text-warn-fg" role="status" data-testid={`alert-waiting-${a.alert_id}`}>
             <p className="font-semibold">{t("alerts.waiting.short")}</p>
             <Link href={approvalHref(waiting)} className="mt-0.5 inline-block font-medium underline underline-offset-2" data-testid={`alert-approval-link-${a.alert_id}`}>
               {t("alerts.waiting.open")}
@@ -106,9 +106,9 @@ export function NextActionBlock({ a, stateVersion, fixer }: { a: HomeNextAction;
           </Button>
         )}
         {pathname === "/cash" ? null : (
-          <Link href="/cash#cash-options" className="inline-flex min-h-10 items-center rounded-md border border-line-ui px-3.5 text-sm font-medium text-ink hover:bg-subtle" data-testid="next-action-alternatives">
+          <ButtonLink href="/cash#cash-options" data-testid="next-action-alternatives">
             {t("biz.compare")}
-          </Link>
+          </ButtonLink>
         )}
       </div>
 
@@ -139,7 +139,7 @@ export function NextActionBlock({ a, stateVersion, fixer }: { a: HomeNextAction;
           {a.cost_breakdown.length > 1 ? (
             <div>
               <p className="text-xs font-medium text-ink-3">{t("biz.costTotal")}</p>
-              <ul className="mt-1 divide-y divide-line rounded-md border border-line px-3" data-testid="next-action-cost-breakdown">
+              <ul className="mt-1 divide-y divide-line rounded-tile border border-line px-3" data-testid="next-action-cost-breakdown">
                 {a.cost_breakdown.map((c, i) => (
                   <li key={i} className="flex items-baseline justify-between gap-3 py-1.5">
                     <span className="min-w-0 text-ink-2">{c.label.replace(/:\s*$/, "")}</span>
@@ -170,7 +170,7 @@ export function NextActionBlock({ a, stateVersion, fixer }: { a: HomeNextAction;
             {a.formula ? <Formula>{a.formula}</Formula> : null}
             <ul className="space-y-1">
               {a.legs.map((leg) => (
-                <li key={leg.index} className="flex flex-wrap items-baseline justify-between gap-2 rounded-md border border-line px-3 py-1.5">
+                <li key={leg.index} className="flex flex-wrap items-baseline justify-between gap-2 rounded-tile border border-line px-3 py-1.5">
                   <span>{leg.label}</span>
                   <span className="text-xs text-ink-3">
                     {leg.cost_display ? t("alerts.cost", { cost: leg.cost_display }) : t("biz.noStatedCost")}

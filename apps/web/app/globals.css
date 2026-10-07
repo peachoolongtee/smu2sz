@@ -100,10 +100,11 @@ body {
   line-height: 1.45;
 }
 
+/* Focus: a 2 px ring, 2 px off the edge, in the focus token (3:1 on the canvas and on white). It follows the element's own
+   radius, so a pill gets a round ring. */
 :focus-visible {
   outline: 2px solid var(--color-focus);
   outline-offset: 2px;
-  border-radius: 4px;
 }
 
 /* Inside the deep block the ring is white. */
