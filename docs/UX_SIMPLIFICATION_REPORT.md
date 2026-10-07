@@ -74,6 +74,8 @@ On `dev` at `b3fe741` (after the Wave 7 fixes), 8 October 2026:
 | Web typecheck, lint | clean |
 | Web unit (`check-mocks`, fallbacks) | 17 passed |
 
+After the Wave 8 merge (`dev` at `262db40`): backend 5,544 passed, 33 skipped, 1 failed (the golden router-plan digest, which strips display-only fields before digesting and had not learned Wave 8's new ones; fixed on `fix/golden-router-digest` without touching the golden); scenarios 49/49; demo path exit 0; attacks 255 with 0 harm; typecheck, lint clean; unit 17; mock e2e 64 passed, 7 skipped, 0 failed; live e2e 36 passed.
+
 New tests this map: `tests/api/test_truth_fields.py` (the display invariant on every fixture plan, the semantic tests of the brief's section 43), `test_owner_words.py`, `test_business_dates.py`, `test_ledger_events.py`, `tests/nl/test_business_page_prompts.py`, `tests/funding/test_display_fields_inert.py` (the new fields never feed the engine), and the rewritten Deals, Cash, home, activity, receivables and chat specs.
 
 ## E2E results
