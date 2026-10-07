@@ -306,6 +306,8 @@ files["home_alerts_day34.json"] = await live.getAlerts();
 files["home_summary_day34.json"] = await live.getHome("en");
 files["home_summary_day34_zh.json"] = await live.getHome("zh");
 files["home_state_day34.json"] = await live.getState();
+// The router's comparison for day 34's gap (the Cash page shows a fresh plan while a gap is open, never the day-0 one).
+files["funding_day34.json"] = await live.planFunding({});
 // The reconciliation after the day-2 bank receipt (it carries the bank's reference).
 files["home_reconciliation_day34.json"] = await live.getReconciliation();
 const reserve = files["home_alerts_day34.json"].alerts.find((a) => a.id.startsWith("ALERT-RESERVE") && a.actionable);

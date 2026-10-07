@@ -31,9 +31,6 @@ export default function CashPage() {
   const home = useAsync(() => getHome(lang), [lang]);
   // The monthly readings only; the chart draws the home's own series so it cannot disagree with the headline.
   const traj = useAsync(() => getTrajectory("CONSERVATIVE"), []);
-  // The router's comparison for today's gap; after the plan executed a fresh plan is empty, so the decision-time snapshot wins.
-  const snapshot = demo.funding;
-  const plan = useAsync(() => (snapshot ? Promise.resolve(snapshot) : planFunding()), [Boolean(snapshot)]);
   const fixer = useFixAlert();
   useEffect(() => onSignedIn(() => bump()), []);
   const h = home.data;
@@ -42,6 +39,11 @@ export default function CashPage() {
   // Covered means no action is needed AND no breach is ahead: a critical alert with no runnable fix has no next action
   // either, and the page must not then say "no additional funding is needed".
   const covered = Boolean(h) && !h?.next_action && h?.cash.first_breach_day === null;
+  // The router's comparison. While a gap is open it is a fresh plan for today's gap, never an older one (a day-0 comparison
+  // beside a day-34 recommendation contradicts it). Once covered, a fresh plan is empty (the plan executed), so the decision-time
+  // snapshot is "Other plans considered", and without a snapshot there is nothing to show.
+  const snapshot = demo.funding;
+  const plan = useAsync(async () => (!h ? null : covered ? (snapshot ?? null) : await planFunding()), [Boolean(h), covered, Boolean(snapshot), h?.state_version]);
   // When the first breach is also the lowest point it is one fact: one tile, not the same figure and day twice.
   const breachIsWorst = unsafe && h?.cash.first_breach_day === h?.cash.lowest_day;
   const today = h?.day ?? 0;
@@ -54,11 +56,11 @@ export default function CashPage() {
 
   const options = plan.error ? (
     <ErrorState error={plan.error} onRetry={plan.reload} />
-  ) : !plan.data ? (
+  ) : plan.loading || !plan.data ? (
     <LoadingBlock rows={2} />
   ) : (
     <>
-      {snapshot ? <p className="mb-3 text-xs text-ink-3">{t("fund.snapshot")}</p> : null}
+      {covered && snapshot ? <p className="mb-3 text-xs text-ink-3">{t("fund.snapshot")}</p> : null}
       <FundingOptions rows={comparison(plan.data)} menu={plan.data.menu} today={today} recommendedKey={h?.next_action?.plan_source === "router" ? "router_optimum" : null} />
       {h?.next_action?.cheaper_option ? (
         <p className="mt-3 text-xs text-ink-3" data-testid="cash-cheaper-option">
@@ -158,7 +160,7 @@ export default function CashPage() {
         )}
 
         {covered ? (
-          plan.data && !comparison(plan.data).length ? null : (
+          !plan.loading && (!plan.data || !comparison(plan.data).length) ? null : (
             <details className="rounded-(--radius-card) border border-line bg-surface shadow-(--shadow-card)" data-testid="cash-options">
               <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-ink">{t("biz.cash.options.considered")}</summary>
               <div className="border-t border-line p-4">{options}</div>

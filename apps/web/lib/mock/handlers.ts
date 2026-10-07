@@ -55,6 +55,7 @@ import borrowerFileJson from "../../mocks/borrower_file.json";
 import capexApplyJson from "../../mocks/capex_apply.json";
 import capexJson from "../../mocks/capex.json";
 import fundingJson from "../../mocks/funding.json";
+import fundingDay34Json from "../../mocks/funding_day34.json";
 import homeApprovalApproved from "../../mocks/home_approval_approved.json";
 import homeApprovalPending from "../../mocks/home_approval_pending.json";
 import homeApprove from "../../mocks/home_approve.json";
@@ -244,7 +245,8 @@ export async function getTrajectory(mode: Mode): Promise<TrajectoryView> {
 export async function planFunding(_req: PlanRequest): Promise<FundingView> {
   void _req;
   await delay();
-  return clone(cast<FundingView>(fundingJson));
+  // The router's comparison for today's gap: the opening books' (day 0) or day 34's (the late invoice and the cure above the ceiling).
+  return clone(cast<FundingView>(home.mockClock().day >= home.NEWS_DAY ? fundingDay34Json : fundingJson));
 }
 
 export async function getLedger(): Promise<LedgerView> {

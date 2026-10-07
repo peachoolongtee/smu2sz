@@ -114,15 +114,50 @@ test("after the plan ran, the page states the current funding and folds the comp
   await expect(current.getByTestId("cash-lot-transit")).toContainText("¥255,000.00");
   await expect(current.getByTestId("cash-lot-transit")).toContainText("Arrives in 3 days");
   await expect(current.getByTestId("cash-no-gap")).toHaveText("No additional funding is needed.");
-  // The comparison is history now: closed under "Other plans considered", never beside "no funding is needed" as a to-do list.
+  // No comparison was taken when the plan was chosen (the plan ran from the home), and a fresh plan on covered books is empty:
+  // the page shows the current funding and nothing that reads as a to-do list.
   await expect(page.locator("body")).not.toContainText(/ways to cover the gap/i);
+  await expect(page.getByTestId("cash-options")).toHaveCount(0);
+  await expect(page.locator("#cash-options")).toHaveCount(0);
+  await expect(page.locator("body")).not.toContainText(/\bDay \d/);
+});
+
+test("covered after the walk: the comparison taken when the plan was chosen is history, closed under Other plans considered", async ({ page }) => {
+  // The guided demo's funding step records the Debt Desk as it stood when the decision was made.
+  await page.goto("/mandate");
+  for (let i = 0; i < 5; i++) {
+    await page.getByTestId("demo-next").click();
+    await expect(page.getByRole("region", { name: "Guided demo" }).locator("[aria-live=polite]")).toContainText(`${i + 1}/15`);
+  }
+  await page.evaluate(() => localStorage.setItem("tl-mode", JSON.stringify({ mode: "business" })));
+  await page.goto("/");
+  await runPlan(page, "ALERT-RESERVE-12");
+  await expect(page.getByTestId("fix-result")).toBeVisible();
+  await page.goto("/cash");
+  await expect(page.getByTestId("cash-headline")).toHaveText("You're covered.");
   const considered = page.getByTestId("cash-options");
   await expect(considered.locator("> summary")).toHaveText("Other plans considered");
   await expect(considered).not.toHaveAttribute("open", "");
   await considered.locator("> summary").click();
   await expect(considered.getByTestId("cash-options-full")).toBeVisible();
   await expect(considered.getByTestId("cash-plan-detail").locator("> summary")).toHaveText("Why this plan was selected");
-  await expect(page.locator("body")).not.toContainText(/\bDay \d/);
+});
+
+test("day 34 with a gap open: the options are today's plan, never the day-0 comparison", async ({ page }) => {
+  await page.goto("/demo");
+  await page.getByTestId("home-days").fill("34");
+  await page.getByTestId("home-advance").click();
+  await expect(page.getByTestId("home-day")).toHaveText("Day 34");
+  await page.goto("/cash");
+  await expect(page.getByTestId("home-next-action").getByTestId("next-action-cost")).toContainText("¥1,782.19");
+  const options = page.getByTestId("cash-options-list");
+  await expect(options).toBeVisible();
+  // Not the opening books' ¥3,113.93 plan, and no reading of a gap "22 days ago".
+  await expect(options).not.toContainText("¥3,113.93");
+  await expect(options).not.toContainText("¥255,000.00");
+  await expect(options).not.toContainText(" ago");
+  await expect(options).toContainText("¥1,706.10");
+  await expect(page.getByTestId("cash-cheaper-option")).toContainText("¥1,706.10");
 });
 
 test("day 34: the first breach is also the worst point, so the figures row says it once", async ({ page }) => {
