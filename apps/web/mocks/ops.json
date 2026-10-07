@@ -59,10 +59,10 @@
     "status": "EXECUTED",
     "tier": "TIER_2",
     "requested_by": "AGENT",
-    "message": "Applied for ¥600,000.00 on FAC-LEASE; it is PENDING and counts as zero until committed",
-    "summary": "Applied for ¥600,000.00 on FAC-LEASE; it is PENDING and counts as zero until committed",
-    "message_when": "Applied for ¥600,000.00 on Equipment lease; it is PENDING and counts as zero until committed",
-    "event_text": "You approved an application for ¥600,000.00 on Equipment lease.",
+    "message": "Applied for ¥600,000.00 on FAC-ETL; it is PENDING and counts as zero until committed",
+    "summary": "Applied for ¥600,000.00 on FAC-ETL; it is PENDING and counts as zero until committed",
+    "message_when": "Applied for ¥600,000.00 on Equipment term loan; it is PENDING and counts as zero until committed",
+    "event_text": "You approved an application for ¥600,000.00 on Equipment term loan.",
     "event_detail": null
   },
   "reject_apply_loan": {
@@ -73,7 +73,7 @@
     "message": "Declined by the owner (APR-000001); nothing executed",
     "summary": "Declined by the owner (APR-000001); nothing executed",
     "message_when": "Declined by the owner (APR-000001); nothing executed",
-    "event_text": "You declined an application for ¥600,000.00 on Equipment lease.",
+    "event_text": "You declined an application for ¥600,000.00 on Equipment term loan.",
     "event_detail": null
   }
 }

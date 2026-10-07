@@ -293,17 +293,20 @@ test("day 34: the approval card is a question with the cost, the landing day and
   expect(await proseOf(page)).not.toMatch(/\bday \d/i);
 });
 
-test("the Chinese labels switch while the server's sentences stay", async ({ page }) => {
+test("in Chinese the whole home reads in Chinese: the labels and the server's recorded sentences", async ({ page }) => {
   await page.goto("/");
   await openAccountMenu(page);
   await page.getByLabel("中文").check();
-  // The status word is the server's own label (`status_text`), so the mock's recorded English summary keeps it.
-  await expect(page.getByTestId("home-status-word")).toHaveText("Action needed");
+  // The home is re-read in Chinese (GET /home?lang=zh, recorded): the status word, the headline and the plan are the server's own.
+  await expect(page.getByTestId("home-status-word")).toHaveText("需要行动");
+  await expect(page.getByTestId("home-headline")).toHaveText(/不再安全/);
+  await expect(page.getByTestId("next-action-title")).toHaveText("筹措 ¥405k 资金");
   await expect(page.getByRole("navigation").getByRole("link", { name: "现金与融资" })).toBeVisible();
   await expect(page.getByTestId("chat-open")).toContainText("问 FLOW");
   await expect(page.locator("html")).toHaveAttribute("lang", "zh-CN");
   await openAccountMenu(page);
   await page.getByLabel("English").check();
+  await expect(page.getByTestId("home-status-word")).toHaveText("Action needed");
   await expect(page.getByTestId("chat-open")).toContainText("Ask FLOW");
 });
 
