@@ -1,4 +1,4 @@
-# Handover: TermsLedger v2, 3 Oct 2026 (sections 4 to 6 updated at the gate checkpoint, `dev` at `db097e0`)
+# Handover: TermsLedger v2, 3 Oct 2026 (sections 4 to 6 updated at the gate checkpoint, `dev` at `db097e0`; reconciled on the Mac on 5 Oct at `bac61f3`)
 
 For a new Claude Code session on another machine. Read this file first, then the files it points to.
 Everything you need is in this repository; nothing depends on the previous machine.
@@ -55,6 +55,8 @@ Read, in this order:
 | `docs/adr/0001`–`0005`, `docs/ARCHITECTURE.md`, `docs/INVARIANTS.md`, `CONTEXT.md` | Earlier decisions and vocabulary |
 | `docs/handover/01_main_architect_brief.md` | The owner's first long brief, verbatim |
 | `docs/handover/02_technical_lead_brief.md` | The owner's second long brief, verbatim (the one in force now) |
+| `docs/handover/03_ux_redesign_brief.md` and `03_ux_reference_dashboard.webp` | The owner's third brief, 5 Oct, verbatim: the UI/UX audit and redesign (Business vs Demo modes, the home answering "am I safe, what should I do, what does it cost"), with the design reference. It lifts stability mode for the frontend only; the engine stays frozen |
+| `docs/handover/04_subagent_handoff.md` | The delegation handoff of 6 Oct: the state, the lead's rules, and eight bounded subagent briefs for the remaining UX debt and the delegable engine rows |
 
 ## 3. Standing instructions from the owner (all still in force)
 
@@ -108,14 +110,17 @@ what-if sandbox. Team of five. A DeepSeek key exists; an Anthropic key is option
 `dev` carries the fixes for an independent audit's 13 findings, five red-team rounds' 26 findings and the business
 review's items (BC1 to BC11 and S1 to S3), all fixed on 3 Oct (`git log --oneline b0e0ab6..origin/dev` lists the
 merges; the findings, decisions and scorecard are in `docs/CONTINUOUS_OPTIMIZATION.md` sections 0, 1, 3 and 5).
-`main` is at `34a58ad` (the cash-figure document pass), 48 commits behind `dev`. The gate on `dev` at `db097e0`:
+`main` was fast-forwarded to `dev` at `bac61f3` on 3 Oct (they are equal). The gate on `dev` at `db097e0`:
 backend 5,446 passed (33 skipped; Windows, `SKIP_PERF_BENCH=1`, two sequential chunks), scenarios 49/49 (87
 turns, 49 evidence chains VALID), 255 attacks (122 API + 133 chat) with 0 harm, `scripts/evaluate.py` with every
 target passing (runnable optimality 26/26, priced 26/26), `scripts/demo_run.py` exits 0, language-boundary
 certification WRONG_MATERIAL 0 on 231 items (cache and fake runs), concurrency 20 passed and 10 skipped (the
-PostgreSQL cases). The web counts are the last known ones: mock e2e 35, live e2e 30; the web mock refresh is in
-progress, so they were not re-run. This is a simulation: lenders, the buyer and the bank feed are simulated, and
+PostgreSQL cases). Web e2e after the refresh `2fc5aa9`: mock 35, live 33. This is a simulation: lenders, the buyer and the bank feed are simulated, and
 nothing is a bank covenant test.
+
+Re-run on the Mac on 5 Oct 2026 at `bac61f3` (the application code is unchanged since `db097e0`; only the web refresh and documents merged after it): backend 5,452 passed, 26 skipped, 1 failed (the EX01 evaluate benchmark at 270 ms against a 250 ms target, full suite in 8 min 15 s without `SKIP_PERF_BENCH`); scenarios 49/49 (87 turns); `scripts/demo_run.py` exit 0; attacks 255 (122 API + 133 chat), 0 with harm; language-boundary certification (cache) WRONG_MATERIAL 0; `scripts/evaluate.py` every target passing (0 missed in all eight suites; runnable optimality 26/26, 67/67 golden values, 264 chat texts scanned, 0 disclosed); web mock e2e 34 passed, 1 skipped, 1 failed (`responsive.spec.ts` phone project: the chat slide-over measures 431 px on a 412 px viewport; it fails on every rerun on macOS Chromium, while the other phone tests pass). A five-item live smoke of the certification with DeepSeek as the only provider gave 5 CORRECT_EXECUTABLE, WRONG_MATERIAL 0 (exit 3: the fallback provider is not certified).
+
+Re-run in the cloud on 5 Oct 2026 after the UI redesign (`feat/ux-redesign`, Linux, `SKIP_PERF_BENCH=1`, two chunks): backend 5,452 passed, 33 skipped, 0 failed; scenarios 49/49 (87 turns); `scripts/demo_run.py` exit 0; attacks 255 (122 API + 133 chat), 0 with harm; web mock e2e 36 passed, 1 skipped; web live e2e 31 passed (the `live.spec.ts` home checks rewritten for the Business home). The application engine is unchanged by the redesign; `GET /home` and the queue's `presentation` fields are presentation reads.
 
 **The owner stopped the red-team rounds on 3 Oct.** Five rounds (3, 7, 3, 7 and 6 findings) are done and all fixed.
 The engine is in **stability mode**: fix regressions, keep the evidence regenerated, rehearse the demo, keep the
@@ -184,7 +189,7 @@ forward-concession valuation of 3 Oct likewise (`docs/research/concession-valuat
 The evidence (`services/api/evals/e2e/latest`, `latest_report.*`, `security/latest_report.*`) and the docx
 deliverables were regenerated on `docs/gate-checkpoint` at `db097e0`; if a later change moves a cash-derived figure,
 regenerate them again (section 6, step 6). The web mocks are the exception: they predate the one-leverage change and
-Counter A's day, and their refresh is in progress (backlog WEB1). `scripts/evaluate.py` reports 15 item-level misses (all targets pass):
+Counter A's day, and were re-recorded in the web refresh `2fc5aa9` (WEB1 done). `scripts/evaluate.py` reports 15 item-level misses (all targets pass):
 four held-out 60-day-terms offers (H09a, H09b, H12a, H39), labelled NEEDS_OWNER_APPROVAL, now return REJECT with
 RESERVE_BREACH on the cash-corrected books, so the label file `fixtures/heldout/offers.yaml` needs an owner decision
 (relabel, or leave as a record that the verdict moved); the other misses were already there.
@@ -239,6 +244,18 @@ RESERVE_BREACH on the cash-corrected books, so the label file `fixtures/heldout/
 
 ## 6. What to do next, in order
 
+**The integration of 6 and 7 Oct (the owner's fourth brief) is done:** `docs/UX_INTEGRATION_BRIEF.md`, the wayfinder map
+(GitHub issue #13) and `docs/UX_AUDIT.md` section 18 record it; `docs/UX_INTEGRATION_REPORT.md` is the final report. The
+recommendation shown to the owner is the router's runnable plan (`services/api/app/funding/recommend.py`), the home carries its
+own projection series, Business mode speaks in distances from today and the minimum cash reserve, the brand is FLOW 流.
+
+**The UI/UX audit and redesign of `docs/handover/03_ux_redesign_brief.md` was done on 5 Oct** (`docs/UX_AUDIT.md`, then
+the merge `feat/ux-redesign`): two shells (Business and Demo), the Business home on the presentation read `GET /home`
+(`services/api/app/api/home.py`, tests in `tests/api/test_home.py`), approval cards as questions on the queue's
+`presentation` fields, the Deals, Cash & funding, Receivables, Activity and Limits pages, the story page `/demo`; mocks
+re-recorded; `home.spec.ts`, `catchup.spec.ts` and `responsive.spec.ts` rewritten. The engine is unchanged. Remaining UX
+debt is listed at the end of `docs/UX_AUDIT.md`. The list below remains the backlog for the engine, in stability mode.
+
 1. Read the three mission documents first: `docs/AGENT_MISSION.md`, `docs/CONTINUOUS_OPTIMIZATION.md` (the live
    tracker; `docs/NEXT_FIXES.md` is history) and `docs/FINANCIAL_SEMANTICS.md`.
 2. Run the gate. From `services/api`, as two sequential chunks (about 8 and 6 minutes on Windows; expect
@@ -252,13 +269,12 @@ RESERVE_BREACH on the cash-corrected books, so the label file `fixtures/heldout/
    `cd services/api && uv run python -m app.security.attacks --report` (255 attacks, 0 with harm),
    `uv run --project services/api python scripts/evaluate.py` (every target PASS; about 6 minutes), and
    `uv run --project services/api python scripts/certify_language_boundary.py --backend cache` and `--backend fake`
-   (WRONG_MATERIAL 0). For the web app `E2E_TARGET=mock pnpm exec playwright test` (35 when last run) and, if another
-   program holds port 8000, `E2E_API_PORT=8010 E2E_TARGET=live pnpm exec playwright test` (30 when last run); the web
-   refresh is in progress. Scenario, attack, evaluation and certification runs rewrite tracked files under
+   (WRONG_MATERIAL 0). For the web app `E2E_TARGET=mock pnpm exec playwright test` (36 passed, 1 skipped after the redesign) and, if another
+   program holds port 8000, `E2E_API_PORT=8010 E2E_TARGET=live pnpm exec playwright test`. Scenario, attack, evaluation and certification runs rewrite tracked files under
    `services/api/evals/`; commit them only when the task is to refresh evidence.
 3. Open rows of the backlog (`docs/CONTINUOUS_OPTIMIZATION.md` section 1): PG1 (PostgreSQL run, needs a URL), LC1 (live
-   certification, needs a key), NR1 (the "no runnable plan" worlds: should the agent propose drawing the line and
-   asking the buyer or the owner? an owner decision), WEB1 (web mock refresh, in progress), EO2 (the
+   certification, needs a key; a five-item DeepSeek-only smoke passed on the Mac on 5 Oct), NR1 (the "no runnable plan" worlds: should the agent propose drawing the line and
+   asking the buyer or the owner? an owner decision), EO2 (the
    `line_first_baseline` metric still uses early pay), R02 (a multi-leg plan is not one transaction), R04 and R05
    (unauthenticated intake is not capped), R07 (a backfill for stores that hold commitments from before ADR-0009),
    F-FIN-10 (label the level DSCR as a reserve-coverage reading on every screen), W02 (accepted), EV1, and the
@@ -276,8 +292,11 @@ RESERVE_BREACH on the cash-corrected books, so the label file `fixtures/heldout/
 
 Known loose ends:
 
-- The EX01 evaluate benchmark is at or just over its 250 ms target on the Windows machine; re-measure on the Mac
-  before deciding anything.
+- The EX01 evaluate benchmark is over its 250 ms target on both machines (Windows: at or just over; Mac, 5 Oct: 270 ms
+  cold). Either raise the target with a reason or find the regression; `SKIP_PERF_BENCH=1` hides it.
+- `apps/web/e2e/responsive.spec.ts` "the slide-over chat fits the viewport with a long reply" fails on macOS Chromium
+  (Pixel 7 project): the dialog's bounding box is 431 px wide on a 412 px viewport although its own rule is
+  `max-w-[min(32rem,100vw)]`. Not diagnosed; it passed on the Windows machine on 3 Oct.
 - `/nl/opener` and `/clock/advance` answer 403 without the owner token where other owner routes answer 401; the web
   client handles both.
 - An over-cap Tier-2 offer is queued as pending and only refused when the owner approves it.

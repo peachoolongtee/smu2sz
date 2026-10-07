@@ -1,9 +1,10 @@
 import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
 
-/** Runs on a phone viewport (and desktop): no page may scroll sideways, and the stepper stays reachable. */
+/** Runs on a phone viewport (and desktop): no page may scroll sideways, the story bar stays reachable in Demo mode, and the Business home puts the answer first. */
 
-const ROUTES = ["/chat", "/mandate", "/inbox", "/trajectory", "/funding", "/verdict", "/capex", "/ledger", "/approvals", "/security", "/evidence"];
+const ENGINE_ROUTES = ["/demo", "/chat", "/mandate", "/inbox", "/trajectory", "/funding", "/verdict", "/capex", "/ledger", "/approvals", "/security", "/evidence"];
+const BUSINESS_ROUTES = ["/", "/deals", "/cash", "/receivables", "/approvals", "/activity", "/limits"];
 
 async function overflowX(page: Page): Promise<number> {
   return page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
@@ -19,15 +20,41 @@ test("no page overflows horizontally after the demo has run", async ({ page }) =
     await expect(page.getByRole("region", { name: "Guided demo" }).locator("[aria-live=polite]")).toContainText(`${i + 1}/15`);
   }
   await expect(page).toHaveURL(/\/evidence/);
-  for (const route of ROUTES) {
+  for (const route of ENGINE_ROUTES) {
     await page.goto(route);
     await expect(page.locator("h1")).toBeVisible();
     // Tables scroll inside their own region; the page itself must not.
     expect(await overflowX(page), `${route} overflows horizontally`).toBeLessThanOrEqual(1);
   }
+  // The Business shell, with the deal of the demo on the books.
+  await page.getByLabel("Business").check();
+  await expect(page).toHaveURL(/\/$/);
+  for (const route of BUSINESS_ROUTES) {
+    await page.goto(route);
+    await expect(page.locator("h1")).toHaveCount(1);
+    expect(await overflowX(page), `${route} overflows horizontally`).toBeLessThanOrEqual(1);
+  }
 });
 
-test("the stepper and navigation are reachable", async ({ page }) => {
+test("the Business home puts the status and the next action in the first screen, with no demo control", async ({ page }) => {
+  await page.goto("/");
+  const status = page.getByTestId("home-status");
+  await expect(status).toBeInViewport();
+  await expect(page.getByTestId("home-headline")).toBeInViewport();
+  await expect(page.getByTestId("home-next-action")).toBeVisible();
+  await expect(page.getByRole("region", { name: "Guided demo" })).toHaveCount(0);
+  expect(await overflowX(page)).toBeLessThanOrEqual(1);
+  const menu = page.getByRole("button", { name: "Open navigation" });
+  if (await menu.isVisible()) {
+    await menu.click();
+    await page.getByRole("link", { name: "Cash & funding" }).click();
+  } else {
+    await page.getByRole("link", { name: "Cash & funding" }).click();
+  }
+  await expect(page).toHaveURL(/\/cash/);
+});
+
+test("the stepper and navigation are reachable in Demo mode", async ({ page }) => {
   await page.goto("/mandate");
   await expect(page.getByTestId("demo-next")).toBeInViewport();
   const menu = page.getByRole("button", { name: "Open navigation" });

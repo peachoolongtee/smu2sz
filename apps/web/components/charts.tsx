@@ -15,7 +15,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { axisYuanK, dayTicks, type CashRow } from "@/lib/chart-helpers";
+import { axisFloor, axisYuanK, dayTicks, type CashRow } from "@/lib/chart-helpers";
 
 /** Same values as the tokens in app/globals.css (SVG props cannot read Tailwind classes). */
 const C = {
@@ -92,13 +92,16 @@ export function CashChart({
   showCured: boolean;
 }) {
   const breachRow = breachDay === null ? undefined : rows.find((r) => r.day === breachDay);
+  // The axis starts at zero, or lower when a projection goes below zero: the trough the headline quotes must be drawn.
+  const yMin = axisFloor(rows);
   return (
     <div className="h-72 w-full sm:h-80">
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={rows} margin={{ top: 16, right: 16, bottom: 4, left: 0 }}>
           <CartesianGrid stroke={C.line} vertical={false} />
+          {yMin < 0 ? <ReferenceLine y={0} stroke={C.ink3} strokeWidth={1} /> : null}
           <XAxis dataKey="day" type="number" domain={[0, horizon]} ticks={dayTicks(horizon)} {...axisProps} />
-          <YAxis width={56} tickFormatter={axisYuanK} domain={[0, "auto"]} {...axisProps} />
+          <YAxis width={56} tickFormatter={axisYuanK} domain={[yMin, "auto"]} {...axisProps} />
           <Tooltip
             content={
               <ChartTooltip

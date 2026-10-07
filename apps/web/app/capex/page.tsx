@@ -108,6 +108,7 @@ export default function CapexPage() {
           </dl>
 
           <Card id="structures" title={t("capex.structures")} subtitle={t("capex.structures.sub", { limit: capex.dscr_limit_display })}>
+            <p className="mb-2 text-xs text-ink-3">{t("dscr.readingNote")}</p>
             <TableWrap label={t("capex.structures")}>
               <table className={`${tableCls} min-w-[50rem]`}>
                 <caption className="sr-only">{t("capex.structures")}</caption>
@@ -200,7 +201,7 @@ export default function CapexPage() {
             </ul>
           </section>
 
-          <Card id="tier" title={t("capex.tier")} tone="warn" actions={<TierBadge tier={capex.required_tier} />}>
+          <Card id="tier" title={t("capex.tier")} tone="warn" actions={<TierBadge tier={capex.required_tier} explain />}>
             <p className="text-sm text-ink-2">{t("capex.tier.body")}</p>
             {canPrepareFile ? null : (
               <p className="mt-3 text-sm font-medium text-warn-fg" data-testid="capex-no-file">

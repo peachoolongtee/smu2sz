@@ -188,6 +188,7 @@ function VerdictBody({
                     {c.label}
                   </p>
                   {c.formula ? <p className="mt-0.5 font-mono text-xs text-ink-3">{c.formula}</p> : null}
+                  {c.code === "DSCR_MIN" ? <p className="mt-0.5 text-xs text-ink-3">{t("dscr.readingNote")}</p> : null}
                 </div>
                 <p className="text-sm tabular-nums">
                   <span className="font-semibold">{c.observed}</span>

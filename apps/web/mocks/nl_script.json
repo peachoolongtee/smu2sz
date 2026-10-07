@@ -489,7 +489,8 @@
             "receivable_id": "RI:BUYER-1:32",
             "repay_day": null,
             "rate_bp": null,
-            "lands_day": 3,
+            "lands_day": 35,
+            "available_from_day": 32,
             "amount_display": "¥135,040.00"
           }
         ],
@@ -521,6 +522,7 @@
         "approval_reason": "",
         "executable_now": false,
         "not_executable_reason": "Invoice financing (onboarded platform): advance ¥135,040.00 on RI:BUYER-1:32: RI:BUYER-1:32 is not an invoice the executor can finance today; it is issued on day 32",
+        "available_from_day": 32,
         "need_display": "¥135,040.00",
         "total_cost_display": "¥2,406.67"
       },
@@ -1128,7 +1130,8 @@
             "receivable_id": "RI:BUYER-1:32",
             "repay_day": null,
             "rate_bp": null,
-            "lands_day": 3,
+            "lands_day": 35,
+            "available_from_day": 32,
             "amount_display": "¥135,040.00"
           }
         ],
@@ -1160,6 +1163,7 @@
         "approval_reason": "",
         "executable_now": false,
         "not_executable_reason": "Invoice financing (onboarded platform): advance ¥135,040.00 on RI:BUYER-1:32: RI:BUYER-1:32 is not an invoice the executor can finance today; it is issued on day 32",
+        "available_from_day": 32,
         "need_display": "¥135,040.00",
         "total_cost_display": "¥2,406.67"
       },
@@ -1871,7 +1875,8 @@
             "receivable_id": "RI:BUYER-1:32",
             "repay_day": null,
             "rate_bp": null,
-            "lands_day": 3,
+            "lands_day": 35,
+            "available_from_day": 32,
             "amount_display": "¥135,040.00"
           }
         ],
@@ -1903,6 +1908,7 @@
         "approval_reason": "",
         "executable_now": false,
         "not_executable_reason": "Invoice financing (onboarded platform): advance ¥135,040.00 on RI:BUYER-1:32: RI:BUYER-1:32 is not an invoice the executor can finance today; it is issued on day 32",
+        "available_from_day": 32,
         "need_display": "¥135,040.00",
         "total_cost_display": "¥2,406.67"
       },
@@ -2340,7 +2346,8 @@
             "receivable_id": "RI:BUYER-1:32",
             "repay_day": null,
             "rate_bp": null,
-            "lands_day": 3,
+            "lands_day": 35,
+            "available_from_day": 32,
             "amount_display": "¥135,040.00"
           }
         ],
@@ -2372,6 +2379,7 @@
         "approval_reason": "",
         "executable_now": false,
         "not_executable_reason": "Invoice financing (onboarded platform): advance ¥135,040.00 on RI:BUYER-1:32: RI:BUYER-1:32 is not an invoice the executor can finance today; it is issued on day 32",
+        "available_from_day": 32,
         "need_display": "¥135,040.00",
         "total_cost_display": "¥2,406.67"
       },
@@ -2638,6 +2646,7 @@
         "approval_reason": "",
         "executable_now": true,
         "not_executable_reason": "",
+        "available_from_day": null,
         "need_display": "¥0.00",
         "total_cost_display": "¥0.00"
       },
@@ -3000,6 +3009,7 @@
         "approval_reason": "",
         "executable_now": true,
         "not_executable_reason": "",
+        "available_from_day": null,
         "need_display": "¥0.00",
         "total_cost_display": "¥0.00"
       },
@@ -3315,6 +3325,7 @@
         "approval_reason": "",
         "executable_now": true,
         "not_executable_reason": "",
+        "available_from_day": null,
         "need_display": "¥0.00",
         "total_cost_display": "¥0.00"
       },
@@ -3578,6 +3589,7 @@
             "repay_day": 32,
             "rate_bp": null,
             "lands_day": 0,
+            "available_from_day": 0,
             "amount_display": "¥150,000.00"
           },
           {
@@ -3589,6 +3601,7 @@
             "repay_day": null,
             "rate_bp": null,
             "lands_day": 3,
+            "available_from_day": 0,
             "amount_display": "¥255,000.00"
           }
         ],
@@ -3657,6 +3670,7 @@
         "approval_reason": "",
         "executable_now": true,
         "not_executable_reason": "",
+        "available_from_day": null,
         "need_display": "¥405,000.00",
         "total_cost_display": "¥3,113.93"
       },
@@ -3791,6 +3805,7 @@
             "repay_day": 32,
             "rate_bp": null,
             "lands_day": 0,
+            "available_from_day": 0,
             "amount_display": "¥150,000.00"
           },
           {
@@ -3802,6 +3817,7 @@
             "repay_day": null,
             "rate_bp": null,
             "lands_day": 3,
+            "available_from_day": 0,
             "amount_display": "¥255,000.00"
           }
         ],
@@ -3870,6 +3886,7 @@
         "approval_reason": "",
         "executable_now": true,
         "not_executable_reason": "",
+        "available_from_day": null,
         "need_display": "¥405,000.00",
         "total_cost_display": "¥3,113.93"
       },
@@ -4342,6 +4359,7 @@
         "approval_reason": "",
         "executable_now": true,
         "not_executable_reason": "",
+        "available_from_day": null,
         "need_display": "¥0.00",
         "total_cost_display": "¥0.00"
       },
@@ -4720,6 +4738,7 @@
         "approval_reason": "",
         "executable_now": true,
         "not_executable_reason": "",
+        "available_from_day": null,
         "need_display": "¥0.00",
         "total_cost_display": "¥0.00"
       },
@@ -5082,6 +5101,7 @@
         "approval_reason": "",
         "executable_now": true,
         "not_executable_reason": "",
+        "available_from_day": null,
         "need_display": "¥0.00",
         "total_cost_display": "¥0.00"
       },
@@ -5641,7 +5661,8 @@
             "receivable_id": "RI:BUYER-1:32",
             "repay_day": null,
             "rate_bp": null,
-            "lands_day": 3,
+            "lands_day": 35,
+            "available_from_day": 32,
             "amount_display": "¥135,040.00"
           }
         ],
@@ -5673,6 +5694,7 @@
         "approval_reason": "",
         "executable_now": false,
         "not_executable_reason": "Invoice financing (onboarded platform): advance ¥135,040.00 on RI:BUYER-1:32: RI:BUYER-1:32 is not an invoice the executor can finance today; it is issued on day 32",
+        "available_from_day": 32,
         "need_display": "¥135,040.00",
         "total_cost_display": "¥2,406.67"
       },
@@ -6280,7 +6302,8 @@
             "receivable_id": "RI:BUYER-1:32",
             "repay_day": null,
             "rate_bp": null,
-            "lands_day": 3,
+            "lands_day": 35,
+            "available_from_day": 32,
             "amount_display": "¥135,040.00"
           }
         ],
@@ -6312,6 +6335,7 @@
         "approval_reason": "",
         "executable_now": false,
         "not_executable_reason": "Invoice financing (onboarded platform): advance ¥135,040.00 on RI:BUYER-1:32: RI:BUYER-1:32 is not an invoice the executor can finance today; it is issued on day 32",
+        "available_from_day": 32,
         "need_display": "¥135,040.00",
         "total_cost_display": "¥2,406.67"
       },
@@ -6571,6 +6595,7 @@
             "repay_day": 32,
             "rate_bp": null,
             "lands_day": 0,
+            "available_from_day": 0,
             "amount_display": "¥150,000.00"
           },
           {
@@ -6582,6 +6607,7 @@
             "repay_day": null,
             "rate_bp": null,
             "lands_day": 3,
+            "available_from_day": 0,
             "amount_display": "¥255,000.00"
           }
         ],
@@ -6650,6 +6676,7 @@
         "approval_reason": "",
         "executable_now": true,
         "not_executable_reason": "",
+        "available_from_day": null,
         "need_display": "¥405,000.00",
         "total_cost_display": "¥3,113.93"
       },

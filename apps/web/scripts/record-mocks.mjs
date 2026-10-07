@@ -61,7 +61,7 @@ const written = [];
 const sha = (t) => createHash("sha256").update(t).digest("hex");
 const FIXED_CMT = `CMT-${sha("recorded commitment").slice(0, 16)}`;
 const FIXED_NONCE = sha("recorded nonce").slice(0, 32);
-const RECHAIN = new Set(["negotiation_accept.json", "home_act.json", "home_goahead.json", "home_approve.json", "home_approve_chat.json"]);
+const RECHAIN = new Set(["negotiation_accept.json", "home_act.json", "home_act_day0.json", "home_goahead.json", "home_approve.json", "home_approve_chat.json"]);
 
 // Files whose operations are chained by first appearance (every other chained file uses `rechain` below): the chat script, whose
 // operation ids and commitment ids come from a per-session random nonce, and the day-34 reconciliation (one receipt).
@@ -146,9 +146,17 @@ const files = {};
 await reset();
 files["state.json"] = await live.getState();
 files["mandate.json"] = await live.getMandate();
-// Opening books: the alerts and reconciliation the owner sees before anything happens.
+// Opening books: the alerts and reconciliation the owner sees before anything happens, and the home summary (GET /home).
 files["alerts.json"] = await live.getAlerts();
 files["reconciliation.json"] = await live.getReconciliation();
+files["home_summary_day0.json"] = await live.getHome("en");
+// The day-0 fix runs alone (Tier 1): the home's "Go ahead" on the opening books, bound to what the home showed.
+{
+  const a = files["home_summary_day0.json"].next_action;
+  files["home_act_day0.json"] = await live.actOnAlert(a.alert_id, { state_version: a.state_version, suggestions: a.suggestions });
+  if (files["home_act_day0.json"].executed !== 2) throw new Error("the day-0 fix no longer runs alone: the demo path has changed");
+  files["home_summary_after_fund.json"] = await live.getHome("en");
+}
 
 let verdictEx01 = null;
 for (const s of DEMO_STEPS) {
@@ -284,8 +292,10 @@ async function toDay34(atDay0 = async () => {}) {
 await toDay34(async () => {
   files["home_opener_quiet.json"] = await live.nlOpener("rec-quiet-en", "en");
   files["home_opener_quiet_zh.json"] = await live.nlOpener("rec-quiet-zh", "zh");
+  files["home_summary_quiet.json"] = await live.getHome("en");
 });
 files["home_alerts_day34.json"] = await live.getAlerts();
+files["home_summary_day34.json"] = await live.getHome("en");
 files["home_state_day34.json"] = await live.getState();
 // The reconciliation after the day-2 bank receipt (it carries the bank's reference).
 files["home_reconciliation_day34.json"] = await live.getReconciliation();
@@ -302,6 +312,7 @@ files["home_act.json"] = await live.actOnAlert(reserve.id, {
 });
 if (files["home_act.json"].results[0]?.status !== "PENDING_APPROVAL") throw new Error("the day-34 cure no longer waits for approval: the demo path has changed");
 files["home_opener_pending.json"] = await live.nlOpener("rec-home-pending", "en");
+files["home_summary_pending.json"] = await live.getHome("en");
 files["home_approval_pending.json"] = (await live.getApprovals())[0];
 // The owner approves on the approval card: the same operation executes (EXECUTED, the cash lands on day 37) and the alert clears.
 files["home_approval_approved.json"] = await live.decideApproval(files["home_approval_pending.json"].id, "APPROVE");
@@ -309,6 +320,7 @@ files["home_approve.json"] = { operations: await ledgerTail(1) };
 files["home_alerts_after.json"] = await live.getAlerts();
 files["home_state_after_approve.json"] = await live.getState();
 files["home_opener_after_approve.json"] = await live.nlOpener("rec-home-after", "en");
+files["home_summary_after.json"] = await live.getHome("en");
 // The mandate's last day is 90: MANDATE_EXPIRING is a WARNING 14 days before (recorded at day 80) and CRITICAL once it has passed (day 95).
 await live.advanceClock(80 - 34);
 files["home_alerts_mandate_warning.json"] = await live.getAlerts();

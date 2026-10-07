@@ -67,7 +67,10 @@ function Terms({ op, commitment, loaded }: { op: ApprovalOperation; commitment: 
   );
 }
 
-/** One Tier-2 queue row: collapsed it shows subject, amount, tier and reason; expanded, everything the server sent about it. */
+/**
+ * One approval as a question the owner can answer: what, how much, what it costs, when the money moves, why it needs them
+ * and what happens after. Ids, the tier, the operation id and the terms sit under "Audit details".
+ */
 export function ApprovalCard({
   a,
   commitments,
@@ -87,7 +90,10 @@ export function ApprovalCard({
   const { t, te } = useI18n();
   const [open, setOpen] = useState(false);
   const isPending = a.status === "PENDING";
-  const shownResult = resultMessage || a.result_message || null;
+  const p = a.presentation;
+  // The queue's presentation says the result in business words (names, distances from today); the raw executor message
+  // the page kept from the decision is the fallback until the queue has been read again.
+  const shownResult = p?.result_message || resultMessage || a.result_message || null;
   const op = a.operation;
   const detailId = `approval-${a.id}-detail`;
   const wantsTerms = op?.kind === "ACCEPT_OFFER" || op?.kind === "RECORD_COMMITMENT";
@@ -98,25 +104,79 @@ export function ApprovalCard({
   if (op?.offer_id) names.push({ k: t("appr.offer"), v: `${op.offer_id} v${op.offer_version ?? "?"}` });
   if (op?.commitment_id) names.push({ k: t("appr.commitment"), v: op.commitment_id });
 
+  const facts: { k: string; v: React.ReactNode }[] = [];
+  if (a.amount_display) facts.push({ k: t("biz.amount"), v: a.amount_display });
+  if (p?.cost_display) {
+    facts.push({
+      k: t("biz.cost"),
+      v: (
+        <span data-testid="approval-cost">
+          {p.cost_display}
+          {p.rate_text ? <span className="ml-1 font-normal text-ink-3">{t("biz.costRateOnly", { rate: p.rate_text })}</span> : null}
+        </span>
+      ),
+    });
+  }
+  if (p?.lands_day !== null && p?.lands_day !== undefined) facts.push({ k: t("biz.lands"), v: <span data-testid="approval-lands">{p.lands_when ?? t("common.dayN", { n: p.lands_day })}</span> });
+  if (p?.facility_name) facts.push({ k: t("biz.source"), v: p.facility_name });
+  if (p?.invoice) facts.push({ k: t("biz.invoice"), v: p.invoice });
+
   return (
     <Card
       id={`approval-${a.id}`}
       tone={isPending ? "warn" : undefined}
-      title={a.subject}
-      subtitle={`${a.id} · ${te("opkind", a.operation_kind)} · ${te("actor", a.requested_by)} · ${t("appr.created", { day: a.created_day })}`}
+      title={<span data-testid="approval-headline">{p?.headline ?? a.subject}</span>}
+      subtitle={p?.what ?? `${a.id} · ${te("opkind", a.operation_kind)}`}
       actions={<Badge tone={statusTone[a.status]}>{te("apprstatus", a.status)}</Badge>}
     >
-      <div className="flex flex-wrap items-center gap-2">
-        <TierBadge tier={a.tier} />
-        {a.amount_display ? <span className="text-lg font-semibold tabular-nums">{a.amount_display}</span> : null}
-      </div>
-      <p className="mt-2 text-sm text-ink-2" data-testid="approval-reason">
-        {a.reason || a.detail}
-      </p>
+      <KeyValueList items={facts} />
+      <dl className="mt-3 space-y-2 text-sm">
+        <div>
+          <dt className="text-xs font-medium text-ink-3">{t("appr.why")}</dt>
+          <dd className="text-ink" data-testid="approval-reason">
+            {p?.reason || a.reason || a.detail}
+          </dd>
+        </div>
+        {p?.protects ? (
+          <div>
+            <dt className="text-xs font-medium text-ink-3">{t("biz.after")}</dt>
+            <dd className="text-ink" data-testid="approval-after">
+              {p.protects}
+            </dd>
+          </div>
+        ) : null}
+        {isPending ? (
+          <div>
+            <dt className="text-xs font-medium text-ink-3">{t("biz.ifDecline")}</dt>
+            <dd className="text-ink-2" data-testid="approval-if-decline">{p?.if_decline || t("biz.ifDecline.body")}</dd>
+          </div>
+        ) : null}
+      </dl>
+
+      {isPending ? (
+        <div className="mt-4 flex flex-wrap gap-2">
+          <Button variant="primary" loading={busyId === `${a.id}:APPROVE`} disabled={busyId !== null} onClick={() => onDecide(a.id, "APPROVE")}>
+            {a.amount_display ? t("appr.approveAmount", { amount: a.amount_display }) : t("appr.approve")}
+          </Button>
+          <Button variant="secondary" loading={busyId === `${a.id}:REJECT`} disabled={busyId !== null} onClick={() => onDecide(a.id, "REJECT")}>
+            {t("appr.reject")}
+          </Button>
+        </div>
+      ) : (
+        // The day of a decision is shown only when the API recorded it for that decision.
+        <p className="mt-3 text-xs text-ink-3" data-testid={`approval-decided-${a.id}`}>
+          {p?.decided_when ? t("appr.decidedWhen", { when: p.decided_when }) : a.decided_day !== null && a.decided_day !== undefined ? t("appr.decidedOn", { day: a.decided_day }) : t("appr.decided")}
+        </p>
+      )}
+      {shownResult ? (
+        <p className="mt-2 text-sm font-medium text-ink" role="status" data-testid={`approval-result-${a.id}`}>
+          {t("appr.result")}: {shownResult}
+        </p>
+      ) : null}
 
       <button
         type="button"
-        className="mt-3 inline-flex min-h-8 items-center gap-1 text-sm font-medium text-brand-700 underline underline-offset-2"
+        className="mt-4 inline-flex min-h-8 items-center gap-1 text-sm font-medium text-brand-700 underline underline-offset-2"
         aria-expanded={open}
         aria-controls={detailId}
         onClick={() => setOpen((v) => !v)}
@@ -132,6 +192,7 @@ export function ApprovalCard({
             <h3 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-ink-3">{t("appr.what")}</h3>
             <KeyValueList
               items={[
+                { k: t("common.id"), v: <span className="font-mono text-xs">{a.id}</span> },
                 { k: t("appr.operation"), v: te("opkind", a.operation_kind) || a.operation_kind },
                 ...names,
                 ...(a.amount_display ? [{ k: t("item.amount"), v: a.amount_display }] : []),
@@ -139,19 +200,17 @@ export function ApprovalCard({
                   k: t("appr.requested"),
                   v: t("appr.requestedValue", { day: a.created_day, who: te("actor", op?.requested_by ?? a.requested_by) }),
                 },
+                { k: t("ledger.tier"), v: <span className="inline-flex items-center gap-2"><TierBadge tier={a.tier} /> <span className="text-xs text-ink-2">{te("tier.short", a.tier)}</span></span> },
                 ...(a.op_id ? [{ k: t("appr.opId"), v: <span className="font-mono text-xs">{a.op_id}</span> }] : []),
               ]}
             />
           </section>
-
-          <section aria-label={t("appr.why")}>
-            <h3 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-ink-3">{t("appr.why")}</h3>
-            <p className="text-sm">{a.reason}</p>
-            <p className="mt-1 text-xs text-ink-2">
-              {te("tier", a.tier)} · {te("tier.short", a.tier)}
-            </p>
-          </section>
-
+          {a.reason && p?.reason && a.reason !== p.reason ? (
+            <section aria-label={t("appr.why")}>
+              <h3 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-ink-3">{t("biz.executorWords")}</h3>
+              <p className="text-sm text-ink-2">{a.reason}</p>
+            </section>
+          ) : null}
           {wantsTerms && op ? (
             <section aria-label={t("appr.terms")}>
               <h3 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-ink-3">{t("appr.terms")}</h3>
@@ -159,27 +218,6 @@ export function ApprovalCard({
             </section>
           ) : null}
         </div>
-      ) : null}
-
-      {isPending ? (
-        <div className="mt-4 flex flex-wrap gap-2">
-          <Button variant="primary" loading={busyId === `${a.id}:APPROVE`} disabled={busyId !== null} onClick={() => onDecide(a.id, "APPROVE")}>
-            {t("appr.approve")}
-          </Button>
-          <Button variant="secondary" loading={busyId === `${a.id}:REJECT`} disabled={busyId !== null} onClick={() => onDecide(a.id, "REJECT")}>
-            {t("appr.reject")}
-          </Button>
-        </div>
-      ) : (
-        // The day of a decision is shown only when the API recorded it for that decision.
-        <p className="mt-3 text-xs text-ink-3" data-testid={`approval-decided-${a.id}`}>
-          {a.decided_day !== null && a.decided_day !== undefined ? t("appr.decidedOn", { day: a.decided_day }) : t("appr.decided")}
-        </p>
-      )}
-      {shownResult ? (
-        <p className="mt-2 text-sm font-medium text-ink" role="status" data-testid={`approval-result-${a.id}`}>
-          {t("appr.result")}: {shownResult}
-        </p>
       ) : null}
     </Card>
   );

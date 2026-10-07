@@ -57,6 +57,9 @@ class TrajectoryView(BaseModel):
     min_cash: Money
     min_cash_day: int
     first_breach_day: int | None
+    # Cash on the first breach day: with `min_cash` on `min_cash_day` these are two different days' figures, and a
+    # page shows both named ("first breach", "worst point") rather than one number for two events.
+    first_breach_cash: Money | None = None
     days: list[DayView]
     months: list[MonthView]
     interest: Money
@@ -71,6 +74,8 @@ def trajectory_view(t: Trajectory, floor_fen: int) -> TrajectoryView:
         min_cash=Money.of(t.min_cash_fen),
         min_cash_day=t.min_cash_day,
         first_breach_day=t.first_breach_day,
+        first_breach_cash=next((Money.of(d.closing_fen) for d in t.days if d.day == t.first_breach_day), None)
+        if t.first_breach_day is not None else None,
         days=[
             DayView(
                 day=d.day,

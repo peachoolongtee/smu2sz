@@ -28,6 +28,7 @@ import type {
   CapexView,
   ClockView,
   FundingView,
+  HomeView,
   LedgerView,
   MandateView,
   Mode,
@@ -164,6 +165,11 @@ export async function nlOpener(sessionId: string | undefined, lang: "en" | "zh")
   return isMock ? (await mock()).nlOpener(sessionId, lang) : (await live()).nlOpener(sessionId, lang);
 }
 
+/** GET /home: the owner's home in business words (owner only). Every sentence and figure is the server's. */
+export async function getHome(lang: "en" | "zh", sinceDay: number | null = null): Promise<HomeView> {
+  return isMock ? (await mock()).getHome(lang) : (await live()).getHome(lang, sinceDay);
+}
+
 /** GET /clock: the simulated day. */
 export async function getClock(): Promise<ClockView> {
   return isMock ? (await mock()).getClock() : (await live()).clock();
@@ -204,9 +210,9 @@ export async function whatIf(params: WhatIfParams): Promise<WhatIfResult> {
   return isMock ? (await mock()).whatIf(params) : (await live()).whatIf(params);
 }
 
-/** POST /demo/reset */
-export async function demoReset(): Promise<void> {
-  return isMock ? (await mock()).demoReset() : (await live()).demoReset();
+/** POST /demo/reset (owner action). `scenario` picks the server fixture: the golden books by default, or `short_facilities`. */
+export async function demoReset(scenario?: string): Promise<void> {
+  return isMock ? (await mock()).demoReset(scenario) : (await live()).demoReset(scenario);
 }
 
 /** GET /borrower-file/{id}.html | .docx | .pdf: fetched with the owner token and saved. Live mode only. */

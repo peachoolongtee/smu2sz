@@ -41,9 +41,20 @@ export function toCashRows(base: Displayed<Trajectory>, cured: Displayed<Traject
   });
 }
 
+/** The lowest plotted fen across the drawn series, for the y axis only: a trough below zero must stay in the picture. */
+export function axisFloor(rows: CashRow[]): number {
+  let low = 0;
+  for (const r of rows) {
+    if (r.cash < low) low = r.cash;
+    if (r.cured !== null && r.cured < low) low = r.cured;
+  }
+  return low;
+}
+
 /** Axis tick label in thousands of yuan ("¥300k"). Axis scale only; never shown as a figure. */
 export function axisYuanK(fen: number): string {
-  return `¥${Math.round(fen / 100000)}k`;
+  const k = Math.round(Math.abs(fen) / 100000);
+  return `${fen < 0 ? "−" : ""}¥${k}k`;
 }
 
 /** Evenly spaced integer day ticks, for the x axis. */

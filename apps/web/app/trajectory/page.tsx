@@ -205,6 +205,7 @@ function TrajectoryBody({
       </div>
 
       <Card id="months" title={t("traj.months")} subtitle={t("traj.months.sub")}>
+        {tr.months.length ? <p className="mb-2 text-xs text-ink-3">{t("dscr.readingNote")}</p> : null}
         {tr.months.length ? (
           <TableWrap label={t("traj.months")}>
             <table className={tableCls}>

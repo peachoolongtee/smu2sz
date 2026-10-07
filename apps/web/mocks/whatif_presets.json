@@ -457,6 +457,11 @@
           },
           "min_cash_day": 60,
           "first_breach_day": 47,
+          "first_breach_cash": {
+            "fen": 20996000,
+            "text": "¥209,960.00",
+            "display": "¥209,960.00"
+          },
           "months": [
             {
               "month": 1,
@@ -2700,6 +2705,11 @@
           },
           "min_cash_day": 30,
           "first_breach_day": 20,
+          "first_breach_cash": {
+            "fen": 19501380,
+            "text": "¥195,013.80",
+            "display": "¥195,013.80"
+          },
           "months": [
             {
               "month": 1,
@@ -4928,6 +4938,11 @@
           },
           "min_cash_day": 30,
           "first_breach_day": 12,
+          "first_breach_cash": {
+            "fen": 6000000,
+            "text": "¥60,000.00",
+            "display": "¥60,000.00"
+          },
           "months": [
             {
               "month": 1,
@@ -7144,6 +7159,11 @@
           },
           "min_cash_day": 30,
           "first_breach_day": 12,
+          "first_breach_cash": {
+            "fen": 6000000,
+            "text": "¥60,000.00",
+            "display": "¥60,000.00"
+          },
           "months": [
             {
               "month": 1,
@@ -9350,6 +9370,11 @@
           },
           "min_cash_day": 30,
           "first_breach_day": 12,
+          "first_breach_cash": {
+            "fen": 6000000,
+            "text": "¥60,000.00",
+            "display": "¥60,000.00"
+          },
           "months": [
             {
               "month": 1,
@@ -11577,6 +11602,11 @@
           },
           "min_cash_day": 30,
           "first_breach_day": 12,
+          "first_breach_cash": {
+            "fen": 6000000,
+            "text": "¥60,000.00",
+            "display": "¥60,000.00"
+          },
           "months": [
             {
               "month": 1,
@@ -13843,6 +13873,7 @@
           },
           "min_cash_day": 30,
           "first_breach_day": null,
+          "first_breach_cash": null,
           "months": [
             {
               "month": 1,
@@ -15118,6 +15149,7 @@
           },
           "min_cash_day": 30,
           "first_breach_day": null,
+          "first_breach_cash": null,
           "months": [
             {
               "month": 1,
@@ -16352,6 +16384,11 @@
           },
           "min_cash_day": 30,
           "first_breach_day": 12,
+          "first_breach_cash": {
+            "fen": 6000000,
+            "text": "¥60,000.00",
+            "display": "¥60,000.00"
+          },
           "months": [
             {
               "month": 1,
@@ -18598,6 +18635,7 @@
           },
           "min_cash_day": 30,
           "first_breach_day": null,
+          "first_breach_cash": null,
           "months": [
             {
               "month": 1,
@@ -19853,6 +19891,7 @@
           },
           "min_cash_day": 30,
           "first_breach_day": null,
+          "first_breach_cash": null,
           "months": [
             {
               "month": 1,
@@ -21105,6 +21144,11 @@
           },
           "min_cash_day": 30,
           "first_breach_day": 12,
+          "first_breach_cash": {
+            "fen": 6000000,
+            "text": "¥60,000.00",
+            "display": "¥60,000.00"
+          },
           "months": [
             {
               "month": 1,
@@ -23379,6 +23423,11 @@
           },
           "min_cash_day": 30,
           "first_breach_day": 12,
+          "first_breach_cash": {
+            "fen": 6000000,
+            "text": "¥60,000.00",
+            "display": "¥60,000.00"
+          },
           "months": [
             {
               "month": 1,
@@ -25692,6 +25741,11 @@
           },
           "min_cash_day": 60,
           "first_breach_day": 47,
+          "first_breach_cash": {
+            "fen": 20996000,
+            "text": "¥209,960.00",
+            "display": "¥209,960.00"
+          },
           "months": [
             {
               "month": 1,
@@ -27950,6 +28004,11 @@
           },
           "min_cash_day": 30,
           "first_breach_day": 12,
+          "first_breach_cash": {
+            "fen": 6000000,
+            "text": "¥60,000.00",
+            "display": "¥60,000.00"
+          },
           "months": [
             {
               "month": 1,
@@ -30239,6 +30298,11 @@
           },
           "min_cash_day": 30,
           "first_breach_day": 12,
+          "first_breach_cash": {
+            "fen": 6000000,
+            "text": "¥60,000.00",
+            "display": "¥60,000.00"
+          },
           "months": [
             {
               "month": 1,
@@ -32567,6 +32631,11 @@
           },
           "min_cash_day": 90,
           "first_breach_day": 47,
+          "first_breach_cash": {
+            "fen": 20996000,
+            "text": "¥209,960.00",
+            "display": "¥209,960.00"
+          },
           "months": [
             {
               "month": 1,
@@ -34875,6 +34944,11 @@
           },
           "min_cash_day": 90,
           "first_breach_day": 47,
+          "first_breach_cash": {
+            "fen": 20996000,
+            "text": "¥209,960.00",
+            "display": "¥209,960.00"
+          },
           "months": [
             {
               "month": 1,

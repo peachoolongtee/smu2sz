@@ -9,10 +9,15 @@ from dataclasses import asdict
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from pydantic import BaseModel, TypeAdapter, ValidationError
 
+from app.alerts import alerts
 from app.api.auth import is_bank_feed, log_refusal, require_owner, require_owner_or_agent
+from app.api.presentation import approval_words, in_words, relative_days
 from app.api.runtime import get_runtime
+from app.books import current_books
 from app.domain.models import Actor, Operation, OperationStatus
 from app.domain.money import fmt_yuan
+from app.financial import EngineError
+from app.funding.recommend import cost_lines_by_leg, runnable_plan
 from app.operations import security_summary
 from app.operations.log import read_entries
 from app.persistence import ApprovalAlreadyDecided
@@ -59,6 +64,20 @@ def approvals_queue() -> dict:
     rt = get_runtime()
     out = []
     ran = _decision_runs(rt.store.operations())
+    state = rt.store.get_state()
+    # The alerts whose cures are queued carry the engine's price for them; read once, only when something is pending.
+    open_alerts: dict = {}
+    plan_costs: dict = {}
+    if any(str(getattr(a.status, "value", a.status)) == "PENDING" for a in rt.store.approvals()):
+        try:
+            with rt.lock:
+                open_alerts = {al.id: al for al in alerts(state, rt.store.get_mandate(), rt.store, rt.day)}
+                if rt.settings.features.debt_desk:  # a queued leg of the recommended router plan carries its cost line
+                    books = current_books(state, rt.store.commitments())
+                    plan = runnable_plan(books.state, books.with_([]), rt.store.get_mandate())
+                    plan_costs = cost_lines_by_leg(plan) if plan is not None else {}
+        except EngineError:
+            open_alerts = {}
     for a in rt.store.approvals():
         d = asdict(a)
         d["status"] = str(getattr(a.status, "value", a.status))
@@ -75,6 +94,14 @@ def approvals_queue() -> dict:
         if d.get("decided_day") is None and run is not None:  # decided before the record kept the day
             d["decided_day"] = run.result.effective_day
         d["result_message"] = run.result.message if run is not None else None
+        # Presentation fields (business words) for the owner's card: the question, names, cost and landing day.
+        alert = open_alerts.get((a.op_id or "").split(":")[1]) if (a.op_id or "").startswith("alert:") else None
+        d["presentation"] = approval_words(state, op, a.kind, rt.day, alert, "en", plan_costs)
+        d["presentation"]["reason"] = relative_days(in_words(state, a.reason), rt.day, "en")
+        d["presentation"]["result_message"] = (relative_days(in_words(state, d["result_message"]), rt.day, "en")
+                                               if d["result_message"] else None)
+        d["presentation"]["decided_when"] = (relative_days(f"on day {d['decided_day']}", rt.day, "en")
+                                             if d.get("decided_day") is not None else None)
         out.append(d)
     return {"approvals": out}
 

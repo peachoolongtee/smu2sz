@@ -130,6 +130,9 @@ def test_compare_rows(rows, g):
     line_only = rows["line_only"]
     assert line_only.result == ComparisonResult.NOT_ADMISSIBLE
     assert line_only.reasons == [ViolationCode.RESERVE_BREACH] and line_only.breach_day == 12
+    # what the line alone leaves uncovered (display only): ¥90,000 short on day 12, ¥255,000 at the deepest, day 30
+    assert line_only.shortfall_fen == 25_500_000 and line_only.worst_day == 30
+    assert rows["line_guaranteed_loan"].shortfall_fen is None and rows["router_optimum"].shortfall_fen is None
     ggl = rows["line_guaranteed_loan"]
     assert ggl.result == ComparisonResult.NOT_ADMISSIBLE
     assert ggl.reasons == [ViolationCode.UNCOMMITTED_FACILITY, ViolationCode.LEAD_TIME_TOO_LONG]

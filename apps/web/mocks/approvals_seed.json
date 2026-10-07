@@ -25,6 +25,23 @@
     "amount_display": "¥600,000.00",
     "detail": "apply for facility FAC-ETL (¥600,000.00)",
     "decided_day": null,
-    "result_message": null
+    "result_message": null,
+    "presentation": {
+      "headline": "Approve ¥600,000.00 of facility application?",
+      "what": "Apply for ¥600,000.00 on Equipment term loan",
+      "facility_name": "Equipment term loan",
+      "buyer_name": null,
+      "invoice": null,
+      "cost_display": null,
+      "rate_text": null,
+      "cost_due_day": null,
+      "lands_day": null,
+      "lands_when": null,
+      "if_decline": "Nothing runs; the request is closed.",
+      "protects": null,
+      "reason": "apply for facility Equipment term loan (¥600,000.00)",
+      "result_message": null,
+      "decided_when": null
+    }
   }
 }

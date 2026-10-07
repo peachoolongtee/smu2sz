@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { ApprovalCard } from "@/components/approval-card";
+import { NextStep } from "@/components/next-step";
 import { Badge, Callout, EmptyState, ErrorState, LoadingBlock, PageHeader } from "@/components/ui";
 import { ApiError, apiMode, decideApproval, getApprovals, getLedger } from "@/lib/api";
 import { bump } from "@/lib/demo-store";
@@ -55,6 +56,7 @@ export default function ApprovalsPage() {
         subtitle={t("appr.subtitle")}
         actions={list.data ? <Badge tone={pending ? "warn" : "neutral"}>{t("appr.pending", { n: pending })}</Badge> : undefined}
       />
+      {pending ? <NextStep label={t("next.label")}>{t("biz.appr.next")}</NextStep> : null}
       <div className="mb-4">
         <Callout tone="info">
           {t("appr.note")} {apiMode === "live" ? t("appr.ownerNote") : null}

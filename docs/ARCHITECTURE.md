@@ -165,7 +165,7 @@ SQLAlchemy 2. Tests and local dev use SQLite (`DATABASE_URL=sqlite:///...`); dep
 
 ## Frontend
 
-`apps/web` is Next.js + TypeScript + Tailwind, with Recharts for charts. **It never computes money**; it displays server-formatted strings. API types are generated from FastAPI's OpenAPI schema with `openapi-typescript`. Labels are in English and Chinese.
+`apps/web` is Next.js + TypeScript + Tailwind, with Recharts for charts. **It never computes money**; it displays server-formatted strings. Two shells since 5 Oct: Business (the owner's product, fed by the presentation read `GET /home` in `app/api/home.py` and the `presentation` fields on `GET /approvals/queue`) and Demo (the story and the engine views); see `docs/UX_AUDIT.md`. API types are generated from FastAPI's OpenAPI schema with `openapi-typescript`. Labels are in English and Chinese.
 
 ## Git workflow
 

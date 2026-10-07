@@ -2,7 +2,7 @@
 
 import { useI18n } from "@/lib/i18n";
 import type { Displayed, FundingPlan } from "@/lib/types";
-import { CodeBadge } from "./badges";
+import { PlainCode } from "./badges";
 import { PlanNotes } from "./plan-notes";
 import { Badge, Card, Formula, TableWrap, tableCls, tdCls, thCls } from "./ui";
 
@@ -54,7 +54,7 @@ export function PlanCard({
               <tr>
                 <th scope="col" className={thCls}>{t("plan.action")}</th>
                 <th scope="col" className={thCls}>{t("plan.facility")}</th>
-                <th scope="col" className={thCls}>{t("plan.requested")}</th>
+                <th scope="col" className={thCls}>{plan.executable_now === false ? t("plan.availableFrom") : t("plan.requested")}</th>
                 <th scope="col" className={thCls}>{t("plan.lands")}</th>
                 <th scope="col" className={`${thCls} text-right`}>{t("common.amount")}</th>
                 <th scope="col" className={thCls}>{t("plan.repay")}</th>
@@ -68,7 +68,9 @@ export function PlanCard({
                     {a.facility_id}
                     {a.receivable_id ? ` · ${a.receivable_id}` : ""}
                   </td>
-                  <td className={`${tdCls} tabular-nums`}>{t("common.dayN", { n: a.day })}</td>
+                  <td className={`${tdCls} tabular-nums`} data-testid="plan-available-from">
+                    {t("common.dayN", { n: a.available_from_day ?? a.day })}
+                  </td>
                   <td className={`${tdCls} tabular-nums`} data-testid="plan-lands">
                     {landing(a) !== null ? t("common.dayN", { n: landing(a) ?? 0 }) : t("common.none")}
                   </td>
@@ -111,7 +113,7 @@ export function PlanCard({
           <ul className="space-y-2">
             {plan.violations.map((v) => (
               <li key={v.code} className="rounded-lg border border-warn-line bg-warn-bg px-3 py-2 text-sm text-warn-fg">
-                <CodeBadge code={v.code} tone="warn" /> <span className="ml-1">{v.message}</span>
+                <PlainCode code={v.code} tone="warn" /> <span className="ml-1">{v.message}</span>
                 {v.cure_note ? <p className="mt-1 text-xs">{v.cure_note}</p> : null}
               </li>
             ))}
@@ -129,7 +131,7 @@ export function PlanCard({
                   {r.reasons.length ? (
                     <div className="mt-1 flex flex-wrap gap-1">
                       {r.reasons.map((c) => (
-                        <CodeBadge key={c} code={c} tone="bad" />
+                        <PlainCode key={c} code={c} tone="bad" />
                       ))}
                     </div>
                   ) : null}

@@ -2,16 +2,15 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
-import { demoReset } from "@/lib/api";
 import { onSignedIn } from "@/lib/auth";
-import { ApiError } from "@/lib/errors";
-import { clearDemo, demoStore, useDemo } from "@/lib/demo-store";
+import { backStep, goToStep, resetDemo } from "@/lib/demo-control";
+import { demoStore, useDemo } from "@/lib/demo-store";
 import { DEMO_STEPS, SCENES } from "@/lib/demo";
 import { useI18n } from "@/lib/i18n";
 import { ArrowLeftIcon, ArrowRightIcon, ResetIcon } from "./icons";
 import { Button } from "./ui";
 
-/** Global "Demo" stepper: Scene 1 -> Scene 2 -> Scene 3 -> Security, with reset. */
+/** The guided story's control bar, Demo mode only: Scene 1 -> Scene 2 -> Scene 3 -> Security, with reset. */
 export function DemoStepper() {
   const { t, te } = useI18n();
   const router = useRouter();
@@ -24,24 +23,9 @@ export function DemoStepper() {
   const interrupted = useRef<number | null>(null);
 
   async function goTo(target: number) {
-    if (demoStore.get().busy || target < 0 || target > last) return;
     interrupted.current = null;
-    demoStore.set((s) => ({ ...s, busy: true, error: null }));
-    try {
-      await DEMO_STEPS[target].run();
-      demoStore.set((s) => ({ ...s, step: target, busy: false }));
-      const route = DEMO_STEPS[target].route;
-      router.push(route);
-      const hash = route.split("#")[1];
-      if (hash) requestAnimationFrame(() => document.getElementById(hash)?.scrollIntoView({ block: "start" }));
-    } catch (e) {
-      if (e instanceof ApiError && e.status === 401) {
-        interrupted.current = target;
-        demoStore.set((s) => ({ ...s, busy: false }));
-        return;
-      }
-      demoStore.set((s) => ({ ...s, busy: false, error: e instanceof Error ? e.message : String(e) }));
-    }
+    const outcome = await goToStep(target, router.push);
+    if (outcome === "unauthorized") interrupted.current = target;
   }
 
   useEffect(
@@ -54,27 +38,6 @@ export function DemoStepper() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
   );
-
-  function back() {
-    const target = step - 1;
-    if (target < 0 || demoStore.get().busy) return;
-    demoStore.set((s) => ({ ...s, step: target, error: null }));
-    router.push(DEMO_STEPS[target].route);
-  }
-
-  async function reset() {
-    if (demoStore.get().busy) return;
-    demoStore.set((s) => ({ ...s, busy: true, error: null }));
-    try {
-      await demoReset();
-      clearDemo();
-      router.push("/mandate");
-    } catch (e) {
-      // A 401 has opened the sign-in dialog; Reset stays a deliberate click.
-      const unauthorized = e instanceof ApiError && e.status === 401;
-      demoStore.set((s) => ({ ...s, busy: false, error: unauthorized ? null : e instanceof Error ? e.message : String(e) }));
-    }
-  }
 
   const nextLabel = step < 0 ? t("demo.start") : t("demo.next");
 
@@ -127,7 +90,7 @@ export function DemoStepper() {
         </div>
 
         <div className="flex items-center gap-1.5">
-          <Button size="sm" variant="ghost" onClick={back} disabled={demo.busy || step <= 0} aria-label={t("demo.back")}>
+          <Button size="sm" variant="ghost" onClick={() => backStep(router.push)} disabled={demo.busy || step <= 0} aria-label={t("demo.back")}>
             <ArrowLeftIcon />
             <span className="hidden sm:inline">{t("demo.back")}</span>
           </Button>
@@ -142,7 +105,7 @@ export function DemoStepper() {
             {nextLabel}
             <ArrowRightIcon />
           </Button>
-          <Button size="sm" variant="secondary" onClick={() => void reset()} disabled={demo.busy} data-testid="demo-reset">
+          <Button size="sm" variant="secondary" onClick={() => void resetDemo(router.push)} disabled={demo.busy} data-testid="demo-reset">
             <ResetIcon />
             {t("demo.reset")}
           </Button>
@@ -153,6 +116,7 @@ export function DemoStepper() {
           {demo.error}
         </p>
       ) : null}
+      {demoStore.get().busy ? null : null}
     </div>
   );
 }

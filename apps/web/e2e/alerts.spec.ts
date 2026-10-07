@@ -6,14 +6,15 @@ import { resetBooks } from "./helpers";
  * Runs in both projects: mock mode serves a recording of the same server output, live mode calls the API.
  */
 
-test("alerts: the day-12 reserve breach shows its amounts, formula and committed cure", async ({ page, request }) => {
+test("alerts: the day-12 reserve breach shows its amounts, formula and fix", async ({ page, request }) => {
   await resetBooks(request);
   await page.goto("/alerts");
   await expect(page.getByRole("heading", { name: "Cash-flow alerts", level: 1 })).toBeVisible();
 
   await expect(page.getByTestId("alert-count-CRITICAL")).toContainText("1 Critical");
   await expect(page.getByRole("heading", { name: "Reserve breach ahead on day 12" })).toBeVisible();
-  await expect(page.getByText("A committed cure exists", { exact: true })).toBeVisible();
+  await expect(page.getByText("A fix the agent can run exists", { exact: true })).toBeVisible();
+  await expect(page.getByText("Cash will drop below your minimum cash reserve", { exact: true })).toBeVisible();
   // Every figure is the server's string: the shortfall, and the two suggested operations (never auto-executed).
   await expect(page.getByText("¥240,000.00").first()).toBeVisible();
   await expect(page.getByText("¥150,000.00").first()).toBeVisible();

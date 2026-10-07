@@ -38,6 +38,9 @@ test("demo stepper walks Scene 1, Scene 2, Scene 3 and Security with the golden 
   await expect(page.getByText("¥28,326.92").first()).toBeVisible();
   await expect(page.getByText(/day 47/i).first()).toBeVisible();
   await expect(page.getByText("¥209,960.00").first()).toBeVisible();
+  // The floor and the concession meter are named in plain words; the figures beside them are the server's.
+  await expect(page.getByText("Minimum cash reserve").first()).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Future give-aways" })).toBeVisible();
 
   await next(page, /\/funding/);
   await expect(page.getByText("10.8417%").first()).toBeVisible();
@@ -54,6 +57,12 @@ test("demo stepper walks Scene 1, Scene 2, Scene 3 and Security with the golden 
   await expect(page.getByTestId("outcome-badge")).toContainText("REJECT");
   await expect(page.getByTestId("violation-AGG_CONCESSION_EXCEEDED")).toContainText("¥28,326.92");
   await expect(page.getByTestId("violation-RESERVE_BREACH")).toContainText(/day 47/i);
+  // The plain name leads and the code sits behind a disclosure.
+  const reserve = page.getByTestId("violation-RESERVE_BREACH");
+  await expect(reserve.getByText("Cash drops below your minimum cash reserve")).toBeVisible();
+  await expect(reserve.getByText("RESERVE_BREACH", { exact: true })).toBeHidden();
+  await reserve.getByText("Code", { exact: true }).click();
+  await expect(reserve.getByText("RESERVE_BREACH", { exact: true })).toBeVisible();
   // Four codes in both modes (the mock is recorded from the live API).
   await expect(page.getByTestId("violation-DISCOUNT_ABOVE_BREAK_EVEN")).toBeVisible();
   await expect(page.getByTestId("violation-EARLY_PAY_DEARER_THAN_PLAN")).toBeVisible();
@@ -69,7 +78,8 @@ test("demo stepper walks Scene 1, Scene 2, Scene 3 and Security with the golden 
 
   await next(page, /\/ledger/);
   await expect(page.getByTestId("chain-status")).toContainText("Chain valid");
-  await expect(page.getByText("Draw facility").first()).toBeVisible();
+  await expect(page.getByText("Borrow from a credit line").first()).toBeVisible();
+  await expect(page.getByText("Within the mandate; the agent may act.").first()).toBeVisible();
 
   // Scene 2: the buyer walks, the gap is still covered.
   await next(page, /\/verdict/);
@@ -81,7 +91,7 @@ test("demo stepper walks Scene 1, Scene 2, Scene 3 and Security with the golden 
   await expect(page.getByText("¥3,938.81").first()).toBeVisible();
 
   await next(page, /\/ledger/);
-  await expect(page.getByText("Submit invoice for financing").first()).toBeVisible();
+  await expect(page.getByText("Get cash early on an invoice").first()).toBeVisible();
   await expect(page.getByTestId("chain-status")).toContainText("Chain valid");
 
   await next(page, /\/verdict/);
@@ -102,7 +112,7 @@ test("demo stepper walks Scene 1, Scene 2, Scene 3 and Security with the golden 
 
   await next(page, /\/approvals/);
   // The queue reason, as the server words it.
-  await expect(page.getByText(/apply for facility FAC-ETL/i).first()).toBeVisible();
+  await expect(page.getByText(/apply for facility Equipment term loan/i).first()).toBeVisible();
 
   // Security: the FastCapital message.
   await next(page, /\/security/);
@@ -156,7 +166,7 @@ test("reset clears the session", async ({ page }) => {
   await page.getByTestId("demo-next").click();
   await expect(page).toHaveURL(/\/inbox/);
   await page.getByTestId("demo-reset").click();
-  await expect(page).toHaveURL(/\/mandate/);
+  await expect(page).toHaveURL(/\/demo/);
   await page.goto("/ledger");
   await expect(page.getByText("No operations yet")).toBeVisible();
 });

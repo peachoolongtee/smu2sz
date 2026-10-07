@@ -30,7 +30,8 @@ export default defineConfig({
   workers: 1,
   retries: 0,
   reporter: [["list"]],
-  use: { trace: "retain-on-failure" },
+  // PW_CHROMIUM_PATH points at a pre-installed Chromium when the pinned browser build is not downloadable (cloud sessions).
+  use: { trace: "retain-on-failure", ...(process.env.PW_CHROMIUM_PATH ? { launchOptions: { executablePath: process.env.PW_CHROMIUM_PATH } } : {}) },
   projects: [
     ...(wantMock
       ? [
@@ -41,7 +42,7 @@ export default defineConfig({
           },
           {
             name: "phone",
-            testMatch: /responsive\.spec\.ts/,
+            testMatch: /(responsive|screenshots)\.spec\.ts/,
             use: { ...devices["Pixel 7"], baseURL: `http://localhost:${MOCK_PORT}` },
           },
         ]

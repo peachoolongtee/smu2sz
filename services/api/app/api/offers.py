@@ -4,12 +4,12 @@ from __future__ import annotations
 
 import json
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, Header, HTTPException
 from pydantic import BaseModel
 
-from app.api.auth import require_owner
+from app.api.auth import counterparty_for_key, is_agent, require_owner
 from app.api.display import displayed
-from app.api.runtime import get_runtime
+from app.api.runtime import Runtime, get_runtime
 from app.compiler import compile_offer, compile_term_sheet
 from app.domain.fixtures import load_offers, offer_documents
 from app.domain.models import SourceDocument
@@ -36,11 +36,35 @@ def _docs(body: OfferIn) -> tuple[list[SourceDocument], str]:
     return docs, body.counterparty_id or docs[0].sender_id
 
 
+def enforce_intake_cap(rt: Runtime, route: str, claimed: str | None) -> None:
+    """R04 and R05: an unauthenticated intake over today's cap is refused (429) and logged as one security event.
+    The caller has already established that no owner token, agent key or valid channel key was presented."""
+    import hashlib
+
+    from app.domain.models import SecurityEvent, SecurityEventKind
+
+    with rt.lock:
+        if rt.take_intake_slot():
+            return
+        key = f"intake-capped {route} {claimed} {rt.day} {len(rt.store.security_events())}"
+        rt.store.add_security_event(SecurityEvent(
+            id="SEC-INTAKE-" + hashlib.sha256(key.encode()).hexdigest()[:12], day=rt.day,
+            kind=SecurityEventKind.PRIVILEGE_ESCALATION, counterparty_id=claimed,
+            action_taken="request refused before reaching any module",
+            detail=f"unauthenticated intake over the daily cap of {rt.settings.intake_cap_per_day}: {route}"))
+    raise HTTPException(429, {"code": "INTAKE_CAPPED",
+                              "message": "too many unauthenticated submissions today; try again tomorrow or use a channel key"})
+
+
 @router.post("/offers")
-def post_offer(body: OfferIn) -> dict:
+def post_offer(body: OfferIn, x_owner_token: str | None = Header(default=None),
+               x_agent_key: str | None = Header(default=None),
+               x_counterparty_key: str | None = Header(default=None)) -> dict:
+    rt = get_runtime()
+    if not (rt.is_owner(x_owner_token) or is_agent(x_agent_key) or counterparty_for_key(x_counterparty_key)):
+        enforce_intake_cap(rt, "POST /offers", body.counterparty_id)
     docs, cp = _docs(body)
     offer = compile_offer(docs, cp)
-    rt = get_runtime()
     try:
         rt.store.put_offer(offer)
     except OfferVersionConflict:

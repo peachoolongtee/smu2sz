@@ -395,6 +395,8 @@ export interface FundingAction {
   rate_bp: Bp | null;
   /** The day the cash lands (DRAW and FINANCE_INVOICE in a router plan's actions); null or absent otherwise. Comparison rows carry the key but, today, always as null. */
   lands_day?: Day | null;
+  /** The first day the executor could run the leg: the invoice's issue day for an advance on an invoice not yet issued, else the request day. Display only. */
+  available_from_day?: Day | null;
 }
 
 export type Mode = "CONSERVATIVE" | "EXPECTED";
@@ -457,6 +459,8 @@ export interface Trajectory {
 
 export type ViolationCode =
   | "AGG_CONCESSION_EXCEEDED"
+  | "DISCOUNT_ABOVE_BREAK_EVEN"
+  | "EARLY_PAY_DEARER_THAN_PLAN"
   | "PER_BUYER_CAP_EXCEEDED"
   | "IMMEDIATE_DISCOUNT_EXCEEDED"
   | "RESERVE_BREACH"
@@ -512,6 +516,8 @@ export interface CostLine {
   /** False when the executor cannot run the leg today (an advance on an invoice that is not issued yet). */
   executable_now?: boolean;
   not_executable_reason?: string;
+  /** When `executable_now` is false: the first day every leg could run. */
+  available_from_day?: Day | null;
 }
 
 export interface RejectedCandidate {
@@ -557,6 +563,8 @@ export interface CounterProposal {
   text: string;
   obligations: Obligation[];
   supplier_cost_fen: Fen;
+  /** The parts behind the floored supplier cost (a price adjustment's offset shows beside the funding cost it offsets). */
+  economics?: CounterEconomics | null;
   rationale: string;
   formula: string;
 }
@@ -710,6 +718,8 @@ export interface MoneyTrajectory {
   min_cash: MoneyView;
   min_cash_day: Day;
   first_breach_day: Day | null;
+  /** Cash on the first breach day: a different day's figure from `min_cash`, named separately wherever both show. */
+  first_breach_cash?: MoneyView | null;
   days: {
     day: Day;
     closing: MoneyView;
@@ -755,6 +765,8 @@ export interface AnnualisedLeg {
 
 /** POST /offers/{id}/evaluate. The optional members are live-mode extras the API sends alongside the verdict. */
 export type VerdictView = Displayed<Verdict> & {
+  /** The business action the server derives from the outcome and the counters. */
+  business_action?: BusinessAction;
   passed_checks: PassedCheck[];
   /** Absent in older recordings: the UI then renders nothing for them. */
   autonomy?: AutonomyView;
@@ -830,6 +842,8 @@ export type MarginalCostView = Displayed<{
 }> & { rate_display: string };
 
 export type ComparisonRow = Displayed<{
+  /** The router's stable id for the row: "full_discount", "line_partial_early_pay", "router_optimum", "line_guaranteed_loan", "line_only". */
+  key?: string;
   label: string;
   total_fen: Fen;
   note: string;
@@ -841,7 +855,34 @@ export type ComparisonRow = Displayed<{
   not_executable_reason?: string;
   /** The row's actions as the router returned them (`lands_day` is null on every comparison row today). */
   actions?: Displayed<FundingAction>[];
+  /** The server's reading of the row: the router's pick, a dearer full plan, a plan that still breaks the reserve, or a source that is not available. Rows of different statuses are never ranked together. */
+  status?: ComparisonStatus;
+  /** Why an admissible row cannot run today: the buyer would have to pay early, or the invoice is not issued yet. */
+  reason_kind?: "buyer_early_pay" | "invoice_not_issued" | null;
+  /** For an insufficient row: the first day cash is below the reserve, the deepest shortfall and the day it is deepest. */
+  breach_day?: Day | null;
+  shortfall_fen?: Fen | null;
+  shortfall_display?: string | null;
+  worst_day?: Day | null;
 };
+
+export type ComparisonStatus = "recommended" | "alternative" | "insufficient" | "unavailable";
+
+/** What the owner should do about an offer, as distinct from the verifier's verdict code (a REJECT with counters is "counter"). */
+export type BusinessAction = "accept" | "counter" | "decline" | "needs_owner" | "cannot";
+
+/** The parts behind a counter's floored supplier cost: each obligation's 12-month value, the funding cost (positive parts), the offset (negative parts) and the net. */
+export interface CounterEconomics {
+  components: { obligation_id: string; type: string; value_fen: Fen; value_display: string; basis: string }[];
+  funding_cost_fen: Fen;
+  funding_cost_display: string;
+  offset_fen: Fen;
+  offset_display: string;
+  net_fen: Fen;
+  net_display: string;
+  /** True when a negative part offsets a positive one: the figure to show is a net, and both parts show beside it. */
+  is_net: boolean;
+}
 
 export interface PlanRequest {
   need_fen?: Fen;
@@ -943,8 +984,31 @@ export interface ApprovalOperation {
   reported_day?: Day | null;
 }
 
+/** Business words the API writes for an approval card (operations.py `presentation`): the question, the names behind the ids, the cost the alert priced and the day the cash lands. */
+export interface ApprovalPresentation {
+  headline: string;
+  what: string;
+  facility_name: string | null;
+  buyer_name: string | null;
+  invoice: string | null;
+  cost_display: string | null;
+  rate_text: string | null;
+  cost_due_day: number | null;
+  lands_day: number | null;
+  /** Distances from today, written by the server ("in 3 days", "2 days ago"); absent in older recordings. */
+  lands_when?: string | null;
+  decided_when?: string | null;
+  /** What declining leaves, in the server's words (the alert's shortfall written relative to today, or "Nothing runs; the request is closed."). */
+  if_decline: string;
+  protects: string | null;
+  reason: string;
+  result_message: string | null;
+}
+
 /** What the card needs beyond the display row: the executor's reason, the operation and, once decided, its result message. */
 export interface ApprovalDetail {
+  /** Absent in older recordings: the card then falls back to the subject and the reason. */
+  presentation?: ApprovalPresentation;
   /** The executor's sentence on why the owner has to decide (the queue's `reason`). */
   reason: string;
   op_id: string | null;
@@ -1511,11 +1575,208 @@ export interface WhatIfResult {
     discount_above: boolean;
     formula: string;
   } | null;
-  counters: { label: string; text: string; supplier_cost_display: string; forward_value_display: string; rationale: string }[];
+  counters: { label: string; text: string; supplier_cost_display: string; forward_value_display: string; rationale: string; economics?: CounterEconomics | null }[];
   notes: string[];
   compute_ms: number;
   cached: boolean;
   controls: WhatIfControls;
   /** Mock mode only: the nearest precomputed position, shown when the exact one was not precomputed. */
   mock_nearest?: { id: string; params: WhatIfParams } | null;
+}
+
+// ------------------------------------------------------------------ the owner's home (GET /home)
+
+export type HomeStatus = "SAFE" | "WATCH" | "ACTION_NEEDED" | "CRITICAL";
+
+export interface HomeLeg {
+  index: number;
+  operation_kind: string;
+  label: string;
+  facility_id: string | null;
+  facility_name: string;
+  receivable_id: string | null;
+  buyer_name: string | null;
+  amount_fen: Fen | null;
+  amount_display: string | null;
+  cost_fen: Fen | null;
+  cost_display: string | null;
+  rate_text: string | null;
+  cost_days: number | null;
+  cost_due_day: Day | null;
+  lands_day: Day | null;
+  /** The landing day as a distance from today ("in 3 days"), written by the server. */
+  lands_when?: string | null;
+  above_apr_cap: boolean;
+  /** The router's cost formula for a leg of the recommended plan (absent on an alert-cure leg). */
+  formula?: string | null;
+}
+
+/** One line of the all-in estimate: the router's cost line for a leg, or a priced alert leg. */
+export interface HomeCostLine {
+  label: string;
+  display: string | null;
+  formula: string | null;
+}
+
+/** A cheaper runnable plan the server did not recommend because it would need several separate approvals. */
+export interface HomeCheaperOption {
+  label: string;
+  cost_total_display: string;
+  approvals: number;
+  legs: string[];
+}
+
+/** One day of a projection the server already ran: closing cash (fen for the axis only) and the events that moved it. */
+export interface HomeSeriesPoint {
+  day: Day;
+  closing_fen: Fen;
+  closing_display: string;
+  events: { kind: string; label: string; amount_fen: Fen; amount_display: string; amount_short: string }[];
+}
+
+/**
+ * The one thing to do now, in the server's words: the router's cheapest runnable plan priced all-in (`plan_source`
+ * "router"), else the alert's own cure ("alert"). "Go ahead" binds to `suggestions` exactly as shown.
+ */
+export interface HomeNextAction {
+  alert_id: string;
+  kind: AlertKind | string;
+  plan_source: "router" | "alert";
+  title: string;
+  /** The business outcome ("Secure ¥405k of funding") and its components, in overview precision. */
+  outcome_title: string;
+  components: { amount_short: string; what: string; lands_when: string | null }[];
+  receive_short: string | null;
+  after_lowest_fen: Fen | null;
+  after_lowest_short: string | null;
+  legs: HomeLeg[];
+  receive_fen: Fen | null;
+  receive_display: string | null;
+  cost_display: string | null;
+  /** The all-in estimate, its lines and what it assumes (the line repaid on the first receipt that can; advances in 30-day periods). */
+  cost_total_display: string | null;
+  cost_breakdown: HomeCostLine[];
+  cost_basis: string | null;
+  cost_note: string | null;
+  cheaper_option: HomeCheaperOption | null;
+  rate_text: string | null;
+  cost_days: number | null;
+  lands_day: Day | null;
+  lands_when: string | null;
+  needs_owner: boolean;
+  needs_owner_reason: string | null;
+  /** The authority line in the owner's words: within the signed limits, or needs approval and why. */
+  authority_text: string;
+  if_nothing: string;
+  after: string;
+  why: string;
+  detail: string;
+  formula: string | null;
+  pending_approval_id: string | null;
+  state_version: number;
+  suggestions: ActSuggestion[];
+}
+
+export interface HomeApproval extends ApprovalPresentation {
+  id: string;
+  kind: string;
+  created_day: Day | null;
+  amount_fen: Fen | null;
+  amount_display: string | null;
+}
+
+export type HomeChangeKind = "OPERATION" | "RECEIPT" | "WAITING" | "REFUSED" | "LATE" | "LANDED" | "AGREEMENT";
+
+export interface HomeChange {
+  day: Day | null;
+  /** The day as a distance from today, written by the server. */
+  when: string;
+  seq: number | null;
+  kind: HomeChangeKind | string;
+  actor: string;
+  text: string;
+}
+
+export interface HomeReceivable {
+  receivable_id: string;
+  buyer_id: string;
+  buyer_name: string;
+  face_fen: Fen;
+  face_display: string;
+  due_day: Day;
+  due_when: string;
+  past_due: boolean;
+  days_late: number;
+  invoice: string;
+}
+
+export interface HomeReceivables {
+  open_count: number;
+  open_total_display: string;
+  /** The server's sum of the past-due invoices' face amounts. */
+  overdue_total_display: string;
+  past_due: HomeReceivable[];
+  next_receipt: HomeReceivable | null;
+  promised: { receivable_id: string; buyer_name: string; expected_display: string; promised_day: Day | null; when: string | null } | null;
+  lapsed_promises: number;
+}
+
+export interface HomeView {
+  day: Day;
+  state_version: number;
+  lang: "en" | "zh";
+  status: HomeStatus;
+  /** The status in the owner's words ("Covered, but tight" for a WATCH with thin headroom). */
+  status_text?: string;
+  /** Level 1: the conclusion, the detail behind it, the worst point if nothing is done, and whether a plan is ready. */
+  headline: string;
+  note: string;
+  worst: string | null;
+  plan_note: string | null;
+  /** Echo of the `since_day` the web sent for "what changed since my last visit"; null for the last week. */
+  since_day: number | null;
+  cash: {
+    cash_fen: Fen;
+    cash_display: string;
+    floor_fen: Fen;
+    floor_display: string;
+    lowest_fen: Fen;
+    lowest_display: string;
+    lowest_day: Day;
+    first_breach_day: Day | null;
+    first_breach_cash_fen: Fen | null;
+    first_breach_cash_short: string | null;
+    cash_short: string;
+    floor_short: string;
+    lowest_short: string;
+    /** What is driving the risk, from the projection's own events (at most two sentences). */
+    drivers: string[];
+    lowest_when: string;
+    first_breach_when: string | null;
+    horizon_days: number;
+    in_transit: { total_display: string; lots: { facility_name: string; amount_display: string; arrival_day: Day; arrival_when: string }[] } | null;
+    /** Every funding lot on the books, landed or still arriving, for the current funding position. */
+    funding_lots?: { facility_name: string; amount_display: string; remaining_display: string; landed: boolean; arrival_day: Day; arrival_when: string; maturity_day: Day | null; maturity_when: string | null }[];
+    /** Cash minus the minimum cash reserve, today and at the lowest point ahead; short figures from the server. */
+    headroom_fen?: Fen;
+    headroom_short?: string;
+    lowest_headroom_fen?: Fen;
+    lowest_headroom_short?: string;
+    dscr_text: string | null;
+    leverage_text: string | null;
+    min_dscr_display: string;
+    max_leverage_display: string;
+    /** The baseline projection ("if you do nothing") and the same books with the recommended plan applied. The chart draws these. */
+    series: HomeSeriesPoint[];
+    plan_series: HomeSeriesPoint[] | null;
+  };
+  next_action: HomeNextAction | null;
+  approvals: HomeApproval[];
+  pending_count: number;
+  changes: HomeChange[];
+  receivables: HomeReceivables;
+  warnings: { id: string; kind: string; title: string; detail: string; day: Day | null; when: string }[];
+  facilities: { id: string; name: string; status: string; limit_display: string; drawn_display: string; available_display: string; lead_time_days: number }[];
+  counts: Record<AlertSeverity, number>;
+  note_basis: string;
 }
