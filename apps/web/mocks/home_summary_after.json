@@ -296,6 +296,7 @@
           {
             "kind": "ADVANCE",
             "label": "Advance on the ¥420,000.00 invoice to Foshan Home Retail Co. due day 47, Invoice financing (onboarded platform)",
+            "label_short": "Invoice financing lands",
             "amount_fen": 20000000,
             "amount_display": "¥200,000.00",
             "amount_short": "¥200k"
@@ -334,6 +335,7 @@
           {
             "kind": "FLOW",
             "label": "Payroll, month 2",
+            "label_short": "Payroll",
             "amount_fen": -20000000,
             "amount_display": "−¥200,000.00",
             "amount_short": "−¥200k"
@@ -372,6 +374,7 @@
           {
             "kind": "RECEIPT",
             "label": "Receipt the ¥420,000.00 invoice to Foshan Home Retail Co. due day 47 from Foshan Home Retail Co.",
+            "label_short": "Receipt from Foshan Home Retail Co.",
             "amount_fen": 42000000,
             "amount_display": "¥420,000.00",
             "amount_short": "¥420k"
@@ -379,6 +382,7 @@
           {
             "kind": "FLOW",
             "label": "Operating bill",
+            "label_short": "Operating bill",
             "amount_fen": -10000000,
             "amount_display": "−¥100,000.00",
             "amount_short": "−¥100k"
@@ -386,6 +390,7 @@
           {
             "kind": "INTEREST",
             "label": "Interest, Invoice financing (onboarded platform) on the ¥420,000.00 invoice to Foshan Home Retail Co. due day 47",
+            "label_short": "Interest",
             "amount_fen": -128219,
             "amount_display": "−¥1,282.19",
             "amount_short": "−¥1k"
@@ -393,6 +398,7 @@
           {
             "kind": "FEE",
             "label": "Fee, Invoice financing (onboarded platform) on the ¥420,000.00 invoice to Foshan Home Retail Co. due day 47",
+            "label_short": "Fee",
             "amount_fen": -50000,
             "amount_display": "−¥500.00",
             "amount_short": "−¥500.00"
@@ -400,6 +406,7 @@
           {
             "kind": "REPAYMENT",
             "label": "Repay advance on the ¥420,000.00 invoice to Foshan Home Retail Co. due day 47",
+            "label_short": "Repayment",
             "amount_fen": -20000000,
             "amount_display": "−¥200,000.00",
             "amount_short": "−¥200k"
@@ -486,6 +493,7 @@
           {
             "kind": "FLOW",
             "label": "Debt service (principal), Existing equipment loan (rate 0%: a fixture assumption)",
+            "label_short": "Debt service",
             "amount_fen": -4500000,
             "amount_display": "−¥45,000.00",
             "amount_short": "−¥45k"
@@ -596,6 +604,7 @@
           {
             "kind": "RECEIPT",
             "label": "Receipt the ¥420,000.00 invoice to Foshan Home Retail Co. due day 77 from Foshan Home Retail Co.",
+            "label_short": "Receipt from Foshan Home Retail Co.",
             "amount_fen": 42000000,
             "amount_display": "¥420,000.00",
             "amount_short": "¥420k"
@@ -603,6 +612,7 @@
           {
             "kind": "INTEREST",
             "label": "Interest, Bank credit line",
+            "label_short": "Interest",
             "amount_fen": -202502,
             "amount_display": "−¥2,025.02",
             "amount_short": "−¥2k"
@@ -610,6 +620,7 @@
           {
             "kind": "REPAYMENT",
             "label": "Repay Bank credit line",
+            "label_short": "Repayment",
             "amount_fen": -14998620,
             "amount_display": "−¥149,986.20",
             "amount_short": "−¥150k"
@@ -696,6 +707,7 @@
           {
             "kind": "FLOW",
             "label": "Debt service (principal), Existing equipment loan (rate 0%: a fixture assumption)",
+            "label_short": "Debt service",
             "amount_fen": -4500000,
             "amount_display": "−¥45,000.00",
             "amount_short": "−¥45k"
@@ -806,6 +818,7 @@
           {
             "kind": "RECEIPT",
             "label": "Receipt the ¥420,000.00 invoice to Foshan Home Retail Co. due day 107 from Foshan Home Retail Co.",
+            "label_short": "Receipt from Foshan Home Retail Co.",
             "amount_fen": 42000000,
             "amount_display": "¥420,000.00",
             "amount_short": "¥420k"
@@ -892,6 +905,7 @@
           {
             "kind": "FLOW",
             "label": "Debt service (principal), Existing equipment loan (rate 0%: a fixture assumption)",
+            "label_short": "Debt service",
             "amount_fen": -4500000,
             "amount_display": "−¥45,000.00",
             "amount_short": "−¥45k"
@@ -1002,6 +1016,7 @@
           {
             "kind": "RECEIPT",
             "label": "Receipt the ¥420,000.00 invoice to Foshan Home Retail Co. due day 137 from Foshan Home Retail Co.",
+            "label_short": "Receipt from Foshan Home Retail Co.",
             "amount_fen": 42000000,
             "amount_display": "¥420,000.00",
             "amount_short": "¥420k"
@@ -1088,6 +1103,7 @@
           {
             "kind": "FLOW",
             "label": "Debt service (principal), Existing equipment loan (rate 0%: a fixture assumption)",
+            "label_short": "Debt service",
             "amount_fen": -4500000,
             "amount_display": "−¥45,000.00",
             "amount_short": "−¥45k"

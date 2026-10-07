@@ -728,7 +728,7 @@ export interface MoneyTrajectory {
     debt: MoneyView;
     forward_concession: MoneyView;
     below_floor: boolean;
-    events: { kind: string; amount: MoneyView; label: string; ref: string | null; formula: string | null }[];
+    events: { kind: string; amount: MoneyView; label: string; /** Short words for a chart annotation, written by the server. */ label_short?: string; ref: string | null; formula: string | null }[];
   }[];
   months: {
     month: number;
@@ -1633,7 +1633,7 @@ export interface HomeSeriesPoint {
   day: Day;
   closing_fen: Fen;
   closing_display: string;
-  events: { kind: string; label: string; amount_fen: Fen; amount_display: string; amount_short: string }[];
+  events: { kind: string; label: string; amount_fen: Fen; amount_display: string; amount_short: string; label_short?: string }[];
 }
 
 /**

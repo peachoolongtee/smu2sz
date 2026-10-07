@@ -27,3 +27,16 @@ def test_each_concession_value_reads_as_a_sentence_before_its_formula(client, rt
     # the equation is still there, after the reading
     ext = next(cv for cv in v["concession_values"] if by_type[cv["obligation_id"]] == "TERMS_EXTENSION")
     assert ext["formula"].startswith("Σ over 13 invoices") and ext["value_display"] == "¥24,326.92"
+
+
+def test_each_chart_event_has_short_words_for_its_annotation(client, rt):
+    h = client.get("/home", headers=OWNER).json()
+    events = [e for d in h["cash"]["series"] for e in d["events"]]
+    receipt = next(e for e in events if e["kind"] == "RECEIPT")
+    assert receipt["label_short"] == "Receipt from Foshan Home Retail Co." and receipt["label"].startswith("Receipt the ¥420,000.00 invoice")
+    payroll = next(e for e in events if e["label"] == "Payroll")
+    assert payroll["label_short"] == "Payroll"
+    debt = next(e for e in events if e["label"].startswith("Debt service"))
+    assert debt["label_short"] == "Debt service"
+    zh = client.get("/home", params={"lang": "zh"}, headers=OWNER).json()
+    assert any(e["label_short"] == "来自Foshan Home Retail Co.的收款" for d in zh["cash"]["series"] for e in d["events"])

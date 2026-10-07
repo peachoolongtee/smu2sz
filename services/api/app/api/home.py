@@ -287,13 +287,37 @@ def _alert_actions(state: FinancialState, alert: Alert, today: int) -> list[Fund
     return out
 
 
-def _series(state: FinancialState, traj: Any) -> list[dict[str, Any]]:
+_FROM = re.compile(r" from (.+?)$")
+
+
+def _label_short(kind: str, label: str, lang: str) -> str:
+    """A chart annotation's words: "Receipt from Foshan Home Retail Co.", "Payroll", "Invoice financing lands"; the
+    full sentence stays in `label` for the table. Written here so the browser never truncates a sentence."""
+    if kind in ("RECEIPT", "EARLY_RECEIPT"):
+        m = _FROM.search(label)
+        who = m.group(1) if m else ""
+        return t(lang, f"Receipt from {who}" if who else "Receipt", f"来自{who}的收款" if who else "收款")
+    if kind == "ADVANCE":
+        return t(lang, "Invoice financing lands", "发票融资到账")
+    if kind == "DRAW":
+        return t(lang, "Credit line draw", "信用额度提款")
+    if kind == "REPAYMENT":
+        return t(lang, "Repayment", "还款")
+    return label.split(" (")[0].split(",")[0].strip()
+
+
+def _series(state: FinancialState, traj: Any, lang: str = "en") -> list[dict[str, Any]]:
     """One projection as the chart's rows: the day, its closing cash (fen for the axis, the display string for the
-    reader) and the events that moved it, with ids replaced by names."""
-    return [{"day": d.day, "closing_fen": d.closing_fen, "closing_display": fmt_yuan(d.closing_fen),
-             "events": [{"kind": e.kind.value, "label": in_words(state, e.label), "amount_fen": e.amount_fen,
-                         "amount_display": fmt_yuan(e.amount_fen), "amount_short": fmt_short(e.amount_fen)} for e in d.events]}
-            for d in traj.days]
+    reader) and the events that moved it, with ids replaced by names and a short label for the chart."""
+    rows = []
+    for d in traj.days:
+        events = []
+        for e in d.events:
+            label = in_words(state, e.label)
+            events.append({"kind": e.kind.value, "label": label, "label_short": _label_short(e.kind.value, label, lang),
+                           "amount_fen": e.amount_fen, "amount_display": fmt_yuan(e.amount_fen), "amount_short": fmt_short(e.amount_fen)})
+        rows.append({"day": d.day, "closing_fen": d.closing_fen, "closing_display": fmt_yuan(d.closing_fen), "events": events})
+    return rows
 
 
 def _after_words(after: Any, floor: int, today: int, horizon: int, lang: str) -> str:
@@ -628,7 +652,7 @@ def get_home(lang: str = "en", since_day: int | None = None) -> dict[str, Any]:
                                     "融资方案已准备好，因其成本需要您批准。") if action["needs_owner"]
                                   else t(lang, "A funding plan is ready, within your signed limits. No approval is needed.",
                                          "融资方案已准备好，在您签署的授权内，无需批准。"))
-        series = _series(books.state, traj)
+        series = _series(books.state, traj, lang)
         queue = _approvals(books.state, books.with_([]), mandate, approvals, found, today, lang,
                            use_router=rt.settings.features.debt_desk)
         changes = _changes(books.state, rt.store, found, today, lang, since_day)
