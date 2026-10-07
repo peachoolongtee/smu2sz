@@ -88,6 +88,9 @@ test("an approval born of the reserve alert says what declining leaves, in days 
     "¥200,000.00 below your minimum cash reserve in 8 days; the gap peaks at ¥200,000.00 in 8 days.",
   );
   // "Why it needs you" in the owner's words: the signed limit and the holding period from today, never the agent's ceiling or "day N".
+  // The reason the owner approves against is on the pending card itself, not behind a click.
+  await expect(card.getByTestId("approval-reason")).toBeVisible();
+  await expect(card.getByTestId("approval-reason").locator("xpath=preceding-sibling::dt")).toHaveText("Why it needs you");
   await expect(card.getByTestId("approval-reason")).toContainText("the yearly cost of 32.52% is above the 15.00% limit you signed for funding without your approval");
   await expect(card.getByTestId("approval-reason")).toContainText("(from in 3 days to in 13 days)");
   expect(await proseOf(page)).not.toMatch(/\bday \d/i);
