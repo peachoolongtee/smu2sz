@@ -26,6 +26,7 @@ from app.api.presentation import (
     cure_legs,
     event_words,
     facility_name,
+    fallback_words,
     fmt_short,
     in_words,
     invoice_words,
@@ -530,7 +531,8 @@ def _next_action(state: FinancialState, obs: list[Any], mandate: Mandate, found:
         "if_nothing": if_nothing,
         "after": after,
         "why": why,
-        "detail": relative_days(in_words(state, alert.detail), today, lang),
+        "detail": (fallback_words(relative_days(in_words(state, alert.detail), today, lang)) if rec.source == "router"
+                   else relative_days(in_words(state, alert.detail), today, lang)),
         "formula": alert.formula,
         "pending_approval_id": queued.id if queued is not None else None,
         "state_version": state_version,

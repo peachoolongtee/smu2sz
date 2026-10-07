@@ -48,6 +48,10 @@ def test_day_zero_answers_safe_do_cost(client):
     assert [leg["cost_display"] for leg in a["legs"]] == ["¥841.64", "¥2,272.29"]
     assert a["if_nothing"] == "¥240,000.00 below your minimum cash reserve in 12 days; the gap peaks at ¥405,000.00 in 30 days."
     assert a["after"] == "Cash stays above your minimum cash reserve for the next 120 days."
+    # the alert's own cure (a different plan, priced on its own basis) is a fallback beside the recommendation, not its figures
+    assert "A committed cure exists" not in a["detail"] and "lasts until in" not in a["detail"]
+    assert ("A fallback also exists: draw on Bank credit line ¥150,000.00 and finance an invoice on Invoice financing (onboarded platform) "
+            "for ¥336,000.00, at ¥2,994.08 (11.2% a year for 29 days); FLOW recommends the plan above.") in a["detail"]
     assert a["authority_text"] == "Within your signed limits. No additional approval required." and a["lands_when"] == "in 3 days"
     assert h["cash"]["lowest_when"] == "in 30 days" and h["cash"]["first_breach_when"] == "in 12 days"
     assert h["receivables"]["open_total_display"] == "¥420,000.00" and h["receivables"]["overdue_total_display"] == "¥0.00"

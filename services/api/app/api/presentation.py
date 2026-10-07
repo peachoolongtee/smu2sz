@@ -224,10 +224,30 @@ def relative_days(text: str, today: int, lang: Lang) -> str:
     text = re.sub(r"\barrives day (\d+)\b", lambda m: "arrives " + on(m), text)
     text = re.sub(r"\bdue day (\d+)\b", lambda m: "due " + on(m), text)
     text = re.sub(r"\b(?:on|for) day (\d+)\b", on, text)
-    text = re.sub(r"\bto day (\d+)\b", lambda m: "until " + on(m), text)
+    def until(m: re.Match[str]) -> str:
+        when = on(m)
+        return "until " + (when[3:] + " from now" if when.startswith("in ") else when)
+
+    text = re.sub(r"\bto day (\d+)\b", until, text)
     text = re.sub(r"\(day (\d+)\)", lambda m: "(" + on(m) + ")", text)
     text = re.sub(r", day (\d+)\b", lambda m: ", " + on(m), text)
     return text
+
+
+_CURE_CLAUSE = re.compile(r"A committed cure exists: (?P<legs>.+?), cost (?P<cost>¥[\d,.]+) \((?P<rate>[^()]*)\)(?P<rest>[^.]*)\.")
+
+
+def fallback_words(text: str) -> str:
+    """The alert's own cure, said as a fallback beside a recommended plan that is not it. The alert detail quotes its cure
+    ("A committed cure exists: draw on … + finance an invoice on … ¥336,000.00, cost ¥2,994.08 (11.2% a year for 29 days).");
+    under a recommendation of a different plan that sentence contradicts the plan's own amounts and cost, so on the Business
+    home it reads as what it is: another way, priced on its own basis, and not the one recommended. Business strings only:
+    the raw alert detail is untouched."""
+    def say(m: re.Match[str]) -> str:
+        legs = m.group("legs").replace(" + ", " and ")
+        legs = re.sub(r"(finance an invoice on [^+]*?) (¥[\d,.]+)(?= and |$)", r"\1 for \2", legs)
+        return f"A fallback also exists: {legs}, at {m.group('cost')} ({m.group('rate')}); FLOW recommends the plan above."
+    return _CURE_CLAUSE.sub(say, text)
 
 
 def business_text(state: FinancialState, text: str | None, today: int, lang: Lang = "en") -> str | None:

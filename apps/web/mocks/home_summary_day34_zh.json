@@ -2235,7 +2235,7 @@
     "if_nothing": "8 天后比最低现金储备低 ¥200,000.00；缺口在8 天后最大，为 ¥200,000.00。",
     "after": "未来 120 天现金都保持在您的最低现金储备以上。",
     "why": "最便宜的方案合计 ¥1,706.10（含预测期内其他利息与费用少付的 ¥788.97），但需要 2 次单独批准；此方案只需一次。两者都在“比较方案”中。",
-    "detail": "Projected cash closes at ¥100,000.00 in 8 days, ¥200,000.00 below the reserve floor; the gap peaks at ¥200,000.00 in 8 days and lasts until in 12 days. A committed cure exists: finance an invoice on Invoice financing (onboarded platform) ¥200,000.00, cost ¥1,782.19 (32.5% a year for 10 days); that is above the 15.00% limit you signed for funding without your approval, so it needs your approval before it runs.",
+    "detail": "Projected cash closes at ¥100,000.00 in 8 days, ¥200,000.00 below the reserve floor; the gap peaks at ¥200,000.00 in 8 days and lasts until 12 days from now. A committed cure exists: finance an invoice on Invoice financing (onboarded platform) ¥200,000.00, cost ¥1,782.19 (32.5% a year for 10 days); that is above the 15.00% limit you signed for funding without your approval, so it needs your approval before it runs.",
     "formula": "shortfall = floor − closing_d: ¥300,000.00 − ¥100,000.00 = ¥200,000.00 (day 42); max over days 42..46 = ¥200,000.00",
     "pending_approval_id": null,
     "state_version": 7,

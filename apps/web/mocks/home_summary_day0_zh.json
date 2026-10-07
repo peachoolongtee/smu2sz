@@ -1848,7 +1848,7 @@
     "if_nothing": "12 天后比最低现金储备低 ¥240,000.00；缺口在30 天后最大，为 ¥405,000.00。",
     "after": "未来 120 天现金都保持在您的最低现金储备以上。",
     "why": "在有界搜索范围内，您已承诺的额度能及时覆盖缺口的最便宜方案。",
-    "detail": "Projected cash closes at ¥60,000.00 in 12 days, ¥240,000.00 below the reserve floor; the gap peaks at ¥405,000.00 in 30 days and lasts until in 31 days. A committed cure exists: draw on Bank credit line ¥150,000.00 + finance an invoice on Invoice financing (onboarded platform) ¥336,000.00, cost ¥2,994.08 (11.2% a year for 29 days).",
+    "detail": "Projected cash closes at ¥60,000.00 in 12 days, ¥240,000.00 below the reserve floor; the gap peaks at ¥405,000.00 in 30 days and lasts until 31 days from now. A fallback also exists: draw on Bank credit line ¥150,000.00 and finance an invoice on Invoice financing (onboarded platform) for ¥336,000.00, at ¥2,994.08 (11.2% a year for 29 days); FLOW recommends the plan above.",
     "formula": "shortfall = floor − closing_d: ¥300,000.00 − ¥60,000.00 = ¥240,000.00 (day 12); max over days 12..31 = ¥405,000.00",
     "pending_approval_id": null,
     "state_version": 1,

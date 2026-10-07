@@ -98,6 +98,10 @@ test("the Business home answers safe, do and cost on the opening books, without 
   await expect(action).not.toContainText("agent");
   await expect(action.getByTestId("next-action-if-nothing")).toContainText("¥240,000.00 below your minimum cash reserve in 12 days");
   await expect(action.getByTestId("next-action-after")).toContainText("Cash stays above your minimum cash reserve for the next 120 days");
+  // "Why this" never quotes another plan's amounts as this plan's: the alert's own cure is said as a fallback.
+  await expect(action.getByTestId("next-action-why")).toContainText("A fallback also exists");
+  await expect(action.getByTestId("next-action-why")).toContainText("FLOW recommends the plan above.");
+  await expect(action.getByTestId("next-action-why")).not.toContainText("A committed cure exists");
   await expect(page.getByTestId("fix-open-ALERT-RESERVE-12")).toHaveText("Run funding plan");
   // Nothing from the demo on the owner's screen: no stepper, no clock, no mock pill, no engine navigation.
   await expect(page.getByRole("region", { name: "Guided demo" })).toHaveCount(0);
