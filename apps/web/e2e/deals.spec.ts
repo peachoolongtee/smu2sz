@@ -44,6 +44,9 @@ test("the inbox groups a buyer's messages into one thread and names each evaluat
   await expect(page.getByTestId("deal-steps").getByRole("link", { name: /Respond/ })).toHaveAttribute("href", "/deals#counters");
   await expect(page.getByTestId("deal-steps").getByRole("link", { name: /Agreed/ })).toHaveAttribute("href", "/deals#commitments");
   const originalId = await page.evaluate(() => JSON.parse(sessionStorage.getItem("tl-demo-v2") ?? "{}").offerId);
+  // Picking the latest message folded the thread; the earlier ones are one click away.
+  await expect(reworded).toBeHidden();
+  await page.getByTestId("inbox-thread-BUYER-1").locator("details > summary").first().click();
   await reworded.click();
   await expect(reworded).toHaveAttribute("aria-current", "true");
   await expect.poll(() => page.evaluate(() => JSON.parse(sessionStorage.getItem("tl-demo-v2") ?? "{}").offerId)).not.toBe(originalId);
