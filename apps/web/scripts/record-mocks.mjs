@@ -306,6 +306,8 @@ files["home_alerts_day34.json"] = await live.getAlerts();
 files["home_summary_day34.json"] = await live.getHome("en");
 files["home_summary_day34_zh.json"] = await live.getHome("zh");
 files["home_state_day34.json"] = await live.getState();
+// The books' history at day 34 (the deal, the funding, the day-2 receipt): the mock replays it when the clock is moved to day 34 without the walk.
+files["home_ledger_day34.json"] = await live.getLedger();
 // The router's comparison for day 34's gap (the Cash page shows a fresh plan while a gap is open, never the day-0 one).
 files["funding_day34.json"] = await live.planFunding({});
 // The reconciliation after the day-2 bank receipt (it carries the bank's reference).

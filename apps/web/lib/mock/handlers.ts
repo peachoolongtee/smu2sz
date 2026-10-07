@@ -59,6 +59,7 @@ import fundingDay34Json from "../../mocks/funding_day34.json";
 import homeApprovalApproved from "../../mocks/home_approval_approved.json";
 import homeApprovalPending from "../../mocks/home_approval_pending.json";
 import homeApprove from "../../mocks/home_approve.json";
+import ledgerDay34 from "../../mocks/home_ledger_day34.json";
 import mandateJson from "../../mocks/mandate.json";
 import negAccept from "../../mocks/negotiation_accept.json";
 import negNoDeal from "../../mocks/negotiation_nodeal.json";
@@ -194,6 +195,7 @@ function append(
 /** Books an operation the recorded API answer reports (a cure the agent ran), on the same hash chain as the rest. */
 type Recorded = { kind: string; status: OperationView["status"]; tier: OperationView["tier"]; message: string; message_when?: string | null; event_text?: string | null; event_detail?: string | null; day: number };
 export function appendRecorded(r: Recorded): void {
+  seedStory();
   const s = load();
   const seq = s.ops.length + 1;
   const prev = s.ops.length ? (s.ops[s.ops.length - 1].entry_hash ?? GENESIS) : GENESIS;
@@ -212,6 +214,26 @@ export function appendRecorded(r: Recorded): void {
     ...(r.event_text ? { event_text: r.event_text, event_detail: r.event_detail ?? null } : {}),
   };
   s.ops.push({ ...base, prev_hash: prev, entry_hash: entryHash(base, prev) });
+  save();
+}
+
+/**
+ * The recorded day-34 books carry the deal, its funding and the day-2 receipt. A session that moves the clock to day 34
+ * without walking the story has none of that in its own ledger, so Activity would say "no commitments yet" beside a
+ * Receivables page that lists one: the recorded history is booked first (re-chained on the mock's hashes), once.
+ */
+function seedStory(): void {
+  const s = load();
+  if (home.mockClock().day < home.NEWS_DAY || s.ops.length || s.commitments.length) return;
+  const rec = cast<LedgerView>(ledgerDay34);
+  let prev = GENESIS;
+  for (const o of rec.operations) {
+    const base = { ...clone(o), seq: s.ops.length + 1 };
+    const entry_hash = entryHash(base, prev);
+    s.ops.push({ ...base, prev_hash: prev, entry_hash });
+    prev = entry_hash;
+  }
+  s.commitments = clone(rec.commitments);
   save();
 }
 
@@ -251,6 +273,7 @@ export async function planFunding(_req: PlanRequest): Promise<FundingView> {
 
 export async function getLedger(): Promise<LedgerView> {
   await delay();
+  seedStory();
   const s = load();
   const head = s.ops.length ? s.ops[s.ops.length - 1].entry_hash : null;
   return clone({
@@ -264,6 +287,7 @@ export async function getLedger(): Promise<LedgerView> {
 
 export async function getAudit(): Promise<AuditView> {
   await delay();
+  seedStory();
   const s = load();
   const scene = cast<AuditView>(auditSec);
   const refusals = s.ops.filter((o) => o.status === "REFUSED");
@@ -292,6 +316,7 @@ export async function getApprovals(): Promise<ApprovalView[]> {
 
 export async function getEvidence(): Promise<string> {
   await delay();
+  seedStory();
   const s = load();
   if (!s.ops.length) return "";
   const lines = s.ops.map((o) =>

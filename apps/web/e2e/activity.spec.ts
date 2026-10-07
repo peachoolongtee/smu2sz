@@ -68,3 +68,18 @@ test("approving the fix reads \"You approved ...\" on Activity, never the execut
   }
   expect(await proseOf(page, [RAW])).not.toMatch(/\bday \d/i);
 });
+
+test("day 34: Activity lists the agreement Receivables lists, not 'No commitments yet'", async ({ page }) => {
+  await page.goto("/demo");
+  await page.getByTestId("home-days").fill("34");
+  await page.getByTestId("home-advance").click();
+  await expect(page.getByTestId("home-day")).toHaveText("Day 34");
+  await page.goto("/receivables");
+  await expect(page.getByTestId("promised-RCV-A")).toBeVisible();
+  await page.goto("/activity");
+  const agreements = page.locator("#activity-commitments");
+  await expect(agreements).toContainText("Foshan Home Retail Co.");
+  await expect(agreements).not.toContainText("No commitments yet");
+  await expect(page.getByTestId("activity-ACCEPT_OFFER")).toBeVisible();
+  await expect(page.getByTestId("chain-status")).toContainText("Records verified");
+});
