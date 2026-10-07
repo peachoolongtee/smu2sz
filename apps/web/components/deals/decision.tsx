@@ -3,7 +3,7 @@
 import { Card } from "@/components/ui";
 import type { DictKey } from "@/lib/dictionary";
 import { useI18n } from "@/lib/i18n";
-import type { BusinessAction, Outcome, VerdictView } from "@/lib/types";
+import type { BusinessAction, NegotiationView, Outcome, VerdictView } from "@/lib/types";
 import { whenText } from "@/lib/when";
 
 /** The server's business action, or its rule for an older recording: a REJECT with counters is "counter", without is "decline". */
@@ -42,20 +42,24 @@ const ACTION_TONE: Record<BusinessAction, "ok" | "warn" | "bad" | undefined> = {
  * cash that day) and the worst point (a different day), plus one sentence when the early-payment discount is dearer
  * than funding. Every figure is a server display string; days are distances from today.
  */
-export function DealDecision({ v, today }: { v: VerdictView; today: number }) {
+export function DealDecision({ v, today, negotiation = null }: { v: VerdictView; today: number; negotiation?: NegotiationView | null }) {
   const { t } = useI18n();
   const action = businessAction(v);
+  // Once the buyer has answered, the headline is the outcome, not the recommendation that preceded it.
+  const outcome = negotiation?.outcome ?? null;
+  const headline = outcome === "DEAL" ? t("biz.deals.action.agreed") : outcome === "NO_DEAL" ? t("biz.deals.action.noDeal") : t(ACTION_KEY[action]);
+  const tone = outcome === "DEAL" ? "ok" : outcome === "NO_DEAL" ? "bad" : ACTION_TONE[action];
   const tr = v.trajectory ?? null;
   const breach = tr?.first_breach_day ?? null;
   const dearer = v.violations.find((x) => x.code === "DISCOUNT_ABOVE_BREAK_EVEN");
   const fc = v.forward_concession;
   return (
-    <Card id="deal-recommendation-card" tone={ACTION_TONE[action]}>
+    <Card id="deal-recommendation-card" tone={tone}>
       <p className="text-xs font-semibold uppercase tracking-wide text-ink-3">{t("biz.deals.recommendation")}</p>
-      <p className="mt-1 text-2xl font-semibold text-ink" data-testid="deal-recommendation">
-        {t(ACTION_KEY[action])}
+      <p className="mt-1 text-2xl font-semibold text-ink" data-testid="deal-recommendation" data-outcome={outcome ?? ""}>
+        {headline}
       </p>
-      {action !== "accept" && (tr || fc) ? <p className="mt-3 text-sm text-ink-2">{t("biz.deals.ifAccept")}</p> : null}
+      {action !== "accept" && (tr || fc) ? <p className="mt-3 text-sm text-ink-2">{outcome ? t("biz.deals.ifAccepted") : t("biz.deals.ifAccept")}</p> : null}
       <dl className="mt-2 grid gap-4 sm:grid-cols-3">
         {v.concession_values.length || fc ? (
           <div data-testid="deal-fact-cost">

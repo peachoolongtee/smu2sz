@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { TierBadge } from "@/components/badges";
 import { ChevronRightIcon } from "@/components/icons";
@@ -145,7 +146,7 @@ export function ApprovalCard({
           {more.length ? <KeyValueList items={more} /> : null}
           <dl className="space-y-2">
             <div>
-              <dt className="text-xs font-medium text-ink-3">{t("appr.why")}</dt>
+              <dt className="sr-only">{t("appr.why")}</dt>
               <dd className="text-ink" data-testid="approval-reason">
                 {words(p?.reason || a.reason || a.detail || "")}
               </dd>
@@ -187,6 +188,12 @@ export function ApprovalCard({
         <p className="mt-2 text-sm font-medium text-ink" role="status" data-testid={`approval-result-${a.id}`}>
           {t("appr.result")}: {shownResult}
         </p>
+      ) : null}
+      {/* A decided capex application leads back to the purchase it belongs to. */}
+      {!isPending && a.operation_kind === "APPLY_FOR_FACILITY" ? (
+        <Link href="/capex" className="mt-2 inline-flex min-h-8 items-center text-sm font-semibold text-brand-700 hover:text-brand-600" data-testid={`approval-capex-${a.id}`}>
+          {t("biz.appr.seeCapex")}
+        </Link>
       ) : null}
 
       <button

@@ -24,6 +24,10 @@ export function plainDays(text: string, today: number, t: I18n["t"]): string {
   // Counted words the server writes as "2 day(s)", and its status codes, read as plain words.
   out = out.replace(/\b(\d+) (day|invoice|message|round)\(s\)/g, (_, n: string, w: string) => `${n} ${w}${n === "1" ? "" : "s"}`);
   out = out.replace(/\bstill OPEN\b/g, "still unpaid");
+  out = out.replace(/Commitment CMT-[0-9a-f]+ is ACTIVE; forward concession (¥[\d,.]+) booked/g, "The agreement with the buyer is in force; future give-aways booked: $1");
+  out = out.replace(/\bit is PENDING and counts as zero until committed/g, "the lender has not committed yet, so it counts as zero until it does");
+  out = out.replace(/\bRESERVE_BREACH\b/g, "the cash reserve is breached");
+  out = out.replace(/\bDSCR_BREACH\b/g, "loan payments are not covered");
   out = out.replace(/\b([Dd])ay (\d+)\b/g, (_, first: string, d: string) => {
     const s = whenText(Number(d), today, t);
     return first === "D" ? s.charAt(0).toUpperCase() + s.slice(1) : s;

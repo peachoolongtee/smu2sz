@@ -288,3 +288,32 @@ adjusted after that run (lint and typecheck clean; the walkthrough never runs in
   thin concentric rings in the top-right corner, a rounded square on the left and a wave line along the bottom. Fixed, behind
   the content (`-z-10` inside the shell's `isolate`), hidden from pointers and screen readers; the drift stops under reduced
   motion. Lint and typecheck clean.
+
+## 10. Logic-gap pass (in progress, paused)
+
+Found by walking the whole demo story and reading every Business page at each stage. Frontend only; lint and typecheck
+clean; the e2e suite was not rerun after these changes.
+
+Fixed:
+
+- Deals after the buyer answers: the headline, the response card, the step line and the inbox label follow the
+  negotiation. DEAL shows "Agreed with the buyer" and the accepted counter marked "Accepted by the buyer"; NO_DEAL shows
+  "No deal", each round with the buyer's refusal, and, when the funding plan ran anyway, what ran (it no longer says
+  "nothing changed on your books"). No "Recommended" or "Compare another option" after an outcome.
+- Capex: the application's status comes from the approvals queue (waiting, approved, declined), with the decision's
+  result in words; a decided capex approval links back to Capex.
+- Home: "Needs your decision" lists the approvals queue (the header badge's source), so a capex application shows there.
+- Mock mode: the hard-line negotiation marks the mock home as funded, so Home and Cash & funding stop asking to run a plan
+  that already ran.
+- Receivables shows an agreed early payment the home names even before reconciliation lists it.
+- Plain words for raw executor text on Business pages ("Commitment CMT-… is ACTIVE", "it is PENDING", RESERVE_BREACH).
+- Approval card: the reason no longer repeats its own label.
+
+Not finished:
+
+- `scripts/record-mocks.mjs` now records the capex approve/reject decisions on the stepper's books, so the approved row will
+  name the 36-month loan like the queued request (today the recorded row says "Equipment lease"). The mocks were **not**
+  re-recorded yet: run the recorder (README) and check that only `mocks/ops.json` changes.
+- Rerun the mock e2e suite; specs that read the old Deals wording after a negotiation may need updating.
+- Backend items found so far (not changed): none that block these fixes. The API's verdict and counter texts have no
+  language parameter, so they stay English in Chinese mode.

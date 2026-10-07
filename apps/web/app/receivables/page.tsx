@@ -116,6 +116,21 @@ export default function ReceivablesPage() {
             </Card>
           ) : null}
 
+          {!promised.length && r.promised ? (
+            <Card id="recv-promised" title={t("biz.recv.promised")} subtitle={t("biz.recv.promised.sub")}>
+              <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-line px-3 py-2 text-sm" data-testid={`promised-${r.promised.receivable_id}`} data-status="AWAITED">
+                <span>
+                  <span className="font-medium text-ink">{r.promised.buyer_name}</span>
+                  <span className="block text-xs text-ink-2">{t("biz.recv.promisedWhen", { when: r.promised.when ?? "" })}</span>
+                </span>
+                <span className="flex items-center gap-2">
+                  <span className="font-semibold tabular-nums">{r.promised.expected_display}</span>
+                  <Badge tone="info">{te("promstatus", "AWAITED")}</Badge>
+                </span>
+              </div>
+            </Card>
+          ) : null}
+
           {promised.length ? (
             <Card id="recv-promised" title={t("biz.recv.promised")} subtitle={t("biz.recv.promised.sub")} actions={data.lapsed_promises ? <Badge tone="bad">{`${t("recon.lapsed")}: ${data.lapsed_promises}`}</Badge> : undefined}>
               <ul className="space-y-2">

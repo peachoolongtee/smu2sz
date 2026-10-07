@@ -82,10 +82,13 @@ export default function DealsPage() {
     }
   }
 
-  /** The recommendation words for a message already evaluated in this session, for its inbox row. */
+  /** The words for a message already handled in this session, for its inbox row: the outcome once the buyer answered. */
   function statusFor(docId: string): string | null {
     const o = Object.values(demo.offers).find((x) => x.documents[0]?.doc_id === docId);
-    const verdict = o ? demo.verdicts[o.offer.offer_id] : undefined;
+    if (!o) return null;
+    const negotiation = demo.negotiations[o.offer.offer_id];
+    if (negotiation) return t(negotiation.outcome === "DEAL" ? "biz.deals.status.agreed" : "biz.deals.status.noDeal");
+    const verdict = demo.verdicts[o.offer.offer_id];
     return verdict ? t(ACTION_KEY[businessAction(verdict)]) : null;
   }
 
@@ -207,7 +210,7 @@ export default function DealsPage() {
               commitments
             ) : (
               <>
-                <DealDecision v={v} today={today} />
+                <DealDecision v={v} today={today} negotiation={cur.negotiation} />
                 <RecommendedResponse v={v} negotiation={cur.negotiation} today={today} />
                 {commitments}
 

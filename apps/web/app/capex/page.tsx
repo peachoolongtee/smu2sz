@@ -6,8 +6,9 @@ import { Avatar, BizCard, BizPageHeader, Chip, Disclosure, PageIcon, SectionHead
 import { CartIcon, CheckIcon, ChevronRightIcon, ClockIcon, ShieldCheckIcon, SlidersIcon, XIcon } from "@/components/icons";
 import { ViolationCard } from "@/components/verdict-parts";
 import { Button, ErrorState, KeyValueList } from "@/components/ui";
-import { downloadFile } from "@/lib/api";
-import { localNames } from "@/lib/business-words";
+import { downloadFile, getApprovals, getState } from "@/lib/api";
+import { idsToNames, localNames, plainDays, sentenceCase } from "@/lib/business-words";
+import { useAsync } from "@/lib/use-async";
 import { runBorrowerFile, runCapex, runCapexApply } from "@/lib/demo";
 import { useDemo } from "@/lib/demo-store";
 import { useI18n } from "@/lib/i18n";
@@ -26,6 +27,14 @@ export default function CapexPage() {
   const capex = demo.capex;
   const file = demo.borrowerFile;
   const application = demo.capexApplication;
+  // Where the application stands now: the approvals queue is the source (it moves when the owner decides there, on another
+  // page), not the answer the apply step got. Refetched on every action (the demo store's version).
+  const queue = useAsync(() => (application?.approval_id ? getApprovals().catch(() => []) : Promise.resolve([])), [application?.approval_id, demo.version]);
+  const books = useAsync(getState, [demo.version]);
+  const decision = application?.approval_id ? (queue.data?.find((a) => a.id === application.approval_id) ?? null) : null;
+  const decided = decision?.status ?? (application ? "PENDING" : null);
+  const named = (books.data?.state.facilities ?? []).map((f) => ({ id: f.id, name: f.name }));
+  const resultText = decision?.presentation?.result_message || decision?.result_message || null;
   // The server selects nothing unless the project is worth doing; an illustration at another term is never selected.
   const worth = capex?.worth_doing !== false;
   const selectedStructure = capex?.structures.find((s) => s.id === capex.selected_id);
@@ -161,7 +170,7 @@ export default function CapexPage() {
                             </span>
                           </span>
                           <span className="shrink-0 text-right">
-                            <span className="figure block font-semibold text-ink">{s.monthly_payment_display ?? t("common.none")}</span>
+                            <span className="figure block font-semibold text-ink">{s.monthly_payment_display ?? "—"}</span>
                             <span className="block text-xs text-ink-3">{t("capex.monthly")}</span>
                           </span>
                           <ChevronRightIcon className="chev shrink-0 text-ink-3" />
@@ -197,7 +206,7 @@ export default function CapexPage() {
                               <p className="mt-1.5 text-xs text-ink-3">{t("dscr.readingNote")}</p>
                             </div>
                           ) : null}
-                          {s.note ? <p className="text-ink-2">{s.note}</p> : null}
+                          {s.note ? <p className="text-ink-2">{localNames(plainDays(s.note, books.data?.day ?? 0, t), lang)}</p> : null}
                           {s.extra_cost_vs_selected_display ? <p className="font-medium text-warn-fg">{t("capex.dearer", { amount: s.extra_cost_vs_selected_display })}</p> : null}
                           {s.hypothetical ? <p className="text-xs text-ink-3">{t("capex.hypothetical.hint")}</p> : null}
                         </div>
@@ -228,18 +237,42 @@ export default function CapexPage() {
             </div>
             <div className="mt-5 flex flex-wrap items-center gap-2">
               <Button variant="primary" loading={busy === "apply"} disabled={Boolean(application) || !canPrepareFile || !worth} onClick={() => void run("apply")} data-testid="capex-apply">
-                {application ? t("capex.applied") : t("capex.apply")}
+                {!application ? t("capex.apply") : decided === "APPROVED" ? t("biz.capex.appApproved") : decided === "REJECTED" ? t("biz.capex.appDeclined") : t("capex.applied")}
               </Button>
               <Button variant="secondary" loading={busy === "file"} disabled={Boolean(file) || !canPrepareFile} onClick={() => void run("file")} data-testid="capex-file">
                 {file ? t("capex.file.done") : t("capex.file.generate")}
               </Button>
-              {application ? (
+              {application && decided === "PENDING" ? (
                 <Link href="/approvals" className={pillSecondary} data-testid="capex-applied">
                   {t("capex.applied.review")}
                 </Link>
               ) : null}
             </div>
-            {application?.approval_id ? <p className="mt-3 text-sm text-ink-2">{t("capex.applied.body", { id: application.approval_id })}</p> : null}
+            {/* The application's status, from the approvals queue. */}
+            {application ? (
+              <div
+                className={`mt-4 rounded-2xl px-4 py-3 text-sm ${decided === "APPROVED" ? "bg-ok-bg/70" : decided === "REJECTED" ? "bg-bad-bg/70" : "bg-warn-bg/70"}`}
+                role="status"
+                data-testid="capex-application-status"
+                data-status={decided ?? ""}
+              >
+                <p className={`font-semibold ${decided === "APPROVED" ? "text-ok-fg" : decided === "REJECTED" ? "text-bad-fg" : "text-warn-fg"}`}>
+                  {decided === "APPROVED" ? t("biz.capex.appApproved") : decided === "REJECTED" ? t("biz.capex.appDeclined") : t("biz.capex.appWaiting")}
+                </p>
+                <p className="mt-0.5 text-ink-2">
+                  {decided === "APPROVED"
+                    ? t("biz.capex.appApproved.body")
+                    : decided === "REJECTED"
+                      ? t("biz.capex.appDeclined.body")
+                      : application.approval_id
+                        ? t("capex.applied.body", { id: application.approval_id })
+                        : null}
+                </p>
+                {resultText && decided !== "PENDING" ? (
+                  <p className="mt-1 text-xs text-ink-3">{localNames(sentenceCase(plainDays(idsToNames(resultText, named), books.data?.day ?? 0, t)), lang)}</p>
+                ) : null}
+              </div>
+            ) : null}
             <Disclosure summary={t("capex.tier")} className="mt-3 border-t border-line pt-1">
               <p className="text-sm text-ink-2">{t("capex.tier.body")}</p>
             </Disclosure>

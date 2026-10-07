@@ -367,6 +367,8 @@ export async function negotiate(offerId: string, req: NegotiateRequest): Promise
     res.offer_id = offerId;
     res.operations = ops;
     result = res;
+    // The gap is funded anyway (the line draw and the invoice advance ran): the home must say so from now on, as live.
+    home.markFunded();
   }
   s.negotiated[offerId] = result;
   save();

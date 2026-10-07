@@ -51,7 +51,7 @@ process.env.NEXT_PUBLIC_API_URL = API;
 process.env.NEXT_PUBLIC_API_MODE = "live";
 const { setOwnerToken } = await import("../lib/auth.ts");
 const { live } = await import("../lib/live/index.ts");
-const { DEMO_STEPS, runCapex, runCapexApply } = await import("../lib/demo.ts");
+const { DEMO_STEPS } = await import("../lib/demo.ts");
 const { demoStore, clearDemo } = await import("../lib/demo-store.ts");
 const { promptsFor } = await import("../lib/chat-prompts.ts");
 setOwnerToken(OWNER_TOKEN);
@@ -205,10 +205,15 @@ for (const s of DEMO_STEPS) {
 }
 
 // ------------------------------------------------------------------ the owner's decisions in the approval queue (ledger rows)
+// The decision is recorded on the same books as the stepper's approval step (the stepper replayed up to it), so the
+// approved application names the structure the queued one does (the 36-month loan); on untouched books the evaluation
+// would select the lease and the approved row would disagree with the queued request.
 async function queueOne() {
   await reset();
-  await runCapex();
-  await runCapexApply();
+  for (const s of DEMO_STEPS) {
+    await s.run();
+    if (s.id === "approval") break;
+  }
   return live.getApprovals();
 }
 let q = await queueOne();
