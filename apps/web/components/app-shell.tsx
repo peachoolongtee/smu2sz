@@ -128,9 +128,9 @@ function ApprovalsBadge() {
   if (!pending) return null;
   return (
     <Link href="/approvals" className="press inline-flex min-h-9 min-w-9 items-center justify-center gap-1.5 rounded-full bg-warn-bg px-3.5 text-xs font-semibold text-warn-fg hover:brightness-95" data-testid="approvals-badge" title={t("approvals.badge", { n: pending })} aria-label={t("approvals.badge", { n: pending })}>
-      {/* The count alone until the header has room for the words, so the badge never pushes the nav into the logo. */}
-      <span aria-hidden className="sm:hidden lg:inline xl:hidden">{pending}</span>
-      <span aria-hidden className="hidden sm:inline lg:hidden xl:inline">{t("approvals.badge", { n: pending })}</span>
+      {/* The count alone while the desktop nav shares the row (lg up to 2xl), so the badge never squeezes the nav. */}
+      <span aria-hidden className="sm:hidden lg:inline 2xl:hidden">{pending}</span>
+      <span aria-hidden className="hidden sm:inline lg:hidden 2xl:inline">{t("approvals.badge", { n: pending })}</span>
     </Link>
   );
 }
@@ -222,7 +222,8 @@ function BusinessShell({ children }: { children: ReactNode }) {
       <OwnerSignInDialog />
       <ChatPanel />
       <header className="sticky top-0 z-30 border-b border-line/70 bg-canvas/85 backdrop-blur-md">
-        <div className="mx-auto flex max-w-[1180px] items-center justify-between gap-3 px-4 py-2.5 lg:grid lg:grid-cols-[auto_minmax(0,1fr)_auto] lg:gap-6 lg:px-6">
+        {/* Wider on very wide screens, where the tagline, the badge's words and the demo pill join the row. */}
+        <div className="mx-auto flex max-w-[1180px] items-center justify-between gap-3 px-4 py-2.5 lg:grid lg:grid-cols-[auto_minmax(0,1fr)_auto] lg:gap-6 lg:px-6 2xl:max-w-[1440px]">
           <div className="shrink-0">
             <Brand href="/" />
           </div>
@@ -251,7 +252,7 @@ function BusinessShell({ children }: { children: ReactNode }) {
           </nav>
           <div className="flex items-center justify-end gap-2 whitespace-nowrap">
             <ApprovalsBadge />
-            <span className="hidden xl:inline-flex" data-testid="demo-data-indicator">
+            <span className="hidden 2xl:inline-flex" data-testid="demo-data-indicator">
               <Badge tone="neutral" title={t("biz.demoData.hint")}>
                 {t("biz.demoData")}
               </Badge>
