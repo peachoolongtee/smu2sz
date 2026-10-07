@@ -98,9 +98,13 @@ Colour (owner, 8 October: "a middle ground"): the researched direction `docs/res
 
 Measured after Wave 8 (desktop / phone screens): Home day 0 1.4 / 2.0 (baseline 1.5 / 2.3), Deals evaluated 1.7 / 2.5 (2.8 / 5.5), Cash & funding day 0 2.4 / 4.0 (2.6 / 4.0), Cash funded 1.8 / 2.5 (2.0 / 2.9), Home day 34 pending 1.9 / 3.0 (2.1 / 3.3).
 
+## The expressive layer (Wave 9)
+
+After seeing Wave 8 the owner asked for the branch's coloured icons, pill-shaped buttons and animations, and found the muted palette stale. Wave 9 ported them as one system on top of option C's rules (`apps/web/DESIGN.md` documents it): five section hues used for wayfinding only (the page header's icon chip, the phone tab bar's icons with a sliding indicator, buyer avatars; never for status; cash teal and receivables orange moved away from the ok and warn tones so they cannot be read as status), one radius scale (pill buttons, chips, badges, segmented controls and inputs; 16 px cards; 12 px tiles), the motion kit (reveal on mount, a 30 ms row stagger, hover lift, press, sheet slide-in, disclosure height, one status pulse on action needed; transform and opacity only; reduced motion honoured and forced in the Playwright runs), and a lifted base (canvas #f3f6fb, brand #1a5fe0 at 5.6:1 on white, soft drifting backdrop discs behind Business pages, cards solid). Every new pair checked: white on each section solid 4.5:1 to 5.8:1, section text on its tint 6.2:1 to 6.9:1, line-ui on the new surfaces 3.3:1 to 3.8:1. The design detector reported two findings, fixed. The duplicate "Where to next" shortcut row was removed (the hued tab bar is the shortcut), and the phone's Cash option rows stack so plan names no longer wrap one word per line (Cash day 0 on a phone 3.6 screens, from 4.1).
+
 ## Remaining UX debt
 
-Chinese twins on the routes without `lang` (`GET /ledger`, the verdict view); the Demo story page and the Demo trajectory view against the new Deals and Cash; the slide-over width test (flaky, pre-existing); Cash & funding on a phone at 4.0 screens on day 0; the FLOW visual mark; a Demo-only card-by-card walk of a deal, if the owner wants the old showcase back.
+Chinese twins on the routes without `lang` (`GET /ledger`, the verdict view); the Demo story page and the Demo trajectory view against the new Deals and Cash; the slide-over width test (flaky, pre-existing); Cash & funding on a phone at 3.6 screens on day 0; Safari and Firefox not checked for the motion kit; the FLOW visual mark; a Demo-only card-by-card walk of a deal, if the owner wants the old showcase back.
 
 ## Known limitations
 
