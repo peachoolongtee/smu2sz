@@ -71,6 +71,13 @@ test("the Business home answers safe, do and cost on the opening books, without 
   expect(await proseOf(page)).not.toMatch(/\bday \d/i);
   await expect(page.getByTestId("home-cash")).toHaveText("¥400k");
   await expect(page.getByTestId("home-lowest")).toHaveText("−¥105k");
+  // The hero: today's cash large, three tiles (the reserve, the first breach, the worst point), the "why" folded.
+  await expect(page.getByTestId("home-status").locator("dl").first().locator("dt")).toHaveText(["Minimum cash reserve", "Cash at first breach", "Worst point"]);
+  await expect(page.getByTestId("home-why")).not.toHaveAttribute("open", "");
+  await expect(page.getByTestId("home-worst")).toBeHidden();
+  await page.getByTestId("home-why").locator("> summary").click();
+  await expect(page.getByTestId("home-worst")).toBeVisible();
+  await expect(page.getByTestId("home-drivers")).toBeVisible();
   // The best next action: what, how much, cost, when, who decides, what if nothing, after.
   const action = page.getByTestId("home-next-action");
   // The recommendation is the router's cheapest runnable plan, priced all-in (every leg, the basis in words): the

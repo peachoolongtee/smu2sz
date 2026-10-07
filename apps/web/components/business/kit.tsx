@@ -22,12 +22,12 @@ const factTone: Record<FactTone, { box: string; value: string }> = {
  * One fact as a tile: a quiet label, the value large, an optional note beneath. The tile is a `<div>` inside a `<dl>`;
  * `testId` goes on the value so a spec can read the figure itself.
  */
-export function FactTile({ label, children, tone = "neutral", testId, note, noteTestId }: { label: ReactNode; children: ReactNode; tone?: FactTone; testId?: string; note?: ReactNode; noteTestId?: string }) {
+export function FactTile({ label, children, tone = "neutral", valueTone, testId, note, noteTestId }: { label: ReactNode; children: ReactNode; tone?: FactTone; valueTone?: "bad"; testId?: string; note?: ReactNode; noteTestId?: string }) {
   const c = factTone[tone];
   return (
     <div className={`min-w-0 rounded-lg border px-3.5 py-3 ${c.box}`}>
       <dt className="text-xs font-medium text-ink-3">{label}</dt>
-      <dd className={`mt-0.5 break-words text-base font-semibold tabular-nums ${c.value}`} data-testid={testId}>
+      <dd className={`mt-0.5 break-words text-base font-semibold tabular-nums ${valueTone === "bad" ? factTone.bad.value : c.value}`} data-testid={testId}>
         {children}
       </dd>
       {note ? (
