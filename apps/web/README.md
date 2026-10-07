@@ -94,10 +94,14 @@ agreement against the facility on the books, and labels the reading "AI-generate
 or rejects it (`POST /documents/{id}/confirm|reject {doc_hash, link_facility_id?}`). Confirming is logged on the chain and
 changes no books.
 
-Mock mode (`lib/mock/documents.ts`) serves the three demo documents as the live API read them, with their recorded
-confirmation and rejection (`mocks/documents.json`), and the deal card for each point of the story (`mocks/deals_*.json`:
-no contract, confirmed on day 0, then day 34 before the cure is queued, while it waits for approval and after approval). Any
-other file needs live mode.
+The demo reset opens on the three demo documents read by the agent and confirmed by the owner (the first three ledger
+entries), so the home page shows the deal card at once. "Read again" on a demo document is a new reading to review and
+confirm or reject.
+
+Mock mode (`lib/mock/documents.ts`) starts from the same point and serves the three demo documents as the live API left
+them, read again, and that reading confirmed and rejected (`mocks/documents.json`), and the deal card for each point of the
+story (`mocks/deals_*.json`: day 0, day 0 after a new reading of the supply agreement is confirmed, then day 34 before the
+cure is queued, while it waits for approval and after approval). Any other file needs live mode.
 
 ### Live-mode notes
 

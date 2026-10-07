@@ -324,42 +324,42 @@ if (!queued) throw new Error("go ahead on day 34 queued no approval: the demo pa
 files["home_approve_chat.json"] = await live.nl({ session_id: "rec-home-go", actor: "OWNER", text: `approve ${queued}` });
 
 // ------------------------------------------------------------------ contract ingestion (brief 03): the demo documents and the deal card
-// Each demo document as the agent read it, then confirmed (a lender agreement linked to its facility) and rejected. Both passes read
-// the documents in fixture order from fresh books, so the ids (DOC-000001..) are the same in each. Confirming writes no books.
+// The demo reset opens on the three demo documents read by the agent and confirmed by the owner (DOC-000001..3, the first three
+// ledger entries), so the home page shows the deal at once. Recorded: each as the reset leaves it with its ledger row, then read
+// again on fresh demo books (a new reading, DOC-000004) and confirmed (a lender agreement linked to its facility) or rejected.
+// Confirming writes no books.
 files["contracts_fixtures.json"] = await live.getContractFixtures();
 const CONTRACT_FIXTURES = files["contracts_fixtures.json"];
-async function readAllDocuments() {
-  const out = {};
-  for (const f of CONTRACT_FIXTURES) out[f.id] = await live.submitDocument({ fixture_id: f.id });
-  return out;
-}
-await reset();
-files["deals_unconfirmed.json"] = await live.getDeals();
 const documentsRecorded = {};
+await reset();
 {
-  const read = await readAllDocuments();
+  const seeded = (await live.getDocuments()).documents;
+  const ledger = (await live.getLedger()).operations;
   for (const f of CONTRACT_FIXTURES) {
-    documentsRecorded[f.id] = { proposed: read[f.id] };
-    documentsRecorded[f.id].rejected = await live.decideDocument(read[f.id].id, "reject", read[f.id].doc_hash, null);
+    const row = seeded.find((d) => d.source === `fixture:${f.id}`);
+    const op = ledger.find((x) => x.seq === row?.decided_seq);
+    if (!row || row.status !== "CONFIRMED" || !op) throw new Error(`the demo reset did not confirm ${f.id}`);
+    documentsRecorded[f.id] = { seeded: await live.getDocument(row.id), seeded_operation: { op_id: op.op_id, ...template(op) } };
   }
 }
-await reset();
-{
-  const read = await readAllDocuments();
+files["deals_day0.json"] = await live.getDeals();
+for (const decision of ["confirm", "reject"]) {
   for (const f of CONTRACT_FIXTURES) {
-    if (read[f.id].id !== documentsRecorded[f.id].proposed.id) throw new Error(`${f.id} was read as ${read[f.id].id} in one pass only`);
-    documentsRecorded[f.id].confirmed = await live.decideDocument(read[f.id].id, "confirm", read[f.id].doc_hash, f.link_facility_id);
-    if (documentsRecorded[f.id].confirmed.result.status !== "EXECUTED") throw new Error(`${f.id} was not confirmed: ${documentsRecorded[f.id].confirmed.result.message}`);
+    await reset();
+    const again = await live.submitDocument({ fixture_id: f.id });
+    if (again.id !== "DOC-000004") throw new Error(`${f.id} read again as ${again.id}, not DOC-000004`);
+    documentsRecorded[f.id].reread = again;
+    const decided = await live.decideDocument(again.id, decision, again.doc_hash, decision === "confirm" ? f.link_facility_id : null);
+    if (decided.result.status !== "EXECUTED") throw new Error(`${f.id} read again was not ${decision}ed: ${decided.result.message}`);
+    documentsRecorded[f.id][decision === "confirm" ? "confirmed" : "rejected"] = decided;
+    // The deal follows the supply agreement confirmed last: record it once, after the new reading is confirmed.
+    if (decision === "confirm" && f.kind === "BUYER_CONTRACT") files["deals_day0_reconfirmed.json"] = await live.getDeals();
   }
 }
 files["documents.json"] = documentsRecorded;
-files["deals_day0.json"] = await live.getDeals();
-// The deal on the home path (as above): the supply agreement confirmed on day 0, the receipt on day 2, the clock to day 34; then the
-// cure queued for approval (the button), then approved.
-await toDay34(async () => {
-  const supply = await live.submitDocument({ fixture_id: "FHR_SUPPLY_AGREEMENT" });
-  await live.decideDocument(supply.id, "confirm", supply.doc_hash, null);
-});
+// The deal on the home path (as above) from the demo's starting point: the receipt on day 2, the clock to day 34; then the cure
+// queued for approval (the button), then approved.
+await toDay34();
 files["deals_day34_open.json"] = await live.getDeals();
 {
   const alerts = await live.getAlerts();

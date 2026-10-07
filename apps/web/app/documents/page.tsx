@@ -169,44 +169,42 @@ function DemoDocuments({
                     {te("dockind", f.kind)} · {nameOf(f.counterparty_id)}
                   </p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   {last ? (
                     <Button size="sm" onClick={() => onOpen(last.id)} data-testid={`fixture-open-${f.id}`}>
                       {t("docs.openIt")}
                     </Button>
-                  ) : (
-                    <>
-                      <label className="sr-only" htmlFor={`fmt-${f.id}`}>
-                        {t("docs.format")}
-                      </label>
-                      <select
-                        id={`fmt-${f.id}`}
-                        value={format}
-                        onChange={(e) => setFormats((s) => ({ ...s, [f.id]: e.target.value as Format }))}
-                        className="min-h-8 rounded-md border border-line-strong bg-surface px-2 text-xs"
-                      >
-                        {f.formats.map((x) => (
-                          <option key={x} value={x}>
-                            {te("docformat", x)}
-                          </option>
-                        ))}
-                      </select>
-                      <Button
-                        size="sm"
-                        variant="primary"
-                        loading={busy === f.id}
-                        disabled={busy !== null}
-                        data-testid={`fixture-read-${f.id}`}
-                        onClick={async () => {
-                          setBusy(f.id);
-                          await onRead({ fixture_id: f.id, format });
-                          setBusy(null);
-                        }}
-                      >
-                        {t("docs.readIt")}
-                      </Button>
-                    </>
-                  )}
+                  ) : null}
+                  <label className="sr-only" htmlFor={`fmt-${f.id}`}>
+                    {t("docs.format")}
+                  </label>
+                  <select
+                    id={`fmt-${f.id}`}
+                    value={format}
+                    onChange={(e) => setFormats((s) => ({ ...s, [f.id]: e.target.value as Format }))}
+                    className="min-h-8 rounded-md border border-line-strong bg-surface px-2 text-xs"
+                  >
+                    {f.formats.map((x) => (
+                      <option key={x} value={x}>
+                        {te("docformat", x)}
+                      </option>
+                    ))}
+                  </select>
+                  {/* Reading a document again is a new reading for the owner to review; the one already confirmed stays. */}
+                  <Button
+                    size="sm"
+                    variant={last ? "secondary" : "primary"}
+                    loading={busy === f.id}
+                    disabled={busy !== null}
+                    data-testid={`fixture-read-${f.id}`}
+                    onClick={async () => {
+                      setBusy(f.id);
+                      await onRead({ fixture_id: f.id, format });
+                      setBusy(null);
+                    }}
+                  >
+                    {last ? t("docs.readAgain") : t("docs.readIt")}
+                  </Button>
                 </div>
               </li>
             );

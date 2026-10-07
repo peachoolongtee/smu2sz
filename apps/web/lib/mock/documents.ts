@@ -1,8 +1,10 @@
 /**
- * Mock for contract ingestion (brief 03): the three demo documents, read, confirmed or rejected, and the deal card.
- * Serves mocks/documents.json (each demo document as the API read it, with its recorded confirmation and rejection),
- * mocks/contracts_fixtures.json and mocks/deals_*.json, all recorded from the live API (scripts/record-mocks.mjs).
- * The state is which demo documents were read, in what order, and what the owner decided; ids are the recorded ones.
+ * Mock for contract ingestion (brief 03). As live, the demo opens on the three demo documents read by the agent and
+ * confirmed by the owner (DOC-000001..3, the first three ledger entries; `seedOperations` gives the ledger its rows), so
+ * the home page shows the deal at once. Reading a demo document again is a new reading (DOC-000004, then 5, …) that the
+ * owner confirms or rejects. Serves mocks/documents.json (each document as the demo reset leaves it, read again, and that
+ * reading confirmed and rejected), mocks/contracts_fixtures.json and mocks/deals_*.json, all recorded from the live API
+ * (scripts/record-mocks.mjs). Ids in a recorded reading are re-numbered to the mock's own; nothing else is changed.
  * Nothing here reads a document or computes money: any other file or pasted text needs live mode.
  */
 
@@ -21,15 +23,28 @@ import type {
 } from "../types";
 import fixturesJson from "../../mocks/contracts_fixtures.json";
 import dealsDay0 from "../../mocks/deals_day0.json";
+import dealsDay0Reconfirmed from "../../mocks/deals_day0_reconfirmed.json";
 import dealsDay34Approved from "../../mocks/deals_day34_approved.json";
 import dealsDay34Open from "../../mocks/deals_day34_open.json";
 import dealsDay34Pending from "../../mocks/deals_day34_pending.json";
-import dealsUnconfirmed from "../../mocks/deals_unconfirmed.json";
 import documentsJson from "../../mocks/documents.json";
 import { cureStage, mockClock, NEWS_DAY } from "./home";
 
+/** A ledger row as recorded: what the server logged for the demo reset's confirmation of one document. */
+export interface SeedOperation {
+  op_id: string;
+  kind: string;
+  status: OperationView["status"];
+  tier: OperationView["tier"];
+  requested_by: OperationView["requested_by"];
+  message: string;
+  summary: string;
+}
+
 interface Recorded {
-  proposed: DocumentView;
+  seeded: DocumentView;
+  seeded_operation: SeedOperation;
+  reread: DocumentView;
   confirmed: DocumentDecision;
   rejected: DocumentDecision;
 }
@@ -38,27 +53,45 @@ const RECORDED = documentsJson as unknown as Record<string, Recorded>;
 const FIXTURES = fixturesJson as unknown as ContractFixture[];
 /** The buyer contract the deal recordings were taken with. */
 const SUPPLY_AGREEMENT = "FHR_SUPPLY_AGREEMENT";
-const KEY = "tl-mock-docs-v1";
+const KEY = "tl-mock-docs-v2";
 
 interface DocState {
+  id: string;
   fixture_id: string;
+  /** Left by the demo reset (the recorded seeded reading), or a reading made since (the recorded re-read). */
+  seeded: boolean;
   status: DocumentStatus;
   uploaded_day: number;
   decided_day: number | null;
   decided_seq: number | null;
 }
 
+/** The demo's starting point, in ledger order. */
+function seededDocs(): DocState[] {
+  return FIXTURES.map((f) => {
+    const v = RECORDED[f.id].seeded;
+    return { id: v.id, fixture_id: f.id, seeded: true, status: v.status, uploaded_day: v.uploaded_day, decided_day: v.decided_day, decided_seq: v.decided_seq };
+  });
+}
+
+/** The three confirmations the demo reset logs, in ledger order (the mock ledger starts with them). */
+export function seedOperations(): SeedOperation[] {
+  return [...FIXTURES]
+    .sort((a, b) => (RECORDED[a.id].seeded.decided_seq ?? 0) - (RECORDED[b.id].seeded.decided_seq ?? 0))
+    .map((f) => RECORDED[f.id].seeded_operation);
+}
+
 let memory: DocState[] | null = null;
 
 function load(): DocState[] {
   if (memory) return memory;
-  memory = [];
+  memory = seededDocs();
   if (typeof window !== "undefined") {
     try {
       const raw = window.sessionStorage.getItem(KEY);
       if (raw) memory = JSON.parse(raw) as DocState[];
     } catch {
-      /* start with nothing read */
+      /* start from the demo's starting point */
     }
   }
   return memory;
@@ -75,6 +108,11 @@ function save(): void {
 
 const clone = <T>(v: unknown): T => JSON.parse(JSON.stringify(v)) as T;
 
+/** A recorded reading made on fresh demo books carries the id it got there (DOC-000004): give it the mock's id. */
+function renumber<T>(value: T, from: string, to: string): T {
+  return JSON.parse(JSON.stringify(value).split(from).join(to)) as T;
+}
+
 function requireOwner(): void {
   if (!getOwnerToken()) {
     requestSignIn("required");
@@ -83,15 +121,16 @@ function requireOwner(): void {
 }
 
 export function resetDocuments(): void {
-  memory = [];
+  memory = seededDocs();
   save();
 }
 
-/** The recorded view for this document's current status, with the mock's own days and chain position. */
+/** The recorded view for this document's current status, with the mock's own id, days and chain position. */
 function viewOf(d: DocState): DocumentView {
   const r = RECORDED[d.fixture_id];
-  const recorded = d.status === "CONFIRMED" ? r.confirmed.document : d.status === "REJECTED" ? r.rejected.document : r.proposed;
-  return { ...clone<DocumentView>(recorded), uploaded_day: d.uploaded_day, decided_day: d.decided_day, decided_seq: d.decided_seq };
+  if (d.seeded) return { ...clone<DocumentView>(r.seeded), uploaded_day: d.uploaded_day, decided_day: d.decided_day, decided_seq: d.decided_seq };
+  const recorded = d.status === "CONFIRMED" ? r.confirmed.document : d.status === "REJECTED" ? r.rejected.document : r.reread;
+  return { ...renumber(clone<DocumentView>(recorded), r.reread.id, d.id), uploaded_day: d.uploaded_day, decided_day: d.decided_day, decided_seq: d.decided_seq };
 }
 
 function summaryOf(v: DocumentView): DocumentSummary {
@@ -115,7 +154,7 @@ function summaryOf(v: DocumentView): DocumentSummary {
 }
 
 function byId(id: string): DocState {
-  const d = load().find((x) => RECORDED[x.fixture_id].proposed.id === id);
+  const d = load().find((x) => x.id === id);
   if (!d) throw new ApiError(404, `no document ${id}`, { code: "UNKNOWN_DOCUMENT", message: `no document ${id}` });
   return d;
 }
@@ -135,7 +174,7 @@ export function mockDocument(id: string): DocumentView {
   return viewOf(byId(id));
 }
 
-/** A demo document (any of its formats: they hold the same text, so the reading is the same). Reading it again starts it over. */
+/** Reads a demo document (any of its formats: they hold the same text, so the reading is the same) as a new reading. */
 export function mockSubmit(req: SubmitDocumentRequest): DocumentView {
   requireOwner();
   if (!req.fixture_id || !RECORDED[req.fixture_id]) {
@@ -145,17 +184,24 @@ export function mockSubmit(req: SubmitDocumentRequest): DocumentView {
     );
   }
   const docs = load();
-  const fresh: DocState = { fixture_id: req.fixture_id, status: "PROPOSED", uploaded_day: mockClock().day, decided_day: null, decided_seq: null };
-  const at = docs.findIndex((d) => d.fixture_id === req.fixture_id);
-  if (at >= 0) docs[at] = fresh;
-  else docs.push(fresh);
+  const fresh: DocState = {
+    id: `DOC-${String(docs.length + 1).padStart(6, "0")}`,
+    fixture_id: req.fixture_id,
+    seeded: false,
+    status: "PROPOSED",
+    uploaded_day: mockClock().day,
+    decided_day: null,
+    decided_seq: null,
+  };
+  docs.push(fresh);
   save();
   return viewOf(fresh);
 }
 
 /**
- * The owner's decision, replayed from the recording and booked on the mock ledger (`book`, the chain the ledger page reads).
- * As live: bound to the hash of the text shown, once only, and a lender agreement is linked to the facility it was recorded with.
+ * The owner's decision on a new reading, replayed from the recording and booked on the mock ledger (`book`, the chain the
+ * ledger page reads). As live: bound to the hash of the text shown, once only, and a lender agreement is linked to the
+ * facility it was recorded with.
  */
 export function mockDecide(
   id: string,
@@ -168,10 +214,10 @@ export function mockDecide(
   const d = byId(id);
   const r = RECORDED[d.fixture_id];
   if (d.status !== "PROPOSED") throw new ApiError(409, `Document ${id} is already ${d.status.toLowerCase()}.`);
-  if (docHash !== r.proposed.doc_hash) {
+  if (docHash !== r.reread.doc_hash) {
     throw new ApiError(409, "Mock mode replays only decisions on the text it showed. Read the document again.");
   }
-  const recorded = decision === "confirm" ? r.confirmed : r.rejected;
+  const recorded = renumber(clone<DocumentDecision>(decision === "confirm" ? r.confirmed : r.rejected), r.reread.id, id);
   const recordedLink = recorded.document.linked_facility_id;
   if (decision === "confirm" && (linkFacilityId ?? null) !== recordedLink) {
     throw new ApiError(409, `Mock mode replays the recorded link (${recordedLink ?? "none"}). Set NEXT_PUBLIC_API_MODE=live to link another facility.`);
@@ -184,22 +230,44 @@ export function mockDecide(
   d.decided_seq = op.seq;
   save();
   return {
-    result: { ...clone<DocumentDecision["result"]>(res), seq: op.seq, entry_hash: op.entry_hash ?? null, prev_hash: op.prev_hash ?? null, effective_day: day },
+    result: { ...res, seq: op.seq, entry_hash: op.entry_hash ?? null, prev_hash: op.prev_hash ?? null, effective_day: day },
     document: viewOf(d),
   };
 }
 
-/** The deal card for this point of the story: the supply agreement confirmed or not, and the home's day and cure stage. */
+/**
+ * The deal card for this point of the story: the home's day and cure stage, the supply agreement confirmed again if it was
+ * read again and confirmed (the deal follows the reading confirmed last; recorded on day 0), and any new reading of it
+ * waiting for the owner.
+ */
 export function mockDeals(): DealsView {
   requireOwner();
-  const supply = load().find((d) => d.fixture_id === SUPPLY_AGREEMENT);
-  if (supply?.status !== "CONFIRMED") {
-    const view = clone<DealsView>(dealsUnconfirmed);
-    const waiting = supply?.status === "PROPOSED" ? [RECORDED[SUPPLY_AGREEMENT].proposed.id] : [];
-    const buyer = RECORDED[SUPPLY_AGREEMENT].proposed.counterparty_id;
-    return { ...view, deals: view.deals.map((x) => (x.counterparty_id === buyer ? { ...x, pending_documents: waiting } : x)) };
-  }
-  if (mockClock().day < NEWS_DAY) return clone<DealsView>(dealsDay0);
+  const docs = load();
+  const supply = docs.filter((d) => d.fixture_id === SUPPLY_AGREEMENT);
+  const reconfirmed = supply.some((d) => !d.seeded && d.status === "CONFIRMED");
+  const day = mockClock().day;
   const stage = cureStage();
-  return clone<DealsView>(stage === "approved" ? dealsDay34Approved : stage === "pending" ? dealsDay34Pending : dealsDay34Open);
+  const recorded =
+    day < NEWS_DAY
+      ? reconfirmed
+        ? dealsDay0Reconfirmed
+        : dealsDay0
+      : stage === "approved"
+        ? dealsDay34Approved
+        : stage === "pending"
+          ? dealsDay34Pending
+          : dealsDay34Open;
+  const view = clone<DealsView>(recorded);
+  const buyer = RECORDED[SUPPLY_AGREEMENT].seeded.counterparty_id;
+  const waiting = supply.filter((d) => d.status === "PROPOSED").map((d) => d.id);
+  const lastConfirmed = [...supply].reverse().find((d) => d.status === "CONFIRMED");
+  return {
+    ...view,
+    deals: view.deals.map((x) => {
+      if (x.counterparty_id !== buyer) return x;
+      // The recording was taken with the reading confirmed last as DOC-000001 (or DOC-000004 once confirmed again).
+      const renamed = x.contract && lastConfirmed ? renumber(x, x.contract.record_id, lastConfirmed.id) : x;
+      return { ...renamed, pending_documents: waiting };
+    }),
+  };
 }

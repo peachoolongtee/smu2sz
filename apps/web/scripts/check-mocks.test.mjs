@@ -173,20 +173,22 @@ test("every term, clause and flag in the recorded document readings quotes its d
   const docs = mock("documents.json");
   assert.deepEqual(Object.keys(docs), mock("contracts_fixtures.json").map((f) => f.id));
   for (const [id, r] of Object.entries(docs)) {
-    for (const view of [r.proposed, r.confirmed.document, r.rejected.document]) {
+    for (const view of [r.seeded, r.reread, r.confirmed.document, r.rejected.document]) {
       const text = view.document.text;
       const spans = [...(view.terms ?? []), ...(view.clauses ?? []), ...view.flags];
       assert.ok(spans.length > 0, id);
       for (const s of spans) assert.equal(text.slice(s.span.start, s.span.end), s.quote, `${id}: ${s.quote}`);
-      assert.equal(view.doc_hash, r.proposed.doc_hash, `${id}: one text throughout`);
+      assert.equal(view.doc_hash, r.seeded.doc_hash, `${id}: one text throughout`);
     }
-    // Until the owner confirms it, a reading is labelled as AI output; confirming is a logged owner operation that writes no books.
-    assert.equal(r.proposed.status, "PROPOSED");
-    assert.equal(r.proposed.ai_label, "AI-generated, for reference");
-    assert.equal(r.proposed.can_confirm, true);
+    // A new reading is labelled as AI output until the owner confirms it; confirming is a logged owner operation that writes no books.
+    assert.equal(r.reread.id, "DOC-000004");
+    assert.equal(r.reread.status, "PROPOSED");
+    assert.equal(r.reread.ai_label, "AI-generated, for reference");
+    assert.equal(r.reread.can_confirm, true);
     assert.equal(r.confirmed.result.kind, "CONFIRM_DOCUMENT");
     assert.equal(r.confirmed.result.status, "EXECUTED");
     assert.equal(r.confirmed.result.tier, "TIER_2");
+    assert.equal(r.confirmed.result.seq, 4);
     assert.ok(r.confirmed.result.message.includes("nothing in the books changed"), id);
     assert.equal(r.confirmed.document.status, "CONFIRMED");
     assert.equal(r.confirmed.document.label, "Read by the agent, confirmed by you");
@@ -195,9 +197,26 @@ test("every term, clause and flag in the recorded document readings quotes its d
   }
 });
 
+test("the demo opens on the three demo documents confirmed by the owner, the first three ledger entries", () => {
+  const docs = mock("documents.json");
+  const seeded = mock("contracts_fixtures.json").map((f) => docs[f.id]);
+  assert.deepEqual(seeded.map((r) => [r.seeded.id, r.seeded.status, r.seeded.decided_day, r.seeded.decided_seq]), [
+    ["DOC-000001", "CONFIRMED", 0, 1],
+    ["DOC-000002", "CONFIRMED", 0, 2],
+    ["DOC-000003", "CONFIRMED", 0, 3],
+  ]);
+  for (const r of seeded) {
+    assert.equal(r.seeded.label, "Read by the agent, confirmed by you");
+    assert.deepEqual([r.seeded_operation.kind, r.seeded_operation.status, r.seeded_operation.tier, r.seeded_operation.requested_by], ["CONFIRM_DOCUMENT", "EXECUTED", "TIER_2", "OWNER"]);
+    assert.ok(r.seeded_operation.message.includes(`Document ${r.seeded.id}`) && r.seeded_operation.message.includes("nothing in the books changed"));
+  }
+  // The rest of the story is recorded from the same starting point: the deal's first operation comes after the confirmations.
+  assert.equal(mock("negotiation_nodeal.json").operations[0].seq, 4);
+});
+
 test("the demo documents read as the demo books: the supply agreement's terms and both lender agreements against their facilities", () => {
   const docs = mock("documents.json");
-  const fhr = docs.FHR_SUPPLY_AGREEMENT.proposed;
+  const fhr = docs.FHR_SUPPLY_AGREEMENT.seeded;
   const term = (f) => fhr.terms.find((t) => t.field === f);
   assert.equal(term("PRICE").amount_display, "¥420,000.00");
   assert.deepEqual([term("PAYMENT_TERMS").days, term("PAYMENT_TERMS").basis], [45, "INVOICE"]);
@@ -206,19 +225,25 @@ test("the demo documents read as the demo books: the supply agreement's terms an
   assert.deepEqual([term("SCHEDULED_INVOICE").reference, term("SCHEDULED_INVOICE").day], ["RCV-A", -13]);
   assert.deepEqual(fhr.blanks.map((b) => b.field), ["MILESTONE", "RETENTION", "LATE_INTEREST"]);
   for (const [id, facility] of [["MB_CREDIT_LINE_AGREEMENT", "FAC-LINE"], ["GBR_INVOICE_FINANCING_AGREEMENT", "FAC-IF"]]) {
-    const view = docs[id].proposed;
+    const view = docs[id].seeded;
     assert.equal(view.compared_with, facility, id);
+    assert.equal(view.linked_facility_id, facility, id);
     assert.ok(view.comparison.length > 0 && view.comparison.every((r) => r.same), `${id} differs from ${facility}`);
     assert.equal(docs[id].confirmed.document.linked_facility_id, facility);
   }
-  assert.equal(docs.GBR_INVOICE_FINANCING_AGREEMENT.proposed.facility.all_in_rate_display, "10.84%");
+  assert.equal(docs.GBR_INVOICE_FINANCING_AGREEMENT.seeded.facility.all_in_rate_display, "10.84%");
 });
 
-test("the deal card: nothing before the contract is confirmed, then the day-34 story as the prototype shows it", () => {
-  assert.ok(mock("deals_unconfirmed.json").deals.every((d) => !d.has_contract && d.pending_documents.length === 0));
+test("the deal card: the confirmed contract from the first page, then the day-34 story as the prototype shows it", () => {
   const day0 = mock("deals_day0.json").deals.find((d) => d.counterparty_id === "BUYER-1");
+  assert.equal(day0.has_contract, true);
+  assert.equal(day0.contract.record_id, "DOC-000001");
   assert.deepEqual(day0.pills.map((p) => p.label), ["On track"]);
   assert.deepEqual(day0.changes.map((c) => c.label), ["You confirmed"]);
+  assert.ok(mock("deals_day0.json").deals.filter((d) => d.counterparty_id !== "BUYER-1").every((d) => !d.has_contract));
+  // Read again and confirmed: the deal follows the reading confirmed last.
+  const again = mock("deals_day0_reconfirmed.json").deals.find((d) => d.counterparty_id === "BUYER-1");
+  assert.equal(again.contract.record_id, "DOC-000004");
   const deal = mock("deals_day34_pending.json").deals.find((d) => d.counterparty_id === "BUYER-1");
   assert.deepEqual(deal.pills.map((p) => p.label), ["Payment overdue", "1 approval waiting"]);
   assert.deepEqual(deal.stages.map((s) => s.state), ["done", "done", "done", "now", "todo"]);

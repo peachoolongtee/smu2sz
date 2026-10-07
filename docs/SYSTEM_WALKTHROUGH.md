@@ -839,6 +839,13 @@ invoice, facility or operation is created from one, and the language model sets 
 9. **Egress.** Every contract record's values (price and other amounts, rates, payment terms, the agreement number,
    a lender agreement's limit and rates) are protected values owned by that counterparty, whether or not the reading
    was confirmed. Another buyer asking for them is refused and they are never sent to anyone else.
+10. **The demo's starting point.** `POST /demo/reset` (`Runtime.reset_demo`) and a fresh start on an empty store read
+   the three demo documents exactly as an upload is read and confirm them as the owner through the executor, so the
+   chain opens with three CONFIRM_DOCUMENT entries (DOC-000001 to DOC-000003, day 0) and the home page shows the deal
+   card at once. The books are untouched. Reading a demo document again is a new reading (DOC-000004 on fresh demo
+   books) that the owner confirms or rejects; the deal follows the buyer contract confirmed last. `Runtime.reset()`
+   alone, which the tests, the attack harness, the certification, the scenario runner and `scripts/demo_run.py` use,
+   leaves the chain empty, so their figures (the 14 ledger entries of section 7 among them) are unchanged.
 
 ---
 
@@ -1014,12 +1021,12 @@ for other money.
 
 ## 9. Tests, evidence and how to run everything
 
-On `feat/contract-ingestion` (5 Oct 2026, contract ingestion added): 5,664 backend tests passed, 33 skipped (the same
-skips as below), in one run of about 21 minutes; 49 of 49 scripted chat scenarios (87 turns); 259 attacks (126 API, 133
+On `feat/contract-ingestion` (5 to 8 Oct 2026, contract ingestion added): 5,669 backend tests passed, 33 skipped (the
+same skips as below), in one run (about 21 minutes on a quiet machine); 49 of 49 scripted chat scenarios (87 turns); 259 attacks (126 API, 133
 chat), 0 with harm; `scripts/demo_run.py` exit 0 with the same 14 ledger entries; `scripts/evaluate.py` with every
 target passing (the same 15 held-out label mismatches as at `db097e0`, only timings and the four new attacks changed);
 the language-boundary certification unchanged in the cache and fake runs (WRONG_MATERIAL 0); the web app's lint, typecheck, build
-and unit checks (16) pass, mock e2e 44 passed (1 skipped, a live-only test) and live e2e 39 passed (2 skipped,
+and unit checks (17) pass, mock e2e 45 passed (1 skipped, a live-only test) and live e2e 40 passed (2 skipped,
 mock-only). The rest of this section is the state at `db097e0`.
 
 At `db097e0` on the Windows machine: 5,446 backend tests passed, 33 skipped (7 router latency benchmarks (`SKIP_PERF_BENCH=1`; their targets were set on another machine), 15 exhaustive router differential cases that run only with `ROUTER_DIFF_FULL=1`, 10 PostgreSQL concurrency cases that need `TERMSLEDGER_TEST_DATABASE_URL`, and the SQL variant of a corrupted-row test, which the attack catalogue covers (FR-12c)), run as
@@ -1268,3 +1275,4 @@ recorded with the deterministic grammar (`rules-v1`); `cd services/api && uv run
 | The held-out harness and report (the set is pending) | 10 | `contracts/test_heldout_scoring.py`, `scripts/evaluate_contracts.py` |
 | Four attacks: an instruction inside a clause, an unregistered lender's agreement, a buyer asking for another buyer's contract, a non-owner confirmation | 5.17 | `security/test_nl_attacks.py`, `services/api/evals/security/latest_report.md` |
 | The web: the deal and documents cards on the home page, the documents page with the review screen, recorded mocks, English and Chinese | 6 | `apps/web/e2e/documents.spec.ts`, `apps/web/e2e/responsive.spec.ts`, `apps/web/scripts/check-mocks.test.mjs` |
+| The demo opens on the three demo documents confirmed by the owner (three logged confirmations, no books changed), so the home page shows the deal card at once; a demo document can be read again | 5.19 | `api/test_demo_documents.py`, `apps/web/e2e/documents.spec.ts`, `apps/web/e2e/demo.spec.ts` |

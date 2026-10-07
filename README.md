@@ -30,9 +30,9 @@ Click **Start** in the demo bar and sign in as the owner when asked (the local d
 **3. Test.**
 
 ```bash
-cd services/api && uv run pytest                     # 5,664 passed, 33 skipped on 5 Oct 2026 with contract ingestion (Windows, SKIP_PERF_BENCH=1: the latency benchmarks skipped; about 21 min in one run)
+cd services/api && uv run pytest                     # 5,669 passed, 33 skipped on 8 Oct 2026 with contract ingestion (Windows, SKIP_PERF_BENCH=1: the latency benchmarks skipped; about 21 min in one run on a quiet machine)
 cd apps/web && pnpm lint && pnpm typecheck && pnpm build && pnpm test:unit && pnpm test:e2e
-                                                     # Playwright mock e2e: 44 passed, 1 skipped (live project: 39 passed, 2 skipped) on 5 Oct 2026
+                                                     # Playwright mock e2e: 45 passed, 1 skipped (live project: 40 passed, 2 skipped) on 8 Oct 2026
                                                      # (once: pnpm exec playwright install chromium)
 ```
 

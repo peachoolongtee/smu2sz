@@ -116,7 +116,8 @@ def test_demo_reset_still_works_in_demo_mode_on_sql(sqlite_env):
     _populate()
     assert TestClient(app).post("/demo/reset", headers=OWNER).status_code == 200
     rt = get_runtime()
-    assert rt.day == 0 and len(rt.store.operations()) == 0 and rt.store.verify_chain()
+    # The demo reset opens on the three demo documents confirmed by the owner (test_demo_documents.py) and nothing else.
+    assert rt.day == 0 and [o.kind for o in rt.store.operations()] == ["CONFIRM_DOCUMENT"] * 3 and rt.store.verify_chain()
 
 
 def test_non_demo_requires_owner_public_key(sqlite_env):

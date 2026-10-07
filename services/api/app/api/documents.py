@@ -16,7 +16,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.api.auth import require_feature, require_owner
-from app.api.runtime import get_runtime
+from app.api.runtime import Runtime, get_runtime
 from app.contracts import read_document, record_view
 from app.deals import documents_for
 from app.domain.fixtures import contract_fixture_bytes, load_contract_fixtures
@@ -154,6 +154,24 @@ def confirm_document(document_id: str, body: DecisionIn) -> dict:
 @router.post("/documents/{document_id}/reject")
 def reject_document(document_id: str, body: DecisionIn) -> dict:
     return _decide(document_id, body, confirm=False)
+
+
+def confirm_demo_documents(rt: Runtime) -> None:
+    """The demo's starting point: the three demo documents already read by the agent and confirmed by the owner, so the
+    home page opens on the deal card. Each is read from its fixture text exactly as an upload is, and confirmed through
+    the executor as the owner, so three CONFIRM_DOCUMENT entries open the chain. Nothing in the books changes."""
+    with rt.lock:
+        state = rt.store.get_state()
+        for fixture_id, fx in load_contract_fixtures().items():
+            name, data = contract_fixture_bytes(fixture_id, None)
+            record = read_document(extract_text(name, data), DocumentKind(fx["kind"]), fx["counterparty_id"],
+                                   title=fx["title"], source=f"fixture:{fixture_id}", day=rt.day,
+                                   facilities=state.facilities)
+            rid = rt.store.add_contract_record(record)
+            result = rt.executor.decide_document(rid, Actor.OWNER, confirm=True, doc_hash=record.doc_hash,
+                                                 link_facility_id=fx.get("link_facility_id"))
+            if result.status.value != "EXECUTED":
+                raise RuntimeError(f"demo document {fixture_id} was not confirmed: {result.message}")
 
 
 @router.get("/fixtures/contracts")

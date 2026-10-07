@@ -66,7 +66,14 @@ test("funding, negotiation and ledger adapters keep the golden numbers and fill 
   }
   const ledger = await live.getLedger();
   expect(ledger.chain_valid).toBe(true);
-  expect(ledger.operations.map((o) => o.kind)).toEqual(["DRAW_FACILITY", "SUBMIT_INVOICE_FOR_FINANCING"]);
+  // The demo opens on the owner's confirmation of the three demo documents; the walk-away's two operations follow.
+  expect(ledger.operations.map((o) => o.kind)).toEqual([
+    "CONFIRM_DOCUMENT",
+    "CONFIRM_DOCUMENT",
+    "CONFIRM_DOCUMENT",
+    "DRAW_FACILITY",
+    "SUBMIT_INVOICE_FOR_FINANCING",
+  ]);
 });
 
 test("approvals adapter: evaluating and the borrower file queue nothing, the capex application queues as Tier 2, and the owner token decides", async () => {
@@ -155,7 +162,8 @@ test("/nl: the owner channel needs the token, a buyer turn does not, and the res
     "ACCEPT_OFFER:EXECUTED",
     "DRAW_FACILITY:EXECUTED",
   ]);
-  expect(ran.operations[0]).toMatchObject({ tier: "TIER_1", seq: 1 });
+  // The demo opens on the owner's confirmation of the three demo documents (entries 1 to 3), so the first counter is entry 4.
+  expect(ran.operations[0]).toMatchObject({ tier: "TIER_1", seq: 4 });
   expect(ran.operations[0].entry_hash).toMatch(/^[0-9a-f]{64}$/);
 
   const buyer = await live.nl({
@@ -174,31 +182,37 @@ test("/nl: the owner channel needs the token, a buyer turn does not, and the res
   setOwnerToken("demo-owner-token");
 });
 
-test("document and deal adapters: read, review, confirm once; the deal card follows and the books do not move", async () => {
+test("document and deal adapters: the demo opens on three confirmed documents; a new reading is reviewed and confirmed once", async () => {
   await live.demoReset();
   const fixtures = await live.getContractFixtures();
   expect(fixtures.map((f) => f.id)).toEqual(["FHR_SUPPLY_AGREEMENT", "MB_CREDIT_LINE_AGREEMENT", "GBR_INVOICE_FINANCING_AGREEMENT"]);
-  expect((await live.getDeals()).deals.every((d) => !d.has_contract)).toBe(true);
+  // The demo's starting point: the agent read the three demo documents and the owner confirmed them (the first three ledger rows).
+  const seeded = await live.getDocuments();
+  expect(seeded.documents.map((d) => [d.id, d.status, d.decided_seq])).toEqual([
+    ["DOC-000001", "CONFIRMED", 1],
+    ["DOC-000002", "CONFIRMED", 2],
+    ["DOC-000003", "CONFIRMED", 3],
+  ]);
+  expect((await live.getDeals()).deals.find((d) => d.counterparty_id === "BUYER-1")).toMatchObject({ has_contract: true, contract: { record_id: "DOC-000001" } });
   const before = await live.getState();
 
   const view = await live.submitDocument({ fixture_id: "FHR_SUPPLY_AGREEMENT", format: "docx" });
-  expect(view).toMatchObject({ kind: "BUYER_CONTRACT", status: "PROPOSED", ai_label: "AI-generated, for reference", can_confirm: true });
+  expect(view).toMatchObject({ id: "DOC-000004", kind: "BUYER_CONTRACT", status: "PROPOSED", ai_label: "AI-generated, for reference", can_confirm: true });
   expect(view.terms).toHaveLength(18);
   for (const t of view.terms ?? []) expect(view.document.text.slice(t.span.start, t.span.end)).toBe(t.quote);
-  const list = await live.getDocuments();
-  expect(list.documents.map((d) => [d.id, d.status, d.flags])).toEqual([[view.id, "PROPOSED", 0]]);
+  expect((await live.getDocuments()).documents.map((d) => [d.id, d.status, d.flags])).toContainEqual([view.id, "PROPOSED", 0]);
   expect((await live.getDeals()).deals.find((d) => d.counterparty_id === "BUYER-1")?.pending_documents).toEqual([view.id]);
 
   const decided = await live.decideDocument(view.id, "confirm", view.doc_hash, null);
-  expect(decided.result).toMatchObject({ kind: "CONFIRM_DOCUMENT", status: "EXECUTED", tier: "TIER_2" });
+  expect(decided.result).toMatchObject({ kind: "CONFIRM_DOCUMENT", status: "EXECUTED", tier: "TIER_2", seq: 4 });
   expect(decided.document).toMatchObject({ status: "CONFIRMED", label: "Read by the agent, confirmed by you", decided_seq: decided.result.seq });
   expect((await live.getState()).state).toEqual(before.state);
   const deal = (await live.getDeals()).deals.find((d) => d.counterparty_id === "BUYER-1");
-  expect(deal).toMatchObject({ has_contract: true, contract: { record_id: view.id, reference: "FHR-2026-07" } });
+  expect(deal).toMatchObject({ has_contract: true, contract: { record_id: view.id, reference: "FHR-2026-07" }, pending_documents: [] });
   expect(deal?.stages?.map((s) => s.key)).toEqual(["read", "negotiated", "early_payment", "collecting", "fulfilled"]);
 
-  // A decision is made once: the same call again is refused, and the ledger holds one confirmation.
+  // A decision is made once: the same call again is refused, and the ledger holds four confirmations.
   const again = await live.decideDocument(view.id, "confirm", view.doc_hash, null);
   expect(again.result.status).toBe("REFUSED");
-  expect((await live.getLedger()).operations.filter((o) => o.kind === "CONFIRM_DOCUMENT" && o.status === "EXECUTED")).toHaveLength(1);
+  expect((await live.getLedger()).operations.filter((o) => o.kind === "CONFIRM_DOCUMENT" && o.status === "EXECUTED")).toHaveLength(4);
 });

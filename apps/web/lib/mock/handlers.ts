@@ -106,7 +106,7 @@ const FIXTURE_OFFERS: { fixture_id: string; view: OfferView; verdict: VerdictVie
 
 const SECURITY_FIXTURE = "SEC_DEMO_FASTCAPITAL";
 const GENESIS = "0".repeat(64);
-const STORAGE_KEY = "tl-mock-store-v1";
+const STORAGE_KEY = "tl-mock-store-v2";
 
 interface Store {
   offers: Record<string, OfferView>;
@@ -128,6 +128,21 @@ const emptyStore = (): Store => ({
   securityScene: false,
 });
 
+/**
+ * The demo's starting point, as live: the books untouched and the ledger opening on the owner's confirmation of the three
+ * demo documents (CONFIRM_DOCUMENT, Tier 2), recorded from the demo reset.
+ */
+function seededStore(): Store {
+  const s = emptyStore();
+  for (const t of documents.seedOperations()) {
+    const seq = s.ops.length + 1;
+    const prev = s.ops.length ? (s.ops[s.ops.length - 1].entry_hash ?? GENESIS) : GENESIS;
+    const base = { op_id: t.op_id, kind: t.kind, status: t.status, tier: t.tier, violations: [], seq, message: t.message, day: 0, requested_by: t.requested_by, summary: t.summary };
+    s.ops.push({ ...base, prev_hash: prev, entry_hash: entryHash(base, prev) });
+  }
+  return s;
+}
+
 let memory: Store | null = null;
 
 function load(): Store {
@@ -140,10 +155,10 @@ function load(): Store {
         return memory;
       }
     } catch {
-      /* fall through to an empty store */
+      /* fall through to the demo's starting point */
     }
   }
-  memory = emptyStore();
+  memory = seededStore();
   return memory;
 }
 
@@ -568,7 +583,7 @@ export async function demoReset(): Promise<void> {
     requestSignIn("required");
     throw new ApiError(401, "Owner sign-in required (401). Sign in with the owner token to use this.");
   }
-  memory = emptyStore();
+  memory = seededStore();
   save();
   home.resetHome();
   documents.resetDocuments();

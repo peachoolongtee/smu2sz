@@ -8,9 +8,9 @@
     "status": "PENDING_APPROVAL",
     "tier": "TIER_2",
     "violations": [],
-    "seq": 3,
-    "entry_hash": "ba985a41155c3d53f14e2a01ac894bdb1be7a6ce1930c740f1113ba84c2d3d91",
-    "prev_hash": "6793c0c2b3cfb24d43345184f7bfe7b862a56cb0b4aef591457445bfa9a45c40",
+    "seq": 6,
+    "entry_hash": "222eb08cec48030b8da839dd3a04c79c0350b17b15581d87227089a63ee81077",
+    "prev_hash": "391456b6adc208e4df2862bdcb556c947a09587414e9a92a1b1ca5c73ebdb57e",
     "effective_day": 0,
     "approval_id": "APR-000001",
     "message": "Queued for owner approval (APR-000001): apply for facility FAC-ETL (¥600,000.00)"
