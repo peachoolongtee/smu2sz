@@ -459,6 +459,8 @@ export interface Trajectory {
 
 export type ViolationCode =
   | "AGG_CONCESSION_EXCEEDED"
+  | "DISCOUNT_ABOVE_BREAK_EVEN"
+  | "EARLY_PAY_DEARER_THAN_PLAN"
   | "PER_BUYER_CAP_EXCEEDED"
   | "IMMEDIATE_DISCOUNT_EXCEEDED"
   | "RESERVE_BREACH"

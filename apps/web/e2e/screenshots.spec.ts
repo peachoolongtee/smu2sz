@@ -122,6 +122,6 @@ test("Demo pages: the story, the stepper before and after the walk, and the engi
   await page.goto("/trajectory");
   await shoot(page, "25-demo-trajectory", p);
   await page.goto("/deals");
-  await expect(page.getByTestId("deal-row").first()).toBeVisible();
+  await expect(page.getByTestId("inbox-msg-EX01")).toBeVisible();
   await shoot(page, "26-deals-two-offers-demo-walked", p);
 });
