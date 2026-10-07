@@ -34,6 +34,10 @@
   --color-info-fg: #1447a6;
   --color-info-bg: #e8f0fd;
   --color-info-line: #b9cff4;
+  /* The contract-ingestion prototype's accent: the new cards' outline and "New" tag, and the rule beside a clause quote. */
+  --color-new: #6b3fc0;
+  --color-new-bg: #f1ebfc;
+  --color-new-line: #d5c4f3;
 
   --shadow-card: 0 1px 2px rgb(15 28 46 / 0.04);
   --radius-card: 0.625rem;
