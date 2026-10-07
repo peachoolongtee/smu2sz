@@ -42,7 +42,7 @@ export default defineConfig({
           },
           {
             name: "phone",
-            testMatch: /responsive\.spec\.ts/,
+            testMatch: /(responsive|screenshots)\.spec\.ts/,
             use: { ...devices["Pixel 7"], baseURL: `http://localhost:${MOCK_PORT}` },
           },
         ]
