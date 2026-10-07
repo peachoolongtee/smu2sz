@@ -71,7 +71,7 @@ def test_when_text_is_a_distance_from_today():
 def test_relative_days_rewrites_the_engine_phrases_and_leaves_counts_alone():
     from app.api.presentation import relative_days
 
-    r = lambda text: relative_days(text, 34, "en")  # noqa: E731
+    r = lambda text: relative_days(text, 34, "en")
     assert r("the cash lands on day 37 after the 3-day lead time") == "the cash lands in 3 days after the 3-day lead time"
     assert r("it will cost ¥1,782.19 by day 47") == "it will cost ¥1,782.19 within 13 days"
     assert r("by day 35") == "by day 35".replace("by day 35", "within 1 day") and r("by day 30") == "by today"

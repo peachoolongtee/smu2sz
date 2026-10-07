@@ -38,7 +38,9 @@ test("a 401 from the API opens the owner sign-in dialog instead of leaving a bla
     }),
   );
   await page.goto("/mandate");
-  await expect(page.getByText(/rejected the owner token/i).first()).toBeVisible();
+  // In words, not an error code: the page asks for the sign-in, and the dialog is open.
+  await expect(page.getByTestId("signin-needed")).toContainText("Sign in to see your books");
+  await expect(page.getByTestId("signin-needed")).not.toContainText("401");
   await expect(page.getByRole("dialog", { name: "Owner sign-in" })).toBeVisible();
 });
 
@@ -306,7 +308,7 @@ test("the Business inbox waits for the books before it shows any sender, and say
   await expect(page.locator('[data-testid^="inbox-msg-"]')).toHaveCount(0);
   await expect(page.getByTestId("inbox-thread-BUYER-1")).toBeVisible();
   await expect(page.getByTestId("inbox-msg-SEC")).toHaveCount(0);
-  await expect(page.getByTestId("inbox-blocked")).toContainText("1 suspicious message was blocked");
+  await expect(page.getByTestId("inbox-blocked")).toContainText("1 message from an unknown sender was set aside.");
   // The books fail to load: the error, never the unchecked list.
   await page.unroute(`${API}/state`);
   await page.route(`${API}/state`, (route) =>
