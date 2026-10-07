@@ -116,9 +116,26 @@ test("opening a message reads it, and the evaluated deal reads in the owner's or
   }
   await expect(page.getByTestId("deal-why")).toContainText("Why FLOW recommends this");
   await page.getByTestId("deal-why").locator("> summary").click();
+  // Three reasons in the owner's words; every check, the formulas and the engine's verdict one level further down.
+  const reasons = page.getByTestId("deal-reasons");
+  await expect(reasons.locator("li")).toHaveCount(3);
+  await expect(page.getByTestId("deal-reason-AGG_CONCESSION_EXCEEDED")).toHaveText("The package gives away ¥28,326.92 over 12 months, above your ¥5,000.00 limit.");
+  await expect(page.getByTestId("deal-reason-RESERVE_BREACH")).toHaveText("It pushes cash to ¥209,960.00 in 47 days, below your ¥300,000.00 minimum cash reserve.");
+  await expect(page.getByTestId("deal-reason-DISCOUNT_ABOVE_BREAK_EVEN")).toContainText("break-even 0.88%");
+  await expect(page.getByTestId("deal-why")).not.toContainText("d/(1");
+  await expect(page.getByTestId("deal-technical-summary")).toBeHidden();
+  await page.getByTestId("deal-all-checks").locator("> summary").click();
+  await expect(page.getByTestId("deal-all-checks").locator("> summary")).toContainText("Show all checks (8)");
   await expect(page.getByTestId("deal-technical-summary")).toContainText("Engine verdict");
   await expect(page.getByTestId("deal-technical-summary")).toContainText("REJECT");
   await page.getByTestId("deal-why").locator("> summary").click();
+  // The calculation opens with the reading, the equation behind it.
+  await page.getByTestId("deal-calc").locator("> summary").click();
+  const items = page.getByTestId("deal-calc-item");
+  await expect(items.nth(1)).toContainText("60-day terms add 15 days of financing to 13 expected invoices");
+  await expect(items.nth(1)).toContainText("¥24,326.92");
+  await expect(items.nth(1).locator("details > summary")).toHaveText("Formula");
+  await page.getByTestId("deal-calc").locator("> summary").click();
   // No empty commitments card; the page fits about two screens with the disclosures closed.
   await expect(page.locator("#commitments")).toHaveCount(0);
   const height = await page.evaluate(() => document.documentElement.scrollHeight);
@@ -127,4 +144,10 @@ test("opening a message reads it, and the evaluated deal reads in the owner's or
   // Reading the same message again costs nothing: it is shown, not read twice.
   await inbox.getByTestId("inbox-msg-EX01").click();
   await expect(inbox.getByTestId("inbox-msg-EX01")).toContainText("Showing below");
+  // Sending the counter: the buyer's (simulated) answer comes back in words, and the next step is the agreement.
+  await expect(response).toContainText("The buyer's reply is simulated in this demo.");
+  await response.getByTestId("deal-send").click();
+  await expect(page.getByTestId("deal-negotiation")).toContainText("The buyer accepted Option A. The agreement is on your books.");
+  await expect(response.getByTestId("deal-send")).toHaveCount(0);
+  await expect(next).toContainText(/agree|books/i);
 });

@@ -15,7 +15,13 @@ from pydantic import BaseModel
 
 from app.api.auth import require_feature, require_owner
 from app.api.display import displayed
-from app.api.presentation import business_action, comparison_reason, comparison_status, counter_economics
+from app.api.presentation import (
+    business_action,
+    comparison_reason,
+    comparison_status,
+    concession_interpretation,
+    counter_economics,
+)
 from app.api.runtime import Runtime, get_runtime
 from app.api.views import owner_verdict_extras, trajectory_view
 from app.books import Books, current_books
@@ -128,6 +134,10 @@ def evaluate_offer(offer_id: str, body: EvaluateIn | None = None) -> dict:
         view = displayed(json.loads(v.model_dump_json()))
         view["counters"] = _guarded_counters(rt, offer, list(v.counters))
         view["business_action"] = business_action(v.outcome.value, len(v.counters))
+        # Interpretation first, equation second: each concession value says what it means before its formula.
+        bound = {o.id: o for o in bundle.bound_obligations}
+        view["concession_values"] = [{**cv, "interpretation": concession_interpretation(cv, bound.get(cv.get("obligation_id", "")), "en")}
+                                     for cv in view.get("concession_values") or []]
     view.update({
         **owner_verdict_extras(bundle, offer, state, mandate),  # passed_checks, autonomy, annualised
         "bound_obligations": displayed([json.loads(o.model_dump_json()) for o in bundle.bound_obligations]),
