@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { CheckIcon } from "@/components/icons";
-import { Badge, Card, type Tone } from "@/components/ui";
+import { Badge, Card, ErrorState, LoadingBlock, type Tone } from "@/components/ui";
 import { useI18n } from "@/lib/i18n";
 import { INBOX, type InboxMessage, type InboxSource } from "@/lib/inbox";
 import type { Mode } from "@/lib/mode";
@@ -32,7 +32,8 @@ function threads(messages: InboxMessage[]): Thread[] {
  * in one line that a suspicious message was blocked, linking to Activity's refused section; Demo mode shows every
  * message, the unknown sender flagged, and keeps the "simulated" explanation. Clicking a message reads it (the page
  * does that); `statusFor` gives the words for a message already evaluated. The registry (`known`, the counterparty ids
- * on the books) decides who is a known contact.
+ * on the books) decides who is a known contact, so Business mode shows no message until the books have loaded (a
+ * loading block, or the error when the books failed to load): it never shows a sender it has not checked.
  */
 export function InboxList({
   currentDocId,
@@ -43,6 +44,8 @@ export function InboxList({
   mode,
   statusFor,
   onOpen,
+  loadError,
+  onRetry,
 }: {
   currentDocId: string | null;
   readDocIds: (string | undefined)[];
@@ -54,6 +57,9 @@ export function InboxList({
   /** The recommendation words for a message that was evaluated, else null. */
   statusFor: (docId: string) => string | null;
   onOpen: (m: InboxMessage) => void;
+  /** The books (the registry of known contacts) failed to load. */
+  loadError?: Error;
+  onRetry?: () => void;
 }) {
   const { t, te } = useI18n();
   const business = mode === "business";
@@ -134,13 +140,23 @@ export function InboxList({
     );
   }
 
+  if (business && known === null) {
+    return (
+      <Card id="inbox-list" title={t("biz.deals.inbox")}>
+        <div data-testid={loadError ? "inbox-error" : "inbox-loading"}>
+          {loadError ? <ErrorState error={loadError} onRetry={onRetry} /> : <LoadingBlock rows={2} />}
+        </div>
+      </Card>
+    );
+  }
   return (
     <Card
       id="inbox-list"
       title={business ? t("biz.deals.inbox") : t("biz.deals.simulatedInbox")}
       subtitle={business ? undefined : t("inbox.list.sub")}
     >
-      <ul className="-m-4 divide-y divide-line" aria-label={business ? t("biz.deals.inbox") : t("biz.deals.simulatedInbox")} data-testid="inbox-list">
+      <ul className=
+"-m-4 divide-y divide-line" aria-label={business ? t("biz.deals.inbox") : t("biz.deals.simulatedInbox")} data-testid="inbox-list">
         {current ? thread(current) : null}
         {current && others.length ? (
           <li>

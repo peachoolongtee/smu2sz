@@ -139,10 +139,41 @@ def _lowest(traj: dict[str, Any]) -> tuple[int, int]:
 # ---------------------------------------------------------------- 1. no commitments: nothing moves
 
 
+# Display-only fields the simplification map added to the router plan's comparison rows and legs (they never feed the
+# engine, see tests/funding/test_display_fields_inert.py). The golden digest is of the payload without them.
+_ROW_DISPLAY = ("status", "reason_kind", "shortfall_fen", "shortfall_display", "worst_day", "not_executable_reason",
+                "not_executable_reason_when", "note_when", "components_when")
+
+
+def _strip_when(plan: dict[str, Any]) -> None:
+    """`plan_when`'s `*_when` sentences (Wave 4/7) beside the plan's, cost lines', violations' and rejected candidates' text."""
+    for holder in [plan, *plan.get("costs", []), *plan.get("violations", []), *plan.get("rejected", [])]:
+        for k in [k for k in holder if k.endswith("_when")]:
+            holder.pop(k)
+
+
+def _without_display_fields(plan: dict[str, Any]) -> dict[str, Any]:
+    out = json.loads(json.dumps(plan))
+    for key in ("committed", "expected"):
+        if out.get(key):
+            out[key].pop("available_from_day", None)
+            _strip_when(out[key])
+            for a in out[key]["actions"]:
+                a.pop("available_from_day", None)
+    for row in out["comparison"]:
+        for k in _ROW_DISPLAY:
+            row.pop(k, None)
+        for a in row["actions"]:
+            a.pop("available_from_day", None)
+            a["lands_day"] = None  # rows now carry the landing stamp; the golden rows had none
+    return out
+
+
 def test_no_commitments_trajectory_and_router_plan_are_unchanged(client: TestClient, rt: Runtime) -> None:
     t = client.get("/trajectory").json()
     assert t.pop("today") == 0
-    assert _digest(t) == GOLDEN_TRAJECTORY
+    # `first_breach_cash` is a display-only field the simplification map added (Wave 1); the golden is of the rest
+    assert _digest({k: v for k, v in t.items() if k != "first_breach_cash"}) == GOLDEN_TRAJECTORY
     state, mandate = rt.store.get_state(), rt.store.get_mandate()
     raw = trajectory_view(project(state, [], [], Mode.CONSERVATIVE, mandate.horizon_days, mandate.min_cash_fen),
                           mandate.min_cash_fen).model_dump()
@@ -150,7 +181,7 @@ def test_no_commitments_trajectory_and_router_plan_are_unchanged(client: TestCli
     r = client.post("/router/plan").json()
     assert r["marginal"]["extension_extra_receivables_fen"] == 21_000_000  # F x 15 / 30, the shared pro forma
     assert r["marginal"]["extension_committed_12m_fen"] == 2_432_692
-    assert _digest(r) == GOLDEN_ROUTER_PLAN
+    assert _digest(_without_display_fields(r)) == GOLDEN_ROUTER_PLAN
     assert r["committed"]["total_cost_display"] == "¥3,113.93"  # line 841.64 + advance of 255,000 2,272.29
     assert r["committed"]["total_cost_fen"] == 311_393
 

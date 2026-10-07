@@ -7,12 +7,14 @@ import type { HomeView } from "@/lib/types";
 /**
  * The current funding position once no further action is needed: each lot on the books with where it came from and
  * whether it has landed or is still arriving, then each committed source's drawn and available amounts. Every figure
- * is the server's; the card adds nothing up.
+ * is the server's; the card adds nothing up. A lot's figure is what is still outstanding on it (`remaining_display`),
+ * with the amount drawn beside it when part has been repaid; an opening balance is not "received today".
  */
 export function CurrentFunding({ h }: { h: HomeView }) {
   const { t } = useI18n();
   const lots = h.cash.funding_lots ?? [];
-  const drawn = h.facilities.filter((f) => f.drawn_display !== "¥0.00");
+  // A source with something drawn: the server's `drawn_fen` (an older recording without it falls back to the display string).
+  const drawn = h.facilities.filter((f) => (f.drawn_fen !== undefined ? f.drawn_fen > 0 : f.drawn_display !== "¥0.00"));
   return (
     <Card id="cash-current" title={t("biz.cash.current")} subtitle={t("biz.cash.current.sub")}>
       {lots.length ? (
@@ -21,9 +23,15 @@ export function CurrentFunding({ h }: { h: HomeView }) {
             <li key={`${lot.facility_name}-${lot.arrival_day}-${i}`} className="flex flex-wrap items-center justify-between gap-2 py-2.5" data-testid={`cash-lot-${lot.landed ? "landed" : "transit"}`}>
               <div className="min-w-0">
                 <p className="text-sm font-semibold tabular-nums text-ink">
-                  {lot.amount_display} <span className="font-normal text-ink-2">{lot.facility_name}</span>
+                  {lot.remaining_display ?? lot.amount_display} <span className="font-normal text-ink-2">{lot.facility_name}</span>
+                  {lot.remaining_display && lot.remaining_display !== lot.amount_display ? (
+                    <span className="ml-1.5 text-xs font-normal text-ink-3" data-testid="cash-lot-of">{t("biz.cash.lot.of", { amount: lot.amount_display })}</span>
+                  ) : null}
                 </p>
-                <p className="text-xs text-ink-3">{lot.landed ? t("biz.cash.lot.landed", { when: lot.arrival_when }) : t("biz.cash.lot.arrives", { when: lot.arrival_when })}</p>
+                <p className="text-xs text-ink-3">
+                  {lot.opening ? t("biz.cash.lot.opening") : lot.landed ? t("biz.cash.lot.landed", { when: lot.arrival_when }) : t("biz.cash.lot.arrives", { when: lot.arrival_when })}
+                </p>
+
               </div>
               <Badge tone={lot.landed ? "ok" : "info"}>{lot.landed ? t("biz.cash.lot.received") : t("biz.cash.lot.inTransit")}</Badge>
             </li>

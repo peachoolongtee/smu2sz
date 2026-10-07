@@ -6,7 +6,7 @@
   "status_text": "Action needed",
   "headline": "Your cash reserve becomes unsafe in 8 days.",
   "note": "Cash falls to ¥100k, ¥200k below your ¥300k minimum cash reserve.",
-  "worst": "Worst point: ¥100k in 8 days if you do nothing.",
+  "worst": null,
   "plan_note": "A funding plan is ready. It needs your approval because of its cost.",
   "since_day": null,
   "cash": {
@@ -38,6 +38,7 @@
         "amount_display": "¥149,986.20",
         "remaining_display": "¥149,986.20",
         "landed": true,
+        "opening": false,
         "arrival_day": 0,
         "arrival_when": "34 days ago",
         "maturity_day": null,
@@ -2234,7 +2235,7 @@
     "if_nothing": "¥200,000.00 below your minimum cash reserve in 8 days; the gap peaks at ¥200,000.00 in 8 days.",
     "after": "Cash stays above your minimum cash reserve for the next 120 days.",
     "why": "The cheapest option, ¥1,706.10 in all (including ¥788.97 less in other interest and fees across the forecast), needs 2 separate approvals; this one needs one. Both are on Compare options.",
-    "detail": "Projected cash closes at ¥100,000.00 in 8 days, ¥200,000.00 below the reserve floor; the gap peaks at ¥200,000.00 in 8 days and lasts until in 12 days. A committed cure exists: SUBMIT_INVOICE_FOR_FINANCING Invoice financing (onboarded platform) ¥200,000.00, cost ¥1,782.19 (32.5% a year for 10 days); that is above the 15.00% limit you signed for funding without your approval, so it needs your approval before it runs.",
+    "detail": "Projected cash closes at ¥100,000.00 in 8 days, ¥200,000.00 below the reserve floor; the gap peaks at ¥200,000.00 in 8 days and lasts until in 12 days. A committed cure exists: finance an invoice on Invoice financing (onboarded platform) ¥200,000.00, cost ¥1,782.19 (32.5% a year for 10 days); that is above the 15.00% limit you signed for funding without your approval, so it needs your approval before it runs.",
     "formula": "shortfall = floor − closing_d: ¥300,000.00 − ¥100,000.00 = ¥200,000.00 (day 42); max over days 42..46 = ¥200,000.00",
     "pending_approval_id": "APR-000001",
     "state_version": 7,
@@ -2351,6 +2352,7 @@
       "name": "Bank credit line",
       "status": "COMMITTED",
       "limit_display": "¥150,000.00",
+      "drawn_fen": 14998620,
       "drawn_display": "¥149,986.20",
       "available_display": "¥13.80",
       "lead_time_days": 0
@@ -2360,6 +2362,7 @@
       "name": "Invoice financing (onboarded platform)",
       "status": "COMMITTED",
       "limit_display": "¥350,000.00",
+      "drawn_fen": 0,
       "drawn_display": "¥0.00",
       "available_display": "¥350,000.00",
       "lead_time_days": 3
@@ -2369,6 +2372,7 @@
       "name": "Buyer early-payment offer",
       "status": "COMMITTED",
       "limit_display": "¥420,000.00",
+      "drawn_fen": 0,
       "drawn_display": "¥0.00",
       "available_display": "¥420,000.00",
       "lead_time_days": 2

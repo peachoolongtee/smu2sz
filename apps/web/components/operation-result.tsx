@@ -44,6 +44,7 @@ export function OperationResultBox({
   children,
   testId,
   kind,
+  details,
 }: {
   status: OperationStatus;
   message: string;
@@ -51,6 +52,8 @@ export function OperationResultBox({
   children: React.ReactNode;
   testId?: string;
   kind?: string;
+  /** Audit-level facts (executor sentence, operation id, tier, sequence, hash), rendered last, behind a disclosure by the caller. */
+  details?: React.ReactNode;
 }) {
   const { t } = useI18n();
   const waiting = status === "PENDING_APPROVAL";
@@ -74,6 +77,8 @@ export function OperationResultBox({
           {message}
         </p>
       ) : null}
+      {details}
     </div>
+
   );
 }

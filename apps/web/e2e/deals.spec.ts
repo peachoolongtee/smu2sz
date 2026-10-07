@@ -151,3 +151,18 @@ test("opening a message reads it, and the evaluated deal reads in the owner's or
   await expect(response.getByTestId("deal-send")).toHaveCount(0);
   await expect(next).toContainText(/agree|books/i);
 });
+
+test("Business mode never shows a sender the books have not vouched for, not even while they load", async ({ page }) => {
+  // Watch the document from its first paint: the suspicious message must not appear for a single frame.
+  await page.addInitScript(() => {
+    (window as unknown as { __sawSec: boolean }).__sawSec = false;
+    const look = () => {
+      if (document.querySelector('[data-testid="inbox-msg-SEC"]')) (window as unknown as { __sawSec: boolean }).__sawSec = true;
+    };
+    new MutationObserver(look).observe(document, { childList: true, subtree: true });
+  });
+  await page.goto("/deals");
+  await expect(page.getByTestId("inbox-thread-BUYER-1")).toBeVisible();
+  await expect(page.getByTestId("inbox-blocked")).toContainText("1 suspicious message was blocked");
+  expect(await page.evaluate(() => (window as unknown as { __sawSec: boolean }).__sawSec)).toBe(false);
+});

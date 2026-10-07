@@ -36,8 +36,8 @@ function CounterBusinessCard({ c, recommended, today, action }: { c: Counter; re
             <div className="flex items-baseline justify-between gap-3">
               <dt className="text-ink-2">{t("biz.deals.netCost")}</dt>
               <dd className="text-lg font-semibold tabular-nums text-ink" data-testid="deal-option-cost">
-                {/* The verifier floors a negative net at zero on purpose (the adjustment covers the cost); the card says so, never a gain. */}
-                {e.net_fen <= 0 ? "≈ ¥0" : e.net_display}
+                {/* The server says the net ("≈ ¥0" when the adjustment covers the cost: the verifier floors it on purpose, never a gain). */}
+                {e.net_words ?? e.net_display}
               </dd>
             </div>
             <div className="mt-1 flex items-baseline justify-between gap-3 text-xs text-ink-3">
@@ -109,15 +109,24 @@ export function RecommendedResponse({ v, offerId, today, mode, negotiation }: { 
     );
   }
   const [first, ...rest] = counters;
+  // The outbound guard held this counter's wording back: it cannot be sent as it stands.
+  const held = Boolean(first.outbound_blocked);
   const sendAction =
     !negotiation && mode === "business" ? (
       <div className="flex flex-wrap items-center gap-3">
-        <Button variant="primary" loading={sending} onClick={() => void send()} data-testid="deal-send">
+        <Button variant="primary" loading={sending} disabled={held} onClick={() => void send()} data-testid="deal-send">
           {sending ? t("biz.deals.sending") : t("biz.deals.send")}
         </Button>
-        <span className="text-xs text-ink-3">{t("biz.deals.send.simulated")}</span>
+        {held ? (
+          <span className="text-xs font-medium text-warn-fg" role="status" data-testid="deal-send-blocked">
+            {t("biz.deals.send.blocked")}
+          </span>
+        ) : (
+          <span className="text-xs text-ink-3">{t("biz.deals.send.simulated")}</span>
+        )}
       </div>
     ) : undefined;
+
   return (
     <Card id="counters" title={t("biz.deals.response")} subtitle={t("biz.deals.counters.sub")}>
       <ul className="space-y-3">

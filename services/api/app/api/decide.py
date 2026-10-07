@@ -114,6 +114,9 @@ def _row_view(r, state=None, today: int | None = None) -> dict:
     d["shortfall_display"] = fmt_yuan(r.shortfall_fen) if r.shortfall_fen is not None else None
     if state is not None and today is not None:
         d["note_when"] = business_text(state, r.note, today, "en") if r.note else None
+        d["not_executable_reason_when"] = (business_text(state, r.not_executable_reason, today, "en")
+                                           if r.not_executable_reason else None)
+
         d["components_when"] = [business_text(state, c, today, "en") for c in r.components]
     return d
 
@@ -354,8 +357,8 @@ def router_plan() -> dict:
     names = {f.id: f.name for f in state.facilities}
     notional, committed_b, expected_b = (bases + [None, None, None])[:3]
     return {
-        "committed": displayed(json.loads(committed.model_dump_json())),
-        "expected": displayed(json.loads(expected.model_dump_json())) if expected else None,
+        "committed": plan_when(state, displayed(json.loads(committed.model_dump_json())), rt.day, "en"),
+        "expected": plan_when(state, displayed(json.loads(expected.model_dump_json())), rt.day, "en") if expected else None,
         "menu": menu,
         "marginal": displayed({
             "rate": {"num": rate.num, "den": rate.den}, "rate_display": fmt_pct(rate.value, 4),

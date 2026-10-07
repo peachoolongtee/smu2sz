@@ -745,7 +745,7 @@ export interface MoneyTrajectory {
     debt: MoneyView;
     forward_concession: MoneyView;
     below_floor: boolean;
-    events: { kind: string; amount: MoneyView; label: string; /** Short words for a chart annotation, written by the server. */ label_short?: string; ref: string | null; formula: string | null }[];
+    events: { kind: string; amount: MoneyView; label: string; ref: string | null; formula: string | null }[];
   }[];
   months: {
     month: number;
@@ -877,7 +877,11 @@ export type ComparisonRow = Displayed<{
   approval_reason?: string;
   executable_now?: boolean;
   not_executable_reason?: string;
-  /** The row's actions as the router returned them (`lands_day` is null on every comparison row today). */
+  /** `not_executable_reason` with its day numbers said as distances from today. */
+  not_executable_reason_when?: string | null;
+  /** The router's own outcome for the row; the fallback for `status` when an older answer lacks it. */
+  result?: "SELECTED" | "ADMISSIBLE" | "NOT_ADMISSIBLE";
+  /** The row's actions as the router returned them, each leg stamped with the day it becomes eligible and the day its cash lands. */
   actions?: Displayed<FundingAction>[];
   /** The server's reading of the row: the router's pick, a dearer full plan, a plan that still breaks the reserve, or a source that is not available. Rows of different statuses are never ranked together. */
   status?: ComparisonStatus;
@@ -892,7 +896,8 @@ export type ComparisonRow = Displayed<{
   note_when?: string;
 };
 
-export type ComparisonStatus = "recommended" | "alternative" | "insufficient" | "unavailable";
+/** `blocked`: not admissible for a reason other than the reserve or an uncommitted source (a limit of the owner's). */
+export type ComparisonStatus = "recommended" | "alternative" | "insufficient" | "unavailable" | "blocked";
 
 /** What the owner should do about an offer, as distinct from the verifier's verdict code (a REJECT with counters is "counter"). */
 export type BusinessAction = "accept" | "counter" | "decline" | "needs_owner" | "cannot";
@@ -906,6 +911,8 @@ export interface CounterEconomics {
   offset_display: string;
   net_fen: Fen;
   net_display: string;
+  /** The net in words: "≈ ¥0" when the offset covers the funding cost, else `net_display`. */
+  net_words?: string;
   /** True when a negative part offsets a positive one: the figure to show is a net, and both parts show beside it. */
   is_net: boolean;
 }
@@ -1794,7 +1801,7 @@ export interface HomeView {
     horizon_days: number;
     in_transit: { total_display: string; lots: { facility_name: string; amount_display: string; arrival_day: Day; arrival_when: string; /** "¥255k funding arriving in 3 days" */ headline?: string }[] } | null;
     /** Every funding lot on the books, landed or still arriving, for the current funding position. */
-    funding_lots?: { facility_name: string; amount_display: string; remaining_display: string; landed: boolean; arrival_day: Day; arrival_when: string; maturity_day: Day | null; maturity_when: string | null }[];
+    funding_lots?: { facility_name: string; amount_display: string; remaining_display: string; landed: boolean; /** A balance older than the books ("Opening balance"), not funding received today. */ opening?: boolean; arrival_day: Day; arrival_when: string; maturity_day: Day | null; maturity_when: string | null }[];
     /** Cash minus the minimum cash reserve, today and at the lowest point ahead; short figures from the server. */
     headroom_fen?: Fen;
     headroom_short?: string;
@@ -1814,7 +1821,8 @@ export interface HomeView {
   changes: HomeChange[];
   receivables: HomeReceivables;
   warnings: { id: string; kind: string; title: string; detail: string; day: Day | null; when: string }[];
-  facilities: { id: string; name: string; status: string; limit_display: string; drawn_display: string; available_display: string; lead_time_days: number }[];
+  facilities: { id: string; name: string; status: string; limit_display: string; drawn_fen?: Fen; drawn_display: string; available_display: string; lead_time_days: number }[];
+
   counts: Record<AlertSeverity, number>;
   note_basis: string;
 }

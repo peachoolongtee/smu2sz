@@ -43,7 +43,12 @@ test("risk, plan, options, forecast: one set of figures, in the owner's order", 
   await expect(full).toContainText("Plans that fully protect your cash");
   await expect(full.getByTestId("cash-option-selected")).toContainText("Bank credit line + Invoice financing (onboarded platform)");
   await expect(full.getByTestId("cash-option-selected")).toContainText("Recommended");
-  await expect(full.getByTestId("cash-option-selected")).toContainText("Cheapest plan that fully protects your cash");
+  // Words with no cost claim the browser cannot make: the recommended row says it protects cash and can run today, the
+  // dearer ones say the server's note ("admissible but dearer than the selected plan").
+  await expect(full.getByTestId("cash-option-selected")).toContainText("Fully protects your cash and can run today");
+  await expect(full.getByTestId("cash-option-alternative-note").first()).toContainText("admissible but dearer than the selected plan");
+  await expect(full).not.toContainText("at a higher cost");
+
   await expect(full.getByTestId("cash-option-selected")).toContainText("¥3,113.93");
   await expect(full.locator("li")).toHaveCount(3);
   // The recommended plan is #1, then the dearer alternatives in ascending cost.
@@ -74,9 +79,9 @@ test("risk, plan, options, forecast: one set of figures, in the owner's order", 
   await page.getByTestId("forecast-horizon-120").click();
   await expect(chart).toHaveAttribute("data-horizon", "120");
   await expect(page.locator("body")).not.toContainText(/\bDay \d/);
-  // No "day N" in the prose. The "Other options" section still quotes the router's own lines ("cash on day 21", "repaid day 32"):
-  // that section is Wave 5's (#34); the API already sends `note_when` and `components_when` beside them.
-  expect(await proseOf(page, ["#cash-options"])).not.toMatch(/\bday \d/i);
+  // No "day N" in the prose, the options included: the rows say the server's `note_when` ("cash in 21 days"), never the router's "cash on day 21".
+  expect(await proseOf(page)).not.toMatch(/\bday \d/i);
+
   // The sources explainer opens on demand and names each facility in plain words.
   await page.getByTestId("cash-sources").locator("> summary").click();
   await expect(page.getByTestId("facility-FAC-LINE")).toContainText("Ready to use");
@@ -105,4 +110,18 @@ test("after the plan ran, the page states the current funding and folds the comp
   await expect(considered.getByTestId("cash-options-full")).toBeVisible();
   await expect(considered.getByTestId("cash-plan-detail").locator("> summary")).toHaveText("Why this plan was selected");
   await expect(page.locator("body")).not.toContainText(/\bDay \d/);
+});
+
+test("day 34: the first breach is also the worst point, so the figures row says it once", async ({ page }) => {
+  await page.goto("/demo");
+  await page.getByTestId("home-days").fill("34");
+  await page.getByTestId("home-advance").click();
+  await expect(page.getByTestId("home-day")).toHaveText("Day 34");
+  await page.goto("/cash");
+  const figures = page.getByTestId("cash-figures");
+  await expect(figures).toContainText("Cash at first breach (also the lowest point)");
+  await expect(figures).toContainText("¥100k · in 8 days");
+  await expect(figures).not.toContainText("Worst point");
+  await expect(figures).not.toContainText("Cash becomes unsafe");
+  await expect(figures.getByText("in 8 days")).toHaveCount(1);
 });

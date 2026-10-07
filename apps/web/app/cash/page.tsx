@@ -38,7 +38,11 @@ export default function CashPage() {
   const h = home.data;
   const view = traj.data;
   const unsafe = h?.cash.first_breach_day !== null && h?.cash.first_breach_day !== undefined;
-  const covered = Boolean(h) && !h?.next_action;
+  // Covered means no action is needed AND no breach is ahead: a critical alert with no runnable fix has no next action
+  // either, and the page must not then say "no additional funding is needed".
+  const covered = Boolean(h) && !h?.next_action && h?.cash.first_breach_day === null;
+  // When the first breach is also the lowest point it is one fact: one tile, not the same figure and day twice.
+  const breachIsWorst = unsafe && h?.cash.first_breach_day === h?.cash.lowest_day;
   const today = h?.day ?? 0;
 
   /** The comparison worth showing: none when a fresh plan on covered books says "no funding needed". */
@@ -68,7 +72,7 @@ export default function CashPage() {
             {plan.data.committed.costs.map((c) => (
               <li key={c.label} className="rounded-md border border-line px-3 py-1.5">
                 <div className="flex items-baseline justify-between gap-3">
-                  <span>{c.label}</span>
+                  <span>{c.label_when ?? c.label}</span>
                   <span className="font-medium tabular-nums">{c.display}</span>
                 </div>
                 <div className="mt-1">
@@ -115,9 +119,10 @@ export default function CashPage() {
                     [t("biz.cashToday"), h.cash.cash_short],
                     [t("biz.reserveMin"), h.cash.floor_short],
                     [t("biz.headroom"), h.cash.headroom_short ?? ""],
-                    [unsafe ? t("biz.worstPoint") : t("biz.lowestAhead"), `${h.cash.lowest_short} · ${h.cash.lowest_when}`],
+                    [breachIsWorst ? t("biz.firstBreachIsWorst") : unsafe ? t("biz.worstPoint") : t("biz.lowestAhead"), `${h.cash.lowest_short} · ${h.cash.lowest_when}`],
                     [t("biz.lowestHeadroom"), h.cash.lowest_headroom_short ?? ""],
-                    [t("biz.firstUnsafeDay"), h.cash.first_breach_when ?? t("biz.none")],
+                    [t("biz.firstUnsafeDay"), breachIsWorst ? "" : (h.cash.first_breach_when ?? t("biz.none"))],
+
                   ] as const
                 ).map(([k, v]) =>
                   v ? (
@@ -131,7 +136,8 @@ export default function CashPage() {
             </Card>
 
             <FixResult result={fixer.result} error={fixer.error} changed={fixer.changed} />
-            {h.next_action ? <NextActionBlock a={h.next_action} stateVersion={h.state_version} fixer={fixer} /> : <CurrentFunding h={h} />}
+            {h.next_action ? <NextActionBlock a={h.next_action} stateVersion={h.state_version} fixer={fixer} /> : covered ? <CurrentFunding h={h} /> : null}
+
           </>
         )}
 

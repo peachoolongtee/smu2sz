@@ -107,7 +107,12 @@ test("Go ahead on the opening books runs the fix alone, and the home turns calm 
   const result = page.getByTestId("fix-result");
   await expect(result).toContainText("2 executed");
   await expect(result).toContainText("The alert is cleared.");
+  // Each operation reads as its business sentence and its status; the engine's details wait behind "Audit details".
+  await expect(result.getByTestId("op-sentence").first()).toHaveText("¥150,000.00 drawn on the Bank credit line. Cash received today.");
+  await expect(result.getByTestId("op-state").first()).toContainText("Executed");
+  await expect(result.getByTestId("op-audit").first().getByTestId("op-raw")).toBeHidden();
   await expect(page.getByTestId("home-status")).toHaveAttribute("data-status", "WATCH");
+
   await expect(page.getByTestId("home-headline")).toHaveText("You're covered.");
   await expect(page.getByTestId("home-note")).toContainText("Cash stays above your ¥300k minimum cash reserve for the next 120 days.");
   await expect(page.getByTestId("home-next-action")).toHaveCount(0);
@@ -150,7 +155,14 @@ test("day 34: the fix needs approval; queuing it from the home runs nothing and 
   await expect(action.getByTestId("next-action-cheaper")).toContainText("2 separate approvals");
   // Who has not paid: the late buyer by name, with the days late.
   await expect(page.getByTestId("home-late-RCV-A")).toContainText("Foshan Home Retail Co.");
-  await expect(page.getByTestId("home-late-RCV-A")).toContainText("2 day(s) late");
+  await expect(page.getByTestId("home-late-RCV-A")).toContainText("2 days late");
+  await expect(page.getByTestId("home-late-RCV-A")).not.toContainText("day(s)");
+  // The first breach is also the worst point here (the same day): one tile with the figure and the distance once, not two.
+  await expect(page.getByTestId("home-status")).toContainText("Cash at first breach (also the lowest point)");
+  await expect(page.getByTestId("home-breach-cash")).toHaveText("¥100k");
+  await expect(page.getByTestId("home-lowest")).toHaveCount(0);
+  await expect(page.getByTestId("home-status")).not.toContainText("Worst point");
+  await expect(page.getByTestId("home-status").getByText("in 8 days", { exact: true })).toHaveCount(1);
   await expect(page.getByTestId("home-change-LATE")).toContainText("was due 2 days ago");
 
   const button = page.getByTestId("fix-ALERT-RESERVE-42");
@@ -169,9 +181,18 @@ test("day 34: the fix needs approval; queuing it from the home runs nothing and 
   await expect(page.getByTestId("home-change-WAITING")).toBeVisible();
   await expect(page.getByTestId("home-in-transit")).toHaveCount(0);
   // The agent's answer and "Recent changes" say the queued cure in the owner's words: the signed limit, days from today, never "day N".
+  // Level 1 is the business sentence and the status pill; the tier, sequence, operation id and hash are under "Audit details".
+  await expect(op.getByTestId("op-sentence")).toHaveText("Waiting for your approval: ¥200,000.00 of invoice financing at 32.5% a year, above the 15.00% limit you signed for funding without your approval.");
   await expect(op).toContainText("above the 15.00% limit you signed for funding without your approval");
-  await expect(op).toContainText("(from in 3 days to in 13 days)");
   await expect(op).not.toContainText("what the agent may borrow alone");
+  await expect(op.getByText("Tier 2")).toBeHidden();
+  await expect(op.getByTestId("op-raw")).toBeHidden();
+  await op.getByTestId("op-audit").locator("> summary").click();
+  await expect(op.getByTestId("op-raw")).toContainText("(from in 3 days to in 13 days)");
+  await expect(op.getByTestId("op-audit")).toContainText("Tier 2");
+  await expect(op.getByTestId("op-audit")).toContainText(/seq|Sequence|\b7\b/i);
+  await expect(op.getByTestId("op-audit")).toContainText(/[0-9a-f]{8}/);
+
   await expect(page.getByTestId("home-change-WAITING")).toContainText("limit you signed");
   // ... and as a business sentence, not the executor's "Queued for owner approval (APR-000001): effective annual cost …".
   const waiting = page.getByTestId("home-change-WAITING").getByTestId("home-change-text");

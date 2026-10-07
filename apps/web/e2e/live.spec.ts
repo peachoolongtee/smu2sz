@@ -292,3 +292,30 @@ test("a second conflict is not retried again: the error says the books were busy
   await expect(page.getByText("1 pending")).toBeVisible();
   expect(posts).toBe(2);
 });
+
+test("the Business inbox waits for the books before it shows any sender, and says so when they fail to load", async ({ page }) => {
+  await page.route(`${API}/state`, async (route) => {
+    await new Promise((r) => setTimeout(r, 1500));
+    await route.continue();
+  });
+  await page.goto("/deals");
+  // Business mode, books still loading: a loading block, and no message row at all (the registry decides who is known).
+  await expect(page.getByTestId("inbox-loading")).toBeVisible();
+  await expect(page.locator('[data-testid^="inbox-msg-"]')).toHaveCount(0);
+  await expect(page.getByTestId("inbox-thread-BUYER-1")).toBeVisible();
+  await expect(page.getByTestId("inbox-msg-SEC")).toHaveCount(0);
+  await expect(page.getByTestId("inbox-blocked")).toContainText("1 suspicious message was blocked");
+  // The books fail to load: the error, never the unchecked list.
+  await page.unroute(`${API}/state`);
+  await page.route(`${API}/state`, (route) =>
+    route.fulfill({
+      status: 500,
+      contentType: "application/json",
+      headers: { "access-control-allow-origin": `http://localhost:${process.env.E2E_LIVE_PORT ?? 3000}` },
+      body: JSON.stringify({ detail: "books unavailable" }),
+    }),
+  );
+  await page.goto("/deals");
+  await expect(page.getByTestId("inbox-error")).toBeVisible();
+  await expect(page.locator('[data-testid^="inbox-msg-"]')).toHaveCount(0);
+});

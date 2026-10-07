@@ -118,7 +118,41 @@ function VerdictBlock({ verdict }: { verdict: NlVerdict }) {
   );
 }
 
-export function OperationList({ operations }: { operations: NlOperation[] }) {
+/**
+ * What the executor's operation is in audit terms: its own sentence, the operation id, the tier, the sequence and the
+ * hash. Business pages keep these behind "Audit details" (the same disclosure as Activity); the Demo views show them in the row.
+ */
+function OperationAudit({ o }: { o: NlOperation }) {
+  const { t, te } = useI18n();
+  return (
+    <details className="mt-1" data-testid="op-audit">
+      <summary className="cursor-pointer text-xs text-ink-3">{t("biz.auditDetails")}</summary>
+      <dl className="mt-1 grid grid-cols-[max-content_minmax(0,1fr)] gap-x-3 gap-y-0.5 text-xs text-ink-2">
+        <dt>{t("audit.executor")}</dt>
+        <dd className="break-words" data-testid="op-raw">{o.message_when || o.message}</dd>
+        <dt>{t("audit.opId")}</dt>
+        <dd className="break-all font-mono">{te("opkind", o.kind) || o.kind} · {o.op_id}</dd>
+        <dt>{t("ledger.seq")}</dt>
+        <dd className="tabular-nums">{o.seq ?? t("common.none")}</dd>
+        <dt>{t("ledger.tier")}</dt>
+        <dd>
+          <TierBadge tier={o.tier} />
+        </dd>
+        <dt>{t("ledger.hash")}</dt>
+        <dd>
+          <Hash value={o.entry_hash} />
+        </dd>
+      </dl>
+    </details>
+  );
+}
+
+/**
+ * The operations an action ran. In `business` mode each row is the business sentence (`event_text`, else the
+ * `message_when` twin, else the executor's sentence) and the status pill; the tier, sequence, operation id and hash
+ * move behind "Audit details". The Demo views and the chat keep the full row.
+ */
+export function OperationList({ operations, business = false }: { operations: NlOperation[]; business?: boolean }) {
   const { t, te } = useI18n();
   return (
     <section aria-label={t("chat.ops")} data-testid="chat-ops">
@@ -126,12 +160,20 @@ export function OperationList({ operations }: { operations: NlOperation[] }) {
       <ul className="space-y-2">
         {operations.map((o) => (
           <li key={`${o.op_id}-${o.seq ?? ""}-${o.status}`}>
-            <OperationResultBox status={o.status} message={o.message} approvalId={o.approval_id} testId={`chat-op-${o.kind}`} kind={o.kind}>
-              <span className="text-sm font-medium text-ink">{te("opkind", o.kind) || o.kind}</span>
-              <TierBadge tier={o.tier} />
-              {o.seq !== null ? <span className="text-xs text-ink-3">{t("chat.ops.seq", { n: o.seq })}</span> : null}
-              <Hash value={o.entry_hash} />
-            </OperationResultBox>
+            {business ? (
+              <OperationResultBox status={o.status} message="" approvalId={o.approval_id} testId={`chat-op-${o.kind}`} kind={o.kind} details={<OperationAudit o={o} />}>
+                <span className="min-w-0 break-words text-sm font-medium text-ink" data-testid="op-sentence">
+                  {o.event_text || o.message_when || o.message}
+                </span>
+              </OperationResultBox>
+            ) : (
+              <OperationResultBox status={o.status} message={o.message} approvalId={o.approval_id} testId={`chat-op-${o.kind}`} kind={o.kind}>
+                <span className="text-sm font-medium text-ink">{te("opkind", o.kind) || o.kind}</span>
+                <TierBadge tier={o.tier} />
+                {o.seq !== null ? <span className="text-xs text-ink-3">{t("chat.ops.seq", { n: o.seq })}</span> : null}
+                <Hash value={o.entry_hash} />
+              </OperationResultBox>
+            )}
           </li>
         ))}
       </ul>
@@ -140,6 +182,7 @@ export function OperationList({ operations }: { operations: NlOperation[] }) {
 }
 
 export function AssistantTurn({
+
   response: r,
   active,
   busy,

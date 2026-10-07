@@ -41,6 +41,10 @@ export function PlanCard({
     const lead = leadTimes?.[a.facility_id];
     return lead === undefined ? null : a.day + lead;
   };
+  /** The day a leg waits for its invoice: only an invoice advance whose eligibility day is after its request day. */
+  const waitsUntil = (a: FundingPlan["actions"][number]): number | null =>
+    a.kind === "FINANCE_INVOICE" && a.available_from_day !== undefined && a.available_from_day !== null && a.available_from_day > a.day ? a.available_from_day : null;
+  const anyWaits = plan.actions.some((a) => waitsUntil(a) !== null);
   return (
     <Card
       id={id}
@@ -68,7 +72,7 @@ export function PlanCard({
               <tr>
                 <th scope="col" className={thCls}>{t("plan.action")}</th>
                 <th scope="col" className={thCls}>{t("plan.facility")}</th>
-                <th scope="col" className={thCls}>{plan.executable_now === false ? t("plan.availableFrom") : t("plan.requested")}</th>
+                <th scope="col" className={thCls}>{anyWaits ? t("plan.requestedOrFrom") : t("plan.requested")}</th>
                 <th scope="col" className={thCls}>{t("plan.lands")}</th>
                 <th scope="col" className={`${thCls} text-right`}>{t("common.amount")}</th>
                 <th scope="col" className={thCls}>{t("plan.repay")}</th>
@@ -83,7 +87,8 @@ export function PlanCard({
                     {a.receivable_id ? ` · ${a.receivable_id}` : ""}
                   </td>
                   <td className={`${tdCls} tabular-nums`} data-testid="plan-available-from">
-                    {dayText(a.available_from_day ?? a.day)}
+                    {waitsUntil(a) !== null ? dayText(waitsUntil(a) ?? a.day) : a.kind === "EARLY_PAY" && plan.executable_now === false ? t("plan.needsBuyer") : dayText(a.day)}
+
                   </td>
                   <td className={`${tdCls} tabular-nums`} data-testid="plan-lands">
                     {landing(a) !== null ? dayText(landing(a) ?? 0) : t("common.none")}
