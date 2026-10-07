@@ -112,10 +112,12 @@ function CommitmentItem({ c, buyer, today }: { c: Displayed<Commitment>; buyer: 
 }
 
 /** The ledger's live commitments (proposed, accepted or active), newest first. */
-export function ActiveCommitments({ today, buyerName }: { today: number; buyerName: (id: string) => string }) {
+export function ActiveCommitments({ today, buyerName, hideEmpty = false }: { today: number; buyerName: (id: string) => string; hideEmpty?: boolean }) {
   const { t } = useI18n();
   const ledger = useAsync(getLedger, []);
   const live = ledger.data ? [...ledger.data.commitments].reverse().filter((c) => LIVE.includes(c.status)) : [];
+  // An empty section is noise on the deal page: with `hideEmpty` the card appears only once a deal is on the books.
+  if (hideEmpty && ledger.data && !ledger.error && !live.length) return null;
   return (
     <Card id="commitments" title={t("biz.deals.commitments")} subtitle={t("biz.deals.commitments.sub")}>
       {ledger.error ? (

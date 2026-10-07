@@ -1,21 +1,21 @@
 "use client";
 
 import Link from "next/link";
+import { CheckIcon } from "@/components/icons";
 import type { DictKey } from "@/lib/dictionary";
 import { useI18n } from "@/lib/i18n";
 import { useCurrentOffer } from "@/lib/use-current";
-import { CheckIcon } from "@/components/icons";
 
 /**
- * Where the owner is in one buyer deal: read the offer, check it against the limits, respond, agreed.
- * Shown on the offer and decision screens so the four steps read as one journey, not four modules.
- * The state comes from the session's current offer only; it decides nothing.
+ * Where the owner is in one buyer deal, as one quiet line: Received · Analysed · Respond · Agreed. The agent's own
+ * stages (receiving and analysing) are done by the time the owner looks, so the line never dominates the page. The
+ * state comes from the session's current offer only; it decides nothing.
  */
-const STEPS: { key: DictKey; hint: DictKey; href: string }[] = [
-  { key: "steps.read", hint: "steps.read.hint", href: "/deals" },
-  { key: "steps.check", hint: "steps.check.hint", href: "/deals" },
-  { key: "steps.respond", hint: "steps.respond.hint", href: "/deals#counters" },
-  { key: "steps.agreed", hint: "steps.agreed.hint", href: "/deals#commitments" },
+const STEPS: { key: DictKey; href: string }[] = [
+  { key: "steps.received", href: "/deals" },
+  { key: "steps.analysed", href: "/deals" },
+  { key: "steps.respond", href: "/deals#counters" },
+  { key: "steps.agreed", href: "/deals#commitments" },
 ];
 
 export function DealSteps() {
@@ -25,32 +25,18 @@ export function DealSteps() {
   const responded = Boolean(cur.negotiation) || cur.verdict?.outcome === "ACCEPT";
   // How many steps are complete; the next one is the current step.
   const done = !cur.offer ? 0 : !cur.verdict ? 1 : !responded ? 2 : agreed ? 4 : 3;
-
   return (
-    <nav aria-label={t("steps.label")} className="mb-5" data-testid="deal-steps">
-      <ol className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+    <nav aria-label={t("steps.label")} className="mb-4" data-testid="deal-steps">
+      <ol className="flex flex-wrap items-center gap-x-1 gap-y-1 text-xs">
         {STEPS.map((s, i) => {
           const state = i < done ? "done" : i === done ? "current" : "todo";
-          const tone =
-            state === "done"
-              ? "border-ok-line bg-ok-bg text-ok-fg"
-              : state === "current"
-                ? "border-brand-600 bg-brand-50 text-brand-700 ring-1 ring-brand-600"
-                : "border-line bg-surface text-ink-3";
+          const tone = state === "done" ? "text-ok-fg" : state === "current" ? "font-semibold text-brand-700" : "text-ink-3";
           return (
-            <li key={s.key}>
-              <Link
-                href={s.href}
-                aria-current={state === "current" ? "step" : undefined}
-                className={`flex h-full items-start gap-2 rounded-lg border px-3 py-2 ${tone}`}
-              >
-                <span className="mt-0.5 grid size-5 shrink-0 place-items-center rounded-full border border-current text-[0.7rem] font-semibold">
-                  {state === "done" ? <CheckIcon /> : i + 1}
-                </span>
-                <span className="min-w-0">
-                  <span className="block text-sm font-semibold">{t(s.key)}</span>
-                  <span className="block text-xs opacity-80">{t(s.hint)}</span>
-                </span>
+            <li key={s.key} className="flex items-center gap-1">
+              {i > 0 ? <span className="text-ink-3">·</span> : null}
+              <Link href={s.href} aria-current={state === "current" ? "step" : undefined} className={`inline-flex items-center gap-1 rounded px-1.5 py-1 ${tone}`}>
+                {state === "done" ? <CheckIcon width={12} height={12} /> : null}
+                {t(s.key)}
               </Link>
             </li>
           );

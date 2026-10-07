@@ -1,16 +1,13 @@
 import { expect, test } from "./fixtures";
 
 /**
- * The Deals page lists every offer of the session (here EX01 and its reworded twin EX01B), newest first, and shows the picked
- * one's recommendation below. Mock mode: the guided demo is walked to step 11, where both offers are compiled and evaluated.
- * A second spec opens a message from the simulated inbox the way the owner does in Business mode (no stepper).
+ * Deals in Business mode, in the owner's order: one inbox thread per buyer, the ask in plain words, the business action
+ * with its three numbers, the recommended response, then the closed disclosures. Mock mode: the guided demo is walked to
+ * step 11 in the first spec (both Foshan offers compiled and evaluated); the second opens a message the way the owner
+ * does. The page must fit about two desktop screens with the disclosures closed (the brief's section 36).
  */
 
-test.beforeEach(async ({}, testInfo) => {
-  test.skip(testInfo.project.name === "live", "mock-mode spec: the demo walk is recorded");
-});
-
-test("the Deals page lists both offers and shows the picked one's recommendation", async ({ page }) => {
+test("the inbox groups a buyer's messages into one thread and names each evaluated one's recommendation", async ({ page }) => {
   await page.goto("/mandate");
   for (let i = 0; i < 11; i++) {
     const button = page.getByTestId("demo-next");
@@ -20,80 +17,111 @@ test("the Deals page lists both offers and shows the picked one's recommendation
     await expect(page.getByRole("region", { name: "Guided demo" }).locator("[aria-live=polite]")).toContainText(`${i + 1}/15`);
   }
 
+  // Running the story put the browser in Demo mode: the Demo inbox shows every message, the unknown sender flagged.
   await page.goto("/deals");
-  const rows = page.getByTestId("deal-row");
-  await expect(rows).toHaveCount(2);
-  for (const row of await rows.all()) {
-    // Received on the clock's day: a distance from today, never "Day 0".
-    await expect(row).toContainText("today");
-    await expect(row).not.toContainText("Day");
-    await expect(row.getByTitle(/ACCEPT|COUNTER|REJECT|NEEDS_OWNER_APPROVAL|NO_VERDICT/)).toBeVisible();
-  }
-
-  // Step 11 selected the reworded offer (the newest, so the first row); pick the original, then the reworded one again.
-  const reworded = rows.nth(0);
-  const original = rows.nth(1);
-  await expect(reworded).toHaveAttribute("aria-pressed", "true");
+  const inbox = page.getByTestId("inbox-list");
+  await expect(page.getByRole("heading", { name: "Simulated inbox" })).toBeVisible();
+  await expect(inbox.getByTestId("inbox-msg-SEC")).toContainText("Not in your contacts");
+  // Back in Business mode: one thread for Foshan Home Retail Co.; the FastCapital message is gone, one line says it was blocked.
+  await page.evaluate(() => localStorage.setItem("tl-mode", JSON.stringify({ mode: "business" })));
+  await page.reload();
+  await expect(page.getByRole("heading", { name: "Inbox", exact: true })).toBeVisible();
+  await expect(page.getByTestId("inbox-thread-BUYER-1")).toHaveCount(1);
+  await expect(inbox.getByTestId("inbox-msg-SEC")).toHaveCount(0);
+  await expect(page.getByTestId("inbox-blocked")).toContainText("1 suspicious message was blocked");
+  await expect(page.getByTestId("inbox-blocked").getByRole("link", { name: "See what was refused" })).toHaveAttribute("href", "/activity#refused");
+  // Step 11 selected the reworded offer; the original is in the thread, evaluated, with its recommendation in words, no code.
+  const reworded = inbox.getByTestId("inbox-msg-EX01B");
+  const original = inbox.getByTestId("inbox-msg-EX01");
+  await expect(reworded).toHaveAttribute("aria-current", "true");
+  await expect(original).toContainText("Counter recommended");
+  await expect(original).not.toContainText("REJECT");
+  await expect(page.locator("body")).not.toContainText(/\bDay \d/);
   await original.click();
-  await expect(original).toHaveAttribute("aria-pressed", "true");
-  await expect(reworded).toHaveAttribute("aria-pressed", "false");
-  await expect(page.getByTestId("deal-recommendation")).toBeVisible();
-  // The deal leads with its consequence; the recommendation, the glance and the active commitments follow.
-  await expect(page.getByTestId("deal-consequence")).toContainText("off for early payment");
-  await expect(page.getByTestId("verdict-glance")).toContainText("What they asked for");
-  await expect(page.locator("#commitments")).toContainText("Active commitments");
+  await expect(original).toHaveAttribute("aria-current", "true");
+  await expect(reworded).not.toHaveAttribute("aria-current", "true");
+  await expect(page.getByTestId("deal-recommendation")).toHaveText("Counter recommended");
   await expect(page.getByTestId("deal-steps").getByRole("link", { name: /Respond/ })).toHaveAttribute("href", "/deals#counters");
   await expect(page.getByTestId("deal-steps").getByRole("link", { name: /Agreed/ })).toHaveAttribute("href", "/deals#commitments");
-
-  const rewordedId = await reworded.getAttribute("data-offer-id");
+  const originalId = await page.evaluate(() => JSON.parse(sessionStorage.getItem("tl-demo-v2") ?? "{}").offerId);
   await reworded.click();
-  await expect(reworded).toHaveAttribute("aria-pressed", "true");
-  await expect(original).toHaveAttribute("aria-pressed", "false");
-  await expect(page.getByTestId("deal-recommendation")).toBeVisible();
-  await expect.poll(() => page.evaluate(() => sessionStorage.getItem("tl-demo-v2"))).toContain(`"offerId":"${rewordedId}"`);
+  await expect(reworded).toHaveAttribute("aria-current", "true");
+  await expect.poll(() => page.evaluate(() => JSON.parse(sessionStorage.getItem("tl-demo-v2") ?? "{}").offerId)).not.toBe(originalId);
 });
 
-test("opening a simulated inbox message reads it, then the deal leads with what it means for the owner", async ({ page }) => {
+test("opening a message reads it, and the evaluated deal reads in the owner's order within two screens", async ({ page }) => {
   await page.goto("/deals");
-  await expect(page.getByRole("heading", { name: "Simulated inbox" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Inbox", exact: true })).toBeVisible();
   const inbox = page.getByTestId("inbox-list");
   await expect(inbox.getByTestId("inbox-msg-EX01")).toContainText("Foshan Home Retail Co.");
   await expect(inbox.getByTestId("inbox-msg-EX01")).toContainText("Li Wei");
-  await expect(inbox.getByTestId("inbox-msg-EX01")).toContainText("11:30");
-  // FastCapital is not a company in the owner's registry.
-  await expect(inbox.getByTestId("inbox-msg-SEC")).toContainText("Not in your contacts");
-  await expect(page.getByTestId("deal-steps")).toBeVisible();
-  await expect(page.getByTestId("deal-consequence")).toHaveCount(0);
+  await expect(page.getByTestId("deal-steps")).toHaveCount(0);
+  await expect(page.getByTestId("deal-recommendation")).toHaveCount(0);
 
-  // Opening a message reads it (no separate button) and offers the one next step.
+  // Opening a message reads it (no separate button); the ask is in plain words; the one next step is the check.
   await inbox.getByTestId("inbox-msg-EX01").click();
   await expect(inbox.getByTestId("inbox-msg-EX01")).toHaveAttribute("aria-current", "true");
-  await expect(page.getByTestId("deal-ask-TERMS_EXTENSION")).toBeVisible();
+  await expect(page.getByTestId("deal-ask-IMMEDIATE_DISCOUNT")).toContainText("1.20% discount for paying the ¥420,000.00 invoice early");
+  await expect(page.getByTestId("deal-ask-TERMS_EXTENSION")).toContainText("60");
+  await expect(page.getByTestId("deal-ask-CONTINGENT_REBATE")).toContainText("1.00% rebate");
+  // The buyer's earlier messages sit inside the thread; there is no other thread in Business mode, so nothing else folds.
+  await expect(page.getByTestId("inbox-thread-BUYER-1").locator("details > summary").first()).toContainText("earlier message");
+  await expect(page.getByTestId("inbox-others")).toHaveCount(0);
+  await expect(page.getByTestId("inbox-blocked")).toBeVisible();
   const next = page.getByTestId("next-step");
-  await expect(next).toContainText("Next step");
   await next.getByRole("button", { name: "Check against my limits" }).click();
 
-  // Consequence first, then the recommendation, then the glance and the detail.
-  await expect(page.getByTestId("deal-recommendation")).toBeVisible();
-  const consequence = page.getByTestId("deal-consequence");
-  await expect(consequence).toContainText("off for early payment");
-  await expect(consequence).toContainText("off for early payment");
-  await expect(page.getByTestId("deal-fact-cash")).toContainText(/unsafe (in|today|tomorrow)|stays safe/);
-  await expect(page.getByTestId("deal-fact-cost")).toContainText("¥");
-  await expect(page.getByTestId("deal-fact-counter")).toContainText("costs us");
-  const glance = page.getByTestId("verdict-glance");
-  for (const column of ["What they asked for", "What we would offer back"]) await expect(glance).toContainText(column);
-  // The next step is now to answer the buyer, and it points at the counters.
-  await expect(next).toContainText("offer back");
+  // The business action, then the three numbers: first breach and worst point are two named days.
+  await expect(page.getByTestId("deal-recommendation")).toHaveText("Counter recommended");
+  await expect(page.getByTestId("deal-ask-TERMS_EXTENSION")).toContainText("45 → 60 day payment terms going forward");
+  const cost = page.getByTestId("deal-fact-cost");
+  await expect(cost).toContainText("12-month cost of concessions");
+  await expect(cost).toContainText("¥28,326.92");
+  await expect(cost).toContainText("Your limit: ¥5,000.00");
+  const breach = page.getByTestId("deal-fact-cash");
+  await expect(breach).toContainText("First reserve breach");
+  await expect(breach).toContainText("in 47 days");
+  await expect(breach).toContainText("Cash falls to ¥209,960.00");
+  const worst = page.getByTestId("deal-fact-worst");
+  await expect(worst).toContainText("Worst point");
+  await expect(worst).toContainText("¥164,960.00");
+  await expect(worst).toContainText("in 60 days");
+  await expect(page.getByTestId("deal-discount-dearer")).toContainText("1.20% early-payment discount also costs more");
+  // No engine count or code at level 1.
+  await expect(page.locator("body")).not.toContainText("failed,");
+  await expect(page.locator("#deal-recommendation-card")).not.toContainText("REJECT");
+
+  // The recommended response: Option A with its cost; Option B behind "Compare", with its net economic cost and both parts.
+  const response = page.locator("#counters");
+  await expect(response.getByTestId("deal-option-Option-A")).toContainText("Recommended");
+  await expect(response.getByTestId("deal-option-Option-A").getByTestId("deal-option-cost")).toHaveText("¥3,027.77");
+  await expect(response.getByTestId("deal-option-Option-B")).toHaveCount(0);
+  await response.getByTestId("deal-compare").click();
+  const b = response.getByTestId("deal-option-Option-B");
+  await expect(b).toContainText("Net economic cost");
+  await expect(b.getByTestId("deal-option-cost")).toContainText("¥0");
+  await expect(b).toContainText("¥16,217.95");
+  await expect(b).toContainText("¥16,380.00");
+  await expect(b).not.toContainText("¥0.00");
+  await response.getByTestId("deal-compare").click();
+  await expect(response.getByTestId("deal-option-Option-B")).toHaveCount(0);
+
+  // The next step points at the response; the disclosures are closed and hold the evidence.
   await expect(next.getByRole("link", { name: "See what we'd offer back" })).toHaveAttribute("href", "#counters");
-  await expect(page.locator("#counters")).toBeVisible();
-  // The consequence sits above the recommendation card.
-  const above = await consequence.boundingBox();
-  const below = await page.locator("#deal-recommendation-card").boundingBox();
-  expect(above!.y).toBeLessThan(below!.y);
+  for (const id of ["deal-why", "deal-original", "deal-calc"]) {
+    await expect(page.getByTestId(id)).not.toHaveAttribute("open", "");
+  }
+  await expect(page.getByTestId("deal-why")).toContainText("Why FLOW recommends this");
+  await page.getByTestId("deal-why").locator("> summary").click();
+  await expect(page.getByTestId("deal-technical-summary")).toContainText("Engine verdict");
+  await expect(page.getByTestId("deal-technical-summary")).toContainText("REJECT");
+  await page.getByTestId("deal-why").locator("> summary").click();
+  // No empty commitments card; the page fits about two screens with the disclosures closed.
+  await expect(page.locator("#commitments")).toHaveCount(0);
+  const height = await page.evaluate(() => document.documentElement.scrollHeight);
+  expect(height).toBeLessThanOrEqual(2 * 900 + 100);
   await expect(page.locator("body")).not.toContainText(/\bDay \d/);
   // Reading the same message again costs nothing: it is shown, not read twice.
   await inbox.getByTestId("inbox-msg-EX01").click();
-  await expect(page.getByTestId("deal-row")).toHaveCount(0);
   await expect(inbox.getByTestId("inbox-msg-EX01")).toContainText("Showing below");
 });
