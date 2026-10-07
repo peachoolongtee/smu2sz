@@ -336,3 +336,73 @@ def approval_words(state: FinancialState, op: dict[str, Any], kind: str | None, 
                        f"它使现金在未来 {max(int(alert.inputs['last_day']) - today, 0)} 天保持在最低现金储备以上。")
                      if alert is not None and alert.inputs.get("last_day") and alert.committed_cure else None),
     }
+
+
+# ---------------------------------------------------------------- truth fields (wayfinder #30)
+
+
+def business_action(outcome: str, counters: int) -> str:
+    """What the owner should do about an offer, as distinct from the verifier's verdict code: a REJECT with counters
+    is the action "counter"; a REJECT with none is "decline". ACCEPT → accept; NEEDS_OWNER_APPROVAL → needs_owner;
+    anything else (NO_VERDICT, NO_DEAL) → cannot."""
+    if outcome == "ACCEPT":
+        return "accept"
+    if outcome == "COUNTER" or (outcome == "REJECT" and counters > 0):
+        return "counter"
+    if outcome == "REJECT":
+        return "decline"
+    if outcome == "NEEDS_OWNER_APPROVAL":
+        return "needs_owner"
+    return "cannot"
+
+
+def comparison_status(result: str, reasons: list[str], breach_day: int | None) -> str:
+    """One word per comparison row so a page never ranks plans that are not comparable: `recommended` (the router's
+    pick), `alternative` (admissible, dearer), `insufficient` (admissible sources, but the reserve still breaks),
+    `unavailable` (a source that is not committed or cannot land in time)."""
+    if result == "SELECTED":
+        return "recommended"
+    if result == "ADMISSIBLE":
+        return "alternative"
+    if "RESERVE_BREACH" in reasons or breach_day is not None:
+        return "insufficient"
+    return "unavailable"
+
+
+def comparison_reason(actions: list[dict[str, Any]], executable_now: bool) -> str | None:
+    """Why an admissible row cannot run today, as a kind the web turns into words: `buyer_early_pay` when a leg is the
+    buyer paying early (not an executor operation), `invoice_not_issued` when an advance waits for its invoice."""
+    if executable_now:
+        return None
+    if any(a.get("kind") == "EARLY_PAY" for a in actions):
+        return "buyer_early_pay"
+    if any(a.get("kind") == "FINANCE_INVOICE" and (a.get("available_from_day") or 0) > (a.get("day") or 0) for a in actions):
+        return "invoice_not_issued"
+    return None
+
+
+def counter_economics(obligations: list[Any], state: FinancialState, mandate: Mandate) -> dict[str, Any] | None:
+    """The parts behind a counter's cost, from the verifier's own valuation of the counter's obligations: each
+    obligation's 12-month value (a price adjustment is negative: it pays the supplier), the funding cost (the positive
+    parts), the offset (the negative parts) and the net. `supplier_cost_fen` stays the verifier's floored figure; this
+    only shows what it floors. None when no committed source prices concessions."""
+    from app.financial import value_concessions
+    from app.funding import NoPermanentSourceError, marginal_cost
+
+    try:
+        rate, fid = marginal_cost(state, mandate)
+    except NoPermanentSourceError:
+        return None
+    fac = next((f for f in state.facilities if f.id == fid), None)
+    label = f"committed marginal source: {fac.name if fac else fid} {fmt_pct(rate.value, 4)}"
+    values = value_concessions(list(obligations), state, rate, label, mandate.forward_concession_horizon_days)
+    kinds = {o.id: str(getattr(o.type, "value", o.type)) for o in obligations}
+    parts = [{"obligation_id": v.obligation_id, "type": kinds.get(v.obligation_id, ""),
+              "value_fen": v.value_fen, "value_display": fmt_yuan(v.value_fen), "basis": v.basis}
+             for v in values]
+    funding = sum(p["value_fen"] for p in parts if p["value_fen"] > 0)
+    offset = sum(p["value_fen"] for p in parts if p["value_fen"] < 0)
+    net = funding + offset
+    return {"components": parts, "funding_cost_fen": funding, "funding_cost_display": fmt_yuan(funding),
+            "offset_fen": offset, "offset_display": fmt_yuan(-offset), "net_fen": net, "net_display": fmt_yuan(net),
+            "is_net": offset < 0 < funding}

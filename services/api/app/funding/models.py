@@ -71,3 +71,7 @@ class ComparisonRow(Contract):
     needs_owner_approval: bool = False  # admissible, but a leg is above the max APR: the owner must approve
     approval_reason: str = ""
     executable_now: bool = True
+    # For a candidate that breaks the reserve: the deepest shortfall below the floor and the day it is deepest
+    # (the router's `Eval.shortfall`; display only, so an insufficient option can say what it leaves uncovered).
+    shortfall_fen: int | None = None
+    worst_day: int | None = None

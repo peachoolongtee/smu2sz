@@ -245,10 +245,13 @@ def _build_plan(search: Search, state: FinancialState, mandate: Mandate) -> Fund
     if unrunnable:
         label += " (cannot run today)"
     actions = _with_landing(search, list(best.actions))
+    available_from = (max((a.available_from_day for a in actions if a.available_from_day is not None), default=None)
+                      if unrunnable else None)
     return FundingPlan(id=plan_id(basis, list(best.actions), state, mandate), actions=actions,
                        costs=lines, total_cost_fen=best.cost or 0, admissible=True, rejected=rejected,
                        label=label, needs_owner_approval=bool(approval), approval_reason=approval,
-                       executable_now=not unrunnable, not_executable_reason=unrunnable, **common)
+                       executable_now=not unrunnable, not_executable_reason=unrunnable,
+                       available_from_day=available_from, **common)
 
 
 def _with_landing(search: Search, actions: list[FundingAction]) -> list[FundingAction]:
@@ -258,9 +261,13 @@ def _with_landing(search: Search, actions: list[FundingAction]) -> list[FundingA
     out = []
     for a in actions:
         if a.kind in (FundingActionKind.DRAW, FundingActionKind.FINANCE_INVOICE):
-            r = next((r for r in search.state.receivables if r.id == a.receivable_id), None)
-            issue = r.issue_day if r is not None and a.kind == FundingActionKind.FINANCE_INVOICE else a.day
-            a = a.model_copy(update={"lands_day": invoice_landing_day(search.facilities[a.facility_id], a.day, issue)})
+            # `search.rcvs` holds every invoice the engine will receive, including recurring invoices not yet on the
+            # books (the same map the pricing reads); `state.receivables` alone misses those, which once stamped an
+            # advance on an invoice issued on day 32 as landing on day 3.
+            r = search.rcvs.get(a.receivable_id or "") if a.kind == FundingActionKind.FINANCE_INVOICE else None
+            issue = r.issue_day if r is not None else a.day
+            a = a.model_copy(update={"lands_day": invoice_landing_day(search.facilities[a.facility_id], a.day, issue),
+                                     "available_from_day": max(a.day, issue)})
         out.append(a)
     return out
 
@@ -304,7 +311,17 @@ def _row(alt: Alternative, search: Search, result: ComparisonResult) -> Comparis
         breach_day=ev.breach_day if ev is not None else None, note=_note(alt, search) if result != ComparisonResult.SELECTED else "",
         needs_owner_approval=ev is not None and ev.needs_approval, approval_reason=approval_text(search, ev),
         executable_now=ev is None or not ev.unrunnable,
+        shortfall_fen=ev.shortfall if ev is not None and ev.breach_day is not None else None,
+        worst_day=_worst_day(ev, search),
     )
+
+
+def _worst_day(ev, search: Search) -> int | None:
+    """The day a candidate's cash is lowest below the floor, or None when it never breaks the reserve."""
+    if ev is None or ev.traj is None or ev.breach_day is None:
+        return None
+    below = [p for p in ev.traj.days if p.closing_fen < search.floor]
+    return min(below, key=lambda p: (p.closing_fen, p.day)).day if below else None
 
 
 def compare(state: FinancialState, obligations: list[Obligation], mandate: Mandate) -> list[ComparisonRow]:

@@ -3,16 +3,21 @@
   "state_version": 8,
   "lang": "en",
   "status": "WATCH",
+  "status_text": "Covered, but tight",
   "headline": "You're covered.",
   "note": "Cash stays above your ¥300k minimum cash reserve for the next 120 days. It comes close: cash sits exactly on the minimum cash reserve today.",
-  "worst": "Lowest cash ahead: ¥300k 34 days ago.",
+  "worst": "Lowest cash ahead: ¥300k today.",
   "plan_note": null,
   "since_day": null,
   "cash": {
     "cash_fen": 30000000,
     "floor_fen": 30000000,
     "lowest_fen": 30000000,
-    "lowest_day": 0,
+    "lowest_day": 34,
+    "headroom_fen": 0,
+    "headroom_short": "¥0.00",
+    "lowest_headroom_fen": 0,
+    "lowest_headroom_short": "¥0.00",
     "first_breach_day": null,
     "first_breach_cash_fen": null,
     "first_breach_cash_short": null,
@@ -20,7 +25,7 @@
     "floor_short": "¥300k",
     "lowest_short": "¥300k",
     "drivers": [],
-    "lowest_when": "34 days ago",
+    "lowest_when": "today",
     "first_breach_when": null,
     "horizon_days": 120,
     "in_transit": {
@@ -34,6 +39,28 @@
         }
       ]
     },
+    "funding_lots": [
+      {
+        "facility_name": "Bank credit line",
+        "amount_display": "¥149,986.20",
+        "remaining_display": "¥149,986.20",
+        "landed": true,
+        "arrival_day": 0,
+        "arrival_when": "34 days ago",
+        "maturity_day": null,
+        "maturity_when": null
+      },
+      {
+        "facility_name": "Invoice financing (onboarded platform)",
+        "amount_display": "¥200,000.00",
+        "remaining_display": "¥200,000.00",
+        "landed": false,
+        "arrival_day": 37,
+        "arrival_when": "in 3 days",
+        "maturity_day": null,
+        "maturity_when": null
+      }
+    ],
     "dscr_text": "2.00×",
     "leverage_text": "1.67×",
     "min_dscr_bp": 12500,
@@ -1096,6 +1123,8 @@
     "cash_display": "¥300,000.00",
     "floor_display": "¥300,000.00",
     "lowest_display": "¥300,000.00",
+    "headroom_display": "¥0.00",
+    "lowest_headroom_display": "¥0.00",
     "min_dscr_display": "1.25×",
     "max_leverage_display": "2.50×"
   },

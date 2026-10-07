@@ -13,6 +13,7 @@
         "repay_day": 32,
         "rate_bp": null,
         "lands_day": 0,
+        "available_from_day": 0,
         "amount_display": "¥150,000.00"
       },
       {
@@ -24,6 +25,7 @@
         "repay_day": null,
         "rate_bp": null,
         "lands_day": 3,
+        "available_from_day": 0,
         "amount_display": "¥255,000.00"
       }
     ],
@@ -92,6 +94,7 @@
     "approval_reason": "",
     "executable_now": true,
     "not_executable_reason": "",
+    "available_from_day": null,
     "need_display": "¥405,000.00",
     "total_cost_display": "¥3,113.93"
   },
@@ -109,6 +112,7 @@
         "repay_day": 32,
         "rate_bp": null,
         "lands_day": 0,
+        "available_from_day": 0,
         "amount_display": "¥150,000.00"
       },
       {
@@ -120,6 +124,7 @@
         "repay_day": null,
         "rate_bp": null,
         "lands_day": 3,
+        "available_from_day": 0,
         "amount_display": "¥255,000.00"
       }
     ],
@@ -188,6 +193,7 @@
     "approval_reason": "",
     "executable_now": true,
     "not_executable_reason": "",
+    "available_from_day": null,
     "need_display": "¥405,000.00",
     "total_cost_display": "¥3,113.93"
   },
@@ -638,7 +644,8 @@
           "receivable_id": "RCV-A",
           "repay_day": null,
           "rate_bp": 120,
-          "lands_day": null
+          "lands_day": null,
+          "available_from_day": null
         }
       ],
       "cost_fen": 504000,
@@ -650,6 +657,11 @@
       "needs_owner_approval": false,
       "approval_reason": "",
       "executable_now": false,
+      "shortfall_fen": null,
+      "worst_day": null,
+      "status": "alternative",
+      "reason_kind": "buyer_early_pay",
+      "shortfall_display": null,
       "total_fen": 504000,
       "total_display": "¥5,040.00",
       "selected": false
@@ -670,7 +682,8 @@
           "receivable_id": null,
           "repay_day": 32,
           "rate_bp": null,
-          "lands_day": null
+          "lands_day": null,
+          "available_from_day": null
         },
         {
           "kind": "EARLY_PAY",
@@ -680,7 +693,8 @@
           "receivable_id": "RCV-A",
           "repay_day": null,
           "rate_bp": 120,
-          "lands_day": null
+          "lands_day": null,
+          "available_from_day": null
         }
       ],
       "cost_fen": 393881,
@@ -692,6 +706,11 @@
       "needs_owner_approval": false,
       "approval_reason": "",
       "executable_now": false,
+      "shortfall_fen": null,
+      "worst_day": null,
+      "status": "alternative",
+      "reason_kind": "buyer_early_pay",
+      "shortfall_display": null,
       "total_fen": 393881,
       "total_display": "¥841.64 + ¥3,097.17 = ¥3,938.81",
       "selected": false
@@ -712,7 +731,8 @@
           "receivable_id": null,
           "repay_day": 32,
           "rate_bp": null,
-          "lands_day": null
+          "lands_day": null,
+          "available_from_day": null
         },
         {
           "kind": "FINANCE_INVOICE",
@@ -722,7 +742,8 @@
           "receivable_id": "RCV-A",
           "repay_day": null,
           "rate_bp": null,
-          "lands_day": null
+          "lands_day": null,
+          "available_from_day": null
         }
       ],
       "cost_fen": 311393,
@@ -734,6 +755,11 @@
       "needs_owner_approval": false,
       "approval_reason": "",
       "executable_now": true,
+      "shortfall_fen": null,
+      "worst_day": null,
+      "status": "recommended",
+      "reason_kind": null,
+      "shortfall_display": null,
       "total_fen": 311393,
       "total_display": "¥841.64 + ¥2,272.29 = ¥3,113.93",
       "selected": true
@@ -754,7 +780,8 @@
           "receivable_id": null,
           "repay_day": 32,
           "rate_bp": null,
-          "lands_day": null
+          "lands_day": null,
+          "available_from_day": null
         },
         {
           "kind": "DRAW",
@@ -764,7 +791,8 @@
           "receivable_id": null,
           "repay_day": null,
           "rate_bp": null,
-          "lands_day": null
+          "lands_day": null,
+          "available_from_day": null
         }
       ],
       "cost_fen": null,
@@ -779,6 +807,11 @@
       "needs_owner_approval": false,
       "approval_reason": "",
       "executable_now": true,
+      "shortfall_fen": null,
+      "worst_day": null,
+      "status": "unavailable",
+      "reason_kind": null,
+      "shortfall_display": null,
       "total_fen": null,
       "total_display": "—",
       "selected": false
@@ -798,7 +831,8 @@
           "receivable_id": null,
           "repay_day": 32,
           "rate_bp": null,
-          "lands_day": null
+          "lands_day": null,
+          "available_from_day": null
         }
       ],
       "cost_fen": 84164,
@@ -812,6 +846,11 @@
       "needs_owner_approval": false,
       "approval_reason": "",
       "executable_now": true,
+      "shortfall_fen": 25500000,
+      "worst_day": 30,
+      "status": "insufficient",
+      "reason_kind": null,
+      "shortfall_display": "¥255,000.00",
       "total_fen": 84164,
       "total_display": "¥841.64",
       "selected": false

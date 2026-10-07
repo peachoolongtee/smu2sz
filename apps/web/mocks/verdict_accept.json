@@ -73,6 +73,7 @@
     "approval_reason": "",
     "executable_now": true,
     "not_executable_reason": "",
+    "available_from_day": null,
     "need_display": "¥0.00",
     "total_cost_display": "¥0.00"
   },
@@ -82,6 +83,7 @@
   "calc_version": "tl-v2.0",
   "summary": "ACCEPT. Forward concessions ¥0.00 against ¥5,000.00. Covenants hold: DSCR_MIN 2.00x, LEVERAGE_MAX 1.35x.",
   "forward_concession_total_display": "¥0.00",
+  "business_action": "accept",
   "passed_checks": [
     {
       "code": "MIN_CASH",
@@ -211,6 +213,7 @@
     },
     "min_cash_day": 30,
     "first_breach_day": null,
+    "first_breach_cash": null,
     "days": [
       {
         "day": 0,
@@ -2488,6 +2491,7 @@
     "approval_reason": "",
     "executable_now": true,
     "not_executable_reason": "",
+    "available_from_day": null,
     "need_display": "¥0.00",
     "total_cost_display": "¥0.00"
   },
@@ -2512,6 +2516,7 @@
     "approval_reason": "",
     "executable_now": true,
     "not_executable_reason": "",
+    "available_from_day": null,
     "need_display": "¥0.00",
     "total_cost_display": "¥0.00"
   },
@@ -2533,7 +2538,8 @@
           "receivable_id": "RCV-A",
           "repay_day": null,
           "rate_bp": 50,
-          "lands_day": null
+          "lands_day": null,
+          "available_from_day": null
         }
       ],
       "cost_fen": 210000,
@@ -2544,7 +2550,12 @@
       "note": "cost ¥2,100.00; admissible but dearer than the selected plan",
       "needs_owner_approval": false,
       "approval_reason": "",
-      "executable_now": false
+      "executable_now": false,
+      "shortfall_fen": null,
+      "worst_day": null,
+      "status": "alternative",
+      "reason_kind": "buyer_early_pay",
+      "shortfall_display": null
     },
     {
       "key": "line_partial_early_pay",
@@ -2562,7 +2573,8 @@
           "receivable_id": null,
           "repay_day": 32,
           "rate_bp": null,
-          "lands_day": null
+          "lands_day": null,
+          "available_from_day": null
         },
         {
           "kind": "EARLY_PAY",
@@ -2572,7 +2584,8 @@
           "receivable_id": "RCV-A",
           "repay_day": null,
           "rate_bp": 50,
-          "lands_day": null
+          "lands_day": null,
+          "available_from_day": null
         }
       ],
       "cost_fen": 212305,
@@ -2583,7 +2596,12 @@
       "note": "cost ¥2,123.05; admissible but dearer than the selected plan",
       "needs_owner_approval": false,
       "approval_reason": "",
-      "executable_now": false
+      "executable_now": false,
+      "shortfall_fen": null,
+      "worst_day": null,
+      "status": "alternative",
+      "reason_kind": "buyer_early_pay",
+      "shortfall_display": null
     },
     {
       "key": "router_optimum",
@@ -2601,7 +2619,8 @@
           "receivable_id": null,
           "repay_day": 32,
           "rate_bp": null,
-          "lands_day": null
+          "lands_day": null,
+          "available_from_day": null
         },
         {
           "kind": "FINANCE_INVOICE",
@@ -2611,7 +2630,8 @@
           "receivable_id": "RCV-A",
           "repay_day": null,
           "rate_bp": null,
-          "lands_day": null
+          "lands_day": null,
+          "available_from_day": null
         }
       ],
       "cost_fen": 311393,
@@ -2622,7 +2642,12 @@
       "note": "",
       "needs_owner_approval": false,
       "approval_reason": "",
-      "executable_now": true
+      "executable_now": true,
+      "shortfall_fen": null,
+      "worst_day": null,
+      "status": "recommended",
+      "reason_kind": null,
+      "shortfall_display": null
     },
     {
       "key": "line_guaranteed_loan",
@@ -2640,7 +2665,8 @@
           "receivable_id": null,
           "repay_day": 32,
           "rate_bp": null,
-          "lands_day": null
+          "lands_day": null,
+          "available_from_day": null
         },
         {
           "kind": "DRAW",
@@ -2650,7 +2676,8 @@
           "receivable_id": null,
           "repay_day": null,
           "rate_bp": null,
-          "lands_day": null
+          "lands_day": null,
+          "available_from_day": null
         }
       ],
       "cost_fen": null,
@@ -2664,7 +2691,12 @@
       "note": "not applied; cash on day 21, gap opens on day 12",
       "needs_owner_approval": false,
       "approval_reason": "",
-      "executable_now": true
+      "executable_now": true,
+      "shortfall_fen": null,
+      "worst_day": null,
+      "status": "unavailable",
+      "reason_kind": null,
+      "shortfall_display": null
     },
     {
       "key": "line_only",
@@ -2681,7 +2713,8 @@
           "receivable_id": null,
           "repay_day": 32,
           "rate_bp": null,
-          "lands_day": null
+          "lands_day": null,
+          "available_from_day": null
         }
       ],
       "cost_fen": 84164,
@@ -2694,7 +2727,12 @@
       "note": "cost ¥841.64; RESERVE_BREACH on day 12",
       "needs_owner_approval": false,
       "approval_reason": "",
-      "executable_now": true
+      "executable_now": true,
+      "shortfall_fen": 25500000,
+      "worst_day": 30,
+      "status": "insufficient",
+      "reason_kind": null,
+      "shortfall_display": "¥255,000.00"
     }
   ],
   "forward_concession": {

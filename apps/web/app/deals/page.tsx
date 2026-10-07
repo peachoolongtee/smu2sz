@@ -18,18 +18,28 @@ import { recordOffer, selectOffer, useDemo } from "@/lib/demo-store";
 import { useI18n, type I18n } from "@/lib/i18n";
 import type { InboxMessage } from "@/lib/inbox";
 import { annotationsFor, offerItems } from "@/lib/offer-items";
-import type { Displayed, Obligation, Outcome, VerdictView } from "@/lib/types";
+import type { BusinessAction, Displayed, Obligation, Outcome, VerdictView } from "@/lib/types";
 import { useAsync } from "@/lib/use-async";
 import { useCurrentOffer } from "@/lib/use-current";
 import { whenText } from "@/lib/when";
 
 /** The recommendation in two words: what the owner should answer the buyer. */
-function recommendationKey(outcome: Outcome): "biz.deal.accept" | "biz.deal.counter" | "biz.deal.decline" | "biz.deal.needsYou" | "biz.deal.cannot" {
-  if (outcome === "ACCEPT") return "biz.deal.accept";
-  if (outcome === "COUNTER") return "biz.deal.counter";
-  if (outcome === "REJECT") return "biz.deal.decline";
-  if (outcome === "NEEDS_OWNER_APPROVAL") return "biz.deal.needsYou";
+function recommendationKey(v: VerdictView): "biz.deal.accept" | "biz.deal.counter" | "biz.deal.decline" | "biz.deal.declineOnly" | "biz.deal.needsYou" | "biz.deal.cannot" {
+  const action = v.business_action ?? localAction(v.outcome, v.counters.length);
+  if (action === "accept") return "biz.deal.accept";
+  if (action === "counter") return v.outcome === "REJECT" ? "biz.deal.decline" : "biz.deal.counter";
+  if (action === "decline") return "biz.deal.declineOnly";
+  if (action === "needs_owner") return "biz.deal.needsYou";
   return "biz.deal.cannot";
+}
+
+/** The server's rule, for an older recording without `business_action`: a REJECT with counters is "counter", without is "decline". */
+function localAction(outcome: Outcome, counters: number): BusinessAction {
+  if (outcome === "ACCEPT") return "accept";
+  if (outcome === "COUNTER" || (outcome === "REJECT" && counters > 0)) return "counter";
+  if (outcome === "REJECT") return "decline";
+  if (outcome === "NEEDS_OWNER_APPROVAL") return "needs_owner";
+  return "cannot";
 }
 
 /** What one ask means for the owner, from typed fields only: extra days of credit, the early-payment discount, else the obligation's name. */
@@ -289,7 +299,7 @@ export default function DealsPage() {
 
                 <Card id="deal-recommendation-card" tone={v.outcome === "REJECT" ? "bad" : v.outcome === "ACCEPT" ? "ok" : "warn"} title={t("biz.deals.recommendation")}>
                   <p className="text-lg font-semibold text-ink" data-testid="deal-recommendation">
-                    {t(recommendationKey(v.outcome))}
+                    {t(recommendationKey(v))}
                   </p>
                   <VerdictGlance verdict={v} today={today} />
                   {/* The verifier's own summary, with its codes, is level 4: behind a disclosure, never the first thing read. */}

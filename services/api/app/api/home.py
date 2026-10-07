@@ -53,7 +53,13 @@ from app.domain.models import (
 from app.domain.money import fmt_yuan
 from app.financial import EngineError, project
 from app.financial.lots import ensure_lots
-from app.funding.recommend import KIND_OF, cost_lines_by_leg, plan_suggestions, recommend_for_alert, runnable_plan
+from app.funding.recommend import (
+    KIND_OF,
+    cost_lines_by_leg,
+    plan_suggestions,
+    recommend_for_alert,
+    runnable_plan,
+)
 from app.operations.log import read_entries
 
 router = APIRouter(dependencies=[Depends(require_owner)])
@@ -89,19 +95,29 @@ def _distance(day: int | None, today: int, lang: str) -> str:
     return when_text(day, today, lang)
 
 
+def _lowest_ahead(traj: Any, today: int) -> tuple[int, int]:
+    """The lowest cash from today on (fen, day). The projection's days are absolute and the closed days before today
+    carry the opening cash, so the trajectory's own minimum can sit in the past ("34 days ago"); the home speaks of
+    what is ahead."""
+    ahead = [d for d in traj.days if d.day >= today] or list(traj.days)
+    low = min(ahead, key=lambda d: (d.closing_fen, d.day))
+    return low.closing_fen, low.day
+
+
 def _headline(found: list[Alert], mandate: Mandate, traj: Any, horizon: int, today: int,
-              lang: str) -> dict[str, str | None]:
+              lang: str, low: tuple[int, int] | None = None) -> dict[str, str | None]:
     """Level 1, conclusion first: the one-line answer, the detail that explains it (where cash goes, against the
     reserve), the worst point if nothing is done, and the plan's readiness as a separate note."""
     floor = fmt_short(mandate.min_cash_fen)
     breach = _breach(found)
-    low_when = _distance(traj.min_cash_day, today, lang)
+    low_fen, low_day = low if low is not None else _lowest_ahead(traj, today)
+    low_when = _distance(low_day, today, lang)
     if breach is not None:
         short = fmt_short(breach.amount_fen or 0)
         when = _distance(breach.day, today, lang)
         at = next((d.closing_fen for d in traj.days if d.day == breach.day), None)
-        worst = t(lang, f"Worst point: {fmt_short(traj.min_cash_fen)} {low_when} if you do nothing.",
-                  f"若不采取行动，最低点为{low_when}的 {fmt_short(traj.min_cash_fen)}。")
+        worst = t(lang, f"Worst point: {fmt_short(low_fen)} {low_when} if you do nothing.",
+                  f"若不采取行动，最低点为{low_when}的 {fmt_short(low_fen)}。")
         if breach.inputs.get("cure_restores_reserve") == "false":
             zero = breach.inputs.get("zero_day", "")
             head = t(lang, f"Cash goes below zero {_distance(int(zero), today, lang)} if nothing is done.",
@@ -142,9 +158,33 @@ def _headline(found: list[Alert], mandate: Mandate, traj: Any, horizon: int, tod
                         f"但会很接近：{_distance(thin.day, today, lang)}仅高出最低现金储备 {fmt_yuan(thin.amount_fen or 0)}。")
     elif warnings:
         note += " " + relative_days(warnings[0].title, today, lang)
-    worst = t(lang, f"Lowest cash ahead: {fmt_short(traj.min_cash_fen)} {low_when}.",
-              f"未来最低现金：{low_when}的 {fmt_short(traj.min_cash_fen)}。")
+    worst = t(lang, f"Lowest cash ahead: {fmt_short(low_fen)} {low_when}.",
+              f"未来最低现金：{low_when}的 {fmt_short(low_fen)}。")
     return {"headline": head, "note": note, "worst": worst, "plan_note": None}
+
+
+def _status_text(status: str, found: list[Alert], lang: str) -> str:
+    """The status in the owner's words. WATCH with thin headroom is "Covered, but tight": the business is not
+    projected to fail, the margin is thin (owner decision, wayfinder #28)."""
+    if status == "SAFE":
+        return t(lang, "Covered", "安全")
+    if status == "WATCH":
+        if any(a.kind == AlertKind.RESERVE_HEADROOM_LOW for a in found):
+            return t(lang, "Covered, but tight", "安全，但余量不多")
+        return t(lang, "Covered, with warnings", "安全，但有提醒")
+    if status == "ACTION_NEEDED":
+        return t(lang, "Action needed", "需要行动")
+    return t(lang, "Critical", "紧急")
+
+
+def _funding_lots(state: FinancialState, today: int, lang: str) -> list[dict[str, Any]]:
+    """Every funding lot on the books, landed or still arriving, so Cash & funding can state the current position."""
+    return [{"facility_name": facility_name(state, lot.facility_id), "amount_display": fmt_yuan(lot.principal_fen),
+             "remaining_display": fmt_yuan(lot.remaining_fen), "landed": bool(lot.settled),
+             "arrival_day": lot.arrival_day, "arrival_when": when_text(lot.arrival_day, today, lang),
+             "maturity_day": lot.maturity_day,
+             "maturity_when": when_text(lot.maturity_day, today, lang) if lot.maturity_day is not None else None}
+            for lot in sorted(ensure_lots(state).lots, key=lambda lt: (lt.arrival_day, lt.id))]
 
 
 def _drivers(state: FinancialState, traj: Any, today: int, breach_day: int | None, lang: str) -> list[str]:
@@ -574,7 +614,8 @@ def get_home(lang: str = "en", since_day: int | None = None) -> dict[str, Any]:
         status = _status(found, len(pending))
         if since_day is not None and since_day > today:  # a marker from before a reset: the last week instead
             since_day = None
-        words = _headline(found, mandate, traj, mandate.horizon_days, today, lang)
+        low_fen, low_day = _lowest_ahead(traj, today)
+        words = _headline(found, mandate, traj, mandate.horizon_days, today, lang, (low_fen, low_day))
         headline, note = words["headline"], words["note"]
         drivers = _drivers(books.state, traj, today, traj.first_breach_day, lang)
         at_breach = next((d.closing_fen for d in traj.days if d.day == traj.first_breach_day), None) if traj.first_breach_day is not None else None
@@ -593,6 +634,7 @@ def get_home(lang: str = "en", since_day: int | None = None) -> dict[str, Any]:
         changes = _changes(books.state, rt.store, found, today, lang, since_day)
         receivables = _receivables(books.state, rt.store, today, lang)
         in_transit = _in_transit(books.state, today, lang)
+        funding_lots = _funding_lots(books.state, today, lang)
         warnings = [{"id": a.id, "kind": a.kind.value, "title": relative_days(in_words(state, a.title), today, lang),
                      "detail": relative_days(in_words(state, a.detail), today, lang), "day": a.day,
                      "when": when_text(a.day, today, lang)} for a in found if a.severity == Severity.WARNING]
@@ -611,6 +653,7 @@ def get_home(lang: str = "en", since_day: int | None = None) -> dict[str, Any]:
         "state_version": state.state_version,
         "lang": lang,
         "status": status,
+        "status_text": _status_text(status, found, lang),
         "headline": headline,
         "note": note,
         "worst": words["worst"],
@@ -619,19 +662,26 @@ def get_home(lang: str = "en", since_day: int | None = None) -> dict[str, Any]:
         "cash": {
             "cash_fen": state.cash_fen,
             "floor_fen": mandate.min_cash_fen,
-            "lowest_fen": traj.min_cash_fen,
-            "lowest_day": traj.min_cash_day,
+            "lowest_fen": low_fen,
+            "lowest_day": low_day,
+            # Headroom: cash minus the minimum cash reserve, today and at the lowest point ahead (the owner reads the
+            # distance to the reserve, not the subtraction).
+            "headroom_fen": state.cash_fen - mandate.min_cash_fen,
+            "headroom_short": fmt_short(state.cash_fen - mandate.min_cash_fen),
+            "lowest_headroom_fen": low_fen - mandate.min_cash_fen,
+            "lowest_headroom_short": fmt_short(low_fen - mandate.min_cash_fen),
             "first_breach_day": traj.first_breach_day,
             "first_breach_cash_fen": at_breach,
             "first_breach_cash_short": fmt_short(at_breach) if at_breach is not None else None,
             "cash_short": fmt_short(state.cash_fen),
             "floor_short": fmt_short(mandate.min_cash_fen),
-            "lowest_short": fmt_short(traj.min_cash_fen),
+            "lowest_short": fmt_short(low_fen),
             "drivers": drivers,
-            "lowest_when": when_text(traj.min_cash_day, today, lang),
+            "lowest_when": when_text(low_day, today, lang),
             "first_breach_when": when_text(traj.first_breach_day, today, lang) if traj.first_breach_day is not None else None,
             "horizon_days": mandate.horizon_days,
             "in_transit": in_transit,
+            "funding_lots": funding_lots,
             "dscr_text": dscr_text,
             "leverage_text": leverage_text,
             "min_dscr_bp": mandate.min_dscr_bp,

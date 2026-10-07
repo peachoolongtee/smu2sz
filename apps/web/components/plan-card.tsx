@@ -54,7 +54,7 @@ export function PlanCard({
               <tr>
                 <th scope="col" className={thCls}>{t("plan.action")}</th>
                 <th scope="col" className={thCls}>{t("plan.facility")}</th>
-                <th scope="col" className={thCls}>{t("plan.requested")}</th>
+                <th scope="col" className={thCls}>{plan.executable_now === false ? t("plan.availableFrom") : t("plan.requested")}</th>
                 <th scope="col" className={thCls}>{t("plan.lands")}</th>
                 <th scope="col" className={`${thCls} text-right`}>{t("common.amount")}</th>
                 <th scope="col" className={thCls}>{t("plan.repay")}</th>
@@ -68,7 +68,9 @@ export function PlanCard({
                     {a.facility_id}
                     {a.receivable_id ? ` · ${a.receivable_id}` : ""}
                   </td>
-                  <td className={`${tdCls} tabular-nums`}>{t("common.dayN", { n: a.day })}</td>
+                  <td className={`${tdCls} tabular-nums`} data-testid="plan-available-from">
+                    {t("common.dayN", { n: a.available_from_day ?? a.day })}
+                  </td>
                   <td className={`${tdCls} tabular-nums`} data-testid="plan-lands">
                     {landing(a) !== null ? t("common.dayN", { n: landing(a) ?? 0 }) : t("common.none")}
                   </td>
