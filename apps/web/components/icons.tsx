@@ -77,3 +77,55 @@ export const ChevronRightIcon = (p: P) => (
     <path d="M6 3.5L10.5 8 6 12.5" />
   </svg>
 );
+
+/* Business navigation icons (24-unit grid). */
+const base24 = (p: P) => ({
+  width: 20,
+  height: 20,
+  viewBox: "0 0 24 24",
+  fill: "none",
+  stroke: "currentColor",
+  strokeWidth: 1.8,
+  strokeLinecap: "round" as const,
+  strokeLinejoin: "round" as const,
+  "aria-hidden": true,
+  focusable: false,
+  ...p,
+});
+
+export const HomeIcon = (p: P) => (
+  <svg {...base24(p)}>
+    <path d="M3.5 10.5 12 4l8.5 6.5" />
+    <path d="M5.5 9v10.5h13V9" />
+    <path d="M10 19.5v-5h4v5" />
+  </svg>
+);
+export const DealsIcon = (p: P) => (
+  <svg {...base24(p)}>
+    <path d="M4 5.5h11a1.5 1.5 0 0 1 1.5 1.5v6A1.5 1.5 0 0 1 15 14.5H9l-4 3.5v-3.5H4A1.5 1.5 0 0 1 2.5 13V7A1.5 1.5 0 0 1 4 5.5Z" />
+    <path d="M19.5 9.5h.5A1.5 1.5 0 0 1 21.5 11v5a1.5 1.5 0 0 1-1.5 1.5h-.5V20l-3-2.5H12" />
+  </svg>
+);
+export const WalletIcon = (p: P) => (
+  <svg {...base24(p)}>
+    <path d="M4 7.5V17a2 2 0 0 0 2 2h13.5V9.5H6a2 2 0 0 1-2-2Zm0 0A2 2 0 0 1 6 5.5h11.5v4" />
+    <circle cx="16" cy="14.25" r="1.1" fill="currentColor" stroke="none" />
+  </svg>
+);
+export const InboxInIcon = (p: P) => (
+  <svg {...base24(p)}>
+    <path d="M12 3.5v9M8.5 9 12 12.5 15.5 9" />
+    <path d="M3.5 13.5h4.25l1.5 2.5h5.5l1.5-2.5h4.25V19a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 19v-5.5Z" />
+  </svg>
+);
+export const ActivityIcon = (p: P) => (
+  <svg {...base24(p)}>
+    <path d="M3.5 12h4l2.5-6.5 4 13 2.5-6.5h4" />
+  </svg>
+);
+export const ShieldCheckIcon = (p: P) => (
+  <svg {...base24(p)}>
+    <path d="M12 3.5 5 6v5.5c0 4.2 2.8 7.2 7 9 4.2-1.8 7-4.8 7-9V6l-7-2.5Z" />
+    <path d="m9 12 2.2 2.2L15.2 10" />
+  </svg>
+);

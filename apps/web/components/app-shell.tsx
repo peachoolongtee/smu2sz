@@ -10,7 +10,7 @@ import { setMode, shellFor, useMode, type Mode } from "@/lib/mode";
 import type { DictKey } from "@/lib/dictionary";
 import { ChatPanel } from "./chat/chat-panel";
 import { DemoStepper } from "./demo-stepper";
-import { MenuIcon, ShieldIcon, XIcon } from "./icons";
+import { ActivityIcon, DealsIcon, HomeIcon, InboxInIcon, MenuIcon, ShieldCheckIcon, ShieldIcon, WalletIcon, XIcon } from "./icons";
 import { signOut, useAuth } from "@/lib/auth";
 import { OwnerSessionControl, OwnerSignInDialog } from "./owner-auth";
 import { Badge, Button, Segmented } from "./ui";
@@ -90,7 +90,7 @@ function Brand({ href }: { href: string }) {
       </span>
       <span className="leading-tight">
         {t("brand.name")}
-        <span className="block text-[0.7rem] font-normal text-ink-3">{t("brand.tagline")}</span>
+        <span className="hidden text-[0.7rem] font-normal text-ink-3 sm:block">{t("brand.tagline")}</span>
       </span>
     </Link>
   );
@@ -132,6 +132,11 @@ function ApprovalsBadge() {
  * One compact place for the account once the owner is signed in: the signed-in state and sign-out, the language, and
  * what this data is. Signed out, the Sign in button stays in the header itself: it is an action the owner needs.
  */
+/** A row in the sheet that navigates closes the sheet (a native `<details>` stays open otherwise). */
+function closeMenu(e: React.MouseEvent<HTMLElement>) {
+  (e.currentTarget.closest("details") as HTMLDetailsElement | null)?.removeAttribute("open");
+}
+
 function AccountMenu() {
   const { t } = useI18n();
   const { token } = useAuth();
@@ -167,6 +172,10 @@ function AccountMenu() {
             {t("auth.signout")}
           </Button>
         </div>
+        <Link href="/limits" onClick={closeMenu} className="flex min-h-10 items-center gap-2.5 rounded-md px-2 text-sm font-medium text-ink hover:bg-subtle" data-testid="account-limits">
+          <ShieldCheckIcon className="text-brand-600" />
+          {t("nav.limits.menu")}
+        </Link>
         <LangSwitch />
         <p className="text-xs text-ink-3">{t("biz.demoData.hint")}</p>
       </div>
@@ -176,82 +185,86 @@ function AccountMenu() {
 
 // ---------------------------------------------------------------- Business
 
+/** The phone tab bar: one icon and word per section, the current one in the brand blue. */
+const TAB_ICON: Record<string, (p: { width?: number; height?: number }) => ReactNode> = {
+  "/": HomeIcon,
+  "/deals": DealsIcon,
+  "/cash": WalletIcon,
+  "/receivables": InboxInIcon,
+  "/activity": ActivityIcon,
+};
+/** A tab is a fifth of a phone's width: two sections have a shorter word there (the link keeps its full name for assistive tools). */
+const TAB_LABEL: Partial<Record<string, DictKey>> = { "/cash": "nav.short.cash" };
+
 function BusinessShell({ children }: { children: ReactNode }) {
   const { t } = useI18n();
   const pathname = usePathname();
-  const [open, setOpen] = useState(false);
-  const links = (onNavigate?: () => void, vertical = false) => (
-    <ul className={vertical ? "space-y-0.5" : "flex items-center gap-1"}>
-      {BUSINESS_NAV.map((n) => {
-        const active = pathname === n.href;
-        return (
-          <li key={n.href}>
-            <Link
-              href={n.href}
-              onClick={onNavigate}
-              aria-current={active ? "page" : undefined}
-              className={`flex min-h-10 items-center whitespace-nowrap rounded-md px-3 text-sm font-medium ${
-                active ? "bg-brand-50 text-brand-700" : "text-ink-2 hover:bg-subtle hover:text-ink"
-              }`}
-            >
-              {t(n.key)}
-            </Link>
-          </li>
-        );
-      })}
-    </ul>
-  );
   return (
     <div className="min-h-dvh">
       <SkipLink />
       <OwnerSignInDialog />
       <ChatPanel />
       <header className="sticky top-0 z-30 border-b border-line bg-surface">
-        <div className="mx-auto flex max-w-[1280px] items-center justify-between gap-3 px-4 py-2 lg:px-6">
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              aria-expanded={open}
-              aria-controls="mobile-nav"
-              aria-label={open ? t("nav.close") : t("nav.open")}
-              onClick={() => setOpen((v) => !v)}
-              className="grid size-10 place-items-center rounded-md border border-line-strong text-ink-2 hover:bg-subtle lg:hidden"
-            >
-              {open ? <XIcon /> : <MenuIcon />}
-            </button>
-            <Brand href="/" />
-          </div>
-          <nav aria-label={t("nav.label")} className="hidden lg:block">
-            {links()}
+        <div className="mx-auto flex max-w-[1280px] items-center justify-between gap-3 px-4 py-2 lg:grid lg:grid-cols-[auto_minmax(0,1fr)_auto] lg:gap-6 lg:px-6">
+          <Brand href="/" />
+          {/* Desktop: the five sections as pills on a quiet track. Phones get the tab bar at the bottom instead. */}
+          <nav aria-label={t("nav.label")} className="hidden min-w-0 lg:block" data-testid="nav-pills">
+            <ul className="mx-auto flex w-max items-center gap-1 rounded-full bg-subtle p-1">
+              {BUSINESS_NAV.map((n) => {
+                const active = pathname === n.href;
+                return (
+                  <li key={n.href}>
+                    <Link
+                      href={n.href}
+                      aria-current={active ? "page" : undefined}
+                      className={`flex min-h-9 items-center whitespace-nowrap rounded-full px-4 text-sm font-medium ${
+                        active ? "bg-brand-600 text-white" : "text-ink-2 hover:bg-line hover:text-ink"
+                      }`}
+                    >
+                      {t(n.key)}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
           </nav>
-          <div className="flex items-center gap-2 whitespace-nowrap">
+          <div className="flex items-center justify-end gap-2 whitespace-nowrap">
             <ApprovalsBadge />
             <span className="hidden sm:inline-flex" data-testid="demo-data-indicator">
               <Badge tone="neutral" title={t("biz.demoData.hint")}>
                 {t("biz.demoData")}
               </Badge>
             </span>
-            <div className="hidden sm:block">
-              <ModeSwitch />
-            </div>
+            <ModeSwitch />
             <AccountMenu />
           </div>
         </div>
-        {open ? (
-          <nav id="mobile-nav" aria-label={t("nav.label")} className="border-t border-line bg-surface px-3 py-3 lg:hidden">
-            {links(() => setOpen(false), true)}
-            <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-line pt-3">
-              <ModeSwitch />
-              <Badge tone="neutral" title={t("biz.demoData.hint")}>
-                {t("biz.demoData")}
-              </Badge>
-            </div>
-          </nav>
-        ) : null}
       </header>
-      <main id="main" tabIndex={-1} className="mx-auto w-full max-w-[1180px] px-4 pb-24 pt-5 lg:px-6 lg:pb-10 lg:pt-6">
+      <main id="main" tabIndex={-1} className="mx-auto w-full max-w-[1180px] px-4 pb-28 pt-5 lg:px-6 lg:pb-10 lg:pt-6">
         {children}
       </main>
+      {/* Phones: a tab bar with the same five sections, as in a banking app. */}
+      <nav aria-label={t("nav.label")} className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] lg:hidden" data-testid="tab-bar">
+        <ul className="mx-auto grid max-w-xl grid-cols-5">
+          {BUSINESS_NAV.map((n) => {
+            const active = pathname === n.href;
+            const Icon = TAB_ICON[n.href];
+            return (
+              <li key={n.href}>
+                <Link
+                  href={n.href}
+                  aria-current={active ? "page" : undefined}
+                  aria-label={t(n.key)}
+                  className={`flex min-h-14 flex-col items-center justify-center gap-0.5 px-1 text-[0.6875rem] font-medium ${active ? "text-brand-600" : "text-ink-3 hover:text-ink"}`}
+                >
+                  {Icon ? <Icon width={21} height={21} /> : null}
+                  <span className="max-w-full truncate">{t(TAB_LABEL[n.href] ?? n.key)}</span>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
     </div>
   );
 }
