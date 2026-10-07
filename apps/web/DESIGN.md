@@ -73,7 +73,7 @@ A section `solid` as an icon on a white tab bar has the same ratio as white on t
 
 - **brand** (`brand-600`): the page's one primary action, links, the focus ring, the selected state of a toggle. Never a status.
 - **status** (`ok`, `warn`, `bad`, `info`): how things are going. Always with a word; the dot or tint is the second channel, never the only one.
-- **section hues** (`sec-*`): where you are or where a link goes (a page's icon chip, the phone tab bar, the Home "Where to next" row, a buyer's avatar tint). Never how things are going. Buyer avatars use four of the five tints (not orange, which sits next to the warning amber) so an avatar cannot read as a status.
+- **section hues** (`sec-*`): where you are or where a link goes (a page's icon chip, the phone tab bar, a buyer's avatar tint). Never how things are going. Buyer avatars use four of the five tints (not orange, which sits next to the warning amber) so an avatar cannot read as a status.
 - **deep** (`brand-900`): the Home hero and the Demo strip, nothing else. The block stays navy; the status is the pill on it.
 - **ink**: text. `ink-3` is for captions, never for anything the owner must act on.
 
@@ -103,7 +103,6 @@ All in `components/ui.tsx` unless noted.
 - **Avatar / toneFor / initials** (`kit.tsx`): a 36 px disc. A change row's icon sits on its status tint; a buyer's initials sit on a section tint (`toneFor(name)` is stable per name).
 - **Icons**: from `components/icons.tsx` only, at 16 or 20 px, `currentColor`. The exception is a section chip, which sets a white icon on its solid.
 - **Focus**: every focusable element gets the global ring (2 px, offset 2 px, `focus`; white inside `.on-deep`). Never remove an outline.
-- **Home "Where to next"** (`components/home/where-next.tsx`): four round chips (Deals, Cash & funding, Receivables, Ask FLOW) in the section solids under the hero, on phones and tablets only; the nav pills cover desktop.
 - **Phone tab bar** (`app-shell.tsx`): the active tab's icon in its section solid, its label in ink; inactive in `ink-3`; a bar slides to the active tab.
 - **Backdrop** (`components/business/backdrop.tsx`): two blurred discs (Home blue, Cash teal) drifting over 40 s at a strength that keeps `ink-3` above 4.5:1 on their strongest point. Behind the Business pages only; cards stay solid.
 
