@@ -10,8 +10,9 @@ import { setMode, shellFor, useMode, type Mode } from "@/lib/mode";
 import type { DictKey } from "@/lib/dictionary";
 import { ChatPanel } from "./chat/chat-panel";
 import { DemoStepper } from "./demo-stepper";
-import { ActivityIcon, DealsIcon, HomeIcon, InboxInIcon, MenuIcon, ShieldCheckIcon, ShieldIcon, WalletIcon, XIcon } from "./icons";
+import { ActivityIcon, DealsIcon, HomeIcon, InboxInIcon, MenuIcon, ShieldCheckIcon, ShieldIcon, SparkIcon, WalletIcon, XIcon } from "./icons";
 import { signOut, useAuth } from "@/lib/auth";
+import { Tour, startTour } from "./business/tour";
 import { OwnerSessionControl, OwnerSignInDialog } from "./owner-auth";
 import { Badge, Button, Segmented } from "./ui";
 
@@ -149,6 +150,18 @@ function AccountMenu() {
             {t("account.menu")}
           </summary>
           <div className="absolute right-0 z-40 mt-1 w-72 space-y-3 rounded-lg border border-line bg-surface p-3 shadow-lg">
+            <button
+              type="button"
+              onClick={(e) => {
+                closeMenu(e);
+                startTour();
+              }}
+              className="flex min-h-10 w-full items-center gap-2.5 rounded-md px-2 text-left text-sm font-medium text-ink hover:bg-subtle"
+              data-testid="account-tour"
+            >
+              <SparkIcon className="text-brand-600" />
+              {t("tour.replay")}
+            </button>
             <LangSwitch />
             <p className="text-xs text-ink-3">{t("biz.demoData.hint")}</p>
           </div>
@@ -176,6 +189,18 @@ function AccountMenu() {
           <ShieldCheckIcon className="text-brand-600" />
           {t("nav.limits.menu")}
         </Link>
+        <button
+          type="button"
+          onClick={(e) => {
+            closeMenu(e);
+            startTour();
+          }}
+          className="flex min-h-10 w-full items-center gap-2.5 rounded-md px-2 text-left text-sm font-medium text-ink hover:bg-subtle"
+          data-testid="account-tour"
+        >
+          <SparkIcon className="text-brand-600" />
+          {t("tour.replay")}
+        </button>
         <LangSwitch />
         <p className="text-xs text-ink-3">{t("biz.demoData.hint")}</p>
       </div>
@@ -204,6 +229,7 @@ function BusinessShell({ children }: { children: ReactNode }) {
       <SkipLink />
       <OwnerSignInDialog />
       <ChatPanel />
+      <Tour />
       <header className="sticky top-0 z-30 border-b border-line bg-surface">
         <div className="mx-auto flex max-w-[1280px] items-center justify-between gap-3 px-4 py-2 lg:grid lg:grid-cols-[auto_minmax(0,1fr)_auto] lg:gap-6 lg:px-6">
           <Brand href="/" />

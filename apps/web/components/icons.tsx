@@ -129,3 +129,8 @@ export const ShieldCheckIcon = (p: P) => (
     <path d="m9 12 2.2 2.2L15.2 10" />
   </svg>
 );
+export const SparkIcon = (p: P) => (
+  <svg {...base24(p)}>
+    <path d="M12 3.5v4M12 16.5v4M3.5 12h4M16.5 12h4M6 6l2.6 2.6M15.4 15.4 18 18M18 6l-2.6 2.6M8.6 15.4 6 18" />
+  </svg>
+);

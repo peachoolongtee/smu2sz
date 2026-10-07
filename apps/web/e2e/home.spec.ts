@@ -306,3 +306,34 @@ test("the Chinese labels switch while the server's sentences stay", async ({ pag
   await page.getByLabel("English").check();
   await expect(page.getByTestId("chat-open")).toContainText("Ask FLOW");
 });
+
+test("the tour is off by default, starts from the account sheet, has two steps on the home and can be closed", async ({ page }) => {
+  await page.goto("/");
+  // Nothing starts by itself, not even on a first visit.
+  await page.waitForTimeout(1200);
+  await expect(page.getByTestId("tour")).toHaveCount(0);
+  await openAccountMenu(page);
+  await page.getByTestId("account-tour").click();
+  const tour = page.getByTestId("tour");
+  await expect(tour).toBeVisible();
+  await expect(tour).toContainText("Step 1 of 2");
+  await expect(tour).toContainText("Am I safe?");
+  await page.getByTestId("tour-next").click();
+  await expect(tour).toContainText("Step 2 of 2");
+  // The five sections, in the pages' own words; no Buy equipment among them.
+  const sections = tour.getByTestId("tour-sections");
+  await expect(sections.locator("li")).toHaveCount(5);
+  await expect(sections).toContainText("Cash & funding");
+  await expect(sections).not.toContainText("Buy equipment");
+  await expect(tour).toContainText("Ask FLOW");
+  await expect(tour.getByTestId("tour-skip")).toHaveCount(0);
+  await page.getByTestId("tour-next").click();
+  await expect(tour).toHaveCount(0);
+  // Esc closes it at any step; the cash page offers its own two.
+  await page.goto("/cash");
+  await openAccountMenu(page);
+  await page.getByTestId("account-tour").click();
+  await expect(page.getByTestId("tour")).toContainText("How much risk");
+  await page.keyboard.press("Escape");
+  await expect(page.getByTestId("tour")).toHaveCount(0);
+});
