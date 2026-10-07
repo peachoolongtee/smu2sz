@@ -109,7 +109,8 @@ had none), the readiness note follows the plan actually shown, the other fix fam
 while one waits (a repeat of the same fix still replays the executor's DUPLICATE), one documented axis-label formatter with
 the right minus sign (the browser still computes no money a reader is asked to trust), the live spec's queue assertion now hits
 the real route, the overview rounding lives in `app/domain/money.py` with unit tests for `fmt_yuan_short`, `when_text` and
-`relative_days` (which now also rewrites "to day N", "(day N)", ", day N" and English text inside Chinese pages), the
+`relative_days` (which now also rewrites "to day N", "(day N)", ", day N" and English text inside Chinese pages; Wave 4 of the
+simplification map, #33, added "on or before day N", "(day A to day B)" and "from day A to day B"), the
 last-visit marker is validated and a marker later than today falls back to the week, the approvals badge refetches on
 navigation, a facility that is not owner-approved shows ¥0 available as the funding menu does, the repay recommendation's
 title and why are relative. Left as noted debt: the rate scraped from the router's prose, the Activity page's unbounded id
@@ -141,9 +142,16 @@ on Deals (now a disclosure), and the "Day N" labels.
 
 - "If you do nothing" on the recommendation repeats the shortfall in full precision beside the short figures above it.
 - The Chinese conclusion has no space before the day count ("将在12 天后"); Chinese parity for the new strings is unreviewed.
-- Executor and ledger sentences still say "day N" and "what the agent may borrow alone" where the Activity headings and the
-  approval card's "Why it needs you" show them (raised by the Wave 7 implementer; a presentation pass over `GET /ledger` is the
-  smallest fix, pending the owner).
+- (Closed by Wave 4 of the simplification map, #33.) Executor and ledger sentences said "day N" and "what the agent may borrow
+  alone" where the Activity headings and the approval card's "Why it needs you" showed them. `GET /ledger` and
+  `POST /alerts/{id}/act` now add `message_when` beside each `message`, the verdict view adds `text_when` / `rationale_when` on
+  each counter, `message_when` / `cure_note_when` on each violation, `summary_when`, `message_when` on each note, `*_when` twins
+  on the plan's sentences and `note_when` / `components_when` on each comparison row, the queue adds `created_when`, and
+  `in_words` says the ceiling clause as "the 15.00% limit you signed for funding without your approval". The raw sentences stay
+  for the audit level and the Demo views; the `*_when` fields are English only where the route has no `lang`. Still quoting
+  the raw lines, for the owners of those files: the home's "Show the calculation" formula (`next_action.formula`, home.py), the
+  Deals glance's counter text and the technical summary (`components/deals`, Wave 2/3), the Cash "Other options" notes and
+  components (Wave 5, #34).
 - Reconciliation detail text carries commitment ids in brackets; the alert title for a late invoice reads awkwardly after the
   invoice words ("Receivable the ¥420,000.00 invoice to … is 2 day(s) past due").
 - The Demo trajectory view keeps the old line chart; the story page was not redesigned against the brief's narrative (fog).
@@ -155,7 +163,8 @@ on Deals (now a disclosure), and the "Day N" labels.
 - `responsive.spec.ts` "the slide-over chat fits the viewport with a long reply" fails on macOS Chromium (both projects, about
   18 px over); the measurement happens during the slide-in animation. Not touched.
 - The mock recorder still records the Demo trajectory mocks with the EX01 verdict applied (by design for the engine view).
-- `relative_days` rewrites "on / by / through / repaid / due day N" by pattern; an unexpected phrase keeps its day number.
+- `relative_days` rewrites "on / by / on or before / through / repaid / due day N", "(day A to day B)" and "from day A to day B"
+  by pattern; an unexpected phrase keeps its day number.
 - The approvals badge reads the queue only when the owner is signed in; the live chat's one-approval-at-a-time rule means a
   multi-leg Tier-2 plan would queue only its first leg from the chat (R02 stays open, hence the #15 refinement).
 

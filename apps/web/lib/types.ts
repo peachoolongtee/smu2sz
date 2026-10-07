@@ -503,6 +503,9 @@ export interface Violation {
   formula: string | null;
   inputs: Record<string, string>;
   spans: SourceSpan[];
+  /** `message` and `cure_note` as a Business page reads them (day numbers as distances from today); absent in older recordings and on reads that do not add them. */
+  message_when?: string | null;
+  cure_note_when?: string | null;
 }
 
 export interface CostLine {
@@ -518,12 +521,18 @@ export interface CostLine {
   not_executable_reason?: string;
   /** When `executable_now` is false: the first day every leg could run. */
   available_from_day?: Day | null;
+  /** The label and the reasons as a Business page reads them (distances from today); absent where the API did not add them. */
+  label_when?: string | null;
+  approval_reason_when?: string | null;
+  not_executable_reason_when?: string | null;
 }
 
 export interface RejectedCandidate {
   label: string;
   reasons: ViolationCode[];
   note: string;
+  /** The note as a Business page reads it (distances from today); absent where the API did not add it. */
+  note_when?: string | null;
 }
 
 export interface FundingPlan {
@@ -545,6 +554,9 @@ export interface FundingPlan {
   /** False when some leg cannot run today (the invoice is not issued yet); `not_executable_reason` names each such leg. */
   executable_now?: boolean;
   not_executable_reason?: string;
+  /** The reasons as a Business page reads them (names, distances from today); absent where the API did not add them (the Demo reads). */
+  approval_reason_when?: string | null;
+  not_executable_reason_when?: string | null;
 }
 
 export interface ConcessionValue {
@@ -569,6 +581,9 @@ export interface CounterProposal {
   economics?: CounterEconomics | null;
   rationale: string;
   formula: string;
+  /** `text` and `rationale` as a Business page reads them ("paid within 2 days", never "day N"); the raw text is what goes to the buyer. Absent in older recordings. */
+  text_when?: string | null;
+  rationale_when?: string | null;
 }
 
 export interface Verdict {
@@ -586,6 +601,8 @@ export interface Verdict {
   state_version: number;
   calc_version: string;
   summary: string;
+  /** `summary` as a Business page reads it (distances from today); absent in older recordings. */
+  summary_when?: string | null;
 }
 
 // ------------------------------------------------------------------ commitments and operations
@@ -794,6 +811,8 @@ export interface OperationView extends Displayed<OperationResult> {
   /** Null when the log entry does not record who asked (for example an owner decision). */
   requested_by: Actor | null;
   summary: string;
+  /** The executor's sentence as a Business page reads it (names, the owner's words, distances from today), written by GET /ledger; `summary` stays the audit sentence. Absent in older recordings. */
+  message_when?: string | null;
 }
 
 export type BuyerProfile = "cooperative" | "hard_line";
@@ -1002,6 +1021,8 @@ export interface ApprovalPresentation {
   /** Distances from today, written by the server ("in 3 days", "2 days ago"); absent in older recordings. */
   lands_when?: string | null;
   decided_when?: string | null;
+  /** The request day as a distance from today ("today", "3 days ago"); absent in older recordings. */
+  created_when?: string | null;
   /** What declining leaves, in the server's words (the alert's shortfall written relative to today, or "Nothing runs; the request is closed."). */
   if_decline: string;
   protects: string | null;
@@ -1384,6 +1405,8 @@ export interface NlOperation {
   entry_hash: string | null;
   approval_id?: string | null;
   message: string;
+  /** `message` as the Business home reads it (POST /alerts/{id}/act adds it); absent elsewhere and in older recordings. */
+  message_when?: string | null;
 }
 
 export interface NlNegotiation {

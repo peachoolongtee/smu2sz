@@ -11,6 +11,7 @@ from fastapi.responses import PlainTextResponse
 from app.api.auth import require_owner
 from app.api.decide import _counter_allow
 from app.api.display import displayed
+from app.api.presentation import business_text
 from app.api.runtime import get_runtime
 from app.api.views import Money, TrajectoryView, trajectory_view
 from app.books import current_books
@@ -24,16 +25,22 @@ from app.verifier import REFUSAL_REPLY
 router = APIRouter(dependencies=[Depends(require_owner)])
 
 
-def _op_view(o) -> dict:
+def _op_view(o, state=None, today: int | None = None) -> dict:
+    """One log entry as the ledger shows it. `message` and `summary` are the executor's own sentence (the audit level);
+    `message_when` is the same sentence as a Business page reads it (names, the owner's words, distances from today),
+    a presentation read added when the books and the clock are given. English only: the route has no `lang`."""
     res = json.loads(o.result_json)
     try:
         op = json.loads(o.payload_json)
     except ValueError:
         op = {}
     v = displayed(res)
+    summary = res.get("message") or o.kind.replace("_", " ").lower()
     v.update({"seq": o.seq, "entry_hash": o.entry_hash, "prev_hash": o.prev_hash,
               "day": res.get("effective_day", op.get("day")), "requested_by": op.get("requested_by"),
-              "summary": res.get("message") or o.kind.replace("_", " ").lower()})
+              "summary": summary})
+    if state is not None and today is not None:
+        v["message_when"] = business_text(state, summary, today, "en")
     return v
 
 
@@ -84,9 +91,10 @@ def get_trajectory(mode: str = "CONSERVATIVE") -> TodayTrajectoryView:
 def get_ledger() -> dict:
     rt = get_runtime()
     ops = rt.store.operations()
+    state = rt.store.get_state()
     return {
         "commitments": [displayed(json.loads(c.model_dump_json())) for c in rt.store.commitments()],
-        "operations": [_op_view(o) for o in ops],
+        "operations": [_op_view(o, state, rt.day) for o in ops],
         "chain_valid": rt.store.verify_chain(),
         "chain_length": len(ops),
         "head_hash": ops[-1].entry_hash if ops else None,
@@ -97,7 +105,8 @@ def get_ledger() -> dict:
 def get_audit() -> dict:
     rt = get_runtime()
     ops = rt.store.operations()
-    refusals = [_op_view(o) for o in ops if json.loads(o.result_json).get("status") == "REFUSED"]
+    state = rt.store.get_state()
+    refusals = [_op_view(o, state, rt.day) for o in ops if json.loads(o.result_json).get("status") == "REFUSED"]
     s = security_summary(rt.store)
     events = rt.store.security_events()
     doc_ids = {sp.doc_id for e in events for sp in e.spans}

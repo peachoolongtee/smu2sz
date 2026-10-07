@@ -9,7 +9,11 @@ import { useI18n } from "@/lib/i18n";
 import { whenText } from "@/lib/when";
 import { useAsync } from "@/lib/use-async";
 
-/** Activity: everything that happened, in order, in the executor's own sentences; the hashes and codes under audit details. */
+/**
+ * Activity: everything that happened, in order. Each row leads with the server's Business sentence (`message_when`: names,
+ * the owner's words, distances from today); an older recording without it gets the executor's sentence with ids named.
+ * The hashes and codes are under audit details.
+ */
 export default function ActivityPage() {
   const { t, te } = useI18n();
   const ledger = useAsync(getLedger, []);
@@ -52,7 +56,7 @@ export default function ActivityPage() {
               <ol className="space-y-2" data-testid="activity-list">
                 {ops.map((o) => (
                   <li key={`${o.seq}-${o.op_id}`} className={`rounded-md border px-3 py-2 ${o.status === "REFUSED" ? "border-bad-line bg-bad-bg/40" : "border-line"}`} data-testid={`activity-${o.kind}`} data-status={o.status}>
-                    <p className="break-words text-sm font-medium text-ink">{words(o.summary) || te("opkind", o.kind) || o.kind}</p>
+                    <p className="break-words text-sm font-medium text-ink">{o.message_when || words(o.summary) || te("opkind", o.kind) || o.kind}</p>
                     <div className="mt-1 flex flex-wrap items-center gap-2">
                       <span className="text-xs text-ink-3">{whenText(o.day, today, t)}</span>
                       <span className="text-xs text-ink-3" data-testid="activity-op">{te("opkind", o.kind) || o.kind}</span>
@@ -129,7 +133,7 @@ export default function ActivityPage() {
                       <OpStatusBadge status={o.status} />
                       <span className="font-medium">{te("opkind", o.kind)}</span>
                     </div>
-                    <p className="mt-1 text-ink-2">{words(o.summary)}</p>
+                    <p className="mt-1 text-ink-2">{o.message_when || words(o.summary)}</p>
                   </li>
                 ))}
                 {audit.data.events.map((e) => (

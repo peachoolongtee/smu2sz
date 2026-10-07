@@ -17,11 +17,12 @@ from app.api.auth import require_feature, require_owner
 from app.api.display import displayed
 from app.api.presentation import (
     business_action,
+    business_text,
     comparison_reason,
     comparison_status,
     concession_interpretation,
     counter_economics,
-    relative_days,
+    plan_when,
 )
 from app.api.runtime import Runtime, get_runtime
 from app.api.views import owner_verdict_extras, trajectory_view
@@ -92,21 +93,28 @@ def _guarded_counters(rt: Runtime, offer: CompiledOffer, counters: list[CounterP
         d = displayed(json.loads(c.model_dump_json()))
         d["text"] = g.text_out
         d["outbound_blocked"] = not g.ok
+        # The same sentences as a Business page reads them (distances from today, never "day N"); `text` and `rationale`
+        # stay the counter's own words, the ones sent to the buyer and the ones the Demo views show. English only.
+        d["text_when"] = business_text(state, g.text_out, rt.day, "en")
+        d["rationale_when"] = business_text(state, c.rationale, rt.day, "en")
         # The parts behind the (floored) supplier cost: a price adjustment's offset is shown, never hidden in "¥0.00".
         d["economics"] = counter_economics(list(c.obligations), state, mandate)
         out.append(d)
     return out
 
 
-def _row_view(r, today: int) -> dict:
+def _row_view(r, state=None, today: int | None = None) -> dict:
     """A comparison row with its presentation status (recommended, alternative, insufficient, unavailable), the
-    uncovered amount of an insufficient candidate and why an admissible one cannot run today. `note_when` is the
-    router's note with its day numbers said as distances from today; `note` stays the engine's original."""
+    uncovered amount of an insufficient candidate, why an admissible one cannot run today and, when the books and the
+    clock are given, `note_when` and `components_when`: the router's sentences as a Business page reads them (names,
+    distances from today). `note` and `components` stay the router's words for the Demo funding view."""
     d = json.loads(r.model_dump_json())
     d["status"] = comparison_status(r.result.value, [c.value for c in r.reasons], r.breach_day)
     d["reason_kind"] = comparison_reason(d.get("actions") or [], r.executable_now)
     d["shortfall_display"] = fmt_yuan(r.shortfall_fen) if r.shortfall_fen is not None else None
-    d["note_when"] = relative_days(r.note, today, "en")
+    if state is not None and today is not None:
+        d["note_when"] = business_text(state, r.note, today, "en") if r.note else None
+        d["components_when"] = [business_text(state, c, today, "en") for c in r.components]
     return d
 
 
@@ -141,16 +149,24 @@ def evaluate_offer(offer_id: str, body: EvaluateIn | None = None) -> dict:
         bound = {o.id: o for o in bundle.bound_obligations}
         view["concession_values"] = [{**cv, "interpretation": concession_interpretation(cv, bound.get(cv.get("obligation_id", "")), "en")}
                                      for cv in view.get("concession_values") or []]
+        # Presentation reads for the Business pages: each violation's sentence and the plan's sentences with their day
+        # numbers as distances from today, beside the originals (`message`, `plan.*`), which the Demo views keep.
+        view["violations"] = [{**x, "message_when": business_text(state, x.get("message"), rt.day, "en"),
+                               "cure_note_when": business_text(state, x.get("cure_note"), rt.day, "en")}
+                              for x in view["violations"]]
+        view["plan"] = plan_when(state, view["plan"], rt.day, "en")
+        view["summary_when"] = business_text(state, view.get("summary"), rt.day, "en")
     view.update({
         **owner_verdict_extras(bundle, offer, state, mandate),  # passed_checks, autonomy, annualised
         "bound_obligations": displayed([json.loads(o.model_dump_json()) for o in bundle.bound_obligations]),
-        "notes": [json.loads(n.model_dump_json()) for n in bundle.notes],
+        "notes": [{**json.loads(n.model_dump_json()), "message_when": business_text(state, n.message, rt.day, "en")}
+                  for n in bundle.notes],
         "trajectory": trajectory_view(bundle.trajectory, mandate.min_cash_fen).model_dump() if bundle.trajectory else None,
         "plan_committed": displayed(json.loads(bundle.plan_committed.model_dump_json())) if bundle.plan_committed else None,
         "plan_expected": displayed(json.loads(bundle.plan_expected.model_dump_json())) if bundle.plan_expected else None,
         "cure_plan": displayed(json.loads(bundle.cure_plan.model_dump_json())) if bundle.cure_plan else None,
         "cured_trajectory": _cured(bundle, current_books(state, rt.store.commitments()), mandate),
-        "comparison": [_row_view(r, rt.day) for r in bundle.comparison],
+        "comparison": [_row_view(r, state, rt.day) for r in bundle.comparison],
         "forward_concession": {
             "total_fen": v.forward_concession_total_fen, "total_display": fmt_yuan(v.forward_concession_total_fen),
             "cap_fen": mandate.max_aggregate_forward_concession_fen,
@@ -356,7 +372,7 @@ def router_plan() -> dict:
             "bases": [json.loads(b.model_dump_json()) for b in by_label.values()],
         }),
         "comparison": [
-            {**_row_view(r, rt.day), "total_fen": r.cost_fen, "total_display": r.cost_display,
+            {**_row_view(r, state, rt.day), "total_fen": r.cost_fen, "total_display": r.cost_display,
              "selected": r.result.value == "SELECTED"}
             for r in compare(books.state, books.with_([]), mandate)
         ],

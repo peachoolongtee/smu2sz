@@ -37,8 +37,8 @@ def test_a_recurring_invoice_id_becomes_the_invoice_to_the_buyer(golden: Financi
 
 def test_two_invoices_of_the_same_buyer_and_face_are_told_apart_by_their_due_day(golden: FinancialState):
     out = in_words(golden, "Finance ¥80,000.00 on RI:BUYER-1:32 and ¥120,000.00 on RI:BUYER-1:2, then RCV-A.")
-    assert out == (f"Finance ¥80,000.00 on the ¥420,000.00 invoice to {BUYER} due day 77 and ¥120,000.00 on the "
-                   f"¥420,000.00 invoice to {BUYER} due day 47, then the ¥420,000.00 invoice to {BUYER} due day 32.")
+    assert out == (f"Finance ¥80,000.00 on the ¥420,000.00 invoice to {BUYER} due in 77 days and ¥120,000.00 on the "
+                   f"¥420,000.00 invoice to {BUYER} due in 47 days, then the ¥420,000.00 invoice to {BUYER} due in 32 days.")
     assert "RI:" not in out and "RCV-A" not in out
 
 

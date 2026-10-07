@@ -264,7 +264,7 @@
         "events": [
           {
             "kind": "RECEIPT",
-            "label": "Receipt the ¥420,000.00 invoice to Foshan Home Retail Co. due day 32 from Foshan Home Retail Co.",
+            "label": "Receipt the ¥420,000.00 invoice to Foshan Home Retail Co. due in 32 days from Foshan Home Retail Co.",
             "label_short": "Receipt from Foshan Home Retail Co.",
             "amount_fen": 42000000,
             "amount_display": "¥420,000.00",
@@ -363,7 +363,7 @@
         "events": [
           {
             "kind": "RECEIPT",
-            "label": "Receipt the ¥420,000.00 invoice to Foshan Home Retail Co. due day 47 from Foshan Home Retail Co.",
+            "label": "Receipt the ¥420,000.00 invoice to Foshan Home Retail Co. due in 47 days from Foshan Home Retail Co.",
             "label_short": "Receipt from Foshan Home Retail Co.",
             "amount_fen": 42000000,
             "amount_display": "¥420,000.00",
@@ -569,7 +569,7 @@
         "events": [
           {
             "kind": "RECEIPT",
-            "label": "Receipt the ¥420,000.00 invoice to Foshan Home Retail Co. due day 77 from Foshan Home Retail Co.",
+            "label": "Receipt the ¥420,000.00 invoice to Foshan Home Retail Co. due in 77 days from Foshan Home Retail Co.",
             "label_short": "Receipt from Foshan Home Retail Co.",
             "amount_fen": 42000000,
             "amount_display": "¥420,000.00",
@@ -767,7 +767,7 @@
         "events": [
           {
             "kind": "RECEIPT",
-            "label": "Receipt the ¥420,000.00 invoice to Foshan Home Retail Co. due day 107 from Foshan Home Retail Co.",
+            "label": "Receipt the ¥420,000.00 invoice to Foshan Home Retail Co. due in 107 days from Foshan Home Retail Co.",
             "label_short": "Receipt from Foshan Home Retail Co.",
             "amount_fen": 42000000,
             "amount_display": "¥420,000.00",
@@ -898,7 +898,7 @@
         "events": [
           {
             "kind": "ADVANCE",
-            "label": "Advance on the ¥420,000.00 invoice to Foshan Home Retail Co. due day 32, Invoice financing (onboarded platform)",
+            "label": "Advance on the ¥420,000.00 invoice to Foshan Home Retail Co. due in 32 days, Invoice financing (onboarded platform)",
             "label_short": "Invoice financing lands",
             "amount_fen": 25500000,
             "amount_display": "¥255,000.00",
@@ -1108,7 +1108,7 @@
         "events": [
           {
             "kind": "RECEIPT",
-            "label": "Receipt the ¥420,000.00 invoice to Foshan Home Retail Co. due day 32 from Foshan Home Retail Co.",
+            "label": "Receipt the ¥420,000.00 invoice to Foshan Home Retail Co. due in 32 days from Foshan Home Retail Co.",
             "label_short": "Receipt from Foshan Home Retail Co.",
             "amount_fen": 42000000,
             "amount_display": "¥420,000.00",
@@ -1132,7 +1132,7 @@
           },
           {
             "kind": "INTEREST",
-            "label": "Interest, Invoice financing (onboarded platform) on the ¥420,000.00 invoice to Foshan Home Retail Co. due day 32",
+            "label": "Interest, Invoice financing (onboarded platform) on the ¥420,000.00 invoice to Foshan Home Retail Co. due in 32 days",
             "label_short": "Interest",
             "amount_fen": -163479,
             "amount_display": "−¥1,634.79",
@@ -1140,7 +1140,7 @@
           },
           {
             "kind": "FEE",
-            "label": "Fee, Invoice financing (onboarded platform) on the ¥420,000.00 invoice to Foshan Home Retail Co. due day 32",
+            "label": "Fee, Invoice financing (onboarded platform) on the ¥420,000.00 invoice to Foshan Home Retail Co. due in 32 days",
             "label_short": "Fee",
             "amount_fen": -63750,
             "amount_display": "−¥637.50",
@@ -1148,7 +1148,7 @@
           },
           {
             "kind": "REPAYMENT",
-            "label": "Repay advance on the ¥420,000.00 invoice to Foshan Home Retail Co. due day 32",
+            "label": "Repay advance on the ¥420,000.00 invoice to Foshan Home Retail Co. due in 32 days",
             "label_short": "Repayment",
             "amount_fen": -25500000,
             "amount_display": "−¥255,000.00",
@@ -1247,7 +1247,7 @@
         "events": [
           {
             "kind": "RECEIPT",
-            "label": "Receipt the ¥420,000.00 invoice to Foshan Home Retail Co. due day 47 from Foshan Home Retail Co.",
+            "label": "Receipt the ¥420,000.00 invoice to Foshan Home Retail Co. due in 47 days from Foshan Home Retail Co.",
             "label_short": "Receipt from Foshan Home Retail Co.",
             "amount_fen": 42000000,
             "amount_display": "¥420,000.00",
@@ -1453,7 +1453,7 @@
         "events": [
           {
             "kind": "RECEIPT",
-            "label": "Receipt the ¥420,000.00 invoice to Foshan Home Retail Co. due day 77 from Foshan Home Retail Co.",
+            "label": "Receipt the ¥420,000.00 invoice to Foshan Home Retail Co. due in 77 days from Foshan Home Retail Co.",
             "label_short": "Receipt from Foshan Home Retail Co.",
             "amount_fen": 42000000,
             "amount_display": "¥420,000.00",
@@ -1651,7 +1651,7 @@
         "events": [
           {
             "kind": "RECEIPT",
-            "label": "Receipt the ¥420,000.00 invoice to Foshan Home Retail Co. due day 107 from Foshan Home Retail Co.",
+            "label": "Receipt the ¥420,000.00 invoice to Foshan Home Retail Co. due in 107 days from Foshan Home Retail Co.",
             "label_short": "Receipt from Foshan Home Retail Co.",
             "amount_fen": 42000000,
             "amount_display": "¥420,000.00",

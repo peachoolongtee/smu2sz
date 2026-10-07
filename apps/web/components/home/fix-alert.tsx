@@ -11,6 +11,7 @@ import type { DictKey } from "@/lib/dictionary";
 import { useI18n } from "@/lib/i18n";
 import { isWriteConflictDetail } from "@/lib/live/retry";
 import { useAsync } from "@/lib/use-async";
+import { useBusinessShell } from "@/lib/use-business-today";
 import type { AlertActResult, AlertChangedDetail, AlertItem, ApprovalView, SuggestedOperation } from "@/lib/types";
 
 /** Information alerts: nothing to press. FUNDING_IN_TRANSIT lands by itself; renewing a mandate is an offline owner step. */
@@ -157,9 +158,14 @@ export function FixButton({ alertId, busyId, onFix }: { alertId: string; busyId:
   );
 }
 
-/** The executor's answer: how many ran, waited for approval or were refused, each operation with its message, and whether the alert is gone. */
+/**
+ * The executor's answer: how many ran, waited for approval or were refused, each operation with its message, and whether the
+ * alert is gone. On a Business page each operation's message is the server's `message_when` (names, the owner's words,
+ * distances from today) when the API sent one; the Demo views keep the executor's sentence.
+ */
 export function FixResult({ result, error, changed }: { result: AlertActResult | null; error: string | null; changed?: AlertChangedDetail | null }) {
   const { t } = useI18n();
+  const business = useBusinessShell();
   if (changed) return <AlertChanged changed={changed} />;
   if (error) {
     return (
@@ -177,7 +183,7 @@ export function FixResult({ result, error, changed }: { result: AlertActResult |
         <Badge tone={result.pending_approval ? "warn" : "neutral"}>{t("alerts.fix.pending", { n: result.pending_approval })}</Badge>
         <Badge tone={result.refused ? "bad" : "neutral"}>{t("alerts.fix.refused", { n: result.refused })}</Badge>
       </div>
-      <OperationList operations={result.results} />
+      <OperationList operations={business ? result.results.map((o) => ({ ...o, message: o.message_when || o.message })) : result.results} />
       <p className="text-xs text-ink-2">
         {result.cured ? t("alerts.fix.cured") : result.pending_approval ? t("alerts.waiting.body") : t("alerts.fix.notCured")}
       </p>

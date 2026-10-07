@@ -394,8 +394,10 @@ wayfinder map, GitHub issue #13 (one ticket per wave, each closed with its files
   (`POST /alerts/{id}/act` accepts the recomputed router plan). An independent agent checked every figure against the golden
   values and the router.
 - **Business language.** Distances from today instead of "Day N" (server `*_when` strings, `relative_days`, a counting helper in
-  the browser), "minimum cash reserve" instead of "safe cash level", authority as the owner's signed limits, one Demo data pill
-  instead of a footer on every page; Demo mode keeps "Day N" and the engine views.
+  the browser), "minimum cash reserve" instead of "safe cash level", authority as the owner's signed limits ("the 15.00% limit
+  you signed for funding without your approval", never "what the agent may borrow alone", also inside the executor's and the
+  ledger's sentences since Wave 4 of the simplification map), one Demo data pill instead of a footer on every page; Demo mode
+  keeps "Day N" and the engine views.
 - **The home as one decision story.** Conclusion first ("Your cash reserve becomes unsafe in 12 days."), the detail, the worst
   point, three short figures, what is driving it from the projection's own events, then the recommendation led by its outcome
   ("Secure ¥405k of funding") with components, estimated total cost and its lines and basis, funds available, lowest cash after

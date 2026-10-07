@@ -198,7 +198,10 @@ export function ApprovalCard({
                 ...(a.amount_display ? [{ k: t("item.amount"), v: a.amount_display }] : []),
                 {
                   k: t("appr.requested"),
-                  v: t("appr.requestedValue", { day: a.created_day, who: te("actor", op?.requested_by ?? a.requested_by) }),
+                  // The request day as the server says it from today ("today", "3 days ago"); an older recording keeps the day number.
+                  v: p?.created_when
+                    ? t("appr.requestedWhen", { when: p.created_when, who: te("actor", op?.requested_by ?? a.requested_by) })
+                    : t("appr.requestedValue", { day: a.created_day, who: te("actor", op?.requested_by ?? a.requested_by) }),
                 },
                 { k: t("ledger.tier"), v: <span className="inline-flex items-center gap-2"><TierBadge tier={a.tier} /> <span className="text-xs text-ink-2">{te("tier.short", a.tier)}</span></span> },
                 ...(a.op_id ? [{ k: t("appr.opId"), v: <span className="font-mono text-xs">{a.op_id}</span> }] : []),

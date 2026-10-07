@@ -1,4 +1,4 @@
-import { expect, test as base } from "@playwright/test";
+import { expect, test as base, type Page } from "@playwright/test";
 
 /** The API's published demo owner token. Only the live project (a local API in demo mode) accepts it. */
 export const DEMO_TOKEN = "demo-owner-token";
@@ -25,3 +25,16 @@ export const test = base.extend({
 });
 
 export { expect };
+
+/**
+ * The page's prose: the body text without scripts and styles, without the engine's formulas (`<code>`, the `Formula` block)
+ * and without `exclude` selectors when given. A Business page never says "day N" in its prose; a formula is the audit level
+ * and keeps the engine's day numbers.
+ */
+export async function proseOf(page: Page, exclude: string[] = []): Promise<string> {
+  return page.evaluate((selectors) => {
+    const body = document.body.cloneNode(true) as HTMLElement;
+    for (const s of ["script", "style", "code", ...selectors]) body.querySelectorAll(s).forEach((el) => el.remove());
+    return body.textContent ?? "";
+  }, exclude);
+}

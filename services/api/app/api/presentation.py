@@ -109,19 +109,37 @@ def _shares_face(state: FinancialState, receivable_id: str) -> bool:
 
 
 def _invoice_in_words(state: FinancialState, receivable_id: str) -> str | None:
-    """The business words for an invoice id the books know (with its due day when another invoice looks the same)."""
+    """The business words for an invoice id the books know; when another invoice looks the same, with its due day as a
+    distance from the books' first open day ("due in 77 days"), since a Business page never says "day N"."""
     if receivable_face(state, receivable_id) is None:
         return None
     words = invoice_words(state, receivable_id, "en")
     due = invoice_due_day(state, receivable_id)
     if due is not None and _shares_face(state, receivable_id):
-        words += f" due day {due}"
+        words += f" due {when_text(due, state.as_of_day, 'en')}"
     return words
 
 
+# The executor's and the alert engine's clause for a leg above the mandate's rate ceiling, in the owner's words (the same
+# words `needs_owner_reason` uses): "the 15.00% limit you signed for funding without your approval".
+_CEILING_CLAUSE = re.compile(r"effective annual cost (\S+%) is above the mandate's (\S+%) ceiling for what the agent may borrow alone")
+_CEILING_SHORT = re.compile(r"above the (\S+%) ceiling for what the agent may borrow alone")
+
+
+def owner_words(text: str) -> str:
+    """Engine clauses re-said in the owner's words: the rate ceiling is "the limit you signed for funding without your
+    approval", never "what the agent may borrow alone", and "the owner's approval" is "your approval". Amounts and rates
+    are kept exactly."""
+    out = _CEILING_CLAUSE.sub(lambda m: f"the yearly cost of {m.group(1)} is above the {m.group(2)} limit you signed for funding "
+                                        f"without your approval", text)
+    out = _CEILING_SHORT.sub(lambda m: f"above the {m.group(1)} limit you signed for funding without your approval", out)
+    return out.replace("needs the owner's approval", "needs your approval")
+
+
 def in_words(state: FinancialState, text: str) -> str:
-    """Server text with invoice, facility and buyer ids replaced by their names (ids are on the audit level)."""
-    out = text
+    """Server text with invoice, facility and buyer ids replaced by their names (ids are on the audit level), and the rate
+    ceiling clause in the owner's words (`owner_words`)."""
+    out = owner_words(text)
     out = _RI_TOKEN.sub(lambda m: _invoice_in_words(state, m.group(0)) or m.group(0), out)
     for rid in sorted((r.id for r in state.receivables if not r.id.startswith("RI:")), key=len, reverse=True):
         out = re.sub(rf"(?<![\w:-]){re.escape(rid)}(?![\w:-])", lambda m: _invoice_in_words(state, m.group(0)) or m.group(0), out)
@@ -158,9 +176,10 @@ def when_text(day: int | None, today: int, lang: Lang) -> str:
 
 
 def relative_days(text: str, today: int, lang: Lang) -> str:
-    """Server sentences written with day numbers ("lands on day 37", "by day 47", "lasts to day 41", "(day 12)", "第 37 天"),
-    re-said as distances from today for the Business pages. The Demo views show the originals. English engine text inside a
-    Chinese page is rewritten too, since the engine writes English."""
+    """Server sentences written with day numbers ("lands on day 37", "by day 47", "paid on or before day 2", "lasts to day 41",
+    "(day 37 to day 47)", "from day 0 to day 32", "arrives day 21", "(day 12)", "第 37 天"), re-said as distances from today
+    for the Business pages. The Demo views show the originals. English engine text inside a Chinese page is rewritten too,
+    since the engine writes English."""
     def on(m: re.Match[str]) -> str:
         return when_text(int(m.group(1)), today, "en")
 
@@ -173,17 +192,51 @@ def relative_days(text: str, today: int, lang: Lang) -> str:
     def through(m: re.Match[str]) -> str:
         return f"for the next {max(int(m.group(1)) - today, 0)} days"
 
+    def span(m: re.Match[str]) -> str:
+        return f"from {when_text(int(m.group(1)), today, 'en')} to {when_text(int(m.group(2)), today, 'en')}"
+
     if lang == "zh":
         text = re.sub(r"第 (\d+) 天", lambda m: when_text(int(m.group(1)), today, "zh"), text)
+    text = re.sub(r"\bfrom day (\d+) to day (\d+)\b", span, text)
+    text = re.sub(r"\(day (\d+) to day (\d+)\)", lambda m: "(" + span(m) + ")", text)
     text = re.sub(r"\bthrough day (\d+)\b", through, text)
-    text = re.sub(r"\bby day (\d+)\b", by, text)
+    text = re.sub(r"\b(?:by|on or before) day (\d+)\b", by, text)
     text = re.sub(r"\brepaid day (\d+)\b", lambda m: "repaid " + on(m), text)
+    text = re.sub(r"\barrives day (\d+)\b", lambda m: "arrives " + on(m), text)
     text = re.sub(r"\bdue day (\d+)\b", lambda m: "due " + on(m), text)
     text = re.sub(r"\b(?:on|for) day (\d+)\b", on, text)
     text = re.sub(r"\bto day (\d+)\b", lambda m: "until " + on(m), text)
     text = re.sub(r"\(day (\d+)\)", lambda m: "(" + on(m) + ")", text)
     text = re.sub(r", day (\d+)\b", lambda m: ", " + on(m), text)
     return text
+
+
+def business_text(state: FinancialState, text: str | None, today: int, lang: Lang = "en") -> str | None:
+    """One engine sentence as a Business page shows it: names for ids, the owner's words for the ceiling clause and
+    distances from today for its day numbers. None stays None; the raw sentence stays beside it for the audit level."""
+    if text is None:
+        return None
+    return relative_days(in_words(state, text), today, lang)
+
+
+def plan_when(state: FinancialState, plan: dict[str, Any] | None, today: int, lang: Lang = "en") -> dict[str, Any] | None:
+    """A serialised funding plan with `*_when` beside every sentence that can carry a day number: the plan's and each cost
+    line's `approval_reason` and `not_executable_reason`, each cost line's `label`, each violation's `message` and
+    `cure_note`, each rejected candidate's `note`. The raw fields are untouched; nothing is recomputed."""
+    if plan is None:
+        return None
+    out = dict(plan)
+    for key in ("approval_reason", "not_executable_reason"):
+        if out.get(key):
+            out[f"{key}_when"] = business_text(state, out[key], today, lang)
+    out["costs"] = [{**c, "label_when": business_text(state, c.get("label"), today, lang),
+                     **{f"{k}_when": business_text(state, c[k], today, lang) for k in ("approval_reason", "not_executable_reason") if c.get(k)}}
+                    for c in out.get("costs") or []]
+    out["violations"] = [{**v, "message_when": business_text(state, v.get("message"), today, lang),
+                          "cure_note_when": business_text(state, v.get("cure_note"), today, lang)}
+                         for v in out.get("violations") or []]
+    out["rejected"] = [{**r, "note_when": business_text(state, r.get("note"), today, lang)} for r in out.get("rejected") or []]
+    return out
 
 
 # ---------------------------------------------------------------- one funding leg
