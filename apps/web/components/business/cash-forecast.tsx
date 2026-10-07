@@ -94,6 +94,8 @@ export function CashForecast({ h }: { h: HomeView }) {
   const ticks: number[] = [];
   const step = horizon <= 30 ? 5 : horizon <= 60 ? 10 : 20;
   for (let d = today; d <= to; d += step) ticks.push(d);
+  // With no plan beside it the line is simply the projection, not "if you do nothing" (funded books carry the funded numbers).
+  const baseName = h.cash.plan_series ? t("biz.forecast.nothing") : t("biz.forecast.projected");
   const tick = (d: number) => (d === today ? t("biz.when.today") : `+${d - today}d`);
 
   return (
@@ -131,12 +133,12 @@ export function CashForecast({ h }: { h: HomeView }) {
             {yMin < 0 ? <ReferenceLine y={0} stroke={AXIS} strokeWidth={1} /> : null}
             <XAxis dataKey="day" type="number" domain={[today, to]} ticks={ticks} tickFormatter={tick} stroke={AXIS} fontSize={12} tickLine={false} />
             <YAxis width={56} tickFormatter={axisYuanK} domain={[yMin, "auto"]} stroke={AXIS} fontSize={12} tickLine={false} axisLine={false} />
-            <Tooltip content={<ForecastTooltip today={today} />} cursor={{ stroke: AXIS, strokeDasharray: "3 3" }} />
+            <Tooltip content={<ForecastTooltip today={today} baseName={baseName} />} cursor={{ stroke: AXIS, strokeDasharray: "3 3" }} />
             <ReferenceLine y={floor} stroke={SERIES.floor.stroke} strokeWidth={2} strokeDasharray="6 4" label={narrow ? undefined : { value: `${t("biz.reserveMin")} ${h.cash.floor_short}`, position: "insideBottomRight", fill: SERIES.floor.stroke, fontSize: 11 }} />
             {breach !== null ? (
               <ReferenceLine x={breach} stroke={SERIES.floor.stroke} strokeDasharray="2 3" label={{ value: t("biz.forecast.unsafe", { when: h.cash.first_breach_when ?? "" }), position: "top", fill: SERIES.floor.stroke, fontSize: 11, fontWeight: 600 }} />
             ) : null}
-            <Area type="stepAfter" dataKey="cash" name={t("biz.forecast.nothing")} stroke={SERIES.cash.stroke} strokeWidth={2} fill="url(#cash-forecast-fill)" isAnimationActive={false} activeDot={{ r: 5, stroke: "#fff", strokeWidth: 2, fill: SERIES.cash.stroke }} />
+            <Area type="stepAfter" dataKey="cash" name={baseName} stroke={SERIES.cash.stroke} strokeWidth={2} fill="url(#cash-forecast-fill)" isAnimationActive={false} activeDot={{ r: 5, stroke: "#fff", strokeWidth: 2, fill: SERIES.cash.stroke }} />
             {h.cash.plan_series ? (
               <Area type="stepAfter" dataKey="plan" name={t("biz.forecast.plan")} stroke={SERIES.plan.stroke} strokeWidth={2} strokeDasharray="9 5" fill="none" isAnimationActive={false} connectNulls />
             ) : null}
@@ -152,17 +154,17 @@ export function CashForecast({ h }: { h: HomeView }) {
       </div>
 
       <ul className="flex flex-wrap gap-x-5 gap-y-1 text-xs text-ink-2">
-        <li className="flex items-center gap-1.5"><span className="inline-block h-0.5 w-5" style={{ background: SERIES.cash.stroke }} aria-hidden />{t("biz.forecast.nothing")}</li>
+        <li className="flex items-center gap-1.5"><span className="inline-block h-0.5 w-5" style={{ background: SERIES.cash.stroke }} aria-hidden />{baseName}</li>
         {h.cash.plan_series ? <li className="flex items-center gap-1.5"><span className="inline-block w-5 border-t-2 border-dashed" style={{ borderColor: SERIES.plan.stroke }} aria-hidden />{t("biz.forecast.plan")}</li> : null}
         <li className="flex items-center gap-1.5"><span className="inline-block w-5 border-t-2 border-dashed" style={{ borderColor: SERIES.floor.stroke }} aria-hidden />{t("biz.reserveMin")}</li>
       </ul>
 
-      <ForecastTable data={data} today={today} keep={[h.cash.lowest_day, breach]} />
+      <ForecastTable data={data} today={today} keep={[h.cash.lowest_day, breach]} baseName={baseName} />
     </figure>
   );
 }
 
-function ForecastTooltip({ active, payload, today }: { active?: boolean; payload?: { payload: Row }[]; today: number }) {
+function ForecastTooltip({ active, payload, today, baseName }: { active?: boolean; payload?: { payload: Row }[]; today: number; baseName: string }) {
   const { t } = useI18n();
   if (!active || !payload?.length) return null;
   const row = payload[0].payload;
@@ -170,7 +172,7 @@ function ForecastTooltip({ active, payload, today }: { active?: boolean; payload
   return (
     <div className="max-w-64 rounded-lg border border-line-strong bg-surface p-2.5 text-xs shadow-md">
       <p className="font-semibold text-ink">{when}</p>
-      <p className="mt-1 flex items-center justify-between gap-3 tabular-nums"><span className="text-ink-2">{t("biz.forecast.nothing")}</span><span className="font-medium text-ink">{row.cashDisplay}</span></p>
+      <p className="mt-1 flex items-center justify-between gap-3 tabular-nums"><span className="text-ink-2">{baseName}</span><span className="font-medium text-ink">{row.cashDisplay}</span></p>
       {row.planDisplay ? <p className="flex items-center justify-between gap-3 tabular-nums"><span className="text-ink-2">{t("biz.forecast.plan")}</span><span className="font-medium text-ink">{row.planDisplay}</span></p> : null}
       {row.events.length ? (
         <ul className="mt-1.5 space-y-0.5 border-t border-line pt-1.5 text-ink-2">
@@ -184,7 +186,7 @@ function ForecastTooltip({ active, payload, today }: { active?: boolean; payload
 }
 
 /** The chart as a table, weekly plus the lowest and first-unsafe days, for screen readers and anyone who prefers numbers. */
-function ForecastTable({ data, today, keep }: { data: Row[]; today: number; keep: (number | null)[] }) {
+function ForecastTable({ data, today, keep, baseName }: { data: Row[]; today: number; keep: (number | null)[]; baseName: string }) {
   const { t } = useI18n();
   const shown = data.filter((r) => (r.day - today) % 7 === 0 || keep.includes(r.day));
   return (
@@ -195,7 +197,7 @@ function ForecastTable({ data, today, keep }: { data: Row[]; today: number; keep
           <thead className="sticky top-0 bg-subtle text-ink-2">
             <tr>
               <th className="px-2.5 py-1.5 font-semibold">{t("biz.forecast.col.when")}</th>
-              <th className="px-2.5 py-1.5 font-semibold">{t("biz.forecast.nothing")}</th>
+              <th className="px-2.5 py-1.5 font-semibold">{baseName}</th>
               {data.some((r) => r.plan !== null) ? <th className="px-2.5 py-1.5 font-semibold">{t("biz.forecast.plan")}</th> : null}
               <th className="px-2.5 py-1.5 font-semibold">{t("biz.forecast.col.events")}</th>
             </tr>

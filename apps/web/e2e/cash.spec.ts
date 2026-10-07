@@ -107,6 +107,11 @@ test("after the plan ran, the page states the current funding and folds the comp
   await expect(page.getByTestId("cash-headline")).toHaveText("You're covered.");
   await expect(page.getByTestId("home-next-action")).toHaveCount(0);
   await expect(page.getByTestId("cash-unsafe-when")).toHaveText("Not in the next 120 days");
+  // No plan beside the line: it is the projection, not "if you do nothing", in the legend and in the table.
+  const chart = page.getByTestId("cash-forecast");
+  await expect(chart).toContainText("Projected cash");
+  await expect(chart).not.toContainText("If you do nothing");
+  await expect(chart).not.toContainText("With the recommended plan");
   const current = page.locator("#cash-current");
   await expect(current).toContainText("Current funding");
   await expect(current.getByTestId("cash-lot-landed")).toContainText("¥150,000.00");
