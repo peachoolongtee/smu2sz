@@ -15,6 +15,27 @@ const TONE: Record<HomeStatus, { badge: string; ring: string }> = {
  * behind it, the worst point if nothing is done, three figures in overview precision, and what is driving it. Every
  * sentence and figure is the server's; the healthy state is three short lines.
  */
+/** Cash still arriving, beside cash available today: two figures, never one. */
+function Arriving({ total }: { total: string }) {
+  const { t } = useI18n();
+  return (
+    <div className="flex min-w-0 items-baseline justify-between gap-3 sm:block">
+      <dt className="text-xs font-medium text-ink-3">{t("biz.arriving")}</dt>
+      <dd className="mt-0.5 text-lg font-semibold tabular-nums text-ink" data-testid="home-arriving">{total}</dd>
+    </div>
+  );
+}
+
+/** What is on its way, one server headline per lot ("¥255k funding arriving in 3 days"); an older recording gets the total. */
+function InTransitLines({ transit }: { transit: NonNullable<HomeView["cash"]["in_transit"]> }) {
+  const { t } = useI18n();
+  return (
+    <dd className="text-xs text-ink-3" data-testid="home-in-transit">
+      {transit.lots.every((l) => l.headline) ? transit.lots.map((l) => <span key={`${l.facility_name}-${l.arrival_day}-${l.amount_display}`} className="block">{l.headline}</span>) : t("biz.inTransit", { amount: transit.total_display })}
+    </dd>
+  );
+}
+
 export function StatusBlock({ h }: { h: HomeView }) {
   const { t, te } = useI18n();
   const tone = TONE[h.status] ?? TONE.WATCH;
@@ -22,7 +43,7 @@ export function StatusBlock({ h }: { h: HomeView }) {
   return (
     <section aria-labelledby="home-status-title" className={`rounded-(--radius-card) border bg-surface p-5 shadow-(--shadow-card) lg:p-6 ${tone.ring}`} data-testid="home-status" data-status={h.status}>
       <span className={`inline-flex items-center rounded-full border px-3 py-1 text-sm font-bold uppercase tracking-wide ${tone.badge}`} data-testid="home-status-word">
-        {te("homestatus", h.status)}
+        {h.status_text ?? te("homestatus", h.status)}
       </span>
       <h1 id="home-status-title" className="mt-3 text-2xl font-semibold leading-snug text-ink lg:text-3xl" data-testid="home-headline">
         {h.headline}
@@ -51,17 +72,26 @@ export function StatusBlock({ h }: { h: HomeView }) {
             <dd className="mt-0.5 text-lg font-semibold tabular-nums text-ink" data-testid="home-cash">
               {h.cash.cash_short}
             </dd>
-            {h.cash.in_transit ? (
-              <dd className="text-xs text-ink-3" data-testid="home-in-transit">
-                {t("biz.inTransit", { amount: h.cash.in_transit.total_display })}
-              </dd>
-            ) : null}
+            {h.cash.in_transit ? <InTransitLines transit={h.cash.in_transit} /> : null}
           </div>
         )}
+        {h.cash.in_transit && !unsafe ? <Arriving total={h.cash.in_transit.total_display} /> : null}
         <div className="flex min-w-0 items-baseline justify-between gap-3 sm:block">
           <dt className="text-xs font-medium text-ink-3">{t("biz.reserveMin")}</dt>
           <dd className="mt-0.5 text-lg font-semibold tabular-nums text-ink" data-testid="home-floor">{h.cash.floor_short}</dd>
         </div>
+        {h.cash.headroom_short !== undefined ? (
+          <div className="flex min-w-0 items-baseline justify-between gap-3 sm:block">
+            <dt className="text-xs font-medium text-ink-3">{t("biz.headroom")}</dt>
+            <dd className="mt-0.5 text-lg font-semibold tabular-nums text-ink" data-testid="home-headroom">{h.cash.headroom_short}</dd>
+          </div>
+        ) : null}
+        {h.cash.lowest_headroom_short !== undefined ? (
+          <div className="flex min-w-0 items-baseline justify-between gap-3 sm:block">
+            <dt className="text-xs font-medium text-ink-3">{t("biz.lowestHeadroom")}</dt>
+            <dd className="mt-0.5 text-lg font-semibold tabular-nums text-ink" data-testid="home-headroom-lowest">{h.cash.lowest_headroom_short}</dd>
+          </div>
+        ) : null}
         <div className="flex min-w-0 flex-wrap items-baseline justify-between gap-x-3 sm:block">
           <dt className="text-xs font-medium text-ink-3">{unsafe ? t("biz.worstPoint") : t("biz.lowestAhead")}</dt>
           <dd className={`mt-0.5 text-lg font-semibold tabular-nums ${unsafe ? "text-bad-fg" : "text-ink"}`} data-testid="home-lowest">
@@ -75,9 +105,11 @@ export function StatusBlock({ h }: { h: HomeView }) {
           <dt className="text-xs font-medium text-ink-3">{t("biz.cashToday")}</dt>
           <dd className="font-semibold tabular-nums text-ink" data-testid="home-cash">{h.cash.cash_short}</dd>
           {h.cash.in_transit ? (
-            <dd className="text-xs text-ink-3" data-testid="home-in-transit">
-              {t("biz.inTransit", { amount: h.cash.in_transit.total_display })}
-            </dd>
+            <>
+              <dt className="text-xs font-medium text-ink-3">{t("biz.arriving")}</dt>
+              <dd className="font-semibold tabular-nums text-ink" data-testid="home-arriving">{h.cash.in_transit.total_display}</dd>
+              <InTransitLines transit={h.cash.in_transit} />
+            </>
           ) : null}
         </dl>
       ) : null}

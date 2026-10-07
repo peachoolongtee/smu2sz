@@ -51,8 +51,11 @@ test("day 34: the late invoice leads, the overdue total is the server's, and the
   const rows = page.locator("#recv-open tbody tr");
   await expect(rows.first()).toHaveAttribute("data-testid", "recv-RCV-A");
   await expect(rows.first()).toContainText("Foshan Home Retail Co.");
-  await expect(rows.first()).toContainText("2 day(s) late");
+  await expect(rows.first()).toContainText("2 days late");
   await expect(rows.first()).toContainText("2 days ago");
+  // The invoice id is a muted second line under the buyer, not part of the name.
+  await expect(rows.first().locator("td").first()).toContainText("Foshan Home Retail Co.");
+  await expect(rows.first().locator("td").first().locator("span.block")).toHaveText("RCV-A");
   await expect(page.getByRole("heading", { name: "Expected early payments" })).toBeVisible();
   await expect(page.getByTestId("promised-RCV-A")).toContainText("¥255,013.80");
   await expect(page.getByRole("heading", { name: "Payments received" })).toBeVisible();

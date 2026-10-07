@@ -35,7 +35,8 @@
           "facility_name": "Invoice financing (onboarded platform)",
           "amount_display": "¥200,000.00",
           "arrival_day": 37,
-          "arrival_when": "in 3 days"
+          "arrival_when": "in 3 days",
+          "headline": "¥200k funding arriving in 3 days"
         }
       ]
     },
@@ -1154,6 +1155,8 @@
       "kind": "OPERATION",
       "actor": "AGENT",
       "text": "Advance ¥200,000.00 on the ¥420,000.00 invoice to Foshan Home Retail Co. due in 13 days from Invoice financing (onboarded platform) today; the cash lands in 3 days after the 3-day lead time, not today",
+      "event_text": "You approved ¥200,000.00 of invoice financing. Funds arrive in 3 days.",
+      "event_detail": null,
       "when": "today"
     },
     {
@@ -1162,6 +1165,8 @@
       "kind": "WAITING",
       "actor": "AGENT",
       "text": "Queued for owner approval (APR-000001): the yearly cost of 32.52% is above the 15.00% limit you signed for funding without your approval (all charges on ¥200,000.00 held 10 days (from in 3 days to in 13 days), annualised = 32.52%)",
+      "event_text": "Waiting for your approval: ¥200,000.00 of invoice financing at 32.5% a year, above the 15.00% limit you signed for funding without your approval.",
+      "event_detail": null,
       "when": "today"
     },
     {
@@ -1170,6 +1175,8 @@
       "kind": "LATE",
       "actor": "",
       "text": "¥162,800.00 outstanding from Foshan Home Retail Co. was due 2 days ago and is still OPEN.",
+      "event_text": "¥162,800.00 outstanding from Foshan Home Retail Co. was due 2 days ago and is still OPEN.",
+      "event_detail": null,
       "when": "2 days ago"
     }
   ],

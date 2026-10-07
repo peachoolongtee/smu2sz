@@ -88,6 +88,9 @@ type OpTemplate = {
   summary: string;
   /** The Business sentence GET /ledger wrote for the row (absent in a recording made before the API added it). */
   message_when?: string | null;
+  /** The business sentence GET /ledger wrote for the row, and its second sentence. */
+  event_text?: string | null;
+  event_detail?: string | null;
 };
 const OPS = cast<Record<string, OpTemplate>>(opsJson);
 
@@ -180,6 +183,7 @@ function append(
     summary: overrides.summary ?? t.summary,
     // The recorded Business sentence travels with the row; an override of the message has no recorded twin.
     ...(overrides.message === undefined && t.message_when ? { message_when: t.message_when } : {}),
+    ...(overrides.message === undefined && t.event_text ? { event_text: t.event_text, event_detail: t.event_detail ?? null } : {}),
   };
   const op: OperationView = { ...base, prev_hash: prev, entry_hash: entryHash(base, prev) };
   s.ops.push(op);
@@ -187,7 +191,8 @@ function append(
 }
 
 /** Books an operation the recorded API answer reports (a cure the agent ran), on the same hash chain as the rest. */
-export function appendRecorded(r: { kind: string; status: OperationView["status"]; tier: OperationView["tier"]; message: string; message_when?: string | null; day: number }): void {
+type Recorded = { kind: string; status: OperationView["status"]; tier: OperationView["tier"]; message: string; message_when?: string | null; event_text?: string | null; event_detail?: string | null; day: number };
+export function appendRecorded(r: Recorded): void {
   const s = load();
   const seq = s.ops.length + 1;
   const prev = s.ops.length ? (s.ops[s.ops.length - 1].entry_hash ?? GENESIS) : GENESIS;
@@ -203,6 +208,7 @@ export function appendRecorded(r: { kind: string; status: OperationView["status"
     requested_by: "AGENT" as const,
     summary: r.message,
     ...(r.message_when ? { message_when: r.message_when } : {}),
+    ...(r.event_text ? { event_text: r.event_text, event_detail: r.event_detail ?? null } : {}),
   };
   s.ops.push({ ...base, prev_hash: prev, entry_hash: entryHash(base, prev) });
   save();
@@ -428,7 +434,7 @@ export async function decideApproval(id: string, decision: ApprovalDecision): Pr
     if (decision === "REJECT") {
       throw new ApiError(409, "Mock mode replays only the approval of the recorded cure. Set NEXT_PUBLIC_API_MODE=live to reject it.");
     }
-    const done = cast<{ operations: { kind: string; status: OperationView["status"]; tier: OperationView["tier"]; message: string; message_when?: string | null; day: number }[] }>(homeApprove).operations[0];
+    const done = cast<{ operations: Recorded[] }>(homeApprove).operations[0];
     Object.assign(a, clone(cast<ApprovalView>(homeApprovalApproved)), { id: a.id });
     appendRecorded(done);
     home.markApproved();
@@ -490,14 +496,14 @@ export async function actOnAlert(id: string, bound: ActRequest): Promise<AlertAc
   await delay();
   if (id === "ALERT-RESERVE-12") {
     const r0 = home.mockActDay0();
-    for (const op of r0.results) appendRecorded({ kind: op.kind, status: op.status, tier: op.tier, message: op.message, message_when: op.message_when, day: 0 });
+    for (const op of r0.results) appendRecorded({ kind: op.kind, status: op.status, tier: op.tier, message: op.message, message_when: op.message_when, event_text: op.event_text, event_detail: op.event_detail, day: 0 });
     return clone(r0);
   }
   const r = home.mockAct(id, bound);
   // Once only: asking again while the cure waits changes nothing.
   const first = !load().approvals.some((x) => x.op_id?.startsWith("alert:"));
   ensureHomeApproval();
-  if (first) for (const o of r.results) appendRecorded({ kind: o.kind, status: o.status, tier: o.tier, message: o.message, message_when: o.message_when, day: r.day });
+  if (first) for (const o of r.results) appendRecorded({ kind: o.kind, status: o.status, tier: o.tier, message: o.message, message_when: o.message_when, event_text: o.event_text, event_detail: o.event_detail, day: r.day });
   return r;
 }
 

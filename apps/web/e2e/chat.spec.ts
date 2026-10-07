@@ -277,3 +277,32 @@ test("network and credential failures are explained in the conversation and can 
   await send(page, "status again");
   await expect(page.getByTestId("chat-log").getByRole("alert").last()).toContainText("Server credentials not configured");
 });
+
+test("the chat button says Ask FLOW, and a Business page offers its own questions first", async ({ page, request }) => {
+  await resetBooks(request);
+  await page.goto("/deals");
+  const signin = page.getByRole("dialog", { name: "Owner sign-in" });
+  if (isLive()) await expect(signin).toBeVisible();
+  else await page.getByTestId("owner-signin-open").click();
+  await signin.getByLabel("Owner token").fill(DEMO_TOKEN);
+  await signin.getByRole("button", { name: "Sign in" }).click();
+  await expect(signin).toBeHidden();
+
+  const open = page.getByTestId("chat-open");
+  await expect(open).toContainText("Ask FLOW");
+  await expect(open).not.toContainText("Ask the agent");
+  await open.click();
+  const panel = page.getByRole("dialog", { name: "Chat with the agent" });
+  // The Deals questions come first; the general prompts stay after them.
+  const chips = panel.locator('[data-testid^="prompt-"]');
+  await expect(chips.first()).toHaveAttribute("data-testid", "prompt-page-counter");
+  await expect(panel.getByTestId("prompt-page-counter")).toHaveText("Why are we countering this?");
+  await expect(panel.getByTestId("prompt-page-accept")).toHaveText("What would happen if I accepted?");
+  await expect(panel.getByTestId("prompt-evaluate")).toBeVisible();
+  await page.keyboard.press("Escape");
+
+  // Another page, other questions: Receivables asks who is late.
+  await page.goto("/receivables");
+  await page.getByTestId("chat-open").click();
+  await expect(page.getByRole("dialog", { name: "Chat with the agent" }).getByTestId("prompt-page-late")).toHaveText("Which payments are late?");
+});

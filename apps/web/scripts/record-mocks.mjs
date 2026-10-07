@@ -129,7 +129,7 @@ const demo = () => demoStore.get();
 
 /** An operation as the mock ledger replays it: what the server said (the executor's sentence and its Business twin), without the position in the chain. */
 function template(op) {
-  return { kind: op.kind, status: op.status, tier: op.tier, requested_by: op.requested_by, message: op.message, summary: op.summary, message_when: op.message_when ?? null };
+  return { kind: op.kind, status: op.status, tier: op.tier, requested_by: op.requested_by, message: op.message, summary: op.summary, message_when: op.message_when ?? null, event_text: op.event_text ?? null, event_detail: op.event_detail ?? null };
 }
 async function ledgerTail(n) {
   return (await live.getLedger()).operations.slice(-n);

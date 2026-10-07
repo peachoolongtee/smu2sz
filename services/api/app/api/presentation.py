@@ -8,6 +8,7 @@ computing anything (INVARIANT 13). Facility and buyer names come from the books;
 from __future__ import annotations
 
 import re
+from fractions import Fraction
 from typing import Any
 
 from app.alerts import Alert, AlertKind
@@ -389,6 +390,156 @@ def approval_words(state: FinancialState, op: dict[str, Any], kind: str | None, 
                        f"它使现金在未来 {max(int(alert.inputs['last_day']) - today, 0)} 天保持在最低现金储备以上。")
                      if alert is not None and alert.inputs.get("last_day") and alert.committed_cure else None),
     }
+
+
+# ---------------------------------------------------------------- a log entry as a business event (wayfinder #35)
+
+_RATE_IN_REASON = re.compile(r"effective annual cost (\d+(?:\.\d+)?)% is above the mandate's (\S+%) ceiling")
+_RECEIPT_DETAIL = re.compile(r"^Received \S+ on \S+ \((.+?)\)")
+_MONEY_KINDS = ("SUBMIT_INVOICE_FOR_FINANCING", "DRAW_FACILITY")
+
+
+def _sentence(text: str) -> str:
+    text = text.strip()
+    if not text:
+        return text
+    text = text[0].upper() + text[1:]
+    return text if text[-1] in ".。!?" else text + ("。" if "一" <= text[-1] <= "鿿" else ".")
+
+
+def _stop(text: str, lang: Lang) -> str:
+    """The sentence's full stop, unless the text already ends in one (a buyer named "… Co.")."""
+    return text if text.endswith((".", "。")) else text + t(lang, ".", "。")
+
+
+def _op_amount(payload: dict[str, Any]) -> int | None:
+    amount = payload.get("advance_fen", payload.get("amount_fen"))
+    return amount if isinstance(amount, int) else None
+
+
+def _landing_day(state: FinancialState, payload: dict[str, Any], day: int | None) -> int | None:
+    """The day the cash of a draw or advance lands: the funding lot the operation created (ADR-0010), else the request day
+    plus the facility's lead time."""
+    op_id = str(payload.get("op_id") or "")
+    for lot in state.lots:
+        if op_id and (lot.id == op_id or lot.id.startswith(op_id + "#")):
+            return lot.arrival_day
+    request = day if day is not None else payload.get("day")
+    return request + lead_days(state, payload.get("facility_id")) if isinstance(request, int) else None
+
+
+def _landing_sentence(landing: int | None, today: int, lang: Lang) -> str | None:
+    if landing is None:
+        return None
+    n = landing - today
+    when = when_text(landing, today, lang)
+    if n > 0:
+        return t(lang, f"Funds arrive {when}.", f"资金将于{when}到账。")
+    if n == 0:
+        return t(lang, "Cash received today.", "资金今天已到账。")
+    return t(lang, f"Cash received {when}.", f"资金已于{when}到账。")
+
+
+def _what_asked(state: FinancialState, kind: str, payload: dict[str, Any], lang: Lang) -> str:
+    """What was asked, in words ("finance ¥80,000.00 of the ¥420,000.00 invoice to X on Y"), lower-cased to follow a colon."""
+    amount = _op_amount(payload)
+    if amount is not None:
+        words = leg_words(state, kind, payload.get("facility_id"), payload.get("receivable_id"), amount, lang)
+    else:
+        words = t(lang, f"the {short_kind(kind, 'en')}", f"{short_kind(kind, 'zh')}")
+    return words[:1].lower() + words[1:] if lang != "zh" else words
+
+
+def _asked_words(state: FinancialState, kind: str, payload: dict[str, Any], lang: Lang) -> str | None:
+    """The thing asked for, as a noun phrase that follows "You approved" or "Waiting for your approval:": "¥200,000.00 of
+    invoice financing", "a ¥150,000.00 draw on the Bank credit line", "an application for ¥600,000.00 on Equipment lease",
+    "the receipt of ¥255,013.80 from Foshan Home Retail Co."; None for a kind with no such reading."""
+    amount = _op_amount(payload)
+    if amount is None:
+        return None
+    money, fac = fmt_yuan(amount), facility_name(state, payload.get("facility_id"))
+    if kind == "SUBMIT_INVOICE_FOR_FINANCING":
+        return t(lang, f"{money} of {short_kind(kind, 'en')}", f"{money} 的{short_kind(kind, 'zh')}")
+    if kind == "DRAW_FACILITY":
+        return t(lang, f"a {money} draw on the {fac}", f"从{fac}提取 {money}")
+    if kind == "APPLY_FOR_FACILITY":
+        return t(lang, f"an application for {money} on {fac}", f"在{fac}申请 {money}")
+    if kind == "RECEIVE_PAYMENT":
+        buyer = party_name(state, buyer_of_receivable(state, payload.get("receivable_id")))
+        return (t(lang, f"the receipt of {money} from {buyer}", f"来自{buyer}的 {money} 入账") if buyer
+                else t(lang, f"the receipt of {money}", f"{money} 入账"))
+    return None
+
+
+def agreement_words(state: FinancialState, counterparty_id: str, forward_value_fen: int, lang: Lang = "en") -> str:
+    """"Agreement with Foshan Home Retail Co. recorded; future give-aways booked: ¥0.00." (the home's AGREEMENT event)."""
+    buyer = party_name(state, counterparty_id)
+    return t(lang, f"Agreement with {buyer} recorded; future give-aways booked: {fmt_yuan(forward_value_fen)}.",
+             f"已记录与{buyer}的协议；已入账的未来让利：{fmt_yuan(forward_value_fen)}。")
+
+
+def event_words(state: FinancialState, *, kind: str, status: str, payload: dict[str, Any], message: str,
+                approval_id: str | None, day: int | None, today: int, lang: Lang = "en") -> dict[str, str | None]:
+    """One operations-log entry as a business sentence: what happened in the owner's words, never the executor's own
+    sentence. `event_text` is the sentence (the landing of a draw or advance is its second sentence) and `event_detail`
+    one more sentence when there is something more to say, else None. Every figure is the operation's own amount, the
+    executor's own rate and the funding lot's own landing day; nothing is priced here. An entry with no business reading
+    (anything the executor says in its own words only) returns `event_text` None and the caller keeps the sentence it has."""
+    none: dict[str, str | None] = {"event_text": None, "event_detail": None}
+    amount = _op_amount(payload)
+    receivable_id = payload.get("receivable_id")
+    facility_id = payload.get("facility_id")
+    buyer = party_name(state, buyer_of_receivable(state, receivable_id)) if receivable_id else ""
+    money = kind in _MONEY_KINDS and amount is not None
+    approved = status == "EXECUTED" and approval_id is not None
+
+    if status == "EXECUTED" and money and not approved:
+        fac = facility_name(state, facility_id)
+        landing = _landing_sentence(_landing_day(state, payload, day), today, lang)
+        if kind == "SUBMIT_INVOICE_FOR_FINANCING":
+            against = (t(lang, f"the {buyer} invoice", f"{buyer}的发票") if buyer else t(lang, "an invoice", "一张发票"))
+            head = t(lang, f"{fmt_yuan(amount or 0)} of invoice financing drawn against {against}.",
+                     f"已以{against}融资 {fmt_yuan(amount or 0)}。")
+            detail = t(lang, f"Financed through {fac}.", f"通过{fac}融资。") if fac else None
+        else:
+            head = t(lang, f"{fmt_yuan(amount or 0)} drawn on the {fac}.", f"已从{fac}提取 {fmt_yuan(amount or 0)}。")
+            detail = None
+        return {"event_text": (head + t(lang, " ", "") + landing) if landing else head, "event_detail": detail}
+
+    asked = _asked_words(state, kind, payload, lang)
+    if status == "PENDING_APPROVAL" and asked is not None:
+        reason = message.split("): ", 1)[1] if "): " in message else ""
+        m = _RATE_IN_REASON.search(reason)
+        if m:
+            rate = fmt_pct(Fraction(m.group(1)) / 100, 1)
+            return {"event_text": t(lang, f"Waiting for your approval: {asked} at {rate} a year, above the {m.group(2)} limit you "
+                                          f"signed for funding without your approval.",
+                                    f"等待您批准：{asked}，年化成本 {rate}，高于您签署的无需批准融资上限 {m.group(2)}。"),
+                    "event_detail": None}
+        detail = _sentence(business_text(state, reason, today, lang) or "") if reason else None
+        return {"event_text": _stop(t(lang, f"Waiting for your approval: {asked}", f"等待您批准：{asked}"), lang), "event_detail": detail or None}
+
+    if approved and asked is not None:
+        landing = _landing_sentence(_landing_day(state, payload, day), today, lang) if money else None
+        head = _stop(t(lang, f"You approved {asked}", f"您已批准{asked}"), lang)
+        return {"event_text": (head + t(lang, " ", "") + landing) if landing else head, "event_detail": None}
+
+    if status == "REFUSED" and approval_id is not None and message.startswith("Declined by the owner") and asked is not None:
+        return {"event_text": _stop(t(lang, f"You declined {asked}", f"您已拒绝{asked}"), lang), "event_detail": None}
+
+    if status == "REFUSED":
+        reason = message.removeprefix("Refused: ").strip()
+        asked = _what_asked(state, kind, payload, lang)
+        why = _sentence(business_text(state, reason, today, lang) or "")
+        return {"event_text": t(lang, f"{_stop(f'Refused: {asked}', lang)} {why}".strip(), f"{_stop(f'已拒绝：{asked}', lang)}{why}".strip()),
+                "event_detail": None}
+
+    if status == "EXECUTED" and kind == "RECEIVE_PAYMENT" and amount is not None and buyer:
+        m = _RECEIPT_DETAIL.match(message)
+        detail = _sentence(business_text(state, m.group(1), today, lang) or "") if m else None
+        return {"event_text": _stop(t(lang, f"Received {fmt_yuan(amount)} from {buyer}", f"已收到{buyer}的 {fmt_yuan(amount)}"), lang),
+                "event_detail": detail or None}
+    return none
 
 
 # ---------------------------------------------------------------- truth fields (wayfinder #30)

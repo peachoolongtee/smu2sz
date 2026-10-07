@@ -923,6 +923,8 @@
       "kind": "OPERATION",
       "actor": "AGENT",
       "text": "Drew ¥149,986.20 on Bank credit line today",
+      "event_text": "¥149,986.20 drawn on the Bank credit line. Cash received today.",
+      "event_detail": null,
       "when": "today"
     },
     {
@@ -931,6 +933,8 @@
       "kind": "AGREEMENT",
       "actor": "AGENT",
       "text": "Agreement with Foshan Home Retail Co. recorded; future give-aways booked: ¥0.00.",
+      "event_text": "Agreement with Foshan Home Retail Co. recorded; future give-aways booked: ¥0.00.",
+      "event_detail": null,
       "when": "today"
     }
   ],

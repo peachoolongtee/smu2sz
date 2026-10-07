@@ -91,7 +91,7 @@ test("the day-0 plan: 'go ahead' brings cash now and leaves the advance in trans
   // The Business home keeps cash in hand apart from the advance on its way (both are the server's strings).
   await page.goto("/");
   await expect(page.getByTestId("home-cash")).toHaveText("¥550k");
-  await expect(page.getByTestId("home-in-transit")).toContainText("¥255,000.00 on its way");
+  await expect(page.getByTestId("home-in-transit")).toContainText("¥255k funding arriving in 3 days");
   // Once day 3 has passed the advance is cash.
   expect((await request.post(`${API}/clock/advance`, { headers: owner, data: { to_day: 4 } })).ok()).toBeTruthy();
   await page.goto("/");
@@ -197,8 +197,8 @@ test("on day 34 the cure needs the owner: the alert says so, the click queues it
   await page.goto("/");
   await expect(page.getByTestId("home-next-action")).toHaveCount(0);
   await expect(page.getByTestId("home-status")).toHaveAttribute("data-status", "WATCH");
-  await expect(page.getByTestId("home-in-transit")).toContainText("¥200,000.00 on its way");
-  await expect(page.getByTestId("home-changes-list")).toContainText("lands in 3 days");
+  await expect(page.getByTestId("home-in-transit")).toContainText("¥200k funding arriving in 3 days");
+  await expect(page.getByTestId("home-changes-list")).toContainText("You approved ¥200,000.00 of invoice financing. Funds arrive in 3 days.");
 
   await post("/demo/reset", {});
 });

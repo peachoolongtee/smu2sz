@@ -11,7 +11,7 @@ from fastapi.responses import PlainTextResponse
 from app.api.auth import require_owner
 from app.api.decide import _counter_allow
 from app.api.display import displayed
-from app.api.presentation import business_text
+from app.api.presentation import agreement_words, business_text, event_words
 from app.api.runtime import get_runtime
 from app.api.views import Money, TrajectoryView, trajectory_view
 from app.books import current_books
@@ -25,10 +25,11 @@ from app.verifier import REFUSAL_REPLY
 router = APIRouter(dependencies=[Depends(require_owner)])
 
 
-def _op_view(o, state=None, today: int | None = None) -> dict:
+def _op_view(o, state=None, today: int | None = None, commitments=()) -> dict:
     """One log entry as the ledger shows it. `message` and `summary` are the executor's own sentence (the audit level);
-    `message_when` is the same sentence as a Business page reads it (names, the owner's words, distances from today),
-    a presentation read added when the books and the clock are given. English only: the route has no `lang`."""
+    `message_when` is the same sentence as a Business page reads it (names, the owner's words, distances from today) and
+    `event_text` / `event_detail` the business sentence for what happened (`event_words`), presentation reads added when
+    the books and the clock are given. English only: the route has no `lang`."""
     res = json.loads(o.result_json)
     try:
         op = json.loads(o.payload_json)
@@ -41,6 +42,16 @@ def _op_view(o, state=None, today: int | None = None) -> dict:
               "summary": summary})
     if state is not None and today is not None:
         v["message_when"] = business_text(state, summary, today, "en")
+        words = event_words(state, kind=o.kind, status=str(res.get("status") or ""), payload=op if isinstance(op, dict) else {},
+                            message=str(res.get("message") or ""), approval_id=res.get("approval_id"),
+                            day=v["day"] if isinstance(v["day"], int) else None, today=today, lang="en")
+        text = words["event_text"] or v["message_when"]
+        if o.kind in ("ACCEPT_OFFER", "RECORD_COMMITMENT") and res.get("status") == "EXECUTED":
+            cmt = next((c for c in commitments if c.id in summary), None)
+            if cmt is not None:
+                text = agreement_words(state, cmt.counterparty_id, cmt.forward_value_fen)
+        v["event_text"] = text
+        v["event_detail"] = words["event_detail"]
     return v
 
 
@@ -92,9 +103,10 @@ def get_ledger() -> dict:
     rt = get_runtime()
     ops = rt.store.operations()
     state = rt.store.get_state()
+    commitments = rt.store.commitments()
     return {
-        "commitments": [displayed(json.loads(c.model_dump_json())) for c in rt.store.commitments()],
-        "operations": [_op_view(o, state, rt.day) for o in ops],
+        "commitments": [displayed(json.loads(c.model_dump_json())) for c in commitments],
+        "operations": [_op_view(o, state, rt.day, commitments) for o in ops],
         "chain_valid": rt.store.verify_chain(),
         "chain_length": len(ops),
         "head_hash": ops[-1].entry_hash if ops else None,

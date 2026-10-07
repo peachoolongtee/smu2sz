@@ -111,8 +111,20 @@ test("Go ahead on the opening books runs the fix alone, and the home turns calm 
   await expect(page.getByTestId("home-headline")).toHaveText("You're covered.");
   await expect(page.getByTestId("home-note")).toContainText("Cash stays above your ¥300k minimum cash reserve for the next 120 days.");
   await expect(page.getByTestId("home-next-action")).toHaveCount(0);
-  await expect(page.getByTestId("home-in-transit")).toContainText("¥255,000.00 on its way");
-  await expect(page.getByTestId("home-changes-list")).toContainText("Bank credit line");
+  // On its way: the server's headline, and "Arriving" beside the cash already in hand (two figures, never one).
+  await expect(page.getByTestId("home-in-transit")).toContainText("¥255k funding arriving in 3 days");
+  await expect(page.getByTestId("home-arriving")).toHaveText("¥255,000.00");
+  await expect(page.getByTestId("home-cash")).toHaveText("¥550k");
+  // The status label is the server's: a WATCH with thin headroom reads "Covered, but tight", and the headroom figures show.
+  await expect(page.getByTestId("home-status-word")).toHaveText("Covered, but tight");
+  await expect(page.getByTestId("home-headroom")).toHaveText("¥250k");
+  await expect(page.getByTestId("home-headroom-lowest")).toHaveText("¥0.00");
+  // Recent changes lead with the business sentence, never the executor's "Advance ¥… on RI:… from FAC-… on day 0".
+  const changes = page.getByTestId("home-changes-list");
+  await expect(changes).toContainText("¥150,000.00 drawn on the Bank credit line. Cash received today.");
+  await expect(changes).toContainText("¥255,000.00 of invoice financing drawn against the Foshan Home Retail Co. invoice. Funds arrive in 3 days.");
+  await expect(changes).not.toContainText("Advance ¥");
+  await expect(changes).not.toContainText("RI:");
   await expect(page.locator("#home-decisions")).toHaveCount(0);
   // The agent's answer and the changes carry no day numbers either: the executor's "on day 0; lands on day 3" is said from today.
   expect(await proseOf(page)).not.toMatch(/\bday \d/i);
@@ -161,6 +173,11 @@ test("day 34: the fix needs approval; queuing it from the home runs nothing and 
   await expect(op).toContainText("(from in 3 days to in 13 days)");
   await expect(op).not.toContainText("what the agent may borrow alone");
   await expect(page.getByTestId("home-change-WAITING")).toContainText("limit you signed");
+  // ... and as a business sentence, not the executor's "Queued for owner approval (APR-000001): effective annual cost …".
+  const waiting = page.getByTestId("home-change-WAITING").getByTestId("home-change-text");
+  await expect(waiting).toHaveText("Waiting for your approval: ¥200,000.00 of invoice financing at 32.5% a year, above the 15.00% limit you signed for funding without your approval.");
+  await expect(page.getByTestId("home-changes-list")).not.toContainText("Queued for owner approval");
+  await expect(page.getByTestId("home-changes-list")).not.toContainText("RI:");
   expect(await proseOf(page)).not.toMatch(/\bday \d/i);
 });
 
@@ -193,9 +210,14 @@ test("day 34: the approval card is a question with the cost, the landing day and
   await page.getByRole("navigation").getByRole("link", { name: "Home", exact: true }).first().click();
   await expect(page.getByTestId("home-status")).toHaveAttribute("data-status", "WATCH");
   await expect(page.getByTestId("home-next-action")).toHaveCount(0);
-  await expect(page.getByTestId("home-in-transit")).toContainText("¥200,000.00 on its way");
+  await expect(page.getByTestId("home-in-transit")).toContainText("¥200k funding arriving in 3 days");
+  await expect(page.getByTestId("home-arriving")).toHaveText("¥200,000.00");
+  await expect(page.getByTestId("home-status-word")).toHaveText("Covered, but tight");
+  await expect(page.getByTestId("home-headroom")).toHaveText("¥0.00");
+  await expect(page.getByTestId("home-headroom-lowest")).toHaveText("¥0.00");
   await expect(page.locator("#home-decisions")).toHaveCount(0);
-  await expect(page.getByTestId("home-changes-list")).toContainText("lands in 3 days");
+  await expect(page.getByTestId("home-changes-list")).toContainText("You approved ¥200,000.00 of invoice financing. Funds arrive in 3 days.");
+  await expect(page.getByTestId("home-changes-list")).not.toContainText("Advance ¥");
   expect(await proseOf(page)).not.toMatch(/\bday \d/i);
 });
 
@@ -203,9 +225,11 @@ test("the Chinese labels switch while the server's sentences stay", async ({ pag
   await page.goto("/");
   await openAccountMenu(page);
   await page.getByLabel("中文").check();
-  await expect(page.getByTestId("home-status-word")).toHaveText("需要行动");
+  // The status word is the server's own label (`status_text`), so the mock's recorded English summary keeps it.
+  await expect(page.getByTestId("home-status-word")).toHaveText("Action needed");
   await expect(page.getByRole("navigation").getByRole("link", { name: "现金与融资" })).toBeVisible();
+  await expect(page.getByTestId("chat-open")).toContainText("问 FLOW");
   await openAccountMenu(page);
   await page.getByLabel("English").check();
-  await expect(page.getByTestId("home-status-word")).toHaveText("Action needed");
+  await expect(page.getByTestId("chat-open")).toContainText("Ask FLOW");
 });

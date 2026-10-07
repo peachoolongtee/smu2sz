@@ -11,9 +11,9 @@ import type { DictKey } from "@/lib/dictionary";
 import { ChatPanel } from "./chat/chat-panel";
 import { DemoStepper } from "./demo-stepper";
 import { MenuIcon, ShieldIcon, XIcon } from "./icons";
-import { useAuth } from "@/lib/auth";
+import { signOut, useAuth } from "@/lib/auth";
 import { OwnerSessionControl, OwnerSignInDialog } from "./owner-auth";
-import { Badge, Segmented } from "./ui";
+import { Badge, Button, Segmented } from "./ui";
 
 /** Business mode: six sections, each a question the owner asks. */
 const BUSINESS_NAV: { href: string; key: DictKey }[] = [
@@ -153,14 +153,20 @@ function AccountMenu() {
   }
   return (
     <details className="relative" data-testid="account-menu">
-      <summary className="flex min-h-8 cursor-pointer list-none items-center gap-1.5 rounded-md border border-line-strong px-2.5 text-xs font-medium text-ink-2 hover:bg-subtle [&::-webkit-details-marker]:hidden">
+      <summary className="flex min-h-8 cursor-pointer list-none items-center rounded-md border border-line-strong px-2 text-xs font-medium text-ink-2 hover:bg-subtle [&::-webkit-details-marker]:hidden" aria-label={t("account.menu")}>
         <span aria-hidden className="grid size-5 place-items-center rounded-full bg-ok-bg text-[0.65rem] font-bold text-ok-fg">
           {t("account.initial")}
         </span>
-        {t("account.owner")}
       </summary>
       <div className="absolute right-0 z-40 mt-1 w-72 space-y-3 rounded-lg border border-line bg-surface p-3 shadow-lg">
-        <OwnerSessionControl />
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-sm font-medium text-ink" data-testid="account-identity">
+            {t("account.signedInAs", { name: t("account.owner") })}
+          </p>
+          <Button size="sm" variant="ghost" onClick={signOut} data-testid="owner-signout">
+            {t("auth.signout")}
+          </Button>
+        </div>
         <LangSwitch />
         <p className="text-xs text-ink-3">{t("biz.demoData.hint")}</p>
       </div>
