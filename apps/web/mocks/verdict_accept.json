@@ -47,7 +47,8 @@
       "basis": "immediate discount: settled in cash now and capped separately, not a forward concession",
       "formula": "0 (see the immediate-discount cap)",
       "per_invoice_fen": null,
-      "value_display": "¥0.00"
+      "value_display": "¥0.00",
+      "interpretation": "Settled in cash now, so it is not a forward concession; the discount is checked against its own cap."
     }
   ],
   "forward_concession_total_fen": 0,

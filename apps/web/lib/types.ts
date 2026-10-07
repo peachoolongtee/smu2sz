@@ -548,6 +548,8 @@ export interface FundingPlan {
 }
 
 export interface ConcessionValue {
+  /** The reading before the equation ("60-day terms add 15 days of financing to 13 expected invoices …"), from the server. */
+  interpretation?: string;
   obligation_id: string;
   value_fen: Fen;
   basis: string;

@@ -3,17 +3,16 @@
 import Link from "next/link";
 import { useState } from "react";
 import { AnnotatedText } from "@/components/annotated-text";
-import { OutcomeBadge } from "@/components/badges";
 import { BuyerAsks } from "@/components/deals/asks";
 import { ActiveCommitments } from "@/components/deals/commitments";
 import { DealSteps } from "@/components/deals/deal-steps";
 import { ACTION_KEY, DealDecision, businessAction } from "@/components/deals/decision";
+import { WhyRecommended } from "@/components/deals/reasons";
 import { InboxList } from "@/components/deals/inbox-list";
 import { RecommendedResponse } from "@/components/deals/response";
 import { NextStep, nextLinkCls } from "@/components/next-step";
 import { PlanCard } from "@/components/plan-card";
-import { Button, Callout, Card, EmptyState, ErrorState, Formula, KeyValueList, LoadingBlock, PageHeader } from "@/components/ui";
-import { ViolationCard } from "@/components/verdict-parts";
+import { Button, Callout, Card, EmptyState, ErrorState, Formula, LoadingBlock, PageHeader } from "@/components/ui";
 import { evaluate as evaluateAndCache } from "@/lib/demo";
 import { getClock, getState, submitOffer } from "@/lib/api";
 import { recordOffer, selectOffer, useDemo } from "@/lib/demo-store";
@@ -192,29 +191,14 @@ export default function DealsPage() {
             ) : (
               <>
                 <DealDecision v={v} today={today} />
-                <RecommendedResponse v={v} negotiation={cur.negotiation} />
+                <RecommendedResponse v={v} offerId={offer.offer.offer_id} today={today} mode={mode} negotiation={cur.negotiation} />
                 {commitments}
 
                 <div className="space-y-2">
                   <details className="rounded-(--radius-card) border border-line bg-surface shadow-(--shadow-card)" data-testid="deal-why">
                     <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-ink">{t("biz.deals.why")}</summary>
-                    <div className="space-y-4 border-t border-line p-4">
-                      {v.violations.length ? (
-                        <ul className="grid gap-4 xl:grid-cols-2">
-                          {v.violations.map((x) => (
-                            <ViolationCard key={`${x.code}-${x.day ?? x.month ?? ""}`} v={x} />
-                          ))}
-                        </ul>
-                      ) : (
-                        <Callout tone="ok">{t("verdict.noViolations")}</Callout>
-                      )}
-                      {v.passed_checks.length ? (
-                        <KeyValueList items={v.passed_checks.map((c) => ({ k: c.label, v: `${c.observed} ${c.limit}` }))} />
-                      ) : null}
-                      {/* The verifier's own summary and code are level 4: here, never the first thing read. */}
-                      <div className="flex flex-wrap items-center gap-2 text-xs text-ink-3" data-testid="deal-technical-summary">
-                        <span className="font-medium">{t("biz.deals.engineVerdict")}:</span> <OutcomeBadge outcome={v.outcome} /> <span>{v.summary}</span>
-                      </div>
+                    <div className="border-t border-line p-4">
+                      <WhyRecommended v={v} today={today} />
                     </div>
                   </details>
                   <details className="rounded-(--radius-card) border border-line bg-surface shadow-(--shadow-card)" data-testid="deal-original">
@@ -238,14 +222,18 @@ export default function DealsPage() {
                       {v.concession_values.length ? (
                         <ul className="space-y-2">
                           {v.concession_values.map((c) => (
-                            <li key={c.obligation_id} className="rounded-md border border-line px-3 py-2 text-sm">
+                            <li key={c.obligation_id} className="rounded-md border border-line px-3 py-2 text-sm" data-testid="deal-calc-item">
                               <div className="flex flex-wrap items-baseline justify-between gap-2">
-                                <span className="text-ink-2">{c.basis}</span>
+                                <span className="text-ink">{c.interpretation ?? c.basis}</span>
                                 <span className="font-semibold tabular-nums">{c.value_display}</span>
                               </div>
-                              <div className="mt-1.5">
-                                <Formula>{c.formula}</Formula>
-                              </div>
+                              <details className="mt-1.5">
+                                <summary className="cursor-pointer text-xs font-medium text-brand-700">{t("common.formula")}</summary>
+                                <p className="mt-1 text-xs text-ink-3">{c.basis}</p>
+                                <div className="mt-1">
+                                  <Formula>{c.formula}</Formula>
+                                </div>
+                              </details>
                             </li>
                           ))}
                         </ul>

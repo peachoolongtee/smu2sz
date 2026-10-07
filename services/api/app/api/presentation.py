@@ -406,3 +406,39 @@ def counter_economics(obligations: list[Any], state: FinancialState, mandate: Ma
     return {"components": parts, "funding_cost_fen": funding, "funding_cost_display": fmt_yuan(funding),
             "offset_fen": offset, "offset_display": fmt_yuan(-offset), "net_fen": net, "net_display": fmt_yuan(net),
             "is_net": offset < 0 < funding}
+
+
+_COUNTED = re.compile(r"Σ over (\d+) invoices")
+
+
+def concession_interpretation(cv: dict[str, Any], ob: Any | None, lang: Lang) -> str:
+    """The reading of one concession value before its equation ("60-day terms add 15 days of financing to 13 expected
+    invoices …"): typed fields of the obligation, the value's display strings and the invoice count the formula states.
+    Nothing is priced here; the words wrap figures the engine produced."""
+    value = cv.get("value_display") or fmt_yuan(int(cv.get("value_fen") or 0))
+    kind = str(getattr(getattr(ob, "type", None), "value", getattr(ob, "type", ""))) if ob is not None else ""
+    m = _COUNTED.search(cv.get("formula") or "")
+    n = int(m.group(1)) if m else None
+    if kind == "TERMS_EXTENSION" and ob is not None:
+        delta = ob.days_delta or 0
+        to = ob.target_terms_days
+        per = cv.get("per_invoice_display")
+        terms = (f"{to}-day terms" if to else f"{delta} more days to pay") if lang == "en" else (f"{to} 天账期" if to else f"再延长 {delta} 天")
+        head = (t(lang, f"{terms} add {delta} days of financing to {n if n is not None else 'the'} expected invoices",
+                  f"{terms}让 {n if n is not None else ''} 张预期发票各多融资 {delta} 天"))
+        per_text = t(lang, f", about {per} each at your cheapest committed source", f"，按您最便宜的已承诺资金来源每张约 {per}") if per else ""
+        return head + per_text + t(lang, f": {value} over 12 months.", f"：12 个月共 {value}。")
+    if kind == "PRICE_ADJUSTMENT" and ob is not None:
+        rate = fmt_pct(bp(ob.rate_bp)) if ob.rate_bp is not None else ""
+        gain = fmt_yuan(abs(int(cv.get("value_fen") or 0)))
+        return t(lang, f"A {rate} price adjustment on {n if n is not None else 'the'} future invoices pays you {gain} over 12 months.",
+                 f"未来 {n if n is not None else ''} 张发票 {rate} 的价格调整，12 个月为您带来 {gain}。")
+    if kind == "CONTINGENT_REBATE" and ob is not None:
+        if ob.rate_bp is not None and ob.base.amount_fen is not None:
+            return t(lang, f"A {fmt_pct(bp(ob.rate_bp))} rebate on {fmt_yuan(ob.base.amount_fen)} of purchases, counted at its maximum: {value}.",
+                     f"对 {fmt_yuan(ob.base.amount_fen)} 采购的 {fmt_pct(bp(ob.rate_bp))} 返利，按最大值计：{value}。")
+        return t(lang, f"A fixed rebate of {value}.", f"固定返利 {value}。")
+    if kind == "IMMEDIATE_DISCOUNT":
+        return t(lang, "Settled in cash now, so it is not a forward concession; the discount is checked against its own cap.",
+                 "现在以现金结算，不属于远期让利；该折扣按其单独上限检查。")
+    return str(cv.get("basis") or "")
