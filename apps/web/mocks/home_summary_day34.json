@@ -3,6 +3,7 @@
   "state_version": 7,
   "lang": "en",
   "status": "ACTION_NEEDED",
+  "status_text": "Action needed",
   "headline": "Your cash reserve becomes unsafe in 8 days.",
   "note": "Cash falls to ¥100k, ¥200k below your ¥300k minimum cash reserve.",
   "worst": "Worst point: ¥100k in 8 days if you do nothing.",
@@ -13,6 +14,10 @@
     "floor_fen": 30000000,
     "lowest_fen": 10000000,
     "lowest_day": 42,
+    "headroom_fen": 0,
+    "headroom_short": "¥0.00",
+    "lowest_headroom_fen": -20000000,
+    "lowest_headroom_short": "−¥200k",
     "first_breach_day": 42,
     "first_breach_cash_fen": 10000000,
     "first_breach_cash_short": "¥100k",
@@ -27,6 +32,18 @@
     "first_breach_when": "in 8 days",
     "horizon_days": 120,
     "in_transit": null,
+    "funding_lots": [
+      {
+        "facility_name": "Bank credit line",
+        "amount_display": "¥149,986.20",
+        "remaining_display": "¥149,986.20",
+        "landed": true,
+        "arrival_day": 0,
+        "arrival_when": "34 days ago",
+        "maturity_day": null,
+        "maturity_when": null
+      }
+    ],
     "dscr_text": "2.00×",
     "leverage_text": "1.49×",
     "min_dscr_bp": 12500,
@@ -2113,6 +2130,8 @@
     "cash_display": "¥300,000.00",
     "floor_display": "¥300,000.00",
     "lowest_display": "¥100,000.00",
+    "headroom_display": "¥0.00",
+    "lowest_headroom_display": "−¥200,000.00",
     "first_breach_cash_display": "¥100,000.00",
     "min_dscr_display": "1.25×",
     "max_leverage_display": "2.50×"

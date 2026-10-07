@@ -14,6 +14,7 @@ import type { DictKey } from "@/lib/dictionary";
 import { bump, useDemo } from "@/lib/demo-store";
 import { useI18n } from "@/lib/i18n";
 import { useAsync } from "@/lib/use-async";
+import { whenText } from "@/lib/when";
 
 /**
  * Cash & funding, in the order the owner asks (brief section 17): how bad is it, what is the plan, what else could I do,
@@ -93,20 +94,32 @@ export default function CashPage() {
                 {plan.data.comparison.map((c, i) => {
                   const key = c.key ? (`biz.option.${c.key}` as DictKey) : null;
                   const recommended = c.selected && h?.next_action?.plan_source === "router";
-                  const impossible = c.total_display === "—";
+                  const status = c.status ?? (c.total_display === "—" ? "unavailable" : c.selected ? "recommended" : "alternative");
+                  const ranked = status === "recommended" || status === "alternative";
                   return (
-                    <li key={c.label} className="flex items-start justify-between gap-3 py-2.5" data-testid={`cash-option-${c.selected ? "selected" : "other"}`} data-key={c.key ?? ""}>
+                    <li key={c.label} className="flex items-start justify-between gap-3 py-2.5" data-testid={`cash-option-${c.selected ? "selected" : "other"}`} data-key={c.key ?? ""} data-status={status}>
                       <div className="flex min-w-0 items-start gap-3">
-                        <span className="mt-0.5 text-xs font-semibold tabular-nums text-ink-3">{t("biz.option.rank", { n: i + 1 })}</span>
+                        <span className="mt-0.5 w-6 text-xs font-semibold tabular-nums text-ink-3">{ranked ? t("biz.option.rank", { n: i + 1 }) : ""}</span>
                         <div className="min-w-0">
                           <p className={`text-sm ${c.selected ? "font-semibold text-ink" : "text-ink"}`}>{key ? t(key) : c.label}</p>
-                          {c.note ? <p className="text-xs text-ink-3">{c.note}</p> : null}
-                          <PlanNotes className="mt-1" needsApproval={c.needs_owner_approval} approvalReason={c.approval_reason} executableNow={c.executable_now} notExecutableReason={c.not_executable_reason} />
+                          {status === "insufficient" ? (
+                            <p className="text-xs text-bad-fg" data-testid="cash-option-uncovered">
+                              {c.shortfall_display ? t("biz.option.uncovered", { amount: c.shortfall_display, when: whenText(c.breach_day ?? 0, h?.day ?? 0, t) }) : c.note}
+                            </p>
+                          ) : c.note ? (
+                            <p className="text-xs text-ink-3">{c.note}</p>
+                          ) : null}
+                          {c.reason_kind === "buyer_early_pay" ? (
+                            <p className="mt-1 text-xs text-ink-3">{t("biz.option.needsBuyer")}</p>
+                          ) : (
+                            <PlanNotes className="mt-1" needsApproval={c.needs_owner_approval} approvalReason={c.approval_reason} executableNow={c.executable_now} notExecutableReason={c.not_executable_reason} />
+                          )}
                         </div>
                       </div>
                       <div className="flex shrink-0 items-center gap-2">
                         {recommended ? <Badge tone="brand">{t("biz.option.recommended")}</Badge> : null}
-                        {impossible ? <Badge tone="neutral">{t("biz.option.notPossible")}</Badge> : null}
+                        {status === "insufficient" ? <Badge tone="bad">{t("biz.option.insufficient")}</Badge> : null}
+                        {status === "unavailable" ? <Badge tone="neutral">{t("biz.option.notPossible")}</Badge> : null}
                         <span className="font-semibold tabular-nums">{c.total_display}</span>
                       </div>
                     </li>

@@ -109,6 +109,7 @@
         "repay_day": 32,
         "rate_bp": null,
         "lands_day": 0,
+        "available_from_day": 0,
         "amount_display": "¥149,986.20"
       }
     ],
@@ -146,6 +147,7 @@
     "approval_reason": "",
     "executable_now": true,
     "not_executable_reason": "",
+    "available_from_day": null,
     "need_display": "¥149,986.20",
     "total_cost_display": "¥841.57"
   },

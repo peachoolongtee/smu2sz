@@ -3,6 +3,7 @@
   "state_version": 3,
   "lang": "en",
   "status": "WATCH",
+  "status_text": "Covered, but tight",
   "headline": "You're covered.",
   "note": "Cash stays above your ¥300k minimum cash reserve for the next 120 days. It comes close: cash sits exactly on the minimum cash reserve in 30 days.",
   "worst": "Lowest cash ahead: ¥300k in 30 days.",
@@ -13,6 +14,10 @@
     "floor_fen": 30000000,
     "lowest_fen": 30000000,
     "lowest_day": 30,
+    "headroom_fen": 25000000,
+    "headroom_short": "¥250k",
+    "lowest_headroom_fen": 0,
+    "lowest_headroom_short": "¥0.00",
     "first_breach_day": null,
     "first_breach_cash_fen": null,
     "first_breach_cash_short": null,
@@ -34,6 +39,28 @@
         }
       ]
     },
+    "funding_lots": [
+      {
+        "facility_name": "Bank credit line",
+        "amount_display": "¥150,000.00",
+        "remaining_display": "¥150,000.00",
+        "landed": true,
+        "arrival_day": 0,
+        "arrival_when": "today",
+        "maturity_day": null,
+        "maturity_when": null
+      },
+      {
+        "facility_name": "Invoice financing (onboarded platform)",
+        "amount_display": "¥255,000.00",
+        "remaining_display": "¥255,000.00",
+        "landed": false,
+        "arrival_day": 3,
+        "arrival_when": "in 3 days",
+        "maturity_day": null,
+        "maturity_when": null
+      }
+    ],
     "dscr_text": "2.00×",
     "leverage_text": "1.72×",
     "min_dscr_bp": 12500,
@@ -900,6 +927,8 @@
     "cash_display": "¥550,000.00",
     "floor_display": "¥300,000.00",
     "lowest_display": "¥300,000.00",
+    "headroom_display": "¥250,000.00",
+    "lowest_headroom_display": "¥0.00",
     "min_dscr_display": "1.25×",
     "max_leverage_display": "2.50×"
   },

@@ -524,6 +524,9 @@ class FundingAction(Contract):
     # The day the cash lands, filled by the router for DRAW and FINANCE_INVOICE (request day + the facility's lead
     # time, the engine's own rule). Display only: no figure depends on it, and the engine ignores it.
     lands_day: Day | None = None
+    # The first day the executor could run this leg: the invoice's issue day for an advance on an invoice not yet
+    # issued, else the request day. Display only, like `lands_day`: nothing is priced or decided from it.
+    available_from_day: Day | None = None
 
 
 class Mode(StrEnum):
@@ -683,6 +686,9 @@ class FundingPlan(Contract):
     # (it ranks after every plan that can run today). `not_executable_reason` names each such leg.
     executable_now: bool = True
     not_executable_reason: str = ""
+    # When `executable_now` is false: the first day every leg could run (the latest leg's `available_from_day`).
+    # Display only.
+    available_from_day: Day | None = None
 
 
 class ConcessionValue(Contract):
