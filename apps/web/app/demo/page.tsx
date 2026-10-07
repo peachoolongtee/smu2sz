@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { TodayCard } from "@/components/home/today-card";
-import { ArrowRightIcon, ResetIcon } from "@/components/icons";
+import { ResetIcon } from "@/components/icons";
 import { Badge, Button, Callout, Card, PageHeader } from "@/components/ui";
 import { goToStep, resetDemo } from "@/lib/demo-control";
 import { useDemo } from "@/lib/demo-store";
@@ -21,16 +21,8 @@ export default function DemoPage() {
 
   return (
     <>
-      <PageHeader
-        title={t("story.title")}
-        subtitle={t("story.subtitle")}
-        actions={
-          <Button variant="primary" loading={demo.busy} disabled={current >= DEMO_STEPS.length - 1} onClick={() => void goToStep(current + 1, router.push)} data-testid="story-next">
-            {current < 0 ? t("demo.start") : t("demo.next")}
-            <ArrowRightIcon />
-          </Button>
-        }
-      />
+      {/* The story bar above carries Start demo and Next; the page does not repeat it. */}
+      <PageHeader title={t("story.title")} subtitle={t("story.subtitle")} />
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
         <div className="min-w-0 space-y-6">

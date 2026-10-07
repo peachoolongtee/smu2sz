@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import { TierBadge } from "@/components/badges";
+import { ChevronRightIcon } from "@/components/icons";
 import { Badge, Button, Callout, Card, KeyValueList, type Tone } from "@/components/ui";
+import { localNames, plainDays, sentenceCase } from "@/lib/business-words";
 import { useI18n } from "@/lib/i18n";
 import type { ApprovalDecision, ApprovalOperation, ApprovalView, Commitment, Displayed } from "@/lib/types";
 
@@ -76,6 +78,7 @@ export function ApprovalCard({
   commitments,
   ledgerLoaded,
   busyId,
+  today = null,
   resultMessage,
   onDecide,
 }: {
@@ -83,17 +86,21 @@ export function ApprovalCard({
   commitments: Displayed<Commitment>[] | undefined;
   ledgerLoaded: boolean;
   busyId: string | null;
+  /** Today on the books, for reasons that still carry day numbers; null leaves them as written. */
+  today?: number | null;
   /** The executor's message for the decision the owner just made, kept by the page (the queue's own `result_message` is shown when this is absent, for example after a reload). */
   resultMessage?: string;
   onDecide: (id: string, decision: ApprovalDecision) => void;
 }) {
-  const { t, te } = useI18n();
+  const { t, te, lang } = useI18n();
   const [open, setOpen] = useState(false);
   const isPending = a.status === "PENDING";
   const p = a.presentation;
   // The queue's presentation says the result in business words (names, distances from today); the raw executor message
   // the page kept from the decision is the fallback until the queue has been read again.
-  const shownResult = p?.result_message || resultMessage || a.result_message || null;
+  const words = (text: string) => sentenceCase(today === null ? text : plainDays(text, today, t));
+  const raw = p?.result_message || resultMessage || a.result_message || null;
+  const shownResult = raw ? words(raw) : null;
   const op = a.operation;
   const detailId = `approval-${a.id}-detail`;
   const wantsTerms = op?.kind === "ACCEPT_OFFER" || op?.kind === "RECORD_COMMITMENT";
@@ -104,57 +111,65 @@ export function ApprovalCard({
   if (op?.offer_id) names.push({ k: t("appr.offer"), v: `${op.offer_id} v${op.offer_version ?? "?"}` });
   if (op?.commitment_id) names.push({ k: t("appr.commitment"), v: op.commitment_id });
 
-  const facts: { k: string; v: React.ReactNode }[] = [];
-  if (a.amount_display) facts.push({ k: t("biz.amount"), v: a.amount_display });
-  if (p?.cost_display) {
-    facts.push({
-      k: t("biz.cost"),
-      v: (
-        <span data-testid="approval-cost">
-          {p.cost_display}
-          {p.rate_text ? <span className="ml-1 font-normal text-ink-3">{t("biz.costRateOnly", { rate: p.rate_text })}</span> : null}
-        </span>
-      ),
-    });
-  }
-  if (p?.lands_day !== null && p?.lands_day !== undefined) facts.push({ k: t("biz.lands"), v: <span data-testid="approval-lands">{p.lands_when ?? t("common.dayN", { n: p.lands_day })}</span> });
-  if (p?.facility_name) facts.push({ k: t("biz.source"), v: p.facility_name });
-  if (p?.invoice) facts.push({ k: t("biz.invoice"), v: p.invoice });
+  // The decision in one glance: the amount large, then what it costs and when the money lands. The rest (the source, the
+  // invoice, why it needs the owner, what happens after or if declined) waits behind "Why it needs you".
+  const more: { k: string; v: React.ReactNode }[] = [];
+  if (p?.facility_name) more.push({ k: t("biz.source"), v: localNames(p.facility_name, lang) });
+  if (p?.invoice) more.push({ k: t("biz.invoice"), v: p.invoice });
 
   return (
     <Card
       id={`approval-${a.id}`}
       tone={isPending ? "warn" : undefined}
       title={<span data-testid="approval-headline">{p?.headline ?? a.subject}</span>}
-      subtitle={p?.what ?? `${a.id} · ${te("opkind", a.operation_kind)}`}
+      subtitle={p?.what ? localNames(p.what, lang) : `${a.id} · ${te("opkind", a.operation_kind)}`}
       actions={<Badge tone={statusTone[a.status]}>{te("apprstatus", a.status)}</Badge>}
     >
-      <KeyValueList items={facts} />
-      <dl className="mt-3 space-y-2 text-sm">
-        <div>
-          <dt className="text-xs font-medium text-ink-3">{t("appr.why")}</dt>
-          <dd className="text-ink" data-testid="approval-reason">
-            {p?.reason || a.reason || a.detail}
-          </dd>
+      {a.amount_display ? <p className="figure text-3xl font-semibold tracking-tight text-ink">{a.amount_display}</p> : null}
+      <p className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-sm text-ink-2">
+        {p?.cost_display ? (
+          <span data-testid="approval-cost">
+            {t("biz.cost")} <span className="figure font-semibold text-ink">{p.cost_display}</span>
+            {p.rate_text ? <span className="ml-1 text-ink-3">{t("biz.costRateOnly", { rate: p.rate_text })}</span> : null}
+          </span>
+        ) : null}
+        {p?.lands_day !== null && p?.lands_day !== undefined ? (
+          <span>
+            {t("biz.lands")} <span className="font-semibold text-ink" data-testid="approval-lands">{p.lands_when ?? t("common.dayN", { n: p.lands_day })}</span>
+          </span>
+        ) : null}
+      </p>
+      <details className="mt-3" data-testid="approval-why">
+        <summary className="flex min-h-10 items-center text-sm font-semibold text-ink-2 hover:text-ink">{t("appr.why")}</summary>
+        <div className="space-y-3 pb-1 pt-1 text-sm">
+          {more.length ? <KeyValueList items={more} /> : null}
+          <dl className="space-y-2">
+            <div>
+              <dt className="text-xs font-medium text-ink-3">{t("appr.why")}</dt>
+              <dd className="text-ink" data-testid="approval-reason">
+                {words(p?.reason || a.reason || a.detail || "")}
+              </dd>
+            </div>
+            {p?.protects ? (
+              <div>
+                <dt className="text-xs font-medium text-ink-3">{t("biz.after")}</dt>
+                <dd className="text-ink" data-testid="approval-after">
+                  {p.protects}
+                </dd>
+              </div>
+            ) : null}
+            {isPending ? (
+              <div>
+                <dt className="text-xs font-medium text-ink-3">{t("biz.ifDecline")}</dt>
+                <dd className="text-ink-2" data-testid="approval-if-decline">{p?.if_decline || t("biz.ifDecline.body")}</dd>
+              </div>
+            ) : null}
+          </dl>
         </div>
-        {p?.protects ? (
-          <div>
-            <dt className="text-xs font-medium text-ink-3">{t("biz.after")}</dt>
-            <dd className="text-ink" data-testid="approval-after">
-              {p.protects}
-            </dd>
-          </div>
-        ) : null}
-        {isPending ? (
-          <div>
-            <dt className="text-xs font-medium text-ink-3">{t("biz.ifDecline")}</dt>
-            <dd className="text-ink-2" data-testid="approval-if-decline">{p?.if_decline || t("biz.ifDecline.body")}</dd>
-          </div>
-        ) : null}
-      </dl>
+      </details>
 
       {isPending ? (
-        <div className="mt-4 flex flex-wrap gap-2">
+        <div className="mt-3 flex flex-wrap gap-2">
           <Button variant="primary" loading={busyId === `${a.id}:APPROVE`} disabled={busyId !== null} onClick={() => onDecide(a.id, "APPROVE")}>
             {a.amount_display ? t("appr.approveAmount", { amount: a.amount_display }) : t("appr.approve")}
           </Button>
@@ -176,13 +191,13 @@ export function ApprovalCard({
 
       <button
         type="button"
-        className="mt-4 inline-flex min-h-8 items-center gap-1 text-sm font-medium text-brand-700 underline underline-offset-2"
+        className="mt-3 inline-flex min-h-8 items-center gap-1.5 text-sm font-medium text-brand-700"
         aria-expanded={open}
         aria-controls={detailId}
         onClick={() => setOpen((v) => !v)}
         data-testid={`approval-toggle-${a.id}`}
       >
-        <span aria-hidden>{open ? "▾" : "▸"}</span>
+        <ChevronRightIcon className={`transition-transform duration-200 ${open ? "rotate-90" : ""}`} />
         {open ? t("appr.hide") : t("appr.show")}
       </button>
 

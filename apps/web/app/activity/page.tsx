@@ -1,42 +1,54 @@
 "use client";
 
+import { PageIcon } from "@/components/business/kit";
+import { ActivityIcon } from "@/components/icons";
+
 import Link from "next/link";
 import { CodeBadge, OpStatusBadge, TierBadge } from "@/components/badges";
 import { SpanQuote } from "@/components/offer-parts";
-import { Badge, Card, EmptyState, ErrorState, Hash, LoadingBlock, PageHeader } from "@/components/ui";
-import { getAudit, getLedger, getState } from "@/lib/api";
+import { Badge, Card, ErrorState, Hash, LoadingBlock, PageHeader } from "@/components/ui";
+import { getApprovals, getAudit, getLedger, getState } from "@/lib/api";
+import { idsToNames, localNames, plainDays } from "@/lib/business-words";
 import { useI18n } from "@/lib/i18n";
 import { whenText } from "@/lib/when";
 import { useAsync } from "@/lib/use-async";
 
 /** Activity: everything that happened, in order, in the executor's own sentences; the hashes and codes under audit details. */
 export default function ActivityPage() {
-  const { t, te } = useI18n();
+  const { t, te, lang } = useI18n();
   const ledger = useAsync(getLedger, []);
   const audit = useAsync(getAudit, []);
   const books = useAsync(getState, []);
+  // A request queued for the owner stays "waiting" in the log; the approvals queue says whether it was decided since.
+  const approvals = useAsync(() => getApprovals().catch(() => []), []);
   const data = ledger.data;
-  // Ids in the executor's sentences become names on this screen (the ids stay in the audit details).
-  const words = (text: string) => {
-    let out = text;
-    for (const f of books.data?.state.facilities ?? []) out = out.split(f.id).join(f.name);
-    for (const c of books.data?.state.counterparties ?? []) if (c.id !== c.name) out = out.split(c.id).join(c.name);
-    return out;
-  };
   const ops = data ? [...data.operations].reverse() : [];
   // Today, for the distances the Business pages show instead of day numbers (the books read carries the clock).
   const today = books.data?.day ?? ops[0]?.day ?? 0;
+  // Ids in the executor's sentences become names on this screen, as whole words only (the ids stay in the audit
+  // details), and day numbers become distances from today.
+  const named = [...(books.data?.state.facilities ?? []), ...(books.data?.state.counterparties ?? [])].map((x) => ({ id: x.id, name: x.name }));
+  const words = (text: string) => localNames(plainDays(idsToNames(text, named), today, t), lang);
+  // Matched by the operation id, or by the approval number the executor writes into the entry ("APR-000001").
+  const decidedLater = (o: { op_id: string; summary: string }) =>
+    approvals.data?.find((a) => a.status !== "PENDING" && (a.op_id === o.op_id || o.summary.includes(`(${a.id})`)))?.status ?? null;
 
   return (
     <>
       <PageHeader
+        icon={
+          <PageIcon tone="pink">
+            <ActivityIcon width={22} height={22} />
+          </PageIcon>
+        }
         title={t("nav.activity")}
         subtitle={t("biz.activity.subtitle")}
         actions={
           data?.chain_length ? (
             <div className="flex items-center gap-2" data-testid="chain-status">
-              <Badge tone={data.chain_valid ? "ok" : "bad"}>{data.chain_valid ? t("ledger.chainValid") : t("ledger.chainBroken")}</Badge>
-              <span className="text-xs text-ink-3">{t("ledger.entries", { n: data.chain_length })}</span>
+              <Badge tone={data.chain_valid ? "ok" : "bad"} title={`${data.chain_valid ? t("ledger.chainValid") : t("ledger.chainBroken")} · ${t("ledger.entries", { n: data.chain_length })}`}>
+                {data.chain_valid ? t("biz.activity.chainOk") : t("biz.activity.chainBroken")}
+              </Badge>
             </div>
           ) : undefined
         }
@@ -49,15 +61,21 @@ export default function ActivityPage() {
         <div className="space-y-5">
           <Card id="activity-timeline" title={t("biz.activity.timeline")} subtitle={t("biz.activity.timeline.sub")}>
             {ops.length ? (
-              <ol className="space-y-2" data-testid="activity-list">
+              <ol className="-mx-1 divide-y divide-line" data-testid="activity-list">
                 {ops.map((o) => (
-                  <li key={`${o.seq}-${o.op_id}`} className={`rounded-md border px-3 py-2 ${o.status === "REFUSED" ? "border-bad-line bg-bad-bg/40" : "border-line"}`} data-testid={`activity-${o.kind}`} data-status={o.status}>
-                    <p className="break-words text-sm font-medium text-ink">{words(o.summary) || te("opkind", o.kind) || o.kind}</p>
+                  <li key={`${o.seq}-${o.op_id}`} className={`px-1 py-3 ${o.status === "REFUSED" ? "text-bad-fg" : ""}`} data-testid={`activity-${o.kind}`} data-status={o.status}>
+                    <p className="break-words font-medium text-ink">{words(o.summary) || te("opkind", o.kind) || o.kind}</p>
                     <div className="mt-1 flex flex-wrap items-center gap-2">
                       <span className="text-xs text-ink-3">{whenText(o.day, today, t)}</span>
                       <span className="text-xs text-ink-3" data-testid="activity-op">{te("opkind", o.kind) || o.kind}</span>
-                      <OpStatusBadge status={o.status} />
-                      <span className="text-xs text-ink-3">{te("actor", o.requested_by)}</span>
+                      {o.status === "PENDING_APPROVAL" && decidedLater(o) ? (
+                        <Badge tone={decidedLater(o) === "APPROVED" ? "ok" : "neutral"}>
+                          {decidedLater(o) === "APPROVED" ? t("biz.activity.approvedLater") : t("biz.activity.declinedLater")}
+                        </Badge>
+                      ) : (
+                        <OpStatusBadge status={o.status} />
+                      )}
+                      <span className="text-xs text-ink-3">· {te("actor", o.requested_by)}</span>
                     </div>
                     {o.violations.length ? (
                       <div className="mt-1 flex flex-wrap gap-1">
@@ -89,7 +107,7 @@ export default function ActivityPage() {
                 ))}
               </ol>
             ) : (
-              <EmptyState title={t("ledger.ops.empty")} body={t("biz.activity.empty.body")} />
+              <p className="text-sm text-ink-3">{t("biz.activity.empty.body")}</p>
             )}
           </Card>
 
@@ -99,20 +117,20 @@ export default function ActivityPage() {
                 {data.commitments.map((c) => (
                   <li key={c.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-line px-3 py-2 text-sm">
                     <span>
-                      <span className="font-medium text-ink">{words(c.counterparty_id)}</span>
+                      <span className="font-medium text-ink">{idsToNames(c.counterparty_id, named)}</span>
                       <span className="block text-xs text-ink-3">
                         {t("ledger.expires")}: {whenText(c.expires_day, today, t)} · {t("biz.deals.giveaways")}: {c.forward_value_display}
                       </span>
                     </span>
                     <span className="flex items-center gap-2">
                       <Badge tone={c.status === "ACTIVE" || c.status === "ACCEPTED" ? "ok" : "neutral"}>{te("commitment", c.status)}</Badge>
-                      <span className="font-mono text-xs text-ink-3">{c.id}</span>
+
                     </span>
                   </li>
                 ))}
               </ul>
             ) : (
-              <p className="text-sm text-ink-3">{t("ledger.commitments.empty")}</p>
+              <p className="text-sm text-ink-3">{t("biz.activity.agreements.empty")}</p>
             )}
           </Card>
 

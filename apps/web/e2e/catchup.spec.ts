@@ -1,5 +1,6 @@
 import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
+import { runPlan } from "./helpers";
 
 /**
  * Mock-mode specs for the API changes the web caught up with: the alert act bound to what was shown (409 ALERT_CHANGED),
@@ -21,7 +22,7 @@ test("the books move after the alert was shown: 409 says so, shows the current a
   await advanceTo(page, 34);
   await page.goto("/");
   await page.evaluate((k) => sessionStorage.setItem(k, "1"), MOVE_BOOKS_KEY);
-  await page.getByTestId("fix-ALERT-RESERVE-42").click();
+  await runPlan(page, "ALERT-RESERVE-42");
 
   const changed = page.getByTestId("fix-changed");
   await expect(changed).toBeVisible();
@@ -39,7 +40,7 @@ test("the books move after the alert was shown: 409 says so, shows the current a
   await expect(page.getByTestId("home-change-WAITING")).toHaveCount(0);
 
   // The home was refetched with the new version, so pressing again acts on what is shown now: it queues the cure, still not as success.
-  await page.getByTestId("fix-ALERT-RESERVE-42").click();
+  await runPlan(page, "ALERT-RESERVE-42");
   const op = page.getByTestId("fix-result").getByTestId("chat-op-SUBMIT_INVOICE_FOR_FINANCING");
   await expect(op).toHaveAttribute("data-status", "PENDING_APPROVAL");
   await expect(op.getByTestId("op-state")).toContainText("Waiting for your approval");
@@ -51,7 +52,7 @@ test("the books move and the alert is gone: the 409 says the alert no longer app
   await advanceTo(page, 34);
   await page.goto("/");
   await page.evaluate((k) => sessionStorage.setItem(k, "gone"), MOVE_BOOKS_KEY);
-  await page.getByTestId("fix-ALERT-RESERVE-42").click();
+  await runPlan(page, "ALERT-RESERVE-42");
   await expect(page.getByTestId("fix-changed")).toContainText("The books changed since this was shown");
   await expect(page.getByTestId("fix-changed-gone")).toContainText("That alert is gone");
   await expect(page.getByTestId("fix-changed-alert")).toHaveCount(0);
@@ -88,5 +89,5 @@ test("receivables and reconciliation list the bank's reference on a receipt that
   await page.goto("/receivables");
   await expect(page.getByTestId("receipt-rec-receipt-1")).toContainText("Foshan Home Retail Co.");
   await expect(page.getByTestId("receipt-ref-rec-receipt-1")).toContainText("DEMO-RCPT-1");
-  await expect(page.getByTestId("recv-RCV-A")).toContainText("2 day(s) late");
+  await expect(page.getByTestId("recv-RCV-A")).toContainText("2 days late");
 });

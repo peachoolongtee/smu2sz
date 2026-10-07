@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { CheckIcon } from "@/components/icons";
 import { Badge, Card, type Tone } from "@/components/ui";
 import { useI18n } from "@/lib/i18n";
@@ -92,7 +91,8 @@ export function InboxList({
             {unknown(m) ? <Badge tone="bad">{t("inbox.unknownSender")}</Badge> : null}
           </span>
           {m.subject ? <span className="mt-0.5 block text-sm text-ink">{m.subject}</span> : null}
-          <span className="mt-0.5 block truncate text-sm text-ink-2">{m.document.text.replace(/\s+/g, " ")}</span>
+          {/* The message being read is shown whole; the others keep to one line. */}
+          <span className={`mt-0.5 block text-sm text-ink-2 ${isCurrent ? "break-words" : "truncate"}`}>{m.document.text.replace(/\s+/g, " ")}</span>
         </span>
         <span className="flex shrink-0 flex-col items-end gap-1 text-xs text-ink-3">
           <span>{t("inbox.at", { when: whenText(m.document.received_day, today, t), time: m.time })}</span>
@@ -153,11 +153,22 @@ export function InboxList({
           others.map(thread)
         )}
         {blocked ? (
+          // These messages never reach the agent (the sender is not on the books), so nothing about them is in Activity:
+          // the owner can look at them here, labelled as unread by the agent.
           <li className="px-4 py-3 text-xs text-ink-3" data-testid="inbox-blocked">
-            {t("biz.deals.blocked", { n: blocked })}{" "}
-            <Link href="/activity#refused" className="font-medium text-brand-700 underline underline-offset-2">
-              {t("biz.deals.blocked.link")}
-            </Link>
+            <details>
+              <summary className="cursor-pointer">
+                {t("biz.deals.blocked", { n: blocked })} <span className="font-medium text-brand-700 underline underline-offset-2">{t("biz.deals.blocked.link")}</span>
+              </summary>
+              <ul className="mt-2 space-y-2">
+                {INBOX.filter(unknown).map((m) => (
+                  <li key={m.id} className="rounded-md border border-line bg-subtle px-3 py-2">
+                    <p className="font-medium text-ink-2">{t("biz.deals.blocked.from", { company: m.company, contact: m.contact })}</p>
+                    <p className="mt-1 whitespace-pre-line break-words text-ink-3">{m.document.text}</p>
+                  </li>
+                ))}
+              </ul>
+            </details>
           </li>
         ) : null}
       </ul>

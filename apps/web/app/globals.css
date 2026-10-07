@@ -37,6 +37,7 @@
 
   --shadow-card: 0 1px 2px rgb(15 28 46 / 0.04);
   --radius-card: 0.625rem;
+  --radius-btn: 0.375rem;
 }
 
 html {
@@ -68,6 +69,354 @@ body {
     transform: none;
     opacity: 1;
   }
+}
+
+/* The walkthrough card's entrance (opacity and scale only, so its own translate is left alone). */
+@keyframes tour-in {
+  from {
+    opacity: 0;
+    scale: 0.96;
+  }
+  to {
+    opacity: 1;
+    scale: 1;
+  }
+}
+
+/* ------------------------------------------------------------------ Business theme
+   The owner's product, inspired by Revolut: a soft grey canvas, white cards with large radii and hairline borders, one
+   confident blue, near-black type with tight tracking for figures, pill buttons, round icon actions, and short, crisp
+   motion (ease-out, under 300 ms, transform and opacity only). Scoped to `.biz` so the Demo shell keeps its own look. */
+.biz {
+  --color-canvas: #f4f5f7;
+  --color-surface: #ffffff;
+  --color-subtle: #f1f2f4;
+  --color-line: #eceef1;
+  --color-line-strong: #dcdfe4;
+
+  --color-ink: #121417;
+  --color-ink-2: #4b5260;
+  --color-ink-3: #6c7380;
+
+  --color-brand-50: #ebf3ff;
+  --color-brand-100: #d4e5ff;
+  --color-brand-600: #0666eb;
+  --color-brand-700: #0552c2;
+
+  --color-ok-fg: #00804f;
+  --color-ok-bg: #e3f7ee;
+  --color-ok-line: #b5e7d0;
+  --color-warn-fg: #8f5200;
+  --color-warn-bg: #fff4e0;
+  --color-warn-line: #f6d79f;
+  --color-bad-fg: #c9252c;
+  --color-bad-bg: #fdecec;
+  --color-bad-line: #f5c2c4;
+  --color-info-fg: #0552c2;
+  --color-info-bg: #ebf3ff;
+  --color-info-line: #c4dbff;
+
+  --shadow-card: 0 1px 2px rgb(18 20 23 / 0.04), 0 8px 24px -12px rgb(18 20 23 / 0.08);
+  --shadow-lift: 0 2px 4px rgb(18 20 23 / 0.05), 0 16px 32px -16px rgb(18 20 23 / 0.16);
+  --radius-card: 1.25rem;
+  --radius-btn: 9999px;
+
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  font-size: 0.9375rem;
+  line-height: 1.5;
+}
+
+/* Some life behind the cards (components/business/backdrop.tsx): a dot grid fading out from the top, soft colour glows
+   that drift slowly, rings and a wave line. Low contrast, so the white cards stay the strongest shapes on the page. */
+.biz-dots {
+  background-image: radial-gradient(rgb(18 20 23 / 0.12) 1px, transparent 1.2px);
+  background-size: 22px 22px;
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 0%, transparent 75%);
+}
+.biz-blob {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(60px);
+  opacity: 0.55;
+  animation: biz-drift 26s ease-in-out infinite alternate;
+}
+.biz-blob-a {
+  top: -10rem;
+  left: -8rem;
+  width: 34rem;
+  height: 30rem;
+  background: rgb(6 102 235 / 0.22);
+}
+.biz-blob-b {
+  top: -6rem;
+  right: -10rem;
+  width: 32rem;
+  height: 28rem;
+  background: rgb(139 92 246 / 0.2);
+  animation-delay: -9s;
+}
+.biz-blob-c {
+  bottom: -12rem;
+  left: 35%;
+  width: 36rem;
+  height: 26rem;
+  background: rgb(20 184 166 / 0.14);
+  animation-delay: -17s;
+}
+@keyframes biz-drift {
+  from {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    transform: translate3d(3rem, 2rem, 0) scale(1.08);
+  }
+}
+
+/* The primary action glows a little: a blue gradient that brightens on hover. */
+.biz .btn-primary {
+  background-image: linear-gradient(135deg, #0666eb 0%, #3b6dff 55%, #6a5cff 100%);
+  box-shadow: 0 6px 16px -6px rgb(6 102 235 / 0.55);
+}
+.biz .btn-primary:not(:disabled):hover {
+  background-image: linear-gradient(135deg, #0552c2 0%, #2f5ff0 55%, #5b4df0 100%);
+  box-shadow: 0 8px 20px -6px rgb(6 102 235 / 0.65);
+}
+
+/* Summary tiles get a tint each, so a row of figures reads as a set of colours rather than grey boxes. */
+.biz dl > .stat:nth-child(4n + 1) {
+  background: linear-gradient(135deg, #eaf2ff 0%, #ffffff 70%);
+}
+.biz dl > .stat:nth-child(4n + 2) {
+  background: linear-gradient(135deg, #fff0f0 0%, #ffffff 70%);
+}
+.biz dl > .stat:nth-child(4n + 3) {
+  background: linear-gradient(135deg, #ebfaf5 0%, #ffffff 70%);
+}
+.biz dl > .stat:nth-child(4n + 4) {
+  background: linear-gradient(135deg, #f3efff 0%, #ffffff 70%);
+}
+.biz .stat {
+  border-radius: 1rem;
+  border-color: transparent;
+  box-shadow: var(--shadow-card);
+  padding: 1rem 1.125rem;
+}
+
+/* The shared button, as a pill in the Business theme: taller, bolder, grey secondaries without a border. */
+.biz .btn {
+  font-weight: 600;
+}
+.biz .btn-md {
+  min-height: 2.75rem;
+  padding-inline: 1.25rem;
+}
+.biz .btn-secondary {
+  background: var(--color-subtle);
+  border-color: transparent;
+}
+.biz .btn-secondary:hover {
+  background: #e6e8ec;
+}
+
+/* Shared primitives, restyled for the Business theme through their class hooks. */
+.biz .page-head {
+  margin-bottom: 1.5rem;
+}
+.biz .page-head h1 {
+  font-size: 1.75rem;
+  line-height: 1.2;
+  letter-spacing: -0.025em;
+}
+@media (min-width: 1024px) {
+  .biz .page-head h1 {
+    font-size: 2rem;
+  }
+}
+.biz .page-head p {
+  font-size: 0.9375rem;
+  color: var(--color-ink-3);
+}
+.biz .card {
+  border-color: var(--color-line);
+}
+.biz .card-head {
+  border-bottom-color: transparent;
+  padding: 1.125rem 1.25rem 0.25rem;
+}
+.biz .card-head h2 {
+  font-size: 1rem;
+  letter-spacing: -0.01em;
+}
+.biz .card-head p {
+  font-size: 0.8125rem;
+}
+.biz .card-body {
+  padding: 1rem 1.25rem 1.25rem;
+}
+.biz .badge {
+  border-color: transparent;
+  padding: 0.125rem 0.625rem;
+  font-weight: 600;
+}
+.biz .next-step {
+  border-color: transparent;
+  border-radius: var(--radius-card);
+  padding: 0.875rem 1rem 0.875rem 1.25rem;
+  box-shadow: var(--shadow-card);
+}
+.biz .next-step a,
+.biz .next-step button {
+  border-radius: 9999px;
+}
+
+/* The brand's tagline only where the header has room for it. */
+@media (max-width: 1535px) {
+  .biz .brand-tagline {
+    display: none;
+  }
+}
+
+/* Segmented switches as pills. */
+.biz .seg {
+  border-color: transparent;
+  border-radius: 9999px;
+  background: #e8eaee;
+  padding: 3px;
+}
+.biz .seg-opt {
+  border-radius: 9999px;
+  font-weight: 600;
+  padding: 0.375rem 0.875rem;
+  transition:
+    background-color 200ms ease,
+    color 200ms ease,
+    box-shadow 200ms ease;
+}
+
+/* Figures read like a banking app: tight tracking, tabular digits. */
+.biz .figure {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.025em;
+}
+
+/* Buttons and pressable rows answer the press. */
+.biz button,
+.biz a.press,
+.biz summary {
+  transition:
+    transform 160ms var(--ease-out),
+    background-color 200ms ease,
+    color 200ms ease,
+    box-shadow 200ms ease,
+    opacity 200ms ease;
+}
+.biz button:not(:disabled):active,
+.biz a.press:active {
+  transform: scale(0.97);
+}
+
+/* Cards that open something lift on hover, only on devices that really hover. */
+@media (hover: hover) and (pointer: fine) {
+  .biz .lift {
+    transition:
+      transform 200ms var(--ease-out),
+      box-shadow 200ms var(--ease-out),
+      background-color 200ms ease;
+  }
+  .biz .lift:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lift);
+  }
+}
+
+/* Disclosures: details stay one click away; the chevron turns and the content eases in. */
+.biz details > summary {
+  list-style: none;
+  cursor: pointer;
+}
+.biz details > summary::-webkit-details-marker {
+  display: none;
+}
+.biz details > summary .chev {
+  transition: transform 200ms var(--ease-out);
+}
+.biz details[open] > summary .chev {
+  transform: rotate(90deg);
+}
+/* Summaries without their own chevron get one drawn here, turning the same way. */
+.biz details > summary:not(:has(.chev)):not(.no-chev)::before {
+  content: "";
+  display: inline-block;
+  flex-shrink: 0;
+  width: 0.45em;
+  height: 0.45em;
+  margin: 0 0.65em 0.1em 0.15em;
+  border-right: 1.75px solid currentColor;
+  border-bottom: 1.75px solid currentColor;
+  opacity: 0.6;
+  transform: rotate(-45deg);
+  transition: transform 200ms var(--ease-out);
+}
+.biz details[open] > summary:not(:has(.chev)):not(.no-chev)::before {
+  transform: rotate(45deg);
+}
+.biz details[open] > :not(summary) {
+  animation: biz-reveal 220ms var(--ease-out);
+}
+@keyframes biz-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Page sections rise in once, with a short stagger. */
+.biz .rise > * {
+  animation: biz-rise 380ms var(--ease-out) both;
+}
+.biz .rise > *:nth-child(2) {
+  animation-delay: 40ms;
+}
+.biz .rise > *:nth-child(3) {
+  animation-delay: 80ms;
+}
+.biz .rise > *:nth-child(4) {
+  animation-delay: 120ms;
+}
+.biz .rise > *:nth-child(n + 5) {
+  animation-delay: 160ms;
+}
+@keyframes biz-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* The hero card: a deep blue panel with a soft glow tinted by the status. */
+.biz .hero {
+  background:
+    radial-gradient(90% 120% at 100% 0%, var(--hero-glow, rgb(124 92 255 / 0.55)) 0%, transparent 60%),
+    radial-gradient(70% 90% at 0% 100%, rgb(20 184 166 / 0.28) 0%, transparent 60%),
+    linear-gradient(140deg, #071230 0%, #0d2a7a 48%, #2a2fb8 78%, #5b2bd6 100%);
+  color: #fff;
+}
+.biz .hero[data-status="SAFE"] {
+  --hero-glow: rgb(0 178 160 / 0.4);
+}
+.biz .hero[data-status="CRITICAL"] {
+  --hero-glow: rgb(229 72 77 / 0.5);
 }
 
 @media (prefers-reduced-motion: reduce) {

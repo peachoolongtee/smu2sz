@@ -1,5 +1,8 @@
 "use client";
 
+import { PageIcon } from "@/components/business/kit";
+import { ShieldCheckIcon } from "@/components/icons";
+
 import Link from "next/link";
 import { Badge, Card, ErrorState, Hash, LoadingBlock, PageHeader, Stat } from "@/components/ui";
 import { getMandate } from "@/lib/api";
@@ -15,7 +18,13 @@ export default function LimitsPage() {
 
   return (
     <>
-      <PageHeader title={t("nav.limits")} subtitle={t("biz.limits.subtitle")} />
+      <PageHeader
+        icon={
+          <PageIcon tone="sky">
+            <ShieldCheckIcon width={22} height={22} />
+          </PageIcon>
+        }
+        title={t("nav.limits")} subtitle={t("biz.limits.subtitle")} />
       {mandate.error ? (
         <ErrorState error={mandate.error} onRetry={mandate.reload} />
       ) : !v || !m ? (
@@ -28,6 +37,7 @@ export default function LimitsPage() {
               <li>{t("biz.limits.apr", { cap: m.max_apr_display })}</li>
               <li>{t("biz.limits.concessions", { cap: m.max_aggregate_forward_concession_display, days: m.forward_concession_horizon_days })}</li>
               <li>{t("biz.limits.covenants", { dscr: m.min_dscr_display, lev: m.max_leverage_display })}</li>
+              <li>{t("biz.limits.tier2", { amount: m.tier2_single_commitment_display })}</li>
               <li>{m.allow_new_borrowing ? t("biz.limits.borrowingYes") : t("biz.limits.borrowingNo")}</li>
               <li>{t("biz.limits.tier3")}</li>
               <li>{t("biz.limits.expires", { day: v.validity.expires_day, n: v.validity.days_remaining })}</li>
@@ -35,9 +45,9 @@ export default function LimitsPage() {
           </Card>
           <dl className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             <Stat label={t("biz.safeLevel")} value={m.min_cash_display} />
-            <Stat label={t("mandate.apr")} value={`≤ ${m.max_apr_display}`} />
+            <Stat label={t("biz.limits.aprLabel")} value={m.max_apr_display} />
             <Stat label={t("mandate.cap")} value={m.max_aggregate_forward_concession_display} />
-            <Stat label={t("mandate.tier2")} value={m.tier2_single_commitment_display} />
+            <Stat label={t("biz.limits.tier2Label")} value={m.tier2_single_commitment_display} />
           </dl>
           <details className="rounded-(--radius-card) border border-line bg-surface shadow-(--shadow-card)">
             <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-ink">{t("biz.auditDetails")}</summary>

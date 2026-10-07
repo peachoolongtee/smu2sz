@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { OperationList } from "@/components/chat/assistant-turn";
-import { approvalHref } from "@/components/operation-result";
+import { approvalHref, OperationResultBox } from "@/components/operation-result";
 import { Badge, Button, ErrorState } from "@/components/ui";
 import { actOnAlert, alertChanged, ApiError, getApprovals, getMandate } from "@/lib/api";
+import { idsToNames, plainDays } from "@/lib/business-words";
 import { bump } from "@/lib/demo-store";
 import type { DictKey } from "@/lib/dictionary";
 import { useI18n } from "@/lib/i18n";
@@ -157,9 +158,28 @@ export function FixButton({ alertId, busyId, onFix }: { alertId: string; busyId:
   );
 }
 
-/** The executor's answer: how many ran, waited for approval or were refused, each operation with its message, and whether the alert is gone. */
-export function FixResult({ result, error, changed }: { result: AlertActResult | null; error: string | null; changed?: AlertChangedDetail | null }) {
-  const { t } = useI18n();
+/**
+ * The executor's answer: how many ran, waited for approval or were refused, each operation with its message, and whether
+ * the alert is gone. With `plain` (the Business pages) the counts that are zero, the tier, the sequence number and the hash
+ * are left out, and the executor's sentence speaks in names and distances from today.
+ */
+export function FixResult({
+  result,
+  error,
+  changed,
+  plain,
+}: {
+  result: AlertActResult | null;
+  error: string | null;
+  changed?: AlertChangedDetail | null;
+  plain?: { today: number; names: { id: string; name: string }[] };
+}) {
+  const { t, te } = useI18n();
+  const ref = useRef<HTMLElement>(null);
+  // The action that was pressed leaves the page once it has run; bring its answer into view instead of leaving the reader lost.
+  useEffect(() => {
+    if (result) ref.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }, [result]);
   if (changed) return <AlertChanged changed={changed} />;
   if (error) {
     return (
@@ -169,15 +189,36 @@ export function FixResult({ result, error, changed }: { result: AlertActResult |
     );
   }
   if (!result) return null;
+  const counts = [
+    { n: result.executed, tone: "ok" as const, key: "alerts.fix.executed" as const },
+    { n: result.pending_approval, tone: "warn" as const, key: "alerts.fix.pending" as const },
+    { n: result.refused, tone: "bad" as const, key: "alerts.fix.refused" as const },
+  ];
   return (
-    <section aria-label={t("alerts.fix.title")} className="mt-3 space-y-2 rounded-lg border border-line bg-subtle p-3" data-testid="fix-result" role="status">
+    <section ref={ref} aria-label={t("alerts.fix.title")} className="mt-3 scroll-mt-24 space-y-2 rounded-(--radius-card) border border-line bg-surface p-4 shadow-(--shadow-card)" data-testid="fix-result" role="status">
       <div className="flex flex-wrap items-center gap-2">
         <h3 className="text-xs font-semibold uppercase tracking-wide text-ink-3">{t("alerts.fix.title")}</h3>
-        <Badge tone={result.executed ? "ok" : "neutral"}>{t("alerts.fix.executed", { n: result.executed })}</Badge>
-        <Badge tone={result.pending_approval ? "warn" : "neutral"}>{t("alerts.fix.pending", { n: result.pending_approval })}</Badge>
-        <Badge tone={result.refused ? "bad" : "neutral"}>{t("alerts.fix.refused", { n: result.refused })}</Badge>
+        {counts.map((c) =>
+          plain && !c.n ? null : (
+            <Badge key={c.key} tone={c.n ? c.tone : "neutral"}>
+              {t(c.key, { n: c.n })}
+            </Badge>
+          ),
+        )}
       </div>
-      <OperationList operations={result.results} />
+      {plain ? (
+        <ul className="space-y-2" data-testid="chat-ops">
+          {result.results.map((o) => (
+            <li key={`${o.op_id}-${o.seq ?? ""}-${o.status}`}>
+              <OperationResultBox status={o.status} message={o.status === "PENDING_APPROVAL" ? "" : plainDays(idsToNames(o.message, plain.names), plain.today, t)} approvalId={o.approval_id} testId={`chat-op-${o.kind}`} kind={o.kind}>
+                <span className="text-sm font-medium text-ink">{te("opkind", o.kind) || o.kind}</span>
+              </OperationResultBox>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <OperationList operations={result.results} />
+      )}
       <p className="text-xs text-ink-2">
         {result.cured ? t("alerts.fix.cured") : result.pending_approval ? t("alerts.waiting.body") : t("alerts.fix.notCured")}
       </p>

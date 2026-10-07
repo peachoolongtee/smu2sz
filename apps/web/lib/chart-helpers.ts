@@ -54,7 +54,11 @@ export function axisFloor(rows: CashRow[]): number {
 /** Axis tick label in thousands of yuan ("¥300k"). Axis scale only; never shown as a figure. */
 export function axisYuanK(fen: number): string {
   const k = Math.round(Math.abs(fen) / 100000);
-  return `${fen < 0 ? "−" : ""}¥${k}k`;
+  if (k === 0) return "¥0";
+  const sign = fen < 0 ? "−" : "";
+  // A million reads as "¥1M", not "¥1000k"; tick values are round, so one decimal is enough.
+  if (k >= 1000) return `${sign}¥${Number((k / 1000).toFixed(1))}M`;
+  return `${sign}¥${k}k`;
 }
 
 /** Evenly spaced integer day ticks, for the x axis. */

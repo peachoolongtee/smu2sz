@@ -4,23 +4,29 @@ import Link from "next/link";
 import { useEffect } from "react";
 import { CashForecast } from "@/components/business/cash-forecast";
 import { FacilityExplainer } from "@/components/business/facility-explainer";
+import { homeNames } from "@/components/business/blocks";
+import { BizCard, BizPageHeader, Chip, Disclosure, Figure, PageIcon, SectionHead, Tile } from "@/components/business/kit";
 import { NextActionBlock } from "@/components/business/next-action";
 import { FixResult, useFixAlert } from "@/components/home/fix-alert";
+import { CartIcon, ChevronRightIcon, SlidersIcon, WalletIcon } from "@/components/icons";
 import { PlanNotes } from "@/components/plan-notes";
-import { Badge, Card, ErrorState, Formula, LoadingBlock, PageHeader, TableWrap, tableCls, tdCls, thCls } from "@/components/ui";
+import { ErrorState, Formula, LoadingBlock, TableWrap, tableCls, tdCls, thCls } from "@/components/ui";
 import { getHome, getTrajectory, planFunding } from "@/lib/api";
 import { onSignedIn } from "@/lib/auth";
 import type { DictKey } from "@/lib/dictionary";
+import { plainDays } from "@/lib/business-words";
 import { bump, useDemo } from "@/lib/demo-store";
+import type { ComparisonRow, ComparisonStatus } from "@/lib/types";
 import { useI18n } from "@/lib/i18n";
 import { useAsync } from "@/lib/use-async";
 import { whenText } from "@/lib/when";
 
 /**
- * Cash & funding, in the order the owner asks (brief section 17): how bad is it, what is the plan, what else could I do,
- * then the forecast as evidence, then the doors to what-if and equipment, with the monthly readings closed. Every
- * figure is the server's: the risk and the plan are the same `GET /home` read as the home, the options are the router's
- * comparison, the chart draws the home's series.
+ * Cash & funding, in the order the owner asks: how bad is it (one card, three figures), what is the plan (the same card
+ * as the home), what else could I do (one row per option, its reasons one click away), then the forecast as evidence,
+ * then the doors to what-if and equipment, with the monthly readings closed. Every figure is the server's: the risk and
+ * the plan are the same `GET /home` read as the home, the options are the router's comparison, the chart draws the
+ * home's series.
  */
 export default function CashPage() {
   const { t, lang } = useI18n();
@@ -37,182 +43,202 @@ export default function CashPage() {
   const view = traj.data;
   const unsafe = h?.cash.first_breach_day !== null && h?.cash.first_breach_day !== undefined;
   const inPlan = new Set(plan.data?.committed.actions.map((a) => a.facility_id) ?? []);
+  // With no gap today, the router's comparison is the one from when the plan was chosen: it is shown as history.
+  const stale = Boolean(h) && !h?.next_action;
+  const statusOf = (c: ComparisonRow): ComparisonStatus => c.status ?? (c.total_display === "—" ? "unavailable" : c.selected ? "recommended" : "alternative");
+  // The recommended plan first, then the dearer plans that work, then those that fall short, then sources that are not available.
+  const rank: Record<string, number> = { recommended: 0, alternative: 1, insufficient: 2, unavailable: 3 };
+  const options = [...(plan.data?.comparison ?? [])].sort((a, b) => (rank[statusOf(a)] ?? 9) - (rank[statusOf(b)] ?? 9));
 
   return (
     <>
-      <PageHeader title={t("nav.cash")} subtitle={t("biz.cash.subtitle")} />
-      <div className="space-y-5">
+      <BizPageHeader
+        title={t("nav.cash")}
+        sub={t("biz.cash.subtitle")}
+        icon={
+          <PageIcon tone="teal">
+            <WalletIcon width={22} height={22} />
+          </PageIcon>
+        }
+      />
+      <div className="rise space-y-8">
         {home.error ? (
           <ErrorState error={home.error} onRetry={home.reload} />
         ) : !h ? (
           <LoadingBlock rows={2} />
         ) : (
-          <>
-            <Card id="cash-answer" title={t("biz.cash.risk")} tone={h.status === "CRITICAL" ? "bad" : h.status === "SAFE" ? "ok" : "warn"}>
-              <p className="text-xl font-semibold text-ink" data-testid="cash-headline">
+          <div className="space-y-4">
+            <BizCard id="cash-answer" className="p-5 lg:p-6">
+              <div className="flex flex-wrap items-center gap-2">
+                <Chip tone={h.status === "CRITICAL" || unsafe ? "bad" : h.status === "SAFE" ? "ok" : "brand"}>{t("biz.cash.risk")}</Chip>
+              </div>
+              <p className="mt-2 text-xl font-semibold tracking-tight text-ink" data-testid="cash-headline">
                 {h.headline}
               </p>
-              <p className="mt-1 text-sm text-ink-2">{h.note}</p>
-              {h.worst ? <p className={`mt-1 text-sm ${unsafe ? "text-bad-fg" : "text-ink-3"}`}>{h.worst}</p> : null}
-              <dl className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                {(
-                  [
-                    [t("biz.cashToday"), h.cash.cash_short],
-                    [t("biz.reserveMin"), h.cash.floor_short],
-                    [unsafe ? t("biz.worstPoint") : t("biz.lowestAhead"), `${h.cash.lowest_short} · ${h.cash.lowest_when}`],
-                    [t("biz.firstUnsafeDay"), h.cash.first_breach_when ?? t("biz.none")],
-                  ] as const
-                ).map(([k, v]) => (
-                  <div key={k} className="min-w-0">
-                    <dt className="text-xs font-medium text-ink-3">{k}</dt>
-                    <dd className="break-words text-sm font-semibold tabular-nums text-ink">{v}</dd>
-                  </div>
-                ))}
+              <p className="mt-1 text-ink-3">{h.note}</p>
+              <dl className="mt-5 grid grid-cols-2 gap-x-4 gap-y-4 sm:grid-cols-4">
+                <Figure label={t("biz.cashToday")} value={h.cash.cash_short} />
+                <Figure label={t("biz.reserveMin")} value={h.cash.floor_short} />
+                <Figure label={unsafe ? t("biz.worstPoint") : t("biz.lowestAhead")} value={h.cash.lowest_short} note={h.cash.lowest_when} tone={unsafe ? "bad" : undefined} />
+                <Figure
+                  label={t("biz.firstUnsafeDay")}
+                  value={<span className="text-base">{h.cash.first_breach_when ?? t("biz.cash.neverUnsafe", { n: h.cash.horizon_days })}</span>}
+                  tone={unsafe ? "bad" : "ok"}
+                />
               </dl>
-            </Card>
+            </BizCard>
 
-            <FixResult result={fixer.result} error={fixer.error} changed={fixer.changed} />
+            <FixResult result={fixer.result} error={fixer.error} changed={fixer.changed} plain={{ today: h.day, names: homeNames(h) }} />
             {h.next_action ? (
               <NextActionBlock a={h.next_action} stateVersion={h.state_version} fixer={fixer} />
             ) : (
-              <Card id="cash-plan" title={t("biz.cash.plan")}>
-                <p className="text-sm text-ink-2" data-testid="cash-no-gap">{t("biz.cash.noGap")}</p>
-              </Card>
+              <BizCard id="cash-plan" className="p-5">
+                <p className="font-semibold text-ink">{t("biz.cash.plan")}</p>
+                <p className="mt-1 text-ink-3" data-testid="cash-no-gap">
+                  {t("biz.cash.noGap")}
+                </p>
+              </BizCard>
             )}
-          </>
+          </div>
         )}
 
-        <Card id="cash-options" title={t("biz.cash.options.title")} subtitle={t("biz.cash.options.sub2")}>
+        <section id="cash-options" aria-labelledby="cash-options-title" className="scroll-mt-24">
+          <SectionHead id="cash-options-title" title={stale ? t("biz.option.considered") : t("biz.cash.options.title")} sub={stale ? t("biz.option.considered.sub") : t("biz.option.tapHint")} />
           {plan.error ? (
             <ErrorState error={plan.error} onRetry={plan.reload} />
           ) : !plan.data ? (
             <LoadingBlock rows={2} />
           ) : (
-            <>
-              {snapshot ? <p className="mb-3 text-xs text-ink-3">{t("fund.snapshot")}</p> : null}
-              <ol className="divide-y divide-line" data-testid="cash-options-list">
-                {plan.data.comparison.map((c, i) => {
+            <BizCard className="p-1.5">
+              <ol data-testid="cash-options-list">
+                {options.map((c) => {
                   const key = c.key ? (`biz.option.${c.key}` as DictKey) : null;
                   const recommended = c.selected && h?.next_action?.plan_source === "router";
-                  const status = c.status ?? (c.total_display === "—" ? "unavailable" : c.selected ? "recommended" : "alternative");
-                  const ranked = status === "recommended" || status === "alternative";
+                  const status = statusOf(c);
+                  // "a + b = c": the total leads, the parts wait in the details (string layout only, no arithmetic).
+                  const eq = c.total_display.lastIndexOf("=");
+                  const total = eq >= 0 ? c.total_display.slice(eq + 1).trim() : c.total_display;
+                  const parts = eq >= 0 ? c.total_display.slice(0, eq).trim() : null;
+                  const note =
+                    status === "insufficient"
+                      ? c.shortfall_display
+                        ? stale
+                          ? t("biz.option.uncoveredNoWhen", { amount: c.shortfall_display })
+                          : t("biz.option.uncovered", { amount: c.shortfall_display, when: whenText(c.breach_day ?? 0, h?.day ?? 0, t) })
+                        : plainDays(c.note, h?.day ?? 0, t)
+                      : status === "alternative"
+                        ? t("biz.option.dearer")
+                        : status === "unavailable"
+                          ? plainDays(c.note, h?.day ?? 0, t)
+                          : "";
                   return (
-                    <li key={c.label} className="flex items-start justify-between gap-3 py-2.5" data-testid={`cash-option-${c.selected ? "selected" : "other"}`} data-key={c.key ?? ""} data-status={status}>
-                      <div className="flex min-w-0 items-start gap-3">
-                        <span className="mt-0.5 w-6 text-xs font-semibold tabular-nums text-ink-3">{ranked ? t("biz.option.rank", { n: i + 1 }) : ""}</span>
-                        <div className="min-w-0">
-                          <p className={`text-sm ${c.selected ? "font-semibold text-ink" : "text-ink"}`}>{key ? t(key) : c.label}</p>
-                          {status === "insufficient" ? (
-                            <p className="text-xs text-bad-fg" data-testid="cash-option-uncovered">
-                              {c.shortfall_display ? t("biz.option.uncovered", { amount: c.shortfall_display, when: whenText(c.breach_day ?? 0, h?.day ?? 0, t) }) : c.note}
+                    <li key={c.label} data-testid={`cash-option-${c.selected ? "selected" : "other"}`} data-key={c.key ?? ""} data-status={status}>
+                      <details className="group rounded-2xl">
+                        <summary className="flex min-h-14 items-center gap-3 rounded-2xl px-4 py-3 hover:bg-subtle">
+                          <span className="min-w-0 flex-1">
+                            <span className={`block ${c.selected ? "font-semibold" : "font-medium"} text-ink`}>{key ? t(key) : c.label}</span>
+                            <span className="mt-0.5 flex flex-wrap items-center gap-1.5">
+                              {recommended ? <Chip tone="brand">{t("biz.option.recommended")}</Chip> : null}
+                              {status === "insufficient" ? <Chip tone="bad">{t("biz.option.insufficient")}</Chip> : null}
+                              {status === "unavailable" ? <Chip>{t("biz.option.notPossible")}</Chip> : null}
+                              {c.reason_kind === "buyer_early_pay" ? <span className="text-xs text-ink-3">{t("biz.option.needsBuyer")}</span> : null}
+                            </span>
+                          </span>
+                          {status === "unavailable" && total === "—" ? null : <span className="figure shrink-0 font-semibold text-ink">{total}</span>}
+                          <ChevronRightIcon className="chev shrink-0 text-ink-3" />
+                        </summary>
+                        <div className="space-y-1.5 px-4 pb-3 text-sm">
+                          {note ? (
+                            <p className={status === "insufficient" ? "text-bad-fg" : "text-ink-2"} data-testid={status === "insufficient" ? "cash-option-uncovered" : undefined}>
+                              {note}
                             </p>
-                          ) : c.note ? (
-                            <p className="text-xs text-ink-3">{c.note}</p>
                           ) : null}
-                          {c.reason_kind === "buyer_early_pay" ? (
-                            <p className="mt-1 text-xs text-ink-3">{t("biz.option.needsBuyer")}</p>
-                          ) : (
-                            <PlanNotes className="mt-1" needsApproval={c.needs_owner_approval} approvalReason={c.approval_reason} executableNow={c.executable_now} notExecutableReason={c.not_executable_reason} />
+                          {parts ? <p className="figure text-ink-3">{parts}</p> : null}
+                          {c.reason_kind === "buyer_early_pay" ? null : (
+                            <PlanNotes needsApproval={c.needs_owner_approval} approvalReason={c.approval_reason} executableNow={c.executable_now} notExecutableReason={c.not_executable_reason ? plainDays(c.not_executable_reason, h?.day ?? 0, t) : undefined} />
                           )}
+                          {!note && !parts ? <p className="text-ink-3">{t("biz.option.noMore")}</p> : null}
                         </div>
-                      </div>
-                      <div className="flex shrink-0 items-center gap-2">
-                        {recommended ? <Badge tone="brand">{t("biz.option.recommended")}</Badge> : null}
-                        {status === "insufficient" ? <Badge tone="bad">{t("biz.option.insufficient")}</Badge> : null}
-                        {status === "unavailable" ? <Badge tone="neutral">{t("biz.option.notPossible")}</Badge> : null}
-                        <span className="font-semibold tabular-nums">{c.total_display}</span>
-                      </div>
+                      </details>
                     </li>
                   );
                 })}
               </ol>
-              {h?.next_action?.cheaper_option ? (
-                <p className="mt-3 text-xs text-ink-2" data-testid="cash-cheaper-note">
-                  {t("biz.cheaper", { cost: h.next_action.cheaper_option.cost_total_display, n: h.next_action.cheaper_option.approvals })}
-                </p>
-              ) : null}
-              <details className="mt-3" data-testid="cash-plan-detail">
-                <summary className="cursor-pointer text-sm font-medium text-brand-700">{t("biz.calculation")}</summary>
-                <div className="mt-2 space-y-2 text-sm">
-                  <p className="text-ink-2">{t("plan.need", { need: plan.data.committed.need_display })}</p>
-                  <ul className="space-y-1.5">
-                    {plan.data.committed.costs.map((c) => (
-                      <li key={c.label} className="rounded-md border border-line px-3 py-1.5">
-                        <div className="flex items-baseline justify-between gap-3">
-                          <span>{c.label}</span>
-                          <span className="font-medium tabular-nums">{c.display}</span>
-                        </div>
-                        <div className="mt-1">
-                          <Formula>{c.formula}</Formula>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                  <p className="text-xs text-ink-3">
-                    <Link href="/funding" className="font-medium text-brand-700 underline underline-offset-2">
-                      {t("biz.cash.fullDesk")}
-                    </Link>
+              <div className="border-t border-line px-3 pt-1">
+                {h?.next_action?.cheaper_option ? (
+                  <p className="px-1 py-2 text-sm text-ink-2" data-testid="cash-cheaper-note">
+                    {t("biz.cheaper", { cost: h.next_action.cheaper_option.cost_total_display, n: h.next_action.cheaper_option.approvals })}
                   </p>
-                </div>
-              </details>
-              <details className="mt-3" data-testid="cash-sources">
-                <summary className="cursor-pointer text-sm font-medium text-brand-700">{t("biz.cash.sources")}</summary>
-                <div className="mt-2">
+                ) : null}
+                <Disclosure summary={t("biz.calculation")} testId="cash-plan-detail">
+                  <div className="space-y-2 text-sm">
+                    <p className="text-ink-2">{t("plan.need", { need: plan.data.committed.need_display })}</p>
+                    <ul className="space-y-1.5">
+                      {plan.data.committed.costs.map((c) => (
+                        <li key={c.label} className="rounded-xl bg-subtle px-3 py-2">
+                          <div className="flex items-baseline justify-between gap-3">
+                            <span>{c.label}</span>
+                            <span className="figure font-semibold">{c.display}</span>
+                          </div>
+                          <div className="mt-1">
+                            <Formula>{c.formula}</Formula>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                    <p className="text-xs text-ink-3">
+                      <Link href="/funding" className="font-semibold text-brand-600 hover:text-brand-700">
+                        {t("biz.cash.fullDesk")}
+                      </Link>
+                    </p>
+                  </div>
+                </Disclosure>
+                <Disclosure summary={t("biz.cash.sources")} testId="cash-sources">
                   <FacilityExplainer menu={plan.data.menu} inPlan={inPlan} />
-                </div>
-              </details>
-            </>
+                </Disclosure>
+              </div>
+            </BizCard>
           )}
-        </Card>
+        </section>
 
-        <Card id="cash-chart" title={t("biz.cash.forecast")} subtitle={t("biz.cash.forecast.sub")}>
-          {home.error ? <ErrorState error={home.error} onRetry={home.reload} /> : !h ? <LoadingBlock rows={2} /> : <CashForecast h={h} />}
-        </Card>
+        <section id="cash-chart" aria-labelledby="cash-chart-title">
+          <SectionHead id="cash-chart-title" title={t("biz.cash.forecast")} sub={t("biz.cash.forecast.short")} />
+          <BizCard className="p-5">{home.error ? <ErrorState error={home.error} onRetry={home.reload} /> : !h ? <LoadingBlock rows={2} /> : <CashForecast h={h} />}</BizCard>
+        </section>
 
-        <div className="grid gap-5 lg:grid-cols-2">
-          <Card id="cash-whatif" title={t("biz.cash.whatif")} subtitle={t("biz.cash.whatif.sub")}>
-            <Link href="/whatif" className="inline-flex min-h-10 items-center rounded-md border border-line-strong px-3.5 text-sm font-medium text-ink hover:bg-subtle">
-              {t("biz.cash.whatif.open")}
-            </Link>
-          </Card>
-          <Card id="cash-capex" title={t("biz.cash.capex")} subtitle={t("biz.cash.capex.sub")}>
-            <Link href="/capex" className="inline-flex min-h-10 items-center rounded-md border border-line-strong px-3.5 text-sm font-medium text-ink hover:bg-subtle">
-              {t("biz.cash.capex.open")}
-            </Link>
-          </Card>
-        </div>
+        <section aria-label={t("biz.cash.tools")} className="grid gap-3 sm:grid-cols-2">
+          <Tile href="/whatif" icon={<SlidersIcon width={22} height={22} />} title={t("biz.cash.whatif")} sub={t("biz.cash.whatif.short")} testId="cash-whatif" tone="teal" />
+          <Tile href="/capex" icon={<CartIcon width={22} height={22} />} title={t("biz.cash.capex")} sub={t("biz.cash.capex.short")} testId="cash-capex" tone="orange" />
+        </section>
 
         {view?.trajectory.months.length ? (
-          <details className="rounded-(--radius-card) border border-line bg-surface shadow-(--shadow-card)" data-testid="cash-readings">
-            <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-ink">{t("biz.readings")}</summary>
-            <div className="border-t border-line p-4">
-              <p className="mb-3 text-xs text-ink-3">{t("biz.readings.note")}</p>
-              <TableWrap label={t("biz.readings")}>
-                <table className={tableCls}>
-                  <thead>
-                    <tr>
-                      <th scope="col" className={thCls}>{t("common.month")}</th>
-                      <th scope="col" className={`${thCls} text-right`}>{t("traj.debtService")}</th>
-                      <th scope="col" className={`${thCls} text-right`}>{t("traj.totalDebt")}</th>
-                      <th scope="col" className={`${thCls} text-right`}>{t("biz.dscr")} ({t("common.min")} {view.covenant_limits.min_dscr_display})</th>
-                      <th scope="col" className={`${thCls} text-right`}>{t("biz.leverage")} ({t("common.max")} {view.covenant_limits.max_leverage_display})</th>
+          <Disclosure card summary={t("biz.readings")} testId="cash-readings">
+            <p className="mb-3 text-xs text-ink-3">{t("biz.readings.note")}</p>
+            <TableWrap label={t("biz.readings")}>
+              <table className={tableCls}>
+                <thead>
+                  <tr>
+                    <th scope="col" className={thCls}>{t("common.month")}</th>
+                    <th scope="col" className={`${thCls} text-right`}>{t("traj.debtService")}</th>
+                    <th scope="col" className={`${thCls} text-right`}>{t("traj.totalDebt")}</th>
+                    <th scope="col" className={`${thCls} text-right`}>{t("biz.dscr")} ({t("common.min")} {view.covenant_limits.min_dscr_display})</th>
+                    <th scope="col" className={`${thCls} text-right`}>{t("biz.leverage")} ({t("common.max")} {view.covenant_limits.max_leverage_display})</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {view.trajectory.months.map((m) => (
+                    <tr key={m.month}>
+                      <td className={`${tdCls} tabular-nums`}>{m.month}</td>
+                      <td className={`${tdCls} text-right tabular-nums`}>{m.debt_service_display}</td>
+                      <td className={`${tdCls} text-right tabular-nums`}>{m.total_debt_display}</td>
+                      <td className={`${tdCls} text-right tabular-nums`}>{m.dscr ? `${m.dscr.text}×` : t("common.none")}</td>
+                      <td className={`${tdCls} text-right tabular-nums`}>{m.leverage.text}×</td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {view.trajectory.months.map((m) => (
-                      <tr key={m.month}>
-                        <td className={`${tdCls} tabular-nums`}>{m.month}</td>
-                        <td className={`${tdCls} text-right tabular-nums`}>{m.debt_service_display}</td>
-                        <td className={`${tdCls} text-right tabular-nums`}>{m.total_debt_display}</td>
-                        <td className={`${tdCls} text-right tabular-nums`}>{m.dscr ? `${m.dscr.text}×` : t("common.none")}</td>
-                        <td className={`${tdCls} text-right tabular-nums`}>{m.leverage.text}×</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </TableWrap>
-            </div>
-          </details>
+                  ))}
+                </tbody>
+              </table>
+            </TableWrap>
+          </Disclosure>
         ) : null}
       </div>
     </>

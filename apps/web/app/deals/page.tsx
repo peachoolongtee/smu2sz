@@ -1,5 +1,8 @@
 "use client";
 
+import { PageIcon } from "@/components/business/kit";
+import { DealsIcon } from "@/components/icons";
+
 import Link from "next/link";
 import { useState } from "react";
 import { AnnotatedText } from "@/components/annotated-text";
@@ -18,7 +21,7 @@ import { evaluate as evaluateAndCache } from "@/lib/demo";
 import { getClock, getState, submitOffer } from "@/lib/api";
 import { recordOffer, selectOffer, useDemo } from "@/lib/demo-store";
 import { useI18n } from "@/lib/i18n";
-import type { InboxMessage } from "@/lib/inbox";
+import { INBOX, type InboxMessage } from "@/lib/inbox";
 import { useMode } from "@/lib/mode";
 import { annotationsFor, offerItems } from "@/lib/offer-items";
 import type { VerdictView } from "@/lib/types";
@@ -116,7 +119,13 @@ export default function DealsPage() {
 
   return (
     <>
-      <PageHeader title={t("nav.deals")} subtitle={t("biz.deals.subtitle")} />
+      <PageHeader
+        icon={
+          <PageIcon tone="violet">
+            <DealsIcon width={22} height={22} />
+          </PageIcon>
+        }
+        title={t("nav.deals")} subtitle={t("biz.deals.subtitle")} />
       {offer ? <DealSteps /> : null}
       {next ? (
         <NextStep label={t("next.label")} action={next.action}>
@@ -148,7 +157,7 @@ export default function DealsPage() {
           <LoadingBlock rows={3} />
         ) : !offer ? (
           <>
-            <EmptyState title={t("biz.deals.empty")} body={t("biz.deals.empty.body")} action={<Link href="/chat" className="inline-flex min-h-10 items-center rounded-md border border-line-strong px-3.5 text-sm font-medium text-ink hover:bg-subtle">{t("chat.open")}</Link>} />
+            <EmptyState title={t("biz.deals.empty")} body={t("biz.deals.empty.body")} />
             {commitments}
           </>
         ) : (
@@ -156,7 +165,14 @@ export default function DealsPage() {
             <Card
               id="deal-ask"
               title={t("biz.deals.ask", { buyer: buyerName(offer.offer.counterparty_id) })}
-              subtitle={t("biz.deals.messageWhen", { channel: te("channel", offer.documents[0]?.channel ?? "chat"), when: whenText(offer.offer.received_day, today, t) })}
+              subtitle={t("biz.deals.messageWhen", {
+                // The app the message came from, as the inbox names it ("WeChat"), else the server's channel.
+                channel: (() => {
+                  const m = INBOX.find((x) => x.document.doc_id === offer.documents[0]?.doc_id);
+                  return m ? te("inbox.source", m.source) : te("channel", offer.documents[0]?.channel ?? "chat");
+                })(),
+                when: whenText(offer.offer.received_day, today, t),
+              })}
             >
               <BuyerAsks asks={asks} />
               {offer.offer.abstentions.length ? (
@@ -192,7 +208,7 @@ export default function DealsPage() {
             ) : (
               <>
                 <DealDecision v={v} today={today} />
-                <RecommendedResponse v={v} negotiation={cur.negotiation} />
+                <RecommendedResponse v={v} negotiation={cur.negotiation} today={today} />
                 {commitments}
 
                 <div className="space-y-2">

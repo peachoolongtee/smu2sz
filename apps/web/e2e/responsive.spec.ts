@@ -47,9 +47,10 @@ test("the Business home puts the status and the next action in the first screen,
   const menu = page.getByRole("button", { name: "Open navigation" });
   if (await menu.isVisible()) {
     await menu.click();
-    await page.getByRole("link", { name: "Cash & funding" }).click();
+    await page.getByRole("navigation", { name: "Main navigation" }).getByRole("link", { name: "Cash & funding" }).click();
   } else {
-    await page.getByRole("link", { name: "Cash & funding" }).click();
+    // The navigation's link; the home card also has a round "Cash & funding" shortcut.
+    await page.getByRole("navigation", { name: "Main navigation" }).getByRole("link", { name: "Cash & funding" }).click();
   }
   await expect(page).toHaveURL(/\/cash/);
 });
@@ -76,6 +77,8 @@ test("the slide-over chat fits the viewport with a long reply", async ({ page })
   await expect(panel).toBeVisible();
   await page.getByTestId("prompt-evaluate").click();
   await expect(panel.getByTestId("chat-awaiting")).toBeVisible();
+  // The panel slides in (0.18 s) and the mock answers in 10 ms: measure once the slide has finished, not mid-way.
+  await expect.poll(() => panel.evaluate((el) => el.getAnimations().every((a) => a.playState === "finished"))).toBe(true);
   const viewport = page.viewportSize()!;
   const box = (await panel.boundingBox())!;
   expect(box.x + box.width).toBeLessThanOrEqual(viewport.width + 1);

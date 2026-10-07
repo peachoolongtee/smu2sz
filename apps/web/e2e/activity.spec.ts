@@ -1,4 +1,5 @@
 import { expect, test } from "./fixtures";
+import { runPlan } from "./helpers";
 
 /**
  * The Business Activity page in mock mode: every row leads with the executor's sentence in business words (names, not ids,
@@ -16,7 +17,7 @@ test("each row leads with the executor's sentence, the operation name is a muted
   await page.getByTestId("home-advance").click();
   await expect(page.getByTestId("home-day")).toHaveText("Day 34");
   await page.goto("/");
-  await page.getByTestId("fix-ALERT-RESERVE-42").click();
+  await runPlan(page, "ALERT-RESERVE-42");
   await expect(page.getByTestId("alert-waiting-ALERT-RESERVE-42")).toBeVisible();
 
   await page.goto("/activity");

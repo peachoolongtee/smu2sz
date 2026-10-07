@@ -1,4 +1,13 @@
-import { expect, test, type APIRequestContext } from "@playwright/test";
+import { expect, test, type APIRequestContext, type Locator, type Page } from "@playwright/test";
+
+/**
+ * The home's and Cash & funding's "Run funding plan" / "Prepare it for my approval": the first press opens the
+ * confirmation, the second sends the bound act. The alerts page's own button sends at once and does not use this.
+ */
+export async function runPlan(scope: Page | Locator, alertId: string): Promise<void> {
+  await scope.getByTestId(`fix-open-${alertId}`).click();
+  await scope.getByTestId(`fix-${alertId}`).click();
+}
 import { DEMO_TOKEN } from "./fixtures";
 
 /**

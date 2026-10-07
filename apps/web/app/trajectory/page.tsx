@@ -263,7 +263,7 @@ function TrajectoryBody({
                     <tr key={`${d.day}-${i}`} className={breach === d.day ? "bg-bad-bg" : ""}>
                       <td className={`${tdCls} tabular-nums`}>{i === 0 ? d.day : ""}</td>
                       <td className={tdCls}>{e.label}</td>
-                      <td className={`${tdCls} text-right tabular-nums`}>{e.amount_display}</td>
+                      <td className={`${tdCls} whitespace-nowrap text-right tabular-nums`}>{e.amount_display}</td>
                       <td className={`${tdCls} text-right tabular-nums`}>{i === d.events.length - 1 ? d.closing_display : ""}</td>
                       <td className={`${tdCls} font-mono text-xs text-ink-2`}>{e.formula ?? ""}</td>
                     </tr>

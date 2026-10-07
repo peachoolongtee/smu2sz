@@ -55,7 +55,8 @@ export function DealDecision({ v, today }: { v: VerdictView; today: number }) {
       <p className="mt-1 text-2xl font-semibold text-ink" data-testid="deal-recommendation">
         {t(ACTION_KEY[action])}
       </p>
-      <dl className="mt-4 grid gap-4 sm:grid-cols-3">
+      {action !== "accept" && (tr || fc) ? <p className="mt-3 text-sm text-ink-2">{t("biz.deals.ifAccept")}</p> : null}
+      <dl className="mt-2 grid gap-4 sm:grid-cols-3">
         {v.concession_values.length || fc ? (
           <div data-testid="deal-fact-cost">
             <dt className="text-xs font-medium text-ink-3">{t("biz.deals.fact.concessions")}</dt>
@@ -79,7 +80,8 @@ export function DealDecision({ v, today }: { v: VerdictView; today: number }) {
         {tr && breach !== null ? (
           <div data-testid="deal-fact-worst">
             <dt className="text-xs font-medium text-ink-3">{t("biz.deals.fact.worst")}</dt>
-            <dd className="text-lg font-semibold tabular-nums text-ink">{tr.min_cash.text}</dd>
+            {/* Below the reserve whenever there is a breach: the same red as the breach it follows. */}
+            <dd className="text-lg font-semibold tabular-nums text-bad-fg">{tr.min_cash.text}</dd>
             <dd className="text-xs text-ink-3">{whenText(tr.min_cash_day, today, t)}</dd>
           </div>
         ) : null}

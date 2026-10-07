@@ -1,5 +1,6 @@
 import { expect, test as signedOut } from "@playwright/test";
 import { test } from "./fixtures";
+import { runPlan } from "./helpers";
 
 /**
  * Mock-mode specs for the owner's decision surfaces: no tier badge on a REJECT, the approval card, the autonomy proof
@@ -45,7 +46,9 @@ test("an approval card expands in place to the operation, the reason, the amount
   await page.getByRole("button", { name: "Scene 3" }).click(); // runs the capex evaluation, which writes nothing
   await expect(page).toHaveURL(/\/capex/);
   await page.goto("/approvals");
-  await expect(page.getByText("0 pending")).toBeVisible();
+  // Nothing waits: the page says so, and shows no "0 pending" count.
+  await expect(page.getByText("Nothing waiting for approval")).toBeVisible();
+  await expect(page.getByText("0 pending")).toHaveCount(0);
   await page.goto("/capex");
   await page.getByTestId("capex-apply").click(); // the owner's explicit application queues the loan application
   await expect(page.getByTestId("capex-applied")).toBeVisible();
@@ -54,7 +57,7 @@ test("an approval card expands in place to the operation, the reason, the amount
   await expect(card).toContainText("¥600,000.00");
   // The card speaks in business words (the facility's name); the executor's own sentence with the id is an audit detail.
   await expect(card.getByTestId("approval-headline")).toHaveText("Approve ¥600,000.00 of facility application?");
-  await expect(card.getByTestId("approval-reason")).toContainText("apply for facility Equipment term loan");
+  await expect(card.getByTestId("approval-reason")).toContainText(/apply for facility Equipment term loan/i);
   await expect(card.getByTestId("approval-detail-APR-000001")).toHaveCount(0);
   await card.getByTestId("approval-toggle-APR-000001").click();
   const detail = card.getByTestId("approval-detail-APR-000001");
@@ -77,7 +80,7 @@ test("an approval born of the reserve alert says what declining leaves, in days 
   await page.getByTestId("home-advance").click();
   await expect(page.getByTestId("home-day")).toHaveText("Day 34");
   await page.goto("/");
-  await page.getByTestId("fix-ALERT-RESERVE-42").click();
+  await runPlan(page, "ALERT-RESERVE-42");
   await page.getByTestId("alert-approval-link-ALERT-RESERVE-42").click();
   await expect(page).toHaveURL(/\/approvals#approval-APR-000001/);
   const card = page.locator("#approval-APR-000001");

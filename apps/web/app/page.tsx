@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { ChangesBlock, DecisionsBlock, DetailsBlock, ReceivablesBlock } from "@/components/business/blocks";
+import { ChangesBlock, DecisionsBlock, DetailsBlock, ReceivablesBlock, WarningsBlock, homeNames } from "@/components/business/blocks";
 import { NextActionBlock } from "@/components/business/next-action";
 import { FixResult, useFixAlert } from "@/components/home/fix-alert";
 import { StatusBlock } from "@/components/business/status-block";
@@ -55,16 +55,24 @@ export default function HomePage() {
       ) : !h ? (
         <LoadingBlock rows={3} />
       ) : (
-        <div className="space-y-5" aria-busy={view.loading}>
+        <div className="rise space-y-7" aria-busy={view.loading}>
           <StatusBlock h={h} />
-          <FixResult result={fixer.result} error={fixer.error} changed={fixer.changed} />
+          <FixResult result={fixer.result} error={fixer.error} changed={fixer.changed} plain={{ today: h.day, names: homeNames(h) }} />
           {h.next_action ? <NextActionBlock a={h.next_action} stateVersion={h.state_version} fixer={fixer} /> : null}
           {/* An empty section is hidden: the absence of decisions or news is not itself news. */}
           {h.pending_count > 0 ? <DecisionsBlock approvals={h.approvals} /> : null}
-          <div className="grid gap-5 lg:grid-cols-2">
-            <ReceivablesBlock r={h.receivables} />
+          <WarningsBlock h={h} />
+          <div className="grid items-start gap-7 lg:grid-cols-2">
+            <div className={h.changes.length ? "" : "lg:col-span-2"}>
+              <ReceivablesBlock r={h.receivables} />
+            </div>
             {h.changes.length ? (
-              <ChangesBlock changes={h.changes} sinceWhen={h.since_day !== null && h.since_day !== undefined ? t("biz.when.daysAgo", { n: Math.max(h.day - h.since_day, 0) }) : null} />
+              <ChangesBlock
+                changes={h.changes}
+                today={h.day}
+                anyPending={h.pending_count > 0}
+                sinceWhen={h.since_day !== null && h.since_day !== undefined ? t("biz.when.daysAgo", { n: Math.max(h.day - h.since_day, 0) }) : null}
+              />
             ) : null}
           </div>
           <DetailsBlock h={h} />

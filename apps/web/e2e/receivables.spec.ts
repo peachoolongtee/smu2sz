@@ -51,11 +51,13 @@ test("day 34: the late invoice leads, the overdue total is the server's, and the
   const rows = page.locator("#recv-open tbody tr");
   await expect(rows.first()).toHaveAttribute("data-testid", "recv-RCV-A");
   await expect(rows.first()).toContainText("Foshan Home Retail Co.");
-  await expect(rows.first()).toContainText("2 day(s) late");
+  await expect(rows.first()).toContainText("2 days late");
   await expect(rows.first()).toContainText("2 days ago");
-  await expect(page.getByRole("heading", { name: "Expected early payments" })).toBeVisible();
-  await expect(page.getByTestId("promised-RCV-A")).toContainText("¥255,013.80");
+  // The early payment arrived, so it is listed once, under the payments received, not again as a promise.
+  await expect(page.getByRole("heading", { name: "Expected early payments" })).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "Payments received" })).toBeVisible();
+  await expect(page.getByTestId("receipt-rec-receipt-1")).toContainText("¥255,013.80");
+  await expect(page.getByTestId("receipt-rec-receipt-1")).not.toContainText("CMT-");
   await expect(page.getByTestId("receipt-rec-receipt-1")).toContainText("Foshan Home Retail Co.");
   await expect(page.getByTestId("receipt-ref-rec-receipt-1")).toContainText("DEMO-RCPT-1");
 });

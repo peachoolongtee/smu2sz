@@ -22,8 +22,11 @@ export function setMode(mode: Mode): void {
   modeStore.set({ mode });
 }
 
-/** Business routes: the owner's six sections, the limits and sign-in. Everything else is an engine view of the demo. */
-export const BUSINESS_ROUTES = ["/", "/deals", "/cash", "/receivables", "/approvals", "/activity", "/limits"] as const;
+/**
+ * Business routes: the owner's six sections, the limits, and the two tools Cash & funding opens (what-if and buying
+ * equipment), so following those doors does not drop the owner into the Demo shell. Everything else is an engine view.
+ */
+export const BUSINESS_ROUTES = ["/", "/deals", "/cash", "/receivables", "/approvals", "/activity", "/limits", "/whatif", "/capex"] as const;
 
 export function isBusinessRoute(pathname: string): boolean {
   return (BUSINESS_ROUTES as readonly string[]).includes(pathname);

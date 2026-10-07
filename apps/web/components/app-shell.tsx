@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { apiMode, getApprovals } from "@/lib/api";
 import { useAsync } from "@/lib/use-async";
 import { setLang, useI18n } from "@/lib/i18n";
@@ -10,9 +10,11 @@ import { setMode, shellFor, useMode, type Mode } from "@/lib/mode";
 import type { DictKey } from "@/lib/dictionary";
 import { ChatPanel } from "./chat/chat-panel";
 import { DemoStepper } from "./demo-stepper";
-import { MenuIcon, ShieldIcon, XIcon } from "./icons";
+import { ActivityIcon, CartIcon, DealsIcon, SparkIcon, HomeIcon, InboxInIcon, MenuIcon, ShieldCheckIcon, ShieldIcon, UserIcon, WalletIcon, XIcon } from "./icons";
 import { useAuth } from "@/lib/auth";
 import { OwnerSessionControl, OwnerSignInDialog } from "./owner-auth";
+import { Tour, startTour } from "./business/tour";
+import { Backdrop } from "./business/backdrop";
 import { Badge, Segmented } from "./ui";
 
 /** Business mode: six sections, each a question the owner asks. */
@@ -22,7 +24,11 @@ const BUSINESS_NAV: { href: string; key: DictKey }[] = [
   { href: "/cash", key: "nav.cash" },
   { href: "/receivables", key: "nav.receivables" },
   { href: "/activity", key: "nav.activity" },
+  { href: "/capex", key: "nav.equipment" },
 ];
+
+/** The phone tab bar carries every section, Capex included. */
+const TAB_NAV = BUSINESS_NAV;
 
 /** Demo mode: the story, then the engine views a judge may want to open. */
 const DEMO_NAV: { href: string; key: DictKey; group: "story" | "engine" }[] = [
@@ -90,7 +96,7 @@ function Brand({ href }: { href: string }) {
       </span>
       <span className="leading-tight">
         {t("brand.name")}
-        <span className="block text-[0.7rem] font-normal text-ink-3">{t("brand.tagline")}</span>
+        <span className="brand-tagline block text-[0.7rem] font-normal text-ink-3">{t("brand.tagline")}</span>
       </span>
     </Link>
   );
@@ -121,7 +127,7 @@ function ApprovalsBadge() {
   const pending = list.data?.filter((a) => a.status === "PENDING").length ?? 0;
   if (!pending) return null;
   return (
-    <Link href="/approvals" className="inline-flex min-h-8 items-center rounded-full border border-warn-line bg-warn-bg px-3 text-xs font-semibold text-warn-fg hover:brightness-95" data-testid="approvals-badge" title={t("approvals.badge", { n: pending })}>
+    <Link href="/approvals" className="press inline-flex min-h-9 items-center gap-1.5 rounded-full bg-warn-bg px-3.5 text-xs font-semibold text-warn-fg hover:brightness-95" data-testid="approvals-badge" title={t("approvals.badge", { n: pending })}>
       <span className="sm:hidden">{pending}</span>
       <span className="hidden sm:inline">{t("approvals.badge", { n: pending })}</span>
     </Link>
@@ -129,123 +135,151 @@ function ApprovalsBadge() {
 }
 
 /**
- * One compact place for the account once the owner is signed in: the signed-in state and sign-out, the language, and
- * what this data is. Signed out, the Sign in button stays in the header itself: it is an action the owner needs.
+ * One compact place for the account: a round button that opens a small sheet with the signed-in state and sign-out,
+ * the owner's limits, the language, the Business/Demo switch on small screens, and what this data is. Signed out, the
+ * Sign in button stays in the header itself: it is an action the owner needs.
  */
 function AccountMenu() {
   const { t } = useI18n();
   const { token } = useAuth();
+  const panel = (
+    <div className="absolute right-0 z-40 mt-2 w-72 origin-top-right space-y-3 whitespace-normal rounded-2xl border border-line bg-surface p-3 shadow-(--shadow-lift) [animation:biz-reveal_180ms_var(--ease-out)]">
+      {token ? <OwnerSessionControl /> : null}
+      {token ? (
+        <Link href="/limits" className="press flex min-h-10 items-center gap-2.5 rounded-xl px-2 text-sm font-medium text-ink hover:bg-subtle" data-testid="account-limits">
+          <ShieldCheckIcon className="text-brand-600" />
+          {t("nav.limits.menu")}
+        </Link>
+      ) : null}
+      {token ? (
+        <button
+          type="button"
+          onClick={(e) => {
+            (e.currentTarget.closest("details") as HTMLDetailsElement | null)?.removeAttribute("open");
+            startTour();
+          }}
+          className="flex min-h-10 w-full items-center gap-2.5 rounded-xl px-2 text-left text-sm font-medium text-ink hover:bg-subtle"
+          data-testid="account-tour"
+        >
+          <SparkIcon className="text-violet-600" />
+          {t("tour.replay")}
+        </button>
+      ) : null}
+      <LangSwitch />
+      <ModeSwitch />
+      <p className="text-xs text-ink-3">{t("biz.demoData.hint")}</p>
+    </div>
+  );
   if (!token) {
     return (
       <div className="flex items-center gap-2">
         <OwnerSessionControl />
         <details className="relative" data-testid="account-menu">
-          <summary className="flex min-h-8 cursor-pointer list-none items-center rounded-md border border-line-strong px-2 text-xs font-medium text-ink-2 hover:bg-subtle [&::-webkit-details-marker]:hidden" aria-label={t("account.menu")}>
-            {t("account.menu")}
+          <summary className="no-chev press grid size-10 place-items-center rounded-full bg-surface text-ink-2 shadow-(--shadow-card) hover:text-ink" aria-label={t("account.menu")}>
+            <UserIcon />
           </summary>
-          <div className="absolute right-0 z-40 mt-1 w-72 space-y-3 rounded-lg border border-line bg-surface p-3 shadow-lg">
-            <LangSwitch />
-            <p className="text-xs text-ink-3">{t("biz.demoData.hint")}</p>
-          </div>
+          {panel}
         </details>
       </div>
     );
   }
   return (
-    <details className="relative" data-testid="account-menu">
-      <summary className="flex min-h-8 cursor-pointer list-none items-center gap-1.5 rounded-md border border-line-strong px-2.5 text-xs font-medium text-ink-2 hover:bg-subtle [&::-webkit-details-marker]:hidden">
-        <span aria-hidden className="grid size-5 place-items-center rounded-full bg-ok-bg text-[0.65rem] font-bold text-ok-fg">
-          {t("account.initial")}
+    <details className="relative" data-testid="account-menu" data-tour="account">
+      <summary className="no-chev press flex min-h-10 items-center gap-2 rounded-full bg-surface py-1 pl-1 pr-3 text-sm font-semibold text-ink shadow-(--shadow-card)" aria-label={t("account.menu")}>
+        <span aria-hidden className="grid size-8 place-items-center rounded-full bg-brand-600 text-white">
+          <UserIcon width={16} height={16} />
         </span>
-        {t("account.owner")}
+        <span className="hidden sm:inline">{t("account.owner")}</span>
       </summary>
-      <div className="absolute right-0 z-40 mt-1 w-72 space-y-3 rounded-lg border border-line bg-surface p-3 shadow-lg">
-        <OwnerSessionControl />
-        <LangSwitch />
-        <p className="text-xs text-ink-3">{t("biz.demoData.hint")}</p>
-      </div>
+      {panel}
     </details>
   );
 }
 
 // ---------------------------------------------------------------- Business
 
+/** Tab-bar labels must fit a fifth of a phone's width. */
+const TAB_LABEL: Partial<Record<string, DictKey>> = { "/cash": "nav.short.cash", "/receivables": "nav.short.receivables" };
+
+const BUSINESS_ICON: Record<string, (p: { width?: number; height?: number }) => ReactNode> = {
+  "/": HomeIcon,
+  "/deals": DealsIcon,
+  "/cash": WalletIcon,
+  "/receivables": InboxInIcon,
+  "/activity": ActivityIcon,
+  "/capex": CartIcon,
+};
+
 function BusinessShell({ children }: { children: ReactNode }) {
   const { t } = useI18n();
   const pathname = usePathname();
-  const [open, setOpen] = useState(false);
-  const links = (onNavigate?: () => void, vertical = false) => (
-    <ul className={vertical ? "space-y-0.5" : "flex items-center gap-1"}>
-      {BUSINESS_NAV.map((n) => {
-        const active = pathname === n.href;
-        return (
-          <li key={n.href}>
-            <Link
-              href={n.href}
-              onClick={onNavigate}
-              aria-current={active ? "page" : undefined}
-              className={`flex min-h-10 items-center whitespace-nowrap rounded-md px-3 text-sm font-medium ${
-                active ? "bg-brand-50 text-brand-700" : "text-ink-2 hover:bg-subtle hover:text-ink"
-              }`}
-            >
-              {t(n.key)}
-            </Link>
-          </li>
-        );
-      })}
-    </ul>
-  );
   return (
-    <div className="min-h-dvh">
+    <div className="biz relative isolate min-h-dvh">
+      <Backdrop />
       <SkipLink />
+      <Tour />
       <OwnerSignInDialog />
       <ChatPanel />
-      <header className="sticky top-0 z-30 border-b border-line bg-surface">
-        <div className="mx-auto flex max-w-[1280px] items-center justify-between gap-3 px-4 py-2 lg:px-6">
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              aria-expanded={open}
-              aria-controls="mobile-nav"
-              aria-label={open ? t("nav.close") : t("nav.open")}
-              onClick={() => setOpen((v) => !v)}
-              className="grid size-10 place-items-center rounded-md border border-line-strong text-ink-2 hover:bg-subtle lg:hidden"
-            >
-              {open ? <XIcon /> : <MenuIcon />}
-            </button>
-            <Brand href="/" />
-          </div>
-          <nav aria-label={t("nav.label")} className="hidden lg:block">
-            {links()}
+      <header className="sticky top-0 z-30 border-b border-line/70 bg-canvas/85 backdrop-blur-md">
+        <div className="mx-auto flex max-w-[1180px] items-center justify-between gap-3 px-4 py-2.5 lg:grid lg:grid-cols-[auto_minmax(0,1fr)_auto] lg:gap-6 lg:px-6">
+          <Brand href="/" />
+          {/* Desktop: the five questions as pills on a white track. Phones get the tab bar at the bottom instead. */}
+          <nav aria-label={t("nav.label")} className="hidden min-w-0 justify-self-center lg:block" data-tour="nav">
+            <ul className="flex items-center gap-1 rounded-full bg-surface p-1 shadow-(--shadow-card)">
+              {BUSINESS_NAV.map((n) => {
+                const active = pathname === n.href;
+                return (
+                  <li key={n.href}>
+                    <Link
+                      href={n.href}
+                      aria-current={active ? "page" : undefined}
+                      className={`press flex min-h-9 items-center whitespace-nowrap rounded-full px-4 text-sm font-semibold ${
+                        active ? "bg-ink text-white" : "text-ink-2 hover:bg-subtle hover:text-ink"
+                      }`}
+                    >
+                      {t(n.key)}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
           </nav>
-          <div className="flex items-center gap-2 whitespace-nowrap">
+          <div className="flex items-center justify-end gap-2 whitespace-nowrap">
             <ApprovalsBadge />
-            <span className="hidden sm:inline-flex" data-testid="demo-data-indicator">
+            <span className="hidden xl:inline-flex" data-testid="demo-data-indicator">
               <Badge tone="neutral" title={t("biz.demoData.hint")}>
                 {t("biz.demoData")}
               </Badge>
             </span>
-            <div className="hidden sm:block">
-              <ModeSwitch />
-            </div>
             <AccountMenu />
           </div>
         </div>
-        {open ? (
-          <nav id="mobile-nav" aria-label={t("nav.label")} className="border-t border-line bg-surface px-3 py-3 lg:hidden">
-            {links(() => setOpen(false), true)}
-            <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-line pt-3">
-              <ModeSwitch />
-              <Badge tone="neutral" title={t("biz.demoData.hint")}>
-                {t("biz.demoData")}
-              </Badge>
-            </div>
-          </nav>
-        ) : null}
       </header>
-      <main id="main" tabIndex={-1} className="mx-auto w-full max-w-[1180px] px-4 pb-24 pt-5 lg:px-6 lg:pb-10 lg:pt-6">
+      <main id="main" tabIndex={-1} className="mx-auto w-full max-w-[1040px] px-4 pb-32 pt-6 lg:px-6 lg:pb-24 lg:pt-8">
         {children}
       </main>
+      {/* Phones: a tab bar, as in a banking app. Five destinations, icon and word, the current one in blue. */}
+      <nav aria-label={t("nav.label")} data-tour="nav" className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-md lg:hidden">
+        <ul className="mx-auto grid max-w-xl grid-cols-6">
+          {TAB_NAV.map((n) => {
+            const active = pathname === n.href;
+            const Icon = BUSINESS_ICON[n.href];
+            return (
+              <li key={n.href}>
+                <Link
+                  href={n.href}
+                  aria-current={active ? "page" : undefined}
+                  aria-label={t(n.key)}
+                  className={`press flex min-h-14 flex-col items-center justify-center gap-0.5 px-1 text-[0.6875rem] font-semibold ${active ? "text-brand-600" : "text-ink-3 hover:text-ink"}`}
+                >
+                  {Icon ? <Icon width={21} height={21} /> : null}
+                  <span className="max-w-full truncate">{t(TAB_LABEL[n.href] ?? n.key)}</span>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
     </div>
   );
 }
@@ -350,8 +384,21 @@ function DemoShell({ children }: { children: ReactNode }) {
 }
 
 /** Two shells. The owner's Business shell has no demo control; the Demo shell carries the story bar and the engine views. */
+const TITLE_KEY: Record<string, DictKey> = {
+  ...Object.fromEntries(DEMO_NAV.map((n) => [n.href, n.key])),
+  ...Object.fromEntries(BUSINESS_NAV.map((n) => [n.href, n.key])),
+  "/approvals": "nav.approvals",
+  "/limits": "nav.limits",
+};
+
 export function AppShell({ children }: { children: ReactNode }) {
   const mode = useMode();
   const pathname = usePathname();
+  const { t, lang } = useI18n();
+  useEffect(() => {
+    const key = TITLE_KEY[pathname];
+    document.title = key && pathname !== "/" ? `${t(key)} · ${t("brand.name")}` : t("brand.name");
+    document.documentElement.lang = lang === "zh" ? "zh-CN" : "en";
+  }, [pathname, lang, t]);
   return shellFor(pathname, mode) === "demo" ? <DemoShell>{children}</DemoShell> : <BusinessShell>{children}</BusinessShell>;
 }

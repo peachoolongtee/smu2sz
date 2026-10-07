@@ -28,8 +28,10 @@ test("the inbox groups a buyer's messages into one thread and names each evaluat
   await expect(page.getByRole("heading", { name: "Inbox", exact: true })).toBeVisible();
   await expect(page.getByTestId("inbox-thread-BUYER-1")).toHaveCount(1);
   await expect(inbox.getByTestId("inbox-msg-SEC")).toHaveCount(0);
-  await expect(page.getByTestId("inbox-blocked")).toContainText("1 suspicious message was blocked");
-  await expect(page.getByTestId("inbox-blocked").getByRole("link", { name: "See what was refused" })).toHaveAttribute("href", "/activity#refused");
+  // The unknown sender's message never reached the agent, so the line says it was set aside and shows it on demand.
+  await expect(page.getByTestId("inbox-blocked")).toContainText("1 message from an unknown sender was set aside");
+  await page.getByTestId("inbox-blocked").getByText("Show it").click();
+  await expect(page.getByTestId("inbox-blocked")).toContainText("FastCapital");
   // Step 11 selected the reworded offer; the original is in the thread, evaluated, with its recommendation in words, no code.
   const reworded = inbox.getByTestId("inbox-msg-EX01B");
   const original = inbox.getByTestId("inbox-msg-EX01");
@@ -41,7 +43,7 @@ test("the inbox groups a buyer's messages into one thread and names each evaluat
   await expect(original).toHaveAttribute("aria-current", "true");
   await expect(reworded).not.toHaveAttribute("aria-current", "true");
   await expect(page.getByTestId("deal-recommendation")).toHaveText("Counter recommended");
-  await expect(page.getByTestId("deal-steps").getByRole("link", { name: /Respond/ })).toHaveAttribute("href", "/deals#counters");
+  await expect(page.getByTestId("deal-steps").getByRole("link", { name: /Reply/ })).toHaveAttribute("href", "/deals#counters");
   await expect(page.getByTestId("deal-steps").getByRole("link", { name: /Agreed/ })).toHaveAttribute("href", "/deals#commitments");
   const originalId = await page.evaluate(() => JSON.parse(sessionStorage.getItem("tl-demo-v2") ?? "{}").offerId);
   // Picking the latest message folded the thread; the earlier ones are one click away.
@@ -110,7 +112,7 @@ test("opening a message reads it, and the evaluated deal reads in the owner's or
   await expect(response.getByTestId("deal-option-Option-B")).toHaveCount(0);
 
   // The next step points at the response; the disclosures are closed and hold the evidence.
-  await expect(next.getByRole("link", { name: "See what we'd offer back" })).toHaveAttribute("href", "#counters");
+  await expect(next.getByRole("link", { name: "See the counter-offer" })).toHaveAttribute("href", "#counters");
   for (const id of ["deal-why", "deal-original", "deal-calc"]) {
     await expect(page.getByTestId(id)).not.toHaveAttribute("open", "");
   }

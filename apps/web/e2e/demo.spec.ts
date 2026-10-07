@@ -111,7 +111,8 @@ test("demo stepper walks Scene 1, Scene 2, Scene 3 and Security with the golden 
   await expect(page.getByTestId("capex-as-of")).toContainText("day 0");
 
   await next(page, /\/approvals/);
-  // The queue reason, as the server words it.
+  // The queue reason, as the server words it, one click away behind "Why it needs you".
+  await page.getByTestId("approval-why").first().locator("> summary").click();
   await expect(page.getByText(/apply for facility Equipment term loan/i).first()).toBeVisible();
 
   // Security: the FastCapital message.

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Badge, Button, Card } from "@/components/ui";
+import { localNames, plainDays } from "@/lib/business-words";
 import { useI18n } from "@/lib/i18n";
 import type { CounterProposal, Displayed, NegotiationView, VerdictView } from "@/lib/types";
 
@@ -13,8 +14,8 @@ type Counter = Displayed<CounterProposal> & { text_when?: string; rationale_when
  * cost, or the net economic cost with the funding cost and the offset beside it, never "¥0.00" alone), and the
  * reasoning behind "Details". Formulas stay in the calculation disclosure of the page.
  */
-function CounterBusinessCard({ c, recommended }: { c: Counter; recommended: boolean }) {
-  const { t } = useI18n();
+function CounterBusinessCard({ c, recommended, today }: { c: Counter; recommended: boolean; today: number }) {
+  const { t, lang } = useI18n();
   const e = c.economics ?? null;
   return (
     <li className={`rounded-lg border p-4 ${recommended ? "border-brand-600 bg-brand-50/40" : "border-line"}`} data-testid={`deal-option-${c.label.replace(/\s+/g, "-")}`}>
@@ -23,7 +24,7 @@ function CounterBusinessCard({ c, recommended }: { c: Counter; recommended: bool
         {recommended ? <Badge tone="brand">{t("biz.deals.option.recommended")}</Badge> : null}
       </div>
       <p className="mt-2 text-sm text-ink" data-testid="deal-option-text">
-        {c.text_when ?? c.text}
+        {localNames(c.text_when ?? plainDays(c.text, today, t), lang)}
       </p>
       <dl className="mt-3 text-sm">
         {e?.is_net ? (
@@ -55,7 +56,7 @@ function CounterBusinessCard({ c, recommended }: { c: Counter; recommended: bool
       </dl>
       <details className="mt-3 text-sm" data-testid="deal-option-details">
         <summary className="cursor-pointer text-xs font-medium text-brand-700">{t("biz.deals.details")}</summary>
-        <p className="mt-1.5 text-ink-2">{c.rationale_when ?? c.rationale}</p>
+        <p className="mt-1.5 text-ink-2">{localNames(c.rationale_when ?? plainDays(c.rationale, today, t), lang)}</p>
       </details>
     </li>
   );
@@ -66,7 +67,7 @@ function CounterBusinessCard({ c, recommended }: { c: Counter; recommended: bool
  * and what the simulated negotiation decided when it ran. The counters are the verifier's, priced and re-checked on the
  * books; the card only shows them.
  */
-export function RecommendedResponse({ v, negotiation }: { v: VerdictView; negotiation: NegotiationView | null }) {
+export function RecommendedResponse({ v, negotiation, today }: { v: VerdictView; negotiation: NegotiationView | null; today: number }) {
   const { t } = useI18n();
   const [compare, setCompare] = useState(false);
   const counters = v.counters as Counter[];
@@ -83,8 +84,8 @@ export function RecommendedResponse({ v, negotiation }: { v: VerdictView; negoti
   return (
     <Card id="counters" title={t("biz.deals.response")} subtitle={t("biz.deals.counters.sub")}>
       <ul className="space-y-3">
-        <CounterBusinessCard c={first} recommended />
-        {compare ? rest.map((c) => <CounterBusinessCard key={c.id} c={c} recommended={false} />) : null}
+        <CounterBusinessCard c={first} recommended today={today} />
+        {compare ? rest.map((c) => <CounterBusinessCard key={c.id} c={c} recommended={false} today={today} />) : null}
       </ul>
       <div className="mt-3 flex flex-wrap items-center gap-3">
         {rest.length ? (

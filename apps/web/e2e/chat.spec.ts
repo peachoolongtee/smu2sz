@@ -102,7 +102,7 @@ test("buyer: the FastCapital message gets only the refusal reply, no verdict, an
   await page.goto("/chat");
   await signIn(page); // signed in as owner on purpose: a buyer turn must still carry no token
 
-  await page.getByRole("radio", { name: "Buyer (counterparty)" }).check();
+  await page.getByRole("radio", { name: "Test as a buyer" }).check();
   await page.getByTestId("chat-counterparty").selectOption("FASTCAPITAL");
   await page.getByTestId("prompt-fastcapital").click();
 

@@ -2,31 +2,24 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { CheckIcon, XIcon } from "@/components/icons";
-import { TierBadge } from "@/components/badges";
+import { Avatar, BizCard, BizPageHeader, Chip, Disclosure, PageIcon, SectionHead, pillSecondary } from "@/components/business/kit";
+import { CartIcon, CheckIcon, ChevronRightIcon, ClockIcon, ShieldCheckIcon, SlidersIcon, XIcon } from "@/components/icons";
 import { ViolationCard } from "@/components/verdict-parts";
-import {
-  Badge,
-  Button,
-  Callout,
-  Card,
-  EmptyState,
-  ErrorState,
-  KeyValueList,
-  PageHeader,
-  Stat,
-  TableWrap,
-  tableCls,
-  tdCls,
-  thCls,
-} from "@/components/ui";
+import { Button, ErrorState, KeyValueList } from "@/components/ui";
 import { downloadFile } from "@/lib/api";
+import { localNames } from "@/lib/business-words";
 import { runBorrowerFile, runCapex, runCapexApply } from "@/lib/demo";
 import { useDemo } from "@/lib/demo-store";
 import { useI18n } from "@/lib/i18n";
 
+/**
+ * Buy equipment (capex), as the owner asks it: is the machine worth it (one verdict card with the net present value, the
+ * payback and the leverage after), how should it be paid for (one row per way to pay, its monthly cover checks one tap
+ * away), and what to do next (apply, which waits for the owner's approval; the borrower file). Why a way fails, the
+ * assumptions and the file itself wait behind disclosures. Every figure is the server's; evaluating writes nothing.
+ */
 export default function CapexPage() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const demo = useDemo();
   const [busy, setBusy] = useState<"capex" | "file" | "apply" | string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -37,6 +30,7 @@ export default function CapexPage() {
   const worth = capex?.worth_doing !== false;
   const selectedStructure = capex?.structures.find((s) => s.id === capex.selected_id);
   const canPrepareFile = Boolean(selectedStructure && !selectedStructure.hypothetical && selectedStructure.facility_id);
+  const failing = capex?.structures.filter((s) => s.violations.length) ?? [];
 
   async function run(kind: "capex" | "file" | "apply") {
     setBusy(kind);
@@ -64,224 +58,205 @@ export default function CapexPage() {
 
   return (
     <>
-      <PageHeader title={t("capex.title")} subtitle={t("capex.subtitle")} />
-      {error ? <ErrorState error={error} /> : null}
+      <BizPageHeader
+        title={t("biz.capex.title")}
+        sub={t("biz.capex.sub")}
+        icon={
+          <PageIcon tone="orange">
+            <CartIcon width={22} height={22} />
+          </PageIcon>
+        }
+      />
+      {error ? (
+        <div className="mb-4">
+          <ErrorState error={error} />
+        </div>
+      ) : null}
 
       {!capex ? (
-        <EmptyState
-          title={t("capex.empty.title")}
-          body={t("capex.empty.body")}
-          action={
-            <Button variant="primary" loading={busy === "capex"} onClick={() => void run("capex")}>
+        // Before the question is asked: what this page answers, and one button to ask it.
+        <div className="rise space-y-4">
+          <section className="hero relative overflow-hidden rounded-[1.75rem] p-6 shadow-(--shadow-lift) lg:p-8" data-status="WATCH">
+            <span className="grid size-12 place-items-center rounded-full bg-white/12 ring-1 ring-white/15">
+              <CartIcon width={22} height={22} />
+            </span>
+            <h2 className="mt-4 max-w-xl text-2xl font-semibold leading-tight tracking-tight lg:text-[2rem]">{t("biz.capex.ask")}</h2>
+            <p className="mt-2 max-w-xl text-white/70">{t("biz.capex.askSub")}</p>
+            <Button variant="primary" className="mt-6 !bg-white !text-ink hover:!bg-white/90" loading={busy === "capex"} onClick={() => void run("capex")}>
               {t("capex.evaluate")}
             </Button>
-          }
-        />
+          </section>
+          <ul className="grid gap-3 sm:grid-cols-3">
+            {(
+              [
+                [<CheckIcon key="i" width={18} height={18} />, "biz.capex.how1", "ok"],
+                [<SlidersIcon key="i" width={18} height={18} />, "biz.capex.how2", "brand"],
+                [<ShieldCheckIcon key="i" width={18} height={18} />, "biz.capex.how3", "violet"],
+              ] as const
+            ).map(([icon, key, tone]) => (
+              <li key={key} className="flex items-start gap-3 rounded-(--radius-card) border border-line bg-surface p-4 shadow-(--shadow-card)">
+                <Avatar tone={tone}>{icon}</Avatar>
+                <p className="text-sm text-ink-2">{t(key)}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
       ) : (
-        <div className="space-y-6">
-          <Callout tone={worth ? "info" : "warn"}>
-            <p data-testid="capex-recommendation">{capex.recommendation ?? (worth ? null : t("capex.notWorth"))}</p>
-            {capex.estimate_note ? <p className="mt-1 text-xs">{capex.estimate_note}</p> : null}
-            {capex.as_of_day !== undefined ? (
-              <p className="mt-1 text-xs" data-testid="capex-as-of">
-                {t("capex.asOf", { day: capex.as_of_day })}
+        <div className="rise space-y-8">
+          {/* The verdict: worth it or not, in one card. */}
+          <BizCard className={`overflow-hidden p-0 ${worth ? "" : ""}`}>
+            <div className={`px-5 pb-5 pt-5 lg:px-6 ${worth ? "bg-linear-to-br from-ok-bg to-surface" : "bg-linear-to-br from-warn-bg to-surface"}`}>
+              <Chip tone={worth ? "ok" : "warn"}>{worth ? t("biz.capex.worth") : t("biz.capex.notWorth")}</Chip>
+              <p className="mt-3 max-w-3xl text-lg font-semibold leading-snug tracking-tight text-ink" data-testid="capex-recommendation">
+                {capex.recommendation ?? (worth ? null : t("capex.notWorth"))}
               </p>
-            ) : null}
-          </Callout>
+            </div>
+            <dl className="grid grid-cols-2 gap-px border-t border-line bg-line sm:grid-cols-4">
+              {(
+                [
+                  [t("capex.npv"), capex.npv_display, capex.request.label, capex.npv_fen < 0 ? "text-bad-fg" : "text-ok-fg"],
+                  [t("capex.payback"), capex.payback_month !== null ? t("capex.paybackValue", { n: capex.payback_month }) : t("common.none"), null, "text-ink"],
+                  [t("capex.leverage"), capex.leverage_financed ? `${capex.leverage_financed.text}×` : t("common.none"), t("capex.leverage.limit", { limit: capex.leverage_limit_display }), "text-ink"],
+                  [t("capex.leverageExt"), capex.leverage_with_extension ? `${capex.leverage_with_extension.text}×` : t("common.none"), t("capex.leverageExt.hint"), "text-ink"],
+                ] as const
+              ).map(([k, v, hint, tone]) => (
+                <div key={k} className="min-w-0 bg-surface px-5 py-4">
+                  <dt className="text-sm text-ink-3">{k}</dt>
+                  <dd className={`figure mt-0.5 text-xl font-semibold ${tone}`}>{v}</dd>
+                  {hint ? <dd className="text-xs text-ink-3">{hint}</dd> : null}
+                </div>
+              ))}
+            </dl>
+            <Disclosure summary={t("biz.capex.basis")} className="border-t border-line px-5">
+              <div className="space-y-1 text-sm text-ink-2">
+                {capex.estimate_note ? <p>{capex.estimate_note}</p> : null}
+                {capex.as_of_day !== undefined ? <p data-testid="capex-as-of">{t("capex.asOf", { day: capex.as_of_day })}</p> : null}
+              </div>
+            </Disclosure>
+          </BizCard>
 
-          <dl className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-            <Stat label={t("capex.npv")} value={capex.npv_display} hint={capex.request.label} tone={capex.npv_fen < 0 ? "bad" : "ok"} />
-            <Stat
-              label={t("capex.payback")}
-              value={capex.payback_month !== null ? t("capex.paybackValue", { n: capex.payback_month }) : t("common.none")}
-            />
-            <Stat
-              label={t("capex.leverage")}
-              value={capex.leverage_financed ? `${capex.leverage_financed.text}×` : t("common.none")}
-              hint={t("capex.leverage.limit", { limit: capex.leverage_limit_display })}
-            />
-            <Stat
-              label={t("capex.leverageExt")}
-              value={capex.leverage_with_extension ? `${capex.leverage_with_extension.text}×` : t("common.none")}
-              hint={t("capex.leverageExt.hint")}
-            />
-          </dl>
-
-          <Card id="structures" title={t("capex.structures")} subtitle={t("capex.structures.sub", { limit: capex.dscr_limit_display })}>
-            <p className="mb-2 text-xs text-ink-3">{t("dscr.readingNote")}</p>
-            <TableWrap label={t("capex.structures")}>
-              <table className={`${tableCls} min-w-[50rem]`}>
-                <caption className="sr-only">{t("capex.structures")}</caption>
-                <thead>
-                  <tr>
-                    <th scope="col" className={`${thCls} sticky left-0 z-10`}>{t("capex.structure")}</th>
-                    <th scope="col" className={`${thCls} text-right`}>{t("capex.monthly")}</th>
-                    <th scope="col" className={`${thCls} text-right`}>{t("capex.interest")}</th>
-                    <th scope="col" className={`${thCls} text-right`} title={t("capex.charges.hint")}>{t("capex.charges")}</th>
-                    {[1, 2, 3, 4, 5, 6].map((m) => (
-                      <th key={m} scope="col" className={`${thCls} text-right`}>
-                        {t("capex.dscrMonth", { n: m })}
-                      </th>
-                    ))}
-                    <th scope="col" className={thCls}>{t("capex.result")}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {capex.structures.map((s) => {
-                    const selected = s.id === capex.selected_id;
-                    return (
-                      <tr key={s.id} className={selected ? "bg-ok-bg/60" : ""} data-testid={`structure-${s.id}`}>
-                        <th scope="row" className={`${tdCls} sticky left-0 z-10 min-w-36 text-left font-medium ${selected ? "bg-ok-bg" : "bg-surface"}`}>
-                          {s.label}
-                          {selected ? (
-                            <Badge tone="ok" className="mt-1 flex w-fit">
-                              <CheckIcon />
-                              {t("capex.selected")}
-                            </Badge>
+          {/* Ways to pay: one row each, the monthly payment on the right; the monthly checks behind a tap. */}
+          <section aria-labelledby="capex-ways-title">
+            <SectionHead id="capex-ways-title" title={t("biz.capex.ways")} sub={t("biz.capex.waysSub", { limit: capex.dscr_limit_display })} />
+            <BizCard className="p-1.5">
+              <ul>
+                {capex.structures.map((s) => {
+                  const selected = s.id === capex.selected_id;
+                  const verdict = s.hypothetical
+                    ? { label: t("capex.hypothetical"), tone: "warn" as const }
+                    : !s.feasible
+                      ? { label: t("capex.infeasible"), tone: "bad" as const }
+                      : selected
+                        ? { label: t("capex.selected"), tone: "ok" as const }
+                        : { label: worth ? t("capex.feasible") : t("capex.notRecommended"), tone: "neutral" as const };
+                  return (
+                    <li key={s.id} data-testid={`structure-${s.id}`}>
+                      <details className={`rounded-2xl ${selected ? "bg-ok-bg/50" : ""}`}>
+                        <summary className="flex min-h-16 items-center gap-3 rounded-2xl px-4 py-3 hover:bg-subtle">
+                          <Avatar tone={selected ? "ok" : !s.feasible ? "bad" : "neutral"}>{selected ? <CheckIcon width={16} height={16} /> : !s.feasible ? <XIcon width={14} height={14} /> : <ClockIcon width={18} height={18} />}</Avatar>
+                          <span className="min-w-0 flex-1">
+                            <span className="block font-semibold text-ink">{localNames(s.label, lang)}</span>
+                            <span className="mt-1 flex flex-wrap items-center gap-1.5">
+                              <Chip tone={verdict.tone}>{verdict.label}</Chip>
+                            </span>
+                          </span>
+                          <span className="shrink-0 text-right">
+                            <span className="figure block font-semibold text-ink">{s.monthly_payment_display ?? t("common.none")}</span>
+                            <span className="block text-xs text-ink-3">{t("capex.monthly")}</span>
+                          </span>
+                          <ChevronRightIcon className="chev shrink-0 text-ink-3" />
+                        </summary>
+                        <div className="space-y-3 px-4 pb-4 text-sm">
+                          <dl className="grid grid-cols-2 gap-3">
+                            <div className="rounded-xl bg-surface px-3 py-2 ring-1 ring-line">
+                              <dt className="text-xs text-ink-3">{t("capex.interest")}</dt>
+                              <dd className="figure font-semibold">{s.total_interest_display ?? t("common.none")}</dd>
+                            </div>
+                            <div className="rounded-xl bg-surface px-3 py-2 ring-1 ring-line">
+                              <dt className="text-xs text-ink-3" title={t("capex.charges.hint")}>
+                                {t("capex.charges")}
+                              </dt>
+                              <dd className="figure font-semibold">{s.charges_total_display ?? t("common.none")}</dd>
+                            </div>
+                          </dl>
+                          {s.dscr_by_month.length ? (
+                            <div>
+                              <p className="text-xs text-ink-3">{t("biz.capex.cover")}</p>
+                              <ul className="mt-1.5 flex flex-wrap gap-1.5">
+                                {s.dscr_by_month.slice(0, 6).map((cell) => (
+                                  <li
+                                    key={cell.month}
+                                    className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${cell.passes ? "bg-ok-bg text-ok-fg" : "bg-bad-bg text-bad-fg"}`}
+                                    title={cell.passes ? t("capex.passes") : t("capex.fails")}
+                                  >
+                                    {cell.passes ? <CheckIcon width={12} height={12} /> : <XIcon width={12} height={12} />}
+                                    {t("biz.capex.month", { n: cell.month })} {cell.dscr.text}&times;
+                                  </li>
+                                ))}
+                              </ul>
+                              <p className="mt-1.5 text-xs text-ink-3">{t("dscr.readingNote")}</p>
+                            </div>
                           ) : null}
-                        </th>
-                        <td className={`${tdCls} whitespace-nowrap text-right font-medium tabular-nums`}>
-                          {s.monthly_payment_display ?? t("common.none")}
-                        </td>
-                        <td className={`${tdCls} whitespace-nowrap text-right tabular-nums`}>{s.total_interest_display ?? t("common.none")}</td>
-                        <td className={`${tdCls} whitespace-nowrap text-right font-medium tabular-nums`}>{s.charges_total_display ?? t("common.none")}</td>
-                        {[1, 2, 3, 4, 5, 6].map((m) => {
-                          const cell = s.dscr_by_month.find((d) => d.month === m);
-                          return (
-                            <td key={m} className={`${tdCls} text-right tabular-nums`}>
-                              {cell ? (
-                                <span
-                                  className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs font-semibold ${
-                                    cell.passes ? "bg-ok-bg text-ok-fg" : "bg-bad-bg text-bad-fg"
-                                  }`}
-                                  title={cell.passes ? t("capex.passes") : t("capex.fails")}
-                                >
-                                  {cell.passes ? <CheckIcon width={12} height={12} /> : <XIcon width={12} height={12} />}
-                                  {cell.dscr.text}&times;
-                                </span>
-                              ) : (
-                                <span className="text-ink-3">{t("common.none")}</span>
-                              )}
-                            </td>
-                          );
-                        })}
-                        <td className={`${tdCls} min-w-48`}>
-                          {s.hypothetical ? (
-                            <Badge tone="warn" title={t("capex.hypothetical.hint")}>
-                              {t("capex.hypothetical")}
-                            </Badge>
-                          ) : (
-                            <Badge tone={!s.feasible ? "bad" : selected || worth ? "ok" : "neutral"}>
-                              {!s.feasible ? t("capex.infeasible") : selected || worth ? t("capex.feasible") : t("capex.notRecommended")}
-                            </Badge>
-                          )}
-                          <p className="mt-1 text-xs text-ink-2">{s.note}</p>
-                          {s.extra_cost_vs_selected_display ? (
-                            <p className="mt-1 text-xs font-medium text-warn-fg">
-                              {t("capex.dearer", { amount: s.extra_cost_vs_selected_display })}
-                            </p>
-                          ) : null}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </TableWrap>
-          </Card>
-
-          <section aria-labelledby="capex-fail-title">
-            <h2 id="capex-fail-title" className="mb-2 text-sm font-semibold">
-              {t("capex.why")}
-            </h2>
-            <ul className="grid gap-4 xl:grid-cols-2">
-              {capex.structures
-                .filter((s) => s.violations.length)
-                .flatMap((s) => s.violations.map((v) => <ViolationCard key={`${s.id}-${v.code}`} v={v} />))}
-            </ul>
+                          {s.note ? <p className="text-ink-2">{s.note}</p> : null}
+                          {s.extra_cost_vs_selected_display ? <p className="font-medium text-warn-fg">{t("capex.dearer", { amount: s.extra_cost_vs_selected_display })}</p> : null}
+                          {s.hypothetical ? <p className="text-xs text-ink-3">{t("capex.hypothetical.hint")}</p> : null}
+                        </div>
+                      </details>
+                    </li>
+                  );
+                })}
+              </ul>
+            </BizCard>
           </section>
 
-          <Card id="tier" title={t("capex.tier")} tone="warn" actions={<TierBadge tier={capex.required_tier} explain />}>
-            <p className="text-sm text-ink-2">{t("capex.tier.body")}</p>
-            {canPrepareFile ? null : (
-              <p className="mt-3 text-sm font-medium text-warn-fg" data-testid="capex-no-file">
-                {t("capex.noFile")}
-              </p>
-            )}
-            <p className="mt-3 text-xs text-ink-2">{t("capex.apply.hint")}</p>
-            <div className="mt-3 flex flex-wrap items-center gap-2">
-              <Button
-                variant="primary"
-                loading={busy === "apply"}
-                disabled={Boolean(application) || !canPrepareFile || !worth}
-                onClick={() => void run("apply")}
-                data-testid="capex-apply"
-              >
+          {/* The next step: applying is the owner's act and waits for approval; the borrower file is prepared, never sent. */}
+          <BizCard className="p-5 lg:p-6">
+            <div className="flex items-start gap-3.5">
+              <Avatar tone="violet" size="lg">
+                <ShieldCheckIcon width={22} height={22} />
+              </Avatar>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium text-ink-3">{t("biz.capex.nextLabel")}</p>
+                <h2 className="text-xl font-semibold tracking-tight text-ink">{t("biz.capex.next")}</h2>
+                <p className="mt-1 text-sm text-ink-2">{t("capex.apply.hint")}</p>
+                {canPrepareFile ? null : (
+                  <p className="mt-2 text-sm font-medium text-warn-fg" data-testid="capex-no-file">
+                    {t("capex.noFile")}
+                  </p>
+                )}
+              </div>
+            </div>
+            <div className="mt-5 flex flex-wrap items-center gap-2">
+              <Button variant="primary" loading={busy === "apply"} disabled={Boolean(application) || !canPrepareFile || !worth} onClick={() => void run("apply")} data-testid="capex-apply">
                 {application ? t("capex.applied") : t("capex.apply")}
               </Button>
-              <Button
-                variant="secondary"
-                loading={busy === "file"}
-                disabled={Boolean(file) || !canPrepareFile}
-                onClick={() => void run("file")}
-                data-testid="capex-file"
-              >
+              <Button variant="secondary" loading={busy === "file"} disabled={Boolean(file) || !canPrepareFile} onClick={() => void run("file")} data-testid="capex-file">
                 {file ? t("capex.file.done") : t("capex.file.generate")}
               </Button>
               {application ? (
-                <Link
-                  href="/approvals"
-                  className="text-sm font-medium text-brand-700 underline underline-offset-2"
-                  data-testid="capex-applied"
-                >
+                <Link href="/approvals" className={pillSecondary} data-testid="capex-applied">
                   {t("capex.applied.review")}
                 </Link>
               ) : null}
             </div>
-            {application?.approval_id ? (
-              <p className="mt-2 text-xs text-ink-2">{t("capex.applied.body", { id: application.approval_id })}</p>
-            ) : null}
-          </Card>
-
-          {capex.assumptions?.length ? (
-            <Card id="assumptions" title={t("capex.assumptions")}>
-              <ul className="list-disc space-y-1 pl-5 text-sm text-ink-2" data-testid="capex-assumptions">
-                {capex.assumptions.map((a) => (
-                  <li key={a}>{a}</li>
-                ))}
-              </ul>
-            </Card>
-          ) : null}
+            {application?.approval_id ? <p className="mt-3 text-sm text-ink-2">{t("capex.applied.body", { id: application.approval_id })}</p> : null}
+            <Disclosure summary={t("capex.tier")} className="mt-3 border-t border-line pt-1">
+              <p className="text-sm text-ink-2">{t("capex.tier.body")}</p>
+            </Disclosure>
+          </BizCard>
 
           {file ? (
-            <Card
-              id="file"
-              title={t("capex.file.title")}
-              subtitle={file.style}
-              actions={<Badge tone="warn">{t("capex.file.status")}</Badge>}
-            >
-              <p className="mb-3 text-xs text-ink-2" data-testid="file-as-of">
-                {t("capex.file.asOf", { day: file.generated_day })}
-              </p>
-              <div className="grid gap-4 md:grid-cols-2">
-                {file.sections.map((sec) => (
-                  <div key={sec.title} className="rounded-lg border border-line p-3">
-                    <h3 className="mb-2 text-sm font-semibold">{sec.title}</h3>
-                    <KeyValueList items={sec.rows.map((r) => ({ k: r.label, v: r.value }))} />
-                    {sec.notes?.length ? (
-                      <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-ink-2">
-                        {sec.notes.map((n) => (
-                          <li key={n}>{n}</li>
-                        ))}
-                      </ul>
-                    ) : null}
-                  </div>
-                ))}
+            <BizCard className="p-5 lg:p-6" testId="capex-borrower-file">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <h2 className="text-lg font-semibold tracking-tight text-ink">{t("capex.file.title")}</h2>
+                  <p className="text-sm text-ink-3">{file.style}</p>
+                </div>
+                <Chip tone="warn">{t("capex.file.status")}</Chip>
               </div>
               <div className="mt-4 flex flex-wrap items-center gap-2" data-testid="borrower-file-downloads">
                 {file.downloads ? (
                   <>
-                    <span className="text-sm font-medium">{t("capex.file.download")}</span>
                     {(
                       [
                         ["html", file.downloads.html, "capex.file.html"],
@@ -290,39 +265,67 @@ export default function CapexPage() {
                       ] as const
                     ).map(([kind, path, label]) =>
                       path ? (
-                        <Button
-                          key={kind}
-                          variant="secondary"
-                          loading={busy === `download-${kind}`}
-                          disabled={busy !== null}
-                          onClick={() => void download(kind, path, file.file_id)}
-                          data-testid={`download-${kind}`}
-                        >
-                          {t(label)}
+                        <Button key={kind} variant="secondary" loading={busy === `download-${kind}`} disabled={busy !== null} onClick={() => void download(kind, path, file.file_id)} data-testid={`download-${kind}`}>
+                          {t("capex.file.download")} · {t(label)}
                         </Button>
                       ) : null,
                     )}
                     {file.pdf_note ? <span className="text-xs text-ink-3">{file.pdf_note}</span> : null}
                   </>
                 ) : (
-                  <p className="text-xs text-ink-3">{t("capex.file.mockDownload")}</p>
+                  <p className="text-sm text-ink-3">{t("capex.file.mockDownload")}</p>
                 )}
               </div>
-              {file.provenance ? (
-                <p className="mt-2 text-xs text-ink-2" data-testid="file-provenance">
-                  {t("capex.file.provenance", {
-                    day: file.provenance.generated_day,
-                    state: file.provenance.state_version,
-                    mandate: file.provenance.mandate_version,
-                    hash: file.provenance.evidence_hash.slice(0, 12),
-                  })}
+              <Disclosure summary={t("biz.capex.fileContents")} className="mt-3 border-t border-line pt-1">
+                <p className="mb-3 text-xs text-ink-3" data-testid="file-as-of">
+                  {t("capex.file.asOf", { day: file.generated_day })}
                 </p>
-              ) : null}
-              <div className="mt-3">
-                <Callout tone="info">{file.lender_note ?? t("capex.file.note")}</Callout>
-              </div>
-            </Card>
+                <div className="grid gap-3 md:grid-cols-2">
+                  {file.sections.map((sec) => (
+                    <div key={sec.title} className="rounded-2xl bg-subtle p-4">
+                      <h3 className="mb-2 text-sm font-semibold">{sec.title}</h3>
+                      <KeyValueList items={sec.rows.map((r) => ({ k: r.label, v: r.value }))} />
+                      {sec.notes?.length ? (
+                        <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-ink-2">
+                          {sec.notes.map((n) => (
+                            <li key={n}>{n}</li>
+                          ))}
+                        </ul>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
+                {file.provenance ? (
+                  <p className="mt-3 text-xs text-ink-3" data-testid="file-provenance">
+                    {t("capex.file.provenance", {
+                      day: file.provenance.generated_day,
+                      state: file.provenance.state_version,
+                      mandate: file.provenance.mandate_version,
+                      hash: file.provenance.evidence_hash.slice(0, 12),
+                    })}
+                  </p>
+                ) : null}
+                <p className="mt-2 text-xs text-ink-3">{file.lender_note ?? t("capex.file.note")}</p>
+              </Disclosure>
+            </BizCard>
           ) : null}
+
+          <div className="space-y-3">
+            {failing.length ? (
+              <Disclosure card summary={t("capex.why")} testId="capex-why">
+                <ul className="grid gap-4 xl:grid-cols-2">{failing.flatMap((s) => s.violations.map((v) => <ViolationCard key={`${s.id}-${v.code}`} v={v} />))}</ul>
+              </Disclosure>
+            ) : null}
+            {capex.assumptions?.length ? (
+              <Disclosure card summary={t("capex.assumptions")}>
+                <ul className="list-disc space-y-1.5 pl-5 text-sm text-ink-2" data-testid="capex-assumptions">
+                  {capex.assumptions.map((a) => (
+                    <li key={a}>{a}</li>
+                  ))}
+                </ul>
+              </Disclosure>
+            ) : null}
+          </div>
         </div>
       )}
     </>

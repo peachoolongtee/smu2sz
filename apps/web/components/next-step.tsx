@@ -10,7 +10,7 @@ import { ArrowRightIcon } from "./icons";
 export function NextStep({ label, children, action, testId = "next-step" }: { label: string; children: ReactNode; action?: ReactNode; testId?: string }) {
   return (
     <div
-      className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-brand-600 bg-brand-50 px-4 py-3"
+      className="next-step mb-5 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-brand-600 bg-brand-50 px-4 py-3"
       role="region"
       aria-label={label}
       data-testid={testId}

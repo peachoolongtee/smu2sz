@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Area, AreaChart, CartesianGrid, ReferenceArea, ReferenceDot, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { localNames, plainDays } from "@/lib/business-words";
 import { axisFloor, axisYuanK } from "@/lib/chart-helpers";
+import type { DictKey } from "@/lib/dictionary";
 import { useI18n } from "@/lib/i18n";
 import type { HomeSeriesPoint, HomeView } from "@/lib/types";
 
@@ -25,6 +27,22 @@ const ZONE = "#fdecea";
 const HORIZONS = [30, 60, 120] as const;
 type Horizon = (typeof HORIZONS)[number];
 const MAX_ANNOTATIONS = 4;
+
+/** A chart label must be a couple of words: the event's kind, or for a scheduled flow its own name before any detail. */
+const SHORT_LABEL: Partial<Record<string, DictKey>> = {
+  RECEIPT: "biz.forecast.ev.receipt",
+  EARLY_RECEIPT: "biz.forecast.ev.early",
+  ADVANCE: "biz.forecast.ev.advance",
+  DRAW: "biz.forecast.ev.draw",
+};
+function shortLabel(e: HomeSeriesPoint["events"][number], t: (k: DictKey) => string): string {
+  const key = SHORT_LABEL[e.kind];
+  if (key) return t(key);
+  return e.label.split(" (")[0].split(", ")[0];
+}
+function shortLabelIn(e: HomeSeriesPoint["events"][number], t: (k: DictKey) => string, lang: string): string {
+  return localNames(shortLabel(e, t), lang);
+}
 
 interface Row {
   day: number;
@@ -50,8 +68,22 @@ function defaultHorizon(h: HomeView): Horizon {
   return HORIZONS.find((n) => span <= n) ?? 120;
 }
 
+/** True on a phone-width screen, where the chart has room for fewer labels. */
+function useNarrow(): boolean {
+  const [narrow, setNarrow] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 639px)");
+    const update = () => setNarrow(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
+  return narrow;
+}
+
 export function CashForecast({ h }: { h: HomeView }) {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
+  const narrow = useNarrow();
   const [horizon, setHorizon] = useState<Horizon>(() => defaultHorizon(h));
   const today = h.day;
   const to = Math.min(today + horizon, today + h.cash.horizon_days);
@@ -63,11 +95,22 @@ export function CashForecast({ h }: { h: HomeView }) {
   const breachRow = breach === null ? undefined : data.find((r) => r.day === breach);
   const lowestRow = h.cash.lowest_day <= to ? data.find((r) => r.day === h.cash.lowest_day) : undefined;
   // The largest movements in the window, by the server's own event amounts (ordering fen is plotting, not reporting).
+  // Labels that would sit on top of each other are dropped: at most one per stretch of the axis, and none beside the
+  // first unsafe day or the lowest point, which carry their own marker.
+  const gap = Math.max(2, Math.round((to - today) / (narrow ? 5 : 10)));
+  const taken: number[] = [breach, lowestRow?.day ?? null].filter((d): d is number => d !== null);
   const annotations = data
     .flatMap((r) => r.events.map((e) => ({ day: r.day, cash: r.cash, e })))
     .filter((x) => x.e.kind === "FLOW" || x.e.kind === "RECEIPT" || x.e.kind === "EARLY_RECEIPT" || x.e.kind === "ADVANCE" || x.e.kind === "DRAW")
     .sort((a, b) => Math.abs(b.e.amount_fen) - Math.abs(a.e.amount_fen))
-    .slice(0, MAX_ANNOTATIONS);
+    .filter((x) => {
+      if (to - x.day < gap || taken.some((d) => Math.abs(d - x.day) < gap)) return false;
+      taken.push(x.day);
+      return true;
+    })
+    .slice(0, narrow ? 2 : MAX_ANNOTATIONS);
+  // With nothing to fix, the line is simply the forecast, not "if you do nothing".
+  const baseName = h.next_action ? t("biz.forecast.nothing") : t("biz.forecast.actual");
   const ticks: number[] = [];
   const step = horizon <= 30 ? 5 : horizon <= 60 ? 10 : 20;
   for (let d = today; d <= to; d += step) ticks.push(d);
@@ -105,20 +148,22 @@ export function CashForecast({ h }: { h: HomeView }) {
             <CartesianGrid stroke={GRID} vertical={false} />
             {/* The danger zone: anything plotted in here is below the minimum cash reserve. */}
             <ReferenceArea y1={yMin} y2={floor} fill={ZONE} fillOpacity={0.8} stroke="none" ifOverflow="extendDomain" />
+            {/* The zone continues to the bottom of the axis when the axis is rounded below the lowest value. */}
+            <ReferenceArea y1={yMin - Math.max(Math.abs(floor), Math.abs(yMin)) * 4} y2={yMin} fill={ZONE} fillOpacity={0.8} stroke="none" ifOverflow="hidden" />
             {yMin < 0 ? <ReferenceLine y={0} stroke={AXIS} strokeWidth={1} /> : null}
             <XAxis dataKey="day" type="number" domain={[today, to]} ticks={ticks} tickFormatter={tick} stroke={AXIS} fontSize={12} tickLine={false} />
             <YAxis width={56} tickFormatter={axisYuanK} domain={[yMin, "auto"]} stroke={AXIS} fontSize={12} tickLine={false} axisLine={false} />
-            <Tooltip content={<ForecastTooltip today={today} />} cursor={{ stroke: AXIS, strokeDasharray: "3 3" }} />
-            <ReferenceLine y={floor} stroke={SERIES.floor.stroke} strokeWidth={2} strokeDasharray="6 4" label={{ value: `${t("biz.reserveMin")} ${h.cash.floor_short}`, position: "insideBottomRight", fill: SERIES.floor.stroke, fontSize: 11 }} />
+            <Tooltip content={<ForecastTooltip today={today} baseName={baseName} />} cursor={{ stroke: AXIS, strokeDasharray: "3 3" }} />
+            <ReferenceLine y={floor} stroke={SERIES.floor.stroke} strokeWidth={2} strokeDasharray="6 4" label={narrow ? undefined : { value: `${t("biz.reserveMin")} ${h.cash.floor_short}`, position: "insideBottomRight", fill: SERIES.floor.stroke, fontSize: 11 }} />
             {breach !== null ? (
               <ReferenceLine x={breach} stroke={SERIES.floor.stroke} strokeDasharray="2 3" label={{ value: t("biz.forecast.unsafe", { when: h.cash.first_breach_when ?? "" }), position: "top", fill: SERIES.floor.stroke, fontSize: 11, fontWeight: 600 }} />
             ) : null}
-            <Area type="stepAfter" dataKey="cash" name={t("biz.forecast.nothing")} stroke={SERIES.cash.stroke} strokeWidth={2} fill="url(#cash-forecast-fill)" isAnimationActive={false} activeDot={{ r: 5, stroke: "#fff", strokeWidth: 2, fill: SERIES.cash.stroke }} />
+            <Area type="stepAfter" dataKey="cash" name={baseName} stroke={SERIES.cash.stroke} strokeWidth={2} fill="url(#cash-forecast-fill)" isAnimationActive={false} activeDot={{ r: 5, stroke: "#fff", strokeWidth: 2, fill: SERIES.cash.stroke }} />
             {h.cash.plan_series ? (
               <Area type="stepAfter" dataKey="plan" name={t("biz.forecast.plan")} stroke={SERIES.plan.stroke} strokeWidth={2} strokeDasharray="9 5" fill="none" isAnimationActive={false} connectNulls />
             ) : null}
             {annotations.map((a, i) => (
-              <ReferenceDot key={`${a.day}-${i}`} x={a.day} y={a.cash} r={4} fill="#fff" stroke={a.e.amount_fen < 0 ? SERIES.floor.stroke : SERIES.plan.stroke} strokeWidth={2} label={{ value: `${a.e.label.split(" (")[0].split(",")[0]} ${a.e.amount_short}`, position: a.e.amount_fen < 0 ? "bottom" : "top", fill: "#3f5068", fontSize: 10 }} />
+              <ReferenceDot key={`${a.day}-${i}`} x={a.day} y={a.cash} r={4} fill="#fff" stroke={a.e.amount_fen < 0 ? SERIES.floor.stroke : SERIES.plan.stroke} strokeWidth={2} label={{ value: `${shortLabelIn(a.e, t, lang)} ${a.e.amount_short}`, position: a.e.amount_fen < 0 ? "bottom" : "top", fill: "#3f5068", fontSize: 10 }} />
             ))}
             {breachRow ? <ReferenceDot x={breachRow.day} y={breachRow.cash} r={6} fill={SERIES.floor.stroke} stroke="#fff" strokeWidth={2} /> : null}
             {lowestRow && lowestRow.day !== breach ? (
@@ -129,17 +174,17 @@ export function CashForecast({ h }: { h: HomeView }) {
       </div>
 
       <ul className="flex flex-wrap gap-x-5 gap-y-1 text-xs text-ink-2">
-        <li className="flex items-center gap-1.5"><span className="inline-block h-0.5 w-5" style={{ background: SERIES.cash.stroke }} aria-hidden />{t("biz.forecast.nothing")}</li>
+        <li className="flex items-center gap-1.5"><span className="inline-block h-0.5 w-5" style={{ background: SERIES.cash.stroke }} aria-hidden />{baseName}</li>
         {h.cash.plan_series ? <li className="flex items-center gap-1.5"><span className="inline-block w-5 border-t-2 border-dashed" style={{ borderColor: SERIES.plan.stroke }} aria-hidden />{t("biz.forecast.plan")}</li> : null}
         <li className="flex items-center gap-1.5"><span className="inline-block w-5 border-t-2 border-dashed" style={{ borderColor: SERIES.floor.stroke }} aria-hidden />{t("biz.reserveMin")}</li>
       </ul>
 
-      <ForecastTable data={data} today={today} keep={[h.cash.lowest_day, breach]} />
+      <ForecastTable data={data} today={today} keep={[h.cash.lowest_day, breach]} baseName={baseName} />
     </figure>
   );
 }
 
-function ForecastTooltip({ active, payload, today }: { active?: boolean; payload?: { payload: Row }[]; today: number }) {
+function ForecastTooltip({ active, payload, today, baseName }: { active?: boolean; payload?: { payload: Row }[]; today: number; baseName: string }) {
   const { t } = useI18n();
   if (!active || !payload?.length) return null;
   const row = payload[0].payload;
@@ -147,12 +192,12 @@ function ForecastTooltip({ active, payload, today }: { active?: boolean; payload
   return (
     <div className="max-w-64 rounded-lg border border-line-strong bg-surface p-2.5 text-xs shadow-md">
       <p className="font-semibold text-ink">{when}</p>
-      <p className="mt-1 flex items-center justify-between gap-3 tabular-nums"><span className="text-ink-2">{t("biz.forecast.nothing")}</span><span className="font-medium text-ink">{row.cashDisplay}</span></p>
+      <p className="mt-1 flex items-center justify-between gap-3 tabular-nums"><span className="text-ink-2">{baseName}</span><span className="font-medium text-ink">{row.cashDisplay}</span></p>
       {row.planDisplay ? <p className="flex items-center justify-between gap-3 tabular-nums"><span className="text-ink-2">{t("biz.forecast.plan")}</span><span className="font-medium text-ink">{row.planDisplay}</span></p> : null}
       {row.events.length ? (
         <ul className="mt-1.5 space-y-0.5 border-t border-line pt-1.5 text-ink-2">
           {row.events.map((e, i) => (
-            <li key={i}>{e.label}: {e.amount_display}</li>
+            <li key={i}>{plainDays(e.label, today, t)}: {e.amount_display}</li>
           ))}
         </ul>
       ) : null}
@@ -161,7 +206,7 @@ function ForecastTooltip({ active, payload, today }: { active?: boolean; payload
 }
 
 /** The chart as a table, weekly plus the lowest and first-unsafe days, for screen readers and anyone who prefers numbers. */
-function ForecastTable({ data, today, keep }: { data: Row[]; today: number; keep: (number | null)[] }) {
+function ForecastTable({ data, today, keep, baseName }: { data: Row[]; today: number; keep: (number | null)[]; baseName: string }) {
   const { t } = useI18n();
   const shown = data.filter((r) => (r.day - today) % 7 === 0 || keep.includes(r.day));
   return (
@@ -172,7 +217,7 @@ function ForecastTable({ data, today, keep }: { data: Row[]; today: number; keep
           <thead className="sticky top-0 bg-subtle text-ink-2">
             <tr>
               <th className="px-2.5 py-1.5 font-semibold">{t("biz.forecast.col.when")}</th>
-              <th className="px-2.5 py-1.5 font-semibold">{t("biz.forecast.nothing")}</th>
+              <th className="px-2.5 py-1.5 font-semibold">{baseName}</th>
               {data.some((r) => r.plan !== null) ? <th className="px-2.5 py-1.5 font-semibold">{t("biz.forecast.plan")}</th> : null}
               <th className="px-2.5 py-1.5 font-semibold">{t("biz.forecast.col.events")}</th>
             </tr>
@@ -183,7 +228,7 @@ function ForecastTable({ data, today, keep }: { data: Row[]; today: number; keep
                 <td className="px-2.5 py-1.5 tabular-nums text-ink">{r.day === today ? t("biz.when.today") : t("biz.when.inDays", { n: r.day - today })}</td>
                 <td className="px-2.5 py-1.5 tabular-nums text-ink">{r.cashDisplay}</td>
                 {data.some((x) => x.plan !== null) ? <td className="px-2.5 py-1.5 tabular-nums text-ink">{r.planDisplay ?? ""}</td> : null}
-                <td className="px-2.5 py-1.5 text-ink-2">{r.events.map((e) => `${e.label}: ${e.amount_display}`).join("; ")}</td>
+                <td className="px-2.5 py-1.5 text-ink-2">{r.events.map((e) => `${plainDays(e.label, today, t)}: ${e.amount_display}`).join("; ")}</td>
               </tr>
             ))}
           </tbody>

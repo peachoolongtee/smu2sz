@@ -1,9 +1,13 @@
 "use client";
 
+import { PageIcon } from "@/components/business/kit";
+import { InboxInIcon } from "@/components/icons";
+
 import { Badge, Card, ErrorState, LoadingBlock, PageHeader, Stat, TableWrap, tableCls, tdCls, thCls } from "@/components/ui";
 import { getHome, getReconciliation, getState } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
 import { whenText } from "@/lib/when";
+import { localNames } from "@/lib/business-words";
 import { useAsync } from "@/lib/use-async";
 
 /**
@@ -22,10 +26,21 @@ export default function ReceivablesPage() {
   // Late rows first, then by due day; the page counts days, the server does the money.
   const invoices = data ? [...data.outstanding].sort((a, b) => Number(b.past_due) - Number(a.past_due) || a.due_day - b.due_day) : [];
   const error = recon.error ?? home.error;
+  // An early payment that arrived is listed once, under the payments received; the promise list keeps what is still awaited.
+  const promised = data?.promised?.filter((p) => p.status !== "RECEIVED") ?? [];
+  // A commitment id in brackets is an audit detail, not something the owner reads.
+  const plain = (text: string) => localNames(text.replace(/\s*\(commitment [^)]*\)/g, ""), lang);
+  const lateLabel = (dueDay: number) => t("biz.recv.late", { days: Math.max(0, (data?.as_of_day ?? 0) - dueDay) });
 
   return (
     <>
-      <PageHeader title={t("nav.receivables")} subtitle={t("biz.recv.subtitle")} />
+      <PageHeader
+        icon={
+          <PageIcon tone="orange">
+            <InboxInIcon width={22} height={22} />
+          </PageIcon>
+        }
+        title={t("nav.receivables")} subtitle={t("biz.recv.subtitle")} />
       {error ? (
         <ErrorState error={error} onRetry={() => { recon.reload(); home.reload(); }} />
       ) : !data || !r ? (
@@ -52,6 +67,24 @@ export default function ReceivablesPage() {
 
           {invoices.length ? (
             <Card id="recv-open" title={t("biz.recv.open")} subtitle={t("biz.recv.open.sub")}>
+              {/* On a phone the invoices are a list; the table needs the width of a larger screen. */}
+              <ul className="space-y-2 sm:hidden" data-testid="recv-open-list">
+                {invoices.map((o) => (
+                  <li key={o.receivable_id} className={`rounded-md border px-3 py-2 text-sm ${o.past_due ? "border-bad-line bg-bad-bg/40" : "border-line"}`}>
+                    <div className="flex items-baseline justify-between gap-3">
+                      <span className="min-w-0 font-medium text-ink">{name(o.counterparty_id)}</span>
+                      <span className="shrink-0 font-semibold tabular-nums">{o.face_display}</span>
+                    </div>
+                    <div className="mt-1 flex flex-wrap items-center justify-between gap-2 text-xs text-ink-3">
+                      <span>
+                        {t("biz.due")} {whenText(o.due_day, data.as_of_day, t)} · {o.receivable_id}
+                      </span>
+                      <Badge tone={o.past_due ? "bad" : "neutral"}>{o.past_due ? lateLabel(o.due_day) : t("recon.onTime")}</Badge>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+              <div className="hidden sm:block">
               <TableWrap label={t("biz.recv.open")}>
                 <table className={tableCls}>
                   <thead>
@@ -67,29 +100,30 @@ export default function ReceivablesPage() {
                       <tr key={o.receivable_id} className={o.past_due ? "bg-bad-bg/40" : ""} data-testid={`recv-${o.receivable_id}`}>
                         <td className={`${tdCls} font-medium`}>
                           {name(o.counterparty_id)}
-                          <span className="ml-2 font-mono text-xs font-normal text-ink-3">{o.receivable_id}</span>
+                          <span className="ml-2 text-xs font-normal text-ink-3">{o.receivable_id}</span>
                         </td>
                         <td className={`${tdCls} text-right tabular-nums`}>{o.face_display}</td>
                         <td className={`${tdCls} tabular-nums`}>{whenText(o.due_day, data.as_of_day, t)}</td>
                         <td className={tdCls}>
-                          <Badge tone={o.past_due ? "bad" : "neutral"}>{o.past_due ? t("biz.recv.late", { days: Math.max(0, data.as_of_day - o.due_day) }) : t("recon.onTime")}</Badge>
+                          <Badge tone={o.past_due ? "bad" : "neutral"}>{o.past_due ? lateLabel(o.due_day) : t("recon.onTime")}</Badge>
                         </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </TableWrap>
+              </div>
             </Card>
           ) : null}
 
-          {data.promised?.length ? (
+          {promised.length ? (
             <Card id="recv-promised" title={t("biz.recv.promised")} subtitle={t("biz.recv.promised.sub")} actions={data.lapsed_promises ? <Badge tone="bad">{`${t("recon.lapsed")}: ${data.lapsed_promises}`}</Badge> : undefined}>
               <ul className="space-y-2">
-                {data.promised.map((p) => (
+                {promised.map((p) => (
                   <li key={`${p.commitment_id}:${p.obligation_id}:${p.receivable_id}`} className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-line px-3 py-2 text-sm" data-testid={`promised-${p.receivable_id}`} data-status={p.status}>
                     <span>
                       <span className="font-medium text-ink">{name(p.counterparty_id)}</span>
-                      <span className="block text-xs text-ink-2">{p.detail}</span>
+                      <span className="block text-xs text-ink-2">{plain(p.detail)}</span>
                     </span>
                     <span className="flex items-center gap-2">
                       <span className="font-semibold tabular-nums">{p.expected_display}</span>
@@ -108,7 +142,7 @@ export default function ReceivablesPage() {
                   <li key={x.entry_hash} className={`rounded-md border px-3 py-2 text-sm ${x.flagged ? "border-bad-line bg-bad-bg/40" : "border-line"}`} data-testid={`receipt-${x.op_id}`}>
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <span className="font-medium text-ink">
-                        {name(x.counterparty_id)} · {x.receivable_id}
+                        {name(x.counterparty_id)}
                       </span>
                       <span className="flex items-center gap-2">
                         <span className="font-semibold tabular-nums">{x.received_display}</span>
@@ -117,10 +151,10 @@ export default function ReceivablesPage() {
                     </div>
                     <p className="mt-0.5 text-xs text-ink-2">
                       {x.day !== null ? `${whenText(x.day, data.as_of_day, t)} · ` : ""}
-                      {x.detail}
+                      {plain(x.detail)}
                     </p>
                     {x.bank_reference ? (
-                      <p className="mt-0.5 font-mono text-xs text-ink-3" data-testid={`receipt-ref-${x.op_id}`}>
+                      <p className="mt-0.5 text-xs text-ink-3" data-testid={`receipt-ref-${x.op_id}`}>
                         {t("recon.bankRef", { ref: x.bank_reference })}
                       </p>
                     ) : null}

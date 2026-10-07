@@ -34,10 +34,15 @@ export function ChatPanel() {
           aria-haspopup="dialog"
           onClick={() => setPanelOpen(true)}
           data-testid="chat-open"
-          className="fixed bottom-28 right-4 z-40 inline-flex min-h-11 items-center gap-2 rounded-full bg-brand-600 px-4 text-sm font-semibold text-white shadow-lg hover:bg-brand-700 lg:bottom-6 lg:right-6"
+          data-tour="chat"
+          aria-label={t("chat.open")}
+          title={t("chat.open")}
+          // A round button where the page is narrow, so it covers as little of the content as possible; the label shows
+          // only where the margin beside the content is wide enough to hold it.
+          className="fixed bottom-28 right-4 z-40 inline-flex size-12 items-center justify-center gap-2 rounded-full bg-brand-600 text-sm font-semibold text-white shadow-lg hover:bg-brand-700 lg:bottom-5 lg:right-5 2xl:size-auto 2xl:min-h-11 2xl:px-4"
         >
           <ChatIcon />
-          {t("chat.open")}
+          <span className="hidden 2xl:inline">{t("chat.open")}</span>
         </button>
       )}
       <dialog

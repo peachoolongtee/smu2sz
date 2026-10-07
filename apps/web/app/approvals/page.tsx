@@ -1,10 +1,14 @@
 "use client";
 
+import { PageIcon } from "@/components/business/kit";
+import { ClockIcon } from "@/components/icons";
+
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ApprovalCard } from "@/components/approval-card";
 import { NextStep } from "@/components/next-step";
 import { Badge, Callout, EmptyState, ErrorState, LoadingBlock, PageHeader } from "@/components/ui";
-import { ApiError, apiMode, decideApproval, getApprovals, getLedger } from "@/lib/api";
+import { ApiError, apiMode, decideApproval, getApprovals, getClock, getLedger } from "@/lib/api";
 import { bump } from "@/lib/demo-store";
 import { isWriteConflictDetail } from "@/lib/live/retry";
 import { useI18n } from "@/lib/i18n";
@@ -16,6 +20,8 @@ export default function ApprovalsPage() {
   const list = useAsync(getApprovals, []);
   // The commitments an ACCEPT_OFFER or RECORD_COMMITMENT names are read from the ledger; a failed read only hides the terms.
   const ledger = useAsync(getLedger, []);
+  // Today, so the reasons speak in distances from it like every Business page.
+  const clock = useAsync(getClock, []);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [results, setResults] = useState<Record<string, string>>({});
@@ -52,16 +58,34 @@ export default function ApprovalsPage() {
   return (
     <>
       <PageHeader
+        icon={
+          <PageIcon tone="amber">
+            <ClockIcon width={22} height={22} />
+          </PageIcon>
+        }
         title={t("appr.title")}
         subtitle={t("appr.subtitle")}
-        actions={list.data ? <Badge tone={pending ? "warn" : "neutral"}>{t("appr.pending", { n: pending })}</Badge> : undefined}
+        actions={pending ? <Badge tone="warn">{t("appr.pending", { n: pending })}</Badge> : undefined}
       />
-      {pending ? <NextStep label={t("next.label")}>{t("biz.appr.next")}</NextStep> : null}
-      <div className="mb-4">
-        <Callout tone="info">
-          {t("appr.note")} {apiMode === "live" ? t("appr.ownerNote") : null}
-        </Callout>
-      </div>
+      {/* One explanation, not two: the next step while something waits, the general note otherwise. */}
+      {pending ? (
+        <NextStep label={t("next.label")}>
+          {t("biz.appr.next")} {apiMode === "live" ? t("appr.ownerNote") : null}
+        </NextStep>
+      ) : list.data?.length ? (
+        <div className="mb-4">
+          <Callout tone="info">
+            {t("appr.note")} {apiMode === "live" ? t("appr.ownerNote") : null}
+          </Callout>
+        </div>
+      ) : null}
+      {!pending && Object.keys(results).length ? (
+        <p className="mb-4 text-sm">
+          <Link href="/" className="font-medium text-brand-700 underline underline-offset-2" data-testid="approvals-back-home">
+            {t("biz.appr.backHome")}
+          </Link>
+        </p>
+      ) : null}
       {error ? (
         <div className="mb-4">
           <ErrorState error={error} />
@@ -75,7 +99,7 @@ export default function ApprovalsPage() {
       ) : list.data.length === 0 ? (
         <EmptyState title={t("appr.empty.title")} body={t("appr.empty.body")} />
       ) : (
-        <ul className="grid items-start gap-4 lg:grid-cols-2">
+        <ul className="grid max-w-3xl items-start gap-4">
           {list.data.map((a) => (
             <li key={a.id} className="min-w-0">
               <ApprovalCard
@@ -83,6 +107,7 @@ export default function ApprovalsPage() {
                 commitments={ledger.data?.commitments}
                 ledgerLoaded={!ledger.loading || Boolean(ledger.error)}
                 busyId={busyId}
+                today={clock.data?.day ?? null}
                 resultMessage={results[a.id]}
                 onDecide={(id, d) => void decide(id, d)}
               />

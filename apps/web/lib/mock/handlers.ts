@@ -461,9 +461,8 @@ export async function getHome(lang: "en" | "zh"): Promise<HomeView> {
     requestSignIn("required");
     throw new ApiError(401, "Owner sign-in required (401). Sign in with the owner token to use this.");
   }
-  void lang; // the recordings are English; the labels around them follow the dictionary
   const dealt = Object.values(load().negotiated).some((n) => n.outcome === "DEAL");
-  return home.mockHome(dealt);
+  return home.mockHome(dealt, lang);
 }
 
 export async function getClock(): Promise<ClockView> {
