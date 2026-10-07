@@ -118,8 +118,8 @@ def _headline(found: list[Alert], mandate: Mandate, traj: Any, horizon: int, tod
         short = fmt_short(breach.amount_fen or 0)
         when = _distance(breach.day, today, lang)
         at = next((d.closing_fen for d in traj.days if d.day == breach.day), None)
-        worst = t(lang, f"Worst point: {fmt_short(low_fen)} {low_when} if you do nothing.",
-                  f"若不采取行动，最低点为{low_when}的 {fmt_short(low_fen)}。")
+        worst: str | None = t(lang, f"Worst point: {fmt_short(low_fen)} {low_when} if you do nothing.",
+                              f"若不采取行动，最低点为{low_when}的 {fmt_short(low_fen)}。")
         if breach.inputs.get("cure_restores_reserve") == "false":
             zero = breach.inputs.get("zero_day", "")
             head = t(lang, f"Cash goes below zero {_distance(int(zero), today, lang)} if nothing is done.",
@@ -128,6 +128,8 @@ def _headline(found: list[Alert], mandate: Mandate, traj: Any, horizon: int, tod
                            f"minimum cash reserve: that needs your decision.",
                      f"现金可以保持在零以上，但没有已承诺的融资能恢复您 {floor} 的最低现金储备，需要您决定。")
             return {"headline": head, "note": note, "worst": worst, "plan_note": None}
+        if breach.day == low_day:
+            worst = None  # the headline and note already say where cash falls; a second sentence would repeat it
         head = t(lang, f"Your cash reserve becomes unsafe {when}.", f"您的现金储备将在{when}不再安全。")
         note = (t(lang, f"Cash falls to {fmt_short(at)}, {short} below your {floor} minimum cash reserve.",
                   f"现金将降至 {fmt_short(at)}，比您 {floor} 的最低现金储备低 {short}。") if at is not None
@@ -183,6 +185,8 @@ def _funding_lots(state: FinancialState, today: int, lang: str) -> list[dict[str
     """Every funding lot on the books, landed or still arriving, so Cash & funding can state the current position."""
     return [{"facility_name": facility_name(state, lot.facility_id), "amount_display": fmt_yuan(lot.principal_fen),
              "remaining_display": fmt_yuan(lot.remaining_fen), "landed": bool(lot.settled),
+             "opening": bool(lot.assumed_date),  # a balance older than the books, not funding received today
+
              "arrival_day": lot.arrival_day, "arrival_when": when_text(lot.arrival_day, today, lang),
              "maturity_day": lot.maturity_day,
              "maturity_when": when_text(lot.maturity_day, today, lang) if lot.maturity_day is not None else None}
@@ -289,14 +293,14 @@ def _alert_actions(state: FinancialState, alert: Alert, today: int) -> list[Fund
     return out
 
 
-_FROM = re.compile(r" from (.+?)$")
+_FROM = re.compile(r".* from (.+)$")
 
 
 def _label_short(kind: str, label: str, lang: str) -> str:
     """A chart annotation's words: "Receipt from Foshan Home Retail Co.", "Payroll", "Invoice financing lands"; the
     full sentence stays in `label` for the table. Written here so the browser never truncates a sentence."""
     if kind in ("RECEIPT", "EARLY_RECEIPT"):
-        m = _FROM.search(label)
+        m = _FROM.match(label)
         who = m.group(1) if m else ""
         return t(lang, f"Receipt from {who}" if who else "Receipt", f"来自{who}的收款" if who else "收款")
     if kind == "ADVANCE":
@@ -671,7 +675,7 @@ def get_home(lang: str = "en", since_day: int | None = None) -> dict[str, Any]:
                      "detail": relative_days(in_words(state, a.detail), today, lang), "day": a.day,
                      "when": when_text(a.day, today, lang)} for a in found if a.severity == Severity.WARNING]
         facilities = [{"id": f.id, "name": f.name, "status": f.status.value, "limit_display": fmt_yuan(f.limit_fen),
-                       "drawn_display": fmt_yuan(f.drawn_fen),
+                       "drawn_fen": f.drawn_fen, "drawn_display": fmt_yuan(f.drawn_fen),
                        "available_display": fmt_yuan(max(f.limit_fen - f.drawn_fen, 0) if f.owner_approved else 0),
                        "lead_time_days": f.lead_time_days}
                       for f in state.facilities if f.status.value == "COMMITTED" and f.limit_fen > 0]

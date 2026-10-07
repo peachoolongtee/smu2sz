@@ -46,6 +46,7 @@
         "amount_display": "¥150,000.00",
         "remaining_display": "¥150,000.00",
         "landed": true,
+        "opening": false,
         "arrival_day": 0,
         "arrival_when": "today",
         "maturity_day": null,
@@ -56,6 +57,7 @@
         "amount_display": "¥255,000.00",
         "remaining_display": "¥255,000.00",
         "landed": false,
+        "opening": false,
         "arrival_day": 3,
         "arrival_when": "in 3 days",
         "maturity_day": null,
@@ -1011,6 +1013,7 @@
       "name": "Bank credit line",
       "status": "COMMITTED",
       "limit_display": "¥150,000.00",
+      "drawn_fen": 15000000,
       "drawn_display": "¥150,000.00",
       "available_display": "¥0.00",
       "lead_time_days": 0
@@ -1020,6 +1023,7 @@
       "name": "Invoice financing (onboarded platform)",
       "status": "COMMITTED",
       "limit_display": "¥350,000.00",
+      "drawn_fen": 25500000,
       "drawn_display": "¥255,000.00",
       "available_display": "¥95,000.00",
       "lead_time_days": 3
@@ -1029,6 +1033,7 @@
       "name": "Buyer early-payment offer",
       "status": "COMMITTED",
       "limit_display": "¥420,000.00",
+      "drawn_fen": 0,
       "drawn_display": "¥0.00",
       "available_display": "¥420,000.00",
       "lead_time_days": 2

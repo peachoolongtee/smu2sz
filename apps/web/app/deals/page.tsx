@@ -6,7 +6,7 @@ import { AnnotatedText } from "@/components/annotated-text";
 import { BuyerAsks } from "@/components/deals/asks";
 import { ActiveCommitments } from "@/components/deals/commitments";
 import { DealSteps } from "@/components/deals/deal-steps";
-import { ACTION_KEY, DealDecision, businessAction } from "@/components/deals/decision";
+import { ACTION_KEY, DealDecision } from "@/components/deals/decision";
 import { WhyRecommended } from "@/components/deals/reasons";
 import { InboxList } from "@/components/deals/inbox-list";
 import { RecommendedResponse } from "@/components/deals/response";
@@ -20,6 +20,7 @@ import { useI18n } from "@/lib/i18n";
 import type { InboxMessage } from "@/lib/inbox";
 import { useMode } from "@/lib/mode";
 import { annotationsFor, offerItems } from "@/lib/offer-items";
+import { businessAction } from "@/lib/presentation-fallbacks";
 import type { VerdictView } from "@/lib/types";
 import { useAsync } from "@/lib/use-async";
 import { useCurrentOffer } from "@/lib/use-current";
@@ -132,7 +133,10 @@ export default function DealsPage() {
           mode={mode}
           statusFor={statusFor}
           onOpen={(m) => void openMessage(m)}
+          loadError={books.error}
+          onRetry={books.reload}
         />
+
         {error ? <ErrorState error={error} /> : null}
 
         {cur.error || clock.error ? (

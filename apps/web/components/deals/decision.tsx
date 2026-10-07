@@ -3,22 +3,9 @@
 import { Card } from "@/components/ui";
 import type { DictKey } from "@/lib/dictionary";
 import { useI18n } from "@/lib/i18n";
-import type { BusinessAction, Outcome, VerdictView } from "@/lib/types";
+import { businessAction } from "@/lib/presentation-fallbacks";
+import type { BusinessAction, VerdictView } from "@/lib/types";
 import { whenText } from "@/lib/when";
-
-/** The server's business action, or its rule for an older recording: a REJECT with counters is "counter", without is "decline". */
-export function businessAction(v: VerdictView): BusinessAction {
-  if (v.business_action) return v.business_action;
-  return localAction(v.outcome, v.counters.length);
-}
-
-function localAction(outcome: Outcome, counters: number): BusinessAction {
-  if (outcome === "ACCEPT") return "accept";
-  if (outcome === "COUNTER" || (outcome === "REJECT" && counters > 0)) return "counter";
-  if (outcome === "REJECT") return "decline";
-  if (outcome === "NEEDS_OWNER_APPROVAL") return "needs_owner";
-  return "cannot";
-}
 
 export const ACTION_KEY: Record<BusinessAction, DictKey> = {
   accept: "biz.deals.action.accept",

@@ -1848,7 +1848,7 @@
     "if_nothing": "¥240,000.00 below your minimum cash reserve in 12 days; the gap peaks at ¥405,000.00 in 30 days.",
     "after": "Cash stays above your minimum cash reserve for the next 120 days.",
     "why": "The cheapest plan your committed facilities can fund in time, within the bounded search.",
-    "detail": "Projected cash closes at ¥60,000.00 in 12 days, ¥240,000.00 below the reserve floor; the gap peaks at ¥405,000.00 in 30 days and lasts until in 31 days. A committed cure exists: DRAW_FACILITY Bank credit line ¥150,000.00 + SUBMIT_INVOICE_FOR_FINANCING Invoice financing (onboarded platform) ¥336,000.00, cost ¥2,994.08 (11.2% a year for 29 days).",
+    "detail": "Projected cash closes at ¥60,000.00 in 12 days, ¥240,000.00 below the reserve floor; the gap peaks at ¥405,000.00 in 30 days and lasts until in 31 days. A committed cure exists: draw on Bank credit line ¥150,000.00 + finance an invoice on Invoice financing (onboarded platform) ¥336,000.00, cost ¥2,994.08 (11.2% a year for 29 days).",
     "formula": "shortfall = floor − closing_d: ¥300,000.00 − ¥60,000.00 = ¥240,000.00 (day 12); max over days 12..31 = ¥405,000.00",
     "pending_approval_id": null,
     "state_version": 1,
@@ -1909,6 +1909,7 @@
       "name": "Bank credit line",
       "status": "COMMITTED",
       "limit_display": "¥150,000.00",
+      "drawn_fen": 0,
       "drawn_display": "¥0.00",
       "available_display": "¥150,000.00",
       "lead_time_days": 0
@@ -1918,6 +1919,7 @@
       "name": "Invoice financing (onboarded platform)",
       "status": "COMMITTED",
       "limit_display": "¥350,000.00",
+      "drawn_fen": 0,
       "drawn_display": "¥0.00",
       "available_display": "¥350,000.00",
       "lead_time_days": 3
@@ -1927,6 +1929,7 @@
       "name": "Buyer early-payment offer",
       "status": "COMMITTED",
       "limit_display": "¥420,000.00",
+      "drawn_fen": 0,
       "drawn_display": "¥0.00",
       "available_display": "¥420,000.00",
       "lead_time_days": 2

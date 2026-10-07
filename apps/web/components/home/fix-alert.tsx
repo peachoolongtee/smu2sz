@@ -183,7 +183,7 @@ export function FixResult({ result, error, changed }: { result: AlertActResult |
         <Badge tone={result.pending_approval ? "warn" : "neutral"}>{t("alerts.fix.pending", { n: result.pending_approval })}</Badge>
         <Badge tone={result.refused ? "bad" : "neutral"}>{t("alerts.fix.refused", { n: result.refused })}</Badge>
       </div>
-      <OperationList operations={business ? result.results.map((o) => ({ ...o, message: o.message_when || o.message })) : result.results} />
+      <OperationList operations={result.results} business={business} />
       <p className="text-xs text-ink-2">
         {result.cured ? t("alerts.fix.cured") : result.pending_approval ? t("alerts.waiting.body") : t("alerts.fix.notCured")}
       </p>

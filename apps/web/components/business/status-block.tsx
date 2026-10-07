@@ -40,6 +40,8 @@ export function StatusBlock({ h }: { h: HomeView }) {
   const { t, te } = useI18n();
   const tone = TONE[h.status] ?? TONE.WATCH;
   const unsafe = h.cash.first_breach_day !== null;
+  // The first breach and the lowest point can be the same day: then it is one tile (one figure, one distance), not two.
+  const breachIsWorst = unsafe && h.cash.first_breach_day === h.cash.lowest_day;
   return (
     <section aria-labelledby="home-status-title" className={`rounded-(--radius-card) border bg-surface p-5 shadow-(--shadow-card) lg:p-6 ${tone.ring}`} data-testid="home-status" data-status={h.status}>
       <span className={`inline-flex items-center rounded-full border px-3 py-1 text-sm font-bold uppercase tracking-wide ${tone.badge}`} data-testid="home-status-word">
@@ -60,7 +62,7 @@ export function StatusBlock({ h }: { h: HomeView }) {
       <dl className="mt-5 grid grid-cols-1 gap-3 border-t border-line pt-4 sm:grid-cols-3">
         {unsafe ? (
           <div className="flex min-w-0 flex-wrap items-baseline justify-between gap-x-3 sm:block">
-            <dt className="text-xs font-medium text-ink-3">{t("biz.breachCash")}</dt>
+            <dt className="text-xs font-medium text-ink-3">{breachIsWorst ? t("biz.firstBreachIsWorst") : t("biz.breachCash")}</dt>
             <dd className="mt-0.5 text-lg font-semibold tabular-nums text-ink" data-testid="home-breach-cash">
               {h.cash.first_breach_cash_short}
             </dd>
@@ -92,13 +94,16 @@ export function StatusBlock({ h }: { h: HomeView }) {
             <dd className="mt-0.5 text-lg font-semibold tabular-nums text-ink" data-testid="home-headroom-lowest">{h.cash.lowest_headroom_short}</dd>
           </div>
         ) : null}
-        <div className="flex min-w-0 flex-wrap items-baseline justify-between gap-x-3 sm:block">
-          <dt className="text-xs font-medium text-ink-3">{unsafe ? t("biz.worstPoint") : t("biz.lowestAhead")}</dt>
-          <dd className={`mt-0.5 text-lg font-semibold tabular-nums ${unsafe ? "text-bad-fg" : "text-ink"}`} data-testid="home-lowest">
-            {h.cash.lowest_short}
-          </dd>
-          <dd className="text-xs text-ink-3" data-testid="home-lowest-when">{h.cash.lowest_when}</dd>
-        </div>
+        {breachIsWorst ? null : (
+          <div className="flex min-w-0 flex-wrap items-baseline justify-between gap-x-3 sm:block">
+            <dt className="text-xs font-medium text-ink-3">{unsafe ? t("biz.worstPoint") : t("biz.lowestAhead")}</dt>
+            <dd className={`mt-0.5 text-lg font-semibold tabular-nums ${unsafe ? "text-bad-fg" : "text-ink"}`} data-testid="home-lowest">
+              {h.cash.lowest_short}
+            </dd>
+            <dd className="text-xs text-ink-3" data-testid="home-lowest-when">{h.cash.lowest_when}</dd>
+          </div>
+        )}
+
       </dl>
       {unsafe ? (
         <dl className="mt-4 flex flex-wrap items-baseline gap-x-4 gap-y-1 text-sm">

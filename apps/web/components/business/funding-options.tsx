@@ -4,7 +4,8 @@ import { PlanNotes } from "@/components/plan-notes";
 import { Badge } from "@/components/ui";
 import type { DictKey } from "@/lib/dictionary";
 import { useI18n, type I18n } from "@/lib/i18n";
-import type { ComparisonRow, ComparisonStatus, MenuRow } from "@/lib/types";
+import { statusOf } from "@/lib/presentation-fallbacks";
+import type { ComparisonRow, MenuRow } from "@/lib/types";
 import { whenText } from "@/lib/when";
 
 /**
@@ -20,10 +21,6 @@ export function optionName(c: ComparisonRow, menu: MenuRow[], t: I18n["t"]): str
   return key ? t(key) : c.label;
 }
 
-function statusOf(c: ComparisonRow): ComparisonStatus {
-  return c.status ?? (c.total_display === "—" ? "unavailable" : c.selected ? "recommended" : "alternative");
-}
-
 function Row({ c, n, name, today, recommended }: { c: ComparisonRow; n: number | null; name: string; today: number; recommended: boolean }) {
   const { t } = useI18n();
   const status = statusOf(c);
@@ -37,17 +34,25 @@ function Row({ c, n, name, today, recommended }: { c: ComparisonRow; n: number |
             <p className="text-xs text-bad-fg" data-testid="cash-option-uncovered">
               {c.shortfall_display ? t("biz.option.uncovered", { amount: c.shortfall_display, when: whenText(c.breach_day ?? 0, today, t) }) : c.note}
             </p>
-          ) : status === "unavailable" ? (
+          ) : status === "unavailable" || status === "blocked" ? (
             <p className="text-xs text-ink-3" data-testid="cash-option-unavailable-note">{c.note_when ?? c.note}</p>
-          ) : recommended ? (
-            <p className="text-xs text-ink-3">{t("biz.option.cheapestFull")}</p>
+          ) : recommended && c.executable_now !== false ? (
+
+            <p className="text-xs text-ink-3">{t("biz.option.recommendedWhy")}</p>
           ) : status === "alternative" ? (
-            <p className="text-xs text-ink-3">{t("biz.option.dearer")}</p>
+            // The server's words for the row ("admissible but dearer than the selected plan"); no cost claim is made here.
+            <p className="text-xs text-ink-3" data-testid="cash-option-alternative-note">{c.note_when ?? c.note}</p>
           ) : null}
           {c.reason_kind === "buyer_early_pay" ? (
             <p className="mt-1 text-xs text-ink-3">{t("biz.option.needsBuyer")}</p>
           ) : (
-            <PlanNotes className="mt-1" needsApproval={c.needs_owner_approval} approvalReason={c.approval_reason} executableNow={c.executable_now} notExecutableReason={c.not_executable_reason} />
+            <PlanNotes
+              className="mt-1"
+              needsApproval={c.needs_owner_approval}
+              approvalReason={c.approval_reason}
+              executableNow={c.executable_now}
+              notExecutableReason={c.not_executable_reason_when ?? c.not_executable_reason}
+            />
           )}
         </div>
       </div>
@@ -55,6 +60,8 @@ function Row({ c, n, name, today, recommended }: { c: ComparisonRow; n: number |
         {recommended ? <Badge tone="brand">{t("biz.option.recommended")}</Badge> : null}
         {status === "insufficient" ? <Badge tone="bad">{t("biz.option.insufficient")}</Badge> : null}
         {status === "unavailable" ? <Badge tone="neutral">{t("biz.option.notPossible")}</Badge> : null}
+        {status === "blocked" ? <Badge tone="bad">{t("biz.option.blocked")}</Badge> : null}
+
         <span className="font-semibold tabular-nums">{c.total_display}</span>
       </div>
     </li>

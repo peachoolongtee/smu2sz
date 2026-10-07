@@ -12,7 +12,7 @@ from fractions import Fraction
 from typing import Any
 
 from app.alerts import Alert, AlertKind
-from app.domain.models import FinancialState, Mandate
+from app.domain.models import Contingency, FinancialState, Mandate
 from app.domain.money import bp, fmt_pct, fmt_yuan, fmt_yuan_short
 from app.financial.invoices import InvoiceRef, issue_terms
 
@@ -79,6 +79,24 @@ def invoice_words(state: FinancialState, receivable_id: str | None, lang: Lang) 
     return t(lang, f"invoice {receivable_id}", f"发票 {receivable_id}")
 
 
+_OPERATION_WORDS = {
+    "DRAW_FACILITY": "draw on",
+    "SUBMIT_INVOICE_FOR_FINANCING": "finance an invoice on",
+    "REPAY_FACILITY": "repay",
+    "APPLY_FOR_FACILITY": "apply for",
+}
+_OPERATION_TOKEN = re.compile(r"(?<![\w:-])(" + "|".join(_OPERATION_WORDS) + r")(?![\w:-])")
+
+
+def operation_words(text: str) -> str:
+    """The engine's operation-kind tokens in the owner's words ("DRAW_FACILITY Bank credit line" reads "draw on Bank
+    credit line"); a token that opens a sentence keeps its capital."""
+    def word(m: re.Match[str]) -> str:
+        w = _OPERATION_WORDS[m.group(1)]
+        return w[0].upper() + w[1:] if m.start() == 0 or text[max(0, m.start() - 2):m.start()] == ". " else w
+    return _OPERATION_TOKEN.sub(word, text)
+
+
 _RI_TOKEN = re.compile(r"(?<![\w:-])RI:[\w-]+:\d+(?![\w:-])")
 
 
@@ -140,7 +158,7 @@ def owner_words(text: str) -> str:
 def in_words(state: FinancialState, text: str) -> str:
     """Server text with invoice, facility and buyer ids replaced by their names (ids are on the audit level), and the rate
     ceiling clause in the owner's words (`owner_words`)."""
-    out = owner_words(text)
+    out = operation_words(owner_words(text))
     out = _RI_TOKEN.sub(lambda m: _invoice_in_words(state, m.group(0)) or m.group(0), out)
     for rid in sorted((r.id for r in state.receivables if not r.id.startswith("RI:")), key=len, reverse=True):
         out = re.sub(rf"(?<![\w:-]){re.escape(rid)}(?![\w:-])", lambda m: _invoice_in_words(state, m.group(0)) or m.group(0), out)
@@ -563,14 +581,17 @@ def business_action(outcome: str, counters: int) -> str:
 def comparison_status(result: str, reasons: list[str], breach_day: int | None) -> str:
     """One word per comparison row so a page never ranks plans that are not comparable: `recommended` (the router's
     pick), `alternative` (admissible, dearer), `insufficient` (admissible sources, but the reserve still breaks),
-    `unavailable` (a source that is not committed or cannot land in time)."""
+    `unavailable` (a source that is not committed or cannot land in time), `blocked` (not admissible for any other
+    reason: the plan breaks one of the owner's limits)."""
     if result == "SELECTED":
         return "recommended"
     if result == "ADMISSIBLE":
         return "alternative"
     if "RESERVE_BREACH" in reasons or breach_day is not None:
         return "insufficient"
-    return "unavailable"
+    if "UNCOMMITTED_FACILITY" in reasons or "LEAD_TIME_TOO_LONG" in reasons:
+        return "unavailable"
+    return "blocked"
 
 
 def comparison_reason(actions: list[dict[str, Any]], executable_now: bool) -> str | None:
@@ -607,7 +628,11 @@ def counter_economics(obligations: list[Any], state: FinancialState, mandate: Ma
     funding = sum(p["value_fen"] for p in parts if p["value_fen"] > 0)
     offset = sum(p["value_fen"] for p in parts if p["value_fen"] < 0)
     net = funding + offset
-    return {"components": parts, "funding_cost_fen": funding, "funding_cost_display": fmt_yuan(funding),
+    # "≈ ¥0" (the same in both languages) when the offset covers the funding cost (the verifier's floor), else the net
+
+    net_words = "≈ ¥0" if net <= 0 else fmt_yuan(net)
+    return {"components": parts, "net_words": net_words,
+ "funding_cost_fen": funding, "funding_cost_display": fmt_yuan(funding),
             "offset_fen": offset, "offset_display": fmt_yuan(-offset), "net_fen": net, "net_display": fmt_yuan(net),
             "is_net": offset < 0 < funding}
 
@@ -618,29 +643,51 @@ _COUNTED = re.compile(r"Σ over (\d+) invoices")
 def concession_interpretation(cv: dict[str, Any], ob: Any | None, lang: Lang) -> str:
     """The reading of one concession value before its equation ("60-day terms add 15 days of financing to 13 expected
     invoices …"): typed fields of the obligation, the value's display strings and the invoice count the formula states.
-    Nothing is priced here; the words wrap figures the engine produced."""
-    value = cv.get("value_display") or fmt_yuan(int(cv.get("value_fen") or 0))
+    The words follow the value's sign (a shortening or a price adjustment pays the supplier, never "add -15 days") and
+    the obligation's contingency (a claimed, unevidenced concession is never counted). Nothing is priced here; the words
+    wrap figures the engine produced."""
+    value_fen = int(cv.get("value_fen") or 0)
+    value = cv.get("value_display") or fmt_yuan(value_fen)
+    amount = fmt_yuan(abs(value_fen))
     kind = str(getattr(getattr(ob, "type", None), "value", getattr(ob, "type", ""))) if ob is not None else ""
+    if ob is not None and ob.contingency == Contingency.CLAIMED_UNEVIDENCED:
+        return str(cv.get("basis") or "")
     m = _COUNTED.search(cv.get("formula") or "")
     n = int(m.group(1)) if m else None
     if kind == "TERMS_EXTENSION" and ob is not None:
         delta = ob.days_delta or 0
         to = ob.target_terms_days
-        per = cv.get("per_invoice_display")
+        per_fen = cv.get("per_invoice_fen")
+        per = fmt_yuan(abs(int(per_fen))) if per_fen is not None else cv.get("per_invoice_display")
+        invoices_en = f"{n if n is not None else 'the'} expected invoices"
+        if delta < 0 or value_fen < 0:
+            days = abs(delta)
+            terms = (f"{to}-day terms" if to else f"{days} fewer days to pay") if lang == "en" else (f"{to} 天账期" if to else f"缩短 {days} 天")
+            head = t(lang, f"{terms} take {days} days of financing off {invoices_en}",
+                     f"{terms}让 {n if n is not None else ''} 张预期发票各少融资 {days} 天")
+            per_text = (t(lang, f", about {per} each at your cheapest committed source", f"，按您最便宜的已承诺资金来源每张约 {per}")
+                        if per else "")
+            return head + per_text + t(lang, f", saving {amount} over 12 months.", f"，12 个月共节省 {amount}。")
         terms = (f"{to}-day terms" if to else f"{delta} more days to pay") if lang == "en" else (f"{to} 天账期" if to else f"再延长 {delta} 天")
-        head = (t(lang, f"{terms} add {delta} days of financing to {n if n is not None else 'the'} expected invoices",
-                  f"{terms}让 {n if n is not None else ''} 张预期发票各多融资 {delta} 天"))
+        head = t(lang, f"{terms} add {delta} days of financing to {invoices_en}",
+                 f"{terms}让 {n if n is not None else ''} 张预期发票各多融资 {delta} 天")
         per_text = t(lang, f", about {per} each at your cheapest committed source", f"，按您最便宜的已承诺资金来源每张约 {per}") if per else ""
         return head + per_text + t(lang, f": {value} over 12 months.", f"：12 个月共 {value}。")
     if kind == "PRICE_ADJUSTMENT" and ob is not None:
         rate = fmt_pct(bp(ob.rate_bp)) if ob.rate_bp is not None else ""
-        gain = fmt_yuan(abs(int(cv.get("value_fen") or 0)))
-        return t(lang, f"A {rate} price adjustment on {n if n is not None else 'the'} future invoices pays you {gain} over 12 months.",
-                 f"未来 {n if n is not None else ''} 张发票 {rate} 的价格调整，12 个月为您带来 {gain}。")
+        invoices = n if n is not None else "the"
+        if value_fen < 0:
+            return t(lang, f"A {rate} price adjustment on {invoices} future invoices pays you {amount} over 12 months.",
+                     f"未来 {n if n is not None else ''} 张发票 {rate} 的价格调整，12 个月为您带来 {amount}。")
+        return t(lang, f"A {rate} price adjustment on {invoices} future invoices costs you {amount} over 12 months.",
+                 f"未来 {n if n is not None else ''} 张发票 {rate} 的价格调整，12 个月让您多付出 {amount}。")
     if kind == "CONTINGENT_REBATE" and ob is not None:
         if ob.rate_bp is not None and ob.base.amount_fen is not None:
-            return t(lang, f"A {fmt_pct(bp(ob.rate_bp))} rebate on {fmt_yuan(ob.base.amount_fen)} of purchases, counted at its maximum: {value}.",
-                     f"对 {fmt_yuan(ob.base.amount_fen)} 采购的 {fmt_pct(bp(ob.rate_bp))} 返利，按最大值计：{value}。")
+            rate, base = fmt_pct(bp(ob.rate_bp)), fmt_yuan(ob.base.amount_fen)
+            if ob.contingency == Contingency.CONTINGENT:
+                return t(lang, f"A {rate} rebate on {base} of purchases, counted at its maximum: {value}.",
+                         f"对 {base} 采购的 {rate} 返利，按最大值计：{value}。")
+            return t(lang, f"A {rate} rebate on {base} of purchases: {value}.", f"对 {base} 采购的 {rate} 返利：{value}。")
         return t(lang, f"A fixed rebate of {value}.", f"固定返利 {value}。")
     if kind == "IMMEDIATE_DISCOUNT":
         return t(lang, "Settled in cash now, so it is not a forward concession; the discount is checked against its own cap.",

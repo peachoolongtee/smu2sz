@@ -4,6 +4,7 @@ import Link from "next/link";
 import { approvalHref } from "@/components/operation-result";
 import { Card, TableWrap, tableCls, tdCls, thCls } from "@/components/ui";
 import { useI18n } from "@/lib/i18n";
+import { daysLate } from "@/lib/when";
 import type { HomeApproval, HomeChange, HomeReceivables, HomeView } from "@/lib/types";
 
 const CHANGE_GLYPH: Record<string, string> = { RECEIPT: "↓", LATE: "!", WAITING: "…", REFUSED: "✕", LANDED: "↓", OPERATION: "✓", AGREEMENT: "✓" };
@@ -85,7 +86,8 @@ export function ReceivablesBlock({ r }: { r: HomeReceivables }) {
           {r.past_due.map((x) => (
             <li key={x.receivable_id} className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-bad-line bg-bad-bg/40 px-3 py-2 text-sm" data-testid={`home-late-${x.receivable_id}`}>
               <span className="font-medium text-ink">{x.buyer_name}</span>
-              <span className="text-ink-2">{t("biz.late", { amount: x.face_display, days: x.days_late, when: x.due_when })}</span>
+              <span className="text-ink-2">{t("biz.late", { amount: x.face_display, late: daysLate(x.days_late, t), when: x.due_when })}
+</span>
             </li>
           ))}
         </ul>

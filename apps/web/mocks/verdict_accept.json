@@ -2554,12 +2554,14 @@
       "needs_owner_approval": false,
       "approval_reason": "",
       "executable_now": false,
+      "not_executable_reason": "Buyer early-payment offer: early payment on ¥420,000.00 face of RCV-A at 0.5%: needs the buyer's agreement to pay early",
       "shortfall_fen": null,
       "worst_day": null,
       "status": "alternative",
       "reason_kind": "buyer_early_pay",
       "shortfall_display": null,
       "note_when": "cost ¥2,100.00; admissible but dearer than the selected plan",
+      "not_executable_reason_when": "Buyer early-payment offer: early payment on ¥420,000.00 face of the ¥420,000.00 invoice to Foshan Home Retail Co. due in 32 days at 0.5%: needs the buyer's agreement to pay early",
       "components_when": [
         "Buyer early-payment offer: early payment on ¥420,000.00 face of the ¥420,000.00 invoice to Foshan Home Retail Co. due in 32 days at 0.5%"
       ]
@@ -2580,8 +2582,8 @@
           "receivable_id": null,
           "repay_day": 32,
           "rate_bp": null,
-          "lands_day": null,
-          "available_from_day": null
+          "lands_day": 0,
+          "available_from_day": 0
         },
         {
           "kind": "EARLY_PAY",
@@ -2604,12 +2606,14 @@
       "needs_owner_approval": false,
       "approval_reason": "",
       "executable_now": false,
+      "not_executable_reason": "Buyer early-payment offer: early payment on ¥256,281.41 face of RCV-A at 0.5%: needs the buyer's agreement to pay early",
       "shortfall_fen": null,
       "worst_day": null,
       "status": "alternative",
       "reason_kind": "buyer_early_pay",
       "shortfall_display": null,
       "note_when": "cost ¥2,123.05; admissible but dearer than the selected plan",
+      "not_executable_reason_when": "Buyer early-payment offer: early payment on ¥256,281.41 face of the ¥420,000.00 invoice to Foshan Home Retail Co. due in 32 days at 0.5%: needs the buyer's agreement to pay early",
       "components_when": [
         "Bank credit line: draw ¥150,000.00, repaid in 32 days",
         "Buyer early-payment offer: early payment on ¥256,281.41 face of the ¥420,000.00 invoice to Foshan Home Retail Co. due in 32 days at 0.5%"
@@ -2631,8 +2635,8 @@
           "receivable_id": null,
           "repay_day": 32,
           "rate_bp": null,
-          "lands_day": null,
-          "available_from_day": null
+          "lands_day": 0,
+          "available_from_day": 0
         },
         {
           "kind": "FINANCE_INVOICE",
@@ -2642,8 +2646,8 @@
           "receivable_id": "RCV-A",
           "repay_day": null,
           "rate_bp": null,
-          "lands_day": null,
-          "available_from_day": null
+          "lands_day": 3,
+          "available_from_day": 0
         }
       ],
       "cost_fen": 311393,
@@ -2655,12 +2659,14 @@
       "needs_owner_approval": false,
       "approval_reason": "",
       "executable_now": true,
+      "not_executable_reason": "",
       "shortfall_fen": null,
       "worst_day": null,
       "status": "recommended",
       "reason_kind": null,
       "shortfall_display": null,
       "note_when": null,
+      "not_executable_reason_when": null,
       "components_when": [
         "Bank credit line: draw ¥150,000.00, repaid in 32 days",
         "Invoice financing (onboarded platform): advance ¥255,000.00 on the ¥420,000.00 invoice to Foshan Home Retail Co. due in 32 days"
@@ -2682,8 +2688,8 @@
           "receivable_id": null,
           "repay_day": 32,
           "rate_bp": null,
-          "lands_day": null,
-          "available_from_day": null
+          "lands_day": 0,
+          "available_from_day": 0
         },
         {
           "kind": "DRAW",
@@ -2693,8 +2699,8 @@
           "receivable_id": null,
           "repay_day": null,
           "rate_bp": null,
-          "lands_day": null,
-          "available_from_day": null
+          "lands_day": 21,
+          "available_from_day": 0
         }
       ],
       "cost_fen": null,
@@ -2709,12 +2715,14 @@
       "needs_owner_approval": false,
       "approval_reason": "",
       "executable_now": true,
+      "not_executable_reason": "",
       "shortfall_fen": null,
       "worst_day": null,
       "status": "unavailable",
       "reason_kind": null,
       "shortfall_display": null,
       "note_when": "not applied; cash in 21 days, gap opens in 12 days",
+      "not_executable_reason_when": null,
       "components_when": [
         "Bank credit line: draw ¥150,000.00, repaid in 32 days",
         "Government-guaranteed working-capital loan: draw ¥255,000.00 (arrives in 21 days)"
@@ -2735,8 +2743,8 @@
           "receivable_id": null,
           "repay_day": 32,
           "rate_bp": null,
-          "lands_day": null,
-          "available_from_day": null
+          "lands_day": 0,
+          "available_from_day": 0
         }
       ],
       "cost_fen": 84164,
@@ -2750,12 +2758,14 @@
       "needs_owner_approval": false,
       "approval_reason": "",
       "executable_now": true,
+      "not_executable_reason": "",
       "shortfall_fen": 25500000,
       "worst_day": 30,
       "status": "insufficient",
       "reason_kind": null,
       "shortfall_display": "¥255,000.00",
       "note_when": "cost ¥841.64; RESERVE_BREACH in 12 days",
+      "not_executable_reason_when": null,
       "components_when": [
         "Bank credit line: draw ¥150,000.00, repaid in 32 days"
       ]
