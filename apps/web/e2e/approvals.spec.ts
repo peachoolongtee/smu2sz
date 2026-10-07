@@ -1,5 +1,6 @@
 import { expect, test as signedOut } from "@playwright/test";
 import { proseOf, test } from "./fixtures";
+import { runPlan } from "./helpers";
 
 /**
  * Mock-mode specs for the owner's decision surfaces: no tier badge on a REJECT, the approval card, the autonomy proof
@@ -78,7 +79,7 @@ test("an approval born of the reserve alert says what declining leaves, in days 
   await page.getByTestId("home-advance").click();
   await expect(page.getByTestId("home-day")).toHaveText("Day 34");
   await page.goto("/");
-  await page.getByTestId("fix-ALERT-RESERVE-42").click();
+  await runPlan(page, "ALERT-RESERVE-42");
   await page.getByTestId("alert-approval-link-ALERT-RESERVE-42").click();
   await expect(page).toHaveURL(/\/approvals#approval-APR-000001/);
   const card = page.locator("#approval-APR-000001");

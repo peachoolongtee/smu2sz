@@ -1,4 +1,5 @@
 import { expect, proseOf, test } from "./fixtures";
+import { runPlan } from "./helpers";
 
 /**
  * Cash & funding (mock mode): the risk with headroom said directly, the plan, the options in two groups that are never
@@ -89,7 +90,7 @@ test("risk, plan, options, forecast: one set of figures, in the owner's order", 
 
 test("after the plan ran, the page states the current funding and folds the comparison away", async ({ page }) => {
   await page.goto("/");
-  await page.getByTestId("fix-ALERT-RESERVE-12").click();
+  await runPlan(page, "ALERT-RESERVE-12");
   await expect(page.getByTestId("fix-result")).toBeVisible();
   await page.goto("/cash");
   await expect(page.getByTestId("cash-headline")).toHaveText("You're covered.");

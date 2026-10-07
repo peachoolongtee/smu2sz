@@ -1503,6 +1503,16 @@ export const en = {
   "biz.deals.commitments.empty": "No active commitments.",
   "biz.deals.giveawaysBooked": "Future give-aways booked",
   "appr.approveAmount": "Approve {amount}",
+  "biz.recommended.short": "Recommended next step",
+  "biz.details.plan": "Details",
+  "biz.confirm.title": "Run this plan now?",
+  "biz.confirm.titleQueue": "Send this to you for approval?",
+  "biz.confirm.body": "You receive {amount}; the estimated total cost is {cost}.",
+  "biz.confirm.bodyCost": "The estimated total cost is {cost}.",
+  "biz.confirm.bodyQueue": "Nothing runs until you approve it on the next screen.",
+  "biz.confirm.go": "Yes, run it",
+  "biz.confirm.goQueue": "Yes, send it",
+  "biz.confirm.cancel": "Cancel",
 } as const;
 
 export type DictKey = keyof typeof en;
@@ -3005,4 +3015,14 @@ export const zh: Record<DictKey, string> = {
   "biz.deals.commitments.empty": "没有生效中的承诺。",
   "biz.deals.giveawaysBooked": "已计入的未来让利",
   "appr.approveAmount": "批准 {amount}",
+  "biz.recommended.short": "建议的下一步",
+  "biz.details.plan": "详情",
+  "biz.confirm.title": "现在执行此方案？",
+  "biz.confirm.titleQueue": "交给您批准？",
+  "biz.confirm.body": "您将收到 {amount}，预计总费用 {cost}。",
+  "biz.confirm.bodyCost": "预计总费用 {cost}。",
+  "biz.confirm.bodyQueue": "在您于下一屏批准之前，不会执行任何操作。",
+  "biz.confirm.go": "确认并执行",
+  "biz.confirm.goQueue": "确认",
+  "biz.confirm.cancel": "取消",
 };

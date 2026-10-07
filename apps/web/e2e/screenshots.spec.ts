@@ -2,6 +2,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
+import { runPlan } from "./helpers";
 
 /**
  * The screenshot walk of the brief's section 44: every Business page in every state the recorded demo path reaches, and the
@@ -64,7 +65,7 @@ test("Business pages on the opening books, after the deal is read and checked, a
   await page.goto("/activity");
   await shoot(page, "07-activity-day0", p);
   await page.goto("/");
-  await page.getByTestId("fix-ALERT-RESERVE-12").click();
+  await runPlan(page, "ALERT-RESERVE-12");
   await expect(page.getByTestId("fix-result")).toBeVisible();
   await shoot(page, "08-home-after-go-ahead", p);
   await page.goto("/");
@@ -85,7 +86,7 @@ test("Business pages on day 34: the fix needs approval, waits, then is approved"
   await page.goto("/receivables");
   await shoot(page, "13-receivables-day34", p);
   await page.goto("/");
-  await page.getByTestId("fix-ALERT-RESERVE-42").click();
+  await runPlan(page, "ALERT-RESERVE-42");
   await expect(page.getByTestId("alert-waiting-ALERT-RESERVE-42")).toBeVisible();
   await shoot(page, "14-home-day34-pending", p);
   await page.getByTestId("alert-approval-link-ALERT-RESERVE-42").click();

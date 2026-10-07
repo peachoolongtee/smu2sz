@@ -1,4 +1,5 @@
 import { expect, proseOf, test } from "./fixtures";
+import { runPlan } from "./helpers";
 
 /**
  * The Business Activity page in mock mode: every row leads with a business sentence (what happened, in the owner's words:
@@ -19,7 +20,7 @@ test("each row leads with the business sentence, the operation name is a muted l
   await page.getByTestId("home-advance").click();
   await expect(page.getByTestId("home-day")).toHaveText("Day 34");
   await page.goto("/");
-  await page.getByTestId("fix-ALERT-RESERVE-42").click();
+  await runPlan(page, "ALERT-RESERVE-42");
   await expect(page.getByTestId("alert-waiting-ALERT-RESERVE-42")).toBeVisible();
 
   await page.goto("/activity");
@@ -51,7 +52,7 @@ test("approving the fix reads \"You approved ...\" on Activity, never the execut
   await page.getByTestId("home-advance").click();
   await expect(page.getByTestId("home-day")).toHaveText("Day 34");
   await page.goto("/");
-  await page.getByTestId("fix-ALERT-RESERVE-42").click();
+  await runPlan(page, "ALERT-RESERVE-42");
   await page.getByTestId("alert-approval-link-ALERT-RESERVE-42").click();
   await page.locator("#approval-APR-000001").getByRole("button", { name: "Approve" }).click();
   await expect(page.locator("#approval-APR-000001")).toContainText("Approved");

@@ -1,5 +1,6 @@
 import type { Page } from "@playwright/test";
 import { expect, proseOf, test } from "./fixtures";
+import { runPlan } from "./helpers";
 
 /**
  * The Business home (`/`) in mock mode: one server read (GET /home) answers "am I safe", "what should I do", "what does it
@@ -90,7 +91,7 @@ test("the Business home answers safe, do and cost on the opening books, without 
   await expect(action).not.toContainText("agent");
   await expect(action.getByTestId("next-action-if-nothing")).toContainText("¥240,000.00 below your minimum cash reserve in 12 days");
   await expect(action.getByTestId("next-action-after")).toContainText("Cash stays above your minimum cash reserve for the next 120 days");
-  await expect(page.getByTestId("fix-ALERT-RESERVE-12")).toHaveText("Run funding plan");
+  await expect(page.getByTestId("fix-open-ALERT-RESERVE-12")).toHaveText("Run funding plan");
   // Nothing from the demo on the owner's screen: no stepper, no clock, no mock pill, no engine navigation.
   await expect(page.getByRole("region", { name: "Guided demo" })).toHaveCount(0);
   await expect(page.getByTestId("home-advance")).toHaveCount(0);
@@ -101,9 +102,43 @@ test("the Business home answers safe, do and cost on the opening books, without 
   await expect(page.getByTestId("home-next-receipt")).toContainText("¥420,000.00 from Foshan Home Retail Co. in 32 days");
 });
 
+test("the next step is three facts and a Details fold; the first press asks, Cancel runs nothing", async ({ page }) => {
+  await page.goto("/");
+  const action = page.getByTestId("home-next-action");
+  await expect(action).toContainText("Recommended next step");
+  // Three tiles: the estimated total cost, when the funds are available, who decides.
+  await expect(action.locator("dl").first().locator("dt")).toHaveText(["Estimated total cost", "Funds available", "Who decides"]);
+  // Everything else waits behind "Details", closed.
+  const details = action.getByTestId("next-action-details");
+  await expect(details).not.toHaveAttribute("open", "");
+  await expect(action.getByTestId("next-action-if-nothing")).toBeHidden();
+  await details.locator("> summary").click();
+  await expect(action.getByTestId("next-action-if-nothing")).toBeVisible();
+  await expect(action.getByTestId("next-action-cost-breakdown")).toBeVisible();
+  // The first press asks, with what is received and what it costs; Cancel sends nothing.
+  let acts = 0;
+  page.on("request", (r) => {
+    if (r.method() === "POST" && /\/alerts\/[^/]+\/act$/.test(r.url())) acts += 1;
+  });
+  await page.getByTestId("fix-open-ALERT-RESERVE-12").click();
+  const confirm = page.getByTestId("fix-confirm-ALERT-RESERVE-12");
+  await expect(confirm).toContainText("Run this plan now?");
+  await expect(confirm).toContainText("¥405,000.00");
+  await expect(confirm).toContainText("¥3,113.93");
+  await expect(page.getByTestId("fix-open-ALERT-RESERVE-12")).toHaveCount(0);
+  await page.getByTestId("fix-cancel-ALERT-RESERVE-12").click();
+  await expect(confirm).toHaveCount(0);
+  await expect(page.getByTestId("fix-open-ALERT-RESERVE-12")).toBeVisible();
+  await expect(page.getByTestId("fix-result")).toHaveCount(0);
+  expect(acts).toBe(0);
+  // Pressing twice runs the plan.
+  await runPlan(page, "ALERT-RESERVE-12");
+  await expect(page.getByTestId("fix-result")).toContainText("2 executed");
+});
+
 test("Go ahead on the opening books runs the fix alone, and the home turns calm with the advance on its way", async ({ page }) => {
   await page.goto("/");
-  await page.getByTestId("fix-ALERT-RESERVE-12").click();
+  await runPlan(page, "ALERT-RESERVE-12");
   const result = page.getByTestId("fix-result");
   await expect(result).toContainText("2 executed");
   await expect(result).toContainText("The alert is cleared.");
@@ -165,14 +200,13 @@ test("day 34: the fix needs approval; queuing it from the home runs nothing and 
   await expect(page.getByTestId("home-status").getByText("in 8 days", { exact: true })).toHaveCount(1);
   await expect(page.getByTestId("home-change-LATE")).toContainText("was due 2 days ago");
 
-  const button = page.getByTestId("fix-ALERT-RESERVE-42");
-  await expect(button).toHaveText("Queue it for my approval");
-  await button.click();
+  await expect(page.getByTestId("fix-open-ALERT-RESERVE-42")).toHaveText("Queue it for my approval");
+  await runPlan(page, "ALERT-RESERVE-42");
   const op = page.getByTestId("fix-result").getByTestId("chat-op-SUBMIT_INVOICE_FOR_FINANCING");
   await expectWaitingNotSuccess(op);
   await expect(page.getByTestId("alert-waiting-ALERT-RESERVE-42")).toContainText("Waiting for your approval (APR-000001)");
   await expect(page.getByTestId("approvals-badge")).toContainText("1 approval(s) waiting");
-  await expect(page.getByTestId("fix-ALERT-RESERVE-42")).toHaveCount(0);
+  await expect(page.getByTestId("fix-open-ALERT-RESERVE-42")).toHaveCount(0);
   // Needs your decision: the question, the cost and the landing day, and a link to the card.
   const decision = page.getByTestId("home-approval-APR-000001");
   await expect(decision).toContainText("Approve ¥200,000.00 of invoice financing?");
@@ -204,7 +238,7 @@ test("day 34: the fix needs approval; queuing it from the home runs nothing and 
 
 test("day 34: the approval card is a question with the cost, the landing day and the after-state; approving clears the home", async ({ page }) => {
   await advanceTo34(page);
-  await page.getByTestId("fix-ALERT-RESERVE-42").click();
+  await runPlan(page, "ALERT-RESERVE-42");
   await page.getByTestId("alert-approval-link-ALERT-RESERVE-42").click();
   await expect(page).toHaveURL(/\/approvals#approval-APR-000001/);
   const card = page.locator("#approval-APR-000001");

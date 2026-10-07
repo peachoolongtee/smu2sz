@@ -72,3 +72,8 @@ export const ChatIcon = (p: P) => (
     <path d="M2.5 3.5h11a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H7l-3 2.5v-2.5H2.5a1 1 0 0 1-1-1v-6a1 1 0 0 1 1-1z" />
   </svg>
 );
+export const ChevronRightIcon = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M6 3.5L10.5 8 6 12.5" />
+  </svg>
+);
