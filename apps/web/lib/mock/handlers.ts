@@ -411,7 +411,9 @@ export async function capexApply(_req: CapexApplyRequest): Promise<CapexApplyRes
 export async function borrowerFile(_req: BorrowerFileRequest): Promise<BorrowerFileView> {
   void _req;
   await delay();
-  return clone(cast<BorrowerFileView>(borrowerFileJson));
+  // The recording carries the API's download paths, but mock mode has no API to render the file: no download buttons,
+  // so the page says where the file can be downloaded instead of offering buttons that fail.
+  return { ...clone(cast<BorrowerFileView>(borrowerFileJson)), downloads: null, pdf_note: null };
 }
 
 export async function decideApproval(id: string, decision: ApprovalDecision): Promise<ApprovalView> {

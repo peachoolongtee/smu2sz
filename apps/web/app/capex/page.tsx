@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { BorrowerFileSections } from "@/components/business/borrower-file";
 import { Avatar, BizCard, BizPageHeader, Chip, Disclosure, PageIcon, SectionHead, pillSecondary } from "@/components/business/kit";
 import { CartIcon, CheckIcon, ChevronRightIcon, ClockIcon, ShieldCheckIcon, XIcon } from "@/components/icons";
-import { Button, ErrorState, KeyValueList } from "@/components/ui";
+import { Button, ErrorState } from "@/components/ui";
 import { downloadFile, getApprovals, getState } from "@/lib/api";
 import { idsToNames, localNames, plainDays, sentenceCase } from "@/lib/business-words";
 import { useAsync } from "@/lib/use-async";
@@ -315,21 +316,7 @@ export default function CapexPage() {
                 <p className="mb-3 text-xs text-ink-3" data-testid="file-as-of">
                   {t("capex.file.asOf", { day: file.generated_day })}
                 </p>
-                <div className="grid gap-3 md:grid-cols-2">
-                  {file.sections.map((sec) => (
-                    <div key={sec.title} className="rounded-2xl bg-subtle p-4">
-                      <h3 className="mb-2 text-sm font-semibold">{sec.title}</h3>
-                      <KeyValueList items={sec.rows.map((r) => ({ k: r.label, v: r.value }))} />
-                      {sec.notes?.length ? (
-                        <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-ink-2">
-                          {sec.notes.map((n) => (
-                            <li key={n}>{n}</li>
-                          ))}
-                        </ul>
-                      ) : null}
-                    </div>
-                  ))}
-                </div>
+                <BorrowerFileSections sections={file.sections} />
                 {file.provenance ? (
                   <p className="mt-3 text-xs text-ink-3" data-testid="file-provenance">
                     {t("capex.file.provenance", {

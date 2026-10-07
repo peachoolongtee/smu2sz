@@ -38,7 +38,8 @@ test("a 401 from the API opens the owner sign-in dialog instead of leaving a bla
     }),
   );
   await page.goto("/mandate");
-  await expect(page.getByText(/rejected the owner token/i).first()).toBeVisible();
+  // Signed out is not a failure: the page asks for the sign-in instead of showing an error code.
+  await expect(page.getByText("Sign in to see your books").first()).toBeVisible();
   await expect(page.getByRole("dialog", { name: "Owner sign-in" })).toBeVisible();
 });
 
@@ -57,7 +58,9 @@ test("the borrower file downloads as HTML and Word, and the owner approves the o
   await expect(page.getByText("1 pending")).toBeVisible();
   const approve = page.getByRole("button", { name: "Approve" });
   await approve.first().click();
-  await expect(page.getByText("0 pending")).toBeVisible();
+  // Once decided, nothing is pending and the page offers the way back; the decided card stays, marked Approved.
+  await expect(page.getByText("1 pending")).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Back to Home" })).toBeVisible();
   await expect(page.getByText("Approved")).toHaveCount(1);
 
   await page.goto("/ledger");

@@ -1095,12 +1095,28 @@ export interface BorrowerFileRequest {
   use_of_proceeds: string;
 }
 
+/** Where a figure in the borrower file comes from: the books, the engine's projection, or the owner's own estimate. */
+export type BorrowerEvidence = "OBSERVED" | "PROJECTED" | "OWNER_ESTIMATE";
+
+/**
+ * One section of the borrower file. A table section names its `columns`, and each row then carries one figure per column
+ * (the server checks the count); `value` is the same figures joined with " · ", kept for older recordings.
+ */
+export interface BorrowerFileSection {
+  key?: string;
+  title: string;
+  title_zh?: string;
+  columns?: string[];
+  rows: { label: string; value: string; note?: string | null; evidence?: string; figures?: { text: string; evidence: BorrowerEvidence | string }[] }[];
+  notes?: string[];
+}
+
 /** POST /borrower-file: a read-only owner action; nothing is queued or approved, the provenance is in the file. */
 export interface BorrowerFileView {
   file_id: string;
   status: "PREPARED_NOT_SENT";
   style: string;
-  sections: { title: string; rows: { label: string; value: string; note?: string | null }[]; notes?: string[] }[];
+  sections: BorrowerFileSection[];
   /** The day the file was generated: it is a snapshot of that day. */
   generated_day: Day;
   /** Where the file came from: the books and mandate it read, and the hash of its inputs. */
