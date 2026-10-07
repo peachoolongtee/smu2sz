@@ -214,7 +214,7 @@ test("day 34: the fix needs approval; queuing it from the home runs nothing and 
   const op = page.getByTestId("fix-result").getByTestId("chat-op-SUBMIT_INVOICE_FOR_FINANCING");
   await expectWaitingNotSuccess(op);
   await expect(page.getByTestId("alert-waiting-ALERT-RESERVE-42")).toHaveText(/^Waiting for your approval \(APR-000001\)\s*Open the approval card$/);
-  await expect(page.getByTestId("approvals-badge")).toContainText("1 approval(s) waiting");
+  await expect(page.getByTestId("approvals-badge")).toContainText("1 approval waiting");
   await expect(page.getByTestId("fix-open-ALERT-RESERVE-42")).toHaveCount(0);
   // Needs your decision: the question, the cost and the landing day, and a link to the card.
   const decision = page.getByTestId("home-approval-APR-000001");

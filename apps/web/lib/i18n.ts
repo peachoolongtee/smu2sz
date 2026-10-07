@@ -15,9 +15,15 @@ export function setLang(lang: Lang): void {
 
 type Vars = Record<string, string | number>;
 
+/**
+ * `{name}` is replaced by the variable; `{name|one|other}` picks the word for a count ("{n} {n|invoice|invoices}"), so
+ * English never needs "invoice(s)". Chinese templates simply do not use the plural form.
+ */
 function interpolate(template: string, vars?: Vars): string {
   if (!vars) return template;
-  return template.replace(/\{(\w+)\}/g, (_, k: string) => (k in vars ? String(vars[k]) : `{${k}}`));
+  return template
+    .replace(/\{(\w+)\|([^|{}]*)\|([^|{}]*)\}/g, (all, k: string, one: string, other: string) => (k in vars ? (Number(vars[k]) === 1 ? one : other) : all))
+    .replace(/\{(\w+)\}/g, (_, k: string) => (k in vars ? String(vars[k]) : `{${k}}`));
 }
 
 export interface I18n {
