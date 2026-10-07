@@ -20,14 +20,19 @@ import {
   tdCls,
   thCls,
 } from "@/components/ui";
-import { downloadFile } from "@/lib/api";
+import { downloadFile, getClock } from "@/lib/api";
 import { runBorrowerFile, runCapex, runCapexApply } from "@/lib/demo";
 import { useDemo } from "@/lib/demo-store";
 import { useI18n } from "@/lib/i18n";
+import { useAsync } from "@/lib/use-async";
+import { whenText } from "@/lib/when";
 
 export default function CapexPage() {
   const { t } = useI18n();
   const demo = useDemo();
+  // Days are said as distances from the simulated today ("computed today", "generated 3 days ago").
+  const clock = useAsync(getClock, []);
+  const today = clock.data?.day ?? 0;
   const [busy, setBusy] = useState<"capex" | "file" | "apply" | string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const capex = demo.capex;
@@ -84,7 +89,7 @@ export default function CapexPage() {
             {capex.estimate_note ? <p className="mt-1 text-xs">{capex.estimate_note}</p> : null}
             {capex.as_of_day !== undefined ? (
               <p className="mt-1 text-xs" data-testid="capex-as-of">
-                {t("capex.asOf", { day: capex.as_of_day })}
+                {t("capex.asOf", { when: whenText(capex.as_of_day, today, t) })}
               </p>
             ) : null}
           </Callout>
@@ -261,7 +266,7 @@ export default function CapexPage() {
               actions={<Badge tone="warn">{t("capex.file.status")}</Badge>}
             >
               <p className="mb-3 text-xs text-ink-2" data-testid="file-as-of">
-                {t("capex.file.asOf", { day: file.generated_day })}
+                {t("capex.file.asOf", { when: whenText(file.generated_day, today, t) })}
               </p>
               <div className="grid gap-4 md:grid-cols-2">
                 {file.sections.map((sec) => (
@@ -311,7 +316,7 @@ export default function CapexPage() {
               {file.provenance ? (
                 <p className="mt-2 text-xs text-ink-2" data-testid="file-provenance">
                   {t("capex.file.provenance", {
-                    day: file.provenance.generated_day,
+                    when: whenText(file.provenance.generated_day, today, t),
                     state: file.provenance.state_version,
                     mandate: file.provenance.mandate_version,
                     hash: file.provenance.evidence_hash.slice(0, 12),

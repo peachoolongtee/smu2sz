@@ -108,7 +108,7 @@ test("demo stepper walks Scene 1, Scene 2, Scene 3 and Security with the golden 
   // 90,000 / (47,457.50 + 34,830.60) = 1.0937 -> 1.09×. The 18-month term is also an illustration (the loan is 36 months).
   await expect(page.getByTestId("structure-loan_18m")).toContainText("1.09");
   await expect(page.getByTestId("structure-loan_18m")).toContainText("Illustration only");
-  await expect(page.getByTestId("capex-as-of")).toContainText("day 0");
+  await expect(page.getByTestId("capex-as-of")).toContainText("Computed today");
 
   await next(page, /\/approvals/);
   // The queue reason, as the server words it.

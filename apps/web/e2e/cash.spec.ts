@@ -139,3 +139,18 @@ test("day 34: the first breach is also the worst point, so the figures row says 
   await expect(figures).not.toContainText("Cash becomes unsafe");
   await expect(figures.getByText("in 8 days")).toHaveCount(1);
 });
+
+test("the doors lead to Capex and the what-if without a day number in their prose", async ({ page }) => {
+  await page.goto("/cash");
+  await page.locator("#cash-capex").getByRole("link").click();
+  await expect(page).toHaveURL(/\/capex/);
+  await page.getByRole("button", { name: /Evaluate/ }).first().click();
+  await expect(page.getByTestId("capex-as-of")).toHaveText("Computed today: a snapshot, not a live figure.");
+  expect(await proseOf(page)).not.toMatch(/\bday \d/i);
+  await page.goto("/cash");
+  await page.locator("#cash-whatif").getByRole("link").click();
+  await expect(page).toHaveURL(/\/whatif/);
+  await expect(page.getByTestId("whatif-outcome")).toHaveText("Breaks your limits");
+  // The engine's own sentences (with their day numbers) are one disclosure down, closed.
+  expect(await proseOf(page, ["details"])).not.toMatch(/\bday \d/i);
+});
