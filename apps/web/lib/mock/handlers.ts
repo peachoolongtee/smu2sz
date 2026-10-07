@@ -260,9 +260,14 @@ export async function getMandate(): Promise<MandateView> {
   return clone(cast<MandateView>(mandateJson));
 }
 
-export async function getTrajectory(mode: Mode): Promise<TrajectoryView> {
+export async function getTrajectory(mode: Mode, verdict?: VerdictView | null): Promise<TrajectoryView> {
   await delay();
-  return clone(cast<TrajectoryView>(mode === "EXPECTED" ? trajExp : trajCons));
+  if (mode === "EXPECTED") return clone(cast<TrajectoryView>(trajExp));
+  // With a verdict the screen shows the package's projection (recorded with the verdict); without one, the books today:
+  // those follow the recorded story like the home does (one projection, read on the books the home was read on).
+  if (verdict) return clone(cast<TrajectoryView>(trajCons));
+  const dealt = Object.values(load().negotiated).some((n) => n.outcome === "DEAL");
+  return cast<TrajectoryView>(home.mockTrajectory(dealt));
 }
 
 export async function planFunding(_req: PlanRequest): Promise<FundingView> {

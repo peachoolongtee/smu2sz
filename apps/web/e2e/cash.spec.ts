@@ -120,6 +120,18 @@ test("after the plan ran, the page states the current funding and folds the comp
   await expect(page.getByTestId("cash-options")).toHaveCount(0);
   await expect(page.locator("#cash-options")).toHaveCount(0);
   await expect(page.locator("body")).not.toContainText(/\bDay \d/);
+  // One projection: the debt readings on Cash & funding are the Home's, said in the summary line and in the table's first month.
+  await page.getByTestId("cash-readings").locator("> summary").click();
+  const now = await page.getByTestId("cash-readings-now").innerText();
+  const firstRow = (await page.getByTestId("cash-readings").locator("tbody tr").first().innerText()).split("\t");
+  const lev = firstRow[firstRow.length - 1].trim();
+  const dscr = firstRow[firstRow.length - 2].trim();
+  await page.goto("/");
+  await page.getByTestId("home-details").locator("> summary").click();
+  expect(now).toContain(await page.getByTestId("home-leverage").innerText());
+  expect(now).toContain(await page.getByTestId("home-dscr").innerText());
+  expect(await page.getByTestId("home-leverage").innerText()).toBe(lev);
+  expect(await page.getByTestId("home-dscr").innerText()).toBe(dscr);
 });
 
 test("covered after the walk: the comparison taken when the plan was chosen is history, closed under Other plans considered", async ({ page }) => {

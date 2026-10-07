@@ -1595,6 +1595,7 @@ export const en = {
   "tour.approvals.body": "FLOW does not approve for you. Approve runs it; Decline closes it. The reason it needs you is on the card.",
   "tour.limits.title": "What FLOW may do alone",
   "tour.limits.body": "The limits you signed. Anything beyond them waits for you.",
+  "biz.readings.now": "Now, as on the Home: debt service cover {dscr}, debt to earnings {lev}.",
 } as const;
 
 export type DictKey = keyof typeof en;
@@ -3189,4 +3190,5 @@ export const zh: Record<DictKey, string> = {
   "tour.approvals.body": "FLOW 不会替您批准。批准即执行，拒绝即关闭。需要您决定的原因就在卡片上。",
   "tour.limits.title": "FLOW 可自行处理的范围",
   "tour.limits.body": "您签署的上限。超出这些上限的事项都会等您决定。",
+  "biz.readings.now": "当前，与首页一致：偿债覆盖 {dscr}，负债/收益 {lev}。",
 };

@@ -193,6 +193,12 @@ export default function CashPage() {
           <details className="rounded-(--radius-card) border border-line bg-surface shadow-(--shadow-card)" data-testid="cash-readings">
             <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-ink">{t("biz.readings")}</summary>
             <div className="border-t border-line p-4">
+              {/* The first line is the home's own reading (the same projection as the table's first month). */}
+              {h?.cash.dscr_text || h?.cash.leverage_text ? (
+                <p className="mb-2 text-sm text-ink" data-testid="cash-readings-now">
+                  {t("biz.readings.now", { dscr: h.cash.dscr_text ?? t("common.none"), lev: h.cash.leverage_text ?? t("common.none") })}
+                </p>
+              ) : null}
               <p className="mb-3 text-xs text-ink-3">{t("biz.readings.note")}</p>
               <TableWrap label={t("biz.readings")}>
                 <table className={tableCls}>

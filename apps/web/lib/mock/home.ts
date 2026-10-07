@@ -15,16 +15,22 @@ import act from "../../mocks/home_act.json";
 import actDay0 from "../../mocks/home_act_day0.json";
 import summaryAfter from "../../mocks/home_summary_after.json";
 import summaryAfterZh from "../../mocks/home_summary_after_zh.json";
+import trajAfter from "../../mocks/trajectory_conservative_after.json";
 import summaryAfterFund from "../../mocks/home_summary_after_fund.json";
 import summaryAfterFundZh from "../../mocks/home_summary_after_fund_zh.json";
+import trajAfterFund from "../../mocks/trajectory_conservative_after_fund.json";
 import summaryDay0 from "../../mocks/home_summary_day0.json";
 import summaryDay0Zh from "../../mocks/home_summary_day0_zh.json";
+import trajDay0 from "../../mocks/trajectory_conservative_day0.json";
 import summaryDay34 from "../../mocks/home_summary_day34.json";
 import summaryDay34Zh from "../../mocks/home_summary_day34_zh.json";
+import trajDay34 from "../../mocks/trajectory_conservative_day34.json";
 import summaryPending from "../../mocks/home_summary_pending.json";
 import summaryPendingZh from "../../mocks/home_summary_pending_zh.json";
+import trajPending from "../../mocks/trajectory_conservative_pending.json";
 import summaryQuiet from "../../mocks/home_summary_quiet.json";
 import summaryQuietZh from "../../mocks/home_summary_quiet_zh.json";
+import trajQuiet from "../../mocks/trajectory_conservative_quiet.json";
 import alertsAfter from "../../mocks/home_alerts_after.json";
 import alertsDay34 from "../../mocks/home_alerts_day34.json";
 import alertsMandateExpired from "../../mocks/home_alerts_mandate_expired.json";
@@ -215,24 +221,43 @@ export function cureStage(): CureStage {
  * books after the deal, the books after the day-0 plan ran (funding in transit), day 34 with the late invoice (the fix
  * needs approval), the queued fix, and the approved fix. `dealt` says whether the Scene 1 deal was made in this session.
  */
+/** Where the recorded story stands: the books the home, the readings and the funding comparison were recorded on. */
+type StoryPoint = "day0" | "quiet" | "after_fund" | "day34" | "pending" | "after";
+
+function storyPoint(dealt: boolean): StoryPoint {
+  const s = load();
+  if (s.day >= NEWS_DAY) return s.stage === "approved" ? "after" : s.stage === "pending" ? "pending" : "day34";
+  return s.funded ? "after_fund" : dealt ? "quiet" : "day0";
+}
+
 export function mockHome(dealt: boolean, lang: "en" | "zh" = "en"): HomeView {
   const s = load();
   // Each point of the story was recorded in both languages (GET /home?lang=zh writes the sentences in Chinese).
   const zh = lang === "zh";
-  const recorded =
-    s.day >= NEWS_DAY
-      ? s.stage === "approved"
-        ? zh ? summaryAfterZh : summaryAfter
-        : s.stage === "pending"
-          ? zh ? summaryPendingZh : summaryPending
-          : zh ? summaryDay34Zh : summaryDay34
-      : s.funded
-        ? zh ? summaryAfterFundZh : summaryAfterFund
-        : dealt
-          ? zh ? summaryQuietZh : summaryQuiet
-          : zh ? summaryDay0Zh : summaryDay0;
+  const recorded = {
+    day0: zh ? summaryDay0Zh : summaryDay0,
+    quiet: zh ? summaryQuietZh : summaryQuiet,
+    after_fund: zh ? summaryAfterFundZh : summaryAfterFund,
+    day34: zh ? summaryDay34Zh : summaryDay34,
+    pending: zh ? summaryPendingZh : summaryPending,
+    after: zh ? summaryAfterZh : summaryAfter,
+  }[storyPoint(dealt)];
   const view = clone<HomeView>(recorded);
   return { ...view, day: s.day, state_version: view.state_version + s.moved };
+}
+
+/** GET /trajectory (conservative) on the same books as the home: the Cash page's readings table and the home's figures are one projection. */
+export function mockTrajectory(dealt: boolean): unknown {
+  return clone(
+    {
+      day0: trajDay0,
+      quiet: trajQuiet,
+      after_fund: trajAfterFund,
+      day34: trajDay34,
+      pending: trajPending,
+      after: trajAfter,
+    }[storyPoint(dealt)],
+  );
 }
 
 /** The day-0 fix (the line draw and the invoice advance) runs alone: the recorded answer, and the books are then "funded". */

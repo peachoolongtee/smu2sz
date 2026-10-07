@@ -185,12 +185,12 @@ export function DetailsBlock({ h }: { h: HomeView }) {
           <dl className="grid grid-cols-2 gap-3 text-sm">
             <div>
               <dt className="text-xs text-ink-3">{t("biz.dscr")}</dt>
-              <dd className="font-semibold tabular-nums">{h.cash.dscr_text ?? t("common.none")}</dd>
+              <dd className="font-semibold tabular-nums" data-testid="home-dscr">{h.cash.dscr_text ?? t("common.none")}</dd>
               <dd className="text-xs text-ink-3">{t("home.position.limitMin", { limit: h.cash.min_dscr_display })}</dd>
             </div>
             <div>
               <dt className="text-xs text-ink-3">{t("biz.leverage")}</dt>
-              <dd className="font-semibold tabular-nums">{h.cash.leverage_text ?? t("common.none")}</dd>
+              <dd className="font-semibold tabular-nums" data-testid="home-leverage">{h.cash.leverage_text ?? t("common.none")}</dd>
               <dd className="text-xs text-ink-3">{t("home.position.limitMax", { limit: h.cash.max_leverage_display })}</dd>
             </div>
           </dl>
