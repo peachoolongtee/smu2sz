@@ -341,10 +341,12 @@ def needs_owner_reason(mandate: Mandate, legs: list[dict[str, Any]], lang: Lang)
 
 
 def approval_words(state: FinancialState, op: dict[str, Any], kind: str | None, today: int, alert: Alert | None,
-                   lang: Lang, plan_costs: dict[tuple[str, str, str | None, int], Any] | None = None) -> dict[str, Any]:
+                   lang: Lang, plan_costs: dict[tuple[str, str, str | None, int], Any] | None = None,
+                   after: str | None = None) -> dict[str, Any]:
     """Business fields for one queued operation: the question, the amount, what it costs (from the alert whose cure
     it is, when that alert is still open; or from the router's cost line when the operation is a leg of the recommended
-    plan, `plan_costs` keyed by kind, facility, receivable and amount), when the cash lands, and the names behind the ids."""
+    plan, `plan_costs` keyed by kind, facility, receivable and amount), when the cash lands, and the names behind the ids.
+    `after` is the cure's after-state sentence, the one the home says (`home.cure_after_words`); `protects` carries it."""
     kind = kind or str(op.get("kind") or "")
     facility_id = op.get("facility_id")
     receivable_id = op.get("receivable_id")
@@ -403,10 +405,7 @@ def approval_words(state: FinancialState, op: dict[str, Any], kind: str | None, 
         "lands_day": lands,
         "lands_when": when_text(lands, today, lang) if lands is not None else None,
         "if_decline": if_decline,
-        "protects": (t(lang, f"It keeps cash above your minimum cash reserve for the next "
-                             f"{max(int(alert.inputs['last_day']) - today, 0)} days.",
-                       f"它使现金在未来 {max(int(alert.inputs['last_day']) - today, 0)} 天保持在最低现金储备以上。")
-                     if alert is not None and alert.inputs.get("last_day") and alert.committed_cure else None),
+        "protects": after,
     }
 
 

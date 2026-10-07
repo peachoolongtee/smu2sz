@@ -11,6 +11,7 @@ from pydantic import BaseModel, TypeAdapter, ValidationError
 
 from app.alerts import alerts
 from app.api.auth import is_bank_feed, log_refusal, require_owner, require_owner_or_agent
+from app.api.home import cure_after_words
 from app.api.presentation import approval_words, in_words, relative_days, when_text
 from app.api.runtime import get_runtime
 from app.books import current_books
@@ -68,10 +69,12 @@ def approvals_queue() -> dict:
     # The alerts whose cures are queued carry the engine's price for them; read once, only when something is pending.
     open_alerts: dict = {}
     plan_costs: dict = {}
+    obs: list = []
     if any(str(getattr(a.status, "value", a.status)) == "PENDING" for a in rt.store.approvals()):
         try:
             with rt.lock:
                 open_alerts = {al.id: al for al in alerts(state, rt.store.get_mandate(), rt.store, rt.day)}
+                obs = current_books(state, rt.store.commitments()).with_([])
                 if rt.settings.features.debt_desk:  # a queued leg of the recommended router plan carries its cost line
                     books = current_books(state, rt.store.commitments())
                     plan = runnable_plan(books.state, books.with_([]), rt.store.get_mandate())
@@ -96,7 +99,8 @@ def approvals_queue() -> dict:
         d["result_message"] = run.result.message if run is not None else None
         # Presentation fields (business words) for the owner's card: the question, names, cost and landing day.
         alert = open_alerts.get((a.op_id or "").split(":")[1]) if (a.op_id or "").startswith("alert:") else None
-        d["presentation"] = approval_words(state, op, a.kind, rt.day, alert, "en", plan_costs)
+        d["presentation"] = approval_words(state, op, a.kind, rt.day, alert, "en", plan_costs,
+                                           after=cure_after_words(state, obs, rt.store.get_mandate(), alert, rt.day, "en") if alert is not None else None)
         d["presentation"]["reason"] = relative_days(in_words(state, a.reason), rt.day, "en")
         d["presentation"]["result_message"] = (relative_days(in_words(state, d["result_message"]), rt.day, "en")
                                                if d["result_message"] else None)

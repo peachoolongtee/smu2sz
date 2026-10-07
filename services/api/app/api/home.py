@@ -336,6 +336,24 @@ def _after_words(after: Any, floor: int, today: int, horizon: int, lang: str) ->
              f"未来 {max(first - 1 - today, 0)} 天现金都保持在最低现金储备以上。")
 
 
+def cure_after_words(state: FinancialState, obs: list[Any], mandate: Mandate, alert: Alert | None, today: int,
+                     lang: str) -> str | None:
+    """The after-state sentence for an alert's own cure, projected on the books like the home's next action: the same
+    words on the home and on the approval card, so one cure never says two horizons. None when the alert has no committed
+    cure that restores the reserve."""
+    if (alert is None or alert.kind != AlertKind.RESERVE_BREACH_AHEAD or not alert.committed_cure
+            or alert.inputs.get("cure_restores_reserve") == "false"):
+        return None
+    actions = _alert_actions(state, alert, today)
+    if not actions:
+        return None
+    try:
+        traj = project(state, obs, actions, Mode.CONSERVATIVE, mandate.horizon_days, mandate.min_cash_fen)
+    except EngineError:
+        return None
+    return _after_words(traj, mandate.min_cash_fen, today, mandate.horizon_days, lang)
+
+
 def _next_action(state: FinancialState, obs: list[Any], mandate: Mandate, found: list[Alert], approvals: list[Any],
                  today: int, state_version: int, lang: str, *, use_router: bool = True) -> dict[str, Any] | None:
     """The one thing to do now, for the first actionable critical alert (a reserve breach), else a repayment the books
@@ -538,7 +556,8 @@ def _approvals(state: FinancialState, obs: list[Any], mandate: Mandate, approval
         alert = None
         if (a.op_id or "").startswith("alert:"):
             alert = by_id.get(a.op_id.split(":")[1])
-        words = approval_words(state, op, a.kind, today, alert, lang, plan_costs)
+        words = approval_words(state, op, a.kind, today, alert, lang, plan_costs,
+                               after=cure_after_words(state, obs, mandate, alert, today, lang))
         amount = op.get("amount_fen", op.get("advance_fen"))
         out.append({"id": a.id, "kind": a.kind, "reason": relative_days(in_words(state, a.reason), today, lang), "created_day": op.get("day"),
                     "amount_fen": amount if isinstance(amount, int) else None,

@@ -218,6 +218,11 @@ def test_a_late_buyer_is_named_in_receivables_and_changes(client):
     client.post(f"/alerts/{a['alert_id']}/act", json={"state_version": a["state_version"], "suggestions": a["suggestions"]})
     [card] = client.get("/home").json()["approvals"]
     assert card["if_decline"] == "¥200,000.00 below your minimum cash reserve in 8 days; the gap peaks at ¥200,000.00 in 8 days."
+    # one cure, one horizon: the approval card says what the home says (the plan projected on the books), on the home and in the queue
+    assert card["protects"] == a["after"] == "Cash stays above your minimum cash reserve for the next 120 days."
+    [row] = client.get("/approvals/queue").json()["approvals"]
+    assert row["presentation"]["protects"] == a["after"]
+    assert client.get("/home?lang=zh").json()["approvals"][0]["protects"] == client.get("/home?lang=zh").json()["next_action"]["after"]
     # the queued fix reads as a business event in the changes, never as the executor's "Queued for owner approval (APR-…)"
     waiting = next(c for c in client.get("/home").json()["changes"] if c["kind"] == "WAITING")
     assert waiting["event_text"] == ("Waiting for your approval: ¥200,000.00 of invoice financing at 32.5% a year, above the "
