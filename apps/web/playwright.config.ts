@@ -31,7 +31,7 @@ export default defineConfig({
   retries: 0,
   reporter: [["list"]],
   // PW_CHROMIUM_PATH points at a pre-installed Chromium when the pinned browser build is not downloadable (cloud sessions).
-  use: { trace: "retain-on-failure", ...(process.env.PW_CHROMIUM_PATH ? { launchOptions: { executablePath: process.env.PW_CHROMIUM_PATH } } : {}) },
+  use: { trace: "retain-on-failure", reducedMotion: "reduce", ...(process.env.PW_CHROMIUM_PATH ? { launchOptions: { executablePath: process.env.PW_CHROMIUM_PATH } } : {}) },
   projects: [
     ...(wantMock
       ? [

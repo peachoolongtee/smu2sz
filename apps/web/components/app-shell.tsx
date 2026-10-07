@@ -123,7 +123,7 @@ function ApprovalsBadge() {
   const pending = list.data?.filter((a) => a.status === "PENDING").length ?? 0;
   if (!pending) return null;
   return (
-    <Link href="/approvals" className="inline-flex min-h-8 items-center rounded-full border border-warn-line bg-warn-bg px-3 text-xs font-semibold text-warn-fg hover:brightness-95" data-testid="approvals-badge" title={t("approvals.badge", { n: pending })}>
+    <Link href="/approvals" className="motion-press inline-flex min-h-8 items-center rounded-pill border border-warn-line bg-warn-bg px-3 text-xs font-semibold text-warn-fg hover:brightness-95" data-testid="approvals-badge" title={t("approvals.badge", { n: pending })}>
       <span className="sm:hidden">{pending}</span>
       <span className="hidden sm:inline">{t("approvals.badge", { n: pending })}</span>
     </Link>
@@ -146,18 +146,18 @@ function AccountMenu() {
     return (
       <div className="flex items-center gap-2">
         <OwnerSessionControl />
-        <details className="relative" data-testid="account-menu">
-          <summary className="flex min-h-8 cursor-pointer list-none items-center rounded-md border border-line-ui px-2 text-xs font-medium text-ink-2 hover:bg-subtle [&::-webkit-details-marker]:hidden" aria-label={t("account.menu")}>
+        <details className="menu relative" data-testid="account-menu">
+          <summary className="motion-press flex min-h-8 cursor-pointer list-none items-center rounded-pill border border-line-ui px-3 text-xs font-medium text-ink-2 hover:bg-subtle [&::-webkit-details-marker]:hidden" aria-label={t("account.menu")}>
             {t("account.menu")}
           </summary>
-          <div className="absolute right-0 z-40 mt-1 w-72 space-y-3 rounded-lg border border-line bg-surface p-3 shadow-lg">
+          <div className="motion-sheet absolute right-0 z-40 mt-1 w-72 space-y-3 rounded-card border border-line bg-surface p-3 shadow-pop">
             <button
               type="button"
               onClick={(e) => {
                 closeMenu(e);
                 startTour();
               }}
-              className="flex min-h-10 w-full items-center gap-2.5 rounded-md px-2 text-left text-sm font-medium text-ink hover:bg-subtle"
+              className="motion-press flex min-h-10 w-full items-center gap-2.5 rounded-pill px-3 text-left text-sm font-medium text-ink hover:bg-subtle"
               data-testid="account-tour"
             >
               <SparkIcon className="text-brand-600" />
@@ -171,13 +171,13 @@ function AccountMenu() {
     );
   }
   return (
-    <details className="relative" data-testid="account-menu">
-      <summary className="flex min-h-8 cursor-pointer list-none items-center rounded-md border border-line-ui px-2 text-xs font-medium text-ink-2 hover:bg-subtle [&::-webkit-details-marker]:hidden" aria-label={t("account.menu")}>
-        <span aria-hidden className="grid size-5 place-items-center rounded-full bg-brand-50 text-[0.65rem] font-bold text-brand-700">
+    <details className="menu relative" data-testid="account-menu">
+      <summary className="motion-press flex min-h-8 cursor-pointer list-none items-center rounded-pill border border-line-ui px-3 text-xs font-medium text-ink-2 hover:bg-subtle [&::-webkit-details-marker]:hidden" aria-label={t("account.menu")}>
+        <span aria-hidden className="grid size-5 place-items-center rounded-pill bg-brand-50 text-[0.65rem] font-bold text-brand-700">
           {t("account.initial")}
         </span>
       </summary>
-      <div className="absolute right-0 z-40 mt-1 w-72 space-y-3 rounded-lg border border-line bg-surface p-3 shadow-lg">
+      <div className="motion-sheet absolute right-0 z-40 mt-1 w-72 space-y-3 rounded-card border border-line bg-surface p-3 shadow-pop">
         <div className="flex items-center justify-between gap-2">
           <p className="text-sm font-medium text-ink" data-testid="account-identity">
             {t("account.signedInAs", { name: t("account.owner") })}
@@ -186,7 +186,7 @@ function AccountMenu() {
             {t("auth.signout")}
           </Button>
         </div>
-        <Link href="/limits" onClick={closeMenu} className="flex min-h-10 items-center gap-2.5 rounded-md px-2 text-sm font-medium text-ink hover:bg-subtle" data-testid="account-limits">
+        <Link href="/limits" onClick={closeMenu} className="motion-press flex min-h-10 items-center gap-2.5 rounded-pill px-3 text-sm font-medium text-ink hover:bg-subtle" data-testid="account-limits">
           <ShieldCheckIcon className="text-brand-600" />
           {t("nav.limits.menu")}
         </Link>
@@ -196,7 +196,7 @@ function AccountMenu() {
             closeMenu(e);
             startTour();
           }}
-          className="flex min-h-10 w-full items-center gap-2.5 rounded-md px-2 text-left text-sm font-medium text-ink hover:bg-subtle"
+          className="motion-press flex min-h-10 w-full items-center gap-2.5 rounded-pill px-3 text-left text-sm font-medium text-ink hover:bg-subtle"
           data-testid="account-tour"
         >
           <SparkIcon className="text-brand-600" />
@@ -240,7 +240,7 @@ function BusinessShell({ children }: { children: ReactNode }) {
                     <Link
                       href={n.href}
                       aria-current={active ? "page" : undefined}
-                      className={`flex min-h-9 items-center whitespace-nowrap rounded-full px-4 text-sm font-medium ${
+                      className={`motion-press flex min-h-9 items-center whitespace-nowrap rounded-pill px-4 text-sm font-medium ${
                         active ? "bg-brand-50 text-brand-700" : "text-ink-2 hover:bg-line hover:text-ink"
                       }`}
                     >
@@ -317,7 +317,7 @@ function DemoNavLinks({ onNavigate }: { onNavigate?: () => void }) {
               href={n.href}
               onClick={onNavigate}
               aria-current={active ? "page" : undefined}
-              className={`flex min-h-10 items-center rounded-md px-3 text-sm font-medium ${
+              className={`motion-press flex min-h-10 items-center rounded-pill px-4 text-sm font-medium ${
                 active ? "bg-brand-50 text-brand-700" : "text-ink-2 hover:bg-subtle hover:text-ink"
               }`}
             >
@@ -374,7 +374,7 @@ function DemoShell({ children }: { children: ReactNode }) {
                   aria-controls="mobile-nav"
                   aria-label={open ? t("nav.close") : t("nav.open")}
                   onClick={() => setOpen((v) => !v)}
-                  className="grid size-10 place-items-center rounded-md border border-line-ui text-ink-2 hover:bg-subtle"
+                  className="motion-press grid size-10 place-items-center rounded-pill border border-line-ui text-ink-2 hover:bg-subtle"
                 >
                   {open ? <XIcon /> : <MenuIcon />}
                 </button>

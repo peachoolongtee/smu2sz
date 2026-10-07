@@ -43,16 +43,21 @@ export function FactTile({ label, children, tone = "neutral", valueTone, testId,
 
 /**
  * Details behind a click: a native `<details>` (keyboard and screen-reader friendly, the open state lives in the DOM)
- * with a chevron that turns when open. Inside a card it is a quiet row; `card` gives it a card of its own.
+ * with a chevron that turns when open and a body that opens by height (globals.css `.disclosure-body`). Inside a card it is a
+ * quiet row; `card` gives it a card of its own.
  */
 export function Disclosure({ summary, children, testId, card = false, className = "", defaultOpen = false, deep = false }: { summary: ReactNode; children: ReactNode; testId?: string; card?: boolean; className?: string; defaultOpen?: boolean; deep?: boolean }) {
   return (
-    <details open={defaultOpen || undefined} data-testid={testId} className={`group ${card ? "rounded-(--radius-card) border border-line bg-surface shadow-(--shadow-card)" : ""} ${className}`}>
-      <summary className={`flex min-h-10 cursor-pointer list-none items-center gap-2 text-sm font-medium [&::-webkit-details-marker]:hidden ${deep ? "text-on-deep" : card ? "px-4 py-3 font-semibold text-ink" : "text-brand-700"}`}>
-        <ChevronRightIcon className={`shrink-0 transition-transform group-open:rotate-90 ${deep ? "text-on-deep-muted" : "text-ink-3"}`} />
+    <details open={defaultOpen || undefined} data-testid={testId} className={`group ${card ? "motion-reveal rounded-card border border-line bg-surface shadow-card" : ""} ${className}`}>
+      <summary className={`flex min-h-10 cursor-pointer list-none items-center gap-2 rounded-pill text-sm font-medium [&::-webkit-details-marker]:hidden ${deep ? "text-on-deep" : card ? "px-4 py-3 font-semibold text-ink" : "text-brand-700"}`}>
+        <ChevronRightIcon className={`shrink-0 transition-transform duration-(--dur) ease-out group-open:rotate-90 ${deep ? "text-on-deep-muted" : "text-ink-3"}`} />
         <span className="min-w-0 flex-1">{summary}</span>
       </summary>
-      <div className={card ? "border-t border-line p-4" : "pb-1 pt-2"}>{children}</div>
+      <div className="disclosure-body">
+        <div className="disclosure-inner -mx-1 px-1 -mb-1 pb-1">
+          <div className={card ? "border-t border-line p-4" : "pb-1 pt-2"}>{children}</div>
+        </div>
+      </div>
     </details>
   );
 }
@@ -142,7 +147,7 @@ export function Row({
   );
   const cls = "flex min-h-12 items-center gap-3 py-2.5";
   return href ? (
-    <Link href={href} className={`${cls} rounded-md hover:bg-subtle`} data-testid={testId}>
+    <Link href={href} className={`${cls} motion-lift rounded-tile px-2 -mx-2 hover:bg-subtle`} data-testid={testId}>
       {body}
     </Link>
   ) : (

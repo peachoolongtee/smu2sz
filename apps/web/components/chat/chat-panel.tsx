@@ -62,7 +62,7 @@ export function ChatPanel() {
                 onClick={() => setPanelOpen(false)}
                 aria-label={t("chat.close")}
                 data-testid="chat-close"
-                className="grid size-10 place-items-center rounded-md border border-line-ui text-ink-2 hover:bg-subtle"
+                className="motion-press grid size-10 place-items-center rounded-pill border border-line-ui text-ink-2 hover:bg-subtle"
               >
                 <XIcon />
               </button>

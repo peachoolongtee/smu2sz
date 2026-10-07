@@ -154,8 +154,7 @@ export function InboxList({
       title={business ? t("biz.deals.inbox") : t("biz.deals.simulatedInbox")}
       subtitle={business ? undefined : t("inbox.list.sub")}
     >
-      <ul className=
-"-m-4 divide-y divide-line" aria-label={business ? t("biz.deals.inbox") : t("biz.deals.simulatedInbox")} data-testid="inbox-list">
+      <ul className="motion-rise -m-4 divide-y divide-line overflow-hidden rounded-b-card" aria-label={business ? t("biz.deals.inbox") : t("biz.deals.simulatedInbox")} data-testid="inbox-list">
         {current ? thread(current) : null}
         {current && others.length ? (
           <li>

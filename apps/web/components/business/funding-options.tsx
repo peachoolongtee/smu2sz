@@ -94,7 +94,7 @@ export function FundingOptions({ rows, menu, today, recommendedKey }: { rows: Co
       {full.length ? (
         <div data-testid="cash-options-full">
           <h3 className="text-xs font-semibold uppercase tracking-wide text-ink-3">{t("biz.cash.options.full")}</h3>
-          <ol className="divide-y divide-line">
+          <ol className="motion-rise divide-y divide-line">
             {full.map((c, i) => (
               <Row key={c.key ?? c.label} c={c} n={i + 1} name={optionName(c, menu, t)} today={today} recommended={c.selected && recommendedKey === (c.key ?? null)} />
             ))}

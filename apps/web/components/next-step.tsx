@@ -11,7 +11,7 @@ import { buttonClass } from "./ui";
 export function NextStep({ label, children, action, testId = "next-step" }: { label: string; children: ReactNode; action?: ReactNode; testId?: string }) {
   return (
     <div
-      className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-brand-100 bg-brand-50 px-4 py-3"
+      className="mb-5 flex flex-wrap items-center justify-between gap-3 motion-reveal rounded-card border border-brand-100 bg-brand-50 px-4 py-3"
       role="region"
       aria-label={label}
       data-testid={testId}

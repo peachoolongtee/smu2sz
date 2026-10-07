@@ -5,6 +5,7 @@ import { getHome, getReconciliation, getState } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
 import { daysLate, whenText } from "@/lib/when";
 import { useAsync } from "@/lib/use-async";
+import { Disclosure } from "@/components/business/kit";
 
 /**
  * Receivables, in the order the owner asks: who owes me and how much (the summary, from the home read), when and who is
@@ -53,7 +54,7 @@ export default function ReceivablesPage() {
           {invoices.length ? (
             <Card id="recv-open" title={t("biz.recv.open")} subtitle={t("biz.recv.open.sub")}>
               {/* On a phone the invoices are a list; the table needs the width of a larger screen. */}
-              <ul className="divide-y divide-line sm:hidden" data-testid="recv-open-list">
+              <ul className="motion-rise divide-y divide-line sm:hidden" data-testid="recv-open-list">
                 {invoices.map((o) => (
                   <li key={o.receivable_id} className="py-2.5 text-sm">
                     <div className="flex items-baseline justify-between gap-3">
@@ -103,7 +104,7 @@ export default function ReceivablesPage() {
 
           {data.promised?.length ? (
             <Card id="recv-promised" title={t("biz.recv.promised")} subtitle={t("biz.recv.promised.sub")} actions={data.lapsed_promises ? <Badge tone="bad">{`${t("recon.lapsed")}: ${data.lapsed_promises}`}</Badge> : undefined}>
-              <ul className="space-y-2">
+              <ul className="motion-rise space-y-2">
                 {data.promised.map((p) => (
                   <li key={`${p.commitment_id}:${p.obligation_id}:${p.receivable_id}`} className="flex flex-wrap items-center justify-between gap-2 rounded-tile border border-line px-3 py-2 text-sm" data-testid={`promised-${p.receivable_id}`} data-status={p.status}>
                     <span>
@@ -137,8 +138,7 @@ export default function ReceivablesPage() {
                       {x.detail_when ?? x.detail}
                     </p>
                     {/* The record ids (invoice, bank reference) are the audit level. */}
-                    <details className="mt-1" data-testid={`receipt-audit-${x.op_id}`}>
-                      <summary className="cursor-pointer text-xs text-ink-3">{t("biz.auditDetails")}</summary>
+                    <Disclosure className="mt-1" testId={`receipt-audit-${x.op_id}`} summary={t("biz.auditDetails")}>
                       <p className="mt-1 text-xs text-ink-3">
                         {x.receivable_id}
                         {x.bank_reference ? (
@@ -148,7 +148,7 @@ export default function ReceivablesPage() {
                           </span>
                         ) : null}
                       </p>
-                    </details>
+                    </Disclosure>
                   </li>
                 ))}
               </ul>

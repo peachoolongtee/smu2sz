@@ -82,8 +82,21 @@
   --color-focus: #1558c0;
   --color-focus-on-deep: #ffffff; /* brand blue on the deep block is 2.4:1: the ring turns white inside it */
 
-  --shadow-card: 0 1px 2px rgb(15 28 46 / 0.04);
-  --radius-card: 0.625rem;
+  /* Shadows: a card rests on a hairline; a lifted row, tile or option takes one step; a sheet or menu takes the pop. */
+  --shadow-card: 0 1px 2px rgb(15 28 46 / 0.05), 0 6px 14px -10px rgb(15 28 46 / 0.12);
+  --shadow-lift: 0 2px 4px rgb(15 28 46 / 0.06), 0 12px 22px -14px rgb(15 28 46 / 0.22);
+  --shadow-pop: 0 4px 8px rgb(15 28 46 / 0.06), 0 18px 36px -12px rgb(15 28 46 / 0.24);
+
+  /* One radius scale: pills for everything you press or type into, 16 px cards, 12 px inner tiles and rows. */
+  --radius-pill: 9999px;
+  --radius-card: 16px;
+  --radius-tile: 12px;
+
+  /* Motion scale: ease-out, under 300 ms, transform and opacity only (the one exception is a disclosure's height). */
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --dur-fast: 120ms;
+  --dur: 200ms;
+  --dur-slow: 280ms;
 }
 
 html {
@@ -112,6 +125,10 @@ body {
   outline-color: var(--color-focus-on-deep);
 }
 
+/* ------------------------------------------------------------------ Motion kit
+   Ease-out, 120 / 200 / 280 ms, transform and opacity only, so nothing moves the layout (a disclosure's height is the one
+   deliberate exception). Everything is a class so a component names what it wants and the reduced-motion block at the end
+   can switch the lot off. */
 @keyframes tl-slide-in {
   from {
     transform: translateX(2rem);
@@ -123,11 +140,228 @@ body {
   }
 }
 
+/* The walkthrough card's entrance (opacity and scale only, so its own translate is left alone). */
+@keyframes tour-in {
+  from {
+    opacity: 0;
+    scale: 0.96;
+  }
+  to {
+    opacity: 1;
+    scale: 1;
+  }
+}
+
+/* A card or block arriving: fades in and rises 6 px. */
+@keyframes biz-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* A row arriving in a list: the same rise, staggered 30 ms per row. */
+@keyframes biz-rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* A menu or sheet opening from its button: a short drop. */
+@keyframes sheet-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* The soft background's slow drift. */
+@keyframes biz-drift {
+  from {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    transform: translate3d(3rem, 2rem, 0) scale(1.08);
+  }
+}
+
+/* The status dot's one pulse: a ring that grows out of the dot and fades. */
+@keyframes dot-pulse {
+  from {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(3);
+  }
+}
+
+@layer components {
+  /* Blocks and cards fade in and rise once when they mount. `backwards` so nothing is left animating afterwards. */
+  .motion-reveal {
+    animation: biz-reveal var(--dur-slow) var(--ease-out) backwards;
+  }
+
+  /* Rows of a list (up to eight) rise one after the other; a ninth row and beyond just appear. */
+  .motion-rise > * {
+    animation: biz-rise var(--dur-slow) var(--ease-out) backwards;
+  }
+  .motion-rise > :nth-child(2) { animation-delay: 30ms; }
+  .motion-rise > :nth-child(3) { animation-delay: 60ms; }
+  .motion-rise > :nth-child(4) { animation-delay: 90ms; }
+  .motion-rise > :nth-child(5) { animation-delay: 120ms; }
+  .motion-rise > :nth-child(6) { animation-delay: 150ms; }
+  .motion-rise > :nth-child(7) { animation-delay: 180ms; }
+  .motion-rise > :nth-child(8) { animation-delay: 210ms; }
+  .motion-rise > :nth-child(n + 9) { animation: none; }
+
+  /* Rows, tiles and option rows that lead somewhere lift 1 px and take the next shadow step, on devices that really hover. */
+  .motion-lift {
+    transition:
+      transform var(--dur) var(--ease-out),
+      box-shadow var(--dur) var(--ease-out),
+      background-color var(--dur) var(--ease-out);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .motion-lift:hover {
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-lift);
+    }
+  }
+
+  /* Pill buttons answer the press, and ease their colour. */
+  .motion-press {
+    transition:
+      transform var(--dur-fast) var(--ease-out),
+      background-color var(--dur) var(--ease-out),
+      border-color var(--dur) var(--ease-out),
+      color var(--dur) var(--ease-out),
+      box-shadow var(--dur) var(--ease-out),
+      opacity var(--dur) var(--ease-out);
+  }
+  .motion-press:not(:disabled):active {
+    transform: scale(0.98);
+  }
+
+  /* A dialog card arriving (the walkthrough): opacity and scale only, so its own placement is left alone. */
+  .motion-pop {
+    animation: tour-in var(--dur) var(--ease-out) backwards;
+  }
+
+  /* The chat slide-over and any panel that enters from the right edge. */
+  .motion-panel[open] {
+    animation: tl-slide-in var(--dur-slow) var(--ease-out) backwards;
+  }
+
+  /* The sheet under the account button, and any menu that drops from a button. */
+  .motion-sheet {
+    transform-origin: top right;
+    animation: sheet-in var(--dur) var(--ease-out) backwards;
+  }
+
+  /* The status dot's single pulse (ACTION_NEEDED and CRITICAL only; the class is not set for the others). */
+  .motion-pulse::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: var(--radius-pill);
+    background: currentColor;
+    animation: dot-pulse 900ms var(--ease-out) 400ms 1 backwards;
+  }
+
+  /* A sliding thumb or indicator: it moves by transform only. */
+  .motion-slide {
+    transition: transform var(--dur) var(--ease-out);
+  }
+}
+
+/* Disclosures: the body is a one-row grid that opens from 0fr to 1fr (the same height animation for every <details>; the
+   inner box clips while it moves). `@starting-style` covers browsers that render a closed <details> as display: none. */
+.disclosure-body {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition:
+    grid-template-rows var(--dur) var(--ease-out),
+    opacity var(--dur) var(--ease-out);
+  opacity: 0;
+}
+details[open] > .disclosure-body {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  @starting-style {
+    grid-template-rows: 0fr;
+    opacity: 0;
+  }
+}
+.disclosure-body > .disclosure-inner {
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Any <details> that is not a Disclosure (a transcript's fold, an inline audit row) gets the browser's own height animation where
+   `::details-content` exists; elsewhere it simply opens. The account menu (`.menu`) is a sheet, not a fold. */
+details:not(.menu, :has(> .disclosure-body)) {
+  interpolate-size: allow-keywords;
+}
+details:not(.menu, :has(> .disclosure-body))::details-content {
+  block-size: 0;
+  overflow: clip;
+  transition:
+    block-size var(--dur) var(--ease-out),
+    content-visibility var(--dur) allow-discrete;
+}
+details[open]:not(.menu, :has(> .disclosure-body))::details-content {
+  block-size: auto;
+}
+
+/* The soft background behind the Business pages (components/business/backdrop.tsx): two blurred discs, in the Home and
+   Cash tints, far below the text's contrast limit (ink-3 stays above 4.5:1 on the strongest point of either). They drift
+   very slowly. Cards stay solid on top. */
+.biz-disc {
+  position: absolute;
+  border-radius: var(--radius-pill);
+  filter: blur(64px);
+  opacity: 0.35;
+  animation: biz-drift 40s ease-in-out infinite alternate;
+}
+.biz-disc-home {
+  top: -8rem;
+  left: -10rem;
+  width: 38rem;
+  height: 32rem;
+  background: color-mix(in srgb, var(--color-sec-home-solid) 12%, var(--color-canvas));
+}
+.biz-disc-cash {
+  right: -12rem;
+  bottom: -10rem;
+  width: 40rem;
+  height: 30rem;
+  background: color-mix(in srgb, var(--color-sec-cash-solid) 12%, var(--color-canvas));
+  animation-delay: -20s;
+}
+
+/* Reduced motion: no transforms, no waiting, no looping. Durations drop to 0.001 ms so a finished state is the only state. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
     animation-duration: 0.001ms !important;
+    animation-delay: 0s !important;
+    animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
   }
 }

@@ -25,6 +25,7 @@ import type { VerdictView } from "@/lib/types";
 import { useAsync } from "@/lib/use-async";
 import { useCurrentOffer } from "@/lib/use-current";
 import { whenText } from "@/lib/when";
+import { Disclosure } from "@/components/business/kit";
 
 /**
  * Deals, in the owner's order (the disclosure standard of the brief): the inbox as one thread per buyer, what the buyer
@@ -174,11 +175,8 @@ export default function DealsPage() {
                       ))}
                     </ul>
                     <div className="mt-2 flex flex-wrap items-center gap-3">
-                      <Link href="/chat" className="inline-flex min-h-10 items-center rounded-md border border-line-ui bg-surface px-3.5 text-sm font-medium text-ink hover:bg-subtle">
-                        {t("biz.deals.clarify")}
-                      </Link>
-                      <details className="text-xs">
-                        <summary className="cursor-pointer">{t("biz.auditDetails")}</summary>
+                      <ButtonLink href="/chat">{t("biz.deals.clarify")}</ButtonLink>
+                      <Disclosure className="text-xs" summary={t("biz.auditDetails")}>
                         <ul className="mt-1 list-disc pl-5 font-mono">
                           {offer.offer.abstentions.map((a) => (
                             <li key={a.field} className="break-all">
@@ -186,7 +184,7 @@ export default function DealsPage() {
                             </li>
                           ))}
                         </ul>
-                      </details>
+                      </Disclosure>
                     </div>
                   </Callout>
                 </div>
@@ -202,15 +200,13 @@ export default function DealsPage() {
                 {commitments}
 
                 <div className="space-y-2">
-                  <details className="rounded-(--radius-card) border border-line bg-surface shadow-(--shadow-card)" data-testid="deal-why">
-                    <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-ink">{t("biz.deals.why")}</summary>
-                    <div className="border-t border-line p-4">
+                  <Disclosure card testId="deal-why" summary={t("biz.deals.why")}>
+                    <div>
                       <WhyRecommended v={v} today={today} />
                     </div>
-                  </details>
-                  <details className="rounded-(--radius-card) border border-line bg-surface shadow-(--shadow-card)" data-testid="deal-original">
-                    <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-ink">{t("biz.deals.original")}</summary>
-                    <div className="space-y-3 border-t border-line p-4">
+                  </Disclosure>
+                  <Disclosure card testId="deal-original" summary={t("biz.deals.original")}>
+                    <div className="space-y-3">
                       {offer.documents.map((doc) => (
                         <AnnotatedText
                           key={doc.doc_id}
@@ -222,10 +218,9 @@ export default function DealsPage() {
                         />
                       ))}
                     </div>
-                  </details>
-                  <details className="rounded-(--radius-card) border border-line bg-surface shadow-(--shadow-card)" data-testid="deal-calc">
-                    <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-ink">{t("biz.deals.calc")}</summary>
-                    <div className="space-y-4 border-t border-line p-4">
+                  </Disclosure>
+                  <Disclosure card testId="deal-calc" summary={t("biz.deals.calc")}>
+                    <div className="space-y-4">
                       {v.concession_values.length ? (
                         <ul className="space-y-2">
                           {v.concession_values.map((c) => (
@@ -234,13 +229,12 @@ export default function DealsPage() {
                                 <span className="text-ink">{c.interpretation ?? c.basis}</span>
                                 <span className="font-semibold tabular-nums">{c.value_display}</span>
                               </div>
-                              <details className="mt-1.5">
-                                <summary className="cursor-pointer text-xs font-medium text-brand-700">{t("common.formula")}</summary>
+                              <Disclosure className="mt-1.5" summary={t("common.formula")}>
                                 <p className="mt-1 text-xs text-ink-3">{c.basis}</p>
                                 <div className="mt-1">
                                   <Formula>{c.formula}</Formula>
                                 </div>
-                              </details>
+                              </Disclosure>
                             </li>
                           ))}
                         </ul>
@@ -260,7 +254,7 @@ export default function DealsPage() {
                         </Link>
                       </p>
                     </div>
-                  </details>
+                  </Disclosure>
                 </div>
               </>
             )}

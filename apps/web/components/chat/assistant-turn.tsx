@@ -304,7 +304,7 @@ export function AssistantTurn({
         </section>
       ) : null}
 
-      <details className="rounded-md border border-line px-3 py-2" open={hasSecurity || refused} data-testid="chat-details">
+      <details className="rounded-tile border border-line px-3 py-2" open={hasSecurity || refused} data-testid="chat-details">
         <summary className="cursor-pointer text-xs font-medium text-ink-2">{t("chat.details")}</summary>
         <div className="mt-2 space-y-3">
           <span data-testid="chat-intent" className="inline-block">

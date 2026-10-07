@@ -162,7 +162,7 @@ function TourCard({ steps }: { steps: Step[] }) {
       {hole ? (
         <div
           aria-hidden
-          className="pointer-events-none fixed rounded-(--radius-card) ring-2 ring-surface transition-[top,left,width,height] duration-300 ease-out"
+          className="pointer-events-none fixed rounded-card ring-2 ring-surface transition-[top,left,width,height] duration-(--dur-slow) ease-out"
           style={{ ...hole, boxShadow: "0 0 0 9999px color-mix(in srgb, var(--color-ink) 60%, transparent)" }}
         />
       ) : (
@@ -176,7 +176,7 @@ function TourCard({ steps }: { steps: Step[] }) {
         aria-labelledby="tour-title"
         aria-describedby="tour-body"
         key={step}
-        className="fixed w-[min(24rem,calc(100vw-2rem))] rounded-(--radius-card) border border-line bg-surface p-5 text-ink shadow-lg"
+        className="motion-pop fixed w-[min(24rem,calc(100vw-2rem))] rounded-card border border-line bg-surface p-5 text-ink shadow-pop"
         style={place}
       >
         <p className="text-xs font-semibold uppercase tracking-wide text-ink-3">{t("tour.step", { n: step + 1, total: steps.length })}</p>

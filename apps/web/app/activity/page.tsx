@@ -9,6 +9,7 @@ import { idsToNames } from "@/lib/business-words";
 import { useI18n } from "@/lib/i18n";
 import { whenText } from "@/lib/when";
 import { useAsync } from "@/lib/use-async";
+import { Disclosure } from "@/components/business/kit";
 
 /**
  * Activity: everything that happened, in order. Each row leads with the server's business sentence (`event_text`: what happened, in the owner's
@@ -52,7 +53,7 @@ export default function ActivityPage() {
         <div className="space-y-5">
           <Card id="activity-timeline" title={t("biz.activity.timeline")} subtitle={t("biz.activity.timeline.sub")}>
             {ops.length ? (
-              <ol className="space-y-2" data-testid="activity-list">
+              <ol className="motion-rise space-y-2" data-testid="activity-list">
                 {ops.map((o) => (
                   <li key={`${o.seq}-${o.op_id}`} className={`rounded-tile border px-3 py-2 ${o.status === "REFUSED" ? "border-bad-line bg-bad-bg/40" : "border-line"}`} data-testid={`activity-${o.kind}`} data-status={o.status}>
                     <p className="break-words text-sm font-medium text-ink" data-testid="activity-event">{o.event_text || o.message_when || words(o.summary) || te("opkind", o.kind) || o.kind}</p>
@@ -70,8 +71,7 @@ export default function ActivityPage() {
                         ))}
                       </div>
                     ) : null}
-                    <details className="mt-1">
-                      <summary className="cursor-pointer text-xs text-ink-3">{t("biz.auditDetails")}</summary>
+                    <Disclosure className="mt-1" summary={t("biz.auditDetails")}>
                       <dl className="mt-1 grid grid-cols-[max-content_minmax(0,1fr)] gap-x-3 gap-y-0.5 text-xs text-ink-2">
                         <dt>{t("audit.executor")}</dt>
                         <dd className="break-words" data-testid="activity-raw">{o.summary}</dd>
@@ -92,7 +92,7 @@ export default function ActivityPage() {
                           <Hash value={o.prev_hash} />
                         </dd>
                       </dl>
-                    </details>
+                    </Disclosure>
                   </li>
                 ))}
               </ol>

@@ -18,7 +18,7 @@ export function CurrentFunding({ h }: { h: HomeView }) {
   return (
     <Card id="cash-current" title={t("biz.cash.current")} subtitle={t("biz.cash.current.sub")}>
       {lots.length ? (
-        <ul className="divide-y divide-line" data-testid="cash-current-lots">
+        <ul className="motion-rise divide-y divide-line" data-testid="cash-current-lots">
           {lots.map((lot, i) => (
             <li key={`${lot.facility_name}-${lot.arrival_day}-${i}`} className="flex flex-wrap items-center justify-between gap-2 py-2.5" data-testid={`cash-lot-${lot.landed ? "landed" : "transit"}`}>
               <div className="min-w-0">

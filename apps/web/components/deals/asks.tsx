@@ -2,6 +2,7 @@
 
 import { useI18n, type I18n } from "@/lib/i18n";
 import type { Displayed, Obligation } from "@/lib/types";
+import { Disclosure } from "@/components/business/kit";
 
 type Ob = Displayed<Obligation>;
 
@@ -65,8 +66,7 @@ export function BuyerAsks({ asks }: { asks: Ob[] }) {
           </li>
         ))}
       </ul>
-      <details className="mt-3" data-testid="deal-parsed-terms">
-        <summary className="cursor-pointer text-xs font-medium text-brand-700">{t("biz.deals.parsed")}</summary>
+      <Disclosure testId="deal-parsed-terms" className="mt-3" summary={t("biz.deals.parsed")}>
         <ul className="mt-1.5 space-y-1 text-sm">
           {asks.map((o) => (
             <li key={o.id} className="flex flex-wrap items-baseline gap-x-2">
@@ -75,7 +75,7 @@ export function BuyerAsks({ asks }: { asks: Ob[] }) {
             </li>
           ))}
         </ul>
-      </details>
+      </Disclosure>
     </>
   );
 }

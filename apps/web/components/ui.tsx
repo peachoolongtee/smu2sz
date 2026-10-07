@@ -155,7 +155,7 @@ export function Card({
     <section
       id={id}
       aria-labelledby={title && id ? `${id}-title` : undefined}
-      className={`min-w-0 rounded-(--radius-card) border bg-surface shadow-(--shadow-card) ${border} ${className}`}
+      className={`motion-reveal min-w-0 rounded-card border bg-surface shadow-card ${border} ${className}`}
     >
       {title ? (
         <div className="flex flex-wrap items-start justify-between gap-2 border-b border-line px-4 py-3">
@@ -278,7 +278,7 @@ export function ErrorState({ error, onRetry }: { error: Error | string; onRetry?
   // Being signed out is not a failure: the owner's pages ask for the sign-in in words instead of showing an error code.
   if (error instanceof ApiError && (error.status === 401 || error.status === 403)) {
     return (
-      <div role="status" className="rounded-lg border border-line bg-surface p-5 text-center shadow-(--shadow-card)" data-testid="signin-needed">
+      <div role="status" className="motion-reveal rounded-card border border-line bg-surface p-5 text-center shadow-card" data-testid="signin-needed">
         <p className="font-semibold text-ink">{t("auth.signinToSee")}</p>
         <p className="mx-auto mt-1 max-w-md text-sm text-ink-2">{error.status === 401 ? t("auth.signinToSee.body") : t("auth.signinToSee.forbidden")}</p>
         <Button className="mt-3" variant="primary" onClick={() => requestSignIn("required")}>
@@ -288,7 +288,7 @@ export function ErrorState({ error, onRetry }: { error: Error | string; onRetry?
     );
   }
   return (
-    <div role="alert" className="rounded-lg border border-bad-line bg-bad-bg p-4">
+    <div role="alert" className="motion-reveal rounded-card border border-bad-line bg-bad-bg p-4">
       <p className="font-semibold text-bad-fg">{t("common.error")}</p>
       <p className="mt-1 break-words text-sm text-ink-2">{message}</p>
       {onRetry ? (
@@ -310,7 +310,7 @@ export function EmptyState({
   action?: ReactNode;
 }) {
   return (
-    <div className="rounded-lg border border-dashed border-line-strong bg-surface px-6 py-10 text-center">
+    <div className="motion-reveal rounded-card border border-dashed border-line-strong bg-surface px-6 py-10 text-center">
       <p className="text-sm font-semibold text-ink">{title}</p>
       {body ? <p className="mx-auto mt-1 max-w-md text-sm text-ink-2">{body}</p> : null}
       {action ? <div className="mt-4 flex justify-center">{action}</div> : null}

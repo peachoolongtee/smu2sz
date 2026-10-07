@@ -9,6 +9,7 @@ import { recordNegotiation } from "@/lib/demo-store";
 import { useI18n } from "@/lib/i18n";
 import type { Mode } from "@/lib/mode";
 import type { CounterProposal, Displayed, NegotiationView, VerdictView } from "@/lib/types";
+import { Disclosure } from "@/components/business/kit";
 
 type Counter = Displayed<CounterProposal> & { text_when?: string; rationale_when?: string; outbound_blocked?: boolean };
 
@@ -22,7 +23,7 @@ function CounterBusinessCard({ c, recommended, today, action }: { c: Counter; re
   const { t, te } = useI18n();
   const e = c.economics ?? null;
   return (
-    <li className={`rounded-lg border p-4 ${recommended ? "border-line border-l-[3px] border-l-brand-600 bg-brand-50" : "border-line bg-surface"}`} data-testid={`deal-option-${c.label.replace(/\s+/g, "-")}`}>
+    <li className={`motion-lift rounded-tile border p-4 ${recommended ? "border-line border-l-[3px] border-l-brand-600 bg-brand-50" : "border-line bg-surface"}`} data-testid={`deal-option-${c.label.replace(/\s+/g, "-")}`}>
       <div className="flex flex-wrap items-center gap-2">
         <h3 className="text-base font-semibold text-ink">{c.label}</h3>
         {recommended ? <Badge tone="brand">{t("biz.deals.option.recommended")}</Badge> : null}
@@ -59,8 +60,7 @@ function CounterBusinessCard({ c, recommended, today, action }: { c: Counter; re
         )}
       </dl>
       {action ? <div className="mt-3">{action}</div> : null}
-      <details className="mt-3 text-sm" data-testid="deal-option-details">
-        <summary className="cursor-pointer text-xs font-medium text-brand-700">{t("biz.deals.details")}</summary>
+      <Disclosure testId="deal-option-details" className="mt-3 text-sm" summary={t("biz.deals.details")}>
         <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-ink-3">{t("biz.deals.whyWorks")}</p>
         <p className="mt-1 text-ink-2">{c.rationale_when ?? c.rationale}</p>
         <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-ink-3">{t("biz.deals.sourceTerms")}</p>
@@ -69,7 +69,7 @@ function CounterBusinessCard({ c, recommended, today, action }: { c: Counter; re
             <li key={o.id}>{obligationSentence(o, t, te, today)}</li>
           ))}
         </ul>
-      </details>
+      </Disclosure>
     </li>
   );
 }
@@ -140,8 +140,7 @@ function NegotiationOutcome({ v, negotiation, today }: { v: VerdictView; negotia
         </>
       )}
       {words.length ? (
-        <details className="mt-3 text-sm" data-testid="deal-buyer-words">
-          <summary className="cursor-pointer text-xs font-medium text-brand-700">{t("biz.deals.buyerWrote")}</summary>
+        <Disclosure testId="deal-buyer-words" className="mt-3 text-sm" summary={t("biz.deals.buyerWrote")}>
           <ul className="mt-1.5 space-y-1.5 text-ink-2">
             {words.map((r) => (
               <li key={r.round} className="break-words">
@@ -149,7 +148,7 @@ function NegotiationOutcome({ v, negotiation, today }: { v: VerdictView; negotia
               </li>
             ))}
           </ul>
-        </details>
+        </Disclosure>
       ) : null}
     </Card>
   );
@@ -212,7 +211,7 @@ export function RecommendedResponse({ v, offerId, today, mode, negotiation }: { 
 
   return (
     <Card id="counters" title={t("biz.deals.response")} subtitle={t("biz.deals.counters.sub")}>
-      <ul className="space-y-3">
+      <ul className="motion-rise space-y-3">
         <CounterBusinessCard c={first} recommended today={today} action={sendAction} />
         {compare ? rest.map((c) => <CounterBusinessCard key={c.id} c={c} recommended={false} today={today} />) : null}
       </ul>

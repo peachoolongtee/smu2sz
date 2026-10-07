@@ -47,7 +47,7 @@ export function DecisionsBlock({ approvals, primary = false }: { approvals: Home
           {t("biz.decisions.none")}
         </p>
       ) : (
-        <ul className="-my-1 divide-y divide-line" data-testid="home-waiting-list">
+        <ul className="motion-rise -my-1 divide-y divide-line" data-testid="home-waiting-list">
           {approvals.map((a) => (
             <li key={a.id}>
               <Row
@@ -94,7 +94,7 @@ export function ChangesBlock({ changes, sinceWhen }: { changes: HomeChange[]; si
         </p>
       ) : (
         <div className="-my-1" data-testid="home-changes-list">
-          <ul className="divide-y divide-line">{changes.slice(0, CHANGES_SHOWN).map(row)}</ul>
+          <ul className="motion-rise divide-y divide-line">{changes.slice(0, CHANGES_SHOWN).map(row)}</ul>
           {rest.length ? (
             <Disclosure summary={t("biz.showMore", { n: rest.length })} testId="home-changes-more" className="border-t border-line">
               <ul className="divide-y divide-line">{rest.map((c, i) => row(c, i + CHANGES_SHOWN))}</ul>
@@ -118,7 +118,7 @@ export function ReceivablesBlock({ r }: { r: HomeReceivables }) {
     <Card id="home-receivables" title={t("biz.receivables")} subtitle={t("biz.receivables.sub", { total: r.open_total_display, n: r.open_count })} actions={<Link href="/receivables" className={textLinkClass}>{t("biz.receivables.open")}</Link>}>
       <div className="-my-1 divide-y divide-line">
         {r.past_due.length ? (
-          <ul className="divide-y divide-line" data-testid="home-late-list">
+          <ul className="motion-rise divide-y divide-line" data-testid="home-late-list">
             {r.past_due.map((x) => (
               <li key={x.receivable_id}>
                 <Row testId={`home-late-${x.receivable_id}`} avatar={<Avatar tone={toneFor(x.buyer_name)}>{initials(x.buyer_name)}</Avatar>} title={x.buyer_name} sub={daysLate(x.days_late, t)} tone="bad" right={x.face_display} />
@@ -146,9 +146,8 @@ export function ReceivablesBlock({ r }: { r: HomeReceivables }) {
 export function DetailsBlock({ h }: { h: HomeView }) {
   const { t } = useI18n();
   return (
-    <details className="rounded-(--radius-card) border border-line bg-surface shadow-(--shadow-card)" data-testid="home-details">
-      <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-ink">{t("biz.details")}</summary>
-      <div className="space-y-5 border-t border-line p-4">
+    <Disclosure card testId="home-details" summary={t("biz.details")}>
+      <div className="space-y-5">
         {h.cash.in_transit ? (
           <section>
             <h3 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-ink-3">{t("transit.title")}</h3>
@@ -224,6 +223,6 @@ export function DetailsBlock({ h }: { h: HomeView }) {
           </Link>
         </p>
       </div>
-    </details>
+    </Disclosure>
   );
 }

@@ -6,6 +6,7 @@ import { axisFloor, axisYuanK } from "@/lib/chart-helpers";
 import { useI18n } from "@/lib/i18n";
 import { SegmentedButtons } from "@/components/ui";
 import type { HomeSeriesPoint, HomeView } from "@/lib/types";
+import { Disclosure } from "@/components/business/kit";
 
 /**
  * The cash forecast as evidence (brief section 18): the baseline "If you do nothing" as a shaded area, the recommended
@@ -179,9 +180,8 @@ function ForecastTable({ data, today, keep, baseName }: { data: Row[]; today: nu
   const { t } = useI18n();
   const shown = data.filter((r) => (r.day - today) % 7 === 0 || keep.includes(r.day));
   return (
-    <details className="text-xs" data-testid="cash-forecast-table">
-      <summary className="cursor-pointer font-medium text-brand-700">{t("biz.forecast.table")}</summary>
-      <div className="mt-2 max-h-64 overflow-auto rounded-md border border-line">
+    <Disclosure testId="cash-forecast-table" className="text-xs" summary={t("biz.forecast.table")}>
+      <div className="mt-2 max-h-64 overflow-auto rounded-tile border border-line">
         <table className="w-full border-collapse text-left">
           <thead className="sticky top-0 bg-subtle text-ink-2">
             <tr>
@@ -203,6 +203,6 @@ function ForecastTable({ data, today, keep, baseName }: { data: Row[]; today: nu
           </tbody>
         </table>
       </div>
-    </details>
+    </Disclosure>
   );
 }
