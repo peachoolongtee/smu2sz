@@ -202,10 +202,10 @@ export function BeforeTheyAsk({ buyerId, optionCount, onOpenOption }: { buyerId:
       <p className="mt-1 text-xs text-ink-3" data-testid="envelope-caption">
         {t("biz.strategy.envelope.caption")}
       </p>
-      <p className="mt-1.5 text-sm text-ink-2" data-testid="envelope-reason">
+      <p className="mt-1 text-sm text-ink-2" data-testid="envelope-reason">
         {e.reason}
       </p>
-      <p className="mt-1.5 text-sm text-ink-2" data-testid="envelope-money">
+      <p className="mt-1 text-sm text-ink-2" data-testid="envelope-money">
         {e.money}
       </p>
       {optionCount > 0 ? (
