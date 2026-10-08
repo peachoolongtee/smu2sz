@@ -1,0 +1,50 @@
+== raw-1-api-pytest.txt
+...........................                                              [100%]
+6398 passed, 37 skipped in 965.51s (0:16:05)
+EXIT 0 DURATION_S 967
+== raw-2-web-build.txt
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+EXIT 0 DURATION_S 9
+== raw-2-web-lint.txt
+$ eslint .
+EXIT 0 DURATION_S 5
+== raw-2-web-test-unit.txt
+ℹ todo 0
+ℹ duration_ms 131.064375
+EXIT 0 DURATION_S 0
+== raw-2-web-typecheck.txt
+$ tsc --noEmit
+EXIT 0 DURATION_S 4
+== raw-3a-mock-default.txt
+  33 skipped
+  135 passed (2.2m)
+EXIT 0 DURATION_S 131
+== raw-3b-mock-strategy.txt
+  24 skipped
+  144 passed (2.2m)
+EXIT 0 DURATION_S 135
+== raw-4a-live-default.txt
+  12 skipped
+  69 passed (1.8m)
+EXIT 0 DURATION_S 105
+== raw-4b-live-strategy.txt
+  4 skipped
+  77 passed (2.6m)
+EXIT 0 DURATION_S 158
+== raw-5a-live-default-sqlite.txt
+  12 skipped
+  69 passed (1.8m)
+EXIT 0 DURATION_S 105
+== raw-5b-live-spec-no-final-reset.txt
+  ✓  23 [live] › e2e/live.spec.ts:653:5 › Cash: the comparison arrives grouped and ordered by the API, and the forecast says what it counts (501ms)
+  23 passed (37.0s)
+EXIT 0 DURATION_S 37
+== raw-5c-live-day34-cure-only.txt
+  ✓  1 [live] › e2e/live.spec.ts:172:5 › on day 34 the cure needs the owner: the alert says so, the click queues it, approval runs it, the cash lands on day 37 (1.8s)
+  1 passed (8.0s)
+EXIT 0 DURATION_S 8
+== raw-5d-live-demo-six-scenes-only.txt
+  ✓  1 [live] › e2e/demo.spec.ts:43:5 › the six scenes run with Next: the buyer asks, FLOW decides, the agreement acts, reality diverges, the owner stays in control, the proof (3.0s)
+  1 passed (9.1s)
+EXIT 0 DURATION_S 9

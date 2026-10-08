@@ -1,0 +1,23 @@
+INFO:     Will watch for changes in these directories: ['/private/tmp/claude-501/-Users-ianpong-Hackathons-SZ-Research/5189f386-0526-4c54-962d-fd87b5e03b18/scratchpad/map65/w8-clone-final/services/api']
+INFO:     Uvicorn running on http://127.0.0.1:8183 (Press CTRL+C to quit)
+INFO:     Started reloader process [16799] using WatchFiles
+INFO:     Started server process [16808]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     127.0.0.1:53314 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53319 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53329 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53331 - "GET /state HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53346 - "GET /decisions/deal%3AOFF-x?lang=en HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:53346 - "GET /decisions/deal%3AOFF-x?lang=en HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:53360 - "OPTIONS /decisions/deal%3AOFF-x?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53361 - "OPTIONS /decisions/deal%3AOFF-x?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53362 - "OPTIONS /approvals/queue?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53361 - "GET /approvals/queue?lang=en HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53360 - "GET /decisions/deal%3AOFF-x?lang=en HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:53361 - "GET /decisions/deal%3AOFF-x?lang=en HTTP/1.1" 404 Not Found
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [16808]
+INFO:     Stopping reloader process [16799]
