@@ -103,7 +103,8 @@ export function ApprovalCard({
   const p = a.presentation;
   // What the decision run did, in the server's words (the decision record's execution block); the older fields are the fallback.
   const execution = a.execution?.status ?? p?.execution_status ?? a.execution_status;
-  const executionText = a.execution?.summary_text ?? null;
+  // A waiting row has run nothing, so it has no result to report ("Waiting for your approval. Nothing has run." is the question's, not an answer).
+  const executionText = a.execution && a.execution.status !== "PENDING" ? a.execution.summary_text : null;
   // The queue's presentation says the result in business words (names, distances from today); the raw executor message
   // the page kept from the decision is the fallback until the queue has been read again.
   const shownResult = executionText || p?.result_message || resultMessage || a.result_message || null;

@@ -107,19 +107,31 @@ test("the day-0 plan: 'go ahead' brings cash now and leaves the advance in trans
  * The same calls scripts/demo_run.py makes: the deal, the receipt on day 2 (with the bank's reference), then the clock to day 34.
  * `receipt` is what the buyer paid on day 2: all of what the server expected, half of it (the part-kept promise), or nothing.
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Post = (path: string, data: object, headers?: Record<string, string>) => Promise<any>;
+
 async function walkToDay34(request: APIRequestContext, receipt: "full" | "half" | "none") {
   const owner = { "X-Owner-Token": TOKEN };
-  const bank = { "X-Agent-Key": "demo-agent-key", "X-Bank-Feed-Key": "demo-bank-feed-key" };
-  const post = async (path: string, data: object, headers: Record<string, string> = owner) => {
+  const post: Post = async (path, data, headers = owner) => {
     const res = await request.post(`${API}${path}`, { headers, data });
     expect(res.ok(), path).toBeTruthy();
     return res.json();
   };
   await post("/demo/reset", {});
   const { offer } = await post("/offers", { fixture_id: "EX01_PACKAGE" });
-  await post(`/offers/${offer.offer_id}/evaluate`, { fixture_id: "EX01_PACKAGE" });
-  const deal = await post(`/negotiate/${offer.offer_id}`, { buyer_profile: "cooperative" });
+  const verdict = await post(`/offers/${offer.offer_id}/evaluate`, { fixture_id: "EX01_PACKAGE" });
+  // The send is bound to what was shown, as the Deals page binds it: the verdict, the first counter and the books' version.
+  const deal = await post(`/negotiate/${offer.offer_id}`, { buyer_profile: "cooperative", verdict_id: verdict.id, counter_id: verdict.counters[0].id, state_version: verdict.state_version });
   expect(deal.outcome).toBe("DEAL");
+  expect(deal.decision_id).toBe(`deal:${offer.offer_id}`);
+  await dayTwoToDay34(request, receipt, post);
+  return { post, offerId: offer.offer_id as string };
+}
+
+/** From the deal to day 34: the clock to day 2, the buyer's receipt (or none), then day 30 and day 34. */
+async function dayTwoToDay34(request: APIRequestContext, receipt: "full" | "half" | "none", post: Post) {
+  const owner = { "X-Owner-Token": TOKEN };
+  const bank = { "X-Agent-Key": "demo-agent-key", "X-Bank-Feed-Key": "demo-bank-feed-key" };
   await post("/clock/advance", { to_day: 2 });
   if (receipt !== "none") {
     const recon = await (await request.get(`${API}/reconciliation`, { headers: owner })).json();
@@ -143,7 +155,6 @@ async function walkToDay34(request: APIRequestContext, receipt: "full" | "half" 
   }
   await post("/clock/advance", { to_day: 30 });
   await post("/clock/advance", { to_day: 34 });
-  return { post };
 }
 
 const toDay34 = (request: APIRequestContext) => walkToDay34(request, "full");
@@ -196,8 +207,14 @@ test("on day 34 the cure needs the owner: the alert says so, the click queues it
   await page.getByTestId("alert-approval-link-ALERT-RESERVE-42").click();
   await expect(page).toHaveURL(/\/approvals#approval-APR-/);
   const approvalCard = page.locator('[id^="approval-APR-"]').first();
+  // The price the owner is quoted is the one stored when the request was made (F13).
+  await expect(approvalCard.getByTestId("approval-quote")).toContainText("Quoted when requested (today)");
+  await expect(approvalCard.getByTestId("approval-cost")).toContainText("¥1,782.19");
   await approvalCard.getByRole("button", { name: "Approve" }).click();
   await expect(approvalCard.locator('[data-testid^="approval-result-"]')).toContainText("the cash lands in 3 days");
+  // Decided: the quote is still there (it does not vanish with the pending alert), with what actually happened beside it.
+  await expect(approvalCard.getByTestId("approval-cost")).toContainText("¥1,782.19");
+  await expect(approvalCard.getByTestId("approval-quote-actual")).toContainText("¥200,000.00");
   await expect(approvalCard).toContainText("Approved");
   // The decision day is the API's `decided_day` (the clock is on day 34).
   await expect(approvalCard.locator('[data-testid^="approval-decided-"]')).toHaveText("Decided today.");
@@ -212,6 +229,16 @@ test("on day 34 the cure needs the owner: the alert says so, the click queues it
   await expect(page.getByTestId("home-status")).toHaveAttribute("data-status", "WATCH");
   await expect(page.getByTestId("home-in-transit")).toContainText("¥200k funding arriving in 3 days");
   await expect(page.getByTestId("home-changes-list")).toContainText("You approved ¥200,000.00 of invoice financing. Funds arrive in 3 days.");
+  // The cure is an open decision until its cash lands: Home lists it under Waiting on, and its record says the same.
+  const open = page.getByTestId("home-waiting-on-list");
+  await expect(open.getByTestId("home-open-state")).toHaveText("Requested; the cash is on its way");
+  await open.getByTestId("home-open-headline").click();
+  await expect(page.getByTestId("record-state")).toHaveAttribute("data-state", "SETTLEMENT_PENDING");
+  await expect(page.getByTestId("record-settlement")).toContainText("¥200,000.00");
+  // The clock moves: the record follows the books, and the lot has landed.
+  await post("/clock/advance", { to_day: 38 });
+  await page.reload();
+  await expect(page.getByTestId("record-state")).toHaveAttribute("data-state", "SETTLED");
 
   await post("/demo/reset", {});
 });
@@ -425,6 +452,11 @@ test("approving after the mandate has expired is refused: the card ends as 'coul
   // The queue is the truth: after a reload the card is still terminal, and no cash was moved.
   await page.reload();
   await expect(page.locator('[id^="approval-APR-"]').first().locator('[data-testid^="approval-refused-"]')).toContainText("could not run");
+  // The record agrees: FAILED is a final state of its own, and the quote taken when the request was made is still on the card.
+  await expect(page.locator('[id^="approval-APR-"]').first().getByTestId("approval-quote")).toContainText("Quoted when requested");
+  await page.locator('[id^="approval-APR-"]').first().locator('[data-testid^="approval-record-"]').click();
+  await expect(page.getByTestId("record-state")).toHaveAttribute("data-state", "FAILED");
+  await expect(page.getByTestId("record-execution")).toContainText("No money moved");
   const ledger = await (await request.get(`${API}/ledger`, { headers: { "X-Owner-Token": TOKEN } })).json();
   const funding = (ledger.operations as { kind: string; status: string; op_id: string }[]).filter((o) => o.op_id.startsWith("alert:"));
   expect(funding.some((o) => o.status === "EXECUTED")).toBe(false);
@@ -453,4 +485,129 @@ test("a buyer's agreement that expired before the owner looked cannot be approve
   await expect(page.locator('[id^="approval-APR-"]').first().getByRole("button", { name: /^Approve/ })).toBeDisabled();
   await expect(page.locator('[id^="approval-APR-"]').first().getByRole("button", { name: "Decline", exact: true })).toBeEnabled();
   await request.post(`${API}/demo/reset`, { headers: owner, data: {} });
+});
+
+/** Reads the Deals page's first Foshan message and checks it against the limits. */
+async function checkedDeal(page: Page) {
+  await page.goto("/deals");
+  await page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01").click();
+  await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
+  await expect(page.getByTestId("deal-steps")).toHaveAttribute("data-state", "RESPONSE_READY");
+}
+
+const ownerPost = (request: APIRequestContext): Post => async (path, data, headers = { "X-Owner-Token": TOKEN }) => {
+  const res = await request.post(`${API}${path}`, { headers, data });
+  expect(res.ok(), path).toBeTruthy();
+  return res.json();
+};
+
+test("Deals: Send carries what was shown, and the record's state follows: Agreed, then Fulfilled once the receipt came", async ({ page, request }) => {
+  const post = ownerPost(request);
+  await post("/demo/reset", {});
+  const sends: { buyer_profile?: string; verdict_id?: string; counter_id?: string; state_version?: unknown }[] = [];
+  page.on("request", (r) => {
+    if (r.method() === "POST" && /\/negotiate\//.test(r.url())) sends.push(r.postDataJSON());
+  });
+  await checkedDeal(page);
+  const steps = page.getByTestId("deal-steps");
+  await expect(steps).toContainText("Response ready (Counter recommended)");
+  await expect(page.getByTestId("deal-send")).toHaveText("Send Option A (simulated buyer reply)");
+  await page.getByTestId("deal-send").click();
+  await expect.poll(() => sends.length).toBe(1);
+  // The browser sends ids and the shown books' version, never a figure.
+  expect(sends[0].buyer_profile).toBe("cooperative");
+  expect(sends[0].verdict_id).toMatch(/^VER-/);
+  expect(sends[0].counter_id).toMatch(/^CTR-/);
+  expect(typeof sends[0].state_version).toBe("number");
+  await expect(steps).toHaveAttribute("data-state", "AGREED");
+  await expect(page.getByTestId("deal-recommendation")).toHaveText("Agreed");
+  await expect(page.locator("#commitments").getByTestId("commitment-state")).toHaveText("Agreed");
+  // The record knows what was sent.
+  await page.goto("/ledger");
+  const offerId = await page.evaluate(() => JSON.parse(sessionStorage.getItem("tl-demo-v2") ?? "{}").offerId as string);
+  const record = await (await request.get(`${API}/decisions/${encodeURIComponent("deal:" + offerId)}`, { headers: { "X-Owner-Token": TOKEN } })).json();
+  expect(record.response.sent.chosen_label).toBe("Option A");
+  // The receipt came on day 2: the page reads the record again and the deal is Fulfilled.
+  await dayTwoToDay34(request, "full", post);
+  await page.goto("/deals");
+  await expect(page.getByTestId("deal-steps")).toHaveAttribute("data-state", "FULFILLED");
+  await expect(page.getByTestId("deal-steps-outcome")).toHaveText("Fulfilled");
+  await post("/demo/reset", {});
+});
+
+test("Deals: with no receipt on day 2 the line says the early payment did not arrive, and the agreement stays listed", async ({ page, request }) => {
+  const post = ownerPost(request);
+  await post("/demo/reset", {});
+  await checkedDeal(page);
+  await page.getByTestId("deal-send").click();
+  await expect(page.getByTestId("deal-steps")).toHaveAttribute("data-state", "AGREED");
+  await dayTwoToDay34(request, "none", post);
+  await page.goto("/deals");
+  const steps = page.getByTestId("deal-steps");
+  await expect(steps).toHaveAttribute("data-state", "MISSED");
+  await expect(page.getByTestId("deal-steps-outcome")).toHaveText("Early payment did not arrive");
+  await expect(steps).not.toContainText("Agreed");
+  await expect(page.getByTestId("deal-recommendation")).toHaveText("Early payment did not arrive");
+  await expect(page.locator("#commitments").getByTestId("commitment-state")).toHaveText("Early payment did not arrive");
+  await expect(page.locator("#commitments")).toContainText("Agreement expired");
+  // The same record is on the Activity page's rows, and the Demo verdict page's summary says what ran.
+  await page.goto("/verdict");
+  await expect(page.getByTestId("execution-agreement")).toHaveText("Early payment did not arrive");
+  await post("/demo/reset", {});
+});
+
+test("Deals: if the books moved after the proposal was shown, Send is refused, nothing is sent, and Check again gets a current one", async ({ page, request }) => {
+  const post = ownerPost(request);
+  await post("/demo/reset", {});
+  await checkedDeal(page);
+  // The books move behind the page's back (the clock), so the version the page holds is stale.
+  await post("/clock/advance", { to_day: 1 });
+  await page.getByTestId("deal-send").click();
+  const changed = page.getByTestId("deal-counter-changed");
+  await expect(changed).toContainText("The books moved since this was shown");
+  await expect(changed).toContainText("Nothing was sent.");
+  await expect(page.getByTestId("deal-negotiation")).toHaveCount(0);
+  await expect(page.getByTestId("deal-steps")).toHaveAttribute("data-state", "RESPONSE_READY");
+  // Nothing was agreed or run on the books.
+  const ledger = await (await request.get(`${API}/ledger`, { headers: { "X-Owner-Token": TOKEN } })).json();
+  expect((ledger.operations as { kind: string }[]).filter((o) => o.kind === "ACCEPT_OFFER" || o.kind === "DRAW_FACILITY")).toEqual([]);
+  expect(ledger.commitments).toEqual([]);
+  // Checking again evaluates on the books as they are; the new proposal can be sent.
+  await changed.getByTestId("deal-check-again").click();
+  await expect(changed).toHaveCount(0);
+  await expect(page.getByTestId("deal-send")).toBeVisible();
+  await page.getByTestId("deal-send").click();
+  await expect(page.getByTestId("deal-steps")).toHaveAttribute("data-state", "AGREED");
+  await post("/demo/reset", {});
+});
+
+test("Home: a cure that cannot restore the reserve leaves a remaining task with the routes it names, and the invoice link lands on its row", async ({ page, request }) => {
+  const { post } = await toDay34NoReceipt(request);
+  await page.goto("/");
+  const open = page.getByTestId("home-next-action").locator('[data-testid^="fix-open-ALERT-RESERVE"]');
+  const alertId = ((await open.getAttribute("data-testid")) ?? "").replace("fix-open-", "");
+  await runPlan(page.getByTestId("home-next-action"), alertId);
+  await page.getByTestId(`alert-approval-link-${alertId}`).click();
+  await page.locator('[id^="approval-APR-"]').first().getByRole("button", { name: /^Approve/ }).click();
+  await expect(page.locator('[id^="approval-APR-"]').first().locator('[data-testid^="approval-decided-"]')).toBeVisible();
+  // While the cash is on its way the record waits for the lender; once it has landed the reserve is still short and the owner is asked.
+  await post("/clock/advance", { to_day: 38 });
+  await page.goto("/");
+  const task = page.locator("#home-remaining");
+  await expect(task.getByTestId("home-remaining-text")).toContainText("Your minimum cash reserve is still");
+  await expect(task.getByTestId("home-remaining-text")).toContainText("This needs your decision.");
+  await expect(task.getByRole("link", { name: "Compare your funding options" })).toHaveAttribute("href", "/cash#cash-options");
+  await expect(task.getByRole("link", { name: "Review your limits" })).toHaveAttribute("href", "/limits");
+  await task.getByRole("link", { name: "See the record" }).click();
+  await expect(page.getByTestId("record-state")).toHaveAttribute("data-state", "SETTLED");
+  await expect(page.getByTestId("record-remaining")).toContainText("This needs your decision.");
+  // The invoice link lands on that invoice's row once the page has loaded.
+  await page.goto("/");
+  await page.locator("#home-remaining").getByRole("link", { name: /^Open the .* invoice/ }).click();
+  await expect(page).toHaveURL(/\/receivables#/);
+  const id = decodeURIComponent(new URL(page.url()).hash.slice(1));
+  const row = page.locator(`[id="${id}"]:visible`);
+  await expect(row).toHaveCount(1);
+  await expect(row).toBeInViewport();
+  await post("/demo/reset", {});
 });

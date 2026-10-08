@@ -2,9 +2,10 @@
 
 import { Card, Stat } from "@/components/ui";
 import type { DictKey } from "@/lib/dictionary";
+import { dealProgress } from "@/lib/decision";
 import { useI18n } from "@/lib/i18n";
 import { businessAction } from "@/lib/presentation-fallbacks";
-import type { BusinessAction, NegotiationView, VerdictView } from "@/lib/types";
+import type { BusinessAction, DecisionView, VerdictView } from "@/lib/types";
 import { whenText } from "@/lib/when";
 
 export const ACTION_KEY: Record<BusinessAction, DictKey> = {
@@ -29,15 +30,19 @@ const ACTION_TONE: Record<BusinessAction, "ok" | "warn" | "bad" | "brand" | unde
  * that carry it: the 12-month cost of concessions against the owner's limit, the first reserve breach (its day and the
  * cash that day) and the worst point (a different day), plus one sentence when the early-payment discount is dearer
  * than funding. Every figure is a server display string; days are distances from today.
+ *
+ * Once the response has been sent the headline is the deal's record, in the server's words ("Agreed", "Early payment did not arrive",
+ * "No deal: the buyer did not accept"), not the recommendation that preceded it and not the answer the browser kept from the click.
  */
-export function DealDecision({ v, today, negotiation = null }: { v: VerdictView; today: number; negotiation?: NegotiationView | null }) {
+export function DealDecision({ v, today, record = null }: { v: VerdictView; today: number; record?: DecisionView | null }) {
   const { t } = useI18n();
   const action = businessAction(v);
-  // Once the buyer has answered, the headline is the outcome, not the recommendation that preceded it.
-  const outcome = negotiation?.outcome ?? null;
-  const headline = outcome === "DEAL" ? t("biz.deals.action.agreed") : outcome === "NO_DEAL" ? t("biz.deals.action.noDeal") : t(ACTION_KEY[action]);
-  // An agreement is fine (ok); no deal is a closed matter, not an alarm (neutral).
-  const tone = outcome === "DEAL" ? "ok" : outcome === "NO_DEAL" ? undefined : ACTION_TONE[action];
+  const progress = record ? dealProgress(record.state) : null;
+  // A record that has gone past "response ready" has an outcome; before that the recommendation is the headline.
+  const outcome = record && progress?.reached ? record.state : null;
+  const headline = outcome && record ? record.state_text : t(ACTION_KEY[action]);
+  // An agreement in force is fine (ok), a lapse or a failure is not (bad); a closed matter is not an alarm (neutral); a waiting approval is a warning.
+  const tone = !progress || !progress.reached ? ACTION_TONE[action] : progress.tone === "good" ? "ok" : progress.tone === "bad" ? "bad" : progress.tone === "open" ? "warn" : undefined;
   const tr = v.trajectory ?? null;
   const breach = tr?.first_breach_day ?? null;
   const dearer = v.violations.find((x) => x.code === "DISCOUNT_ABOVE_BREAK_EVEN");

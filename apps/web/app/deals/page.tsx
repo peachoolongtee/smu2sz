@@ -25,7 +25,8 @@ import { annotationsFor, offerItems } from "@/lib/offer-items";
 import type { VerdictView } from "@/lib/types";
 import { useAsync } from "@/lib/use-async";
 import { useCurrentOffer } from "@/lib/use-current";
-import { useDecisions } from "@/lib/use-decision";
+import { useDecision, useDecisions } from "@/lib/use-decision";
+import { dealProgress } from "@/lib/decision";
 import { whenText } from "@/lib/when";
 import { Disclosure } from "@/components/business/kit";
 
@@ -95,6 +96,9 @@ export default function DealsPage() {
 
   const offer = cur.offer;
   const v: VerdictView | null = cur.verdict;
+  // The deal's record: where it stands (sent, agreed, lapsed, closed) is read from it, never from the answer the browser kept from a click.
+  const record = useDecision(offer ? dealRecordId(offer.offer.offer_id) : null).data ?? null;
+  const progress = record ? dealProgress(record.state) : null;
   const items = offer ? offerItems(offer.offer) : [];
   // The verdict's bound obligations carry the terms delta ("45 → 60 days"); before the check, the compiled offer's.
   const asks = v?.bound_obligations?.length ? v.bound_obligations : items.flatMap((i) => (i.group === "obligation" ? [i.obligation] : []));
@@ -110,12 +114,16 @@ export default function DealsPage() {
         </Button>
       ),
     };
-  } else if (offer && v && cur.negotiation) {
+  } else if (offer && v && record && progress?.reached) {
     next =
-      cur.negotiation.outcome === "DEAL"
+      progress.tone === "good"
         ? { text: t("next.agreed"), action: <a href="#commitments" className={nextLinkCls}>{t("next.seeHome")}</a> }
-        : { text: t("next.noDeal"), action: <a href="#inbox-list" className={nextLinkCls}>{t("next.backToOffers")}</a> };
-  } else if (offer && v && v.counters.length) {
+        : progress.tone === "open"
+          ? { text: t("next.approval"), action: <Link href="/approvals" className={nextLinkCls}>{t("next.toApprovals")}</Link> }
+          : record.state === "NO_DEAL"
+            ? { text: t("next.noDeal"), action: <a href="#inbox-list" className={nextLinkCls}>{t("next.backToOffers")}</a> }
+            : { text: t("next.closed", { state: record.state_text }), action: <a href="#commitments" className={nextLinkCls}>{t("next.seeHome")}</a> };
+  } else if (offer && v && v.counters.length && !cur.negotiation) {
     // The response card below carries the page's one primary action ("Send this counter"); this link only leads to it.
     next = { text: t("next.counter"), action: <a href="#counters" className={nextLinkSecondaryCls}>{t("next.toCounters")}</a> };
   }
@@ -203,7 +211,7 @@ export default function DealsPage() {
               commitments
             ) : (
               <>
-                <DealDecision v={v} today={today} negotiation={cur.negotiation} />
+                <DealDecision v={v} today={today} record={record} />
                 <RecommendedResponse
                   v={v}
                   offerId={offer.offer.offer_id}
