@@ -28,7 +28,7 @@ test("STRATEGY_MVP is on only for NEXT_PUBLIC_STRATEGY_MVP=1 (unset, 0 and true 
   assert.equal(await flagWith("1"), true);
 });
 
-test("every new client call is behind the flag at its call site, so the default build never reads the routes", () => {
+test("every strategy read goes through useStrategyAsync, which is the idle hook (the thunk never runs) unless the build flag is on", () => {
   for (const [file, call] of [
     ["app/cash/page.tsx", "getPriceCurve"],
     ["app/receivables/page.tsx", "getReceivablesWorth"],
@@ -36,8 +36,10 @@ test("every new client call is behind the flag at its call site, so the default 
   ]) {
     const uses = source(file).split("\n").filter((line) => line.includes(`${call}(`));
     assert.ok(uses.length > 0, `${file} no longer calls ${call}`);
-    for (const line of uses) assert.match(line, /STRATEGY_MVP \? await /, `${file}: ${call} must be called behind STRATEGY_MVP: ${line.trim()}`);
+    for (const line of uses) assert.match(line, /useStrategyAsync\(\(\) => /, `${file}: ${call} must be read through useStrategyAsync: ${line.trim()}`);
   }
+  assert.match(source("lib/use-async.ts"), /useStrategyAsync: typeof useAsync = STRATEGY_MVP \? useAsync : useIdle/);
+  assert.doesNotMatch(source("lib/use-async.ts"), /function useIdle[^}]*load\(/);
 });
 
 test("the recordings are chosen by the clock's day: the opening books before the news day, day 34's from it", () => {
@@ -60,10 +62,13 @@ test("after the day-34 cure is approved the post-approval recording is served; b
 
 test("the mock handlers choose with the home mock's own condition (the clock's day and cureStage() === 'approved') and the recordings are the right days", () => {
   const handlers = source("lib/mock/handlers.ts");
-  assert.match(handlers, /pickByStory\(home\.mockClock\(\)\.day, home\.NEWS_DAY, home\.cureStage\(\) === "approved", atDay0, atNews, afterApproval\)/);
-  assert.match(handlers, /getPriceCurve[\s\S]*?strategyRecording<PriceCurveView>\(priceCurveDay0Json, priceCurveDay34Json, priceCurveDay34AfterJson\)/);
-  assert.match(handlers, /getReceivablesWorth[\s\S]*?strategyRecording<ReceivablesWorthView>\(worthDay0Json, worthDay34Json, worthDay34AfterJson\)/);
-  assert.match(handlers, /getEnvelope[\s\S]*?strategyRecording<EnvelopeView>\(envelopeDay0Json, envelopeDay34Json, envelopeDay34AfterJson\)/);
+  assert.match(handlers, /pickByStory\(home\.mockClock\(\)\.day, home\.NEWS_DAY, home\.cureStage\(\) === "approved", atDay0\.default, atNews\.default, afterApproval\.default\)/);
+  assert.match(handlers, /getPriceCurve[\s\S]*?strategyRecording<PriceCurveView>\(priceCurveRecordings\)/);
+  assert.match(handlers, /getReceivablesWorth[\s\S]*?strategyRecording<ReceivablesWorthView>\(worthRecordings\)/);
+  assert.match(handlers, /getEnvelope[\s\S]*?strategyRecording<EnvelopeView>\(envelopeRecordings\)/);
+  // The nine recordings are loaded lazily, inside the strategy handlers: the default mock chunk does not carry them.
+  assert.doesNotMatch(handlers, /^import .* from "\.\.\/\.\.\/mocks\/strategy\//m);
+  assert.equal(handlers.match(/import\("\.\.\/\.\.\/mocks\/strategy\/[a-z_0-9]+\.json"\)/g)?.length, 9);
   assert.match(source("lib/mock/home.ts"), /s\.stage === "approved" \? "after"/);
   for (const name of ["price_curve", "worth", "envelope"]) {
     assert.equal(recording(`${name}_day0`).day, 0);
@@ -83,7 +88,7 @@ test("the recordings carry the server's strings the pages show, and no 'day N' i
     assert.ok(worth.rows.length > 0);
     assert.ok(worth.ranking_note && worth.top_action);
     for (const row of worth.rows) {
-      for (const text of [row.action_sentence, row.net_saving_text, row.gross_saving_display]) assert.doesNotMatch(text, /\bday \d/i);
+      for (const text of [row.action_sentence, row.net_saving_text, row.gross_saving_display, row.worth_text ?? ""]) assert.doesNotMatch(text, /\bday \d/i);
       assert.ok(["call_now", "escalate", "reminder", "offer_early_pay", "finance", "wait"].includes(row.action));
     }
   }
@@ -131,4 +136,35 @@ test("the envelope call is behind the flag at its call site", () => {
   const uses = source("components/deals/before-they-ask.tsx").split("\n").filter((line) => line.includes("getEnvelope("));
   assert.ok(uses.length > 0);
   for (const line of uses) assert.match(line, /STRATEGY_MVP/, line.trim());
+});
+
+test("the Deals card says it is the most the owner can give, labels the figure an estimate, and the flag words are not ink-3", () => {
+  const dictionary = source("lib/dictionary.ts");
+  for (const line of [
+    '"biz.strategy.envelope.eyebrow": "The most you can give"',
+    '"biz.strategy.envelope.eyebrow": "您最多能给到"',
+    '"biz.strategy.envelope.caption": "Your limits, not an opening offer. FLOW sends only what you choose below."',
+    '"biz.strategy.envelope.caption": "这是您的底线，不是开价。FLOW 只会发送您在下方选择的内容。"',
+    '"biz.strategy.envelope.hypothetical": "Estimate"',
+    '"biz.strategy.envelope.hypothetical": "估算"',
+    '"biz.strategy.envelope.packages": "Within your limits"',
+    '"biz.strategy.envelope.zone": "Terms and price table"',
+    '"biz.strategy.envelope.zone": "账期与价格表"',
+  ]) assert.ok(dictionary.includes(line), line);
+  const card = source("components/deals/before-they-ask.tsx");
+  assert.match(card, /<span className="text-ink-2">\{` · \$\{p\.flags\.join/);
+  assert.match(card, /data-testid="envelope-caption"/);
+});
+
+test("the worth cell is the server's one string (worth_text, else net_saving_text) and decides nothing from the gross saving", () => {
+  const cell = source("components/business/strategy.tsx");
+  assert.match(cell, /row\.worth_text \?\? row\.net_saving_text/);
+  assert.doesNotMatch(cell, /gross_saving/);
+  assert.doesNotMatch(source("lib/dictionary.ts"), /before any discount/);
+});
+
+test("without the flag the Deals page does not hand the compare state to the response card, and the strategy spec gates as the config does", () => {
+  assert.match(source("app/deals/page.tsx"), /\.\.\.\(STRATEGY_MVP \? \{ compareOpen, onCompareChange/);
+  assert.match(source("e2e/strategy.spec.ts"), /test\.skip\(process\.env\.E2E_STRATEGY !== "1"/);
+  assert.match(source("playwright.config.ts"), /process\.env\.E2E_STRATEGY === "1"/);
 });

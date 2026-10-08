@@ -60,15 +60,6 @@ import capexApplyJson from "../../mocks/capex_apply.json";
 import capexJson from "../../mocks/capex.json";
 import fundingJson from "../../mocks/funding.json";
 import fundingDay34Json from "../../mocks/funding_day34.json";
-import priceCurveDay0Json from "../../mocks/strategy/price_curve_day0.json";
-import priceCurveDay34Json from "../../mocks/strategy/price_curve_day34.json";
-import priceCurveDay34AfterJson from "../../mocks/strategy/price_curve_day34_after.json";
-import envelopeDay0Json from "../../mocks/strategy/envelope_day0.json";
-import envelopeDay34Json from "../../mocks/strategy/envelope_day34.json";
-import envelopeDay34AfterJson from "../../mocks/strategy/envelope_day34_after.json";
-import worthDay0Json from "../../mocks/strategy/worth_day0.json";
-import worthDay34Json from "../../mocks/strategy/worth_day34.json";
-import worthDay34AfterJson from "../../mocks/strategy/worth_day34_after.json";
 import homeApprovalApproved from "../../mocks/home_approval_approved.json";
 import homeApprovalPending from "../../mocks/home_approval_pending.json";
 import homeApprove from "../../mocks/home_approve.json";
@@ -563,22 +554,30 @@ export async function actOnAlert(id: string, bound: ActRequest): Promise<AlertAc
  * day 34's from then, and the post-approval recording once the owner has approved the day-34 cure (home.cureStage() === "approved").
  * English only: the recordings are `?lang=en`.
  */
-function strategyRecording<T>(atDay0: unknown, atNews: unknown, afterApproval: unknown): T {
-  return clone(cast<T>(pickByStory(home.mockClock().day, home.NEWS_DAY, home.cureStage() === "approved", atDay0, atNews, afterApproval)));
+async function strategyRecording<T>(load: () => Promise<[{ default: unknown }, { default: unknown }, { default: unknown }]>): Promise<T> {
+  // The nine recordings load on first use, each in its own chunk, so the default mock bundle does not carry them.
+  const [atDay0, atNews, afterApproval] = await load();
+  return clone(cast<T>(pickByStory(home.mockClock().day, home.NEWS_DAY, home.cureStage() === "approved", atDay0.default, atNews.default, afterApproval.default)));
 }
+
+const priceCurveRecordings = () =>
+  Promise.all([import("../../mocks/strategy/price_curve_day0.json"), import("../../mocks/strategy/price_curve_day34.json"), import("../../mocks/strategy/price_curve_day34_after.json")]);
+const worthRecordings = () => Promise.all([import("../../mocks/strategy/worth_day0.json"), import("../../mocks/strategy/worth_day34.json"), import("../../mocks/strategy/worth_day34_after.json")]);
+const envelopeRecordings = () =>
+  Promise.all([import("../../mocks/strategy/envelope_day0.json"), import("../../mocks/strategy/envelope_day34.json"), import("../../mocks/strategy/envelope_day34_after.json")]);
 
 /** GET /cash/price-curve. */
 export async function getPriceCurve(_lang: "en" | "zh"): Promise<PriceCurveView | null> {
   void _lang;
   await delay();
-  return strategyRecording<PriceCurveView>(priceCurveDay0Json, priceCurveDay34Json, priceCurveDay34AfterJson);
+  return await strategyRecording<PriceCurveView>(priceCurveRecordings);
 }
 
 /** GET /receivables/worth: as above. */
 export async function getReceivablesWorth(_lang: "en" | "zh"): Promise<ReceivablesWorthView | null> {
   void _lang;
   await delay();
-  return strategyRecording<ReceivablesWorthView>(worthDay0Json, worthDay34Json, worthDay34AfterJson);
+  return await strategyRecording<ReceivablesWorthView>(worthRecordings);
 }
 
 /**
@@ -589,7 +588,7 @@ export async function getEnvelope(buyerId: string, _lang: "en" | "zh", zone = fa
   void _lang;
   await delay();
   if (buyerId !== "BUYER-1") return null;
-  const view = strategyRecording<EnvelopeView>(envelopeDay0Json, envelopeDay34Json, envelopeDay34AfterJson);
+  const view = await strategyRecording<EnvelopeView>(envelopeRecordings);
   return zone ? view : { ...view, zone: [] };
 }
 

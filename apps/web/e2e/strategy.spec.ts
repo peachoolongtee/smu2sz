@@ -23,7 +23,7 @@ import { filledBrand, resetBooks, runPlan } from "./helpers";
  * page, one hidden by the breakpoint, so the ids differ).
  */
 
-test.skip(!process.env.E2E_STRATEGY, "set E2E_STRATEGY=1 (the build flag NEXT_PUBLIC_STRATEGY_MVP=1 and the API's strategy flags)");
+test.skip(process.env.E2E_STRATEGY !== "1", "set E2E_STRATEGY=1 (the build flag NEXT_PUBLIC_STRATEGY_MVP=1 and the API's strategy flags)");
 
 const API = `http://localhost:${process.env.E2E_API_PORT ?? 8000}`;
 const DAY_N = /\bday \d/i;
@@ -103,7 +103,8 @@ test.describe("desktop", () => {
     await page.goto("/receivables");
     await expect(page.getByTestId("recv-RCV-A")).toBeVisible();
     await expect(page.getByTestId("recv-ranking-note")).toContainText("Ranked by what collecting each saves you");
-    await expect(page.getByTestId("recv-worth-RCV-A")).toContainText("¥");
+    await expect(page.getByTestId("recv-worth-RCV-A")).not.toBeEmpty();
+    await expect(page.getByTestId("recv-RCV-A")).not.toContainText("before any discount");
     const action = page.getByTestId("recv-action-RCV-A");
     await expect(action).toContainText("early payment");
     await expect(page.getByTestId("recv-RCV-A")).toContainText("Offer early payment");
@@ -118,7 +119,7 @@ test.describe("desktop", () => {
     await expect(rows.first()).toHaveAttribute("data-testid", "recv-RCV-A");
     await expect(rows.first().locator("td").first().locator("span.block")).toHaveText("RCV-A");
     await expect(page.getByTestId("recv-ranking-note")).toHaveCount(1);
-    await expect(page.getByTestId("recv-worth-RCV-A")).toContainText("¥");
+    await expect(page.getByTestId("recv-worth-RCV-A")).not.toBeEmpty();
     await expect(page.getByTestId("recv-action-RCV-A")).toContainText("Call Foshan Home Retail Co.");
     // The action word is the first thing in the action cell, as a pill from the dictionary.
     await expect(rows.first().locator("td").last()).toContainText("Call now");
@@ -146,8 +147,10 @@ test.describe("desktop", () => {
     await expect(card.getByTestId("envelope-primary")).toContainText("0.85%");
     await expect(card.getByTestId("envelope-reason")).not.toBeEmpty();
     await expect(card.getByTestId("envelope-money")).toContainText("¥");
-    await expect(card).toContainText("Before they ask");
-    await expect(card).toContainText("Hypothetical");
+    await expect(card).toContainText("The most you can give");
+    await expect(card.getByTestId("envelope-caption")).toContainText("Your limits, not an opening offer");
+    await expect(card).toContainText("Estimate");
+    await expect(card).not.toContainText("Hypothetical");
     await expect(card.getByTestId("envelope-open-a")).toHaveCount(0);
     expect(await sectionOrder(page)).toEqual(["deal-ask", "deal-envelope"]);
 
@@ -173,10 +176,12 @@ test.describe("desktop", () => {
     expect(await packages.count()).toBeGreaterThan(3);
     await expect(packages.first()).toContainText(" · ");
     await expect(card.getByTestId("envelope-packages")).toContainText("55-day terms · price up 0.25% · rebate 0.60%");
+    await expect(card.getByRole("heading", { name: "Within your limits" })).toBeVisible();
     await expect(card.getByTestId("envelope-packages")).toContainText("needs your approval");
     // The terms-and-price zone: the server's rows, in the mock and live alike.
     const zone = card.getByTestId("envelope-zone");
     await zone.locator("summary").first().click();
+    await expect(zone.locator("summary").first()).toContainText("Terms and price table");
     await expect(zone.getByTestId("envelope-zone-row")).toHaveCount(13);
     await expect(zone.getByTestId("envelope-zone-row").first()).toContainText("no price step needed");
     await expect(zone.getByTestId("envelope-zone-row").nth(3)).toContainText("no price step needed");
@@ -275,7 +280,8 @@ test.describe("phone", () => {
     const list = page.getByTestId("recv-open-list");
     await expect(list).toBeVisible();
     await expect(page.getByTestId("recv-ranking-note")).toBeVisible();
-    await expect(page.getByTestId("recv-list-worth-RCV-A")).toContainText("¥");
+    await expect(page.getByTestId("recv-list-worth-RCV-A")).not.toBeEmpty();
+    await expect(page.getByTestId("recv-list-action-RCV-A-reason")).not.toBeEmpty();
     await expect(page.getByTestId("recv-list-action-RCV-A")).toContainText("Call Foshan Home Retail Co.");
     await expect(list.locator("li").first()).toContainText("Call now");
     // No horizontal overflow at phone width.

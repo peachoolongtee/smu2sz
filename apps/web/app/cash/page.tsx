@@ -12,11 +12,10 @@ import { FixResult, useFixAlert } from "@/components/home/fix-alert";
 import { Badge, Card, ErrorState, Formula, LoadingBlock, PageHeader, TableWrap, tableCls, tdCls, thCls, ButtonLink } from "@/components/ui";
 import { getHome, getPriceCurve, getTrajectory, planFunding } from "@/lib/api";
 import { onSignedIn } from "@/lib/auth";
-import { STRATEGY_MVP } from "@/lib/config";
 import { bump, useDemo } from "@/lib/demo-store";
 import { useI18n } from "@/lib/i18n";
 import type { FundingView } from "@/lib/types";
-import { useAsync } from "@/lib/use-async";
+import { useAsync, useStrategyAsync } from "@/lib/use-async";
 import { Disclosure } from "@/components/business/kit";
 
 /**
@@ -35,7 +34,7 @@ export default function CashPage() {
   const traj = useAsync(() => getTrajectory("CONSERVATIVE"), []);
   // The one sentence on what earlier cash is worth (strategy MVP, build-time flag). Null while loading, when the server has it
   // off, or when the read fails: the page then shows nothing extra, and never calls the route with the flag off.
-  const curve = useAsync(async () => (STRATEGY_MVP ? await getPriceCurve(lang) : null), [lang]).data;
+  const curve = useStrategyAsync(() => getPriceCurve(lang), [lang]).data;
   const fixer = useFixAlert();
   useEffect(() => onSignedIn(() => bump()), []);
   const h = home.data;

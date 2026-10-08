@@ -8,10 +8,9 @@ import { StatusBlock } from "@/components/business/status-block";
 import { ErrorState, LoadingBlock } from "@/components/ui";
 import { getHome, getReceivablesWorth } from "@/lib/api";
 import { onSignedIn } from "@/lib/auth";
-import { STRATEGY_MVP } from "@/lib/config";
 import { bump } from "@/lib/demo-store";
 import { useI18n } from "@/lib/i18n";
-import { useAsync } from "@/lib/use-async";
+import { useAsync, useStrategyAsync } from "@/lib/use-async";
 
 /**
  * The owner's home: am I safe, what should I do, what does it cost, what needs my decision, what changed, who has not paid.
@@ -36,7 +35,7 @@ export default function HomePage() {
   const view = useAsync(() => getHome(lang, typeof window === "undefined" ? null : readLastVisit()), [lang]);
   // What to do about the invoice that saves the most (strategy MVP, build-time flag): null while loading, when the server has it off
   // or when the read fails, so the home is then exactly what it was; never read with the flag off.
-  const worth = useAsync(async () => (STRATEGY_MVP ? await getReceivablesWorth(lang) : null), [lang]).data;
+  const worth = useStrategyAsync(() => getReceivablesWorth(lang), [lang]).data;
   // Remember this visit once the home has loaded, so the next visit asks "since then".
   useEffect(() => {
     if (!view.data) return;
