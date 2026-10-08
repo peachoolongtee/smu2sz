@@ -9,7 +9,7 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "mocks:record": "node scripts/record-mocks.mjs --api http://localhost:8011",
-    "test:unit": "node --test scripts/check-mocks.test.mjs scripts/retry.test.mjs scripts/presentation-fallbacks.test.mjs",
+    "test:unit": "node --test scripts/check-mocks.test.mjs scripts/retry.test.mjs scripts/presentation-fallbacks.test.mjs scripts/strategy.test.mjs",
     "test:e2e": "playwright test",
     "test:e2e:mock": "E2E_TARGET=mock playwright test",
     "test:e2e:live": "E2E_TARGET=live playwright test"

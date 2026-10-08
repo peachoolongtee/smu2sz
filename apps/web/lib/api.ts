@@ -39,6 +39,8 @@ import type {
   NlResponse,
   OfferView,
   PlanRequest,
+  PriceCurveView,
+  ReceivablesWorthView,
   ReconciliationView,
   StateView,
   SubmitOfferRequest,
@@ -153,6 +155,20 @@ export async function getAlerts(): Promise<AlertsView> {
 /** GET /reconciliation (flag `alerts`): receipts in the log matched to receivables. */
 export async function getReconciliation(): Promise<ReconciliationView> {
   return isMock ? (await mock()).getReconciliation() : (await live()).getReconciliation();
+}
+
+/**
+ * GET /cash/price-curve (flag `price_curve`): what cash arriving earlier is worth, in one sentence. Resolves to null when the
+ * server has the feature off (403 FEATURE_DISABLED) or lacks the route (404), so the Cash page hides the sentence. Call it only
+ * behind STRATEGY_MVP.
+ */
+export async function getPriceCurve(lang: "en" | "zh"): Promise<PriceCurveView | null> {
+  return isMock ? (await mock()).getPriceCurve(lang) : (await live()).getPriceCurve(lang);
+}
+
+/** GET /receivables/worth (flag `collections_worth`): the open receivables ranked by what collecting each saves. Null as above. */
+export async function getReceivablesWorth(lang: "en" | "zh"): Promise<ReceivablesWorthView | null> {
+  return isMock ? (await mock()).getReceivablesWorth(lang) : (await live()).getReceivablesWorth(lang);
 }
 
 /** POST /nl: one turn of the conversation. Owner turns need the owner token (401 opens the sign-in dialog). */

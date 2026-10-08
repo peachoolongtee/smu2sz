@@ -85,6 +85,9 @@ test("Business pages on day 34: the fix needs approval, waits, then is approved"
   await shoot(page, "12-home-day34", p);
   await page.goto("/receivables");
   await shoot(page, "13-receivables-day34", p);
+  await page.goto("/cash");
+  await expect(page.getByTestId("cash-headline")).toBeVisible();
+  await shoot(page, "13b-cash-day34", p);
   await page.goto("/");
   await runPlan(page, "ALERT-RESERVE-42");
   await expect(page.getByTestId("alert-waiting-ALERT-RESERVE-42")).toBeVisible();

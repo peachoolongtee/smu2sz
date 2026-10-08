@@ -9,7 +9,7 @@ import { Card, TableWrap, tableCls, tdCls, thCls } from "@/components/ui";
 import { useI18n } from "@/lib/i18n";
 import { buttonClass, textLinkClass } from "@/components/ui";
 import { daysLate } from "@/lib/when";
-import type { HomeApproval, HomeChange, HomeReceivables, HomeView } from "@/lib/types";
+import type { HomeApproval, HomeChange, HomeReceivables, HomeView, ReceivablesWorthView } from "@/lib/types";
 
 /** A change row's icon sits on the status tint it has always had: money in is ok, late or refused is bad, waiting is warn. */
 const CHANGE_ICON: Record<string, ReactNode> = {
@@ -106,8 +106,11 @@ export function ChangesBlock({ changes, sinceWhen }: { changes: HomeChange[]; si
   );
 }
 
-/** Who has not paid, and what comes in next, as rows: the buyer, then the amount. */
-export function ReceivablesBlock({ r }: { r: HomeReceivables }) {
+/**
+ * Who has not paid, and what comes in next, as rows: the buyer, then the amount. With the strategy MVP's `worth` loaded,
+ * one line more: what is best to do about the invoice that saves the most (the server's sentence).
+ */
+export function ReceivablesBlock({ r, worth }: { r: HomeReceivables; worth?: ReceivablesWorthView | null }) {
   const { t } = useI18n();
   const next = r.promised
     ? { buyer: r.promised.buyer_name, amount: r.promised.expected_display, when: r.promised.when ?? "" }
@@ -137,6 +140,11 @@ export function ReceivablesBlock({ r }: { r: HomeReceivables }) {
             {t("biz.nextReceipt.none")}
           </p>
         )}
+        {worth?.rows.length && worth.top_action ? (
+          <p className="py-2.5 text-sm text-ink-2" data-testid="home-top-action">
+            {worth.top_action}
+          </p>
+        ) : null}
       </div>
     </Card>
   );
