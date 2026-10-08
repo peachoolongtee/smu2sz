@@ -18,19 +18,13 @@ export function ActionChip({ action }: { action: ReceivableWorth["action"] }) {
 
 /**
  * What collecting the invoice is worth: the server's one string for the row (`worth_text`, "Saves ¥1,374.61"). The gross saving
- * stays in the payload; the page decides nothing from it. A string with two clauses ("Saves ¥788.28 at the 0.45% limit;
- * ¥1,288.28 if they take 0.20%") breaks after the semicolon so each clause is a line of its own and the column aligns cleanly.
+ * stays in the payload; the page decides nothing from it. Right-aligned in the table (where it wraps at its own semicolon in the
+ * column's width), left-aligned in the phone list.
  */
 export function WorthText({ row, testId, align = "left" }: { row: ReceivableWorth; testId: string; align?: "left" | "right" }) {
-  const clauses = row.worth_text.split(/[;；]\s*/).filter(Boolean);
   return (
-    <span className={`text-sm tabular-nums text-ink ${align === "right" ? "text-right" : ""}`} data-testid={testId}>
-      {clauses.map((c, i) => (
-        <span key={i} className="block">
-          {c}
-          {i < clauses.length - 1 ? ";" : ""}
-        </span>
-      ))}
+    <span className={`block text-sm tabular-nums text-ink ${align === "right" ? "text-right" : ""}`} data-testid={testId}>
+      {row.worth_text}
     </span>
   );
 }

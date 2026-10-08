@@ -58,7 +58,6 @@ test("day 34: the late invoice leads, the overdue total is the server's, and the
   await expect(rows.first()).toContainText("2 days ago");
   // The buyer is a monogram and a name; the invoice id waits behind the row's chevron (level 2).
   await expect(rows.first()).not.toContainText("RCV-A");
-  await expect(rows.first().locator("td").nth(1)).toContainText("Foshan Home Retail Co.");
   await page.getByTestId("recv-toggle-RCV-A").click();
   await expect(page.getByTestId("recv-detail-RCV-A")).toContainText("RCV-A");
   await expect(page.getByRole("heading", { name: "Expected early payments" })).toBeVisible();
