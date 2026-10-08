@@ -4,5 +4,9 @@
   "prior_ux_audits_read_before_primary_report": false,
   "product_and_handover_context_contain_prior_work_summaries": true,
   "assessment_a": "/root/independent_design",
-  "assessment_b": "/root/technical_evidence"
+  "assessment_b": "/root/technical_evidence",
+  "frozen_checkout": false,
+  "concurrent_code_checkpoint": "f7ba10c38bbc680944892c413ff737d8ec885d49",
+  "primary_api_reload": false,
+  "newer_pilot_capabilities_audited": false
 }

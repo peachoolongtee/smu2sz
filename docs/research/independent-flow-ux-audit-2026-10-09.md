@@ -23,7 +23,7 @@ Evidence and limits:
 
 | Item | What was actually inspected |
 | --- | --- |
-| Baseline | `dev` at `e15e3eebec3b25d245eb67c7306f02d92b0e6bb2`, originally clean |
+| Initial baseline | `dev` at `e15e3eebec3b25d245eb67c7306f02d92b0e6bb2`, originally clean; the shared checkout advanced during the audit, so this was not a frozen-commit review |
 | Primary runtime | Separate Next frontend :3015 and FastAPI :8015; memory store; `TERMSLEDGER_NO_DOTENV=1`; cached model; demo build with public synthetic credentials |
 | Native browser | Fresh Safari audit tab; live Home, Deals, Cash, Receivables, Activity, Approvals, Ask FLOW, all fifteen Demo steps, missed and partial payment states |
 | Automated browser | Disposable live web :3002 / API :8012; Chromium; 28 unique existing live checks and five phone checks passed |
@@ -34,6 +34,8 @@ Evidence and limits:
 | Not certified | Live model, real bank/lender connections, Postgres concurrency, deployed performance, full WCAG conformance, every Safari rendering behavior |
 
 Earlier UX audit files were not used to form the findings. The mandated handover and product/design context were read as intent; those documents themselves contain summaries of prior work, so this was not a perfectly blind research study. Assessments A and B were isolated; detector results entered synthesis only after A finished. These are expert task walkthroughs and heuristic judgments, **not interviews or observed human five-second tests**.
+
+**Concurrent-work boundary:** while the audit ran, the shared repository advanced through pilot-related work to `f7ba10c38bbc680944892c413ff737d8ec885d49`, and its active branch changed. The audit's captures and API responses establish the observed default golden-book workflows; they are not certification of that newer entire commit or its public-SME/pilot capabilities. The initial API ran without reload, while frontend/source reads came from the shared checkout. Newer pilot work is outside this report's tested scope. No concurrent history was reset or rewritten.
 
 The evidence folder is [flow-ux-audit-2026-10-09](flow-ux-audit-2026-10-09/). The [technical assessment](flow-ux-audit-2026-10-09/technical-assessment.md), [responsive verification](flow-ux-audit-2026-10-09/responsive-verification.md), API responses, capture manifests and [demo timing](flow-ux-audit-2026-10-09/demo-timing.json) record the scope precisely.
 

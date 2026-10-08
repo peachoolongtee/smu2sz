@@ -4,6 +4,8 @@ Read [the complete 32-section audit](../independent-flow-ux-audit-2026-10-09.md)
 
 Baseline: `e15e3eebec3b25d245eb67c7306f02d92b0e6bb2`. All responses and screenshots contain synthetic fixtures, in-memory state, and cached model output. No real bank, lender, production database or live-model certification is implied.
 
+The shared checkout advanced through concurrent pilot work during the audit; the report records that boundary. These captured default golden-book workflows do not certify the newer entire checkout or its pilot features. The non-reloading primary API and the shared frontend/source reads are explicitly distinguished.
+
 - `original-startup-error.html`: HTTP 500 response from the documented dev startup before the temporary touch-rule correction.
 - `home-missed-payment.json`, `state-missed-payment.json`: current day-34 cash was presented at a past first-breach date (F01).
 - `approval-after-decision.json`, `home-after-decision.json`: approved quote disappeared and the zero-floor rescue left the reserve risk unresolved (F12/F13/F17).
