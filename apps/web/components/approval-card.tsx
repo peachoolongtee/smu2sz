@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import { TierBadge } from "@/components/badges";
+import { Disclosure } from "@/components/business/kit";
 import { Badge, Button, Callout, Card, KeyValueList, type Tone } from "@/components/ui";
 import { useI18n } from "@/lib/i18n";
 import type { ApprovalDecision, ApprovalOperation, ApprovalView, Commitment, Displayed } from "@/lib/types";
@@ -88,14 +88,12 @@ export function ApprovalCard({
   onDecide: (id: string, decision: ApprovalDecision) => void;
 }) {
   const { t, te } = useI18n();
-  const [open, setOpen] = useState(false);
   const isPending = a.status === "PENDING";
   const p = a.presentation;
   // The queue's presentation says the result in business words (names, distances from today); the raw executor message
   // the page kept from the decision is the fallback until the queue has been read again.
   const shownResult = p?.result_message || resultMessage || a.result_message || null;
   const op = a.operation;
-  const detailId = `approval-${a.id}-detail`;
   const wantsTerms = op?.kind === "ACCEPT_OFFER" || op?.kind === "RECORD_COMMITMENT";
 
   const names: { k: string; v: string }[] = [];
@@ -129,8 +127,16 @@ export function ApprovalCard({
       subtitle={p?.what ?? `${a.id} · ${te("opkind", a.operation_kind)}`}
       actions={<Badge tone={statusTone[a.status]}>{te("apprstatus", a.status)}</Badge>}
     >
-      <KeyValueList items={facts} />
-      <dl className="mt-3 space-y-2 text-sm">
+      {/* The facts in two columns: the label above its value. */}
+      <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm" data-testid={`approval-facts-${a.id}`}>
+        {facts.map((f, i) => (
+          <div key={i} className="min-w-0">
+            <dt className="text-xs font-medium text-ink-3">{f.k}</dt>
+            <dd className="break-words font-semibold tabular-nums text-ink">{f.v}</dd>
+          </div>
+        ))}
+      </dl>
+      <dl className="mt-4 space-y-3 border-t border-line pt-3 text-sm">
         <div>
           <dt className="text-xs font-medium text-ink-3">{t("appr.why")}</dt>
           <dd className="text-ink" data-testid="approval-reason">
@@ -174,21 +180,8 @@ export function ApprovalCard({
         </p>
       ) : null}
 
-      <Button
-        variant="ghost"
-        size="sm"
-        className="mt-3 -ml-3"
-        aria-expanded={open}
-        aria-controls={detailId}
-        onClick={() => setOpen((v) => !v)}
-        data-testid={`approval-toggle-${a.id}`}
-      >
-        <span aria-hidden>{open ? "▾" : "▸"}</span>
-        {open ? t("appr.hide") : t("appr.show")}
-      </Button>
-
-      {open ? (
-        <div id={detailId} className="mt-3 space-y-4 border-t border-line pt-3" data-testid={`approval-detail-${a.id}`}>
+      <Disclosure className="mt-3 border-t border-line pt-1" testId={`approval-toggle-${a.id}`} summary={t("biz.auditDetails")}>
+        <div className="space-y-4" data-testid={`approval-detail-${a.id}`}>
           <section aria-label={t("appr.what")}>
             <h3 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-ink-3">{t("appr.what")}</h3>
             <KeyValueList
@@ -222,7 +215,7 @@ export function ApprovalCard({
             </section>
           ) : null}
         </div>
-      ) : null}
+      </Disclosure>
     </Card>
   );
 }
