@@ -30,7 +30,7 @@ const ACTION_TONE: Record<BusinessAction, "ok" | "warn" | "bad" | "brand" | unde
  * accept"), never the recommendation that preceded it and never the answer the browser kept from the click. The figures behind the
  * recommendation are the workspace's cost and why-it-matters sections above; this card carries none of them.
  */
-export function DealDecision({ v, record = null, text }: { v: VerdictView; record?: DecisionView | null; text?: string }) {
+export function DealDecision({ v, record = null, text, reason = null }: { v: VerdictView; record?: DecisionView | null; text?: string; reason?: string | null }) {
   const { t } = useI18n();
   const action = businessAction(v);
   const progress = record ? dealProgress(record.state) : null;
@@ -47,6 +47,12 @@ export function DealDecision({ v, record = null, text }: { v: VerdictView; recor
           {headline}
         </span>
       </p>
+      {/* On a phone the first reason from "why it matters" rides under the recommendation, so the answer and its cause are one glance. */}
+      {reason && !outcome ? (
+        <p className="mt-1 text-sm text-ink-2" data-testid="deal-recommendation-reason">
+          {reason}
+        </p>
+      ) : null}
     </Card>
   );
 }

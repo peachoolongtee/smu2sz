@@ -207,14 +207,16 @@ test("day 34: the fix needs approval; queuing it from the home runs nothing and 
   // once (with the link), the decision row says the question once, and Recent changes keeps its row. The operation's tier, sequence
   // and hash are under "Audit details" on the approval card (approvals.spec.ts and below).
   await expect(page.getByTestId("fix-result")).toHaveCount(0);
-  await expect(page.getByTestId("alert-waiting-ALERT-RESERVE-42")).toHaveText(/^Waiting for your approval\s*Open the approval card$/);
-  await expect(page.getByTestId("alert-approval-link-ALERT-RESERVE-42")).toHaveText("Open the approval card");
+  await expect(page.getByTestId("alert-waiting-ALERT-RESERVE-42")).toHaveText("Waiting for your approval");
+  await expect(page.getByTestId("alert-approval-link-ALERT-RESERVE-42")).toHaveText("Review and decide");
   await expect(page.getByTestId("approvals-badge")).toContainText("1 approval waiting");
   await expect(page.getByTestId("fix-open-ALERT-RESERVE-42")).toHaveCount(0);
   // Needs your decision: the question, the cost and the landing day, and a link to the card.
-  // The decision card's button is the page's one primary action (nothing else is left to run), filled like "Run funding plan".
-  await expect(page.getByTestId("home-review-primary")).toHaveText("Review and decide");
-  await expect(page.getByTestId("home-review-primary")).toHaveClass(/bg-brand-600/);
+  // The next step's card holds the page's one primary action while the plan waits (nothing else is left to run), filled like "Run funding plan";
+  // the decision row below is a plain row with a quiet "Review and decide" word.
+  await expect(page.getByTestId("alert-approval-link-ALERT-RESERVE-42")).toHaveText("Review and decide");
+  await expect(page.getByTestId("alert-approval-link-ALERT-RESERVE-42")).toHaveClass(/bg-brand-600/);
+  await expect(page.getByTestId("home-review-primary")).toHaveCount(0);
   await expect(page.locator("main button.bg-brand-600")).toHaveCount(0);
   const decision = page.getByTestId("home-approval-APR-000001");
   await expect(decision).toContainText("Approve ¥200,000.00 of invoice financing?");

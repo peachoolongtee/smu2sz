@@ -141,6 +141,11 @@ export async function getApprovals(): Promise<ApprovalView[]> {
   return isMock ? (await mock()).getApprovals() : (await live()).getApprovals();
 }
 
+/** GET /approvals/queue with the read's own freshness word (`last_read_when`, null when the server sends none). */
+export async function getApprovalsRead(): Promise<{ approvals: ApprovalView[]; last_read_when: string | null }> {
+  return isMock ? { approvals: await (await mock()).getApprovals(), last_read_when: null } : (await live()).getApprovalsRead();
+}
+
 /** POST /approvals/{id}. Owner action: live mode sends X-Owner-Token. */
 export async function decideApproval(id: string, decision: ApprovalDecision): Promise<ApprovalView> {
   return isMock ? (await mock()).decideApproval(id, decision) : (await live()).decideApproval(id, decision);

@@ -115,6 +115,7 @@ export const live = {
   getDecision: (id: string, lang: "en" | "zh") => decisions.getDecision(id, lang),
 
   getApprovals: (): Promise<ApprovalView[]> => approvals.getApprovals(),
+  getApprovalsRead: () => approvals.getApprovalsRead(),
   decideApproval: (id: string, decision: ApprovalDecision) => approvals.decideApproval(id, decision),
 
   capexEvaluate: (req: CapexRequest) => http<CapexView>("POST", "/capex/evaluate", { body: req }),
@@ -125,8 +126,11 @@ export const live = {
   /** The owner's home read: written by the server in the language asked for; the owner token is required. */
   getHome: (lang: "en" | "zh", sinceDay: number | null = null) =>
     http<HomeView>("GET", `/home?lang=${lang}${sinceDay !== null ? `&since_day=${sinceDay}` : ""}`),
-  getReconciliation: async (): Promise<ReconciliationView> =>
-    (await http<{ reconciliation: ReconciliationView }>("GET", "/reconciliation")).reconciliation,
+  getReconciliation: async (): Promise<ReconciliationView> => {
+    const raw = await http<{ reconciliation: ReconciliationView; last_read_when?: string }>("GET", "/reconciliation");
+    // The freshness word sits beside the report or inside it, depending on the server's version; the report carries whichever there is.
+    return raw.reconciliation.last_read_when || !raw.last_read_when ? raw.reconciliation : { ...raw.reconciliation, last_read_when: raw.last_read_when };
+  },
 
   /** GET /receivables/{id}/chase: the collection handoff for one open invoice (owner only; 404 unknown, 422 when nothing is outstanding). */
   getChase: (receivableId: string, lang: "en" | "zh") => http<ChaseView>("GET", `/receivables/${enc(receivableId)}/chase?lang=${lang}`),

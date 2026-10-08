@@ -1822,6 +1822,8 @@ export interface ReconciliationView {
   promised?: PromisedReceipt[];
   /** How many of them lapsed (their day passed unpaid). */
   lapsed_promises?: number;
+  /** When the books were last read for this report, as a distance from today ("today"); absent from an older server. */
+  last_read_when?: string;
 }
 
 export type PromiseStatus = "AWAITED" | "RECEIVED" | "LAPSED" | "SETTLED_OTHERWISE";
@@ -2402,6 +2404,8 @@ export interface HomeView {
   next_action: HomeNextAction | null;
   approvals: HomeApproval[];
   pending_count: number;
+  /** Supporting reads the server could not make (the names, in the owner's words). Absent or empty when everything was read. */
+  partial?: { missing: string[] };
   /** Up to three decisions still open, newest first (the record's summaries). Absent in older recordings. */
   open_decisions?: DecisionSummary[];
   /** What is left after a cure that did not restore the reserve, in the owner's words; null when nothing is left to decide. */

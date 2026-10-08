@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { Disclosure } from "@/components/business/kit";
@@ -87,12 +86,15 @@ export function NextActionBlock({ a, stateVersion, fixer }: { a: HomeNextAction;
 
       <div className="mt-4 flex flex-wrap items-center gap-2">
         {waiting ? (
-          <div className="rounded-tile border border-warn-line bg-warn-bg px-3 py-2 text-sm text-warn-fg" role="status" data-testid={`alert-waiting-${a.alert_id}`}>
-            <p className="font-semibold">{t("alerts.waiting.short")}</p>
-            <Link href={approvalHref(waiting)} className="mt-0.5 inline-block font-medium underline underline-offset-2" data-testid={`alert-approval-link-${a.alert_id}`}>
-              {t("alerts.waiting.open")}
-            </Link>
-          </div>
+          <>
+            <div className="rounded-tile border border-warn-line bg-warn-bg px-3 py-2 text-sm text-warn-fg" role="status" data-testid={`alert-waiting-${a.alert_id}`}>
+              <p className="font-semibold">{t("alerts.waiting.short")}</p>
+            </div>
+            {/* The one primary while the plan waits for the owner: the question to answer. */}
+            <ButtonLink href={approvalHref(waiting)} variant="primary" data-testid={`alert-approval-link-${a.alert_id}`}>
+              {t("biz.review")}
+            </ButtonLink>
+          </>
         ) : confirming ? null : (
           <Button variant="primary" onClick={() => setConfirming(true)} data-testid={`fix-open-${a.alert_id}`}>
             {a.needs_owner ? t("biz.queueForMe") : t("biz.runPlan")}

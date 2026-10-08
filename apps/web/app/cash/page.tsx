@@ -4,9 +4,11 @@ import Link from "next/link";
 import { useEffect } from "react";
 import { CashForecast } from "@/components/lazy-charts";
 import { CurrentFunding } from "@/components/business/current-funding";
+import { PartialRead } from "@/components/business/freshness";
 import { FacilityExplainer } from "@/components/business/facility-explainer";
 import { FundingOptions } from "@/components/business/funding-options";
 import { NextActionBlock } from "@/components/business/next-action";
+import { RemainingTaskBlock } from "@/components/business/open-decisions";
 import { FixResult, useFixAlert } from "@/components/home/fix-alert";
 import { ChevronRightIcon } from "@/components/icons";
 import { Badge, Card, ErrorState, Formula, LoadingBlock, PageHeader, Stat, TableWrap, tableCls, tdCls, thCls } from "@/components/ui";
@@ -16,6 +18,7 @@ import { bump, useDemo } from "@/lib/demo-store";
 import { useI18n } from "@/lib/i18n";
 import type { FundingView } from "@/lib/types";
 import { useAsync, useStrategyAsync } from "@/lib/use-async";
+import { useNarrow } from "@/lib/use-narrow";
 import { Disclosure } from "@/components/business/kit";
 
 /** "Lowest forecast headroom −¥405k": the second line of the caption under the lowest point. */
@@ -59,12 +62,15 @@ function DoorTile({ id, title, sub, href, label }: { id: string; title: string; 
 export default function CashPage() {
   const { t, te, lang } = useI18n();
   const demo = useDemo();
+  // A phone reads the status, then the plan to run, then the four facts as a short list, then the options.
+  const narrow = useNarrow();
   const home = useAsync(() => getHome(lang), [lang]);
   // The monthly readings only; the chart draws the home's own series so it cannot disagree with the headline.
   const traj = useAsync(() => getTrajectory("CONSERVATIVE"), []);
   // The one sentence on what earlier cash is worth (strategy MVP, build-time flag). Null while loading, when the server has it
   // off, or when the read fails: the page then shows nothing extra, and never calls the route with the flag off.
-  const curve = useStrategyAsync(() => getPriceCurve(lang), [lang]).data;
+  const curveRead = useStrategyAsync(() => getPriceCurve(lang), [lang]);
+  const curve = curveRead.data;
   const fixer = useFixAlert();
   useEffect(() => onSignedIn(() => bump()), []);
   const h = home.data;
@@ -87,6 +93,61 @@ export default function CashPage() {
     const rows = p?.comparison ?? [];
     return rows.length === 1 && rows[0].key === "router_optimum" && !rows[0].actions?.length ? [] : rows;
   };
+
+  // Four facts: today's cash, the reserve, when cash becomes unsafe, the worst point. The headroom is the caption of the tile it belongs to.
+  const figures = h ? (
+    <dl className={`grid gap-2 sm:gap-3 ${breachIsWorst ? "sm:grid-cols-3" : "sm:grid-cols-4"}`} data-testid="cash-figures">
+      <Stat row label={t("biz.cashToday")} value={h.cash.cash_short} />
+      <Stat
+        row
+        label={t("biz.reserveMin")}
+        value={h.cash.floor_short}
+        caption={
+          h.cash.headroom_short !== undefined ? (
+            <>
+              {t("biz.headroom")} <span className="font-semibold tabular-nums text-ink-2" data-testid="cash-headroom">{h.cash.headroom_short}</span>
+            </>
+          ) : undefined
+        }
+      />
+      {breachIsWorst ? (
+        <Stat
+          row
+          label={h.cash.below_reserve_today ? t("biz.belowReserveToday") : t("biz.firstBreachIsWorst")}
+          tone="bad"
+          value={h.cash.first_breach_cash_short}
+          caption={
+            <>
+              {h.cash.first_breach_when && !h.cash.below_reserve_today ? <span className="block">{h.cash.first_breach_when}</span> : null}
+              <LowestHeadroom short={h.cash.lowest_headroom_short} />
+            </>
+          }
+        />
+      ) : (
+        <>
+          <Stat
+          row
+            label={h.cash.below_reserve_today ? t("biz.belowReserveToday") : t("biz.firstUnsafeDay")}
+            tone={unsafe ? "bad" : "neutral"}
+            testId="cash-unsafe-when"
+            value={h.cash.below_reserve_today ? h.cash.first_breach_cash_short : (h.cash.first_breach_when ?? t("biz.cash.neverUnsafe", { n: h.cash.horizon_days }))}
+          />
+          <Stat
+          row
+            label={unsafe ? t("biz.worstPoint") : t("biz.lowestAhead")}
+            tone={unsafe ? "bad" : "neutral"}
+            value={h.cash.lowest_short}
+            caption={
+              <>
+                {h.cash.lowest_when ? <span className="block">{h.cash.lowest_when}</span> : null}
+                <LowestHeadroom short={h.cash.lowest_headroom_short} />
+              </>
+            }
+          />
+        </>
+      )}
+    </dl>
+  ) : null;
 
   const options = plan.error ? (
     <ErrorState error={plan.error} onRetry={plan.reload} />
@@ -160,63 +221,39 @@ export default function CashPage() {
                 </div>
                 <p className="mt-1 text-sm text-ink-2">{h.note}</p>
                 {curve ? (
-                  <p className="mt-1 text-sm text-ink-2" data-testid="cash-price-sentence">
-                    {curve.sentence}
-                  </p>
+                  narrow ? (
+                    <Disclosure className="mt-1" summary={t("biz.cash.priceFold")} testId="cash-price-fold">
+                      <p className="pb-1 text-sm text-ink-2" data-testid="cash-price-sentence">
+                        {curve.sentence}
+                      </p>
+                    </Disclosure>
+                  ) : (
+                    <p className="mt-1 text-sm text-ink-2" data-testid="cash-price-sentence">
+                      {curve.sentence}
+                    </p>
+                  )
+                ) : null}
+                {/* A failed read is not "no price to show": it says so, with Retry (a feature that is off returns nothing and says nothing). */}
+                {curveRead.error ? (
+                  <div className="mt-2" data-testid="cash-curve-failed">
+                    <ErrorState error={t("biz.cash.curve.failed")} onRetry={curveRead.reload} />
+                  </div>
                 ) : null}
               </div>
-              {/* Four facts: today's cash, the reserve, when cash becomes unsafe, the worst point. The headroom is the caption of the tile it belongs to. */}
-              <dl className={`grid grid-cols-2 gap-3 ${breachIsWorst ? "sm:grid-cols-3" : "sm:grid-cols-4"}`} data-testid="cash-figures">
-                <Stat label={t("biz.cashToday")} value={h.cash.cash_short} />
-                <Stat
-                  label={t("biz.reserveMin")}
-                  value={h.cash.floor_short}
-                  caption={
-                    h.cash.headroom_short !== undefined ? (
-                      <>
-                        {t("biz.headroom")} <span className="font-semibold tabular-nums text-ink-2" data-testid="cash-headroom">{h.cash.headroom_short}</span>
-                      </>
-                    ) : undefined
-                  }
-                />
-                {breachIsWorst ? (
-                  <Stat
-                    label={h.cash.below_reserve_today ? t("biz.belowReserveToday") : t("biz.firstBreachIsWorst")}
-                    tone="bad"
-                    value={h.cash.first_breach_cash_short}
-                    caption={
-                      <>
-                        {h.cash.first_breach_when && !h.cash.below_reserve_today ? <span className="block">{h.cash.first_breach_when}</span> : null}
-                        <LowestHeadroom short={h.cash.lowest_headroom_short} />
-                      </>
-                    }
-                  />
-                ) : (
-                  <>
-                    <Stat
-                      label={h.cash.below_reserve_today ? t("biz.belowReserveToday") : t("biz.firstUnsafeDay")}
-                      tone={unsafe ? "bad" : "neutral"}
-                      testId="cash-unsafe-when"
-                      value={h.cash.below_reserve_today ? h.cash.first_breach_cash_short : (h.cash.first_breach_when ?? t("biz.cash.neverUnsafe", { n: h.cash.horizon_days }))}
-                    />
-                    <Stat
-                      label={unsafe ? t("biz.worstPoint") : t("biz.lowestAhead")}
-                      tone={unsafe ? "bad" : "neutral"}
-                      value={h.cash.lowest_short}
-                      caption={
-                        <>
-                          {h.cash.lowest_when ? <span className="block">{h.cash.lowest_when}</span> : null}
-                          <LowestHeadroom short={h.cash.lowest_headroom_short} />
-                        </>
-                      }
-                    />
-                  </>
-                )}
-              </dl>
+              {narrow ? null : figures}
             </section>
 
-            <FixResult result={fixer.result} error={fixer.error} changed={fixer.changed} />
-            {h.next_action ? <NextActionBlock a={h.next_action} stateVersion={h.state_version} fixer={fixer} /> : covered ? <CurrentFunding h={h} /> : null}
+            <PartialRead missing={h.partial?.missing} onRetry={home.reload} />
+            <FixResult result={fixer.result} error={fixer.error} changed={fixer.changed} slow={fixer.slow} rechecked={fixer.rechecked} onRecheck={fixer.recheck} />
+            {h.next_action ? (
+              <NextActionBlock a={h.next_action} stateVersion={h.state_version} fixer={fixer} />
+            ) : h.remaining_task ? (
+              // After a cure that did not restore the reserve there is no plan to run: the one remaining task takes the plan's place.
+              <RemainingTaskBlock text={h.remaining_task} links={h.remaining_task_links ?? []} decisionId={h.remaining_task_decision_id} primary={h.pending_count === 0} />
+            ) : covered ? (
+              <CurrentFunding h={h} />
+            ) : null}
+            {narrow ? figures : null}
 
           </>
         )}

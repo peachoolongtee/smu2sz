@@ -22,7 +22,7 @@ import { whenText } from "@/lib/when";
  */
 
 /** The compact header of the selected deal: the buyer, the offer's one-line ask, when it came and when it was checked. */
-export function SelectedBuyer({ buyer, ask, received, evaluatedWhen, children }: { buyer: string; ask: string; received: string; evaluatedWhen: string | null; children?: React.ReactNode }) {
+export function SelectedBuyer({ buyer, ask, received, evaluatedWhen, stateChip = null, children }: { buyer: string; ask: string; received: string; evaluatedWhen: string | null; stateChip?: string | null; children?: React.ReactNode }) {
   const { t } = useI18n();
   return (
     <section id="deal-selected" aria-labelledby="deal-selected-title" className="motion-reveal min-w-0 rounded-card border border-line bg-surface px-4 py-3 shadow-card">
@@ -41,6 +41,12 @@ export function SelectedBuyer({ buyer, ask, received, evaluatedWhen, children }:
         </p>
       </div>
       <p className="mt-0.5 text-sm text-ink-2">{ask}</p>
+      {/* On a phone the step line gives way to one chip: where the deal stands, in the record's words. */}
+      {stateChip ? (
+        <p className="mt-2" data-testid="deal-state-chip">
+          <Badge tone="info">{stateChip}</Badge>
+        </p>
+      ) : null}
       {children}
     </section>
   );
