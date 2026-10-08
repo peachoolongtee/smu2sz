@@ -14,6 +14,7 @@ from app.strategy.collections import (
     saving_text,
 )
 from app.strategy.envelope import EnvelopeAnswer
+from app.strategy.faces import option_a_face
 from app.strategy.impact import marginal_impact, scenario_inflow, scenario_received
 from app.strategy.price_curve import PriceBand, PriceCurve, money_line, price_curve, price_sentence
 from app.strategy.types import CandidatePackage, MarginalImpact, ScenarioState
@@ -32,6 +33,7 @@ __all__ = [
     "early_pay_vs_plan",
     "marginal_impact",
     "money_line",
+    "option_a_face",
     "price_curve",
     "price_sentence",
     "receivables_worth",
