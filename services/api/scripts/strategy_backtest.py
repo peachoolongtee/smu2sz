@@ -1059,8 +1059,8 @@ def _envelope_lines(env: dict[str, Any], ec: dict[str, Any]) -> list[str]:
     abstain = ec.get("skipped: the verifier abstains (no verdict to compare)", 0)
     out = [
         f"- Mode: {ec['mode']}. Offer files: {'; '.join(ec['files'])}.",
-        (f"- Offers listed: {ec['offers_listed']}; checked: {ec['offers_checked']} (verdicts {verdicts}); not buyers on the golden "
-         f"books, skipped: {ec['skipped_total']} ({skipped}); the verifier abstains (NO_VERDICT), nothing to compare: {abstain}."),
+        (f"- Offers listed: {ec['offers_listed']}; checked: {ec['offers_checked']} (verdicts {verdicts}); skipped: "
+         f"{ec['skipped_total']} ({skipped}); the verifier abstains (NO_VERDICT), nothing to compare: {abstain}."),
         (f"- Compiled from (`LLM_MODE=cache`: the fixture cache, then the rules grammar for a document set that is not cached): "
          f"{', '.join(f'{k} {v}' for k, v in ec['compiled_from'].items())}."),
         f"- Buyers swept (once each): {buyers}. Refusals: {ec['refusals']} offers whose buyer has no lever.",
