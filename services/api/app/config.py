@@ -1,5 +1,6 @@
 """Settings and feature flags. Every optional feature can be switched off without breaking the core
-(Terms Guard + Debt Desk committed routing + verifier + executor + /nl)."""
+(Terms Guard + Debt Desk committed routing + verifier + executor + /nl).
+The three strategy flags (envelope, price_curve, collections_worth) are the read-only MVP of map #47 and default off."""
 
 from __future__ import annotations
 
@@ -50,6 +51,9 @@ class Features:
     security_scenes: bool = field(default_factory=lambda: _flag("FEATURE_SECURITY_SCENES"))
     alerts: bool = field(default_factory=lambda: _flag("FEATURE_ALERTS"))
     expected_plans: bool = field(default_factory=lambda: _flag("FEATURE_EXPECTED_PLANS"))
+    envelope: bool = field(default_factory=lambda: _flag("FEATURE_ENVELOPE", default=False))
+    price_curve: bool = field(default_factory=lambda: _flag("FEATURE_PRICE_CURVE", default=False))
+    collections_worth: bool = field(default_factory=lambda: _flag("FEATURE_COLLECTIONS_WORTH", default=False))
 
 
 @dataclass(frozen=True)
