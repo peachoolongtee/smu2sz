@@ -97,8 +97,8 @@ class Ceiling(Contract):
     cost_without_fen: int  # C0
     cost_with_fen: int | None  # C1 at the largest rate
     beats_by_fen: int | None  # C0 - C1
-    best_rate_bp: int | None  # the rate at or under the ceiling that saves most (the lowest on a tie)
-    best_saving_fen: int | None  # C0 - C1 at that rate
+    mid_rate_bp: int | None  # halfway to the ceiling, rounded down to the 5 bp grid (at least 5 bp): an illustration
+    mid_saving_fen: int | None  # C0 - C1 at that rate
     next_rate_bp: int | None  # the next 5 bp step (within the mandate's cap), and how much dearer than the plan it is
     next_rate_dearer_by_fen: int | None
 
@@ -116,8 +116,8 @@ class ReceivableWorth(Contract):
     effects: list[Effect]
     gross_saving_fen: int
     ceilings: list[Ceiling]
-    best_rate_bp: int | None  # on the plan's-need face: the rate that saves most ...
-    best_saving_fen: int  # ... and what it saves against the funding it replaces (0 when no rate beats the plan)
+    mid_rate_bp: int | None  # on the plan's-need face: the rate halfway to the ceiling ...
+    mid_saving_fen: int  # ... and what it saves against the funding it replaces (0 when no rate beats the plan)
     net_saving_fen: int
     no_saving: bool  # net_saving_fen <= 0
     net_saving_text: str
@@ -223,17 +223,19 @@ def _ceiling(books: Books, mandate: Mandate, r: Receivable, face_kind: Literal["
     best = _last_true(rates, beats) if len(rates) > 1 else None
     if not best:
         return Ceiling(face_kind=face_kind, face_fen=face_fen, face_label=label, largest_rate_bp=None,
-                       cost_without_fen=c0, cost_with_fen=None, beats_by_fen=None, best_rate_bp=None,
-                       best_saving_fen=None, next_rate_bp=None, next_rate_dearer_by_fen=None)
+                       cost_without_fen=c0, cost_with_fen=None, beats_by_fen=None, mid_rate_bp=None,
+                       mid_saving_fen=None, next_rate_bp=None, next_rate_dearer_by_fen=None)
     g_best = gap(best)
     assert g_best is not None
-    swept = [(rate, -g) for rate in rates[1:rates.index(best) + 1] if (g := gap(rate)) is not None]
-    best_rate, best_saving = min(swept, key=lambda rs: (-rs[1], rs[0]))
+    mid = max(RATE_STEP_BP, best // 2 // RATE_STEP_BP * RATE_STEP_BP)
+    g_mid = gap(mid)
+    if g_mid is None:  # cannot happen while the saving falls with the rate; fall back to the limit itself
+        mid, g_mid = best, g_best
     nxt = best + RATE_STEP_BP if best + RATE_STEP_BP <= cap_bp else None
     g_next = gap(nxt) if nxt is not None else None
     return Ceiling(face_kind=face_kind, face_fen=face_fen, face_label=label, largest_rate_bp=best,
-                   cost_without_fen=c0, cost_with_fen=c0 + g_best, beats_by_fen=-g_best, best_rate_bp=best_rate,
-                   best_saving_fen=best_saving, next_rate_bp=nxt,
+                   cost_without_fen=c0, cost_with_fen=c0 + g_best, beats_by_fen=-g_best, mid_rate_bp=mid,
+                   mid_saving_fen=-g_mid, next_rate_bp=nxt,
                    next_rate_dearer_by_fen=g_next)
 
 
@@ -381,21 +383,22 @@ def _sentences(*, lang: Lang, action: Action, who: str, r: Receivable, day: int,
                   f"到期时现金低于您的储备，按时付款很重要。{if_arrived}"))
     if action == "offer_early_pay":
         assert need_c is not None and whole_c is not None and need_c.largest_rate_bp is not None
-        assert need_c.best_rate_bp is not None and need_c.best_saving_fen is not None
+        assert need_c.mid_rate_bp is not None and need_c.mid_saving_fen is not None
         top = fmt_pct(bp(need_c.largest_rate_bp))
-        best = fmt_pct(bp(need_c.best_rate_bp))
+        mid = fmt_pct(bp(need_c.mid_rate_bp))
         on = fmt_yuan(need_c.face_fen)
-        saves = fmt_yuan(need_c.best_saving_fen)
+        at_limit = fmt_yuan(need_c.beats_by_fen or 0)
         whole_bp = whole_c.largest_rate_bp if whole_c is not need_c else None
         whole = (t(lang, f" ({fmt_pct(bp(whole_bp))} on the whole invoice)", f"（整张发票 {fmt_pct(bp(whole_bp))}）")
                  if whole_bp else "")
         fin = t(lang, " Or finance it.", "或者改为融资。") if advanced else ""
-        limit = (t(lang, f"anything up to {top}{whole} still beats it", f"最高 {top}{whole}仍比融资划算")
-                 if need_c.best_rate_bp != need_c.largest_rate_bp
-                 else t(lang, f"{top}{whole} is the most that still beats it", f"{top}{whole}是仍比融资划算的上限"))
-        sentence = t(lang, f"On the {face} due {when}, early payment at {best} on {on} saves {saves} against the "
-                           f"funding it replaces; {limit}.{fin}",
-                     f"{when}到期的 {face}：对 {on} 按 {best} 提前付款，比它所替代的融资省 {saves}；{limit}。{fin}")
+        saved = (t(lang, f"{fmt_yuan(need_c.mid_saving_fen)} saved at {mid}, {at_limit} at the limit",
+                   f"按 {mid} 省 {fmt_yuan(need_c.mid_saving_fen)}，按上限省 {at_limit}")
+                 if need_c.mid_rate_bp != need_c.largest_rate_bp
+                 else t(lang, f"{at_limit} saved at the limit", f"按上限省 {at_limit}"))
+        sentence = t(lang, f"On the {face} due {when}, early payment at up to {top} on {on}{whole} still beats the "
+                           f"funding it replaces: {saved}.{fin}",
+                     f"{when}到期的 {face}：对 {on} 提前付款，最高 {top}{whole}仍比它所替代的融资划算：{saved}。{fin}")
         nxt = ""
         if need_c.next_rate_bp is not None and (need_c.next_rate_dearer_by_fen or 0) > 0:
             nxt = t(lang, f" {fmt_pct(bp(need_c.next_rate_bp))} would cost {fmt_yuan(need_c.next_rate_dearer_by_fen or 0)} more than the plan.",
@@ -461,8 +464,8 @@ def receivables_worth(books: Books, mandate: Mandate, *, store: LedgerStore, day
             gross = today_effect.saving_fen if today_effect is not None else (effects[0].saving_fen if effects else 0)
             ceilings, why_none = _ceilings(books, mandate, r, base_plan.need_fen, c0, lang)
             need_ceiling = ceilings[-1] if ceilings and ceilings[-1].largest_rate_bp else None
-            best_rate = need_ceiling.best_rate_bp if need_ceiling is not None else None
-            best_saving = (need_ceiling.best_saving_fen or 0) if need_ceiling is not None else 0
+            mid_rate = need_ceiling.mid_rate_bp if need_ceiling is not None else None
+            mid_saving = (need_ceiling.mid_saving_fen or 0) if need_ceiling is not None else 0
             lapsed = r.id in lapsed_ids
             action = _decide(r=r, day=day, days_late=days_late, lapsed=lapsed, promised=r.id in awaited_ids,
                              episode=episode, beyond=beyond, need_ceiling=need_ceiling)
@@ -478,7 +481,7 @@ def receivables_worth(books: Books, mandate: Mandate, *, store: LedgerStore, day
                 receivable_id=r.id, buyer_id=r.counterparty_id, buyer_name=who, outstanding_fen=r.outstanding_fen,
                 due_day=r.due_day, due_when=when_text(r.due_day, day, lang), days_late=days_late, status=r.status,
                 financed=r.status == "FINANCED", effects=effects, gross_saving_fen=gross, ceilings=ceilings,
-                best_rate_bp=best_rate, best_saving_fen=best_saving, net_saving_fen=net, no_saving=net <= 0, net_saving_text=saving_text(net, lang), action=action,
+                mid_rate_bp=mid_rate, mid_saving_fen=mid_saving, net_saving_fen=net, no_saving=net <= 0, net_saving_text=saving_text(net, lang), action=action,
                 action_sentence=sentence, reason_sentence=reason))
     ranked = sorted(rows, key=lambda w: (-w.net_saving_fen, -w.gross_saving_fen, w.due_day, w.receivable_id))
     by_gross = sorted(rows, key=lambda w: (-w.gross_saving_fen, w.due_day, w.receivable_id))

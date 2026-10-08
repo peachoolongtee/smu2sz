@@ -19,7 +19,7 @@ from app.api.runtime import Runtime, set_runtime
 from app.books import Books
 from app.domain.models import Mandate, Receivable
 from app.strategy import WorthAnswer, early_pay_vs_plan, receivables_worth, saving_text
-from app.strategy.collections import Ceiling, ReceivableWorth, _decide
+from app.strategy.collections import Ceiling, ReceivableWorth, _decide, _sentences
 from app.verifier.evaluate import clear_caches
 
 from .conftest import OWNER
@@ -104,14 +104,13 @@ def test_day34_ri2_offers_early_payment_with_the_day42_breach_removed(worth34: W
     assert (whole.face_fen, whole.largest_rate_bp) == (42_000_000, 40)
     assert (need.face_label, whole.face_label) == ("the plan's need", "the whole invoice")
     assert b.ceilings == [whole, need]
-    # the sweep falls by a flat ¥100 per 5 bp, so its best point is the first step: 0.05% saves ¥1,588.28 (the brief's
-    # 0.40% / ¥888.28 is one point on the sweep, pinned in test_sweep_pins_day34); the ceiling only limits it
-    assert (need.best_rate_bp, need.best_saving_fen) == (5, 158_828)
-    assert (whole.best_rate_bp, whole.best_saving_fen) == (5, 149_610)
-    assert (b.best_rate_bp, b.best_saving_fen) == (5, 158_828) and b.net_saving_fen == 7_758  # the order is on net
-    assert b.action_sentence == ("On the ¥420,000.00 due in 13 days, early payment at 0.05% on ¥200,000.00 saves "
-                                 "¥1,588.28 against the funding it replaces; anything up to 0.80% (0.40% on the whole "
-                                 "invoice) still beats it. Or finance it.")
+    # the midpoint illustration: halfway to the ceiling, rounded down to the 5 bp grid (the sweep's 0.40% point)
+    assert (need.mid_rate_bp, need.mid_saving_fen) == (40, 88_828)  # ¥888.28 saved at 0.40%, ¥77.58 at the 0.80% limit
+    assert (whole.mid_rate_bp, whole.mid_saving_fen) == (20, 86_610)  # the ceiling is 0.40%
+    assert (b.mid_rate_bp, b.mid_saving_fen) == (40, 88_828) and b.net_saving_fen == 7_758  # the order is on net
+    assert b.action_sentence == ("On the ¥420,000.00 due in 13 days, early payment at up to 0.80% on ¥200,000.00 "
+                                 "(0.40% on the whole invoice) still beats the funding it replaces: ¥888.28 saved "
+                                 "at 0.40%, ¥77.58 at the limit. Or finance it.")
 
 
 def test_day34_ri32_waits_by_the_rule(worth34: WorthAnswer):
@@ -180,14 +179,12 @@ def test_every_oracle_effect_and_ceiling_is_reproduced(name: str, fixture: str, 
             c = _ceiling(w, _FACE_KIND[p["face_label"]])
             assert c.face_fen == _fen(p["face"]) and c.cost_without_fen == _fen(p["cost_without"])
             assert c.largest_rate_bp == (p["largest_rate"] or {}).get("bp")
-            gains = [(-_fen(x["c1_less_c0"]), x["rate"]["bp"]) for x in p["sweep"] if x["c1_less_c0"]]
             if c.largest_rate_bp is None:
-                assert c.best_rate_bp is None and c.best_saving_fen is None
-            else:  # the sweep's best point: the largest C0 - C1 (the lowest rate on a tie)
-                top_gain = max(g for g, _ in gains)
-                assert (c.best_saving_fen, c.best_rate_bp) == (top_gain, min(r for g, r in gains if g == top_gain))
-                assert c.beats_by_fen is not None and c.best_saving_fen is not None and c.best_rate_bp is not None
-                assert c.best_saving_fen >= c.beats_by_fen > 0 and c.best_rate_bp <= c.largest_rate_bp
+                assert c.mid_rate_bp is None and c.mid_saving_fen is None
+            else:  # halfway to the ceiling, down to the 5 bp grid, and the sweep's value at that rate
+                assert c.mid_rate_bp == max(5, c.largest_rate_bp // 2 // 5 * 5)
+                at_mid = next(x for x in p["sweep"] if x["rate"]["bp"] == c.mid_rate_bp)
+                assert c.mid_saving_fen == -_fen(at_mid["c1_less_c0"])
             assert c.cost_with_fen == (_fen(p["cost_with"]) if p["cost_with"] else None)
             assert c.beats_by_fen == (_fen(p["beats_by"]) if p["beats_by"] else None)
             assert c.next_rate_bp == (p["next_rate"] or {}).get("bp")
@@ -229,7 +226,7 @@ def test_day0_rcv_a(worth0: WorthAnswer):
     assert (_ceiling(a, "whole").face_fen, _ceiling(a, "whole").largest_rate_bp) == (42_000_000, 70)
     assert (_ceiling(a, "need").face_fen, _ceiling(a, "need").largest_rate_bp) == (40_500_000, 75)
     assert a.net_saving_fen == _ceiling(a, "need").beats_by_fen == 5_939
-    assert a.best_saving_fen == _ceiling(a, "need").best_saving_fen and a.best_saving_fen >= 5_939
+    assert (a.mid_rate_bp, a.mid_saving_fen) == (35, _ceiling(a, "need").mid_saving_fen)  # 0.75% / 2 down to 0.35%
     assert a.action == "offer_early_pay" and worth0.first_breach_day == 12
     assert worth0.gross_order == [RCV_A]
 
@@ -254,8 +251,8 @@ def _receivable(due_day: int = 50, status: str = "OPEN") -> Receivable:
 
 def _ceil(beats: int | None) -> Ceiling:
     return Ceiling(face_kind="need", face_fen=1, face_label="x", largest_rate_bp=None if beats is None else 5,
-                   cost_without_fen=0, cost_with_fen=None, beats_by_fen=beats, best_rate_bp=None if beats is None else 5,
-                   best_saving_fen=beats, next_rate_bp=None, next_rate_dearer_by_fen=None)
+                   cost_without_fen=0, cost_with_fen=None, beats_by_fen=beats, mid_rate_bp=None if beats is None else 5,
+                   mid_saving_fen=beats, next_rate_bp=None, next_rate_dearer_by_fen=None)
 
 
 def _decision(**kw: Any) -> str:
@@ -352,8 +349,8 @@ def test_chinese_twins_for_every_sentence(rt_day34: Runtime, books_day34: Books,
     for s in _strings(zh):
         assert not re.search(r"\bday \d|第 ?\d+ ?天", s), s
     assert _row(zh, RI_2).action_sentence == (
-        "13 天后到期的 ¥420,000.00：对 ¥200,000.00 按 0.05% 提前付款，比它所替代的融资省 ¥1,588.28；"
-        "最高 0.80%（整张发票 0.40%）仍比融资划算。或者改为融资。")
+        "13 天后到期的 ¥420,000.00：对 ¥200,000.00 提前付款，最高 0.80%（整张发票 0.40%）仍比它所替代的融资划算："
+        "按 0.40% 省 ¥888.28，按上限省 ¥77.58。或者改为融资。")
     assert _row(zh, RCV_A).action_sentence.startswith("今天就联系 Foshan Home Retail Co. 催收这笔 ¥162,800.00：")
 
 
@@ -419,3 +416,15 @@ def test_chinese_strings_use_full_width_punctuation(rt_day34: Runtime, books_day
         assert not _ASCII_PUNCTUATION.search(bare), text
         assert not re.search(r"[一-鿿] [：，；。）]", text), text  # no space between a Chinese word and the mark
     assert "：" in zh.rows[0].action_sentence and "，" in "".join(w.reason_sentence for w in zh.rows)
+
+
+def test_a_ceiling_of_one_step_states_only_the_saving_at_the_limit():
+    ceiling = Ceiling(face_kind="need", face_fen=20_000_000, face_label="the plan's need", largest_rate_bp=5,
+                      cost_without_fen=10, cost_with_fen=5, beats_by_fen=7_758, mid_rate_bp=5, mid_saving_fen=7_758,
+                      next_rate_bp=10, next_rate_dearer_by_fen=100)
+    for lang, expected in (("en", "still beats the funding it replaces: ¥77.58 saved at the limit."),
+                           ("zh", "仍比它所替代的融资划算：按上限省 ¥77.58。")):
+        sentence, _ = _sentences(lang=lang, action="offer_early_pay", who="B", r=_receivable(60), day=10, days_late=0,
+                                 lapsed=False, promised=False, episode=(20, 30), advanced=False, ceilings=[ceiling],
+                                 why_none="", today_effect=None)
+        assert sentence.endswith(expected) and "saved at 0.05%" not in sentence and "按 0.05% 省" not in sentence
