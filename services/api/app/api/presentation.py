@@ -621,8 +621,6 @@ def clock_words(payload: dict[str, Any], lang: Lang = "en") -> str | None:
     add(_count(payload, "settled_lot_ids"), "one funding request landed", "{n} funding requests landed", "{n} 笔融资已到账")
     add(_count(payload, "posted_flow_ids"), "one scheduled cash movement was recorded", "{n} scheduled cash movements were recorded",
         "已记录 {n} 笔计划收支")
-    add(_count(payload, "added_flow_ids"), "one new scheduled cash movement was added", "{n} new scheduled cash movements were added",
-        "新增 {n} 笔计划收支")
     add(_count(payload, "issued_receivable_ids"), "one invoice was issued", "{n} invoices were issued", "已开出 {n} 张发票")
     add(_count(payload, "expired_commitment_ids"), "one agreement expired", "{n} agreements expired", "{n} 项协议已到期")
     add(_count(payload, "fulfilled_commitment_ids"), "one agreement was fulfilled", "{n} agreements were fulfilled", "{n} 项协议已履行")

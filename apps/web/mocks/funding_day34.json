@@ -602,6 +602,67 @@
   },
   "comparison": [
     {
+      "key": "recommended_plan",
+      "label": "Recommended plan",
+      "components": [
+        "Finance ¥200,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. on Invoice financing (onboarded platform)"
+      ],
+      "components_when": [
+        "Finance ¥200,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. on Invoice financing (onboarded platform)"
+      ],
+      "actions": [
+        {
+          "kind": "FINANCE_INVOICE",
+          "facility_id": "FAC-IF",
+          "day": 34,
+          "amount_fen": 20000000,
+          "amount_display": "¥200,000.00",
+          "receivable_id": "RI:BUYER-1:2",
+          "repay_day": null,
+          "rate_bp": null,
+          "lands_day": 37,
+          "available_from_day": 34
+        }
+      ],
+      "cost_fen": 178219,
+      "cost_display": "¥1,782.19",
+      "total_fen": 178219,
+      "total_display": "¥1,782.19",
+      "result": "ADMISSIBLE",
+      "reasons": [],
+      "breach_day": null,
+      "note": "",
+      "note_when": "",
+      "needs_owner_approval": true,
+      "approval_reason": "The yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval.",
+      "approval_reason_when": "The yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval.",
+      "executable_now": true,
+      "not_executable_reason": "",
+      "not_executable_reason_when": null,
+      "shortfall_fen": null,
+      "shortfall_display": null,
+      "worst_day": null,
+      "status": "alternative",
+      "reason_kind": null,
+      "selected": false,
+      "legs": [
+        {
+          "index": 0,
+          "name_display": "Invoice financing (onboarded platform)",
+          "facility_id": "FAC-IF",
+          "amount_fen": 20000000,
+          "amount_display": "¥200,000.00",
+          "cost_fen": 178219,
+          "cost_display": "¥1,782.19"
+        }
+      ],
+      "name_display": "Invoice financing (onboarded platform)",
+      "offset_fen": null,
+      "offset_display": null,
+      "role": "recommended",
+      "role_reason": "The next step: it needs one approval; the cheapest plan (¥1,706.10 in all) needs 2 separate approvals."
+    },
+    {
       "key": "full_discount",
       "label": "Discount the whole invoice at 1.2%",
       "components": [
@@ -632,18 +693,38 @@
       "not_executable_reason": "Buyer early-payment offer: early payment on ¥420,000.00 face of RI:BUYER-1:2 at 1.2%: needs the buyer's agreement to pay early",
       "shortfall_fen": null,
       "worst_day": null,
+      "leg_costs_fen": [
+        504000
+      ],
       "status": "alternative",
       "reason_kind": "buyer_early_pay",
       "shortfall_display": null,
       "note_when": "cost ¥5,040.00; within your limits, but you must approve it: Buyer early-payment offer: early payment on ¥420,000.00 face of the ¥420,000.00 invoice to Foshan Home Retail Co. due in 13 days at 1.2%: the yearly cost of 40.30% is above the 15.00% limit you signed for funding without your approval (1.2%/(1 − 1.2%) × 365/11 = ≈40.3018%)",
       "not_executable_reason_when": "Buyer early-payment offer: early payment on ¥420,000.00 face of the ¥420,000.00 invoice to Foshan Home Retail Co. due in 13 days at 1.2%: needs the buyer's agreement to pay early",
-      "approval_reason_when": "Buyer early-payment offer: early payment on ¥420,000.00 face of the ¥420,000.00 invoice to Foshan Home Retail Co. due in 13 days at 1.2%: the yearly cost of 40.3% is above the 15.00% limit you signed for funding without your approval (1.2%/(1 − 1.2%) × 365/11 = ≈40.3018%)",
+      "approval_reason_when": "Buyer early-payment offer: early payment on ¥420,000.00 face of the ¥420,000.00 invoice to Foshan Home Retail Co. due in 13 days at 1.2%: the yearly cost of 40.3% is above the 15.00% limit you signed for funding without your approval (1.2%/(1 − 1.2%) × 365/11 = ≈40.3018%).",
       "components_when": [
         "Buyer early-payment offer: early payment on ¥420,000.00 face of the ¥420,000.00 invoice to Foshan Home Retail Co. due in 13 days at 1.2%"
       ],
+      "legs": [
+        {
+          "index": 0,
+          "name_display": "Buyer early-payment offer",
+          "facility_id": "FAC-EARLYPAY",
+          "amount_fen": 42000000,
+          "amount_display": "¥420,000.00",
+          "cost_fen": 504000,
+          "cost_display": "¥5,040.00"
+        }
+      ],
+      "name_display": "Buyer early-payment offer",
+      "offset_fen": null,
+      "offset_display": null,
+      "offset_label": null,
       "total_fen": 504000,
       "total_display": "¥5,040.00",
-      "selected": false
+      "selected": false,
+      "role": "alternative",
+      "role_reason": "Only if the buyer agrees to pay early."
     },
     {
       "key": "router_optimum",
@@ -688,19 +769,50 @@
       "not_executable_reason": "",
       "shortfall_fen": null,
       "worst_day": null,
+      "leg_costs_fen": [
+        142575,
+        106932
+      ],
       "status": "recommended",
       "reason_kind": null,
       "shortfall_display": null,
       "note_when": null,
       "not_executable_reason_when": null,
-      "approval_reason_when": "Invoice financing (onboarded platform): advance ¥80,000.00 on RI:BUYER-1:32: the yearly cost of 16.3% is above the 15.00% limit you signed for funding without your approval; Invoice financing (onboarded platform): advance ¥120,000.00 on RI:BUYER-1:2: the yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval",
+      "approval_reason_when": "Invoice financing (onboarded platform): advance ¥80,000.00 on RI:BUYER-1:32: the yearly cost of 16.3% is above the 15.00% limit you signed for funding without your approval; Invoice financing (onboarded platform): advance ¥120,000.00 on RI:BUYER-1:2: the yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval.",
       "components_when": [
         "Invoice financing (onboarded platform): advance ¥80,000.00 on the ¥420,000.00 invoice to Foshan Home Retail Co. due in 43 days",
         "Invoice financing (onboarded platform): advance ¥120,000.00 on the ¥420,000.00 invoice to Foshan Home Retail Co. due in 13 days"
       ],
+      "legs": [
+        {
+          "index": 0,
+          "name_display": "Invoice financing (onboarded platform), ¥80k",
+          "facility_id": "FAC-IF",
+          "amount_fen": 8000000,
+          "amount_display": "¥80,000.00",
+          "cost_fen": 142575,
+          "cost_display": "¥1,425.75"
+        },
+        {
+          "index": 1,
+          "name_display": "Invoice financing (onboarded platform), ¥120k",
+          "facility_id": "FAC-IF",
+          "amount_fen": 12000000,
+          "amount_display": "¥120,000.00",
+          "cost_fen": 106932,
+          "cost_display": "¥1,069.32"
+        }
+      ],
+      "name_display": "Invoice financing (onboarded platform)",
+      "offset_fen": -78897,
+      "offset_display": "−¥788.97",
+      "offset_label": "Change in other interest and fees across the forecast",
       "total_fen": 170610,
       "total_display": "¥1,425.75 + ¥1,069.32 = ¥1,706.10",
-      "selected": true
+      "selected": true,
+      "role": "alternative",
+      "role_reason": "Cheapest in all, but it needs 2 separate approvals; the recommended plan needs one."
     }
-  ]
+  ],
+  "recommended_key": "recommended_plan"
 }

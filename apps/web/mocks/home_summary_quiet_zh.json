@@ -933,8 +933,8 @@
       "seq": 1,
       "kind": "AGREEMENT",
       "actor": "AGENT",
-      "text": "已记录与Foshan Home Retail Co.的协议；已入账的未来让利：¥0.00。",
-      "event_text": "已记录与Foshan Home Retail Co.的协议；已入账的未来让利：¥0.00。",
+      "text": "已记录与Foshan Home Retail Co.的协议；已计入您预算的让步：¥0.00。",
+      "event_text": "已记录与Foshan Home Retail Co.的协议；已计入您预算的让步：¥0.00。",
       "event_detail": null,
       "when": "今天"
     }

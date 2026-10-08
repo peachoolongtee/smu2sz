@@ -38,7 +38,7 @@
     "lands_when": "in 3 days",
     "if_decline": "¥200,000.00 below your minimum cash reserve in 8 days; the gap peaks at ¥200,000.00 in 8 days.",
     "protects": "Cash stays above your minimum cash reserve for the next 120 days.",
-    "reason": "the yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval",
+    "reason": "The yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval.",
     "result_message": null,
     "decided_when": null,
     "created_when": "today"
