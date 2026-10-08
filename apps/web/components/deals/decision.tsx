@@ -44,7 +44,7 @@ export function DealDecision({ v, today, negotiation = null }: { v: VerdictView;
   const fc = v.forward_concession;
   return (
     <Card id="deal-recommendation-card" tone={tone}>
-      <p className="text-2xl font-semibold text-ink" data-testid="deal-recommendation" data-outcome={outcome ?? ""}>
+      <p className="text-xl font-semibold text-ink" data-testid="deal-recommendation" data-outcome={outcome ?? ""}>
         {headline}
       </p>
       {/* The three numbers are about the offer as the buyer asked for it, not about a counter: the line says so. */}

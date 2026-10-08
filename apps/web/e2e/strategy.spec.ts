@@ -15,7 +15,7 @@ import { filledBrand, resetBooks, runPlan } from "./helpers";
  *   live  E2E_STRATEGY=1 E2E_TARGET=live E2E_API_PORT=8016 E2E_LIVE_PORT=3016 pnpm exec playwright test e2e/strategy.spec.ts
  *         (the config starts the API itself with the flags; nothing may already hold E2E_API_PORT)
  *
- * The envelope card's testids: envelope-ceiling-terms / -early / -rebate (the three tiles), envelope-primary / -reason / -money, envelope-details (the fold), envelope-levers
+ * The envelope card's testids: envelope-ceiling-terms / -early / -rebate (the three tiles), envelope-caption / -reason / -money, envelope-details (the fold), envelope-levers
  * (the table on desktop, envelope-levers-list on a phone), envelope-packages, envelope-zone, envelope-loading, envelope-error.
  *
  * Desktop (mock and live) checks the table; the phone project checks the list rows. Testids: the table cells are
@@ -110,6 +110,9 @@ test.describe("desktop", () => {
     await page.getByTestId("recv-toggle-RCV-A").click();
     const action = page.getByTestId("recv-action-RCV-A");
     await expect(action).toContainText("early payment");
+    // The cell is one figure; the server's full worth sentence (the limit, the better rate) is the first line of the details.
+    await expect(page.getByTestId("recv-worth-RCV-A")).not.toContainText("limit");
+    await expect(page.getByTestId("recv-action-RCV-A-worth")).toContainText("% limit");
     await expect(page.getByTestId("recv-RCV-A")).toContainText("Offer early payment");
     expect(await proseOf(page)).not.toMatch(DAY_N);
     expect(await filledBrand(page)).toBe(0);
@@ -150,9 +153,10 @@ test.describe("desktop", () => {
     await openEx01(page);
     const card = page.locator("#deal-envelope");
     // The card is there as soon as the message is read, before the check; it has no options to open yet.
-    await expect(card.getByTestId("envelope-primary")).toContainText("You can live with", { timeout: 30_000 });
-    await expect(card.getByTestId("envelope-primary")).toContainText("55-day");
-    await expect(card.getByTestId("envelope-primary")).toContainText("0.85%");
+    // The server's `primary` sentence (the same three figures, said again) is not drawn: the tiles carry them, and the sentence is
+    // pinned at the recording level in scripts/strategy.test.mjs.
+    await expect(card.getByTestId("envelope-caption")).toBeVisible({ timeout: 30_000 });
+    await expect(card.getByTestId("envelope-primary")).toHaveCount(0);
     await expect(card.getByTestId("envelope-reason")).not.toBeEmpty();
     // The three ceilings are tiles, each the server's maximum in words.
     await expect(card.getByTestId("envelope-ceiling-terms")).toHaveText("55 days, price up 0.30%");
@@ -229,7 +233,7 @@ test.describe("desktop", () => {
   test("Deals: the details open and close from the keyboard", async ({ page }) => {
     await openEx01(page);
     const card = page.locator("#deal-envelope");
-    await expect(card.getByTestId("envelope-primary")).toBeVisible({ timeout: 30_000 });
+    await expect(card.getByTestId("envelope-caption")).toBeVisible({ timeout: 30_000 });
     await card.getByTestId("envelope-details").locator("summary").first().focus();
     await page.keyboard.press("Enter");
     await expect(card.getByTestId("envelope-levers")).toBeVisible();
@@ -266,7 +270,7 @@ test.describe("desktop", () => {
     const loading = page.locator("#deal-envelope").getByTestId("envelope-loading");
     await expect(loading).toBeVisible();
     await expect(loading).toContainText("Working out what you can live with");
-    await expect(page.locator("#deal-envelope").getByTestId("envelope-primary")).toBeVisible({ timeout: 30_000 });
+    await expect(page.locator("#deal-envelope").getByTestId("envelope-caption")).toBeVisible({ timeout: 30_000 });
 
     await page.unroute("**/envelope?**");
     await page.route("**/envelope?**", (route) => route.fulfill({ status: 500, contentType: "application/json", body: JSON.stringify({ detail: "boom" }) }));
@@ -276,7 +280,7 @@ test.describe("desktop", () => {
     await expect(failed).toContainText("could not work out");
     await page.unroute("**/envelope?**");
     await failed.getByRole("button", { name: "Retry" }).click();
-    await expect(page.locator("#deal-envelope").getByTestId("envelope-primary")).toBeVisible({ timeout: 30_000 });
+    await expect(page.locator("#deal-envelope").getByTestId("envelope-caption")).toBeVisible({ timeout: 30_000 });
   });
 
 });
@@ -305,7 +309,7 @@ test.describe("phone", () => {
   test("Deals day 0: the Before they ask card on a phone lists the levers, keeps Compare in reach and does not overflow", async ({ page }) => {
     await openEx01(page);
     const card = page.locator("#deal-envelope");
-    await expect(card.getByTestId("envelope-primary")).toContainText("55-day", { timeout: 30_000 });
+    await expect(card.getByTestId("envelope-ceiling-terms")).toContainText("55 days", { timeout: 30_000 });
     await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
     await card.getByTestId("envelope-details").locator("summary").first().click();
     await expect(card.getByTestId("envelope-levers-list").locator("li")).toHaveCount(6);
