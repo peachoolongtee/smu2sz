@@ -30,9 +30,9 @@ Switch to **Demo** in the header, click **Start demo** and sign in as the owner 
 **3. Test.**
 
 ```bash
-cd services/api && uv run pytest                     # 5,669 passed, 33 skipped on 8 Oct 2026 with contract ingestion (Windows, SKIP_PERF_BENCH=1: the latency benchmarks skipped; about 21 min in one run on a quiet machine)
+cd services/api && uv run pytest                     # 5,716 passed, 33 skipped on 8 Oct 2026 after contract ingestion was merged into the redesigned UI (Windows, SKIP_PERF_BENCH=1: the latency benchmarks skipped; one run of about 51 min with other jobs on the machine)
 cd apps/web && pnpm lint && pnpm typecheck && pnpm build && pnpm test:unit && pnpm test:e2e
-                                                     # Playwright mock e2e: MERGE-COUNTS
+                                                     # Playwright mock e2e: 58 passed, 7 skipped (live project: 41 passed, 2 skipped) on 8 Oct 2026
                                                      # (once: pnpm exec playwright install chromium)
 ```
 
@@ -74,7 +74,7 @@ Flags are environment variables read by `services/api/app/config.py` (`1` on, `0
 | Alerts and reconciliation | Cash-flow alerts from the conservative trajectory, each with an executable cure (`POST /alerts/{id}/act`); receipt reconciliation, including promised early payments (AWAITED, RECEIVED, LAPSED, SETTLED_OTHERWISE) | `FEATURE_ALERTS` | on |
 | Current books and clock | Accepted commitments change every later projection; a simulated clock (`POST /clock/advance`); partial settlement; re-verification of a verdict at the moment of commitment (ADR-0006) | core | on |
 | Expected-mode plans | Display-only expected-basis funding plan beside the committed one | `FEATURE_EXPECTED_PLANS` | on |
-| Contract ingestion and the deal card | Upload a signed buyer contract or a lender agreement (Word, PDF with text, or text); the agent reads it with every term beside its quoted clause, labelled "AI-generated, for reference"; the owner confirms or rejects it (an owner-only operation logged in the chain, which changes no books); the home page sets each confirmed contract beside the live books; `SHOW_DEAL` in chat ("where are we with Foshan?") | `FEATURE_CONTRACTS` | on |
+| Contract ingestion and the deal summary | Upload a signed buyer contract or a lender agreement (Word, PDF with text, or text); the agent reads it with every term beside its quoted clause, labelled "AI-generated, for reference"; the owner confirms or rejects it (an owner-only operation logged in the chain, which changes no books); once a deal is agreed, the Deals page sets the confirmed contract beside the live books; `SHOW_DEAL` in chat ("where are we with Foshan?") | `FEATURE_CONTRACTS` | on |
 
 Other switches: `LLM_MODE=cache|live`, `LLM_PRIMARY=claude|deepseek`, `DATABASE_URL` (SQLite by default, `memory`, or Postgres), and `DEMO_MODE`.
 

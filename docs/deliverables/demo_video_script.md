@@ -86,7 +86,7 @@ Every figure in the narration comes from `fixtures/golden/golden_values.json` or
 - **Say** "the first one we could find that a small supplier owns", never "the first AI agent for suppliers".
 - **Never say** "cannot be fooled", "solves prompt injection" or "understands every message". The narration says what the architecture prevents, and discloses the compiler's misreads on unseen messages.
 - **Do not** show or describe any real bank integration; the lenders and the bank feed are simulated, and no real payment is made.
-- **Say**, if the deal card or the documents page is shown, that the demo contract was written to match the synthetic scenario and "the agent read it, you confirmed it"; never "the AI signs" or "legally verified", and quote no reading-accuracy figure (the held-out contract set is pending).
+- **Say**, if the deal summary or the documents page is shown, that the demo contract was written to match the synthetic scenario and "the agent read it, you confirmed it"; never "the AI signs" or "legally verified", and quote no reading-accuracy figure (the held-out contract set is pending).
 - **Say** "the agent proposed it, the owner said go ahead, and then approved it" for the day-34 advance; do not say the agent decided alone, and do not hide that it is above the 15% ceiling (the code never approves for the owner).
 - **Say** "simulation" for the clock, the bank feed, the buyer and the lenders; "screens the entered obligations only"; "cheapest within the bounded search"; "reserve-coverage reading" for the bullet-loan DSCR; "internally checkable" for the log. **Never say** "safe by construction" or claim bank-covenant compliance.
 

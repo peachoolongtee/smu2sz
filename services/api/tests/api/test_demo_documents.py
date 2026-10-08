@@ -1,7 +1,7 @@
 """The demo's starting point (brief 03, option B): POST /demo/reset and a fresh start open on the three demo documents
-read by the agent and confirmed by the owner, so the home page shows the deal card at once. The confirmations are the
-owner's logged operations (CONFIRM_DOCUMENT, Tier 2, the first three entries of the chain) and change no books. The
-bare `Runtime.reset()` that tests and harnesses use still leaves the chain empty."""
+read by the agent and confirmed by the owner, so the deal summary is ready the moment a deal is agreed on Deals. The
+confirmations are the owner's logged operations (CONFIRM_DOCUMENT, Tier 2, the first three entries of the chain) and
+change no books. The bare `Runtime.reset()` that tests and harnesses use still leaves the chain empty."""
 
 from __future__ import annotations
 
@@ -37,7 +37,7 @@ def test_the_demo_reset_opens_on_the_three_confirmed_documents_and_the_deal(clie
 
     foshan = next(d for d in client.get("/deals").json()["deals"] if d["counterparty_id"] == "BUYER-1")
     assert foshan["has_contract"] is True and foshan["contract"]["reference"] == "FHR-2026-07"
-    assert [s["state"] for s in foshan["stages"]][0] == "done"
+    assert foshan["stages"][0]["state"] == "done"
 
 
 def test_every_demo_reset_starts_over_from_the_same_three_confirmations(client):

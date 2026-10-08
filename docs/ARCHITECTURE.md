@@ -45,7 +45,7 @@ Everything lives under `services/api/app/`.
 | `alerts/` (flag) | cash-flow alerts from the conservative trajectory; receipt reconciliation | `alerts()`, `reconcile()` | domain, financial |
 | `ingest/` | text from an uploaded file (Word, PDF with a text layer, plain text); refuses scans, other types and oversize files | `extract_text()` | nothing internal |
 | `contracts/` (flag) | contract records: a document read into a record, the suggested facility, the review view, the held-out scorer | `read_document()`, `record_view()`, `score()` | domain, compiler |
-| `deals/` (flag) | the deal card: a confirmed contract beside the books, and its chat reply | `deal_summary()`, `deal_reply()` | domain, contracts, alerts (reconciliation), financial (invoice terms), operations (log reading), persistence |
+| `deals/` (flag) | the deal summary: a confirmed contract beside the books, and its chat reply | `deal_summary()`, `deal_reply()` | domain, contracts, alerts (reconciliation), financial (invoice terms), operations (log reading), persistence |
 | `api/` | FastAPI routers, dependency wiring | HTTP | everything |
 
 A module may not import another module's internals, only its public functions. **Cycles are forbidden.**
@@ -165,7 +165,7 @@ Every violation carries a `formula` and `inputs` the UI can show verbatim.
 | `POST` | `/documents` | flag `contracts`; owner only; a demo document, an upload (base64) or pasted text → a contract record with the agent's reading |
 | `GET` | `/documents`, `/documents/{id}` | flag `contracts`; owner only; the records, and one record's review view |
 | `POST` | `/documents/{id}/confirm`, `/documents/{id}/reject` | flag `contracts`; owner only; `{doc_hash, link_facility_id?}` → `CONFIRM_DOCUMENT` / `REJECT_DOCUMENT` |
-| `GET` | `/deals`, `/deals/{buyer}` | flag `contracts`; owner only; the deal card |
+| `GET` | `/deals`, `/deals/{buyer}` | flag `contracts`; owner only; the deal summary (shown on Deals once a deal is agreed) |
 | `GET` | `/fixtures/contracts` | flag `contracts`; owner only; the demo documents |
 
 ## Storage

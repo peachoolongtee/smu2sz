@@ -7,7 +7,7 @@ The main scripted path is spec v2 §10, with the numbers from `fixtures/golden/g
 - The owner's signed mandate v1 is shown with its three tiers.
 - The reset also has the agent read the three demo documents (the supply agreement with Foshan Home Retail, the credit
   line agreement, the invoice financing agreement) and the owner confirm them: the first three ledger entries, with no
-  change to the books. The home page therefore opens on the Foshan deal card. Say that the demo contract was written to
+  change to the books. Once the buyer agrees in Scene 1, the Deals page shows the deal summary: the confirmed contract beside the books. Say that the demo contract was written to
   match the synthetic scenario. On the Documents page, "Read again" shows the agent reading a document and the owner
   confirming it.
 

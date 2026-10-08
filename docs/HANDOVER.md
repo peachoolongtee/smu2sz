@@ -124,12 +124,16 @@ Re-run in the cloud on 5 Oct 2026 after the UI redesign (`feat/ux-redesign`, Lin
 
 **Contract ingestion (5 Oct 2026, branch `feat/contract-ingestion` from `experiments`, local commits).** Brief 03
 (`docs/handover/03_contract_ingestion_brief.md`) is built: document upload and reading, owner confirmation logged in the
-chain, the deal card and the documents card on the home page, the documents page, `SHOW_DEAL` in chat, four attacks, the
+chain, the deal summary on Deals once a deal is agreed, the documents page, `SHOW_DEAL` in chat, four attacks, the
 golden equality test and the held-out harness (the set itself is pending). The demo reset opens on the three demo
 documents confirmed by the owner (three CONFIRM_DOCUMENT ledger entries; `Runtime.reset()` alone leaves the chain empty).
 `docs/SYSTEM_WALKTHROUGH.md` sections 5.19 and 12 describe it. Its gate (8 Oct): backend 5,669 passed, 33 skipped; scenarios 49/49; 259 attacks (126 API + 133 chat) with
 0 harm; `scripts/demo_run.py` exit 0; `scripts/evaluate.py` every target PASS; language-boundary certification WRONG_MATERIAL 0
-(cache and fake, unchanged); web mock e2e 45 passed (1 skipped), live e2e 40 passed (2 skipped).
+(cache and fake, unchanged); web mock e2e 45 passed (1 skipped), live e2e 40 passed (2 skipped). Merged into the redesigned
+UI (`feat/upgrading-contracts`, 8 Oct): backend 5,716 passed, 33 skipped (the first run's one failure, two golden
+digests in `tests/books/test_modules_on_books.py` that feat/upgrading's Wave 1 had not updated, was fixed and that file
+re-run); scenarios 49/49; `scripts/demo_run.py` exit 0; web mock e2e 58 passed (7 skipped), live e2e 41 passed (2
+skipped).
 
 **The owner stopped the red-team rounds on 3 Oct.** Five rounds (3, 7, 3, 7 and 6 findings) are done and all fixed.
 The engine is in **stability mode**: fix regressions, keep the evidence regenerated, rehearse the demo, keep the
@@ -268,7 +272,7 @@ debt is listed at the end of `docs/UX_AUDIT.md`. The list below remains the back
 1. Read the three mission documents first: `docs/AGENT_MISSION.md`, `docs/CONTINUOUS_OPTIMIZATION.md` (the live
    tracker; `docs/NEXT_FIXES.md` is history) and `docs/FINANCIAL_SEMANTICS.md`.
 2. Run the gate. From `services/api`, as two sequential chunks (about 8 and 6 minutes on Windows; expect
-   about 5,669 passed, 33 skipped in all), each `SKIP_PERF_BENCH=1 uv run pytest -o addopts= -q -p no:cacheprovider`:
+   about 5,716 passed, 33 skipped in all), each `SKIP_PERF_BENCH=1 uv run pytest -o addopts= -q -p no:cacheprovider`:
    chunk A = `tests/alerts tests/api tests/books tests/borrower_file tests/capex tests/clock tests/commitments
    tests/compiler tests/contracts tests/counterparties tests/covenants tests/egress tests/evals tests/financial
    tests/funding tests/ingest`;
@@ -279,8 +283,8 @@ debt is listed at the end of `docs/UX_AUDIT.md`. The list below remains the back
    `cd services/api && uv run python -m app.security.attacks --report` (259 attacks, 0 with harm),
    `uv run --project services/api python scripts/evaluate.py` (every target PASS; about 6 minutes), and
    `uv run --project services/api python scripts/certify_language_boundary.py --backend cache` and `--backend fake`
-   (WRONG_MATERIAL 0). For the web app `E2E_TARGET=mock pnpm exec playwright test` (MERGE-COUNTS-MOCK) and, if another
-   program holds port 8000, `E2E_API_PORT=8010 E2E_TARGET=live pnpm exec playwright test` (MERGE-COUNTS-LIVE). Scenario, attack, evaluation and certification runs rewrite tracked files under
+   (WRONG_MATERIAL 0). For the web app `E2E_TARGET=mock pnpm exec playwright test` (58 passed, 7 skipped on 8 Oct, after the merge) and, if another
+   program holds port 8000, `E2E_API_PORT=8010 E2E_TARGET=live pnpm exec playwright test` (41 passed, 2 skipped). Scenario, attack, evaluation and certification runs rewrite tracked files under
    `services/api/evals/`; commit them only when the task is to refresh evidence.
 3. Open rows of the backlog (`docs/CONTINUOUS_OPTIMIZATION.md` section 1): PG1 (PostgreSQL run, needs a URL), LC1 (live
    certification, needs a key; a five-item DeepSeek-only smoke passed on the Mac on 5 Oct), NR1 (the "no runnable plan" worlds: should the agent propose drawing the line and

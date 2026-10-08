@@ -392,6 +392,8 @@ export async function negotiate(offerId: string, req: NegotiateRequest): Promise
     res.operations = ops;
     if (res.commitment) s.commitments.push(clone(res.commitment));
     result = res;
+    // Both parties agreed: the Deals page shows the deal summary from now on, as live.
+    documents.markDealAgreed();
   } else {
     const ops = [append("draw_line_hard_line"), append("submit_invoice")];
     const res = clone(cast<NegotiationView>(negNoDeal));
@@ -611,7 +613,7 @@ export async function demoReset(scenario?: string): Promise<void> {
   documents.resetDocuments();
 }
 
-// ------------------------------------------------------------------ contract ingestion and the deal card (brief 03)
+// ------------------------------------------------------------------ contract ingestion and the deal summary (brief 03)
 
 export async function getDeals(): Promise<DealsView> {
   await delay();

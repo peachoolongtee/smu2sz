@@ -117,13 +117,16 @@ or rejects it (`POST /documents/{id}/confirm|reject {doc_hash, link_facility_id?
 changes no books.
 
 The demo reset opens on the three demo documents read by the agent and confirmed by the owner (the first three ledger
-entries), so the home page shows the deal card at once. "Read again" on a demo document is a new reading to review and
-confirm or reject.
+entries). The deal summary sits on Deals (`components/deals/deal-summary.tsx`): once both parties have agreed a deal (the
+"Terms negotiated" stage done in `GET /deals`) it follows what was agreed, the next step points at it, and it links to the
+contract. `/documents` is a Business route opened from a summary and an engine view in Demo mode; Activity links each
+confirmation to its contract. "Read again" on a demo document is a new reading to review and confirm or reject.
 
 Mock mode (`lib/mock/documents.ts`) starts from the same point and serves the three demo documents as the live API left
-them, read again, and that reading confirmed and rejected (`mocks/documents.json`), and the deal card for each point of the
-story (`mocks/deals_*.json`: day 0, day 0 after a new reading of the supply agreement is confirmed, then day 34 before the
-cure is queued, while it waits for approval and after approval). Any other file needs live mode.
+them, read again, and that reading confirmed and rejected (`mocks/documents.json`), and the deal summary for each point of
+the story (`mocks/deals_*.json`: day 0 before and after the buyer agrees, day 0 after a new reading of the supply agreement is
+confirmed, then day 34 before the cure is queued, while it waits for approval and after approval). The mock marks the deal
+agreed when the negotiation (Deals, the stepper) or the chat's "go ahead" agrees it, as the live books do. Any other file needs live mode.
 
 ### Live-mode notes
 

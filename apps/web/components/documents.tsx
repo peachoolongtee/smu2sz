@@ -48,7 +48,7 @@ export function contractsOff(e: Error | undefined): boolean {
   return e instanceof ApiError && e.status === 403 && JSON.stringify(e.detail ?? "").includes("FEATURE_DISABLED");
 }
 
-// ------------------------------------------------------------------ the brief-03 prototype's look (deal and documents cards)
+// ------------------------------------------------------------------ the brief-03 prototype's look (the deal summary and the documents page)
 
 const PILL: Record<DealTone, string> = {
   ok: "border-ok-line bg-ok-bg text-ok-fg",

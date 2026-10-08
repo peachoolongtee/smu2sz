@@ -1,70 +1,33 @@
 "use client";
 
 import Link from "next/link";
-import { CardLink, ClauseLabel, ClauseQuote, ContractCard, contractsOff, DealHeading, Pill } from "@/components/documents";
-import { ErrorState, LoadingBlock } from "@/components/ui";
-import { getDeals } from "@/lib/api";
+import { CardLink, ClauseLabel, ClauseQuote, ContractCard, DealHeading, Pill } from "@/components/documents";
 import { useI18n } from "@/lib/i18n";
 import type { DealTone, DealView, StageState } from "@/lib/types";
-import { useAsync } from "@/lib/use-async";
+
+/** Agreed by both parties: a confirmed contract and the "Terms negotiated" stage done (the server's accepted commitment). */
+export function isAgreed(d: DealView): boolean {
+  return d.has_contract && Boolean(d.stages?.some((s) => s.key === "negotiated" && s.state === "done"));
+}
 
 /**
- * Each buyer's deal, laid out as the brief-03 prototype: the contract the owner confirmed (every term with its clause and
- * quote) beside the live books (what changed since signing, the terms in force, the invoices, what each side owes and what to
- * do next). GET /deals builds it all; every amount, date and sentence here is a server string. A buyer without a confirmed
- * contract gets a placeholder.
+ * The deal summary, after the negotiation (brief 03, on Deals): for each buyer whose deal both parties have agreed, the
+ * contract the owner confirmed (every term with its clause and quote) beside the live books: what changed since signing,
+ * the terms in force, the invoices, what each side owes and what to do next. The page passes GET /deals; every amount, date
+ * and sentence here is a server string. Nothing shows before a deal is agreed.
  */
-export function DealsCard() {
+export function AgreedDeals({ deals }: { deals: DealView[] }) {
   const { t } = useI18n();
-  const deals = useAsync(getDeals, []);
-  const list = deals.data?.deals ?? [];
+  const agreed = deals.filter(isAgreed);
+  if (!agreed.length) return null;
   return (
-    <ContractCard id="home-deals" title={t("home.deals")} aside={<CardLink href="/documents">{t("home.deals.open")} →</CardLink>}>
-      {contractsOff(deals.error) ? (
-        <p className="text-sm text-ink-3" data-testid="home-deals-off">
-          {t("home.deals.off")}
-        </p>
-      ) : deals.error ? (
-        <ErrorState error={deals.error} onRetry={deals.reload} />
-      ) : !deals.data ? (
-        <LoadingBlock rows={2} />
-      ) : (
-        <div className="space-y-3">
-          {list
-            .filter((d) => d.has_contract)
-            .map((d) => (
-              <Deal key={d.counterparty_id} deal={d} />
-            ))}
-          <div className="grid gap-3 md:grid-cols-2">
-            {list
-              .filter((d) => !d.has_contract)
-              .map((d) => (
-                <div
-                  key={d.counterparty_id}
-                  className="grid gap-1 rounded-(--radius-card) border border-dashed border-line-strong px-3.5 py-3 text-ink-3"
-                  data-testid={`home-deal-${d.counterparty_id}`}
-                  data-has-contract="false"
-                >
-                  <b className="font-semibold text-ink-2">{d.counterparty_name}</b>
-                  {d.pending_documents.length ? (
-                    <span>
-                      {t("home.deals.waiting", { id: d.pending_documents[0] })}{" "}
-                      <Link href={`/documents?id=${encodeURIComponent(d.pending_documents[0])}`} className="font-medium text-brand-600 hover:underline">
-                        {t("home.deals.review")}
-                      </Link>
-                    </span>
-                  ) : (
-                    <span>{t("home.deals.none")}</span>
-                  )}
-                </div>
-              ))}
-            <Link href="/documents" className="grid gap-1 rounded-(--radius-card) border border-dashed border-line-strong px-3.5 py-3 text-ink-3 hover:bg-subtle">
-              <b className="font-semibold text-ink-2">{t("home.deals.add")}</b>
-              <span>{t("home.deals.addHint")}</span>
-            </Link>
-          </div>
-        </div>
-      )}
+    <ContractCard id="deal-summary" title={t("deals.summary.title")} aside={<CardLink href="/documents">{t("deals.summary.documents")} →</CardLink>}>
+      <p className="mb-3 text-sm text-ink-3">{t("deals.summary.sub")}</p>
+      <div className="space-y-3">
+        {agreed.map((d) => (
+          <DealSummary key={d.counterparty_id} deal={d} />
+        ))}
+      </div>
     </ContractCard>
   );
 }
@@ -114,7 +77,7 @@ function clauseRange(clauses: (string | null)[]): string | null {
   return lo === hi ? `§${lo}` : `§${lo}–${hi}`;
 }
 
-function Deal({ deal }: { deal: DealView }) {
+export function DealSummary({ deal }: { deal: DealView }) {
   const { t, te } = useI18n();
   const c = deal.contract;
   const meta = [c?.title, c?.signed_display ? t("deal.signed", { date: c.signed_display }) : null, c?.term_display, c?.cadence_display].filter(Boolean).join(" · ");
@@ -123,11 +86,21 @@ function Deal({ deal }: { deal: DealView }) {
   const range = clauseRange([...owed.deliverables, ...owed.documents].map((o) => o.clause));
   const next = deal.next_action;
   return (
-    <article className="overflow-hidden rounded-(--radius-card) border border-line" data-testid={`home-deal-${deal.counterparty_id}`} data-has-contract="true">
+    <article className="overflow-hidden rounded-(--radius-card) border border-line" data-testid={`deal-summary-${deal.counterparty_id}`}>
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2.5 border-b border-line bg-subtle px-4 py-3.5">
         <div className="min-w-0">
           <h3 className="text-base font-semibold text-ink">{deal.counterparty_name}</h3>
-          <p className="text-[12.5px] text-ink-3">{meta}</p>
+          <p className="text-[12.5px] text-ink-3">
+            {meta}
+            {c?.record_id ? (
+              <>
+                {" · "}
+                <Link href={`/documents?id=${encodeURIComponent(c.record_id)}`} className="font-medium text-brand-600 hover:underline" data-testid="deal-contract-link">
+                  {t("deals.summary.contract")}
+                </Link>
+              </>
+            ) : null}
+          </p>
         </div>
         <div className="flex flex-wrap gap-1.5" data-testid="deal-pills">
           {deal.pills?.map((p) => (

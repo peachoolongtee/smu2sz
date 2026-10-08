@@ -86,7 +86,7 @@ A Tier-2 operation returns `PENDING_APPROVAL` and sits in the approvals queue. A
 
 `FEATURE_TERMS_GUARD`, `FEATURE_DEBT_DESK`, `FEATURE_CAPEX`, `FEATURE_BORROWER_FILE`,
 `FEATURE_BUYER_NEGOTIATION`, `FEATURE_SECURITY_SCENES`, `FEATURE_ALERTS`, `FEATURE_EXPECTED_PLANS` and
-`FEATURE_CONTRACTS` (contract ingestion and the deal card, section 5.19) all default on. A disabled feature answers
+`FEATURE_CONTRACTS` (contract ingestion and the deal summary, section 5.19) all default on. A disabled feature answers
 `FEATURE_DISABLED`.
 
 ---
@@ -185,7 +185,7 @@ api ─► everything; web ─► api
 | `compiler` | Text → typed offer, term sheet or contract reading; grounding, coverage proof, flag lexicon | documents only (never state or mandate) | api, nl |
 | `ingest` | File → text: Word, PDF with a text layer, plain text; refuses scans, other types and oversize files | the uploaded bytes | api |
 | `contracts` | Contract records: reading a document into a record, the suggested facility, the review view, the held-out scorer | compiler, state (facilities, counterparties) | api, deals |
-| `deals` | The deal card: a confirmed contract beside the books, and its chat reply | contract records, state, commitments, operations log, reconciliation | api, nl |
+| `deals` | The deal summary: a confirmed contract beside the books, and its chat reply | contract records, state, commitments, operations log, reconciliation | api, nl |
 | `financial` | The day-by-day engine, charges, amortisation, the existing-debt schedule (`debts.py`), concession valuation | state, obligations, funding actions | verifier, funding, alerts, capex, borrower file, nl |
 | `books` | Current books: state plus the live commitments' obligations | state, commitments | verifier, alerts, nl, api |
 | `funding` | Funding menu, same-basis rates (`rates.action_rate`), the router, break-even, admission (`admission.py`), the leg rule shared by both (`legs.py`) | state, mandate, financial, covenants | verifier, nl, api, capex, executor |
@@ -779,7 +779,7 @@ outbound scan of every counter text. Nothing in it is a constant.
 The operations log, security events and verdict references are exported as JSON lines with their hashes. The
 verifier script recomputes every entry hash and link with the standard library only.
 
-### 5.19 Contract ingestion and the deal card (`ingest/`, `compiler/contract*.py`, `contracts/`, `deals/`)
+### 5.19 Contract ingestion and the deal summary (`ingest/`, `compiler/contract*.py`, `contracts/`, `deals/`)
 
 The owner uploads a signed contract with a buyer, or a lender agreement. The agent reads it; the owner checks the
 reading against the text and confirms or rejects it; a confirmed contract is shown beside the live books on the deal
@@ -827,22 +827,25 @@ invoice, facility or operation is created from one, and the language model sets 
    blanks and why, the flags, the "AI-generated, for reference" label), `POST /documents/{id}/confirm` and `/reject`
    (`doc_hash`, and `link_facility_id` for a lender agreement), `GET /fixtures/contracts`, `GET /deals`,
    `GET /deals/{buyer}`.
-7. **The deal card** (`deals/`). For each buyer with a confirmed contract: its terms with their clauses and the fields
+7. **The deal summary** (`deals/`, on the Deals page). For each buyer with a confirmed contract: its terms with their clauses and the fields
    left blank; what changed since signing (the confirmation, the buyer's offers, the agent's replies, the accepted
    commitment, the bank receipts); the terms in force against the contract (same, different, not in the contract);
    the buyer's invoices from the books (paid, late, advance waiting for the owner, financed, due today, not due) and
    the next one; what the supplier owes (deliverables and payment documents, shown with their quotes and not tracked);
-   checks of the books against the contract; the deal stage; and the next action, with links. A buyer without a
-   confirmed contract gets a placeholder that names any reading waiting for review.
+   checks of the books against the contract; the deal stage; and the next action, with links. The Deals page shows it
+   after the negotiation, once both parties have agreed (a commitment with the buyer accepted, the "Terms negotiated"
+   stage done), right after what was agreed; the next step then points at it, and it links to the contract it was built
+   from. Before a deal is agreed, and for a buyer without a confirmed contract, it is not shown.
 8. **Chat.** "where are we with Foshan?" or "跟佛山的合同进展如何" is SHOW_DEAL: owner only and read-only, it answers
-   with the deal card in plain lines, in English or Chinese; with two buyers and no name it asks which.
+   with the deal summary in plain lines, in English or Chinese; with two buyers and no name it asks which.
 9. **Egress.** Every contract record's values (price and other amounts, rates, payment terms, the agreement number,
    a lender agreement's limit and rates) are protected values owned by that counterparty, whether or not the reading
    was confirmed. Another buyer asking for them is refused and they are never sent to anyone else.
 10. **The demo's starting point.** `POST /demo/reset` (`Runtime.reset_demo`) and a fresh start on an empty store read
    the three demo documents exactly as an upload is read and confirm them as the owner through the executor, so the
-   chain opens with three CONFIRM_DOCUMENT entries (DOC-000001 to DOC-000003, day 0) and the home page shows the deal
-   card at once. The books are untouched. Reading a demo document again is a new reading (DOC-000004 on fresh demo
+   chain opens with three CONFIRM_DOCUMENT entries (DOC-000001 to DOC-000003, day 0) and the deal summary is ready the
+   moment a deal is agreed on Deals. The books are untouched, and the home's "What changed" leaves the confirmations out
+   (Activity lists them, each linking to its contract). Reading a demo document again is a new reading (DOC-000004 on fresh demo
    books) that the owner confirms or rejects; the deal follows the buyer contract confirmed last. `Runtime.reset()`
    alone, which the tests, the attack harness, the certification, the scenario runner and `scripts/demo_run.py` use,
    leaves the chain empty, so their figures (the 14 ledger entries of section 7 among them) are unchanged.
@@ -1022,6 +1025,10 @@ for other money.
 
 ## 9. Tests, evidence and how to run everything
 
+After the merge into the redesigned UI (`feat/upgrading-contracts`, 8 Oct 2026): 5,716 backend tests passed, 33 skipped;
+49 of 49 scripted chat scenarios; `scripts/demo_run.py` exit 0; the web app's lint, typecheck and unit checks (17) pass,
+mock e2e 58 passed (7 skipped) and live e2e 41 passed (2 skipped).
+
 On `feat/contract-ingestion` (5 to 8 Oct 2026, contract ingestion added): 5,669 backend tests passed, 33 skipped (the
 same skips as below), in one run (about 21 minutes on a quiet machine); 49 of 49 scripted chat scenarios (87 turns); 259 attacks (126 API, 133
 chat), 0 with harm; `scripts/demo_run.py` exit 0 with the same 14 ledger entries; `scripts/evaluate.py` with every
@@ -1168,7 +1175,7 @@ decision.
   readings are recorded (`rules-v1`, the deterministic grammar, since no model key was available); the grammar was
   written against the three demo documents, so it says nothing about other contracts. The held-out set that would
   measure that is pending (`services/api/evals/contracts_heldout_report.md` says so and quotes no figure). The demo
-  documents are English; a Chinese contract has not been tried. The deal card's text is English only.
+  documents are English; a Chinese contract has not been tried. The deal summary's text is English only.
 - **Not built.** Named stress scenarios, payment by acceptance bill, recurring outflows, Chinese server text,
   deployment, a LICENSE file. The statutory-due-date module and the mock
   lender were deleted rather than left empty.
@@ -1274,5 +1281,5 @@ recorded with the deterministic grammar (`rules-v1`); `cd services/api && uv run
 | The three demo documents (Markdown, Word, PDF) reproduce the demo books: the recurring invoices, RCV-A, the early-payment terms, FAC-LINE and FAC-IF | 5.19 | `contracts/test_golden_equality.py` |
 | The held-out harness and report (the set is pending) | 10 | `contracts/test_heldout_scoring.py`, `scripts/evaluate_contracts.py` |
 | Four attacks: an instruction inside a clause, an unregistered lender's agreement, a buyer asking for another buyer's contract, a non-owner confirmation | 5.17 | `security/test_nl_attacks.py`, `services/api/evals/security/latest_report.md` |
-| The web: the deal and documents cards on the home page, the documents page with the review screen, recorded mocks, English and Chinese | 6 | `apps/web/e2e/documents.spec.ts`, `apps/web/e2e/responsive.spec.ts`, `apps/web/scripts/check-mocks.test.mjs` |
-| The demo opens on the three demo documents confirmed by the owner (three logged confirmations, no books changed), so the home page shows the deal card at once; a demo document can be read again | 5.19 | `api/test_demo_documents.py`, `apps/web/e2e/documents.spec.ts`, `apps/web/e2e/demo.spec.ts` |
+| The web: the deal summary on Deals after the negotiation (merged into the redesigned UI), the documents page with the review screen (a Business route opened from a deal summary, and a Demo engine view), Activity's links to the contracts, recorded mocks, English and Chinese | 6 | `apps/web/e2e/documents.spec.ts`, `apps/web/e2e/responsive.spec.ts`, `apps/web/scripts/check-mocks.test.mjs` |
+| The demo opens on the three demo documents confirmed by the owner (three logged confirmations, no books changed), so the deal summary is ready as soon as a deal is agreed; a demo document can be read again | 5.19 | `api/test_demo_documents.py`, `apps/web/e2e/documents.spec.ts`, `apps/web/e2e/demo.spec.ts` |

@@ -2,14 +2,14 @@ import type { Page } from "@playwright/test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { expect, test } from "./fixtures";
-import { resetBooks } from "./helpers";
+import { resetBooks, runPlan } from "./helpers";
 
 /**
- * Contract ingestion (brief 03): the home cards and the confirm flow. The demo opens on the three demo documents read by the
- * agent and confirmed by the owner (the first three ledger entries), so the home page shows the deal at once, as in the
- * prototype. Reading a demo document again is a new reading the owner reviews beside the text and confirms or rejects. The
- * same walk runs in mock mode (answers recorded from the live API) and in the live project (a fresh in-memory API). The
- * day-34 deal and the Chinese screens are mock-only (the live equivalent needs the whole demo path first).
+ * Contract ingestion (brief 03) in the redesigned UI. The demo opens on the three demo documents read by the agent and
+ * confirmed by the owner (the first three ledger entries). The deal summary (the confirmed contract beside the live books)
+ * comes on Deals once both parties have agreed a deal; the Documents page reviews, confirms or rejects a reading, and
+ * Activity links each confirmation to its contract. The same walk runs in mock mode (answers recorded from the live API) and
+ * in the live project (a fresh in-memory API). The day-34 summary and the Chinese screens are mock-only.
  */
 
 const SUPPLY = "FHR_SUPPLY_AGREEMENT";
@@ -32,41 +32,62 @@ async function readAgain(page: Page, fixtureId: string, format?: "md" | "docx" |
   return review;
 }
 
-test("home: the demo opens on the deal card and the three documents the agent read and the owner confirmed", async ({ page }) => {
-  await page.goto("/");
-  await expect(page.getByRole("heading", { name: "Your deals", level: 2 })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Documents the agent has read", level: 2 })).toBeVisible();
-  // The cards come after Position, as the prototype places them.
-  const order = await page.locator("main h2").allTextContents();
-  expect(order.indexOf("Your deals")).toBe(order.indexOf("Position") + 1);
-  expect(order.indexOf("Documents the agent has read")).toBe(order.indexOf("Position") + 2);
+/** The owner checks Foshan's offer and sends the recommended counter; the buyer open to a counter accepts it. */
+async function agreeFoshanDeal(page: Page) {
+  await page.goto("/deals");
+  await page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01").click();
+  await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
+  const response = page.locator("#counters");
+  await response.getByTestId("deal-send-open").click();
+  await response.getByTestId("deal-send").click();
+  await expect(response).toContainText("Accepted by the buyer");
+}
 
-  const deal = page.getByTestId("home-deal-BUYER-1");
-  await expect(deal).toHaveAttribute("data-has-contract", "true");
+/** The Business header keeps the language switch and sign-out inside the account menu; open it when it is there. */
+async function openAccountMenu(page: Page) {
+  const menu = page.getByTestId("account-menu");
+  if ((await menu.count()) && !(await menu.evaluate((el) => (el as HTMLDetailsElement).open))) await menu.locator("> summary").click();
+}
+
+test("Deals: no summary before a deal is agreed; once the buyer agrees, the confirmed contract beside the books", async ({ page }) => {
+  await page.goto("/deals");
+  await expect(page.getByTestId("inbox-list")).toBeVisible();
+  await expect(page.locator("#deal-summary")).toHaveCount(0);
+
+  await agreeFoshanDeal(page);
+  await expect(page.getByTestId("next-step")).toContainText("The deal summary below sets the contract beside the books");
+  await expect(page.getByTestId("next-step").getByRole("link", { name: "See the deal summary" })).toHaveAttribute("href", "#deal-summary");
+  const summary = page.locator("#deal-summary");
+  await expect(summary.getByRole("heading", { name: "Deal summary", level: 2 })).toBeVisible();
+  const deal = page.getByTestId("deal-summary-BUYER-1");
   await expect(deal).toContainText("Supply agreement FHR-2026-07 · signed 1 Sep 2026 · 12 months · an invoice every 30 days");
   await expect(deal.getByTestId("deal-pills")).toHaveText("On track");
-  await expect(deal.getByTestId("deal-stages").locator("li")).toHaveCount(5);
+  await expect(deal.getByTestId("deal-stages").locator('li[data-state="done"]')).toContainText(["Contract read", "Terms negotiated"]);
   const contract = deal.getByTestId("deal-contract");
   await expect(contract).toContainText("Read by the agent, confirmed by you");
   await expect(contract).toContainText("¥420,000.00 per delivery batch");
   await expect(contract).toContainText("45 days from the invoice date");
   await expect(contract).toContainText("§4.2");
   await expect(deal.getByTestId("deal-blanks")).toContainText("Late-payment interest");
-  await expect(deal.getByTestId("deal-invoice-RCV-A")).toContainText("¥420,000.00");
+  // What changed since signing is the negotiation just run; the agreed early payment is in force, beside the contract's.
+  await expect(deal.getByTestId("deal-changes")).toContainText("Buyer accepted");
+  await expect(deal.getByTestId("deal-in-force").locator('[data-vs="DIFFERENT"]')).toContainText("0.85%");
   await expect(deal.getByTestId("deal-owed")).toContainText("a quality inspection certificate for the Batch");
-  await expect(deal.getByTestId("deal-checks").locator("li")).toHaveCount(5);
+  await expect(deal.getByTestId("deal-checks").locator("li")).toHaveCount(6);
   await expect(deal.getByTestId("deal-next")).toContainText("Nothing needs you on this deal today.");
-  await expect(page.getByTestId("home-deal-BUYER-2")).toContainText("No contract confirmed yet.");
 
-  const docs = page.getByTestId("home-docs-list").locator("li");
-  await expect(docs).toHaveCount(3);
-  for (const title of ["Supply agreement FHR-2026-07", "Credit line agreement MB-CL-2026-031", "Invoice financing agreement GBR-IF-2026-118"]) {
-    await expect(docs.filter({ hasText: title })).toContainText("Confirmed day 0");
-  }
+  // The summary opens the contract it was built from, in the Business shell.
+  await deal.getByTestId("deal-contract-link").click();
+  await expect(page).toHaveURL(/\/documents\?id=DOC-000001$/);
+  await expect(page.getByTestId("doc-review")).toHaveAttribute("data-status", "CONFIRMED");
+  await expect(page.getByRole("region", { name: "Guided demo" })).toHaveCount(0);
 });
 
-test("the review screen: the confirmed supply agreement, every term beside the clause it came from", async ({ page }) => {
+test("the documents: the three demo documents confirmed, each term of the supply agreement beside its clause", async ({ page }) => {
   await page.goto("/documents");
+  for (const id of ["DOC-000001", "DOC-000002", "DOC-000003"]) {
+    await expect(page.getByTestId(`doc-row-${id}`)).toHaveAttribute("data-status", "CONFIRMED");
+  }
   await page.getByTestId(`fixture-open-${SUPPLY}`).click();
   await expect(page).toHaveURL(/\/documents\?id=DOC-000001$/);
   const review = page.getByTestId("doc-review");
@@ -90,7 +111,7 @@ test("the review screen: the confirmed supply agreement, every term beside the c
   await expect(mark).toHaveClass(/ring-2/);
 });
 
-test("the confirm flow: a new reading is labelled AI-generated until the owner confirms it, and the ledger logs it", async ({ page }) => {
+test("the confirm flow: a new reading is labelled AI-generated until the owner confirms it, and Activity logs it", async ({ page }) => {
   const review = await readAgain(page, SUPPLY);
   await expect(review.getByTestId("doc-ai-label")).toHaveText("AI-generated, for reference");
   await expect(page.getByTestId("doc-terms").locator(":scope > li")).toHaveCount(18);
@@ -102,19 +123,15 @@ test("the confirm flow: a new reading is labelled AI-generated until the owner c
   await expect(review).toHaveAttribute("data-status", "CONFIRMED");
   await expect(review.getByTestId("doc-ai-label")).toHaveText("Read by the agent, confirmed by you");
   await expect(page.getByTestId("doc-decided")).toContainText("Decided on day 0 (ledger entry #4)");
+  await expect(page.getByTestId("doc-row-DOC-000004")).toHaveAttribute("data-status", "CONFIRMED");
 
-  // Home: the deal follows the reading confirmed last; the documents card lists the new reading too.
-  await page.getByRole("navigation").getByRole("link", { name: "Home", exact: true }).first().click();
-  const deal = page.getByTestId("home-deal-BUYER-1");
-  await expect(deal).toHaveAttribute("data-has-contract", "true");
-  await expect(deal.getByTestId("deal-contract")).toContainText("45 days from the invoice date");
-  const docs = page.getByTestId("home-docs-list").locator("li");
-  await expect(docs).toHaveCount(4);
-  await expect(page.getByTestId("home-doc-DOC-000004")).toHaveAttribute("data-status", "CONFIRMED");
-
-  // The ledger holds the owner's four confirmations, on the hash chain with everything else.
-  await page.goto("/ledger");
-  await expect(page.locator("#operations tbody tr").filter({ hasText: "Confirm document" })).toHaveCount(4);
+  // Activity: the owner's four confirmations in the executor's sentences, newest first, each opening its contract.
+  await page.goto("/activity");
+  const confirms = page.getByTestId("activity-CONFIRM_DOCUMENT");
+  await expect(confirms).toHaveCount(4);
+  await expect(confirms.first()).toContainText("the agent read it, the owner confirmed it; nothing in the books changed");
+  await confirms.first().getByTestId("activity-document-link").click();
+  await expect(page).toHaveURL(/\/documents\?id=DOC-000004$/);
 });
 
 test("a lender agreement (the PDF copy) is compared with the facility on the books and linked when confirmed", async ({ page }) => {
@@ -165,14 +182,15 @@ test("your own file: the upload form sends a Word, PDF or text file with what it
   }
 });
 
-test("day 34: the deal card tells the story and points at the approval", async ({ page }, testInfo) => {
+test("day 34: the deal summary tells the story and points at the approval", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name === "live", "mock-mode spec: the recorded demo path (deal, receipt on day 2, clock to day 34)");
-  await page.goto("/");
+  await page.goto("/demo");
   await page.getByTestId("home-days").fill("34");
   await page.getByTestId("home-advance").click();
   await expect(page.getByTestId("home-day")).toHaveText("Day 34");
 
-  const deal = page.getByTestId("home-deal-BUYER-1");
+  await page.goto("/deals");
+  const deal = page.getByTestId("deal-summary-BUYER-1");
   await expect(deal.getByTestId("deal-pills")).toHaveText("Payment overdue");
   await expect(deal.getByTestId("deal-stages").locator('li[data-state="now"]')).toContainText("Collecting");
   const rcvA = deal.getByTestId("deal-invoice-RCV-A");
@@ -180,11 +198,13 @@ test("day 34: the deal card tells the story and points at the approval", async (
   await expect(rcvA).toContainText("¥162,800.00");
   await expect(rcvA).toContainText("2 days late");
   await expect(deal.getByTestId("deal-changes")).toContainText("¥255,013.80 received on RCV-A");
-  await expect(deal.getByTestId("deal-in-force").locator('[data-vs="DIFFERENT"]')).toContainText("0.85%");
   await expect(deal.getByTestId("deal-next")).toContainText("Chase the ¥162,800.00 on RCV-A (2 days late).");
 
-  // The owner lets the agent fix the reserve alert: the cure waits for approval, and the deal card says so.
-  await page.getByTestId("fix-ALERT-RESERVE-42").click();
+  // The owner lets the agent fix the reserve alert from the home: the fix waits for approval, and the summary says so.
+  await page.goto("/");
+  await runPlan(page, "ALERT-RESERVE-42");
+  await expect(page.getByTestId("alert-waiting-ALERT-RESERVE-42")).toBeVisible();
+  await page.goto("/deals");
   await expect(deal.getByTestId("deal-pills")).toContainText("1 approval waiting");
   await expect(deal.getByTestId("deal-invoice-RI:BUYER-1:2")).toHaveAttribute("data-status", "ADVANCE_WAITING");
   await expect(deal.getByTestId("deal-next")).toContainText("Review APR-000001");
@@ -192,14 +212,14 @@ test("day 34: the deal card tells the story and points at the approval", async (
   await expect(page).toHaveURL(/\/approvals/);
 });
 
-test("Chinese: the cards and the review screen", async ({ page }, testInfo) => {
+test("Chinese: the deal summary and the review screen", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name === "live", "the strings are the same in both modes; checked once");
-  await page.goto("/");
+  await agreeFoshanDeal(page);
+  await openAccountMenu(page);
   await page.getByLabel("中文").check();
-  await expect(page.getByRole("heading", { name: "您的交易", level: 2 })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "代理读过的文件", level: 2 })).toBeVisible();
-  await expect(page.getByTestId("home-deal-BUYER-1")).toContainText("合同约定");
-  await expect(page.getByTestId("home-docs-list")).toContainText("第 0 天确认");
+  await expect(page.locator("#deal-summary").getByRole("heading", { name: "交易摘要", level: 2 })).toBeVisible();
+  await expect(page.getByTestId("deal-summary-BUYER-1")).toContainText("合同约定");
+  await expect(page.getByTestId("deal-summary-BUYER-1")).toContainText("由代理读取，经您确认");
   await readAgain(page, SUPPLY);
   await expect(page.getByRole("heading", { name: "文件", level: 1 })).toBeVisible();
   await expect(page.getByTestId("doc-ai-label")).toHaveText("由 AI 生成，仅供参考");

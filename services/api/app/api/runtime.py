@@ -150,8 +150,8 @@ class Runtime:
 
     def reset_demo(self, scenario: str = "golden_sme") -> None:
         """POST /demo/reset: the scenario's books (`reset`), then, on the golden books, the demo documents read by the
-        agent and confirmed by the owner, so the demo opens on the deal card. `reset` alone (tests, harnesses) leaves
-        the chain empty."""
+        agent and confirmed by the owner, so the deal summary is ready once a deal is agreed. `reset` alone (tests,
+        harnesses) leaves the chain empty."""
         with self.lock:
             self.reset(scenario)
             _confirm_demo_documents(self, scenario)

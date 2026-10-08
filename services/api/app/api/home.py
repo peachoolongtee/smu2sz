@@ -60,7 +60,7 @@ from app.funding.recommend import (
     recommend_for_alert,
     runnable_plan,
 )
-from app.operations.log import read_entries
+from app.operations.log import CONFIRM_DOCUMENT_KIND, REJECT_DOCUMENT_KIND, read_entries
 
 router = APIRouter(dependencies=[Depends(require_owner)])
 
@@ -528,6 +528,8 @@ def _changes(state: FinancialState, store: Any, found: list[Alert], today: int, 
             continue
         if e.result.status == OperationStatus.DUPLICATE or "CLOCK" in e.kind.upper():
             continue  # a clock step is not news; what it posted shows as receipts, landings and alerts
+        if e.kind in (CONFIRM_DOCUMENT_KIND, REJECT_DOCUMENT_KIND):
+            continue  # the owner's decision on a contract the agent read changes no books; Activity and Deals show it
         who = (getattr(e.op, "requested_by", None) or "") if e.op is not None else ""
         who = str(getattr(who, "value", who))
         kind = "REFUSED" if e.result.status == OperationStatus.REFUSED else (

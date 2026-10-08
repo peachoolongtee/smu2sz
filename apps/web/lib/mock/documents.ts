@@ -1,8 +1,8 @@
 /**
  * Mock for contract ingestion (brief 03). As live, the demo opens on the three demo documents read by the agent and
  * confirmed by the owner (DOC-000001..3, the first three ledger entries; `seedOperations` gives the ledger its rows), so
- * the home page shows the deal at once. Reading a demo document again is a new reading (DOC-000004, then 5, …) that the
- * owner confirms or rejects. Serves mocks/documents.json (each document as the demo reset leaves it, read again, and that
+ * the deal summary is ready once a deal is agreed. Reading a demo document again is a new reading (DOC-000004, then 5,
+ * …) that the owner confirms or rejects. Serves mocks/documents.json (each document as the demo reset leaves it, read again, and that
  * reading confirmed and rejected), mocks/contracts_fixtures.json and mocks/deals_*.json, all recorded from the live API
  * (scripts/record-mocks.mjs). Ids in a recorded reading are re-numbered to the mock's own; nothing else is changed.
  * Nothing here reads a document or computes money: any other file or pasted text needs live mode.
@@ -23,6 +23,7 @@ import type {
 } from "../types";
 import fixturesJson from "../../mocks/contracts_fixtures.json";
 import dealsDay0 from "../../mocks/deals_day0.json";
+import dealsDay0Agreed from "../../mocks/deals_day0_agreed.json";
 import dealsDay0Reconfirmed from "../../mocks/deals_day0_reconfirmed.json";
 import dealsDay34Approved from "../../mocks/deals_day34_approved.json";
 import dealsDay34Open from "../../mocks/deals_day34_open.json";
@@ -53,7 +54,7 @@ const RECORDED = documentsJson as unknown as Record<string, Recorded>;
 const FIXTURES = fixturesJson as unknown as ContractFixture[];
 /** The buyer contract the deal recordings were taken with. */
 const SUPPLY_AGREEMENT = "FHR_SUPPLY_AGREEMENT";
-const KEY = "tl-mock-docs-v2";
+const KEY = "tl-mock-docs-v3";
 
 interface DocState {
   id: string;
@@ -81,20 +82,30 @@ export function seedOperations(): SeedOperation[] {
     .map((f) => RECORDED[f.id].seeded_operation);
 }
 
-let memory: DocState[] | null = null;
+/** The documents read in this session, and whether the buyer has agreed a deal (the deal summary shows from then on). */
+interface MockState {
+  docs: DocState[];
+  agreed: boolean;
+}
 
-function load(): DocState[] {
+let memory: MockState | null = null;
+
+function state(): MockState {
   if (memory) return memory;
-  memory = seededDocs();
+  memory = { docs: seededDocs(), agreed: false };
   if (typeof window !== "undefined") {
     try {
       const raw = window.sessionStorage.getItem(KEY);
-      if (raw) memory = JSON.parse(raw) as DocState[];
+      if (raw) memory = JSON.parse(raw) as MockState;
     } catch {
       /* start from the demo's starting point */
     }
   }
   return memory;
+}
+
+function load(): DocState[] {
+  return state().docs;
 }
 
 function save(): void {
@@ -104,6 +115,12 @@ function save(): void {
   } catch {
     /* the in-memory state still works */
   }
+}
+
+/** Both parties agreed a deal in this session (the negotiation on Deals or the stepper, or "go ahead" in the chat), as recorded. */
+export function markDealAgreed(): void {
+  state().agreed = true;
+  save();
 }
 
 const clone = <T>(v: unknown): T => JSON.parse(JSON.stringify(v)) as T;
@@ -121,7 +138,7 @@ function requireOwner(): void {
 }
 
 export function resetDocuments(): void {
-  memory = seededDocs();
+  memory = { docs: seededDocs(), agreed: false };
   save();
 }
 
@@ -236,9 +253,10 @@ export function mockDecide(
 }
 
 /**
- * The deal card for this point of the story: the home's day and cure stage, the supply agreement confirmed again if it was
- * read again and confirmed (the deal follows the reading confirmed last; recorded on day 0), and any new reading of it
- * waiting for the owner.
+ * The deal summary for this point of the story: whether the buyer agreed the deal (recorded on day 0 after the negotiation; the
+ * Deals page shows the summary only then), the home's day and cure stage, the supply agreement confirmed again if it was read
+ * again and confirmed (the deal follows the reading confirmed last), and any new reading of it waiting for the owner. From day
+ * 34 the recordings are the demo path's, on which the deal was agreed.
  */
 export function mockDeals(): DealsView {
   requireOwner();
@@ -249,9 +267,11 @@ export function mockDeals(): DealsView {
   const stage = cureStage();
   const recorded =
     day < NEWS_DAY
-      ? reconfirmed
-        ? dealsDay0Reconfirmed
-        : dealsDay0
+      ? state().agreed
+        ? dealsDay0Agreed
+        : reconfirmed
+          ? dealsDay0Reconfirmed
+          : dealsDay0
       : stage === "approved"
         ? dealsDay34Approved
         : stage === "pending"

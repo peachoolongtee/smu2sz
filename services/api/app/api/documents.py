@@ -158,8 +158,9 @@ def reject_document(document_id: str, body: DecisionIn) -> dict:
 
 def confirm_demo_documents(rt: Runtime) -> None:
     """The demo's starting point: the three demo documents already read by the agent and confirmed by the owner, so the
-    home page opens on the deal card. Each is read from its fixture text exactly as an upload is, and confirmed through
-    the executor as the owner, so three CONFIRM_DOCUMENT entries open the chain. Nothing in the books changes."""
+    deal summary is ready once a deal is agreed on Deals. Each is read from its fixture text exactly as an upload is,
+    and confirmed through the executor as the owner, so three CONFIRM_DOCUMENT entries open the chain. Nothing in the
+    books changes."""
     with rt.lock:
         state = rt.store.get_state()
         for fixture_id, fx in load_contract_fixtures().items():

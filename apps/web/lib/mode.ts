@@ -23,10 +23,11 @@ export function setMode(mode: Mode): void {
 }
 
 /**
- * Business routes: the owner's six sections, the limits, and the two tools Cash & funding opens (what-if and buying
- * equipment), so following those doors does not drop the owner into the Demo shell. Everything else is an engine view.
+ * Business routes: the owner's six sections, the limits, the two tools Cash & funding opens (what-if and buying
+ * equipment) and the contract documents a deal summary opens, so following those doors does not drop the owner into the
+ * Demo shell. Everything else is an engine view.
  */
-export const BUSINESS_ROUTES = ["/", "/deals", "/cash", "/receivables", "/approvals", "/activity", "/limits", "/whatif", "/capex"] as const;
+export const BUSINESS_ROUTES = ["/", "/deals", "/documents", "/cash", "/receivables", "/approvals", "/activity", "/limits", "/whatif", "/capex"] as const;
 
 export function isBusinessRoute(pathname: string): boolean {
   return (BUSINESS_ROUTES as readonly string[]).includes(pathname);

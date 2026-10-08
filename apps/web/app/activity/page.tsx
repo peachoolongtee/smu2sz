@@ -65,6 +65,16 @@ export default function ActivityPage() {
                 {ops.map((o) => (
                   <li key={`${o.seq}-${o.op_id}`} className={`px-1 py-3 ${o.status === "REFUSED" ? "text-bad-fg" : ""}`} data-testid={`activity-${o.kind}`} data-status={o.status}>
                     <p className="break-words font-medium text-ink">{words(o.summary) || te("opkind", o.kind) || o.kind}</p>
+                    {/* The owner's decision on a contract the agent read: the entry opens the document it names. */}
+                    {(o.kind === "CONFIRM_DOCUMENT" || o.kind === "REJECT_DOCUMENT") && /\bDOC-\d{6}\b/.test(o.summary) ? (
+                      <Link
+                        href={`/documents?id=${/\bDOC-\d{6}\b/.exec(o.summary)![0]}`}
+                        className="mt-0.5 inline-block text-xs font-medium text-brand-700 underline underline-offset-2"
+                        data-testid="activity-document-link"
+                      >
+                        {t("deals.summary.contract")}
+                      </Link>
+                    ) : null}
                     <div className="mt-1 flex flex-wrap items-center gap-2">
                       <span className="text-xs text-ink-3">{whenText(o.day, today, t)}</span>
                       <span className="text-xs text-ink-3" data-testid="activity-op">{te("opkind", o.kind) || o.kind}</span>

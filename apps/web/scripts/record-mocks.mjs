@@ -346,9 +346,9 @@ const queued = files["home_goahead.json"].operations[0]?.approval_id;
 if (!queued) throw new Error("go ahead on day 34 queued no approval: the demo path has changed");
 files["home_approve_chat.json"] = await live.nl({ session_id: "rec-home-go", actor: "OWNER", text: `approve ${queued}` });
 
-// ------------------------------------------------------------------ contract ingestion (brief 03): the demo documents and the deal card
+// ------------------------------------------------------------------ contract ingestion (brief 03): the demo documents and the deal summary
 // The demo reset opens on the three demo documents read by the agent and confirmed by the owner (DOC-000001..3, the first three
-// ledger entries), so the home page shows the deal at once. Recorded: each as the reset leaves it with its ledger row, then read
+// ledger entries), so the deal summary is ready once a deal is agreed. Recorded: each as the reset leaves it with its ledger row, then read
 // again on fresh demo books (a new reading, DOC-000004) and confirmed (a lender agreement linked to its facility) or rejected.
 // Confirming writes no books.
 files["contracts_fixtures.json"] = await live.getContractFixtures();
@@ -380,9 +380,11 @@ for (const decision of ["confirm", "reject"]) {
   }
 }
 files["documents.json"] = documentsRecorded;
-// The deal on the home path (as above) from the demo's starting point: the receipt on day 2, the clock to day 34; then the cure
-// queued for approval (the button), then approved.
-await toDay34();
+// The deal on the home path (as above) from the demo's starting point: on day 0 right after the buyer agreed (the Deals page shows
+// the summary from then on), then the receipt on day 2 and the clock to day 34; then the cure queued for approval, then approved.
+await toDay34(async () => {
+  files["deals_day0_agreed.json"] = await live.getDeals();
+});
 files["deals_day34_open.json"] = await live.getDeals();
 {
   const alerts = await live.getAlerts();

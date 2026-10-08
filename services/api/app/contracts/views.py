@@ -2,7 +2,7 @@
 
 `record_view` is the review screen: the document text, every term beside its quote and span, the fields left blank
 and why, the flags, and for a lender agreement the agreement against the facility on the books. `record_summary` is
-the row the documents card shows. Every reading is labelled "AI-generated, for reference" until the owner confirms it.
+the row the documents list shows. Every reading is labelled "AI-generated, for reference" until the owner confirms it.
 """
 
 from __future__ import annotations

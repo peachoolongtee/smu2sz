@@ -234,13 +234,19 @@ test("the demo documents read as the demo books: the supply agreement's terms an
   assert.equal(docs.GBR_INVOICE_FINANCING_AGREEMENT.seeded.facility.all_in_rate_display, "10.84%");
 });
 
-test("the deal card: the confirmed contract from the first page, then the day-34 story as the prototype shows it", () => {
+test("the deal summary: the confirmed contract once the buyer agrees, then the day-34 story as the prototype shows it", () => {
   const day0 = mock("deals_day0.json").deals.find((d) => d.counterparty_id === "BUYER-1");
   assert.equal(day0.has_contract, true);
   assert.equal(day0.contract.record_id, "DOC-000001");
   assert.deepEqual(day0.pills.map((p) => p.label), ["On track"]);
   assert.deepEqual(day0.changes.map((c) => c.label), ["You confirmed"]);
   assert.ok(mock("deals_day0.json").deals.filter((d) => d.counterparty_id !== "BUYER-1").every((d) => !d.has_contract));
+  // Deals shows the summary only once both parties have agreed: the "Terms negotiated" stage done.
+  const negotiated = (d) => d.stages.find((s) => s.key === "negotiated").state;
+  assert.notEqual(negotiated(day0), "done");
+  const agreed = mock("deals_day0_agreed.json").deals.find((d) => d.counterparty_id === "BUYER-1");
+  assert.equal(negotiated(agreed), "done");
+  assert.ok(agreed.changes.some((c) => c.label === "Buyer accepted"));
   // Read again and confirmed: the deal follows the reading confirmed last.
   const again = mock("deals_day0_reconfirmed.json").deals.find((d) => d.counterparty_id === "BUYER-1");
   assert.equal(again.contract.record_id, "DOC-000004");

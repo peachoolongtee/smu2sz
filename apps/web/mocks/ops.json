@@ -44,8 +44,8 @@
     "status": "EXECUTED",
     "tier": "TIER_2",
     "requested_by": "AGENT",
-    "message": "Applied for ¥600,000.00 on FAC-LEASE; it is PENDING and counts as zero until committed",
-    "summary": "Applied for ¥600,000.00 on FAC-LEASE; it is PENDING and counts as zero until committed"
+    "message": "Applied for ¥600,000.00 on FAC-ETL; it is PENDING and counts as zero until committed",
+    "summary": "Applied for ¥600,000.00 on FAC-ETL; it is PENDING and counts as zero until committed"
   },
   "reject_apply_loan": {
     "kind": "APPLY_FOR_FACILITY",
