@@ -18,10 +18,13 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from app.api.auth import counterparty_for_key, is_agent
 from app.api.display import displayed
+from app.api.home import get_home
 from app.api.offers import enforce_intake_cap
+from app.api.presentation import business_text
 from app.api.runtime import get_runtime
 from app.api.views import owner_verdict_extras
 from app.nl import NlRequest, handle, opener, reset_sessions
+from app.nl.binding import OwnerReads
 from app.nl.offers import COUNTERPARTY_AUTHENTICATED
 from app.nl.service import APPROVAL_ID
 
@@ -39,6 +42,22 @@ def _counterparty_view(out: dict) -> dict:
     view.update(plan=[], verdict=None, operations=[], clarification=None, negotiation=None, security_events=[],
                 parse_source="actor", awaiting_confirmation=False, amended=False, replayed=False)
     return view
+
+
+def _owner_reads(rt) -> OwnerReads:
+    """What the owner's chat may read besides the stores: the Home read (the sentences and figures GET /home writes),
+    the Business-words rewrite of an engine sentence, and the runtime's latest verdict per offer. Called under the
+    runtime lock; owner turns only."""
+    def home(lang: str, since_day: int | None):
+        try:
+            return get_home(lang=lang, since_day=since_day)
+        except HTTPException:  # the books cannot be projected: the read says so rather than guessing
+            return None
+
+    def words(text: str, lang: str) -> str:
+        return business_text(rt.store.get_state(), text, rt.day, "zh" if lang == "zh" else "en") or text
+
+    return OwnerReads(home=home, words=words, latest_verdict=rt.latest_verdict)
 
 
 def _security_event(rt, kind: str, claimed: str | None, action: str, detail: str) -> None:
@@ -86,7 +105,8 @@ def post_nl(body: NlRequest, x_owner_token: str | None = Header(default=None),
         try:
             resp = handle(body, store=rt.store, executor=rt.executor, day=rt.day, owner_key_hex=rt.owner_key_hex,
                           owner_authenticated=rt.is_owner(x_owner_token),
-                          verdict_extras=None if is_counterparty else owner_verdict_extras)
+                          verdict_extras=None if is_counterparty else owner_verdict_extras,
+                          owner_reads=_owner_reads(rt) if not is_counterparty and rt.is_owner(x_owner_token) else None)
         finally:
             COUNTERPARTY_AUTHENTICATED.reset(token)
     out = resp.model_dump(mode="json")

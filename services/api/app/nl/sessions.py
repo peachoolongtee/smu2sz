@@ -73,6 +73,7 @@ class Session:
     last_offer_id: str | None = None
     last_verdict_id: str | None = None
     last_fixture_id: str | None = None
+    bound_verdict_id: str | None = None  # the page's decision this session was last pointed at (app/nl/binding.py)
     offer_fixtures: dict[str, str] = field(default_factory=dict)  # offer id -> fixture id (declared costs)
     pending_plan: PendingPlan | None = None
     pending_clarification: PendingClarification | None = None
