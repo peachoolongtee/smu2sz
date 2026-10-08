@@ -74,3 +74,77 @@ test("day 34: the late invoice leads, the overdue total is the server's, and the
   expect(promised + received).not.toMatch(/CMT-|RI:|DEMO-RCPT/);
   await expect(page.getByTestId("promised-RCV-A")).toContainText("the ¥420,000.00 invoice to Foshan Home Retail Co.");
 });
+
+/** Day 34 on the books where the buyer paid half on day 2: the part-paid promise, the balance still owed and the window ended. */
+async function advanceTo34Half(page: Page) {
+  await page.addInitScript(() => sessionStorage.setItem("tl-mock-no-receipt", "half"));
+  await advanceTo34(page);
+}
+
+test("day 0: nothing is late or at risk, so no row offers Chase payment", async ({ page }) => {
+  await page.goto("/receivables");
+  await expect(page.getByTestId("recv-RCV-A")).toBeVisible();
+  await expect(page.locator('[data-testid^="chase-open-"]')).toHaveCount(0);
+});
+
+test("day 34: only the late invoice offers Chase payment; the dialog holds the server's facts and the request, and Copy copies it", async ({ page, context }) => {
+  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+  await advanceTo34(page);
+  // The two invoices still to come are neither late nor inside the shortfall.
+  await expect(page.locator('[data-testid^="chase-open-"]')).toHaveCount(1);
+  const open = page.getByTestId("chase-open-RCV-A");
+  await expect(open).toHaveText("Chase payment");
+  expect((await open.boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(44);
+  await open.click();
+  const dialog = page.getByTestId("chase-dialog-RCV-A");
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByRole("heading", { name: "Chase payment: Foshan Home Retail Co." })).toBeVisible();
+  await expect(dialog.getByTestId("chase-fact-outstanding")).toContainText("¥162,800.00");
+  await expect(dialog.getByTestId("chase-fact-invoice")).toContainText("¥420,000.00");
+  await expect(dialog.getByTestId("chase-fact-late")).toContainText("2 days");
+  await expect(dialog.getByTestId("chase-fact-terms")).toContainText("45 days");
+  await expect(dialog.getByTestId("chase-fact-promise-0")).toContainText("¥255,013.80");
+  const request = dialog.getByTestId("chase-request");
+  await expect(request).toContainText("Dear Foshan Home Retail Co.");
+  await expect(request).toContainText("¥162,800.00 remains outstanding");
+  const asked = await request.innerText();
+  expect(asked).not.toMatch(/CMT-|RCV-|\bday \d/);
+  // One Primary inside the dialog: Copy. "Open the buyer thread" is a link in the Deals route when a thread exists.
+  await expect(dialog.getByTestId("chase-copy")).toHaveText("Copy request");
+  await expect(dialog.getByTestId("chase-thread")).toHaveAttribute("href", "/deals?buyer=BUYER-1");
+  await expect(dialog.getByTestId("chase-copy-status")).toHaveText("");
+  await dialog.getByTestId("chase-copy").click();
+  await expect(dialog.getByTestId("chase-copy-status")).toHaveText("Copied");
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(asked);
+  // Esc closes it and focus returns to the control that opened it.
+  await page.keyboard.press("Escape");
+  await expect(dialog).toBeHidden();
+  await expect(open).toBeFocused();
+});
+
+test("day 34 after the half receipt: the chase dialog's balance is the one the page shows, and the receipt row names its four facts", async ({ page }) => {
+  await advanceTo34Half(page);
+  await expect(page.getByTestId("recv-overdue")).toHaveText("¥291,400.00");
+  await page.getByTestId("chase-open-RCV-A").click();
+  const dialog = page.getByTestId("chase-dialog-RCV-A");
+  await expect(dialog.getByTestId("chase-fact-outstanding")).toHaveText(/¥291,400\.00/);
+  await expect(dialog.getByTestId("chase-request")).toContainText("¥291,400.00 remains outstanding");
+  await dialog.getByTestId("chase-close").click();
+  await expect(dialog).toBeHidden();
+  // F25: the receipt row on the Receivables page, not only the Home change row, states received, face cleared, discount, remaining and the window.
+  const facts = page.getByTestId("receipt-facts-rec-receipt-1");
+  await expect(facts.getByTestId("receipt-facts-rec-receipt-1-received")).toContainText("¥127,506.90");
+  await expect(facts.getByTestId("receipt-facts-rec-receipt-1-cleared")).toContainText("¥128,600.00");
+  await expect(facts.getByTestId("receipt-facts-rec-receipt-1-discount")).toContainText("¥1,093.10");
+  await expect(facts.getByTestId("receipt-facts-rec-receipt-1-remaining")).toContainText("¥291,400.00");
+  await expect(facts).toContainText("Early-payment window ended");
+});
+
+test("day 34 in Chinese: the handoff and the request are the server's Chinese", async ({ page }) => {
+  await advanceTo34(page);
+  const menu = page.getByTestId("account-menu");
+  if ((await menu.count()) && !(await menu.evaluate((el) => (el as HTMLDetailsElement).open))) await menu.locator("> summary").click();
+  await page.getByLabel("中文").check();
+  await page.getByTestId("chase-open-RCV-A").click();
+  await expect(page.getByTestId("chase-request")).toContainText("请确认付款日期");
+});

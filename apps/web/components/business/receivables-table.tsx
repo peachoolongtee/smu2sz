@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { Avatar, Disclosure, FoldChevron, initials, toneFor } from "@/components/business/kit";
-import { ActionChip, ActionText, WorthSentence, WorthText } from "@/components/business/strategy";
+import { ChasePayment } from "@/components/business/chase-payment";
+import { ActionChip, ActionText, RankingNote, WorthSentence, WorthText } from "@/components/business/strategy";
 import { Badge, Card, TableWrap, tableCls, tdCls, thCls, toggleClass } from "@/components/ui";
 import { useI18n } from "@/lib/i18n";
 import type { OutstandingReceivable, ReceivableWorth, ReceivablesWorthView } from "@/lib/types";
@@ -27,6 +28,7 @@ export function ReceivablesTable({
   worth,
   worthOf,
   rank,
+  chase,
 }: {
   invoices: OutstandingReceivable[];
   asOfDay: number;
@@ -34,6 +36,8 @@ export function ReceivablesTable({
   worth: ReceivablesWorthView | null | undefined;
   worthOf: Map<string, ReceivableWorth>;
   rank: Map<string, number>;
+  /** The invoices that offer "Chase payment" (late, due inside the forecast's shortfall, or with a lapsed promise); the page chose them. */
+  chase: Set<string>;
 }) {
   const { t } = useI18n();
   const [filter, setFilter] = useState<Filter>("all");
@@ -74,11 +78,7 @@ export function ReceivablesTable({
             ))}
           </div>
         ) : null}
-        {worth ? (
-          <p className="min-w-0 text-xs text-ink-3" data-testid="recv-ranking-note">
-            {worth.ranking_note}
-          </p>
-        ) : null}
+        {worth ? <RankingNote worth={worth} /> : null}
       </div>
       {shown.length === 0 ? (
         <p className="text-sm text-ink-3" data-testid="recv-filter-none">
@@ -120,6 +120,7 @@ export function ReceivablesTable({
                     <ActionChip action={w.action} />
                   </div>
                 ) : null}
+                {chase.has(o.receivable_id) ? <ChasePayment list className="mt-2 ml-12" receivableId={o.receivable_id} buyer={buyer} /> : null}
                 <Disclosure className="mt-1 pl-12" summary={w ? t("biz.details.plan") : t("biz.auditDetails")}>
                   <RowDetail o={o} w={w} testId={`recv-list-action-${o.receivable_id}`} />
                 </Disclosure>
@@ -172,6 +173,7 @@ export function ReceivablesTable({
                       <td className={tdCls}>
                         <span className="flex items-center justify-between gap-2">
                           {w ? <ActionChip action={w.action} /> : <span />}
+                          {chase.has(o.receivable_id) ? <ChasePayment receivableId={o.receivable_id} buyer={buyer} /> : null}
                           <button
                             type="button"
                             aria-expanded={expanded}

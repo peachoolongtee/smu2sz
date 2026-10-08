@@ -83,7 +83,7 @@ const RECHAIN = new Set(["negotiation_accept.json", "home_act.json", "home_act_d
 
 // Files whose operations are chained by first appearance (every other chained file uses `rechain` below): the chat script, whose
 // operation ids and commitment ids come from a per-session random nonce, and the day-34 reconciliation (one receipt).
-const RECHAIN_BY_APPEARANCE = new Set(["nl_script.json", "home_reconciliation_day34.json", "home_ledger_day34.json", "home_ledger_approved.json"]);
+const RECHAIN_BY_APPEARANCE = new Set(["nl_script.json", "home_reconciliation_day34.json", "home_reconciliation_day34_half.json", "home_ledger_day34.json", "home_ledger_approved.json"]);
 const nlIds = new Map(); // NL-<16 hex> operation / lot ids, which the API derives from a random session nonce -> a fixed id by first appearance
 
 function rechainByAppearance(name, root) {
@@ -154,6 +154,12 @@ function template(op) {
 async function ledgerTail(n) {
   return (await live.getLedger()).operations.slice(-n);
 }
+/** GET /receivables/{id}/chase for every open invoice of the books just read, in both languages ({ en: { id: view }, zh: { id: view } }). */
+async function chaseAll(recon) {
+  const out = { en: {}, zh: {} };
+  for (const o of recon.outstanding) for (const lang of ["en", "zh"]) out[lang][o.receivable_id] = await live.getChase(o.receivable_id, lang);
+  return out;
+}
 async function reset() {
   await live.demoReset();
   clearDemo();
@@ -209,6 +215,7 @@ files["mandate.json"] = await live.getMandate();
 // Opening books: the alerts and reconciliation the owner sees before anything happens, and the home summary (GET /home).
 files["alerts.json"] = await live.getAlerts();
 files["reconciliation.json"] = await live.getReconciliation();
+files["chase_day0.json"] = await chaseAll(files["reconciliation.json"]); // the collection handoff on the opening books (nothing due yet)
 files["home_summary_day0.json"] = await live.getHome("en");
 files["home_summary_day0_zh.json"] = await live.getHome("zh");
 files["trajectory_conservative_day0.json"] = await live.getTrajectory("CONSERVATIVE"); // the Cash page's readings, on the books this home was read on
@@ -376,6 +383,7 @@ files["home_ledger_day34.json"] = await live.getLedger();
 files["funding_day34.json"] = await live.planFunding({});
 // The reconciliation after the day-2 bank receipt (it carries the bank's reference).
 files["home_reconciliation_day34.json"] = await live.getReconciliation();
+files["chase_day34.json"] = await chaseAll(files["home_reconciliation_day34.json"]); // the collection handoff for the late invoice and the two coming
 const reserve = files["home_alerts_day34.json"].alerts.find((a) => a.id.startsWith("ALERT-RESERVE") && a.actionable);
 if (!reserve) throw new Error("no actionable reserve alert on day 34: the demo path has changed");
 files["home_opener_day34.json"] = await live.nlOpener("rec-home-en", "en");
@@ -447,6 +455,10 @@ files["home_summary_day34_half.json"] = await live.getHome("en");
 files["home_summary_day34_half_zh.json"] = await live.getHome("zh");
 files["trajectory_conservative_day34_half.json"] = await live.getTrajectory("CONSERVATIVE");
 if (!files["home_summary_day34_half.json"].changes.some((c) => c.window_state)) throw new Error("a half receipt should give a change row with the part-paid facts: the API has changed");
+// The Receivables page on the same books: the receipt row carries the four facts (F25) and the late invoice has its handoff (F15).
+files["home_reconciliation_day34_half.json"] = await live.getReconciliation();
+if (!files["home_reconciliation_day34_half.json"].receipts.some((r) => r.window_state === "ended" && r.remaining_display)) throw new Error("the half receipt's row should carry the four facts and the window: the API has changed");
+files["chase_day34_half.json"] = await chaseAll(files["home_reconciliation_day34_half.json"]);
 
 // 2. A buyer's early-payment message queues an agreement for the owner: its approval row carries the terms (terms_available true);
 //    once the agreement has expired the same row says the terms cannot be shown (terms_available false, with the server's reason).
