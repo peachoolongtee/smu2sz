@@ -375,7 +375,7 @@ export async function submitOffer(req: SubmitOfferRequest): Promise<OfferView> {
 export async function getOffer(offerId: string): Promise<OfferView> {
   await delay();
   const v = load().offers[offerId];
-  if (!v) throw new ApiError(404, `Offer ${offerId} not found.`);
+  if (!v) throw new ApiError(404, `Offer ${offerId} not found.`, undefined, "offer_missing", { id: offerId });
   return clone(v);
 }
 
@@ -383,7 +383,7 @@ export async function evaluateOffer(offerId: string): Promise<VerdictView> {
   await delay();
   const s = load();
   const b = bundleFor(offerId);
-  if (!b || !s.offers[offerId]) throw new ApiError(404, `Offer ${offerId} not found. Submit it first.`);
+  if (!b || !s.offers[offerId]) throw new ApiError(404, `Offer ${offerId} not found. Submit it first.`, undefined, "offer_missing", { id: offerId });
   if (!s.evaluated.includes(offerId)) {
     s.evaluated.push(offerId);
     // As live: evaluating an offer books nothing (the counters go out in the negotiation); the FastCapital message opens the security scene.
@@ -466,8 +466,8 @@ export async function decideApproval(id: string, decision: ApprovalDecision): Pr
   await delay();
   const s = load();
   const a = s.approvals.find((x) => x.id === id);
-  if (!a) throw new ApiError(404, `Approval ${id} not found.`);
-  if (a.status !== "PENDING") throw new ApiError(409, `Approval ${id} is already ${a.status}.`);
+  if (!a) throw new ApiError(404, `Approval ${id} not found.`, undefined, "approval_missing", { id });
+  if (a.status !== "PENDING") throw new ApiError(409, `Approval ${id} is already ${a.status}.`, undefined, "approval_done", { id, status: a.status });
   if (a.op_id?.startsWith("alert:")) {
     // The day-34 cure the alert queued: approving runs it (recorded EXECUTED, the cash lands on day 37) and clears the alert.
     if (decision === "REJECT") {
@@ -513,7 +513,7 @@ export async function getHome(lang: "en" | "zh"): Promise<HomeView> {
   await delay();
   if (!getOwnerToken()) {
     requestSignIn("required");
-    throw new ApiError(401, "Owner sign-in required (401). Sign in with the owner token to use this.");
+    throw new ApiError(401, "Owner sign-in required (401). Sign in with the owner token to use this.", undefined, "owner_required");
   }
   const dealt = Object.values(load().negotiated).some((n) => n.outcome === "DEAL");
   return home.mockHome(dealt, lang);
@@ -665,7 +665,7 @@ export async function demoReset(scenario?: string): Promise<void> {
   // Like the live API, the reset is an owner action: without a token the sign-in dialog opens and the caller retries after sign-in.
   if (!getOwnerToken()) {
     requestSignIn("required");
-    throw new ApiError(401, "Owner sign-in required (401). Sign in with the owner token to use this.");
+    throw new ApiError(401, "Owner sign-in required (401). Sign in with the owner token to use this.", undefined, "owner_required");
   }
   memory = emptyStore();
   save();

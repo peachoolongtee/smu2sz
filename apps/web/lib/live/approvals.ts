@@ -65,9 +65,9 @@ export async function decideApproval(id: string, decision: ApprovalDecision): Pr
   });
   const notOwner = result.violations.some((v) => v.code === "INSUFFICIENT_AUTHORITY");
   if (notOwner || (decision === "APPROVE" && result.status === "REFUSED")) {
-    throw new ApiError(403, result.message || "The executor refused this decision.");
+    throw new ApiError(403, result.message || "The executor refused this decision.", undefined, result.message ? undefined : "executor_refused");
   }
   const found = (await getApprovals()).find((a) => a.id === id);
-  if (!found) throw new ApiError(404, `Approval ${id} not found.`);
+  if (!found) throw new ApiError(404, `Approval ${id} not found.`, undefined, "approval_missing", { id });
   return { ...found, result_message: result.message };
 }

@@ -10,6 +10,7 @@
 import { nl } from "./api";
 import { onSignedIn } from "./auth";
 import { ApiError } from "./errors";
+import { errorMessage } from "./error-text";
 import { createStore } from "./create-store";
 import type { NlActor, NlResponse } from "./types";
 
@@ -92,7 +93,7 @@ async function run(a: Attempt): Promise<NlResponse | null> {
   } catch (e) {
     failed[a.role] = a;
     const status = e instanceof ApiError ? e.status : 0;
-    const text = e instanceof Error ? e.message : String(e);
+    const text = errorMessage(e);
     patchConv(a.role, (c) => (c.generation !== generation ? c : { ...c, busy: false, messages: [...c.messages, { id: uid("e"), from: "error", text, status }] }));
     return null;
   }

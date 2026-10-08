@@ -69,11 +69,15 @@ test("Business navigation: five pills on a desktop, the same five tabs on a phon
   await expect(page.getByRole("radio", { name: "Business" })).toBeAttached();
   await expect(page.getByTestId("chat-open")).toContainText("Ask FLOW");
   await expect(page.getByTestId("chat-open")).toBeInViewport();
-  // The tab bar never hides the last content: the bar sits below the page's end.
+  // Ask FLOW never covers content: on a phone it is the bar's last cell (beside the five tabs, not over one); from sm a pill above the bar.
+  const chat = (await page.getByTestId("chat-open").boundingBox())!;
   if (phone) {
-    const barBox = await bar.boundingBox();
-    const chat = await page.getByTestId("chat-open").boundingBox();
-    expect(chat && barBox && chat.y + chat.height <= barBox.y + 1).toBeTruthy();
+    const barBox = (await bar.boundingBox())!;
+    expect(chat.y).toBeGreaterThanOrEqual(barBox.y - 1);
+    for (const link of await bar.getByRole("link").all()) {
+      const l = (await link.boundingBox())!;
+      expect(l.x + l.width, "a tab runs under Ask FLOW").toBeLessThanOrEqual(chat.x + 1);
+    }
   }
   await bar.getByRole("link", { name: "Deals", exact: true }).click();
   await expect(page).toHaveURL(/\/deals/);
@@ -86,6 +90,82 @@ test("Business navigation: five pills on a desktop, the same five tabs on a phon
   await expect(page.getByTestId("account-identity")).toBeVisible();
   await page.getByTestId("account-limits").click();
   await expect(page).toHaveURL(/\/limits/);
+});
+
+test("the last content clears the bottom bar and Ask FLOW on every Business page", async ({ page }) => {
+  for (const route of BUSINESS_ROUTES) {
+    await page.goto(route);
+    await expect(page.locator("h1")).toHaveCount(1);
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+    const covered = await page.evaluate(() => {
+      const chat = document.querySelector('[data-testid="chat-open"]')!.getBoundingClientRect();
+      const bar = document.querySelector('[data-testid="tab-bar"]');
+      const barTop = bar && getComputedStyle(bar).display !== "none" ? bar.getBoundingClientRect().top : innerHeight;
+      // Every control in main, at the end of the page, sits above the bar and outside the Ask FLOW box.
+      // A control inside a fold that is closed is not on screen (its box is clipped, not removed): the fold's own summary is.
+      const folded = (el: Element) => Boolean((el.tagName === "SUMMARY" ? el.parentElement?.parentElement : el)?.closest("details:not([open])"));
+      return Array.from(document.querySelectorAll("main a[href], main button, main summary, main input")).filter((el) => {
+        const r = el.getBoundingClientRect();
+        if (r.width === 0 || r.height === 0 || folded(el)) return false;
+        const hitsChat = r.left < chat.right && r.right > chat.left && r.top < chat.bottom && r.bottom > chat.top;
+        return hitsChat || r.bottom > barTop;
+      }).length;
+    });
+    expect(covered, `${route}: controls under the bar or Ask FLOW at the end of the page`).toBe(0);
+  }
+});
+
+test("a hard load names the tab: the title survives hydration", async ({ page }) => {
+  for (const [route, title] of [["/deals", "Deals · FLOW 流"], ["/cash", "Cash & funding · FLOW 流"], ["/receivables", "Receivables · FLOW 流"], ["/limits", "Limits · FLOW 流"], ["/", "FLOW 流"]] as const) {
+    await page.goto(route);
+    await page.waitForLoadState("networkidle");
+    await expect(page).toHaveTitle(title);
+    await page.reload();
+    await page.waitForLoadState("networkidle");
+    await expect(page).toHaveTitle(title);
+  }
+});
+
+test("the account sheet closes on Escape (focus returns to its button) and on a press outside", async ({ page }) => {
+  await page.goto("/");
+  const menu = page.getByTestId("account-menu");
+  const summary = menu.locator("> summary");
+  await summary.click();
+  await expect(menu).toHaveAttribute("open", "");
+  await page.keyboard.press("Escape");
+  await expect(menu).not.toHaveAttribute("open", "");
+  await expect(summary).toBeFocused();
+  await summary.click();
+  await expect(menu).toHaveAttribute("open", "");
+  // The far left edge, clear of the sheet (it hangs from the right).
+  await page.mouse.click(2, 400);
+  await expect(menu).not.toHaveAttribute("open", "");
+});
+
+test("a phone's controls reach 44 px (the pill itself may stay compact: its hit area is what a finger meets)", async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 1440) >= 1024, "a desktop keeps its compact controls");
+  for (const route of ["/", "/cash", "/receivables"]) {
+    await page.goto(route);
+    await expect(page.locator("h1")).toHaveCount(1);
+    const short = await page.evaluate(() => {
+      const hit = (el: Element, x: number, y: number) => {
+        const h = document.elementFromPoint(x, y);
+        return !h || x < 0 || y < 0 || x >= innerWidth || y >= innerHeight || el.contains(h) || h.contains(el);
+      };
+      return Array.from(document.querySelectorAll("header a, header button, header summary, header label, main button, main summary, nav[data-testid=tab-bar] a"))
+        .filter((el) => (el as HTMLElement).offsetParent !== null && !(el.closest("details:not([open])") && el.tagName !== "SUMMARY"))
+        .filter((el) => {
+          const r = el.getBoundingClientRect();
+          const cx = r.x + r.width / 2;
+          const cy = r.y + r.height / 2;
+          const okW = r.width >= 44 || (hit(el, cx - 21, cy) && hit(el, cx + 21, cy));
+          const okH = r.height >= 44 || (hit(el, cx, cy - 21) && hit(el, cx, cy + 21));
+          return !(okW && okH);
+        })
+        .map((el) => `${el.tagName}:${(el.textContent ?? "").trim().slice(0, 24)}`);
+    });
+    expect(short, `${route}: controls a finger cannot hit at 44 px`).toEqual([]);
+  }
 });
 
 test("the stepper and navigation are reachable in Demo mode", async ({ page }) => {

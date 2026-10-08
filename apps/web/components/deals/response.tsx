@@ -7,6 +7,7 @@ import { Badge, Button, Card, ErrorState } from "@/components/ui";
 import { negotiate } from "@/lib/api";
 import { recordNegotiation } from "@/lib/demo-store";
 import { useI18n } from "@/lib/i18n";
+import { errorText } from "@/lib/error-text";
 import type { Mode } from "@/lib/mode";
 import type { CounterProposal, Displayed, NegotiationView, VerdictView } from "@/lib/types";
 import { Disclosure } from "@/components/business/kit";
@@ -199,7 +200,7 @@ export function RecommendedResponse({
     try {
       recordNegotiation(await negotiate(offerId, { buyer_profile: "cooperative" }));
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(errorText(e, t));
     } finally {
       setSending(false);
     }

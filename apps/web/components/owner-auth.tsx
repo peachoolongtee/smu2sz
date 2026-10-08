@@ -6,6 +6,7 @@ import { closeSignIn, requestSignIn, setOwnerToken, signOut, useAuth } from "@/l
 import { DEMO_BUILD, DEMO_OWNER_TOKEN } from "@/lib/config";
 import { bump } from "@/lib/demo-store";
 import { useI18n } from "@/lib/i18n";
+import { errorText } from "@/lib/error-text";
 import { Badge, Button, inputClass } from "./ui";
 
 function SignInForm() {
@@ -30,7 +31,7 @@ function SignInForm() {
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) setError(t("auth.err.rejected"));
       else if (err instanceof ApiError && err.status === 503) setError(t("auth.err.unconfigured"));
-      else setError(err instanceof Error ? err.message : String(err));
+      else setError(errorText(err, t));
     } finally {
       setBusy(false);
     }

@@ -9,6 +9,7 @@ import { actOnAlert, alertChanged, ApiError, getApprovals, getMandate } from "@/
 import { bump } from "@/lib/demo-store";
 import type { DictKey } from "@/lib/dictionary";
 import { useI18n } from "@/lib/i18n";
+import { errorText } from "@/lib/error-text";
 import { isWriteConflictDetail } from "@/lib/live/retry";
 import { useAsync } from "@/lib/use-async";
 import { useBusinessShell } from "@/lib/use-business-today";
@@ -41,7 +42,7 @@ export function useFixAlert(onDone?: () => void) {
       const moved = alertChanged(e);
       if (moved) setChanged(moved);
       else if (e instanceof ApiError && (e.status === 404 || e.status === 409) && !isWriteConflictDetail(e.detail)) setError(t(e.status === 404 ? "alerts.fix.err.404" : "alerts.fix.err.409"));
-      else setError(e instanceof Error ? e.message : String(e));
+      else setError(errorText(e, t));
     } finally {
       setBusyId(null);
       bump();

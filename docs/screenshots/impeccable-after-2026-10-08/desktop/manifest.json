@@ -31,8 +31,8 @@
     "name": "05-cash-day0",
     "url": "/cash",
     "viewport": "1440x900",
-    "height": 2093,
-    "screens": 2.3
+    "height": 2135,
+    "screens": 2.4
   },
   {
     "name": "06-receivables-day0",
@@ -94,8 +94,8 @@
     "name": "13b-cash-day34",
     "url": "/cash",
     "viewport": "1440x900",
-    "height": 1947,
-    "screens": 2.2
+    "height": 2048,
+    "screens": 2.3
   },
   {
     "name": "14-home-day34-pending",
@@ -136,56 +136,56 @@
     "name": "19-activity-day34-approved",
     "url": "/activity",
     "viewport": "1440x900",
-    "height": 1626,
+    "height": 1634,
     "screens": 1.8
   },
   {
     "name": "20-demo-story",
     "url": "/demo",
     "viewport": "1440x900",
-    "height": 1766,
+    "height": 1822,
     "screens": 2
   },
   {
     "name": "21-demo-mandate-start",
     "url": "/mandate",
     "viewport": "1440x900",
-    "height": 1767,
+    "height": 1823,
     "screens": 2
   },
   {
     "name": "22-demo-mandate-step11",
     "url": "/verdict",
     "viewport": "1440x900",
-    "height": 4236,
-    "screens": 4.7
+    "height": 4292,
+    "screens": 4.8
   },
   {
     "name": "23-demo-verdict",
     "url": "/verdict",
     "viewport": "1440x900",
-    "height": 4236,
-    "screens": 4.7
+    "height": 4292,
+    "screens": 4.8
   },
   {
     "name": "24-demo-funding",
     "url": "/funding",
     "viewport": "1440x900",
-    "height": 2777,
+    "height": 2833,
     "screens": 3.1
   },
   {
     "name": "25-demo-trajectory",
     "url": "/trajectory",
     "viewport": "1440x900",
-    "height": 2114,
-    "screens": 2.3
+    "height": 2170,
+    "screens": 2.4
   },
   {
     "name": "26-deals-two-offers-demo-walked",
     "url": "/deals",
     "viewport": "1440x900",
-    "height": 2059,
-    "screens": 2.3
+    "height": 2115,
+    "screens": 2.4
   }
 ]

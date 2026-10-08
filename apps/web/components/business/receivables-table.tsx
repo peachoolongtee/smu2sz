@@ -178,7 +178,7 @@ export function ReceivablesTable({
                             aria-controls={panel}
                             aria-label={`${t("biz.details.plan")}: ${buyer}`}
                             onClick={() => toggle(o.receivable_id)}
-                            className="motion-press grid size-8 shrink-0 place-items-center rounded-pill hover:bg-subtle"
+                            className="motion-press hit grid size-8 shrink-0 place-items-center rounded-pill hover:bg-subtle"
                             data-testid={`recv-toggle-${o.receivable_id}`}
                           >
                             <FoldChevron open={expanded} />

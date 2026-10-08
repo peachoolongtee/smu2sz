@@ -72,6 +72,7 @@ export function AnnotatedText({
             tabIndex={0}
             data-annotation={seg.covering.map((a) => a.id).join(" ")}
             title={seg.covering.map((a) => `${a.n}. ${a.label}`).join(" / ")}
+            aria-description={seg.covering.map((a) => `${a.n}. ${a.label}`).join(" / ")}
             onMouseEnter={() => onActivate(primary.id)}
             onMouseLeave={() => onActivate(null)}
             onFocus={() => onActivate(primary.id)}

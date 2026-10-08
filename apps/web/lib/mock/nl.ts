@@ -96,7 +96,7 @@ export async function mockNl(req: NlRequest): Promise<NlResponse> {
   // The real gate: owner turns need a token, counterparty turns are open. Any non-empty token passes in mock mode.
   if (req.actor === "OWNER" && !getOwnerToken()) {
     requestSignIn("required");
-    throw new ApiError(401, "Owner sign-in required (401). Sign in with the owner token to use this.");
+    throw new ApiError(401, "Owner sign-in required (401). Sign in with the owner token to use this.", undefined, "owner_required");
   }
   const sid = req.session_id ?? "mock-session";
   const s = sessions.get(sid) ?? { turn: 0, pending: null, clarifying: false, zh: false };

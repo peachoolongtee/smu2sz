@@ -171,7 +171,7 @@ export default function ActivityPage() {
 
           <p className="text-xs text-ink-3">
             {t("biz.activity.trail")}{" "}
-            <Link href="/evidence" className="font-medium text-brand-700 underline underline-offset-2">
+            <Link href="/evidence" className="inline-flex min-h-8 items-center font-medium text-brand-700 underline underline-offset-2 touch:min-h-11">
               {t("biz.activity.trail.open")}
             </Link>
           </p>

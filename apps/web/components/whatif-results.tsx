@@ -1,6 +1,6 @@
 "use client";
 
-import { CashChart, ConcessionMeter } from "@/components/charts";
+import { CashChart, ConcessionMeter } from "@/components/lazy-charts";
 import { OutcomeBadge, PlainCode, TierBadge, outcomeHasTier } from "@/components/badges";
 import { Spinner } from "@/components/icons";
 import { Badge, Card, Formula, type Tone } from "@/components/ui";
