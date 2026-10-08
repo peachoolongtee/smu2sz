@@ -114,11 +114,14 @@ Wave 1 showed the two agree on the day-0 books but not on the day-34 books (¥89
 d = 34), because the plan is not linear in the flows; `test_the_curve_points_are_reproduced_by_the_spikes_pair` pins
 the spike's pair at nine arrival days on each book. Bands are cut at the breach episodes' first and recovery days (`alerts()` RESERVE_BREACH_AHEAD items carry
 them) and the plan's repayment days; the value is computed at each band's two ends and, when they agree, assigned to
-the band; when they disagree the band is split once at its midpoint and, if the halves still disagree, reported with
-`varies: True` and the smaller value. Expected on the golden books: day 0 → ¥89.11 for days 1–30, ¥0 for day 0 and from
+the band; when they disagree the band is bisected recursively until the step sits between two adjacent days (Wave 2: one
+midpoint split was not enough on day 34, where the step at day 61 is far from any boundary), within a budget of 120 extra
+evaluations; a band the budget cannot settle is `varies: True` with the smaller value. Expected on the golden books: day 0 → ¥89.11 for days 1–30, ¥0 for day 0 and from
 day 31; day 34 → ¥178.22 for 34–42, ¥89.12 for 43–60, ¥0 from 61 (so the day-0 answer has at most three bands and the
-day-34 answer four). The value never exceeds the marginal cost of funds for 30 days on the amount (`marginal_cost` on
-¥10,000 for 30 days); assert it.
+day-34 answer four). The value never exceeds the cost of funds for TWO whole fee periods (60 days) on the amount
+(`break_even_cost_share(state, mandate, 60)` × ¥10,000: FAC-IF bills whole 30-day periods, so moving cash 30 days
+earlier can save two periods' fees, which is the day-34 ¥178.22 = 2 × ¥89.11); assert it, and assert that bands
+outside the breach episode stay within one period (¥89.11/¥89.12).
 
 ### 5.2 Safe Deal Envelope (Wave 3, estimate 8 agent-days)
 
@@ -169,8 +172,10 @@ Ranking by net, gross beside; the order must be identical before and after `clea
 
 - Business words only at level 1: distances from today (`when_text`, `relative_days`), the buyer's name, no engine
   terms (no "verdict", "trajectory", "basis", "fen", violation codes) and no "day N" in English or Chinese.
-- The curve: "Cash before <when> is worth 0.89% to you; after <when>, nothing." and "Earlier cash saves you nothing
-  today." Never "rate", "charged", "interest" in the sentence.
+- The curve (as built in Wave 2): "Cash arriving within the next 30 days is worth 0.89% to you; after that, nothing.";
+  two bands: "Cash arriving within the next 8 days is worth 1.78% to you, then 0.89% if it arrives within the next 26
+  days; after that, nothing."; flat: "Earlier cash saves you nothing today." Never "rate", "charged", "interest" in
+  the sentence. Chinese: 未来 30 天内到账的现金对你价值 0.89%；之后则没有。
 - The envelope: "what you can live with", never "what to offer them" or "give them"; "approved" means passes FLOW's
   checks, never that the deal is good; a flagged package says "needs your approval" or "its funding cannot run today".
 - Collections: "worth collecting", "saves you", "what you can afford", never "offer them a discount"; "no saving" for a
