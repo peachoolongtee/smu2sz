@@ -157,7 +157,7 @@
       "summary": "Received ¥255,013.80 on RCV-A (settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 still due on day 32)",
       "message_when": "Received ¥255,013.80 on the ¥420,000.00 invoice to Foshan Home Retail Co. due 2 days ago (settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 was still due 2 days ago)",
       "event_text": "Received ¥255,013.80 from Foshan Home Retail Co.",
-      "event_detail": "Settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 was still due 2 days ago.",
+      "event_detail": "Settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 was still due 2 days ago. Synthetic bank event, reference DEMO-RCPT-1; no real funds moved.",
       "what_changed": "Received ¥255,013.80 from Foshan Home Retail Co.",
       "why_it_matters": "The forecast stays above your minimum.",
       "why_it_matters_as_of": "now",

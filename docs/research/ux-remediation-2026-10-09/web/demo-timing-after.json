@@ -5,16 +5,124 @@
  "runs": {
   "live_production_build_memory_store": {
    "stack": "next start :3163 (NEXT_PUBLIC_API_MODE=live) + uvicorn :8063, LLM_MODE=cache, demo owner token",
-   "unguarded_rapid": { "presses": 35, "ms_to_15_of_15": 2135, "progress_sequence_sampled": [1,2,3,4,5,6,7,9,10,11,12,13,14,15], "idle_after_start": false, "step_went_back": false, "ledger_entries": 3 },
-   "guarded_wait_for_each_step": { "ms_to_15_of_15": 2234, "ledger_entries": 3 },
+   "unguarded_rapid": {
+    "presses": 35,
+    "ms_to_15_of_15": 2135,
+    "progress_sequence_sampled": [
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15
+    ],
+    "idle_after_start": false,
+    "step_went_back": false,
+    "ledger_entries": 3
+   },
+   "guarded_wait_for_each_step": {
+    "ms_to_15_of_15": 2234,
+    "ledger_entries": 3
+   },
    "ledger_entries_equal": true
   },
   "mock_production_build": {
    "stack": "next start :3162 (NEXT_PUBLIC_API_MODE=mock, 10 ms latency)",
-   "unguarded_rapid": { "presses": 30, "ms_to_15_of_15": 1888, "progress_sequence_sampled": [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15], "idle_after_start": false, "step_went_back": false, "ledger_entries": 3 },
-   "guarded_wait_for_each_step": { "ms_to_15_of_15": 1003, "ledger_entries": 3 },
+   "unguarded_rapid": {
+    "presses": 30,
+    "ms_to_15_of_15": 1888,
+    "progress_sequence_sampled": [
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15
+    ],
+    "idle_after_start": false,
+    "step_went_back": false,
+    "ledger_entries": 3
+   },
+   "guarded_wait_for_each_step": {
+    "ms_to_15_of_15": 1003,
+    "ledger_entries": 3
+   },
    "ledger_entries_equal": true
   }
  },
- "reading": "Both runs end at 15/15 with the counter never idle and never going back, and the unguarded walk leaves the same three ledger entries as the guarded one: no scene ran twice and there is no second negotiation. The same test fails on the previous code (the strip went idle at step 8, with clearDemo resetting the control fields and no second guard)."
+ "reading": "Both runs end at 15/15 with the counter never idle and never going back, and the unguarded walk leaves the same three ledger entries as the guarded one: no scene ran twice and there is no second negotiation. The same test fails on the previous code (the strip went idle at step 8, with clearDemo resetting the control fields and no second guard).",
+ "wave6b_six_scene_story": {
+  "what": "Wave 6 part B (ticket #75): the same rapid-click walk and guarded walk on the eleven-step late-payment story (six scenes), from e2e/demo.spec.ts 'rapid clicks on Start and Next end at the last step...'",
+  "method": "As above, with 'n/11'. The eighth step's button is the owner's approval, so the rapid walk approves the cure by pressing it (a hand that fast has decided); the guarded walk presses it once. Ledger entries are read from the Ledger page after each walk, and the test also checks there is exactly one RECEIVE_PAYMENT.",
+  "runs": {
+   "live_production_build_memory_store": {
+    "unguarded_rapid": {
+     "presses": 30,
+     "ms_to_11_of_11": 1879,
+     "progress_sequence_sampled": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11
+     ],
+     "ledger_entries": 8
+    },
+    "guarded_wait_for_each_step": {
+     "ms_to_11_of_11": 1962,
+     "ledger_entries": 8
+    },
+    "ledger_entries_equal": true
+   },
+   "mock_production_build": {
+    "unguarded_rapid": {
+     "presses": 30,
+     "ms_to_11_of_11": 2116,
+     "progress_sequence_sampled": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11
+     ],
+     "ledger_entries": 5
+    },
+    "guarded_wait_for_each_step": {
+     "ms_to_11_of_11": 1093,
+     "ledger_entries": 5
+    },
+    "ledger_entries_equal": true
+   }
+  },
+  "reading": "Both walks end at 11/11, never idle, never back, and leave the same ledger (live: the deal's two entries, three clock moves, the receipt, the queued and the approved cure). The steps are convergent, so no step ran twice."
+ }
 }

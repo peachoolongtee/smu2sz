@@ -1,7 +1,7 @@
 {
   "day": 80,
   "basis": "CONSERVATIVE",
-  "state_version": 9,
+  "state_version": 10,
   "projected_offer_id": null,
   "counts": {
     "CRITICAL": 3,

@@ -1,22 +1,16 @@
 import { expect, proseOf, test } from "./fixtures";
+import { walkAway } from "./helpers";
 
 /**
  * Deals in Business mode, one workspace in the server's order: one inbox thread per buyer (folded to one row once a deal is selected),
  * the selected buyer's header, what the buyer asks, what it costs (the immediate discount apart from the forward total), why it matters,
- * what FLOW recommends, the priced response, then the closed Advanced details. Mock mode: the guided demo is walked to
- * step 11 in the first spec (both Foshan offers compiled and evaluated); the second opens a message the way the owner
+ * what FLOW recommends, the priced response, then the closed Advanced details. Mock mode: the optional scene "The buyer walks away" is run
+ * in the first spec (both Foshan offers compiled and evaluated); the second opens a message the way the owner
  * does. The page must fit about two desktop screens with the disclosures closed (the brief's section 36).
  */
 
 test("the inbox groups a buyer's messages into one thread and names each evaluated one's recommendation", async ({ page }) => {
-  await page.goto("/mandate");
-  for (let i = 0; i < 11; i++) {
-    const button = page.getByTestId("demo-next");
-    await expect(button).toBeEnabled();
-    await button.click();
-    // Wait for the step to finish: a click while the stepper is busy is ignored.
-    await expect(page.getByRole("region", { name: "Guided demo" }).locator("[aria-live=polite]")).toContainText(`${i + 1}/15`);
-  }
+  await walkAway(page); // both Foshan offers compiled and evaluated, the hard-line buyer refused, the reworded offer selected
 
   // Running the story put the browser in Demo mode: the Demo inbox shows every message, the unknown sender flagged.
   await page.goto("/deals");
@@ -41,11 +35,11 @@ test("the inbox groups a buyer's messages into one thread and names each evaluat
   await expect(page.getByTestId("inbox-blocked")).toHaveAttribute("data-example", "true");
   await expect(page.getByTestId("inbox-blocked")).toContainText("Example only: nothing has been refused in your books yet.");
   await expect(page.getByTestId("inbox-blocked").getByRole("link", { name: "See what was refused" })).toHaveAttribute("href", "/activity#activity-refused");
-  // Step 11 selected the reworded offer; the original is in the thread, evaluated, with its recommendation in words, no code.
+  // The walk-away scene selected the reworded offer; the original is in the thread, evaluated, with its recommendation in words, no code.
   const reworded = inbox.getByTestId("inbox-msg-EX01B");
   const original = inbox.getByTestId("inbox-msg-EX01");
   await expect(reworded).toHaveAttribute("aria-current", "true");
-  // The story's step 11 negotiated this offer with a buyer who refused: the row says the outcome, not the earlier recommendation.
+  // The walk-away scene negotiated this offer with a buyer who refused: the row says the outcome, not the earlier recommendation.
   await expect(original).toContainText("No deal");
   await expect(original).not.toContainText("REJECT");
   await expect(page.locator("body")).not.toContainText(/\bDay \d/);
@@ -56,7 +50,7 @@ test("the inbox groups a buyer's messages into one thread and names each evaluat
   await expect(page.getByTestId("deal-steps")).toHaveAttribute("data-state", "NO_DEAL");
   await expect(page.getByTestId("deal-steps").getByRole("link")).toHaveCount(0);
   await expect(page.getByTestId("deal-steps-outcome")).toHaveText("No deal: the buyer did not accept");
-  const originalId = await page.evaluate(() => JSON.parse(sessionStorage.getItem("tl-demo-v2") ?? "{}").offerId);
+  const originalId = await page.evaluate(() => JSON.parse(sessionStorage.getItem("tl-demo-v3") ?? "{}").offerId);
   // Open the inbox again: the selected message is marked, and picking the latest message folded the thread; the earlier ones are one click away.
   await page.getByTestId("inbox-back").click();
   await expect(original).toHaveAttribute("aria-current", "true");
@@ -65,7 +59,7 @@ test("the inbox groups a buyer's messages into one thread and names each evaluat
   await page.getByTestId("inbox-thread-BUYER-1").locator("details > summary").first().click();
   await reworded.click();
   await expect(page.getByTestId("inbox-collapsed")).toBeVisible();
-  await expect.poll(() => page.evaluate(() => JSON.parse(sessionStorage.getItem("tl-demo-v2") ?? "{}").offerId)).not.toBe(originalId);
+  await expect.poll(() => page.evaluate(() => JSON.parse(sessionStorage.getItem("tl-demo-v3") ?? "{}").offerId)).not.toBe(originalId);
 });
 
 test("opening a message reads it, and the evaluated deal is one workspace in the server's order within two screens", async ({ page }) => {

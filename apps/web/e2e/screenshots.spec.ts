@@ -2,7 +2,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { runPlan } from "./helpers";
+import { runPlan, STORY_STEPS, walkStory } from "./helpers";
 
 /**
  * The screenshot walk of the brief's section 44: every Business page in every state the recorded demo path reaches, and the
@@ -114,13 +114,9 @@ test("Demo pages: the story, the stepper before and after the walk, and the engi
   await shoot(page, "20-demo-story", p);
   await page.goto("/mandate");
   await shoot(page, "21-demo-mandate-start", p);
-  for (let i = 0; i < 11; i++) {
-    const button = page.getByTestId("demo-next");
-    await expect(button).toBeEnabled();
-    await button.click();
-    await expect(page.getByRole("region", { name: "Guided demo" }).locator("[aria-live=polite]")).toContainText(`${i + 1}/15`);
-  }
-  await shoot(page, "22-demo-mandate-step11", p);
+  await page.goto("/demo");
+  await walkStory(page, STORY_STEPS);
+  await shoot(page, "22-demo-stepper-last-step", p);
   await page.goto("/verdict");
   await shoot(page, "23-demo-verdict", p);
   await page.goto("/funding");

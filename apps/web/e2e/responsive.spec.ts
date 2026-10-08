@@ -1,5 +1,6 @@
 import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
+import { STORY_STEPS, walkStory } from "./helpers";
 
 /** Runs on a phone viewport (and desktop): no page may scroll sideways, the story bar stays reachable in Demo mode, and the Business home puts the answer first. */
 
@@ -11,15 +12,9 @@ async function overflowX(page: Page): Promise<number> {
 }
 
 test("no page overflows horizontally after the demo has run", async ({ page }) => {
-  await page.goto("/mandate");
-  for (let i = 0; i < 15; i++) {
-    const button = page.getByTestId("demo-next");
-    await expect(button).toBeEnabled();
-    await button.click();
-    // Wait for the step to finish: a click while the stepper is busy is ignored.
-    await expect(page.getByRole("region", { name: "Guided demo" }).locator("[aria-live=polite]")).toContainText(`${i + 1}/15`);
-  }
-  await expect(page).toHaveURL(/\/evidence/);
+  await page.goto("/demo");
+  await walkStory(page, STORY_STEPS);
+  await expect(page).toHaveURL(/\/activity/);
   for (const route of ENGINE_ROUTES) {
     await page.goto(route);
     await expect(page.locator("h1")).toBeVisible();

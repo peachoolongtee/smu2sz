@@ -2622,3 +2622,15 @@ export interface DecisionNotFoundDetail {
   code: "DECISION_NOT_FOUND";
   decision_id: string;
 }
+
+/**
+ * POST /demo/bank-receipt (owner, demo mode only): the guided Demo's one synthetic bank event. The receipt is the early payment the books
+ * were waiting for, in the amount they promised, from the simulated bank feed with a synthetic bank reference. The clock never records one.
+ */
+export interface BankReceiptResult {
+  synthetic: true;
+  bank_reference: string;
+  day: Day;
+  op_id: string;
+  result: OperationResult;
+}

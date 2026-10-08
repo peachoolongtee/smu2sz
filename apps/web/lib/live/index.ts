@@ -13,6 +13,7 @@ import type {
   ClockView,
   ApprovalView,
   AuditView,
+  BankReceiptResult,
   BorrowerFileRequest,
   BorrowerFileView,
   ChaseView,
@@ -173,6 +174,9 @@ export const live = {
   demoReset: async (scenario?: string): Promise<void> => {
     await http("POST", scenario ? `/demo/reset?scenario=${encodeURIComponent(scenario)}` : "/demo/reset", { body: {} });
   },
+
+  /** The guided Demo's synthetic bank event (owner, demo mode): the server posts the promised early payment as the bank feed would. */
+  demoBankReceipt: () => http<BankReceiptResult>("POST", "/demo/bank-receipt", { body: {} }),
 
   getEvidence: () => http<string>("GET", "/evidence", { as: "text" }),
 

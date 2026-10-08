@@ -60,7 +60,7 @@ test("approving the fix reads \"You approved ...\" on Activity, never the execut
   await page.goto("/activity");
   const approved = page.getByTestId("activity-event").filter({ hasText: "You approved" });
   await expect(approved).toHaveText("You approved ¥200,000.00 of invoice financing. Funds arrive in 3 days.");
-  // One operation, one story: the entry that waited reads in the past beside the decision, never "Waiting" beside "You approved".
+  // One operation, one story (the API words the entry that waited in the past, "Approval requested", once it is decided): the entry that waited reads in the past beside the decision, never "Waiting" beside "You approved".
   const events = await page.getByTestId("activity-event").allTextContents();
   expect(events.filter((x) => x.includes("¥200,000.00 of invoice financing")).map((x) => x.split(":")[0].split(".")[0])).toEqual(["You approved ¥200,000", "Approval requested"]);
   expect(events.some((x) => x.startsWith("Waiting for your approval"))).toBe(false);

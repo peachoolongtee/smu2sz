@@ -1,20 +1,16 @@
 import type { APIRequestContext, Page } from "@playwright/test";
 import { DEMO_TOKEN, expect, test } from "./fixtures";
-import { runPlan } from "./helpers";
+import { runPlan, walkStory } from "./helpers";
 
 /** Live-mode only: owner-token handling, the 401 state, borrower-file downloads and owner approval. */
 
 const API = `http://localhost:${process.env.E2E_API_PORT ?? 8000}`;
 const TOKEN = DEMO_TOKEN;
 
+/** Walks the first `steps` steps of the guided Demo (the late-payment loop, eleven steps; lib/demo.ts): 2 = the buyer asks and FLOW decides, 7 = the cure is queued for the owner. */
 async function walkTo(page: Page, steps: number) {
-  await page.goto("/mandate");
-  for (let i = 0; i < steps; i++) {
-    const button = page.getByTestId("demo-next");
-    await expect(button).toBeEnabled();
-    await button.click();
-    await expect(page.getByRole("region", { name: "Guided demo" }).locator("[aria-live=polite]")).toContainText(`${i + 1}/15`);
-  }
+  await page.goto("/demo");
+  await walkStory(page, steps);
 }
 
 test("every API request carries the owner token", async ({ page }) => {
@@ -22,10 +18,11 @@ test("every API request carries the owner token", async ({ page }) => {
   page.on("request", (r) => {
     if (r.url().startsWith(API) && r.method() !== "OPTIONS") seen.push({ url: r.url(), token: r.headers()["x-owner-token"] });
   });
-  await walkTo(page, 4); // reset, compile, evaluate, plan
-  await expect(page).toHaveURL(/\/funding/);
+  await walkTo(page, 2); // reset, compile, evaluate and the plan the Debt Desk priced
+  await expect(page).toHaveURL(/\/deals/);
   expect(seen.length).toBeGreaterThan(5);
-  for (const r of seen) expect(r.token, r.url).toBe(TOKEN);
+  // GET /clock is the one credential-free read (the day is public to the Demo's control strip); every other request carries the token.
+  for (const r of seen.filter((x) => !x.url.endsWith("/clock"))) expect(r.token, r.url).toBe(TOKEN);
 });
 
 test("a 401 from the API opens the owner sign-in dialog instead of leaving a blank screen", async ({ page }) => {
@@ -45,8 +42,12 @@ test("a 401 from the API opens the owner sign-in dialog instead of leaving a bla
 });
 
 test("the borrower file downloads as HTML and Word, and the owner approves the one pending application", async ({ page }) => {
-  await walkTo(page, 13); // through the capex application (pending) and the read-only borrower file (nothing pending)
-  await expect(page).toHaveURL(/\/approvals/);
+  // The capex question (an optional scene) evaluates and prepares the read-only borrower file; the application is the owner's click.
+  await page.goto("/demo");
+  await page.getByTestId("more-run-capex").click();
+  await expect(page).toHaveURL(/\/capex/);
+  await page.getByTestId("capex-apply").click();
+  await expect(page.getByTestId("capex-applied")).toBeVisible();
 
   await page.goto("/capex");
   await expect(page.getByTestId("borrower-file-downloads")).toBeVisible();
@@ -67,7 +68,8 @@ test("the borrower file downloads as HTML and Word, and the owner approves the o
 });
 
 test("the EX01 verdict shows each early-pay discount as a yearly rate, the offer's and Counter A's", async ({ page }) => {
-  await walkTo(page, 5); // reset, compile, trajectory, funding, verdict
+  await walkTo(page, 2); // reset, compile, evaluate
+  await page.goto("/verdict");
   await expect(page).toHaveURL(/\/verdict/);
   const offer = page.getByTestId("annualised-offer");
   await expect(offer).toContainText("1.20%");
@@ -268,7 +270,11 @@ test("when the books move after the alert was shown, the act answers 409 and the
 });
 
 test("an approval is refused when the server does not recognise the owner", async ({ page }) => {
-  await walkTo(page, 13);
+  // A pending approval to decide: the capex application (an optional scene, then the owner's own click on the Capex page).
+  await page.goto("/demo");
+  await page.getByTestId("more-run-capex").click();
+  await page.getByTestId("capex-apply").click();
+  await expect(page.getByTestId("capex-applied")).toBeVisible();
   // Simulate a wrong token: the server treats the caller as the agent and the executor refuses.
   await page.route(`${API}/approvals/APR-*`, async (route) => {
     if (route.request().method() !== "POST") return route.continue();
@@ -292,12 +298,13 @@ test("the plan card shows the landing day the API sent, not one derived from the
     }
     return route.fulfill({ response, json: body });
   });
-  await walkTo(page, 4); // reset, compile, evaluate, plan: the funding page
-  await expect(page).toHaveURL(/\/funding/);
+  await walkTo(page, 2); // reset, compile, evaluate and the plan the Debt Desk priced: the funding page shows it
+  await page.goto("/funding");
   const lands = page.getByTestId("plan-lands");
   await expect(lands).toHaveCount(2);
   await expect(lands.nth(0)).toHaveText("Day 0");
   await expect(lands.nth(1)).toHaveText("Day 9");
+  await page.unrouteAll({ behavior: "ignoreErrors" });
 });
 
 const CONFLICT = {
@@ -308,7 +315,7 @@ const CONFLICT = {
 };
 
 test("a write that lost a race is sent once more after the hint, and succeeds", async ({ page }) => {
-  await walkTo(page, 13);
+  await walkTo(page, 7);
   let posts = 0;
   await page.route(`${API}/approvals/APR-*`, async (route) => {
     if (route.request().method() !== "POST") return route.continue();
@@ -322,7 +329,7 @@ test("a write that lost a race is sent once more after the hint, and succeeds", 
 });
 
 test("a second conflict is not retried again: the error says the books were busy", async ({ page }) => {
-  await walkTo(page, 13);
+  await walkTo(page, 7);
   let posts = 0;
   await page.route(`${API}/approvals/APR-*`, async (route) => {
     if (route.request().method() !== "POST") return route.continue();
@@ -528,7 +535,7 @@ test("Deals: Send carries what was shown, and the record's state follows: Agreed
   await expect(page.locator("#commitments").getByTestId("commitment-state")).toHaveText("Agreed");
   // The record knows what was sent.
   await page.goto("/ledger");
-  const offerId = await page.evaluate(() => JSON.parse(sessionStorage.getItem("tl-demo-v2") ?? "{}").offerId as string);
+  const offerId = await page.evaluate(() => JSON.parse(sessionStorage.getItem("tl-demo-v3") ?? "{}").offerId as string);
   const record = await (await request.get(`${API}/decisions/${encodeURIComponent("deal:" + offerId)}`, { headers: { "X-Owner-Token": TOKEN } })).json();
   expect(record.response.sent.chosen_label).toBe("Option A");
   // The receipt came on day 2: the page reads the record again and the deal is Fulfilled.

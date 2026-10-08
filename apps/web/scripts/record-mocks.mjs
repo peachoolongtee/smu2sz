@@ -76,8 +76,8 @@ process.env.NEXT_PUBLIC_API_URL = API;
 process.env.NEXT_PUBLIC_API_MODE = "live";
 const { setOwnerToken } = await import("../lib/auth.ts");
 const { live } = await import("../lib/live/index.ts");
-const { DEMO_STEPS } = await import("../lib/demo.ts");
-const { demoStore, clearDemo } = await import("../lib/demo-store.ts");
+const demoModule = await import("../lib/demo.ts");
+const { demoStore, clearDemo, recordFunding, recordNegotiation, selectOffer, bump } = await import("../lib/demo-store.ts");
 const { promptsFor } = await import("../lib/chat-prompts.ts");
 setOwnerToken(OWNER_TOKEN);
 
@@ -90,7 +90,7 @@ const RECHAIN = new Set(["negotiation_accept.json", "home_act.json", "home_act_d
 
 // Files whose operations are chained by first appearance (every other chained file uses `rechain` below): the chat script, whose
 // operation ids and commitment ids come from a per-session random nonce, and the day-34 reconciliation (one receipt).
-const RECHAIN_BY_APPEARANCE = new Set(["nl_script.json", "home_reconciliation_day34.json", "home_reconciliation_day34_half.json", "home_ledger_day34.json", "home_ledger_approved.json", "decisions.json"]);
+const RECHAIN_BY_APPEARANCE = new Set(["nl_script.json", "home_reconciliation_day2.json", "bank_receipt.json", "home_reconciliation_day34.json", "home_reconciliation_day34_half.json", "home_ledger_day34.json", "home_ledger_approved.json", "decisions.json"]);
 const nlIds = new Map(); // NL-<16 hex> operation / lot ids, which the API derives from a random session nonce -> a fixed id by first appearance
 
 function rechainByAppearance(name, root) {
@@ -151,7 +151,36 @@ function write(name, value) {
   writeFileSync(join(OUT, name), JSON.stringify(normalise(name, value), null, 2) + "\n");
   written.push(name);
 }
-const step = (id) => DEMO_STEPS.find((s) => s.id === id);
+// The recorder walks the engine's own sequences, not the six scenes the Demo tells (lib/demo.ts DEMO_STEPS): the mocks hold every screen the
+// engine has, so each of its steps is run here in the order docs/DEMO_FLOW.md gives, through the same helpers the Demo's optional scenes use.
+const { submitSample, evaluate, runCapex, runCapexApply, runBorrowerFile, runSecurityScene, runWalkAway } = demoModule;
+const { planFunding, negotiate } = live;
+const noop = async () => {};
+const ENGINE_STEPS = [
+  { id: "mandate", run: async () => { await live.demoReset(); clearDemo(); } },
+  { id: "inbox", run: async () => void (await submitSample("EX01")) },
+  { id: "trajectory", run: async () => { const id = demoStore.get().offerId; if (id) await evaluate(id); } },
+  { id: "funding", run: async () => recordFunding(await planFunding({})) },
+  { id: "verdict", run: noop },
+  { id: "negotiate", run: async () => { const id = demoStore.get().offerId; if (id) recordNegotiation(await negotiate(id, { buyer_profile: "cooperative" })); } },
+  { id: "ledger1", run: async () => bump() },
+  { id: "walk", run: runWalkAway },
+  { id: "router", run: noop },
+  { id: "ledger2", run: async () => bump() },
+  {
+    id: "reworded",
+    run: async () => {
+      const prepared = demoStore.get().rewordedId;
+      if (prepared) return selectOffer(prepared);
+      await evaluate(await submitSample("EX01B"));
+    },
+  },
+  { id: "capex", run: runCapex },
+  { id: "approval", run: async () => { await runCapexApply(); await runBorrowerFile(); } },
+  { id: "fastcapital", run: runSecurityScene },
+  { id: "evidence", run: async () => bump() },
+];
+const step = (id) => ENGINE_STEPS.find((s) => s.id === id);
 
 // ------------------------------------------------------------------ the decision record: named snapshots in both languages
 const decisions = {};
@@ -256,7 +285,7 @@ files["trajectory_conservative_day0.json"] = await live.getTrajectory("CONSERVAT
 }
 
 let verdictEx01 = null;
-for (const s of DEMO_STEPS) {
+for (const s of ENGINE_STEPS) {
   await s.run();
   const d = demo();
   if (s.id === "inbox") {
@@ -313,7 +342,7 @@ for (const s of DEMO_STEPS) {
 // would select the lease and the approved row would disagree with the queued request.
 async function queueOne() {
   await reset();
-  for (const s of DEMO_STEPS) {
+  for (const s of ENGINE_STEPS) {
     await s.run();
     if (s.id === "approval") break;
   }
@@ -393,6 +422,7 @@ await reset();
 
 // ------------------------------------------------------------------ the home: deal, receipt on day 2, clock to day 34 (as scripts/demo_run.py)
 async function bankReceipt(half = false) {
+  // The bank feed's own call (the op id the mock specs read is "rec-receipt-1"); the route the Demo's stepper calls is recorded once, below.
   const recon = await live.getReconciliation();
   const promised = recon.promised[0];
   const mandate = await live.getMandate();
@@ -412,7 +442,7 @@ async function bankReceipt(half = false) {
   });
   if (!res.ok) throw new Error(`bank receipt failed: ${res.status} ${await res.text()}`);
 }
-async function toDay34(atDay0 = async () => {}) {
+async function toDay34(atDay0 = async () => {}, atDay2 = async () => {}) {
   await reset();
   await step("inbox").run();
   await step("trajectory").run();
@@ -420,6 +450,7 @@ async function toDay34(atDay0 = async () => {}) {
   await atDay0();
   await live.advanceClock(2);
   await bankReceipt();
+  await atDay2();
   await live.advanceClock(28);
   await live.advanceClock(4);
 }
@@ -431,6 +462,17 @@ await toDay34(async () => {
   files["home_summary_quiet.json"] = await live.getHome("en");
   files["home_summary_quiet_zh.json"] = await live.getHome("zh");
   files["trajectory_conservative_quiet.json"] = await live.getTrajectory("CONSERVATIVE"); // the Cash page's readings, on the books this home was read on
+}, async () => {
+  // Day 2, right after the synthetic bank event (the Demo's scene 4 shows the Receivables page here): the receipt is booked and nothing is late yet.
+  files["home_reconciliation_day2.json"] = await live.getReconciliation();
+  files["chase_day2.json"] = await chaseAll(files["home_reconciliation_day2.json"]);
+  files["home_summary_day2.json"] = await live.getHome("en");
+  files["home_summary_day2_zh.json"] = await live.getHome("zh");
+  files["trajectory_conservative_day2.json"] = await live.getTrajectory("CONSERVATIVE");
+  files["home_state_day2.json"] = await live.getState();
+  const receipt = (await live.getLedger()).operations.filter((o) => o.kind === "RECEIVE_PAYMENT").at(-1);
+  if (!receipt?.event_detail?.includes("Synthetic bank event")) throw new Error("the receipt should say it is a synthetic bank event in the activity words: the API has changed");
+  ops.receive_payment = template(receipt);
 });
 files["home_alerts_day34.json"] = await live.getAlerts();
 files["home_summary_day34.json"] = await live.getHome("en");
@@ -476,8 +518,17 @@ files["home_opener_after_approve.json"] = await live.nlOpener("rec-home-after", 
 files["home_summary_after.json"] = await live.getHome("en");
 files["home_summary_after_zh.json"] = await live.getHome("zh");
 files["trajectory_conservative_after.json"] = await live.getTrajectory("CONSERVATIVE"); // the Cash page's readings, on the books this home was read on
+// Day 38: the advance landed on day 37 and settled the day after. The Demo's "the funding settles" step shows these books.
+await live.advanceClock(38 - 34);
+files["home_alerts_settled.json"] = await live.getAlerts();
+files["home_state_settled.json"] = await live.getState();
+files["home_summary_settled.json"] = await live.getHome("en");
+files["home_summary_settled_zh.json"] = await live.getHome("zh");
+files["trajectory_conservative_settled.json"] = await live.getTrajectory("CONSERVATIVE");
+await snap("cure_settled", files["home_approval_pending.json"].decision_id);
+if (decisions.cure_settled.en.state !== "SETTLED") throw new Error("the landed cure should read SETTLED: the API has changed");
 // The mandate's last day is 90: MANDATE_EXPIRING is a WARNING 14 days before (recorded at day 80) and CRITICAL once it has passed (day 95).
-await live.advanceClock(80 - 34);
+await live.advanceClock(80 - 38);
 files["home_alerts_mandate_warning.json"] = await live.getAlerts();
 await live.advanceClock(95 - 80);
 files["home_alerts_mandate_expired.json"] = await live.getAlerts();
@@ -489,6 +540,18 @@ files["home_goahead.json"] = await live.nl({ session_id: "rec-home-go", actor: "
 const queued = files["home_goahead.json"].operations[0]?.approval_id;
 if (!queued) throw new Error("go ahead on day 34 queued no approval: the demo path has changed");
 files["home_approve_chat.json"] = await live.nl({ session_id: "rec-home-go", actor: "OWNER", text: `approve ${queued}` });
+
+// The guided Demo's synthetic bank event, as the stepper calls it: POST /demo/bank-receipt on the books where the deal is made and day 2 has come.
+await reset();
+await step("inbox").run();
+await step("trajectory").run();
+await step("negotiate").run();
+await live.advanceClock(2);
+{
+  const result = await live.demoBankReceipt();
+  if (!result.synthetic || result.result.status !== "EXECUTED") throw new Error("the synthetic bank event did not post: the API has changed");
+  files["bank_receipt.json"] = result;
+}
 
 // ------------------------------------------------------------------ Wave 1 stories (map #65): three states the main walk does not reach
 // 1. Day 34 with NO bank receipt on day 2: the books are already under the reserve today (cash.below_reserve_today). The mock serves it

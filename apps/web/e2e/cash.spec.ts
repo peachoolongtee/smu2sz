@@ -1,5 +1,5 @@
 import { expect, proseOf, test } from "./fixtures";
-import { runPlan } from "./helpers";
+import { runPlan, walkStory } from "./helpers";
 
 /**
  * Cash & funding (mock mode): the risk with headroom said directly, the plan, the options in two groups that are never
@@ -165,11 +165,8 @@ test("after the plan ran, the page states the current funding and folds the comp
 
 test("covered after the walk: the comparison taken when the plan was chosen is history, closed under Other plans considered", async ({ page }) => {
   // The guided demo's funding step records the Debt Desk as it stood when the decision was made.
-  await page.goto("/mandate");
-  for (let i = 0; i < 5; i++) {
-    await page.getByTestId("demo-next").click();
-    await expect(page.getByRole("region", { name: "Guided demo" }).locator("[aria-live=polite]")).toContainText(`${i + 1}/15`);
-  }
+  await page.goto("/demo");
+  await walkStory(page, 2); // the buyer asks, FLOW decides: the Debt Desk's view at decision time is kept
   await page.evaluate(() => localStorage.setItem("tl-mode", JSON.stringify({ mode: "business" })));
   await page.goto("/");
   await runPlan(page, "ALERT-RESERVE-12");
