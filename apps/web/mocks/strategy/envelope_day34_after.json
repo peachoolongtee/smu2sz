@@ -30,6 +30,7 @@
       ],
       "counter_match": true,
       "plan_cost_fen": 0,
+      "summary": "45-day terms · rebate 1.25%",
       "forward_budget_used_display": "¥5,000.00",
       "plan_cost_display": "¥0.00"
     },
@@ -58,6 +59,7 @@
       ],
       "counter_match": false,
       "plan_cost_fen": 0,
+      "summary": "45-day terms · early payment 0.25% · rebate 1.25%",
       "forward_budget_used_display": "¥5,000.00",
       "plan_cost_display": "¥0.00"
     },
@@ -86,6 +88,7 @@
       ],
       "counter_match": false,
       "plan_cost_fen": 0,
+      "summary": "50-day terms · price up 0.05%",
       "forward_budget_used_display": "¥4,965.21",
       "plan_cost_display": "¥0.00"
     },
@@ -114,6 +117,7 @@
       ],
       "counter_match": false,
       "plan_cost_fen": 0,
+      "summary": "50-day terms · price up 0.05% · early payment 0.25%",
       "forward_budget_used_display": "¥4,965.21",
       "plan_cost_display": "¥0.00"
     },
@@ -142,6 +146,7 @@
       ],
       "counter_match": false,
       "plan_cost_fen": 0,
+      "summary": "55-day terms · price up 0.20%",
       "forward_budget_used_display": "¥4,890.41",
       "plan_cost_display": "¥0.00"
     },
@@ -170,6 +175,7 @@
       ],
       "counter_match": false,
       "plan_cost_fen": 0,
+      "summary": "55-day terms · price up 0.20% · early payment 0.25%",
       "forward_budget_used_display": "¥4,890.41",
       "plan_cost_display": "¥0.00"
     }
@@ -188,6 +194,9 @@
       "face_fen": null,
       "rule_price_bp": null,
       "unavailable": null,
+      "maximum_display": "45 days",
+      "wall_words": "your budget for what you give buyers",
+      "next_step_sentence": "50 days: not approved",
       "at_maximum": {
         "package": {
           "buyer_id": "BUYER-1",
@@ -213,6 +222,7 @@
         ],
         "counter_match": false,
         "plan_cost_fen": 0,
+        "summary": "45-day terms",
         "forward_budget_used_display": "¥0.00",
         "plan_cost_display": "¥0.00"
       },
@@ -243,6 +253,7 @@
         "flags": [],
         "counter_match": false,
         "plan_cost_fen": 0,
+        "summary": "50-day terms",
         "forward_budget_used_display": "¥7,485.21",
         "plan_cost_display": "¥0.00"
       }
@@ -260,6 +271,9 @@
       "face_fen": null,
       "rule_price_bp": null,
       "unavailable": null,
+      "maximum_display": "90 days",
+      "wall_words": null,
+      "next_step_sentence": "no further step",
       "at_maximum": {
         "package": {
           "buyer_id": "BUYER-1",
@@ -287,6 +301,7 @@
         "flags": [],
         "counter_match": false,
         "plan_cost_fen": 0,
+        "summary": "90-day terms",
         "forward_budget_used_display": "¥67,366.85",
         "plan_cost_display": "¥0.00"
       },
@@ -305,6 +320,9 @@
       "face_fen": null,
       "rule_price_bp": 105,
       "unavailable": null,
+      "maximum_display": "80 days, price up 1.05%",
+      "wall_words": "your budget for what you give buyers",
+      "next_step_sentence": "85 days, price up 1.00%: not approved",
       "at_maximum": {
         "package": {
           "buyer_id": "BUYER-1",
@@ -330,6 +348,7 @@
         ],
         "counter_match": false,
         "plan_cost_fen": 0,
+        "summary": "80-day terms · price up 0.95%",
         "forward_budget_used_display": "¥4,516.44",
         "plan_cost_display": "¥0.00"
       },
@@ -360,6 +379,7 @@
         "flags": [],
         "counter_match": false,
         "plan_cost_fen": 0,
+        "summary": "85-day terms · price up 1.00%",
         "forward_budget_used_display": "¥9,481.64",
         "plan_cost_display": "¥0.00"
       },
@@ -378,6 +398,9 @@
       "face_fen": 42000000,
       "rule_price_bp": null,
       "unavailable": null,
+      "maximum_display": "0.25% on ¥420,000.00",
+      "wall_words": null,
+      "next_step_sentence": "0.30% on ¥420,000.00: not approved",
       "at_maximum": {
         "package": {
           "buyer_id": "BUYER-1",
@@ -403,6 +426,7 @@
         ],
         "counter_match": false,
         "plan_cost_fen": 0,
+        "summary": "45-day terms · early payment 0.25%",
         "forward_budget_used_display": "¥0.00",
         "plan_cost_display": "¥0.00"
       },
@@ -433,6 +457,7 @@
         "flags": [],
         "counter_match": false,
         "plan_cost_fen": 0,
+        "summary": "45-day terms · early payment 0.30%",
         "forward_budget_used_display": "¥0.00",
         "plan_cost_display": "¥0.00"
       },
@@ -451,6 +476,9 @@
       "face_fen": null,
       "rule_price_bp": null,
       "unavailable": null,
+      "maximum_display": "1.25%",
+      "wall_words": "your budget for what you give buyers",
+      "next_step_sentence": "1.30%: not approved",
       "at_maximum": {
         "package": {
           "buyer_id": "BUYER-1",
@@ -476,6 +504,7 @@
         ],
         "counter_match": false,
         "plan_cost_fen": 0,
+        "summary": "45-day terms · rebate 1.25%",
         "forward_budget_used_display": "¥5,000.00",
         "plan_cost_display": "¥0.00"
       },
@@ -506,6 +535,7 @@
         "flags": [],
         "counter_match": false,
         "plan_cost_fen": 0,
+        "summary": "45-day terms · rebate 1.30%",
         "forward_budget_used_display": "¥5,200.00",
         "plan_cost_display": "¥0.00"
       }
@@ -514,6 +544,7 @@
   "zone": [
     {
       "terms_days": 30,
+      "terms_words": "30 days",
       "min_price_bp": 0,
       "rule_price_bp": null,
       "cost_per_invoice_fen": null,
@@ -544,13 +575,16 @@
         ],
         "counter_match": false,
         "plan_cost_fen": 0,
+        "summary": "30-day terms",
         "forward_budget_used_display": "¥0.00",
         "plan_cost_display": "¥0.00"
       },
+      "lowest_price_words": "no price step needed",
       "min_price_display": "0.00%"
     },
     {
       "terms_days": 35,
+      "terms_words": "35 days",
       "min_price_bp": 0,
       "rule_price_bp": null,
       "cost_per_invoice_fen": null,
@@ -581,13 +615,16 @@
         ],
         "counter_match": false,
         "plan_cost_fen": 0,
+        "summary": "35-day terms",
         "forward_budget_used_display": "¥0.00",
         "plan_cost_display": "¥0.00"
       },
+      "lowest_price_words": "no price step needed",
       "min_price_display": "0.00%"
     },
     {
       "terms_days": 40,
+      "terms_words": "40 days",
       "min_price_bp": 0,
       "rule_price_bp": null,
       "cost_per_invoice_fen": null,
@@ -618,13 +655,16 @@
         ],
         "counter_match": false,
         "plan_cost_fen": 0,
+        "summary": "40-day terms",
         "forward_budget_used_display": "¥0.00",
         "plan_cost_display": "¥0.00"
       },
+      "lowest_price_words": "no price step needed",
       "min_price_display": "0.00%"
     },
     {
       "terms_days": 45,
+      "terms_words": "45 days",
       "min_price_bp": 0,
       "rule_price_bp": null,
       "cost_per_invoice_fen": null,
@@ -655,13 +695,16 @@
         ],
         "counter_match": false,
         "plan_cost_fen": 0,
+        "summary": "45-day terms",
         "forward_budget_used_display": "¥0.00",
         "plan_cost_display": "¥0.00"
       },
+      "lowest_price_words": "no price step needed",
       "min_price_display": "0.00%"
     },
     {
       "terms_days": 50,
+      "terms_words": "50 days",
       "min_price_bp": 5,
       "rule_price_bp": 15,
       "cost_per_invoice_fen": 62377,
@@ -692,15 +735,18 @@
         ],
         "counter_match": false,
         "plan_cost_fen": 0,
+        "summary": "50-day terms · price up 0.05%",
         "forward_budget_used_display": "¥4,965.21",
         "plan_cost_display": "¥0.00"
       },
+      "lowest_price_words": "0.05%",
       "min_price_display": "0.05%",
       "rule_price_display": "0.15%",
       "cost_per_invoice_display": "¥623.77"
     },
     {
       "terms_days": 55,
+      "terms_words": "55 days",
       "min_price_bp": 20,
       "rule_price_bp": 30,
       "cost_per_invoice_fen": 124753,
@@ -731,15 +777,18 @@
         ],
         "counter_match": false,
         "plan_cost_fen": 0,
+        "summary": "55-day terms · price up 0.20%",
         "forward_budget_used_display": "¥4,890.41",
         "plan_cost_display": "¥0.00"
       },
+      "lowest_price_words": "0.20%",
       "min_price_display": "0.20%",
       "rule_price_display": "0.30%",
       "cost_per_invoice_display": "¥1,247.53"
     },
     {
       "terms_days": 60,
+      "terms_words": "60 days",
       "min_price_bp": 35,
       "rule_price_bp": 45,
       "cost_per_invoice_fen": 187130,
@@ -770,15 +819,18 @@
         ],
         "counter_match": false,
         "plan_cost_fen": 0,
+        "summary": "60-day terms · price up 0.35%",
         "forward_budget_used_display": "¥4,815.62",
         "plan_cost_display": "¥0.00"
       },
+      "lowest_price_words": "0.35%",
       "min_price_display": "0.35%",
       "rule_price_display": "0.45%",
       "cost_per_invoice_display": "¥1,871.30"
     },
     {
       "terms_days": 65,
+      "terms_words": "65 days",
       "min_price_bp": 50,
       "rule_price_bp": 60,
       "cost_per_invoice_fen": 249507,
@@ -809,15 +861,18 @@
         ],
         "counter_match": false,
         "plan_cost_fen": 0,
+        "summary": "65-day terms · price up 0.50%",
         "forward_budget_used_display": "¥4,740.82",
         "plan_cost_display": "¥0.00"
       },
+      "lowest_price_words": "0.50%",
       "min_price_display": "0.50%",
       "rule_price_display": "0.60%",
       "cost_per_invoice_display": "¥2,495.07"
     },
     {
       "terms_days": 70,
+      "terms_words": "70 days",
       "min_price_bp": 65,
       "rule_price_bp": 75,
       "cost_per_invoice_fen": 311884,
@@ -848,15 +903,18 @@
         ],
         "counter_match": false,
         "plan_cost_fen": 0,
+        "summary": "70-day terms · price up 0.65%",
         "forward_budget_used_display": "¥4,666.03",
         "plan_cost_display": "¥0.00"
       },
+      "lowest_price_words": "0.65%",
       "min_price_display": "0.65%",
       "rule_price_display": "0.75%",
       "cost_per_invoice_display": "¥3,118.84"
     },
     {
       "terms_days": 75,
+      "terms_words": "75 days",
       "min_price_bp": 80,
       "rule_price_bp": 90,
       "cost_per_invoice_fen": 374260,
@@ -887,15 +945,18 @@
         ],
         "counter_match": false,
         "plan_cost_fen": 0,
+        "summary": "75-day terms · price up 0.80%",
         "forward_budget_used_display": "¥4,591.23",
         "plan_cost_display": "¥0.00"
       },
+      "lowest_price_words": "0.80%",
       "min_price_display": "0.80%",
       "rule_price_display": "0.90%",
       "cost_per_invoice_display": "¥3,742.60"
     },
     {
       "terms_days": 80,
+      "terms_words": "80 days",
       "min_price_bp": 95,
       "rule_price_bp": 105,
       "cost_per_invoice_fen": 436637,
@@ -926,15 +987,18 @@
         ],
         "counter_match": false,
         "plan_cost_fen": 0,
+        "summary": "80-day terms · price up 0.95%",
         "forward_budget_used_display": "¥4,516.44",
         "plan_cost_display": "¥0.00"
       },
+      "lowest_price_words": "0.95%",
       "min_price_display": "0.95%",
       "rule_price_display": "1.05%",
       "cost_per_invoice_display": "¥4,366.37"
     },
     {
       "terms_days": 85,
+      "terms_words": "85 days",
       "min_price_bp": null,
       "rule_price_bp": 120,
       "cost_per_invoice_fen": 499014,
@@ -967,14 +1031,17 @@
         "flags": [],
         "counter_match": false,
         "plan_cost_fen": 0,
+        "summary": "85-day terms · price up 1.00%",
         "forward_budget_used_display": "¥9,481.64",
         "plan_cost_display": "¥0.00"
       },
+      "lowest_price_words": "none works",
       "rule_price_display": "1.20%",
       "cost_per_invoice_display": "¥4,990.14"
     },
     {
       "terms_days": 90,
+      "terms_words": "90 days",
       "min_price_bp": null,
       "rule_price_bp": 135,
       "cost_per_invoice_fen": 561390,
@@ -1007,9 +1074,11 @@
         "flags": [],
         "counter_match": false,
         "plan_cost_fen": 0,
+        "summary": "90-day terms · price up 1.00%",
         "forward_budget_used_display": "¥16,966.85",
         "plan_cost_display": "¥0.00"
       },
+      "lowest_price_words": "none works",
       "rule_price_display": "1.35%",
       "cost_per_invoice_display": "¥5,613.90"
     }

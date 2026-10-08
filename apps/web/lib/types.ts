@@ -1358,6 +1358,8 @@ export interface EnvelopePackageView {
   counter_match: boolean;
   plan_cost_fen: Fen | null;
   plan_cost_display?: string;
+  /** The package on one line, its terms joined by " · " ("55-day terms · price up 0.25% · rebate 0.60%"). */
+  summary: string;
 }
 
 /** One lever's maximum: where it stops (`wall_text`, in words) and the package at the maximum and at the next step. */
@@ -1376,6 +1378,12 @@ export interface EnvelopeLeverView {
   rule_price_bp: number | null;
   rule_price_display?: string;
   unavailable: string | null;
+  /** The maximum in words ("45 days", "55 days, price up 0.30%", "0.70% on ¥420,000.00", "1.25%"). */
+  maximum_display: string;
+  /** What holds the next step back, in the owner's words; null when nothing inside the range does. */
+  wall_words: string | null;
+  /** The next step and that it is not approved, with the flags ("50 days: not approved; its funding cannot run today"). */
+  next_step_sentence: string;
   at_maximum: EnvelopePackageView | null;
   next_step: EnvelopePackageView | null;
 }
@@ -1383,6 +1391,8 @@ export interface EnvelopeLeverView {
 /** One row of the terms-and-price zone (only with `zone=1`): the smallest price that passes at that many days. */
 export interface EnvelopeZoneRow {
   terms_days: number;
+  /** "45 days". */
+  terms_words: string;
   min_price_bp: number | null;
   min_price_display?: string;
   rule_price_bp: number | null;
@@ -1392,6 +1402,8 @@ export interface EnvelopeZoneRow {
   passes_within_range: boolean;
   neighbours_confirmed: boolean;
   at_that_price: EnvelopePackageView;
+  /** "no price step needed", the percentage, or "none works". */
+  lowest_price_words: string;
 }
 
 /** GET /buyers/{buyer_id}/envelope (flag `envelope`): what the owner can live with for one buyer, as approved packages. Hypothetical; sends nothing. */
