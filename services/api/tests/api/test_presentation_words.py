@@ -103,7 +103,7 @@ def test_the_cards_reason_has_no_working_and_says_the_yearly_cost_as_the_home_do
     raw = ("effective annual cost 32.52% is above the mandate's 15.00% ceiling for what the agent may borrow alone "
            "(all charges on ¥200,000.00 held 10 days (day 37 to day 47), annualised = 32.52%)")
     out = approval_reason_words(state, raw, 34, "en")
-    assert out == "the yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval"
+    assert out == "The yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval."
     assert "annualised" not in out and "day 37" not in out and "agent" not in out
 
 

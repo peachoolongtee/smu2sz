@@ -285,14 +285,14 @@ _YEARLY_COST = re.compile(r"\b(yearly cost of )(\d+(?:\.\d+)?)%")
 
 
 def approval_reason_words(state: FinancialState, text: str | None, today: int, lang: Lang = "en") -> str | None:
-    """Why a request needs the owner, for the card: the Business sentence without the executor's working (the "all charges on
+    """Why a request needs the owner, for the card, as a full sentence: the Business sentence without the executor's working (the "all charges on
     ¥… annualised = …" parenthesis stays at the audit level) and the yearly cost to one decimal, as the home says it
     ("32.5% a year"), never 32.52% beside 32.5%."""
     out = business_text(state, text, today, lang)
     if out is None:
         return None
     out = _FORMULA_PAREN.sub("", out)
-    return _YEARLY_COST.sub(lambda m: f"{m.group(1)}{fmt_pct(Fraction(m.group(2)) / 100, 1)}", out)
+    return _sentence(_YEARLY_COST.sub(lambda m: f"{m.group(1)}{fmt_pct(Fraction(m.group(2)) / 100, 1)}", out))
 
 
 def plan_when(state: FinancialState, plan: dict[str, Any] | None, today: int, lang: Lang = "en") -> dict[str, Any] | None:
@@ -378,6 +378,8 @@ def cure_legs(state: FinancialState, alert: Alert, today: int, lang: Lang) -> li
             "lands_when": when_text(lands, today, lang) if lands is not None else None,
             "above_apr_cap": s.above_apr_cap,
         })
+    for leg, name in zip(legs, leg_names(state, [(x["facility_id"], x["amount_fen"]) for x in legs]), strict=True):
+        leg["name_display"] = name
     return legs
 
 
@@ -543,6 +545,35 @@ def _asked_words(state: FinancialState, kind: str, payload: dict[str, Any], lang
         return (t(lang, f"the receipt of {money} from {buyer}", f"来自{buyer}的 {money} 入账") if buyer
                 else t(lang, f"the receipt of {money}", f"{money} 入账"))
     return None
+
+
+def result_words(state: FinancialState, *, kind: str, status: str, payload: dict[str, Any], day: int | None, today: int,
+                 lang: Lang = "en") -> str | None:
+    """What came of the owner's decision on an approval, as one sentence: "¥200,000.00 of invoice financing was requested
+    today; the cash lands in 3 days." (the landing is the funding lot's own day, ADR-0010), or "You declined ...". None for a
+    kind or status with no such reading; the caller keeps the executor's own sentence then."""
+    asked = _asked_words(state, kind, payload, lang)
+    if asked is None:
+        return None
+    if status == "REFUSED":
+        return _stop(t(lang, f"You declined {asked}", f"您已拒绝{asked}"), lang)
+    if status != "EXECUTED" or kind not in _MONEY_KINDS:
+        return None
+    asked = asked[:1].upper() + asked[1:] if lang == "en" else asked
+    landing = _landing_day(state, payload, day)
+    request = day if day is not None else payload.get("day")
+    if landing is None or not isinstance(request, int):
+        return None
+    n = landing - today
+    when = when_text(landing, today, lang)
+    asked_when = when_text(request, today, lang)
+    if n > 0:
+        cash = t(lang, f"the cash lands {when}.", f"资金将于{when}到账。")
+    elif n == 0:
+        cash = t(lang, "the cash arrived today.", "资金今天已到账。")
+    else:
+        cash = t(lang, f"the cash arrived {when}.", f"资金已于{when}到账。")
+    return t(lang, f"{asked} was requested {asked_when}; {cash}", f"{asked}已于{asked_when}提交；{cash}")
 
 
 def agreement_words(state: FinancialState, counterparty_id: str, forward_value_fen: int, lang: Lang = "en") -> str:
@@ -719,6 +750,140 @@ def comparison_reason(actions: list[dict[str, Any]], executable_now: bool) -> st
     if any(a.get("kind") == "FINANCE_INVOICE" and (a.get("available_from_day") or 0) > (a.get("day") or 0) for a in actions):
         return "invoice_not_issued"
     return None
+
+
+# The row the API adds for the plan the next-step card recommends when it is the alert's own cure, not a router row.
+RECOMMENDED_PLAN_KEY = "recommended_plan"
+KIND_FOR_OPERATION = {"DRAW_FACILITY": "DRAW", "SUBMIT_INVOICE_FOR_FINANCING": "FINANCE_INVOICE"}
+
+
+def leg_names(state: FinancialState, legs: list[tuple[str | None, int | None]]) -> list[str]:
+    """The source each leg draws on, by name ("Bank credit line"); a source used twice carries its amount, so two advances
+    on one facility are told apart ("Invoice financing, ¥80k")."""
+    names = [facility_name(state, fid) for fid, _ in legs]
+    return [n if names.count(n) == 1 else f"{n}, {fmt_short(amount or 0)}" for n, (_, amount) in zip(names, legs, strict=True)]
+
+
+def plan_name(state: FinancialState, facility_ids: list[str | None]) -> str:
+    """A plan named by its sources ("Bank credit line + Invoice financing"), each source once."""
+    return " + ".join(dict.fromkeys(facility_name(state, f) for f in facility_ids if f))
+
+
+def row_legs(state: FinancialState, actions: list[dict[str, Any]], leg_costs_fen: list[int]) -> list[dict[str, Any]]:
+    """A comparison row's legs for the page: the source's name, the leg's amount and what it costs, in the order the router
+    priced them (`leg_costs_fen` runs in the actions' order). Empty when the router priced no legs or not one per action."""
+    if not actions or len(actions) != len(leg_costs_fen):
+        return []
+    names = leg_names(state, [(a.get("facility_id"), a.get("amount_fen")) for a in actions])
+    return [{"index": i, "name_display": name, "facility_id": a.get("facility_id"), "amount_fen": a.get("amount_fen"),
+             "amount_display": fmt_yuan(a.get("amount_fen") or 0), "cost_fen": cost, "cost_display": fmt_yuan(cost)}
+            for i, (a, name, cost) in enumerate(zip(actions, names, leg_costs_fen, strict=True))]
+
+
+def recommended_row(state: FinancialState, action: dict[str, Any], today: int, lang: Lang) -> dict[str, Any]:
+    """The plan the next-step card recommends, as a comparison row, for the case where it is the alert's own cure and so
+    none of the router's rows. Every figure is the card's own (the legs the alert priced); nothing is priced here."""
+    legs = [{"index": leg["index"], "name_display": leg["name_display"], "facility_id": leg["facility_id"],
+             "amount_fen": leg["amount_fen"], "amount_display": leg["amount_display"], "cost_fen": leg["cost_fen"],
+             "cost_display": leg["cost_display"]} for leg in action["legs"] if leg["operation_kind"] in KIND_FOR_OPERATION]
+    priced = [leg for leg in legs if leg["cost_fen"] is not None]
+    total = sum(leg["cost_fen"] for leg in priced)
+    total_display = action.get("cost_total_display") or "—"
+    equation = (" + ".join(leg["cost_display"] for leg in priced) + f" = {total_display}") if len(priced) > 1 else total_display
+    actions = [{"kind": KIND_FOR_OPERATION[leg["operation_kind"]], "facility_id": leg["facility_id"], "day": today,
+                "amount_fen": leg["amount_fen"], "amount_display": leg["amount_display"], "receivable_id": leg["receivable_id"],
+                "repay_day": None, "rate_bp": None, "lands_day": leg["lands_day"], "available_from_day": today}
+               for leg in action["legs"] if leg["operation_kind"] in KIND_FOR_OPERATION]
+    reason = action.get("needs_owner_reason")
+    return {
+        "key": RECOMMENDED_PLAN_KEY, "label": t(lang, "Recommended plan", "推荐方案"),
+        "components": [leg["label"] for leg in action["legs"]], "components_when": [leg["label"] for leg in action["legs"]],
+        "actions": actions, "cost_fen": total, "cost_display": equation, "total_fen": total, "total_display": total_display,
+        "result": "ADMISSIBLE", "reasons": [], "breach_day": None, "note": "", "note_when": "",
+        "needs_owner_approval": bool(action.get("needs_owner")), "approval_reason": reason or "", "approval_reason_when": reason,
+        "executable_now": True, "not_executable_reason": "", "not_executable_reason_when": None, "shortfall_fen": None,
+        "shortfall_display": None, "worst_day": None, "status": "alternative", "reason_kind": None, "selected": False,
+        "legs": legs, "name_display": plan_name(state, [leg["facility_id"] for leg in legs]), "offset_fen": None, "offset_display": None,
+    }
+
+
+
+def _role_reason(row: dict[str, Any], role: str, recommended_cost: int | None, today: int, lang: Lang) -> str | None:
+    """One sentence on why a row is where it is, for a row that is not the recommended plan."""
+    kind = row.get("reason_kind")
+    if role == "insufficient":
+        when = when_text(row.get("breach_day"), today, lang)
+        short = row.get("shortfall_display")
+        if short and when:
+            return t(lang, f"Cash still falls below your reserve {when}; {short} short at the worst point.",
+                     f"现金仍将在{when}低于储备；最低点还差 {short}。")
+        return t(lang, "It does not cover the gap.", "无法覆盖缺口。")
+    if role == "blocked":
+        return t(lang, "It breaks one of your limits.", "违反您的某项限额。")
+    if role == "unavailable" or row.get("executable_now") is False:
+        if kind == "buyer_early_pay":
+            return t(lang, "Only if the buyer agrees to pay early.", "须买方同意提前付款。")
+        if kind == "invoice_not_issued":
+            return t(lang, "It waits for the invoice to be issued.", "须等发票开出。")
+        return t(lang, "A source in this plan is not available today.", "此方案中的某个资金来源今天无法使用。")
+    cost = row.get("cost_fen")
+    if recommended_cost is not None and isinstance(cost, int) and cost < recommended_cost:
+        return t(lang, "Cheaper, but it is not the plan FLOW recommends.", "更便宜，但不是 FLOW 推荐的方案。")
+    return t(lang, "Within your limits, but dearer than the recommended plan.", "在您的限额内，但比推荐方案更贵。")
+
+
+def with_roles(rows: list[dict[str, Any]], action: dict[str, Any] | None, state: FinancialState, today: int,
+               lang: Lang) -> tuple[list[dict[str, Any]], str | None]:
+    """The comparison as the owner reads it: every row says what it is for the owner (`role`) and why (`role_reason`), and the
+    plan the next-step card recommends is in the list. `role` is `recommended` (the plan the card shows), `alternative`
+    (within the limits, not chosen) or the row's own status (`insufficient`, `unavailable`, `blocked`). When the card shows
+    the router's cheapest plan that row is the recommended one; when it shows the alert's cure (the cheaper plan needs
+    several approvals) the cure is added as a row, listed first, and the router's cheapest becomes an alternative whose reason
+    names the approvals it would ask for. Returns the rows and the recommended row's key. `status` and `selected` stay the
+    router's own; no plan is ranked or priced here (`funding/recommend.py` already decided)."""
+    reserve = bool(action) and action is not None and action.get("kind") == "RESERVE_BREACH_AHEAD"
+    source = action.get("plan_source") if reserve and action is not None else None
+    out: list[dict[str, Any]] = []
+    recommended_cost: int | None = None
+    cure: dict[str, Any] | None = None
+    if source == "alert" and action is not None:
+        cure = recommended_row(state, action, today, lang)
+        recommended_cost = cure["total_fen"] if all(leg["cost_fen"] is not None for leg in cure["legs"]) else None
+        cheaper = action.get("cheaper_option")
+        cure["role"] = "recommended"
+        cure["role_reason"] = (
+            t(lang, f"The next step: it needs one approval; the cheapest plan ({cheaper['cost_total_display']} in all) needs "
+                    f"{cheaper['approvals']} separate approvals.",
+              f"下一步所用方案：只需一次批准；最便宜的方案（合计 {cheaper['cost_total_display']}）需要 {cheaper['approvals']} 次单独批准。")
+            if cheaper else action.get("why"))
+        out.append(cure)
+    elif source == "router":
+        recommended_cost = next((r["cost_fen"] for r in rows if r.get("result") == "SELECTED"), None)
+    for r in rows:
+        status = r.get("status") or "alternative"
+        if source == "router" and r.get("result") == "SELECTED":
+            role, reason = "recommended", t(lang, "The cheapest plan your committed facilities can fund in time.",
+                                            "您已承诺的额度能及时覆盖缺口的最便宜方案。")
+        elif status in ("recommended", "alternative"):
+            if source == "alert":
+                role = "alternative"
+                cheaper = action.get("cheaper_option") if action is not None else None
+                if cheaper and r.get("result") == "SELECTED":
+                    reason = t(lang, f"Cheapest in all, but it needs {cheaper['approvals']} separate approvals; the recommended plan "
+                                     f"needs one.", f"合计最便宜，但需要 {cheaper['approvals']} 次单独批准；推荐方案只需一次。")
+                else:
+                    reason = _role_reason(r, role, recommended_cost, today, lang)
+            elif status == "recommended":  # nothing is recommended against it (no gap, or a repayment): the router's pick stands
+                role = "recommended"
+                reason = (t(lang, "The cheapest plan your committed facilities can fund in time.",
+                            "您已承诺的额度能及时覆盖缺口的最便宜方案。") if r.get("actions") else None)
+            else:
+                role, reason = "alternative", _role_reason(r, "alternative", recommended_cost, today, lang)
+        else:
+            role, reason = status, _role_reason(r, status, recommended_cost, today, lang)
+        out.append({**r, "role": role, "role_reason": reason})
+    key = next((r["key"] for r in out if r["role"] == "recommended"), None)
+    return out, key
 
 
 def counter_economics(obligations: list[Any], state: FinancialState, mandate: Mandate) -> dict[str, Any] | None:

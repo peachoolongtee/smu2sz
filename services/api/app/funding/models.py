@@ -77,3 +77,7 @@ class ComparisonRow(Contract):
     # (the router's `Eval.shortfall`; display only, so an insufficient option can say what it leaves uncovered).
     shortfall_fen: int | None = None
     worst_day: int | None = None
+    # What the router priced each action at, in the actions' order (the cost lines' fen; display only, so a page can name
+    # each source beside its own cost instead of an unlabelled sum). The row's `cost_fen` is not always their sum: it is the
+    # net change in charges across the forecast.
+    leg_costs_fen: list[int] = Field(default_factory=list)

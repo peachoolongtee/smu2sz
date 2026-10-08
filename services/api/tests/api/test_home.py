@@ -37,8 +37,10 @@ def test_day_zero_answers_safe_do_cost(client):
                           "Foshan Home Retail Co. on Invoice financing (onboarded platform)")
     assert a["receive_display"] == "¥405,000.00" and a["needs_owner"] is False and a["cheaper_option"] is None
     assert a["outcome_title"] == "Secure ¥405k of funding" and a["after_lowest_short"] == "¥300k"
-    assert a["components"] == [{"amount_short": "¥150k", "what": "Bank credit line", "lands_when": "today"},
-                               {"amount_short": "¥255k", "what": "against the ¥420k invoice to Foshan Home Retail Co.", "lands_when": "in 3 days"}]
+    assert a["components"] == [{"amount_short": "¥150k", "what": "Bank credit line", "lands_when": "today",
+                                "name_display": "Bank credit line", "cost_display": "¥841.64"},
+                               {"amount_short": "¥255k", "what": "against the ¥420k invoice to Foshan Home Retail Co.", "lands_when": "in 3 days",
+                                "name_display": "Invoice financing (onboarded platform)", "cost_display": "¥2,272.29"}]
     # all-in: every leg priced on the router's own convention, the basis said in words, nothing left to a footnote
     assert a["cost_total_display"] == "¥3,113.93" and a["cost_display"] == "¥3,113.93" and a["cost_note"] is None
     assert [(c["label"], c["display"]) for c in a["cost_breakdown"]] == [
@@ -231,7 +233,7 @@ def test_a_late_buyer_is_named_in_receivables_and_changes(client):
     # one cure, one horizon: the approval card says what the home says (the plan projected on the books), on the home and in the queue
     assert card["protects"] == a["after"] == "Cash stays above your minimum cash reserve for the next 120 days."
     [row] = client.get("/approvals/queue").json()["approvals"]
-    assert row["presentation"]["reason"] == ("the yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval")
+    assert row["presentation"]["reason"] == ("The yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval.")
     assert card["reason"] == row["presentation"]["reason"]
     assert row["presentation"]["protects"] == a["after"]
     assert client.get("/home?lang=zh").json()["approvals"][0]["protects"] == client.get("/home?lang=zh").json()["next_action"]["after"]

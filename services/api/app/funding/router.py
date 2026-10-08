@@ -316,6 +316,7 @@ def _row(alt: Alternative, search: Search, result: ComparisonResult) -> Comparis
 
         shortfall_fen=ev.shortfall if ev is not None and ev.breach_day is not None else None,
         worst_day=_worst_day(ev, search),
+        leg_costs_fen=[c.fen for c in lines],
     )
 
 
