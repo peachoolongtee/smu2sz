@@ -389,3 +389,51 @@ Read-only survey of `/Users/ianpong/Hackathons/smu2sz/apps/web` on branch `dev` 
 - Motion (111-131): `motion-reveal` (a block on mount: `Card`, disclosure cards, next-step band), `motion-rise` on a list (rows stagger 30 ms, first eight), `motion-lift` (hover lift on rows/tiles/options), `motion-press` (buttons), `motion-pulse` only for ACTION_NEEDED/CRITICAL; transform and opacity only, "nothing animates width, height (but the disclosure), margin or position"; durations `--dur-fast` 120 ms, `--dur` 200 ms, `--dur-slow` 280 ms, `--ease-out`.
 - Consequences for the three cards: Deals already spends its primary on `deal-send`, Cash on the next-action button, Receivables has none; so the Deals card's "open Option A/B" and the Receivables action cell must be a secondary `Button`, `textLinkClass` link, or ghost — never `variant="primary"`. A "worth collecting" figure is a server string shown in `tabular-nums`; any emphasis colour must be a status with a word, not a bare tint. Cards inside a card use `rounded-tile border border-line`; a standalone card is `Card` (`rounded-card`), gets `motion-reveal` for free, and lists inside take `motion-rise`.
 
+
+## 12. Wave 7 decisions (these supersede sections 5, 6 and 9 where they differ)
+
+From the cold-user walk (`docs/research/strategy/cold-walk-strategy-2026-10-08.md`), the independent code review and
+the backtest's findings, 8 October 2026.
+
+- **One early-payment figure per invoice across pages.** The figure FLOW would actually send: the verifier's Option A
+  face (`app/strategy/faces.py::option_a_face`, the counter's face from an ask at the top of the early-pay range on the
+  whole invoice; the same probe the envelope's lever uses). Collections quotes that face when it exists (golden day 0:
+  0.85% on ¥257,200, saving ¥86.16 at the limit, ¥1,250.06 at 0.40%), the plan's-need face otherwise (day 34: no
+  counter on either coming invoice, so ¥200,000). The whole-face and need-face ceilings stay in the payload only.
+- **The collections ceiling respects the mandate's APR cap.** The spike's ceiling tested the plan comparison alone, so on
+  day 34 it quoted 0.80% on ¥200,000 for RI:BUYER-1:2 although the verifier rejects that rate with MAX_APR_EXCEEDED (11
+  days early against the 15% cap). A ceiling FLOW could not send is a false figure: the ceiling is the largest grid rate
+  that beats the plan AND passes the verifier's price checks for that tenor (the APR cap computed with the verifier's own
+  function; the immediate-discount cap as before). The oracle's 0.80% stays recorded as an expected difference.
+- **One worth string per row, `worth_text`**: "Saves ¥1,374.61" (call now); "Saves ¥888.28 at 0.40% (¥77.58 at the
+  0.80% limit)" shape for an offer, with the quoted face's figures; "Saves nothing extra now" (wait). The gross stays in
+  the payload. Action sentences are at most 25 words; the second clause lives in `reason_sentence`; "or fund it
+  instead" replaces "Or finance it."; the ranking note says "against the cheapest funding plan".
+- **The cash price sentence, yuan first**: "Cash in the next 30 days saves you ¥89.11 of funding cost per ¥10,000
+  (0.89%); after that, earlier cash saves nothing." Two bands: "Cash in the next 8 days saves you ¥178.22 of funding cost
+  per ¥10,000 (1.78%), then ¥89.12 (0.89%) for the 18 days after; later, nothing." (The first impression of "worth 0.89%
+  to you" was a rate charged: the synthesis's kill criterion.)
+- **The curve's bands by cost per arrival day.** A value is cost(d + 30) − cost(d), so each arrival day's plan cost is
+  computed once and shared; sample days are today, the horizon end + 30, the breach first and recovery days and the plan's
+  repay and landing days; a span whose ends disagree is cut at the event days inside it (flows, due days, recurring issue
+  + terms, debt payment days, each with the day after) before any bisection, within the 120-evaluation budget. S21's
+  two-gap state fell from 18.8 s to 4.1 s with identical bands; a literal "every event day ± 30 as a boundary" was slower
+  (63 plan searches).
+- **The envelope speaks in limits.** Eyebrow "The most you can give"; `primary` opens "You can live with: "; caption
+  "Your limits, not an opening offer. FLOW sends only what you choose below."; chip "Estimate"; "fix" for cure, "price
+  rise" for price step, "your current funding plan" for standing plan, "within / over your limits" for approved / not
+  approved; packages header "Within your limits", sub-caption "Each one passes your checks on today's books; some need
+  your approval to fund."; "Terms and price table" for the zone. Flag words the owner must act on render in ink-2.
+- **The buyer context has three levers**: a recurring invoice (terms, price, rebate), an open invoice (early pay), an
+  expected order (rebate); refused only with none: "FLOW has no terms, payment or rebate lever to value for <name> yet."
+  BUYER-2 on the golden books has none (H37's ¥250,000 order is stated in the offer text, not on the books), so the
+  backtest counts a refused buyer whose only counter is a rebate on an order not on the books as skipped with that reason.
+- **Routes**: the books, mandate, day and commitments are read under `rt.lock` and every sweep runs outside it; one
+  `AnswerCache` (32 entries, single-flight) for the three routes; the curve's cost-of-funds guard and engine errors map
+  to 422, never 500; counters outside the lever ranges are listed under `unlisted_counters`, not probed; `ValueError`
+  on the envelope route becomes a `refused` sentence; `computed_in_seconds` is measured per request.
+- **Backtest check (i)** means "inside the envelope": a counter passes when a listed package matches it or
+  `probe_packages` approves it; `counters_listed` is reported beside `counters_inside`.
+- **Tests**: every wall-clock assertion is skipped under `SKIP_PERF_BENCH=1`; deterministic counts are preferred.
+- **Web**: the default build is byte-for-byte the old app (the Deals compare state is lifted only with the flag; the
+  strategy reads are idle hooks with the flag off; the recordings load lazily).
