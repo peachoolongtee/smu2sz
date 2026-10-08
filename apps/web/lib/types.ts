@@ -1353,7 +1353,7 @@ export interface EnvelopePackageView {
   binding_codes: string[];
   forward_budget_used_fen: Fen;
   forward_budget_used_display: string;
-  reserve_breach: { day: Day; when: string; curable: boolean; cure_cost_fen: Fen; cure_cost_display: string } | null;
+  reserve_breach: { day: Day; when: string; curable: boolean; cure_cost_fen: Fen | null; cure_cost_display?: string | null } | null;
   flags: string[];
   counter_match: boolean;
   plan_cost_fen: Fen | null;
@@ -1495,6 +1495,8 @@ export interface ReceivableWorth {
   net_saving_display: string;
   /** What collecting it saves, net of the discount that earns it; reads "no saving" when it is nothing. */
   net_saving_text: string;
+  /** The one worth string for the row ("Saves ¥1,374.61"); older servers do not send it, then `net_saving_text` stands in. */
+  worth_text?: string;
   no_saving: boolean;
   action: CollectionAction;
   action_sentence: string;

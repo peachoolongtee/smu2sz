@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { STRATEGY_MVP } from "./config";
 import { useDemo } from "./demo-store";
 
 export interface AsyncState<T> {
@@ -42,3 +43,19 @@ export function useAsync<T>(load: () => Promise<T>, deps: readonly unknown[]): A
     reload: () => setNonce((n) => n + 1),
   };
 }
+
+const IDLE: AsyncState<never> = { data: undefined, error: undefined, loading: false, reload: () => {} };
+
+/** What the strategy reads are with the flag off: no state, no effect, and the thunk is never called. */
+function useIdle<T>(_load: () => Promise<T>, _deps: readonly unknown[]): AsyncState<T> {
+  void _load;
+  void _deps;
+  return IDLE;
+}
+
+/**
+ * `useAsync` for the strategy MVP's reads (the price curve, the receivables worth). STRATEGY_MVP is a build-time constant, so each
+ * build has exactly one of the two and every render calls the same hook: with the flag off the thunk never runs and nothing is
+ * fetched, set or re-rendered; with it on this is `useAsync`.
+ */
+export const useStrategyAsync: typeof useAsync = STRATEGY_MVP ? useAsync : useIdle;

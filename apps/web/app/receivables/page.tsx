@@ -2,10 +2,9 @@
 
 import { Badge, Card, ErrorState, LoadingBlock, PageHeader, Stat, TableWrap, tableCls, tdCls, thCls } from "@/components/ui";
 import { getHome, getReceivablesWorth, getReconciliation, getState } from "@/lib/api";
-import { STRATEGY_MVP } from "@/lib/config";
 import { useI18n } from "@/lib/i18n";
 import { daysLate, whenText } from "@/lib/when";
-import { useAsync } from "@/lib/use-async";
+import { useAsync, useStrategyAsync } from "@/lib/use-async";
 import { Disclosure } from "@/components/business/kit";
 import { ActionChip, ActionText, WorthText } from "@/components/business/strategy";
 
@@ -21,7 +20,7 @@ export default function ReceivablesPage() {
   const home = useAsync(() => getHome(lang), [lang]);
   // The worth of collecting each invoice (strategy MVP, build-time flag): null while loading, when the server has it off, or
   // when the read fails; the page then shows the table it always had. Matched to the invoices by receivable_id.
-  const worth = useAsync(async () => (STRATEGY_MVP ? await getReceivablesWorth(lang) : null), [lang]).data;
+  const worth = useStrategyAsync(() => getReceivablesWorth(lang), [lang]).data;
   const worthOf = new Map((worth?.rows ?? []).map((w) => [w.receivable_id, w]));
   const data = recon.data;
   const r = home.data?.receivables;
@@ -86,9 +85,9 @@ export default function ReceivablesPage() {
                     </div>
                     {w ? (
                       <div className="mt-2 space-y-2">
-                        <div className="flex items-start justify-between gap-3">
+                        <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1">
                           <ActionChip action={w.action} />
-                          <div className="text-right">
+                          <div className="min-w-0 text-right">
                             <span className="block text-xs text-ink-3">{t("biz.strategy.worth")}</span>
                             <WorthText row={w} testId={`recv-list-worth-${o.receivable_id}`} />
                           </div>

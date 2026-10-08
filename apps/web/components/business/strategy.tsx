@@ -16,23 +16,28 @@ export function ActionChip({ action }: { action: ReceivableWorth["action"] }) {
   return <Chip>{te("biz.strategy.action", action)}</Chip>;
 }
 
-/** The net saving, with the gross beneath it when the discount that earns it makes them differ. */
+/**
+ * What collecting the invoice is worth: the server's one string for the row (`worth_text`, "Saves ¥1,374.61"). A server that does not
+ * send it yet is read through `net_saving_text`. The gross saving stays in the payload; the page decides nothing from it.
+ */
 export function WorthText({ row, testId }: { row: ReceivableWorth; testId: string }) {
-  const { t } = useI18n();
-  const showGross = row.gross_saving_fen > 0 && row.gross_saving_display !== row.net_saving_display;
   return (
-    <span data-testid={testId}>
-      <span className="font-semibold tabular-nums text-ink">{row.net_saving_text}</span>
-      {showGross ? <span className="block text-xs text-ink-3">{t("biz.strategy.worth.gross", { gross: row.gross_saving_display })}</span> : null}
+    <span className="text-sm text-ink" data-testid={testId}>
+      {row.worth_text ?? row.net_saving_text}
     </span>
   );
 }
 
-/** The server's sentence for the step, wrapping, in plain text. */
+/** The server's sentence for the step, wrapping, with the reason beneath it in a smaller size. Both are plain text. */
 export function ActionText({ row, testId }: { row: ReceivableWorth; testId: string }) {
   return (
-    <span className="block text-ink-2" data-testid={testId}>
-      {row.action_sentence}
+    <span className="block" data-testid={testId}>
+      <span className="block text-ink-2">{row.action_sentence}</span>
+      {row.reason_sentence ? (
+        <span className="mt-0.5 block text-xs text-ink-2" data-testid={`${testId}-reason`}>
+          {row.reason_sentence}
+        </span>
+      ) : null}
     </span>
   );
 }
