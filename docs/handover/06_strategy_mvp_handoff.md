@@ -1,6 +1,6 @@
 # Handoff: the strategy MVP and the pilot (8 October 2026)
 
-For the next session's lead. Read this, then wayfinder map [#47](https://github.com/peachoolongtee/smu2sz/issues/47) on
+For the next session's lead. Read this, then wayfinder maps [#47](https://github.com/peachoolongtee/smu2sz/issues/47) (complete) and [#58](https://github.com/peachoolongtee/smu2sz/issues/58) (the pilot) on
 GitHub, then `docs/STRATEGY_MVP_REPORT.md` and `docs/STRATEGY_MVP_BRIEF.md` (section 12 last). The earlier handoff,
 `docs/handover/05_strategy_and_ux_handoff.md`, still holds the delegation model, the integration loop and the standing
 rules; nothing here repeats them.
@@ -9,8 +9,8 @@ rules; nothing here repeats them.
 
 - **Branch `feat/strategy-mvp`** (from `dev` at `bcc67d4`) holds the read-only MVP: the Safe Deal Envelope, the cash price
   curve and collections worth, behind `FEATURE_ENVELOPE`, `FEATURE_PRICE_CURVE`, `FEATURE_COLLECTIONS_WORTH` (API, default
-  off) and `NEXT_PUBLIC_STRATEGY_MVP=1` (web). With the flags off it is byte-for-byte `dev`'s behaviour. It has NOT been
-  merged into `dev`: that is the owner's decision in grilling [#56](https://github.com/peachoolongtee/smu2sz/issues/56).
+  off) and `NEXT_PUBLIC_STRATEGY_MVP=1` (web). With the flags off it is byte-for-byte the old app. **Merged into `dev` at f9c6097** on the owner's decision
+  ([#56](https://github.com/peachoolongtee/smu2sz/issues/56), 8 October): flags off, the tree identical to the gated branch.
 - **Wave 8** ([#57](https://github.com/peachoolongtee/smu2sz/issues/57)), the Impeccable finish over the whole UI, is
   done and merged into `feat/strategy-mvp` (report section 11; `apps/web/DESIGN.md` is the canonical record, `PRODUCT.md`
   the inferred product context with its open questions). If #56 defers the `dev` merge, the finish is cherry-picked onto a
@@ -23,16 +23,17 @@ rules; nothing here repeats them.
   `uv run --project services/api python services/api/scripts/strategy_backtest.py [--quick] [--json]`, then
   `git checkout -- services/api/evals`.
 
-## 2. What the owner must decide (#56)
+## 2. What the owner decided (#56, 8 October, live) and what is still to name
 
-1. Merge `feat/strategy-mvp` into `dev` now with the flags off, or keep it on its branch until the pilot ends.
-   Recommendation: merge, flags off; the demo path is unchanged by construction and a long-lived branch rots.
+1. Merged into `dev` with the flags off (f9c6097). The pilot's build is `dev` plus the three API flags and the web flag.
 2. The shadow pilot: which one or two SMEs, which month; if none, who runs the five interview sets (synthesis section I).
-3. `Capacity`: confirm its deferral (the envelope names the wall from the verifier's codes), or ask for the read-only view.
+3. `Capacity`: deferred to post-pilot (the envelope names the wall from the verifier's codes).
 4. The comprehension test of the cash sentence on three owners: who and when. The sentence now leads with yuan ("Cash in
    the next 30 days saves you ¥89.11 of funding cost per ¥10,000 (0.89%); after that, earlier cash saves nothing.") because
    the first cold reader took "worth 0.89% to you" for a rate charged.
-5. Controlled action stays off through the 30-day and 90-day windows unless the owner names one action earlier.
+5. Controlled action stays off through the 30-day and 90-day windows (confirmed).
+
+Still to name, on the pilot map's grilling ([#59](https://github.com/peachoolongtee/smu2sz/issues/59)): the SMEs and the month (or the interviewers), and the three owners for the comprehension test. The pilot map is [#58](https://github.com/peachoolongtee/smu2sz/issues/58); its Wave 0 ([#60](https://github.com/peachoolongtee/smu2sz/issues/60)) builds the instruments that need no SME.
 
 ## 3. The pilot's instrument
 
@@ -61,7 +62,6 @@ FIRST gate is read from the pilot's inbox (two or more deals open at once in mos
 
 > Read `docs/handover/06_strategy_mvp_handoff.md` on `feat/strategy-mvp`, then wayfinder map #47 on GitHub. You are the
 > lead: you architect, write specs and acceptance criteria, review and merge; implementation goes to lower-tier implementer
-> subagents, research to research agents, figures are checked by a verifier agent. Every build wave of the map is done;
-> the frontier is the owner's grilling (#56). Record my answers there, append them to the map's "Decisions so far", then
-> act on them: merge `feat/strategy-mvp` into `dev` with the flags off if I say so (full gate first), and chart the
-> 90-day shadow pilot as a new map from section 3 of this handoff.
+> subagents, research to research agents, figures are checked by a verifier agent. Map #47 is complete and merged into
+> `dev`. The next map is the shadow pilot, #58: take its frontier (Wave 0, #60, the instruments that need no SME; then the
+> grilling #59 where I name the SMEs, the month and the three readers), and run it in the same way.
