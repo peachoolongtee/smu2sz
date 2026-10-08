@@ -1,0 +1,92 @@
+[
+  {
+    "name": "demo-completed-ledger",
+    "path": "/ledger",
+    "status": 200,
+    "seconds": 0.026
+  },
+  {
+    "name": "receipt-reset",
+    "path": "/demo/reset",
+    "status": 200,
+    "seconds": 0.007
+  },
+  {
+    "name": "receipt-offer",
+    "path": "/offers",
+    "status": 200,
+    "seconds": 0.018
+  },
+  {
+    "name": "receipt-evaluation",
+    "path": "/offers/OFF-f806f79b6c21/evaluate",
+    "status": 200,
+    "seconds": 0.258
+  },
+  {
+    "name": "receipt-negotiation",
+    "path": "/negotiate/OFF-f806f79b6c21",
+    "status": 200,
+    "seconds": 0.014
+  },
+  {
+    "name": "receipt-clock-day2",
+    "path": "/clock/advance",
+    "status": 200,
+    "seconds": 0.002
+  },
+  {
+    "name": "receipt-promise-before",
+    "path": "/reconciliation",
+    "status": 200,
+    "seconds": 0.002
+  },
+  {
+    "name": "receipt-partial",
+    "path": "/operations",
+    "status": 200,
+    "seconds": 0.004
+  },
+  {
+    "name": "receipt-duplicate",
+    "path": "/operations",
+    "status": 200,
+    "seconds": 0.004
+  },
+  {
+    "name": "receipt-reconciliation-day2",
+    "path": "/reconciliation",
+    "status": 200,
+    "seconds": 0.002
+  },
+  {
+    "name": "receipt-clock-day34",
+    "path": "/clock/advance",
+    "status": 200,
+    "seconds": 0.001
+  },
+  {
+    "name": "receipt-reconciliation-day34",
+    "path": "/reconciliation",
+    "status": 200,
+    "seconds": 0.002
+  },
+  {
+    "name": "home-partial-payment",
+    "path": "/home",
+    "status": 200,
+    "seconds": 0.016
+  },
+  {
+    "name": "receipt-ledger-day34",
+    "path": "/ledger",
+    "status": 200,
+    "seconds": 0.002
+  },
+  {
+    "name": "abstention-foreign-currency",
+    "path": "/nl",
+    "status": 200,
+    "seconds": 0.005
+  }
+]

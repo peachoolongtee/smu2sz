@@ -1,0 +1,33 @@
+{
+  "from_day": 0,
+  "to_day": 2,
+  "posted_flow_ids": [],
+  "posted_net_fen": 0,
+  "skipped_unconfirmed_inflow_ids": [],
+  "issued_receivable_ids": [],
+  "expired_commitment_ids": [],
+  "added_flow_ids": [],
+  "result": {
+    "op_id": "clock-0-2",
+    "kind": "ADVANCE_CLOCK",
+    "status": "EXECUTED",
+    "tier": "TIER_1",
+    "violations": [],
+    "seq": 3,
+    "entry_hash": "a630d391153d11b7baf6b041fca59addb1c63019b801d0542e4387d13525effb",
+    "prev_hash": "f8e3418da6495e4981057c816b3458fccc6f6badc26789ffba426c8fcdcf5bc1",
+    "effective_day": 2,
+    "approval_id": null,
+    "message": "Clock moved from day 0 to day 2: 0 scheduled flow(s) posted (net ¥0.00), 0 invoice(s) issued, 0 commitment(s) expired"
+  },
+  "consumed_adjustment_ids": [],
+  "fulfilled_commitment_ids": [],
+  "settled_lot_ids": [],
+  "posted_debt_payments": [],
+  "lots_net_fen": 0,
+  "posted_debt_service": [],
+  "debt_service_fen": 0,
+  "lapsed_commitment_ids": [],
+  "day": 2,
+  "posted_net_display": "¥0.00"
+}

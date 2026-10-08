@@ -1,0 +1,8 @@
+{
+  "primary_report_sha256_before_prior_audit_comparison": "d19a36a07bccc7b316f363e2d82f0c305cb5b6745c2e6f9c718f979a7f19c59c",
+  "baseline_commit": "e15e3eebec3b25d245eb67c7306f02d92b0e6bb2",
+  "prior_ux_audits_read_before_primary_report": false,
+  "product_and_handover_context_contain_prior_work_summaries": true,
+  "assessment_a": "/root/independent_design",
+  "assessment_b": "/root/technical_evidence"
+}

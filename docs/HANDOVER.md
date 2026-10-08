@@ -244,6 +244,13 @@ RESERVE_BREACH on the cash-corrected books, so the label file `fixtures/heldout/
 
 ## 6. What to do next, in order
 
+**Independent end-to-end FLOW UX audit, 9 Oct:** `docs/research/independent-flow-ux-audit-2026-10-09.md` contains the
+32-section report, 28 findings (4 P0, 14 P1, 10 P2), task walks and implementation order. Evidence is in
+`docs/research/flow-ux-audit-2026-10-09/`. This was an audit only: no proposed UX fixes were implemented. The original
+documented dev startup returned HTTP 500 from the malformed touch variant; the temporary correction used for inspection
+was restored. Prioritize F01/F03 time presentation, F02 essential approval terms and F04 execution-state wording, after
+restoring startup. The report distinguishes verified behavior from source-only paths and scoped test limitations.
+
 **The integration of 6 and 7 Oct (the owner's fourth brief) is done:** `docs/UX_INTEGRATION_BRIEF.md`, the wayfinder map
 (GitHub issue #13) and `docs/UX_AUDIT.md` section 18 record it; `docs/UX_INTEGRATION_REPORT.md` is the final report. The
 recommendation shown to the owner is the router's runnable plan (`services/api/app/funding/recommend.py`), the home carries its

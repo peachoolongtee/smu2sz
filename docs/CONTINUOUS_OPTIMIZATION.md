@@ -8,6 +8,14 @@ Last updated: 3 Oct 2026 (night), at `db097e0` on `dev`: the API gaps, one lever
 
 ## 0. Engine Stability Gate (set by the owner, 3 Oct, late)
 
+**9 Oct UX audit checkpoint (presentation/workflow findings, not implemented):**
+[`independent-flow-ux-audit-2026-10-09.md`](research/independent-flow-ux-audit-2026-10-09.md) is the independent
+32-section audit and its prioritized fix plan. F01 (current cash backdated as a past breach), F02 (approval without
+reviewable essential terms), F03 (expired early-pay deadline rewritten as "today") and F04 ("Nothing is executed"
+after funding ran) are open P0 presentation/trust findings under that audit's severity system. F05 is the reproduced
+documented dev-startup blocker. The remaining 14 P1 / 10 P2 findings include that blocker and have exact evidence,
+scope, effort and acceptance criteria in the report; no engine policy or formula was changed by the audit.
+
 The financial engine is declared stable, and broad new financial features may be considered, only when all of these
 hold. Until then the queue below is correctness and certification only; capex stays as a supporting demo scene; the
 explicit Tier-2 approval for an above-ceiling rate stays.

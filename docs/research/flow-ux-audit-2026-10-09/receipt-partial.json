@@ -1,0 +1,15 @@
+{
+  "result": {
+    "op_id": "audit-partial-receipt",
+    "kind": "RECEIVE_PAYMENT",
+    "status": "EXECUTED",
+    "tier": "TIER_1",
+    "violations": [],
+    "seq": 4,
+    "entry_hash": "2929dee74c0acad52805ffa1df7168dda17b90fa4cbf83f1a831a2daae979510",
+    "prev_hash": "a630d391153d11b7baf6b041fca59addb1c63019b801d0542e4387d13525effb",
+    "effective_day": 2,
+    "approval_id": null,
+    "message": "Received ¥127,506.90 on RCV-A (settles ¥128,600.00 at the agreed 0.85% early-payment discount; up to ¥128,600.00 more may be settled early by day 2; ¥291,400.00 still due on day 32)"
+  }
+}
