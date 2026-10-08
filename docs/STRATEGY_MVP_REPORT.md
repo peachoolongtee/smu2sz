@@ -227,4 +227,10 @@ Receivables outstanding split bar, the Deals concession bar in Business mode and
 taken (no server percentages, and the owner's bar did not require them); the reference's density target of 1.8 screens is
 not reached on Cash (2.3 desktop screens) and Deals (2.1).
 
-**Gate after the finish.** (filled below)
+**Gate after the finish** (`feat/strategy-mvp` at ba3c7a5 and after): full API suite 5,753 passed / 37 skipped after
+pass A (one golden-digest test then taught the new display fields; the digest returned to its golden value, proving the
+engine's figures and order unchanged); api, books, funding, strategy and alerts suites 1,618 passed / 26 skipped after
+pass E; scenarios 49/49; demo run exit 0; attacks 0 harm; web typecheck, lint, 29 unit; mock e2e 73 (flag off; the 65
+plus eight new responsive and compare tests) and 81 (flag on); live e2e 36 (off) and 43 (on); axe 0 serious and 0
+critical at 412, 768, 1024 and 1440; the design detector clean over every changed component and stylesheet; before and
+after screenshots in `docs/screenshots/impeccable-before-2026-10-08/` and `impeccable-after-2026-10-08/`.
