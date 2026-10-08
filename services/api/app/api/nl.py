@@ -44,7 +44,7 @@ def _counterparty_view(out: dict) -> dict:
     return view
 
 
-def _owner_reads(rt) -> OwnerReads:
+def _owner_reads(rt, business: bool = False) -> OwnerReads:
     """What the owner's chat may read besides the stores: the Home read (the sentences and figures GET /home writes),
     the Business-words rewrite of an engine sentence, and the runtime's latest verdict per offer. Called under the
     runtime lock; owner turns only."""
@@ -57,7 +57,7 @@ def _owner_reads(rt) -> OwnerReads:
     def words(text: str, lang: str) -> str:
         return business_text(rt.store.get_state(), text, rt.day, "zh" if lang == "zh" else "en") or text
 
-    return OwnerReads(home=home, words=words, latest_verdict=rt.latest_verdict)
+    return OwnerReads(home=home, words=words, latest_verdict=rt.latest_verdict, business=business)
 
 
 def _security_event(rt, kind: str, claimed: str | None, action: str, detail: str) -> None:
@@ -74,7 +74,7 @@ def _security_event(rt, kind: str, claimed: str | None, action: str, detail: str
 @router.post("/nl")
 def post_nl(body: NlRequest, x_owner_token: str | None = Header(default=None),
             x_agent_key: str | None = Header(default=None),
-            x_counterparty_key: str | None = Header(default=None)) -> dict:
+            x_counterparty_key: str | None = Header(default=None), mode: str = "demo") -> dict:
     rt = get_runtime()
     is_counterparty = str(getattr(body.actor, "value", body.actor)) == "COUNTERPARTY"
     if not is_counterparty and not (rt.is_owner(x_owner_token) or is_agent(x_agent_key)):
@@ -106,7 +106,7 @@ def post_nl(body: NlRequest, x_owner_token: str | None = Header(default=None),
             resp = handle(body, store=rt.store, executor=rt.executor, day=rt.day, owner_key_hex=rt.owner_key_hex,
                           owner_authenticated=rt.is_owner(x_owner_token),
                           verdict_extras=None if is_counterparty else owner_verdict_extras,
-                          owner_reads=_owner_reads(rt) if not is_counterparty and rt.is_owner(x_owner_token) else None)
+                          owner_reads=_owner_reads(rt, business=mode == "business") if not is_counterparty and rt.is_owner(x_owner_token) else None)
         finally:
             COUNTERPARTY_AUTHENTICATED.reset(token)
     out = resp.model_dump(mode="json")

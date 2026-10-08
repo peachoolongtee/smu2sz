@@ -18,12 +18,14 @@ from app.api.presentation import (
     COMMERCIAL_KINDS,
     agreement_terms,
     approval_reason_words,
+    approval_result_state,
     approval_words,
     business_text,
+    executed_words,
     find_agreement,
+    last_read,
     party_name,
     quote_not_recorded,
-    relative_days,
     result_words,
     t,
     when_text,
@@ -40,7 +42,7 @@ from app.persistence import ApprovalAlreadyDecided
 
 log = logging.getLogger("termsledger.decisions")
 router = APIRouter()
-_OP = TypeAdapter(Operation)
+_OP: TypeAdapter[Operation] = TypeAdapter(Operation)
 
 
 def _result(r) -> dict:
@@ -200,18 +202,24 @@ def _approvals_queue(rt, lang: str) -> dict:
             if terms is not None and d["amount_display"] is None:
                 d["amount_display"] = d["presentation"]["amount_display"]  # the agreement's scope, never ¥0.00
             d["presentation"]["reason"] = approval_reason_words(state, a.reason, rt.day, lang)
+            d["presentation"]["result_state_text"], d["presentation"]["result_tone"] = approval_result_state(
+                kind=a.kind or "", status=d["status"], execution_status=d["presentation"]["execution_status"],
+                lands_day=d["presentation"]["lands_day"], today=rt.day, lang=lang)
             d["presentation"]["result_message"] = (
                 (result_words(state, kind=a.kind or "", status=run.result.status.value, payload=op, day=run.result.effective_day,
                               today=rt.day, lang=lang, approval_status=d["status"], message=run.result.message,
                               agreements=agreements) if run is not None else None)
                 or (business_text(state, d["result_message"], rt.day, lang, agreements) if d["result_message"] else None))
-            d["presentation"]["decided_when"] = (relative_days(f"on day {d['decided_day']}", rt.day, lang)
+            d["presentation"]["decided_when"] = (when_text(int(d["decided_day"]), rt.day, lang)
                                                  if d.get("decided_day") is not None else None)
             d["presentation"]["created_when"] = (when_text(int(d["created_day"]), rt.day, lang)
                                                  if d.get("created_day") is not None else None)
         except Exception:
             log.exception("approval %s could not be presented", a.id)
             d.setdefault("presentation", None)
+        if d.get("presentation") is not None:
+            d["result_state_text"] = d["presentation"].get("result_state_text")
+            d["result_tone"] = d["presentation"].get("result_tone")
         d.update({"decision_id": None, "decision_state": None, "quote": None, "execution": None})
         if ctx is not None and d.get("presentation") is not None:
             try:
@@ -219,7 +227,7 @@ def _approvals_queue(rt, lang: str) -> dict:
             except Exception:
                 log.exception("approval %s: the decision record could not be read", a.id)
         out.append(d)
-    return {"approvals": out}
+    return {"approvals": out, "lang": lang, **last_read(rt.day, lang)}
 
 
 class Decision(BaseModel):
@@ -227,8 +235,12 @@ class Decision(BaseModel):
 
 
 @router.post("/approvals/{approval_id}", dependencies=[Depends(require_owner_or_agent)])
-def decide(approval_id: str, body: Decision, request: Request, x_owner_token: str | None = Header(default=None)) -> dict:
+def decide(approval_id: str, body: Decision, request: Request, x_owner_token: str | None = Header(default=None),
+           lang: str = "en") -> dict:
+    """The owner's decision on a queued approval. `lang` (en | zh, additive) is the language of the words the server writes for the
+    result (`message_when`, `event_text`, `event_detail`); the executor's `message` stays as written."""
     rt = get_runtime()
+    lang = "zh" if lang == "zh" else "en"
     actor = Actor.OWNER if rt.is_owner(x_owner_token) else Actor.AGENT
     if rt.store.get_approval(approval_id) is None:
         log_refusal(request, f"decision on unknown approval {approval_id}")
@@ -239,7 +251,16 @@ def decide(approval_id: str, body: Decision, request: Request, x_owner_token: st
     except ApprovalAlreadyDecided:
         log_refusal(request, f"decision on already-decided approval {approval_id}")  # F-08
         raise HTTPException(409, {"code": "APPROVAL_ALREADY_DECIDED", "approval_id": approval_id}) from None
-    return {"result": _result(r)}
+    raw = _result(r)
+    words: dict = {}
+    try:  # the words are a presentation read: a failure here never changes the answer to the decision
+        approval = rt.store.get_approval(approval_id)
+        state = rt.store.get_state()
+        words = executed_words(state, payload=json.loads(approval.op_json) if approval is not None else {}, result=raw, today=rt.day,
+                               lang=lang, agreements={c.id: party_name(state, c.counterparty_id) for c in rt.store.commitments()})
+    except Exception:
+        log.exception("the words for the decision on %s could not be written", approval_id)
+    return {"result": {**raw, **words}, "lang": lang}
 
 
 @router.post("/circuit/{counterparty_id}/reset", dependencies=[Depends(require_owner_or_agent)])

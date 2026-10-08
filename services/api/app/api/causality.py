@@ -78,6 +78,16 @@ def refusal_block(refused_operations: int, security_events: int, lang: str) -> d
     }
 
 
+def mark_changed(rows: list[dict[str, Any]]) -> None:
+    """`why_it_matters_changed` on each row of a list: true only when the row has a "why it matters" sentence that differs from the previous
+    row's in this list's order, so a page shows the forecast ("Now") line once for a run of rows that share it."""
+    previous: str | None = None
+    for row in rows:
+        why = row.get("why_it_matters")
+        row["why_it_matters_changed"] = bool(why) and why != previous
+        previous = why
+
+
 @dataclass
 class Causality:
     """Builds the three causal sentences of an event once the request's decision record and forecast are read."""

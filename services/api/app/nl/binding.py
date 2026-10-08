@@ -33,6 +33,7 @@ class OwnerReads:
     home: HomeRead
     words: Words = lambda text, lang: text
     latest_verdict: Mapping[str, str] | None = None
+    business: bool = False  # the request asked for Business words (POST /nl?mode=business): see app/nl/business.py
 
 
 @dataclass(frozen=True)

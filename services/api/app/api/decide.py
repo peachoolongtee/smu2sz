@@ -28,6 +28,8 @@ from app.api.presentation import (
     comparison_status,
     concession_interpretation,
     counter_economics,
+    last_read,
+    option_label,
     plan_name,
     plan_when,
     row_legs,
@@ -83,6 +85,7 @@ from app.security import flag_events
 from app.verifier import evaluate
 
 router = APIRouter(dependencies=[Depends(require_owner)])
+_t = t  # `negotiate` binds a local `t` (the transcript)
 
 PROFILES = {"cooperative": "BUYER-1", "hard_line": "BUYER-1-HARDLINE"}
 
@@ -100,7 +103,7 @@ def _counter_allow(c: CounterProposal) -> list[AllowedValue]:
     return allow
 
 
-def _guarded_counters(rt: Runtime, offer: CompiledOffer, counters: list[CounterProposal]) -> list[dict]:
+def _guarded_counters(rt: Runtime, offer: CompiledOffer, counters: list[CounterProposal], lang: str = "en") -> list[dict]:
     state, mandate = rt.store.get_state(), rt.store.get_mandate()
     ps = ProtectedSet.build(state, mandate)
     out = []
@@ -111,13 +114,14 @@ def _guarded_counters(rt: Runtime, offer: CompiledOffer, counters: list[CounterP
         d = displayed(json.loads(c.model_dump_json()))
         d["text"] = g.text_out
         d["outbound_blocked"] = not g.ok
-        # The same sentences as a Business page reads them (distances from today, never "day N"); `text` and `rationale`
-        # stay the counter's own words, the ones sent to the buyer and the ones the Demo views show. English only.
-        d["text_when"] = business_text(state, g.text_out, rt.day, "en")
-        d["rationale_when"] = business_text(state, c.rationale, rt.day, "en")
+        # The same sentences as a Business page reads them (distances from today, never "day N"), in the page's language; `text` and
+        # `rationale` stay the counter's own words, the ones sent to the buyer and the ones the Demo views show.
+        d["text_when"] = business_text(state, g.text_out, rt.day, lang)
+        d["rationale_when"] = business_text(state, c.rationale, rt.day, lang)
+        d["label_when"] = option_label(c.label, lang)
         # The parts behind the (floored) supplier cost: a price adjustment's offset is shown, never hidden in "¥0.00".
         d["economics"] = counter_economics(list(c.obligations), state, mandate)
-        d["send_scope"] = send_scope_text("en", c.label)
+        d["send_scope"] = send_scope_text(lang, option_label(c.label, lang))
         out.append(d)
     return out
 
@@ -132,12 +136,13 @@ def _row_view(r, state=None, today: int | None = None, lang: str = "en") -> dict
     d["reason_kind"] = comparison_reason(d.get("actions") or [], r.executable_now)
     d["shortfall_display"] = fmt_yuan(r.shortfall_fen) if r.shortfall_fen is not None else None
     if state is not None and today is not None:
-        d["note_when"] = business_text(state, r.note, today, "en") if r.note else None
-        d["not_executable_reason_when"] = (business_text(state, r.not_executable_reason, today, "en")
+        d["note_when"] = business_text(state, r.note, today, lang) if r.note else None
+        d["not_executable_reason_when"] = (business_text(state, r.not_executable_reason, today, lang)
                                            if r.not_executable_reason else None)
 
-        d["approval_reason_when"] = approval_reason_words(state, r.approval_reason, today, "en") if r.approval_reason else None
-        d["components_when"] = [business_text(state, c, today, "en") for c in r.components]
+        d["approval_reason_when"] = approval_reason_words(state, r.approval_reason, today, lang) if r.approval_reason else None
+        d["components_when"] = [business_text(state, c, today, lang) for c in r.components]
+        d["label_when"] = business_text(state, r.label, today, lang)
         # The sources each leg draws on, with the router's own cost for each (a page names them beside their costs).
         d["legs"] = row_legs(state, d.get("actions") or [], d.get("leg_costs_fen") or [])
         d["name_display"] = plan_name(state, [a.get("facility_id") for a in d.get("actions") or []]) or r.label
@@ -183,32 +188,36 @@ def evaluate_offer(offer_id: str, body: EvaluateIn | None = None, lang: str = "e
                 continue
             rt.store.add_security_event(ev)
         view = displayed(json.loads(v.model_dump_json()))
-        view["counters"] = _guarded_counters(rt, offer, list(v.counters))
+        view["counters"] = _guarded_counters(rt, offer, list(v.counters), lang)
         view["business_action"] = business_action(v.outcome.value, len(v.counters))
         # Interpretation first, equation second: each concession value says what it means before its formula.
         bound = {o.id: o for o in bundle.bound_obligations}
-        view["concession_values"] = [{**cv, "interpretation": concession_interpretation(cv, bound.get(cv.get("obligation_id", "")), "en")}
+        view["concession_values"] = [{**cv, "interpretation": concession_interpretation(cv, bound.get(cv.get("obligation_id", "")), lang)}
                                      for cv in view.get("concession_values") or []]
         # Presentation reads for the Business pages: each violation's sentence and the plan's sentences with their day
         # numbers as distances from today, beside the originals (`message`, `plan.*`), which the Demo views keep.
-        view["violations"] = [{**x, "message_when": business_text(state, x.get("message"), rt.day, "en"),
-                               "cure_note_when": business_text(state, x.get("cure_note"), rt.day, "en")}
+        view["violations"] = [{**x, "message_when": business_text(state, x.get("message"), rt.day, lang),
+                               "cure_note_when": business_text(state, x.get("cure_note"), rt.day, lang)}
                               for x in view["violations"]]
-        view["plan"] = plan_when(state, view["plan"], rt.day, "en")
-        view["summary_when"] = business_text(state, view.get("summary"), rt.day, "en")
+        view["plan"] = plan_when(state, view["plan"], rt.day, lang)
+        view["summary_when"] = business_text(state, view.get("summary"), rt.day, lang)
     view.update({
         "decision_id": did, "decision_recorded": recorded, "evaluated_day": rt.day,
-        "evaluated_when": t("en", "today", "今天"),
+        "evaluated_when": t(lang, "today", "今天"),
+        "lang": lang,
+        **last_read(rt.day, lang),
         **owner_verdict_extras(bundle, offer, state, mandate),  # passed_checks, autonomy, annualised
         "bound_obligations": displayed([json.loads(o.model_dump_json()) for o in bundle.bound_obligations]),
-        "notes": [{**json.loads(n.model_dump_json()), "message_when": business_text(state, n.message, rt.day, "en")}
+        "notes": [{**json.loads(n.model_dump_json()), "message_when": business_text(state, n.message, rt.day, lang)}
                   for n in bundle.notes],
         "trajectory": trajectory_view(bundle.trajectory, mandate.min_cash_fen).model_dump() if bundle.trajectory else None,
-        "plan_committed": displayed(json.loads(bundle.plan_committed.model_dump_json())) if bundle.plan_committed else None,
-        "plan_expected": displayed(json.loads(bundle.plan_expected.model_dump_json())) if bundle.plan_expected else None,
-        "cure_plan": displayed(json.loads(bundle.cure_plan.model_dump_json())) if bundle.cure_plan else None,
+        "plan_committed": (plan_when(state, displayed(json.loads(bundle.plan_committed.model_dump_json())), rt.day, lang)
+                           if bundle.plan_committed else None),
+        "plan_expected": (plan_when(state, displayed(json.loads(bundle.plan_expected.model_dump_json())), rt.day, lang)
+                          if bundle.plan_expected else None),
+        "cure_plan": plan_when(state, displayed(json.loads(bundle.cure_plan.model_dump_json())), rt.day, lang) if bundle.cure_plan else None,
         "cured_trajectory": _cured(bundle, current_books(state, rt.store.commitments()), mandate),
-        "comparison": [_row_view(r, state, rt.day) for r in bundle.comparison],
+        "comparison": [_row_view(r, state, rt.day, lang) for r in bundle.comparison],
         "forward_concession": {
             "total_fen": v.forward_concession_total_fen, "total_display": fmt_yuan(v.forward_concession_total_fen),
             "cap_fen": mandate.max_aggregate_forward_concession_fen,
@@ -217,7 +226,15 @@ def evaluate_offer(offer_id: str, body: EvaluateIn | None = None, lang: str = "e
         },
     })
     # The page's order, server-shaped (the Deals workspace): every line is a field of this view or the engine's own posting, in words.
-    view["workspace"] = build_workspace(view, bundle=bundle, state=state, mandate=mandate, today=rt.day, lang=lang)
+    send_plan = None
+    if view["counters"] and view["business_action"] == "counter":
+        try:  # the router's plan for the gap that would remain if the buyer accepts the recommended counter (what the send would run)
+            books_s = current_books(state, rt.store.commitments())
+            send_plan = plan(books_s.state, books_s.with_(list(v.counters[0].obligations)), mandate)
+        except Exception:
+            logging.getLogger("termsledger.decisions").exception("the send plan could not be read for %s", offer_id)
+    view["workspace"] = build_workspace(view, bundle=bundle, state=state, mandate=mandate, today=rt.day, lang=lang, offer=offer,
+                                        commitments=rt.store.commitments(), send_plan=send_plan)
     return view
 
 
@@ -281,15 +298,17 @@ def _runnable(gap_plan) -> str | None:
     return None
 
 
-def _counter_changed(rt: Runtime, offer: CompiledOffer, verdict, state_version: int, why: str) -> HTTPException:
+def _counter_changed(rt: Runtime, offer: CompiledOffer, verdict, state_version: int, why: str, lang: str = "en") -> HTTPException:
     """409 COUNTER_CHANGED: what was shown is no longer what would be sent. The latest verdict's guarded counters come back when
     that verdict is on the current books; otherwise the owner must evaluate again. Nothing was proposed, accepted or funded."""
     on_current_books = verdict is not None and verdict.state_version == state_version
-    counters = _guarded_counters(rt, offer, list(verdict.counters)) if on_current_books else []
+    counters = _guarded_counters(rt, offer, list(verdict.counters), lang) if on_current_books else []
     return HTTPException(409, detail={
         "code": "COUNTER_CHANGED", "offer_id": offer.offer_id, "reason": why, "verdict_id": verdict.id if verdict else None,
         "state_version": state_version, "counters": counters, "reevaluate": not on_current_books,
-        "message": "The counter changed since you read it; nothing was sent. Review the current counters."})
+        "message": "The counter changed since you read it; nothing was sent. Review the current counters.",
+        "message_when": t(lang, "The counter changed since you read it; nothing was sent. Review the current counters.",
+                          "还价在您阅读之后已发生变化，未发送任何内容。请查看最新的还价。")})
 
 
 def _chosen_economics(rt: Runtime, counter: CounterProposal | None, state, mandate) -> CounterEconomics | None:
@@ -310,13 +329,17 @@ def _chosen_economics(rt: Runtime, counter: CounterProposal | None, state, manda
 
 @router.post("/negotiate/{offer_id}", dependencies=[Depends(require_feature("terms_guard")),
                                                   Depends(require_feature("buyer_negotiation"))])
-def negotiate_offer(offer_id: str, body: NegotiateIn) -> dict:
+def negotiate_offer(offer_id: str, body: NegotiateIn, lang: str = "en") -> dict:
+    """Send the chosen counter (or the verdict's counters) to the simulated buyer. `lang` (en | zh, additive) is the language of the words
+    the server writes for the answer (`message_when`, the execution summary, the plan's `*_when`, the 409 messages); the engine's
+    `message` and the buyer's own text stay as written."""
     rt = get_runtime()
+    lang = "zh" if lang == "zh" else "en"
     profile = PROFILES.get(body.buyer_profile)
     if profile is None:
         raise HTTPException(422, "buyer_profile must be cooperative or hard_line")
     with rt.lock:  # one critical section from the binding check to the last write: what was checked is what runs
-        return _negotiate_locked(rt, offer_id, body, profile)
+        return _negotiate_locked(rt, offer_id, body, profile, lang)
 
 
 def _open_agreement(rt: Runtime, verdict, counter: CounterProposal):
@@ -328,13 +351,15 @@ def _open_agreement(rt: Runtime, verdict, counter: CounterProposal):
                  and c.status in (CommitmentStatus.PROPOSED, CommitmentStatus.ACCEPTED, CommitmentStatus.ACTIVE)), None)
 
 
-def _already_sent(rt: Runtime, offer_id: str, c) -> HTTPException:
+def _already_sent(rt: Runtime, offer_id: str, c, lang: str = "en") -> HTTPException:
     approval = next((a for a in reversed(rt.store.approvals()) if _approval_names(a, c)), None)
     return HTTPException(409, detail={
         "code": "ALREADY_SENT", "offer_id": offer_id, "decision_id": deal_id(offer_id), "commitment_id": c.id,
         "commitment_status": c.status.value, "approval_id": approval.id if approval is not None else None,
         "approval_status": str(getattr(approval.status, "value", approval.status)) if approval is not None else None,
-        "message": "This counter was already sent and its agreement exists; nothing was sent again."})
+        "message": "This counter was already sent and its agreement exists; nothing was sent again.",
+        "message_when": t(lang, "This counter was already sent and its agreement exists; nothing was sent again.",
+                          "这项还价已发送，对应的协议已存在；未重复发送。")})
 
 
 def _approval_names(a, c) -> bool:
@@ -345,7 +370,7 @@ def _approval_names(a, c) -> bool:
     return op.get("nonce") == c.nonce or op.get("commitment_id") == c.id
 
 
-def _negotiate_locked(rt: Runtime, offer_id: str, body: NegotiateIn, profile: str) -> dict:
+def _negotiate_locked(rt: Runtime, offer_id: str, body: NegotiateIn, profile: str, lang: str = "en") -> dict:
     vid = rt.latest_verdict.get(offer_id)
     verdict = rt.store.get_verdict(vid) if vid else None
     if verdict is None and (body.verdict_id or body.counter_id or body.state_version is not None):
@@ -361,16 +386,16 @@ def _negotiate_locked(rt: Runtime, offer_id: str, body: NegotiateIn, profile: st
             latest = latest_verdict_for(rt, offer_id) or verdict
             version = rt.store.get_state().state_version
             if body.verdict_id is not None and body.verdict_id != latest.id:
-                raise _counter_changed(rt, offer, latest, version, "VERDICT_CHANGED")
+                raise _counter_changed(rt, offer, latest, version, "VERDICT_CHANGED", lang)
             if body.counter_id is not None:
                 chosen = next((c for c in latest.counters if c.id == body.counter_id), None)
                 if chosen is None:
-                    raise _counter_changed(rt, offer, latest, version, "COUNTER_NOT_IN_VERDICT")
+                    raise _counter_changed(rt, offer, latest, version, "COUNTER_NOT_IN_VERDICT", lang)
                 standing = _open_agreement(rt, latest, chosen)
                 if standing is not None:  # the owner learns it already went, whatever the books have done since
-                    raise _already_sent(rt, offer_id, standing)
+                    raise _already_sent(rt, offer_id, standing, lang)
             if (body.state_version is not None and body.state_version != version) or latest.state_version != version:
-                raise _counter_changed(rt, offer, latest, version, "BOOKS_CHANGED")  # also when the verdict is on old books
+                raise _counter_changed(rt, offer, latest, version, "BOOKS_CHANGED", lang)  # also when the verdict is on old books
             verdict = latest
     counters = [chosen] if chosen is not None else list(verdict.counters)
     if not counters:
@@ -397,6 +422,7 @@ def _negotiate_locked(rt: Runtime, offer_id: str, body: NegotiateIn, profile: st
             cid = r.supplier_counter_ids[0] if r.supplier_counter_ids else None
             rounds.append({"round": r.round, "counter_id": cid,
                            "counter_label": by_id[cid].label if cid in by_id else None,
+                           "counter_label_when": option_label(by_id[cid].label, lang) if cid in by_id else None,
                            "buyer_response": "ACCEPT" if r.response.decision.value == "ACCEPT" else "REFUSE",
                            "buyer_text": g.text_out})
         operations: list[dict] = []
@@ -416,16 +442,27 @@ def _negotiate_locked(rt: Runtime, offer_id: str, body: NegotiateIn, profile: st
             books = current_books(rt.store.get_state(), rt.store.commitments())
             gap_plan = plan(books.state, books.with_([]), mandate)
             message = f"{t.accepted_counter_id} accepted; commitment recorded; remaining gap funded."
+            accepted_label = option_label(by_id[t.accepted_counter_id].label, lang) if t.accepted_counter_id in by_id else ""
+            head_when = _t(lang, f"{accepted_label or 'The counter'} was accepted and the agreement is recorded",
+                          f"{accepted_label or '还价'}已被接受，协议已记录")
+            funded_when = _t(lang, "the remaining gap is funded.", "其余缺口已融资。")
         else:
             books = current_books(state, rt.store.commitments())
             gap_plan = plan(books.state, books.with_([]), mandate)
             message = "NO DEAL after bounded rounds; the Debt Desk funds the near-term gap."
+            head_when = _t(lang, "No deal after the buyer's replies", "买方回复后未能成交")
+            funded_when = _t(lang, "the near-term gap is funded another way.", "近期缺口将通过其他方式融资。")
         blocked = _runnable(gap_plan)
         if blocked is not None:
             head = message.rsplit(";", 1)[0]
             message = (f"{head}; the near-term gap is not funded: the router's plan cannot run today ({blocked}). "
                        f"Nothing was executed from it.")
+            why_blocked = business_text(state, blocked, rt.day, lang) or ""
+            message_when = _t(lang, f"{head_when}; the near-term gap is not funded: the plan cannot run today ({why_blocked}). "
+                                   f"Nothing was executed from it.",
+                             f"{head_when}；近期缺口未获融资：该方案今天无法执行（{why_blocked}）。未据此执行任何操作。")
         else:
+            message_when = f"{head_when}{_t(lang, '; ', '；')}{funded_when}"
             funding_ops = _ops_for_plan(rt, list(gap_plan.actions), f"fund-{offer_id}-{body.buyer_profile}")
             operations += funding_ops
         # The fact is written after the canonical events (the commitment, the accept, each funding unit), in this lock, so no
@@ -461,7 +498,7 @@ def _negotiate_locked(rt: Runtime, offer_id: str, body: NegotiateIn, profile: st
         execution = None
         try:
             ctx = load_context(rt)
-            execution = execution_view(ctx, derive(ctx.inputs_for(did)), "en")
+            execution = execution_view(ctx, derive(ctx.inputs_for(did)), lang)
         except Exception:
             logging.getLogger("termsledger.decisions").exception("the execution summary could not be read for %s", did)
     return {
@@ -474,8 +511,10 @@ def _negotiate_locked(rt: Runtime, offer_id: str, body: NegotiateIn, profile: st
         "accepted_counter_id": t.accepted_counter_id,
         "commitment": displayed(json.loads(commitment.model_dump_json())) if commitment else None,
         "operations": [displayed(o) for o in operations],
-        "plan": displayed(json.loads(gap_plan.model_dump_json())),
+        "plan": plan_when(state, displayed(json.loads(gap_plan.model_dump_json())), rt.day, lang),
         "message": message,
+        "message_when": message_when,
+        "lang": lang,
         "transcript_hash": t.transcript_hash,
     }
 
@@ -540,8 +579,8 @@ def router_plan(lang: str = "en") -> dict:
     names = {f.id: f.name for f in state.facilities}
     notional, committed_b, expected_b = (bases + [None, None, None])[:3]
     return {
-        "committed": plan_when(state, displayed(json.loads(committed.model_dump_json())), rt.day, "en"),
-        "expected": plan_when(state, displayed(json.loads(expected.model_dump_json())), rt.day, "en") if expected else None,
+        "committed": plan_when(state, displayed(json.loads(committed.model_dump_json())), rt.day, lang),
+        "expected": plan_when(state, displayed(json.loads(expected.model_dump_json())), rt.day, lang) if expected else None,
         "menu": menu,
         "marginal": displayed({
             "rate": {"num": rate.num, "den": rate.den}, "rate_display": fmt_pct(rate.value, 4),

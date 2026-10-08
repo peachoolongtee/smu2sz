@@ -27,12 +27,14 @@ from app.api.presentation import (
     business_action,
     business_action_text,
     decision_state_text,
+    decision_state_tone,
     event_words,
     execution_summary,
     facility_name,
     lands_difference,
     leg_words,
     obligation_sentence,
+    option_label,
     party_name,
     quote_not_recorded,
     quote_view,
@@ -293,14 +295,17 @@ def residual_view(ctx: Context, ds: DecisionState, lang: str) -> dict[str, Any] 
 
 def decision_summary(ctx: Context, ds: DecisionState, inp: DecisionInputs, lang: str) -> dict[str, Any]:
     """One decision as a list row. Reused by /decisions, the home's open decisions and the approvals queue."""
+    waiting = waiting_view(ctx, ds, inp, lang)
+    residual = ds.residual is not None
     return {
         "id": ds.decision_id, "family": ds.family, "state": ds.state.value,
-        "state_text": decision_state_text(ds.family, ds.state.value, lang, response=_response_code(ds)),
+        "state_text": decision_state_text(ds.family, ds.state.value, lang, response=_response_code(ds), residual=residual),
+        "state_tone": decision_state_tone(ds.state.value, awaited=waiting["party"] == Party.OWNER.value, residual=residual),
         "terminal": ds.terminal, "headline": _headline(ctx, ds, lang), "counterparty_name": _counterparty(ctx, ds),
         "amount_display": _amount_display(ctx, ds),
         "opened_when": when_text(ds.opened_day, ctx.today, lang) if ds.opened_day is not None else None,
         "updated_when": when_text(ds.updated_day, ctx.today, lang) if ds.updated_day is not None else None,
-        "waiting_for": waiting_view(ctx, ds, inp, lang), "residual": residual_view(ctx, ds, lang),
+        "waiting_for": waiting, "residual": residual_view(ctx, ds, lang),
     }
 
 
@@ -415,7 +420,7 @@ def _response(ctx: Context, ds: DecisionState, lang: str) -> dict[str, Any] | No
     if v is None:
         return None
     labels = {c.id: c.label for c in v.counters}
-    counters = [{"id": c.id, "label": c.label, "supplier_cost_display": fmt_yuan(c.supplier_cost_fen),
+    counters = [{"id": c.id, "label": c.label, "label_text": option_label(c.label, lang), "supplier_cost_display": fmt_yuan(c.supplier_cost_fen),
                  "forward_value_display": fmt_yuan(c.forward_value_fen)} for c in v.counters]
     s = ds.sent
     sent: dict[str, Any] | None = None
@@ -423,8 +428,11 @@ def _response(ctx: Context, ds: DecisionState, lang: str) -> dict[str, Any] | No
         eco = s.counter_economics
         sent = {"recorded": True, "outcome": s.outcome, "simulated": True, "buyer_profile": s.buyer_profile,
                 "chosen_counter_id": s.chosen_counter_id, "chosen_label": labels.get(s.chosen_counter_id or ""),
+                "chosen_label_text": option_label(labels.get(s.chosen_counter_id or ""), lang) or None,
                 "accepted_counter_id": s.accepted_counter_id, "accepted_label": labels.get(s.accepted_counter_id or ""),
-                "counters_sent": [{"id": cid, "label": labels.get(cid)} for cid in s.counter_ids_sent],
+                "accepted_label_text": option_label(labels.get(s.accepted_counter_id or ""), lang) or None,
+                "counters_sent": [{"id": cid, "label": labels.get(cid), "label_text": option_label(labels.get(cid), lang) or None}
+                                  for cid in s.counter_ids_sent],
                 "economics": ({"supplier_cost_display": fmt_yuan(eco.supplier_cost_fen),
                                "forward_value_display": fmt_yuan(eco.forward_value_fen),
                                "funding_cost_display": fmt_yuan(eco.funding_cost_fen),

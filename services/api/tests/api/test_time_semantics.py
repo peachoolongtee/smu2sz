@@ -175,7 +175,7 @@ def test_with_the_cure_approved_the_headline_says_below_reserve_and_the_worst_po
     home = client.get("/home").json()
     assert home["headline"] == "Below reserve today."
     assert home["note"].startswith("Cash is ¥255k below your ¥300k minimum cash reserve")
-    assert home["worst"] == "Worst point: ¥0.00 in 8 days with the requested funding counted."  # R04: not "if you do nothing"
+    assert home["worst"] == "Lowest point: ¥0.00 in 8 days if nothing more is done."  # R04: not "if you do nothing"
     assert home["cash"]["below_reserve_today"] is True and home["cash"]["first_breach_when"] == "today"
     assert any(d.startswith("Payroll of") for d in home["cash"]["drivers"])
     lang = client.get("/home?lang=zh").json()
@@ -240,7 +240,7 @@ def test_after_a_partial_receipt_the_change_says_what_arrived(client):
     warnings = client.get("/home").json()["warnings"]
     assert next(w["detail"] for w in warnings) == (
         "¥291,400.00 outstanding from Foshan Home Retail Co. was due 2 days ago and is still OPEN. "
-        "The conservative trajectory no longer counts on a dated receipt.")
+        "The cash forecast no longer counts on a dated receipt.")
     assert not any("CMT-" in w["title"] + w["detail"] for w in warnings)
 
 
