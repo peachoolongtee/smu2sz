@@ -1,0 +1,3872 @@
+{
+  "_meta": {
+    "command": "FLOW_RESEARCH_SPIKES=1 TERMSLEDGER_NO_DOTENV=1 DATABASE_URL=memory LLM_MODE=cache PYTHONUTF8=1 uv run --project services/api python services/api/scripts/research/collections_spike.py --day both --json",
+    "branch": "feat/mvp-w0",
+    "base_commit": "bcc67d4",
+    "recorded": "2026-10-08"
+  },
+  "spike": "collections",
+  "hypothetical": true,
+  "books": [
+    {
+      "books": "day 0",
+      "how": "the golden scenario as loaded (fixtures/scenarios/golden_sme.json)",
+      "day": 0,
+      "cash": {
+        "fen": 40000000,
+        "display": "¥400,000.00"
+      },
+      "baseline": {
+        "cost": {
+          "fen": 311393,
+          "display": "¥3,113.93"
+        },
+        "need": {
+          "fen": 40500000,
+          "display": "¥405,000.00"
+        },
+        "admissible": true,
+        "first_breach_day": 12,
+        "breach_days": 20,
+        "shortfall": {
+          "fen": 24000000,
+          "display": "¥240,000.00"
+        },
+        "alerts": [
+          "RESERVE_BREACH_AHEAD",
+          "RESERVE_HEADROOM_LOW"
+        ],
+        "plan": "committed plan: ¥841.64 + ¥2,272.29 = ¥3,113.93",
+        "plan_needs_owner_approval": false
+      },
+      "ranking": [
+        {
+          "receivable": "RCV-A",
+          "buyer": "BUYER-1",
+          "buyer_name": "Foshan Home Retail Co.",
+          "due_day": 32,
+          "days_late": 0,
+          "status": "OPEN",
+          "financed_by_plan": true,
+          "effects": [
+            {
+              "label": "received today (day 0)",
+              "receipt_day": 0,
+              "saving": {
+                "fen": 311393,
+                "display": "¥3,113.93"
+              },
+              "shortfall_removed": {
+                "fen": 24000000,
+                "display": "¥240,000.00"
+              },
+              "breach_days_removed": 20,
+              "alerts_cleared": [
+                "RESERVE_BREACH_AHEAD"
+              ],
+              "after": {
+                "cost": {
+                  "fen": 0,
+                  "display": "¥0.00"
+                },
+                "need": {
+                  "fen": 0,
+                  "display": "¥0.00"
+                },
+                "admissible": true,
+                "first_breach_day": null,
+                "breach_days": 0,
+                "shortfall": {
+                  "fen": 0,
+                  "display": "¥0.00"
+                },
+                "alerts": [
+                  "RESERVE_HEADROOM_LOW"
+                ],
+                "plan": "no funding needed",
+                "plan_needs_owner_approval": false
+              }
+            },
+            {
+              "label": "received 5 days before it is due (day 27)",
+              "receipt_day": 27,
+              "saving": {
+                "fen": 53249,
+                "display": "¥532.49"
+              },
+              "shortfall_removed": {
+                "fen": 0,
+                "display": "¥0.00"
+              },
+              "breach_days_removed": 5,
+              "alerts_cleared": [],
+              "after": {
+                "cost": {
+                  "fen": 258144,
+                  "display": "¥2,581.44"
+                },
+                "need": {
+                  "fen": 36000000,
+                  "display": "¥360,000.00"
+                },
+                "admissible": true,
+                "first_breach_day": 12,
+                "breach_days": 15,
+                "shortfall": {
+                  "fen": 24000000,
+                  "display": "¥240,000.00"
+                },
+                "alerts": [
+                  "RESERVE_BREACH_AHEAD",
+                  "RESERVE_HEADROOM_LOW"
+                ],
+                "plan": "committed plan: ¥710.14 + ¥1,871.30 = ¥2,581.44",
+                "plan_needs_owner_approval": false
+              }
+            },
+            {
+              "label": "received by the first breach day (day 12)",
+              "receipt_day": 12,
+              "saving": {
+                "fen": 311393,
+                "display": "¥3,113.93"
+              },
+              "shortfall_removed": {
+                "fen": 24000000,
+                "display": "¥240,000.00"
+              },
+              "breach_days_removed": 20,
+              "alerts_cleared": [
+                "RESERVE_BREACH_AHEAD"
+              ],
+              "after": {
+                "cost": {
+                  "fen": 0,
+                  "display": "¥0.00"
+                },
+                "need": {
+                  "fen": 0,
+                  "display": "¥0.00"
+                },
+                "admissible": true,
+                "first_breach_day": null,
+                "breach_days": 0,
+                "shortfall": {
+                  "fen": 0,
+                  "display": "¥0.00"
+                },
+                "alerts": [
+                  "RESERVE_HEADROOM_LOW"
+                ],
+                "plan": "no funding needed",
+                "plan_needs_owner_approval": false
+              }
+            }
+          ],
+          "early_pay": [
+            {
+              "face": {
+                "fen": 42000000,
+                "display": "¥420,000.00"
+              },
+              "face_label": "the whole outstanding invoice",
+              "largest_rate": {
+                "bp": 70,
+                "display": "0.70%"
+              },
+              "cost_without": {
+                "fen": 311393,
+                "display": "¥3,113.93"
+              },
+              "cost_with": {
+                "fen": 294000,
+                "display": "¥2,940.00"
+              },
+              "beats_by": {
+                "fen": 17393,
+                "display": "¥173.93"
+              },
+              "next_rate": {
+                "bp": 75,
+                "display": "0.75%"
+              },
+              "next_rate_dearer_by": {
+                "fen": 3607,
+                "display": "¥36.07"
+              },
+              "sweep": [
+                {
+                  "rate": {
+                    "bp": 5,
+                    "display": "0.05%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -290393,
+                    "display": "−¥2,903.93"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 10,
+                    "display": "0.10%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -269393,
+                    "display": "−¥2,693.93"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 15,
+                    "display": "0.15%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -248393,
+                    "display": "−¥2,483.93"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 20,
+                    "display": "0.20%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -227393,
+                    "display": "−¥2,273.93"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 25,
+                    "display": "0.25%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -206393,
+                    "display": "−¥2,063.93"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 30,
+                    "display": "0.30%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -185393,
+                    "display": "−¥1,853.93"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 35,
+                    "display": "0.35%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -164393,
+                    "display": "−¥1,643.93"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 40,
+                    "display": "0.40%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -143393,
+                    "display": "−¥1,433.93"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 45,
+                    "display": "0.45%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -122393,
+                    "display": "−¥1,223.93"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 50,
+                    "display": "0.50%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -101393,
+                    "display": "−¥1,013.93"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 55,
+                    "display": "0.55%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -80393,
+                    "display": "−¥803.93"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 60,
+                    "display": "0.60%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -59393,
+                    "display": "−¥593.93"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 65,
+                    "display": "0.65%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -38393,
+                    "display": "−¥383.93"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 70,
+                    "display": "0.70%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -17393,
+                    "display": "−¥173.93"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 75,
+                    "display": "0.75%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 3607,
+                    "display": "¥36.07"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 80,
+                    "display": "0.80%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 24607,
+                    "display": "¥246.07"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 85,
+                    "display": "0.85%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 45607,
+                    "display": "¥456.07"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 90,
+                    "display": "0.90%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 66607,
+                    "display": "¥666.07"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 95,
+                    "display": "0.95%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 87607,
+                    "display": "¥876.07"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 100,
+                    "display": "1.00%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 108607,
+                    "display": "¥1,086.07"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 105,
+                    "display": "1.05%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 129607,
+                    "display": "¥1,296.07"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 110,
+                    "display": "1.10%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 150607,
+                    "display": "¥1,506.07"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 115,
+                    "display": "1.15%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 171607,
+                    "display": "¥1,716.07"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 120,
+                    "display": "1.20%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 192607,
+                    "display": "¥1,926.07"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 125,
+                    "display": "1.25%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 213607,
+                    "display": "¥2,136.07"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 130,
+                    "display": "1.30%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 234607,
+                    "display": "¥2,346.07"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 135,
+                    "display": "1.35%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 255607,
+                    "display": "¥2,556.07"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 140,
+                    "display": "1.40%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 276607,
+                    "display": "¥2,766.07"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 145,
+                    "display": "1.45%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 297607,
+                    "display": "¥2,976.07"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 150,
+                    "display": "1.50%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 318607,
+                    "display": "¥3,186.07"
+                  }
+                }
+              ],
+              "note": ""
+            },
+            {
+              "face": {
+                "fen": 40500000,
+                "display": "¥405,000.00"
+              },
+              "face_label": "the shortfall the plan covers",
+              "largest_rate": {
+                "bp": 75,
+                "display": "0.75%"
+              },
+              "cost_without": {
+                "fen": 311393,
+                "display": "¥3,113.93"
+              },
+              "cost_with": {
+                "fen": 305454,
+                "display": "¥3,054.54"
+              },
+              "beats_by": {
+                "fen": 5939,
+                "display": "¥59.39"
+              },
+              "next_rate": {
+                "bp": 80,
+                "display": "0.80%"
+              },
+              "next_rate_dearer_by": {
+                "fen": 14425,
+                "display": "¥144.25"
+              },
+              "sweep": [
+                {
+                  "rate": {
+                    "bp": 5,
+                    "display": "0.05%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -290582,
+                    "display": "−¥2,905.82"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 10,
+                    "display": "0.10%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -270332,
+                    "display": "−¥2,703.32"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 15,
+                    "display": "0.15%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -250082,
+                    "display": "−¥2,500.82"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 20,
+                    "display": "0.20%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -229832,
+                    "display": "−¥2,298.32"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 25,
+                    "display": "0.25%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -209575,
+                    "display": "−¥2,095.75"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 30,
+                    "display": "0.30%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -189211,
+                    "display": "−¥1,892.11"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 35,
+                    "display": "0.35%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -168848,
+                    "display": "−¥1,688.48"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 40,
+                    "display": "0.40%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -148484,
+                    "display": "−¥1,484.84"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 45,
+                    "display": "0.45%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -128120,
+                    "display": "−¥1,281.20"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 50,
+                    "display": "0.50%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -107757,
+                    "display": "−¥1,077.57"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 55,
+                    "display": "0.55%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -87393,
+                    "display": "−¥873.93"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 60,
+                    "display": "0.60%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -67030,
+                    "display": "−¥670.30"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 65,
+                    "display": "0.65%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -46666,
+                    "display": "−¥466.66"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 70,
+                    "display": "0.70%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -26302,
+                    "display": "−¥263.02"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 75,
+                    "display": "0.75%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -5939,
+                    "display": "−¥59.39"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 80,
+                    "display": "0.80%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 14425,
+                    "display": "¥144.25"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 85,
+                    "display": "0.85%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 34789,
+                    "display": "¥347.89"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 90,
+                    "display": "0.90%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 55152,
+                    "display": "¥551.52"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 95,
+                    "display": "0.95%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 75516,
+                    "display": "¥755.16"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 100,
+                    "display": "1.00%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 95879,
+                    "display": "¥958.79"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 105,
+                    "display": "1.05%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 116243,
+                    "display": "¥1,162.43"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 110,
+                    "display": "1.10%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 136607,
+                    "display": "¥1,366.07"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 115,
+                    "display": "1.15%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 156970,
+                    "display": "¥1,569.70"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 120,
+                    "display": "1.20%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 177334,
+                    "display": "¥1,773.34"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 125,
+                    "display": "1.25%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 197698,
+                    "display": "¥1,976.98"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 130,
+                    "display": "1.30%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 218061,
+                    "display": "¥2,180.61"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 135,
+                    "display": "1.35%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 238425,
+                    "display": "¥2,384.25"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 140,
+                    "display": "1.40%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 258788,
+                    "display": "¥2,587.88"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 145,
+                    "display": "1.45%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 279152,
+                    "display": "¥2,791.52"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 150,
+                    "display": "1.50%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 299516,
+                    "display": "¥2,995.16"
+                  }
+                }
+              ],
+              "note": ""
+            }
+          ],
+          "action": "offer early pay up to 0.75%",
+          "sentence": "Offer Foshan Home Retail Co. early payment on RCV-A (¥420,000.00, due day 32) at up to 0.75% on ¥405,000.00 (0.70% if it covers ¥420,000.00): paying it today would avoid ¥3,113.93 of financing cost and clears the shortfall, and a discount up to that rate costs less than the financing it replaces. The standing plan already advances against it.",
+          "skipped": "",
+          "outstanding": {
+            "fen": 42000000,
+            "display": "¥420,000.00"
+          },
+          "face": {
+            "fen": 42000000,
+            "display": "¥420,000.00"
+          },
+          "marginal_value": {
+            "fen": 311393,
+            "display": "¥3,113.93"
+          },
+          "net_value_at_ceiling": {
+            "fen": 17393,
+            "display": "¥173.93"
+          }
+        }
+      ],
+      "cash_price_curve": {
+        "amount": {
+          "fen": 1000000,
+          "display": "¥10,000.00"
+        },
+        "points": [
+          {
+            "arrival_day": 0,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 1,
+            "worth": {
+              "fen": 8911,
+              "display": "¥89.11"
+            }
+          },
+          {
+            "arrival_day": 2,
+            "worth": {
+              "fen": 8911,
+              "display": "¥89.11"
+            }
+          },
+          {
+            "arrival_day": 3,
+            "worth": {
+              "fen": 8911,
+              "display": "¥89.11"
+            }
+          },
+          {
+            "arrival_day": 4,
+            "worth": {
+              "fen": 8911,
+              "display": "¥89.11"
+            }
+          },
+          {
+            "arrival_day": 5,
+            "worth": {
+              "fen": 8911,
+              "display": "¥89.11"
+            }
+          },
+          {
+            "arrival_day": 6,
+            "worth": {
+              "fen": 8911,
+              "display": "¥89.11"
+            }
+          },
+          {
+            "arrival_day": 7,
+            "worth": {
+              "fen": 8911,
+              "display": "¥89.11"
+            }
+          },
+          {
+            "arrival_day": 8,
+            "worth": {
+              "fen": 8911,
+              "display": "¥89.11"
+            }
+          },
+          {
+            "arrival_day": 9,
+            "worth": {
+              "fen": 8911,
+              "display": "¥89.11"
+            }
+          },
+          {
+            "arrival_day": 10,
+            "worth": {
+              "fen": 8911,
+              "display": "¥89.11"
+            }
+          },
+          {
+            "arrival_day": 11,
+            "worth": {
+              "fen": 8911,
+              "display": "¥89.11"
+            }
+          },
+          {
+            "arrival_day": 12,
+            "worth": {
+              "fen": 8911,
+              "display": "¥89.11"
+            }
+          },
+          {
+            "arrival_day": 13,
+            "worth": {
+              "fen": 8911,
+              "display": "¥89.11"
+            }
+          },
+          {
+            "arrival_day": 14,
+            "worth": {
+              "fen": 8911,
+              "display": "¥89.11"
+            }
+          },
+          {
+            "arrival_day": 15,
+            "worth": {
+              "fen": 8911,
+              "display": "¥89.11"
+            }
+          },
+          {
+            "arrival_day": 16,
+            "worth": {
+              "fen": 8911,
+              "display": "¥89.11"
+            }
+          },
+          {
+            "arrival_day": 17,
+            "worth": {
+              "fen": 8911,
+              "display": "¥89.11"
+            }
+          },
+          {
+            "arrival_day": 18,
+            "worth": {
+              "fen": 8911,
+              "display": "¥89.11"
+            }
+          },
+          {
+            "arrival_day": 19,
+            "worth": {
+              "fen": 8911,
+              "display": "¥89.11"
+            }
+          },
+          {
+            "arrival_day": 20,
+            "worth": {
+              "fen": 8911,
+              "display": "¥89.11"
+            }
+          },
+          {
+            "arrival_day": 21,
+            "worth": {
+              "fen": 8911,
+              "display": "¥89.11"
+            }
+          },
+          {
+            "arrival_day": 22,
+            "worth": {
+              "fen": 8911,
+              "display": "¥89.11"
+            }
+          },
+          {
+            "arrival_day": 23,
+            "worth": {
+              "fen": 8911,
+              "display": "¥89.11"
+            }
+          },
+          {
+            "arrival_day": 24,
+            "worth": {
+              "fen": 8911,
+              "display": "¥89.11"
+            }
+          },
+          {
+            "arrival_day": 25,
+            "worth": {
+              "fen": 8911,
+              "display": "¥89.11"
+            }
+          },
+          {
+            "arrival_day": 26,
+            "worth": {
+              "fen": 8911,
+              "display": "¥89.11"
+            }
+          },
+          {
+            "arrival_day": 27,
+            "worth": {
+              "fen": 8911,
+              "display": "¥89.11"
+            }
+          },
+          {
+            "arrival_day": 28,
+            "worth": {
+              "fen": 8911,
+              "display": "¥89.11"
+            }
+          },
+          {
+            "arrival_day": 29,
+            "worth": {
+              "fen": 8911,
+              "display": "¥89.11"
+            }
+          },
+          {
+            "arrival_day": 30,
+            "worth": {
+              "fen": 8911,
+              "display": "¥89.11"
+            }
+          },
+          {
+            "arrival_day": 31,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 32,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 33,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 34,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 35,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 36,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 37,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 38,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 39,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 40,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 41,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 42,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 43,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 44,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 45,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 46,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 47,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 48,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 49,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 50,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 51,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 52,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 53,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 54,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 55,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 56,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 57,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 58,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 59,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 60,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 61,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 62,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 63,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 64,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 65,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 66,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 67,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 68,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 69,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 70,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 71,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 72,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 73,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 74,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 75,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 76,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 77,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 78,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 79,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 80,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 81,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 82,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 83,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 84,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 85,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 86,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 87,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 88,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 89,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 90,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          }
+        ]
+      },
+      "readings": 6,
+      "seconds": 6.42
+    },
+    {
+      "books": "day 34",
+      "how": "the demo path replayed in process (scripts/demo_run.py; as tests/alerts/test_repay_alert.py::to_day34)",
+      "day": 34,
+      "cash": {
+        "fen": 30000000,
+        "display": "¥300,000.00"
+      },
+      "baseline": {
+        "cost": {
+          "fen": 170610,
+          "display": "¥1,706.10"
+        },
+        "need": {
+          "fen": 20000000,
+          "display": "¥200,000.00"
+        },
+        "admissible": true,
+        "first_breach_day": 42,
+        "breach_days": 5,
+        "shortfall": {
+          "fen": 20000000,
+          "display": "¥200,000.00"
+        },
+        "alerts": [
+          "RESERVE_BREACH_AHEAD",
+          "RECEIVABLE_PAST_DUE",
+          "RESERVE_HEADROOM_LOW"
+        ],
+        "plan": "committed plan: ¥1,425.75 + ¥1,069.32 = ¥1,706.10 (needs the owner's approval)",
+        "plan_needs_owner_approval": true
+      },
+      "ranking": [
+        {
+          "receivable": "RI:BUYER-1:2",
+          "buyer": "BUYER-1",
+          "buyer_name": "Foshan Home Retail Co.",
+          "due_day": 47,
+          "days_late": 0,
+          "status": "OPEN",
+          "financed_by_plan": true,
+          "effects": [
+            {
+              "label": "received today (day 34)",
+              "receipt_day": 34,
+              "saving": {
+                "fen": 170610,
+                "display": "¥1,706.10"
+              },
+              "shortfall_removed": {
+                "fen": 20000000,
+                "display": "¥200,000.00"
+              },
+              "breach_days_removed": 5,
+              "alerts_cleared": [
+                "RESERVE_BREACH_AHEAD",
+                "RESERVE_HEADROOM_LOW"
+              ],
+              "after": {
+                "cost": {
+                  "fen": 0,
+                  "display": "¥0.00"
+                },
+                "need": {
+                  "fen": 0,
+                  "display": "¥0.00"
+                },
+                "admissible": true,
+                "first_breach_day": null,
+                "breach_days": 0,
+                "shortfall": {
+                  "fen": 0,
+                  "display": "¥0.00"
+                },
+                "alerts": [
+                  "RECEIVABLE_PAST_DUE"
+                ],
+                "plan": "no funding needed",
+                "plan_needs_owner_approval": false
+              }
+            },
+            {
+              "label": "received 5 days before it is due (day 42)",
+              "receipt_day": 42,
+              "saving": {
+                "fen": 170610,
+                "display": "¥1,706.10"
+              },
+              "shortfall_removed": {
+                "fen": 20000000,
+                "display": "¥200,000.00"
+              },
+              "breach_days_removed": 5,
+              "alerts_cleared": [
+                "RESERVE_BREACH_AHEAD"
+              ],
+              "after": {
+                "cost": {
+                  "fen": 0,
+                  "display": "¥0.00"
+                },
+                "need": {
+                  "fen": 0,
+                  "display": "¥0.00"
+                },
+                "admissible": true,
+                "first_breach_day": null,
+                "breach_days": 0,
+                "shortfall": {
+                  "fen": 0,
+                  "display": "¥0.00"
+                },
+                "alerts": [
+                  "RECEIVABLE_PAST_DUE",
+                  "RESERVE_HEADROOM_LOW"
+                ],
+                "plan": "no funding needed",
+                "plan_needs_owner_approval": false
+              }
+            }
+          ],
+          "early_pay": [
+            {
+              "face": {
+                "fen": 42000000,
+                "display": "¥420,000.00"
+              },
+              "face_label": "the whole outstanding invoice",
+              "largest_rate": {
+                "bp": 40,
+                "display": "0.40%"
+              },
+              "cost_without": {
+                "fen": 373112,
+                "display": "¥3,731.12"
+              },
+              "cost_with": {
+                "fen": 370502,
+                "display": "¥3,705.02"
+              },
+              "beats_by": {
+                "fen": 2610,
+                "display": "¥26.10"
+              },
+              "next_rate": {
+                "bp": 45,
+                "display": "0.45%"
+              },
+              "next_rate_dearer_by": {
+                "fen": 18390,
+                "display": "¥183.90"
+              },
+              "sweep": [
+                {
+                  "rate": {
+                    "bp": 5,
+                    "display": "0.05%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -149610,
+                    "display": "−¥1,496.10"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 10,
+                    "display": "0.10%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -128610,
+                    "display": "−¥1,286.10"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 15,
+                    "display": "0.15%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -107610,
+                    "display": "−¥1,076.10"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 20,
+                    "display": "0.20%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -86610,
+                    "display": "−¥866.10"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 25,
+                    "display": "0.25%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -65610,
+                    "display": "−¥656.10"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 30,
+                    "display": "0.30%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -44610,
+                    "display": "−¥446.10"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 35,
+                    "display": "0.35%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -23610,
+                    "display": "−¥236.10"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 40,
+                    "display": "0.40%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -2610,
+                    "display": "−¥26.10"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 45,
+                    "display": "0.45%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 18390,
+                    "display": "¥183.90"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 50,
+                    "display": "0.50%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 39390,
+                    "display": "¥393.90"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 55,
+                    "display": "0.55%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 60390,
+                    "display": "¥603.90"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 60,
+                    "display": "0.60%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 81390,
+                    "display": "¥813.90"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 65,
+                    "display": "0.65%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 102390,
+                    "display": "¥1,023.90"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 70,
+                    "display": "0.70%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 123390,
+                    "display": "¥1,233.90"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 75,
+                    "display": "0.75%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 144390,
+                    "display": "¥1,443.90"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 80,
+                    "display": "0.80%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 165390,
+                    "display": "¥1,653.90"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 85,
+                    "display": "0.85%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 186390,
+                    "display": "¥1,863.90"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 90,
+                    "display": "0.90%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 207390,
+                    "display": "¥2,073.90"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 95,
+                    "display": "0.95%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 228390,
+                    "display": "¥2,283.90"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 100,
+                    "display": "1.00%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 249390,
+                    "display": "¥2,493.90"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 105,
+                    "display": "1.05%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 270390,
+                    "display": "¥2,703.90"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 110,
+                    "display": "1.10%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 291390,
+                    "display": "¥2,913.90"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 115,
+                    "display": "1.15%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 312390,
+                    "display": "¥3,123.90"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 120,
+                    "display": "1.20%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 333390,
+                    "display": "¥3,333.90"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 125,
+                    "display": "1.25%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 354390,
+                    "display": "¥3,543.90"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 130,
+                    "display": "1.30%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 375390,
+                    "display": "¥3,753.90"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 135,
+                    "display": "1.35%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 396390,
+                    "display": "¥3,963.90"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 140,
+                    "display": "1.40%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 417390,
+                    "display": "¥4,173.90"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 145,
+                    "display": "1.45%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 438390,
+                    "display": "¥4,383.90"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 150,
+                    "display": "1.50%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 459390,
+                    "display": "¥4,593.90"
+                  }
+                }
+              ],
+              "note": ""
+            },
+            {
+              "face": {
+                "fen": 20000000,
+                "display": "¥200,000.00"
+              },
+              "face_label": "the shortfall the plan covers",
+              "largest_rate": {
+                "bp": 80,
+                "display": "0.80%"
+              },
+              "cost_without": {
+                "fen": 373112,
+                "display": "¥3,731.12"
+              },
+              "cost_with": {
+                "fen": 365354,
+                "display": "¥3,653.54"
+              },
+              "beats_by": {
+                "fen": 7758,
+                "display": "¥77.58"
+              },
+              "next_rate": {
+                "bp": 85,
+                "display": "0.85%"
+              },
+              "next_rate_dearer_by": {
+                "fen": 2420,
+                "display": "¥24.20"
+              },
+              "sweep": [
+                {
+                  "rate": {
+                    "bp": 5,
+                    "display": "0.05%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -158828,
+                    "display": "−¥1,588.28"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 10,
+                    "display": "0.10%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -148828,
+                    "display": "−¥1,488.28"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 15,
+                    "display": "0.15%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -138828,
+                    "display": "−¥1,388.28"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 20,
+                    "display": "0.20%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -128828,
+                    "display": "−¥1,288.28"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 25,
+                    "display": "0.25%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -118828,
+                    "display": "−¥1,188.28"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 30,
+                    "display": "0.30%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -108828,
+                    "display": "−¥1,088.28"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 35,
+                    "display": "0.35%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -98828,
+                    "display": "−¥988.28"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 40,
+                    "display": "0.40%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -88828,
+                    "display": "−¥888.28"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 45,
+                    "display": "0.45%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -78828,
+                    "display": "−¥788.28"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 50,
+                    "display": "0.50%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -68828,
+                    "display": "−¥688.28"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 55,
+                    "display": "0.55%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -58650,
+                    "display": "−¥586.50"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 60,
+                    "display": "0.60%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -48471,
+                    "display": "−¥484.71"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 65,
+                    "display": "0.65%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -38293,
+                    "display": "−¥382.93"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 70,
+                    "display": "0.70%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -28115,
+                    "display": "−¥281.15"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 75,
+                    "display": "0.75%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -17937,
+                    "display": "−¥179.37"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 80,
+                    "display": "0.80%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -7758,
+                    "display": "−¥77.58"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 85,
+                    "display": "0.85%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 2420,
+                    "display": "¥24.20"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 90,
+                    "display": "0.90%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 12598,
+                    "display": "¥125.98"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 95,
+                    "display": "0.95%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 22776,
+                    "display": "¥227.76"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 100,
+                    "display": "1.00%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 32954,
+                    "display": "¥329.54"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 105,
+                    "display": "1.05%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 43133,
+                    "display": "¥431.33"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 110,
+                    "display": "1.10%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 53311,
+                    "display": "¥533.11"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 115,
+                    "display": "1.15%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 63489,
+                    "display": "¥634.89"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 120,
+                    "display": "1.20%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 73667,
+                    "display": "¥736.67"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 125,
+                    "display": "1.25%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 83845,
+                    "display": "¥838.45"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 130,
+                    "display": "1.30%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 94024,
+                    "display": "¥940.24"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 135,
+                    "display": "1.35%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 104202,
+                    "display": "¥1,042.02"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 140,
+                    "display": "1.40%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 114380,
+                    "display": "¥1,143.80"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 145,
+                    "display": "1.45%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 124558,
+                    "display": "¥1,245.58"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 150,
+                    "display": "1.50%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 134737,
+                    "display": "¥1,347.37"
+                  }
+                }
+              ],
+              "note": ""
+            }
+          ],
+          "action": "offer early pay up to 0.80%",
+          "sentence": "Offer Foshan Home Retail Co. early payment on RI:BUYER-1:2 (¥420,000.00, due day 47) at up to 0.80% on ¥200,000.00 (0.40% if it covers ¥420,000.00): paying it today would avoid ¥1,706.10 of financing cost and clears the shortfall, and a discount up to that rate costs less than the financing it replaces. The standing plan already advances against it.",
+          "skipped": "",
+          "outstanding": {
+            "fen": 42000000,
+            "display": "¥420,000.00"
+          },
+          "face": {
+            "fen": 42000000,
+            "display": "¥420,000.00"
+          },
+          "marginal_value": {
+            "fen": 170610,
+            "display": "¥1,706.10"
+          },
+          "net_value_at_ceiling": {
+            "fen": 7758,
+            "display": "¥77.58"
+          }
+        },
+        {
+          "receivable": "RI:BUYER-1:32",
+          "buyer": "BUYER-1",
+          "buyer_name": "Foshan Home Retail Co.",
+          "due_day": 77,
+          "days_late": 0,
+          "status": "OPEN",
+          "financed_by_plan": true,
+          "effects": [
+            {
+              "label": "received today (day 34)",
+              "receipt_day": 34,
+              "saving": {
+                "fen": 170610,
+                "display": "¥1,706.10"
+              },
+              "shortfall_removed": {
+                "fen": 20000000,
+                "display": "¥200,000.00"
+              },
+              "breach_days_removed": 5,
+              "alerts_cleared": [
+                "RESERVE_BREACH_AHEAD",
+                "RESERVE_HEADROOM_LOW"
+              ],
+              "after": {
+                "cost": {
+                  "fen": 0,
+                  "display": "¥0.00"
+                },
+                "need": {
+                  "fen": 0,
+                  "display": "¥0.00"
+                },
+                "admissible": true,
+                "first_breach_day": null,
+                "breach_days": 0,
+                "shortfall": {
+                  "fen": 0,
+                  "display": "¥0.00"
+                },
+                "alerts": [
+                  "RECEIVABLE_PAST_DUE",
+                  "FACILITY_REPAYABLE"
+                ],
+                "plan": "no funding needed",
+                "plan_needs_owner_approval": false
+              }
+            },
+            {
+              "label": "received 5 days before it is due (day 72)",
+              "receipt_day": 72,
+              "saving": {
+                "fen": -7609,
+                "display": "−¥76.09"
+              },
+              "shortfall_removed": {
+                "fen": 0,
+                "display": "¥0.00"
+              },
+              "breach_days_removed": 0,
+              "alerts_cleared": [],
+              "after": {
+                "cost": {
+                  "fen": 178219,
+                  "display": "¥1,782.19"
+                },
+                "need": {
+                  "fen": 20000000,
+                  "display": "¥200,000.00"
+                },
+                "admissible": true,
+                "first_breach_day": 42,
+                "breach_days": 5,
+                "shortfall": {
+                  "fen": 20000000,
+                  "display": "¥200,000.00"
+                },
+                "alerts": [
+                  "RESERVE_BREACH_AHEAD",
+                  "RECEIVABLE_PAST_DUE",
+                  "RESERVE_HEADROOM_LOW"
+                ],
+                "plan": "committed plan: ¥1,782.19 (needs the owner's approval)",
+                "plan_needs_owner_approval": true
+              }
+            },
+            {
+              "label": "received by the first breach day (day 42)",
+              "receipt_day": 42,
+              "saving": {
+                "fen": 170610,
+                "display": "¥1,706.10"
+              },
+              "shortfall_removed": {
+                "fen": 20000000,
+                "display": "¥200,000.00"
+              },
+              "breach_days_removed": 5,
+              "alerts_cleared": [
+                "RESERVE_BREACH_AHEAD"
+              ],
+              "after": {
+                "cost": {
+                  "fen": 0,
+                  "display": "¥0.00"
+                },
+                "need": {
+                  "fen": 0,
+                  "display": "¥0.00"
+                },
+                "admissible": true,
+                "first_breach_day": null,
+                "breach_days": 0,
+                "shortfall": {
+                  "fen": 0,
+                  "display": "¥0.00"
+                },
+                "alerts": [
+                  "RECEIVABLE_PAST_DUE",
+                  "RESERVE_HEADROOM_LOW"
+                ],
+                "plan": "no funding needed",
+                "plan_needs_owner_approval": false
+              }
+            }
+          ],
+          "early_pay": [
+            {
+              "face": {
+                "fen": 42000000,
+                "display": "¥420,000.00"
+              },
+              "face_label": "the whole outstanding invoice",
+              "largest_rate": {
+                "bp": 65,
+                "display": "0.65%"
+              },
+              "cost_without": {
+                "fen": 373112,
+                "display": "¥3,731.12"
+              },
+              "cost_with": {
+                "fen": 367676,
+                "display": "¥3,676.76"
+              },
+              "beats_by": {
+                "fen": 5436,
+                "display": "¥54.36"
+              },
+              "next_rate": {
+                "bp": 70,
+                "display": "0.70%"
+              },
+              "next_rate_dearer_by": {
+                "fen": 15564,
+                "display": "¥155.64"
+              },
+              "sweep": [
+                {
+                  "rate": {
+                    "bp": 5,
+                    "display": "0.05%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -257436,
+                    "display": "−¥2,574.36"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 10,
+                    "display": "0.10%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -236436,
+                    "display": "−¥2,364.36"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 15,
+                    "display": "0.15%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -215436,
+                    "display": "−¥2,154.36"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 20,
+                    "display": "0.20%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -194436,
+                    "display": "−¥1,944.36"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 25,
+                    "display": "0.25%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -173436,
+                    "display": "−¥1,734.36"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 30,
+                    "display": "0.30%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -152436,
+                    "display": "−¥1,524.36"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 35,
+                    "display": "0.35%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -131436,
+                    "display": "−¥1,314.36"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 40,
+                    "display": "0.40%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -110436,
+                    "display": "−¥1,104.36"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 45,
+                    "display": "0.45%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -89436,
+                    "display": "−¥894.36"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 50,
+                    "display": "0.50%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -68436,
+                    "display": "−¥684.36"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 55,
+                    "display": "0.55%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -47436,
+                    "display": "−¥474.36"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 60,
+                    "display": "0.60%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -26436,
+                    "display": "−¥264.36"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 65,
+                    "display": "0.65%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -5436,
+                    "display": "−¥54.36"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 70,
+                    "display": "0.70%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 15564,
+                    "display": "¥155.64"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 75,
+                    "display": "0.75%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 36564,
+                    "display": "¥365.64"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 80,
+                    "display": "0.80%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 57564,
+                    "display": "¥575.64"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 85,
+                    "display": "0.85%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 78564,
+                    "display": "¥785.64"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 90,
+                    "display": "0.90%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 99564,
+                    "display": "¥995.64"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 95,
+                    "display": "0.95%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 120564,
+                    "display": "¥1,205.64"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 100,
+                    "display": "1.00%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 141564,
+                    "display": "¥1,415.64"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 105,
+                    "display": "1.05%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 162564,
+                    "display": "¥1,625.64"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 110,
+                    "display": "1.10%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 183564,
+                    "display": "¥1,835.64"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 115,
+                    "display": "1.15%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 204564,
+                    "display": "¥2,045.64"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 120,
+                    "display": "1.20%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 225564,
+                    "display": "¥2,255.64"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 125,
+                    "display": "1.25%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 246564,
+                    "display": "¥2,465.64"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 130,
+                    "display": "1.30%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 267564,
+                    "display": "¥2,675.64"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 135,
+                    "display": "1.35%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 288564,
+                    "display": "¥2,885.64"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 140,
+                    "display": "1.40%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 309564,
+                    "display": "¥3,095.64"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 145,
+                    "display": "1.45%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 330564,
+                    "display": "¥3,305.64"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 150,
+                    "display": "1.50%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 351564,
+                    "display": "¥3,515.64"
+                  }
+                }
+              ],
+              "note": ""
+            },
+            {
+              "face": {
+                "fen": 20000000,
+                "display": "¥200,000.00"
+              },
+              "face_label": "the shortfall the plan covers",
+              "largest_rate": {
+                "bp": 120,
+                "display": "1.20%"
+              },
+              "cost_without": {
+                "fen": 373112,
+                "display": "¥3,731.12"
+              },
+              "cost_with": {
+                "fen": 365744,
+                "display": "¥3,657.44"
+              },
+              "beats_by": {
+                "fen": 7368,
+                "display": "¥73.68"
+              },
+              "next_rate": {
+                "bp": 125,
+                "display": "1.25%"
+              },
+              "next_rate_dearer_by": {
+                "fen": 2721,
+                "display": "¥27.21"
+              },
+              "sweep": [
+                {
+                  "rate": {
+                    "bp": 5,
+                    "display": "0.05%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -238616,
+                    "display": "−¥2,386.16"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 10,
+                    "display": "0.10%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -228616,
+                    "display": "−¥2,286.16"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 15,
+                    "display": "0.15%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -218616,
+                    "display": "−¥2,186.16"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 20,
+                    "display": "0.20%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -208616,
+                    "display": "−¥2,086.16"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 25,
+                    "display": "0.25%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -198616,
+                    "display": "−¥1,986.16"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 30,
+                    "display": "0.30%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -188616,
+                    "display": "−¥1,886.16"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 35,
+                    "display": "0.35%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -178616,
+                    "display": "−¥1,786.16"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 40,
+                    "display": "0.40%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -168616,
+                    "display": "−¥1,686.16"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 45,
+                    "display": "0.45%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -158616,
+                    "display": "−¥1,586.16"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 50,
+                    "display": "0.50%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -148616,
+                    "display": "−¥1,486.16"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 55,
+                    "display": "0.55%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -138527,
+                    "display": "−¥1,385.27"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 60,
+                    "display": "0.60%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -128438,
+                    "display": "−¥1,284.38"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 65,
+                    "display": "0.65%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -118349,
+                    "display": "−¥1,183.49"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 70,
+                    "display": "0.70%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -108259,
+                    "display": "−¥1,082.59"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 75,
+                    "display": "0.75%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -98170,
+                    "display": "−¥981.70"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 80,
+                    "display": "0.80%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -88081,
+                    "display": "−¥880.81"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 85,
+                    "display": "0.85%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -77992,
+                    "display": "−¥779.92"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 90,
+                    "display": "0.90%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -67903,
+                    "display": "−¥679.03"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 95,
+                    "display": "0.95%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -57814,
+                    "display": "−¥578.14"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 100,
+                    "display": "1.00%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -47725,
+                    "display": "−¥477.25"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 105,
+                    "display": "1.05%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -37636,
+                    "display": "−¥376.36"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 110,
+                    "display": "1.10%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -27547,
+                    "display": "−¥275.47"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 115,
+                    "display": "1.15%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -17457,
+                    "display": "−¥174.57"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 120,
+                    "display": "1.20%"
+                  },
+                  "c1_less_c0": {
+                    "fen": -7368,
+                    "display": "−¥73.68"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 125,
+                    "display": "1.25%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 2721,
+                    "display": "¥27.21"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 130,
+                    "display": "1.30%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 12810,
+                    "display": "¥128.10"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 135,
+                    "display": "1.35%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 22899,
+                    "display": "¥228.99"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 140,
+                    "display": "1.40%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 32988,
+                    "display": "¥329.88"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 145,
+                    "display": "1.45%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 43077,
+                    "display": "¥430.77"
+                  }
+                },
+                {
+                  "rate": {
+                    "bp": 150,
+                    "display": "1.50%"
+                  },
+                  "c1_less_c0": {
+                    "fen": 53166,
+                    "display": "¥531.66"
+                  }
+                }
+              ],
+              "note": ""
+            }
+          ],
+          "action": "offer early pay up to 1.20%",
+          "sentence": "Offer Foshan Home Retail Co. early payment on RI:BUYER-1:32 (¥420,000.00, due day 77) at up to 1.20% on ¥200,000.00 (0.65% if it covers ¥420,000.00): paying it today would avoid ¥1,706.10 of financing cost and clears the shortfall, and a discount up to that rate costs less than the financing it replaces. The standing plan already advances against it.",
+          "skipped": "",
+          "outstanding": {
+            "fen": 42000000,
+            "display": "¥420,000.00"
+          },
+          "face": {
+            "fen": 42000000,
+            "display": "¥420,000.00"
+          },
+          "marginal_value": {
+            "fen": 170610,
+            "display": "¥1,706.10"
+          },
+          "net_value_at_ceiling": {
+            "fen": 7368,
+            "display": "¥73.68"
+          }
+        },
+        {
+          "receivable": "RCV-A",
+          "buyer": "BUYER-1",
+          "buyer_name": "Foshan Home Retail Co.",
+          "due_day": 32,
+          "days_late": 2,
+          "status": "OPEN",
+          "financed_by_plan": false,
+          "effects": [
+            {
+              "label": "received today (day 34)",
+              "receipt_day": 34,
+              "saving": {
+                "fen": 137461,
+                "display": "¥1,374.61"
+              },
+              "shortfall_removed": {
+                "fen": 16280000,
+                "display": "¥162,800.00"
+              },
+              "breach_days_removed": 0,
+              "alerts_cleared": [
+                "RECEIVABLE_PAST_DUE",
+                "RESERVE_HEADROOM_LOW"
+              ],
+              "after": {
+                "cost": {
+                  "fen": 33149,
+                  "display": "¥331.49"
+                },
+                "need": {
+                  "fen": 3720000,
+                  "display": "¥37,200.00"
+                },
+                "admissible": true,
+                "first_breach_day": 42,
+                "breach_days": 5,
+                "shortfall": {
+                  "fen": 3720000,
+                  "display": "¥37,200.00"
+                },
+                "alerts": [
+                  "RESERVE_BREACH_AHEAD"
+                ],
+                "plan": "committed plan: ¥331.49 (needs the owner's approval)",
+                "plan_needs_owner_approval": true
+              }
+            }
+          ],
+          "early_pay": [
+            {
+              "face": {
+                "fen": 16280000,
+                "display": "¥162,800.00"
+              },
+              "face_label": "the whole outstanding invoice",
+              "largest_rate": null,
+              "cost_without": {
+                "fen": 373112,
+                "display": "¥3,731.12"
+              },
+              "cost_with": null,
+              "beats_by": null,
+              "next_rate": null,
+              "next_rate_dearer_by": null,
+              "sweep": [],
+              "note": "overdue: an early-payment discount is never offered on an invoice already due"
+            }
+          ],
+          "action": "call now",
+          "sentence": "Call Foshan Home Retail Co. first: recovering ¥162,800.00 now avoids ¥1,374.61 of financing cost and leaves ¥37,200.00 to cover.",
+          "skipped": "",
+          "outstanding": {
+            "fen": 16280000,
+            "display": "¥162,800.00"
+          },
+          "face": {
+            "fen": 42000000,
+            "display": "¥420,000.00"
+          },
+          "marginal_value": {
+            "fen": 137461,
+            "display": "¥1,374.61"
+          },
+          "net_value_at_ceiling": {
+            "fen": 137461,
+            "display": "¥1,374.61"
+          }
+        }
+      ],
+      "cash_price_curve": {
+        "amount": {
+          "fen": 1000000,
+          "display": "¥10,000.00"
+        },
+        "points": [
+          {
+            "arrival_day": 34,
+            "worth": {
+              "fen": 17822,
+              "display": "¥178.22"
+            }
+          },
+          {
+            "arrival_day": 35,
+            "worth": {
+              "fen": 17822,
+              "display": "¥178.22"
+            }
+          },
+          {
+            "arrival_day": 36,
+            "worth": {
+              "fen": 17822,
+              "display": "¥178.22"
+            }
+          },
+          {
+            "arrival_day": 37,
+            "worth": {
+              "fen": 17822,
+              "display": "¥178.22"
+            }
+          },
+          {
+            "arrival_day": 38,
+            "worth": {
+              "fen": 17822,
+              "display": "¥178.22"
+            }
+          },
+          {
+            "arrival_day": 39,
+            "worth": {
+              "fen": 17822,
+              "display": "¥178.22"
+            }
+          },
+          {
+            "arrival_day": 40,
+            "worth": {
+              "fen": 17822,
+              "display": "¥178.22"
+            }
+          },
+          {
+            "arrival_day": 41,
+            "worth": {
+              "fen": 17822,
+              "display": "¥178.22"
+            }
+          },
+          {
+            "arrival_day": 42,
+            "worth": {
+              "fen": 17822,
+              "display": "¥178.22"
+            }
+          },
+          {
+            "arrival_day": 43,
+            "worth": {
+              "fen": 8912,
+              "display": "¥89.12"
+            }
+          },
+          {
+            "arrival_day": 44,
+            "worth": {
+              "fen": 8912,
+              "display": "¥89.12"
+            }
+          },
+          {
+            "arrival_day": 45,
+            "worth": {
+              "fen": 8912,
+              "display": "¥89.12"
+            }
+          },
+          {
+            "arrival_day": 46,
+            "worth": {
+              "fen": 8912,
+              "display": "¥89.12"
+            }
+          },
+          {
+            "arrival_day": 47,
+            "worth": {
+              "fen": 8912,
+              "display": "¥89.12"
+            }
+          },
+          {
+            "arrival_day": 48,
+            "worth": {
+              "fen": 8912,
+              "display": "¥89.12"
+            }
+          },
+          {
+            "arrival_day": 49,
+            "worth": {
+              "fen": 8912,
+              "display": "¥89.12"
+            }
+          },
+          {
+            "arrival_day": 50,
+            "worth": {
+              "fen": 8912,
+              "display": "¥89.12"
+            }
+          },
+          {
+            "arrival_day": 51,
+            "worth": {
+              "fen": 8912,
+              "display": "¥89.12"
+            }
+          },
+          {
+            "arrival_day": 52,
+            "worth": {
+              "fen": 8912,
+              "display": "¥89.12"
+            }
+          },
+          {
+            "arrival_day": 53,
+            "worth": {
+              "fen": 8912,
+              "display": "¥89.12"
+            }
+          },
+          {
+            "arrival_day": 54,
+            "worth": {
+              "fen": 8912,
+              "display": "¥89.12"
+            }
+          },
+          {
+            "arrival_day": 55,
+            "worth": {
+              "fen": 8912,
+              "display": "¥89.12"
+            }
+          },
+          {
+            "arrival_day": 56,
+            "worth": {
+              "fen": 8912,
+              "display": "¥89.12"
+            }
+          },
+          {
+            "arrival_day": 57,
+            "worth": {
+              "fen": 8912,
+              "display": "¥89.12"
+            }
+          },
+          {
+            "arrival_day": 58,
+            "worth": {
+              "fen": 8912,
+              "display": "¥89.12"
+            }
+          },
+          {
+            "arrival_day": 59,
+            "worth": {
+              "fen": 8912,
+              "display": "¥89.12"
+            }
+          },
+          {
+            "arrival_day": 60,
+            "worth": {
+              "fen": 8912,
+              "display": "¥89.12"
+            }
+          },
+          {
+            "arrival_day": 61,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 62,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 63,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 64,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 65,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 66,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 67,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 68,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 69,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 70,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 71,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 72,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 73,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 74,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 75,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 76,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 77,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 78,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 79,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 80,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 81,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 82,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 83,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 84,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 85,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 86,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 87,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 88,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 89,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 90,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 91,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 92,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 93,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 94,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 95,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 96,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 97,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 98,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 99,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 100,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 101,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 102,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 103,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 104,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 105,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 106,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 107,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 108,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 109,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 110,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 111,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 112,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 113,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 114,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 115,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 116,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 117,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 118,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 119,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 120,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 121,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 122,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 123,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          },
+          {
+            "arrival_day": 124,
+            "worth": {
+              "fen": 0,
+              "display": "¥0.00"
+            }
+          }
+        ]
+      },
+      "readings": 11,
+      "seconds": 3.165
+    }
+  ]
+}
