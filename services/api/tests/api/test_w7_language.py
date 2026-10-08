@@ -162,12 +162,13 @@ def _read(client, path: str, lang: str, **params: Any) -> dict:
     return r.json()
 
 
-def _both(client, path: str, raw: list[str], **params: Any) -> tuple[dict, dict]:
+def _both(client, path: str, raw: list[str], echoes_lang: bool = True, **params: Any) -> tuple[dict, dict]:
     en, zh = _read(client, path, "en", **params), _read(client, path, "zh", **params)
     assert figures(en) == figures(zh), path  # the same figures, ids, statuses and days
     assert unchanged_words(en, zh, _names(), raw) == [], path  # every *_when and *_text differs, or it is figures only
     assert english_leaks(zh, _names(), raw) == [], path  # and no English sentence is left outside the audit fields
-    assert en["lang"] == "en" and zh["lang"] == "zh"
+    if echoes_lang:
+        assert en["lang"] == "en" and zh["lang"] == "zh"
     return en, zh
 
 
@@ -260,6 +261,22 @@ def test_a_late_invoice_and_a_missed_early_payment_in_chinese(client):
     late = [a for a in _read(client, "/alerts", "zh")["alerts"] if a["kind"] == "RECEIVABLE_PAST_DUE"]
     assert late and all("已逾期" in a["title_when"] or "没有到账" in a["title_when"] for a in late)
     assert not any("trajectory" in a["detail_when"] for a in _read(client, "/alerts", "en")["alerts"])
+
+
+def test_the_decision_record_and_the_chase_read_the_same_in_both_languages(client):
+    _walk(client, receipt="half")
+    _act(client)
+    client.post(f"/approvals/{_queue(client)[0]['id']}", json={"decision": "APPROVE"})
+    listed_en, listed_zh = _read(client, "/decisions", "en"), _read(client, "/decisions", "zh")
+    assert figures(listed_en) == figures(listed_zh) and len(listed_zh["decisions"]) >= 2
+    raw = [r"\.(receipts|promises)\[\]\.(detail|formula)", r"\.response\.counters\[\]\.label",
+           r"\.response\.sent\.(chosen_label|accepted_label|counters_sent\[\]\.label)"]
+    for row in listed_zh["decisions"]:
+        _both(client, f"/decisions/{row['id']}", raw, echoes_lang=False)
+    deal = next(r for r in listed_zh["decisions"] if r["id"].startswith("deal:"))
+    sent = _read(client, f"/decisions/{deal['id']}", "zh")["response"]["sent"]
+    assert sent["accepted_label_text"] == "方案 A" and sent["counters_sent"][0]["label_text"] == "方案 A"
+    _both(client, "/receivables/RCV-A/chase", [r"\.thread_href"], echoes_lang=False)
 
 
 # ---------------------------------------------------------------- the writes, in both languages
