@@ -211,7 +211,7 @@ def test_after_a_partial_receipt_the_change_says_what_arrived(client):
     overdue = next(c for c in changes if c["kind"] == "LATE" and not c.get("window_state"))
     assert overdue["text"] == "¥291,400.00 outstanding from Foshan Home Retail Co. was due 2 days ago and is still OPEN."
     warnings = client.get("/home").json()["warnings"]
-    assert [w["detail"] for w in warnings][0] == (
+    assert next(w["detail"] for w in warnings) == (
         "¥291,400.00 outstanding from Foshan Home Retail Co. was due 2 days ago and is still OPEN. "
         "The conservative trajectory no longer counts on a dated receipt.")
     assert not any("CMT-" in w["title"] + w["detail"] for w in warnings)
