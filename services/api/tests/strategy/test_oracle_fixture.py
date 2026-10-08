@@ -164,3 +164,84 @@ def test_portfolio_default(portfolio):
     assert greedy["rank_in_enumeration"] == 7 and greedy["feasible_portfolios"] == 9
     assert _fen(greedy["cost_for_ranking"]) == 611_393
     assert _fen(greedy["best_cost_for_ranking"]) == 302_777
+
+
+@pytest.fixture(scope="module")
+def packages() -> list[dict[str, Any]]:
+    """The ten recorded evaluations (the deep dive's nine packages; package 8 at price 95 and at price 100), in order."""
+    recorded: list[dict[str, Any]] = _load("envelope_packages.json")["requested"]
+    assert len(recorded) == 10
+    return recorded
+
+
+def _package_at(recorded: list[dict[str, Any]], index: int, terms: int, price: int, rebate: int = 0) -> dict[str, Any]:
+    p = recorded[index]
+    assert (p["terms_days"], _bp(p["price_adjustment"]), _bp(p["rebate"])) == (terms, price, rebate)
+    return p
+
+
+def test_package_1_terms_50_with_rebate_fails(packages):
+    p = _package_at(packages, 0, 50, 0, 125)
+    assert p["passes"] is False and p["binding_codes"] == ["AGG_CONCESSION_EXCEEDED"]
+    assert _fen(p["forward_budget_used"]) == 1_310_897
+
+
+def test_package_2_terms_55_price_30_passes_at_no_budget(packages):
+    p = _package_at(packages, 1, 55, 30)
+    assert p["passes"] is True and p["binding_codes"] == [] and p["early_pay"] is None
+    assert _fen(p["forward_budget_used"]) == 0
+
+
+def test_package_3_and_4_rebate_edge(packages):
+    three = _package_at(packages, 2, 55, 30, 125)
+    assert three["passes"] is True and three["binding_codes"] == []
+    assert _fen(three["forward_budget_used"]) == 483_795
+    four = _package_at(packages, 3, 55, 30, 130)
+    assert four["passes"] is False and four["binding_codes"] == ["AGG_CONCESSION_EXCEEDED"]
+    assert _fen(four["forward_budget_used"]) == 503_795
+
+
+def test_package_5_early_pay_cure(packages):
+    p = _package_at(packages, 4, 55, 30)
+    assert p["passes"] is True and p["binding_codes"] == []
+    assert (_bp(p["early_pay"]["rate"]), _fen(p["early_pay"]["face"])) == (85, 25_720_000)
+    assert _fen(p["forward_budget_used"]) == 0
+    assert _fen(p["reserve_breach"]["cure_cost"]) == 267_304
+
+
+def test_package_6_terms_60_passes(packages):
+    p = _package_at(packages, 5, 60, 45)
+    assert p["passes"] is True and p["binding_codes"] == []
+    assert _fen(p["forward_budget_used"]) == 0
+    assert _fen(p["reserve_breach"]["cure_cost"]) == 267_304
+
+
+def test_package_7_terms_80_passes_with_larger_cure(packages):
+    p = _package_at(packages, 6, 80, 95)
+    assert p["passes"] is True and p["binding_codes"] == []
+    assert p["outcome"] == "NEEDS_OWNER_APPROVAL"
+    assert _fen(p["reserve_breach"]["cure_cost"]) == 400_957
+    # recorded, not in the deep dive's list: the forward budget this package uses
+    assert _fen(p["forward_budget_used"]) == 489_281
+
+
+def test_package_8_terms_85_fails_at_price_95_and_100(packages):
+    # the deep dive's 10,271.78 is the figure at price 100; at price 95 the recorded figure is 13,001.78
+    at_95 = _package_at(packages, 7, 85, 95)
+    assert at_95["passes"] is False
+    assert at_95["binding_codes"] == ["AGG_CONCESSION_EXCEEDED", "EARLY_PAY_DEARER_THAN_PLAN"]
+    assert _fen(at_95["forward_budget_used"]) == 1_300_178
+    at_100 = _package_at(packages, 8, 85, 100)
+    assert at_100["passes"] is False
+    assert at_100["binding_codes"] == ["AGG_CONCESSION_EXCEEDED", "EARLY_PAY_DEARER_THAN_PLAN"]
+    assert _fen(at_100["forward_budget_used"]) == 1_027_178
+    assert _fen(at_100["reserve_breach"]["cure_cost"]) == 400_957
+
+
+def test_package_9_ex01_as_asked_fails(packages):
+    p = _package_at(packages, 9, 60, 0, 100)
+    assert p["passes"] is False
+    assert (_bp(p["early_pay"]["rate"]), p["early_pay"]["face"]) == (120, "whole invoice")
+    assert p["binding_codes"] == ["AGG_CONCESSION_EXCEEDED", "DISCOUNT_ABOVE_BREAK_EVEN", "EARLY_PAY_DEARER_THAN_PLAN"]
+    assert _fen(p["forward_budget_used"]) == 2_832_692
+    assert _fen(p["reserve_breach"]["cure_cost"]) == 240_667
