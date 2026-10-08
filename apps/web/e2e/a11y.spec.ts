@@ -2,6 +2,7 @@ import AxeBuilder from "@axe-core/playwright";
 import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
 import { resetBooks, runPlan } from "./helpers";
+import { STORY_STEPS } from "./helpers";
 
 /**
  * The accessibility re-check (wayfinder #65 Wave 7, section 29): axe on every Business page and on the blocks added since the last
@@ -98,7 +99,7 @@ test("the chat panel and the Demo story", async ({ page }) => {
   await page.goto("/mandate");
   for (let i = 0; i < 4; i++) {
     await page.getByTestId("demo-next").click();
-    await expect(page.getByRole("region", { name: "Guided demo" }).locator("[aria-live=polite]")).toContainText(`${i + 1}/15`);
+    await expect(page.getByRole("region", { name: "Guided demo" }).locator("[aria-live=polite]")).toContainText(`${i + 1}/${STORY_STEPS}`);
   }
   await scan(page, "Demo story, step 4");
 });
