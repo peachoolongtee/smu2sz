@@ -24,6 +24,7 @@ from app.api.presentation import (
 from app.api.runtime import get_runtime
 from app.api.views import Money, TrajectoryView, trajectory_view
 from app.books import current_books
+from app.decisions.identity import decision_id_for
 from app.domain.models import Mode
 from app.financial import project
 from app.mandate import MandatePolicyImpl
@@ -46,7 +47,11 @@ def _op_view(o, state=None, today: int | None = None, commitments=(), decided=fr
         op = {}
     v = displayed(res)
     summary = res.get("message") or o.kind.replace("_", " ").lower()
-    v.update({"seq": o.seq, "entry_hash": o.entry_hash, "prev_hash": o.prev_hash,
+    # The decision this operation belongs to (ADR-0011), so Activity can link each entry to its record; None for activity that
+    # belongs to no decision (a direct operation with no approval, a clock move, a bank receipt).
+    decision = decision_id_for(op if isinstance(op, dict) else {}, o.idempotency_key, commitments,
+                               approval_id=res.get("approval_id"))
+    v.update({"decision_id": decision, "seq": o.seq, "entry_hash": o.entry_hash, "prev_hash": o.prev_hash,
               "day": res.get("effective_day", op.get("day")), "requested_by": op.get("requested_by"),
               "summary": summary})
     if state is not None and today is not None:
