@@ -306,6 +306,76 @@ def test_the_golden_sentences_in_chinese(cold):
     assert zh.packages[3].flags == ["需要您批准", "其资金安排今天无法执行"]
 
 
+LEVER_WORDS_EN = {  # maximum_display, wall_words, next_step_sentence
+    "terms_alone": ("45 days", "your budget for what you give buyers", "50 days: not approved; its funding cannot run today"),
+    "terms_budget_ignored": ("55 days", "your cash floor", "60 days: not approved"),
+    "terms_with_price": ("55 days, price up 0.30%", "your cash floor", "60 days, price up 1.00%: not approved"),
+    "early_pay_whole": ("0.70% on ¥420,000.00", "the cheaper funding you already have",
+                        "0.75% on ¥420,000.00: not approved"),
+    "early_pay_counter": ("0.85% on ¥257,200.00", "the break-even for paying early", "0.90% on ¥257,200.00: not approved"),
+    "rebate": ("1.25%", "your budget for what you give buyers", "1.30%: not approved"),
+}
+LEVER_WORDS_ZH = {
+    "terms_alone": ("45 天", "您给买家让利的预算", "50 天：未通过；其资金安排今天无法执行"),
+    "terms_budget_ignored": ("55 天", "您的现金底线", "60 天：未通过"),
+    "terms_with_price": ("55 天，加价 0.30%", "您的现金底线", "60 天，加价 1.00%：未通过"),
+    "early_pay_whole": ("0.70%，金额 ¥420,000.00", "您已有的更便宜的资金安排", "0.75%，金额 ¥420,000.00：未通过"),
+    "early_pay_counter": ("0.85%，金额 ¥257,200.00", "提前付款的盈亏平衡点", "0.90%，金额 ¥257,200.00：未通过"),
+    "rebate": ("1.25%", "您给买家让利的预算", "1.30%：未通过"),
+}
+SUMMARIES_EN = [
+    "45-day terms · rebate 1.25%",
+    "45-day terms · early payment 0.85% on ¥257,200.00 · rebate 1.25%",
+    "45-day terms · early payment 0.70% · rebate 1.25%",
+    "50-day terms · price up 0.10% · rebate 0.55%",
+    "50-day terms · price up 0.10% · early payment 0.85% on ¥257,200.00 · rebate 0.55%",
+    "50-day terms · price up 0.10% · early payment 0.65% · rebate 0.55%",
+    "55-day terms · price up 0.25% · rebate 0.60%",
+    "55-day terms · price up 0.25% · early payment 0.85% on ¥257,200.00 · rebate 0.60%",
+    "55-day terms · price up 0.25% · early payment 0.65% · rebate 0.60%",
+    "45-day terms · early payment 0.85% on ¥257,200.00",
+    "55-day terms · price up 0.30%",
+]
+
+
+def test_the_lever_table_comes_worded_by_the_server_in_english(answer):
+    assert {lv.key: (lv.maximum_display, lv.wall_words, lv.next_step_sentence) for lv in answer.levers} == LEVER_WORDS_EN
+    assert [p.summary for p in answer.packages] == SUMMARIES_EN
+
+
+def test_the_lever_table_comes_worded_by_the_server_in_chinese(cold):
+    zh = envelope_answer(cold[0], "zh")
+    assert {lv.key: (lv.maximum_display, lv.wall_words, lv.next_step_sentence) for lv in zh.levers} == LEVER_WORDS_ZH
+    assert zh.packages[6].summary == "55 天账期 · 加价 0.25% · 返利 0.60%"
+    assert zh.packages[1].summary == "45 天账期 · 提前付款 0.85%，金额 ¥257,200.00 · 返利 1.25%"
+
+
+def test_the_zone_rows_say_the_lowest_price_in_words(zoned):
+    words = {z.terms_days: z.lowest_price_words for z in zoned.zone}
+    assert [words[d] for d in (30, 35, 40, 45)] == ["no price step needed"] * 4
+    assert words[50] == "0.10%" and words[55] == "0.25%"
+    assert [z.terms_words for z in zoned.zone][:2] == ["30 days", "35 days"]
+    assert [words[d] for d in range(60, 91, 5)] == ["none works"] * 7
+
+
+def test_the_zone_rows_say_the_lowest_price_in_chinese(golden):
+    zh = {z.terms_days: z.lowest_price_words for z in envelope_answer(golden.facts(zone=True), "zh").zone}
+    assert [z.terms_words for z in envelope_answer(golden.facts(zone=True), "zh").zone][:2] == ["30 天", "35 天"]
+    assert zh[30] == zh[45] == "无需加价" and zh[50] == "0.10%" and zh[60] == "没有可行的价格"
+
+
+@pytest.mark.parametrize("lang", ["en", "zh"])
+def test_the_server_strings_use_business_words(golden, lang):
+    a = envelope_answer(golden.facts(zone=True), lang)
+    texts = [*[w for lv in a.levers for w in (lv.maximum_display, lv.wall_words or "", lv.next_step_sentence)],
+             *[p.summary for p in a.packages], *[z.lowest_price_words for z in a.zone], *[z.at_that_price.summary for z in a.zone]]
+    for text in texts:
+        assert text and not DAY_N.search(text), text
+        assert not CODE_NAME.search(text), text
+        for engine_word in ("verdict", "trajectory", "basis", "fen", "offer them", "give them"):
+            assert engine_word not in text.lower(), text
+
+
 @pytest.mark.parametrize("lang", ["en", "zh"])
 def test_the_sentences_use_business_words(cold, lang):
     a = envelope_answer(cold[0], lang)

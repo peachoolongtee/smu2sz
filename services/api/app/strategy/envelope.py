@@ -679,6 +679,7 @@ class EnvelopePackage(Contract):
     flags: list[str]  # in words: "needs your approval", "its funding cannot run today"
     counter_match: bool  # the verifier's own counters to the largest asks include this package
     plan_cost_fen: int | None
+    summary: str  # the package on one line, its terms joined by " · ": "55-day terms · price up 0.25% · rebate 0.60%"
 
 
 class EnvelopeLever(Contract):
@@ -694,18 +695,23 @@ class EnvelopeLever(Contract):
     face_fen: int | None
     rule_price_bp: int | None  # terms with price: the counter FLOW would send (Option B's rule), beside the smallest
     unavailable: str | None  # "no recurring invoice to extend"
+    maximum_display: str  # the maximum in words: "45 days", "55 days, price up 0.30%", "0.70% on ¥420,000.00", "1.25%"
+    wall_words: str | None  # what stops the next step, in the owner's words; None when nothing inside the range does
+    next_step_sentence: str  # "50 days: not approved; its funding cannot run today"
     at_maximum: EnvelopePackage | None
     next_step: EnvelopePackage | None
 
 
 class ZoneEntry(Contract):
     terms_days: int
+    terms_words: str  # "45 days"
     min_price_bp: int | None  # the smallest price that passes alone
     rule_price_bp: int | None  # Option B's rule price beside it
     cost_per_invoice_fen: int | None
     passes_within_range: bool
     neighbours_confirmed: bool
     at_that_price: EnvelopePackage
+    lowest_price_words: str  # "no price step needed", the percentage, or "none works"
 
 
 class EnvelopeAnswer(Contract):
@@ -732,6 +738,14 @@ _WALL_TEXT = {
     "plan comparison": ("the cheaper funding you already have", "您已有的更便宜的资金安排"),
     "the mandate's price ceiling": ("your price ceiling", "您的价格上限"),
 }
+_WALL_WORDS = {
+    "forward budget": ("your budget for what you give buyers", "您给买家让利的预算"),
+    "buyer cap": ("the cap for this buyer", "该买家的上限"),
+    "liquidity": ("your cash floor", "您的现金底线"),
+    "break-even": ("the break-even for paying early", "提前付款的盈亏平衡点"),
+    "plan comparison": ("the cheaper funding you already have", "您已有的更便宜的资金安排"),
+    "the mandate's price ceiling": ("the price ceiling in your mandate", "您授权中的价格上限"),
+}
 _LEVER_LABEL = {
     "terms_alone": ("Longest payment terms on their own", "仅延长账期时的最长账期"),
     "terms_budget_ignored": ("Longest payment terms if the budget is ignored", "不计预算时的最长账期"),
@@ -756,6 +770,79 @@ def _flags(p: Probe, lang: str) -> list[str]:
     return out
 
 
+def _pct(value_bp: int) -> str:
+    return fmt_pct(bp(value_bp))
+
+
+def _days(n: int, lang: str) -> str:
+    return t(lang, f"{n} {'day' if n == 1 else 'days'}", f"{n} 天")
+
+
+def _summary(s: Setting, lang: str) -> str:
+    """One package on a line, from the server's own displays: terms first, then what is added to them."""
+    parts = [t(lang, f"{s.terms}-day terms", f"{s.terms} 天账期")]
+    if s.price > 0:
+        parts.append(t(lang, f"price up {_pct(s.price)}", f"加价 {_pct(s.price)}"))
+    if s.discount > 0:
+        rate = _pct(s.discount)
+        if s.face is not None:
+            parts.append(t(lang, f"early payment {rate} on {fmt_yuan(s.face)}", f"提前付款 {rate}，金额 {fmt_yuan(s.face)}"))
+        else:
+            parts.append(t(lang, f"early payment {rate}", f"提前付款 {rate}"))
+    if s.rebate > 0:
+        parts.append(t(lang, f"rebate {_pct(s.rebate)}", f"返利 {_pct(s.rebate)}"))
+    return " · ".join(parts)
+
+
+def _lever_value(m: Maximum, p: Probe | None, lang: str, *, rule_price: bool = False) -> str | None:
+    """A lever's value at one probe, in words ("55 days, price up 0.30%", "0.70% on ¥420,000.00", "1.25%")."""
+    if p is None:
+        return None
+    s = p.setting
+    if m.unit == "days":
+        days = _days(s.terms, lang)
+        if m.key != "terms_with_price":
+            return days
+        price = _pct(m.rule_price_bp if rule_price and m.rule_price_bp is not None else s.price)
+        return t(lang, f"{days}, price up {price}", f"{days}，加价 {price}")
+    if m.key.startswith("early_pay"):
+        rate, face = _pct(s.discount), fmt_yuan(m.face_fen or 0)
+        return t(lang, f"{rate} on {face}", f"{rate}，金额 {face}")
+    return _pct(s.rebate) if m.key == "rebate" else None
+
+
+def _maximum_words(m: Maximum, lang: str) -> str:
+    if m.unavailable:
+        return t(lang, "no recurring invoice to extend", "没有可延长的定期发票")
+    return _lever_value(m, m.at_max, lang, rule_price=True) or t(lang, "none passes", "没有可通过的值")
+
+
+def _next_step_words(m: Maximum, lang: str) -> str:
+    value = _lever_value(m, m.beyond, lang)
+    if m.beyond is None or value is None:
+        return t(lang, "no further step", "没有更进一步的方案")
+    flags = _flags(m.beyond, lang)
+    verdict = t(lang, "approved", "已通过") if m.beyond.approved else t(lang, "not approved", "未通过")
+    text = f"{value}{t(lang, ': ', '：')}{verdict}"
+    if flags:
+        text += t(lang, "; ", "；") + t(lang, ", ", "，").join(flags)
+    return text
+
+
+def _wall_words(m: Maximum, lang: str) -> str | None:
+    if m.unavailable:
+        return t(lang, "no recurring invoice to extend", "没有可延长的定期发票")
+    return t(lang, *_WALL_WORDS[m.wall]) if m.wall in _WALL_WORDS else None
+
+
+def _lowest_price_words(z: ZoneRow, lang: str) -> str:
+    if z.min_price_bp is None:
+        return t(lang, "none works", "没有可行的价格")
+    if z.min_price_bp == 0:
+        return t(lang, "no price step needed", "无需加价")
+    return _pct(z.min_price_bp)
+
+
 def _package(facts: EnvelopeFacts, p: Probe, lang: str, match: bool = False) -> EnvelopePackage:
     s = p.setting
     breach = None
@@ -767,7 +854,7 @@ def _package(facts: EnvelopeFacts, p: Probe, lang: str, match: bool = False) -> 
                                  early_pay_face_fen=s.face, rebate_bp=s.rebate),
         outcome=p.outcome, tier=p.tier, passes=p.passes, approved=p.approved, codes=list(p.codes),
         binding_codes=list(p.binding), forward_budget_used_fen=p.forward_total_fen, reserve_breach=breach,
-        flags=_flags(p, lang), counter_match=match, plan_cost_fen=p.plan_cost_fen)
+        flags=_flags(p, lang), counter_match=match, plan_cost_fen=p.plan_cost_fen, summary=_summary(s, lang))
 
 
 def _lever(facts: EnvelopeFacts, m: Maximum, lang: str) -> EnvelopeLever:
@@ -776,6 +863,7 @@ def _lever(facts: EnvelopeFacts, m: Maximum, lang: str) -> EnvelopeLever:
         lever=m.lever, key=m.key, label=_lever_label(m, lang), unit=m.unit, maximum=m.value, confirmed=m.confirmed,
         scanned=m.scanned, wall=m.wall, wall_text=wall_text, face_fen=m.face_fen, rule_price_bp=m.rule_price_bp,
         unavailable=t(lang, "no recurring invoice to extend", "没有可延长的定期发票") if m.unavailable else None,
+        maximum_display=_maximum_words(m, lang), wall_words=_wall_words(m, lang), next_step_sentence=_next_step_words(m, lang),
         at_maximum=_package(facts, m.at_max, lang) if m.at_max is not None else None,
         next_step=_package(facts, m.beyond, lang) if m.beyond is not None else None)
 
@@ -917,9 +1005,10 @@ def envelope_answer(facts: EnvelopeFacts, lang: str = "en") -> EnvelopeAnswer:
     if facts.refused:
         return EnvelopeAnswer.model_validate({**meta, "primary": "", "reason": "", "money": "", "packages": [],
                                               "levers": [], "zone": [], "refused": _refusal(facts.buyer_name, lang)})
-    zone = [ZoneEntry(terms_days=z.terms_days, min_price_bp=z.min_price_bp, rule_price_bp=z.rule_price_bp,
+    zone = [ZoneEntry(terms_days=z.terms_days, terms_words=_days(z.terms_days, lang), min_price_bp=z.min_price_bp, rule_price_bp=z.rule_price_bp,
                       cost_per_invoice_fen=z.cost_per_invoice_fen, passes_within_range=z.min_price_bp is not None,
-                      neighbours_confirmed=z.confirmed, at_that_price=_package(facts, z.at_price, lang))
+                      neighbours_confirmed=z.confirmed, at_that_price=_package(facts, z.at_price, lang),
+                      lowest_price_words=_lowest_price_words(z, lang))
             for z in facts.zone]
     return EnvelopeAnswer(
         buyer_id=facts.buyer_id, buyer_name=facts.buyer_name, primary=_primary(facts, lang), reason=_reason(facts, lang),
