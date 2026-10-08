@@ -11,6 +11,10 @@ operations and the verdicts are the demo's.
                    carries no signature it is signed here with the key in --owner-key-file, else with the published
                    DEMO key (which proves nothing about a real owner: fine for a local, read-only pilot runtime).
   --owner-key-file PATH   JSON with `private_key_hex` (an Ed25519 seed). Optional. Keep it outside the repository.
+  --journal-file PATH     the pilot journal on a file: JSON lines, one entry per line. The file is replayed into the store at
+                   start-up (a malformed line refuses the start, naming the line) and every `POST /pilot/journal` is appended
+                   to it before the route answers. A path inside the repository is refused unless it is under
+                   docs/pilot/<label>/ and --allow-repo-path is passed. The in-memory store is still the source of truth.
 
 Usage (from the repository root; OWNER_TOKEN and AGENT_KEY are required because DEMO_MODE=0 accepts no published token):
 
@@ -20,8 +24,8 @@ Usage (from the repository root; OWNER_TOKEN and AGENT_KEY are required because 
       uv run --project services/api python services/api/scripts/pilot_runtime.py \
         --state <state.json> --mandate <mandate.json> --port 8001
 
-The store is in memory: stopping the process forgets the books and the journal, so export what matters first
-(docs/pilot/RUNBOOK.md). Refuses to start when the books or the mandate do not validate, when the mandate is not valid
+The store is in memory: stopping the process forgets the books, and the journal too unless --journal-file is given, so
+export what matters first (docs/pilot/RUNBOOK.md). Refuses to start when the books or the mandate do not validate, when the mandate is not valid
 on day 0, or when the port is 3000.
 """
 
@@ -44,6 +48,7 @@ from app.config import get_settings
 from app.domain.models import FinancialState, Mandate
 from app.mandate import MandatePolicyImpl, load_demo_owner_key, public_key_for, sign
 from app.persistence import InMemoryLedgerStore
+from app.pilot.file_journal import JournalFileError, open_journal
 
 
 class PilotStartError(RuntimeError):
@@ -75,8 +80,12 @@ def _owner_private_key(key_file: Path | None) -> str:
     return key
 
 
-def build_runtime(state_path: Path, mandate_path: Path, key_file: Path | None = None) -> Runtime:
-    """An in-memory runtime holding only the SME's books and signed mandate. Raises `PilotStartError`."""
+def build_runtime(
+    state_path: Path, mandate_path: Path, key_file: Path | None = None, journal_file: Path | None = None,
+    allow_repo_path: bool = False,
+) -> Runtime:
+    """An in-memory runtime holding only the SME's books and signed mandate. With `journal_file`, the store's pilot journal
+    is replayed from that file and appended to it. Raises `PilotStartError`."""
     try:
         state = FinancialState.model_validate_json(json.dumps(_read_json(state_path, "state file")))
         mandate = Mandate.model_validate_json(json.dumps(_read_json(mandate_path, "mandate file")))
@@ -94,7 +103,14 @@ def build_runtime(state_path: Path, mandate_path: Path, key_file: Path | None = 
     problems = MandatePolicyImpl(trusted_public_key_hex=owner_key_hex).check_validity(mandate, 0, mandate.version)
     if problems:
         raise PilotStartError("the mandate is not valid on day 0: " + "; ".join(v.message for v in problems))
-    store = InMemoryLedgerStore()
+    store: InMemoryLedgerStore
+    if journal_file is None:
+        store = InMemoryLedgerStore()
+    else:
+        try:
+            store = open_journal(journal_file, allow_repo_path=allow_repo_path)
+        except JournalFileError as exc:
+            raise PilotStartError(str(exc)) from None
     store.put_state(state)
     store.put_mandate(mandate)
     rt = Runtime(settings=get_settings(), store=store, owner_key_hex=owner_key_hex)
@@ -107,6 +123,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--state", type=Path, required=True)
     ap.add_argument("--mandate", type=Path, required=True)
     ap.add_argument("--owner-key-file", type=Path, default=None)
+    ap.add_argument("--journal-file", type=Path, default=None)
+    ap.add_argument("--allow-repo-path", action="store_true")
     ap.add_argument("--host", default="127.0.0.1")
     ap.add_argument("--port", type=int, default=8001)
     args = ap.parse_args(argv)
@@ -117,10 +135,14 @@ def main(argv: list[str] | None = None) -> int:
         print("the pilot runtime is in memory: set DATABASE_URL=memory", file=sys.stderr)
         return 2
     try:
-        rt = build_runtime(args.state, args.mandate, args.owner_key_file)
+        rt = build_runtime(args.state, args.mandate, args.owner_key_file, args.journal_file, args.allow_repo_path)
     except PilotStartError as exc:
         print(f"pilot runtime not started: {exc}", file=sys.stderr)
         return 2
+    if args.journal_file is not None:
+        print(f"pilot journal: {len(rt.store.pilot_journal())} entries replayed from {args.journal_file}")  # type: ignore[attr-defined]
+        if not get_settings().features.pilot_journal:
+            print("note: FEATURE_PILOT_JOURNAL is off, so the journal routes answer 403 and nothing will be written")
     set_runtime(rt)
     import uvicorn
 

@@ -84,6 +84,17 @@ uv run --project services/api python -c "import json; from nacl.signing import S
 Without `--owner-key-file` the mandate is signed with the repository's **published demo key**, which proves nothing about a
 real owner. That is acceptable for a local, read-only pilot runtime and no more.
 
+### Keep the journal across a restart: `--journal-file`
+
+The runtime is restarted every week (section 3), and the journal lives in its memory. Add `--journal-file
+~/pilot-private/sme-a/journal.jsonl` to the command and the journal is kept on that file as well: one JSON object per line,
+the entry as `GET /pilot/journal` shows it (`seq`, `week`, ..., `recorded_at`). At start-up the file is read back into the runtime
+(a line that does not validate stops the start with a sentence naming the line number, and the file is left as it was); every
+`POST /pilot/journal` is written to the file, and synced, before the route answers. A file that cannot be written answers 500
+and the entry is not kept. The file is append-only: do not edit it by hand. Keep it in the private folder; a path inside the
+repository is refused, except `docs/pilot/<label>/<file>` when `--allow-repo-path` is also passed (only after section 5's
+approval). The file changes nothing else: the books, the operations log and the hash chain are as without it.
+
 ### Check it started on the SME's books
 
 ```bash
@@ -244,8 +255,8 @@ repository only after the approval step (section 5).
    ```
 
    `choice` is one of `followed`, `partly`, `ignored`, `not_applicable`. The entries also show, read-only, at the foot of the web app's
-   Activity page while the runtime is up (live mode, strategy flag on). The journal lives in the runtime's memory; stopping
-   the runtime forgets it, so **`journal.json` must be exported before stopping**. Then confirm nothing acted:
+   Activity page while the runtime is up (live mode, strategy flag on). The journal lives in the runtime's memory (and on the
+   `--journal-file` if the command had one, section 2); stopping the runtime forgets the memory, so **`journal.json` must be exported before stopping**. Then confirm nothing acted:
    `curl -s -H "$OWN" localhost:$P/ledger | jq '{chain_length, commitments: (.commitments|length)}'` reads
    `{"chain_length": 0, "commitments": 0}`. Anything else means a step posted an operation: stop and tell the lead.
 7. **Fill `docs/pilot/weekly-record.md`'s sections** from the files; copy figures as displayed.
@@ -319,3 +330,43 @@ How each reading is taken:
 
 Write the result as the pilot report: per answer the gate's figures, pass or fail, and the post-pilot action it earns
 (`docs/STRATEGY_RESEARCH.md` section L, "Post-pilot"). Controlled action stays off until the report names one.
+
+## 8. Dry pilot: a rehearsal on public-record or synthetic books
+
+Before the real pilot the whole procedure is run once, by an agent, on books no one owns: the public-record SME fixture
+(map #58, ticket #61) or the synthetic templates. It exercises sections 2 to 4 and the journal; it finds what breaks and what
+reads wrongly **before an owner sees it**.
+
+- **The label** is `dry-a`. Its folder is `docs/pilot/dry-a/`, its weeks `week-01`..`week-08`, and the same label is the journal's `sme`.
+  A dry pilot's files may be committed (the books are synthetic or public); a real SME's never are before section 5.
+- **The role-play rule.** Nobody plays the owner's judgment. Either the owner writes the week's decisions beforehand in
+  `docs/pilot/dry-a/decisions.yaml` (copy `docs/pilot/decisions.example.yaml`; each is an answer, the owner's words and a choice),
+  or the run says `--role-play auto`, which records `followed` for every answer with `owner_did` "role-play: followed FLOW's
+  answer". The auto mode only exercises the pipeline; it says nothing about whether any answer is right, and the report must
+  never describe it as an owner's behaviour.
+- **What it does.** In one process (no server, no port), for each week it advances the clock seven days, reads the three
+  answers through the real routes, writes `price_curve.json`, `worth.json`, `envelope-<buyer>.json` for each buyer with an open
+  invoice, a recurring invoice or an expected order, `sentences.md` (the displayed sentences) and `sha256.txt` into
+  `<out>/week-NN/`, prints the sentences and the open decisions, and records the week's decisions through `POST
+  /pilot/journal` (`snapshot_hash` is the file's sha256, `flow_said` the displayed sentence). `<out>/summary.md` holds per week
+  the sentences, the choices, the runtime, and every error with its week; an answer slower than 10 seconds is listed under
+  "Slow". It never posts an operation. Moving the clock writes one `ADVANCE_CLOCK` entry per week on the operations log (the
+  clock's own entry), so a dry run ends with that many entries and **no other**; the run reports any other entry as an
+  error. (A real pilot runtime never advances its clock, so section 4 step 6's empty log still holds there.)
+- **The command**, from the repository root:
+
+  ```bash
+  TERMSLEDGER_NO_DOTENV=1 DATABASE_URL=memory LLM_MODE=cache PYTHONUTF8=1 \
+    uv run --project services/api python services/api/scripts/pilot_dry_run.py \
+      --state <state.json> --mandate <mandate.json> --label dry-a --weeks 8 --out docs/pilot/dry-a \
+      --role-play auto
+  # or, with the owner's written decisions:  --decisions docs/pilot/dry-a/decisions.yaml   (instead of --role-play auto)
+  # optional: --journal-file <path> to keep the journal on a file (it must not hold entries yet), --owner-key-file <path>
+  ```
+
+  `--state` and `--mandate` are the books and mandate of section 3 (for the synthetic templates: `docs/pilot/templates/state.example.json`
+  and `mandate.example.json`). The flags and a random owner token are set by the script itself. Exit 0 means every week ran
+  without an error; 1 means a week reported one (read `summary.md`); 2 means the arguments or files were refused, with a sentence.
+- **No gate is read from a dry pilot.** The books are not an owner's, the decisions are written or role-played, and so no
+  figure in a dry pilot counts toward any threshold in section 7; its report says what broke and what read wrongly, and is
+  labelled a rehearsal.
