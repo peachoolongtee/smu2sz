@@ -64,7 +64,22 @@ Receivables: `GET /receivables/{id}/chase` and the Chase payment dialog (buyer, 
 
 ## 12. Files, tests, results
 
-Against `dev` (742847f): 415 files changed (36 under `services/api/app`, 109 under `apps/web` excluding re-recorded mocks); 39 new test files (API: time semantics, decisions flow, binding, quote, terms, refused terminal, remaining task, collections, comparison contract, forecast basis, causality, workspace, demo bank receipt, language, the decisions module and store; web: trust, record, touch, a11y, slow, lang e2e and seven unit scripts). The integration gate after every merge: the whole API suite 6398 passed, 37 skipped after the Wave 7 API merge (golden digests unchanged throughout); web with zero retries after Wave 7: unit 76, mock e2e 135 default and 144 with the strategy flag, live 69 and 77; axe zero serious or critical findings at 412 and 1440. Wave 8 part A reruns the whole gate on the final head from a clean clone, on the SQLite file store and in memory: see `docs/research/ux-remediation-2026-10-09/gate/README.md` (pending at the time of this draft).
+Against `dev` (742847f): 415 files changed (36 under `services/api/app`, 109 under `apps/web` excluding re-recorded mocks); 39 new test files (API: time semantics, decisions flow, binding, quote, terms, refused terminal, remaining task, collections, comparison contract, forecast basis, causality, workspace, demo bank receipt, language, the decisions module and store; web: trust, record, touch, a11y, slow, lang e2e and seven unit scripts). The integration gate was re-run after every merge (golden digests unchanged throughout).
+
+The final gate (Wave 8 part A, head 6106c72 with only documentation commits after it; record and raw output under `docs/research/ux-remediation-2026-10-09/gate/`, all with zero retries):
+
+| Check | Result |
+| --- | --- |
+| Whole API suite (`pytest tests`) | 6398 passed, 37 skipped (16 min) |
+| Web unit, typecheck, lint, build | 76 passed; clean; clean; compiled with no CSS warning |
+| Mock e2e, default / strategy build | 135 passed, 33 skipped / 144 passed, 24 skipped |
+| Live e2e, default / strategy build | 69 passed, 12 skipped / 77 passed, 4 skipped |
+| Live e2e on the SQLite file store | 69 passed, 12 skipped; the Demo story alone leaves 8 operations, 3 decision facts, 1 approval and 1 commitment on disk |
+| Demo timing | 30 rapid clicks end at step 11 in about 1.9 s in every run |
+| Cold start from a clean GitHub clone | every page 200 (`/`, `/deals`, `/cash`, `/receivables`, `/activity`, `/approvals`, an unknown record); no dev-server warning; `git status` clean |
+| Evidence chains | 49 valid |
+
+Each mission flow maps to a live test (approval: `trust.spec.ts`, `record.spec.ts`, `live.spec.ts`; counter: `record.spec.ts`, the bound send in `live.spec.ts`; funding: the day-34 cure in `live.spec.ts`; receipt: the half-receipt walk and `receivables.spec.ts`; the late-payment cure: the six scenes in `demo.spec.ts` and `live.spec.ts`; Ask FLOW: `chat.spec.ts` in en and zh); the responsive, phone, axe, record and trust specs run in the mock projects and all passed there.
 
 ## 13. Screenshots reviewed
 
