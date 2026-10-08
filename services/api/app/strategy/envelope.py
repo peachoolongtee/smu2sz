@@ -105,6 +105,7 @@ class Probe:
     counter_costs_fen: tuple[int, ...]  # each counter's own cost to the supplier (`supplier_cost_fen`), in the same order
     plan_cost_fen: int | None  # FundingPlan.total_cost_fen of the verdict's committed plan
     recheck: str | None  # why the package would fail the counter re-check (None: it would pass)
+    unlisted: tuple[Setting, ...] = ()  # the verifier's counters outside the levers' ranges: not read as settings, not probed
 
     @property
     def approved(self) -> bool:
@@ -135,7 +136,9 @@ def ranges_for(ctx: Context | EarlyPayContext, mandate: Mandate) -> Ranges:
     cap = DISCOUNT_MAX_BP if mandate.max_immediate_discount_bp is None else min(DISCOUNT_MAX_BP, mandate.max_immediate_discount_bp)
     terms: tuple[int, ...] = ()
     if isinstance(ctx, Context):
-        terms = tuple(range(min(TERMS_MIN, ctx.recurring.terms_days), TERMS_MAX + 1, TERMS_STEP))
+        # the terms in force are a point of their own when they sit off the 5-day grid (32 days, or beyond 90)
+        terms = tuple(sorted({*range(min(TERMS_MIN, ctx.recurring.terms_days), TERMS_MAX + 1, TERMS_STEP),
+                              ctx.recurring.terms_days}))
     return Ranges(
         terms=terms,
         price=tuple(range(0, PRICE_MAX_BP + 1, RATE_STEP_BP)) if terms else (0,),
@@ -262,6 +265,14 @@ def _setting_of(c: CounterProposal, current_terms: int, receivable_face_fen: int
     return Setting(terms, price, discount, face, rebate)
 
 
+def _params(s: Setting) -> WhatIfParams:
+    """The what-if parameters of a setting. The terms in force may sit off the sandbox's grid (32 days): the sliders'
+    validators would refuse them, so that one setting is built unvalidated (every other value is on the grid)."""
+    make = WhatIfParams if TERMS_MIN <= s.terms <= TERMS_MAX and s.terms % TERMS_STEP == 0 else WhatIfParams.model_construct
+    return make(terms_days=s.terms, discount_bp=s.discount, rebate_bp=s.rebate, price_adjustment_bp=s.price,
+                settle_face_fen=s.face)
+
+
 class _Verifier:
     """`build` then `evaluate`, memoised per setting within one call, counting the evaluations it actually runs."""
 
@@ -282,17 +293,23 @@ class _Verifier:
             return s._replace(face=None)
         return s
 
+    def in_range(self, s: Setting) -> bool:
+        """Whether the setting is on the levers' own grids: terms, price, early-pay rate and rebate in their ranges, the
+        early-pay face a whole ¥100 inside the open invoice."""
+        r = self.ranges
+        if (s.terms not in r.terms and (r.terms or s.terms != self.cur)) or s.price not in r.price \
+                or s.discount not in r.discount or s.rebate not in r.rebate:
+            return False
+        return s.face is None or (0 < s.face <= r.face_max_fen and s.face % FACE_STEP_FEN == 0)
+
     def probe(self, setting: Setting) -> Probe:
         s = self.norm(setting)
         hit = self.memo.get(s)
         if hit is not None:
             return hit
-        r = self.ranges
-        if (s.terms not in r.terms and (r.terms or s.terms != self.cur)) or s.price not in r.price \
-                or s.discount not in r.discount or s.rebate not in r.rebate:
+        if not self.in_range(s):
             raise ValueError(f"{s} is outside the levers' ranges")
-        offer, _ = build(WhatIfParams(terms_days=s.terms, discount_bp=s.discount, rebate_bp=s.rebate,
-                                      price_adjustment_bp=s.price, settle_face_fen=s.face), self.ctx, self.day)
+        offer, _ = build(_params(s), self.ctx, self.day)
         v = evaluate(offer, self.state, self.mandate, trusted_owner_key_hex=self.key, day=self.day,
                      commitments=self.commitments, plans="committed").verdict
         p = self._read(s, v)
@@ -310,6 +327,8 @@ class _Verifier:
             x.code == ViolationCode.RESERVE_BREACH and not x.curable for x in v.violations)
         flags = reserve.inputs if reserve is not None else {}
         cur = self.cur
+        read = [(self.norm(_setting_of(c, cur, self.ctx.receivable.face_fen)), c.supplier_cost_fen) for c in v.counters]
+        listed = [(c, cost) for c, cost in read if self.in_range(c)]
         return Probe(
             setting=s, outcome=v.outcome.value, tier=v.required_tier.value, passes=passes, liquidity_only=liquidity_only,
             codes=tuple(dict.fromkeys(x.code.value for x in v.violations)), binding=binding,
@@ -317,10 +336,10 @@ class _Verifier:
             reserve_day=reserve.day if reserve else None, reserve_curable=reserve.curable if reserve else None,
             cure_cost_fen=reserve.cure_cost_fen if reserve is not None and curable_reserve else None,
             cure_needs_owner="cure_needs_owner_approval" in flags, cure_cannot_run_today="cure_executable_now" in flags,
-            counters=tuple(self.norm(_setting_of(c, cur, self.ctx.receivable.face_fen)) for c in v.counters),
-            counter_costs_fen=tuple(c.supplier_cost_fen for c in v.counters),
+            counters=tuple(c for c, _ in listed), counter_costs_fen=tuple(cost for _, cost in listed),
             plan_cost_fen=v.plan.total_cost_fen if v.plan is not None else None,
-            recheck=infeasibility(v, self.state) if v.outcome in PASSING else None)
+            recheck=infeasibility(v, self.state) if v.outcome in PASSING else None,
+            unlisted=tuple(c for c, _ in read if not self.in_range(c)))
 
     def ok(self, s: Setting) -> bool:
         return self.probe(s).passes
@@ -423,6 +442,8 @@ class EnvelopeFacts:
     evaluations: int
     seconds: float
     past_due: tuple[tuple[int, int], ...] = ()  # (outstanding fen, days late) of this buyer's invoices past due today
+    unlisted_counters: tuple[Setting, ...] = ()  # the verifier's counters to the asks that fall outside the levers' ranges
+    refusal: Literal["no_lever", "out_of_range"] = "no_lever"  # why `refused` is set
 
 
 def wall_of(p: Probe | None, *, ignore_caps: bool = False) -> str | None:
@@ -505,7 +526,7 @@ def _levers(v: _Verifier) -> tuple[list[Maximum], list[tuple[Setting, int | None
     faces: list[int] = []
     whole = last_true(r.discount, lambda d: v.ok(Setting(cur, discount=d)))
     if (whole.value or 0) < top_discount:
-        for s in v.probe(Setting(cur, discount=top_discount)).counters:
+        for s in v.probe(Setting(cur, discount=top_discount)).counters:  # only the counters on the levers' grids
             if s.discount and s.face is not None and s.face not in faces:
                 faces.append(s.face)
 
@@ -595,6 +616,14 @@ def _grid(v: _Verifier, early_counter: list[tuple[Setting, int | None]], whole_s
     return out
 
 
+def out_of_range_facts(books: Books, *, day: int, buyer_id: str) -> EnvelopeFacts:
+    """The facts of a buyer whose books fall outside the levers' ranges (a `ValueError` out of the sweep): refused with
+    its own sentence, never an error."""
+    state = books.state
+    return EnvelopeFacts(buyer_id, party_name(state, buyer_id), day, state.state_version, True, None, 0, 0, False, (), (), (),
+                         {}, None, None, False, 0, 0.0, refusal="out_of_range")
+
+
 def envelope_facts(books: Books, mandate: Mandate, *, store: LedgerStore | None = None, day: int, buyer_id: str,
                    trusted_owner_key_hex: str, commitments: Sequence[Commitment] = (), zone: bool = False,
                    full_grid: bool = False) -> EnvelopeFacts:
@@ -628,10 +657,12 @@ def envelope_facts(books: Books, mandate: Mandate, *, store: LedgerStore | None 
         if m.key in ("terms_budget_ignored", "rebate") and m.beyond is not None:
             asks.append(m.beyond.setting)
     counter_costs: dict[Setting, int] = {}
+    unlisted: dict[Setting, None] = {}
     for a in asks:
         p = v.probe(a)
         for c, cost in zip(p.counters, p.counter_costs_fen, strict=True):
             counter_costs.setdefault(c, cost)
+        unlisted.update(dict.fromkeys(p.unlisted))
     counters = set(counter_costs)
     seen = {c.setting for c in cells}
     for s in sorted(counters):
@@ -651,7 +682,7 @@ def envelope_facts(books: Books, mandate: Mandate, *, store: LedgerStore | None 
     return EnvelopeFacts(
         buyer_id, name, day, version, False, mandate, cur, ctx.receivable.face_fen, bool(ranges.terms), tuple(maxima),
         tuple(zone_rows), cell_tuple, counter_costs, status_quo, next_terms, with_early, v.evaluations, time.perf_counter() - started,
-        past_due)
+        past_due, tuple(unlisted))
 
 
 # ---------------------------------------------------------------- the answer (words)
@@ -724,6 +755,7 @@ class EnvelopeAnswer(Contract):
     levers: list[EnvelopeLever]
     zone: list[ZoneEntry] = Field(default_factory=list)
     refused: str | None = None
+    unlisted_counters: list[str] = Field(default_factory=list)  # one sentence per verifier counter left out as off the grid
     source_state_version: int
     hypothetical: Literal[True] = True
     evaluations: int
@@ -849,9 +881,12 @@ def _package(facts: EnvelopeFacts, p: Probe, lang: str, match: bool = False) -> 
     if p.reserve_day is not None:
         breach = ReserveBreachView(day=p.reserve_day, when=when_text(p.reserve_day, facts.day, lang),
                                    curable=bool(p.reserve_curable), cure_cost_fen=p.cure_cost_fen)
+    # the terms in force may sit off the sandbox's 5-day grid (32 days): that one package is carried unvalidated
+    on_grid = TERMS_MIN <= s.terms <= TERMS_MAX and s.terms % TERMS_STEP == 0
+    make = CandidatePackage if on_grid else CandidatePackage.model_construct
     return EnvelopePackage(
-        package=CandidatePackage(buyer_id=facts.buyer_id, terms_days=s.terms, price_bp=s.price, early_pay_bp=s.discount,
-                                 early_pay_face_fen=s.face, rebate_bp=s.rebate),
+        package=make(buyer_id=facts.buyer_id, terms_days=s.terms, price_bp=s.price, early_pay_bp=s.discount,
+                     early_pay_face_fen=s.face, rebate_bp=s.rebate),
         outcome=p.outcome, tier=p.tier, passes=p.passes, approved=p.approved, codes=list(p.codes),
         binding_codes=list(p.binding), forward_budget_used_fen=p.forward_total_fen, reserve_breach=breach,
         flags=_flags(p, lang), counter_match=match, plan_cost_fen=p.plan_cost_fen, summary=_summary(s, lang))
@@ -990,7 +1025,17 @@ def _money(facts: EnvelopeFacts, lang: str) -> str:
     return lead + t(lang, "; ", "；") + now + t(lang, ".", "。")
 
 
-def _refusal(name: str, lang: str) -> str:
+def _unlisted_sentence(s: Setting, lang: str) -> str:
+    what = _summary(s, lang)
+    return t(lang, f"FLOW's own counter ({what}) is outside the ranges this page checks, so it is not listed.",
+             f"FLOW 自己给出的对案（{what}）超出本页检查的范围，因此未列出。")
+
+
+def _refusal(name: str, lang: str, reason: str = "no_lever") -> str:
+    if reason == "out_of_range":
+        return t(lang, f"FLOW cannot value a deal with {name} on the books as they stand: its terms or amounts fall "
+                       f"outside the ranges FLOW checks.",
+                 f"FLOW 目前无法为{name}估值：账上的账期或金额超出了 FLOW 检查的范围。")
     return t(lang, f"FLOW has no terms or payment lever to value for {name} yet: no recurring invoice and no open invoice.",
              f"FLOW 目前没有可为{name}估值的账期或付款杠杆：没有定期发票，也没有未结发票。")
 
@@ -1002,7 +1047,8 @@ def envelope_answer(facts: EnvelopeFacts, lang: str = "en") -> EnvelopeAnswer:
                                "computed_in_seconds": round(facts.seconds, 3)}
     if facts.refused:
         return EnvelopeAnswer.model_validate({**meta, "primary": "", "reason": "", "money": "", "packages": [],
-                                              "levers": [], "zone": [], "refused": _refusal(facts.buyer_name, lang)})
+                                              "levers": [], "zone": [],
+                                              "refused": _refusal(facts.buyer_name, lang, facts.refusal)})
     zone = [ZoneEntry(terms_days=z.terms_days, terms_words=_days(z.terms_days, lang), min_price_bp=z.min_price_bp, rule_price_bp=z.rule_price_bp,
                       cost_per_invoice_fen=z.cost_per_invoice_fen, passes_within_range=z.min_price_bp is not None,
                       neighbours_confirmed=z.confirmed, at_that_price=_package(facts, z.at_price, lang),
@@ -1012,6 +1058,7 @@ def envelope_answer(facts: EnvelopeFacts, lang: str = "en") -> EnvelopeAnswer:
         buyer_id=facts.buyer_id, buyer_name=facts.buyer_name, primary=_primary(facts, lang), reason=_reason(facts, lang),
         money=_money(facts, lang), packages=[_package(facts, c.probe, lang, c.counter_match) for c in facts.cells],
         levers=[_lever(facts, m, lang) for m in facts.maxima], zone=zone, refused=None,
+        unlisted_counters=[_unlisted_sentence(c, lang) for c in facts.unlisted_counters],
         source_state_version=facts.source_state_version, evaluations=facts.evaluations,
         computed_in_seconds=round(facts.seconds, 3))
 
@@ -1047,4 +1094,4 @@ def envelope(books: Books, mandate: Mandate, *, store: LedgerStore | None = None
 
 
 __all__ = ["EnvelopeAnswer", "EnvelopeFacts", "EnvelopeLever", "EnvelopePackage", "ZoneEntry", "envelope", "envelope_answer",
-           "envelope_facts", "probe_packages"]
+           "envelope_facts", "out_of_range_facts", "probe_packages"]

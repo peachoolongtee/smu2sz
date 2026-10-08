@@ -643,3 +643,46 @@ def test_full_grid_reproduces_the_oracles_thirty_packages(golden):
         assert _setting(z.at_that_price)[1] == o["at_that_price"]["price_adjustment"]["bp"]
     # a failing row is listed but never approved; the approved ones are the grid's passing packages
     assert any(not p.approved for p in a.packages) and any(p.approved for p in a.packages)
+
+
+# ---------------------------------------------------------------- books off the levers' grids
+
+
+def _with_terms(golden: Golden, days: int) -> Books:
+    other = [r.model_copy(update={"terms_days": days}) if r.counterparty_id == GOLDEN_BUYER else r
+             for r in golden.books.state.recurring_invoices]
+    return replace(golden.books, state=golden.books.state.model_copy(update={"recurring_invoices": other}))
+
+
+def test_terms_in_force_off_the_five_day_grid_do_not_crash(golden):
+    books = _with_terms(golden, 32)
+    facts = envelope_facts(books, golden.mandate, buyer_id=GOLDEN_BUYER, zone=True, **golden.kw())
+    a = envelope_answer(facts, "en")
+    assert a.refused is None and a.packages and facts.current_terms == 32
+    # the terms in force are a point of their own in the range, and the packages at them are carried
+    assert 32 in [z.terms_days for z in a.zone] and a.zone[0].terms_days == 30
+    assert any(p.package.terms_days == 32 for p in a.packages)
+    assert all(p.package.terms_days >= 32 for p in a.packages)
+    assert a.primary.startswith("You can live with: ") and envelope_answer(facts, "zh").primary.startswith("您能接受的范围：")
+    json.loads(a.model_dump_json())
+
+
+def test_a_counter_outside_the_levers_ranges_is_listed_not_probed(golden, monkeypatch):
+    from app.strategy import envelope as module
+
+    base = envelope_facts(golden.books, golden.mandate, buyer_id=GOLDEN_BUYER, **golden.kw())
+    assert base.unlisted_counters == () and envelope_answer(base).unlisted_counters == []
+    # a mandate whose early-payment ceiling (0.60%) is below the counters the verifier names (0.85%): the verifier keeps
+    # to the mandate it is given, so the ranges are narrowed here and the verifier still runs on the golden one
+    capped = golden.mandate.model_copy(update={"max_immediate_discount_bp": 60})
+    narrowed = module.ranges_for
+    monkeypatch.setattr(module, "ranges_for", lambda ctx, _mandate: narrowed(ctx, capped))
+    facts = envelope_facts(golden.books, golden.mandate, buyer_id=GOLDEN_BUYER, **golden.kw())
+    assert facts.unlisted_counters, "the verifier's counter above the cap must be listed"
+    assert all(c.discount > 60 for c in facts.unlisted_counters)
+    assert all(c.probe.setting.discount <= 60 for c in facts.cells) and facts.evaluations > 0
+    assert all(c.discount <= 60 for c in facts.counter_costs_fen)
+    en, zh = envelope_answer(facts, "en"), envelope_answer(facts, "zh")
+    assert len(en.unlisted_counters) == len(facts.unlisted_counters)
+    assert all("not listed" in x and "FLOW's own counter (" in x for x in en.unlisted_counters)
+    assert all("未列出" in x for x in zh.unlisted_counters)

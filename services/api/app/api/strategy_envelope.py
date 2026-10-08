@@ -9,6 +9,7 @@ is language-neutral and cached (32 entries, by the books, the mandate, the day, 
 from __future__ import annotations
 
 import hashlib
+import logging
 import threading
 from collections import OrderedDict
 from typing import Any, Literal
@@ -20,9 +21,10 @@ from app.api.features import require_feature
 from app.api.runtime import get_runtime
 from app.books import books_from_store
 from app.financial import EngineError
-from app.strategy.envelope import EnvelopeFacts, envelope_answer, envelope_facts
+from app.strategy.envelope import EnvelopeFacts, envelope_answer, envelope_facts, out_of_range_facts
 
 router = APIRouter()
+log = logging.getLogger(__name__)
 
 CACHE_SIZE = 32
 _cache: OrderedDict[str, EnvelopeFacts] = OrderedDict()
@@ -72,6 +74,9 @@ def get_envelope(buyer_id: str, zone: int = Query(0, ge=0, le=1), lang: Literal[
                                    trusted_owner_key_hex=rt.owner_key_hex, commitments=commitments, zone=bool(zone))
         except EngineError as exc:
             raise HTTPException(422, f"cannot project: {exc}") from None
+        except ValueError:  # WhatIfParamError or a value off the levers' grids: said in a sentence, never a 500
+            log.warning("envelope for %s is outside the levers' ranges", buyer_id, exc_info=True)
+            facts = out_of_range_facts(books, day=day, buyer_id=buyer_id)
         _remember(key, facts)
     answer = envelope_answer(facts, lang)
     return {**displayed(answer.model_dump(mode="json")), "state_version": state.state_version, "day": day}
