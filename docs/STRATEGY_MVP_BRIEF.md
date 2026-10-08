@@ -159,12 +159,16 @@ available), need left = `after_need_fen`, with the after plan's approval and exe
 `last_true` over whole-5bp rates on two faces (the whole outstanding; the plan's need rounded to the ¥100 grid), each
 rate tested by the ADR-0007 comparison (C1 with the discount obligation against C0 without, both under the router's
 plan: the wrapper reproduces `_early_pay_vs_plan`'s inputs through `plan` and `project`), held to the mandate's
-immediate-discount cap; never on an overdue invoice. Net saving = gross − the discount posted at the ceiling on the
-plan's-need face (what earning the receipt early costs). Action rules in order: call now (past due; "the only free
-action"); escalate (a lapsed promise in `reconcile().lapsed_promises`, or days late ≥ 30 when the mandate has no
-threshold); reminder (due within the first breach episode and not promised); offer early payment up to X% on ¥Y (due
-after the first breach day and the ceiling's saving beats the cure it replaces); finance the invoice (an advance on it
-lands before the breach and the discount does not beat it, or the ceiling is 0); wait (due beyond the episode). A
+immediate-discount cap; never on an overdue invoice. Net saving (as built in Wave 4) = the saving the discount at the ceiling still makes against the standing plan
+(C0 − C1 on the plan's-need face; the spike's `net_value_at_ceiling`), 0 when no rate beats the plan, gross for the free
+actions (call now, escalate). The offer sentence also states the saving at the midpoint rate (half the ceiling, rounded
+down to 5 bp: 0.40% saves ¥888.28 on RI:BUYER-1:2's ¥200,000) so the owner sees the range, with the ceiling as the limit.
+Action rules in order (`_decide`): escalate (a lapsed promise in `reconcile().lapsed_promises`, or 30 or more days
+late; checked first so it can fire); call now (past due; "the only free action"); wait when the receivable is not OPEN
+(financed: the lender is paid first) or is due before the shortfall; reminder when due inside the first breach episode
+and not promised (wait when promised); wait when "beyond the shortfall" (the receivables due before it already cover the
+plan's need: RI:BUYER-1:32 on day 34); offer early payment when the ceiling on the plan's-need face beats the plan;
+finance otherwise. "Wait" is a rule, not an engine output. A
 negative delta (RI:BUYER-1:32 five days early: −¥76.09) is displayed "no saving" with the raw figure in the payload.
 Ranking by net, gross beside; the order must be identical before and after `clear_caches()`.
 
