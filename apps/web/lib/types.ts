@@ -584,6 +584,8 @@ export interface CounterProposal {
   /** `text` and `rationale` as a Business page reads them ("paid within 2 days", never "day N"); the raw text is what goes to the buyer. Absent in older recordings. */
   text_when?: string | null;
   rationale_when?: string | null;
+  /** The label in the owner's language ("Option A" / "方案 A"); the raw label is what the ids and anchors use. Absent in older recordings. */
+  label_when?: string | null;
   /** What sending this counter does, in the server's words (the reply is simulated; the agreement needs approval when it changes terms; the funding it may run). Absent in older recordings. */
   send_scope?: string | null;
 }
@@ -812,11 +814,16 @@ export type VerdictView = Displayed<Verdict> & {
   workspace?: DealWorkspace;
 };
 
-export type WorkspaceSection = "buyer_asks" | "financial_impact" | "why_it_matters" | "recommends" | "priced_response" | "advanced";
+export type WorkspaceSection = "buyer" | "buyer_asks" | "financial_impact" | "why_it_matters" | "recommends" | "priced_response" | "agreements" | "advanced";
 export type AdvancedKey = "parsed_obligations" | "source_text" | "checks" | "formula" | "engine_verdict" | "audit_evidence";
 
 export interface DealWorkspace {
+  /** The sections in the server's order (the Wave 7 order: buyer, recommends, priced response, asks, cost, why it matters, agreements, advanced). */
   order: WorkspaceSection[];
+  /** Who is asking and when it came; absent in older recordings. */
+  buyer?: { title: string; counterparty_id: string; name: string; offer_id: string; received_when: string };
+  /** The agreements with this buyer, the server's words; absent in older recordings. */
+  agreements?: { title: string; items: { [k: string]: unknown }[]; empty_text: string };
   buyer_asks: { title: string; asks: { obligation_id: string; type: string; label: string; text: string }[] };
   financial_impact: {
     title: string;
@@ -829,6 +836,8 @@ export interface DealWorkspace {
       amount_display: string | null;
       window_text: string;
       basis: string;
+      /** The basis as a Business page says it (distances from today); absent in older recordings. */
+      basis_when?: string;
     }[];
     window_months: number;
     forward_total_fen: Fen;
@@ -842,7 +851,11 @@ export interface DealWorkspace {
   priced_response: {
     counter_id: string;
     label: string;
+    /** The label in the owner's language ("Option A" / "方案 A"); absent in older recordings. */
+    label_text?: string;
     send_scope: string;
+    /** What sending does, one line each (the agreement it records, the funding it draws or requests, the estimated cost); absent when there is no counter or in older recordings. */
+    send_scope_lines?: string[] | null;
     supplier_cost_display: string;
     forward_value_display: string;
     verdict_id: string;
@@ -856,6 +869,8 @@ export interface NegotiationRound {
   round: number;
   counter_id: string | null;
   counter_label: string | null;
+  /** The label in the owner's language; absent in older recordings. */
+  counter_label_when?: string | null;
   buyer_response: "ACCEPT" | "REFUSE";
   buyer_text: string;
 }
@@ -877,6 +892,8 @@ export interface OperationView extends Displayed<OperationResult> {
   /** The cash forecast as of now ("now"), or the entry's own quote for an approval request (null). Never a per-event replay. */
   why_it_matters?: string | null;
   why_it_matters_as_of?: "now" | null;
+  /** False when this row's sentence is the same as the one before it, so a page says it once. Absent in older recordings. */
+  why_it_matters_changed?: boolean;
   what_remains?: string | null;
   /** On an approval request: "Approval requested" (never "Waiting for your approval", which is today's state), with the decision's state today. */
   approval_label?: string | null;
@@ -931,6 +948,8 @@ export interface NegotiationView {
   operations: OperationView[];
   plan: Displayed<FundingPlan> | null;
   message: string;
+  /** The message in the requested language (distances from today); absent in older recordings. */
+  message_when?: string | null;
   /** The deal's record, and whether this send was written to it. Absent in older recordings. */
   decision_id?: string;
   decision_recorded?: boolean;
@@ -1229,6 +1248,9 @@ export interface ApprovalPresentation {
   lands_text?: string | null;
   /** How the decision run ended: set on every row by the API, and by decideApproval for the decision just made. */
   execution_status?: ApprovalExecutionStatus;
+  /** The state after the decision as one phrase and its tone (the server's); the card shows these first once decided. */
+  result_state_text?: string | null;
+  result_tone?: StateTone | null;
   /** A cure that does not restore the reserve says what stays short. */
   residual?: { shortfall_display: string; from_when: string; restores_reserve: boolean } | null;
 }
@@ -1254,7 +1276,13 @@ export interface ApprovalDetail {
   quote?: ApprovalQuote | null;
   /** What the decision run did, in the server's words. Null while pending. Absent in older recordings. */
   execution?: { status: ApprovalExecutionStatus; summary_text: string | null } | null;
+  /** The one state word for the row ("Approved, cash arrives in 3 days", "Approved, did not run. No money moved.", "Declined, nothing ran", "Waiting for your approval") and its tone, the server's. Absent in older recordings. */
+  result_state_text?: string | null;
+  result_tone?: StateTone | null;
 }
+
+/** The colour of a state, chosen by the server. */
+export type StateTone = "warn" | "ok" | "info" | "neutral" | "bad";
 
 /** One priced leg of a quote. */
 export interface QuoteLine {
@@ -1538,6 +1566,8 @@ export interface ReceiptRow {
   discount_display?: string;
   remaining_display?: string;
   window_state?: "open" | "ended";
+  /** The early-payment window in words ("The early-payment window has ended"), the server's; set on a part-paid row. */
+  window_state_text?: string | null;
 }
 
 /** One labelled fact of the collection handoff, written by the server in the language asked for. */
@@ -2299,6 +2329,8 @@ export interface HomeChange {
   what_changed?: string | null;
   why_it_matters?: string | null;
   why_it_matters_as_of?: "now" | null;
+  /** False when this row's sentence is the same as the one before it, so a page says it once. Absent in older recordings. */
+  why_it_matters_changed?: boolean;
   what_remains?: string | null;
   approval_label?: string | null;
   current_decision_state?: string | null;
@@ -2405,7 +2437,7 @@ export interface HomeView {
   approvals: HomeApproval[];
   pending_count: number;
   /** Supporting reads the server could not make (the names, in the owner's words). Absent or empty when everything was read. */
-  partial?: { missing: string[] };
+  partial?: { missing: string[]; missing_text?: string[]; text?: string } | null;
   /** Up to three decisions still open, newest first (the record's summaries). Absent in older recordings. */
   open_decisions?: DecisionSummary[];
   /** What is left after a cure that did not restore the reserve, in the owner's words; null when nothing is left to decide. */
@@ -2510,6 +2542,8 @@ export interface DecisionSummary {
   state: DecisionState;
   /** The state in the owner's words ("Counter recommended", "Agreed", "Early payment did not arrive"). */
   state_text: string;
+  /** The colour of the state, chosen by the server (warn: waits for the owner or has something left; ok; info; neutral; bad). The browser never picks one. */
+  state_tone?: StateTone;
   terminal: boolean;
   headline: string;
   counterparty_name: string | null;
@@ -2558,8 +2592,11 @@ export type DecisionSent =
       buyer_profile: string | null;
       chosen_counter_id: string | null;
       chosen_label: string | null;
+      /** The labels in the owner's language; absent in older recordings. */
+      chosen_label_text?: string | null;
       accepted_counter_id: string | null;
       accepted_label: string | null;
+      accepted_label_text?: string | null;
       counters_sent: { id: string; label: string | null }[];
       economics: {
         supplier_cost_display: string;
@@ -2597,7 +2634,7 @@ export interface DecisionView extends DecisionSummary {
     evaluated_when: string;
   } | null;
   response: {
-    counters: { id: string; label: string; supplier_cost_display: string; forward_value_display: string }[];
+    counters: { id: string; label: string; label_text?: string; supplier_cost_display: string; forward_value_display: string }[];
     recommended_counter_id: string | null;
     sent: DecisionSent | null;
   } | null;

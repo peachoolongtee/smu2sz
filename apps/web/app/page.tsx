@@ -56,16 +56,21 @@ export default function HomePage() {
   const h = view.data;
   // The decisions still open, minus the two the page already says in its own block: an approval waiting for the owner (the decisions block below
   // has its question) and the one holding the remaining task.
+  // Said once: the hero already says what is on its way, so the funding that is still landing is not listed again.
   const waitingOn = (h?.open_decisions ?? []).filter(
-    (d) => !(d.waiting_for.code === "OWNER_APPROVAL" && (h?.pending_count ?? 0) > 0) && d.id !== h?.remaining_task_decision_id,
+    (d) => !(d.waiting_for.code === "OWNER_APPROVAL" && (h?.pending_count ?? 0) > 0) && d.id !== h?.remaining_task_decision_id && !(d.waiting_for.code === "FUNDING_SETTLEMENT" && h?.cash.in_transit),
   );
+  // The next step's card holds the question when its plan waits for approval; the decision card below would say it again.
+  const cardHoldsApproval = Boolean(h?.next_action?.pending_approval_id) && (h?.approvals ?? []).every((a) => a.id === h?.next_action?.pending_approval_id);
 
   // A phone reads the answer, then the priced action (or the one remaining task), then what needs the owner, then who owes and what changed: the order of the parts changes, never what they say.
   const narrow = useNarrow();
-  const decisions = h && h.pending_count > 0 ? <DecisionsBlock key="decisions" approvals={h.approvals} primary={!h.next_action} /> : null;
+  const decisions = h && h.pending_count > 0 && !cardHoldsApproval ? <DecisionsBlock key="decisions" approvals={h.approvals} primary={!h.next_action} /> : null;
+  // While an approval is open the waiting row would say it a third time.
+  const shownChanges = (h?.changes ?? []).filter((c) => !(c.kind === "WAITING" && (h?.pending_count ?? 0) > 0));
   const changes =
-    h && h.changes.length ? (
-      <ChangesBlock key="changes" changes={h.changes} sinceWhen={h.since_day !== null && h.since_day !== undefined ? t("biz.when.daysAgo", { n: Math.max(h.day - h.since_day, 0) }) : null} />
+    h && shownChanges.length ? (
+      <ChangesBlock key="changes" changes={shownChanges} sinceWhen={h.since_day !== null && h.since_day !== undefined ? t("biz.when.daysAgo", { n: Math.max(h.day - h.since_day, 0) }) : null} />
     ) : null;
   const receivables = h ? (
     <div key="receivables" className="min-w-0 space-y-3">
@@ -88,7 +93,7 @@ export default function HomePage() {
       ) : (
         <div className="space-y-4 sm:space-y-6" aria-busy={view.loading}>
           <StatusBlock h={h} />
-          <PartialRead missing={h.partial?.missing} onRetry={view.reload} />
+          <PartialRead partial={h.partial} onRetry={view.reload} />
           <FixResult result={fixer.result} error={fixer.error} changed={fixer.changed} slow={fixer.slow} rechecked={fixer.rechecked} onRecheck={fixer.recheck} />
           {h.remaining_task ? <RemainingTaskBlock text={h.remaining_task} links={h.remaining_task_links ?? []} decisionId={h.remaining_task_decision_id} primary={h.pending_count === 0} /> : null}
           {h.next_action ? <NextActionBlock a={h.next_action} stateVersion={h.state_version} fixer={fixer} /> : null}

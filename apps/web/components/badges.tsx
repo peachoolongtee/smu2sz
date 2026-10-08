@@ -20,7 +20,7 @@ export function OutcomeBadge({ outcome, large = false }: { outcome: Outcome; lar
   const size = large ? "px-4 py-1.5 text-base font-bold tracking-wide" : "";
   return (
     <Badge tone={tone} className={size} title={outcome}>
-      <span aria-hidden className="text-[0.7em]">
+      <span aria-hidden className="text-xs leading-none">
         {outcome === "ACCEPT" ? "●" : outcome === "REJECT" ? "■" : "◆"}
       </span>
       {te("outcome", outcome)}

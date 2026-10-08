@@ -1,5 +1,6 @@
 {
   "day": 95,
+  "lang": "en",
   "basis": "CONSERVATIVE",
   "state_version": 11,
   "projected_offer_id": null,
@@ -43,12 +44,15 @@
           "cost_formula": "",
           "above_apr_cap": false,
           "executes_automatically": false,
-          "amount_display": "¥420,000.00"
+          "amount_display": "¥420,000.00",
+          "note_when": "chase the buyer; record the receipt when the money lands"
         }
       ],
       "actionable": false,
       "basis": "CONSERVATIVE",
-      "amount_display": "¥420,000.00"
+      "amount_display": "¥420,000.00",
+      "title_when": "Receivable the ¥420,000.00 invoice to Foshan Home Retail Co. due 48 days ago is 48 days past due",
+      "detail_when": "¥420,000.00 outstanding from Foshan Home Retail Co. was due 48 days ago and is still FINANCED. The cash forecast no longer counts on a dated receipt. The financing advance falls due with it."
     },
     {
       "id": "ALERT-MANDATE-EXPIRY",
@@ -71,7 +75,9 @@
       },
       "suggested": [],
       "actionable": false,
-      "basis": "CONSERVATIVE"
+      "basis": "CONSERVATIVE",
+      "title_when": "mandate expired: the agent can no longer act",
+      "detail_when": "Mandate v1 expired 5 days ago, 5 days ago. Every operation is refused (MANDATE_EXPIRED) until the owner signs a new mandate. Renewal is an offline owner step: sign a new mandate outside the agent. The agent cannot renew or extend it, and it suggests no operation."
     },
     {
       "id": "ALERT-RESERVE-95",
@@ -96,7 +102,9 @@
       "suggested": [],
       "actionable": false,
       "basis": "CONSERVATIVE",
-      "amount_display": "¥393,564.38"
+      "amount_display": "¥393,564.38",
+      "title_when": "Reserve breach ahead today",
+      "detail_when": "Projected cash closes at −¥93,564.38 today, ¥393,564.38 below your minimum cash reserve; the gap peaks at ¥393,564.38 today and lasts until 11 days from now. No committed facility can cure it; uncommitted facilities count as zero."
     },
     {
       "id": "ALERT-RESERVE-120",
@@ -133,12 +141,15 @@
           "cost_formula": "",
           "above_apr_cap": false,
           "executes_automatically": false,
-          "amount_display": "¥18,564.38"
+          "amount_display": "¥18,564.38",
+          "note_when": "Needs your approval: you apply; counted as zero until committed"
         }
       ],
       "actionable": true,
       "basis": "CONSERVATIVE",
-      "amount_display": "¥18,564.38"
+      "amount_display": "¥18,564.38",
+      "title_when": "Reserve breach ahead in 25 days",
+      "detail_when": "Projected cash closes at ¥281,435.62 in 25 days, ¥18,564.38 below your minimum cash reserve; the gap peaks at ¥18,564.38 in 25 days and lasts until 41 days from now. No committed facility can cure it; uncommitted facilities count as zero."
     },
     {
       "id": "ALERT-PASTDUE-RCV-A",
@@ -174,12 +185,15 @@
           "cost_formula": "",
           "above_apr_cap": false,
           "executes_automatically": false,
-          "amount_display": "¥162,800.00"
+          "amount_display": "¥162,800.00",
+          "note_when": "chase the buyer; record the receipt when the money lands"
         }
       ],
       "actionable": false,
       "basis": "CONSERVATIVE",
-      "amount_display": "¥162,800.00"
+      "amount_display": "¥162,800.00",
+      "title_when": "Receivable the ¥420,000.00 invoice to Foshan Home Retail Co. due 63 days ago is 63 days past due",
+      "detail_when": "¥162,800.00 outstanding from Foshan Home Retail Co. was due 63 days ago and is still OPEN. The cash forecast no longer counts on a dated receipt."
     },
     {
       "id": "ALERT-PASTDUE-RI:BUYER-1:32",
@@ -215,12 +229,15 @@
           "cost_formula": "",
           "above_apr_cap": false,
           "executes_automatically": false,
-          "amount_display": "¥420,000.00"
+          "amount_display": "¥420,000.00",
+          "note_when": "chase the buyer; record the receipt when the money lands"
         }
       ],
       "actionable": false,
       "basis": "CONSERVATIVE",
-      "amount_display": "¥420,000.00"
+      "amount_display": "¥420,000.00",
+      "title_when": "Receivable the ¥420,000.00 invoice to Foshan Home Retail Co. due 18 days ago is 18 days past due",
+      "detail_when": "¥420,000.00 outstanding from Foshan Home Retail Co. was due 18 days ago and is still OPEN. The cash forecast no longer counts on a dated receipt."
     },
     {
       "id": "ALERT-HEADROOM-107",
@@ -241,8 +258,13 @@
       "suggested": [],
       "actionable": false,
       "basis": "CONSERVATIVE",
-      "amount_display": "¥26,435.62"
+      "amount_display": "¥26,435.62",
+      "title_when": "Cash is close to your minimum in 12 days",
+      "detail_when": "Cash stays above your minimum cash reserve by only ¥26,435.62 in 12 days (13 days with less than 10% of your minimum cash reserve to spare)."
     }
   ],
-  "note": "A suggested operation is executed only through POST /alerts/{id}/act or POST /operations, never by itself."
+  "note": "A suggested operation is executed only through POST /alerts/{id}/act or POST /operations, never by itself.",
+  "note_when": "A suggested step runs only when you choose it. Nothing runs by itself.",
+  "last_read_when": "today",
+  "last_read_day": 95
 }

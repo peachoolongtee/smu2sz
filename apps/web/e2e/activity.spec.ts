@@ -119,7 +119,7 @@ test("each event says what changed, why it matters (labelled Now when it is toda
   await expect(waiting.getByTestId("activity-why")).toContainText("Why it matters");
   await expect(waiting.getByTestId("activity-why")).toContainText("Quoted cost ¥1,782.19");
   await expect(waiting.getByTestId("activity-why")).not.toContainText("Now");
-  await expect(waiting.getByTestId("activity-remains")).toContainText("What remains");
+  await expect(waiting.getByTestId("activity-remains")).toContainText("What is left");
   await expect(waiting.getByTestId("activity-approval")).toContainText("Approval requested");
 
   // Approved: the history keeps "Approval requested" but says where the decision stands today and links to it; the decision row reads in the present.
@@ -133,13 +133,14 @@ test("each event says what changed, why it matters (labelled Now when it is toda
   await expect(requested.getByTestId("activity-approval-state")).toHaveText("Now: Requested; the cash is on its way");
   await expect(requested.getByTestId("activity-record")).toHaveAttribute("href", /^\/decisions\/alert:ALERT-RESERVE-42/);
   const approved = page.getByTestId("activity-SUBMIT_INVOICE_FOR_FINANCING").filter({ hasText: "You approved" });
-  await expect(approved.getByTestId("activity-why")).toContainText("Why it matters");
-  await expect(approved.getByTestId("activity-why").getByText("Now", { exact: true })).toBeVisible();
+  // Today's forecast is one sentence, labelled Now, said once above the timeline; the row does not repeat it.
+  await expect(page.getByTestId("activity-now")).toContainText("Now");
+  await expect(page.getByTestId("activity-now")).toHaveCount(1);
+  await expect(approved.getByTestId("activity-why")).toHaveCount(0);
   await expect(approved.getByTestId("activity-remains")).toContainText("Waiting for Invoice financing");
-  // The three parts in that order.
-  const order = await approved.evaluate((el) => ["activity-event", "activity-why", "activity-remains"].map((id) => el.querySelector(`[data-testid="${id}"]`)?.getBoundingClientRect().top ?? -1));
+  // What changed, then what is left.
+  const order = await approved.evaluate((el) => ["activity-event", "activity-remains"].map((id) => el.querySelector(`[data-testid="${id}"]`)?.getBoundingClientRect().top ?? -1));
   expect(order[0]).toBeLessThan(order[1]);
-  expect(order[1]).toBeLessThan(order[2]);
   // The decision row never reads "Waiting" beside its own approval.
   await expect(page.getByTestId("activity-approval-state")).not.toContainText("Waiting for your approval");
 });

@@ -1,7 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { resetBooks, runPlan } from "./helpers";
+import { resetBooks, runPlan, sendCounter } from "./helpers";
 import { STORY_STEPS } from "./helpers";
 
 /**
@@ -67,7 +67,7 @@ test("Deals: the inbox, a checked deal with its priced response, and the decisio
 
 test("an approval waiting, the chase dialog and the remaining task at day 34", async ({ page }) => {
   await checkedDeal(page);
-  await page.locator("#counters").getByTestId("deal-send").click();
+  await sendCounter(page.locator("#counters"));
   await advanceTo(page, 34);
   await page.goto("/");
   await expect(page.getByTestId("home-next-action")).toBeVisible();
@@ -89,7 +89,7 @@ test("an approval waiting, the chase dialog and the remaining task at day 34", a
 test("the chat panel and the Demo story", async ({ page }) => {
   await page.goto("/");
   await page.getByTestId("chat-open").click();
-  await expect(page.getByRole("dialog", { name: "Chat with the agent" })).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "Ask FLOW" })).toBeVisible();
   await scan(page, "chat panel");
   await page.keyboard.press("Escape");
   await page.goto("/demo");
@@ -121,8 +121,8 @@ test("the approval question, its decided card with the execution summary, the re
   await expect(page.getByTestId("record-state")).toBeVisible();
   await scan(page, "decision record");
   await page.goto("/");
-  await expect(page.getByTestId("home-waiting-on-list")).toBeVisible();
-  await scan(page, "/ Waiting on");
+  await expect(page.getByTestId("home-in-transit")).toBeVisible();
+  await scan(page, "/ funding on its way");
   await page.goto("/cash");
   await expect(page.locator("h1").first()).toBeVisible();
   await scan(page, "/cash after the approval");

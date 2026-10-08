@@ -82,7 +82,7 @@
           {
             "kind": "DISCOUNT",
             "label": "Discount on early settlement of the ¥420,000.00 invoice to Foshan Home Retail Co. due in 32 days (CTR-193394b6ba8b-O2)",
-            "label_short": "Discount on early settlement of the ¥420",
+            "label_short": "Discount on early settlement of the ¥420,000.00 invoice to Foshan Home Retail Co. due in 32 days",
             "amount_fen": -218620,
             "amount_display": "−¥2,186.20",
             "amount_short": "−¥2k"
@@ -1300,6 +1300,7 @@
       "family": "DEAL",
       "state": "AGREED",
       "state_text": "Agreed",
+      "state_tone": "info",
       "terminal": false,
       "headline": "Offer from Foshan Home Retail Co.",
       "counterparty_name": "Foshan Home Retail Co.",
@@ -1339,7 +1340,8 @@
       "decision_link": {
         "decision_id": "deal:OFF-f806f79b6c21",
         "href": "/decisions/deal:OFF-f806f79b6c21"
-      }
+      },
+      "why_it_matters_changed": true
     },
     {
       "day": 0,
@@ -1359,7 +1361,8 @@
       "decision_link": {
         "decision_id": "deal:OFF-f806f79b6c21",
         "href": "/decisions/deal:OFF-f806f79b6c21"
-      }
+      },
+      "why_it_matters_changed": false
     }
   ],
   "receivables": {
@@ -1392,8 +1395,8 @@
     {
       "id": "ALERT-HEADROOM-30",
       "kind": "RESERVE_HEADROOM_LOW",
-      "title": "Reserve headroom thin in 30 days",
-      "detail": "Cash stays above the floor but only by ¥0.00 in 30 days (17 day(s) under 10% of the floor).",
+      "title": "Cash is close to your minimum in 30 days",
+      "detail": "Cash stays above your minimum cash reserve by only ¥0.00 in 30 days (17 days with less than 10% of your minimum cash reserve to spare).",
       "day": 30,
       "when": "in 30 days"
     }
@@ -1438,5 +1441,6 @@
     "WARNING": 1,
     "INFO": 0
   },
-  "note_basis": "Conservative projection of today's books: unconfirmed receipts are not counted."
+  "note_basis": "Conservative projection of today's books: unconfirmed receipts are not counted.",
+  "partial": null
 }

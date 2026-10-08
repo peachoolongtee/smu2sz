@@ -9,6 +9,8 @@
 
 import { nl } from "./api";
 import { onSignedIn, onSignedOut } from "./auth";
+import { getLang } from "./i18n";
+import { getMode, shellFor } from "./mode";
 import { nlContext } from "./chat-context";
 import { ApiError } from "./errors";
 import { errorMessage } from "./error-text";
@@ -104,6 +106,11 @@ function patchConv(role: NlActor, fn: (c: Conversation) => Conversation): void {
   store.set((s) => ({ ...s, convs: { ...s.convs, [role]: fn(s.convs[role]) } }));
 }
 
+/** Whether the page the owner is on shows the Business shell: its chat then asks for the owner's wording (no ids, no tier words). */
+function onBusinessShell(): boolean {
+  return typeof window !== "undefined" && shellFor(window.location.pathname, getMode()) === "business";
+}
+
 interface Attempt {
   role: NlActor;
   counterpartyId: CounterpartyId;
@@ -125,10 +132,11 @@ async function run(a: Attempt): Promise<NlResponse | null> {
       actor: a.role,
       counterparty_id: a.role === "COUNTERPARTY" ? a.counterpartyId : undefined,
       text: a.text,
+      lang: getLang(),
       request_id: a.requestId,
       // The owner's page, as ids: the deal it evaluated, the invoice row it has open, the last visit. A buyer's turn names none.
       context: a.role === "OWNER" ? nlContext() : undefined,
-    });
+    }, { business: a.role === "OWNER" && onBusinessShell() });
     delete failed[a.role];
     patchConv(a.role, (c) =>
       c.generation !== generation ? c : { ...c, busy: false, sessionId: response.session_id, messages: [...c.messages, { id: uid("a"), from: "assistant", response }] },

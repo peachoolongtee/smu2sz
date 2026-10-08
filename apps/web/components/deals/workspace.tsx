@@ -8,7 +8,7 @@ import { decisionHref } from "@/components/business/open-decisions";
 import { ParsedTerms } from "@/components/deals/asks";
 import { AllChecks, checkCount, EngineVerdictLine } from "@/components/deals/reasons";
 import { PlanCard } from "@/components/plan-card";
-import { Badge, Callout, Card, Formula } from "@/components/ui";
+import { Badge, Callout, Card, Formula, StatePill, textLinkClass, type Tone } from "@/components/ui";
 import { useI18n } from "@/lib/i18n";
 import { annotationsFor, type OfferItem } from "@/lib/offer-items";
 import type { AdvancedKey, DealWorkspace, Displayed, Obligation, OfferView, VerdictView } from "@/lib/types";
@@ -21,33 +21,34 @@ import { whenText } from "@/lib/when";
  * up and decides nothing (INVARIANT 13).
  */
 
-/** The compact header of the selected deal: the buyer, the offer's one-line ask, when it came and when it was checked. */
-export function SelectedBuyer({ buyer, ask, received, evaluatedWhen, stateChip = null, children }: { buyer: string; ask: string; received: string; evaluatedWhen: string | null; stateChip?: string | null; children?: React.ReactNode }) {
+/**
+ * The compact header of the selected deal: the buyer, when the offer came, when it was checked, and one chip for where the deal stands (the
+ * record's state in the server's words, its colour the server's `state_tone`; the browser never picks one). No ask line (the asks card says it
+ * once) and no step line (the chip is the step).
+ */
+export function SelectedBuyer({ buyer, received, evaluatedWhen, state = null }: { buyer: string; received: string; evaluatedWhen: string | null; state?: { code: string; text: string; tone: Tone } | null }) {
   const { t } = useI18n();
   return (
     <section id="deal-selected" aria-labelledby="deal-selected-title" className="motion-reveal min-w-0 rounded-card border border-line bg-surface px-4 py-3 shadow-card">
-      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
         <h2 id="deal-selected-title" className="text-balance text-base font-semibold text-ink">
           {buyer}
         </h2>
-        <p className="text-xs text-ink-3" data-testid="deal-selected-meta">
-          {received}
-          {evaluatedWhen ? (
-            <>
-              {" · "}
-              <span data-testid="deal-evaluated">{t("biz.deals.evaluatedWhen", { when: evaluatedWhen })}</span>
-            </>
-          ) : null}
-        </p>
+        {state ? (
+          <span data-testid="deal-state-chip" data-state={state.code}>
+            <StatePill tone={state.tone}>{state.text}</StatePill>
+          </span>
+        ) : null}
       </div>
-      <p className="mt-0.5 text-sm text-ink-2">{ask}</p>
-      {/* On a phone the step line gives way to one chip: where the deal stands, in the record's words. */}
-      {stateChip ? (
-        <p className="mt-2" data-testid="deal-state-chip">
-          <Badge tone="info">{stateChip}</Badge>
-        </p>
-      ) : null}
-      {children}
+      <p className="mt-0.5 text-xs text-ink-3" data-testid="deal-selected-meta">
+        {received}
+        {evaluatedWhen ? (
+          <>
+            {" · "}
+            <span data-testid="deal-evaluated">{t("biz.deals.evaluatedWhen", { when: evaluatedWhen })}</span>
+          </>
+        ) : null}
+      </p>
     </section>
   );
 }
@@ -232,7 +233,7 @@ export function AdvancedDetails({ ws, v, offer, items, asks }: { ws: DealWorkspa
         ))}
         {v.plan ? <PlanCard plan={v.plan} id="deal-plan" /> : null}
         <p className="text-xs text-ink-3">
-          <Link href="/verdict" className="font-medium text-brand-700 underline underline-offset-2">
+          <Link href="/verdict" className={textLinkClass}>
             {t("biz.deals.fullVerdict")}
           </Link>
         </p>
@@ -246,7 +247,7 @@ export function AdvancedDetails({ ws, v, offer, items, asks }: { ws: DealWorkspa
             <>
               <dt>{t("biz.deals.adv.record")}</dt>
               <dd className="break-all">
-                <Link href={decisionHref(v.decision_id)} className="font-mono font-medium text-brand-700 underline underline-offset-2">
+                <Link href={decisionHref(v.decision_id)} className={`font-mono ${textLinkClass}`}>
                   {v.decision_id}
                 </Link>
               </dd>

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { CheckIcon } from "@/components/icons";
 import { Disclosure } from "@/components/business/kit";
-import { Badge, Button, Card, Chip, ErrorState, LoadingBlock } from "@/components/ui";
+import { Badge, Button, Card, Chip, ErrorState, LoadingBlock, textLinkClass } from "@/components/ui";
 import { useI18n } from "@/lib/i18n";
 import { INBOX, type InboxMessage } from "@/lib/inbox";
 import type { Mode } from "@/lib/mode";
@@ -215,7 +215,7 @@ export function InboxList({
             <span aria-hidden className="mt-1 size-1.5 shrink-0 rounded-pill bg-bad-solid" />
             <span>
               {aside.text}{" "}
-              <Link href={aside.href} className="font-medium text-brand-700 underline underline-offset-2">
+              <Link href={aside.href} className={textLinkClass}>
                 {t("biz.deals.blocked.link")}
               </Link>
             </span>

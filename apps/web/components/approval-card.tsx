@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { TierBadge } from "@/components/badges";
 import { Disclosure } from "@/components/business/kit";
-import { Badge, Button, Callout, Card, KeyValueList, type Tone } from "@/components/ui";
+import { Badge, Button, Callout, Card, KeyValueList, StatePill, textLinkClass, type Tone } from "@/components/ui";
 import { approveDisabled, termsGate } from "@/lib/approval-terms";
 import { useI18n } from "@/lib/i18n";
 import type { ApprovalDecision, ApprovalQuote, ApprovalView } from "@/lib/types";
@@ -18,14 +18,16 @@ const statusTone: Record<ApprovalView["status"], Tone> = { PENDING: "warn", APPR
  * total), how the rate is billed, and, once decided, what actually happened and how it differs from the quote. A quote that was never
  * stored says so in the server's words. Nothing here is computed: every line is a string from the decision record.
  */
-export function QuoteBlock({ id, quote, missing, alwaysLines = false }: { id: string; quote: ApprovalQuote; missing: string | null; alwaysLines?: boolean }) {
+export function QuoteBlock({ id, quote, missing, alwaysLines = false, hideLands = false, bare = false }: { id: string; quote: ApprovalQuote; missing: string | null; alwaysLines?: boolean; hideLands?: boolean; /** Inside a fold that already names it: no rule and no heading of its own. */ bare?: boolean }) {
   const { t } = useI18n();
   const lines = quote.lines ?? [];
   return (
-    <section aria-labelledby={`quote-${id}`} className="mt-4 border-t border-line pt-3" data-testid="approval-quote">
-      <h3 id={`quote-${id}`} className="mb-1.5 text-xs font-medium text-ink-3">
-        {quote.recorded && quote.quoted_when ? t("appr.quote.when", { when: quote.quoted_when }) : t("appr.quote.title")}
-      </h3>
+    <section aria-labelledby={bare ? undefined : `quote-${id}`} aria-label={bare ? t("appr.quote.title") : undefined} className={bare ? "mt-2" : "mt-4 border-t border-line pt-3"} data-testid="approval-quote">
+      {bare ? null : (
+        <h3 id={`quote-${id}`} className="mb-1.5 text-xs font-medium text-ink-3">
+          {quote.recorded && quote.quoted_when ? t("appr.quote.when", { when: quote.quoted_when }) : t("appr.quote.title")}
+        </h3>
+      )}
       {missing ? (
         <p className="text-sm text-ink-2" data-testid="approval-quote-missing">
           {missing}
@@ -53,7 +55,7 @@ export function QuoteBlock({ id, quote, missing, alwaysLines = false }: { id: st
           ) : null}
           {quote.rate_basis ? <p className="text-xs text-ink-2">{quote.rate_basis}</p> : null}
           {quote.cost_note ? <p className="text-xs text-ink-2">{quote.cost_note}</p> : null}
-          {quote.lands_when && !lines.length ? <p className="text-xs text-ink-2">{t("appr.quote.lands", { when: quote.lands_when })}</p> : null}
+          {quote.lands_when && !lines.length && !hideLands ? <p className="text-xs text-ink-2">{t("appr.quote.lands", { when: quote.lands_when })}</p> : null}
           {quote.actual?.length ? (
             <div data-testid="approval-quote-actual">
               <p className="text-xs font-medium text-ink-3">{t("appr.quote.actual")}</p>
@@ -118,6 +120,9 @@ export function ApprovalCard({
   const quoted = quote?.recorded ? quote : null;
   const quoteMissing = quote && !quote.recorded && quote.text && PRICED_KINDS.has(a.operation_kind) ? quote.text : null;
   const refusedReason = a.result_message || resultMessage || "";
+  // The one state word and its tone come from the server; the card never derives a colour from the status.
+  const stateText = a.result_state_text ?? p?.result_state_text ?? null;
+  const stateTone: Tone = (a.result_tone ?? p?.result_tone ?? "neutral") as Tone;
 
   const names: { k: string; v: React.ReactNode }[] = [];
   if (op?.facility_id) names.push({ k: t("appr.facility"), v: op.facility_id });
@@ -162,6 +167,7 @@ export function ApprovalCard({
   } else if (p?.lands_day !== null && p?.lands_day !== undefined) {
     facts.push({ k: t("biz.lands"), v: <span data-testid="approval-lands">{p.lands_when ?? t("common.dayN", { n: p.lands_day })}</span> });
   }
+  const landsShown = (isPending && Boolean(p?.lands_text)) || (p?.lands_day !== null && p?.lands_day !== undefined);
   if (p?.facility_name) facts.push({ k: t("biz.source"), v: p.facility_name });
   if (p?.invoice) facts.push({ k: t("biz.invoice"), v: p.invoice });
 
@@ -170,9 +176,39 @@ export function ApprovalCard({
       id={`approval-${a.id}`}
       tone={isPending ? "warn" : undefined}
       title={<span data-testid="approval-headline">{p?.headline ?? a.subject}</span>}
-      subtitle={p?.what ?? `${a.id} · ${te("opkind", a.operation_kind)}`}
-      actions={<Badge tone={statusTone[a.status]}>{te("apprstatus", a.status)}</Badge>}
+      // The sentence under the title says what the request is; when the Source and Invoice facts below say it already, it is not said twice.
+      subtitle={p?.facility_name && p?.invoice ? undefined : (p?.what ?? `${a.id} · ${te("opkind", a.operation_kind)}`)}
+      actions={
+        // The state is one word and one tone, the server's (`result_tone`): never green on a refusal. An older recording keeps the status badge.
+        stateText ? <StatePill tone={stateTone} testId={`approval-state-${a.id}`}>{stateText}</StatePill> : <Badge tone={statusTone[a.status]}>{te("apprstatus", a.status)}</Badge>
+      }
     >
+      {isPending ? null : (
+        // Decided: the result comes first, with what the decision run did and what is left.
+        <div className="mb-4 rounded-tile border border-line bg-subtle px-3.5 py-3 text-sm" data-testid={`approval-outcome-${a.id}`} data-execution={execution ?? ""}>
+          <p className="font-semibold text-ink">{t("appr.result")}</p>
+          {approvedButRefused ? (
+            <div role="status" data-testid={`approval-refused-${a.id}`} className="mt-1">
+              <p className="break-words text-ink" data-testid={`approval-result-${a.id}`}>
+                {refusedSentence ?? t("appr.refused.sentence", { reason: refusedReason.replace(/[.\s]+$/, "") || t("appr.refused.noReason") })}
+              </p>
+            </div>
+          ) : shownResult ? (
+            <p className="mt-1 break-words text-ink" role="status" data-testid={`approval-result-${a.id}`} data-execution={execution ?? ""}>
+              {shownResult}
+            </p>
+          ) : null}
+          {p?.residual ? (
+            <p className="mt-1 font-medium text-warn-fg" data-testid={`approval-residual-${a.id}`}>
+              {t("appr.residual", { amount: p.residual.shortfall_display, when: p.residual.from_when })}
+            </p>
+          ) : null}
+          {/* The day of a decision is shown only when the API recorded it for that decision. */}
+          <p className="mt-1 text-xs text-ink-3" data-testid={`approval-decided-${a.id}`}>
+            {p?.decided_when ? t("appr.decidedWhen", { when: p.decided_when }) : a.decided_day !== null && a.decided_day !== undefined ? t("appr.decidedOn", { day: a.decided_day }) : t("appr.decided")}
+          </p>
+        </div>
+      )}
       {/* The facts in two columns: the label above its value. */}
       <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm" data-testid={`approval-facts-${a.id}`}>
         {facts.map((f, i) => (
@@ -216,8 +252,19 @@ export function ApprovalCard({
           )}
         </div>
       ) : null}
-      {quoted || quoteMissing ? (
-        <QuoteBlock id={a.id} quote={quote as ApprovalQuote} missing={quoteMissing} />
+      {isPending ? (
+        quoted || quoteMissing ? <QuoteBlock id={a.id} quote={quote as ApprovalQuote} missing={quoteMissing} hideLands={landsShown} /> : null
+      ) : quoted || quoteMissing ? (
+        // Decided: what was quoted is history, kept behind its own fold with the after-state it promised.
+        <Disclosure className="mt-3 border-t border-line pt-1" testId={`approval-quoted-${a.id}`} summary={quoted?.quoted_when ? t("appr.quote.when", { when: quoted.quoted_when }) : t("appr.quote.title")}>
+          <QuoteBlock id={a.id} quote={quote as ApprovalQuote} missing={quoteMissing} hideLands={landsShown} bare />
+          {quoted?.after || p?.protects ? (
+            <p className="mt-2 text-sm text-ink-2">
+              <span className="font-medium text-ink-3">{t("biz.after")}: </span>
+              <span data-testid="approval-after">{quoted?.after || p?.protects}</span>
+            </p>
+          ) : null}
+        </Disclosure>
       ) : null}
       <dl className="mt-4 space-y-3 border-t border-line pt-3 text-sm">
         <div>
@@ -227,7 +274,7 @@ export function ApprovalCard({
           </dd>
         </div>
         {/* The stored quote's after-state and what declining leaves win over today's recomputation: they are what the owner was quoted. */}
-        {quoted?.after || p?.protects ? (
+        {isPending && (quoted?.after || p?.protects) ? (
           <div>
             <dt className="text-xs font-medium text-ink-3">{t("biz.after")}</dt>
             <dd className="text-ink" data-testid="approval-after">
@@ -258,28 +305,10 @@ export function ApprovalCard({
             {t("appr.reject")}
           </Button>
         </div>
-      ) : (
-        // The day of a decision is shown only when the API recorded it for that decision.
-        <p className="mt-3 text-xs text-ink-3" data-testid={`approval-decided-${a.id}`}>
-          {p?.decided_when ? t("appr.decidedWhen", { when: p.decided_when }) : a.decided_day !== null && a.decided_day !== undefined ? t("appr.decidedOn", { day: a.decided_day }) : t("appr.decided")}
-        </p>
-      )}
-      {approvedButRefused ? (
-        <div className="mt-3" role="status" data-testid={`approval-refused-${a.id}`}>
-          <Callout tone="bad" title={t("appr.refused.title")}>
-            <p className="break-words" data-testid={`approval-result-${a.id}`}>
-              {refusedSentence ?? t("appr.refused.sentence", { reason: refusedReason.replace(/[.\s]+$/, "") || t("appr.refused.noReason") })}
-            </p>
-          </Callout>
-        </div>
-      ) : shownResult ? (
-        <p className="mt-2 text-sm font-medium text-ink" role="status" data-testid={`approval-result-${a.id}`} data-execution={execution ?? ""}>
-          {t("appr.result")}: {shownResult}
-        </p>
       ) : null}
       {a.decision_id ? (
         <p className="mt-2 text-xs">
-          <Link href={`/decisions/${encodeURIComponent(a.decision_id)}`} className="font-medium text-brand-700 underline underline-offset-2" data-testid={`approval-record-${a.id}`}>
+          <Link href={`/decisions/${encodeURIComponent(a.decision_id)}`} className={textLinkClass} data-testid={`approval-record-${a.id}`}>
             {t("appr.record")}
           </Link>
         </p>

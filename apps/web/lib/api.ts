@@ -221,8 +221,8 @@ export async function getPilotJournal(): Promise<PilotJournalView | null> {
 }
 
 /** POST /nl: one turn of the conversation. Owner turns need the owner token (401 opens the sign-in dialog). */
-export async function nl(req: NlRequest): Promise<NlResponse> {
-  return isMock ? (await mock()).nl(req) : (await live()).nl(req);
+export async function nl(req: NlRequest, opts: { business?: boolean } = {}): Promise<NlResponse> {
+  return isMock ? (await mock()).nl(req) : (await live()).nl(req, opts);
 }
 
 /** POST /nl/opener: the agent speaks first. Owner only. Any pending cure waits in `sessionId` until "go ahead". */

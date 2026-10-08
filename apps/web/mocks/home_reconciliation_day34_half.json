@@ -28,7 +28,8 @@
       "face_cleared_display": "¥128,600.00",
       "discount_display": "¥1,093.10",
       "remaining_display": "¥291,400.00",
-      "window_state": "ended"
+      "window_state": "ended",
+      "window_state_text": "The early-payment window has ended"
     }
   ],
   "outstanding": [
@@ -88,5 +89,6 @@
   ],
   "lapsed_promises": 0,
   "received_total_display": "¥127,506.90",
-  "expected_total_display": "¥127,506.90"
+  "expected_total_display": "¥127,506.90",
+  "last_read_when": "today"
 }

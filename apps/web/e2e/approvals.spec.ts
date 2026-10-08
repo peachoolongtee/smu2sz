@@ -69,7 +69,7 @@ test("an approval card expands in place to the operation, the reason, the amount
   await expect(card.getByTestId("approval-if-decline")).toHaveText("Nothing runs; the request is closed.");
   await expect(card.getByRole("button", { name: "Decline", exact: true })).toBeVisible();
   await card.getByRole("button", { name: "Approve ¥600,000.00", exact: true }).click();
-  await expect(card.getByTestId("approval-result-APR-000001")).toContainText("Result:");
+  await expect(card.getByTestId("approval-outcome-APR-000001")).toContainText("Result");
   await expect(card).toContainText("Approved");
 });
 

@@ -54,6 +54,8 @@
       "residual": null,
       "execution_status": "PENDING",
       "reason": "The verdict requires owner approval.",
+      "result_state_text": "Waiting for your approval",
+      "result_tone": "warn",
       "result_message": null,
       "decided_when": null,
       "created_when": "today"
@@ -64,7 +66,9 @@
     "execution": {
       "status": "PENDING",
       "summary_text": "Waiting for your approval. Nothing has run."
-    }
+    },
+    "result_state_text": "Waiting for your approval",
+    "result_tone": "warn"
   },
   "expired": {
     "id": "APR-000001",
@@ -119,6 +123,8 @@
       "residual": null,
       "execution_status": "PENDING",
       "reason": "The verdict requires owner approval.",
+      "result_state_text": "Waiting for your approval",
+      "result_tone": "warn",
       "result_message": null,
       "decided_when": null,
       "created_when": "60 days ago"
@@ -129,7 +135,9 @@
     "execution": {
       "status": "PENDING",
       "summary_text": "Waiting for your approval. Nothing has run."
-    }
+    },
+    "result_state_text": "Waiting for your approval",
+    "result_tone": "warn"
   },
   "refused": {
     "pending": {
@@ -176,6 +184,8 @@
         "residual": null,
         "execution_status": "PENDING",
         "reason": "The yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval.",
+        "result_state_text": "Waiting for your approval",
+        "result_tone": "warn",
         "result_message": null,
         "decided_when": null,
         "created_when": "today"
@@ -215,7 +225,9 @@
       "execution": {
         "status": "PENDING",
         "summary_text": "Waiting for your approval. Nothing has run."
-      }
+      },
+      "result_state_text": "Waiting for your approval",
+      "result_tone": "warn"
     },
     "decided": {
       "id": "APR-000001",
@@ -261,6 +273,8 @@
         "residual": null,
         "execution_status": "REFUSED",
         "reason": "The yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval.",
+        "result_state_text": "Approved, did not run. No money moved.",
+        "result_tone": "bad",
         "result_message": "You approved it, but it could not run: Mandate v1 expired yesterday. No money moved.",
         "decided_when": "today",
         "created_when": "57 days ago"
@@ -303,6 +317,8 @@
         "status": "REFUSED",
         "summary_text": "You approved it, but it could not run: Mandate v1 expired yesterday. No money moved."
       },
+      "result_state_text": "Approved, did not run. No money moved.",
+      "result_tone": "bad",
       "execution_status": "REFUSED"
     }
   }

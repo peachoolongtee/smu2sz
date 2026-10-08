@@ -23,10 +23,11 @@ export function RemainingTaskBlock({ text, links, decisionId, primary = false }:
         {text}
       </p>
       {links.length ? (
-        <ul className="mt-3 flex flex-wrap gap-2" data-testid="home-remaining-links" aria-label={t("biz.remaining.links")}>
+        <ul className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1" data-testid="home-remaining-links" aria-label={t("biz.remaining.links")}>
           {links.map((l, i) => (
             <li key={l.href}>
-              <Link href={l.href} className={buttonClass(primary && i === 0 ? "primary" : "secondary", "md", "max-w-full whitespace-normal text-center")}>
+              {/* The first route is the one primary (when nothing else is waiting); the others are text links. */}
+              <Link href={l.href} className={primary && i === 0 ? buttonClass("primary", "md", "max-w-full whitespace-normal text-center") : textLinkClass}>
                 {l.label}
               </Link>
             </li>

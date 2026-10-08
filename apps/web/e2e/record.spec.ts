@@ -1,6 +1,6 @@
 import type { Page } from "@playwright/test";
 import { expect, proseOf, test } from "./fixtures";
-import { runPlan } from "./helpers";
+import { runPlan, sendCounter } from "./helpers";
 
 /**
  * Wave 2 (map #65), mock mode: the pages read the durable decision record (ADR-0011). Each state is a recording of GET /decisions/{id} from the
@@ -37,26 +37,21 @@ async function advanceTo(page: Page, day: number) {
 test("the steps follow the record: Response ready names the recommendation, a send moves it to Sent and Agreed", async ({ page }) => {
   await page.goto("/deals");
   await page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01").click();
-  // Read but not checked: the record is RECEIVED, so the line stops after the first step.
-  const steps = page.getByTestId("deal-steps");
+  // Read but not checked: the record is RECEIVED. The chip is the record's state in the server's words and tone; there is no step line.
+  const steps = page.getByTestId("deal-state-chip");
   await expect(steps).toHaveAttribute("data-state", "RECEIVED");
-  await expect(steps).toContainText("Received");
-  await expect(steps).toContainText("Response ready");
-  // The line is quiet text: no step is a link.
-  await expect(steps.getByRole("link")).toHaveCount(0);
+  await expect(page.getByTestId("deal-steps")).toHaveCount(0);
   await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
   await expect(steps).toHaveAttribute("data-state", "RESPONSE_READY");
-  await expect(steps).toContainText("Response ready (Counter recommended)");
-  await expect(page.getByTestId("deal-steps-outcome")).toHaveText("Agreement");
+  await expect(steps).toContainText("Counter recommended");
   await expect(steps).not.toContainText("Agreed");
   // The inbox row says the record's state in the server's words (the inbox is one row until it is asked for).
   await page.getByTestId("inbox-back").click();
   await expect(page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01")).toContainText("Showing below");
 
-  await page.locator("#counters").getByTestId("deal-send").click();
+  await sendCounter(page.locator("#counters"));
   await expect(steps).toHaveAttribute("data-state", "AGREED");
-  await expect(page.getByTestId("deal-steps-outcome")).toHaveText("Agreed");
-  await expect(steps).toContainText("Sent");
+  await expect(steps).toContainText("Agreed");
   // The agreements card keeps the deal, with the record's word for where it stands.
   await expect(page.locator("#commitments").getByTestId("commitment-state")).toHaveText("Agreed");
 });
@@ -66,9 +61,8 @@ test("the send names its option, says the reply is simulated, and carries what w
   const response = page.locator("#counters");
   const send = response.getByTestId("deal-send");
   await expect(send).toHaveText("Send Option A (simulated buyer reply)");
-  await expect(response.getByTestId("deal-option-Option-A").getByTestId("deal-send-scope")).toHaveText(
-    "Sends Option A to the buyer (the reply is simulated); records the agreement, with your approval when it changes terms; runs the funding for any remaining gap within your limits.",
-  );
+  await expect(response.getByTestId("deal-option-Option-A").getByTestId("deal-send-scope")).toContainText("Records the agreement with Foshan Home Retail Co. (needs your approval when it changes terms)");
+  await expect(response.getByTestId("deal-send-scope-lines")).toContainText("Estimated cost ¥841.57");
   // The send is described by its scope sentence for assistive tools.
   await expect(send).toHaveAttribute("aria-describedby", /scope-deal-option-Option-A/);
   await response.getByTestId("deal-compare").click();
@@ -84,7 +78,7 @@ test("COUNTER_CHANGED, the verdict was replaced: the current proposal takes the 
   await checked(page);
   await hook(page, "tl-mock-counter-changed", "replaced");
   const response = page.locator("#counters");
-  await response.getByTestId("deal-send").click();
+  await sendCounter(response);
   const changed = response.getByTestId("deal-counter-changed");
   await expect(changed).toBeVisible();
   await expect(changed).toHaveAttribute("role", "alert");
@@ -92,26 +86,26 @@ test("COUNTER_CHANGED, the verdict was replaced: the current proposal takes the 
   await expect(changed).toContainText("Here is the current proposal. Nothing was sent.");
   // The current counters are shown and can be sent; nothing was sent, so the record is where it was.
   await expect(response.getByTestId("deal-option-Option-A")).toBeVisible();
-  await expect(page.getByTestId("deal-steps")).toHaveAttribute("data-state", "RESPONSE_READY");
+  await expect(page.getByTestId("deal-state-chip")).toHaveAttribute("data-state", "RESPONSE_READY");
   await expect(page.getByTestId("deal-negotiation")).toHaveCount(0);
   await expect(changed.getByTestId("deal-check-again")).toHaveCount(0);
   // Sending the proposal that is now shown goes through.
-  await response.getByTestId("deal-send").click();
+  await sendCounter(response);
   await expect(page.getByTestId("deal-negotiation")).toContainText("The buyer accepted Option A.");
-  await expect(page.getByTestId("deal-steps")).toHaveAttribute("data-state", "AGREED");
+  await expect(page.getByTestId("deal-state-chip")).toHaveAttribute("data-state", "AGREED");
 });
 
 test("COUNTER_CHANGED, the books moved: the old proposal is withdrawn and Check again gets a current one", async ({ page }) => {
   await checked(page);
   await hook(page, "tl-mock-counter-changed", "moved");
   const response = page.locator("#counters");
-  await response.getByTestId("deal-send").click();
+  await sendCounter(response);
   const changed = response.getByTestId("deal-counter-changed");
   await expect(changed).toContainText("The books moved since this was shown");
   await expect(changed).toContainText("Nothing was sent. Check again to get a current one.");
   // No counter is offered to send until the check is run again.
   await expect(response.getByTestId("deal-send")).toHaveCount(0);
-  await expect(page.getByTestId("deal-steps")).toHaveAttribute("data-state", "RESPONSE_READY");
+  await expect(page.getByTestId("deal-state-chip")).toHaveAttribute("data-state", "RESPONSE_READY");
   await changed.getByTestId("deal-check-again").click();
   await expect(changed).toHaveCount(0);
   await expect(response.getByTestId("deal-send")).toHaveText("Send Option A (simulated buyer reply)");
@@ -119,12 +113,12 @@ test("COUNTER_CHANGED, the books moved: the old proposal is withdrawn and Check 
 
 test("day 34: the deal's steps say Fulfilled with the receipt and 'Early payment did not arrive' without it, never Agreed", async ({ page }) => {
   await checked(page);
-  await page.locator("#counters").getByTestId("deal-send").click();
-  await expect(page.getByTestId("deal-steps")).toHaveAttribute("data-state", "AGREED");
+  await sendCounter(page.locator("#counters"));
+  await expect(page.getByTestId("deal-state-chip")).toHaveAttribute("data-state", "AGREED");
   await advanceTo(page, 34);
   await page.goto("/deals");
-  await expect(page.getByTestId("deal-steps")).toHaveAttribute("data-state", "FULFILLED");
-  await expect(page.getByTestId("deal-steps-outcome")).toHaveText("Fulfilled");
+  await expect(page.getByTestId("deal-state-chip")).toHaveAttribute("data-state", "FULFILLED");
+  await expect(page.getByTestId("deal-state-chip")).toContainText("Fulfilled");
   await expect(page.locator("#commitments").getByTestId("commitment-state")).toHaveText("Fulfilled");
 });
 
@@ -132,12 +126,12 @@ test("day 34 without the receipt: the line and the agreements card say the early
   await page.goto("/");
   await hook(page, "tl-mock-no-receipt", "1");
   await checked(page);
-  await page.locator("#counters").getByTestId("deal-send").click();
+  await sendCounter(page.locator("#counters"));
   await advanceTo(page, 34);
   await page.goto("/deals");
-  const steps = page.getByTestId("deal-steps");
+  const steps = page.getByTestId("deal-state-chip");
   await expect(steps).toHaveAttribute("data-state", "MISSED");
-  await expect(page.getByTestId("deal-steps-outcome")).toHaveText("Early payment did not arrive");
+  await expect(page.getByTestId("deal-state-chip")).toContainText("Early payment did not arrive");
   await expect(steps).not.toContainText("Agreed");
   // A lapsed agreement stays on the page, with its word, instead of disappearing.
   await expect(page.locator("#commitments").getByTestId("commitment-state")).toHaveText("Early payment did not arrive");
@@ -146,16 +140,16 @@ test("day 34 without the receipt: the line and the agreements card say the early
 
 test("the execution summary is the record's: the agreement in its words, what ran, what has landed", async ({ page }) => {
   await checked(page);
-  await page.locator("#counters").getByTestId("deal-send").click();
-  await expect(page.getByTestId("deal-steps")).toHaveAttribute("data-state", "AGREED");
+  await sendCounter(page.locator("#counters"));
+  await expect(page.getByTestId("deal-state-chip")).toHaveAttribute("data-state", "AGREED");
   // The Demo verdict page shares the card with Deals.
   await page.goto("/verdict");
   const summary = page.getByTestId("execution-summary");
   await expect(summary.getByTestId("execution-text")).toContainText("Funding of ¥149,986.20 was requested and has landed.");
-  await expect(summary.getByTestId("execution-agreement")).toHaveText("Agreed");
+  await expect(summary.getByTestId("execution-agreement")).toContainText("Agreed");
   await expect(summary.getByTestId("execution-settlement")).toContainText("Waiting for Foshan Home Retail Co. to pay");
   await expect(summary.getByTestId("execution-funding")).toContainText("¥149,986.20 drawn on the Bank credit line");
-  await expect(summary.getByTestId("execution-lots")).toContainText("Landed");
+  await expect(summary.getByTestId("execution-lots")).toContainText("Cash received today");
 });
 
 test("the approval card shows what was quoted, and once decided what happened and how it differs", async ({ page }) => {
@@ -173,8 +167,10 @@ test("the approval card shows what was quoted, and once decided what happened an
   await expect(card.getByTestId("approval-quote-actual")).toHaveCount(0);
 
   await card.getByRole("button", { name: "Approve" }).click();
+  // Decided: what was quoted is history, behind its own fold.
+  await card.getByTestId("approval-quoted-APR-000001").locator("> summary").click();
   const decided = card.getByTestId("approval-quote");
-  await expect(decided).toContainText("Quoted when requested");
+  await expect(card.getByTestId("approval-quoted-APR-000001").locator("> summary")).toContainText("Quoted when requested");
   await expect(decided.getByTestId("approval-quote-actual")).toContainText("What actually happened");
   await expect(decided.getByTestId("approval-quote-actual")).toContainText("¥200,000.00");
   await expect(card.getByTestId("approval-cost")).toContainText("¥1,782.19");
@@ -193,6 +189,9 @@ test("a refused approval ends in the record's words: it could not run, no money 
   await page.goto("/approvals");
   const card = page.locator("#approval-APR-000001");
   await card.getByRole("button", { name: /^Approve/ }).click();
+  // One state word and the server's tone: never green on a refusal.
+  await expect(card.getByTestId("approval-state-APR-000001")).toContainText("Approved, did not run. No money moved.");
+  await expect(card.getByTestId("approval-state-APR-000001")).toHaveAttribute("data-tone", "bad");
   await expect(card.getByTestId("approval-refused-APR-000001")).toContainText("could not run");
   await expect(card.getByTestId("approval-refused-APR-000001")).toContainText("No money moved.");
   await card.getByTestId("approval-record-APR-000001").click();
@@ -208,11 +207,11 @@ test("Home: after the cure is approved, 'Waiting on' lists what is open and link
   await page.locator("#approval-APR-000001").getByRole("button", { name: "Approve" }).click();
   await expect(page.locator("#approval-APR-000001").getByTestId("approval-decided-APR-000001")).toBeVisible();
   await page.getByRole("navigation").getByRole("link", { name: "Home", exact: true }).first().click();
-  const waiting = page.getByTestId("home-waiting-on-list");
-  await expect(waiting).toBeVisible();
-  await expect(waiting.getByTestId("home-open-state")).toHaveText("Requested; the cash is on its way");
-  await expect(waiting.getByTestId("home-open-waiting")).toContainText("to land the funds");
-  await waiting.getByTestId("home-open-headline").click();
+  // The hero says what is on its way, so "Waiting on" does not list the same funding again.
+  await expect(page.getByTestId("home-in-transit")).toContainText("arriving in 3 days");
+  await expect(page.getByTestId("home-waiting-on-list")).toHaveCount(0);
+  await page.goto("/approvals");
+  await page.getByTestId("approval-record-APR-000001").click();
   await expect(page).toHaveURL(/\/decisions\/alert%3AALERT-RESERVE-42/);
   await expect(page.getByTestId("record-state")).toHaveAttribute("data-state", "SETTLEMENT_PENDING");
   await expect(page.getByTestId("record-settlement")).toContainText("¥200,000.00");
@@ -260,7 +259,7 @@ test("in Chinese the record page and the Home blocks read in Chinese from the re
   await hook(page, "tl-mock-no-receipt", "residual");
   await advanceTo(page, 34);
   await page.goto("/");
-  await expect(page.locator("#home-remaining")).toContainText("这件事仍需您决定");
+  await expect(page.locator("#home-remaining")).toContainText("需要您决定");
   await page.locator("#home-remaining").getByRole("link", { name: "查看记录" }).click();
-  await expect(page.getByTestId("record-state")).toContainText("已完成");
+  await expect(page.getByTestId("record-state")).toContainText("已融资，储备仍有缺口");
 });

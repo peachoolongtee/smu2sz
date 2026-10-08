@@ -76,6 +76,7 @@ process.env.NEXT_PUBLIC_API_URL = API;
 process.env.NEXT_PUBLIC_API_MODE = "live";
 const { setOwnerToken } = await import("../lib/auth.ts");
 const { live } = await import("../lib/live/index.ts");
+const { setLang } = await import("../lib/i18n.ts");
 const demoModule = await import("../lib/demo.ts");
 const { demoStore, clearDemo, recordFunding, recordNegotiation, selectOffer, bump } = await import("../lib/demo-store.ts");
 const { promptsFor } = await import("../lib/chat-prompts.ts");
@@ -90,6 +91,16 @@ const RECHAIN = new Set(["negotiation_accept.json", "home_act.json", "home_act_d
 
 // Files whose operations are chained by first appearance (every other chained file uses `rechain` below): the chat script, whose
 // operation ids and commitment ids come from a per-session random nonce, and the day-34 reconciliation (one receipt).
+/** Runs `read` with the UI language set to `lang` (the adapters add it to every route that takes one), then puts English back. */
+async function inLang(lang, read) {
+  setLang(lang);
+  try {
+    return await read();
+  } finally {
+    setLang("en");
+  }
+}
+
 const RECHAIN_BY_APPEARANCE = new Set(["nl_script.json", "home_reconciliation_day2.json", "bank_receipt.json", "home_reconciliation_day34.json", "home_reconciliation_day34_half.json", "home_ledger_day34.json", "home_ledger_approved.json", "decisions.json"]);
 const nlIds = new Map(); // NL-<16 hex> operation / lot ids, which the API derives from a random session nonce -> a fixed id by first appearance
 
@@ -350,11 +361,12 @@ async function queueOne() {
 }
 let q = await queueOne();
 await snap("apply_pending", q[0].decision_id);
-await live.decideApproval(q[0].id, "APPROVE");
+// The decided rows too (their state word and tone come from the server): the mock swaps them in when the owner decides.
+files["approvals_seed.json"].apply_loan_approved = await live.decideApproval(q[0].id, "APPROVE");
 await snap("apply_approved", q[0].decision_id);
 ops.approve_apply_loan = template((await ledgerTail(1))[0]);
 q = await queueOne();
-await live.decideApproval(q[0].id, "REJECT");
+files["approvals_seed.json"].apply_loan_rejected = await live.decideApproval(q[0].id, "REJECT");
 await snap("apply_rejected", q[0].decision_id);
 ops.reject_apply_loan = template((await ledgerTail(1))[0]);
 files["ops.json"] = ops;
@@ -505,9 +517,12 @@ files["home_summary_pending.json"] = await live.getHome("en");
 files["home_summary_pending_zh.json"] = await live.getHome("zh");
 files["trajectory_conservative_pending.json"] = await live.getTrajectory("CONSERVATIVE"); // the Cash page's readings, on the books this home was read on
 files["home_approval_pending.json"] = (await live.getApprovals())[0];
+// The same row in Chinese (the queue takes ?lang=zh): the zh mock serves it with the same amounts.
+files["home_approval_pending_zh.json"] = (await inLang("zh", () => live.getApprovals()))[0];
 await snap("cure_pending", files["home_approval_pending.json"].decision_id);
 // The owner approves on the approval card: the same operation executes (EXECUTED, the cash lands on day 37) and the alert clears.
 files["home_approval_approved.json"] = await live.decideApproval(files["home_approval_pending.json"].id, "APPROVE");
+files["home_approval_approved_zh.json"] = (await inLang("zh", () => live.getApprovals())).find((a) => a.id === files["home_approval_pending.json"].id);
 files["home_approve.json"] = { operations: await ledgerTail(1) };
 await snap("cure_approved", files["home_approval_pending.json"].decision_id);
 // The log after the decision: the earlier "waiting" entry now reads in the past, beside "You approved ..." (the mock replays that).
@@ -520,6 +535,8 @@ files["home_summary_after_zh.json"] = await live.getHome("zh");
 files["trajectory_conservative_after.json"] = await live.getTrajectory("CONSERVATIVE"); // the Cash page's readings, on the books this home was read on
 // Day 38: the advance landed on day 37 and settled the day after. The Demo's "the funding settles" step shows these books.
 await live.advanceClock(38 - 34);
+// The optional capex scene run after the story reads the books as they stand on day 38: "Computed today", not "38 days ago".
+files["capex_day38.json"] = await live.capexEvaluate({ label: "¥600k machine", price_fen: 60000000 });
 files["home_alerts_settled.json"] = await live.getAlerts();
 files["home_state_settled.json"] = await live.getState();
 files["home_summary_settled.json"] = await live.getHome("en");

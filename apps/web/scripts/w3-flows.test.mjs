@@ -90,7 +90,8 @@ test("the recorded ledger: causality on every row, the chain words and the refus
 
 test("the recorded Deals workspace: the sections in the server's order, the immediate discount apart from the forward total", () => {
   const w = read("verdict_ex01.json").workspace;
-  assert.deepEqual(w.order, ["buyer_asks", "financial_impact", "why_it_matters", "recommends", "priced_response", "advanced"]);
+  // Wave 7: the buyer, what FLOW recommends and the priced response come first; the agreements sit before the folded details.
+  assert.deepEqual(w.order, ["buyer", "recommends", "priced_response", "buyer_asks", "financial_impact", "why_it_matters", "agreements", "advanced"]);
   const immediate = w.financial_impact.lines.filter((l) => l.horizon === "IMMEDIATE");
   const forward = w.financial_impact.lines.filter((l) => l.horizon === "FORWARD");
   assert.equal(immediate.length, 1);
@@ -99,5 +100,6 @@ test("the recorded Deals workspace: the sections in the server's order, the imme
   assert.equal(w.financial_impact.forward_total_display, "¥28,326.92");
   assert.notEqual(w.financial_impact.forward_total_display, immediate[0].amount_display);
   assert.ok(w.priced_response.send_scope);
+  assert.ok(w.priced_response.send_scope_lines.length >= 2, "the send says what it will do, one line each");
   assert.deepEqual(Object.keys(w.advanced.keys), ["parsed_obligations", "source_text", "checks", "formula", "engine_verdict", "audit_evidence"]);
 });

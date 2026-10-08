@@ -102,22 +102,22 @@ function Row({ c, name, recommended }: { c: Option; name: string; recommended: b
           </span>
         ) : null}
         {c.arrival_text ? (
-          <span className="mt-0.5 block text-xs text-ink-2" data-testid="cash-option-arrival">
+          <span className="mt-0.5 block text-sm text-ink" data-testid="cash-option-arrival">
             {c.arrival_text}
           </span>
         ) : null}
         {/* An insufficient plan says what it leaves uncovered in the server's sentence (and when cash falls short); the others say whether a gap remains. */}
         {insufficient && (c.role_reason || c.remaining_gap_text) ? (
-          <span className="block text-xs text-bad-fg" data-testid="cash-option-uncovered">
+          <span className="block text-sm text-bad-fg" data-testid="cash-option-uncovered">
             {c.role_reason ?? c.remaining_gap_text}
           </span>
         ) : c.remaining_gap_text ? (
-          <span className="block text-xs text-ink-2" data-testid="cash-option-gap">
+          <span className="block text-sm text-ink" data-testid="cash-option-gap">
             {c.remaining_gap_text}
           </span>
         ) : null}
         {c.consent_text ? (
-          <span className="mt-0.5 block text-xs text-ink-2" data-testid="cash-option-consent">
+          <span className="mt-0.5 block text-sm text-ink" data-testid="cash-option-consent">
             {c.consent_text}
           </span>
         ) : null}

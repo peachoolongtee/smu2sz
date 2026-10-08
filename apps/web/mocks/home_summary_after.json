@@ -1329,6 +1329,7 @@
       "family": "FUNDING",
       "state": "SETTLEMENT_PENDING",
       "state_text": "Requested; the cash is on its way",
+      "state_tone": "info",
       "terminal": false,
       "headline": "Finance ¥200,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. on Invoice financing (onboarded platform)",
       "counterparty_name": "Foshan Home Retail Co.",
@@ -1368,7 +1369,8 @@
       "decision_link": {
         "decision_id": "alert:ALERT-RESERVE-42:v7",
         "href": "/decisions/alert:ALERT-RESERVE-42:v7"
-      }
+      },
+      "why_it_matters_changed": true
     },
     {
       "day": 32,
@@ -1385,7 +1387,8 @@
       "what_remains": null,
       "approval_label": null,
       "current_decision_state": null,
-      "decision_link": null
+      "decision_link": null,
+      "why_it_matters_changed": false
     }
   ],
   "receivables": {
@@ -1425,16 +1428,16 @@
     {
       "id": "ALERT-PASTDUE-RCV-A",
       "kind": "RECEIVABLE_PAST_DUE",
-      "title": "Receivable the ¥420,000.00 invoice to Foshan Home Retail Co. due 2 days ago is 2 day(s) past due",
-      "detail": "¥162,800.00 outstanding from Foshan Home Retail Co. was due 2 days ago and is still OPEN. The conservative trajectory no longer counts on a dated receipt.",
+      "title": "Receivable the ¥420,000.00 invoice to Foshan Home Retail Co. due 2 days ago is 2 days past due",
+      "detail": "¥162,800.00 outstanding from Foshan Home Retail Co. was due 2 days ago and is still OPEN. The cash forecast no longer counts on a dated receipt.",
       "day": 32,
       "when": "2 days ago"
     },
     {
       "id": "ALERT-HEADROOM-34",
       "kind": "RESERVE_HEADROOM_LOW",
-      "title": "Reserve headroom thin today",
-      "detail": "Cash stays above the floor but only by ¥0.00 today (8 day(s) under 10% of the floor).",
+      "title": "Cash is close to your minimum today",
+      "detail": "Cash stays above your minimum cash reserve by only ¥0.00 today (8 days with less than 10% of your minimum cash reserve to spare).",
       "day": 34,
       "when": "today"
     }
@@ -1479,5 +1482,6 @@
     "WARNING": 2,
     "INFO": 1
   },
-  "note_basis": "Conservative projection of today's books: unconfirmed receipts are not counted."
+  "note_basis": "Conservative projection of today's books: unconfirmed receipts are not counted.",
+  "partial": null
 }

@@ -17,18 +17,21 @@ export function ChasePayment({
   receivableId,
   buyer,
   list = false,
+  top = false,
   className = "",
 }: {
   receivableId: string;
   buyer: string;
   /** The phone list's control: the page holds the table and the list at once (one hidden by the breakpoint), so their test ids and dialog ids differ. */
   list?: boolean;
+  /** The button beside the top action sentence above the summary: its own test ids and dialog ids again. */
+  top?: boolean;
   className?: string;
 }) {
   const { t } = useI18n();
   const ref = useRef<HTMLDialogElement>(null);
   const [open, setOpen] = useState(false);
-  const scope = list ? "list-" : "";
+  const scope = top ? "top-" : list ? "list-" : "";
   const title = `chase-${scope}title-${receivableId}`;
 
   useEffect(() => {
@@ -42,7 +45,7 @@ export function ChasePayment({
     <>
       <Button
         size="sm"
-        className={`min-h-11 ${className}`}
+        className={className}
         aria-haspopup="dialog"
         aria-label={`${t("biz.chase.button")}: ${buyer}`}
         onClick={() => setOpen(true)}

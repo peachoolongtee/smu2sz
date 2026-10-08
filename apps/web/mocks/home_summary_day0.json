@@ -2595,7 +2595,7 @@
     "if_nothing": "¥240,000.00 below your minimum cash reserve in 12 days; the gap peaks at ¥405,000.00 in 30 days.",
     "after": "Cash stays above your minimum cash reserve for the next 120 days.",
     "why": "The cheapest plan your committed facilities can fund in time, within the bounded search.",
-    "detail": "Projected cash closes at ¥60,000.00 in 12 days, ¥240,000.00 below the reserve floor; the gap peaks at ¥405,000.00 in 30 days and lasts until 31 days from now. A fallback also exists: draw on Bank credit line ¥150,000.00 and finance an invoice on Invoice financing (onboarded platform) for ¥336,000.00, at ¥2,994.08 (11.2% a year for 29 days); FLOW recommends the plan above.",
+    "detail": "Projected cash closes at ¥60,000.00 in 12 days, ¥240,000.00 below your minimum cash reserve; the gap peaks at ¥405,000.00 in 30 days and lasts until 31 days from now. A fallback also exists: draw on Bank credit line ¥150,000.00 and finance an invoice on Invoice financing (onboarded platform) for ¥336,000.00, at ¥2,994.08 (11.2% a year for 29 days); FLOW recommends the plan above.",
     "formula": "shortfall = floor − closing_d: ¥300,000.00 − ¥60,000.00 = ¥240,000.00 (day 12); max over days 12..31 = ¥405,000.00",
     "pending_approval_id": null,
     "state_version": 1,
@@ -2648,8 +2648,8 @@
     {
       "id": "ALERT-HEADROOM-32",
       "kind": "RESERVE_HEADROOM_LOW",
-      "title": "Reserve headroom thin in 32 days",
-      "detail": "Cash stays above the floor but only by ¥15,000.00 in 32 days (15 day(s) under 10% of the floor).",
+      "title": "Cash is close to your minimum in 32 days",
+      "detail": "Cash stays above your minimum cash reserve by only ¥15,000.00 in 32 days (15 days with less than 10% of your minimum cash reserve to spare).",
       "day": 32,
       "when": "in 32 days"
     }
@@ -2694,5 +2694,6 @@
     "WARNING": 1,
     "INFO": 0
   },
-  "note_basis": "Conservative projection of today's books: unconfirmed receipts are not counted."
+  "note_basis": "Conservative projection of today's books: unconfirmed receipts are not counted.",
+  "partial": null
 }

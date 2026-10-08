@@ -6,6 +6,7 @@ import { dealProgress } from "@/lib/decision";
 import { useI18n } from "@/lib/i18n";
 import { businessAction } from "@/lib/presentation-fallbacks";
 import type { BusinessAction, DecisionView, VerdictView } from "@/lib/types";
+import type { Tone } from "@/components/ui";
 
 export const ACTION_KEY: Record<BusinessAction, DictKey> = {
   accept: "biz.deals.action.accept",
@@ -41,18 +42,62 @@ export function DealDecision({ v, record = null, text, reason = null }: { v: Ver
   const tone = !progress || !progress.reached ? ACTION_TONE[action] : progress.tone === "good" ? "ok" : progress.tone === "bad" ? "bad" : progress.tone === "open" ? "warn" : undefined;
   return (
     <Card id="deal-recommendation-card" tone={tone} className="[&>div]:py-3">
+      {/* The eyebrow says what the line is: the recommendation while there is one, where the deal stands once it has an outcome. */}
       <p className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
-        <span className="text-xs font-semibold uppercase tracking-wide text-ink-3">{t("biz.deals.recommends")}</span>
+        <span className="text-xs font-semibold uppercase tracking-wide text-ink-3" data-testid="deal-eyebrow">{outcome ? t("biz.deals.stands") : t("biz.deals.recommends")}</span>
         <span className="text-lg font-semibold text-ink sm:text-xl" data-testid="deal-recommendation" data-outcome={outcome ?? ""}>
           {headline}
         </span>
       </p>
-      {/* On a phone the first reason from "why it matters" rides under the recommendation, so the answer and its cause are one glance. */}
+      {/* The first reason rides under the recommendation, so the answer and its cause are one glance. */}
       {reason && !outcome ? (
         <p className="mt-1 text-sm text-ink-2" data-testid="deal-recommendation-reason">
           {reason}
         </p>
       ) : null}
+      {outcome && record ? <DealMoney record={record} /> : null}
     </Card>
+  );
+}
+
+/**
+ * After a deal: the money and what is left, from the record's execution and its lots, in the server's figures. "Received" for a lot that has
+ * landed, "arrives" for one still on its way; neutral until the cash has landed (then ok). What is left is the record's own remaining task.
+ */
+function DealMoney({ record }: { record: DecisionView }) {
+  const { t } = useI18n();
+  const lots = record.settlement ?? [];
+  const lines = lots.map((l) => ({
+    key: l.lot_id,
+    text: l.settled ? t("deal.money.received", { amount: l.principal_display, when: l.arrival_when }) : t("deal.money.arrives", { amount: l.principal_display, when: l.arrival_when }),
+    landed: l.settled,
+  }));
+  const landed = lines.length > 0 && lines.every((l) => l.landed);
+  const left = record.remaining_task?.text;
+  if (!lines.length && !left) return null;
+  const tone: Tone = landed ? "ok" : "neutral";
+  return (
+    <dl className="mt-2 space-y-1.5 border-t border-line pt-2 text-sm" data-testid="deal-money" data-tone={tone}>
+      {lines.length ? (
+        <div className="flex flex-wrap gap-x-3">
+          <dt className="text-xs font-semibold uppercase tracking-wide text-ink-3">{t("deal.money")}</dt>
+          <dd className={landed ? "font-medium text-ok-fg" : "text-ink"} data-testid="deal-money-lines">
+            {lines.map((l) => (
+              <span key={l.key} className="mr-2 inline-block">
+                {l.text}
+              </span>
+            ))}
+          </dd>
+        </div>
+      ) : null}
+      {left ? (
+        <div className="flex flex-wrap gap-x-3">
+          <dt className="text-xs font-semibold uppercase tracking-wide text-ink-3">{t("common.left")}</dt>
+          <dd className="text-ink" data-testid="deal-left">
+            {left}
+          </dd>
+        </div>
+      ) : null}
+    </dl>
   );
 }

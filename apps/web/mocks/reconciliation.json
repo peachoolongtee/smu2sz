@@ -21,5 +21,6 @@
   "promised": [],
   "lapsed_promises": 0,
   "received_total_display": "¥0.00",
-  "expected_total_display": "¥0.00"
+  "expected_total_display": "¥0.00",
+  "last_read_when": "today"
 }

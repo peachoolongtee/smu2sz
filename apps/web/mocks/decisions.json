@@ -5,6 +5,7 @@
       "family": "DEAL",
       "state": "AGREED",
       "state_text": "Agreed",
+      "state_tone": "info",
       "terminal": false,
       "headline": "Offer from Foshan Home Retail Co.",
       "counterparty_name": "Foshan Home Retail Co.",
@@ -51,12 +52,14 @@
           {
             "id": "CTR-193394b6ba8b",
             "label": "Option A",
+            "label_text": "Option A",
             "supplier_cost_display": "¥3,027.77",
             "forward_value_display": "¥0.00"
           },
           {
             "id": "CTR-6b07cbf70441",
             "label": "Option B",
+            "label_text": "Option B",
             "supplier_cost_display": "¥0.00",
             "forward_value_display": "¥0.00"
           }
@@ -69,16 +72,20 @@
           "buyer_profile": "cooperative",
           "chosen_counter_id": null,
           "chosen_label": null,
+          "chosen_label_text": null,
           "accepted_counter_id": "CTR-193394b6ba8b",
           "accepted_label": "Option A",
+          "accepted_label_text": "Option A",
           "counters_sent": [
             {
               "id": "CTR-193394b6ba8b",
-              "label": "Option A"
+              "label": "Option A",
+              "label_text": "Option A"
             },
             {
               "id": "CTR-6b07cbf70441",
-              "label": "Option B"
+              "label": "Option B",
+              "label_text": "Option B"
             }
           ],
           "economics": {
@@ -184,6 +191,7 @@
       "family": "DEAL",
       "state": "AGREED",
       "state_text": "已达成协议",
+      "state_tone": "info",
       "terminal": false,
       "headline": "来自Foshan Home Retail Co.的报价",
       "counterparty_name": "Foshan Home Retail Co.",
@@ -230,12 +238,14 @@
           {
             "id": "CTR-193394b6ba8b",
             "label": "Option A",
+            "label_text": "方案 A",
             "supplier_cost_display": "¥3,027.77",
             "forward_value_display": "¥0.00"
           },
           {
             "id": "CTR-6b07cbf70441",
             "label": "Option B",
+            "label_text": "方案 B",
             "supplier_cost_display": "¥0.00",
             "forward_value_display": "¥0.00"
           }
@@ -248,16 +258,20 @@
           "buyer_profile": "cooperative",
           "chosen_counter_id": null,
           "chosen_label": null,
+          "chosen_label_text": null,
           "accepted_counter_id": "CTR-193394b6ba8b",
           "accepted_label": "Option A",
+          "accepted_label_text": "方案 A",
           "counters_sent": [
             {
               "id": "CTR-193394b6ba8b",
-              "label": "Option A"
+              "label": "Option A",
+              "label_text": "方案 A"
             },
             {
               "id": "CTR-6b07cbf70441",
-              "label": "Option B"
+              "label": "Option B",
+              "label_text": "方案 B"
             }
           ],
           "economics": {
@@ -344,7 +358,7 @@
           "face_display": "¥257,200.00",
           "discount_display": "¥2,186.20",
           "expected_display": "¥255,013.80",
-          "detail_when": "¥255,013.80 promised for the ¥420,000.00 invoice to Foshan Home Retail Co. due in 32 days within 2 days under the agreement with Foshan Home Retail Co.; the day has not passed."
+          "detail_when": "与Foshan Home Retail Co.的协议约定，Foshan Home Retail Co. 的 ¥420,000.00 发票（32 天后到期）的 ¥255,013.80 应在2 天内到账；约定日尚未过。"
         }
       ],
       "remaining_task": {
@@ -365,6 +379,7 @@
       "family": "FUNDING",
       "state": "EXECUTED",
       "state_text": "Done",
+      "state_tone": "info",
       "terminal": true,
       "headline": "Apply for ¥600,000.00 on Equipment term loan",
       "counterparty_name": null,
@@ -450,6 +465,7 @@
       "family": "FUNDING",
       "state": "EXECUTED",
       "state_text": "已完成",
+      "state_tone": "info",
       "terminal": true,
       "headline": "申请Equipment term loan ¥600,000.00",
       "counterparty_name": null,
@@ -537,6 +553,7 @@
       "family": "FUNDING",
       "state": "AUTHORIZATION_REQUIRED",
       "state_text": "Waiting for your approval",
+      "state_tone": "warn",
       "terminal": false,
       "headline": "Apply for ¥600,000.00 on Equipment term loan",
       "counterparty_name": null,
@@ -622,6 +639,7 @@
       "family": "FUNDING",
       "state": "AUTHORIZATION_REQUIRED",
       "state_text": "等待您批准",
+      "state_tone": "warn",
       "terminal": false,
       "headline": "申请Equipment term loan ¥600,000.00",
       "counterparty_name": null,
@@ -709,6 +727,7 @@
       "family": "FUNDING",
       "state": "DECLINED",
       "state_text": "You declined it",
+      "state_tone": "neutral",
       "terminal": true,
       "headline": "Apply for ¥600,000.00 on Equipment term loan",
       "counterparty_name": null,
@@ -794,6 +813,7 @@
       "family": "FUNDING",
       "state": "DECLINED",
       "state_text": "您已拒绝",
+      "state_tone": "neutral",
       "terminal": true,
       "headline": "申请Equipment term loan ¥600,000.00",
       "counterparty_name": null,
@@ -881,6 +901,7 @@
       "family": "FUNDING",
       "state": "SETTLEMENT_PENDING",
       "state_text": "Requested; the cash is on its way",
+      "state_tone": "info",
       "terminal": false,
       "headline": "Finance ¥200,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. on Invoice financing (onboarded platform)",
       "counterparty_name": "Foshan Home Retail Co.",
@@ -1005,6 +1026,7 @@
       "family": "FUNDING",
       "state": "SETTLEMENT_PENDING",
       "state_text": "已提交，资金在途",
+      "state_tone": "info",
       "terminal": false,
       "headline": "以Foshan Home Retail Co. 的 ¥420,000.00 发票在Invoice financing (onboarded platform)融资 ¥200,000.00",
       "counterparty_name": "Foshan Home Retail Co.",
@@ -1131,6 +1153,7 @@
       "family": "FUNDING",
       "state": "SETTLEMENT_PENDING",
       "state_text": "Requested; the cash is on its way",
+      "state_tone": "info",
       "terminal": false,
       "headline": "Draw ¥150,000.00 on Bank credit line and finance ¥255,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. on Invoice financing (onboarded platform)",
       "counterparty_name": "Foshan Home Retail Co.",
@@ -1270,6 +1293,7 @@
       "family": "FUNDING",
       "state": "SETTLEMENT_PENDING",
       "state_text": "已提交，资金在途",
+      "state_tone": "info",
       "terminal": false,
       "headline": "从Bank credit line提款 ¥150,000.00，以Foshan Home Retail Co. 的 ¥420,000.00 发票在Invoice financing (onboarded platform)融资 ¥255,000.00",
       "counterparty_name": "Foshan Home Retail Co.",
@@ -1411,6 +1435,7 @@
       "family": "FUNDING",
       "state": "FAILED",
       "state_text": "Could not run. No money moved",
+      "state_tone": "bad",
       "terminal": true,
       "headline": "Finance ¥200,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. on Invoice financing (onboarded platform)",
       "counterparty_name": "Foshan Home Retail Co.",
@@ -1516,6 +1541,7 @@
       "family": "FUNDING",
       "state": "FAILED",
       "state_text": "未能执行，资金未动",
+      "state_tone": "bad",
       "terminal": true,
       "headline": "以Foshan Home Retail Co. 的 ¥420,000.00 发票在Invoice financing (onboarded platform)融资 ¥200,000.00",
       "counterparty_name": "Foshan Home Retail Co.",
@@ -1623,6 +1649,7 @@
       "family": "FUNDING",
       "state": "AUTHORIZATION_REQUIRED",
       "state_text": "Waiting for your approval",
+      "state_tone": "warn",
       "terminal": false,
       "headline": "Finance ¥200,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. on Invoice financing (onboarded platform)",
       "counterparty_name": "Foshan Home Retail Co.",
@@ -1726,6 +1753,7 @@
       "family": "FUNDING",
       "state": "AUTHORIZATION_REQUIRED",
       "state_text": "等待您批准",
+      "state_tone": "warn",
       "terminal": false,
       "headline": "以Foshan Home Retail Co. 的 ¥420,000.00 发票在Invoice financing (onboarded platform)融资 ¥200,000.00",
       "counterparty_name": "Foshan Home Retail Co.",
@@ -1830,7 +1858,8 @@
       "id": "alert:ALERT-RESERVE-34:v6",
       "family": "FUNDING",
       "state": "SETTLED",
-      "state_text": "Done; the cash has landed",
+      "state_text": "Funded, reserve still short",
+      "state_tone": "warn",
       "terminal": false,
       "headline": "Finance ¥155,013.80 of the ¥420,000.00 invoice to Foshan Home Retail Co. on Invoice financing (onboarded platform)",
       "counterparty_name": "Foshan Home Retail Co.",
@@ -1976,7 +2005,8 @@
       "id": "alert:ALERT-RESERVE-34:v6",
       "family": "FUNDING",
       "state": "SETTLED",
-      "state_text": "已完成，资金已到账",
+      "state_text": "已融资，储备仍有缺口",
+      "state_tone": "warn",
       "terminal": false,
       "headline": "以Foshan Home Retail Co. 的 ¥420,000.00 发票在Invoice financing (onboarded platform)融资 ¥155,013.80",
       "counterparty_name": "Foshan Home Retail Co.",
@@ -2125,6 +2155,7 @@
       "family": "FUNDING",
       "state": "SETTLED",
       "state_text": "Done; the cash has landed",
+      "state_tone": "ok",
       "terminal": true,
       "headline": "Finance ¥200,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. on Invoice financing (onboarded platform)",
       "counterparty_name": "Foshan Home Retail Co.",
@@ -2249,6 +2280,7 @@
       "family": "FUNDING",
       "state": "SETTLED",
       "state_text": "已完成，资金已到账",
+      "state_tone": "ok",
       "terminal": true,
       "headline": "以Foshan Home Retail Co. 的 ¥420,000.00 发票在Invoice financing (onboarded platform)融资 ¥200,000.00",
       "counterparty_name": "Foshan Home Retail Co.",
@@ -2375,6 +2407,7 @@
       "family": "DEAL",
       "state": "FULFILLED",
       "state_text": "Fulfilled",
+      "state_tone": "ok",
       "terminal": true,
       "headline": "Offer from Foshan Home Retail Co.",
       "counterparty_name": "Foshan Home Retail Co.",
@@ -2421,12 +2454,14 @@
           {
             "id": "CTR-193394b6ba8b",
             "label": "Option A",
+            "label_text": "Option A",
             "supplier_cost_display": "¥3,027.77",
             "forward_value_display": "¥0.00"
           },
           {
             "id": "CTR-6b07cbf70441",
             "label": "Option B",
+            "label_text": "Option B",
             "supplier_cost_display": "¥0.00",
             "forward_value_display": "¥0.00"
           }
@@ -2439,16 +2474,20 @@
           "buyer_profile": "cooperative",
           "chosen_counter_id": null,
           "chosen_label": null,
+          "chosen_label_text": null,
           "accepted_counter_id": "CTR-193394b6ba8b",
           "accepted_label": "Option A",
+          "accepted_label_text": "Option A",
           "counters_sent": [
             {
               "id": "CTR-193394b6ba8b",
-              "label": "Option A"
+              "label": "Option A",
+              "label_text": "Option A"
             },
             {
               "id": "CTR-6b07cbf70441",
-              "label": "Option B"
+              "label": "Option B",
+              "label_text": "Option B"
             }
           ],
           "economics": {
@@ -2580,6 +2619,7 @@
       "family": "DEAL",
       "state": "FULFILLED",
       "state_text": "已履行",
+      "state_tone": "ok",
       "terminal": true,
       "headline": "来自Foshan Home Retail Co.的报价",
       "counterparty_name": "Foshan Home Retail Co.",
@@ -2626,12 +2666,14 @@
           {
             "id": "CTR-193394b6ba8b",
             "label": "Option A",
+            "label_text": "方案 A",
             "supplier_cost_display": "¥3,027.77",
             "forward_value_display": "¥0.00"
           },
           {
             "id": "CTR-6b07cbf70441",
             "label": "Option B",
+            "label_text": "方案 B",
             "supplier_cost_display": "¥0.00",
             "forward_value_display": "¥0.00"
           }
@@ -2644,16 +2686,20 @@
           "buyer_profile": "cooperative",
           "chosen_counter_id": null,
           "chosen_label": null,
+          "chosen_label_text": null,
           "accepted_counter_id": "CTR-193394b6ba8b",
           "accepted_label": "Option A",
+          "accepted_label_text": "方案 A",
           "counters_sent": [
             {
               "id": "CTR-193394b6ba8b",
-              "label": "Option A"
+              "label": "Option A",
+              "label_text": "方案 A"
             },
             {
               "id": "CTR-6b07cbf70441",
-              "label": "Option B"
+              "label": "Option B",
+              "label_text": "方案 B"
             }
           ],
           "economics": {
@@ -2746,7 +2792,7 @@
           "agreed_discount_display": "¥2,186.20",
           "expected_display": "¥255,013.80",
           "difference_display": "¥0.00",
-          "detail_when": "agreed early payment for ¥257,200.00 of the invoice"
+          "detail_when": "约定的提前付款，对应发票 ¥257,200.00"
         }
       ],
       "promises": [
@@ -2766,7 +2812,7 @@
           "face_display": "¥257,200.00",
           "discount_display": "¥2,186.20",
           "expected_display": "¥255,013.80",
-          "detail_when": "The agreed ¥255,013.80 for the ¥420,000.00 invoice to Foshan Home Retail Co., due 2 days ago, arrived."
+          "detail_when": "Foshan Home Retail Co. 的 ¥420,000.00 发票（2 天前到期）约定的 ¥255,013.80 已到账。"
         }
       ],
       "remaining_task": {
@@ -2787,6 +2833,7 @@
       "family": "DEAL",
       "state": "MISSED",
       "state_text": "Early payment did not arrive",
+      "state_tone": "bad",
       "terminal": true,
       "headline": "Offer from Foshan Home Retail Co.",
       "counterparty_name": "Foshan Home Retail Co.",
@@ -2833,12 +2880,14 @@
           {
             "id": "CTR-193394b6ba8b",
             "label": "Option A",
+            "label_text": "Option A",
             "supplier_cost_display": "¥3,027.77",
             "forward_value_display": "¥0.00"
           },
           {
             "id": "CTR-6b07cbf70441",
             "label": "Option B",
+            "label_text": "Option B",
             "supplier_cost_display": "¥0.00",
             "forward_value_display": "¥0.00"
           }
@@ -2851,16 +2900,20 @@
           "buyer_profile": "cooperative",
           "chosen_counter_id": null,
           "chosen_label": null,
+          "chosen_label_text": null,
           "accepted_counter_id": "CTR-193394b6ba8b",
           "accepted_label": "Option A",
+          "accepted_label_text": "Option A",
           "counters_sent": [
             {
               "id": "CTR-193394b6ba8b",
-              "label": "Option A"
+              "label": "Option A",
+              "label_text": "Option A"
             },
             {
               "id": "CTR-6b07cbf70441",
-              "label": "Option B"
+              "label": "Option B",
+              "label_text": "Option B"
             }
           ],
           "economics": {
@@ -2992,6 +3045,7 @@
       "family": "DEAL",
       "state": "MISSED",
       "state_text": "提前付款未到账",
+      "state_tone": "bad",
       "terminal": true,
       "headline": "来自Foshan Home Retail Co.的报价",
       "counterparty_name": "Foshan Home Retail Co.",
@@ -3038,12 +3092,14 @@
           {
             "id": "CTR-193394b6ba8b",
             "label": "Option A",
+            "label_text": "方案 A",
             "supplier_cost_display": "¥3,027.77",
             "forward_value_display": "¥0.00"
           },
           {
             "id": "CTR-6b07cbf70441",
             "label": "Option B",
+            "label_text": "方案 B",
             "supplier_cost_display": "¥0.00",
             "forward_value_display": "¥0.00"
           }
@@ -3056,16 +3112,20 @@
           "buyer_profile": "cooperative",
           "chosen_counter_id": null,
           "chosen_label": null,
+          "chosen_label_text": null,
           "accepted_counter_id": "CTR-193394b6ba8b",
           "accepted_label": "Option A",
+          "accepted_label_text": "方案 A",
           "counters_sent": [
             {
               "id": "CTR-193394b6ba8b",
-              "label": "Option A"
+              "label": "Option A",
+              "label_text": "方案 A"
             },
             {
               "id": "CTR-6b07cbf70441",
-              "label": "Option B"
+              "label": "Option B",
+              "label_text": "方案 B"
             }
           ],
           "economics": {
@@ -3158,7 +3218,7 @@
           "agreed_discount_display": "¥1,093.10",
           "expected_display": "¥127,506.90",
           "difference_display": "¥0.00",
-          "detail_when": "agreed early payment for ¥128,600.00 of the invoice; the early-payment window for the other ¥128,600.00 ended 32 days ago"
+          "detail_when": "约定的提前付款，对应发票 ¥128,600.00；另外 ¥128,600.00 的提前付款期限已于32 天前结束"
         }
       ],
       "promises": [
@@ -3178,7 +3238,7 @@
           "face_display": "¥128,600.00",
           "discount_display": "¥1,093.10",
           "expected_display": "¥127,506.90",
-          "detail_when": "The agreed ¥127,506.90 for ¥128,600.00 of the ¥257,200.00 agreed for early settlement of the ¥420,000.00 invoice to Foshan Home Retail Co., due 2 days ago, arrived; the other ¥128,600.00 is due on the invoice's own day."
+          "detail_when": "Foshan Home Retail Co. 的 ¥420,000.00 发票（2 天前到期）已约定提前结算的 ¥257,200.00 中，¥128,600.00 对应的约定款项 ¥127,506.90 已到账；另外 ¥128,600.00 在发票自己的到期日支付。"
         }
       ],
       "remaining_task": {
@@ -3199,6 +3259,7 @@
       "family": "DEAL",
       "state": "NO_DEAL",
       "state_text": "No deal: the buyer did not accept",
+      "state_tone": "neutral",
       "terminal": true,
       "headline": "Offer from Foshan Home Retail Co.",
       "counterparty_name": "Foshan Home Retail Co.",
@@ -3245,12 +3306,14 @@
           {
             "id": "CTR-193394b6ba8b",
             "label": "Option A",
+            "label_text": "Option A",
             "supplier_cost_display": "¥3,027.77",
             "forward_value_display": "¥0.00"
           },
           {
             "id": "CTR-6b07cbf70441",
             "label": "Option B",
+            "label_text": "Option B",
             "supplier_cost_display": "¥0.00",
             "forward_value_display": "¥0.00"
           }
@@ -3263,16 +3326,20 @@
           "buyer_profile": "hard_line",
           "chosen_counter_id": null,
           "chosen_label": null,
+          "chosen_label_text": null,
           "accepted_counter_id": null,
           "accepted_label": null,
+          "accepted_label_text": null,
           "counters_sent": [
             {
               "id": "CTR-193394b6ba8b",
-              "label": "Option A"
+              "label": "Option A",
+              "label_text": "Option A"
             },
             {
               "id": "CTR-6b07cbf70441",
-              "label": "Option B"
+              "label": "Option B",
+              "label_text": "Option B"
             }
           ],
           "economics": null,
@@ -3351,6 +3418,7 @@
       "family": "DEAL",
       "state": "NO_DEAL",
       "state_text": "未成交：买方未接受",
+      "state_tone": "neutral",
       "terminal": true,
       "headline": "来自Foshan Home Retail Co.的报价",
       "counterparty_name": "Foshan Home Retail Co.",
@@ -3397,12 +3465,14 @@
           {
             "id": "CTR-193394b6ba8b",
             "label": "Option A",
+            "label_text": "方案 A",
             "supplier_cost_display": "¥3,027.77",
             "forward_value_display": "¥0.00"
           },
           {
             "id": "CTR-6b07cbf70441",
             "label": "Option B",
+            "label_text": "方案 B",
             "supplier_cost_display": "¥0.00",
             "forward_value_display": "¥0.00"
           }
@@ -3415,16 +3485,20 @@
           "buyer_profile": "hard_line",
           "chosen_counter_id": null,
           "chosen_label": null,
+          "chosen_label_text": null,
           "accepted_counter_id": null,
           "accepted_label": null,
+          "accepted_label_text": null,
           "counters_sent": [
             {
               "id": "CTR-193394b6ba8b",
-              "label": "Option A"
+              "label": "Option A",
+              "label_text": "方案 A"
             },
             {
               "id": "CTR-6b07cbf70441",
-              "label": "Option B"
+              "label": "Option B",
+              "label_text": "方案 B"
             }
           ],
           "economics": null,
@@ -3505,6 +3579,7 @@
       "family": "DEAL",
       "state": "MISSED",
       "state_text": "Early payment did not arrive",
+      "state_tone": "bad",
       "terminal": true,
       "headline": "Offer from Foshan Home Retail Co.",
       "counterparty_name": "Foshan Home Retail Co.",
@@ -3551,12 +3626,14 @@
           {
             "id": "CTR-193394b6ba8b",
             "label": "Option A",
+            "label_text": "Option A",
             "supplier_cost_display": "¥3,027.77",
             "forward_value_display": "¥0.00"
           },
           {
             "id": "CTR-6b07cbf70441",
             "label": "Option B",
+            "label_text": "Option B",
             "supplier_cost_display": "¥0.00",
             "forward_value_display": "¥0.00"
           }
@@ -3569,16 +3646,20 @@
           "buyer_profile": "cooperative",
           "chosen_counter_id": null,
           "chosen_label": null,
+          "chosen_label_text": null,
           "accepted_counter_id": "CTR-193394b6ba8b",
           "accepted_label": "Option A",
+          "accepted_label_text": "Option A",
           "counters_sent": [
             {
               "id": "CTR-193394b6ba8b",
-              "label": "Option A"
+              "label": "Option A",
+              "label_text": "Option A"
             },
             {
               "id": "CTR-6b07cbf70441",
-              "label": "Option B"
+              "label": "Option B",
+              "label_text": "Option B"
             }
           ],
           "economics": {
@@ -3684,6 +3765,7 @@
       "family": "DEAL",
       "state": "MISSED",
       "state_text": "提前付款未到账",
+      "state_tone": "bad",
       "terminal": true,
       "headline": "来自Foshan Home Retail Co.的报价",
       "counterparty_name": "Foshan Home Retail Co.",
@@ -3730,12 +3812,14 @@
           {
             "id": "CTR-193394b6ba8b",
             "label": "Option A",
+            "label_text": "方案 A",
             "supplier_cost_display": "¥3,027.77",
             "forward_value_display": "¥0.00"
           },
           {
             "id": "CTR-6b07cbf70441",
             "label": "Option B",
+            "label_text": "方案 B",
             "supplier_cost_display": "¥0.00",
             "forward_value_display": "¥0.00"
           }
@@ -3748,16 +3832,20 @@
           "buyer_profile": "cooperative",
           "chosen_counter_id": null,
           "chosen_label": null,
+          "chosen_label_text": null,
           "accepted_counter_id": "CTR-193394b6ba8b",
           "accepted_label": "Option A",
+          "accepted_label_text": "方案 A",
           "counters_sent": [
             {
               "id": "CTR-193394b6ba8b",
-              "label": "Option A"
+              "label": "Option A",
+              "label_text": "方案 A"
             },
             {
               "id": "CTR-6b07cbf70441",
-              "label": "Option B"
+              "label": "Option B",
+              "label_text": "方案 B"
             }
           ],
           "economics": {
@@ -3865,6 +3953,7 @@
       "family": "DEAL",
       "state": "RESPONSE_READY",
       "state_text": "Acceptable, awaiting agreement",
+      "state_tone": "warn",
       "terminal": false,
       "headline": "Offer from Foshan Home Retail Co.",
       "counterparty_name": "Foshan Home Retail Co.",
@@ -3941,6 +4030,7 @@
       "family": "DEAL",
       "state": "RESPONSE_READY",
       "state_text": "可接受，等待达成协议",
+      "state_tone": "warn",
       "terminal": false,
       "headline": "来自Foshan Home Retail Co.的报价",
       "counterparty_name": "Foshan Home Retail Co.",
@@ -4019,6 +4109,7 @@
       "family": "DEAL",
       "state": "RESPONSE_READY",
       "state_text": "Counter recommended",
+      "state_tone": "warn",
       "terminal": false,
       "headline": "Offer from Foshan Home Retail Co.",
       "counterparty_name": "Foshan Home Retail Co.",
@@ -4065,12 +4156,14 @@
           {
             "id": "CTR-193394b6ba8b",
             "label": "Option A",
+            "label_text": "Option A",
             "supplier_cost_display": "¥3,027.77",
             "forward_value_display": "¥0.00"
           },
           {
             "id": "CTR-6b07cbf70441",
             "label": "Option B",
+            "label_text": "Option B",
             "supplier_cost_display": "¥0.00",
             "forward_value_display": "¥0.00"
           }
@@ -4110,6 +4203,7 @@
       "family": "DEAL",
       "state": "RESPONSE_READY",
       "state_text": "建议还价",
+      "state_tone": "warn",
       "terminal": false,
       "headline": "来自Foshan Home Retail Co.的报价",
       "counterparty_name": "Foshan Home Retail Co.",
@@ -4156,12 +4250,14 @@
           {
             "id": "CTR-193394b6ba8b",
             "label": "Option A",
+            "label_text": "方案 A",
             "supplier_cost_display": "¥3,027.77",
             "forward_value_display": "¥0.00"
           },
           {
             "id": "CTR-6b07cbf70441",
             "label": "Option B",
+            "label_text": "方案 B",
             "supplier_cost_display": "¥0.00",
             "forward_value_display": "¥0.00"
           }
@@ -4203,6 +4299,7 @@
       "family": "DEAL",
       "state": "RESPONSE_READY",
       "state_text": "Counter recommended",
+      "state_tone": "warn",
       "terminal": false,
       "headline": "Offer from Foshan Home Retail Co.",
       "counterparty_name": "Foshan Home Retail Co.",
@@ -4249,12 +4346,14 @@
           {
             "id": "CTR-72a07f7c0f50",
             "label": "Option A",
+            "label_text": "Option A",
             "supplier_cost_display": "¥3,027.77",
             "forward_value_display": "¥0.00"
           },
           {
             "id": "CTR-be519b1e4c69",
             "label": "Option B",
+            "label_text": "Option B",
             "supplier_cost_display": "¥0.00",
             "forward_value_display": "¥0.00"
           }
@@ -4294,6 +4393,7 @@
       "family": "DEAL",
       "state": "RESPONSE_READY",
       "state_text": "建议还价",
+      "state_tone": "warn",
       "terminal": false,
       "headline": "来自Foshan Home Retail Co.的报价",
       "counterparty_name": "Foshan Home Retail Co.",
@@ -4340,12 +4440,14 @@
           {
             "id": "CTR-72a07f7c0f50",
             "label": "Option A",
+            "label_text": "方案 A",
             "supplier_cost_display": "¥3,027.77",
             "forward_value_display": "¥0.00"
           },
           {
             "id": "CTR-be519b1e4c69",
             "label": "Option B",
+            "label_text": "方案 B",
             "supplier_cost_display": "¥0.00",
             "forward_value_display": "¥0.00"
           }
@@ -4387,6 +4489,7 @@
       "family": "DEAL",
       "state": "RESPONSE_READY",
       "state_text": "Decline recommended",
+      "state_tone": "warn",
       "terminal": false,
       "headline": "Offer from FASTCAPITAL",
       "counterparty_name": "FASTCAPITAL",
@@ -4463,6 +4566,7 @@
       "family": "DEAL",
       "state": "RESPONSE_READY",
       "state_text": "建议拒绝",
+      "state_tone": "warn",
       "terminal": false,
       "headline": "来自FASTCAPITAL的报价",
       "counterparty_name": "FASTCAPITAL",
@@ -4541,6 +4645,7 @@
       "family": "DEAL",
       "state": "RECEIVED",
       "state_text": "Received; not evaluated yet",
+      "state_tone": "warn",
       "terminal": false,
       "headline": "Offer from Foshan Home Retail Co.",
       "counterparty_name": "Foshan Home Retail Co.",
@@ -4606,6 +4711,7 @@
       "family": "DEAL",
       "state": "RECEIVED",
       "state_text": "已收到，尚未评估",
+      "state_tone": "warn",
       "terminal": false,
       "headline": "来自Foshan Home Retail Co.的报价",
       "counterparty_name": "Foshan Home Retail Co.",
@@ -4673,6 +4779,7 @@
       "family": "DEAL",
       "state": "RECEIVED",
       "state_text": "Received; not evaluated yet",
+      "state_tone": "warn",
       "terminal": false,
       "headline": "Offer from Foshan Home Retail Co.",
       "counterparty_name": "Foshan Home Retail Co.",
@@ -4740,6 +4847,7 @@
       "family": "DEAL",
       "state": "RECEIVED",
       "state_text": "已收到，尚未评估",
+      "state_tone": "warn",
       "terminal": false,
       "headline": "来自Foshan Home Retail Co.的报价",
       "counterparty_name": "Foshan Home Retail Co.",
@@ -4809,6 +4917,7 @@
       "family": "DEAL",
       "state": "RECEIVED",
       "state_text": "Received; not evaluated yet",
+      "state_tone": "warn",
       "terminal": false,
       "headline": "Offer from Foshan Home Retail Co.",
       "counterparty_name": "Foshan Home Retail Co.",
@@ -4876,6 +4985,7 @@
       "family": "DEAL",
       "state": "RECEIVED",
       "state_text": "已收到，尚未评估",
+      "state_tone": "warn",
       "terminal": false,
       "headline": "来自Foshan Home Retail Co.的报价",
       "counterparty_name": "Foshan Home Retail Co.",
@@ -4945,6 +5055,7 @@
       "family": "DEAL",
       "state": "RECEIVED",
       "state_text": "Received; not evaluated yet",
+      "state_tone": "warn",
       "terminal": false,
       "headline": "Offer from FASTCAPITAL",
       "counterparty_name": "FASTCAPITAL",
@@ -5010,6 +5121,7 @@
       "family": "DEAL",
       "state": "RECEIVED",
       "state_text": "已收到，尚未评估",
+      "state_tone": "warn",
       "terminal": false,
       "headline": "来自FASTCAPITAL的报价",
       "counterparty_name": "FASTCAPITAL",

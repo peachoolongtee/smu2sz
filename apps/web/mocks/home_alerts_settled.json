@@ -1,5 +1,6 @@
 {
   "day": 38,
+  "lang": "en",
   "basis": "CONSERVATIVE",
   "state_version": 9,
   "projected_offer_id": null,
@@ -43,12 +44,15 @@
           "cost_formula": "",
           "above_apr_cap": false,
           "executes_automatically": false,
-          "amount_display": "¥162,800.00"
+          "amount_display": "¥162,800.00",
+          "note_when": "chase the buyer; record the receipt when the money lands"
         }
       ],
       "actionable": false,
       "basis": "CONSERVATIVE",
-      "amount_display": "¥162,800.00"
+      "amount_display": "¥162,800.00",
+      "title_when": "Receivable the ¥420,000.00 invoice to Foshan Home Retail Co. due 6 days ago is 6 days past due",
+      "detail_when": "¥162,800.00 outstanding from Foshan Home Retail Co. was due 6 days ago and is still OPEN. The cash forecast no longer counts on a dated receipt."
     },
     {
       "id": "ALERT-HEADROOM-42",
@@ -69,8 +73,13 @@
       "suggested": [],
       "actionable": false,
       "basis": "CONSERVATIVE",
-      "amount_display": "¥0.00"
+      "amount_display": "¥0.00",
+      "title_when": "Cash is close to your minimum in 4 days",
+      "detail_when": "Cash stays above your minimum cash reserve by only ¥0.00 in 4 days (5 days with less than 10% of your minimum cash reserve to spare)."
     }
   ],
-  "note": "A suggested operation is executed only through POST /alerts/{id}/act or POST /operations, never by itself."
+  "note": "A suggested operation is executed only through POST /alerts/{id}/act or POST /operations, never by itself.",
+  "note_when": "A suggested step runs only when you choose it. Nothing runs by itself.",
+  "last_read_when": "today",
+  "last_read_day": 38
 }
