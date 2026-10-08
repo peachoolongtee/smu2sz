@@ -3,13 +3,22 @@
 import Link from "next/link";
 import { CodeBadge, OpStatusBadge, TierBadge } from "@/components/badges";
 import { SpanQuote } from "@/components/offer-parts";
-import { Badge, Card, EmptyState, ErrorState, Hash, LoadingBlock, PageHeader } from "@/components/ui";
+import { Badge, Card, ErrorState, Hash, LoadingBlock, PageHeader } from "@/components/ui";
 import { getAudit, getLedger, getState } from "@/lib/api";
 import { idsToNames } from "@/lib/business-words";
 import { useI18n } from "@/lib/i18n";
 import { whenText } from "@/lib/when";
 import { useAsync } from "@/lib/use-async";
 import { Disclosure } from "@/components/business/kit";
+
+/** An empty section is one quiet line under the timeline, not a card around nothing (it keeps the section's id). */
+function QuietLine({ id, title, children }: { id: string; title: string; children: string }) {
+  return (
+    <p id={id} className="text-sm text-ink-3">
+      <span className="font-medium text-ink-2">{title}:</span> {children}
+    </p>
+  );
+}
 
 /**
  * Activity: everything that happened, in order. Each row leads with the server's business sentence (`event_text`: what happened, in the owner's
@@ -33,6 +42,7 @@ export default function ActivityPage() {
   const ops = data ? [...data.operations].reverse() : [];
   // Today, for the distances the Business pages show instead of day numbers (the books read carries the clock).
   const today = books.data?.day ?? ops[0]?.day ?? 0;
+  const refusedEmpty = !!audit.data && !audit.error && !audit.data.events.length && !audit.data.refusals.length;
 
   return (
     <>
@@ -102,12 +112,14 @@ export default function ActivityPage() {
                 ))}
               </ol>
             ) : (
-              <EmptyState title={t("ledger.ops.empty")} body={t("biz.activity.empty.body")} />
+              <p className="text-sm text-ink-3" data-testid="activity-empty">
+                <span className="font-medium text-ink-2">{t("ledger.ops.empty")}.</span> {t("biz.activity.empty.body")}
+              </p>
             )}
           </Card>
 
-          <Card id="activity-commitments" title={t("biz.activity.agreements")} subtitle={t("biz.activity.agreements.sub")}>
-            {data.commitments.length ? (
+          {data.commitments.length ? (
+            <Card id="activity-commitments" title={t("biz.activity.agreements")} subtitle={t("biz.activity.agreements.sub")}>
               <ul className="space-y-2">
                 {data.commitments.map((c) => (
                   <li key={c.id} className="flex flex-wrap items-center justify-between gap-2 rounded-tile border border-line px-3 py-2 text-sm">
@@ -130,44 +142,50 @@ export default function ActivityPage() {
                   </li>
                 ))}
               </ul>
-            ) : (
-              <p className="text-sm text-ink-3">{t("ledger.commitments.empty")}</p>
-            )}
-          </Card>
+            </Card>
+          ) : (
+            <QuietLine id="activity-commitments" title={t("biz.activity.agreements")}>
+              {t("ledger.commitments.empty")}
+            </QuietLine>
+          )}
 
-          <Card id="activity-refused" title={t("biz.activity.refused")} subtitle={t("biz.activity.refused.sub")}>
-            {audit.error ? (
-              <ErrorState error={audit.error} onRetry={audit.reload} />
-            ) : !audit.data ? (
-              <LoadingBlock rows={1} />
-            ) : audit.data.events.length || audit.data.refusals.length ? (
-              <ul className="space-y-2">
-                {audit.data.refusals.map((o) => (
-                  <li key={`${o.seq}-${o.op_id}`} className="rounded-tile border border-bad-line px-3 py-2 text-sm">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <OpStatusBadge status={o.status} />
-                      <span className="font-medium">{kindLabel(o.kind)}</span>
-                    </div>
-                    <p className="mt-1 text-ink-2">{o.event_text || o.message_when || words(o.summary)}</p>
-                  </li>
-                ))}
-                {audit.data.events.map((e) => (
-                  <li key={e.id} className="rounded-tile border border-bad-line px-3 py-2 text-sm">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-medium">{te("secevent", e.kind)}</span>
-                      <span className="text-xs text-ink-3">{e.action_taken}</span>
-                    </div>
-                    <p className="mt-1 text-ink-2">{e.detail}</p>
-                    {e.spans.map((s) => (
-                      <SpanQuote key={`${s.doc_id}:${s.start}`} text={s.text} />
-                    ))}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-sm text-ink-3">{t("ledger.refusals.empty")}</p>
-            )}
-          </Card>
+          {refusedEmpty ? (
+            <QuietLine id="activity-refused" title={t("biz.activity.refused")}>
+              {t("ledger.refusals.empty")}
+            </QuietLine>
+          ) : (
+            <Card id="activity-refused" title={t("biz.activity.refused")} subtitle={t("biz.activity.refused.sub")}>
+              {audit.error ? (
+                <ErrorState error={audit.error} onRetry={audit.reload} />
+              ) : !audit.data ? (
+                <LoadingBlock rows={1} />
+              ) : (
+                <ul className="space-y-2">
+                  {audit.data.refusals.map((o) => (
+                    <li key={`${o.seq}-${o.op_id}`} className="rounded-tile border border-bad-line px-3 py-2 text-sm">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <OpStatusBadge status={o.status} />
+                        <span className="font-medium">{kindLabel(o.kind)}</span>
+                      </div>
+                      <p className="mt-1 text-ink-2">{o.event_text || o.message_when || words(o.summary)}</p>
+                    </li>
+                  ))}
+                  {audit.data.events.map((e) => (
+                    <li key={e.id} className="rounded-tile border border-bad-line px-3 py-2 text-sm">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-medium">{te("secevent", e.kind)}</span>
+                        <span className="text-xs text-ink-3">{e.action_taken}</span>
+                      </div>
+                      <p className="mt-1 text-ink-2">{e.detail}</p>
+                      {e.spans.map((s) => (
+                        <SpanQuote key={`${s.doc_id}:${s.start}`} text={s.text} />
+                      ))}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </Card>
+          )}
 
           <p className="text-xs text-ink-3">
             {t("biz.activity.trail")}{" "}

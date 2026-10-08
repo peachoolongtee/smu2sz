@@ -103,6 +103,9 @@
   --dur-fast: 120ms;
   --dur: 200ms;
   --dur-slow: 280ms;
+  /* Tailwind's own transition-colors / -opacity / -transform take the kit's timing, not its 150 ms default. */
+  --default-transition-duration: var(--dur);
+  --default-transition-timing-function: var(--ease-out);
 }
 
 html {
@@ -139,6 +142,26 @@ body {
 /* Inside the deep block the ring is white. */
 .on-deep :focus-visible {
   outline-color: var(--color-focus-on-deep);
+}
+
+/* A text link answers the pointer: its underline thickens (no colour change, so the contrast row in DESIGN.md stays true). */
+a.underline:hover {
+  text-decoration-thickness: 2px;
+}
+
+/* The browser's own surfaces take the palette: the selection is the brand tint, the caret and the checkboxes are the brand blue. */
+::selection {
+  background: var(--color-brand-100);
+  color: var(--color-ink);
+}
+input,
+textarea,
+select {
+  caret-color: var(--color-brand-600);
+}
+input[type="checkbox"],
+input[type="radio"] {
+  accent-color: var(--color-brand-600);
 }
 
 /* ------------------------------------------------------------------ Motion kit
@@ -459,6 +482,17 @@ details[open]:not(.menu, :has(> .disclosure-body))::details-content {
   .biz-disc {
     animation: none !important;
   }
+  /* A frozen arc is no feedback: the busy state is an ellipsis instead. */
+  .spinner {
+    display: none;
+  }
+  .spinner-dots {
+    display: inline;
+    order: 1; /* after the label in a button's row */
+  }
+}
+.spinner-dots {
+  display: none;
 }
 
 /* Recharts makes its SVG a tab stop (its accessibility layer): it takes the global ring like every other control. */

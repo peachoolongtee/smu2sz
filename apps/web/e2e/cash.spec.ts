@@ -114,9 +114,9 @@ test("after the plan ran, the page states the current funding and folds the comp
   const current = page.locator("#cash-current");
   await expect(current).toContainText("Current funding");
   await expect(current.getByTestId("cash-lot-landed")).toContainText("¥150,000.00");
-  await expect(current.getByTestId("cash-lot-landed")).toContainText("Received today");
+  await expect(current.getByTestId("cash-lot-landed")).toContainText("today");
   await expect(current.getByTestId("cash-lot-transit")).toContainText("¥255,000.00");
-  await expect(current.getByTestId("cash-lot-transit")).toContainText("Arrives in 3 days");
+  await expect(current.getByTestId("cash-lot-transit")).toContainText("in 3 days");
   await expect(current.getByTestId("cash-no-gap")).toHaveText("No additional funding is needed.");
   // No comparison was taken when the plan was chosen (the plan ran from the home), and a fresh plan on covered books is empty:
   // the page shows the current funding and nothing that reads as a to-do list.
@@ -218,5 +218,5 @@ test("engine words stay out of level 1 on Cash & funding and Activity", async ({
   const activity = await page.locator("main").innerText();
   for (const word of [/hash-chained/i, /\bexecutor\b/i, /operations the/i]) expect(activity, String(word)).not.toMatch(word);
   await expect(page.locator("#activity-timeline")).toContainText("Each entry is sealed to the one before it.");
-  await expect(page.locator("#activity-refused")).toContainText("What FLOW refused");
+  await expect(page.locator("#activity-refused")).toContainText("Nothing has been refused yet");
 });

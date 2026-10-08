@@ -60,6 +60,7 @@ export function Badge({
   title,
   className = "",
   dot = true,
+  wrap = false,
 }: {
   tone?: Tone;
   children: ReactNode;
@@ -67,12 +68,14 @@ export function Badge({
   className?: string;
   /** False where the label has its own mark (a glyph). */
   dot?: boolean;
+  /** A label that is a whole sentence from the server may wrap (and never wider than its row) instead of running off a phone. */
+  wrap?: boolean;
 }) {
   const mark = dot ? toneDot[tone] : undefined;
   return (
     <span
       title={title}
-      className={`inline-flex items-center gap-1 whitespace-nowrap rounded-pill border px-2.5 py-0.5 text-xs font-medium ${toneBadge[tone]} ${className}`}
+      className={`inline-flex items-center gap-1 rounded-pill border px-2.5 py-0.5 text-xs font-medium ${wrap ? "max-w-full" : "whitespace-nowrap"} ${toneBadge[tone]} ${className}`}
     >
       {mark ? <span aria-hidden className={`size-1.5 shrink-0 rounded-full ${mark}`} /> : null}
       {children}
@@ -81,9 +84,9 @@ export function Badge({
 }
 
 /** A small tag that carries no status (a channel, a kind, a count): a Badge without the dot. Same pill, same tones. */
-export function Chip({ tone = "neutral", children, title, className = "" }: { tone?: Tone; children: ReactNode; title?: string; className?: string }) {
+export function Chip({ tone = "neutral", children, title, className = "", wrap }: { tone?: Tone; children: ReactNode; title?: string; className?: string; wrap?: boolean }) {
   return (
-    <Badge tone={tone} title={title} dot={false} className={className}>
+    <Badge tone={tone} title={title} dot={false} className={className} wrap={wrap}>
       {children}
     </Badge>
   );
@@ -115,8 +118,8 @@ export function PageHeader({
       <div className="flex min-w-0 items-start gap-3">
         {chip ? <PageIcon section={section} icon={icon} /> : null}
         <div className="min-w-0">
-          <h1 className={`text-xl font-semibold tracking-tight text-ink ${chip ? "leading-10" : ""}`}>{title}</h1>
-          {subtitle ? <p className="mt-1 max-w-3xl text-sm text-ink-2">{subtitle}</p> : null}
+          <h1 className={`text-balance text-xl font-semibold tracking-tight text-ink ${chip ? "leading-10" : ""}`}>{title}</h1>
+          {subtitle ? <p className="mt-1 max-w-3xl text-pretty text-sm text-ink-2">{subtitle}</p> : null}
         </div>
       </div>
       {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
@@ -151,10 +154,10 @@ export function Card({
       {title ? (
         <div className="flex flex-wrap items-start justify-between gap-2 border-b border-line px-4 py-3">
           <div className="min-w-0">
-            <h2 id={id ? `${id}-title` : undefined} className="text-sm font-semibold text-ink">
+            <h2 id={id ? `${id}-title` : undefined} className="text-balance text-sm font-semibold text-ink">
               {title}
             </h2>
-            {subtitle ? <p className="mt-0.5 text-xs text-ink-3">{subtitle}</p> : null}
+            {subtitle ? <p className="mt-0.5 text-pretty text-xs text-ink-3">{subtitle}</p> : null}
           </div>
           {actions}
         </div>
@@ -354,8 +357,8 @@ export function EmptyState({
 }) {
   return (
     <div className="motion-reveal rounded-card border border-dashed border-line-strong bg-surface px-6 py-10 text-center">
-      <p className="text-sm font-semibold text-ink">{title}</p>
-      {body ? <p className="mx-auto mt-1 max-w-md text-sm text-ink-2">{body}</p> : null}
+      <p className="text-balance text-sm font-semibold text-ink">{title}</p>
+      {body ? <p className="mx-auto mt-1 max-w-md text-pretty text-sm text-ink-2">{body}</p> : null}
       {action ? <div className="mt-4 flex justify-center">{action}</div> : null}
     </div>
   );

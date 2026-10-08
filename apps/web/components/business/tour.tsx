@@ -110,11 +110,16 @@ function TourCard({ steps }: { steps: Step[] }) {
   const last = step === steps.length - 1;
   const close = useCallback(() => tourStore.set({ open: false }), []);
 
-  // A real modal: the browser makes the page behind it inert (focus cannot leave the card), Esc cancels, focus returns to what had it.
+  // A real modal: the browser makes the page behind it inert (focus cannot leave the card) and Esc cancels. The tour starts from a row
+  // in the account sheet, which closes as it starts, so the browser has nothing to give focus back to: it goes to the account button.
   useEffect(() => {
     const d = dialogRef.current;
     if (d && !d.open) d.showModal();
-    return () => d?.close();
+    return () => {
+      d?.close();
+      const buttons = Array.from(document.querySelectorAll<HTMLElement>('[data-testid="account-menu"] > summary'));
+      buttons.find((b) => b.getBoundingClientRect().width > 0)?.focus();
+    };
   }, []);
 
   // Follow the spotlighted part: bring it into view, then track it. Nothing polls: the part's own size, the window's size and any
@@ -205,10 +210,10 @@ function TourCard({ steps }: { steps: Step[] }) {
         style={place}
       >
         <p className="text-xs font-semibold uppercase tracking-wide text-ink-3">{t("tour.step", { n: step + 1, total: steps.length })}</p>
-        <h2 id="tour-title" className="mt-1 text-lg font-semibold leading-snug">
+        <h2 id="tour-title" className="mt-1 text-balance text-lg font-semibold leading-snug">
           {t(current.title)}
         </h2>
-        <p id="tour-body" className="mt-2 text-sm leading-relaxed text-ink-2">
+        <p id="tour-body" className="mt-2 text-pretty text-sm leading-relaxed text-ink-2">
           {t(current.body)}
         </p>
         {current.extra === "sections" ? (
