@@ -11,6 +11,7 @@ _MESSAGES = {
     "envelope": "The Safe Deal Envelope is switched off (FEATURE_ENVELOPE).",
     "price_curve": "The cash price curve is switched off (FEATURE_PRICE_CURVE).",
     "collections_worth": "Collections worth is switched off (FEATURE_COLLECTIONS_WORTH).",
+    "pilot_journal": "The pilot journal is switched off (FEATURE_PILOT_JOURNAL).",
 }
 
 

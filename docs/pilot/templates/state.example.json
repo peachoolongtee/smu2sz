@@ -1,0 +1,203 @@
+{
+  "org_id": "SME-EXAMPLE",
+  "as_of": "2026-10-12",
+  "cash_fen": 25000000,
+  "flows": [
+    {
+      "id": "F-PAYROLL",
+      "day": 18,
+      "amount_fen": -20000000,
+      "kind": "PAYROLL",
+      "label": "Payroll",
+      "counterparty_id": null,
+      "confirmed": true
+    },
+    {
+      "id": "F-SUPPLIER",
+      "day": 25,
+      "amount_fen": -9000000,
+      "kind": "SUPPLIER",
+      "label": "Supplier payment",
+      "counterparty_id": null,
+      "confirmed": true
+    }
+  ],
+  "receivables": [
+    {
+      "id": "RCV-A1",
+      "counterparty_id": "BUYER-1",
+      "face_fen": 30000000,
+      "issue_day": -20,
+      "terms_days": 45,
+      "status": "OPEN",
+      "confirmed": true
+    },
+    {
+      "id": "RCV-B1",
+      "counterparty_id": "BUYER-2",
+      "face_fen": 12000000,
+      "issue_day": -50,
+      "terms_days": 30,
+      "status": "OPEN",
+      "confirmed": true
+    }
+  ],
+  "recurring_invoices": [
+    {
+      "counterparty_id": "BUYER-1",
+      "face_fen": 30000000,
+      "every_days": 30,
+      "next_issue_day": 10,
+      "terms_days": 45
+    },
+    {
+      "counterparty_id": "BUYER-2",
+      "face_fen": 12000000,
+      "every_days": 30,
+      "next_issue_day": 5,
+      "terms_days": 30
+    }
+  ],
+  "facilities": [
+    {
+      "id": "FAC-LINE",
+      "name": "Bank credit line",
+      "kind": "CREDIT_LINE",
+      "lender_id": "BANK-1",
+      "status": "COMMITTED",
+      "owner_approved": true,
+      "limit_fen": 15000000,
+      "drawn_fen": 0,
+      "advance_rate_bp": null,
+      "rate_bp": 640,
+      "fee_bp_per_advance": 0,
+      "fee_period_days": null,
+      "upfront_fee_bp": 0,
+      "lead_time_days": 0,
+      "term_months": null,
+      "repayment": "BULLET",
+      "collateral": false,
+      "personal_guarantee": false,
+      "counts_in_leverage": true,
+      "counts_in_debt_service": true,
+      "covenants": [
+        {
+          "id": "FAC-LINE-DSCR",
+          "facility_id": "FAC-LINE",
+          "kind": "DSCR_MIN",
+          "threshold_bp": 12500,
+          "clean_down_days": null,
+          "definition": "monthly EBITDA / scheduled debt service (principal + interest, all facilities)",
+          "formula": "EBITDA_m / DS_m >= 1.25"
+        },
+        {
+          "id": "FAC-LINE-LEV",
+          "facility_id": "FAC-LINE",
+          "kind": "LEVERAGE_MAX",
+          "threshold_bp": 25000,
+          "clean_down_days": null,
+          "definition": "total debt / annualised EBITDA",
+          "formula": "Debt_m / (12 x EBITDA_m) <= 2.5"
+        },
+        {
+          "id": "FAC-LINE-CD",
+          "facility_id": "FAC-LINE",
+          "kind": "CLEAN_DOWN",
+          "threshold_bp": null,
+          "clean_down_days": 30,
+          "definition": "credit line at zero for 30 consecutive days each year",
+          "formula": "max run of days with balance = 0 >= 30"
+        }
+      ],
+      "source_note": "EXAMPLE: replace with the facility letter reference"
+    },
+    {
+      "id": "FAC-IF",
+      "name": "Invoice financing (onboarded platform)",
+      "kind": "INVOICE_FINANCING",
+      "lender_id": "PLATFORM-1",
+      "status": "COMMITTED",
+      "owner_approved": true,
+      "limit_fen": 35000000,
+      "drawn_fen": 0,
+      "advance_rate_bp": 8000,
+      "rate_bp": 780,
+      "fee_bp_per_advance": 25,
+      "fee_period_days": 30,
+      "upfront_fee_bp": 0,
+      "lead_time_days": 3,
+      "term_months": null,
+      "repayment": "ON_RECEIPT",
+      "collateral": false,
+      "personal_guarantee": false,
+      "counts_in_leverage": true,
+      "counts_in_debt_service": true,
+      "covenants": [],
+      "source_note": "EXAMPLE: replace with the facility letter reference"
+    },
+    {
+      "id": "FAC-EARLYPAY",
+      "name": "Buyer early-payment offer",
+      "kind": "BUYER_EARLY_PAY",
+      "lender_id": "BUYER-1",
+      "status": "COMMITTED",
+      "owner_approved": true,
+      "limit_fen": 30000000,
+      "drawn_fen": 0,
+      "advance_rate_bp": null,
+      "rate_bp": 120,
+      "fee_bp_per_advance": 0,
+      "fee_period_days": null,
+      "upfront_fee_bp": 0,
+      "lead_time_days": 2,
+      "term_months": null,
+      "repayment": "ON_RECEIPT",
+      "collateral": false,
+      "personal_guarantee": false,
+      "counts_in_leverage": false,
+      "counts_in_debt_service": false,
+      "covenants": [],
+      "source_note": "EXAMPLE: replace with the facility letter reference"
+    }
+  ],
+  "debts": [],
+  "forward_concessions": [],
+  "expected_orders": [],
+  "counterparties": [
+    {
+      "id": "BUYER-1",
+      "name": "Buyer A",
+      "role": "BUYER",
+      "known": true
+    },
+    {
+      "id": "BUYER-2",
+      "name": "Buyer B",
+      "role": "BUYER",
+      "known": true
+    },
+    {
+      "id": "BANK-1",
+      "name": "Bank (credit line)",
+      "role": "LENDER",
+      "known": true
+    },
+    {
+      "id": "PLATFORM-1",
+      "name": "Invoice financing platform",
+      "role": "LENDER",
+      "known": true
+    },
+    {
+      "id": "OWNER",
+      "name": "Owner",
+      "role": "OWNER",
+      "known": true
+    }
+  ],
+  "invoice_adjustments": [],
+  "monthly_ebitda_fen": 6000000,
+  "state_version": 1,
+  "as_of_day": 0,
+  "lots": []
+}

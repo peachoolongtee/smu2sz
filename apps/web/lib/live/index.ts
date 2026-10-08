@@ -33,6 +33,7 @@ import type {
   OfferView,
   OperationView,
   PlanRequest,
+  PilotJournalView,
   PriceCurveView,
   ReceivablesWorthView,
   ReconciliationView,
@@ -124,6 +125,9 @@ export const live = {
   /** GET /buyers/{buyer_id}/envelope (flag `envelope`). Null when the feature is off or the buyer is unknown. The zone is a detail of the answer, read only when asked. */
   getEnvelope: (buyerId: string, lang: "en" | "zh", zone = false) =>
     nullWhenOff(() => http<EnvelopeView>("GET", `/buyers/${enc(buyerId)}/envelope?lang=${lang}${zone ? "&zone=1" : ""}`)),
+
+  /** GET /pilot/journal (flag `pilot_journal`). Null when the feature is off or absent. Read-only: the web never posts an entry. */
+  getPilotJournal: () => nullWhenOff(() => http<PilotJournalView>("GET", "/pilot/journal")),
 
   /** POST /nl. The owner channel sends X-Owner-Token. A buyer turn never carries the owner token; in a demo build it
    * sends the buyer's published channel key (X-Counterparty-Key), otherwise nothing, and the API treats it as a proposal. */

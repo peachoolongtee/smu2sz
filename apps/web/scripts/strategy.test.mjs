@@ -190,3 +190,25 @@ test("without the flag the Deals page does not hand the compare state to the res
   assert.match(source("e2e/strategy.spec.ts"), /test\.skip\(process\.env\.E2E_STRATEGY !== "1"/);
   assert.match(source("playwright.config.ts"), /process\.env\.E2E_STRATEGY === "1"/);
 });
+
+test("the pilot journal (map #58) is read-only and mounted only with the strategy build flag AND a live API: the mock has no journal, the flag-off build reads nothing", () => {
+  // The Activity page mounts it on both conditions, at the foot of the page.
+  assert.match(source("app/activity/page.tsx"), /\{STRATEGY_MVP && API_MODE === "live" \? <PilotJournal \/> : null\}/);
+  // The component reads through the idle hook (the thunk never runs without the flag) and hides on a null (403 FEATURE_DISABLED, 404).
+  const component = source("components/business/pilot-journal.tsx");
+  assert.match(component, /useStrategyAsync\(\(\) => getPilotJournal\(\), \[\]\)/);
+  assert.match(component, /if \(!journal\.data\) return null;/);
+  // Read-only: the client has a GET and no way to write an entry; the mock answers null (no recording).
+  assert.match(source("lib/live/index.ts"), /getPilotJournal: \(\) => nullWhenOff\(\(\) => http<PilotJournalView>\("GET", "\/pilot\/journal"\)\)/);
+  for (const file of ["lib/live/index.ts", "lib/api.ts", "lib/mock/handlers.ts", "components/business/pilot-journal.tsx"]) {
+    assert.doesNotMatch(source(file), /"(POST|PUT|PATCH|DELETE)",\s*"\/pilot\/journal/, `${file} must not write the journal`);
+  }
+  assert.match(source("lib/mock/handlers.ts"), /export async function getPilotJournal\(\): Promise<PilotJournalView \| null> \{\s*return null;\s*\}/);
+  // No money is formatted or computed in it: the entry has none, and the component never formats a number.
+  assert.doesNotMatch(component, /fmt|toFixed|Intl\.NumberFormat|_fen|_display/);
+  // Dictionary: every key the section uses exists in English and Chinese.
+  const dictionary = source("lib/dictionary.ts");
+  const keys = ["title", "sub", "empty", "error", "week", "recorded", "flowSaid", "youDid", "sme", "snapshot", "answer.envelope", "answer.worth", "answer.curve", "choice.followed", "choice.partly", "choice.ignored", "choice.not_applicable"];
+  for (const key of keys) assert.equal(dictionary.split(`"biz.pilot.${key}":`).length - 1, 2, `biz.pilot.${key} in en and zh`);
+  for (const used of component.matchAll(/t\("(biz\.pilot\.[a-zA-Z]+)"/g)) assert.ok(dictionary.includes(`"${used[1]}":`), used[1]);
+});

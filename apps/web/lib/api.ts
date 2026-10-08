@@ -40,6 +40,7 @@ import type {
   OfferView,
   PlanRequest,
   EnvelopeView,
+  PilotJournalView,
   PriceCurveView,
   ReceivablesWorthView,
   ReconciliationView,
@@ -180,6 +181,15 @@ export async function getReceivablesWorth(lang: "en" | "zh"): Promise<Receivable
  */
 export async function getEnvelope(buyerId: string, lang: "en" | "zh", zone = false): Promise<EnvelopeView | null> {
   return isMock ? (await mock()).getEnvelope(buyerId, lang, zone) : (await live()).getEnvelope(buyerId, lang, zone);
+}
+
+/**
+ * GET /pilot/journal (flag `pilot_journal`): the shadow pilot's entries, newest first, read-only. Null when the server has the
+ * feature off (403 FEATURE_DISABLED) or lacks the route, so the Activity section hides; null in mock mode, which has no recording.
+ * Call it only behind STRATEGY_MVP and live mode.
+ */
+export async function getPilotJournal(): Promise<PilotJournalView | null> {
+  return isMock ? (await mock()).getPilotJournal() : (await live()).getPilotJournal();
 }
 
 /** POST /nl: one turn of the conversation. Owner turns need the owner token (401 opens the sign-in dialog). */
