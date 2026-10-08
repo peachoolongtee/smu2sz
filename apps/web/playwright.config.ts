@@ -9,7 +9,7 @@ import { defineConfig, devices } from "@playwright/test";
  *
  * The live web server uses :3000 (the API default CORS origin); E2E_LIVE_PORT moves it and tells the API to allow that origin.
  * E2E_STRATEGY=1 builds the web app with NEXT_PUBLIC_STRATEGY_MVP=1 (its own dist dir) and starts the live API with
- * FEATURE_PRICE_CURVE=1 FEATURE_COLLECTIONS_WORTH=1, so e2e/strategy.spec.ts and the screenshot walk see the strategy surfaces; unset,
+ * FEATURE_ENVELOPE=1 FEATURE_PRICE_CURVE=1 FEATURE_COLLECTIONS_WORTH=1, so e2e/strategy.spec.ts and the screenshot walk see the strategy surfaces; unset,
  * the app is the default build and that spec skips.
  * E2E_TARGET=mock|live|all (default all) chooses which servers start; `pnpm test:e2e:mock` and
  * `pnpm test:e2e:live` set it. Needs `uv` for the API and `pnpm exec playwright install chromium` once.
@@ -26,7 +26,7 @@ const wantLive = target === "all" || target === "live";
 // The strategy MVP is a build-time flag on the web app and a runtime flag on the API; both follow E2E_STRATEGY.
 const strategy = process.env.E2E_STRATEGY === "1";
 const strategyWeb: Record<string, string> = strategy ? { NEXT_PUBLIC_STRATEGY_MVP: "1" } : {};
-const strategyApi: Record<string, string> = strategy ? { FEATURE_PRICE_CURVE: "1", FEATURE_COLLECTIONS_WORTH: "1" } : {};
+const strategyApi: Record<string, string> = strategy ? { FEATURE_ENVELOPE: "1", FEATURE_PRICE_CURVE: "1", FEATURE_COLLECTIONS_WORTH: "1" } : {};
 
 const desktop = { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 } };
 
