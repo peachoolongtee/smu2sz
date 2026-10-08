@@ -121,7 +121,11 @@ day 31; day 34 → ¥178.22 for 34–42, ¥89.12 for 43–60, ¥0 from 61 (so th
 day-34 answer four). The value never exceeds the cost of funds for TWO whole fee periods (60 days) on the amount
 (`break_even_cost_share(state, mandate, 60)` × ¥10,000: FAC-IF bills whole 30-day periods, so moving cash 30 days
 earlier can save two periods' fees, which is the day-34 ¥178.22 = 2 × ¥89.11); assert it, and assert that bands
-outside the breach episode stay within one period (¥89.11/¥89.12).
+outside the breach episode stay within one period (¥89.11/¥89.12). Wave 8 (map #58): the ceiling is the marginal cost of
+funds over the longest carry the plan actually holds on the books (the latest repay day, or the horizon end for a draw it
+carries, less the earliest landing day, at least 30 days; never below the two-period figure), because a bank line carried
+for months saves its whole carry; exceeding the ceiling never refuses the curve: the band keeps its value, is marked
+`above_guard: true`, and one warning is logged.
 
 ### 5.2 Safe Deal Envelope (Wave 3, estimate 8 agent-days)
 
@@ -419,6 +423,11 @@ the backtest's findings, 8 October 2026.
   + terms, debt payment days, each with the day after) before any bisection, within the 120-evaluation budget. S21's
   two-gap state fell from 18.8 s to 4.1 s with identical bands; a literal "every event day ± 30 as a boundary" was slower
   (63 plan searches).
+- **The curve's ceiling follows the plan's carry and never refuses (map #58, ticket #63).** `GET /cash/price-curve` is
+  never a 422 because a value is high: the guard is the cost of funds over the longest carry in the router's plan
+  (`break_even_cost_share(state, mandate, carry_days)`, floored at two billing periods so the golden pins stay), and a band
+  above it is kept, marked `above_guard`, and logged; the route still answers 422 for an engine error or no permanent
+  source.
 - **The envelope speaks in limits.** Eyebrow "The most you can give"; `primary` opens "You can live with: "; caption
   "Your limits, not an opening offer. FLOW sends only what you choose below."; chip "Estimate"; "fix" for cure, "price
   rise" for price step, "your current funding plan" for standing plan, "within / over your limits" for approved / not

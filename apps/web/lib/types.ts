@@ -1331,6 +1331,8 @@ export interface PriceBand {
   value_fen: Fen;
   value_bp: number;
   varies: boolean;
+  /** The value is above the server's sanity ceiling for the plan's carry: kept and shown, never refused. Absent in older recordings. */
+  above_guard?: boolean;
   /** The band's value as a share of the amount, server-formatted ("0.89%"). */
   value_pct: string;
   value_display: string;

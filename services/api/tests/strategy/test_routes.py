@@ -259,8 +259,7 @@ def test_computed_in_seconds_on_a_hit_is_its_own_near_zero_time(name, rt, api):
 # ---------------------------------------------------------------- errors are 422 with a sentence, never 500
 
 
-@pytest.mark.parametrize("error", [RuntimeError("the cash price curve values days 3..9 at 12345 fen, above the cost of funds"),
-                                   NoPermanentSourceError("no permanent source"), EngineError("bad books")])
+@pytest.mark.parametrize("error", [NoPermanentSourceError("no permanent source"), EngineError("bad books")])
 @pytest.mark.parametrize("lang", ["en", "zh"])
 def test_the_curve_route_maps_its_errors_to_422(api, monkeypatch, error, lang):
     from app.api import strategy_curve as route
@@ -274,10 +273,20 @@ def test_the_curve_route_maps_its_errors_to_422(api, monkeypatch, error, lang):
     assert r.status_code == 422, r.text
     detail = r.json()["detail"]
     assert isinstance(detail, str) and detail and " fen" not in detail
-    assert lang == "en" or not isinstance(error, RuntimeError) or "资金价格曲线" in detail
     # the failure is not cached: the next request computes again
     monkeypatch.setattr(route, "price_curve", real)
     assert api.get("/cash/price-curve", headers=OWNER).status_code == 200
+
+
+def test_a_value_above_the_ceiling_is_a_200_with_above_guard_not_a_422(api, monkeypatch):
+    from app.strategy import price_curve as module
+
+    monkeypatch.setattr(module, "_ceiling_fen", lambda *_: 1)
+    r = api.get("/cash/price-curve", headers=OWNER)
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert [b["above_guard"] for b in body["bands"]] == [False, True, False]  # the band keeps its value
+    assert body["bands"][1]["value_fen"] == 8911 and body["sentence"].startswith("Cash in the next 30 days saves you ¥89.11")
 
 
 @pytest.mark.parametrize("error", [EngineError("bad books"), NoPermanentSourceError("no permanent source")])

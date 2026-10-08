@@ -97,10 +97,27 @@ def test_the_value_never_exceeds_the_cost_of_funds(rt_day0: Runtime, books_day0:
     assert all(b.value_fen <= 8912 for b in curve34.bands if b.from_day >= 43)
 
 
-def test_a_value_above_the_cost_of_funds_is_a_runtime_error(rt_day0: Runtime, books_day0: Books, monkeypatch: pytest.MonkeyPatch):
+def test_no_band_is_above_the_guard_on_the_golden_books(curve0: PriceCurve, curve34: PriceCurve):
+    assert not any(b.above_guard for b in curve0.bands + curve34.bands)
+
+
+def test_a_value_above_the_cost_of_funds_is_kept_and_marked_above_guard(
+        rt_day0: Runtime, books_day0: Books, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture):
     monkeypatch.setattr(pc, "_ceiling_fen", lambda *_: 100)
-    with pytest.raises(RuntimeError, match="above the cost of funds"):
-        price_curve(books_day0, rt_day0.store.get_mandate(), store=rt_day0.store, day=0)
+    with caplog.at_level("WARNING", logger=pc.__name__):
+        curve = price_curve(books_day0, rt_day0.store.get_mandate(), store=rt_day0.store, day=0)
+    assert _spans(curve) == [(0, 0, 0), (1, 30, 8911), (31, 120, 0)]  # the value is kept, nothing refused
+    assert [b.above_guard for b in curve.bands] == [False, True, False]
+    assert [r.levelname for r in caplog.records] == ["WARNING"]  # one warning for the curve
+    assert price_sentence(curve, today=0, lang="en").startswith("Cash in the next 30 days saves you ¥89.11")
+
+
+def test_the_golden_books_carry_the_floor_of_the_ceiling(rt_day0: Runtime, books_day0: Books, rt_day34: Runtime,
+                                                          books_day34: Books):
+    """The plan's longest draw carry on the golden books is shorter than two periods: the ceiling is the two-period figure."""
+    for rt, books, day in ((rt_day0, books_day0, 0), (rt_day34, books_day34, 34)):
+        assert pc._carry_days(books, rt.store.get_mandate(), day) <= 2 * pc.WINDOW_DAYS
+        assert pc._ceiling_fen(books, rt.store.get_mandate(), GRID_STEP_FEN, day) == 17822
 
 
 def test_no_arrival_day_is_planned_twice(rt_day34: Runtime, books_day34: Books, monkeypatch: pytest.MonkeyPatch):

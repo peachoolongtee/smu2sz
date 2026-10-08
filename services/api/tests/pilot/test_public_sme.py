@@ -16,9 +16,12 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.api.runtime import Runtime, set_runtime
+from app.books import books_from_store
 from app.domain.fixtures import load_scenario
 from app.domain.models import Mode
 from app.financial.trajectory import project
+
+price_curve_module = importlib.import_module("app.strategy.price_curve")  # the package exports no `price_curve` module attribute
 
 API_DIR = Path(__file__).resolve().parents[2]
 SCENARIOS = API_DIR.parents[1] / "fixtures" / "scenarios"
@@ -168,3 +171,49 @@ def test_envelope_of_buyer_a_on_90_day_terms_is_scanned_to_100_and_the_zone_has_
     assert a.primary == ("You can live with: up to 100-day terms (the most FLOW checks), or early payment at up to 0.10% "
                          "on ¥5,397,202.57; a rebate up to 1.50%.")
     assert envelope_answer(facts, "zh").primary.startswith("您能接受的范围：账期最长 100 天（FLOW 检查的上限），或提前付款")
+
+
+def test_the_curve_answers_on_the_bank_line_books_with_the_value_the_engine_gives(api: TestClient) -> None:
+    """The line is the marginal source (3.00%): the day-0 draw is repaid by the ¥10.5m receipt on day 25 (carry 23 days,
+    so the ceiling is its floor, two periods of the invoice-financing option: 4,932 fen)."""
+    body = api.get("/cash/price-curve").json()
+    assert [(b["from_day"], b["to_day"], b["value_fen"], b["value_bp"]) for b in body["bands"]] == [
+        (0, 24, 1_890, 19), (25, 120, 0, 0)]
+    assert not any(b["above_guard"] or b["varies"] for b in body["bands"]) and body["flat"] is False
+    assert body["sentence"] == ("Cash in the next 24 days saves you ¥18.90 of funding cost per ¥10,000 (0.19%); "
+                                "after that, earlier cash saves nothing.")
+
+
+def test_a_draw_carried_for_months_is_priced_against_its_carry_and_never_refused(
+        pilot: ModuleType, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """The ¥10.5m receipt (RCV-F2) arrives 60 days later, so the line draw is repaid on day 85 and the saving from earlier
+    cash is the draw's whole carry: ¥68.22 per ¥10,000 over 83 days, more than the two periods (¥49.32) the curve
+    once refused above. The ceiling follows the carry, so the curve answers 200 and no band is above the guard."""
+    from app.api import strategy_curve
+    from app.main import app
+
+    raw = json.loads((SCENARIOS / "public_sme.json").read_text(encoding="utf-8"))
+    for r in raw["state"]["receivables"]:
+        if r["id"] == "RCV-F2":
+            r["issue_day"] += 60
+    path = tmp_path / "state.json"
+    path.write_text(json.dumps(raw["state"]), encoding="utf-8")
+    rt = pilot.build_runtime(path, MANDATE)
+    monkeypatch.setenv("FEATURE_PRICE_CURVE", "1")
+    set_runtime(rt)
+    strategy_curve.clear_cache()
+    try:
+        res = TestClient(app, headers=OWNER).get("/cash/price-curve")
+        books = books_from_store(rt.store)
+        carry = price_curve_module._carry_days(books, rt.store.get_mandate(), 0)
+        ceiling = price_curve_module._ceiling_fen(books, rt.store.get_mandate(), 1_000_000, 0)
+    finally:
+        set_runtime(None)
+        strategy_curve.clear_cache()
+    assert res.status_code == 200, res.text
+    body = res.json()
+    assert [(b["from_day"], b["to_day"], b["value_fen"]) for b in body["bands"]] == [(0, 53, 0), (54, 83, 6_822), (84, 120, 0)]
+    assert (carry, ceiling) == (83, 6_822)  # the draw lands on day 2 and is repaid on day 85; two periods said 4,932
+    assert not any(b["above_guard"] for b in body["bands"])
+    assert body["sentence"] == ("Cash in the next 83 days saves you ¥68.22 of funding cost per ¥10,000 (0.68%); "
+                                "after that, earlier cash saves nothing.")
