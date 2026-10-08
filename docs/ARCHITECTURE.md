@@ -43,6 +43,7 @@ Everything lives under `services/api/app/`.
 | `capex/` (flag) | NPV, payback, structure comparison; evaluation is side-effect free (`POST /capex/apply` is the separate owner step) | `evaluate_capex()` | domain, financial, covenants |
 | `borrower_file/` (flag) | 微业贷-style borrower file from verified state (HTML, then PDF/DOCX); read-only, with provenance (generation day, versions, evidence hash); queues nothing | `build()` | domain, financial, covenants, persistence |
 | `alerts/` (flag) | cash-flow alerts from the conservative trajectory; receipt reconciliation | `alerts()`, `reconcile()` | domain, financial |
+| `decisions/` | the durable decision record (ADR-0011): three strict fact models (EVALUATED, SENT, QUOTED), deterministic decision identity, and the pure `derive()` / `waiting_for()` over stored records; pure, no I/O, no money; no engine module imports it (a test pins that) | `derive()`, `derive_all()`, `waiting_for()`, `decision_id_for()`, the fact models | domain, `persistence.records` only |
 | `api/` | FastAPI routers, dependency wiring | HTTP | everything |
 
 A module may not import another module's internals, only its public functions. **Cycles are forbidden.**
@@ -146,16 +147,20 @@ Every violation carries a `formula` and `inputs` the UI can show verbatim.
 | --- | --- | --- |
 | `POST` | `/nl` | multi-turn session: `{session_id?, actor, text}` → `{reply, intent, plan, verdict?, operations[], clarification?}` |
 | `POST` | `/offers` | submit documents → `CompiledOffer` |
-| `POST` | `/offers/{id}/evaluate` | → `Verdict` |
-| `POST` | `/negotiate/{offer_id}` | bounded rounds with the buyer kernel |
+| `GET` | `/offers/{id}` | the stored offer with its latest verdict id and `decision_id` (owner only) |
+| `POST` | `/offers/{id}/evaluate` | → `Verdict`; adds `decision_id`, `evaluated_when`, and a `send_scope` sentence per counter |
+| `POST` | `/negotiate/{offer_id}` | bounded rounds with the buyer kernel; optional `verdict_id`, `counter_id`, `state_version` bind the send to what the owner read (409 `COUNTER_CHANGED` otherwise); adds `decision_id`, `execution`, `decision_recorded` |
+| `GET` | `/decisions`, `/decisions/{id}` | the decision record, derived on request from the stores plus three stored facts (ADR-0011); owner only; every sentence per `lang` |
 | `POST` | `/router/plan` | → `FundingPlan` (committed + expected) |
 | `POST` | `/facilities/compile` | term sheet → `CompiledTermSheet` (owner must approve) |
 | `POST` | `/capex/evaluate` | flag `capex`; writes nothing |
 | `POST` | `/capex/apply` | flag `capex`; owner only, bound to the evaluation's state version; queues the Tier-2 application |
 | `POST` | `/borrower-file` | flag `borrower_file`; read-only owner action |
 | `POST` | `/operations` | typed operation → `OperationResult` |
-| `GET`/`POST` | `/approvals`, `/approvals/{id}` | the Tier-2 queue |
-| `GET` | `/state`, `/trajectory`, `/ledger`, `/audit`, `/mandate` | read views; money pre-formatted on the server |
+| `GET`/`POST` | `/approvals`, `/approvals/{id}` | the Tier-2 queue; `GET /approvals/queue` rows carry `decision_id`, `decision_state`, `quote` (the stored one for a decided row) and `execution` |
+| `POST` | `/alerts/{id}/act` | runs the bound cure; stores the quote the owner was shown (`decision_id`, `decision_recorded`) |
+| `GET` | `/state`, `/trajectory`, `/ledger`, `/audit`, `/mandate` | read views; money pre-formatted on the server; `/ledger` operations carry `decision_id` |
+| `GET` | `/home` | the owner's home; adds `open_decisions` (up to three) and `remaining_task` with `remaining_task_links` |
 | `POST` | `/demo/reset` | reload fixtures, clear the ledger |
 | `GET` | `/evidence` | JSONL execution evidence with hashes |
 

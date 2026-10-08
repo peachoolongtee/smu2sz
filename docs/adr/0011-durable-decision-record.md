@@ -1,6 +1,6 @@
 # ADR-0011: One durable decision record, derived from the canonical stores plus three small facts
 
-Status: proposed, 9 Oct 2026. Owner: main architect. Addresses audit (independent-flow-ux-audit-2026-10-09) F02, F04,
+Status: accepted. Implemented 10 Oct 2026 (map #65, ticket #71). Proposed 9 Oct 2026. Owner: main architect. Addresses audit (independent-flow-ux-audit-2026-10-09) F02, F04,
 F06, F07, F13, F14, F17; sets the time-wording contract Wave 1 needs for F01 and F03. Changes no financial rule: the
 engine stability gate (CONTINUOUS_OPTIMIZATION section 0) holds.
 
@@ -81,14 +81,15 @@ They hold no buyer text and no model output.
   order, buyer_profile, simulated = true, outcome (DEAL | NO_DEAL), accepted_counter_id, transcript_hash,
   commitment_id, accept_op_id, funding_op_ids, funding_blocked (null or the router's reason code), counter_economics of
   the chosen or accepted counter {supplier_cost_fen, forward_value_fen, funding_cost_fen, offset_fen, net_fen,
-  basis_label} as `counter_economics()` gave it at send time, gap_plan {need_fen, total_cost_fen, legs [{kind,
-  facility_id, receivable_id, amount_fen, lands_day}]}.
+  basis_facility_id, basis_rate} as `counter_economics()` gave it at send time, gap_plan {need_fen, total_cost_fen, legs [{kind,
+  facility_id, receivable_id, amount_fen, lands_day}]}. The counter economics hold numbers and ids only: the basis is
+  `basis_facility_id` and an exact `basis_rate` Ratio (not a `basis_label`), and the server words the label per language.
 - QUOTED (FUNDING; fact_key = decision_id). alert_id, alert_kind, alert_day, state_version_shown, source (cure | router),
   legs [{op_id, kind, facility_id, receivable_id, amount_fen, cost_fen, annual_rate, cost_days, cost_end_day, lands_day,
   above_ceiling}], total_cost_fen (null when the engine gave no total), cost_note (draw_interest_excluded | null),
   needs_owner, max_apr_bp, restores_reserve, after_first_short_day (null = safe through the horizon), horizon_days,
-  if_decline {kind: below_reserve | below_zero | closed, day, zero_day, shortfall_fen, max_shortfall_display,
-  worst_day}, residual_shortfall_display. Every number is copied from the Alert's SuggestedAction pricing, the alert's
+  if_decline {kind: below_reserve | below_zero | closed, day, zero_day, shortfall_fen, max_shortfall_fen,
+  worst_day}, residual_shortfall_fen (numbers, never display strings). Every number is copied from the Alert's SuggestedAction pricing, the alert's
   inputs, the router plan's cost lines (`cost_lines_by_leg`) and the after-state projection the home already shows
   (`cure_after_words`). Nothing is priced for the fact.
 
@@ -297,3 +298,20 @@ Where the findings attach:
 3. The card shows the queued quote and today's price when they differ. Enforcing the quoted cost as a ceiling on approvals is an engine change, recorded on grilling #66 for the owner, not done here.
 4. `remaining_task` is a statement plus the supported routes as links (compare options on Cash; the named invoice on Receivables; the limits page); no facility application is invented.
 5. Standalone approvals appear as `approval:` records; the facts stay off the hash chain and out of the evidence export.
+
+## Implementation notes (10 Oct 2026)
+
+Decisions taken while building it, all inside the rules above:
+
+- The facts hold no sentence. `basis_label`, `max_shortfall_display` and `residual_shortfall_display` became `basis_facility_id` plus
+  `basis_rate`, `max_shortfall_fen` and `residual_shortfall_fen`.
+- The residual (section 5) is set only while a RESERVE_BREACH_AHEAD alert is open today. ADR text also let `restores_reserve` false
+  alone set it; with no open alert there is no current shortfall to show. `quoted_to_restore` keeps the quote's flag. The newest
+  reserve record carries it (`derive_all`), and it keeps SETTLED and EXECUTED records open.
+- ACCEPTED, the transient twin of ACTIVE, reads AGREED. A FUNDING record with a quote and no logged operation reads FAILED (nothing
+  ran). The deal table is applied as written: an approve that the run refused because the commitment had expired is EXPIRED (row 6
+  before row 9); the FAILED record is the funding one (for example the cure approved after the mandate expired).
+- The module takes protocols for the log entry, the promise and the alert, so it imports only `app.domain` and
+  `app.persistence.records`. `decision_id_for` takes a keyword `approval_id` and returns None for activity.
+- Waiting: a deal's linked funding in transit is checked after the buyer rows, for AGREED and NO_DEAL.
+- A router-plan quote stores no per-leg rate (the plan's cost lines carry none); a cure quote stores the alert's exact rate.
