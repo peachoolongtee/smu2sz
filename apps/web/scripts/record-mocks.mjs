@@ -325,7 +325,7 @@ await reset();
 }
 
 // ------------------------------------------------------------------ the home: deal, receipt on day 2, clock to day 34 (as scripts/demo_run.py)
-async function bankReceipt() {
+async function bankReceipt(half = false) {
   const recon = await live.getReconciliation();
   const promised = recon.promised[0];
   const mandate = await live.getMandate();
@@ -339,7 +339,7 @@ async function bankReceipt() {
       mandate_version: mandate.mandate.version,
       requested_by: "SYSTEM",
       receivable_id: promised.receivable_id,
-      amount_fen: promised.expected_fen,
+      amount_fen: half ? Math.floor(promised.expected_fen / 2) : promised.expected_fen, // half: the buyer part-keeps the promise (bank-feed setup, not a displayed figure)
       bank_reference: "DEMO-RCPT-1", // the demo's bank feed carries the bank's own reference on every receipt
     }),
   });
@@ -432,6 +432,21 @@ files["home_summary_day34_noreceipt.json"] = await live.getHome("en");
 files["home_summary_day34_noreceipt_zh.json"] = await live.getHome("zh");
 files["trajectory_conservative_day34_noreceipt.json"] = await live.getTrajectory("CONSERVATIVE");
 if (files["home_summary_day34_noreceipt.json"].cash.below_reserve_today !== true) throw new Error("day 34 without a receipt should be below the reserve today: the API has changed");
+
+// 1b. Day 34 after a HALF receipt on day 2: the part-paid promise's change row carries the four named facts and the window (F25).
+//     The mock serves it when "tl-mock-no-receipt" is "half".
+await reset();
+await step("inbox").run();
+await step("trajectory").run();
+await step("negotiate").run();
+await live.advanceClock(2);
+await bankReceipt(true);
+await live.advanceClock(28);
+await live.advanceClock(4);
+files["home_summary_day34_half.json"] = await live.getHome("en");
+files["home_summary_day34_half_zh.json"] = await live.getHome("zh");
+files["trajectory_conservative_day34_half.json"] = await live.getTrajectory("CONSERVATIVE");
+if (!files["home_summary_day34_half.json"].changes.some((c) => c.window_state)) throw new Error("a half receipt should give a change row with the part-paid facts: the API has changed");
 
 // 2. A buyer's early-payment message queues an agreement for the owner: its approval row carries the terms (terms_available true);
 //    once the agreement has expired the same row says the terms cannot be shown (terms_available false, with the server's reason).

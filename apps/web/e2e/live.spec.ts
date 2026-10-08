@@ -364,6 +364,14 @@ test("day 34 after a half receipt: the early-payment window for the rest is said
   await expect(receipt).not.toContainText(/by today/);
   await page.goto("/");
   await expect(page.getByTestId("home-headline")).toHaveText("Below reserve today.");
+  // The part-paid promise's row names its four facts under the sentence (F25).
+  const more = page.getByTestId("home-changes-more");
+  if (await more.count()) await more.locator("> summary").click();
+  const facts = page.getByTestId("home-change-facts");
+  await expect(facts).toHaveCount(1);
+  await expect(facts.getByTestId("home-change-facts-received")).toContainText("Cash received");
+  await expect(facts.getByTestId("home-change-facts-remaining")).toContainText("Remaining balance");
+  await expect(facts).toContainText("Early-payment window ended");
   await post("/demo/reset", {});
 });
 

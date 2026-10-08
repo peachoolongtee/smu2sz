@@ -1821,7 +1821,7 @@
     "needs_owner_reason": "年化成本 32.5% 高于您签署的无需批准融资上限 15.00%。",
     "authority_text": "需要您批准：年化成本 32.5% 高于您签署的无需批准融资上限 15.00%。",
     "if_nothing": "现金将在8 天后跌破零。",
-    "after": "现金保持在零以上，但最差的一天仍比最低现金储备低 ¥300,000.00。",
+    "after": "可避免现金为负；从今天起现金仍比 ¥300k 的最低现金储备低 ¥300k（最低点为8 天后的 ¥0.00）。",
     "why": "没有已承诺的融资能恢复安全线；这是保持在零以上最便宜的方式。",
     "detail": "Projected cash closes at ¥44,986.20 today, ¥255,013.80 below the reserve floor; the gap peaks at ¥455,013.80 in 8 days and lasts until 42 days from now. No committed plan restores the reserve; the cure that keeps cash at or above zero is: finance an invoice on Invoice financing (onboarded platform) ¥155,013.80, cost ¥1,381.32 (32.5% a year for 10 days); that is above the 15.00% limit you signed for funding without your approval, so it needs your approval before it runs. It does not restore the reserve: cash stays at or above zero, but the reserve is still ¥300,000.00 short at the worst day, which needs the owner's decision. The projection lets cash run below zero only as a simulation limit; the bank does not allow an overdraft, so a negative figure is a day the books cannot pay what falls due.",
     "formula": "shortfall = floor − closing_d: ¥300,000.00 − ¥44,986.20 = ¥255,013.80 (day 34); max over days 34..76 = ¥455,013.80",

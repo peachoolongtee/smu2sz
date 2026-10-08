@@ -1,5 +1,6 @@
 "use client";
 
+import { ReceiptFacts } from "@/components/receipt-facts";
 import { Badge, Card, ErrorState, LoadingBlock, PageHeader, Stat } from "@/components/ui";
 import { getHome, getReceivablesWorth, getReconciliation, getState } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
@@ -97,6 +98,7 @@ export default function ReceivablesPage() {
                       {x.day !== null ? `${whenText(x.day, data.as_of_day, t)} · ` : ""}
                       {x.detail_when ?? x.detail}
                     </p>
+                    <ReceiptFacts facts={x} testId={`receipt-facts-${x.op_id}`} />
                     {/* The record ids (invoice, bank reference) are the audit level. */}
                     <Disclosure className="mt-1" testId={`receipt-audit-${x.op_id}`} summary={t("biz.auditDetails")}>
                       <p className="mt-1 text-xs text-ink-3">

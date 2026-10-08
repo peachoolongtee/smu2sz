@@ -45,11 +45,12 @@
       "terms_available": true,
       "terms_unavailable_reason": null,
       "terms": [
-        "The buyer may pay early and take 0.50% off the ¥420,000.00 invoice (effective in 2 days; one time)"
+        "The buyer may pay early and take 0.50% off the ¥420,000.00 invoice to Foshan Home Retail Co. (effective in 2 days; one time)"
       ],
       "counterparty_name": "Foshan Home Retail Co.",
-      "forward_value_display": "¥0.00",
-      "what_you_agree_to": "The buyer may pay early and take 0.50% off the ¥420,000.00 invoice (effective in 2 days; one time).",
+      "forward_value_display": null,
+      "economic_effect_text": "No cost over the valuation window beyond the early-payment discount.",
+      "what_you_agree_to": "The buyer may pay early and take 0.50% off the ¥420,000.00 invoice to Foshan Home Retail Co. (effective in 2 days; one time).",
       "residual": null,
       "execution_status": "PENDING",
       "reason": "The verdict requires owner approval.",
@@ -105,7 +106,8 @@
       "terms_unavailable_reason": "The agreement this approval refers to has expired.",
       "terms": [],
       "counterparty_name": "Foshan Home Retail Co.",
-      "forward_value_display": "¥0.00",
+      "forward_value_display": null,
+      "economic_effect_text": "No cost over the valuation window beyond the early-payment discount.",
       "what_you_agree_to": null,
       "residual": null,
       "execution_status": "PENDING",

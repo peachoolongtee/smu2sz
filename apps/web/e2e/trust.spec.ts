@@ -4,7 +4,7 @@ import { expect, test } from "./fixtures";
  * Wave 1 (map #65), mock mode. Each story is one recording from the real API (mocks/w1_approval_stories.json and the no-receipt home
  * files, scripts/record-mocks.mjs), switched on by a sessionStorage hook that is set before the page loads:
  *   tl-mock-approval-story  agreement | expired | refused     (lib/mock/handlers.ts)
- *   tl-mock-no-receipt      1                                 (lib/mock/home.ts)
+ *   tl-mock-no-receipt      1 | half                          (lib/mock/home.ts)
  */
 
 async function story(page: import("@playwright/test").Page, key: string, value: string) {
@@ -18,7 +18,10 @@ test("an agreement approval shows the buyer, the terms and the amount above the 
   await expect(card.getByTestId("approval-headline")).toHaveText("Approve this agreement with Foshan Home Retail Co.?");
   await expect(card.getByTestId("approval-buyer")).toHaveText("Foshan Home Retail Co.");
   const terms = card.getByTestId("approval-terms");
-  await expect(terms).toContainText("The buyer may pay early and take 0.50% off the ¥420,000.00 invoice");
+  await expect(terms).toContainText("The buyer may pay early and take 0.50% off the ¥420,000.00 invoice to Foshan Home Retail Co.");
+  // A zero forward value is not shown as "¥0.00": the server sends its sentence instead.
+  await expect(card.getByTestId("approval-forward")).toHaveText("No cost over the valuation window beyond the early-payment discount.");
+  await expect(card).not.toContainText("¥0.00");
   await expect(card).toContainText("¥420,000.00");
   await expect(card).not.toContainText("Accept offer");
   // Everything the owner decides on is above the buttons, not behind "Audit details".
@@ -82,4 +85,31 @@ test("day 34 without a receipt: the Home says it is below the reserve today, nev
   await page.goto("/cash");
   await expect(page.getByTestId("cash-unsafe-when")).toHaveText("¥45k");
   await expect(page.getByText("Below reserve today").first()).toBeVisible();
+});
+
+test("a part-paid promise names its four facts and the window under the server's sentence", async ({ page }) => {
+  await story(page, "tl-mock-no-receipt", "half");
+  await page.goto("/demo");
+  await page.getByTestId("home-days").fill("34");
+  await page.getByTestId("home-advance").click();
+  await expect(page.getByTestId("home-day")).toHaveText("Day 34");
+  await page.goto("/");
+  // The late row may sit behind "Show more"; open it when it does.
+  const more = page.getByTestId("home-changes-more");
+  if (await more.count()) await more.locator("> summary").click();
+  const late = page.getByTestId("home-change-LATE").filter({ has: page.getByTestId("home-change-facts") });
+  await expect(late).toHaveCount(1);
+  // The sentence stays; the facts are named beneath it.
+  await expect(late.getByTestId("home-change-text")).toContainText("Received ¥127,506.90 from Foshan Home Retail Co.");
+  const facts = late.getByTestId("home-change-facts");
+  await expect(facts.getByTestId("home-change-facts-received")).toContainText("Cash received");
+  await expect(facts.getByTestId("home-change-facts-received")).toContainText("¥127,506.90");
+  await expect(facts.getByTestId("home-change-facts-cleared")).toContainText("Invoice face cleared");
+  await expect(facts.getByTestId("home-change-facts-cleared")).toContainText("¥128,600.00");
+  await expect(facts.getByTestId("home-change-facts-discount")).toContainText("¥1,093.10");
+  await expect(facts.getByTestId("home-change-facts-remaining")).toContainText("Remaining balance");
+  await expect(facts.getByTestId("home-change-facts-remaining")).toContainText("¥291,400.00");
+  await expect(facts).toContainText("Early-payment window ended");
+  // A row without the facts renders no list.
+  await expect(page.getByTestId("home-change-facts")).toHaveCount(1);
 });

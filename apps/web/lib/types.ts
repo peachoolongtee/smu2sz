@@ -1076,8 +1076,10 @@ export interface ApprovalPresentation {
   /** One plain sentence per obligation, written by the server. */
   terms?: string[];
   counterparty_name?: string | null;
-  /** The economic effect of the agreement over time, as the server formats it. */
+  /** The agreement's forward value as a figure; null when it is zero. */
   forward_value_display?: string | null;
+  /** The economic effect in a sentence ("No cost over the valuation window beyond the early-payment discount."); shown as "Economic effect". */
+  economic_effect_text?: string | null;
   /** The terms joined into one line. */
   what_you_agree_to?: string | null;
   /** A pending funding row's landing as a forecast ("If you approve today, the cash lands in 3 days."). */
@@ -1344,6 +1346,11 @@ export interface ReceiptRow {
   /** `detail` as a Business page reads it (names, no commitment id, distances from today); absent in older recordings. */
   detail_when?: string | null;
   formula: string;
+  /** The part-paid facts, when the server sends them on a receipt (the Home change row carries them today). */
+  face_cleared_display?: string;
+  discount_display?: string;
+  remaining_display?: string;
+  window_state?: "open" | "ended";
 }
 
 /** One band of the cash price curve: what the stated amount is worth if it arrives on days from_day..to_day. */
@@ -2012,6 +2019,15 @@ export interface HomeApproval extends ApprovalPresentation {
   amount_display: string | null;
 }
 
+/** The four facts of a part-paid invoice, as the server words them, and whether the early-payment window for the rest is still open. */
+export interface ReceiptFacts {
+  received_display: string;
+  face_cleared_display: string;
+  discount_display: string;
+  remaining_display: string;
+  window_state: "open" | "ended";
+}
+
 export type HomeChangeKind = "OPERATION" | "RECEIPT" | "WAITING" | "REFUSED" | "LATE" | "LANDED" | "AGREEMENT";
 
 export interface HomeChange {
@@ -2027,6 +2043,12 @@ export interface HomeChange {
   event_text?: string;
   /** One more sentence when there is more to say, else null. */
   event_detail?: string | null;
+  /** On a part-paid promise's LATE row (F25): the four named facts and the window. Absent on every other row. */
+  received_display?: string;
+  face_cleared_display?: string;
+  discount_display?: string;
+  remaining_display?: string;
+  window_state?: "open" | "ended";
 }
 
 export interface HomeReceivable {
