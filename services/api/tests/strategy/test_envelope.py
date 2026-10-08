@@ -52,13 +52,13 @@ GOLDEN_BUYER = "BUYER-1"
 OPTION_A = (45, 0, 85, 25_720_000, 0)  # terms, price, early-pay bp, face, rebate
 OPTION_B = (55, 30, 0, None, 0)
 
-PRIMARY_EN = ("Up to 55-day terms if the price rises 0.30%, or early payment at up to 0.85% on ¥257,200.00; "
+PRIMARY_EN = ("You can live with: up to 55-day terms if the price rises 0.30%, or early payment at up to 0.85% on ¥257,200.00; "
               "a rebate up to 1.25%; not 60 days without an early payment.")
-REASON_EN = ("60 days leaves a shortfall in 47 days that no cure covers; the ¥5,000.00 budget buys no terms "
-             "without a price step.")
-MONEY_EN = ("Cost to you ¥0.00 with the price step, or ¥3,027.77 with the early payment; without a deal the "
-            "standing plan costs ¥3,113.93.")
-PRIMARY_ZH = "账期最长 55 天（价格上调 0.30%），或提前付款最高 0.85%（金额 ¥257,200.00）；返利最高 1.25%；不提前付款则不能做到 60 天。"
+REASON_EN = ("60 days leaves a shortfall in 47 days that no fix covers; the ¥5,000.00 budget buys no terms "
+             "without a price rise.")
+MONEY_EN = ("Cost to you ¥0.00 with the price rise, or ¥3,027.77 with the early payment; without a deal "
+            "your current funding plan costs ¥3,113.93.")
+PRIMARY_ZH = "您能接受的范围：账期最长 55 天（价格上调 0.30%），或提前付款最高 0.85%（金额 ¥257,200.00）；返利最高 1.25%；不提前付款则不能做到 60 天。"
 REASON_ZH = "账期 60 天在 47 天后会出现缺口，且无法补上；¥5,000.00 的预算无法在不加价的情况下延长账期。"
 MONEY_ZH = "您的成本：加价方案 ¥0.00，或提前付款方案 ¥3,027.77；不做交易时，现行资金安排的成本为 ¥3,113.93。"
 
@@ -307,21 +307,21 @@ def test_the_golden_sentences_in_chinese(cold):
 
 
 LEVER_WORDS_EN = {  # maximum_display, wall_words, next_step_sentence
-    "terms_alone": ("45 days", "your budget for what you give buyers", "50 days: not approved; its funding cannot run today"),
-    "terms_budget_ignored": ("55 days", "your cash floor", "60 days: not approved"),
-    "terms_with_price": ("55 days, price up 0.30%", "your cash floor", "60 days, price up 1.00%: not approved"),
+    "terms_alone": ("45 days", "your budget for what you give buyers", "50 days: over your limits; its funding cannot run today"),
+    "terms_budget_ignored": ("55 days", "your cash floor", "60 days: over your limits"),
+    "terms_with_price": ("55 days, price up 0.30%", "your cash floor", "60 days, price up 1.00%: over your limits"),
     "early_pay_whole": ("0.70% on ¥420,000.00", "the cheaper funding you already have",
-                        "0.75% on ¥420,000.00: not approved"),
-    "early_pay_counter": ("0.85% on ¥257,200.00", "the break-even for paying early", "0.90% on ¥257,200.00: not approved"),
-    "rebate": ("1.25%", "your budget for what you give buyers", "1.30%: not approved"),
+                        "0.75% on ¥420,000.00: over your limits"),
+    "early_pay_counter": ("0.85% on ¥257,200.00", "the break-even for paying early", "0.90% on ¥257,200.00: over your limits"),
+    "rebate": ("1.25%", "your budget for what you give buyers", "1.30%: over your limits"),
 }
 LEVER_WORDS_ZH = {
-    "terms_alone": ("45 天", "您给买家让利的预算", "50 天：未通过；其资金安排今天无法执行"),
-    "terms_budget_ignored": ("55 天", "您的现金底线", "60 天：未通过"),
-    "terms_with_price": ("55 天，加价 0.30%", "您的现金底线", "60 天，加价 1.00%：未通过"),
-    "early_pay_whole": ("0.70%，金额 ¥420,000.00", "您已有的更便宜的资金安排", "0.75%，金额 ¥420,000.00：未通过"),
-    "early_pay_counter": ("0.85%，金额 ¥257,200.00", "提前付款的盈亏平衡点", "0.90%，金额 ¥257,200.00：未通过"),
-    "rebate": ("1.25%", "您给买家让利的预算", "1.30%：未通过"),
+    "terms_alone": ("45 天", "您给买家让利的预算", "50 天：超出您的底线；其资金安排今天无法执行"),
+    "terms_budget_ignored": ("55 天", "您的现金底线", "60 天：超出您的底线"),
+    "terms_with_price": ("55 天，加价 0.30%", "您的现金底线", "60 天，加价 1.00%：超出您的底线"),
+    "early_pay_whole": ("0.70%，金额 ¥420,000.00", "您已有的更便宜的资金安排", "0.75%，金额 ¥420,000.00：超出您的底线"),
+    "early_pay_counter": ("0.85%，金额 ¥257,200.00", "提前付款的盈亏平衡点", "0.90%，金额 ¥257,200.00：超出您的底线"),
+    "rebate": ("1.25%", "您给买家让利的预算", "1.30%：超出您的底线"),
 }
 SUMMARIES_EN = [
     "45-day terms · rebate 1.25%",
@@ -352,7 +352,7 @@ def test_the_lever_table_comes_worded_by_the_server_in_chinese(cold):
 
 def test_the_zone_rows_say_the_lowest_price_in_words(zoned):
     words = {z.terms_days: z.lowest_price_words for z in zoned.zone}
-    assert [words[d] for d in (30, 35, 40, 45)] == ["no price step needed"] * 4
+    assert [words[d] for d in (30, 35, 40, 45)] == ["no price rise needed"] * 4
     assert words[50] == "0.10%" and words[55] == "0.25%"
     assert [z.terms_words for z in zoned.zone][:2] == ["30 days", "35 days"]
     assert [words[d] for d in range(60, 91, 5)] == ["none works"] * 7
@@ -372,7 +372,8 @@ def test_the_server_strings_use_business_words(golden, lang):
     for text in texts:
         assert text and not DAY_N.search(text), text
         assert not CODE_NAME.search(text), text
-        for engine_word in ("verdict", "trajectory", "basis", "fen", "offer them", "give them"):
+        for engine_word in ("verdict", "trajectory", "basis", "fen", "offer them", "give them", "cure", "standing plan",
+                            "price step", "approved"):
             assert engine_word not in text.lower(), text
 
 
@@ -384,7 +385,7 @@ def test_the_sentences_use_business_words(cold, lang):
         assert "offer them" not in text and "give them" not in text, text
         assert not DAY_N.search(text), text
         assert not CODE_NAME.search(text), text
-        for engine_word in ("verdict", "trajectory", "basis", "fen"):
+        for engine_word in ("verdict", "trajectory", "basis", "fen", "cure", "standing plan", "price step"):
             assert engine_word not in text.lower(), text
 
 
@@ -477,7 +478,7 @@ def test_the_searches_agree_with_a_scan_when_the_lever_is_monotone():
 # ---------------------------------------------------------------- the day-34 books
 
 
-def test_day_34_books_no_extension_passes_without_a_price_step(rt_day34, books_day34):
+def test_day_34_books_no_extension_passes_without_a_price_rise(rt_day34, books_day34):
     g = Golden(rt_day34, books_day34, rt_day34.store.get_mandate())
     started = time.perf_counter()
     facts = g.facts()
@@ -493,9 +494,9 @@ def test_day_34_books_no_extension_passes_without_a_price_step(rt_day34, books_d
     # no longer terms pass on their own: the ¥5,000 budget stops them at 50 days (¥7,485.21 against ¥5,000.00)
     assert by[TERMS_ALONE].maximum == 45 and by[TERMS_ALONE].wall == "forward budget"
     assert by[TERMS_ALONE].next_step is not None and by[TERMS_ALONE].next_step.forward_budget_used_fen == 748_521
-    # with a price step the engine does pass them (the verifier judges the offer's own effect, not the standing breach)
+    # with a price rise the engine does pass them (the verifier judges the offer's own effect, not the standing breach)
     assert by[TERMS_WITH_PRICE].maximum == 80
-    assert a.primary.startswith("Up to 80-day terms if the price rises 0.95%")
+    assert a.primary.startswith("You can live with: up to 80-day terms if the price rises 0.95%")
     # the early-pay face is the earliest invoice not yet past due, RI:BUYER-1:2 (¥420,000 due day 47), not the overdue RCV-A
     assert context(books_day34.state, 34, GOLDEN_BUYER).receivable.id == "RI:BUYER-1:2"
     assert context(books_day34.state, 34).receivable.id == "RCV-A"  # the default rule is untouched
@@ -512,7 +513,7 @@ def test_day_34_books_no_extension_passes_without_a_price_step(rt_day34, books_d
                                "with Foshan Home Retail Co. needs your approval; the ¥5,000.00 budget buys no terms")
     zh = envelope_answer(facts, "zh")
     assert zh.reason.startswith("Foshan Home Retail Co. 欠款 ¥162,800.00 已逾期 2 天，因此与其做任何交易都需要您批准；")
-    assert a.money == "Without a deal the standing plan costs ¥1,706.10."
+    assert a.money == "Without a deal your current funding plan costs ¥1,706.10."
     assert all(p.approved for p in a.packages) and not CODE_NAME.search(a.primary + a.reason + a.money)
     assert not DAY_N.search(a.primary + a.reason + a.money)
 

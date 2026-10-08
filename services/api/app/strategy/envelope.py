@@ -697,7 +697,7 @@ class EnvelopeLever(Contract):
     unavailable: str | None  # "no recurring invoice to extend"
     maximum_display: str  # the maximum in words: "45 days", "55 days, price up 0.30%", "0.70% on ¥420,000.00", "1.25%"
     wall_words: str | None  # what stops the next step, in the owner's words; None when nothing inside the range does
-    next_step_sentence: str  # "50 days: not approved; its funding cannot run today"
+    next_step_sentence: str  # "50 days: over your limits; its funding cannot run today"
     at_maximum: EnvelopePackage | None
     next_step: EnvelopePackage | None
 
@@ -711,7 +711,7 @@ class ZoneEntry(Contract):
     passes_within_range: bool
     neighbours_confirmed: bool
     at_that_price: EnvelopePackage
-    lowest_price_words: str  # "no price step needed", the percentage, or "none works"
+    lowest_price_words: str  # "no price rise needed", the percentage, or "none works"
 
 
 class EnvelopeAnswer(Contract):
@@ -749,7 +749,7 @@ _WALL_WORDS = {
 _LEVER_LABEL = {
     "terms_alone": ("Longest payment terms on their own", "仅延长账期时的最长账期"),
     "terms_budget_ignored": ("Longest payment terms if the budget is ignored", "不计预算时的最长账期"),
-    "terms_with_price": ("Longest payment terms with a price step", "加价后的最长账期"),
+    "terms_with_price": ("Longest payment terms with a price rise", "加价后的最长账期"),
     "rebate": ("Rebate on the expected order", "预期订单的返利"),
 }
 
@@ -822,7 +822,7 @@ def _next_step_words(m: Maximum, lang: str) -> str:
     if m.beyond is None or value is None:
         return t(lang, "no further step", "没有更进一步的方案")
     flags = _flags(m.beyond, lang)
-    verdict = t(lang, "approved", "已通过") if m.beyond.approved else t(lang, "not approved", "未通过")
+    verdict = t(lang, "within your limits", "在您的底线内") if m.beyond.approved else t(lang, "over your limits", "超出您的底线")
     text = f"{value}{t(lang, ': ', '：')}{verdict}"
     if flags:
         text += t(lang, "; ", "；") + t(lang, ", ", "，").join(flags)
@@ -839,7 +839,7 @@ def _lowest_price_words(z: ZoneRow, lang: str) -> str:
     if z.min_price_bp is None:
         return t(lang, "none works", "没有可行的价格")
     if z.min_price_bp == 0:
-        return t(lang, "no price step needed", "无需加价")
+        return t(lang, "no price rise needed", "无需加价")
     return _pct(z.min_price_bp)
 
 
@@ -904,9 +904,7 @@ def _primary(facts: EnvelopeFacts, lang: str) -> str:
             parts.append(t(lang, "no longer payment terms", "不能延长账期"))
     if not parts:
         return t(lang, "Nothing beyond today's terms passes FLOW's checks.", "今天的条件之外，没有任何方案能通过 FLOW 的检查。")
-    text = t(lang, "; ", "；").join(parts)
-    if lang != "zh":
-        text = text[0].upper() + text[1:]
+    text = t(lang, "You can live with: ", "您能接受的范围：") + t(lang, "; ", "；").join(parts)
     return text + t(lang, ".", "。")
 
 
@@ -940,7 +938,7 @@ def _reason(facts: EnvelopeFacts, lang: str) -> str:
         b, n = liquid.beyond, liquid.beyond.setting.terms
         if liquid.wall == "liquidity" and b.reserve_day is not None:
             when = when_text(b.reserve_day, facts.day, lang)
-            clauses.append(t(lang, f"{n} days leaves a shortfall {when} that no cure covers",
+            clauses.append(t(lang, f"{n} days leaves a shortfall {when} that no fix covers",
                              f"账期 {n} 天在 {when}会出现缺口，且无法补上"))
         elif liquid.wall is not None:
             wall = t(lang, *_WALL_TEXT[liquid.wall]) if liquid.wall in _WALL_TEXT else ""
@@ -955,9 +953,9 @@ def _reason(facts: EnvelopeFacts, lang: str) -> str:
             cap = mandate.max_aggregate_forward_concession_fen
             what = t(lang, f"the {fmt_yuan(cap)} budget", f"{fmt_yuan(cap)} 的预算")
         if alone.value == facts.current_terms:
-            clauses.append(t(lang, f"{what} buys no terms without a price step", f"{what}无法在不加价的情况下延长账期"))
+            clauses.append(t(lang, f"{what} buys no terms without a price rise", f"{what}无法在不加价的情况下延长账期"))
         else:
-            clauses.append(t(lang, f"{what} buys terms only up to {alone.value} days without a price step",
+            clauses.append(t(lang, f"{what} buys terms only up to {alone.value} days without a price rise",
                              f"{what}在不加价时最多只能延长到 {alone.value} 天"))
     if not clauses:
         return t(lang, "No payment-terms step fails inside the range FLOW checks.", "FLOW 检查的范围内，没有哪一档账期被拒绝。")
@@ -982,10 +980,10 @@ def _money(facts: EnvelopeFacts, lang: str) -> str:
     option_b = next((fen for c, fen in given if c.terms > cur and c.price and not c.discount), None)
     costs: list[str] = []
     if option_b is not None:
-        costs.append(t(lang, f"{fmt_yuan(option_b)} with the price step", f"加价方案 {fmt_yuan(option_b)}"))
+        costs.append(t(lang, f"{fmt_yuan(option_b)} with the price rise", f"加价方案 {fmt_yuan(option_b)}"))
     if option_a is not None:
         costs.append(t(lang, f"{fmt_yuan(option_a)} with the early payment", f"提前付款方案 {fmt_yuan(option_a)}"))
-    now = t(lang, f"without a deal the standing plan costs {fmt_yuan(standing)}", f"不做交易时，现行资金安排的成本为 {fmt_yuan(standing)}")
+    now = t(lang, f"without a deal your current funding plan costs {fmt_yuan(standing)}", f"不做交易时，现行资金安排的成本为 {fmt_yuan(standing)}")
     if not costs:
         return (now[0].upper() + now[1:] if lang != "zh" else now) + t(lang, ".", "。")
     lead = t(lang, "Cost to you ", "您的成本：") + t(lang, ", or ", "，或").join(costs)
