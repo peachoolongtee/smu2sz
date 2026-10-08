@@ -1,5 +1,6 @@
 "use client";
 
+import { ReceiptFacts } from "@/components/receipt-facts";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { AlertIcon, ArrowDownIcon, CheckIcon, ClockIcon, XIcon } from "@/components/icons";
@@ -87,7 +88,9 @@ export function ChangesBlock({ changes, sinceWhen }: { changes: HomeChange[]; si
   const { t } = useI18n();
   const row = (c: HomeChange, i: number) => (
     <li key={`${c.day}-${c.seq}-${i}`}>
-      <Row testId={`home-change-${c.kind}`} titleTestId="home-change-text" avatar={<Avatar tone={CHANGE_TONE[c.kind] ?? "neutral"}>{CHANGE_ICON[c.kind] ?? <CheckIcon />}</Avatar>} title={c.event_text ?? c.text} sub={c.when} />
+      <Row testId={`home-change-${c.kind}`} titleTestId="home-change-text" avatar={<Avatar tone={CHANGE_TONE[c.kind] ?? "neutral"}>{CHANGE_ICON[c.kind] ?? <CheckIcon />}</Avatar>} title={c.event_text ?? c.text} sub={c.when}>
+        <ReceiptFacts facts={c} testId="home-change-facts" />
+      </Row>
     </li>
   );
   const rest = changes.slice(CHANGES_SHOWN);

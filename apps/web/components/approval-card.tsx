@@ -65,7 +65,18 @@ export function ApprovalCard({
       ),
     });
   }
-  if (gate.commercial && gate.available && p?.forward_value_display) facts.push({ k: t("appr.forward"), v: <span data-testid="approval-forward">{p.forward_value_display}</span> });
+  if (gate.commercial && gate.available && (p?.forward_value_display || p?.economic_effect_text)) {
+    // The figure when the agreement has one (the server sends null for zero), always with the server's sentence; nothing when it sent neither.
+    facts.push({
+      k: t("appr.forward"),
+      v: (
+        <span data-testid="approval-forward">
+          {p.forward_value_display}
+          {p.economic_effect_text ? <span className={`${p.forward_value_display ? "mt-0.5 block " : ""}font-normal text-ink-2`}>{p.economic_effect_text}</span> : null}
+        </span>
+      ),
+    });
+  }
   if (isPending && p?.lands_text) {
     // A waiting row's landing is a forecast, and the server says it as one ("If you approve today, the cash lands in 3 days.").
     facts.push({ k: t("appr.timing"), v: <span className="font-normal" data-testid="approval-lands">{p.lands_text}</span> });
@@ -92,12 +103,12 @@ export function ApprovalCard({
           </div>
         ))}
       </dl>
-      {gate.commercial ? (
+      {gate.commercial && (gate.available || isPending) ? (
         <div className="mt-4 border-t border-line pt-3">
           {gate.available ? (
             <section aria-labelledby={`terms-${a.id}`} data-testid="approval-terms">
               <h3 id={`terms-${a.id}`} className="mb-1.5 text-xs font-medium text-ink-3">
-                {t("appr.agreeTo")}
+                {isPending ? t("appr.agreeTo") : t("appr.agreedTo")}
               </h3>
               {p?.terms?.length ? (
                 <ul className="list-disc space-y-1.5 pl-5 text-sm text-ink marker:text-ink-3">
@@ -116,7 +127,7 @@ export function ApprovalCard({
               <Callout tone="warn" title={t("appr.terms.unavailable.title")}>
                 <p>{t("appr.terms.unavailable.body")}</p>
                 {p?.terms_unavailable_reason ? <p className="mt-1 break-words font-medium text-ink">{p.terms_unavailable_reason}</p> : null}
-                {isPending && onRetry ? (
+                {onRetry ? (
                   <Button className="mt-2" size="sm" onClick={onRetry} data-testid="approval-terms-retry">
                     {t("appr.terms.retry")}
                   </Button>

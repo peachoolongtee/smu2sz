@@ -1868,7 +1868,8 @@
       "lands_text": "若您今天批准，资金将于3 天后到账。",
       "if_decline": "8 天后比最低现金储备低 ¥200,000.00；缺口在8 天后最大，为 ¥200,000.00。",
       "protects": "未来 120 天现金都保持在您的最低现金储备以上。",
-      "residual": null
+      "residual": null,
+      "execution_status": "PENDING"
     }
   ],
   "pending_count": 1,

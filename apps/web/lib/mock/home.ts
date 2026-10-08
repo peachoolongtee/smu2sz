@@ -48,6 +48,9 @@ import stateDay34 from "../../mocks/home_state_day34.json";
 import stateAfterFund from "../../mocks/state_after_fund.json";
 import summaryDay34NoReceipt from "../../mocks/home_summary_day34_noreceipt.json";
 import summaryDay34NoReceiptZh from "../../mocks/home_summary_day34_noreceipt_zh.json";
+import summaryDay34Half from "../../mocks/home_summary_day34_half.json";
+import summaryDay34HalfZh from "../../mocks/home_summary_day34_half_zh.json";
+import trajDay34Half from "../../mocks/trajectory_conservative_day34_half.json";
 import trajDay34NoReceipt from "../../mocks/trajectory_conservative_day34_noreceipt.json";
 
 /** The day the recording was taken on. */
@@ -61,18 +64,21 @@ const KEY = "tl-mock-home-v3";
 export const MOVE_BOOKS_KEY = "tl-mock-books-moved";
 
 /**
- * Test hook, like MOVE_BOOKS_KEY: set this sessionStorage key to "1" and day 34 is the day with NO bank receipt on day 2 (the home and
- * the readings are then the recordings taken on those books: cash is already under the reserve today). Without it the story is the
- * main walk's, with the receipt.
+ * Test hook, like MOVE_BOOKS_KEY: set this sessionStorage key and day 34 is read on other books than the main walk's (which has the
+ * full receipt of day 2). "1": NO receipt, so cash is already under the reserve today. "half": half of the receipt, so the promise is
+ * part-kept and its change row carries the four named facts. The home and the readings are the recordings taken on those books.
  */
 export const NO_RECEIPT_KEY = "tl-mock-no-receipt";
 
-function noReceipt(): boolean {
-  if (typeof window === "undefined") return false;
+type Receipt = "none" | "half" | null;
+
+function receiptVariant(): Receipt {
+  if (typeof window === "undefined") return null;
   try {
-    return window.sessionStorage.getItem(NO_RECEIPT_KEY) === "1";
+    const v = window.sessionStorage.getItem(NO_RECEIPT_KEY);
+    return v === "1" ? "none" : v === "half" ? "half" : null;
   } catch {
-    return false;
+    return null;
   }
 }
 
@@ -249,6 +255,13 @@ function storyPoint(dealt: boolean): StoryPoint {
   return s.funded ? "after_fund" : dealt ? "quiet" : "day0";
 }
 
+function day34Summary(zh: boolean): unknown {
+  const variant = receiptVariant();
+  if (variant === "none") return zh ? summaryDay34NoReceiptZh : summaryDay34NoReceipt;
+  if (variant === "half") return zh ? summaryDay34HalfZh : summaryDay34Half;
+  return zh ? summaryDay34Zh : summaryDay34;
+}
+
 export function mockHome(dealt: boolean, lang: "en" | "zh" = "en"): HomeView {
   const s = load();
   // Each point of the story was recorded in both languages (GET /home?lang=zh writes the sentences in Chinese).
@@ -258,7 +271,7 @@ export function mockHome(dealt: boolean, lang: "en" | "zh" = "en"): HomeView {
     day0: zh ? summaryDay0Zh : summaryDay0,
     quiet: zh ? summaryQuietZh : summaryQuiet,
     after_fund: zh ? summaryAfterFundZh : summaryAfterFund,
-    day34: noReceipt() ? (zh ? summaryDay34NoReceiptZh : summaryDay34NoReceipt) : zh ? summaryDay34Zh : summaryDay34,
+    day34: day34Summary(zh),
     pending: zh ? summaryPendingZh : summaryPending,
     after: zh ? summaryAfterZh : summaryAfter,
   }[point];
@@ -273,7 +286,7 @@ export function mockTrajectory(dealt: boolean): unknown {
       day0: trajDay0,
       quiet: trajQuiet,
       after_fund: trajAfterFund,
-      day34: noReceipt() ? trajDay34NoReceipt : trajDay34,
+      day34: receiptVariant() === "none" ? trajDay34NoReceipt : receiptVariant() === "half" ? trajDay34Half : trajDay34,
       pending: trajPending,
       after: trajAfter,
     }[storyPoint(dealt)],
