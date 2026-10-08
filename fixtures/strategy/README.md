@@ -10,6 +10,7 @@ the command, branch, base commit and date of the recording.
 | `envelope_day0.json` | Safe Deal Envelope for BUYER-1 on the day-0 golden books: lever maxima, the terms x price zone, the package grid | `envelope_spike.py --json` |
 | `collections_both.json` | Collections worth on the day-0 and day-34 books: ranking, early-pay ceilings, cash price curve | `collections_spike.py --day both --json` |
 | `portfolio_default.json` | Portfolio enumeration of EX01, EX08A, EX08B and the greedy `evaluate_many` order | `portfolio_spike.py --json` |
+| `envelope_packages.json` | The deep dive's nine interaction packages (ten evaluations: package 8 at price 95 and 100) as whole verifier evaluations; the document holds `_meta`, the buyer and `requested` | `envelope_spike.py --json --package K=V,...` (one flag per package; the exact list is in `_meta.command`) |
 
 Nothing in the app reads these files. Only `services/api/tests/strategy` does.
 
