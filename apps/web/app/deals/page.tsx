@@ -47,6 +47,7 @@ export default function DealsPage() {
   // The id of the inbox message being read, or null.
   const [reading, setReading] = useState<string | null>(null);
   // Whether the other counters are shown, kept here so the "Before they ask" card can open Option B; tied to the offer it was opened for.
+  // Passed down only with STRATEGY_MVP: without the flag the response card keeps its own state, exactly as before the card existed.
   const [compareFor, setCompareFor] = useState<string | null>(null);
   const books = useAsync(getState, []);
   const clock = useAsync(getClock, []);
@@ -224,8 +225,7 @@ export default function DealsPage() {
                   today={today}
                   mode={mode}
                   negotiation={cur.negotiation}
-                  compareOpen={compareOpen}
-                  onCompareChange={(open) => setCompareFor(open ? offer.offer.offer_id : null)}
+                  {...(STRATEGY_MVP ? { compareOpen, onCompareChange: (open: boolean) => setCompareFor(open ? offer.offer.offer_id : null) } : {})}
                 />
                 {commitments}
 

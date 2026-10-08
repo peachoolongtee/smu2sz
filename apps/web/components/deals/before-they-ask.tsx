@@ -26,11 +26,11 @@ function LeverTable({ levers }: { levers: EnvelopeLeverView[] }) {
               <span className="shrink-0 text-right font-semibold tabular-nums text-ink">{l.maximum_display}</span>
             </div>
             {l.wall_words ? (
-              <p className="mt-1 text-xs text-ink-3">
+              <p className="mt-1 text-xs text-ink-2">
                 {t("biz.strategy.envelope.col.wall")}: {l.wall_words}
               </p>
             ) : null}
-            <p className="mt-0.5 text-xs text-ink-3">
+            <p className="mt-0.5 text-xs text-ink-2">
               {t("biz.strategy.envelope.col.next")}: {l.next_step_sentence}
             </p>
           </li>
@@ -84,7 +84,7 @@ function Packages({ packages }: { packages: EnvelopePackageView[] }) {
         {packages.map((p, i) => (
           <li key={i} className="py-2 text-sm text-ink" data-testid="envelope-package">
             {p.summary}
-            {p.flags.length ? <span className="text-ink-3">{` · ${p.flags.join(", ")}`}</span> : null}
+            {p.flags.length ? <span className="text-ink-2">{` · ${p.flags.join(", ")}`}</span> : null}
           </li>
         ))}
       </ul>
@@ -193,6 +193,9 @@ export function BeforeTheyAsk({ buyerId, optionCount, onOpenOption }: { buyerId:
     <Card id="deal-envelope" title={eyebrow} actions={<Chip title={t("biz.strategy.envelope.hypothetical.title")}>{t("biz.strategy.envelope.hypothetical")}</Chip>}>
       <p className="text-base font-semibold text-ink" data-testid="envelope-primary">
         {e.primary}
+      </p>
+      <p className="mt-1 text-xs text-ink-3" data-testid="envelope-caption">
+        {t("biz.strategy.envelope.caption")}
       </p>
       <p className="mt-1.5 text-sm text-ink-2" data-testid="envelope-reason">
         {e.reason}
