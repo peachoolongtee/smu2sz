@@ -1,5 +1,6 @@
-import type { Locator, Page } from "@playwright/test";
+import type { Locator } from "@playwright/test";
 import { expect, test } from "./fixtures";
+import { filledBrand } from "./helpers";
 
 /**
  * The colour direction (docs/research/colour-direction-2026-10-08.md), as computed styles in mock mode: the deep hero on the
@@ -12,7 +13,6 @@ test.beforeEach(async ({}, testInfo) => {
 });
 
 const BRAND_900 = "rgb(11, 31, 77)";
-const BRAND_600 = "rgb(26, 95, 224)";
 const BAD_BRIGHT = "rgb(255, 180, 171)";
 
 const bg = (l: Locator) => l.evaluate((el) => getComputedStyle(el).backgroundColor);
@@ -29,19 +29,6 @@ function contrast(a: string, b: string): number {
   };
   const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p);
   return (x + 0.05) / (y + 0.05);
-}
-
-/** Visible elements filled with the brand blue: the page's primary actions. */
-async function filledBrand(page: Page): Promise<number> {
-  return page.evaluate((brand) => {
-    const visible = (el: Element) => {
-      const r = el.getBoundingClientRect();
-      const s = getComputedStyle(el);
-      return r.width > 0 && r.height > 0 && s.visibility !== "hidden" && s.display !== "none";
-    };
-    return Array.from(document.querySelectorAll("main button, main a")).filter((el) => visible(el) && getComputedStyle(el).backgroundColor === brand).length +
-      Array.from(document.querySelectorAll('main [data-testid="home-review-primary"]')).filter((el) => visible(el) && getComputedStyle(el).backgroundColor === brand).length;
-  }, BRAND_600);
 }
 
 test("the Home hero is one solid deep block; the status is the pill, and the pill word is dark on a bright fill", async ({ page }) => {

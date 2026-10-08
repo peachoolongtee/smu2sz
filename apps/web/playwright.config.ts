@@ -8,6 +8,9 @@ import { defineConfig, devices } from "@playwright/test";
  *         NEXT_PUBLIC_API_MODE=live on :3000. The demo walk is the same spec as in mock mode.
  *
  * The live web server uses :3000 (the API default CORS origin); E2E_LIVE_PORT moves it and tells the API to allow that origin.
+ * E2E_STRATEGY=1 builds the web app with NEXT_PUBLIC_STRATEGY_MVP=1 (its own dist dir) and starts the live API with
+ * FEATURE_PRICE_CURVE=1 FEATURE_COLLECTIONS_WORTH=1, so e2e/strategy.spec.ts and the screenshot walk see the strategy surfaces; unset,
+ * the app is the default build and that spec skips.
  * E2E_TARGET=mock|live|all (default all) chooses which servers start; `pnpm test:e2e:mock` and
  * `pnpm test:e2e:live` set it. Needs `uv` for the API and `pnpm exec playwright install chromium` once.
  */
@@ -19,6 +22,11 @@ process.env.NEXT_PUBLIC_API_URL ??= `http://localhost:${API_PORT}`;
 const target = process.env.E2E_TARGET ?? "all";
 const wantMock = target === "all" || target === "mock";
 const wantLive = target === "all" || target === "live";
+
+// The strategy MVP is a build-time flag on the web app and a runtime flag on the API; both follow E2E_STRATEGY.
+const strategy = process.env.E2E_STRATEGY === "1";
+const strategyWeb: Record<string, string> = strategy ? { NEXT_PUBLIC_STRATEGY_MVP: "1" } : {};
+const strategyApi: Record<string, string> = strategy ? { FEATURE_PRICE_CURVE: "1", FEATURE_COLLECTIONS_WORTH: "1" } : {};
 
 const desktop = { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 } };
 
@@ -42,7 +50,7 @@ export default defineConfig({
           },
           {
             name: "phone",
-            testMatch: /(responsive|screenshots)\.spec\.ts/,
+            testMatch: /(responsive|screenshots|strategy)\.spec\.ts/,
             use: { ...devices["Pixel 7"], baseURL: `http://localhost:${MOCK_PORT}` },
           },
         ]
@@ -52,7 +60,7 @@ export default defineConfig({
           {
             name: "live",
             // The same demo walk and what-if spec as mock mode, plus the live-only checks and the adapter contract tests.
-            testMatch: /(demo|whatif|alerts|contract|live|chat)\.spec\.ts/,
+            testMatch: /(demo|whatif|alerts|contract|live|chat|strategy)\.spec\.ts/,
             use: { ...desktop, baseURL: `http://localhost:${LIVE_PORT}` },
           },
         ]
@@ -69,7 +77,8 @@ export default defineConfig({
             env: {
               NEXT_PUBLIC_API_MODE: "mock",
               NEXT_PUBLIC_MOCK_LATENCY_MS: "10",
-              NEXT_DIST_DIR: ".next-e2e-mock",
+              NEXT_DIST_DIR: strategy ? ".next-e2e-mock-strategy" : ".next-e2e-mock",
+              ...strategyWeb,
             },
           },
         ]
@@ -84,7 +93,7 @@ export default defineConfig({
             timeout: 120_000,
             // A server already on :8000 could hold state from a previous run or point at a real database.
             reuseExistingServer: false,
-            env: { TERMSLEDGER_NO_DOTENV: "1", DATABASE_URL: "memory", LLM_MODE: "cache", CORS_ORIGINS: `http://localhost:${LIVE_PORT}` },
+            env: { TERMSLEDGER_NO_DOTENV: "1", DATABASE_URL: "memory", LLM_MODE: "cache", CORS_ORIGINS: `http://localhost:${LIVE_PORT}`, ...strategyApi },
           },
           {
             command: `pnpm build && pnpm start -p ${LIVE_PORT}`,
@@ -94,7 +103,8 @@ export default defineConfig({
             env: {
               NEXT_PUBLIC_API_MODE: "live",
               NEXT_PUBLIC_API_URL: `http://localhost:${API_PORT}`,
-              NEXT_DIST_DIR: ".next-e2e-live",
+              NEXT_DIST_DIR: strategy ? ".next-e2e-live-strategy" : ".next-e2e-live",
+              ...strategyWeb,
             },
           },
         ]
