@@ -187,7 +187,7 @@ api ─► everything; web ─► api
 | `verifier` | Screening, binding, verdict, counters, early-pay rule, autonomy gaps | all of the above | api, nl, runtime re-verify hook |
 | `commitments` | Lifecycle, terms hash, nonce | — | operations |
 | `operations` | The executor, approvals, circuit breaker, log reading | store, mandate, commitments, financial charges | api, nl, alerts act |
-| `persistence` | `LedgerStore` (in-memory and SQL), hash chain; the append-only `decision_facts` table (migration 0006) | — | everything that stores |
+| `persistence` | `LedgerStore` (in-memory and SQL), hash chain; the append-only `decision_facts` table (migration 0006) | nothing | everything that stores |
 | `clock` | Moving time; lands funding cash and posts loan instalments, existing-debt payments and maturities on their day | store, scenario events | api runtime |
 | `alerts` | Alerts, cure search and pricing, repay proposal, reconciliation, `cure_operations` | books, financial, operations log | api, nl |
 | `egress` | Outbound guard, protected set, canaries | state, mandate | nl, api |
