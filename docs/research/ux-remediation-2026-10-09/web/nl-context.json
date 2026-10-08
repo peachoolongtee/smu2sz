@@ -1,0 +1,76 @@
+{
+ "stack": "uvicorn :8033 memory store LLM_MODE=cache DEMO_MODE=1, owner token demo-owner-token",
+ "setup": [
+  "POST /demo/reset",
+  "POST /offers {fixture_id: EX01_PACKAGE} -> OFF-f806f79b6c21",
+  "POST /offers/{id}/evaluate {fixture_id: EX01_PACKAGE} -> outcome REJECT, verdict id VER-a899ca66120c, 2 counters"
+ ],
+ "store_holds_verdict": true,
+ "turns": [
+  {
+   "request": {
+    "session_id": "w0-owner",
+    "actor": "OWNER",
+    "text": "Why are we countering this?",
+    "request_id": "w0-1"
+   },
+   "reply": "There is no verdict to explain yet. Evaluate an offer first.",
+   "intent": "EXPLAIN",
+   "parse_source": "rules",
+   "verdict_in_response": null
+  },
+  {
+   "request": {
+    "session_id": "w0-owner",
+    "actor": "OWNER",
+    "text": "What changed today?",
+    "request_id": "w0-2"
+   },
+   "reply": "I can't do that. I can evaluate a buyer's offer, negotiate with counters, get an invoice paid early, fund a projected cash gap, repay a facility, show cash status, explain a verdict, run a what-if, compare financing options, reconcile receipts, show the covenant ratios, evaluate an equipment purchase, prepare a borrower file, and approve or reject pending operations.",
+   "intent": "OUT_OF_SCOPE",
+   "parse_source": "fallback",
+   "verdict_in_response": null
+  },
+  {
+   "request": {
+    "session_id": "w0-owner",
+    "actor": "OWNER",
+    "text": "What are we waiting for?",
+    "request_id": "w0-3"
+   },
+   "reply": "I can't do that. I can evaluate a buyer's offer, negotiate with counters, get an invoice paid early, fund a projected cash gap, repay a facility, show cash status, explain a verdict, run a what-if, compare financing options, reconcile receipts, show the covenant ratios, evaluate an equipment purchase, prepare a borrower file, and approve or reject pending operations.",
+   "intent": "OUT_OF_SCOPE",
+   "parse_source": "fallback",
+   "verdict_in_response": null
+  },
+  {
+   "request": {
+    "session_id": "w0-owner-2",
+    "actor": "OWNER",
+    "text": "Why are we countering this?",
+    "request_id": "w0-4"
+   },
+   "reply": "There is no verdict to explain yet. Evaluate an offer first.",
+   "intent": "EXPLAIN",
+   "parse_source": "rules",
+   "verdict_in_response": null
+  }
+ ],
+ "finding": "The REST evaluate wrote the verdict to the store but the /nl session knows nothing of it (session.last_verdict_id is set only by /nl's own evaluate paths), so 'explain' answers 'There is no verdict to explain yet'. 'What changed today?' and 'What are we waiting for?' have no intent and fall to OUT_OF_SCOPE. A fresh second session answers the same.",
+ "control": {
+  "session_id": "w0-owner-3",
+  "turns": [
+   {
+    "text": "Evaluate EX01",
+    "intent": "EVALUATE_OFFER",
+    "reply_starts": "Verdict REJECT (TIER_1): AGG_CONCESSION_EXCEEDED, RESERVE_BREACH, ..."
+   },
+   {
+    "text": "Why are we countering this?",
+    "intent": "EXPLAIN",
+    "reply_starts": "Verdict REJECT (TIER_1): AGG_CONCESSION_EXCEEDED, RESERVE_BREACH, ... (the verdict is explained)"
+   }
+  ],
+  "meaning": "When the evaluation happens inside the /nl session the same question works; the gap is the REST evaluate the web app uses."
+ }
+}

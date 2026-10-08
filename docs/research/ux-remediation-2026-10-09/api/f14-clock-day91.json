@@ -1,0 +1,66 @@
+{
+  "probe": "f14-clock-day91",
+  "request": {
+    "method": "POST",
+    "path": "/clock/advance",
+    "body": {
+      "to_day": 91
+    },
+    "credential": [
+      "X-Owner-Token"
+    ]
+  },
+  "clock_day_before_request": 34,
+  "status": 200,
+  "response": {
+    "from_day": 34,
+    "to_day": 91,
+    "posted_flow_ids": [
+      "F-BILL47",
+      "F-PAYROLL-M2"
+    ],
+    "posted_net_fen": -30000000,
+    "skipped_unconfirmed_inflow_ids": [],
+    "issued_receivable_ids": [
+      "RI:BUYER-1:62"
+    ],
+    "expired_commitment_ids": [],
+    "added_flow_ids": [],
+    "result": {
+      "op_id": "clock-34-91",
+      "kind": "ADVANCE_CLOCK",
+      "status": "EXECUTED",
+      "tier": "TIER_1",
+      "violations": [],
+      "seq": 7,
+      "entry_hash": "2cab300da0f0e291fd3a4ac13824d69aad296b0062ee6960430b2357e0f753fe",
+      "prev_hash": "bea9367c6c4a1ec627de1407d315c8655db7fd0c30db48bfd18a5f0314000b84",
+      "effective_day": 91,
+      "approval_id": null,
+      "message": "Clock moved from day 34 to day 91: 2 scheduled flow(s) posted (net −¥300,000.00), 1 invoice(s) issued, 0 commitment(s) expired, 2 existing-debt payment(s) posted (−¥90,000.00)"
+    },
+    "consumed_adjustment_ids": [],
+    "fulfilled_commitment_ids": [],
+    "settled_lot_ids": [],
+    "posted_debt_payments": [],
+    "lots_net_fen": 0,
+    "posted_debt_service": [
+      {
+        "debt_id": "D-EQUIP",
+        "day": 60,
+        "principal_fen": 4500000,
+        "interest_fen": 0
+      },
+      {
+        "debt_id": "D-EQUIP",
+        "day": 90,
+        "principal_fen": 4500000,
+        "interest_fen": 0
+      }
+    ],
+    "debt_service_fen": 9000000,
+    "lapsed_commitment_ids": [],
+    "day": 91,
+    "posted_net_display": "−¥300,000.00"
+  }
+}

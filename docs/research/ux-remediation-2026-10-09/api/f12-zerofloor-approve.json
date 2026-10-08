@@ -1,0 +1,30 @@
+{
+  "probe": "f12-zerofloor-approve",
+  "request": {
+    "method": "POST",
+    "path": "/approvals/APR-000001",
+    "body": {
+      "decision": "APPROVE"
+    },
+    "credential": [
+      "X-Owner-Token"
+    ]
+  },
+  "clock_day_before_request": 34,
+  "status": 200,
+  "response": {
+    "result": {
+      "op_id": "alert:ALERT-RESERVE-34:v6:0",
+      "kind": "SUBMIT_INVOICE_FOR_FINANCING",
+      "status": "EXECUTED",
+      "tier": "TIER_2",
+      "violations": [],
+      "seq": 7,
+      "entry_hash": "8fc385ca40458793fce7aab499ff59e2743c16690bf1ea6eefcaccbc532b515c",
+      "prev_hash": "23d415c28dc72f9a87c77e77917953951758acae368be9dca4f4547ce05976dc",
+      "effective_day": 34,
+      "approval_id": "APR-000001",
+      "message": "Advance ¥155,013.80 on RI:BUYER-1:2 from FAC-IF on day 34; the cash lands on day 37 after the 3-day lead time, not today"
+    }
+  }
+}

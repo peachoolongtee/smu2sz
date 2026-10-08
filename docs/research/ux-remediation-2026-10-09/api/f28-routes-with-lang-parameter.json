@@ -1,0 +1,224 @@
+{
+ "probe": "f28-routes",
+ "request": {
+  "method": "GET",
+  "path": "/openapi.json"
+ },
+ "routes": [
+  {
+   "method": "GET",
+   "path": "/alerts",
+   "takes_lang": false
+  },
+  {
+   "method": "POST",
+   "path": "/alerts/{alert_id}/act",
+   "takes_lang": false
+  },
+  {
+   "method": "GET",
+   "path": "/approvals/queue",
+   "takes_lang": false
+  },
+  {
+   "method": "POST",
+   "path": "/approvals/{approval_id}",
+   "takes_lang": false
+  },
+  {
+   "method": "GET",
+   "path": "/audit",
+   "takes_lang": false
+  },
+  {
+   "method": "POST",
+   "path": "/borrower-file",
+   "takes_lang": false
+  },
+  {
+   "method": "GET",
+   "path": "/borrower-file/{file_id}",
+   "takes_lang": false
+  },
+  {
+   "method": "GET",
+   "path": "/borrower-file/{file_id}.docx",
+   "takes_lang": false
+  },
+  {
+   "method": "GET",
+   "path": "/borrower-file/{file_id}.html",
+   "takes_lang": false
+  },
+  {
+   "method": "GET",
+   "path": "/borrower-file/{file_id}.pdf",
+   "takes_lang": false
+  },
+  {
+   "method": "GET",
+   "path": "/buyers/{buyer_id}/envelope",
+   "takes_lang": true
+  },
+  {
+   "method": "POST",
+   "path": "/capex/apply",
+   "takes_lang": false
+  },
+  {
+   "method": "POST",
+   "path": "/capex/evaluate",
+   "takes_lang": false
+  },
+  {
+   "method": "GET",
+   "path": "/cash/price-curve",
+   "takes_lang": true
+  },
+  {
+   "method": "POST",
+   "path": "/circuit/{counterparty_id}/reset",
+   "takes_lang": false
+  },
+  {
+   "method": "GET",
+   "path": "/clock",
+   "takes_lang": false
+  },
+  {
+   "method": "POST",
+   "path": "/clock/advance",
+   "takes_lang": false
+  },
+  {
+   "method": "POST",
+   "path": "/commitments/{commitment_id}/revoke",
+   "takes_lang": false
+  },
+  {
+   "method": "POST",
+   "path": "/demo/reset",
+   "takes_lang": false
+  },
+  {
+   "method": "GET",
+   "path": "/evidence",
+   "takes_lang": false
+  },
+  {
+   "method": "POST",
+   "path": "/facilities/compile",
+   "takes_lang": false
+  },
+  {
+   "method": "GET",
+   "path": "/fixtures/offers",
+   "takes_lang": false
+  },
+  {
+   "method": "GET",
+   "path": "/health",
+   "takes_lang": false
+  },
+  {
+   "method": "GET",
+   "path": "/home",
+   "takes_lang": true
+  },
+  {
+   "method": "GET",
+   "path": "/ledger",
+   "takes_lang": false
+  },
+  {
+   "method": "GET",
+   "path": "/mandate",
+   "takes_lang": false
+  },
+  {
+   "method": "POST",
+   "path": "/negotiate/{offer_id}",
+   "takes_lang": false
+  },
+  {
+   "method": "POST",
+   "path": "/nl",
+   "takes_lang": true
+  },
+  {
+   "method": "POST",
+   "path": "/nl/opener",
+   "takes_lang": true
+  },
+  {
+   "method": "POST",
+   "path": "/nl/reset",
+   "takes_lang": false
+  },
+  {
+   "method": "POST",
+   "path": "/offers",
+   "takes_lang": false
+  },
+  {
+   "method": "POST",
+   "path": "/offers/{offer_id}/evaluate",
+   "takes_lang": false
+  },
+  {
+   "method": "POST",
+   "path": "/operations",
+   "takes_lang": false
+  },
+  {
+   "method": "POST",
+   "path": "/pilot/journal",
+   "takes_lang": false
+  },
+  {
+   "method": "GET",
+   "path": "/pilot/journal",
+   "takes_lang": false
+  },
+  {
+   "method": "GET",
+   "path": "/receivables/worth",
+   "takes_lang": true
+  },
+  {
+   "method": "GET",
+   "path": "/reconciliation",
+   "takes_lang": false
+  },
+  {
+   "method": "POST",
+   "path": "/router/plan",
+   "takes_lang": true
+  },
+  {
+   "method": "GET",
+   "path": "/security/summary",
+   "takes_lang": false
+  },
+  {
+   "method": "GET",
+   "path": "/state",
+   "takes_lang": false
+  },
+  {
+   "method": "GET",
+   "path": "/trajectory",
+   "takes_lang": false
+  },
+  {
+   "method": "POST",
+   "path": "/whatif",
+   "takes_lang": false
+  },
+  {
+   "method": "GET",
+   "path": "/whatif/presets",
+   "takes_lang": false
+  }
+ ]
+}

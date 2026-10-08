@@ -1,0 +1,37 @@
+{
+  "probe": "f24-nl-usd",
+  "request": {
+    "method": "POST",
+    "path": "/nl",
+    "body": {
+      "session_id": "f24-usd",
+      "actor": "COUNTERPARTY",
+      "counterparty_id": "BUYER-1",
+      "text": "We can pay the invoice early at 0.5% in USD.",
+      "request_id": "f24-usd"
+    },
+    "credential": [
+      "X-Counterparty-Key"
+    ]
+  },
+  "clock_day_before_request": 0,
+  "status": 200,
+  "response": {
+    "session_id": "f24-usd",
+    "turn": 1,
+    "reply": "Please clarify the terms: we cannot establish them from your message.",
+    "intent": "COUNTERPARTY_MESSAGE",
+    "lang": "en",
+    "trace_id": "f24-usd:1",
+    "plan": [],
+    "verdict": null,
+    "operations": [],
+    "clarification": null,
+    "negotiation": null,
+    "security_events": [],
+    "parse_source": "actor",
+    "awaiting_confirmation": false,
+    "amended": false,
+    "replayed": false
+  }
+}

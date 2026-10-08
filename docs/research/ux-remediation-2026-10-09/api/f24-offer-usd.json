@@ -1,0 +1,109 @@
+{
+  "probe": "f24-offer-usd",
+  "request": {
+    "method": "POST",
+    "path": "/offers",
+    "body": {
+      "counterparty_id": "BUYER-1",
+      "documents": [
+        {
+          "doc_id": "f24-usd",
+          "channel": "chat",
+          "sender_id": "BUYER-1",
+          "received_day": 0,
+          "text": "We can pay the invoice early at 0.5% in USD."
+        }
+      ]
+    },
+    "credential": [
+      "X-Owner-Token"
+    ]
+  },
+  "clock_day_before_request": 0,
+  "status": 200,
+  "response": {
+    "offer": {
+      "offer_id": "OFF-c9d5f2694b9a",
+      "version": 1,
+      "counterparty_id": "BUYER-1",
+      "doc_ids": [
+        "f24-usd"
+      ],
+      "received_day": 0,
+      "status": "ABSTAINED",
+      "obligations": [
+        {
+          "id": "OFF-c9d5f2694b9a-O1",
+          "type": "IMMEDIATE_DISCOUNT",
+          "counterparty_id": "BUYER-1",
+          "rate_bp": 50,
+          "amount_fen": null,
+          "days_delta": null,
+          "target_terms_days": null,
+          "effective_day": null,
+          "base": {
+            "kind": "INVOICE",
+            "amount_fen": null,
+            "receivable_id": null,
+            "events_per_year": null
+          },
+          "contingency": "FIRM",
+          "duration": {
+            "kind": "ONE_OFF",
+            "invoices": null,
+            "end_day": null
+          },
+          "spans": [
+            {
+              "doc_id": "f24-usd",
+              "start": 7,
+              "end": 36,
+              "text": "pay the invoice early at 0.5%"
+            }
+          ],
+          "confidence": 0.9,
+          "unresolved": [],
+          "rate_display": "0.50%"
+        }
+      ],
+      "abstentions": [
+        {
+          "field": "offer.currency",
+          "reason": "amount in a currency other than yuan; please confirm the amount in yuan",
+          "spans": [
+            {
+              "doc_id": "f24-usd",
+              "start": 40,
+              "end": 43,
+              "text": "USD"
+            }
+          ]
+        }
+      ],
+      "data_requests": [],
+      "authority_claims": [],
+      "funding_claims": [],
+      "compiler": "rules-v1",
+      "prompt_version": "offer-v4",
+      "autonomy_eligible": false,
+      "autonomy_notes": [
+        "the compilation is ABSTAINED, not clean",
+        "a term was not read (offer.currency)",
+        "a discount does not state its invoice amount",
+        "non-CNY currency stated",
+        "text not read into the terms: 'usd'"
+      ]
+    },
+    "documents": [
+      {
+        "doc_id": "f24-usd",
+        "channel": "chat",
+        "sender_id": "BUYER-1",
+        "received_day": 0,
+        "text": "We can pay the invoice early at 0.5% in USD.",
+        "parent_doc_id": null,
+        "filename": null
+      }
+    ]
+  }
+}

@@ -1,0 +1,75 @@
+{
+ "/": {
+  "roleRadios": [
+   "Business",
+   "Demo",
+   "English",
+   "中文",
+   "Owner",
+   "Buyer (counterparty)"
+  ],
+  "chipButtons": [
+   "Sign out",
+   "Show me around",
+   "Run funding plan",
+   "AskAsk FLOW",
+   "New conversation",
+   "Do we have enough cash this month?",
+   "What should I deal with today?",
+   "Evaluate EX01",
+   "actually make it 0.8%",
+   "fund the cash gap",
+   "help me sort out our cash",
+   "approve it",
+   "status",
+   "Why was it rejected?",
+   "Send"
+  ],
+  "hint": [
+   "Owner channel. Tier 1 actions inside the mandate can run; anything larger waits for your approval."
+  ]
+ },
+ "/deals": {
+  "roleRadios": [
+   "Business",
+   "Demo",
+   "English",
+   "中文",
+   "Owner",
+   "Buyer (counterparty)"
+  ],
+  "chipButtons": [
+   "Sign out",
+   "Show me around",
+   "AskAsk FLOW",
+   "New conversation",
+   "Why are we countering this?",
+   "What would happen if I accepted?",
+   "Evaluate EX01",
+   "actually make it 0.8%",
+   "fund the cash gap",
+   "help me sort out our cash",
+   "approve it",
+   "status",
+   "Why was it rejected?",
+   "Send"
+  ],
+  "hint": [
+   "Owner channel. Tier 1 actions inside the mandate can run; anything larger waits for your approval."
+  ]
+ },
+ "persistence": {
+  "beforeLen": 344,
+  "afterLen": 87,
+  "afterHasStatus": false,
+  "draftAfterReload": "",
+  "storageKeys": {
+   "local": [
+    "tl-last-visit"
+   ],
+   "session": [
+    "tl-owner-auth"
+   ]
+  }
+ }
+}

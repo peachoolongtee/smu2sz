@@ -1,0 +1,18 @@
+{
+  "probe": "f18-reset",
+  "request": {
+    "method": "POST",
+    "path": "/demo/reset",
+    "body": {},
+    "credential": [
+      "X-Owner-Token"
+    ]
+  },
+  "clock_day_before_request": 34,
+  "status": 200,
+  "response": {
+    "ok": true,
+    "scenario": "golden_sme",
+    "day": 0
+  }
+}

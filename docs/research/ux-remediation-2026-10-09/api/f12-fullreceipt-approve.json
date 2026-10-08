@@ -1,0 +1,30 @@
+{
+  "probe": "f12-fullreceipt-approve",
+  "request": {
+    "method": "POST",
+    "path": "/approvals/APR-000001",
+    "body": {
+      "decision": "APPROVE"
+    },
+    "credential": [
+      "X-Owner-Token"
+    ]
+  },
+  "clock_day_before_request": 34,
+  "status": 200,
+  "response": {
+    "result": {
+      "op_id": "alert:ALERT-RESERVE-42:v7:0",
+      "kind": "SUBMIT_INVOICE_FOR_FINANCING",
+      "status": "EXECUTED",
+      "tier": "TIER_2",
+      "violations": [],
+      "seq": 8,
+      "entry_hash": "e10d1544d95d0ace556fccb6ec80c2f216c527ed3868c759fb161cbb3671a641",
+      "prev_hash": "2b915143f8a67136ccf57b85964913c2776c97864dfb52ab91ce81ac7d3c93c8",
+      "effective_day": 34,
+      "approval_id": "APR-000001",
+      "message": "Advance ¥200,000.00 on RI:BUYER-1:2 from FAC-IF on day 34; the cash lands on day 37 after the 3-day lead time, not today"
+    }
+  }
+}

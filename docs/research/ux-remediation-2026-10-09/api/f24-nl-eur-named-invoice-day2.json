@@ -1,0 +1,37 @@
+{
+  "probe": "f24-nl-eur-named-invoice-day2",
+  "request": {
+    "method": "POST",
+    "path": "/nl",
+    "body": {
+      "session_id": "f24-eur-named-invoice-day2",
+      "actor": "COUNTERPARTY",
+      "counterparty_id": "BUYER-1",
+      "text": "We will pay invoice RCV-A on day 2 at a 0.5% discount, in EUR.",
+      "request_id": "f24-eur-named-invoice-day2"
+    },
+    "credential": [
+      "X-Counterparty-Key"
+    ]
+  },
+  "clock_day_before_request": 0,
+  "status": 200,
+  "response": {
+    "session_id": "f24-eur-named-invoice-day2",
+    "turn": 1,
+    "reply": "Please clarify the terms: we cannot establish them from your message.",
+    "intent": "COUNTERPARTY_MESSAGE",
+    "lang": "en",
+    "trace_id": "f24-eur-named-invoice-day2:1",
+    "plan": [],
+    "verdict": null,
+    "operations": [],
+    "clarification": null,
+    "negotiation": null,
+    "security_events": [],
+    "parse_source": "actor",
+    "awaiting_confirmation": false,
+    "amended": false,
+    "replayed": false
+  }
+}
