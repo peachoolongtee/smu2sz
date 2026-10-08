@@ -7,6 +7,7 @@ import { useI18n } from "@/lib/i18n";
 import { whenText } from "@/lib/when";
 import { useAsync, useStrategyAsync } from "@/lib/use-async";
 import { Disclosure } from "@/components/business/kit";
+import { chaseIds, shortfallStretch } from "@/lib/chase";
 import { ReceivablesTable } from "@/components/business/receivables-table";
 
 /**
@@ -21,7 +22,8 @@ export default function ReceivablesPage() {
   const home = useAsync(() => getHome(lang), [lang]);
   // The worth of collecting each invoice (strategy MVP, build-time flag): null while loading, when the server has it off, or
   // when the read fails; the page then shows the table it always had. Matched to the invoices by receivable_id.
-  const worth = useStrategyAsync(() => getReceivablesWorth(lang), [lang]).data;
+  const worthRead = useStrategyAsync(() => getReceivablesWorth(lang), [lang]);
+  const worth = worthRead.data;
   const worthOf = new Map((worth?.rows ?? []).map((w) => [w.receivable_id, w]));
   const data = recon.data;
   const r = home.data?.receivables;
@@ -33,6 +35,9 @@ export default function ReceivablesPage() {
     ? [...data.outstanding].sort((a, b) => (rank.get(a.receivable_id) ?? rank.size) - (rank.get(b.receivable_id) ?? rank.size) || Number(b.past_due) - Number(a.past_due) || a.due_day - b.due_day)
     : [];
   const error = recon.error ?? home.error;
+  // Chase payment is offered on the invoices that are late, that fall due inside the forecast's shortfall (the home read's first
+  // breach to its lowest day) or whose early payment lapsed. Day numbers are compared; the handoff itself is the server's.
+  const chase = chaseIds(invoices, data?.promised, shortfallStretch(home.data?.cash.first_breach_day, home.data?.cash.lowest_day));
 
   return (
     <>
@@ -61,7 +66,13 @@ export default function ReceivablesPage() {
             {r.open_count === 0 ? <p className="mt-3 text-sm text-ink-3" data-testid="recv-none">{t("recon.outstanding.empty")}</p> : null}
           </section>
 
-          {invoices.length ? <ReceivablesTable invoices={invoices} asOfDay={data.as_of_day} buyerName={name} worth={worth} worthOf={worthOf} rank={rank} /> : null}
+          {worthRead.error ? (
+            <div data-testid="recv-worth-failed">
+              <ErrorState error={t("biz.recv.worth.failed")} onRetry={worthRead.reload} />
+            </div>
+          ) : null}
+
+          {invoices.length ? <ReceivablesTable invoices={invoices} asOfDay={data.as_of_day} buyerName={name} worth={worth} worthOf={worthOf} rank={rank} chase={chase} /> : null}
 
           {data.promised?.length ? (
             <Card id="recv-promised" title={t("biz.recv.promised")} subtitle={t("biz.recv.promised.sub")} actions={data.lapsed_promises ? <Badge tone="bad">{`${t("recon.lapsed")}: ${data.lapsed_promises}`}</Badge> : undefined}>

@@ -43,6 +43,7 @@ import openerPending from "../../mocks/home_opener_pending.json";
 import openerQuiet from "../../mocks/home_opener_quiet.json";
 import openerQuietZh from "../../mocks/home_opener_quiet_zh.json";
 import reconciliationDay34 from "../../mocks/home_reconciliation_day34.json";
+import reconciliationDay34Half from "../../mocks/home_reconciliation_day34_half.json";
 import stateAfterApprove from "../../mocks/home_state_after_approve.json";
 import stateDay34 from "../../mocks/home_state_day34.json";
 import stateAfterFund from "../../mocks/state_after_fund.json";
@@ -172,7 +173,14 @@ export function mockAlerts(): AlertsView | null {
 
 /** GET /reconciliation once the day-2 bank receipt has been recorded (the home path reaches day 34 with it); null before. */
 export function mockReconciliation(): unknown {
-  return load().day >= NEWS_DAY ? clone(reconciliationDay34) : null;
+  if (load().day < NEWS_DAY) return null;
+  return clone(receiptVariant() === "half" ? reconciliationDay34Half : reconciliationDay34);
+}
+
+/** Which recorded books the mock is reading: the opening books, day 34 after the full receipt, or day 34 after the half receipt. */
+export function recordedBooks(): "day0" | "day34" | "day34_half" {
+  if (load().day < NEWS_DAY) return "day0";
+  return receiptVariant() === "half" ? "day34_half" : "day34";
 }
 
 const sameSuggestions = (a: ActRequest["suggestions"], b: ActRequest["suggestions"]): boolean =>

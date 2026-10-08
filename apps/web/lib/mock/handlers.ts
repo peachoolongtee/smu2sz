@@ -18,6 +18,7 @@ import type {
   AuditView,
   BorrowerFileRequest,
   BorrowerFileView,
+  ChaseView,
   CapexApplyRequest,
   CapexApplyResult,
   CapexRequest,
@@ -616,10 +617,21 @@ export async function getPriceCurve(_lang: "en" | "zh"): Promise<PriceCurveView 
   return await strategyRecording<PriceCurveView>(priceCurveRecordings);
 }
 
+/**
+ * Test hook, like APPROVAL_STORY_KEY: set this sessionStorage key to "1" and GET /receivables/worth fails (503) until it is removed,
+ * so the Receivables page's "could not be read" state and its Retry can be seen offline.
+ */
+export const WORTH_FAIL_KEY = "tl-mock-worth-fail";
+
 /** GET /receivables/worth: as above. */
 export async function getReceivablesWorth(_lang: "en" | "zh"): Promise<ReceivablesWorthView | null> {
   void _lang;
   await delay();
+  try {
+    if (typeof window !== "undefined" && window.sessionStorage.getItem(WORTH_FAIL_KEY) === "1") throw new ApiError(503, "The collections ranking is unavailable");
+  } catch (e) {
+    if (e instanceof ApiError) throw e;
+  }
   return await strategyRecording<ReceivablesWorthView>(worthRecordings);
 }
 
@@ -638,6 +650,20 @@ export async function getEnvelope(buyerId: string, _lang: "en" | "zh", zone = fa
 /** GET /pilot/journal: the mock has no recording (the pilot journal is the shadow pilot's, against a real runtime), so it is absent. */
 export async function getPilotJournal(): Promise<PilotJournalView | null> {
   return null;
+}
+
+/**
+ * GET /receivables/{id}/chase: a recording of the real API for each open invoice of the three books the mock walks (the opening
+ * books, day 34 after the full receipt, day 34 after the half receipt), in both languages; chosen as the reconciliation is
+ * (`home.recordedBooks`). An invoice the recording does not hold is unknown (404), as the server answers.
+ */
+export async function getChase(receivableId: string, lang: "en" | "zh"): Promise<ChaseView> {
+  await delay();
+  const books = home.recordedBooks();
+  const file = (await (books === "day34_half" ? import("../../mocks/chase_day34_half.json") : books === "day34" ? import("../../mocks/chase_day34.json") : import("../../mocks/chase_day0.json"))).default;
+  const found = cast<Record<"en" | "zh", Record<string, ChaseView>>>(file)[lang][receivableId];
+  if (!found) throw new ApiError(404, "Unknown receivable", { code: "RECEIVABLE_NOT_FOUND", receivable_id: receivableId });
+  return clone(found);
 }
 
 export async function getReconciliation(): Promise<ReconciliationView> {
