@@ -74,6 +74,26 @@ def post_offer(body: OfferIn, x_owner_token: str | None = Header(default=None),
     return {"offer": displayed(json.loads(offer.model_dump_json())), "documents": [json.loads(d.model_dump_json()) for d in docs]}
 
 
+@router.get("/offers/{offer_id}", dependencies=[Depends(require_owner)])
+def get_offer(offer_id: str) -> dict:
+    """The compiled offer as stored (its latest version) with the id of the latest verdict stored for it and its decision id
+    (ADR-0011), so a page can open an offer without the session cache (ledger F06). Owner only."""
+    from app.decisions.identity import deal_id
+
+    rt = get_runtime()
+    with rt.lock:
+        offer = rt.store.get_offer(offer_id)
+        if offer is None:
+            raise HTTPException(404, {"code": "OFFER_NOT_FOUND", "offer_id": offer_id})
+        vid = rt.latest_verdict.get(offer_id)
+        latest = rt.store.get_verdict(vid) if vid else None
+        if latest is None:
+            latest = next((v for v in reversed(rt.store.verdicts()) if v.offer_id == offer_id), None)
+        documents = [json.loads(rt.documents[d].model_dump_json()) for d in offer.doc_ids if d in rt.documents]
+    return {"offer": displayed(json.loads(offer.model_dump_json())), "documents": documents,
+            "latest_verdict_id": latest.id if latest is not None else None, "decision_id": deal_id(offer_id)}
+
+
 @router.post("/facilities/compile", dependencies=[Depends(require_owner)])
 def post_term_sheet(body: OfferIn) -> dict:
     docs, _ = _docs(body)
