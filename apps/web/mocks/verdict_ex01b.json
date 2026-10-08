@@ -5751,5 +5751,131 @@
     "cap_fen": 500000,
     "cap_display": "¥5,000.00",
     "over_cap": true
+  },
+  "workspace": {
+    "order": [
+      "buyer_asks",
+      "financial_impact",
+      "why_it_matters",
+      "recommends",
+      "priced_response",
+      "advanced"
+    ],
+    "buyer_asks": {
+      "title": "What the buyer asks",
+      "asks": [
+        {
+          "obligation_id": "OFF-1559c5b525ed-O1",
+          "type": "IMMEDIATE_DISCOUNT",
+          "label": "Immediate discount",
+          "text": "The buyer may pay early and take 1.20% off the ¥420,000.00 invoice to Foshan Home Retail Co. (effective in 2 days; one time)"
+        },
+        {
+          "obligation_id": "OFF-1559c5b525ed-O2",
+          "type": "TERMS_EXTENSION",
+          "label": "Payment terms change",
+          "text": "The buyer gets 60-day payment terms on future invoices (ongoing, no end date)"
+        },
+        {
+          "obligation_id": "OFF-1559c5b525ed-O3",
+          "type": "CONTINGENT_REBATE",
+          "label": "Rebate, counted at its maximum",
+          "text": "A rebate of 1.00% on purchases in the period if its conditions are met (one time)"
+        }
+      ]
+    },
+    "financial_impact": {
+      "title": "What it costs you",
+      "lines": [
+        {
+          "obligation_id": "OFF-1559c5b525ed-O1",
+          "type": "IMMEDIATE_DISCOUNT",
+          "label": "Immediate discount",
+          "horizon": "IMMEDIATE",
+          "amount_fen": 504000,
+          "amount_display": "¥5,040.00",
+          "window_text": "Taken off the invoice when it is settled early. It is checked against its own cap and is not part of the forward figure.",
+          "basis": "immediate discount: settled in cash now and capped separately, not a forward concession"
+        },
+        {
+          "obligation_id": "OFF-1559c5b525ed-O2",
+          "type": "TERMS_EXTENSION",
+          "label": "Payment terms change",
+          "horizon": "FORWARD",
+          "amount_fen": 2432692,
+          "amount_display": "¥24,326.92",
+          "window_text": "Valued over the next 12 months at your cheapest committed source.",
+          "basis": "terms extension priced as a loan: committed marginal source: Invoice financing (onboarded platform) 10.8417%"
+        },
+        {
+          "obligation_id": "OFF-1559c5b525ed-O3",
+          "type": "CONTINGENT_REBATE",
+          "label": "Rebate, counted at its maximum",
+          "horizon": "FORWARD",
+          "amount_fen": 400000,
+          "amount_display": "¥4,000.00",
+          "window_text": "Valued over the next 12 months at your cheapest committed source.",
+          "basis": "contingent rebate counted at maximum"
+        }
+      ],
+      "window_months": 12,
+      "forward_total_fen": 2832692,
+      "forward_total_display": "¥28,326.92",
+      "cap_display": "¥5,000.00",
+      "over_cap": true,
+      "total_note": "The 12-month figure is the forward cost only. The immediate discount is on its own line and the two are not added together."
+    },
+    "why_it_matters": {
+      "text": "The forward concessions in this offer come to ¥28,326.92, above your ¥5,000.00 limit. Accepted as asked, cash would fall below your minimum in 47 days.",
+      "reasons": [
+        "The forward concessions in this offer come to ¥28,326.92, above your ¥5,000.00 limit.",
+        "Accepted as asked, cash would fall below your minimum in 47 days."
+      ]
+    },
+    "recommends": {
+      "action": "counter",
+      "text": "Counter recommended"
+    },
+    "priced_response": {
+      "counter_id": "CTR-72a07f7c0f50",
+      "label": "Option A",
+      "send_scope": "Sends Option A to the buyer (the reply is simulated); records the agreement, with your approval when it changes terms; runs the funding for any remaining gap within your limits.",
+      "supplier_cost_display": "¥3,027.77",
+      "forward_value_display": "¥0.00",
+      "verdict_id": "VER-ad144620d269",
+      "state_version": 1
+    },
+    "advanced": {
+      "keys": {
+        "parsed_obligations": [
+          "bound_obligations",
+          "notes"
+        ],
+        "source_text": [
+          "offer_id"
+        ],
+        "checks": [
+          "passed_checks",
+          "violations"
+        ],
+        "formula": [
+          "concession_values",
+          "annualised"
+        ],
+        "engine_verdict": [
+          "outcome",
+          "summary",
+          "summary_when",
+          "required_tier"
+        ],
+        "audit_evidence": [
+          "autonomy",
+          "decision_id",
+          "calc_version",
+          "state_version",
+          "mandate_version"
+        ]
+      }
+    }
   }
 }

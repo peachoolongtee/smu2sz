@@ -100,7 +100,10 @@
         "status": "ACTIVE",
         "status_text": "Agreed",
         "expires_day": 7,
-        "expires_when": "in 7 days"
+        "expires_when": "in 7 days",
+        "terms": [
+          "The buyer may pay early and take 0.85% off up to ¥257,200.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. (effective in 2 days; one time)"
+        ]
       },
       "operations": [
         {
@@ -276,7 +279,10 @@
         "status": "ACTIVE",
         "status_text": "已达成协议",
         "expires_day": 7,
-        "expires_when": "7 天后"
+        "expires_when": "7 天后",
+        "terms": [
+          "买家可提前付款，Foshan Home Retail Co. 的 ¥420,000.00 发票中最多 ¥257,200.00 减免 0.85%（2 天后生效；一次性）"
+        ]
       },
       "operations": [
         {
@@ -2214,7 +2220,10 @@
         "status": "FULFILLED",
         "status_text": "Fulfilled",
         "expires_day": 7,
-        "expires_when": "27 days ago"
+        "expires_when": "27 days ago",
+        "terms": [
+          "The buyer may pay early and take 0.85% off up to ¥257,200.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. (effective 32 days ago; one time)"
+        ]
       },
       "operations": [
         {
@@ -2416,7 +2425,10 @@
         "status": "FULFILLED",
         "status_text": "已履行",
         "expires_day": 7,
-        "expires_when": "27 天前"
+        "expires_when": "27 天前",
+        "terms": [
+          "买家可提前付款，Foshan Home Retail Co. 的 ¥420,000.00 发票中最多 ¥257,200.00 减免 0.85%（32 天前生效；一次性）"
+        ]
       },
       "operations": [
         {
@@ -2620,7 +2632,10 @@
         "status": "EXPIRED",
         "status_text": "Early payment did not arrive",
         "expires_day": 7,
-        "expires_when": "27 days ago"
+        "expires_when": "27 days ago",
+        "terms": [
+          "The buyer may pay early and take 0.85% off up to ¥257,200.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. (effective 32 days ago; one time)"
+        ]
       },
       "operations": [
         {
@@ -2822,7 +2837,10 @@
         "status": "EXPIRED",
         "status_text": "提前付款未到账",
         "expires_day": 7,
-        "expires_when": "27 天前"
+        "expires_when": "27 天前",
+        "terms": [
+          "买家可提前付款，Foshan Home Retail Co. 的 ¥420,000.00 发票中最多 ¥257,200.00 减免 0.85%（32 天前生效；一次性）"
+        ]
       },
       "operations": [
         {
@@ -3332,7 +3350,10 @@
         "status": "EXPIRED",
         "status_text": "Early payment did not arrive",
         "expires_day": 7,
-        "expires_when": "27 days ago"
+        "expires_when": "27 days ago",
+        "terms": [
+          "The buyer may pay early and take 0.85% off up to ¥257,200.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. (effective 32 days ago; one time)"
+        ]
       },
       "operations": [
         {
@@ -3508,7 +3529,10 @@
         "status": "EXPIRED",
         "status_text": "提前付款未到账",
         "expires_day": 7,
-        "expires_when": "27 天前"
+        "expires_when": "27 天前",
+        "terms": [
+          "买家可提前付款，Foshan Home Retail Co. 的 ¥420,000.00 发票中最多 ¥257,200.00 减免 0.85%（32 天前生效；一次性）"
+        ]
       },
       "operations": [
         {
