@@ -46,6 +46,7 @@ from app.persistence.records import (
     EvidenceExportRecord,
     LedgerEntry,
     LlmCallRecord,
+    PilotJournalRecord,
 )
 
 
@@ -63,6 +64,7 @@ class InMemoryLedgerStore:
         self._tx_depth = 0
         self._llm_calls: list[LlmCallRecord] = []
         self._evaluation_runs: list[EvaluationRunRecord] = []
+        self._pilot_journal: list[PilotJournalRecord] = []  # kept by reset(), like telemetry; not in `_CONTAINERS`
         self._clear_ledger()
 
     # ------------------------------------------------------------ unit of work
@@ -345,6 +347,38 @@ class InMemoryLedgerStore:
         with self._lock:
             return list(self._evaluation_runs)
 
+    # ------------------------------------------------------------ the pilot's journal (docs/pilot/JOURNAL_SPEC.md)
+
+    def add_pilot_journal(
+        self,
+        *,
+        week: int,
+        sme: str,
+        answer: str,
+        flow_said: str,
+        snapshot_hash: str,
+        owner_did: str,
+        choice: str,
+        recorded_on: str,
+        state_version: int,
+        day: int,
+    ) -> PilotJournalRecord:
+        """Append one entry. Append-only: the store has no update or delete for it, and nothing here touches the books,
+        the operations log or the hash chain."""
+        with self._lock:
+            rec = PilotJournalRecord(
+                seq=len(self._pilot_journal) + 1, week=week, sme=sme, answer=answer, flow_said=flow_said,
+                snapshot_hash=snapshot_hash, owner_did=owner_did, choice=choice, recorded_on=recorded_on,
+                state_version=state_version, day=day, recorded_at=datetime.now(UTC).isoformat(),
+            )
+            self._pilot_journal.append(rec)
+            return rec
+
+    def pilot_journal(self) -> list[PilotJournalRecord]:
+        """Every entry, oldest first."""
+        with self._lock:
+            return list(self._pilot_journal)
+
     # ------------------------------------------------------------ evidence
 
     def export_evidence(self) -> str:
@@ -376,6 +410,7 @@ class InMemoryLedgerStore:
             if include_telemetry:
                 self._llm_calls = []
                 self._evaluation_runs = []
+                self._pilot_journal = []
 
 
 def _copy(value: object) -> object:

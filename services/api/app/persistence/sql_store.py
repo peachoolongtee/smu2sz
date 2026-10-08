@@ -92,10 +92,11 @@ from app.persistence.records import (
     EvidenceExportRecord,
     LedgerEntry,
     LlmCallRecord,
+    PilotJournalRecord,
 )
 
 _RESET_OPTION = "termsledger_reset"
-_PROTECTED = frozenset({t.operations.name, t.used_nonces.name})
+_PROTECTED = frozenset({t.operations.name, t.used_nonces.name, t.pilot_journal.name})
 _RETRIES = 5
 
 T = TypeVar("T")
@@ -752,6 +753,55 @@ class SqlLedgerStore:
                 notes=r.notes,
             )
             for r in self._read_all(t.evaluation_runs, t.evaluation_runs.c.row_id)
+        ]
+
+    # ------------------------------------------------------------ the pilot's journal (docs/pilot/JOURNAL_SPEC.md)
+
+    def add_pilot_journal(
+        self,
+        *,
+        week: int,
+        sme: str,
+        answer: str,
+        flow_said: str,
+        snapshot_hash: str,
+        owner_did: str,
+        choice: str,
+        recorded_on: str,
+        state_version: int,
+        day: int,
+    ) -> PilotJournalRecord:
+        """Append one entry. The table is append-only (an engine hook refuses Core UPDATE and DELETE on it, as for the
+        operations log) and nothing here touches the books, the operations log or the hash chain."""
+        recorded_at = datetime.now(UTC).isoformat()
+
+        def _add(conn: Connection) -> PilotJournalRecord:
+            seq = _inserted_id(
+                conn.execute(
+                    insert(t.pilot_journal).values(
+                        week=week, sme=sme, answer=answer, flow_said=flow_said, snapshot_hash=snapshot_hash,
+                        owner_did=owner_did, choice=choice, recorded_on=recorded_on, state_version=state_version,
+                        day=day, recorded_at=recorded_at,
+                    )
+                )
+            )
+            return PilotJournalRecord(
+                seq=seq, week=week, sme=sme, answer=answer, flow_said=flow_said, snapshot_hash=snapshot_hash,
+                owner_did=owner_did, choice=choice, recorded_on=recorded_on, state_version=state_version, day=day,
+                recorded_at=recorded_at,
+            )
+
+        return self._retry(_add)
+
+    def pilot_journal(self) -> list[PilotJournalRecord]:
+        """Every entry, oldest first."""
+        return [
+            PilotJournalRecord(
+                seq=int(r.row_id), week=int(r.week), sme=r.sme, answer=r.answer, flow_said=r.flow_said,
+                snapshot_hash=r.snapshot_hash, owner_did=r.owner_did, choice=r.choice, recorded_on=r.recorded_on,
+                state_version=int(r.state_version), day=int(r.day), recorded_at=r.recorded_at,
+            )
+            for r in self._read_all(t.pilot_journal, t.pilot_journal.c.row_id)
         ]
 
     # ------------------------------------------------------------ evidence

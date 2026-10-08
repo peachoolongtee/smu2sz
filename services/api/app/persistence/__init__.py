@@ -22,6 +22,7 @@ from app.persistence.records import (
     EvidenceExportRecord,
     LedgerEntry,
     LlmCallRecord,
+    PilotJournalRecord,
 )
 from app.persistence.sql_store import SqlLedgerStore
 
@@ -42,6 +43,7 @@ __all__ = [
     "NotFound",
     "OfferVersionConflict",
     "PersistenceError",
+    "PilotJournalRecord",
     "SqlLedgerStore",
     "StateVersionConflict",
     "canonical_json",

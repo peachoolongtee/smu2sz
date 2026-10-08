@@ -94,3 +94,22 @@ class EvidenceExportRecord:
     chain_valid: bool
     content_sha256: str
     exported_at: str
+
+
+@dataclass(frozen=True, slots=True)
+class PilotJournalRecord:
+    """One entry of the shadow pilot's journal (docs/pilot/JOURNAL_SPEC.md): what the owner did against an answer FLOW gave.
+    No money field. `seq` is the append position; `state_version` and `day` stamp the books and the clock at the write."""
+
+    seq: int
+    week: int
+    sme: str
+    answer: str
+    flow_said: str
+    snapshot_hash: str
+    owner_did: str
+    choice: str
+    recorded_on: str
+    state_version: int
+    day: int
+    recorded_at: str
