@@ -2884,5 +2884,90 @@
     "cap_fen": 500000,
     "cap_display": "¥5,000.00",
     "over_cap": false
+  },
+  "workspace": {
+    "order": [
+      "buyer_asks",
+      "financial_impact",
+      "why_it_matters",
+      "recommends",
+      "priced_response",
+      "advanced"
+    ],
+    "buyer_asks": {
+      "title": "What the buyer asks",
+      "asks": [
+        {
+          "obligation_id": "OFF-8e944bff0cc9-O1",
+          "type": "IMMEDIATE_DISCOUNT",
+          "label": "Immediate discount",
+          "text": "The buyer may pay early and take 0.50% off the ¥420,000.00 invoice to Foshan Home Retail Co. (effective in 2 days; one time)"
+        }
+      ]
+    },
+    "financial_impact": {
+      "title": "What it costs you",
+      "lines": [
+        {
+          "obligation_id": "OFF-8e944bff0cc9-O1",
+          "type": "IMMEDIATE_DISCOUNT",
+          "label": "Immediate discount",
+          "horizon": "IMMEDIATE",
+          "amount_fen": 210000,
+          "amount_display": "¥2,100.00",
+          "window_text": "Taken off the invoice when it is settled early. It is checked against its own cap and is not part of the forward figure.",
+          "basis": "immediate discount: settled in cash now and capped separately, not a forward concession"
+        }
+      ],
+      "window_months": 12,
+      "forward_total_fen": 0,
+      "forward_total_display": "¥0.00",
+      "cap_display": "¥5,000.00",
+      "over_cap": false,
+      "total_note": "The 12-month figure is the forward cost only. The immediate discount is on its own line and the two are not added together."
+    },
+    "why_it_matters": {
+      "text": "Acceptable, awaiting agreement.",
+      "reasons": [
+        "Acceptable, awaiting agreement."
+      ]
+    },
+    "recommends": {
+      "action": "accept",
+      "text": "Acceptable, awaiting agreement"
+    },
+    "priced_response": null,
+    "advanced": {
+      "keys": {
+        "parsed_obligations": [
+          "bound_obligations",
+          "notes"
+        ],
+        "source_text": [
+          "offer_id"
+        ],
+        "checks": [
+          "passed_checks",
+          "violations"
+        ],
+        "formula": [
+          "concession_values",
+          "annualised"
+        ],
+        "engine_verdict": [
+          "outcome",
+          "summary",
+          "summary_when",
+          "required_tier"
+        ],
+        "audit_evidence": [
+          "autonomy",
+          "decision_id",
+          "calc_version",
+          "state_version",
+          "mandate_version"
+        ]
+      }
+    }
   }
 }

@@ -100,7 +100,10 @@
         "status": "ACTIVE",
         "status_text": "Agreed",
         "expires_day": 7,
-        "expires_when": "in 7 days"
+        "expires_when": "in 7 days",
+        "terms": [
+          "The buyer may pay early and take 0.85% off up to ¥257,200.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. (effective in 2 days; one time)"
+        ]
       },
       "operations": [
         {
@@ -276,7 +279,10 @@
         "status": "ACTIVE",
         "status_text": "已达成协议",
         "expires_day": 7,
-        "expires_when": "7 天后"
+        "expires_when": "7 天后",
+        "terms": [
+          "买家可提前付款，Foshan Home Retail Co. 的 ¥420,000.00 发票中最多 ¥257,200.00 减免 0.85%（2 天后生效；一次性）"
+        ]
       },
       "operations": [
         {
@@ -2113,6 +2119,256 @@
       }
     }
   },
+  "cure_settled": {
+    "en": {
+      "id": "alert:ALERT-RESERVE-42:v7",
+      "family": "FUNDING",
+      "state": "SETTLED",
+      "state_text": "Done; the cash has landed",
+      "terminal": true,
+      "headline": "Finance ¥200,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. on Invoice financing (onboarded platform)",
+      "counterparty_name": "Foshan Home Retail Co.",
+      "amount_display": "¥200,000.00",
+      "opened_when": "4 days ago",
+      "updated_when": "4 days ago",
+      "waiting_for": {
+        "code": "NOTHING",
+        "party": "none",
+        "party_name": null,
+        "day": null,
+        "when": null,
+        "text": "Nothing is waiting: the action is complete."
+      },
+      "residual": null,
+      "source": {
+        "kind": "ALERT",
+        "alert_id": "ALERT-RESERVE-42",
+        "alert_kind": "RESERVE_BREACH_AHEAD",
+        "alert_day": 42
+      },
+      "interpretation": null,
+      "evaluation": null,
+      "response": null,
+      "quote": {
+        "recorded": true,
+        "quoted_when": "4 days ago",
+        "lines": [
+          {
+            "label": "Finance ¥200,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. on Invoice financing (onboarded platform)",
+            "op_id": "alert:ALERT-RESERVE-42:v7:0",
+            "kind": "SUBMIT_INVOICE_FOR_FINANCING",
+            "amount_fen": 20000000,
+            "amount_display": "¥200,000.00",
+            "cost_fen": 178219,
+            "cost_display": "¥1,782.19",
+            "rate_text": "32.5%",
+            "cost_days": 10,
+            "lands_day": 37,
+            "lands_when": "yesterday",
+            "above_ceiling": true
+          }
+        ],
+        "total_fen": 178219,
+        "total_display": "¥1,782.19",
+        "cost_note": null,
+        "rate_basis": "Invoice financing is billed in whole 30-day periods until the invoice is paid.",
+        "lands_day": 37,
+        "lands_when": "yesterday",
+        "after": "Cash stays above your minimum cash reserve for the next 120 days.",
+        "if_declined": "¥200,000.00 below your minimum cash reserve in 4 days; the gap peaks at ¥200,000.00 in 4 days.",
+        "needs_owner": true,
+        "text": null,
+        "actual": [
+          {
+            "op_id": "alert:ALERT-RESERVE-42:v7:0",
+            "amount_display": "¥200,000.00",
+            "request_day": 34,
+            "arrival_day": 37,
+            "arrival_when": "yesterday",
+            "settled": true
+          }
+        ],
+        "difference_text": null
+      },
+      "authorization": {
+        "required_tier": "TIER_2",
+        "approval_id": "APR-000001",
+        "status": "APPROVED",
+        "decided_by": "OWNER",
+        "decided_day": 34,
+        "decided_when": "4 days ago"
+      },
+      "agreement": null,
+      "operations": [
+        {
+          "op_id": "alert:ALERT-RESERVE-42:v7:0",
+          "kind": "SUBMIT_INVOICE_FOR_FINANCING",
+          "status": "EXECUTED",
+          "event_text": "You approved ¥200,000.00 of invoice financing. Cash received yesterday.",
+          "day": 34,
+          "when": "4 days ago",
+          "approval_id": "APR-000001",
+          "seq": 8
+        }
+      ],
+      "execution": {
+        "summary_text": "Funding of ¥200,000.00 was requested and has landed.",
+        "requested_fen": 20000000,
+        "requested_display": "¥200,000.00",
+        "landed_fen": 20000000,
+        "landed_display": "¥200,000.00",
+        "in_transit_fen": 0,
+        "in_transit_display": null
+      },
+      "settlement": [
+        {
+          "lot_id": "alert:ALERT-RESERVE-42:v7:0",
+          "facility_name": "Invoice financing (onboarded platform)",
+          "principal_display": "¥200,000.00",
+          "request_when": "4 days ago",
+          "arrival_day": 37,
+          "arrival_when": "yesterday",
+          "settled": true
+        }
+      ],
+      "receipts": [],
+      "promises": [],
+      "remaining_task": {
+        "text": "Nothing is waiting: the action is complete.",
+        "code": "NOTHING",
+        "links": []
+      },
+      "recorded": {
+        "evaluated": false,
+        "sent": false,
+        "quoted": true
+      }
+    },
+    "zh": {
+      "id": "alert:ALERT-RESERVE-42:v7",
+      "family": "FUNDING",
+      "state": "SETTLED",
+      "state_text": "已完成，资金已到账",
+      "terminal": true,
+      "headline": "以Foshan Home Retail Co. 的 ¥420,000.00 发票在Invoice financing (onboarded platform)融资 ¥200,000.00",
+      "counterparty_name": "Foshan Home Retail Co.",
+      "amount_display": "¥200,000.00",
+      "opened_when": "4 天前",
+      "updated_when": "4 天前",
+      "waiting_for": {
+        "code": "NOTHING",
+        "party": "none",
+        "party_name": null,
+        "day": null,
+        "when": null,
+        "text": "没有待办事项：操作已完成。"
+      },
+      "residual": null,
+      "source": {
+        "kind": "ALERT",
+        "alert_id": "ALERT-RESERVE-42",
+        "alert_kind": "RESERVE_BREACH_AHEAD",
+        "alert_day": 42
+      },
+      "interpretation": null,
+      "evaluation": null,
+      "response": null,
+      "quote": {
+        "recorded": true,
+        "quoted_when": "4 天前",
+        "lines": [
+          {
+            "label": "以Foshan Home Retail Co. 的 ¥420,000.00 发票在Invoice financing (onboarded platform)融资 ¥200,000.00",
+            "op_id": "alert:ALERT-RESERVE-42:v7:0",
+            "kind": "SUBMIT_INVOICE_FOR_FINANCING",
+            "amount_fen": 20000000,
+            "amount_display": "¥200,000.00",
+            "cost_fen": 178219,
+            "cost_display": "¥1,782.19",
+            "rate_text": "32.5%",
+            "cost_days": 10,
+            "lands_day": 37,
+            "lands_when": "昨天",
+            "above_ceiling": true
+          }
+        ],
+        "total_fen": 178219,
+        "total_display": "¥1,782.19",
+        "cost_note": null,
+        "rate_basis": "发票融资按整 30 天计费，直至发票付清。",
+        "lands_day": 37,
+        "lands_when": "昨天",
+        "after": "未来 120 天现金都保持在您的最低现金储备以上。",
+        "if_declined": "4 天后比最低现金储备低 ¥200,000.00；缺口在4 天后最大，为 ¥200,000.00。",
+        "needs_owner": true,
+        "text": null,
+        "actual": [
+          {
+            "op_id": "alert:ALERT-RESERVE-42:v7:0",
+            "amount_display": "¥200,000.00",
+            "request_day": 34,
+            "arrival_day": 37,
+            "arrival_when": "昨天",
+            "settled": true
+          }
+        ],
+        "difference_text": null
+      },
+      "authorization": {
+        "required_tier": "TIER_2",
+        "approval_id": "APR-000001",
+        "status": "APPROVED",
+        "decided_by": "OWNER",
+        "decided_day": 34,
+        "decided_when": "4 天前"
+      },
+      "agreement": null,
+      "operations": [
+        {
+          "op_id": "alert:ALERT-RESERVE-42:v7:0",
+          "kind": "SUBMIT_INVOICE_FOR_FINANCING",
+          "status": "EXECUTED",
+          "event_text": "您已批准¥200,000.00 的发票融资。资金已于昨天到账。",
+          "day": 34,
+          "when": "4 天前",
+          "approval_id": "APR-000001",
+          "seq": 8
+        }
+      ],
+      "execution": {
+        "summary_text": "已提交 ¥200,000.00 的融资，并已到账。",
+        "requested_fen": 20000000,
+        "requested_display": "¥200,000.00",
+        "landed_fen": 20000000,
+        "landed_display": "¥200,000.00",
+        "in_transit_fen": 0,
+        "in_transit_display": null
+      },
+      "settlement": [
+        {
+          "lot_id": "alert:ALERT-RESERVE-42:v7:0",
+          "facility_name": "Invoice financing (onboarded platform)",
+          "principal_display": "¥200,000.00",
+          "request_when": "4 天前",
+          "arrival_day": 37,
+          "arrival_when": "昨天",
+          "settled": true
+        }
+      ],
+      "receipts": [],
+      "promises": [],
+      "remaining_task": {
+        "text": "没有待办事项：操作已完成。",
+        "code": "NOTHING",
+        "links": []
+      },
+      "recorded": {
+        "evaluated": false,
+        "sent": false,
+        "quoted": true
+      }
+    }
+  },
   "fulfilled_day34.ex01": {
     "en": {
       "id": "deal:OFF-f806f79b6c21",
@@ -2214,7 +2470,10 @@
         "status": "FULFILLED",
         "status_text": "Fulfilled",
         "expires_day": 7,
-        "expires_when": "27 days ago"
+        "expires_when": "27 days ago",
+        "terms": [
+          "The buyer may pay early and take 0.85% off up to ¥257,200.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. (effective 32 days ago; one time)"
+        ]
       },
       "operations": [
         {
@@ -2416,7 +2675,10 @@
         "status": "FULFILLED",
         "status_text": "已履行",
         "expires_day": 7,
-        "expires_when": "27 天前"
+        "expires_when": "27 天前",
+        "terms": [
+          "买家可提前付款，Foshan Home Retail Co. 的 ¥420,000.00 发票中最多 ¥257,200.00 减免 0.85%（32 天前生效；一次性）"
+        ]
       },
       "operations": [
         {
@@ -2620,7 +2882,10 @@
         "status": "EXPIRED",
         "status_text": "Early payment did not arrive",
         "expires_day": 7,
-        "expires_when": "27 days ago"
+        "expires_when": "27 days ago",
+        "terms": [
+          "The buyer may pay early and take 0.85% off up to ¥257,200.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. (effective 32 days ago; one time)"
+        ]
       },
       "operations": [
         {
@@ -2822,7 +3087,10 @@
         "status": "EXPIRED",
         "status_text": "提前付款未到账",
         "expires_day": 7,
-        "expires_when": "27 天前"
+        "expires_when": "27 天前",
+        "terms": [
+          "买家可提前付款，Foshan Home Retail Co. 的 ¥420,000.00 发票中最多 ¥257,200.00 减免 0.85%（32 天前生效；一次性）"
+        ]
       },
       "operations": [
         {
@@ -3332,7 +3600,10 @@
         "status": "EXPIRED",
         "status_text": "Early payment did not arrive",
         "expires_day": 7,
-        "expires_when": "27 days ago"
+        "expires_when": "27 days ago",
+        "terms": [
+          "The buyer may pay early and take 0.85% off up to ¥257,200.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. (effective 32 days ago; one time)"
+        ]
       },
       "operations": [
         {
@@ -3508,7 +3779,10 @@
         "status": "EXPIRED",
         "status_text": "提前付款未到账",
         "expires_day": 7,
-        "expires_when": "27 天前"
+        "expires_when": "27 天前",
+        "terms": [
+          "买家可提前付款，Foshan Home Retail Co. 的 ¥420,000.00 发票中最多 ¥257,200.00 减免 0.85%（32 天前生效；一次性）"
+        ]
       },
       "operations": [
         {
