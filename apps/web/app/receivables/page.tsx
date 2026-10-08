@@ -1,11 +1,13 @@
 "use client";
 
 import { Badge, Card, ErrorState, LoadingBlock, PageHeader, Stat, TableWrap, tableCls, tdCls, thCls } from "@/components/ui";
-import { getHome, getReconciliation, getState } from "@/lib/api";
+import { getHome, getReceivablesWorth, getReconciliation, getState } from "@/lib/api";
+import { STRATEGY_MVP } from "@/lib/config";
 import { useI18n } from "@/lib/i18n";
 import { daysLate, whenText } from "@/lib/when";
 import { useAsync } from "@/lib/use-async";
 import { Disclosure } from "@/components/business/kit";
+import { ActionChip, ActionText, WorthText } from "@/components/business/strategy";
 
 /**
  * Receivables, in the order the owner asks: who owes me and how much (the summary, from the home read), when and who is
@@ -17,11 +19,19 @@ export default function ReceivablesPage() {
   const recon = useAsync(getReconciliation, []);
   const books = useAsync(getState, []);
   const home = useAsync(() => getHome(lang), [lang]);
+  // The worth of collecting each invoice (strategy MVP, build-time flag): null while loading, when the server has it off, or
+  // when the read fails; the page then shows the table it always had. Matched to the invoices by receivable_id.
+  const worth = useAsync(async () => (STRATEGY_MVP ? await getReceivablesWorth(lang) : null), [lang]).data;
+  const worthOf = new Map((worth?.rows ?? []).map((w) => [w.receivable_id, w]));
   const data = recon.data;
   const r = home.data?.receivables;
   const name = (id: string | null) => books.data?.state.counterparties.find((c) => c.id === id)?.name ?? id ?? "";
   // Late rows first, then by due day; the page counts days, the server does the money.
-  const invoices = data ? [...data.outstanding].sort((a, b) => Number(b.past_due) - Number(a.past_due) || a.due_day - b.due_day) : [];
+  // With the worth loaded the server's own rank leads (what collecting each saves), the rest keep the late-first order.
+  const rank = new Map((worth?.rows ?? []).map((w, i) => [w.receivable_id, i]));
+  const invoices = data
+    ? [...data.outstanding].sort((a, b) => (rank.get(a.receivable_id) ?? rank.size) - (rank.get(b.receivable_id) ?? rank.size) || Number(b.past_due) - Number(a.past_due) || a.due_day - b.due_day)
+    : [];
   const error = recon.error ?? home.error;
 
   return (
@@ -53,9 +63,16 @@ export default function ReceivablesPage() {
 
           {invoices.length ? (
             <Card id="recv-open" title={t("biz.recv.open")} subtitle={t("biz.recv.open.sub")}>
+              {worth ? (
+                <p className="mb-3 text-xs text-ink-3" data-testid="recv-ranking-note">
+                  {worth.ranking_note}
+                </p>
+              ) : null}
               {/* On a phone the invoices are a list; the table needs the width of a larger screen. */}
               <ul className="motion-rise divide-y divide-line sm:hidden" data-testid="recv-open-list">
-                {invoices.map((o) => (
+                {invoices.map((o) => {
+                  const w = worthOf.get(o.receivable_id);
+                  return (
                   <li key={o.receivable_id} className="py-2.5 text-sm">
                     <div className="flex items-baseline justify-between gap-3">
                       <span className="min-w-0 font-medium text-ink">{name(o.counterparty_id)}</span>
@@ -67,8 +84,19 @@ export default function ReceivablesPage() {
                       </span>
                       <Badge tone={o.past_due ? "bad" : "neutral"}>{o.past_due ? daysLate(Math.max(0, data.as_of_day - o.due_day), t) : t("recon.onTime")}</Badge>
                     </div>
+                    {w ? (
+                      <div className="mt-2 space-y-1">
+                        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                          <ActionChip action={w.action} />
+                          <span className="text-xs text-ink-3">{t("biz.strategy.worth")}</span>
+                          <WorthText row={w} testId={`recv-list-worth-${o.receivable_id}`} />
+                        </div>
+                        <ActionText row={w} testId={`recv-list-action-${o.receivable_id}`} />
+                      </div>
+                    ) : null}
                   </li>
-                ))}
+                  );
+                })}
               </ul>
               <div className="hidden sm:block">
               <TableWrap label={t("biz.recv.open")}>
@@ -79,10 +107,14 @@ export default function ReceivablesPage() {
                       <th scope="col" className={`${thCls} text-right`}>{t("biz.amount")}</th>
                       <th scope="col" className={thCls}>{t("biz.due")}</th>
                       <th scope="col" className={thCls}>{t("common.status")}</th>
+                      {worth ? <th scope="col" className={thCls}>{t("biz.strategy.worth")}</th> : null}
+                      {worth ? <th scope="col" className={thCls}>{t("biz.strategy.action")}</th> : null}
                     </tr>
                   </thead>
                   <tbody>
-                    {invoices.map((o) => (
+                    {invoices.map((o) => {
+                      const w = worthOf.get(o.receivable_id);
+                      return (
                       <tr key={o.receivable_id} className={o.past_due ? "bg-bad-bg/40" : ""} data-testid={`recv-${o.receivable_id}`}>
                         <td className={`${tdCls} font-medium`}>
                           {name(o.counterparty_id)}
@@ -93,8 +125,22 @@ export default function ReceivablesPage() {
                         <td className={tdCls}>
                           <Badge tone={o.past_due ? "bad" : "neutral"}>{o.past_due ? daysLate(Math.max(0, data.as_of_day - o.due_day), t) : t("recon.onTime")}</Badge>
                         </td>
+                        {worth ? (
+                          <td className={tdCls}>{w ? <WorthText row={w} testId={`recv-worth-${o.receivable_id}`} /> : null}</td>
+                        ) : null}
+                        {worth ? (
+                          <td className={`${tdCls} min-w-64 max-w-md`}>
+                            {w ? (
+                              <div className="space-y-1">
+                                <ActionChip action={w.action} />
+                                <ActionText row={w} testId={`recv-action-${o.receivable_id}`} />
+                              </div>
+                            ) : null}
+                          </td>
+                        ) : null}
                       </tr>
-                    ))}
+                      );
+                    })}
                   </tbody>
                 </table>
               </TableWrap>

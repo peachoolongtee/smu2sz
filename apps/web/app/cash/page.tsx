@@ -10,8 +10,9 @@ import { FactTile } from "@/components/business/kit";
 import { NextActionBlock } from "@/components/business/next-action";
 import { FixResult, useFixAlert } from "@/components/home/fix-alert";
 import { Badge, Card, ErrorState, Formula, LoadingBlock, PageHeader, TableWrap, tableCls, tdCls, thCls, ButtonLink } from "@/components/ui";
-import { getHome, getTrajectory, planFunding } from "@/lib/api";
+import { getHome, getPriceCurve, getTrajectory, planFunding } from "@/lib/api";
 import { onSignedIn } from "@/lib/auth";
+import { STRATEGY_MVP } from "@/lib/config";
 import { bump, useDemo } from "@/lib/demo-store";
 import { useI18n } from "@/lib/i18n";
 import type { FundingView } from "@/lib/types";
@@ -32,6 +33,9 @@ export default function CashPage() {
   const home = useAsync(() => getHome(lang), [lang]);
   // The monthly readings only; the chart draws the home's own series so it cannot disagree with the headline.
   const traj = useAsync(() => getTrajectory("CONSERVATIVE"), []);
+  // The one sentence on what earlier cash is worth (strategy MVP, build-time flag). Null while loading, when the server has it
+  // off, or when the read fails: the page then shows nothing extra, and never calls the route with the flag off.
+  const curve = useAsync(async () => (STRATEGY_MVP ? await getPriceCurve(lang) : null), [lang]).data;
   const fixer = useFixAlert();
   useEffect(() => onSignedIn(() => bump()), []);
   const h = home.data;
@@ -154,6 +158,11 @@ export default function CashPage() {
                     </div>
                   ) : null}
                 </dl>
+              ) : null}
+              {curve ? (
+                <p className="mt-3 text-sm text-ink-2" data-testid="cash-price-sentence">
+                  {curve.sentence}
+                </p>
               ) : null}
             </Card>
 
