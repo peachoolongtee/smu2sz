@@ -1632,6 +1632,10 @@ export const en = {
   "alerts.waiting.short": "Waiting for your approval",
   "demo.strip.label": "DEMO",
   "demo.strip.text": "Synthetic data. No real funds move.",
+  "opkind.ADVANCE_CLOCK": "Time passed",
+  "biz.activity.kind.other": "Change",
+  "biz.activity.concessions": "Concessions booked against your budget",
+  "biz.option.recommended_plan": "Recommended plan",
 } as const;
 
 export type DictKey = keyof typeof en;
@@ -3263,4 +3267,8 @@ export const zh: Record<DictKey, string> = {
   "alerts.waiting.short": "等待您批准",
   "demo.strip.label": "演示",
   "demo.strip.text": "合成数据，不会动用任何真实资金。",
+  "opkind.ADVANCE_CLOCK": "时间推进",
+  "biz.activity.kind.other": "变更",
+  "biz.activity.concessions": "已计入您预算的让步",
+  "biz.option.recommended_plan": "推荐方案",
 };

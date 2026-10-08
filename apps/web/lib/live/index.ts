@@ -95,7 +95,7 @@ export const live = {
     return { ...n, operations: n.operations.map((o) => asOperationView(o as unknown as Record<string, unknown>)) };
   },
 
-  planFunding: (req: PlanRequest) => http<FundingView>("POST", "/router/plan", { body: req }),
+  planFunding: (req: PlanRequest, lang: "en" | "zh" = "en") => http<FundingView>("POST", lang === "zh" ? "/router/plan?lang=zh" : "/router/plan", { body: req }),
 
   getTrajectory: (mode: Mode, verdict?: VerdictView | null): Promise<TrajectoryView> => trajectory.getTrajectory(mode, verdict),
 

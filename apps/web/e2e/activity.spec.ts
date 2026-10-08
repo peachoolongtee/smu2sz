@@ -87,3 +87,25 @@ test("day 34: Activity lists the agreement Receivables lists, not 'No commitment
   await expect(page.getByTestId("activity-ACCEPT_OFFER")).toBeVisible();
   await expect(page.getByTestId("chain-status")).toContainText("Records verified");
 });
+
+test("day 34, Business: the clock move reads in owner words and no row shows an engine term or a record id", async ({ page }) => {
+  await page.goto("/demo");
+  await page.getByTestId("home-days").fill("34");
+  await page.getByTestId("home-advance").click();
+  await expect(page.getByTestId("home-day")).toHaveText("Day 34");
+  await page.goto("/activity");
+  const clock = page.getByTestId("activity-ADVANCE_CLOCK").first();
+  await expect(clock).toBeVisible();
+  await expect(clock.getByTestId("activity-event")).toContainText(/\d+ days? passed/);
+  await expect(clock.getByTestId("activity-op")).toHaveText("Time passed");
+  const prose = await proseOf(page, [RAW, "summary", "[data-testid=activity-commitment-id]"]);
+  expect(prose).not.toMatch(/\bday \d/i);
+  expect(prose).not.toContain("ADVANCE_CLOCK");
+  expect(prose).not.toMatch(/flow\(s\)|commitment\(s\)|give-aways|Clock moved/);
+  // The agreement says what it booked in the budget's words, and its ids sit under Audit details, closed.
+  const agreements = page.locator("#activity-commitments");
+  await expect(agreements).toContainText("Concessions booked against your budget");
+  await expect(agreements.locator("details").first()).not.toHaveAttribute("open", "");
+  await expect(page.getByTestId("activity-ACCEPT_OFFER").getByTestId("activity-event")).toContainText("concessions booked against your budget");
+  expect(await page.locator("body").innerText()).not.toContain("CMT-");
+});
