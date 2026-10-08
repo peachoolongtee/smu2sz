@@ -31,6 +31,7 @@ from app.api.presentation import (
     event_words,
     execution_summary,
     facility_name,
+    kind_text,
     lands_difference,
     leg_words,
     obligation_sentence,
@@ -469,7 +470,7 @@ def _operations(ctx: Context, ds: DecisionState, lang: str) -> list[dict[str, An
                                 approval_id=e.result.approval_id, day=o.day, today=ctx.today, lang=lang,
                                 decided=e.result.approval_id in decided, agreements=_agreements(ctx))
             text = words["event_text"]
-        out.append({"op_id": o.op_id, "kind": o.kind, "status": o.status.value, "event_text": text, "day": o.day,
+        out.append({"op_id": o.op_id, "kind": o.kind, "kind_text": kind_text(o.kind, lang), "status": o.status.value, "event_text": text, "day": o.day,
                     "when": when_text(o.day, ctx.today, lang) if o.day is not None else None, "approval_id": o.approval_id,
                     "seq": o.seq})
     return out

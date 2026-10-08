@@ -83,7 +83,26 @@ Each mission flow maps to a live test (approval: `trust.spec.ts`, `record.spec.t
 
 ## 13. Screenshots reviewed
 
-Captured at 1440×900, 1366×768, 820×1180 and 412×915 under `docs/screenshots/ux-remediation-2026-10-10/` (Wave 8 part B) and reviewed cold against the six questions (Wave 8 part C): pending at the time of this draft; the design review of the merged Waves 1 to 5 (10 October) and its fixes in Wave 7 are recorded on map #65.
+Wave 8 part B captured 92 full-page screenshots on the live stack at 1440×900, 1366×768, 820×1180 and 412×915 (`docs/screenshots/ux-remediation-2026-10-10/`, with a manifest per width recording each primary action's position; the on-demand script `apps/web/scripts/capture-remediation.mjs` repeats them). Wave 8 part C reviewed them cold, as an owner who had not seen the product, against the six questions (the decision's state, what happened, what happens next, whether money moved, whether approval is needed, what remains unresolved), the audit's five-second page test and its scorecard.
+
+Five-second test (audit verdict → now): Home PARTIAL → PASS; Deals FAIL on phone / PARTIAL on desktop → PASS; Cash PARTIAL → PASS; Receivables FAIL → PARTIAL (the chase flow exists; the headline named the wrong invoice when one was overdue, fixed in the final pass); Activity PASS → PASS; Funding approval FAIL → PASS on desktop, PARTIAL on phone (two cure states' buttons sat under the tab bar, fixed in the final pass); Ask FLOW FAIL → FAIL at capture time (the explain reply still carried engine codes; fixed in the final pass, now "FLOW recommends a counter: …"); Demo story FAIL → PARTIAL (duplicate Approve controls at scene 5, fixed in the final pass).
+
+Scorecard, the audit's seven columns (clarity, cognitive load, actionability, trust, financial comprehension, consistency, efficiency), audit → cold review of the captures:
+
+| Surface | Audit | After |
+| --- | --- | --- |
+| Home | 8 7 7 5 7 6 7 | 8 8 9 7 7 7 8 |
+| Deals | 7 6 5 5 7 5 5 | 8 7 7 6 7 7 8 |
+| Cash | 7 5 7 6 7 6 6 | 8 6 8 7 8 7 7 |
+| Receivables | 7 7 3 5 5 5 4 | 7 7 7 7 8 6 6 |
+| Activity | 8 8 6 6 6 6 7 | 8 7 7 6 7 7 7 |
+| Approvals | 7 6 6 4 5 4 5 | 8 8 8 8 7 8 8 |
+| Ask FLOW | 4 4 4 5 4 3 3 | 5 4 5 5 4 4 5 (before the explain-reply fix) |
+| Business/Demo separation | 6 5 5 6 5 4 5 | 8 7 7 8 7 7 7 |
+| Mobile | 6 5 5 6 6 6 5 | 7 7 6 7 7 7 6 |
+| Demo flow | 5 3 5 4 6 4 4 | 7 5 7 7 7 6 6 |
+
+Before/after at the same width: the phone Home primary moved from about y 1118 (behind the tab bar) to 741–785; the phone Deals Send from about 1660 to 779–823; desktop Deals' recommendation from about 1176 to 360 with the stepper, the jump band and the expanded inbox gone; Cash's numbered list became groups that say what is uncovered and when; Receivables gained the overdue tile, the late row, Chase payment and the part-paid ledger. The review's seventeen FIX NOW items (two P1: the Receivables table clipped at tablet width; Home's "Below reserve today" tile showing cash rather than the shortfall; fifteen P2 and P3 wording, fold and duplication items) were taken as the final pass of Wave 8; the five DEBT items (overdue invoices pinned above the savings ranking, the approvals card alignment, the Cash day-34 price sentence, a stage indicator on Deals, the story page's length) are in section 14. What a still image cannot show (motion, the fixed bars at scroll 0, keyboard and screen-reader behaviour, loading and error states) is covered by the e2e suites in section 12 and not claimed beyond them.
 
 ## 14. Known remaining debt
 

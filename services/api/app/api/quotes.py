@@ -96,7 +96,7 @@ def build_quote(state: FinancialState, obs: list[Any], mandate: Mandate, alert: 
             amount_fen=leg["amount_fen"] or 0, cost_fen=leg["cost_fen"], annual_rate=rates.get(i), cost_days=leg["cost_days"],
             cost_end_day=leg["cost_due_day"], lands_day=leg["lands_day"], above_ceiling=bool(leg["above_apr_cap"]),
         ))
-    restores, first_short = after_facts(state, obs, mandate, actions, today)
+    restores, first_short, lowest_day = after_facts(state, obs, mandate, actions, today)
     residual = fen_of(alert.inputs.get("residual_shortfall")) if alert.inputs.get("cure_restores_reserve") == "false" else None
     return QuotedFact(
         alert_id=alert.id, alert_kind=alert.kind.value, alert_day=alert.day, state_version_shown=state.state_version,
@@ -105,6 +105,7 @@ def build_quote(state: FinancialState, obs: list[Any], mandate: Mandate, alert: 
         restores_reserve=None if restores is None else (restores and alert.inputs.get("cure_restores_reserve") != "false"),
         after_first_short_day=first_short, horizon_days=mandate.horizon_days, if_decline=_if_decline(alert),
         residual_shortfall_fen=residual,
+        after_lowest_day=lowest_day if alert.inputs.get("cure_restores_reserve") == "false" else None,
     )
 
 

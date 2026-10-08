@@ -493,10 +493,17 @@ def _covenant_title(m: re.Match[str]) -> str:
     return f"第 {m['month']} 个月 {m['kind']} {what}"
 
 
+@rule(r"(?P<kind>DSCR|Leverage) (?P<value>[\d.×]+|undefined) against your signed limit (?P<limit>[\d.×]+) \(version (?P<v>\d+)\) "
+      r"\((?P<head>[\d.×]+|undefined) (?P<dir>above|below) the limit\); months affected: (?P<months>[\d, ]+)")
+def _covenant_detail_signed(m: re.Match[str]) -> str:
+    return (f"{m['kind']} {m['value']}，对照您签署的授权（第 {m['v']} 版）限值 {m['limit']}（{'高于' if m['dir'] == 'above' else '低于'}限值 "
+            f"{m['head']}）；涉及的月份：{m['months']}")
+
+
 @rule(r"(?P<kind>DSCR|Leverage) (?P<value>[\d.×]+|undefined) against (?P<src>.+?) limit (?P<limit>[\d.×]+) "
       r"\((?P<head>[\d.×]+|undefined) (?P<dir>above|below) the limit\); months affected: (?P<months>[\d, ]+)")
 def _covenant_detail(m: re.Match[str]) -> str:
-    src = re.sub(r"mandate v(\d+)", r"授权 v\1 的", m["src"])
+    src = m["src"]
     return f"{m['kind']} {m['value']}，对照{src}限值 {m['limit']}（{'高于' if m['dir'] == 'above' else '低于'}限值 {m['head']}）；涉及的月份：{m['months']}"
 
 
@@ -533,14 +540,24 @@ def _mandate_expired_title(m: re.Match[str]) -> str:
     return "授权已过期：代理不能再操作"
 
 
-@rule(rf"Mandate v(?P<v>\d+) expires in (?P<n>\d+) {DAYS}")
+@rule(rf"Your signed limits \(version (?P<v>\d+)\) expire in (?P<n>\d+) {DAYS}")
 def _mandate_title(m: re.Match[str]) -> str:
-    return f"授权 v{m['v']} 将在 {m['n']} 天后到期"
+    return f"您签署的授权（第 {m['v']} 版）将在 {m['n']} 天后到期"
 
 
-@rule(rf"Mandate v(?P<v>\d+) expired (?P<w>{WHEN}), (?P<n>\d+) {DAYS} ago")
+@rule(rf"Your signed limits \(version (?P<v>\d+)\) expired (?P<w>{WHEN}), (?P<n>\d+) {DAYS} ago")
 def _mandate_expired_detail(m: re.Match[str]) -> str:
-    return f"授权 v{m['v']} 已于{when_zh(m['w'])}到期（{m['n']} 天前）"
+    return f"您签署的授权（第 {m['v']} 版）已于{when_zh(m['w'])}到期（{m['n']} 天前）"
+
+
+@rule(rf"Your signed limits \(version (?P<v>\d+)\) expired (?P<w>{WHEN})")
+def _limits_expired(m: re.Match[str]) -> str:
+    return f"您签署的授权（第 {m['v']} 版）已于{when_zh(m['w'])}到期"
+
+
+@rule(r"Your signed limits \(version (?P<v>\d+)\) have been revoked by the owner")
+def _limits_revoked(m: re.Match[str]) -> str:
+    return f"您签署的授权（第 {m['v']} 版）已被您撤销"
 
 
 @rule(r"Every operation is refused \(MANDATE_EXPIRED\) until the owner signs a new mandate")
@@ -548,10 +565,10 @@ def _mandate_expired_detail_2(m: re.Match[str]) -> str:
     return "在您签署新授权之前，所有操作都会被拒绝（MANDATE_EXPIRED）"
 
 
-@rule(rf"Mandate v(?P<v>\d+) is valid until (?P<u>{UNTIL}); after that the agent can no longer act, "
+@rule(rf"Your signed limits \(version (?P<v>\d+)\) are valid until (?P<u>{UNTIL}); after that the agent can no longer act, "
       rf"although the forecast horizon runs until (?P<h>{UNTIL})")
 def _mandate_detail(m: re.Match[str]) -> str:
-    return f"授权 v{m['v']} 的有效期到{until_zh(m['u'])}；之后代理不能再操作，尽管预测期一直延伸到{until_zh(m['h'])}"
+    return f"您签署的授权（第 {m['v']} 版）的有效期到{until_zh(m['u'])}；之后代理不能再操作，尽管预测期一直延伸到{until_zh(m['h'])}"
 
 
 @rule(r"Renewal is an offline owner step: sign a new mandate outside the agent")
@@ -1020,6 +1037,7 @@ _NOTES.update({
     "The mandate cannot be relied on; nothing evaluated": "授权不可依赖；未做任何评估",
     "Owner or buyer clarification needed; nothing booked": "需要您或买方进一步澄清；未入账任何内容",
     "Nothing booked": "未入账任何内容",
+    "The verdict requires owner approval": "判定结果要求由您批准",
 })
 
 

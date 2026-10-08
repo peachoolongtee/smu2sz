@@ -129,6 +129,9 @@ class QuotedFact(Contract):
     horizon_days: int
     if_decline: IfDecline | None
     residual_shortfall_fen: int | None
+    # The day cash is lowest in the stretch below the reserve that the legs leave (None for facts stored before this field, and when
+    # the legs restore the reserve): the lowest point the after-state names.
+    after_lowest_day: int | None = None
 
 
 Fact = EvaluatedFact | SentFact | QuotedFact
