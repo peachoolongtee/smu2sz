@@ -111,6 +111,7 @@ passes through `displayed()` unchanged because it holds no `*_fen`, `*_bp` or `{
 ## 7. Out of scope, on purpose
 
 An edit or delete route; a link from an entry to an operation; any score, ranking or "accuracy" computed from entries by the
-server; a write from the agent or a counterparty (owner only); a server-side check of `snapshot_hash`; a journal that
-survives a restart of the in-memory pilot runtime (export is the durable copy); a Chinese reading of the entries (the section's
+server; a write from the agent or a counterparty (owner only); a server-side check of `snapshot_hash`; a journal in the SQL store across
+runtimes (the durable copy is the per-SME JSON-lines file the runtime keeps with `--journal-file`, replayed at start and
+appended before each answer; the weekly export is the committed copy); a Chinese reading of the entries (the section's
 labels are translated; the entries are the owner's own words in the language they spoke).

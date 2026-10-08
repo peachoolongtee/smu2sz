@@ -195,7 +195,7 @@ repository only after the approval step (section 5).
 
    ```bash
    OWN='X-Owner-Token: <the token>'; mkdir -p "$W"
-   curl -s -H "$OWN" "localhost:$P/cash/price-curve?lang=en"          > "$W/price-curve.json"
+   curl -s -H "$OWN" "localhost:$P/cash/price-curve?lang=en"          > "$W/price_curve.json"
    curl -s -H "$OWN" "localhost:$P/receivables/worth?lang=en"         > "$W/worth.json"
    # one file per buyer on the books (the ids are in state.json's counterparties with role BUYER); the first read of
    # each can take several seconds on large books, and with the zone table up to about 44 seconds: wait for it
@@ -271,7 +271,7 @@ record says so (the template's last section carries the date and the owner's ini
 
 - The owner's records: the offers' dates and what was asked in terms, percentages and days, the owner's replies in their own
   words, the chase order and reasons, receipt and due dates, the open-at-once counts.
-- FLOW's displayed sentences and figures exactly as the routes returned them: `price-curve.json`, `worth.json`,
+- FLOW's displayed sentences and figures exactly as the routes returned them: `price_curve.json`, `worth.json`,
   `envelope-<id>.json`, `journal.json`, the three screenshots, and the hashes of the files.
 
 **Anonymise before committing:** counterparty names (buyers, lenders, suppliers) become "Buyer A", "Buyer B", "Lender 1"
