@@ -75,6 +75,13 @@ test("demo stepper walks Scene 1, Scene 2, Scene 3 and Security with the golden 
   await next(page, /\/verdict/);
   await expect(page.getByTestId("negotiation-result")).toContainText("DEAL");
   await expect(page.getByTestId("negotiation-result")).toContainText("Option A");
+  // Above the verdict, what the negotiation actually did: the agreement, the funding in the server's words and the settlement still to come.
+  const executed = page.getByTestId("execution-summary");
+  await expect(executed).toBeVisible();
+  await expect(executed.getByTestId("execution-agreement")).toHaveText("Agreed");
+  await expect(executed.getByTestId("execution-funding")).toContainText("¥149,986.20");
+  await expect(executed.getByTestId("execution-settlement")).toContainText("Pending");
+  await expect(page.getByTestId("nothing-executed")).toHaveText("Evaluation alone makes no changes.");
 
   await next(page, /\/ledger/);
   await expect(page.getByTestId("chain-status")).toContainText("Chain valid");
@@ -84,6 +91,9 @@ test("demo stepper walks Scene 1, Scene 2, Scene 3 and Security with the golden 
   // Scene 2: the buyer walks, the gap is still covered.
   await next(page, /\/verdict/);
   await expect(page.getByTestId("negotiation-result")).toContainText("NO DEAL");
+  // No agreement, yet the gap was funded: the summary says both and never "nothing happened".
+  await expect(page.getByTestId("execution-agreement")).toHaveText("No agreement");
+  await expect(page.getByTestId("execution-funding")).not.toContainText("No funding was requested");
 
   await next(page, /\/funding/);
   await expect(page.getByTestId("plan-total")).toHaveText("¥3,113.93");

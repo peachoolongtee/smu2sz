@@ -5,7 +5,7 @@ import { ApprovalCard } from "@/components/approval-card";
 import { ShieldCheckIcon } from "@/components/icons";
 import { NextStep } from "@/components/next-step";
 import { Badge, EmptyState, ErrorState, LoadingBlock, PageHeader } from "@/components/ui";
-import { ApiError, apiMode, decideApproval, getApprovals, getLedger } from "@/lib/api";
+import { ApiError, apiMode, decideApproval, getApprovals } from "@/lib/api";
 import { bump } from "@/lib/demo-store";
 import { isWriteConflictDetail } from "@/lib/live/retry";
 import { useI18n } from "@/lib/i18n";
@@ -15,8 +15,6 @@ import { useAsync } from "@/lib/use-async";
 export default function ApprovalsPage() {
   const { t } = useI18n();
   const list = useAsync(getApprovals, []);
-  // The commitments an ACCEPT_OFFER or RECORD_COMMITMENT names are read from the ledger; a failed read only hides the terms.
-  const ledger = useAsync(getLedger, []);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [results, setResults] = useState<Record<string, string>>({});
@@ -27,6 +25,8 @@ export default function ApprovalsPage() {
     try {
       const decided = await decideApproval(id, decision);
       if (decided.result_message) setResults((r) => ({ ...r, [id]: decided.result_message ?? "" }));
+      // The queue is the truth: read it again after every completed decision, a refusal included, so a card never keeps live buttons.
+      list.reload();
       bump();
     } catch (e) {
       if (e instanceof ApiError && (e.status === 404 || e.status === 409) && !isWriteConflictDetail(e.detail)) {
@@ -79,11 +79,10 @@ export default function ApprovalsPage() {
             <li key={a.id} className="min-w-0">
               <ApprovalCard
                 a={a}
-                commitments={ledger.data?.commitments}
-                ledgerLoaded={!ledger.loading || Boolean(ledger.error)}
                 busyId={busyId}
                 resultMessage={results[a.id]}
                 onDecide={(id, d) => void decide(id, d)}
+                onRetry={list.reload}
               />
             </li>
           ))}

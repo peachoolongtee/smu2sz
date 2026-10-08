@@ -1,11 +1,12 @@
 /**
  * The Tier-2 queue. GET /approvals/queue returns raw approval records; the page wants a display row.
  * Decisions are owner actions. Like every live request they carry X-Owner-Token, and the server (not this file)
- * decides whether the caller really is the owner. A refusal from the executor is surfaced as an error.
+ * decides whether the caller really is the owner. Only "you are not the owner" is an error. An approval whose run the executor
+ * refused is a completed decision: the row comes back APPROVED with the refusal, and the page shows the terminal outcome.
  */
 
 import { ApiError } from "../errors";
-import type { ApprovalDecision, ApprovalOperation, ApprovalPresentation, ApprovalStatus, ApprovalView, OperationResult, Tier } from "../types";
+import type { ApprovalDecision, ApprovalExecutionStatus, ApprovalOperation, ApprovalPresentation, ApprovalStatus, ApprovalView, OperationResult, Tier } from "../types";
 import { http } from "./http";
 
 interface RawApproval {
@@ -58,16 +59,24 @@ export async function getApprovals(): Promise<ApprovalView[]> {
   );
 }
 
+/** How the decision run ended, from the executor's result (the queue's `presentation.execution_status` wins once it is read). */
+function executionStatusOf(decision: ApprovalDecision, status: OperationResult["status"]): ApprovalExecutionStatus {
+  if (status === "REFUSED") return "REFUSED";
+  if (status === "DUPLICATE") return "DUPLICATE";
+  if (status === "PENDING_APPROVAL") return "PENDING";
+  return decision === "REJECT" ? "DECLINED" : "EXECUTED";
+}
+
 export async function decideApproval(id: string, decision: ApprovalDecision): Promise<ApprovalView> {
   // A 404 (unknown id) or 409 (already decided) is thrown as an ApiError with that status; the page explains it.
   const { result } = await http<{ result: OperationResult }>("POST", `/approvals/${encodeURIComponent(id)}`, {
     body: { decision },
   });
-  const notOwner = result.violations.some((v) => v.code === "INSUFFICIENT_AUTHORITY");
-  if (notOwner || (decision === "APPROVE" && result.status === "REFUSED")) {
-    throw new ApiError(403, result.message || "The executor refused this decision.", undefined, result.message ? undefined : "executor_refused");
+  if (result.violations.some((v) => v.code === "INSUFFICIENT_AUTHORITY")) {
+    throw new ApiError(403, result.message || "Only the owner can decide this.", undefined, result.message ? undefined : "executor_refused");
   }
+  // The approval is APPROVED even when the executor then refused to run it (the authorization stands, the execution did not): read the queue again.
   const found = (await getApprovals()).find((a) => a.id === id);
   if (!found) throw new ApiError(404, `Approval ${id} not found.`, undefined, "approval_missing", { id });
-  return { ...found, result_message: result.message };
+  return { ...found, result_message: result.message, execution_status: found.presentation?.execution_status ?? executionStatusOf(decision, result.status) };
 }

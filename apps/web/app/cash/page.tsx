@@ -176,19 +176,24 @@ export default function CashPage() {
                 />
                 {breachIsWorst ? (
                   <Stat
-                    label={t("biz.firstBreachIsWorst")}
+                    label={h.cash.below_reserve_today ? t("biz.belowReserveToday") : t("biz.firstBreachIsWorst")}
                     tone="bad"
                     value={h.cash.first_breach_cash_short}
                     caption={
                       <>
-                        {h.cash.first_breach_when ? <span className="block">{h.cash.first_breach_when}</span> : null}
+                        {h.cash.first_breach_when && !h.cash.below_reserve_today ? <span className="block">{h.cash.first_breach_when}</span> : null}
                         <LowestHeadroom short={h.cash.lowest_headroom_short} />
                       </>
                     }
                   />
                 ) : (
                   <>
-                    <Stat label={t("biz.firstUnsafeDay")} tone={unsafe ? "bad" : "neutral"} testId="cash-unsafe-when" value={h.cash.first_breach_when ?? t("biz.cash.neverUnsafe", { n: h.cash.horizon_days })} />
+                    <Stat
+                      label={h.cash.below_reserve_today ? t("biz.belowReserveToday") : t("biz.firstUnsafeDay")}
+                      tone={unsafe ? "bad" : "neutral"}
+                      testId="cash-unsafe-when"
+                      value={h.cash.below_reserve_today ? h.cash.first_breach_cash_short : (h.cash.first_breach_when ?? t("biz.cash.neverUnsafe", { n: h.cash.horizon_days }))}
+                    />
                     <Stat
                       label={unsafe ? t("biz.worstPoint") : t("biz.lowestAhead")}
                       tone={unsafe ? "bad" : "neutral"}

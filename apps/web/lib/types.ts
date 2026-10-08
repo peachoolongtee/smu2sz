@@ -1066,7 +1066,29 @@ export interface ApprovalPresentation {
   protects: string | null;
   reason: string;
   result_message: string | null;
+  /**
+   * A commercial approval (ACCEPT_OFFER, RECORD_COMMITMENT): the server resolves the agreement and sends its terms. Absent in older
+   * recordings; the card then treats the terms as unavailable (it fails closed) rather than guess.
+   */
+  terms_available?: boolean;
+  /** Why the terms could not be shown, in the server's words ("The agreement this approval refers to has expired."). */
+  terms_unavailable_reason?: string | null;
+  /** One plain sentence per obligation, written by the server. */
+  terms?: string[];
+  counterparty_name?: string | null;
+  /** The economic effect of the agreement over time, as the server formats it. */
+  forward_value_display?: string | null;
+  /** The terms joined into one line. */
+  what_you_agree_to?: string | null;
+  /** A pending funding row's landing as a forecast ("If you approve today, the cash lands in 3 days."). */
+  lands_text?: string | null;
+  /** How the decision run ended: set on every row by the API, and by decideApproval for the decision just made. */
+  execution_status?: ApprovalExecutionStatus;
+  /** A cure that does not restore the reserve says what stays short. */
+  residual?: { shortfall_display: string; from_when: string; restores_reserve: boolean } | null;
 }
+
+export type ApprovalExecutionStatus = "EXECUTED" | "REFUSED" | "PENDING" | "DECLINED" | "DUPLICATE";
 
 /** What the card needs beyond the display row: the executor's reason, the operation and, once decided, its result message. */
 export interface ApprovalDetail {
@@ -1078,6 +1100,8 @@ export interface ApprovalDetail {
   operation: ApprovalOperation | null;
   /** The executor's message for the decision: sent by the queue on a decided item, and set by decideApproval for the decision just made. */
   result_message?: string | null;
+  /** The decision just made, when decideApproval set it before the queue was read again. The queue's own is `presentation.execution_status`. */
+  execution_status?: ApprovalExecutionStatus;
 }
 
 export type ApprovalDecision = "APPROVE" | "REJECT";
@@ -2054,6 +2078,8 @@ export interface HomeView {
     first_breach_day: Day | null;
     first_breach_cash_fen: Fen | null;
     first_breach_cash_short: string | null;
+    /** Today's cash is already under the reserve: the first breach is today, its cash is today's, and no tile may say "N days ago". Absent in older recordings. */
+    below_reserve_today?: boolean;
     cash_short: string;
     floor_short: string;
     lowest_short: string;

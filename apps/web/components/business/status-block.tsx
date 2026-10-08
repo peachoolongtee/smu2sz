@@ -98,13 +98,13 @@ export function StatusBlock({ h }: { h: HomeView }) {
         {unsafe ? (
           <Stat
             surface="deep"
-            label={breachIsWorst ? t("biz.firstBreachIsWorst") : t("biz.breachCash")}
+            label={h.cash.below_reserve_today ? t("biz.belowReserveToday") : breachIsWorst ? t("biz.firstBreachIsWorst") : t("biz.breachCash")}
             tone="bad"
             testId="home-breach-cash"
             value={h.cash.first_breach_cash_short}
             caption={
               <>
-                {h.cash.first_breach_when ? <span className="block">{h.cash.first_breach_when}</span> : null}
+                {h.cash.first_breach_when && !h.cash.below_reserve_today ? <span className="block">{h.cash.first_breach_when}</span> : null}
                 {breachIsWorst ? <HeadroomLowest short={h.cash.lowest_headroom_short} /> : null}
               </>
             }

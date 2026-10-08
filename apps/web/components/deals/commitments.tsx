@@ -50,7 +50,8 @@ function durationPhrase(o: Ob, t: I18n["t"], today: number): string | null {
   if (d.kind === "ONE_OFF") return t("deal.dur.once");
   if (d.kind === "RECURRING_PERPETUAL") return t("deal.dur.forever");
   if (d.invoices !== null) return t("deal.dur.invoices", { n: d.invoices });
-  if (d.end_day !== null) return t("deal.dur.until", { when: whenText(d.end_day, today, t) });
+  // A past end date is said in the past tense ("ended 3 days ago"), never as a future one and never rewritten to "today".
+  if (d.end_day !== null) return t(d.end_day < today ? "deal.dur.ended" : "deal.dur.until", { when: whenText(d.end_day, today, t) });
   return null;
 }
 
