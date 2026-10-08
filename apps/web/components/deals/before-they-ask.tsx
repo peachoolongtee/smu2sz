@@ -129,7 +129,7 @@ function Zone({ zone }: { zone: EnvelopeView["zone"] }) {
                   {z.terms_words}
                 </th>
                 <td className={`${tdCls} tabular-nums text-ink`}>{z.lowest_price_words}</td>
-                <td className={`${tdCls} tabular-nums text-ink-2`}>{z.rule_price_display ?? "-"}</td>
+                <td className={`${tdCls} tabular-nums text-ink-2`}>{z.min_price_bp === null ? "—" : (z.rule_price_display ?? "-")}</td>
                 <td className={`${tdCls} tabular-nums text-ink-2`}>{z.cost_per_invoice_display ?? "-"}</td>
               </tr>
             ))}
