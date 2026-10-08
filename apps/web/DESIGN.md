@@ -23,7 +23,7 @@ The rules that do not move: one brand-filled primary action per page; status col
 
 ### Status (unchanged from Wave 8)
 
-`ok`, `warn`, `bad`, `info` each have `-fg` (text), `-bg` (tint), `-line` (tint border), `-solid` (a mark that must be seen: dot, rail, chart mark, 3:1) and `-bright` (a pill or figure on the deep block). A status colour means that status and nothing else.
+`ok`, `warn`, `bad`, `info` each have `-fg` (text), `-bg` (tint), `-line` (tint border), `-solid` (a mark that must be seen: dot, chart mark, 3:1) and `-bright` (a pill or figure on the deep block). A status colour means that status and nothing else.
 
 ### Section hues (wayfinding only)
 
@@ -57,6 +57,12 @@ Each section has a tint (`bg`), the text on that tint (`fg`) and a `solid` (the 
 | focus ring (brand-600) / canvas | 5.2 | 3 |
 | focus ring / white | 5.6 | 3 |
 | white focus ring / brand-900 | 15.9 | 3 |
+| on-deep-muted / the deep tile (`on-deep` at 10% over brand-900) | 6.7 | 4.5 |
+| on-deep / the deep tile | 12.0 | 4.5 |
+| bad-bright / warn-bright / ok-bright on the deep tile | 7.1 / 6.8 / 7.1 | 4.5 |
+| ink-3 / the open row of a table (`subtle` at 60% on white) | 4.8 | 4.5 |
+| ink-2 / brand-700 on that row | 7.6 / 7.1 | 4.5 |
+| ink-3 / a late row (`bad-bg` at 40% on white) | 4.9 | 4.5 |
 | line-ui / white | 3.8 | 3 |
 | line-ui / canvas | 3.5 | 3 |
 | line-ui / subtle | 3.3 | 3 |
@@ -87,7 +93,13 @@ A section `solid` as an icon on a white tab bar has the same ratio as white on t
 
 A multi-line text area takes `rounded-card` (a pill clips the corners of a second line); the chat composer is a pill with a fixed two-line height.
 
-Shadows: `--shadow-card` (a card at rest), `--shadow-lift` (a row, tile or option on hover), `--shadow-pop` (a sheet, menu, the chat panel, a floating button). No gradient on a button or a card.
+Shadows: `--shadow-card` (a card at rest), `--shadow-lift` (a row, tile or option on hover), `--shadow-pop` (a sheet, menu, the chat panel, a floating button), `--shadow-up` (the Demo strip fixed to the bottom of a phone: the card shadow cast upward). No gradient on a button or a card, and no coloured rail on a card's edge: a status is a pill with a word, a tone is a 1 px line.
+
+### Type, density and rhythm
+
+One family, one role scale; body is 14 px (`text-sm`) and so is the data in a table or a row, captions and eyebrows are 12 px (`text-xs`, the floor: nothing is set below it, so there is no `text-2xs`), a figure is 20 px (`text-xl`, 24 px with `size="lg"` from `sm` up; 18 px on a phone), a card or page title 20 px. Every money column is `tabular-nums` and right-aligned, and a cell that holds an amount does not wrap (`whitespace-nowrap`).
+
+Spacing is a 4 px base: 16 px (`p-4`) inside a Business card, 12 px (`gap-3`) between tiles, 24 px (`space-y-6`) between sections. The home hero keeps its own 20 px.
 
 ## 3. Components
 
@@ -97,12 +109,19 @@ All in `components/ui.tsx` unless noted.
 - **Badge** (`tone`): a pill with its tint, line and (for a status) a solid dot. **Chip**: a Badge without the dot, for a tag that carries no status (a channel, a kind).
 - **Segmented / SegmentedButtons**: a pill track (`line-ui` border on `subtle`) with a sliding pill thumb on `surface`. `Segmented` is a radio group (the Business/Demo switch, the language switch); `SegmentedButtons` is the same track made of `aria-pressed` buttons (the forecast horizon).
 - **Inputs**: `inputClass` (pill, 40 px, `line-ui` border) and `textareaClass` (`rounded-card`).
-- **Card**, **Stat**, **Callout**, **EmptyState**, **ErrorState**, **TableWrap**: radii from the scale above. `Card` reveals on mount.
+- **Card**, **Callout**, **EmptyState**, **ErrorState**, **TableWrap**: radii from the scale above. `Card` reveals on mount. A card's `tone` is a 1 px tone line, never a rail.
+- **Stat**: the one fact tile (hero tiles, Cash facts, Receivables summary, the Deals ceilings and recommendation facts, the Mandate limits, the next step's cost, landing and authority). An uppercase eyebrow (`text-xs`, tracking, `ink-3`), the figure (`tabular-nums`, `text-lg`/`text-xl`; its colour is a status only when `tone` names one), a caption (`text-xs`, `ink-3`: when, of what, against what; a second line is a second `block` span) and, only when the server sent a `delta_display`, a delta chip (neutral unless the server names its tone; the browser never subtracts). Two surfaces: `surface` (white, a `line` hairline) and `deep` (the home hero: `on-deep` at 10% over `brand-900`, eyebrow and caption in `on-deep-muted`, a status figure in its `-bright` tone). `tint` fills the tile with its status tint for the one tile that says who decides. A caption of a tile may carry a related figure (the headroom under the reserve and under the lowest point) with its own test id. A row of three is `grid-cols-2 sm:grid-cols-3` with the first tile `col-span-2` on a phone.
 - **PageHeader** (`section`, optional `icon`): in the Business shell the title takes a 40 px round chip, a white 20 px icon on the section's `solid` (`components/section.tsx`, `PageIcon`). Every Business page and Approvals has one; the Demo shell keeps the flat look.
-- **Disclosure** (`components/business/kit.tsx`): the one fold. A native `<details>` with a turning chevron and a body that opens by height. Use it instead of a hand-rolled `<details>`.
+- **Disclosure** (`components/business/kit.tsx`): the one fold, with the one chevron (`FoldChevron`, right-pointing, a quarter turn when open; the same chevron opens a table row). A native `<details>` with a body that opens by height. Use it instead of a hand-rolled `<details>` (the Approvals card, the home's agent's answer, the inbox's earlier messages and the chat's details all use it now); `summaryClass` + `bare` let a row draw its own summary (a Cash option) and `flush` removes the body padding. Its label comes from one small set: **Details** (`biz.details.plan`), **Why** (`biz.hero.why`), **Show the calculation** (`biz.calculation`), **Audit details** (`biz.auditDetails`: ids, tiers, hashes, the executor's sentence). A fold that names its own subject ("Original message", "Debt readings", "Show 3 more", "Other plans considered") says so; two folds on one page never share a label.
+- **Row disclosure** (`components/business/receivables-table.tsx`): in a table a row opens from a trailing chevron button (`aria-expanded`, `aria-controls`) into a second row spanning the table; on a phone the same facts are a stacked list whose row ends in a Disclosure.
+- **Filters**: pills that toggle (`toggleClass`, `aria-pressed`) in a `role="group"`, above the list they filter; a filter that would repeat the whole list is not offered.
+- **Ranking**: wherever the server ranks, the rank is a numeral (a column in a table, `#1` on a Cash plan, a number before a buyer on a phone) and the order is the server's. "Recommended" is the brand badge wherever the server marks a row; an alternative says why in a neutral chip (the server's `role_reason`).
+- **Link tile** (`DoorTile` in `app/cash/page.tsx`): a quiet bordered tile with what the door is for and one text link stretched over the whole tile.
 - **Avatar / toneFor / initials** (`kit.tsx`): a 36 px disc. A change row's icon sits on its status tint; a buyer's initials sit on a section tint (`toneFor(name)` is stable per name).
 - **Icons**: from `components/icons.tsx` only, at 16 or 20 px, `currentColor`. The exception is a section chip, which sets a white icon on its solid.
 - **Focus**: every focusable element gets the global ring (2 px, offset 2 px, `focus`; white inside `.on-deep`). Never remove an outline.
+- **Status header**: Home says it in the navy hero; Cash says it once in a compact row (the status pill and the sentence, then the note) above the facts as `Stat` tiles. The same fact never has two voices.
+- **Next-step band** (`NextStep`) only where the step is a navigation; the **Recommended-next-step card** where there is a priced action. A card's quiet links ("All receivables", "Open approvals") are text links; a pill is for a step.
 - **Phone tab bar** (`app-shell.tsx`): the active tab's icon in its section solid, its label in ink; inactive in `ink-3`; a bar slides to the active tab.
 - **Backdrop** (`components/business/backdrop.tsx`): two blurred discs (Home blue, Cash teal) drifting over 40 s at a strength that keeps `ink-3` above 4.5:1 on their strongest point. Behind the Business pages only; cards stay solid.
 
