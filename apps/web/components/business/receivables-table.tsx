@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Avatar, Disclosure, FoldChevron, initials, toneFor } from "@/components/business/kit";
-import { ActionChip, ActionText, WorthText } from "@/components/business/strategy";
+import { ActionChip, ActionText, WorthSentence, WorthText } from "@/components/business/strategy";
 import { Badge, Card, TableWrap, tableCls, tdCls, thCls, toggleClass } from "@/components/ui";
 import { useI18n } from "@/lib/i18n";
 import type { OutstandingReceivable, ReceivableWorth, ReceivablesWorthView } from "@/lib/types";
@@ -215,6 +215,7 @@ function RowDetail({ o, w, testId }: { o: OutstandingReceivable; w: ReceivableWo
   if (!w) return <p className="font-mono text-xs text-ink-3">{o.receivable_id}</p>;
   return (
     <div className="max-w-3xl space-y-2 text-sm">
+      {w.no_saving ? null : <WorthSentence row={w} testId={`${testId}-worth`} />}
       <ActionText row={w} testId={testId} />
       <Disclosure summary={t("biz.auditDetails")} testId={`recv-audit-${o.receivable_id}`}>
         <p className="font-mono text-xs text-ink-3">{o.receivable_id}</p>

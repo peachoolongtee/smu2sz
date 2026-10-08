@@ -114,6 +114,8 @@ test("the envelope recordings are BUYER-1's, carry the server's sentences and th
   const day0 = recording("envelope_day0");
   assert.match(day0.primary, /55-day/);
   assert.match(day0.primary, /0\.85%/);
+  // The sentence stays in the payload but the card does not draw it: the three tiles carry its figures.
+  assert.doesNotMatch(source("components/deals/before-they-ask.tsx"), /e\.primary/);
   assert.equal(day0.levers.length, 6);
   assert.match(day0.reason, /^60 days without an early payment leaves a shortfall in 47 days that no fix covers; the ¥5,000\.00 budget buys no terms without a price rise\.$/);
   // The lever table, the package lines and the zone rows are the server's strings: the card composes none of them.
@@ -173,9 +175,11 @@ test("the Deals card says it is the most the owner can give, labels the figure a
   for (const name of ["envelope_day0", "envelope_day34", "envelope_day34_after"]) assert.ok(Array.isArray(recording(name).unlisted_counters), name);
 });
 
-test("the worth cell is the server's one string (worth_text) and decides nothing from the gross saving", () => {
+test("the worth cell is one server figure (net_saving_display, or worth_text when there is no saving), the full sentence is in the row's details, and nothing is decided from the gross saving", () => {
   const cell = source("components/business/strategy.tsx");
-  assert.match(cell, /\{row\.worth_text\}/);
+  assert.match(cell, /row\.no_saving \? \(\s*row\.worth_text/);
+  assert.match(cell, /\{row\.net_saving_display\}/);
+  assert.match(source("components/business/receivables-table.tsx"), /w\.no_saving \? null : <WorthSentence row=\{w\}/);
   assert.doesNotMatch(cell, /net_saving_text/);
   assert.doesNotMatch(cell, /gross_saving/);
   assert.doesNotMatch(source("lib/dictionary.ts"), /before any discount/);
