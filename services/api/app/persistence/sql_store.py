@@ -88,6 +88,7 @@ from app.persistence.errors import (
 from app.persistence.records import (
     ApprovalRecord,
     ApprovalStatus,
+    DecisionFactRecord,
     EvaluationRunRecord,
     EvidenceExportRecord,
     LedgerEntry,
@@ -96,10 +97,14 @@ from app.persistence.records import (
 )
 
 _RESET_OPTION = "termsledger_reset"
-_PROTECTED = frozenset({t.operations.name, t.used_nonces.name, t.pilot_journal.name})
+_PROTECTED = frozenset({t.operations.name, t.used_nonces.name, t.pilot_journal.name, t.decision_facts.name})
 _RETRIES = 5
 
 T = TypeVar("T")
+
+
+class _FactAlreadyStored(Exception):
+    """A decision fact's unique key was claimed between the read and the insert; the caller re-reads the stored row."""
 
 
 def _sqlite_memory(database_url: str) -> bool:
@@ -803,6 +808,48 @@ class SqlLedgerStore:
             )
             for r in self._read_all(t.pilot_journal, t.pilot_journal.c.row_id)
         ]
+
+    # ------------------------------------------------------------ the decision record's facts (ADR-0011)
+
+    @staticmethod
+    def _decision_fact(row: Row[Any]) -> DecisionFactRecord:
+        return DecisionFactRecord(
+            decision_id=row.decision_id, family=row.family, fact=row.fact, fact_key=row.fact_key,
+            state_version=int(row.state_version), day=int(row.day), body_json=row.body_json, recorded_at=row.recorded_at,
+            seq=int(row.row_id),
+        )
+
+    def add_decision_fact(self, record: DecisionFactRecord) -> DecisionFactRecord:
+        """Insert-if-absent on (decision_id, fact, fact_key): a second write returns the row already stored and changes
+        nothing. The table is append-only (an engine hook refuses Core UPDATE and DELETE on it) and nothing here touches
+        the books, the operations log or the hash chain. `seq` and `recorded_at` are the store's."""
+        facts = t.decision_facts
+        key = (facts.c.decision_id == record.decision_id, facts.c.fact == record.fact, facts.c.fact_key == record.fact_key)
+        recorded_at = datetime.now(UTC).isoformat()
+
+        def _add(conn: Connection) -> DecisionFactRecord:
+            have = conn.execute(select(facts).where(*key)).first()
+            if have is not None:
+                return self._decision_fact(have)
+            conn.execute(
+                insert(facts).values(
+                    decision_id=record.decision_id, family=record.family, fact=record.fact, fact_key=record.fact_key,
+                    state_version=record.state_version, day=record.day, body_json=record.body_json, recorded_at=recorded_at,
+                )
+            )
+            row = conn.execute(select(facts).where(*key)).one()
+            return self._decision_fact(row)
+
+        try:
+            return self._retry(_add, on_conflict=lambda _exc: _FactAlreadyStored())
+        except _FactAlreadyStored:  # another writer stored the same key between our read and our insert
+            with self._reading() as conn:
+                return self._decision_fact(conn.execute(select(facts).where(*key)).one())
+
+    def decision_facts(self, decision_id: str | None = None) -> list[DecisionFactRecord]:
+        """Every fact, oldest first; of one decision when `decision_id` is given."""
+        where = () if decision_id is None else (t.decision_facts.c.decision_id == decision_id,)
+        return [self._decision_fact(r) for r in self._read_all(t.decision_facts, t.decision_facts.c.row_id, *where)]
 
     # ------------------------------------------------------------ evidence
 

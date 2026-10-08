@@ -11,6 +11,7 @@ amount, day and rate is copied from an engine result.
 from __future__ import annotations
 
 import json
+import logging
 import re
 from typing import Any
 
@@ -18,6 +19,7 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from app.alerts import Alert, AlertKind, Severity, alerts, reconcile
 from app.api.auth import require_owner
+from app.api.decisions import decision_summary, load_context, remaining_links, remaining_task_view
 from app.api.display import displayed
 from app.api.presentation import (
     COMMERCIAL_KINDS,
@@ -269,7 +271,7 @@ def _plan_lines(state: FinancialState, p: FundingPlan, lang: str) -> list[dict[s
     return lines
 
 
-def _plan_legs(state: FinancialState, p: FundingPlan, today: int, lang: str) -> list[dict[str, Any]]:
+def plan_legs(state: FinancialState, p: FundingPlan, today: int, lang: str) -> list[dict[str, Any]]:
     """The router plan's legs as business legs: amounts, the cost line the router wrote for each, its landing day."""
     legs: list[dict[str, Any]] = []
     for i, (a, cl) in enumerate(zip(p.actions, p.costs, strict=True)):
@@ -424,6 +426,21 @@ def cure_after(state: FinancialState, obs: list[Any], mandate: Mandate, alert: A
     return words, {"shortfall_display": fmt_yuan(gap), "from_when": from_when, "restores_reserve": False}
 
 
+def after_facts(state: FinancialState, obs: list[Any], mandate: Mandate, actions: list[FundingAction],
+                today: int) -> tuple[bool | None, int | None]:
+    """The after-state of the legs that run, as numbers for the decision record's quote: whether cash stays at or above the
+    reserve through the horizon and, if not, the first day it is below it. The same projection `next_action` and `cure_after`
+    say in words; (None, None) when the legs cannot be projected."""
+    if not actions:
+        return None, None
+    try:
+        traj = project(state, obs, actions, Mode.CONSERVATIVE, mandate.horizon_days, mandate.min_cash_fen)
+    except EngineError:
+        return None, None
+    first = first_breach_ahead(traj, today, mandate.min_cash_fen)
+    return first is None, (first[0] if first is not None else None)
+
+
 def next_action(state: FinancialState, obs: list[Any], mandate: Mandate, found: list[Alert], approvals: list[Any],
                  today: int, state_version: int, lang: str, *, use_router: bool = True) -> dict[str, Any] | None:
     """The one thing to do now, for the first actionable critical alert (a reserve breach), else a repayment the books
@@ -445,7 +462,7 @@ def next_action(state: FinancialState, obs: list[Any], mandate: Mandate, found: 
 
     if rec.source == "router" and rec.plan is not None:
         p = rec.plan
-        legs = _plan_legs(state, p, today, lang)
+        legs = plan_legs(state, p, today, lang)
         needs_owner = p.needs_owner_approval
         needs_owner_reason = in_words(state, p.approval_reason) if needs_owner else None
         cost_total = fmt_yuan(p.total_cost_fen)
@@ -826,6 +843,37 @@ def _in_transit(state: FinancialState, today: int, lang: str) -> dict[str, Any] 
         for lot in sorted(lots, key=lambda lt: (lt.arrival_day, lt.id))]}
 
 
+def _decision_record(rt: Any, lang: str) -> tuple[list[dict[str, Any]], dict[str, Any] | None]:
+    """The decision record's two reads for the home: up to three open decisions (newest first) and, when a cure left the reserve
+    at risk, what is left to decide (F17). A failure here never takes the home down: it reads as nothing open."""
+    try:
+        ctx = load_context(rt)
+        ranked = sorted(ctx.states().values(), key=lambda p: (p[0].updated_day if p[0].updated_day is not None else -1, p[0].updated_seq),
+                        reverse=True)
+        rows: list[dict[str, Any]] = []
+        for ds, inp in ranked:
+            if ds.terminal or (ds.family == "DEAL" and ds.offer is None and ds.commitment is None):
+                continue
+            try:
+                rows.append(decision_summary(ctx, ds, inp, lang))
+            except Exception:
+                logging.getLogger("termsledger.decisions").exception("decision %s could not be summarised", ds.decision_id)
+                continue
+            if len(rows) == 3:
+                break
+        remaining = None
+        for ds, inp in ranked:
+            if ds.residual is not None:
+                view = remaining_task_view(ctx, ds, inp, lang)
+                if view["code"] == "OWNER_DECISION":
+                    remaining = {"text": view["text"], "links": remaining_links(ctx, ds, lang), "decision_id": ds.decision_id}
+                break
+        return rows, remaining
+    except Exception:
+        logging.getLogger("termsledger.decisions").exception("the decision record could not be read for the home")
+        return [], None
+
+
 @router.get("/home")
 def get_home(lang: str = "en", since_day: int | None = None) -> dict[str, Any]:
     rt = get_runtime()
@@ -873,6 +921,7 @@ def get_home(lang: str = "en", since_day: int | None = None) -> dict[str, Any]:
         recon = _Reconciliation(books.state, rt.store, today)
         warnings = [{"id": a.id, "kind": a.kind.value, **_warning_words(state, a, recon, today, lang, agreements), "day": a.day,
                      "when": when_text(a.day, today, lang)} for a in found if a.severity == Severity.WARNING]
+        open_decisions, remaining = _decision_record(rt, lang)
         facilities = [{"id": f.id, "name": f.name, "status": f.status.value, "limit_display": fmt_yuan(f.limit_fen), "limit_fen": f.limit_fen,
                        "drawn_fen": f.drawn_fen, "drawn_display": fmt_yuan(f.drawn_fen),
                        "available_display": fmt_yuan(max(f.limit_fen - f.drawn_fen, 0) if f.owner_approved else 0),
@@ -930,6 +979,10 @@ def get_home(lang: str = "en", since_day: int | None = None) -> dict[str, Any]:
         "next_action": action,
         "approvals": queue,
         "pending_count": len(pending),
+        "open_decisions": open_decisions,
+        "remaining_task": remaining["text"] if remaining else None,
+        "remaining_task_links": remaining["links"] if remaining else [],
+        "remaining_task_decision_id": remaining["decision_id"] if remaining else None,
         "changes": changes,
         "receivables": receivables,
         "warnings": warnings,

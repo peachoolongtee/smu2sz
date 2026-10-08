@@ -1308,3 +1308,240 @@ def concession_interpretation(cv: dict[str, Any], ob: Any | None, lang: Lang) ->
         return t(lang, "Settled in cash now, so it is not a forward concession; the discount is checked against its own cap.",
                  "现在以现金结算，不属于远期让利；该折扣按其单独上限检查。")
     return str(cv.get("basis") or "")
+
+
+# ---------------------------------------------------------------- the decision record's words (ADR-0011, wayfinder #65)
+#
+# The record stores codes, ids and numbers; these functions write every sentence, per request and language (INVARIANT 13).
+# Nothing here prices or projects: each figure is read from a stored fact, a lot or the operations' own amounts.
+
+_DEAL_STATE_WORDS = {
+    "RECEIVED": ("Received; not evaluated yet", "已收到，尚未评估"),
+    "NEEDS_CLARIFICATION": ("Needs clarification from the buyer", "需要买方澄清"),
+    "AUTHORIZATION_REQUIRED": ("Waiting for your approval", "等待您批准"),
+    "DECLINED": ("You declined it", "您已拒绝"),
+    "FAILED": ("Could not run; nothing changed", "未能执行，没有任何改动"),
+    "NO_DEAL": ("No deal: the buyer did not accept", "未成交：买方未接受"),
+    "AGREED": ("Agreed", "已达成协议"),
+    "EXPIRED": ("Expired before it was agreed", "未达成协议即已到期"),
+    "MISSED": ("Early payment did not arrive", "提前付款未到账"),
+    "FULFILLED": ("Fulfilled", "已履行"),
+    "REVOKED": ("Revoked", "已撤销"),
+}
+_RESPONSE_WORDS = {
+    "accept": ("Acceptable, awaiting agreement", "可接受，等待达成协议"),
+    "counter": ("Counter recommended", "建议还价"),
+    "decline": ("Decline recommended", "建议拒绝"),
+    "needs_owner": ("Needs your approval", "需要您批准"),
+    "cannot": ("Cannot be decided yet", "暂时无法决定"),
+}
+_FUNDING_STATE_WORDS = {
+    "AUTHORIZATION_REQUIRED": ("Waiting for your approval", "等待您批准"),
+    "DECLINED": ("You declined it", "您已拒绝"),
+    "FAILED": ("Could not run. No money moved", "未能执行，资金未动"),
+    "PARTIALLY_EXECUTED": ("Partly done", "部分完成"),
+    "SETTLEMENT_PENDING": ("Requested; the cash is on its way", "已提交，资金在途"),
+    "SETTLED": ("Done; the cash has landed", "已完成，资金已到账"),
+    "EXECUTED": ("Done", "已完成"),
+}
+
+
+def business_action_text(code: str, lang: Lang) -> str:
+    """The owner's words for `business_action` (accept, counter, decline, needs_owner, cannot)."""
+    en, zh = _RESPONSE_WORDS.get(code, _RESPONSE_WORDS["cannot"])
+    return t(lang, en, zh)
+
+
+def decision_state_text(family: str, state: str, lang: Lang, *, response: str | None = None) -> str:
+    """A decision's state in the owner's words. A deal ready for a response says what the verdict recommends ("Acceptable,
+    awaiting agreement" for an acceptable offer, never "Agreed": the agreement words follow the commitment only)."""
+    if family == "DEAL":
+        if state == "RESPONSE_READY":
+            return business_action_text(response or "cannot", lang)
+        en, zh = _DEAL_STATE_WORDS.get(state, (state.replace("_", " ").capitalize(), state))
+    else:
+        en, zh = _FUNDING_STATE_WORDS.get(state, _DEAL_STATE_WORDS.get(state, (state.replace("_", " ").capitalize(), state)))
+    return t(lang, en, zh)
+
+
+def waiting_text(code: str, party: str, day: int | None, today: int, lang: Lang, *, family: str = "DEAL") -> str:
+    """What FLOW is waiting for, as one sentence. `party` is the name of the buyer or the lender where there is one."""
+    when = when_text(day, today, lang) if day is not None else ""
+    if code == "OWNER_RESPONSE":
+        return t(lang, "Waiting for your response.", "等待您的回复。")
+    if code == "BUYER_CLARIFICATION":
+        return t(lang, f"Waiting for {party or 'the buyer'} to clarify the offer.", f"等待{party or '买方'}澄清报价。")
+    if code == "OWNER_APPROVAL":
+        if day is None:
+            return t(lang, "Waiting for your approval.", "等待您批准。")
+        if family == "DEAL":
+            return t(lang, f"Waiting for your approval; the offer expires {when}.", f"等待您批准；该报价将于{when}到期。")
+        return t(lang, f"Waiting for your approval; the cash is needed {when}.", f"等待您批准；资金需要在{when}到位。")
+    if code == "BANK_RECEIPT":
+        return (t(lang, f"Waiting for {party or 'the buyer'} to pay, due {when}.", f"等待{party or '买方'}付款，应于{when}到账。")
+                if day is not None else t(lang, f"Waiting for {party or 'the buyer'} to pay.", f"等待{party or '买方'}付款。"))
+    if code == "INVOICE_ISSUE":
+        return (t(lang, f"Waiting for the next invoice to {party or 'the buyer'}, issued {when}, which carries the new terms.",
+                  f"等待下一张开给{party or '买方'}的发票（{when}开出），其中包含新条款。")
+                if day is not None else t(lang, "Waiting for the next invoice, which carries the new terms.", "等待下一张发票，其中包含新条款。"))
+    if code == "FUNDING_SETTLEMENT":
+        return (t(lang, f"Waiting for {party or 'the lender'} to land the funds {when}.", f"等待{party or '放款方'}于{when}放款到账。")
+                if day is not None else t(lang, f"Waiting for {party or 'the lender'} to land the funds.", f"等待{party or '放款方'}放款到账。"))
+    if code == "OWNER_DECISION":
+        return (t(lang, f"Waiting for your decision; the shortfall starts {when}.", f"等待您的决定；缺口从{when}开始。")
+                if day is not None else t(lang, "Waiting for your decision.", "等待您的决定。"))
+    return t(lang, "Nothing is waiting: the action is complete.", "没有待办事项：操作已完成。")
+
+
+def execution_summary(lang: Lang, today: int, *, family: str, state: str, buyer: str | None, agreement: str | None,
+                      requested_fen: int, landed_fen: int, in_transit_fen: int, arrival_day: int | None, repaid_fen: int,
+                      pending: int, refused: int, blocked: bool) -> str:
+    """What has actually been executed for this decision, in one or two sentences (F04: never "nothing executed" after a
+    negotiation funded a gap). `agreement` is "recorded", "waiting" or None for a deal; the amounts are the operations' own
+    amounts and the funding lots' own principal."""
+    parts: list[str] = []
+    if agreement == "waiting":
+        pending = max(pending - 1, 0)  # the agreement is the step already said
+    if agreement == "recorded":
+        parts.append(t(lang, f"Agreement with {buyer or 'the buyer'} recorded.", f"已记录与{buyer or '买方'}的协议。"))
+    elif agreement == "waiting":
+        parts.append(t(lang, "The agreement is waiting for your approval and is not in force.", "协议正等待您批准，尚未生效。"))
+    if requested_fen:
+        if landed_fen and not in_transit_fen:
+            parts.append(t(lang, f"Funding of {fmt_yuan(requested_fen)} was requested and has landed.",
+                           f"已提交 {fmt_yuan(requested_fen)} 的融资，并已到账。"))
+        elif in_transit_fen:
+            when = when_text(arrival_day, today, lang) if arrival_day is not None else ""
+            parts.append(t(lang, f"Funding of {fmt_yuan(requested_fen)} was requested; {fmt_yuan(in_transit_fen)} is on its way"
+                                 f"{' and lands ' + when if when else ''}.",
+                           f"已提交 {fmt_yuan(requested_fen)} 的融资；{fmt_yuan(in_transit_fen)} 在途"
+                           f"{'，将于' + when + '到账' if when else ''}。"))
+        else:
+            parts.append(t(lang, f"Funding of {fmt_yuan(requested_fen)} was requested.", f"已提交 {fmt_yuan(requested_fen)} 的融资。"))
+    if repaid_fen:
+        parts.append(t(lang, f"{fmt_yuan(repaid_fen)} was repaid.", f"已还款 {fmt_yuan(repaid_fen)}。"))
+    if pending:
+        parts.append(t(lang, "One step is waiting for your approval." if pending == 1 else f"{pending} steps are waiting for your approval.",
+                       f"有 {pending} 步正等待您批准。"))
+    if refused:
+        parts.append(t(lang, "One step could not run. No money moved for it." if refused == 1
+                       else f"{refused} steps could not run. No money moved for them.", f"有 {refused} 步未能执行，对应资金未动。"))
+    if blocked and family == "DEAL":
+        parts.append(t(lang, "The gap was not funded: the router's plan could not run today.", "缺口未获融资：路由方案今天无法执行。"))
+    if not parts:
+        return t(lang, "Nothing has been executed yet.", "尚未执行任何操作。")
+    return " ".join(parts)
+
+
+def quote_view(fact: Any, state: FinancialState, today: int, quote_day: int, lang: Lang) -> dict[str, Any]:
+    """A stored QUOTED fact as the owner reads it: one line per leg (what, amount, cost, rate, when it lands), the total, the
+    basis of the price, the after-state and what declining leaves. Every figure is the fact's; nothing is priced here."""
+    lines: list[dict[str, Any]] = []
+    for leg in fact.legs:
+        rate = fmt_pct(Fraction(leg.annual_rate.num, leg.annual_rate.den), 1) if leg.annual_rate is not None else None
+        lines.append({
+            "label": leg_words(state, leg.kind, leg.facility_id, leg.receivable_id, leg.amount_fen, lang),
+            "op_id": leg.op_id, "kind": leg.kind, "amount_fen": leg.amount_fen, "amount_display": fmt_yuan(leg.amount_fen),
+            "cost_fen": leg.cost_fen, "cost_display": fmt_yuan(leg.cost_fen) if leg.cost_fen is not None else None,
+            "rate_text": rate, "cost_days": leg.cost_days, "lands_day": leg.lands_day,
+            "lands_when": when_text(leg.lands_day, today, lang) if leg.lands_day is not None else None,
+            "above_ceiling": leg.above_ceiling,
+        })
+    note = None
+    if fact.cost_note == "draw_interest_excluded":
+        names = ", ".join(facility_name(state, leg.facility_id) for leg in fact.legs
+                          if leg.kind == "DRAW_FACILITY" and leg.cost_fen is None)
+        note = t(lang, f"Interest on the {names} draw is not included: it runs only while the balance stays drawn.",
+                 f"不含{names}提款的利息：利息只在余额未还期间产生。")
+    basis_parts: list[str] = []
+    if note:
+        basis_parts.append(note)
+    elif any(leg.kind == "SUBMIT_INVOICE_FOR_FINANCING" and leg.cost_fen is not None for leg in fact.legs):
+        basis_parts.append(t(lang, "Invoice financing is billed in whole 30-day periods until the invoice is paid.",
+                             "发票融资按整 30 天计费，直至发票付清。"))
+    if fact.source == "router":
+        for leg in fact.legs:
+            if leg.kind == "DRAW_FACILITY" and leg.cost_end_day is not None:
+                basis_parts.append(t(lang, f"Estimated through the expected repayment of the {facility_name(state, leg.facility_id)} "
+                                           f"{when_text(leg.cost_end_day, today, lang)}; the final interest depends on the actual repayment day.",
+                                     f"按预计{when_text(leg.cost_end_day, today, lang)}偿还{facility_name(state, leg.facility_id)}估算；最终利息取决于实际还款日。"))
+    lands = [leg.lands_day for leg in fact.legs if leg.lands_day is not None]
+    if fact.after_first_short_day is None:
+        after = t(lang, f"Cash stays above your minimum cash reserve for the next {fact.horizon_days} days.",
+                  f"未来 {fact.horizon_days} 天现金都保持在您的最低现金储备以上。")
+    elif fact.restores_reserve is False and fact.residual_shortfall_fen is not None:
+        after = t(lang, f"Cash stays {fmt_yuan(fact.residual_shortfall_fen)} below your minimum cash reserve from "
+                        f"{when_text(fact.after_first_short_day, today, lang)}.",
+                  f"从{when_text(fact.after_first_short_day, today, lang)}起现金仍比最低现金储备低 {fmt_yuan(fact.residual_shortfall_fen)}。")
+    else:
+        after = t(lang, f"Cash stays above your minimum cash reserve for the next {max(fact.after_first_short_day - 1 - quote_day, 0)} days.",
+                  f"未来 {max(fact.after_first_short_day - 1 - quote_day, 0)} 天现金都保持在最低现金储备以上。")
+    return {
+        "recorded": True,
+        "quoted_when": when_text(quote_day, today, lang),
+        "lines": lines,
+        "total_fen": fact.total_cost_fen,
+        "total_display": fmt_yuan(fact.total_cost_fen) if fact.total_cost_fen is not None else None,
+        "cost_note": note,
+        "rate_basis": " ".join(basis_parts) or None,
+        "lands_day": max(lands) if lands else None,
+        "lands_when": when_text(max(lands), today, lang) if lands else None,
+        "after": after,
+        "if_declined": decline_words(fact.if_decline, fact.alert_kind, today, lang),
+        "needs_owner": fact.needs_owner,
+        "text": None,
+    }
+
+
+def decline_words(d: Any, alert_kind: str, today: int, lang: Lang) -> str | None:
+    """What declining leaves, from the stored shortfall and days."""
+    if d is None:
+        return t(lang, "Interest keeps running on the drawn balance.", "已提款余额将继续产生利息。") if alert_kind == "FACILITY_REPAYABLE" else None
+    if d.kind == "below_zero" and d.zero_day is not None:
+        return t(lang, f"Cash goes below zero {when_text(d.zero_day, today, lang)}.", f"现金将在{when_text(d.zero_day, today, lang)}跌破零。")
+    if d.kind == "below_reserve" and d.shortfall_fen is not None and d.day is not None:
+        peak = d.max_shortfall_fen if d.max_shortfall_fen is not None else d.shortfall_fen
+        worst = when_text(d.worst_day if d.worst_day is not None else d.day, today, lang)
+        return t(lang, f"{fmt_yuan(d.shortfall_fen)} below your minimum cash reserve {when_text(d.day, today, lang)}; the gap peaks at "
+                       f"{fmt_yuan(peak)} {worst}.",
+                 f"{when_text(d.day, today, lang)}比最低现金储备低 {fmt_yuan(d.shortfall_fen)}；缺口在{worst}最大，为 {fmt_yuan(peak)}。")
+    return t(lang, "Interest keeps running on the drawn balance.", "已提款余额将继续产生利息。") if d.kind == "closed" else None
+
+
+def quote_not_recorded(decided: bool, lang: Lang) -> dict[str, Any]:
+    """A decision with no QUOTED fact: a decided row never shows a price taken from today's alert; a waiting row says its price
+    is today's."""
+    text = (t(lang, "The quoted cost was not recorded.", "当时报价的成本没有记录。") if decided
+            else t(lang, "Price today.", "按今日价格。"))
+    return {"recorded": False, "quoted_when": None, "lines": [], "total_fen": None, "total_display": None, "cost_note": None,
+            "rate_basis": None, "lands_day": None, "lands_when": None, "after": None, "if_declined": None, "needs_owner": None,
+            "text": text}
+
+
+def lands_difference(quoted_lands: int | None, actual_lands: int | None, today: int, lang: Lang) -> str | None:
+    """The difference between the quoted landing day and the lot's own, when they differ."""
+    if quoted_lands is None or actual_lands is None or quoted_lands == actual_lands:
+        return None
+    later = actual_lands > quoted_lands
+    return t(lang, f"Approved {'later' if later else 'sooner'} than quoted, so the cash lands {when_text(actual_lands, today, lang)} "
+                   f"instead of {when_text(quoted_lands, today, lang)}.",
+             f"批准时间{'晚于' if later else '早于'}报价，资金将于{when_text(actual_lands, today, lang)}到账，而非{when_text(quoted_lands, today, lang)}。")
+
+
+def remaining_task_words(shortfall_fen: int | None, starts_day: int | None, today: int, lang: Lang) -> str:
+    """The sentence for the reserve still at risk after a cure: F17."""
+    if shortfall_fen is None:
+        return t(lang, "Nothing is waiting: the action is complete.", "没有待办事项：操作已完成。")
+    when = when_text(starts_day, today, lang) if starts_day is not None else ""
+    return t(lang, f"Your minimum cash reserve is still {fmt_yuan(shortfall_fen)} short{' from ' + when if when else ''}; "
+                   f"no committed funding restores it. This needs your decision.",
+             f"您的最低现金储备仍差 {fmt_yuan(shortfall_fen)}{'，从' + when + '起' if when else ''}；没有已承诺的融资能恢复它。这需要您决定。")
+
+
+def send_scope_text(lang: Lang, label: str | None = None) -> str:
+    """What sending a counter does: the buyer's reply is simulated, the agreement waits for the owner when it changes terms, and the
+    funding runs within the limits."""
+    which = label or t(lang, "this counter", "此还价")
+    return t(lang, f"Sends {which} to the buyer (the reply is simulated); records the agreement, with your approval when it changes "
+                   f"terms; runs the funding for any remaining gap within your limits.",
+             f"向买方发送{which}（回复为模拟）；记录协议，若改变条款则需您批准；在您的额度内为剩余缺口融资。")

@@ -1,0 +1,80 @@
+"""The durable decision record (ADR-0011): a read model over the canonical stores plus three small stored facts.
+
+Pure: this package imports only `app.domain` and `app.persistence.records`. It computes no money, prices no past moment and
+grants no authority. No engine module (`app.financial`, `app.verifier`, `app.funding`, `app.alerts`, `app.operations`,
+`app.clock`, `app.books`) imports it; a test pins that.
+"""
+
+from app.decisions.facts import (
+    CounterEconomics,
+    DecisionFactStore,
+    EvaluatedFact,
+    Fact,
+    GapLeg,
+    GapPlan,
+    IfDecline,
+    QuotedFact,
+    QuotedLeg,
+    SentFact,
+    body_json,
+    parse_fact,
+    record_for,
+)
+from app.decisions.identity import (
+    alert_cure_id,
+    alert_plan_id,
+    approval_decision_id,
+    deal_id,
+    decision_id_for,
+    family_of,
+    offer_id_of,
+)
+from app.decisions.state import (
+    DealState,
+    DecisionInputs,
+    DecisionState,
+    FundingState,
+    Party,
+    Residual,
+    WaitCode,
+    Waiting,
+    derive,
+    derive_all,
+    newest_reserve_decision,
+    waiting_for,
+)
+
+__all__ = [
+    "CounterEconomics",
+    "DealState",
+    "DecisionFactStore",
+    "DecisionInputs",
+    "DecisionState",
+    "EvaluatedFact",
+    "Fact",
+    "FundingState",
+    "GapLeg",
+    "GapPlan",
+    "IfDecline",
+    "Party",
+    "QuotedFact",
+    "QuotedLeg",
+    "Residual",
+    "SentFact",
+    "WaitCode",
+    "Waiting",
+    "alert_cure_id",
+    "alert_plan_id",
+    "approval_decision_id",
+    "body_json",
+    "deal_id",
+    "decision_id_for",
+    "derive",
+    "derive_all",
+    "family_of",
+    "newest_reserve_decision",
+    "offer_id_of",
+    "parse_fact",
+    "record_for",
+    "waiting_for",
+]

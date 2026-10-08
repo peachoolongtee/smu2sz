@@ -1,0 +1,607 @@
+"""The decision's state and what it is waiting for, derived from stored reality only (ADR-0011 sections 5 and 6).
+
+`derive(inputs) -> DecisionState` and `waiting_for(state, inputs) -> Waiting` are pure: they read the `DecisionInputs`
+dataclass and nothing else (no store, no clock, no I/O, no recomputation of a price or a projection). The first matching rule
+of each table wins. A fact that is missing is simply absent: the state still derives from the commitment, the approvals, the
+log and the lots, and the quote or sent counter reads "not recorded" where the server words it.
+
+Display sentences are not written here (INVARIANT 13: the server words them per request and language, in
+`app.api.presentation`). This module returns codes, ids and numbers.
+"""
+
+from __future__ import annotations
+
+import json
+from collections.abc import Mapping, Sequence
+from dataclasses import dataclass, replace
+from enum import StrEnum
+from typing import Any, Protocol
+
+from app.decisions.facts import EvaluatedFact, QuotedFact, SentFact, parse_fact
+from app.decisions.identity import decision_id_for, family_of, offer_id_of
+from app.domain.models import (
+    Commitment,
+    CommitmentStatus,
+    CompiledOffer,
+    CompileStatus,
+    FinancialState,
+    FundingLot,
+    OperationResult,
+    OperationStatus,
+    Outcome,
+    Receivable,
+    Verdict,
+)
+from app.persistence.records import ApprovalRecord, ApprovalStatus, DecisionFactRecord
+
+RESERVE_ALERT = "RESERVE_BREACH_AHEAD"
+_DECIDE_ATTEMPT = "#decide:"  # a non-owner attempt to decide an approval is logged under this suffix
+
+
+class DealState(StrEnum):
+    RECEIVED = "RECEIVED"
+    NEEDS_CLARIFICATION = "NEEDS_CLARIFICATION"
+    RESPONSE_READY = "RESPONSE_READY"
+    AUTHORIZATION_REQUIRED = "AUTHORIZATION_REQUIRED"
+    DECLINED = "DECLINED"
+    FAILED = "FAILED"
+    NO_DEAL = "NO_DEAL"
+    AGREED = "AGREED"
+    EXPIRED = "EXPIRED"
+    MISSED = "MISSED"
+    FULFILLED = "FULFILLED"
+    REVOKED = "REVOKED"
+
+
+class FundingState(StrEnum):
+    AUTHORIZATION_REQUIRED = "AUTHORIZATION_REQUIRED"
+    DECLINED = "DECLINED"
+    FAILED = "FAILED"
+    PARTIALLY_EXECUTED = "PARTIALLY_EXECUTED"
+    SETTLEMENT_PENDING = "SETTLEMENT_PENDING"
+    SETTLED = "SETTLED"
+    EXECUTED = "EXECUTED"
+
+
+class WaitCode(StrEnum):
+    OWNER_RESPONSE = "OWNER_RESPONSE"
+    BUYER_CLARIFICATION = "BUYER_CLARIFICATION"
+    OWNER_APPROVAL = "OWNER_APPROVAL"
+    BANK_RECEIPT = "BANK_RECEIPT"
+    INVOICE_ISSUE = "INVOICE_ISSUE"
+    FUNDING_SETTLEMENT = "FUNDING_SETTLEMENT"
+    OWNER_DECISION = "OWNER_DECISION"
+    NOTHING = "NOTHING"
+
+
+class Party(StrEnum):
+    OWNER = "owner"
+    BUYER = "buyer"
+    BOOKS = "books"
+    LENDER = "lender"
+    NONE = "none"
+
+
+# ---------------------------------------------------------------- what the routes hand in
+
+
+class LoggedRun(Protocol):
+    """One operations-log entry as `app.operations.log.LoggedEntry` provides it (it satisfies this protocol as it is)."""
+
+    @property
+    def seq(self) -> int: ...
+    @property
+    def kind(self) -> str: ...
+    @property
+    def idempotency_key(self) -> str: ...
+    @property
+    def payload(self) -> Mapping[str, Any]: ...
+    @property
+    def result(self) -> OperationResult: ...
+    @property
+    def day(self) -> int | None: ...
+
+
+class PromiseLike(Protocol):
+    """An early payment a commitment promised (`app.alerts.models.PromisedReceipt` satisfies it)."""
+
+    @property
+    def commitment_id(self) -> str: ...
+    @property
+    def receivable_id(self) -> str: ...
+    @property
+    def promised_day(self) -> int | None: ...
+    @property
+    def status(self) -> str: ...  # AWAITED | RECEIVED | LAPSED | SETTLED_OTHERWISE
+
+
+class AlertLike(Protocol):
+    """An open alert as read today (`app.alerts.models.Alert` satisfies it). Only the reserve alert is used."""
+
+    @property
+    def id(self) -> str: ...
+    @property
+    def kind(self) -> str: ...
+    @property
+    def day(self) -> int | None: ...
+    @property
+    def amount_fen(self) -> int | None: ...
+    @property
+    def committed_cure(self) -> bool | None: ...
+
+
+@dataclass(frozen=True, slots=True)
+class DecisionInputs:
+    """Everything `derive` and `waiting_for` read: the stored records, passed in whole. Nothing is looked up.
+
+    `offers`, `verdicts`, `commitments`, `approvals`, `log` and `facts` may hold records of other decisions: membership is
+    decided here by `decision_id_for`, so the route reads each store once and passes the same inputs to every decision.
+    `verdicts` and `log` are in stored order. `state` is the books today (lots, invoices, adjustments); `promised` is
+    `reconcile().promised`; `alerts` are today's alerts; `newest_reserve` is set by `derive_all` for the one reserve record
+    that may carry the residual."""
+
+    decision_id: str
+    today: int
+    offers: tuple[CompiledOffer, ...] = ()
+    verdicts: tuple[Verdict, ...] = ()
+    commitments: tuple[Commitment, ...] = ()
+    approvals: tuple[ApprovalRecord, ...] = ()
+    log: tuple[LoggedRun, ...] = ()
+    facts: tuple[DecisionFactRecord, ...] = ()
+    state: FinancialState | None = None
+    promised: tuple[PromiseLike, ...] = ()
+    alerts: tuple[AlertLike, ...] = ()
+    newest_reserve: bool = False
+
+
+# ---------------------------------------------------------------- what comes out
+
+
+@dataclass(frozen=True, slots=True)
+class OpState:
+    """One operation of the decision and its last non-duplicate result."""
+
+    op_id: str
+    kind: str
+    status: OperationStatus
+    seq: int
+    day: int | None
+    approval_id: str | None
+    facility_id: str | None
+    receivable_id: str | None
+    amount_fen: int | None
+
+
+@dataclass(frozen=True, slots=True)
+class Residual:
+    """The reserve still at risk after a cure ran (read now, labelled as today's position)."""
+
+    shortfall_fen: int | None
+    starts_day: int | None
+    committed_cure: bool | None
+    alert_id: str
+    quoted_to_restore: bool
+
+
+@dataclass(frozen=True, slots=True)
+class DecisionState:
+    decision_id: str
+    family: str  # DEAL | FUNDING
+    state: DealState | FundingState
+    terminal: bool
+    residual: Residual | None
+    ops: tuple[OpState, ...]
+    approvals: tuple[ApprovalRecord, ...]  # the decision's approvals, oldest first
+    approval: ApprovalRecord | None  # DEAL: the one whose operation records the agreement
+    offer: CompiledOffer | None
+    verdict: Verdict | None
+    commitment: Commitment | None
+    evaluated: EvaluatedFact | None
+    sent: SentFact | None
+    quote: QuotedFact | None
+    lots: tuple[FundingLot, ...]  # lots the decision's operations created
+    opened_day: int | None
+    updated_day: int | None
+    updated_seq: int
+
+
+@dataclass(frozen=True, slots=True)
+class Waiting:
+    code: WaitCode
+    party: Party
+    day: int | None
+    ref: str | None = None  # the lender's facility id, or the buyer's counterparty id, for the server to name
+
+
+# ---------------------------------------------------------------- reading the inputs
+
+
+def _payload_of(approval: ApprovalRecord) -> dict[str, Any]:
+    try:
+        data = json.loads(approval.op_json)
+    except ValueError:
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _is_decide_attempt(run: LoggedRun) -> bool:
+    return _DECIDE_ATTEMPT in run.idempotency_key
+
+
+def _facts(i: DecisionInputs) -> list[tuple[DecisionFactRecord, Any]]:
+    out = []
+    for r in sorted((r for r in i.facts if r.decision_id == i.decision_id), key=lambda r: r.seq):
+        fact = parse_fact(r)
+        if fact is not None:
+            out.append((r, fact))
+    return out
+
+
+def _approval_members(i: DecisionInputs) -> list[ApprovalRecord]:
+    out = []
+    for a in i.approvals:
+        payload = _payload_of(a)
+        key = payload.get("idempotency_key")
+        if decision_id_for(payload, key if isinstance(key, str) else "", i.commitments, approval_id=a.id) == i.decision_id:
+            out.append(a)
+    return out
+
+
+def _run_members(i: DecisionInputs, extra_op_ids: frozenset[str]) -> list[LoggedRun]:
+    out = []
+    for e in i.log:
+        did = decision_id_for(e.payload, e.idempotency_key, i.commitments, approval_id=e.result.approval_id)
+        if did == i.decision_id or (e.payload.get("op_id") in extra_op_ids):
+            out.append(e)
+    return out
+
+
+def _op_states(runs: Sequence[LoggedRun]) -> list[OpState]:
+    """Each operation's last non-duplicate result, in the order the operations first appeared. A non-owner attempt to
+    decide an approval is not a result of the operation."""
+    last: dict[str, LoggedRun] = {}
+    order: list[str] = []
+    for e in runs:
+        if _is_decide_attempt(e) or e.result.status == OperationStatus.DUPLICATE:
+            continue
+        op_id = str(e.payload.get("op_id") or e.result.op_id)
+        if op_id not in last:
+            order.append(op_id)
+        last[op_id] = e
+    out = []
+    for op_id in order:
+        e = last[op_id]
+        p = e.payload
+        out.append(OpState(
+            op_id=op_id, kind=e.kind, status=e.result.status, seq=e.seq, day=e.day,
+            approval_id=e.result.approval_id, facility_id=_str(p.get("facility_id")),
+            receivable_id=_str(p.get("receivable_id")), amount_fen=_int(p.get("amount_fen", p.get("advance_fen"))),
+        ))
+    return out
+
+
+def _str(v: object) -> str | None:
+    return v if isinstance(v, str) else None
+
+
+def _int(v: object) -> int | None:
+    return v if isinstance(v, int) and not isinstance(v, bool) else None
+
+
+def _lots_of(state: FinancialState | None, op_ids: Sequence[str]) -> tuple[FundingLot, ...]:
+    if state is None:
+        return ()
+    return tuple(
+        lot for lot in state.lots if any(lot.id == op_id or lot.id.startswith(op_id + "#") for op_id in op_ids)
+    )
+
+
+def _reserve_alert(i: DecisionInputs) -> AlertLike | None:
+    return next((a for a in i.alerts if a.kind == RESERVE_ALERT), None)
+
+
+# ---------------------------------------------------------------- DEAL
+
+
+def _matches_accept(payload: Mapping[str, Any], c: Commitment) -> bool:
+    kind = payload.get("kind")
+    if kind == "RECORD_COMMITMENT":
+        return payload.get("commitment_id") == c.id
+    if kind == "ACCEPT_OFFER":
+        return (payload.get("offer_id") == c.offer_id and payload.get("offer_version") == c.offer_version
+                and payload.get("nonce") == c.nonce)
+    return False
+
+
+def _derive_deal(i: DecisionInputs) -> DecisionState:
+    offer_id = offer_id_of(i.decision_id)
+    offers = [o for o in i.offers if o.offer_id == offer_id]
+    offer = max(offers, key=lambda o: o.version) if offers else None
+    verdicts = [v for v in i.verdicts if v.offer_id == offer_id]
+    verdict = verdicts[-1] if verdicts else None
+    facts = _facts(i)
+    evaluated = next((f for _, f in reversed(facts) if isinstance(f, EvaluatedFact) and (verdict is None or f.verdict_id == verdict.id)), None)
+    sents = [f for _, f in facts if isinstance(f, SentFact)]
+    latest_sent = sents[-1] if sents else None
+    mine = [c for c in i.commitments if c.offer_id == offer_id]
+    commitment = next((c for c in mine if latest_sent is not None and c.id == latest_sent.commitment_id), None)
+    if commitment is None and mine:
+        commitment = mine[-1]
+    extra = frozenset(
+        op_id for f in sents for op_id in ([*f.funding_op_ids, *([f.accept_op_id] if f.accept_op_id else [])])
+    )
+    runs = _run_members(i, extra)
+    ops = _op_states(runs)
+    approvals = _approval_members(i)
+    approval: ApprovalRecord | None = None
+    accept_run: OpState | None = None
+    if commitment is not None:
+        approval = next((a for a in reversed(approvals) if _matches_accept(_payload_of(a), commitment)), None)
+        accept_ops = [o for o in ops if _matches_accept(_op_payload(runs, o.op_id), commitment)]
+        accept_run = accept_ops[-1] if accept_ops else None
+    sent_for_verdict = next((f for f in reversed(sents) if verdict is not None and f.verdict_id == verdict.id), None)
+    promised = [p for p in i.promised if commitment is not None and p.commitment_id == commitment.id]
+
+    state = _deal_state(offer, verdict, commitment, approval, accept_run, sent_for_verdict, promised)
+    terminal = state in _DEAL_TERMINAL and not (
+        state == DealState.MISSED and commitment is not None and commitment.status != CommitmentStatus.EXPIRED
+    )
+    funding_ops = [o for o in ops if o.kind in ("DRAW_FACILITY", "SUBMIT_INVOICE_FOR_FINANCING", "REPAY_FACILITY")]
+    updated_day, updated_seq, opened = _stamps(i, runs, approvals, [r for r, _ in facts], offer)
+    return DecisionState(
+        decision_id=i.decision_id, family="DEAL", state=state, terminal=terminal, residual=None, ops=tuple(ops),
+        approvals=tuple(approvals), approval=approval, offer=offer, verdict=verdict, commitment=commitment,
+        evaluated=evaluated, sent=latest_sent, quote=None, lots=_lots_of(i.state, [o.op_id for o in funding_ops]),
+        opened_day=opened, updated_day=updated_day, updated_seq=updated_seq,
+    )
+
+
+_DEAL_TERMINAL = frozenset({
+    DealState.REVOKED, DealState.FULFILLED, DealState.MISSED, DealState.EXPIRED, DealState.DECLINED, DealState.FAILED,
+    DealState.NO_DEAL,
+})
+
+
+def _op_payload(runs: Sequence[LoggedRun], op_id: str) -> Mapping[str, Any]:
+    return next((e.payload for e in runs if e.payload.get("op_id") == op_id), {})
+
+
+def _deal_state(
+    offer: CompiledOffer | None, verdict: Verdict | None, c: Commitment | None, a: ApprovalRecord | None,
+    x: OpState | None, sent_for_verdict: SentFact | None, promised: Sequence[PromiseLike],
+) -> DealState:
+    if c is not None:
+        if c.status == CommitmentStatus.REVOKED:  # 1
+            return DealState.REVOKED
+        if c.status == CommitmentStatus.FULFILLED:  # 2
+            return DealState.FULFILLED
+        if c.status == CommitmentStatus.EXPIRED and c.lapsed_obligations:  # 3
+            return DealState.MISSED
+        live = c.status in (CommitmentStatus.ACTIVE, CommitmentStatus.ACCEPTED)  # ACCEPTED is ACTIVE's transient twin
+        if live and any(p.status == "LAPSED" for p in promised):  # 4
+            return DealState.MISSED
+        if live:  # 5
+            return DealState.AGREED
+        if c.status == CommitmentStatus.EXPIRED:  # 6
+            return DealState.EXPIRED
+    if a is not None and a.status == ApprovalStatus.PENDING:  # 7
+        return DealState.AUTHORIZATION_REQUIRED
+    if a is not None and a.status == ApprovalStatus.REJECTED:  # 8
+        return DealState.DECLINED
+    if x is not None and x.status == OperationStatus.REFUSED:  # 9
+        return DealState.FAILED
+    if sent_for_verdict is not None and sent_for_verdict.outcome == "NO_DEAL":  # 10
+        return DealState.NO_DEAL
+    if (offer is not None and offer.status in (CompileStatus.ABSTAINED, CompileStatus.CONFLICTING_SOURCES)) or (
+        verdict is not None and verdict.outcome == Outcome.NO_VERDICT
+    ):  # 11
+        return DealState.NEEDS_CLARIFICATION
+    if verdict is not None:  # 12
+        return DealState.RESPONSE_READY
+    return DealState.RECEIVED  # 13
+
+
+# ---------------------------------------------------------------- FUNDING
+
+
+def _derive_funding(i: DecisionInputs) -> DecisionState:
+    facts = _facts(i)
+    quote = next((f for _, f in reversed(facts) if isinstance(f, QuotedFact)), None)
+    runs = _run_members(i, frozenset())
+    ops = _op_states(runs)
+    approvals = _approval_members(i)
+    lots = _lots_of(i.state, [o.op_id for o in ops])
+    state = _funding_state(ops, approvals, quote, lots)
+    residual = _residual(i, state, quote)
+    terminal = state in (FundingState.DECLINED, FundingState.FAILED, FundingState.SETTLED, FundingState.EXECUTED)
+    if residual is not None:
+        terminal = False
+    updated_day, updated_seq, opened = _stamps(i, runs, approvals, [r for r, _ in facts], None)
+    return DecisionState(
+        decision_id=i.decision_id, family="FUNDING", state=state, terminal=terminal, residual=residual, ops=tuple(ops),
+        approvals=tuple(approvals), approval=None, offer=None, verdict=None, commitment=None, evaluated=None, sent=None,
+        quote=quote, lots=lots, opened_day=opened, updated_day=updated_day, updated_seq=updated_seq,
+    )
+
+
+def _funding_state(
+    ops: Sequence[OpState], approvals: Sequence[ApprovalRecord], quote: QuotedFact | None, lots: Sequence[FundingLot]
+) -> FundingState:
+    executed = [o for o in ops if o.status == OperationStatus.EXECUTED]
+    refused = [o for o in ops if o.status == OperationStatus.REFUSED]
+    if any(a.status == ApprovalStatus.PENDING for a in approvals):  # 1
+        return FundingState.AUTHORIZATION_REQUIRED
+    if not executed and any(a.status == ApprovalStatus.REJECTED for a in approvals):  # 2
+        return FundingState.DECLINED
+    if not executed and (refused or not ops):  # 3 (a quote with no operation logged at all: nothing ran)
+        return FundingState.FAILED
+    fewer = quote is not None and len(ops) < len(quote.legs)
+    if refused or fewer or len(executed) < len(ops):  # 4
+        return FundingState.PARTIALLY_EXECUTED
+    if any(not lot.settled for lot in lots):  # 5
+        return FundingState.SETTLEMENT_PENDING
+    return FundingState.SETTLED if lots else FundingState.EXECUTED  # 6, 7
+
+
+def _residual(i: DecisionInputs, state: FundingState, quote: QuotedFact | None) -> Residual | None:
+    """Set on the newest reserve-breach record in states 4 to 7 while a reserve alert is open today. (ADR-0011 also lets
+    `restores_reserve` false alone set it; with no open alert there is no current shortfall to show, so none is set.)"""
+    if not i.newest_reserve or quote is None or quote.alert_kind != RESERVE_ALERT:
+        return None
+    if state not in (FundingState.PARTIALLY_EXECUTED, FundingState.SETTLEMENT_PENDING, FundingState.SETTLED,
+                     FundingState.EXECUTED):
+        return None
+    alert = _reserve_alert(i)
+    if alert is None:
+        return None
+    return Residual(shortfall_fen=alert.amount_fen, starts_day=alert.day, committed_cure=alert.committed_cure,
+                    alert_id=alert.id, quoted_to_restore=quote.restores_reserve)
+
+
+def _stamps(
+    i: DecisionInputs, runs: Sequence[LoggedRun], approvals: Sequence[ApprovalRecord],
+    facts: Sequence[DecisionFactRecord], offer: CompiledOffer | None,
+) -> tuple[int | None, int, int | None]:
+    days: list[int] = [d for d in (e.day for e in runs) if d is not None]
+    days += [a.decided_day for a in approvals if a.decided_day is not None]
+    days += [f.day for f in facts]
+    opened = list(days)
+    if offer is not None:
+        days.append(offer.received_day)
+        opened.append(offer.received_day)
+    seq = max((e.seq for e in runs), default=0)
+    return (max(days) if days else None, seq, min(opened) if opened else None)
+
+
+def derive(inputs: DecisionInputs) -> DecisionState:
+    """The decision's state from the stored records alone. First matching rule of the family's table wins."""
+    if family_of(inputs.decision_id) == "DEAL":
+        return _derive_deal(inputs)
+    return _derive_funding(inputs)
+
+
+def derive_all(inputs: Sequence[DecisionInputs]) -> list[DecisionState]:
+    """Derive many decisions. The residual belongs to the newest reserve-breach funding record only, so a first pass finds
+    which one that is (by last event day, then log seq) and the second derives it with the residual."""
+    first = [derive(replace(i, newest_reserve=False)) for i in inputs]
+    newest = newest_reserve_decision(first)
+    return [derive(replace(i, newest_reserve=i.decision_id == newest)) for i in inputs]
+
+
+def newest_reserve_decision(states: Sequence[DecisionState]) -> str | None:
+    """The newest FUNDING record that quoted a reserve-breach cure and is in state 4 to 7 (partly executed to executed)."""
+    candidates = [
+        s for s in states
+        if s.family == "FUNDING" and s.quote is not None and s.quote.alert_kind == RESERVE_ALERT
+        and s.state in (FundingState.PARTIALLY_EXECUTED, FundingState.SETTLEMENT_PENDING, FundingState.SETTLED,
+                        FundingState.EXECUTED)
+    ]
+    if not candidates:
+        return None
+    return max(candidates, key=lambda s: (s.updated_day if s.updated_day is not None else -1, s.updated_seq)).decision_id
+
+
+# ---------------------------------------------------------------- what the decision is waiting for
+
+
+def _receivable(state: FinancialState | None, rid: str) -> Receivable | None:
+    return next((r for r in state.receivables if r.id == rid), None) if state is not None else None
+
+
+def _earliest(days: Sequence[int | None]) -> int | None:
+    known = [d for d in days if d is not None]
+    return min(known) if known else None
+
+
+def _agreed_wait(s: DecisionState, i: DecisionInputs) -> Waiting | None:
+    c = s.commitment
+    assert c is not None
+    awaited = [p for p in i.promised if p.commitment_id == c.id and p.status == "AWAITED"]
+    if awaited:
+        return Waiting(WaitCode.BANK_RECEIPT, Party.BUYER, _earliest([p.promised_day for p in awaited]), c.counterparty_id)
+    st = i.state
+    if st is not None:
+        mine = [a for a in st.invoice_adjustments if a.commitment_id == c.id]
+        if mine:
+            days = [r.next_issue_day for r in st.recurring_invoices if r.counterparty_id in {a.counterparty_id for a in mine}]
+            return Waiting(WaitCode.INVOICE_ISSUE, Party.BOOKS, _earliest(days), c.counterparty_id)
+        carrying = [r for r in st.receivables
+                    if any(x.startswith(f"{c.id}:") for x in r.applied) and r.status in ("OPEN", "FINANCED")
+                    and r.outstanding_fen > 0]
+        if carrying:
+            return Waiting(WaitCode.BANK_RECEIPT, Party.BUYER, _earliest([r.due_day for r in carrying]), c.counterparty_id)
+    return None
+
+
+def _missed_wait(s: DecisionState, i: DecisionInputs) -> Waiting:
+    c = s.commitment
+    assert c is not None
+    rids = [p.receivable_id for p in i.promised if p.commitment_id == c.id and p.status == "LAPSED"]
+    if not rids:  # the clock ended the agreement: its lapsed obligations name the invoices
+        rids = [o.base.receivable_id for o in c.obligations
+                if o.id in c.lapsed_obligations and o.base.receivable_id is not None]
+    days = [r.due_day for r in (_receivable(i.state, rid) for rid in rids) if r is not None]
+    return Waiting(WaitCode.BANK_RECEIPT, Party.BUYER, _earliest(days), c.counterparty_id)
+
+
+def _settlement_wait(s: DecisionState) -> Waiting | None:
+    unsettled = [lot for lot in s.lots if not lot.settled]
+    if not unsettled:
+        return None
+    last = max(unsettled, key=lambda lot: lot.arrival_day)
+    return Waiting(WaitCode.FUNDING_SETTLEMENT, Party.LENDER, last.arrival_day, last.facility_id)
+
+
+def waiting_for(state: DecisionState, inputs: DecisionInputs) -> Waiting:
+    """What FLOW is waiting for, by the ADR's table; the first row that applies wins."""
+    st = state.state
+    if st in (DealState.RECEIVED, DealState.RESPONSE_READY):
+        return Waiting(WaitCode.OWNER_RESPONSE, Party.OWNER, None)
+    if st == DealState.NEEDS_CLARIFICATION:
+        return Waiting(WaitCode.BUYER_CLARIFICATION, Party.BUYER, None,
+                       state.offer.counterparty_id if state.offer is not None else None)
+    if st == FundingState.AUTHORIZATION_REQUIRED:  # the same value in both families
+        if state.family == "DEAL":
+            return Waiting(WaitCode.OWNER_APPROVAL, Party.OWNER,
+                           state.commitment.expires_day if state.commitment is not None else None)
+        return Waiting(WaitCode.OWNER_APPROVAL, Party.OWNER, state.quote.alert_day if state.quote is not None else None)
+    if st == DealState.AGREED and state.commitment is not None:
+        agreed = _agreed_wait(state, inputs)
+        if agreed is not None:
+            return agreed
+    if st == DealState.MISSED and state.commitment is not None:
+        return _missed_wait(state, inputs)
+    if st == FundingState.SETTLEMENT_PENDING or (state.family == "DEAL" and st in (DealState.AGREED, DealState.NO_DEAL)):
+        waiting = _settlement_wait(state)
+        if waiting is not None:
+            return waiting
+    if st == FundingState.PARTIALLY_EXECUTED or state.residual is not None:
+        return Waiting(WaitCode.OWNER_DECISION, Party.OWNER,
+                       state.residual.starts_day if state.residual is not None else _alert_day(inputs))
+    return Waiting(WaitCode.NOTHING, Party.NONE, None)
+
+
+def _alert_day(i: DecisionInputs) -> int | None:
+    alert = _reserve_alert(i)
+    return alert.day if alert is not None else None
+
+
+__all__ = [
+    "RESERVE_ALERT",
+    "AlertLike",
+    "DealState",
+    "DecisionInputs",
+    "DecisionState",
+    "FundingState",
+    "LoggedRun",
+    "OpState",
+    "Party",
+    "PromiseLike",
+    "Residual",
+    "WaitCode",
+    "Waiting",
+    "derive",
+    "derive_all",
+    "newest_reserve_decision",
+    "waiting_for",
+]
