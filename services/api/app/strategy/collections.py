@@ -394,14 +394,14 @@ def _sentences(*, lang: Lang, action: Action, who: str, r: Receivable, day: int,
     due = t(lang, f"the {face} due {when}", f"{when}到期的 {face}")
     saving = today_effect.saving_fen if today_effect is not None else 0
     left = today_effect.need_left_fen if today_effect is not None else 0
+    rest_en = f" and leave {fmt_yuan(left)} still to cover" if left > 0 else " and clear the shortfall"
+    rest_zh = f"，还剩 {fmt_yuan(left)} 要筹措" if left > 0 else "，并补上缺口"
     if today_effect is None or saving <= 0:
         if_arrived = t(lang, "If it arrived today it would not lower your funding cost.",
                        "如果今天到账，不会降低您的融资成本。")
     else:
-        rest = (t(lang, f" and leave {fmt_yuan(left)} still to cover", f"，还剩 {fmt_yuan(left)} 要筹措") if left > 0
-                else t(lang, " and clear the shortfall", "，并补上缺口"))
-        if_arrived = t(lang, f"If it arrived today it would save you {fmt_yuan(saving)}{rest}.",
-                       f"如果今天到账，能为您省 {fmt_yuan(saving)}{rest}。")
+        if_arrived = t(lang, f"If it arrived today it would save you {fmt_yuan(saving)}{rest_en}.",
+                       f"如果今天到账，能为您省 {fmt_yuan(saving)}{rest_zh}。")
     need_c = _quoted_ceiling(ceilings)
     no_discount = {
         "overdue": t(lang, " No early-payment discount applies to an invoice already due.", "已到期的发票不适用提前付款折扣。"),
@@ -441,9 +441,9 @@ def _sentences(*, lang: Lang, action: Action, who: str, r: Receivable, day: int,
         fund_zh = "，或改为融资" if advanced else ""
         sentence = t(lang, f"On the {face} due {when}, offer early payment at up to {top} on {on}{fund_en}.",
                      f"{when}到期的 {face}：对 {on} 提前付款，最高 {top}{fund_zh}。")
-        saved = (t(lang, f"At {mid} it saves you {fmt_yuan(need_c.mid_saving_fen)} against the cheapest funding plan; "
-                         f"at the {top} limit {at_limit}.",
-                   f"按 {mid}，相比最便宜的融资方案能为您省 {fmt_yuan(need_c.mid_saving_fen)}；按 {top} 的上限省 {at_limit}。")
+        saved = (t(lang, f"At the {top} limit it saves you {at_limit} against the cheapest funding plan; "
+                         f"at {mid} {fmt_yuan(need_c.mid_saving_fen)}.",
+                   f"按 {top} 的上限，相比最便宜的融资方案能为您省 {at_limit}；按 {mid} 省 {fmt_yuan(need_c.mid_saving_fen)}。")
                  if need_c.mid_rate_bp != need_c.largest_rate_bp
                  else t(lang, f"At the {top} limit it saves you {at_limit} against the cheapest funding plan.",
                         f"按 {top} 的上限，相比最便宜的融资方案能为您省 {at_limit}。"))
@@ -473,8 +473,13 @@ def _sentences(*, lang: Lang, action: Action, who: str, r: Receivable, day: int,
                 t(lang, "The promised payment is still awaited.", "承诺的付款还在等待中。"))
     return (t(lang, f"Wait: {due} is beyond the shortfall; chasing it now saves nothing extra.",
               f"等待：{due}超出了缺口范围，现在去催收不会多省什么。"),
-            t(lang, f"The invoices due before it already cover what you need. {if_arrived}",
-              f"在它之前到期的发票已经够用。{if_arrived}"))
+            t(lang, f"Collected today it would save you {fmt_yuan(saving)}{rest_en}, but the invoices due before it already "
+                    "cover what you need, so chasing it adds nothing.",
+              f"今天收回能为您省 {fmt_yuan(saving)}{rest_zh}，但在它之前到期的发票已经够用，现在去催收不会多省什么。")
+            if saving > 0 else
+            t(lang, "Collected today it would not lower your funding cost, and the invoices due before it already cover "
+                    "what you need, so chasing it adds nothing.",
+              "今天收回也不会降低您的融资成本，而且在它之前到期的发票已经够用，现在去催收不会多省什么。"))
 
 
 def _worth_text(lang: Lang, action: Action, net: int, quoted: Ceiling | None) -> str:
@@ -489,8 +494,8 @@ def _worth_text(lang: Lang, action: Action, net: int, quoted: Ceiling | None) ->
         if quoted.mid_rate_bp is None or quoted.mid_saving_fen is None or quoted.mid_rate_bp == quoted.largest_rate_bp:
             return t(lang, f"Saves {fmt_yuan(net)} at the {limit} limit", f"按 {limit} 的上限可省 {fmt_yuan(net)}")
         mid = fmt_pct(bp(quoted.mid_rate_bp))
-        return t(lang, f"Saves {fmt_yuan(quoted.mid_saving_fen)} at {mid} ({fmt_yuan(net)} at the {limit} limit)",
-                 f"按 {mid} 可省 {fmt_yuan(quoted.mid_saving_fen)}（按 {limit} 的上限可省 {fmt_yuan(net)}）")
+        return t(lang, f"Saves {fmt_yuan(net)} at the {limit} limit; {fmt_yuan(quoted.mid_saving_fen)} if they take {mid}",
+                 f"按 {limit} 的上限可省 {fmt_yuan(net)}；若对方接受 {mid}，可省 {fmt_yuan(quoted.mid_saving_fen)}")
     return t(lang, f"Saves {fmt_yuan(net)} if collected", f"收回可省 {fmt_yuan(net)}")
 
 

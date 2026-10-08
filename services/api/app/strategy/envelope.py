@@ -1018,8 +1018,11 @@ def _reason(facts: EnvelopeFacts, lang: str) -> str:
         b, n = liquid.beyond, liquid.beyond.setting.terms
         if liquid.wall == "liquidity" and b.reserve_day is not None:
             when = when_text(b.reserve_day, facts.day, lang)
-            clauses.append(t(lang, f"{n} days leaves a shortfall {when} that no fix covers",
-                             f"账期 {n} 天在 {when}会出现缺口，且无法补上"))
+            # the failing package carries no early payment; say so when an early payment is what would let the step pass
+            bare = b.setting.discount == 0 and facts.next_terms_passes_with_early_pay
+            clauses.append(t(lang, f"{n} days{' without an early payment' if bare else ''} leaves a shortfall {when} that no fix covers",
+                             f"不提前付款的 {n} 天账期会在 {when}出现无法补上的缺口" if bare
+                             else f"账期 {n} 天在 {when}会出现缺口，且无法补上"))
         elif liquid.wall is not None:
             wall = t(lang, *_WALL_TEXT[liquid.wall]) if liquid.wall in _WALL_TEXT else ""
             clauses.append(t(lang, f"{n} days runs into {wall}", f"账期 {n} 天会碰到{wall}"))

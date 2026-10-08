@@ -120,11 +120,11 @@ def test_day34_ri2_offers_early_payment_with_the_day42_breach_removed(worth34: W
     # the verifier offers no early-pay counter on this invoice (every rate it would send is refused on its APR), so the
     # row quotes the plan's need; one early-payment figure per invoice, never the whole-invoice ceiling in the sentence
     assert [c.face_kind for c in b.ceilings] == ["whole", "need"]
-    assert b.worth_text == "Saves ¥1,288.28 at 0.20% (¥788.28 at the 0.45% limit)"
+    assert b.worth_text == "Saves ¥788.28 at the 0.45% limit; ¥1,288.28 if they take 0.20%"
     assert b.action_sentence == ("On the ¥420,000.00 due in 13 days, offer early payment at up to 0.45% on "
                                  "¥200,000.00, or fund it instead.")
-    assert b.reason_sentence.startswith("At 0.20% it saves you ¥1,288.28 against the cheapest funding plan; "
-                                        "at the 0.45% limit ¥788.28.")
+    assert b.reason_sentence.startswith("At the 0.45% limit it saves you ¥788.28 against the cheapest funding plan; "
+                                        "at 0.20% ¥1,288.28.")
 
 
 def test_day34_ri32_waits_by_the_rule(worth34: WorthAnswer):
@@ -137,6 +137,8 @@ def test_day34_ri32_waits_by_the_rule(worth34: WorthAnswer):
     assert c.action == "wait"
     assert c.action_sentence == ("Wait: the ¥420,000.00 due in 43 days is beyond the shortfall; "
                                  "chasing it now saves nothing extra.")
+    assert c.reason_sentence == ("Collected today it would save you ¥1,706.10 and clear the shortfall, but the invoices due "
+                                 "before it already cover what you need, so chasing it adds nothing.")
     assert c.worth_text == "Saves nothing extra now" and c.net_saving_fen == 7_368  # the figure stays in the payload
 
 
@@ -147,7 +149,7 @@ def test_day34_has_no_counter_face_and_the_rows_quote_the_plans_need(worth34: Wo
         assert all(c.face_kind != "counter" for c in _row(worth34, rid).ceilings)
     assert [w.receivable_id for w in worth34.rows] == [RCV_A, RI_2, RI_32]  # the net order is the same with the counter face
     assert [w.worth_text for w in worth34.rows] == [
-        "Saves ¥1,374.61", "Saves ¥1,288.28 at 0.20% (¥788.28 at the 0.45% limit)", "Saves nothing extra now"]
+        "Saves ¥1,374.61", "Saves ¥788.28 at the 0.45% limit; ¥1,288.28 if they take 0.20%", "Saves nothing extra now"]
 
 
 def test_every_ceiling_passes_the_verifiers_apr_check_and_the_next_step_does_not(
@@ -311,9 +313,12 @@ def test_day0_rcv_a(worth0: WorthAnswer):
     assert [c.face_kind for c in a.ceilings] == ["whole", "need", "counter"]
     assert a.net_saving_fen == counter.beats_by_fen == 8_616
     assert (a.mid_rate_bp, a.mid_saving_fen) == (40, counter.mid_saving_fen) == (40, 125_006)  # 0.85% / 2 down to 0.40%
-    assert a.worth_text == "Saves ¥1,250.06 at 0.40% (¥86.16 at the 0.85% limit)"
+    assert a.worth_text == "Saves ¥86.16 at the 0.85% limit; ¥1,250.06 if they take 0.40%"
     assert a.action_sentence == ("On the ¥420,000.00 due in 32 days, offer early payment at up to 0.85% on "
                                  "¥257,200.00, or fund it instead.")
+    assert a.reason_sentence.startswith(
+        "At the 0.85% limit it saves you ¥86.16 against the cheapest funding plan; at 0.40% ¥1,250.06. "
+        "0.90% would cost ¥54.51 more than the plan. If it arrived today")
     assert a.action == "offer_early_pay" and worth0.first_breach_day == 12
     assert worth0.gross_order == [RCV_A]
 
@@ -453,7 +458,9 @@ def test_chinese_twins_for_every_sentence(rt_day34: Runtime, books_day34: Books,
     for s in _strings(zh):
         assert not re.search(r"\bday \d|第 ?\d+ ?天", s), s
     assert _row(zh, RI_2).action_sentence == "13 天后到期的 ¥420,000.00：对 ¥200,000.00 提前付款，最高 0.45%，或改为融资。"
-    assert _row(zh, RI_2).worth_text == "按 0.20% 可省 ¥1,288.28（按 0.45% 的上限可省 ¥788.28）"
+    assert _row(zh, RI_32).reason_sentence == ("今天收回能为您省 ¥1,706.10，并补上缺口，但在它之前到期的发票已经够用，"
+                                               "现在去催收不会多省什么。")
+    assert _row(zh, RI_2).worth_text == "按 0.45% 的上限可省 ¥788.28；若对方接受 0.20%，可省 ¥1,288.28"
     assert [w.worth_text for w in zh.rows][::2] == ["可省 ¥1,374.61", "暂无额外节省"]
     assert zh.ranking_note.startswith("按收回每一笔相比最便宜的融资方案")
     assert _row(zh, RCV_A).action_sentence.startswith("今天就联系 Foshan Home Retail Co. 催收这笔 ¥162,800.00：")

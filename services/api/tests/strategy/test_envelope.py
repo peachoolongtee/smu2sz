@@ -54,12 +54,12 @@ OPTION_B = (55, 30, 0, None, 0)
 
 PRIMARY_EN = ("You can live with: up to 55-day terms if the price rises 0.30%, or early payment at up to 0.85% on ¥257,200.00; "
               "a rebate up to 1.25%; not 60 days without an early payment.")
-REASON_EN = ("60 days leaves a shortfall in 47 days that no fix covers; the ¥5,000.00 budget buys no terms "
+REASON_EN = ("60 days without an early payment leaves a shortfall in 47 days that no fix covers; the ¥5,000.00 budget buys no terms "
              "without a price rise.")
 MONEY_EN = ("Cost to you ¥0.00 with the price rise, or ¥3,027.77 with the early payment; without a deal "
             "your current funding plan costs ¥3,113.93.")
 PRIMARY_ZH = "您能接受的范围：账期最长 55 天（价格上调 0.30%），或提前付款最高 0.85%（金额 ¥257,200.00）；返利最高 1.25%；不提前付款则不能做到 60 天。"
-REASON_ZH = "账期 60 天在 47 天后会出现缺口，且无法补上；¥5,000.00 的预算无法在不加价的情况下延长账期。"
+REASON_ZH = "不提前付款的 60 天账期会在 47 天后出现无法补上的缺口；¥5,000.00 的预算无法在不加价的情况下延长账期。"
 MONEY_ZH = "您的成本：加价方案 ¥0.00，或提前付款方案 ¥3,027.77；不做交易时，现行资金安排的成本为 ¥3,113.93。"
 
 CODE_NAME = re.compile(r"\b[A-Z]{2,}(?:_[A-Z]+)+\b")  # AGG_CONCESSION_EXCEEDED, RESERVE_BREACH, ...
