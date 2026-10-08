@@ -17,21 +17,21 @@
     "name": "03-deals-read",
     "url": "/deals",
     "viewport": "1440x900",
-    "height": 1121,
+    "height": 1077,
     "screens": 1.2
   },
   {
     "name": "04-deals-evaluated",
     "url": "/deals",
     "viewport": "1440x900",
-    "height": 1890,
-    "screens": 2.1
+    "height": 1842,
+    "screens": 2
   },
   {
     "name": "05-cash-day0",
     "url": "/cash",
     "viewport": "1440x900",
-    "height": 2135,
+    "height": 2118,
     "screens": 2.4
   },
   {
@@ -66,7 +66,7 @@
     "name": "10-cash-funded",
     "url": "/cash",
     "viewport": "1440x900",
-    "height": 1529,
+    "height": 1512,
     "screens": 1.7
   },
   {
@@ -87,15 +87,15 @@
     "name": "13-receivables-day34",
     "url": "/receivables",
     "viewport": "1440x900",
-    "height": 1069,
+    "height": 1057,
     "screens": 1.2
   },
   {
     "name": "13b-cash-day34",
     "url": "/cash",
     "viewport": "1440x900",
-    "height": 2048,
-    "screens": 2.3
+    "height": 2003,
+    "screens": 2.2
   },
   {
     "name": "14-home-day34-pending",
@@ -129,15 +129,15 @@
     "name": "18-cash-day34-approved",
     "url": "/cash",
     "viewport": "1440x900",
-    "height": 1529,
+    "height": 1512,
     "screens": 1.7
   },
   {
     "name": "19-activity-day34-approved",
     "url": "/activity",
     "viewport": "1440x900",
-    "height": 1553,
-    "screens": 1.7
+    "height": 1182,
+    "screens": 1.3
   },
   {
     "name": "20-demo-story",
@@ -185,7 +185,7 @@
     "name": "26-deals-two-offers-demo-walked",
     "url": "/deals",
     "viewport": "1440x900",
-    "height": 2115,
-    "screens": 2.4
+    "height": 2067,
+    "screens": 2.3
   }
 ]
