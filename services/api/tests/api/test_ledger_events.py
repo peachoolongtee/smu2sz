@@ -78,7 +78,7 @@ def test_an_agreement_is_said_as_the_home_says_it_and_no_row_loses_its_sentence(
     client.post(f"/negotiate/{o}", json={"buyer_profile": "cooperative"})
     rows = _ops(client)
     agreement = next(r for r in rows if r["kind"] == "ACCEPT_OFFER")
-    assert agreement["event_text"].startswith("Agreement with Foshan Home Retail Co. recorded; future give-aways booked: ¥")
+    assert agreement["event_text"].startswith("Agreement with Foshan Home Retail Co. recorded; concessions booked against your budget: ¥")
     assert "CMT-" not in agreement["event_text"]
     assert all(r["event_text"] for r in rows)
 
@@ -120,3 +120,23 @@ def test_an_approval_that_was_answered_no_longer_reads_waiting(client):
     # the home leaves the answered "waiting" entry out of the changes
     changes = client.get("/home").json()["changes"]
     assert not any(c["kind"] == "WAITING" and "invoice financing" in c["event_text"] for c in changes)
+
+
+# ---------------------------------------------------------------- a clock move in the owner's words (Wave 8, finding 1)
+
+ENGINE_WORDS = ("flow(s)", "commitment(s)", "invoice(s)", "payment(s)", "ADVANCE_CLOCK", "give-aways", "CMT-", "day ", "Clock moved")
+
+
+def test_clock_move_words_count_what_happened_and_leave_out_what_did_not():
+    from app.api.presentation import clock_words
+    one = {"from_day": 30, "to_day": 34, "posted_debt_service": [{"x": 1}], "debt_service_fen": -4_500_000,
+           "issued_receivable_ids": ["RI:BUYER-1:32"], "posted_flow_ids": [], "expired_commitment_ids": []}
+    assert clock_words(one) == "4 days passed: the ¥45,000.00 debt payment went out and one invoice was issued."
+    assert clock_words(one, "zh") == "过去了 4 天：已支付 ¥45,000.00 的债务还款，已开出 1 张发票。"
+    many = {"from_day": 0, "to_day": 1, "posted_flow_ids": ["a", "b"], "issued_receivable_ids": ["r1", "r2", "r3"],
+            "expired_commitment_ids": ["c"], "posted_debt_service": [{}, {}], "debt_service_fen": -9_000_000}
+    assert clock_words(many) == ("1 day passed: 2 debt payments totalling ¥90,000.00 went out, 2 scheduled cash movements were "
+                                 "recorded, 3 invoices were issued and one agreement expired.")
+    assert clock_words({"from_day": 3, "to_day": 5}) == "2 days passed; nothing was due."
+    assert clock_words({"from_day": 3, "to_day": 5}, "zh") == "过去了 2 天，没有到期事项。"
+    assert clock_words({}) is None

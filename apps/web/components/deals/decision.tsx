@@ -1,6 +1,6 @@
 "use client";
 
-import { Card } from "@/components/ui";
+import { Card, Stat } from "@/components/ui";
 import type { DictKey } from "@/lib/dictionary";
 import { useI18n } from "@/lib/i18n";
 import { businessAction } from "@/lib/presentation-fallbacks";
@@ -44,8 +44,7 @@ export function DealDecision({ v, today, negotiation = null }: { v: VerdictView;
   const fc = v.forward_concession;
   return (
     <Card id="deal-recommendation-card" tone={tone}>
-      <p className="text-xs font-semibold uppercase tracking-wide text-ink-3">{t("biz.deals.recommendation")}</p>
-      <p className="mt-1 text-2xl font-semibold text-ink" data-testid="deal-recommendation" data-outcome={outcome ?? ""}>
+      <p className="text-xl font-semibold text-ink" data-testid="deal-recommendation" data-outcome={outcome ?? ""}>
         {headline}
       </p>
       {/* The three numbers are about the offer as the buyer asked for it, not about a counter: the line says so. */}
@@ -54,34 +53,27 @@ export function DealDecision({ v, today, negotiation = null }: { v: VerdictView;
           {outcome ? t("biz.deals.ifAccepted") : t("biz.deals.ifAccept")}
         </p>
       ) : null}
-      <dl className="mt-2 grid gap-4 sm:grid-cols-3">
+      <dl className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
         {v.concession_values.length || fc ? (
-          <div data-testid="deal-fact-cost">
-            <dt className="text-xs font-medium text-ink-3">{t("biz.deals.fact.concessions")}</dt>
-            <dd className={`text-lg font-semibold tabular-nums ${fc?.over_cap ? "text-bad-fg" : "text-ink"}`}>{v.forward_concession_total_display}</dd>
-            {fc ? <dd className="text-xs text-ink-3">{t("biz.deals.fact.limit", { cap: fc.cap_display })}</dd> : null}
-          </div>
+          <Stat
+            className="col-span-2 sm:col-span-1"
+            rootTestId="deal-fact-cost"
+            label={t("biz.deals.fact.concessions")}
+            value={v.forward_concession_total_display}
+            tone={fc?.over_cap ? "bad" : "neutral"}
+            caption={fc ? t("biz.deals.fact.limit", { cap: fc.cap_display }) : undefined}
+          />
         ) : null}
         {tr ? (
-          <div data-testid="deal-fact-cash">
-            <dt className="text-xs font-medium text-ink-3">{t("biz.deals.fact.breach")}</dt>
-            {breach !== null ? (
-              <>
-                <dd className="text-lg font-semibold text-bad-fg">{whenText(breach, today, t)}</dd>
-                {tr.first_breach_cash ? <dd className="text-xs text-ink-3">{t("biz.deals.fact.breachCash", { amount: tr.first_breach_cash.text })}</dd> : null}
-              </>
-            ) : (
-              <dd className="text-lg font-semibold text-ink">{t("biz.deals.fact.noBreach")}</dd>
-            )}
-          </div>
+          <Stat
+            rootTestId="deal-fact-cash"
+            label={t("biz.deals.fact.breach")}
+            value={breach !== null ? whenText(breach, today, t) : t("biz.deals.fact.noBreach")}
+            tone={breach !== null ? "bad" : "neutral"}
+            caption={breach !== null && tr.first_breach_cash ? t("biz.deals.fact.breachCash", { amount: tr.first_breach_cash.text }) : undefined}
+          />
         ) : null}
-        {tr && breach !== null ? (
-          <div data-testid="deal-fact-worst">
-            <dt className="text-xs font-medium text-ink-3">{t("biz.deals.fact.worst")}</dt>
-            <dd className="text-lg font-semibold tabular-nums text-ink">{tr.min_cash.text}</dd>
-            <dd className="text-xs text-ink-3">{whenText(tr.min_cash_day, today, t)}</dd>
-          </div>
-        ) : null}
+        {tr && breach !== null ? <Stat rootTestId="deal-fact-worst" label={t("biz.deals.fact.worst")} value={tr.min_cash.text} caption={whenText(tr.min_cash_day, today, t)} /> : null}
       </dl>
       {dearer ? (
         <p className="mt-3 text-sm text-ink-2" data-testid="deal-discount-dearer">

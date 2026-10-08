@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
 import { onSignedIn } from "@/lib/auth";
 import { backStep, goToStep, resetDemo } from "@/lib/demo-control";
-import { demoStore, useDemo } from "@/lib/demo-store";
+import { useDemo } from "@/lib/demo-store";
 import { DEMO_STEPS, SCENES } from "@/lib/demo";
 import { useI18n } from "@/lib/i18n";
 import { ArrowLeftIcon, ArrowRightIcon, ResetIcon } from "./icons";
@@ -44,11 +44,12 @@ export function DemoStepper() {
   return (
     <div className="border-t border-line bg-brand-50 px-4 py-2 lg:px-8" aria-label={t("demo.region")} role="region">
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-        <div className="flex items-center gap-2">
-          <span className="rounded-pill bg-brand-600 px-2 py-0.5 text-[0.7rem] font-bold uppercase tracking-wide text-white">
+        <div className="flex flex-wrap items-center gap-2">
+          {/* The navy strip above the page already says DEMO on a phone, where the five scene buttons need the whole width. */}
+          <span className="rounded-pill bg-brand-600 px-2 py-0.5 text-xs font-bold uppercase tracking-wide text-white max-sm:hidden">
             {t("demo.label")}
           </span>
-          <ol className="flex items-center gap-1" aria-label={t("demo.scenes")}>
+          <ol className="flex flex-wrap items-center gap-1" aria-label={t("demo.scenes")}>
             {SCENES.map((s) => {
               const active = current?.scene === s.id;
               return (
@@ -85,7 +86,8 @@ export function DemoStepper() {
           )}
         </div>
 
-        <div className="flex items-center gap-1.5">
+        {/* Below sm the last 3rem of this row is Ask FLOW (chat-panel.tsx fixes it to the bar's corner). */}
+        <div className="flex items-center gap-1.5 max-sm:mr-12">
           <Button size="sm" variant="ghost" onClick={() => backStep(router.push)} disabled={demo.busy || step <= 0} aria-label={t("demo.back")}>
             <ArrowLeftIcon />
             <span className="hidden sm:inline">{t("demo.back")}</span>
@@ -108,11 +110,10 @@ export function DemoStepper() {
         </div>
       </div>
       {demo.error ? (
-        <p role="alert" className="mt-1.5 rounded-tile border border-bad-line bg-bad-bg px-2.5 py-1.5 text-xs text-bad-fg">
+        <p role="alert" className="mt-1.5 rounded-tile max-sm:mr-12 border border-bad-line bg-bad-bg px-2.5 py-1.5 text-xs text-bad-fg">
           {demo.error}
         </p>
       ) : null}
-      {demoStore.get().busy ? null : null}
     </div>
   );
 }

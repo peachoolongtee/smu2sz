@@ -19,6 +19,7 @@ import type {
   CapexApplyResult,
   CapexRequest,
   CapexView,
+  EnvelopeView,
   FundingView,
   HomeView,
   LedgerView,
@@ -32,6 +33,8 @@ import type {
   OfferView,
   OperationView,
   PlanRequest,
+  PriceCurveView,
+  ReceivablesWorthView,
   ReconciliationView,
   StateView,
   SubmitOfferRequest,
@@ -46,6 +49,16 @@ import { downloadFile, http } from "./http";
 import * as trajectory from "./trajectory";
 
 const enc = encodeURIComponent;
+
+/** A strategy read the server has switched off (403 FEATURE_DISABLED) or does not have (404) is no data, not a failure: the card hides. */
+async function nullWhenOff<T>(read: () => Promise<T>): Promise<T | null> {
+  try {
+    return await read();
+  } catch (e) {
+    if (e instanceof ApiError && (e.status === 404 || (e.status === 403 && /FEATURE_DISABLED/.test(JSON.stringify(e.detail ?? e.message))))) return null;
+    throw e;
+  }
+}
 
 /** /negotiate returns the executor's raw results; the ledger view adds who asked and a one-line summary. */
 function asOperationView(o: Record<string, unknown>): OperationView {
@@ -72,7 +85,7 @@ export const live = {
 
   /** The API has no read endpoint for an offer; the session cache (demo store) holds what POST /offers returned. */
   getOffer: (offerId: string): Promise<OfferView> =>
-    Promise.reject(new ApiError(404, `Offer ${offerId} is not in this session. Submit it again from the Inbox.`)),
+    Promise.reject(new ApiError(404, `Offer ${offerId} is not in this session. Submit it again from the Inbox.`, undefined, "offer_missing", { id: offerId })),
 
   evaluateOffer: (offerId: string, fixtureId?: string) =>
     http<VerdictView>("POST", `/offers/${enc(offerId)}/evaluate`, { body: fixtureId ? { fixture_id: fixtureId } : {} }),
@@ -82,7 +95,7 @@ export const live = {
     return { ...n, operations: n.operations.map((o) => asOperationView(o as unknown as Record<string, unknown>)) };
   },
 
-  planFunding: (req: PlanRequest) => http<FundingView>("POST", "/router/plan", { body: req }),
+  planFunding: (req: PlanRequest, lang: "en" | "zh" = "en") => http<FundingView>("POST", lang === "zh" ? "/router/plan?lang=zh" : "/router/plan", { body: req }),
 
   getTrajectory: (mode: Mode, verdict?: VerdictView | null): Promise<TrajectoryView> => trajectory.getTrajectory(mode, verdict),
 
@@ -102,6 +115,15 @@ export const live = {
     http<HomeView>("GET", `/home?lang=${lang}${sinceDay !== null ? `&since_day=${sinceDay}` : ""}`),
   getReconciliation: async (): Promise<ReconciliationView> =>
     (await http<{ reconciliation: ReconciliationView }>("GET", "/reconciliation")).reconciliation,
+
+  /** GET /cash/price-curve (flag `price_curve`). Null when the feature is off or absent. */
+  getPriceCurve: (lang: "en" | "zh") => nullWhenOff(() => http<PriceCurveView>("GET", `/cash/price-curve?lang=${lang}`)),
+  /** GET /receivables/worth (flag `collections_worth`). Null when the feature is off or absent. */
+  getReceivablesWorth: (lang: "en" | "zh") => nullWhenOff(() => http<ReceivablesWorthView>("GET", `/receivables/worth?lang=${lang}`)),
+
+  /** GET /buyers/{buyer_id}/envelope (flag `envelope`). Null when the feature is off or the buyer is unknown. The zone is a detail of the answer, read only when asked. */
+  getEnvelope: (buyerId: string, lang: "en" | "zh", zone = false) =>
+    nullWhenOff(() => http<EnvelopeView>("GET", `/buyers/${enc(buyerId)}/envelope?lang=${lang}${zone ? "&zone=1" : ""}`)),
 
   /** POST /nl. The owner channel sends X-Owner-Token. A buyer turn never carries the owner token; in a demo build it
    * sends the buyer's published channel key (X-Counterparty-Key), otherwise nothing, and the API treats it as a proposal. */

@@ -39,6 +39,9 @@ import type {
   NlResponse,
   OfferView,
   PlanRequest,
+  EnvelopeView,
+  PriceCurveView,
+  ReceivablesWorthView,
   ReconciliationView,
   StateView,
   SubmitOfferRequest,
@@ -92,9 +95,9 @@ export async function negotiate(offerId: string, req: NegotiateRequest): Promise
   return isMock ? (await mock()).negotiate(offerId, req) : (await live()).negotiate(offerId, req);
 }
 
-/** POST /router/plan */
-export async function planFunding(req: PlanRequest = {}): Promise<FundingView> {
-  return isMock ? (await mock()).planFunding(req) : (await live()).planFunding(req);
+/** POST /router/plan. `lang` ("zh") makes the server write each row's `role_reason` in Chinese; English is the default. */
+export async function planFunding(req: PlanRequest = {}, lang: "en" | "zh" = "en"): Promise<FundingView> {
+  return isMock ? (await mock()).planFunding(req) : (await live()).planFunding(req, lang);
 }
 
 /**
@@ -153,6 +156,30 @@ export async function getAlerts(): Promise<AlertsView> {
 /** GET /reconciliation (flag `alerts`): receipts in the log matched to receivables. */
 export async function getReconciliation(): Promise<ReconciliationView> {
   return isMock ? (await mock()).getReconciliation() : (await live()).getReconciliation();
+}
+
+/**
+ * GET /cash/price-curve (flag `price_curve`): what cash arriving earlier is worth, in one sentence. Resolves to null when the
+ * server has the feature off (403 FEATURE_DISABLED) or lacks the route (404), so the Cash page hides the sentence. Call it only
+ * behind STRATEGY_MVP.
+ */
+export async function getPriceCurve(lang: "en" | "zh"): Promise<PriceCurveView | null> {
+  return isMock ? (await mock()).getPriceCurve(lang) : (await live()).getPriceCurve(lang);
+}
+
+/** GET /receivables/worth (flag `collections_worth`): the open receivables ranked by what collecting each saves. Null as above. */
+export async function getReceivablesWorth(lang: "en" | "zh"): Promise<ReceivablesWorthView | null> {
+  return isMock ? (await mock()).getReceivablesWorth(lang) : (await live()).getReceivablesWorth(lang);
+}
+
+/**
+ * GET /buyers/{buyer_id}/envelope (flag `envelope`): what the owner can live with for this buyer, as approved packages. `zone` asks
+ * for the terms-and-price table as well. The first answer for a set of books takes several seconds (the server sweeps the levers);
+ * a repeat is cached. Null when the server has the feature off or lacks the buyer, so the Deals card hides. Call it only behind
+ * STRATEGY_MVP.
+ */
+export async function getEnvelope(buyerId: string, lang: "en" | "zh", zone = false): Promise<EnvelopeView | null> {
+  return isMock ? (await mock()).getEnvelope(buyerId, lang, zone) : (await live()).getEnvelope(buyerId, lang, zone);
 }
 
 /** POST /nl: one turn of the conversation. Owner turns need the owner token (401 opens the sign-in dialog). */
@@ -217,7 +244,7 @@ export async function demoReset(scenario?: string): Promise<void> {
 
 /** GET /borrower-file/{id}.html | .docx | .pdf: fetched with the owner token and saved. Live mode only. */
 export async function downloadFile(path: string, filename: string): Promise<void> {
-  if (isMock) throw new ApiError(0, "Downloads are available in live mode, where the API renders the file.");
+  if (isMock) throw new ApiError(0, "Downloads are available in live mode, where the API renders the file.", undefined, "mock_download");
   return (await live()).downloadFile(path, filename);
 }
 

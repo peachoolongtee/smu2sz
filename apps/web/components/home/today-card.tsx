@@ -6,6 +6,7 @@ import { Badge, Button, Card, ErrorState, textLinkClass, inputClass } from "@/co
 import { advanceClock, getClock } from "@/lib/api";
 import { bump } from "@/lib/demo-store";
 import { useI18n } from "@/lib/i18n";
+import { errorText } from "@/lib/error-text";
 import { useAsync } from "@/lib/use-async";
 
 const MAX_DAYS = 366;
@@ -32,7 +33,7 @@ export function TodayCard({ onAdvanced }: { onAdvanced: () => void }) {
       onAdvanced();
       bump();
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(errorText(e, t));
     } finally {
       setBusy(false);
     }
@@ -66,7 +67,7 @@ export function TodayCard({ onAdvanced }: { onAdvanced: () => void }) {
               data-testid="home-days"
             />
           </label>
-          <Button type="submit" variant="primary" loading={busy} data-testid="home-advance">
+          <Button type="submit" variant="secondary" loading={busy} data-testid="home-advance">
             {t("home.demo.advance")}
           </Button>
           <span className="flex gap-1.5" role="group" aria-label={t("home.demo.badge")}>

@@ -1,113 +1,413 @@
-# FLOW web: design system
+---
+name: FLOW web
+description: A light, flat fintech surface for a supplier's owner; one confident blue, status colour only for status, five section hues for wayfinding, one deep navy block.
+colors:
+  canvas: "#f3f6fb"
+  surface: "#ffffff"
+  subtle: "#eaf0f7"
+  line: "#dbe3ee"
+  line-strong: "#c2cddc"
+  line-ui: "#74849b"
+  ink: "#0f1c2e"
+  ink-2: "#3f5068"
+  ink-3: "#5d6e84"
+  brand-50: "#e8f0fe"
+  brand-100: "#d3e2fc"
+  brand-600: "#1a5fe0"
+  brand-700: "#124bb8"
+  brand-900: "#0b1f4d"
+  on-deep: "#ffffff"
+  on-deep-muted: "#b7c3d9"
+  ok-fg: "#0b6b48"
+  ok-bg: "#e5f5ed"
+  ok-line: "#b2dec6"
+  ok-solid: "#1a8a5a"
+  ok-bright: "#6fdcae"
+  warn-fg: "#82490a"
+  warn-bg: "#fdf2d9"
+  warn-line: "#ecd092"
+  warn-solid: "#b7791f"
+  warn-bright: "#f5b942"
+  bad-fg: "#a3241a"
+  bad-bg: "#fdecea"
+  bad-line: "#f1b9b2"
+  bad-solid: "#d2362a"
+  bad-bright: "#ffb4ab"
+  info-fg: "#1447a6"
+  info-bg: "#e8f0fd"
+  info-line: "#b9cff4"
+  info-solid: "#2f6fe0"
+  info-bright: "#a9c8ff"
+  sec-home-bg: "#e8f0fe"
+  sec-home-fg: "#124bb8"
+  sec-home-solid: "#1a5fe0"
+  sec-deals-bg: "#f0ebfd"
+  sec-deals-fg: "#5532bf"
+  sec-deals-solid: "#6d4ad8"
+  sec-cash-bg: "#e1f4f6"
+  sec-cash-fg: "#07616e"
+  sec-cash-solid: "#0a8190"
+  sec-recv-bg: "#fdeee0"
+  sec-recv-fg: "#8f3f05"
+  sec-recv-solid: "#c4570c"
+  sec-activity-bg: "#fce9f1"
+  sec-activity-fg: "#a3225a"
+  sec-activity-solid: "#c7366e"
+  chart-base: "#1a5fe0"
+  chart-plan: "#0b6b48"
+  chart-reserve: "#a3241a"
+  chart-danger: "#fdecea"
+  chart-worst: "#b7791f"
+  chart-grid: "#dbe3ee"
+  chart-axis: "#5d6e84"
+  focus: "#1a5fe0"
+  focus-on-deep: "#ffffff"
+typography:
+  display:
+    fontFamily: "Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif"
+    fontSize: "36px"
+    fontWeight: 600
+    lineHeight: 1
+    letterSpacing: "-0.025em"
+  headline:
+    fontFamily: "Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif"
+    fontSize: "24px"
+    fontWeight: 600
+    lineHeight: 1.375
+  title:
+    fontFamily: "Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif"
+    fontSize: "20px"
+    fontWeight: 600
+    lineHeight: 1.4
+    letterSpacing: "-0.025em"
+  figure:
+    fontFamily: "Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif"
+    fontSize: "20px"
+    fontWeight: 600
+    lineHeight: 1.4
+    fontFeature: "tnum"
+  body:
+    fontFamily: "Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif"
+    fontSize: "14px"
+    fontWeight: 400
+    lineHeight: 1.45
+  label:
+    fontFamily: "Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif"
+    fontSize: "12px"
+    fontWeight: 600
+    lineHeight: 1.33
+    letterSpacing: "0.025em"
+  mono:
+    fontFamily: "ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace"
+    fontSize: "12px"
+    fontWeight: 400
+    lineHeight: 1.625
+rounded:
+  pill: "9999px"
+  card: "16px"
+  tile: "12px"
+spacing:
+  xs: "4px"
+  sm: "8px"
+  md: "12px"
+  lg: "16px"
+  xl: "20px"
+  2xl: "24px"
+components:
+  button-primary:
+    backgroundColor: "{colors.brand-600}"
+    textColor: "{colors.surface}"
+    rounded: "{rounded.pill}"
+    padding: "0 16px"
+    height: "40px"
+    typography: "{typography.body}"
+  button-primary-hover:
+    backgroundColor: "{colors.brand-700}"
+    textColor: "{colors.surface}"
+    rounded: "{rounded.pill}"
+    padding: "0 16px"
+    height: "40px"
+  button-secondary:
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.pill}"
+    padding: "0 16px"
+    height: "40px"
+  button-secondary-hover:
+    backgroundColor: "{colors.subtle}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.pill}"
+    padding: "0 16px"
+    height: "40px"
+  button-ghost:
+    backgroundColor: "transparent"
+    textColor: "{colors.ink-2}"
+    rounded: "{rounded.pill}"
+    padding: "0 16px"
+    height: "40px"
+  button-danger:
+    backgroundColor: "{colors.bad-solid}"
+    textColor: "{colors.surface}"
+    rounded: "{rounded.pill}"
+    padding: "0 16px"
+    height: "40px"
+  button-sm:
+    rounded: "{rounded.pill}"
+    padding: "0 12px"
+    height: "32px"
+    typography: "{typography.label}"
+  toggle-active:
+    backgroundColor: "{colors.brand-50}"
+    textColor: "{colors.brand-700}"
+    rounded: "{rounded.pill}"
+    padding: "0 16px"
+    height: "40px"
+  nav-pill-active:
+    backgroundColor: "{colors.brand-50}"
+    textColor: "{colors.brand-700}"
+    rounded: "{rounded.pill}"
+    padding: "0 14px"
+    height: "36px"
+  badge-ok:
+    backgroundColor: "{colors.ok-bg}"
+    textColor: "{colors.ok-fg}"
+    rounded: "{rounded.pill}"
+    padding: "2px 10px"
+    typography: "{typography.label}"
+  chip-neutral:
+    backgroundColor: "{colors.subtle}"
+    textColor: "{colors.ink-2}"
+    rounded: "{rounded.pill}"
+    padding: "2px 10px"
+    typography: "{typography.label}"
+  input:
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.pill}"
+    padding: "0 16px"
+    height: "40px"
+    typography: "{typography.body}"
+  textarea:
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.card}"
+    padding: "10px 16px"
+    typography: "{typography.body}"
+  card:
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.card}"
+    padding: "16px"
+  stat-tile:
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.tile}"
+    padding: "12px 16px"
+  hero-deep:
+    backgroundColor: "{colors.brand-900}"
+    textColor: "{colors.on-deep}"
+    rounded: "{rounded.card}"
+    padding: "20px"
+  segmented-track:
+    backgroundColor: "{colors.subtle}"
+    rounded: "{rounded.pill}"
+    padding: "2px"
+    height: "36px"
+  avatar:
+    backgroundColor: "{colors.subtle}"
+    textColor: "{colors.ink-2}"
+    rounded: "{rounded.pill}"
+    size: "36px"
+    typography: "{typography.label}"
+---
 
-The single reference for the look of `apps/web`. The tokens live in `app/globals.css` (`@theme static`, so Tailwind generates a utility for each and a chart can read them with `var()`); components take every colour, radius, shadow and duration from there. The colour reasoning is in `docs/research/colour-direction-2026-10-08.md`; the words are in `docs/UX_SIMPLIFICATION_BRIEF.md`.
+# Design System: FLOW web
 
-The rules that do not move: one brand-filled primary action per page; status colour only for status; the deep `brand-900` Home hero with its bright status pill; every text pair at 4.5:1 or better and every visible boundary and icon at 3:1 or better; nothing said by colour alone; no gradients on buttons or cards; the browser computes no money; Business mode shows no engine terms and no day numbers.
+The single reference for the look of `apps/web`, recorded from the shipped build (branch `feat/strategy-mvp`, 8 October 2026). The tokens live in `app/globals.css` (`@theme static`, so Tailwind generates a utility for each and a chart can read them with `var()`); components take every colour, radius, shadow and duration from there, and no hex appears anywhere else in `app/`, `components/` or `lib/`. The frontmatter above is normative; the prose says where and why. The colour reasoning is in `docs/research/colour-direction-2026-10-08.md`; the words are in `docs/UX_SIMPLIFICATION_BRIEF.md`; the sidecar for the live panel is `.impeccable/design.json` beside this file.
 
-## 1. Colour
+## Overview
 
-### Base
+**Creative North Star: "The Owner's Ledger, Lifted"**
 
-| Token | Hex | Use |
-|---|---|---|
-| `canvas` | `#f3f6fb` | the page behind the cards (a faint cool tint) |
-| `surface` | `#ffffff` | cards, sheets, inputs |
-| `subtle` | `#eaf0f7` | quiet fills: segmented track, table heads, skeletons |
-| `line` / `line-strong` | `#dbe3ee` / `#c2cddc` | hairlines and dividers (decoration, not a boundary that must be seen) |
-| `line-ui` | `#74849b` | any boundary that must be seen: inputs, secondary buttons, the segmented track |
-| `ink` / `ink-2` / `ink-3` | `#0f1c2e` / `#3f5068` / `#5d6e84` | text: primary, secondary, quiet |
-| `brand-50` / `-100` | `#e8f0fe` / `#d3e2fc` | the brand tint (selected toggle, next-step band, nav pill) |
-| `brand-600` / `-700` | `#1a5fe0` / `#124bb8` | the primary fill and its hover; links and the focus ring |
-| `brand-900` | `#0b1f4d` | the deep block: the Home hero, the Demo strip |
-| `on-deep` / `on-deep-muted` | `#ffffff` / `#b7c3d9` | text on the deep block |
+A light, flat, calm surface for a supplier's owner who reads cash the way a banker reads a statement: a faintly cool canvas under solid white cards, one confident blue that only ever means "the next step", and status colour that only ever means status and always comes with a word. The one deep moment is the navy Home hero (and the Demo strip), where the status is a bright pill on an unchanging block. Density is a banking app's: 14 px data in rows and tables, 16 px inside a card, fact tiles with a 12 px label, a 20 px figure and a 12 px caption, 24 px of air between sections.
 
-### Status (unchanged from Wave 8)
+Depth is "lifted base": a card rests on a hairline and a whisper of shadow, a row lifts one pixel on hover, a sheet or dialog takes a deeper pop. Motion is ease-out, under 300 ms, transform and opacity only; nothing moves the layout. Wayfinding is in colour: each of the five Business sections owns a hue that appears on its icon chip, its tab, its shortcut and a buyer's avatar, never on a status. Both the English and the Chinese shells live in one type stack that falls through to the system's Latin and CJK faces: no web font is fetched.
 
-`ok`, `warn`, `bad`, `info` each have `-fg` (text), `-bg` (tint), `-line` (tint border), `-solid` (a mark that must be seen: dot, rail, chart mark, 3:1) and `-bright` (a pill or figure on the deep block). A status colour means that status and nothing else.
+Confirmed rejections: no dark theme (`color-scheme: light`), no gradient on a button or a card, no coloured rail on a card's edge, no runtime web fonts, no browser-drawn sparklines, no text below 12 px, and no money computed in the browser (every figure, date and sentence arrives formatted from the server).
 
-### Section hues (wayfinding only)
+**Key Characteristics:**
+- Light only, flat materials, white cards on a cool `canvas`, lifted by shadow steps rather than tone.
+- One brand blue for the page's single primary action, links, focus and selection; never a status.
+- Status tokens (`ok`, `warn`, `bad`, `info`) in five weights each, always paired with a word.
+- Five section hues for wayfinding only; teal and orange pushed away from green and amber.
+- One radius scale: pill for anything pressed or typed into, 16 px cards, 12 px inner tiles.
+- 14 px body and data, 12 px floor, tabular figures, right-aligned money that never wraps.
+- Ease-out motion kit (120 / 200 / 280 ms), reduced motion honoured and forced in tests.
+- 44 px touch targets wherever a finger is the pointer, through a transparent hit area.
 
-Each section has a tint (`bg`), the text on that tint (`fg`) and a `solid` (the fill behind a white icon, or an icon on white). Classes: `bg-sec-deals-solid`, `text-sec-deals-solid`, `bg-sec-deals-bg text-sec-deals-fg`.
+## Colors
 
-| Section | bg | fg | solid | Looks like |
-|---|---|---|---|---|
-| `sec-home` (Home, Approvals, Limits) | `#e8f0fe` | `#124bb8` | `#1a5fe0` | the brand blue |
-| `sec-deals` | `#f0ebfd` | `#5532bf` | `#6d4ad8` | violet |
-| `sec-cash` | `#e1f4f6` | `#07616e` | `#0a8190` | teal (bluer than `ok` green on purpose) |
-| `sec-recv` | `#fdeee0` | `#8f3f05` | `#c4570c` | orange (redder than `warn` amber on purpose) |
-| `sec-activity` | `#fce9f1` | `#a3225a` | `#c7366e` | rose |
+A faint cool canvas, white surfaces, three inks, one blue in five weights, four status tones in five weights, five section hues, and one deep navy. Values are in the frontmatter; the roles and the computed WCAG 2.x ratios are here.
 
-### Contrast, computed (WCAG 2.x relative luminance)
+### Primary (brand)
+- **Brand blue** (`brand-600`): the page's one primary fill, text links, the focus ring, the caret and checkbox accent, the cash line in the chart. White on it is 5.6:1.
+- **Deep brand** (`brand-700`): the primary's hover; link text and the selected toggle's text (7.7:1 on white, 7.1:1 on canvas, 6.7:1 on `brand-50`).
+- **Brand tints** (`brand-50`, `brand-100`): the selected toggle's fill, the active nav pill, the next-step band, the "Recommended" badge; `brand-100` is the text selection colour.
+- **Navy** (`brand-900`): the deep block, used for the Home hero and the Demo strip and nothing else. Text on it is `on-deep` (15.9:1) and `on-deep-muted` (9.0:1); a fact tile on it is `on-deep` at 10% over the navy (`#23355f`), where `on-deep` is 12.0:1, `on-deep-muted` 6.8:1 and the bright status figures 7.1 / 6.8 / 7.1:1 (bad / warn / ok). Brand blue on navy is only 2.9:1, so the focus ring turns white inside `.on-deep`.
 
-| Pair | Ratio | Needs |
-|---|---|---|
-| ink / canvas | 15.8 | 4.5 |
-| ink-2 / canvas | 7.6 | 4.5 |
-| ink-3 / canvas | 4.8 | 4.5 |
-| ink-3 / white | 5.2 | 4.5 |
-| ink-3 / subtle | 4.5 | 4.5 |
-| ink-2 / subtle | 7.2 | 4.5 |
-| ink-3 / brand-50 | 4.6 | 4.5 |
-| ink-3 / backdrop disc at its strongest point (blue `#eaf0fa`, teal `#e9f1f6`) | 4.55 / 4.56 | 4.5 |
-| white / brand-600 | 5.6 | 4.5 |
-| white / brand-700 | 7.7 | 4.5 |
-| brand-700 / brand-50 | 6.7 | 4.5 |
-| brand-700 / white | 7.7 | 4.5 |
-| white / bad-solid (danger button) | 4.9 | 4.5 |
-| focus ring (brand-600) / canvas | 5.2 | 3 |
-| focus ring / white | 5.6 | 3 |
-| white focus ring / brand-900 | 15.9 | 3 |
-| line-ui / white | 3.8 | 3 |
-| line-ui / canvas | 3.5 | 3 |
-| line-ui / subtle | 3.3 | 3 |
-| brand-600 border / brand-50 (selected toggle) | 4.9 | 3 |
-| sec-home: white / solid; fg / bg; fg / white | 5.6; 6.7; 7.7 | 3; 4.5; 4.5 |
-| sec-deals: white / solid; fg / bg; fg / white | 5.8; 6.9; 8.1 | 3; 4.5; 4.5 |
-| sec-cash: white / solid; fg / bg; fg / white | 4.6; 6.3; 7.1 | 3; 4.5; 4.5 |
-| sec-recv: white / solid; fg / bg; fg / white | 4.5; 6.4; 7.3 | 3; 4.5; 4.5 |
-| sec-activity: white / solid; fg / bg; fg / white | 5.0; 6.2; 7.2 | 3; 4.5; 4.5 |
+### Secondary (status, four tones)
+Each of `ok`, `warn`, `bad`, `info` has `-fg` (text), `-bg` (tint), `-line` (tint border), `-solid` (a mark that must be seen: the dot, a chart mark, 3:1 or better) and `-bright` (a pill or figure on the deep block). Computed: fg on its own bg 5.8 / 6.5 / 6.5 / 7.4:1; fg on white 6.5 / 7.2 / 7.4 / 8.5:1; solid on its own bg 3.9 / 3.3 / 4.3 / 4.1:1; solid on white 4.4 / 3.6 / 4.9 / 4.7:1; white on `bad-solid` (the danger button) 4.9:1; `ink` on the bright pill (the hero's status) 10.2 / 9.7 / 10.1:1. A status colour means that status and nothing else.
 
-A section `solid` as an icon on a white tab bar has the same ratio as white on the solid. The Wave 8 status pairs are unchanged (their tints sit on their own backgrounds).
+### Tertiary (section hues, wayfinding only)
+Each section has a tint (`bg`), the text on that tint (`fg`) and a `solid` (the fill behind a white icon, or an icon on white). Home is the brand blue, Deals violet, Cash teal (bluer than `ok` green on purpose), Receivables orange (redder than `warn` amber on purpose), Activity rose. Computed: fg on bg 6.7 / 6.9 / 6.3 / 6.4 / 6.2:1; white on solid 5.6 / 5.8 / 4.6 / 4.5 / 5.0:1 (so a solid icon on a white tab bar is the same); fg on white 7.7 / 8.1 / 7.1 / 7.3 / 7.2:1. Buyer avatars use four of the five tints (not orange, which sits next to the warning amber) so an avatar cannot read as a status.
 
-### Roles: what each colour may mean
+### Chart
+Seven tokens for the cash chart's marks and nothing else: `chart-base` (the line you read, 5.6:1 on white, 4.9:1 on the danger band), `chart-plan` (the recommended plan, 6.5:1), `chart-reserve` (the floor, 7.4:1), `chart-danger` (the band below the floor, `bad-bg`), `chart-worst` (the worst point, 3.6:1 on white, 3.2:1 on the band: a 2 px mark, not text), `chart-grid` (`line`) and `chart-axis` (`ink-3`, 5.2:1 for the 12 px axis labels).
 
-- **brand** (`brand-600`): the page's one primary action, links, the focus ring, the selected state of a toggle. Never a status.
-- **status** (`ok`, `warn`, `bad`, `info`): how things are going. Always with a word; the dot or tint is the second channel, never the only one.
-- **section hues** (`sec-*`): where you are or where a link goes (a page's icon chip, the phone tab bar, a buyer's avatar tint). Never how things are going. Buyer avatars use four of the five tints (not orange, which sits next to the warning amber) so an avatar cannot read as a status.
-- **deep** (`brand-900`): the Home hero and the Demo strip, nothing else. The block stays navy; the status is the pill on it.
-- **ink**: text. `ink-3` is for captions, never for anything the owner must act on.
+### Neutral
+- **Canvas** (`canvas`): the page behind the cards (a faint cool tint).
+- **Surface** (`surface`): cards, sheets, inputs, the header and the tab bar.
+- **Subtle** (`subtle`): quiet fills: the segmented track, the nav track, table heads, skeletons, hover on a secondary button.
+- **Line / line-strong** (`line`, `line-strong`): hairlines and dividers (1.3:1 on white: decoration, not a boundary that must be seen). `line-strong` is the dashed edge of an empty state.
+- **Line-ui** (`line-ui`): any boundary that must be seen: inputs, secondary buttons, the segmented track, the account button (3.8:1 on white, 3.5:1 on canvas, 3.3:1 on subtle).
+- **Ink / ink-2 / ink-3** (`ink`, `ink-2`, `ink-3`): text primary, secondary, quiet. `ink` 15.8:1 on canvas; `ink-2` 7.6 on canvas, 8.2 on white, 7.2 on subtle; `ink-3` 4.8 on canvas, 5.2 on white, 4.5 on subtle, 4.6 on `brand-50`, 4.8 on an open table row (`subtle` at 60% on white), 4.9 on a late row (`bad-bg` at 40% on white), 4.55 / 4.56 on the strongest point of the backdrop discs (`#eaf0fa`, `#e9f1f6`). `ink-3` is for captions, never for anything the owner must act on.
+- **Focus** (`focus`, `focus-on-deep`): the brand ring, 5.2:1 on canvas, 5.6:1 on white, 4.9:1 on `brand-50`; white inside the deep block (15.9:1).
 
-## 2. Shape
+### Named Rules
+**The One Primary Rule.** One brand-filled action per page. Every other step is a secondary pill, a ghost, or a text link.
+**The Status Speaks Rule.** Status colour means status and nothing else, and it is never the only channel: the word is always there, the dot or tint is the second voice.
+**The Hue Is a Place Rule.** A section hue says where you are or where a link goes; it never says how things are going.
+**The Deep Block Rule.** `brand-900` is the Home hero and the Demo strip only. The block stays navy; the status is the bright pill on it.
+**The 4.5 / 3 Rule.** Every text pair 4.5:1 or better, every visible boundary and icon 3:1 or better, on the surface it actually sits on (tiles, rows, discs and tints included).
 
-| Token | Value | For |
-|---|---|---|
-| `--radius-pill` (`rounded-pill`) | 9999px | buttons, chips, badges, pills, segmented controls and their thumb, inputs, selects, the chat composer, icon chips, avatars |
-| `--radius-card` (`rounded-card`) | 16px | cards, the hero, disclosure cards, tables, dialogs, empty and error states |
-| `--radius-tile` (`rounded-tile`) | 12px | what sits inside a card: fact tiles, list rows with a border, option rows, callouts |
+## Typography
 
-A multi-line text area takes `rounded-card` (a pill clips the corners of a second line); the chat composer is a pill with a fixed two-line height.
+**Display Font:** the system stack (Inter if installed, else `ui-sans-serif` / `system-ui`, then PingFang SC, Hiragino Sans GB, Microsoft YaHei, Noto Sans CJK SC)
+**Body Font:** the same stack
+**Label/Mono Font:** `ui-monospace`, SF Mono, JetBrains Mono, Menlo, Consolas (hashes, formulas, code)
 
-Shadows: `--shadow-card` (a card at rest), `--shadow-lift` (a row, tile or option on hover), `--shadow-pop` (a sheet, menu, the chat panel, a floating button). No gradient on a button or a card.
+**Character:** one family, one role scale, no fetched font. The stack names Inter first and falls through to the platform's Latin and CJK faces, so English and Chinese render in the same metrics without a network request. Weight does the work: 600 for titles, figures and labels, 500 for controls and row titles, 400 for sentences. Antialiased, `text-size-adjust: 100%`.
 
-## 3. Components
+### Hierarchy
+- **Display** (600, 36 px / 48 px from `lg`, line-height 1, tight tracking): the Home hero's "Cash today" figure only; the Today card's day number is 30 px.
+- **Headline** (600, 24 px / 30 px from `lg`, line-height 1.375): the hero's status sentence; a deal's recommendation and a plan total at 24 px.
+- **Title** (600, 20 px, tight tracking): a page title (`PageHeader`), and the `Stat` figure at `size="lg"` (24 px from `sm`; 20 px on a phone).
+- **Figure** (600, 20 px, `tabular-nums`): the `Stat` figure (18 px on a phone), a row's amount at 14 px; every money column is `tabular-nums`, right-aligned, and a cell that holds an amount never wraps.
+- **Body** (400, 14 px, line-height 1.45): sentences, data in a table or a row, the subtitle under a page title, controls. Headlines and card titles are `text-balance`; the sentences under them `text-pretty`.
+- **Label** (600 / 500, 12 px, `0.025em` tracking when uppercase): a tile's label and caption, table heads, badges and chips, tab words, captions, the nav's section heading in Demo. 12 px is the floor: nothing is set below it, so there is no `text-2xs`.
+- **Mono** (400, 12 px, line-height 1.625): hashes (shortened, with copy), formulas (`Formula`, in a `subtle` tile).
 
-All in `components/ui.tsx` unless noted.
+### Named Rules
+**The Twelve Pixel Floor Rule.** No text is set below 12 px, on any surface, in any language.
+**The Tabular Money Rule.** A figure is `tabular-nums` and semibold; in a column it is right-aligned and never wraps.
+**The Sentence Before the Formula Rule.** A calculation is said in body text first; the formula follows in mono, in its own tile.
 
-- **Button** (`variant` primary, secondary, ghost, danger; `size` md, sm): a pill, 40 px tall (32 px compact), 16 px of horizontal padding, medium weight. Secondary has a `line-ui` border, ghost is text only, primary is the brand fill. **One primary per page.** A link that is the next step is a `ButtonLink` (same shape); `buttonClass()` is the class for a span that sits inside a link. `toggleClass(active)` is the pill that toggles (a preset, a demo scene): the selected one takes `brand-50` and a `brand-600` border.
-- **Badge** (`tone`): a pill with its tint, line and (for a status) a solid dot. **Chip**: a Badge without the dot, for a tag that carries no status (a channel, a kind).
-- **Segmented / SegmentedButtons**: a pill track (`line-ui` border on `subtle`) with a sliding pill thumb on `surface`. `Segmented` is a radio group (the Business/Demo switch, the language switch); `SegmentedButtons` is the same track made of `aria-pressed` buttons (the forecast horizon).
-- **Inputs**: `inputClass` (pill, 40 px, `line-ui` border) and `textareaClass` (`rounded-card`).
-- **Card**, **Stat**, **Callout**, **EmptyState**, **ErrorState**, **TableWrap**: radii from the scale above. `Card` reveals on mount.
-- **PageHeader** (`section`, optional `icon`): in the Business shell the title takes a 40 px round chip, a white 20 px icon on the section's `solid` (`components/section.tsx`, `PageIcon`). Every Business page and Approvals has one; the Demo shell keeps the flat look.
-- **Disclosure** (`components/business/kit.tsx`): the one fold. A native `<details>` with a turning chevron and a body that opens by height. Use it instead of a hand-rolled `<details>`.
-- **Avatar / toneFor / initials** (`kit.tsx`): a 36 px disc. A change row's icon sits on its status tint; a buyer's initials sit on a section tint (`toneFor(name)` is stable per name).
-- **Icons**: from `components/icons.tsx` only, at 16 or 20 px, `currentColor`. The exception is a section chip, which sets a white icon on its solid.
-- **Focus**: every focusable element gets the global ring (2 px, offset 2 px, `focus`; white inside `.on-deep`). Never remove an outline.
-- **Phone tab bar** (`app-shell.tsx`): the active tab's icon in its section solid, its label in ink; inactive in `ink-3`; a bar slides to the active tab.
-- **Backdrop** (`components/business/backdrop.tsx`): two blurred discs (Home blue, Cash teal) drifting over 40 s at a strength that keeps `ink-3` above 4.5:1 on their strongest point. Behind the Business pages only; cards stay solid.
+## Layout
 
-## 4. Motion
+A single centred column, 1180 px wide at most, 16 px of side padding (24 px from `lg`), 20 px under the sticky header (24 px from `lg`). Sections sit 24 px apart (`space-y-6`); inside a card the padding is 16 px (`p-4`), a card's header row is 16 px by 12 px with a hairline under it; tiles sit 12 px apart (`gap-3`); the chips and controls in a row sit 8 px apart (`gap-2`); the hero keeps its own 20 px. Everything is on a 4 px base.
 
+Breakpoints are Tailwind's: `sm` 640 px, `lg` 1024 px, `xl` 1280 px, plus a 1440 px (`90rem`) step for the dock and a `touch:` variant that is "below `lg`, or a coarse pointer at any width". A row of three tiles is `grid-cols-2 sm:grid-cols-3` with the first tile spanning two columns on a phone. `KeyValueList` stacks label over value on a phone and goes two-column from `sm`. The cash chart is 256 px tall (320 px from `sm`). Below `sm` the Cash backdrop disc is dropped; below `lg` the desktop pill nav is replaced by the fixed phone tab bar and the Demo sidebar by a menu.
+
+**The dock.** A fixed bottom bar (the phone tab bar, the Demo stepper) publishes its measured height as `--dock-h` on `html` (`useDock` in `app-shell.tsx`; 0 when the bar is not fixed). `main` takes `.dock-pad`: the bar plus 24 px below `sm`, the bar plus 72 px (room for the Ask FLOW pill) from `sm`, 80 px from `lg` where there is no bar, and 40 px from 1440 px on Business pages where the pill sits beside the 1180 px column. `html` takes a matching `scroll-padding-bottom`, so the last row of a page and a focused control always clear both the bar and the pill.
+
+**Touch.** Wherever a finger is the pointer every control reaches 44 px: `Button`, `toggleClass` and a `Disclosure` summary grow to `min-h-11` (the desktop 32 / 40 px look is unchanged); a small chip that must stay small (a segmented option, the account button, the copy-hash icon, a text link) keeps its look and takes `.hit`, a transparent 44 x 44 pseudo-element centred on it. Inline links in a sentence are exempt.
+
+### Named Rules
+**The 14 / 16 / 24 Rule.** 14 px data, 16 px inside a card, 24 px between sections.
+**The Dock Rule.** Nothing fixed to the bottom covers content or another fixed thing: the bar measures itself and the page pads to it.
+**The 44 px Rule.** Every control a finger can press reaches 44 px, by growing or by a transparent hit area; the desktop look does not change.
+
+## Elevation & Depth
+
+A lifted base: solid white cards on a cool canvas, each resting on a 1 px hairline and a soft two-layer shadow. Depth is a response to role and state, not decoration: a card at rest takes `--shadow-card`; a row, tile or option that leads somewhere lifts 1 px and takes `--shadow-lift` on hover (only on devices that hover); a sheet, menu, the chat panel and the Ask FLOW pill take `--shadow-pop`; the Demo strip fixed to the bottom of a phone casts `--shadow-up`. There is no tonal layering of surfaces; `subtle` is a fill for a track or a head, not a level. The one translucent surface is the hero's fact tile (`on-deep` at 10% on the navy). The Business pages sit on a backdrop of two blurred discs (Home blue, Cash teal; 64 px blur at 35%) that drift once over 40 s and then rest; cards stay solid on top.
+
+### Shadow Vocabulary
+- **Card** (`box-shadow: 0 1px 2px rgb(15 28 46 / 0.05), 0 6px 14px -10px rgb(15 28 46 / 0.12)`): a card at rest, the segmented thumb, a link tile.
+- **Lift** (`box-shadow: 0 2px 4px rgb(15 28 46 / 0.06), 0 12px 22px -14px rgb(15 28 46 / 0.22)`): a row, tile or option on hover (`motion-lift`).
+- **Pop** (`box-shadow: 0 4px 8px rgb(15 28 46 / 0.06), 0 18px 36px -12px rgb(15 28 46 / 0.24)`): the account sheet, the chat slide-over, the walkthrough card, the floating Ask FLOW pill, the skip link.
+- **Up** (`box-shadow: 0 -4px 12px rgb(15 28 46 / 0.08)`): the Demo strip fixed to a phone's bottom edge.
+
+### Named Rules
+**The Hairline First Rule.** A card's edge is a 1 px `line`; the shadow is the whisper under it, never the boundary.
+**The No Rail Rule.** No gradient on a button or a card, and no coloured rail on a card's edge: a status is a pill with a word, a tone is a 1 px tone line.
+
+## Shapes
+
+Three radii and nothing else. Anything pressed or typed into is a pill (`9999px`): buttons, chips, badges, pills, segmented controls and their thumb, inputs, selects, the chat composer, icon chips, avatars, the nav pills, the account button. A container is a card (`16px`): cards, the hero, disclosure cards, tables, dialogs, the chat panel's edge, empty and error states, the walkthrough card and its spotlight. What sits inside a card is a tile (`12px`): fact tiles, list rows with a border, option rows, callouts, skeletons, formulas. A multi-line text area takes the card radius (a pill clips the corners of a second line); the chat composer is a pill with a fixed two-line height. Borders are 1 px: `line` when decorative, `line-ui` when the edge must be seen, a tone's `-line` when the surface is a tint, dashed `line-strong` on an empty state. Icons are from `components/icons.tsx` only, at 16 or 20 px, `currentColor`; the one exception is a section chip, a 40 px disc (48 px `lg`) with a white 20 px icon on the section's solid.
+
+## Components
+
+All in `components/ui.tsx` unless noted. Motion classes are in `app/globals.css`.
+
+### Buttons
+- **Shape:** a pill (`9999px`), 40 px tall (`min-h-10`), 16 px of horizontal padding, 14 px medium; compact is 32 px, 12 px padding, 12 px text; 44 px wherever a finger is the pointer. `motion-press`: scales to 0.98 while pressed, eases colour in 200 ms.
+- **Primary:** the brand fill, white text, hover to `brand-700`. **One primary per page.** A link that is the next step is a `ButtonLink` (same shape); `buttonClass()` is the class for a span inside a link.
+- **Secondary:** white with a `line-ui` border, hover `subtle`. **Ghost:** text only in `ink-2`, hover `subtle` and `ink`. **Danger:** `bad-solid` fill, white text, hover darkens 10%.
+- **Focus:** the global ring, 2 px `focus` offset 2 px, following the element's own radius (a pill gets a round ring); white inside `.on-deep`. Never remove an outline.
+- **Disabled / loading:** 50% opacity, `not-allowed`; a loading button shows the `Spinner` before its label and sets `aria-busy`; under reduced motion the arc is an ellipsis after the label.
+- **Toggle** (`toggleClass(active)`): the pill that toggles (a preset, a scene, a filter), `aria-pressed`, in a `role="group"` above the list it filters. The selected one takes `brand-50`, a `brand-600` border (4.9:1 on the tint) and `brand-700` text; the rest look secondary. A filter that would repeat the whole list is not offered.
+- **Text link** (`textLinkClass`, `a.underline`): `brand-700`, underlined, 12 px medium, a pill hover of `brand-50`; the underline thickens to 2 px on hover (no colour change). A card's quiet links ("All receivables", "Open approvals") are text links; a pill is for a step.
+
+### Chips and badges
+- **Badge** (`tone`): a pill with its tint, its `-line` border and (for a status) a 6 px `-solid` dot; 12 px medium, 10 px by 2 px padding, `whitespace-nowrap`. Neutral and brand badges (a tier, a count, "Recommended") carry no status and no dot.
+- **Chip:** a Badge without the dot, for a tag that carries no status (a channel, a kind). A label that is a whole server sentence (a plan's `role_reason`) takes `wrap`: it breaks inside its pill and never runs wider than its row.
+- **Ranking:** wherever the server ranks, the rank is a numeral (a column in a table, `#1` on a Cash plan, a number before a buyer on a phone) and the order is the server's. "Recommended" is the brand badge wherever the server marks a row; an alternative says why in a neutral chip.
+
+### Cards and containers
+- **Card:** `16px` radius, white, `line` hairline, `--shadow-card`, reveals on mount (`motion-reveal`). An optional header row (title 14 px semibold, subtitle 12 px `ink-3`, actions on the right) with a hairline under it; the body is 16 px padding. A card's `tone` is a 1 px tone line, never a rail. A section with nothing in it is not a card around nothing: on Activity the empty Agreements and Refused sections are one quiet `ink-3` line each (title, colon, the sentence), and the empty Timeline is the same line inside its card.
+- **Callout** (`tone`): a `12px` tile on the tone's tint and line; its title in the tone's fg, its body in `ink-2`.
+- **TableWrap / table:** a scrollable `role="region"` with a card radius and hairline; heads are 12 px semibold `ink-2` on `subtle`; cells are 14 px with a `line` rule, 12 px by 8 px padding, last row unruled.
+- **Link tile** (`DoorTile` in `app/cash/page.tsx`): a quiet bordered card-radius tile with what the door is for (14 px semibold, 12 px `ink-3` under it) and one text link stretched over the whole tile; lifts on hover.
+- **Stat:** the one fact tile (hero tiles, Cash facts, Receivables summary, the Deals ceilings and recommendation facts, the Mandate limits, the next step's cost, landing and authority). A `12px` tile, 16 px by 12 px padding, in a `<dl>`: an uppercase 12 px semibold tracked label (`ink-3`), the figure (`tabular-nums`, 18 → 20 px, 20 → 24 px with `size="lg"`; its colour is a status only when `tone` names one), a 12 px `ink-3` caption (when, of what, against what; a second line is a second `block` span) and, only when the server sent a `delta_display`, a delta chip (neutral unless the server names its tone; the browser never subtracts). Two surfaces: `surface` (white, a `line` hairline) and `deep` (the Home hero: `on-deep` at 10%, label and caption in `on-deep-muted`, a status figure in its `-bright` tone). `tint` fills the tile with its status tint for the one tile that says who decides. A caption may carry a related figure (the headroom under the reserve and under the lowest point) with its own test id.
+- **Avatar** (`kit.tsx`): a 36 px disc, 12 px bold. A change row's icon sits on its status tint; a buyer's initials sit on a section tint (`toneFor(name)` is stable per name, four hues, never orange).
+- **Row** (`kit.tsx`): an avatar, the title (14 px medium) with a quiet 12 px line under it (in `bad-fg` or `warn-fg` only when the row's `tone` is that status), on the right the figure (14 px semibold tabular) with its note; with `href` the whole row is a link with the chevron and lifts on hover (`12px` radius, `subtle`). Rows are 48 px minimum and divided by hairlines.
+
+### Inputs / Fields
+- **Style:** `inputClass`: a pill, 40 px, `line-ui` border, white, 16 px padding, 14 px `ink`, placeholder `ink-3`. `textareaClass`: the same in a card radius with 10 px by 16 px padding and relaxed leading. The caret is `brand-600`; checkboxes and radios take the brand accent.
+- **Focus:** the global ring. **Disabled:** inherited from the button rules (50% opacity).
+- **Segmented / SegmentedButtons:** a pill track (`line-ui` border on `subtle`, 2 px inset) with a sliding white pill thumb carrying `--shadow-card`; options are 32 px, 12 px medium, `ink` when selected and `ink-2` otherwise, each with `.hit`. `Segmented` is a radio group (the Business/Demo switch, the language switch); `SegmentedButtons` is the same track made of `aria-pressed` buttons (the forecast horizon). The thumb moves by transform (`motion-slide`).
+
+### Navigation
+- **Desktop nav** (`app-shell.tsx`, from `lg`): the five sections as 36 px pills on a `subtle` pill track; the active one is `brand-50` with `brand-700` text and `aria-current="page"`, the rest `ink-2` with a `line` hover. The header is sticky, white, with a hairline under it; the brand mark is a 32 px brand-blue disc.
+- **Phone tab bar** (below `lg`): fixed to the bottom, white with a hairline over it and safe-area padding; five tabs of 56 px, icon over a 12 px word. The active tab's icon takes its section's solid, its word stays `ink`; inactive tabs are `ink-3`. A 2 px, 40 px wide bar in the section's solid slides to the active tab (`motion-slide`). Its last 3 rem below `sm` is Ask FLOW. A section whose word is too long for a fifth of a phone takes a shorter word (the link keeps its full name for assistive tools).
+- **Ask FLOW** (`components/chat/chat-panel.tsx`, `.ask-trigger`): never floats over content. Below `sm` it is the last cell of the bottom bar, 48 by 56 px, icon over "Ask"; from `sm` a brand pill 16 px above the bar; from `lg` 24 px from the corner. It opens a native modal `<dialog>` that slides in from the right (`motion-panel`), 32 rem wide at most, white, a `line` left edge, `--shadow-pop`, over a 30% ink backdrop; its close button is a 40 px pill with a `line-ui` border.
+- **Account sheet** (`AccountSheet`): a native `<details>` under a small 32 px pill button (`line-ui` border, a 24 px `brand-50` initial disc); the sheet is a 288 px card with `--shadow-pop` that drops in from its top-right corner (`motion-sheet`); its rows are 44 px pills. Escape closes it and returns focus to the button, a press outside closes it. Business: the identity, Limits, the tour, the language. Demo, below `lg`: mock or live data, who is signed in, the language.
+- **Approvals shortcut:** a warn-tinted 32 px pill in the header (`warn-bg`, `warn-line`, `warn-fg` at 7.2:1) when something awaits the owner.
+- **Skip link:** visible on focus as a white pill with `--shadow-pop` at the top-left.
+- **Demo strip:** the `brand-900` bar across the top of the Demo shell (`.on-deep`, 36 px, 12 px text); fixed to the bottom of a phone with `--shadow-up`.
+
+### Page header
+`PageHeader` (`section`, optional `icon`): a 20 px semibold title, a 14 px `ink-2` subtitle, actions on the right, 20 px under it. In the Business shell the title takes a 40 px round chip, a white 20 px icon on the section's `solid` (`components/section.tsx`, `PageIcon`). Every Business page and Approvals has one; the Demo shell keeps the flat look.
+
+### Disclosure
+`Disclosure` (`components/business/kit.tsx`) is the one fold, with the one chevron (`FoldChevron`, right-pointing, a quarter turn in 200 ms when open; the same chevron opens a table row). A native `<details>` whose body opens by height (`.disclosure-body`, a one-row grid from `0fr` to `1fr` with a fade). The summary is a 40 px pill row (44 px on touch), 14 px medium, `brand-700` inside a card, `ink` semibold when the fold is its own card (`card`: a card radius, hairline, shadow, a hairline between summary and body), `on-deep` on the hero. Use it instead of a hand-rolled `<details>`; `summaryClass` + `bare` let a row draw its own summary (a Cash option) and `flush` removes the body padding. Its label comes from one small set: **Details**, **Why**, **Show the calculation**, **Audit details** (ids, tiers, hashes, the executor's sentence). A fold that names its own subject ("Original message", "Debt readings", "Show 3 more", "Other plans considered") says so; two folds on one page never share a label. Other `<details>` (a transcript's fold) take the browser's `::details-content` height transition where it exists.
+
+**Row disclosure** (`components/business/receivables-table.tsx`): in a table a row opens from a trailing chevron button (`aria-expanded`, `aria-controls`) into a second row spanning the table, on `subtle` at 60%; on a phone the same facts are a stacked list whose row ends in a Disclosure.
+
+### Hero and status
+- **Home hero** (`components/business/status-block.tsx`): a `brand-900` card, 20 px padding, `.on-deep`. The status pill is its `-bright` tone with `ink` text and a 6 px ink dot that pulses once (`motion-pulse`) for ACTION_NEEDED and CRITICAL only; the sentence is 24 / 30 px `on-deep`; the note 16 px `on-deep-muted`; "Cash today" is the 36 / 48 px display figure; three deep `Stat` tiles follow; "Why" is a deep Disclosure under a `on-deep` 20% hairline. The block never changes colour: the pill does.
+- **Cash status row:** Cash says it once in a compact row (the status pill and the sentence, then the note) above the facts as `Stat` tiles. The same fact never has two voices.
+- **Next-step band** (`NextStep`) only where the step is a navigation; the **Recommended-next-step card** where there is a priced action.
+
+### States
+- **Loading** (`LoadingBlock`): `role="status"`, `aria-live="polite"`, a visually hidden label, and `subtle` tile-radius skeletons (a 32 px third-width line, then 64 px rows) that pulse.
+- **Empty** (`EmptyState`): a card-radius box with a dashed `line-strong` edge, 40 px by 24 px padding, centred 14 px semibold title, 14 px `ink-2` body, an optional action under 16 px of air.
+- **Error** (`ErrorState`): `role="alert"`, a card-radius `bad-bg` box with a `bad-line` edge, "Something went wrong" in `bad-fg`, the message in `ink-2`, a compact secondary "Retry". A failure the client recognises carries a code (`ApiError.code`) and is said through the dictionary (`err.<code>`, `errorText` in `lib/error-text.ts`); a failure the server explained shows the server's own words.
+- **Signed out (401 / 403):** not an error. `role="status"`, a white card with `--shadow-card`, "Sign in to see this" in `ink`, the reason in `ink-2`, and the page's one primary "Sign in" (`data-testid="signin-needed"`).
+
+### Dialogs and the tour
+The chat and the walkthrough (`components/business/tour.tsx`) are native `<dialog>`s (`showModal`: the page behind is inert, Escape closes, focus returns). The walkthrough's card is 24 rem wide at most, card radius, white, `--shadow-pop`, scaling in (`motion-pop`); its spotlight is a card-radius hole ringed in white, cut from `ink` at 60%, tracked with a `ResizeObserver` and scroll, never a timer, and it jumps between steps. The tour returns focus to the account button when it closes.
+
+### Cash forecast (`components/business/cash-forecast.tsx`)
+A step-after area chart with a horizontal-only grid in `chart-grid`, axis text in `chart-axis` at 12 px, the cash line 2 px `chart-base` with an 8% fill, the plan a 2 px dashed `chart-plan` (9 / 5), the reserve a 2 px dashed `chart-reserve` (6 / 4) named in the legend rather than on the line, the first unsafe day a 2 px dotted `chart-reserve` vertical with its label, the band below the reserve in `chart-danger`, event marks as 4 px white discs stroked in `chart-plan` (money in) or `chart-reserve` (money out), the breach a 6 px `chart-reserve` disc, the worst point a `chart-worst` mark with a bold label. Labels are 12 px (the floor), placed in pixels against the measured drawing: event labels alternate above and below the line, none within 24 px of another or of the first unsafe day and the lowest point, up to four; below `sm` there are no event labels (the marks stay, up to three, and the tooltip lists the day's events). The worst-point label is dropped when the worst point is the reserve. A label is pushed in from whichever edge it would cross; two events that read the same (one buyer's two receipts) share one label and the tooltip names the later one. The tooltip is a white card-radius box with the day's events as the server's `label: amount_display`; its cursor is a 3 / 3 dashed `chart-axis` line. The horizon is a `SegmentedButtons` track; a "Show the figures as a table" Disclosure carries the same rows as text. Recharts' focusable SVG takes the global ring. Chart animation is off; the browser draws no sparklines.
+
+### Browser surfaces and first paint
+Text selection is `brand-100` on `ink`; the caret and checkboxes are `brand-600`. `color-scheme: light` on `html`: there is no dark theme; the scrollbars, form controls and dialog backdrop must not take a dark phone's. An inline script in `<head>` (`lib/pre-hydration.ts`) reads `tl-lang` and `tl-mode`, sets `lang` and `data-mode` at once, and keeps the body hidden (`data-pending`) while the server's Business/English markup would be the wrong shell or language; the shell clears it after hydration (a 2 s timer is the way out). The tab title of every route is server metadata (`lib/route-title.ts`, one `layout.tsx` per route); the shell puts the owner's language in.
+
+### Backdrop (`components/business/backdrop.tsx`)
+Two blurred discs (Home blue, Cash teal: the section solid at 12% in the canvas, 64 px blur, 35% opacity) that drift once over 40 s and then rest, at a strength that keeps `ink-3` above 4.5:1 on their strongest point (the Cash disc is left out on a phone). Behind the Business pages only; cards stay solid.
+
+### Motion
 Ease-out, short, transform and opacity only. A disclosure's height is the one deliberate exception.
 
 | Token | Value |
@@ -119,13 +419,55 @@ Ease-out, short, transform and opacity only. A disclosure's height is the one de
 
 | Class | What it does |
 |---|---|
-| `motion-reveal` | a block fades in and rises 6 px on mount (the hero, `Card`, `PageHeader`, disclosure cards, the next-step band) |
+| `motion-reveal` | a block fades in and rises 6 px on mount (the hero, `Card`, `PageHeader`, disclosure cards, the next-step band, empty and error states) |
 | `motion-rise` on a list | rows rise one after another, 30 ms apart, for the first eight; a ninth row just appears |
-| `motion-lift` | hover lifts 1 px and takes the next shadow step (rows, tiles, option rows), only where hover exists |
+| `motion-lift` | hover lifts 1 px and takes the next shadow step (rows, tiles, option rows, link tiles), only where hover exists |
 | `motion-press` | a button scales to 0.98 while pressed and eases its colour |
 | `motion-slide` | a thumb or indicator moves by transform (the segmented thumb, the tab bar's active bar) |
-| `motion-sheet` / `motion-panel` / `motion-pop` | the account sheet drops in; the chat slide-over enters from the right; the walkthrough card scales in |
-| `motion-pulse` | the status dot's ring pulses once on mount, for ACTION_NEEDED and CRITICAL only (never on a calm status) |
-| `.disclosure-body` | a one-row grid from `0fr` to `1fr`; other `<details>` use the browser's `::details-content` height transition where it exists |
+| `motion-sheet` / `motion-panel` / `motion-pop` | the account sheet drops in from its corner; the chat slide-over enters from the right; the walkthrough card scales in |
+| `motion-pulse` | the status dot's ring grows to 3x and fades once (900 ms, after 400 ms), for ACTION_NEEDED and CRITICAL only (never on a calm status) |
+| `.disclosure-body` | a one-row grid from `0fr` to `1fr` with a fade; other `<details>` use the browser's `::details-content` height transition where it exists |
+| `.biz-disc` | the backdrop's one 40 s drift, then rest |
 
-Rules: nothing animates width, height (but the disclosure), margin or position, so nothing shifts the layout. `prefers-reduced-motion: reduce` sets every duration to 0.001 ms, removes delays and loops, and cancels the hover and press transforms; the backdrop stops. The Playwright config sets `reducedMotion: "reduce"` so every spec runs without animation.
+The Tailwind transition utilities (`transition-colors`, `-opacity`, `-transform`) take `--dur` and `--ease-out` as their default, so a bare one still comes from this kit. Nothing animates width, height (but the disclosure), margin or position, so nothing shifts the layout. `prefers-reduced-motion: reduce` sets every duration to 0.001 ms, removes delays and loops, cancels the hover and press transforms, stops the backdrop and replaces the `Spinner` arc with an ellipsis after the label. The Playwright config sets `reducedMotion: "reduce"` so every spec runs without animation.
+
+### Language and figures
+Every string is in the dictionary in both English and Chinese (`lib/dictionary.ts`: 1608 keys each, `zh` typed as `Record<DictKey, string>` so a missing twin fails the build); `<html lang>` follows the owner's choice (`en` / `zh-CN`). One plural template (`{n|invoice|invoices}`) serves every count. The browser computes no money: every figure, date and sentence arrives formatted from the server as a display string (`*_display`, `*_short`, `*_when`, `event_text`, `label_short`), traceable to a formula; the client does no regex rewrite, approval inference, subtraction or truncation. Business mode shows no engine terms and no day numbers.
+
+## Do's and Don'ts
+
+### Do:
+- **Do** take every colour, radius, shadow and duration from `app/globals.css`; no hex lives in a component.
+- **Do** give each page one brand-filled primary; make every other step a secondary pill, a ghost or a text link.
+- **Do** pair every status colour with a word (the pill, the dot and the tint are the second channel).
+- **Do** use a section hue only to say where you are or where a link goes: the page chip, the tab, a shortcut, a buyer's avatar.
+- **Do** keep text at 12 px or above, body and data at 14 px, and set every figure `tabular-nums`, right-aligned in a column, never wrapping.
+- **Do** use `Stat` for a fact, `Disclosure` for a fold, `Badge` for a status, `Chip` for a tag, `Row` for a list line, and the one `FoldChevron`.
+- **Do** hold every text pair at 4.5:1 and every boundary and icon at 3:1 on the surface it actually sits on; use `line-ui` for any edge that must be seen.
+- **Do** reach 44 px on touch by growing a control or giving it `.hit`; keep the desktop 32 / 40 px look.
+- **Do** publish and read `--dock-h` so nothing fixed to the bottom covers content.
+- **Do** animate transform and opacity only, with the kit's three durations and one easing, and respect `prefers-reduced-motion`.
+- **Do** show every figure, date and sentence as the server sent it, in both languages.
+
+### Don't:
+- **Don't** ship a dark theme, a gradient on a button or a card, a coloured rail on a card's edge, or a runtime web font.
+- **Don't** let the brand blue mean a status, or a status colour mean anything but that status.
+- **Don't** use `brand-900` anywhere but the Home hero and the Demo strip, or change the block's colour with the status.
+- **Don't** set text below 12 px; there is no `text-2xs`.
+- **Don't** hand-roll a `<details>`, a second chevron, a second fact tile, or a second radius; the scale is pill / 16 / 12.
+- **Don't** compute, subtract, round, truncate or reword money in the browser, or draw a sparkline there.
+- **Don't** remove a focus outline, animate height or position (the disclosure's height excepted), or let Ask FLOW float over content.
+- **Don't** tint a buyer's avatar orange, and don't give two folds on one page the same label.
+- **Don't** wrap an empty section in a card; one quiet `ink-3` line says it.
+
+## Amendments from the finish review (8 October 2026, Wave 8 pass E)
+
+- **Cash forecast labels** also avoid the gridlines and the reserve line: a label whose text box would cross one flips to the other side of its mark before the same-side overlap rule runs. Labels may still cross the series lines (open).
+- **Receivables worth is one figure**: the word "Saves" beside the server's net figure, right-aligned and tabular; when the server says there is no saving, its short sentence stands in. The full worth sentence is the first line of the row's details.
+- **Fold labels**: on a page that already has a "Details" fold, every other fold names its subject ("Option A details"; Home's foot card "Details: what is on its way, warnings, facilities and debt readings").
+- **The recommended funding row** is titled by the server's plan name, "Recommended plan" only as the fallback; the grey "a cheaper option exists" note is not drawn when the rows carry a role (the alternative's chip says it).
+- **The envelope card** draws the three fact tiles, the caption, the reason and the money sentence; the server's primary sentence is not drawn (the tiles carry its figures).
+- **A decision headline** ("Counter recommended") is a card title: 20 px semibold, its weight from position.
+- **Lists in a card** (the Activity timeline) are divider-separated rows with no per-row border, radius or tint; the audit fold sits inline at the trailing edge.
+- **The Cash status card** carries the note and the cash-price sentence; the debt-readings fold is the Forecast card's footer.
+- **Copy**: time passing carries no "Executed" chip; an expiry reads in the past tense once the day has gone ("Expired 27 days ago"); "Debt readings, this month"; a recovered promise is a full sentence; a receipt says "of the invoice".

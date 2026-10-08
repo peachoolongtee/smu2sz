@@ -6,11 +6,11 @@ import { NextActionBlock } from "@/components/business/next-action";
 import { FixResult, useFixAlert } from "@/components/home/fix-alert";
 import { StatusBlock } from "@/components/business/status-block";
 import { ErrorState, LoadingBlock } from "@/components/ui";
-import { getHome } from "@/lib/api";
+import { getHome, getReceivablesWorth } from "@/lib/api";
 import { onSignedIn } from "@/lib/auth";
 import { bump } from "@/lib/demo-store";
 import { useI18n } from "@/lib/i18n";
-import { useAsync } from "@/lib/use-async";
+import { useAsync, useStrategyAsync } from "@/lib/use-async";
 
 /**
  * The owner's home: am I safe, what should I do, what does it cost, what needs my decision, what changed, who has not paid.
@@ -33,6 +33,9 @@ export default function HomePage() {
   const { lang, t } = useI18n();
   // "Since my last visit": the marker is read when the home is fetched (client side), so no state is needed for it.
   const view = useAsync(() => getHome(lang, typeof window === "undefined" ? null : readLastVisit()), [lang]);
+  // What to do about the invoice that saves the most (strategy MVP, build-time flag): null while loading, when the server has it off
+  // or when the read fails, so the home is then exactly what it was; never read with the flag off.
+  const worth = useStrategyAsync(() => getReceivablesWorth(lang), [lang]).data;
   // Remember this visit once the home has loaded, so the next visit asks "since then".
   useEffect(() => {
     if (!view.data) return;
@@ -55,14 +58,14 @@ export default function HomePage() {
       ) : !h ? (
         <LoadingBlock rows={3} />
       ) : (
-        <div className="space-y-5" aria-busy={view.loading}>
+        <div className="space-y-6" aria-busy={view.loading}>
           <StatusBlock h={h} />
           <FixResult result={fixer.result} error={fixer.error} changed={fixer.changed} />
           {h.next_action ? <NextActionBlock a={h.next_action} stateVersion={h.state_version} fixer={fixer} /> : null}
           {/* An empty section is hidden: the absence of decisions or news is not itself news. */}
           {h.pending_count > 0 ? <DecisionsBlock approvals={h.approvals} primary={!h.next_action || Boolean(h.next_action.pending_approval_id)} /> : null}
-          <div className="grid gap-5 lg:grid-cols-2">
-            <ReceivablesBlock r={h.receivables} />
+          <div className={`grid gap-6 ${h.changes.length ? "lg:grid-cols-2" : ""}`}>
+            <ReceivablesBlock r={h.receivables} worth={worth} />
             {h.changes.length ? (
               <ChangesBlock changes={h.changes} sinceWhen={h.since_day !== null && h.since_day !== undefined ? t("biz.when.daysAgo", { n: Math.max(h.day - h.since_day, 0) }) : null} />
             ) : null}

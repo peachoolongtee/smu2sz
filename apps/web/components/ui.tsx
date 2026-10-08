@@ -5,6 +5,7 @@ import { useState, type ComponentProps, type ReactNode } from "react";
 import { requestSignIn } from "@/lib/auth";
 import { ApiError } from "@/lib/errors";
 import { useI18n } from "@/lib/i18n";
+import { errorText } from "@/lib/error-text";
 import { usePathname } from "next/navigation";
 import { shellFor, useMode } from "@/lib/mode";
 import { CheckIcon, CopyIcon, Spinner } from "./icons";
@@ -40,16 +41,6 @@ const toneBorder: Record<Tone, string> = {
   brand: "border-brand-100",
 };
 
-/** A card that carries a status or a recommendation wears a 3 px rail in the tone's solid colour (a mark that must be seen). */
-const toneRail: Record<Tone, string> = {
-  neutral: "",
-  ok: "border-l-[3px] border-l-ok-solid",
-  warn: "border-l-[3px] border-l-warn-solid",
-  bad: "border-l-[3px] border-l-bad-solid",
-  info: "border-l-[3px] border-l-info-solid",
-  brand: "border-l-[3px] border-l-brand-600",
-};
-
 const toneText: Record<Tone, string> = {
   neutral: "text-ink",
   ok: "text-ok-fg",
@@ -69,6 +60,7 @@ export function Badge({
   title,
   className = "",
   dot = true,
+  wrap = false,
 }: {
   tone?: Tone;
   children: ReactNode;
@@ -76,12 +68,14 @@ export function Badge({
   className?: string;
   /** False where the label has its own mark (a glyph). */
   dot?: boolean;
+  /** A label that is a whole sentence from the server may wrap (and never wider than its row) instead of running off a phone. */
+  wrap?: boolean;
 }) {
   const mark = dot ? toneDot[tone] : undefined;
   return (
     <span
       title={title}
-      className={`inline-flex items-center gap-1 whitespace-nowrap rounded-pill border px-2.5 py-0.5 text-xs font-medium ${toneBadge[tone]} ${className}`}
+      className={`inline-flex items-center gap-1 rounded-pill border px-2.5 py-0.5 text-xs font-medium ${wrap ? "max-w-full" : "whitespace-nowrap"} ${toneBadge[tone]} ${className}`}
     >
       {mark ? <span aria-hidden className={`size-1.5 shrink-0 rounded-full ${mark}`} /> : null}
       {children}
@@ -90,9 +84,9 @@ export function Badge({
 }
 
 /** A small tag that carries no status (a channel, a kind, a count): a Badge without the dot. Same pill, same tones. */
-export function Chip({ tone = "neutral", children, title, className = "" }: { tone?: Tone; children: ReactNode; title?: string; className?: string }) {
+export function Chip({ tone = "neutral", children, title, className = "", wrap }: { tone?: Tone; children: ReactNode; title?: string; className?: string; wrap?: boolean }) {
   return (
-    <Badge tone={tone} title={title} dot={false} className={className}>
+    <Badge tone={tone} title={title} dot={false} className={className} wrap={wrap}>
       {children}
     </Badge>
   );
@@ -124,8 +118,8 @@ export function PageHeader({
       <div className="flex min-w-0 items-start gap-3">
         {chip ? <PageIcon section={section} icon={icon} /> : null}
         <div className="min-w-0">
-          <h1 className={`text-xl font-semibold tracking-tight text-ink ${chip ? "leading-10" : ""}`}>{title}</h1>
-          {subtitle ? <p className="mt-1 max-w-3xl text-sm text-ink-2">{subtitle}</p> : null}
+          <h1 className={`text-balance text-xl font-semibold tracking-tight text-ink ${chip ? "leading-10" : ""}`}>{title}</h1>
+          {subtitle ? <p className="mt-1 max-w-3xl text-pretty text-sm text-ink-2">{subtitle}</p> : null}
         </div>
       </div>
       {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
@@ -150,7 +144,7 @@ export function Card({
   id?: string;
   tone?: Tone;
 }) {
-  const border = tone ? `${toneBorder[tone]} ${toneRail[tone]}` : "border-line";
+  const border = tone ? toneBorder[tone] : "border-line";
   return (
     <section
       id={id}
@@ -160,10 +154,10 @@ export function Card({
       {title ? (
         <div className="flex flex-wrap items-start justify-between gap-2 border-b border-line px-4 py-3">
           <div className="min-w-0">
-            <h2 id={id ? `${id}-title` : undefined} className="text-sm font-semibold text-ink">
+            <h2 id={id ? `${id}-title` : undefined} className="text-balance text-sm font-semibold text-ink">
               {title}
             </h2>
-            {subtitle ? <p className="mt-0.5 text-xs text-ink-3">{subtitle}</p> : null}
+            {subtitle ? <p className="mt-0.5 text-pretty text-xs text-ink-3">{subtitle}</p> : null}
           </div>
           {actions}
         </div>
@@ -173,24 +167,76 @@ export function Card({
   );
 }
 
+/** A figure on the deep block takes its status's bright tone (the plain tone is for a white surface); a neutral figure is white. */
+const toneOnDeep: Record<Tone, string> = {
+  neutral: "text-on-deep",
+  ok: "text-ok-bright",
+  warn: "text-warn-bright",
+  bad: "text-bad-bright",
+  info: "text-info-bright",
+  brand: "text-on-deep",
+};
+
+/**
+ * The one fact tile: an uppercase eyebrow (what it is), the figure (`tabular-nums`, 20 px, 24 px with `size="lg"`), a quiet caption
+ * (when, of what, against what) and, only when the server sent one, a delta chip. Two surfaces: `surface` (white, hairline) and
+ * `deep` (translucent white on the navy Home hero). The figure takes a status colour only when `tone` names a status; a delta
+ * chip is neutral unless the server names its tone (the browser never subtracts). `testId` goes on the figure, so a spec can read
+ * it; the tile is a `<div>` and belongs in a `<dl>`. `hint` is the older name of `caption`.
+ */
 export function Stat({
   label,
   value,
+  caption,
   hint,
   tone = "neutral",
+  delta,
+  deltaTone = "neutral",
+  surface = "surface",
+  size = "md",
+  tint = false,
+  testId,
+  captionTestId,
+  rootTestId,
   className = "",
 }: {
   label: ReactNode;
   value: ReactNode;
+  caption?: ReactNode;
   hint?: ReactNode;
   tone?: Tone;
+  /** The server's `delta_display` ("+3.5%"); its tone is a status only when the server names one. */
+  delta?: ReactNode;
+  deltaTone?: Tone;
+  surface?: "surface" | "deep";
+  size?: "md" | "lg";
+  /** A status-tinted tile (the owner must decide; within limits): the tone's tint and line instead of the hairline. */
+  tint?: boolean;
+  testId?: string;
+  captionTestId?: string;
+  /** On the tile itself, for a spec that reads the label, figure and caption together. */
+  rootTestId?: string;
   className?: string;
 }) {
+  const deep = surface === "deep";
+  const note = caption ?? hint;
+  const box = deep ? "bg-on-deep/10" : tint && tone !== "neutral" ? `border ${toneSurface[tone]}` : "border border-line bg-surface";
   return (
-    <div className={`min-w-0 rounded-tile border border-line bg-surface px-3.5 py-3 ${className}`}>
-      <dt className="text-xs font-medium text-ink-3">{label}</dt>
-      <dd className={`mt-1 break-words text-lg font-semibold tabular-nums ${toneText[tone]}`}>{value}</dd>
-      {hint ? <p className="mt-0.5 text-xs text-ink-3">{hint}</p> : null}
+    <div className={`min-w-0 rounded-tile px-4 py-3 ${box} ${className}`} data-testid={rootTestId}>
+      <dt className={`text-xs font-semibold uppercase tracking-wide ${deep ? "text-on-deep-muted" : "text-ink-3"}`}>{label}</dt>
+      <dd className={`mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-1 font-semibold tabular-nums ${size === "lg" ? "text-xl sm:text-2xl" : "text-lg sm:text-xl"}`}>
+        <span className={`min-w-0 break-words ${deep ? toneOnDeep[tone] : toneText[tone]}`} data-testid={testId}>
+          {value}
+        </span>
+        {delta ? (
+          <span className={`inline-flex items-center whitespace-nowrap rounded-pill border px-2 py-0.5 text-xs font-medium ${deep ? "border-on-deep/20 bg-on-deep/10 text-on-deep" : toneBadge[deltaTone]}`}>{delta}</span>
+        ) : null}
+      </dd>
+      {note ? (
+        <dd className={`mt-0.5 text-xs ${deep ? "text-on-deep-muted" : "text-ink-3"}`} data-testid={captionTestId}>
+          {note}
+        </dd>
+      ) : null}
     </div>
   );
 }
@@ -206,13 +252,13 @@ const variantClass: Record<ButtonVariant, string> = {
 };
 
 /**
- * The one button shape: a pill, 40 px tall (32 px compact), 16 px of padding, medium weight. Primary is the brand fill (one per
+ * The one button shape: a pill, 40 px tall (32 px compact; 44 px wherever a finger is the pointer, the `touch:` variant), 16 px of padding, medium weight. Primary is the brand fill (one per
  * page); secondary a line-ui outline; ghost text only; danger is the destructive fill. `Button` and `ButtonLink` both wear it,
  * so a link that looks like a button is the same button.
  */
 export function buttonClass(variant: ButtonVariant = "secondary", size: ButtonSize = "md", className = ""): string {
   return `motion-press inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-pill border font-medium disabled:cursor-not-allowed disabled:opacity-50 ${
-    size === "sm" ? "min-h-8 px-3 text-xs" : "min-h-10 px-4 text-sm"
+    size === "sm" ? "min-h-8 px-3 text-xs touch:min-h-11" : "min-h-10 px-4 text-sm touch:min-h-11"
   } ${variantClass[variant]} ${className}`;
 }
 
@@ -240,12 +286,12 @@ export function Button({
 /** A pill that toggles (a preset, a scene): the selected one takes the brand tint and a brand boundary, the rest are secondary buttons. */
 export function toggleClass(active: boolean, size: ButtonSize = "md", className = ""): string {
   return `motion-press inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-pill border font-medium disabled:cursor-not-allowed disabled:opacity-50 ${
-    size === "sm" ? "min-h-8 px-3 text-xs" : "min-h-10 px-4 text-sm"
+    size === "sm" ? "min-h-8 px-3 text-xs touch:min-h-11" : "min-h-10 px-4 text-sm touch:min-h-11"
   } ${active ? "border-brand-600 bg-brand-50 text-brand-700" : "border-line-ui bg-surface text-ink hover:bg-subtle"} ${className}`;
 }
 
 /** A quiet text link in a card's header or a sentence (the "open" links): brand-700 on white is 7.7:1. */
-export const textLinkClass = "motion-press inline-flex min-h-8 items-center rounded-pill px-2 text-xs font-medium text-brand-700 underline underline-offset-2 hover:bg-brand-50";
+export const textLinkClass = "motion-press hit inline-flex min-h-8 items-center rounded-pill px-2 text-xs font-medium text-brand-700 underline underline-offset-2 hover:bg-brand-50";
 
 /** A link in a button's shape (a navigation that is the page's next step). */
 export function ButtonLink({ variant = "secondary", size = "md", className = "", ...rest }: ComponentProps<typeof Link> & { variant?: ButtonVariant; size?: ButtonSize }) {
@@ -274,7 +320,7 @@ export function LoadingBlock({ rows = 3, label }: { rows?: number; label?: strin
 
 export function ErrorState({ error, onRetry }: { error: Error | string; onRetry?: () => void }) {
   const { t } = useI18n();
-  const message = typeof error === "string" ? error : error.message;
+  const message = typeof error === "string" ? error : errorText(error, t);
   // Being signed out is not a failure: the owner's pages ask for the sign-in in words instead of showing an error code.
   if (error instanceof ApiError && (error.status === 401 || error.status === 403)) {
     return (
@@ -311,8 +357,8 @@ export function EmptyState({
 }) {
   return (
     <div className="motion-reveal rounded-card border border-dashed border-line-strong bg-surface px-6 py-10 text-center">
-      <p className="text-sm font-semibold text-ink">{title}</p>
-      {body ? <p className="mx-auto mt-1 max-w-md text-sm text-ink-2">{body}</p> : null}
+      <p className="text-balance text-sm font-semibold text-ink">{title}</p>
+      {body ? <p className="mx-auto mt-1 max-w-md text-pretty text-sm text-ink-2">{body}</p> : null}
       {action ? <div className="mt-4 flex justify-center">{action}</div> : null}
     </div>
   );
@@ -349,7 +395,7 @@ function SegmentedTrack({ count, index, role, label, children }: { count: number
   );
 }
 
-const segmentedOption = "relative z-10 grid min-h-8 cursor-pointer place-items-center whitespace-nowrap rounded-pill px-3.5 text-xs font-medium transition-colors";
+const segmentedOption = "hit relative z-10 grid min-h-8 cursor-pointer place-items-center whitespace-nowrap rounded-pill px-3.5 text-xs font-medium transition-colors";
 
 /** Radio-group segmented control. Native radios give arrow-key navigation for free. */
 export function Segmented<T extends string>({
@@ -380,7 +426,7 @@ export function Segmented<T extends string>({
               value={o.value}
               checked={value === o.value}
               onChange={() => onChange(o.value)}
-              className="absolute inset-0 cursor-pointer opacity-0"
+              className="absolute inset-0 z-10 cursor-pointer opacity-0"
             />
             {o.label}
           </label>
@@ -450,7 +496,7 @@ export function Hash({ value, className = "" }: { value: string | null; classNam
       <button
         type="button"
         aria-label={t("common.copy")}
-        className="rounded-pill p-1 text-ink-3 hover:bg-subtle hover:text-ink"
+        className="hit rounded-pill p-1 text-ink-3 hover:bg-subtle hover:text-ink"
         onClick={() => {
           void navigator.clipboard?.writeText(value).then(() => {
             setCopied(true);

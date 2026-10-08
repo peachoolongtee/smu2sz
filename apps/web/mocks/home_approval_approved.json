@@ -38,8 +38,8 @@
     "lands_when": "in 3 days",
     "if_decline": "Nothing runs; the request is closed.",
     "protects": null,
-    "reason": "the yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval",
-    "result_message": "Advance ¥200,000.00 on the ¥420,000.00 invoice to Foshan Home Retail Co. due in 13 days from Invoice financing (onboarded platform) today; the cash lands in 3 days after the 3-day lead time, not today",
+    "reason": "The yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval.",
+    "result_message": "¥200,000.00 of invoice financing was requested today; the cash lands in 3 days.",
     "decided_when": "today",
     "created_when": "today"
   }

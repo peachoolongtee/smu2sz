@@ -21,3 +21,18 @@ export async function resetBooks(request: APIRequestContext): Promise<void> {
   });
   expect(res.ok()).toBeTruthy();
 }
+
+const BRAND_600 = "rgb(26, 95, 224)";
+
+/** Visible elements filled with the brand blue: the page's primary actions. */
+export async function filledBrand(page: Page): Promise<number> {
+  return page.evaluate((brand) => {
+    const visible = (el: Element) => {
+      const r = el.getBoundingClientRect();
+      const s = getComputedStyle(el);
+      return r.width > 0 && r.height > 0 && s.visibility !== "hidden" && s.display !== "none";
+    };
+    return Array.from(document.querySelectorAll("main button, main a")).filter((el) => visible(el) && getComputedStyle(el).backgroundColor === brand).length +
+      Array.from(document.querySelectorAll('main [data-testid="home-review-primary"]')).filter((el) => visible(el) && getComputedStyle(el).backgroundColor === brand).length;
+  }, BRAND_600);
+}

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { FacilityStatusBadge, PlainCode } from "@/components/badges";
 import { CheckIcon, XIcon } from "@/components/icons";
+import { Disclosure } from "@/components/business/kit";
 import { PlanCard } from "@/components/plan-card";
 import { PlanNotes } from "@/components/plan-notes";
 import {
@@ -105,7 +106,11 @@ function FundingBody({ view, basis, snapshot }: { view: FundingView; basis: "COM
                       <FacilityStatusBadge status={row.facility.status} />
                     </td>
                     <td className={`${tdCls} whitespace-nowrap text-right tabular-nums`}>{row.facility.limit_display}</td>
-                    <td className={`${tdCls} min-w-44 text-xs text-ink-2`}>{row.covenant_effect}</td>
+                    <td className={`${tdCls} min-w-36 text-xs text-ink-2`}>
+                      <Disclosure summary={t("biz.details.plan")} testId={`menu-covenant-${row.facility.id}`}>
+                        {row.covenant_effect}
+                      </Disclosure>
+                    </td>
                     <td className={`${tdCls} min-w-56`}>
                       <div className="flex flex-wrap items-center gap-1.5">
                         <Badge tone={row.admissible ? "ok" : "bad"}>
@@ -164,7 +169,7 @@ function FundingBody({ view, basis, snapshot }: { view: FundingView; basis: "COM
           <Card id="compare" title={t("fund.compare")} subtitle={t("fund.compare.sub")}>
             <ul className="divide-y divide-line">
               {view.comparison.map((c) => (
-                <li key={c.label} className="flex items-center justify-between gap-3 py-2">
+                <li key={c.label} className="flex flex-col gap-1.5 py-2">
                   <div className="min-w-0">
                     <p className={`text-sm ${c.selected ? "font-semibold" : ""}`}>{c.label}</p>
                     <p className="text-xs text-ink-3">{c.note}</p>
@@ -176,7 +181,7 @@ function FundingBody({ view, basis, snapshot }: { view: FundingView; basis: "COM
                       notExecutableReason={c.not_executable_reason}
                     />
                   </div>
-                  <div className="flex shrink-0 items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                     {c.selected ? <Badge tone="brand">{te("fund", "selected")}</Badge> : null}
                     <span className="font-semibold tabular-nums">{c.total_display}</span>
                   </div>

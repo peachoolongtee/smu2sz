@@ -5,6 +5,7 @@ import { AnnualisedCompact, offerLegs } from "@/components/annualised";
 import { AutonomyPanel } from "@/components/autonomy-panel";
 import { CodeBadge, OutcomeBadge, TierBadge, outcomeHasTier } from "@/components/badges";
 import { OperationResultBox } from "@/components/operation-result";
+import { Disclosure } from "@/components/business/kit";
 import { Badge, Button, Hash, type Tone } from "@/components/ui";
 import { useI18n } from "@/lib/i18n";
 import type { DictKey } from "@/lib/dictionary";
@@ -125,9 +126,8 @@ function VerdictBlock({ verdict }: { verdict: NlVerdict }) {
 function OperationAudit({ o }: { o: NlOperation }) {
   const { t, te } = useI18n();
   return (
-    <details className="mt-1" data-testid="op-audit">
-      <summary className="cursor-pointer text-xs text-ink-3">{t("biz.auditDetails")}</summary>
-      <dl className="mt-1 grid grid-cols-[max-content_minmax(0,1fr)] gap-x-3 gap-y-0.5 text-xs text-ink-2">
+    <Disclosure className="mt-1" testId="op-audit" summary={t("biz.auditDetails")}>
+      <dl className="grid grid-cols-[max-content_minmax(0,1fr)] gap-x-3 gap-y-0.5 text-xs text-ink-2">
         <dt>{t("audit.executor")}</dt>
         <dd className="break-words" data-testid="op-raw">{o.message_when || o.message}</dd>
         <dt>{t("audit.opId")}</dt>
@@ -143,7 +143,7 @@ function OperationAudit({ o }: { o: NlOperation }) {
           <Hash value={o.entry_hash} />
         </dd>
       </dl>
-    </details>
+    </Disclosure>
   );
 }
 
@@ -304,9 +304,8 @@ export function AssistantTurn({
         </section>
       ) : null}
 
-      <details className="rounded-tile border border-line px-3 py-2" open={hasSecurity || refused} data-testid="chat-details">
-        <summary className="cursor-pointer text-xs font-medium text-ink-2">{t("chat.details")}</summary>
-        <div className="mt-2 space-y-3">
+      <Disclosure className="rounded-tile border border-line px-3" defaultOpen={hasSecurity || refused} testId="chat-details" summary={t("chat.details")}>
+        <div className="space-y-3">
           <span data-testid="chat-intent" className="inline-block">
             <Badge tone="brand">{te("nlintent", r.intent) || r.intent}</Badge>
           </span>
@@ -318,7 +317,7 @@ export function AssistantTurn({
             </p>
           ) : null}
         </div>
-      </details>
+      </Disclosure>
     </div>
   );
 }

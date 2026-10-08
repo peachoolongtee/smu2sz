@@ -3,10 +3,10 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { Disclosure, FactTile } from "@/components/business/kit";
+import { Disclosure } from "@/components/business/kit";
 import type { useFixAlert } from "@/components/home/fix-alert";
 import { approvalHref } from "@/components/operation-result";
-import { Button, Formula, ButtonLink } from "@/components/ui";
+import { Button, Formula, ButtonLink, Stat } from "@/components/ui";
 import { useI18n } from "@/lib/i18n";
 import type { AlertItem, HomeNextAction } from "@/lib/types";
 
@@ -36,9 +36,9 @@ export function NextActionBlock({ a, stateVersion, fixer }: { a: HomeNextAction;
         : "";
 
   return (
-    <section aria-labelledby="home-action-title" className="rounded-card border border-line bg-surface p-5 shadow-card lg:p-6" data-testid="home-next-action" data-alert={a.alert_id}>
+    <section aria-labelledby="home-action-title" className="rounded-card border border-line bg-surface p-4 shadow-card" data-testid="home-next-action" data-alert={a.alert_id}>
       <p className="text-xs font-semibold uppercase tracking-wide text-ink-3">{t("biz.recommended.short")}</p>
-      <h2 id="home-action-title" className="mt-1.5 text-xl font-semibold leading-snug text-ink" data-testid="next-action-title">
+      <h2 id="home-action-title" className="mt-1 text-balance text-xl font-semibold leading-snug text-ink" data-testid="next-action-title">
         {a.outcome_title}
       </h2>
       <ul className="mt-2 flex flex-wrap gap-x-6 gap-y-1 text-sm" data-testid="next-action-components">
@@ -51,27 +51,20 @@ export function NextActionBlock({ a, stateVersion, fixer }: { a: HomeNextAction;
       </ul>
 
       {/* The three things the owner decides on. */}
-      <dl className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-3">
+      <dl className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
         {costTotal ? (
-          <FactTile label={t("biz.costTotal")} testId="next-action-cost">
-            {costTotal}
-            {a.rate_text ? <span className="ml-1.5 text-sm font-normal text-ink-3">{a.cost_days ? t("biz.costRate", { rate: a.rate_text, days: a.cost_days }) : t("biz.costRateOnly", { rate: a.rate_text })}</span> : null}
-          </FactTile>
+          <Stat
+            label={t("biz.costTotal")}
+            testId="next-action-cost"
+            value={costTotal}
+            caption={a.rate_text ? (a.cost_days ? t("biz.costRate", { rate: a.rate_text, days: a.cost_days }) : t("biz.costRateOnly", { rate: a.rate_text })) : undefined}
+          />
         ) : null}
-        {a.lands_day !== null ? (
-          <FactTile label={t("biz.fundsAvailable")} testId="next-action-lands">
-            {a.lands_when ?? ""}
-          </FactTile>
-        ) : null}
+        {a.lands_day !== null ? <Stat label={t("biz.fundsAvailable")} testId="next-action-lands" value={a.lands_when ?? ""} /> : null}
         {a.needs_owner ? (
-          <FactTile label={t("biz.authority")} tone="warn" testId="next-action-needs-owner">
-            {t("biz.needsYou")}
-            {a.needs_owner_reason ? <span className="block text-sm font-normal">{a.needs_owner_reason}</span> : null}
-          </FactTile>
+          <Stat className="col-span-2 sm:col-span-1" label={t("biz.authority")} tone="warn" tint testId="next-action-needs-owner" value={<span className="text-base">{t("biz.needsYou")}{a.needs_owner_reason ? <span className="block text-sm font-normal text-warn-fg">{a.needs_owner_reason}</span> : null}</span>} />
         ) : (
-          <FactTile label={t("biz.authority")} tone="ok" testId="next-action-within-limits">
-            <span className="text-sm">{a.authority_text || t("biz.agentAlone")}</span>
-          </FactTile>
+          <Stat className="col-span-2 sm:col-span-1" label={t("biz.authority")} tone="ok" tint testId="next-action-within-limits" value={<span className="text-sm">{a.authority_text || t("biz.agentAlone")}</span>} />
         )}
       </dl>
 

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { AnnotatedText } from "@/components/annotated-text";
+import { BeforeTheyAsk } from "@/components/deals/before-they-ask";
 import { BuyerAsks } from "@/components/deals/asks";
 import { ActiveCommitments } from "@/components/deals/commitments";
 import { DealSteps } from "@/components/deals/deal-steps";
@@ -13,6 +14,7 @@ import { RecommendedResponse } from "@/components/deals/response";
 import { NextStep, nextLinkCls, nextLinkSecondaryCls } from "@/components/next-step";
 import { PlanCard } from "@/components/plan-card";
 import { Button, Callout, Card, EmptyState, ErrorState, Formula, LoadingBlock, PageHeader, ButtonLink } from "@/components/ui";
+import { STRATEGY_MVP } from "@/lib/config";
 import { evaluate as evaluateAndCache } from "@/lib/demo";
 import { getClock, getState, submitOffer } from "@/lib/api";
 import { recordOffer, selectOffer, useDemo } from "@/lib/demo-store";
@@ -44,6 +46,9 @@ export default function DealsPage() {
   const [active, setActive] = useState<string | null>(null);
   // The id of the inbox message being read, or null.
   const [reading, setReading] = useState<string | null>(null);
+  // Whether the other counters are shown (Option B), tied to the offer it was opened for.
+  // Passed down only with STRATEGY_MVP: without the flag the response card keeps its own state, exactly as before the card existed.
+  const [compareFor, setCompareFor] = useState<string | null>(null);
   const books = useAsync(getState, []);
   const clock = useAsync(getClock, []);
   // The simulated clock: every day on this page is said as a distance from it.
@@ -116,6 +121,8 @@ export default function DealsPage() {
     next = { text: t("next.counter"), action: <a href="#counters" className={nextLinkSecondaryCls}>{t("next.toCounters")}</a> };
   }
 
+  const compareOpen = Boolean(offer && compareFor === offer.offer.offer_id);
+
   const commitments = <ActiveCommitments today={today} buyerName={buyerName} hideEmpty />;
 
   return (
@@ -127,7 +134,7 @@ export default function DealsPage() {
           {next.text}
         </NextStep>
       ) : null}
-      <div className="space-y-5">
+      <div className="space-y-6">
         <InboxList
           currentDocId={offer?.documents[0]?.doc_id ?? null}
           readDocIds={Object.values(demo.offers).map((o) => o.documents[0]?.doc_id)}
@@ -191,16 +198,25 @@ export default function DealsPage() {
               ) : null}
             </Card>
 
+            {STRATEGY_MVP ? <BeforeTheyAsk buyerId={offer.offer.counterparty_id} /> : null}
+
             {!v ? (
               commitments
             ) : (
               <>
                 <DealDecision v={v} today={today} negotiation={cur.negotiation} />
-                <RecommendedResponse v={v} offerId={offer.offer.offer_id} today={today} mode={mode} negotiation={cur.negotiation} />
+                <RecommendedResponse
+                  v={v}
+                  offerId={offer.offer.offer_id}
+                  today={today}
+                  mode={mode}
+                  negotiation={cur.negotiation}
+                  {...(STRATEGY_MVP ? { compareOpen, onCompareChange: (open: boolean) => setCompareFor(open ? offer.offer.offer_id : null) } : {})}
+                />
                 {commitments}
 
                 <div className="space-y-2">
-                  <Disclosure card testId="deal-why" summary={t("biz.deals.why")}>
+                  <Disclosure card testId="deal-why" summary={t("biz.hero.why")}>
                     <div>
                       <WhyRecommended v={v} today={today} />
                     </div>
@@ -219,7 +235,7 @@ export default function DealsPage() {
                       ))}
                     </div>
                   </Disclosure>
-                  <Disclosure card testId="deal-calc" summary={t("biz.deals.calc")}>
+                  <Disclosure card testId="deal-calc" summary={t("biz.calculation")}>
                     <div className="space-y-4">
                       {v.concession_values.length ? (
                         <ul className="space-y-2">

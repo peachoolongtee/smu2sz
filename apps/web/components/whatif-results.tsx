@@ -1,6 +1,6 @@
 "use client";
 
-import { CashChart, ConcessionMeter } from "@/components/charts";
+import { CashChart, ConcessionMeter } from "@/components/lazy-charts";
 import { OutcomeBadge, PlainCode, TierBadge, outcomeHasTier } from "@/components/badges";
 import { Spinner } from "@/components/icons";
 import { Badge, Card, Formula, type Tone } from "@/components/ui";
@@ -258,7 +258,7 @@ export function WhatIfMeterCard({ r }: { r: WhatIfResult }) {
                 <span className="text-ink-2">{it.label}</span>
                 <span className="font-medium tabular-nums">{it.value_display}</span>
               </div>
-              <p className="mt-0.5 break-words font-mono text-[0.7rem] leading-relaxed text-ink-3">{it.formula}</p>
+              <p className="mt-0.5 break-words font-mono text-xs leading-relaxed text-ink-3">{it.formula}</p>
             </li>
           ))}
         </ul>

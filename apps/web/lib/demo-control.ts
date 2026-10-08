@@ -2,6 +2,7 @@
 
 import { demoReset } from "./api";
 import { ApiError } from "./errors";
+import { errorMessage } from "./error-text";
 import { clearDemo, demoStore } from "./demo-store";
 import { DEMO_STEPS } from "./demo";
 import { setMode } from "./mode";
@@ -29,7 +30,7 @@ export async function goToStep(target: number, push: (route: string) => void): P
       demoStore.set((s) => ({ ...s, busy: false }));
       return "unauthorized";
     }
-    demoStore.set((s) => ({ ...s, busy: false, error: e instanceof Error ? e.message : String(e) }));
+    demoStore.set((s) => ({ ...s, busy: false, error: errorMessage(e) }));
     return "error";
   }
 }
@@ -55,6 +56,6 @@ export async function resetDemo(push: (route: string) => void, scenario?: string
   } catch (e) {
     // A 401 has opened the sign-in dialog; Reset stays a deliberate click.
     const unauthorized = e instanceof ApiError && e.status === 401;
-    demoStore.set((s) => ({ ...s, busy: false, error: unauthorized ? null : e instanceof Error ? e.message : String(e) }));
+    demoStore.set((s) => ({ ...s, busy: false, error: unauthorized ? null : errorMessage(e) }));
   }
 }

@@ -121,7 +121,7 @@ test("opening a message reads it, and the evaluated deal reads in the owner's or
   for (const id of ["deal-why", "deal-original", "deal-calc"]) {
     await expect(page.getByTestId(id)).not.toHaveAttribute("open", "");
   }
-  await expect(page.getByTestId("deal-why")).toContainText("Why FLOW recommends this");
+  await expect(page.getByTestId("deal-why").locator("> summary")).toHaveText("Why");
   await page.getByTestId("deal-why").locator("> summary").click();
   // Three reasons in the owner's words; every check, the formulas and the engine's verdict one level further down.
   const reasons = page.getByTestId("deal-reasons");
@@ -164,6 +164,30 @@ test("opening a message reads it, and the evaluated deal reads in the owner's or
   await expect(inbox.getByTestId("inbox-msg-EX01").getByTestId("inbox-msg-status")).toHaveCount(0); // the message being read says "Showing below"
   await expect(response.getByTestId("deal-option-Option-A")).toHaveCount(0);
   await expect(next).toContainText(/agree|books/i);
+});
+
+test("without the strategy flag, Compare is the response card's own state: it is closed again after reading another message and coming back", async ({ page }) => {
+  // With the flag on the page keeps the state (so "Before they ask" can open Option B), which is what e2e/strategy.spec.ts covers.
+  test.skip(process.env.E2E_STRATEGY === "1", "the strategy build keeps the compare state on the page");
+  await page.goto("/deals");
+  const inbox = page.getByTestId("inbox-list");
+  await inbox.getByTestId("inbox-msg-EX01").click();
+  await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
+  const response = page.locator("#counters");
+  await response.getByTestId("deal-compare").click();
+  await expect(response.getByTestId("deal-option-Option-B")).toBeVisible();
+  // Read the other message of the thread: the response card is gone until it is checked.
+  await page.getByTestId("inbox-thread-BUYER-1").locator("details > summary").first().click();
+  await inbox.getByTestId("inbox-msg-EX01B").click();
+  await expect(inbox.getByTestId("inbox-msg-EX01B")).toHaveAttribute("aria-current", "true");
+  await expect(page.locator("#counters")).toHaveCount(0);
+  // Back to the first: its response card starts closed, as it always did.
+  await page.getByTestId("inbox-thread-BUYER-1").locator("details > summary").first().click();
+  await inbox.getByTestId("inbox-msg-EX01").click();
+  await expect(inbox.getByTestId("inbox-msg-EX01")).toHaveAttribute("aria-current", "true");
+  await expect(page.locator("#counters").getByTestId("deal-option-Option-A")).toBeVisible();
+  await expect(page.locator("#counters").getByTestId("deal-option-Option-B")).toHaveCount(0);
+  await expect(page.locator("#counters").getByTestId("deal-compare")).toContainText("Compare");
 });
 
 test("Business mode never shows a sender the books have not vouched for, not even while they load", async ({ page }) => {

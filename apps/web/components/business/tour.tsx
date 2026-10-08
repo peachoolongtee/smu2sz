@@ -102,12 +102,28 @@ function TourCard({ steps }: { steps: Step[] }) {
   const { t } = useI18n();
   const [step, setStep] = useState(0);
   const [rect, setRect] = useState<DOMRect | null>(null);
+  const [cardH, setCardH] = useState(280);
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
   const nextRef = useRef<HTMLButtonElement>(null);
   const current = steps[step];
   const last = step === steps.length - 1;
   const close = useCallback(() => tourStore.set({ open: false }), []);
 
-  // Follow the spotlighted part: bring it into view, then track it through scrolling and resizing.
+  // A real modal: the browser makes the page behind it inert (focus cannot leave the card) and Esc cancels. The tour starts from a row
+  // in the account sheet, which closes as it starts, so the browser has nothing to give focus back to: it goes to the account button.
+  useEffect(() => {
+    const d = dialogRef.current;
+    if (d && !d.open) d.showModal();
+    return () => {
+      d?.close();
+      const buttons = Array.from(document.querySelectorAll<HTMLElement>('[data-testid="account-menu"] > summary'));
+      buttons.find((b) => b.getBoundingClientRect().width > 0)?.focus();
+    };
+  }, []);
+
+  // Follow the spotlighted part: bring it into view, then track it. Nothing polls: the part's own size, the window's size and any
+  // scroll (the smooth scroll into view included) say when it moved.
   useLayoutEffect(() => {
     const el = visibleTarget(current.target);
     if (!el) {
@@ -117,73 +133,87 @@ function TourCard({ steps }: { steps: Step[] }) {
     el.scrollIntoView({ block: "center", behavior: "smooth" });
     const update = () => setRect(el.getBoundingClientRect());
     const frame = window.requestAnimationFrame(update);
-    const id = window.setInterval(update, 120);
+    const resize = new ResizeObserver(update);
+    resize.observe(el);
+    resize.observe(document.documentElement);
     window.addEventListener("resize", update);
     window.addEventListener("scroll", update, true);
     return () => {
       window.cancelAnimationFrame(frame);
-      window.clearInterval(id);
+      resize.disconnect();
       window.removeEventListener("resize", update);
       window.removeEventListener("scroll", update, true);
     };
   }, [current.target]);
 
-  // Keyboard: Esc closes, arrows move; focus starts on the main button.
+  // The card's real height (the sections step is much taller than the others) decides where it can sit.
+  useLayoutEffect(() => {
+    const el = cardRef.current;
+    if (!el) return;
+    const read = () => setCardH(el.offsetHeight);
+    read();
+    const observer = new ResizeObserver(read);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [step]);
+
+  // Keyboard: arrows move, focus starts on the main button.
   useEffect(() => {
     nextRef.current?.focus();
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") close();
-      else if (e.key === "ArrowRight") setStep((s) => Math.min(s + 1, steps.length - 1));
+      if (e.key === "ArrowRight") setStep((s) => Math.min(s + 1, steps.length - 1));
       else if (e.key === "ArrowLeft") setStep((s) => Math.max(s - 1, 0));
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [close, steps.length]);
+  }, [steps.length]);
 
   const pad = 6;
   const hole = rect ? { top: rect.top - pad, left: rect.left - pad, width: rect.width + pad * 2, height: rect.height + pad * 2 } : null;
   // Where the card goes: beside the spotlight when the screen is wide enough, else below it, else above it, else pinned to
-  // the bottom of the screen (a tall part such as the home card).
+  // the bottom of the screen (a tall part such as the home card), clear of the phone's tab bar.
   const CARD_W = 384;
-  const CARD_H = 280;
   let place: CSSProperties = { top: "50%", left: "50%", translate: "-50% -50%" };
   if (hole) {
     const right = window.innerWidth - (hole.left + hole.width);
     const below = window.innerHeight - (hole.top + hole.height);
-    if (right > CARD_W + 32) place = { left: hole.left + hole.width + 16, top: Math.min(Math.max(16, hole.top), window.innerHeight - CARD_H - 16) };
-    else if (below > CARD_H + 16) place = { top: hole.top + hole.height + 16, left: "50%", translate: "-50% 0" };
-    else if (hole.top > CARD_H + 16) place = { top: hole.top - CARD_H - 16, left: "50%", translate: "-50% 0" };
+    if (right > CARD_W + 32) place = { left: hole.left + hole.width + 16, top: Math.min(Math.max(16, hole.top), window.innerHeight - cardH - 16) };
+    else if (below > cardH + 16) place = { top: hole.top + hole.height + 16, left: "50%", translate: "-50% 0" };
+    else if (hole.top > cardH + 16) place = { top: hole.top - cardH - 16, left: "50%", translate: "-50% 0" };
     else place = { bottom: 88, left: "50%", translate: "-50% 0" };
   }
 
   return (
-    <div className="fixed inset-0 z-[60]" role="presentation" data-testid="tour">
-      {/* The dimmed page, with a hole around the part being explained. */}
+    <dialog
+      ref={dialogRef}
+      aria-labelledby="tour-title"
+      aria-describedby="tour-body"
+      data-testid="tour"
+      onCancel={(e) => {
+        e.preventDefault();
+        close();
+      }}
+      className="fixed inset-0 z-[60] m-0 h-dvh max-h-none w-screen max-w-none overflow-hidden bg-transparent p-0 text-ink backdrop:bg-transparent"
+    >
+      {/* The dimmed page, with a hole around the part being explained (it jumps between steps: no layout property animates). */}
       {hole ? (
-        <div
-          aria-hidden
-          className="pointer-events-none fixed rounded-card ring-2 ring-surface transition-[top,left,width,height] duration-(--dur-slow) ease-out"
-          style={{ ...hole, boxShadow: "0 0 0 9999px color-mix(in srgb, var(--color-ink) 60%, transparent)" }}
-        />
+        <div aria-hidden className="pointer-events-none fixed rounded-card ring-2 ring-surface" style={{ ...hole, boxShadow: "0 0 0 9999px color-mix(in srgb, var(--color-ink) 60%, transparent)" }} />
       ) : (
         <div aria-hidden className="fixed inset-0 bg-ink/60" />
       )}
       <div className="fixed inset-0" onClick={close} aria-hidden />
 
       <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="tour-title"
-        aria-describedby="tour-body"
+        ref={cardRef}
         key={step}
         className="motion-pop fixed w-[min(24rem,calc(100vw-2rem))] rounded-card border border-line bg-surface p-5 text-ink shadow-pop"
         style={place}
       >
         <p className="text-xs font-semibold uppercase tracking-wide text-ink-3">{t("tour.step", { n: step + 1, total: steps.length })}</p>
-        <h2 id="tour-title" className="mt-1 text-lg font-semibold leading-snug">
+        <h2 id="tour-title" className="mt-1 text-balance text-lg font-semibold leading-snug">
           {t(current.title)}
         </h2>
-        <p id="tour-body" className="mt-2 text-sm leading-relaxed text-ink-2">
+        <p id="tour-body" className="mt-2 text-pretty text-sm leading-relaxed text-ink-2">
           {t(current.body)}
         </p>
         {current.extra === "sections" ? (
@@ -201,14 +231,12 @@ function TourCard({ steps }: { steps: Step[] }) {
               {t("tour.skip")}
             </Button>
           )}
-          {step > 0 ? (
-            <Button onClick={() => setStep(step - 1)}>{t("tour.back")}</Button>
-          ) : null}
+          {step > 0 ? <Button onClick={() => setStep(step - 1)}>{t("tour.back")}</Button> : null}
           <Button ref={nextRef} variant="primary" onClick={() => (last ? close() : setStep(step + 1))} data-testid="tour-next">
             {last ? t("tour.finish") : t("tour.next")}
           </Button>
         </div>
       </div>
-    </div>
+    </dialog>
   );
 }

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { ApprovalCard } from "@/components/approval-card";
 import { ShieldCheckIcon } from "@/components/icons";
 import { NextStep } from "@/components/next-step";
-import { Badge, Callout, EmptyState, ErrorState, LoadingBlock, PageHeader } from "@/components/ui";
+import { Badge, EmptyState, ErrorState, LoadingBlock, PageHeader } from "@/components/ui";
 import { ApiError, apiMode, decideApproval, getApprovals, getLedger } from "@/lib/api";
 import { bump } from "@/lib/demo-store";
 import { isWriteConflictDetail } from "@/lib/live/retry";
@@ -60,11 +60,7 @@ export default function ApprovalsPage() {
         actions={list.data ? <Badge tone={pending ? "warn" : "neutral"}>{t("appr.pending", { n: pending })}</Badge> : undefined}
       />
       {pending ? <NextStep label={t("next.label")}>{t("biz.appr.next")}</NextStep> : null}
-      <div className="mb-4">
-        <Callout tone="info">
-          {t("appr.note")} {apiMode === "live" ? t("appr.ownerNote") : null}
-        </Callout>
-      </div>
+      {apiMode === "live" ? <p className="mb-4 text-xs text-ink-3">{t("appr.ownerNote")}</p> : null}
       {error ? (
         <div className="mb-4">
           <ErrorState error={error} />
@@ -78,7 +74,7 @@ export default function ApprovalsPage() {
       ) : list.data.length === 0 ? (
         <EmptyState title={t("appr.empty.title")} body={t("appr.empty.body")} />
       ) : (
-        <ul className="grid items-start gap-4 lg:grid-cols-2">
+        <ul className="mx-auto max-w-3xl space-y-4">
           {list.data.map((a) => (
             <li key={a.id} className="min-w-0">
               <ApprovalCard

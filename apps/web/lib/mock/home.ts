@@ -104,7 +104,7 @@ const clone = <T>(v: unknown): T => JSON.parse(JSON.stringify(v)) as T;
 function requireOwner(): void {
   if (!getOwnerToken()) {
     requestSignIn("required");
-    throw new ApiError(401, "Owner sign-in required (401). Sign in with the owner token to use this.");
+    throw new ApiError(401, "Owner sign-in required (401). Sign in with the owner token to use this.", undefined, "owner_required");
   }
 }
 

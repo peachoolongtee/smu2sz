@@ -35,6 +35,9 @@ import type {
   OfferView,
   OperationView,
   PlanRequest,
+  PriceCurveView,
+  EnvelopeView,
+  ReceivablesWorthView,
   ReconciliationView,
   StateView,
   SubmitOfferRequest,
@@ -48,6 +51,7 @@ import type {
 } from "../types";
 
 import * as home from "./home";
+import { pickByStory } from "./strategy-pick";
 import alertsJson from "../../mocks/alerts.json";
 import approvalsSeed from "../../mocks/approvals_seed.json";
 import auditSec from "../../mocks/audit_sec.json";
@@ -371,7 +375,7 @@ export async function submitOffer(req: SubmitOfferRequest): Promise<OfferView> {
 export async function getOffer(offerId: string): Promise<OfferView> {
   await delay();
   const v = load().offers[offerId];
-  if (!v) throw new ApiError(404, `Offer ${offerId} not found.`);
+  if (!v) throw new ApiError(404, `Offer ${offerId} not found.`, undefined, "offer_missing", { id: offerId });
   return clone(v);
 }
 
@@ -379,7 +383,7 @@ export async function evaluateOffer(offerId: string): Promise<VerdictView> {
   await delay();
   const s = load();
   const b = bundleFor(offerId);
-  if (!b || !s.offers[offerId]) throw new ApiError(404, `Offer ${offerId} not found. Submit it first.`);
+  if (!b || !s.offers[offerId]) throw new ApiError(404, `Offer ${offerId} not found. Submit it first.`, undefined, "offer_missing", { id: offerId });
   if (!s.evaluated.includes(offerId)) {
     s.evaluated.push(offerId);
     // As live: evaluating an offer books nothing (the counters go out in the negotiation); the FastCapital message opens the security scene.
@@ -462,8 +466,8 @@ export async function decideApproval(id: string, decision: ApprovalDecision): Pr
   await delay();
   const s = load();
   const a = s.approvals.find((x) => x.id === id);
-  if (!a) throw new ApiError(404, `Approval ${id} not found.`);
-  if (a.status !== "PENDING") throw new ApiError(409, `Approval ${id} is already ${a.status}.`);
+  if (!a) throw new ApiError(404, `Approval ${id} not found.`, undefined, "approval_missing", { id });
+  if (a.status !== "PENDING") throw new ApiError(409, `Approval ${id} is already ${a.status}.`, undefined, "approval_done", { id, status: a.status });
   if (a.op_id?.startsWith("alert:")) {
     // The day-34 cure the alert queued: approving runs it (recorded EXECUTED, the cash lands on day 37) and clears the alert.
     if (decision === "REJECT") {
@@ -509,7 +513,7 @@ export async function getHome(lang: "en" | "zh"): Promise<HomeView> {
   await delay();
   if (!getOwnerToken()) {
     requestSignIn("required");
-    throw new ApiError(401, "Owner sign-in required (401). Sign in with the owner token to use this.");
+    throw new ApiError(401, "Owner sign-in required (401). Sign in with the owner token to use this.", undefined, "owner_required");
   }
   const dealt = Object.values(load().negotiated).some((n) => n.outcome === "DEAL");
   return home.mockHome(dealt, lang);
@@ -543,6 +547,49 @@ export async function actOnAlert(id: string, bound: ActRequest): Promise<AlertAc
   ensureHomeApproval();
   if (first) for (const o of r.results) appendRecorded({ kind: o.kind, status: o.status, tier: o.tier, message: o.message, message_when: o.message_when, event_text: o.event_text, event_detail: o.event_detail, day: r.day });
   return r;
+}
+
+/**
+ * The strategy answers are recordings of the real API, chosen as the home mock chooses its summary: the opening books before day 34,
+ * day 34's from then, and the post-approval recording once the owner has approved the day-34 cure (home.cureStage() === "approved").
+ * English only: the recordings are `?lang=en`.
+ */
+async function strategyRecording<T>(load: () => Promise<[{ default: unknown }, { default: unknown }, { default: unknown }]>): Promise<T> {
+  // The nine recordings load on first use, each in its own chunk, so the default mock bundle does not carry them.
+  const [atDay0, atNews, afterApproval] = await load();
+  return clone(cast<T>(pickByStory(home.mockClock().day, home.NEWS_DAY, home.cureStage() === "approved", atDay0.default, atNews.default, afterApproval.default)));
+}
+
+const priceCurveRecordings = () =>
+  Promise.all([import("../../mocks/strategy/price_curve_day0.json"), import("../../mocks/strategy/price_curve_day34.json"), import("../../mocks/strategy/price_curve_day34_after.json")]);
+const worthRecordings = () => Promise.all([import("../../mocks/strategy/worth_day0.json"), import("../../mocks/strategy/worth_day34.json"), import("../../mocks/strategy/worth_day34_after.json")]);
+const envelopeRecordings = () =>
+  Promise.all([import("../../mocks/strategy/envelope_day0.json"), import("../../mocks/strategy/envelope_day34.json"), import("../../mocks/strategy/envelope_day34_after.json")]);
+
+/** GET /cash/price-curve. */
+export async function getPriceCurve(_lang: "en" | "zh"): Promise<PriceCurveView | null> {
+  void _lang;
+  await delay();
+  return await strategyRecording<PriceCurveView>(priceCurveRecordings);
+}
+
+/** GET /receivables/worth: as above. */
+export async function getReceivablesWorth(_lang: "en" | "zh"): Promise<ReceivablesWorthView | null> {
+  void _lang;
+  await delay();
+  return await strategyRecording<ReceivablesWorthView>(worthRecordings);
+}
+
+/**
+ * GET /buyers/{id}/envelope: as above. The recordings are BUYER-1's, with the zone table; the zone is dropped when it was not asked
+ * for, as the server would. Any other buyer has no envelope.
+ */
+export async function getEnvelope(buyerId: string, _lang: "en" | "zh", zone = false): Promise<EnvelopeView | null> {
+  void _lang;
+  await delay();
+  if (buyerId !== "BUYER-1") return null;
+  const view = await strategyRecording<EnvelopeView>(envelopeRecordings);
+  return zone ? view : { ...view, zone: [] };
 }
 
 export async function getReconciliation(): Promise<ReconciliationView> {
@@ -618,7 +665,7 @@ export async function demoReset(scenario?: string): Promise<void> {
   // Like the live API, the reset is an owner action: without a token the sign-in dialog opens and the caller retries after sign-in.
   if (!getOwnerToken()) {
     requestSignIn("required");
-    throw new ApiError(401, "Owner sign-in required (401). Sign in with the owner token to use this.");
+    throw new ApiError(401, "Owner sign-in required (401). Sign in with the owner token to use this.", undefined, "owner_required");
   }
   memory = emptyStore();
   save();

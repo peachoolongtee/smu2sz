@@ -23,15 +23,14 @@ test("risk, plan, options, forecast: one set of figures, in the owner's order", 
   await page.goto("/cash");
   await expect(page.getByTestId("cash-headline")).toHaveText("Your cash reserve becomes unsafe in 12 days.");
   // Headroom is said directly: cash minus the reserve, today and at the lowest point ahead.
-  // Four fact tiles (cash today, the reserve, when cash becomes unsafe, the worst point) and the headroom in one quiet line.
+  // Four fact tiles (cash today, the reserve, when cash becomes unsafe, the worst point); the headroom is the caption of the tile it belongs to.
   const figures = page.getByTestId("cash-figures");
   await expect(figures.locator("dt")).toHaveText(["Cash today", "Minimum cash reserve", "Cash becomes unsafe", "Worst point"]);
   await expect(page.getByTestId("cash-unsafe-when")).toHaveText("in 12 days");
-  const headroom = page.getByTestId("cash-headroom");
-  await expect(headroom).toContainText("Available headroom");
-  await expect(headroom).toContainText("¥100k");
-  await expect(headroom).toContainText("Lowest forecast headroom");
-  await expect(headroom).toContainText("−¥405k");
+  await expect(figures).toContainText("Available headroom");
+  await expect(page.getByTestId("cash-headroom")).toHaveText("¥100k");
+  await expect(figures).toContainText("Lowest forecast headroom");
+  await expect(figures).toContainText("−¥405k");
   const action = page.getByTestId("home-next-action");
   await expect(action.getByTestId("next-action-title")).toHaveText("Secure ¥405k of funding");
   await expect(action.getByTestId("next-action-cost")).toContainText("¥3,113.93");
@@ -115,9 +114,9 @@ test("after the plan ran, the page states the current funding and folds the comp
   const current = page.locator("#cash-current");
   await expect(current).toContainText("Current funding");
   await expect(current.getByTestId("cash-lot-landed")).toContainText("¥150,000.00");
-  await expect(current.getByTestId("cash-lot-landed")).toContainText("Received today");
+  await expect(current.getByTestId("cash-lot-landed")).toContainText("today");
   await expect(current.getByTestId("cash-lot-transit")).toContainText("¥255,000.00");
-  await expect(current.getByTestId("cash-lot-transit")).toContainText("Arrives in 3 days");
+  await expect(current.getByTestId("cash-lot-transit")).toContainText("in 3 days");
   await expect(current.getByTestId("cash-no-gap")).toHaveText("No additional funding is needed.");
   // No comparison was taken when the plan was chosen (the plan ran from the home), and a fresh plan on covered books is empty:
   // the page shows the current funding and nothing that reads as a to-do list.
@@ -174,7 +173,10 @@ test("day 34 with a gap open: the options are today's plan, never the day-0 comp
   await expect(options).not.toContainText("¥255,000.00");
   await expect(options).not.toContainText(" ago");
   await expect(options).toContainText("¥1,706.10");
-  await expect(page.getByTestId("cash-cheaper-option")).toContainText("¥1,706.10");
+  // The server's roles say it in the alternative's chip, so the grey "a cheaper option exists" note is not drawn a second time;
+  // and the first row is titled with its sources, not the generic "Recommended plan".
+  await expect(page.getByTestId("cash-cheaper-option")).toHaveCount(0);
+  await expect(options.locator('[data-key="recommended_plan"]')).not.toContainText("Recommended plan");
   expect(await proseOf(page)).not.toMatch(/\bday \d/i);
 });
 
@@ -219,5 +221,5 @@ test("engine words stay out of level 1 on Cash & funding and Activity", async ({
   const activity = await page.locator("main").innerText();
   for (const word of [/hash-chained/i, /\bexecutor\b/i, /operations the/i]) expect(activity, String(word)).not.toMatch(word);
   await expect(page.locator("#activity-timeline")).toContainText("Each entry is sealed to the one before it.");
-  await expect(page.locator("#activity-refused")).toContainText("What FLOW refused");
+  await expect(page.locator("#activity-refused")).toContainText("Nothing has been refused yet");
 });

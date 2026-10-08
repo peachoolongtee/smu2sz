@@ -1,0 +1,2865 @@
+{
+  "_meta": {
+    "command": "FLOW_RESEARCH_SPIKES=1 TERMSLEDGER_NO_DOTENV=1 DATABASE_URL=memory LLM_MODE=cache PYTHONUTF8=1 uv run --project services/api python services/api/scripts/research/envelope_spike.py --json",
+    "branch": "feat/mvp-w0",
+    "base_commit": "bcc67d4",
+    "recorded": "2026-10-08"
+  },
+  "buyer": "BUYER-1",
+  "receivable": "RCV-A",
+  "current_terms": 45,
+  "ranges": {
+    "terms_days": [
+      30,
+      90,
+      5
+    ],
+    "price_adjustment_bp": [
+      0,
+      100,
+      5
+    ],
+    "discount_bp": [
+      0,
+      150,
+      5
+    ],
+    "discount_range_from": "the mandate's immediate-discount cap",
+    "rebate_bp": [
+      0,
+      200,
+      5
+    ],
+    "face_step": {
+      "fen": 10000,
+      "display": "¥100.00"
+    },
+    "open_invoice": {
+      "fen": 42000000,
+      "display": "¥420,000.00"
+    }
+  },
+  "maxima": [
+    {
+      "lever": "Terms (days), alone",
+      "wall": "forward budget",
+      "largest_that_passes": "45 days",
+      "value": 45,
+      "neighbours_confirmed": true,
+      "at_largest": {
+        "terms_days": 45,
+        "price_adjustment": {
+          "bp": 0,
+          "display": "0.00%"
+        },
+        "early_pay": null,
+        "rebate": {
+          "bp": 0,
+          "display": "0.00%"
+        },
+        "outcome": "ACCEPT",
+        "tier": "TIER_1",
+        "passes": true,
+        "codes": [],
+        "binding_codes": [],
+        "counter_grade": true,
+        "recheck_failure": null,
+        "forward_budget_used": {
+          "fen": 0,
+          "display": "¥0.00"
+        },
+        "reserve_breach": null
+      },
+      "next_step": {
+        "terms_days": 50,
+        "price_adjustment": {
+          "bp": 0,
+          "display": "0.00%"
+        },
+        "early_pay": null,
+        "rebate": {
+          "bp": 0,
+          "display": "0.00%"
+        },
+        "outcome": "REJECT",
+        "tier": "TIER_1",
+        "passes": false,
+        "codes": [
+          "AGG_CONCESSION_EXCEEDED",
+          "RESERVE_BREACH"
+        ],
+        "binding_codes": [
+          "AGG_CONCESSION_EXCEEDED"
+        ],
+        "counter_grade": false,
+        "recheck_failure": null,
+        "forward_budget_used": {
+          "fen": 810897,
+          "display": "¥8,108.97"
+        },
+        "reserve_breach": {
+          "day": 47,
+          "curable": true,
+          "cure_cost": {
+            "fen": 157036,
+            "display": "¥1,570.36"
+          },
+          "cure_flags": [
+            "the cure cannot run today"
+          ]
+        }
+      }
+    },
+    {
+      "lever": "Terms (days), budget ignored",
+      "wall": "liquidity (reserve)",
+      "largest_that_passes": "55 days",
+      "value": 55,
+      "neighbours_confirmed": true,
+      "at_largest": {
+        "terms_days": 55,
+        "price_adjustment": {
+          "bp": 0,
+          "display": "0.00%"
+        },
+        "early_pay": null,
+        "rebate": {
+          "bp": 0,
+          "display": "0.00%"
+        },
+        "outcome": "REJECT",
+        "tier": "TIER_1",
+        "passes": false,
+        "codes": [
+          "AGG_CONCESSION_EXCEEDED",
+          "RESERVE_BREACH"
+        ],
+        "binding_codes": [
+          "AGG_CONCESSION_EXCEEDED"
+        ],
+        "counter_grade": false,
+        "recheck_failure": null,
+        "forward_budget_used": {
+          "fen": 1621795,
+          "display": "¥16,217.95"
+        },
+        "reserve_breach": {
+          "day": 47,
+          "curable": true,
+          "cure_cost": {
+            "fen": 157036,
+            "display": "¥1,570.36"
+          },
+          "cure_flags": [
+            "the cure cannot run today"
+          ]
+        }
+      },
+      "next_step": {
+        "terms_days": 60,
+        "price_adjustment": {
+          "bp": 0,
+          "display": "0.00%"
+        },
+        "early_pay": null,
+        "rebate": {
+          "bp": 0,
+          "display": "0.00%"
+        },
+        "outcome": "REJECT",
+        "tier": "TIER_1",
+        "passes": false,
+        "codes": [
+          "AGG_CONCESSION_EXCEEDED",
+          "RESERVE_BREACH"
+        ],
+        "binding_codes": [
+          "AGG_CONCESSION_EXCEEDED",
+          "RESERVE_BREACH"
+        ],
+        "counter_grade": false,
+        "recheck_failure": null,
+        "forward_budget_used": {
+          "fen": 2432692,
+          "display": "¥24,326.92"
+        },
+        "reserve_breach": {
+          "day": 47,
+          "curable": false,
+          "cure_cost": null,
+          "cure_flags": []
+        }
+      }
+    },
+    {
+      "lever": "Terms (days), with the price that compensates it",
+      "wall": "liquidity (reserve)",
+      "largest_that_passes": "55 days at +0.25%",
+      "value": 55,
+      "neighbours_confirmed": true,
+      "at_largest": {
+        "terms_days": 55,
+        "price_adjustment": {
+          "bp": 25,
+          "display": "0.25%"
+        },
+        "early_pay": null,
+        "rebate": {
+          "bp": 0,
+          "display": "0.00%"
+        },
+        "outcome": "NEEDS_OWNER_APPROVAL",
+        "tier": "TIER_2",
+        "passes": true,
+        "codes": [
+          "RESERVE_BREACH"
+        ],
+        "binding_codes": [],
+        "counter_grade": true,
+        "recheck_failure": null,
+        "forward_budget_used": {
+          "fen": 256795,
+          "display": "¥2,567.95"
+        },
+        "reserve_breach": {
+          "day": 47,
+          "curable": true,
+          "cure_cost": {
+            "fen": 157036,
+            "display": "¥1,570.36"
+          },
+          "cure_flags": [
+            "the cure cannot run today"
+          ]
+        }
+      },
+      "next_step": {
+        "terms_days": 60,
+        "price_adjustment": {
+          "bp": 100,
+          "display": "1.00%"
+        },
+        "early_pay": null,
+        "rebate": {
+          "bp": 0,
+          "display": "0.00%"
+        },
+        "outcome": "REJECT",
+        "tier": "TIER_1",
+        "passes": false,
+        "codes": [
+          "RESERVE_BREACH"
+        ],
+        "binding_codes": [
+          "RESERVE_BREACH"
+        ],
+        "counter_grade": false,
+        "recheck_failure": null,
+        "forward_budget_used": {
+          "fen": 0,
+          "display": "¥0.00"
+        },
+        "reserve_breach": {
+          "day": 47,
+          "curable": false,
+          "cure_cost": null,
+          "cure_flags": []
+        }
+      }
+    },
+    {
+      "lever": "Early pay on ¥420,000.00",
+      "wall": "plan comparison / break-even",
+      "largest_that_passes": "0.70%",
+      "value": 70,
+      "neighbours_confirmed": true,
+      "at_largest": {
+        "terms_days": 45,
+        "price_adjustment": {
+          "bp": 0,
+          "display": "0.00%"
+        },
+        "early_pay": {
+          "rate": {
+            "bp": 70,
+            "display": "0.70%"
+          },
+          "face": "whole invoice"
+        },
+        "rebate": {
+          "bp": 0,
+          "display": "0.00%"
+        },
+        "outcome": "ACCEPT",
+        "tier": "TIER_1",
+        "passes": true,
+        "codes": [],
+        "binding_codes": [],
+        "counter_grade": true,
+        "recheck_failure": null,
+        "forward_budget_used": {
+          "fen": 0,
+          "display": "¥0.00"
+        },
+        "reserve_breach": null
+      },
+      "next_step": {
+        "terms_days": 45,
+        "price_adjustment": {
+          "bp": 0,
+          "display": "0.00%"
+        },
+        "early_pay": {
+          "rate": {
+            "bp": 75,
+            "display": "0.75%"
+          },
+          "face": "whole invoice"
+        },
+        "rebate": {
+          "bp": 0,
+          "display": "0.00%"
+        },
+        "outcome": "COUNTER",
+        "tier": "TIER_1",
+        "passes": false,
+        "codes": [
+          "EARLY_PAY_DEARER_THAN_PLAN"
+        ],
+        "binding_codes": [
+          "EARLY_PAY_DEARER_THAN_PLAN"
+        ],
+        "counter_grade": false,
+        "recheck_failure": null,
+        "forward_budget_used": {
+          "fen": 0,
+          "display": "¥0.00"
+        },
+        "reserve_breach": null
+      }
+    },
+    {
+      "lever": "Early pay on ¥257,200.00",
+      "wall": "plan comparison / break-even",
+      "largest_that_passes": "0.85%",
+      "value": 85,
+      "neighbours_confirmed": true,
+      "at_largest": {
+        "terms_days": 45,
+        "price_adjustment": {
+          "bp": 0,
+          "display": "0.00%"
+        },
+        "early_pay": {
+          "rate": {
+            "bp": 85,
+            "display": "0.85%"
+          },
+          "face": {
+            "fen": 25720000,
+            "display": "¥257,200.00"
+          }
+        },
+        "rebate": {
+          "bp": 0,
+          "display": "0.00%"
+        },
+        "outcome": "ACCEPT",
+        "tier": "TIER_1",
+        "passes": true,
+        "codes": [],
+        "binding_codes": [],
+        "counter_grade": true,
+        "recheck_failure": null,
+        "forward_budget_used": {
+          "fen": 0,
+          "display": "¥0.00"
+        },
+        "reserve_breach": null
+      },
+      "next_step": {
+        "terms_days": 45,
+        "price_adjustment": {
+          "bp": 0,
+          "display": "0.00%"
+        },
+        "early_pay": {
+          "rate": {
+            "bp": 90,
+            "display": "0.90%"
+          },
+          "face": {
+            "fen": 25720000,
+            "display": "¥257,200.00"
+          }
+        },
+        "rebate": {
+          "bp": 0,
+          "display": "0.00%"
+        },
+        "outcome": "COUNTER",
+        "tier": "TIER_1",
+        "passes": false,
+        "codes": [
+          "DISCOUNT_ABOVE_BREAK_EVEN",
+          "EARLY_PAY_DEARER_THAN_PLAN"
+        ],
+        "binding_codes": [
+          "DISCOUNT_ABOVE_BREAK_EVEN",
+          "EARLY_PAY_DEARER_THAN_PLAN"
+        ],
+        "counter_grade": false,
+        "recheck_failure": null,
+        "forward_budget_used": {
+          "fen": 0,
+          "display": "¥0.00"
+        },
+        "reserve_breach": null
+      }
+    },
+    {
+      "lever": "Rebate on the expected order",
+      "wall": "forward budget",
+      "largest_that_passes": "1.25%",
+      "value": 125,
+      "neighbours_confirmed": true,
+      "at_largest": {
+        "terms_days": 45,
+        "price_adjustment": {
+          "bp": 0,
+          "display": "0.00%"
+        },
+        "early_pay": null,
+        "rebate": {
+          "bp": 125,
+          "display": "1.25%"
+        },
+        "outcome": "NEEDS_OWNER_APPROVAL",
+        "tier": "TIER_2",
+        "passes": true,
+        "codes": [],
+        "binding_codes": [],
+        "counter_grade": true,
+        "recheck_failure": null,
+        "forward_budget_used": {
+          "fen": 500000,
+          "display": "¥5,000.00"
+        },
+        "reserve_breach": null
+      },
+      "next_step": {
+        "terms_days": 45,
+        "price_adjustment": {
+          "bp": 0,
+          "display": "0.00%"
+        },
+        "early_pay": null,
+        "rebate": {
+          "bp": 130,
+          "display": "1.30%"
+        },
+        "outcome": "REJECT",
+        "tier": "TIER_1",
+        "passes": false,
+        "codes": [
+          "AGG_CONCESSION_EXCEEDED"
+        ],
+        "binding_codes": [
+          "AGG_CONCESSION_EXCEEDED"
+        ],
+        "counter_grade": false,
+        "recheck_failure": null,
+        "forward_budget_used": {
+          "fen": 520000,
+          "display": "¥5,200.00"
+        },
+        "reserve_breach": null
+      }
+    }
+  ],
+  "zone": [
+    {
+      "terms_days": 30,
+      "min_price_adjustment": {
+        "bp": 0,
+        "display": "0.00%"
+      },
+      "cost_per_invoice": null,
+      "price_that_nets_it_to_zero": null,
+      "passes_within_range": true,
+      "neighbours_confirmed": true,
+      "at_that_price": {
+        "terms_days": 30,
+        "price_adjustment": {
+          "bp": 0,
+          "display": "0.00%"
+        },
+        "early_pay": null,
+        "rebate": {
+          "bp": 0,
+          "display": "0.00%"
+        },
+        "outcome": "NEEDS_OWNER_APPROVAL",
+        "tier": "TIER_2",
+        "passes": true,
+        "codes": [],
+        "binding_codes": [],
+        "counter_grade": true,
+        "recheck_failure": null,
+        "forward_budget_used": {
+          "fen": 0,
+          "display": "¥0.00"
+        },
+        "reserve_breach": null
+      }
+    },
+    {
+      "terms_days": 35,
+      "min_price_adjustment": {
+        "bp": 0,
+        "display": "0.00%"
+      },
+      "cost_per_invoice": null,
+      "price_that_nets_it_to_zero": null,
+      "passes_within_range": true,
+      "neighbours_confirmed": true,
+      "at_that_price": {
+        "terms_days": 35,
+        "price_adjustment": {
+          "bp": 0,
+          "display": "0.00%"
+        },
+        "early_pay": null,
+        "rebate": {
+          "bp": 0,
+          "display": "0.00%"
+        },
+        "outcome": "NEEDS_OWNER_APPROVAL",
+        "tier": "TIER_2",
+        "passes": true,
+        "codes": [],
+        "binding_codes": [],
+        "counter_grade": true,
+        "recheck_failure": null,
+        "forward_budget_used": {
+          "fen": 0,
+          "display": "¥0.00"
+        },
+        "reserve_breach": null
+      }
+    },
+    {
+      "terms_days": 40,
+      "min_price_adjustment": {
+        "bp": 0,
+        "display": "0.00%"
+      },
+      "cost_per_invoice": null,
+      "price_that_nets_it_to_zero": null,
+      "passes_within_range": true,
+      "neighbours_confirmed": true,
+      "at_that_price": {
+        "terms_days": 40,
+        "price_adjustment": {
+          "bp": 0,
+          "display": "0.00%"
+        },
+        "early_pay": null,
+        "rebate": {
+          "bp": 0,
+          "display": "0.00%"
+        },
+        "outcome": "NEEDS_OWNER_APPROVAL",
+        "tier": "TIER_2",
+        "passes": true,
+        "codes": [],
+        "binding_codes": [],
+        "counter_grade": true,
+        "recheck_failure": null,
+        "forward_budget_used": {
+          "fen": 0,
+          "display": "¥0.00"
+        },
+        "reserve_breach": null
+      }
+    },
+    {
+      "terms_days": 45,
+      "min_price_adjustment": {
+        "bp": 0,
+        "display": "0.00%"
+      },
+      "cost_per_invoice": null,
+      "price_that_nets_it_to_zero": null,
+      "passes_within_range": true,
+      "neighbours_confirmed": true,
+      "at_that_price": {
+        "terms_days": 45,
+        "price_adjustment": {
+          "bp": 0,
+          "display": "0.00%"
+        },
+        "early_pay": null,
+        "rebate": {
+          "bp": 0,
+          "display": "0.00%"
+        },
+        "outcome": "ACCEPT",
+        "tier": "TIER_1",
+        "passes": true,
+        "codes": [],
+        "binding_codes": [],
+        "counter_grade": true,
+        "recheck_failure": null,
+        "forward_budget_used": {
+          "fen": 0,
+          "display": "¥0.00"
+        },
+        "reserve_breach": null
+      }
+    },
+    {
+      "terms_days": 50,
+      "min_price_adjustment": {
+        "bp": 10,
+        "display": "0.10%"
+      },
+      "cost_per_invoice": {
+        "fen": 62377,
+        "display": "¥623.77"
+      },
+      "price_that_nets_it_to_zero": {
+        "bp": 15,
+        "display": "0.15%"
+      },
+      "passes_within_range": true,
+      "neighbours_confirmed": true,
+      "at_that_price": {
+        "terms_days": 50,
+        "price_adjustment": {
+          "bp": 10,
+          "display": "0.10%"
+        },
+        "early_pay": null,
+        "rebate": {
+          "bp": 0,
+          "display": "0.00%"
+        },
+        "outcome": "NEEDS_OWNER_APPROVAL",
+        "tier": "TIER_2",
+        "passes": true,
+        "codes": [
+          "RESERVE_BREACH"
+        ],
+        "binding_codes": [],
+        "counter_grade": true,
+        "recheck_failure": null,
+        "forward_budget_used": {
+          "fen": 264897,
+          "display": "¥2,648.97"
+        },
+        "reserve_breach": {
+          "day": 47,
+          "curable": true,
+          "cure_cost": {
+            "fen": 157036,
+            "display": "¥1,570.36"
+          },
+          "cure_flags": [
+            "the cure cannot run today"
+          ]
+        }
+      }
+    },
+    {
+      "terms_days": 55,
+      "min_price_adjustment": {
+        "bp": 25,
+        "display": "0.25%"
+      },
+      "cost_per_invoice": {
+        "fen": 124753,
+        "display": "¥1,247.53"
+      },
+      "price_that_nets_it_to_zero": {
+        "bp": 30,
+        "display": "0.30%"
+      },
+      "passes_within_range": true,
+      "neighbours_confirmed": true,
+      "at_that_price": {
+        "terms_days": 55,
+        "price_adjustment": {
+          "bp": 25,
+          "display": "0.25%"
+        },
+        "early_pay": null,
+        "rebate": {
+          "bp": 0,
+          "display": "0.00%"
+        },
+        "outcome": "NEEDS_OWNER_APPROVAL",
+        "tier": "TIER_2",
+        "passes": true,
+        "codes": [
+          "RESERVE_BREACH"
+        ],
+        "binding_codes": [],
+        "counter_grade": true,
+        "recheck_failure": null,
+        "forward_budget_used": {
+          "fen": 256795,
+          "display": "¥2,567.95"
+        },
+        "reserve_breach": {
+          "day": 47,
+          "curable": true,
+          "cure_cost": {
+            "fen": 157036,
+            "display": "¥1,570.36"
+          },
+          "cure_flags": [
+            "the cure cannot run today"
+          ]
+        }
+      }
+    },
+    {
+      "terms_days": 60,
+      "min_price_adjustment": null,
+      "cost_per_invoice": {
+        "fen": 187130,
+        "display": "¥1,871.30"
+      },
+      "price_that_nets_it_to_zero": {
+        "bp": 45,
+        "display": "0.45%"
+      },
+      "passes_within_range": false,
+      "neighbours_confirmed": true,
+      "at_that_price": {
+        "terms_days": 60,
+        "price_adjustment": {
+          "bp": 100,
+          "display": "1.00%"
+        },
+        "early_pay": null,
+        "rebate": {
+          "bp": 0,
+          "display": "0.00%"
+        },
+        "outcome": "REJECT",
+        "tier": "TIER_1",
+        "passes": false,
+        "codes": [
+          "RESERVE_BREACH"
+        ],
+        "binding_codes": [
+          "RESERVE_BREACH"
+        ],
+        "counter_grade": false,
+        "recheck_failure": null,
+        "forward_budget_used": {
+          "fen": 0,
+          "display": "¥0.00"
+        },
+        "reserve_breach": {
+          "day": 47,
+          "curable": false,
+          "cure_cost": null,
+          "cure_flags": []
+        }
+      }
+    },
+    {
+      "terms_days": 65,
+      "min_price_adjustment": null,
+      "cost_per_invoice": {
+        "fen": 249507,
+        "display": "¥2,495.07"
+      },
+      "price_that_nets_it_to_zero": {
+        "bp": 60,
+        "display": "0.60%"
+      },
+      "passes_within_range": false,
+      "neighbours_confirmed": true,
+      "at_that_price": {
+        "terms_days": 65,
+        "price_adjustment": {
+          "bp": 100,
+          "display": "1.00%"
+        },
+        "early_pay": null,
+        "rebate": {
+          "bp": 0,
+          "display": "0.00%"
+        },
+        "outcome": "REJECT",
+        "tier": "TIER_1",
+        "passes": false,
+        "codes": [
+          "RESERVE_BREACH"
+        ],
+        "binding_codes": [
+          "RESERVE_BREACH"
+        ],
+        "counter_grade": false,
+        "recheck_failure": null,
+        "forward_budget_used": {
+          "fen": 0,
+          "display": "¥0.00"
+        },
+        "reserve_breach": {
+          "day": 47,
+          "curable": false,
+          "cure_cost": null,
+          "cure_flags": []
+        }
+      }
+    },
+    {
+      "terms_days": 70,
+      "min_price_adjustment": null,
+      "cost_per_invoice": {
+        "fen": 311884,
+        "display": "¥3,118.84"
+      },
+      "price_that_nets_it_to_zero": {
+        "bp": 75,
+        "display": "0.75%"
+      },
+      "passes_within_range": false,
+      "neighbours_confirmed": true,
+      "at_that_price": {
+        "terms_days": 70,
+        "price_adjustment": {
+          "bp": 100,
+          "display": "1.00%"
+        },
+        "early_pay": null,
+        "rebate": {
+          "bp": 0,
+          "display": "0.00%"
+        },
+        "outcome": "REJECT",
+        "tier": "TIER_1",
+        "passes": false,
+        "codes": [
+          "RESERVE_BREACH"
+        ],
+        "binding_codes": [
+          "RESERVE_BREACH"
+        ],
+        "counter_grade": false,
+        "recheck_failure": null,
+        "forward_budget_used": {
+          "fen": 0,
+          "display": "¥0.00"
+        },
+        "reserve_breach": {
+          "day": 47,
+          "curable": false,
+          "cure_cost": null,
+          "cure_flags": []
+        }
+      }
+    },
+    {
+      "terms_days": 75,
+      "min_price_adjustment": null,
+      "cost_per_invoice": {
+        "fen": 374260,
+        "display": "¥3,742.60"
+      },
+      "price_that_nets_it_to_zero": {
+        "bp": 90,
+        "display": "0.90%"
+      },
+      "passes_within_range": false,
+      "neighbours_confirmed": true,
+      "at_that_price": {
+        "terms_days": 75,
+        "price_adjustment": {
+          "bp": 100,
+          "display": "1.00%"
+        },
+        "early_pay": null,
+        "rebate": {
+          "bp": 0,
+          "display": "0.00%"
+        },
+        "outcome": "REJECT",
+        "tier": "TIER_1",
+        "passes": false,
+        "codes": [
+          "RESERVE_BREACH"
+        ],
+        "binding_codes": [
+          "RESERVE_BREACH"
+        ],
+        "counter_grade": false,
+        "recheck_failure": null,
+        "forward_budget_used": {
+          "fen": 0,
+          "display": "¥0.00"
+        },
+        "reserve_breach": {
+          "day": 47,
+          "curable": false,
+          "cure_cost": null,
+          "cure_flags": []
+        }
+      }
+    },
+    {
+      "terms_days": 80,
+      "min_price_adjustment": null,
+      "cost_per_invoice": {
+        "fen": 436637,
+        "display": "¥4,366.37"
+      },
+      "price_that_nets_it_to_zero": {
+        "bp": 105,
+        "display": "1.05%"
+      },
+      "passes_within_range": false,
+      "neighbours_confirmed": true,
+      "at_that_price": {
+        "terms_days": 80,
+        "price_adjustment": {
+          "bp": 100,
+          "display": "1.00%"
+        },
+        "early_pay": null,
+        "rebate": {
+          "bp": 0,
+          "display": "0.00%"
+        },
+        "outcome": "REJECT",
+        "tier": "TIER_1",
+        "passes": false,
+        "codes": [
+          "RESERVE_BREACH"
+        ],
+        "binding_codes": [
+          "RESERVE_BREACH"
+        ],
+        "counter_grade": false,
+        "recheck_failure": null,
+        "forward_budget_used": {
+          "fen": 216281,
+          "display": "¥2,162.81"
+        },
+        "reserve_breach": {
+          "day": 47,
+          "curable": false,
+          "cure_cost": null,
+          "cure_flags": []
+        }
+      }
+    },
+    {
+      "terms_days": 85,
+      "min_price_adjustment": null,
+      "cost_per_invoice": {
+        "fen": 499014,
+        "display": "¥4,990.14"
+      },
+      "price_that_nets_it_to_zero": {
+        "bp": 120,
+        "display": "1.20%"
+      },
+      "passes_within_range": false,
+      "neighbours_confirmed": true,
+      "at_that_price": {
+        "terms_days": 85,
+        "price_adjustment": {
+          "bp": 100,
+          "display": "1.00%"
+        },
+        "early_pay": null,
+        "rebate": {
+          "bp": 0,
+          "display": "0.00%"
+        },
+        "outcome": "REJECT",
+        "tier": "TIER_1",
+        "passes": false,
+        "codes": [
+          "AGG_CONCESSION_EXCEEDED",
+          "RESERVE_BREACH"
+        ],
+        "binding_codes": [
+          "AGG_CONCESSION_EXCEEDED",
+          "RESERVE_BREACH"
+        ],
+        "counter_grade": false,
+        "recheck_failure": null,
+        "forward_budget_used": {
+          "fen": 1027178,
+          "display": "¥10,271.78"
+        },
+        "reserve_breach": {
+          "day": 47,
+          "curable": false,
+          "cure_cost": null,
+          "cure_flags": []
+        }
+      }
+    },
+    {
+      "terms_days": 90,
+      "min_price_adjustment": null,
+      "cost_per_invoice": {
+        "fen": 561390,
+        "display": "¥5,613.90"
+      },
+      "price_that_nets_it_to_zero": {
+        "bp": 135,
+        "display": "1.35%"
+      },
+      "passes_within_range": false,
+      "neighbours_confirmed": true,
+      "at_that_price": {
+        "terms_days": 90,
+        "price_adjustment": {
+          "bp": 100,
+          "display": "1.00%"
+        },
+        "early_pay": null,
+        "rebate": {
+          "bp": 0,
+          "display": "0.00%"
+        },
+        "outcome": "REJECT",
+        "tier": "TIER_1",
+        "passes": false,
+        "codes": [
+          "AGG_CONCESSION_EXCEEDED",
+          "RESERVE_BREACH"
+        ],
+        "binding_codes": [
+          "AGG_CONCESSION_EXCEEDED",
+          "RESERVE_BREACH"
+        ],
+        "counter_grade": false,
+        "recheck_failure": null,
+        "forward_budget_used": {
+          "fen": 1838075,
+          "display": "¥18,380.75"
+        },
+        "reserve_breach": {
+          "day": 47,
+          "curable": false,
+          "cure_cost": null,
+          "cure_flags": []
+        }
+      }
+    }
+  ],
+  "packages": [
+    {
+      "terms_days": 45,
+      "price_adjustment": {
+        "bp": 0,
+        "display": "0.00%"
+      },
+      "early_pay": null,
+      "rebate": {
+        "bp": 125,
+        "display": "1.25%"
+      },
+      "outcome": "NEEDS_OWNER_APPROVAL",
+      "tier": "TIER_2",
+      "passes": true,
+      "codes": [],
+      "binding_codes": [],
+      "counter_grade": true,
+      "recheck_failure": null,
+      "forward_budget_used": {
+        "fen": 500000,
+        "display": "¥5,000.00"
+      },
+      "reserve_breach": null,
+      "neighbours_confirmed": true,
+      "next_rebate_step": {
+        "terms_days": 45,
+        "price_adjustment": {
+          "bp": 0,
+          "display": "0.00%"
+        },
+        "early_pay": null,
+        "rebate": {
+          "bp": 130,
+          "display": "1.30%"
+        },
+        "outcome": "REJECT",
+        "tier": "TIER_1",
+        "passes": false,
+        "codes": [
+          "AGG_CONCESSION_EXCEEDED"
+        ],
+        "binding_codes": [
+          "AGG_CONCESSION_EXCEEDED"
+        ],
+        "counter_grade": false,
+        "recheck_failure": null,
+        "forward_budget_used": {
+          "fen": 520000,
+          "display": "¥5,200.00"
+        },
+        "reserve_breach": null
+      }
+    },
+    {
+      "terms_days": 45,
+      "price_adjustment": {
+        "bp": 0,
+        "display": "0.00%"
+      },
+      "early_pay": {
+        "rate": {
+          "bp": 70,
+          "display": "0.70%"
+        },
+        "face": "whole invoice"
+      },
+      "rebate": {
+        "bp": 125,
+        "display": "1.25%"
+      },
+      "outcome": "NEEDS_OWNER_APPROVAL",
+      "tier": "TIER_2",
+      "passes": true,
+      "codes": [],
+      "binding_codes": [],
+      "counter_grade": true,
+      "recheck_failure": null,
+      "forward_budget_used": {
+        "fen": 500000,
+        "display": "¥5,000.00"
+      },
+      "reserve_breach": null,
+      "neighbours_confirmed": true,
+      "next_rebate_step": {
+        "terms_days": 45,
+        "price_adjustment": {
+          "bp": 0,
+          "display": "0.00%"
+        },
+        "early_pay": {
+          "rate": {
+            "bp": 70,
+            "display": "0.70%"
+          },
+          "face": "whole invoice"
+        },
+        "rebate": {
+          "bp": 130,
+          "display": "1.30%"
+        },
+        "outcome": "REJECT",
+        "tier": "TIER_1",
+        "passes": false,
+        "codes": [
+          "AGG_CONCESSION_EXCEEDED"
+        ],
+        "binding_codes": [
+          "AGG_CONCESSION_EXCEEDED"
+        ],
+        "counter_grade": false,
+        "recheck_failure": null,
+        "forward_budget_used": {
+          "fen": 520000,
+          "display": "¥5,200.00"
+        },
+        "reserve_breach": null
+      }
+    },
+    {
+      "terms_days": 45,
+      "price_adjustment": {
+        "bp": 0,
+        "display": "0.00%"
+      },
+      "early_pay": {
+        "rate": {
+          "bp": 85,
+          "display": "0.85%"
+        },
+        "face": {
+          "fen": 25720000,
+          "display": "¥257,200.00"
+        }
+      },
+      "rebate": {
+        "bp": 125,
+        "display": "1.25%"
+      },
+      "outcome": "NEEDS_OWNER_APPROVAL",
+      "tier": "TIER_2",
+      "passes": true,
+      "codes": [],
+      "binding_codes": [],
+      "counter_grade": true,
+      "recheck_failure": null,
+      "forward_budget_used": {
+        "fen": 500000,
+        "display": "¥5,000.00"
+      },
+      "reserve_breach": null,
+      "neighbours_confirmed": true,
+      "next_rebate_step": {
+        "terms_days": 45,
+        "price_adjustment": {
+          "bp": 0,
+          "display": "0.00%"
+        },
+        "early_pay": {
+          "rate": {
+            "bp": 85,
+            "display": "0.85%"
+          },
+          "face": {
+            "fen": 25720000,
+            "display": "¥257,200.00"
+          }
+        },
+        "rebate": {
+          "bp": 130,
+          "display": "1.30%"
+        },
+        "outcome": "REJECT",
+        "tier": "TIER_1",
+        "passes": false,
+        "codes": [
+          "AGG_CONCESSION_EXCEEDED"
+        ],
+        "binding_codes": [
+          "AGG_CONCESSION_EXCEEDED"
+        ],
+        "counter_grade": false,
+        "recheck_failure": null,
+        "forward_budget_used": {
+          "fen": 520000,
+          "display": "¥5,200.00"
+        },
+        "reserve_breach": null
+      }
+    },
+    {
+      "terms_days": 50,
+      "price_adjustment": {
+        "bp": 10,
+        "display": "0.10%"
+      },
+      "early_pay": null,
+      "rebate": {
+        "bp": 55,
+        "display": "0.55%"
+      },
+      "outcome": "NEEDS_OWNER_APPROVAL",
+      "tier": "TIER_2",
+      "passes": true,
+      "codes": [
+        "RESERVE_BREACH"
+      ],
+      "binding_codes": [],
+      "counter_grade": true,
+      "recheck_failure": null,
+      "forward_budget_used": {
+        "fen": 484897,
+        "display": "¥4,848.97"
+      },
+      "reserve_breach": {
+        "day": 47,
+        "curable": true,
+        "cure_cost": {
+          "fen": 157036,
+          "display": "¥1,570.36"
+        },
+        "cure_flags": [
+          "the cure cannot run today"
+        ]
+      },
+      "neighbours_confirmed": true,
+      "next_rebate_step": {
+        "terms_days": 50,
+        "price_adjustment": {
+          "bp": 10,
+          "display": "0.10%"
+        },
+        "early_pay": null,
+        "rebate": {
+          "bp": 60,
+          "display": "0.60%"
+        },
+        "outcome": "REJECT",
+        "tier": "TIER_1",
+        "passes": false,
+        "codes": [
+          "AGG_CONCESSION_EXCEEDED",
+          "RESERVE_BREACH"
+        ],
+        "binding_codes": [
+          "AGG_CONCESSION_EXCEEDED"
+        ],
+        "counter_grade": false,
+        "recheck_failure": null,
+        "forward_budget_used": {
+          "fen": 504897,
+          "display": "¥5,048.97"
+        },
+        "reserve_breach": {
+          "day": 47,
+          "curable": true,
+          "cure_cost": {
+            "fen": 157036,
+            "display": "¥1,570.36"
+          },
+          "cure_flags": [
+            "the cure cannot run today"
+          ]
+        }
+      }
+    },
+    {
+      "terms_days": 50,
+      "price_adjustment": {
+        "bp": 100,
+        "display": "1.00%"
+      },
+      "early_pay": {
+        "rate": {
+          "bp": 70,
+          "display": "0.70%"
+        },
+        "face": "whole invoice"
+      },
+      "rebate": {
+        "bp": 0,
+        "display": "0.00%"
+      },
+      "outcome": "COUNTER",
+      "tier": "TIER_1",
+      "passes": false,
+      "codes": [
+        "RESERVE_BREACH",
+        "EARLY_PAY_DEARER_THAN_PLAN"
+      ],
+      "binding_codes": [
+        "EARLY_PAY_DEARER_THAN_PLAN"
+      ],
+      "counter_grade": false,
+      "recheck_failure": null,
+      "forward_budget_used": {
+        "fen": 0,
+        "display": "¥0.00"
+      },
+      "reserve_breach": {
+        "day": 47,
+        "curable": true,
+        "cure_cost": {
+          "fen": 156726,
+          "display": "¥1,567.26"
+        },
+        "cure_flags": [
+          "the cure cannot run today"
+        ]
+      },
+      "neighbours_confirmed": true,
+      "next_rebate_step": null
+    },
+    {
+      "terms_days": 50,
+      "price_adjustment": {
+        "bp": 10,
+        "display": "0.10%"
+      },
+      "early_pay": {
+        "rate": {
+          "bp": 85,
+          "display": "0.85%"
+        },
+        "face": {
+          "fen": 25720000,
+          "display": "¥257,200.00"
+        }
+      },
+      "rebate": {
+        "bp": 55,
+        "display": "0.55%"
+      },
+      "outcome": "NEEDS_OWNER_APPROVAL",
+      "tier": "TIER_2",
+      "passes": true,
+      "codes": [
+        "RESERVE_BREACH"
+      ],
+      "binding_codes": [],
+      "counter_grade": true,
+      "recheck_failure": null,
+      "forward_budget_used": {
+        "fen": 484897,
+        "display": "¥4,848.97"
+      },
+      "reserve_breach": {
+        "day": 47,
+        "curable": true,
+        "cure_cost": {
+          "fen": 267304,
+          "display": "¥2,673.04"
+        },
+        "cure_flags": [
+          "the cure cannot run today"
+        ]
+      },
+      "neighbours_confirmed": true,
+      "next_rebate_step": {
+        "terms_days": 50,
+        "price_adjustment": {
+          "bp": 10,
+          "display": "0.10%"
+        },
+        "early_pay": {
+          "rate": {
+            "bp": 85,
+            "display": "0.85%"
+          },
+          "face": {
+            "fen": 25720000,
+            "display": "¥257,200.00"
+          }
+        },
+        "rebate": {
+          "bp": 60,
+          "display": "0.60%"
+        },
+        "outcome": "REJECT",
+        "tier": "TIER_1",
+        "passes": false,
+        "codes": [
+          "AGG_CONCESSION_EXCEEDED",
+          "RESERVE_BREACH"
+        ],
+        "binding_codes": [
+          "AGG_CONCESSION_EXCEEDED"
+        ],
+        "counter_grade": false,
+        "recheck_failure": null,
+        "forward_budget_used": {
+          "fen": 504897,
+          "display": "¥5,048.97"
+        },
+        "reserve_breach": {
+          "day": 47,
+          "curable": true,
+          "cure_cost": {
+            "fen": 267304,
+            "display": "¥2,673.04"
+          },
+          "cure_flags": [
+            "the cure cannot run today"
+          ]
+        }
+      }
+    },
+    {
+      "terms_days": 55,
+      "price_adjustment": {
+        "bp": 25,
+        "display": "0.25%"
+      },
+      "early_pay": null,
+      "rebate": {
+        "bp": 60,
+        "display": "0.60%"
+      },
+      "outcome": "NEEDS_OWNER_APPROVAL",
+      "tier": "TIER_2",
+      "passes": true,
+      "codes": [
+        "RESERVE_BREACH"
+      ],
+      "binding_codes": [],
+      "counter_grade": true,
+      "recheck_failure": null,
+      "forward_budget_used": {
+        "fen": 496795,
+        "display": "¥4,967.95"
+      },
+      "reserve_breach": {
+        "day": 47,
+        "curable": true,
+        "cure_cost": {
+          "fen": 157036,
+          "display": "¥1,570.36"
+        },
+        "cure_flags": [
+          "the cure cannot run today"
+        ]
+      },
+      "neighbours_confirmed": true,
+      "next_rebate_step": {
+        "terms_days": 55,
+        "price_adjustment": {
+          "bp": 25,
+          "display": "0.25%"
+        },
+        "early_pay": null,
+        "rebate": {
+          "bp": 65,
+          "display": "0.65%"
+        },
+        "outcome": "REJECT",
+        "tier": "TIER_1",
+        "passes": false,
+        "codes": [
+          "AGG_CONCESSION_EXCEEDED",
+          "RESERVE_BREACH"
+        ],
+        "binding_codes": [
+          "AGG_CONCESSION_EXCEEDED"
+        ],
+        "counter_grade": false,
+        "recheck_failure": null,
+        "forward_budget_used": {
+          "fen": 516795,
+          "display": "¥5,167.95"
+        },
+        "reserve_breach": {
+          "day": 47,
+          "curable": true,
+          "cure_cost": {
+            "fen": 157036,
+            "display": "¥1,570.36"
+          },
+          "cure_flags": [
+            "the cure cannot run today"
+          ]
+        }
+      }
+    },
+    {
+      "terms_days": 55,
+      "price_adjustment": {
+        "bp": 100,
+        "display": "1.00%"
+      },
+      "early_pay": {
+        "rate": {
+          "bp": 70,
+          "display": "0.70%"
+        },
+        "face": "whole invoice"
+      },
+      "rebate": {
+        "bp": 0,
+        "display": "0.00%"
+      },
+      "outcome": "COUNTER",
+      "tier": "TIER_1",
+      "passes": false,
+      "codes": [
+        "RESERVE_BREACH",
+        "EARLY_PAY_DEARER_THAN_PLAN"
+      ],
+      "binding_codes": [
+        "EARLY_PAY_DEARER_THAN_PLAN"
+      ],
+      "counter_grade": false,
+      "recheck_failure": null,
+      "forward_budget_used": {
+        "fen": 0,
+        "display": "¥0.00"
+      },
+      "reserve_breach": {
+        "day": 47,
+        "curable": true,
+        "cure_cost": {
+          "fen": 156726,
+          "display": "¥1,567.26"
+        },
+        "cure_flags": [
+          "the cure cannot run today"
+        ]
+      },
+      "neighbours_confirmed": true,
+      "next_rebate_step": null
+    },
+    {
+      "terms_days": 55,
+      "price_adjustment": {
+        "bp": 25,
+        "display": "0.25%"
+      },
+      "early_pay": {
+        "rate": {
+          "bp": 85,
+          "display": "0.85%"
+        },
+        "face": {
+          "fen": 25720000,
+          "display": "¥257,200.00"
+        }
+      },
+      "rebate": {
+        "bp": 60,
+        "display": "0.60%"
+      },
+      "outcome": "NEEDS_OWNER_APPROVAL",
+      "tier": "TIER_2",
+      "passes": true,
+      "codes": [
+        "RESERVE_BREACH"
+      ],
+      "binding_codes": [],
+      "counter_grade": true,
+      "recheck_failure": null,
+      "forward_budget_used": {
+        "fen": 496795,
+        "display": "¥4,967.95"
+      },
+      "reserve_breach": {
+        "day": 47,
+        "curable": true,
+        "cure_cost": {
+          "fen": 267304,
+          "display": "¥2,673.04"
+        },
+        "cure_flags": [
+          "the cure cannot run today"
+        ]
+      },
+      "neighbours_confirmed": true,
+      "next_rebate_step": {
+        "terms_days": 55,
+        "price_adjustment": {
+          "bp": 25,
+          "display": "0.25%"
+        },
+        "early_pay": {
+          "rate": {
+            "bp": 85,
+            "display": "0.85%"
+          },
+          "face": {
+            "fen": 25720000,
+            "display": "¥257,200.00"
+          }
+        },
+        "rebate": {
+          "bp": 65,
+          "display": "0.65%"
+        },
+        "outcome": "REJECT",
+        "tier": "TIER_1",
+        "passes": false,
+        "codes": [
+          "AGG_CONCESSION_EXCEEDED",
+          "RESERVE_BREACH"
+        ],
+        "binding_codes": [
+          "AGG_CONCESSION_EXCEEDED"
+        ],
+        "counter_grade": false,
+        "recheck_failure": null,
+        "forward_budget_used": {
+          "fen": 516795,
+          "display": "¥5,167.95"
+        },
+        "reserve_breach": {
+          "day": 47,
+          "curable": true,
+          "cure_cost": {
+            "fen": 267304,
+            "display": "¥2,673.04"
+          },
+          "cure_flags": [
+            "the cure cannot run today"
+          ]
+        }
+      }
+    },
+    {
+      "terms_days": 60,
+      "price_adjustment": {
+        "bp": 100,
+        "display": "1.00%"
+      },
+      "early_pay": null,
+      "rebate": {
+        "bp": 0,
+        "display": "0.00%"
+      },
+      "outcome": "REJECT",
+      "tier": "TIER_1",
+      "passes": false,
+      "codes": [
+        "RESERVE_BREACH"
+      ],
+      "binding_codes": [
+        "RESERVE_BREACH"
+      ],
+      "counter_grade": false,
+      "recheck_failure": null,
+      "forward_budget_used": {
+        "fen": 0,
+        "display": "¥0.00"
+      },
+      "reserve_breach": {
+        "day": 47,
+        "curable": false,
+        "cure_cost": null,
+        "cure_flags": []
+      },
+      "neighbours_confirmed": true,
+      "next_rebate_step": null
+    },
+    {
+      "terms_days": 60,
+      "price_adjustment": {
+        "bp": 100,
+        "display": "1.00%"
+      },
+      "early_pay": {
+        "rate": {
+          "bp": 70,
+          "display": "0.70%"
+        },
+        "face": "whole invoice"
+      },
+      "rebate": {
+        "bp": 0,
+        "display": "0.00%"
+      },
+      "outcome": "COUNTER",
+      "tier": "TIER_1",
+      "passes": false,
+      "codes": [
+        "RESERVE_BREACH",
+        "EARLY_PAY_DEARER_THAN_PLAN"
+      ],
+      "binding_codes": [
+        "EARLY_PAY_DEARER_THAN_PLAN"
+      ],
+      "counter_grade": false,
+      "recheck_failure": null,
+      "forward_budget_used": {
+        "fen": 0,
+        "display": "¥0.00"
+      },
+      "reserve_breach": {
+        "day": 47,
+        "curable": true,
+        "cure_cost": {
+          "fen": 236924,
+          "display": "¥2,369.24"
+        },
+        "cure_flags": [
+          "the cure cannot run today"
+        ]
+      },
+      "neighbours_confirmed": true,
+      "next_rebate_step": null
+    },
+    {
+      "terms_days": 60,
+      "price_adjustment": {
+        "bp": 40,
+        "display": "0.40%"
+      },
+      "early_pay": {
+        "rate": {
+          "bp": 85,
+          "display": "0.85%"
+        },
+        "face": {
+          "fen": 25720000,
+          "display": "¥257,200.00"
+        }
+      },
+      "rebate": {
+        "bp": 60,
+        "display": "0.60%"
+      },
+      "outcome": "NEEDS_OWNER_APPROVAL",
+      "tier": "TIER_2",
+      "passes": true,
+      "codes": [
+        "RESERVE_BREACH"
+      ],
+      "binding_codes": [],
+      "counter_grade": true,
+      "recheck_failure": null,
+      "forward_budget_used": {
+        "fen": 488692,
+        "display": "¥4,886.92"
+      },
+      "reserve_breach": {
+        "day": 47,
+        "curable": true,
+        "cure_cost": {
+          "fen": 267304,
+          "display": "¥2,673.04"
+        },
+        "cure_flags": [
+          "the cure cannot run today"
+        ]
+      },
+      "neighbours_confirmed": true,
+      "next_rebate_step": {
+        "terms_days": 60,
+        "price_adjustment": {
+          "bp": 40,
+          "display": "0.40%"
+        },
+        "early_pay": {
+          "rate": {
+            "bp": 85,
+            "display": "0.85%"
+          },
+          "face": {
+            "fen": 25720000,
+            "display": "¥257,200.00"
+          }
+        },
+        "rebate": {
+          "bp": 65,
+          "display": "0.65%"
+        },
+        "outcome": "REJECT",
+        "tier": "TIER_1",
+        "passes": false,
+        "codes": [
+          "AGG_CONCESSION_EXCEEDED",
+          "RESERVE_BREACH"
+        ],
+        "binding_codes": [
+          "AGG_CONCESSION_EXCEEDED"
+        ],
+        "counter_grade": false,
+        "recheck_failure": null,
+        "forward_budget_used": {
+          "fen": 508692,
+          "display": "¥5,086.92"
+        },
+        "reserve_breach": {
+          "day": 47,
+          "curable": true,
+          "cure_cost": {
+            "fen": 267304,
+            "display": "¥2,673.04"
+          },
+          "cure_flags": [
+            "the cure cannot run today"
+          ]
+        }
+      }
+    },
+    {
+      "terms_days": 65,
+      "price_adjustment": {
+        "bp": 100,
+        "display": "1.00%"
+      },
+      "early_pay": null,
+      "rebate": {
+        "bp": 0,
+        "display": "0.00%"
+      },
+      "outcome": "REJECT",
+      "tier": "TIER_1",
+      "passes": false,
+      "codes": [
+        "RESERVE_BREACH"
+      ],
+      "binding_codes": [
+        "RESERVE_BREACH"
+      ],
+      "counter_grade": false,
+      "recheck_failure": null,
+      "forward_budget_used": {
+        "fen": 0,
+        "display": "¥0.00"
+      },
+      "reserve_breach": {
+        "day": 47,
+        "curable": false,
+        "cure_cost": null,
+        "cure_flags": []
+      },
+      "neighbours_confirmed": true,
+      "next_rebate_step": null
+    },
+    {
+      "terms_days": 65,
+      "price_adjustment": {
+        "bp": 100,
+        "display": "1.00%"
+      },
+      "early_pay": {
+        "rate": {
+          "bp": 70,
+          "display": "0.70%"
+        },
+        "face": "whole invoice"
+      },
+      "rebate": {
+        "bp": 0,
+        "display": "0.00%"
+      },
+      "outcome": "COUNTER",
+      "tier": "TIER_1",
+      "passes": false,
+      "codes": [
+        "RESERVE_BREACH",
+        "EARLY_PAY_DEARER_THAN_PLAN"
+      ],
+      "binding_codes": [
+        "EARLY_PAY_DEARER_THAN_PLAN"
+      ],
+      "counter_grade": false,
+      "recheck_failure": null,
+      "forward_budget_used": {
+        "fen": 0,
+        "display": "¥0.00"
+      },
+      "reserve_breach": {
+        "day": 47,
+        "curable": true,
+        "cure_cost": {
+          "fen": 355386,
+          "display": "¥3,553.86"
+        },
+        "cure_flags": [
+          "the cure needs the owner's approval",
+          "the cure cannot run today"
+        ]
+      },
+      "neighbours_confirmed": true,
+      "next_rebate_step": null
+    },
+    {
+      "terms_days": 65,
+      "price_adjustment": {
+        "bp": 55,
+        "display": "0.55%"
+      },
+      "early_pay": {
+        "rate": {
+          "bp": 85,
+          "display": "0.85%"
+        },
+        "face": {
+          "fen": 25720000,
+          "display": "¥257,200.00"
+        }
+      },
+      "rebate": {
+        "bp": 60,
+        "display": "0.60%"
+      },
+      "outcome": "NEEDS_OWNER_APPROVAL",
+      "tier": "TIER_2",
+      "passes": true,
+      "codes": [
+        "RESERVE_BREACH"
+      ],
+      "binding_codes": [],
+      "counter_grade": true,
+      "recheck_failure": null,
+      "forward_budget_used": {
+        "fen": 480589,
+        "display": "¥4,805.89"
+      },
+      "reserve_breach": {
+        "day": 47,
+        "curable": true,
+        "cure_cost": {
+          "fen": 400957,
+          "display": "¥4,009.57"
+        },
+        "cure_flags": [
+          "the cure needs the owner's approval",
+          "the cure cannot run today"
+        ]
+      },
+      "neighbours_confirmed": true,
+      "next_rebate_step": {
+        "terms_days": 65,
+        "price_adjustment": {
+          "bp": 55,
+          "display": "0.55%"
+        },
+        "early_pay": {
+          "rate": {
+            "bp": 85,
+            "display": "0.85%"
+          },
+          "face": {
+            "fen": 25720000,
+            "display": "¥257,200.00"
+          }
+        },
+        "rebate": {
+          "bp": 65,
+          "display": "0.65%"
+        },
+        "outcome": "REJECT",
+        "tier": "TIER_1",
+        "passes": false,
+        "codes": [
+          "AGG_CONCESSION_EXCEEDED",
+          "RESERVE_BREACH"
+        ],
+        "binding_codes": [
+          "AGG_CONCESSION_EXCEEDED"
+        ],
+        "counter_grade": false,
+        "recheck_failure": null,
+        "forward_budget_used": {
+          "fen": 500589,
+          "display": "¥5,005.89"
+        },
+        "reserve_breach": {
+          "day": 47,
+          "curable": true,
+          "cure_cost": {
+            "fen": 400957,
+            "display": "¥4,009.57"
+          },
+          "cure_flags": [
+            "the cure needs the owner's approval",
+            "the cure cannot run today"
+          ]
+        }
+      }
+    },
+    {
+      "terms_days": 70,
+      "price_adjustment": {
+        "bp": 100,
+        "display": "1.00%"
+      },
+      "early_pay": null,
+      "rebate": {
+        "bp": 0,
+        "display": "0.00%"
+      },
+      "outcome": "REJECT",
+      "tier": "TIER_1",
+      "passes": false,
+      "codes": [
+        "RESERVE_BREACH"
+      ],
+      "binding_codes": [
+        "RESERVE_BREACH"
+      ],
+      "counter_grade": false,
+      "recheck_failure": null,
+      "forward_budget_used": {
+        "fen": 0,
+        "display": "¥0.00"
+      },
+      "reserve_breach": {
+        "day": 47,
+        "curable": false,
+        "cure_cost": null,
+        "cure_flags": []
+      },
+      "neighbours_confirmed": true,
+      "next_rebate_step": null
+    },
+    {
+      "terms_days": 70,
+      "price_adjustment": {
+        "bp": 100,
+        "display": "1.00%"
+      },
+      "early_pay": {
+        "rate": {
+          "bp": 70,
+          "display": "0.70%"
+        },
+        "face": "whole invoice"
+      },
+      "rebate": {
+        "bp": 0,
+        "display": "0.00%"
+      },
+      "outcome": "COUNTER",
+      "tier": "TIER_1",
+      "passes": false,
+      "codes": [
+        "RESERVE_BREACH",
+        "EARLY_PAY_DEARER_THAN_PLAN"
+      ],
+      "binding_codes": [
+        "EARLY_PAY_DEARER_THAN_PLAN"
+      ],
+      "counter_grade": false,
+      "recheck_failure": null,
+      "forward_budget_used": {
+        "fen": 0,
+        "display": "¥0.00"
+      },
+      "reserve_breach": {
+        "day": 47,
+        "curable": true,
+        "cure_cost": {
+          "fen": 355386,
+          "display": "¥3,553.86"
+        },
+        "cure_flags": [
+          "the cure cannot run today"
+        ]
+      },
+      "neighbours_confirmed": true,
+      "next_rebate_step": null
+    },
+    {
+      "terms_days": 70,
+      "price_adjustment": {
+        "bp": 70,
+        "display": "0.70%"
+      },
+      "early_pay": {
+        "rate": {
+          "bp": 85,
+          "display": "0.85%"
+        },
+        "face": {
+          "fen": 25720000,
+          "display": "¥257,200.00"
+        }
+      },
+      "rebate": {
+        "bp": 65,
+        "display": "0.65%"
+      },
+      "outcome": "NEEDS_OWNER_APPROVAL",
+      "tier": "TIER_2",
+      "passes": true,
+      "codes": [
+        "RESERVE_BREACH"
+      ],
+      "binding_codes": [],
+      "counter_grade": true,
+      "recheck_failure": null,
+      "forward_budget_used": {
+        "fen": 492486,
+        "display": "¥4,924.86"
+      },
+      "reserve_breach": {
+        "day": 47,
+        "curable": true,
+        "cure_cost": {
+          "fen": 400957,
+          "display": "¥4,009.57"
+        },
+        "cure_flags": [
+          "the cure cannot run today"
+        ]
+      },
+      "neighbours_confirmed": true,
+      "next_rebate_step": {
+        "terms_days": 70,
+        "price_adjustment": {
+          "bp": 70,
+          "display": "0.70%"
+        },
+        "early_pay": {
+          "rate": {
+            "bp": 85,
+            "display": "0.85%"
+          },
+          "face": {
+            "fen": 25720000,
+            "display": "¥257,200.00"
+          }
+        },
+        "rebate": {
+          "bp": 70,
+          "display": "0.70%"
+        },
+        "outcome": "REJECT",
+        "tier": "TIER_1",
+        "passes": false,
+        "codes": [
+          "AGG_CONCESSION_EXCEEDED",
+          "RESERVE_BREACH"
+        ],
+        "binding_codes": [
+          "AGG_CONCESSION_EXCEEDED"
+        ],
+        "counter_grade": false,
+        "recheck_failure": null,
+        "forward_budget_used": {
+          "fen": 512486,
+          "display": "¥5,124.86"
+        },
+        "reserve_breach": {
+          "day": 47,
+          "curable": true,
+          "cure_cost": {
+            "fen": 400957,
+            "display": "¥4,009.57"
+          },
+          "cure_flags": [
+            "the cure cannot run today"
+          ]
+        }
+      }
+    },
+    {
+      "terms_days": 75,
+      "price_adjustment": {
+        "bp": 100,
+        "display": "1.00%"
+      },
+      "early_pay": null,
+      "rebate": {
+        "bp": 0,
+        "display": "0.00%"
+      },
+      "outcome": "REJECT",
+      "tier": "TIER_1",
+      "passes": false,
+      "codes": [
+        "RESERVE_BREACH"
+      ],
+      "binding_codes": [
+        "RESERVE_BREACH"
+      ],
+      "counter_grade": false,
+      "recheck_failure": null,
+      "forward_budget_used": {
+        "fen": 0,
+        "display": "¥0.00"
+      },
+      "reserve_breach": {
+        "day": 47,
+        "curable": false,
+        "cure_cost": null,
+        "cure_flags": []
+      },
+      "neighbours_confirmed": true,
+      "next_rebate_step": null
+    },
+    {
+      "terms_days": 75,
+      "price_adjustment": {
+        "bp": 100,
+        "display": "1.00%"
+      },
+      "early_pay": {
+        "rate": {
+          "bp": 70,
+          "display": "0.70%"
+        },
+        "face": "whole invoice"
+      },
+      "rebate": {
+        "bp": 0,
+        "display": "0.00%"
+      },
+      "outcome": "COUNTER",
+      "tier": "TIER_1",
+      "passes": false,
+      "codes": [
+        "RESERVE_BREACH",
+        "EARLY_PAY_DEARER_THAN_PLAN"
+      ],
+      "binding_codes": [
+        "EARLY_PAY_DEARER_THAN_PLAN"
+      ],
+      "counter_grade": false,
+      "recheck_failure": null,
+      "forward_budget_used": {
+        "fen": 0,
+        "display": "¥0.00"
+      },
+      "reserve_breach": {
+        "day": 47,
+        "curable": true,
+        "cure_cost": {
+          "fen": 355386,
+          "display": "¥3,553.86"
+        },
+        "cure_flags": [
+          "the cure cannot run today"
+        ]
+      },
+      "neighbours_confirmed": true,
+      "next_rebate_step": null
+    },
+    {
+      "terms_days": 75,
+      "price_adjustment": {
+        "bp": 80,
+        "display": "0.80%"
+      },
+      "early_pay": {
+        "rate": {
+          "bp": 85,
+          "display": "0.85%"
+        },
+        "face": {
+          "fen": 25720000,
+          "display": "¥257,200.00"
+        }
+      },
+      "rebate": {
+        "bp": 0,
+        "display": "0.00%"
+      },
+      "outcome": "NEEDS_OWNER_APPROVAL",
+      "tier": "TIER_2",
+      "passes": true,
+      "codes": [
+        "RESERVE_BREACH"
+      ],
+      "binding_codes": [],
+      "counter_grade": true,
+      "recheck_failure": null,
+      "forward_budget_used": {
+        "fen": 497384,
+        "display": "¥4,973.84"
+      },
+      "reserve_breach": {
+        "day": 47,
+        "curable": true,
+        "cure_cost": {
+          "fen": 400957,
+          "display": "¥4,009.57"
+        },
+        "cure_flags": [
+          "the cure cannot run today"
+        ]
+      },
+      "neighbours_confirmed": true,
+      "next_rebate_step": {
+        "terms_days": 75,
+        "price_adjustment": {
+          "bp": 80,
+          "display": "0.80%"
+        },
+        "early_pay": {
+          "rate": {
+            "bp": 85,
+            "display": "0.85%"
+          },
+          "face": {
+            "fen": 25720000,
+            "display": "¥257,200.00"
+          }
+        },
+        "rebate": {
+          "bp": 5,
+          "display": "0.05%"
+        },
+        "outcome": "REJECT",
+        "tier": "TIER_1",
+        "passes": false,
+        "codes": [
+          "AGG_CONCESSION_EXCEEDED",
+          "RESERVE_BREACH"
+        ],
+        "binding_codes": [
+          "AGG_CONCESSION_EXCEEDED"
+        ],
+        "counter_grade": false,
+        "recheck_failure": null,
+        "forward_budget_used": {
+          "fen": 517384,
+          "display": "¥5,173.84"
+        },
+        "reserve_breach": {
+          "day": 47,
+          "curable": true,
+          "cure_cost": {
+            "fen": 400957,
+            "display": "¥4,009.57"
+          },
+          "cure_flags": [
+            "the cure cannot run today"
+          ]
+        }
+      }
+    },
+    {
+      "terms_days": 80,
+      "price_adjustment": {
+        "bp": 100,
+        "display": "1.00%"
+      },
+      "early_pay": null,
+      "rebate": {
+        "bp": 0,
+        "display": "0.00%"
+      },
+      "outcome": "REJECT",
+      "tier": "TIER_1",
+      "passes": false,
+      "codes": [
+        "RESERVE_BREACH"
+      ],
+      "binding_codes": [
+        "RESERVE_BREACH"
+      ],
+      "counter_grade": false,
+      "recheck_failure": null,
+      "forward_budget_used": {
+        "fen": 216281,
+        "display": "¥2,162.81"
+      },
+      "reserve_breach": {
+        "day": 47,
+        "curable": false,
+        "cure_cost": null,
+        "cure_flags": []
+      },
+      "neighbours_confirmed": true,
+      "next_rebate_step": null
+    },
+    {
+      "terms_days": 80,
+      "price_adjustment": {
+        "bp": 100,
+        "display": "1.00%"
+      },
+      "early_pay": {
+        "rate": {
+          "bp": 70,
+          "display": "0.70%"
+        },
+        "face": "whole invoice"
+      },
+      "rebate": {
+        "bp": 0,
+        "display": "0.00%"
+      },
+      "outcome": "COUNTER",
+      "tier": "TIER_1",
+      "passes": false,
+      "codes": [
+        "RESERVE_BREACH",
+        "EARLY_PAY_DEARER_THAN_PLAN"
+      ],
+      "binding_codes": [
+        "EARLY_PAY_DEARER_THAN_PLAN"
+      ],
+      "counter_grade": false,
+      "recheck_failure": null,
+      "forward_budget_used": {
+        "fen": 216281,
+        "display": "¥2,162.81"
+      },
+      "reserve_breach": {
+        "day": 47,
+        "curable": true,
+        "cure_cost": {
+          "fen": 355386,
+          "display": "¥3,553.86"
+        },
+        "cure_flags": [
+          "the cure cannot run today"
+        ]
+      },
+      "neighbours_confirmed": true,
+      "next_rebate_step": null
+    },
+    {
+      "terms_days": 80,
+      "price_adjustment": {
+        "bp": 95,
+        "display": "0.95%"
+      },
+      "early_pay": {
+        "rate": {
+          "bp": 85,
+          "display": "0.85%"
+        },
+        "face": {
+          "fen": 25720000,
+          "display": "¥257,200.00"
+        }
+      },
+      "rebate": {
+        "bp": 0,
+        "display": "0.00%"
+      },
+      "outcome": "NEEDS_OWNER_APPROVAL",
+      "tier": "TIER_2",
+      "passes": true,
+      "codes": [
+        "RESERVE_BREACH"
+      ],
+      "binding_codes": [],
+      "counter_grade": true,
+      "recheck_failure": null,
+      "forward_budget_used": {
+        "fen": 489281,
+        "display": "¥4,892.81"
+      },
+      "reserve_breach": {
+        "day": 47,
+        "curable": true,
+        "cure_cost": {
+          "fen": 400957,
+          "display": "¥4,009.57"
+        },
+        "cure_flags": [
+          "the cure cannot run today"
+        ]
+      },
+      "neighbours_confirmed": true,
+      "next_rebate_step": {
+        "terms_days": 80,
+        "price_adjustment": {
+          "bp": 95,
+          "display": "0.95%"
+        },
+        "early_pay": {
+          "rate": {
+            "bp": 85,
+            "display": "0.85%"
+          },
+          "face": {
+            "fen": 25720000,
+            "display": "¥257,200.00"
+          }
+        },
+        "rebate": {
+          "bp": 5,
+          "display": "0.05%"
+        },
+        "outcome": "REJECT",
+        "tier": "TIER_1",
+        "passes": false,
+        "codes": [
+          "AGG_CONCESSION_EXCEEDED",
+          "RESERVE_BREACH"
+        ],
+        "binding_codes": [
+          "AGG_CONCESSION_EXCEEDED"
+        ],
+        "counter_grade": false,
+        "recheck_failure": null,
+        "forward_budget_used": {
+          "fen": 509281,
+          "display": "¥5,092.81"
+        },
+        "reserve_breach": {
+          "day": 47,
+          "curable": true,
+          "cure_cost": {
+            "fen": 400957,
+            "display": "¥4,009.57"
+          },
+          "cure_flags": [
+            "the cure cannot run today"
+          ]
+        }
+      }
+    },
+    {
+      "terms_days": 85,
+      "price_adjustment": {
+        "bp": 100,
+        "display": "1.00%"
+      },
+      "early_pay": null,
+      "rebate": {
+        "bp": 0,
+        "display": "0.00%"
+      },
+      "outcome": "REJECT",
+      "tier": "TIER_1",
+      "passes": false,
+      "codes": [
+        "AGG_CONCESSION_EXCEEDED",
+        "RESERVE_BREACH"
+      ],
+      "binding_codes": [
+        "AGG_CONCESSION_EXCEEDED",
+        "RESERVE_BREACH"
+      ],
+      "counter_grade": false,
+      "recheck_failure": null,
+      "forward_budget_used": {
+        "fen": 1027178,
+        "display": "¥10,271.78"
+      },
+      "reserve_breach": {
+        "day": 47,
+        "curable": false,
+        "cure_cost": null,
+        "cure_flags": []
+      },
+      "neighbours_confirmed": true,
+      "next_rebate_step": null
+    },
+    {
+      "terms_days": 85,
+      "price_adjustment": {
+        "bp": 100,
+        "display": "1.00%"
+      },
+      "early_pay": {
+        "rate": {
+          "bp": 70,
+          "display": "0.70%"
+        },
+        "face": "whole invoice"
+      },
+      "rebate": {
+        "bp": 0,
+        "display": "0.00%"
+      },
+      "outcome": "REJECT",
+      "tier": "TIER_1",
+      "passes": false,
+      "codes": [
+        "AGG_CONCESSION_EXCEEDED",
+        "RESERVE_BREACH",
+        "EARLY_PAY_DEARER_THAN_PLAN"
+      ],
+      "binding_codes": [
+        "AGG_CONCESSION_EXCEEDED",
+        "EARLY_PAY_DEARER_THAN_PLAN"
+      ],
+      "counter_grade": false,
+      "recheck_failure": null,
+      "forward_budget_used": {
+        "fen": 1027178,
+        "display": "¥10,271.78"
+      },
+      "reserve_breach": {
+        "day": 47,
+        "curable": true,
+        "cure_cost": {
+          "fen": 355386,
+          "display": "¥3,553.86"
+        },
+        "cure_flags": [
+          "the cure cannot run today"
+        ]
+      },
+      "neighbours_confirmed": true,
+      "next_rebate_step": null
+    },
+    {
+      "terms_days": 85,
+      "price_adjustment": {
+        "bp": 100,
+        "display": "1.00%"
+      },
+      "early_pay": {
+        "rate": {
+          "bp": 85,
+          "display": "0.85%"
+        },
+        "face": {
+          "fen": 25720000,
+          "display": "¥257,200.00"
+        }
+      },
+      "rebate": {
+        "bp": 0,
+        "display": "0.00%"
+      },
+      "outcome": "REJECT",
+      "tier": "TIER_1",
+      "passes": false,
+      "codes": [
+        "AGG_CONCESSION_EXCEEDED",
+        "RESERVE_BREACH",
+        "EARLY_PAY_DEARER_THAN_PLAN"
+      ],
+      "binding_codes": [
+        "AGG_CONCESSION_EXCEEDED",
+        "EARLY_PAY_DEARER_THAN_PLAN"
+      ],
+      "counter_grade": false,
+      "recheck_failure": null,
+      "forward_budget_used": {
+        "fen": 1027178,
+        "display": "¥10,271.78"
+      },
+      "reserve_breach": {
+        "day": 47,
+        "curable": true,
+        "cure_cost": {
+          "fen": 400957,
+          "display": "¥4,009.57"
+        },
+        "cure_flags": [
+          "the cure cannot run today"
+        ]
+      },
+      "neighbours_confirmed": true,
+      "next_rebate_step": null
+    },
+    {
+      "terms_days": 90,
+      "price_adjustment": {
+        "bp": 100,
+        "display": "1.00%"
+      },
+      "early_pay": null,
+      "rebate": {
+        "bp": 0,
+        "display": "0.00%"
+      },
+      "outcome": "REJECT",
+      "tier": "TIER_1",
+      "passes": false,
+      "codes": [
+        "AGG_CONCESSION_EXCEEDED",
+        "RESERVE_BREACH"
+      ],
+      "binding_codes": [
+        "AGG_CONCESSION_EXCEEDED",
+        "RESERVE_BREACH"
+      ],
+      "counter_grade": false,
+      "recheck_failure": null,
+      "forward_budget_used": {
+        "fen": 1838075,
+        "display": "¥18,380.75"
+      },
+      "reserve_breach": {
+        "day": 47,
+        "curable": false,
+        "cure_cost": null,
+        "cure_flags": []
+      },
+      "neighbours_confirmed": true,
+      "next_rebate_step": null
+    },
+    {
+      "terms_days": 90,
+      "price_adjustment": {
+        "bp": 100,
+        "display": "1.00%"
+      },
+      "early_pay": {
+        "rate": {
+          "bp": 70,
+          "display": "0.70%"
+        },
+        "face": "whole invoice"
+      },
+      "rebate": {
+        "bp": 0,
+        "display": "0.00%"
+      },
+      "outcome": "REJECT",
+      "tier": "TIER_1",
+      "passes": false,
+      "codes": [
+        "AGG_CONCESSION_EXCEEDED",
+        "RESERVE_BREACH",
+        "EARLY_PAY_DEARER_THAN_PLAN"
+      ],
+      "binding_codes": [
+        "AGG_CONCESSION_EXCEEDED",
+        "EARLY_PAY_DEARER_THAN_PLAN"
+      ],
+      "counter_grade": false,
+      "recheck_failure": null,
+      "forward_budget_used": {
+        "fen": 1838075,
+        "display": "¥18,380.75"
+      },
+      "reserve_breach": {
+        "day": 47,
+        "curable": true,
+        "cure_cost": {
+          "fen": 475685,
+          "display": "¥4,756.85"
+        },
+        "cure_flags": [
+          "the cure cannot run today"
+        ]
+      },
+      "neighbours_confirmed": true,
+      "next_rebate_step": null
+    },
+    {
+      "terms_days": 90,
+      "price_adjustment": {
+        "bp": 100,
+        "display": "1.00%"
+      },
+      "early_pay": {
+        "rate": {
+          "bp": 85,
+          "display": "0.85%"
+        },
+        "face": {
+          "fen": 25720000,
+          "display": "¥257,200.00"
+        }
+      },
+      "rebate": {
+        "bp": 0,
+        "display": "0.00%"
+      },
+      "outcome": "REJECT",
+      "tier": "TIER_1",
+      "passes": false,
+      "codes": [
+        "AGG_CONCESSION_EXCEEDED",
+        "RESERVE_BREACH",
+        "EARLY_PAY_DEARER_THAN_PLAN"
+      ],
+      "binding_codes": [
+        "AGG_CONCESSION_EXCEEDED",
+        "EARLY_PAY_DEARER_THAN_PLAN"
+      ],
+      "counter_grade": false,
+      "recheck_failure": null,
+      "forward_budget_used": {
+        "fen": 1838075,
+        "display": "¥18,380.75"
+      },
+      "reserve_breach": {
+        "day": 47,
+        "curable": true,
+        "cure_cost": {
+          "fen": 473670,
+          "display": "¥4,736.70"
+        },
+        "cure_flags": [
+          "the cure cannot run today"
+        ]
+      },
+      "neighbours_confirmed": true,
+      "next_rebate_step": null
+    }
+  ],
+  "checks": [],
+  "requested": [],
+  "exhaustive": null,
+  "phases": [
+    {
+      "phase": "lever searches and the terms x price zone (steps 1 to 4)",
+      "evaluations": 51,
+      "seconds": 5.29
+    },
+    {
+      "phase": "approved packages (smallest price, then largest rebate, per terms value and early-pay variant)",
+      "evaluations": 134,
+      "seconds": 21.83
+    }
+  ],
+  "grid": [],
+  "evaluations": 185,
+  "lookups": 359,
+  "seconds": 27.121,
+  "spike": "envelope"
+}

@@ -68,7 +68,7 @@
       "requested_by": "AGENT",
       "summary": "Commitment CMT-a78afaa5becb5273 is ACTIVE; forward concession ¥0.00 booked",
       "message_when": "Commitment CMT-a78afaa5becb5273 is ACTIVE; forward concession ¥0.00 booked",
-      "event_text": "Agreement with Foshan Home Retail Co. recorded; future give-aways booked: ¥0.00.",
+      "event_text": "Agreement with Foshan Home Retail Co. recorded; concessions booked against your budget: ¥0.00.",
       "event_detail": null
     },
     {
@@ -106,7 +106,7 @@
       "requested_by": "SYSTEM",
       "summary": "Clock moved from day 0 to day 2: 0 scheduled flow(s) posted (net ¥0.00), 0 invoice(s) issued, 0 commitment(s) expired",
       "message_when": "Clock moved from 34 days ago to 32 days ago: 0 scheduled flow(s) posted (net ¥0.00), 0 invoice(s) issued, 0 commitment(s) expired",
-      "event_text": "Clock moved from 34 days ago to 32 days ago: 0 scheduled flow(s) posted (net ¥0.00), 0 invoice(s) issued, 0 commitment(s) expired",
+      "event_text": "2 days passed; nothing was due.",
       "event_detail": null
     },
     {
@@ -144,7 +144,7 @@
       "requested_by": "SYSTEM",
       "summary": "Clock moved from day 2 to day 30: 2 scheduled flow(s) posted (net −¥460,000.00), 1 invoice(s) issued, 0 commitment(s) expired, 1 new scheduled flow(s) recorded",
       "message_when": "Clock moved from 32 days ago to 4 days ago: 2 scheduled flow(s) posted (net −¥460,000.00), 1 invoice(s) issued, 0 commitment(s) expired, 1 new scheduled flow(s) recorded",
-      "event_text": "Clock moved from 32 days ago to 4 days ago: 2 scheduled flow(s) posted (net −¥460,000.00), 1 invoice(s) issued, 0 commitment(s) expired, 1 new scheduled flow(s) recorded",
+      "event_text": "28 days passed: 2 scheduled cash movements were recorded and one invoice was issued.",
       "event_detail": null
     },
     {
@@ -163,7 +163,7 @@
       "requested_by": "SYSTEM",
       "summary": "Clock moved from day 30 to day 34: 0 scheduled flow(s) posted (net ¥0.00), 1 invoice(s) issued, 0 commitment(s) expired, 1 existing-debt payment(s) posted (−¥45,000.00)",
       "message_when": "Clock moved from 4 days ago to today: 0 scheduled flow(s) posted (net ¥0.00), 1 invoice(s) issued, 0 commitment(s) expired, 1 existing-debt payment(s) posted (−¥45,000.00)",
-      "event_text": "Clock moved from 4 days ago to today: 0 scheduled flow(s) posted (net ¥0.00), 1 invoice(s) issued, 0 commitment(s) expired, 1 existing-debt payment(s) posted (−¥45,000.00)",
+      "event_text": "4 days passed: the ¥45,000.00 debt payment went out and one invoice was issued.",
       "event_detail": null
     },
     {

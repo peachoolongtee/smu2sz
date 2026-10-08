@@ -9,7 +9,7 @@ import { Card, TableWrap, tableCls, tdCls, thCls } from "@/components/ui";
 import { useI18n } from "@/lib/i18n";
 import { buttonClass, textLinkClass } from "@/components/ui";
 import { daysLate } from "@/lib/when";
-import type { HomeApproval, HomeChange, HomeReceivables, HomeView } from "@/lib/types";
+import type { HomeApproval, HomeChange, HomeReceivables, HomeView, ReceivablesWorthView } from "@/lib/types";
 
 /** A change row's icon sits on the status tint it has always had: money in is ok, late or refused is bad, waiting is warn. */
 const CHANGE_ICON: Record<string, ReactNode> = {
@@ -50,25 +50,30 @@ export function DecisionsBlock({ approvals, primary = false }: { approvals: Home
         <ul className="motion-rise -my-1 divide-y divide-line" data-testid="home-waiting-list">
           {approvals.map((a) => (
             <li key={a.id}>
-              <Row
-                testId={`home-approval-${a.id}`}
+              {/* The question and the button: side by side from the small breakpoint; on a phone the button sits under the text, full width, instead of squeezing it into a narrow column. */}
+              <Link
                 href={approvalHref(a.id)}
-                avatar={<Avatar tone="warn"><ClockIcon /></Avatar>}
-                title={a.headline}
-                sub={[a.cost_display ? t("alerts.cost", { cost: a.cost_display }) : null, a.lands_day !== null ? t("biz.landsShort", { when: a.lands_when ?? "" }) : null, a.protects]
-                  .filter(Boolean)
-                  .join(" · ")}
-                right={
-                  // The page's one primary action while no plan waits to be run: the question is the thing to answer.
-                  primary ? (
-                    <span className={buttonClass("primary")} data-testid="home-review-primary">
-                      {t("biz.review")}
+                className="motion-lift -mx-2 flex flex-col gap-3 rounded-tile px-2 py-3 hover:bg-subtle sm:flex-row sm:items-center"
+                data-testid={`home-approval-${a.id}`}
+              >
+                <span className="flex min-w-0 flex-1 items-start gap-3">
+                  <Avatar tone="warn"><ClockIcon /></Avatar>
+                  <span className="min-w-0 flex-1">
+                    <span className="block break-words text-sm font-medium text-ink">{a.headline}</span>
+                    <span className="mt-0.5 block text-xs text-ink-3">
+                      {[a.cost_display ? t("alerts.cost", { cost: a.cost_display }) : null, a.lands_day !== null ? t("biz.landsShort", { when: a.lands_when ?? "" }) : null, a.protects].filter(Boolean).join(" · ")}
                     </span>
-                  ) : (
-                    <span className="text-xs font-medium text-brand-700">{t("biz.review")}</span>
-                  )
-                }
-              />
+                  </span>
+                </span>
+                {/* The page's one primary action while no plan waits to be run: the question is the thing to answer. */}
+                {primary ? (
+                  <span className={buttonClass("primary", "md", "w-full sm:w-auto")} data-testid="home-review-primary">
+                    {t("biz.review")}
+                  </span>
+                ) : (
+                  <span className="text-xs font-medium text-brand-700">{t("biz.review")}</span>
+                )}
+              </Link>
             </li>
           ))}
         </ul>
@@ -106,8 +111,11 @@ export function ChangesBlock({ changes, sinceWhen }: { changes: HomeChange[]; si
   );
 }
 
-/** Who has not paid, and what comes in next, as rows: the buyer, then the amount. */
-export function ReceivablesBlock({ r }: { r: HomeReceivables }) {
+/**
+ * Who has not paid, and what comes in next, as rows: the buyer, then the amount. With the strategy MVP's `worth` loaded,
+ * one line more: what is best to do about the invoice that saves the most (the server's sentence).
+ */
+export function ReceivablesBlock({ r, worth }: { r: HomeReceivables; worth?: ReceivablesWorthView | null }) {
   const { t } = useI18n();
   const next = r.promised
     ? { buyer: r.promised.buyer_name, amount: r.promised.expected_display, when: r.promised.when ?? "" }
@@ -137,6 +145,11 @@ export function ReceivablesBlock({ r }: { r: HomeReceivables }) {
             {t("biz.nextReceipt.none")}
           </p>
         )}
+        {worth?.rows.length && worth.top_action ? (
+          <p className="py-2.5 text-sm text-ink-2" data-testid="home-top-action">
+            {worth.top_action}
+          </p>
+        ) : null}
       </div>
     </Card>
   );

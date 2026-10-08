@@ -24,6 +24,20 @@
 //     server's chain includes that commitment id, so it differs on every run. They are re-derived (sha256 over the op's
 //     own seq, id, kind, status and the previous hash) so the chain stays internally consistent and repeatable. Hashes in
 //     every other file (the chat script, for one) are deterministic and are kept exactly as recorded.
+//   - strategy/*.json (only with --strategy): `computed_in_seconds` -> 0 (the time the call took; a cache hit differs from a miss).
+//
+// --strategy records ONLY apps/web/mocks/strategy/*.json and exits; no other file is written and the assertions below are not run:
+//   price_curve_{day0,day34,day34_after}.json   GET /cash/price-curve         (lang=en)
+//   worth_{day0,day34,day34_after}.json         GET /receivables/worth        (lang=en)
+//   envelope_{day0,day34,day34_after}.json      GET /buyers/BUYER-1/envelope  (lang=en, zone=1 so the table is present; the mock drops it when not asked)
+// at the opening books, at day 34 (the late invoice, the reserve alert open) and at day 34 AFTER the owner has approved the alert's
+// cure (the step that reaches home_summary_after.json): the mock serves the "_after" files in the condition the home mock serves its
+// post-approval summary (lib/mock/home.ts cureStage() === "approved"; lib/mock/strategy-pick.ts pickByStory). The API needs
+// FEATURE_ENVELOPE=1 FEATURE_PRICE_CURVE=1 FEATURE_COLLECTIONS_WORTH=1 and the other flags as above; the first envelope read of a
+// set of books takes several seconds:
+//   cd services/api && FEATURE_ENVELOPE=1 FEATURE_PRICE_CURVE=1 FEATURE_COLLECTIONS_WORTH=1 TERMSLEDGER_NO_DOTENV=1 DATABASE_URL=memory LLM_MODE=cache DEMO_MODE=1 PYTHONUTF8=1 uv run uvicorn app.main:app --port 8016
+//   node scripts/record-mocks.mjs --api http://localhost:8016 --strategy
+//
 // Verified by running the recorder twice on the same API and on two fresh APIs: `git status --short apps/web/mocks` is empty.
 
 import { createHash } from "node:crypto";
@@ -39,11 +53,12 @@ function arg(name, fallback) {
   return i >= 0 && process.argv[i + 1] ? process.argv[i + 1] : fallback;
 }
 if (process.argv.includes("--help")) {
-  console.log("usage: node scripts/record-mocks.mjs [--api http://localhost:8011] [--out apps/web/mocks]\n(start the API first, see the header of this file; never use port 8000)");
+  console.log("usage: node scripts/record-mocks.mjs [--api http://localhost:8011] [--out apps/web/mocks] [--strategy]\n(start the API first, see the header of this file; never use port 8000)");
   process.exit(0);
 }
 const API = arg("--api", "http://localhost:8011").replace(/\/+$/, "");
 const OUT = resolve(arg("--out", join(here, "..", "mocks")));
+const STRATEGY = process.argv.includes("--strategy");
 const OWNER_TOKEN = "demo-owner-token";
 const BANK = { "X-Agent-Key": "demo-agent-key", "X-Bank-Feed-Key": "demo-bank-feed-key" };
 
@@ -116,6 +131,7 @@ function normalise(name, value) {
       }
     } else if (node && typeof node === "object") for (const v of Object.values(node)) rechain(v);
   };
+  if (name.startsWith("strategy/")) out.computed_in_seconds = 0;
   if (RECHAIN.has(name)) rechain(out);
   if (RECHAIN_BY_APPEARANCE.has(name)) rechainByAppearance(name, out);
   return out;
@@ -143,6 +159,46 @@ async function reset() {
 // ------------------------------------------------------------------ the demo stepper, in order, snapshotting after each step
 const ops = {};
 const files = {};
+
+// --strategy: the nine strategy recordings and nothing else (see the header). The recorder's own day-0, day-34 and day-34-approved states.
+if (STRATEGY) {
+  const BUYER = "BUYER-1";
+  const strategyReads = async (lang) => {
+    const [curve, worth] = [await live.getPriceCurve(lang), await live.getReceivablesWorth(lang)];
+    const envelope = await live.getEnvelope(BUYER, lang, true);
+    if (!curve || !worth || !envelope) throw new Error("a strategy route is off: start the API with FEATURE_ENVELOPE=1 FEATURE_PRICE_CURVE=1 FEATURE_COLLECTIONS_WORTH=1");
+    // The adapter falls back to the plain answer when the server refuses ?zone=1; the mock needs the table.
+    if (!envelope.zone.length) throw new Error("the envelope came back without its zone: the server refused ?zone=1");
+    return { curve, worth, envelope };
+  };
+  const keep = (suffix, reads) => {
+    files[`strategy/price_curve_${suffix}.json`] = reads.curve;
+    files[`strategy/worth_${suffix}.json`] = reads.worth;
+    files[`strategy/envelope_${suffix}.json`] = reads.envelope;
+  };
+  mkdirSync(join(OUT, "strategy"), { recursive: true });
+  await reset();
+  keep("day0", await strategyReads("en"));
+  await toDay34();
+  keep("day34", await strategyReads("en"));
+  // The owner's approval of day 34's cure, as the home's recording does it: the act queues it, the approval executes it.
+  {
+    const alerts = await live.getAlerts();
+    const reserve = alerts.alerts.find((a) => a.id.startsWith("ALERT-RESERVE") && a.actionable);
+    if (!reserve) throw new Error("no actionable reserve alert on day 34: the demo path has changed");
+    const act = await live.actOnAlert(reserve.id, {
+      state_version: alerts.state_version,
+      suggestions: reserve.suggested.map((x) => ({ operation_kind: x.operation_kind, facility_id: x.facility_id, receivable_id: x.receivable_id, amount_fen: x.amount_fen })),
+    });
+    if (act.results[0]?.status !== "PENDING_APPROVAL") throw new Error("the day-34 cure no longer waits for approval: the demo path has changed");
+    await live.decideApproval((await live.getApprovals())[0].id, "APPROVE");
+  }
+  keep("day34_after", await strategyReads("en"));
+  await live.demoReset();
+  for (const name of Object.keys(files).sort()) write(name, files[name]);
+  console.log(`recorded ${written.length} strategy files into ${join(OUT, "strategy")} from ${API}`);
+  process.exit(0);
+}
 
 await reset();
 files["state.json"] = await live.getState();

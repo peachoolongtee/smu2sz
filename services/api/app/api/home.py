@@ -20,6 +20,7 @@ from app.alerts import Alert, AlertKind, Severity, alerts, reconcile
 from app.api.auth import require_owner
 from app.api.display import displayed
 from app.api.presentation import (
+    RECOMMENDED_PLAN_KEY,
     agreement_words,
     approval_reason_words,
     approval_words,
@@ -32,6 +33,7 @@ from app.api.presentation import (
     in_words,
     invoice_words,
     lead_days,
+    leg_names,
     leg_words,
     party_name,
     receivable_face,
@@ -263,6 +265,8 @@ def _plan_legs(state: FinancialState, p: FundingPlan, today: int, lang: str) -> 
             "above_apr_cap": cl.needs_owner_approval,
             "formula": cl.formula,
         })
+    for leg, name in zip(legs, leg_names(state, [(x["facility_id"], x["amount_fen"]) for x in legs]), strict=True):
+        leg["name_display"] = name
     return legs
 
 
@@ -356,7 +360,7 @@ def cure_after_words(state: FinancialState, obs: list[Any], mandate: Mandate, al
     return _after_words(traj, mandate.min_cash_fen, today, mandate.horizon_days, lang)
 
 
-def _next_action(state: FinancialState, obs: list[Any], mandate: Mandate, found: list[Alert], approvals: list[Any],
+def next_action(state: FinancialState, obs: list[Any], mandate: Mandate, found: list[Alert], approvals: list[Any],
                  today: int, state_version: int, lang: str, *, use_router: bool = True) -> dict[str, Any] | None:
     """The one thing to do now, for the first actionable critical alert (a reserve breach), else a repayment the books
     can afford. For a reserve breach the plan shown is the recommendation of `app.funding.recommend`: the router's
@@ -457,7 +461,8 @@ def _next_action(state: FinancialState, obs: list[Any], mandate: Mandate, found:
             what = t(lang, f"repay {leg['facility_name']}", f"偿还{leg['facility_name']}")
         else:
             what = leg["label"]
-        components.append({"amount_short": fmt_short(leg["amount_fen"] or 0), "what": what, "lands_when": leg.get("lands_when")})
+        components.append({"amount_short": fmt_short(leg["amount_fen"] or 0), "what": what, "lands_when": leg.get("lands_when"),
+                           "name_display": leg["name_display"], "cost_display": leg["cost_display"]})
     repay = sum(leg["amount_fen"] or 0 for leg in legs if leg["operation_kind"] == "REPAY_FACILITY")
     if alert.kind == AlertKind.RESERVE_BREACH_AHEAD and receive:
         outcome_title = t(lang, f"Secure {receive_short} of funding", f"筹措 {receive_short} 资金")
@@ -504,6 +509,10 @@ def _next_action(state: FinancialState, obs: list[Any], mandate: Mandate, found:
         "alert_id": alert.id,
         "kind": alert.kind.value,
         "plan_source": rec.source,
+        # The row of the comparison (POST /router/plan) that is this plan. The router's cheapest plan is "router_optimum"
+        # (the comparison names the exact row in its own `recommended_key`); the alert's cure is a row the comparison adds.
+        "recommended_key": (None if alert.kind != AlertKind.RESERVE_BREACH_AHEAD else
+                            "router_optimum" if rec.source == "router" and rec.plan is not None else RECOMMENDED_PLAN_KEY),
         "title": title,
         "outcome_title": outcome_title,
         "components": components,
@@ -685,7 +694,7 @@ def get_home(lang: str = "en", since_day: int | None = None) -> dict[str, Any]:
         headline, note = words["headline"], words["note"]
         drivers = _drivers(books.state, traj, today, traj.first_breach_day, lang)
         at_breach = next((d.closing_fen for d in traj.days if d.day == traj.first_breach_day), None) if traj.first_breach_day is not None else None
-        action = _next_action(books.state, books.with_([]), mandate, found, approvals, today, state.state_version, lang,
+        action = next_action(books.state, books.with_([]), mandate, found, approvals, today, state.state_version, lang,
                               use_router=rt.settings.features.debt_desk)
         plan_series = action.pop("plan_series") if action is not None else None
         if action is not None and action["kind"] == "RESERVE_BREACH_AHEAD" and words["plan_note"] is not None:

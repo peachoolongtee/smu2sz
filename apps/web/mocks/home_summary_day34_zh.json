@@ -2169,13 +2169,16 @@
     "alert_id": "ALERT-RESERVE-42",
     "kind": "RESERVE_BREACH_AHEAD",
     "plan_source": "alert",
+    "recommended_key": "recommended_plan",
     "title": "以Foshan Home Retail Co. 的 ¥420,000.00 发票在Invoice financing (onboarded platform)融资 ¥200,000.00",
     "outcome_title": "筹措 ¥200k 资金",
     "components": [
       {
         "amount_short": "¥200k",
         "what": "以Foshan Home Retail Co. 的 ¥420k 发票融资",
-        "lands_when": "3 天后"
+        "lands_when": "3 天后",
+        "name_display": "Invoice financing (onboarded platform)",
+        "cost_display": "¥1,782.19"
       }
     ],
     "receive_short": "¥200k",
@@ -2199,7 +2202,8 @@
         "cost_due_day": 47,
         "lands_day": 37,
         "lands_when": "3 天后",
-        "above_apr_cap": true
+        "above_apr_cap": true,
+        "name_display": "Invoice financing (onboarded platform)"
       }
     ],
     "receive_fen": 20000000,

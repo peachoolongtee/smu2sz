@@ -896,7 +896,31 @@ export type ComparisonRow = Displayed<{
   worst_day?: Day | null;
   /** The row's note with its day numbers said as distances from today; `note` is the engine's original. */
   note_when?: string;
+  /** What the row is for the owner, written by the server: the plan the next-step card recommends, an admissible alternative, or the row's own status. Prefer it to `status`/`selected`, which are the router's. */
+  role?: ComparisonRole;
+  /** One sentence on why the row has that role ("Cheapest in all, but it needs 2 separate approvals; the recommended plan needs one."). */
+  role_reason?: string | null;
+  /** The sources the plan draws on ("Bank credit line + Invoice financing"). */
+  name_display?: string;
+  /** Each leg with its source's name and its own cost, in the order the router priced them. */
+  legs?: ComparisonLeg[];
+  /** When the total is not the sum of the legs (a plan that lets another balance be repaid sooner): the difference and its words. */
+  offset_fen?: Fen | null;
+  offset_display?: string | null;
+  offset_label?: string | null;
 };
+
+export type ComparisonRole = "recommended" | "alternative" | "insufficient" | "unavailable" | "blocked";
+
+export interface ComparisonLeg {
+  index: number;
+  name_display: string;
+  facility_id: string | null;
+  amount_fen: Fen | null;
+  amount_display: string;
+  cost_fen: Fen | null;
+  cost_display: string | null;
+}
 
 /** `blocked`: not admissible for a reason other than the reserve or an uncommitted source (a limit of the owner's). */
 export type ComparisonStatus = "recommended" | "alternative" | "insufficient" | "unavailable" | "blocked";
@@ -930,6 +954,8 @@ export interface FundingView {
   menu: MenuRow[];
   marginal: MarginalCostView;
   comparison: ComparisonRow[];
+  /** The key of the row whose `role` is "recommended" (the plan the home's next-step card shows); absent from older answers. */
+  recommended_key?: string | null;
 }
 
 export type TrajectoryScenario = "AS_RECEIVED" | "WITH_PLAN";
@@ -1296,6 +1322,231 @@ export interface ReceiptRow {
   formula: string;
 }
 
+/** One band of the cash price curve: what the stated amount is worth if it arrives on days from_day..to_day. */
+export interface PriceBand {
+  from_day: Day;
+  to_day: Day;
+  from_when: string;
+  to_when: string;
+  value_fen: Fen;
+  value_bp: number;
+  varies: boolean;
+  /** The band's value as a share of the amount, server-formatted ("0.89%"). */
+  value_pct: string;
+  value_display: string;
+}
+
+/** GET /cash/price-curve (flag `price_curve`): what cash arriving earlier is worth to the owner. Hypothetical; one sentence in the owner's words. */
+export interface PriceCurveView {
+  amount_fen: Fen;
+  amount_display: string;
+  window_days: number;
+  bands: PriceBand[];
+  /** True when there is no breach to cure: every band is worth nothing. */
+  flat: boolean;
+  /** The one sentence the Cash page shows. */
+  sentence: string;
+  hypothetical: true;
+  state_version: number;
+  source_state_version: number;
+  day: Day;
+  computed_in_seconds: number;
+}
+
+/** One package's terms as the server worded them (GET /buyers/{id}/envelope): every percentage and amount is its own string. */
+export interface EnvelopeTerms {
+  buyer_id: string;
+  terms_days: number;
+  price_bp: number;
+  early_pay_bp: number;
+  early_pay_face_fen: Fen | null;
+  rebate_bp: number;
+  price_display: string;
+  early_pay_display: string;
+  /** Present only when an early-payment face is part of the package. */
+  early_pay_face_display?: string;
+  rebate_display: string;
+}
+
+/** A package and the verifier's answer to it. `flags` are in words ("needs your approval", "its funding cannot run today"). */
+export interface EnvelopePackageView {
+  package: EnvelopeTerms;
+  outcome: string;
+  tier: string;
+  passes: boolean;
+  approved: boolean;
+  codes: string[];
+  binding_codes: string[];
+  forward_budget_used_fen: Fen;
+  forward_budget_used_display: string;
+  reserve_breach: { day: Day; when: string; curable: boolean; cure_cost_fen: Fen | null; cure_cost_display?: string | null } | null;
+  flags: string[];
+  counter_match: boolean;
+  plan_cost_fen: Fen | null;
+  plan_cost_display?: string;
+  /** The package on one line, its terms joined by " · " ("55-day terms · price up 0.25% · rebate 0.60%"). */
+  summary: string;
+}
+
+/** One lever's maximum: where it stops (`wall_text`, in words) and the package at the maximum and at the next step. */
+export interface EnvelopeLeverView {
+  lever: string;
+  key: "terms_alone" | "terms_budget_ignored" | "terms_with_price" | "early_pay_whole" | "early_pay_counter" | "rebate" | string;
+  label: string;
+  unit: "days" | "bp";
+  maximum: number | null;
+  confirmed: boolean;
+  scanned: boolean;
+  wall: string | null;
+  wall_text: string | null;
+  face_fen: Fen | null;
+  face_display?: string;
+  rule_price_bp: number | null;
+  rule_price_display?: string;
+  unavailable: string | null;
+  /** The maximum in words ("45 days", "55 days, price up 0.30%", "0.70% on ¥420,000.00", "1.25%"). */
+  maximum_display: string;
+  /** What holds the next step back, in the owner's words; null when nothing inside the range does. */
+  wall_words: string | null;
+  /** The next step and that it is not approved, with the flags ("50 days: not approved; its funding cannot run today"). */
+  next_step_sentence: string;
+  at_maximum: EnvelopePackageView | null;
+  next_step: EnvelopePackageView | null;
+}
+
+/** One row of the terms-and-price zone (only with `zone=1`): the smallest price that passes at that many days. */
+export interface EnvelopeZoneRow {
+  terms_days: number;
+  /** "45 days". */
+  terms_words: string;
+  min_price_bp: number | null;
+  min_price_display?: string;
+  rule_price_bp: number | null;
+  rule_price_display?: string;
+  cost_per_invoice_fen: Fen | null;
+  cost_per_invoice_display?: string;
+  passes_within_range: boolean;
+  neighbours_confirmed: boolean;
+  at_that_price: EnvelopePackageView;
+  /** "no price step needed", the percentage, or "none works". */
+  lowest_price_words: string;
+}
+
+/** GET /buyers/{buyer_id}/envelope (flag `envelope`): what the owner can live with for one buyer, as approved packages. Hypothetical; sends nothing. */
+export interface EnvelopeView {
+  buyer_id: string;
+  buyer_name: string;
+  /** The one-sentence answer, the reason behind its limit and the cost, all the server's words. */
+  primary: string;
+  reason: string;
+  money: string;
+  packages: EnvelopePackageView[];
+  levers: EnvelopeLeverView[];
+  zone: EnvelopeZoneRow[];
+  /** One sentence per counter FLOW itself would make that falls outside the ranges the card checks; listed, never probed. */
+  unlisted_counters: string[];
+  /** One sentence when the buyer has no lever at all; the card then shows only this. */
+  refused: string | null;
+  hypothetical: true;
+  evaluations: number;
+  state_version: number;
+  source_state_version: number;
+  day: Day;
+  computed_in_seconds: number;
+}
+
+export type CollectionAction = "call_now" | "escalate" | "reminder" | "offer_early_pay" | "finance" | "wait";
+
+/** One hypothetical receipt date for a receivable and what it would save. */
+export interface WorthEffect {
+  kind: string;
+  label: string;
+  receipt_day: Day;
+  receipt_when: string;
+  saving_fen: Fen;
+  no_saving: boolean;
+  saving_text: string;
+  saving_display: string;
+  need_left_fen: Fen;
+  need_left_display: string;
+  breach_days_removed: number;
+  alerts_removed: string[];
+  after_needs_owner: boolean;
+  after_executable_now: boolean;
+}
+
+/** The most an early-payment discount could be before it costs more than the funding it replaces. */
+export interface WorthCeiling {
+  face_kind: string;
+  face_fen: Fen;
+  face_display: string;
+  face_label: string;
+  largest_rate_bp: number | null;
+  largest_rate_display?: string;
+  cost_without_fen: Fen;
+  cost_without_display: string;
+  cost_with_fen: Fen | null;
+  cost_with_display?: string;
+  beats_by_fen: Fen | null;
+  beats_by_display?: string;
+  mid_rate_bp: number | null;
+  mid_rate_display?: string;
+  mid_saving_fen: Fen | null;
+  mid_saving_display?: string;
+  next_rate_bp: number | null;
+  next_rate_display?: string;
+  next_rate_dearer_by_fen: Fen | null;
+  next_rate_dearer_by_display?: string;
+}
+
+/** One open receivable, with what collecting it saves and the action for it. */
+export interface ReceivableWorth {
+  receivable_id: string;
+  buyer_id: string;
+  buyer_name: string;
+  outstanding_fen: Fen;
+  outstanding_display: string;
+  due_day: Day;
+  due_when: string;
+  days_late: number;
+  status: string;
+  financed: boolean;
+  effects: WorthEffect[];
+  ceilings: WorthCeiling[];
+  gross_saving_fen: Fen;
+  gross_saving_display: string;
+  mid_rate_bp: number | null;
+  mid_rate_display?: string;
+  mid_saving_fen: Fen;
+  mid_saving_display: string;
+  net_saving_fen: Fen;
+  net_saving_display: string;
+  /** What collecting it saves, net of the discount that earns it; reads "no saving" when it is nothing. */
+  net_saving_text: string;
+  /** The one worth string for the row ("Saves ¥1,374.61"). */
+  worth_text: string;
+  no_saving: boolean;
+  action: CollectionAction;
+  action_sentence: string;
+  reason_sentence: string;
+  hypothetical: true;
+}
+
+/** GET /receivables/worth (flag `collections_worth`): the open receivables ranked by what collecting each saves. Hypothetical. */
+export interface ReceivablesWorthView {
+  rows: ReceivableWorth[];
+  gross_order: string[];
+  /** The first row's action sentence, for the home. */
+  top_action: string;
+  ranking_note: string;
+  first_breach_day: Day | null;
+  hypothetical: true;
+  state_version: number;
+  source_state_version: number;
+  day: Day;
+  computed_in_seconds: number;
+}
+
 /** GET /reconciliation */
 export interface ReconciliationView {
   as_of_day: Day;
@@ -1655,6 +1906,8 @@ export interface HomeLeg {
   above_apr_cap: boolean;
   /** The router's cost formula for a leg of the recommended plan (absent on an alert-cure leg). */
   formula?: string | null;
+  /** The source the leg draws on, written by the server ("Bank credit line"); two legs on one source carry their amounts. Read it beside `cost_display`. */
+  name_display?: string;
 }
 
 /** One line of the all-in estimate: the router's cost line for a leg, or a priced alert leg. */
@@ -1691,7 +1944,9 @@ export interface HomeNextAction {
   title: string;
   /** The business outcome ("Secure ¥405k of funding") and its components, in overview precision. */
   outcome_title: string;
-  components: { amount_short: string; what: string; lands_when: string | null }[];
+  components: { amount_short: string; what: string; lands_when: string | null; name_display?: string; cost_display?: string | null }[];
+  /** The key of the comparison row (POST /router/plan) that is this plan: "router_optimum", or "recommended_plan" when the plan is the alert's cure. Null when the card is not a funding plan. Badge the row by its `role`, which is exact. */
+  recommended_key?: string | null;
   receive_short: string | null;
   after_lowest_fen: Fen | null;
   after_lowest_short: string | null;

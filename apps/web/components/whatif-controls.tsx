@@ -62,7 +62,7 @@ function Slider({
         disabled={disabled}
         aria-valuetext={readout}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="mt-2 h-2 w-full cursor-pointer accent-brand-600 disabled:cursor-not-allowed"
+        className="mt-2 h-2 w-full cursor-pointer accent-brand-600 touch:h-11 disabled:cursor-not-allowed"
       />
       {hint ? <p className="mt-1 text-xs text-ink-3">{hint}</p> : null}
     </div>
@@ -145,7 +145,7 @@ export function WhatIfControlsCard({
           onChange={(v) => set({ discount_bp: v })}
         />
         <div className="rounded-tile border border-line bg-subtle/60 p-3">
-          <label className="flex min-h-8 cursor-pointer items-center gap-2 text-sm text-ink-2">
+          <label className="flex min-h-8 cursor-pointer items-center gap-2 text-sm text-ink-2 touch:min-h-11">
             <input
               type="checkbox"
               checked={partial}

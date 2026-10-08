@@ -1,0 +1,1509 @@
+{
+  "buyer_id": "BUYER-1",
+  "buyer_name": "Foshan Home Retail Co.",
+  "primary": "You can live with: up to 55-day terms if the price rises 0.30%, or early payment at up to 0.85% on ¥257,200.00; a rebate up to 1.25%; not 60 days without an early payment.",
+  "reason": "60 days without an early payment leaves a shortfall in 47 days that no fix covers; the ¥5,000.00 budget buys no terms without a price rise.",
+  "money": "Cost to you ¥0.00 with the price rise, or ¥3,027.77 with the early payment; without a deal your current funding plan costs ¥3,113.93.",
+  "packages": [
+    {
+      "package": {
+        "buyer_id": "BUYER-1",
+        "terms_days": 45,
+        "price_bp": 0,
+        "early_pay_bp": 0,
+        "early_pay_face_fen": null,
+        "rebate_bp": 125,
+        "price_display": "0.00%",
+        "early_pay_display": "0.00%",
+        "rebate_display": "1.25%"
+      },
+      "outcome": "NEEDS_OWNER_APPROVAL",
+      "tier": "TIER_2",
+      "passes": true,
+      "approved": true,
+      "codes": [],
+      "binding_codes": [],
+      "forward_budget_used_fen": 500000,
+      "reserve_breach": null,
+      "flags": [
+        "needs your approval"
+      ],
+      "counter_match": true,
+      "plan_cost_fen": 311393,
+      "summary": "45-day terms · rebate 1.25%",
+      "forward_budget_used_display": "¥5,000.00",
+      "plan_cost_display": "¥3,113.93"
+    },
+    {
+      "package": {
+        "buyer_id": "BUYER-1",
+        "terms_days": 45,
+        "price_bp": 0,
+        "early_pay_bp": 85,
+        "early_pay_face_fen": 25720000,
+        "rebate_bp": 125,
+        "price_display": "0.00%",
+        "early_pay_display": "0.85%",
+        "early_pay_face_display": "¥257,200.00",
+        "rebate_display": "1.25%"
+      },
+      "outcome": "NEEDS_OWNER_APPROVAL",
+      "tier": "TIER_2",
+      "passes": true,
+      "approved": true,
+      "codes": [],
+      "binding_codes": [],
+      "forward_budget_used_fen": 500000,
+      "reserve_breach": null,
+      "flags": [
+        "needs your approval"
+      ],
+      "counter_match": false,
+      "plan_cost_fen": 84157,
+      "summary": "45-day terms · early payment 0.85% on ¥257,200.00 · rebate 1.25%",
+      "forward_budget_used_display": "¥5,000.00",
+      "plan_cost_display": "¥841.57"
+    },
+    {
+      "package": {
+        "buyer_id": "BUYER-1",
+        "terms_days": 45,
+        "price_bp": 0,
+        "early_pay_bp": 70,
+        "early_pay_face_fen": null,
+        "rebate_bp": 125,
+        "price_display": "0.00%",
+        "early_pay_display": "0.70%",
+        "rebate_display": "1.25%"
+      },
+      "outcome": "NEEDS_OWNER_APPROVAL",
+      "tier": "TIER_2",
+      "passes": true,
+      "approved": true,
+      "codes": [],
+      "binding_codes": [],
+      "forward_budget_used_fen": 500000,
+      "reserve_breach": null,
+      "flags": [
+        "needs your approval"
+      ],
+      "counter_match": false,
+      "plan_cost_fen": 0,
+      "summary": "45-day terms · early payment 0.70% · rebate 1.25%",
+      "forward_budget_used_display": "¥5,000.00",
+      "plan_cost_display": "¥0.00"
+    },
+    {
+      "package": {
+        "buyer_id": "BUYER-1",
+        "terms_days": 50,
+        "price_bp": 10,
+        "early_pay_bp": 0,
+        "early_pay_face_fen": null,
+        "rebate_bp": 55,
+        "price_display": "0.10%",
+        "early_pay_display": "0.00%",
+        "rebate_display": "0.55%"
+      },
+      "outcome": "NEEDS_OWNER_APPROVAL",
+      "tier": "TIER_2",
+      "passes": true,
+      "approved": true,
+      "codes": [
+        "RESERVE_BREACH"
+      ],
+      "binding_codes": [],
+      "forward_budget_used_fen": 484897,
+      "reserve_breach": {
+        "day": 47,
+        "when": "in 47 days",
+        "curable": true,
+        "cure_cost_fen": 157036,
+        "cure_cost_display": "¥1,570.36"
+      },
+      "flags": [
+        "needs your approval",
+        "its funding cannot run today"
+      ],
+      "counter_match": false,
+      "plan_cost_fen": 157036,
+      "summary": "50-day terms · price up 0.10% · rebate 0.55%",
+      "forward_budget_used_display": "¥4,848.97",
+      "plan_cost_display": "¥1,570.36"
+    },
+    {
+      "package": {
+        "buyer_id": "BUYER-1",
+        "terms_days": 50,
+        "price_bp": 10,
+        "early_pay_bp": 85,
+        "early_pay_face_fen": 25720000,
+        "rebate_bp": 55,
+        "price_display": "0.10%",
+        "early_pay_display": "0.85%",
+        "early_pay_face_display": "¥257,200.00",
+        "rebate_display": "0.55%"
+      },
+      "outcome": "NEEDS_OWNER_APPROVAL",
+      "tier": "TIER_2",
+      "passes": true,
+      "approved": true,
+      "codes": [
+        "RESERVE_BREACH"
+      ],
+      "binding_codes": [],
+      "forward_budget_used_fen": 484897,
+      "reserve_breach": {
+        "day": 47,
+        "when": "in 47 days",
+        "curable": true,
+        "cure_cost_fen": 267304,
+        "cure_cost_display": "¥2,673.04"
+      },
+      "flags": [
+        "needs your approval",
+        "its funding cannot run today"
+      ],
+      "counter_match": false,
+      "plan_cost_fen": 267304,
+      "summary": "50-day terms · price up 0.10% · early payment 0.85% on ¥257,200.00 · rebate 0.55%",
+      "forward_budget_used_display": "¥4,848.97",
+      "plan_cost_display": "¥2,673.04"
+    },
+    {
+      "package": {
+        "buyer_id": "BUYER-1",
+        "terms_days": 50,
+        "price_bp": 10,
+        "early_pay_bp": 65,
+        "early_pay_face_fen": null,
+        "rebate_bp": 55,
+        "price_display": "0.10%",
+        "early_pay_display": "0.65%",
+        "rebate_display": "0.55%"
+      },
+      "outcome": "NEEDS_OWNER_APPROVAL",
+      "tier": "TIER_2",
+      "passes": true,
+      "approved": true,
+      "codes": [
+        "RESERVE_BREACH"
+      ],
+      "binding_codes": [],
+      "forward_budget_used_fen": 484897,
+      "reserve_breach": {
+        "day": 47,
+        "when": "in 47 days",
+        "curable": true,
+        "cure_cost_fen": 156351,
+        "cure_cost_display": "¥1,563.51"
+      },
+      "flags": [
+        "needs your approval",
+        "its funding cannot run today"
+      ],
+      "counter_match": false,
+      "plan_cost_fen": 156351,
+      "summary": "50-day terms · price up 0.10% · early payment 0.65% · rebate 0.55%",
+      "forward_budget_used_display": "¥4,848.97",
+      "plan_cost_display": "¥1,563.51"
+    },
+    {
+      "package": {
+        "buyer_id": "BUYER-1",
+        "terms_days": 55,
+        "price_bp": 25,
+        "early_pay_bp": 0,
+        "early_pay_face_fen": null,
+        "rebate_bp": 60,
+        "price_display": "0.25%",
+        "early_pay_display": "0.00%",
+        "rebate_display": "0.60%"
+      },
+      "outcome": "NEEDS_OWNER_APPROVAL",
+      "tier": "TIER_2",
+      "passes": true,
+      "approved": true,
+      "codes": [
+        "RESERVE_BREACH"
+      ],
+      "binding_codes": [],
+      "forward_budget_used_fen": 496795,
+      "reserve_breach": {
+        "day": 47,
+        "when": "in 47 days",
+        "curable": true,
+        "cure_cost_fen": 157036,
+        "cure_cost_display": "¥1,570.36"
+      },
+      "flags": [
+        "needs your approval",
+        "its funding cannot run today"
+      ],
+      "counter_match": false,
+      "plan_cost_fen": 157036,
+      "summary": "55-day terms · price up 0.25% · rebate 0.60%",
+      "forward_budget_used_display": "¥4,967.95",
+      "plan_cost_display": "¥1,570.36"
+    },
+    {
+      "package": {
+        "buyer_id": "BUYER-1",
+        "terms_days": 55,
+        "price_bp": 25,
+        "early_pay_bp": 85,
+        "early_pay_face_fen": 25720000,
+        "rebate_bp": 60,
+        "price_display": "0.25%",
+        "early_pay_display": "0.85%",
+        "early_pay_face_display": "¥257,200.00",
+        "rebate_display": "0.60%"
+      },
+      "outcome": "NEEDS_OWNER_APPROVAL",
+      "tier": "TIER_2",
+      "passes": true,
+      "approved": true,
+      "codes": [
+        "RESERVE_BREACH"
+      ],
+      "binding_codes": [],
+      "forward_budget_used_fen": 496795,
+      "reserve_breach": {
+        "day": 47,
+        "when": "in 47 days",
+        "curable": true,
+        "cure_cost_fen": 267304,
+        "cure_cost_display": "¥2,673.04"
+      },
+      "flags": [
+        "needs your approval",
+        "its funding cannot run today"
+      ],
+      "counter_match": false,
+      "plan_cost_fen": 267304,
+      "summary": "55-day terms · price up 0.25% · early payment 0.85% on ¥257,200.00 · rebate 0.60%",
+      "forward_budget_used_display": "¥4,967.95",
+      "plan_cost_display": "¥2,673.04"
+    },
+    {
+      "package": {
+        "buyer_id": "BUYER-1",
+        "terms_days": 55,
+        "price_bp": 25,
+        "early_pay_bp": 65,
+        "early_pay_face_fen": null,
+        "rebate_bp": 60,
+        "price_display": "0.25%",
+        "early_pay_display": "0.65%",
+        "rebate_display": "0.60%"
+      },
+      "outcome": "NEEDS_OWNER_APPROVAL",
+      "tier": "TIER_2",
+      "passes": true,
+      "approved": true,
+      "codes": [
+        "RESERVE_BREACH"
+      ],
+      "binding_codes": [],
+      "forward_budget_used_fen": 496795,
+      "reserve_breach": {
+        "day": 47,
+        "when": "in 47 days",
+        "curable": true,
+        "cure_cost_fen": 156351,
+        "cure_cost_display": "¥1,563.51"
+      },
+      "flags": [
+        "needs your approval",
+        "its funding cannot run today"
+      ],
+      "counter_match": false,
+      "plan_cost_fen": 156351,
+      "summary": "55-day terms · price up 0.25% · early payment 0.65% · rebate 0.60%",
+      "forward_budget_used_display": "¥4,967.95",
+      "plan_cost_display": "¥1,563.51"
+    },
+    {
+      "package": {
+        "buyer_id": "BUYER-1",
+        "terms_days": 45,
+        "price_bp": 0,
+        "early_pay_bp": 85,
+        "early_pay_face_fen": 25720000,
+        "rebate_bp": 0,
+        "price_display": "0.00%",
+        "early_pay_display": "0.85%",
+        "early_pay_face_display": "¥257,200.00",
+        "rebate_display": "0.00%"
+      },
+      "outcome": "ACCEPT",
+      "tier": "TIER_1",
+      "passes": true,
+      "approved": true,
+      "codes": [],
+      "binding_codes": [],
+      "forward_budget_used_fen": 0,
+      "reserve_breach": null,
+      "flags": [],
+      "counter_match": true,
+      "plan_cost_fen": 84157,
+      "summary": "45-day terms · early payment 0.85% on ¥257,200.00",
+      "forward_budget_used_display": "¥0.00",
+      "plan_cost_display": "¥841.57"
+    },
+    {
+      "package": {
+        "buyer_id": "BUYER-1",
+        "terms_days": 55,
+        "price_bp": 30,
+        "early_pay_bp": 0,
+        "early_pay_face_fen": null,
+        "rebate_bp": 0,
+        "price_display": "0.30%",
+        "early_pay_display": "0.00%",
+        "rebate_display": "0.00%"
+      },
+      "outcome": "NEEDS_OWNER_APPROVAL",
+      "tier": "TIER_2",
+      "passes": true,
+      "approved": true,
+      "codes": [
+        "RESERVE_BREACH"
+      ],
+      "binding_codes": [],
+      "forward_budget_used_fen": 0,
+      "reserve_breach": {
+        "day": 47,
+        "when": "in 47 days",
+        "curable": true,
+        "cure_cost_fen": 157036,
+        "cure_cost_display": "¥1,570.36"
+      },
+      "flags": [
+        "needs your approval",
+        "its funding cannot run today"
+      ],
+      "counter_match": true,
+      "plan_cost_fen": 157036,
+      "summary": "55-day terms · price up 0.30%",
+      "forward_budget_used_display": "¥0.00",
+      "plan_cost_display": "¥1,570.36"
+    }
+  ],
+  "levers": [
+    {
+      "lever": "Terms (days), alone",
+      "key": "terms_alone",
+      "label": "Longest payment terms on their own",
+      "unit": "days",
+      "maximum": 45,
+      "confirmed": true,
+      "scanned": false,
+      "wall": "forward budget",
+      "wall_text": "your budget for what you give buyers",
+      "face_fen": null,
+      "rule_price_bp": null,
+      "unavailable": null,
+      "maximum_display": "45 days",
+      "wall_words": "your budget for what you give buyers",
+      "next_step_sentence": "50 days: over your limits; its funding cannot run today",
+      "at_maximum": {
+        "package": {
+          "buyer_id": "BUYER-1",
+          "terms_days": 45,
+          "price_bp": 0,
+          "early_pay_bp": 0,
+          "early_pay_face_fen": null,
+          "rebate_bp": 0,
+          "price_display": "0.00%",
+          "early_pay_display": "0.00%",
+          "rebate_display": "0.00%"
+        },
+        "outcome": "ACCEPT",
+        "tier": "TIER_1",
+        "passes": true,
+        "approved": true,
+        "codes": [],
+        "binding_codes": [],
+        "forward_budget_used_fen": 0,
+        "reserve_breach": null,
+        "flags": [],
+        "counter_match": false,
+        "plan_cost_fen": 311393,
+        "summary": "45-day terms",
+        "forward_budget_used_display": "¥0.00",
+        "plan_cost_display": "¥3,113.93"
+      },
+      "next_step": {
+        "package": {
+          "buyer_id": "BUYER-1",
+          "terms_days": 50,
+          "price_bp": 0,
+          "early_pay_bp": 0,
+          "early_pay_face_fen": null,
+          "rebate_bp": 0,
+          "price_display": "0.00%",
+          "early_pay_display": "0.00%",
+          "rebate_display": "0.00%"
+        },
+        "outcome": "REJECT",
+        "tier": "TIER_1",
+        "passes": false,
+        "approved": false,
+        "codes": [
+          "AGG_CONCESSION_EXCEEDED",
+          "RESERVE_BREACH"
+        ],
+        "binding_codes": [
+          "AGG_CONCESSION_EXCEEDED"
+        ],
+        "forward_budget_used_fen": 810897,
+        "reserve_breach": {
+          "day": 47,
+          "when": "in 47 days",
+          "curable": true,
+          "cure_cost_fen": 157036,
+          "cure_cost_display": "¥1,570.36"
+        },
+        "flags": [
+          "its funding cannot run today"
+        ],
+        "counter_match": false,
+        "plan_cost_fen": 157036,
+        "summary": "50-day terms",
+        "forward_budget_used_display": "¥8,108.97",
+        "plan_cost_display": "¥1,570.36"
+      }
+    },
+    {
+      "lever": "Terms (days), budget ignored",
+      "key": "terms_budget_ignored",
+      "label": "Longest payment terms if the budget is ignored",
+      "unit": "days",
+      "maximum": 55,
+      "confirmed": true,
+      "scanned": false,
+      "wall": "liquidity",
+      "wall_text": "your cash floor",
+      "face_fen": null,
+      "rule_price_bp": null,
+      "unavailable": null,
+      "maximum_display": "55 days",
+      "wall_words": "your cash floor",
+      "next_step_sentence": "60 days: over your limits",
+      "at_maximum": {
+        "package": {
+          "buyer_id": "BUYER-1",
+          "terms_days": 55,
+          "price_bp": 0,
+          "early_pay_bp": 0,
+          "early_pay_face_fen": null,
+          "rebate_bp": 0,
+          "price_display": "0.00%",
+          "early_pay_display": "0.00%",
+          "rebate_display": "0.00%"
+        },
+        "outcome": "REJECT",
+        "tier": "TIER_1",
+        "passes": false,
+        "approved": false,
+        "codes": [
+          "AGG_CONCESSION_EXCEEDED",
+          "RESERVE_BREACH"
+        ],
+        "binding_codes": [
+          "AGG_CONCESSION_EXCEEDED"
+        ],
+        "forward_budget_used_fen": 1621795,
+        "reserve_breach": {
+          "day": 47,
+          "when": "in 47 days",
+          "curable": true,
+          "cure_cost_fen": 157036,
+          "cure_cost_display": "¥1,570.36"
+        },
+        "flags": [
+          "its funding cannot run today"
+        ],
+        "counter_match": false,
+        "plan_cost_fen": 157036,
+        "summary": "55-day terms",
+        "forward_budget_used_display": "¥16,217.95",
+        "plan_cost_display": "¥1,570.36"
+      },
+      "next_step": {
+        "package": {
+          "buyer_id": "BUYER-1",
+          "terms_days": 60,
+          "price_bp": 0,
+          "early_pay_bp": 0,
+          "early_pay_face_fen": null,
+          "rebate_bp": 0,
+          "price_display": "0.00%",
+          "early_pay_display": "0.00%",
+          "rebate_display": "0.00%"
+        },
+        "outcome": "REJECT",
+        "tier": "TIER_1",
+        "passes": false,
+        "approved": false,
+        "codes": [
+          "AGG_CONCESSION_EXCEEDED",
+          "RESERVE_BREACH"
+        ],
+        "binding_codes": [
+          "AGG_CONCESSION_EXCEEDED",
+          "RESERVE_BREACH"
+        ],
+        "forward_budget_used_fen": 2432692,
+        "reserve_breach": {
+          "day": 47,
+          "when": "in 47 days",
+          "curable": false,
+          "cure_cost_fen": null
+        },
+        "flags": [],
+        "counter_match": false,
+        "plan_cost_fen": 387358,
+        "summary": "60-day terms",
+        "forward_budget_used_display": "¥24,326.92",
+        "plan_cost_display": "¥3,873.58"
+      }
+    },
+    {
+      "lever": "Terms (days), with the price that compensates it",
+      "key": "terms_with_price",
+      "label": "Longest payment terms with a price rise",
+      "unit": "days",
+      "maximum": 55,
+      "confirmed": true,
+      "scanned": false,
+      "wall": "liquidity",
+      "wall_text": "your cash floor",
+      "face_fen": null,
+      "rule_price_bp": 30,
+      "unavailable": null,
+      "maximum_display": "55 days, price up 0.30%",
+      "wall_words": "your cash floor",
+      "next_step_sentence": "60 days, price up 1.00%: over your limits",
+      "at_maximum": {
+        "package": {
+          "buyer_id": "BUYER-1",
+          "terms_days": 55,
+          "price_bp": 25,
+          "early_pay_bp": 0,
+          "early_pay_face_fen": null,
+          "rebate_bp": 0,
+          "price_display": "0.25%",
+          "early_pay_display": "0.00%",
+          "rebate_display": "0.00%"
+        },
+        "outcome": "NEEDS_OWNER_APPROVAL",
+        "tier": "TIER_2",
+        "passes": true,
+        "approved": true,
+        "codes": [
+          "RESERVE_BREACH"
+        ],
+        "binding_codes": [],
+        "forward_budget_used_fen": 256795,
+        "reserve_breach": {
+          "day": 47,
+          "when": "in 47 days",
+          "curable": true,
+          "cure_cost_fen": 157036,
+          "cure_cost_display": "¥1,570.36"
+        },
+        "flags": [
+          "needs your approval",
+          "its funding cannot run today"
+        ],
+        "counter_match": false,
+        "plan_cost_fen": 157036,
+        "summary": "55-day terms · price up 0.25%",
+        "forward_budget_used_display": "¥2,567.95",
+        "plan_cost_display": "¥1,570.36"
+      },
+      "next_step": {
+        "package": {
+          "buyer_id": "BUYER-1",
+          "terms_days": 60,
+          "price_bp": 100,
+          "early_pay_bp": 0,
+          "early_pay_face_fen": null,
+          "rebate_bp": 0,
+          "price_display": "1.00%",
+          "early_pay_display": "0.00%",
+          "rebate_display": "0.00%"
+        },
+        "outcome": "REJECT",
+        "tier": "TIER_1",
+        "passes": false,
+        "approved": false,
+        "codes": [
+          "RESERVE_BREACH"
+        ],
+        "binding_codes": [
+          "RESERVE_BREACH"
+        ],
+        "forward_budget_used_fen": 0,
+        "reserve_breach": {
+          "day": 47,
+          "when": "in 47 days",
+          "curable": false,
+          "cure_cost_fen": null
+        },
+        "flags": [],
+        "counter_match": false,
+        "plan_cost_fen": 387358,
+        "summary": "60-day terms · price up 1.00%",
+        "forward_budget_used_display": "¥0.00",
+        "plan_cost_display": "¥3,873.58"
+      },
+      "rule_price_display": "0.30%"
+    },
+    {
+      "lever": "Early pay on ¥420,000.00",
+      "key": "early_pay_whole",
+      "label": "Early payment on ¥420,000.00",
+      "unit": "bp",
+      "maximum": 70,
+      "confirmed": true,
+      "scanned": false,
+      "wall": "plan comparison",
+      "wall_text": "the cheaper funding you already have",
+      "face_fen": 42000000,
+      "rule_price_bp": null,
+      "unavailable": null,
+      "maximum_display": "0.70% on ¥420,000.00",
+      "wall_words": "the cheaper funding you already have",
+      "next_step_sentence": "0.75% on ¥420,000.00: over your limits",
+      "at_maximum": {
+        "package": {
+          "buyer_id": "BUYER-1",
+          "terms_days": 45,
+          "price_bp": 0,
+          "early_pay_bp": 70,
+          "early_pay_face_fen": null,
+          "rebate_bp": 0,
+          "price_display": "0.00%",
+          "early_pay_display": "0.70%",
+          "rebate_display": "0.00%"
+        },
+        "outcome": "ACCEPT",
+        "tier": "TIER_1",
+        "passes": true,
+        "approved": true,
+        "codes": [],
+        "binding_codes": [],
+        "forward_budget_used_fen": 0,
+        "reserve_breach": null,
+        "flags": [],
+        "counter_match": false,
+        "plan_cost_fen": 0,
+        "summary": "45-day terms · early payment 0.70%",
+        "forward_budget_used_display": "¥0.00",
+        "plan_cost_display": "¥0.00"
+      },
+      "next_step": {
+        "package": {
+          "buyer_id": "BUYER-1",
+          "terms_days": 45,
+          "price_bp": 0,
+          "early_pay_bp": 75,
+          "early_pay_face_fen": null,
+          "rebate_bp": 0,
+          "price_display": "0.00%",
+          "early_pay_display": "0.75%",
+          "rebate_display": "0.00%"
+        },
+        "outcome": "COUNTER",
+        "tier": "TIER_1",
+        "passes": false,
+        "approved": false,
+        "codes": [
+          "EARLY_PAY_DEARER_THAN_PLAN"
+        ],
+        "binding_codes": [
+          "EARLY_PAY_DEARER_THAN_PLAN"
+        ],
+        "forward_budget_used_fen": 0,
+        "reserve_breach": null,
+        "flags": [],
+        "counter_match": false,
+        "plan_cost_fen": 0,
+        "summary": "45-day terms · early payment 0.75%",
+        "forward_budget_used_display": "¥0.00",
+        "plan_cost_display": "¥0.00"
+      },
+      "face_display": "¥420,000.00"
+    },
+    {
+      "lever": "Early pay on ¥257,200.00",
+      "key": "early_pay_counter",
+      "label": "Early payment on ¥257,200.00",
+      "unit": "bp",
+      "maximum": 85,
+      "confirmed": true,
+      "scanned": false,
+      "wall": "break-even",
+      "wall_text": "the break-even for paying early",
+      "face_fen": 25720000,
+      "rule_price_bp": null,
+      "unavailable": null,
+      "maximum_display": "0.85% on ¥257,200.00",
+      "wall_words": "the break-even for paying early",
+      "next_step_sentence": "0.90% on ¥257,200.00: over your limits",
+      "at_maximum": {
+        "package": {
+          "buyer_id": "BUYER-1",
+          "terms_days": 45,
+          "price_bp": 0,
+          "early_pay_bp": 85,
+          "early_pay_face_fen": 25720000,
+          "rebate_bp": 0,
+          "price_display": "0.00%",
+          "early_pay_display": "0.85%",
+          "early_pay_face_display": "¥257,200.00",
+          "rebate_display": "0.00%"
+        },
+        "outcome": "ACCEPT",
+        "tier": "TIER_1",
+        "passes": true,
+        "approved": true,
+        "codes": [],
+        "binding_codes": [],
+        "forward_budget_used_fen": 0,
+        "reserve_breach": null,
+        "flags": [],
+        "counter_match": false,
+        "plan_cost_fen": 84157,
+        "summary": "45-day terms · early payment 0.85% on ¥257,200.00",
+        "forward_budget_used_display": "¥0.00",
+        "plan_cost_display": "¥841.57"
+      },
+      "next_step": {
+        "package": {
+          "buyer_id": "BUYER-1",
+          "terms_days": 45,
+          "price_bp": 0,
+          "early_pay_bp": 90,
+          "early_pay_face_fen": 25720000,
+          "rebate_bp": 0,
+          "price_display": "0.00%",
+          "early_pay_display": "0.90%",
+          "early_pay_face_display": "¥257,200.00",
+          "rebate_display": "0.00%"
+        },
+        "outcome": "COUNTER",
+        "tier": "TIER_1",
+        "passes": false,
+        "approved": false,
+        "codes": [
+          "DISCOUNT_ABOVE_BREAK_EVEN",
+          "EARLY_PAY_DEARER_THAN_PLAN"
+        ],
+        "binding_codes": [
+          "DISCOUNT_ABOVE_BREAK_EVEN",
+          "EARLY_PAY_DEARER_THAN_PLAN"
+        ],
+        "forward_budget_used_fen": 0,
+        "reserve_breach": null,
+        "flags": [],
+        "counter_match": false,
+        "plan_cost_fen": 85364,
+        "summary": "45-day terms · early payment 0.90% on ¥257,200.00",
+        "forward_budget_used_display": "¥0.00",
+        "plan_cost_display": "¥853.64"
+      },
+      "face_display": "¥257,200.00"
+    },
+    {
+      "lever": "Rebate on the expected order",
+      "key": "rebate",
+      "label": "Rebate on the expected order",
+      "unit": "bp",
+      "maximum": 125,
+      "confirmed": true,
+      "scanned": false,
+      "wall": "forward budget",
+      "wall_text": "your budget for what you give buyers",
+      "face_fen": null,
+      "rule_price_bp": null,
+      "unavailable": null,
+      "maximum_display": "1.25%",
+      "wall_words": "your budget for what you give buyers",
+      "next_step_sentence": "1.30%: over your limits",
+      "at_maximum": {
+        "package": {
+          "buyer_id": "BUYER-1",
+          "terms_days": 45,
+          "price_bp": 0,
+          "early_pay_bp": 0,
+          "early_pay_face_fen": null,
+          "rebate_bp": 125,
+          "price_display": "0.00%",
+          "early_pay_display": "0.00%",
+          "rebate_display": "1.25%"
+        },
+        "outcome": "NEEDS_OWNER_APPROVAL",
+        "tier": "TIER_2",
+        "passes": true,
+        "approved": true,
+        "codes": [],
+        "binding_codes": [],
+        "forward_budget_used_fen": 500000,
+        "reserve_breach": null,
+        "flags": [
+          "needs your approval"
+        ],
+        "counter_match": false,
+        "plan_cost_fen": 311393,
+        "summary": "45-day terms · rebate 1.25%",
+        "forward_budget_used_display": "¥5,000.00",
+        "plan_cost_display": "¥3,113.93"
+      },
+      "next_step": {
+        "package": {
+          "buyer_id": "BUYER-1",
+          "terms_days": 45,
+          "price_bp": 0,
+          "early_pay_bp": 0,
+          "early_pay_face_fen": null,
+          "rebate_bp": 130,
+          "price_display": "0.00%",
+          "early_pay_display": "0.00%",
+          "rebate_display": "1.30%"
+        },
+        "outcome": "REJECT",
+        "tier": "TIER_1",
+        "passes": false,
+        "approved": false,
+        "codes": [
+          "AGG_CONCESSION_EXCEEDED"
+        ],
+        "binding_codes": [
+          "AGG_CONCESSION_EXCEEDED"
+        ],
+        "forward_budget_used_fen": 520000,
+        "reserve_breach": null,
+        "flags": [],
+        "counter_match": false,
+        "plan_cost_fen": 311393,
+        "summary": "45-day terms · rebate 1.30%",
+        "forward_budget_used_display": "¥5,200.00",
+        "plan_cost_display": "¥3,113.93"
+      }
+    }
+  ],
+  "zone": [
+    {
+      "terms_days": 30,
+      "terms_words": "30 days",
+      "min_price_bp": 0,
+      "rule_price_bp": null,
+      "cost_per_invoice_fen": null,
+      "passes_within_range": true,
+      "neighbours_confirmed": true,
+      "at_that_price": {
+        "package": {
+          "buyer_id": "BUYER-1",
+          "terms_days": 30,
+          "price_bp": 0,
+          "early_pay_bp": 0,
+          "early_pay_face_fen": null,
+          "rebate_bp": 0,
+          "price_display": "0.00%",
+          "early_pay_display": "0.00%",
+          "rebate_display": "0.00%"
+        },
+        "outcome": "NEEDS_OWNER_APPROVAL",
+        "tier": "TIER_2",
+        "passes": true,
+        "approved": true,
+        "codes": [],
+        "binding_codes": [],
+        "forward_budget_used_fen": 0,
+        "reserve_breach": null,
+        "flags": [
+          "needs your approval"
+        ],
+        "counter_match": false,
+        "plan_cost_fen": 311393,
+        "summary": "30-day terms",
+        "forward_budget_used_display": "¥0.00",
+        "plan_cost_display": "¥3,113.93"
+      },
+      "lowest_price_words": "no price rise needed",
+      "min_price_display": "0.00%"
+    },
+    {
+      "terms_days": 35,
+      "terms_words": "35 days",
+      "min_price_bp": 0,
+      "rule_price_bp": null,
+      "cost_per_invoice_fen": null,
+      "passes_within_range": true,
+      "neighbours_confirmed": true,
+      "at_that_price": {
+        "package": {
+          "buyer_id": "BUYER-1",
+          "terms_days": 35,
+          "price_bp": 0,
+          "early_pay_bp": 0,
+          "early_pay_face_fen": null,
+          "rebate_bp": 0,
+          "price_display": "0.00%",
+          "early_pay_display": "0.00%",
+          "rebate_display": "0.00%"
+        },
+        "outcome": "NEEDS_OWNER_APPROVAL",
+        "tier": "TIER_2",
+        "passes": true,
+        "approved": true,
+        "codes": [],
+        "binding_codes": [],
+        "forward_budget_used_fen": 0,
+        "reserve_breach": null,
+        "flags": [
+          "needs your approval"
+        ],
+        "counter_match": false,
+        "plan_cost_fen": 311393,
+        "summary": "35-day terms",
+        "forward_budget_used_display": "¥0.00",
+        "plan_cost_display": "¥3,113.93"
+      },
+      "lowest_price_words": "no price rise needed",
+      "min_price_display": "0.00%"
+    },
+    {
+      "terms_days": 40,
+      "terms_words": "40 days",
+      "min_price_bp": 0,
+      "rule_price_bp": null,
+      "cost_per_invoice_fen": null,
+      "passes_within_range": true,
+      "neighbours_confirmed": true,
+      "at_that_price": {
+        "package": {
+          "buyer_id": "BUYER-1",
+          "terms_days": 40,
+          "price_bp": 0,
+          "early_pay_bp": 0,
+          "early_pay_face_fen": null,
+          "rebate_bp": 0,
+          "price_display": "0.00%",
+          "early_pay_display": "0.00%",
+          "rebate_display": "0.00%"
+        },
+        "outcome": "NEEDS_OWNER_APPROVAL",
+        "tier": "TIER_2",
+        "passes": true,
+        "approved": true,
+        "codes": [],
+        "binding_codes": [],
+        "forward_budget_used_fen": 0,
+        "reserve_breach": null,
+        "flags": [
+          "needs your approval"
+        ],
+        "counter_match": false,
+        "plan_cost_fen": 311393,
+        "summary": "40-day terms",
+        "forward_budget_used_display": "¥0.00",
+        "plan_cost_display": "¥3,113.93"
+      },
+      "lowest_price_words": "no price rise needed",
+      "min_price_display": "0.00%"
+    },
+    {
+      "terms_days": 45,
+      "terms_words": "45 days",
+      "min_price_bp": 0,
+      "rule_price_bp": null,
+      "cost_per_invoice_fen": null,
+      "passes_within_range": true,
+      "neighbours_confirmed": true,
+      "at_that_price": {
+        "package": {
+          "buyer_id": "BUYER-1",
+          "terms_days": 45,
+          "price_bp": 0,
+          "early_pay_bp": 0,
+          "early_pay_face_fen": null,
+          "rebate_bp": 0,
+          "price_display": "0.00%",
+          "early_pay_display": "0.00%",
+          "rebate_display": "0.00%"
+        },
+        "outcome": "ACCEPT",
+        "tier": "TIER_1",
+        "passes": true,
+        "approved": true,
+        "codes": [],
+        "binding_codes": [],
+        "forward_budget_used_fen": 0,
+        "reserve_breach": null,
+        "flags": [],
+        "counter_match": false,
+        "plan_cost_fen": 311393,
+        "summary": "45-day terms",
+        "forward_budget_used_display": "¥0.00",
+        "plan_cost_display": "¥3,113.93"
+      },
+      "lowest_price_words": "no price rise needed",
+      "min_price_display": "0.00%"
+    },
+    {
+      "terms_days": 50,
+      "terms_words": "50 days",
+      "min_price_bp": 10,
+      "rule_price_bp": 15,
+      "cost_per_invoice_fen": 62377,
+      "passes_within_range": true,
+      "neighbours_confirmed": true,
+      "at_that_price": {
+        "package": {
+          "buyer_id": "BUYER-1",
+          "terms_days": 50,
+          "price_bp": 10,
+          "early_pay_bp": 0,
+          "early_pay_face_fen": null,
+          "rebate_bp": 0,
+          "price_display": "0.10%",
+          "early_pay_display": "0.00%",
+          "rebate_display": "0.00%"
+        },
+        "outcome": "NEEDS_OWNER_APPROVAL",
+        "tier": "TIER_2",
+        "passes": true,
+        "approved": true,
+        "codes": [
+          "RESERVE_BREACH"
+        ],
+        "binding_codes": [],
+        "forward_budget_used_fen": 264897,
+        "reserve_breach": {
+          "day": 47,
+          "when": "in 47 days",
+          "curable": true,
+          "cure_cost_fen": 157036,
+          "cure_cost_display": "¥1,570.36"
+        },
+        "flags": [
+          "needs your approval",
+          "its funding cannot run today"
+        ],
+        "counter_match": false,
+        "plan_cost_fen": 157036,
+        "summary": "50-day terms · price up 0.10%",
+        "forward_budget_used_display": "¥2,648.97",
+        "plan_cost_display": "¥1,570.36"
+      },
+      "lowest_price_words": "0.10%",
+      "min_price_display": "0.10%",
+      "rule_price_display": "0.15%",
+      "cost_per_invoice_display": "¥623.77"
+    },
+    {
+      "terms_days": 55,
+      "terms_words": "55 days",
+      "min_price_bp": 25,
+      "rule_price_bp": 30,
+      "cost_per_invoice_fen": 124753,
+      "passes_within_range": true,
+      "neighbours_confirmed": true,
+      "at_that_price": {
+        "package": {
+          "buyer_id": "BUYER-1",
+          "terms_days": 55,
+          "price_bp": 25,
+          "early_pay_bp": 0,
+          "early_pay_face_fen": null,
+          "rebate_bp": 0,
+          "price_display": "0.25%",
+          "early_pay_display": "0.00%",
+          "rebate_display": "0.00%"
+        },
+        "outcome": "NEEDS_OWNER_APPROVAL",
+        "tier": "TIER_2",
+        "passes": true,
+        "approved": true,
+        "codes": [
+          "RESERVE_BREACH"
+        ],
+        "binding_codes": [],
+        "forward_budget_used_fen": 256795,
+        "reserve_breach": {
+          "day": 47,
+          "when": "in 47 days",
+          "curable": true,
+          "cure_cost_fen": 157036,
+          "cure_cost_display": "¥1,570.36"
+        },
+        "flags": [
+          "needs your approval",
+          "its funding cannot run today"
+        ],
+        "counter_match": false,
+        "plan_cost_fen": 157036,
+        "summary": "55-day terms · price up 0.25%",
+        "forward_budget_used_display": "¥2,567.95",
+        "plan_cost_display": "¥1,570.36"
+      },
+      "lowest_price_words": "0.25%",
+      "min_price_display": "0.25%",
+      "rule_price_display": "0.30%",
+      "cost_per_invoice_display": "¥1,247.53"
+    },
+    {
+      "terms_days": 60,
+      "terms_words": "60 days",
+      "min_price_bp": null,
+      "rule_price_bp": 45,
+      "cost_per_invoice_fen": 187130,
+      "passes_within_range": false,
+      "neighbours_confirmed": true,
+      "at_that_price": {
+        "package": {
+          "buyer_id": "BUYER-1",
+          "terms_days": 60,
+          "price_bp": 100,
+          "early_pay_bp": 0,
+          "early_pay_face_fen": null,
+          "rebate_bp": 0,
+          "price_display": "1.00%",
+          "early_pay_display": "0.00%",
+          "rebate_display": "0.00%"
+        },
+        "outcome": "REJECT",
+        "tier": "TIER_1",
+        "passes": false,
+        "approved": false,
+        "codes": [
+          "RESERVE_BREACH"
+        ],
+        "binding_codes": [
+          "RESERVE_BREACH"
+        ],
+        "forward_budget_used_fen": 0,
+        "reserve_breach": {
+          "day": 47,
+          "when": "in 47 days",
+          "curable": false,
+          "cure_cost_fen": null
+        },
+        "flags": [],
+        "counter_match": false,
+        "plan_cost_fen": 387358,
+        "summary": "60-day terms · price up 1.00%",
+        "forward_budget_used_display": "¥0.00",
+        "plan_cost_display": "¥3,873.58"
+      },
+      "lowest_price_words": "none works",
+      "rule_price_display": "0.45%",
+      "cost_per_invoice_display": "¥1,871.30"
+    },
+    {
+      "terms_days": 65,
+      "terms_words": "65 days",
+      "min_price_bp": null,
+      "rule_price_bp": 60,
+      "cost_per_invoice_fen": 249507,
+      "passes_within_range": false,
+      "neighbours_confirmed": true,
+      "at_that_price": {
+        "package": {
+          "buyer_id": "BUYER-1",
+          "terms_days": 65,
+          "price_bp": 100,
+          "early_pay_bp": 0,
+          "early_pay_face_fen": null,
+          "rebate_bp": 0,
+          "price_display": "1.00%",
+          "early_pay_display": "0.00%",
+          "rebate_display": "0.00%"
+        },
+        "outcome": "REJECT",
+        "tier": "TIER_1",
+        "passes": false,
+        "approved": false,
+        "codes": [
+          "RESERVE_BREACH"
+        ],
+        "binding_codes": [
+          "RESERVE_BREACH"
+        ],
+        "forward_budget_used_fen": 0,
+        "reserve_breach": {
+          "day": 47,
+          "when": "in 47 days",
+          "curable": false,
+          "cure_cost_fen": null
+        },
+        "flags": [],
+        "counter_match": false,
+        "plan_cost_fen": 399193,
+        "summary": "65-day terms · price up 1.00%",
+        "forward_budget_used_display": "¥0.00",
+        "plan_cost_display": "¥3,991.93"
+      },
+      "lowest_price_words": "none works",
+      "rule_price_display": "0.60%",
+      "cost_per_invoice_display": "¥2,495.07"
+    },
+    {
+      "terms_days": 70,
+      "terms_words": "70 days",
+      "min_price_bp": null,
+      "rule_price_bp": 75,
+      "cost_per_invoice_fen": 311884,
+      "passes_within_range": false,
+      "neighbours_confirmed": true,
+      "at_that_price": {
+        "package": {
+          "buyer_id": "BUYER-1",
+          "terms_days": 70,
+          "price_bp": 100,
+          "early_pay_bp": 0,
+          "early_pay_face_fen": null,
+          "rebate_bp": 0,
+          "price_display": "1.00%",
+          "early_pay_display": "0.00%",
+          "rebate_display": "0.00%"
+        },
+        "outcome": "REJECT",
+        "tier": "TIER_1",
+        "passes": false,
+        "approved": false,
+        "codes": [
+          "RESERVE_BREACH"
+        ],
+        "binding_codes": [
+          "RESERVE_BREACH"
+        ],
+        "forward_budget_used_fen": 0,
+        "reserve_breach": {
+          "day": 47,
+          "when": "in 47 days",
+          "curable": false,
+          "cure_cost_fen": null
+        },
+        "flags": [],
+        "counter_match": false,
+        "plan_cost_fen": 411029,
+        "summary": "70-day terms · price up 1.00%",
+        "forward_budget_used_display": "¥0.00",
+        "plan_cost_display": "¥4,110.29"
+      },
+      "lowest_price_words": "none works",
+      "rule_price_display": "0.75%",
+      "cost_per_invoice_display": "¥3,118.84"
+    },
+    {
+      "terms_days": 75,
+      "terms_words": "75 days",
+      "min_price_bp": null,
+      "rule_price_bp": 90,
+      "cost_per_invoice_fen": 374260,
+      "passes_within_range": false,
+      "neighbours_confirmed": true,
+      "at_that_price": {
+        "package": {
+          "buyer_id": "BUYER-1",
+          "terms_days": 75,
+          "price_bp": 100,
+          "early_pay_bp": 0,
+          "early_pay_face_fen": null,
+          "rebate_bp": 0,
+          "price_display": "1.00%",
+          "early_pay_display": "0.00%",
+          "rebate_display": "0.00%"
+        },
+        "outcome": "REJECT",
+        "tier": "TIER_1",
+        "passes": false,
+        "approved": false,
+        "codes": [
+          "RESERVE_BREACH"
+        ],
+        "binding_codes": [
+          "RESERVE_BREACH"
+        ],
+        "forward_budget_used_fen": 0,
+        "reserve_breach": {
+          "day": 47,
+          "when": "in 47 days",
+          "curable": false,
+          "cure_cost_fen": null
+        },
+        "flags": [],
+        "counter_match": false,
+        "plan_cost_fen": 422864,
+        "summary": "75-day terms · price up 1.00%",
+        "forward_budget_used_display": "¥0.00",
+        "plan_cost_display": "¥4,228.64"
+      },
+      "lowest_price_words": "none works",
+      "rule_price_display": "0.90%",
+      "cost_per_invoice_display": "¥3,742.60"
+    },
+    {
+      "terms_days": 80,
+      "terms_words": "80 days",
+      "min_price_bp": null,
+      "rule_price_bp": 105,
+      "cost_per_invoice_fen": 436637,
+      "passes_within_range": false,
+      "neighbours_confirmed": true,
+      "at_that_price": {
+        "package": {
+          "buyer_id": "BUYER-1",
+          "terms_days": 80,
+          "price_bp": 100,
+          "early_pay_bp": 0,
+          "early_pay_face_fen": null,
+          "rebate_bp": 0,
+          "price_display": "1.00%",
+          "early_pay_display": "0.00%",
+          "rebate_display": "0.00%"
+        },
+        "outcome": "REJECT",
+        "tier": "TIER_1",
+        "passes": false,
+        "approved": false,
+        "codes": [
+          "RESERVE_BREACH"
+        ],
+        "binding_codes": [
+          "RESERVE_BREACH"
+        ],
+        "forward_budget_used_fen": 216281,
+        "reserve_breach": {
+          "day": 47,
+          "when": "in 47 days",
+          "curable": false,
+          "cure_cost_fen": null
+        },
+        "flags": [],
+        "counter_match": false,
+        "plan_cost_fen": 434700,
+        "summary": "80-day terms · price up 1.00%",
+        "forward_budget_used_display": "¥2,162.81",
+        "plan_cost_display": "¥4,347.00"
+      },
+      "lowest_price_words": "none works",
+      "rule_price_display": "1.05%",
+      "cost_per_invoice_display": "¥4,366.37"
+    },
+    {
+      "terms_days": 85,
+      "terms_words": "85 days",
+      "min_price_bp": null,
+      "rule_price_bp": 120,
+      "cost_per_invoice_fen": 499014,
+      "passes_within_range": false,
+      "neighbours_confirmed": true,
+      "at_that_price": {
+        "package": {
+          "buyer_id": "BUYER-1",
+          "terms_days": 85,
+          "price_bp": 100,
+          "early_pay_bp": 0,
+          "early_pay_face_fen": null,
+          "rebate_bp": 0,
+          "price_display": "1.00%",
+          "early_pay_display": "0.00%",
+          "rebate_display": "0.00%"
+        },
+        "outcome": "REJECT",
+        "tier": "TIER_1",
+        "passes": false,
+        "approved": false,
+        "codes": [
+          "AGG_CONCESSION_EXCEEDED",
+          "RESERVE_BREACH"
+        ],
+        "binding_codes": [
+          "AGG_CONCESSION_EXCEEDED",
+          "RESERVE_BREACH"
+        ],
+        "forward_budget_used_fen": 1027178,
+        "reserve_breach": {
+          "day": 47,
+          "when": "in 47 days",
+          "curable": false,
+          "cure_cost_fen": null
+        },
+        "flags": [],
+        "counter_match": false,
+        "plan_cost_fen": 446536,
+        "summary": "85-day terms · price up 1.00%",
+        "forward_budget_used_display": "¥10,271.78",
+        "plan_cost_display": "¥4,465.36"
+      },
+      "lowest_price_words": "none works",
+      "rule_price_display": "1.20%",
+      "cost_per_invoice_display": "¥4,990.14"
+    },
+    {
+      "terms_days": 90,
+      "terms_words": "90 days",
+      "min_price_bp": null,
+      "rule_price_bp": 135,
+      "cost_per_invoice_fen": 561390,
+      "passes_within_range": false,
+      "neighbours_confirmed": true,
+      "at_that_price": {
+        "package": {
+          "buyer_id": "BUYER-1",
+          "terms_days": 90,
+          "price_bp": 100,
+          "early_pay_bp": 0,
+          "early_pay_face_fen": null,
+          "rebate_bp": 0,
+          "price_display": "1.00%",
+          "early_pay_display": "0.00%",
+          "rebate_display": "0.00%"
+        },
+        "outcome": "REJECT",
+        "tier": "TIER_1",
+        "passes": false,
+        "approved": false,
+        "codes": [
+          "AGG_CONCESSION_EXCEEDED",
+          "RESERVE_BREACH"
+        ],
+        "binding_codes": [
+          "AGG_CONCESSION_EXCEEDED",
+          "RESERVE_BREACH"
+        ],
+        "forward_budget_used_fen": 1838075,
+        "reserve_breach": {
+          "day": 47,
+          "when": "in 47 days",
+          "curable": false,
+          "cure_cost_fen": null
+        },
+        "flags": [],
+        "counter_match": false,
+        "plan_cost_fen": 368921,
+        "summary": "90-day terms · price up 1.00%",
+        "forward_budget_used_display": "¥18,380.75",
+        "plan_cost_display": "¥3,689.21"
+      },
+      "lowest_price_words": "none works",
+      "rule_price_display": "1.35%",
+      "cost_per_invoice_display": "¥5,613.90"
+    }
+  ],
+  "refused": null,
+  "unlisted_counters": [],
+  "source_state_version": 1,
+  "hypothetical": true,
+  "evaluations": 83,
+  "computed_in_seconds": 0,
+  "state_version": 1,
+  "day": 0
+}

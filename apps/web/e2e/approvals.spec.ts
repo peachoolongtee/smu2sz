@@ -55,9 +55,9 @@ test("an approval card expands in place to the operation, the reason, the amount
   await expect(card).toContainText("¥600,000.00");
   // The card speaks in business words (the facility's name); the executor's own sentence with the id is an audit detail.
   await expect(card.getByTestId("approval-headline")).toHaveText("Approve ¥600,000.00 of facility application?");
-  await expect(card.getByTestId("approval-reason")).toContainText("apply for facility Equipment term loan");
-  await expect(card.getByTestId("approval-detail-APR-000001")).toHaveCount(0);
-  await card.getByTestId("approval-toggle-APR-000001").click();
+  await expect(card.getByTestId("approval-reason")).toContainText("Apply for facility Equipment term loan");
+  await expect(card.getByTestId("approval-detail-APR-000001")).toBeHidden();
+  await card.getByTestId("approval-toggle-APR-000001").locator("> summary").click();
   const detail = card.getByTestId("approval-detail-APR-000001");
   await expect(detail).toContainText("Apply for a loan");
   await expect(detail).toContainText("FAC-ETL");
@@ -91,19 +91,19 @@ test("an approval born of the reserve alert says what declining leaves, in days 
   // The reason the owner approves against is on the pending card itself, not behind a click.
   await expect(card.getByTestId("approval-reason")).toBeVisible();
   await expect(card.getByTestId("approval-reason").locator("xpath=preceding-sibling::dt")).toHaveText("Why it needs you");
-  await expect(card.getByTestId("approval-reason")).toContainText("the yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval");
+  await expect(card.getByTestId("approval-reason")).toContainText("The yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval.");
   // The executor's working ("all charges on ¥200,000.00 held 10 days, annualised = 32.52%") is not in the sentence.
   await expect(card.getByTestId("approval-reason")).not.toContainText("annualised");
   await expect(card.getByTestId("approval-reason")).not.toContainText("32.52");
   await expect(card.getByTestId("approval-result-APR-000001")).toHaveCount(0);
-  expect(await proseOf(page)).not.toMatch(/\bday \d/i);
+  expect(await proseOf(page, ["[data-testid^=\"approval-detail-\"]"])).not.toMatch(/\bday \d/i);
   await expect(card.getByRole("button", { name: "Approve ¥200,000.00", exact: true })).toBeVisible();
   // The tier is an audit detail, closed by default; so are the working behind the rate and the facility's lead time.
-  await expect(card).not.toContainText("Tier");
+  // What the owner sees (a closed Audit details fold is not rendered) carries neither the tier nor the working.
   const visible = await card.innerText();
-  expect(visible).not.toMatch(/annualised|lead time|Tier 2/);
+  expect(visible).not.toMatch(/Tier|annualised|lead time/);
   await expect(card.getByTestId("approval-reason")).toContainText("32.5%");
-  await card.getByTestId("approval-toggle-APR-000001").click();
+  await card.getByTestId("approval-toggle-APR-000001").locator("> summary").click();
   await expect(card.getByTestId("approval-detail-APR-000001")).toContainText("Tier 2");
   // The working is one level down, in the executor's own words.
   await expect(card.getByTestId("approval-detail-APR-000001")).toContainText("annualised = 32.52%");

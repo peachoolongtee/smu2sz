@@ -8,6 +8,10 @@ export type Lang = "en" | "zh";
 
 const langStore = createStore<{ lang: Lang }>({ lang: "en" }, { storage: "local", key: "tl-lang" });
 
+export function getLang(): Lang {
+  return langStore.get().lang;
+}
+
 export function setLang(lang: Lang): void {
   langStore.set({ lang });
   if (typeof document !== "undefined") document.documentElement.lang = lang === "zh" ? "zh-CN" : "en";
@@ -24,6 +28,12 @@ function interpolate(template: string, vars?: Vars): string {
   return template
     .replace(/\{(\w+)\|([^|{}]*)\|([^|{}]*)\}/g, (all, k: string, one: string, other: string) => (k in vars ? (Number(vars[k]) === 1 ? one : other) : all))
     .replace(/\{(\w+)\}/g, (_, k: string) => (k in vars ? String(vars[k]) : `{${k}}`));
+}
+
+/** A label in the language chosen now, for code outside React (an error held in a store). Components use `useI18n().t`. */
+export function tNow(key: DictKey, vars?: Vars): string {
+  const dict: Record<string, string> = getLang() === "zh" ? zh : en;
+  return interpolate(dict[key] ?? en[key] ?? key, vars);
 }
 
 export interface I18n {

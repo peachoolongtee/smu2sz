@@ -7,11 +7,17 @@ import { Badge, Button, Card, ErrorState } from "@/components/ui";
 import { negotiate } from "@/lib/api";
 import { recordNegotiation } from "@/lib/demo-store";
 import { useI18n } from "@/lib/i18n";
+import { errorText } from "@/lib/error-text";
 import type { Mode } from "@/lib/mode";
 import type { CounterProposal, Displayed, NegotiationView, VerdictView } from "@/lib/types";
 import { Disclosure } from "@/components/business/kit";
 
 type Counter = Displayed<CounterProposal> & { text_when?: string; rationale_when?: string; outbound_blocked?: boolean };
+
+/** The DOM id (and test id) of a counter's card: "deal-option-Option-B". */
+export function optionDomId(label: string): string {
+  return `deal-option-${label.replace(/\s+/g, "-")}`;
+}
 
 /**
  * One counter as a business card: what changes for the buyer (the counter's own wording), what it costs (the plain
@@ -23,44 +29,46 @@ function CounterBusinessCard({ c, recommended, today, action }: { c: Counter; re
   const { t, te } = useI18n();
   const e = c.economics ?? null;
   return (
-    <li className={`motion-lift rounded-tile border p-4 ${recommended ? "border-line border-l-[3px] border-l-brand-600 bg-brand-50" : "border-line bg-surface"}`} data-testid={`deal-option-${c.label.replace(/\s+/g, "-")}`}>
-      <div className="flex flex-wrap items-center gap-2">
-        <h3 className="text-base font-semibold text-ink">{c.label}</h3>
-        {recommended ? <Badge tone="brand">{t("biz.deals.option.recommended")}</Badge> : null}
+    <li id={optionDomId(c.label)} tabIndex={-1} className="py-4 first:pt-0 last:pb-0" data-testid={optionDomId(c.label)}>
+      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <h3 className="text-base font-semibold text-ink">{c.label}</h3>
+          {recommended ? <Badge tone="brand">{t("biz.deals.option.recommended")}</Badge> : null}
+        </div>
+        {/* A plain cost sits on the title's line; a net cost needs its two parts and keeps the rows below. */}
+        {!e?.is_net ? (
+          <p className="flex items-baseline gap-2 text-sm">
+            <span className="text-ink-3">{t("biz.deals.estCost")}</span>
+            <span className="text-lg font-semibold tabular-nums text-ink" data-testid="deal-option-cost">
+              {c.supplier_cost_display}
+            </span>
+          </p>
+        ) : null}
       </div>
       <p className="mt-2 text-sm text-ink" data-testid="deal-option-text">
         {c.text_when ?? c.text}
       </p>
-      <dl className="mt-3 text-sm">
-        {e?.is_net ? (
-          <>
-            <div className="flex items-baseline justify-between gap-3">
-              <dt className="text-ink-2">{t("biz.deals.netCost")}</dt>
-              <dd className="text-lg font-semibold tabular-nums text-ink" data-testid="deal-option-cost">
-                {/* The server says the net ("≈ ¥0" when the adjustment covers the cost: the verifier floors it on purpose, never a gain). */}
-                {e.net_words ?? e.net_display}
-              </dd>
-            </div>
-            <div className="mt-1 flex items-baseline justify-between gap-3 text-xs text-ink-3">
-              <dt>{t("biz.deals.fundingCost")}</dt>
-              <dd className="tabular-nums">{e.funding_cost_display}</dd>
-            </div>
-            <div className="flex items-baseline justify-between gap-3 text-xs text-ink-3">
-              <dt>{t("biz.deals.offset")}</dt>
-              <dd className="tabular-nums">−{e.offset_display}</dd>
-            </div>
-          </>
-        ) : (
+      {e?.is_net ? (
+        <dl className="mt-3 text-sm">
           <div className="flex items-baseline justify-between gap-3">
-            <dt className="text-ink-2">{t("biz.deals.estCost")}</dt>
+            <dt className="text-ink-2">{t("biz.deals.netCost")}</dt>
             <dd className="text-lg font-semibold tabular-nums text-ink" data-testid="deal-option-cost">
-              {c.supplier_cost_display}
+              {/* The server says the net ("≈ ¥0" when the adjustment covers the cost: the verifier floors it on purpose, never a gain). */}
+              {e.net_words ?? e.net_display}
             </dd>
           </div>
-        )}
-      </dl>
+          <div className="mt-1 flex items-baseline justify-between gap-3 text-xs text-ink-3">
+            <dt>{t("biz.deals.fundingCost")}</dt>
+            <dd className="tabular-nums">{e.funding_cost_display}</dd>
+          </div>
+          <div className="flex items-baseline justify-between gap-3 text-xs text-ink-3">
+            <dt>{t("biz.deals.offset")}</dt>
+            <dd className="tabular-nums">−{e.offset_display}</dd>
+          </div>
+        </dl>
+      ) : null}
       {action ? <div className="mt-3">{action}</div> : null}
-      <Disclosure testId="deal-option-details" className="mt-3 text-sm" summary={t("biz.deals.details")}>
+      <Disclosure testId="deal-option-details" className="mt-3 text-sm" summary={t("biz.deals.optionDetails", { label: c.label })}>
         <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-ink-3">{t("biz.deals.whyWorks")}</p>
         <p className="mt-1 text-ink-2">{c.rationale_when ?? c.rationale}</p>
         <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-ink-3">{t("biz.deals.sourceTerms")}</p>
@@ -160,9 +168,28 @@ function NegotiationOutcome({ v, negotiation, today }: { v: VerdictView; negotia
  * kernel (the "Demo data" pill and the note say the reply is simulated); the counters are the verifier's, priced and
  * re-checked on the books, and the card only shows them.
  */
-export function RecommendedResponse({ v, offerId, today, mode, negotiation }: { v: VerdictView; offerId: string; today: number; mode: Mode; negotiation: NegotiationView | null }) {
+export function RecommendedResponse({
+  v,
+  offerId,
+  today,
+  mode,
+  negotiation,
+  compareOpen,
+  onCompareChange,
+}: {
+  v: VerdictView;
+  offerId: string;
+  today: number;
+  mode: Mode;
+  negotiation: NegotiationView | null;
+  /** The page may hold whether the other options are shown (Option B); without it the card keeps its own state. */
+  compareOpen?: boolean;
+  onCompareChange?: (open: boolean) => void;
+}) {
   const { t } = useI18n();
-  const [compare, setCompare] = useState(false);
+  const [localCompare, setLocalCompare] = useState(false);
+  const compare = compareOpen ?? localCompare;
+  const setCompare = (open: boolean) => (onCompareChange ? onCompareChange(open) : setLocalCompare(open));
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const counters = v.counters as Counter[];
@@ -173,7 +200,7 @@ export function RecommendedResponse({ v, offerId, today, mode, negotiation }: { 
     try {
       recordNegotiation(await negotiate(offerId, { buyer_profile: "cooperative" }));
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(errorText(e, t));
     } finally {
       setSending(false);
     }
@@ -211,7 +238,7 @@ export function RecommendedResponse({ v, offerId, today, mode, negotiation }: { 
 
   return (
     <Card id="counters" title={t("biz.deals.response")} subtitle={t("biz.deals.counters.sub")}>
-      <ul className="motion-rise space-y-3">
+      <ul className="motion-rise divide-y divide-line">
         <CounterBusinessCard c={first} recommended today={today} action={sendAction} />
         {compare ? rest.map((c) => <CounterBusinessCard key={c.id} c={c} recommended={false} today={today} />) : null}
       </ul>
@@ -222,7 +249,7 @@ export function RecommendedResponse({ v, offerId, today, mode, negotiation }: { 
       ) : null}
       <div className="mt-3 flex flex-wrap items-center gap-3">
         {rest.length ? (
-          <Button variant="secondary" onClick={() => setCompare((x) => !x)} data-testid="deal-compare">
+          <Button variant="secondary" onClick={() => setCompare(!compare)} data-testid="deal-compare">
             {compare ? t("biz.deals.hideCompare") : t("biz.deals.compare", { n: rest.length })}
           </Button>
         ) : null}

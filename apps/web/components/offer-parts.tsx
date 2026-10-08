@@ -10,7 +10,8 @@ const contingencyTone: Record<Contingency, Tone> = { FIRM: "ok", CONTINGENT: "wa
 
 export function NumberChip({ n }: { n: number }) {
   return (
-    <span className="grid size-5 shrink-0 place-items-center rounded-pill bg-ink text-[0.7rem] font-bold text-white" aria-label={`#${n}`}>
+    <span className="grid size-6 shrink-0 place-items-center rounded-pill bg-ink text-xs font-bold text-white">
+      <span className="sr-only">#</span>
       {n}
     </span>
   );

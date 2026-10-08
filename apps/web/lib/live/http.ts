@@ -33,11 +33,12 @@ function ownerHeaders(opts: Pick<HttpOptions, "auth" | "token"> = {}): Record<st
 const UNAUTHORIZED = "Owner sign-in required (401). Sign in with the owner token to use this.";
 const REJECTED = "The API rejected the owner token (401). Sign in again with the correct token.";
 export const NOT_CONFIGURED = "Server credentials not configured (503). Set OWNER_TOKEN and AGENT_KEY on the API, or run it in demo mode.";
+const unreachable = () => new ApiError(0, `Cannot reach the API at ${API_URL}. Is the service running?`, undefined, "unreachable", { url: API_URL });
 
 function unauthorized(opts: Pick<HttpOptions, "auth" | "token" | "silent">): ApiError {
   const hadToken = Boolean(opts.token ?? getOwnerToken());
   if (!opts.silent && opts.auth !== "none") requestSignIn(hadToken ? "rejected" : "required");
-  return new ApiError(401, hadToken ? REJECTED : UNAUTHORIZED);
+  return new ApiError(401, hadToken ? REJECTED : UNAUTHORIZED, undefined, hadToken ? "owner_rejected" : "owner_required");
 }
 
 function detailMessage(detail: unknown, fallback: string): string {
@@ -73,23 +74,25 @@ export async function http<T>(method: "GET" | "POST", path: string, opts: HttpOp
     // A write that lost a race (409 CONCURRENT_WRITE_CONFLICT) is sent once more after the API's Retry-After hint.
     res = method === "POST" ? await sendWriteWithRetry(send) : await send();
   } catch {
-    throw new ApiError(0, `Cannot reach the API at ${API_URL}. Is the service running?`);
+    throw unreachable();
   }
   if (res.status === 401) throw unauthorized(opts);
   if (!res.ok) {
     let message = `${res.status} ${res.statusText}`;
     let detail: unknown;
+    let busy = false;
     try {
       const data = (await res.json()) as { detail?: unknown };
       if (res.status === 403 && opts.ownerOn403 && !/FEATURE_DISABLED/.test(JSON.stringify(data.detail))) throw unauthorized(opts);
-      if (res.status === 503 && /NOT_CONFIGURED/.test(JSON.stringify(data.detail))) throw new ApiError(503, NOT_CONFIGURED);
-      message = res.status === 409 && isWriteConflictDetail(data.detail) ? BOOKS_BUSY : detailMessage(data.detail, message);
+      if (res.status === 503 && /NOT_CONFIGURED/.test(JSON.stringify(data.detail))) throw new ApiError(503, NOT_CONFIGURED, undefined, "not_configured");
+      busy = res.status === 409 && isWriteConflictDetail(data.detail);
+      message = busy ? BOOKS_BUSY : detailMessage(data.detail, message);
       detail = data.detail;
     } catch (e) {
       if (e instanceof ApiError) throw e;
       /* keep the status line */
     }
-    throw new ApiError(res.status, message, detail);
+    throw new ApiError(res.status, message, detail, busy ? "books_busy" : undefined);
   }
   return (opts.as === "text" ? await res.text() : await res.json()) as T;
 }
@@ -103,10 +106,10 @@ export async function downloadFile(path: string, filename: string): Promise<void
   try {
     res = await fetch(`${API_URL}${path}`, { headers: ownerHeaders() });
   } catch {
-    throw new ApiError(0, `Cannot reach the API at ${API_URL}. Is the service running?`);
+    throw unreachable();
   }
   if (res.status === 401) throw unauthorized({});
-  if (!res.ok) throw new ApiError(res.status, `Download failed: ${res.status} ${res.statusText}`);
+  if (!res.ok) throw new ApiError(res.status, `Download failed: ${res.status} ${res.statusText}`, undefined, "download_failed", { status: res.status });
   const url = URL.createObjectURL(await res.blob());
   const a = document.createElement("a");
   a.href = url;

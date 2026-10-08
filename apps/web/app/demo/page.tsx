@@ -11,7 +11,10 @@ import { useDemo } from "@/lib/demo-store";
 import { DEMO_STEPS, SCENES, type SceneId } from "@/lib/demo";
 import { useI18n } from "@/lib/i18n";
 
-/** The judge's page: the story in order, each step one click, with the clock, the scenario switch and the side doors. */
+/**
+ * The judge's page: the story in order, each step one click, with the clock, the scenario switch and the side doors. The one brand
+ * fill on the page is the strip's Start demo / Next; every button here is a secondary pill.
+ */
 export default function DemoPage() {
   const { t, te } = useI18n();
   const router = useRouter();
@@ -25,7 +28,7 @@ export default function DemoPage() {
         title={t("story.title")}
         subtitle={t("story.subtitle")}
         actions={
-          <Button variant="primary" loading={demo.busy} disabled={current >= DEMO_STEPS.length - 1} onClick={() => void goToStep(current + 1, router.push)} data-testid="story-next">
+          <Button variant="secondary" loading={demo.busy} disabled={current >= DEMO_STEPS.length - 1} onClick={() => void goToStep(current + 1, router.push)} data-testid="story-next">
             {current < 0 ? t("demo.start") : t("demo.next")}
             <ArrowRightIcon />
           </Button>
@@ -54,7 +57,7 @@ export default function DemoPage() {
                               <span className="block text-sm font-medium text-ink">{te("demo.step", s.id)}</span>
                               <span className="block text-xs text-ink-2">{te("demo.desc", s.id)}</span>
                             </span>
-                            <Button size="sm" variant={active ? "primary" : "secondary"} disabled={demo.busy} onClick={() => void goToStep(i, router.push)}>
+                            <Button size="sm" variant="secondary" disabled={demo.busy} onClick={() => void goToStep(i, router.push)}>
                               {done ? t("story.show") : t("story.run")}
                             </Button>
                           </li>
