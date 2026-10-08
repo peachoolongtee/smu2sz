@@ -80,7 +80,8 @@ test("demo stepper walks Scene 1, Scene 2, Scene 3 and Security with the golden 
   await expect(executed).toBeVisible();
   await expect(executed.getByTestId("execution-agreement")).toHaveText("Agreed");
   await expect(executed.getByTestId("execution-funding")).toContainText("¥149,986.20");
-  await expect(executed.getByTestId("execution-settlement")).toContainText("Pending");
+  await expect(executed.getByTestId("execution-text")).toContainText("Funding of ¥149,986.20 was requested and has landed.");
+  await expect(executed.getByTestId("execution-settlement")).toContainText("Waiting for Foshan Home Retail Co. to pay");
   await expect(page.getByTestId("nothing-executed")).toHaveText("Evaluation alone makes no changes.");
 
   await next(page, /\/ledger/);

@@ -28,6 +28,8 @@ import type {
   CapexRequest,
   CapexView,
   ClockView,
+  DecisionList,
+  DecisionView,
   FundingView,
   HomeView,
   LedgerView,
@@ -54,6 +56,7 @@ import type {
 } from "./types";
 
 export { ApiError };
+export { counterChanged, dealRecordId, decisionMissing } from "./decision";
 
 // Each implementation is loaded lazily, so a live build never ships the mock JSON and a mock build never ships the live client.
 const mock = () => import("./mock/handlers");
@@ -82,7 +85,7 @@ export async function submitOffer(req: SubmitOfferRequest): Promise<OfferView> {
   return isMock ? (await mock()).submitOffer(req) : (await live()).submitOffer(req);
 }
 
-/** The contract has no read endpoint for offers: live mode answers from the session cache only. */
+/** GET /offers/{id} (owner): the offer, its documents, the latest verdict id and the deal's record id. A 404 means the server does not know the offer. */
 export async function getOffer(offerId: string): Promise<OfferView> {
   return isMock ? (await mock()).getOffer(offerId) : (await live()).getOffer(offerId);
 }
@@ -95,6 +98,19 @@ export async function evaluateOffer(offerId: string, fixtureId?: string): Promis
 /** POST /negotiate/{offer_id}: bounded rounds with the buyer kernel. */
 export async function negotiate(offerId: string, req: NegotiateRequest): Promise<NegotiationView> {
   return isMock ? (await mock()).negotiate(offerId, req) : (await live()).negotiate(offerId, req);
+}
+
+/**
+ * GET /decisions: the durable decision record, newest first (ADR-0011). `open` keeps only the unfinished ones. Owner only.
+ * Every state, sentence and figure is the server's; screens show them and decide nothing from them.
+ */
+export async function getDecisions(opts: { lang: "en" | "zh"; family?: "DEAL" | "FUNDING"; open?: boolean; limit?: number }): Promise<DecisionList> {
+  return isMock ? (await mock()).getDecisions(opts) : (await live()).getDecisions(opts);
+}
+
+/** GET /decisions/{id}: one record in full. The id of a deal is `deal:{offer_id}` (`dealRecordId`). A 404 DECISION_NOT_FOUND is `decisionMissing`. */
+export async function getDecision(id: string, lang: "en" | "zh"): Promise<DecisionView> {
+  return isMock ? (await mock()).getDecision(id, lang) : (await live()).getDecision(id, lang);
 }
 
 /** POST /router/plan. `lang` ("zh") makes the server write each row's `role_reason` in Chinese; English is the default. */

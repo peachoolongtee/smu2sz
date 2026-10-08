@@ -12,6 +12,7 @@ import { whenText } from "@/lib/when";
 import { useAsync } from "@/lib/use-async";
 import { Disclosure, FoldChevron } from "@/components/business/kit";
 import { PilotJournal } from "@/components/business/pilot-journal";
+import { decisionHref } from "@/components/business/open-decisions";
 
 /** An empty section is one quiet line under the timeline, not a card around nothing (it keeps the section's id). */
 function QuietLine({ id, title, children }: { id: string; title: string; children: string }) {
@@ -104,6 +105,13 @@ export default function ActivityPage() {
                         </>
                       }
                     >
+                      {o.decision_id ? (
+                        <p className="pb-2 text-xs">
+                          <Link href={decisionHref(o.decision_id)} className="inline-flex min-h-8 items-center font-medium text-brand-700 underline underline-offset-2 touch:min-h-11" data-testid="activity-record">
+                            {t("biz.activity.record")}
+                          </Link>
+                        </p>
+                      ) : null}
                       <dl className="grid grid-cols-[max-content_minmax(0,1fr)] gap-x-3 gap-y-0.5 pb-3 text-xs text-ink-2">
                         <dt>{t("audit.executor")}</dt>
                         <dd className="break-words" data-testid="activity-raw">{o.summary}</dd>

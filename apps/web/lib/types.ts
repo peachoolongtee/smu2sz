@@ -584,6 +584,8 @@ export interface CounterProposal {
   /** `text` and `rationale` as a Business page reads them ("paid within 2 days", never "day N"); the raw text is what goes to the buyer. Absent in older recordings. */
   text_when?: string | null;
   rationale_when?: string | null;
+  /** What sending this counter does, in the server's words (the reply is simulated; the agreement needs approval when it changes terms; the funding it may run). Absent in older recordings. */
+  send_scope?: string | null;
 }
 
 export interface Verdict {
@@ -713,6 +715,10 @@ export interface StateView {
 export interface OfferView {
   offer: Displayed<CompiledOffer>;
   documents: SourceDocument[];
+  /** GET /offers/{id} only: the latest verdict stored for the offer, if it was evaluated. */
+  latest_verdict_id?: string | null;
+  /** GET /offers/{id} only: the deal's record id (`deal:{offer_id}`). */
+  decision_id?: string;
 }
 
 export interface SubmitOfferRequest {
@@ -796,6 +802,12 @@ export type VerdictView = Displayed<Verdict> & {
   /** The same projection with the committed cure plan applied. Null when the verdict has no cure. */
   cured_trajectory?: MoneyTrajectory | null;
   forward_concession?: { total_fen: Fen; total_display: string; cap_fen: Fen; cap_display: string; over_cap: boolean };
+  /** The deal's record id (`deal:{offer_id}`) and whether this evaluation was written to it. Absent in older recordings. */
+  decision_id?: string;
+  decision_recorded?: boolean;
+  /** The day the evaluation was made and the same as a distance from today. */
+  evaluated_day?: Day;
+  evaluated_when?: string;
 };
 
 export interface NegotiationRound {
@@ -816,6 +828,8 @@ export interface OperationView extends Displayed<OperationResult> {
   /** The business sentence for what the operation did (GET /ledger); `summary` stays the executor's own sentence. Absent in older recordings. */
   event_text?: string | null;
   event_detail?: string | null;
+  /** The decision record the operation belongs to (GET /ledger); null for an operation no record claims. Absent in older recordings. */
+  decision_id?: string | null;
 }
 
 export type BuyerProfile = "cooperative" | "hard_line";
@@ -823,6 +837,36 @@ export type BuyerProfile = "cooperative" | "hard_line";
 export interface NegotiateRequest {
   buyer_profile: BuyerProfile;
   max_rounds?: number;
+  /**
+   * What the owner was shown, sent back so the server can refuse a send the books have outgrown (409 COUNTER_CHANGED, nothing sent):
+   * the verdict the counters came from, the counter chosen and the `state_version` of that verdict. The Demo stepper sends none of them.
+   */
+  verdict_id?: string;
+  counter_id?: string;
+  state_version?: number;
+}
+
+/** The detail of a 409 COUNTER_CHANGED: nothing was sent. `counters` are the latest guarded counters when that verdict is on the current books, else empty with `reevaluate` true. */
+export interface CounterChangedDetail {
+  code: "COUNTER_CHANGED";
+  offer_id: string;
+  reason: "VERDICT_CHANGED" | "BOOKS_CHANGED" | "COUNTER_NOT_IN_VERDICT";
+  verdict_id: string | null;
+  state_version: number;
+  counters: CounterProposal[];
+  reevaluate: boolean;
+  message: string;
+}
+
+/** What a send or a decision ran, in the server's words (the same block the decision record carries). */
+export interface ExecutionBlock {
+  summary_text: string;
+  requested_fen?: Fen;
+  requested_display: string | null;
+  landed_fen?: Fen;
+  landed_display: string | null;
+  in_transit_fen?: Fen;
+  in_transit_display: string | null;
 }
 
 /** POST /negotiate/{offer_id} */
@@ -835,6 +879,10 @@ export interface NegotiationView {
   operations: OperationView[];
   plan: Displayed<FundingPlan> | null;
   message: string;
+  /** The deal's record, and whether this send was written to it. Absent in older recordings. */
+  decision_id?: string;
+  decision_recorded?: boolean;
+  execution?: ExecutionBlock;
 }
 
 /** One row of the Debt Desk comparison table. */
@@ -1104,6 +1152,48 @@ export interface ApprovalDetail {
   result_message?: string | null;
   /** The decision just made, when decideApproval set it before the queue was read again. The queue's own is `presentation.execution_status`. */
   execution_status?: ApprovalExecutionStatus;
+  /** The decision record this approval belongs to (null for a record the server does not know), and its state now. Absent in older recordings. */
+  decision_id?: string | null;
+  decision_state?: DecisionState | null;
+  /** The quote as stored when the request was queued, with the actual result once decided. Null for an agreement row. Absent in older recordings. */
+  quote?: ApprovalQuote | null;
+  /** What the decision run did, in the server's words. Null while pending. Absent in older recordings. */
+  execution?: { status: ApprovalExecutionStatus; summary_text: string | null } | null;
+}
+
+/** One priced leg of a quote. */
+export interface QuoteLine {
+  label: string;
+  op_id: string;
+  kind: string;
+  amount_display: string;
+  cost_display: string | null;
+  rate_text: string | null;
+  cost_days: number | null;
+  lands_day: Day | null;
+  lands_when: string | null;
+  above_ceiling: boolean;
+}
+
+/**
+ * The price the owner was quoted when the request was made (ADR-0011 section 5), written by the server. `recorded` false means the
+ * quote was never stored: `text` then says so ("The quoted cost was not recorded." on a decided row, "Price today." on a pending one) and
+ * nothing else is set. A decided row also carries the actual result and the difference sentence.
+ */
+export interface ApprovalQuote {
+  recorded: boolean;
+  quoted_when?: string | null;
+  lines?: QuoteLine[];
+  total_display?: string | null;
+  rate_basis?: string | null;
+  cost_note?: string | null;
+  lands_when?: string | null;
+  after?: string | null;
+  if_declined?: string | null;
+  needs_owner?: boolean;
+  text: string | null;
+  actual?: { op_id: string; amount_display: string; request_day: Day; arrival_day: Day; arrival_when: string; settled: boolean }[];
+  difference_text?: string | null;
 }
 
 export type ApprovalDecision = "APPROVE" | "REJECT";
@@ -1300,6 +1390,8 @@ export interface AlertChangedDetail {
 /** POST /alerts/{id}/act: the alert's cure submitted as the agent. Tier 1 executes, Tier 2 waits in the approvals queue. */
 export interface AlertActResult {
   alert_id: string;
+  /** The decision record the act wrote to. Absent in older recordings. */
+  decision_id?: string;
   day: Day;
   results: NlOperation[];
   executed: number;
@@ -2189,6 +2281,13 @@ export interface HomeView {
   next_action: HomeNextAction | null;
   approvals: HomeApproval[];
   pending_count: number;
+  /** Up to three decisions still open, newest first (the record's summaries). Absent in older recordings. */
+  open_decisions?: DecisionSummary[];
+  /** What is left after a cure that did not restore the reserve, in the owner's words; null when nothing is left to decide. */
+  remaining_task?: string | null;
+  /** The supported routes for that task (compare options, the invoice, the limits). */
+  remaining_task_links?: { label: string; href: string }[];
+  remaining_task_decision_id?: string | null;
   changes: HomeChange[];
   receivables: HomeReceivables;
   warnings: { id: string; kind: string; title: string; detail: string; day: Day | null; when: string }[];
@@ -2222,4 +2321,183 @@ export interface PilotJournalEntry {
 export interface PilotJournalView {
   entries: PilotJournalEntry[];
   count: number;
+}
+
+// ------------------------------------------------------------------ the durable decision record (ADR-0011)
+
+export type DecisionFamily = "DEAL" | "FUNDING";
+
+/** A deal's states then a funding request's; both families share AUTHORIZATION_REQUIRED, DECLINED and FAILED. */
+export type DecisionState =
+  | "RECEIVED"
+  | "NEEDS_CLARIFICATION"
+  | "RESPONSE_READY"
+  | "AUTHORIZATION_REQUIRED"
+  | "DECLINED"
+  | "FAILED"
+  | "NO_DEAL"
+  | "AGREED"
+  | "EXPIRED"
+  | "MISSED"
+  | "FULFILLED"
+  | "REVOKED"
+  | "PARTIALLY_EXECUTED"
+  | "SETTLEMENT_PENDING"
+  | "SETTLED"
+  | "EXECUTED";
+
+export type DecisionWaitCode =
+  | "OWNER_RESPONSE"
+  | "BUYER_CLARIFICATION"
+  | "OWNER_APPROVAL"
+  | "BANK_RECEIPT"
+  | "INVOICE_ISSUE"
+  | "FUNDING_SETTLEMENT"
+  | "OWNER_DECISION"
+  | "NOTHING";
+
+/** Who or what the record is waiting for, in the server's words. */
+export interface DecisionWaiting {
+  code: DecisionWaitCode;
+  party: "owner" | "buyer" | "books" | "lender" | "none";
+  party_name: string | null;
+  day: Day | null;
+  when: string | null;
+  text: string;
+}
+
+/** The shortfall a cure leaves, read now and labelled as today's position. */
+export interface DecisionResidual {
+  shortfall_fen: Fen | null;
+  shortfall_display: string | null;
+  starts_day: Day | null;
+  from_when: string | null;
+  committed_cure: boolean;
+  alert_id: string | null;
+  as_of: string;
+  text: string;
+}
+
+/** One row of GET /decisions, and the head of GET /decisions/{id}. */
+export interface DecisionSummary {
+  id: string;
+  family: DecisionFamily;
+  state: DecisionState;
+  /** The state in the owner's words ("Counter recommended", "Agreed", "Early payment did not arrive"). */
+  state_text: string;
+  terminal: boolean;
+  headline: string;
+  counterparty_name: string | null;
+  amount_display: string | null;
+  opened_when: string | null;
+  updated_when: string | null;
+  waiting_for: DecisionWaiting;
+  residual: DecisionResidual | null;
+}
+
+export interface DecisionList {
+  day: Day;
+  lang: "en" | "zh";
+  count: number;
+  decisions: DecisionSummary[];
+}
+
+export interface DecisionOperation {
+  op_id: string;
+  kind: OperationKind | string;
+  status: OperationStatus;
+  event_text: string | null;
+  day: Day | null;
+  when: string | null;
+  approval_id: string | null;
+  seq: number;
+}
+
+export interface DecisionSettlementLot {
+  lot_id: string;
+  facility_name: string;
+  principal_display: string;
+  request_when: string;
+  arrival_day: Day;
+  arrival_when: string;
+  settled: boolean;
+}
+
+/** What was sent, as recorded; `recorded` false when an agreement exists but the counter that produced it was not stored. */
+export type DecisionSent =
+  | { recorded: false; text: string }
+  | {
+      recorded: true;
+      outcome: "DEAL" | "NO_DEAL" | string;
+      simulated: boolean;
+      buyer_profile: string | null;
+      chosen_counter_id: string | null;
+      chosen_label: string | null;
+      accepted_counter_id: string | null;
+      accepted_label: string | null;
+      counters_sent: { id: string; label: string | null }[];
+      economics: {
+        supplier_cost_display: string;
+        forward_value_display: string;
+        funding_cost_display: string;
+        offset_display: string;
+        net_display: string;
+        net_fen: Fen;
+        basis_facility_name: string | null;
+      } | null;
+      funding_blocked: string | null;
+    };
+
+/** GET /decisions/{id}: the summary plus everything the record holds. Every sentence and figure is the server's. */
+export interface DecisionView extends DecisionSummary {
+  source: {
+    kind: "OFFER" | "ALERT" | "OPERATION";
+    offer_id?: string;
+    version?: number;
+    counterparty_name?: string | null;
+    doc_ids?: string[];
+    received_day?: Day;
+    received_when?: string;
+    alert_id?: string;
+    alert_kind?: string;
+    alert_day?: Day | null;
+  };
+  interpretation: { terms: string[] } | null;
+  evaluation: {
+    verdict_id: string;
+    outcome: Outcome;
+    business_action: BusinessAction;
+    business_action_text: string;
+    evaluated_day: Day | null;
+    evaluated_when: string;
+  } | null;
+  response: {
+    counters: { id: string; label: string; supplier_cost_display: string; forward_value_display: string }[];
+    recommended_counter_id: string | null;
+    sent: DecisionSent | null;
+  } | null;
+  /** FUNDING only. */
+  quote: ApprovalQuote | null;
+  authorization: {
+    required_tier: Tier;
+    approval_id: string;
+    status: ApprovalStatus;
+    decided_by: string | null;
+    decided_day: Day | null;
+    decided_when: string | null;
+  } | null;
+  agreement: { commitment_id: string; status: CommitmentStatus; status_text: string; expires_day: Day; expires_when: string } | null;
+  operations: DecisionOperation[];
+  execution: ExecutionBlock;
+  settlement: DecisionSettlementLot[];
+  receipts: { detail?: string | null; detail_when?: string | null; [k: string]: unknown }[];
+  promises: { detail?: string | null; detail_when?: string | null; status?: string; [k: string]: unknown }[];
+  remaining_task: { text: string; code: DecisionWaitCode; links: { label: string; href: string }[] };
+  recorded: { evaluated: boolean; sent: boolean; quoted: boolean };
+}
+
+/** The detail of a 404 DECISION_NOT_FOUND. */
+export interface DecisionNotFoundDetail {
+  code: "DECISION_NOT_FOUND";
+  decision_id: string;
 }

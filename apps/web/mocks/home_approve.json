@@ -12,6 +12,7 @@
       "status": "EXECUTED",
       "tier": "TIER_2",
       "violations": [],
+      "decision_id": "alert:ALERT-RESERVE-42:v7",
       "day": 34,
       "requested_by": "AGENT",
       "summary": "Advance ¥200,000.00 on RI:BUYER-1:2 from FAC-IF on day 34; the cash lands on day 37 after the 3-day lead time, not today",

@@ -99,7 +99,7 @@ export function ReceivablesTable({
             const buyer = buyerName(o.counterparty_id);
             const n = rank.get(o.receivable_id);
             return (
-              <li key={o.receivable_id} className="py-3 text-sm">
+              <li key={o.receivable_id} id={o.receivable_id} className="scroll-mt-20 py-3 text-sm">
                 <div className="flex items-center gap-3">
                   <Avatar tone={toneFor(buyer)}>{initials(buyer)}</Avatar>
                   <span className="min-w-0 flex-1">
@@ -163,7 +163,7 @@ export function ReceivablesTable({
                   const expanded = open.has(o.receivable_id);
                   const panel = `recv-detail-${o.receivable_id}`;
                   return [
-                    <tr key={o.receivable_id} className={o.past_due ? "bg-bad-bg/40" : ""} data-testid={`recv-${o.receivable_id}`}>
+                    <tr key={o.receivable_id} id={o.receivable_id} className={`scroll-mt-20 ${o.past_due ? "bg-bad-bg/40" : ""}`} data-testid={`recv-${o.receivable_id}`}>
                       {worth ? <td className={`${tdCls} text-right font-semibold tabular-nums text-ink-3`}>{n !== undefined ? n + 1 : ""}</td> : null}
                       <td className={`${tdCls} font-medium`}>
                         <span className="flex items-center gap-3">

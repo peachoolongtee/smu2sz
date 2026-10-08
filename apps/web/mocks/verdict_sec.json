@@ -112,6 +112,10 @@
   "forward_concession_total_display": "¥0.00",
   "business_action": "decline",
   "summary_when": "REJECT: UNKNOWN_COUNTERPARTY (FASTCAPITAL vs owner-registered counterparties and owner-approved facilities only); UNEVIDENCED_PRIOR_CONCESSION (1 unevidenced claim(s) vs a matching ledger commitment); DATA_EXTRACTION_REFUSED (RESERVE_FLOOR, FACILITY_LIMIT, OTHER_COUNTERPARTY_TERMS vs no protected data leaves the ledger). Nothing booked, no facility added, nothing disclosed.",
+  "decision_id": "deal:OFF-833f35d497a5",
+  "decision_recorded": true,
+  "evaluated_day": 0,
+  "evaluated_when": "today",
   "passed_checks": [],
   "autonomy": {
     "eligible": false,

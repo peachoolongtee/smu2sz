@@ -956,6 +956,32 @@
   "next_action": null,
   "approvals": [],
   "pending_count": 0,
+  "open_decisions": [
+    {
+      "id": "alert:ALERT-RESERVE-12:v1:plan",
+      "family": "FUNDING",
+      "state": "SETTLEMENT_PENDING",
+      "state_text": "Requested; the cash is on its way",
+      "terminal": false,
+      "headline": "Draw ¥150,000.00 on Bank credit line and finance ¥255,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. on Invoice financing (onboarded platform)",
+      "counterparty_name": "Foshan Home Retail Co.",
+      "amount_display": "¥405,000.00",
+      "opened_when": "today",
+      "updated_when": "today",
+      "waiting_for": {
+        "code": "FUNDING_SETTLEMENT",
+        "party": "lender",
+        "party_name": "Invoice financing (onboarded platform)",
+        "day": 3,
+        "when": "in 3 days",
+        "text": "Waiting for Invoice financing (onboarded platform) to land the funds in 3 days."
+      },
+      "residual": null
+    }
+  ],
+  "remaining_task": null,
+  "remaining_task_links": [],
+  "remaining_task_decision_id": null,
   "changes": [
     {
       "day": 0,

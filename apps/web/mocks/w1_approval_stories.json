@@ -57,6 +57,13 @@
       "result_message": null,
       "decided_when": null,
       "created_when": "today"
+    },
+    "decision_id": "deal:OFF-4e85a4e34b52",
+    "decision_state": "AUTHORIZATION_REQUIRED",
+    "quote": null,
+    "execution": {
+      "status": "PENDING",
+      "summary_text": "Waiting for your approval. Nothing has run."
     }
   },
   "expired": {
@@ -115,6 +122,13 @@
       "result_message": null,
       "decided_when": null,
       "created_when": "60 days ago"
+    },
+    "decision_id": "deal:OFF-4e85a4e34b52",
+    "decision_state": "EXPIRED",
+    "quote": null,
+    "execution": {
+      "status": "PENDING",
+      "summary_text": "Waiting for your approval. Nothing has run."
     }
   },
   "refused": {
@@ -165,6 +179,42 @@
         "result_message": null,
         "decided_when": null,
         "created_when": "today"
+      },
+      "decision_id": "alert:ALERT-RESERVE-42:v7",
+      "decision_state": "AUTHORIZATION_REQUIRED",
+      "quote": {
+        "recorded": true,
+        "quoted_when": "today",
+        "lines": [
+          {
+            "label": "Finance ¥200,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. on Invoice financing (onboarded platform)",
+            "op_id": "alert:ALERT-RESERVE-42:v7:0",
+            "kind": "SUBMIT_INVOICE_FOR_FINANCING",
+            "amount_fen": 20000000,
+            "amount_display": "¥200,000.00",
+            "cost_fen": 178219,
+            "cost_display": "¥1,782.19",
+            "rate_text": "32.5%",
+            "cost_days": 10,
+            "lands_day": 37,
+            "lands_when": "in 3 days",
+            "above_ceiling": true
+          }
+        ],
+        "total_fen": 178219,
+        "total_display": "¥1,782.19",
+        "cost_note": null,
+        "rate_basis": "Invoice financing is billed in whole 30-day periods until the invoice is paid.",
+        "lands_day": 37,
+        "lands_when": "in 3 days",
+        "after": "Cash stays above your minimum cash reserve for the next 120 days.",
+        "if_declined": "¥200,000.00 below your minimum cash reserve in 8 days; the gap peaks at ¥200,000.00 in 8 days.",
+        "needs_owner": true,
+        "text": null
+      },
+      "execution": {
+        "status": "PENDING",
+        "summary_text": "Waiting for your approval. Nothing has run."
       }
     },
     "decided": {
@@ -200,20 +250,58 @@
         "facility_name": "Invoice financing (onboarded platform)",
         "buyer_name": "Foshan Home Retail Co.",
         "invoice": "the ¥420,000.00 invoice to Foshan Home Retail Co.",
-        "cost_display": null,
-        "rate_text": null,
-        "cost_due_day": null,
+        "cost_display": "¥1,782.19",
+        "rate_text": "32.5%",
+        "cost_due_day": 47,
         "lands_day": null,
         "lands_when": null,
         "lands_text": null,
         "if_decline": null,
-        "protects": null,
+        "protects": "Cash stays above your minimum cash reserve for the next 120 days.",
         "residual": null,
         "execution_status": "REFUSED",
         "reason": "The yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval.",
         "result_message": "You approved it, but it could not run: Mandate v1 expired yesterday. No money moved.",
         "decided_when": "today",
         "created_when": "57 days ago"
+      },
+      "decision_id": "alert:ALERT-RESERVE-42:v7",
+      "decision_state": "FAILED",
+      "quote": {
+        "recorded": true,
+        "quoted_when": "57 days ago",
+        "lines": [
+          {
+            "label": "Finance ¥200,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. on Invoice financing (onboarded platform)",
+            "op_id": "alert:ALERT-RESERVE-42:v7:0",
+            "kind": "SUBMIT_INVOICE_FOR_FINANCING",
+            "amount_fen": 20000000,
+            "amount_display": "¥200,000.00",
+            "cost_fen": 178219,
+            "cost_display": "¥1,782.19",
+            "rate_text": "32.5%",
+            "cost_days": 10,
+            "lands_day": 37,
+            "lands_when": "54 days ago",
+            "above_ceiling": true
+          }
+        ],
+        "total_fen": 178219,
+        "total_display": "¥1,782.19",
+        "cost_note": null,
+        "rate_basis": "Invoice financing is billed in whole 30-day periods until the invoice is paid.",
+        "lands_day": 37,
+        "lands_when": "54 days ago",
+        "after": "Cash stays above your minimum cash reserve for the next 120 days.",
+        "if_declined": "¥200,000.00 below your minimum cash reserve 49 days ago; the gap peaks at ¥200,000.00 49 days ago.",
+        "needs_owner": true,
+        "text": null,
+        "actual": [],
+        "difference_text": null
+      },
+      "execution": {
+        "status": "REFUSED",
+        "summary_text": "You approved it, but it could not run: Mandate v1 expired yesterday. No money moved."
       },
       "execution_status": "REFUSED"
     }

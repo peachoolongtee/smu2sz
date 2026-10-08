@@ -918,6 +918,32 @@
   "next_action": null,
   "approvals": [],
   "pending_count": 0,
+  "open_decisions": [
+    {
+      "id": "deal:OFF-f806f79b6c21",
+      "family": "DEAL",
+      "state": "AGREED",
+      "state_text": "已达成协议",
+      "terminal": false,
+      "headline": "来自Foshan Home Retail Co.的报价",
+      "counterparty_name": "Foshan Home Retail Co.",
+      "amount_display": "¥257,200.00",
+      "opened_when": "今天",
+      "updated_when": "今天",
+      "waiting_for": {
+        "code": "BANK_RECEIPT",
+        "party": "buyer",
+        "party_name": "Foshan Home Retail Co.",
+        "day": 2,
+        "when": "2 天后",
+        "text": "等待Foshan Home Retail Co.付款，应于2 天后到账。"
+      },
+      "residual": null
+    }
+  ],
+  "remaining_task": null,
+  "remaining_task_links": [],
+  "remaining_task_decision_id": null,
   "changes": [
     {
       "day": 0,

@@ -3,13 +3,14 @@
 import Link from "next/link";
 import { useState } from "react";
 import { obligationSentence } from "@/components/deals/commitments";
-import { Badge, Button, Card, ErrorState } from "@/components/ui";
-import { negotiate } from "@/lib/api";
+import { Badge, Button, Callout, Card, ErrorState } from "@/components/ui";
+import { counterChanged, negotiate } from "@/lib/api";
+import { evaluate as evaluateAndCache } from "@/lib/demo";
 import { recordNegotiation } from "@/lib/demo-store";
 import { useI18n } from "@/lib/i18n";
 import { errorText } from "@/lib/error-text";
 import type { Mode } from "@/lib/mode";
-import type { CounterProposal, Displayed, NegotiationView, VerdictView } from "@/lib/types";
+import type { CounterChangedDetail, CounterProposal, Displayed, NegotiationView, VerdictView } from "@/lib/types";
 import { Disclosure } from "@/components/business/kit";
 
 type Counter = Displayed<CounterProposal> & { text_when?: string; rationale_when?: string; outbound_blocked?: boolean };
@@ -163,10 +164,70 @@ function NegotiationOutcome({ v, negotiation, today }: { v: VerdictView; negotia
 }
 
 /**
- * "Recommended response": the first counter as the response to send, the next one behind "Compare another option",
- * and what the buyer answered once a counter was sent. Sending runs the bounded negotiation with the demo's buyer
- * kernel (the "Demo data" pill and the note say the reply is simulated); the counters are the verifier's, priced and
- * re-checked on the books, and the card only shows them.
+ * One counter's send control: the button that names the option and says the buyer's reply is simulated, the server's `send_scope`
+ * sentence under it (what sending does: the agreement it records, the approval it may need, the funding it may run), and the outbound
+ * guard's hold when the wording was held back.
+ */
+function SendControl({ c, primary, sending, busy, onSend }: { c: Counter; primary: boolean; sending: boolean; busy: boolean; onSend: () => void }) {
+  const { t } = useI18n();
+  // The outbound guard held this counter's wording back: it cannot be sent as it stands.
+  const held = Boolean(c.outbound_blocked);
+  const scopeId = `scope-${optionDomId(c.label)}`;
+  return (
+    <div className="space-y-1.5">
+      <div className="flex flex-wrap items-center gap-3">
+        <Button
+          variant={primary ? "primary" : "secondary"}
+          loading={sending}
+          disabled={held || busy}
+          aria-describedby={scopeId}
+          onClick={onSend}
+          data-testid={primary ? "deal-send" : `deal-send-${c.label.replace(/\s+/g, "-")}`}
+        >
+          {sending ? t("biz.deals.sending") : t("biz.deals.sendOption", { label: c.label })}
+        </Button>
+        {held ? (
+          <span className="text-xs font-medium text-warn-fg" role="status" data-testid="deal-send-blocked">
+            {t("biz.deals.send.blocked")}
+          </span>
+        ) : null}
+      </div>
+      {!held ? (
+        <p id={scopeId} className="max-w-prose text-xs text-ink-3" data-testid="deal-send-scope">
+          {c.send_scope || t("biz.deals.send.simulated")}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+/**
+ * The refusal of a send the books have outgrown (409 COUNTER_CHANGED): nothing was sent. With the current counters the card shows
+ * them in place of the old ones; without them (`reevaluate`) the old proposal is withdrawn and "Check again" gets a new one.
+ */
+function CounterChanged({ detail, onCheck, checking }: { detail: CounterChangedDetail; onCheck: () => void; checking: boolean }) {
+  const { t } = useI18n();
+  const current = detail.counters.length > 0;
+  return (
+    <div className="mb-4" role="alert" data-testid="deal-counter-changed" data-reason={detail.reason}>
+      <Callout tone="warn" title={t("biz.deals.changed.title")}>
+        <p>{current ? t("biz.deals.changed.current") : t("biz.deals.changed.reevaluate")}</p>
+        {detail.reevaluate || !current ? (
+          <Button className="mt-2" size="sm" variant="secondary" loading={checking} onClick={onCheck} data-testid="deal-check-again">
+            {t("biz.deals.checkAgain")}
+          </Button>
+        ) : null}
+      </Callout>
+    </div>
+  );
+}
+
+/**
+ * "Recommended response": the first counter as the response to send, the next one behind "Compare another option" with its own send,
+ * and what the buyer answered once a counter was sent. Each send names its option, runs the bounded negotiation with the demo's buyer
+ * kernel (the label and the server's scope sentence say the reply is simulated), and carries what the owner was shown: the verdict
+ * id, the counter id and the verdict's `state_version`. If the books moved the API refuses (409 COUNTER_CHANGED) and nothing is sent.
+ * The counters are the verifier's, priced and re-checked on the books; the card only shows them.
  */
 export function RecommendedResponse({
   v,
@@ -190,23 +251,47 @@ export function RecommendedResponse({
   const [localCompare, setLocalCompare] = useState(false);
   const compare = compareOpen ?? localCompare;
   const setCompare = (open: boolean) => (onCompareChange ? onCompareChange(open) : setLocalCompare(open));
-  const [sending, setSending] = useState(false);
+  const [sending, setSending] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const counters = v.counters as Counter[];
+  // The refusal belongs to the verdict it answered: a new evaluation (same id, other books) starts clean.
+  const shownKey = `${v.id}:${v.state_version}`;
+  const [refused, setRefused] = useState<{ key: string; detail: CounterChangedDetail } | null>(null);
+  const [checking, setChecking] = useState(false);
+  const changed = refused && refused.key === shownKey ? refused.detail : null;
+  // What the owner is looking at, and what the send will carry: the evaluation's, or the current proposal the API sent back.
+  const shown = changed && changed.counters.length ? { verdictId: changed.verdict_id ?? v.id, stateVersion: changed.state_version, counters: changed.counters as Counter[] } : { verdictId: v.id, stateVersion: v.state_version, counters: v.counters as Counter[] };
+  const withdrawn = Boolean(changed && !changed.counters.length);
+  const counters = withdrawn ? [] : shown.counters;
 
-  async function send() {
-    setSending(true);
+  async function send(c: Counter) {
+    setSending(c.id);
     setError(null);
     try {
-      recordNegotiation(await negotiate(offerId, { buyer_profile: "cooperative" }));
+      recordNegotiation(await negotiate(offerId, { buyer_profile: "cooperative", verdict_id: shown.verdictId, counter_id: c.id, state_version: shown.stateVersion }));
+      setRefused(null);
     } catch (e) {
-      setError(errorText(e, t));
+      const moved = counterChanged(e);
+      if (moved) setRefused({ key: shownKey, detail: moved });
+      else setError(errorText(e, t));
     } finally {
-      setSending(false);
+      setSending(null);
     }
   }
 
-  if (!counters.length) {
+  async function checkAgain() {
+    setChecking(true);
+    setError(null);
+    try {
+      await evaluateAndCache(offerId);
+      setRefused(null);
+    } catch (e) {
+      setError(errorText(e, t));
+    } finally {
+      setChecking(false);
+    }
+  }
+
+  if (!v.counters.length) {
     return (
       <Card id="counters" title={t("biz.deals.response")}>
         <p className="text-sm text-ink-2" data-testid="deal-no-offer">
@@ -218,30 +303,19 @@ export function RecommendedResponse({
   // The buyer has answered: the outcome replaces the counters, which are no longer choices.
   if (negotiation) return <NegotiationOutcome v={v} negotiation={negotiation} today={today} />;
   const [first, ...rest] = counters;
-  // The outbound guard held this counter's wording back: it cannot be sent as it stands.
-  const held = Boolean(first.outbound_blocked);
-  const sendAction =
-    mode === "business" ? (
-      <div className="flex flex-wrap items-center gap-3">
-        <Button variant="primary" loading={sending} disabled={held} onClick={() => void send()} data-testid="deal-send">
-          {sending ? t("biz.deals.sending") : t("biz.deals.send")}
-        </Button>
-        {held ? (
-          <span className="text-xs font-medium text-warn-fg" role="status" data-testid="deal-send-blocked">
-            {t("biz.deals.send.blocked")}
-          </span>
-        ) : (
-          <span className="text-xs text-ink-3">{t("biz.deals.send.simulated")}</span>
-        )}
-      </div>
-    ) : undefined;
+  const busy = sending !== null;
+  const controlFor = (c: Counter, primary: boolean) =>
+    mode === "business" ? <SendControl c={c} primary={primary} sending={sending === c.id} busy={busy} onSend={() => void send(c)} /> : undefined;
 
   return (
     <Card id="counters" title={t("biz.deals.response")} subtitle={t("biz.deals.counters.sub")}>
-      <ul className="motion-rise divide-y divide-line">
-        <CounterBusinessCard c={first} recommended today={today} action={sendAction} />
-        {compare ? rest.map((c) => <CounterBusinessCard key={c.id} c={c} recommended={false} today={today} />) : null}
-      </ul>
+      {changed ? <CounterChanged detail={changed} onCheck={() => void checkAgain()} checking={checking} /> : null}
+      {first ? (
+        <ul className="motion-rise divide-y divide-line">
+          <CounterBusinessCard c={first} recommended today={today} action={controlFor(first, true)} />
+          {compare ? rest.map((c) => <CounterBusinessCard key={c.id} c={c} recommended={false} today={today} action={controlFor(c, false)} />) : null}
+        </ul>
+      ) : null}
       {error ? (
         <div className="mt-3">
           <ErrorState error={error} />

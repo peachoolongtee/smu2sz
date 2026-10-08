@@ -1873,6 +1873,32 @@
     }
   ],
   "pending_count": 1,
+  "open_decisions": [
+    {
+      "id": "alert:ALERT-RESERVE-42:v7",
+      "family": "FUNDING",
+      "state": "AUTHORIZATION_REQUIRED",
+      "state_text": "Waiting for your approval",
+      "terminal": false,
+      "headline": "Finance ¥200,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. on Invoice financing (onboarded platform)",
+      "counterparty_name": "Foshan Home Retail Co.",
+      "amount_display": "¥200,000.00",
+      "opened_when": "today",
+      "updated_when": "today",
+      "waiting_for": {
+        "code": "OWNER_APPROVAL",
+        "party": "owner",
+        "party_name": null,
+        "day": 42,
+        "when": "in 8 days",
+        "text": "Waiting for your approval; the cash is needed in 8 days."
+      },
+      "residual": null
+    }
+  ],
+  "remaining_task": null,
+  "remaining_task_links": [],
+  "remaining_task_decision_id": null,
   "changes": [
     {
       "day": 34,

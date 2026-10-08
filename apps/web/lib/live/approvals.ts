@@ -6,7 +6,7 @@
  */
 
 import { ApiError } from "../errors";
-import type { ApprovalDecision, ApprovalExecutionStatus, ApprovalOperation, ApprovalPresentation, ApprovalStatus, ApprovalView, OperationResult, Tier } from "../types";
+import type { ApprovalDecision, ApprovalExecutionStatus, ApprovalOperation, ApprovalPresentation, ApprovalQuote, ApprovalStatus, ApprovalView, DecisionState, OperationResult, Tier } from "../types";
 import { http } from "./http";
 
 interface RawApproval {
@@ -29,6 +29,11 @@ interface RawApproval {
   amount_display?: string | null;
   /** Business words for the card, written by the API. */
   presentation?: ApprovalPresentation;
+  /** The decision record (ADR-0011): its id and state, the stored quote and what the decision run did. All the server's words. */
+  decision_id?: string | null;
+  decision_state?: DecisionState | null;
+  quote?: ApprovalQuote | null;
+  execution?: { status: ApprovalExecutionStatus; summary_text: string | null } | null;
 }
 
 export async function getApprovals(): Promise<ApprovalView[]> {
@@ -55,6 +60,10 @@ export async function getApprovals(): Promise<ApprovalView[]> {
         decided_day: a.decided_day ?? null,
         result_message: a.result_message ?? null,
         presentation: a.presentation,
+        decision_id: a.decision_id ?? null,
+        decision_state: a.decision_state ?? null,
+        quote: a.quote ?? null,
+        execution: a.execution ?? null,
       }) as ApprovalView,
   );
 }

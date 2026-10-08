@@ -1,5 +1,16 @@
 {
   "offer_id": "OFF-f806f79b6c21",
+  "decision_id": "deal:OFF-f806f79b6c21",
+  "decision_recorded": true,
+  "execution": {
+    "summary_text": "Funding of ¥405,000.00 was requested; ¥255,000.00 is on its way and lands in 3 days.",
+    "requested_fen": 40500000,
+    "requested_display": "¥405,000.00",
+    "landed_fen": 15000000,
+    "landed_display": "¥150,000.00",
+    "in_transit_fen": 25500000,
+    "in_transit_display": "¥255,000.00"
+  },
   "outcome": "NO_DEAL",
   "rounds": [
     {
