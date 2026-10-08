@@ -1,5 +1,5 @@
-"""Wave 6 of map #47: the quick backtest (the golden scenario and the differential against the oracle) exits 0 with no
-failure. The full run over the 49 e2e scenarios is `scripts/strategy_backtest.py` and its committed report."""
+"""Wave 6 of map #47: the quick backtest (the golden scenario, its clock sweep, the differential against the oracle and the
+envelope of EX01) exits 0 with no failure. The full run over the 49 e2e scenarios is `scripts/strategy_backtest.py` and its committed report."""
 
 from __future__ import annotations
 
@@ -46,6 +46,16 @@ def test_the_quick_backtest_passes(backtest: ModuleType, tmp_path: Path, capsys:
     assert day34["day 34: ceilings (largest rate)"] == 4 and day34["day 34: net value at the ceiling"] == 3
     assert day34["day 34: curve points"] == 91
     assert len(sections["differential"]["counts"]["expected_differences"]) == 1  # day 0's plan's-need face, not a failure
-    assert sections["envelope"]["status"] == "skipped"
+    # the envelope ran (not skipped): in --quick EX01 and its two counters, the default grid and the zone, and no
+    # exhaustive scan (that alone costs about 50 s; the full run does it)
+    env = sections["envelope"]
+    assert env["status"] == "ok" and env["failures"] == [], env["failures"]
+    assert env["counts"]["offers_checked"] == 1 and env["counts"]["counters_checked"] == 2
+    assert env["counts"]["counters_matched"] == 2 and env["counts"]["lever_maxima_confirmed"] == 6
+    assert env["counts"]["packages_rechecked"] >= 1 and env["counts"]["packages_approved"] == env["counts"]["packages_rechecked"]
+    # the clock sweep ran at days 10 and 34 for the one scenario
+    clock = sections["clock"]
+    assert clock["status"] == "ok" and clock["counts"]["states"] == 2 and clock["counts"]["advance_errors"] == 0
+    assert set(clock["counts"]["by_day"]) == {"10", "34"} and clock["counts"]["by_day"]["34"]["overdue_rows"] >= 1
     assert report.read_text(encoding="utf-8").startswith("# Strategy backtest")
     assert elapsed < 60

@@ -59,24 +59,48 @@ from fastapi.testclient import TestClient
 from app.api.runtime import Runtime, set_runtime
 from app.books import Books, books_from_store
 from app.config import get_settings
-from app.domain.models import Mandate
+from app.domain.models import (
+    CompiledOffer,
+    Mandate,
+    Obligation,
+    ObligationType,
+    Outcome,
+    Verdict,
+    ViolationCode,
+)
 from app.domain.money import bp, post, round_half_up
 from app.financial import EngineError
 from app.funding import NoPermanentSourceError
 from app.funding.rates import break_even_cost_share
 from app.mandate.fixture import demo_owner_public_key_hex
 from app.persistence import InMemoryLedgerStore
+from app.strategy import CandidatePackage
 from app.strategy.collections import ReceivableWorth, WorthAnswer, early_pay_vs_plan, receivables_worth
+from app.strategy.envelope import (
+    EnvelopeAnswer,
+    EnvelopeFacts,
+    EnvelopePackage,
+    envelope_answer,
+    envelope_facts,
+    open_context,
+    probe_packages,
+    ranges_for,
+)
 from app.strategy.impact import marginal_impact, scenario_inflow
 from app.strategy.price_curve import WINDOW_DAYS, PriceCurve, price_curve
+from app.verifier import evaluate
+from app.verifier.counters import infeasibility
 from app.verifier.evaluate import clear_caches
-from app.whatif.params import DISCOUNT_MAX_BP
+from app.whatif.offer import Context, EarlyPayContext, build
+from app.whatif.params import DISCOUNT_MAX_BP, WhatIfParams
 
 SCENARIOS = API / "evals" / "e2e" / "scenarios.yaml"
 ORACLE = ROOT / "fixtures" / "strategy" / "collections_both.json"
 RUNNER = ROOT / "scripts" / "run_scenarios.py"
 REPORT_DIR = ROOT / "docs" / "research" / "strategy"
 QUICK_SCENARIO = "S01_scene1_counter_accept"  # the golden scenario: EX01 evaluated, countered, agreed
+SWEEP_DAYS = (10, 20, 34, 47, 60)  # the clock sweep: each scenario's end state, advanced to these days in turn
+QUICK_SWEEP_DAYS = (10, 34)
 OWNER = {"X-Owner-Token": "demo-owner-token"}
 BANK = {"X-Agent-Key": "demo-agent-key", "X-Bank-Feed-Key": "demo-bank-feed-key"}
 FACE_KIND = {"the whole outstanding invoice": "whole", "the shortfall the plan covers": "need"}
@@ -308,7 +332,7 @@ def _books_key(rt: Runtime) -> str:
     return hashlib.sha256("|".join(parts).encode()).hexdigest()
 
 
-def replay(quick: bool, collections: Section, curve: Section) -> None:
+def replay(quick: bool, collections: Section, curve: Section, clock: Section) -> None:
     import yaml
 
     scenarios: list[dict[str, Any]] = yaml.safe_load(SCENARIOS.read_text(encoding="utf-8"))["scenarios"]
@@ -319,6 +343,10 @@ def replay(quick: bool, collections: Section, curve: Section) -> None:
     actions: Counter[str] = Counter()
     days: set[int] = set()
     slowest: list[tuple[float, str, int]] = []
+    sweep_days = QUICK_SWEEP_DAYS if quick else SWEEP_DAYS
+    per_day = {d: _DayStats() for d in sweep_days}
+    clock.counts.update({"scenarios": len(scenarios), "days": list(sweep_days), "states": 0, "distinct_book_states": 0,
+                         "advance_errors": 0, "days_already_passed": 0})
     collections.counts.update({"scenarios": len(scenarios), "turns": 0, "distinct_book_states": 0, "rows_checked": 0,
                                "ceilings_checked": 0, "turns_with_two_or_more_rows": 0,
                                "net_order_differs_from_amount_order": 0, "turns_without_rows": 0, "non_200_turns": 0,
@@ -355,14 +383,23 @@ def replay(quick: bool, collections: Section, curve: Section) -> None:
                     curve.seconds += a.curve_seconds
                     slowest.append((a.worth_seconds + a.curve_seconds, scn["id"], n))
                 _record(scn["id"], n, a, collections, curve, actions, days)
+            swept = _sweep(transport.rt, scn["id"], sweep_days, memo, clock, per_day)
             print(f"[{i}/{len(scenarios)}] {scn['id']}: {len(turns)} turns, {fresh} new book states, "
-                  f"{time.perf_counter() - t_scn:.1f}s", file=sys.stderr, flush=True)
+                  f"{swept} swept, {time.perf_counter() - t_scn:.1f}s", file=sys.stderr, flush=True)
     finally:
         set_runtime(None)
     collections.counts["actions"] = dict(sorted(actions.items()))
     collections.counts["days_covered"] = sorted(days)
     collections.counts["slowest_turns"] = [{"scenario": s, "turn": n, "seconds": round(t, 2)}
                                            for t, s, n in sorted(slowest, reverse=True)[:5]]
+    clock.counts["by_day"] = {str(d): st.summary() for d, st in per_day.items()}
+    clock.counts["states"] = sum(st.states for st in per_day.values())
+    clock.seconds = sum(st.seconds for st in per_day.values())
+    clock.counts["actions"] = dict(sorted(sum((st.actions for st in per_day.values()), Counter[str]()).items()))
+    clock.counts["slowest_states"] = [
+        {"scenario": s, "day": d, "worth_s": round(w, 2), "curve_s": round(c, 2)}
+        for w, c, s, d in sorted(((st.worst[0], st.worst[1], st.worst[2], d) for d, st in per_day.items() if st.worst[2]),
+                                 key=lambda x: -(x[0] + x[1]))[:5]]
 
 
 def _record(scn: str, n: int, a: Analysis, collections: Section, curve: Section, actions: Counter[str],
@@ -394,6 +431,89 @@ def _record(scn: str, n: int, a: Analysis, collections: Section, curve: Section,
         curve.bump("band_end_checks", s["checks"])
         curve.bump("flat_turns", int(s["flat"]))
         curve.bump("varies_bands", s["varies"])
+
+
+@dataclass
+class _DayStats:
+    """What the sweep found at one day, over every scenario's end state advanced to it."""
+
+    states: int = 0
+    distinct: int = 0
+    rows: int = 0
+    ceilings: int = 0
+    overdue_rows: int = 0
+    comparable: int = 0
+    order_differs: int = 0
+    states_without_rows: int = 0
+    bands: int = 0
+    varies: int = 0
+    band_checks: int = 0
+    flat: int = 0
+    seconds: float = 0.0
+    actions: Counter[str] = field(default_factory=Counter)
+    worst: tuple[float, float, str] = (0.0, 0.0, "")  # worth seconds, curve seconds, scenario of the slowest state
+
+    def summary(self) -> dict[str, Any]:
+        return {"states": self.states, "distinct_book_states": self.distinct, "rows": self.rows, "ceilings": self.ceilings,
+                "overdue_rows": self.overdue_rows, "states_without_rows": self.states_without_rows,
+                "states_with_two_or_more_rows": self.comparable, "net_order_differs": self.order_differs,
+                "bands": self.bands, "varies_bands": self.varies, "band_end_checks": self.band_checks,
+                "flat_curves": self.flat, "actions": dict(sorted(self.actions.items())), "seconds": round(self.seconds, 1),
+                "slowest_state": {"scenario": self.worst[2], "worth_s": round(self.worst[0], 2),
+                                  "curve_s": round(self.worst[1], 2)} if self.worst[2] else None}
+
+
+def _sweep(rt: Runtime, scn: str, days: Sequence[int], memo: dict[str, Analysis], clock: Section,
+           per_day: dict[int, _DayStats]) -> int:
+    """Advance this scenario's end state through `days` (`Runtime.advance_to`, which `POST /clock/advance` calls) and put
+    `receivables_worth` and `price_curve` to the replay's invariant checks at each. Returns the states swept."""
+    swept = 0
+    for day in days:
+        if day <= rt.day:
+            clock.bump("days_already_passed")
+            continue
+        try:
+            rt.advance_to(day)
+        except Exception as e:  # noqa: BLE001 - an advance that fails is a finding, and ends this scenario's sweep
+            clock.bump("advance_errors")
+            clock.fail(scn, day, "clock advance", f"day {day}: {type(e).__name__}: {e}")
+            break
+        st = per_day[day]
+        key = _books_key(rt)
+        a = memo.get(key)
+        if a is None:
+            a = memo[key] = _analyse(rt)
+            st.distinct += 1
+            clock.counts["distinct_book_states"] += 1
+            st.seconds += a.worth_seconds + a.curve_seconds
+            if a.worth_seconds + a.curve_seconds > st.worst[0] + st.worst[1]:
+                st.worst = (a.worth_seconds, a.curve_seconds, scn)
+        st.states += 1
+        swept += 1
+        if a.worth_error is not None:
+            clock.fail(scn, day, "receivables_worth", f"day {day}: {a.worth_error}")
+        else:
+            for figure, message in a.worth_bad:
+                clock.fail(scn, day, figure, f"day {day}: {message}")
+            w = a.worth_stats
+            st.rows += w["rows"]
+            st.ceilings += w["ceilings"]
+            st.overdue_rows += w["overdue"]
+            st.comparable += int(w["comparable"])
+            st.order_differs += int(w["order_differs"])
+            st.states_without_rows += int(w["rows"] == 0)
+            st.actions.update(w["actions"])
+        if a.curve_error is not None:
+            clock.fail(scn, day, "price_curve", f"day {day}: {a.curve_error}")
+        else:
+            for figure, message in a.curve_bad:
+                clock.fail(scn, day, figure, f"day {day}: {message}")
+            c = a.curve_stats
+            st.bands += c["bands"]
+            st.varies += c["varies"]
+            st.band_checks += c["checks"]
+            st.flat += int(c["flat"])
+    return swept
 
 
 # ---------------------------------------------------------------- section 3: the differential
@@ -504,26 +624,369 @@ def _compare_row(counts: Counter[str], expected: list[str], name: str, books: Bo
 
 # ---------------------------------------------------------------- section 4: the envelope
 
+Point = tuple[int, int, int, int | None, int]  # terms, price bp, early-pay bp, early-pay face fen (None: whole), rebate bp
+PASSING = (Outcome.ACCEPT, Outcome.NEEDS_OWNER_APPROVAL)
+CAP_CODES = (ViolationCode.AGG_CONCESSION_EXCEEDED, ViolationCode.PER_BUYER_CAP_EXCEEDED)
+LEVER_TYPES = (ObligationType.TERMS_EXTENSION, ObligationType.PRICE_ADJUSTMENT, ObligationType.IMMEDIATE_DISCOUNT,
+               ObligationType.CONTINGENT_REBATE)
+OFFER_FILES = (ROOT / "fixtures" / "offers" / "offers.yaml",
+               *(d / "offers.yaml" for d in sorted((ROOT / "fixtures").glob("heldout*")) if (d / "offers.yaml").is_file()))
+QUICK_OFFERS = ("EX01_PACKAGE",)  # `--quick` puts this one offer and its counters to the envelope
+MAX_UNMATCHED_NOTES = 12
 
-def check_envelope() -> Section:
-    """The brief's section 9 item 1 for the Safe Deal Envelope. Skipped until `app.strategy.envelope` is on this branch.
 
-    TODO (follow-up once Wave 3 is merged): for every offer in `fixtures/offers/offers.yaml` and `fixtures/heldout*/`,
-    on the golden books:
-      - compile and evaluate the offer (`verifier.evaluate`), then build the envelope for its buyer;
-      - every counter in the verdict appears among the packages (same terms, price, early-pay rate and face, rebate);
-      - "as asked" is inside the zone if and only if the verdict passes;
-      - every package passes its re-check (`evaluate`) and `counters.infeasibility` is None;
-      - the bisection agrees with the exhaustive grid for every lever;
-      - count the refusals (a buyer with no recurring invoice and no open invoice).
-    Count the offers, the packages and the refusals, and record each failure with the offer id as the scenario.
-    """
-    sec = Section("envelope", status="skipped")
-    if importlib.util.find_spec("app.strategy.envelope") is None:
-        sec.notes.append("envelope checks: module not on this branch yet; skipped")
+def _passes(v: Verdict) -> bool:
+    """The sweep's own definition of a package that passes: ACCEPT, or NEEDS_OWNER_APPROVAL with every reserve breach curable."""
+    return v.outcome in PASSING and not any(x.code == ViolationCode.RESERVE_BREACH and not x.curable for x in v.violations)
+
+
+def _liquidity_only(v: Verdict) -> bool:
+    return v.outcome != Outcome.NO_VERDICT and all(
+        x.code in CAP_CODES or (x.code == ViolationCode.RESERVE_BREACH and x.curable) for x in v.violations)
+
+
+def _reading(obligations: Sequence[Obligation], cur: int, whole_face: int) -> Point | None:
+    """Obligations read as one package of the envelope's levers (the levers they do not set at zero, the terms in force
+    when they set none). None when an obligation has no lever or a lever is set twice. This is a second reading,
+    written here, of what `envelope._setting_of` does for the sweep's own counters."""
+    terms, price, discount, face, rebate = cur, 0, 0, None, 0
+    seen: set[ObligationType] = set()
+    for o in obligations:
+        if o.type not in LEVER_TYPES or o.type in seen:
+            return None
+        seen.add(o.type)
+        if o.type == ObligationType.TERMS_EXTENSION:
+            if o.target_terms_days is not None:
+                terms = o.target_terms_days
+            elif o.days_delta is not None:
+                terms = cur + o.days_delta
+        elif o.type == ObligationType.PRICE_ADJUSTMENT:
+            price = o.rate_bp or 0
+        elif o.type == ObligationType.IMMEDIATE_DISCOUNT:
+            discount = o.rate_bp or 0
+            face = o.base.amount_fen if o.base.amount_fen not in (None, whole_face) else None
+        else:
+            rebate = o.rate_bp or 0
+    return terms, price, discount, face, rebate
+
+
+def _describe(obligations: Sequence[Obligation]) -> str:
+    out: list[str] = []
+    for o in obligations:
+        bits = [o.type.value]
+        if o.target_terms_days is not None:
+            bits.append(f"to {o.target_terms_days} d")
+        if o.days_delta is not None:
+            bits.append(f"{o.days_delta:+d} d")
+        if o.rate_bp is not None:
+            bits.append(f"{o.rate_bp} bp")
+        if o.base.amount_fen is not None:
+            bits.append(f"on {_money(o.base.amount_fen)}")
+        out.append(" ".join(bits))
+    return "; ".join(out) or "no obligations"
+
+
+def _point_text(p: Point) -> str:
+    terms, price, discount, face, rebate = p
+    return (f"terms {terms} d, price {price} bp, early pay {discount} bp on "
+            f"{'the whole invoice' if face is None else _money(face)}, rebate {rebate} bp")
+
+
+def _candidate(buyer_id: str, p: Point) -> CandidatePackage:
+    return CandidatePackage(buyer_id=buyer_id, terms_days=p[0], price_bp=p[1], early_pay_bp=p[2], early_pay_face_fen=p[3],
+                            rebate_bp=p[4])
+
+
+def _note(sec: Section, text: str) -> None:
+    if text not in sec.notes and len(sec.notes) < MAX_UNMATCHED_NOTES:
+        sec.notes.append(text)
+
+
+def _point_of(pkg: EnvelopePackage) -> Point:
+    q = pkg.package
+    return q.terms_days, q.price_bp, q.early_pay_bp, q.early_pay_face_fen, q.rebate_bp
+
+
+@dataclass(frozen=True)
+class GridCell:
+    passes: bool
+    approved: bool
+    liquidity_only: bool
+
+
+@dataclass
+class Reference:
+    """One buyer's envelope on the golden day-0 books and the exhaustive terms x price scan beside it."""
+
+    buyer_id: str
+    facts: EnvelopeFacts
+    answer: EnvelopeAnswer
+    grid: dict[tuple[int, int], GridCell] = field(default_factory=dict)
+    envelope_seconds: float = 0.0
+    scan_seconds: float = 0.0
+
+
+class EnvelopeRun:
+    """The golden day-0 books and the per-buyer references (there are two buyers on the books, so the sweep runs at
+    most twice)."""
+
+    def __init__(self, full_grid: bool, zone: bool) -> None:
+        self.rt = _runtime()
+        self.books = books_from_store(self.rt.store)
+        self.mandate = self.rt.store.get_mandate()
+        self.key = demo_owner_public_key_hex()
+        self.full_grid, self.zone = full_grid, zone
+        self.refs: dict[str, Reference] = {}
+
+    def verdict(self, offer: CompiledOffer, declared: dict[str, Any] | None = None) -> Verdict:
+        return evaluate(offer, self.books.state, self.mandate, trusted_owner_key_hex=self.key, day=0,
+                        owner_declared=declared, plans="committed").verdict
+
+    def package_verdict(self, ctx: Context | EarlyPayContext, point: Point) -> Verdict:
+        terms, price, discount, face, rebate = point
+        offer, _ = build(WhatIfParams(terms_days=terms, discount_bp=discount, rebate_bp=rebate, price_adjustment_bp=price,
+                                      settle_face_fen=face), ctx, 0)
+        return self.verdict(offer)
+
+    def reference(self, buyer_id: str, scan: bool) -> Reference:
+        ref = self.refs.get(buyer_id)
+        if ref is not None:
+            return ref
+        t0 = time.perf_counter()
+        facts = envelope_facts(self.books, self.mandate, store=self.rt.store, day=0, buyer_id=buyer_id,
+                               trusted_owner_key_hex=self.key, zone=self.zone, full_grid=self.full_grid)
+        ref = self.refs[buyer_id] = Reference(buyer_id, facts, envelope_answer(facts), envelope_seconds=time.perf_counter() - t0)
+        if scan and not facts.refused:
+            t1 = time.perf_counter()
+            ctx = open_context(self.books.state, 0, buyer_id)
+            ranges = ranges_for(ctx, self.mandate)
+            for terms in ranges.terms:
+                for price in ranges.price:
+                    v = self.package_verdict(ctx, (terms, price, 0, None, 0))
+                    passes = _passes(v)
+                    ref.grid[(terms, price)] = GridCell(
+                        passes, passes and infeasibility(v, self.books.state) is None, _liquidity_only(v))
+            ref.scan_seconds = time.perf_counter() - t1
+        return ref
+
+
+def _check_buyer(run: EnvelopeRun, ref: Reference, sec: Section) -> None:
+    """Items iii and iv, once per buyer: every approved package passes its re-check; every lever maximum is confirmed;
+    the bisection's zone and maxima equal the exhaustive terms x price scan."""
+    who = f"envelope {ref.buyer_id}"
+    answer, facts = ref.answer, ref.facts
+    if facts.refused:
+        return
+    ctx = open_context(run.books.state, 0, ref.buyer_id)
+    for pkg in answer.packages:  # iii
+        point = _point_of(pkg)
+        sec.bump("packages_rechecked")
+        v = run.package_verdict(ctx, point)
+        passes = _passes(v)
+        why = infeasibility(v, run.books.state) if v.outcome in PASSING else None
+        sec.bump("packages_approved", int(pkg.approved))
+        if pkg.approved and (not passes or why is not None):
+            sec.fail(who, 0, _point_text(point), f"the answer calls it approved but the verifier says {v.outcome.value} "
+                                                  f"(passes {passes}); the re-check says: {why}")
+        elif pkg.approved != (passes and why is None):
+            sec.fail(who, 0, _point_text(point), f"the answer says approved={pkg.approved}, a fresh evaluation says {passes and why is None}")
+    for lv in answer.levers:  # iv: confirmed
+        if lv.unavailable is not None:
+            continue
+        sec.bump("lever_maxima_checked")
+        if lv.confirmed:
+            sec.bump("lever_maxima_confirmed")
+        else:
+            sec.fail(who, 0, lv.lever, f"neighbour check not confirmed (maximum {lv.maximum}, scanned {lv.scanned})")
+    if not ref.grid:
+        return
+    cur, pmax = facts.current_terms, max(p for _, p in ref.grid)
+    up = [t for t in sorted({t for t, _ in ref.grid}) if t >= cur]
+    prices = sorted({p for _, p in ref.grid})
+    by_key = {lv.key: lv for lv in answer.levers}
+
+    def agree(figure: str, got: object, want: object) -> None:
+        sec.bump("exhaustive_comparisons")
+        if got == want:
+            sec.bump("exhaustive_agreements")
+        else:
+            sec.fail(who, 0, figure, f"bisection {got}, exhaustive scan {want}")
+
+    for z in answer.zone:
+        want = next((p for p in prices if ref.grid[(z.terms_days, p)].passes), None)
+        agree(f"zone: smallest passing price at {z.terms_days} d", z.min_price_bp, want)
+    sec.counts["zone_rows_scanned"] = len(answer.zone)
+    alone = by_key.get("terms_alone")
+    if alone is not None and alone.unavailable is None:
+        agree("terms alone: longest passing", alone.maximum, max((t for t in up if ref.grid[(t, 0)].passes), default=None))
+    liquid = by_key.get("terms_budget_ignored")
+    if liquid is not None and liquid.unavailable is None:
+        agree("terms, budget ignored: longest", liquid.maximum,
+              max((t for t in up if ref.grid[(t, 0)].liquidity_only), default=None))
+    best = by_key.get("terms_with_price")
+    if best is not None and best.unavailable is None:
+        t_best = max((t for t in up if ref.grid[(t, pmax)].approved), default=None)
+        agree("terms with price: longest approved", best.maximum, t_best)
+        if t_best is not None:
+            p_best = next((p for p in prices if ref.grid[(t_best, p)].approved), None)
+            got = best.at_maximum.package.price_bp if best.at_maximum is not None else None
+            agree(f"terms with price: smallest approved price at {t_best} d", got, p_best)
+
+
+def _check_offer(run: EnvelopeRun, item: dict[str, Any], offer: CompiledOffer, sec: Section, scan: bool) -> None:
+    oid = item["id"]
+    declared = item.get("declared_costs")
+    v = run.verdict(offer, declared)
+    sec.bump(f"verdicts: {v.outcome.value}")
+    if v.outcome == Outcome.NO_VERDICT:
+        sec.bump("skipped: the verifier abstains (no verdict to compare)")
+        return
+    sec.bump("offers_checked")
+    ref = run.reference(offer.counterparty_id, scan)
+    facts = ref.facts
+    if facts.refused:
+        sec.bump("refusals")
+        sec.bump("offers_whose_buyer_is_refused")
+    whole = facts.receivable_face_fen
+    cur = facts.current_terms
+    approved = {_point_of(p): p for p in ref.answer.packages if p.approved}
+    for c in v.counters:  # i
+        sec.bump("counters_checked")
+        point = _reading(c.obligations, cur, whole)
+        if point is not None and point in approved:
+            sec.bump("counters_matched")
+            continue
+        text = _describe(c.obligations)
+        if facts.refused:
+            sec.fail(oid, 0, c.label, f"{text}: the envelope for {facts.buyer_name} is refused, so there is no package to match")
+            continue
+        if point is None:
+            sec.fail(oid, 0, c.label, f"{text}: the counter has an obligation or a lever twice that no package can express")
+            continue
+        extra = ""
+        try:
+            probed = probe_packages(run.books, run.mandate, [_candidate(ref.buyer_id, point)], day=0,
+                                    trusted_owner_key_hex=run.key)[0]
+            extra = f"; put to the verifier it is {'approved' if probed.approved else 'not approved'} ({probed.outcome})"
+        except ValueError as e:
+            extra = f"; outside the envelope's levers ({str(e).splitlines()[0][:80]})"
+        same = [_point_of(p)[1] for p in ref.answer.packages
+                if _point_of(p)[0::2] == point[0::2] and _point_of(p)[3:] == point[3:] and p.approved]
+        if same:
+            extra += f"; approved packages with the same other levers have price {sorted(same)} bp"
+        sec.fail(oid, 0, c.label, f"{text} reads as ({_point_text(point)}) and matches no approved package{extra}")
+    # ii: the offer's own point
+    if not _passes(v):
+        return
+    if facts.refused:
+        sec.bump("passing offers not tested (the buyer is refused)")
+        return
+    if declared:
+        sec.bump("passing offers not tested (owner-declared costs the envelope cannot know)")
+        return
+    types = {o.type for o in v.bound_obligations}
+    point = _reading(v.bound_obligations, cur, whole)
+    if point is None:
+        sec.bump("passing offers not tested (an obligation with no lever, or a lever twice)")
+        return
+    terms, price = point[0], point[1]
+    if types <= {ObligationType.TERMS_EXTENSION, ObligationType.PRICE_ADJUSTMENT} and types:
+        row = next((z for z in ref.answer.zone if z.terms_days == terms), None)
+        if row is None:
+            sec.bump("passing offers not tested (terms off the zone's grid or no zone computed)")
+            return
+        sec.bump("zone_tests")
+        if row.min_price_bp is not None and price >= row.min_price_bp:
+            sec.bump("zone_tests_inside")
+        else:
+            sec.fail(oid, 0, f"terms {terms} d, price {price} bp",
+                     f"the verdict passes ({v.outcome.value}) but the zone's smallest passing price at {terms} d is "
+                     f"{row.min_price_bp} bp")
+        return
+    try:
+        probed = probe_packages(run.books, run.mandate, [_candidate(ref.buyer_id, point)], day=0,
+                                trusted_owner_key_hex=run.key)[0]
+    except ValueError as e:
+        sec.bump("passing offers not tested (off the levers' grid, so not probeable)")
+        _note(sec, f"not probeable: {oid} ({_point_text(point)}): {str(e).splitlines()[0][:100]}")
+        return
+    sec.bump("probes")
+    if probed.passes:
+        sec.bump("probes_agree")
     else:
-        sec.notes.append("envelope checks: module present, checks not written yet (see the TODO); skipped")
-    print(sec.notes[0], file=sys.stderr)
+        sec.fail(oid, 0, _point_text(point), f"the verdict passes ({v.outcome.value}) but the same package put to "
+                                              f"probe_packages is {probed.outcome} (passes {probed.passes})")
+
+
+def check_envelope(quick: bool = False) -> Section:
+    """The brief's section 9 item 1 for the Safe Deal Envelope, on the golden day-0 books, for every offer of
+    `fixtures/offers/offers.yaml` and the held-out sets (`--quick`: EX01 only, with the default grid and the zone, and no exhaustive scan: that alone costs about 50 s).
+
+    Per offer: compile it (the cache, then the rules grammar, as `LLM_MODE=cache` does), evaluate it
+    (`plans="committed"`) and take the envelope of its buyer (once per buyer, with `full_grid` and the zone):
+      i.   every counter of the verdict reads as a package the envelope approves (terms, price, early-pay rate and face,
+           rebate; levers a counter does not set at zero, the terms in force when it sets none);
+      ii.  a passing offer with terms and price levers only is on or above the zone's smallest passing price at its
+           terms; a passing offer with an early-pay or rebate lever too is put to `probe_packages`, which must pass it;
+    Per buyer: iii. every approved package passes a fresh evaluation and `infeasibility`; iv. every lever maximum is
+    confirmed by its neighbour check, and the zone and the maxima equal an exhaustive scan of terms x price built with
+    `whatif.offer.build` and `evaluate` directly; v. the refusals (a buyer with no recurring or open invoice) are counted.
+    A failure carries the offer id (or `envelope <buyer>`) as its scenario and the figure.
+    """
+    import yaml
+
+    from app.compiler import compile_offer
+    from app.domain.models import SourceDocument
+
+    sec = Section("envelope")
+    t0 = time.perf_counter()
+    run = EnvelopeRun(full_grid=not quick, zone=True)
+    roles = {c.id: c.role for c in run.books.state.counterparties}
+    sec.counts.update({"offers_listed": 0, "offers_checked": 0, "files": [], "compiled_from": {}, "counters_checked": 0,
+                       "counters_matched": 0, "zone_tests": 0, "zone_tests_inside": 0, "probes": 0, "probes_agree": 0,
+                       "refusals": 0, "packages_rechecked": 0, "packages_approved": 0, "lever_maxima_checked": 0,
+                       "lever_maxima_confirmed": 0, "exhaustive_comparisons": 0, "exhaustive_agreements": 0,
+                       "buyers_swept": 0, "mode": "quick: EX01 only, default grid, no exhaustive scan" if quick else "full: full grid, zone"})
+    skipped: Counter[str] = Counter()
+    for path in OFFER_FILES:
+        items: list[dict[str, Any]] = yaml.safe_load(path.read_text(encoding="utf-8"))["offers"]
+        if quick:
+            items = [i for i in items if i["id"] in QUICK_OFFERS]
+        sec.counts["files"].append(f"{path.parent.name}/{path.name}: {len(items)}")
+        for item in items:
+            sec.counts["offers_listed"] += 1
+            cp = item.get("counterparty_id", "BUYER-1")
+            if roles.get(cp) != "BUYER":
+                skipped[f"counterparty {cp} is not a buyer on the golden books ({roles.get(cp, 'not on the books')})"] += 1
+                continue
+            raw = item.get("documents") or [{"doc_id": f"{item['id']}-msg", "channel": "chat", "sender_id": cp,
+                                             "received_day": 0, "text": item["text"]}]
+            try:
+                offer = compile_offer([SourceDocument.model_validate_json(json.dumps(d)) for d in raw], cp)
+            except Exception as e:  # noqa: BLE001 - an offer that does not compile is skipped and counted, not a failure here
+                skipped[f"the compile failed ({type(e).__name__})"] += 1
+                continue
+            sec.counts["compiled_from"][offer.compiler] = sec.counts["compiled_from"].get(offer.compiler, 0) + 1
+            try:
+                _check_offer(run, item, offer, sec, scan=not quick)
+            except (EngineError, ValueError) as e:
+                sec.fail(item["id"], 0, "envelope check", f"{type(e).__name__}: {e}")
+    for ref in run.refs.values():
+        _check_buyer(run, ref, sec)
+    sec.counts["buyers_swept"] = len(run.refs)
+    sec.counts["buyers"] = {r.buyer_id: {"refused": r.facts.refused, "packages": len(r.answer.packages),
+                                         "approved": sum(p.approved for p in r.answer.packages),
+                                         "zone_rows": len(r.answer.zone), "evaluations": r.facts.evaluations,
+                                         "envelope_seconds": round(r.envelope_seconds, 1),
+                                         "scan_cells": len(r.grid), "scan_seconds": round(r.scan_seconds, 1)}
+                            for r in run.refs.values()}
+    sec.counts["skipped"] = dict(sorted(skipped.items()))
+    sec.counts["skipped_total"] = sum(skipped.values())
+    sec.seconds = time.perf_counter() - t0
+    if not quick:
+        sec.counts["all_offers_accounted"] = sec.counts["offers_listed"] == (
+            sec.counts["offers_checked"] + sec.counts["skipped_total"] + sec.counts.get(
+                "skipped: the verifier abstains (no verdict to compare)", 0))
     return sec
 
 
@@ -534,21 +997,77 @@ def _money(fen: int) -> str:
     return f"¥{fen / 100:,.2f}"
 
 
+def _envelope_lines(env: dict[str, Any], ec: dict[str, Any]) -> list[str]:
+    buyers = "; ".join(
+        f"{b}: {'refused (no recurring or open invoice)' if v['refused'] else str(v['packages']) + ' packages (' + str(v['approved']) + ' approved), ' + str(v['zone_rows']) + ' zone rows, ' + str(v['evaluations']) + ' evaluations, ' + str(v['envelope_seconds']) + ' s'}"
+        for b, v in ec["buyers"].items())
+    verdicts = ", ".join(f"{k.split(': ')[1]} {v}" for k, v in sorted(ec.items()) if k.startswith("verdicts: ")) or "none"
+    not_tested = [f"{k[len('passing offers not tested '):]} {v}" for k, v in ec.items() if k.startswith("passing offers not tested")]
+    skipped = "; ".join(f"{k}: {v}" for k, v in ec["skipped"].items()) or "none"
+    abstain = ec.get("skipped: the verifier abstains (no verdict to compare)", 0)
+    out = [
+        f"- Mode: {ec['mode']}. Offer files: {'; '.join(ec['files'])}.",
+        (f"- Offers listed: {ec['offers_listed']}; checked: {ec['offers_checked']} (verdicts {verdicts}); not buyers on the golden "
+         f"books, skipped: {ec['skipped_total']} ({skipped}); the verifier abstains (NO_VERDICT), nothing to compare: {abstain}."),
+        (f"- Compiled from (`LLM_MODE=cache`: the fixture cache, then the rules grammar for a document set that is not cached): "
+         f"{', '.join(f'{k} {v}' for k, v in ec['compiled_from'].items())}."),
+        f"- Buyers swept (once each): {buyers}. Refusals: {ec['refusals']} offers whose buyer has no lever.",
+        (f"- Counters of the verdicts put to the packages: {ec['counters_matched']} of {ec['counters_checked']} match an "
+         f"approved package."),
+        (f"- Zone tests (passing offer with terms and price only): {ec['zone_tests_inside']} of {ec['zone_tests']} inside. "
+         f"Probes (passing offer with an early-pay or rebate lever): {ec['probes_agree']} of {ec['probes']} agree with the verdict."),
+        (f"- Re-check: {ec['packages_rechecked']} packages re-evaluated from scratch and put to `infeasibility`, "
+         f"{ec['packages_approved']} approved. Lever maxima confirmed by the neighbour check: {ec['lever_maxima_confirmed']} of "
+         f"{ec['lever_maxima_checked']}."),
+        (f"- Bisection against the exhaustive terms x price scan ({sum(v['scan_cells'] for v in ec['buyers'].values())} cells): "
+         f"{ec['exhaustive_agreements']} of {ec['exhaustive_comparisons']} comparisons agree (the zone's smallest passing price at "
+         f"each terms value, and the longest terms alone, with the budget ignored, and with a price)."),
+        f"- Passing offers the sweep cannot test: {'; '.join(not_tested) or 'none'}.",
+        f"- Runtime: {env['seconds']:.1f} s.",
+    ]
+    out += [f"- Note: {n}" for n in env["notes"]]
+    return out
+
+
+def _clock_lines(clk: dict[str, Any], kc: dict[str, Any], swept_actions: str) -> list[str]:
+    out = [
+        (f"- Each scenario's end state is advanced in process with `Runtime.advance_to` (what `POST /clock/advance` calls) to "
+         f"days {kc['days']}, and the replay's checks run at each: {kc['states']} states, {kc['distinct_book_states']} "
+         f"distinct. Clock-advance errors: {kc['advance_errors']}; days already passed: {kc['days_already_passed']}."),
+        f"- Actions over all days: {swept_actions}.",
+        "",
+        "| Day | States | Rows | Ceilings | Overdue rows | Actions | Net order differs (of 2+ rows) | Flat curves | Bands | Slowest state |",
+        "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
+    ]
+    for day, d in kc["by_day"].items():
+        slow = d["slowest_state"]
+        slowest = f"{slow['scenario']} (worth {slow['worth_s']} s, curve {slow['curve_s']} s)" if slow else "-"
+        acts = ", ".join(f"{k} {v}" for k, v in d["actions"].items()) or "none"
+        out.append(f"| {day} | {d['states']} | {d['rows']} | {d['ceilings']} | {d['overdue_rows']} | {acts} | "
+                   f"{d['net_order_differs']} of {d['states_with_two_or_more_rows']} | {d['flat_curves']} | {d['bands']} | {slowest} |")
+    slowest5 = "; ".join(f"{x['scenario']} day {x['day']}: worth {x['worth_s']} s, curve {x['curve_s']} s" for x in kc["slowest_states"])
+    out += ["", f"- Slowest states overall: {slowest5 or 'none'}.", f"- Analysis time: {clk['seconds']:.1f} s."]
+    return out
+
+
 def render(result: dict[str, Any]) -> str:
     secs: dict[str, dict[str, Any]] = {s["name"]: s for s in result["sections"]}
-    col, cur, dif, env = secs["collections"], secs["curve"], secs["differential"], secs["envelope"]
-    cc, uc, dc = col["counts"], cur["counts"], dif["counts"]
+    col, cur, dif, env, clk = secs["collections"], secs["curve"], secs["differential"], secs["envelope"], secs["clock"]
+    cc, uc, dc, ec, kc = col["counts"], cur["counts"], dif["counts"], env["counts"], clk["counts"]
     verdict = "PASS" if result["failures_total"] == 0 else "FAIL"
     quick = " --quick" if result["quick"] else ""
     slowest = "; ".join(f"{x['scenario']} turn {x['turn']} {x['seconds']} s" for x in cc["slowest_turns"])
-    unseen = ", ".join(a for a in ("call_now", "escalate", "reminder", "offer_early_pay", "finance", "wait")
-                       if a not in cc["actions"]) or "none"
+    every = ("call_now", "escalate", "reminder", "offer_early_pay", "finance", "wait")
+    unseen = ", ".join(a for a in every if a not in cc["actions"]) or "none"
+    unseen_both = ", ".join(a for a in every if a not in cc["actions"] and a not in kc["actions"]) or "none"
     actions = ", ".join(f"{k} {v}" for k, v in cc["actions"].items()) or "none"
+    swept_actions = ", ".join(f"{k} {v}" for k, v in kc["actions"].items()) or "none"
+    sweep_days = kc["days"]
     lines: list[str] = [
         f"# Strategy backtest, {result['date']}",
         "",
         (f"Wave 6 of map #47 (`services/api/scripts/strategy_backtest.py{quick}`). Result: **{verdict}** "
-         f"({result['failures_total']} failures, {result['skipped']} section skipped), {result['seconds']:.0f} s in all."),
+         f"({result['failures_total']} failures, {result['skipped']} sections skipped), {result['seconds']:.0f} s in all."),
         "",
         "| Section | Status | Failures | Seconds |",
         "| --- | --- | --- | --- |",
@@ -566,8 +1085,10 @@ def render(result: dict[str, Any]) -> str:
         (f"- Turns where the net order differs from the overdue-amount order: {cc['net_order_differs_from_amount_order']} "
          f"of {cc['turns_with_two_or_more_rows']} turns with two or more rows."),
         f"- Actions (rows): {actions}; never produced by the replay: {unseen}.",
-        (f"- Coverage: simulated days {cc['days_covered']}; overdue rows {cc['overdue_rows']}; most rows in one turn "
-         f"{cc['max_rows_in_a_turn']}."),
+        (f"- Coverage: the replay stays on simulated days {cc['days_covered']} (overdue rows {cc['overdue_rows']}, most rows "
+         f"in one turn {cc['max_rows_in_a_turn']}); the clock sweep below adds days {sweep_days} (overdue rows "
+         f"{sum(d['overdue_rows'] for d in kc['by_day'].values())}). Actions never produced by replay and sweep together: "
+         f"{unseen_both}."),
         f"- Scenario turns the /nl route did not answer with 200: {cc['non_200_turns']} (not a failure of this backtest).",
         f"- Analysis time: {col['seconds']:.1f} s; slowest book states: {slowest}.",
         "",
@@ -586,7 +1107,11 @@ def render(result: dict[str, Any]) -> str:
     lines += [f"- {x}" for x in dc["invariants"]]
     lines += ["", "Expected differences (not failures):", ""]
     lines += [f"- {x}" for x in dc["expected_differences"]] or ["- none"]
-    lines += ["", "## Envelope", "", *(f"- {n}" for n in env["notes"]), ""]
+    lines += ["", "## Envelope", ""]
+    lines += _envelope_lines(env, ec)
+    lines += ["", "## Clock sweep: `receivables_worth` and `price_curve` after the clock moves", ""]
+    lines += _clock_lines(clk, kc, swept_actions)
+    lines.append("")
     fails = [f for s in result["sections"] for f in s["failures"]]
     lines += ["## Failures", ""]
     if not fails:
@@ -609,12 +1134,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = ap.parse_args(argv)
     started = time.perf_counter()
     today = date.today().isoformat()  # noqa: DTZ011 - the local date names the report
-    collections, curve = Section("collections"), Section("curve")
-    replay(args.quick, collections, curve)
+    collections, curve, clock = Section("collections"), Section("curve"), Section("clock")
+    replay(args.quick, collections, curve, clock)
     print("differential: golden day-0 and day-34 books against the oracle", file=sys.stderr, flush=True)
     diff = differential()
-    envelope = check_envelope()
-    sections = [collections, curve, diff, envelope]
+    envelope = check_envelope(args.quick)
+    sections = [collections, curve, clock, diff, envelope]
     result: dict[str, Any] = {
         "date": today, "quick": args.quick, "seconds": round(time.perf_counter() - started, 1),
         "failures_total": sum(len(s.failures) for s in sections),
