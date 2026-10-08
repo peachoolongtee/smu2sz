@@ -2,7 +2,14 @@
 
 /* `touch:` is where a finger is the pointer: any viewport below the desktop layout (1024 px) or a coarse pointer at any width.
    Controls keep their 32 / 40 px look on a desktop and reach 44 px here (DESIGN.md, Touch). */
-@custom-variant touch (@media (max-width: 63.999rem), (pointer: coarse));
+@custom-variant touch {
+  @media (max-width: 63.999rem) {
+    @slot;
+  }
+  @media (pointer: coarse) {
+    @slot;
+  }
+}
 
 /* Design tokens (the reference is apps/web/DESIGN.md). A light fintech theme: a faintly cool canvas under white cards, one
    confident blue, semantic status colours, five section hues for wayfinding, and one deep navy block (the Home hero, the
@@ -463,6 +470,12 @@ details[open]:not(.menu, :has(> .disclosure-body))::details-content {
   }
 }
 
+/* The ellipsis stays hidden until reduced motion asks for it. This base rule must come before the media block: equal
+   specificity, so the later rule wins, and the other order left the ellipsis hidden under reduced motion. */
+.spinner-dots {
+  display: none;
+}
+
 /* Reduced motion: no transforms, no waiting, no looping. Durations drop to 0.001 ms so a finished state is the only state. */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -490,9 +503,6 @@ details[open]:not(.menu, :has(> .disclosure-body))::details-content {
     display: inline;
     order: 1; /* after the label in a button's row */
   }
-}
-.spinner-dots {
-  display: none;
 }
 
 /* Recharts makes its SVG a tab stop (its accessibility layer): it takes the global ring like every other control. */

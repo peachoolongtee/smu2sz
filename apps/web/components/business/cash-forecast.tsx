@@ -190,7 +190,8 @@ export function CashForecast({ h }: { h: HomeView }) {
   const floor = h.cash.floor_fen;
   // Axis scale only: from zero, or lower when a projection goes below zero, so the trough the headline quotes is drawn.
   const yMin = axisFloor(data.map((r) => ({ cash: r.cash, cured: r.plan })) as Parameters<typeof axisFloor>[0]);
-  const breach = h.cash.first_breach_day !== null && h.cash.first_breach_day <= to ? h.cash.first_breach_day : null;
+  // The series starts today, and so does any breach we draw: a breach before today (an older server) is not a mark on this chart.
+  const breach = h.cash.first_breach_day !== null && h.cash.first_breach_day >= today && h.cash.first_breach_day <= to ? h.cash.first_breach_day : null;
   const breachRow = breach === null ? undefined : data.find((r) => r.day === breach);
   const lowestRow = h.cash.lowest_day <= to ? data.find((r) => r.day === h.cash.lowest_day) : undefined;
   // Pixel frame of the drawing (measured), so labels are placed against what is really there and never cross its edges.

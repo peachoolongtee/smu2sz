@@ -46,6 +46,9 @@ import reconciliationDay34 from "../../mocks/home_reconciliation_day34.json";
 import stateAfterApprove from "../../mocks/home_state_after_approve.json";
 import stateDay34 from "../../mocks/home_state_day34.json";
 import stateAfterFund from "../../mocks/state_after_fund.json";
+import summaryDay34NoReceipt from "../../mocks/home_summary_day34_noreceipt.json";
+import summaryDay34NoReceiptZh from "../../mocks/home_summary_day34_noreceipt_zh.json";
+import trajDay34NoReceipt from "../../mocks/trajectory_conservative_day34_noreceipt.json";
 
 /** The day the recording was taken on. */
 export const NEWS_DAY = 34;
@@ -56,6 +59,22 @@ const KEY = "tl-mock-home-v3";
  * the next act answers 409 ALERT_CHANGED, once, and the state_version the mock serves advances by one.
  */
 export const MOVE_BOOKS_KEY = "tl-mock-books-moved";
+
+/**
+ * Test hook, like MOVE_BOOKS_KEY: set this sessionStorage key to "1" and day 34 is the day with NO bank receipt on day 2 (the home and
+ * the readings are then the recordings taken on those books: cash is already under the reserve today). Without it the story is the
+ * main walk's, with the receipt.
+ */
+export const NO_RECEIPT_KEY = "tl-mock-no-receipt";
+
+function noReceipt(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return window.sessionStorage.getItem(NO_RECEIPT_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
 
 export type CureStage = "open" | "pending" | "approved";
 
@@ -234,14 +253,15 @@ export function mockHome(dealt: boolean, lang: "en" | "zh" = "en"): HomeView {
   const s = load();
   // Each point of the story was recorded in both languages (GET /home?lang=zh writes the sentences in Chinese).
   const zh = lang === "zh";
+  const point = storyPoint(dealt);
   const recorded = {
     day0: zh ? summaryDay0Zh : summaryDay0,
     quiet: zh ? summaryQuietZh : summaryQuiet,
     after_fund: zh ? summaryAfterFundZh : summaryAfterFund,
-    day34: zh ? summaryDay34Zh : summaryDay34,
+    day34: noReceipt() ? (zh ? summaryDay34NoReceiptZh : summaryDay34NoReceipt) : zh ? summaryDay34Zh : summaryDay34,
     pending: zh ? summaryPendingZh : summaryPending,
     after: zh ? summaryAfterZh : summaryAfter,
-  }[storyPoint(dealt)];
+  }[point];
   const view = clone<HomeView>(recorded);
   return { ...view, day: s.day, state_version: view.state_version + s.moved };
 }
@@ -253,7 +273,7 @@ export function mockTrajectory(dealt: boolean): unknown {
       day0: trajDay0,
       quiet: trajQuiet,
       after_fund: trajAfterFund,
-      day34: trajDay34,
+      day34: noReceipt() ? trajDay34NoReceipt : trajDay34,
       pending: trajPending,
       after: trajAfter,
     }[storyPoint(dealt)],

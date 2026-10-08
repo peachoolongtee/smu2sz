@@ -19,6 +19,8 @@
 //     per-session nonce, become fixed ids by order of first appearance; nl_script.json, home_reconciliation_day34.json and the two
 //     home ledgers (home_ledger_day34.json, home_ledger_approved.json) are
 //     chained again by first appearance (entry_hash / prev_hash re-derived, chain_head_hash fixed) for the same reason.
+//   - the early-payment alert id (ALERT-EARLYPAY-<12 hex>, derived from the offer's random id; raised on the books where the day-2 receipt
+//     never came): one fixed id.
 //   - the entry_hash / prev_hash of the operations in negotiation_accept.json, home_act.json, home_goahead.json, home_approve.json
 //     and home_approve_chat.json: the
 //     server's chain includes that commitment id, so it differs on every run. They are re-derived (sha256 over the op's
@@ -114,6 +116,7 @@ function rechainByAppearance(name, root) {
 function normalise(name, value) {
   const text = JSON.stringify(value)
     .replace(/CMT-[0-9a-f]{16}/g, FIXED_CMT)
+    .replace(/ALERT-EARLYPAY-[0-9a-f]{12}/g, `ALERT-EARLYPAY-${sha("recorded early-pay alert").slice(0, 12)}`)
     .replace(/NL-[0-9a-f]{16}/g, (id) => {
       if (!nlIds.has(id)) nlIds.set(id, `NL-${sha(`recorded nl id ${nlIds.size}`).slice(0, 16)}`);
       return nlIds.get(id);
@@ -414,6 +417,58 @@ files["home_goahead.json"] = await live.nl({ session_id: "rec-home-go", actor: "
 const queued = files["home_goahead.json"].operations[0]?.approval_id;
 if (!queued) throw new Error("go ahead on day 34 queued no approval: the demo path has changed");
 files["home_approve_chat.json"] = await live.nl({ session_id: "rec-home-go", actor: "OWNER", text: `approve ${queued}` });
+
+// ------------------------------------------------------------------ Wave 1 stories (map #65): three states the main walk does not reach
+// 1. Day 34 with NO bank receipt on day 2: the books are already under the reserve today (cash.below_reserve_today). The mock serves it
+//    when sessionStorage "tl-mock-no-receipt" is "1" (lib/mock/home.ts).
+await reset();
+await step("inbox").run();
+await step("trajectory").run();
+await step("negotiate").run();
+await live.advanceClock(2);
+await live.advanceClock(28);
+await live.advanceClock(4);
+files["home_summary_day34_noreceipt.json"] = await live.getHome("en");
+files["home_summary_day34_noreceipt_zh.json"] = await live.getHome("zh");
+files["trajectory_conservative_day34_noreceipt.json"] = await live.getTrajectory("CONSERVATIVE");
+if (files["home_summary_day34_noreceipt.json"].cash.below_reserve_today !== true) throw new Error("day 34 without a receipt should be below the reserve today: the API has changed");
+
+// 2. A buyer's early-payment message queues an agreement for the owner: its approval row carries the terms (terms_available true);
+//    once the agreement has expired the same row says the terms cannot be shown (terms_available false, with the server's reason).
+//    3. The day-34 cure approved after the mandate has expired: the executor refuses to run it, the approval stays APPROVED.
+//    The mock serves these when sessionStorage "tl-mock-approval-story" is "agreement", "expired" or "refused" (lib/mock/handlers.ts).
+const stories = {};
+await reset();
+{
+  // The buyer's own channel carries the buyer's key; the owner-side client does not send it.
+  const res = await fetch(`${API}/nl`, {
+    method: "POST",
+    headers: { "content-type": "application/json", "X-Counterparty-Key": "demo-buyer-1-key" },
+    body: JSON.stringify({ session_id: "rec-agreement", actor: "COUNTERPARTY", counterparty_id: "BUYER-1", text: "We can pay the invoice early at 0.5%.", request_id: "rec-agreement-1" }),
+  });
+  if (!res.ok) throw new Error(`the buyer's message failed: ${res.status} ${await res.text()}`);
+}
+stories.agreement = (await live.getApprovals()).find((a) => a.operation_kind === "ACCEPT_OFFER" || a.operation_kind === "RECORD_COMMITMENT");
+if (!stories.agreement?.presentation?.terms_available) throw new Error("the buyer's message queued no agreement with terms: the demo path has changed");
+await live.advanceClock(60);
+stories.expired = (await live.getApprovals()).find((a) => a.id === stories.agreement.id);
+if (stories.expired?.presentation?.terms_available !== false) throw new Error("an expired agreement should have no terms: the API has changed");
+await toDay34();
+{
+  const alerts = await live.getAlerts();
+  const reserve = alerts.alerts.find((a) => a.id.startsWith("ALERT-RESERVE") && a.actionable);
+  if (!reserve) throw new Error("no actionable reserve alert on day 34: the demo path has changed");
+  await live.actOnAlert(reserve.id, {
+    state_version: alerts.state_version,
+    suggestions: reserve.suggested.map((x) => ({ operation_kind: x.operation_kind, facility_id: x.facility_id, receivable_id: x.receivable_id, amount_fen: x.amount_fen })),
+  });
+}
+const cure = (await live.getApprovals())[0];
+await live.advanceClock(91 - 34);
+const refused = await live.decideApproval(cure.id, "APPROVE");
+if (refused.presentation?.execution_status !== "REFUSED") throw new Error("approving after the mandate expired should be refused: the API has changed");
+stories.refused = { pending: cure, decided: refused };
+files["w1_approval_stories.json"] = stories;
 
 // ------------------------------------------------------------------ the chat: every scripted text the mock knows, one conversation each
 const P = (role, lang, id) => promptsFor(role, lang).find((p) => p.id === id);

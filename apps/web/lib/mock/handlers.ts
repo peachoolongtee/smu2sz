@@ -55,6 +55,7 @@ import * as home from "./home";
 import { pickByStory } from "./strategy-pick";
 import alertsJson from "../../mocks/alerts.json";
 import approvalsSeed from "../../mocks/approvals_seed.json";
+import approvalStories from "../../mocks/w1_approval_stories.json";
 import auditSec from "../../mocks/audit_sec.json";
 import borrowerFileJson from "../../mocks/borrower_file.json";
 import capexApplyJson from "../../mocks/capex_apply.json";
@@ -320,8 +321,42 @@ export async function getAudit(): Promise<AuditView> {
   return clone({ ...scene, refusals });
 }
 
+/**
+ * Test hook, like home.MOVE_BOOKS_KEY: set this sessionStorage key to put one of three recorded approvals in the queue.
+ *   "agreement"  a buyer's early-payment agreement waiting for the owner, with its terms (terms_available true)
+ *   "expired"    the same agreement once it has expired: the server cannot present the terms (terms_available false, with its reason)
+ *   "refused"    the day-34 cure after the mandate has expired: Approve is answered 200 and the executor refuses to run it
+ * Each row is the API's own answer (scripts/record-mocks.mjs, mocks/w1_approval_stories.json).
+ */
+export const APPROVAL_STORY_KEY = "tl-mock-approval-story";
+
+type ApprovalStory = "agreement" | "expired" | "refused";
+const STORIES = cast<{ agreement: ApprovalView; expired: ApprovalView; refused: { pending: ApprovalView; decided: ApprovalView } }>(approvalStories);
+
+function approvalStory(): ApprovalStory | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const v = window.sessionStorage.getItem(APPROVAL_STORY_KEY);
+    return v === "agreement" || v === "expired" || v === "refused" ? v : null;
+  } catch {
+    return null;
+  }
+}
+
+/** The story's row, put in the queue once (its decided twin replaces it when the owner approves). */
+function seedApprovalStory(): void {
+  const story = approvalStory();
+  if (!story) return;
+  const s = load();
+  const row = story === "refused" ? STORIES.refused.pending : STORIES[story];
+  if (s.approvals.some((a) => a.id === row.id)) return;
+  s.approvals.push(clone(row));
+  save();
+}
+
 export async function getApprovals(): Promise<ApprovalView[]> {
   await delay();
+  seedApprovalStory();
   return clone(load().approvals);
 }
 
@@ -469,6 +504,13 @@ export async function decideApproval(id: string, decision: ApprovalDecision): Pr
   const a = s.approvals.find((x) => x.id === id);
   if (!a) throw new ApiError(404, `Approval ${id} not found.`, undefined, "approval_missing", { id });
   if (a.status !== "PENDING") throw new ApiError(409, `Approval ${id} is already ${a.status}.`, undefined, "approval_done", { id, status: a.status });
+  if (approvalStory() === "refused" && a.id === STORIES.refused.pending.id && decision === "APPROVE") {
+    // The executor refuses to run it after the owner's approval (the mandate has expired): the row comes back APPROVED, not run, as live.
+    const decided = clone(STORIES.refused.decided);
+    Object.assign(a, decided);
+    save();
+    return decided;
+  }
   if (a.op_id?.startsWith("alert:")) {
     // The day-34 cure the alert queued: approving runs it (recorded EXECUTED, the cash lands on day 37) and clears the alert.
     if (decision === "REJECT") {

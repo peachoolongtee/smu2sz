@@ -3,89 +3,31 @@
 import { TierBadge } from "@/components/badges";
 import { Disclosure } from "@/components/business/kit";
 import { Badge, Button, Callout, Card, KeyValueList, type Tone } from "@/components/ui";
+import { approveDisabled, termsGate } from "@/lib/approval-terms";
 import { useI18n } from "@/lib/i18n";
-import type { ApprovalDecision, ApprovalOperation, ApprovalView, Commitment, Displayed } from "@/lib/types";
+import type { ApprovalDecision, ApprovalView } from "@/lib/types";
 
 const statusTone: Record<ApprovalView["status"], Tone> = { PENDING: "warn", APPROVED: "ok", REJECTED: "bad" };
 
-/** The commitment an ACCEPT_OFFER or RECORD_COMMITMENT operation names, found in GET /ledger. */
-export function commitmentFor(op: ApprovalOperation | null, commitments: Displayed<Commitment>[] | undefined): Displayed<Commitment> | null {
-  if (!op || !commitments) return null;
-  if (op.kind === "RECORD_COMMITMENT") return commitments.find((c) => c.id === op.commitment_id) ?? null;
-  if (op.kind === "ACCEPT_OFFER") {
-    return commitments.find((c) => c.terms_hash === op.terms_hash && c.offer_id === op.offer_id && c.nonce === op.nonce) ?? null;
-  }
-  return null;
-}
-
-function Terms({ op, commitment, loaded }: { op: ApprovalOperation; commitment: Displayed<Commitment> | null; loaded: boolean }) {
-  const { t, te } = useI18n();
-  if (!commitment) {
-    return (
-      <div data-testid="approval-terms-missing">
-        <Callout tone="neutral">
-          {loaded ? t("appr.terms.none") : t("appr.terms.loading")}{" "}
-          <span className="font-mono text-xs">
-            {[op.offer_id ? `${op.offer_id} v${op.offer_version ?? "?"}` : null, op.commitment_id, op.terms_hash?.slice(0, 12)].filter(Boolean).join(" · ")}
-          </span>
-        </Callout>
-      </div>
-    );
-  }
-  return (
-    <div data-testid="approval-terms" className="space-y-2">
-      <p className="text-xs text-ink-3">
-        <span className="font-mono">{commitment.id}</span> · {commitment.counterparty_id} · {t("appr.terms.forward", { v: commitment.forward_value_display })}
-      </p>
-      <ul className="space-y-2">
-        {commitment.obligations.map((o) => {
-          const rows: { k: string; v: string }[] = [];
-          if (o.rate_bp !== null) rows.push({ k: t("item.rate"), v: o.rate_display ?? t("appr.rateBp", { n: o.rate_bp }) });
-          if (o.amount_fen !== null && o.amount_display) rows.push({ k: t("item.amount"), v: o.amount_display });
-          if (o.days_delta !== null) rows.push({ k: t("item.terms"), v: t("item.termsValue", { n: `${o.days_delta > 0 ? "+" : ""}${o.days_delta}` }) });
-          rows.push({
-            k: t("item.base"),
-            v: [te("basekind", o.base.kind), o.base.amount_fen !== null ? o.base.amount_display : null, o.base.receivable_id].filter(Boolean).join(" · "),
-          });
-          rows.push({ k: t("item.effective"), v: o.effective_day !== null ? t("common.dayN", { n: o.effective_day }) : t("common.none") });
-          const unformatted = (o.base.amount_fen !== null && !o.base.amount_display) || (o.amount_fen !== null && !o.amount_display);
-          return (
-            <li key={o.id} className="rounded-tile border border-line px-3 py-2" data-testid={`approval-obligation-${o.type}`}>
-              <p className="mb-1.5 text-sm font-semibold">{te("obligation", o.type)}</p>
-              <KeyValueList items={rows} />
-              {unformatted ? <p className="mt-1.5 text-xs text-ink-3">{t("appr.terms.noDisplay")}</p> : null}
-              {o.spans.map((s, i) => (
-                <blockquote key={i} className="mt-2 border-l-2 border-line-strong pl-2.5 text-xs italic text-ink-2" data-testid="approval-clause">
-                  <span className="not-italic font-medium text-ink-3">{t("appr.terms.clause")}: </span>&ldquo;{s.text}&rdquo;
-                </blockquote>
-              ))}
-            </li>
-          );
-        })}
-      </ul>
-    </div>
-  );
-}
-
 /**
- * One approval as a question the owner can answer: what, how much, what it costs, when the money moves, why it needs them
- * and what happens after. Ids, the tier, the operation id and the terms sit under "Audit details".
+ * One approval as a question the owner can answer: who with, what they would agree to, how much, what it costs, when the money
+ * moves, why it needs them and what happens after. All of that sits above the buttons. A commercial approval whose terms the
+ * server could not present cannot be approved (Decline stays). Ids, the tier and the operation id sit under "Audit details".
  */
 export function ApprovalCard({
   a,
-  commitments,
-  ledgerLoaded,
   busyId,
   resultMessage,
   onDecide,
+  onRetry,
 }: {
   a: ApprovalView;
-  commitments: Displayed<Commitment>[] | undefined;
-  ledgerLoaded: boolean;
   busyId: string | null;
   /** The executor's message for the decision the owner just made, kept by the page (the queue's own `result_message` is shown when this is absent, for example after a reload). */
   resultMessage?: string;
   onDecide: (id: string, decision: ApprovalDecision) => void;
+  /** Reads the queue again: the way out of "terms unavailable". */
+  onRetry?: () => void;
 }) {
   const { t, te } = useI18n();
   const isPending = a.status === "PENDING";
@@ -94,15 +36,23 @@ export function ApprovalCard({
   // the page kept from the decision is the fallback until the queue has been read again.
   const shownResult = p?.result_message || resultMessage || a.result_message || null;
   const op = a.operation;
-  const wantsTerms = op?.kind === "ACCEPT_OFFER" || op?.kind === "RECORD_COMMITMENT";
+  const gate = termsGate(a);
+  const execution = p?.execution_status ?? a.execution_status;
+  // The owner approved and the executor then refused to run it: the authorization stands, the execution did not, and no money moved.
+  const approvedButRefused = a.status === "APPROVED" && execution === "REFUSED";
+  const refusedSentence = p?.result_message?.startsWith("You approved it") ? p.result_message : null;
+  const refusedReason = a.result_message || resultMessage || "";
 
-  const names: { k: string; v: string }[] = [];
+  const names: { k: string; v: React.ReactNode }[] = [];
   if (op?.facility_id) names.push({ k: t("appr.facility"), v: op.facility_id });
   if (op?.receivable_id) names.push({ k: t("appr.receivable"), v: op.receivable_id });
   if (op?.offer_id) names.push({ k: t("appr.offer"), v: `${op.offer_id} v${op.offer_version ?? "?"}` });
   if (op?.commitment_id) names.push({ k: t("appr.commitment"), v: op.commitment_id });
+  if (op?.terms_hash) names.push({ k: t("neg.commitment.hash"), v: <span className="break-all font-mono text-xs">{op.terms_hash}</span> });
 
   const facts: { k: string; v: React.ReactNode }[] = [];
+  const buyer = p?.counterparty_name || p?.buyer_name;
+  if (gate.commercial && buyer) facts.push({ k: t("appr.buyer"), v: <span data-testid="approval-buyer">{buyer}</span> });
   if (a.amount_display) facts.push({ k: t("biz.amount"), v: a.amount_display });
   if (p?.cost_display) {
     facts.push({
@@ -115,7 +65,13 @@ export function ApprovalCard({
       ),
     });
   }
-  if (p?.lands_day !== null && p?.lands_day !== undefined) facts.push({ k: t("biz.lands"), v: <span data-testid="approval-lands">{p.lands_when ?? t("common.dayN", { n: p.lands_day })}</span> });
+  if (gate.commercial && gate.available && p?.forward_value_display) facts.push({ k: t("appr.forward"), v: <span data-testid="approval-forward">{p.forward_value_display}</span> });
+  if (isPending && p?.lands_text) {
+    // A waiting row's landing is a forecast, and the server says it as one ("If you approve today, the cash lands in 3 days.").
+    facts.push({ k: t("appr.timing"), v: <span className="font-normal" data-testid="approval-lands">{p.lands_text}</span> });
+  } else if (p?.lands_day !== null && p?.lands_day !== undefined) {
+    facts.push({ k: t("biz.lands"), v: <span data-testid="approval-lands">{p.lands_when ?? t("common.dayN", { n: p.lands_day })}</span> });
+  }
   if (p?.facility_name) facts.push({ k: t("biz.source"), v: p.facility_name });
   if (p?.invoice) facts.push({ k: t("biz.invoice"), v: p.invoice });
 
@@ -136,6 +92,40 @@ export function ApprovalCard({
           </div>
         ))}
       </dl>
+      {gate.commercial ? (
+        <div className="mt-4 border-t border-line pt-3">
+          {gate.available ? (
+            <section aria-labelledby={`terms-${a.id}`} data-testid="approval-terms">
+              <h3 id={`terms-${a.id}`} className="mb-1.5 text-xs font-medium text-ink-3">
+                {t("appr.agreeTo")}
+              </h3>
+              {p?.terms?.length ? (
+                <ul className="list-disc space-y-1.5 pl-5 text-sm text-ink marker:text-ink-3">
+                  {p.terms.map((term, i) => (
+                    <li key={i} className="text-pretty break-words">
+                      {term}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-pretty break-words text-sm text-ink">{p?.what_you_agree_to}</p>
+              )}
+            </section>
+          ) : (
+            <div id={`terms-${a.id}`} data-testid="approval-terms-unavailable">
+              <Callout tone="warn" title={t("appr.terms.unavailable.title")}>
+                <p>{t("appr.terms.unavailable.body")}</p>
+                {p?.terms_unavailable_reason ? <p className="mt-1 break-words font-medium text-ink">{p.terms_unavailable_reason}</p> : null}
+                {isPending && onRetry ? (
+                  <Button className="mt-2" size="sm" onClick={onRetry} data-testid="approval-terms-retry">
+                    {t("appr.terms.retry")}
+                  </Button>
+                ) : null}
+              </Callout>
+            </div>
+          )}
+        </div>
+      ) : null}
       <dl className="mt-4 space-y-3 border-t border-line pt-3 text-sm">
         <div>
           <dt className="text-xs font-medium text-ink-3">{t("appr.why")}</dt>
@@ -161,7 +151,13 @@ export function ApprovalCard({
 
       {isPending ? (
         <div className="mt-4 flex flex-wrap gap-2">
-          <Button variant="primary" loading={busyId === `${a.id}:APPROVE`} disabled={busyId !== null} onClick={() => onDecide(a.id, "APPROVE")}>
+          <Button
+            variant="primary"
+            loading={busyId === `${a.id}:APPROVE`}
+            disabled={approveDisabled(a, busyId !== null)}
+            aria-describedby={gate.commercial && !gate.available ? `terms-${a.id}` : undefined}
+            onClick={() => onDecide(a.id, "APPROVE")}
+          >
             {a.amount_display ? t("appr.approveAmount", { amount: a.amount_display }) : t("appr.approve")}
           </Button>
           <Button variant="secondary" loading={busyId === `${a.id}:REJECT`} disabled={busyId !== null} onClick={() => onDecide(a.id, "REJECT")}>
@@ -174,7 +170,15 @@ export function ApprovalCard({
           {p?.decided_when ? t("appr.decidedWhen", { when: p.decided_when }) : a.decided_day !== null && a.decided_day !== undefined ? t("appr.decidedOn", { day: a.decided_day }) : t("appr.decided")}
         </p>
       )}
-      {shownResult ? (
+      {approvedButRefused ? (
+        <div className="mt-3" role="status" data-testid={`approval-refused-${a.id}`}>
+          <Callout tone="bad" title={t("appr.refused.title")}>
+            <p className="break-words" data-testid={`approval-result-${a.id}`}>
+              {refusedSentence ?? t("appr.refused.sentence", { reason: refusedReason.replace(/[.\s]+$/, "") || t("appr.refused.noReason") })}
+            </p>
+          </Callout>
+        </div>
+      ) : shownResult ? (
         <p className="mt-2 text-sm font-medium text-ink" role="status" data-testid={`approval-result-${a.id}`}>
           {t("appr.result")}: {shownResult}
         </p>
@@ -206,12 +210,6 @@ export function ApprovalCard({
             <section aria-label={t("appr.why")}>
               <h3 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-ink-3">{t("biz.executorWords")}</h3>
               <p className="text-sm text-ink-2">{a.reason}</p>
-            </section>
-          ) : null}
-          {wantsTerms && op ? (
-            <section aria-label={t("appr.terms")}>
-              <h3 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-ink-3">{t("appr.terms")}</h3>
-              <Terms op={op} commitment={commitmentFor(op, commitments)} loaded={ledgerLoaded} />
             </section>
           ) : null}
         </div>

@@ -10,13 +10,13 @@ import { runPlan } from "./helpers";
 
 const ACCEPT_TEXT = "We will pay the full ¥420,000 invoice early at 0.5%.";
 
-test("a REJECT verdict shows the outcome only, no tier badge, and says nothing is executed", async ({ page }) => {
+test("a REJECT verdict shows the outcome only, no tier badge, and says evaluation alone makes no changes", async ({ page }) => {
   await page.goto("/inbox");
   await page.getByRole("button", { name: "Compile" }).click();
   await page.getByRole("button", { name: "Evaluate against the mandate" }).click();
   await expect(page).toHaveURL(/\/verdict/);
   await expect(page.getByTestId("outcome-badge")).toContainText("REJECT");
-  await expect(page.getByTestId("nothing-executed")).toHaveText("Nothing is executed");
+  await expect(page.getByTestId("nothing-executed")).toHaveText("Evaluation alone makes no changes.");
   const outcome = page.locator("#outcome");
   await expect(outcome).not.toContainText("Tier 1");
   await expect(outcome).not.toContainText("the agent may act");

@@ -244,7 +244,8 @@ test("day 34: the approval card is a question with the cost, the landing day and
   await expect(card.getByTestId("approval-headline")).toHaveText("Approve ¥200,000.00 of invoice financing?");
   await expect(card).toContainText("Finance ¥200,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co.");
   await expect(card.getByTestId("approval-cost")).toContainText("¥1,782.19");
-  await expect(card.getByTestId("approval-lands")).toHaveText("in 3 days");
+  // A waiting row's landing is a forecast, said as one by the server.
+  await expect(card.getByTestId("approval-lands")).toHaveText("If you approve today, the cash lands in 3 days.");
   await expect(card.getByTestId("approval-reason")).toContainText("32.5%");
   await expect(card.getByTestId("approval-reason")).not.toContainText("annualised");
   await expect(card.getByTestId("approval-after")).toContainText("for the next 120 days");

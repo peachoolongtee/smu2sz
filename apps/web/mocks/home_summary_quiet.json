@@ -19,6 +19,7 @@
     "lowest_headroom_fen": 0,
     "lowest_headroom_short": "¥0.00",
     "first_breach_day": null,
+    "below_reserve_today": false,
     "first_breach_cash_fen": null,
     "first_breach_cash_short": null,
     "cash_short": "¥550k",

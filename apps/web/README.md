@@ -34,6 +34,14 @@ cd services/api && TERMSLEDGER_NO_DOTENV=1 DATABASE_URL=memory LLM_MODE=cache uv
 cd apps/web && NEXT_PUBLIC_API_MODE=live pnpm dev      # must be on :3000, the API's CORS allow-list
 ```
 
+To use other ports, tell the API to allow the web origin and tell the web app where the API is (without `CORS_ORIGINS` the
+browser's preflight gets a 400 and every request fails):
+
+```
+cd services/api && CORS_ORIGINS=http://localhost:3141 TERMSLEDGER_NO_DOTENV=1 DATABASE_URL=memory LLM_MODE=cache uv run uvicorn app.main:app --port 8041
+cd apps/web && NEXT_PUBLIC_API_MODE=live NEXT_PUBLIC_API_URL=http://localhost:8041 pnpm dev -p 3141
+```
+
 ### Owner sign-in
 
 The API gates its owner routes on `X-Owner-Token`. No token is built into the bundle. A 401 from any owner request
