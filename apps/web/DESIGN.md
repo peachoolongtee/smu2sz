@@ -459,3 +459,15 @@ Every string is in the dictionary in both English and Chinese (`lib/dictionary.t
 - **Don't** remove a focus outline, animate height or position (the disclosure's height excepted), or let Ask FLOW float over content.
 - **Don't** tint a buyer's avatar orange, and don't give two folds on one page the same label.
 - **Don't** wrap an empty section in a card; one quiet `ink-3` line says it.
+
+## Amendments from the finish review (8 October 2026, Wave 8 pass E)
+
+- **Cash forecast labels** also avoid the gridlines and the reserve line: a label whose text box would cross one flips to the other side of its mark before the same-side overlap rule runs. Labels may still cross the series lines (open).
+- **Receivables worth is one figure**: the word "Saves" beside the server's net figure, right-aligned and tabular; when the server says there is no saving, its short sentence stands in. The full worth sentence is the first line of the row's details.
+- **Fold labels**: on a page that already has a "Details" fold, every other fold names its subject ("Option A details"; Home's foot card "Details: what is on its way, warnings, facilities and debt readings").
+- **The recommended funding row** is titled by the server's plan name, "Recommended plan" only as the fallback; the grey "a cheaper option exists" note is not drawn when the rows carry a role (the alternative's chip says it).
+- **The envelope card** draws the three fact tiles, the caption, the reason and the money sentence; the server's primary sentence is not drawn (the tiles carry its figures).
+- **A decision headline** ("Counter recommended") is a card title: 20 px semibold, its weight from position.
+- **Lists in a card** (the Activity timeline) are divider-separated rows with no per-row border, radius or tint; the audit fold sits inline at the trailing edge.
+- **The Cash status card** carries the note and the cash-price sentence; the debt-readings fold is the Forecast card's footer.
+- **Copy**: time passing carries no "Executed" chip; an expiry reads in the past tense once the day has gone ("Expired 27 days ago"); "Debt readings, this month"; a recovered promise is a full sentence; a receipt says "of the invoice".
