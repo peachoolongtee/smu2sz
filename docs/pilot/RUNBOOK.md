@@ -367,6 +367,7 @@ reads wrongly **before an owner sees it**.
   `--state` and `--mandate` are the books and mandate of section 3 (for the synthetic templates: `docs/pilot/templates/state.example.json`
   and `mandate.example.json`). The flags and a random owner token are set by the script itself. Exit 0 means every week ran
   without an error; 1 means a week reported one (read `summary.md`); 2 means the arguments or files were refused, with a sentence.
+- **What it teaches about itself.** The runner lands no receipt and a decision never changes the books, so from week 2 the books drift into a stress case (see `docs/pilot/dry-pilot-report-2026-10-09.md`); a week on six buyers takes up to four minutes, so start it and wait.
 - **No gate is read from a dry pilot.** The books are not an owner's, the decisions are written or role-played, and so no
   figure in a dry pilot counts toward any threshold in section 7; its report says what broke and what read wrongly, and is
   labelled a rehearsal.

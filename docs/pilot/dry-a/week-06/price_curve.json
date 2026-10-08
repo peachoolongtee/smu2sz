@@ -1,0 +1,26 @@
+{
+  "amount_display": "¥10,000.00",
+  "amount_fen": 1000000,
+  "bands": [
+    {
+      "above_guard": false,
+      "from_day": 42,
+      "from_when": "today",
+      "to_day": 162,
+      "to_when": "in 120 days",
+      "value_bp": 0,
+      "value_display": "¥0.00",
+      "value_fen": 0,
+      "value_pct": "0.00%",
+      "varies": false
+    }
+  ],
+  "computed_in_seconds": 3.679,
+  "day": 42,
+  "flat": true,
+  "hypothetical": true,
+  "sentence": "Earlier cash saves you nothing today.",
+  "source_state_version": 7,
+  "state_version": 7,
+  "window_days": 30
+}
