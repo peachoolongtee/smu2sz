@@ -2,11 +2,11 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from "react";
 import { apiMode, getApprovals } from "@/lib/api";
 import { useAsync } from "@/lib/use-async";
-import { setLang, useI18n } from "@/lib/i18n";
-import { setMode, shellFor, useMode, type Mode } from "@/lib/mode";
+import { getLang, setLang, useI18n } from "@/lib/i18n";
+import { getMode, setMode, shellFor, useMode, type Mode } from "@/lib/mode";
 import type { DictKey } from "@/lib/dictionary";
 import { ChatPanel } from "./chat/chat-panel";
 import { DemoStepper } from "./demo-stepper";
@@ -124,7 +124,7 @@ function ApprovalsBadge() {
   const pending = list.data?.filter((a) => a.status === "PENDING").length ?? 0;
   if (!pending) return null;
   return (
-    <Link href="/approvals" className="motion-press inline-flex min-h-8 items-center rounded-pill border border-warn-line bg-warn-bg px-3 text-xs font-semibold text-warn-fg hover:brightness-95" data-testid="approvals-badge" title={t("approvals.badge", { n: pending })}>
+    <Link href="/approvals" className="motion-press hit inline-flex min-h-8 items-center rounded-pill border border-warn-line bg-warn-bg px-3 text-xs font-semibold text-warn-fg hover:brightness-95" data-testid="approvals-badge" title={t("approvals.badge", { n: pending })}>
       <span className="sm:hidden">{pending}</span>
       <span className="hidden sm:inline">{t("approvals.badge", { n: pending })}</span>
     </Link>
@@ -132,12 +132,72 @@ function ApprovalsBadge() {
 }
 
 /**
- * One compact place for the account once the owner is signed in: the signed-in state and sign-out, the language, and
- * what this data is. Signed out, the Sign in button stays in the header itself: it is an action the owner needs.
+ * The account sheet: a native `<details>` under a small button. It closes on Escape (focus returns to its button), on a press
+ * outside it, and when a row in it navigates; a native `<details>` does none of these by itself.
  */
+function AccountSheet({ signedIn, children }: { signedIn: boolean; children: ReactNode | ((open: boolean) => ReactNode) }) {
+  const { t } = useI18n();
+  const ref = useRef<HTMLDetailsElement>(null);
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    const d = ref.current;
+    if (!d) return;
+    // Always listening (the `toggle` event is queued, so a key pressed right after the click would find no listener); each handler
+    // does nothing unless the sheet is open.
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape" || !d.open) return;
+      d.open = false;
+      d.querySelector("summary")?.focus();
+    };
+    const onPress = (e: PointerEvent) => {
+      if (d.open && !d.contains(e.target as Node)) d.open = false;
+    };
+    document.addEventListener("keydown", onKey);
+    document.addEventListener("pointerdown", onPress);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("pointerdown", onPress);
+    };
+  }, []);
+  return (
+    <details ref={ref} onToggle={(e) => setOpen(e.currentTarget.open)} className="menu relative" data-testid="account-menu">
+      <summary className="motion-press hit flex min-h-8 cursor-pointer list-none items-center rounded-pill border border-line-ui px-3 text-xs font-medium text-ink-2 hover:bg-subtle [&::-webkit-details-marker]:hidden" aria-label={t("account.menu")}>
+        {signedIn ? (
+          <span aria-hidden className="grid size-6 place-items-center rounded-pill bg-brand-50 text-xs font-bold text-brand-700">
+            {t("account.initial")}
+          </span>
+        ) : (
+          t("account.menu")
+        )}
+      </summary>
+      <div className="motion-sheet absolute right-0 z-40 mt-1 w-72 space-y-3 rounded-card border border-line bg-surface p-3 shadow-pop">{typeof children === "function" ? children(open) : children}</div>
+    </details>
+  );
+}
+
 /** A row in the sheet that navigates closes the sheet (a native `<details>` stays open otherwise). */
 function closeMenu(e: React.MouseEvent<HTMLElement>) {
   (e.currentTarget.closest("details") as HTMLDetailsElement | null)?.removeAttribute("open");
+}
+
+const sheetRow = "motion-press flex min-h-11 w-full items-center gap-2.5 rounded-pill px-3 text-left text-sm font-medium text-ink hover:bg-subtle";
+
+function TourRow() {
+  const { t } = useI18n();
+  return (
+    <button
+      type="button"
+      onClick={(e) => {
+        closeMenu(e);
+        startTour();
+      }}
+      className={sheetRow}
+      data-testid="account-tour"
+    >
+      <SparkIcon className="text-brand-600" />
+      {t("tour.replay")}
+    </button>
+  );
 }
 
 function AccountMenu() {
@@ -147,67 +207,85 @@ function AccountMenu() {
     return (
       <div className="flex items-center gap-2">
         <OwnerSessionControl />
-        <details className="menu relative" data-testid="account-menu">
-          <summary className="motion-press flex min-h-8 cursor-pointer list-none items-center rounded-pill border border-line-ui px-3 text-xs font-medium text-ink-2 hover:bg-subtle [&::-webkit-details-marker]:hidden" aria-label={t("account.menu")}>
-            {t("account.menu")}
-          </summary>
-          <div className="motion-sheet absolute right-0 z-40 mt-1 w-72 space-y-3 rounded-card border border-line bg-surface p-3 shadow-pop">
-            <button
-              type="button"
-              onClick={(e) => {
-                closeMenu(e);
-                startTour();
-              }}
-              className="motion-press flex min-h-10 w-full items-center gap-2.5 rounded-pill px-3 text-left text-sm font-medium text-ink hover:bg-subtle"
-              data-testid="account-tour"
-            >
-              <SparkIcon className="text-brand-600" />
-              {t("tour.replay")}
-            </button>
-            <LangSwitch />
-            <p className="text-xs text-ink-3">{t("biz.demoData.hint")}</p>
-          </div>
-        </details>
+        <AccountSheet signedIn={false}>
+          <TourRow />
+          <LangSwitch />
+          <p className="text-xs text-ink-3">{t("biz.demoData.hint")}</p>
+        </AccountSheet>
       </div>
     );
   }
   return (
-    <details className="menu relative" data-testid="account-menu">
-      <summary className="motion-press flex min-h-8 cursor-pointer list-none items-center rounded-pill border border-line-ui px-3 text-xs font-medium text-ink-2 hover:bg-subtle [&::-webkit-details-marker]:hidden" aria-label={t("account.menu")}>
-        <span aria-hidden className="grid size-6 place-items-center rounded-pill bg-brand-50 text-xs font-bold text-brand-700">
-          {t("account.initial")}
-        </span>
-      </summary>
-      <div className="motion-sheet absolute right-0 z-40 mt-1 w-72 space-y-3 rounded-card border border-line bg-surface p-3 shadow-pop">
-        <div className="flex items-center justify-between gap-2">
-          <p className="text-sm font-medium text-ink" data-testid="account-identity">
-            {t("account.signedInAs", { name: t("account.owner") })}
-          </p>
-          <Button size="sm" variant="ghost" onClick={signOut} data-testid="owner-signout">
-            {t("auth.signout")}
-          </Button>
-        </div>
-        <Link href="/limits" onClick={closeMenu} className="motion-press flex min-h-10 items-center gap-2.5 rounded-pill px-3 text-sm font-medium text-ink hover:bg-subtle" data-testid="account-limits">
-          <ShieldCheckIcon className="text-brand-600" />
-          {t("nav.limits.menu")}
-        </Link>
-        <button
-          type="button"
-          onClick={(e) => {
-            closeMenu(e);
-            startTour();
-          }}
-          className="motion-press flex min-h-10 w-full items-center gap-2.5 rounded-pill px-3 text-left text-sm font-medium text-ink hover:bg-subtle"
-          data-testid="account-tour"
-        >
-          <SparkIcon className="text-brand-600" />
-          {t("tour.replay")}
-        </button>
-        <LangSwitch />
-        <p className="text-xs text-ink-3">{t("biz.demoData.hint")}</p>
+    <AccountSheet signedIn>
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-sm font-medium text-ink" data-testid="account-identity">
+          {t("account.signedInAs", { name: t("account.owner") })}
+        </p>
+        <Button size="sm" variant="ghost" onClick={signOut} data-testid="owner-signout">
+          {t("auth.signout")}
+        </Button>
       </div>
-    </details>
+      <Link href="/limits" onClick={closeMenu} className={sheetRow} data-testid="account-limits">
+        <ShieldCheckIcon className="text-brand-600" />
+        {t("nav.limits.menu")}
+      </Link>
+      <TourRow />
+      <LangSwitch />
+      <p className="text-xs text-ink-3">{t("biz.demoData.hint")}</p>
+    </AccountSheet>
   );
+}
+
+/**
+ * The Demo shell's account sheet, for a phone and a tablet: what this data is (mock or live), who is signed in with sign-out, and
+ * the language, so the header keeps the brand, the menu, the mode switch and this one button. The content mounts when the sheet
+ * opens, so a test id appears once (the desktop header carries the same controls inline).
+ */
+function DemoAccountMenu() {
+  const { t } = useI18n();
+  const { token } = useAuth();
+  return (
+    <div className="lg:hidden">
+      <AccountSheet signedIn={Boolean(token)}>
+        {(open) =>
+          open ? (
+            <>
+              <div className="flex items-center justify-between gap-2">
+                <Badge tone={apiMode === "mock" ? "warn" : "ok"}>{t(apiMode === "mock" ? "mode.mock" : "mode.live")}</Badge>
+                <OwnerSessionControl />
+              </div>
+              <LangSwitch />
+              <p className="text-xs text-ink-3">{t(apiMode === "mock" ? "mode.mock.hint" : "mode.live.hint")}</p>
+            </>
+          ) : null
+        }
+      </AccountSheet>
+    </div>
+  );
+}
+
+/**
+ * Publishes the measured height of a fixed bottom bar (the phone tab bar, the Demo stepper) as `--dock-h` on <html>, in px, and 0 when
+ * the bar is not fixed or not shown (a desktop). Page padding, the Ask FLOW pill and `scroll-padding-bottom` read it (globals.css),
+ * so nothing fixed to the bottom is covered by another fixed thing or covers content, whatever the bar's height (the stepper wraps).
+ */
+function useDock(ref: RefObject<HTMLElement | null>) {
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const root = document.documentElement;
+    const publish = () => root.style.setProperty("--dock-h", getComputedStyle(el).position === "fixed" ? `${el.getBoundingClientRect().height}px` : "0px");
+    publish();
+    const observer = new ResizeObserver(publish);
+    observer.observe(el);
+    // The Demo stepper turns static at `lg` without changing size.
+    window.addEventListener("resize", publish);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", publish);
+      root.style.removeProperty("--dock-h");
+    };
+  }, [ref]);
 }
 
 // ---------------------------------------------------------------- Business
@@ -222,11 +300,12 @@ function BusinessShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const activeIdx = BUSINESS_NAV.findIndex((n) => n.href === pathname);
   const activeSection = activeIdx < 0 ? null : TAB_SECTION[BUSINESS_NAV[activeIdx].href];
+  const bar = useRef<HTMLElement>(null);
+  useDock(bar);
   return (
     <div className="min-h-dvh">
       <SkipLink />
       <OwnerSignInDialog />
-      <ChatPanel />
       <Tour />
       <Backdrop />
       <header className="sticky top-0 z-30 border-b border-line bg-surface">
@@ -265,41 +344,46 @@ function BusinessShell({ children }: { children: ReactNode }) {
           </div>
         </div>
       </header>
-      <main id="main" tabIndex={-1} className="mx-auto w-full max-w-[1180px] px-4 pb-28 pt-5 lg:px-6 lg:pb-10 lg:pt-6">
+      <main id="main" tabIndex={-1} className="dock-pad mx-auto w-full max-w-[1180px] px-4 pt-5 lg:px-6 lg:pt-6">
         {children}
       </main>
       {/* Phones: a tab bar with the same five sections, as in a banking app. */}
-      <nav aria-label={t("nav.label")} className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] lg:hidden" data-testid="tab-bar">
-        <div className="relative mx-auto max-w-xl">
-          <span
-            aria-hidden
-            className={`motion-slide pointer-events-none absolute left-0 top-0 h-0.5 w-1/5 ${activeIdx < 0 ? "opacity-0" : ""}`}
-            style={{ transform: `translateX(${Math.max(activeIdx, 0) * 100}%)` }}
-          >
-            <span className={`mx-auto block h-full w-10 rounded-pill transition-colors duration-(--dur) ${activeSection ? SECTIONS[activeSection].solid : ""}`} />
-          </span>
-          <ul className="grid grid-cols-5">
-            {BUSINESS_NAV.map((n) => {
-              const active = pathname === n.href;
-              const section = TAB_SECTION[n.href];
-              const Icon = SECTIONS[section].icon;
-              return (
-                <li key={n.href}>
-                  <Link
-                    href={n.href}
-                    aria-current={active ? "page" : undefined}
-                    aria-label={t(n.key)}
-                    className={`motion-press flex min-h-14 flex-col items-center justify-center gap-0.5 px-1 text-xs font-medium ${active ? "text-ink" : "text-ink-3 hover:text-ink"}`}
-                  >
-                    <Icon width={20} height={20} className={`transition-colors duration-(--dur) ${active ? SECTIONS[section].solidText : ""}`} />
-                    <span className="max-w-full truncate">{t(TAB_LABEL[n.href] ?? n.key)}</span>
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
+      <nav ref={bar} aria-label={t("nav.label")} className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] lg:hidden" data-testid="tab-bar">
+        {/* Below sm the bar's last cell (3rem) is Ask FLOW, which ChatPanel fixes in place; from sm the bar is the five tabs. */}
+        <div className="mx-auto flex max-w-xl">
+          <div className="relative min-w-0 flex-1">
+            <span
+              aria-hidden
+              className={`motion-slide pointer-events-none absolute left-0 top-0 h-0.5 w-1/5 ${activeIdx < 0 ? "opacity-0" : ""}`}
+              style={{ transform: `translateX(${Math.max(activeIdx, 0) * 100}%)` }}
+            >
+              <span className={`mx-auto block h-full w-10 rounded-pill transition-colors duration-(--dur) ${activeSection ? SECTIONS[activeSection].solid : ""}`} />
+            </span>
+            <ul className="grid grid-cols-5">
+              {BUSINESS_NAV.map((n) => {
+                const active = pathname === n.href;
+                const section = TAB_SECTION[n.href];
+                const Icon = SECTIONS[section].icon;
+                return (
+                  <li key={n.href}>
+                    <Link
+                      href={n.href}
+                      aria-current={active ? "page" : undefined}
+                      aria-label={t(n.key)}
+                      className={`motion-press flex min-h-14 flex-col items-center justify-center gap-0.5 px-0.5 text-xs font-medium tracking-tight ${active ? "text-ink" : "text-ink-3 hover:text-ink"}`}
+                    >
+                      <Icon width={20} height={20} className={`transition-colors duration-(--dur) ${active ? SECTIONS[section].solidText : ""}`} />
+                      <span className="max-w-full truncate">{t(TAB_LABEL[n.href] ?? n.key)}</span>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+          <div aria-hidden className="w-12 shrink-0 sm:hidden" />
         </div>
       </nav>
+      <ChatPanel />
     </div>
   );
 }
@@ -344,6 +428,8 @@ function DemoNavLinks({ onNavigate }: { onNavigate?: () => void }) {
 function DemoShell({ children }: { children: ReactNode }) {
   const { t } = useI18n();
   const [open, setOpen] = useState(false);
+  const stepper = useRef<HTMLDivElement>(null);
+  useDock(stepper);
   return (
     <div className="min-h-dvh">
       {/* The Demo is visibly not the product: a deep strip across the top says so (the deep hero is the Business home's alone). */}
@@ -363,7 +449,6 @@ function DemoShell({ children }: { children: ReactNode }) {
       </aside>
 
       <OwnerSignInDialog />
-      <ChatPanel />
 
       <div className="min-w-0">
         <div className="border-b border-line bg-surface lg:sticky lg:top-0 lg:z-30">
@@ -376,20 +461,24 @@ function DemoShell({ children }: { children: ReactNode }) {
                   aria-controls="mobile-nav"
                   aria-label={open ? t("nav.close") : t("nav.open")}
                   onClick={() => setOpen((v) => !v)}
-                  className="motion-press grid size-10 place-items-center rounded-pill border border-line-ui text-ink-2 hover:bg-subtle"
+                  className="motion-press grid size-10 place-items-center rounded-pill border border-line-ui text-ink-2 hover:bg-subtle touch:size-11"
                 >
                   {open ? <XIcon /> : <MenuIcon />}
                 </button>
                 <Brand href="/demo" />
               </div>
               <div className="hidden text-xs text-ink-3 lg:block">{t("common.tagline")}</div>
-              <div className="flex flex-wrap items-center justify-end gap-2">
+              <div className="flex items-center justify-end gap-2">
                 <ModeSwitch />
-                <Badge tone={apiMode === "mock" ? "warn" : "ok"} title={t(apiMode === "mock" ? "mode.mock.hint" : "mode.live.hint")}>
-                  {t(apiMode === "mock" ? "mode.mock" : "mode.live")}
-                </Badge>
-                <OwnerSessionControl />
-                <LangSwitch />
+                {/* Desktop: what this data is, who is signed in and the language sit in the header. Below lg they are the account sheet. */}
+                <div className="hidden items-center gap-2 lg:flex">
+                  <Badge tone={apiMode === "mock" ? "warn" : "ok"} title={t(apiMode === "mock" ? "mode.mock.hint" : "mode.live.hint")}>
+                    {t(apiMode === "mock" ? "mode.mock" : "mode.live")}
+                  </Badge>
+                  <OwnerSessionControl />
+                  <LangSwitch />
+                </div>
+                <DemoAccountMenu />
               </div>
             </div>
             {open ? (
@@ -398,15 +487,16 @@ function DemoShell({ children }: { children: ReactNode }) {
               </div>
             ) : null}
           </header>
-          <div className="fixed inset-x-0 bottom-0 z-30 shadow-up lg:static lg:shadow-none">
+          <div ref={stepper} className="fixed inset-x-0 bottom-0 z-30 bg-brand-50 pb-[env(safe-area-inset-bottom)] shadow-up lg:static lg:pb-0 lg:shadow-none">
             <DemoStepper />
           </div>
         </div>
-        <main id="main" tabIndex={-1} className="mx-auto w-full max-w-[1280px] px-4 pb-36 pt-5 lg:px-8 lg:pb-6 lg:pt-6">
+        <main id="main" tabIndex={-1} className="dock-pad mx-auto w-full max-w-[1280px] px-4 pt-5 lg:px-8 lg:pt-6">
           {children}
         </main>
       </div>
       </div>
+      <ChatPanel />
     </div>
   );
 }
@@ -418,20 +508,36 @@ const TITLE_KEY: Record<string, DictKey> = {
   "/limits": "nav.limits",
 };
 
-/** Sets the tab title ("Cash & funding · FLOW 流") and the document language, so a tab is findable and read aloud in the right language. */
-function useDocumentMeta(pathname: string) {
+/**
+ * Sets the tab title ("Cash & funding · FLOW 流") and the document language, so a tab is findable and read aloud in the owner's
+ * language. The server already sent the English title of the route (`metadata`, lib/route-title.ts); this puts the chosen language
+ * in, and puts it back if Next rewrites the title on a client navigation. It also clears the first-paint guard (lib/pre-hydration.ts)
+ * once the shell shows the stored mode and language.
+ */
+function useDocumentMeta(pathname: string, mode: Mode) {
   const { t, lang } = useI18n();
   useEffect(() => {
     const key = TITLE_KEY[pathname];
-    document.title = key && pathname !== "/" ? `${t(key)} · ${t("brand.name")}` : t("brand.name");
+    const want = key && pathname !== "/" ? `${t(key)} · ${t("brand.name")}` : t("brand.name");
+    const apply = () => {
+      if (document.title !== want) document.title = want;
+    };
+    apply();
     document.documentElement.lang = lang === "zh" ? "zh-CN" : "en";
+    // Next replaces the <title> text (or the element) when the route's metadata resolves: say it again, only when it differs.
+    const observer = new MutationObserver(apply);
+    observer.observe(document.head, { childList: true, subtree: true, characterData: true });
+    return () => observer.disconnect();
   }, [pathname, t, lang]);
+  useEffect(() => {
+    if (mode === getMode() && lang === getLang()) document.documentElement.removeAttribute("data-pending");
+  }, [mode, lang]);
 }
 
 /** Two shells. The owner's Business shell has no demo control; the Demo shell carries the story bar and the engine views. */
 export function AppShell({ children }: { children: ReactNode }) {
   const mode = useMode();
   const pathname = usePathname();
-  useDocumentMeta(pathname);
+  useDocumentMeta(pathname, mode);
   return shellFor(pathname, mode) === "demo" ? <DemoShell>{children}</DemoShell> : <BusinessShell>{children}</BusinessShell>;
 }

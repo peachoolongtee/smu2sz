@@ -81,7 +81,7 @@ export function PlainCode({ code, tone = "neutral", kind = "violation" }: { code
     <span className="inline-flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1">
       <span className={`min-w-0 break-words text-sm font-medium ${codeText[tone] ?? "text-ink"}`}>{label}</span>
       <details className="inline-block">
-        <summary className="cursor-pointer text-xs text-ink-3">{t("common.code")}</summary>
+        <summary className="hit cursor-pointer text-xs text-ink-3">{t("common.code")}</summary>
         <CodeBadge code={code} tone={tone} />
       </details>
     </span>

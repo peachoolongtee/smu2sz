@@ -10,7 +10,7 @@ import type { Mode } from "@/lib/mode";
 import { whenText } from "@/lib/when";
 
 /** A fold inside the inbox list: its head spans the card, aligned with the rows. */
-const foldHead = "flex min-h-8 cursor-pointer list-none items-center gap-2 px-4 text-xs font-medium text-brand-700 [&::-webkit-details-marker]:hidden";
+const foldHead = "hit flex min-h-8 cursor-pointer list-none items-center gap-2 px-4 text-xs font-medium text-brand-700 [&::-webkit-details-marker]:hidden";
 
 /** One buyer's messages, newest first; the first is the thread's row. */
 interface Thread {

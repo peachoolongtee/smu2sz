@@ -145,7 +145,7 @@ export function WhatIfControlsCard({
           onChange={(v) => set({ discount_bp: v })}
         />
         <div className="rounded-tile border border-line bg-subtle/60 p-3">
-          <label className="flex min-h-8 cursor-pointer items-center gap-2 text-sm text-ink-2">
+          <label className="flex min-h-8 cursor-pointer items-center gap-2 text-sm text-ink-2 touch:min-h-11">
             <input
               type="checkbox"
               checked={partial}

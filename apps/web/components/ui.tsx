@@ -5,6 +5,7 @@ import { useState, type ComponentProps, type ReactNode } from "react";
 import { requestSignIn } from "@/lib/auth";
 import { ApiError } from "@/lib/errors";
 import { useI18n } from "@/lib/i18n";
+import { errorText } from "@/lib/error-text";
 import { usePathname } from "next/navigation";
 import { shellFor, useMode } from "@/lib/mode";
 import { CheckIcon, CopyIcon, Spinner } from "./icons";
@@ -248,13 +249,13 @@ const variantClass: Record<ButtonVariant, string> = {
 };
 
 /**
- * The one button shape: a pill, 40 px tall (32 px compact), 16 px of padding, medium weight. Primary is the brand fill (one per
+ * The one button shape: a pill, 40 px tall (32 px compact; 44 px wherever a finger is the pointer, the `touch:` variant), 16 px of padding, medium weight. Primary is the brand fill (one per
  * page); secondary a line-ui outline; ghost text only; danger is the destructive fill. `Button` and `ButtonLink` both wear it,
  * so a link that looks like a button is the same button.
  */
 export function buttonClass(variant: ButtonVariant = "secondary", size: ButtonSize = "md", className = ""): string {
   return `motion-press inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-pill border font-medium disabled:cursor-not-allowed disabled:opacity-50 ${
-    size === "sm" ? "min-h-8 px-3 text-xs" : "min-h-10 px-4 text-sm"
+    size === "sm" ? "min-h-8 px-3 text-xs touch:min-h-11" : "min-h-10 px-4 text-sm touch:min-h-11"
   } ${variantClass[variant]} ${className}`;
 }
 
@@ -282,12 +283,12 @@ export function Button({
 /** A pill that toggles (a preset, a scene): the selected one takes the brand tint and a brand boundary, the rest are secondary buttons. */
 export function toggleClass(active: boolean, size: ButtonSize = "md", className = ""): string {
   return `motion-press inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-pill border font-medium disabled:cursor-not-allowed disabled:opacity-50 ${
-    size === "sm" ? "min-h-8 px-3 text-xs" : "min-h-10 px-4 text-sm"
+    size === "sm" ? "min-h-8 px-3 text-xs touch:min-h-11" : "min-h-10 px-4 text-sm touch:min-h-11"
   } ${active ? "border-brand-600 bg-brand-50 text-brand-700" : "border-line-ui bg-surface text-ink hover:bg-subtle"} ${className}`;
 }
 
 /** A quiet text link in a card's header or a sentence (the "open" links): brand-700 on white is 7.7:1. */
-export const textLinkClass = "motion-press inline-flex min-h-8 items-center rounded-pill px-2 text-xs font-medium text-brand-700 underline underline-offset-2 hover:bg-brand-50";
+export const textLinkClass = "motion-press hit inline-flex min-h-8 items-center rounded-pill px-2 text-xs font-medium text-brand-700 underline underline-offset-2 hover:bg-brand-50";
 
 /** A link in a button's shape (a navigation that is the page's next step). */
 export function ButtonLink({ variant = "secondary", size = "md", className = "", ...rest }: ComponentProps<typeof Link> & { variant?: ButtonVariant; size?: ButtonSize }) {
@@ -316,7 +317,7 @@ export function LoadingBlock({ rows = 3, label }: { rows?: number; label?: strin
 
 export function ErrorState({ error, onRetry }: { error: Error | string; onRetry?: () => void }) {
   const { t } = useI18n();
-  const message = typeof error === "string" ? error : error.message;
+  const message = typeof error === "string" ? error : errorText(error, t);
   // Being signed out is not a failure: the owner's pages ask for the sign-in in words instead of showing an error code.
   if (error instanceof ApiError && (error.status === 401 || error.status === 403)) {
     return (
@@ -391,7 +392,7 @@ function SegmentedTrack({ count, index, role, label, children }: { count: number
   );
 }
 
-const segmentedOption = "relative z-10 grid min-h-8 cursor-pointer place-items-center whitespace-nowrap rounded-pill px-3.5 text-xs font-medium transition-colors";
+const segmentedOption = "hit relative z-10 grid min-h-8 cursor-pointer place-items-center whitespace-nowrap rounded-pill px-3.5 text-xs font-medium transition-colors";
 
 /** Radio-group segmented control. Native radios give arrow-key navigation for free. */
 export function Segmented<T extends string>({
@@ -422,7 +423,7 @@ export function Segmented<T extends string>({
               value={o.value}
               checked={value === o.value}
               onChange={() => onChange(o.value)}
-              className="absolute inset-0 cursor-pointer opacity-0"
+              className="absolute inset-0 z-10 cursor-pointer opacity-0"
             />
             {o.label}
           </label>
@@ -492,7 +493,7 @@ export function Hash({ value, className = "" }: { value: string | null; classNam
       <button
         type="button"
         aria-label={t("common.copy")}
-        className="rounded-pill p-1 text-ink-3 hover:bg-subtle hover:text-ink"
+        className="hit rounded-pill p-1 text-ink-3 hover:bg-subtle hover:text-ink"
         onClick={() => {
           void navigator.clipboard?.writeText(value).then(() => {
             setCopied(true);
