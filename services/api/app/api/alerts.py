@@ -17,7 +17,14 @@ from pydantic import BaseModel, ConfigDict
 from app.alerts import Alert, Severity, alerts, cure_operations, reconcile
 from app.api.auth import require_owner
 from app.api.display import displayed
-from app.api.presentation import business_text, event_words, party_name, reconciliation_words
+from app.api.presentation import (
+    business_text,
+    event_words,
+    live_windows,
+    party_name,
+    reconciliation_words,
+    window_is_live,
+)
 from app.api.runtime import Runtime, get_runtime
 from app.books import current_books
 from app.domain.models import (
@@ -186,14 +193,15 @@ def act_on_alert(alert_id: str, body: ActRequest | None = None) -> dict[str, Any
         return sum(1 for r in results if r.status == status)
 
     books_now = rt.store.get_state()
+    agreements = {c.id: party_name(books_now, c.counterparty_id) for c in rt.store.commitments()}
     return {
         "alert_id": alert_id,
         "day": rt.day,
         # `message` is the executor's sentence; `message_when` says it as the Business home does (names, the owner's
         # words for the ceiling, distances from today). A presentation read, English only.
         # `event_text` / `event_detail`: the business sentence for what the operation did (`event_words`).
-        "results": [{**json.loads(r.model_dump_json()), "message_when": business_text(books_now, r.message, rt.day, "en"),
-                     **_event(books_now, op, r, rt.day)} for op, r in zip(ops, results, strict=False)],
+        "results": [{**json.loads(r.model_dump_json()), "message_when": business_text(books_now, r.message, rt.day, "en", agreements),
+                     **_event(books_now, op, r, rt.day, agreements)} for op, r in zip(ops, results, strict=False)],
         "executed": n(OperationStatus.EXECUTED),
         "pending_approval": n(OperationStatus.PENDING_APPROVAL),
         "refused": n(OperationStatus.REFUSED),
@@ -202,11 +210,13 @@ def act_on_alert(alert_id: str, body: ActRequest | None = None) -> dict[str, Any
     }
 
 
-def _event(state: FinancialState, op: Any, r: OperationResult, today: int) -> dict[str, Any]:
+def _event(state: FinancialState, op: Any, r: OperationResult, today: int,
+           agreements: dict[str, str] | None = None) -> dict[str, Any]:
     """The business sentence for one result of an act (`event_words`), from the operation that ran and its result."""
     words = event_words(state, kind=r.kind, status=r.status.value, payload=json.loads(op.model_dump_json()), message=r.message,
-                        approval_id=r.approval_id, day=r.effective_day, today=today, lang="en")
-    return {"event_text": words["event_text"] or business_text(state, r.message, today, "en"), "event_detail": words["event_detail"]}
+                        approval_id=r.approval_id, day=r.effective_day, today=today, lang="en", agreements=agreements)
+    return {"event_text": words["event_text"] or business_text(state, r.message, today, "en", agreements),
+            "event_detail": words["event_detail"]}
 
 
 @router.get("/reconciliation")
@@ -216,12 +226,14 @@ def get_reconciliation() -> dict[str, Any]:
     with rt.lock:
         report = reconcile(rt.store, day=rt.day)
         state = rt.store.get_state()
+        live = live_windows(report, rt.store.commitments(), state)
     out = displayed(json.loads(report.model_dump_json()))
     # `detail_when`: each promise's and receipt's sentence as a Business page reads it (names for ids, no commitment id,
     # distances from today). `detail` stays the engine's sentence for the audit level.
     agreements = {c.id: party_name(state, c.counterparty_id) for c in rt.store.commitments()}
     for key in ("promised", "receipts"):
         for row in out.get(key, []):
-            row["detail_when"] = (reconciliation_words(state, row.get("detail"), rt.day, promise=key == "promised", agreements=agreements)
+            row["detail_when"] = (reconciliation_words(state, row.get("detail"), rt.day, promise=key == "promised", agreements=agreements,
+                                                       window_live=window_is_live(live, row.get("receivable_id"), row.get("commitment_id")))
                                   if row.get("detail") else None)
     return {"reconciliation": out}

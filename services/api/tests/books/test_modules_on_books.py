@@ -189,6 +189,7 @@ def test_no_commitments_trajectory_and_router_plan_are_unchanged(client: TestCli
     assert t == json.loads(json.dumps(raw))
     # day 0: nothing is closed yet, so the first breach from today on is the engine's own
     assert ahead["first_breach_ahead_day"] == raw["first_breach_day"]
+    assert ahead["first_breach_ahead_cash"] == json.loads(json.dumps(raw["first_breach_cash"]))
     r = client.post("/router/plan").json()
     assert r["marginal"]["extension_extra_receivables_fen"] == 21_000_000  # F x 15 / 30, the shared pro forma
     assert r["marginal"]["extension_committed_12m_fen"] == 2_432_692

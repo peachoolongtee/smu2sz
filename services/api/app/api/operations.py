@@ -13,11 +13,13 @@ from app.alerts import alerts
 from app.api.auth import is_bank_feed, log_refusal, require_owner, require_owner_or_agent
 from app.api.home import cure_after
 from app.api.presentation import (
+    COMMERCIAL_KINDS,
     agreement_terms,
     approval_reason_words,
     approval_words,
+    business_text,
     find_agreement,
-    in_words,
+    party_name,
     relative_days,
     result_words,
     when_text,
@@ -69,9 +71,6 @@ def _decision_runs(records) -> dict:
     return out
 
 
-_COMMERCIAL = ("ACCEPT_OFFER", "RECORD_COMMITMENT")
-
-
 def _execution_status(approval_status: str, run_status: str | None) -> str:
     """What came of an approval, as one word the card can switch on: PENDING (waiting, or nothing ran yet), EXECUTED, REFUSED (the
     owner approved but the run was refused), DUPLICATE, or DECLINED (the owner said no)."""
@@ -87,6 +86,7 @@ def approvals_queue() -> dict:
     ran = _decision_runs(rt.store.operations())
     state = rt.store.get_state()
     commitments = rt.store.commitments()
+    agreements = {c.id: party_name(state, c.counterparty_id) for c in commitments}
     # The alerts whose cures are queued carry the engine's price for them; read once, only when something is pending.
     open_alerts: dict = {}
     plan_costs: dict = {}
@@ -122,7 +122,9 @@ def approvals_queue() -> dict:
         alert = open_alerts.get((a.op_id or "").split(":")[1]) if (a.op_id or "").startswith("alert:") else None
         after, residual = (cure_after(state, obs, rt.store.get_mandate(), alert, rt.day, "en") if alert is not None else (None, None))
         # An agreement row carries its terms, resolved here from the commitment it refers to (F02).
-        terms = agreement_terms(state, find_agreement(op, commitments), rt.day, "en") if a.kind in _COMMERCIAL else None
+        terms = agreement_terms(state, find_agreement(op, commitments), rt.day, "en",
+                                 pending=d["status"] == "PENDING",
+                                 horizon_days=rt.store.get_mandate().forward_concession_horizon_days) if a.kind in COMMERCIAL_KINDS else None
         d["presentation"] = approval_words(state, op, a.kind, rt.day, alert, "en", plan_costs, after=after,
                                            status=d["status"], agreement=terms)
         d["presentation"]["residual"] = residual
@@ -132,8 +134,9 @@ def approvals_queue() -> dict:
         d["presentation"]["reason"] = approval_reason_words(state, a.reason, rt.day, "en")
         d["presentation"]["result_message"] = (
             (result_words(state, kind=a.kind or "", status=run.result.status.value, payload=op, day=run.result.effective_day,
-                          today=rt.day, lang="en", approval_status=d["status"], message=run.result.message) if run is not None else None)
-            or (relative_days(in_words(state, d["result_message"]), rt.day, "en") if d["result_message"] else None))
+                          today=rt.day, lang="en", approval_status=d["status"], message=run.result.message,
+                          agreements=agreements) if run is not None else None)
+            or (business_text(state, d["result_message"], rt.day, "en", agreements) if d["result_message"] else None))
         d["presentation"]["decided_when"] = (relative_days(f"on day {d['decided_day']}", rt.day, "en")
                                              if d.get("decided_day") is not None else None)
         d["presentation"]["created_when"] = (when_text(int(d["created_day"]), rt.day, "en")

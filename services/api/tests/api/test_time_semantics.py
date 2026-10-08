@@ -9,10 +9,12 @@ from __future__ import annotations
 import pytest
 
 from app.api.presentation import (
+    agreement_ref,
     agreement_terms,
     approval_words,
     deadline_text,
     find_agreement,
+    obligation_sentence,
     relative_days,
     result_words,
     settlement_words,
@@ -67,16 +69,38 @@ def test_a_deadline_is_by_today_only_on_the_day_itself():
 
 def test_the_settlement_window_is_said_by_its_own_day():
     clause = "agreed early payment for ¥128,600.00 of face; up to ¥128,600.00 more may be settled early by day 2"
-    assert settlement_words(clause, 2).endswith("; up to ¥128,600.00 more may still be settled early by today")
-    assert settlement_words(clause, 1).endswith("more may still be settled early by tomorrow")
-    assert settlement_words(clause, 0).endswith("more may still be settled early within 2 days")
-    assert settlement_words(clause, 34).endswith("; the early-payment window for the other ¥128,600.00 ended 32 days ago")
-    assert settlement_words(clause, 3).endswith("; the early-payment window for the other ¥128,600.00 ended yesterday")
+    live = lambda text, today: settlement_words(text, today, live=True)  # noqa: E731
+    assert live(clause, 2).endswith("; up to ¥128,600.00 more may still be settled early by today")
+    assert live(clause, 1).endswith("more may still be settled early by tomorrow")
+    assert live(clause, 0).endswith("more may still be settled early within 2 days")
+    # a window the promise no longer has open is never "may still": the neutral form says what could be done
+    assert settlement_words(clause, 2).endswith("; up to ¥128,600.00 more could be settled early until today")
+    assert settlement_words(clause, 0).endswith("more could be settled early until 2 days from now")
+    assert settlement_words(clause, 1).endswith("more could be settled early until tomorrow")
+    for live_flag in (True, False):  # a window that has ended is ended whatever the promise says
+        assert settlement_words(clause, 34, live_flag).endswith("; the early-payment window for the other ¥128,600.00 ended 32 days ago")
+        assert settlement_words(clause, 3, live_flag).endswith("; the early-payment window for the other ¥128,600.00 ended yesterday")
     due = "(settles ¥1.00; ¥291,400.00 still due on day 32)"
     assert settlement_words(due, 34) == "(settles ¥1.00; ¥291,400.00 was still due 2 days ago)"
     assert settlement_words(due, 30) == due  # not yet due: the ordinary day rewrite says "in 2 days"
     assert settlement_words("¥1.00 promised for day 2 under commitment CMT-ab", 34) == (
         "¥1.00 promised as an early payment due 32 days ago under commitment CMT-ab")
+
+
+def test_a_commitment_id_never_reaches_the_owner():
+    ref = lambda text, **m: agreement_ref(text, m)  # noqa: E731
+    known = {"CMT-ab12": "Foshan Home Retail Co."}
+    assert agreement_ref("promised under commitment CMT-ab12 did not arrive", known) == (
+        "promised under the agreement with Foshan Home Retail Co. did not arrive")
+    assert agreement_ref("the early payment of commitment CMT-ab12 lapsed", known) == "the early payment of the agreement with Foshan Home Retail Co. lapsed"
+    assert agreement_ref("Commitment CMT-ab12 is ACTIVE; forward concession ¥0.00 booked", known) == (
+        "The agreement with Foshan Home Retail Co. is ACTIVE; forward concession ¥0.00 booked")
+    assert agreement_ref("Only the owner may revoke commitment CMT-ab12; the owner may revoke CMT-ab12 first", known) == (
+        "Only the owner may revoke the agreement with Foshan Home Retail Co.; the owner may revoke the agreement with Foshan Home Retail Co. first")
+    assert agreement_ref("of accepted commitment CMT-ff00 and the earlier REVOKED commitment CMT-ee11") == (
+        "of the accepted agreement and the earlier revoked agreement")
+    assert agreement_ref("paid (commitment CMT-ab12) now", known) == "paid now"
+    assert ref("FC-CMT-ab12 stays") == "FC-CMT-ab12 stays"  # a longer record id is not a commitment id
 
 
 def test_a_pending_approval_lands_from_today_a_decided_one_from_its_lot(client):
@@ -131,14 +155,16 @@ def test_the_trajectory_view_keeps_the_engines_day_and_adds_the_first_breach_ahe
     assert view["first_breach_ahead_day"] == 34 and view["first_breach_ahead_cash"]["fen"] == client.get("/home").json()["cash"]["cash_fen"]
 
 
-def test_a_breach_ahead_is_still_reported_by_its_own_day(client):
+def test_a_breach_ahead_is_reported_by_its_own_day_and_is_not_today(client):
     client.post("/demo/reset", json={})
-    cash = client.get("/home").json()["cash"]
+    home = client.get("/home").json()
+    cash = home["cash"]
     assert cash["below_reserve_today"] is False
-    day = cash["first_breach_day"]
-    assert day is None or day >= 0
+    assert cash["first_breach_day"] == 12 and cash["first_breach_when"] == "in 12 days"
+    assert cash["first_breach_cash_short"] == "¥60k"
     view = client.get("/trajectory").json()
-    assert view["first_breach_ahead_day"] == day
+    assert view["first_breach_ahead_day"] == 12 and view["first_breach_ahead_cash"]["fen"] == 6_000_000
+    assert home["headline"] == "Your cash reserve becomes unsafe in 12 days."
 
 
 def test_with_the_cure_approved_the_headline_says_below_reserve_and_the_worst_point_counts_the_funding(client):
@@ -242,8 +268,12 @@ def test_a_queued_agreement_carries_its_terms_and_the_buyer(client):
     row = _queue_agreement(client)
     p = row["presentation"]
     assert p["terms_available"] is True and p["terms_unavailable_reason"] is None
-    assert p["terms"] == ["The buyer may pay early and take 0.50% off the ¥420,000.00 invoice (effective in 2 days; one time)"]
-    assert p["counterparty_name"] == "Foshan Home Retail Co." and p["forward_value_display"] == "¥0.00"
+    assert p["terms"] == ["The buyer may pay early and take 0.50% off the ¥420,000.00 invoice to Foshan Home Retail Co. "
+                          "(effective in 2 days; one time)"]
+    assert p["counterparty_name"] == "Foshan Home Retail Co."
+    # a zero forward value is not "free": no figure, and the economic effect said in words
+    assert p["forward_value_display"] is None
+    assert p["economic_effect_text"] == "No cost over the valuation window beyond the early-payment discount."
     assert p["what_you_agree_to"] == p["terms"][0] + "."
     assert p["headline"] == "Approve this agreement with Foshan Home Retail Co.?"
     assert p["amount_display"] == "¥420,000.00" and row["amount_display"] == "¥420,000.00"
@@ -252,6 +282,7 @@ def test_a_queued_agreement_carries_its_terms_and_the_buyer(client):
     # the same row on the home
     home_row = client.get("/home").json()["approvals"][0]
     assert home_row["terms"] == p["terms"] and home_row["terms_available"] is True and home_row["headline"] == p["headline"]
+    assert home_row["execution_status"] == "PENDING" and home_row["economic_effect_text"] == p["economic_effect_text"]
 
 
 def test_a_funding_row_has_no_agreement_fields(client):
@@ -355,3 +386,177 @@ def test_an_approval_the_run_refused_is_not_a_decline(client):
     assert p["result_message"] == "You approved it, but it could not run: Mandate v1 expired yesterday. No money moved."
     assert "declined" not in p["result_message"].lower()
     assert p["if_decline"] is None and p["lands_day"] is None
+
+
+# ---------------------------------------------------------------- review fixes: the EX01 package through the HTTP queue
+
+
+AGENT = {"X-Agent-Key": "demo-agent-key"}
+
+
+def _queue_counter(client, which: int) -> dict:
+    """Option A (0) or Option B (1) of the EX01 package, proposed as a commitment and recorded as the agent would: a RECORD_COMMITMENT
+    that needs the owner waits in the approvals queue."""
+    client.post("/demo/reset", json={})
+    offer = client.post("/offers", json={"fixture_id": "EX01_PACKAGE"}).json()["offer"]
+    ev = client.post(f"/offers/{offer['offer_id']}/evaluate", json={"fixture_id": "EX01_PACKAGE"}).json()
+    verdict = ev.get("verdict", ev)
+    rt = get_runtime()
+    commitment = rt.executor.propose_commitment(verdict["id"], expires_day=14, counter_id=verdict["counters"][which]["id"])
+    version = client.get("/mandate").json()["mandate"]["version"]
+    r = client.post("/operations", headers=AGENT, json={
+        "kind": "RECORD_COMMITMENT", "op_id": "rec-1", "idempotency_key": "rec-1", "mandate_version": version,
+        "requested_by": "AGENT", "commitment_id": commitment.id, "nonce": commitment.nonce})
+    assert r.status_code == 200, r.text
+    rows = [a for a in _queue(client) if a["kind"] == "RECORD_COMMITMENT"]
+    return {"row": rows[0] if rows else None, "result": r.json()["result"], "commitment": commitment}
+
+
+def test_option_b_of_the_package_reads_as_terms_not_as_an_invoice_amount(client):
+    queued = _queue_counter(client, 1)
+    assert queued["result"]["status"] == "PENDING_APPROVAL"
+    p = queued["row"]["presentation"]
+    assert p["terms_available"] is True and p["headline"] == "Approve this agreement with Foshan Home Retail Co.?"
+    assert p["terms"] == ["The buyer gets 55-day payment terms on future invoices (ongoing, no end date)",
+                          "The price changes by 0.30% on future invoices (ongoing, no end date)"]
+    assert p["amount_display"] is None and queued["row"]["amount_display"] is None  # the bases are not invoices
+    assert "RCV-" not in " ".join(p["terms"]) and "¥0.00" not in p["what"]
+    cost = queued["commitment"].forward_value_fen
+    if cost:
+        assert p["forward_value_display"] and p["economic_effect_text"].startswith("Future cost of the terms you promise: ")
+        assert p["economic_effect_text"].endswith(" over the next 365 days.")
+    else:
+        assert p["forward_value_display"] is None and "terms you promise: ¥0.00" in p["economic_effect_text"]
+
+
+def test_a_cap_below_the_invoice_is_a_cap_not_a_smaller_invoice(client):
+    _queue_agreement(client)
+    rt = get_runtime()
+    commitment = rt.store.commitments()[0]
+    capped = commitment.model_copy(update={"obligations": [
+        ob.model_copy(update={"base": ob.base.model_copy(update={"amount_fen": 25_720_000})}) for ob in commitment.obligations]})
+    rt.store.put_commitment(capped)
+    row = _queue(client)[0]
+    assert row["presentation"]["terms"] == [
+        "The buyer may pay early and take 0.50% off up to ¥257,200.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. "
+        "(effective in 2 days; one time)"]
+    assert row["presentation"]["amount_display"] == "¥257,200.00"
+    assert "RCV-" not in str(row["presentation"]["terms"])
+
+
+def test_an_expired_or_revoked_agreement_in_the_queue_says_so(client):
+    _queue_agreement(client)
+    rt = get_runtime()
+    commitment = rt.store.commitments()[0]
+    for status, reason in (("EXPIRED", "has expired."), ("REVOKED", "was revoked.")):
+        rt.store.put_commitment(commitment.model_copy(update={"status": status}))
+        p = _queue(client)[0]["presentation"]
+        assert p["terms_available"] is False and p["terms"] == []
+        assert p["terms_unavailable_reason"] == f"The agreement this approval refers to {reason}"
+
+
+def test_a_decided_agreement_row_still_shows_what_was_approved(client):
+    row = _queue_agreement(client)
+    assert client.post(f"/approvals/{row['id']}", json={"decision": "APPROVE"}).json()["result"]["status"] == "EXECUTED"
+    decided = next(a for a in _queue(client) if a["id"] == row["id"])
+    assert get_runtime().store.commitments()[0].status.value in ("ACTIVE", "FULFILLED", "ACCEPTED")
+    p = decided["presentation"]
+    assert p["terms_available"] is True and p["terms_unavailable_reason"] is None
+    assert p["terms"] and p["execution_status"] == "EXECUTED" and p["if_decline"] is None
+
+
+def test_a_payment_term_that_gets_shorter_says_sooner(client):
+    queued = _queue_counter(client, 1)
+    rt = get_runtime()
+    ob = next(o for o in queued["commitment"].obligations if o.type.value == "TERMS_EXTENSION")
+    sooner = ob.model_copy(update={"days_delta": -15, "target_terms_days": None})
+    assert obligation_sentence(rt.store.get_state(), sooner, 0).startswith("The buyer pays 15 days sooner on future invoices")
+    assert "-15" not in obligation_sentence(rt.store.get_state(), sooner, 0)
+
+
+# ---------------------------------------------------------------- review fixes: receipts, windows, warnings
+
+
+def _receive(client, name: str, amount: int) -> None:
+    promise = client.get("/reconciliation").json()["reconciliation"]["promised"][0]
+    version = client.get("/mandate").json()["mandate"]["version"]
+    r = client.post("/operations", headers=BANK, json={
+        "kind": "RECEIVE_PAYMENT", "op_id": name, "idempotency_key": name, "mandate_version": version, "requested_by": "SYSTEM",
+        "receivable_id": promise["receivable_id"], "amount_fen": amount, "bank_reference": name.upper()})
+    assert r.json()["result"]["status"] == "EXECUTED", r.text
+
+
+def _to_package_deal(client) -> int:
+    client.post("/demo/reset", json={})
+    offer = client.post("/offers", json={"fixture_id": "EX01_PACKAGE"}).json()["offer"]
+    client.post(f"/offers/{offer['offer_id']}/evaluate", json={"fixture_id": "EX01_PACKAGE"})
+    client.post(f"/negotiate/{offer['offer_id']}", json={"buyer_profile": "cooperative"})
+    return client.get("/reconciliation").json()["reconciliation"]["promised"][0]["expected_fen"]
+
+
+def test_a_receipt_stops_saying_may_still_once_the_remainder_is_settled(client):
+    expected = _to_package_deal(client)
+    client.post("/clock/advance", json={"to_day": 1})
+    _receive(client, "half-1", expected // 2)
+    first = client.get("/reconciliation").json()["reconciliation"]["receipts"][0]
+    assert "may still be settled early by tomorrow" in first["detail_when"]  # the other half is still open
+    ledger = next(o for o in client.get("/ledger").json()["operations"] if o["kind"] == "RECEIVE_PAYMENT")
+    assert "may still be settled early by tomorrow" in ledger["event_detail"]
+    client.post("/clock/advance", json={"to_day": 2})
+    _receive(client, "half-2", expected - expected // 2)
+    rec = client.get("/reconciliation").json()["reconciliation"]
+    assert [p["status"] for p in rec["promised"]] == ["RECEIVED"]
+    for row in rec["receipts"]:
+        assert "may still" not in row["detail_when"]
+    assert "more could be settled early until today" in rec["receipts"][0]["detail_when"]
+    for op in client.get("/ledger").json()["operations"]:
+        if op["kind"] == "RECEIVE_PAYMENT":
+            assert "may still" not in (op["event_detail"] or "") + op["message_when"]
+
+
+def test_two_part_payments_read_as_one_change_and_no_warning_says_nothing_arrived(client):
+    expected = _to_package_deal(client)
+    client.post("/clock/advance", json={"to_day": 1})
+    _receive(client, "q-1", expected // 4)
+    client.post("/clock/advance", json={"to_day": 2})
+    _receive(client, "q-2", expected // 4)
+    client.post("/clock/advance", json={"to_day": 30})
+    client.post("/clock/advance", json={"to_day": 34})
+    home = client.get("/home").json()
+    row = next(c for c in home["changes"] if c.get("window_state"))
+    assert row["text"].startswith("Received 2 payments totalling ¥127,506.90 from Foshan Home Retail Co. (the last 32 days ago): "
+                                  "together they cleared ¥128,600.00 of the invoice")
+    assert row["window_state"] == "ended" and row["kind"] == "LATE"
+    assert not any("did not arrive" in w["title"] + w["detail"] for w in home["warnings"])
+    early = next(w for w in home["warnings"] if w["kind"] == "RECEIVABLE_PAST_DUE" and "partly paid" in w["title"])
+    assert early["title"].startswith("Early payment on the ¥420,000.00 invoice to Foshan Home Retail Co.")
+    assert early["detail"].startswith("Received 2 payments totalling")
+
+
+def test_the_half_receipt_leaves_no_warning_that_says_nothing_arrived(client):
+    _walk(client, receipt="half")
+    home = client.get("/home").json()
+    assert not any("did not arrive" in w["title"] + w["detail"] for w in home["warnings"])
+    early = next(w for w in home["warnings"] if "partly paid" in w["title"])
+    assert early["detail"].startswith("Received ¥127,506.90 from Foshan Home Retail Co. 32 days ago: it cleared ¥128,600.00")
+    assert "CMT-" not in early["title"] + early["detail"]
+
+
+def test_the_decided_receipt_row_never_names_a_passed_deadline_as_by_today(client):
+    _walk(client, receipt="half")
+    # the result_message fallback goes through the same words as the ledger (names, the past as past, no commitment id)
+    from app.api.presentation import business_text
+
+    state = get_runtime().store.get_state()
+    text = business_text(state, "Received ¥1.00 on RCV-A (settles ¥1.00; up to ¥2.00 more may be settled early by day 2; "
+                                "¥3.00 still due on day 32) under commitment CMT-ab12", 34, "en", {"CMT-ab12": "Foshan Home Retail Co."})
+    assert "by a deadline that passed" not in text and "by today" not in text
+    assert "ended 32 days ago" in text and "was still due 2 days ago" in text and "CMT-" not in text
+
+
+def test_the_home_next_action_and_the_card_say_the_same_after_state(client):
+    _walk(client)
+    _act(client)
+    home = client.get("/home").json()
+    card = _queue(client)[0]["presentation"]["protects"]
+    assert home["next_action"]["after"] == card and card.startswith("Prevents negative cash; cash stays ")
