@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { CodeBadge, OpStatusBadge, TierBadge } from "@/components/badges";
+import { StatePill } from "@/components/ui";
 import { SpanQuote } from "@/components/offer-parts";
 import { Badge, Card, Chip, ErrorState, Hash, LoadingBlock, PageHeader } from "@/components/ui";
 import { getAudit, getLedger, getState } from "@/lib/api";
@@ -61,6 +62,11 @@ export default function ActivityPage() {
     return label && label !== kind ? label : t("biz.activity.kind.other");
   };
   const ops = data ? [...data.operations].reverse() : [];
+  const decisionOf = (o: OperationView) => o.decision_link?.decision_id ?? o.decision_id ?? null;
+  // A request that waited for the owner is history once a later entry of the same decision ran (the owner decided).
+  const decidedSince = (o: OperationView) => o.status === "PENDING_APPROVAL" && decisionOf(o) !== null && ops.some((x) => decisionOf(x) === decisionOf(o) && (x.seq ?? 0) > (o.seq ?? 0) && x.status !== "PENDING_APPROVAL");
+  // The entry that ran after a request waited is the owner's decision (the agent only asked): the actor is "You".
+  const ownerDecided = (o: OperationView) => o.status !== "PENDING_APPROVAL" && decisionOf(o) !== null && ops.some((x) => decisionOf(x) === decisionOf(o) && (x.seq ?? 0) < (o.seq ?? 0) && x.status === "PENDING_APPROVAL");
   // Today, for the distances the Business pages show instead of day numbers (the books read carries the clock).
   const today = books.data?.day ?? ops[0]?.day ?? 0;
   const nowLine = ops.find((o) => o.why_it_matters && o.why_it_matters_as_of === "now")?.why_it_matters ?? null;
@@ -122,10 +128,15 @@ export default function ActivityPage() {
                       {o.approval_label ? <ApprovalLine o={o} /> : null}
                       <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
                         <span className="text-xs text-ink-3">{whenText(o.day, today, t)}</span>
-                        <span className="text-xs text-ink-3" data-testid="activity-op">{kindLabel(o.kind)}</span>
+                        <span className="text-xs text-ink-3" data-testid="activity-op">{o.kind_text ?? kindLabel(o.kind)}</span>
                         {/* Time passing is not an outcome to confirm: it carries no "Executed" chip. */}
-                        {o.kind === "ADVANCE_CLOCK" && o.status === "EXECUTED" ? null : <OpStatusBadge status={o.status} />}
-                        <span className="text-xs text-ink-3">{te("actor", o.requested_by)}</span>
+                        {o.kind === "ADVANCE_CLOCK" && o.status === "EXECUTED" ? null : decidedSince(o) && o.current_decision_state ? (
+                          // The request is history once the owner has decided: it wears where the decision stands today, not "Waiting for your approval".
+                          <StatePill tone="neutral" testId="activity-request-state">{o.current_decision_state}</StatePill>
+                        ) : (
+                          <OpStatusBadge status={o.status} />
+                        )}
+                        <span className="text-xs text-ink-3" data-testid="activity-actor">{ownerDecided(o) ? t("biz.activity.you") : te("actor", o.requested_by)}</span>
                       </p>
                       {o.violations.length ? (
                         <p className="mt-1 flex flex-wrap gap-1">

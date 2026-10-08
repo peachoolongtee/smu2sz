@@ -51,8 +51,15 @@ export async function walkStory(page: Page, steps: number, from = 0): Promise<vo
   for (let i = from; i < from + steps; i++) {
     const button = page.getByTestId("demo-next");
     await expect(button).toBeEnabled();
+    // The owner's step: the strip only opens the approval; the decision is the card's one filled Approve, and then the strip moves the story on.
+    if ((await button.textContent())?.includes("Open the approval")) {
+      await button.click();
+      await page.getByRole("button", { name: /^Approve/ }).click();
+      await expect(page.getByText("0 pending")).toBeVisible();
+      await expect(button).toHaveText("Next");
+    }
     await button.click();
-    await expect(stripOf(page)).toContainText(`${i + 1}/${STORY_STEPS}`);
+    await expect(stripOf(page)).toContainText(`step ${i + 1} of ${STORY_STEPS}`);
   }
 }
 

@@ -11,6 +11,9 @@
   }
 }
 
+/* `short:` is a window at most 800 px tall (a 768 px laptop): the hero and the next-step card tighten so the priced action reaches the first screen. */
+@custom-variant short (@media (max-height: 800px));
+
 /* Design tokens (the reference is apps/web/DESIGN.md). A light fintech theme: a faintly cool canvas under white cards, one
    confident blue, semantic status colours, five section hues for wayfinding, and one deep navy block (the Home hero, the
    Demo strip). Every colour used by components comes from here (the annotation tones in lib/annotation-style.ts are the one

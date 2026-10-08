@@ -79,12 +79,16 @@ test("day 34 without a receipt: the Home says it is below the reserve today, nev
   await expect(page.getByTestId("home-headline")).toHaveText("Below reserve today.");
   const hero = page.getByTestId("home-status");
   await expect(hero).toContainText("Below reserve today");
-  await expect(page.getByTestId("home-breach-cash")).toHaveText("¥45k");
+  // Already under the minimum: the tile is how far under (¥255k), with today's cash (¥45k) as its caption, never cash under a "below" label.
+  await expect(page.getByTestId("home-breach-cash")).toHaveText("¥255k");
+  await expect(hero).toContainText("Short of your minimum today");
+  await expect(hero).toContainText("Cash today ¥45k");
   await expect(hero).not.toContainText(/ago/);
   // The Cash page reads the same facts and starts its chart today.
   await page.goto("/cash");
-  await expect(page.getByTestId("cash-unsafe-when")).toHaveText("¥45k");
-  await expect(page.getByText("Below reserve today").first()).toBeVisible();
+  await expect(page.getByTestId("cash-unsafe-when")).toHaveText("¥255k");
+  await expect(page.getByText("Short of your minimum today").first()).toBeVisible();
+  await expect(page.getByTestId("cash-figures")).toContainText("Cash today ¥45k");
 });
 
 test("a part-paid promise: Home says it once in the server's sentence, Receivables names the four facts and the window", async ({ page }) => {

@@ -35,7 +35,7 @@ export function NextActionBlock({ a, stateVersion, fixer }: { a: HomeNextAction;
         : "";
 
   return (
-    <section aria-labelledby="home-action-title" className="rounded-card border border-line bg-surface p-4 shadow-card" data-testid="home-next-action" data-alert={a.alert_id}>
+    <section aria-labelledby="home-action-title" className="rounded-card border border-line bg-surface p-4 shadow-card short:p-3" data-testid="home-next-action" data-alert={a.alert_id}>
       <p className="text-xs font-semibold uppercase tracking-wide text-ink-3">{t("biz.recommended.short")}</p>
       <h2 id="home-action-title" className="mt-1 text-balance text-xl font-semibold leading-snug text-ink" data-testid="next-action-title">
         {a.outcome_title}
@@ -61,7 +61,7 @@ export function NextActionBlock({ a, stateVersion, fixer }: { a: HomeNextAction;
         ) : null}
         {a.lands_day !== null ? <Stat label={t("biz.fundsAvailable")} testId="next-action-lands" value={a.lands_when ?? ""} /> : null}
         {a.needs_owner ? (
-          <Stat className="col-span-2 sm:col-span-1" label={t("biz.authority")} tone="warn" tint testId="next-action-needs-owner" value={<span className="text-base">{t("biz.needsYou")}{a.needs_owner_reason ? <span className="block text-sm font-normal text-warn-fg">{a.needs_owner_reason}</span> : null}</span>} />
+          <Stat className="col-span-2 sm:col-span-1" label={t("biz.authority")} tone="warn" tint testId="next-action-needs-owner" value={<span className="text-base">{t("biz.needsYou")}{a.needs_owner_reason ? <span className="block text-sm font-normal text-warn-fg max-sm:hidden" data-testid="next-action-needs-owner-reason">{a.needs_owner_reason}</span> : null}</span>} />
         ) : (
           <Stat className="col-span-2 sm:col-span-1" label={t("biz.authority")} tone="ok" tint testId="next-action-within-limits" value={<span className="text-sm">{a.authority_text || t("biz.agentAlone")}</span>} />
         )}
@@ -109,6 +109,12 @@ export function NextActionBlock({ a, stateVersion, fixer }: { a: HomeNextAction;
 
       <Disclosure summary={t("biz.details.plan")} className="mt-4 border-t border-line pt-2" testId="next-action-details">
         <div className="space-y-4 text-sm">
+          {/* On a phone the reason the owner must decide waits here, so the button comes up the screen; a desktop shows it in the tile. */}
+          {a.needs_owner && a.needs_owner_reason ? (
+            <p className="text-warn-fg sm:hidden" data-testid="next-action-needs-owner-reason-folded">
+              {a.needs_owner_reason}
+            </p>
+          ) : null}
           <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
             {a.receive_display ? (
               <div>

@@ -141,6 +141,10 @@ test("each event says what changed, why it matters (labelled Now when it is toda
   // What changed, then what is left.
   const order = await approved.evaluate((el) => ["activity-event", "activity-remains"].map((id) => el.querySelector(`[data-testid="${id}"]`)?.getBoundingClientRect().top ?? -1));
   expect(order[0]).toBeLessThan(order[1]);
+  // The request is history once the owner has decided: it wears where the decision stands now, never "Waiting for your approval", and the decision is "You".
+  await expect(requested.getByTestId("activity-request-state")).toContainText("Requested; the cash is on its way");
+  await expect(requested.getByText("Waiting for your approval")).toHaveCount(0);
+  await expect(approved.getByTestId("activity-actor")).toHaveText("You");
   // The decision row never reads "Waiting" beside its own approval.
   await expect(page.getByTestId("activity-approval-state")).not.toContainText("Waiting for your approval");
 });

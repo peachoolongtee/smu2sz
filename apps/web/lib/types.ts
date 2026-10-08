@@ -880,6 +880,8 @@ export interface OperationView extends Displayed<OperationResult> {
   /** Null when the log entry does not record who asked (for example an owner decision). */
   requested_by: Actor | null;
   summary: string;
+  /** The operation's kind in the owner's words ("Funding request", "Agreement recorded"); the raw `kind` is for the audit fold. Absent before the API sends it. */
+  kind_text?: string | null;
   /** The executor's sentence as a Business page reads it (names, the owner's words, distances from today), written by GET /ledger; `summary` stays the audit sentence. Absent in older recordings. */
   message_when?: string | null;
   /** The business sentence for what the operation did (GET /ledger); `summary` stays the executor's own sentence. Absent in older recordings. */
@@ -1248,6 +1250,12 @@ export interface ApprovalPresentation {
   lands_text?: string | null;
   /** How the decision run ended: set on every row by the API, and by decideApproval for the decision just made. */
   execution_status?: ApprovalExecutionStatus;
+  /** Once decided, the next thing to look at as a sentence and a route (the server's); absent before the API sends them. */
+  next_step_text?: string | null;
+  next_step_href?: string | null;
+  /** The label of the Approve button and the reason in the owner's words for an agreement approval; absent before the API sends them. */
+  approve_label?: string | null;
+  why_text?: string | null;
   /** The state after the decision as one phrase and its tone (the server's); the card shows these first once decided. */
   result_state_text?: string | null;
   result_tone?: StateTone | null;
@@ -2563,6 +2571,8 @@ export interface DecisionList {
 
 export interface DecisionOperation {
   op_id: string;
+  /** The kind in the owner's words; absent before the API sends it. */
+  kind_text?: string | null;
   kind: OperationKind | string;
   status: OperationStatus;
   event_text: string | null;

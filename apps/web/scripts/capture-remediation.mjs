@@ -425,7 +425,7 @@ async function scenarioDemo(browser, vp, S) {
     await button.waitFor();
     await page.waitForFunction(() => !document.querySelector('[data-testid="demo-next"]')?.hasAttribute("disabled"));
     await button.click();
-    await strip.getByText(new RegExp(`${n}/${STORY_STEPS}`)).waitFor();
+    await strip.getByText(new RegExp(`step ${n} of ${STORY_STEPS}`)).waitFor();
   };
   await next(1);
   await next(2);
@@ -434,10 +434,11 @@ async function scenarioDemo(browser, vp, S) {
   for (let i = 3; i <= 7; i++) await next(i);
   await page.waitForURL(/\/approvals#approval-APR-/);
   await page.locator('[id^="approval-APR-"]').first().waitFor();
-  await page.waitForFunction(() => /Approve/.test(document.querySelector('[data-testid="demo-next"]')?.textContent ?? ""));
+  // The dock's button only opens the approval (the card holds the one filled Approve); the story page's step shows where the decision stands.
+  await page.waitForFunction(() => /Open the approval/.test(document.querySelector('[data-testid="demo-next"]')?.textContent ?? ""));
   await S.shoot(page, "22", "demo", "scene5-owner-approve-step");
   await page.goto(`${WEB}/demo`);
-  await tid(page, "story-run-8").waitFor();
+  await tid(page, "story-waiting-8").waitFor();
   await S.shoot(page, "22b", "demo", "story-page-scene5");
   await context.close();
 }

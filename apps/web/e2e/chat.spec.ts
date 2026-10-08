@@ -300,6 +300,22 @@ test("network and credential failures are explained in the conversation and can 
   await expect(page.getByTestId("chat-log").getByRole("alert").last()).toContainText("Server credentials not configured");
 });
 
+test("the prompt chips wrap inside the panel instead of running off its right edge", async ({ page, request }) => {
+  await resetBooks(request);
+  await asOwner(page);
+  await page.goto("/deals");
+  await page.getByTestId("chat-open").click();
+  const panel = page.getByRole("dialog", { name: "Ask FLOW" });
+  const list = panel.locator('[data-testid^="prompt-"]').first().locator("xpath=ancestor::ul[1]");
+  await expect(list).toBeVisible();
+  expect(await list.evaluate((el) => el.scrollWidth - el.clientWidth)).toBeLessThanOrEqual(1);
+  const edge = await panel.evaluate((el) => el.getBoundingClientRect().right);
+  for (const chip of await panel.locator('[data-testid^="prompt-"]').all()) {
+    const box = await chip.boundingBox();
+    if (box) expect(box.x + box.width).toBeLessThanOrEqual(edge + 1);
+  }
+});
+
 test("the chat button says Ask FLOW, and a Business page offers only the questions it can answer", async ({ page, request }) => {
   await resetBooks(request);
   await asOwner(page);
@@ -376,7 +392,8 @@ test("the Deals question about the deal explains the verdict the page evaluated,
   // The chat never evaluated anything: the answer is about the page's deal, named, with the server's own figures.
   await panel.getByTestId("prompt-page-counter").click();
   const why = panel.getByTestId("chat-turn").last();
-  await expect(why.getByTestId("chat-reply")).toContainText("About the Foshan Home Retail Co. offer evaluated today:");
+  // The live server answers in the owner's words, starting with the page's own word; the mock replays the earlier recorded template.
+  await expect(why.getByTestId("chat-reply")).toContainText(isLive() ? "FLOW recommends a counter:" : "About the Foshan Home Retail Co. offer evaluated today:");
   await expect(why.getByTestId("chat-reply")).not.toContainText("no verdict to explain");
   // A Business page says it in the reply, in words; the verdict panel (outcome, tier, codes) is the Demo views'.
   await expect(why.getByTestId("chat-outcome")).toHaveCount(0);

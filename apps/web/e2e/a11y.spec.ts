@@ -99,7 +99,7 @@ test("the chat panel and the Demo story", async ({ page }) => {
   await page.goto("/mandate");
   for (let i = 0; i < 4; i++) {
     await page.getByTestId("demo-next").click();
-    await expect(page.getByRole("region", { name: "Guided demo" }).locator("[aria-live=polite]")).toContainText(`${i + 1}/${STORY_STEPS}`);
+    await expect(page.getByRole("region", { name: "Guided demo" }).locator("[aria-live=polite]")).toContainText(`step ${i + 1} of ${STORY_STEPS}`);
   }
   await scan(page, "Demo story, step 4");
 });

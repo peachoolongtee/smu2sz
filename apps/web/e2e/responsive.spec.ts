@@ -317,3 +317,66 @@ test("on a desktop the Deals workspace keeps the server's order and the inbox ro
   const selected = (await topOf(page, "deal-selected"))!;
   expect(inbox.top).toBeLessThan(selected.top);
 });
+
+/**
+ * Wave 8 part C: on a phone every primary ends above y 840 at 412 x 915 (the tab bar starts at 858, and a primary that ends against it reads as covered),
+ * on day 0 and on day 34 (the cure waits for the owner), including the approval's own buttons. On a 1366 x 768 laptop Home's primary ends in the first screen.
+ */
+async function toDay34(page: Page) {
+  await page.goto("/demo");
+  await page.getByTestId("home-days").fill("34");
+  await page.getByTestId("home-advance").click();
+  await expect(page.getByTestId("home-day")).toHaveText("Day 34");
+}
+
+async function bottomOf(page: Page, testId: string): Promise<number> {
+  const box = (await page.getByTestId(testId).first().boundingBox())!;
+  return Math.round(box.y + box.height);
+}
+
+test("phone: every primary ends above y 840, on day 0 and on day 34 (Home, Cash, the approval's buttons)", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "phone", "the phone's first screen");
+  await page.setViewportSize({ width: 412, height: 915 });
+  await page.goto("/cash");
+  await expect(page.getByTestId("home-next-action")).toBeVisible();
+  const alert0 = (await page.getByTestId("home-next-action").getAttribute("data-alert"))!;
+  expect(await bottomOf(page, `fix-open-${alert0}`), "Cash day 0").toBeLessThanOrEqual(840);
+  await toDay34(page);
+  await page.goto("/");
+  const alert34 = (await page.getByTestId("home-next-action").getAttribute("data-alert"))!;
+  expect(await bottomOf(page, `fix-open-${alert34}`), "Home day 34").toBeLessThanOrEqual(840);
+  await page.goto("/cash");
+  await expect(page.getByTestId(`fix-open-${alert34}`)).toBeVisible();
+  expect(await bottomOf(page, `fix-open-${alert34}`), "Cash day 34").toBeLessThanOrEqual(840);
+  await page.getByTestId(`fix-open-${alert34}`).click();
+  await page.getByTestId(`fix-${alert34}`).click();
+  await expect(page.getByTestId(`alert-waiting-${alert34}`)).toBeVisible();
+  await page.goto("/approvals");
+  const approve = page.getByRole("button", { name: /^Approve/ }).first();
+  await expect(approve).toBeVisible();
+  const box = (await approve.boundingBox())!;
+  expect(Math.round(box.y + box.height), "Approvals pending").toBeLessThanOrEqual(840);
+});
+
+test("a 1366 x 768 laptop: Home's primary ends in the first screen, with the stat tiles behind Why", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name === "phone", "a laptop check");
+  await page.setViewportSize({ width: 1366, height: 768 });
+  await page.goto("/");
+  const alertId = (await page.getByTestId("home-next-action").getAttribute("data-alert"))!;
+  expect(await bottomOf(page, `fix-open-${alertId}`)).toBeLessThanOrEqual(700);
+  // The tiles are folded behind Why (the first screen is the answer and the priced action); a taller window shows them.
+  await expect(page.getByTestId("home-floor")).toBeHidden();
+  await page.getByTestId("home-why").locator("> summary").click();
+  await expect(page.getByTestId("home-floor")).toBeVisible();
+  await page.setViewportSize({ width: 1366, height: 900 });
+  await expect(page.getByTestId("home-floor")).toBeVisible();
+});
+
+test("at tablet width (820) the open invoices are a list, so the Buyer column is never clipped", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name === "phone", "the phone has its own check");
+  await page.setViewportSize({ width: 820, height: 1180 });
+  await page.goto("/receivables");
+  await expect(page.getByTestId("recv-open-list")).toBeVisible();
+  await expect(page.locator("table")).toBeHidden();
+  expect(await overflowX(page)).toBeLessThanOrEqual(1);
+});

@@ -452,7 +452,8 @@ function DemoShell({ children }: { children: ReactNode }) {
       </div>
       <div className="lg:grid lg:grid-cols-[14.5rem_minmax(0,1fr)]">
       <SkipLink />
-      <aside className="sticky top-0 hidden h-dvh flex-col gap-6 overflow-y-auto border-r border-line bg-surface px-3 py-4 lg:flex">
+      {/* The strip above is 36 px of the first screen: the footer reserves that height (pb-12) so a 768 px window never cuts it, and the column scrolls when it must. */}
+      <aside className="sticky top-0 hidden h-dvh flex-col gap-6 overflow-y-auto border-r border-line bg-surface px-3 pb-12 pt-4 lg:flex">
         <div className="px-2">
           <Brand href="/demo" />
         </div>
