@@ -661,6 +661,7 @@ Receipts in the log are replayed in order against what was outstanding when each
 | CAPEX | NPV, payback, each structure, the selection; it never applies for anything (the application is `POST /capex/apply`, section 5.14) | Read only, owner token |
 | BORROWER_FILE | Builds the lender pack at once for the owner and returns its id, evidence hash and download link ("prepared, not sent"); nothing is queued or approved | Read only, owner token |
 | RECORD_FACT | The owner states a new bill, invoice, delay or figure ("we have a supplier bill of ¥80,000 due on day 30"): the reply says chat cannot record it, that the forecast is unchanged and that facts enter through the books, echoing any amount named. English and Chinese | Nothing: no operation, no pending plan, no confirmation armed |
+| CHANGES | "What changed today?" / "What changed since my last visit?" / 今天有什么变化？ (and the page questions "What are we waiting for?", "When does the money arrive?", "What is overdue?", "What happens if this payment is late?", "Why did FLOW choose this plan?", which answer under SHOW_STATUS, RECONCILE, WHAT_IF and EXPLAIN): a read of the Home read in business words, each event with its status, what it means for cash and what is left to do; with nothing new it says so and gives the forecast. The owner's page context (`context` ids, validated against the stores) points "why" and "what if I accept" at the deal the page evaluated | Nothing: read-only, owner token required |
 | AMBIGUOUS | A three-option clarification | — |
 | OUT_OF_SCOPE | A Tier-3 request is sent to the executor so its refusal is logged; anything else gets the nearest capability and an example | — |
 
@@ -1126,7 +1127,7 @@ Test paths are under `services/api/tests/` unless they start with `apps/`.
 | Leg ordering: the router orders legs so every prefix is admissible, one leg rule shared with admission; a plan admissible only as a whole is flagged cannot run today | 5.4, 5.6 | `funding/test_planner_executor_agree.py` |
 | Capex evaluation is side-effect free; `POST /capex/apply` is the owner's explicit, state-version-bound step | 5.14 | `capex/test_api.py`, `capex/test_audit_fixes.py` |
 | The borrower file is read-only with provenance (generation day, versions, evidence hash); no GENERATE_BORROWER_FILE operation or approval; dated by the generation day | 5.15 | `borrower_file/test_api.py`, `borrower_file/test_review_gaps.py`, `nl/test_capabilities.py` |
-| Chat refuses to "record" facts: RECORD_FACT answers "cannot record, forecast unchanged" and arms nothing (20 intents) | 5.12 | `nl/test_record_fact.py` |
+| Chat refuses to "record" facts: RECORD_FACT answers "cannot record, forecast unchanged" and arms nothing (21 intents) | 5.12 | `nl/test_record_fact.py` |
 | Mandate-expiry alert: a warning 14 days ahead, critical once expired, no suggested operation | 5.10 | `alerts/test_review_gaps.py`, `nl/test_review_gaps_opener.py` |
 | Zero-floor fallback cure: when no plan restores the reserve but one keeps cash at or above zero, the alert offers it and says it does not restore the reserve | 5.10 | `alerts/test_review_gaps.py`, `nl/test_review_gaps_opener.py` |
 | The alert button is bound: `act` carries the state version and the suggestions shown, and answers 409 `ALERT_CHANGED` when either moved | 5.10, 6 | `alerts/test_review_gaps.py` |

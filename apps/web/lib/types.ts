@@ -1671,6 +1671,7 @@ export type NlIntent =
   | "EXPLAIN"
   | "WHAT_IF"
   | "RECORD_FACT"
+  | "CHANGES"
   | "APPROVE"
   | "REJECT"
   | "COUNTERPARTY_MESSAGE"
@@ -1688,6 +1689,25 @@ export interface NlRequest {
   lang?: "en" | "zh";
   /** Makes a retried request replay-safe: the same id in the same session is answered as DUPLICATE, not run twice. */
   request_id?: string;
+  /** What the owner's page was showing: ids only (INVARIANT 13), never an amount or a sentence. Owner turns only; the server checks every id and ignores what it cannot find. */
+  context?: NlPageContext;
+}
+
+/** The page behind a chat turn. `since_day` is the owner's last-visit marker (the same one GET /home takes). */
+export interface NlPageContext {
+  page: string;
+  offer_id?: string;
+  decision_id?: string;
+  invoice_id?: string;
+  since_day?: number;
+}
+
+/** What the server actually used from the page context ("Discussing: the Foshan offer"). */
+export interface NlContextEcho {
+  offer_id: string | null;
+  counterparty_name: string | null;
+  decision_id: string | null;
+  invoice_id: string | null;
 }
 
 export type NlPlanStatus = "PROPOSED" | "EXECUTED" | "REFUSED" | "PENDING_APPROVAL" | "DUPLICATE" | "SKIPPED" | "DONE" | "INFO";
@@ -1778,6 +1798,8 @@ export interface NlResponse {
   security_events: string[];
   parse_source: string;
   trace_id: string;
+  /** The validated page context this turn used; null when none was sent or none was found. */
+  context_echo?: NlContextEcho | null;
 }
 
 /** POST /nl/opener: the agent speaks first. A pending cure sits in the owner's session until "go ahead". */

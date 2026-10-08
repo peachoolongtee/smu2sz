@@ -559,6 +559,59 @@ const missing = KEY_ORDER.filter((k) => !(k in script));
 if (missing.length || Object.keys(script).length !== KEY_ORDER.length) throw new Error(`nl script keys do not match: missing ${missing.join(", ")}`);
 files["nl_script.json"] = Object.fromEntries(KEY_ORDER.map((k) => [k, script[k]]));
 
+// ------------------------------------------------------------------ Ask FLOW bound to the page (map #65, wave 4 part A): mocks/nl_page.json
+// The questions the Business pages suggest (lib/chat-prompts.ts), asked as the browser asks them: the page, the deal the page
+// evaluated (an id), and the last-visit marker. The deal questions are recorded once on the day-0 books with EX01 evaluated over
+// REST (the Deals page's own path); the others at each point of the story the mock can be at (lib/mock/home.ts readPoint()).
+const pageAsk = (session, text, context) => live.nl({ session_id: `rec-page-${session}`, actor: "OWNER", text, context });
+const POINT_QUESTIONS = {
+  changes: ["What changed today?", "/"],
+  waiting: ["What are we waiting for?", "/deals"],
+  arrival: ["When does the money arrive?", "/cash"],
+  overdue: ["What is overdue?", "/receivables"],
+  late: ["What happens if this payment is late?", "/cash"],
+  plan: ["Why did FLOW choose this plan?", "/cash"],
+};
+async function pointReads(point, since) {
+  const out = {};
+  for (const [key, [text, pg]] of Object.entries(POINT_QUESTIONS)) {
+    out[key] = await pageAsk(`${point}-${key}`, text, { page: pg, ...(since === null ? {} : { since_day: since }) });
+  }
+  return out;
+}
+const nlPage = {};
+await reset();
+await step("inbox").run();
+await step("trajectory").run();
+{
+  const offerId = demo().offerId;
+  const ctx = { page: "/deals", offer_id: offerId };
+  nlPage.deals = {
+    explain: await pageAsk("deal-explain", "Why are we countering this?", ctx),
+    original: await pageAsk("deal-original", "What if I accept their original terms?", ctx),
+    option: await pageAsk("deal-option", "Why is Option A cheaper?", ctx),
+  };
+  if (!nlPage.deals.explain.context_echo?.decision_id) throw new Error("the page's deal was not bound: the API has changed");
+}
+await reset();
+nlPage.day0 = await pointReads("day0", null);
+await toDay34();
+nlPage.day34 = await pointReads("day34", 0);
+{
+  const alerts = await live.getAlerts();
+  const reserve = alerts.alerts.find((a) => a.id.startsWith("ALERT-RESERVE") && a.actionable);
+  if (!reserve) throw new Error("no actionable reserve alert on day 34: the demo path has changed");
+  await live.actOnAlert(reserve.id, {
+    state_version: alerts.state_version,
+    suggestions: reserve.suggested.map((x) => ({ operation_kind: x.operation_kind, facility_id: x.facility_id, receivable_id: x.receivable_id, amount_fen: x.amount_fen })),
+  });
+}
+nlPage.pending = await pointReads("pending", 0);
+await live.decideApproval((await live.getApprovals())[0].id, "APPROVE");
+nlPage.after = await pointReads("after", 0);
+if (nlPage.pending.changes.intent !== "CHANGES" || !nlPage.pending.changes.reply.includes("Waiting for your approval")) throw new Error("the queued cure is not in 'what changed': the API has changed");
+files["nl_page.json"] = nlPage;
+
 await live.demoReset();
 
 for (const name of Object.keys(files).sort()) write(name, files[name]);

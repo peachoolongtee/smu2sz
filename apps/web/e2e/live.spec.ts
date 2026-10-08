@@ -81,7 +81,9 @@ test("the day-0 plan: 'go ahead' brings cash now and leaves the advance in trans
   const owner = { "X-Owner-Token": TOKEN };
   expect((await request.post(`${API}/demo/reset`, { headers: owner, data: {} })).ok()).toBeTruthy();
   await page.goto("/chat");
-  await page.getByTestId("prompt-fund").click();
+  // Business chat has no general prompts (they live in Demo): the owner types the request.
+  await page.getByRole("textbox", { name: "Message" }).fill("Fund the cash gap");
+  await page.getByTestId("chat-send").click();
   const first = page.getByTestId("chat-turn").first();
   // "Fund the cash gap" only proposes; every action says when its cash lands.
   await expect(first.getByTestId("chat-reply")).toContainText("lands on day 3");

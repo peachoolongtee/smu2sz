@@ -185,13 +185,15 @@ export function OperationList({ operations, business = false }: { operations: Nl
 }
 
 export function AssistantTurn({
-
   response: r,
   active,
   busy,
+  restored = false,
   onSend,
 }: {
   response: NlResponse;
+  /** Read back from the browser after a refresh: its buttons are history, and what was pending lives on the Approvals page. */
+  restored?: boolean;
   /** Only the latest turn can be answered: confirmations and clarifications on older turns are history. */
   active: boolean;
   busy: boolean;
@@ -202,6 +204,7 @@ export function AssistantTurn({
   const ranNothing = r.operations.length === 0 && (hasSecurity || r.plan.length > 0);
   const zh = r.lang === "zh";
   const refused = r.operations.some((o) => o.status === "REFUSED");
+  const pendingAfterRefresh = restored && (r.awaiting_confirmation || r.operations.some((o) => o.status === "PENDING_APPROVAL"));
 
   return (
     <div
@@ -289,7 +292,14 @@ export function AssistantTurn({
         </section>
       ) : null}
 
-      {r.awaiting_confirmation ? (
+      {pendingAfterRefresh ? (
+        <p className="rounded-tile border border-warn-line bg-warn-bg px-3 py-2 text-sm text-warn-fg" data-testid="chat-restored-pending">
+          {t("chat.restored.pending")}{" "}
+          <Link href="/approvals" className="font-medium underline">
+            {t("chat.restored.open")}
+          </Link>
+        </p>
+      ) : r.awaiting_confirmation ? (
         <section className="rounded-tile border border-warn-line bg-warn-bg px-3 py-2" data-testid="chat-awaiting" aria-label={t("chat.awaiting")}>
           <p className="text-sm font-medium text-warn-fg">{t("chat.awaiting")}</p>
           <p className="mt-0.5 text-xs text-warn-fg">{t("chat.awaiting.hint")}</p>

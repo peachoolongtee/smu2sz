@@ -263,6 +263,15 @@ function storyPoint(dealt: boolean): StoryPoint {
   return s.funded ? "after_fund" : dealt ? "quiet" : "day0";
 }
 
+/** Which recorded books the chat's page reads (what changed, what is overdue, ...) were taken on: the opening books, day 34 open, the queued cure, the approved cure. */
+export type ReadPoint = "day0" | "day34" | "pending" | "after";
+
+export function readPoint(): ReadPoint {
+  const s = load();
+  if (s.day < NEWS_DAY) return "day0";
+  return s.stage === "approved" ? "after" : s.stage === "pending" ? "pending" : "day34";
+}
+
 function day34Summary(zh: boolean): unknown {
   const variant = receiptVariant();
   if (variant === "none") return zh ? summaryDay34NoReceiptZh : summaryDay34NoReceipt;
