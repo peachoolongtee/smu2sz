@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Avatar, Disclosure, FoldChevron, initials, toneFor } from "@/components/business/kit";
 import { ActionChip, ActionText, WorthSentence, WorthText } from "@/components/business/strategy";
 import { Badge, Card, TableWrap, tableCls, tdCls, thCls, toggleClass } from "@/components/ui";
+import { focusInvoice } from "@/lib/chat-context";
 import { useI18n } from "@/lib/i18n";
 import type { OutstandingReceivable, ReceivableWorth, ReceivablesWorthView } from "@/lib/types";
 import { daysLate, whenText } from "@/lib/when";
@@ -50,12 +51,16 @@ export function ReceivablesTable({
     ...(soon > 0 ? [{ id: "soon" as const, label: t("biz.recv.filter.soon"), n: soon }] : []),
   ];
   const showFilters = invoices.length > 1 && filters.length > 1;
-  const toggle = (id: string) =>
+  // Ask FLOW is told which invoice row is open (an id only), so "What happens if this payment is late?" is about that one.
+  useEffect(() => () => focusInvoice(null), []);
+  const toggle = (id: string) => {
+    focusInvoice(open.has(id) ? null : id);
     setOpen((cur) => {
       const next = new Set(cur);
       if (!next.delete(id)) next.add(id);
       return next;
     });
+  };
   const status = (o: OutstandingReceivable) => (
     <Badge tone={o.past_due ? "bad" : "neutral"}>{o.past_due ? daysLate(Math.max(0, asOfDay - o.due_day), t) : t("recon.onTime")}</Badge>
   );

@@ -15,6 +15,7 @@
   "security_events": [],
   "parse_source": "opener",
   "trace_id": "rec-quiet-zh:1",
+  "context_echo": null,
   "proactive": true,
   "has_news": true
 }
