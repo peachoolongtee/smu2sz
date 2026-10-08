@@ -2,7 +2,7 @@
 
 import { Chip } from "@/components/ui";
 import { useI18n } from "@/lib/i18n";
-import type { ReceivableWorth } from "@/lib/types";
+import type { ReceivableWorth, ReceivablesWorthView } from "@/lib/types";
 
 /**
  * The strategy MVP's two receivable cells (behind STRATEGY_MVP): what collecting the invoice is worth and what to do about it.
@@ -57,5 +57,18 @@ export function ActionText({ row, testId }: { row: ReceivableWorth; testId: stri
         </span>
       ) : null}
     </span>
+  );
+}
+
+/**
+ * The one line that says what the order of the open invoices follows when the collections ranking is on: what each collection saves
+ * the owner, not how late it is. The server's own line (`ranking_note`); the dictionary line stands in when an older answer has none.
+ */
+export function RankingNote({ worth }: { worth: ReceivablesWorthView }) {
+  const { t } = useI18n();
+  return (
+    <p className="min-w-0 text-xs text-ink-3" data-testid="recv-ranking-note">
+      {worth.ranking_note || t("biz.recv.ranking.default")}
+    </p>
   );
 }

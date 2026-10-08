@@ -22,6 +22,7 @@ import type {
   AuditView,
   BorrowerFileRequest,
   BorrowerFileView,
+  ChaseView,
   CapexApplyRequest,
   CapexApplyResult,
   CapexRequest,
@@ -157,6 +158,11 @@ export async function getAlerts(): Promise<AlertsView> {
 /** GET /reconciliation (flag `alerts`): receipts in the log matched to receivables. */
 export async function getReconciliation(): Promise<ReconciliationView> {
   return isMock ? (await mock()).getReconciliation() : (await live()).getReconciliation();
+}
+
+/** GET /receivables/{id}/chase: the collection handoff for one open invoice (the facts and a payment request to copy; nothing is sent). */
+export async function getChase(receivableId: string, lang: "en" | "zh"): Promise<ChaseView> {
+  return isMock ? (await mock()).getChase(receivableId, lang) : (await live()).getChase(receivableId, lang);
 }
 
 /**

@@ -1353,6 +1353,44 @@ export interface ReceiptRow {
   window_state?: "open" | "ended";
 }
 
+/** One labelled fact of the collection handoff, written by the server in the language asked for. */
+export interface ChaseFact {
+  id: string;
+  label: string;
+  value: string;
+}
+
+/** An early-payment promise on the invoice, and what became of it, in the owner's words. */
+export interface ChasePromise {
+  status: PromiseStatus;
+  amount_display: string;
+  face_display: string;
+  promised_when: string | null;
+  text: string;
+}
+
+/** GET /receivables/{id}/chase: the handoff for one open invoice. Every figure and sentence is the server's; nothing is sent from here. */
+export interface ChaseView {
+  receivable_id: string;
+  buyer_name: string;
+  face_display: string;
+  outstanding_display: string;
+  issued_when: string;
+  due_when: string;
+  past_due: boolean;
+  late_days: number;
+  terms_days: number;
+  promises: ChasePromise[];
+  /** An early-payment window is still open on this invoice. */
+  window_open: boolean;
+  /** The facts for the dialog's definition list, in order. */
+  facts: ChaseFact[];
+  /** A payment request in the owner's voice, ready to copy. */
+  request_text: string;
+  /** The Deals route for the buyer when a deal thread exists, else null. */
+  thread_href: string | null;
+}
+
 /** One band of the cash price curve: what the stated amount is worth if it arrives on days from_day..to_day. */
 export interface PriceBand {
   from_day: Day;

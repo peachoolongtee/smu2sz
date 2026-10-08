@@ -1,0 +1,110 @@
+{
+  "en": {
+    "RCV-A": {
+      "receivable_id": "RCV-A",
+      "buyer_name": "Foshan Home Retail Co.",
+      "face_display": "¥420,000.00",
+      "outstanding_display": "¥420,000.00",
+      "issued_when": "13 days ago",
+      "due_when": "in 32 days",
+      "past_due": false,
+      "late_days": 0,
+      "terms_days": 45,
+      "promises": [],
+      "window_open": false,
+      "facts": [
+        {
+          "id": "buyer",
+          "label": "Buyer",
+          "value": "Foshan Home Retail Co."
+        },
+        {
+          "id": "invoice",
+          "label": "Invoice",
+          "value": "¥420,000.00"
+        },
+        {
+          "id": "outstanding",
+          "label": "Outstanding",
+          "value": "¥420,000.00"
+        },
+        {
+          "id": "issued",
+          "label": "Issued",
+          "value": "13 days ago"
+        },
+        {
+          "id": "due",
+          "label": "Due",
+          "value": "in 32 days"
+        },
+        {
+          "id": "late",
+          "label": "Late by",
+          "value": "Not yet due"
+        },
+        {
+          "id": "terms",
+          "label": "Agreed terms on the invoice",
+          "value": "45 days"
+        }
+      ],
+      "request_text": "Dear Foshan Home Retail Co., the ¥420,000.00 invoice issued 13 days ago is due in 32 days; ¥420,000.00 remains outstanding. Please confirm the payment date. Our agreed payment terms are 45 days from the invoice date. Thank you.",
+      "thread_href": null
+    }
+  },
+  "zh": {
+    "RCV-A": {
+      "receivable_id": "RCV-A",
+      "buyer_name": "Foshan Home Retail Co.",
+      "face_display": "¥420,000.00",
+      "outstanding_display": "¥420,000.00",
+      "issued_when": "13 天前",
+      "due_when": "32 天后",
+      "past_due": false,
+      "late_days": 0,
+      "terms_days": 45,
+      "promises": [],
+      "window_open": false,
+      "facts": [
+        {
+          "id": "buyer",
+          "label": "买方",
+          "value": "Foshan Home Retail Co."
+        },
+        {
+          "id": "invoice",
+          "label": "发票金额",
+          "value": "¥420,000.00"
+        },
+        {
+          "id": "outstanding",
+          "label": "未付余额",
+          "value": "¥420,000.00"
+        },
+        {
+          "id": "issued",
+          "label": "开票",
+          "value": "13 天前"
+        },
+        {
+          "id": "due",
+          "label": "到期",
+          "value": "32 天后"
+        },
+        {
+          "id": "late",
+          "label": "逾期",
+          "value": "未到期"
+        },
+        {
+          "id": "terms",
+          "label": "发票约定账期",
+          "value": "45 天"
+        }
+      ],
+      "request_text": "尊敬的Foshan Home Retail Co.：13 天前开具的 ¥420,000.00 发票将于 32 天后到期，尚有 ¥420,000.00 未付。请确认付款日期。按我们约定的账期（自开票日起 45 天），应在到期日付款。谢谢。",
+      "thread_href": null
+    }
+  }
+}

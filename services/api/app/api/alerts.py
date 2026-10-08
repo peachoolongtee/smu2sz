@@ -28,6 +28,7 @@ from app.api.presentation import (
     window_is_live,
 )
 from app.api.quotes import build_quote
+from app.api.receipt_facts import receipt_facts
 from app.api.runtime import Runtime, get_runtime
 from app.books import current_books
 from app.decisions.identity import alert_cure_id, alert_plan_id
@@ -243,6 +244,7 @@ def get_reconciliation() -> dict[str, Any]:
         report = reconcile(rt.store, day=rt.day)
         state = rt.store.get_state()
         live = live_windows(report, rt.store.commitments(), state)
+        facts = receipt_facts(state, report, live, rt.day)
     out = displayed(json.loads(report.model_dump_json()))
     # `detail_when`: each promise's and receipt's sentence as a Business page reads it (names for ids, no commitment id,
     # distances from today). `detail` stays the engine's sentence for the audit level.
@@ -252,4 +254,6 @@ def get_reconciliation() -> dict[str, Any]:
             row["detail_when"] = (reconciliation_words(state, row.get("detail"), rt.day, promise=key == "promised", agreements=agreements,
                                                        window_live=window_is_live(live, row.get("receivable_id"), row.get("commitment_id")))
                                   if row.get("detail") else None)
+    for row in out.get("receipts", []):
+        row.update(facts.get(row["seq"], {}))  # the four named facts and the window (F25) on the receipts that paid an agreed early payment
     return {"reconciliation": out}

@@ -375,6 +375,30 @@ test("day 34 after a half receipt: the early-payment window for the rest is said
   await post("/demo/reset", {});
 });
 
+test("day 34 after a half receipt: Chase payment opens the API's handoff, its balance is the API's own, and the receipt row names its four facts", async ({ page, request }) => {
+  const { post } = await toDay34HalfReceipt(request);
+  const owner = { "X-Owner-Token": TOKEN };
+  const recon = (await (await request.get(`${API}/reconciliation`, { headers: owner })).json()).reconciliation;
+  const owed: string = recon.outstanding.find((o: { receivable_id: string }) => o.receivable_id === "RCV-A").face_display;
+  const handoff = await (await request.get(`${API}/receivables/RCV-A/chase`, { headers: owner })).json();
+  expect(handoff.outstanding_display).toBe(owed);
+  expect(handoff.late_days).toBe(2);
+
+  await page.goto("/receivables");
+  const facts = page.getByTestId("receipt-facts-e2e-receipt-1");
+  await expect(facts.getByTestId("receipt-facts-e2e-receipt-1-received")).toContainText(recon.receipts[0].received_display);
+  await expect(facts.getByTestId("receipt-facts-e2e-receipt-1-cleared")).toContainText(recon.receipts[0].face_cleared_display);
+  await expect(facts.getByTestId("receipt-facts-e2e-receipt-1-remaining")).toContainText(owed);
+  await expect(facts).toContainText("Early-payment window ended");
+
+  await page.getByTestId("chase-open-RCV-A").click();
+  const dialog = page.getByTestId("chase-dialog-RCV-A");
+  await expect(dialog.getByTestId("chase-fact-outstanding")).toContainText(owed);
+  await expect(dialog.getByTestId("chase-request")).toHaveText(handoff.request_text);
+  await expect(dialog.getByTestId("chase-thread")).toHaveAttribute("href", handoff.thread_href);
+  await post("/demo/reset", {});
+});
+
 test("approving after the mandate has expired is refused: the card ends as 'could not run', with no buttons and no money moved", async ({ page, request }) => {
   const { post } = await toDay34NoReceipt(request);
   await page.goto("/");

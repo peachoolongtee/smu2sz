@@ -118,6 +118,20 @@ test.describe("desktop", () => {
     expect(await filledBrand(page)).toBe(0);
   });
 
+  test("Receivables: when the collections ranking cannot be read the page says so and Retry brings the ranking back", async ({ page }) => {
+    test.skip(test.info().project.name === "live", "the failure is the mock's test hook");
+    await page.addInitScript(() => sessionStorage.setItem("tl-mock-worth-fail", "1"));
+    await page.goto("/receivables");
+    await expect(page.getByTestId("recv-RCV-A")).toBeVisible();
+    const failed = page.getByTestId("recv-worth-failed");
+    await expect(failed).toContainText("The collections ranking could not be read.");
+    await expect(page.getByTestId("recv-ranking-note")).toHaveCount(0);
+    await page.evaluate(() => sessionStorage.removeItem("tl-mock-worth-fail"));
+    await failed.getByRole("button", { name: "Retry" }).click();
+    await expect(failed).toHaveCount(0);
+    await expect(page.getByTestId("recv-ranking-note")).toContainText("Ranked by what collecting each saves you");
+  });
+
   test("Receivables day 34: the late invoice leads with Call now, and the existing columns and ids are intact", async ({ page, request }) => {
     await advanceTo34(page, request);
     await page.goto("/receivables");
@@ -304,6 +318,15 @@ test.describe("phone", () => {
     // No horizontal overflow at phone width.
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
     expect(await filledBrand(page)).toBe(0);
+    // Chase payment on the late row: a 44 px control, and a dialog that fits the screen with Copy as its one filled button.
+    const chase = page.getByTestId("chase-list-open-RCV-A");
+    expect((await chase.boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(44);
+    await chase.click();
+    const dialog = page.getByTestId("chase-list-dialog-RCV-A");
+    await expect(dialog.getByTestId("chase-request")).toBeVisible();
+    const box = await dialog.boundingBox();
+    expect(box && box.x >= 0 && box.x + box.width <= (page.viewportSize()?.width ?? 0)).toBe(true);
+    await expect(dialog.getByTestId("chase-copy")).toBeVisible();
   });
 
   test("Deals day 0: the Before they ask card on a phone lists the levers, keeps Compare in reach and does not overflow", async ({ page }) => {

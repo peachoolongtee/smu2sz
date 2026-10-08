@@ -11,6 +11,7 @@ from app.api.alerts import router as alerts_router
 from app.api.borrower_file import router as borrower_file_router
 from app.api.capex import router as capex_router
 from app.api.clock import router as clock_router
+from app.api.collections import router as collections_router
 from app.api.decide import router as decide_router
 from app.api.decisions import router as decisions_router
 from app.api.errors import install_error_handlers
@@ -49,6 +50,7 @@ app.include_router(clock_router)
 app.include_router(home_router)
 app.include_router(strategy_router)
 app.include_router(pilot_router)
+app.include_router(collections_router)
 
 
 @app.get("/health")
