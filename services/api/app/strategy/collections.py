@@ -68,23 +68,6 @@ _OPEN = ("OPEN", "FINANCED")
 _SPAN = SourceSpan(doc_id="STRATEGY", start=0, end=0, text="")
 
 
-def _worth_text(lang: Lang, action: Action, net: int, quoted: Ceiling | None) -> str:
-    """The Receivables worth cell as one string, so the page shows no gross figure beside it."""
-    nothing = t(lang, "Saves nothing extra now", "暂无额外节省")
-    if action == "wait" or net <= 0:
-        return nothing
-    if action == "call_now":
-        return t(lang, f"Saves {fmt_yuan(net)}", f"可省 {fmt_yuan(net)}")
-    if action == "offer_early_pay" and quoted is not None and quoted.largest_rate_bp is not None:
-        limit = fmt_pct(bp(quoted.largest_rate_bp))
-        if quoted.mid_rate_bp is None or quoted.mid_saving_fen is None or quoted.mid_rate_bp == quoted.largest_rate_bp:
-            return t(lang, f"Saves {fmt_yuan(net)} at the {limit} limit", f"按 {limit} 的上限可省 {fmt_yuan(net)}")
-        mid = fmt_pct(bp(quoted.mid_rate_bp))
-        return t(lang, f"Saves {fmt_yuan(quoted.mid_saving_fen)} at {mid} ({fmt_yuan(net)} at the {limit} limit)",
-                 f"按 {mid} 可省 {fmt_yuan(quoted.mid_saving_fen)}（按 {limit} 的上限可省 {fmt_yuan(net)}）")
-    return t(lang, f"Saves {fmt_yuan(net)} if collected", f"收回可省 {fmt_yuan(net)}")
-
-
 # ---------------------------------------------------------------- the answer's types
 
 
