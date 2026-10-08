@@ -586,11 +586,14 @@ def test_route_answers_in_both_languages_from_one_sweep(api, monkeypatch, rt_day
     assert pkg["reserve_breach"]["cure_cost_display"] == "¥1,570.36" and pkg["counter_match"] is True
     lever = next(lv for lv in en["levers"] if lv["lever"] == TERMS_WITH_PRICE)
     assert lever["rule_price_display"] == "0.30%" and lever["at_maximum"]["package"]["price_display"] == "0.25%"
-    started = time.perf_counter()
+    from app.api import strategy_envelope as route
+
+    sweeps: list[int] = []
+    real = route.envelope_facts
+    monkeypatch.setattr(route, "envelope_facts", lambda *a, **k: sweeps.append(1) or real(*a, **k))
     zh = api.get(f"/buyers/{GOLDEN_BUYER}/envelope?lang=zh", headers=OWNER).json()  # the cached sweep, worded again
-    assert time.perf_counter() - started < 2.0
+    assert sweeps == [] and zh["evaluations"] == en["evaluations"]  # no second sweep: counts, not wall-clock
     assert (zh["primary"], zh["reason"], zh["money"]) == (PRIMARY_ZH, REASON_ZH, MONEY_ZH)
-    assert zh["computed_in_seconds"] == en["computed_in_seconds"]
 
 
 def test_route_cache_holds_32_sweeps():
@@ -599,8 +602,8 @@ def test_route_cache_holds_32_sweeps():
     route.clear_cache()
     facts = EnvelopeFacts("B", "B", 0, 1, True, None, 0, 0, False, (), (), (), {}, None, None, False, 0, 0.0)
     for i in range(40):
-        route._remember(str(i), facts)
-    assert len(route._cache) == 32 and route._cached("0") is None and route._cached("39") is facts
+        route._cache.put(str(i), facts)
+    assert len(route._cache) == 32 and route._cache.get("0") is None and route._cache.get("39") is facts
     route.clear_cache()
 
 

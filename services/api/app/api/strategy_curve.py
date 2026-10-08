@@ -7,54 +7,44 @@ sentence. Read-only and hypothetical: nothing is written, logged as an operation
 
 from __future__ import annotations
 
-import hashlib
-import threading
 import time
-from collections import OrderedDict
 from fractions import Fraction
 from typing import Any, Literal
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 
 from app.api.display import displayed
 from app.api.features import require_feature
-from app.api.presentation import when_text
+from app.api.presentation import t, when_text
 from app.api.runtime import get_runtime
 from app.books import books_from_store
 from app.domain.money import fmt_pct
+from app.financial import EngineError
+from app.funding import NoPermanentSourceError
+from app.strategy.cache import CACHE_SIZE, AnswerCache, cache_key
 from app.strategy.price_curve import PriceCurve, price_curve, price_sentence
 
 router = APIRouter()
 
-CACHE_SIZE = 32
+_cache: AnswerCache[PriceCurve] = AnswerCache(CACHE_SIZE)
 
 
-class _Lru:
-    def __init__(self, size: int) -> None:
-        self.size = size
-        self.data: OrderedDict[str, PriceCurve] = OrderedDict()
-        self.lock = threading.Lock()
-
-    def get(self, key: str) -> PriceCurve | None:
-        with self.lock:
-            hit = self.data.get(key)
-            if hit is not None:
-                self.data.move_to_end(key)
-            return hit
-
-    def put(self, key: str, value: PriceCurve) -> None:
-        with self.lock:
-            self.data[key] = value
-            self.data.move_to_end(key)
-            while len(self.data) > self.size:
-                self.data.popitem(last=False)
-
-    def clear(self) -> None:
-        with self.lock:
-            self.data.clear()
+def clear_cache() -> None:
+    _cache.clear()
 
 
-_cache = _Lru(CACHE_SIZE)
+def _cannot_price(exc: Exception, lang: Literal["en", "zh"]) -> HTTPException:
+    """The curve's refusals in a sentence: no permanent funding source to measure against, a value above the cost of
+    funds (the module's own `RuntimeError`), or an engine error."""
+    if isinstance(exc, NoPermanentSourceError):
+        return HTTPException(422, t(lang, "FLOW cannot price cash timing: there is no permanent funding source on the books "
+                                          "to measure it against.",
+                                    "FLOW 无法为资金到账时间估值：账上没有可用来比较的长期资金来源。"))
+    if isinstance(exc, EngineError):
+        return HTTPException(422, f"cannot project: {exc}")
+    return HTTPException(422, t(lang, "FLOW cannot show the cash price curve: on some days the cash would be worth more than "
+                                      "it costs to fund two billing periods, so the figures are not trusted.",
+                                "FLOW 无法显示资金价格曲线：某些日子里资金的价值高于两个计费周期的融资成本，因此这些数字不可信。"))
 
 
 @router.get("/cash/price-curve")
@@ -62,15 +52,19 @@ def get_price_curve(lang: Literal["en", "zh"] = "en") -> dict[str, Any]:
     require_feature("price_curve")
     started = time.perf_counter()
     rt = get_runtime()
-    with rt.lock:
-        state, mandate, day = rt.store.get_state(), rt.store.get_mandate(), rt.day
-        commitments = rt.store.commitments()
-        held = "|".join(c.model_dump_json() for c in commitments)
-        key = hashlib.sha256(f"{state.model_dump_json()}|{mandate.model_dump_json()}|{day}|{held}".encode()).hexdigest()
-        curve = _cache.get(key)
-        if curve is None:
-            curve = price_curve(books_from_store(rt.store), mandate, store=rt.store, day=day)
-            _cache.put(key, curve)
+    with rt.lock:  # read the books, the mandate, the day and the commitments together; the curve is computed outside
+        books = books_from_store(rt.store)
+        mandate = rt.store.get_mandate()
+        commitments = tuple(rt.store.commitments())
+        day = rt.day
+
+    def compute() -> PriceCurve:
+        try:
+            return price_curve(books, mandate, store=rt.store, day=day)
+        except (NoPermanentSourceError, EngineError, RuntimeError) as exc:
+            raise _cannot_price(exc, lang) from None
+
+    curve = _cache.get_or_compute(cache_key(books.state, mandate, day, commitments), compute)
     bands = [{**b.model_dump(), "from_when": when_text(b.from_day, day, lang), "to_when": when_text(b.to_day, day, lang),
               "value_pct": fmt_pct(Fraction(b.value_bp, 10_000))} for b in curve.bands]
     return displayed({**curve.model_dump(), "bands": bands, "sentence": price_sentence(curve, today=day, lang=lang),

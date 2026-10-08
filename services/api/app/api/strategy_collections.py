@@ -7,9 +7,7 @@ logged as an operation or stored as a verdict.
 
 from __future__ import annotations
 
-import hashlib
-import threading
-from collections import OrderedDict
+import time
 from typing import Any, Literal
 
 from fastapi import APIRouter, HTTPException
@@ -19,17 +17,17 @@ from app.api.features import require_feature
 from app.api.runtime import get_runtime
 from app.books import books_from_store
 from app.financial import EngineError
+from app.funding import NoPermanentSourceError
+from app.strategy.cache import CACHE_SIZE, AnswerCache, cache_key
 from app.strategy.collections import WorthAnswer, receivables_worth, saving_text
 
 router = APIRouter()
 
-_CACHE_SIZE = 32
-_CACHE: OrderedDict[str, WorthAnswer] = OrderedDict()
-_CACHE_LOCK = threading.Lock()
+_cache: AnswerCache[WorthAnswer] = AnswerCache(CACHE_SIZE)
 
 
-def _key(state_json: str, mandate_json: str, day: int, commitments_json: str, lang: str) -> str:
-    return hashlib.sha256("|".join([state_json, mandate_json, str(day), commitments_json, lang]).encode()).hexdigest()
+def clear_cache() -> None:
+    _cache.clear()
 
 
 def _payload(answer: WorthAnswer, lang: str) -> dict[str, Any]:
@@ -49,26 +47,20 @@ def _payload(answer: WorthAnswer, lang: str) -> dict[str, Any]:
 @router.get("/receivables/worth")
 def get_receivables_worth(lang: Literal["en", "zh"] = "en") -> dict[str, Any]:
     require_feature("collections_worth")
+    started = time.perf_counter()
     rt = get_runtime()
-    with rt.lock:
+    with rt.lock:  # read the books, the mandate, the day and the commitments together; the ranking is computed outside
         books = books_from_store(rt.store)
         mandate = rt.store.get_mandate()
+        commitments = tuple(rt.store.commitments())
         day = rt.day
-        key = _key(books.state.model_dump_json(), mandate.model_dump_json(), day,
-                   "|".join(c.model_dump_json() for c in rt.store.commitments()), lang)
-        with _CACHE_LOCK:
-            hit = _CACHE.get(key)
-            if hit is not None:
-                _CACHE.move_to_end(key)
-        if hit is None:
-            try:
-                hit = receivables_worth(books, mandate, store=rt.store, day=day, lang=lang)
-            except EngineError as exc:
-                raise HTTPException(422, f"cannot project: {exc}") from None
-            with _CACHE_LOCK:
-                _CACHE[key] = hit
-                while len(_CACHE) > _CACHE_SIZE:
-                    _CACHE.popitem(last=False)
-        state_version = books.state.state_version
-    return {"hypothetical": True, "state_version": state_version, "day": day,
-            "computed_in_seconds": hit.computed_in_seconds, **_payload(hit, lang)}
+
+    def compute() -> WorthAnswer:
+        try:
+            return receivables_worth(books, mandate, store=rt.store, day=day, lang=lang)
+        except (EngineError, NoPermanentSourceError) as exc:
+            raise HTTPException(422, f"cannot project: {exc}") from None
+
+    answer = _cache.get_or_compute(cache_key(books.state, mandate, day, commitments, lang), compute)
+    return {"hypothetical": True, "state_version": books.state.state_version, "day": day, **_payload(answer, lang),
+            "computed_in_seconds": round(time.perf_counter() - started, 3)}
