@@ -68,7 +68,7 @@ function CounterBusinessCard({ c, recommended, today, action }: { c: Counter; re
         </dl>
       ) : null}
       {action ? <div className="mt-3">{action}</div> : null}
-      <Disclosure testId="deal-option-details" className="mt-3 text-sm" summary={t("biz.deals.details")}>
+      <Disclosure testId="deal-option-details" className="mt-3 text-sm" summary={t("biz.deals.optionDetails", { label: c.label })}>
         <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-ink-3">{t("biz.deals.whyWorks")}</p>
         <p className="mt-1 text-ink-2">{c.rationale_when ?? c.rationale}</p>
         <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-ink-3">{t("biz.deals.sourceTerms")}</p>

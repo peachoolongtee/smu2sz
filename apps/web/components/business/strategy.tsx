@@ -17,13 +17,30 @@ export function ActionChip({ action }: { action: ReceivableWorth["action"] }) {
 }
 
 /**
- * What collecting the invoice is worth: the server's one string for the row (`worth_text`, "Saves ¥1,374.61"). The gross saving
- * stays in the payload; the page decides nothing from it. Right-aligned in the table (where it wraps at its own semicolon in the
- * column's width), left-aligned in the phone list.
+ * What collecting the invoice is worth, as ONE figure: the dictionary word "Saves" beside the server's `net_saving_display`
+ * (right-aligned, tabular, never wrapping). When the server says there is no saving (`no_saving`), its own short sentence
+ * ("Saves nothing extra now") stands in. The full `worth_text` (the limit and the better rate) is the first line of the row's
+ * details (`WorthSentence`). The gross saving stays in the payload; the page decides nothing from it and computes no money.
  */
 export function WorthText({ row, testId, align = "left" }: { row: ReceivableWorth; testId: string; align?: "left" | "right" }) {
+  const { t } = useI18n();
   return (
-    <span className={`block text-sm tabular-nums text-ink ${align === "right" ? "text-right" : ""}`} data-testid={testId}>
+    <span className={`block whitespace-nowrap text-sm tabular-nums text-ink ${align === "right" ? "text-right" : ""}`} data-testid={testId}>
+      {row.no_saving ? (
+        row.worth_text
+      ) : (
+        <>
+          <span className="text-ink-3">{t("biz.strategy.saves")}</span> <span className="font-semibold">{row.net_saving_display}</span>
+        </>
+      )}
+    </span>
+  );
+}
+
+/** The server's full worth sentence ("Saves ¥86.16 at the 0.85% limit; ¥1,250.06 if they take 0.40%"), shown where the cell is one figure. */
+export function WorthSentence({ row, testId }: { row: ReceivableWorth; testId: string }) {
+  return (
+    <span className="block text-ink" data-testid={testId}>
       {row.worth_text}
     </span>
   );

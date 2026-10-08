@@ -11,13 +11,15 @@ import { whenText } from "@/lib/when";
 
 /**
  * The human name of an option: the router's pick is named by its sources ("Bank credit line + Invoice financing"),
- * the other rows by the dictionary's business names. Never "Router optimum" or "Cheapest committed plan".
+ * the other rows by the dictionary's business names. Never "Router optimum" or "Cheapest committed plan". The recommended row is
+ * titled with the server's `name_display` (its sources joined) when it sends one; "Recommended plan" is only the fallback.
  */
 export function optionName(c: ComparisonRow, menu: MenuRow[], t: I18n["t"]): string {
   if (c.key === "router_optimum" && c.actions?.length) {
     const names = Array.from(new Set(c.actions.map((a) => menu.find((m) => m.facility.id === a.facility_id)?.facility.name ?? a.facility_id)));
     if (names.length) return names.join(" + ");
   }
+  if (c.role === "recommended" && c.name_display) return c.name_display;
   const key = c.key ? (`biz.option.${c.key}` as DictKey) : null;
   return key ? t(key) : c.label;
 }

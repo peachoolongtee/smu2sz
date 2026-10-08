@@ -164,7 +164,7 @@ function Ceilings({ levers }: { levers: EnvelopeLeverView[] }) {
 
 /**
  * "Before they ask" on Deals (behind STRATEGY_MVP): what the owner can live with for this buyer, in the server's words, before the
- * buyer asks: three ceiling tiles, the one sentence as their caption, the reason and the money beneath. The card sends nothing and
+ * buyer asks: three ceiling tiles, "Your limits, not an opening offer" as their caption, the reason and the money beneath. The card sends nothing and
  * carries no button of its own (Option A is the response card below; "Compare another option" there opens Option B). Loading takes several seconds on a cold server, so the card holds its place with a
  * caption; an unreachable server says so in one line; a buyer the server has no envelope for (feature off) mounts nothing.
  * Business mode shows the sentences and the details; Demo mode adds how long the server took.
@@ -219,10 +219,8 @@ export function BeforeTheyAsk({ buyerId }: { buyerId: string }) {
   return (
     <Card id="deal-envelope" title={eyebrow} actions={<Chip title={t("biz.strategy.envelope.hypothetical.title")}>{t("biz.strategy.envelope.hypothetical")}</Chip>}>
       <Ceilings levers={e.levers} />
-      <p className="mt-3 text-sm font-medium text-ink" data-testid="envelope-primary">
-        {e.primary}
-      </p>
-      <p className="mt-1 text-xs text-ink-3" data-testid="envelope-caption">
+      {/* The three tiles carry the figures, so the server's `primary` sentence (the same three, said again) is not drawn. */}
+      <p className="mt-3 text-xs text-ink-3" data-testid="envelope-caption">
         {t("biz.strategy.envelope.caption")}
       </p>
       <p className="mt-2 text-sm text-ink-2" data-testid="envelope-reason">

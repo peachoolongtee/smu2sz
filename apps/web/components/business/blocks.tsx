@@ -159,7 +159,7 @@ export function ReceivablesBlock({ r, worth }: { r: HomeReceivables; worth?: Rec
 export function DetailsBlock({ h }: { h: HomeView }) {
   const { t } = useI18n();
   return (
-    <Disclosure card testId="home-details" summary={t("biz.details.plan")}>
+    <Disclosure card testId="home-details" summary={t("biz.details")}>
       <div className="space-y-5">
         {h.cash.in_transit ? (
           <section>

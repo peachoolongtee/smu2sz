@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from "react";
-import { Area, AreaChart, CartesianGrid, ReferenceArea, ReferenceDot, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Area, AreaChart, CartesianGrid, ReferenceArea, ReferenceDot, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis, useYAxisScale, useYAxisTicks } from "recharts";
 import { axisFloor, axisYuanK } from "@/lib/chart-helpers";
 import { useI18n } from "@/lib/i18n";
 import { SegmentedButtons } from "@/components/ui";
@@ -96,6 +96,32 @@ function textWidth(text: string): number {
   return w;
 }
 
+/** The drawing's horizontal lines in pixels (every gridline and the reserve) and the value-to-pixel scale, read from the chart once it has laid out. */
+interface Geometry {
+  guides: number[];
+  yOf: (v: number) => number;
+}
+
+/** A 12 px label sits 8 to 23 px below its mark or 7 to 20 px above it; true when a horizontal line would run through that box. */
+function crossesGuide(markY: number, below: boolean, guides: number[]): boolean {
+  const top = below ? markY + 7 : markY - 21;
+  const bottom = below ? markY + 24 : markY - 6;
+  return guides.some((g) => g >= top && g <= bottom);
+}
+
+/** Sits inside the chart and reports where its gridlines and the reserve line really are, so a label can keep off them. Renders nothing. */
+function ReadGeometry({ floor, onRead }: { floor: number; onRead: (g: Geometry) => void }) {
+  const ticks = useYAxisTicks();
+  const scale = useYAxisScale();
+  const key = scale && ticks ? `${ticks.map((t) => Math.round(t.coordinate)).join(",")}|${Math.round(scale(floor) ?? -1)}|${Math.round(scale(0) ?? -1)}|${Math.round(scale(1e8) ?? -1)}` : "";
+  useEffect(() => {
+    if (!scale || !ticks) return;
+    onRead({ guides: [...ticks.map((t) => t.coordinate), scale(floor)].filter((n): n is number => typeof n === "number" && Number.isFinite(n)), yOf: (v) => scale(v) ?? 0 });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- the key stands for the scale and ticks (both are new objects every render)
+  }, [key]);
+  return null;
+}
+
 interface Placed {
   day: number;
   cash: number;
@@ -109,7 +135,7 @@ interface Placed {
  * Which event labels are drawn, and on which side of the line. Largest movement first; a label is refused when its mark is within
  * 24 px of one already chosen, or of the first unsafe day or the lowest point (those carry their own), or when it would touch
  * a label on the same side. The chosen ones alternate above and below the line in order along the axis, so neighbours rarely
- * share a side. Whatever is refused stays a mark on the line and is listed in the tooltip. Pure placement: no money is touched.
+ * share a side; a label whose box would cross a gridline or the reserve line flips to the other side of its mark first. Whatever is refused stays a mark on the line and is listed in the tooltip. Pure placement: no money is touched.
  */
 function placeLabels(
   candidates: { day: number; cash: number; e: HomeSeriesPoint["events"][number] }[],
@@ -117,10 +143,18 @@ function placeLabels(
   fixedX: number[],
   limit: number,
   labelled: boolean,
+  geo: Geometry | null,
 ): Placed[] {
   const sorted = [...candidates].sort((a, b) => Math.abs(b.e.amount_fen) - Math.abs(a.e.amount_fen));
   let chosen: Placed[] = [];
-  const arrange = (list: Placed[]) => [...list].sort((a, b) => a.x - b.x).map((p, i) => ({ ...p, side: (i % 2 === 0 ? "above" : "below") as Placed["side"] }));
+  const flip = (p: Placed): Placed => {
+    if (!geo) return p;
+    const y = geo.yOf(p.cash);
+    const below = p.side === "below";
+    return crossesGuide(y, below, geo.guides) && !crossesGuide(y, !below, geo.guides) ? { ...p, side: below ? "above" : "below" } : p;
+  };
+  const arrange = (list: Placed[]) =>
+    [...list].sort((a, b) => a.x - b.x).map((p, i) => flip({ ...p, side: (i % 2 === 0 ? "above" : "below") as Placed["side"] }));
   const fits = (list: Placed[]) =>
     list.every((a, i) => list.slice(i + 1).every((b) => a.side !== b.side || Math.abs(a.x - b.x) >= (textWidth(a.text) + textWidth(b.text)) / 2 + 8));
   for (const c of sorted) {
@@ -134,7 +168,8 @@ function placeLabels(
 }
 
 /** A 12 px label next to a mark that never leaves the drawing: centred on the mark, but pushed in from whichever edge it would cross. */
-function MarkLabel({ x, y, text, below, bounds, fill = LABEL, bold = false }: { x: number; y: number; text: string; below: boolean; bounds: { left: number; right: number }; fill?: string; bold?: boolean }) {
+function MarkLabel({ x, y, text, below: wanted, bounds, fill = LABEL, bold = false, guides }: { x: number; y: number; text: string; below: boolean; bounds: { left: number; right: number }; fill?: string; bold?: boolean; guides?: number[] }) {
+  const below = guides && crossesGuide(y, wanted, guides) && !crossesGuide(y, !wanted, guides) ? !wanted : wanted;
   const half = textWidth(text) / 2;
   const anchor = x + half > bounds.right ? "end" : x - half < bounds.left ? "start" : "middle";
   const tx = anchor === "end" ? bounds.right : anchor === "start" ? bounds.left : x;
@@ -166,6 +201,7 @@ export function CashForecast({ h }: { h: HomeView }) {
   const plotBottom = box.h - MARGIN.bottom - X_AXIS_H;
   const xOf = (day: number) => plotLeft + ((day - today) / Math.max(to - today, 1)) * Math.max(plotRight - plotLeft, 1);
   const bounds = { left: plotLeft + 4, right: box.w - 4 };
+  const [geo, setGeo] = useState<Geometry | null>(null);
   // The largest movements in the window, by the server's own event amounts (ordering fen is plotting, not reporting). A phone draws
   // the marks without labels (three at most): a tap opens the tooltip with the day's events. Wider, up to four, alternating above
   // and below the line, none within 24 px of another or of the first unsafe day and the lowest point, which carry their own label.
@@ -182,7 +218,7 @@ export function CashForecast({ h }: { h: HomeView }) {
   });
   const markOnly = candidates.filter((c) => !labelCandidates.includes(c));
   const fixedX = [breach, lowestRow?.day ?? null].filter((d): d is number => d !== null).map(xOf);
-  const annotations = box.w === 0 ? [] : placeLabels(labelCandidates, xOf, fixedX, narrow ? 3 : MAX_ANNOTATIONS, !narrow);
+  const annotations = box.w === 0 ? [] : placeLabels(labelCandidates, xOf, fixedX, narrow ? 3 : MAX_ANNOTATIONS, !narrow, geo);
   // The worst point is the reserve itself when the two figures are the same: one label is enough, and the legend names the reserve.
   const lowestIsReserve = h.cash.lowest_fen === h.cash.floor_fen;
   const ticks: number[] = [];
@@ -208,6 +244,7 @@ export function CashForecast({ h }: { h: HomeView }) {
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={data} margin={MARGIN}>
             <CartesianGrid stroke={GRID} vertical={false} />
+            <ReadGeometry floor={floor} onRead={setGeo} />
             {/* The danger zone: anything plotted in here is below the minimum cash reserve. */}
             <ReferenceArea y1={yMin} y2={floor} fill={ZONE} fillOpacity={0.8} stroke="none" ifOverflow="extendDomain" />
             {yMin < 0 ? <ReferenceLine y={0} stroke={AXIS} strokeWidth={1} /> : null}
@@ -259,7 +296,7 @@ export function CashForecast({ h }: { h: HomeView }) {
                   <g>
                     <circle cx={cx} cy={cy} r={6} fill={SERIES.lowest.stroke} stroke={RING} strokeWidth={2} />
                     {lowestIsReserve ? null : (
-                      <MarkLabel x={cx ?? 0} y={cy ?? 0} text={`${t("biz.worstPoint")} ${h.cash.lowest_short}`} below={(cy ?? 0) < plotBottom - 24} bounds={bounds} bold />
+                      <MarkLabel x={cx ?? 0} y={cy ?? 0} text={`${t("biz.worstPoint")} ${h.cash.lowest_short}`} below={(cy ?? 0) < plotBottom - 24} bounds={bounds} bold guides={geo?.guides} />
                     )}
                   </g>
                 )}

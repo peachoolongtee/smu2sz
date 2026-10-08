@@ -109,3 +109,18 @@ def test_operation_kind_tokens_read_as_words():
     assert operation_words(raw) == ("A committed cure exists: draw on Bank credit line + finance an invoice on Invoice financing. "
                                     "Repay X")
     assert operation_words("APPLY_FOR_FACILITY Term loan") == "Apply for Term loan"
+
+
+def test_reconciliation_sentences_read_as_sentences(client, rt):
+    """The recovered-receipt promise stands alone under the buyer's name: a capital, commas round its due clause, a full stop.
+    A receipt's clause says "of the invoice", never the engine's "of face" (and the engine's own "outstanding ... of face ..." is left alone)."""
+    from app.api.presentation import reconciliation_words
+
+    state = rt.store.get_state()
+    promise = reconciliation_words(state, "the agreed ¥255,013.80 for RCV-A arrived (commitment CMT-1)", 41, promise=True)
+    assert promise == "The agreed ¥255,013.80 for the ¥420,000.00 invoice to Foshan Home Retail Co., due in 32 days, arrived."
+    receipt = reconciliation_words(state, "agreed early payment for ¥257,200.00 of face (commitment CMT-1)", 41, promise=False)
+    assert receipt == "agreed early payment for ¥257,200.00 of the invoice"
+    kept = reconciliation_words(state, "short (outstanding ¥10.00 of face ¥20.00)", 41, promise=False)
+    assert kept == "short (outstanding ¥10.00 of face ¥20.00)"
+    assert reconciliation_words(state, None, 41, promise=True) is None

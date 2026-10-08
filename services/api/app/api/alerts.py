@@ -17,7 +17,7 @@ from pydantic import BaseModel, ConfigDict
 from app.alerts import Alert, Severity, alerts, cure_operations, reconcile
 from app.api.auth import require_owner
 from app.api.display import displayed
-from app.api.presentation import business_text, event_words
+from app.api.presentation import business_text, event_words, reconciliation_words
 from app.api.runtime import Runtime, get_runtime
 from app.books import current_books
 from app.domain.models import (
@@ -219,6 +219,7 @@ def get_reconciliation() -> dict[str, Any]:
     out = displayed(json.loads(report.model_dump_json()))
     # `detail_when`: each promise's and receipt's sentence as a Business page reads it (names for ids, no commitment id,
     # distances from today). `detail` stays the engine's sentence for the audit level.
-    for row in [*out.get("promised", []), *out.get("receipts", [])]:
-        row["detail_when"] = business_text(state, row.get("detail"), rt.day, "en") if row.get("detail") else None
+    for key in ("promised", "receipts"):
+        for row in out.get(key, []):
+            row["detail_when"] = reconciliation_words(state, row.get("detail"), rt.day, promise=key == "promised") if row.get("detail") else None
     return {"reconciliation": out}

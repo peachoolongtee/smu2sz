@@ -173,7 +173,10 @@ test("day 34 with a gap open: the options are today's plan, never the day-0 comp
   await expect(options).not.toContainText("¥255,000.00");
   await expect(options).not.toContainText(" ago");
   await expect(options).toContainText("¥1,706.10");
-  await expect(page.getByTestId("cash-cheaper-option")).toContainText("¥1,706.10");
+  // The server's roles say it in the alternative's chip, so the grey "a cheaper option exists" note is not drawn a second time;
+  // and the first row is titled with its sources, not the generic "Recommended plan".
+  await expect(page.getByTestId("cash-cheaper-option")).toHaveCount(0);
+  await expect(options.locator('[data-key="recommended_plan"]')).not.toContainText("Recommended plan");
   expect(await proseOf(page)).not.toMatch(/\bday \d/i);
 });
 
