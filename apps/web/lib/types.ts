@@ -1321,6 +1321,7 @@ export type NlIntent =
   | "FUND_GAP"
   | "REPAY_FACILITY"
   | "SHOW_STATUS"
+  | "SHOW_DEAL"
   | "EXPLAIN"
   | "WHAT_IF"
   | "RECORD_FACT"
@@ -1795,4 +1796,206 @@ export interface HomeView {
   facilities: { id: string; name: string; status: string; limit_display: string; drawn_display: string; available_display: string; lead_time_days: number }[];
   counts: Record<AlertSeverity, number>;
   note_basis: string;
+}
+
+// ------------------------------------------------------------------ contract ingestion and the deal summary (brief 03)
+
+export type DocumentKind = "BUYER_CONTRACT" | "LENDER_AGREEMENT";
+export type DocumentStatus = "PROPOSED" | "CONFIRMED" | "REJECTED";
+export type ContractFieldName =
+  | "PARTY_SUPPLIER" | "PARTY_BUYER" | "CONTRACT_REFERENCE" | "SIGNED_DATE" | "START_DATE" | "END_DATE" | "DURATION"
+  | "PRICE" | "INVOICING" | "SCHEDULED_INVOICE" | "PAYMENT_TERMS" | "EARLY_PAYMENT" | "MILESTONE" | "RETENTION"
+  | "LATE_INTEREST" | "DELIVERABLE" | "REQUIRED_DOCUMENT" | "AMENDMENT";
+
+export interface TextSpan {
+  start: number;
+  end: number;
+}
+
+/** One term the agent read, beside its quote. Every value is a server string; the typed fields are for labels only. */
+export interface ContractTermView {
+  field: ContractFieldName;
+  label: string;
+  value_display: string;
+  clause: string | null;
+  quote: string;
+  span: TextSpan;
+  amount_fen: Fen | null;
+  amount_display: string | null;
+  rate_bp: Bp | null;
+  rate_display: string | null;
+  days: number | null;
+  months: number | null;
+  date: string | null;
+  date_display: string | null;
+  day: Day | null;
+  basis: "INVOICE" | "DELIVERY" | "ACCEPTANCE" | "MONTH_END" | null;
+  unit: "PER_DELIVERY" | "PER_UNIT" | "PER_MONTH" | "LUMP_SUM" | null;
+  reference: string | null;
+  text: string | null;
+  business_days: boolean;
+}
+
+export interface DocumentBlank {
+  field: ContractFieldName;
+  label: string;
+  reason: string;
+  multi: boolean;
+}
+
+export interface DocumentFlagView {
+  kind: string;
+  blocking: boolean;
+  note: string;
+  quote: string;
+  span: TextSpan;
+}
+
+/** A row of GET /documents. */
+export interface DocumentSummary {
+  id: string;
+  kind: DocumentKind;
+  title: string;
+  counterparty_id: string;
+  counterparty_name: string;
+  status: DocumentStatus;
+  uploaded_day: Day;
+  decided_day: Day | null;
+  decided_seq: number | null;
+  linked_facility_id: string | null;
+  /** Server text: "18 terms read, 3 left blank" or the facility in one line. */
+  summary: string;
+  blocked: boolean;
+  /** How many flags the reading raised (the full flags are on the document view). */
+  flags: number;
+  source: string;
+  label: string;
+}
+
+/** GET /documents/{id}: the review screen. */
+export interface DocumentView extends Omit<DocumentSummary, "flags"> {
+  doc_hash: string;
+  document: { doc_id: string; text: string };
+  ai_label: string;
+  ai_label_zh: string;
+  flags: DocumentFlagView[];
+  can_confirm: boolean;
+  reading_status: "COMPILED" | "ABSTAINED" | "CONFLICTING_SOURCES";
+  compiler: string;
+  prompt_version: string;
+  chunks?: number;
+  terms?: ContractTermView[];
+  blanks?: DocumentBlank[];
+  notes: { field: string; reason: string }[];
+  clauses?: { field: string; value_text: string; quote: string; span: TextSpan }[];
+  facility?: { kind: string; summary: string; all_in_rate_display: string | null; repayment: string; tier3: { field: string; quote: string }[] } | null;
+  suggested_facility_id?: string | null;
+  compared_with?: string | null;
+  comparison?: { label: string; agreement_display: string; books_display: string | null; same: boolean }[];
+}
+
+export interface DocumentsList {
+  documents: DocumentSummary[];
+  day: Day;
+}
+
+export interface ContractFixture {
+  id: string;
+  kind: DocumentKind;
+  counterparty_id: string;
+  title: string;
+  formats: ("md" | "docx" | "pdf")[];
+  link_facility_id: string | null;
+}
+
+export interface SubmitDocumentRequest {
+  fixture_id?: string;
+  format?: "md" | "docx" | "pdf";
+  kind?: DocumentKind;
+  counterparty_id?: string;
+  filename?: string;
+  content_base64?: string;
+  text?: string;
+  title?: string;
+}
+
+export interface DocumentDecision {
+  result: OperationResultLike;
+  document: DocumentView;
+}
+
+/** The executor's answer to CONFIRM_DOCUMENT / REJECT_DOCUMENT. */
+export interface OperationResultLike {
+  op_id: string;
+  kind: string;
+  status: "EXECUTED" | "REFUSED" | "PENDING_APPROVAL" | "DUPLICATE";
+  tier: string;
+  violations: { code: string; message: string }[];
+  seq: number | null;
+  entry_hash: string | null;
+  prev_hash: string | null;
+  effective_day: Day | null;
+  approval_id: string | null;
+  message: string;
+}
+
+export type StageState = "done" | "now" | "todo" | "skipped" | "pending" | "missed";
+export type DealTone = "ok" | "warn" | "bad" | "info" | "mute";
+
+export interface DealView {
+  counterparty_id: string;
+  counterparty_name: string;
+  day: Day;
+  has_contract: boolean;
+  pending_documents: string[];
+  label?: string;
+  contract?: {
+    record_id: string;
+    title: string;
+    reference: string | null;
+    signed_display: string | null;
+    signed_day: Day | null;
+    term_display: string | null;
+    cadence_display: string | null;
+    end_day: Day | null;
+    confirmed_day: Day | null;
+  };
+  pills?: { label: string; tone: DealTone }[];
+  stages?: { key: "read" | "negotiated" | "early_payment" | "collecting" | "fulfilled"; label: string; state: StageState; note: string; tone: DealTone | null }[];
+  contract_terms?: ContractTermView[];
+  blanks?: DocumentBlank[];
+  changes?: { day: Day | null; actor: "BUYER" | "AGENT" | "OWNER" | "BANK"; label: string; text: string }[];
+  in_force?: { key: string; label: string; value_display: string; vs_contract: "SAME" | "DIFFERENT" | "NOT_IN_CONTRACT" | "NONE"; contract_display: string | null }[];
+  invoices?: {
+    id: string;
+    label: string;
+    issue_day: Day;
+    due_day: Day;
+    amount_fen: Fen;
+    amount_display: string;
+    outstanding_fen: Fen;
+    outstanding_display: string;
+    status: "PAID" | "LATE" | "ADVANCE_WAITING" | "FINANCED" | "DUE_TODAY" | "NOT_DUE";
+    status_text: string;
+    tone: DealTone;
+    notes: string[];
+  }[];
+  next_invoice?: { day: Day; amount_display: string } | null;
+  owed_by_us?: {
+    display_only: boolean;
+    deliverables: { text: string | null; clause: string | null; quote: string }[];
+    documents: { text: string | null; clause: string | null; quote: string }[];
+  };
+  checks?: { status: "ok" | "warn" | "info"; text: string }[];
+  next_action?: {
+    text: string;
+    items: Record<string, unknown>[];
+    actions: { key: string; label: string; href: string; primary: boolean }[];
+    tone: DealTone;
+  };
+}
+
+export interface DealsView {
+  day: Day;
+  deals: DealView[];
 }

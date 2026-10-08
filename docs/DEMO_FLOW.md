@@ -5,6 +5,11 @@ The main scripted path is spec v2 §10, with the numbers from `fixtures/golden/g
 ## 0. Reset and the mandate (Mandate screen)
 - Fixture `golden_sme`: cash ¥400,000; payroll ¥340,000 on day 12; supplier ¥120,000 on day 20; the existing equipment loan's ¥45,000 payment on day 30 (and every 30 days after: it leaves cash); Receivable A ¥420,000 due day 32; floor ¥300,000; concession cap ¥5,000; DSCR ≥ 1.25×; leverage ≤ 2.5×. Before day 32 the cash falls ¥405,000 short of the floor (the day-0 gap).
 - The owner's signed mandate v1 is shown with its three tiers.
+- The reset also has the agent read the three demo documents (the supply agreement with Foshan Home Retail, the credit
+  line agreement, the invoice financing agreement) and the owner confirm them: the first three ledger entries, with no
+  change to the books. The home page therefore opens on the Foshan deal card. Say that the demo contract was written to
+  match the synthetic scenario. On the Documents page, "Read again" shows the agent reading a document and the owner
+  confirming it.
 
 ## Scene 1: the offer is a loan (Inbox → Trajectory → Funding → Verdict)
 1. The buyer message arrives: "We'll settle the ¥420k early at 1.2% if you extend our standard terms to 60 days going forward and give us 1% off next quarter."

@@ -1,5 +1,5 @@
 {
-  "file_id": "BF-5F1F938D37D4",
+  "file_id": "BF-57AFD159D4EF",
   "status": "PREPARED_NOT_SENT",
   "style": "Borrower file (micro-enterprise loan format) · lender mocked",
   "title_en": "Borrower file (micro-enterprise loan format)",
@@ -2788,8 +2788,8 @@
       "columns": [],
       "rows": [
         {
-          "label": "Draw: Bank credit line (FAC-LINE), seq 1, day 0",
-          "value": "¥150,000.00 · entry hash 3a58b1c3a966bc84e131779acc8606e389118068402a963f545ca955cf9e4dd0 · prev hash 0000000000000000000000000000000000000000000000000000000000000000",
+          "label": "Draw: Bank credit line (FAC-LINE), seq 4, day 0",
+          "value": "¥150,000.00 · entry hash 9ca39a4241d249c525e25f805979ec7a18f9635e5e35234508c0c6bf74cf1387 · prev hash 1896e5a2c31a5094e211c19e588b287b2118819d5063e526c8b7e3c0baffe7e9",
           "evidence": "OBSERVED",
           "note": "",
           "figures": [
@@ -2799,11 +2799,11 @@
               "fen": 15000000,
               "ratio": null,
               "formula": null,
-              "source": "op seq 1",
+              "source": "op seq 4",
               "display": "¥150,000.00"
             },
             {
-              "text": "entry hash 3a58b1c3a966bc84e131779acc8606e389118068402a963f545ca955cf9e4dd0",
+              "text": "entry hash 9ca39a4241d249c525e25f805979ec7a18f9635e5e35234508c0c6bf74cf1387",
               "evidence": "OBSERVED",
               "fen": null,
               "ratio": null,
@@ -2811,7 +2811,7 @@
               "source": "operations log"
             },
             {
-              "text": "prev hash 0000000000000000000000000000000000000000000000000000000000000000",
+              "text": "prev hash 1896e5a2c31a5094e211c19e588b287b2118819d5063e526c8b7e3c0baffe7e9",
               "evidence": "OBSERVED",
               "fen": null,
               "ratio": null,
@@ -2821,8 +2821,8 @@
           ]
         },
         {
-          "label": "Invoice-financing advance: Invoice financing (onboarded platform) (FAC-IF), seq 2, day 0",
-          "value": "¥255,000.00 · entry hash 6793c0c2b3cfb24d43345184f7bfe7b862a56cb0b4aef591457445bfa9a45c40 · prev hash 3a58b1c3a966bc84e131779acc8606e389118068402a963f545ca955cf9e4dd0",
+          "label": "Invoice-financing advance: Invoice financing (onboarded platform) (FAC-IF), seq 5, day 0",
+          "value": "¥255,000.00 · entry hash 391456b6adc208e4df2862bdcb556c947a09587414e9a92a1b1ca5c73ebdb57e · prev hash 9ca39a4241d249c525e25f805979ec7a18f9635e5e35234508c0c6bf74cf1387",
           "evidence": "OBSERVED",
           "note": "",
           "figures": [
@@ -2832,11 +2832,11 @@
               "fen": 25500000,
               "ratio": null,
               "formula": null,
-              "source": "op seq 2",
+              "source": "op seq 5",
               "display": "¥255,000.00"
             },
             {
-              "text": "entry hash 6793c0c2b3cfb24d43345184f7bfe7b862a56cb0b4aef591457445bfa9a45c40",
+              "text": "entry hash 391456b6adc208e4df2862bdcb556c947a09587414e9a92a1b1ca5c73ebdb57e",
               "evidence": "OBSERVED",
               "fen": null,
               "ratio": null,
@@ -2844,7 +2844,7 @@
               "source": "operations log"
             },
             {
-              "text": "prev hash 3a58b1c3a966bc84e131779acc8606e389118068402a963f545ca955cf9e4dd0",
+              "text": "prev hash 9ca39a4241d249c525e25f805979ec7a18f9635e5e35234508c0c6bf74cf1387",
               "evidence": "OBSERVED",
               "fen": null,
               "ratio": null,
@@ -3083,12 +3083,12 @@
         },
         {
           "label": "Operations log head hash",
-          "value": "ba985a41155c3d53f14e2a01ac894bdb1be7a6ce1930c740f1113ba84c2d3d91",
+          "value": "222eb08cec48030b8da839dd3a04c79c0350b17b15581d87227089a63ee81077",
           "evidence": "OBSERVED",
           "note": "",
           "figures": [
             {
-              "text": "ba985a41155c3d53f14e2a01ac894bdb1be7a6ce1930c740f1113ba84c2d3d91",
+              "text": "222eb08cec48030b8da839dd3a04c79c0350b17b15581d87227089a63ee81077",
               "evidence": "OBSERVED",
               "fen": null,
               "ratio": null,
@@ -3099,12 +3099,12 @@
         },
         {
           "label": "Log entries · chain verified",
-          "value": "3 · yes",
+          "value": "6 · yes",
           "evidence": "OBSERVED",
           "note": "",
           "figures": [
             {
-              "text": "3",
+              "text": "6",
               "evidence": "OBSERVED",
               "fen": null,
               "ratio": null,
@@ -3139,12 +3139,12 @@
         },
         {
           "label": "Evidence hash of the inputs",
-          "value": "5f1f938d37d45e3e24e4b3923e6a31bc5a02061388519d782ae3c51188f80409",
+          "value": "57afd159d4efee833a54894fe3cfd8baf2ae2198df95577ca8865c80352206bf",
           "evidence": "OBSERVED",
           "note": "",
           "figures": [
             {
-              "text": "5f1f938d37d45e3e24e4b3923e6a31bc5a02061388519d782ae3c51188f80409",
+              "text": "57afd159d4efee833a54894fe3cfd8baf2ae2198df95577ca8865c80352206bf",
               "evidence": "OBSERVED",
               "fen": null,
               "ratio": null,
@@ -3179,17 +3179,17 @@
     "as_of": "2026-10-01",
     "state_version": 3,
     "mandate_version": 1,
-    "chain_head_hash": "ba985a41155c3d53f14e2a01ac894bdb1be7a6ce1930c740f1113ba84c2d3d91",
-    "chain_length": 3,
+    "chain_head_hash": "222eb08cec48030b8da839dd3a04c79c0350b17b15581d87227089a63ee81077",
+    "chain_length": 6,
     "chain_valid": true,
     "generated_day": 0,
-    "evidence_hash": "5f1f938d37d45e3e24e4b3923e6a31bc5a02061388519d782ae3c51188f80409",
+    "evidence_hash": "57afd159d4efee833a54894fe3cfd8baf2ae2198df95577ca8865c80352206bf",
     "basis": "CONSERVATIVE",
     "calc": "app.financial.project (integer fen, ADR-0002)"
   },
   "downloads": {
-    "html": "/borrower-file/BF-5F1F938D37D4.html",
-    "docx": "/borrower-file/BF-5F1F938D37D4.docx",
+    "html": "/borrower-file/BF-57AFD159D4EF.html",
+    "docx": "/borrower-file/BF-57AFD159D4EF.docx",
     "pdf": null
   },
   "pdf_note": "PDF skipped: no local PDF renderer is installed; print the HTML to PDF.",

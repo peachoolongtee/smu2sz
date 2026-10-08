@@ -84,6 +84,8 @@ from app.financial.trajectory import early_pay_face
 from app.mandate import check_validity, tier_for
 from app.operations.charges import upfront_fee
 from app.operations.log import (
+    CONFIRM_DOCUMENT_KIND,
+    REJECT_DOCUMENT_KIND,
     RESET_CIRCUIT_KIND,
     REVOKE_COMMITMENT_KIND,
     LoggedEntry,
@@ -473,6 +475,85 @@ class Executor:
             extra = f"; {dropped} invoice adjustment(s) removed" if dropped else ""
             return done(EXECUTED, f"Commitment {c.id} revoked by the owner ({c.status.value} -> REVOKED); "
                                   f"forward concession {fmt_yuan(removed)} removed{extra}")
+
+        return self._atomically(once)
+
+    def decide_document(self, document_id: str, actor: Actor, *, confirm: bool, doc_hash: str,
+                        link_facility_id: str | None = None) -> OperationResult:
+        """The owner confirms or rejects a document the agent read (brief 03). Owner only, and logged either way as
+        CONFIRM_DOCUMENT or REJECT_DOCUMENT (like RESET_CIRCUIT, not a typed Operation). It changes no money state:
+        a confirmed contract is a record the deal summary reads, never the books.
+
+        Refused, with nothing decided: anyone but the owner (a PRIVILEGE_ESCALATION event); an unknown or already
+        decided document; a `doc_hash` that is not the stored document's (the owner decides on the exact text shown);
+        confirming a document that carries text addressed to the agent; and a link to a facility that is not this
+        lender's, not of the agreement's kind, or on anything but a confirmed lender agreement."""
+        from app.domain.models import DocumentKind, DocumentStatus
+
+        def once() -> OperationResult:
+            now = self._clock()
+            kind = CONFIRM_DOCUMENT_KIND if confirm else REJECT_DOCUMENT_KIND
+            op_id = f"{kind.split('_')[0]}-{document_id}-{now}-{len(self._store.operations()) + 1}"
+            payload: dict[str, Any] = {"kind": kind, "op_id": op_id, "document_id": document_id, "doc_hash": doc_hash,
+                                       "requested_by": actor.value, "day": now}
+            if link_facility_id is not None:
+                payload["link_facility_id"] = link_facility_id
+            rec = self._store.get_contract_record(document_id)
+
+            def done(status: OperationStatus, message: str, violations: list[Violation] | None = None) -> OperationResult:
+                result = OperationResult(op_id=op_id, kind=kind, status=status, tier=Tier.TIER_2,
+                                         violations=violations or [], effective_day=now, message=message)
+                entry = self._store.append_operation(op_id, kind, op_id, canonical_json(payload), canonical_json(result))
+                return result.model_copy(update={"seq": entry.seq, "entry_hash": entry.entry_hash,
+                                                 "prev_hash": entry.prev_hash})
+
+            def refuse(code: ViolationCode, message: str, **inputs: object) -> OperationResult:
+                v = _v(code, message, document_id=document_id, **inputs)
+                return done(REFUSED, v.message, [v])
+
+            verb = "confirm" if confirm else "reject"
+            if actor != Actor.OWNER:
+                self._add_security(SecurityEventKind.PRIVILEGE_ESCALATION, now, rec.counterparty_id if rec else None,
+                                   f"{actor} tried to {verb} document {document_id}")
+                return refuse(Code.INSUFFICIENT_AUTHORITY, f"Only the owner may {verb} document {document_id}; "
+                                                           f"{actor} may not", actor=actor)
+            if rec is None:
+                return refuse(Code.PRECONDITION_FAILED, f"Document {document_id} does not exist")
+            if rec.status != DocumentStatus.PROPOSED:
+                return refuse(Code.PRECONDITION_FAILED, f"Document {document_id} is already {rec.status.value.lower()} "
+                                                        f"(day {rec.decided_day})", status=rec.status.value)
+            if not hmac.compare_digest(doc_hash.encode(), rec.doc_hash.encode()):
+                return refuse(Code.TERMS_CHANGED, f"The document shown is not document {document_id} as stored; "
+                                                  f"nothing was {verb}ed. Reload it and decide again")
+            if confirm and rec.blocked:
+                return refuse(Code.PRECONDITION_FAILED, f"Document {document_id} carries text addressed to the agent "
+                                                        f"and cannot be confirmed; ask the counterparty for a clean copy")
+            if link_facility_id is not None:
+                if not confirm or rec.kind != DocumentKind.LENDER_AGREEMENT:
+                    return refuse(Code.PRECONDITION_FAILED, "Only a lender agreement being confirmed links to a facility")
+                fac = next((f for f in self._store.get_state().facilities if f.id == link_facility_id), None)
+                proposed = rec.term_sheet.proposed_facility if rec.term_sheet else None
+                if fac is None:
+                    return refuse(Code.PRECONDITION_FAILED, f"Facility {link_facility_id} is not on the funding menu")
+                if fac.lender_id != rec.counterparty_id:
+                    return refuse(Code.PRECONDITION_FAILED, f"{link_facility_id} is lent by {fac.lender_id}, not by "
+                                                            f"{rec.counterparty_id}", facility_id=link_facility_id)
+                if proposed is not None and proposed.kind != fac.kind:
+                    return refuse(Code.PRECONDITION_FAILED, f"The agreement describes a {proposed.kind.value.lower()}, "
+                                                            f"but {link_facility_id} is a {fac.kind.value.lower()}",
+                                  facility_id=link_facility_id)
+            if confirm:
+                link = f"; linked to {link_facility_id} for reference (the facility itself is unchanged)" \
+                    if link_facility_id else ""
+                message = (f"Document {document_id} ({rec.title}) confirmed by the owner: the agent read it, the owner "
+                           f"confirmed it; nothing in the books changed{link}")
+            else:
+                message = f"Document {document_id} ({rec.title}) rejected by the owner; nothing recorded from it"
+            result = done(EXECUTED, message)
+            self._store.decide_contract_record(rec.model_copy(update={
+                "status": DocumentStatus.CONFIRMED if confirm else DocumentStatus.REJECTED, "decided_day": now,
+                "decided_seq": result.seq, "linked_facility_id": link_facility_id if confirm else None}))
+            return result
 
         return self._atomically(once)
 

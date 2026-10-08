@@ -279,6 +279,9 @@ def parse(text: str, state: FinancialState, *, pending_plan: bool = False) -> Pa
         return hit(Intent.SHOW_RATIOS, "ratios")
     if lx.CAPEX_ASK.search(text):
         return hit(Intent.CAPEX, "capex")
+    if lx.DEAL.search(text) and not (lx.NEGOTIATE_VERB.search(text) or lx.NEGOTIATE.search(text)
+                                     or lx.ACCELERATE.search(text) or lx.FUND.search(text) or lx.REPAY.search(text)):
+        return hit(Intent.SHOW_DEAL, "deal")  # read-only: the confirmed contract beside the live books
     if lx.STATUS_QUESTION.search(text) and not lx.ACCELERATE.search(text):
         return hit(Intent.SHOW_STATUS, "status_question")
     if lx.RECORD_FACT.search(text) and not (lx.ACCELERATE.search(text) or lx.NEGOTIATE_VERB.search(text)

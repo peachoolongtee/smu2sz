@@ -1,2 +1,5 @@
 # Fixture text is hashed and span-matched byte for byte: keep LF on every platform.
 * text=auto eol=lf
+# Binary fixtures (contract uploads): never touched by line-ending normalisation.
+*.docx binary
+*.pdf binary

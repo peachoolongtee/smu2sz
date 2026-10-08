@@ -28,7 +28,7 @@ from app.domain.models import (
     ViolationCode,
 )
 from app.domain.money import bp, fmt_pct, fmt_yuan
-from app.egress import AllowedValue, ProtectedSet, allowed_for_counter, allowed_from_obligations, scan
+from app.egress import AllowedValue, allowed_for_counter, allowed_from_obligations, protected_for, scan
 from app.nl import landing
 from app.nl import lexicon as lx
 from app.nl.context import NlContext
@@ -180,7 +180,7 @@ def acceptance_line(ctx: NlContext, b: VerdictBundle, recipient: str) -> str:
         return fallback
     terms = t(ctx, "; ", "；").join(_restated(ctx, o) for o in b.bound_obligations)
     text = t(ctx, f"Agreed: {terms}. Nothing else in your message is agreed.", f"同意：{terms}。贵方消息中的其他内容均未同意。")
-    if scan(text, ProtectedSet.build(ctx.state(), ctx.mandate()), recipient_id=recipient, allow=acceptance_allow(b)):
+    if scan(text, protected_for(ctx.store), recipient_id=recipient, allow=acceptance_allow(b)):
         return fallback
     return text
 

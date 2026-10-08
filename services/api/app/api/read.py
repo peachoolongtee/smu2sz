@@ -132,7 +132,7 @@ def demo_reset(scenario: str = "golden_sme") -> dict:
 
     rt = get_runtime()
     try:
-        rt.reset(scenario)
+        rt.reset_demo(scenario)
     except ResetRefused as e:
         raise HTTPException(403, {"code": "RESET_REFUSED", "message": str(e)}) from e
     return {"ok": True, "scenario": scenario, "day": rt.day}

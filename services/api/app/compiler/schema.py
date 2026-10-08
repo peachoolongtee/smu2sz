@@ -18,6 +18,7 @@ from pydantic import BaseModel, ConfigDict
 from app.domain.models import (
     BaseKind,
     Contingency,
+    ContractField,
     DataRequestKind,
     DurationKind,
     FacilityKind,
@@ -111,7 +112,8 @@ class OfferExtraction(_X):
     funding_claims: list[XFundingClaim]
 
 
-ClauseField = Literal["principal", "rate", "fee", "tenor", "lead_time", "guarantee", "collateral", "covenant", "equity"]
+ClauseField = Literal["principal", "rate", "fee", "tenor", "lead_time", "guarantee", "collateral", "covenant", "equity",
+                      "advance_rate"]
 
 
 class XClause(_X):
@@ -128,8 +130,35 @@ class TermSheetExtraction(_X):
     authority_claims: list[XAuthorityClaim]
 
 
+class XContractTerm(_X):
+    """One term of a buyer contract, read from one chunk of it. `quote` is an exact substring of the chunk; every
+    `*_text` fragment that is not null must sit inside `quote`. Code parses all of them; which fragment a field
+    needs is fixed (see CONTRACT_SYSTEM_PROMPT)."""
+
+    field: ContractField
+    quote: str
+    value_text: str | None  # the amount, rate, name, reference or description as written
+    date_text: str | None  # a calendar date as written ("1 September 2026")
+    period_text: str | None  # a length of time or a cadence ("forty-five (45) days", "every thirty (30) days")
+    basis_text: str | None  # what payment terms count from ("after the Invoice Date")
+    unit_text: str | None  # what a price is for ("for each Batch")
+    trigger_text: str | None  # what a milestone payment waits for ("on acceptance")
+    reference_text: str | None  # an invoice or document reference ("RCV-A")
+    confidence: float
+
+
+class ContractExtraction(_X):
+    terms: list[XContractTerm]
+    authority_claims: list[XAuthorityClaim]
+    data_requests: list[XDataRequest]
+
+
 def empty_offer_extraction() -> OfferExtraction:
     return OfferExtraction(
         obligations=[], quantities=[], unresolved_references=[], missing_material=[],
         data_requests=[], authority_claims=[], funding_claims=[],
     )
+
+
+def empty_contract_extraction() -> ContractExtraction:
+    return ContractExtraction(terms=[], authority_claims=[], data_requests=[])

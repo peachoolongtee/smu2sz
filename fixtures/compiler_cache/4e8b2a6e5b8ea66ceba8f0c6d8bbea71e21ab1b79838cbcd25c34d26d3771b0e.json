@@ -1,0 +1,53 @@
+{
+  "doc_ids": [
+    "DOC-0b9e1ce4aafc6a68"
+  ],
+  "extraction": {
+    "authority_claims": [],
+    "clauses": [
+      {
+        "field": "lead_time",
+        "quote": "Drawdowns are funded on the same day",
+        "value_text": "on the same day"
+      },
+      {
+        "field": "principal",
+        "quote": "facility limit of RMB 150,000",
+        "value_text": "RMB 150,000"
+      },
+      {
+        "field": "rate",
+        "quote": "interest rate is 6.4% per annum",
+        "value_text": "6.4%"
+      },
+      {
+        "field": "covenant",
+        "quote": "FINANCIAL COVENANTS",
+        "value_text": "COVENANTS"
+      },
+      {
+        "field": "covenant",
+        "quote": "5.1 Debt service coverage: the Borrower shall maintain a debt service coverage ratio (DSCR) of at least 1.25 times in each month",
+        "value_text": "Debt service coverage"
+      },
+      {
+        "field": "covenant",
+        "quote": "5.2 Leverage: the total debt of the Borrower shall not exceed 2.5 times its annual EBITDA",
+        "value_text": "Leverage"
+      },
+      {
+        "field": "covenant",
+        "quote": "5.3 Clean-down: the outstanding balance of the credit line shall be reduced to zero for at least thirty (30) consecutive days in each year",
+        "value_text": "Clean-down"
+      }
+    ],
+    "facility_kind": "CREDIT_LINE",
+    "lender_name": null,
+    "repayment": "BULLET"
+  },
+  "key": "4e8b2a6e5b8ea66ceba8f0c6d8bbea71e21ab1b79838cbcd25c34d26d3771b0e",
+  "kind": "term_sheet",
+  "label": "MB_CREDIT_LINE_AGREEMENT",
+  "prompt_version": "termsheet-v3",
+  "source_model": "rules-v1"
+}

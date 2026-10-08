@@ -1,0 +1,4 @@
+# Held-out contracts (brief 03 §6.8). Pending: no independent contract has been supplied yet.
+# Protocol and schema: README.md in this folder. Labels are written BEFORE the first run, by someone who has not seen
+# the reading code, and committed in their own commit.
+contracts: []

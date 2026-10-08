@@ -26,6 +26,7 @@ class Intent(StrEnum):
     SHOW_RATIOS = "SHOW_RATIOS"
     CAPEX = "CAPEX"
     BORROWER_FILE = "BORROWER_FILE"
+    SHOW_DEAL = "SHOW_DEAL"  # where a buyer's deal stands: the confirmed contract and the live books (read-only)
     EXPLAIN = "EXPLAIN"
     WHAT_IF = "WHAT_IF"
     RECORD_FACT = "RECORD_FACT"  # the owner states a new bill, invoice, delay or figure: read-only, nothing is recorded
