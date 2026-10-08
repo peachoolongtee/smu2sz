@@ -19,6 +19,7 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from app.alerts import Alert, AlertKind, Severity, alerts, reconcile
 from app.api.auth import require_owner
+from app.api.causality import Causality, forecast_of
 from app.api.decisions import decision_summary, load_context, remaining_links, remaining_task_view
 from app.api.display import displayed
 from app.api.presentation import (
@@ -56,6 +57,7 @@ from app.api.presentation import (
 )
 from app.api.runtime import get_runtime
 from app.books import current_books
+from app.decisions.identity import decision_id_for
 from app.domain.models import (
     FinancialState,
     FundingAction,
@@ -362,8 +364,50 @@ def _series(state: FinancialState, traj: Any, lang: str = "en", from_day: int = 
             label = in_words(state, e.label)
             events.append({"kind": e.kind.value, "label": label, "label_short": _label_short(e.kind.value, label, lang),
                            "amount_fen": e.amount_fen, "amount_display": fmt_yuan(e.amount_fen), "amount_short": fmt_short(e.amount_fen)})
-        rows.append({"day": d.day, "closing_fen": d.closing_fen, "closing_display": fmt_yuan(d.closing_fen), "events": events})
+        # The day's net movement: the sum of the engine's own postings for the day, so a page can label the day by its net and never
+        # let one large outflow look like the cause of a rising line (the components stay in `events`).
+        net = sum(e.amount_fen for e in d.events)
+        rows.append({"day": d.day, "closing_fen": d.closing_fen, "closing_display": fmt_yuan(d.closing_fen), "events": events,
+                     "net_fen": net, "net_display": fmt_yuan(net), "net_short": fmt_short(net)})
     return rows
+
+
+_EXPECTED_RECEIPTS = (LedgerEventKind.RECEIPT, LedgerEventKind.EARLY_RECEIPT)
+
+
+def forecast_basis(state: FinancialState, store: Any, traj: Any, action: dict[str, Any] | None, today: int, lang: str) -> dict[str, Any]:
+    """What the cash chart counts, in words and in two sums (audit section 16): the invoice payments the engine expects at their due
+    dates and the funding already committed; overdue payments are not counted. `confirmed_receipts_fen` is the sum of the receipts in
+    the log; `expected_receipts_fen` the sum of the receipts the projection already posted from today on. Both are sums of amounts
+    that exist elsewhere; nothing is projected here. The assumed repayment day of the line is the plan's own (None without one)."""
+    entries, _ = read_entries(store.operations())
+    confirmed = sum(_receipt_fen(e.payload) for e in entries
+                    if e.kind == "RECEIVE_PAYMENT" and e.result.status == OperationStatus.EXECUTED)
+    expected = sum(ev.amount_fen for d in traj.days if d.day >= today for ev in d.events
+                   if ev.kind in _EXPECTED_RECEIPTS and ev.amount_fen > 0)
+    repay_days = [leg["cost_due_day"] for leg in (action or {}).get("legs") or []
+                  if leg.get("operation_kind") == "DRAW_FACILITY" and isinstance(leg.get("cost_due_day"), int)]
+    repay = max(repay_days) if repay_days else None
+    base = t(lang, "Expected invoice payments at their due dates and committed funding; overdue payments are excluded",
+             "按到期日预计的发票回款和已承诺的融资；已逾期未付的款项不计入")
+    tail = (t(lang, f"; assumed line repayment {when_text(repay, today, lang)}.", f"；假定额度于{when_text(repay, today, lang)}还款。")
+            if repay is not None else t(lang, ".", "。"))
+    return {
+        "forecast_basis_text": base + tail,
+        "forecast_basis": {
+            "scheduled_receipts_counted": True, "overdue_excluded": True,
+            "confirmed_receipts_fen": confirmed, "confirmed_receipts_display": fmt_yuan(confirmed),
+            "expected_receipts_fen": expected, "expected_receipts_display": fmt_yuan(expected),
+            "assumed_repayment_day": repay,
+            "assumed_repayment_when": when_text(repay, today, lang) if repay is not None else None,
+        },
+        "last_read_when": t(lang, "today", "今天"), "last_read_day": today,
+    }
+
+
+def _receipt_fen(payload: dict[str, Any]) -> int:
+    amount = payload.get("amount_fen")
+    return amount if isinstance(amount, int) else 0
 
 
 def _after_words(after: Any, floor: int, today: int, horizon: int, lang: str) -> str:
@@ -740,11 +784,13 @@ def _warning_words(state: FinancialState, a: Alert, recon: _Reconciliation, toda
 
 
 def _changes(state: FinancialState, store: Any, found: list[Alert], today: int, lang: str,
-             since_day: int | None = None) -> list[dict[str, Any]]:
-    """Since the owner's last visit when the web says when that was (`since_day`), else the last week of the clock."""
+             since_day: int | None = None, causality: Causality | None = None) -> list[dict[str, Any]]:
+    """Since the owner's last visit when the web says when that was (`since_day`), else the last week of the clock. With a `Causality`
+    each row also says `what_changed`, `why_it_matters` (the forecast as of now, not a replay) and `what_remains` (the decision record's)."""
     since = since_day if since_day is not None else today - RECENT_DAYS
     items: list[dict[str, Any]] = []
-    agreements = {c.id: party_name(state, c.counterparty_id) for c in store.commitments()}
+    commitments = store.commitments()
+    agreements = {c.id: party_name(state, c.counterparty_id) for c in commitments}
     recon = _Reconciliation(state, store, today)
     entries, _ = read_entries(store.operations())
     # An approval the owner has answered: its "waiting" entry is history, and when the decision itself is in the window the
@@ -777,9 +823,14 @@ def _changes(state: FinancialState, store: Any, found: list[Alert], today: int, 
                              approval_id=e.result.approval_id, day=day, today=today, lang=lang,
                              decided=e.result.approval_id in decided_ids, agreements=agreements, window_live=live)
                  if kind != "AGREEMENT" else {"event_text": None, "event_detail": None})
-        items.append({"day": day, "seq": e.seq, "kind": kind, "actor": who, "text": shown,
-                      "event_text": words["event_text"] or shown, "event_detail": words["event_detail"],
-                      "when": when_text(day, today, lang)})
+        item: dict[str, Any] = {"day": day, "seq": e.seq, "kind": kind, "actor": who, "text": shown,
+                "event_text": words["event_text"] or shown, "event_detail": words["event_detail"],
+                "when": when_text(day, today, lang)}
+        if causality is not None:
+            did = decision_id_for(e.payload, e.idempotency_key, commitments, approval_id=e.result.approval_id)
+            item.update(causality.fields(status=e.result.status.value, event_text=item["event_text"], decision_id=did,
+                                         decided=e.result.approval_id in decided_ids))
+        items.append(item)
     for a in found:
         if a.kind == AlertKind.RECEIVABLE_PAST_DUE:
             late = business_text(state, a.detail.split(". ")[0] + ".", today, lang, agreements) or ""
@@ -800,7 +851,12 @@ def _changes(state: FinancialState, store: Any, found: list[Alert], today: int, 
                           "when": when_text(lot.arrival_day, today, lang), "text": landed,
                           "event_text": landed, "event_detail": None})
     items.sort(key=lambda x: (-(x["day"] or 0), -(x["seq"] or 0)))
-    return items[:MAX_CHANGES]
+    items = items[:MAX_CHANGES]
+    if causality is not None:
+        for item in items:
+            if "what_changed" not in item:  # a late payment or a landing: the forecast now is its consequence
+                item.update(causality.fields(status="EXECUTED", event_text=item["event_text"], decision_id=None))
+    return items
 
 
 def _receivables(state: FinancialState, store: Any, today: int, lang: str) -> dict[str, Any]:
@@ -843,11 +899,20 @@ def _in_transit(state: FinancialState, today: int, lang: str) -> dict[str, Any] 
         for lot in sorted(lots, key=lambda lt: (lt.arrival_day, lt.id))]}
 
 
-def _decision_record(rt: Any, lang: str) -> tuple[list[dict[str, Any]], dict[str, Any] | None]:
+def _context(rt: Any) -> Any:
+    """The decision record's context, read once for the home (None when it cannot be read: the home never goes down for it)."""
+    try:
+        return load_context(rt)
+    except Exception:
+        logging.getLogger("termsledger.decisions").exception("the decision record could not be read for the home")
+        return None
+
+
+def _decision_record(rt: Any, lang: str, ctx: Any = None) -> tuple[list[dict[str, Any]], dict[str, Any] | None]:
     """The decision record's two reads for the home: up to three open decisions (newest first) and, when a cure left the reserve
     at risk, what is left to decide (F17). A failure here never takes the home down: it reads as nothing open."""
     try:
-        ctx = load_context(rt)
+        ctx = ctx if ctx is not None else load_context(rt)
         ranked = sorted(ctx.states().values(), key=lambda p: (p[0].updated_day if p[0].updated_day is not None else -1, p[0].updated_seq),
                         reverse=True)
         rows: list[dict[str, Any]] = []
@@ -911,9 +976,12 @@ def get_home(lang: str = "en", since_day: int | None = None) -> dict[str, Any]:
                                   else t(lang, "A funding plan is ready, within your signed limits. No approval is needed.",
                                          "融资方案已准备好，在您签署的授权内，无需批准。"))
         series = _series(books.state, traj, lang, today)
+        basis = forecast_basis(books.state, rt.store, traj, action, today, lang)
         queue = _approvals(books.state, books.with_([]), mandate, approvals, found, today, lang,
                            use_router=rt.settings.features.debt_desk, commitments=rt.store.commitments())
-        changes = _changes(books.state, rt.store, found, today, lang, since_day)
+        record = _context(rt)
+        causality = Causality(record, forecast_of(traj, today, mandate.min_cash_fen), today, lang)
+        changes = _changes(books.state, rt.store, found, today, lang, since_day, causality)
         receivables = _receivables(books.state, rt.store, today, lang)
         in_transit = _in_transit(books.state, today, lang)
         funding_lots = _funding_lots(books.state, today, lang)
@@ -921,7 +989,7 @@ def get_home(lang: str = "en", since_day: int | None = None) -> dict[str, Any]:
         recon = _Reconciliation(books.state, rt.store, today)
         warnings = [{"id": a.id, "kind": a.kind.value, **_warning_words(state, a, recon, today, lang, agreements), "day": a.day,
                      "when": when_text(a.day, today, lang)} for a in found if a.severity == Severity.WARNING]
-        open_decisions, remaining = _decision_record(rt, lang)
+        open_decisions, remaining = _decision_record(rt, lang, record)
         facilities = [{"id": f.id, "name": f.name, "status": f.status.value, "limit_display": fmt_yuan(f.limit_fen), "limit_fen": f.limit_fen,
                        "drawn_fen": f.drawn_fen, "drawn_display": fmt_yuan(f.drawn_fen),
                        "available_display": fmt_yuan(max(f.limit_fen - f.drawn_fen, 0) if f.owner_approved else 0),
@@ -975,6 +1043,7 @@ def get_home(lang: str = "en", since_day: int | None = None) -> dict[str, Any]:
             # the recommended plan applied ("with the recommended plan"). The browser draws these and computes nothing.
             "series": series,
             "plan_series": plan_series,
+            **basis,
         },
         "next_action": action,
         "approvals": queue,

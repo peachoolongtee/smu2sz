@@ -89,10 +89,13 @@ def test_day0_the_router_optimum_is_the_recommended_row_and_the_legs_are_named(c
     assert all(r["role"] and r["role_reason"] for r in plan["comparison"])
 
 
-def test_the_roles_change_no_cost_and_no_order_of_the_routers_rows(client, rt):
+def test_the_roles_change_no_cost_of_the_routers_rows_and_keep_their_spec_position(client, rt):
     to_day34(client, rt)
     rows = _comparison(client)["comparison"]
-    assert [(r["key"], r["total_fen"]) for r in rows if r["key"] != "recommended_plan"] == [("full_discount", 504_000), ("router_optimum", 170_610)]
+    assert {r["key"]: r["total_fen"] for r in rows if r["key"] != "recommended_plan"} == {"full_discount": 504_000, "router_optimum": 170_610}
+    # Wave 3 (F18) reorders the list for the owner (runnable before buyer-dependent); the router's own order is `router_order`
+    assert [r["key"] for r in sorted(rows, key=lambda r: r["router_order"] if r["router_order"] is not None else -1)
+            if r["key"] != "recommended_plan"] == ["full_discount", "router_optimum"]
 
 
 # ---------------------------------------------------------------- the approval's result and reason are owner sentences (finding 18)

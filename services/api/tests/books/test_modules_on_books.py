@@ -147,7 +147,10 @@ _ROW_DISPLAY = ("status", "reason_kind", "shortfall_fen", "shortfall_display", "
                 # Wave 8 pass A: the row's role and why, its named legs (with their cost lines), the plan's name and the
                 # offset it nets against; `legs` goes whole (name_display, cost_display, amounts all derive from the actions)
                 "role", "role_reason", "legs", "leg_costs_fen", "name_display", "offset_fen", "offset_display",
-                "offset_label")
+                "offset_label",
+                # Wave 3 (F18): the comparison contract's group, rank and words (the golden is of the router's rows and figures)
+                "group", "group_text", "rank", "arrival_day", "arrival_when", "arrival_text", "available_when", "uncovered_display",
+                "remaining_gap_fen", "remaining_gap_display", "remaining_gap_text", "basis_text", "consent_text")
 
 
 def _strip_when(plan: dict[str, Any]) -> None:
@@ -160,6 +163,9 @@ def _strip_when(plan: dict[str, Any]) -> None:
 def _without_display_fields(plan: dict[str, Any]) -> dict[str, Any]:
     out = json.loads(json.dumps(plan))
     out.pop("recommended_key", None)  # Wave 8 pass A: names the recommended comparison row; `recommended_plan` is never a row here
+    out.pop("comparison_order_text", None)  # Wave 3: how the list is ordered
+    # Wave 3 (F18) lists the rows in the order the owner reads them; the golden is of the router's spec 7.4 order, kept as `router_order`
+    out["comparison"] = sorted(out["comparison"], key=lambda r: r.pop("router_order"))
     for key in ("committed", "expected"):
         if out.get(key):
             out[key].pop("available_from_day", None)
