@@ -303,7 +303,7 @@ def test_day34_answer_is_fast_when_warm(rt_day34: Runtime, books_day34: Books, m
 # ---------------------------------------------------------------- wording
 
 
-_ENGINE_WORDS = re.compile(r"\b(verdict|trajectory|basis|fen|offer them|give them)\b", re.I)
+_ENGINE_WORDS = re.compile(r"\b(verdict|trajectory|basis|fen|offer them|give them)\b", re.IGNORECASE)
 
 
 def _strings(answer: WorthAnswer) -> list[str]:
