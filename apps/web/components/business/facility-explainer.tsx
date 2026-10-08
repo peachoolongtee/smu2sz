@@ -1,6 +1,7 @@
 "use client";
 
 import { Badge, type Tone } from "@/components/ui";
+import { FoldChevron } from "@/components/business/kit";
 import type { DictKey } from "@/lib/dictionary";
 import { useI18n } from "@/lib/i18n";
 import type { MenuRow } from "@/lib/types";
@@ -46,7 +47,7 @@ export function FacilityExplainer({ menu, inPlan }: { menu: MenuRow[]; inPlan: S
                 </span>
                 {inPlan.has(f.id) ? <Badge tone="brand">{t("biz.facility.inPlan")}</Badge> : null}
                 <Badge tone={availTone[av]}>{t(availKey[av])}</Badge>
-                <span aria-hidden className="text-ink-3 transition-transform group-open:rotate-90">›</span>
+                <FoldChevron />
               </summary>
               <div className="space-y-2 border-t border-line px-3 py-3 text-sm">
                 <dl className="grid gap-2 sm:grid-cols-3">

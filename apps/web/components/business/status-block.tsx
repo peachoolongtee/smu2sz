@@ -48,17 +48,17 @@ export function StatusBlock({ h }: { h: HomeView }) {
   const unsafe = h.cash.first_breach_day !== null;
   // The first breach and the lowest point can be the same day: then it is one tile (one figure, one distance), not two.
   const breachIsWorst = unsafe && h.cash.first_breach_day === h.cash.lowest_day;
-    return (
+  return (
     <section aria-labelledby="home-status-title" className="on-deep motion-reveal rounded-card bg-brand-900 p-5 text-on-deep" data-testid="home-status" data-status={h.status}>
       <span className={`inline-flex items-center gap-1.5 rounded-pill px-3 py-1 text-xs font-bold uppercase tracking-wide text-ink ${pill}`} data-testid="home-status-word">
         {/* The dot repeats the pill's status as a mark; it pulses once when the status asks for the owner (never on a calm one). */}
         <span aria-hidden className={`relative size-1.5 shrink-0 rounded-pill bg-ink text-ink ${pulses ? "motion-pulse" : ""}`} />
         {h.status_text ?? te("homestatus", h.status)}
       </span>
-      <h1 id="home-status-title" className="mt-3 text-2xl font-semibold leading-snug text-on-deep lg:text-3xl" data-testid="home-headline">
+      <h1 id="home-status-title" className="mt-3 text-balance text-2xl font-semibold leading-snug text-on-deep lg:text-3xl" data-testid="home-headline">
         {h.headline}
       </h1>
-      <p className="mt-1.5 max-w-3xl text-base text-on-deep-muted" data-testid="home-note">
+      <p className="mt-1.5 max-w-3xl text-pretty text-base text-on-deep-muted" data-testid="home-note">
         {h.note}
       </p>
 

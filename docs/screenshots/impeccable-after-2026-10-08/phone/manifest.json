@@ -45,7 +45,7 @@
     "name": "07-activity-day0",
     "url": "/activity",
     "viewport": "412x839",
-    "height": 865,
+    "height": 839,
     "screens": 1
   },
   {
@@ -73,8 +73,8 @@
     "name": "11-activity-funded",
     "url": "/activity",
     "viewport": "412x839",
-    "height": 1101,
-    "screens": 1.3
+    "height": 919,
+    "screens": 1.1
   },
   {
     "name": "12-home-day34",
@@ -94,7 +94,7 @@
     "name": "13b-cash-day34",
     "url": "/cash",
     "viewport": "412x839",
-    "height": 2854,
+    "height": 2886,
     "screens": 3.4
   },
   {
@@ -136,8 +136,8 @@
     "name": "19-activity-day34-approved",
     "url": "/activity",
     "viewport": "412x839",
-    "height": 2165,
-    "screens": 2.6
+    "height": 2080,
+    "screens": 2.5
   },
   {
     "name": "20-demo-story",

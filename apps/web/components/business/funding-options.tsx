@@ -85,7 +85,7 @@ function Row({ c, n, name, today, recommended }: { c: Option; n: number | null; 
         {legs || reason ? (
           <span className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink-2" data-testid="cash-option-legs">
             {legs ? <span className="tabular-nums">{legs}</span> : null}
-            {reason ? <Chip>{reason}</Chip> : null}
+            {reason ? <Chip wrap>{reason}</Chip> : null}
           </span>
         ) : null}
         {status === "insufficient" ? (

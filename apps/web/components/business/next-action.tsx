@@ -38,7 +38,7 @@ export function NextActionBlock({ a, stateVersion, fixer }: { a: HomeNextAction;
   return (
     <section aria-labelledby="home-action-title" className="rounded-card border border-line bg-surface p-4 shadow-card" data-testid="home-next-action" data-alert={a.alert_id}>
       <p className="text-xs font-semibold uppercase tracking-wide text-ink-3">{t("biz.recommended.short")}</p>
-      <h2 id="home-action-title" className="mt-1 text-xl font-semibold leading-snug text-ink" data-testid="next-action-title">
+      <h2 id="home-action-title" className="mt-1 text-balance text-xl font-semibold leading-snug text-ink" data-testid="next-action-title">
         {a.outcome_title}
       </h2>
       <ul className="mt-2 flex flex-wrap gap-x-6 gap-y-1 text-sm" data-testid="next-action-components">

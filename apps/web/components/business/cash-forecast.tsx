@@ -172,8 +172,17 @@ export function CashForecast({ h }: { h: HomeView }) {
   const candidates = data
     .flatMap((r) => r.events.map((e) => ({ day: r.day, cash: r.cash, e })))
     .filter((x) => x.e.kind === "FLOW" || x.e.kind === "RECEIPT" || x.e.kind === "EARLY_RECEIPT" || x.e.kind === "ADVANCE" || x.e.kind === "DRAW");
+  // Two events that read the same (one buyer's two receipts) are one label: the later one stays a mark, and the tooltip names it.
+  const seen = new Set<string>();
+  const labelCandidates = candidates.filter((c) => {
+    const text = `${c.e.label_short ?? c.e.label} ${c.e.amount_short}`;
+    if (seen.has(text)) return false;
+    seen.add(text);
+    return true;
+  });
+  const markOnly = candidates.filter((c) => !labelCandidates.includes(c));
   const fixedX = [breach, lowestRow?.day ?? null].filter((d): d is number => d !== null).map(xOf);
-  const annotations = box.w === 0 ? [] : placeLabels(candidates, xOf, fixedX, narrow ? 3 : MAX_ANNOTATIONS, !narrow);
+  const annotations = box.w === 0 ? [] : placeLabels(labelCandidates, xOf, fixedX, narrow ? 3 : MAX_ANNOTATIONS, !narrow);
   // The worst point is the reserve itself when the two figures are the same: one label is enough, and the legend names the reserve.
   const lowestIsReserve = h.cash.lowest_fen === h.cash.floor_fen;
   const ticks: number[] = [];
@@ -235,6 +244,11 @@ export function CashForecast({ h }: { h: HomeView }) {
                 )}
               />
             ))}
+            {box.w === 0
+              ? null
+              : markOnly.map((m) => (
+                  <ReferenceDot key={`${m.day}-${m.e.label}-mark`} x={m.day} y={m.cash} r={4} fill={RING} stroke={m.e.amount_fen < 0 ? SERIES.floor.stroke : SERIES.plan.stroke} strokeWidth={2} />
+                ))}
             {breachRow ? <ReferenceDot x={breachRow.day} y={breachRow.cash} r={6} fill={SERIES.floor.stroke} stroke={RING} strokeWidth={2} /> : null}
             {lowestRow && lowestRow.day !== breach ? (
               <ReferenceDot

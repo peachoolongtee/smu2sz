@@ -62,10 +62,16 @@ export const ShieldIcon = (p: P) => (
     <path d="M8 1.8l5 1.8v4c0 3-2.1 5.2-5 6.6-2.9-1.4-5-3.6-5-6.6v-4l5-1.8z" />
   </svg>
 );
+/** An arc that turns; where motion is reduced (a frozen arc says nothing) it is an ellipsis instead (see globals.css). */
 export const Spinner = (p: P) => (
-  <svg {...base(p)} className={`animate-spin ${p.className ?? ""}`}>
-    <path d="M8 2a6 6 0 1 0 6 6" />
-  </svg>
+  <>
+    <svg {...base(p)} className={`spinner animate-spin ${p.className ?? ""}`}>
+      <path d="M8 2a6 6 0 1 0 6 6" />
+    </svg>
+    <span aria-hidden className="spinner-dots font-semibold leading-none">
+      …
+    </span>
+  </>
 );
 export const ArrowDownIcon = (p: P) => (
   <svg {...base(p)}>
