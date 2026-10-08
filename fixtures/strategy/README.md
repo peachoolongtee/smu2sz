@@ -26,3 +26,14 @@ FLOW_RESEARCH_SPIKES=1 TERMSLEDGER_NO_DOTENV=1 DATABASE_URL=memory LLM_MODE=cach
 ```
 
 The `seconds` fields are wall-clock timings and differ on every run; the tests do not read them.
+
+## What the oracle covers in the production code
+
+`collections_both.json` knows two early-payment faces per receivable, the whole outstanding invoice and the plan's need. The
+production `receivables_worth` keeps both as ceilings (`face_kind` `whole` and `need`) and the tests and the backtest's
+differential pin them to the fen. It adds a third, `counter`: the face of the verifier's own Option A counter to an ask of the
+top early-pay rate (`app/strategy/faces.py`), which is the one figure the pages quote. The oracle has no such face, so
+there is nothing to pin it to: day 0, RCV-A, ¥257,200 at up to 0.85% is pinned from the app's own run (the Deals card's
+figure); on the day-34 books the verifier offers no early-pay counter on `RI:BUYER-1:2` or `RI:BUYER-1:32`, so those rows quote
+the plan's need. The row's net saving therefore differs from the oracle's `net_value_at_ceiling` on day 0 (RCV-A: ¥86.16 on
+the counter face against the oracle's ¥173.93 on the whole face); the differential lists it as an expected difference.
