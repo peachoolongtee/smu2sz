@@ -1,9 +1,9 @@
 {
   "buyer_id": "BUYER-1",
   "buyer_name": "Foshan Home Retail Co.",
-  "primary": "Up to 80-day terms if the price rises 0.95%, or early payment at up to 0.25% on ¥420,000.00; a rebate up to 1.25%; not 85 days.",
-  "reason": "The ¥162,800.00 still owed by Foshan Home Retail Co. is 2 days past due, so any deal with Foshan Home Retail Co. needs your approval; the ¥5,000.00 budget buys no terms without a price step.",
-  "money": "Without a deal the standing plan costs ¥0.00.",
+  "primary": "You can live with: up to 80-day terms if the price rises 0.95%, or early payment at up to 0.25% on ¥420,000.00; a rebate up to 1.25%; not 85 days.",
+  "reason": "The ¥162,800.00 still owed by Foshan Home Retail Co. is 2 days past due, so any deal with Foshan Home Retail Co. needs your approval; the ¥5,000.00 budget buys no terms without a price rise.",
+  "money": "Without a deal your current funding plan costs ¥0.00.",
   "packages": [
     {
       "package": {
@@ -196,7 +196,7 @@
       "unavailable": null,
       "maximum_display": "45 days",
       "wall_words": "your budget for what you give buyers",
-      "next_step_sentence": "50 days: not approved",
+      "next_step_sentence": "50 days: over your limits",
       "at_maximum": {
         "package": {
           "buyer_id": "BUYER-1",
@@ -310,7 +310,7 @@
     {
       "lever": "Terms (days), with the price that compensates it",
       "key": "terms_with_price",
-      "label": "Longest payment terms with a price step",
+      "label": "Longest payment terms with a price rise",
       "unit": "days",
       "maximum": 80,
       "confirmed": true,
@@ -322,7 +322,7 @@
       "unavailable": null,
       "maximum_display": "80 days, price up 1.05%",
       "wall_words": "your budget for what you give buyers",
-      "next_step_sentence": "85 days, price up 1.00%: not approved",
+      "next_step_sentence": "85 days, price up 1.00%: over your limits",
       "at_maximum": {
         "package": {
           "buyer_id": "BUYER-1",
@@ -400,7 +400,7 @@
       "unavailable": null,
       "maximum_display": "0.25% on ¥420,000.00",
       "wall_words": null,
-      "next_step_sentence": "0.30% on ¥420,000.00: not approved",
+      "next_step_sentence": "0.30% on ¥420,000.00: over your limits",
       "at_maximum": {
         "package": {
           "buyer_id": "BUYER-1",
@@ -478,7 +478,7 @@
       "unavailable": null,
       "maximum_display": "1.25%",
       "wall_words": "your budget for what you give buyers",
-      "next_step_sentence": "1.30%: not approved",
+      "next_step_sentence": "1.30%: over your limits",
       "at_maximum": {
         "package": {
           "buyer_id": "BUYER-1",
@@ -579,7 +579,7 @@
         "forward_budget_used_display": "¥0.00",
         "plan_cost_display": "¥0.00"
       },
-      "lowest_price_words": "no price step needed",
+      "lowest_price_words": "no price rise needed",
       "min_price_display": "0.00%"
     },
     {
@@ -619,7 +619,7 @@
         "forward_budget_used_display": "¥0.00",
         "plan_cost_display": "¥0.00"
       },
-      "lowest_price_words": "no price step needed",
+      "lowest_price_words": "no price rise needed",
       "min_price_display": "0.00%"
     },
     {
@@ -659,7 +659,7 @@
         "forward_budget_used_display": "¥0.00",
         "plan_cost_display": "¥0.00"
       },
-      "lowest_price_words": "no price step needed",
+      "lowest_price_words": "no price rise needed",
       "min_price_display": "0.00%"
     },
     {
@@ -699,7 +699,7 @@
         "forward_budget_used_display": "¥0.00",
         "plan_cost_display": "¥0.00"
       },
-      "lowest_price_words": "no price step needed",
+      "lowest_price_words": "no price rise needed",
       "min_price_display": "0.00%"
     },
     {
@@ -1084,6 +1084,7 @@
     }
   ],
   "refused": null,
+  "unlisted_counters": [],
   "source_state_version": 8,
   "hypothetical": true,
   "evaluations": 87,

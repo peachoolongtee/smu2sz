@@ -74,7 +74,7 @@ function LeverTable({ levers }: { levers: EnvelopeLeverView[] }) {
   );
 }
 
-function Packages({ packages }: { packages: EnvelopePackageView[] }) {
+function Packages({ packages, unlisted }: { packages: EnvelopePackageView[]; unlisted: string[] }) {
   const { t } = useI18n();
   return (
     <div className="mt-4">
@@ -88,6 +88,11 @@ function Packages({ packages }: { packages: EnvelopePackageView[] }) {
           </li>
         ))}
       </ul>
+      {unlisted.map((sentence, i) => (
+        <p key={i} className="mt-2 text-xs text-ink-2" data-testid="envelope-unlisted">
+          {sentence}
+        </p>
+      ))}
     </div>
   );
 }
@@ -217,7 +222,7 @@ export function BeforeTheyAsk({ buyerId, optionCount, onOpenOption }: { buyerId:
       ) : null}
       <Disclosure className="mt-3" testId="envelope-details" summary={t("biz.strategy.envelope.details")}>
         <LeverTable levers={e.levers} />
-        {e.packages.length ? <Packages packages={e.packages} /> : null}
+        {e.packages.length ? <Packages packages={e.packages} unlisted={e.unlisted_counters} /> : null}
         {e.zone.length ? <Zone zone={e.zone} /> : null}
       </Disclosure>
       {mode === "demo" && e.computed_in_seconds > 0 ? (

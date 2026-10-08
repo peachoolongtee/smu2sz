@@ -93,6 +93,7 @@ test.describe("desktop", () => {
     const sentence = page.getByTestId("cash-price-sentence");
     await expect(sentence).toHaveCount(1);
     await expect(sentence).toContainText("%");
+    await expect(sentence).toContainText("saves you ¥89.11 of funding cost per ¥10,000");
     await expect(page.locator("#cash-answer").getByTestId("cash-price-sentence")).toHaveCount(1);
     expect(await sentence.innerText()).not.toMatch(DAY_N);
     expect(await proseOf(page)).not.toMatch(DAY_N);
@@ -103,7 +104,7 @@ test.describe("desktop", () => {
     await page.goto("/receivables");
     await expect(page.getByTestId("recv-RCV-A")).toBeVisible();
     await expect(page.getByTestId("recv-ranking-note")).toContainText("Ranked by what collecting each saves you");
-    await expect(page.getByTestId("recv-worth-RCV-A")).not.toBeEmpty();
+    await expect(page.getByTestId("recv-worth-RCV-A")).toContainText("Saves ¥");
     await expect(page.getByTestId("recv-RCV-A")).not.toContainText("before any discount");
     const action = page.getByTestId("recv-action-RCV-A");
     await expect(action).toContainText("early payment");
@@ -119,7 +120,7 @@ test.describe("desktop", () => {
     await expect(rows.first()).toHaveAttribute("data-testid", "recv-RCV-A");
     await expect(rows.first().locator("td").first().locator("span.block")).toHaveText("RCV-A");
     await expect(page.getByTestId("recv-ranking-note")).toHaveCount(1);
-    await expect(page.getByTestId("recv-worth-RCV-A")).not.toBeEmpty();
+    await expect(page.getByTestId("recv-worth-RCV-A")).toContainText("Saves ¥");
     await expect(page.getByTestId("recv-action-RCV-A")).toContainText("Call Foshan Home Retail Co.");
     // The action word is the first thing in the action cell, as a pill from the dictionary.
     await expect(rows.first().locator("td").last()).toContainText("Call now");
@@ -143,7 +144,8 @@ test.describe("desktop", () => {
     await openEx01(page);
     const card = page.locator("#deal-envelope");
     // The card is there as soon as the message is read, before the check; it has no options to open yet.
-    await expect(card.getByTestId("envelope-primary")).toContainText("55-day", { timeout: 30_000 });
+    await expect(card.getByTestId("envelope-primary")).toContainText("You can live with", { timeout: 30_000 });
+    await expect(card.getByTestId("envelope-primary")).toContainText("55-day");
     await expect(card.getByTestId("envelope-primary")).toContainText("0.85%");
     await expect(card.getByTestId("envelope-reason")).not.toBeEmpty();
     await expect(card.getByTestId("envelope-money")).toContainText("¥");
@@ -165,12 +167,12 @@ test.describe("desktop", () => {
     await expect(card.getByTestId("envelope-levers").locator("tbody tr")).toHaveCount(6);
     await expect(card.getByTestId("envelope-lever-terms_alone")).toContainText("45 days");
     await expect(card.getByTestId("envelope-lever-terms_alone")).toContainText("your budget for what you give buyers");
-    await expect(card.getByTestId("envelope-lever-terms_alone")).toContainText("50 days: not approved; its funding cannot run today");
+    await expect(card.getByTestId("envelope-lever-terms_alone")).toContainText("50 days: over your limits; its funding cannot run today");
     await expect(card.getByTestId("envelope-lever-terms_with_price")).toContainText("55 days, price up 0.30%");
     await expect(card.getByTestId("envelope-lever-terms_with_price")).toContainText("your cash floor");
     await expect(card.getByTestId("envelope-lever-early_pay_whole")).toContainText("0.70% on ¥420,000.00");
     await expect(card.getByTestId("envelope-lever-early_pay_counter")).toContainText("0.85% on ¥257,200.00");
-    await expect(card.getByTestId("envelope-lever-early_pay_counter")).toContainText("0.90% on ¥257,200.00: not approved");
+    await expect(card.getByTestId("envelope-lever-early_pay_counter")).toContainText("0.90% on ¥257,200.00: over your limits");
     await expect(card.getByTestId("envelope-lever-rebate")).toContainText("1.25%");
     const packages = card.getByTestId("envelope-packages").getByTestId("envelope-package");
     expect(await packages.count()).toBeGreaterThan(3);
@@ -183,8 +185,8 @@ test.describe("desktop", () => {
     await zone.locator("summary").first().click();
     await expect(zone.locator("summary").first()).toContainText("Terms and price table");
     await expect(zone.getByTestId("envelope-zone-row")).toHaveCount(13);
-    await expect(zone.getByTestId("envelope-zone-row").first()).toContainText("no price step needed");
-    await expect(zone.getByTestId("envelope-zone-row").nth(3)).toContainText("no price step needed");
+    await expect(zone.getByTestId("envelope-zone-row").first()).toContainText("no price rise needed");
+    await expect(zone.getByTestId("envelope-zone-row").nth(3)).toContainText("no price rise needed");
     await expect(zone).toContainText("0.25%");
     await expect(zone).toContainText("none works");
     await expect(zone).not.toContainText("0.00%");
@@ -280,7 +282,7 @@ test.describe("phone", () => {
     const list = page.getByTestId("recv-open-list");
     await expect(list).toBeVisible();
     await expect(page.getByTestId("recv-ranking-note")).toBeVisible();
-    await expect(page.getByTestId("recv-list-worth-RCV-A")).not.toBeEmpty();
+    await expect(page.getByTestId("recv-list-worth-RCV-A")).toContainText("Saves ¥");
     await expect(page.getByTestId("recv-list-action-RCV-A-reason")).not.toBeEmpty();
     await expect(page.getByTestId("recv-list-action-RCV-A")).toContainText("Call Foshan Home Retail Co.");
     await expect(list.locator("li").first()).toContainText("Call now");

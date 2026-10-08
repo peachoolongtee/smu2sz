@@ -17,13 +17,13 @@ export function ActionChip({ action }: { action: ReceivableWorth["action"] }) {
 }
 
 /**
- * What collecting the invoice is worth: the server's one string for the row (`worth_text`, "Saves ¥1,374.61"). A server that does not
- * send it yet is read through `net_saving_text`. The gross saving stays in the payload; the page decides nothing from it.
+ * What collecting the invoice is worth: the server's one string for the row (`worth_text`, "Saves ¥1,374.61"). The gross saving
+ * stays in the payload; the page decides nothing from it.
  */
 export function WorthText({ row, testId }: { row: ReceivableWorth; testId: string }) {
   return (
     <span className="text-sm text-ink" data-testid={testId}>
-      {row.worth_text ?? row.net_saving_text}
+      {row.worth_text}
     </span>
   );
 }

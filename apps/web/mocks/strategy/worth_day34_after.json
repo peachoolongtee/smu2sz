@@ -2,7 +2,6 @@
   "hypothetical": true,
   "state_version": 8,
   "day": 34,
-  "computed_in_seconds": 0,
   "rows": [
     {
       "receivable_id": "RI:BUYER-1:32",
@@ -80,6 +79,7 @@
       "net_saving_fen": 2826,
       "no_saving": false,
       "net_saving_text": "¥28.26",
+      "worth_text": "Saves nothing extra now",
       "action": "wait",
       "action_sentence": "Wait: the ¥420,000.00 due in 43 days falls in no shortfall; there is nothing to cover.",
       "reason_sentence": "No shortfall is ahead.",
@@ -128,6 +128,7 @@
       "net_saving_fen": 0,
       "no_saving": true,
       "net_saving_text": "no saving",
+      "worth_text": "Saves nothing extra now",
       "action": "call_now",
       "action_sentence": "Call Foshan Home Retail Co. today for the ¥162,800.00: it is the only free action.",
       "reason_sentence": "The ¥162,800.00 was due 2 days ago. If it arrived today it would not lower your funding cost. No early-payment discount applies to an invoice already due.",
@@ -175,6 +176,7 @@
       "net_saving_fen": 0,
       "no_saving": true,
       "net_saving_text": "no saving",
+      "worth_text": "Saves nothing extra now",
       "action": "wait",
       "action_sentence": "Wait: the ¥420,000.00 due in 13 days is already financed; when it arrives the lender is repaid first.",
       "reason_sentence": "If it arrived today it would not lower your funding cost.",
@@ -191,7 +193,8 @@
     "RI:BUYER-1:32"
   ],
   "top_action": "Wait: the ¥420,000.00 due in 43 days falls in no shortfall; there is nothing to cover.",
-  "ranking_note": "Ranked by what collecting each saves you, net of any discount that earns it.",
+  "ranking_note": "Ranked by what collecting each saves you against the cheapest funding plan, net of any discount that earns it.",
   "first_breach_day": null,
-  "source_state_version": 8
+  "source_state_version": 8,
+  "computed_in_seconds": 0
 }

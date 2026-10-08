@@ -2,7 +2,6 @@
   "hypothetical": true,
   "state_version": 1,
   "day": 0,
-  "computed_in_seconds": 0,
   "rows": [
     {
       "receivable_id": "RCV-A",
@@ -113,29 +112,53 @@
           "mid_saving_display": "¥1,688.48",
           "next_rate_display": "0.80%",
           "next_rate_dearer_by_display": "¥144.25"
+        },
+        {
+          "face_kind": "counter",
+          "face_fen": 25720000,
+          "face_label": "the amount FLOW would ask for",
+          "largest_rate_bp": 85,
+          "cost_without_fen": 311393,
+          "cost_with_fen": 302777,
+          "beats_by_fen": 8616,
+          "mid_rate_bp": 40,
+          "mid_saving_fen": 125006,
+          "next_rate_bp": 90,
+          "next_rate_dearer_by_fen": 5451,
+          "face_display": "¥257,200.00",
+          "largest_rate_display": "0.85%",
+          "cost_without_display": "¥3,113.93",
+          "cost_with_display": "¥3,027.77",
+          "beats_by_display": "¥86.16",
+          "mid_rate_display": "0.40%",
+          "mid_saving_display": "¥1,250.06",
+          "next_rate_display": "0.90%",
+          "next_rate_dearer_by_display": "¥54.51"
         }
       ],
-      "mid_rate_bp": 35,
-      "mid_saving_fen": 168848,
-      "net_saving_fen": 5939,
+      "mid_rate_bp": 40,
+      "mid_saving_fen": 125006,
+      "net_saving_fen": 8616,
       "no_saving": false,
-      "net_saving_text": "¥59.39",
+      "net_saving_text": "¥86.16",
+      "worth_text": "Saves ¥1,250.06 at 0.40% (¥86.16 at the 0.85% limit)",
       "action": "offer_early_pay",
-      "action_sentence": "On the ¥420,000.00 due in 32 days, early payment at up to 0.75% on ¥405,000.00 (0.70% on the whole invoice) still beats the funding it replaces: ¥1,688.48 saved at 0.35%, ¥59.39 at the limit. Or finance it.",
-      "reason_sentence": "Up to 0.75% on ¥405,000.00 is what you can afford before the discount costs more than the funding it replaces. 0.80% would cost ¥144.25 more than the plan. If it arrived today it would save you ¥3,113.93 and clear the shortfall.",
+      "action_sentence": "On the ¥420,000.00 due in 32 days, offer early payment at up to 0.85% on ¥257,200.00, or fund it instead.",
+      "reason_sentence": "At 0.40% it saves you ¥1,250.06 against the cheapest funding plan; at the 0.85% limit ¥86.16. 0.90% would cost ¥54.51 more than the plan. If it arrived today it would save you ¥3,113.93 and clear the shortfall.",
       "hypothetical": true,
       "outstanding_display": "¥420,000.00",
       "gross_saving_display": "¥3,113.93",
-      "mid_rate_display": "0.35%",
-      "mid_saving_display": "¥1,688.48",
-      "net_saving_display": "¥59.39"
+      "mid_rate_display": "0.40%",
+      "mid_saving_display": "¥1,250.06",
+      "net_saving_display": "¥86.16"
     }
   ],
   "gross_order": [
     "RCV-A"
   ],
-  "top_action": "On the ¥420,000.00 due in 32 days, early payment at up to 0.75% on ¥405,000.00 (0.70% on the whole invoice) still beats the funding it replaces: ¥1,688.48 saved at 0.35%, ¥59.39 at the limit. Or finance it.",
-  "ranking_note": "Ranked by what collecting each saves you, net of any discount that earns it.",
+  "top_action": "On the ¥420,000.00 due in 32 days, offer early payment at up to 0.85% on ¥257,200.00, or fund it instead.",
+  "ranking_note": "Ranked by what collecting each saves you against the cheapest funding plan, net of any discount that earns it.",
   "first_breach_day": 12,
-  "source_state_version": 1
+  "source_state_version": 1,
+  "computed_in_seconds": 0
 }
