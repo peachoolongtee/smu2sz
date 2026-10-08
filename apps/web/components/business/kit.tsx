@@ -67,6 +67,7 @@ export function Disclosure({
   deep = false,
   summaryClass,
   flush = false,
+  bare = false,
 }: {
   summary: ReactNode;
   children: ReactNode;
@@ -78,13 +79,21 @@ export function Disclosure({
   summaryClass?: string;
   /** No padding around the body (a fold that spans the edge of its card and brings its own rows). */
   flush?: boolean;
+  /** The caller draws the whole summary (a grid row) and places the `FoldChevron` itself. */
+  bare?: boolean;
 }) {
   const head = summaryClass ?? `flex min-h-10 cursor-pointer list-none items-center gap-2 rounded-pill text-sm font-medium [&::-webkit-details-marker]:hidden ${deep ? "text-on-deep" : card ? "px-4 py-3 font-semibold text-ink" : "text-brand-700"}`;
   return (
     <details open={defaultOpen || undefined} data-testid={testId} className={`group ${card ? "motion-reveal rounded-card border border-line bg-surface shadow-card" : ""} ${className}`}>
       <summary className={head}>
-        <FoldChevron deep={deep} />
-        <span className="min-w-0 flex-1">{summary}</span>
+        {bare ? (
+          summary
+        ) : (
+          <>
+            <FoldChevron deep={deep} />
+            <span className="min-w-0 flex-1">{summary}</span>
+          </>
+        )}
       </summary>
       <div className="disclosure-body">
         <div className="disclosure-inner -mx-1 px-1 -mb-1 pb-1">
