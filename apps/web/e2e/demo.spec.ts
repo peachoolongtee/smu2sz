@@ -2,6 +2,13 @@ import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
 import { STORY_STEPS, stripOf, walkStory } from "./helpers";
 
+/** Since Wave 3 the Inbox folds to one row once a deal is selected: open it before reading which message is current. */
+async function expectSelectedMessage(page: Page, id: string): Promise<void> {
+  if (await page.getByTestId("inbox-collapsed").isVisible().catch(() => false)) await page.getByTestId("inbox-back").click();
+  await expect(page.getByTestId(`inbox-msg-${id}`)).toHaveAttribute("aria-current", "true");
+}
+
+
 /**
  * Walks the guided Demo, the late-payment loop of docs/DEMO_FLOW.md in six scenes and eleven steps, and asserts the numbers the server formats.
  * The same spec runs in both Playwright projects: `desktop` (mock data, recorded from the API) and `live` (the real FastAPI service). Only the
@@ -45,7 +52,7 @@ test("the six scenes run with Next: the buyer asks, FLOW decides, the agreement 
   await expect(page).toHaveURL(/\/deals/);
   await expect(stripOf(page)).toContainText(`1/${STORY_STEPS}`);
   await expect(narration).toContainText("Offer from Foshan Home Retail Co.");
-  await expect(page.getByTestId("inbox-msg-EX01")).toHaveAttribute("aria-current", "true");
+  await expectSelectedMessage(page, "EX01");
   await expect(page.getByTestId("deal-ask-IMMEDIATE_DISCOUNT")).toContainText("1.20% discount for paying the ¥420,000.00 invoice early");
   await expect(page.getByTestId("deal-ask-TERMS_EXTENSION")).toContainText("60");
 
@@ -218,10 +225,7 @@ test("the optional scenes run from More to show and never move the story's point
   await page.goto("/demo");
   await page.getByTestId("story-show-2").click();
   await expect(page).toHaveURL(/\/deals/);
-  // Since Wave 3 the Inbox folds to one row once a deal is selected; the story's offer is the selected one behind "Back to inbox".
-  await expect(page.getByTestId("inbox-collapsed")).toBeVisible();
-  await page.getByTestId("inbox-back").click();
-  await expect(page.getByTestId("inbox-msg-EX01")).toHaveAttribute("aria-current", "true");
+  await expectSelectedMessage(page, "EX01");
   await expect(stripOf(page)).toContainText(`${STORY_STEPS}/${STORY_STEPS}`);
 
   // The engine's own pages open as they are.
