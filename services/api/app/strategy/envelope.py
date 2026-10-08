@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import time
 from collections.abc import Callable, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Literal, NamedTuple
 
 from pydantic import Field
@@ -119,6 +119,16 @@ class Ranges:
     face_max_fen: int
 
 
+def open_context(state: FinancialState, day: int, buyer_id: str) -> Context | EarlyPayContext:
+    """The what-if context of one buyer, with the early-pay face the invoice still owes: an invoice paid in part is
+    asked about for its outstanding amount, not the original face the sandbox's own builder would name."""
+    ctx = context(state, day, buyer_id)
+    rcv = ctx.receivable
+    if rcv.outstanding_fen >= rcv.face_fen:
+        return ctx
+    return replace(ctx, receivable=rcv.model_copy(update={"face_fen": rcv.outstanding_fen}))
+
+
 def ranges_for(ctx: Context | EarlyPayContext, mandate: Mandate) -> Ranges:
     """The levers' own ranges: the what-if grid, with the discount held to the mandate's immediate-discount cap."""
     cap = DISCOUNT_MAX_BP if mandate.max_immediate_discount_bp is None else min(DISCOUNT_MAX_BP, mandate.max_immediate_discount_bp)
@@ -162,8 +172,8 @@ def last_true(values: Sequence[int], ok: Callable[[int], bool], *, hint: int | N
         return Found(None, True)
     if hint is not None and hint in values:
         i = values.index(hint)
-        if ok(hint):
-            return _scan_max(values, ok) if any(ok(v) for v in values[i + 1: i + 3]) else Found(hint, True)
+        if ok(hint) and not any(ok(v) for v in values[i + 1: i + 3]):
+            return Found(hint, True)
     lo, hi = 0, len(values)  # values[hi] is past the end: the top of the range is only probed when the search gets there
     step = 1
     while gallop and lo + step < hi:
@@ -189,8 +199,8 @@ def first_true(values: Sequence[int], ok: Callable[[int], bool], *, hint: int | 
         return Found(None, True)
     if hint is not None and hint in values:
         i = values.index(hint)
-        if ok(hint):
-            return _scan_min(values, ok) if any(ok(v) for v in values[max(0, i - 2): i]) else Found(hint, True)
+        if ok(hint) and not any(ok(v) for v in values[max(0, i - 2): i]):
+            return Found(hint, True)
     if hint != values[0] and ok(values[0]):
         return Found(values[0], True)
     if not ok(values[-1]):
@@ -589,7 +599,7 @@ def envelope_facts(books: Books, mandate: Mandate, *, store: LedgerStore | None 
     name = party_name(state, buyer_id)
     version = state.state_version
     try:
-        ctx = context(state, day, buyer_id)
+        ctx = open_context(state, day, buyer_id)
     except WhatIfParamError:
         return EnvelopeFacts(buyer_id, name, day, version, True, None, 0, 0, False, (), (), (), {}, None, None, False, 0,
                              time.perf_counter() - started)
@@ -813,7 +823,7 @@ def _reason(facts: EnvelopeFacts, lang: str) -> str:
         if liquid.wall == "liquidity" and b.reserve_day is not None:
             when = when_text(b.reserve_day, facts.day, lang)
             clauses.append(t(lang, f"{n} days leaves a shortfall {when} that no cure covers",
-                             f"账期 {n} 天会在 {when} 出现缺口，且无法补上"))
+                             f"账期 {n} 天在 {when}会出现缺口，且无法补上"))
         elif liquid.wall is not None:
             wall = t(lang, *_WALL_TEXT[liquid.wall]) if liquid.wall in _WALL_TEXT else ""
             clauses.append(t(lang, f"{n} days runs into {wall}", f"账期 {n} 天会碰到{wall}"))
@@ -885,6 +895,26 @@ def envelope_answer(facts: EnvelopeFacts, lang: str = "en") -> EnvelopeAnswer:
         computed_in_seconds=round(facts.seconds, 3))
 
 
+def probe_packages(books: Books, mandate: Mandate, packages: Sequence[CandidatePackage], *, day: int,
+                   trusted_owner_key_hex: str, commitments: Sequence[Commitment] = (), lang: str = "en") -> list[EnvelopePackage]:
+    """Put these packages to the verifier whole, as the sweep does (one buyer's, memoised within the call). A package
+    outside the levers' ranges, or for a buyer with no lever, raises `ValueError` (`WhatIfParamError`)."""
+    out: list[EnvelopePackage] = []
+    verifiers: dict[str, _Verifier] = {}
+    for pkg in packages:
+        v = verifiers.get(pkg.buyer_id)
+        if v is None:
+            ctx = open_context(books.state, day, pkg.buyer_id)
+            v = verifiers[pkg.buyer_id] = _Verifier(books, mandate, trusted_owner_key_hex, day, commitments, ctx,
+                                                    ranges_for(ctx, mandate))
+        facts = EnvelopeFacts(pkg.buyer_id, party_name(books.state, pkg.buyer_id), day, books.state.state_version, False,
+                              mandate, v.cur, v.ctx.receivable.face_fen, bool(v.ranges.terms), (), (), (), {}, None, None,
+                              False, 0, 0.0)
+        out.append(_package(facts, v.probe(Setting(pkg.terms_days, pkg.price_bp, pkg.early_pay_bp, pkg.early_pay_face_fen,
+                                                   pkg.rebate_bp)), lang))
+    return out
+
+
 def envelope(books: Books, mandate: Mandate, *, store: LedgerStore | None = None, day: int, buyer_id: str,
              trusted_owner_key_hex: str, commitments: Sequence[Commitment] = (), zone: bool = False,
              full_grid: bool = False, lang: str = "en") -> EnvelopeAnswer:
@@ -896,4 +926,4 @@ def envelope(books: Books, mandate: Mandate, *, store: LedgerStore | None = None
 
 
 __all__ = ["EnvelopeAnswer", "EnvelopeFacts", "EnvelopeLever", "EnvelopePackage", "ZoneEntry", "envelope", "envelope_answer",
-           "envelope_facts"]
+           "envelope_facts", "probe_packages"]
