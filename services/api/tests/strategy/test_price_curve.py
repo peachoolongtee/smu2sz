@@ -190,6 +190,20 @@ def test_two_live_bands_with_a_gap_say_how_far_the_later_one_reaches():
         "in the next 40 days; later, nothing.")
 
 
+def test_a_step_between_two_samples_is_found_at_the_event_day_in_few_reads():
+    read: list[int] = []
+
+    def cost(x: int) -> int:
+        read.append(x)
+        return 0 if x < 31 else 900
+
+    runs = pc._settle(12, 77, cost, [13, 20, 21, 30, 31, 32, 47, 60], lambda: False)
+    by_day = {d: r.costs for r in runs for d in range(r.first, r.last + 1)}
+    assert sorted(by_day) == list(range(12, 77))  # the runs tile the span
+    assert all(by_day[d] == ((0,) if d < 31 else (900,)) for d in by_day)
+    assert len(set(read)) <= 8  # the ends and the event days halved down to the step, not a bisection of 65 days
+
+
 def test_event_days_are_the_flows_receipts_and_debt_payments(books_day0: Books):
     events = pc._event_days(books_day0, 0, 150)
     state = books_day0.state

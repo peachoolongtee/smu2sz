@@ -13,7 +13,7 @@ budget could not settle is reported `varies` with the smaller value.
 
 from __future__ import annotations
 
-from bisect import bisect_right
+from bisect import bisect_left, bisect_right
 from collections.abc import Callable
 from fractions import Fraction
 from itertools import pairwise
@@ -75,26 +75,27 @@ def _event_days(books: Books, day: int, last: int) -> set[int]:
 
 def _sample_days(books: Books, mandate: Mandate, store: LedgerStore, day: int, last: int) -> list[int]:
     """The arrival days the plan's cost is read on first: today and the last day a value reads (`end + 30`), every
-    breach episode's first and recovery day, every plan action's repay and landing day, and the day after each event
-    day inside the stretch they bound (an arrival after the money has moved is the one that no longer helps; before
-    the first shortfall and after the last day the plan acts, ¥10,000 more cash changes nothing the plan does). Between
-    two of them the cost is taken as settled when both read the same; when they differ the span is bisected."""
+    breach episode's first and recovery day and every plan action's repay and landing day. Between two of them the
+    cost is taken as settled when both read the same; when they differ the span is cut at the event days inside it
+    (`_hints`) and then bisected."""
     marks = {day, last}
-    stretch: set[int] = set()
     for a in alerts(books.state, mandate, store, day):
         if a.kind != AlertKind.RESERVE_BREACH_AHEAD:
             continue
         if a.day is not None:
-            stretch.add(a.day)
+            marks.add(a.day)
         recovery = a.inputs.get("last_day", "")
         if recovery.isdigit():
-            stretch.add(int(recovery) + 1)  # the recovery day: the first day back above the floor
+            marks.add(int(recovery) + 1)  # the recovery day: the first day back above the floor
     for action in plan(books.state, books.with_([]), mandate).actions:
-        stretch |= {d for d in (action.repay_day, action.lands_day) if d is not None}
-    if stretch:
-        lo, hi = min(stretch), max(stretch)
-        marks |= stretch | {e + 1 for e in _event_days(books, day, last) if lo - 1 <= e <= hi}
+        marks |= {d for d in (action.repay_day, action.lands_day) if d is not None}
     return sorted(m for m in marks if day <= m <= last)
+
+
+def _hints(books: Books, day: int, last: int) -> list[int]:
+    """Where a span whose ends disagree is cut first: each event day and the day after it (an arrival after the money
+    has moved is the one that no longer helps)."""
+    return sorted({d for e in _event_days(books, day, last) for d in (e, e + 1) if day <= d <= last})
 
 
 class _Run(NamedTuple):
@@ -106,9 +107,10 @@ class _Run(NamedTuple):
     costs: tuple[int, ...]
 
 
-def _settle(a: int, b: int, cost: Callable[[int], int], spent: Callable[[], bool]) -> list[_Run]:
-    """The runs covering `a..b-1` (the cost at `a` and `b` is read): equal ends take the one figure; unequal ends are
-    bisected until the two sides of the step are adjacent days. Out of budget, the span is one unsettled run."""
+def _settle(a: int, b: int, cost: Callable[[int], int], hints: list[int], spent: Callable[[], bool]) -> list[_Run]:
+    """The runs covering `a..b-1` (the cost at `a` and `b` is read): equal ends take the one figure; unequal ends are cut
+    at an event day inside the span (the middle one; the middle day when there is none) until the two sides of the step
+    are adjacent days. Out of budget, the span is one unsettled run."""
     ca, cb = cost(a), cost(b)
     if ca == cb:
         return [_Run(a, b - 1, (ca,))]
@@ -116,8 +118,9 @@ def _settle(a: int, b: int, cost: Callable[[int], int], spent: Callable[[], bool
         return [_Run(a, a, (ca,))]
     if spent():
         return [_Run(a, b - 1, (ca, cb))]
-    mid = (a + b) // 2
-    return _settle(a, mid, cost, spent) + _settle(mid, b, cost, spent)
+    inside = hints[bisect_right(hints, a):bisect_left(hints, b)]
+    mid = inside[len(inside) // 2] if inside else (a + b) // 2
+    return _settle(a, mid, cost, hints, spent) + _settle(mid, b, cost, hints, spent)
 
 
 def _ceiling_fen(books: Books, mandate: Mandate, amount_fen: int) -> int | None:
@@ -148,11 +151,12 @@ def price_curve(books: Books, mandate: Mandate, *, store: LedgerStore, day: int)
         return costs[arrival]
 
     samples = _sample_days(books, mandate, store, day, last)
+    hints = _hints(books, day, last)
     for x in samples:  # the sampled days first: the bisection budget only gates what comes after
         cost(x)
     budget = len(costs) + MAX_EXTRA_EVALUATIONS
     runs: list[_Run] = [r for a, b in pairwise(samples)
-                        for r in _settle(a, b, cost, lambda: len(costs) + 1 > budget)]
+                        for r in _settle(a, b, cost, hints, lambda: len(costs) + 1 > budget)]
     runs.append(_Run(last, last, (cost(last),)))
 
     def costs_at(x: int) -> tuple[int, ...]:
