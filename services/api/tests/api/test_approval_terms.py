@@ -45,10 +45,12 @@ def test_a_missing_expired_or_revoked_agreement_fails_closed_and_the_record_says
         assert row["presentation"]["terms_available"] is False
         assert row["presentation"]["terms_unavailable_reason"] == f"The agreement this approval refers to {reason}"
         assert row["decision_state"] == state
-    # the commitment cannot be found at all
-    rt.store.put_commitment(commitment.model_copy(update={"id": "CMT-gone"}))
+    # the commitment cannot be found at all: it is removed from the store, and the card fails closed with that reason
+    rt.store._commitments.pop(commitment.id)  # type: ignore[attr-defined]  # the in-memory store; no public delete exists
     row = next(a for a in _queue(client) if a["kind"] == "RECORD_COMMITMENT")
-    assert row["presentation"]["terms_available"] is False or row["presentation"]["terms"]
+    assert row["presentation"]["terms_available"] is False and row["presentation"]["terms"] == []
+    assert row["presentation"]["terms_unavailable_reason"] == "The agreement this approval refers to could not be found."
+    assert row["decision_id"] == f"approval:{row['id']}", "with no commitment to name its deal, the approval is its own record"
 
 
 def test_an_expired_agreement_that_is_approved_anyway_is_refused_and_reads_expired(client):

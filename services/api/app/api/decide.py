@@ -16,7 +16,7 @@ from pydantic import BaseModel
 
 from app.alerts import alerts
 from app.api.auth import require_feature, require_owner
-from app.api.decisions import execution_view, load_context, record_fact
+from app.api.decisions import execution_view, latest_verdict_for, load_context, record_fact
 from app.api.display import displayed
 from app.api.home import next_action
 from app.api.presentation import (
@@ -39,6 +39,7 @@ from app.api.runtime import Runtime, get_runtime
 from app.api.views import owner_verdict_extras, trajectory_view
 from app.api.workspace import build as build_workspace
 from app.books import Books, current_books
+from app.commitments import terms_hash
 from app.config import get_settings
 from app.counterparties import negotiate
 from app.decisions import derive
@@ -49,6 +50,7 @@ from app.domain.models import (
     AcceptOffer,
     Actor,
     BaseKind,
+    CommitmentStatus,
     CompiledOffer,
     Contingency,
     CounterProposal,
@@ -76,6 +78,7 @@ from app.funding import (
     menu_view,
     plan,
 )
+from app.operations.executor import committable
 from app.security import flag_events
 from app.verifier import evaluate
 
@@ -169,9 +172,10 @@ def evaluate_offer(offer_id: str, body: EvaluateIn | None = None, lang: str = "e
         did = deal_id(offer_id)
         recorded = record_fact(
             rt, did, v.id,
-            EvaluatedFact(offer_id=offer_id, offer_version=offer.version, verdict_id=v.id, outcome=v.outcome,
-                          counter_ids=[c.id for c in v.counters],
-                          recommended_counter_id=v.counters[0].id if v.counters else None, mandate_version=v.mandate_version),
+            lambda: EvaluatedFact(offer_id=offer_id, offer_version=offer.version, verdict_id=v.id, outcome=v.outcome,
+                                  counter_ids=[c.id for c in v.counters],
+                                  recommended_counter_id=v.counters[0].id if v.counters else None,
+                                  mandate_version=v.mandate_version),
             state_version=state.state_version, day=rt.day)
         known = {e.id for e in bundle.security_events}
         for ev in [*bundle.security_events, *flag_events(offer, rt.day)]:  # F-09: compiler authority flags too
@@ -277,15 +281,6 @@ def _runnable(gap_plan) -> str | None:
     return None
 
 
-def _latest_verdict(rt: Runtime, offer_id: str):
-    """The latest stored verdict of an offer: this session's, else the last one the store holds for it."""
-    vid = rt.latest_verdict.get(offer_id)
-    verdict = rt.store.get_verdict(vid) if vid else None
-    if verdict is None:
-        verdict = next((v for v in reversed(rt.store.verdicts()) if v.offer_id == offer_id), None)
-    return verdict
-
-
 def _counter_changed(rt: Runtime, offer: CompiledOffer, verdict, state_version: int, why: str) -> HTTPException:
     """409 COUNTER_CHANGED: what was shown is no longer what would be sent. The latest verdict's guarded counters come back when
     that verdict is on the current books; otherwise the owner must evaluate again. Nothing was proposed, accepted or funded."""
@@ -320,10 +315,41 @@ def negotiate_offer(offer_id: str, body: NegotiateIn) -> dict:
     profile = PROFILES.get(body.buyer_profile)
     if profile is None:
         raise HTTPException(422, "buyer_profile must be cooperative or hard_line")
+    with rt.lock:  # one critical section from the binding check to the last write: what was checked is what runs
+        return _negotiate_locked(rt, offer_id, body, profile)
+
+
+def _open_agreement(rt: Runtime, verdict, counter: CounterProposal):
+    """A commitment this send already made and that still stands (PROPOSED, ACCEPTED or ACTIVE) for the same verdict and the same
+    terms as `counter`, else None. A second identical send must not make a second agreement."""
+    want = terms_hash(committable(list(counter.obligations)))
+    return next((c for c in rt.store.commitments()
+                 if c.verdict_id == verdict.id and c.terms_hash == want
+                 and c.status in (CommitmentStatus.PROPOSED, CommitmentStatus.ACCEPTED, CommitmentStatus.ACTIVE)), None)
+
+
+def _already_sent(rt: Runtime, offer_id: str, c) -> HTTPException:
+    approval = next((a for a in reversed(rt.store.approvals()) if _approval_names(a, c)), None)
+    return HTTPException(409, detail={
+        "code": "ALREADY_SENT", "offer_id": offer_id, "decision_id": deal_id(offer_id), "commitment_id": c.id,
+        "commitment_status": c.status.value, "approval_id": approval.id if approval is not None else None,
+        "approval_status": str(getattr(approval.status, "value", approval.status)) if approval is not None else None,
+        "message": "This counter was already sent and its agreement exists; nothing was sent again."})
+
+
+def _approval_names(a, c) -> bool:
+    try:
+        op = json.loads(a.op_json)
+    except ValueError:
+        return False
+    return op.get("nonce") == c.nonce or op.get("commitment_id") == c.id
+
+
+def _negotiate_locked(rt: Runtime, offer_id: str, body: NegotiateIn, profile: str) -> dict:
     vid = rt.latest_verdict.get(offer_id)
     verdict = rt.store.get_verdict(vid) if vid else None
     if verdict is None and (body.verdict_id or body.counter_id or body.state_version is not None):
-        verdict = _latest_verdict(rt, offer_id)  # a bound send may arrive after a restart emptied the session cache
+        verdict = latest_verdict_for(rt, offer_id)  # a bound send may arrive after a restart emptied the session cache
     if verdict is None:
         raise HTTPException(409, "evaluate the offer first")
     offer = rt.store.get_offer(offer_id)
@@ -332,16 +358,19 @@ def negotiate_offer(offer_id: str, body: NegotiateIn) -> dict:
     with rt.lock:
         bound = body.verdict_id is not None or body.counter_id is not None or body.state_version is not None
         if bound:
-            latest = _latest_verdict(rt, offer_id) or verdict
+            latest = latest_verdict_for(rt, offer_id) or verdict
             version = rt.store.get_state().state_version
             if body.verdict_id is not None and body.verdict_id != latest.id:
                 raise _counter_changed(rt, offer, latest, version, "VERDICT_CHANGED")
-            if body.state_version is not None and body.state_version != version:
-                raise _counter_changed(rt, offer, latest, version, "BOOKS_CHANGED")
             if body.counter_id is not None:
                 chosen = next((c for c in latest.counters if c.id == body.counter_id), None)
                 if chosen is None:
                     raise _counter_changed(rt, offer, latest, version, "COUNTER_NOT_IN_VERDICT")
+                standing = _open_agreement(rt, latest, chosen)
+                if standing is not None:  # the owner learns it already went, whatever the books have done since
+                    raise _already_sent(rt, offer_id, standing)
+            if (body.state_version is not None and body.state_version != version) or latest.state_version != version:
+                raise _counter_changed(rt, offer, latest, version, "BOOKS_CHANGED")  # also when the verdict is on old books
             verdict = latest
     counters = [chosen] if chosen is not None else list(verdict.counters)
     if not counters:
@@ -406,20 +435,29 @@ def negotiate_offer(offer_id: str, body: NegotiateIn) -> dict:
         sent_order: list[str] = []
         for r in t.rounds:
             sent_order += [x for x in r.supplier_counter_ids if x not in sent_order]
-        fact = SentFact(
-            offer_id=offer_id, verdict_id=verdict.id, state_version_shown=body.state_version, chosen_counter_id=body.counter_id,
-            counter_ids_sent=sent_order, buyer_profile=body.buyer_profile, outcome="DEAL" if commitment is not None else "NO_DEAL",
-            accepted_counter_id=t.accepted_counter_id if commitment is not None else None, transcript_hash=t.transcript_hash,
-            commitment_id=commitment.id if commitment is not None else None,
-            accept_op_id=f"accept-{commitment.id}" if commitment is not None else None,
-            funding_op_ids=[o["op_id"] for o in funding_ops],
-            funding_blocked=(None if blocked is None else "NOT_EXECUTABLE_NOW" if not gap_plan.executable_now else "UNSUPPORTED_LEG"),
-            counter_economics=_chosen_economics(rt, sent_counter, state, mandate),
-            gap_plan=GapPlan(need_fen=gap_plan.need_fen, total_cost_fen=gap_plan.total_cost_fen,
-                             legs=[GapLeg(kind=a.kind.value, facility_id=a.facility_id, receivable_id=a.receivable_id,
-                                          amount_fen=a.amount_fen, lands_day=a.lands_day) for a in gap_plan.actions]))
-        key = f"accept-{commitment.id}" if commitment is not None else f"nodeal:{verdict.id}:{body.buyer_profile}"
-        recorded = record_fact(rt, did, key, fact, state_version=rt.store.get_state().state_version, day=rt.day)
+        def build_fact() -> SentFact:
+            return SentFact(
+                offer_id=offer_id, verdict_id=verdict.id, state_version_shown=body.state_version, chosen_counter_id=body.counter_id,
+                counter_ids_sent=sent_order, buyer_profile=body.buyer_profile,
+                outcome="DEAL" if commitment is not None else "NO_DEAL",
+                accepted_counter_id=t.accepted_counter_id if commitment is not None else None, transcript_hash=t.transcript_hash,
+                commitment_id=commitment.id if commitment is not None else None,
+                accept_op_id=f"accept-{commitment.id}" if commitment is not None else None,
+                funding_op_ids=[o["op_id"] for o in funding_ops],
+                funding_blocked=(None if blocked is None else "NOT_EXECUTABLE_NOW" if not gap_plan.executable_now
+                                 else "UNSUPPORTED_LEG"),
+                counter_economics=_chosen_economics(rt, sent_counter, state, mandate),
+                gap_plan=GapPlan(need_fen=gap_plan.need_fen, total_cost_fen=gap_plan.total_cost_fen,
+                                 legs=[GapLeg(kind=a.kind.value, facility_id=a.facility_id, receivable_id=a.receivable_id,
+                                              amount_fen=a.amount_fen, lands_day=a.lands_day) for a in gap_plan.actions]))
+
+        # a send of one chosen counter that ended without a deal has its own key, so sending Option B after Option A's refusal
+        # is recorded and not mistaken for the same send
+        if commitment is not None:
+            key = f"accept-{commitment.id}"
+        else:
+            key = f"nodeal:{verdict.id}:{body.buyer_profile}" + (f":{body.counter_id}" if body.counter_id else "")
+        recorded = record_fact(rt, did, key, build_fact, state_version=rt.store.get_state().state_version, day=rt.day)
         execution = None
         try:
             ctx = load_context(rt)

@@ -9,6 +9,7 @@ hold money as the display strings the home reads, so a figure is read back exact
 from __future__ import annotations
 
 import re
+from fractions import Fraction
 from typing import Any, Literal
 
 from app.alerts import Alert, AlertKind
@@ -17,6 +18,7 @@ from app.api.home import after_facts, plan_legs
 from app.api.presentation import cure_legs
 from app.decisions.facts import IfDecline, QuotedFact, QuotedLeg
 from app.domain.models import FinancialState, FundingPlan, Mandate, Operation
+from app.domain.money import Ratio
 
 _YUAN = re.compile(r"^(?P<sign>[-−])?¥(?P<whole>[\d,]+)\.(?P<cents>\d{2})$")
 
@@ -28,6 +30,16 @@ def fen_of(display: str | None) -> int | None:
         return None
     fen = int(m["whole"].replace(",", "")) * 100 + int(m["cents"])
     return -fen if m["sign"] else fen
+
+
+def rate_of(text: str | None) -> Ratio | None:
+    """The yearly rate a router cost line names ("16.26%") as an exact ratio. The cost line states it to two decimals, so this is
+    that statement exactly, not the unrounded rate behind it; the web shows it back at the same two places."""
+    m = re.match(r"^(\d+(?:\.\d+)?)%$", text or "")
+    if m is None:
+        return None
+    f = Fraction(m[1]) / 100
+    return Ratio(num=f.numerator, den=f.denominator)
 
 
 def _int(text: str | None) -> int | None:
@@ -54,7 +66,7 @@ def build_quote(state: FinancialState, obs: list[Any], mandate: Mandate, alert: 
     if plan is not None:
         pl = plan_legs(state, plan, today, "en")
         by_index = {leg["index"]: leg for leg in pl}
-        rates: dict[int, Any] = {}
+        rates: dict[int, Any] = {leg["index"]: rate_of(leg["rate_text"]) for leg in pl}
         actions = list(plan.actions)
         total: int | None = plan.total_cost_fen
         note: Literal["draw_interest_excluded"] | None = None
@@ -89,7 +101,8 @@ def build_quote(state: FinancialState, obs: list[Any], mandate: Mandate, alert: 
     return QuotedFact(
         alert_id=alert.id, alert_kind=alert.kind.value, alert_day=alert.day, state_version_shown=state.state_version,
         source=source, legs=legs, total_cost_fen=total, cost_note=note, needs_owner=needs_owner, max_apr_bp=mandate.max_apr_bp,
-        restores_reserve=bool(restores) and alert.inputs.get("cure_restores_reserve") != "false",
+        projected=restores is not None,
+        restores_reserve=None if restores is None else (restores and alert.inputs.get("cure_restores_reserve") != "false"),
         after_first_short_day=first_short, horizon_days=mandate.horizon_days, if_decline=_if_decline(alert),
         residual_shortfall_fen=residual,
     )

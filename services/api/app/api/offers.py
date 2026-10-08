@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, Header, HTTPException
 from pydantic import BaseModel
 
 from app.api.auth import counterparty_for_key, is_agent, require_owner
+from app.api.decisions import latest_verdict_for
 from app.api.display import displayed
 from app.api.runtime import Runtime, get_runtime
 from app.compiler import compile_offer, compile_term_sheet
@@ -85,10 +86,7 @@ def get_offer(offer_id: str) -> dict:
         offer = rt.store.get_offer(offer_id)
         if offer is None:
             raise HTTPException(404, {"code": "OFFER_NOT_FOUND", "offer_id": offer_id})
-        vid = rt.latest_verdict.get(offer_id)
-        latest = rt.store.get_verdict(vid) if vid else None
-        if latest is None:
-            latest = next((v for v in reversed(rt.store.verdicts()) if v.offer_id == offer_id), None)
+        latest = latest_verdict_for(rt, offer_id)
         documents = [json.loads(rt.documents[d].model_dump_json()) for d in offer.doc_ids if d in rt.documents]
     return {"offer": displayed(json.loads(offer.model_dump_json())), "documents": documents,
             "latest_verdict_id": latest.id if latest is not None else None, "decision_id": deal_id(offer_id)}

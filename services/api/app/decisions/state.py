@@ -180,7 +180,7 @@ class Residual:
     starts_day: int | None
     committed_cure: bool | None
     alert_id: str
-    quoted_to_restore: bool
+    quoted_to_restore: bool | None  # the quote's flag; None when the quote projected nothing
 
 
 @dataclass(frozen=True, slots=True)
@@ -443,16 +443,25 @@ def _funding_state(
     return FundingState.SETTLED if lots else FundingState.EXECUTED  # 6, 7
 
 
+def attaches(alert: AlertLike, quote: QuotedFact) -> bool:
+    """Whether today's open reserve alert is this record's to carry. It is when it is the alert the record quoted (the same breach
+    still open), or when the engine says nothing fixes it (`committed_cure` false: no committed funding restores the reserve), so
+    that what is left is the owner's to decide. A later, unrelated breach that a committed cure covers belongs to the next step
+    the home shows, not to an old record."""
+    return alert.id == quote.alert_id or alert.committed_cure is False
+
+
 def _residual(i: DecisionInputs, state: FundingState, quote: QuotedFact | None) -> Residual | None:
-    """Set on the newest reserve-breach record in states 4 to 7 while a reserve alert is open today. (ADR-0011 also lets
-    `restores_reserve` false alone set it; with no open alert there is no current shortfall to show, so none is set.)"""
+    """Set on the newest reserve-breach record in states 4 to 7 while a reserve alert that is its own (`attaches`) is open today.
+    (ADR-0011 also lets `restores_reserve` false alone set it; with no open alert there is no current shortfall to show, so none
+    is set.)"""
     if not i.newest_reserve or quote is None or quote.alert_kind != RESERVE_ALERT:
         return None
     if state not in (FundingState.PARTIALLY_EXECUTED, FundingState.SETTLEMENT_PENDING, FundingState.SETTLED,
                      FundingState.EXECUTED):
         return None
     alert = _reserve_alert(i)
-    if alert is None:
+    if alert is None or not attaches(alert, quote):
         return None
     return Residual(shortfall_fen=alert.amount_fen, starts_day=alert.day, committed_cure=alert.committed_cure,
                     alert_id=alert.id, quoted_to_restore=quote.restores_reserve)
@@ -484,17 +493,19 @@ def derive_all(inputs: Sequence[DecisionInputs]) -> list[DecisionState]:
     """Derive many decisions. The residual belongs to the newest reserve-breach funding record only, so a first pass finds
     which one that is (by last event day, then log seq) and the second derives it with the residual."""
     first = [derive(replace(i, newest_reserve=False)) for i in inputs]
-    newest = newest_reserve_decision(first)
+    newest = newest_reserve_decision(first, _reserve_alert(inputs[0]) if inputs else None)
     return [derive(replace(i, newest_reserve=i.decision_id == newest)) for i in inputs]
 
 
-def newest_reserve_decision(states: Sequence[DecisionState]) -> str | None:
-    """The newest FUNDING record that quoted a reserve-breach cure and is in state 4 to 7 (partly executed to executed)."""
+def newest_reserve_decision(states: Sequence[DecisionState], alert: AlertLike | None = None) -> str | None:
+    """The newest FUNDING record that quoted a reserve-breach cure, is in state 4 to 7 (partly executed to executed) and, when
+    today's open reserve `alert` is given, is the record that alert is attached to (`attaches`)."""
     candidates = [
         s for s in states
         if s.family == "FUNDING" and s.quote is not None and s.quote.alert_kind == RESERVE_ALERT
         and s.state in (FundingState.PARTIALLY_EXECUTED, FundingState.SETTLEMENT_PENDING, FundingState.SETTLED,
                         FundingState.EXECUTED)
+        and (alert is None or attaches(alert, s.quote))
     ]
     if not candidates:
         return None
@@ -600,6 +611,7 @@ __all__ = [
     "Residual",
     "WaitCode",
     "Waiting",
+    "attaches",
     "derive",
     "derive_all",
     "newest_reserve_decision",

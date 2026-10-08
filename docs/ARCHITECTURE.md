@@ -149,7 +149,7 @@ Every violation carries a `formula` and `inputs` the UI can show verbatim.
 | `POST` | `/offers` | submit documents → `CompiledOffer` |
 | `GET` | `/offers/{id}` | the stored offer with its latest verdict id and `decision_id` (owner only) |
 | `POST` | `/offers/{id}/evaluate` | → `Verdict`; adds `decision_id`, `evaluated_when`, and a `send_scope` sentence per counter |
-| `POST` | `/negotiate/{offer_id}` | bounded rounds with the buyer kernel; optional `verdict_id`, `counter_id`, `state_version` bind the send to what the owner read (409 `COUNTER_CHANGED` otherwise); adds `decision_id`, `execution`, `decision_recorded` |
+| `POST` | `/negotiate/{offer_id}` | bounded rounds with the buyer kernel; optional `verdict_id`, `counter_id`, `state_version` bind the send to what the owner read (409 `COUNTER_CHANGED` otherwise; 409 `ALREADY_SENT` when the same counter's agreement stands); adds `decision_id`, `execution`, `decision_recorded` |
 | `GET` | `/decisions`, `/decisions/{id}` | the decision record, derived on request from the stores plus three stored facts (ADR-0011); owner only; every sentence per `lang` |
 | `POST` | `/router/plan` | → `FundingPlan` (committed + expected) |
 | `POST` | `/facilities/compile` | term sheet → `CompiledTermSheet` (owner must approve) |
@@ -157,7 +157,7 @@ Every violation carries a `formula` and `inputs` the UI can show verbatim.
 | `POST` | `/capex/apply` | flag `capex`; owner only, bound to the evaluation's state version; queues the Tier-2 application |
 | `POST` | `/borrower-file` | flag `borrower_file`; read-only owner action |
 | `POST` | `/operations` | typed operation → `OperationResult` |
-| `GET`/`POST` | `/approvals`, `/approvals/{id}` | the Tier-2 queue; `GET /approvals/queue` rows carry `decision_id`, `decision_state`, `quote` (the stored one for a decided row) and `execution` |
+| `GET`/`POST` | `/approvals`, `/approvals/{id}` | the Tier-2 queue; `GET /approvals/queue?lang=` rows carry `decision_id`, `decision_state`, `quote` (the stored one for a decided row) and `execution` |
 | `POST` | `/alerts/{id}/act` | runs the bound cure; stores the quote the owner was shown (`decision_id`, `decision_recorded`) |
 | `GET` | `/state`, `/trajectory`, `/ledger`, `/audit`, `/mandate` | read views; money pre-formatted on the server; `/ledger` operations carry `decision_id` |
 | `GET` | `/home` | the owner's home; adds `open_decisions` (up to three) and `remaining_task` with `remaining_task_links` |

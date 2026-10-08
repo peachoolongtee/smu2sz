@@ -1588,7 +1588,9 @@ def quote_view(fact: Any, state: FinancialState, today: int, quote_day: int, lan
     basis of the price, the after-state and what declining leaves. Every figure is the fact's; nothing is priced here."""
     lines: list[dict[str, Any]] = []
     for leg in fact.legs:
-        rate = fmt_pct(Fraction(leg.annual_rate.num, leg.annual_rate.den), 1) if leg.annual_rate is not None else None
+        # a cure's rate is the alert's own, shown to one place as the home shows it; a router line states its rate to two
+        rate = (fmt_pct(Fraction(leg.annual_rate.num, leg.annual_rate.den), 2 if fact.source == "router" else 1)
+                if leg.annual_rate is not None else None)
         lines.append({
             "label": leg_words(state, leg.kind, leg.facility_id, leg.receivable_id, leg.amount_fen, lang),
             "op_id": leg.op_id, "kind": leg.kind, "amount_fen": leg.amount_fen, "amount_display": fmt_yuan(leg.amount_fen),
@@ -1616,7 +1618,11 @@ def quote_view(fact: Any, state: FinancialState, today: int, quote_day: int, lan
                                            f"{when_text(leg.cost_end_day, today, lang)}; the final interest depends on the actual repayment day.",
                                      f"按预计{when_text(leg.cost_end_day, today, lang)}偿还{facility_name(state, leg.facility_id)}估算；最终利息取决于实际还款日。"))
     lands = [leg.lands_day for leg in fact.legs if leg.lands_day is not None]
-    if fact.after_first_short_day is None:
+    if not fact.projected:
+        # nothing was projected (a repayment, an application, a projection that failed): say nothing about the reserve
+        after = (t(lang, "The balance is repaid and the interest stops.", "余额还清，利息停止。")
+                 if fact.alert_kind == "FACILITY_REPAYABLE" else None)
+    elif fact.after_first_short_day is None:
         after = t(lang, f"Cash stays above your minimum cash reserve for the next {fact.horizon_days} days.",
                   f"未来 {fact.horizon_days} 天现金都保持在您的最低现金储备以上。")
     elif fact.restores_reserve is False and fact.residual_shortfall_fen is not None:
@@ -1678,11 +1684,17 @@ def lands_difference(quoted_lands: int | None, actual_lands: int | None, today: 
              f"批准时间{'晚于' if later else '早于'}报价，资金将于{when_text(actual_lands, today, lang)}到账，而非{when_text(quoted_lands, today, lang)}。")
 
 
-def remaining_task_words(shortfall_fen: int | None, starts_day: int | None, today: int, lang: Lang) -> str:
-    """The sentence for the reserve still at risk after a cure: F17."""
+def remaining_task_words(shortfall_fen: int | None, starts_day: int | None, today: int, lang: Lang,
+                         committed_cure: bool | None = False) -> str:
+    """The sentence for the reserve still at risk after a cure: F17. When a committed cure exists the engine has a plan, so the
+    sentence points at the next step instead of saying nothing restores the reserve."""
     if shortfall_fen is None:
         return t(lang, "Nothing is waiting: the action is complete.", "没有待办事项：操作已完成。")
     when = when_text(starts_day, today, lang) if starts_day is not None else ""
+    if committed_cure:
+        return t(lang, f"Your minimum cash reserve is still {fmt_yuan(shortfall_fen)} short{' from ' + when if when else ''}; "
+                       f"a funding plan is ready (see the next step).",
+                 f"您的最低现金储备仍差 {fmt_yuan(shortfall_fen)}{'，从' + when + '起' if when else ''}；融资方案已准备好（见下一步）。")
     return t(lang, f"Your minimum cash reserve is still {fmt_yuan(shortfall_fen)} short{' from ' + when if when else ''}; "
                    f"no committed funding restores it. This needs your decision.",
              f"您的最低现金储备仍差 {fmt_yuan(shortfall_fen)}{'，从' + when + '起' if when else ''}；没有已承诺的融资能恢复它。这需要您决定。")
