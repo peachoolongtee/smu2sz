@@ -142,11 +142,20 @@ def _headline(found: list[Alert], mandate: Mandate, traj: Any, horizon: int, tod
                                f"若不采取行动，最低点为{low_when}的 {fmt_short(low_fen)}。"))
         if breach.inputs.get("cure_restores_reserve") == "false":
             zero = breach.inputs.get("zero_day", "")
-            head = t(lang, f"Cash goes below zero {_distance(int(zero), today, lang)} if nothing is done.",
-                     f"若不采取行动，现金将在{_distance(int(zero), today, lang)}跌破零。")
-            note = t(lang, f"Cash can be kept at or above zero, but no committed funding restores your {floor} "
-                           f"minimum cash reserve: that needs your decision.",
-                     f"现金可以保持在零以上，但没有已承诺的融资能恢复您 {floor} 的最低现金储备，需要您决定。")
+            zero_when = _distance(int(zero), today, lang)
+            if breach.day is not None and breach.day <= today:
+                # Already under the reserve (F01): the headline says so; the zero day is the note's fact.
+                head = t(lang, "Below reserve today.", "今天现金低于储备。")
+                note = t(lang, f"Cash is {short} below your {floor} minimum cash reserve and goes below zero {zero_when} "
+                               f"if nothing is done. It can be kept at or above zero, but no committed funding restores the "
+                               f"reserve: that needs your decision.",
+                         f"现金比您 {floor} 的最低现金储备低 {short}，若不采取行动将在{zero_when}跌破零。现金可以保持在零以上，"
+                         f"但没有已承诺的融资能恢复储备，需要您决定。")
+            else:
+                head = t(lang, f"Cash goes below zero {zero_when} if nothing is done.", f"若不采取行动，现金将在{zero_when}跌破零。")
+                note = t(lang, f"Cash can be kept at or above zero, but no committed funding restores your {floor} "
+                               f"minimum cash reserve: that needs your decision.",
+                         f"现金可以保持在零以上，但没有已承诺的融资能恢复您 {floor} 的最低现金储备，需要您决定。")
             return {"headline": head, "note": note, "worst": worst, "plan_note": None}
         if breach.day == low_day:
             worst = None  # the headline and note already say where cash falls; a second sentence would repeat it

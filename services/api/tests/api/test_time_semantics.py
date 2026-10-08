@@ -118,8 +118,9 @@ def test_day_34_without_a_receipt_the_first_breach_is_today_and_the_payroll_driv
     assert "34 days ago" not in str(cash["first_breach_when"]) and "becomes unsafe" not in home["headline"]
     assert any(d.startswith("Payroll of") and d.endswith("falls due in 8 days.") for d in cash["drivers"])
     assert cash["series"][0]["day"] == 34 and all(row["day"] >= 34 for row in cash["series"])
-    # the cash is lower later (below zero): the headline keeps the sharper fact, and the note says the reserve is not met
-    assert home["headline"] == "Cash goes below zero in 8 days if nothing is done."
+    # already under the reserve (F01): the headline says so; the zero day is the note's fact
+    assert home["headline"] == "Below reserve today."
+    assert home["note"].startswith("Cash is ¥255k below your ¥300k minimum cash reserve and goes below zero in 8 days if nothing is done.")
     assert home["worst"] == "Worst point: −¥155k in 8 days if you do nothing."
 
 
