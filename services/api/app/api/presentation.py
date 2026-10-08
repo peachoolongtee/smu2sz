@@ -546,10 +546,62 @@ def _asked_words(state: FinancialState, kind: str, payload: dict[str, Any], lang
 
 
 def agreement_words(state: FinancialState, counterparty_id: str, forward_value_fen: int, lang: Lang = "en") -> str:
-    """"Agreement with Foshan Home Retail Co. recorded; future give-aways booked: ¥0.00." (the home's AGREEMENT event)."""
+    """"Agreement with Foshan Home Retail Co. recorded; concessions booked against your budget: ¥0.00." (the home's
+    AGREEMENT event)."""
     buyer = party_name(state, counterparty_id)
-    return t(lang, f"Agreement with {buyer} recorded; future give-aways booked: {fmt_yuan(forward_value_fen)}.",
-             f"已记录与{buyer}的协议；已入账的未来让利：{fmt_yuan(forward_value_fen)}。")
+    return t(lang, f"Agreement with {buyer} recorded; concessions booked against your budget: {fmt_yuan(forward_value_fen)}.",
+             f"已记录与{buyer}的协议；已计入您预算的让步：{fmt_yuan(forward_value_fen)}。")
+
+
+def _count(payload: dict[str, Any], key: str) -> int:
+    value = payload.get(key)
+    return len(value) if isinstance(value, list) else 0
+
+
+def clock_words(payload: dict[str, Any], lang: Lang = "en") -> str | None:
+    """A clock move in the owner's words: "4 days passed: the ¥45,000.00 debt payment went out and one invoice was issued."
+    Built from the counts the operation recorded (scheduled cash movements posted, invoices issued, agreements expired or
+    fulfilled, funding landed, loan and debt payments with their total); an item that did not happen is left out. None when
+    the payload does not say how far the clock moved."""
+    start, end = payload.get("from_day"), payload.get("to_day")
+    if not isinstance(start, int) or not isinstance(end, int):
+        return None
+    days = end - start
+    head = t(lang, f"{days} day passed" if days == 1 else f"{days} days passed", f"过去了 {days} 天")
+    en: list[str] = []
+    zh: list[str] = []
+
+    def add(n: int, one: str, many: str, zh_text: str) -> None:
+        if n:
+            en.append(one if n == 1 else many.format(n=n))
+            zh.append(zh_text.format(n=n))
+
+    debts = _count(payload, "posted_debt_service")
+    total = payload.get("debt_service_fen")
+    if debts:
+        amount = fmt_yuan(abs(total)) if isinstance(total, int) else ""
+        if debts == 1 and amount:
+            en.append(f"the {amount} debt payment went out")
+            zh.append(f"已支付 {amount} 的债务还款")
+        else:
+            en.append(f"{debts} debt payments{f' totalling {amount}' if amount else ''} went out")
+            zh.append(f"已支付 {debts} 笔债务还款" + (f"，共 {amount}" if amount else ""))
+    add(_count(payload, "posted_debt_payments"), "one loan payment was posted", "{n} loan payments were posted", "已入账 {n} 笔贷款还款")
+    add(_count(payload, "settled_lot_ids"), "one funding request landed", "{n} funding requests landed", "{n} 笔融资已到账")
+    add(_count(payload, "posted_flow_ids"), "one scheduled cash movement was recorded", "{n} scheduled cash movements were recorded",
+        "已记录 {n} 笔计划收支")
+    add(_count(payload, "added_flow_ids"), "one new scheduled cash movement was added", "{n} new scheduled cash movements were added",
+        "新增 {n} 笔计划收支")
+    add(_count(payload, "issued_receivable_ids"), "one invoice was issued", "{n} invoices were issued", "已开出 {n} 张发票")
+    add(_count(payload, "expired_commitment_ids"), "one agreement expired", "{n} agreements expired", "{n} 项协议已到期")
+    add(_count(payload, "fulfilled_commitment_ids"), "one agreement was fulfilled", "{n} agreements were fulfilled", "{n} 项协议已履行")
+    add(_count(payload, "lapsed_commitment_ids"), "one early-payment agreement ended", "{n} early-payment agreements ended",
+        "{n} 项提前付款协议已终止")
+    if not en:
+        return t(lang, f"{head}; nothing was due.", f"{head}，没有到期事项。")
+    if lang == "zh":
+        return f"{head}：{'，'.join(zh)}。"
+    return f"{head}: {', '.join(en[:-1])}{' and ' if len(en) > 1 else ''}{en[-1]}."
 
 
 def event_words(state: FinancialState, *, kind: str, status: str, payload: dict[str, Any], message: str,
@@ -563,6 +615,8 @@ def event_words(state: FinancialState, *, kind: str, status: str, payload: dict[
     `decided` says the owner has since answered the approval a PENDING_APPROVAL entry waited on: the entry then reads in the
     past ("Queued for your approval"), never "Waiting", beside the entry of the decision."""
     none: dict[str, str | None] = {"event_text": None, "event_detail": None}
+    if kind == "ADVANCE_CLOCK" and status == "EXECUTED":
+        return {"event_text": clock_words(payload, lang), "event_detail": None}
     amount = _op_amount(payload)
     receivable_id = payload.get("receivable_id")
     facility_id = payload.get("facility_id")
