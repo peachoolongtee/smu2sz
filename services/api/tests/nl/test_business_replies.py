@@ -87,8 +87,8 @@ def test_a_counterparty_never_gets_the_business_rewrite_and_a_business_mode_cann
 def test_why_are_we_countering_this_is_two_lines_in_business_words(client):
     _say(client, "Evaluate EX01", "e1")
     for lang, first, second in (
-            ("en", "FLOW recommends a counter: the offer's future concessions cost ¥28,326.92 over the next 12 months, above your ¥5,000 "
-                   "limit, and cash would fall below your minimum in 47 days.", "Recommended response: send Option A to the buyer."),
+            ("en", ("FLOW recommends a counter: the offer's future concessions cost ¥28,326.92 over the next 12 months, above your ¥5,000 "
+                    "limit, and cash would fall below your minimum in 47 days."), "Recommended response: send Option A to the buyer."),
             ("zh", "FLOW 建议还价：此报价的未来让步在未来 12 个月内共需 ¥28,326.92，高于您 ¥5,000 的上限，并且现金将在47 天后低于您的最低现金储备。",
              "建议的回应：向买方发送方案 A。")):
         j = _say(client, "Why are we countering this?" if lang == "en" else "为什么要还价？", "e1", lang)

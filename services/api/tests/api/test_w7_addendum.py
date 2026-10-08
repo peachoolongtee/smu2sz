@@ -229,7 +229,7 @@ def test_the_funding_cost_line_says_whether_it_is_inside_the_counters_cost_or_in
 
     from app.api.workspace import send_scope_lines
 
-    (en, _), (zh, _) = _evaluate(client, "en"), _evaluate(client, "zh")
+    en, _ = _evaluate(client, "en")
     a = en["counters"][0]
     assert a["supplier_cost_display"] == "¥3,027.77" and "¥841.57" in a["formula"]  # Option A's cost is the discount plus this funding
     state = get_runtime().store.get_state()
