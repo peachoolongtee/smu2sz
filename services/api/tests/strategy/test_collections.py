@@ -17,8 +17,8 @@ from fastapi.testclient import TestClient
 
 from app.api.runtime import Runtime, set_runtime
 from app.books import Books
-from app.domain.money import fmt_yuan
 from app.domain.models import Mandate, Receivable
+from app.domain.money import fmt_yuan
 from app.strategy import WorthAnswer, early_pay_vs_plan, receivables_worth, saving_text
 from app.strategy.collections import Ceiling, ReceivableWorth, _decide, _sentences
 from app.strategy.faces import clear_face_cache, option_a_face
