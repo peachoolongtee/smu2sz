@@ -1,0 +1,13 @@
+[WebServer] INFO:     Started server process [21778]
+[WebServer] INFO:     Waiting for application startup.
+[WebServer] INFO:     Application startup complete.
+[WebServer] INFO:     Uvicorn running on http://127.0.0.1:8181 (Press CTRL+C to quit)
+[WebServer] $ next build
+[WebServer] $ next start -p 3253
+
+Running 1 test using 1 worker
+
+  ✓  1 [live] › e2e/demo.spec.ts:43:5 › the six scenes run with Next: the buyer asks, FLOW decides, the agreement acts, reality diverges, the owner stays in control, the proof (3.0s)
+
+  1 passed (9.1s)
+EXIT 0 DURATION_S 9

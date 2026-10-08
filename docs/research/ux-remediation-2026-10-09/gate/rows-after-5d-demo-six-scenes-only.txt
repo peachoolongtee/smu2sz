@@ -1,0 +1,8 @@
+operations 8
+decision_facts 3
+approvals 1
+commitments 1
+obligations 3
+offers 1
+evaluation_runs 0
+security_events 0

@@ -1,0 +1,126 @@
+$ node --test scripts/check-mocks.test.mjs scripts/retry.test.mjs scripts/presentation-fallbacks.test.mjs scripts/strategy.test.mjs scripts/w1-trust.test.mjs scripts/w5-collections.test.mjs scripts/chat-prompts.test.mjs scripts/w2-record.test.mjs scripts/w3-flows.test.mjs scripts/w6-demo.test.mjs scripts/timeout.test.mjs
+(node:16438) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/ianpong/Hackathons/smu2sz/.claude/worktrees/w8-gate/apps/web/lib/demo-store.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/ianpong/Hackathons/smu2sz/.claude/worktrees/w8-gate/apps/web/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ Business shows two to four questions per page when the page holds what they ask about (0.614375ms)
+✔ a question whose prerequisite is missing is hidden, not shown to fail (0.069ms)
+✔ every other Business route gets the Home questions, and nothing from the Demo set (0.086084ms)
+✔ Demo keeps the general prompts (fixtures, the amendment, approve it) and the buyer role-play (0.080916ms)
+✔ every suggested question is one the API's rules read (the same list as tests/nl/test_business_page_prompts.py) (0.349333ms)
+✔ the page context carries ids and a day only (0.1895ms)
+✔ every span in every mock offer matches its document text exactly (2.063792ms)
+✔ verdict figures are the golden values, server-formatted (15.866375ms)
+✔ the EX01 verdict, the counters and the buyer turns are the live API's, as recorded (3.852792ms)
+✔ funding, trajectory and capex mocks match the golden values (2.34525ms)
+✔ alerts and reconciliation mocks are the recorded server output for the opening books (0.52225ms)
+✔ funding lands later: the day-0 plan leaves the advance in transit, cash is only what has landed (0.960708ms)
+✔ the day-34 cure waits for the owner: PENDING_APPROVAL, then EXECUTED on approval, cash on day 37 (1.737291ms)
+(node:16440) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/ianpong/Hackathons/smu2sz/.claude/worktrees/w8-gate/apps/web/lib/presentation-fallbacks.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/ianpong/Hackathons/smu2sz/.claude/worktrees/w8-gate/apps/web/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ the server's status wins over anything derived (0.328417ms)
+✔ without a status, a row that is not admissible is insufficient when it breaks the reserve, else unavailable (1.564666ms)
+✔ without a status, the selected row is recommended and an admissible one is an alternative (0.091583ms)
+✔ the server's business action wins; an older verdict gets the rule from its outcome and counters (0.086333ms)
+(node:16441) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/ianpong/Hackathons/smu2sz/.claude/worktrees/w8-gate/apps/web/lib/live/retry.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/ianpong/Hackathons/smu2sz/.claude/worktrees/w8-gate/apps/web/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ a conflict is retried once after the hint, and the second answer is returned (21.137917ms)
+✔ a second conflict is returned as it is: no third attempt (0.315583ms)
+✔ another 409 (already decided, alert changed) and other statuses are not retried (1.954333ms)
+✔ the first answer body stays readable by the caller (0.283125ms)
+✔ the wait follows the hint in the body, then the header, defaults to one second and is capped (0.083166ms)
+✔ the error text says the books were busy (0.088042ms)
+(node:16442) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/ianpong/Hackathons/smu2sz/.claude/worktrees/w8-gate/apps/web/lib/mock/strategy-pick.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/ianpong/Hackathons/smu2sz/.claude/worktrees/w8-gate/apps/web/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ STRATEGY_MVP is on only for NEXT_PUBLIC_STRATEGY_MVP=1 (unset, 0 and true are off) (3.714209ms)
+✔ every strategy read goes through useStrategyAsync, which is the idle hook (the thunk never runs) unless the build flag is on (1.167167ms)
+✔ the recordings are chosen by the clock's day: the opening books before the news day, day 34's from it (0.060875ms)
+✔ after the day-34 cure is approved the post-approval recording is served; before it, day 34's; before day 34, the opening books' (0.0615ms)
+✔ the mock handlers choose with the home mock's own condition (the clock's day and cureStage() === 'approved') and the recordings are the right days (5.646792ms)
+✔ the recordings carry the server's strings the pages show, and no 'day N' in them (0.5025ms)
+✔ the envelope recordings are BUYER-1's, carry the server's sentences and the zone, and say no 'day N' (1.650083ms)
+✔ the Deals card renders the server's lever, package and zone strings and composes none (0.446208ms)
+✔ the envelope call is behind the flag at its call site (0.147167ms)
+✔ the Deals card says it is the most the owner can give, labels the figure an estimate, and the flag words are not ink-3 (1.014708ms)
+✔ the worth cell is one server figure (net_saving_display, or worth_text when there is no saving), the full sentence is in the row's details, and nothing is decided from the gross saving (0.80975ms)
+✔ without the flag the Deals page does not hand the compare state to the response card, and the strategy spec gates as the config does (0.573208ms)
+✔ the pilot journal (map #58) is read-only and mounted only with the strategy build flag AND a live API: the mock has no journal, the flag-off build reads nothing (2.95275ms)
+(node:16443) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/ianpong/Hackathons/smu2sz/.claude/worktrees/w8-gate/apps/web/lib/live/timeout.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/ianpong/Hackathons/smu2sz/.claude/worktrees/w8-gate/apps/web/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ every route has a timeout: 20 s by default, 60 s for the model, the evaluation and the strategy reads (0.407042ms)
+✔ a timed-out request is a read, a write that may have landed, or a model reply (0.153916ms)
+✔ the signal fires after the time and the failure becomes the timeout error (43.048875ms)
+✔ a request that finishes in time is returned, and one that fails in time keeps its own error (0.212958ms)
+(node:16444) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/ianpong/Hackathons/smu2sz/.claude/worktrees/w8-gate/apps/web/lib/approval-terms.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/ianpong/Hackathons/smu2sz/.claude/worktrees/w8-gate/apps/web/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ Approve is disabled for a commercial approval whose terms are not available (0.348667ms)
+✔ an older answer without the field fails closed on a commercial approval (0.043416ms)
+✔ available but empty terms also fail closed (0.03975ms)
+✔ Approve is enabled when the terms are shown, and a funding approval needs no terms (0.05775ms)
+✔ a decision in flight disables Approve whatever the terms say (0.039625ms)
+✔ the agreement label follows the commitment's status (0.044ms)
+✔ a deadline that has passed is a distance in the past and is never rewritten to today (0.130917ms)
+✔ globals.css: the touch variant is the block form that keeps both branches (0.115542ms)
+✔ globals.css: the reduced-motion ellipsis comes after the base rule that hides it (0.052709ms)
+(node:16445) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/ianpong/Hackathons/smu2sz/.claude/worktrees/w8-gate/apps/web/lib/errors.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/ianpong/Hackathons/smu2sz/.claude/worktrees/w8-gate/apps/web/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ a deal's record id is deal:{offer_id} (0.335625ms)
+✔ the steps: a response that is ready is not sent, and an acceptable offer is not agreed (0.343ms)
+✔ the steps: each record state has its own place and tone (0.084958ms)
+✔ the steps follow the recorded story: agreed on day 0, fulfilled with the receipt, missed without it, no deal when the buyer walks (0.055459ms)
+✔ the execution summary is read from the record: the agreement in the server's words, the funding it ran, the lots (0.194166ms)
+✔ the agreement tone follows the commitment status, never the verdict (0.040667ms)
+✔ a 409 COUNTER_CHANGED is recognised with its counters or its re-evaluate flag; other errors are not (0.098791ms)
+✔ a 404 DECISION_NOT_FOUND is a missing record, not a failure (0.056625ms)
+✔ the recorded refused cure is FAILED and the stored quote survives the decision (0.049041ms)
+(node:16446) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/ianpong/Hackathons/smu2sz/.claude/worktrees/w8-gate/apps/web/lib/chart-helpers.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/ianpong/Hackathons/smu2sz/.claude/worktrees/w8-gate/apps/web/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ a day with one event is labelled by that event (0.38375ms)
+✔ a day with several events is labelled by the server's net, never by its largest component (0.100167ms)
+✔ a net that has the sign of the smaller event still labels the day by the net (0.338875ms)
+✔ without a net (an older recording) each event stays its own candidate; a day with no mover has none (0.0745ms)
+✔ the recorded forecast: every day with several events carries the server's net (3.223083ms)
+✔ the recorded comparison: the server's groups in its order, a rank only where it ranked (1.116333ms)
+✔ the recorded ledger: causality on every row, the chain words and the refusal block (0.62325ms)
+✔ the recorded Deals workspace: the sections in the server's order, the immediate discount apart from the forward total (0.6445ms)
+(node:16447) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/ianpong/Hackathons/smu2sz/.claude/worktrees/w8-gate/apps/web/lib/chase.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/ianpong/Hackathons/smu2sz/.claude/worktrees/w8-gate/apps/web/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ a past-due invoice offers Chase payment; one that is not due and not at risk does not (0.573458ms)
+✔ an invoice due inside the forecast's shortfall stretch offers it, one outside does not (0.084625ms)
+✔ no shortfall means no stretch; a lowest day before the breach does not invert it (0.0585ms)
+✔ a lapsed promise offers it, a kept or awaited one does not (0.068292ms)
+✔ the chase dictionary lines exist in both languages (0.240333ms)
+✔ the recorded handoffs hold the server's figures for every open invoice, in both languages, with no record ids (0.990917ms)
+✔ the recorded reconciliations carry the four facts on the receipt row (0.44125ms)
+(node:16448) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/ianpong/Hackathons/smu2sz/.claude/worktrees/w8-gate/apps/web/lib/dictionary.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/ianpong/Hackathons/smu2sz/.claude/worktrees/w8-gate/apps/web/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ every step and scene has its words in English and Chinese (0.435958ms)
+✔ no figure is typed into a step's sentences: the plain ones and the templates carry no digit and no money (0.144166ms)
+✔ a step is narrated from what the server told it, and each sentence is omitted when its figure is missing (0.453417ms)
+ℹ tests 76
+ℹ suites 0
+ℹ pass 76
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 131.064375
+EXIT 0 DURATION_S 0

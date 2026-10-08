@@ -1,0 +1,6 @@
+operations 0
+decision_facts 0
+approvals 0
+commitments 0
+obligations 0
+offers 0
