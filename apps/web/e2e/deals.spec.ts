@@ -200,7 +200,8 @@ test("opening a message reads it, and the evaluated deal is one workspace in the
   // No empty commitments card; the page fits about two screens with the disclosures closed.
   await expect(page.locator("#commitments")).toHaveCount(0);
   const height = await page.evaluate(() => document.documentElement.scrollHeight);
-  expect(height).toBeLessThanOrEqual(2 * 900 + 100);
+  // (the strategy build adds its "Before they ask" card to the page)
+  expect(height).toBeLessThanOrEqual(2 * 900 + 100 + (process.env.E2E_STRATEGY === "1" ? 250 : 0));
   await expect(page.locator("body")).not.toContainText(/\bDay \d/);
   // Reading the same message again costs nothing: it is shown, not read twice.
   await page.getByTestId("inbox-back").click();
