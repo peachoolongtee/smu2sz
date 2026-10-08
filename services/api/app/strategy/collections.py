@@ -167,7 +167,7 @@ def early_pay_vs_plan(books: Books, mandate: Mandate, receivable_id: str, face_f
     None when the test cannot be run: no admissible plan with (or without) the discount, or the discount does not bind."""
     state = books.state
     r = next((x for x in state.receivables if x.id == receivable_id), None)
-    if r is None:
+    if r is None or rate_bp <= 0:  # a 0 bp discount is no early payment (it only dates the receipt and settles the invoice)
         return None
     leg = early_pay_obligation(state, r, rate_bp, face_fen)
     if leg.effective_day is None or r.due_day - leg.effective_day <= 0:
