@@ -11,10 +11,10 @@ rules; nothing here repeats them.
   curve and collections worth, behind `FEATURE_ENVELOPE`, `FEATURE_PRICE_CURVE`, `FEATURE_COLLECTIONS_WORTH` (API, default
   off) and `NEXT_PUBLIC_STRATEGY_MVP=1` (web). With the flags off it is byte-for-byte `dev`'s behaviour. It has NOT been
   merged into `dev`: that is the owner's decision in grilling [#56](https://github.com/peachoolongtee/smu2sz/issues/56).
-- **Wave 8** ([#57](https://github.com/peachoolongtee/smu2sz/issues/57)): the Impeccable suite over the whole UI, with
-  `docs/research/inspiration/` as the bar, runs after this handoff and before the grilling. Its branches come from
-  `feat/strategy-mvp`; if #56 defers the `dev` merge, the finish is cherry-picked onto a branch from `dev` without the
-  strategy cards.
+- **Wave 8** ([#57](https://github.com/peachoolongtee/smu2sz/issues/57)), the Impeccable finish over the whole UI, is
+  done and merged into `feat/strategy-mvp` (report section 11; `apps/web/DESIGN.md` is the canonical record, `PRODUCT.md`
+  the inferred product context with its open questions). If #56 defers the `dev` merge, the finish is cherry-picked onto a
+  branch from `dev` without the strategy cards (the finish touched every page, so expect a careful cherry-pick).
 - **Running the MVP locally**: API from `services/api` with the three flags, `TERMSLEDGER_NO_DOTENV=1 DATABASE_URL=memory
   LLM_MODE=cache DEMO_MODE=1 PYTHONUTF8=1 uv run uvicorn app.main:app --port 8000`; web with `NEXT_PUBLIC_STRATEGY_MVP=1`
   (`NEXT_PUBLIC_API_MODE=live` against the API, or mock mode with the recordings under `apps/web/mocks/strategy/`,
@@ -61,6 +61,7 @@ FIRST gate is read from the pilot's inbox (two or more deals open at once in mos
 
 > Read `docs/handover/06_strategy_mvp_handoff.md` on `feat/strategy-mvp`, then wayfinder map #47 on GitHub. You are the
 > lead: you architect, write specs and acceptance criteria, review and merge; implementation goes to lower-tier implementer
-> subagents, research to research agents, figures are checked by a verifier agent. Next on the map is Wave 8 (#57), the
-> Impeccable suite over the whole UI with `docs/research/inspiration/` as the bar, as a refinement of `apps/web/DESIGN.md`;
-> then the owner's grilling (#56). Start Wave 8 with `impeccable context`, then critique and audit over every route.
+> subagents, research to research agents, figures are checked by a verifier agent. Every build wave of the map is done;
+> the frontier is the owner's grilling (#56). Record my answers there, append them to the map's "Decisions so far", then
+> act on them: merge `feat/strategy-mvp` into `dev` with the flags off if I say so (full gate first), and chart the
+> 90-day shadow pilot as a new map from section 3 of this handoff.

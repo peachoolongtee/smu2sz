@@ -199,6 +199,32 @@ polling; first paint in the owner's mode and language; the backdrop drifts once 
 recharts lazy-loaded (`/cash` 372 → 264 KB gzipped); the "Estimate" chip explained ("Priced on today's books;
 re-checked before sending."). axe: 0 serious and 0 critical at every width after (13 target-size at 412 before).
 
-**Pass D, polish, the finish review and the documentation.** (filled below)
+**Pass D, polish, the finish review and the documentation.** One inspection round over all 54 after-screenshots, one
+fix batch (Activity's empty sections as one quiet line each; one shared label for a buyer's duplicate receipts with the
+tooltip naming the second; the Tour's focus returned to the account button; one `when` voice for the lots; chips that
+wrap; the reduced-motion spinner as an ellipsis; the kit's durations and easing as Tailwind's transition defaults; link
+hover; balanced headlines; text selection and caret in brand), one confirmation round, then stop. The
+`impeccable-finish-reviewer` agent judged the shipped build against DESIGN.md, PRODUCT.md and the references: every P0,
+every adapt finding and every mechanical audit item closed; eight local fixes left, done in pass E (forecast labels off
+the gridlines and the reserve line; a fold on a page with a "Details" names its subject; the Receivables worth cell as
+one figure with the sentence behind the chevron; the recommended funding row titled by the server's plan name and the
+duplicate "cheaper option" note dropped; the envelope drawn once as its three tiles; Activity rows as divider-separated
+list rows, the cash sentence inside the status card, the debt readings as the Forecast's footer; "Expired 27 days ago",
+no "Executed" chip on time passing, "Debt readings, this month", a recovered promise as a full sentence, "of the
+invoice" for "of face"; the decision title at 20 px). Heights: Activity day 34 1,553 → 1,182 px, Deals evaluated 1,890 →
+1,842, Cash day 34 2,048 → 2,003. The `impeccable-documenter` agent rewrote `apps/web/DESIGN.md` from the shipped build
+(56 tokens with computed contrast ratios, the type and radius scales, density, motion, thirteen named rules) with its
+sidecar `apps/web/.impeccable/design.json`; `impeccable doctor` reports the coverage check cleared. The reviewer's verdict:
+the Business pages carry the references' hierarchy and finish while staying unmistakably FLOW; what fell short (density on
+Cash and Deals, a last layer of copy, one chart) is what pass E addressed, and the remaining density gap is structural
+(the chart, the folds and the required copy), recorded below.
+
+**Left after the finish (debt).** Forecast labels may still cross the series lines; the Demo-shell engine views keep two
+primaries on some empty states (inbox, security, capex, verdict) and their dense formula tables; two Cash day-34 rows share
+the server's facility name (told apart by their legs and chip); `--font-sans` names Inter first (no file is fetched; a
+decision for the owner); Chinese pages show English server strings in mock mode (the recordings are English); the
+Receivables outstanding split bar, the Deals concession bar in Business mode and Activity filters with paging were not
+taken (no server percentages, and the owner's bar did not require them); the reference's density target of 1.8 screens is
+not reached on Cash (2.3 desktop screens) and Deals (2.1).
 
 **Gate after the finish.** (filled below)
