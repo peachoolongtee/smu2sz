@@ -119,8 +119,8 @@ function CommitmentItem({ c, buyer, today, recordState }: { c: Displayed<Commitm
 
 /** The ledger's commitments, newest first with the ones in force (proposed, accepted or active) ahead of the ones that ended. */
 export function ActiveCommitments({ today, buyerName, hideEmpty = false }: { today: number; buyerName: (id: string) => string; hideEmpty?: boolean }) {
-  const { t } = useI18n();
-  const ledger = useAsync(getLedger, []);
+  const { t, lang } = useI18n();
+  const ledger = useAsync(() => getLedger(lang), [lang]);
   // A failed record read only costs the server's wording of the status: the commitment's own status is then shown.
   const records = useDecisions({ family: "DEAL" });
   const stateText = new Map((records.data?.decisions ?? []).map((d) => [d.id, d.state_text]));

@@ -69,12 +69,14 @@
         "label": "Discount the whole invoice at 1.2%",
         "reasons": [],
         "note": "cost ¥5,040.00; admissible but dearer than the selected plan",
+        "label_when": "Discount the whole invoice at 1.2%",
         "note_when": "cost ¥5,040.00; within your limits but dearer than the selected plan"
       },
       {
         "label": "Line + early payment on part of the invoice at 1.2%",
         "reasons": [],
         "note": "cost ¥3,938.81; admissible but dearer than the selected plan",
+        "label_when": "Line + early payment on part of the invoice at 1.2%",
         "note_when": "cost ¥3,938.81; within your limits but dearer than the selected plan"
       },
       {
@@ -84,6 +86,7 @@
           "LEAD_TIME_TOO_LONG"
         ],
         "note": "not applied; cash on day 21, gap opens on day 12",
+        "label_when": "Line + guaranteed loan",
         "note_when": "not applied; cash in 21 days, gap opens in 12 days"
       },
       {
@@ -92,6 +95,7 @@
           "RESERVE_BREACH"
         ],
         "note": "cost ¥841.64; RESERVE_BREACH on day 12",
+        "label_when": "Line only",
         "note_when": "cost ¥841.64; RESERVE_BREACH in 12 days"
       }
     ],
@@ -102,7 +106,8 @@
     "not_executable_reason": "",
     "available_from_day": null,
     "need_display": "¥405,000.00",
-    "total_cost_display": "¥3,113.93"
+    "total_cost_display": "¥3,113.93",
+    "label_when": "committed plan: ¥841.64 + ¥2,272.29 = ¥3,113.93"
   },
   "expected": {
     "id": "PLAN-EXP-a39a566c48da",
@@ -174,12 +179,14 @@
         "label": "Discount the whole invoice at 1.2%",
         "reasons": [],
         "note": "cost ¥5,040.00; admissible but dearer than the selected plan",
+        "label_when": "Discount the whole invoice at 1.2%",
         "note_when": "cost ¥5,040.00; within your limits but dearer than the selected plan"
       },
       {
         "label": "Line + early payment on part of the invoice at 1.2%",
         "reasons": [],
         "note": "cost ¥3,938.81; admissible but dearer than the selected plan",
+        "label_when": "Line + early payment on part of the invoice at 1.2%",
         "note_when": "cost ¥3,938.81; within your limits but dearer than the selected plan"
       },
       {
@@ -189,6 +196,7 @@
           "RESERVE_BREACH"
         ],
         "note": "cost ¥13,416.98; RESERVE_BREACH on day 12; not applied; cash on day 21, gap opens on day 12",
+        "label_when": "Line + guaranteed loan",
         "note_when": "cost ¥13,416.98; RESERVE_BREACH in 12 days; not applied; cash in 21 days, gap opens in 12 days"
       },
       {
@@ -197,6 +205,7 @@
           "RESERVE_BREACH"
         ],
         "note": "cost ¥841.64; RESERVE_BREACH on day 12",
+        "label_when": "Line only",
         "note_when": "cost ¥841.64; RESERVE_BREACH in 12 days"
       }
     ],
@@ -207,7 +216,8 @@
     "not_executable_reason": "",
     "available_from_day": null,
     "need_display": "¥405,000.00",
-    "total_cost_display": "¥3,113.93"
+    "total_cost_display": "¥3,113.93",
+    "label_when": "expected plan (committed sources only): ¥841.64 + ¥2,272.29 = ¥3,113.93"
   },
   "menu": [
     {
@@ -698,6 +708,7 @@
         "Bank credit line: draw ¥150,000.00, repaid in 32 days",
         "Invoice financing (onboarded platform): advance ¥255,000.00 on the ¥420,000.00 invoice to Foshan Home Retail Co. due in 32 days"
       ],
+      "label_when": "Router optimum",
       "legs": [
         {
           "index": 0,
@@ -799,6 +810,7 @@
         "Bank credit line: draw ¥150,000.00, repaid in 32 days",
         "Buyer early-payment offer: early payment on ¥258,097.17 face of the ¥420,000.00 invoice to Foshan Home Retail Co. due in 32 days at 1.2%"
       ],
+      "label_when": "Line + early payment on part of the invoice at 1.2%",
       "legs": [
         {
           "index": 0,
@@ -886,6 +898,7 @@
       "components_when": [
         "Buyer early-payment offer: early payment on ¥420,000.00 face of the ¥420,000.00 invoice to Foshan Home Retail Co. due in 32 days at 1.2%"
       ],
+      "label_when": "Discount the whole invoice at 1.2%",
       "legs": [
         {
           "index": 0,
@@ -966,6 +979,7 @@
       "components_when": [
         "Bank credit line: draw ¥150,000.00, repaid in 32 days"
       ],
+      "label_when": "Line only",
       "legs": [
         {
           "index": 0,
@@ -1058,6 +1072,7 @@
         "Bank credit line: draw ¥150,000.00, repaid in 32 days",
         "Government-guaranteed working-capital loan: draw ¥255,000.00 (arrives in 21 days)"
       ],
+      "label_when": "Line + guaranteed loan",
       "legs": [],
       "name_display": "Bank credit line + Government-guaranteed working-capital loan",
       "offset_fen": null,

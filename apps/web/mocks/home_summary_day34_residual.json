@@ -1312,7 +1312,8 @@
       "id": "alert:ALERT-RESERVE-34:v6",
       "family": "FUNDING",
       "state": "SETTLED",
-      "state_text": "Done; the cash has landed",
+      "state_text": "Funded, reserve still short",
+      "state_tone": "warn",
       "terminal": false,
       "headline": "Finance ¥155,013.80 of the ¥420,000.00 invoice to Foshan Home Retail Co. on Invoice financing (onboarded platform)",
       "counterparty_name": "Foshan Home Retail Co.",
@@ -1371,7 +1372,8 @@
       "what_remains": null,
       "approval_label": null,
       "current_decision_state": null,
-      "decision_link": null
+      "decision_link": null,
+      "why_it_matters_changed": true
     },
     {
       "day": 37,
@@ -1388,7 +1390,8 @@
       "what_remains": null,
       "approval_label": null,
       "current_decision_state": null,
-      "decision_link": null
+      "decision_link": null,
+      "why_it_matters_changed": false
     },
     {
       "day": 34,
@@ -1404,11 +1407,12 @@
       "why_it_matters_as_of": "now",
       "what_remains": "Your minimum cash reserve is still ¥100,000.00 short from today; no committed funding restores it. This needs your decision.",
       "approval_label": null,
-      "current_decision_state": "Done; the cash has landed",
+      "current_decision_state": "Funded, reserve still short",
       "decision_link": {
         "decision_id": "alert:ALERT-RESERVE-34:v6",
         "href": "/decisions/alert:ALERT-RESERVE-34:v6"
-      }
+      },
+      "why_it_matters_changed": false
     },
     {
       "day": 32,
@@ -1425,7 +1429,8 @@
       "what_remains": null,
       "approval_label": null,
       "current_decision_state": null,
-      "decision_link": null
+      "decision_link": null,
+      "why_it_matters_changed": false
     }
   ],
   "receivables": {
@@ -1465,8 +1470,8 @@
     {
       "id": "ALERT-PASTDUE-RCV-A",
       "kind": "RECEIVABLE_PAST_DUE",
-      "title": "Receivable the ¥420,000.00 invoice to Foshan Home Retail Co. due 6 days ago is 6 day(s) past due",
-      "detail": "¥420,000.00 outstanding from Foshan Home Retail Co. was due 6 days ago and is still OPEN. The conservative trajectory no longer counts on a dated receipt.",
+      "title": "Receivable the ¥420,000.00 invoice to Foshan Home Retail Co. due 6 days ago is 6 days past due",
+      "detail": "¥420,000.00 outstanding from Foshan Home Retail Co. was due 6 days ago and is still OPEN. The cash forecast no longer counts on a dated receipt.",
       "day": 32,
       "when": "6 days ago"
     },
@@ -1474,7 +1479,7 @@
       "id": "ALERT-EARLYPAY-576959dcbbfb",
       "kind": "RECEIVABLE_PAST_DUE",
       "title": "Early payment on the ¥420,000.00 invoice to Foshan Home Retail Co. due 6 days ago did not arrive",
-      "detail": "The early payment promised under the agreement with Foshan Home Retail Co. 36 days ago did not arrive. the ¥420,000.00 invoice to Foshan Home Retail Co. due 6 days ago (¥420,000.00 outstanding from Foshan Home Retail Co.) is back on its original due day, 6 days ago, and the conservative trajectory is projected that way.",
+      "detail": "The early payment promised under the agreement with Foshan Home Retail Co. 36 days ago did not arrive. The ¥420,000.00 invoice to Foshan Home Retail Co. due 6 days ago (¥420,000.00 outstanding from Foshan Home Retail Co.) is back on its original due day, 6 days ago, and the cash forecast is projected that way.",
       "day": 38,
       "when": "today"
     }
@@ -1519,5 +1524,6 @@
     "WARNING": 2,
     "INFO": 0
   },
-  "note_basis": "Conservative projection of today's books: unconfirmed receipts are not counted."
+  "note_basis": "Conservative projection of today's books: unconfirmed receipts are not counted.",
+  "partial": null
 }

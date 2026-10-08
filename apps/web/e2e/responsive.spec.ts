@@ -181,7 +181,7 @@ test("the slide-over chat fits the viewport with a long reply", async ({ page })
   await page.goto("/mandate");
   // Already signed in as the owner by the fixture.
   await page.getByTestId("chat-open").click();
-  const panel = page.getByRole("dialog", { name: "Chat with the agent" });
+  const panel = page.getByRole("dialog", { name: "Ask FLOW" });
   await expect(panel).toBeVisible();
   await page.getByTestId("prompt-evaluate").click();
   await expect(panel.getByTestId("chat-awaiting")).toBeVisible();
@@ -204,11 +204,8 @@ test("Deals (checked) and Cash on a phone: no sideways scroll, the folded inbox 
   await expect(page.getByTestId("deal-recommendation")).toHaveText("Counter recommended");
   await expect(page.getByTestId("inbox-collapsed")).toBeVisible();
   expect(await overflowX(page), "/deals overflows horizontally").toBeLessThanOrEqual(1);
-  // The workspace order: the server's on a desktop; on a phone the answer (what FLOW recommends and the priced response) comes straight after the buyer.
-  const narrowNow = (page.viewportSize()?.width ?? 1440) < 1024;
-  const ids = narrowNow
-    ? ["inbox-collapsed", "deal-selected", "deal-recommendation-card", "counters", "deal-ask", "deal-impact", "deal-advanced"]
-    : ["deal-selected", "deal-ask", "deal-impact", "deal-recommendation-card", "counters", "deal-advanced"];
+  // One workspace order at every width, the server's: the folded inbox row, the buyer, what FLOW recommends, the priced response, then the asks and the costs.
+  const ids = ["inbox-collapsed", "deal-selected", "deal-recommendation-card", "counters", "deal-ask", "deal-impact", "deal-advanced"];
   const tops = await page.evaluate((list) => list.map((id) => {
     const el = document.getElementById(id) ?? document.querySelector(`[data-testid="${id}"]`);
     return el ? el.getBoundingClientRect().top + scrollY : -1;
@@ -276,7 +273,7 @@ test("phone priority: Home's primary action, Deals' priced response and Cash's o
   const asks = (await topOf(page, "deal-ask"))!;
   expect(inbox.top, "the inbox is one folded row above the buyer").toBeLessThan((await topOf(page, "deal-selected"))!.top);
   await expect(page.getByTestId("deal-steps")).toHaveCount(0);
-  await expect(page.getByTestId("deal-state-chip")).toHaveText("Counter recommended");
+  await expect(page.getByTestId("deal-state-chip")).toContainText("Counter recommended");
   expect(rec.top, "the recommendation card starts in the first screen").toBeLessThan(915);
   expect(send, "the bound Send is on the page").not.toBeNull();
   expect(send!.y + send!.height, "the Send button is inside the first 915 px").toBeLessThanOrEqual(915);

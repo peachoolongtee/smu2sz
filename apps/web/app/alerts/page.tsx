@@ -12,8 +12,8 @@ const SEVERITIES: AlertSeverity[] = ["CRITICAL", "WARNING", "INFO"];
 const severityTone: Record<AlertSeverity, Tone> = { CRITICAL: "bad", WARNING: "warn", INFO: "info" };
 
 export default function AlertsPage() {
-  const { t, te } = useI18n();
-  const alerts = useAsync(getAlerts, []);
+  const { t, te, lang } = useI18n();
+  const alerts = useAsync(getAlerts, [lang]);
   const data = alerts.data;
   const fixer = useFixAlert();
   const ctx = useAlertContext();

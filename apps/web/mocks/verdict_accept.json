@@ -76,7 +76,8 @@
     "not_executable_reason": "",
     "available_from_day": null,
     "need_display": "¥0.00",
-    "total_cost_display": "¥0.00"
+    "total_cost_display": "¥0.00",
+    "label_when": "no funding needed"
   },
   "required_tier": "TIER_1",
   "mandate_version": 1,
@@ -90,6 +91,9 @@
   "decision_recorded": true,
   "evaluated_day": 0,
   "evaluated_when": "today",
+  "lang": "en",
+  "last_read_when": "today",
+  "last_read_day": 0,
   "passed_checks": [
     {
       "code": "MIN_CASH",
@@ -2500,7 +2504,8 @@
     "not_executable_reason": "",
     "available_from_day": null,
     "need_display": "¥0.00",
-    "total_cost_display": "¥0.00"
+    "total_cost_display": "¥0.00",
+    "label_when": "no funding needed"
   },
   "plan_expected": {
     "id": "PLAN-EXP-3eb83f5d8c1e",
@@ -2525,7 +2530,8 @@
     "not_executable_reason": "",
     "available_from_day": null,
     "need_display": "¥0.00",
-    "total_cost_display": "¥0.00"
+    "total_cost_display": "¥0.00",
+    "label_when": "no funding needed (expected plan: shown only, never relied on (uses facilities not yet committed))"
   },
   "cure_plan": null,
   "cured_trajectory": null,
@@ -2573,6 +2579,7 @@
       "components_when": [
         "Buyer early-payment offer: early payment on ¥420,000.00 face of the ¥420,000.00 invoice to Foshan Home Retail Co. due in 32 days at 0.5%"
       ],
+      "label_when": "Discount the whole invoice at 0.5%",
       "legs": [
         {
           "index": 0,
@@ -2646,6 +2653,7 @@
         "Bank credit line: draw ¥150,000.00, repaid in 32 days",
         "Buyer early-payment offer: early payment on ¥256,281.41 face of the ¥420,000.00 invoice to Foshan Home Retail Co. due in 32 days at 0.5%"
       ],
+      "label_when": "Line + early payment on part of the invoice at 0.5%",
       "legs": [
         {
           "index": 0,
@@ -2728,6 +2736,7 @@
         "Bank credit line: draw ¥150,000.00, repaid in 32 days",
         "Invoice financing (onboarded platform): advance ¥255,000.00 on the ¥420,000.00 invoice to Foshan Home Retail Co. due in 32 days"
       ],
+      "label_when": "Router optimum",
       "legs": [
         {
           "index": 0,
@@ -2810,6 +2819,7 @@
         "Bank credit line: draw ¥150,000.00, repaid in 32 days",
         "Government-guaranteed working-capital loan: draw ¥255,000.00 (arrives in 21 days)"
       ],
+      "label_when": "Line + guaranteed loan",
       "legs": [],
       "name_display": "Bank credit line + Government-guaranteed working-capital loan",
       "offset_fen": null,
@@ -2861,6 +2871,7 @@
       "components_when": [
         "Bank credit line: draw ¥150,000.00, repaid in 32 days"
       ],
+      "label_when": "Line only",
       "legs": [
         {
           "index": 0,
@@ -2887,13 +2898,27 @@
   },
   "workspace": {
     "order": [
+      "buyer",
+      "recommends",
+      "priced_response",
       "buyer_asks",
       "financial_impact",
       "why_it_matters",
-      "recommends",
-      "priced_response",
+      "agreements",
       "advanced"
     ],
+    "buyer": {
+      "title": "Who is asking",
+      "counterparty_id": "BUYER-1",
+      "name": "Foshan Home Retail Co.",
+      "offer_id": "OFF-8e944bff0cc9",
+      "received_when": "today"
+    },
+    "agreements": {
+      "title": "Your agreements with Foshan Home Retail Co.",
+      "items": [],
+      "empty_text": "No agreement with this buyer is waiting or in force."
+    },
     "buyer_asks": {
       "title": "What the buyer asks",
       "asks": [
@@ -2916,7 +2941,8 @@
           "amount_fen": 210000,
           "amount_display": "¥2,100.00",
           "window_text": "Taken off the invoice when it is settled early. It is checked against its own cap and is not part of the forward figure.",
-          "basis": "immediate discount: settled in cash now and capped separately, not a forward concession"
+          "basis": "immediate discount: settled in cash now and capped separately, not a forward concession",
+          "basis_when": "immediate discount: settled in cash now and capped separately, not a forward concession"
         }
       ],
       "window_months": 12,

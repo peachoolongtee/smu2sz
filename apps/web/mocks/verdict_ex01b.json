@@ -80,7 +80,7 @@
       "spans": [],
       "cure_cost_display": "¥2,406.67",
       "message_when": "Under this offer projected cash falls below the reserve in 47 days",
-      "cure_note_when": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥2,406.67 (cannot run today); the extension itself costs ¥1,871.30 per invoice; the cure cannot run today: Invoice financing (onboarded platform): advance ¥135,040.00 on RI:BUYER-1:32: the ¥420,000.00 invoice to Foshan Home Retail Co. due in 77 days is not an invoice the executor can finance today; it is issued in 32 days"
+      "cure_note_when": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥2,406.67 (cannot run today); the extension itself costs ¥1,871.30 per invoice; the cure cannot run today: Invoice financing (onboarded platform): advance ¥135,040.00 on the ¥420,000.00 invoice to Foshan Home Retail Co. due in 77 days: the ¥420,000.00 invoice to Foshan Home Retail Co. due in 77 days is not an invoice the executor can finance today; it is issued in 32 days"
     },
     {
       "code": "DISCOUNT_ABOVE_BREAK_EVEN",
@@ -328,6 +328,7 @@
       "outbound_blocked": false,
       "text_when": "Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥257,200 of this invoice at 0.85%, paid within 2 days.",
       "rationale_when": "Early settlement at 0.85% is cheaper than financing the invoice on the marginal committed source; the line covers the rest of the near-term gap.",
+      "label_when": "Option A",
       "economics": {
         "components": [
           {
@@ -430,6 +431,7 @@
       "outbound_blocked": false,
       "text_when": "55-day terms accepted with a 0.30% price adjustment on future invoices, no rebate.",
       "rationale_when": "The price adjustment covers the per-invoice cost of funding the longer terms on the marginal committed source, so the net forward concession is about zero; on current books with these terms the router's committed plan (committed plan: ¥899.51 + ¥2,806.95 = ¥3,706.46) keeps the reserve. The offered 60-day terms fail their own re-check; 55 days is the longest that passes. Re-checked as an offer, its terms leave a shortfall of ¥85,000.00 in 47 days, funded by the plan: committed plan: ¥1,570.36 (cannot run today).",
+      "label_when": "Option B",
       "economics": {
         "components": [
           {
@@ -510,7 +512,8 @@
     "available_from_day": 32,
     "need_display": "¥135,040.00",
     "total_cost_display": "¥2,406.67",
-    "not_executable_reason_when": "Invoice financing (onboarded platform): advance ¥135,040.00 on RI:BUYER-1:32: the ¥420,000.00 invoice to Foshan Home Retail Co. due in 77 days is not an invoice the executor can finance today; it is issued in 32 days"
+    "not_executable_reason_when": "Invoice financing (onboarded platform): advance ¥135,040.00 on the ¥420,000.00 invoice to Foshan Home Retail Co. due in 77 days: the ¥420,000.00 invoice to Foshan Home Retail Co. due in 77 days is not an invoice the executor can finance today; it is issued in 32 days",
+    "label_when": "committed plan: ¥2,406.67 (cannot run today)"
   },
   "required_tier": "TIER_1",
   "mandate_version": 1,
@@ -524,6 +527,9 @@
   "decision_recorded": true,
   "evaluated_day": 0,
   "evaluated_when": "today",
+  "lang": "en",
+  "last_read_when": "today",
+  "last_read_day": 0,
   "passed_checks": [
     {
       "code": "MAX_APR",
@@ -669,7 +675,7 @@
       "resolved": true,
       "material": true,
       "message": "rebate base: expected order of BUYER-1: next quarter (days 92–182) ¥400,000.00, not firm; counted at maximum",
-      "message_when": "rebate base: expected order of BUYER-1: next quarter (days 92–182) ¥400,000.00, not firm; counted at maximum"
+      "message_when": "rebate base: expected order of Foshan Home Retail Co.: next quarter (days 92–182) ¥400,000.00, not firm; counted at maximum"
     }
   ],
   "trajectory": {
@@ -2962,7 +2968,8 @@
         "approval_reason": "",
         "executable_now": true,
         "not_executable_reason": "",
-        "display": "¥1,468.05"
+        "display": "¥1,468.05",
+        "label_when": "Bank credit line: draw ¥135,040.00, repaid in 62 days"
       }
     ],
     "total_cost_fen": 146805,
@@ -2978,7 +2985,9 @@
       {
         "label": "Discount the whole invoice at 1.2%",
         "reasons": [],
-        "note": "cost ¥5,040.00; admissible but dearer than the selected plan"
+        "note": "cost ¥5,040.00; admissible but dearer than the selected plan",
+        "label_when": "Discount the whole invoice at 1.2%",
+        "note_when": "cost ¥5,040.00; within your limits but dearer than the selected plan"
       }
     ],
     "label": "committed plan: ¥1,468.05",
@@ -2988,7 +2997,8 @@
     "not_executable_reason": "",
     "available_from_day": null,
     "need_display": "¥135,040.00",
-    "total_cost_display": "¥1,468.05"
+    "total_cost_display": "¥1,468.05",
+    "label_when": "committed plan: ¥1,468.05"
   },
   "plan_expected": {
     "id": "PLAN-EXP-b2efe8e2b235",
@@ -3018,7 +3028,8 @@
         "approval_reason": "",
         "executable_now": true,
         "not_executable_reason": "",
-        "display": "¥1,468.05"
+        "display": "¥1,468.05",
+        "label_when": "Bank credit line: draw ¥135,040.00, repaid in 62 days"
       }
     ],
     "total_cost_fen": 146805,
@@ -3034,7 +3045,9 @@
       {
         "label": "Discount the whole invoice at 1.2%",
         "reasons": [],
-        "note": "cost ¥5,040.00; admissible but dearer than the selected plan"
+        "note": "cost ¥5,040.00; admissible but dearer than the selected plan",
+        "label_when": "Discount the whole invoice at 1.2%",
+        "note_when": "cost ¥5,040.00; within your limits but dearer than the selected plan"
       }
     ],
     "label": "expected plan (committed sources only): ¥1,468.05",
@@ -3044,7 +3057,8 @@
     "not_executable_reason": "",
     "available_from_day": null,
     "need_display": "¥135,040.00",
-    "total_cost_display": "¥1,468.05"
+    "total_cost_display": "¥1,468.05",
+    "label_when": "expected plan (committed sources only): ¥1,468.05"
   },
   "cure_plan": {
     "id": "PLAN-COM-98b519315a32",
@@ -3074,7 +3088,9 @@
         "approval_reason": "",
         "executable_now": false,
         "not_executable_reason": "RI:BUYER-1:32 is not an invoice the executor can finance today; it is issued on day 32",
-        "display": "¥2,406.67"
+        "display": "¥2,406.67",
+        "label_when": "Invoice financing (onboarded platform): advance ¥135,040.00 on the ¥420,000.00 invoice to Foshan Home Retail Co. due in 77 days",
+        "not_executable_reason_when": "the ¥420,000.00 invoice to Foshan Home Retail Co. due in 77 days is not an invoice the executor can finance today; it is issued in 32 days"
       }
     ],
     "total_cost_fen": 240667,
@@ -3094,7 +3110,9 @@
     "not_executable_reason": "Invoice financing (onboarded platform): advance ¥135,040.00 on RI:BUYER-1:32: RI:BUYER-1:32 is not an invoice the executor can finance today; it is issued on day 32",
     "available_from_day": 32,
     "need_display": "¥135,040.00",
-    "total_cost_display": "¥2,406.67"
+    "total_cost_display": "¥2,406.67",
+    "not_executable_reason_when": "Invoice financing (onboarded platform): advance ¥135,040.00 on the ¥420,000.00 invoice to Foshan Home Retail Co. due in 77 days: the ¥420,000.00 invoice to Foshan Home Retail Co. due in 77 days is not an invoice the executor can finance today; it is issued in 32 days",
+    "label_when": "committed plan: ¥2,406.67 (cannot run today)"
   },
   "cured_trajectory": {
     "mode": "CONSERVATIVE",
@@ -5440,6 +5458,7 @@
       "components_when": [
         "Buyer early-payment offer: early payment on ¥420,000.00 face of the ¥420,000.00 invoice to Foshan Home Retail Co. due in 32 days at 1.2%"
       ],
+      "label_when": "Discount the whole invoice at 1.2%",
       "legs": [
         {
           "index": 0,
@@ -5513,6 +5532,7 @@
         "Bank credit line: draw ¥150,000.00, repaid in 32 days",
         "Buyer early-payment offer: early payment on ¥258,097.17 face of the ¥420,000.00 invoice to Foshan Home Retail Co. due in 32 days at 1.2%"
       ],
+      "label_when": "Line + early payment on part of the invoice at 1.2%",
       "legs": [
         {
           "index": 0,
@@ -5595,6 +5615,7 @@
         "Bank credit line: draw ¥150,000.00, repaid in 32 days",
         "Invoice financing (onboarded platform): advance ¥255,000.00 on the ¥420,000.00 invoice to Foshan Home Retail Co. due in 32 days"
       ],
+      "label_when": "Router optimum",
       "legs": [
         {
           "index": 0,
@@ -5677,6 +5698,7 @@
         "Bank credit line: draw ¥150,000.00, repaid in 32 days",
         "Government-guaranteed working-capital loan: draw ¥255,000.00 (arrives in 21 days)"
       ],
+      "label_when": "Line + guaranteed loan",
       "legs": [],
       "name_display": "Bank credit line + Government-guaranteed working-capital loan",
       "offset_fen": null,
@@ -5728,6 +5750,7 @@
       "components_when": [
         "Bank credit line: draw ¥150,000.00, repaid in 32 days"
       ],
+      "label_when": "Line only",
       "legs": [
         {
           "index": 0,
@@ -5754,13 +5777,27 @@
   },
   "workspace": {
     "order": [
+      "buyer",
+      "recommends",
+      "priced_response",
       "buyer_asks",
       "financial_impact",
       "why_it_matters",
-      "recommends",
-      "priced_response",
+      "agreements",
       "advanced"
     ],
+    "buyer": {
+      "title": "Who is asking",
+      "counterparty_id": "BUYER-1",
+      "name": "Foshan Home Retail Co.",
+      "offer_id": "OFF-1559c5b525ed",
+      "received_when": "today"
+    },
+    "agreements": {
+      "title": "Your agreements with Foshan Home Retail Co.",
+      "items": [],
+      "empty_text": "No agreement with this buyer is waiting or in force."
+    },
     "buyer_asks": {
       "title": "What the buyer asks",
       "asks": [
@@ -5795,7 +5832,8 @@
           "amount_fen": 504000,
           "amount_display": "¥5,040.00",
           "window_text": "Taken off the invoice when it is settled early. It is checked against its own cap and is not part of the forward figure.",
-          "basis": "immediate discount: settled in cash now and capped separately, not a forward concession"
+          "basis": "immediate discount: settled in cash now and capped separately, not a forward concession",
+          "basis_when": "immediate discount: settled in cash now and capped separately, not a forward concession"
         },
         {
           "obligation_id": "OFF-1559c5b525ed-O2",
@@ -5805,7 +5843,8 @@
           "amount_fen": 2432692,
           "amount_display": "¥24,326.92",
           "window_text": "Valued over the next 12 months at your cheapest committed source.",
-          "basis": "terms extension priced as a loan: committed marginal source: Invoice financing (onboarded platform) 10.8417%"
+          "basis": "terms extension priced as a loan: committed marginal source: Invoice financing (onboarded platform) 10.8417%",
+          "basis_when": "terms extension priced as a loan: committed marginal source: Invoice financing (onboarded platform) 10.8417%"
         },
         {
           "obligation_id": "OFF-1559c5b525ed-O3",
@@ -5815,7 +5854,8 @@
           "amount_fen": 400000,
           "amount_display": "¥4,000.00",
           "window_text": "Valued over the next 12 months at your cheapest committed source.",
-          "basis": "contingent rebate counted at maximum"
+          "basis": "contingent rebate counted at maximum",
+          "basis_when": "contingent rebate counted at maximum"
         }
       ],
       "window_months": 12,
@@ -5839,7 +5879,13 @@
     "priced_response": {
       "counter_id": "CTR-72a07f7c0f50",
       "label": "Option A",
+      "label_text": "Option A",
       "send_scope": "Sends Option A to the buyer (the reply is simulated); records the agreement, with your approval when it changes terms; runs the funding for any remaining gap within your limits.",
+      "send_scope_lines": [
+        "Records the agreement with Foshan Home Retail Co. (needs your approval when it changes terms)",
+        "Draws ¥149,986.20 on the Bank credit line today",
+        "Estimated cost ¥841.57"
+      ],
       "supplier_cost_display": "¥3,027.77",
       "forward_value_display": "¥0.00",
       "verdict_id": "VER-ad144620d269",

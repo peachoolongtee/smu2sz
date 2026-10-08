@@ -1,44 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { QuoteBlock } from "@/components/approval-card";
-import { Badge, ButtonLink, Card, EmptyState, ErrorState, LoadingBlock, PageHeader, type Tone } from "@/components/ui";
+import { Badge, Button, ButtonLink, Card, EmptyState, ErrorState, LoadingBlock, PageHeader, StatePill, textLinkClass, type Tone } from "@/components/ui";
 import { OpStatusBadge } from "@/components/badges";
+import { ReceiptFacts } from "@/components/receipt-facts";
 import { useI18n } from "@/lib/i18n";
-import type { DecisionState, DecisionView } from "@/lib/types";
+import type { DecisionView } from "@/lib/types";
 import { useDecision } from "@/lib/use-decision";
 
-const stateTone = (s: DecisionState): Tone => {
-  switch (s) {
-    case "AGREED":
-    case "FULFILLED":
-    case "SETTLED":
-    case "EXECUTED":
-      return "ok";
-    case "AUTHORIZATION_REQUIRED":
-    case "NEEDS_CLARIFICATION":
-    case "PARTIALLY_EXECUTED":
-    case "SETTLEMENT_PENDING":
-      return "warn";
-    case "FAILED":
-    case "MISSED":
-    case "REVOKED":
-      return "bad";
-    case "RESPONSE_READY":
-    case "RECEIVED":
-      return "info";
-    default:
-      return "neutral";
-  }
-};
-
 /** A label above its value; the value is the server's own words. */
-function Fact({ label, children, testId }: { label: string; children: React.ReactNode; testId?: string }) {
+function Fact({ label, children, testId, figure = false }: { label: string; children: React.ReactNode; testId?: string; figure?: boolean }) {
   return (
     <div className="min-w-0">
       <dt className="text-xs font-medium text-ink-3">{label}</dt>
-      <dd className="break-words text-sm text-ink" data-testid={testId}>
+      <dd className={`break-words text-sm text-ink ${figure ? "font-semibold tabular-nums" : ""}`} data-testid={testId}>
         {children}
       </dd>
     </div>
@@ -49,25 +26,34 @@ function RecordBody({ d }: { d: DecisionView }) {
   const { t } = useI18n();
   const sent = d.response?.sent ?? null;
   const dealHome = d.family === "DEAL" ? "/deals" : "/approvals";
+  // The server chooses the tone of the state; a state that waits for the owner, or leaves something short, is the warning tone, never a calm "done".
+  const tone: Tone = d.state_tone ?? (d.residual ? "warn" : "neutral");
+  const awaitsOwner = d.authorization?.status === "PENDING";
   return (
-    <div className="space-y-5">
-      <Card id="record-status" tone={stateTone(d.state) === "bad" ? "bad" : undefined}>
+    <div className="space-y-6">
+      <Card id="record-status" tone={tone === "bad" ? "bad" : tone === "warn" || d.residual || awaitsOwner ? "warn" : undefined}>
         <div className="flex flex-wrap items-center gap-3">
-          <span data-testid="record-state" data-state={d.state}>
-            <Badge tone={stateTone(d.state)} className="px-3 py-1 text-sm">
-              {d.state_text}
-            </Badge>
+          <span data-testid="record-state" data-state={d.state} data-tone={tone}>
+            <StatePill tone={tone}>{d.state_text}</StatePill>
           </span>
           <p className="min-w-0 flex-1 basis-64 text-sm text-ink" data-testid="record-waiting">
             {d.waiting_for.text}
           </p>
         </div>
+        {/* Waiting for the owner: the one primary is the question to answer. */}
+        {awaitsOwner && d.authorization ? (
+          <p className="mt-3">
+            <ButtonLink href={`/approvals#approval-${d.authorization.approval_id}`} variant="primary" data-testid="record-review">
+              {t("biz.review")}
+            </ButtonLink>
+          </p>
+        ) : null}
         <p className="mt-3 text-sm text-ink-2" data-testid="record-execution">
           {d.execution.summary_text}
         </p>
         <dl className="mt-4 grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-4">
           {d.counterparty_name ? <Fact label={t("rec.counterparty")}>{d.counterparty_name}</Fact> : null}
-          {d.amount_display ? <Fact label={t("biz.amount")}>{d.amount_display}</Fact> : null}
+          {d.amount_display ? <Fact label={t("biz.amount")} figure>{d.amount_display}</Fact> : null}
           {d.opened_when ? <Fact label={t("rec.opened")}>{d.opened_when}</Fact> : null}
           {d.updated_when ? <Fact label={t("rec.updated")}>{d.updated_when}</Fact> : null}
         </dl>
@@ -76,10 +62,10 @@ function RecordBody({ d }: { d: DecisionView }) {
             <p className="text-xs font-medium text-ink-3">{t("rec.remaining")}</p>
             <p className="mt-0.5 text-sm text-ink">{d.residual?.text ?? d.remaining_task.text}</p>
             {d.remaining_task.links.length ? (
-              <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm">
+              <ul className="mt-2 flex flex-wrap gap-x-2 gap-y-1 text-sm">
                 {d.remaining_task.links.map((l) => (
                   <li key={l.href}>
-                    <Link href={l.href} className="font-medium text-brand-700 underline underline-offset-2">
+                    <Link href={l.href} className={textLinkClass}>
                       {l.label}
                     </Link>
                   </li>
@@ -112,7 +98,7 @@ function RecordBody({ d }: { d: DecisionView }) {
               {d.response.counters.map((c) => (
                 <li key={c.id} className="flex flex-wrap items-baseline justify-between gap-x-4 py-2">
                   <span className="font-medium text-ink">
-                    {c.label}
+                    {c.label_text ?? c.label}
                     {c.id === d.response?.recommended_counter_id ? <Badge tone="brand" className="ml-2">{t("biz.deals.option.recommended")}</Badge> : null}
                   </span>
                   <span className="tabular-nums text-ink-2">
@@ -129,7 +115,7 @@ function RecordBody({ d }: { d: DecisionView }) {
             ) : sent.recorded ? (
               <div className="text-sm text-ink">
                 <p>
-                  {sent.chosen_label ? t("rec.sent.chosen", { label: sent.chosen_label }) : t("rec.sent.unbound")} {t("rec.sent.simulated")}
+                  {sent.chosen_label ? t("rec.sent.chosen", { label: sent.chosen_label_text ?? sent.chosen_label }) : t("rec.sent.unbound")} {t("rec.sent.simulated")}
                 </p>
                 {sent.economics ? (
                   <p className="mt-0.5 text-xs text-ink-2">
@@ -160,7 +146,7 @@ function RecordBody({ d }: { d: DecisionView }) {
             {d.authorization ? (
               <>
                 <Fact label={t("rec.approval")} testId="record-approval">
-                  <Link href={`/approvals#approval-${d.authorization.approval_id}`} className="font-medium text-brand-700 underline underline-offset-2">
+                  <Link href={`/approvals#approval-${d.authorization.approval_id}`} className={textLinkClass}>
                     {t(d.authorization.status === "PENDING" ? "rec.approval.pending" : d.authorization.status === "APPROVED" ? "rec.approval.approved" : "rec.approval.rejected")}
                   </Link>
                 </Fact>
@@ -200,7 +186,7 @@ function RecordBody({ d }: { d: DecisionView }) {
               <li key={l.lot_id} className="flex flex-wrap items-baseline gap-x-2">
                 <span className="font-semibold tabular-nums text-ink">{l.principal_display}</span>
                 <span className="text-ink-2">{l.facility_name}</span>
-                <span className={`text-xs font-medium ${l.settled ? "text-ok-fg" : "text-ink-3"}`}>{l.settled ? t("verdict.exec.landed") : t("verdict.exec.arriving", { when: l.arrival_when })}</span>
+                <span className={`text-xs font-medium ${l.settled ? "text-ok-fg" : "text-ink-3"}`}>{l.settled ? t("deal.cashReceived", { when: l.arrival_when }) : t("deal.cashArrives", { when: l.arrival_when })}</span>
               </li>
             ))}
           </ul>
@@ -213,6 +199,7 @@ function RecordBody({ d }: { d: DecisionView }) {
             {[...d.promises, ...d.receipts].map((x, i) => (
               <li key={i} className="break-words">
                 {x.detail_when ?? x.detail}
+                <ReceiptFacts facts={x as Record<string, string>} testId={`record-receipt-facts-${i}`} windowText={(x as { window_state_text?: string | null }).window_state_text} />
               </li>
             ))}
           </ul>
@@ -220,7 +207,7 @@ function RecordBody({ d }: { d: DecisionView }) {
       ) : null}
 
       <p className="text-xs text-ink-3">
-        <Link href={dealHome} className="font-medium text-brand-700 underline underline-offset-2">
+        <Link href={dealHome} className={textLinkClass}>
           {d.family === "DEAL" ? t("rec.openDeals") : t("rec.openApprovals")}
         </Link>
       </p>
@@ -246,15 +233,18 @@ export default function DecisionPage() {
     }
   })();
   const record = useDecision(id);
+  const router = useRouter();
+  // Back goes where the owner came from (Home, Activity, an approval); a record opened on its own has no page behind it and falls back to Activity.
+  const back = () => (typeof window !== "undefined" && window.history.length > 1 ? router.back() : router.push("/activity"));
   return (
     <>
       <PageHeader
         title={record.data ? record.data.headline : t("rec.title")}
         subtitle={record.data ? undefined : t("rec.subtitle")}
         actions={
-          <ButtonLink href="/activity" size="sm">
+          <Button size="sm" onClick={back} data-testid="record-back">
             {t("rec.back")}
-          </ButtonLink>
+          </Button>
         }
       />
       {record.error ? (

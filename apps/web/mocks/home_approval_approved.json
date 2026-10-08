@@ -42,6 +42,8 @@
     "residual": null,
     "execution_status": "EXECUTED",
     "reason": "The yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval.",
+    "result_state_text": "Approved, cash arrives in 3 days",
+    "result_tone": "info",
     "result_message": "¥200,000.00 of invoice financing was requested today; the cash lands in 3 days.",
     "decided_when": "today",
     "created_when": "today"
@@ -93,5 +95,7 @@
     "status": "EXECUTED",
     "summary_text": "¥200,000.00 of invoice financing was requested today; the cash lands in 3 days."
   },
+  "result_state_text": "Approved, cash arrives in 3 days",
+  "result_tone": "info",
   "execution_status": "EXECUTED"
 }

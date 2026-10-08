@@ -1,5 +1,6 @@
 {
   "day": 34,
+  "lang": "en",
   "basis": "CONSERVATIVE",
   "state_version": 7,
   "projected_offer_id": null,
@@ -52,12 +53,15 @@
           "above_apr_cap": true,
           "executes_automatically": false,
           "amount_display": "¥200,000.00",
-          "cost_display": "¥1,782.19"
+          "cost_display": "¥1,782.19",
+          "note_when": "submit today: the invoice is open, buyer-confirmed and not yet due"
         }
       ],
       "actionable": true,
       "basis": "CONSERVATIVE",
-      "amount_display": "¥200,000.00"
+      "amount_display": "¥200,000.00",
+      "title_when": "Reserve breach ahead in 8 days",
+      "detail_when": "Projected cash closes at ¥100,000.00 in 8 days, ¥200,000.00 below your minimum cash reserve; the gap peaks at ¥200,000.00 in 8 days and lasts until 12 days from now. A funding plan is available: finance an invoice on Invoice financing (onboarded platform) ¥200,000.00, cost ¥1,782.19 (32.5% a year for 10 days); that is above the 15.00% limit you signed for funding without your approval, so it needs your approval before it runs."
     },
     {
       "id": "ALERT-PASTDUE-RCV-A",
@@ -93,12 +97,15 @@
           "cost_formula": "",
           "above_apr_cap": false,
           "executes_automatically": false,
-          "amount_display": "¥162,800.00"
+          "amount_display": "¥162,800.00",
+          "note_when": "chase the buyer; record the receipt when the money lands"
         }
       ],
       "actionable": false,
       "basis": "CONSERVATIVE",
-      "amount_display": "¥162,800.00"
+      "amount_display": "¥162,800.00",
+      "title_when": "Receivable the ¥420,000.00 invoice to Foshan Home Retail Co. due 2 days ago is 2 days past due",
+      "detail_when": "¥162,800.00 outstanding from Foshan Home Retail Co. was due 2 days ago and is still OPEN. The cash forecast no longer counts on a dated receipt."
     },
     {
       "id": "ALERT-HEADROOM-34",
@@ -119,8 +126,13 @@
       "suggested": [],
       "actionable": false,
       "basis": "CONSERVATIVE",
-      "amount_display": "¥0.00"
+      "amount_display": "¥0.00",
+      "title_when": "Cash is close to your minimum today",
+      "detail_when": "Cash stays above your minimum cash reserve by only ¥0.00 today (8 days with less than 10% of your minimum cash reserve to spare)."
     }
   ],
-  "note": "A suggested operation is executed only through POST /alerts/{id}/act or POST /operations, never by itself."
+  "note": "A suggested operation is executed only through POST /alerts/{id}/act or POST /operations, never by itself.",
+  "note_when": "A suggested step runs only when you choose it. Nothing runs by itself.",
+  "last_read_when": "today",
+  "last_read_day": 34
 }

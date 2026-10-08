@@ -87,7 +87,7 @@ test("day 34 without a receipt: the Home says it is below the reserve today, nev
   await expect(page.getByText("Below reserve today").first()).toBeVisible();
 });
 
-test("a part-paid promise names its four facts and the window under the server's sentence", async ({ page }) => {
+test("a part-paid promise: Home says it once in the server's sentence, Receivables names the four facts and the window", async ({ page }) => {
   await story(page, "tl-mock-no-receipt", "half");
   await page.goto("/demo");
   await page.getByTestId("home-days").fill("34");
@@ -97,19 +97,17 @@ test("a part-paid promise names its four facts and the window under the server's
   // The late row may sit behind "Show more"; open it when it does.
   const more = page.getByTestId("home-changes-more");
   if (await more.count()) await more.locator("> summary").click();
-  const late = page.getByTestId("home-change-LATE").filter({ has: page.getByTestId("home-change-facts") });
+  // On Home the server's sentence names all four facts and the window, so there are no tiles beneath it (a fact is said once).
+  const late = page.getByTestId("home-change-LATE").filter({ hasText: "Received ¥127,506.90" });
   await expect(late).toHaveCount(1);
-  // The sentence stays; the facts are named beneath it.
-  await expect(late.getByTestId("home-change-text")).toContainText("Received ¥127,506.90 from Foshan Home Retail Co.");
-  const facts = late.getByTestId("home-change-facts");
-  await expect(facts.getByTestId("home-change-facts-received")).toContainText("Cash received");
-  await expect(facts.getByTestId("home-change-facts-received")).toContainText("¥127,506.90");
-  await expect(facts.getByTestId("home-change-facts-cleared")).toContainText("Invoice face cleared");
-  await expect(facts.getByTestId("home-change-facts-cleared")).toContainText("¥128,600.00");
-  await expect(facts.getByTestId("home-change-facts-discount")).toContainText("¥1,093.10");
-  await expect(facts.getByTestId("home-change-facts-remaining")).toContainText("Remaining balance");
-  await expect(facts.getByTestId("home-change-facts-remaining")).toContainText("¥291,400.00");
-  await expect(facts).toContainText("Early-payment window ended");
-  // A row without the facts renders no list.
-  await expect(page.getByTestId("home-change-facts")).toHaveCount(1);
+  await expect(late.getByTestId("home-change-text")).toContainText("it cleared ¥128,600.00 of the invoice, including a ¥1,093.10 early-payment discount; ¥291,400.00 remains and is overdue; the early-payment window has ended");
+  await expect(page.getByTestId("home-change-facts")).toHaveCount(0);
+  // The Receivables receipt row is where the four facts are named: a short lead, the facts (the balance largest) and the window in words.
+  await page.goto("/receivables");
+  const facts = page.getByTestId("receipt-facts-rec-receipt-1");
+  await expect(page.getByTestId("receipt-lead-rec-receipt-1")).toContainText("Part-paid by Foshan Home Retail Co.");
+  await expect(facts.getByTestId("receipt-facts-rec-receipt-1-received")).toContainText("Cash received");
+  await expect(facts.getByTestId("receipt-facts-rec-receipt-1-remaining")).toContainText("¥291,400.00");
+  await expect(facts.getByTestId("receipt-facts-rec-receipt-1-remaining").locator("dd")).toHaveClass(/font-bold/);
+  await expect(facts.getByTestId("receipt-facts-rec-receipt-1-window")).toHaveText("The early-payment window has ended");
 });

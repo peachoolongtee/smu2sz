@@ -80,7 +80,8 @@
       "decision_link": {
         "decision_id": "deal:OFF-f806f79b6c21",
         "href": "/decisions/deal:OFF-f806f79b6c21"
-      }
+      },
+      "why_it_matters_changed": true
     },
     {
       "approval_id": null,
@@ -110,7 +111,8 @@
       "decision_link": {
         "decision_id": "deal:OFF-f806f79b6c21",
         "href": "/decisions/deal:OFF-f806f79b6c21"
-      }
+      },
+      "why_it_matters_changed": false
     },
     {
       "approval_id": null,
@@ -128,7 +130,7 @@
       "day": 2,
       "requested_by": "SYSTEM",
       "summary": "Clock moved from day 0 to day 2: 0 scheduled flow(s) posted (net ¥0.00), 0 invoice(s) issued, 0 commitment(s) expired",
-      "message_when": "Clock moved from 34 days ago to 32 days ago: 0 scheduled flow(s) posted (net ¥0.00), 0 invoice(s) issued, 0 commitment(s) expired",
+      "message_when": "Clock moved from 34 days ago to 32 days ago: 0 scheduled flows posted (net ¥0.00), 0 invoices issued, 0 commitments expired",
       "event_text": "2 days passed; nothing was due.",
       "event_detail": null,
       "what_changed": "2 days passed; nothing was due.",
@@ -137,7 +139,8 @@
       "what_remains": null,
       "approval_label": null,
       "current_decision_state": null,
-      "decision_link": null
+      "decision_link": null,
+      "why_it_matters_changed": false
     },
     {
       "approval_id": null,
@@ -164,7 +167,8 @@
       "what_remains": null,
       "approval_label": null,
       "current_decision_state": null,
-      "decision_link": null
+      "decision_link": null,
+      "why_it_matters_changed": false
     },
     {
       "approval_id": null,
@@ -182,7 +186,7 @@
       "day": 30,
       "requested_by": "SYSTEM",
       "summary": "Clock moved from day 2 to day 30: 2 scheduled flow(s) posted (net −¥460,000.00), 1 invoice(s) issued, 0 commitment(s) expired, 1 new scheduled flow(s) recorded",
-      "message_when": "Clock moved from 32 days ago to 4 days ago: 2 scheduled flow(s) posted (net −¥460,000.00), 1 invoice(s) issued, 0 commitment(s) expired, 1 new scheduled flow(s) recorded",
+      "message_when": "Clock moved from 32 days ago to 4 days ago: 2 scheduled flows posted (net −¥460,000.00), 1 invoice issued, 0 commitments expired, 1 new scheduled flow(s) recorded",
       "event_text": "28 days passed: 2 scheduled cash movements were recorded and one invoice was issued.",
       "event_detail": null,
       "what_changed": "28 days passed: 2 scheduled cash movements were recorded and one invoice was issued.",
@@ -191,7 +195,8 @@
       "what_remains": null,
       "approval_label": null,
       "current_decision_state": null,
-      "decision_link": null
+      "decision_link": null,
+      "why_it_matters_changed": false
     },
     {
       "approval_id": null,
@@ -209,7 +214,7 @@
       "day": 34,
       "requested_by": "SYSTEM",
       "summary": "Clock moved from day 30 to day 34: 0 scheduled flow(s) posted (net ¥0.00), 1 invoice(s) issued, 0 commitment(s) expired, 1 existing-debt payment(s) posted (−¥45,000.00)",
-      "message_when": "Clock moved from 4 days ago to today: 0 scheduled flow(s) posted (net ¥0.00), 1 invoice(s) issued, 0 commitment(s) expired, 1 existing-debt payment(s) posted (−¥45,000.00)",
+      "message_when": "Clock moved from 4 days ago to today: 0 scheduled flows posted (net ¥0.00), 1 invoice issued, 0 commitments expired, 1 existing-debt payment posted (−¥45,000.00)",
       "event_text": "4 days passed: the ¥45,000.00 debt payment went out and one invoice was issued.",
       "event_detail": null,
       "what_changed": "4 days passed: the ¥45,000.00 debt payment went out and one invoice was issued.",
@@ -218,7 +223,8 @@
       "what_remains": null,
       "approval_label": null,
       "current_decision_state": null,
-      "decision_link": null
+      "decision_link": null,
+      "why_it_matters_changed": false
     }
   ],
   "chain_valid": true,
@@ -238,5 +244,8 @@
       "is_fixture_example": true,
       "text": "Example only: nothing has been refused in your books yet. A message from a sender you do not know would be set aside here."
     }
-  }
+  },
+  "lang": "en",
+  "last_read_when": "today",
+  "last_read_day": 34
 }

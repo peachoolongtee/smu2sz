@@ -67,7 +67,7 @@ test("the six scenes run with Next: the buyer asks, FLOW decides, the agreement 
   // Scene 3, the agreement and its action: the recommended counter is sent bound to what was shown; the live agreement, then cash now.
   await walkStory(page, 1, 2);
   await expect(page).toHaveURL(/\/deals#commitments/);
-  await expect(page.getByTestId("deal-steps")).toHaveAttribute("data-state", "AGREED");
+  await expect(page.getByTestId("deal-state-chip")).toHaveAttribute("data-state", "AGREED");
   await expect(page.getByTestId("commitments-live")).toBeVisible();
   await expect(narration).toContainText("Agreed.");
   await walkStory(page, 1, 3);

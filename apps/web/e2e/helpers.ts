@@ -68,3 +68,9 @@ export async function walkAway(page: Page): Promise<void> {
   await page.getByTestId("more-run-reworded").click();
   await expect(page).toHaveURL(/\/verdict/);
 }
+
+/** A counter's Send asks once, as Home's Run does: the first press shows what will happen, the second sends exactly that. `scope` holds the button. */
+export async function sendCounter(scope: Page | Locator, option = ""): Promise<void> {
+  await scope.getByTestId(option ? `deal-send-${option}` : "deal-send").click();
+  await scope.getByTestId(option ? `deal-send-confirm-${option}` : "deal-send-confirm").click();
+}

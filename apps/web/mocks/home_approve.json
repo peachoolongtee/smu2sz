@@ -28,7 +28,8 @@
       "decision_link": {
         "decision_id": "alert:ALERT-RESERVE-42:v7",
         "href": "/decisions/alert:ALERT-RESERVE-42:v7"
-      }
+      },
+      "why_it_matters_changed": true
     }
   ]
 }

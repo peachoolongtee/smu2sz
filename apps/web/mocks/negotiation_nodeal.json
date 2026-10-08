@@ -17,6 +17,7 @@
       "round": 1,
       "counter_id": "CTR-193394b6ba8b",
       "counter_label": "Option A",
+      "counter_label_when": "Option A",
       "buyer_response": "REFUSE",
       "buyer_text": "Round 1. We have considered Option A and cannot accept as proposed. We propose: early settlement of invoice RCV-A (¥420,000.00) on day 2 at a 1.15% discount; 60-day payment terms on future invoices; a 0.50% rebate on next quarter's purchases of up to ¥400,000.00."
     },
@@ -24,6 +25,7 @@
       "round": 2,
       "counter_id": "CTR-6b07cbf70441",
       "counter_label": "Option B",
+      "counter_label_when": "Option B",
       "buyer_response": "REFUSE",
       "buyer_text": "Round 2. We have considered Option B and cannot accept as proposed. We propose: early settlement of invoice RCV-A (¥420,000.00) on day 2 at a 1.10% discount; 60-day payment terms on future invoices."
     },
@@ -31,6 +33,7 @@
       "round": 3,
       "counter_id": "CTR-193394b6ba8b",
       "counter_label": "Option A",
+      "counter_label_when": "Option A",
       "buyer_response": "REFUSE",
       "buyer_text": "Round 3. We cannot accept Option A. This is our final round, so we will keep our existing terms."
     }
@@ -111,7 +114,8 @@
         "approval_reason": "",
         "executable_now": true,
         "not_executable_reason": "",
-        "display": "¥841.64"
+        "display": "¥841.64",
+        "label_when": "Bank credit line: draw ¥150,000.00, repaid in 32 days"
       },
       {
         "label": "Invoice financing (onboarded platform): advance ¥255,000.00 on RCV-A",
@@ -122,7 +126,8 @@
         "approval_reason": "",
         "executable_now": true,
         "not_executable_reason": "",
-        "display": "¥2,272.29"
+        "display": "¥2,272.29",
+        "label_when": "Invoice financing (onboarded platform): advance ¥255,000.00 on the ¥420,000.00 invoice to Foshan Home Retail Co. due in 32 days"
       }
     ],
     "total_cost_fen": 311393,
@@ -138,12 +143,16 @@
       {
         "label": "Discount the whole invoice at 1.2%",
         "reasons": [],
-        "note": "cost ¥5,040.00; admissible but dearer than the selected plan"
+        "note": "cost ¥5,040.00; admissible but dearer than the selected plan",
+        "label_when": "Discount the whole invoice at 1.2%",
+        "note_when": "cost ¥5,040.00; within your limits but dearer than the selected plan"
       },
       {
         "label": "Line + early payment on part of the invoice at 1.2%",
         "reasons": [],
-        "note": "cost ¥3,938.81; admissible but dearer than the selected plan"
+        "note": "cost ¥3,938.81; admissible but dearer than the selected plan",
+        "label_when": "Line + early payment on part of the invoice at 1.2%",
+        "note_when": "cost ¥3,938.81; within your limits but dearer than the selected plan"
       },
       {
         "label": "Line + guaranteed loan",
@@ -151,14 +160,18 @@
           "UNCOMMITTED_FACILITY",
           "LEAD_TIME_TOO_LONG"
         ],
-        "note": "not applied; cash on day 21, gap opens on day 12"
+        "note": "not applied; cash on day 21, gap opens on day 12",
+        "label_when": "Line + guaranteed loan",
+        "note_when": "not applied; cash in 21 days, gap opens in 12 days"
       },
       {
         "label": "Line only",
         "reasons": [
           "RESERVE_BREACH"
         ],
-        "note": "cost ¥841.64; RESERVE_BREACH on day 12"
+        "note": "cost ¥841.64; RESERVE_BREACH on day 12",
+        "label_when": "Line only",
+        "note_when": "cost ¥841.64; RESERVE_BREACH in 12 days"
       }
     ],
     "label": "committed plan: ¥841.64 + ¥2,272.29 = ¥3,113.93",
@@ -168,8 +181,11 @@
     "not_executable_reason": "",
     "available_from_day": null,
     "need_display": "¥405,000.00",
-    "total_cost_display": "¥3,113.93"
+    "total_cost_display": "¥3,113.93",
+    "label_when": "committed plan: ¥841.64 + ¥2,272.29 = ¥3,113.93"
   },
   "message": "NO DEAL after bounded rounds; the Debt Desk funds the near-term gap.",
+  "message_when": "No deal after the buyer's replies; the near-term gap is funded another way.",
+  "lang": "en",
   "transcript_hash": "aa83758d389c111dd347f3ccb0e13324a700213bb4eae7cd7d136150bdce8659"
 }

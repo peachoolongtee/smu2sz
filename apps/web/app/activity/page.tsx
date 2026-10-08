@@ -49,7 +49,7 @@ function ApprovalLine({ o }: { o: OperationView }) {
 export default function ActivityPage() {
   const { t, te, lang } = useI18n();
   const ledger = useAsync(() => getLedger(lang), [lang]);
-  const audit = useAsync(getAudit, []);
+  const audit = useAsync(getAudit, [lang]);
   const books = useAsync(getState, []);
   const data = ledger.data;
   // Ids in the executor's sentences become names on this screen (the ids stay in the audit details).
@@ -63,6 +63,7 @@ export default function ActivityPage() {
   const ops = data ? [...data.operations].reverse() : [];
   // Today, for the distances the Business pages show instead of day numbers (the books read carries the clock).
   const today = books.data?.day ?? ops[0]?.day ?? 0;
+  const nowLine = ops.find((o) => o.why_it_matters && o.why_it_matters_as_of === "now")?.why_it_matters ?? null;
   const refusedEmpty = !!audit.data && !audit.error && !audit.data.events.length && !audit.data.refusals.length;
 
   return (
@@ -89,8 +90,15 @@ export default function ActivityPage() {
       ) : !data ? (
         <LoadingBlock rows={4} />
       ) : (
-        <div className="space-y-5">
+        <div className="space-y-6">
           <Card id="activity-timeline" title={t("biz.activity.timeline")} subtitle={t("biz.activity.timeline.sub")}>
+            {/* Today's forecast is one sentence, said once above the timeline; a row says its own only when it differs from the one before. */}
+            {nowLine ? (
+              <p className="mb-3 break-words text-sm text-ink" data-testid="activity-now">
+                <Chip className="mr-1.5">{t("biz.activity.now")}</Chip>
+                {nowLine}
+              </p>
+            ) : null}
             {ops.length ? (
               <ol className="motion-rise divide-y divide-line" data-testid="activity-list">
                 {ops.map((o) => (
@@ -98,11 +106,9 @@ export default function ActivityPage() {
                     <div className="py-3">
                       <p className="break-words text-sm font-medium text-ink" data-testid="activity-event">{o.what_changed || o.event_text || o.message_when || words(o.summary) || kindLabel(o.kind)}</p>
                       {o.event_detail ? <p className="break-words text-xs text-ink-2" data-testid="activity-detail">{o.event_detail}</p> : null}
-                      {o.why_it_matters ? (
-                        <p className="mt-1 break-words text-xs text-ink-2" data-testid="activity-why">
-                          <span className="font-medium text-ink-3">{t("biz.activity.why")}:</span>{" "}
-                          {o.why_it_matters_as_of === "now" ? <Chip className="mr-1">{t("biz.activity.now")}</Chip> : null}
-                          {o.why_it_matters}
+                      {o.why_it_matters && o.why_it_matters_as_of !== "now" && o.why_it_matters_changed !== false ? (
+                        <p className="mt-1 break-words text-sm text-ink-2" data-testid="activity-why">
+                          <span className="font-medium text-ink-3">{t("biz.activity.why")}:</span> {o.why_it_matters}
                         </p>
                       ) : null}
                       {o.what_remains ? (

@@ -11,25 +11,23 @@ import { NextActionBlock } from "@/components/business/next-action";
 import { RemainingTaskBlock } from "@/components/business/open-decisions";
 import { FixResult, useFixAlert } from "@/components/home/fix-alert";
 import { ChevronRightIcon } from "@/components/icons";
-import { Badge, Card, ErrorState, Formula, LoadingBlock, PageHeader, Stat, TableWrap, tableCls, tdCls, thCls } from "@/components/ui";
+import { Badge, Card, ErrorState, Formula, LoadingBlock, PageHeader, Stat, TableWrap, tableCls, tdCls, textLinkClass, thCls } from "@/components/ui";
 import { getHome, getPriceCurve, getTrajectory, planFunding } from "@/lib/api";
 import { onSignedIn } from "@/lib/auth";
 import { bump, useDemo } from "@/lib/demo-store";
 import { useI18n } from "@/lib/i18n";
 import type { FundingView } from "@/lib/types";
 import { useAsync, useStrategyAsync } from "@/lib/use-async";
+import { versusMinimum } from "@/lib/minimum";
 import { useNarrow } from "@/lib/use-narrow";
 import { Disclosure } from "@/components/business/kit";
 
 /** "Lowest forecast headroom −¥405k": the second line of the caption under the lowest point. */
-function LowestHeadroom({ short }: { short: string | undefined }) {
+function LowestHeadroom({ short, fen }: { short: string | undefined; fen?: number }) {
   const { t } = useI18n();
   if (short === undefined) return null;
-  return (
-    <span className="block">
-      {t("biz.lowestHeadroom")} <span className="font-semibold tabular-nums text-ink-2">{short}</span>
-    </span>
-  );
+  const v = versusMinimum(short, fen, true);
+  return <span className="block font-semibold tabular-nums text-ink-2">{t(v.key, { amount: v.amount })}</span>;
 }
 
 /**
@@ -105,7 +103,7 @@ export default function CashPage() {
         caption={
           h.cash.headroom_short !== undefined ? (
             <>
-              {t("biz.headroom")} <span className="font-semibold tabular-nums text-ink-2" data-testid="cash-headroom">{h.cash.headroom_short}</span>
+              <span className="font-semibold tabular-nums text-ink-2" data-testid="cash-headroom">{t(versusMinimum(h.cash.headroom_short, h.cash.headroom_fen, false).key, { amount: versusMinimum(h.cash.headroom_short, h.cash.headroom_fen, false).amount })}</span>
             </>
           ) : undefined
         }
@@ -119,7 +117,7 @@ export default function CashPage() {
           caption={
             <>
               {h.cash.first_breach_when && !h.cash.below_reserve_today ? <span className="block">{h.cash.first_breach_when}</span> : null}
-              <LowestHeadroom short={h.cash.lowest_headroom_short} />
+              <LowestHeadroom short={h.cash.lowest_headroom_short} fen={h.cash.lowest_headroom_fen} />
             </>
           }
         />
@@ -140,7 +138,7 @@ export default function CashPage() {
             caption={
               <>
                 {h.cash.lowest_when ? <span className="block">{h.cash.lowest_when}</span> : null}
-                <LowestHeadroom short={h.cash.lowest_headroom_short} />
+                <LowestHeadroom short={h.cash.lowest_headroom_short} fen={h.cash.lowest_headroom_fen} />
               </>
             }
           />
@@ -180,7 +178,7 @@ export default function CashPage() {
             ))}
           </ul>
           <p className="text-xs text-ink-3">
-            <Link href="/funding" className="font-medium text-brand-700 underline underline-offset-2">
+            <Link href="/funding" className={textLinkClass}>
               {t("biz.cash.fullDesk")}
             </Link>
           </p>
@@ -243,7 +241,7 @@ export default function CashPage() {
               {narrow ? null : figures}
             </section>
 
-            <PartialRead missing={h.partial?.missing} onRetry={home.reload} />
+            <PartialRead partial={h.partial} onRetry={home.reload} />
             <FixResult result={fixer.result} error={fixer.error} changed={fixer.changed} slow={fixer.slow} rechecked={fixer.rechecked} onRecheck={fixer.recheck} />
             {h.next_action ? (
               <NextActionBlock a={h.next_action} stateVersion={h.state_version} fixer={fixer} />

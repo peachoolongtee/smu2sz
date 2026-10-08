@@ -1297,7 +1297,8 @@
       "what_remains": null,
       "approval_label": null,
       "current_decision_state": null,
-      "decision_link": null
+      "decision_link": null,
+      "why_it_matters_changed": true
     },
     {
       "day": 0,
@@ -1317,7 +1318,8 @@
       "decision_link": {
         "decision_id": "deal:OFF-f806f79b6c21",
         "href": "/decisions/deal:OFF-f806f79b6c21"
-      }
+      },
+      "why_it_matters_changed": false
     },
     {
       "day": 0,
@@ -1337,7 +1339,8 @@
       "decision_link": {
         "decision_id": "deal:OFF-f806f79b6c21",
         "href": "/decisions/deal:OFF-f806f79b6c21"
-      }
+      },
+      "why_it_matters_changed": false
     }
   ],
   "receivables": {
@@ -1364,8 +1367,8 @@
     {
       "id": "ALERT-HEADROOM-30",
       "kind": "RESERVE_HEADROOM_LOW",
-      "title": "Reserve headroom thin in 28 days",
-      "detail": "Cash stays above the floor but only by ¥0.00 in 28 days (17 day(s) under 10% of the floor).",
+      "title": "Cash is close to your minimum in 28 days",
+      "detail": "Cash stays above your minimum cash reserve by only ¥0.00 in 28 days (17 days with less than 10% of your minimum cash reserve to spare).",
       "day": 30,
       "when": "in 28 days"
     }
@@ -1410,5 +1413,6 @@
     "WARNING": 1,
     "INFO": 0
   },
-  "note_basis": "Conservative projection of today's books: unconfirmed receipts are not counted."
+  "note_basis": "Conservative projection of today's books: unconfirmed receipts are not counted.",
+  "partial": null
 }

@@ -11,6 +11,7 @@ import { PartialRead, ReadWhen } from "@/components/business/freshness";
 import { Disclosure } from "@/components/business/kit";
 import { chaseIds, shortfallStretch } from "@/lib/chase";
 import { ReceivablesTable } from "@/components/business/receivables-table";
+import { ChasePayment } from "@/components/business/chase-payment";
 
 /**
  * Receivables, in the order the owner asks: who owes me and how much (the summary, from the home read), when and who is
@@ -19,7 +20,7 @@ import { ReceivablesTable } from "@/components/business/receivables-table";
  */
 export default function ReceivablesPage() {
   const { t, te, lang } = useI18n();
-  const recon = useAsync(getReconciliation, []);
+  const recon = useAsync(getReconciliation, [lang]);
   const books = useAsync(getState, []);
   const home = useAsync(() => getHome(lang), [lang]);
   // The worth of collecting each invoice (strategy MVP, build-time flag): null while loading, when the server has it off, or
@@ -63,6 +64,13 @@ export default function ReceivablesPage() {
           <section id="recv-summary" aria-label={t("nav.receivables")} data-testid="recv-summary">
             {/* How fresh the summary is: the report's own "when", else the home read's. */}
             <ReadWhen when={data.last_read_when ?? home.data?.cash.last_read_when} testId="recv-read-when" className="mb-2" />
+            {/* What to do first, in the server's sentence, with the way to act beside it. */}
+            {worth?.rows.length && worth.top_action ? (
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-tile border border-line bg-surface px-4 py-3 shadow-card" data-testid="recv-top-action">
+                <p className="min-w-0 flex-1 basis-64 text-sm font-medium text-ink">{worth.top_action}</p>
+                {chase.has(worth.rows[0].receivable_id) ? <ChasePayment top receivableId={worth.rows[0].receivable_id} buyer={name(worth.rows[0].buyer_id)} /> : null}
+              </div>
+            ) : null}
             <dl className="grid grid-cols-2 gap-3 sm:grid-cols-3">
               <Stat className="col-span-2 sm:col-span-1" label={t("biz.recv.sum.outstanding")} value={<span data-testid="recv-outstanding">{r.open_total_display}</span>} caption={t("biz.recv.sum.count", { n: r.open_count })} />
               <Stat
@@ -80,7 +88,7 @@ export default function ReceivablesPage() {
             {r.open_count === 0 ? <p className="mt-3 text-sm text-ink-3" data-testid="recv-none">{t("recon.outstanding.empty")}</p> : null}
           </section>
 
-          <PartialRead missing={home.data?.partial?.missing} onRetry={home.reload} />
+          <PartialRead partial={home.data?.partial} onRetry={home.reload} />
 
           {worthRead.error ? (
             <div data-testid="recv-worth-failed">
@@ -121,13 +129,23 @@ export default function ReceivablesPage() {
                         <Badge tone={x.flagged ? "bad" : "ok"}>{te("recstatus", x.status)}</Badge>
                       </span>
                     </div>
-                    <p className="mt-0.5 text-xs text-ink-2">
-                      {x.day !== null ? `${whenText(x.day, data.as_of_day, t)} · ` : ""}
-                      {x.detail_when ?? x.detail}
-                    </p>
-                    <ReceiptFacts facts={x} testId={`receipt-facts-${x.op_id}`} />
+                    {/* A part-paid invoice: a short lead and the four named facts say it once; the long sentence waits behind Audit details. */}
+                    {x.remaining_display ? (
+                      <>
+                        <p className="mt-0.5 text-sm text-ink-2" data-testid={`receipt-lead-${x.op_id}`}>
+                          {t("biz.recv.partPaid", { buyer: name(x.counterparty_id), when: x.day !== null ? whenText(x.day, data.as_of_day, t) : "" })}
+                        </p>
+                        <ReceiptFacts facts={x} testId={`receipt-facts-${x.op_id}`} windowText={x.window_state_text} />
+                      </>
+                    ) : (
+                      <p className="mt-0.5 text-xs text-ink-2">
+                        {x.day !== null ? `${whenText(x.day, data.as_of_day, t)} · ` : ""}
+                        {x.detail_when ?? x.detail}
+                      </p>
+                    )}
                     {/* The record ids (invoice, bank reference) are the audit level. */}
                     <Disclosure className="mt-1" testId={`receipt-audit-${x.op_id}`} summary={t("biz.auditDetails")}>
+                      {x.remaining_display ? <p className="mt-1 text-xs text-ink-2">{x.detail_when ?? x.detail}</p> : null}
                       <p className="mt-1 text-xs text-ink-3">
                         {x.receivable_id}
                         {x.bank_reference ? (

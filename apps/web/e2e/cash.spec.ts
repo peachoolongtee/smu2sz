@@ -27,10 +27,9 @@ test("risk, plan, options, forecast: one set of figures, in the owner's order", 
   const figures = page.getByTestId("cash-figures");
   await expect(figures.locator("dt")).toHaveText(["Cash today", "Minimum cash reserve", "Cash becomes unsafe", "Worst point"]);
   await expect(page.getByTestId("cash-unsafe-when")).toHaveText("in 12 days");
-  await expect(figures).toContainText("Available headroom");
-  await expect(page.getByTestId("cash-headroom")).toHaveText("¥100k");
-  await expect(figures).toContainText("Lowest forecast headroom");
-  await expect(figures).toContainText("−¥405k");
+  await expect(page.getByTestId("cash-headroom")).toHaveText("¥100k above your minimum");
+  await expect(figures).toContainText("Lowest point: ¥405k below your minimum");
+  await expect(figures).toContainText("−¥105k");
   const action = page.getByTestId("home-next-action");
   await expect(action.getByTestId("next-action-title")).toHaveText("Secure ¥405k of funding");
   await expect(action.getByTestId("next-action-cost")).toContainText("¥3,113.93");

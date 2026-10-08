@@ -55,6 +55,7 @@
         "outbound_blocked": false,
         "text_when": "Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥257,200 of this invoice at 0.85%, paid within 2 days.",
         "rationale_when": "Early settlement at 0.85% is cheaper than financing the invoice on the marginal committed source; the line covers the rest of the near-term gap.",
+        "label_when": "Option A",
         "economics": {
           "components": [
             {
@@ -157,6 +158,7 @@
         "outbound_blocked": false,
         "text_when": "55-day terms accepted with a 0.30% price adjustment on future invoices, no rebate.",
         "rationale_when": "The price adjustment covers the per-invoice cost of funding the longer terms on the marginal committed source, so the net forward concession is about zero; on current books with these terms the router's committed plan (committed plan: ¥899.51 + ¥2,806.95 = ¥3,706.46) keeps the reserve. The offered 60-day terms fail their own re-check; 55 days is the longest that passes. Re-checked as an offer, its terms leave a shortfall of ¥85,000.00 in 47 days, funded by the plan: committed plan: ¥1,570.36 (cannot run today).",
+        "label_when": "Option B",
         "economics": {
           "components": [
             {
@@ -187,7 +189,8 @@
       }
     ],
     "reevaluate": false,
-    "message": "The counter changed since you read it; nothing was sent. Review the current counters."
+    "message": "The counter changed since you read it; nothing was sent. Review the current counters.",
+    "message_when": "The counter changed since you read it; nothing was sent. Review the current counters."
   },
   "moved": {
     "code": "COUNTER_CHANGED",
@@ -197,6 +200,7 @@
     "state_version": 3,
     "counters": [],
     "reevaluate": true,
-    "message": "The counter changed since you read it; nothing was sent. Review the current counters."
+    "message": "The counter changed since you read it; nothing was sent. Review the current counters.",
+    "message_when": "The counter changed since you read it; nothing was sent. Review the current counters."
   }
 }

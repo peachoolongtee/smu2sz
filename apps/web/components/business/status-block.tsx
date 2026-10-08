@@ -4,6 +4,7 @@ import { ReadWhen } from "@/components/business/freshness";
 import { Disclosure } from "@/components/business/kit";
 import { Stat } from "@/components/ui";
 import { useI18n } from "@/lib/i18n";
+import { versusMinimum } from "@/lib/minimum";
 import { useNarrow } from "@/lib/use-narrow";
 import type { HomeStatus, HomeView } from "@/lib/types";
 
@@ -26,12 +27,13 @@ function InTransitLines({ transit }: { transit: NonNullable<HomeView["cash"]["in
 }
 
 /** "Lowest forecast headroom −¥200k", the second line of the caption under the lowest point. */
-function HeadroomLowest({ short }: { short: string | undefined }) {
+function HeadroomLowest({ short, fen }: { short: string | undefined; fen?: number }) {
   const { t } = useI18n();
   if (short === undefined) return null;
+  const v = versusMinimum(short, fen, true);
   return (
-    <span className="block">
-      {t("biz.lowestHeadroom")} <span className="font-semibold tabular-nums text-on-deep" data-testid="home-headroom-lowest">{short}</span>
+    <span className="block font-semibold tabular-nums text-on-deep" data-testid="home-headroom-lowest">
+      {t(v.key, { amount: v.amount })}
     </span>
   );
 }
@@ -63,7 +65,7 @@ export function StatusBlock({ h }: { h: HomeView }) {
           caption={
             h.cash.headroom_short !== undefined ? (
               <>
-                {t("biz.headroom")} <span className="font-semibold tabular-nums text-on-deep" data-testid="home-headroom">{h.cash.headroom_short}</span>
+                <span className="font-semibold tabular-nums text-on-deep" data-testid="home-headroom">{t(versusMinimum(h.cash.headroom_short, h.cash.headroom_fen, false).key, { amount: versusMinimum(h.cash.headroom_short, h.cash.headroom_fen, false).amount })}</span>
               </>
             ) : undefined
           }
@@ -79,7 +81,7 @@ export function StatusBlock({ h }: { h: HomeView }) {
             caption={
               <>
                 {h.cash.first_breach_when && !h.cash.below_reserve_today ? <span className="block">{h.cash.first_breach_when}</span> : null}
-                {breachIsWorst ? <HeadroomLowest short={h.cash.lowest_headroom_short} /> : null}
+                {breachIsWorst ? <HeadroomLowest short={h.cash.lowest_headroom_short} fen={h.cash.lowest_headroom_fen} /> : null}
               </>
             }
           />
@@ -94,7 +96,7 @@ export function StatusBlock({ h }: { h: HomeView }) {
             caption={
               <>
                 {h.cash.lowest_when ? <span className="block" data-testid="home-lowest-when">{h.cash.lowest_when}</span> : null}
-                <HeadroomLowest short={h.cash.lowest_headroom_short} />
+                <HeadroomLowest short={h.cash.lowest_headroom_short} fen={h.cash.lowest_headroom_fen} />
               </>
             }
           />

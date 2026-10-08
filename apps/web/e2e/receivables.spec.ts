@@ -94,7 +94,8 @@ test("day 34: only the late invoice offers Chase payment; the dialog holds the s
   await expect(page.locator('[data-testid^="chase-open-"]')).toHaveCount(1);
   const open = page.getByTestId("chase-open-RCV-A");
   await expect(open).toHaveText("Chase payment");
-  expect((await open.boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(44);
+  // The normal rule: 32 px on a desktop, 44 px wherever a finger is the pointer.
+  expect((await open.boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(32);
   await open.click();
   const dialog = page.getByTestId("chase-dialog-RCV-A");
   await expect(dialog).toBeVisible();
@@ -137,7 +138,7 @@ test("day 34 after the half receipt: the chase dialog's balance is the one the p
   await expect(facts.getByTestId("receipt-facts-rec-receipt-1-cleared")).toContainText("¥128,600.00");
   await expect(facts.getByTestId("receipt-facts-rec-receipt-1-discount")).toContainText("¥1,093.10");
   await expect(facts.getByTestId("receipt-facts-rec-receipt-1-remaining")).toContainText("¥291,400.00");
-  await expect(facts).toContainText("Early-payment window ended");
+  await expect(facts).toContainText("The early-payment window has ended");
 });
 
 test("day 34 in Chinese: the handoff and the request are the server's Chinese", async ({ page }) => {

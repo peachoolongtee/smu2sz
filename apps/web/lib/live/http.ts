@@ -3,6 +3,7 @@
 import { API_URL } from "../config";
 import { getOwnerToken, requestSignIn } from "../auth";
 import { ApiError } from "../errors";
+import { getLang } from "../i18n";
 import { BOOKS_BUSY, isWriteConflictDetail, sendWriteWithRetry } from "./retry";
 import { kindOf, LONG_TIMEOUT_MS, runWithTimeout, timeoutFor, type RequestKind } from "./timeout";
 
@@ -21,6 +22,8 @@ interface HttpOptions {
   ownerOn403?: boolean;
   /** Give up after this many ms (default by route, see timeout.ts). */
   timeoutMs?: number;
+  /** A Business page asks for the owner's wording where the route has one (`POST /nl?mode=business`: no ids, no tier words). */
+  business?: boolean;
 }
 
 /** The test build's shorter timeout (ms); unset in production. */
@@ -70,7 +73,28 @@ function detailMessage(detail: unknown, fallback: string): string {
   return detail === undefined ? fallback : JSON.stringify(detail);
 }
 
+/**
+ * The routes that write their sentences in the owner's language (`?lang=en|zh`, default en). Every Business read and write carries the language the
+ * page is in, unless the caller already named one; the figures, ids and states are the same in both languages.
+ */
+const LANG_ROUTES = [
+  /^\/home$/, /^\/alerts$/, /^\/alerts\/[^/]+\/act$/, /^\/reconciliation$/, /^\/approvals\/queue$/, /^\/approvals\/[^/]+$/, /^\/ledger$/, /^\/audit$/,
+  /^\/offers\/[^/]+\/evaluate$/, /^\/negotiate\/[^/]+$/, /^\/router\/plan$/, /^\/decisions(\/.*)?$/, /^\/receivables\/[^/]+\/chase$/,
+  /^\/receivables\/worth$/, /^\/cash\/price-curve$/, /^\/buyers\/[^/]+\/envelope$/,
+];
+
+/** `path` with `lang=` (the page's language) and, for a Business chat turn, `mode=business` added where the route takes them. */
+export function withRouteParams(path: string, opts: Pick<HttpOptions, "business"> = {}): string {
+  const [route, query = ""] = path.split("?");
+  const params = new URLSearchParams(query);
+  if (LANG_ROUTES.some((r) => r.test(route)) && !params.has("lang")) params.set("lang", getLang());
+  if (route === "/nl" && opts.business) params.set("mode", "business");
+  const q = params.toString();
+  return q ? `${route}?${q}` : route;
+}
+
 export function http<T>(method: "GET" | "POST", path: string, opts: HttpOptions = {}): Promise<T> {
+  path = withRouteParams(path, opts);
   return runWithTimeout((signal) => request<T>(method, path, opts, signal), timeoutFor(path, opts.timeoutMs ?? TIMEOUT_OVERRIDE), () => timedOut(kindOf(method, path), path));
 }
 

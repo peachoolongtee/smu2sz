@@ -2570,8 +2570,8 @@
     "authority_text": "Needs your approval: The yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval.",
     "if_nothing": "¥200,000.00 below your minimum cash reserve in 8 days; the gap peaks at ¥200,000.00 in 8 days.",
     "after": "Cash stays above your minimum cash reserve for the next 120 days.",
-    "why": "The cheapest option, ¥1,706.10 in all (including ¥788.97 less in other interest and fees across the forecast), needs 2 separate approvals; this one needs one. Both are on Compare options.",
-    "detail": "Projected cash closes at ¥100,000.00 in 8 days, ¥200,000.00 below the reserve floor; the gap peaks at ¥200,000.00 in 8 days and lasts until 12 days from now. A committed cure exists: finance an invoice on Invoice financing (onboarded platform) ¥200,000.00, cost ¥1,782.19 (32.5% a year for 10 days); that is above the 15.00% limit you signed for funding without your approval, so it needs your approval before it runs.",
+    "why": "The cheapest option, ¥1,706.10 in all (including ¥788.97 less in other interest and fees across the forecast), needs 2 separate approvals; this one needs one. Both are under your funding options.",
+    "detail": "Projected cash closes at ¥100,000.00 in 8 days, ¥200,000.00 below your minimum cash reserve; the gap peaks at ¥200,000.00 in 8 days and lasts until 12 days from now. A funding plan is available: finance an invoice on Invoice financing (onboarded platform) ¥200,000.00, cost ¥1,782.19 (32.5% a year for 10 days); that is above the 15.00% limit you signed for funding without your approval, so it needs your approval before it runs.",
     "formula": "shortfall = floor − closing_d: ¥300,000.00 − ¥100,000.00 = ¥200,000.00 (day 42); max over days 42..46 = ¥200,000.00",
     "pending_approval_id": "APR-000001",
     "state_version": 7,
@@ -2618,6 +2618,7 @@
       "family": "FUNDING",
       "state": "AUTHORIZATION_REQUIRED",
       "state_text": "Waiting for your approval",
+      "state_tone": "warn",
       "terminal": false,
       "headline": "Finance ¥200,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. on Invoice financing (onboarded platform)",
       "counterparty_name": "Foshan Home Retail Co.",
@@ -2657,7 +2658,8 @@
       "decision_link": {
         "decision_id": "alert:ALERT-RESERVE-42:v7",
         "href": "/decisions/alert:ALERT-RESERVE-42:v7"
-      }
+      },
+      "why_it_matters_changed": true
     },
     {
       "day": 32,
@@ -2674,7 +2676,8 @@
       "what_remains": null,
       "approval_label": null,
       "current_decision_state": null,
-      "decision_link": null
+      "decision_link": null,
+      "why_it_matters_changed": true
     }
   ],
   "receivables": {
@@ -2714,16 +2717,16 @@
     {
       "id": "ALERT-PASTDUE-RCV-A",
       "kind": "RECEIVABLE_PAST_DUE",
-      "title": "Receivable the ¥420,000.00 invoice to Foshan Home Retail Co. due 2 days ago is 2 day(s) past due",
-      "detail": "¥162,800.00 outstanding from Foshan Home Retail Co. was due 2 days ago and is still OPEN. The conservative trajectory no longer counts on a dated receipt.",
+      "title": "Receivable the ¥420,000.00 invoice to Foshan Home Retail Co. due 2 days ago is 2 days past due",
+      "detail": "¥162,800.00 outstanding from Foshan Home Retail Co. was due 2 days ago and is still OPEN. The cash forecast no longer counts on a dated receipt.",
       "day": 32,
       "when": "2 days ago"
     },
     {
       "id": "ALERT-HEADROOM-34",
       "kind": "RESERVE_HEADROOM_LOW",
-      "title": "Reserve headroom thin today",
-      "detail": "Cash stays above the floor but only by ¥0.00 today (8 day(s) under 10% of the floor).",
+      "title": "Cash is close to your minimum today",
+      "detail": "Cash stays above your minimum cash reserve by only ¥0.00 today (8 days with less than 10% of your minimum cash reserve to spare).",
       "day": 34,
       "when": "today"
     }
@@ -2768,5 +2771,6 @@
     "WARNING": 2,
     "INFO": 0
   },
-  "note_basis": "Conservative projection of today's books: unconfirmed receipts are not counted."
+  "note_basis": "Conservative projection of today's books: unconfirmed receipts are not counted.",
+  "partial": null
 }

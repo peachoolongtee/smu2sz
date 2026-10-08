@@ -184,7 +184,7 @@
         "events": [
           {
             "kind": "RECEIPT",
-            "label": "Receipt the ¥420,000.00 invoice to Foshan Home Retail Co. due in 13 days from Foshan Home Retail Co.",
+            "label": "Foshan Home Retail Co.的回款：Foshan Home Retail Co. 的 ¥420,000.00 发票（13 天后到期）",
             "label_short": "来自Foshan Home Retail Co.的收款",
             "amount_fen": 42000000,
             "amount_display": "¥420,000.00",
@@ -318,8 +318,8 @@
         "events": [
           {
             "kind": "FLOW",
-            "label": "Debt service (principal), Existing equipment loan (rate 0%: a fixture assumption)",
-            "label_short": "Debt service",
+            "label": "债务还款（本金）：Existing equipment loan（利率 0%：示例假设）",
+            "label_short": "债务还款",
             "amount_fen": -4500000,
             "amount_display": "−¥45,000.00",
             "amount_short": "−¥45k"
@@ -480,7 +480,7 @@
         "events": [
           {
             "kind": "RECEIPT",
-            "label": "Receipt the ¥420,000.00 invoice to Foshan Home Retail Co. due in 43 days from Foshan Home Retail Co.",
+            "label": "Foshan Home Retail Co.的回款：Foshan Home Retail Co. 的 ¥420,000.00 发票（43 天后到期）",
             "label_short": "来自Foshan Home Retail Co.的收款",
             "amount_fen": 42000000,
             "amount_display": "¥420,000.00",
@@ -488,15 +488,15 @@
           },
           {
             "kind": "INTEREST",
-            "label": "Interest, Bank credit line",
-            "label_short": "Interest",
+            "label": "利息：Bank credit line",
+            "label_short": "利息",
             "amount_fen": -202502,
             "amount_display": "−¥2,025.02",
             "amount_short": "−¥2k"
           },
           {
             "kind": "REPAYMENT",
-            "label": "Repay Bank credit line",
+            "label": "向Bank credit line还款",
             "label_short": "还款",
             "amount_fen": -14998620,
             "amount_display": "−¥149,986.20",
@@ -622,8 +622,8 @@
         "events": [
           {
             "kind": "FLOW",
-            "label": "Debt service (principal), Existing equipment loan (rate 0%: a fixture assumption)",
-            "label_short": "Debt service",
+            "label": "债务还款（本金）：Existing equipment loan（利率 0%：示例假设）",
+            "label_short": "债务还款",
             "amount_fen": -4500000,
             "amount_display": "−¥45,000.00",
             "amount_short": "−¥45k"
@@ -784,7 +784,7 @@
         "events": [
           {
             "kind": "RECEIPT",
-            "label": "Receipt the ¥420,000.00 invoice to Foshan Home Retail Co. due in 73 days from Foshan Home Retail Co.",
+            "label": "Foshan Home Retail Co.的回款：Foshan Home Retail Co. 的 ¥420,000.00 发票（73 天后到期）",
             "label_short": "来自Foshan Home Retail Co.的收款",
             "amount_fen": 42000000,
             "amount_display": "¥420,000.00",
@@ -910,8 +910,8 @@
         "events": [
           {
             "kind": "FLOW",
-            "label": "Debt service (principal), Existing equipment loan (rate 0%: a fixture assumption)",
-            "label_short": "Debt service",
+            "label": "债务还款（本金）：Existing equipment loan（利率 0%：示例假设）",
+            "label_short": "债务还款",
             "amount_fen": -4500000,
             "amount_display": "−¥45,000.00",
             "amount_short": "−¥45k"
@@ -1072,7 +1072,7 @@
         "events": [
           {
             "kind": "RECEIPT",
-            "label": "Receipt the ¥420,000.00 invoice to Foshan Home Retail Co. due in 103 days from Foshan Home Retail Co.",
+            "label": "Foshan Home Retail Co.的回款：Foshan Home Retail Co. 的 ¥420,000.00 发票（103 天后到期）",
             "label_short": "来自Foshan Home Retail Co.的收款",
             "amount_fen": 42000000,
             "amount_display": "¥420,000.00",
@@ -1198,8 +1198,8 @@
         "events": [
           {
             "kind": "FLOW",
-            "label": "Debt service (principal), Existing equipment loan (rate 0%: a fixture assumption)",
-            "label_short": "Debt service",
+            "label": "债务还款（本金）：Existing equipment loan（利率 0%：示例假设）",
+            "label_short": "债务还款",
             "amount_fen": -4500000,
             "amount_display": "−¥45,000.00",
             "amount_short": "−¥45k"
@@ -2556,8 +2556,8 @@
       "cost_total_display": "¥1,706.10",
       "approvals": 2,
       "legs": [
-        "Invoice financing (onboarded platform): advance ¥80,000.00 on the ¥420,000.00 invoice to Foshan Home Retail Co. due in 43 days: ¥1,425.75",
-        "Invoice financing (onboarded platform): advance ¥120,000.00 on the ¥420,000.00 invoice to Foshan Home Retail Co. due in 13 days: ¥1,069.32",
+        "Invoice financing (onboarded platform)：以Foshan Home Retail Co. 的 ¥420,000.00 发票（43 天后到期）预支 ¥80,000.00: ¥1,425.75",
+        "Invoice financing (onboarded platform)：以Foshan Home Retail Co. 的 ¥420,000.00 发票（13 天后到期）预支 ¥120,000.00: ¥1,069.32",
         "预测期内其他利息与费用的变化: −¥788.97"
       ]
     },
@@ -2570,8 +2570,8 @@
     "authority_text": "需要您批准：年化成本 32.5% 高于您签署的无需批准融资上限 15.00%。",
     "if_nothing": "8 天后比最低现金储备低 ¥200,000.00；缺口在8 天后最大，为 ¥200,000.00。",
     "after": "未来 120 天现金都保持在您的最低现金储备以上。",
-    "why": "最便宜的方案合计 ¥1,706.10（含预测期内其他利息与费用少付的 ¥788.97），但需要 2 次单独批准；此方案只需一次。两者都在“比较方案”中。",
-    "detail": "Projected cash closes at ¥100,000.00 in 8 days, ¥200,000.00 below the reserve floor; the gap peaks at ¥200,000.00 in 8 days and lasts until 12 days from now. A committed cure exists: finance an invoice on Invoice financing (onboarded platform) ¥200,000.00, cost ¥1,782.19 (32.5% a year for 10 days); that is above the 15.00% limit you signed for funding without your approval, so it needs your approval before it runs.",
+    "why": "最便宜的方案合计 ¥1,706.10（含预测期内其他利息与费用少付的 ¥788.97），但需要 2 次单独批准；此方案只需一次。两者都在“您的融资方案”中。",
+    "detail": "预计现金将在8 天后降至 ¥100,000.00，比最低现金储备低 ¥200,000.00；缺口在8 天后最大，为 ¥200,000.00，持续到12 天后。有可用的融资方案：以发票在Invoice financing (onboarded platform)融资 ¥200,000.00，成本 ¥1,782.19（年化 32.5%，10 天）；该方案的年化成本高于您签署的无需批准融资上限 15.00%，因此执行前需要您批准。",
     "formula": "shortfall = floor − closing_d: ¥300,000.00 − ¥100,000.00 = ¥200,000.00 (day 42); max over days 42..46 = ¥200,000.00",
     "pending_approval_id": null,
     "state_version": 7,
@@ -2598,17 +2598,18 @@
       "seq": null,
       "kind": "LATE",
       "actor": "",
-      "text": "¥162,800.00 outstanding from Foshan Home Retail Co. was due 2 days ago and is still OPEN.",
-      "event_text": "¥162,800.00 outstanding from Foshan Home Retail Co. was due 2 days ago and is still OPEN.",
+      "text": "Foshan Home Retail Co.应付的 ¥162,800.00 原定2 天前到期，目前仍未收款。",
+      "event_text": "Foshan Home Retail Co.应付的 ¥162,800.00 原定2 天前到期，目前仍未收款。",
       "event_detail": null,
       "when": "2 天前",
-      "what_changed": "¥162,800.00 outstanding from Foshan Home Retail Co. was due 2 days ago and is still OPEN.",
+      "what_changed": "Foshan Home Retail Co.应付的 ¥162,800.00 原定2 天前到期，目前仍未收款。",
       "why_it_matters": "截至现在，现金预测显示8 天后将比您的最低现金储备低 ¥200,000.00。",
       "why_it_matters_as_of": "现在",
       "what_remains": null,
       "approval_label": null,
       "current_decision_state": null,
-      "decision_link": null
+      "decision_link": null,
+      "why_it_matters_changed": true
     }
   ],
   "receivables": {
@@ -2648,16 +2649,16 @@
     {
       "id": "ALERT-PASTDUE-RCV-A",
       "kind": "RECEIVABLE_PAST_DUE",
-      "title": "Receivable the ¥420,000.00 invoice to Foshan Home Retail Co. due 2 days ago is 2 day(s) past due",
-      "detail": "¥162,800.00 outstanding from Foshan Home Retail Co. was due 2 days ago and is still OPEN. The conservative trajectory no longer counts on a dated receipt.",
+      "title": "Foshan Home Retail Co. 的 ¥420,000.00 发票（2 天前到期）已逾期 2 天",
+      "detail": "Foshan Home Retail Co.应付的 ¥162,800.00 原定2 天前到期，目前仍未收款。现金预测不再把这笔款项当作有确定日期的回款。",
       "day": 32,
       "when": "2 天前"
     },
     {
       "id": "ALERT-HEADROOM-34",
       "kind": "RESERVE_HEADROOM_LOW",
-      "title": "Reserve headroom thin today",
-      "detail": "Cash stays above the floor but only by ¥0.00 today (8 day(s) under 10% of the floor).",
+      "title": "今天现金仅略高于最低现金储备",
+      "detail": "今天现金仅高出最低现金储备 ¥0.00（共 8 天高出的部分不足最低现金储备的 10%）。",
       "day": 34,
       "when": "今天"
     }
@@ -2702,5 +2703,6 @@
     "WARNING": 2,
     "INFO": 0
   },
-  "note_basis": "基于今日账目的保守预测：未确认的收款不计入。"
+  "note_basis": "基于今日账目的保守预测：未确认的收款不计入。",
+  "partial": null
 }

@@ -1,6 +1,6 @@
 import type { APIRequestContext, Page } from "@playwright/test";
 import { DEMO_TOKEN, expect, test } from "./fixtures";
-import { runPlan, walkStory } from "./helpers";
+import { runPlan, walkStory, sendCounter } from "./helpers";
 
 /** Live-mode only: owner-token handling, the 401 state, borrower-file downloads and owner approval. */
 
@@ -503,7 +503,7 @@ async function checkedDeal(page: Page) {
   await page.goto("/deals");
   await page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01").click();
   await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
-  await expect(page.getByTestId("deal-steps")).toHaveAttribute("data-state", "RESPONSE_READY");
+  await expect(page.getByTestId("deal-state-chip")).toHaveAttribute("data-state", "RESPONSE_READY");
 }
 
 const ownerPost = (request: APIRequestContext): Post => async (path, data, headers = { "X-Owner-Token": TOKEN }) => {
@@ -520,10 +520,10 @@ test("Deals: Send carries what was shown, and the record's state follows: Agreed
     if (r.method() === "POST" && /\/negotiate\//.test(r.url())) sends.push(r.postDataJSON());
   });
   await checkedDeal(page);
-  const steps = page.getByTestId("deal-steps");
-  await expect(steps).toContainText("Response ready (Counter recommended)");
+  const steps = page.getByTestId("deal-state-chip");
+  await expect(steps).toContainText("Counter recommended");
   await expect(page.getByTestId("deal-send")).toHaveText("Send Option A (simulated buyer reply)");
-  await page.getByTestId("deal-send").click();
+  await sendCounter(page);
   await expect.poll(() => sends.length).toBe(1);
   // The browser sends ids and the shown books' version, never a figure.
   expect(sends[0].buyer_profile).toBe("cooperative");
@@ -541,8 +541,8 @@ test("Deals: Send carries what was shown, and the record's state follows: Agreed
   // The receipt came on day 2: the page reads the record again and the deal is Fulfilled.
   await dayTwoToDay34(request, "full", post);
   await page.goto("/deals");
-  await expect(page.getByTestId("deal-steps")).toHaveAttribute("data-state", "FULFILLED");
-  await expect(page.getByTestId("deal-steps-outcome")).toHaveText("Fulfilled");
+  await expect(page.getByTestId("deal-state-chip")).toHaveAttribute("data-state", "FULFILLED");
+  await expect(page.getByTestId("deal-state-chip")).toContainText("Fulfilled");
   await post("/demo/reset", {});
 });
 
@@ -550,13 +550,13 @@ test("Deals: with no receipt on day 2 the line says the early payment did not ar
   const post = ownerPost(request);
   await post("/demo/reset", {});
   await checkedDeal(page);
-  await page.getByTestId("deal-send").click();
-  await expect(page.getByTestId("deal-steps")).toHaveAttribute("data-state", "AGREED");
+  await sendCounter(page);
+  await expect(page.getByTestId("deal-state-chip")).toHaveAttribute("data-state", "AGREED");
   await dayTwoToDay34(request, "none", post);
   await page.goto("/deals");
-  const steps = page.getByTestId("deal-steps");
+  const steps = page.getByTestId("deal-state-chip");
   await expect(steps).toHaveAttribute("data-state", "MISSED");
-  await expect(page.getByTestId("deal-steps-outcome")).toHaveText("Early payment did not arrive");
+  await expect(page.getByTestId("deal-state-chip")).toContainText("Early payment did not arrive");
   await expect(steps).not.toContainText("Agreed");
   await expect(page.getByTestId("deal-recommendation")).toHaveText("Early payment did not arrive");
   await expect(page.locator("#commitments").getByTestId("commitment-state")).toHaveText("Early payment did not arrive");
@@ -573,12 +573,12 @@ test("Deals: if the books moved after the proposal was shown, Send is refused, n
   await checkedDeal(page);
   // The books move behind the page's back (the clock), so the version the page holds is stale.
   await post("/clock/advance", { to_day: 1 });
-  await page.getByTestId("deal-send").click();
+  await sendCounter(page);
   const changed = page.getByTestId("deal-counter-changed");
   await expect(changed).toContainText("The books moved since this was shown");
   await expect(changed).toContainText("Nothing was sent.");
   await expect(page.getByTestId("deal-negotiation")).toHaveCount(0);
-  await expect(page.getByTestId("deal-steps")).toHaveAttribute("data-state", "RESPONSE_READY");
+  await expect(page.getByTestId("deal-state-chip")).toHaveAttribute("data-state", "RESPONSE_READY");
   // Nothing was agreed or run on the books.
   const ledger = await (await request.get(`${API}/ledger`, { headers: { "X-Owner-Token": TOKEN } })).json();
   expect((ledger.operations as { kind: string }[]).filter((o) => o.kind === "ACCEPT_OFFER" || o.kind === "DRAW_FACILITY")).toEqual([]);
@@ -587,8 +587,8 @@ test("Deals: if the books moved after the proposal was shown, Send is refused, n
   await changed.getByTestId("deal-check-again").click();
   await expect(changed).toHaveCount(0);
   await expect(page.getByTestId("deal-send")).toBeVisible();
-  await page.getByTestId("deal-send").click();
-  await expect(page.getByTestId("deal-steps")).toHaveAttribute("data-state", "AGREED");
+  await sendCounter(page);
+  await expect(page.getByTestId("deal-state-chip")).toHaveAttribute("data-state", "AGREED");
   await post("/demo/reset", {});
 });
 

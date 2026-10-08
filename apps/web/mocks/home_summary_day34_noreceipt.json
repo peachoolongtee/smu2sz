@@ -2562,7 +2562,7 @@
     "if_nothing": "Cash goes below zero in 8 days.",
     "after": "Prevents negative cash; cash stays ¥300k below your ¥300k minimum cash reserve from today (lowest ¥0.00 in 8 days).",
     "why": "No committed funding restores the reserve; this is the cheapest way to stay above zero.",
-    "detail": "Projected cash closes at ¥44,986.20 today, ¥255,013.80 below the reserve floor; the gap peaks at ¥455,013.80 in 8 days and lasts until 42 days from now. No committed plan restores the reserve; the cure that keeps cash at or above zero is: finance an invoice on Invoice financing (onboarded platform) ¥155,013.80, cost ¥1,381.32 (32.5% a year for 10 days); that is above the 15.00% limit you signed for funding without your approval, so it needs your approval before it runs. It does not restore the reserve: cash stays at or above zero, but the reserve is still ¥300,000.00 short at the worst day, which needs the owner's decision. The projection lets cash run below zero only as a simulation limit; the bank does not allow an overdraft, so a negative figure is a day the books cannot pay what falls due.",
+    "detail": "Projected cash closes at ¥44,986.20 today, ¥255,013.80 below your minimum cash reserve; the gap peaks at ¥455,013.80 in 8 days and lasts until 42 days from now. No funding plan restores your minimum cash reserve; the plan that keeps cash at or above zero is: finance an invoice on Invoice financing (onboarded platform) ¥155,013.80, cost ¥1,381.32 (32.5% a year for 10 days); that is above the 15.00% limit you signed for funding without your approval, so it needs your approval before it runs. It does not restore the reserve: cash stays at or above zero, but the reserve is still ¥300,000.00 short at the worst day, which needs the owner's decision. The projection lets cash run below zero only as a simulation limit; the bank does not allow an overdraft, so a negative figure is a day the books cannot pay what falls due.",
     "formula": "shortfall = floor − closing_d: ¥300,000.00 − ¥44,986.20 = ¥255,013.80 (day 34); max over days 34..76 = ¥455,013.80",
     "pending_approval_id": null,
     "state_version": 6,
@@ -2599,7 +2599,8 @@
       "what_remains": null,
       "approval_label": null,
       "current_decision_state": null,
-      "decision_link": null
+      "decision_link": null,
+      "why_it_matters_changed": true
     },
     {
       "day": 32,
@@ -2616,7 +2617,8 @@
       "what_remains": null,
       "approval_label": null,
       "current_decision_state": null,
-      "decision_link": null
+      "decision_link": null,
+      "why_it_matters_changed": false
     }
   ],
   "receivables": {
@@ -2656,8 +2658,8 @@
     {
       "id": "ALERT-PASTDUE-RCV-A",
       "kind": "RECEIVABLE_PAST_DUE",
-      "title": "Receivable the ¥420,000.00 invoice to Foshan Home Retail Co. due 2 days ago is 2 day(s) past due",
-      "detail": "¥420,000.00 outstanding from Foshan Home Retail Co. was due 2 days ago and is still OPEN. The conservative trajectory no longer counts on a dated receipt.",
+      "title": "Receivable the ¥420,000.00 invoice to Foshan Home Retail Co. due 2 days ago is 2 days past due",
+      "detail": "¥420,000.00 outstanding from Foshan Home Retail Co. was due 2 days ago and is still OPEN. The cash forecast no longer counts on a dated receipt.",
       "day": 32,
       "when": "2 days ago"
     },
@@ -2665,7 +2667,7 @@
       "id": "ALERT-EARLYPAY-576959dcbbfb",
       "kind": "RECEIVABLE_PAST_DUE",
       "title": "Early payment on the ¥420,000.00 invoice to Foshan Home Retail Co. due 2 days ago did not arrive",
-      "detail": "The early payment promised under the agreement with Foshan Home Retail Co. 32 days ago did not arrive. the ¥420,000.00 invoice to Foshan Home Retail Co. due 2 days ago (¥420,000.00 outstanding from Foshan Home Retail Co.) is back on its original due day, 2 days ago, and the conservative trajectory is projected that way.",
+      "detail": "The early payment promised under the agreement with Foshan Home Retail Co. 32 days ago did not arrive. The ¥420,000.00 invoice to Foshan Home Retail Co. due 2 days ago (¥420,000.00 outstanding from Foshan Home Retail Co.) is back on its original due day, 2 days ago, and the cash forecast is projected that way.",
       "day": 34,
       "when": "today"
     }
@@ -2710,5 +2712,6 @@
     "WARNING": 2,
     "INFO": 0
   },
-  "note_basis": "Conservative projection of today's books: unconfirmed receipts are not counted."
+  "note_basis": "Conservative projection of today's books: unconfirmed receipts are not counted.",
+  "partial": null
 }

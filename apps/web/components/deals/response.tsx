@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { obligationSentence } from "@/components/deals/commitments";
-import { Badge, Button, Callout, Card, ErrorState, SlowNotice } from "@/components/ui";
+import { Badge, Button, Callout, Card, ErrorState, SlowNotice, textLinkClass } from "@/components/ui";
 import { counterChanged, negotiate } from "@/lib/api";
 import { evaluate as evaluateAndCache } from "@/lib/demo";
 import { bump, recordNegotiation } from "@/lib/demo-store";
@@ -14,7 +14,7 @@ import type { Mode } from "@/lib/mode";
 import type { CounterChangedDetail, CounterProposal, Displayed, NegotiationView, VerdictView } from "@/lib/types";
 import { Disclosure } from "@/components/business/kit";
 
-type Counter = Displayed<CounterProposal> & { text_when?: string; rationale_when?: string; outbound_blocked?: boolean };
+type Counter = Displayed<CounterProposal> & { text_when?: string; rationale_when?: string; label_when?: string | null; outbound_blocked?: boolean };
 
 /** The DOM id (and test id) of a counter's card: "deal-option-Option-B". */
 export function optionDomId(label: string): string {
@@ -34,7 +34,7 @@ function CounterBusinessCard({ c, recommended, today, action }: { c: Counter; re
     <li id={optionDomId(c.label)} tabIndex={-1} className="py-4 first:pt-0 last:pb-0" data-testid={optionDomId(c.label)}>
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
         <div className="flex flex-wrap items-center gap-2">
-          <h3 className="text-base font-semibold text-ink">{c.label}</h3>
+          <h3 className="text-base font-semibold text-ink">{c.label_when ?? c.label}</h3>
           {recommended ? <Badge tone="brand">{t("biz.deals.option.recommended")}</Badge> : null}
         </div>
         {/* A plain cost sits on the title's line; a net cost needs its two parts and keeps the rows below. */}
@@ -90,11 +90,10 @@ function CounterBusinessCard({ c, recommended, today, action }: { c: Counter; re
  * (the server's operation statuses) with the way to Cash & funding. The buyer's own words, which can carry the engine's
  * day numbers, wait behind "What the buyer wrote". The counters are the verifier's; this card only reports the answer.
  */
-function NegotiationOutcome({ v, negotiation, today }: { v: VerdictView; negotiation: NegotiationView; today: number }) {
-  const { t, te } = useI18n();
+function NegotiationOutcome({ negotiation }: { negotiation: NegotiationView }) {
+  const { t } = useI18n();
   const deal = negotiation.outcome === "DEAL";
   const accepted = negotiation.rounds.find((r) => r.buyer_response === "ACCEPT");
-  const terms = negotiation.commitment?.obligations ?? (v.counters as Counter[]).find((c) => c.id === negotiation.accepted_counter_id)?.obligations ?? [];
   const ran = negotiation.operations.filter((o) => o.status === "EXECUTED");
   const words = negotiation.rounds.filter((r) => r.buyer_text);
   return (
@@ -102,21 +101,11 @@ function NegotiationOutcome({ v, negotiation, today }: { v: VerdictView; negotia
       {deal ? (
         <>
           <p className="text-base font-semibold text-ink" data-testid="deal-negotiation">
-            {t("biz.deals.dealDone", { counter: accepted?.counter_label ?? "" })}
+            {t("biz.deals.dealDone", { counter: accepted?.counter_label_when ?? accepted?.counter_label ?? "" })}
           </p>
-          {terms.length ? (
-            <div className="mt-3" data-testid="deal-agreed">
-              <p className="text-xs font-semibold uppercase tracking-wide text-ink-3">{t("biz.deals.agreedTerms")}</p>
-              <ul className="mt-1 list-disc space-y-1 pl-5 text-sm text-ink" data-testid="deal-agreed-terms">
-                {terms.map((o) => (
-                  <li key={o.id}>{obligationSentence(o, t, te, today)}</li>
-                ))}
-              </ul>
-              {negotiation.commitment ? <p className="mt-2 text-xs text-ink-3">{t("biz.deals.agreedBooked", { amount: negotiation.commitment.forward_value_display })}</p> : null}
-            </div>
-          ) : null}
-          <p className="mt-3 text-sm">
-            <a href="#commitments" className="font-medium text-brand-700 underline underline-offset-2">
+          {/* The agreed terms are said once, in the Agreements card; this is the way to it. */}
+          <p className="mt-2">
+            <a href="#commitments" className={textLinkClass}>
               {t("biz.deals.seeAgreement")}
             </a>
           </p>
@@ -130,7 +119,7 @@ function NegotiationOutcome({ v, negotiation, today }: { v: VerdictView; negotia
             {negotiation.rounds.map((r) => (
               <li key={r.round} className="flex flex-wrap items-center gap-2 text-sm">
                 <span className="font-medium text-ink">{t("biz.deals.round", { n: r.round })}</span>
-                {r.counter_label ? <span className="text-ink-2">{r.counter_label}</span> : null}
+                {r.counter_label ? <span className="text-ink-2">{r.counter_label_when ?? r.counter_label}</span> : null}
                 <Badge tone={r.buyer_response === "ACCEPT" ? "ok" : "neutral"}>{r.buyer_response === "ACCEPT" ? t("biz.deals.accepted") : t("biz.deals.refused")}</Badge>
               </li>
             ))}
@@ -138,7 +127,7 @@ function NegotiationOutcome({ v, negotiation, today }: { v: VerdictView; negotia
           {ran.length ? (
             <div className="mt-3 rounded-tile border border-ok-line bg-ok-bg px-3 py-2 text-sm" data-testid="deal-gap-funded">
               <p className="font-medium text-ok-fg">{t("biz.deals.gapFunded")}</p>
-              <Link href="/cash" className="mt-1 inline-block font-medium text-brand-700 underline underline-offset-2">
+              <Link href="/cash" className={`mt-1 ${textLinkClass}`}>
                 {t("biz.deals.seeCash")}
               </Link>
             </div>
@@ -165,39 +154,70 @@ function NegotiationOutcome({ v, negotiation, today }: { v: VerdictView; negotia
 }
 
 /**
- * One counter's send control: the button that names the option and says the buyer's reply is simulated, the server's `send_scope`
- * sentence under it (what sending does: the agreement it records, the approval it may need, the funding it may run), and the outbound
- * guard's hold when the wording was held back.
+ * One counter's send control. Above the button, in 14 px ink, what sending does: "This will" and the server's lines (the agreement it
+ * records, the funding it draws or requests, the estimated cost), or the server's one `send_scope` sentence when it sent no lines. The first
+ * press asks once, as Home's Run does; the second sends exactly what is shown. The outbound guard's hold says the wording was held back.
  */
-function SendControl({ c, primary, sending, busy, onSend }: { c: Counter; primary: boolean; sending: boolean; busy: boolean; onSend: () => void }) {
+function SendControl({ c, lines, primary, sending, busy, onSend }: { c: Counter; lines: string[] | null; primary: boolean; sending: boolean; busy: boolean; onSend: () => void }) {
   const { t } = useI18n();
+  const [confirming, setConfirming] = useState(false);
   // The outbound guard held this counter's wording back: it cannot be sent as it stands.
   const held = Boolean(c.outbound_blocked);
   const scopeId = `scope-${optionDomId(c.label)}`;
+  const name = c.label_when ?? c.label;
+  const suffix = primary ? "" : `-${c.label.replace(/\s+/g, "-")}`;
   return (
-    <div className="space-y-1.5">
-      <div className="flex flex-wrap items-center gap-3">
-        <Button
-          variant={primary ? "primary" : "secondary"}
-          loading={sending}
-          disabled={held || busy}
-          aria-describedby={scopeId}
-          onClick={onSend}
-          data-testid={primary ? "deal-send" : `deal-send-${c.label.replace(/\s+/g, "-")}`}
-        >
-          {sending ? t("biz.deals.sending") : t("biz.deals.sendOption", { label: c.label })}
-        </Button>
-        {held ? (
-          <span className="text-xs font-medium text-warn-fg" role="status" data-testid="deal-send-blocked">
-            {t("biz.deals.send.blocked")}
-          </span>
-        ) : null}
-      </div>
+    <div className="space-y-3">
       {!held ? (
-        <p id={scopeId} className="max-w-prose text-xs text-ink-3" data-testid="deal-send-scope">
-          {c.send_scope || t("biz.deals.send.simulated")}
-        </p>
+        lines?.length ? (
+          <div id={scopeId} data-testid="deal-send-scope">
+            <p className="text-sm font-semibold text-ink">{t("biz.deals.send.thisWill")}</p>
+            <ul className="mt-1 list-disc space-y-0.5 pl-5 text-sm text-ink" data-testid="deal-send-scope-lines">
+              {lines.map((l) => (
+                <li key={l}>{l}</li>
+              ))}
+            </ul>
+          </div>
+        ) : (
+          <p id={scopeId} className="max-w-prose text-sm text-ink" data-testid="deal-send-scope">
+            {c.send_scope || t("biz.deals.send.simulated")}
+          </p>
+        )
       ) : null}
+      {confirming && !held ? (
+        <div className="rounded-tile border border-brand-100 bg-brand-50 p-4" role="group" aria-labelledby={`send-confirm-${c.id}`} data-testid={`deal-send-confirm-box${suffix}`}>
+          <p id={`send-confirm-${c.id}`} className="font-semibold text-ink">
+            {t("biz.deals.send.confirmTitle", { label: name })}
+          </p>
+          <p className="mt-0.5 text-sm text-ink-2">{t("biz.deals.send.confirmBody")}</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Button variant="primary" loading={sending} disabled={busy} onClick={() => { onSend(); setConfirming(false); }} data-testid={`deal-send-confirm${suffix}`}>
+              {sending ? t("biz.deals.sending") : t("biz.deals.send.confirmGo", { label: name })}
+            </Button>
+            <Button variant="secondary" disabled={busy} onClick={() => setConfirming(false)} data-testid={`deal-send-cancel${suffix}`}>
+              {t("biz.confirm.cancel")}
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div className="flex flex-wrap items-center gap-3">
+          <Button
+            variant={primary ? "primary" : "secondary"}
+            loading={sending}
+            disabled={held || busy}
+            aria-describedby={scopeId}
+            onClick={() => setConfirming(true)}
+            data-testid={primary ? "deal-send" : `deal-send-${c.label.replace(/\s+/g, "-")}`}
+          >
+            {sending ? t("biz.deals.sending") : t("biz.deals.sendOption", { label: name })}
+          </Button>
+          {held ? (
+            <span className="text-xs font-medium text-warn-fg" role="status" data-testid="deal-send-blocked">
+              {t("biz.deals.send.blocked")}
+            </span>
+          ) : null}
+        </div>
+      )}
     </div>
   );
 }
@@ -310,11 +330,13 @@ export function RecommendedResponse({
     );
   }
   // The buyer has answered: the outcome replaces the counters, which are no longer choices.
-  if (negotiation) return <NegotiationOutcome v={v} negotiation={negotiation} today={today} />;
+  if (negotiation) return <NegotiationOutcome negotiation={negotiation} />;
   const [first, ...rest] = counters;
   const busy = sending !== null;
+  // The server's "This will" lines belong to the priced response (the recommended counter); another counter keeps its one sentence.
+  const pricedLines = (c: Counter): string[] | null => (v.workspace?.priced_response?.counter_id === c.id ? (v.workspace.priced_response.send_scope_lines ?? null) : null);
   const controlFor = (c: Counter, primary: boolean) =>
-    mode === "business" ? <SendControl c={c} primary={primary} sending={sending === c.id} busy={busy} onSend={() => void send(c)} /> : undefined;
+    mode === "business" ? <SendControl c={c} lines={pricedLines(c)} primary={primary} sending={sending === c.id} busy={busy} onSend={() => void send(c)} /> : undefined;
 
   return (
     <Card id="counters" title={t("biz.deals.response")} subtitle={t("biz.deals.counters.sub")}>
@@ -355,7 +377,7 @@ export function RecommendedResponse({
         {mode === "demo" ? (
           <p className="text-xs text-ink-3">
             {t("biz.deals.negotiateHint")}{" "}
-            <Link href="/verdict#negotiation" className="font-medium text-brand-700 underline underline-offset-2">
+            <Link href="/verdict#negotiation" className={textLinkClass}>
               {t("biz.deals.negotiateLink")}
             </Link>
           </p>

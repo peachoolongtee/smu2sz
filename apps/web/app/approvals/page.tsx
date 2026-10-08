@@ -3,10 +3,9 @@
 import { useEffect, useState } from "react";
 import { ApprovalCard } from "@/components/approval-card";
 import { ShieldCheckIcon } from "@/components/icons";
-import { NextStep } from "@/components/next-step";
 import { Badge, EmptyState, ErrorState, LoadingBlock, PageHeader, SlowNotice } from "@/components/ui";
 import { ReadWhen } from "@/components/business/freshness";
-import { ApiError, apiMode, decideApproval, getApprovalsRead } from "@/lib/api";
+import { ApiError, decideApproval, getApprovalsRead } from "@/lib/api";
 import { bump } from "@/lib/demo-store";
 import { isTimeout } from "@/lib/errors";
 import { isWriteConflictDetail } from "@/lib/live/retry";
@@ -15,8 +14,8 @@ import type { ApprovalDecision } from "@/lib/types";
 import { useAsync } from "@/lib/use-async";
 
 export default function ApprovalsPage() {
-  const { t } = useI18n();
-  const read = useAsync(getApprovalsRead, []);
+  const { t, lang } = useI18n();
+  const read = useAsync(getApprovalsRead, [lang]);
   // The queue as before: `list.data` is the rows; the read's own freshness word rides beside it.
   const list = { data: read.data?.approvals, error: read.error, reload: read.reload };
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -78,9 +77,7 @@ export default function ApprovalsPage() {
         subtitle={t("appr.subtitle")}
         actions={list.data ? <Badge tone={pending ? "warn" : "neutral"}>{t("appr.pending", { n: pending })}</Badge> : undefined}
       />
-      {pending ? <NextStep label={t("next.label")}>{t("biz.appr.next")}</NextStep> : null}
       <ReadWhen when={read.data?.last_read_when} testId="appr-read-when" className="mb-2" />
-      {apiMode === "live" ? <p className="mb-4 text-xs text-ink-3">{t("appr.ownerNote")}</p> : null}
       {slow ? (
         <div className="mb-4">
           <SlowNotice message={t("err.timeout_write")} onRetry={recheck} />
@@ -103,7 +100,7 @@ export default function ApprovalsPage() {
       ) : list.data.length === 0 ? (
         <EmptyState title={t("appr.empty.title")} body={t("appr.empty.body")} />
       ) : (
-        <ul className="mx-auto max-w-3xl space-y-4">
+        <ul className="mx-auto max-w-3xl space-y-6">
           {list.data.map((a) => (
             <li key={a.id} className="min-w-0">
               <ApprovalCard

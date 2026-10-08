@@ -21,12 +21,14 @@ export function ReadWhen({ when, testId = "read-when", deep = false, className =
  * Supporting facts the server could not read (`partial.missing`, the names in the owner's words). Said in an error tone with a Retry beside
  * the conclusion: an answer built on a partial read must never look complete, and silence is never the answer.
  */
-export function PartialRead({ missing, onRetry }: { missing: string[] | undefined; onRetry: () => void }) {
+export function PartialRead({ partial, onRetry }: { partial: { missing: string[]; missing_text?: string[]; text?: string } | null | undefined; onRetry: () => void }) {
   const { t } = useI18n();
-  if (!missing?.length) return null;
+  if (!partial?.missing?.length) return null;
+  // The server says it in the language on screen (`text`, with the names in `missing_text`); an older answer gets the names joined here.
+  const sentence = partial.text ?? t("biz.partial", { names: (partial.missing_text ?? partial.missing).join(", ") });
   return (
     <div role="alert" className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-tile border border-bad-line bg-bad-bg px-3.5 py-2.5 text-sm text-bad-fg" data-testid="partial-read">
-      <p className="min-w-0 break-words font-medium">{t("biz.partial", { names: missing.join(", ") })}</p>
+      <p className="min-w-0 break-words font-medium">{sentence}</p>
       <Button size="sm" onClick={onRetry} data-testid="partial-retry">
         {t("common.retry")}
       </Button>

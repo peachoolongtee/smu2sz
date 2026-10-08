@@ -46,6 +46,7 @@ async function openAccountMenu(page: Page) {
 }
 
 test("owner: Evaluate EX01 is a REJECT, then go ahead lists the executed operations", async ({ page, request }) => {
+  await demoMode(page);
   await resetBooks(request);
   await page.goto("/chat");
   await signIn(page);
@@ -138,6 +139,7 @@ test("buyer: the FastCapital message gets only the refusal reply, no verdict, an
 });
 
 test("clarification: options are buttons, and the chosen one is sent", async ({ page, request }) => {
+  await demoMode(page);
   await resetBooks(request);
   await page.goto("/chat");
   await signIn(page);
@@ -179,6 +181,7 @@ test("correction: 'actually make it 0.8%' amends the pending plan and is marked 
 });
 
 test("a 401 opens the owner sign-in dialog, and signing in resends the refused message", async ({ page }) => {
+  await demoMode(page);
   await page.goto("/chat");
   await expect(page.getByTestId("chat-signed-out")).toBeVisible();
 
@@ -225,7 +228,7 @@ test("the slide-over chat opens from another page, keeps the conversation, and c
   await expect(signin).toBeHidden();
 
   await page.getByTestId("chat-open").click();
-  const panel = page.getByRole("dialog", { name: "Chat with the agent" });
+  const panel = page.getByRole("dialog", { name: "Ask FLOW" });
   await expect(panel).toBeVisible();
   await panel.getByRole("textbox", { name: "Message" }).fill("status");
   await panel.getByTestId("chat-send").click();
@@ -303,7 +306,7 @@ test("the chat button says Ask FLOW, and a Business page offers only the questio
   await expect(open).toContainText("Ask FLOW");
   await expect(open).not.toContainText("Ask the agent");
   await open.click();
-  const panel = page.getByRole("dialog", { name: "Chat with the agent" });
+  const panel = page.getByRole("dialog", { name: "Ask FLOW" });
   const chips = panel.locator('[data-testid^="prompt-"]');
   // No deal has been evaluated on this page, so the questions about one are hidden rather than shown to fail.
   await expect(panel.getByTestId("prompt-page-waiting")).toHaveText("What are we waiting for?");
@@ -313,13 +316,13 @@ test("the chat button says Ask FLOW, and a Business page offers only the questio
   // Another page, other questions: Receivables asks what is overdue (who to chase appears only when something is).
   await page.goto("/receivables");
   await page.getByTestId("chat-open").click();
-  await expect(page.getByRole("dialog", { name: "Chat with the agent" }).getByTestId("prompt-page-overdue")).toHaveText("What is overdue?");
+  await expect(page.getByRole("dialog", { name: "Ask FLOW" }).getByTestId("prompt-page-overdue")).toHaveText("What is overdue?");
   await page.keyboard.press("Escape");
 
   // Home: what changed and what needs attention.
   await page.goto("/");
   await page.getByTestId("chat-open").click();
-  const home = page.getByRole("dialog", { name: "Chat with the agent" });
+  const home = page.getByRole("dialog", { name: "Ask FLOW" });
   await expect(home.getByTestId("prompt-page-changed")).toHaveText("What changed today?");
   await expect(home.getByTestId("prompt-page-attention")).toHaveText("What needs my attention?");
 });
@@ -330,7 +333,7 @@ test("Business chat is the owner's alone: no role switch, no Tier 1 hint, no fix
   for (const route of ["/chat", "/"]) {
     await page.goto(route);
     if (route !== "/chat") await page.getByTestId("chat-open").click();
-    const scope = route === "/chat" ? page.locator("main") : page.getByRole("dialog", { name: "Chat with the agent" });
+    const scope = route === "/chat" ? page.locator("main") : page.getByRole("dialog", { name: "Ask FLOW" });
     await expect(scope.getByTestId("chat-send")).toBeVisible();
     await expect(page.getByRole("radio", { name: "Buyer (counterparty)" })).toHaveCount(0);
     await expect(page.getByRole("radio", { name: "Owner", exact: true })).toHaveCount(0);
@@ -357,7 +360,7 @@ test("the Deals question about the deal explains the verdict the page evaluated,
   await expect(page.getByTestId("deal-recommendation")).toHaveText("Counter recommended");
 
   await page.getByTestId("chat-open").click();
-  const panel = page.getByRole("dialog", { name: "Chat with the agent" });
+  const panel = page.getByRole("dialog", { name: "Ask FLOW" });
   // The page holds an evaluated deal with counters, so all four Deals questions are offered.
   await expect(panel.locator('[data-testid^="prompt-"]')).toHaveText([
     "Why are we countering this?",
@@ -372,7 +375,8 @@ test("the Deals question about the deal explains the verdict the page evaluated,
   const why = panel.getByTestId("chat-turn").last();
   await expect(why.getByTestId("chat-reply")).toContainText("About the Foshan Home Retail Co. offer evaluated today:");
   await expect(why.getByTestId("chat-reply")).not.toContainText("no verdict to explain");
-  await expect(why.getByTestId("chat-outcome")).toContainText("REJECT");
+  // A Business page says it in the reply, in words; the verdict panel (outcome, tier, codes) is the Demo views'.
+  await expect(why.getByTestId("chat-outcome")).toHaveCount(0);
   await expect(panel.getByTestId("chat-discussing")).toHaveText("Discussing: the Foshan Home Retail Co. offer");
 
   await panel.getByTestId("prompt-page-original").click();
@@ -393,12 +397,33 @@ test("Home's 'What changed today?' is a read of the books, not a list of what th
   await asOwner(page);
   await page.goto("/");
   await page.getByTestId("chat-open").click();
-  const panel = page.getByRole("dialog", { name: "Chat with the agent" });
+  const panel = page.getByRole("dialog", { name: "Ask FLOW" });
   await panel.getByTestId("prompt-page-changed").click();
   const turn = panel.getByTestId("chat-turn").last();
   await expect(turn.getByTestId("chat-reply")).toContainText("Nothing has changed today; the forecast is unchanged:");
   await expect(turn.getByTestId("chat-reply")).not.toContainText("I can't do that");
   await expect(turn.getByTestId("chat-ops")).toHaveCount(0);
+});
+
+test("Business chat says one outcome in the owner's words: no verdict panel, no intent chip, no tier or operation rows, and the confirmation is 'Yes, run it'", async ({ page, request }) => {
+  await resetBooks(request);
+  await asOwner(page);
+  await page.goto("/chat");
+  await send(page, "Evaluate EX01");
+  const first = turns(page).first();
+  await expect(first.getByTestId("chat-awaiting")).toBeVisible();
+  await expect(first.getByTestId("chat-goahead")).toHaveText("Yes, run it");
+  await expect(first.getByTestId("chat-verdict")).toHaveCount(0);
+  await expect(first.getByTestId("chat-outcome")).toHaveCount(0);
+  await expect(first.getByTestId("chat-intent")).toHaveCount(0);
+  // The live server writes the Business template (no ids, no tier words); the mock replays the engine's recorded reply.
+  if (isLive()) await expect(first.getByTestId("chat-reply")).not.toContainText(/TIER|Tier \d/);
+  // Confirming runs it; the operation rows are the owner's sentences (no tier badge or hash in the row).
+  await first.getByTestId("chat-goahead").click();
+  await expect(turns(page).last().getByTestId("chat-ops")).toBeAttached();
+  // Each row is the owner's sentence; the tier, sequence and hash are behind "Audit details".
+  await expect(turns(page).last().getByTestId("op-audit").first()).toBeAttached();
+  await expect(turns(page).last().getByTestId("op-sentence").first()).toBeAttached();
 });
 
 test("a refresh keeps the draft and the conversation, and a pending plan points to the Approvals page", async ({ page, request }) => {

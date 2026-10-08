@@ -68,10 +68,14 @@ import bankReceiptJson from "../../mocks/bank_receipt.json";
 import borrowerFileJson from "../../mocks/borrower_file.json";
 import capexApplyJson from "../../mocks/capex_apply.json";
 import capexJson from "../../mocks/capex.json";
+import capexDay38Json from "../../mocks/capex_day38.json";
 import fundingJson from "../../mocks/funding.json";
 import fundingDay34Json from "../../mocks/funding_day34.json";
 import homeApprovalApproved from "../../mocks/home_approval_approved.json";
 import homeApprovalPending from "../../mocks/home_approval_pending.json";
+import homeApprovalApprovedZh from "../../mocks/home_approval_approved_zh.json";
+import homeApprovalPendingZh from "../../mocks/home_approval_pending_zh.json";
+import { getLang } from "../i18n";
 import homeApprove from "../../mocks/home_approve.json";
 import ledgerApproved from "../../mocks/home_ledger_approved.json";
 import ledgerDay34 from "../../mocks/home_ledger_day34.json";
@@ -394,10 +398,17 @@ function seedApprovalStory(): void {
   save();
 }
 
+/** The day-34 cure's row in Chinese (recorded from `GET /approvals/queue?lang=zh`): the same operation, amounts and states as the English row, its sentences in zh. */
+function inChinese(rows: ApprovalView[]): ApprovalView[] {
+  if (getLang() !== "zh") return rows;
+  const op = cast<ApprovalView>(homeApprovalPending).op_id;
+  return rows.map((r) => (r.op_id === op ? { ...clone(cast<ApprovalView>(r.status === "PENDING" ? homeApprovalPendingZh : homeApprovalApprovedZh)), id: r.id } : r));
+}
+
 export async function getApprovals(): Promise<ApprovalView[]> {
   await delay();
   seedApprovalStory();
-  return clone(load().approvals);
+  return inChinese(clone(load().approvals));
 }
 
 export async function getEvidence(): Promise<string> {
@@ -559,7 +570,7 @@ export async function negotiate(offerId: string, req: NegotiateRequest): Promise
   return clone(result);
 }
 
-const APPROVAL_SEEDS = cast<Record<"apply_loan", ApprovalView>>(approvalsSeed);
+const APPROVAL_SEEDS = cast<Record<"apply_loan" | "apply_loan_approved" | "apply_loan_rejected", ApprovalView>>(approvalsSeed);
 
 function ensureApproval(key: "apply_loan"): ApprovalView {
   const s = load();
@@ -591,7 +602,8 @@ export async function demoBankReceipt(): Promise<BankReceiptResult> {
 export async function capexEvaluate(_req: CapexRequest): Promise<CapexView> {
   void _req;
   await delay();
-  return clone(cast<CapexView>(capexJson));
+  // On the books the story left (day 38) the evaluation is as of that day; on the opening books it is the day-0 one.
+  return clone(cast<CapexView>(home.mockClock().day >= 38 ? capexDay38Json : capexJson));
 }
 
 /** The owner's explicit application: queues the recorded Tier-2 application once. */
@@ -646,6 +658,8 @@ export async function decideApproval(id: string, decision: ApprovalDecision): Pr
   }
   a.status = decision === "APPROVE" ? "APPROVED" : "REJECTED";
   const op = append(decision === "APPROVE" ? "approve_apply_loan" : "reject_apply_loan");
+  // The decided row as the server wrote it (its one state word and tone, what was agreed), keeping this session's id.
+  Object.assign(a, clone(decision === "APPROVE" ? APPROVAL_SEEDS.apply_loan_approved : APPROVAL_SEEDS.apply_loan_rejected), { id: a.id });
   save();
   return { ...clone(a), result_message: op.message };
 }

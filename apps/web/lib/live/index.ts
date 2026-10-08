@@ -150,9 +150,10 @@ export const live = {
 
   /** POST /nl. The owner channel sends X-Owner-Token. A buyer turn never carries the owner token; in a demo build it
    * sends the buyer's published channel key (X-Counterparty-Key), otherwise nothing, and the API treats it as a proposal. */
-  nl: (req: NlRequest): Promise<NlResponse> =>
+  nl: (req: NlRequest, opts: { business?: boolean } = {}): Promise<NlResponse> =>
     http<NlResponse>("POST", "/nl", {
       body: req,
+      business: opts.business && req.actor !== "COUNTERPARTY",
       auth: req.actor === "COUNTERPARTY" ? "none" : "owner",
       buyerKey: req.actor === "COUNTERPARTY" ? DEMO_BUYER_KEYS[req.counterparty_id ?? ""] : undefined,
     }),

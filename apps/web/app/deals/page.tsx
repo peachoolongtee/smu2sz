@@ -5,7 +5,6 @@ import { useEffect, useRef, useState } from "react";
 import { BeforeTheyAsk } from "@/components/deals/before-they-ask";
 import { BuyerAsks } from "@/components/deals/asks";
 import { ActiveCommitments } from "@/components/deals/commitments";
-import { DealSteps } from "@/components/deals/deal-steps";
 import { DealDecision } from "@/components/deals/decision";
 import { InboxList } from "@/components/deals/inbox-list";
 import { RecommendedResponse } from "@/components/deals/response";
@@ -22,7 +21,6 @@ import { useMode } from "@/lib/mode";
 import { offerItems } from "@/lib/offer-items";
 import type { VerdictView } from "@/lib/types";
 import { useAsync } from "@/lib/use-async";
-import { useNarrow } from "@/lib/use-narrow";
 import { useCurrentOffer } from "@/lib/use-current";
 import { useDecision, useDecisions } from "@/lib/use-decision";
 import { dealProgress } from "@/lib/decision";
@@ -39,8 +37,6 @@ import { Disclosure } from "@/components/business/kit";
 export default function DealsPage() {
   const { t, te, lang } = useI18n();
   const mode = useMode();
-  // A phone reads the recommendation and the priced response right after the buyer's name; the inbox, the asks and the costs come after.
-  const narrow = useNarrow();
   const cur = useCurrentOffer();
   const demo = useDemo();
   const [busy, setBusy] = useState(false);
@@ -142,29 +138,26 @@ export default function DealsPage() {
       ),
     };
   } else if (offer && v && record && progress?.reached) {
+    // The band appears only where it names a real action: the approval still to answer, or the way back to the other offers. An agreement in
+    // force or a closed matter is said by the state chip and the Agreements card, and needs no band.
     next =
-      progress.tone === "good"
-        ? { text: t("next.agreed"), action: <a href="#commitments" className={nextLinkCls}>{t("next.seeHome")}</a> }
-        : progress.tone === "open"
-          ? { text: t("next.approval"), action: <Link href="/approvals" className={nextLinkCls}>{t("next.toApprovals")}</Link> }
-          : record.state === "NO_DEAL"
-            ? {
-                text: t("next.noDeal"),
-                action: (
-                  <button type="button" className={nextLinkCls} onClick={() => setInboxFor(offer.offer.offer_id)}>
-                    {t("next.backToOffers")}
-                  </button>
-                ),
-              }
-            : { text: t("next.closed", { state: record.state_text }), action: <a href="#commitments" className={nextLinkCls}>{t("next.seeHome")}</a> };
+      progress.tone === "open"
+        ? { text: t("next.approval"), action: <Link href="/approvals" className={nextLinkCls}>{t("next.toApprovals")}</Link> }
+        : record.state === "NO_DEAL"
+          ? {
+              text: t("next.noDeal"),
+              action: (
+                <button type="button" className={nextLinkCls} onClick={() => setInboxFor(offer.offer.offer_id)}>
+                  {t("next.backToOffers")}
+                </button>
+              ),
+            }
+          : null;
   }
 
   const compareOpen = Boolean(offer && compareFor === offer.offer.offer_id);
 
   const commitments = <ActiveCommitments key="commitments" today={today} buyerName={buyerName} hideEmpty />;
-
-  /** The offer's one-line ask: the names of what is asked, once each ("Immediate discount · Terms extension · Contingent rebate"). */
-  const oneLine = Array.from(new Set(asks.map((o) => te("obligation", o.type)))).join(" · ");
 
   const abstentions = offer?.offer.abstentions.length ? (
     <div className="mt-3" data-testid="deal-abstentions">
@@ -213,19 +206,16 @@ export default function DealsPage() {
   // The parts of a selected deal, each with its key so the order can differ without losing what a part holds.
   const dealParts: Record<string, React.ReactNode> = {};
   if (offer && !cur.error && !clock.error && !cur.loading && clock.data) {
-    dealParts.selected = (
+    dealParts.buyer = (
       <SelectedBuyer
-        key="selected"
+        key="buyer"
         buyer={buyerName(offer.offer.counterparty_id)}
-        ask={oneLine}
         received={t("biz.deals.messageWhen", { channel: te("channel", offer.documents[0]?.channel ?? "chat"), when: whenText(offer.offer.received_day, today, t) })}
         evaluatedWhen={v ? (record?.evaluation?.evaluated_when ?? v.evaluated_when ?? null) : null}
-        stateChip={narrow ? (record?.state_text ?? null) : null}
-      >
-        {narrow ? null : <DealSteps />}
-      </SelectedBuyer>
+        state={record ? { code: record.state, text: record.state_text, tone: record.state_tone ?? "neutral" } : null}
+      />
     );
-    dealParts.asks = ws ? (
+    dealParts.buyer_asks = ws ? (
       <WorkspaceAsks key="asks" ws={ws}>{abstentions}</WorkspaceAsks>
     ) : (
       <Card key="asks" id="deal-ask" title={t("biz.deals.ask", { buyer: buyerName(offer.offer.counterparty_id) })}>
@@ -235,9 +225,9 @@ export default function DealsPage() {
     );
     if (STRATEGY_MVP) dealParts.before = <BeforeTheyAsk key="before" buyerId={offer.offer.counterparty_id} />;
     if (v && ws) {
-      dealParts.impact = <WorkspaceImpact key="impact" ws={ws} v={v} today={today} settled={Boolean(record && progress?.reached)} />;
-      dealParts.decision = <DealDecision key="decision" v={v} record={record} text={ws.recommends.text} reason={narrow ? (ws.why_it_matters.reasons[0] ?? null) : null} />;
-      dealParts.response = (
+      dealParts.financial_impact = <WorkspaceImpact key="impact" ws={ws} v={v} today={today} settled={Boolean(record && progress?.reached)} />;
+      dealParts.recommends = <DealDecision key="decision" v={v} record={record} text={ws.recommends.text} reason={ws.why_it_matters.reasons[0] ?? null} />;
+      dealParts.priced_response = (
         <RecommendedResponse
           key="response"
           v={v}
@@ -257,13 +247,12 @@ export default function DealsPage() {
         </NextStep>
       );
     }
-    dealParts.commitments = commitments;
+    dealParts.agreements = commitments;
   }
-  // The inbox is one folded row at the top at every width. A phone then reads the buyer, what FLOW recommends and the priced response before
-  // the asks, the costs and why it matters; a desktop keeps the server's order.
-  const order = narrow
-    ? ["selected", "decision", "response", "next", "asks", "before", "impact", "commitments", "advanced"]
-    : ["selected", "asks", "before", "impact", "decision", "response", "next", "commitments", "advanced"];
+  // One order at every width, the server's (`workspace.order`): the buyer, what FLOW recommends, the priced response, what the buyer asks, what it costs
+  // (with why it matters inside), the agreements, the folded details. The Action and the "Before they ask" card sit beside the part they belong to.
+  const serverOrder = (ws?.order ?? ["buyer", "recommends", "priced_response", "buyer_asks", "financial_impact", "why_it_matters", "agreements", "advanced"]).filter((k) => k !== "why_it_matters");
+  const order = serverOrder.flatMap((k) => (k === "priced_response" ? [k, "next"] : k === "buyer_asks" ? [k, "before"] : [k]));
   const errorNode = error ? <ErrorState key="error" error={error} /> : null;
 
   return (

@@ -1,5 +1,5 @@
 import { expect, proseOf, test } from "./fixtures";
-import { walkAway } from "./helpers";
+import { walkAway, sendCounter } from "./helpers";
 
 /**
  * Deals in Business mode, one workspace in the server's order: one inbox thread per buyer (folded to one row once a deal is selected),
@@ -46,10 +46,10 @@ test("the inbox groups a buyer's messages into one thread and names each evaluat
   await original.click();
   await expect(page.getByTestId("inbox-collapsed")).toBeVisible();
   await expect(page.getByTestId("deal-recommendation")).toHaveText("No deal: the buyer did not accept");
-  // The line is the record's: this deal ended in No deal, so the steps stop at Sent and the outcome is the server's word. It is a quiet line: nothing in it links.
-  await expect(page.getByTestId("deal-steps")).toHaveAttribute("data-state", "NO_DEAL");
-  await expect(page.getByTestId("deal-steps").getByRole("link")).toHaveCount(0);
-  await expect(page.getByTestId("deal-steps-outcome")).toHaveText("No deal: the buyer did not accept");
+  // The chip is the record's: this deal ended in No deal, in the server's word and the server's tone. There is no step line.
+  await expect(page.getByTestId("deal-state-chip")).toHaveAttribute("data-state", "NO_DEAL");
+  await expect(page.getByTestId("deal-state-chip")).toContainText("No deal: the buyer did not accept");
+  await expect(page.getByTestId("deal-steps")).toHaveCount(0);
   const originalId = await page.evaluate(() => JSON.parse(sessionStorage.getItem("tl-demo-v3") ?? "{}").offerId);
   // Open the inbox again: the selected message is marked, and picking the latest message folded the thread; the earlier ones are one click away.
   await page.getByTestId("inbox-back").click();
@@ -85,15 +85,17 @@ test("opening a message reads it, and the evaluated deal is one workspace in the
   const next = page.getByTestId("next-step");
   await next.getByRole("button", { name: "Check against my limits" }).click();
 
-  // The workspace in the server's order: the buyer, what it asks, what it costs, why it matters, what FLOW recommends, the priced response.
+  // The workspace in the server's order: the buyer, what FLOW recommends (with its reason), the priced response, what the buyer asks, what it costs and why it matters.
   await expect(page.getByTestId("deal-recommendation")).toHaveText("Counter recommended");
-  const tops = await page.evaluate(() => ["deal-selected", "deal-ask", "deal-impact", "deal-recommendation-card", "counters", "commitments", "deal-advanced"].map((id) => document.getElementById(id) ?? document.querySelector(`[data-testid="${id}"]`)).map((el) => el?.getBoundingClientRect().top ?? -1));
+  await expect(page.getByTestId("deal-recommendation-reason")).not.toBeEmpty();
+  const tops = await page.evaluate(() => ["deal-selected", "deal-recommendation-card", "counters", "deal-ask", "deal-impact", "commitments", "deal-advanced"].map((id) => document.getElementById(id) ?? document.querySelector(`[data-testid="${id}"]`)).map((el) => el?.getBoundingClientRect().top ?? -1));
   // (no agreement yet, so there is no commitments card)
   const present = tops.filter((y) => y >= 0);
   expect(present.length).toBe(6);
   expect(present).toEqual([...present].sort((a, b) => a - b));
-  // The header: the buyer, the offer's one-line ask, when it came and when it was checked.
-  await expect(page.locator("#deal-selected")).toContainText("Immediate discount · Terms extension · Contingent rebate");
+  // The header: the buyer, when it came and when it was checked, and one chip for where the deal stands. No ask line: the asks card says it once.
+  await expect(page.locator("#deal-selected")).not.toContainText("Immediate discount · Terms extension · Contingent rebate");
+  await expect(page.getByTestId("deal-state-chip")).toContainText("Counter recommended");
   await expect(page.getByTestId("deal-evaluated")).toHaveText("Evaluated today");
   // Buyer terms appear once: the server's sentence for the term, not again in a second card, the response or the header.
   await expect(page.getByTestId("deal-ask-TERMS_EXTENSION")).toHaveText("The buyer gets 60-day payment terms on future invoices (ongoing, no end date)");
@@ -154,9 +156,9 @@ test("opening a message reads it, and the evaluated deal is one workspace in the
   // With the check done there is no Action left to take on this card: the response carries the page's one filled call ("Send this counter").
   await expect(next).toHaveCount(0);
   await expect(response.getByTestId("deal-send")).toHaveClass(/bg-brand-600/);
-  // The jump band and the passive stage links are gone; the step line is quiet text.
+  // The jump band and the passive stage links are gone, and so is the step line.
   await expect(page.getByRole("link", { name: "See what we'd offer back" })).toHaveCount(0);
-  await expect(page.getByTestId("deal-steps").getByRole("link")).toHaveCount(0);
+  await expect(page.getByTestId("deal-steps")).toHaveCount(0);
   // One fold holds the rest, in the sections the server names, closed.
   const advanced = page.getByTestId("deal-advanced");
   await expect(advanced).not.toHaveAttribute("open", "");
@@ -180,7 +182,7 @@ test("opening a message reads it, and the evaluated deal is one workspace in the
   await page.getByTestId("deal-adv-checks").locator("> summary").click();
   await expect(page.getByTestId("deal-adv-checks").locator("> summary")).toContainText("Show all checks (8)");
   await page.getByTestId("deal-adv-engine_verdict").locator("> summary").click();
-  await expect(page.getByTestId("deal-technical-summary")).toContainText("Engine verdict");
+  await expect(page.getByTestId("deal-technical-summary")).toContainText("the engine's verdict");
   await expect(page.getByTestId("deal-technical-summary")).toContainText("REJECT");
   // The calculation opens with the reading, the equation behind it.
   await page.getByTestId("deal-adv-formula").locator("> summary").click();
@@ -204,20 +206,31 @@ test("opening a message reads it, and the evaluated deal is one workspace in the
   await expect(page.getByTestId("inbox-collapsed")).toBeVisible();
   // Sending the counter: the buyer's (simulated) answer comes back in words, and the next step is the agreement.
   await expect(response.getByTestId("deal-send")).toHaveText("Send Option A (simulated buyer reply)");
-  await expect(response.getByTestId("deal-send-scope")).toContainText("the reply is simulated");
+  // Above the button, in 14 px ink: "This will" and what sending does, from the server's lines; the first press asks, the second sends.
+  await expect(response.getByTestId("deal-send-scope")).toContainText("This will");
+  await expect(response.getByTestId("deal-send-scope-lines")).toContainText("Draws ¥149,986.20 on the Bank credit line");
   await response.getByTestId("deal-send").click();
+  await expect(response.getByTestId("deal-send-confirm-box")).toContainText("The buyer's reply is simulated");
+  await response.getByTestId("deal-send-cancel").click();
+  await expect(response.getByTestId("deal-send")).toBeVisible();
+  await sendCounter(response);
   await expect(page.getByTestId("deal-negotiation")).toContainText("The buyer accepted Option A. The agreement is on your books.");
   await expect(response.getByTestId("deal-send")).toHaveCount(0);
-  // The outcome card: the buyer's answer, the agreement with its terms as sentences; the headline, the step and the inbox row follow.
+  // The outcome card: the buyer's answer and the way to the agreement (the terms are said once, in the Agreements card); the headline, the chip and the inbox row follow.
   await expect(response.getByRole("heading", { name: "The buyer's answer" })).toBeVisible();
-  await expect(response.getByTestId("deal-agreed-terms")).toContainText("0.85% off the ¥257,200.00 invoice");
+  await expect(response.getByTestId("deal-agreed-terms")).toHaveCount(0);
+  await expect(page.locator("#commitments")).toContainText("0.85% off");
   await expect(page.getByTestId("deal-recommendation")).toHaveText("Agreed");
-  await expect(page.getByTestId("deal-steps")).toContainText("Agreed");
-  await expect(page.getByTestId("deal-steps")).toHaveAttribute("data-state", "AGREED");
+  await expect(page.getByTestId("deal-eyebrow")).toHaveText("Where this deal stands");
+  await expect(page.getByTestId("deal-state-chip")).toHaveAttribute("data-state", "AGREED");
+  // Money and what is left, from the record: cash received today, and the invoice still to be paid.
+  await expect(page.getByTestId("deal-money-lines")).toContainText("Received ¥149,986.20 today.");
+  await expect(page.getByTestId("deal-left")).toContainText("Waiting for Foshan Home Retail Co. to pay");
   await page.getByTestId("inbox-back").click();
   await expect(inbox.getByTestId("inbox-msg-EX01").getByTestId("inbox-msg-status")).toHaveCount(0); // the message being read says "Showing below"
   await expect(response.getByTestId("deal-option-Option-A")).toHaveCount(0);
-  await expect(page.getByTestId("next-step")).toContainText(/agree|books/i);
+  // No band: an agreement in force is said by the chip and the Agreements card.
+  await expect(page.getByTestId("next-step")).toHaveCount(0);
 });
 
 test("without the strategy flag, Compare is the response card's own state: it is closed again after reading another message and coming back", async ({ page }) => {
@@ -280,8 +293,8 @@ test("a buyer who refuses every counter ends in No deal, with what happens next,
   await expect(page.getByTestId("deal-recommendation")).toHaveText("No deal: the buyer did not accept");
   await expect(page.getByTestId("deal-recommendation")).toHaveAttribute("data-outcome", "NO_DEAL");
   await expect(page.getByTestId("deal-if-accept")).toHaveText("If you had accepted the offer as asked:");
-  await expect(page.getByTestId("deal-steps")).toContainText("No deal");
-  await expect(page.getByTestId("deal-steps-outcome")).toHaveClass(/text-ink-2/);
+  await expect(page.getByTestId("deal-state-chip")).toContainText("No deal");
+  await expect(page.getByTestId("deal-state-chip")).toHaveAttribute("data-state", "NO_DEAL");
   const outcome = page.locator("#counters");
   await expect(outcome.getByTestId("deal-negotiation")).toContainText("The buyer refused every counter. Nothing was agreed.");
   await expect(outcome.getByTestId("deal-rounds").locator("li")).toHaveCount(3);
