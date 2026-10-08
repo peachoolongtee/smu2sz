@@ -1327,6 +1327,94 @@ export interface PriceCurveView {
   computed_in_seconds: number;
 }
 
+/** One package's terms as the server worded them (GET /buyers/{id}/envelope): every percentage and amount is its own string. */
+export interface EnvelopeTerms {
+  buyer_id: string;
+  terms_days: number;
+  price_bp: number;
+  early_pay_bp: number;
+  early_pay_face_fen: Fen | null;
+  rebate_bp: number;
+  price_display: string;
+  early_pay_display: string;
+  /** Present only when an early-payment face is part of the package. */
+  early_pay_face_display?: string;
+  rebate_display: string;
+}
+
+/** A package and the verifier's answer to it. `flags` are in words ("needs your approval", "its funding cannot run today"). */
+export interface EnvelopePackageView {
+  package: EnvelopeTerms;
+  outcome: string;
+  tier: string;
+  passes: boolean;
+  approved: boolean;
+  codes: string[];
+  binding_codes: string[];
+  forward_budget_used_fen: Fen;
+  forward_budget_used_display: string;
+  reserve_breach: { day: Day; when: string; curable: boolean; cure_cost_fen: Fen; cure_cost_display: string } | null;
+  flags: string[];
+  counter_match: boolean;
+  plan_cost_fen: Fen | null;
+  plan_cost_display?: string;
+}
+
+/** One lever's maximum: where it stops (`wall_text`, in words) and the package at the maximum and at the next step. */
+export interface EnvelopeLeverView {
+  lever: string;
+  key: "terms_alone" | "terms_budget_ignored" | "terms_with_price" | "early_pay_whole" | "early_pay_counter" | "rebate" | string;
+  label: string;
+  unit: "days" | "bp";
+  maximum: number | null;
+  confirmed: boolean;
+  scanned: boolean;
+  wall: string | null;
+  wall_text: string | null;
+  face_fen: Fen | null;
+  face_display?: string;
+  rule_price_bp: number | null;
+  rule_price_display?: string;
+  unavailable: string | null;
+  at_maximum: EnvelopePackageView | null;
+  next_step: EnvelopePackageView | null;
+}
+
+/** One row of the terms-and-price zone (only with `zone=1`): the smallest price that passes at that many days. */
+export interface EnvelopeZoneRow {
+  terms_days: number;
+  min_price_bp: number | null;
+  min_price_display?: string;
+  rule_price_bp: number | null;
+  rule_price_display?: string;
+  cost_per_invoice_fen: Fen | null;
+  cost_per_invoice_display?: string;
+  passes_within_range: boolean;
+  neighbours_confirmed: boolean;
+  at_that_price: EnvelopePackageView;
+}
+
+/** GET /buyers/{buyer_id}/envelope (flag `envelope`): what the owner can live with for one buyer, as approved packages. Hypothetical; sends nothing. */
+export interface EnvelopeView {
+  buyer_id: string;
+  buyer_name: string;
+  /** The one-sentence answer, the reason behind its limit and the cost, all the server's words. */
+  primary: string;
+  reason: string;
+  money: string;
+  packages: EnvelopePackageView[];
+  levers: EnvelopeLeverView[];
+  zone: EnvelopeZoneRow[];
+  /** One sentence when the buyer has no lever at all; the card then shows only this. */
+  refused: string | null;
+  hypothetical: true;
+  evaluations: number;
+  state_version: number;
+  source_state_version: number;
+  day: Day;
+  computed_in_seconds: number;
+}
+
 export type CollectionAction = "call_now" | "escalate" | "reminder" | "offer_early_pay" | "finance" | "wait";
 
 /** One hypothetical receipt date for a receivable and what it would save. */

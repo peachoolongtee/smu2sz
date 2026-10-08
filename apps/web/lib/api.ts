@@ -39,6 +39,7 @@ import type {
   NlResponse,
   OfferView,
   PlanRequest,
+  EnvelopeView,
   PriceCurveView,
   ReceivablesWorthView,
   ReconciliationView,
@@ -169,6 +170,16 @@ export async function getPriceCurve(lang: "en" | "zh"): Promise<PriceCurveView |
 /** GET /receivables/worth (flag `collections_worth`): the open receivables ranked by what collecting each saves. Null as above. */
 export async function getReceivablesWorth(lang: "en" | "zh"): Promise<ReceivablesWorthView | null> {
   return isMock ? (await mock()).getReceivablesWorth(lang) : (await live()).getReceivablesWorth(lang);
+}
+
+/**
+ * GET /buyers/{buyer_id}/envelope (flag `envelope`): what the owner can live with for this buyer, as approved packages. `zone` asks
+ * for the terms-and-price table as well. The first answer for a set of books takes several seconds (the server sweeps the levers);
+ * a repeat is cached. Null when the server has the feature off or lacks the buyer, so the Deals card hides. Call it only behind
+ * STRATEGY_MVP.
+ */
+export async function getEnvelope(buyerId: string, lang: "en" | "zh", zone = false): Promise<EnvelopeView | null> {
+  return isMock ? (await mock()).getEnvelope(buyerId, lang, zone) : (await live()).getEnvelope(buyerId, lang, zone);
 }
 
 /** POST /nl: one turn of the conversation. Owner turns need the owner token (401 opens the sign-in dialog). */

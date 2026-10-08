@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
-import { pickByDay } from "../lib/mock/strategy-pick.ts";
+import { pickByDay, pickByStory } from "../lib/mock/strategy-pick.ts";
 
 const web = (p) => fileURLToPath(new URL(`../${p}`, import.meta.url));
 const source = (p) => readFileSync(web(p), "utf8");
@@ -47,14 +47,29 @@ test("the recordings are chosen by the clock's day: the opening books before the
   assert.equal(pickByDay(80, 34, "day0", "day34"), "day34");
 });
 
-test("the mock handlers choose with the same day as the funding plan (home.NEWS_DAY) and the four recordings are the right days", () => {
+test("after the day-34 cure is approved the post-approval recording is served; before it, day 34's; before day 34, the opening books'", () => {
+  const pick = (day, approved) => pickByStory(day, 34, approved, "day0", "day34", "after");
+  assert.equal(pick(0, false), "day0");
+  assert.equal(pick(33, false), "day0");
+  assert.equal(pick(34, false), "day34");
+  assert.equal(pick(34, true), "after");
+  assert.equal(pick(80, true), "after");
+  // An approval cannot predate the news: the cure exists only from day 34.
+  assert.equal(pick(10, true), "day0");
+});
+
+test("the mock handlers choose with the home mock's own condition (the clock's day and cureStage() === 'approved') and the recordings are the right days", () => {
   const handlers = source("lib/mock/handlers.ts");
-  assert.match(handlers, /getPriceCurve[\s\S]*?pickByDay\(home\.mockClock\(\)\.day, home\.NEWS_DAY, priceCurveDay0Json, priceCurveDay34Json\)/);
-  assert.match(handlers, /getReceivablesWorth[\s\S]*?pickByDay\(home\.mockClock\(\)\.day, home\.NEWS_DAY, worthDay0Json, worthDay34Json\)/);
-  assert.equal(recording("price_curve_day0").day, 0);
-  assert.equal(recording("price_curve_day34").day, 34);
-  assert.equal(recording("worth_day0").day, 0);
-  assert.equal(recording("worth_day34").day, 34);
+  assert.match(handlers, /pickByStory\(home\.mockClock\(\)\.day, home\.NEWS_DAY, home\.cureStage\(\) === "approved", atDay0, atNews, afterApproval\)/);
+  assert.match(handlers, /getPriceCurve[\s\S]*?strategyRecording<PriceCurveView>\(priceCurveDay0Json, priceCurveDay34Json, priceCurveDay34AfterJson\)/);
+  assert.match(handlers, /getReceivablesWorth[\s\S]*?strategyRecording<ReceivablesWorthView>\(worthDay0Json, worthDay34Json, worthDay34AfterJson\)/);
+  assert.match(handlers, /getEnvelope[\s\S]*?strategyRecording<EnvelopeView>\(envelopeDay0Json, envelopeDay34Json, envelopeDay34AfterJson\)/);
+  assert.match(source("lib/mock/home.ts"), /s\.stage === "approved" \? "after"/);
+  for (const name of ["price_curve", "worth", "envelope"]) {
+    assert.equal(recording(`${name}_day0`).day, 0);
+    assert.equal(recording(`${name}_day34`).day, 34);
+    assert.equal(recording(`${name}_day34_after`).day, 34);
+  }
 });
 
 test("the recordings carry the server's strings the pages show, and no 'day N' in them", () => {
@@ -73,4 +88,28 @@ test("the recordings carry the server's strings the pages show, and no 'day N' i
     }
   }
   assert.equal(recording("worth_day34").rows[0].action, "call_now");
+});
+
+test("the envelope recordings are BUYER-1's, carry the server's sentences and the zone, and say no 'day N'", () => {
+  for (const name of ["envelope_day0", "envelope_day34", "envelope_day34_after"]) {
+    const e = recording(name);
+    assert.equal(e.buyer_id, "BUYER-1");
+    assert.equal(e.refused, null);
+    assert.ok(e.packages.length > 0 && e.levers.length > 0 && e.zone.length === 13, name);
+    for (const text of [e.primary, e.reason, e.money]) assert.doesNotMatch(text, /\bday \d/i);
+    assert.equal(e.computed_in_seconds, 0);
+  }
+  const day0 = recording("envelope_day0");
+  assert.match(day0.primary, /55-day/);
+  assert.match(day0.primary, /0\.85%/);
+  assert.equal(day0.levers.length, 6);
+  // The approval changes the answer: the post-approval sentence is not day 34's.
+  assert.notEqual(recording("envelope_day34_after").primary, recording("envelope_day34").primary);
+  assert.notEqual(recording("price_curve_day34_after").sentence, recording("price_curve_day34").sentence);
+});
+
+test("the envelope call is behind the flag at its call site", () => {
+  const uses = source("components/deals/before-they-ask.tsx").split("\n").filter((line) => line.includes("getEnvelope("));
+  assert.ok(uses.length > 0);
+  for (const line of uses) assert.match(line, /STRATEGY_MVP/, line.trim());
 });
