@@ -1880,6 +1880,10 @@
   },
   "approvals": [],
   "pending_count": 0,
+  "open_decisions": [],
+  "remaining_task": null,
+  "remaining_task_links": [],
+  "remaining_task_decision_id": null,
   "changes": [],
   "receivables": {
     "open_count": 1,

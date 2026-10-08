@@ -46,6 +46,27 @@
       "result_message": null,
       "decided_when": null,
       "created_when": "today"
+    },
+    "decision_id": "approval:APR-000001",
+    "decision_state": "AUTHORIZATION_REQUIRED",
+    "quote": {
+      "recorded": false,
+      "quoted_when": null,
+      "lines": [],
+      "total_fen": null,
+      "total_display": null,
+      "cost_note": null,
+      "rate_basis": null,
+      "lands_day": null,
+      "lands_when": null,
+      "after": null,
+      "if_declined": null,
+      "needs_owner": null,
+      "text": "Price today."
+    },
+    "execution": {
+      "status": "PENDING",
+      "summary_text": "Waiting for your approval. Nothing has run."
     }
   }
 }

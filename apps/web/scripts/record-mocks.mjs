@@ -17,7 +17,7 @@
 //     id and nonce wherever they appear (negotiation_accept.json, ops.json, home_act.json, home_goahead.json).
 //   - nl_script.json and state_after_fund.json: the NL-<16 hex> operation and lot ids, which the API derives from a random
 //     per-session nonce, become fixed ids by order of first appearance; nl_script.json, home_reconciliation_day34.json and the two
-//     home ledgers (home_ledger_day34.json, home_ledger_approved.json) are
+//     home ledgers (home_ledger_day34.json, home_ledger_approved.json) and the receipts inside decisions.json are
 //     chained again by first appearance (entry_hash / prev_hash re-derived, chain_head_hash fixed) for the same reason.
 //   - the early-payment alert id (ALERT-EARLYPAY-<12 hex>, derived from the offer's random id; raised on the books where the day-2 receipt
 //     never came): one fixed id.
@@ -27,6 +27,13 @@
 //     own seq, id, kind, status and the previous hash) so the chain stays internally consistent and repeatable. Hashes in
 //     every other file (the chat script, for one) are deterministic and are kept exactly as recorded.
 //   - strategy/*.json (only with --strategy): `computed_in_seconds` -> 0 (the time the call took; a cache hit differs from a miss).
+//
+// The decision record (Wave 2, ADR-0011) is recorded as snapshots in decisions.json, { name: { en, zh } }, each one GET /decisions/{id} read at
+// the moment the story names (received, ready, agreed_day0, fulfilled_day34, expired_day34 / missed_day34 on the receipt variants, nodeal,
+// cure_pending, cure_approved, cure_failed, cure_residual, and so on). lib/mock/decisions.ts chooses among them by the mock's story state.
+// w2_counter_changed.json holds the two 409 COUNTER_CHANGED answers (the books moved: no counters, re-evaluate; the verdict was replaced: the
+// current counters). home_summary_day34_residual*.json is the home after a cure that did not restore the reserve, once the cash landed (the
+// remaining task), with its trajectory.
 //
 // --strategy records ONLY apps/web/mocks/strategy/*.json and exits; no other file is written and the assertions below are not run:
 //   price_curve_{day0,day34,day34_after}.json   GET /cash/price-curve         (lang=en)
@@ -83,7 +90,7 @@ const RECHAIN = new Set(["negotiation_accept.json", "home_act.json", "home_act_d
 
 // Files whose operations are chained by first appearance (every other chained file uses `rechain` below): the chat script, whose
 // operation ids and commitment ids come from a per-session random nonce, and the day-34 reconciliation (one receipt).
-const RECHAIN_BY_APPEARANCE = new Set(["nl_script.json", "home_reconciliation_day34.json", "home_ledger_day34.json", "home_ledger_approved.json"]);
+const RECHAIN_BY_APPEARANCE = new Set(["nl_script.json", "home_reconciliation_day34.json", "home_ledger_day34.json", "home_ledger_approved.json", "decisions.json"]);
 const nlIds = new Map(); // NL-<16 hex> operation / lot ids, which the API derives from a random session nonce -> a fixed id by first appearance
 
 function rechainByAppearance(name, root) {
@@ -145,11 +152,29 @@ function write(name, value) {
   written.push(name);
 }
 const step = (id) => DEMO_STEPS.find((s) => s.id === id);
+
+// ------------------------------------------------------------------ the decision record: named snapshots in both languages
+const decisions = {};
+const dealId = (offerId) => `deal:${offerId}`;
+async function snap(name, id) {
+  if (!id) throw new Error(`snapshot ${name}: no decision id`);
+  decisions[name] = { en: await live.getDecision(id, "en"), zh: await live.getDecision(id, "zh") };
+}
+/** The 409 COUNTER_CHANGED detail a bound send gets, or a failure when the API accepted it. */
+async function refusedSend(offerId, body) {
+  try {
+    await live.negotiate(offerId, body);
+  } catch (e) {
+    if (e?.status === 409 && e.detail?.code === "COUNTER_CHANGED") return e.detail;
+    throw e;
+  }
+  throw new Error("the bound send was accepted: the story needs a send the API refuses");
+}
 const demo = () => demoStore.get();
 
 /** An operation as the mock ledger replays it: what the server said (the executor's sentence and its Business twin), without the position in the chain. */
 function template(op) {
-  return { kind: op.kind, status: op.status, tier: op.tier, requested_by: op.requested_by, message: op.message, summary: op.summary, message_when: op.message_when ?? null, event_text: op.event_text ?? null, event_detail: op.event_detail ?? null };
+  return { kind: op.kind, status: op.status, tier: op.tier, requested_by: op.requested_by, message: op.message, summary: op.summary, message_when: op.message_when ?? null, event_text: op.event_text ?? null, event_detail: op.event_detail ?? null, decision_id: op.decision_id ?? null };
 }
 async function ledgerTail(n) {
   return (await live.getLedger()).operations.slice(-n);
@@ -217,6 +242,7 @@ files["trajectory_conservative_day0.json"] = await live.getTrajectory("CONSERVAT
   const a = files["home_summary_day0.json"].next_action;
   files["home_act_day0.json"] = await live.actOnAlert(a.alert_id, { state_version: a.state_version, suggestions: a.suggestions });
   if (files["home_act_day0.json"].executed !== 2) throw new Error("the day-0 fix no longer runs alone: the demo path has changed");
+  await snap("cure_day0", files["home_act_day0.json"].decision_id);
   files["home_summary_after_fund.json"] = await live.getHome("en");
   files["home_summary_after_fund_zh.json"] = await live.getHome("zh");
   files["trajectory_conservative_after_fund.json"] = await live.getTrajectory("CONSERVATIVE"); // the Cash page's readings, on the books this home was read on
@@ -226,10 +252,14 @@ let verdictEx01 = null;
 for (const s of DEMO_STEPS) {
   await s.run();
   const d = demo();
-  if (s.id === "inbox") files["offer_ex01.json"] = d.offers[d.offerId];
+  if (s.id === "inbox") {
+    files["offer_ex01.json"] = d.offers[d.offerId];
+    await snap("received.ex01", dealId(d.offerId));
+  }
   if (s.id === "trajectory") {
     verdictEx01 = d.verdicts[d.offerId];
     files["verdict_ex01.json"] = verdictEx01;
+    await snap("ready.ex01", dealId(d.offerId));
     // The trajectory page: the position with the offer applied (conservative decides) and the position today (expected).
     files["trajectory_conservative.json"] = await live.getTrajectory("CONSERVATIVE", verdictEx01);
     files["trajectory_expected.json"] = await live.getTrajectory("EXPECTED", verdictEx01);
@@ -237,6 +267,7 @@ for (const s of DEMO_STEPS) {
   if (s.id === "funding") files["funding.json"] = d.funding;
   if (s.id === "negotiate") {
     files["negotiation_accept.json"] = d.negotiations[d.offerId];
+    await snap("agreed_day0.ex01", dealId(d.offerId));
     const [accept, draw] = await ledgerTail(2);
     ops.accept_a = template(accept);
     ops.draw_line = template(draw);
@@ -245,6 +276,8 @@ for (const s of DEMO_STEPS) {
     files["offer_ex01b.json"] = d.offers[d.rewordedId];
     files["verdict_ex01b.json"] = d.verdicts[d.rewordedId];
     files["negotiation_nodeal.json"] = d.negotiations[d.offerId];
+    await snap("nodeal.ex01", dealId(d.offerId));
+    await snap("ready.ex01b", dealId(d.rewordedId));
     const [draw, invoice] = await ledgerTail(2);
     ops.draw_line_hard_line = template(draw);
     ops.submit_invoice = template(invoice);
@@ -262,6 +295,7 @@ for (const s of DEMO_STEPS) {
     const sec = Object.values(d.offers).find((o) => o.offer.counterparty_id !== "BUYER-1");
     files["offer_sec.json"] = sec;
     files["verdict_sec.json"] = d.verdicts[sec.offer.offer_id];
+    await snap("ready.sec", dealId(sec.offer.offer_id));
     files["audit_sec.json"] = await live.getAudit();
   }
 }
@@ -279,10 +313,13 @@ async function queueOne() {
   return live.getApprovals();
 }
 let q = await queueOne();
+await snap("apply_pending", q[0].decision_id);
 await live.decideApproval(q[0].id, "APPROVE");
+await snap("apply_approved", q[0].decision_id);
 ops.approve_apply_loan = template((await ledgerTail(1))[0]);
 q = await queueOne();
 await live.decideApproval(q[0].id, "REJECT");
+await snap("apply_rejected", q[0].decision_id);
 ops.reject_apply_loan = template((await ledgerTail(1))[0]);
 files["ops.json"] = ops;
 
@@ -295,7 +332,30 @@ const typed = await live.submitOffer({
   ],
 });
 files["offer_accept.json"] = typed;
+await snap("received.accept", dealId(typed.offer.offer_id));
 files["verdict_accept.json"] = await live.evaluateOffer(typed.offer.offer_id);
+await snap("ready.accept", dealId(typed.offer.offer_id));
+// The other two demo messages, read but not yet checked (the Deals page opens them in this state).
+for (const [key, fixture] of [["ex01b", "EX01B_REWORDED"], ["sec", "SEC_DEMO_FASTCAPITAL"]]) {
+  const read = await live.submitOffer({ fixture_id: fixture });
+  await snap(`received.${key}`, dealId(read.offer.offer_id));
+}
+
+// ------------------------------------------------------------------ Wave 2: a bound send the API refuses (409 COUNTER_CHANGED), two ways
+// Replaced: the verdict the owner read is no longer the latest (the current counters come back). Moved: the books moved after the evaluation
+// (the day-0 fix ran), so the counters are no longer safe to show and the answer says to evaluate again.
+await reset();
+{
+  const read = await live.submitOffer({ fixture_id: "EX01_PACKAGE" });
+  const verdict = await live.evaluateOffer(read.offer.offer_id, "EX01_PACKAGE");
+  const replaced = await refusedSend(read.offer.offer_id, { buyer_profile: "cooperative", verdict_id: "VER-replaced", counter_id: verdict.counters[0].id, state_version: verdict.state_version });
+  if (replaced.reason !== "VERDICT_CHANGED" || !replaced.counters.length) throw new Error("the replaced-verdict story changed: the API has changed");
+  const home = await live.getHome("en");
+  await live.actOnAlert(home.next_action.alert_id, { state_version: home.next_action.state_version, suggestions: home.next_action.suggestions });
+  const moved = await refusedSend(read.offer.offer_id, { buyer_profile: "cooperative", verdict_id: verdict.id, counter_id: verdict.counters[0].id, state_version: verdict.state_version });
+  if (moved.reason !== "BOOKS_CHANGED" || moved.counters.length || !moved.reevaluate) throw new Error("the moved-books story changed: the API has changed");
+  files["w2_counter_changed.json"] = { replaced, moved };
+}
 
 // ------------------------------------------------------------------ what-if: the presets and a coarse grid, on the opening books
 await reset();
@@ -376,6 +436,8 @@ files["home_ledger_day34.json"] = await live.getLedger();
 files["funding_day34.json"] = await live.planFunding({});
 // The reconciliation after the day-2 bank receipt (it carries the bank's reference).
 files["home_reconciliation_day34.json"] = await live.getReconciliation();
+// The deal's record on the main walk at day 34: the day-2 receipt came, so it is fulfilled.
+await snap("fulfilled_day34.ex01", dealId(demoStore.get().offerId));
 const reserve = files["home_alerts_day34.json"].alerts.find((a) => a.id.startsWith("ALERT-RESERVE") && a.actionable);
 if (!reserve) throw new Error("no actionable reserve alert on day 34: the demo path has changed");
 files["home_opener_day34.json"] = await live.nlOpener("rec-home-en", "en");
@@ -393,9 +455,11 @@ files["home_summary_pending.json"] = await live.getHome("en");
 files["home_summary_pending_zh.json"] = await live.getHome("zh");
 files["trajectory_conservative_pending.json"] = await live.getTrajectory("CONSERVATIVE"); // the Cash page's readings, on the books this home was read on
 files["home_approval_pending.json"] = (await live.getApprovals())[0];
+await snap("cure_pending", files["home_approval_pending.json"].decision_id);
 // The owner approves on the approval card: the same operation executes (EXECUTED, the cash lands on day 37) and the alert clears.
 files["home_approval_approved.json"] = await live.decideApproval(files["home_approval_pending.json"].id, "APPROVE");
 files["home_approve.json"] = { operations: await ledgerTail(1) };
+await snap("cure_approved", files["home_approval_pending.json"].decision_id);
 // The log after the decision: the earlier "waiting" entry now reads in the past, beside "You approved ..." (the mock replays that).
 files["home_ledger_approved.json"] = await live.getLedger();
 files["home_alerts_after.json"] = await live.getAlerts();
@@ -432,6 +496,7 @@ files["home_summary_day34_noreceipt.json"] = await live.getHome("en");
 files["home_summary_day34_noreceipt_zh.json"] = await live.getHome("zh");
 files["trajectory_conservative_day34_noreceipt.json"] = await live.getTrajectory("CONSERVATIVE");
 if (files["home_summary_day34_noreceipt.json"].cash.below_reserve_today !== true) throw new Error("day 34 without a receipt should be below the reserve today: the API has changed");
+await snap("noreceipt_day34.ex01", dealId(demoStore.get().offerId));
 
 // 1b. Day 34 after a HALF receipt on day 2: the part-paid promise's change row carries the four named facts and the window (F25).
 //     The mock serves it when "tl-mock-no-receipt" is "half".
@@ -447,6 +512,33 @@ files["home_summary_day34_half.json"] = await live.getHome("en");
 files["home_summary_day34_half_zh.json"] = await live.getHome("zh");
 files["trajectory_conservative_day34_half.json"] = await live.getTrajectory("CONSERVATIVE");
 if (!files["home_summary_day34_half.json"].changes.some((c) => c.window_state)) throw new Error("a half receipt should give a change row with the part-paid facts: the API has changed");
+await snap("half_day34.ex01", dealId(demoStore.get().offerId));
+
+// 1c. A cure that does not restore the reserve (no receipt on day 2), approved and landed: the cash is back but the reserve is still short, so the
+//     home carries the remaining task (F17) and the record is settled with a residual. The mock serves it when "tl-mock-no-receipt" is "residual".
+await reset();
+await step("inbox").run();
+await step("trajectory").run();
+await step("negotiate").run();
+await live.advanceClock(2);
+await live.advanceClock(28);
+await live.advanceClock(4);
+{
+  const alerts = await live.getAlerts();
+  const reserve = alerts.alerts.find((a) => a.id.startsWith("ALERT-RESERVE") && a.actionable);
+  if (!reserve) throw new Error("no actionable reserve alert on the no-receipt books: the demo path has changed");
+  await live.actOnAlert(reserve.id, {
+    state_version: alerts.state_version,
+    suggestions: reserve.suggested.map((x) => ({ operation_kind: x.operation_kind, facility_id: x.facility_id, receivable_id: x.receivable_id, amount_fen: x.amount_fen })),
+  });
+  await live.decideApproval((await live.getApprovals())[0].id, "APPROVE");
+  await live.advanceClock(4); // the advance lands on day 37 and settles the day after
+  files["home_summary_day34_residual.json"] = await live.getHome("en");
+  files["home_summary_day34_residual_zh.json"] = await live.getHome("zh");
+  files["trajectory_conservative_day34_residual.json"] = await live.getTrajectory("CONSERVATIVE");
+  if (!files["home_summary_day34_residual.json"].remaining_task) throw new Error("the cure that leaves the reserve short should give a remaining task: the API has changed");
+  await snap("cure_residual", files["home_summary_day34_residual.json"].remaining_task_decision_id);
+}
 
 // 2. A buyer's early-payment message queues an agreement for the owner: its approval row carries the terms (terms_available true);
 //    once the agreement has expired the same row says the terms cannot be shown (terms_available false, with the server's reason).
@@ -483,6 +575,7 @@ await live.advanceClock(91 - 34);
 const refused = await live.decideApproval(cure.id, "APPROVE");
 if (refused.presentation?.execution_status !== "REFUSED") throw new Error("approving after the mandate expired should be refused: the API has changed");
 stories.refused = { pending: cure, decided: refused };
+await snap("cure_failed", cure.decision_id);
 files["w1_approval_stories.json"] = stories;
 
 // ------------------------------------------------------------------ the chat: every scripted text the mock knows, one conversation each
@@ -549,5 +642,6 @@ files["nl_script.json"] = Object.fromEntries(KEY_ORDER.map((k) => [k, script[k]]
 
 await live.demoReset();
 
+files["decisions.json"] = Object.fromEntries(Object.keys(decisions).sort().map((k) => [k, decisions[k]]));
 for (const name of Object.keys(files).sort()) write(name, files[name]);
 console.log(`recorded ${written.length} files into ${OUT} from ${API}`);

@@ -86,6 +86,10 @@
   "forward_concession_total_display": "¥0.00",
   "business_action": "accept",
   "summary_when": "ACCEPT. Forward concessions ¥0.00 against ¥5,000.00. Covenants hold: DSCR_MIN 2.00x, LEVERAGE_MAX 1.35x.",
+  "decision_id": "deal:OFF-8e944bff0cc9",
+  "decision_recorded": true,
+  "evaluated_day": 0,
+  "evaluated_when": "today",
   "passed_checks": [
     {
       "code": "MIN_CASH",

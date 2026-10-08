@@ -918,6 +918,32 @@
   "next_action": null,
   "approvals": [],
   "pending_count": 0,
+  "open_decisions": [
+    {
+      "id": "deal:OFF-f806f79b6c21",
+      "family": "DEAL",
+      "state": "AGREED",
+      "state_text": "Agreed",
+      "terminal": false,
+      "headline": "Offer from Foshan Home Retail Co.",
+      "counterparty_name": "Foshan Home Retail Co.",
+      "amount_display": "¥257,200.00",
+      "opened_when": "today",
+      "updated_when": "today",
+      "waiting_for": {
+        "code": "BANK_RECEIPT",
+        "party": "buyer",
+        "party_name": "Foshan Home Retail Co.",
+        "day": 2,
+        "when": "in 2 days",
+        "text": "Waiting for Foshan Home Retail Co. to pay, due in 2 days."
+      },
+      "residual": null
+    }
+  ],
+  "remaining_task": null,
+  "remaining_task_links": [],
+  "remaining_task_decision_id": null,
   "changes": [
     {
       "day": 0,

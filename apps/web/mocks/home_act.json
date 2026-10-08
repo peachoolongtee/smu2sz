@@ -1,5 +1,7 @@
 {
   "alert_id": "ALERT-RESERVE-42",
+  "decision_id": "alert:ALERT-RESERVE-42:v7",
+  "decision_recorded": true,
   "day": 34,
   "results": [
     {

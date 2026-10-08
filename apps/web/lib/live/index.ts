@@ -46,6 +46,7 @@ import type {
   ApprovalDecision,
 } from "../types";
 import * as approvals from "./approvals";
+import * as decisions from "./decisions";
 import { downloadFile, http } from "./http";
 import * as trajectory from "./trajectory";
 
@@ -84,9 +85,15 @@ export const live = {
       body: req.fixture_id ? { fixture_id: req.fixture_id } : { counterparty_id: req.counterparty_id, documents: req.documents },
     }),
 
-  /** The API has no read endpoint for an offer; the session cache (demo store) holds what POST /offers returned. */
-  getOffer: (offerId: string): Promise<OfferView> =>
-    Promise.reject(new ApiError(404, `Offer ${offerId} is not in this session. Submit it again from the Inbox.`, undefined, "offer_missing", { id: offerId })),
+  /** GET /offers/{id} (owner): the offer, its documents, the latest verdict id and the deal's record id. An unknown id is a 404 the page explains. */
+  getOffer: async (offerId: string): Promise<OfferView> => {
+    try {
+      return await http<OfferView>("GET", `/offers/${enc(offerId)}`);
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 404) throw new ApiError(404, `Offer ${offerId} was not found. Submit it again from the Inbox.`, e.detail, "offer_missing", { id: offerId });
+      throw e;
+    }
+  },
 
   evaluateOffer: (offerId: string, fixtureId?: string) =>
     http<VerdictView>("POST", `/offers/${enc(offerId)}/evaluate`, { body: fixtureId ? { fixture_id: fixtureId } : {} }),
@@ -102,6 +109,9 @@ export const live = {
 
   getLedger: () => http<LedgerView>("GET", "/ledger"),
   getAudit: () => http<AuditView>("GET", "/audit"),
+
+  getDecisions: (q: decisions.DecisionQuery) => decisions.getDecisions(q),
+  getDecision: (id: string, lang: "en" | "zh") => decisions.getDecision(id, lang),
 
   getApprovals: (): Promise<ApprovalView[]> => approvals.getApprovals(),
   decideApproval: (id: string, decision: ApprovalDecision) => approvals.decideApproval(id, decision),

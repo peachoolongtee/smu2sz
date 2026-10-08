@@ -346,7 +346,8 @@
         "net_fen": 0,
         "net_display": "¥0.00",
         "is_net": false
-      }
+      },
+      "send_scope": "Sends Option A to the buyer (the reply is simulated); records the agreement, with your approval when it changes terms; runs the funding for any remaining gap within your limits."
     },
     {
       "id": "CTR-6b07cbf70441",
@@ -454,7 +455,8 @@
         "net_fen": -16205,
         "net_display": "−¥162.05",
         "is_net": true
-      }
+      },
+      "send_scope": "Sends Option B to the buyer (the reply is simulated); records the agreement, with your approval when it changes terms; runs the funding for any remaining gap within your limits."
     }
   ],
   "plan": {
@@ -518,6 +520,10 @@
   "forward_concession_total_display": "¥28,326.92",
   "business_action": "counter",
   "summary_when": "REJECT: AGG_CONCESSION_EXCEEDED (¥28,326.92 vs ¥5,000.00); RESERVE_BREACH@47 (curable at ¥2,406.67; the cure cannot run today); DISCOUNT_ABOVE_BREAK_EVEN (1.20% vs < 0.88%); EARLY_PAY_DEARER_THAN_PLAN (¥6,508.05 vs < ¥3,873.58). Forward concessions ¥28,326.92 against ¥5,000.00. Covenants hold: DSCR_MIN 1.92x, LEVERAGE_MAX 1.47x. Price-adjustment counter at 55 days, not 60: 60-day terms cannot be funded from committed sources: the shortfall of ¥85,000.00 in 47 days has no cure. Option B passes its own re-check: its terms leave a shortfall of ¥85,000.00 in 47 days, funded by the plan: committed plan: ¥1,570.36 (cannot run today). Counters: Option A, Option B.",
+  "decision_id": "deal:OFF-f806f79b6c21",
+  "decision_recorded": true,
+  "evaluated_day": 0,
+  "evaluated_when": "today",
   "passed_checks": [
     {
       "code": "MAX_APR",

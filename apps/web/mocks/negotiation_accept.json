@@ -1,5 +1,16 @@
 {
   "offer_id": "OFF-f806f79b6c21",
+  "decision_id": "deal:OFF-f806f79b6c21",
+  "decision_recorded": true,
+  "execution": {
+    "summary_text": "Agreement with Foshan Home Retail Co. recorded. Funding of ¥149,986.20 was requested and has landed.",
+    "requested_fen": 14998620,
+    "requested_display": "¥149,986.20",
+    "landed_fen": 14998620,
+    "landed_display": "¥149,986.20",
+    "in_transit_fen": 0,
+    "in_transit_display": null
+  },
   "outcome": "DEAL",
   "rounds": [
     {

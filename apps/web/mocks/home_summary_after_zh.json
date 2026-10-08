@@ -947,6 +947,32 @@
   "next_action": null,
   "approvals": [],
   "pending_count": 0,
+  "open_decisions": [
+    {
+      "id": "alert:ALERT-RESERVE-42:v7",
+      "family": "FUNDING",
+      "state": "SETTLEMENT_PENDING",
+      "state_text": "已提交，资金在途",
+      "terminal": false,
+      "headline": "以Foshan Home Retail Co. 的 ¥420,000.00 发票在Invoice financing (onboarded platform)融资 ¥200,000.00",
+      "counterparty_name": "Foshan Home Retail Co.",
+      "amount_display": "¥200,000.00",
+      "opened_when": "今天",
+      "updated_when": "今天",
+      "waiting_for": {
+        "code": "FUNDING_SETTLEMENT",
+        "party": "lender",
+        "party_name": "Invoice financing (onboarded platform)",
+        "day": 37,
+        "when": "3 天后",
+        "text": "等待Invoice financing (onboarded platform)于3 天后放款到账。"
+      },
+      "residual": null
+    }
+  ],
+  "remaining_task": null,
+  "remaining_task_links": [],
+  "remaining_task_decision_id": null,
   "changes": [
     {
       "day": 34,

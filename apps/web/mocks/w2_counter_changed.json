@@ -1,0 +1,202 @@
+{
+  "replaced": {
+    "code": "COUNTER_CHANGED",
+    "offer_id": "OFF-f806f79b6c21",
+    "reason": "VERDICT_CHANGED",
+    "verdict_id": "VER-a899ca66120c",
+    "state_version": 1,
+    "counters": [
+      {
+        "id": "CTR-193394b6ba8b",
+        "label": "Option A",
+        "text": "Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥257,200 of this invoice at 0.85%, paid on or before day 2.",
+        "obligations": [
+          {
+            "id": "CTR-193394b6ba8b-O2",
+            "type": "IMMEDIATE_DISCOUNT",
+            "counterparty_id": "BUYER-1",
+            "rate_bp": 85,
+            "amount_fen": null,
+            "days_delta": null,
+            "target_terms_days": null,
+            "effective_day": 2,
+            "base": {
+              "kind": "INVOICE",
+              "amount_fen": 25720000,
+              "receivable_id": "RCV-A",
+              "events_per_year": null,
+              "amount_display": "¥257,200.00"
+            },
+            "contingency": "FIRM",
+            "duration": {
+              "kind": "ONE_OFF",
+              "invoices": null,
+              "end_day": null
+            },
+            "spans": [
+              {
+                "doc_id": "CTR-193394b6ba8b",
+                "start": 34,
+                "end": 134,
+                "text": "We will accept early settlement on up to ¥257,200 of this invoice at 0.85%, paid on or before day 2."
+              }
+            ],
+            "confidence": 1,
+            "unresolved": [],
+            "rate_display": "0.85%"
+          }
+        ],
+        "supplier_cost_fen": 302777,
+        "forward_value_fen": 0,
+        "rationale": "Early settlement at 0.85% is cheaper than financing the invoice on the marginal committed source; the line covers the rest of the near-term gap.",
+        "formula": "break-even: d/(1−d) < c, c = 10.8417% × 30/365 = 0.8911% → d < 0.8832%; largest whole-5bp rate below it = 0.85%. Face: (near-term need ¥405,000.00 − committed line ¥150,000.00) / (1 − 0.85%) = ¥257,186.08 → up to ¥257,200.00 (rounded up to a whole ¥100, at most the invoice). Cost: discount ¥2,186.20 + funding the rest of the gap ¥841.57 (committed plan: ¥841.57) = ¥3,027.77",
+        "supplier_cost_display": "¥3,027.77",
+        "forward_value_display": "¥0.00",
+        "outbound_blocked": false,
+        "text_when": "Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥257,200 of this invoice at 0.85%, paid within 2 days.",
+        "rationale_when": "Early settlement at 0.85% is cheaper than financing the invoice on the marginal committed source; the line covers the rest of the near-term gap.",
+        "economics": {
+          "components": [
+            {
+              "obligation_id": "CTR-193394b6ba8b-O2",
+              "type": "IMMEDIATE_DISCOUNT",
+              "value_fen": 0,
+              "value_display": "¥0.00",
+              "basis": "immediate discount: settled in cash now and capped separately, not a forward concession"
+            }
+          ],
+          "net_words": "≈ ¥0",
+          "funding_cost_fen": 0,
+          "funding_cost_display": "¥0.00",
+          "offset_fen": 0,
+          "offset_display": "¥0.00",
+          "net_fen": 0,
+          "net_display": "¥0.00",
+          "is_net": false
+        },
+        "send_scope": "Sends Option A to the buyer (the reply is simulated); records the agreement, with your approval when it changes terms; runs the funding for any remaining gap within your limits."
+      },
+      {
+        "id": "CTR-6b07cbf70441",
+        "label": "Option B",
+        "text": "55-day terms accepted with a 0.30% price adjustment on future invoices, no rebate.",
+        "obligations": [
+          {
+            "id": "CTR-6b07cbf70441-O1",
+            "type": "TERMS_EXTENSION",
+            "counterparty_id": "BUYER-1",
+            "rate_bp": null,
+            "amount_fen": null,
+            "days_delta": 10,
+            "target_terms_days": 55,
+            "effective_day": null,
+            "base": {
+              "kind": "FUTURE_INVOICES",
+              "amount_fen": null,
+              "receivable_id": null,
+              "events_per_year": null
+            },
+            "contingency": "FIRM",
+            "duration": {
+              "kind": "RECURRING_PERPETUAL",
+              "invoices": null,
+              "end_day": null
+            },
+            "spans": [
+              {
+                "doc_id": "CTR-6b07cbf70441",
+                "start": 0,
+                "end": 21,
+                "text": "55-day terms accepted"
+              }
+            ],
+            "confidence": 1,
+            "unresolved": []
+          },
+          {
+            "id": "CTR-6b07cbf70441-O2",
+            "type": "PRICE_ADJUSTMENT",
+            "counterparty_id": "BUYER-1",
+            "rate_bp": 30,
+            "amount_fen": null,
+            "days_delta": null,
+            "target_terms_days": null,
+            "effective_day": null,
+            "base": {
+              "kind": "FUTURE_INVOICES",
+              "amount_fen": 42000000,
+              "receivable_id": null,
+              "events_per_year": null,
+              "amount_display": "¥420,000.00"
+            },
+            "contingency": "FIRM",
+            "duration": {
+              "kind": "RECURRING_PERPETUAL",
+              "invoices": null,
+              "end_day": null
+            },
+            "spans": [
+              {
+                "doc_id": "CTR-6b07cbf70441",
+                "start": 22,
+                "end": 82,
+                "text": "with a 0.30% price adjustment on future invoices, no rebate."
+              }
+            ],
+            "confidence": 1,
+            "unresolved": [],
+            "rate_display": "0.30%"
+          }
+        ],
+        "supplier_cost_fen": 0,
+        "forward_value_fen": 0,
+        "rationale": "The price adjustment covers the per-invoice cost of funding the longer terms on the marginal committed source, so the net forward concession is about zero; on current books with these terms the router's committed plan (committed plan: ¥899.51 + ¥2,806.95 = ¥3,706.46) keeps the reserve. The offered 60-day terms fail their own re-check; 55 days is the longest that passes. Re-checked as an offer, its terms leave a shortfall of ¥85,000.00 on day 47, funded by the plan: committed plan: ¥1,570.36 (cannot run today).",
+        "formula": "smallest whole-5bp rate r with r × ¥420,000.00 >= per-invoice funding cost ¥1,247.53: 0.30% → ¥1,260.00 per invoice. 12-month: extension ¥16,217.95 + price adjustment −¥16,380.00 = −¥162.05 (cost to the supplier ¥0.00). Funded on current books with these terms by the router's committed plan (committed plan: ¥899.51 + ¥2,806.95 = ¥3,706.46), cost ¥3,706.46. Re-check: its terms leave a shortfall of ¥85,000.00 on day 47, funded by the plan: committed plan: ¥1,570.36 (cannot run today)",
+        "supplier_cost_display": "¥0.00",
+        "forward_value_display": "¥0.00",
+        "outbound_blocked": false,
+        "text_when": "55-day terms accepted with a 0.30% price adjustment on future invoices, no rebate.",
+        "rationale_when": "The price adjustment covers the per-invoice cost of funding the longer terms on the marginal committed source, so the net forward concession is about zero; on current books with these terms the router's committed plan (committed plan: ¥899.51 + ¥2,806.95 = ¥3,706.46) keeps the reserve. The offered 60-day terms fail their own re-check; 55 days is the longest that passes. Re-checked as an offer, its terms leave a shortfall of ¥85,000.00 in 47 days, funded by the plan: committed plan: ¥1,570.36 (cannot run today).",
+        "economics": {
+          "components": [
+            {
+              "obligation_id": "CTR-6b07cbf70441-O1",
+              "type": "TERMS_EXTENSION",
+              "value_fen": 1621795,
+              "value_display": "¥16,217.95",
+              "basis": "terms extension priced as a loan: committed marginal source: Invoice financing (onboarded platform) 10.8417%"
+            },
+            {
+              "obligation_id": "CTR-6b07cbf70441-O2",
+              "type": "PRICE_ADJUSTMENT",
+              "value_fen": -1638000,
+              "value_display": "−¥16,380.00",
+              "basis": "price adjustment on future invoices (a positive rate is a gain to the supplier)"
+            }
+          ],
+          "net_words": "≈ ¥0",
+          "funding_cost_fen": 1621795,
+          "funding_cost_display": "¥16,217.95",
+          "offset_fen": -1638000,
+          "offset_display": "¥16,380.00",
+          "net_fen": -16205,
+          "net_display": "−¥162.05",
+          "is_net": true
+        },
+        "send_scope": "Sends Option B to the buyer (the reply is simulated); records the agreement, with your approval when it changes terms; runs the funding for any remaining gap within your limits."
+      }
+    ],
+    "reevaluate": false,
+    "message": "The counter changed since you read it; nothing was sent. Review the current counters."
+  },
+  "moved": {
+    "code": "COUNTER_CHANGED",
+    "offer_id": "OFF-f806f79b6c21",
+    "reason": "BOOKS_CHANGED",
+    "verdict_id": "VER-a899ca66120c",
+    "state_version": 3,
+    "counters": [],
+    "reevaluate": true,
+    "message": "The counter changed since you read it; nothing was sent. Review the current counters."
+  }
+}

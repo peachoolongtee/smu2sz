@@ -31,20 +31,67 @@
     "facility_name": "Invoice financing (onboarded platform)",
     "buyer_name": "Foshan Home Retail Co.",
     "invoice": "the ¥420,000.00 invoice to Foshan Home Retail Co.",
-    "cost_display": null,
-    "rate_text": null,
-    "cost_due_day": null,
+    "cost_display": "¥1,782.19",
+    "rate_text": "32.5%",
+    "cost_due_day": 47,
     "lands_day": 37,
     "lands_when": "in 3 days",
     "lands_text": null,
     "if_decline": null,
-    "protects": null,
+    "protects": "Cash stays above your minimum cash reserve for the next 120 days.",
     "residual": null,
     "execution_status": "EXECUTED",
     "reason": "The yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval.",
     "result_message": "¥200,000.00 of invoice financing was requested today; the cash lands in 3 days.",
     "decided_when": "today",
     "created_when": "today"
+  },
+  "decision_id": "alert:ALERT-RESERVE-42:v7",
+  "decision_state": "SETTLEMENT_PENDING",
+  "quote": {
+    "recorded": true,
+    "quoted_when": "today",
+    "lines": [
+      {
+        "label": "Finance ¥200,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. on Invoice financing (onboarded platform)",
+        "op_id": "alert:ALERT-RESERVE-42:v7:0",
+        "kind": "SUBMIT_INVOICE_FOR_FINANCING",
+        "amount_fen": 20000000,
+        "amount_display": "¥200,000.00",
+        "cost_fen": 178219,
+        "cost_display": "¥1,782.19",
+        "rate_text": "32.5%",
+        "cost_days": 10,
+        "lands_day": 37,
+        "lands_when": "in 3 days",
+        "above_ceiling": true
+      }
+    ],
+    "total_fen": 178219,
+    "total_display": "¥1,782.19",
+    "cost_note": null,
+    "rate_basis": "Invoice financing is billed in whole 30-day periods until the invoice is paid.",
+    "lands_day": 37,
+    "lands_when": "in 3 days",
+    "after": "Cash stays above your minimum cash reserve for the next 120 days.",
+    "if_declined": "¥200,000.00 below your minimum cash reserve in 8 days; the gap peaks at ¥200,000.00 in 8 days.",
+    "needs_owner": true,
+    "text": null,
+    "actual": [
+      {
+        "op_id": "alert:ALERT-RESERVE-42:v7:0",
+        "amount_display": "¥200,000.00",
+        "request_day": 34,
+        "arrival_day": 37,
+        "arrival_when": "in 3 days",
+        "settled": false
+      }
+    ],
+    "difference_text": null
+  },
+  "execution": {
+    "status": "EXECUTED",
+    "summary_text": "¥200,000.00 of invoice financing was requested today; the cash lands in 3 days."
   },
   "execution_status": "EXECUTED"
 }
