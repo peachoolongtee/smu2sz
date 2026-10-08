@@ -30,6 +30,11 @@ export interface DemoState {
   /** Bumped after every write so read hooks refetch. */
   version: number;
   busy: boolean;
+  /**
+   * The step being run, set when a run starts and cleared when it commits or fails. It is saved with the session, so a
+   * reload in the middle of a step leaves `running` set with `busy` false: the stepper then says the step was interrupted.
+   */
+  running: number | null;
   error: string | null;
 }
 
@@ -47,12 +52,14 @@ export const INITIAL_DEMO: DemoState = {
   rewordedId: null,
   version: 0,
   busy: false,
+  running: null,
   error: null,
 };
 
 export const demoStore = createStore<DemoState>(INITIAL_DEMO, {
   storage: "session",
   key: "tl-demo-v2",
+  // A reload never restores a locked stepper: `busy` is not saved, `running` is (it is how a reload mid-step is recognised).
   sanitize: (s) => ({ ...s, busy: false, error: null }),
 });
 
@@ -103,6 +110,16 @@ export function selectOffer(offerId: string, rewordedId?: string): void {
   demoStore.set((s) => ({ ...s, offerId, rewordedId: rewordedId ?? s.rewordedId, version: s.version + 1 }));
 }
 
+/**
+ * Clears the scenario's data (offers, verdicts, negotiations, funding, ids) and nothing that controls the running step: `busy`,
+ * `running`, `step` and `error` stay as they are, so a step that clears the books half-way (Setup, the walk) stays locked and
+ * keeps its place until `goToStep` commits it.
+ */
 export function clearDemo(): void {
+  demoStore.set((s) => ({ ...INITIAL_DEMO, busy: s.busy, running: s.running, step: s.step, error: s.error, version: s.version + 1 }));
+}
+
+/** Back to the first screen: the data and the step pointer both cleared (the Reset action, after the server has reset the books). */
+export function resetSession(): void {
   demoStore.set((s) => ({ ...INITIAL_DEMO, version: s.version + 1 }));
 }

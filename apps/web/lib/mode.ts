@@ -22,8 +22,14 @@ export function setMode(mode: Mode): void {
   modeStore.set({ mode });
 }
 
-/** Business routes: the owner's six sections, the limits and sign-in. Everything else is an engine view of the demo. */
-export const BUSINESS_ROUTES = ["/", "/deals", "/cash", "/receivables", "/approvals", "/activity", "/limits"] as const;
+/**
+ * Owner detail routes: pages the owner opens from a section and returns to (Cash opens what-if and equipment). They render in the
+ * Business shell when the mode is Business, with a way back to the section.
+ */
+export const OWNER_DETAIL_ROUTES: Record<string, string> = { "/whatif": "/cash", "/capex": "/cash" };
+
+/** Business routes: the owner's six sections, the limits and sign-in, and the detail routes opened from them. Everything else is an engine view of the demo. */
+export const BUSINESS_ROUTES = ["/", "/deals", "/cash", "/receivables", "/approvals", "/activity", "/limits", ...Object.keys(OWNER_DETAIL_ROUTES)] as const;
 
 export function isBusinessRoute(pathname: string): boolean {
   return (BUSINESS_ROUTES as readonly string[]).includes(pathname);

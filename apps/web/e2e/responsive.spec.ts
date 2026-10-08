@@ -27,7 +27,7 @@ test("no page overflows horizontally after the demo has run", async ({ page }) =
     expect(await overflowX(page), `${route} overflows horizontally`).toBeLessThanOrEqual(1);
   }
   // The Business shell, with the deal of the demo on the books.
-  await page.getByLabel("Business").check();
+  await page.getByLabel("Business").click(); // the radio shows the shell on screen, so it changes once the route has
   await expect(page).toHaveURL(/\/$/);
   for (const route of BUSINESS_ROUTES) {
     await page.goto(route);

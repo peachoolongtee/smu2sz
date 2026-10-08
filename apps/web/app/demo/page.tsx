@@ -49,17 +49,54 @@ export default function DemoPage() {
                         const done = i <= current;
                         const active = i === current;
                         return (
-                          <li key={s.id} className={`flex items-start gap-3 rounded-tile border px-3 py-2 ${active ? "border-brand-600 bg-brand-50" : "border-line"}`} data-testid={`story-step-${i + 1}`} data-done={done}>
+                          <li key={s.id} className={`flex flex-wrap items-start gap-x-3 gap-y-2 rounded-tile border px-3 py-2 ${active ? "border-brand-600 bg-brand-50" : "border-line"}`} data-testid={`story-step-${i + 1}`} data-done={done}>
                             <span className={`mt-0.5 grid size-6 shrink-0 place-items-center rounded-pill text-xs font-bold ${done ? "bg-brand-600 text-white" : "bg-subtle text-ink-3"}`} aria-hidden>
                               {i + 1}
                             </span>
-                            <span className="min-w-0 flex-1">
+                            <span className="min-w-0 flex-1 basis-48">
                               <span className="block text-sm font-medium text-ink">{te("demo.step", s.id)}</span>
                               <span className="block text-xs text-ink-2">{te("demo.desc", s.id)}</span>
                             </span>
-                            <Button size="sm" variant="secondary" disabled={demo.busy} onClick={() => void goToStep(i, router.push)}>
-                              {done ? t("story.show") : t("story.run")}
-                            </Button>
+                            <span className="flex shrink-0 gap-1.5 max-sm:ml-9">
+                              {done ? (
+                                <>
+                                  {/* A finished step is shown, never re-run by accident: Show only opens its screen; Replay is the deliberate re-run. */}
+                                  <Button
+                                    size="sm"
+                                    variant="secondary"
+                                    disabled={demo.busy}
+                                    onClick={() => void goToStep(i, router.push, { mode: "show" })}
+                                    title={t("story.show.hint")}
+                                    aria-label={`${t("story.show")}, ${t("story.stepN", { n: i + 1 })}`}
+                                    data-testid={`story-show-${i + 1}`}
+                                  >
+                                    {t("story.show")}
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    disabled={demo.busy}
+                                    onClick={() => void goToStep(i, router.push, { mode: "run" })}
+                                    title={t(i === 0 ? "story.replay.setup" : "story.replay.hint")}
+                                    aria-label={`${t("story.replay")}, ${t("story.stepN", { n: i + 1 })}. ${t(i === 0 ? "story.replay.setup" : "story.replay.hint")}`}
+                                    data-testid={`story-replay-${i + 1}`}
+                                  >
+                                    {t("story.replay")}
+                                  </Button>
+                                </>
+                              ) : (
+                                <Button
+                                  size="sm"
+                                  variant="secondary"
+                                  disabled={demo.busy}
+                                  onClick={() => void goToStep(i, router.push, { mode: "run" })}
+                                  aria-label={`${t("story.run")}, ${t("story.stepN", { n: i + 1 })}`}
+                                  data-testid={`story-run-${i + 1}`}
+                                >
+                                  {t("story.run")}
+                                </Button>
+                              )}
+                            </span>
                           </li>
                         );
                       })}
@@ -67,6 +104,11 @@ export default function DemoPage() {
                 </li>
               ))}
             </ol>
+            {!demo.busy && demo.running !== null ? (
+              <p role="status" className="mt-3 rounded-tile border border-warn-line bg-warn-bg px-2.5 py-1.5 text-xs text-warn-fg" data-testid="story-interrupted">
+                {t("demo.interrupted", { n: demo.running + 1 })}
+              </p>
+            ) : null}
             {demo.error ? (
               <p role="alert" className="mt-3 rounded-tile border border-bad-line bg-bad-bg px-2.5 py-1.5 text-xs text-bad-fg">
                 {demo.error}
@@ -85,7 +127,10 @@ export default function DemoPage() {
         </div>
 
         <div className="min-w-0 space-y-6">
-          <TodayCard onAdvanced={() => undefined} />
+          {/* The clock moves the books under a running step: a disabled fieldset locks the card's controls while a step runs. */}
+          <fieldset disabled={demo.busy} className="min-w-0">
+            <TodayCard onAdvanced={() => undefined} />
+          </fieldset>
 
           <Card id="story-reset" title={t("story.books")} subtitle={t("story.books.sub")}>
             <div className="space-y-3">
@@ -93,6 +138,7 @@ export default function DemoPage() {
                 <span className="mb-1 block text-xs font-medium text-ink-3">{t("story.scenario")}</span>
                 <select
                   value={scenario}
+                  disabled={demo.busy}
                   onChange={(e) => setScenario(e.target.value as "golden_sme" | "short_facilities")}
                   className={`w-full ${inputClass}`}
                   data-testid="story-scenario"
@@ -101,7 +147,7 @@ export default function DemoPage() {
                   <option value="short_facilities">{t("story.scenario.short")}</option>
                 </select>
               </label>
-              <Button variant="secondary" loading={demo.busy} onClick={() => void resetDemo(router.push, scenario === "golden_sme" ? undefined : scenario)} data-testid="story-reset">
+              <Button variant="secondary" disabled={demo.busy} onClick={() => void resetDemo(router.push, scenario === "golden_sme" ? undefined : scenario)} data-testid="story-reset">
                 <ResetIcon />
                 {t("story.reset")}
               </Button>

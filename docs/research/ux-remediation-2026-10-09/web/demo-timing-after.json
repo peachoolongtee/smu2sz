@@ -1,0 +1,20 @@
+{
+ "what": "Wave 6 part A (ticket #75): the same rapid-click walk as demo-rapid-click.json, after the fix, from e2e/demo.spec.ts 'rapid clicks on Start and Next end at the last step...'",
+ "method": "Raw element.click() on [data-testid=demo-next] every 50 ms with no waiting (a disabled button swallows a click as for a hand), at least 30 presses and until the strip reads 15/15; the strip's progress is sampled after each press (a step that finishes between two samples is not seen, so a missing number in the sequence is a sampling gap, not a skipped step). The guarded run is Reset, then one Next per step with a wait for 'n/15' each time. Ledger entries are read from the Ledger page after each walk.",
+ "before": "demo-rapid-click.json: unguarded 15 presses stopped at step 6; a mash looped 1..7 four times and ended at step 2; a user who waited only for the spinner restarted after step 7 and ended at step 6.",
+ "runs": {
+  "live_production_build_memory_store": {
+   "stack": "next start :3163 (NEXT_PUBLIC_API_MODE=live) + uvicorn :8063, LLM_MODE=cache, demo owner token",
+   "unguarded_rapid": { "presses": 35, "ms_to_15_of_15": 2135, "progress_sequence_sampled": [1,2,3,4,5,6,7,9,10,11,12,13,14,15], "idle_after_start": false, "step_went_back": false, "ledger_entries": 3 },
+   "guarded_wait_for_each_step": { "ms_to_15_of_15": 2234, "ledger_entries": 3 },
+   "ledger_entries_equal": true
+  },
+  "mock_production_build": {
+   "stack": "next start :3162 (NEXT_PUBLIC_API_MODE=mock, 10 ms latency)",
+   "unguarded_rapid": { "presses": 30, "ms_to_15_of_15": 1888, "progress_sequence_sampled": [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15], "idle_after_start": false, "step_went_back": false, "ledger_entries": 3 },
+   "guarded_wait_for_each_step": { "ms_to_15_of_15": 1003, "ledger_entries": 3 },
+   "ledger_entries_equal": true
+  }
+ },
+ "reading": "Both runs end at 15/15 with the counter never idle and never going back, and the unguarded walk leaves the same three ledger entries as the guarded one: no scene ran twice and there is no second negotiation. The same test fails on the previous code (the strip went idle at step 8, with clearDemo resetting the control fields and no second guard)."
+}
