@@ -109,6 +109,12 @@ FACE_KIND = {"the whole outstanding invoice": "whole", "the shortfall the plan c
 # Option A counter uses (RCV-A, 0.85% on ¥257,200: ¥86.16; the plan's need is 0.75% on ¥405,000: ¥59.39); the spike's
 # `net_value_at_ceiling` is on the whole face (0.70%: ¥173.93).
 EXPECTED_DAY0_NET = {"RCV-A": (8_616, 17_393)}
+# The oracle's ceiling tests the plan comparison alone; the module's also holds the rate to the mandate's APR cap over the
+# days the payment is early (brief section 12). day 34 RI:BUYER-1:2 on the plan's-need face (¥200,000, 11 days early against
+# the 15% cap): the oracle's 0.80% (net ¥77.58) is a rate the verifier rejects with MAX_APR_EXCEEDED; the module's is 0.45%
+# (net ¥788.28). (books, receivable, face kind) -> (the oracle's ceiling bp, the module's ceiling bp, the oracle's net fen,
+# the module's net fen)
+EXPECTED_APR_CAPPED = {(34, "RI:BUYER-1:2", "need"): (80, 45, 7_758, 78_828)}
 MAX_ACTION_WORDS = 25  # a row's action sentence is at most this many words (English)
 MAX_FAILURES_IN_REPORT = 200
 
@@ -613,7 +619,11 @@ def _compare_row(counts: Counter[str], expected: list[str], name: str, books: Bo
             bad(f"{rid} {kind} face", "the module has no ceiling on this face")
         else:
             want = (p["largest_rate"] or {}).get("bp")
-            if c.largest_rate_bp != want or c.face_fen != face:
+            capped = EXPECTED_APR_CAPPED.get((which, rid, kind))
+            if capped is not None and (want, c.largest_rate_bp) == capped[:2] and c.face_fen == face:
+                expected.append(f"{name} {rid} {kind} face: ceiling {c.largest_rate_bp} bp vs the oracle's plan-only {want} bp: "
+                                f"{want} bp is rejected by the verifier (MAX_APR_EXCEEDED), the module holds the ceiling to the mandate's APR cap")
+            elif c.largest_rate_bp != want or c.face_fen != face:
                 bad(f"{rid} {kind} face", f"ceiling {c.largest_rate_bp} bp on {c.face_fen} fen vs oracle {want} bp on {face} fen")
         for s in p["sweep"]:
             counts[f"{name}: sweep points (C1 less C0)"] += 1
@@ -625,7 +635,11 @@ def _compare_row(counts: Counter[str], expected: list[str], name: str, books: Bo
     want_net = _fen(o["net_value_at_ceiling"])
     if w.net_saving_fen == want_net:
         return
-    if which == 0 and EXPECTED_DAY0_NET.get(rid) == (w.net_saving_fen, want_net):
+    capped_net = next((v for (b, r, _k), v in EXPECTED_APR_CAPPED.items() if (b, r) == (which, rid)), None)
+    if capped_net is not None and (want_net, w.net_saving_fen) == capped_net[2:]:
+        expected.append(f"{name} {rid}: net saving {w.net_saving_fen} fen at the APR-capped ceiling vs the oracle's "
+                        f"net_value_at_ceiling {want_net} fen at its plan-only ceiling")
+    elif which == 0 and EXPECTED_DAY0_NET.get(rid) == (w.net_saving_fen, want_net):
         expected.append(f"{name} {rid}: net saving {w.net_saving_fen} fen (the face the verifier's Option A counter uses) vs the "
                         f"oracle's net_value_at_ceiling {want_net} fen (whole face): the module quotes the one face FLOW would send")
     else:

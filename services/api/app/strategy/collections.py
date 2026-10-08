@@ -7,7 +7,8 @@ Per receivable with something outstanding (OPEN or FINANCED):
 - effects: the receipt "today", "five days before it is due" and "when cash first runs short", each one
   `marginal_impact` against the books as they stand. `saving_fen` is minus the posted-cost delta and may be negative
   (kept as it is; `saving_text` says "no saving").
-- ceilings: the largest whole-5bp early-payment rate whose cost beats the standing plan, on up to three faces (the whole
+- ceilings: the largest whole-5bp early-payment rate whose cost beats the standing plan AND that FLOW could send (the
+  immediate-discount cap, and the mandate's APR cap over the days the payment is early, `_apr_cap_bp`), on up to three faces (the whole
   outstanding; the plan's need rounded up to the next ¥100 and capped at the outstanding; the face of the verifier's own
   Option A counter, `faces.option_a_face`, the one FLOW would actually send), found by the collections spike's
   `last_true` bisection. The row quotes the counter face when there is one, else the plan's need. "Beats" is ADR-0007's test as the verifier runs it (`verifier.evaluate._early_pay_vs_plan`,
@@ -48,11 +49,12 @@ from app.domain.models import (
     Receivable,
     SourceSpan,
 )
-from app.domain.money import bp, fmt_pct, fmt_yuan
+from app.domain.money import DAYS_PER_YEAR, Ratio, bp, fmt_pct, fmt_yuan
 from app.domain.ports import LedgerStore
 from app.financial import EngineError, project
 from app.funding import plan
 from app.funding.router import shared_runs
+from app.mandate import check_apr
 from app.strategy.faces import option_a_face
 from app.strategy.impact import marginal_impact, scenario_received
 from app.strategy.types import MarginalImpact
@@ -192,6 +194,21 @@ def early_pay_vs_plan(books: Books, mandate: Mandate, receivable_id: str, face_f
     return c1 - c0 if ok else None
 
 
+def _apr_cap_bp(mandate: Mandate, days_early: int, cap_bp: int) -> int:
+    """The largest whole-5bp rate up to `cap_bp` whose annualised cost over `days_early` days is within the mandate's
+    `max_apr_bp`. The arithmetic is `verifier.evaluate._apr_checks` (private): the rate d/(1-d) x 365/days, compared by
+    `mandate.check_apr` exactly as the verifier does; MAX_APR_EXCEEDED there is a rate that fails here. It does not
+    depend on the face, and it rises with the rate, so the passing rates are a prefix of the grid."""
+    best = 0
+    for rate_bp in range(RATE_STEP_BP, cap_bp + 1, RATE_STEP_BP):
+        d = bp(rate_bp)
+        annual = d / (1 - d) * DAYS_PER_YEAR / days_early
+        if check_apr(Ratio.of(annual), mandate, "collections ceiling") is not None:
+            break
+        best = rate_bp
+    return best
+
+
 def _last_true(values: list[int], ok: Callable[[int], bool]) -> int | None:
     """Largest value with ok(value), assuming ok holds up to a boundary and fails after it (the spike's bisection)."""
     if not ok(values[0]):
@@ -242,7 +259,7 @@ def _ceiling(books: Books, mandate: Mandate, r: Receivable, face_kind: Literal["
     g_mid = gap(mid)
     if g_mid is None:  # cannot happen while the saving falls with the rate; fall back to the limit itself
         mid, g_mid = best, g_best
-    nxt = best + RATE_STEP_BP if best + RATE_STEP_BP <= cap_bp else None
+    nxt = best + RATE_STEP_BP if best + RATE_STEP_BP <= cap_bp else None  # within both caps: the next step FLOW could send
     g_next = gap(nxt) if nxt is not None else None
     return Ceiling(face_kind=face_kind, face_fen=face_fen, face_label=label, largest_rate_bp=best,
                    cost_without_fen=c0, cost_with_fen=c0 + g_best, beats_by_fen=-g_best, mid_rate_bp=mid,
@@ -264,6 +281,7 @@ def _ceilings(books: Books, mandate: Mandate, r: Receivable, need_fen: int, c0: 
     if c0 is None:
         return [], "no_plan"
     cap = mandate.max_immediate_discount_bp if mandate.max_immediate_discount_bp is not None else DISCOUNT_MAX_BP
+    cap = _apr_cap_bp(mandate, r.due_day - lead_day, cap)  # a rate the verifier would refuse is not one FLOW could send
     faces: list[tuple[Literal["whole", "need", "counter"], int]] = [("whole", r.outstanding_fen)]
     need_face = min(r.outstanding_fen, -(-need_fen // FACE_STEP_FEN) * FACE_STEP_FEN)
     if 0 < need_face < r.outstanding_fen:
