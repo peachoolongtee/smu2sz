@@ -7,9 +7,10 @@ Per receivable with something outstanding (OPEN or FINANCED):
 - effects: the receipt "today", "five days before it is due" and "when cash first runs short", each one
   `marginal_impact` against the books as they stand. `saving_fen` is minus the posted-cost delta and may be negative
   (kept as it is; `saving_text` says "no saving").
-- ceilings: the largest whole-5bp early-payment rate whose cost beats the standing plan, on two faces (the whole
-  outstanding; the plan's need rounded up to the next ¥100 and capped at the outstanding), found by the collections
-  spike's `last_true` bisection. "Beats" is ADR-0007's test as the verifier runs it (`verifier.evaluate._early_pay_vs_plan`,
+- ceilings: the largest whole-5bp early-payment rate whose cost beats the standing plan, on up to three faces (the whole
+  outstanding; the plan's need rounded up to the next ¥100 and capped at the outstanding; the face of the verifier's own
+  Option A counter, `faces.option_a_face`, the one FLOW would actually send), found by the collections spike's
+  `last_true` bisection. The row quotes the counter face when there is one, else the plan's need. "Beats" is ADR-0007's test as the verifier runs it (`verifier.evaluate._early_pay_vs_plan`,
   which stays private): C1 = interest + fees + discounts the projection posts under the router's COMMITTED plan for the
   books plus the discount, against C0 = the same for the books without it (`early_pay_vs_plan` below).
 - action: one of call now, escalate, reminder, offer early payment, finance, wait, and the sentences that say why.
@@ -20,7 +21,8 @@ The answer is pure in (state, mandate, day, commitments) and the ranking does no
 from __future__ import annotations
 
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
+from functools import partial
 from typing import Literal
 
 from pydantic import Field
@@ -30,6 +32,7 @@ from app.api.presentation import Lang, party_name, t, when_text
 from app.books import Books
 from app.domain.models import (
     BaseKind,
+    Commitment,
     Contingency,
     Contract,
     Duration,
@@ -50,6 +53,7 @@ from app.domain.ports import LedgerStore
 from app.financial import EngineError, project
 from app.funding import plan
 from app.funding.router import shared_runs
+from app.strategy.faces import option_a_face
 from app.strategy.impact import marginal_impact, scenario_received
 from app.strategy.types import MarginalImpact
 from app.verifier.bind import early_pay_lead
@@ -90,9 +94,9 @@ class Ceiling(Contract):
     """The early-payment ceiling on one face of the receivable: the most the owner can afford to give for being paid
     early before the discount costs more than the funding it replaces."""
 
-    face_kind: Literal["whole", "need"]
+    face_kind: Literal["whole", "need", "counter"]
     face_fen: int
-    face_label: str  # "the whole invoice" / "the plan's need"
+    face_label: str  # "the whole invoice" / "the plan's need" / "the amount FLOW would ask for"
     largest_rate_bp: int | None  # None: no whole-5bp rate beats the standing plan
     cost_without_fen: int  # C0
     cost_with_fen: int | None  # C1 at the largest rate
@@ -116,13 +120,14 @@ class ReceivableWorth(Contract):
     effects: list[Effect]
     gross_saving_fen: int
     ceilings: list[Ceiling]
-    mid_rate_bp: int | None  # on the plan's-need face: the rate halfway to the ceiling ...
+    mid_rate_bp: int | None  # on the quoted face (the counter's, else the plan's need): the rate halfway to the ceiling ...
     mid_saving_fen: int  # ... and what it saves against the funding it replaces (0 when no rate beats the plan)
     net_saving_fen: int
     no_saving: bool  # net_saving_fen <= 0
     net_saving_text: str
+    worth_text: str  # the Receivables worth cell in one string: "Saves ¥1,374.61", "Saves nothing extra now", ...
     action: Action
-    action_sentence: str
+    action_sentence: str  # at most 25 words
     reason_sentence: str
     hypothetical: Literal[True] = True
 
@@ -204,7 +209,14 @@ def _last_true(values: list[int], ok: Callable[[int], bool]) -> int | None:
     return values[lo]
 
 
-def _ceiling(books: Books, mandate: Mandate, r: Receivable, face_kind: Literal["whole", "need"], face_fen: int,
+_FACE_LABELS: dict[str, tuple[str, str]] = {
+    "whole": ("the whole invoice", "整张发票"),
+    "need": ("the plan's need", "计划所需金额"),
+    "counter": ("the amount FLOW would ask for", "FLOW 会提出的金额"),
+}
+
+
+def _ceiling(books: Books, mandate: Mandate, r: Receivable, face_kind: Literal["whole", "need", "counter"], face_fen: int,
              c0: int, cap_bp: int, lang: Lang) -> Ceiling:
     rates = list(range(0, cap_bp + 1, RATE_STEP_BP))
     cache: dict[int, int | None] = {0: 0}
@@ -218,8 +230,7 @@ def _ceiling(books: Books, mandate: Mandate, r: Receivable, face_kind: Literal["
         g = gap(rate)
         return rate == 0 or (g is not None and g < 0)
 
-    label = t(lang, "the whole invoice" if face_kind == "whole" else "the plan's need",
-              "整张发票" if face_kind == "whole" else "计划所需金额")
+    label = t(lang, *_FACE_LABELS[face_kind])
     best = _last_true(rates, beats) if len(rates) > 1 else None
     if not best:
         return Ceiling(face_kind=face_kind, face_fen=face_fen, face_label=label, largest_rate_bp=None,
@@ -239,8 +250,10 @@ def _ceiling(books: Books, mandate: Mandate, r: Receivable, face_kind: Literal["
                    next_rate_dearer_by_fen=g_next)
 
 
-def _ceilings(books: Books, mandate: Mandate, r: Receivable, need_fen: int, c0: int | None, lang: Lang) -> tuple[list[Ceiling], str]:
-    """The ceilings on the two faces and, when there are none, the reason in a word (empty when there are some)."""
+def _ceilings(books: Books, mandate: Mandate, r: Receivable, need_fen: int, c0: int | None, lang: Lang,
+              counter_face: Callable[[], int | None] = lambda: None) -> tuple[list[Ceiling], str]:
+    """The ceilings on the faces (whole, the plan's need, the verifier's counter face) and, when there are none, the
+    reason in a word (empty when there are some). `counter_face` is asked only when a ceiling can exist."""
     if r.status != "OPEN":
         return [], "financed"
     if r.due_day < books.state.as_of_day:
@@ -251,11 +264,30 @@ def _ceilings(books: Books, mandate: Mandate, r: Receivable, need_fen: int, c0: 
     if c0 is None:
         return [], "no_plan"
     cap = mandate.max_immediate_discount_bp if mandate.max_immediate_discount_bp is not None else DISCOUNT_MAX_BP
-    faces: list[tuple[Literal["whole", "need"], int]] = [("whole", r.outstanding_fen)]
+    faces: list[tuple[Literal["whole", "need", "counter"], int]] = [("whole", r.outstanding_fen)]
     need_face = min(r.outstanding_fen, -(-need_fen // FACE_STEP_FEN) * FACE_STEP_FEN)
     if 0 < need_face < r.outstanding_fen:
         faces.append(("need", need_face))
-    return [_ceiling(books, mandate, r, k, f, c0, cap, lang) for k, f in faces], ""
+    out = [_ceiling(books, mandate, r, k, f, c0, cap, lang) for k, f in faces]
+    face = counter_face()
+    if face is not None and 0 < face < r.outstanding_fen:
+        same = next((c for c in out if c.face_fen == face), None)  # already measured on this face: the same figures
+        out.append(same.model_copy(update={"face_kind": "counter", "face_label": t(lang, *_FACE_LABELS["counter"])})
+                   if same is not None else _ceiling(books, mandate, r, "counter", face, c0, cap, lang))
+    return out, ""
+
+
+def _need_ceiling(ceilings: list[Ceiling]) -> Ceiling | None:
+    """The ceiling on the plan's-need face (the whole invoice's when the need is the whole invoice) when a rate beats the
+    plan: the one the action rules read."""
+    own = [c for c in ceilings if c.face_kind != "counter"]
+    return own[-1] if own and own[-1].largest_rate_bp else None
+
+
+def _quoted_ceiling(ceilings: list[Ceiling]) -> Ceiling | None:
+    """The ceiling the row quotes: the verifier's counter face when it has a rate that beats the plan, else the plan's need."""
+    counter = next((c for c in ceilings if c.face_kind == "counter" and c.largest_rate_bp), None)
+    return counter if counter is not None else _need_ceiling(ceilings)
 
 
 # ---------------------------------------------------------------- the effects
@@ -352,8 +384,7 @@ def _sentences(*, lang: Lang, action: Action, who: str, r: Receivable, day: int,
                 else t(lang, " and clear the shortfall", "，并补上缺口"))
         if_arrived = t(lang, f"If it arrived today it would save you {fmt_yuan(saving)}{rest}.",
                        f"如果今天到账，能为您省 {fmt_yuan(saving)}{rest}。")
-    need_c = ceilings[-1] if ceilings else None
-    whole_c = ceilings[0] if ceilings else None
+    need_c = _quoted_ceiling(ceilings)
     no_discount = {
         "overdue": t(lang, " No early-payment discount applies to an invoice already due.", "已到期的发票不适用提前付款折扣。"),
         "financed": t(lang, " It is already financed, so the lender is repaid first.", "它已经融资，收款后先还融资方。"),
@@ -382,30 +413,27 @@ def _sentences(*, lang: Lang, action: Action, who: str, r: Receivable, day: int,
                 t(lang, f"Cash is below your reserve when it is due, so paying on time matters. {if_arrived}",
                   f"到期时现金低于您的储备，按时付款很重要。{if_arrived}"))
     if action == "offer_early_pay":
-        assert need_c is not None and whole_c is not None and need_c.largest_rate_bp is not None
+        assert need_c is not None and need_c.largest_rate_bp is not None
         assert need_c.mid_rate_bp is not None and need_c.mid_saving_fen is not None
         top = fmt_pct(bp(need_c.largest_rate_bp))
         mid = fmt_pct(bp(need_c.mid_rate_bp))
         on = fmt_yuan(need_c.face_fen)
         at_limit = fmt_yuan(need_c.beats_by_fen or 0)
-        whole_bp = whole_c.largest_rate_bp if whole_c is not need_c else None
-        whole = (t(lang, f" ({fmt_pct(bp(whole_bp))} on the whole invoice)", f"（整张发票 {fmt_pct(bp(whole_bp))}）")
-                 if whole_bp else "")
-        fin = t(lang, " Or finance it.", "或者改为融资。") if advanced else ""
-        saved = (t(lang, f"{fmt_yuan(need_c.mid_saving_fen)} saved at {mid}, {at_limit} at the limit",
-                   f"按 {mid} 省 {fmt_yuan(need_c.mid_saving_fen)}，按上限省 {at_limit}")
+        fund_en = ", or fund it instead" if advanced else ""
+        fund_zh = "，或改为融资" if advanced else ""
+        sentence = t(lang, f"On the {face} due {when}, offer early payment at up to {top} on {on}{fund_en}.",
+                     f"{when}到期的 {face}：对 {on} 提前付款，最高 {top}{fund_zh}。")
+        saved = (t(lang, f"At {mid} it saves you {fmt_yuan(need_c.mid_saving_fen)} against the cheapest funding plan; "
+                         f"at the {top} limit {at_limit}.",
+                   f"按 {mid}，相比最便宜的融资方案能为您省 {fmt_yuan(need_c.mid_saving_fen)}；按 {top} 的上限省 {at_limit}。")
                  if need_c.mid_rate_bp != need_c.largest_rate_bp
-                 else t(lang, f"{at_limit} saved at the limit", f"按上限省 {at_limit}"))
-        sentence = t(lang, f"On the {face} due {when}, early payment at up to {top} on {on}{whole} still beats the "
-                           f"funding it replaces: {saved}.{fin}",
-                     f"{when}到期的 {face}：对 {on} 提前付款，最高 {top}{whole}仍比它所替代的融资划算：{saved}。{fin}")
+                 else t(lang, f"At the {top} limit it saves you {at_limit} against the cheapest funding plan.",
+                        f"按 {top} 的上限，相比最便宜的融资方案能为您省 {at_limit}。"))
         nxt = ""
         if need_c.next_rate_bp is not None and (need_c.next_rate_dearer_by_fen or 0) > 0:
             nxt = t(lang, f" {fmt_pct(bp(need_c.next_rate_bp))} would cost {fmt_yuan(need_c.next_rate_dearer_by_fen or 0)} more than the plan.",
                     f"{fmt_pct(bp(need_c.next_rate_bp))} 就会比原计划多花 {fmt_yuan(need_c.next_rate_dearer_by_fen or 0)}。")
-        return (sentence, t(lang, f"Up to {top} on {on} is what you can afford before the discount costs more than the "
-                                  f"funding it replaces.{nxt} {if_arrived}",
-                            f"{on} 的折扣在 {top} 以内是您负担得起的，再高就比它所替代的融资更贵。{nxt}{if_arrived}"))
+        return sentence, t(lang, f"{saved}{nxt} {if_arrived}", f"{saved}{nxt}{if_arrived}")
     if action == "finance":
         stands = (t(lang, " The standing plan already advances against it.", "现有计划已对它做了融资垫款。") if advanced else "")
         return (t(lang, f"Finance {due} rather than ask for it early: no early-payment discount costs less than the funding.",
@@ -431,14 +459,42 @@ def _sentences(*, lang: Lang, action: Action, who: str, r: Receivable, day: int,
               f"在它之前到期的发票已经够用。{if_arrived}"))
 
 
+def _worth_text(lang: Lang, action: Action, net: int, quoted: Ceiling | None) -> str:
+    """The Receivables worth cell as one string, so the page shows no gross figure beside it."""
+    nothing = t(lang, "Saves nothing extra now", "暂无额外节省")
+    if action == "wait" or net <= 0:
+        return nothing
+    if action == "call_now":
+        return t(lang, f"Saves {fmt_yuan(net)}", f"可省 {fmt_yuan(net)}")
+    if action == "offer_early_pay" and quoted is not None and quoted.largest_rate_bp is not None:
+        limit = fmt_pct(bp(quoted.largest_rate_bp))
+        if quoted.mid_rate_bp is None or quoted.mid_saving_fen is None or quoted.mid_rate_bp == quoted.largest_rate_bp:
+            return t(lang, f"Saves {fmt_yuan(net)} at the {limit} limit", f"按 {limit} 的上限可省 {fmt_yuan(net)}")
+        mid = fmt_pct(bp(quoted.mid_rate_bp))
+        return t(lang, f"Saves {fmt_yuan(quoted.mid_saving_fen)} at {mid} ({fmt_yuan(net)} at the {limit} limit)",
+                 f"按 {mid} 可省 {fmt_yuan(quoted.mid_saving_fen)}（按 {limit} 的上限可省 {fmt_yuan(net)}）")
+    return t(lang, f"Saves {fmt_yuan(net)} if collected", f"收回可省 {fmt_yuan(net)}")
+
+
 # ---------------------------------------------------------------- the answer
 
 
-def receivables_worth(books: Books, mandate: Mandate, *, store: LedgerStore, day: int, lang: Lang = "en") -> WorthAnswer:
+def receivables_worth(books: Books, mandate: Mandate, *, store: LedgerStore, day: int, lang: Lang = "en",
+                      trusted_owner_key_hex: str | None = None,
+                      commitments: Sequence[Commitment] | None = None) -> WorthAnswer:
     """Every open receivable with something outstanding, ranked by what collecting it saves you net of the discount that
-    earns it. Hypothetical: nothing is booked and no receipt is recorded."""
+    earns it. Hypothetical: nothing is booked and no receipt is recorded. The verifier's Option A counter face is read
+    against `trusted_owner_key_hex` (the mandate's own key when not given) and the store's commitments."""
     started = time.perf_counter()
     state = books.state
+    key = trusted_owner_key_hex if trusted_owner_key_hex is not None else mandate.public_key_hex
+    held = tuple(store.commitments()) if commitments is None else tuple(commitments)
+
+    def counter_face(rid: str) -> int | None:
+        if key is None:
+            return None
+        return option_a_face(books, mandate, rid, trusted_owner_key_hex=key, day=day, commitments=held)
+
     with shared_runs():
         base_plan = plan(state, books.with_([]), mandate)
         c0 = standing_cost(books, mandate)
@@ -462,17 +518,18 @@ def receivables_worth(books: Books, mandate: Mandate, *, store: LedgerStore, day
             effects = _effects(books, mandate, store, day, r, first_breach, lang)
             today_effect = next((e for e in effects if e.kind == "today"), None)
             gross = today_effect.saving_fen if today_effect is not None else (effects[0].saving_fen if effects else 0)
-            ceilings, why_none = _ceilings(books, mandate, r, base_plan.need_fen, c0, lang)
-            need_ceiling = ceilings[-1] if ceilings and ceilings[-1].largest_rate_bp else None
-            mid_rate = need_ceiling.mid_rate_bp if need_ceiling is not None else None
-            mid_saving = (need_ceiling.mid_saving_fen or 0) if need_ceiling is not None else 0
+            ceilings, why_none = _ceilings(books, mandate, r, base_plan.need_fen, c0, lang, partial(counter_face, r.id))
+            need_ceiling = _need_ceiling(ceilings)
+            quoted = _quoted_ceiling(ceilings)
+            mid_rate = quoted.mid_rate_bp if quoted is not None else None
+            mid_saving = (quoted.mid_saving_fen or 0) if quoted is not None else 0
             lapsed = r.id in lapsed_ids
             action = _decide(r=r, day=day, days_late=days_late, lapsed=lapsed, promised=r.id in awaited_ids,
                              episode=episode, beyond=beyond, need_ceiling=need_ceiling)
             if action in ("call_now", "escalate"):
                 net = gross  # a call costs nothing: the whole saving is kept
             else:
-                net = (need_ceiling.beats_by_fen or 0) if need_ceiling is not None else 0
+                net = (quoted.beats_by_fen or 0) if quoted is not None else 0
             sentence, reason = _sentences(
                 lang=lang, action=action, who=who, r=r, day=day, days_late=days_late, lapsed=lapsed,
                 promised=r.id in awaited_ids, episode=episode, advanced=r.id in advanced_ids, ceilings=ceilings,
@@ -481,15 +538,17 @@ def receivables_worth(books: Books, mandate: Mandate, *, store: LedgerStore, day
                 receivable_id=r.id, buyer_id=r.counterparty_id, buyer_name=who, outstanding_fen=r.outstanding_fen,
                 due_day=r.due_day, due_when=when_text(r.due_day, day, lang), days_late=days_late, status=r.status,
                 financed=r.status == "FINANCED", effects=effects, gross_saving_fen=gross, ceilings=ceilings,
-                mid_rate_bp=mid_rate, mid_saving_fen=mid_saving, net_saving_fen=net, no_saving=net <= 0, net_saving_text=saving_text(net, lang), action=action,
+                mid_rate_bp=mid_rate, mid_saving_fen=mid_saving, net_saving_fen=net, no_saving=net <= 0, net_saving_text=saving_text(net, lang),
+                worth_text=_worth_text(lang, action, net, quoted), action=action,
                 action_sentence=sentence, reason_sentence=reason))
     ranked = sorted(rows, key=lambda w: (-w.net_saving_fen, -w.gross_saving_fen, w.due_day, w.receivable_id))
     by_gross = sorted(rows, key=lambda w: (-w.gross_saving_fen, w.due_day, w.receivable_id))
     return WorthAnswer(
         rows=ranked, gross_order=[w.receivable_id for w in by_gross],
         top_action=ranked[0].action_sentence if ranked else t(lang, "Nothing is waiting to be collected.", "没有待收的应收款。"),
-        ranking_note=t(lang, "Ranked by what collecting each saves you, net of any discount that earns it.",
-                       "按收回每一笔能为您省多少排序，已扣除为此给出的折扣。"),
+        ranking_note=t(lang, "Ranked by what collecting each saves you against the cheapest funding plan, net of any "
+                             "discount that earns it.",
+                       "按收回每一笔相比最便宜的融资方案能为您省多少排序，已扣除为此给出的折扣。"),
         first_breach_day=first_breach, source_state_version=state.state_version,
         computed_in_seconds=round(time.perf_counter() - started, 3))
 

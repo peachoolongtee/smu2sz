@@ -13,20 +13,25 @@ budget could not settle is reported `varies` with the smaller value.
 
 from __future__ import annotations
 
+from bisect import bisect_left, bisect_right
 from collections.abc import Callable
 from fractions import Fraction
-from typing import Literal
+from itertools import pairwise
+from typing import Literal, NamedTuple
 
 from app.alerts import AlertKind, alerts
 from app.api.presentation import Lang, t, when_text
-from app.books import Books
+from app.books import Books, current_books
 from app.domain.models import Contract, Mandate
-from app.domain.money import fmt_pct, round_half_up
+from app.domain.money import fmt_pct, fmt_yuan, round_half_up
 from app.domain.ports import LedgerStore
+from app.financial.concessions import recurring_issue_days
+from app.financial.debts import debt_payments
 from app.funding import NoPermanentSourceError, plan
 from app.funding.rates import break_even_cost_share
+from app.funding.router import shared_runs
 from app.funding.search import GRID_STEP_FEN
-from app.strategy.impact import marginal_impact, scenario_inflow
+from app.strategy.impact import scenario_inflow
 
 WINDOW_DAYS = 30
 MAX_EXTRA_EVALUATIONS = 120  # the bisection budget beyond the band ends (a band it cannot settle is `varies`)
@@ -52,45 +57,70 @@ class PriceCurve(Contract):
     hypothetical: Literal[True] = True
 
 
-class _OutOfBudget(Exception):
-    pass
+# ---------------------------------------------------------------- the costs and the bands
 
 
-# ---------------------------------------------------------------- the bands
+def _event_days(books: Books, day: int, last: int) -> set[int]:
+    """Every day money moves on the books: a flow, a receivable's due day, a recurring invoice's issue day plus its
+    terms, a payment of an existing debt."""
+    state = books.state
+    events = {f.day for f in state.flows}
+    events |= {r.due_day for r in state.receivables if r.status in ("OPEN", "FINANCED") and r.outstanding_fen > 0}
+    for rec in state.recurring_invoices:
+        events |= {issue + rec.terms_days for issue in recurring_issue_days(rec, day, last + 1)}
+    for debt in state.debts:
+        events |= {p.day for p in debt_payments(debt, day, last + 1)}
+    return events
 
 
-def _boundaries(books: Books, mandate: Mandate, store: LedgerStore, day: int, end: int) -> list[int]:
-    """The days a band starts on: today, today + 1, the end, every breach episode's first and recovery day, every
-    plan action's repay and landing day, each with a day either side, kept inside `day..end`."""
-    marks = {day, end}
+def _sample_days(books: Books, mandate: Mandate, store: LedgerStore, day: int, last: int) -> list[int]:
+    """The arrival days the plan's cost is read on first: today and the last day a value reads (`end + 30`), every
+    breach episode's first and recovery day and every plan action's repay and landing day. Between two of them the
+    cost is taken as settled when both read the same; when they differ the span is cut at the event days inside it
+    (`_hints`) and then bisected."""
+    marks = {day, last}
     for a in alerts(books.state, mandate, store, day):
         if a.kind != AlertKind.RESERVE_BREACH_AHEAD:
             continue
         if a.day is not None:
             marks.add(a.day)
-        last = a.inputs.get("last_day", "")
-        if last.isdigit():
-            marks.add(int(last) + 1)  # the recovery day: the first day back above the floor
+        recovery = a.inputs.get("last_day", "")
+        if recovery.isdigit():
+            marks.add(int(recovery) + 1)  # the recovery day: the first day back above the floor
     for action in plan(books.state, books.with_([]), mandate).actions:
-        for d in (action.repay_day, action.lands_day):
-            if d is not None:
-                marks.add(d)
-    starts = {day, day + 1} | {m + k for m in marks for k in (-1, 0, 1)}
-    return sorted(s for s in starts if day <= s <= end)
+        marks |= {d for d in (action.repay_day, action.lands_day) if d is not None}
+    return sorted(m for m in marks if day <= m <= last)
 
 
-def _settle(a: int, b: int, value: Callable[[int], int], seen: dict[int, int], budget: int) -> list[tuple[int, int, int, bool]]:
-    """Bands covering `a..b` as (from, to, value, varies): equal ends take the value; unequal ends are bisected until the
-    two sides of the step are adjacent days. Over budget, the span is one `varies` band with the smaller value."""
-    va, vb = value(a), value(b)
-    if va == vb:
-        return [(a, b, va, False)]
+def _hints(books: Books, day: int, last: int) -> list[int]:
+    """Where a span whose ends disagree is cut first: each event day and the day after it (an arrival after the money
+    has moved is the one that no longer helps)."""
+    return sorted({d for e in _event_days(books, day, last) for d in (e, e + 1) if day <= d <= last})
+
+
+class _Run(NamedTuple):
+    """Arrival days `first..last` whose cost is `costs`: one figure when settled, the two figures read at the span's ends
+    when the budget could not settle it."""
+
+    first: int
+    last: int
+    costs: tuple[int, ...]
+
+
+def _settle(a: int, b: int, cost: Callable[[int], int], hints: list[int], spent: Callable[[], bool]) -> list[_Run]:
+    """The runs covering `a..b-1` (the cost at `a` and `b` is read): equal ends take the one figure; unequal ends are cut
+    at an event day inside the span (the middle one; the middle day when there is none) until the two sides of the step
+    are adjacent days. Out of budget, the span is one unsettled run."""
+    ca, cb = cost(a), cost(b)
+    if ca == cb:
+        return [_Run(a, b - 1, (ca,))]
     if b == a + 1:
-        return [(a, a, va, False), (b, b, vb, False)]
-    mid = (a + b) // 2
-    if len(seen) + 2 > budget:
-        return [(a, b, min(va, vb), True)]
-    return _settle(a, mid, value, seen, budget) + _settle(mid + 1, b, value, seen, budget)
+        return [_Run(a, a, (ca,))]
+    if spent():
+        return [_Run(a, b - 1, (ca, cb))]
+    inside = hints[bisect_right(hints, a):bisect_left(hints, b)]
+    mid = inside[len(inside) // 2] if inside else (a + b) // 2
+    return _settle(a, mid, cost, hints, spent) + _settle(mid, b, cost, hints, spent)
 
 
 def _ceiling_fen(books: Books, mandate: Mandate, amount_fen: int) -> int | None:
@@ -107,22 +137,39 @@ def _ceiling_fen(books: Books, mandate: Mandate, amount_fen: int) -> int | None:
 def price_curve(books: Books, mandate: Mandate, *, store: LedgerStore, day: int) -> PriceCurve:
     amount = GRID_STEP_FEN
     end = day + mandate.horizon_days
-    seen: dict[int, int] = {}
+    last = end + WINDOW_DAYS  # the latest arrival day a value reads
+    held = store.commitments()
+    costs: dict[int, int] = {}
 
-    def value(d: int) -> int:
-        if d not in seen:
-            mi = marginal_impact(scenario_inflow(books, amount, d + WINDOW_DAYS), scenario_inflow(books, amount, d),
-                                 mandate, store=store, day=day)
-            seen[d] = -mi.posted_cost_delta_fen
-        return seen[d]
+    def cost(arrival: int) -> int:
+        """The plan's cost with `amount` arriving on `arrival`: what `marginal_impact` reads of one side, the router's
+        COMMITTED plan for that copy of the books under the live commitments. Each arrival day is planned once."""
+        if arrival not in costs:
+            state = scenario_inflow(books, amount, arrival).state
+            with shared_runs():
+                costs[arrival] = plan(state, current_books(state, held).with_([]), mandate).total_cost_fen
+        return costs[arrival]
 
-    starts = _boundaries(books, mandate, store, day, end)
-    spans = [(s, (starts[i + 1] - 1) if i + 1 < len(starts) else end) for i, s in enumerate(starts)]
-    for s, e in spans:  # the ends of every band first: the bisection budget only gates what comes after
-        value(s)
-        value(e)
-    budget = len(seen) + MAX_EXTRA_EVALUATIONS
-    pieces = [p for s, e in spans for p in _settle(s, e, value, seen, budget)]
+    samples = _sample_days(books, mandate, store, day, last)
+    hints = _hints(books, day, last)
+    for x in samples:  # the sampled days first: the bisection budget only gates what comes after
+        cost(x)
+    budget = len(costs) + MAX_EXTRA_EVALUATIONS
+    runs: list[_Run] = [r for a, b in pairwise(samples)
+                        for r in _settle(a, b, cost, hints, lambda: len(costs) + 1 > budget)]
+    runs.append(_Run(last, last, (cost(last),)))
+
+    def costs_at(x: int) -> tuple[int, ...]:
+        return runs[bisect_right([r.first for r in runs], x) - 1].costs
+
+    # a value reads the cost on d + 30 less the cost on d, so it can step where either cost does
+    starts = sorted({day} | {c for r in runs for c in (r.first, r.first - WINDOW_DAYS) if day <= c <= end})
+    pieces: list[tuple[int, int, int, bool]] = []
+    for i, a in enumerate(starts):
+        b = (starts[i + 1] - 1) if i + 1 < len(starts) else end
+        far, near = costs_at(a + WINDOW_DAYS), costs_at(a)
+        # an unsettled run is read at both its ends (the smaller value is kept, the band is marked `varies`)
+        pieces.append((a, b, min(far[0] - near[0], far[-1] - near[-1]), len(far) > 1 or len(near) > 1))
     merged: list[tuple[int, int, int, bool]] = []
     for a, b, v, varies in pieces:
         if merged and not varies and not merged[-1][3] and merged[-1][2] == v:
@@ -144,34 +191,43 @@ def price_curve(books: Books, mandate: Mandate, *, store: LedgerStore, day: int)
 # ---------------------------------------------------------------- the sentence
 
 
-def _within(day_last: int, today: int, lang: Lang) -> str:
-    """"within the next 30 days" for an arrival no later than `day_last` (today and tomorrow are said as such)."""
+def _next(day_last: int, today: int, lang: Lang) -> str:
+    """"in the next 30 days" for an arrival no later than `day_last` (today and tomorrow are said as such)."""
     n = day_last - today
     if n <= 1:
-        return t(lang, f"by {when_text(day_last, today, 'en')}" if n == 1 else "today",
-                 f"最迟{when_text(day_last, today, 'zh')}" if n == 1 else "今天")
-    return t(lang, f"within the next {n} days", f"未来 {n} 天内")
+        return t(lang, f"arriving by {when_text(day_last, today, 'en')}" if n == 1 else "arriving today",
+                 f"最迟{when_text(day_last, today, 'zh')}到账" if n == 1 else "今天到账")
+    return t(lang, f"in the next {n} days", f"未来 {n} 天内到账")
 
 
 def price_sentence(curve: PriceCurve, *, today: int, lang: Lang) -> str:
-    """The curve in one sentence for the owner: the highest worth, until when, then nothing (Business words: distances
-    from today, never a day number, never the engine's vocabulary)."""
+    """The curve in one sentence for the owner: the funding cost that cash saves, in yuan first and the percentage in
+    brackets, until when, then nothing (business words: distances from today, never a day number, never the engine's
+    vocabulary; the cost is named so that it does not read as a rate charged)."""
     live = [b for b in curve.bands if b.value_fen > 0]
     if not live:
         return t(lang, "Earlier cash saves you nothing today.", "现在更早到账的现金不会为你节省任何费用。")
+    per = f"¥{curve.amount_fen // 100:,}"
     first = live[0]
+    en_first = f"Cash {_next(first.to_day, today, 'en')} saves you {fmt_yuan(first.value_fen)} of funding cost per {per}"
+    zh_first = f"{_next(first.to_day, today, 'zh')}的现金，每 {per} 为您节省 {fmt_yuan(first.value_fen)} 的融资成本"
+    pct = fmt_pct(Fraction(first.value_bp, 10_000))
     if len(live) == 1:
-        pct = fmt_pct(Fraction(first.value_bp, 10_000))
-        return t(lang,
-                 f"Cash arriving {_within(first.to_day, today, 'en')} is worth {pct} to you; after that, nothing.",
-                 f"{_within(first.to_day, today, 'zh')}到账的现金对你价值 {pct}；之后则没有。")
-    en = f"Cash arriving {_within(first.to_day, today, 'en')} is worth {fmt_pct(Fraction(first.value_bp, 10_000))} to you"
-    zh = f"{_within(first.to_day, today, 'zh')}到账的现金对你价值 {fmt_pct(Fraction(first.value_bp, 10_000))}"
+        return t(lang, f"{en_first} ({pct}); after that, earlier cash saves nothing.",
+                 f"{zh_first}（{pct}）；之后更早到账也不再节省。")
+    en, zh = f"{en_first} ({pct})", f"{zh_first}（{pct}）"
+    prev = first
     for b in live[1:]:
         pct = fmt_pct(Fraction(b.value_bp, 10_000))
-        en += f", then {pct} if it arrives {_within(b.to_day, today, 'en')}"
-        zh += f"，{_within(b.to_day, today, 'zh')}到账的为 {pct}"
-    return t(lang, en + "; after that, nothing.", zh + "；之后则没有。")
+        n = b.to_day - prev.to_day
+        if b.from_day == prev.to_day + 1:
+            en += f", then {fmt_yuan(b.value_fen)} ({pct}) for the {n} days after"
+            zh += f"，随后的 {n} 天为 {fmt_yuan(b.value_fen)}（{pct}）"
+        else:  # a stretch worth nothing lies between the two
+            en += f", then {fmt_yuan(b.value_fen)} ({pct}) {_next(b.to_day, today, 'en')}"
+            zh += f"，{_next(b.to_day, today, 'zh')}的为 {fmt_yuan(b.value_fen)}（{pct}）"
+        prev = b
+    return t(lang, en + "; later, nothing.", zh + "；再之后没有。")
 
 
 def money_line(curve: PriceCurve, lang: Lang) -> str:

@@ -51,7 +51,8 @@ def test_the_quick_backtest_passes(backtest: ModuleType, tmp_path: Path, capsys:
     env = sections["envelope"]
     assert env["status"] == "ok" and env["failures"] == [], env["failures"]
     assert env["counts"]["offers_checked"] == 1 and env["counts"]["counters_checked"] == 2
-    assert env["counts"]["counters_matched"] == 2 and env["counts"]["lever_maxima_confirmed"] == 6
+    assert env["counts"]["counters_inside"] == 2 and env["counts"]["counters_listed"] == 2
+    assert env["counts"]["lever_maxima_confirmed"] == 6
     assert env["counts"]["packages_rechecked"] >= 1 and env["counts"]["packages_approved"] == env["counts"]["packages_rechecked"]
     # the clock sweep ran at days 10 and 34 for the one scenario
     clock = sections["clock"]

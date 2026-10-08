@@ -18,8 +18,10 @@ from fastapi.testclient import TestClient
 from app.api.runtime import Runtime, set_runtime
 from app.books import Books
 from app.domain.models import Mandate, Receivable
+from app.domain.money import fmt_yuan
 from app.strategy import WorthAnswer, early_pay_vs_plan, receivables_worth, saving_text
 from app.strategy.collections import Ceiling, ReceivableWorth, _decide, _sentences
+from app.strategy.faces import clear_face_cache, option_a_face
 from app.verifier.evaluate import clear_caches
 
 from .conftest import OWNER
@@ -87,6 +89,7 @@ def test_day34_call_now_on_the_overdue_invoice(worth34: WorthAnswer):
     assert a.action == "call_now" and not a.no_saving
     assert a.action_sentence == ("Call Foshan Home Retail Co. today for the ¥162,800.00: it saves you ¥1,374.61 "
                                  "and is the only free action.")
+    assert a.worth_text == "Saves ¥1,374.61"
 
 
 def test_day34_ri2_offers_early_payment_with_the_day42_breach_removed(worth34: WorthAnswer):
@@ -108,9 +111,14 @@ def test_day34_ri2_offers_early_payment_with_the_day42_breach_removed(worth34: W
     assert (need.mid_rate_bp, need.mid_saving_fen) == (40, 88_828)  # ¥888.28 saved at 0.40%, ¥77.58 at the 0.80% limit
     assert (whole.mid_rate_bp, whole.mid_saving_fen) == (20, 86_610)  # the ceiling is 0.40%
     assert (b.mid_rate_bp, b.mid_saving_fen) == (40, 88_828) and b.net_saving_fen == 7_758  # the order is on net
-    assert b.action_sentence == ("On the ¥420,000.00 due in 13 days, early payment at up to 0.80% on ¥200,000.00 "
-                                 "(0.40% on the whole invoice) still beats the funding it replaces: ¥888.28 saved "
-                                 "at 0.40%, ¥77.58 at the limit. Or finance it.")
+    # the verifier offers no early-pay counter on this invoice (every rate it would send is refused on its APR), so the
+    # row quotes the plan's need; one early-payment figure per invoice, never the whole-invoice ceiling in the sentence
+    assert [c.face_kind for c in b.ceilings] == ["whole", "need"]
+    assert b.worth_text == "Saves ¥888.28 at 0.40% (¥77.58 at the 0.80% limit)"
+    assert b.action_sentence == ("On the ¥420,000.00 due in 13 days, offer early payment at up to 0.80% on "
+                                 "¥200,000.00, or fund it instead.")
+    assert b.reason_sentence.startswith("At 0.40% it saves you ¥888.28 against the cheapest funding plan; "
+                                        "at the 0.80% limit ¥77.58.")
 
 
 def test_day34_ri32_waits_by_the_rule(worth34: WorthAnswer):
@@ -123,6 +131,30 @@ def test_day34_ri32_waits_by_the_rule(worth34: WorthAnswer):
     assert c.action == "wait"
     assert c.action_sentence == ("Wait: the ¥420,000.00 due in 43 days is beyond the shortfall; "
                                  "chasing it now saves nothing extra.")
+    assert c.worth_text == "Saves nothing extra now" and c.net_saving_fen == 7_368  # the figure stays in the payload
+
+
+def test_day34_has_no_counter_face_and_the_rows_quote_the_plans_need(worth34: WorthAnswer):
+    """The verifier answers an ask at the top of the range on RI:BUYER-1:2 and :32 with no early-pay counter (the first is
+    refused on its APR at every rate above 0.40%, the second at 1.50%), so the row falls back to the need face."""
+    for rid in (RI_2, RI_32):
+        assert all(c.face_kind != "counter" for c in _row(worth34, rid).ceilings)
+    assert [w.receivable_id for w in worth34.rows] == [RCV_A, RI_2, RI_32]  # the net order is the same with the counter face
+    assert [w.worth_text for w in worth34.rows] == [
+        "Saves ¥1,374.61", "Saves ¥888.28 at 0.40% (¥77.58 at the 0.80% limit)", "Saves nothing extra now"]
+
+
+def test_option_a_face_is_the_counters(rt_day0: Runtime, books_day0: Books, mandate0: Mandate,
+                                       rt_day34: Runtime, books_day34: Books, mandate34: Mandate):
+    clear_face_cache()
+    key = rt_day0.owner_key_hex
+    assert option_a_face(books_day0, mandate0, RCV_A, trusted_owner_key_hex=key, day=0, commitments=()) == 25_720_000
+    assert option_a_face(books_day0, mandate0, RCV_A, trusted_owner_key_hex=key, day=0, commitments=()) == 25_720_000  # cached
+    held = tuple(rt_day34.store.commitments())
+    assert option_a_face(books_day34, mandate34, RCV_A, trusted_owner_key_hex=key, day=34, commitments=held) is None  # overdue
+    assert option_a_face(books_day34, mandate34, RI_2, trusted_owner_key_hex=key, day=34, commitments=held) is None
+    assert option_a_face(books_day34, mandate34, RI_32, trusted_owner_key_hex=key, day=34, commitments=held) is None
+    assert option_a_face(books_day34, mandate34, "NO-SUCH", trusted_owner_key_hex=key, day=34, commitments=held) is None
 
 
 def test_day34_ranking_net_and_gross(worth34: WorthAnswer):
@@ -132,7 +164,8 @@ def test_day34_ranking_net_and_gross(worth34: WorthAnswer):
     assert [_row(worth34, i).gross_saving_fen for i in worth34.gross_order] == [170_610, 170_610, 137_461]
     assert worth34.top_action == worth34.rows[0].action_sentence
     assert worth34.first_breach_day == 42 == _oracle("day 34")["baseline"]["first_breach_day"]
-    assert worth34.ranking_note.startswith("Ranked by what collecting each saves you, net of")
+    assert worth34.ranking_note == ("Ranked by what collecting each saves you against the cheapest funding plan, "
+                                    "net of any discount that earns it.")
     assert worth34.source_state_version >= 0 and worth34.computed_in_seconds > 0
 
 
@@ -171,7 +204,9 @@ def test_every_oracle_effect_and_ceiling_is_reproduced(name: str, fixture: str, 
             assert got.breach_days_removed == e["breach_days_removed"]
             assert got.alerts_removed == e["alerts_cleared"]
             assert got.after_needs_owner == e["after"]["plan_needs_owner_approval"]
-        assert len(w.ceilings) == len([p for p in o["early_pay"] if p["largest_rate"] is not None or p["sweep"]])
+        # the oracle knows the whole-invoice and plan's-need faces; the counter face is the third ceiling beside them
+        assert len([c for c in w.ceilings if c.face_kind != "counter"]) == len(
+            [p for p in o["early_pay"] if p["largest_rate"] is not None or p["sweep"]])
         for p in o["early_pay"]:
             if not p["sweep"] and p["largest_rate"] is None:  # overdue: nothing offered
                 assert w.ceilings == [] and "overdue" in p["note"]
@@ -225,8 +260,17 @@ def test_day0_rcv_a(worth0: WorthAnswer):
     assert a.gross_saving_fen == 311_393
     assert (_ceiling(a, "whole").face_fen, _ceiling(a, "whole").largest_rate_bp) == (42_000_000, 70)
     assert (_ceiling(a, "need").face_fen, _ceiling(a, "need").largest_rate_bp) == (40_500_000, 75)
-    assert a.net_saving_fen == _ceiling(a, "need").beats_by_fen == 5_939
-    assert (a.mid_rate_bp, a.mid_saving_fen) == (35, _ceiling(a, "need").mid_saving_fen)  # 0.75% / 2 down to 0.35%
+    assert _ceiling(a, "need").beats_by_fen == 5_939 and _ceiling(a, "need").mid_rate_bp == 35  # 0.75% / 2 down to 0.35%
+    # the row quotes the face the verifier's own Option A counter uses: ¥257,200 at up to 0.85% (the Deals card's figure)
+    counter = _ceiling(a, "counter")
+    assert (counter.face_fen, counter.largest_rate_bp, counter.beats_by_fen) == (25_720_000, 85, 8_616)
+    assert (counter.next_rate_bp, counter.next_rate_dearer_by_fen) == (90, 5_451)
+    assert [c.face_kind for c in a.ceilings] == ["whole", "need", "counter"]
+    assert a.net_saving_fen == counter.beats_by_fen == 8_616
+    assert (a.mid_rate_bp, a.mid_saving_fen) == (40, counter.mid_saving_fen) == (40, 125_006)  # 0.85% / 2 down to 0.40%
+    assert a.worth_text == "Saves ¥1,250.06 at 0.40% (¥86.16 at the 0.85% limit)"
+    assert a.action_sentence == ("On the ¥420,000.00 due in 32 days, offer early payment at up to 0.85% on "
+                                 "¥257,200.00, or fund it instead.")
     assert a.action == "offer_early_pay" and worth0.first_breach_day == 12
     assert worth0.gross_order == [RCV_A]
 
@@ -320,7 +364,8 @@ _ENGINE_WORDS = re.compile(r"\b(verdict|trajectory|basis|fen|offer them|give the
 def _strings(answer: WorthAnswer) -> list[str]:
     out = [answer.top_action, answer.ranking_note]
     for w in answer.rows:
-        out += [w.action_sentence, w.reason_sentence, w.due_when, w.net_saving_text, *(c.face_label for c in w.ceilings)]
+        out += [w.action_sentence, w.reason_sentence, w.worth_text, w.due_when, w.net_saving_text,
+                *(c.face_label for c in w.ceilings)]
         for e in w.effects:
             out += [e.label, e.receipt_when, e.saving_text]
     return out
@@ -339,6 +384,22 @@ def test_english_words_are_the_owners(fixture: str, request: pytest.FixtureReque
         assert w.hypothetical is True
 
 
+@pytest.mark.parametrize("fixture", ["worth0", "worth34"])
+def test_action_sentences_are_at_most_25_words(fixture: str, request: pytest.FixtureRequest):
+    answer: WorthAnswer = request.getfixturevalue(fixture)
+    assert answer.rows
+    for w in answer.rows:
+        assert len(w.action_sentence.split()) <= 25, w.action_sentence
+        assert "finance it" not in w.action_sentence and "Or " not in w.action_sentence
+
+
+def test_worth_text_has_no_gross_figure_beside_it(worth34: WorthAnswer):
+    for w in worth34.rows:
+        gross = fmt_yuan(w.gross_saving_fen)
+        if w.action != "call_now":
+            assert gross not in w.worth_text, (w.receivable_id, w.worth_text)
+
+
 def test_chinese_twins_for_every_sentence(rt_day34: Runtime, books_day34: Books, mandate34: Mandate, worth34: WorthAnswer):
     zh = receivables_worth(books_day34, mandate34, store=rt_day34.store, day=34, lang="zh")
     assert [w.receivable_id for w in zh.rows] == [w.receivable_id for w in worth34.rows]
@@ -348,9 +409,10 @@ def test_chinese_twins_for_every_sentence(rt_day34: Runtime, books_day34: Books,
         assert re.search(r"[一-鿿]", w.reason_sentence)
     for s in _strings(zh):
         assert not re.search(r"\bday \d|第 ?\d+ ?天", s), s
-    assert _row(zh, RI_2).action_sentence == (
-        "13 天后到期的 ¥420,000.00：对 ¥200,000.00 提前付款，最高 0.80%（整张发票 0.40%）仍比它所替代的融资划算："
-        "按 0.40% 省 ¥888.28，按上限省 ¥77.58。或者改为融资。")
+    assert _row(zh, RI_2).action_sentence == "13 天后到期的 ¥420,000.00：对 ¥200,000.00 提前付款，最高 0.80%，或改为融资。"
+    assert _row(zh, RI_2).worth_text == "按 0.40% 可省 ¥888.28（按 0.80% 的上限可省 ¥77.58）"
+    assert [w.worth_text for w in zh.rows][::2] == ["可省 ¥1,374.61", "暂无额外节省"]
+    assert zh.ranking_note.startswith("按收回每一笔相比最便宜的融资方案")
     assert _row(zh, RCV_A).action_sentence.startswith("今天就联系 Foshan Home Retail Co. 催收这笔 ¥162,800.00：")
 
 
@@ -422,9 +484,10 @@ def test_a_ceiling_of_one_step_states_only_the_saving_at_the_limit():
     ceiling = Ceiling(face_kind="need", face_fen=20_000_000, face_label="the plan's need", largest_rate_bp=5,
                       cost_without_fen=10, cost_with_fen=5, beats_by_fen=7_758, mid_rate_bp=5, mid_saving_fen=7_758,
                       next_rate_bp=10, next_rate_dearer_by_fen=100)
-    for lang, expected in (("en", "still beats the funding it replaces: ¥77.58 saved at the limit."),
-                           ("zh", "仍比它所替代的融资划算：按上限省 ¥77.58。")):
-        sentence, _ = _sentences(lang=lang, action="offer_early_pay", who="B", r=_receivable(60), day=10, days_late=0,
+    for lang, expected in (("en", "At the 0.05% limit it saves you ¥77.58 against the cheapest funding plan."),
+                           ("zh", "按 0.05% 的上限，相比最便宜的融资方案能为您省 ¥77.58。")):
+        sentence, reason = _sentences(lang=lang, action="offer_early_pay", who="B", r=_receivable(60), day=10, days_late=0,
                                  lapsed=False, promised=False, episode=(20, 30), advanced=False, ceilings=[ceiling],
                                  why_none="", today_effect=None)
-        assert sentence.endswith(expected) and "saved at 0.05%" not in sentence and "按 0.05% 省" not in sentence
+        assert reason.startswith(expected) and "At 0.05% it saves" not in reason and "按 0.05%，" not in reason
+        assert sentence.count("0.05%") == 1

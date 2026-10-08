@@ -102,7 +102,7 @@ def test_a_value_above_the_cost_of_funds_is_a_runtime_error(rt_day0: Runtime, bo
         price_curve(books_day0, rt_day0.store.get_mandate(), store=rt_day0.store, day=0)
 
 
-def test_no_arrival_day_is_computed_twice(rt_day34: Runtime, books_day34: Books, monkeypatch: pytest.MonkeyPatch):
+def test_no_arrival_day_is_planned_twice(rt_day34: Runtime, books_day34: Books, monkeypatch: pytest.MonkeyPatch):
     seen: list[int] = []
     real = pc.scenario_inflow
 
@@ -112,13 +112,15 @@ def test_no_arrival_day_is_computed_twice(rt_day34: Runtime, books_day34: Books,
 
     monkeypatch.setattr(pc, "scenario_inflow", spy)
     price_curve(books_day34, rt_day34.store.get_mandate(), store=rt_day34.store, day=34)
-    shifted = [d for i, d in enumerate(seen) if i % 2 == 0]  # each evaluation reads the d + 30 copy first
-    assert len(shifted) == len(set(shifted)) and 40 < len(seen) < 120
+    # a value is the difference of two arrival days' plan costs and every arrival day is planned once: the two legs of
+    # neighbouring days share their costs, and the events cut the days so that the bisection stays short
+    assert len(seen) == len(set(seen)) and 8 < len(seen) < 40
 
 
 def test_a_band_the_budget_cannot_settle_is_marked_varies_with_the_smaller_value(
         rt_day34: Runtime, books_day34: Books, monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr(pc, "MAX_EXTRA_EVALUATIONS", 0)
+    monkeypatch.setattr(pc, "_sample_days", lambda _b, _m, _s, day, last: [day, last])  # no event cuts: nothing to settle with
     curve = price_curve(books_day34, rt_day34.store.get_mandate(), store=rt_day34.store, day=34)
     varying = [b for b in curve.bands if b.varies]
     assert varying and all(b.value_fen == 0 for b in varying)  # the smaller of 8912 and 0
@@ -149,19 +151,20 @@ def test_the_runtime_of_the_day0_curve(rt_day0: Runtime, books_day0: Books, caps
 
 def test_the_day0_sentence(curve0: PriceCurve):
     en = price_sentence(curve0, today=0, lang="en")
-    assert en == "Cash arriving within the next 30 days is worth 0.89% to you; after that, nothing."
-    assert "0.89%" in en and "nothing" in en
+    assert en == ("Cash in the next 30 days saves you ¥89.11 of funding cost per ¥10,000 (0.89%); "
+                  "after that, earlier cash saves nothing.")
     zh = price_sentence(curve0, today=0, lang="zh")
-    assert zh == "未来 30 天内到账的现金对你价值 0.89%；之后则没有。"
+    assert zh == "未来 30 天内到账的现金，每 ¥10,000 为您节省 ¥89.11 的融资成本（0.89%）；之后更早到账也不再节省。"
     assert money_line(curve0, "en") == en and money_line(curve0, "zh") == zh
 
 
 def test_the_day34_sentence_has_two_bands(curve34: PriceCurve):
     en = price_sentence(curve34, today=34, lang="en")
-    assert en == ("Cash arriving within the next 8 days is worth 1.78% to you, then 0.89% if it arrives within the "
-                  "next 26 days; after that, nothing.")
+    assert en == ("Cash in the next 8 days saves you ¥178.22 of funding cost per ¥10,000 (1.78%), then ¥89.12 (0.89%) "
+                  "for the 18 days after; later, nothing.")
     zh = price_sentence(curve34, today=34, lang="zh")
-    assert zh == "未来 8 天内到账的现金对你价值 1.78%，未来 26 天内到账的为 0.89%；之后则没有。"
+    assert zh == ("未来 8 天内到账的现金，每 ¥10,000 为您节省 ¥178.22 的融资成本（1.78%），随后的 18 天为 ¥89.12（0.89%）；"
+                  "再之后没有。")
 
 
 def test_a_band_ending_today_or_tomorrow_is_said_as_such():
@@ -170,9 +173,44 @@ def test_a_band_ending_today_or_tomorrow_is_said_as_such():
             pc.PriceBand(from_day=5, to_day=last, value_fen=8911, value_bp=89),
             pc.PriceBand(from_day=last + 1, to_day=125, value_fen=0, value_bp=0)])
 
-    assert price_sentence(one(5), today=5, lang="en") == "Cash arriving today is worth 0.89% to you; after that, nothing."
-    assert price_sentence(one(6), today=5, lang="en") == "Cash arriving by tomorrow is worth 0.89% to you; after that, nothing."
-    assert price_sentence(one(6), today=5, lang="zh") == "最迟明天到账的现金对你价值 0.89%；之后则没有。"
+    tail = "saves you ¥89.11 of funding cost per ¥10,000 (0.89%); after that, earlier cash saves nothing."
+    assert price_sentence(one(5), today=5, lang="en") == f"Cash arriving today {tail}"
+    assert price_sentence(one(6), today=5, lang="en") == f"Cash arriving by tomorrow {tail}"
+    assert price_sentence(one(6), today=5, lang="zh") == "最迟明天到账的现金，每 ¥10,000 为您节省 ¥89.11 的融资成本（0.89%）；之后更早到账也不再节省。"
+
+
+def test_two_live_bands_with_a_gap_say_how_far_the_later_one_reaches():
+    curve = PriceCurve(day=0, flat=False, source_state_version=1, bands=[
+        pc.PriceBand(from_day=0, to_day=10, value_fen=17822, value_bp=178),
+        pc.PriceBand(from_day=11, to_day=15, value_fen=0, value_bp=0),
+        pc.PriceBand(from_day=16, to_day=40, value_fen=8912, value_bp=89),
+        pc.PriceBand(from_day=41, to_day=120, value_fen=0, value_bp=0)])
+    assert price_sentence(curve, today=0, lang="en") == (
+        "Cash in the next 10 days saves you ¥178.22 of funding cost per ¥10,000 (1.78%), then ¥89.12 (0.89%) "
+        "in the next 40 days; later, nothing.")
+
+
+def test_a_step_between_two_samples_is_found_at_the_event_day_in_few_reads():
+    read: list[int] = []
+
+    def cost(x: int) -> int:
+        read.append(x)
+        return 0 if x < 31 else 900
+
+    runs = pc._settle(12, 77, cost, [13, 20, 21, 30, 31, 32, 47, 60], lambda: False)
+    by_day = {d: r.costs for r in runs for d in range(r.first, r.last + 1)}
+    assert sorted(by_day) == list(range(12, 77))  # the runs tile the span
+    assert all(by_day[d] == ((0,) if d < 31 else (900,)) for d in by_day)
+    assert len(set(read)) <= 8  # the ends and the event days halved down to the step, not a bisection of 65 days
+
+
+def test_event_days_are_the_flows_receipts_and_debt_payments(books_day0: Books):
+    events = pc._event_days(books_day0, 0, 150)
+    state = books_day0.state
+    assert {f.day for f in state.flows} <= events
+    assert {r.due_day for r in state.receivables if r.status == "OPEN"} <= events
+    assert {ri_issue + ri.terms_days for ri in state.recurring_invoices for ri_issue in (ri.next_issue_day,)} <= events
+    assert {30, 60, 90, 120} & events  # the existing loan's monthly payment
 
 
 def test_the_sentences_use_business_words_only(curve0: PriceCurve, curve34: PriceCurve):
@@ -216,7 +254,8 @@ def test_the_route_answers_the_curve_with_display_strings(client: TestClient, mo
     assert body["hypothetical"] is True and body["flat"] is False
     assert body["day"] == 0 and body["amount_fen"] == 1_000_000 and body["amount_display"] == "¥10,000.00"
     assert body["state_version"] == body["source_state_version"] and body["computed_in_seconds"] >= 0
-    assert body["sentence"] == "Cash arriving within the next 30 days is worth 0.89% to you; after that, nothing."
+    assert body["sentence"] == ("Cash in the next 30 days saves you ¥89.11 of funding cost per ¥10,000 (0.89%); "
+                                "after that, earlier cash saves nothing.")
     first, second, third = body["bands"]
     assert first["value_display"] == "¥0.00" and first["from_when"] == "today" and first["to_when"] == "today"
     assert second["value_fen"] == 8911 and second["value_display"] == "¥89.11" and second["value_pct"] == "0.89%"
@@ -228,7 +267,7 @@ def test_the_route_answers_the_curve_with_display_strings(client: TestClient, mo
 def test_the_route_speaks_chinese_and_serves_the_second_call_from_its_cache(client: TestClient, monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setenv("FEATURE_PRICE_CURVE", "1")
     zh = client.get("/cash/price-curve?lang=zh", headers=OWNER).json()
-    assert zh["sentence"] == "未来 30 天内到账的现金对你价值 0.89%；之后则没有。"
+    assert zh["sentence"] == "未来 30 天内到账的现金，每 ¥10,000 为您节省 ¥89.11 的融资成本（0.89%）；之后更早到账也不再节省。"
     assert zh["bands"][1]["to_when"] == "30 天后"
     t0 = time.perf_counter()
     again = client.get("/cash/price-curve", headers=OWNER)

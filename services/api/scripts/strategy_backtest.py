@@ -104,9 +104,11 @@ QUICK_SWEEP_DAYS = (10, 34)
 OWNER = {"X-Owner-Token": "demo-owner-token"}
 BANK = {"X-Agent-Key": "demo-agent-key", "X-Bank-Feed-Key": "demo-bank-feed-key"}
 FACE_KIND = {"the whole outstanding invoice": "whole", "the shortfall the plan covers": "need"}
-# The one known difference from the oracle: on day 0 the module values the net saving on the plan's-need face
-# (RCV-A, 0.75% on ¥405,000: ¥59.39); the spike's `net_value_at_ceiling` is on the whole face (0.70%: ¥173.93).
-EXPECTED_DAY0_NET = {"RCV-A": (5_939, 17_393)}
+# The one known difference from the oracle: on day 0 the module values the net saving on the face the verifier's own
+# Option A counter uses (RCV-A, 0.85% on ¥257,200: ¥86.16; the plan's need is 0.75% on ¥405,000: ¥59.39); the spike's
+# `net_value_at_ceiling` is on the whole face (0.70%: ¥173.93).
+EXPECTED_DAY0_NET = {"RCV-A": (8_616, 17_393)}
+MAX_ACTION_WORDS = 25  # a row's action sentence is at most this many words (English)
 MAX_FAILURES_IN_REPORT = 200
 
 
@@ -189,6 +191,13 @@ def check_worth(books: Books, mandate: Mandate, rt: Runtime, day: int) -> tuple[
             bad.append((w.receivable_id, f"call_now on a receivable that is not past due (days_late {w.days_late})"))
         if w.days_late > 0 and w.ceilings:
             bad.append((w.receivable_id, f"an early-payment ceiling on an overdue receivable ({w.days_late} days late)"))
+        if len(w.action_sentence.split()) > MAX_ACTION_WORDS:
+            words = len(w.action_sentence.split())
+            bad.append((w.receivable_id, f"the action sentence has {words} words (at most {MAX_ACTION_WORDS}): {w.action_sentence}"))
+        if not w.worth_text:
+            bad.append((w.receivable_id, "the row has no worth_text"))
+        elif w.action == "wait" and w.worth_text != "Saves nothing extra now":
+            bad.append((w.receivable_id, f"a wait row says {w.worth_text!r}"))
         for c in w.ceilings:
             ceilings += 1
             if c.largest_rate_bp is None:
@@ -616,8 +625,8 @@ def _compare_row(counts: Counter[str], expected: list[str], name: str, books: Bo
     if w.net_saving_fen == want_net:
         return
     if which == 0 and EXPECTED_DAY0_NET.get(rid) == (w.net_saving_fen, want_net):
-        expected.append(f"{name} {rid}: net saving {w.net_saving_fen} fen (plan's-need face) vs the oracle's net_value_at_ceiling "
-                        f"{want_net} fen (whole face): the module values the discount on the plan's need, as the brief says")
+        expected.append(f"{name} {rid}: net saving {w.net_saving_fen} fen (the face the verifier's Option A counter uses) vs the "
+                        f"oracle's net_value_at_ceiling {want_net} fen (whole face): the module quotes the one face FLOW would send")
     else:
         bad(f"{rid} net value at the ceiling", f"net saving {w.net_saving_fen} fen vs oracle {want_net} fen")
 
@@ -850,12 +859,12 @@ def _check_offer(run: EnvelopeRun, item: dict[str, Any], offer: CompiledOffer, s
     whole = facts.receivable_face_fen
     cur = facts.current_terms
     approved = {_point_of(p): p for p in ref.answer.packages if p.approved}
-    for c in v.counters:  # i
+    for c in v.counters:  # i: a counter passes when it is inside the envelope (approved when probed); listed is counted beside
         sec.bump("counters_checked")
         point = _reading(c.obligations, cur, whole)
-        if point is not None and point in approved:
-            sec.bump("counters_matched")
-            continue
+        listed = point is not None and point in approved
+        if listed:
+            sec.bump("counters_listed")
         text = _describe(c.obligations)
         if facts.refused:
             sec.fail(oid, 0, c.label, f"{text}: the envelope for {facts.buyer_name} is refused, so there is no package to match")
@@ -863,18 +872,26 @@ def _check_offer(run: EnvelopeRun, item: dict[str, Any], offer: CompiledOffer, s
         if point is None:
             sec.fail(oid, 0, c.label, f"{text}: the counter has an obligation or a lever twice that no package can express")
             continue
-        extra = ""
+        if listed:
+            sec.bump("counters_inside")
+            continue
         try:
             probed = probe_packages(run.books, run.mandate, [_candidate(ref.buyer_id, point)], day=0,
                                     trusted_owner_key_hex=run.key)[0]
-            extra = f"; put to the verifier it is {'approved' if probed.approved else 'not approved'} ({probed.outcome})"
         except ValueError as e:
-            extra = f"; outside the envelope's levers ({str(e).splitlines()[0][:80]})"
+            sec.fail(oid, 0, c.label, f"{text} reads as ({_point_text(point)}) and is outside the envelope's levers "
+                                      f"({str(e).splitlines()[0][:80]})")
+            continue
+        if probed.approved:
+            sec.bump("counters_inside")
+            sec.bump("counters_inside_not_listed")
+            continue
+        extra = f"; put to the verifier it is not approved ({probed.outcome})"
         same = [_point_of(p)[1] for p in ref.answer.packages
                 if _point_of(p)[0::2] == point[0::2] and _point_of(p)[3:] == point[3:] and p.approved]
         if same:
             extra += f"; approved packages with the same other levers have price {sorted(same)} bp"
-        sec.fail(oid, 0, c.label, f"{text} reads as ({_point_text(point)}) and matches no approved package{extra}")
+        sec.fail(oid, 0, c.label, f"{text} reads as ({_point_text(point)}) and is not inside the envelope{extra}")
     # ii: the offer's own point
     if not _passes(v):
         return
@@ -924,13 +941,15 @@ def check_envelope(quick: bool = False) -> Section:
 
     Per offer: compile it (the cache, then the rules grammar, as `LLM_MODE=cache` does), evaluate it
     (`plans="committed"`) and take the envelope of its buyer (once per buyer, with `full_grid` and the zone):
-      i.   every counter of the verdict reads as a package the envelope approves (terms, price, early-pay rate and face,
-           rebate; levers a counter does not set at zero, the terms in force when it sets none);
+      i.   every counter of the verdict is inside the envelope: it reads as a package (terms, price, early-pay rate and
+           face, rebate; levers a counter does not set at zero, the terms in force when it sets none) that
+           `probe_packages` approves; the counters that are also listed among the grid's packages are counted beside;
+           a buyer the envelope refuses has no envelope, so a counter to it is a failure;
       ii.  a passing offer with terms and price levers only is on or above the zone's smallest passing price at its
            terms; a passing offer with an early-pay or rebate lever too is put to `probe_packages`, which must pass it;
     Per buyer: iii. every approved package passes a fresh evaluation and `infeasibility`; iv. every lever maximum is
     confirmed by its neighbour check, and the zone and the maxima equal an exhaustive scan of terms x price built with
-    `whatif.offer.build` and `evaluate` directly; v. the refusals (a buyer with no recurring or open invoice) are counted.
+    `whatif.offer.build` and `evaluate` directly; v. the refusals (a buyer with no recurring invoice, open invoice or expected order) are counted.
     A failure carries the offer id (or `envelope <buyer>`) as its scenario and the figure.
     """
     import yaml
@@ -943,7 +962,7 @@ def check_envelope(quick: bool = False) -> Section:
     run = EnvelopeRun(full_grid=not quick, zone=True)
     roles = {c.id: c.role for c in run.books.state.counterparties}
     sec.counts.update({"offers_listed": 0, "offers_checked": 0, "files": [], "compiled_from": {}, "counters_checked": 0,
-                       "counters_matched": 0, "zone_tests": 0, "zone_tests_inside": 0, "probes": 0, "probes_agree": 0,
+                       "counters_inside": 0, "counters_listed": 0, "counters_inside_not_listed": 0, "zone_tests": 0, "zone_tests_inside": 0, "probes": 0, "probes_agree": 0,
                        "refusals": 0, "packages_rechecked": 0, "packages_approved": 0, "lever_maxima_checked": 0,
                        "lever_maxima_confirmed": 0, "exhaustive_comparisons": 0, "exhaustive_agreements": 0,
                        "buyers_swept": 0, "mode": "quick: EX01 only, default grid, no exhaustive scan" if quick else "full: full grid, zone"})
@@ -999,7 +1018,7 @@ def _money(fen: int) -> str:
 
 def _envelope_lines(env: dict[str, Any], ec: dict[str, Any]) -> list[str]:
     buyers = "; ".join(
-        f"{b}: {'refused (no recurring or open invoice)' if v['refused'] else str(v['packages']) + ' packages (' + str(v['approved']) + ' approved), ' + str(v['zone_rows']) + ' zone rows, ' + str(v['evaluations']) + ' evaluations, ' + str(v['envelope_seconds']) + ' s'}"
+        f"{b}: {'refused (no recurring invoice, open invoice or expected order)' if v['refused'] else str(v['packages']) + ' packages (' + str(v['approved']) + ' approved), ' + str(v['zone_rows']) + ' zone rows, ' + str(v['evaluations']) + ' evaluations, ' + str(v['envelope_seconds']) + ' s'}"
         for b, v in ec["buyers"].items())
     verdicts = ", ".join(f"{k.split(': ')[1]} {v}" for k, v in sorted(ec.items()) if k.startswith("verdicts: ")) or "none"
     not_tested = [f"{k[len('passing offers not tested '):]} {v}" for k, v in ec.items() if k.startswith("passing offers not tested")]
@@ -1012,8 +1031,9 @@ def _envelope_lines(env: dict[str, Any], ec: dict[str, Any]) -> list[str]:
         (f"- Compiled from (`LLM_MODE=cache`: the fixture cache, then the rules grammar for a document set that is not cached): "
          f"{', '.join(f'{k} {v}' for k, v in ec['compiled_from'].items())}."),
         f"- Buyers swept (once each): {buyers}. Refusals: {ec['refusals']} offers whose buyer has no lever.",
-        (f"- Counters of the verdicts put to the packages: {ec['counters_matched']} of {ec['counters_checked']} match an "
-         f"approved package."),
+        (f"- Counters of the verdicts: {ec['counters_inside']} of {ec['counters_checked']} are inside the envelope (approved "
+         f"when probed); {ec['counters_listed']} of them are listed among the grid's packages and {ec['counters_inside_not_listed']} "
+         f"are approved when probed without being listed."),
         (f"- Zone tests (passing offer with terms and price only): {ec['zone_tests_inside']} of {ec['zone_tests']} inside. "
          f"Probes (passing offer with an early-pay or rebate lever): {ec['probes_agree']} of {ec['probes']} agree with the verdict."),
         (f"- Re-check: {ec['packages_rechecked']} packages re-evaluated from scratch and put to `infeasibility`, "
