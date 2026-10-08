@@ -1,0 +1,106 @@
+# SYNTHETIC: the decisions of a role-played finance director of a 105 million yuan electronics manufacturer, written for the
+# public-record books (fixtures/scenarios/public_sme.json) after reading week 1's answers, not a real owner's behaviour.
+# Read by services/api/scripts/pilot_dry_run.py --decisions. Buyers: BUYER-A..E are the named customers, BUYER-F is the aggregate.
+- week: 1
+  decisions:
+    - answer: curve
+      owner_did: "Asked our two biggest customers to pay a few days early. Did not offer a discount: a tenth of a percent is less than the saving."
+      choice: partly
+    - answer: worth
+      owner_did: "Rang the group that owes us the 7.5 million, a month late, the same morning, as the list said."
+      choice: followed
+    - answer: envelope
+      buyer: BUYER-A
+      owner_did: "Offered Buyer A 0.10% off for paying 15 days early. Kept their 90-day terms: we do not give 100."
+      choice: partly
+    - answer: envelope
+      buyer: BUYER-C
+      owner_did: "Said no to longer terms for Buyer C. Our own suppliers are paid in 30 days, so we cannot finance 100."
+      choice: ignored
+    - answer: envelope
+      buyer: BUYER-E
+      owner_did: "Accepted 0.10% off for early payment on Buyer E's invoice."
+      choice: followed
+- week: 2
+  decisions:
+    - answer: curve
+      owner_did: "The sentence said earlier cash saves nothing, but the cash page shows we are about to run short. Phoned the bank about the credit line instead."
+      choice: not_applicable
+    - answer: worth
+      owner_did: "Wrote to the group that owes 7.5 million, copying their finance director; the list put them first again."
+      choice: followed
+    - answer: envelope
+      buyer: BUYER-B
+      owner_did: "Offered Buyer B 0.10% for paying their next invoice 10 days early."
+      choice: followed
+    - answer: envelope
+      buyer: BUYER-E
+      owner_did: "Offered Buyer E 0.30% for early payment, not the 0.45% the page allows, since the line is cheap."
+      choice: partly
+- week: 3
+  decisions:
+    - answer: worth
+      owner_did: "Escalated with the group owing 7.5 million, but chased Buyer D first because our sales director knows them and they were close to paying."
+      choice: partly
+    - answer: envelope
+      buyer: BUYER-A
+      owner_did: "Buyer A asked for longer terms. Said no and offered nothing."
+      choice: ignored
+    - answer: envelope
+      buyer: BUYER-F
+      owner_did: "Offered the group 90-day terms only on the new order, with no price change."
+      choice: partly
+- week: 4
+  decisions:
+    - answer: curve
+      owner_did: "Nothing to do with the curve: we are already below our cash floor. Drew on the bank line for the shortfall."
+      choice: ignored
+    - answer: worth
+      owner_did: "Sent Buyer B's finance director a formal letter about the 3 million, now two months late, as the list said."
+      choice: followed
+    - answer: envelope
+      buyer: BUYER-C
+      owner_did: "Offered Buyer C a 2% rebate for a larger order, nothing on terms."
+      choice: partly
+- week: 5
+  decisions:
+    - answer: worth
+      owner_did: "Chased the 10.5 million from the group first because it is the biggest and now due, then Buyer B."
+      choice: ignored
+    - answer: envelope
+      buyer: BUYER-B
+      owner_did: "No offer from Buyer B this week."
+      choice: not_applicable
+- week: 6
+  decisions:
+    - answer: worth
+      owner_did: "Rang Buyer B, then Buyer D, then the group, in the order of the list."
+      choice: followed
+    - answer: envelope
+      buyer: BUYER-A
+      owner_did: "Buyer A is paying on time; nothing to decide."
+      choice: not_applicable
+- week: 7
+  decisions:
+    - answer: curve
+      owner_did: "Read it and moved on."
+      choice: not_applicable
+    - answer: worth
+      owner_did: "Followed the list for Buyer B and Buyer D, but left the group for the sales director to call."
+      choice: partly
+    - answer: envelope
+      buyer: BUYER-F
+      owner_did: "The group asked for 80 days. Refused."
+      choice: ignored
+- week: 8
+  decisions:
+    - answer: curve
+      owner_did: "Ignored the sentence; we agreed a new credit line limit with the bank instead."
+      choice: ignored
+    - answer: worth
+      owner_did: "Followed the list: another call to Buyer B's finance director."
+      choice: followed
+    - answer: envelope
+      buyer: BUYER-B
+      owner_did: "Offered Buyer B a 1% rebate to settle the old invoice in one payment."
+      choice: partly
