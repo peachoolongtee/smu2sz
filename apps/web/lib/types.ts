@@ -1417,6 +1417,8 @@ export interface EnvelopeView {
   packages: EnvelopePackageView[];
   levers: EnvelopeLeverView[];
   zone: EnvelopeZoneRow[];
+  /** One sentence per counter FLOW itself would make that falls outside the ranges the card checks; listed, never probed. */
+  unlisted_counters: string[];
   /** One sentence when the buyer has no lever at all; the card then shows only this. */
   refused: string | null;
   hypothetical: true;
@@ -1495,8 +1497,8 @@ export interface ReceivableWorth {
   net_saving_display: string;
   /** What collecting it saves, net of the discount that earns it; reads "no saving" when it is nothing. */
   net_saving_text: string;
-  /** The one worth string for the row ("Saves ¥1,374.61"); older servers do not send it, then `net_saving_text` stands in. */
-  worth_text?: string;
+  /** The one worth string for the row ("Saves ¥1,374.61"). */
+  worth_text: string;
   no_saving: boolean;
   action: CollectionAction;
   action_sentence: string;

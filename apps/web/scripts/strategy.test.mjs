@@ -88,7 +88,8 @@ test("the recordings carry the server's strings the pages show, and no 'day N' i
     assert.ok(worth.rows.length > 0);
     assert.ok(worth.ranking_note && worth.top_action);
     for (const row of worth.rows) {
-      for (const text of [row.action_sentence, row.net_saving_text, row.gross_saving_display, row.worth_text ?? ""]) assert.doesNotMatch(text, /\bday \d/i);
+      for (const text of [row.action_sentence, row.net_saving_text, row.gross_saving_display, row.worth_text]) assert.doesNotMatch(text, /\bday \d/i);
+      assert.ok(typeof row.worth_text === "string" && row.worth_text.length > 0, `${name} ${row.receivable_id} carries worth_text`);
       assert.ok(["call_now", "escalate", "reminder", "offer_early_pay", "finance", "wait"].includes(row.action));
     }
   }
@@ -110,10 +111,10 @@ test("the envelope recordings are BUYER-1's, carry the server's sentences and th
   assert.equal(day0.levers.length, 6);
   // The lever table, the package lines and the zone rows are the server's strings: the card composes none of them.
   assert.deepEqual(day0.levers.map((l) => l.maximum_display), ["45 days", "55 days", "55 days, price up 0.30%", "0.70% on ¥420,000.00", "0.85% on ¥257,200.00", "1.25%"]);
-  assert.equal(day0.levers[0].next_step_sentence, "50 days: not approved; its funding cannot run today");
+  assert.equal(day0.levers[0].next_step_sentence, "50 days: over your limits; its funding cannot run today");
   assert.equal(day0.levers[0].wall_words, "your budget for what you give buyers");
   assert.ok(day0.packages.some((p) => p.summary === "55-day terms · price up 0.25% · rebate 0.60%"));
-  assert.deepEqual(day0.zone.slice(0, 5).map((z) => z.lowest_price_words), ["no price step needed", "no price step needed", "no price step needed", "no price step needed", "0.10%"]);
+  assert.deepEqual(day0.zone.slice(0, 5).map((z) => z.lowest_price_words), ["no price rise needed", "no price rise needed", "no price rise needed", "no price rise needed", "0.10%"]);
   assert.equal(day0.zone.at(-1).lowest_price_words, "none works");
   for (const name of ["envelope_day0", "envelope_day34", "envelope_day34_after"]) {
     const e = recording(name);
@@ -154,11 +155,16 @@ test("the Deals card says it is the most the owner can give, labels the figure a
   const card = source("components/deals/before-they-ask.tsx");
   assert.match(card, /<span className="text-ink-2">\{` · \$\{p\.flags\.join/);
   assert.match(card, /data-testid="envelope-caption"/);
+  // The counters FLOW would make outside the ranges it checks are the server's sentences, a smaller line under the packages.
+  assert.match(card, /unlisted\.map\(\(sentence, i\) => \(\s*<p key=\{i\} className="mt-2 text-xs text-ink-2" data-testid="envelope-unlisted">/);
+  assert.match(card, /<Packages packages=\{e\.packages\} unlisted=\{e\.unlisted_counters\} \/>/);
+  for (const name of ["envelope_day0", "envelope_day34", "envelope_day34_after"]) assert.ok(Array.isArray(recording(name).unlisted_counters), name);
 });
 
-test("the worth cell is the server's one string (worth_text, else net_saving_text) and decides nothing from the gross saving", () => {
+test("the worth cell is the server's one string (worth_text) and decides nothing from the gross saving", () => {
   const cell = source("components/business/strategy.tsx");
-  assert.match(cell, /row\.worth_text \?\? row\.net_saving_text/);
+  assert.match(cell, /\{row\.worth_text\}/);
+  assert.doesNotMatch(cell, /net_saving_text/);
   assert.doesNotMatch(cell, /gross_saving/);
   assert.doesNotMatch(source("lib/dictionary.ts"), /before any discount/);
 });

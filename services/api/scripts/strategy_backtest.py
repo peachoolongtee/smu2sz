@@ -77,6 +77,7 @@ from app.persistence import InMemoryLedgerStore
 from app.strategy import CandidatePackage
 from app.strategy.collections import ReceivableWorth, WorthAnswer, early_pay_vs_plan, receivables_worth
 from app.strategy.envelope import (
+    BuyerContext,
     EnvelopeAnswer,
     EnvelopeFacts,
     EnvelopePackage,
@@ -91,7 +92,7 @@ from app.strategy.price_curve import WINDOW_DAYS, PriceCurve, price_curve
 from app.verifier import evaluate
 from app.verifier.counters import infeasibility
 from app.verifier.evaluate import clear_caches
-from app.whatif.offer import Context, EarlyPayContext, build
+from app.whatif.offer import build
 from app.whatif.params import DISCOUNT_MAX_BP, WhatIfParams
 
 SCENARIOS = API / "evals" / "e2e" / "scenarios.yaml"
@@ -108,6 +109,12 @@ FACE_KIND = {"the whole outstanding invoice": "whole", "the shortfall the plan c
 # Option A counter uses (RCV-A, 0.85% on ¥257,200: ¥86.16; the plan's need is 0.75% on ¥405,000: ¥59.39); the spike's
 # `net_value_at_ceiling` is on the whole face (0.70%: ¥173.93).
 EXPECTED_DAY0_NET = {"RCV-A": (8_616, 17_393)}
+# The oracle's ceiling tests the plan comparison alone; the module's also holds the rate to the mandate's APR cap over the
+# days the payment is early (brief section 12). day 34 RI:BUYER-1:2 on the plan's-need face (¥200,000, 11 days early against
+# the 15% cap): the oracle's 0.80% (net ¥77.58) is a rate the verifier rejects with MAX_APR_EXCEEDED; the module's is 0.45%
+# (net ¥788.28). (books, receivable, face kind) -> (the oracle's ceiling bp, the module's ceiling bp, the oracle's net fen,
+# the module's net fen)
+EXPECTED_APR_CAPPED = {(34, "RI:BUYER-1:2", "need"): (80, 45, 7_758, 78_828)}
 MAX_ACTION_WORDS = 25  # a row's action sentence is at most this many words (English)
 MAX_FAILURES_IN_REPORT = 200
 
@@ -612,7 +619,11 @@ def _compare_row(counts: Counter[str], expected: list[str], name: str, books: Bo
             bad(f"{rid} {kind} face", "the module has no ceiling on this face")
         else:
             want = (p["largest_rate"] or {}).get("bp")
-            if c.largest_rate_bp != want or c.face_fen != face:
+            capped = EXPECTED_APR_CAPPED.get((which, rid, kind))
+            if capped is not None and (want, c.largest_rate_bp) == capped[:2] and c.face_fen == face:
+                expected.append(f"{name} {rid} {kind} face: ceiling {c.largest_rate_bp} bp vs the oracle's plan-only {want} bp: "
+                                f"{want} bp is rejected by the verifier (MAX_APR_EXCEEDED), the module holds the ceiling to the mandate's APR cap")
+            elif c.largest_rate_bp != want or c.face_fen != face:
                 bad(f"{rid} {kind} face", f"ceiling {c.largest_rate_bp} bp on {c.face_fen} fen vs oracle {want} bp on {face} fen")
         for s in p["sweep"]:
             counts[f"{name}: sweep points (C1 less C0)"] += 1
@@ -624,7 +635,11 @@ def _compare_row(counts: Counter[str], expected: list[str], name: str, books: Bo
     want_net = _fen(o["net_value_at_ceiling"])
     if w.net_saving_fen == want_net:
         return
-    if which == 0 and EXPECTED_DAY0_NET.get(rid) == (w.net_saving_fen, want_net):
+    capped_net = next((v for (b, r, _k), v in EXPECTED_APR_CAPPED.items() if (b, r) == (which, rid)), None)
+    if capped_net is not None and (want_net, w.net_saving_fen) == capped_net[2:]:
+        expected.append(f"{name} {rid}: net saving {w.net_saving_fen} fen at the APR-capped ceiling vs the oracle's "
+                        f"net_value_at_ceiling {want_net} fen at its plan-only ceiling")
+    elif which == 0 and EXPECTED_DAY0_NET.get(rid) == (w.net_saving_fen, want_net):
         expected.append(f"{name} {rid}: net saving {w.net_saving_fen} fen (the face the verifier's Option A counter uses) vs the "
                         f"oracle's net_value_at_ceiling {want_net} fen (whole face): the module quotes the one face FLOW would send")
     else:
@@ -751,7 +766,7 @@ class EnvelopeRun:
         return evaluate(offer, self.books.state, self.mandate, trusted_owner_key_hex=self.key, day=0,
                         owner_declared=declared, plans="committed").verdict
 
-    def package_verdict(self, ctx: Context | EarlyPayContext, point: Point) -> Verdict:
+    def package_verdict(self, ctx: BuyerContext, point: Point) -> Verdict:
         terms, price, discount, face, rebate = point
         offer, _ = build(WhatIfParams(terms_days=terms, discount_bp=discount, rebate_bp=rebate, price_adjustment_bp=price,
                                       settle_face_fen=face), ctx, 0)
@@ -842,17 +857,32 @@ def _check_buyer(run: EnvelopeRun, ref: Reference, sec: Section) -> None:
             agree(f"terms with price: smallest approved price at {t_best} d", got, p_best)
 
 
-def _check_offer(run: EnvelopeRun, item: dict[str, Any], offer: CompiledOffer, sec: Section, scan: bool) -> None:
+UNBOOKED_ORDER = "the order is stated in the offer, not on the books"
+
+
+def _only_rebate_counters(v: Verdict) -> bool:
+    """Whether the verdict has counters and every obligation of every one is a rebate (H37's counter: a rebate on an
+    order the offer states and the books do not carry)."""
+    return bool(v.counters) and all(c.obligations and all(o.type == ObligationType.CONTINGENT_REBATE for o in c.obligations)
+                                    for c in v.counters)
+
+
+def _check_offer(run: EnvelopeRun, item: dict[str, Any], offer: CompiledOffer, sec: Section, scan: bool) -> str | None:
+    """Checks one offer; the reason it was skipped, if it was (counted by the caller, not as checked)."""
     oid = item["id"]
     declared = item.get("declared_costs")
     v = run.verdict(offer, declared)
     sec.bump(f"verdicts: {v.outcome.value}")
     if v.outcome == Outcome.NO_VERDICT:
         sec.bump("skipped: the verifier abstains (no verdict to compare)")
-        return
-    sec.bump("offers_checked")
+        return None
     ref = run.reference(offer.counterparty_id, scan)
     facts = ref.facts
+    if facts.refused and facts.refusal == "no_lever" and _only_rebate_counters(v):
+        # a buyer with no lever on the books (no recurring invoice, open invoice or expected order) whose only counter is a
+        # rebate on an order the offer itself states: there is no base on the books to put the rebate to
+        return UNBOOKED_ORDER
+    sec.bump("offers_checked")
     if facts.refused:
         sec.bump("refusals")
         sec.bump("offers_whose_buyer_is_refused")
@@ -894,24 +924,24 @@ def _check_offer(run: EnvelopeRun, item: dict[str, Any], offer: CompiledOffer, s
         sec.fail(oid, 0, c.label, f"{text} reads as ({_point_text(point)}) and is not inside the envelope{extra}")
     # ii: the offer's own point
     if not _passes(v):
-        return
+        return None
     if facts.refused:
         sec.bump("passing offers not tested (the buyer is refused)")
-        return
+        return None
     if declared:
         sec.bump("passing offers not tested (owner-declared costs the envelope cannot know)")
-        return
+        return None
     types = {o.type for o in v.bound_obligations}
     point = _reading(v.bound_obligations, cur, whole)
     if point is None:
         sec.bump("passing offers not tested (an obligation with no lever, or a lever twice)")
-        return
+        return None
     terms, price = point[0], point[1]
     if types <= {ObligationType.TERMS_EXTENSION, ObligationType.PRICE_ADJUSTMENT} and types:
         row = next((z for z in ref.answer.zone if z.terms_days == terms), None)
         if row is None:
             sec.bump("passing offers not tested (terms off the zone's grid or no zone computed)")
-            return
+            return None
         sec.bump("zone_tests")
         if row.min_price_bp is not None and price >= row.min_price_bp:
             sec.bump("zone_tests_inside")
@@ -919,20 +949,21 @@ def _check_offer(run: EnvelopeRun, item: dict[str, Any], offer: CompiledOffer, s
             sec.fail(oid, 0, f"terms {terms} d, price {price} bp",
                      f"the verdict passes ({v.outcome.value}) but the zone's smallest passing price at {terms} d is "
                      f"{row.min_price_bp} bp")
-        return
+        return None
     try:
         probed = probe_packages(run.books, run.mandate, [_candidate(ref.buyer_id, point)], day=0,
                                 trusted_owner_key_hex=run.key)[0]
     except ValueError as e:
         sec.bump("passing offers not tested (off the levers' grid, so not probeable)")
         _note(sec, f"not probeable: {oid} ({_point_text(point)}): {str(e).splitlines()[0][:100]}")
-        return
+        return None
     sec.bump("probes")
     if probed.passes:
         sec.bump("probes_agree")
     else:
         sec.fail(oid, 0, _point_text(point), f"the verdict passes ({v.outcome.value}) but the same package put to "
                                               f"probe_packages is {probed.outcome} (passes {probed.passes})")
+    return None
 
 
 def check_envelope(quick: bool = False) -> Section:
@@ -949,7 +980,7 @@ def check_envelope(quick: bool = False) -> Section:
            terms; a passing offer with an early-pay or rebate lever too is put to `probe_packages`, which must pass it;
     Per buyer: iii. every approved package passes a fresh evaluation and `infeasibility`; iv. every lever maximum is
     confirmed by its neighbour check, and the zone and the maxima equal an exhaustive scan of terms x price built with
-    `whatif.offer.build` and `evaluate` directly; v. the refusals (a buyer with no recurring invoice, open invoice or expected order) are counted.
+    `whatif.offer.build` and `evaluate` directly; v. the refusals (a buyer with no recurring invoice, open invoice or expected order) are counted, and an offer to such a buyer whose only counters are rebates on an order the offer states and the books do not carry is skipped with that reason.
     A failure carries the offer id (or `envelope <buyer>`) as its scenario and the figure.
     """
     import yaml
@@ -987,7 +1018,9 @@ def check_envelope(quick: bool = False) -> Section:
                 continue
             sec.counts["compiled_from"][offer.compiler] = sec.counts["compiled_from"].get(offer.compiler, 0) + 1
             try:
-                _check_offer(run, item, offer, sec, scan=not quick)
+                why = _check_offer(run, item, offer, sec, scan=not quick)
+                if why is not None:
+                    skipped[why] += 1
             except (EngineError, ValueError) as e:
                 sec.fail(item["id"], 0, "envelope check", f"{type(e).__name__}: {e}")
     for ref in run.refs.values():
@@ -1026,8 +1059,8 @@ def _envelope_lines(env: dict[str, Any], ec: dict[str, Any]) -> list[str]:
     abstain = ec.get("skipped: the verifier abstains (no verdict to compare)", 0)
     out = [
         f"- Mode: {ec['mode']}. Offer files: {'; '.join(ec['files'])}.",
-        (f"- Offers listed: {ec['offers_listed']}; checked: {ec['offers_checked']} (verdicts {verdicts}); not buyers on the golden "
-         f"books, skipped: {ec['skipped_total']} ({skipped}); the verifier abstains (NO_VERDICT), nothing to compare: {abstain}."),
+        (f"- Offers listed: {ec['offers_listed']}; checked: {ec['offers_checked']} (verdicts {verdicts}); skipped: "
+         f"{ec['skipped_total']} ({skipped}); the verifier abstains (NO_VERDICT), nothing to compare: {abstain}."),
         (f"- Compiled from (`LLM_MODE=cache`: the fixture cache, then the rules grammar for a document set that is not cached): "
          f"{', '.join(f'{k} {v}' for k, v in ec['compiled_from'].items())}."),
         f"- Buyers swept (once each): {buyers}. Refusals: {ec['refusals']} offers whose buyer has no lever.",

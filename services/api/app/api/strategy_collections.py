@@ -57,7 +57,8 @@ def get_receivables_worth(lang: Literal["en", "zh"] = "en") -> dict[str, Any]:
 
     def compute() -> WorthAnswer:
         try:
-            return receivables_worth(books, mandate, store=rt.store, day=day, lang=lang)
+            return receivables_worth(books, mandate, store=rt.store, day=day, lang=lang,
+                                     trusted_owner_key_hex=rt.owner_key_hex, commitments=commitments)
         except (EngineError, NoPermanentSourceError) as exc:
             raise HTTPException(422, f"cannot project: {exc}") from None
 

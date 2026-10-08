@@ -45,7 +45,10 @@ def test_the_quick_backtest_passes(backtest: ModuleType, tmp_path: Path, capsys:
     assert day34["day 34: effects (saving)"] == 6 and day34["day 34: sweep points (C1 less C0)"] == 120
     assert day34["day 34: ceilings (largest rate)"] == 4 and day34["day 34: net value at the ceiling"] == 3
     assert day34["day 34: curve points"] == 91
-    assert len(sections["differential"]["counts"]["expected_differences"]) == 1  # day 0's plan's-need face, not a failure
+    # not failures: day 0's quoted face, and day 34's RI:BUYER-1:2 whose ceiling the mandate's APR cap holds to 0.45% (the
+    # oracle's plan-only 0.80% is rejected by the verifier), its ceiling and the net saving at it
+    diffs = sections["differential"]["counts"]["expected_differences"]
+    assert len(diffs) == 3 and sum("RI:BUYER-1:2" in d and "APR" in d for d in diffs) == 2 and sum("day 0 RCV-A" in d for d in diffs) == 1
     # the envelope ran (not skipped): in --quick EX01 and its two counters, the default grid and the zone, and no
     # exhaustive scan (that alone costs about 50 s; the full run does it)
     env = sections["envelope"]

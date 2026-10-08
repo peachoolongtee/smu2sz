@@ -21,7 +21,7 @@ from fastapi.testclient import TestClient
 
 from app.api.runtime import Runtime, set_runtime
 from app.books import Books
-from app.domain.models import FinancialState, Mandate
+from app.domain.models import ExpectedOrder, FinancialState, Mandate
 from app.strategy import CandidatePackage
 from app.strategy.envelope import (
     REBATE,
@@ -42,7 +42,7 @@ from app.strategy.envelope import (
     probe_packages,
 )
 from app.verifier.evaluate import clear_caches
-from app.whatif.offer import Context, EarlyPayContext, build, context
+from app.whatif.offer import Context, EarlyPayContext, RebateOnlyContext, build, context
 from app.whatif.params import WhatIfParamError, WhatIfParams
 
 from .conftest import OWNER
@@ -399,9 +399,8 @@ def test_the_primary_uses_the_rule_price_and_keeps_the_smallest_in_the_payload(a
 
 def test_a_buyer_with_no_lever_is_refused_in_one_sentence(golden):
     for lang, sentence in (
-        ("en", ("FLOW has no terms or payment lever to value for Dongguan Office Supplies Ltd. yet: no recurring "
-                "invoice and no open invoice.")),
-        ("zh", "FLOW 目前没有可为Dongguan Office Supplies Ltd.估值的账期或付款杠杆：没有定期发票，也没有未结发票。"),
+        ("en", "FLOW has no terms, payment or rebate lever to value for Dongguan Office Supplies Ltd. yet."),
+        ("zh", "FLOW 目前没有可为Dongguan Office Supplies Ltd.估值的账期、付款或返利杠杆。"),
     ):
         a = envelope(golden.books, golden.mandate, buyer_id="BUYER-2", lang=lang, **golden.kw())
         assert a.refused == sentence
@@ -410,7 +409,7 @@ def test_a_buyer_with_no_lever_is_refused_in_one_sentence(golden):
 
 
 def test_the_builder_refuses_with_the_same_sentence(golden):
-    with pytest.raises(WhatIfParamError, match="FLOW has no terms or payment lever to value for Dongguan Office Supplies"):
+    with pytest.raises(WhatIfParamError, match="FLOW has no terms, payment or rebate lever to value for Dongguan Office Supplies"):
         context(golden.books.state, 0, "BUYER-2")
 
 
@@ -689,3 +688,74 @@ def test_a_counter_outside_the_levers_ranges_is_listed_not_probed(golden, monkey
     assert len(en.unlisted_counters) == len(facts.unlisted_counters)
     assert all("not listed" in x and "FLOW's own counter (" in x for x in en.unlisted_counters)
     assert all("未列出" in x for x in zh.unlisted_counters)
+
+
+# ---------------------------------------------------------------- a buyer with an expected order and nothing else
+
+
+ORDER_250K = ExpectedOrder(counterparty_id="BUYER-2", label="next quarter", start_day=92, end_day=182, amount_fen=25_000_000)
+
+
+@pytest.fixture(scope="module")
+def rebate_only_books(books_day0: Books) -> Books:
+    """The golden books plus BUYER-2's ¥250,000 expected order (H37's, stated in the offer and not on the golden books)."""
+    state = books_day0.state.model_copy(update={"expected_orders": [*books_day0.state.expected_orders, ORDER_250K]})
+    return replace(books_day0, state=state)
+
+
+@pytest.fixture(scope="module")
+def rebate_only(golden: Golden, rebate_only_books: Books) -> EnvelopeFacts:
+    return envelope_facts(rebate_only_books, golden.mandate, buyer_id="BUYER-2", **golden.kw())
+
+
+def test_a_rebate_only_buyer_has_the_rebate_lever_and_no_other(golden, rebate_only_books, rebate_only):
+    from app.strategy.envelope import open_context, ranges_for
+
+    ctx = open_context(rebate_only_books.state, 0, "BUYER-2")
+    assert isinstance(ctx, RebateOnlyContext)
+    r = ranges_for(ctx, golden.mandate)
+    assert (r.terms, r.price, r.discount, r.face_max_fen) == ((), (0,), (0,), 0) and r.rebate[0] == 0 and r.rebate[-1] == 200
+    a = envelope_answer(rebate_only, "en")
+    assert rebate_only.rebate_only and a.refused is None and rebate_only.receivable_face_fen == 0
+    by = _by_lever(a)
+    assert [lv.key for lv in a.levers][:3] == ["terms_alone", "terms_budget_ignored", "terms_with_price"]
+    for name in (TERMS_ALONE, TERMS_BUDGET_IGNORED, TERMS_WITH_PRICE):
+        assert by[name].unavailable == "no recurring invoice to extend" and by[name].maximum is None
+    early = next(lv for lv in a.levers if lv.key == "early_pay_whole")
+    assert early.unavailable == "no open invoice to pay early" and early.maximum is None and early.label == "Early payment"
+    assert by[REBATE].unavailable is None and by[REBATE].maximum == 200 and by[REBATE].maximum_display == "2.00%"
+
+
+def test_the_rebate_only_sentences(rebate_only):
+    en, zh = envelope_answer(rebate_only, "en"), envelope_answer(rebate_only, "zh")
+    assert en.primary == "You can live with: a rebate up to 2.00% on the expected order; no terms or early payment to value yet."
+    assert zh.primary == "您能接受的范围：对预期订单的返利最高 2.00%；暂无可估值的账期或提前付款。"
+    assert en.reason.startswith("There is no recurring invoice to extend and no open invoice to pay early, so only the rebate")
+    assert en.money.startswith("The rebate at that most counts ¥5,000.00 against your budget for what you give buyers; ") and "your current funding plan costs" in en.money
+    assert zh.money.startswith("按上述上限，返利会占用") and zh.reason.endswith("。")
+    assert [(p.package.rebate_bp, p.approved) for p in en.packages] == [(200, True)]
+    assert en.packages[0].package.early_pay_bp == 0 and en.packages[0].package.price_bp == 0
+
+
+def test_the_rebate_only_route_answers_with_the_flag_on(rebate_only_books, monkeypatch):
+    from app.api.strategy_envelope import clear_cache
+    from app.main import app
+
+    from .conftest import _runtime
+
+    rt = _runtime()
+    rt.store.put_state(rebate_only_books.state)
+    monkeypatch.setenv("FEATURE_ENVELOPE", "1")
+    clear_cache()
+    set_runtime(rt)
+    try:
+        body = TestClient(app).get("/buyers/BUYER-2/envelope", headers=OWNER)
+        assert body.status_code == 200, body.text
+        j = body.json()
+        assert j["refused"] is None and j["primary"].startswith("You can live with: a rebate up to 2.00%")
+        assert [lv["unavailable"] for lv in j["levers"] if lv["unavailable"]] == [
+            "no recurring invoice to extend", "no recurring invoice to extend", "no recurring invoice to extend",
+            "no open invoice to pay early"]
+    finally:
+        set_runtime(None)
+        clear_cache()

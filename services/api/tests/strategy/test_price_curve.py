@@ -18,10 +18,11 @@ from app.api.runtime import Runtime, set_runtime
 from app.books import Books
 from app.funding.rates import break_even_cost_share
 from app.funding.search import GRID_STEP_FEN
-from app.strategy import PriceCurve, money_line, price_curve, price_sentence
+from app.strategy import PriceCurve, money_line, price_sentence
+from app.strategy.price_curve import price_curve
 from tests.strategy.conftest import OWNER
 
-pc = importlib.import_module("app.strategy.price_curve")  # `app.strategy.price_curve` the attribute is the function
+pc = importlib.import_module("app.strategy.price_curve")  # the package exports no `price_curve`: the attribute is the submodule
 
 _ORACLE = Path(__file__).resolve().parents[4] / "fixtures" / "strategy" / "collections_both.json"
 _DAY_N = re.compile(r"\bday \d")
@@ -273,3 +274,12 @@ def test_the_route_speaks_chinese_and_serves_the_second_call_from_its_cache(clie
     again = client.get("/cash/price-curve", headers=OWNER)
     assert again.status_code == 200 and time.perf_counter() - t0 < 1.0
     assert client.get("/cash/price-curve?lang=fr", headers=OWNER).status_code == 422
+
+
+def test_the_package_exports_the_module_not_the_function():
+    import types
+
+    from app import strategy
+
+    assert isinstance(strategy.price_curve, types.ModuleType) and "price_curve" not in strategy.__all__
+    assert strategy.price_curve.price_curve is price_curve
