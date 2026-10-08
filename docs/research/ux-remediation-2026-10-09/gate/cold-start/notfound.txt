@@ -1,0 +1,3 @@
+status 200
+main text: "Decision record\n\nOne request or deal, from the first message to the money.\n\nBack\n\nSign in to see your books\n\nYour cash, deals and approvals are for the owner only.\n\nOwner sign-in"
+browser warnings/errors: ["error: Failed to load resource: the server responded with a status of 401 (Unauthorized)","error: Failed to load resource: the server responded with a status of 401 (Unauthorized)"]

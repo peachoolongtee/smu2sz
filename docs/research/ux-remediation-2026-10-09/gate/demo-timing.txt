@@ -1,0 +1,5 @@
+3a-mock-default: DEMO_TIMING {"project":"desktop","steps":11,"rapid":{"clicks":30,"ms":1972,"ledgerEntries":5,"progress":[1,2,3,4,5,6,7,8,9,10,11]},"guarded":{"ms":1079,"ledgerEntries":5}}
+3b-mock-strategy: DEMO_TIMING {"project":"desktop","steps":11,"rapid":{"clicks":30,"ms":1959,"ledgerEntries":5,"progress":[1,2,3,4,5,6,7,8,9,10,11]},"guarded":{"ms":1092,"ledgerEntries":5}}
+4a-live-default: DEMO_TIMING {"project":"live","steps":11,"rapid":{"clicks":30,"ms":1846,"ledgerEntries":8,"progress":[1,2,3,4,5,6,7,8,9,10,11]},"guarded":{"ms":1879,"ledgerEntries":8}}
+4b-live-strategy: DEMO_TIMING {"project":"live","steps":11,"rapid":{"clicks":30,"ms":1903,"ledgerEntries":8,"progress":[1,2,3,4,5,6,7,8,9,10,11]},"guarded":{"ms":2679,"ledgerEntries":8}}
+5a-live-default-sqlite: DEMO_TIMING {"project":"live","steps":11,"rapid":{"clicks":30,"ms":1851,"ledgerEntries":8,"progress":[1,2,3,4,5,6,7,8,9,10,11]},"guarded":{"ms":2042,"ledgerEntries":8}}
