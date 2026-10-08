@@ -9,7 +9,8 @@ recorded oracle (`fixtures/strategy/collections_both.json`) to the fen.
      mandate's immediate-discount cap or fails to beat the plan; the row order is the same after `clear_caches()`;
      counts of the turns where the net order differs from the overdue-amount order and the actions' distribution.
   2. curve: `price_curve` at the same turns. Every band equals the spike's pair (`marginal_impact` of the inflow moved 30
-     days earlier) at both its ends, no band is above the cost of two billing periods, `flat` iff every band is 0.
+     days earlier) at both its ends, no band is above the module's ceiling (the cost of funds over the carry the plan holds, at least two
+     billing periods) and `above_guard` says so, `flat` iff every band is 0.
   3. differential: the golden day-0 and day-34 books against `collections_both.json`.
   4. envelope: a placeholder until `app.strategy.envelope` is on the branch (see `check_envelope`).
 
@@ -68,10 +69,8 @@ from app.domain.models import (
     Verdict,
     ViolationCode,
 )
-from app.domain.money import bp, post, round_half_up
+from app.domain.money import bp, post
 from app.financial import EngineError
-from app.funding import NoPermanentSourceError
-from app.funding.rates import break_even_cost_share
 from app.mandate.fixture import demo_owner_public_key_hex
 from app.persistence import InMemoryLedgerStore
 from app.strategy import CandidatePackage
@@ -88,7 +87,7 @@ from app.strategy.envelope import (
     ranges_for,
 )
 from app.strategy.impact import marginal_impact, scenario_inflow
-from app.strategy.price_curve import WINDOW_DAYS, PriceCurve, price_curve
+from app.strategy.price_curve import WINDOW_DAYS, PriceCurve, _ceiling_fen, price_curve
 from app.verifier import evaluate
 from app.verifier.counters import infeasibility
 from app.verifier.evaluate import clear_caches
@@ -246,11 +245,7 @@ def check_curve(books: Books, mandate: Mandate, rt: Runtime, day: int) -> tuple[
             pairs[d] = -mi.posted_cost_delta_fen
         return pairs[d]
 
-    try:
-        share, _, _ = break_even_cost_share(books.state, mandate, 2 * WINDOW_DAYS)
-        limit: int | None = round_half_up(share * amount)
-    except NoPermanentSourceError:
-        limit = None
+    limit = _ceiling_fen(books, mandate, amount, day)  # the module's own: the cost of funds over the carry the plan holds
     checks = 0
     for b in curve.bands:
         tag = f"band {b.from_day}..{b.to_day}"
@@ -264,7 +259,9 @@ def check_curve(books: Books, mandate: Mandate, rt: Runtime, day: int) -> tuple[
                 if got != b.value_fen:
                     bad.append((tag, f"band value {b.value_fen} fen but the marginal-impact pair at day {d} gives {got}"))
         if limit is not None and b.value_fen > limit:
-            bad.append((tag, f"value {b.value_fen} fen is above the cost of funds for two periods ({limit} fen)"))
+            bad.append((tag, f"value {b.value_fen} fen is above the cost of funds over the plan's carry ({limit} fen)"))
+        if b.above_guard != (limit is not None and b.value_fen > limit):
+            bad.append((tag, f"above_guard={b.above_guard} but the value is {b.value_fen} fen against a ceiling of {limit}"))
     if curve.flat != all(b.value_fen == 0 for b in curve.bands):
         bad.append(("flat", f"flat={curve.flat} but the band values are {[b.value_fen for b in curve.bands]}"))
     if curve.bands and (curve.bands[0].from_day != day
