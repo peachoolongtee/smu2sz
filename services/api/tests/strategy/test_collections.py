@@ -508,6 +508,23 @@ def test_route_answers_on_the_day34_runtime(day34_client: TestClient, rt_day34: 
     assert (rt_day34.store.get_state().model_dump_json(), len(rt_day34.store.commitments())) == before  # read-only
 
 
+def test_route_gives_the_ranking_the_trusted_key_and_the_commitments(day34_client: TestClient, rt_day34: Runtime,
+                                                                     monkeypatch: pytest.MonkeyPatch):
+    from app.api import strategy_collections as route
+
+    monkeypatch.setenv("FEATURE_COLLECTIONS_WORTH", "1")
+    route.clear_cache()
+    seen: list[dict[str, Any]] = []
+    real = route.receivables_worth
+    monkeypatch.setattr(route, "receivables_worth", lambda *a, **k: seen.append(k) or real(*a, **k))
+    try:
+        assert day34_client.get("/receivables/worth", headers=OWNER).status_code == 200
+    finally:
+        route.clear_cache()
+    assert len(seen) == 1 and seen[0]["trusted_owner_key_hex"] == rt_day34.owner_key_hex
+    assert [c.id for c in seen[0]["commitments"]] == [c.id for c in rt_day34.store.commitments()]
+
+
 _ASCII_PUNCTUATION = re.compile(r"[:,;()]")
 _FIGURES = re.compile(r"¥[\d,]+(?:\.\d+)?|\d+(?:\.\d+)?%")
 
