@@ -1,6 +1,40 @@
 # Demo flow
 
-The main scripted path is spec v2 §10, with the numbers from `fixtures/golden/golden_values.json`. The path from the deal to the repaid line (steps 1 to 17, Scene 1 and Scene 4 below) runs in process with `PYTHONUTF8=1 uv run --project services/api python scripts/demo_run.py`, and the web stepper is covered by Playwright. Both repeat after `POST /demo/reset`.
+The guided Demo in the web app is the late-payment loop in six scenes and eleven steps (`apps/web/lib/demo.ts`, `DEMO_STEPS`). The earlier module tour is kept as "More to show" (below) and as the engine reference in the sections after it. The numbers come from `fixtures/golden/golden_values.json`; the path from the deal to the repaid line (Scene 4 below) also runs in process with `PYTHONUTF8=1 uv run --project services/api python scripts/demo_run.py`. Both repeat after `POST /demo/reset`.
+
+## The guided Demo: the late-payment loop
+
+Run it with Start demo and Next on the stepper (Demo mode keeps it on every page), or step by step on the story page (`/demo`). Every step does its work through the same API calls the Business pages use, then opens the Business page that shows the result. A step waits for the one before it, because the story moves time. Every step is convergent: Run brings the books to at least that step's state, and when they are already there it only reads them again, so Replay and a second Run are safe. Show only opens a finished step's screen. Reset (or Replay of step 1) erases the books and starts over.
+
+| Scene | Step (what Next does) | Screen |
+| --- | --- | --- |
+| 1 Buyer asks | 1. Reset the books and read the buyer's message (EX01) | Deals: the request beside the interpreted terms |
+| 2 FLOW decides | 2. Check the offer (evaluate); the Debt Desk's view at decision time is kept for Cash | Deals: forward cost, cash impact, the recommended counter and its scope |
+| 3 The agreement acts | 3. Send the recommended counter, bound to the verdict id, counter id and books version shown (`POST /negotiate` with `verdict_id`, `counter_id`, `state_version`; cooperative buyer) | Deals, the live agreement |
+|  | 4. Read cash now against what is still arriving, and the execution summary | Cash |
+| 4 Reality diverges | 5. "Bank: the agreed early payment arrives (synthetic)": the clock moves to the day the buyer promised to pay by (it records nothing), then `POST /demo/bank-receipt` posts the one receipt | Receivables |
+|  | 6. Time passes: the clock moves to day 34; nothing is recorded as received, the later payment does not arrive | Home: the reserve breach and the cure priced above the autonomous ceiling |
+| 5 The owner stays in control | 7. Queue the cure: exactly the Home button's bound act (the home's `state_version` and suggestions); it needs the owner, so it waits | Approvals, the card |
+|  | 8. The owner approves: the Next button reads "Approve ¥200,000.00" and is the owner's own click (`POST /approvals/{id}`); the stepper never presses it by itself. A second Run after the decision approves nothing again | Approvals |
+|  | 9. Time passes: the clock moves to the day after the funding lands (day 38); the cash is in hand, not in transit | Cash |
+| 6 Outcome and proof | 10. Where the books stand: updated cash and the risk that remains, the deal's record (Fulfilled) and the cure's (Settled) | Home |
+|  | 11. The record and the proof: Activity with what changed, why it matters and what remains, and the evidence export link | Activity |
+
+**The clock never invents receipts.** The one receipt in the story is the synthetic bank event of step 5. It goes through `POST /demo/bank-receipt` (owner token, `DEMO_MODE` only; 403 `DEMO_ONLY` otherwise): the server posts exactly the operation the bank feed would post (`RECEIVE_PAYMENT`, requested by `SYSTEM`) for the one early payment the books are still waiting for, in the amount they promised, with the bank reference `DEMO-RCPT-1`. A second call books nothing (409 `NO_PROMISED_RECEIPT`). The bank-feed key stays on the server, so the browser never holds it. Activity words any `DEMO-` reference as "Synthetic bank event, reference DEMO-RCPT-1; no real funds moved." The stepper labels the step "(synthetic)".
+
+**Narration comes from the responses.** After a step runs, its sentence (`demo.done.<step>` in the dictionary) is filled from what the server just told it: the deal record's state and remaining task, the verdict workspace's recommendation, the home's `headline` and `note`, the approval's `presentation.headline` and `execution.summary_text`. Each sentence of a template is shown only when everything it names was supplied; otherwise the plain sentence (`demo.desc.<step>`, no figure) is shown. No figure is typed into the dictionary (`scripts/w6-demo.test.mjs` checks it).
+
+**More to show** (on the story page; never part of Next, and they never move the story's step):
+- *The buyer walks away* and *the same offer, other words*: the old Scene 2 (a hard-line buyer refuses every counter, the gap is still funded; EX01B gets the same verdict as EX01). It replaces the books, so the story starts over afterwards, and the page says so before it is opened.
+- *Can we buy a machine?*: the capex evaluation and the read-only borrower file (Scene 3 below). Applying stays the owner's click on the Capex page.
+- *The attack message*: the FastCapital message (Security scene below).
+- The engine's own pages: signed mandate, cash line, Debt Desk, verdict, ledger, evidence export.
+
+Tests: `apps/web/e2e/demo.spec.ts` (mock and live) runs the six scenes end to end, checks that the approve step needs the click, that Cash shows the landed funding, the receipt carries its synthetic reference in Activity, the deal record is FULFILLED and the cure's SETTLED, the rapid-click and Show/Replay/Reset rules, and the optional scenes. The mocks (`apps/web/mocks`) are recorded from the API by `scripts/record-mocks.mjs`, which walks the engine's own sequences.
+
+## Engine reference
+
+The sections below are the engine's own scenes, in the order of spec v2 section 10. The guided Demo above reaches Scene 1's deal and Scene 4's loop through the Business pages; the rest is reached from "More to show".
 
 ## 0. Reset and the mandate (Mandate screen)
 - Fixture `golden_sme`: cash ¥400,000; payroll ¥340,000 on day 12; supplier ¥120,000 on day 20; the existing equipment loan's ¥45,000 payment on day 30 (and every 30 days after: it leaves cash); Receivable A ¥420,000 due day 32; floor ¥300,000; concession cap ¥5,000; DSCR ≥ 1.25×; leverage ≤ 2.5×. Before day 32 the cash falls ¥405,000 short of the floor (the day-0 gap).

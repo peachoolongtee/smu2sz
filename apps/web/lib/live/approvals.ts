@@ -37,7 +37,16 @@ interface RawApproval {
 }
 
 export async function getApprovals(): Promise<ApprovalView[]> {
-  const { approvals } = await http<{ approvals: RawApproval[] }>("GET", "/approvals/queue");
+  return (await getApprovalsRead()).approvals;
+}
+
+/** The queue and when the books were last read for it (the server's words, absent from an older server). */
+export async function getApprovalsRead(): Promise<{ approvals: ApprovalView[]; last_read_when: string | null }> {
+  const raw = await http<{ approvals: RawApproval[]; last_read_when?: string | null }>("GET", "/approvals/queue");
+  return { approvals: toViews(raw.approvals), last_read_when: raw.last_read_when ?? null };
+}
+
+function toViews(approvals: RawApproval[]): ApprovalView[] {
   // `decided_day` is the API's, never the simulated clock today (that is not the day a past decision was made).
   return approvals.map(
     (a) =>

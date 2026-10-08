@@ -4,6 +4,7 @@ import { API_URL } from "../config";
 import { getOwnerToken, requestSignIn } from "../auth";
 import { ApiError } from "../errors";
 import { BOOKS_BUSY, isWriteConflictDetail, sendWriteWithRetry } from "./retry";
+import { kindOf, LONG_TIMEOUT_MS, runWithTimeout, timeoutFor, type RequestKind } from "./timeout";
 
 interface HttpOptions {
   body?: unknown;
@@ -18,6 +19,16 @@ interface HttpOptions {
   silent?: boolean;
   /** The route answers 403 (not 401) when the owner credential is missing or wrong: open the sign-in dialog for that too. */
   ownerOn403?: boolean;
+  /** Give up after this many ms (default by route, see timeout.ts). */
+  timeoutMs?: number;
+}
+
+/** The test build's shorter timeout (ms); unset in production. */
+const TIMEOUT_OVERRIDE = Number(process.env.NEXT_PUBLIC_REQUEST_TIMEOUT_MS) || undefined;
+
+const TIMEOUT_CODE = { read: "timeout", write: "timeout_write", reply: "timeout_reply" } as const;
+function timedOut(kind: RequestKind, path: string): ApiError {
+  return new ApiError(0, "This is taking longer than usual…", { path }, TIMEOUT_CODE[kind]);
 }
 
 /**
@@ -59,7 +70,11 @@ function detailMessage(detail: unknown, fallback: string): string {
   return detail === undefined ? fallback : JSON.stringify(detail);
 }
 
-export async function http<T>(method: "GET" | "POST", path: string, opts: HttpOptions = {}): Promise<T> {
+export function http<T>(method: "GET" | "POST", path: string, opts: HttpOptions = {}): Promise<T> {
+  return runWithTimeout((signal) => request<T>(method, path, opts, signal), timeoutFor(path, opts.timeoutMs ?? TIMEOUT_OVERRIDE), () => timedOut(kindOf(method, path), path));
+}
+
+async function request<T>(method: "GET" | "POST", path: string, opts: HttpOptions, signal: AbortSignal): Promise<T> {
   const headers: Record<string, string> = ownerHeaders(opts);
   if (opts.buyerKey) headers["X-Counterparty-Key"] = opts.buyerKey;
   if (opts.body !== undefined) headers["Content-Type"] = "application/json";
@@ -69,6 +84,7 @@ export async function http<T>(method: "GET" | "POST", path: string, opts: HttpOp
       method,
       headers,
       body: opts.body === undefined ? undefined : JSON.stringify(opts.body),
+      signal,
     });
   try {
     // A write that lost a race (409 CONCURRENT_WRITE_CONFLICT) is sent once more after the API's Retry-After hint.
@@ -102,15 +118,22 @@ export async function http<T>(method: "GET" | "POST", path: string, opts: HttpOp
  * so the bytes are fetched with the header and saved from an object URL.
  */
 export async function downloadFile(path: string, filename: string): Promise<void> {
-  let res: Response;
-  try {
-    res = await fetch(`${API_URL}${path}`, { headers: ownerHeaders() });
-  } catch {
-    throw unreachable();
-  }
-  if (res.status === 401) throw unauthorized({});
-  if (!res.ok) throw new ApiError(res.status, `Download failed: ${res.status} ${res.statusText}`, undefined, "download_failed", { status: res.status });
-  const url = URL.createObjectURL(await res.blob());
+  const blob = await runWithTimeout(
+    async (signal) => {
+      let res: Response;
+      try {
+        res = await fetch(`${API_URL}${path}`, { headers: ownerHeaders(), signal });
+      } catch {
+        throw unreachable();
+      }
+      if (res.status === 401) throw unauthorized({});
+      if (!res.ok) throw new ApiError(res.status, `Download failed: ${res.status} ${res.statusText}`, undefined, "download_failed", { status: res.status });
+      return res.blob();
+    },
+    timeoutFor(path, TIMEOUT_OVERRIDE ?? LONG_TIMEOUT_MS),
+    () => timedOut("read", path),
+  );
+  const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
   a.download = filename;

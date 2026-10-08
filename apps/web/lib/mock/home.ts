@@ -56,10 +56,22 @@ import summaryDay34ResidualZh from "../../mocks/home_summary_day34_residual_zh.j
 import trajDay34Residual from "../../mocks/trajectory_conservative_day34_residual.json";
 import trajDay34Half from "../../mocks/trajectory_conservative_day34_half.json";
 import trajDay34NoReceipt from "../../mocks/trajectory_conservative_day34_noreceipt.json";
+import reconciliationDay2 from "../../mocks/home_reconciliation_day2.json";
+import stateDay2 from "../../mocks/home_state_day2.json";
+import summaryDay2 from "../../mocks/home_summary_day2.json";
+import summaryDay2Zh from "../../mocks/home_summary_day2_zh.json";
+import trajDay2 from "../../mocks/trajectory_conservative_day2.json";
+import alertsSettled from "../../mocks/home_alerts_settled.json";
+import stateSettled from "../../mocks/home_state_settled.json";
+import summarySettled from "../../mocks/home_summary_settled.json";
+import summarySettledZh from "../../mocks/home_summary_settled_zh.json";
+import trajSettled from "../../mocks/trajectory_conservative_settled.json";
 
 /** The day the recording was taken on. */
 export const NEWS_DAY = 34;
-const KEY = "tl-mock-home-v3";
+/** The day after the approved cure's cash landed (day 37): the recording of the books with that funding settled. */
+export const SETTLED_DAY = 38;
+const KEY = "tl-mock-home-v4";
 /**
  * The mock variant of the 409 ALERT_CHANGED path. Set this sessionStorage key to "1" (the books move, the alert is still there
  * with its recorded cure) or "gone" (the books move and the alert no longer exists) just before pressing "Let the agent fix this":
@@ -100,13 +112,15 @@ interface HomeState {
   stage: CureStage;
   /** The day-0 funding plan ("Fund the cash gap", then "go ahead") has run. */
   funded: boolean;
+  /** The guided Demo's one synthetic bank event has posted the agreed early payment (the clock never does). */
+  receipted: boolean;
   /** How many times the books moved behind the owner's back (the mock variant below): added to the recorded state_version. */
   moved: number;
 }
 
 let memory: HomeState | null = null;
 
-const fresh = (): HomeState => ({ day: 0, stage: "open", funded: false, moved: 0 });
+const fresh = (): HomeState => ({ day: 0, stage: "open", funded: false, receipted: false, moved: 0 });
 
 function load(): HomeState {
   if (memory) return memory;
@@ -114,7 +128,7 @@ function load(): HomeState {
   if (typeof window !== "undefined") {
     try {
       const raw = window.sessionStorage.getItem(KEY);
-      if (raw) memory = JSON.parse(raw) as HomeState;
+      if (raw) memory = { ...fresh(), ...(JSON.parse(raw) as Partial<HomeState>) };
     } catch {
       /* start from day 0 */
     }
@@ -175,20 +189,31 @@ export function mockAlerts(): AlertsView | null {
   const s = load();
   if (s.day < NEWS_DAY) return null;
   const recorded =
-    s.day > MANDATE_LAST_DAY ? alertsMandateExpired : s.day >= MANDATE_WARN_FROM_DAY ? alertsMandateWarning : s.stage === "approved" ? alertsAfter : alertsDay34;
+    s.day > MANDATE_LAST_DAY
+      ? alertsMandateExpired
+      : s.day >= MANDATE_WARN_FROM_DAY
+        ? alertsMandateWarning
+        : s.stage === "approved"
+          ? s.day >= SETTLED_DAY
+            ? alertsSettled
+            : alertsAfter
+          : alertsDay34;
   const view = clone<AlertsView>(recorded);
   return { ...view, day: s.day, state_version: view.state_version + s.moved };
 }
 
 /** GET /reconciliation once the day-2 bank receipt has been recorded (the home path reaches day 34 with it); null before. */
 export function mockReconciliation(): unknown {
-  if (load().day < NEWS_DAY) return null;
+  const s = load();
+  // Between the synthetic bank event and day 34 the books hold the receipt and nothing is late yet (recorded on day 2).
+  if (s.day < NEWS_DAY) return s.receipted ? clone(reconciliationDay2) : null;
   return clone(receiptVariant() === "half" ? reconciliationDay34Half : reconciliationDay34);
 }
 
 /** Which recorded books the mock is reading: the opening books, day 34 after the full receipt, or day 34 after the half receipt. */
-export function recordedBooks(): "day0" | "day34" | "day34_half" {
-  if (load().day < NEWS_DAY) return "day0";
+export function recordedBooks(): "day0" | "day2" | "day34" | "day34_half" {
+  const s = load();
+  if (s.day < NEWS_DAY) return s.receipted ? "day2" : "day0";
   return receiptVariant() === "half" ? "day34_half" : "day34";
 }
 
@@ -264,13 +289,14 @@ export function cureStage(): CureStage {
  * needs approval), the queued fix, and the approved fix. `dealt` says whether the Scene 1 deal was made in this session.
  */
 /** Where the recorded story stands: the books the home, the readings and the funding comparison were recorded on. */
-type StoryPoint = "day0" | "quiet" | "after_fund" | "day34" | "pending" | "after";
+type StoryPoint = "day0" | "quiet" | "day2" | "after_fund" | "day34" | "pending" | "after" | "settled";
 
 function storyPoint(dealt: boolean): StoryPoint {
   const s = load();
   // The residual variant is one recording of its own books: the cure there ran and landed, whatever the mock's cure stage says.
   if (s.day >= NEWS_DAY && receiptVariant() === "residual") return "day34";
-  if (s.day >= NEWS_DAY) return s.stage === "approved" ? "after" : s.stage === "pending" ? "pending" : "day34";
+  if (s.day >= NEWS_DAY) return s.stage === "approved" ? (s.day >= SETTLED_DAY ? "settled" : "after") : s.stage === "pending" ? "pending" : "day34";
+  if (s.receipted && !s.funded) return "day2";
   return s.funded ? "after_fund" : dealt ? "quiet" : "day0";
 }
 
@@ -299,10 +325,12 @@ export function mockHome(dealt: boolean, lang: "en" | "zh" = "en"): HomeView {
   const recorded = {
     day0: zh ? summaryDay0Zh : summaryDay0,
     quiet: zh ? summaryQuietZh : summaryQuiet,
+    day2: zh ? summaryDay2Zh : summaryDay2,
     after_fund: zh ? summaryAfterFundZh : summaryAfterFund,
     day34: day34Summary(zh),
     pending: zh ? summaryPendingZh : summaryPending,
     after: zh ? summaryAfterZh : summaryAfter,
+    settled: zh ? summarySettledZh : summarySettled,
   }[point];
   const view = clone<HomeView>(recorded);
   return { ...view, day: s.day, state_version: view.state_version + s.moved };
@@ -314,11 +342,13 @@ export function mockTrajectory(dealt: boolean): unknown {
     {
       day0: trajDay0,
       quiet: trajQuiet,
+      day2: trajDay2,
       after_fund: trajAfterFund,
       day34:
         receiptVariant() === "none" ? trajDay34NoReceipt : receiptVariant() === "half" ? trajDay34Half : receiptVariant() === "residual" ? trajDay34Residual : trajDay34,
       pending: trajPending,
       after: trajAfter,
+      settled: trajSettled,
     }[storyPoint(dealt)],
   );
 }
@@ -335,6 +365,16 @@ export function mockActDay0(): AlertActResult {
   return { ...clone<AlertActResult>(actDay0), day: s.day };
 }
 
+/** The synthetic bank event has posted the agreed early payment. */
+export function markReceipted(): void {
+  load().receipted = true;
+  save();
+}
+
+export function isReceipted(): boolean {
+  return load().receipted;
+}
+
 /** The day-0 funding plan has run. */
 export function isFunded(): boolean {
   return load().funded;
@@ -349,7 +389,8 @@ export function markFunded(): void {
 /** The recorded books for this point of the story: after the approved cure, at day 34, after the day-0 plan, or null for the opening books. */
 export function mockStateJson(): unknown {
   const s = load();
-  if (s.day >= NEWS_DAY) return s.stage === "approved" ? stateAfterApprove : stateDay34;
+  if (s.day >= NEWS_DAY) return s.stage === "approved" ? (s.day >= SETTLED_DAY ? stateSettled : stateAfterApprove) : stateDay34;
+  if (s.receipted && !s.funded) return stateDay2;
   return s.funded ? stateAfterFund : null;
 }
 

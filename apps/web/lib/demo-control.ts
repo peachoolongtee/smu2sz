@@ -3,8 +3,9 @@
 import { demoReset } from "./api";
 import { ApiError } from "./errors";
 import { errorMessage } from "./error-text";
-import { demoStore, resetSession } from "./demo-store";
-import { DEMO_STEPS } from "./demo";
+import { demoStore, recordFacts, resetSession, selectStoryOffer } from "./demo-store";
+import { DEMO_STEPS, MORE, stepRoute, type MoreId } from "./demo";
+import { getLang } from "./i18n";
 import { setMode } from "./mode";
 
 /**
@@ -14,6 +15,7 @@ import { setMode } from "./mode";
  *
  * Two modes. `run` does the step's server work (and changes the books); `show` only opens the step's screen and is allowed for
  * a completed step (`target <= step`), so it can never reset the clock or the ledger. Replaying a completed step is `run`.
+ * A step can only run when the one before it has: the story moves time, so a step never skips the steps that make it true.
  */
 export type StepMode = "show" | "run";
 export type StepOutcome = "done" | "unauthorized" | "busy" | "error" | "ignored";
@@ -38,15 +40,21 @@ export async function goToStep(target: number, push: (route: string) => void, op
   setMode("demo"); // the story is Demo mode: the stepper stays on every screen it visits
   if (mode === "show") {
     if (target > demoStore.get().step) return "ignored";
-    open(DEMO_STEPS[target].route, push); // read-only: the store is not touched
+    selectStoryOffer(); // an optional scene may have read another message: the story shows its own
+    open(stepRoute(DEMO_STEPS[target], demoStore.get()), push); // read-only: the books are not touched
     return "done";
   }
+  // The first step starts the story over; every other step needs the one before it.
+  if (target > demoStore.get().step + 1) return "ignored";
   inFlight = true;
   demoStore.set((s) => ({ ...s, busy: true, running: target, error: null }));
   try {
-    await DEMO_STEPS[target].run();
+    selectStoryOffer();
+    const step = DEMO_STEPS[target];
+    const values = await step.run();
+    if (values) recordFacts(step.id, { lang: getLang(), values });
     demoStore.set((s) => ({ ...s, step: target, busy: false, running: null }));
-    open(DEMO_STEPS[target].route, push);
+    open(stepRoute(step, demoStore.get()), push);
     return "done";
   } catch (e) {
     if (e instanceof ApiError && e.status === 401) {
@@ -65,8 +73,42 @@ export function backStep(push: (route: string) => void): void {
   const step = demoStore.get().step;
   const target = step - 1;
   if (target < 0 || inFlight || demoStore.get().busy) return;
+  selectStoryOffer();
   demoStore.set((s) => ({ ...s, step: target, running: null, error: null }));
-  push(DEMO_STEPS[target].route);
+  push(stepRoute(DEMO_STEPS[target], demoStore.get()));
+}
+
+/**
+ * One of the optional scenes ("More to show"). It never moves the story's pointer: it runs on the books the story left and opens its
+ * screen. The scene that replaces the books (the buyer who walks away) cannot leave a story half-told on books that are no longer
+ * its own, so after it the story starts over from its first step.
+ */
+export async function goToMore(id: MoreId, push: (route: string) => void): Promise<StepOutcome> {
+  const item = MORE.find((m) => m.id === id);
+  if (!item) return "ignored";
+  if (inFlight || demoStore.get().busy) return "busy";
+  if (item.needsWalk && !demoStore.get().rewordedId) return "ignored";
+  setMode("demo");
+  inFlight = true;
+  demoStore.set((s) => ({ ...s, busy: true, running: null, error: null }));
+  try {
+    if (item.run) await item.run();
+    if (item.replacesBooks) {
+      // The story's own state is gone with its books; what the optional scene prepared (the offers, verdicts, the answer) stays for its screens.
+      demoStore.set((s) => ({ ...s, step: -1, storyOfferId: null, cure: null, facts: {}, busy: false }));
+    } else demoStore.set((s) => ({ ...s, busy: false }));
+    open(item.route, push);
+    return "done";
+  } catch (e) {
+    if (e instanceof ApiError && e.status === 401) {
+      demoStore.set((s) => ({ ...s, busy: false }));
+      return "unauthorized";
+    }
+    demoStore.set((s) => ({ ...s, busy: false, error: errorMessage(e) }));
+    return "error";
+  } finally {
+    inFlight = false;
+  }
 }
 
 /** Reset the books (owner action) and clear the session; `scenario` picks the server fixture (golden books by default). */

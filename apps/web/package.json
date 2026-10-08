@@ -9,7 +9,7 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "mocks:record": "node scripts/record-mocks.mjs --api http://localhost:8011",
-    "test:unit": "node --test scripts/check-mocks.test.mjs scripts/retry.test.mjs scripts/presentation-fallbacks.test.mjs scripts/strategy.test.mjs scripts/w1-trust.test.mjs scripts/w5-collections.test.mjs scripts/chat-prompts.test.mjs scripts/w2-record.test.mjs scripts/w3-flows.test.mjs",
+    "test:unit": "node --test scripts/check-mocks.test.mjs scripts/retry.test.mjs scripts/presentation-fallbacks.test.mjs scripts/strategy.test.mjs scripts/w1-trust.test.mjs scripts/w5-collections.test.mjs scripts/chat-prompts.test.mjs scripts/w2-record.test.mjs scripts/w3-flows.test.mjs scripts/w6-demo.test.mjs scripts/timeout.test.mjs",
     "test:e2e": "playwright test",
     "test:e2e:mock": "E2E_TARGET=mock playwright test",
     "test:e2e:live": "E2E_TARGET=live playwright test"
@@ -22,6 +22,7 @@
     "recharts": "^3.10.1"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
     "@playwright/test": "^1.63.0",
     "@tailwindcss/postcss": "^4.3.3",
     "@types/node": "^26.6.3",

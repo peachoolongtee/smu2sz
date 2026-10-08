@@ -42,8 +42,8 @@ test("a Tier 1 ACCEPT shows why the agent may accept it alone, with the server's
 });
 
 test("an approval card expands in place to the operation, the reason, the amount and who asked", async ({ page }) => {
-  await page.goto("/mandate");
-  await page.getByRole("button", { name: "Scene 3" }).click(); // runs the capex evaluation, which writes nothing
+  await page.goto("/demo");
+  await page.getByTestId("more-run-capex").click(); // runs the capex evaluation, which writes nothing
   await expect(page).toHaveURL(/\/capex/);
   await page.goto("/approvals");
   await expect(page.getByText("0 pending")).toBeVisible();
@@ -110,14 +110,14 @@ test("an approval born of the reserve alert says what declining leaves, in days 
 });
 
 signedOut("the stepper's Start resumes by itself after the owner signs in from the dialog it opened", async ({ page }) => {
-  await page.goto("/mandate");
+  await page.goto("/demo");
   await page.getByTestId("demo-next").click(); // one click only
   const dialog = page.getByRole("dialog", { name: "Owner sign-in" });
   await expect(dialog).toBeVisible();
   await dialog.getByLabel("Owner token").fill("mock-owner");
   await dialog.getByRole("button", { name: "Sign in" }).click();
   await expect(dialog).toBeHidden();
-  await expect(page.getByRole("region", { name: "Guided demo" }).locator("[aria-live=polite]")).toContainText("1/15");
+  await expect(page.getByRole("region", { name: "Guided demo" }).locator("[aria-live=polite]")).toContainText("1/11");
 });
 
 signedOut("signed out, an owner page asks for the sign-in in words, not an error code, and opens the dialog", async ({ page }) => {

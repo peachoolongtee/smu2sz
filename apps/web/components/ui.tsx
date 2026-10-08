@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState, type ComponentProps, type ReactNode } from "react";
 import { requestSignIn } from "@/lib/auth";
-import { ApiError } from "@/lib/errors";
+import { ApiError, isTimeout } from "@/lib/errors";
 import { useI18n } from "@/lib/i18n";
 import { errorText } from "@/lib/error-text";
 import { usePathname } from "next/navigation";
@@ -198,6 +198,7 @@ export function Stat({
   testId,
   captionTestId,
   rootTestId,
+  row = false,
   className = "",
 }: {
   label: ReactNode;
@@ -216,15 +217,17 @@ export function Stat({
   captionTestId?: string;
   /** On the tile itself, for a spec that reads the label, figure and caption together. */
   rootTestId?: string;
+  /** Below the small breakpoint the tile is one row (the label, then the figure at the right, the caption under both) so a phone reads several facts in a few lines; from `sm` it is the tile. */
+  row?: boolean;
   className?: string;
 }) {
   const deep = surface === "deep";
   const note = caption ?? hint;
   const box = deep ? "bg-on-deep/10" : tint && tone !== "neutral" ? `border ${toneSurface[tone]}` : "border border-line bg-surface";
   return (
-    <div className={`min-w-0 rounded-tile px-4 py-3 ${box} ${className}`} data-testid={rootTestId}>
+    <div className={`min-w-0 rounded-tile px-4 py-3 ${row ? "max-sm:flex max-sm:flex-wrap max-sm:items-baseline max-sm:justify-between max-sm:gap-x-3 max-sm:py-1.5" : ""} ${box} ${className}`} data-testid={rootTestId}>
       <dt className={`text-xs font-semibold uppercase tracking-wide ${deep ? "text-on-deep-muted" : "text-ink-3"}`}>{label}</dt>
-      <dd className={`mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-1 font-semibold tabular-nums ${size === "lg" ? "text-xl sm:text-2xl" : "text-lg sm:text-xl"}`}>
+      <dd className={`mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-1 font-semibold tabular-nums ${row ? "max-sm:mt-0 max-sm:justify-end max-sm:text-right" : ""} ${size === "lg" ? "text-xl sm:text-2xl" : "text-lg sm:text-xl"}`}>
         <span className={`min-w-0 break-words ${deep ? toneOnDeep[tone] : toneText[tone]}`} data-testid={testId}>
           {value}
         </span>
@@ -233,7 +236,7 @@ export function Stat({
         ) : null}
       </dd>
       {note ? (
-        <dd className={`mt-0.5 text-xs ${deep ? "text-on-deep-muted" : "text-ink-3"}`} data-testid={captionTestId}>
+        <dd className={`mt-0.5 text-xs ${row ? "max-sm:mt-0 max-sm:basis-full" : ""} ${deep ? "text-on-deep-muted" : "text-ink-3"}`} data-testid={captionTestId}>
           {note}
         </dd>
       ) : null}
@@ -318,9 +321,34 @@ export function LoadingBlock({ rows = 3, label }: { rows?: number; label?: strin
   );
 }
 
+/**
+ * "This is taking longer than usual…": a request that ran out of time is not a refusal and not a verdict. A read is simply read again;
+ * for a write that may already have landed the caller's Retry reads the current state first (`note` then says it did). Never red: nothing
+ * is known to have failed.
+ */
+export function SlowNotice({ message, onRetry, note }: { message: string; onRetry?: () => void; note?: string | null }) {
+  const { t } = useI18n();
+  return (
+    <div role="status" className="motion-reveal rounded-card border border-warn-line bg-warn-bg p-4 text-warn-fg" data-testid="slow-notice">
+      <p className="font-semibold">{message}</p>
+      {note ? (
+        <p className="mt-1 text-sm" data-testid="slow-checked">
+          {note}
+        </p>
+      ) : null}
+      {onRetry ? (
+        <Button className="mt-3" size="sm" onClick={onRetry} data-testid="slow-retry">
+          {t("common.retry")}
+        </Button>
+      ) : null}
+    </div>
+  );
+}
+
 export function ErrorState({ error, onRetry }: { error: Error | string; onRetry?: () => void }) {
   const { t } = useI18n();
   const message = typeof error === "string" ? error : errorText(error, t);
+  if (isTimeout(error)) return <SlowNotice message={message} onRetry={onRetry} />;
   // Being signed out is not a failure: the owner's pages ask for the sign-in in words instead of showing an error code.
   if (error instanceof ApiError && (error.status === 401 || error.status === 403)) {
     return (

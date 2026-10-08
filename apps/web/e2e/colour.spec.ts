@@ -87,7 +87,7 @@ test("the day-34 pending home has one primary: the decision, and the owner's dis
   await page.goto("/");
   await page.getByTestId("fix-open-ALERT-RESERVE-42").click();
   await page.getByTestId("fix-ALERT-RESERVE-42").click();
-  await expect(page.getByTestId("home-review-primary")).toBeVisible();
+  await expect(page.getByTestId("alert-approval-link-ALERT-RESERVE-42")).toBeVisible();
   expect(await filledBrand(page)).toBe(1);
   const disc = page.getByTestId("account-menu").locator("summary span").first();
   expect(await bg(disc)).toBe("rgb(232, 240, 254)");

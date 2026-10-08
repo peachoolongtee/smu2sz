@@ -1170,6 +1170,10 @@ def event_words(state: FinancialState, *, kind: str, status: str, payload: dict[
     if status == "EXECUTED" and kind == "RECEIVE_PAYMENT" and amount is not None and buyer:
         m = _RECEIPT_DETAIL.match(message)
         detail = _sentence(business_text(state, m.group(1), today, lang, agreements, window_live) or "") if m else None
+        ref = payload.get("bank_reference")
+        if isinstance(ref, str) and ref.startswith("DEMO-"):  # the guided Demo's one receipt says it is synthetic, wherever it is read
+            note = t(lang, f"Synthetic bank event, reference {ref}; no real funds moved.", f"模拟银行事件，银行参考号 {ref}；没有真实资金流动。")
+            detail = f"{detail} {note}" if detail else note
         return {"event_text": _stop(t(lang, f"Received {fmt_yuan(amount)} from {buyer}", f"已收到{buyer}的 {fmt_yuan(amount)}"), lang),
                 "event_detail": detail or None}
     return none

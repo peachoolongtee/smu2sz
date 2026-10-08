@@ -7,6 +7,7 @@ import { getHome, getReceivablesWorth, getReconciliation, getState } from "@/lib
 import { useI18n } from "@/lib/i18n";
 import { whenText } from "@/lib/when";
 import { useAsync, useStrategyAsync } from "@/lib/use-async";
+import { PartialRead, ReadWhen } from "@/components/business/freshness";
 import { Disclosure } from "@/components/business/kit";
 import { chaseIds, shortfallStretch } from "@/lib/chase";
 import { ReceivablesTable } from "@/components/business/receivables-table";
@@ -60,6 +61,8 @@ export default function ReceivablesPage() {
       ) : (
         <div className="space-y-6">
           <section id="recv-summary" aria-label={t("nav.receivables")} data-testid="recv-summary">
+            {/* How fresh the summary is: the report's own "when", else the home read's. */}
+            <ReadWhen when={data.last_read_when ?? home.data?.cash.last_read_when} testId="recv-read-when" className="mb-2" />
             <dl className="grid grid-cols-2 gap-3 sm:grid-cols-3">
               <Stat className="col-span-2 sm:col-span-1" label={t("biz.recv.sum.outstanding")} value={<span data-testid="recv-outstanding">{r.open_total_display}</span>} caption={t("biz.recv.sum.count", { n: r.open_count })} />
               <Stat
@@ -76,6 +79,8 @@ export default function ReceivablesPage() {
             </dl>
             {r.open_count === 0 ? <p className="mt-3 text-sm text-ink-3" data-testid="recv-none">{t("recon.outstanding.empty")}</p> : null}
           </section>
+
+          <PartialRead missing={home.data?.partial?.missing} onRetry={home.reload} />
 
           {worthRead.error ? (
             <div data-testid="recv-worth-failed">

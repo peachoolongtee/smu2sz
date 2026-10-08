@@ -20,6 +20,7 @@ import type {
   ApprovalDecision,
   ApprovalView,
   AuditView,
+  BankReceiptResult,
   BorrowerFileRequest,
   BorrowerFileView,
   ChaseView,
@@ -139,6 +140,11 @@ export async function getAudit(): Promise<AuditView> {
 /** GET /approvals/queue */
 export async function getApprovals(): Promise<ApprovalView[]> {
   return isMock ? (await mock()).getApprovals() : (await live()).getApprovals();
+}
+
+/** GET /approvals/queue with the read's own freshness word (`last_read_when`, null when the server sends none). */
+export async function getApprovalsRead(): Promise<{ approvals: ApprovalView[]; last_read_when: string | null }> {
+  return isMock ? { approvals: await (await mock()).getApprovals(), last_read_when: null } : (await live()).getApprovalsRead();
 }
 
 /** POST /approvals/{id}. Owner action: live mode sends X-Owner-Token. */
@@ -272,6 +278,14 @@ export async function whatIf(params: WhatIfParams): Promise<WhatIfResult> {
 /** POST /demo/reset (owner action). `scenario` picks the server fixture: the golden books by default, or `short_facilities`. */
 export async function demoReset(scenario?: string): Promise<void> {
   return isMock ? (await mock()).demoReset(scenario) : (await live()).demoReset(scenario);
+}
+
+/**
+ * POST /demo/bank-receipt (owner, demo mode only): the guided Demo's one synthetic bank event, the agreed early payment arriving from the
+ * simulated bank feed. Demo mode only: no Business page calls it, and the clock never records a receipt by itself.
+ */
+export async function demoBankReceipt(): Promise<BankReceiptResult> {
+  return isMock ? (await mock()).demoBankReceipt() : (await live()).demoBankReceipt();
 }
 
 /** GET /borrower-file/{id}.html | .docx | .pdf: fetched with the owner token and saved. Live mode only. */
