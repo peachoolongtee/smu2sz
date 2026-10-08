@@ -58,13 +58,13 @@ export default function HomePage() {
       ) : !h ? (
         <LoadingBlock rows={3} />
       ) : (
-        <div className="space-y-5" aria-busy={view.loading}>
+        <div className="space-y-6" aria-busy={view.loading}>
           <StatusBlock h={h} />
           <FixResult result={fixer.result} error={fixer.error} changed={fixer.changed} />
           {h.next_action ? <NextActionBlock a={h.next_action} stateVersion={h.state_version} fixer={fixer} /> : null}
           {/* An empty section is hidden: the absence of decisions or news is not itself news. */}
           {h.pending_count > 0 ? <DecisionsBlock approvals={h.approvals} primary={!h.next_action || Boolean(h.next_action.pending_approval_id)} /> : null}
-          <div className="grid gap-5 lg:grid-cols-2">
+          <div className={`grid gap-6 ${h.changes.length ? "lg:grid-cols-2" : ""}`}>
             <ReceivablesBlock r={h.receivables} worth={worth} />
             {h.changes.length ? (
               <ChangesBlock changes={h.changes} sinceWhen={h.since_day !== null && h.since_day !== undefined ? t("biz.when.daysAgo", { n: Math.max(h.day - h.since_day, 0) }) : null} />

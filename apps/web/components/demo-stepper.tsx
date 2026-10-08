@@ -45,7 +45,7 @@ export function DemoStepper() {
     <div className="border-t border-line bg-brand-50 px-4 py-2 lg:px-8" aria-label={t("demo.region")} role="region">
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
         <div className="flex items-center gap-2">
-          <span className="rounded-pill bg-brand-600 px-2 py-0.5 text-[0.7rem] font-bold uppercase tracking-wide text-white">
+          <span className="rounded-pill bg-brand-600 px-2 py-0.5 text-xs font-bold uppercase tracking-wide text-white">
             {t("demo.label")}
           </span>
           <ol className="flex items-center gap-1" aria-label={t("demo.scenes")}>

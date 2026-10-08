@@ -40,16 +40,6 @@ const toneBorder: Record<Tone, string> = {
   brand: "border-brand-100",
 };
 
-/** A card that carries a status or a recommendation wears a 3 px rail in the tone's solid colour (a mark that must be seen). */
-const toneRail: Record<Tone, string> = {
-  neutral: "",
-  ok: "border-l-[3px] border-l-ok-solid",
-  warn: "border-l-[3px] border-l-warn-solid",
-  bad: "border-l-[3px] border-l-bad-solid",
-  info: "border-l-[3px] border-l-info-solid",
-  brand: "border-l-[3px] border-l-brand-600",
-};
-
 const toneText: Record<Tone, string> = {
   neutral: "text-ink",
   ok: "text-ok-fg",
@@ -150,7 +140,7 @@ export function Card({
   id?: string;
   tone?: Tone;
 }) {
-  const border = tone ? `${toneBorder[tone]} ${toneRail[tone]}` : "border-line";
+  const border = tone ? toneBorder[tone] : "border-line";
   return (
     <section
       id={id}
@@ -173,24 +163,76 @@ export function Card({
   );
 }
 
+/** A figure on the deep block takes its status's bright tone (the plain tone is for a white surface); a neutral figure is white. */
+const toneOnDeep: Record<Tone, string> = {
+  neutral: "text-on-deep",
+  ok: "text-ok-bright",
+  warn: "text-warn-bright",
+  bad: "text-bad-bright",
+  info: "text-info-bright",
+  brand: "text-on-deep",
+};
+
+/**
+ * The one fact tile: an uppercase eyebrow (what it is), the figure (`tabular-nums`, 20 px, 24 px with `size="lg"`), a quiet caption
+ * (when, of what, against what) and, only when the server sent one, a delta chip. Two surfaces: `surface` (white, hairline) and
+ * `deep` (translucent white on the navy Home hero). The figure takes a status colour only when `tone` names a status; a delta
+ * chip is neutral unless the server names its tone (the browser never subtracts). `testId` goes on the figure, so a spec can read
+ * it; the tile is a `<div>` and belongs in a `<dl>`. `hint` is the older name of `caption`.
+ */
 export function Stat({
   label,
   value,
+  caption,
   hint,
   tone = "neutral",
+  delta,
+  deltaTone = "neutral",
+  surface = "surface",
+  size = "md",
+  tint = false,
+  testId,
+  captionTestId,
+  rootTestId,
   className = "",
 }: {
   label: ReactNode;
   value: ReactNode;
+  caption?: ReactNode;
   hint?: ReactNode;
   tone?: Tone;
+  /** The server's `delta_display` ("+3.5%"); its tone is a status only when the server names one. */
+  delta?: ReactNode;
+  deltaTone?: Tone;
+  surface?: "surface" | "deep";
+  size?: "md" | "lg";
+  /** A status-tinted tile (the owner must decide; within limits): the tone's tint and line instead of the hairline. */
+  tint?: boolean;
+  testId?: string;
+  captionTestId?: string;
+  /** On the tile itself, for a spec that reads the label, figure and caption together. */
+  rootTestId?: string;
   className?: string;
 }) {
+  const deep = surface === "deep";
+  const note = caption ?? hint;
+  const box = deep ? "bg-on-deep/10" : tint && tone !== "neutral" ? `border ${toneSurface[tone]}` : "border border-line bg-surface";
   return (
-    <div className={`min-w-0 rounded-tile border border-line bg-surface px-3.5 py-3 ${className}`}>
-      <dt className="text-xs font-medium text-ink-3">{label}</dt>
-      <dd className={`mt-1 break-words text-lg font-semibold tabular-nums ${toneText[tone]}`}>{value}</dd>
-      {hint ? <p className="mt-0.5 text-xs text-ink-3">{hint}</p> : null}
+    <div className={`min-w-0 rounded-tile px-4 py-3 ${box} ${className}`} data-testid={rootTestId}>
+      <dt className={`text-xs font-semibold uppercase tracking-wide ${deep ? "text-on-deep-muted" : "text-ink-3"}`}>{label}</dt>
+      <dd className={`mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-1 font-semibold tabular-nums ${size === "lg" ? "text-xl sm:text-2xl" : "text-lg sm:text-xl"}`}>
+        <span className={`min-w-0 break-words ${deep ? toneOnDeep[tone] : toneText[tone]}`} data-testid={testId}>
+          {value}
+        </span>
+        {delta ? (
+          <span className={`inline-flex items-center whitespace-nowrap rounded-pill border px-2 py-0.5 text-xs font-medium ${deep ? "border-on-deep/20 bg-on-deep/10 text-on-deep" : toneBadge[deltaTone]}`}>{delta}</span>
+        ) : null}
+      </dd>
+      {note ? (
+        <dd className={`mt-0.5 text-xs ${deep ? "text-on-deep-muted" : "text-ink-3"}`} data-testid={captionTestId}>
+          {note}
+        </dd>
+      ) : null}
     </div>
   );
 }

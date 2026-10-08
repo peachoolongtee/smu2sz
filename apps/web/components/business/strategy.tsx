@@ -18,11 +18,12 @@ export function ActionChip({ action }: { action: ReceivableWorth["action"] }) {
 
 /**
  * What collecting the invoice is worth: the server's one string for the row (`worth_text`, "Saves ¥1,374.61"). The gross saving
- * stays in the payload; the page decides nothing from it.
+ * stays in the payload; the page decides nothing from it. Right-aligned in the table (where it wraps at its own semicolon in the
+ * column's width), left-aligned in the phone list.
  */
-export function WorthText({ row, testId }: { row: ReceivableWorth; testId: string }) {
+export function WorthText({ row, testId, align = "left" }: { row: ReceivableWorth; testId: string; align?: "left" | "right" }) {
   return (
-    <span className="text-sm text-ink" data-testid={testId}>
+    <span className={`block text-sm tabular-nums text-ink ${align === "right" ? "text-right" : ""}`} data-testid={testId}>
       {row.worth_text}
     </span>
   );

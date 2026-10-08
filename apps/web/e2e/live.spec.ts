@@ -173,11 +173,10 @@ test("on day 34 the cure needs the owner: the alert says so, the click queues it
   await expect.poll(() => acts.length).toBe(1);
   expect(typeof acts[0].state_version).toBe("number");
   expect(acts[0].suggestions.some((x) => x.operation_kind === "SUBMIT_INVOICE_FOR_FINANCING" && typeof x.amount_fen === "number")).toBeTruthy();
-  const op = page.getByTestId("fix-result").getByTestId("chat-op-SUBMIT_INVOICE_FOR_FINANCING");
-  await expect(op).toHaveAttribute("data-status", "PENDING_APPROVAL");
-  await expect(op.getByTestId("op-state")).toContainText("Waiting for your approval");
-  await expect(op.getByTestId("op-state").locator(":scope > span")).not.toHaveClass(/text-ok-fg/);
+  // The queued cure is said once, by the next step's waiting tile in the warning look; the agent's answer is not a card when it only waits.
   const waiting = page.getByTestId("alert-waiting-ALERT-RESERVE-42");
+  await expect(waiting).toHaveClass(/text-warn-fg/);
+  await expect(page.getByTestId("fix-result")).toHaveCount(0);
   await expect(waiting).toHaveText(/^Waiting for your approval\s*Open the approval card$/);
   await expect(page.getByTestId("home-next-action")).toBeVisible();
   await expect(page.locator('[data-testid^="home-approval-APR-"]').first()).toContainText("Approve ¥200,000.00 of invoice financing?");

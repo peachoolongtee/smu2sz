@@ -169,14 +169,14 @@ export function FixResult({ result, error, changed }: { result: AlertActResult |
   if (changed) return <AlertChanged changed={changed} />;
   if (error) {
     return (
-      <div className="mt-3">
-        <ErrorState error={error} />
-      </div>
+      <ErrorState error={error} />
     );
   }
   if (!result) return null;
+  // The one thing that happened is "it waits for your approval": the next-step tile and the decision row already say that, once each.
+  if (business && result.pending_approval && !result.executed && !result.refused) return null;
   return (
-    <section aria-label={t("alerts.fix.title")} className="mt-3 space-y-2 rounded-tile border border-line bg-surface p-3 shadow-card" data-testid="fix-result" role="status">
+    <section aria-label={t("alerts.fix.title")} className="space-y-2 rounded-card border border-line bg-surface p-4 shadow-card" data-testid="fix-result" role="status">
       <div className="flex flex-wrap items-center gap-2">
         <h3 className="text-xs font-semibold uppercase tracking-wide text-ink-3">{t("alerts.fix.title")}</h3>
         {/* On a Business page only the counts that are not zero: "0 refused" is noise. */}
@@ -185,10 +185,7 @@ export function FixResult({ result, error, changed }: { result: AlertActResult |
         {!business || result.refused ? <Badge tone={result.refused ? "bad" : "neutral"}>{t("alerts.fix.refused", { n: result.refused })}</Badge> : null}
       </div>
       <OperationList operations={result.results} business={business} />
-      {/* A waiting request is said once (the status and its link above); the other outcomes get their one line. */}
-      {business && !result.cured && result.pending_approval ? null : (
-        <p className="text-xs text-ink-2">{result.cured ? t("alerts.fix.cured") : result.pending_approval ? t("alerts.waiting.body") : t("alerts.fix.notCured")}</p>
-      )}
+      <p className="text-xs text-ink-2">{result.cured ? t("alerts.fix.cured") : result.pending_approval ? t("alerts.waiting.body") : t("alerts.fix.notCured")}</p>
     </section>
   );
 }

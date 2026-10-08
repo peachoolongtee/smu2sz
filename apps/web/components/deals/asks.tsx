@@ -59,14 +59,14 @@ export function BuyerAsks({ asks }: { asks: Ob[] }) {
   if (!asks.length) return <p className="text-sm text-ink-2">{t("inbox.noObligations")}</p>;
   return (
     <>
-      <ul className="space-y-1.5" data-testid="deal-asks">
+      <ul className="space-y-1" data-testid="deal-asks">
         {asks.map((o) => (
           <li key={o.id} className="text-base font-medium text-ink" data-testid={`deal-ask-${o.type}`}>
             {askSentence(o, t, te)}
           </li>
         ))}
       </ul>
-      <Disclosure testId="deal-parsed-terms" className="mt-3" summary={t("biz.deals.parsed")}>
+      <Disclosure testId="deal-parsed-terms" className="mt-2" summary={t("biz.deals.parsed")}>
         <ul className="mt-1.5 space-y-1 text-sm">
           {asks.map((o) => (
             <li key={o.id} className="flex flex-wrap items-baseline gap-x-2">

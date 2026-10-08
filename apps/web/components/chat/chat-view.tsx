@@ -30,7 +30,7 @@ function Bubble({ from, children, label }: { from: "user" | "error"; children: R
           from === "user" ? "bg-brand-600 text-white" : "border border-bad-line bg-bad-bg text-bad-fg"
         }`}
       >
-        <p className={`mb-0.5 text-[0.7rem] font-semibold uppercase tracking-wide ${from === "user" ? "text-white/80" : ""}`}>{label}</p>
+        <p className={`mb-0.5 text-xs font-semibold uppercase tracking-wide ${from === "user" ? "text-white/80" : ""}`}>{label}</p>
         {children}
       </div>
     </div>

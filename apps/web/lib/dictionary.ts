@@ -1636,6 +1636,15 @@ export const en = {
   "biz.activity.kind.other": "Change",
   "biz.activity.concessions": "Concessions booked against your budget",
   "biz.option.recommended_plan": "Recommended plan",
+  "biz.recv.filter.all": "All",
+  "biz.recv.filter.late": "Late",
+  "biz.recv.filter.soon": "Due soon",
+  "biz.recv.filter.label": "Show invoices",
+  "biz.recv.filter.none": "No invoices in this view.",
+  "biz.recv.rank": "Rank",
+  "biz.strategy.envelope.stat.terms": "Longest terms",
+  "biz.strategy.envelope.stat.early": "Early payment",
+  "biz.strategy.envelope.stat.rebate": "Rebate",
 } as const;
 
 export type DictKey = keyof typeof en;
@@ -3271,4 +3280,13 @@ export const zh: Record<DictKey, string> = {
   "biz.activity.kind.other": "变更",
   "biz.activity.concessions": "已计入您预算的让步",
   "biz.option.recommended_plan": "推荐方案",
+  "biz.recv.filter.all": "全部",
+  "biz.recv.filter.late": "逾期",
+  "biz.recv.filter.soon": "即将到期",
+  "biz.recv.filter.label": "筛选发票",
+  "biz.recv.filter.none": "此筛选下没有发票。",
+  "biz.recv.rank": "排名",
+  "biz.strategy.envelope.stat.terms": "最长账期",
+  "biz.strategy.envelope.stat.early": "提前付款",
+  "biz.strategy.envelope.stat.rebate": "返利",
 };

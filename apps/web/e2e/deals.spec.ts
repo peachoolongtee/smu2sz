@@ -121,7 +121,7 @@ test("opening a message reads it, and the evaluated deal reads in the owner's or
   for (const id of ["deal-why", "deal-original", "deal-calc"]) {
     await expect(page.getByTestId(id)).not.toHaveAttribute("open", "");
   }
-  await expect(page.getByTestId("deal-why")).toContainText("Why FLOW recommends this");
+  await expect(page.getByTestId("deal-why").locator("> summary")).toHaveText("Why");
   await page.getByTestId("deal-why").locator("> summary").click();
   // Three reasons in the owner's words; every check, the formulas and the engine's verdict one level further down.
   const reasons = page.getByTestId("deal-reasons");

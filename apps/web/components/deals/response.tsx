@@ -13,7 +13,7 @@ import { Disclosure } from "@/components/business/kit";
 
 type Counter = Displayed<CounterProposal> & { text_when?: string; rationale_when?: string; outbound_blocked?: boolean };
 
-/** The DOM id (and test id) of a counter's card: "deal-option-Option-B". The "Before they ask" card scrolls to it. */
+/** The DOM id (and test id) of a counter's card: "deal-option-Option-B". */
 export function optionDomId(label: string): string {
   return `deal-option-${label.replace(/\s+/g, "-")}`;
 }
@@ -28,42 +28,44 @@ function CounterBusinessCard({ c, recommended, today, action }: { c: Counter; re
   const { t, te } = useI18n();
   const e = c.economics ?? null;
   return (
-    <li id={optionDomId(c.label)} tabIndex={-1} className={`motion-lift rounded-tile border p-4 ${recommended ? "border-line border-l-[3px] border-l-brand-600 bg-brand-50" : "border-line bg-surface"}`} data-testid={optionDomId(c.label)}>
-      <div className="flex flex-wrap items-center gap-2">
-        <h3 className="text-base font-semibold text-ink">{c.label}</h3>
-        {recommended ? <Badge tone="brand">{t("biz.deals.option.recommended")}</Badge> : null}
+    <li id={optionDomId(c.label)} tabIndex={-1} className="py-4 first:pt-0 last:pb-0" data-testid={optionDomId(c.label)}>
+      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <h3 className="text-base font-semibold text-ink">{c.label}</h3>
+          {recommended ? <Badge tone="brand">{t("biz.deals.option.recommended")}</Badge> : null}
+        </div>
+        {/* A plain cost sits on the title's line; a net cost needs its two parts and keeps the rows below. */}
+        {!e?.is_net ? (
+          <p className="flex items-baseline gap-2 text-sm">
+            <span className="text-ink-3">{t("biz.deals.estCost")}</span>
+            <span className="text-lg font-semibold tabular-nums text-ink" data-testid="deal-option-cost">
+              {c.supplier_cost_display}
+            </span>
+          </p>
+        ) : null}
       </div>
       <p className="mt-2 text-sm text-ink" data-testid="deal-option-text">
         {c.text_when ?? c.text}
       </p>
-      <dl className="mt-3 text-sm">
-        {e?.is_net ? (
-          <>
-            <div className="flex items-baseline justify-between gap-3">
-              <dt className="text-ink-2">{t("biz.deals.netCost")}</dt>
-              <dd className="text-lg font-semibold tabular-nums text-ink" data-testid="deal-option-cost">
-                {/* The server says the net ("≈ ¥0" when the adjustment covers the cost: the verifier floors it on purpose, never a gain). */}
-                {e.net_words ?? e.net_display}
-              </dd>
-            </div>
-            <div className="mt-1 flex items-baseline justify-between gap-3 text-xs text-ink-3">
-              <dt>{t("biz.deals.fundingCost")}</dt>
-              <dd className="tabular-nums">{e.funding_cost_display}</dd>
-            </div>
-            <div className="flex items-baseline justify-between gap-3 text-xs text-ink-3">
-              <dt>{t("biz.deals.offset")}</dt>
-              <dd className="tabular-nums">−{e.offset_display}</dd>
-            </div>
-          </>
-        ) : (
+      {e?.is_net ? (
+        <dl className="mt-3 text-sm">
           <div className="flex items-baseline justify-between gap-3">
-            <dt className="text-ink-2">{t("biz.deals.estCost")}</dt>
+            <dt className="text-ink-2">{t("biz.deals.netCost")}</dt>
             <dd className="text-lg font-semibold tabular-nums text-ink" data-testid="deal-option-cost">
-              {c.supplier_cost_display}
+              {/* The server says the net ("≈ ¥0" when the adjustment covers the cost: the verifier floors it on purpose, never a gain). */}
+              {e.net_words ?? e.net_display}
             </dd>
           </div>
-        )}
-      </dl>
+          <div className="mt-1 flex items-baseline justify-between gap-3 text-xs text-ink-3">
+            <dt>{t("biz.deals.fundingCost")}</dt>
+            <dd className="tabular-nums">{e.funding_cost_display}</dd>
+          </div>
+          <div className="flex items-baseline justify-between gap-3 text-xs text-ink-3">
+            <dt>{t("biz.deals.offset")}</dt>
+            <dd className="tabular-nums">−{e.offset_display}</dd>
+          </div>
+        </dl>
+      ) : null}
       {action ? <div className="mt-3">{action}</div> : null}
       <Disclosure testId="deal-option-details" className="mt-3 text-sm" summary={t("biz.deals.details")}>
         <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-ink-3">{t("biz.deals.whyWorks")}</p>
@@ -179,7 +181,7 @@ export function RecommendedResponse({
   today: number;
   mode: Mode;
   negotiation: NegotiationView | null;
-  /** The page may hold whether the other options are shown (the "Before they ask" card opens Option B); without it the card keeps its own state. */
+  /** The page may hold whether the other options are shown (Option B); without it the card keeps its own state. */
   compareOpen?: boolean;
   onCompareChange?: (open: boolean) => void;
 }) {
@@ -235,7 +237,7 @@ export function RecommendedResponse({
 
   return (
     <Card id="counters" title={t("biz.deals.response")} subtitle={t("biz.deals.counters.sub")}>
-      <ul className="motion-rise space-y-3">
+      <ul className="motion-rise divide-y divide-line">
         <CounterBusinessCard c={first} recommended today={today} action={sendAction} />
         {compare ? rest.map((c) => <CounterBusinessCard key={c.id} c={c} recommended={false} today={today} />) : null}
       </ul>

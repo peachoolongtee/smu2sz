@@ -15,7 +15,7 @@ import { filledBrand, resetBooks, runPlan } from "./helpers";
  *   live  E2E_STRATEGY=1 E2E_TARGET=live E2E_API_PORT=8016 E2E_LIVE_PORT=3016 pnpm exec playwright test e2e/strategy.spec.ts
  *         (the config starts the API itself with the flags; nothing may already hold E2E_API_PORT)
  *
- * The envelope card's testids: envelope-primary / -reason / -money, envelope-open-a / -b, envelope-details (the fold), envelope-levers
+ * The envelope card's testids: envelope-ceiling-terms / -early / -rebate (the three tiles), envelope-primary / -reason / -money, envelope-details (the fold), envelope-levers
  * (the table on desktop, envelope-levers-list on a phone), envelope-packages, envelope-zone, envelope-loading, envelope-error.
  *
  * Desktop (mock and live) checks the table; the phone project checks the list rows. Testids: the table cells are
@@ -106,6 +106,8 @@ test.describe("desktop", () => {
     await expect(page.getByTestId("recv-ranking-note")).toContainText("Ranked by what collecting each saves you");
     await expect(page.getByTestId("recv-worth-RCV-A")).toContainText("Saves ¥");
     await expect(page.getByTestId("recv-RCV-A")).not.toContainText("before any discount");
+    // The sentence for the step is one chevron down, with the reason and the record id.
+    await page.getByTestId("recv-toggle-RCV-A").click();
     const action = page.getByTestId("recv-action-RCV-A");
     await expect(action).toContainText("early payment");
     await expect(page.getByTestId("recv-RCV-A")).toContainText("Offer early payment");
@@ -118,10 +120,14 @@ test.describe("desktop", () => {
     await page.goto("/receivables");
     const rows = page.locator("#recv-open tbody tr");
     await expect(rows.first()).toHaveAttribute("data-testid", "recv-RCV-A");
-    await expect(rows.first().locator("td").first().locator("span.block")).toHaveText("RCV-A");
+    // Ids are level 2: not in the row, the server's rank is a numeral, and the sentence opens from the row's chevron.
+    await expect(rows.first()).not.toContainText("RCV-A");
+    await expect(rows.first().locator("td").first()).toHaveText("1");
     await expect(page.getByTestId("recv-ranking-note")).toHaveCount(1);
     await expect(page.getByTestId("recv-worth-RCV-A")).toContainText("Saves ¥");
+    await page.getByTestId("recv-toggle-RCV-A").click();
     await expect(page.getByTestId("recv-action-RCV-A")).toContainText("Call Foshan Home Retail Co.");
+    await expect(page.getByTestId("recv-detail-RCV-A")).toContainText("RCV-A");
     // The action word is the first thing in the action cell, as a pill from the dictionary.
     await expect(rows.first().locator("td").last()).toContainText("Call now");
     await expect(rows.first().locator("td").last().getByText("Call now", { exact: true })).toHaveCount(1);
@@ -140,7 +146,7 @@ test.describe("desktop", () => {
     expect(await proseOf(page)).not.toMatch(DAY_N);
     expect(await filledBrand(page)).toBeLessThanOrEqual(1);
   });
-  test("Deals day 0: the Before they ask card answers in the server's words, opens its details and Option B, and adds no filled button", async ({ page }) => {
+  test("Deals day 0: the Before they ask card answers in the server's words, opens its details, and adds no filled button; Option B opens from the response card", async ({ page }) => {
     await openEx01(page);
     const card = page.locator("#deal-envelope");
     // The card is there as soon as the message is read, before the check; it has no options to open yet.
@@ -148,6 +154,10 @@ test.describe("desktop", () => {
     await expect(card.getByTestId("envelope-primary")).toContainText("55-day");
     await expect(card.getByTestId("envelope-primary")).toContainText("0.85%");
     await expect(card.getByTestId("envelope-reason")).not.toBeEmpty();
+    // The three ceilings are tiles, each the server's maximum in words.
+    await expect(card.getByTestId("envelope-ceiling-terms")).toHaveText("55 days, price up 0.30%");
+    await expect(card.getByTestId("envelope-ceiling-early")).toHaveText("0.85% on ¥257,200.00");
+    await expect(card.getByTestId("envelope-ceiling-rebate")).toHaveText("1.25%");
     await expect(card.getByTestId("envelope-money")).toContainText("¥");
     await expect(card).toContainText("The most you can give");
     await expect(card.getByTestId("envelope-caption")).toContainText("Your limits, not an opening offer");
@@ -199,22 +209,19 @@ test.describe("desktop", () => {
     expect(await filledBrand(page)).toBeLessThanOrEqual(1);
     await expect(card.getByTestId("envelope-computed")).toHaveCount(0);
 
-    // Option A: scroll to the response card. Option B: reveal it, then scroll to it. The card sends nothing.
-    await expect(card.getByTestId("envelope-open-a")).toBeVisible();
+    // The card has no Option A / Option B buttons any more: Option A is the response card below, and "Compare another option" there
+    // opens Option B. The card sends nothing.
+    await expect(card.getByTestId("envelope-open-a")).toHaveCount(0);
+    await expect(card.getByTestId("envelope-open-b")).toHaveCount(0);
+    await expect(page.getByTestId("deal-option-Option-A")).toBeVisible();
     await expect(page.getByTestId("deal-option-Option-B")).toHaveCount(0);
-    await card.getByTestId("envelope-open-a").click();
-    await expect(page.getByTestId("deal-option-Option-A")).toBeInViewport();
-    await expect(page.getByTestId("deal-option-Option-A")).toBeFocused();
-    await expect(page.getByTestId("deal-option-Option-B")).toHaveCount(0);
-    await card.scrollIntoViewIfNeeded();
-    await card.getByTestId("envelope-open-b").click();
+    await page.getByTestId("deal-compare").click();
     await expect(page.getByTestId("deal-option-Option-B")).toBeVisible();
-    await expect(page.getByTestId("deal-option-Option-B")).toBeInViewport();
     await expect(page.getByTestId("deal-compare")).toContainText("Hide");
     await expect(page.getByTestId("deal-negotiation")).toHaveCount(0);
     expect(await filledBrand(page)).toBe(1);
     await expect(page.getByTestId("deal-send")).toHaveClass(/bg-brand-600/);
-    // The response card still toggles Option B by itself.
+    // ... and toggles it closed again.
     await page.getByTestId("deal-compare").click();
     await expect(page.getByTestId("deal-option-Option-B")).toHaveCount(0);
   });
@@ -286,6 +293,7 @@ test.describe("phone", () => {
     await expect(list).toBeVisible();
     await expect(page.getByTestId("recv-ranking-note")).toBeVisible();
     await expect(page.getByTestId("recv-list-worth-RCV-A")).toContainText("Saves ¥");
+    await list.locator("li").first().locator("summary").first().click();
     await expect(page.getByTestId("recv-list-action-RCV-A-reason")).not.toBeEmpty();
     await expect(page.getByTestId("recv-list-action-RCV-A")).toContainText("Call Foshan Home Retail Co.");
     await expect(list.locator("li").first()).toContainText("Call now");
@@ -294,18 +302,17 @@ test.describe("phone", () => {
     expect(await filledBrand(page)).toBe(0);
   });
 
-  test("Deals day 0: the Before they ask card on a phone lists the levers, keeps its buttons in reach and does not overflow", async ({ page }) => {
+  test("Deals day 0: the Before they ask card on a phone lists the levers, keeps Compare in reach and does not overflow", async ({ page }) => {
     await openEx01(page);
     const card = page.locator("#deal-envelope");
     await expect(card.getByTestId("envelope-primary")).toContainText("55-day", { timeout: 30_000 });
     await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
-    await expect(card.getByTestId("envelope-open-b")).toBeVisible();
     await card.getByTestId("envelope-details").locator("summary").first().click();
     await expect(card.getByTestId("envelope-levers-list").locator("li")).toHaveCount(6);
     await expect(card.getByTestId("envelope-levers").locator("table")).toBeHidden();
     await expect(card.getByTestId("envelope-packages")).toBeVisible();
-    await card.getByTestId("envelope-open-b").click();
-    await expect(page.getByTestId("deal-option-Option-B")).toBeInViewport();
+    await page.getByTestId("deal-compare").click();
+    await expect(page.getByTestId("deal-option-Option-B")).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
     expect(await filledBrand(page)).toBeLessThanOrEqual(1);
   });

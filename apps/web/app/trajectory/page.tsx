@@ -184,7 +184,7 @@ function TrajectoryBody({
                   <span aria-hidden className={`size-2.5 rounded-sm ${i === 0 ? "bg-warn-fg" : "bg-info-solid"}`} />
                   {p.label}
                 </span>
-                <span className="font-medium tabular-nums">{p.value_display}</span>
+                <span className="whitespace-nowrap font-medium tabular-nums">{p.value_display}</span>
               </li>
             ))}
           </ul>
@@ -228,11 +228,11 @@ function TrajectoryBody({
                 {tr.months.map((m) => (
                   <tr key={m.month}>
                     <td className={`${tdCls} tabular-nums`}>{m.month}</td>
-                    <td className={`${tdCls} text-right tabular-nums`}>{m.ebitda_display}</td>
-                    <td className={`${tdCls} text-right tabular-nums`}>{m.debt_service_display}</td>
-                    <td className={`${tdCls} text-right tabular-nums`}>{m.total_debt_display}</td>
-                    <td className={`${tdCls} text-right font-medium tabular-nums`}>{m.dscr ? `${m.dscr.text}×` : t("common.none")}</td>
-                    <td className={`${tdCls} text-right font-medium tabular-nums`}>{m.leverage.text}&times;</td>
+                    <td className={`${tdCls} whitespace-nowrap text-right tabular-nums`}>{m.ebitda_display}</td>
+                    <td className={`${tdCls} whitespace-nowrap text-right tabular-nums`}>{m.debt_service_display}</td>
+                    <td className={`${tdCls} whitespace-nowrap text-right tabular-nums`}>{m.total_debt_display}</td>
+                    <td className={`${tdCls} whitespace-nowrap text-right font-medium tabular-nums`}>{m.dscr ? `${m.dscr.text}×` : t("common.none")}</td>
+                    <td className={`${tdCls} whitespace-nowrap text-right font-medium tabular-nums`}>{m.leverage.text}&times;</td>
                   </tr>
                 ))}
               </tbody>
@@ -263,8 +263,8 @@ function TrajectoryBody({
                     <tr key={`${d.day}-${i}`} className={breach === d.day ? "bg-bad-bg" : ""}>
                       <td className={`${tdCls} tabular-nums`}>{i === 0 ? d.day : ""}</td>
                       <td className={tdCls}>{e.label}</td>
-                      <td className={`${tdCls} text-right tabular-nums`}>{e.amount_display}</td>
-                      <td className={`${tdCls} text-right tabular-nums`}>{i === d.events.length - 1 ? d.closing_display : ""}</td>
+                      <td className={`${tdCls} whitespace-nowrap text-right tabular-nums`}>{e.amount_display}</td>
+                      <td className={`${tdCls} whitespace-nowrap text-right tabular-nums`}>{i === d.events.length - 1 ? d.closing_display : ""}</td>
                       <td className={`${tdCls} font-mono text-xs text-ink-2`}>{e.formula ?? ""}</td>
                     </tr>
                   )),

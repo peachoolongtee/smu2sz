@@ -66,7 +66,7 @@ export function TodayCard({ onAdvanced }: { onAdvanced: () => void }) {
               data-testid="home-days"
             />
           </label>
-          <Button type="submit" variant="primary" loading={busy} data-testid="home-advance">
+          <Button type="submit" variant="secondary" loading={busy} data-testid="home-advance">
             {t("home.demo.advance")}
           </Button>
           <span className="flex gap-1.5" role="group" aria-label={t("home.demo.badge")}>
