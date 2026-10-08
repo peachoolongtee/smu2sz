@@ -859,6 +859,7 @@ def with_roles(rows: list[dict[str, Any]], action: dict[str, Any] | None, state:
         recommended_cost = next((r["cost_fen"] for r in rows if r.get("result") == "SELECTED"), None)
     for r in rows:
         status = r.get("status") or "alternative"
+        reason: str | None
         if source == "router" and r.get("result") == "SELECTED":
             role, reason = "recommended", t(lang, "The cheapest plan your committed facilities can fund in time.",
                                             "您已承诺的额度能及时覆盖缺口的最便宜方案。")

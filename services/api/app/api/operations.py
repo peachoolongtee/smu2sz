@@ -12,7 +12,14 @@ from pydantic import BaseModel, TypeAdapter, ValidationError
 from app.alerts import alerts
 from app.api.auth import is_bank_feed, log_refusal, require_owner, require_owner_or_agent
 from app.api.home import cure_after_words
-from app.api.presentation import approval_reason_words, approval_words, in_words, relative_days, result_words, when_text
+from app.api.presentation import (
+    approval_reason_words,
+    approval_words,
+    in_words,
+    relative_days,
+    result_words,
+    when_text,
+)
 from app.api.runtime import get_runtime
 from app.books import current_books
 from app.domain.models import Actor, Operation, OperationStatus
