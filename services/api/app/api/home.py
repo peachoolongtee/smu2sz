@@ -47,6 +47,7 @@ from app.api.presentation import (
     leg_names,
     leg_words,
     live_windows,
+    lowest_point_words,
     party_name,
     receivable_face,
     relative_days,
@@ -451,42 +452,48 @@ def cure_after(state: FinancialState, obs: list[Any], mandate: Mandate, alert: A
     first = first_breach_ahead(traj, today, floor)
     if first is None:  # the cure's own projection stays above the reserve; the alert's flag is stale
         return _after_words(traj, floor, today, mandate.horizon_days, lang), None
-    episode = []
-    for d in traj.days:
-        if d.day >= first[0]:
-            if d.closing_fen >= floor:
-                break
-            episode.append(d)
-    low = min(episode, key=lambda d: (d.closing_fen, d.day))
-    low_fen, low_day = low.closing_fen, low.day
+    low_fen, low_day = _episode_low(traj, first[0], floor)
     from_when, low_when = _distance(first[0], today, lang), _distance(low_day, today, lang)
     gap = floor - low_fen
+    now = alert.amount_fen if alert.day is not None and alert.day <= today else None  # today's gap: the alert's own first shortfall
     if _lowest_ahead(traj, today)[0] < 0:
         words = t(lang, f"Does not fully prevent negative cash: cash still falls to {fmt_short(_lowest_ahead(traj, today)[0])} "
                         f"{_distance(_lowest_ahead(traj, today)[1], today, lang)}, below your {fmt_short(floor)} minimum cash reserve.",
                   f"不能完全避免现金为负：现金仍将在{_distance(_lowest_ahead(traj, today)[1], today, lang)}降至 "
                   f"{fmt_short(_lowest_ahead(traj, today)[0])}，低于 {fmt_short(floor)} 的最低现金储备。")
     else:
-        words = t(lang, f"Prevents negative cash; cash stays {fmt_short(gap)} below your {fmt_short(floor)} minimum cash reserve "
-                        f"from {from_when} (lowest {fmt_short(low_fen)} {low_when}).",
-                  f"可避免现金为负；从{from_when}起现金仍比 {fmt_short(floor)} 的最低现金储备低 {fmt_short(gap)}"
-                  f"（最低点为{low_when}的 {fmt_short(low_fen)}）。")
-    return words, {"shortfall_display": fmt_yuan(gap), "from_when": from_when, "restores_reserve": False}
+        words = lowest_point_words(gap, low_day, now, today, lang)
+    return words, {"shortfall_display": fmt_yuan(gap), "from_when": from_when, "restores_reserve": False, "lowest_when": low_when,
+                   "shortfall_today_display": fmt_yuan(now) if now is not None else None, "text": words}
+
+
+def _episode_low(traj: Any, first_day: int, floor: int) -> tuple[int, int]:
+    """(closing cash, day) of the lowest point of the stretch below the reserve that starts on `first_day`."""
+    episode = []
+    for d in traj.days:
+        if d.day >= first_day:
+            if d.closing_fen >= floor:
+                break
+            episode.append(d)
+    low = min(episode, key=lambda d: (d.closing_fen, d.day))
+    return low.closing_fen, low.day
 
 
 def after_facts(state: FinancialState, obs: list[Any], mandate: Mandate, actions: list[FundingAction],
-                today: int) -> tuple[bool | None, int | None]:
+                today: int) -> tuple[bool | None, int | None, int | None]:
     """The after-state of the legs that run, as numbers for the decision record's quote: whether cash stays at or above the
     reserve through the horizon and, if not, the first day it is below it. The same projection `next_action` and `cure_after`
-    say in words; (None, None) when the legs cannot be projected."""
+    say in words, and the day cash is lowest in that stretch; (None, None, None) when the legs cannot be projected."""
     if not actions:
-        return None, None
+        return None, None, None
     try:
         traj = project(state, obs, actions, Mode.CONSERVATIVE, mandate.horizon_days, mandate.min_cash_fen)
     except EngineError:
-        return None, None
+        return None, None, None
     first = first_breach_ahead(traj, today, mandate.min_cash_fen)
-    return first is None, (first[0] if first is not None else None)
+    if first is None:
+        return True, None, None
+    return False, first[0], _episode_low(traj, first[0], mandate.min_cash_fen)[1]
 
 
 def next_action(state: FinancialState, obs: list[Any], mandate: Mandate, found: list[Alert], approvals: list[Any],

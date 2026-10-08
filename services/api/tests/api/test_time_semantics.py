@@ -124,7 +124,7 @@ def test_only_a_rejected_approval_is_a_decline(client):
     draw = {"kind": "DRAW_FACILITY", "facility_id": state.facilities[0].id, "amount_fen": 15_000_000}
     kw = {"kind": "DRAW_FACILITY", "status": "REFUSED", "payload": draw, "day": 91, "today": 91}
     assert result_words(state, **kw, approval_status="APPROVED", message="Refused: Mandate v1 expired on day 90") == (
-        "You approved it, but it could not run: Mandate v1 expired yesterday. No money moved.")
+        "You approved it, but it could not run: your signed limits (version 1) expired yesterday. No money moved.")
     assert result_words(state, **kw, approval_status="REJECTED", message="Declined by the owner").startswith("You declined")
     assert result_words(state, **kw).startswith("You declined")  # the callers that do not say which keep the old reading
 
@@ -345,9 +345,9 @@ def test_a_cure_that_only_keeps_cash_above_zero_still_states_its_after_state(cli
     _act(client)
     row = _queue(client)[0]
     p = row["presentation"]
-    assert p["protects"] == ("Prevents negative cash; cash stays ¥300k below your ¥300k minimum cash reserve from today "
-                             "(lowest ¥0.00 in 8 days).")
-    assert p["residual"] == {"shortfall_display": "¥300,000.00", "from_when": "today", "restores_reserve": False}
+    assert p["protects"] == ("At its lowest point, in 8 days, cash would still be ¥300,000.00 below your minimum cash reserve; today it is ¥255,013.80 below.")
+    assert p["residual"] == {"shortfall_display": "¥300,000.00", "from_when": "today", "restores_reserve": False, "lowest_when": "in 8 days",
+                             "shortfall_today_display": "¥255,013.80", "text": p["protects"]}
     assert p["execution_status"] == "PENDING" and p["if_decline"] == "Cash goes below zero in 8 days."
     # the home's card for the same cure says the same
     assert client.get("/home").json()["approvals"][0]["protects"] == p["protects"]
@@ -383,7 +383,7 @@ def test_an_approval_the_run_refused_is_not_a_decline(client):
     row = _queue(client)[0]
     p = row["presentation"]
     assert row["status"] == "APPROVED" and p["execution_status"] == "REFUSED"
-    assert p["result_message"] == "You approved it, but it could not run: Mandate v1 expired yesterday. No money moved."
+    assert p["result_message"] == "You approved it, but it could not run: your signed limits (version 1) expired yesterday. No money moved."
     assert "declined" not in p["result_message"].lower()
     assert p["if_decline"] is None and p["lands_day"] is None
 
@@ -559,4 +559,4 @@ def test_the_home_next_action_and_the_card_say_the_same_after_state(client):
     _act(client)
     home = client.get("/home").json()
     card = _queue(client)[0]["presentation"]["protects"]
-    assert home["next_action"]["after"] == card and card.startswith("Prevents negative cash; cash stays ")
+    assert home["next_action"]["after"] == card and card.startswith("At its lowest point, in 8 days, cash would still be ")

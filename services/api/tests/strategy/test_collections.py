@@ -200,7 +200,8 @@ def test_day34_ranking_net_and_gross(worth34: WorthAnswer):
     assert [w.net_saving_fen for w in worth34.rows] == [137_461, 78_828, 7_368]
     assert worth34.gross_order == [RI_2, RI_32, RCV_A]  # ¥1,706.10, ¥1,706.10 (due earlier first), ¥1,374.61
     assert [_row(worth34, i).gross_saving_fen for i in worth34.gross_order] == [170_610, 170_610, 137_461]
-    assert worth34.top_action == worth34.rows[0].action_sentence
+    assert worth34.top_action == "¥162,800.00 from Foshan Home Retail Co. is 2 days late: ask them to pay."  # the overdue invoice first
+    assert worth34.top_action_second == worth34.rows[0].action_sentence
     assert worth34.first_breach_day == 42 == _oracle("day 34")["baseline"]["first_breach_day"]
     assert worth34.ranking_note == ("Ranked by what collecting each saves you against the cheapest funding plan, "
                                     "net of any discount that earns it.")
@@ -499,7 +500,7 @@ def test_route_answers_on_the_day34_runtime(day34_client: TestClient, rt_day34: 
     assert body["hypothetical"] is True and body["day"] == 34 and body["state_version"] == body["source_state_version"]
     assert [w["receivable_id"] for w in body["rows"]] == [RCV_A, RI_2, RI_32]
     assert body["rows"][0]["action"] == "call_now"
-    assert body["top_action"] == body["rows"][0]["action_sentence"]
+    assert body["top_action"].endswith("is 2 days late: ask them to pay.") and body["top_action_second"] == body["rows"][0]["action_sentence"]
     assert body["gross_order"] == [RI_2, RI_32, RCV_A]
     assert body["rows"][0]["net_saving_display"] == "¥1,374.61"
     ri2 = body["rows"][1]
@@ -558,3 +559,26 @@ def test_a_ceiling_of_one_step_states_only_the_saving_at_the_limit():
                                  why_none="", today_effect=None)
         assert reason.startswith(expected) and "At 0.05% it saves" not in reason and "按 0.05%，" not in reason
         assert sentence.count("0.05%") == 1
+
+
+# ---------------------------------------------------------------- the overdue invoice first (Wave 8 part C, F4)
+
+
+def test_the_overdue_invoice_leads_the_top_sentence_and_the_savings_sentence_comes_second(worth34: WorthAnswer, rt_day34: Runtime,
+                                                                                    books_day34: Books, mandate34: Mandate):
+    assert worth34.top_action == "¥162,800.00 from Foshan Home Retail Co. is 2 days late: ask them to pay."
+    assert worth34.top_action_second == _row(worth34, RCV_A).action_sentence  # the ranking by saving is unchanged
+    assert [w.receivable_id for w in worth34.rows] == [RCV_A, RI_2, RI_32]
+    zh = receivables_worth(books_day34, mandate34, store=rt_day34.store, day=34, lang="zh")
+    assert zh.top_action == "Foshan Home Retail Co.的 ¥162,800.00 已逾期 2 天：请催对方付款。"
+    assert zh.top_action_second == _row(zh, RCV_A).action_sentence
+    assert [w.net_saving_fen for w in zh.rows] == [w.net_saving_fen for w in worth34.rows]  # identical figures
+    assert [w.overdue_text for w in worth34.rows] == ["Overdue", None, None] and [w.overdue_text for w in zh.rows] == ["已逾期", None, None]
+
+
+def test_an_overdue_row_says_overdue_where_it_would_say_it_saves_nothing_extra():
+    from app.strategy.collections import _worth_text
+
+    assert _worth_text("en", "call_now", 0, None, 2) == "Overdue" and _worth_text("zh", "escalate", 0, None, 40) == "已逾期"
+    assert _worth_text("en", "call_now", 137_461, None, 2) == "Saves ¥1,374.61"  # a saving stays said, beside the overdue word
+    assert _worth_text("en", "wait", 0, None, 0) == "Saves nothing extra now"  # an invoice not yet late is as it was
