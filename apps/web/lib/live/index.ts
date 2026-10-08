@@ -85,7 +85,7 @@ export const live = {
 
   /** The API has no read endpoint for an offer; the session cache (demo store) holds what POST /offers returned. */
   getOffer: (offerId: string): Promise<OfferView> =>
-    Promise.reject(new ApiError(404, `Offer ${offerId} is not in this session. Submit it again from the Inbox.`)),
+    Promise.reject(new ApiError(404, `Offer ${offerId} is not in this session. Submit it again from the Inbox.`, undefined, "offer_missing", { id: offerId })),
 
   evaluateOffer: (offerId: string, fixtureId?: string) =>
     http<VerdictView>("POST", `/offers/${enc(offerId)}/evaluate`, { body: fixtureId ? { fixture_id: fixtureId } : {} }),

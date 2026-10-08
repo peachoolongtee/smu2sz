@@ -232,6 +232,9 @@ export function BeforeTheyAsk({ buyerId }: { buyerId: string }) {
         {e.money}
       </p>
       <Disclosure className="mt-2" testId="envelope-details" summary={t("biz.strategy.envelope.details")}>
+        <p className="text-xs text-ink-3" data-testid="envelope-estimate-note">
+          <span className="font-semibold">{t("biz.strategy.envelope.hypothetical")}</span> {t("biz.strategy.envelope.hypothetical.title")}
+        </p>
         <LeverTable levers={e.levers} />
         {e.packages.length ? <Packages packages={e.packages} unlisted={e.unlisted_counters} /> : null}
         {e.zone.length ? <Zone zone={e.zone} /> : null}

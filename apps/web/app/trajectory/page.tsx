@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CashChart, ConcessionMeter, DebtChart } from "@/components/charts";
+import { CashChart, ConcessionMeter, DebtChart } from "@/components/lazy-charts";
 import {
   Badge,
   Callout,

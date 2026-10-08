@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect } from "react";
-import { CashForecast } from "@/components/business/cash-forecast";
+import { CashForecast } from "@/components/lazy-charts";
 import { CurrentFunding } from "@/components/business/current-funding";
 import { FacilityExplainer } from "@/components/business/facility-explainer";
 import { FundingOptions } from "@/components/business/funding-options";
@@ -77,7 +77,7 @@ export default function CashPage() {
   // beside a day-34 recommendation contradicts it). Once covered, a fresh plan is empty (the plan executed), so the decision-time
   // snapshot is "Other plans considered", and without a snapshot there is nothing to show.
   const snapshot = demo.funding;
-  const plan = useAsync(async () => (!h ? null : covered ? (snapshot ?? null) : await planFunding()), [Boolean(h), covered, Boolean(snapshot), h?.state_version]);
+  const plan = useAsync(async () => (!h ? null : covered ? (snapshot ?? null) : await planFunding({}, lang)), [Boolean(h), covered, Boolean(snapshot), h?.state_version, lang]);
   // When the first breach is also the lowest point it is one fact: one tile, not the same figure and day twice.
   const breachIsWorst = unsafe && h?.cash.first_breach_day === h?.cash.lowest_day;
   const today = h?.day ?? 0;

@@ -244,7 +244,7 @@ export async function demoReset(scenario?: string): Promise<void> {
 
 /** GET /borrower-file/{id}.html | .docx | .pdf: fetched with the owner token and saved. Live mode only. */
 export async function downloadFile(path: string, filename: string): Promise<void> {
-  if (isMock) throw new ApiError(0, "Downloads are available in live mode, where the API renders the file.");
+  if (isMock) throw new ApiError(0, "Downloads are available in live mode, where the API renders the file.", undefined, "mock_download");
   return (await live()).downloadFile(path, filename);
 }
 
