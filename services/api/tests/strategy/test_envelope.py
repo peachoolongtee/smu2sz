@@ -21,7 +21,7 @@ from fastapi.testclient import TestClient
 from app.api.runtime import Runtime, set_runtime
 from app.books import Books
 from app.domain.models import FinancialState, Mandate
-from app.strategy import CandidatePackage, envelope
+from app.strategy import CandidatePackage
 from app.strategy.envelope import (
     REBATE,
     TERMS_ALONE,
@@ -33,6 +33,7 @@ from app.strategy.envelope import (
     EnvelopePackage,
     descend,
     early_pay_lever,
+    envelope,
     envelope_answer,
     envelope_facts,
     first_true,

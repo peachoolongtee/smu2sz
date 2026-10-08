@@ -161,18 +161,20 @@ def _scan_max(values: Sequence[int], ok: Callable[[int], bool]) -> Found:
     return Found(max(v for v in values if ok(v)), False, True)
 
 
-def last_true(values: Sequence[int], ok: Callable[[int], bool], *, hint: int | None = None, gallop: bool = False) -> Found:
+def last_true(values: Sequence[int], ok: Callable[[int], bool], *, hint: int | None = None, gallop: bool = False,
+              hint_steps: int = 2) -> Found:
     """Largest value with ok(value), assuming ok holds up to a boundary and fails after it (binary search, then the two
     values past the boundary checked; if one passes the lever is scanned whole and its largest passing value returned).
     A `hint` (a value expected to be the boundary) is tried first: it stands when it passes and the two values past it
     fail, which is the same evidence the search ends with; otherwise the search runs as if there were no hint. With
     `gallop` the search first doubles its steps up from the first value (cheap when the boundary is near it, as for
-    the terms, where a long extension is also the costliest evaluation)."""
+    the terms, where a long extension is also the costliest evaluation). `hint_steps` is how many values past the
+    hint must fail for it to stand (a sibling search's boundary, which had both neighbours checked, stands on one)."""
     if not values or not ok(values[0]):
         return Found(None, True)
     if hint is not None and hint in values:
         i = values.index(hint)
-        if ok(hint) and not any(ok(v) for v in values[i + 1: i + 3]):
+        if ok(hint) and not any(ok(v) for v in values[i + 1: i + 1 + hint_steps]):
             return Found(hint, True)
     lo, hi = 0, len(values)  # values[hi] is past the end: the top of the range is only probed when the search gets there
     step = 1
@@ -193,13 +195,13 @@ def last_true(values: Sequence[int], ok: Callable[[int], bool], *, hint: int | N
     return Found(values[lo], True)
 
 
-def first_true(values: Sequence[int], ok: Callable[[int], bool], *, hint: int | None = None) -> Found:
+def first_true(values: Sequence[int], ok: Callable[[int], bool], *, hint: int | None = None, hint_steps: int = 2) -> Found:
     """Smallest value with ok(value), assuming ok fails up to a boundary and holds after it (see `last_true`)."""
     if not values:
         return Found(None, True)
     if hint is not None and hint in values:
         i = values.index(hint)
-        if ok(hint) and not any(ok(v) for v in values[max(0, i - 2): i]):
+        if ok(hint) and not any(ok(v) for v in values[max(0, i - hint_steps): i]):
             return Found(hint, True)
     if hint != values[0] and ok(values[0]):
         return Found(values[0], True)
@@ -548,11 +550,12 @@ def _cell(v: _Verifier, base: Setting, keep_failures: bool, price_hint: int | No
     that still passes at that price (one whole verifier evaluation). A failing cell shows the verifier's answer at the
     largest price, and only when `keep_failures`."""
     r = v.ranges
-    fp = first_true(r.price, lambda p: v.ok(base._replace(price=p)), hint=price_hint)
+    fp = first_true(r.price, lambda p: v.ok(base._replace(price=p)), hint=price_hint, hint_steps=1)
     if fp.value is None:
         return v.probe(base._replace(price=r.price[-1], rebate=0)) if keep_failures else None
     priced = base._replace(price=fp.value)
-    fr = last_true(r.rebate, lambda x: v.ok(priced._replace(rebate=x)), hint=v.rebate_hint(v.probe(priced)))
+    fr = last_true(r.rebate, lambda x: v.ok(priced._replace(rebate=x)), hint=v.rebate_hint(v.probe(priced)),
+                   hint_steps=1 if price_hint is not None else 2)
     return v.probe(priced._replace(rebate=fr.value or 0))
 
 
