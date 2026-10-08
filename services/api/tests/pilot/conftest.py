@@ -2,7 +2,11 @@
 
 from __future__ import annotations
 
+import importlib.util
+import sys
 from collections.abc import Iterator
+from pathlib import Path
+from types import ModuleType
 
 import pytest
 from fastapi.testclient import TestClient
@@ -12,6 +16,7 @@ from app.config import get_settings
 from app.mandate.fixture import demo_owner_public_key_hex
 from app.persistence import InMemoryLedgerStore
 
+SCRIPTS = Path(__file__).resolve().parents[2] / "scripts"
 OWNER = {"X-Owner-Token": "demo-owner-token"}
 HASH = "a" * 64
 
@@ -52,3 +57,13 @@ def client(runtime: Runtime) -> TestClient:
     from app.main import app
 
     return TestClient(app, headers=OWNER)
+
+
+def load_script(name: str) -> ModuleType:
+    """A module of services/api/scripts/ loaded by path (the folder is not a package)."""
+    spec = importlib.util.spec_from_file_location(name, SCRIPTS / f"{name}.py")
+    assert spec and spec.loader
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[name] = module
+    spec.loader.exec_module(module)
+    return module
