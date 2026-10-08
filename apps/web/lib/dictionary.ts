@@ -828,7 +828,7 @@ export const en = {
   "auth.err.empty": "Enter a token.",
   "err.owner_required": "Owner sign-in required. Sign in with the owner token to use this.",
   "err.owner_rejected": "The API rejected the owner token. Sign in again with the correct token.",
-  "err.not_configured": "The service has no owner credentials set up yet. Set OWNER_TOKEN on the API, or run it in demo mode.",
+  "err.not_configured": "Server credentials not configured. Set OWNER_TOKEN and AGENT_KEY on the API, or run it in demo mode.",
   "err.books_busy": "The books were busy: another change was being saved at the same moment, so nothing was saved. Try again.",
   "err.unreachable": "Cannot reach the API at {url}. Check that the service is running, then try again.",
   "err.download_failed": "The file could not be downloaded (error {status}). Try again.",

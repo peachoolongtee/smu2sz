@@ -44,11 +44,12 @@ export function DemoStepper() {
   return (
     <div className="border-t border-line bg-brand-50 px-4 py-2 lg:px-8" aria-label={t("demo.region")} role="region">
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-        <div className="flex items-center gap-2">
-          <span className="rounded-pill bg-brand-600 px-2 py-0.5 text-xs font-bold uppercase tracking-wide text-white">
+        <div className="flex flex-wrap items-center gap-2">
+          {/* The navy strip above the page already says DEMO on a phone, where the five scene buttons need the whole width. */}
+          <span className="rounded-pill bg-brand-600 px-2 py-0.5 text-xs font-bold uppercase tracking-wide text-white max-sm:hidden">
             {t("demo.label")}
           </span>
-          <ol className="flex items-center gap-1" aria-label={t("demo.scenes")}>
+          <ol className="flex flex-wrap items-center gap-1" aria-label={t("demo.scenes")}>
             {SCENES.map((s) => {
               const active = current?.scene === s.id;
               return (

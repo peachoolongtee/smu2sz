@@ -324,7 +324,7 @@ body {
   /* The fixed bottom bar (the phone tab bar, the Demo stepper) publishes its measured height as --dock-h (app-shell.tsx, useDock).
      Content clears it, and clears the Ask FLOW pill that sits above it from `sm` (40 px tall, 16 px off the bar and 16 px below the
      content); on a phone Ask FLOW is a cell of the bar itself, so only the bar is cleared. From `lg` there is no bar: the pill is at
-     the corner and the page ends 80 px below its content. */
+     the corner and the page ends 80 px below its content (40 px from 1440 px up). */
   .dock-pad {
     padding-bottom: calc(var(--dock-h, 3.5rem) + 1.5rem);
   }
@@ -336,6 +336,12 @@ body {
   @media (min-width: 64rem) {
     .dock-pad {
       padding-bottom: calc(var(--dock-h, 0px) + 5rem);
+    }
+  }
+  /* Business pages (`.dock-pad-margin`): from 1440 px the 1180 px content leaves a margin wider than the pill, so it sits beside the page. */
+  @media (min-width: 90rem) {
+    .dock-pad.dock-pad-margin {
+      padding-bottom: 2.5rem;
     }
   }
 

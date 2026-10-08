@@ -50,7 +50,7 @@ export default function TrajectoryPage() {
                 { value: "EXPECTED", label: t("traj.expected") },
               ]}
             />
-            <label className="flex min-h-10 cursor-pointer items-center gap-2 text-sm text-ink-2">
+            <label className="flex min-h-10 cursor-pointer items-center gap-2 text-sm text-ink-2 touch:min-h-11">
               <input
                 type="checkbox"
                 checked={showCured && Boolean(view?.cured_trajectory)}

@@ -62,7 +62,7 @@ function Slider({
         disabled={disabled}
         aria-valuetext={readout}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="mt-2 h-2 w-full cursor-pointer accent-brand-600 disabled:cursor-not-allowed"
+        className="mt-2 h-2 w-full cursor-pointer accent-brand-600 touch:h-11 disabled:cursor-not-allowed"
       />
       {hint ? <p className="mt-1 text-xs text-ink-3">{hint}</p> : null}
     </div>

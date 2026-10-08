@@ -87,11 +87,11 @@ function LangSwitch() {
 function Brand({ href }: { href: string }) {
   const { t } = useI18n();
   return (
-    <Link href={href} className="flex items-center gap-2 font-semibold text-ink">
+    <Link href={href} className="hit flex items-center gap-2 font-semibold text-ink">
       <span className="grid size-8 place-items-center rounded-pill bg-brand-600 text-white">
         <ShieldIcon />
       </span>
-      <span className="leading-tight">
+      <span className="whitespace-nowrap leading-tight">
         {t("brand.name")}
         <span className="hidden text-xs font-normal text-ink-3 sm:block">{t("brand.tagline")}</span>
       </span>
@@ -334,7 +334,7 @@ function BusinessShell({ children }: { children: ReactNode }) {
           </nav>
           <div className="flex items-center justify-end gap-2 whitespace-nowrap">
             <ApprovalsBadge />
-            <span className="hidden sm:inline-flex" data-testid="demo-data-indicator">
+            <span className="hidden sm:inline-flex lg:hidden xl:inline-flex" data-testid="demo-data-indicator">
               <Badge tone="neutral" title={t("biz.demoData.hint")}>
                 {t("biz.demoData")}
               </Badge>
@@ -344,7 +344,7 @@ function BusinessShell({ children }: { children: ReactNode }) {
           </div>
         </div>
       </header>
-      <main id="main" tabIndex={-1} className="dock-pad mx-auto w-full max-w-[1180px] px-4 pt-5 lg:px-6 lg:pt-6">
+      <main id="main" tabIndex={-1} className="dock-pad dock-pad-margin mx-auto w-full max-w-[1180px] px-4 pt-5 lg:px-6 lg:pt-6">
         {children}
       </main>
       {/* Phones: a tab bar with the same five sections, as in a banking app. */}

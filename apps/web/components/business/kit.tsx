@@ -51,7 +51,7 @@ export function Disclosure({
   /** The caller draws the whole summary (a grid row) and places the `FoldChevron` itself. */
   bare?: boolean;
 }) {
-  const head = summaryClass ?? `flex min-h-10 cursor-pointer list-none items-center gap-2 rounded-pill text-sm font-medium [&::-webkit-details-marker]:hidden ${deep ? "text-on-deep" : card ? "px-4 py-3 font-semibold text-ink" : "text-brand-700"}`;
+  const head = summaryClass ?? `flex min-h-10 touch:min-h-11 cursor-pointer list-none items-center gap-2 rounded-pill text-sm font-medium [&::-webkit-details-marker]:hidden ${deep ? "text-on-deep" : card ? "px-4 py-3 font-semibold text-ink" : "text-brand-700"}`;
   return (
     <details open={defaultOpen || undefined} data-testid={testId} className={`group ${card ? "motion-reveal rounded-card border border-line bg-surface shadow-card" : ""} ${className}`}>
       <summary className={head}>

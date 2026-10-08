@@ -116,6 +116,7 @@ function placeLabels(
   xOf: (day: number) => number,
   fixedX: number[],
   limit: number,
+  labelled: boolean,
 ): Placed[] {
   const sorted = [...candidates].sort((a, b) => Math.abs(b.e.amount_fen) - Math.abs(a.e.amount_fen));
   let chosen: Placed[] = [];
@@ -127,7 +128,7 @@ function placeLabels(
     const x = xOf(c.day);
     if (fixedX.some((f) => Math.abs(f - x) < MIN_LABEL_GAP) || chosen.some((p) => Math.abs(p.x - x) < MIN_LABEL_GAP)) continue;
     const next = arrange([...chosen, { ...c, x, text: `${c.e.label_short ?? c.e.label} ${c.e.amount_short}`, side: "above" }]);
-    if (fits(next)) chosen = next;
+    if (!labelled || fits(next)) chosen = next;
   }
   return chosen;
 }
@@ -166,13 +167,13 @@ export function CashForecast({ h }: { h: HomeView }) {
   const xOf = (day: number) => plotLeft + ((day - today) / Math.max(to - today, 1)) * Math.max(plotRight - plotLeft, 1);
   const bounds = { left: plotLeft + 4, right: box.w - 4 };
   // The largest movements in the window, by the server's own event amounts (ordering fen is plotting, not reporting). A phone draws
-  // no event labels: the marks stay on the line and a tap opens the tooltip with the day's events. Wider, up to four, alternating above
+  // the marks without labels (three at most): a tap opens the tooltip with the day's events. Wider, up to four, alternating above
   // and below the line, none within 24 px of another or of the first unsafe day and the lowest point, which carry their own label.
   const candidates = data
     .flatMap((r) => r.events.map((e) => ({ day: r.day, cash: r.cash, e })))
     .filter((x) => x.e.kind === "FLOW" || x.e.kind === "RECEIPT" || x.e.kind === "EARLY_RECEIPT" || x.e.kind === "ADVANCE" || x.e.kind === "DRAW");
   const fixedX = [breach, lowestRow?.day ?? null].filter((d): d is number => d !== null).map(xOf);
-  const annotations = narrow || box.w === 0 ? [] : placeLabels(candidates, xOf, fixedX, MAX_ANNOTATIONS);
+  const annotations = box.w === 0 ? [] : placeLabels(candidates, xOf, fixedX, narrow ? 3 : MAX_ANNOTATIONS, !narrow);
   // The worst point is the reserve itself when the two figures are the same: one label is enough, and the legend names the reserve.
   const lowestIsReserve = h.cash.lowest_fen === h.cash.floor_fen;
   const ticks: number[] = [];
@@ -229,7 +230,7 @@ export function CashForecast({ h }: { h: HomeView }) {
                 shape={({ cx, cy }: { cx?: number; cy?: number }) => (
                   <g>
                     <circle cx={cx} cy={cy} r={4} fill={RING} stroke={a.e.amount_fen < 0 ? SERIES.floor.stroke : SERIES.plan.stroke} strokeWidth={2} />
-                    <MarkLabel x={cx ?? 0} y={cy ?? 0} text={a.text} below={a.side === "below"} bounds={bounds} />
+                    {narrow ? null : <MarkLabel x={cx ?? 0} y={cy ?? 0} text={a.text} below={a.side === "below"} bounds={bounds} />}
                   </g>
                 )}
               />
