@@ -183,3 +183,54 @@ def test_the_sentences_use_business_words_only(curve0: PriceCurve, curve34: Pric
             assert not any(w in text.lower() for w in _FORBIDDEN), text
         zh = price_sentence(curve, today=today, lang="zh")
         assert not re.search(r"第 ?\d+ ?天|day", zh), zh
+
+
+# ---------------------------------------------------------------- the route
+
+
+@pytest.fixture
+def client(rt_day0: Runtime):
+    set_runtime(rt_day0)
+    from app.main import app
+
+    yield TestClient(app)
+    set_runtime(None)
+
+
+def test_the_route_is_403_with_the_flag_off(client: TestClient, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.delenv("FEATURE_PRICE_CURVE", raising=False)
+    r = client.get("/cash/price-curve", headers=OWNER)
+    assert r.status_code == 403 and r.json()["detail"]["code"] == "FEATURE_DISABLED"
+
+
+def test_the_route_needs_the_owner(client: TestClient, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setenv("FEATURE_PRICE_CURVE", "1")
+    assert client.get("/cash/price-curve").status_code in (401, 403)
+
+
+def test_the_route_answers_the_curve_with_display_strings(client: TestClient, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setenv("FEATURE_PRICE_CURVE", "1")
+    r = client.get("/cash/price-curve", headers=OWNER)
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["hypothetical"] is True and body["flat"] is False
+    assert body["day"] == 0 and body["amount_fen"] == 1_000_000 and body["amount_display"] == "¥10,000.00"
+    assert body["state_version"] == body["source_state_version"] and body["computed_in_seconds"] >= 0
+    assert body["sentence"] == "Cash arriving within the next 30 days is worth 0.89% to you; after that, nothing."
+    first, second, third = body["bands"]
+    assert first["value_display"] == "¥0.00" and first["from_when"] == "today" and first["to_when"] == "today"
+    assert second["value_fen"] == 8911 and second["value_display"] == "¥89.11" and second["value_pct"] == "0.89%"
+    assert (second["from_when"], second["to_when"]) == ("tomorrow", "in 30 days")
+    assert third["value_display"] == "¥0.00" and third["from_when"] == "in 31 days"
+    assert not _DAY_N.search(json.dumps(body))
+
+
+def test_the_route_speaks_chinese_and_serves_the_second_call_from_its_cache(client: TestClient, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setenv("FEATURE_PRICE_CURVE", "1")
+    zh = client.get("/cash/price-curve?lang=zh", headers=OWNER).json()
+    assert zh["sentence"] == "未来 30 天内到账的现金对你价值 0.89%；之后则没有。"
+    assert zh["bands"][1]["to_when"] == "30 天后"
+    t0 = time.perf_counter()
+    again = client.get("/cash/price-curve", headers=OWNER)
+    assert again.status_code == 200 and time.perf_counter() - t0 < 1.0
+    assert client.get("/cash/price-curve?lang=fr", headers=OWNER).status_code == 422
