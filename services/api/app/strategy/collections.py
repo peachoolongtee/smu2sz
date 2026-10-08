@@ -97,6 +97,8 @@ class Ceiling(Contract):
     cost_without_fen: int  # C0
     cost_with_fen: int | None  # C1 at the largest rate
     beats_by_fen: int | None  # C0 - C1
+    best_rate_bp: int | None  # the rate at or under the ceiling that saves most (the lowest on a tie)
+    best_saving_fen: int | None  # C0 - C1 at that rate
     next_rate_bp: int | None  # the next 5 bp step (within the mandate's cap), and how much dearer than the plan it is
     next_rate_dearer_by_fen: int | None
 
@@ -114,6 +116,8 @@ class ReceivableWorth(Contract):
     effects: list[Effect]
     gross_saving_fen: int
     ceilings: list[Ceiling]
+    best_rate_bp: int | None  # on the plan's-need face: the rate that saves most ...
+    best_saving_fen: int  # ... and what it saves against the funding it replaces (0 when no rate beats the plan)
     net_saving_fen: int
     no_saving: bool  # net_saving_fen <= 0
     net_saving_text: str
@@ -219,14 +223,17 @@ def _ceiling(books: Books, mandate: Mandate, r: Receivable, face_kind: Literal["
     best = _last_true(rates, beats) if len(rates) > 1 else None
     if not best:
         return Ceiling(face_kind=face_kind, face_fen=face_fen, face_label=label, largest_rate_bp=None,
-                       cost_without_fen=c0, cost_with_fen=None, beats_by_fen=None, next_rate_bp=None,
-                       next_rate_dearer_by_fen=None)
+                       cost_without_fen=c0, cost_with_fen=None, beats_by_fen=None, best_rate_bp=None,
+                       best_saving_fen=None, next_rate_bp=None, next_rate_dearer_by_fen=None)
     g_best = gap(best)
     assert g_best is not None
+    swept = [(rate, -g) for rate in rates[1:rates.index(best) + 1] if (g := gap(rate)) is not None]
+    best_rate, best_saving = min(swept, key=lambda rs: (-rs[1], rs[0]))
     nxt = best + RATE_STEP_BP if best + RATE_STEP_BP <= cap_bp else None
     g_next = gap(nxt) if nxt is not None else None
     return Ceiling(face_kind=face_kind, face_fen=face_fen, face_label=label, largest_rate_bp=best,
-                   cost_without_fen=c0, cost_with_fen=c0 + g_best, beats_by_fen=-g_best, next_rate_bp=nxt,
+                   cost_without_fen=c0, cost_with_fen=c0 + g_best, beats_by_fen=-g_best, best_rate_bp=best_rate,
+                   best_saving_fen=best_saving, next_rate_bp=nxt,
                    next_rate_dearer_by_fen=g_next)
 
 
@@ -263,7 +270,7 @@ def _effects(books: Books, mandate: Mandate, store: LedgerStore, day: int, r: Re
         if first_breach is not None and day < first_breach < r.due_day and first_breach != early:
             when = when_text(first_breach, day, lang)
             targets.append(("first_breach", first_breach, t(lang, f"if it arrived {when}, when cash first runs short",
-                                                            f"如果 {when}(现金首次吃紧时)到账")))
+                                                            f"如果 {when}（现金首次吃紧时）到账")))
     out: list[Effect] = []
     for kind, rday, label in targets:
         try:  # the receipt is refused where it is not modelled (a financed or overdue receivable on another day)
@@ -337,82 +344,86 @@ def _sentences(*, lang: Lang, action: Action, who: str, r: Receivable, day: int,
     left = today_effect.need_left_fen if today_effect is not None else 0
     if today_effect is None or saving <= 0:
         if_arrived = t(lang, "If it arrived today it would not lower your funding cost.",
-                       "如果今天到账,不会降低您的融资成本。")
+                       "如果今天到账，不会降低您的融资成本。")
     else:
-        rest = (t(lang, f" and leave {fmt_yuan(left)} still to cover", f",还剩 {fmt_yuan(left)} 要筹措") if left > 0
-                else t(lang, " and clear the shortfall", ",并补上缺口"))
+        rest = (t(lang, f" and leave {fmt_yuan(left)} still to cover", f"，还剩 {fmt_yuan(left)} 要筹措") if left > 0
+                else t(lang, " and clear the shortfall", "，并补上缺口"))
         if_arrived = t(lang, f"If it arrived today it would save you {fmt_yuan(saving)}{rest}.",
-                       f"如果今天到账,能为您省 {fmt_yuan(saving)}{rest}。")
+                       f"如果今天到账，能为您省 {fmt_yuan(saving)}{rest}。")
     need_c = ceilings[-1] if ceilings else None
     whole_c = ceilings[0] if ceilings else None
     no_discount = {
         "overdue": t(lang, " No early-payment discount applies to an invoice already due.", "已到期的发票不适用提前付款折扣。"),
-        "financed": t(lang, " It is already financed, so the lender is repaid first.", "它已经融资,收款后先还融资方。"),
-        "too_late": t(lang, " It is too close to its due date for an early payment.", "离到期日太近,来不及提前付款。"),
+        "financed": t(lang, " It is already financed, so the lender is repaid first.", "它已经融资，收款后先还融资方。"),
+        "too_late": t(lang, " It is too close to its due date for an early payment.", "离到期日太近，来不及提前付款。"),
         "no_plan": "",
     }.get(why_none, "")
     if action == "escalate":
         if lapsed:
             return (t(lang, f"Escalate with {who}: they promised to pay early on {due} and did not.",
-                      f"向 {who} 升级处理:他们承诺提前支付{due},却没有付。"),
+                      f"向 {who} 升级处理：他们承诺提前支付{due}，却没有付。"),
                     t(lang, f"The promised early payment lapsed, so the invoice is back on its due date. {if_arrived}",
-                      f"承诺的提前付款已落空,发票回到原到期日。{if_arrived}"))
+                      f"承诺的提前付款已落空，发票回到原到期日。{if_arrived}"))
         return (t(lang, f"Escalate with {who}: the {face} is {days_late} days overdue.",
-                  f"向 {who} 升级处理:这笔 {face} 已逾期 {days_late} 天。"),
+                  f"向 {who} 升级处理：这笔 {face} 已逾期 {days_late} 天。"),
                 t(lang, f"It has been overdue for {days_late} days, past the point where a call is enough. {if_arrived}{no_discount}",
-                  f"已逾期 {days_late} 天,光打电话已不够。{if_arrived}{no_discount}"))
+                  f"已逾期 {days_late} 天，光打电话已不够。{if_arrived}{no_discount}"))
     if action == "call_now":
         free = (t(lang, f"it saves you {fmt_yuan(saving)} and is the only free action",
-                  f"能为您省 {fmt_yuan(saving)},而且是唯一不用花钱的办法") if saving > 0
+                  f"能为您省 {fmt_yuan(saving)}，而且是唯一不用花钱的办法") if saving > 0
                 else t(lang, "it is the only free action", "这是唯一不用花钱的办法"))
-        return (t(lang, f"Call {who} today for the {face}: {free}.", f"今天就联系 {who} 催收这笔 {face}:{free}。"),
-                t(lang, f"The {face} was due {when}. {if_arrived}{no_discount}", f"这笔 {face} 已于{when}到期。{if_arrived}{no_discount}"))
+        return (t(lang, f"Call {who} today for the {face}: {free}.", f"今天就联系 {who} 催收这笔 {face}：{free}。"),
+                t(lang, f"The {face} was due {when}. {if_arrived}{no_discount}", f"这笔 {face} 的到期日是 {when}。{if_arrived}{no_discount}"))
     if action == "reminder":
         return (t(lang, f"Remind {who} about {due}: it falls inside the stretch where cash runs short.",
-                  f"提醒 {who}:{due},正落在现金吃紧的时段内。"),
+                  f"提醒 {who}：{due}，正落在现金吃紧的时段内。"),
                 t(lang, f"Cash is below your reserve when it is due, so paying on time matters. {if_arrived}",
-                  f"到期时现金低于您的储备,按时付款很重要。{if_arrived}"))
+                  f"到期时现金低于您的储备，按时付款很重要。{if_arrived}"))
     if action == "offer_early_pay":
         assert need_c is not None and whole_c is not None and need_c.largest_rate_bp is not None
+        assert need_c.best_rate_bp is not None and need_c.best_saving_fen is not None
         top = fmt_pct(bp(need_c.largest_rate_bp))
+        best = fmt_pct(bp(need_c.best_rate_bp))
         on = fmt_yuan(need_c.face_fen)
-        beats = fmt_yuan(need_c.beats_by_fen or 0)
-        whole = (t(lang, f" ({fmt_pct(bp(whole_c.largest_rate_bp))} on the whole)",
-                   f"(整张发票最高 {fmt_pct(bp(whole_c.largest_rate_bp))})")
-                 if whole_c is not need_c and whole_c.largest_rate_bp else "")
-        fin = t(lang, "; or finance it", ";或者改为融资") if advanced else ""
-        sentence = t(lang, f"On the {face} due {when}, early payment at up to {top} on {on}{whole} beats the funding it "
-                           f"replaces by {beats} at the top rate{fin}.",
-                     f"{when}到期的 {face}:对 {on} 提前付款,折扣最高 {top}{whole}仍比它所替代的融资划算,"
-                     f"最高折扣时省 {beats}{fin}。")
+        saves = fmt_yuan(need_c.best_saving_fen)
+        whole_bp = whole_c.largest_rate_bp if whole_c is not need_c else None
+        whole = (t(lang, f" ({fmt_pct(bp(whole_bp))} on the whole invoice)", f"（整张发票 {fmt_pct(bp(whole_bp))}）")
+                 if whole_bp else "")
+        fin = t(lang, " Or finance it.", "或者改为融资。") if advanced else ""
+        limit = (t(lang, f"anything up to {top}{whole} still beats it", f"最高 {top}{whole}仍比融资划算")
+                 if need_c.best_rate_bp != need_c.largest_rate_bp
+                 else t(lang, f"{top}{whole} is the most that still beats it", f"{top}{whole}是仍比融资划算的上限"))
+        sentence = t(lang, f"On the {face} due {when}, early payment at {best} on {on} saves {saves} against the "
+                           f"funding it replaces; {limit}.{fin}",
+                     f"{when}到期的 {face}：对 {on} 按 {best} 提前付款，比它所替代的融资省 {saves}；{limit}。{fin}")
         nxt = ""
         if need_c.next_rate_bp is not None and (need_c.next_rate_dearer_by_fen or 0) > 0:
             nxt = t(lang, f" {fmt_pct(bp(need_c.next_rate_bp))} would cost {fmt_yuan(need_c.next_rate_dearer_by_fen or 0)} more than the plan.",
                     f"{fmt_pct(bp(need_c.next_rate_bp))} 就会比原计划多花 {fmt_yuan(need_c.next_rate_dearer_by_fen or 0)}。")
         return (sentence, t(lang, f"Up to {top} on {on} is what you can afford before the discount costs more than the "
                                   f"funding it replaces.{nxt} {if_arrived}",
-                            f"{on} 的折扣在 {top} 以内是您负担得起的,再高就比它所替代的融资更贵。{nxt}{if_arrived}"))
+                            f"{on} 的折扣在 {top} 以内是您负担得起的，再高就比它所替代的融资更贵。{nxt}{if_arrived}"))
     if action == "finance":
         stands = (t(lang, " The standing plan already advances against it.", "现有计划已对它做了融资垫款。") if advanced else "")
         return (t(lang, f"Finance {due} rather than ask for it early: no early-payment discount costs less than the funding.",
-                  f"对 {due} 改用融资,不必提前收款:没有哪档提前付款折扣比融资便宜。"),
+                  f"对 {due} 改用融资，不必提前收款：没有哪档提前付款折扣比融资便宜。"),
                 t(lang, f"{if_arrived}{stands}{no_discount}", f"{if_arrived}{stands}{no_discount}"))
     # wait
     if r.status != "OPEN":
         return (t(lang, f"Wait: {due} is already financed; when it arrives the lender is repaid first.",
-                  f"等待:{due}已经融资,收款后先还融资方。"), t(lang, f"{if_arrived}", f"{if_arrived}"))
+                  f"等待：{due}已经融资，收款后先还融资方。"), t(lang, f"{if_arrived}", f"{if_arrived}"))
     if episode is None:
         return (t(lang, f"Wait: {due} falls in no shortfall; there is nothing to cover.",
-                  f"等待:{due}不涉及任何缺口,无需筹措。"), t(lang, "No shortfall is ahead.", "前面没有现金缺口。"))
+                  f"等待：{due}不涉及任何缺口，无需筹措。"), t(lang, "No shortfall is ahead.", "前面没有现金缺口。"))
     if r.due_day < episode[0]:
-        return (t(lang, f"Wait: {due} arrives before cash runs short.", f"等待:{due}会在现金吃紧之前到账。"),
+        return (t(lang, f"Wait: {due} arrives before cash runs short.", f"等待：{due}会在现金吃紧之前到账。"),
                 t(lang, "It lands before the shortfall begins, so nothing needs chasing yet.",
-                  "它在缺口出现前到账,暂时不必催收。"))
+                  "它在缺口出现前到账，暂时不必催收。"))
     if promised and r.due_day <= episode[1]:
-        return (t(lang, f"Wait: {who} has promised to pay {due} early.", f"等待:{who} 已承诺提前支付 {due}。"),
+        return (t(lang, f"Wait: {who} has promised to pay {due} early.", f"等待：{who} 已承诺提前支付 {due}。"),
                 t(lang, "The promised payment is still awaited.", "承诺的付款还在等待中。"))
     return (t(lang, f"Wait: {due} is beyond the shortfall; chasing it now saves nothing extra.",
-              f"等待:{due}超出了缺口范围,现在去催收不会多省什么。"),
+              f"等待：{due}超出了缺口范围，现在去催收不会多省什么。"),
             t(lang, f"The invoices due before it already cover what you need. {if_arrived}",
               f"在它之前到期的发票已经够用。{if_arrived}"))
 
@@ -450,6 +461,8 @@ def receivables_worth(books: Books, mandate: Mandate, *, store: LedgerStore, day
             gross = today_effect.saving_fen if today_effect is not None else (effects[0].saving_fen if effects else 0)
             ceilings, why_none = _ceilings(books, mandate, r, base_plan.need_fen, c0, lang)
             need_ceiling = ceilings[-1] if ceilings and ceilings[-1].largest_rate_bp else None
+            best_rate = need_ceiling.best_rate_bp if need_ceiling is not None else None
+            best_saving = (need_ceiling.best_saving_fen or 0) if need_ceiling is not None else 0
             lapsed = r.id in lapsed_ids
             action = _decide(r=r, day=day, days_late=days_late, lapsed=lapsed, promised=r.id in awaited_ids,
                              episode=episode, beyond=beyond, need_ceiling=need_ceiling)
@@ -465,7 +478,7 @@ def receivables_worth(books: Books, mandate: Mandate, *, store: LedgerStore, day
                 receivable_id=r.id, buyer_id=r.counterparty_id, buyer_name=who, outstanding_fen=r.outstanding_fen,
                 due_day=r.due_day, due_when=when_text(r.due_day, day, lang), days_late=days_late, status=r.status,
                 financed=r.status == "FINANCED", effects=effects, gross_saving_fen=gross, ceilings=ceilings,
-                net_saving_fen=net, no_saving=net <= 0, net_saving_text=saving_text(net, lang), action=action,
+                best_rate_bp=best_rate, best_saving_fen=best_saving, net_saving_fen=net, no_saving=net <= 0, net_saving_text=saving_text(net, lang), action=action,
                 action_sentence=sentence, reason_sentence=reason))
     ranked = sorted(rows, key=lambda w: (-w.net_saving_fen, -w.gross_saving_fen, w.due_day, w.receivable_id))
     by_gross = sorted(rows, key=lambda w: (-w.gross_saving_fen, w.due_day, w.receivable_id))
@@ -473,7 +486,7 @@ def receivables_worth(books: Books, mandate: Mandate, *, store: LedgerStore, day
         rows=ranked, gross_order=[w.receivable_id for w in by_gross],
         top_action=ranked[0].action_sentence if ranked else t(lang, "Nothing is waiting to be collected.", "没有待收的应收款。"),
         ranking_note=t(lang, "Ranked by what collecting each saves you, net of any discount that earns it.",
-                       "按收回每一笔能为您省多少排序,已扣除为此给出的折扣。"),
+                       "按收回每一笔能为您省多少排序，已扣除为此给出的折扣。"),
         first_breach_day=first_breach, source_state_version=state.state_version,
         computed_in_seconds=round(time.perf_counter() - started, 3))
 
