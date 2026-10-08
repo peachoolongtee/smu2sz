@@ -37,8 +37,11 @@ test("day 0: the summary answers who owes what, with no empty panels", async ({ 
   await expect(page.getByTestId("recv-none")).toHaveCount(0);
   const row = page.getByTestId("recv-RCV-A");
   await expect(row).toContainText("Foshan Home Retail Co.");
-  await expect(row).toContainText("RCV-A");
   await expect(row).toContainText("in 32 days");
+  // The record id is a level-2 fact: not in the row, one chevron down.
+  await expect(row).not.toContainText("RCV-A");
+  await page.getByTestId("recv-toggle-RCV-A").click();
+  await expect(page.getByTestId("recv-detail-RCV-A")).toContainText("RCV-A");
   await expect(page.getByRole("heading", { name: "Expected early payments" })).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "Payments received" })).toHaveCount(0);
   await expect(page.locator("#recv-promised, #recv-receipts")).toHaveCount(0);
@@ -53,9 +56,11 @@ test("day 34: the late invoice leads, the overdue total is the server's, and the
   await expect(rows.first()).toContainText("Foshan Home Retail Co.");
   await expect(rows.first()).toContainText("2 days late");
   await expect(rows.first()).toContainText("2 days ago");
-  // The invoice id is a muted second line under the buyer, not part of the name.
-  await expect(rows.first().locator("td").first()).toContainText("Foshan Home Retail Co.");
-  await expect(rows.first().locator("td").first().locator("span.block")).toHaveText("RCV-A");
+  // The buyer is a monogram and a name; the invoice id waits behind the row's chevron (level 2).
+  await expect(rows.first()).not.toContainText("RCV-A");
+  await expect(rows.first().locator("td").nth(1)).toContainText("Foshan Home Retail Co.");
+  await page.getByTestId("recv-toggle-RCV-A").click();
+  await expect(page.getByTestId("recv-detail-RCV-A")).toContainText("RCV-A");
   await expect(page.getByRole("heading", { name: "Expected early payments" })).toBeVisible();
   await expect(page.getByTestId("promised-RCV-A")).toContainText("¥255,013.80");
   await expect(page.getByRole("heading", { name: "Payments received" })).toBeVisible();

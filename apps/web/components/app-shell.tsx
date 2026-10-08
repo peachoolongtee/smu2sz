@@ -93,7 +93,7 @@ function Brand({ href }: { href: string }) {
       </span>
       <span className="leading-tight">
         {t("brand.name")}
-        <span className="hidden text-[0.7rem] font-normal text-ink-3 sm:block">{t("brand.tagline")}</span>
+        <span className="hidden text-xs font-normal text-ink-3 sm:block">{t("brand.tagline")}</span>
       </span>
     </Link>
   );
@@ -174,7 +174,7 @@ function AccountMenu() {
   return (
     <details className="menu relative" data-testid="account-menu">
       <summary className="motion-press flex min-h-8 cursor-pointer list-none items-center rounded-pill border border-line-ui px-3 text-xs font-medium text-ink-2 hover:bg-subtle [&::-webkit-details-marker]:hidden" aria-label={t("account.menu")}>
-        <span aria-hidden className="grid size-5 place-items-center rounded-pill bg-brand-50 text-[0.65rem] font-bold text-brand-700">
+        <span aria-hidden className="grid size-6 place-items-center rounded-pill bg-brand-50 text-xs font-bold text-brand-700">
           {t("account.initial")}
         </span>
       </summary>
@@ -289,7 +289,7 @@ function BusinessShell({ children }: { children: ReactNode }) {
                     href={n.href}
                     aria-current={active ? "page" : undefined}
                     aria-label={t(n.key)}
-                    className={`motion-press flex min-h-14 flex-col items-center justify-center gap-0.5 px-1 text-[0.6875rem] font-medium ${active ? "text-ink" : "text-ink-3 hover:text-ink"}`}
+                    className={`motion-press flex min-h-14 flex-col items-center justify-center gap-0.5 px-1 text-xs font-medium ${active ? "text-ink" : "text-ink-3 hover:text-ink"}`}
                   >
                     <Icon width={20} height={20} className={`transition-colors duration-(--dur) ${active ? SECTIONS[section].solidText : ""}`} />
                     <span className="max-w-full truncate">{t(TAB_LABEL[n.href] ?? n.key)}</span>
@@ -398,7 +398,7 @@ function DemoShell({ children }: { children: ReactNode }) {
               </div>
             ) : null}
           </header>
-          <div className="fixed inset-x-0 bottom-0 z-30 shadow-[0_-4px_12px_rgb(15_28_46/0.08)] lg:static lg:shadow-none">
+          <div className="fixed inset-x-0 bottom-0 z-30 shadow-up lg:static lg:shadow-none">
             <DemoStepper />
           </div>
         </div>

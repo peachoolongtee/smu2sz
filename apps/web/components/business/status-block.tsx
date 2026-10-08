@@ -39,7 +39,7 @@ export function StatusBlock({ h }: { h: HomeView }) {
   const hasHeadroom = h.cash.headroom_short !== undefined || h.cash.lowest_headroom_short !== undefined;
   return (
     <section aria-labelledby="home-status-title" className="on-deep motion-reveal rounded-card bg-brand-900 p-5 text-on-deep lg:p-6" data-testid="home-status" data-status={h.status}>
-      <span className={`inline-flex items-center gap-1.5 rounded-pill px-3 py-1 text-[0.6875rem] font-bold uppercase tracking-wide text-ink ${pill}`} data-testid="home-status-word">
+      <span className={`inline-flex items-center gap-1.5 rounded-pill px-3 py-1 text-xs font-bold uppercase tracking-wide text-ink ${pill}`} data-testid="home-status-word">
         {/* The dot repeats the pill's status as a mark; it pulses once when the status asks for the owner (never on a calm one). */}
         <span aria-hidden className={`relative size-1.5 shrink-0 rounded-pill bg-ink text-ink ${pulses ? "motion-pulse" : ""}`} />
         {h.status_text ?? te("homestatus", h.status)}

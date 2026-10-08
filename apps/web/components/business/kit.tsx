@@ -41,16 +41,46 @@ export function FactTile({ label, children, tone = "neutral", valueTone, testId,
   );
 }
 
+/** The one chevron of every fold and row disclosure: it points right and turns a quarter when its `<details>` (`group`) or `open` is set. */
+export function FoldChevron({ deep = false, open, className = "" }: { deep?: boolean; open?: boolean; className?: string }) {
+  return (
+    <ChevronRightIcon
+      className={`shrink-0 transition-transform duration-(--dur) ease-out ${open === undefined ? "group-open:rotate-90" : open ? "rotate-90" : ""} ${deep ? "text-on-deep-muted" : "text-ink-3"} ${className}`}
+    />
+  );
+}
+
 /**
- * Details behind a click: a native `<details>` (keyboard and screen-reader friendly, the open state lives in the DOM)
- * with a chevron that turns when open and a body that opens by height (globals.css `.disclosure-body`). Inside a card it is a
- * quiet row; `card` gives it a card of its own.
+ * Details behind a click, the one fold of the app: a native `<details>` (keyboard and screen-reader friendly, the open state
+ * lives in the DOM) with the one chevron and a body that opens by height (globals.css `.disclosure-body`). Inside a card it is
+ * a quiet row; `card` gives it a card of its own. Its label comes from one small set: "Details", "Why", "Show the calculation",
+ * "Audit details" (`biz.details.plan`, `biz.hero.why`, `biz.calculation`, `biz.auditDetails`); a fold that names its own
+ * content (the original message, "Show 3 more") says so. `summaryClass` replaces the summary's look for a custom head.
  */
-export function Disclosure({ summary, children, testId, card = false, className = "", defaultOpen = false, deep = false }: { summary: ReactNode; children: ReactNode; testId?: string; card?: boolean; className?: string; defaultOpen?: boolean; deep?: boolean }) {
+export function Disclosure({
+  summary,
+  children,
+  testId,
+  card = false,
+  className = "",
+  defaultOpen = false,
+  deep = false,
+  summaryClass,
+}: {
+  summary: ReactNode;
+  children: ReactNode;
+  testId?: string;
+  card?: boolean;
+  className?: string;
+  defaultOpen?: boolean;
+  deep?: boolean;
+  summaryClass?: string;
+}) {
+  const head = summaryClass ?? `flex min-h-10 cursor-pointer list-none items-center gap-2 rounded-pill text-sm font-medium [&::-webkit-details-marker]:hidden ${deep ? "text-on-deep" : card ? "px-4 py-3 font-semibold text-ink" : "text-brand-700"}`;
   return (
     <details open={defaultOpen || undefined} data-testid={testId} className={`group ${card ? "motion-reveal rounded-card border border-line bg-surface shadow-card" : ""} ${className}`}>
-      <summary className={`flex min-h-10 cursor-pointer list-none items-center gap-2 rounded-pill text-sm font-medium [&::-webkit-details-marker]:hidden ${deep ? "text-on-deep" : card ? "px-4 py-3 font-semibold text-ink" : "text-brand-700"}`}>
-        <ChevronRightIcon className={`shrink-0 transition-transform duration-(--dur) ease-out group-open:rotate-90 ${deep ? "text-on-deep-muted" : "text-ink-3"}`} />
+      <summary className={head}>
+        <FoldChevron deep={deep} />
         <span className="min-w-0 flex-1">{summary}</span>
       </summary>
       <div className="disclosure-body">

@@ -106,6 +106,8 @@ test.describe("desktop", () => {
     await expect(page.getByTestId("recv-ranking-note")).toContainText("Ranked by what collecting each saves you");
     await expect(page.getByTestId("recv-worth-RCV-A")).toContainText("Saves ¥");
     await expect(page.getByTestId("recv-RCV-A")).not.toContainText("before any discount");
+    // The sentence for the step is one chevron down, with the reason and the record id.
+    await page.getByTestId("recv-toggle-RCV-A").click();
     const action = page.getByTestId("recv-action-RCV-A");
     await expect(action).toContainText("early payment");
     await expect(page.getByTestId("recv-RCV-A")).toContainText("Offer early payment");
@@ -118,10 +120,14 @@ test.describe("desktop", () => {
     await page.goto("/receivables");
     const rows = page.locator("#recv-open tbody tr");
     await expect(rows.first()).toHaveAttribute("data-testid", "recv-RCV-A");
-    await expect(rows.first().locator("td").first().locator("span.block")).toHaveText("RCV-A");
+    // Ids are level 2: not in the row, the server's rank is a numeral, and the sentence opens from the row's chevron.
+    await expect(rows.first()).not.toContainText("RCV-A");
+    await expect(rows.first().locator("td").first()).toHaveText("1");
     await expect(page.getByTestId("recv-ranking-note")).toHaveCount(1);
     await expect(page.getByTestId("recv-worth-RCV-A")).toContainText("Saves ¥");
+    await page.getByTestId("recv-toggle-RCV-A").click();
     await expect(page.getByTestId("recv-action-RCV-A")).toContainText("Call Foshan Home Retail Co.");
+    await expect(page.getByTestId("recv-detail-RCV-A")).toContainText("RCV-A");
     // The action word is the first thing in the action cell, as a pill from the dictionary.
     await expect(rows.first().locator("td").last()).toContainText("Call now");
     await expect(rows.first().locator("td").last().getByText("Call now", { exact: true })).toHaveCount(1);
@@ -286,6 +292,7 @@ test.describe("phone", () => {
     await expect(list).toBeVisible();
     await expect(page.getByTestId("recv-ranking-note")).toBeVisible();
     await expect(page.getByTestId("recv-list-worth-RCV-A")).toContainText("Saves ¥");
+    await list.locator("li").first().locator("summary").first().click();
     await expect(page.getByTestId("recv-list-action-RCV-A-reason")).not.toBeEmpty();
     await expect(page.getByTestId("recv-list-action-RCV-A")).toContainText("Call Foshan Home Retail Co.");
     await expect(list.locator("li").first()).toContainText("Call now");

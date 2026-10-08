@@ -1632,6 +1632,12 @@ export const en = {
   "alerts.waiting.short": "Waiting for your approval",
   "demo.strip.label": "DEMO",
   "demo.strip.text": "Synthetic data. No real funds move.",
+  "biz.recv.filter.all": "All",
+  "biz.recv.filter.late": "Late",
+  "biz.recv.filter.soon": "Due soon",
+  "biz.recv.filter.label": "Show invoices",
+  "biz.recv.filter.none": "No invoices in this view.",
+  "biz.recv.rank": "Rank",
 } as const;
 
 export type DictKey = keyof typeof en;
@@ -3263,4 +3269,10 @@ export const zh: Record<DictKey, string> = {
   "alerts.waiting.short": "等待您批准",
   "demo.strip.label": "演示",
   "demo.strip.text": "合成数据，不会动用任何真实资金。",
+  "biz.recv.filter.all": "全部",
+  "biz.recv.filter.late": "逾期",
+  "biz.recv.filter.soon": "即将到期",
+  "biz.recv.filter.label": "筛选发票",
+  "biz.recv.filter.none": "此筛选下没有发票。",
+  "biz.recv.rank": "排名",
 };
