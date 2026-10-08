@@ -1,0 +1,141 @@
+{
+  "hypothetical": true,
+  "state_version": 1,
+  "day": 0,
+  "computed_in_seconds": 0,
+  "rows": [
+    {
+      "receivable_id": "RCV-A",
+      "buyer_id": "BUYER-1",
+      "buyer_name": "Foshan Home Retail Co.",
+      "outstanding_fen": 42000000,
+      "due_day": 32,
+      "due_when": "in 32 days",
+      "days_late": 0,
+      "status": "OPEN",
+      "financed": false,
+      "effects": [
+        {
+          "kind": "today",
+          "label": "if it arrived today",
+          "receipt_day": 0,
+          "receipt_when": "today",
+          "saving_fen": 311393,
+          "no_saving": false,
+          "saving_text": "¥3,113.93",
+          "need_left_fen": 0,
+          "breach_days_removed": 20,
+          "alerts_removed": [
+            "RESERVE_BREACH_AHEAD"
+          ],
+          "after_needs_owner": false,
+          "after_executable_now": true,
+          "saving_display": "¥3,113.93",
+          "need_left_display": "¥0.00"
+        },
+        {
+          "kind": "before_due",
+          "label": "if it arrived 5 days before it is due",
+          "receipt_day": 27,
+          "receipt_when": "in 27 days",
+          "saving_fen": 53249,
+          "no_saving": false,
+          "saving_text": "¥532.49",
+          "need_left_fen": 36000000,
+          "breach_days_removed": 5,
+          "alerts_removed": [],
+          "after_needs_owner": false,
+          "after_executable_now": true,
+          "saving_display": "¥532.49",
+          "need_left_display": "¥360,000.00"
+        },
+        {
+          "kind": "first_breach",
+          "label": "if it arrived in 12 days, when cash first runs short",
+          "receipt_day": 12,
+          "receipt_when": "in 12 days",
+          "saving_fen": 311393,
+          "no_saving": false,
+          "saving_text": "¥3,113.93",
+          "need_left_fen": 0,
+          "breach_days_removed": 20,
+          "alerts_removed": [
+            "RESERVE_BREACH_AHEAD"
+          ],
+          "after_needs_owner": false,
+          "after_executable_now": true,
+          "saving_display": "¥3,113.93",
+          "need_left_display": "¥0.00"
+        }
+      ],
+      "gross_saving_fen": 311393,
+      "ceilings": [
+        {
+          "face_kind": "whole",
+          "face_fen": 42000000,
+          "face_label": "the whole invoice",
+          "largest_rate_bp": 70,
+          "cost_without_fen": 311393,
+          "cost_with_fen": 294000,
+          "beats_by_fen": 17393,
+          "mid_rate_bp": 35,
+          "mid_saving_fen": 164393,
+          "next_rate_bp": 75,
+          "next_rate_dearer_by_fen": 3607,
+          "face_display": "¥420,000.00",
+          "largest_rate_display": "0.70%",
+          "cost_without_display": "¥3,113.93",
+          "cost_with_display": "¥2,940.00",
+          "beats_by_display": "¥173.93",
+          "mid_rate_display": "0.35%",
+          "mid_saving_display": "¥1,643.93",
+          "next_rate_display": "0.75%",
+          "next_rate_dearer_by_display": "¥36.07"
+        },
+        {
+          "face_kind": "need",
+          "face_fen": 40500000,
+          "face_label": "the plan's need",
+          "largest_rate_bp": 75,
+          "cost_without_fen": 311393,
+          "cost_with_fen": 305454,
+          "beats_by_fen": 5939,
+          "mid_rate_bp": 35,
+          "mid_saving_fen": 168848,
+          "next_rate_bp": 80,
+          "next_rate_dearer_by_fen": 14425,
+          "face_display": "¥405,000.00",
+          "largest_rate_display": "0.75%",
+          "cost_without_display": "¥3,113.93",
+          "cost_with_display": "¥3,054.54",
+          "beats_by_display": "¥59.39",
+          "mid_rate_display": "0.35%",
+          "mid_saving_display": "¥1,688.48",
+          "next_rate_display": "0.80%",
+          "next_rate_dearer_by_display": "¥144.25"
+        }
+      ],
+      "mid_rate_bp": 35,
+      "mid_saving_fen": 168848,
+      "net_saving_fen": 5939,
+      "no_saving": false,
+      "net_saving_text": "¥59.39",
+      "action": "offer_early_pay",
+      "action_sentence": "On the ¥420,000.00 due in 32 days, early payment at up to 0.75% on ¥405,000.00 (0.70% on the whole invoice) still beats the funding it replaces: ¥1,688.48 saved at 0.35%, ¥59.39 at the limit. Or finance it.",
+      "reason_sentence": "Up to 0.75% on ¥405,000.00 is what you can afford before the discount costs more than the funding it replaces. 0.80% would cost ¥144.25 more than the plan. If it arrived today it would save you ¥3,113.93 and clear the shortfall.",
+      "hypothetical": true,
+      "outstanding_display": "¥420,000.00",
+      "gross_saving_display": "¥3,113.93",
+      "mid_rate_display": "0.35%",
+      "mid_saving_display": "¥1,688.48",
+      "net_saving_display": "¥59.39"
+    }
+  ],
+  "gross_order": [
+    "RCV-A"
+  ],
+  "top_action": "On the ¥420,000.00 due in 32 days, early payment at up to 0.75% on ¥405,000.00 (0.70% on the whole invoice) still beats the funding it replaces: ¥1,688.48 saved at 0.35%, ¥59.39 at the limit. Or finance it.",
+  "ranking_note": "Ranked by what collecting each saves you, net of any discount that earns it.",
+  "first_breach_day": 12,
+  "source_state_version": 1
+}

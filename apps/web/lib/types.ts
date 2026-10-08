@@ -1296,6 +1296,127 @@ export interface ReceiptRow {
   formula: string;
 }
 
+/** One band of the cash price curve: what the stated amount is worth if it arrives on days from_day..to_day. */
+export interface PriceBand {
+  from_day: Day;
+  to_day: Day;
+  from_when: string;
+  to_when: string;
+  value_fen: Fen;
+  value_bp: number;
+  varies: boolean;
+  /** The band's value as a share of the amount, server-formatted ("0.89%"). */
+  value_pct: string;
+  value_display: string;
+}
+
+/** GET /cash/price-curve (flag `price_curve`): what cash arriving earlier is worth to the owner. Hypothetical; one sentence in the owner's words. */
+export interface PriceCurveView {
+  amount_fen: Fen;
+  amount_display: string;
+  window_days: number;
+  bands: PriceBand[];
+  /** True when there is no breach to cure: every band is worth nothing. */
+  flat: boolean;
+  /** The one sentence the Cash page shows. */
+  sentence: string;
+  hypothetical: true;
+  state_version: number;
+  source_state_version: number;
+  day: Day;
+  computed_in_seconds: number;
+}
+
+export type CollectionAction = "call_now" | "escalate" | "reminder" | "offer_early_pay" | "finance" | "wait";
+
+/** One hypothetical receipt date for a receivable and what it would save. */
+export interface WorthEffect {
+  kind: string;
+  label: string;
+  receipt_day: Day;
+  receipt_when: string;
+  saving_fen: Fen;
+  no_saving: boolean;
+  saving_text: string;
+  saving_display: string;
+  need_left_fen: Fen;
+  need_left_display: string;
+  breach_days_removed: number;
+  alerts_removed: string[];
+  after_needs_owner: boolean;
+  after_executable_now: boolean;
+}
+
+/** The most an early-payment discount could be before it costs more than the funding it replaces. */
+export interface WorthCeiling {
+  face_kind: string;
+  face_fen: Fen;
+  face_display: string;
+  face_label: string;
+  largest_rate_bp: number | null;
+  largest_rate_display?: string;
+  cost_without_fen: Fen;
+  cost_without_display: string;
+  cost_with_fen: Fen | null;
+  cost_with_display?: string;
+  beats_by_fen: Fen | null;
+  beats_by_display?: string;
+  mid_rate_bp: number | null;
+  mid_rate_display?: string;
+  mid_saving_fen: Fen | null;
+  mid_saving_display?: string;
+  next_rate_bp: number | null;
+  next_rate_display?: string;
+  next_rate_dearer_by_fen: Fen | null;
+  next_rate_dearer_by_display?: string;
+}
+
+/** One open receivable, with what collecting it saves and the action for it. */
+export interface ReceivableWorth {
+  receivable_id: string;
+  buyer_id: string;
+  buyer_name: string;
+  outstanding_fen: Fen;
+  outstanding_display: string;
+  due_day: Day;
+  due_when: string;
+  days_late: number;
+  status: string;
+  financed: boolean;
+  effects: WorthEffect[];
+  ceilings: WorthCeiling[];
+  gross_saving_fen: Fen;
+  gross_saving_display: string;
+  mid_rate_bp: number | null;
+  mid_rate_display?: string;
+  mid_saving_fen: Fen;
+  mid_saving_display: string;
+  net_saving_fen: Fen;
+  net_saving_display: string;
+  /** What collecting it saves, net of the discount that earns it; reads "no saving" when it is nothing. */
+  net_saving_text: string;
+  no_saving: boolean;
+  action: CollectionAction;
+  action_sentence: string;
+  reason_sentence: string;
+  hypothetical: true;
+}
+
+/** GET /receivables/worth (flag `collections_worth`): the open receivables ranked by what collecting each saves. Hypothetical. */
+export interface ReceivablesWorthView {
+  rows: ReceivableWorth[];
+  gross_order: string[];
+  /** The first row's action sentence, for the home. */
+  top_action: string;
+  ranking_note: string;
+  first_breach_day: Day | null;
+  hypothetical: true;
+  state_version: number;
+  source_state_version: number;
+  day: Day;
+  computed_in_seconds: number;
+}
+
 /** GET /reconciliation */
 export interface ReconciliationView {
   as_of_day: Day;

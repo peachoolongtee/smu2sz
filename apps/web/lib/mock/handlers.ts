@@ -35,6 +35,8 @@ import type {
   OfferView,
   OperationView,
   PlanRequest,
+  PriceCurveView,
+  ReceivablesWorthView,
   ReconciliationView,
   StateView,
   SubmitOfferRequest,
@@ -48,6 +50,7 @@ import type {
 } from "../types";
 
 import * as home from "./home";
+import { pickByDay } from "./strategy-pick";
 import alertsJson from "../../mocks/alerts.json";
 import approvalsSeed from "../../mocks/approvals_seed.json";
 import auditSec from "../../mocks/audit_sec.json";
@@ -56,6 +59,10 @@ import capexApplyJson from "../../mocks/capex_apply.json";
 import capexJson from "../../mocks/capex.json";
 import fundingJson from "../../mocks/funding.json";
 import fundingDay34Json from "../../mocks/funding_day34.json";
+import priceCurveDay0Json from "../../mocks/strategy/price_curve_day0.json";
+import priceCurveDay34Json from "../../mocks/strategy/price_curve_day34.json";
+import worthDay0Json from "../../mocks/strategy/worth_day0.json";
+import worthDay34Json from "../../mocks/strategy/worth_day34.json";
 import homeApprovalApproved from "../../mocks/home_approval_approved.json";
 import homeApprovalPending from "../../mocks/home_approval_pending.json";
 import homeApprove from "../../mocks/home_approve.json";
@@ -543,6 +550,20 @@ export async function actOnAlert(id: string, bound: ActRequest): Promise<AlertAc
   ensureHomeApproval();
   if (first) for (const o of r.results) appendRecorded({ kind: o.kind, status: o.status, tier: o.tier, message: o.message, message_when: o.message_when, event_text: o.event_text, event_detail: o.event_detail, day: r.day });
   return r;
+}
+
+/** GET /cash/price-curve: the recording for the books' day (opening books, or day 34), as the funding plan above is chosen. English only: the recordings are `?lang=en`. */
+export async function getPriceCurve(_lang: "en" | "zh"): Promise<PriceCurveView | null> {
+  void _lang;
+  await delay();
+  return clone(cast<PriceCurveView>(pickByDay(home.mockClock().day, home.NEWS_DAY, priceCurveDay0Json, priceCurveDay34Json)));
+}
+
+/** GET /receivables/worth: as above. */
+export async function getReceivablesWorth(_lang: "en" | "zh"): Promise<ReceivablesWorthView | null> {
+  void _lang;
+  await delay();
+  return clone(cast<ReceivablesWorthView>(pickByDay(home.mockClock().day, home.NEWS_DAY, worthDay0Json, worthDay34Json)));
 }
 
 export async function getReconciliation(): Promise<ReconciliationView> {

@@ -1,0 +1,47 @@
+{
+  "amount_fen": 1000000,
+  "window_days": 30,
+  "day": 34,
+  "bands": [
+    {
+      "from_day": 34,
+      "to_day": 42,
+      "value_fen": 17822,
+      "value_bp": 178,
+      "varies": false,
+      "from_when": "today",
+      "to_when": "in 8 days",
+      "value_pct": "1.78%",
+      "value_display": "¥178.22"
+    },
+    {
+      "from_day": 43,
+      "to_day": 60,
+      "value_fen": 8912,
+      "value_bp": 89,
+      "varies": false,
+      "from_when": "in 9 days",
+      "to_when": "in 26 days",
+      "value_pct": "0.89%",
+      "value_display": "¥89.12"
+    },
+    {
+      "from_day": 61,
+      "to_day": 154,
+      "value_fen": 0,
+      "value_bp": 0,
+      "varies": false,
+      "from_when": "in 27 days",
+      "to_when": "in 120 days",
+      "value_pct": "0.00%",
+      "value_display": "¥0.00"
+    }
+  ],
+  "flat": false,
+  "source_state_version": 7,
+  "hypothetical": true,
+  "sentence": "Cash arriving within the next 8 days is worth 1.78% to you, then 0.89% if it arrives within the next 26 days; after that, nothing.",
+  "state_version": 7,
+  "computed_in_seconds": 0,
+  "amount_display": "¥10,000.00"
+}
