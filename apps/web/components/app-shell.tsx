@@ -125,8 +125,9 @@ function ApprovalsBadge() {
   if (!pending) return null;
   return (
     <Link href="/approvals" className="motion-press hit inline-flex min-h-8 items-center rounded-pill border border-warn-line bg-warn-bg px-3 text-xs font-semibold text-warn-fg hover:brightness-95" data-testid="approvals-badge" title={t("approvals.badge", { n: pending })}>
-      <span className="sm:hidden">{pending}</span>
-      <span className="hidden sm:inline">{t("approvals.badge", { n: pending })}</span>
+      {/* The count alone where the header is tight (a phone, and the width where the five pills just fit); the sentence elsewhere. */}
+      <span className="sm:hidden lg:inline xl:hidden">{pending}</span>
+      <span className="hidden sm:inline lg:hidden xl:inline">{t("approvals.badge", { n: pending })}</span>
     </Link>
   );
 }
@@ -321,7 +322,7 @@ function BusinessShell({ children }: { children: ReactNode }) {
                     <Link
                       href={n.href}
                       aria-current={active ? "page" : undefined}
-                      className={`motion-press flex min-h-9 items-center whitespace-nowrap rounded-pill px-4 text-sm font-medium ${
+                      className={`motion-press flex min-h-9 items-center whitespace-nowrap rounded-pill px-3.5 text-sm font-medium xl:px-4 ${
                         active ? "bg-brand-50 text-brand-700" : "text-ink-2 hover:bg-line hover:text-ink"
                       }`}
                     >

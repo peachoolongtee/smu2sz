@@ -104,7 +104,7 @@ function Suggestions({ prompts, disabled, compact }: { prompts: Prompt[]; disabl
                 if (p.counterparty) setCounterparty(p.counterparty);
                 void sendMessage(p.text, p.text);
               }}
-              className="motion-press hit max-w-72 rounded-pill border border-line-ui bg-surface px-3 py-1.5 text-left text-xs font-medium text-ink-2 hover:bg-subtle hover:text-ink disabled:cursor-not-allowed disabled:opacity-50"
+              className="motion-press max-w-72 rounded-pill border border-line-ui bg-surface px-3 py-1.5 touch:min-h-11 text-left text-xs font-medium text-ink-2 hover:bg-subtle hover:text-ink disabled:cursor-not-allowed disabled:opacity-50"
             >
               <span className="line-clamp-2 break-words">{t(p.label)}</span>
             </button>
