@@ -178,12 +178,17 @@ def _without_display_fields(plan: dict[str, Any]) -> dict[str, Any]:
 def test_no_commitments_trajectory_and_router_plan_are_unchanged(client: TestClient, rt: Runtime) -> None:
     t = client.get("/trajectory").json()
     assert t.pop("today") == 0
-    # `first_breach_cash` is a display-only field the simplification map added (Wave 1); the golden is of the rest
-    assert _digest({k: v for k, v in t.items() if k != "first_breach_cash"}) == GOLDEN_TRAJECTORY
+    # `first_breach_cash` is a display-only field the simplification map added (Wave 1), and `first_breach_ahead_*` the first
+    # breach from today on (map #65, F01); the golden is of the rest, which is the engine's own projection and has not moved
+    display_only = {"first_breach_cash", "first_breach_ahead_day", "first_breach_ahead_cash"}
+    assert _digest({k: v for k, v in t.items() if k not in display_only}) == GOLDEN_TRAJECTORY
     state, mandate = rt.store.get_state(), rt.store.get_mandate()
     raw = trajectory_view(project(state, [], [], Mode.CONSERVATIVE, mandate.horizon_days, mandate.min_cash_fen),
                           mandate.min_cash_fen).model_dump()
+    ahead = {k: t.pop(k) for k in ("first_breach_ahead_day", "first_breach_ahead_cash")}
     assert t == json.loads(json.dumps(raw))
+    # day 0: nothing is closed yet, so the first breach from today on is the engine's own
+    assert ahead["first_breach_ahead_day"] == raw["first_breach_day"]
     r = client.post("/router/plan").json()
     assert r["marginal"]["extension_extra_receivables_fen"] == 21_000_000  # F x 15 / 30, the shared pro forma
     assert r["marginal"]["extension_committed_12m_fen"] == 2_432_692

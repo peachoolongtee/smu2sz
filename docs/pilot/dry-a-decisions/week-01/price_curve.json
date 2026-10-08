@@ -1,0 +1,38 @@
+{
+  "amount_display": "¥10,000.00",
+  "amount_fen": 1000000,
+  "bands": [
+    {
+      "above_guard": false,
+      "from_day": 7,
+      "from_when": "today",
+      "to_day": 24,
+      "to_when": "in 17 days",
+      "value_bp": 13,
+      "value_display": "¥13.15",
+      "value_fen": 1315,
+      "value_pct": "0.13%",
+      "varies": false
+    },
+    {
+      "above_guard": false,
+      "from_day": 25,
+      "from_when": "in 18 days",
+      "to_day": 127,
+      "to_when": "in 120 days",
+      "value_bp": 0,
+      "value_display": "¥0.00",
+      "value_fen": 0,
+      "value_pct": "0.00%",
+      "varies": false
+    }
+  ],
+  "computed_in_seconds": 1.803,
+  "day": 7,
+  "flat": false,
+  "hypothetical": true,
+  "sentence": "Cash in the next 17 days saves you ¥13.15 of funding cost per ¥10,000 (0.13%); after that, earlier cash saves nothing.",
+  "source_state_version": 2,
+  "state_version": 2,
+  "window_days": 30
+}
