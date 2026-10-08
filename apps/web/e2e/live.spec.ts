@@ -103,8 +103,11 @@ test("the day-0 plan: 'go ahead' brings cash now and leaves the advance in trans
   await request.post(`${API}/demo/reset`, { headers: owner, data: {} });
 });
 
-/** The same calls scripts/demo_run.py makes: the deal, the receipt on day 2 (with the bank's reference), then the clock to day 34. */
-async function toDay34(request: APIRequestContext) {
+/**
+ * The same calls scripts/demo_run.py makes: the deal, the receipt on day 2 (with the bank's reference), then the clock to day 34.
+ * `receipt` is what the buyer paid on day 2: all of what the server expected, half of it (the part-kept promise), or nothing.
+ */
+async function walkToDay34(request: APIRequestContext, receipt: "full" | "half" | "none") {
   const owner = { "X-Owner-Token": TOKEN };
   const bank = { "X-Agent-Key": "demo-agent-key", "X-Bank-Feed-Key": "demo-bank-feed-key" };
   const post = async (path: string, data: object, headers: Record<string, string> = owner) => {
@@ -118,27 +121,35 @@ async function toDay34(request: APIRequestContext) {
   const deal = await post(`/negotiate/${offer.offer_id}`, { buyer_profile: "cooperative" });
   expect(deal.outcome).toBe("DEAL");
   await post("/clock/advance", { to_day: 2 });
-  const recon = await (await request.get(`${API}/reconciliation`, { headers: owner })).json();
-  const promised = recon.reconciliation.promised[0]; // the server's own expected receipt: nothing is computed here
-  const mandate = await (await request.get(`${API}/mandate`, { headers: owner })).json();
-  await post(
-    "/operations",
-    {
-      kind: "RECEIVE_PAYMENT",
-      op_id: "e2e-receipt-1",
-      idempotency_key: "e2e-receipt-1",
-      mandate_version: mandate.mandate.version,
-      requested_by: "SYSTEM",
-      receivable_id: promised.receivable_id,
-      amount_fen: promised.expected_fen,
-      bank_reference: "E2E-RCPT-1",
-    },
-    bank,
-  );
+  if (receipt !== "none") {
+    const recon = await (await request.get(`${API}/reconciliation`, { headers: owner })).json();
+    const promised = recon.reconciliation.promised[0]; // the server's own expected receipt
+    const mandate = await (await request.get(`${API}/mandate`, { headers: owner })).json();
+    await post(
+      "/operations",
+      {
+        kind: "RECEIVE_PAYMENT",
+        op_id: "e2e-receipt-1",
+        idempotency_key: "e2e-receipt-1",
+        mandate_version: mandate.mandate.version,
+        requested_by: "SYSTEM",
+        receivable_id: promised.receivable_id,
+        // Test setup for the bank feed, not a figure on screen: half of what the server expected is a part-kept promise.
+        amount_fen: receipt === "half" ? Math.floor(promised.expected_fen / 2) : promised.expected_fen,
+        bank_reference: "E2E-RCPT-1",
+      },
+      bank,
+    );
+  }
   await post("/clock/advance", { to_day: 30 });
   await post("/clock/advance", { to_day: 34 });
   return { post };
 }
+
+const toDay34 = (request: APIRequestContext) => walkToDay34(request, "full");
+/** R07: day 34 on the books where the buyer never paid on day 2, so cash is under the reserve today. */
+const toDay34NoReceipt = (request: APIRequestContext) => walkToDay34(request, "none");
+const toDay34HalfReceipt = (request: APIRequestContext) => walkToDay34(request, "half");
 
 test("on day 34 the cure needs the owner: the alert says so, the click queues it, approval runs it, the cash lands on day 37", async ({ page, request }) => {
   const { post } = await toDay34(request);
@@ -321,4 +332,93 @@ test("the Business inbox waits for the books before it shows any sender, and say
   await page.goto("/deals");
   await expect(page.getByTestId("inbox-error")).toBeVisible();
   await expect(page.locator('[data-testid^="inbox-msg-"]')).toHaveCount(0);
+});
+
+test("day 34 with no receipt: the Home says below the reserve today, the promise is history, and no page says 'by today'", async ({ page, request }) => {
+  const { post } = await toDay34NoReceipt(request);
+  await page.goto("/");
+  await expect(page.getByTestId("home-headline")).toHaveText("Below reserve today.");
+  const hero = page.getByTestId("home-status");
+  await expect(hero).toContainText("Below reserve today");
+  await expect(hero).not.toContainText(/ago/);
+  // The forecast starts today: the first unsafe day is today, not a closed day.
+  await page.goto("/cash");
+  await expect(page.getByTestId("cash-unsafe-when")).not.toHaveText(/ago/);
+  await expect(page.getByTestId("cash-forecast")).toBeVisible();
+  // The early-payment promise lapsed: it is said in the past, never as a deadline "by today".
+  await page.goto("/receivables");
+  const promised = page.getByTestId("promised-RCV-A");
+  await expect(promised).toBeVisible();
+  await expect(promised).toContainText(/ago/);
+  await expect(promised).not.toContainText(/by today/);
+  await expect(promised).not.toContainText(/CMT-/);
+  await post("/demo/reset", {});
+});
+
+test("day 34 after a half receipt: the early-payment window for the rest is said as ended, not 'by today'", async ({ page, request }) => {
+  const { post } = await toDay34HalfReceipt(request);
+  await page.goto("/receivables");
+  const receipt = page.getByTestId("receipt-e2e-receipt-1");
+  await expect(receipt).toBeVisible();
+  await expect(receipt).toContainText(/ended 32 days ago/);
+  await expect(receipt).not.toContainText(/by today/);
+  await page.goto("/");
+  await expect(page.getByTestId("home-headline")).toHaveText("Below reserve today.");
+  await post("/demo/reset", {});
+});
+
+test("approving after the mandate has expired is refused: the card ends as 'could not run', with no buttons and no money moved", async ({ page, request }) => {
+  const { post } = await toDay34NoReceipt(request);
+  await page.goto("/");
+  // The reserve alert's id carries the books' version, which differs without the receipt: read it from the page.
+  const open = page.getByTestId("home-next-action").locator('[data-testid^="fix-open-ALERT-RESERVE"]');
+  const alertId = ((await open.getAttribute("data-testid")) ?? "").replace("fix-open-", "");
+  expect(alertId).toMatch(/^ALERT-RESERVE/);
+  await runPlan(page.getByTestId("home-next-action"), alertId);
+  await page.getByTestId(`alert-approval-link-${alertId}`).click();
+  await expect(page).toHaveURL(/\/approvals#approval-APR-/);
+  const card = page.locator('[id^="approval-APR-"]').first();
+  const approve = card.getByRole("button", { name: /^Approve/ });
+  await expect(approve).toBeEnabled();
+  // The mandate's last day is 90: the owner is slow, and the executor refuses to run what they approve.
+  await post("/clock/advance", { to_day: 91 });
+  await approve.click();
+  const refused = card.locator('[data-testid^="approval-refused-"]');
+  await expect(refused).toContainText("You approved it, but it could not run:");
+  await expect(refused).toContainText("No money moved.");
+  await expect(refused).not.toContainText(/declined/i);
+  await expect(card).toContainText("Approved");
+  await expect(card.getByRole("button", { name: /^Approve/ })).toHaveCount(0);
+  await expect(card.getByRole("button", { name: "Decline", exact: true })).toHaveCount(0);
+  // The queue is the truth: after a reload the card is still terminal, and no cash was moved.
+  await page.reload();
+  await expect(page.locator('[id^="approval-APR-"]').first().locator('[data-testid^="approval-refused-"]')).toContainText("could not run");
+  const ledger = await (await request.get(`${API}/ledger`, { headers: { "X-Owner-Token": TOKEN } })).json();
+  const funding = (ledger.operations as { kind: string; status: string; op_id: string }[]).filter((o) => o.op_id.startsWith("alert:"));
+  expect(funding.some((o) => o.status === "EXECUTED")).toBe(false);
+  await post("/demo/reset", {});
+});
+
+test("a buyer's agreement that expired before the owner looked cannot be approved: the card says why and keeps Decline", async ({ page, request }) => {
+  const owner = { "X-Owner-Token": TOKEN };
+  await request.post(`${API}/demo/reset`, { headers: owner, data: {} });
+  const sent = await request.post(`${API}/nl`, {
+    headers: { "X-Counterparty-Key": "demo-buyer-1-key" },
+    data: { session_id: "e2e-agreement", actor: "COUNTERPARTY", counterparty_id: "BUYER-1", text: "We can pay the invoice early at 0.5%.", request_id: "e2e-agreement-1" },
+  });
+  expect(sent.ok()).toBeTruthy();
+  await page.goto("/approvals");
+  const card = page.locator('[id^="approval-APR-"]').first();
+  // While it waits, the terms are on the card above the buttons.
+  await expect(card.getByTestId("approval-terms")).toContainText("The buyer may pay early and take 0.50%");
+  await expect(card.getByRole("button", { name: /^Approve/ })).toBeEnabled();
+  // The agreement expires while the page is open; "Try again" reads the queue and the gate closes.
+  await request.post(`${API}/clock/advance`, { headers: owner, data: { to_day: 60 } });
+  await page.reload();
+  const gap = page.locator('[id^="approval-APR-"]').first().getByTestId("approval-terms-unavailable");
+  await expect(gap).toContainText("I can't safely present the full terms for review.");
+  await expect(gap).toContainText("has expired");
+  await expect(page.locator('[id^="approval-APR-"]').first().getByRole("button", { name: /^Approve/ })).toBeDisabled();
+  await expect(page.locator('[id^="approval-APR-"]').first().getByRole("button", { name: "Decline", exact: true })).toBeEnabled();
+  await request.post(`${API}/demo/reset`, { headers: owner, data: {} });
 });

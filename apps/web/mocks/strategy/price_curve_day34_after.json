@@ -9,6 +9,7 @@
       "value_fen": 0,
       "value_bp": 0,
       "varies": false,
+      "above_guard": false,
       "from_when": "today",
       "to_when": "in 120 days",
       "value_pct": "0.00%",

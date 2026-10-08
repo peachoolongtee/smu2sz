@@ -19,6 +19,7 @@
     "lowest_headroom_fen": 0,
     "lowest_headroom_short": "¥0.00",
     "first_breach_day": null,
+    "below_reserve_today": false,
     "first_breach_cash_fen": null,
     "first_breach_cash_short": null,
     "cash_short": "¥550k",
@@ -961,7 +962,7 @@
       "seq": 2,
       "kind": "OPERATION",
       "actor": "AGENT",
-      "text": "Advance ¥255,000.00 on the ¥420,000.00 invoice to Foshan Home Retail Co. due in 32 days from Invoice financing (onboarded platform) today; the cash lands in 3 days after the 3-day lead time, not today",
+      "text": "Advance ¥255,000.00 on the ¥420,000.00 invoice to Foshan Home Retail Co. due in 32 days from Invoice financing (onboarded platform) today; the cash lands in 3 days, not today",
       "event_text": "¥255,000.00 of invoice financing drawn against the Foshan Home Retail Co. invoice. Funds arrive in 3 days.",
       "event_detail": "Financed through Invoice financing (onboarded platform).",
       "when": "today"

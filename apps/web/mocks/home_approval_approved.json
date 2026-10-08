@@ -36,11 +36,15 @@
     "cost_due_day": null,
     "lands_day": 37,
     "lands_when": "in 3 days",
-    "if_decline": "Nothing runs; the request is closed.",
+    "lands_text": null,
+    "if_decline": null,
     "protects": null,
+    "residual": null,
+    "execution_status": "EXECUTED",
     "reason": "The yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval.",
     "result_message": "¥200,000.00 of invoice financing was requested today; the cash lands in 3 days.",
     "decided_when": "today",
     "created_when": "today"
-  }
+  },
+  "execution_status": "EXECUTED"
 }

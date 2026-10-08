@@ -19,6 +19,7 @@
     "lowest_headroom_fen": 0,
     "lowest_headroom_short": "¥0.00",
     "first_breach_day": null,
+    "below_reserve_today": false,
     "first_breach_cash_fen": null,
     "first_breach_cash_short": null,
     "cash_short": "¥300k",
@@ -69,210 +70,6 @@
     "min_dscr_bp": 12500,
     "max_leverage_bp": 25000,
     "series": [
-      {
-        "day": 0,
-        "closing_fen": 30000000,
-        "closing_display": "¥300,000.00",
-        "events": []
-      },
-      {
-        "day": 1,
-        "closing_fen": 30000000,
-        "closing_display": "¥300,000.00",
-        "events": []
-      },
-      {
-        "day": 2,
-        "closing_fen": 30000000,
-        "closing_display": "¥300,000.00",
-        "events": []
-      },
-      {
-        "day": 3,
-        "closing_fen": 30000000,
-        "closing_display": "¥300,000.00",
-        "events": []
-      },
-      {
-        "day": 4,
-        "closing_fen": 30000000,
-        "closing_display": "¥300,000.00",
-        "events": []
-      },
-      {
-        "day": 5,
-        "closing_fen": 30000000,
-        "closing_display": "¥300,000.00",
-        "events": []
-      },
-      {
-        "day": 6,
-        "closing_fen": 30000000,
-        "closing_display": "¥300,000.00",
-        "events": []
-      },
-      {
-        "day": 7,
-        "closing_fen": 30000000,
-        "closing_display": "¥300,000.00",
-        "events": []
-      },
-      {
-        "day": 8,
-        "closing_fen": 30000000,
-        "closing_display": "¥300,000.00",
-        "events": []
-      },
-      {
-        "day": 9,
-        "closing_fen": 30000000,
-        "closing_display": "¥300,000.00",
-        "events": []
-      },
-      {
-        "day": 10,
-        "closing_fen": 30000000,
-        "closing_display": "¥300,000.00",
-        "events": []
-      },
-      {
-        "day": 11,
-        "closing_fen": 30000000,
-        "closing_display": "¥300,000.00",
-        "events": []
-      },
-      {
-        "day": 12,
-        "closing_fen": 30000000,
-        "closing_display": "¥300,000.00",
-        "events": []
-      },
-      {
-        "day": 13,
-        "closing_fen": 30000000,
-        "closing_display": "¥300,000.00",
-        "events": []
-      },
-      {
-        "day": 14,
-        "closing_fen": 30000000,
-        "closing_display": "¥300,000.00",
-        "events": []
-      },
-      {
-        "day": 15,
-        "closing_fen": 30000000,
-        "closing_display": "¥300,000.00",
-        "events": []
-      },
-      {
-        "day": 16,
-        "closing_fen": 30000000,
-        "closing_display": "¥300,000.00",
-        "events": []
-      },
-      {
-        "day": 17,
-        "closing_fen": 30000000,
-        "closing_display": "¥300,000.00",
-        "events": []
-      },
-      {
-        "day": 18,
-        "closing_fen": 30000000,
-        "closing_display": "¥300,000.00",
-        "events": []
-      },
-      {
-        "day": 19,
-        "closing_fen": 30000000,
-        "closing_display": "¥300,000.00",
-        "events": []
-      },
-      {
-        "day": 20,
-        "closing_fen": 30000000,
-        "closing_display": "¥300,000.00",
-        "events": []
-      },
-      {
-        "day": 21,
-        "closing_fen": 30000000,
-        "closing_display": "¥300,000.00",
-        "events": []
-      },
-      {
-        "day": 22,
-        "closing_fen": 30000000,
-        "closing_display": "¥300,000.00",
-        "events": []
-      },
-      {
-        "day": 23,
-        "closing_fen": 30000000,
-        "closing_display": "¥300,000.00",
-        "events": []
-      },
-      {
-        "day": 24,
-        "closing_fen": 30000000,
-        "closing_display": "¥300,000.00",
-        "events": []
-      },
-      {
-        "day": 25,
-        "closing_fen": 30000000,
-        "closing_display": "¥300,000.00",
-        "events": []
-      },
-      {
-        "day": 26,
-        "closing_fen": 30000000,
-        "closing_display": "¥300,000.00",
-        "events": []
-      },
-      {
-        "day": 27,
-        "closing_fen": 30000000,
-        "closing_display": "¥300,000.00",
-        "events": []
-      },
-      {
-        "day": 28,
-        "closing_fen": 30000000,
-        "closing_display": "¥300,000.00",
-        "events": []
-      },
-      {
-        "day": 29,
-        "closing_fen": 30000000,
-        "closing_display": "¥300,000.00",
-        "events": []
-      },
-      {
-        "day": 30,
-        "closing_fen": 30000000,
-        "closing_display": "¥300,000.00",
-        "events": []
-      },
-      {
-        "day": 31,
-        "closing_fen": 30000000,
-        "closing_display": "¥300,000.00",
-        "events": []
-      },
-      {
-        "day": 32,
-        "closing_fen": 30000000,
-        "closing_display": "¥300,000.00",
-        "events": []
-      },
-      {
-        "day": 33,
-        "closing_fen": 30000000,
-        "closing_display": "¥300,000.00",
-        "events": []
-      },
       {
         "day": 34,
         "closing_fen": 30000000,
@@ -1156,7 +953,7 @@
       "seq": 8,
       "kind": "OPERATION",
       "actor": "AGENT",
-      "text": "Advance ¥200,000.00 on the ¥420,000.00 invoice to Foshan Home Retail Co. due in 13 days from Invoice financing (onboarded platform) today; the cash lands in 3 days after the 3-day lead time, not today",
+      "text": "Advance ¥200,000.00 on the ¥420,000.00 invoice to Foshan Home Retail Co. due in 13 days from Invoice financing (onboarded platform) today; the cash lands in 3 days, not today",
       "event_text": "You approved ¥200,000.00 of invoice financing. Funds arrive in 3 days.",
       "event_detail": null,
       "when": "today"
