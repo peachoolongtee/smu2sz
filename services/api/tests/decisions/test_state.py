@@ -3,6 +3,7 @@ precedence cases, and one per row of the waiting table (section 6)."""
 
 from __future__ import annotations
 
+import json
 from dataclasses import replace
 from typing import Literal
 
@@ -489,3 +490,52 @@ def test_derive_reads_only_its_inputs() -> None:
     # the inputs are frozen: nothing can be written back into them
     with pytest.raises(AttributeError):
         i.today = 9  # type: ignore[misc]
+
+
+# ---------------------------------------------------------------- the residual belongs to its own breach (review fix)
+
+
+def _settled(alerts: list[Alert], newest: bool = True) -> Funding:
+    return funding(runs=[leg_run(1, 0, OK)], facts=q(legs=1), lots=[lot(f"{CURE}:0", settled=True)], alerts=alerts, newest=newest)
+
+
+def test_the_same_breach_still_open_keeps_the_residual_even_when_a_committed_cure_exists() -> None:
+    f = _settled([Alert(id="ALERT-RESERVE-34", committed_cure=True)])
+    s = derive(f.inputs())
+    assert s.residual is not None and s.residual.committed_cure is True and s.terminal is False
+
+
+def test_a_later_unrelated_breach_with_a_committed_cure_is_not_this_records_residual() -> None:
+    f = _settled([Alert(id="ALERT-RESERVE-80", committed_cure=True)])
+    s = derive(f.inputs())
+    assert s.residual is None and s.terminal is True and s.state == FundingState.SETTLED
+    assert waiting_for(s, f.inputs()).code == WaitCode.NOTHING
+
+
+def test_a_later_breach_nothing_fixes_is_still_the_owners_to_decide() -> None:
+    f = _settled([Alert(id="ALERT-RESERVE-80", committed_cure=False)])
+    s = derive(f.inputs())
+    assert s.residual is not None and s.residual.alert_id == "ALERT-RESERVE-80" and s.residual.committed_cure is False
+
+
+def test_derive_all_gives_the_residual_to_the_newest_record_the_open_alert_belongs_to() -> None:
+    older = Funding(decision_id="alert:ALERT-RESERVE-20:v2")
+    older.runs = [run(1, "DRAW_FACILITY", "alert:ALERT-RESERVE-20:v2:0", OK, day=20, facility_id="F", amount_fen=1)]
+    older.facts = [fact_row(older.decision_id, older.decision_id, quoted(legs=1).model_copy(update={"alert_id": "ALERT-RESERVE-20"}), day=20)]
+    newer = _settled([])
+    newer.facts = [fact_row(CURE, CURE, quoted(legs=1), day=34)]
+    open_alert = Alert(id="ALERT-RESERVE-20", committed_cure=True)  # the old breach is the one still open, and a plan exists
+    both = [replace(older.inputs(), alerts=(open_alert,)), replace(newer.inputs(), alerts=(open_alert,))]
+    first, second = derive_all(both)
+    assert first.residual is not None and second.residual is None and second.terminal is True
+
+
+# ---------------------------------------------------------------- a quote that projected nothing says nothing about the reserve
+
+
+def test_a_quote_stored_before_the_projected_field_reads_as_projected() -> None:
+    from app.decisions import QuotedFact, body_json
+
+    body = json.loads(body_json(quoted()))
+    del body["projected"]
+    assert QuotedFact.model_validate_json(json.dumps(body)).projected is True

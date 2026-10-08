@@ -121,8 +121,11 @@ class QuotedFact(Contract):
     cost_note: Literal["draw_interest_excluded"] | None
     needs_owner: bool
     max_apr_bp: int
-    restores_reserve: bool
-    after_first_short_day: int | None  # None = safe through the horizon
+    # Whether the legs that run were projected at all (a repayment, an application and a projection that failed are not):
+    # when False, `restores_reserve` is None and `after_first_short_day` says nothing. Facts stored before this field read True.
+    projected: bool = True
+    restores_reserve: bool | None
+    after_first_short_day: int | None  # None, with `projected`, = cash stays above the reserve through the horizon
     horizon_days: int
     if_decline: IfDecline | None
     residual_shortfall_fen: int | None

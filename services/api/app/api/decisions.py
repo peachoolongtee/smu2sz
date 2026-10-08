@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import json
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass, field, replace
 from typing import Any
 
@@ -54,7 +55,7 @@ from app.decisions import (
 )
 from app.decisions.facts import Fact, record_for
 from app.decisions.identity import deal_id, decision_id_for, family_of, offer_id_of
-from app.decisions.state import derive_all
+from app.decisions.state import RESERVE_ALERT, derive, newest_reserve_decision
 from app.domain.models import CommitmentStatus, CompiledOffer, FinancialState, Mandate, OperationStatus
 from app.domain.money import fmt_yuan
 from app.financial import EngineError
@@ -70,17 +71,31 @@ _MONEY_KINDS = ("DRAW_FACILITY", "SUBMIT_INVOICE_FOR_FINANCING")
 # ---------------------------------------------------------------- the write helper
 
 
-def record_fact(rt: Runtime, decision_id: str, fact_key: str, fact: Fact, *, state_version: int, day: int) -> bool:
-    """Store a decision fact after the canonical event it describes. Insert-if-absent: a retry changes nothing. Any store error
-    is logged and answered with False; this never raises, because a 500 after a committed event invites a client retry of an
-    action that already happened."""
+def record_fact(rt: Runtime, decision_id: str, fact_key: str, fact: Fact | Callable[[], Fact], *, state_version: int,
+                day: int) -> bool | str:
+    """Store a decision fact after the canonical event it describes. Insert-if-absent: a retry changes nothing. `fact` may be a
+    callable that builds it, so that building the model is inside the guard too. Any error, in building or in the store, is logged
+    and answered with False; this never raises, because a 500 after a committed event invites a client retry of an action that
+    already happened. True means stored; "already_recorded_differently" means a fact with this key was stored earlier with other
+    content (the earlier one stands)."""
     try:
+        built = fact() if callable(fact) else fact
+        row = record_for(decision_id, fact_key, built, state_version=state_version, day=day)
         store: Any = rt.store
-        store.add_decision_fact(record_for(decision_id, fact_key, fact, state_version=state_version, day=day))
+        stored = store.add_decision_fact(row)
+        return True if stored.body_json == row.body_json else "already_recorded_differently"
     except Exception:
-        log.exception("decision fact %s %s could not be recorded", type(fact).__name__, decision_id)
+        log.exception("decision fact for %s could not be recorded", decision_id)
         return False
-    return True
+
+
+def latest_verdict_for(rt: Runtime, offer_id: str):
+    """The latest verdict stored for an offer: this session's, else the last one the store holds for it."""
+    vid = rt.latest_verdict.get(offer_id)
+    verdict = rt.store.get_verdict(vid) if vid else None
+    if verdict is None:
+        verdict = next((v for v in reversed(rt.store.verdicts()) if v.offer_id == offer_id), None)
+    return verdict
 
 
 # ---------------------------------------------------------------- reading the stores once
@@ -139,13 +154,29 @@ class Context:
         )
 
     def states(self) -> dict[str, tuple[DecisionState, DecisionInputs]]:
+        """Every decision's state. One that cannot be derived is logged and left out (and not tried again), so a bad entry
+        never takes the list, the home or the queue down with it."""
         if self._states is None:
-            ids = self.candidate_ids()
-            inputs = [self.inputs_for(i) for i in ids]
-            derived = derive_all(inputs)
-            newest = {s.decision_id for s in derived if s.residual is not None}
-            self._states = {s.decision_id: (s, replace(i, newest_reserve=i.decision_id in newest))
-                            for s, i in zip(derived, inputs, strict=True)}
+            first: dict[str, tuple[DecisionState, DecisionInputs]] = {}
+            for decision_id in self.candidate_ids():
+                try:
+                    inp = self.inputs_for(decision_id)
+                    first[decision_id] = (derive(inp), inp)
+                except Exception:
+                    log.exception("decision %s could not be derived; it is left out", decision_id)
+            newest = newest_reserve_decision([d for d, _ in first.values()],
+                                             next((a for a in self.open_alerts if a.kind.value == RESERVE_ALERT), None))
+            out: dict[str, tuple[DecisionState, DecisionInputs]] = {}
+            for decision_id, (ds, inp) in first.items():
+                if decision_id == newest:
+                    try:
+                        inp = replace(inp, newest_reserve=True)
+                        ds = derive(inp)
+                    except Exception:
+                        log.exception("decision %s could not be derived with its residual; it is left out", decision_id)
+                        continue
+                out[decision_id] = (ds, inp)
+            self._states = out
         return self._states
 
 
@@ -257,7 +288,7 @@ def residual_view(ctx: Context, ds: DecisionState, lang: str) -> dict[str, Any] 
     return {"shortfall_fen": r.shortfall_fen, "shortfall_display": fmt_yuan(r.shortfall_fen) if r.shortfall_fen is not None else None,
             "starts_day": r.starts_day, "from_when": when_text(r.starts_day, ctx.today, lang) if r.starts_day is not None else None,
             "committed_cure": r.committed_cure, "alert_id": r.alert_id, "as_of": "today",
-            "text": remaining_task_words(r.shortfall_fen, r.starts_day, ctx.today, lang)}
+            "text": remaining_task_words(r.shortfall_fen, r.starts_day, ctx.today, lang, r.committed_cure)}
 
 
 def decision_summary(ctx: Context, ds: DecisionState, inp: DecisionInputs, lang: str) -> dict[str, Any]:
@@ -356,6 +387,17 @@ def _terms(ctx: Context, ds: DecisionState, lang: str) -> list[str]:
     return out
 
 
+def _agreed_terms(ctx: Context, c: Any, lang: str) -> list[str]:
+    """The terms actually agreed, from the commitment's own obligations (beside `interpretation.terms`, which reads the offer)."""
+    out = []
+    for ob in c.obligations:
+        try:
+            out.append(obligation_sentence(ctx.state, ob, ctx.today, lang))
+        except (ValueError, KeyError, AttributeError):
+            continue
+    return out
+
+
 def _evaluation(ctx: Context, ds: DecisionState, lang: str) -> dict[str, Any] | None:
     v = ds.verdict
     if v is None:
@@ -400,7 +442,9 @@ def _authorization(ctx: Context, ds: DecisionState, lang: str) -> dict[str, Any]
     a = ds.approval if ds.approval is not None else (ds.approvals[-1] if ds.approvals else None)
     if a is None:
         return None
-    return {"required_tier": "TIER_2", "approval_id": a.id, "status": str(getattr(a.status, "value", a.status)),
+    # the tier is what the executor judged: the result logged when the operation was queued or run, not a constant
+    entry = next((e for e in ctx.entries if e.result.approval_id == a.id), None)
+    return {"required_tier": entry.result.tier.value if entry is not None else None, "approval_id": a.id, "status": str(getattr(a.status, "value", a.status)),
             "decided_by": a.decided_by, "decided_day": a.decided_day,
             "decided_when": when_text(a.decided_day, ctx.today, lang) if a.decided_day is not None else None}
 
@@ -450,7 +494,7 @@ def _receipts(ctx: Context, ds: DecisionState, lang: str) -> tuple[list[dict[str
 def remaining_task_view(ctx: Context, ds: DecisionState, inp: DecisionInputs, lang: str) -> dict[str, Any]:
     w = waiting_for(ds, inp)
     if ds.residual is not None and w.code == WaitCode.OWNER_DECISION:
-        text = remaining_task_words(ds.residual.shortfall_fen, ds.residual.starts_day, ctx.today, lang)
+        text = remaining_task_words(ds.residual.shortfall_fen, ds.residual.starts_day, ctx.today, lang, ds.residual.committed_cure)
     else:
         text = waiting_text(w.code.value, _party_name(ctx, w) or "", w.day, ctx.today, lang, family=ds.family)
     return {"text": text, "code": w.code.value, "links": remaining_links(ctx, ds, lang) if ds.residual is not None and w.code == WaitCode.OWNER_DECISION else []}
@@ -494,7 +538,8 @@ def decision_detail(ctx: Context, ds: DecisionState, inp: DecisionInputs, lang: 
         "quote": quote_for(ctx, ds, lang, decided=decided) if ds.family == "FUNDING" else None,
         "authorization": _authorization(ctx, ds, lang),
         "agreement": ({"commitment_id": c.id, "status": c.status.value, "status_text": _status_text(c, ds, lang),
-                       "expires_day": c.expires_day, "expires_when": when_text(c.expires_day, ctx.today, lang)}
+                       "expires_day": c.expires_day, "expires_when": when_text(c.expires_day, ctx.today, lang),
+                       "terms": _agreed_terms(ctx, c, lang)}
                       if c is not None else None),
         "operations": _operations(ctx, ds, lang),
         "execution": execution_view(ctx, ds, lang),
@@ -531,7 +576,10 @@ def list_decisions(lang: str = "en", family: str | None = None, open: bool = Fal
                 continue
             if ds.family == "DEAL" and ds.offer is None and ds.commitment is None:
                 continue  # nothing of this offer is stored
-            rows.append(decision_summary(ctx, ds, inp, lang))
+            try:
+                rows.append(decision_summary(ctx, ds, inp, lang))
+            except Exception:
+                log.exception("decision %s could not be summarised", ds.decision_id)
     return {"day": ctx.today, "lang": lang, "decisions": rows[: max(1, min(limit, 200))], "count": len(rows)}
 
 
@@ -546,16 +594,10 @@ def get_decision(decision_id: str, lang: str = "en") -> dict[str, Any]:
             offer_id = offer_id_of(decision_id)
             if offer_id is None or ctx.offer(offer_id) is None:
                 raise HTTPException(404, {"code": "DECISION_NOT_FOUND", "decision_id": decision_id})
-            from app.decisions import derive
-
             inp = ctx.inputs_for(decision_id)
             found = (derive(inp), inp)
         ds, inp = found
         return decision_detail(ctx, ds, inp, lang)
-
-
-def decision_id_of_offer(offer_id: str) -> str:
-    return deal_id(offer_id)
 
 
 __all__ = ["Context", "decision_detail", "decision_summary", "family_of", "load_context", "record_fact", "router"]

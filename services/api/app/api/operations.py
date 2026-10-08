@@ -131,8 +131,16 @@ def _decision_fields(ctx, rt, a, op: dict, status: str, pres: dict, run, lang: s
 
 
 @router.get("/approvals/queue", dependencies=[Depends(require_owner)])
-def approvals_queue() -> dict:
+def approvals_queue(lang: str = "en") -> dict:
+    """The Tier-2 queue, read once under one lock so every row is from the same books. `lang` (en | zh, additive) is the language of
+    every sentence the server writes for the cards."""
     rt = get_runtime()
+    lang = "zh" if lang == "zh" else "en"
+    with rt.lock:
+        return _approvals_queue(rt, lang)
+
+
+def _approvals_queue(rt, lang: str) -> dict:
     out = []
     ran = _decision_runs(rt.store.operations())
     state = rt.store.get_state()
@@ -180,26 +188,26 @@ def approvals_queue() -> dict:
             # Presentation fields (business words) for the owner's card: the question, names, cost and landing day.
             alert = (open_alerts.get((a.op_id or "").split(":")[1])
                      if pending and (a.op_id or "").startswith("alert:") else None)
-            after, residual = (cure_after(state, obs, rt.store.get_mandate(), alert, rt.day, "en") if alert is not None else (None, None))
+            after, residual = (cure_after(state, obs, rt.store.get_mandate(), alert, rt.day, lang) if alert is not None else (None, None))
             # An agreement row carries its terms, resolved here from the commitment it refers to (F02).
-            terms = agreement_terms(state, find_agreement(op, commitments), rt.day, "en",
+            terms = agreement_terms(state, find_agreement(op, commitments), rt.day, lang,
                                      pending=pending,
                                      horizon_days=rt.store.get_mandate().forward_concession_horizon_days) if a.kind in COMMERCIAL_KINDS else None
-            d["presentation"] = approval_words(state, op, a.kind, rt.day, alert, "en", plan_costs if pending else None, after=after,
+            d["presentation"] = approval_words(state, op, a.kind, rt.day, alert, lang, plan_costs if pending else None, after=after,
                                                status=d["status"], agreement=terms)
             d["presentation"]["residual"] = residual
             d["presentation"]["execution_status"] = _execution_status(d["status"], run.result.status.value if run is not None else None)
             if terms is not None and d["amount_display"] is None:
                 d["amount_display"] = d["presentation"]["amount_display"]  # the agreement's scope, never ¥0.00
-            d["presentation"]["reason"] = approval_reason_words(state, a.reason, rt.day, "en")
+            d["presentation"]["reason"] = approval_reason_words(state, a.reason, rt.day, lang)
             d["presentation"]["result_message"] = (
                 (result_words(state, kind=a.kind or "", status=run.result.status.value, payload=op, day=run.result.effective_day,
-                              today=rt.day, lang="en", approval_status=d["status"], message=run.result.message,
+                              today=rt.day, lang=lang, approval_status=d["status"], message=run.result.message,
                               agreements=agreements) if run is not None else None)
-                or (business_text(state, d["result_message"], rt.day, "en", agreements) if d["result_message"] else None))
-            d["presentation"]["decided_when"] = (relative_days(f"on day {d['decided_day']}", rt.day, "en")
+                or (business_text(state, d["result_message"], rt.day, lang, agreements) if d["result_message"] else None))
+            d["presentation"]["decided_when"] = (relative_days(f"on day {d['decided_day']}", rt.day, lang)
                                                  if d.get("decided_day") is not None else None)
-            d["presentation"]["created_when"] = (when_text(int(d["created_day"]), rt.day, "en")
+            d["presentation"]["created_when"] = (when_text(int(d["created_day"]), rt.day, lang)
                                                  if d.get("created_day") is not None else None)
         except Exception:
             log.exception("approval %s could not be presented", a.id)
@@ -207,7 +215,7 @@ def approvals_queue() -> dict:
         d.update({"decision_id": None, "decision_state": None, "quote": None, "execution": None})
         if ctx is not None and d.get("presentation") is not None:
             try:
-                d.update(_decision_fields(ctx, rt, a, op, d["status"], d["presentation"], ran.get(a.id)))
+                d.update(_decision_fields(ctx, rt, a, op, d["status"], d["presentation"], ran.get(a.id), lang))
             except Exception:
                 log.exception("approval %s: the decision record could not be read", a.id)
         out.append(d)

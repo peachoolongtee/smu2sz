@@ -98,7 +98,7 @@ def test_without_a_receipt_the_agreement_is_missed_or_expired_never_agreed(clien
     _walk(client, to=34)
     deals = client.get("/decisions", params={"family": "DEAL"}).json()["decisions"]
     assert len(deals) == 1
-    assert deals[0]["state"] in ("MISSED", "EXPIRED") and deals[0]["state_text"] != "Agreed"
+    assert deals[0]["state"] == "MISSED" and deals[0]["state_text"] == "Early payment did not arrive"  # the golden walk is MISSED
     d = _record(client, deals[0]["id"])
     assert d["terminal"] is True and d["agreement"]["status_text"] != "Agreed"
     assert d["waiting_for"]["code"] == "BANK_RECEIPT" and d["waiting_for"]["day"] is not None

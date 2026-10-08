@@ -76,7 +76,8 @@ They hold no buyer text and no model output.
 
 - EVALUATED (DEAL; fact_key = verdict_id). offer_id, offer_version, verdict_id, outcome, counter_ids, recommended_counter_id,
   mandate_version. Gives the evaluation its day.
-- SENT (DEAL; fact_key = "accept-{commitment_id}" when the buyer accepted, else "nodeal:{verdict_id}:{buyer_profile}").
+- SENT (DEAL; fact_key = "accept-{commitment_id}" when the buyer accepted, else "nodeal:{verdict_id}:{buyer_profile}", with
+  ":{counter_id}" added for a bound send, so a send of one counter after another's refusal is its own fact).
   offer_id, verdict_id, state_version_shown, chosen_counter_id (null for an unbound send), counter_ids_sent in round
   order, buyer_profile, simulated = true, outcome (DEAL | NO_DEAL), accepted_counter_id, transcript_hash,
   commitment_id, accept_op_id, funding_op_ids, funding_blocked (null or the router's reason code), counter_economics of
@@ -87,7 +88,7 @@ They hold no buyer text and no model output.
 - QUOTED (FUNDING; fact_key = decision_id). alert_id, alert_kind, alert_day, state_version_shown, source (cure | router),
   legs [{op_id, kind, facility_id, receivable_id, amount_fen, cost_fen, annual_rate, cost_days, cost_end_day, lands_day,
   above_ceiling}], total_cost_fen (null when the engine gave no total), cost_note (draw_interest_excluded | null),
-  needs_owner, max_apr_bp, restores_reserve, after_first_short_day (null = safe through the horizon), horizon_days,
+  needs_owner, max_apr_bp, projected, restores_reserve (null when not projected), after_first_short_day (null with projected = safe through the horizon), horizon_days,
   if_decline {kind: below_reserve | below_zero | closed, day, zero_day, shortfall_fen, max_shortfall_fen,
   worst_day}, residual_shortfall_fen (numbers, never display strings). Every number is copied from the Alert's SuggestedAction pricing, the alert's
   inputs, the router plan's cost lines (`cost_lines_by_leg`) and the after-state projection the home already shows
@@ -315,3 +316,21 @@ Decisions taken while building it, all inside the rules above:
   `app.persistence.records`. `decision_id_for` takes a keyword `approval_id` and returns None for activity.
 - Waiting: a deal's linked funding in transit is checked after the buyer rows, for AGREED and NO_DEAL.
 - A router-plan quote stores no per-leg rate (the plan's cost lines carry none); a cure quote stores the alert's exact rate.
+
+## Review fixes (10 Oct 2026)
+
+- The residual belongs to the record whose breach it is: the open alert is the record's own (`alert_id`), or the engine says nothing
+  fixes it (`committed_cure` false). A later, unrelated breach with a committed cure is the next step on the home, not an old record's
+  residual, and the old record closes. When the alert still has a committed cure the sentence says a funding plan is ready, not that
+  nothing restores the reserve.
+- A quote says whether it projected anything (`projected`). A repayment, an application and a failed projection did not, and say
+  nothing about the reserve; a repayment's after-state is "The balance is repaid and the interest stops."
+- A bound send is idempotent: while a commitment for the same verdict and the same terms is PROPOSED, ACCEPTED or ACTIVE, a second
+  identical send is 409 `ALREADY_SENT` (with the commitment and approval ids) and creates nothing. The binding check and the side
+  effects run in one lock. Any binding field present also requires the latest verdict to be on the current books.
+- `record_fact` builds the fact inside its guard and answers `true`, `false` or `"already_recorded_differently"` (a fact with that
+  key was stored earlier with other content; the earlier one stands).
+- A router-plan leg keeps the rate its cost line stated (to two places). A decision that cannot be derived is logged and left out.
+- Known: `fen_of` reads money back from the alert's display strings. And `/negotiate` funds the gap in the same call as a queued
+  accept, which moves the books, so approving that accept later is refused ("The books changed since verdict ...") and the record reads
+  FAILED. That is executor behaviour; it is recorded, not changed here.

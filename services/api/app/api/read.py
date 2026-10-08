@@ -147,7 +147,8 @@ def get_audit() -> dict:
     rt = get_runtime()
     ops = rt.store.operations()
     state = rt.store.get_state()
-    refusals = [_op_view(o, state, rt.day) for o in ops if json.loads(o.result_json).get("status") == "REFUSED"]
+    commitments = rt.store.commitments()
+    refusals = [_op_view(o, state, rt.day, commitments) for o in ops if json.loads(o.result_json).get("status") == "REFUSED"]
     s = security_summary(rt.store)
     events = rt.store.security_events()
     doc_ids = {sp.doc_id for e in events for sp in e.spans}
