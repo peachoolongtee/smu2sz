@@ -1,0 +1,523 @@
+{
+  "state": {
+    "org_id": "SME-PUBLIC-1",
+    "as_of": "2026-01-01",
+    "cash_fen": 763450382,
+    "flows": [
+      {
+        "id": "F-SUPPLIER-1",
+        "day": 9,
+        "amount_fen": -259805996,
+        "kind": "SUPPLIER",
+        "label": "Material suppliers (the 10th and 25th)",
+        "counterparty_id": null,
+        "confirmed": true
+      },
+      {
+        "id": "F-PAYROLL-1",
+        "day": 14,
+        "amount_fen": -254893092,
+        "kind": "PAYROLL",
+        "label": "Payroll (the 15th)",
+        "counterparty_id": null,
+        "confirmed": true
+      },
+      {
+        "id": "F-TAX-1",
+        "day": 14,
+        "amount_fen": -43980275,
+        "kind": "OTHER",
+        "label": "VAT and surcharges (the 15th)",
+        "counterparty_id": null,
+        "confirmed": true
+      },
+      {
+        "id": "F-SUPPLIER-2",
+        "day": 24,
+        "amount_fen": -259805996,
+        "kind": "SUPPLIER",
+        "label": "Material suppliers (the 10th and 25th)",
+        "counterparty_id": null,
+        "confirmed": true
+      },
+      {
+        "id": "F-OPEX-1",
+        "day": 27,
+        "amount_fen": -65569632,
+        "kind": "OPERATING",
+        "label": "Rent, utilities, freight (the 28th)",
+        "counterparty_id": null,
+        "confirmed": true
+      },
+      {
+        "id": "F-SUPPLIER-3",
+        "day": 40,
+        "amount_fen": -259805996,
+        "kind": "SUPPLIER",
+        "label": "Material suppliers (the 10th and 25th)",
+        "counterparty_id": null,
+        "confirmed": true
+      },
+      {
+        "id": "F-PAYROLL-2",
+        "day": 45,
+        "amount_fen": -254893092,
+        "kind": "PAYROLL",
+        "label": "Payroll (the 15th)",
+        "counterparty_id": null,
+        "confirmed": true
+      },
+      {
+        "id": "F-TAX-2",
+        "day": 45,
+        "amount_fen": -43980275,
+        "kind": "OTHER",
+        "label": "VAT and surcharges (the 15th)",
+        "counterparty_id": null,
+        "confirmed": true
+      },
+      {
+        "id": "F-SUPPLIER-4",
+        "day": 55,
+        "amount_fen": -259805996,
+        "kind": "SUPPLIER",
+        "label": "Material suppliers (the 10th and 25th)",
+        "counterparty_id": null,
+        "confirmed": true
+      },
+      {
+        "id": "F-OPEX-2",
+        "day": 58,
+        "amount_fen": -65569632,
+        "kind": "OPERATING",
+        "label": "Rent, utilities, freight (the 28th)",
+        "counterparty_id": null,
+        "confirmed": true
+      },
+      {
+        "id": "F-SUPPLIER-5",
+        "day": 68,
+        "amount_fen": -259805996,
+        "kind": "SUPPLIER",
+        "label": "Material suppliers (the 10th and 25th)",
+        "counterparty_id": null,
+        "confirmed": true
+      },
+      {
+        "id": "F-PAYROLL-3",
+        "day": 73,
+        "amount_fen": -254893092,
+        "kind": "PAYROLL",
+        "label": "Payroll (the 15th)",
+        "counterparty_id": null,
+        "confirmed": true
+      },
+      {
+        "id": "F-TAX-3",
+        "day": 73,
+        "amount_fen": -43980275,
+        "kind": "OTHER",
+        "label": "VAT and surcharges (the 15th)",
+        "counterparty_id": null,
+        "confirmed": true
+      },
+      {
+        "id": "F-SUPPLIER-6",
+        "day": 83,
+        "amount_fen": -259805996,
+        "kind": "SUPPLIER",
+        "label": "Material suppliers (the 10th and 25th)",
+        "counterparty_id": null,
+        "confirmed": true
+      },
+      {
+        "id": "F-OPEX-3",
+        "day": 86,
+        "amount_fen": -65569632,
+        "kind": "OPERATING",
+        "label": "Rent, utilities, freight (the 28th)",
+        "counterparty_id": null,
+        "confirmed": true
+      },
+      {
+        "id": "F-SUPPLIER-7",
+        "day": 99,
+        "amount_fen": -259805996,
+        "kind": "SUPPLIER",
+        "label": "Material suppliers (the 10th and 25th)",
+        "counterparty_id": null,
+        "confirmed": true
+      },
+      {
+        "id": "F-PAYROLL-4",
+        "day": 104,
+        "amount_fen": -254893092,
+        "kind": "PAYROLL",
+        "label": "Payroll (the 15th)",
+        "counterparty_id": null,
+        "confirmed": true
+      },
+      {
+        "id": "F-TAX-4",
+        "day": 104,
+        "amount_fen": -43980275,
+        "kind": "OTHER",
+        "label": "VAT and surcharges (the 15th)",
+        "counterparty_id": null,
+        "confirmed": true
+      },
+      {
+        "id": "F-SUPPLIER-8",
+        "day": 114,
+        "amount_fen": -259805996,
+        "kind": "SUPPLIER",
+        "label": "Material suppliers (the 10th and 25th)",
+        "counterparty_id": null,
+        "confirmed": true
+      },
+      {
+        "id": "F-OPEX-4",
+        "day": 117,
+        "amount_fen": -65569632,
+        "kind": "OPERATING",
+        "label": "Rent, utilities, freight (the 28th)",
+        "counterparty_id": null,
+        "confirmed": true
+      }
+    ],
+    "receivables": [
+      {
+        "id": "RCV-A1",
+        "counterparty_id": "BUYER-A",
+        "face_fen": 539720257,
+        "issue_day": -50,
+        "terms_days": 90,
+        "status": "OPEN",
+        "confirmed": true
+      },
+      {
+        "id": "RCV-B1",
+        "counterparty_id": "BUYER-B",
+        "face_fen": 300000000,
+        "issue_day": -95,
+        "terms_days": 60,
+        "status": "OPEN",
+        "confirmed": true
+      },
+      {
+        "id": "RCV-B2",
+        "counterparty_id": "BUYER-B",
+        "face_fen": 240126737,
+        "issue_day": -30,
+        "terms_days": 60,
+        "status": "OPEN",
+        "confirmed": true
+      },
+      {
+        "id": "RCV-C1",
+        "counterparty_id": "BUYER-C",
+        "face_fen": 338466049,
+        "issue_day": -45,
+        "terms_days": 90,
+        "status": "OPEN",
+        "confirmed": true
+      },
+      {
+        "id": "RCV-D1",
+        "counterparty_id": "BUYER-D",
+        "face_fen": 254926735,
+        "issue_day": -70,
+        "terms_days": 60,
+        "status": "OPEN",
+        "confirmed": true
+      },
+      {
+        "id": "RCV-E1",
+        "counterparty_id": "BUYER-E",
+        "face_fen": 230598209,
+        "issue_day": -15,
+        "terms_days": 90,
+        "status": "OPEN",
+        "confirmed": true
+      },
+      {
+        "id": "RCV-F1",
+        "counterparty_id": "BUYER-F",
+        "face_fen": 750000000,
+        "issue_day": -96,
+        "terms_days": 76,
+        "status": "OPEN",
+        "confirmed": true
+      },
+      {
+        "id": "RCV-F2",
+        "counterparty_id": "BUYER-F",
+        "face_fen": 1052256767,
+        "issue_day": -51,
+        "terms_days": 76,
+        "status": "OPEN",
+        "confirmed": true
+      }
+    ],
+    "recurring_invoices": [
+      {
+        "counterparty_id": "BUYER-A",
+        "face_fen": 215326304,
+        "every_days": 30,
+        "next_issue_day": 5,
+        "terms_days": 90
+      },
+      {
+        "counterparty_id": "BUYER-B",
+        "face_fen": 140552811,
+        "every_days": 30,
+        "next_issue_day": 12,
+        "terms_days": 60
+      },
+      {
+        "counterparty_id": "BUYER-C",
+        "face_fen": 71463167,
+        "every_days": 30,
+        "next_issue_day": 18,
+        "terms_days": 90
+      },
+      {
+        "counterparty_id": "BUYER-F",
+        "face_fen": 457728480,
+        "every_days": 30,
+        "next_issue_day": 8,
+        "terms_days": 76
+      }
+    ],
+    "facilities": [
+      {
+        "drawn_fen": 0,
+        "advance_rate_bp": null,
+        "fee_bp_per_advance": 0,
+        "fee_period_days": null,
+        "upfront_fee_bp": 0,
+        "term_months": null,
+        "collateral": false,
+        "personal_guarantee": false,
+        "counts_in_leverage": true,
+        "counts_in_debt_service": true,
+        "covenants": [],
+        "owner_approved": true,
+        "id": "FAC-LINE",
+        "name": "Bank credit lines, undrawn room",
+        "kind": "CREDIT_LINE",
+        "lender_id": "BANK-1",
+        "status": "COMMITTED",
+        "limit_fen": 1400000000,
+        "rate_bp": 300,
+        "lead_time_days": 2,
+        "repayment": "BULLET",
+        "source_note": "filing: credit lines granted ¥50,000,000, used ¥36,000,000 (附注 流动性风险); rate derived from the filing's accrued interest (SOURCES.md §3)"
+      },
+      {
+        "drawn_fen": 0,
+        "advance_rate_bp": 8000,
+        "fee_bp_per_advance": 25,
+        "fee_period_days": 30,
+        "upfront_fee_bp": 0,
+        "term_months": null,
+        "collateral": false,
+        "personal_guarantee": false,
+        "counts_in_leverage": true,
+        "counts_in_debt_service": true,
+        "covenants": [],
+        "owner_approved": true,
+        "id": "FAC-IF",
+        "name": "Invoice financing (supply-chain platform)",
+        "kind": "INVOICE_FINANCING",
+        "lender_id": "PLATFORM-1",
+        "status": "NOT_APPLIED",
+        "limit_fen": 800000000,
+        "rate_bp": 780,
+        "lead_time_days": 3,
+        "repayment": "ON_RECEIPT",
+        "source_note": "calibrated: not in the filing; the terms of the golden books' platform (spec v2 §7.2) on a limit of one month of invoices; not applied for, so zero for hard constraints"
+      },
+      {
+        "drawn_fen": 0,
+        "advance_rate_bp": null,
+        "fee_bp_per_advance": 0,
+        "fee_period_days": null,
+        "upfront_fee_bp": 0,
+        "term_months": null,
+        "collateral": false,
+        "personal_guarantee": false,
+        "counts_in_leverage": false,
+        "counts_in_debt_service": false,
+        "covenants": [],
+        "owner_approved": true,
+        "id": "FAC-BILL",
+        "name": "Bank acceptance bill discounting (6+9 bills held)",
+        "kind": "BANK_ACCEPTANCE_BILL",
+        "lender_id": "BANK-1",
+        "status": "COMMITTED",
+        "limit_fen": 437105804,
+        "rate_bp": 120,
+        "lead_time_days": 1,
+        "repayment": "BULLET",
+        "source_note": "filing: bills held ¥3,717,461.74 (应收票据) + ¥653,596.30 (应收款项融资); discount rate calibrated (6+9 city and rural bank paper, 2025)"
+      },
+      {
+        "drawn_fen": 0,
+        "advance_rate_bp": null,
+        "fee_bp_per_advance": 0,
+        "fee_period_days": null,
+        "upfront_fee_bp": 0,
+        "term_months": 12,
+        "collateral": false,
+        "personal_guarantee": false,
+        "counts_in_leverage": true,
+        "counts_in_debt_service": true,
+        "covenants": [],
+        "owner_approved": true,
+        "id": "FAC-GGL",
+        "name": "Guaranteed working-capital loan (SME guarantee company)",
+        "kind": "GOV_GUARANTEED_LOAN",
+        "lender_id": "BANK-2",
+        "status": "NOT_APPLIED",
+        "limit_fen": 1000000000,
+        "rate_bp": 425,
+        "lead_time_days": 21,
+        "repayment": "BULLET",
+        "source_note": "composite: the rate a Shenzhen peer's 2025 annual report states for a bank loan guaranteed by the municipal SME guarantee company (SOURCES.md §7)"
+      }
+    ],
+    "debts": [
+      {
+        "id": "D-ST-CREDIT",
+        "facility_id": null,
+        "label": "Short-term credit loans ¥15m, interest monthly on the 21st, 12-month bullet beyond the horizon",
+        "principal_fen": 1500000000,
+        "monthly_debt_service_fen": 3698630,
+        "rate_bp": 300,
+        "payment_every_days": 30,
+        "next_payment_day": 20
+      },
+      {
+        "id": "D-ST-MORT",
+        "facility_id": null,
+        "label": "Mortgage-backed short-term loan ¥6m, interest monthly on the 21st, 12-month bullet beyond the horizon",
+        "principal_fen": 600000000,
+        "monthly_debt_service_fen": 1509041,
+        "rate_bp": 306,
+        "payment_every_days": 30,
+        "next_payment_day": 20
+      },
+      {
+        "id": "D-LT-MORT",
+        "facility_id": null,
+        "label": "Long-term loan ¥15m secured on plant and land-use rights, interest monthly on the 21st, no principal due within a year",
+        "principal_fen": 1500000000,
+        "monthly_debt_service_fen": 3526027,
+        "rate_bp": 286,
+        "payment_every_days": 30,
+        "next_payment_day": 20
+      }
+    ],
+    "forward_concessions": [],
+    "expected_orders": [
+      {
+        "counterparty_id": "BUYER-A",
+        "label": "next quarter",
+        "start_day": 92,
+        "end_day": 182,
+        "amount_fen": 645978913,
+        "firm": false
+      }
+    ],
+    "counterparties": [
+      {
+        "id": "BUYER-A",
+        "name": "Buyer A",
+        "role": "BUYER",
+        "known": true
+      },
+      {
+        "id": "BUYER-B",
+        "name": "Buyer B",
+        "role": "BUYER",
+        "known": true
+      },
+      {
+        "id": "BUYER-C",
+        "name": "Buyer C",
+        "role": "BUYER",
+        "known": true
+      },
+      {
+        "id": "BUYER-D",
+        "name": "Buyer D",
+        "role": "BUYER",
+        "known": true
+      },
+      {
+        "id": "BUYER-E",
+        "name": "Buyer E",
+        "role": "BUYER",
+        "known": true
+      },
+      {
+        "id": "BUYER-F",
+        "name": "Other buyers (aggregate)",
+        "role": "BUYER",
+        "known": true
+      },
+      {
+        "id": "BANK-1",
+        "name": "Main bank (credit lines, bills)",
+        "role": "LENDER",
+        "known": true
+      },
+      {
+        "id": "BANK-2",
+        "name": "Guaranteed-loan bank",
+        "role": "LENDER",
+        "known": true
+      },
+      {
+        "id": "PLATFORM-1",
+        "name": "Supply-chain finance platform",
+        "role": "LENDER",
+        "known": true
+      },
+      {
+        "id": "OWNER",
+        "name": "Owner",
+        "role": "OWNER",
+        "known": true
+      }
+    ],
+    "invoice_adjustments": [],
+    "monthly_ebitda_fen": 81429627,
+    "state_version": 1,
+    "as_of_day": 0,
+    "lots": [],
+    "scenario": null
+  },
+  "mandate": {
+    "org_id": "SME-PUBLIC-1",
+    "version": 1,
+    "min_cash_fen": 364442999,
+    "max_aggregate_forward_concession_fen": 10000000,
+    "forward_concession_horizon_days": 365,
+    "per_buyer_caps_fen": {},
+    "max_immediate_discount_bp": 150,
+    "min_dscr_bp": 12500,
+    "max_leverage_bp": 45000,
+    "max_apr_bp": 1500,
+    "require_clean_down": false,
+    "allow_new_borrowing": true,
+    "tier2_single_commitment_fen": 50000000,
+    "horizon_days": 120,
+    "issued_day": 0,
+    "expires_day": 90,
+    "revoked": false,
+    "public_key_hex": null,
+    "signature_hex": null
+  }
+}

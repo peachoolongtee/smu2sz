@@ -1,0 +1,21 @@
+{
+  "org_id": "SME-PUBLIC-1",
+  "version": 1,
+  "min_cash_fen": 364442999,
+  "max_aggregate_forward_concession_fen": 10000000,
+  "forward_concession_horizon_days": 365,
+  "per_buyer_caps_fen": {},
+  "max_immediate_discount_bp": 150,
+  "min_dscr_bp": 12500,
+  "max_leverage_bp": 45000,
+  "max_apr_bp": 1500,
+  "require_clean_down": false,
+  "allow_new_borrowing": true,
+  "tier2_single_commitment_fen": 50000000,
+  "horizon_days": 120,
+  "issued_day": 0,
+  "expires_day": 90,
+  "revoked": false,
+  "public_key_hex": null,
+  "signature_hex": null
+}
