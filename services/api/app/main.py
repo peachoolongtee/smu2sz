@@ -14,6 +14,7 @@ from app.api.clock import router as clock_router
 from app.api.collections import router as collections_router
 from app.api.decide import router as decide_router
 from app.api.decisions import router as decisions_router
+from app.api.demo_bank import router as demo_bank_router
 from app.api.errors import install_error_handlers
 from app.api.home import router as home_router
 from app.api.nl import router as nl_router
@@ -47,6 +48,7 @@ app.include_router(borrower_file_router)
 app.include_router(alerts_router)
 app.include_router(nl_router)
 app.include_router(clock_router)
+app.include_router(demo_bank_router)
 app.include_router(home_router)
 app.include_router(strategy_router)
 app.include_router(pilot_router)
