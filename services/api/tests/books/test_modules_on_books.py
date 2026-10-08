@@ -143,7 +143,11 @@ def _lowest(traj: dict[str, Any]) -> tuple[int, int]:
 # engine, see tests/funding/test_display_fields_inert.py). The golden digest is of the payload without them.
 _ROW_DISPLAY = ("status", "reason_kind", "shortfall_fen", "shortfall_display", "worst_day", "not_executable_reason",
                 "not_executable_reason_when", "note_when", "components_when",
-                "approval_reason_when")  # approval_reason_when: the comparison rows' approval-reason sentence (Wave 4/7)
+                "approval_reason_when",  # approval_reason_when: the comparison rows' approval-reason sentence (Wave 4/7)
+                # Wave 8 pass A: the row's role and why, its named legs (with their cost lines), the plan's name and the
+                # offset it nets against; `legs` goes whole (name_display, cost_display, amounts all derive from the actions)
+                "role", "role_reason", "legs", "leg_costs_fen", "name_display", "offset_fen", "offset_display",
+                "offset_label")
 
 
 def _strip_when(plan: dict[str, Any]) -> None:
@@ -155,6 +159,7 @@ def _strip_when(plan: dict[str, Any]) -> None:
 
 def _without_display_fields(plan: dict[str, Any]) -> dict[str, Any]:
     out = json.loads(json.dumps(plan))
+    out.pop("recommended_key", None)  # Wave 8 pass A: names the recommended comparison row; `recommended_plan` is never a row here
     for key in ("committed", "expected"):
         if out.get(key):
             out[key].pop("available_from_day", None)
