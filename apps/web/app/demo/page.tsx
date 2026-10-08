@@ -6,21 +6,25 @@ import { useState } from "react";
 import { TodayCard } from "@/components/home/today-card";
 import { ArrowRightIcon, ResetIcon } from "@/components/icons";
 import { Badge, Button, Callout, Card, PageHeader, inputClass } from "@/components/ui";
-import { goToStep, resetDemo } from "@/lib/demo-control";
+import { goToMore, goToStep, resetDemo } from "@/lib/demo-control";
 import { useDemo } from "@/lib/demo-store";
-import { DEMO_STEPS, SCENES, type SceneId } from "@/lib/demo";
+import { DEMO_STEPS, ENGINE_PAGES, MORE, SCENES, type SceneId } from "@/lib/demo";
+import { stepNarration } from "@/lib/demo-text";
 import { useI18n } from "@/lib/i18n";
 
 /**
- * The judge's page: the story in order, each step one click, with the clock, the scenario switch and the side doors. The one brand
- * fill on the page is the strip's Start demo / Next; every button here is a secondary pill.
+ * The judge's page: the late-payment loop in six scenes, each step one click, with the clock, the scenario switch, the optional scenes
+ * and the side doors. The one brand fill on the page is the strip's Start demo / Next; every button here is a secondary pill.
  */
 export default function DemoPage() {
-  const { t, te } = useI18n();
+  const i18n = useI18n();
+  const { t, te } = i18n;
   const router = useRouter();
   const demo = useDemo();
   const [scenario, setScenario] = useState<"golden_sme" | "short_facilities">("golden_sme");
   const current = demo.step;
+  // The owner's own step names what it approves on its button, here as on the strip.
+  const runLabel = (id: string) => (DEMO_STEPS.find((x) => x.id === id)?.owner ? (demo.cure?.amount ? t("demo.approve", { amount: demo.cure.amount }) : t("demo.approve.plain")) : t("story.run"));
 
   return (
     <>
@@ -29,7 +33,7 @@ export default function DemoPage() {
         subtitle={t("story.subtitle")}
         actions={
           <Button variant="secondary" loading={demo.busy} disabled={current >= DEMO_STEPS.length - 1} onClick={() => void goToStep(current + 1, router.push)} data-testid="story-next">
-            {current < 0 ? t("demo.start") : t("demo.next")}
+            {current < 0 ? t("demo.start") : DEMO_STEPS[current + 1]?.owner ? (demo.cure?.amount ? t("demo.approve", { amount: demo.cure.amount }) : t("demo.approve.plain")) : t("demo.next")}
             <ArrowRightIcon />
           </Button>
         }
@@ -55,7 +59,7 @@ export default function DemoPage() {
                             </span>
                             <span className="min-w-0 flex-1 basis-48">
                               <span className="block text-sm font-medium text-ink">{te("demo.step", s.id)}</span>
-                              <span className="block text-xs text-ink-2">{te("demo.desc", s.id)}</span>
+                              <span className="block text-xs text-ink-2">{stepNarration(i18n, s.id, demo)}</span>
                             </span>
                             <span className="flex shrink-0 gap-1.5 max-sm:ml-9">
                               {done ? (
@@ -88,12 +92,14 @@ export default function DemoPage() {
                                 <Button
                                   size="sm"
                                   variant="secondary"
-                                  disabled={demo.busy}
+                                  // The story moves time: a step waits for the one before it.
+                                  disabled={demo.busy || i > current + 1}
                                   onClick={() => void goToStep(i, router.push, { mode: "run" })}
-                                  aria-label={`${t("story.run")}, ${t("story.stepN", { n: i + 1 })}`}
+                                  title={i > current + 1 ? t("story.run.wait") : undefined}
+                                  aria-label={`${runLabel(s.id)}, ${t("story.stepN", { n: i + 1 })}`}
                                   data-testid={`story-run-${i + 1}`}
                                 >
-                                  {t("story.run")}
+                                  {runLabel(s.id)}
                                 </Button>
                               )}
                             </span>
@@ -116,13 +122,41 @@ export default function DemoPage() {
             ) : null}
           </Card>
 
-          <Card id="story-after" title={t("story.after")} subtitle={t("story.after.sub")}>
-            <ol className="list-decimal space-y-1 pl-5 text-sm text-ink-2">
-              {(["1", "2", "3", "4", "5"] as const).map((n) => (
-                <li key={n}>{t(`story.after.${n}`)}</li>
+          <Card id="story-more" title={t("story.more")} subtitle={t("story.more.sub")}>
+            <ul className="space-y-3">
+              {MORE.map((m) => (
+                <li key={m.id} className="flex flex-wrap items-start gap-x-3 gap-y-2" data-testid={`more-${m.id}`}>
+                  <span className="min-w-0 flex-1 basis-48">
+                    <span className="block text-sm font-medium text-ink">{te("more.title", m.id)}</span>
+                    <span className="block text-xs text-ink-2">{te("more.desc", m.id)}</span>
+                    {m.replacesBooks ? <span className="block text-xs font-medium text-warn-fg">{t("more.replaces")}</span> : null}
+                    {m.needsWalk && !demo.rewordedId ? <span className="block text-xs text-ink-3">{t("more.needsWalk")}</span> : null}
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    disabled={demo.busy || Boolean(m.needsWalk && !demo.rewordedId)}
+                    onClick={() => void goToMore(m.id, router.push)}
+                    aria-label={`${t("story.show")}: ${te("more.title", m.id)}`}
+                    data-testid={`more-run-${m.id}`}
+                  >
+                    {t("story.show")}
+                  </Button>
+                </li>
               ))}
-            </ol>
-            <p className="mt-3 text-xs text-ink-3">{t("story.after.hint")}</p>
+            </ul>
+            <div className="mt-4 border-t border-line pt-3">
+              <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-ink-3">{t("more.engine")}</p>
+              <ul className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
+                {ENGINE_PAGES.map((p) => (
+                  <li key={p.route}>
+                    <Link href={p.route} className="font-medium text-brand-700 underline underline-offset-2">
+                      {t(p.label)}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </Card>
         </div>
 
@@ -160,7 +194,6 @@ export default function DemoPage() {
               {(
                 [
                   ["/chat", "story.door.buyer"],
-                  ["/security", "story.door.attack"],
                   ["/whatif", "story.door.whatif"],
                   ["/evidence", "story.door.evidence"],
                   ["/", "story.door.business"],

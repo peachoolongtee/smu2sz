@@ -25,6 +25,10 @@ export interface DecisionContext {
   funded: boolean;
   /** Where the day-34 cure stands. */
   stage: "open" | "pending" | "approved";
+  /** The guided Demo's synthetic bank event has posted the agreed early payment (before day 34). */
+  receipted: boolean;
+  /** The day the approved cure's funding has landed and settled. */
+  settledDay: number;
   receipt: ReceiptVariant;
   offers: Record<string, OfferView>;
   evaluated: string[];
@@ -58,7 +62,8 @@ function dealKey(snaps: Snaps, ctx: DecisionContext, offerId: string): { key: st
       const after = ctx.receipt === "none" ? "noreceipt_day34" : ctx.receipt === "half" ? "half_day34" : "fulfilled_day34";
       return { key: `${after}.${answered}`, rekey };
     }
-    return { key: `agreed_day0.${answered}`, rekey };
+    // The synthetic bank event paid the agreed early payment: the deal is fulfilled from that day on (recorded with day 34's books).
+    return { key: `${ctx.receipted ? "fulfilled_day34" : "agreed_day0"}.${answered}`, rekey };
   }
   if (agreed) {
     // Seeded history without an offer in this session: the deal as the recorded story left it.
@@ -79,8 +84,9 @@ function otherKey(snaps: Snaps, ctx: DecisionContext, id: string): string | null
   if (has("cure_day0") && ctx.funded) return "cure_day0";
   if (has("cure_pending")) {
     const refused = row?.status === "APPROVED" && (row.execution_status === "REFUSED" || row.presentation?.execution_status === "REFUSED");
-    if (row) return refused ? "cure_failed" : row.status === "PENDING" ? "cure_pending" : "cure_approved";
-    if (ctx.day >= ctx.newsDay && ctx.stage !== "open") return ctx.stage === "approved" ? "cure_approved" : "cure_pending";
+    const settled = has("cure_settled") && ctx.day >= ctx.settledDay ? "cure_settled" : "cure_approved";
+    if (row) return refused ? "cure_failed" : row.status === "PENDING" ? "cure_pending" : settled;
+    if (ctx.day >= ctx.newsDay && ctx.stage !== "open") return ctx.stage === "approved" ? settled : "cure_pending";
     return null;
   }
   if (has("apply_pending")) {

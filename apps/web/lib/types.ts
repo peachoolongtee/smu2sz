@@ -808,6 +808,15 @@ export type VerdictView = Displayed<Verdict> & {
   /** The day the evaluation was made and the same as a distance from today. */
   evaluated_day?: Day;
   evaluated_when?: string;
+  /**
+   * The Deals workspace blocks the server wrote (Wave 3): the business action, why it matters and the priced response, the counter the
+   * server recommends sending with the verdict id and state version it is bound to. The guided Demo reads them to send exactly what Deals shows.
+   */
+  workspace?: {
+    recommends?: { action: string; text: string };
+    why_it_matters?: { text: string };
+    priced_response?: { counter_id: string; label?: string; send_scope?: string; verdict_id: string; state_version: number } | null;
+  };
 };
 
 export interface NegotiationRound {
@@ -2500,4 +2509,16 @@ export interface DecisionView extends DecisionSummary {
 export interface DecisionNotFoundDetail {
   code: "DECISION_NOT_FOUND";
   decision_id: string;
+}
+
+/**
+ * POST /demo/bank-receipt (owner, demo mode only): the guided Demo's one synthetic bank event. The receipt is the early payment the books
+ * were waiting for, in the amount they promised, from the simulated bank feed with a synthetic bank reference. The clock never records one.
+ */
+export interface BankReceiptResult {
+  synthetic: true;
+  bank_reference: string;
+  day: Day;
+  op_id: string;
+  result: OperationResult;
 }

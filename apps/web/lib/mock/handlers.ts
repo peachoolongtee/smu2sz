@@ -19,6 +19,7 @@ import type {
   ApprovalDecision,
   ApprovalView,
   AuditView,
+  BankReceiptResult,
   BorrowerFileRequest,
   BorrowerFileView,
   ChaseView,
@@ -63,6 +64,7 @@ import approvalsSeed from "../../mocks/approvals_seed.json";
 import approvalStories from "../../mocks/w1_approval_stories.json";
 import counterChangedJson from "../../mocks/w2_counter_changed.json";
 import auditSec from "../../mocks/audit_sec.json";
+import bankReceiptJson from "../../mocks/bank_receipt.json";
 import borrowerFileJson from "../../mocks/borrower_file.json";
 import capexApplyJson from "../../mocks/capex_apply.json";
 import capexJson from "../../mocks/capex.json";
@@ -181,7 +183,7 @@ function entryHash(op: Pick<OperationView, "seq" | "op_id" | "kind" | "status" |
 
 function append(
   key: keyof typeof OPS,
-  overrides: Partial<Pick<OperationView, "status" | "message" | "summary" | "requested_by">> = {},
+  overrides: Partial<Pick<OperationView, "status" | "message" | "summary" | "requested_by" | "day">> = {},
 ): OperationView {
   const s = load();
   const t = OPS[key];
@@ -196,7 +198,7 @@ function append(
     violations: [],
     seq,
     message: overrides.message ?? t.message,
-    day: 0,
+    day: overrides.day ?? 0,
     requested_by: overrides.requested_by ?? t.requested_by,
     summary: overrides.summary ?? t.summary,
     // The recorded Business sentence travels with the row; an override of the message has no recorded twin.
@@ -427,6 +429,8 @@ function decisionContext(): decisions.DecisionContext {
     newsDay: home.NEWS_DAY,
     funded: home.isFunded(),
     stage: home.cureStage(),
+    receipted: home.isReceipted(),
+    settledDay: home.SETTLED_DAY,
     receipt: home.mockReceiptVariant(),
     offers: s.offers,
     evaluated: s.evaluated,
@@ -536,6 +540,23 @@ function ensureApproval(key: "apply_loan"): ApprovalView {
   if (found) return found;
   s.approvals.push(clone(seed));
   return s.approvals[s.approvals.length - 1];
+}
+
+/**
+ * POST /demo/bank-receipt: the guided Demo's one synthetic bank event, the recorded answer of the real route. It posts the recorded receipt
+ * once, on the day the clock stands at (the Demo moves it to the promised day first), and only after an agreement was made.
+ */
+export async function demoBankReceipt(): Promise<BankReceiptResult> {
+  await delay();
+  const s = load();
+  const dealt = Object.values(s.negotiated).some((n) => n.outcome === "DEAL");
+  if (!dealt || home.isReceipted()) throw new ApiError(409, "No agreed early payment is waiting for the bank.", { code: "NO_PROMISED_RECEIPT" });
+  home.markReceipted();
+  const day = home.mockClock().day;
+  const op = append("receive_payment", { day });
+  save();
+  const res = clone(cast<BankReceiptResult>(bankReceiptJson));
+  return { ...res, day, op_id: op.op_id };
 }
 
 /** Side-effect free, as on the API: nothing is queued. */
@@ -727,7 +748,15 @@ export async function getPilotJournal(): Promise<PilotJournalView | null> {
 export async function getChase(receivableId: string, lang: "en" | "zh"): Promise<ChaseView> {
   await delay();
   const books = home.recordedBooks();
-  const file = (await (books === "day34_half" ? import("../../mocks/chase_day34_half.json") : books === "day34" ? import("../../mocks/chase_day34.json") : import("../../mocks/chase_day0.json"))).default;
+  const file = (
+    await (books === "day34_half"
+      ? import("../../mocks/chase_day34_half.json")
+      : books === "day34"
+        ? import("../../mocks/chase_day34.json")
+        : books === "day2"
+          ? import("../../mocks/chase_day2.json")
+          : import("../../mocks/chase_day0.json"))
+  ).default;
   const found = cast<Record<"en" | "zh", Record<string, ChaseView>>>(file)[lang][receivableId];
   if (!found) throw new ApiError(404, "Unknown receivable", { code: "RECEIVABLE_NOT_FOUND", receivable_id: receivableId });
   return clone(found);
