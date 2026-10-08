@@ -277,7 +277,7 @@ export const DEMO_STEPS: DemoStep[] = [
     link: { route: "/evidence", label: "demo.link.evidence" },
     run: async () => {
       const ledger = await getLedger();
-      return { entries: String(ledger.chain_length), chain: tNow(ledger.chain_valid ? "biz.activity.chainOk" : "biz.activity.chainBroken") };
+      return { entries: String(ledger.chain_length), chain: ledger.chain_text ?? tNow(ledger.chain_valid ? "biz.activity.chainOk" : "biz.activity.chainBroken") };
     },
   },
 ];
