@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import hashlib
 from dataclasses import dataclass
+from typing import overload
 
 from app.domain.models import (
     BaseKind,
@@ -44,19 +45,61 @@ class Context:
     order: ExpectedOrder | None
 
 
-def context(state: FinancialState, day: int = 0) -> Context:
-    """The buyer with a recurring invoice and an open receivable (golden: BUYER-1, RCV-A)."""
+@dataclass(frozen=True)
+class EarlyPayContext:
+    """A buyer with an open receivable and no recurring invoice: the early-payment lever only (no terms, price or rebate)."""
+
+    counterparty_id: str
+    receivable: Receivable
+    order: ExpectedOrder | None
+
+
+def _context_of(state: FinancialState, cp: str, rec: RecurringInvoice | None, day: int) -> Context | EarlyPayContext | None:
+    opens = sorted((r for r in state.receivables if r.counterparty_id == cp and r.status == "OPEN"),
+                   key=lambda r: (r.due_day, r.id))
+    if rec is None and not opens:
+        return None
+    orders = sorted((o for o in state.expected_orders if o.counterparty_id == cp and o.start_day >= day),
+                    key=lambda o: (o.start_day, o.label))
+    order = orders[0] if orders else None
+    if rec is not None:
+        if not opens:
+            return None
+        return Context(cp, opens[0], rec, order)
+    return EarlyPayContext(cp, opens[0], order)
+
+
+@overload
+def context(state: FinancialState, day: int = 0, buyer_id: None = None) -> Context: ...
+
+
+@overload
+def context(state: FinancialState, day: int, buyer_id: str) -> Context | EarlyPayContext: ...
+
+
+@overload
+def context(state: FinancialState, day: int = 0, *, buyer_id: str) -> Context | EarlyPayContext: ...
+
+
+def context(state: FinancialState, day: int = 0, buyer_id: str | None = None) -> Context | EarlyPayContext:
+    """Without a buyer id: the buyer with a recurring invoice and an open receivable (golden: BUYER-1, RCV-A).
+    With one: that buyer's single recurring invoice and its earliest open receivable; a buyer with open receivables
+    and no recurring invoice gets an `EarlyPayContext`; a buyer with neither is refused."""
+    if buyer_id is not None:
+        recs = [r for r in state.recurring_invoices if r.counterparty_id == buyer_id]
+        found = _context_of(state, buyer_id, recs[0] if len(recs) == 1 else None, day)
+        if found is None:
+            name = next((c.name for c in state.counterparties if c.id == buyer_id), buyer_id)
+            raise WhatIfParamError(f"FLOW has no terms or payment lever to value for {name} yet: "
+                                   f"no recurring invoice and no open invoice.")
+        return found
     for rec in state.recurring_invoices:
         cp = rec.counterparty_id
         if sum(1 for r in state.recurring_invoices if r.counterparty_id == cp) != 1:
             continue
-        opens = sorted((r for r in state.receivables if r.counterparty_id == cp and r.status == "OPEN"),
-                       key=lambda r: (r.due_day, r.id))
-        if not opens:
-            continue
-        orders = sorted((o for o in state.expected_orders if o.counterparty_id == cp and o.start_day >= day),
-                        key=lambda o: (o.start_day, o.label))
-        return Context(cp, opens[0], rec, orders[0] if orders else None)
+        found = _context_of(state, cp, rec, day)
+        if isinstance(found, Context):
+            return found
     raise WhatIfParamError("the state has no buyer with a recurring invoice and an open receivable")
 
 
@@ -76,9 +119,11 @@ def offer_id(params: WhatIfParams) -> str:
     return "WHATIF-" + hashlib.sha256(key.encode()).hexdigest()[:10]
 
 
-def build(params: WhatIfParams, ctx: Context, day: int = 0) -> tuple[CompiledOffer, str]:
+def build(params: WhatIfParams, ctx: Context | EarlyPayContext, day: int = 0) -> tuple[CompiledOffer, str]:
     """(synthetic offer, its description text). Obligations are FIRM except the rebate, which is
-    CONTINGENT and so counted at maximum (INVARIANT 5)."""
+    CONTINGENT and so counted at maximum (INVARIANT 5). An `EarlyPayContext` carries the early payment only: the
+    terms, rebate and price clauses need a recurring invoice and are left out."""
+    recurring = ctx.recurring if isinstance(ctx, Context) else None
     cp = ctx.counterparty_id
     rcv = ctx.receivable
     doc = _Doc()
@@ -100,15 +145,15 @@ def build(params: WhatIfParams, ctx: Context, day: int = 0) -> tuple[CompiledOff
             base=ObligationBase(kind=BaseKind.INVOICE, amount_fen=face, receivable_id=rcv.id),
             contingency=Contingency.FIRM, duration=Duration(kind=DurationKind.ONE_OFF))
 
-    current = ctx.recurring.terms_days
-    if params.terms_days != current:
+    current = recurring.terms_days if recurring is not None else params.terms_days
+    if recurring is not None and params.terms_days != current:
         span = doc.clause(f"payment terms {params.terms_days} days going forward (now {current} days).")
         add(ObligationType.TERMS_EXTENSION, span, days_delta=params.terms_days - current,
             target_terms_days=params.terms_days, effective_day=None,
             base=ObligationBase(kind=BaseKind.FUTURE_INVOICES),
             contingency=Contingency.FIRM, duration=Duration(kind=DurationKind.RECURRING_PERPETUAL))
 
-    if params.rebate_bp > 0:
+    if recurring is not None and params.rebate_bp > 0:
         amount = ctx.order.amount_fen if ctx.order is not None else None
         what = (f"the expected {ctx.order.label} order of {fmt_yuan(ctx.order.amount_fen)}"
                 if ctx.order is not None else "next quarter's purchases")
@@ -117,11 +162,11 @@ def build(params: WhatIfParams, ctx: Context, day: int = 0) -> tuple[CompiledOff
             base=ObligationBase(kind=BaseKind.PERIOD_PURCHASES, amount_fen=amount),
             contingency=Contingency.CONTINGENT, duration=Duration(kind=DurationKind.ONE_OFF))
 
-    if params.price_adjustment_bp > 0:
+    if recurring is not None and params.price_adjustment_bp > 0:
         span = doc.clause(f"{fmt_pct(bp(params.price_adjustment_bp))} price adjustment on future invoices "
-                          f"of {fmt_yuan(ctx.recurring.face_fen)}.")
+                          f"of {fmt_yuan(recurring.face_fen)}.")
         add(ObligationType.PRICE_ADJUSTMENT, span, rate_bp=params.price_adjustment_bp,
-            base=ObligationBase(kind=BaseKind.FUTURE_INVOICES, amount_fen=ctx.recurring.face_fen),
+            base=ObligationBase(kind=BaseKind.FUTURE_INVOICES, amount_fen=recurring.face_fen),
             contingency=Contingency.FIRM, duration=Duration(kind=DurationKind.RECURRING_PERPETUAL))
 
     if not obs:
