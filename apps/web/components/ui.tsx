@@ -40,16 +40,6 @@ const toneBorder: Record<Tone, string> = {
   brand: "border-brand-100",
 };
 
-/** A card that carries a status or a recommendation wears a 3 px rail in the tone's solid colour (a mark that must be seen). */
-const toneRail: Record<Tone, string> = {
-  neutral: "",
-  ok: "border-l-[3px] border-l-ok-solid",
-  warn: "border-l-[3px] border-l-warn-solid",
-  bad: "border-l-[3px] border-l-bad-solid",
-  info: "border-l-[3px] border-l-info-solid",
-  brand: "border-l-[3px] border-l-brand-600",
-};
-
 const toneText: Record<Tone, string> = {
   neutral: "text-ink",
   ok: "text-ok-fg",
@@ -150,7 +140,7 @@ export function Card({
   id?: string;
   tone?: Tone;
 }) {
-  const border = tone ? `${toneBorder[tone]} ${toneRail[tone]}` : "border-line";
+  const border = tone ? toneBorder[tone] : "border-line";
   return (
     <section
       id={id}
@@ -203,6 +193,7 @@ export function Stat({
   tint = false,
   testId,
   captionTestId,
+  rootTestId,
   className = "",
 }: {
   label: ReactNode;
@@ -219,15 +210,17 @@ export function Stat({
   tint?: boolean;
   testId?: string;
   captionTestId?: string;
+  /** On the tile itself, for a spec that reads the label, figure and caption together. */
+  rootTestId?: string;
   className?: string;
 }) {
   const deep = surface === "deep";
   const note = caption ?? hint;
   const box = deep ? "bg-on-deep/10" : tint && tone !== "neutral" ? `border ${toneSurface[tone]}` : "border border-line bg-surface";
   return (
-    <div className={`min-w-0 rounded-tile px-4 py-3 ${box} ${className}`}>
+    <div className={`min-w-0 rounded-tile px-4 py-3 ${box} ${className}`} data-testid={rootTestId}>
       <dt className={`text-xs font-semibold uppercase tracking-wide ${deep ? "text-on-deep-muted" : "text-ink-3"}`}>{label}</dt>
-      <dd className={`mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-1 font-semibold tabular-nums ${size === "lg" ? "text-2xl" : "text-xl"}`}>
+      <dd className={`mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-1 font-semibold tabular-nums ${size === "lg" ? "text-xl sm:text-2xl" : "text-lg sm:text-xl"}`}>
         <span className={`min-w-0 break-words ${deep ? toneOnDeep[tone] : toneText[tone]}`} data-testid={testId}>
           {value}
         </span>

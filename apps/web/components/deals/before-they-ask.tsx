@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Card, Chip, LoadingBlock, TableWrap, tableCls, tdCls, thCls } from "@/components/ui";
+import { Button, Card, Chip, LoadingBlock, Stat, TableWrap, tableCls, tdCls, thCls } from "@/components/ui";
 import { Disclosure } from "@/components/business/kit";
 import { getEnvelope } from "@/lib/api";
 import { STRATEGY_MVP } from "@/lib/config";
@@ -141,13 +141,35 @@ function Zone({ zone }: { zone: EnvelopeView["zone"] }) {
 }
 
 /**
+ * The three ceilings as tiles, each the server's `maximum_display` of its lever: the longest terms (with the price rise it needs),
+ * the early payment (a rate on an amount) and the rebate. A lever the server could not place (no maximum) leaves its tile out.
+ */
+function Ceilings({ levers }: { levers: EnvelopeLeverView[] }) {
+  const { t } = useI18n();
+  const pick = (...keys: string[]) => keys.map((k) => levers.find((l) => l.key === k)).find((l) => l && l.maximum !== null);
+  const tiles = [
+    { key: "terms", label: t("biz.strategy.envelope.stat.terms"), lever: pick("terms_with_price", "terms_alone", "terms_budget_ignored") },
+    { key: "early", label: t("biz.strategy.envelope.stat.early"), lever: pick("early_pay_counter", "early_pay_whole") },
+    { key: "rebate", label: t("biz.strategy.envelope.stat.rebate"), lever: pick("rebate") },
+  ].filter((x) => x.lever);
+  if (!tiles.length) return null;
+  return (
+    <dl className="grid grid-cols-2 gap-3 sm:grid-cols-3" data-testid="envelope-ceilings">
+      {tiles.map((x, i) => (
+        <Stat className={i === 0 ? "col-span-2 sm:col-span-1" : ""} key={x.key} label={x.label} value={x.lever!.maximum_display} testId={`envelope-ceiling-${x.key}`} />
+      ))}
+    </dl>
+  );
+}
+
+/**
  * "Before they ask" on Deals (behind STRATEGY_MVP): what the owner can live with for this buyer, in the server's words, before the
- * buyer asks. The card sends nothing: its two secondary buttons only open the response card's Option A and Option B (the page's one
- * filled action stays "Send this counter"). Loading takes several seconds on a cold server, so the card holds its place with a
+ * buyer asks: three ceiling tiles, the one sentence as their caption, the reason and the money beneath. The card sends nothing and
+ * carries no button of its own (Option A is the response card below; "Compare another option" there opens Option B). Loading takes several seconds on a cold server, so the card holds its place with a
  * caption; an unreachable server says so in one line; a buyer the server has no envelope for (feature off) mounts nothing.
  * Business mode shows the sentences and the details; Demo mode adds how long the server took.
  */
-export function BeforeTheyAsk({ buyerId, optionCount, onOpenOption }: { buyerId: string; optionCount: number; onOpenOption: (index: number) => void }) {
+export function BeforeTheyAsk({ buyerId }: { buyerId: string }) {
   const { t, lang } = useI18n();
   const mode = useMode();
   // The first answer for a set of books is the slow one; every later read is cached on the server.
@@ -196,31 +218,20 @@ export function BeforeTheyAsk({ buyerId, optionCount, onOpenOption }: { buyerId:
 
   return (
     <Card id="deal-envelope" title={eyebrow} actions={<Chip title={t("biz.strategy.envelope.hypothetical.title")}>{t("biz.strategy.envelope.hypothetical")}</Chip>}>
-      <p className="text-base font-semibold text-ink" data-testid="envelope-primary">
+      <Ceilings levers={e.levers} />
+      <p className="mt-3 text-sm font-medium text-ink" data-testid="envelope-primary">
         {e.primary}
       </p>
       <p className="mt-1 text-xs text-ink-3" data-testid="envelope-caption">
         {t("biz.strategy.envelope.caption")}
       </p>
-      <p className="mt-1 text-sm text-ink-2" data-testid="envelope-reason">
+      <p className="mt-2 text-sm text-ink-2" data-testid="envelope-reason">
         {e.reason}
       </p>
       <p className="mt-1 text-sm text-ink-2" data-testid="envelope-money">
         {e.money}
       </p>
-      {optionCount > 0 ? (
-        <div className="mt-3 flex flex-wrap gap-2">
-          <Button onClick={() => onOpenOption(0)} data-testid="envelope-open-a">
-            {t("biz.strategy.envelope.openA")}
-          </Button>
-          {optionCount > 1 ? (
-            <Button onClick={() => onOpenOption(1)} data-testid="envelope-open-b">
-              {t("biz.strategy.envelope.openB")}
-            </Button>
-          ) : null}
-        </div>
-      ) : null}
-      <Disclosure className="mt-3" testId="envelope-details" summary={t("biz.strategy.envelope.details")}>
+      <Disclosure className="mt-2" testId="envelope-details" summary={t("biz.strategy.envelope.details")}>
         <LeverTable levers={e.levers} />
         {e.packages.length ? <Packages packages={e.packages} unlisted={e.unlisted_counters} /> : null}
         {e.zone.length ? <Zone zone={e.zone} /> : null}

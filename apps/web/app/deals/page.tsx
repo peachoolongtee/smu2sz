@@ -10,7 +10,7 @@ import { DealSteps } from "@/components/deals/deal-steps";
 import { ACTION_KEY, DealDecision } from "@/components/deals/decision";
 import { WhyRecommended } from "@/components/deals/reasons";
 import { InboxList } from "@/components/deals/inbox-list";
-import { RecommendedResponse, optionDomId } from "@/components/deals/response";
+import { RecommendedResponse } from "@/components/deals/response";
 import { NextStep, nextLinkCls, nextLinkSecondaryCls } from "@/components/next-step";
 import { PlanCard } from "@/components/plan-card";
 import { Button, Callout, Card, EmptyState, ErrorState, Formula, LoadingBlock, PageHeader, ButtonLink } from "@/components/ui";
@@ -46,7 +46,7 @@ export default function DealsPage() {
   const [active, setActive] = useState<string | null>(null);
   // The id of the inbox message being read, or null.
   const [reading, setReading] = useState<string | null>(null);
-  // Whether the other counters are shown, kept here so the "Before they ask" card can open Option B; tied to the offer it was opened for.
+  // Whether the other counters are shown (Option B), tied to the offer it was opened for.
   // Passed down only with STRATEGY_MVP: without the flag the response card keeps its own state, exactly as before the card existed.
   const [compareFor, setCompareFor] = useState<string | null>(null);
   const books = useAsync(getState, []);
@@ -121,21 +121,7 @@ export default function DealsPage() {
     next = { text: t("next.counter"), action: <a href="#counters" className={nextLinkSecondaryCls}>{t("next.toCounters")}</a> };
   }
 
-  const counters = v && !cur.negotiation ? v.counters : [];
   const compareOpen = Boolean(offer && compareFor === offer.offer.offer_id);
-
-  /** Show the response card's Option A (index 0) or Option B (1), scroll to it and move focus there. Sends nothing. */
-  function openOption(index: number) {
-    const target = counters[index];
-    if (!target || !offer) return;
-    if (index > 0) setCompareFor(offer.offer.offer_id);
-    // The Option B card is rendered by the next frame (React commits a click's update before it).
-    requestAnimationFrame(() => {
-      const card = document.getElementById(optionDomId(target.label));
-      (index === 0 ? document.getElementById("counters") : card)?.scrollIntoView({ block: "start", behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
-      card?.focus({ preventScroll: true });
-    });
-  }
 
   const commitments = <ActiveCommitments today={today} buyerName={buyerName} hideEmpty />;
 
@@ -148,7 +134,7 @@ export default function DealsPage() {
           {next.text}
         </NextStep>
       ) : null}
-      <div className="space-y-5">
+      <div className="space-y-6">
         <InboxList
           currentDocId={offer?.documents[0]?.doc_id ?? null}
           readDocIds={Object.values(demo.offers).map((o) => o.documents[0]?.doc_id)}
@@ -212,7 +198,7 @@ export default function DealsPage() {
               ) : null}
             </Card>
 
-            {STRATEGY_MVP ? <BeforeTheyAsk buyerId={offer.offer.counterparty_id} optionCount={Math.min(counters.length, 2)} onOpenOption={openOption} /> : null}
+            {STRATEGY_MVP ? <BeforeTheyAsk buyerId={offer.offer.counterparty_id} /> : null}
 
             {!v ? (
               commitments
@@ -230,7 +216,7 @@ export default function DealsPage() {
                 {commitments}
 
                 <div className="space-y-2">
-                  <Disclosure card testId="deal-why" summary={t("biz.deals.why")}>
+                  <Disclosure card testId="deal-why" summary={t("biz.hero.why")}>
                     <div>
                       <WhyRecommended v={v} today={today} />
                     </div>
@@ -249,7 +235,7 @@ export default function DealsPage() {
                       ))}
                     </div>
                   </Disclosure>
-                  <Disclosure card testId="deal-calc" summary={t("biz.deals.calc")}>
+                  <Disclosure card testId="deal-calc" summary={t("biz.calculation")}>
                     <div className="space-y-4">
                       {v.concession_values.length ? (
                         <ul className="space-y-2">

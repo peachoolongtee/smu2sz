@@ -1638,6 +1638,9 @@ export const en = {
   "biz.recv.filter.label": "Show invoices",
   "biz.recv.filter.none": "No invoices in this view.",
   "biz.recv.rank": "Rank",
+  "biz.strategy.envelope.stat.terms": "Longest terms",
+  "biz.strategy.envelope.stat.early": "Early payment",
+  "biz.strategy.envelope.stat.rebate": "Rebate",
 } as const;
 
 export type DictKey = keyof typeof en;
@@ -3275,4 +3278,7 @@ export const zh: Record<DictKey, string> = {
   "biz.recv.filter.label": "筛选发票",
   "biz.recv.filter.none": "此筛选下没有发票。",
   "biz.recv.rank": "排名",
+  "biz.strategy.envelope.stat.terms": "最长账期",
+  "biz.strategy.envelope.stat.early": "提前付款",
+  "biz.strategy.envelope.stat.rebate": "返利",
 };

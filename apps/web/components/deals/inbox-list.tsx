@@ -2,11 +2,15 @@
 
 import Link from "next/link";
 import { CheckIcon } from "@/components/icons";
-import { Badge, Card, ErrorState, LoadingBlock } from "@/components/ui";
+import { Disclosure } from "@/components/business/kit";
+import { Badge, Card, Chip, ErrorState, LoadingBlock } from "@/components/ui";
 import { useI18n } from "@/lib/i18n";
 import { INBOX, type InboxMessage } from "@/lib/inbox";
 import type { Mode } from "@/lib/mode";
 import { whenText } from "@/lib/when";
+
+/** A fold inside the inbox list: its head spans the card, aligned with the rows. */
+const foldHead = "flex min-h-8 cursor-pointer list-none items-center gap-2 px-4 text-xs font-medium text-brand-700 [&::-webkit-details-marker]:hidden";
 
 /** One buyer's messages, newest first; the first is the thread's row. */
 interface Thread {
@@ -81,7 +85,7 @@ export function InboxList({
         aria-current={isCurrent ? "true" : undefined}
         data-testid={`inbox-msg-${m.id}`}
         className={`flex min-h-11 w-full flex-wrap items-start gap-x-3 gap-y-1 px-4 py-3 text-left transition-colors hover:bg-subtle focus-visible:outline-2 focus-visible:-outline-offset-2 disabled:cursor-wait ${
-          isCurrent ? "bg-brand-50 shadow-[inset_3px_0_0_var(--color-brand-600)]" : ""
+          isCurrent ? "bg-brand-50" : ""
         } ${inThread ? "pl-8" : ""}`}
       >
         <Badge className="mt-0.5 w-16 justify-center">
@@ -106,8 +110,8 @@ export function InboxList({
           ) : isCurrent ? (
             <span className="font-medium text-brand-700">{t("inbox.showing")}</span>
           ) : status ? (
-            <span className="font-medium text-ink" data-testid="inbox-msg-status">
-              {status}
+            <span data-testid="inbox-msg-status">
+              <Chip>{status}</Chip>
             </span>
           ) : read ? (
             <span className="flex items-center gap-1 text-ok-fg">
@@ -128,12 +132,9 @@ export function InboxList({
       <li key={th.counterpartyId} data-testid={`inbox-thread-${th.counterpartyId}`}>
         {row(latest, false)}
         {rest.length ? (
-          <details open={th === current && latest.document.doc_id !== currentDocId}>
-            <summary className="cursor-pointer px-4 pb-2 text-xs font-medium text-brand-700">
-              {t("biz.deals.moreInThread", { n: rest.length, buyer: th.company })}
-            </summary>
+          <Disclosure flush summaryClass={foldHead} defaultOpen={th === current && latest.document.doc_id !== currentDocId} summary={t("biz.deals.moreInThread", { n: rest.length, buyer: th.company })}>
             <div className="divide-y divide-line border-t border-line">{rest.map((m) => row(m, true))}</div>
-          </details>
+          </Disclosure>
         ) : null}
       </li>
     );
@@ -158,10 +159,9 @@ export function InboxList({
         {current ? thread(current) : null}
         {current && others.length ? (
           <li>
-            <details data-testid="inbox-others">
-              <summary className="cursor-pointer px-4 py-3 text-sm font-medium text-brand-700">{t("biz.deals.otherMessages", { n: others.reduce((n, th) => n + th.messages.length, 0) })}</summary>
+            <Disclosure flush testId="inbox-others" summaryClass={foldHead} summary={t("biz.deals.otherMessages", { n: others.reduce((n, th) => n + th.messages.length, 0) })}>
               <ul className="divide-y divide-line border-t border-line">{others.map(thread)}</ul>
-            </details>
+            </Disclosure>
           </li>
         ) : (
           others.map(thread)

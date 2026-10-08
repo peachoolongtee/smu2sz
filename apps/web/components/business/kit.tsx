@@ -66,6 +66,7 @@ export function Disclosure({
   defaultOpen = false,
   deep = false,
   summaryClass,
+  flush = false,
 }: {
   summary: ReactNode;
   children: ReactNode;
@@ -75,6 +76,8 @@ export function Disclosure({
   defaultOpen?: boolean;
   deep?: boolean;
   summaryClass?: string;
+  /** No padding around the body (a fold that spans the edge of its card and brings its own rows). */
+  flush?: boolean;
 }) {
   const head = summaryClass ?? `flex min-h-10 cursor-pointer list-none items-center gap-2 rounded-pill text-sm font-medium [&::-webkit-details-marker]:hidden ${deep ? "text-on-deep" : card ? "px-4 py-3 font-semibold text-ink" : "text-brand-700"}`;
   return (
@@ -85,7 +88,7 @@ export function Disclosure({
       </summary>
       <div className="disclosure-body">
         <div className="disclosure-inner -mx-1 px-1 -mb-1 pb-1">
-          <div className={card ? "border-t border-line p-4" : "pb-1 pt-2"}>{children}</div>
+          <div className={card ? "border-t border-line p-4" : flush ? "" : "pb-1 pt-2"}>{children}</div>
         </div>
       </div>
     </details>
