@@ -978,7 +978,8 @@ def event_words(state: FinancialState, *, kind: str, status: str, payload: dict[
     executor's own rate and the funding lot's own landing day; nothing is priced here. An entry with no business reading
     (anything the executor says in its own words only) returns `event_text` None and the caller keeps the sentence it has.
     `decided` says the owner has since answered the approval a PENDING_APPROVAL entry waited on: the entry then reads in the
-    past ("Queued for your approval"), never "Waiting", beside the entry of the decision."""
+    past ("Approval requested"), never "Waiting", beside the entry of the decision (the row's `current_decision_state` says where the
+    decision stands now)."""
     none: dict[str, str | None] = {"event_text": None, "event_detail": None}
     if kind == "ADVANCE_CLOCK" and status == "EXECUTED":
         return {"event_text": clock_words(payload, lang), "event_detail": None}
@@ -1004,8 +1005,8 @@ def event_words(state: FinancialState, *, kind: str, status: str, payload: dict[
 
     asked = _asked_words(state, kind, payload, lang)
     if status == "PENDING_APPROVAL" and asked is not None:
-        lead = t(lang, "Queued for your approval" if decided else "Waiting for your approval",
-                 "已提交请您批准" if decided else "等待您批准")
+        lead = t(lang, "Approval requested" if decided else "Waiting for your approval",
+                 "已请求批准" if decided else "等待您批准")
         reason = message.split("): ", 1)[1] if "): " in message else ""
         m = _RATE_IN_REASON.search(reason)
         if m:
@@ -1166,6 +1167,153 @@ def _role_reason(row: dict[str, Any], role: str, recommended_cost: int | None, t
     return t(lang, "Within your limits, but dearer than the recommended plan.", "在您的限额内，但比推荐方案更贵。")
 
 
+# ---------------------------------------------------------------- the comparison contract (wayfinder #65 Wave 3, F18)
+
+GROUP_ORDER = ("RECOMMENDED", "ALTERNATIVE", "CONDITIONAL_ON_BUYER", "INSUFFICIENT", "NOT_AVAILABLE_YET", "BLOCKED")
+_RANKED = ("RECOMMENDED", "ALTERNATIVE")
+
+
+def comparison_order_text(lang: Lang) -> str:
+    """How the list is ordered, in one sentence (it is true of the order `comparison_contract` gives)."""
+    return t(lang, "The recommended plan first, then the other plans that can run now, cheapest first. Plans that depend on the "
+                   "buyer, leave a gap or are not available yet follow, and are not ranked.",
+             "推荐方案在前，其后是现在即可执行的其他方案，按成本从低到高。依赖买方、仍有缺口或暂不可用的方案排在后面，不参与排名。")
+
+
+def _row_group(row: dict[str, Any]) -> str:
+    """The group a row belongs to, from the router's own flags (`role`, `executable_now`, `reason_kind`)."""
+    role = row.get("role")
+    if role == "recommended":
+        return "RECOMMENDED"
+    if row.get("executable_now") is False and row.get("reason_kind") == "buyer_early_pay":
+        return "CONDITIONAL_ON_BUYER"
+    if role == "insufficient":
+        return "INSUFFICIENT"
+    if role == "blocked":
+        return "BLOCKED"
+    if role == "unavailable" or row.get("executable_now") is False:
+        return "NOT_AVAILABLE_YET"
+    return "ALTERNATIVE"
+
+
+def _landing_days(row: dict[str, Any]) -> list[int | None]:
+    return [a.get("lands_day") for a in row.get("actions") or []]
+
+
+def _row_arrival(row: dict[str, Any], today: int, lang: Lang) -> tuple[int | None, str | None, str | None]:
+    """The day every source in the plan has paid out, as the router's own landing days give it. None when a leg has no landing
+    day (a buyer's early payment lands when the buyer says), and then the text says so."""
+    days = _landing_days(row)
+    if not days:
+        return None, None, None
+    if any(d is None for d in days):
+        return None, None, t(lang, "When the cash arrives depends on the buyer agreeing to pay early.",
+                             "资金何时到账取决于买方是否同意提前付款。")
+    last = max(d for d in days if d is not None)
+    when = when_text(last, today, lang)
+    return last, when, (t(lang, "All of the funds are available today.", "全部资金今天到位。") if last <= today
+                        else t(lang, f"All of the funds are available {when}.", f"全部资金将于{when}到位。"))
+
+
+def _row_basis(row: dict[str, Any], action: dict[str, Any] | None, today: int, lang: Lang) -> str | None:
+    """What the plan's cost assumes: the line is priced to the day it is assumed repaid, an advance in whole 30-day periods.
+    A row with neither says nothing (its cost is the discount alone)."""
+    if row.get("key") == RECOMMENDED_PLAN_KEY and action is not None:
+        return action.get("cost_basis") or None
+    actions = row.get("actions") or []
+    parts: list[str] = []
+    repay = [a["repay_day"] for a in actions if a.get("kind") == "DRAW" and a.get("repay_day") is not None]
+    if repay:
+        parts.append(t(lang, f"All charges to the assumed repayment day {when_text(max(repay), today, lang)}.",
+                       f"所有费用均计算至假定还款日（{when_text(max(repay), today, lang)}）。"))
+    if any(a.get("kind") == "FINANCE_INVOICE" for a in actions):
+        parts.append(t(lang, "Invoice financing is billed in whole 30-day periods until the invoice is paid.",
+                       "发票融资按整 30 天计费，直至发票付清。"))
+    return t(lang, " ", "").join(parts) or None
+
+
+def _consent_text(state: FinancialState, row: dict[str, Any], lang: Lang) -> str:
+    rid = next((a.get("receivable_id") for a in row.get("actions") or [] if a.get("kind") == "EARLY_PAY"), None)
+    buyer = party_name(state, buyer_of_receivable(state, rid)) if rid else ""
+    return t(lang, f"Needs {buyer or 'the buyer'} to agree to pay early; it cannot run until they do.",
+             f"需要{buyer or '买方'}同意提前付款；对方同意前无法执行。")
+
+
+def _available_when(row: dict[str, Any], today: int, lang: Lang) -> str | None:
+    """The earliest day a not-yet-available plan can have its cash, from the router's own landing days or the day an invoice is
+    issued; None when the router names no day (a source that is not committed)."""
+    days = [d for d in (*_landing_days(row), *(a.get("available_from_day") for a in row.get("actions") or [])) if isinstance(d, int)]
+    later = [d for d in days if d > today]
+    return when_text(max(later), today, lang) if later else None
+
+
+def _group_text(group: str, row: dict[str, Any], available: str | None, lang: Lang) -> str:
+    if group == "RECOMMENDED":
+        return t(lang, "Recommended", "推荐方案")
+    if group == "ALTERNATIVE":
+        return t(lang, "Another way to fund it", "其他融资方式")
+    if group == "CONDITIONAL_ON_BUYER":
+        return t(lang, "Only if the buyer agrees to early payment", "仅当买方同意提前付款")
+    if group == "INSUFFICIENT":
+        short = row.get("shortfall_display")
+        return (t(lang, f"Leaves {short} uncovered", f"仍有 {short} 缺口未覆盖") if short
+                else t(lang, "Does not cover the gap", "无法覆盖缺口"))
+    if group == "NOT_AVAILABLE_YET":
+        return (t(lang, f"Not available yet: earliest {available}", f"暂不可用：最早{available}") if available
+                else t(lang, "Not available yet", "暂不可用"))
+    return t(lang, "Breaks one of your limits", "违反您的某项限额")
+
+
+def _gap_text(group: str, row: dict[str, Any], action: dict[str, Any] | None, lang: Lang) -> str | None:
+    if group == "INSUFFICIENT":
+        short = row.get("shortfall_display")
+        return t(lang, f"Leaves {short} uncovered.", f"仍有 {short} 缺口未覆盖。") if short else None
+    if row.get("key") == RECOMMENDED_PLAN_KEY and action is not None:
+        return action.get("after") or None  # the next-step card's own after-state sentence
+    if group in ("NOT_AVAILABLE_YET", "BLOCKED") or row.get("result") == "NOT_ADMISSIBLE" or not row.get("actions"):
+        return None
+    return t(lang, "No gap is left.", "不留缺口。")
+
+
+def comparison_contract(rows: list[dict[str, Any]], action: dict[str, Any] | None, state: FinancialState, today: int,
+                        lang: Lang) -> list[dict[str, Any]]:
+    """Order the roled rows and give each its place in the comparison (F18). `group` is RECOMMENDED, ALTERNATIVE, INSUFFICIENT,
+    CONDITIONAL_ON_BUYER, NOT_AVAILABLE_YET or BLOCKED (a plan that breaks a limit), from the router's own flags. The order is the
+    recommended plan first, then the plans that can run now by the router's all-in cost, cheapest first; the plans that depend on
+    the buyer follow (by cost), then the rest in the router's order. Only RECOMMENDED and ALTERNATIVE rows get a `rank`, 1 to n in
+    that order, so no plan that cannot run today is numbered among the ones that can. `router_order` is the row's place in the
+    router's own spec 7.4 order (None for the cure row the API adds), which the Demo funding view keeps. No figure is
+    recomputed: each field is the row's own, and a field the row has no figure for is None."""
+    router_pos = {r["key"]: i for i, r in enumerate(r for r in rows if r.get("key") != RECOMMENDED_PLAN_KEY)}
+    staged: list[tuple[tuple[int, int, int], dict[str, Any]]] = []
+    for i, r in enumerate(rows):
+        group = _row_group(r)
+        total = r.get("total_fen")
+        cost_key = total if isinstance(total, int) else 1 << 62
+        sort = (GROUP_ORDER.index(group), cost_key if group in ("ALTERNATIVE", "CONDITIONAL_ON_BUYER") else 0, i)
+        arrival_day, arrival_when, arrival_text = _row_arrival(r, today, lang)
+        available = _available_when(r, today, lang) if group == "NOT_AVAILABLE_YET" else None
+        short = r.get("shortfall_display") if group == "INSUFFICIENT" else None
+        gap_text = _gap_text(group, r, action, lang)
+        staged.append((sort, {
+            **r, "group": group, "group_text": _group_text(group, r, available, lang), "rank": None,
+            "router_order": router_pos.get(r["key"]),
+            "arrival_day": arrival_day, "arrival_when": arrival_when, "arrival_text": arrival_text,
+            "available_when": available, "uncovered_display": short,
+            "remaining_gap_fen": r.get("shortfall_fen") if group == "INSUFFICIENT" else None,
+            "remaining_gap_display": short, "remaining_gap_text": gap_text,
+            "basis_text": _row_basis(r, action, today, lang),
+            "consent_text": _consent_text(state, r, lang) if group == "CONDITIONAL_ON_BUYER" else None,
+        }))
+    ordered = [row for _, row in sorted(staged, key=lambda p: p[0])]
+    rank = 0
+    for row in ordered:
+        if row["group"] in _RANKED:
+            rank += 1
+            row["rank"] = rank
+    return ordered
+
+
 def with_roles(rows: list[dict[str, Any]], action: dict[str, Any] | None, state: FinancialState, today: int,
                lang: Lang) -> tuple[list[dict[str, Any]], str | None]:
     """The comparison as the owner reads it: every row says what it is for the owner (`role`) and why (`role_reason`), and the
@@ -1174,7 +1322,9 @@ def with_roles(rows: list[dict[str, Any]], action: dict[str, Any] | None, state:
     the router's cheapest plan that row is the recommended one; when it shows the alert's cure (the cheaper plan needs
     several approvals) the cure is added as a row, listed first, and the router's cheapest becomes an alternative whose reason
     names the approvals it would ask for. Returns the rows and the recommended row's key. `status` and `selected` stay the
-    router's own; no plan is ranked or priced here (`funding/recommend.py` already decided)."""
+    router's own; no plan is priced here (`funding/recommend.py` already decided). The rows come back in the order the owner reads
+    them and carry the comparison contract (`comparison_contract`): a `group`, a `rank` for the runnable ones only, and the
+    words for arrival, gap, basis and consent."""
     reserve = bool(action) and action is not None and action.get("kind") == "RESERVE_BREACH_AHEAD"
     source = action.get("plan_source") if reserve and action is not None else None
     out: list[dict[str, Any]] = []
@@ -1218,7 +1368,7 @@ def with_roles(rows: list[dict[str, Any]], action: dict[str, Any] | None, state:
             role, reason = status, _role_reason(r, status, recommended_cost, today, lang)
         out.append({**r, "role": role, "role_reason": reason})
     key = next((r["key"] for r in out if r["role"] == "recommended"), None)
-    return out, key
+    return comparison_contract(out, action if source == "alert" else None, state, today, lang), key
 
 
 def counter_economics(obligations: list[Any], state: FinancialState, mandate: Mandate) -> dict[str, Any] | None:

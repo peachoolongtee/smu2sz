@@ -23,6 +23,7 @@ from app.api.presentation import (
     approval_reason_words,
     business_action,
     business_text,
+    comparison_order_text,
     comparison_reason,
     comparison_status,
     concession_interpretation,
@@ -36,6 +37,7 @@ from app.api.presentation import (
 )
 from app.api.runtime import Runtime, get_runtime
 from app.api.views import owner_verdict_extras, trajectory_view
+from app.api.workspace import build as build_workspace
 from app.books import Books, current_books
 from app.config import get_settings
 from app.counterparties import negotiate
@@ -149,8 +151,9 @@ class EvaluateIn(BaseModel):
 
 
 @router.post("/offers/{offer_id}/evaluate", dependencies=[Depends(require_feature("terms_guard"))])
-def evaluate_offer(offer_id: str, body: EvaluateIn | None = None) -> dict:
+def evaluate_offer(offer_id: str, body: EvaluateIn | None = None, lang: str = "en") -> dict:
     rt = get_runtime()
+    lang = "zh" if lang == "zh" else "en"
     offer = rt.store.get_offer(offer_id)
     if offer is None:
         raise HTTPException(404, "offer not found; POST /offers first")
@@ -209,6 +212,8 @@ def evaluate_offer(offer_id: str, body: EvaluateIn | None = None) -> dict:
             "over_cap": v.forward_concession_total_fen > mandate.max_aggregate_forward_concession_fen,
         },
     })
+    # The page's order, server-shaped (the Deals workspace): every line is a field of this view or the engine's own posting, in words.
+    view["workspace"] = build_workspace(view, bundle=bundle, state=state, mandate=mandate, today=rt.day, lang=lang)
     return view
 
 
@@ -456,7 +461,8 @@ def router_plan(lang: str = "en") -> dict:
     """The router's plan, its menu and the §7.4 comparison. Each comparison row carries its `role` for the owner
     (`recommended`, `alternative`, or its own status) and `role_reason`, and the plan the home's next-step card recommends is
     in the list: when it is the alert's cure (the cheaper plan needs several approvals) it is added as a row, listed first.
-    `recommended_key` is that row's key. The router's own `status`, `selected` and order of costs are untouched."""
+    `recommended_key` is that row's key. The router's own `status`, `selected` and costs are untouched; the list is in the order the
+    owner reads it (the comparison contract: `group`, `rank` for the runnable rows only, `router_order` for the spec 7.4 position)."""
     rt = get_runtime()
     lang = "zh" if lang == "zh" else "en"
     state, mandate = rt.store.get_state(), rt.store.get_mandate()
@@ -514,5 +520,6 @@ def router_plan(lang: str = "en") -> dict:
             "bases": [json.loads(b.model_dump_json()) for b in by_label.values()],
         }),
         "comparison": comparison,
+        "comparison_order_text": comparison_order_text(lang),
         "recommended_key": recommended_key,
     }
