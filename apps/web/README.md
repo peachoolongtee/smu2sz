@@ -154,8 +154,8 @@ Counts on `feat/ux-remediation`, 9 Oct 2026, run from this directory with `--ret
 
 | Command | Result |
 | --- | --- |
-| `E2E_TARGET=mock pnpm exec playwright test` (`pnpm test:e2e:mock`) | 166 tests listed: 133 passed, 33 skipped |
-| `E2E_TARGET=live pnpm exec playwright test` (`pnpm test:e2e:live`) | 79 tests listed: 67 passed, 12 skipped |
+| `E2E_TARGET=mock pnpm exec playwright test` (`pnpm test:e2e:mock`) | 166 tests listed: 135 passed, 33 skipped |
+| `E2E_TARGET=live pnpm exec playwright test` (`pnpm test:e2e:live`) | 79 tests listed: 69 passed, 12 skipped |
 
 All 12 live skips need `E2E_STRATEGY=1` (11 in `strategy.spec.ts`, the price-curve test in `slow.spec.ts`).
 
