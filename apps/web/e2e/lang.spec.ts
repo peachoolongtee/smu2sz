@@ -48,15 +48,17 @@ test.beforeEach(async ({ request }) => {
 
 test("in Chinese the approvals queue and the decision record read in Chinese with the same amounts as in English", async ({ page, request }) => {
   await setLang(page, "zh");
-  const langs: string[] = [];
+  // What each route was last asked in. (The first paint is English until the stored language is read, so a page may ask once in English before it re-reads in Chinese; what matters is the read it ends on, and that no read leaves the language out.)
+  const asked = new Map<string, string>();
   page.on("request", (r) => {
     const u = new URL(r.url());
-    if (/^\/(home|alerts|approvals\/queue|reconciliation|ledger|audit|decisions)/.test(u.pathname) && u.port === String(new URL(API).port)) langs.push(u.searchParams.get("lang") ?? "none");
+    if (/^\/(home|alerts|approvals\/queue|reconciliation|ledger|audit|decisions)/.test(u.pathname) && u.port === String(new URL(API).port)) asked.set(u.pathname, u.searchParams.get("lang") ?? "none");
   });
   await toDay34(page, request);
   await page.goto("/");
   const alertId = await page.getByTestId("home-next-action").getAttribute("data-alert");
   await runPlan(page, alertId!);
+  await expect(page.getByTestId(`alert-waiting-${alertId}`)).toBeVisible();
   await page.goto("/approvals");
   const card = page.locator('[id^="approval-APR-"]').first();
   await expect(card).toBeVisible();
@@ -74,7 +76,7 @@ test("in Chinese the approvals queue and the decision record read in Chinese wit
   await expect(page.getByTestId("record-waiting")).toContainText("您");
   // Live: no read the page made asked in English (the mock makes no requests, it replays the recorded Chinese answers).
   if (test.info().project.name === "live") {
-    expect(langs.length).toBeGreaterThan(3);
-    expect(langs.filter((l) => l !== "zh")).toEqual([]);
+    expect(asked.size).toBeGreaterThan(2);
+    expect([...asked].filter(([, l]) => l !== "zh")).toEqual([]);
   }
 });

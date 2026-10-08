@@ -8,6 +8,7 @@ import { counterChanged, negotiate } from "@/lib/api";
 import { evaluate as evaluateAndCache } from "@/lib/demo";
 import { bump, recordNegotiation } from "@/lib/demo-store";
 import { isTimeout } from "@/lib/errors";
+import { useNarrow } from "@/lib/use-narrow";
 import { useI18n } from "@/lib/i18n";
 import { errorText } from "@/lib/error-text";
 import type { Mode } from "@/lib/mode";
@@ -269,6 +270,8 @@ export function RecommendedResponse({
   onCompareChange?: (open: boolean) => void;
 }) {
   const { t } = useI18n();
+  // On a phone the generic line under the title gives way to the answer: the Send button comes up the page.
+  const narrow = useNarrow();
   const [localCompare, setLocalCompare] = useState(false);
   const compare = compareOpen ?? localCompare;
   const setCompare = (open: boolean) => (onCompareChange ? onCompareChange(open) : setLocalCompare(open));
@@ -339,7 +342,7 @@ export function RecommendedResponse({
     mode === "business" ? <SendControl c={c} lines={pricedLines(c)} primary={primary} sending={sending === c.id} busy={busy} onSend={() => void send(c)} /> : undefined;
 
   return (
-    <Card id="counters" title={t("biz.deals.response")} subtitle={t("biz.deals.counters.sub")}>
+    <Card id="counters" title={t("biz.deals.response")} subtitle={narrow ? undefined : t("biz.deals.counters.sub")}>
       {changed ? <CounterChanged detail={changed} onCheck={() => void checkAgain()} checking={checking} /> : null}
       {first ? (
         <ul className="motion-rise divide-y divide-line">

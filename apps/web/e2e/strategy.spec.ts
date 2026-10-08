@@ -186,8 +186,8 @@ test.describe("desktop", () => {
 
     await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
     await expect(page.getByTestId("deal-recommendation")).toBeVisible();
-    // The card sits right after the ask card and before the decision.
-    expect(await sectionOrder(page)).toEqual(["deal-ask", "deal-envelope", "deal-recommendation-card"]);
+    // The recommendation and the priced response come first (the server's order); the card sits right after the ask card.
+    expect(await sectionOrder(page)).toEqual(["deal-recommendation-card", "deal-ask", "deal-envelope"]);
 
     // Details: the levers (six), the approved packages and, where the server gave it, the terms-and-price zone.
     await expect(card.getByTestId("envelope-levers")).toBeHidden();

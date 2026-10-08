@@ -119,7 +119,7 @@ test("the next step is three facts and a Details fold; the first press asks, Can
   // The first press asks, with what is received and what it costs; Cancel sends nothing.
   let acts = 0;
   page.on("request", (r) => {
-    if (r.method() === "POST" && /\/alerts\/[^/]+\/act$/.test(r.url())) acts += 1;
+    if (r.method() === "POST" && /\/alerts\/[^/]+\/act(\?|$)/.test(r.url())) acts += 1;
   });
   await page.getByTestId("fix-open-ALERT-RESERVE-12").click();
   const confirm = page.getByTestId("fix-confirm-ALERT-RESERVE-12");

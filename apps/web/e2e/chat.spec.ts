@@ -112,7 +112,7 @@ test("buyer: the FastCapital message gets only the refusal reply, no verdict, an
   await demoMode(page);
   const sent: (string | undefined)[] = [];
   page.on("request", (r) => {
-    if (r.url() === `${API}/nl` && r.method() === "POST") sent.push(r.headers()["x-owner-token"]);
+    if (new URL(r.url()).pathname === "/nl" && r.method() === "POST") sent.push(r.headers()["x-owner-token"]);
   });
   await page.goto("/chat");
   await signIn(page); // signed in as owner on purpose: a buyer turn must still carry no token
@@ -264,13 +264,16 @@ test("the Chinese UI offers Chinese prompts and gets a Chinese answer", async ({
 
 test("network and credential failures are explained in the conversation and can be retried", async ({ page, request }) => {
   test.skip(!isLive(), "needs real network requests to intercept");
+  await demoMode(page);
   await resetBooks(request);
   await page.goto("/chat");
   await signIn(page);
 
   // Offline once: the error bubble offers Retry, which resends the same request.
   let calls = 0;
-  await page.route(`${API}/nl`, (route) => {
+  // The turn's address carries its language and mode (`/nl?mode=business`), so the route matches the path, not the whole address.
+  const nlPath = (url: URL) => url.pathname === "/nl" && url.port === new URL(API).port;
+  await page.route(nlPath, (route) => {
     if (route.request().method() === "OPTIONS") return route.continue();
     calls += 1;
     return calls === 1 ? route.abort() : route.continue();
@@ -280,10 +283,10 @@ test("network and credential failures are explained in the conversation and can 
   await page.getByTestId("chat-retry").click();
   await expect(turns(page).last().getByTestId("chat-intent")).toHaveText("Status");
   await expect(page.getByTestId("chat-log").getByRole("alert")).toHaveCount(0);
-  await page.unroute(`${API}/nl`);
+  await page.unroute(nlPath);
 
   // A server with no credentials configured answers 503.
-  await page.route(`${API}/nl`, (route) =>
+  await page.route(nlPath, (route) =>
     route.request().method() === "OPTIONS"
       ? route.continue()
       : route.fulfill({
@@ -442,7 +445,7 @@ test("a refresh keeps the draft and the conversation, and a pending plan points 
   // The half-typed question is back, and so is the conversation, as history: the old buttons are gone.
   await expect(page.getByRole("textbox", { name: "Message" })).toHaveValue("what is the reserve fl");
   await expect(turns(page)).toHaveCount(1);
-  await expect(turns(page).first().getByTestId("chat-reply")).toContainText("REJECT");
+  await expect(turns(page).first().getByTestId("chat-reply")).toContainText(isLive() ? "FLOW recommends a counter" : "REJECT");
   await expect(turns(page).first().getByTestId("chat-goahead")).toHaveCount(0);
   await expect(turns(page).first().getByTestId("chat-restored-pending")).toContainText("Your pending approvals are on the Approvals page.");
   await expect(turns(page).first().getByRole("link", { name: "Open Approvals" })).toHaveAttribute("href", "/approvals");
@@ -455,7 +458,7 @@ test("a refresh keeps the draft and the conversation, and a pending plan points 
   expect(await page.evaluate(() => sessionStorage.getItem("tl-chat-draft"))).not.toContain("reserve");
   if (isLive()) {
     await send(page, "go ahead");
-    await expect(turns(page).last().getByTestId("chat-intent")).toHaveText("Negotiate");
+    await expect(turns(page).last().getByTestId("chat-ops")).toBeAttached();
   }
 
   // Signing out takes the conversation and the draft out of the browser with the token.

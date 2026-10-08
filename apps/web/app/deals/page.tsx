@@ -21,6 +21,7 @@ import { useMode } from "@/lib/mode";
 import { offerItems } from "@/lib/offer-items";
 import type { VerdictView } from "@/lib/types";
 import { useAsync } from "@/lib/use-async";
+import { useNarrow } from "@/lib/use-narrow";
 import { useCurrentOffer } from "@/lib/use-current";
 import { useDecision, useDecisions } from "@/lib/use-decision";
 import { dealProgress } from "@/lib/decision";
@@ -37,6 +38,8 @@ import { Disclosure } from "@/components/business/kit";
 export default function DealsPage() {
   const { t, te, lang } = useI18n();
   const mode = useMode();
+  // On a phone, once a deal is open the page's own subtitle gives way to the deal: the answer comes up the screen.
+  const narrow = useNarrow();
   const cur = useCurrentOffer();
   const demo = useDemo();
   const [busy, setBusy] = useState(false);
@@ -257,7 +260,7 @@ export default function DealsPage() {
 
   return (
     <>
-      <PageHeader section="deals" title={t("nav.deals")} subtitle={t("biz.deals.subtitle")} />
+      <PageHeader section="deals" title={t("nav.deals")} subtitle={offer && narrow ? undefined : t("biz.deals.subtitle")} />
       <div className="space-y-6">
         {inbox}
 

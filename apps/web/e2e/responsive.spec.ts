@@ -277,6 +277,7 @@ test("phone priority: Home's primary action, Deals' priced response and Cash's o
   expect(rec.top, "the recommendation card starts in the first screen").toBeLessThan(915);
   expect(send, "the bound Send is on the page").not.toBeNull();
   expect(send!.y + send!.height, "the Send button is inside the first 915 px").toBeLessThanOrEqual(915);
+  expect(send!.y + send!.height, "and above the tab bar").toBeLessThanOrEqual(tab.y);
   expect(asks.top, "the asks come after the priced response").toBeGreaterThan(send!.y + send!.height);
   measured.deals = { recommendation: rec, send: { top: Math.round(send!.y), bottom: Math.round(send!.y + send!.height) }, inbox, asks, pageHeight: await page.evaluate(() => document.documentElement.scrollHeight) };
 
@@ -288,6 +289,7 @@ test("phone priority: Home's primary action, Deals' priced response and Cash's o
   const cashRun = page.getByTestId(`fix-open-${alertId}`);
   const cashBox = (await cashRun.boundingBox())!;
   expect(cashBox.y + cashBox.height, "Cash's primary action is inside the first 915 px").toBeLessThanOrEqual(915);
+  expect(cashBox.y + cashBox.height, "and above the tab bar").toBeLessThanOrEqual(tab.y);
   expect((await topOf(page, "cash-figures"))!.top, "the four facts come after the plan").toBeGreaterThan(plan.top);
   const chart = (await topOf(page, "cash-chart"))!;
   expect((await topOf(page, "cash-answer"))!.top).toBeLessThan(plan.top);

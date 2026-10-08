@@ -30,25 +30,25 @@ export function SelectedBuyer({ buyer, received, evaluatedWhen, state = null }: 
   const { t } = useI18n();
   return (
     <section id="deal-selected" aria-labelledby="deal-selected-title" className="motion-reveal min-w-0 rounded-card border border-line bg-surface px-4 py-3 shadow-card">
-      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
         <h2 id="deal-selected-title" className="text-balance text-base font-semibold text-ink">
           {buyer}
         </h2>
-        <p className="text-xs text-ink-3" data-testid="deal-selected-meta">
-          {received}
-          {evaluatedWhen ? (
-            <>
-              {" · "}
-              <span data-testid="deal-evaluated">{t("biz.deals.evaluatedWhen", { when: evaluatedWhen })}</span>
-            </>
-          ) : null}
-        </p>
+        {state ? (
+          <span data-testid="deal-state-chip" data-state={state.code}>
+            <StatePill tone={state.tone}>{state.text}</StatePill>
+          </span>
+        ) : null}
       </div>
-      {state ? (
-        <p className="mt-2" data-testid="deal-state-chip" data-state={state.code}>
-          <StatePill tone={state.tone}>{state.text}</StatePill>
-        </p>
-      ) : null}
+      <p className="mt-0.5 text-xs text-ink-3" data-testid="deal-selected-meta">
+        {received}
+        {evaluatedWhen ? (
+          <>
+            {" · "}
+            <span data-testid="deal-evaluated">{t("biz.deals.evaluatedWhen", { when: evaluatedWhen })}</span>
+          </>
+        ) : null}
+      </p>
     </section>
   );
 }

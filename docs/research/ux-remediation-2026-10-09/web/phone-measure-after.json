@@ -7,33 +7,33 @@
   },
   "action": {
    "top": 377,
-   "bottom": 887
+   "bottom": 871
   },
   "primary": {
-   "top": 757,
-   "bottom": 801
+   "top": 741,
+   "bottom": 785
   },
   "tabBarTop": 858,
-  "pageHeight": 1254
+  "pageHeight": 1238
  },
  "deals": {
   "recommendation": {
-   "top": 430,
-   "bottom": 528
+   "top": 339,
+   "bottom": 437
   },
   "send": {
-   "top": 784,
-   "bottom": 828
+   "top": 779,
+   "bottom": 823
   },
   "inbox": {
-   "top": 179,
-   "bottom": 241
+   "top": 135,
+   "bottom": 197
   },
   "asks": {
-   "top": 1035,
-   "bottom": 1262
+   "top": 976,
+   "bottom": 1203
   },
-  "pageHeight": 2175
+  "pageHeight": 2116
  },
  "cash": {
   "answer": {
@@ -42,29 +42,29 @@
   },
   "plan": {
    "top": 391,
-   "bottom": 901
+   "bottom": 885
   },
   "primary": {
-   "top": 771,
-   "bottom": 815
+   "top": 755,
+   "bottom": 799
   },
   "facts": {
-   "top": 925,
-   "bottom": 1165
+   "top": 909,
+   "bottom": 1149
   },
   "options": {
-   "top": 1285,
-   "bottom": 2342
+   "top": 1269,
+   "bottom": 2390
   },
   "chart": {
-   "top": 2495,
-   "bottom": 2945
+   "top": 2543,
+   "bottom": 2993
   },
-  "pageHeight": 3238
+  "pageHeight": 3286
  },
  "primaryBottomEdges": {
-  "home": 801,
-  "deals": 828,
-  "cash": 815
+  "home": 785,
+  "deals": 823,
+  "cash": 799
  }
 }
