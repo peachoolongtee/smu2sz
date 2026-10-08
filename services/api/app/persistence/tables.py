@@ -267,6 +267,24 @@ pilot_journal = Table(
     Column("recorded_at", String(40), nullable=False),
 )
 
+# The durable decision record's facts (ADR-0011): the few things a decision's read model cannot re-derive from the other
+# tables. Its own table, written only by the API layer after the canonical event, never part of the state, the operations or
+# the hash chain. Append-only and insert-if-absent. Unlike the pilot journal it is ledger data: `reset()` clears it.
+decision_facts = Table(
+    "decision_facts",
+    metadata,
+    _row_id(),
+    Column("decision_id", String(160), nullable=False, index=True),
+    Column("family", String(8), nullable=False),
+    Column("fact", String(16), nullable=False),
+    Column("fact_key", String(256), nullable=False),
+    Column("state_version", Integer, nullable=False),
+    Column("day", Integer, nullable=False),
+    Column("body_json", Text, nullable=False),
+    Column("recorded_at", String(40), nullable=False),
+    UniqueConstraint("decision_id", "fact", "fact_key", name="uq_decision_facts_decision_id_fact_fact_key"),
+)
+
 # Tables that `reset()` keeps: telemetry and the pilot's journal, not ledger state.
 TELEMETRY_TABLES = (llm_calls, evaluation_runs, pilot_journal)
 
@@ -275,6 +293,7 @@ __all__ = [
     "approvals",
     "commitments",
     "counterparties",
+    "decision_facts",
     "evaluation_runs",
     "evidence_exports",
     "facilities",

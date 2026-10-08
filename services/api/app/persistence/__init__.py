@@ -18,6 +18,7 @@ from app.persistence.memory_store import InMemoryLedgerStore
 from app.persistence.records import (
     ApprovalRecord,
     ApprovalStatus,
+    DecisionFactRecord,
     EvaluationRunRecord,
     EvidenceExportRecord,
     LedgerEntry,
@@ -33,6 +34,7 @@ __all__ = [
     "ApprovalRecord",
     "ApprovalStatus",
     "ConcurrentWriteConflict",
+    "DecisionFactRecord",
     "EvaluationRunRecord",
     "EvidenceExportRecord",
     "InMemoryLedgerStore",
