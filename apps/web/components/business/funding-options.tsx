@@ -124,9 +124,9 @@ function Row({ c, n, name, today, recommended }: { c: Option; n: number | null; 
 
 /**
  * The router's comparison in two groups that are never ranked together: plans that fully protect cash (the
- * recommended one first, then the alternatives, numbered in the server's order) and options that do not (insufficient,
+ * recommended one first, then the alternatives, numbered in display order) and options that do not (insufficient,
  * with what they leave uncovered; not currently available, with why). The rows are the server's; the component only sorts
- * them by the server's status, and keeps the server's own order when it sent a `role` (the numerals then follow it).
+ * them by the server's status, and keeps the server's own order among the alternatives when it sent a `role` (the numerals follow the display order).
  */
 export function FundingOptions({ rows, menu, today, recommendedKey }: { rows: ComparisonRow[]; menu: MenuRow[]; today: number; recommendedKey: string | null }) {
   const { t } = useI18n();
@@ -135,7 +135,8 @@ export function FundingOptions({ rows, menu, today, recommendedKey }: { rows: Co
   const isFull = (c: Option) => ["recommended", "alternative"].includes(roleOf(c));
   // Without the server's roles the recommended plan is #1 and the dearer alternatives follow by ascending total (ordering only, no arithmetic).
   const full = options.filter(isFull);
-  if (!serverRanked) full.sort((a, b) => Number(roleOf(b) === "recommended") - Number(roleOf(a) === "recommended") || a.total_fen - b.total_fen);
+  // With the roles the order is the server's, but the recommended plan always leads its group (a stable sort: the alternatives keep the server's order).
+  full.sort((a, b) => Number(roleOf(b) === "recommended") - Number(roleOf(a) === "recommended") || (serverRanked ? 0 : a.total_fen - b.total_fen));
   const rest = options.filter((c) => !isFull(c));
   // The badge follows the server's role; an older recording marks the router's pick only when the home's next step came from it.
   const isRecommended = (c: Option) => (c.role ? c.role === "recommended" : c.selected && recommendedKey === (c.key ?? null));
