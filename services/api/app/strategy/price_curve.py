@@ -13,6 +13,7 @@ budget could not settle is reported `varies` with the smaller value.
 
 from __future__ import annotations
 
+import logging
 from bisect import bisect_left, bisect_right
 from collections.abc import Callable
 from fractions import Fraction
@@ -22,7 +23,7 @@ from typing import Literal, NamedTuple
 from app.alerts import AlertKind, alerts
 from app.api.presentation import Lang, t, when_text
 from app.books import Books, current_books
-from app.domain.models import Contract, Mandate
+from app.domain.models import Contract, FundingActionKind, Mandate
 from app.domain.money import fmt_pct, fmt_yuan, round_half_up
 from app.domain.ports import LedgerStore
 from app.financial.concessions import recurring_issue_days
@@ -33,7 +34,10 @@ from app.funding.router import shared_runs
 from app.funding.search import GRID_STEP_FEN
 from app.strategy.impact import scenario_inflow
 
+log = logging.getLogger(__name__)
+
 WINDOW_DAYS = 30
+MIN_CARRY_DAYS = 30  # the shortest carry the ceiling prices: one billing period
 MAX_EXTRA_EVALUATIONS = 120  # the bisection budget beyond the band ends (a band it cannot settle is `varies`)
 
 
@@ -45,6 +49,7 @@ class PriceBand(Contract):
     value_fen: int
     value_bp: int  # the value as bp of the amount
     varies: bool = False
+    above_guard: bool = False  # the value is above the sanity ceiling (`_ceiling_fen`): kept, never refused
 
 
 class PriceCurve(Contract):
@@ -123,15 +128,33 @@ def _settle(a: int, b: int, cost: Callable[[int], int], hints: list[int], spent:
     return _settle(a, mid, cost, hints, spent) + _settle(mid, b, cost, hints, spent)
 
 
-def _ceiling_fen(books: Books, mandate: Mandate, amount_fen: int) -> int | None:
-    """The most a 30-day shift of `amount_fen` can save: the marginal source's cost of carrying the money for two billing
-    periods (60 days). One period (30 days, ¥89.11 per ¥10,000 on the golden books) is the brief's bound, but invoice
-    financing bills whole periods and the oracle's own day-34 point is ¥178.22, exactly two."""
+def _carry_days(books: Books, mandate: Mandate, day: int) -> int:
+    """The longest carry the plan holds on these books: the latest day a borrowing action is repaid (the horizon end when
+    it is carried, because the router repays a credit-line draw only where every later closing stays above the floor,
+    as `trajectory._repay_carried` does) less the earliest day one lands, at least `MIN_CARRY_DAYS`. An invoice advance
+    is repaid on its receivable's receipt and is not counted: its carry is the two billing periods the ceiling never
+    goes below."""
+    end = day + mandate.horizon_days
+    carries = [(a.repay_day if a.repay_day is not None else end, a.lands_day if a.lands_day is not None else a.day)
+               for a in plan(books.state, books.with_([]), mandate).actions
+               if a.kind in (FundingActionKind.DRAW, FundingActionKind.DISCOUNT_BILL)]
+    if not carries:
+        return MIN_CARRY_DAYS
+    return max(MIN_CARRY_DAYS, max(repaid for repaid, _ in carries) - min(landed for _, landed in carries))
+
+
+def _ceiling_fen(books: Books, mandate: Mandate, amount_fen: int, day: int) -> int | None:
+    """A sanity guard on what a 30-day shift of `amount_fen` can save: the marginal source's cost of carrying the money
+    for as long as the plan carries it on these books (`_carry_days`), never less than two billing periods (60 days).
+    Two periods are the golden books' answer: invoice financing bills whole periods and the oracle's day-34 point
+    (¥178.22) is exactly two. A bank line carried to the horizon end costs more than that, and the curve's value is
+    then the whole carry."""
     try:
-        share, _, _ = break_even_cost_share(books.state, mandate, 2 * WINDOW_DAYS)
+        two_periods, _, _ = break_even_cost_share(books.state, mandate, 2 * WINDOW_DAYS)
+        share, _, _ = break_even_cost_share(books.state, mandate, _carry_days(books, mandate, day))
     except NoPermanentSourceError:
         return None
-    return round_half_up(share * amount_fen)
+    return round_half_up(max(two_periods, share) * amount_fen)
 
 
 def price_curve(books: Books, mandate: Mandate, *, store: LedgerStore, day: int) -> PriceCurve:
@@ -176,14 +199,12 @@ def price_curve(books: Books, mandate: Mandate, *, store: LedgerStore, day: int)
             merged[-1] = (merged[-1][0], b, v, False)
         else:
             merged.append((a, b, v, varies))
-    ceiling = _ceiling_fen(books, mandate, amount)
-    bands = []
-    for a, b, v, varies in merged:
-        if ceiling is not None and v > ceiling:
-            raise RuntimeError(f"the cash price curve values days {a}..{b} at {v} fen, above the cost of funds "
-                               f"for two billing periods ({ceiling} fen)")
-        bands.append(PriceBand(from_day=a, to_day=b, value_fen=v, varies=varies,
-                               value_bp=round_half_up(Fraction(v * 10_000, amount))))
+    ceiling = _ceiling_fen(books, mandate, amount, day)
+    bands = [PriceBand(from_day=a, to_day=b, value_fen=v, varies=varies, value_bp=round_half_up(Fraction(v * 10_000, amount)),
+                       above_guard=ceiling is not None and v > ceiling) for a, b, v, varies in merged]
+    if any(b.above_guard for b in bands):  # never a refusal: the band keeps its value and the sentence stands
+        log.warning("the cash price curve values days %s above the cost of funds for the plan's carry (%s fen)",
+                    ", ".join(f"{b.from_day}..{b.to_day} at {b.value_fen} fen" for b in bands if b.above_guard), ceiling)
     return PriceCurve(amount_fen=amount, day=day, bands=bands, flat=not any(b.value_fen > 0 for b in bands),
                       source_state_version=books.state.state_version)
 
