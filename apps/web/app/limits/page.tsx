@@ -23,7 +23,7 @@ export default function LimitsPage() {
       ) : !v || !m ? (
         <LoadingBlock rows={3} />
       ) : (
-        <div className="space-y-5">
+        <div className="space-y-6">
           <Card id="limits-rules" title={t("biz.limits.rules")} subtitle={t("biz.limits.rules.sub", { v: m.version })} actions={<Badge tone={v.validity.status === "ACTIVE" ? "ok" : "bad"}>{te("validity", v.validity.status)}</Badge>}>
             <ul className="list-disc space-y-1.5 pl-5 text-sm text-ink">
               <li>{t("biz.limits.floor", { floor: m.min_cash_display })}</li>
