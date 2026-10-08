@@ -11,6 +11,7 @@ from fastapi.responses import PlainTextResponse
 from app.api.auth import require_owner
 from app.api.decide import _counter_allow
 from app.api.display import displayed
+from app.api.home import _first_breach_ahead
 from app.api.presentation import agreement_words, business_text, event_words
 from app.api.runtime import get_runtime
 from app.api.views import Money, TrajectoryView, trajectory_view
@@ -86,6 +87,10 @@ def get_mandate() -> dict:
 
 class TodayTrajectoryView(TrajectoryView):
     today: int  # the first open day of the books (`state.as_of_day`): earlier days are closed
+    # `first_breach_day` is the engine's own scan from day 0, whose closed days carry the opening cash, so it can name a day
+    # before `today`; this is the first breach from `today` on (the day itself when cash is already under the reserve).
+    first_breach_ahead_day: int | None = None
+    first_breach_ahead_cash: Money | None = None
 
 
 @router.get("/trajectory", response_model=TodayTrajectoryView)
@@ -96,7 +101,10 @@ def get_trajectory(mode: str = "CONSERVATIVE") -> TodayTrajectoryView:
         s, m = rt.store.get_state(), rt.store.get_mandate()
         b = current_books(s, rt.store.commitments())
     t = project(b.state, b.with_([]), [], Mode(mode), m.horizon_days, m.min_cash_fen)
-    return TodayTrajectoryView(**trajectory_view(t, m.min_cash_fen).model_dump(), today=s.as_of_day)
+    ahead = _first_breach_ahead(t, max(rt.day, s.as_of_day), m.min_cash_fen)
+    return TodayTrajectoryView(**trajectory_view(t, m.min_cash_fen).model_dump(), today=s.as_of_day,
+                               first_breach_ahead_day=ahead[0] if ahead else None,
+                               first_breach_ahead_cash=Money.of(ahead[1]) if ahead else None)
 
 
 @router.get("/ledger")
