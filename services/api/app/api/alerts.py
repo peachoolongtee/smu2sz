@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -16,6 +17,7 @@ from pydantic import BaseModel, ConfigDict
 
 from app.alerts import Alert, Severity, alerts, cure_operations, reconcile
 from app.api.auth import require_owner
+from app.api.decisions import record_fact
 from app.api.display import displayed
 from app.api.presentation import (
     business_text,
@@ -25,8 +27,10 @@ from app.api.presentation import (
     reconciliation_words,
     window_is_live,
 )
+from app.api.quotes import build_quote
 from app.api.runtime import Runtime, get_runtime
 from app.books import current_books
+from app.decisions.identity import alert_cure_id, alert_plan_id
 from app.domain.models import (
     FinancialState,
     Obligation,
@@ -178,12 +182,22 @@ def act_on_alert(alert_id: str, body: ActRequest | None = None) -> dict[str, Any
         if not ops:
             raise HTTPException(409, detail={"code": "NO_EXECUTABLE_CURE", "alert_id": alert_id,
                                              "message": "This alert suggests nothing the agent may execute."})
+        # The quote is what the owner was shown: built now, from the alert and plan just recomputed and bound to the shown
+        # suggestions, before anything runs (ADR-0011 section 4). Whether it can be stored is settled after the executor.
+        did = alert_plan_id(alert.id, state.state_version) if plan is not None else alert_cure_id(alert.id, state.state_version)
+        quote = None
+        try:
+            books_q = current_books(state, rt.store.commitments())
+            quote = build_quote(books_q.state, books_q.with_([]), mandate, alert, plan, ops, max(rt.day, state.as_of_day))
+        except Exception:
+            logging.getLogger("termsledger.decisions").exception("the quote for %s could not be built", did)
         results = []
         for op in ops:
             r = rt.executor.execute(op)
             results.append(r)
             if r.status not in (OperationStatus.EXECUTED, OperationStatus.PENDING_APPROVAL):
                 break
+        recorded = (quote is not None and record_fact(rt, did, did, quote, state_version=state.state_version, day=rt.day))
         try:
             after = alerts(rt.store.get_state(), rt.store.get_mandate(), rt.store, rt.day)
         except EngineError as exc:
@@ -196,6 +210,8 @@ def act_on_alert(alert_id: str, body: ActRequest | None = None) -> dict[str, Any
     agreements = {c.id: party_name(books_now, c.counterparty_id) for c in rt.store.commitments()}
     return {
         "alert_id": alert_id,
+        "decision_id": did,
+        "decision_recorded": recorded,
         "day": rt.day,
         # `message` is the executor's sentence; `message_when` says it as the Business home does (names, the owner's
         # words for the ceiling, distances from today). A presentation read, English only.

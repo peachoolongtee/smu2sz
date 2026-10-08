@@ -7,6 +7,7 @@ code from typed plans and sent to the executor; nothing here trusts free text.""
 from __future__ import annotations
 
 import json
+import logging
 from fractions import Fraction
 from typing import Any
 
@@ -15,6 +16,7 @@ from pydantic import BaseModel
 
 from app.alerts import alerts
 from app.api.auth import require_feature, require_owner
+from app.api.decisions import execution_view, load_context, record_fact
 from app.api.display import displayed
 from app.api.home import next_action
 from app.api.presentation import (
@@ -28,6 +30,7 @@ from app.api.presentation import (
     plan_name,
     plan_when,
     row_legs,
+    send_scope_text,
     t,
     with_roles,
 )
@@ -36,6 +39,9 @@ from app.api.views import owner_verdict_extras, trajectory_view
 from app.books import Books, current_books
 from app.config import get_settings
 from app.counterparties import negotiate
+from app.decisions import derive
+from app.decisions.facts import CounterEconomics, EvaluatedFact, GapLeg, GapPlan, SentFact
+from app.decisions.identity import deal_id
 from app.domain.fixtures import load_offers
 from app.domain.models import (
     AcceptOffer,
@@ -106,6 +112,7 @@ def _guarded_counters(rt: Runtime, offer: CompiledOffer, counters: list[CounterP
         d["rationale_when"] = business_text(state, c.rationale, rt.day, "en")
         # The parts behind the (floored) supplier cost: a price adjustment's offset is shown, never hidden in "¥0.00".
         d["economics"] = counter_economics(list(c.obligations), state, mandate)
+        d["send_scope"] = send_scope_text("en", c.label)
         out.append(d)
     return out
 
@@ -156,6 +163,13 @@ def evaluate_offer(offer_id: str, body: EvaluateIn | None = None) -> dict:
         v = bundle.verdict
         rt.store.put_verdict(v)
         rt.latest_verdict[offer_id] = v.id
+        did = deal_id(offer_id)
+        recorded = record_fact(
+            rt, did, v.id,
+            EvaluatedFact(offer_id=offer_id, offer_version=offer.version, verdict_id=v.id, outcome=v.outcome,
+                          counter_ids=[c.id for c in v.counters],
+                          recommended_counter_id=v.counters[0].id if v.counters else None, mandate_version=v.mandate_version),
+            state_version=state.state_version, day=rt.day)
         known = {e.id for e in bundle.security_events}
         for ev in [*bundle.security_events, *flag_events(offer, rt.day)]:  # F-09: compiler authority flags too
             if ev.id in known and ev not in bundle.security_events:
@@ -176,6 +190,8 @@ def evaluate_offer(offer_id: str, body: EvaluateIn | None = None) -> dict:
         view["plan"] = plan_when(state, view["plan"], rt.day, "en")
         view["summary_when"] = business_text(state, view.get("summary"), rt.day, "en")
     view.update({
+        "decision_id": did, "decision_recorded": recorded, "evaluated_day": rt.day,
+        "evaluated_when": t("en", "today", "今天"),
         **owner_verdict_extras(bundle, offer, state, mandate),  # passed_checks, autonomy, annualised
         "bound_obligations": displayed([json.loads(o.model_dump_json()) for o in bundle.bound_obligations]),
         "notes": [{**json.loads(n.model_dump_json()), "message_when": business_text(state, n.message, rt.day, "en")}
@@ -215,6 +231,12 @@ def _cured(bundle, books: Books, mandate) -> dict | None:
 class NegotiateIn(BaseModel):
     buyer_profile: str = "cooperative"
     max_rounds: int | None = None
+    # The send is bound to what the owner was shown (F07): the verdict, the counter and the books' state version of the
+    # evaluate view. Any of them given is checked; a mismatch is 409 COUNTER_CHANGED and nothing is proposed, accepted or
+    # funded. With `counter_id` the buyer is offered that counter only. Absent, the send is unbound, as before.
+    verdict_id: str | None = None
+    counter_id: str | None = None
+    state_version: int | None = None
 
 
 def _ops_for_plan(rt: Runtime, actions: list[FundingAction], key: str) -> list[dict]:
@@ -250,6 +272,42 @@ def _runnable(gap_plan) -> str | None:
     return None
 
 
+def _latest_verdict(rt: Runtime, offer_id: str):
+    """The latest stored verdict of an offer: this session's, else the last one the store holds for it."""
+    vid = rt.latest_verdict.get(offer_id)
+    verdict = rt.store.get_verdict(vid) if vid else None
+    if verdict is None:
+        verdict = next((v for v in reversed(rt.store.verdicts()) if v.offer_id == offer_id), None)
+    return verdict
+
+
+def _counter_changed(rt: Runtime, offer: CompiledOffer, verdict, state_version: int, why: str) -> HTTPException:
+    """409 COUNTER_CHANGED: what was shown is no longer what would be sent. The latest verdict's guarded counters come back when
+    that verdict is on the current books; otherwise the owner must evaluate again. Nothing was proposed, accepted or funded."""
+    on_current_books = verdict is not None and verdict.state_version == state_version
+    counters = _guarded_counters(rt, offer, list(verdict.counters)) if on_current_books else []
+    return HTTPException(409, detail={
+        "code": "COUNTER_CHANGED", "offer_id": offer.offer_id, "reason": why, "verdict_id": verdict.id if verdict else None,
+        "state_version": state_version, "counters": counters, "reevaluate": not on_current_books,
+        "message": "The counter changed since you read it; nothing was sent. Review the current counters."})
+
+
+def _chosen_economics(rt: Runtime, counter: CounterProposal | None, state, mandate) -> CounterEconomics | None:
+    """The sent (or accepted) counter's economics as `counter_economics()` gives them, kept as numbers and ids."""
+    if counter is None:
+        return None
+    eco = counter_economics(list(counter.obligations), state, mandate)
+    if eco is None:
+        return None
+    try:
+        rate, fid = marginal_cost(state, mandate)
+    except Exception:  # noqa: BLE001  no committed marginal source: the figures stand without a stated basis
+        rate, fid = None, None
+    return CounterEconomics(supplier_cost_fen=counter.supplier_cost_fen, forward_value_fen=counter.forward_value_fen,
+                            funding_cost_fen=eco["funding_cost_fen"], offset_fen=eco["offset_fen"], net_fen=eco["net_fen"],
+                            basis_facility_id=fid, basis_rate=rate)
+
+
 @router.post("/negotiate/{offer_id}", dependencies=[Depends(require_feature("terms_guard")),
                                                   Depends(require_feature("buyer_negotiation"))])
 def negotiate_offer(offer_id: str, body: NegotiateIn) -> dict:
@@ -259,13 +317,30 @@ def negotiate_offer(offer_id: str, body: NegotiateIn) -> dict:
         raise HTTPException(422, "buyer_profile must be cooperative or hard_line")
     vid = rt.latest_verdict.get(offer_id)
     verdict = rt.store.get_verdict(vid) if vid else None
+    if verdict is None and (body.verdict_id or body.counter_id or body.state_version is not None):
+        verdict = _latest_verdict(rt, offer_id)  # a bound send may arrive after a restart emptied the session cache
     if verdict is None:
         raise HTTPException(409, "evaluate the offer first")
-    counters = list(verdict.counters)
-    if not counters:
-        raise HTTPException(409, "the verdict has no counter to negotiate")
     offer = rt.store.get_offer(offer_id)
     assert offer is not None
+    chosen: CounterProposal | None = None
+    with rt.lock:
+        bound = body.verdict_id is not None or body.counter_id is not None or body.state_version is not None
+        if bound:
+            latest = _latest_verdict(rt, offer_id) or verdict
+            version = rt.store.get_state().state_version
+            if body.verdict_id is not None and body.verdict_id != latest.id:
+                raise _counter_changed(rt, offer, latest, version, "VERDICT_CHANGED")
+            if body.state_version is not None and body.state_version != version:
+                raise _counter_changed(rt, offer, latest, version, "BOOKS_CHANGED")
+            if body.counter_id is not None:
+                chosen = next((c for c in latest.counters if c.id == body.counter_id), None)
+                if chosen is None:
+                    raise _counter_changed(rt, offer, latest, version, "COUNTER_NOT_IN_VERDICT")
+            verdict = latest
+    counters = [chosen] if chosen is not None else list(verdict.counters)
+    if not counters:
+        raise HTTPException(409, "the verdict has no counter to negotiate")
     tried = {counters[0].id}
 
     def supplier_next(_resp):  # next untried counter, then restate Option A as the final offer
@@ -291,6 +366,7 @@ def negotiate_offer(offer_id: str, body: NegotiateIn) -> dict:
                            "buyer_response": "ACCEPT" if r.response.decision.value == "ACCEPT" else "REFUSE",
                            "buyer_text": g.text_out})
         operations: list[dict] = []
+        funding_ops: list[dict] = []
         commitment = None
         if t.outcome == Outcome.ACCEPT and t.accepted_counter_id:
             c = rt.executor.propose_commitment(verdict.id, expires_day=rt.day + 7, counter_id=t.accepted_counter_id)
@@ -316,9 +392,40 @@ def negotiate_offer(offer_id: str, body: NegotiateIn) -> dict:
             message = (f"{head}; the near-term gap is not funded: the router's plan cannot run today ({blocked}). "
                        f"Nothing was executed from it.")
         else:
-            operations += _ops_for_plan(rt, list(gap_plan.actions), f"fund-{offer_id}-{body.buyer_profile}")
+            funding_ops = _ops_for_plan(rt, list(gap_plan.actions), f"fund-{offer_id}-{body.buyer_profile}")
+            operations += funding_ops
+        # The fact is written after the canonical events (the commitment, the accept, each funding unit), in this lock, so no
+        # read sees them without it. A failure here never undoes them: the record then reads "not recorded".
+        did = deal_id(offer_id)
+        sent_counter = chosen or by_id.get(t.accepted_counter_id or "")
+        sent_order: list[str] = []
+        for r in t.rounds:
+            sent_order += [x for x in r.supplier_counter_ids if x not in sent_order]
+        fact = SentFact(
+            offer_id=offer_id, verdict_id=verdict.id, state_version_shown=body.state_version, chosen_counter_id=body.counter_id,
+            counter_ids_sent=sent_order, buyer_profile=body.buyer_profile, outcome="DEAL" if commitment is not None else "NO_DEAL",
+            accepted_counter_id=t.accepted_counter_id if commitment is not None else None, transcript_hash=t.transcript_hash,
+            commitment_id=commitment.id if commitment is not None else None,
+            accept_op_id=f"accept-{commitment.id}" if commitment is not None else None,
+            funding_op_ids=[o["op_id"] for o in funding_ops],
+            funding_blocked=(None if blocked is None else "NOT_EXECUTABLE_NOW" if not gap_plan.executable_now else "UNSUPPORTED_LEG"),
+            counter_economics=_chosen_economics(rt, sent_counter, state, mandate),
+            gap_plan=GapPlan(need_fen=gap_plan.need_fen, total_cost_fen=gap_plan.total_cost_fen,
+                             legs=[GapLeg(kind=a.kind.value, facility_id=a.facility_id, receivable_id=a.receivable_id,
+                                          amount_fen=a.amount_fen, lands_day=a.lands_day) for a in gap_plan.actions]))
+        key = f"accept-{commitment.id}" if commitment is not None else f"nodeal:{verdict.id}:{body.buyer_profile}"
+        recorded = record_fact(rt, did, key, fact, state_version=rt.store.get_state().state_version, day=rt.day)
+        execution = None
+        try:
+            ctx = load_context(rt)
+            execution = execution_view(ctx, derive(ctx.inputs_for(did)), "en")
+        except Exception:
+            logging.getLogger("termsledger.decisions").exception("the execution summary could not be read for %s", did)
     return {
         "offer_id": offer_id,
+        "decision_id": did,
+        "decision_recorded": recorded,
+        "execution": execution,
         "outcome": "DEAL" if t.outcome == Outcome.ACCEPT else "NO_DEAL",
         "rounds": rounds,
         "accepted_counter_id": t.accepted_counter_id,
