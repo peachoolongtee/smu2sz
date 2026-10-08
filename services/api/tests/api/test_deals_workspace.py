@@ -82,7 +82,7 @@ def test_the_workspace_is_in_chinese_too(client, rt):
     assert ws["buyer_asks"]["title"] == "买方的要求" and ws["recommends"]["text"] == "建议还价"
     assert ws["financial_impact"]["lines"][0]["label"] == "立即折扣" and "12 个月" in ws["financial_impact"]["lines"][1]["window_text"]
     assert ws["why_it_matters"]["reasons"][0].startswith("此报价的远期让步合计 ¥28,326.92")
-    assert ws["priced_response"]["send_scope"].startswith("向买方发送Option A")
+    assert ws["priced_response"]["send_scope"].startswith("向买方发送方案 A")
 
 
 def test_an_offer_with_no_counter_has_no_priced_response(client, rt):

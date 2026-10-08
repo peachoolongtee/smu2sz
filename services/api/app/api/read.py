@@ -20,6 +20,7 @@ from app.api.presentation import (
     business_text,
     event_words,
     first_breach_ahead,
+    last_read,
     live_windows,
     party_name,
     window_is_live,
@@ -178,6 +179,8 @@ def get_ledger(lang: str = "en") -> dict:
             "head_hash": ops[-1].entry_hash if ops else None,
             **chain_fields(chain_valid, len(ops), lang),
             "refusals": refusal_block(refused, events, lang),
+            "lang": lang,
+            **last_read(today, lang),
         }
 
 
@@ -195,6 +198,7 @@ def get_audit(lang: str = "en") -> dict:
     extraction = any(e.kind.value == "DATA_EXTRACTION" for e in events)
     board = scoreboard(rt.store, allow_for=_counter_allow)  # computed from every stored verdict, not asserted
     return {
+        "lang": lang,
         "events": [displayed(json.loads(e.model_dump_json())) for e in events],
         "refusals": refusals,
         "refusal_summary": refusal_block(len(refusals), len(events), lang),

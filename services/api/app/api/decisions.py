@@ -33,6 +33,7 @@ from app.api.presentation import (
     lands_difference,
     leg_words,
     obligation_sentence,
+    option_label,
     party_name,
     quote_not_recorded,
     quote_view,
@@ -415,7 +416,7 @@ def _response(ctx: Context, ds: DecisionState, lang: str) -> dict[str, Any] | No
     if v is None:
         return None
     labels = {c.id: c.label for c in v.counters}
-    counters = [{"id": c.id, "label": c.label, "supplier_cost_display": fmt_yuan(c.supplier_cost_fen),
+    counters = [{"id": c.id, "label": c.label, "label_text": option_label(c.label, lang), "supplier_cost_display": fmt_yuan(c.supplier_cost_fen),
                  "forward_value_display": fmt_yuan(c.forward_value_fen)} for c in v.counters]
     s = ds.sent
     sent: dict[str, Any] | None = None
@@ -423,8 +424,11 @@ def _response(ctx: Context, ds: DecisionState, lang: str) -> dict[str, Any] | No
         eco = s.counter_economics
         sent = {"recorded": True, "outcome": s.outcome, "simulated": True, "buyer_profile": s.buyer_profile,
                 "chosen_counter_id": s.chosen_counter_id, "chosen_label": labels.get(s.chosen_counter_id or ""),
+                "chosen_label_text": option_label(labels.get(s.chosen_counter_id or ""), lang) or None,
                 "accepted_counter_id": s.accepted_counter_id, "accepted_label": labels.get(s.accepted_counter_id or ""),
-                "counters_sent": [{"id": cid, "label": labels.get(cid)} for cid in s.counter_ids_sent],
+                "accepted_label_text": option_label(labels.get(s.accepted_counter_id or ""), lang) or None,
+                "counters_sent": [{"id": cid, "label": labels.get(cid), "label_text": option_label(labels.get(cid), lang) or None}
+                                  for cid in s.counter_ids_sent],
                 "economics": ({"supplier_cost_display": fmt_yuan(eco.supplier_cost_fen),
                                "forward_value_display": fmt_yuan(eco.forward_value_fen),
                                "funding_cost_display": fmt_yuan(eco.funding_cost_fen),

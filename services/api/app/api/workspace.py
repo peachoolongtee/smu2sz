@@ -13,8 +13,10 @@ from typing import Any
 
 from app.api.presentation import (
     business_action_text,
+    business_text,
     first_breach_ahead,
     obligation_sentence,
+    option_label,
     send_scope_text,
     t,
     when_text,
@@ -83,14 +85,14 @@ def build(view: dict[str, Any], *, bundle: Any, state: FinancialState, mandate: 
                 "window_text": t(lang, "Taken off the invoice when it is settled early. It is checked against its own cap and is not "
                                        "part of the forward figure.",
                                  "发票提前结算时直接扣减。它按自己的上限单独检查，不计入远期金额。"),
-                "basis": cv.basis})
+                "basis": cv.basis, "basis_when": business_text(state, cv.basis, today, lang)})
         else:
             lines.append({
                 "obligation_id": cv.obligation_id, "type": kind, "label": _label(kind, lang), "horizon": "FORWARD",
                 "amount_fen": cv.value_fen, "amount_display": fmt_yuan(cv.value_fen),
                 "window_text": t(lang, f"Valued over the next {months} months at your cheapest committed source.",
                                  f"按您最便宜的已承诺资金来源，估值期为未来 {months} 个月。"),
-                "basis": cv.basis})
+                "basis": cv.basis, "basis_when": business_text(state, cv.basis, today, lang)})
     fc = view["forward_concession"]
     impact = {
         "title": t(lang, "What it costs you", "对您的成本"),
@@ -123,7 +125,8 @@ def build(view: dict[str, Any], *, bundle: Any, state: FinancialState, mandate: 
         "why_it_matters": {"text": " ".join(reasons), "reasons": reasons},
         "recommends": {"action": action, "text": business_action_text(action, lang)},
         "priced_response": ({
-            "counter_id": chosen["id"], "label": chosen["label"], "send_scope": send_scope_text(lang, chosen["label"]),
+            "counter_id": chosen["id"], "label": chosen["label"], "label_text": option_label(chosen["label"], lang),
+            "send_scope": send_scope_text(lang, option_label(chosen["label"], lang)),
             "supplier_cost_display": chosen["supplier_cost_display"], "forward_value_display": chosen["forward_value_display"],
             "verdict_id": verdict.id, "state_version": view["state_version"],
         } if chosen is not None else None),

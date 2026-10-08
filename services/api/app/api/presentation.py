@@ -14,6 +14,7 @@ from fractions import Fraction
 from typing import Any
 
 from app.alerts import Alert, AlertKind
+from app.api.engine_zh import translate
 from app.books import current_books
 from app.domain.models import (
     BaseKind,
@@ -110,7 +111,7 @@ def operation_words(text: str) -> str:
     return _OPERATION_TOKEN.sub(word, text)
 
 
-_RI_TOKEN = re.compile(r"(?<![\w:-])RI:[\w-]+:\d+(?![\w:-])")
+_RI_TOKEN = re.compile(r"(?<![\w:-])RI:[\w-]+:\d+(?![\w-]|:\w)")
 
 
 def invoice_due_day(state: FinancialState, receivable_id: str) -> int | None:
@@ -158,6 +159,37 @@ _CEILING_CLAUSE = re.compile(r"effective annual cost (\S+%) is above the mandate
 _CEILING_SHORT = re.compile(r"above the (\S+%) ceiling for what the agent may borrow alone")
 
 
+# The engine's own terms in the owner's words (audit section 16, wayfinder #65 Wave 7): a Business sentence never says "headroom" of the
+# reserve, "trajectory", "Tier 2", "obligation" or "committed cure". The raw sentence (the audit level, the hash-chained log) keeps the
+# engine's words; only the Business field is re-said. Order matters: the longer phrases first.
+_OWNER_LAYER: tuple[tuple[re.Pattern[str], Any], ...] = tuple((re.compile(p), w) for p, w in (
+    (r"\bDays? \d+(?: to \d+)? (?:are|is) below the (¥[\d,]+(?:\.\d+)?) reserve floor until then: the cash is not in before day (\d+)",
+     r"Cash is below your \1 minimum cash reserve until the funds land on day \2"),
+    (r"\bA committed cure exists:", "A funding plan is available:"),
+    (r"\ba committed cure exists:", "a funding plan is available:"),
+    (r"\bno committed plan restores the reserve; the cure that keeps cash at or above zero is:",
+     "no funding plan restores your minimum cash reserve; the plan that keeps cash at or above zero is:"),
+    (r"\bNo committed plan restores the reserve; the cure that keeps cash at or above zero is:",
+     "No funding plan restores your minimum cash reserve; the plan that keeps cash at or above zero is:"),
+    (r"\bReserve headroom thin\b", "Cash above your minimum is thin"),
+    (r"\bCash stays above the floor but only by (¥[\d,]+(?:\.\d+)?)", r"Cash stays above your minimum cash reserve by only \1"),
+    (r"\((\d+) day\(s\) under 10% of the floor\)",
+     lambda m: f"({m.group(1)} {'day' if m.group(1) == '1' else 'days'} with less than 10% of your minimum cash reserve to spare)"),
+    (r"\bbelow the reserve floor\b", "below your minimum cash reserve"),
+    (r"\bbelow the (¥[\d,]+(?:\.\d+)?) reserve floor\b", r"below your \1 minimum cash reserve"),
+    (r"\bcash stays above the floor\b", "cash stays above your minimum cash reserve"),
+    (r"\bthe conservative trajectory\b", "the cash forecast"),
+    (r"\bThe conservative trajectory\b", "The cash forecast"),
+    (r"\bTier 2: the owner applies; zero until committed", "Needs your approval: you apply; counted as zero until committed"),
+    (r"\babove the Tier-2 threshold (¥[\d,]+(?:\.\d+)?)", r"above the \1 you allow without your approval"),
+    (r"\babove the Tier-2 threshold\b", "above the limit you set for what needs your approval"),
+    (r"\bTier[ -]?2\b", "needs your approval"),
+    (r"\bobligation (?:OB|CTR)[\w:.#-]*", "the terms you agreed"),
+    (r"\bbound obligations\b", "terms"),
+    (r"\bobligations\b", "terms"),
+))
+
+
 def owner_words(text: str) -> str:
     """Engine clauses re-said in the owner's words: the rate ceiling is "the limit you signed for funding without your
     approval", never "what the agent may borrow alone", and "the owner's approval" is "your approval". Amounts and rates
@@ -165,7 +197,10 @@ def owner_words(text: str) -> str:
     out = _CEILING_CLAUSE.sub(lambda m: f"the yearly cost of {m.group(1)} is above the {m.group(2)} limit you signed for funding "
                                         f"without your approval", text)
     out = _CEILING_SHORT.sub(lambda m: f"above the {m.group(1)} limit you signed for funding without your approval", out)
-    return out.replace("needs the owner's approval", "needs your approval")
+    out = out.replace("needs the owner's approval", "needs your approval")
+    for pattern, words in _OWNER_LAYER:
+        out = pattern.sub(words, out)
+    return out
 
 
 def in_words(state: FinancialState, text: str) -> str:
@@ -174,12 +209,12 @@ def in_words(state: FinancialState, text: str) -> str:
     out = operation_words(owner_words(text))
     out = _RI_TOKEN.sub(lambda m: _invoice_in_words(state, m.group(0)) or m.group(0), out)
     for rid in sorted((r.id for r in state.receivables if not r.id.startswith("RI:")), key=len, reverse=True):
-        out = re.sub(rf"(?<![\w:-]){re.escape(rid)}(?![\w:-])", lambda m: _invoice_in_words(state, m.group(0)) or m.group(0), out)
+        out = re.sub(rf"(?<![\w:-]){re.escape(rid)}(?![\w-]|:\w)", lambda m: _invoice_in_words(state, m.group(0)) or m.group(0), out)
     for f in state.facilities:
-        out = re.sub(rf"(?<![\w:-]){re.escape(f.id)}(?![\w:-])", f.name, out)
+        out = re.sub(rf"(?<![\w:-]){re.escape(f.id)}(?![\w-]|:\w)", f.name, out)
     for c in state.counterparties:
         if c.id != c.name:
-            out = re.sub(rf"(?<![\w:-]){re.escape(c.id)}(?![\w:-])", c.name, out)
+            out = re.sub(rf"(?<![\w:-]){re.escape(c.id)}(?![\w-]|:\w)", c.name, out)
     return out
 
 
@@ -260,13 +295,23 @@ def relative_days(text: str, today: int, lang: Lang) -> str:
         when = on(m)
         return "until " + (when[3:] + " from now" if when.startswith("in ") else when)
 
+    text = re.sub(r"\brequested day (\d+)\b", lambda m: "requested " + on(m), text)
+    text = re.sub(r"\bfrom day (\d+)\b", lambda m: "starting " + on(m), text)
     text = re.sub(r"\bto day (\d+)\b", until, text)
     text = re.sub(r"\(day (\d+)\)", lambda m: "(" + on(m) + ")", text)
     text = re.sub(r", day (\d+)\b", lambda m: ", " + on(m), text)
     return text
 
 
-_CURE_CLAUSE = re.compile(r"A committed cure exists: (?P<legs>.+?), cost (?P<cost>¥[\d,.]+) \((?P<rate>[^()]*)\)(?P<rest>[^.]*)\.")
+_CURE_CLAUSE = re.compile(r"A (?:committed cure exists|funding plan is available): (?P<legs>.+?), cost (?P<cost>¥[\d,.]+) \((?P<rate>[^()]*)\)"
+                          r"(?P<rest>(?:[^.]|\.\d)*)\.")
+
+
+def engine_sentence(state: FinancialState, text: str, today: int, lang: Lang, *, fallback: bool = False) -> str:
+    """An engine sentence the home shows as it is (an alert's detail, a cost line's label): names for ids, distances from today, the owner's
+    words, and in Chinese the engine-sentence templates. `fallback` says it as the alternative to a recommended plan (`fallback_words`)."""
+    out = relative_days(in_words(state, text), today, lang)
+    return in_language(fallback_words(out) if fallback else out, lang, state) or ""
 
 
 def fallback_words(text: str) -> str:
@@ -292,6 +337,7 @@ _ADMISSIBLE = (
 # "(commitment CMT-a78afaa5becb5273)": a record id, which belongs to the audit level.
 _COMMITMENT_REF = re.compile(r"\s*\(commitment CMT-[0-9a-f]+\)")
 # "… the cash lands in 3 days after the 3-day lead time": the landing is said once, as a distance from today.
+_SENTENCE_THE = re.compile(r"(?<=[a-z0-9)]\. )the (?=¥|invoice|agreement)")
 _LEAD_TIME = re.compile(r" after the \d+-day lead time")
 
 
@@ -365,10 +411,51 @@ def business_text(state: FinancialState, text: str | None, today: int, lang: Lan
     limits" for the engine's "admissible". `agreements` maps a commitment id to its buyer's name; `window_live` says the
     early-payment promise a settlement clause speaks of is still live (`live_windows`). None stays None; the raw sentence
     stays beside it for the audit level."""
+    out = _owner_english(state, text, today, lang, agreements, window_live)
+    return in_language(out, lang, state)
+
+
+def _owner_english(state: FinancialState, text: str | None, today: int, lang: Lang = "en",
+                   agreements: Mapping[str, str] | None = None, window_live: bool = False) -> str | None:
+    """`business_text` before the language step: the engine sentence in the owner's English (names, distances from today, the owner's
+    words). A caller that edits the sentence further (a full stop, a clause removed) edits this and says it in Chinese last."""
     if text is None:
         return None
-    return agreement_ref(_LEAD_TIME.sub("", limits_words(relative_days(in_words(state, settlement_words(text, today, window_live)), today, lang))),
+    said = agreement_ref(_LEAD_TIME.sub("", limits_words(relative_days(in_words(state, settlement_words(text, today, window_live)), today, lang))),
                          agreements)
+    return _SENTENCE_THE.sub("The ", said)  # an id at the start of a sentence became "the invoice to ...": it takes its capital
+
+
+def book_names(state: FinancialState | None) -> list[str]:
+    """The names the books give (buyers, facilities): carried over exactly in a Chinese sentence, never translated."""
+    if state is None:
+        return []
+    return [*(c.name for c in state.counterparties), *(f.name for f in state.facilities), *(x.label for x in state.flows)]
+
+
+def in_language(text: str | None, lang: Lang, state: FinancialState | None = None) -> str | None:
+    """The owner's English sentence in the page's language: Chinese through the engine-sentence templates (`engine_zh`), English as it is.
+    A sentence no template knows passes through unchanged."""
+    return translate(text, book_names(state)) if lang == "zh" else text
+
+
+def last_read(today: int, lang: Lang) -> dict[str, Any]:
+    """When the books behind a read were last read (F21): the page says "as of {when}" beside a conclusion. Every read here is taken from
+    the books as they stand now, so the day is today; the fields are the same ones `GET /home` carries in its forecast basis."""
+    return {"last_read_when": when_text(today, today, lang), "last_read_day": today}
+
+
+def executed_words(state: FinancialState, *, payload: dict[str, Any], result: dict[str, Any], today: int, lang: Lang,
+                   agreements: Mapping[str, str] | None = None) -> dict[str, str | None]:
+    """The Business words for one operation result (an act on an alert, an owner's decision on an approval): the executor's sentence as
+    a Business page reads it (`message_when`) and the sentence for what the operation did (`event_text`, `event_detail`). The raw
+    `message` of the result stays beside them for the audit level."""
+    message = str(result.get("message") or "")
+    words = event_words(state, kind=str(result.get("kind") or ""), status=str(result.get("status") or ""), payload=payload, message=message,
+                        approval_id=result.get("approval_id"), day=result.get("effective_day"), today=today, lang=lang,
+                        agreements=agreements)
+    when = business_text(state, message, today, lang, agreements)
+    return {"message_when": when, "event_text": words["event_text"] or when, "event_detail": words["event_detail"]}
 
 
 def live_windows(report: Any, commitments: Sequence[Commitment], state: FinancialState) -> frozenset[tuple[str, str]]:
@@ -407,10 +494,13 @@ def reconciliation_words(state: FinancialState, text: str | None, today: int, *,
     """The sentence for one reconciliation row (`detail_when`). A promise stands alone under the buyer's name, so it is a full sentence
     (capital, commas round the due clause, full stop); a receipt follows the day ("today · agreed early payment for ... of the invoice")
     and stays a clause. The raw `detail` is untouched."""
-    out = business_text(state, text, today, lang, agreements, window_live)
+    out = _owner_english(state, text, today, lang, agreements, window_live)
     if out is None:
         return None
     out = _OF_FACE.sub(r"\1 of the invoice", out)
+    if lang == "zh":  # the Chinese templates read the sentence before the English comma rule below
+        said = in_language(out, lang, state) or ""
+        return _sentence(said) if promise else said
     if not promise:
         return out
     return _sentence(_DUE_ARRIVED.sub(r", due \1, arrived", out))
@@ -425,11 +515,11 @@ def approval_reason_words(state: FinancialState, text: str | None, today: int, l
     """Why a request needs the owner, for the card, as a full sentence: the Business sentence without the executor's working (the "all charges on
     ¥… annualised = …" parenthesis stays at the audit level) and the yearly cost to one decimal, as the home says it
     ("32.5% a year"), never 32.52% beside 32.5%."""
-    out = business_text(state, text, today, lang)
+    out = _owner_english(state, text, today, lang)
     if out is None:
         return None
     out = _FORMULA_PAREN.sub("", out)
-    return _sentence(_YEARLY_COST.sub(lambda m: f"{m.group(1)}{fmt_pct(Fraction(m.group(2)) / 100, 1)}", out))
+    return _sentence(in_language(_YEARLY_COST.sub(lambda m: f"{m.group(1)}{fmt_pct(Fraction(m.group(2)) / 100, 1)}", out), lang, state) or "")
 
 
 def plan_when(state: FinancialState, plan: dict[str, Any] | None, today: int, lang: Lang = "en") -> dict[str, Any] | None:
@@ -448,7 +538,9 @@ def plan_when(state: FinancialState, plan: dict[str, Any] | None, today: int, la
     out["violations"] = [{**v, "message_when": business_text(state, v.get("message"), today, lang),
                           "cure_note_when": business_text(state, v.get("cure_note"), today, lang)}
                          for v in out.get("violations") or []]
-    out["rejected"] = [{**r, "note_when": business_text(state, r.get("note"), today, lang)} for r in out.get("rejected") or []]
+    out["rejected"] = [{**r, "label_when": business_text(state, r.get("label"), today, lang),
+                        "note_when": business_text(state, r.get("note"), today, lang)} for r in out.get("rejected") or []]
+    out["label_when"] = business_text(state, out.get("label"), today, lang)
     return out
 
 
@@ -1698,6 +1790,14 @@ def remaining_task_words(shortfall_fen: int | None, starts_day: int | None, toda
     return t(lang, f"Your minimum cash reserve is still {fmt_yuan(shortfall_fen)} short{' from ' + when if when else ''}; "
                    f"no committed funding restores it. This needs your decision.",
              f"您的最低现金储备仍差 {fmt_yuan(shortfall_fen)}{'，从' + when + '起' if when else ''}；没有已承诺的融资能恢复它。这需要您决定。")
+
+
+def option_label(label: str | None, lang: Lang) -> str:
+    """A counter's label ("Option A") as a Business page names it ("方案 A" in Chinese); any other label is the counter's own."""
+    if not label:
+        return ""
+    m = re.fullmatch(r"Option ([A-Z])", label)
+    return t(lang, label, f"方案 {m.group(1)}") if m else label
 
 
 def send_scope_text(lang: Lang, label: str | None = None) -> str:
