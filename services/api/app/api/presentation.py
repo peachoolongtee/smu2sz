@@ -279,6 +279,25 @@ def business_text(state: FinancialState, text: str | None, today: int, lang: Lan
     return _COMMITMENT_REF.sub("", _LEAD_TIME.sub("", limits_words(relative_days(in_words(state, text), today, lang))))
 
 
+# A reconciliation sentence as a Business page reads it. "…Foshan Home Retail Co. due 2 days ago arrived" gets the commas its clause
+# needs, and the engine's "for ¥257,200.00 of face" says "of the invoice" (the owner has an invoice, not a face value).
+_DUE_ARRIVED = re.compile(r" due ([^,;]+?) arrived\b")
+_OF_FACE = re.compile(r"(\bfor ¥[\d,]+(?:\.\d+)?) of face\b")
+
+
+def reconciliation_words(state: FinancialState, text: str | None, today: int, *, promise: bool, lang: Lang = "en") -> str | None:
+    """The sentence for one reconciliation row (`detail_when`). A promise stands alone under the buyer's name, so it is a full sentence
+    (capital, commas round the due clause, full stop); a receipt follows the day ("today · agreed early payment for ... of the invoice")
+    and stays a clause. The raw `detail` is untouched."""
+    out = business_text(state, text, today, lang)
+    if out is None:
+        return None
+    out = _OF_FACE.sub(r"\1 of the invoice", out)
+    if not promise:
+        return out
+    return _sentence(_DUE_ARRIVED.sub(r", due \1, arrived", out))
+
+
 # The executor's working behind a rate: "(all charges on ¥200,000.00 held 10 days (day 37 to day 47), annualised = 32.52%)".
 _FORMULA_PAREN = re.compile(r"\s*\(all charges on [^()]*(?:\([^()]*\)[^()]*)*\)")
 _YEARLY_COST = re.compile(r"\b(yearly cost of )(\d+(?:\.\d+)?)%")
