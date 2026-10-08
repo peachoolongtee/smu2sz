@@ -6,40 +6,9 @@ import { ChevronRightIcon } from "@/components/icons";
 
 /**
  * The Business pages' small shared parts, on the app's flat palette (surface cards, the brand blue, the tone tokens):
- * details that stay closed until asked for, list rows that read left to right (what, then how much), and a fact tile (a label over one figure or sentence). No colour here is
+ * details that stay closed until asked for and list rows that read left to right (what, then how much). The fact tile is `Stat` in ui.tsx. No colour here is
  * new; the tones come from globals.css.
  */
-
-export type FactTone = "neutral" | "ok" | "warn" | "bad";
-
-const factTone: Record<FactTone, { box: string; value: string }> = {
-  neutral: { box: "border-line bg-subtle", value: "text-ink" },
-  ok: { box: "border-ok-line bg-ok-bg", value: "text-ok-fg" },
-  warn: { box: "border-warn-line bg-warn-bg", value: "text-warn-fg" },
-  bad: { box: "border-bad-line bg-bad-bg", value: "text-bad-fg" },
-};
-
-/**
- * One fact as a tile: a quiet label, the value large, an optional note beneath. The tile is a `<div>` inside a `<dl>`;
- * `testId` goes on the value so a spec can read the figure itself.
- */
-export function FactTile({ label, children, tone = "neutral", valueTone, testId, note, noteTestId, deep = false }: { label: ReactNode; children: ReactNode; tone?: FactTone; valueTone?: "bad"; testId?: string; note?: ReactNode; noteTestId?: string; deep?: boolean }) {
-  const c = factTone[tone];
-  // On the deep block (the Home hero) the tile is translucent white, its figure white, and a figure that is the status takes the bright red.
-  return (
-    <div className={`min-w-0 rounded-tile px-3.5 py-3 ${deep ? "bg-on-deep/10" : `border ${c.box}`}`}>
-      <dt className={`text-xs font-medium ${deep ? "text-on-deep-muted" : "text-ink-3"}`}>{label}</dt>
-      <dd className={`mt-0.5 break-words text-base font-semibold tabular-nums ${deep ? (valueTone === "bad" ? "text-bad-bright" : "text-on-deep") : valueTone === "bad" ? factTone.bad.value : c.value}`} data-testid={testId}>
-        {children}
-      </dd>
-      {note ? (
-        <dd className={`text-xs font-normal ${deep ? "text-on-deep-muted" : "text-ink-3"}`} data-testid={noteTestId}>
-          {note}
-        </dd>
-      ) : null}
-    </div>
-  );
-}
 
 /** The one chevron of every fold and row disclosure: it points right and turns a quarter when its `<details>` (`group`) or `open` is set. */
 export function FoldChevron({ deep = false, open, className = "" }: { deep?: boolean; open?: boolean; className?: string }) {

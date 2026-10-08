@@ -169,7 +169,7 @@ function FundingBody({ view, basis, snapshot }: { view: FundingView; basis: "COM
           <Card id="compare" title={t("fund.compare")} subtitle={t("fund.compare.sub")}>
             <ul className="divide-y divide-line">
               {view.comparison.map((c) => (
-                <li key={c.label} className="flex flex-col gap-1.5 py-2 md:flex-row md:items-center md:justify-between md:gap-3">
+                <li key={c.label} className="flex flex-col gap-1.5 py-2">
                   <div className="min-w-0">
                     <p className={`text-sm ${c.selected ? "font-semibold" : ""}`}>{c.label}</p>
                     <p className="text-xs text-ink-3">{c.note}</p>
@@ -181,7 +181,7 @@ function FundingBody({ view, basis, snapshot }: { view: FundingView; basis: "COM
                       notExecutableReason={c.not_executable_reason}
                     />
                   </div>
-                  <div className="flex shrink-0 items-center gap-2 md:justify-end">
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                     {c.selected ? <Badge tone="brand">{te("fund", "selected")}</Badge> : null}
                     <span className="font-semibold tabular-nums">{c.total_display}</span>
                   </div>
