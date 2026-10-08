@@ -165,5 +165,6 @@ def test_envelope_of_buyer_a_on_90_day_terms_is_scanned_to_100_and_the_zone_has_
     # every terms lever passes both new steps; the engine finds no wall inside the range, so each ends at its top
     assert all(lv.maximum == 100 and lv.confirmed and lv.wall is None and lv.next_step is None for lv in terms.values())
     assert {p.package.terms_days for p in a.packages} == {90, 95, 100}
-    assert a.primary == ("You can live with: up to 100-day terms, or early payment at up to 0.10% on ¥5,397,202.57; "
-                         "a rebate up to 1.50%.")
+    assert a.primary == ("You can live with: up to 100-day terms (the most FLOW checks), or early payment at up to 0.10% "
+                         "on ¥5,397,202.57; a rebate up to 1.50%.")
+    assert envelope_answer(facts, "zh").primary.startswith("您能接受的范围：账期最长 100 天（FLOW 检查的上限），或提前付款")

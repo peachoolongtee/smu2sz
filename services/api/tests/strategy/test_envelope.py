@@ -712,7 +712,9 @@ def test_a_buyer_on_90_day_terms_is_scanned_to_100_and_the_zone_has_the_rows(gol
     assert alone.next_step.package.terms_days == 95 and not alone.next_step.passes
     for name in (TERMS_BUDGET_IGNORED, TERMS_WITH_PRICE):  # liquidity and the price let both new steps through: the range's top
         assert levers[name].maximum == 100 and levers[name].wall is None and levers[name].next_step is None
-    assert "up to 100-day terms if the price rises" in a.primary and "no longer payment terms" not in a.primary
+    assert "up to 100-day terms (the most FLOW checks) if the price rises 0.25%" in a.primary
+    assert "no longer payment terms" not in a.primary
+    assert "账期最长 100 天（FLOW 检查的上限；价格上调 0.25%）" in envelope_answer(facts, "zh").primary
     assert any(p.package.terms_days in (95, 100) for p in a.packages)
     json.loads(a.model_dump_json())
 

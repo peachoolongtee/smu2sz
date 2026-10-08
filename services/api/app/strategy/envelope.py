@@ -955,11 +955,14 @@ def _primary(facts: EnvelopeFacts, lang: str) -> str:
         if terms.rule_price_bp is not None and any(
                 c.probe.setting == Setting(longest, price=terms.rule_price_bp) for c in facts.cells):
             price = terms.rule_price_bp
+        # a maximum at the top of the range with no wall is not a ceiling the books set: say so
+        top = terms.wall is None and facts.next_terms is None
         if price:
-            pieces.append(t(lang, f"up to {longest}-day terms if the price rises {fmt_pct(bp(price))}",
-                            f"账期最长 {longest} 天（价格上调 {fmt_pct(bp(price))}）"))
+            pieces.append(t(lang, f"up to {longest}-day terms{' (the most FLOW checks)' if top else ''} if the price rises {fmt_pct(bp(price))}",
+                            f"账期最长 {longest} 天（{'FLOW 检查的上限；' if top else ''}价格上调 {fmt_pct(bp(price))}）"))
         else:  # the longer terms pass on their own: no price rise to name
-            pieces.append(t(lang, f"up to {longest}-day terms", f"账期最长 {longest} 天"))
+            pieces.append(t(lang, f"up to {longest}-day terms{' (the most FLOW checks)' if top else ''}",
+                            f"账期最长 {longest} 天{'（FLOW 检查的上限）' if top else ''}"))
     early = next((m for m in facts.maxima if m.key == "early_pay_counter" and m.value), None) or \
         next((m for m in facts.maxima if m.key == "early_pay_whole" and m.value), None)
     if early is not None and early.value:
