@@ -85,11 +85,13 @@ export default function ReceivablesPage() {
                       <Badge tone={o.past_due ? "bad" : "neutral"}>{o.past_due ? daysLate(Math.max(0, data.as_of_day - o.due_day), t) : t("recon.onTime")}</Badge>
                     </div>
                     {w ? (
-                      <div className="mt-2 space-y-1">
-                        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                      <div className="mt-2 space-y-2">
+                        <div className="flex items-start justify-between gap-3">
                           <ActionChip action={w.action} />
-                          <span className="text-xs text-ink-3">{t("biz.strategy.worth")}</span>
-                          <WorthText row={w} testId={`recv-list-worth-${o.receivable_id}`} />
+                          <div className="text-right">
+                            <span className="block text-xs text-ink-3">{t("biz.strategy.worth")}</span>
+                            <WorthText row={w} testId={`recv-list-worth-${o.receivable_id}`} />
+                          </div>
                         </div>
                         <ActionText row={w} testId={`recv-list-action-${o.receivable_id}`} />
                       </div>
