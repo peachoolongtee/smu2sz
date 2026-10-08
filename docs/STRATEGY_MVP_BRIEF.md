@@ -58,10 +58,14 @@ Literal[True]`, `source_state_version: int`, `day: int`. Constructors in `impact
 
 - `scenario_received(books, receivable_id, on_day) -> ScenarioState`: the receipt moved. `on_day == today`: cash
   credited with the outstanding residual, the receivable SETTLED (`settled_fen = face_fen`), as 01 §7.3 did; a FINANCED
-  receivable pays the lender first (ADR-0010: the lot's `remaining_fen` is repaid, cash gets the rest). `on_day >
-  today`: an `IMMEDIATE_DISCOUNT` obligation at 0 bp with `effective_day = on_day` on the outstanding face added to the
-  books' obligations (the ledger's own way to date a receipt), never a shorter `terms_days` (that would be a contract
-  change). An overdue receivable (due before today) has only the today case; asking for another day raises `ValueError`.
+  receivable pays the lender first (ADR-0010, through the public `financial.lots.apply_receipt`: the lot is cleared
+  with its charges out of the receipt, the facility's drawn balance falls, cash gets the rest). `on_day > today`, up to
+  the due day: the receipt is moved the way the collections spike moved it, by ending the receivable's `terms_days` on
+  the COPY on that day, so the engine posts the RECEIPT there and the invoice stays financeable until then (Wave 1
+  found that an `IMMEDIATE_DISCOUNT` at 0 bp settles the invoice early, so the router can no longer finance it and
+  prices another source: ¥146.82 of cost instead of the oracle's ¥532.49 saving on day 27). The books' own receivable,
+  the commitments and the contract are untouched; the copy is labelled hypothetical. An overdue receivable (due before
+  today), a FINANCED receivable, a day before today or after the due day: only the today case; otherwise `ValueError`.
 - `scenario_inflow(books, amount_fen, on_day) -> ScenarioState`: one confirmed `CashFlow` of `amount_fen` on `on_day`
   appended to the state's flows (label "¥10,000 arrives on day d").
 
@@ -73,7 +77,8 @@ Literal[True]`, `source_state_version: int`, `day: int`. Constructors in `impact
 `label`, `need_delta_fen`, `posted_cost_delta_fen` (after − before: negative is a saving; kept as is), `first_breach_before:
 int | None`, `first_breach_after`, `lowest_headroom_delta_fen`, `budget_used_delta_fen`, `breach_days_removed: int`,
 `alerts_removed: list[str]` (codes), `alerts_added: list[str]`, `before_needs_owner: bool`, `after_needs_owner`,
-`before_executable_now`, `after_executable_now`, `before_cost_fen`, `after_cost_fen`, `before_need_fen`, `after_need_fen`.
+`before_executable_now`, `after_executable_now`, `before_cost_fen`, `after_cost_fen`, `before_need_fen`, `after_need_fen`. `budget_used` is the alerts engine's own figure (`_concession_alerts`' total: the maximum forward-concession
+value over the trajectory, floored at the booked concessions).
 `marginal_impact(before: Books, after: Books, mandate, *, store, day) -> MarginalImpact` runs `plan(state, books.with_([]),
 mandate)` (COMMITTED), `project(state, obligations, [], CONSERVATIVE)` and `alerts(state, mandate, store, day)` on each
 side, inside one `shared_runs()` block, and subtracts. "Posted cost" is `FundingPlan.total_cost_fen` (interest, fees and
@@ -101,10 +106,13 @@ is not called by the routes. No background thread in the MVP.
 
 ### 5.1 Cash price curve (Wave 2, estimate 3 agent-days)
 
-For arrival day `d`, the value is `−posted_cost_delta_fen` of `marginal_impact(books, scenario_inflow(books, 10,000 00, d) with
-the same amount leaving on d + 30)`, i.e. the saving the router makes when ¥10,000 is available 30 days earlier; by the
-spike's definition (collections_spike, "cash price curve") that is the plan's cost without the flow minus the plan's cost
-with it. Bands are cut at the breach episodes' first and recovery days (`alerts()` RESERVE_BREACH_AHEAD items carry
+For arrival day `d`, the value is the spike's definition (collections_spike, "cash price curve"): the plan's cost with
+¥10,000 arriving on `d + 30` minus the plan's cost with it arriving on `d`, i.e.
+`marginal_impact(scenario_inflow(books, 10,000 00, d + 30), scenario_inflow(books, 10,000 00, d), ...).posted_cost_delta_fen`
+negated is the saving of having the same cash 30 days earlier. Not an inflow-and-outflow pair against the bare books:
+Wave 1 showed the two agree on the day-0 books but not on the day-34 books (¥89.11 against the oracle's ¥178.22 for
+d = 34), because the plan is not linear in the flows; `test_the_curve_points_are_reproduced_by_the_spikes_pair` pins
+the spike's pair at nine arrival days on each book. Bands are cut at the breach episodes' first and recovery days (`alerts()` RESERVE_BREACH_AHEAD items carry
 them) and the plan's repayment days; the value is computed at each band's two ends and, when they agree, assigned to
 the band; when they disagree the band is split once at its midpoint and, if the halves still disagree, reported with
 `varies: True` and the smaller value. Expected on the golden books: day 0 → ¥89.11 for days 1–30, ¥0 for day 0 and from
