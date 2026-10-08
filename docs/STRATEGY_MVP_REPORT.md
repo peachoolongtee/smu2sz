@@ -156,3 +156,49 @@ chart label collision, the sticky nav in full-page captures) and the cluster of 
 details (0.70, 0.85, 0.88, 0.89, 0.90) go to Wave 8. One observation from the verifier for Wave 8 too: on the day-34 books
 the terms-with-price lever shows the rule price (80 days, price up 1.05%) while the primary sentence shows the smallest
 passing price (0.95%); one rule should decide both.
+
+## 11. Wave 8: the finish (the Impeccable suite over the whole UI)
+
+At the owner's request, after the MVP, the Impeccable suite ran over every page as a refinement of the incumbent
+identity in `apps/web/DESIGN.md`, with the two reference dashboards in `docs/research/inspiration/` as the bar for
+density, hierarchy and finish. `PRODUCT.md` was written by inference from the repository's documents (every line
+labelled) and `.impeccable/config.json` names `apps/web`, so the launcher resolves both.
+
+**Evaluate.** The critique (`docs/research/impeccable-critique-2026-10-08.md`) scored eleven pages (24–28/40 on the
+Business pages) and ranked 25 findings: two P0s (engine terms on the Business Activity page; Cash & funding ranking a
+plan #1 that was not the recommended one), eleven P1s, twelve P2s, nine cross-page inconsistencies, and the reference
+patterns mapped to FLOW (what to take, and what not: the dark variant, gradients, browser sparklines, a sidebar, bulk
+checkboxes). The audit (`docs/research/impeccable-audit-2026-10-08.md`) walked 246 page views with axe at 412, 768,
+1024 and 1440 (15/20): one P0 (the floating Ask FLOW over the phone demo stepper), six P1s (titles lost on hard loads,
+the chart focus ring removed, 142 phone controls under 44 px, the account sheet ignoring Escape, English server strings on
+zh pages in mock mode, Ask FLOW over content rows).
+
+**Pass A, server words and fields (presentation reads, no engine change).** A clock move reads "4 days passed: the
+¥45,000.00 debt payment went out and one invoice was issued." with "Time passed" as its label and ids in Audit details;
+the comparison rows carry `role` and `role_reason` so the Cash page badges the recommended plan and chips the cheaper
+two-approval alternative ("Cheapest in all, but it needs 2 separate approvals; the recommended plan needs one."); legs
+carry names and the router total's offset is stated instead of a sum that did not add up; the approvals result is one
+owner sentence; `POST /router/plan?lang=zh`. Every mock re-recorded through the demo path.
+
+**Pass B, layout, typeset, distill.** One `Stat` (eyebrow, figure, caption, optional server delta; surface and deep) and
+one `Disclosure` (one chevron, four fold verbs) replace five tile idioms and seven fold styles; status rails retired; 14 px
+data and captions, 16 px card padding, 24 px between sections, the twelve-pixel floor; Receivables rebuilt as the
+references do it (rank numeral, monogram, right-aligned tabular amounts, one worth figure, the action chip, a chevron
+opening the sentence and the ids, pill filters All / Late / Due soon); the Deals envelope as three fact tiles with the
+sentence as caption, the two pills gone; Home says the pending approval once; Cash's status header is one compact row;
+Approvals one band and a centred card; the Demo story keeps one brand fill. Heights: Receivables day 34 1.5 → 1.2
+screens, Cash day 0 2.5 → 2.3, Home pending 1.9 → 1.7, phone Home pending 3.1 → 2.7.
+
+**Pass C, adapt, harden, optimize, clarify.** Ask FLOW docks as the phone bar's last cell and the content clears the bar
+and the Demo strip (a measured `--dock-h`); 44 px touch targets on every Business control (compact chips keep their look
+through a transparent hit area); the phone Demo header's four rows fold into the account sheet; chart labels placed in
+pixels, alternating, dropping into the tooltip when crowded, marks only on the phone; tablet widths fixed (768, 1024);
+route titles survive a hard load (server metadata per route); the recharts focus ring restored; the account sheet closes
+on Escape and outside press; error strings through the dictionary in both languages; the Tour as a native dialog with no
+polling; first paint in the owner's mode and language; the backdrop drifts once then rests; `color-scheme: light`;
+recharts lazy-loaded (`/cash` 372 → 264 KB gzipped); the "Estimate" chip explained ("Priced on today's books;
+re-checked before sending."). axe: 0 serious and 0 critical at every width after (13 target-size at 412 before).
+
+**Pass D, polish, the finish review and the documentation.** (filled below)
+
+**Gate after the finish.** (filled below)
