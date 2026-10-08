@@ -13,6 +13,11 @@ import { Disclosure } from "@/components/business/kit";
 
 type Counter = Displayed<CounterProposal> & { text_when?: string; rationale_when?: string; outbound_blocked?: boolean };
 
+/** The DOM id (and test id) of a counter's card: "deal-option-Option-B". The "Before they ask" card scrolls to it. */
+export function optionDomId(label: string): string {
+  return `deal-option-${label.replace(/\s+/g, "-")}`;
+}
+
 /**
  * One counter as a business card: what changes for the buyer (the counter's own wording), what it costs (the plain
  * cost, or the net economic cost with the funding cost and the offset beside it, never "¥0.00" alone), and behind
@@ -23,7 +28,7 @@ function CounterBusinessCard({ c, recommended, today, action }: { c: Counter; re
   const { t, te } = useI18n();
   const e = c.economics ?? null;
   return (
-    <li className={`motion-lift rounded-tile border p-4 ${recommended ? "border-line border-l-[3px] border-l-brand-600 bg-brand-50" : "border-line bg-surface"}`} data-testid={`deal-option-${c.label.replace(/\s+/g, "-")}`}>
+    <li id={optionDomId(c.label)} tabIndex={-1} className={`motion-lift rounded-tile border p-4 ${recommended ? "border-line border-l-[3px] border-l-brand-600 bg-brand-50" : "border-line bg-surface"}`} data-testid={optionDomId(c.label)}>
       <div className="flex flex-wrap items-center gap-2">
         <h3 className="text-base font-semibold text-ink">{c.label}</h3>
         {recommended ? <Badge tone="brand">{t("biz.deals.option.recommended")}</Badge> : null}
@@ -160,9 +165,28 @@ function NegotiationOutcome({ v, negotiation, today }: { v: VerdictView; negotia
  * kernel (the "Demo data" pill and the note say the reply is simulated); the counters are the verifier's, priced and
  * re-checked on the books, and the card only shows them.
  */
-export function RecommendedResponse({ v, offerId, today, mode, negotiation }: { v: VerdictView; offerId: string; today: number; mode: Mode; negotiation: NegotiationView | null }) {
+export function RecommendedResponse({
+  v,
+  offerId,
+  today,
+  mode,
+  negotiation,
+  compareOpen,
+  onCompareChange,
+}: {
+  v: VerdictView;
+  offerId: string;
+  today: number;
+  mode: Mode;
+  negotiation: NegotiationView | null;
+  /** The page may hold whether the other options are shown (the "Before they ask" card opens Option B); without it the card keeps its own state. */
+  compareOpen?: boolean;
+  onCompareChange?: (open: boolean) => void;
+}) {
   const { t } = useI18n();
-  const [compare, setCompare] = useState(false);
+  const [localCompare, setLocalCompare] = useState(false);
+  const compare = compareOpen ?? localCompare;
+  const setCompare = (open: boolean) => (onCompareChange ? onCompareChange(open) : setLocalCompare(open));
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const counters = v.counters as Counter[];
@@ -222,7 +246,7 @@ export function RecommendedResponse({ v, offerId, today, mode, negotiation }: { 
       ) : null}
       <div className="mt-3 flex flex-wrap items-center gap-3">
         {rest.length ? (
-          <Button variant="secondary" onClick={() => setCompare((x) => !x)} data-testid="deal-compare">
+          <Button variant="secondary" onClick={() => setCompare(!compare)} data-testid="deal-compare">
             {compare ? t("biz.deals.hideCompare") : t("biz.deals.compare", { n: rest.length })}
           </Button>
         ) : null}

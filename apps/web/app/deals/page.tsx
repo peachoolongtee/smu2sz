@@ -3,16 +3,18 @@
 import Link from "next/link";
 import { useState } from "react";
 import { AnnotatedText } from "@/components/annotated-text";
+import { BeforeTheyAsk } from "@/components/deals/before-they-ask";
 import { BuyerAsks } from "@/components/deals/asks";
 import { ActiveCommitments } from "@/components/deals/commitments";
 import { DealSteps } from "@/components/deals/deal-steps";
 import { ACTION_KEY, DealDecision } from "@/components/deals/decision";
 import { WhyRecommended } from "@/components/deals/reasons";
 import { InboxList } from "@/components/deals/inbox-list";
-import { RecommendedResponse } from "@/components/deals/response";
+import { RecommendedResponse, optionDomId } from "@/components/deals/response";
 import { NextStep, nextLinkCls, nextLinkSecondaryCls } from "@/components/next-step";
 import { PlanCard } from "@/components/plan-card";
 import { Button, Callout, Card, EmptyState, ErrorState, Formula, LoadingBlock, PageHeader, ButtonLink } from "@/components/ui";
+import { STRATEGY_MVP } from "@/lib/config";
 import { evaluate as evaluateAndCache } from "@/lib/demo";
 import { getClock, getState, submitOffer } from "@/lib/api";
 import { recordOffer, selectOffer, useDemo } from "@/lib/demo-store";
@@ -44,6 +46,8 @@ export default function DealsPage() {
   const [active, setActive] = useState<string | null>(null);
   // The id of the inbox message being read, or null.
   const [reading, setReading] = useState<string | null>(null);
+  // Whether the other counters are shown, kept here so the "Before they ask" card can open Option B; tied to the offer it was opened for.
+  const [compareFor, setCompareFor] = useState<string | null>(null);
   const books = useAsync(getState, []);
   const clock = useAsync(getClock, []);
   // The simulated clock: every day on this page is said as a distance from it.
@@ -114,6 +118,22 @@ export default function DealsPage() {
   } else if (offer && v && v.counters.length) {
     // The response card below carries the page's one primary action ("Send this counter"); this link only leads to it.
     next = { text: t("next.counter"), action: <a href="#counters" className={nextLinkSecondaryCls}>{t("next.toCounters")}</a> };
+  }
+
+  const counters = v && !cur.negotiation ? v.counters : [];
+  const compareOpen = Boolean(offer && compareFor === offer.offer.offer_id);
+
+  /** Show the response card's Option A (index 0) or Option B (1), scroll to it and move focus there. Sends nothing. */
+  function openOption(index: number) {
+    const target = counters[index];
+    if (!target || !offer) return;
+    if (index > 0) setCompareFor(offer.offer.offer_id);
+    // The Option B card is rendered by the next frame (React commits a click's update before it).
+    requestAnimationFrame(() => {
+      const card = document.getElementById(optionDomId(target.label));
+      (index === 0 ? document.getElementById("counters") : card)?.scrollIntoView({ block: "start", behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+      card?.focus({ preventScroll: true });
+    });
   }
 
   const commitments = <ActiveCommitments today={today} buyerName={buyerName} hideEmpty />;
@@ -191,12 +211,22 @@ export default function DealsPage() {
               ) : null}
             </Card>
 
+            {STRATEGY_MVP ? <BeforeTheyAsk buyerId={offer.offer.counterparty_id} optionCount={Math.min(counters.length, 2)} onOpenOption={openOption} /> : null}
+
             {!v ? (
               commitments
             ) : (
               <>
                 <DealDecision v={v} today={today} negotiation={cur.negotiation} />
-                <RecommendedResponse v={v} offerId={offer.offer.offer_id} today={today} mode={mode} negotiation={cur.negotiation} />
+                <RecommendedResponse
+                  v={v}
+                  offerId={offer.offer.offer_id}
+                  today={today}
+                  mode={mode}
+                  negotiation={cur.negotiation}
+                  compareOpen={compareOpen}
+                  onCompareChange={(open) => setCompareFor(open ? offer.offer.offer_id : null)}
+                />
                 {commitments}
 
                 <div className="space-y-2">
