@@ -449,8 +449,9 @@ def _sentences(*, lang: Lang, action: Action, who: str, r: Receivable, day: int,
                         f"按 {top} 的上限，相比最便宜的融资方案能为您省 {at_limit}。"))
         nxt = ""
         if need_c.next_rate_bp is not None and (need_c.next_rate_dearer_by_fen or 0) > 0:
-            nxt = t(lang, f" {fmt_pct(bp(need_c.next_rate_bp))} would cost {fmt_yuan(need_c.next_rate_dearer_by_fen or 0)} more than the plan.",
-                    f"{fmt_pct(bp(need_c.next_rate_bp))} 就会比原计划多花 {fmt_yuan(need_c.next_rate_dearer_by_fen or 0)}。")
+            nxt = t(lang, f" The next step, {fmt_pct(bp(need_c.next_rate_bp))}, is already dearer than your current funding plan "
+                          f"(by {fmt_yuan(need_c.next_rate_dearer_by_fen or 0)}).",
+                    f"再往上一档 {fmt_pct(bp(need_c.next_rate_bp))} 已经比您当前的融资方案更贵（贵 {fmt_yuan(need_c.next_rate_dearer_by_fen or 0)}）。")
         return sentence, t(lang, f"{saved}{nxt} {if_arrived}", f"{saved}{nxt}{if_arrived}")
     if action == "finance":
         stands = (t(lang, " The standing plan already advances against it.", "现有计划已对它做了融资垫款。") if advanced else "")

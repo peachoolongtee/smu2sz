@@ -896,7 +896,31 @@ export type ComparisonRow = Displayed<{
   worst_day?: Day | null;
   /** The row's note with its day numbers said as distances from today; `note` is the engine's original. */
   note_when?: string;
+  /** What the row is for the owner, written by the server: the plan the next-step card recommends, an admissible alternative, or the row's own status. Prefer it to `status`/`selected`, which are the router's. */
+  role?: ComparisonRole;
+  /** One sentence on why the row has that role ("Cheapest in all, but it needs 2 separate approvals; the recommended plan needs one."). */
+  role_reason?: string | null;
+  /** The sources the plan draws on ("Bank credit line + Invoice financing"). */
+  name_display?: string;
+  /** Each leg with its source's name and its own cost, in the order the router priced them. */
+  legs?: ComparisonLeg[];
+  /** When the total is not the sum of the legs (a plan that lets another balance be repaid sooner): the difference and its words. */
+  offset_fen?: Fen | null;
+  offset_display?: string | null;
+  offset_label?: string | null;
 };
+
+export type ComparisonRole = "recommended" | "alternative" | "insufficient" | "unavailable" | "blocked";
+
+export interface ComparisonLeg {
+  index: number;
+  name_display: string;
+  facility_id: string | null;
+  amount_fen: Fen | null;
+  amount_display: string;
+  cost_fen: Fen | null;
+  cost_display: string | null;
+}
 
 /** `blocked`: not admissible for a reason other than the reserve or an uncommitted source (a limit of the owner's). */
 export type ComparisonStatus = "recommended" | "alternative" | "insufficient" | "unavailable" | "blocked";
@@ -930,6 +954,8 @@ export interface FundingView {
   menu: MenuRow[];
   marginal: MarginalCostView;
   comparison: ComparisonRow[];
+  /** The key of the row whose `role` is "recommended" (the plan the home's next-step card shows); absent from older answers. */
+  recommended_key?: string | null;
 }
 
 export type TrajectoryScenario = "AS_RECEIVED" | "WITH_PLAN";
@@ -1880,6 +1906,8 @@ export interface HomeLeg {
   above_apr_cap: boolean;
   /** The router's cost formula for a leg of the recommended plan (absent on an alert-cure leg). */
   formula?: string | null;
+  /** The source the leg draws on, written by the server ("Bank credit line"); two legs on one source carry their amounts. Read it beside `cost_display`. */
+  name_display?: string;
 }
 
 /** One line of the all-in estimate: the router's cost line for a leg, or a priced alert leg. */
@@ -1916,7 +1944,9 @@ export interface HomeNextAction {
   title: string;
   /** The business outcome ("Secure ¥405k of funding") and its components, in overview precision. */
   outcome_title: string;
-  components: { amount_short: string; what: string; lands_when: string | null }[];
+  components: { amount_short: string; what: string; lands_when: string | null; name_display?: string; cost_display?: string | null }[];
+  /** The key of the comparison row (POST /router/plan) that is this plan: "router_optimum", or "recommended_plan" when the plan is the alert's cure. Null when the card is not a funding plan. Badge the row by its `role`, which is exact. */
+  recommended_key?: string | null;
   receive_short: string | null;
   after_lowest_fen: Fen | null;
   after_lowest_short: string | null;

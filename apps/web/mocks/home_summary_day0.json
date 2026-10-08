@@ -1760,18 +1760,23 @@
     "alert_id": "ALERT-RESERVE-12",
     "kind": "RESERVE_BREACH_AHEAD",
     "plan_source": "router",
+    "recommended_key": "router_optimum",
     "title": "Draw ¥150,000.00 on Bank credit line and finance ¥255,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. on Invoice financing (onboarded platform)",
     "outcome_title": "Secure ¥405k of funding",
     "components": [
       {
         "amount_short": "¥150k",
         "what": "Bank credit line",
-        "lands_when": "today"
+        "lands_when": "today",
+        "name_display": "Bank credit line",
+        "cost_display": "¥841.64"
       },
       {
         "amount_short": "¥255k",
         "what": "against the ¥420k invoice to Foshan Home Retail Co.",
-        "lands_when": "in 3 days"
+        "lands_when": "in 3 days",
+        "name_display": "Invoice financing (onboarded platform)",
+        "cost_display": "¥2,272.29"
       }
     ],
     "receive_short": "¥405k",
@@ -1796,7 +1801,8 @@
         "lands_day": 0,
         "lands_when": "today",
         "above_apr_cap": false,
-        "formula": "150,000.00 × 6.4% × 32/365 = 841.64"
+        "formula": "150,000.00 × 6.4% × 32/365 = 841.64",
+        "name_display": "Bank credit line"
       },
       {
         "index": 1,
@@ -1816,7 +1822,8 @@
         "lands_day": 3,
         "lands_when": "in 3 days",
         "above_apr_cap": false,
-        "formula": "255,000.00 × 7.8% × 30/365 (29 days billed as 1 × 30-day period) = 1,634.79; 255,000.00 × 0.25% × 1 = 637.50; total ¥2,272.29"
+        "formula": "255,000.00 × 7.8% × 30/365 (29 days billed as 1 × 30-day period) = 1,634.79; 255,000.00 × 0.25% × 1 = 637.50; total ¥2,272.29",
+        "name_display": "Invoice financing (onboarded platform)"
       }
     ],
     "receive_fen": 40500000,

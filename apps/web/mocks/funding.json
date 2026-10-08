@@ -672,6 +672,9 @@
       "not_executable_reason": "Buyer early-payment offer: early payment on ¥420,000.00 face of RCV-A at 1.2%: needs the buyer's agreement to pay early",
       "shortfall_fen": null,
       "worst_day": null,
+      "leg_costs_fen": [
+        504000
+      ],
       "status": "alternative",
       "reason_kind": "buyer_early_pay",
       "shortfall_display": null,
@@ -681,9 +684,26 @@
       "components_when": [
         "Buyer early-payment offer: early payment on ¥420,000.00 face of the ¥420,000.00 invoice to Foshan Home Retail Co. due in 32 days at 1.2%"
       ],
+      "legs": [
+        {
+          "index": 0,
+          "name_display": "Buyer early-payment offer",
+          "facility_id": "FAC-EARLYPAY",
+          "amount_fen": 42000000,
+          "amount_display": "¥420,000.00",
+          "cost_fen": 504000,
+          "cost_display": "¥5,040.00"
+        }
+      ],
+      "name_display": "Buyer early-payment offer",
+      "offset_fen": null,
+      "offset_display": null,
+      "offset_label": null,
       "total_fen": 504000,
       "total_display": "¥5,040.00",
-      "selected": false
+      "selected": false,
+      "role": "alternative",
+      "role_reason": "Only if the buyer agrees to pay early."
     },
     {
       "key": "line_partial_early_pay",
@@ -728,6 +748,10 @@
       "not_executable_reason": "Buyer early-payment offer: early payment on ¥258,097.17 face of RCV-A at 1.2%: needs the buyer's agreement to pay early",
       "shortfall_fen": null,
       "worst_day": null,
+      "leg_costs_fen": [
+        84164,
+        309717
+      ],
       "status": "alternative",
       "reason_kind": "buyer_early_pay",
       "shortfall_display": null,
@@ -738,9 +762,35 @@
         "Bank credit line: draw ¥150,000.00, repaid in 32 days",
         "Buyer early-payment offer: early payment on ¥258,097.17 face of the ¥420,000.00 invoice to Foshan Home Retail Co. due in 32 days at 1.2%"
       ],
+      "legs": [
+        {
+          "index": 0,
+          "name_display": "Bank credit line",
+          "facility_id": "FAC-LINE",
+          "amount_fen": 15000000,
+          "amount_display": "¥150,000.00",
+          "cost_fen": 84164,
+          "cost_display": "¥841.64"
+        },
+        {
+          "index": 1,
+          "name_display": "Buyer early-payment offer",
+          "facility_id": "FAC-EARLYPAY",
+          "amount_fen": 25809717,
+          "amount_display": "¥258,097.17",
+          "cost_fen": 309717,
+          "cost_display": "¥3,097.17"
+        }
+      ],
+      "name_display": "Bank credit line + Buyer early-payment offer",
+      "offset_fen": null,
+      "offset_display": null,
+      "offset_label": null,
       "total_fen": 393881,
       "total_display": "¥841.64 + ¥3,097.17 = ¥3,938.81",
-      "selected": false
+      "selected": false,
+      "role": "alternative",
+      "role_reason": "Only if the buyer agrees to pay early."
     },
     {
       "key": "router_optimum",
@@ -785,6 +835,10 @@
       "not_executable_reason": "",
       "shortfall_fen": null,
       "worst_day": null,
+      "leg_costs_fen": [
+        84164,
+        227229
+      ],
       "status": "recommended",
       "reason_kind": null,
       "shortfall_display": null,
@@ -795,9 +849,35 @@
         "Bank credit line: draw ¥150,000.00, repaid in 32 days",
         "Invoice financing (onboarded platform): advance ¥255,000.00 on the ¥420,000.00 invoice to Foshan Home Retail Co. due in 32 days"
       ],
+      "legs": [
+        {
+          "index": 0,
+          "name_display": "Bank credit line",
+          "facility_id": "FAC-LINE",
+          "amount_fen": 15000000,
+          "amount_display": "¥150,000.00",
+          "cost_fen": 84164,
+          "cost_display": "¥841.64"
+        },
+        {
+          "index": 1,
+          "name_display": "Invoice financing (onboarded platform)",
+          "facility_id": "FAC-IF",
+          "amount_fen": 25500000,
+          "amount_display": "¥255,000.00",
+          "cost_fen": 227229,
+          "cost_display": "¥2,272.29"
+        }
+      ],
+      "name_display": "Bank credit line + Invoice financing (onboarded platform)",
+      "offset_fen": null,
+      "offset_display": null,
+      "offset_label": null,
       "total_fen": 311393,
       "total_display": "¥841.64 + ¥2,272.29 = ¥3,113.93",
-      "selected": true
+      "selected": true,
+      "role": "recommended",
+      "role_reason": "The cheapest plan your committed facilities can fund in time."
     },
     {
       "key": "line_guaranteed_loan",
@@ -845,6 +925,7 @@
       "not_executable_reason": "",
       "shortfall_fen": null,
       "worst_day": null,
+      "leg_costs_fen": [],
       "status": "unavailable",
       "reason_kind": null,
       "shortfall_display": null,
@@ -855,9 +936,16 @@
         "Bank credit line: draw ¥150,000.00, repaid in 32 days",
         "Government-guaranteed working-capital loan: draw ¥255,000.00 (arrives in 21 days)"
       ],
+      "legs": [],
+      "name_display": "Bank credit line + Government-guaranteed working-capital loan",
+      "offset_fen": null,
+      "offset_display": null,
+      "offset_label": null,
       "total_fen": null,
       "total_display": "—",
-      "selected": false
+      "selected": false,
+      "role": "unavailable",
+      "role_reason": "A source in this plan is not available today."
     },
     {
       "key": "line_only",
@@ -892,6 +980,9 @@
       "not_executable_reason": "",
       "shortfall_fen": 25500000,
       "worst_day": 30,
+      "leg_costs_fen": [
+        84164
+      ],
       "status": "insufficient",
       "reason_kind": null,
       "shortfall_display": "¥255,000.00",
@@ -901,9 +992,27 @@
       "components_when": [
         "Bank credit line: draw ¥150,000.00, repaid in 32 days"
       ],
+      "legs": [
+        {
+          "index": 0,
+          "name_display": "Bank credit line",
+          "facility_id": "FAC-LINE",
+          "amount_fen": 15000000,
+          "amount_display": "¥150,000.00",
+          "cost_fen": 84164,
+          "cost_display": "¥841.64"
+        }
+      ],
+      "name_display": "Bank credit line",
+      "offset_fen": null,
+      "offset_display": null,
+      "offset_label": null,
       "total_fen": 84164,
       "total_display": "¥841.64",
-      "selected": false
+      "selected": false,
+      "role": "insufficient",
+      "role_reason": "Cash still falls below your reserve in 12 days; ¥255,000.00 short at the worst point."
     }
-  ]
+  ],
+  "recommended_key": "router_optimum"
 }

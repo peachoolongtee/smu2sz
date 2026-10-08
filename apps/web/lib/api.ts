@@ -95,9 +95,9 @@ export async function negotiate(offerId: string, req: NegotiateRequest): Promise
   return isMock ? (await mock()).negotiate(offerId, req) : (await live()).negotiate(offerId, req);
 }
 
-/** POST /router/plan */
-export async function planFunding(req: PlanRequest = {}): Promise<FundingView> {
-  return isMock ? (await mock()).planFunding(req) : (await live()).planFunding(req);
+/** POST /router/plan. `lang` ("zh") makes the server write each row's `role_reason` in Chinese; English is the default. */
+export async function planFunding(req: PlanRequest = {}, lang: "en" | "zh" = "en"): Promise<FundingView> {
+  return isMock ? (await mock()).planFunding(req) : (await live()).planFunding(req, lang);
 }
 
 /**

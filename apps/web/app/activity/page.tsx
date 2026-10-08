@@ -25,6 +25,11 @@ export default function ActivityPage() {
   // Ids in the executor's sentences become names on this screen (the ids stay in the audit details).
   const named = [...(books.data?.state.facilities ?? []), ...(books.data?.state.counterparties ?? [])].map((x) => ({ id: x.id, name: x.name }));
   const words = (text: string) => idsToNames(text, named);
+  // The plain name of an operation kind; a kind the dictionary does not know reads "Change", never the raw code.
+  const kindLabel = (kind: string) => {
+    const label = te("opkind", kind);
+    return label && label !== kind ? label : t("biz.activity.kind.other");
+  };
   const ops = data ? [...data.operations].reverse() : [];
   // Today, for the distances the Business pages show instead of day numbers (the books read carries the clock).
   const today = books.data?.day ?? ops[0]?.day ?? 0;
@@ -56,11 +61,11 @@ export default function ActivityPage() {
               <ol className="motion-rise space-y-2" data-testid="activity-list">
                 {ops.map((o) => (
                   <li key={`${o.seq}-${o.op_id}`} className={`rounded-tile border px-3 py-2 ${o.status === "REFUSED" ? "border-bad-line bg-bad-bg/40" : "border-line"}`} data-testid={`activity-${o.kind}`} data-status={o.status}>
-                    <p className="break-words text-sm font-medium text-ink" data-testid="activity-event">{o.event_text || o.message_when || words(o.summary) || te("opkind", o.kind) || o.kind}</p>
+                    <p className="break-words text-sm font-medium text-ink" data-testid="activity-event">{o.event_text || o.message_when || words(o.summary) || kindLabel(o.kind)}</p>
                     {o.event_detail ? <p className="break-words text-xs text-ink-2" data-testid="activity-detail">{o.event_detail}</p> : null}
                     <div className="mt-1 flex flex-wrap items-center gap-2">
                       <span className="text-xs text-ink-3">{whenText(o.day, today, t)}</span>
-                      <span className="text-xs text-ink-3" data-testid="activity-op">{te("opkind", o.kind) || o.kind}</span>
+                      <span className="text-xs text-ink-3" data-testid="activity-op">{kindLabel(o.kind)}</span>
                       <OpStatusBadge status={o.status} />
                       <span className="text-xs text-ink-3">{te("actor", o.requested_by)}</span>
                     </div>
@@ -109,13 +114,19 @@ export default function ActivityPage() {
                     <span>
                       <span className="font-medium text-ink">{words(c.counterparty_id)}</span>
                       <span className="block text-xs text-ink-3">
-                        {t("ledger.expires")}: {whenText(c.expires_day, today, t)} · {t("biz.deals.giveaways")}: {c.forward_value_display}
+                        {t("ledger.expires")}: {whenText(c.expires_day, today, t)} · {t("biz.activity.concessions")}: {c.forward_value_display}
                       </span>
                     </span>
-                    <span className="flex items-center gap-2">
-                      <Badge tone={c.status === "ACTIVE" || c.status === "ACCEPTED" ? "ok" : "neutral"}>{te("commitment", c.status)}</Badge>
-                      <span className="font-mono text-xs text-ink-3">{c.id}</span>
-                    </span>
+                    <Badge tone={c.status === "ACTIVE" || c.status === "ACCEPTED" ? "ok" : "neutral"}>{te("commitment", c.status)}</Badge>
+                    {/* The agreement's record ids are the audit level, never the row. */}
+                    <Disclosure className="basis-full" summary={t("biz.auditDetails")}>
+                      <dl className="grid grid-cols-[max-content_minmax(0,1fr)] gap-x-3 gap-y-0.5 text-xs text-ink-2">
+                        <dt>{t("appr.commitment")}</dt>
+                        <dd className="break-all font-mono" data-testid="activity-commitment-id">{c.id}</dd>
+                        <dt>{t("appr.offer")}</dt>
+                        <dd className="break-all font-mono">{`${c.offer_id} v${c.offer_version}`}</dd>
+                      </dl>
+                    </Disclosure>
                   </li>
                 ))}
               </ul>
@@ -135,7 +146,7 @@ export default function ActivityPage() {
                   <li key={`${o.seq}-${o.op_id}`} className="rounded-tile border border-bad-line px-3 py-2 text-sm">
                     <div className="flex flex-wrap items-center gap-2">
                       <OpStatusBadge status={o.status} />
-                      <span className="font-medium">{te("opkind", o.kind)}</span>
+                      <span className="font-medium">{kindLabel(o.kind)}</span>
                     </div>
                     <p className="mt-1 text-ink-2">{o.event_text || o.message_when || words(o.summary)}</p>
                   </li>

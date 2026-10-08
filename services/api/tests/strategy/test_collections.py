@@ -318,7 +318,7 @@ def test_day0_rcv_a(worth0: WorthAnswer):
                                  "¥257,200.00, or fund it instead.")
     assert a.reason_sentence.startswith(
         "At the 0.85% limit it saves you ¥86.16 against the cheapest funding plan; at 0.40% ¥1,250.06. "
-        "0.90% would cost ¥54.51 more than the plan. If it arrived today")
+        "The next step, 0.90%, is already dearer than your current funding plan (by ¥54.51). If it arrived today")
     assert a.action == "offer_early_pay" and worth0.first_breach_day == 12
     assert worth0.gross_order == [RCV_A]
 

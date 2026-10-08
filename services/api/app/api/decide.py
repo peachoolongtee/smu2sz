@@ -13,8 +13,10 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
+from app.alerts import alerts
 from app.api.auth import require_feature, require_owner
 from app.api.display import displayed
+from app.api.home import next_action
 from app.api.presentation import (
     approval_reason_words,
     business_action,
@@ -23,7 +25,11 @@ from app.api.presentation import (
     comparison_status,
     concession_interpretation,
     counter_economics,
+    plan_name,
     plan_when,
+    row_legs,
+    t,
+    with_roles,
 )
 from app.api.runtime import Runtime, get_runtime
 from app.api.views import owner_verdict_extras, trajectory_view
@@ -104,7 +110,7 @@ def _guarded_counters(rt: Runtime, offer: CompiledOffer, counters: list[CounterP
     return out
 
 
-def _row_view(r, state=None, today: int | None = None) -> dict:
+def _row_view(r, state=None, today: int | None = None, lang: str = "en") -> dict:
     """A comparison row with its presentation status (recommended, alternative, insufficient, unavailable), the
     uncovered amount of an insufficient candidate, why an admissible one cannot run today and, when the books and the
     clock are given, `note_when` and `components_when`: the router's sentences as a Business page reads them (names,
@@ -120,6 +126,14 @@ def _row_view(r, state=None, today: int | None = None) -> dict:
 
         d["approval_reason_when"] = approval_reason_words(state, r.approval_reason, today, "en") if r.approval_reason else None
         d["components_when"] = [business_text(state, c, today, "en") for c in r.components]
+        # The sources each leg draws on, with the router's own cost for each (a page names them beside their costs).
+        d["legs"] = row_legs(state, d.get("actions") or [], d.get("leg_costs_fen") or [])
+        d["name_display"] = plan_name(state, [a.get("facility_id") for a in d.get("actions") or []]) or r.label
+        offset = r.cost_fen - sum(d.get("leg_costs_fen") or []) if r.cost_fen is not None and d["legs"] else 0
+        d["offset_fen"] = offset or None
+        d["offset_display"] = fmt_yuan(offset) if offset else None
+        d["offset_label"] = (t(lang, "Change in other interest and fees across the forecast", "预测期内其他利息与费用的变化")
+                             if offset else None)
     return d
 
 
@@ -331,8 +345,13 @@ def _extension_probe(state) -> Obligation:
 
 
 @router.post("/router/plan", dependencies=[Depends(require_feature("debt_desk"))])
-def router_plan() -> dict:
+def router_plan(lang: str = "en") -> dict:
+    """The router's plan, its menu and the §7.4 comparison. Each comparison row carries its `role` for the owner
+    (`recommended`, `alternative`, or its own status) and `role_reason`, and the plan the home's next-step card recommends is
+    in the list: when it is the alert's cure (the cheaper plan needs several approvals) it is added as a row, listed first.
+    `recommended_key` is that row's key. The router's own `status`, `selected` and order of costs are untouched."""
     rt = get_runtime()
+    lang = "zh" if lang == "zh" else "en"
     state, mandate = rt.store.get_state(), rt.store.get_mandate()
     books = current_books(state, rt.store.commitments())
     committed = plan(books.state, books.with_([]), mandate)
@@ -355,6 +374,17 @@ def router_plan() -> dict:
             "reason": "; ".join(r.notes), "limit_display": r.limit_display, "available_display": r.available_display,
             "committed": r.committed, "short_term_only": r.short_term_only,
         })
+    rows = [{**_row_view(r, state, rt.day, lang), "total_fen": r.cost_fen, "total_display": r.cost_display,
+             "selected": r.result.value == "SELECTED"}
+            for r in compare(books.state, books.with_([]), mandate)]
+    with rt.lock:
+        try:  # the same reading the home makes of the open alerts, so the comparison names the plan the next-step card shows
+            found = alerts(state, mandate, rt.store, rt.day)
+            action = next_action(books.state, books.with_([]), mandate, found, rt.store.approvals(), max(rt.day, state.as_of_day),
+                                 state.state_version, lang, use_router=rt.settings.features.debt_desk)
+        except EngineError:
+            action = None
+    comparison, recommended_key = with_roles(rows, action, state, rt.day, lang)
     by_label = {b.basis: b for b in bases}
     names = {f.id: f.name for f in state.facilities}
     notional, committed_b, expected_b = (bases + [None, None, None])[:3]
@@ -376,9 +406,6 @@ def router_plan() -> dict:
             "extension_formula": committed_b.formula if committed_b else "",
             "bases": [json.loads(b.model_dump_json()) for b in by_label.values()],
         }),
-        "comparison": [
-            {**_row_view(r, state, rt.day), "total_fen": r.cost_fen, "total_display": r.cost_display,
-             "selected": r.result.value == "SELECTED"}
-            for r in compare(books.state, books.with_([]), mandate)
-        ],
+        "comparison": comparison,
+        "recommended_key": recommended_key,
     }

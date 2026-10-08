@@ -55,7 +55,7 @@ test("an approval card expands in place to the operation, the reason, the amount
   await expect(card).toContainText("¥600,000.00");
   // The card speaks in business words (the facility's name); the executor's own sentence with the id is an audit detail.
   await expect(card.getByTestId("approval-headline")).toHaveText("Approve ¥600,000.00 of facility application?");
-  await expect(card.getByTestId("approval-reason")).toContainText("apply for facility Equipment term loan");
+  await expect(card.getByTestId("approval-reason")).toContainText("Apply for facility Equipment term loan");
   await expect(card.getByTestId("approval-detail-APR-000001")).toHaveCount(0);
   await card.getByTestId("approval-toggle-APR-000001").click();
   const detail = card.getByTestId("approval-detail-APR-000001");
@@ -91,7 +91,7 @@ test("an approval born of the reserve alert says what declining leaves, in days 
   // The reason the owner approves against is on the pending card itself, not behind a click.
   await expect(card.getByTestId("approval-reason")).toBeVisible();
   await expect(card.getByTestId("approval-reason").locator("xpath=preceding-sibling::dt")).toHaveText("Why it needs you");
-  await expect(card.getByTestId("approval-reason")).toContainText("the yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval");
+  await expect(card.getByTestId("approval-reason")).toContainText("The yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval.");
   // The executor's working ("all charges on ¥200,000.00 held 10 days, annualised = 32.52%") is not in the sentence.
   await expect(card.getByTestId("approval-reason")).not.toContainText("annualised");
   await expect(card.getByTestId("approval-reason")).not.toContainText("32.52");

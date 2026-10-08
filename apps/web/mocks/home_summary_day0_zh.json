@@ -1760,18 +1760,23 @@
     "alert_id": "ALERT-RESERVE-12",
     "kind": "RESERVE_BREACH_AHEAD",
     "plan_source": "router",
+    "recommended_key": "router_optimum",
     "title": "从Bank credit line提款 ¥150,000.00，以Foshan Home Retail Co. 的 ¥420,000.00 发票在Invoice financing (onboarded platform)融资 ¥255,000.00",
     "outcome_title": "筹措 ¥405k 资金",
     "components": [
       {
         "amount_short": "¥150k",
         "what": "Bank credit line",
-        "lands_when": "今天"
+        "lands_when": "今天",
+        "name_display": "Bank credit line",
+        "cost_display": "¥841.64"
       },
       {
         "amount_short": "¥255k",
         "what": "以Foshan Home Retail Co. 的 ¥420k 发票融资",
-        "lands_when": "3 天后"
+        "lands_when": "3 天后",
+        "name_display": "Invoice financing (onboarded platform)",
+        "cost_display": "¥2,272.29"
       }
     ],
     "receive_short": "¥405k",
@@ -1796,7 +1801,8 @@
         "lands_day": 0,
         "lands_when": "今天",
         "above_apr_cap": false,
-        "formula": "150,000.00 × 6.4% × 32/365 = 841.64"
+        "formula": "150,000.00 × 6.4% × 32/365 = 841.64",
+        "name_display": "Bank credit line"
       },
       {
         "index": 1,
@@ -1816,7 +1822,8 @@
         "lands_day": 3,
         "lands_when": "3 天后",
         "above_apr_cap": false,
-        "formula": "255,000.00 × 7.8% × 30/365 (29 days billed as 1 × 30-day period) = 1,634.79; 255,000.00 × 0.25% × 1 = 637.50; total ¥2,272.29"
+        "formula": "255,000.00 × 7.8% × 30/365 (29 days billed as 1 × 30-day period) = 1,634.79; 255,000.00 × 0.25% × 1 = 637.50; total ¥2,272.29",
+        "name_display": "Invoice financing (onboarded platform)"
       }
     ],
     "receive_fen": 40500000,

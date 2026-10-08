@@ -933,8 +933,8 @@
       "seq": 1,
       "kind": "AGREEMENT",
       "actor": "AGENT",
-      "text": "Agreement with Foshan Home Retail Co. recorded; future give-aways booked: ¥0.00.",
-      "event_text": "Agreement with Foshan Home Retail Co. recorded; future give-aways booked: ¥0.00.",
+      "text": "Agreement with Foshan Home Retail Co. recorded; concessions booked against your budget: ¥0.00.",
+      "event_text": "Agreement with Foshan Home Retail Co. recorded; concessions booked against your budget: ¥0.00.",
       "event_detail": null,
       "when": "today"
     }

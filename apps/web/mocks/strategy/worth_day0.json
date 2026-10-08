@@ -144,7 +144,7 @@
       "worth_text": "Saves ¥86.16 at the 0.85% limit; ¥1,250.06 if they take 0.40%",
       "action": "offer_early_pay",
       "action_sentence": "On the ¥420,000.00 due in 32 days, offer early payment at up to 0.85% on ¥257,200.00, or fund it instead.",
-      "reason_sentence": "At the 0.85% limit it saves you ¥86.16 against the cheapest funding plan; at 0.40% ¥1,250.06. 0.90% would cost ¥54.51 more than the plan. If it arrived today it would save you ¥3,113.93 and clear the shortfall.",
+      "reason_sentence": "At the 0.85% limit it saves you ¥86.16 against the cheapest funding plan; at 0.40% ¥1,250.06. The next step, 0.90%, is already dearer than your current funding plan (by ¥54.51). If it arrived today it would save you ¥3,113.93 and clear the shortfall.",
       "hypothetical": true,
       "outstanding_display": "¥420,000.00",
       "gross_saving_display": "¥3,113.93",
