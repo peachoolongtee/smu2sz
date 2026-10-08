@@ -96,8 +96,8 @@ export const live = {
     }
   },
 
-  evaluateOffer: (offerId: string, fixtureId?: string) =>
-    http<VerdictView>("POST", `/offers/${enc(offerId)}/evaluate`, { body: fixtureId ? { fixture_id: fixtureId } : {} }),
+  evaluateOffer: (offerId: string, fixtureId?: string, lang: "en" | "zh" = "en") =>
+    http<VerdictView>("POST", `/offers/${enc(offerId)}/evaluate${lang === "zh" ? "?lang=zh" : ""}`, { body: fixtureId ? { fixture_id: fixtureId } : {} }),
 
   negotiate: async (offerId: string, req: NegotiateRequest): Promise<NegotiationView> => {
     const n = await http<NegotiationView>("POST", `/negotiate/${enc(offerId)}`, { body: req });
@@ -108,7 +108,7 @@ export const live = {
 
   getTrajectory: (mode: Mode, verdict?: VerdictView | null): Promise<TrajectoryView> => trajectory.getTrajectory(mode, verdict),
 
-  getLedger: () => http<LedgerView>("GET", "/ledger"),
+  getLedger: (lang: "en" | "zh" = "en") => http<LedgerView>("GET", `/ledger${lang === "zh" ? "?lang=zh" : ""}`),
   getAudit: () => http<AuditView>("GET", "/audit"),
 
   getDecisions: (q: decisions.DecisionQuery) => decisions.getDecisions(q),

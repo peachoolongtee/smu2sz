@@ -82,6 +82,7 @@ import offerEx01b from "../../mocks/offer_ex01b.json";
 import offerSec from "../../mocks/offer_sec.json";
 import opsJson from "../../mocks/ops.json";
 import reconciliationJson from "../../mocks/reconciliation.json";
+import summaryPending from "../../mocks/home_summary_pending.json";
 import stateJson from "../../mocks/state.json";
 import trajCons from "../../mocks/trajectory_conservative.json";
 import trajExp from "../../mocks/trajectory_expected.json";
@@ -175,6 +176,27 @@ function save(): void {
 const delay = () => new Promise<void>((r) => setTimeout(r, MOCK_LATENCY_MS));
 const clone = <T>(v: T): T => JSON.parse(JSON.stringify(v)) as T;
 
+/** The causality fields of a ledger row (what changed, why it matters, what remains, the approval's label and state, the link to its record). */
+const CAUSAL_KEYS = ["what_changed", "why_it_matters", "why_it_matters_as_of", "what_remains", "approval_label", "current_decision_state", "decision_link"] as const;
+
+/**
+ * The recorded causality of the row whose business sentence is `eventText`: found in what the API recorded (the pending summary's changes
+ * first, which read the approval while it waited, then the two recorded ledgers). A row the mock books that no recording has is shown without it.
+ */
+function causalFor(eventText: string | null | undefined): Partial<Pick<OperationView, (typeof CAUSAL_KEYS)[number]>> {
+  if (!eventText) return {};
+  const pools = [
+    ...cast<{ changes: Record<string, unknown>[] }>(summaryPending).changes,
+    ...(cast<LedgerView>(ledgerApproved).operations as unknown as Record<string, unknown>[]),
+    ...(cast<LedgerView>(ledgerDay34).operations as unknown as Record<string, unknown>[]),
+  ];
+  const hit = pools.find((x) => x.event_text === eventText);
+  if (!hit) return {};
+  const out: Record<string, unknown> = {};
+  for (const k of CAUSAL_KEYS) if (k in hit) out[k] = hit[k];
+  return out;
+}
+
 function entryHash(op: Pick<OperationView, "seq" | "op_id" | "kind" | "status" | "tier" | "summary">, prev: string): string {
   return sha256(`${prev}|${op.seq}|${op.op_id}|${op.kind}|${op.status}|${op.tier}|${op.summary}`);
 }
@@ -201,7 +223,7 @@ function append(
     summary: overrides.summary ?? t.summary,
     // The recorded Business sentence travels with the row; an override of the message has no recorded twin.
     ...(overrides.message === undefined && t.message_when ? { message_when: t.message_when } : {}),
-    ...(overrides.message === undefined && t.event_text ? { event_text: t.event_text, event_detail: t.event_detail ?? null } : {}),
+    ...(overrides.message === undefined && t.event_text ? { event_text: t.event_text, event_detail: t.event_detail ?? null, ...causalFor(t.event_text) } : {}),
   };
   const op: OperationView = { ...base, prev_hash: prev, entry_hash: entryHash(base, prev) };
   s.ops.push(op);
@@ -228,7 +250,7 @@ export function appendRecorded(r: Recorded): void {
     decision_id: r.decision_id ?? null,
     summary: r.message,
     ...(r.message_when ? { message_when: r.message_when } : {}),
-    ...(r.event_text ? { event_text: r.event_text, event_detail: r.event_detail ?? null } : {}),
+    ...(r.event_text ? { event_text: r.event_text, event_detail: r.event_detail ?? null, ...causalFor(r.event_text) } : {}),
   };
   s.ops.push({ ...base, prev_hash: prev, entry_hash: entryHash(base, prev) });
   save();
@@ -298,12 +320,18 @@ export async function getLedger(): Promise<LedgerView> {
   seedStory();
   const s = load();
   const head = s.ops.length ? s.ops[s.ops.length - 1].entry_hash : null;
+  const valid = chainValid(s.ops);
+  // The chain words and the refusal block are the API's own, recorded: the set-aside count is the recorded Audit's once the security scene has run.
+  const rec = cast<LedgerView>(ledgerApproved);
   return clone({
     commitments: s.commitments,
     operations: s.ops,
-    chain_valid: chainValid(s.ops),
+    chain_valid: valid,
     chain_length: s.ops.length,
     head_hash: head,
+    chain_text: !s.ops.length ? null : valid ? rec.chain_text : "Record chain checks failed",
+    chain_scope_text: rec.chain_scope_text,
+    refusals: s.securityScene ? cast<AuditView>(auditSec).refusal_summary : cast<LedgerView>(ledgerDay34).refusals,
   });
 }
 
@@ -590,7 +618,7 @@ export async function decideApproval(id: string, decision: ApprovalDecision): Pr
     // The entry that waited for this approval now reads as the server words it once the decision is made (recorded).
     const waited = cast<LedgerView>(ledgerApproved).operations.find((o) => o.status === "PENDING_APPROVAL" && o.kind === done.kind);
     const row = s.ops.find((o) => o.status === "PENDING_APPROVAL" && o.kind === done.kind);
-    if (waited && row && waited.event_text) row.event_text = waited.event_text;
+    if (waited && row && waited.event_text) Object.assign(row, { event_text: waited.event_text, ...causalFor(waited.event_text) });
     home.markApproved();
     save();
     return { ...clone(a), result_message: done.message };
