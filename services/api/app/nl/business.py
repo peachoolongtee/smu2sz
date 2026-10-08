@@ -74,6 +74,57 @@ def _whole(fen: int) -> str:
     return text.removesuffix(".00")
 
 
+def _reason(ctx: NlContext, v: Any, x: Any) -> str:
+    """One thing in the way of a verdict, in the owner's words and without the capital or the full stop."""
+    code = x.code.value
+    if code == "AGG_CONCESSION_EXCEEDED":
+        cap = ctx.mandate().max_aggregate_forward_concession_fen
+        return _t(ctx, f"the offer's future concessions cost {fmt_yuan(v.forward_concession_total_fen)} over the next {_months(ctx)} months, "
+                       f"above your {_whole(cap)} limit",
+                  f"此报价的未来让步在未来 {_months(ctx)} 个月内共需 {fmt_yuan(v.forward_concession_total_fen)}，高于您 {_whole(cap)} 的上限")
+    if code == "RESERVE_BREACH":
+        when = landing_when(ctx, x.day)
+        return _t(ctx, f"cash would fall below your minimum {when}", f"现金将在{when}低于您的最低现金储备")
+    from app.api.presentation import business_text
+
+    words = business_text(ctx.state(), x.message, ctx.day, ctx.lang) or x.message
+    return words.rstrip(".。")
+
+
+def explain_reply(ctx: NlContext, turn: Turn) -> str | None:
+    """"Why are we countering this?": the outcome in one line (every reason the verdict names that has a plain wording) and the
+    recommended response in one line, nothing else."""
+    v = turn.verdict
+    if v is None:
+        return None
+    action = business_action(v.outcome.value, len(v.counters))
+    lead = outcome_lead(ctx, action)
+    known = [x for x in v.violations if x.code.value in ("AGG_CONCESSION_EXCEEDED", "RESERVE_BREACH")] or list(v.violations[:1])
+    reasons = [_reason(ctx, v, x) for x in known]
+    if reasons:
+        joined = _t(ctx, ", and ", "，并且").join(reasons)
+        line = lead + _t(ctx, ": ", "：") + joined + _t(ctx, ".", "。")
+    else:
+        line = lead + _t(ctx, ": the terms are within your limits.", "：条款在您的限额内。")
+    label = option_label(v.counters[0].label, ctx.lang) if v.counters else ""
+    response = {"accept": _t(ctx, "accept the offer", "接受报价"),
+                "counter": _t(ctx, f"send {label} to the buyer", f"向买方发送{label}"),
+                "decline": _t(ctx, "decline the offer", "拒绝报价"),
+                "needs_owner": _t(ctx, "ask for your approval first", "先征得您的批准"),
+                "cannot": _t(ctx, "wait: FLOW cannot decide this yet", "等待：FLOW 暂时无法决定")}[action]
+    return line + "\n" + _t(ctx, f"Recommended response: {response}.", f"建议的回应：{response}。")
+
+
+_RAW_VOICE = re.compile(r"\bVerdict [A-Z]|\bTIER_\d|\b[A-Z][A-Z_]{5,}\b")
+
+
+def outcome_lead(ctx: NlContext, action: str) -> str:
+    return {"accept": _t(ctx, "FLOW recommends accepting", "FLOW 建议接受"), "counter": _t(ctx, "FLOW recommends a counter", "FLOW 建议还价"),
+            "decline": _t(ctx, "FLOW recommends declining", "FLOW 建议拒绝"),
+            "needs_owner": _t(ctx, "This needs your approval", "这需要您批准"),
+            "cannot": _t(ctx, "FLOW cannot decide this yet", "FLOW 暂时无法决定")}[action]
+
+
 def outcome_line(ctx: NlContext, v: Any) -> str:
     """"FLOW recommends a counter: the offer's future concessions cost ¥28,326.92 over the next 12 months, above your ¥5,000 limit.":
     the verdict's recommendation and the first thing in the way, in the owner's words."""
@@ -195,7 +246,9 @@ def rewrite(ctx: NlContext, turn: Turn) -> Turn:
     if not active(ctx) or turn.guarded:
         return turn
     reply: str | None = None
-    if turn.intent == Intent.EVALUATE_OFFER and turn.awaiting:
+    if turn.verdict is not None and not turn.awaiting and not turn.clear_pending and _RAW_VOICE.search(turn.reply):
+        reply = explain_reply(ctx, turn)  # any owner read that still carries a verdict line, a tier or a reason code
+    elif turn.intent == Intent.EVALUATE_OFFER and turn.awaiting:
         reply = evaluate_reply(ctx, turn)
     elif turn.intent == Intent.FUND_GAP and turn.awaiting:
         reply = plan_reply(ctx, turn)

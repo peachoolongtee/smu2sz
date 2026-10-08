@@ -50,9 +50,11 @@ def test_the_send_has_lines_with_the_router_plans_own_figures_in_both_languages(
     (en, offer), (zh, _) = _evaluate(client, "en"), _evaluate(client, "zh")
     assert en["workspace"]["priced_response"]["send_scope_lines"] == [
         "Records the agreement with Foshan Home Retail Co. (needs your approval when it changes terms)",
-        "Draws ¥149,986.20 on the Bank credit line today", "Estimated cost ¥841.57"]
+        "Draws ¥149,986.20 on the Bank credit line today",
+        "Funding cost ¥841.57 for the draw (already inside the ¥3,027.77 above)"]
     assert zh["workspace"]["priced_response"]["send_scope_lines"] == [
-        "记录与Foshan Home Retail Co.的协议（若改变条款，需要您批准）", "从Bank credit line提款 ¥149,986.20，今天到账", "预计成本 ¥841.57"]
+        "记录与Foshan Home Retail Co.的协议（若改变条款，需要您批准）", "从Bank credit line提款 ¥149,986.20，今天到账",
+        "融资成本 ¥841.57（已计入上方的 ¥3,027.77）"]
     sent = client.post(f"/negotiate/{offer}", json={"buyer_profile": "cooperative"}).json()
     assert sent["plan"]["total_cost_display"] == "¥841.57" and sent["plan"]["actions"][0]["amount_fen"] == 14_998_620  # the lines are what runs
     assert "send_scope" in en["workspace"]["priced_response"]  # the sentence stays beside the lines
@@ -220,3 +222,54 @@ def test_no_business_sentence_of_the_home_or_the_alerts_still_says_the_engines_w
         text = json.dumps(body)
         for word in ("headroom thin", "Compare options", "committed cure", "trajectory", "day(s)", "Tier 2", "Tier-2", "reserve floor"):
             assert word not in text, (path, word)
+
+
+def test_the_funding_cost_line_says_whether_it_is_inside_the_counters_cost_or_in_addition(client):
+    from types import SimpleNamespace
+
+    from app.api.workspace import send_scope_lines
+
+    en, _ = _evaluate(client, "en")
+    a = en["counters"][0]
+    assert a["supplier_cost_display"] == "¥3,027.77" and "¥841.57" in a["formula"]  # Option A's cost is the discount plus this funding
+    state = get_runtime().store.get_state()
+    action = SimpleNamespace(kind=SimpleNamespace(value="DRAW"), facility_id="FAC-LINE", amount_fen=14_998_620, lands_day=0)
+    plan = SimpleNamespace(actions=[action], executable_now=True, total_cost_fen=84_157)
+    inside = send_scope_lines(state, "Foshan Home Retail Co.", plan, 0, "en", a)
+    assert inside[-1] == "Funding cost ¥841.57 for the draw (already inside the ¥3,027.77 above)"
+    other = {"supplier_cost_display": "¥1,000.00", "formula": "extension ¥900.00 + firm credit ¥100.00 = ¥1,000.00"}  # a price adjustment's cost
+    assert send_scope_lines(state, "Foshan Home Retail Co.", plan, 0, "en", other)[-1] == "Funding cost ¥841.57 in addition"
+    assert send_scope_lines(state, "Foshan Home Retail Co.", plan, 0, "zh", other)[-1] == "融资成本 ¥841.57（另计）"
+    assert all("Estimated cost" not in line for line in en["workspace"]["priced_response"]["send_scope_lines"])
+
+
+# ---------------------------------------------------------------- the residual sentence when the shortfall began in the past
+
+
+def test_the_residual_sentence_says_how_long_the_reserve_has_been_short_when_it_began_in_the_past():
+    from app.api.presentation import remaining_task_words
+
+    assert remaining_task_words(30_000_000, 0, 57, "en") == (
+        "Your minimum cash reserve has been ¥300,000.00 short for 57 days; no committed funding restores it. This needs your decision.")
+    assert remaining_task_words(30_000_000, 56, 57, "en", True) == (
+        "Your minimum cash reserve has been ¥300,000.00 short for 1 day; a funding plan is ready (see the next step).")
+    assert remaining_task_words(30_000_000, 0, 57, "zh", True) == "您的最低现金储备已差 ¥300,000.00 达 57 天；融资方案已准备好（见下一步）。"
+    # today or a future day keeps "from {when}"
+    assert remaining_task_words(10_000_000, 57, 57, "en", True) == (
+        "Your minimum cash reserve is still ¥100,000.00 short from today; a funding plan is ready (see the next step).")
+    assert remaining_task_words(10_000_000, 60, 57, "en") .startswith("Your minimum cash reserve is still ¥100,000.00 short from in 3 days;")
+    assert remaining_task_words(10_000_000, 60, 57, "zh", True) == "您的最低现金储备仍差 ¥100,000.00，从3 天后起；融资方案已准备好（见下一步）。"
+
+
+def test_a_decided_card_says_how_long_the_reserve_has_been_short(client):
+    _walk(client)
+    _act(client)
+    client.post(f"/approvals/{_queue(client)[0]['id']}", json={"decision": "APPROVE"})
+    client.post("/clock/advance", json={"to_day": 40})
+    for lang, want in (("en", "Cash has stayed ¥300,000.00 below your minimum cash reserve for 6 days."),
+                       ("zh", "现金已连续 6 天比最低现金储备低 ¥300,000.00。")):
+        card = client.get("/approvals/queue", params={"lang": lang}).json()["approvals"][0]
+        assert card["presentation"]["protects"] == card["presentation"]["residual"]["text"] == want
+    home = client.get("/home").json()
+    assert home["remaining_task"] == ("Your minimum cash reserve is still ¥100,000.00 short from today; no committed funding restores it. "
+                                      "This needs your decision.")  # began today: the forward form

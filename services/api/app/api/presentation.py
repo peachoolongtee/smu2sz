@@ -1782,9 +1782,14 @@ def quote_view(fact: Any, state: FinancialState, today: int, quote_day: int, lan
         after = t(lang, f"Cash stays above your minimum cash reserve for the next {fact.horizon_days} days.",
                   f"未来 {fact.horizon_days} 天现金都保持在您的最低现金储备以上。")
     elif fact.restores_reserve is False and fact.residual_shortfall_fen is not None:
-        after = t(lang, f"Cash stays {fmt_yuan(fact.residual_shortfall_fen)} below your minimum cash reserve from "
-                        f"{when_text(fact.after_first_short_day, today, lang)}.",
-                  f"从{when_text(fact.after_first_short_day, today, lang)}起现金仍比最低现金储备低 {fmt_yuan(fact.residual_shortfall_fen)}。")
+        if fact.after_first_short_day < today:  # it began in the past: how long, not "from 6 days ago"
+            n = today - fact.after_first_short_day
+            after = t(lang, f"Cash has stayed {fmt_yuan(fact.residual_shortfall_fen)} below your minimum cash reserve for {n} {'day' if n == 1 else 'days'}.",
+                      f"现金已连续 {n} 天比最低现金储备低 {fmt_yuan(fact.residual_shortfall_fen)}。")
+        else:
+            after = t(lang, f"Cash stays {fmt_yuan(fact.residual_shortfall_fen)} below your minimum cash reserve from "
+                            f"{when_text(fact.after_first_short_day, today, lang)}.",
+                      f"从{when_text(fact.after_first_short_day, today, lang)}起现金仍比最低现金储备低 {fmt_yuan(fact.residual_shortfall_fen)}。")
     else:
         after = t(lang, f"Cash stays above your minimum cash reserve for the next {max(fact.after_first_short_day - 1 - quote_day, 0)} days.",
                   f"未来 {max(fact.after_first_short_day - 1 - quote_day, 0)} 天现金都保持在最低现金储备以上。")
@@ -1846,14 +1851,18 @@ def remaining_task_words(shortfall_fen: int | None, starts_day: int | None, toda
     sentence points at the next step instead of saying nothing restores the reserve."""
     if shortfall_fen is None:
         return t(lang, "Nothing is waiting: the action is complete.", "没有待办事项：操作已完成。")
-    when = when_text(starts_day, today, lang) if starts_day is not None else ""
+    money = fmt_yuan(shortfall_fen)
+    if starts_day is not None and starts_day < today:  # it began in the past: say how long it has been short, not "from 57 days ago"
+        n = today - starts_day
+        en = f"Your minimum cash reserve has been {money} short for {n} {'day' if n == 1 else 'days'}"
+        zh = f"您的最低现金储备已差 {money} 达 {n} 天"
+    else:
+        when = when_text(starts_day, today, lang) if starts_day is not None else ""
+        en = f"Your minimum cash reserve is still {money} short{' from ' + when if when else ''}"
+        zh = f"您的最低现金储备仍差 {money}{'，从' + when + '起' if when else ''}"
     if committed_cure:
-        return t(lang, f"Your minimum cash reserve is still {fmt_yuan(shortfall_fen)} short{' from ' + when if when else ''}; "
-                       f"a funding plan is ready (see the next step).",
-                 f"您的最低现金储备仍差 {fmt_yuan(shortfall_fen)}{'，从' + when + '起' if when else ''}；融资方案已准备好（见下一步）。")
-    return t(lang, f"Your minimum cash reserve is still {fmt_yuan(shortfall_fen)} short{' from ' + when if when else ''}; "
-                   f"no committed funding restores it. This needs your decision.",
-             f"您的最低现金储备仍差 {fmt_yuan(shortfall_fen)}{'，从' + when + '起' if when else ''}；没有已承诺的融资能恢复它。这需要您决定。")
+        return t(lang, f"{en}; a funding plan is ready (see the next step).", f"{zh}；融资方案已准备好（见下一步）。")
+    return t(lang, f"{en}; no committed funding restores it. This needs your decision.", f"{zh}；没有已承诺的融资能恢复它。这需要您决定。")
 
 
 def option_label(label: str | None, lang: Lang) -> str:

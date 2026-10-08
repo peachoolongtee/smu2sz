@@ -116,7 +116,7 @@ def _decision_fields(ctx, rt, a, op: dict, status: str, pres: dict, run, lang: s
                 pres["protects"] = view["after"]
                 pres["residual"] = ({"shortfall_display": fmt_yuan(ds.quote.residual_shortfall_fen),
                                      "from_when": when_text(ds.quote.after_first_short_day, ctx.today, lang),
-                                     "restores_reserve": False}
+                                     "restores_reserve": False, "text": view["after"]}
                                     if ds.quote.restores_reserve is False and ds.quote.residual_shortfall_fen is not None
                                     and ds.quote.after_first_short_day is not None else None)
             out["quote"] = view

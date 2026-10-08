@@ -74,7 +74,7 @@ _LIVE_AGREEMENT = {CommitmentStatus.PROPOSED: ("Waiting for your approval", "等
                    CommitmentStatus.ACTIVE: ("In force", "已生效")}
 
 
-def send_scope_lines(state: FinancialState, buyer: str, send_plan: Any, today: int, lang: str) -> list[str]:
+def send_scope_lines(state: FinancialState, buyer: str, send_plan: Any, today: int, lang: str, counter: dict[str, Any] | None = None) -> list[str]:
     """The lines under "Send this counter": the agreement it records, and the funding the send would run, from the router plan's own legs and
     cost. No funding line when none would run (the plan is empty, or it cannot run today)."""
     lines = [t(lang, f"Records the agreement with {buyer} (needs your approval when it changes terms)",
@@ -83,8 +83,21 @@ def send_scope_lines(state: FinancialState, buyer: str, send_plan: Any, today: i
                 and all(a.kind.value in ("DRAW", "FINANCE_INVOICE") for a in send_plan.actions))
     if runnable:
         legs = [(a.kind.value, a.facility_id, a.amount_fen, a.lands_day) for a in send_plan.actions]
-        lines += funding_lines(state, legs, send_plan.total_cost_fen, today, lang)
+        lines += funding_lines(state, legs, None, today, lang)
+        lines.append(_funding_cost_line(send_plan, legs, counter, lang))
     return lines
+
+
+def _funding_cost_line(send_plan: Any, legs: list[Any], counter: dict[str, Any] | None, lang: str) -> str:
+    """The funding leg's cost, said against the counter's own cost on the same card so the owner never reads two figures under one label:
+    "already inside" when the counter's cost is the discount plus this funding (its formula carries the funding figure), else "in addition"."""
+    cost = fmt_yuan(send_plan.total_cost_fen)
+    inside = counter is not None and cost in str(counter.get("formula") or "") and counter.get("supplier_cost_display")
+    what = t(lang, "for the draw" if all(k == "DRAW" for k, *_ in legs) else "for the funding", "")
+    if inside:
+        above = counter["supplier_cost_display"]
+        return t(lang, f"Funding cost {cost} {what} (already inside the {above} above)", f"融资成本 {cost}（已计入上方的 {above}）")
+    return t(lang, f"Funding cost {cost} in addition", f"融资成本 {cost}（另计）")
 
 
 def build(view: dict[str, Any], *, bundle: Any, state: FinancialState, mandate: Mandate, today: int, lang: str,
@@ -164,7 +177,7 @@ def build(view: dict[str, Any], *, bundle: Any, state: FinancialState, mandate: 
         "priced_response": ({
             "counter_id": chosen["id"], "label": chosen["label"], "label_text": option_label(chosen["label"], lang),
             "send_scope": send_scope_text(lang, option_label(chosen["label"], lang)),
-            "send_scope_lines": send_scope_lines(state, buyer_name, send_plan, today, lang),
+            "send_scope_lines": send_scope_lines(state, buyer_name, send_plan, today, lang, chosen),
             "supplier_cost_display": chosen["supplier_cost_display"], "forward_value_display": chosen["forward_value_display"],
             "verdict_id": verdict.id, "state_version": view["state_version"],
         } if chosen is not None else None),
