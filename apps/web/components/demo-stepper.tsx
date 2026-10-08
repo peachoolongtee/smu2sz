@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
 import { onSignedIn } from "@/lib/auth";
-import { backStep, goToStep, resetDemo } from "@/lib/demo-control";
+import { backStep, goToStep, resetDemo, type StepMode } from "@/lib/demo-control";
 import { useDemo } from "@/lib/demo-store";
 import { DEMO_STEPS, SCENES } from "@/lib/demo";
 import { useI18n } from "@/lib/i18n";
@@ -22,9 +22,9 @@ export function DemoStepper() {
   // The step a 401 interrupted: once the owner signs in from the dialog it opened, it runs by itself (as the chat resends its turn).
   const interrupted = useRef<number | null>(null);
 
-  async function goTo(target: number) {
+  async function goTo(target: number, mode: StepMode = "run") {
     interrupted.current = null;
-    const outcome = await goToStep(target, router.push);
+    const outcome = await goToStep(target, router.push, { mode });
     if (outcome === "unauthorized") interrupted.current = target;
   }
 
@@ -57,7 +57,8 @@ export function DemoStepper() {
                   <button
                     type="button"
                     disabled={demo.busy}
-                    onClick={() => void goTo(s.first)}
+                    // A scene that is already behind us is shown, never re-run: jumping to Setup must not reset the books.
+                    onClick={() => void goTo(s.first, s.first <= step ? "show" : "run")}
                     aria-current={active ? "step" : undefined}
                     title={t("demo.jump", { scene: te("scene", s.id) })}
                     className={toggleClass(active, "sm")}
@@ -84,6 +85,12 @@ export function DemoStepper() {
           ) : (
             <p className="text-sm text-ink-2">{t("demo.idle")}</p>
           )}
+          {/* A reload in the middle of a step leaves the books where the step stopped: say so, never unlock silently. */}
+          {!demo.busy && demo.running !== null ? (
+            <p className="mt-0.5 text-xs font-medium text-warn-fg" data-testid="demo-interrupted">
+              {t("demo.interrupted", { n: demo.running + 1 })}
+            </p>
+          ) : null}
         </div>
 
         {/* Below sm the last 3rem of this row is Ask FLOW (chat-panel.tsx fixes it to the bar's corner). */}

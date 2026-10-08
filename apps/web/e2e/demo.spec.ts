@@ -180,3 +180,206 @@ test("reset clears the session", async ({ page }) => {
   await page.goto("/ledger");
   await expect(page.getByText("No operations yet")).toBeVisible();
 });
+
+// ---------------------------------------------------------------- Show, Replay, Reset and the in-flight lock (Wave 6, ticket #75)
+
+const API = `http://localhost:${process.env.E2E_API_PORT ?? 8000}`;
+const strip = (page: Page) => page.getByRole("region", { name: "Guided demo" }).locator("[aria-live=polite]");
+
+/** The strip's "n/15" as a number, or null while it shows the idle text. */
+async function progressOf(page: Page): Promise<number | null> {
+  const m = /(\d+)\/15/.exec((await strip(page).textContent()) ?? "");
+  return m ? Number(m[1]) : null;
+}
+
+/** The ledger's entry count on the ledger page (0 when the books hold no operation). */
+async function ledgerEntries(page: Page): Promise<number> {
+  await page.goto("/ledger");
+  const status = page.getByTestId("chain-status");
+  const empty = page.getByText("No operations yet");
+  await expect(status.or(empty)).toBeVisible();
+  if (await empty.isVisible()) return 0;
+  return Number(/(\d+) entries/.exec((await status.textContent()) ?? "")?.[1]);
+}
+
+/** Next, one press at a time, each waited for: the guarded walk. */
+async function walkGuarded(page: Page, steps: number, from = 0) {
+  for (let i = from; i < from + steps; i++) {
+    const button = page.getByTestId("demo-next");
+    await expect(button).toBeEnabled();
+    await button.click();
+    await expect(strip(page)).toContainText(`${i + 1}/15`);
+  }
+}
+
+test("rapid clicks on Start and Next end at the last step, in order, with the books of one walk", async ({ page }, testInfo) => {
+  test.setTimeout(240_000);
+  await page.goto("/mandate");
+  const next = page.getByTestId("demo-next");
+  await expect(next).toHaveText(/Start demo/);
+
+  // Raw clicks every 50 ms with no waiting: a disabled button swallows a click as it does for a hand.
+  const seen: (number | null)[] = [];
+  const started = Date.now();
+  let clicks = 0;
+  while (Date.now() - started < 150_000) {
+    await next.evaluate((el) => (el as HTMLButtonElement).click());
+    clicks++;
+    await page.waitForTimeout(50);
+    const n = await progressOf(page);
+    seen.push(n);
+    if (n === 15 && clicks >= 30) break; // at least thirty presses, the last ones past the end of the story
+  }
+  const rapidMs = Date.now() - started;
+
+  // Never the idle text once started, never a step back, and the last step is reached.
+  const firstStep = seen.findIndex((n) => n !== null);
+  expect(firstStep).toBeGreaterThanOrEqual(0);
+  const afterStart = seen.slice(firstStep);
+  expect(afterStart.every((n) => n !== null)).toBe(true);
+  for (let i = 1; i < afterStart.length; i++) expect(afterStart[i]!, `progress went back at sample ${i}: ${afterStart.join(",")}`).toBeGreaterThanOrEqual(afterStart[i - 1]!);
+  expect(afterStart.at(-1)).toBe(15);
+  await expect(next).toBeDisabled();
+
+  // The books of one walk: the same ledger as a guarded walk (no scene ran twice, no second negotiation).
+  const rapidEntries = await ledgerEntries(page);
+  await page.goto("/demo");
+  await page.getByTestId("story-reset").click();
+  await expect(strip(page)).toContainText("Walk the story");
+  const guardedStarted = Date.now();
+  await walkGuarded(page, 15);
+  const guardedMs = Date.now() - guardedStarted;
+  const guardedEntries = await ledgerEntries(page);
+  expect(rapidEntries).toBeGreaterThan(0);
+  expect(rapidEntries).toBe(guardedEntries);
+
+  const timing = { project: testInfo.project.name, rapid: { clicks, ms: rapidMs, ledgerEntries: rapidEntries, progress: afterStart.filter((n, i) => i === 0 || n !== afterStart[i - 1]) }, guarded: { ms: guardedMs, ledgerEntries: guardedEntries } };
+  console.log(`DEMO_TIMING ${JSON.stringify(timing)}`);
+  await testInfo.attach("demo-timing", { body: JSON.stringify(timing, null, 1), contentType: "application/json" });
+});
+
+test("Show opens a finished step and changes nothing; Replay runs it again; Reset resets", async ({ page }) => {
+  test.setTimeout(120_000);
+  await page.goto("/mandate");
+  await walkGuarded(page, 7);
+
+  // Move the clock to day 7 from the story page.
+  await page.goto("/demo");
+  await page.getByTestId("home-plus-7").click();
+  await expect(page.getByTestId("home-day")).toHaveText("Day 7");
+  const entries = await ledgerEntries(page);
+  expect(entries).toBeGreaterThan(0);
+
+  // Finished steps offer Show and Replay; the next one offers Run.
+  await page.goto("/demo");
+  await expect(page.getByTestId("story-show-1")).toBeVisible();
+  await expect(page.getByTestId("story-replay-1")).toHaveAttribute("aria-label", /erases the books/);
+  await expect(page.getByTestId("story-replay-3")).toHaveAttribute("aria-label", /runs this step again and changes the books/);
+  await expect(page.getByTestId("story-show-8")).toHaveCount(0);
+  await expect(page.getByTestId("story-run-8")).toBeVisible();
+
+  // Show on Setup and on a later step: the screen opens, the day and the ledger stay.
+  await page.getByTestId("story-show-1").click();
+  await expect(page).toHaveURL(/\/mandate/);
+  await page.goto("/demo");
+  await page.getByTestId("story-show-3").click();
+  await expect(page).toHaveURL(/\/trajectory/);
+  await page.goto("/demo");
+  await expect(page.getByTestId("home-day")).toHaveText("Day 7");
+  await expect(strip(page)).toContainText("7/15");
+  expect(await ledgerEntries(page)).toBe(entries);
+
+  // Replay of Setup is the deliberate reset: day 0, no operations, the story at step 1.
+  await page.goto("/demo");
+  await page.getByTestId("story-replay-1").click();
+  await expect(page).toHaveURL(/\/mandate/);
+  await expect(strip(page)).toContainText("1/15");
+  await page.goto("/demo");
+  await expect(page.getByTestId("home-day")).toHaveText("Day 0");
+  expect(await ledgerEntries(page)).toBe(0);
+
+  // Reset starts the story over.
+  await page.goto("/demo");
+  await page.getByTestId("story-next").click();
+  await expect(strip(page)).toContainText("2/15");
+  await page.goto("/demo");
+  await page.getByTestId("story-reset").click();
+  await expect(strip(page)).toContainText("Walk the story");
+  await expect(page.getByTestId("story-show-1")).toHaveCount(0);
+  await expect(page.getByTestId("story-run-1")).toBeVisible();
+});
+
+test("while a step runs every control that conflicts with it is disabled", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "live", "The mock answers in milliseconds; the live API is held back to make the window long enough to see.");
+  await page.route(`${API}/demo/reset`, async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+    await route.continue();
+  });
+  await page.goto("/demo");
+  await page.getByTestId("story-next").click();
+  // Setup is running: nothing else can start.
+  for (const id of ["demo-next", "story-next", "demo-reset", "story-reset", "story-run-2", "home-advance", "home-plus-1"]) await expect(page.getByTestId(id), id).toBeDisabled();
+  const jumps = page.getByRole("list", { name: "Demo scenes" }).getByRole("button");
+  expect(await jumps.count()).toBe(5);
+  for (let i = 0; i < 5; i++) await expect(jumps.nth(i)).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Back" })).toBeDisabled();
+  await expect(strip(page)).toContainText("1/15");
+  await expect(page.getByTestId("demo-next")).toBeEnabled();
+});
+
+test("a reload in the middle of a step is said, not silently unlocked", async ({ page }) => {
+  await page.goto("/mandate");
+  await walkGuarded(page, 2);
+  // What the browser holds when the tab is closed while step 3 runs: running is saved, busy never is.
+  await page.evaluate(() => {
+    const key = "tl-demo-v2";
+    const s = JSON.parse(sessionStorage.getItem(key) ?? "{}");
+    sessionStorage.setItem(key, JSON.stringify({ ...s, busy: false, running: 2 }));
+  });
+  await page.reload();
+  await expect(page.getByTestId("demo-interrupted")).toContainText("Step 3 was interrupted by a reload");
+  await expect(page.getByTestId("demo-next")).toBeEnabled();
+  await expect(strip(page)).toContainText("2/15");
+  // Running the next step clears the notice.
+  await page.getByTestId("demo-next").click();
+  await expect(strip(page)).toContainText("3/15");
+  await expect(page.getByTestId("demo-interrupted")).toHaveCount(0);
+});
+
+test("an engine view with Business stored shows the Demo shell and the Demo radio, with a way back", async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem("tl-mode", JSON.stringify({ mode: "business" })));
+  await page.goto("/demo");
+  await expect(page.getByTestId("demo-strip")).toBeVisible();
+  await expect(page.getByLabel("Demo", { exact: true })).toBeChecked();
+  await expect(page.getByTestId("tab-bar")).toHaveCount(0);
+
+  await page.getByTestId("back-to-business").click();
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.getByTestId("tab-bar")).toHaveCount(1);
+  await expect(page.getByTestId("demo-strip")).toHaveCount(0);
+  await expect(page.getByLabel("Business", { exact: true })).toBeChecked();
+
+  // Choosing Business on an engine view goes Home.
+  await page.goto("/mandate");
+  await expect(page.getByLabel("Demo", { exact: true })).toBeChecked();
+  await page.getByLabel("Business", { exact: true }).click();
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.getByTestId("tab-bar")).toHaveCount(1);
+});
+
+test("what-if and equipment open from Cash inside the Business shell, with a way back to Cash", async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem("tl-mode", JSON.stringify({ mode: "business" })));
+  await page.goto("/cash");
+  await page.getByRole("link", { name: "Try different terms" }).click();
+  await expect(page).toHaveURL(/\/whatif/);
+  await expect(page.getByTestId("tab-bar")).toHaveCount(1);
+  await expect(page.getByTestId("demo-strip")).toHaveCount(0);
+  await expect(page.getByTestId("back-to-business")).toHaveCount(0);
+  await page.getByTestId("back-to-cash").click();
+  await expect(page).toHaveURL(/\/cash/);
+
+  await page.goto("/capex");
+  await expect(page.getByTestId("tab-bar")).toHaveCount(1);
+  await expect(page.getByTestId("demo-strip")).toHaveCount(0);
+  await expect(page.getByTestId("back-to-cash")).toBeVisible();
+});

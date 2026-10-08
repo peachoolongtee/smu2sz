@@ -10,7 +10,7 @@ export const PRE_HYDRATION = `(function(){try{
 var d=document.documentElement;
 var l=JSON.parse(localStorage.getItem("tl-lang")||"{}").lang;
 var m=JSON.parse(localStorage.getItem("tl-mode")||"{}").mode;
-var biz=["/","/deals","/cash","/receivables","/approvals","/activity","/limits"].indexOf(location.pathname.replace(/(.)\\/$/,"$1"))>-1;
+var biz=["/","/deals","/cash","/receivables","/approvals","/activity","/limits","/whatif","/capex"].indexOf(location.pathname.replace(/(.)\\/$/,"$1"))>-1;
 d.dataset.mode=m==="demo"?"demo":"business";
 if(l==="zh")d.lang="zh-CN";
 if(l==="zh"||m==="demo"&&(biz||location.pathname==="/chat")){d.dataset.pending="";setTimeout(function(){d.removeAttribute("data-pending")},2000);}
