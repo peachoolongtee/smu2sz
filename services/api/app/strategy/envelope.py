@@ -1036,8 +1036,8 @@ def _refusal(name: str, lang: str, reason: str = "no_lever") -> str:
         return t(lang, f"FLOW cannot value a deal with {name} on the books as they stand: its terms or amounts fall "
                        f"outside the ranges FLOW checks.",
                  f"FLOW 目前无法为{name}估值：账上的账期或金额超出了 FLOW 检查的范围。")
-    return t(lang, f"FLOW has no terms or payment lever to value for {name} yet: no recurring invoice and no open invoice.",
-             f"FLOW 目前没有可为{name}估值的账期或付款杠杆：没有定期发票，也没有未结发票。")
+    return t(lang, f"FLOW has no terms, payment or rebate lever to value for {name} yet.",
+             f"FLOW 目前没有可为{name}估值的账期、付款或返利杠杆。")
 
 
 def envelope_answer(facts: EnvelopeFacts, lang: str = "en") -> EnvelopeAnswer:

@@ -399,9 +399,8 @@ def test_the_primary_uses_the_rule_price_and_keeps_the_smallest_in_the_payload(a
 
 def test_a_buyer_with_no_lever_is_refused_in_one_sentence(golden):
     for lang, sentence in (
-        ("en", ("FLOW has no terms or payment lever to value for Dongguan Office Supplies Ltd. yet: no recurring "
-                "invoice and no open invoice.")),
-        ("zh", "FLOW 目前没有可为Dongguan Office Supplies Ltd.估值的账期或付款杠杆：没有定期发票，也没有未结发票。"),
+        ("en", "FLOW has no terms, payment or rebate lever to value for Dongguan Office Supplies Ltd. yet."),
+        ("zh", "FLOW 目前没有可为Dongguan Office Supplies Ltd.估值的账期、付款或返利杠杆。"),
     ):
         a = envelope(golden.books, golden.mandate, buyer_id="BUYER-2", lang=lang, **golden.kw())
         assert a.refused == sentence
@@ -410,7 +409,7 @@ def test_a_buyer_with_no_lever_is_refused_in_one_sentence(golden):
 
 
 def test_the_builder_refuses_with_the_same_sentence(golden):
-    with pytest.raises(WhatIfParamError, match="FLOW has no terms or payment lever to value for Dongguan Office Supplies"):
+    with pytest.raises(WhatIfParamError, match="FLOW has no terms, payment or rebate lever to value for Dongguan Office Supplies"):
         context(golden.books.state, 0, "BUYER-2")
 
 

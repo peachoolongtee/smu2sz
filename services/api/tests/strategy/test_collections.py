@@ -459,7 +459,7 @@ def test_route_answers_on_the_day34_runtime(day34_client: TestClient, rt_day34: 
     assert early["saving_fen"] == -7_609 and early["saving_display"] == "no saving"  # the raw figure stays beside it
     assert body["computed_in_seconds"] >= 0
     again = day34_client.get("/receivables/worth", headers=OWNER)  # from the cache, identical
-    assert again.json() == body
+    assert {**again.json(), "computed_in_seconds": 0} == {**body, "computed_in_seconds": 0}  # the time is per request
     assert day34_client.get("/receivables/worth?lang=zh", headers=OWNER).json()["rows"][0]["action"] == "call_now"
     assert day34_client.get("/receivables/worth?lang=fr", headers=OWNER).status_code == 422
     assert (rt_day34.store.get_state().model_dump_json(), len(rt_day34.store.commitments())) == before  # read-only
