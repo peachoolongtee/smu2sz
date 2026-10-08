@@ -5,11 +5,13 @@ import { CodeBadge, OpStatusBadge, TierBadge } from "@/components/badges";
 import { SpanQuote } from "@/components/offer-parts";
 import { Badge, Card, ErrorState, Hash, LoadingBlock, PageHeader } from "@/components/ui";
 import { getAudit, getLedger, getState } from "@/lib/api";
+import { API_MODE, STRATEGY_MVP } from "@/lib/config";
 import { idsToNames } from "@/lib/business-words";
 import { useI18n } from "@/lib/i18n";
 import { whenText } from "@/lib/when";
 import { useAsync } from "@/lib/use-async";
 import { Disclosure, FoldChevron } from "@/components/business/kit";
+import { PilotJournal } from "@/components/business/pilot-journal";
 
 /** An empty section is one quiet line under the timeline, not a card around nothing (it keeps the section's id). */
 function QuietLine({ id, title, children }: { id: string; title: string; children: string }) {
@@ -208,6 +210,9 @@ export default function ActivityPage() {
               {t("biz.activity.trail.open")}
             </Link>
           </p>
+
+          {/* The shadow pilot's journal: read-only, only with the strategy build flag and a live API (the mock has none). */}
+          {STRATEGY_MVP && API_MODE === "live" ? <PilotJournal /> : null}
         </div>
       )}
     </>

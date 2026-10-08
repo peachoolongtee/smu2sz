@@ -243,7 +243,8 @@ repository only after the approval step (section 5).
    curl -s -H "$OWN" "localhost:$P/pilot/journal" > "$W/journal.json"
    ```
 
-   `choice` is one of `followed`, `partly`, `ignored`, `not_applicable`. The journal lives in the runtime's memory; stopping
+   `choice` is one of `followed`, `partly`, `ignored`, `not_applicable`. The entries also show, read-only, at the foot of the web app's
+   Activity page while the runtime is up (live mode, strategy flag on). The journal lives in the runtime's memory; stopping
    the runtime forgets it, so **`journal.json` must be exported before stopping**. Then confirm nothing acted:
    `curl -s -H "$OWN" localhost:$P/ledger | jq '{chain_length, commitments: (.commitments|length)}'` reads
    `{"chain_length": 0, "commitments": 0}`. Anything else means a step posted an operation: stop and tell the lead.

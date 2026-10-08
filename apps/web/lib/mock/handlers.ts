@@ -35,6 +35,7 @@ import type {
   OfferView,
   OperationView,
   PlanRequest,
+  PilotJournalView,
   PriceCurveView,
   EnvelopeView,
   ReceivablesWorthView,
@@ -590,6 +591,11 @@ export async function getEnvelope(buyerId: string, _lang: "en" | "zh", zone = fa
   if (buyerId !== "BUYER-1") return null;
   const view = await strategyRecording<EnvelopeView>(envelopeRecordings);
   return zone ? view : { ...view, zone: [] };
+}
+
+/** GET /pilot/journal: the mock has no recording (the pilot journal is the shadow pilot's, against a real runtime), so it is absent. */
+export async function getPilotJournal(): Promise<PilotJournalView | null> {
+  return null;
 }
 
 export async function getReconciliation(): Promise<ReconciliationView> {

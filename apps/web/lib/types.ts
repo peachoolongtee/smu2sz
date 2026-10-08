@@ -2087,3 +2087,29 @@ export interface HomeView {
   counts: Record<AlertSeverity, number>;
   note_basis: string;
 }
+
+/** One entry of the shadow pilot's journal (GET /pilot/journal, flag `pilot_journal`): what the owner did against an answer FLOW gave. No money field. */
+export interface PilotJournalEntry {
+  id: string;
+  seq: number;
+  week: number;
+  /** The SME's anonymous label. */
+  sme: string;
+  answer: "envelope" | "worth" | "curve";
+  /** The sentence FLOW displayed, as recorded. */
+  flow_said: string;
+  /** sha256 of the exported answer file. */
+  snapshot_hash: string;
+  /** What the owner did, in their own words. */
+  owner_did: string;
+  choice: "followed" | "partly" | "ignored" | "not_applicable";
+  /** ISO date the owner made the record. */
+  recorded_on: string;
+  recorded_at: string;
+}
+
+/** GET /pilot/journal: the entries, newest first. */
+export interface PilotJournalView {
+  entries: PilotJournalEntry[];
+  count: number;
+}
