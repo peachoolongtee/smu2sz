@@ -9,11 +9,12 @@ from __future__ import annotations
 
 import hmac
 import re
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from fractions import Fraction
 from typing import Any
 
 from app.alerts import Alert, AlertKind
+from app.books import current_books
 from app.domain.models import (
     BaseKind,
     Commitment,
@@ -189,6 +190,15 @@ def fmt_short(fen: int) -> str:
 
 # ---------------------------------------------------------------- days, as the owner reads them
 
+def first_breach_ahead(traj: Any, today: int, floor: int) -> tuple[int, int] | None:
+    """The first day from today on whose closing cash is below the reserve (day, closing fen), or None. The projection's
+    own `first_breach_day` scans from day 0 and the closed days before today carry the opening cash, so when cash is already
+    low it names a day in the past ("34 days ago", F01); the home speaks of what is ahead, and when today is already below
+    the reserve the first breach is today. Never earlier than today."""
+    hit = next((d for d in traj.days if d.day >= today and d.closing_fen < floor), None)
+    return (max(hit.day, today), hit.closing_fen) if hit is not None else None
+
+
 def when_text(day: int | None, today: int, lang: Lang) -> str:
     """A simulated day as a distance from today ("in 12 days", "today", "3 days ago"): Business mode never says
     "day N"; the Demo views keep the day numbers."""
@@ -298,18 +308,29 @@ def limits_words(text: str) -> str:
 _WINDOW_CLAUSE = re.compile(r"; up to (¥[\d,.]+) more may be settled early by day (\d+)")
 _STILL_DUE_PAST = re.compile(r"(¥[\d,.]+) still due on day (\d+)")
 _PROMISED_FOR_DAY = re.compile(r"\bpromised for day (\d+)\b")
-# "under commitment CMT-9c61e3666e753a1d": a record id, said as the agreement with the buyer.
-_UNDER_COMMITMENT = re.compile(r"\bunder commitment (CMT-[0-9a-f]+)")
+# A record id the owner never reads: "under commitment CMT-9c61e3666e753a1d", "Commitment CMT-… is ACTIVE", "revoke CMT-… first",
+# "of accepted commitment CMT-…", "the earlier REVOKED commitment CMT-…". Said as the agreement with the buyer.
+_COMMITMENT_ID = re.compile(r"(?:\b(?P<adj>[A-Z]{4,}|accepted) )?(?P<word>\b[Cc]ommitment )?(?<![\w-])(?P<id>CMT-[0-9a-f]+)")
+_RECORD_ID = re.compile(r"\s*\((?:APR|OP)-[\w:-]+\)|(?<![\w-])(?:APR|OP)-[\w:-]+")
 
 
-def settlement_words(text: str, today: int) -> str:
-    """The early-payment window and the amount still due, said by their own day: a deadline still ahead is a current
-    eligibility ("may still be settled early by today", "within 5 days"); one that has passed is what happened ("the
-    early-payment window for the other ¥X ended 32 days ago", "¥X was still due 2 days ago"). Anything else is untouched."""
+def until_text(n: int) -> str:
+    """"until today" / "until tomorrow" / "until 5 days from now": the last day a thing could be done, for a deadline n days ahead."""
+    return "until today" if n == 0 else "until tomorrow" if n == 1 else f"until {n} days from now"
+
+
+def settlement_words(text: str, today: int, live: bool = False) -> str:
+    """The early-payment window and the amount still due, said by their own day. A deadline still ahead is a claim about now
+    only when the promise behind it is still live (`live`: the obligation is in the books and not paid in full): "may still be
+    settled early by today"; otherwise it is the neutral "could be settled early until …". One that has passed is what
+    happened ("the early-payment window for the other ¥X ended 32 days ago", "¥X was still due 2 days ago"). Anything else
+    is untouched."""
     def window(m: re.Match[str]) -> str:
         n = int(m.group(2)) - today
-        if n >= 0:
+        if n >= 0 and live:
             return f"; up to {m.group(1)} more may still be settled early {deadline_text(n)}"
+        if n >= 0:
+            return f"; up to {m.group(1)} more could be settled early {until_text(n)}"
         return f"; the early-payment window for the other {m.group(1)} ended {when_text(int(m.group(2)), today, 'en')}"
 
     def still_due(m: re.Match[str]) -> str:
@@ -323,25 +344,56 @@ def settlement_words(text: str, today: int) -> str:
 
 
 def agreement_ref(text: str, agreements: Mapping[str, str] | None = None) -> str:
-    """"under commitment CMT-…" as "under the agreement with {buyer}" (the buyer when the caller knows whose commitment it is,
-    else "under the agreement"); the bracketed "(commitment CMT-…)" form is dropped."""
+    """A commitment id in the owner's words: "the agreement with {buyer}" (the buyer when the caller knows whose commitment it
+    is, else "the agreement"), "Commitment CMT-… is ACTIVE" reading "The agreement with … is ACTIVE"; the bracketed
+    "(commitment CMT-…)" form is dropped."""
     def say(m: re.Match[str]) -> str:
-        buyer = (agreements or {}).get(m.group(1))
-        return f"under the agreement with {buyer}" if buyer else "under the agreement"
+        buyer = (agreements or {}).get(m.group("id"))
+        adj = f"{m.group('adj').lower()} " if m.group("adj") else ""
+        phrase = f"the {adj}agreement" + (f" with {buyer}" if buyer else "")
+        capital = m.group("word") is not None and m.group("word")[0] == "C" and not m.group("adj")
+        return phrase[0].upper() + phrase[1:] if capital else phrase
 
-    return _COMMITMENT_REF.sub("", _UNDER_COMMITMENT.sub(say, text))
+    out = _COMMITMENT_ID.sub(say, _COMMITMENT_REF.sub("", text))
+    return re.sub(r"\b(earlier|other|first|later) the ", r"\1 ", out)
 
 
 def business_text(state: FinancialState, text: str | None, today: int, lang: Lang = "en",
-                  agreements: Mapping[str, str] | None = None) -> str | None:
+                  agreements: Mapping[str, str] | None = None, window_live: bool = False) -> str | None:
     """One engine sentence as a Business page shows it: names for ids, the owner's words for the ceiling clause, distances
     from today for its day numbers (a deadline that has already passed is said as past, never "by today") and "within your
-    limits" for the engine's "admissible". `agreements` maps a commitment id to its buyer's name. None stays None; the raw
-    sentence stays beside it for the audit level."""
+    limits" for the engine's "admissible". `agreements` maps a commitment id to its buyer's name; `window_live` says the
+    early-payment promise a settlement clause speaks of is still live (`live_windows`). None stays None; the raw sentence
+    stays beside it for the audit level."""
     if text is None:
         return None
-    return agreement_ref(_LEAD_TIME.sub("", limits_words(relative_days(in_words(state, settlement_words(text, today)), today, lang))),
+    return agreement_ref(_LEAD_TIME.sub("", limits_words(relative_days(in_words(state, settlement_words(text, today, window_live)), today, lang))),
                          agreements)
+
+
+def live_windows(report: Any, commitments: Sequence[Commitment], state: FinancialState) -> frozenset[tuple[str, str]]:
+    """The early-payment promises still open, as (commitment id, receivable id): the obligation is in the current books (its
+    commitment is live, its day has not lapsed, the invoice is not settled) and has not been paid in full. Only these may be
+    spoken of as "may still be settled early"."""
+    books = current_books(state, commitments)
+    by_id = {c.id: c for c in commitments}
+    live = {(cid, o.id) for o, cid in zip(books.obligations, books.owners, strict=False)}
+    out: set[tuple[str, str]] = set()
+    for p in report.promised:
+        c = by_id.get(p.commitment_id)
+        ob = next((o for o in c.obligations if o.id == p.obligation_id), None) if c is not None else None
+        if ob is None or (p.commitment_id, p.obligation_id) not in live:
+            continue
+        agreed = ob.base.amount_fen
+        if p.status.value == "RECEIVED" and (agreed is None or p.face_fen >= agreed):
+            continue  # paid in full: nothing is left to settle early
+        out.add((p.commitment_id, p.receivable_id))
+    return frozenset(out)
+
+
+def window_is_live(live: frozenset[tuple[str, str]] | None, receivable_id: str | None, commitment_id: str | None = None) -> bool:
+    """Whether the early-payment window of this receivable (under this commitment, when known) is in `live`."""
+    return bool(live) and any(r == receivable_id and (commitment_id is None or c == commitment_id) for c, r in live)
 
 
 # A reconciliation sentence as a Business page reads it. "…Foshan Home Retail Co. due 2 days ago arrived" gets the commas its clause
@@ -351,11 +403,11 @@ _OF_FACE = re.compile(r"(\bfor ¥[\d,]+(?:\.\d+)?) of face\b")
 
 
 def reconciliation_words(state: FinancialState, text: str | None, today: int, *, promise: bool, lang: Lang = "en",
-                         agreements: Mapping[str, str] | None = None) -> str | None:
+                         agreements: Mapping[str, str] | None = None, window_live: bool = False) -> str | None:
     """The sentence for one reconciliation row (`detail_when`). A promise stands alone under the buyer's name, so it is a full sentence
     (capital, commas round the due clause, full stop); a receipt follows the day ("today · agreed early payment for ... of the invoice")
     and stays a clause. The raw `detail` is untouched."""
-    out = business_text(state, text, today, lang, agreements)
+    out = business_text(state, text, today, lang, agreements, window_live)
     if out is None:
         return None
     out = _OF_FACE.sub(r"\1 of the invoice", out)
@@ -484,15 +536,25 @@ def needs_owner_reason(mandate: Mandate, legs: list[dict[str, Any]], lang: Lang)
 # ---------------------------------------------------------------- an approval row
 
 
-_COMMERCIAL_KINDS = ("ACCEPT_OFFER", "RECORD_COMMITMENT")
+COMMERCIAL_KINDS = ("ACCEPT_OFFER", "RECORD_COMMITMENT")
 
 
-def _base_phrase(ob: Obligation, lang: Lang) -> str:
+def _base_phrase(state: FinancialState, ob: Obligation, lang: Lang) -> str:
+    """What an obligation is about. For an invoice, `base.amount_fen` is the face OR a cap on it (models.ObligationBase), so a
+    cap below the invoice's own face reads "up to ¥257,200.00 of the ¥420,000.00 invoice to {buyer}", never a smaller invoice
+    that does not exist; an invoice id is never printed (the invoice to {buyer} when the books know no face)."""
     b = ob.base
     if b.kind == BaseKind.INVOICE:
-        if b.amount_fen is not None:
-            return t(lang, f"the {fmt_yuan(b.amount_fen)} invoice", f"{fmt_yuan(b.amount_fen)} 的发票")
-        return t(lang, f"invoice {b.receivable_id or '?'}", f"发票 {b.receivable_id or '?'}")
+        face = receivable_face(state, b.receivable_id)
+        buyer = party_name(state, buyer_of_receivable(state, b.receivable_id) or ob.counterparty_id)
+        whole = face if face is not None else b.amount_fen
+        cap = b.amount_fen if b.amount_fen is not None and face is not None and b.amount_fen < face else None
+        amount = f"{fmt_yuan(whole)} " if whole is not None else ""
+        en = f"the {amount}invoice" + (f" to {buyer}" if buyer else "")
+        zh = (f"{buyer} 的 " if buyer else "") + (f"{amount}发票" if buyer else (f"{amount}的发票" if amount else "发票"))
+        if cap is not None:
+            return t(lang, f"up to {fmt_yuan(cap)} of {en}", f"{zh}中最多 {fmt_yuan(cap)}")
+        return t(lang, en, zh)
     if b.kind == BaseKind.FUTURE_INVOICES:
         return t(lang, "future invoices", "今后的发票")
     if b.kind == BaseKind.PERIOD_PURCHASES:
@@ -508,10 +570,10 @@ _OBLIGATION_LABEL = {
 }
 
 
-def obligation_sentence(ob: Obligation, today: int, lang: Lang = "en") -> str:
+def obligation_sentence(state: FinancialState, ob: Obligation, today: int, lang: Lang = "en") -> str:
     """One agreed term as a sentence a non-accountant can read: the server's port of the web's `obligationSentence`
     (discount, terms, price, rebate, volume) with the effective day and the duration in one bracket. Typed fields only."""
-    base = _base_phrase(ob, lang)
+    base = _base_phrase(state, ob, lang)
     rate = fmt_pct(bp(ob.rate_bp)) if ob.rate_bp is not None else None
     amount = fmt_yuan(ob.amount_fen) if ob.amount_fen is not None else None
     if ob.type == ObligationType.IMMEDIATE_DISCOUNT:
@@ -519,8 +581,10 @@ def obligation_sentence(ob: Obligation, today: int, lang: Lang = "en") -> str:
     elif ob.type == ObligationType.TERMS_EXTENSION:
         if ob.target_terms_days is not None:
             sentence = t(lang, f"The buyer gets {ob.target_terms_days}-day payment terms on {base}", f"{base} 的账期改为 {ob.target_terms_days} 天")
-        elif ob.days_delta is not None:
+        elif ob.days_delta is not None and ob.days_delta > 0:
             sentence = t(lang, f"The buyer gets {ob.days_delta} more days to pay on {base}", f"{base} 的付款期延长 {ob.days_delta} 天")
+        elif ob.days_delta is not None and ob.days_delta < 0:
+            sentence = t(lang, f"The buyer pays {-ob.days_delta} days sooner on {base}", f"{base} 的付款期缩短 {-ob.days_delta} 天")
         else:
             sentence = t(lang, f"The buyer gets longer payment terms on {base}", f"{base} 的账期延长")
     elif ob.type == ObligationType.PRICE_ADJUSTMENT:
@@ -550,13 +614,18 @@ def obligation_sentence(ob: Obligation, today: int, lang: Lang = "en") -> str:
     return f"{sentence}（{'；'.join(notes)}）" if lang == "zh" else f"{sentence} ({'; '.join(notes)})"
 
 
-def agreement_face_fen(c: Commitment) -> int | None:
-    """The scope of an agreement in money: the base amounts it states, each invoice once. None when it states none."""
-    seen: dict[tuple[str, str | None], int] = {}
+def agreement_face_fen(state: FinancialState, c: Commitment) -> int | None:
+    """The scope of an agreement in money, from one base kind only: the invoice face or cap each of its obligations names,
+    each invoice once (the largest it names). None when any obligation is about something else (future invoices, a period's
+    purchases, each event: the bases are mixed) or when no invoice amount is known."""
+    if not c.obligations or any(ob.base.kind != BaseKind.INVOICE for ob in c.obligations):
+        return None
+    per_invoice: dict[str | None, int] = {}
     for ob in c.obligations:
-        if ob.base.amount_fen is not None:
-            seen.setdefault((ob.base.kind.value, ob.base.receivable_id), ob.base.amount_fen)
-    return sum(seen.values()) if seen else None
+        amount = ob.base.amount_fen if ob.base.amount_fen is not None else receivable_face(state, ob.base.receivable_id)
+        if amount is not None:
+            per_invoice[ob.base.receivable_id] = max(per_invoice.get(ob.base.receivable_id, 0), amount)
+    return sum(per_invoice.values()) if per_invoice else None
 
 
 def find_agreement(op: dict[str, Any], commitments: list[Commitment]) -> Commitment | None:
@@ -569,33 +638,50 @@ def find_agreement(op: dict[str, Any], commitments: list[Commitment]) -> Commitm
                  and isinstance(nonce, str) and hmac.compare_digest(c.nonce.encode(), nonce.encode())), None)
 
 
-def agreement_terms(state: FinancialState, commitment: Commitment | None, today: int, lang: Lang = "en") -> dict[str, Any]:
+def economic_effect_text(commitment: Commitment, horizon_days: int | None, lang: Lang = "en") -> str:
+    """What the terms cost the owner over the valuation window, from the commitment's stored forward value (never recomputed): a
+    discount alone has no forward cost, so a zero value says so instead of showing "¥0.00" as if the agreement were free."""
+    only_discount = all(ob.type == ObligationType.IMMEDIATE_DISCOUNT for ob in commitment.obligations)
+    if commitment.forward_value_fen == 0 and only_discount:
+        return t(lang, "No cost over the valuation window beyond the early-payment discount.", "除提前付款折扣外，估值期内没有其他成本。")
+    window = t(lang, f" over the next {horizon_days} days", f"，未来 {horizon_days} 天内") if horizon_days is not None else ""
+    return t(lang, f"Future cost of the terms you promise: {fmt_yuan(commitment.forward_value_fen)}{window}.",
+             f"您承诺的条款带来的未来成本：{fmt_yuan(commitment.forward_value_fen)}{window}。")
+
+
+def agreement_terms(state: FinancialState, commitment: Commitment | None, today: int, lang: Lang = "en", *,
+                    pending: bool = True, horizon_days: int | None = None) -> dict[str, Any]:
     """What the owner is asked to agree to, written by the server: `terms_available` (the commitment is found, readable, has
-    obligations and still waits for a yes: PROPOSED or ACCEPTED), the reason when it is not, one sentence per obligation, the
-    buyer, the concessions booked against the budget and the whole in one line. Nothing here prices anything."""
+    obligations and, while the approval is `pending`, still waits for a yes: PROPOSED or ACCEPTED), the reason when it is not,
+    one sentence per obligation, the buyer, the concessions booked against the budget and the whole in one line. A decided
+    approval shows the terms that were approved whatever the agreement has become since (in force, settled, expired).
+    Nothing here prices anything."""
     none: dict[str, Any] = {"terms_available": False, "terms_unavailable_reason": None, "terms": [], "counterparty_name": None,
-                            "forward_value_display": None, "what_you_agree_to": None, "agreement_fen": None}
+                            "forward_value_display": None, "what_you_agree_to": None, "agreement_fen": None,
+                            "economic_effect_text": None}
     if commitment is None:
         return {**none, "terms_unavailable_reason": t(lang, "The agreement this approval refers to could not be found.",
                                                       "找不到此批准所对应的协议。")}
     buyer = party_name(state, commitment.counterparty_id) or None
-    base = {**none, "counterparty_name": buyer, "forward_value_display": fmt_yuan(commitment.forward_value_fen)}
+    base = {**none, "counterparty_name": buyer,
+            "forward_value_display": fmt_yuan(commitment.forward_value_fen) if commitment.forward_value_fen else None,
+            "economic_effect_text": economic_effect_text(commitment, horizon_days, lang)}
     status = commitment.status
-    if status == CommitmentStatus.EXPIRED:
+    if pending and status == CommitmentStatus.EXPIRED:
         return {**base, "terms_unavailable_reason": t(lang, "The agreement this approval refers to has expired.", "此批准所对应的协议已到期。")}
-    if status == CommitmentStatus.REVOKED:
+    if pending and status == CommitmentStatus.REVOKED:
         return {**base, "terms_unavailable_reason": t(lang, "The agreement this approval refers to was revoked.", "此批准所对应的协议已被撤销。")}
-    if status not in (CommitmentStatus.PROPOSED, CommitmentStatus.ACCEPTED):
+    if pending and status not in (CommitmentStatus.PROPOSED, CommitmentStatus.ACCEPTED):
         return {**base, "terms_unavailable_reason": t(lang, "The agreement this approval refers to is already in force or settled.",
                                                       "此批准所对应的协议已生效或已结清。")}
     try:
-        terms = [obligation_sentence(ob, today, lang) for ob in commitment.obligations]
+        terms = [obligation_sentence(state, ob, today, lang) for ob in commitment.obligations]
     except (ValueError, KeyError, AttributeError):
         terms = []
     if not terms:
         return {**base, "terms_unavailable_reason": t(lang, "The terms of the agreement this approval refers to could not be read.",
                                                       "无法读取此批准所对应协议的条款。")}
-    return {**base, "terms_available": True, "terms": terms, "agreement_fen": agreement_face_fen(commitment),
+    return {**base, "terms_available": True, "terms": terms, "agreement_fen": agreement_face_fen(state, commitment),
             "what_you_agree_to": ("; " if lang != "zh" else "；").join(terms) + t(lang, ".", "。")}
 
 
@@ -605,7 +691,7 @@ def approval_words(state: FinancialState, op: dict[str, Any], kind: str | None, 
     """Business fields for one queued operation: the question, the amount, what it costs (from the alert whose cure
     it is, when that alert is still open; or from the router's cost line when the operation is a leg of the recommended
     plan, `plan_costs` keyed by kind, facility, receivable and amount), when the cash lands, and the names behind the ids.
-    `after` is the cure's after-state sentence, the one the home says (`home.cure_after_words`); `protects` carries it."""
+    `after` is the cure's after-state sentence, the one the home says (`home.cure_after`); `protects` carries it."""
     kind = kind or str(op.get("kind") or "")
     pending = status == "PENDING"
     facility_id = op.get("facility_id")
@@ -615,7 +701,7 @@ def approval_words(state: FinancialState, op: dict[str, Any], kind: str | None, 
     what = short_kind(kind, lang)
     ag = agreement or {}
     agreement_buyer = ag.get("counterparty_name")
-    if kind in _COMMERCIAL_KINDS:
+    if kind in COMMERCIAL_KINDS:
         # An agreement with a buyer has no funding amount; its scope is the face it states (None when it states none), never ¥0.00.
         amount_display = fmt_yuan(ag["agreement_fen"]) if ag.get("agreement_fen") else None
         headline = (t(lang, f"Approve this agreement with {agreement_buyer}?", f"批准与{agreement_buyer}的这项协议？") if agreement_buyer
@@ -668,7 +754,7 @@ def approval_words(state: FinancialState, op: dict[str, Any], kind: str | None, 
                                  f"{alert.inputs.get('max_shortfall', short)} {worst_when}.",
                            f"{when_text(alert.day, today, lang)}比最低现金储备低 {short}；缺口在{worst_when}最大，为 "
                            f"{alert.inputs.get('max_shortfall', short)}。")
-    if kind in _COMMERCIAL_KINDS:
+    if kind in COMMERCIAL_KINDS:
         words = (t(lang, f"Agreement with {agreement_buyer}", f"与{agreement_buyer}的协议") if agreement_buyer
                  else t(lang, "Buyer agreement", "买方协议"))
     else:
@@ -690,10 +776,11 @@ def approval_words(state: FinancialState, op: dict[str, Any], kind: str | None, 
         "if_decline": if_decline,
         "protects": after,
     }
-    if kind in _COMMERCIAL_KINDS:
+    if kind in COMMERCIAL_KINDS:
         out.update({"amount_display": amount_display, "terms_available": bool(ag.get("terms_available")),
                     "terms_unavailable_reason": ag.get("terms_unavailable_reason"), "terms": list(ag.get("terms") or []),
                     "counterparty_name": agreement_buyer, "forward_value_display": ag.get("forward_value_display"),
+                    "economic_effect_text": ag.get("economic_effect_text"),
                     "what_you_agree_to": ag.get("what_you_agree_to")})
     return out
 
@@ -786,7 +873,8 @@ def _asked_words(state: FinancialState, kind: str, payload: dict[str, Any], lang
 
 
 def result_words(state: FinancialState, *, kind: str, status: str, payload: dict[str, Any], day: int | None, today: int,
-                 lang: Lang = "en", approval_status: str | None = None, message: str | None = None) -> str | None:
+                 lang: Lang = "en", approval_status: str | None = None, message: str | None = None,
+                 agreements: Mapping[str, str] | None = None) -> str | None:
     """What came of the owner's decision on an approval, as one sentence: "¥200,000.00 of invoice financing was requested
     today; the cash lands in 3 days." (the landing is the funding lot's own day, ADR-0010), "You declined ...", or, when the
     owner approved but the run was refused, "You approved it, but it could not run: {reason}. No money moved." (F14: only an
@@ -794,7 +882,9 @@ def result_words(state: FinancialState, *, kind: str, status: str, payload: dict
     a kind or status with no such reading; the caller keeps the executor's own sentence then."""
     if status == "REFUSED" and approval_status == "APPROVED":
         reason = (message or "").removeprefix("Refused: ").strip().rstrip(".")
-        why = business_text(state, reason, today, lang) if reason else None
+        why = business_text(state, reason, today, lang, agreements) if reason else None
+        if why:  # an approval or operation id belongs to the audit level (the raw `result_message` keeps it)
+            why = _RECORD_ID.sub(lambda m: "" if m.group(0).lstrip().startswith("(") else "this request", why).replace("  ", " ")
         return t(lang, f"You approved it, but it could not run{': ' + why.rstrip('.') if why else ''}. No money moved.",
                  f"您已批准，但未能执行{'：' + why.rstrip('.') if why else ''}。资金未动。")
     asked = _asked_words(state, kind, payload, lang)
@@ -880,7 +970,8 @@ def clock_words(payload: dict[str, Any], lang: Lang = "en") -> str | None:
 
 def event_words(state: FinancialState, *, kind: str, status: str, payload: dict[str, Any], message: str,
                 approval_id: str | None, day: int | None, today: int, lang: Lang = "en",
-                decided: bool = False) -> dict[str, str | None]:
+                decided: bool = False, agreements: Mapping[str, str] | None = None,
+                window_live: bool = False) -> dict[str, str | None]:
     """One operations-log entry as a business sentence: what happened in the owner's words, never the executor's own
     sentence. `event_text` is the sentence (the landing of a draw or advance is its second sentence) and `event_detail`
     one more sentence when there is something more to say, else None. Every figure is the operation's own amount, the
@@ -923,7 +1014,7 @@ def event_words(state: FinancialState, *, kind: str, status: str, payload: dict[
                                           f"signed for funding without your approval.",
                                     f"{lead}：{asked}，年化成本 {rate}，高于您签署的无需批准融资上限 {m.group(2)}。"),
                     "event_detail": None}
-        detail = _sentence(business_text(state, reason, today, lang) or "") if reason else None
+        detail = _sentence(business_text(state, reason, today, lang, agreements) or "") if reason else None
         return {"event_text": _stop(f"{lead}: {asked}" if lang == "en" else f"{lead}：{asked}", lang), "event_detail": detail or None}
 
     if approved and asked is not None:
@@ -937,13 +1028,13 @@ def event_words(state: FinancialState, *, kind: str, status: str, payload: dict[
     if status == "REFUSED":
         reason = message.removeprefix("Refused: ").strip()
         asked = _what_asked(state, kind, payload, lang)
-        why = _sentence(business_text(state, reason, today, lang) or "")
+        why = _sentence(business_text(state, reason, today, lang, agreements) or "")
         return {"event_text": t(lang, f"{_stop(f'Refused: {asked}', lang)} {why}".strip(), f"{_stop(f'已拒绝：{asked}', lang)}{why}".strip()),
                 "event_detail": None}
 
     if status == "EXECUTED" and kind == "RECEIVE_PAYMENT" and amount is not None and buyer:
         m = _RECEIPT_DETAIL.match(message)
-        detail = _sentence(business_text(state, m.group(1), today, lang) or "") if m else None
+        detail = _sentence(business_text(state, m.group(1), today, lang, agreements, window_live) or "") if m else None
         return {"event_text": _stop(t(lang, f"Received {fmt_yuan(amount)} from {buyer}", f"已收到{buyer}的 {fmt_yuan(amount)}"), lang),
                 "event_detail": detail or None}
     return none

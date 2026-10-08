@@ -8,11 +8,19 @@ import json
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import PlainTextResponse
 
+from app.alerts import reconcile
 from app.api.auth import require_owner
 from app.api.decide import _counter_allow
 from app.api.display import displayed
-from app.api.home import _first_breach_ahead
-from app.api.presentation import agreement_words, business_text, event_words
+from app.api.presentation import (
+    agreement_words,
+    business_text,
+    event_words,
+    first_breach_ahead,
+    live_windows,
+    party_name,
+    window_is_live,
+)
 from app.api.runtime import get_runtime
 from app.api.views import Money, TrajectoryView, trajectory_view
 from app.books import current_books
@@ -26,7 +34,7 @@ from app.verifier import REFUSAL_REPLY
 router = APIRouter(dependencies=[Depends(require_owner)])
 
 
-def _op_view(o, state=None, today: int | None = None, commitments=(), decided=frozenset()) -> dict:
+def _op_view(o, state=None, today: int | None = None, commitments=(), decided=frozenset(), agreements=None, live=None) -> dict:
     """One log entry as the ledger shows it. `message` and `summary` are the executor's own sentence (the audit level);
     `message_when` is the same sentence as a Business page reads it (names, the owner's words, distances from today) and
     `event_text` / `event_detail` the business sentence for what happened (`event_words`), presentation reads added when
@@ -42,11 +50,12 @@ def _op_view(o, state=None, today: int | None = None, commitments=(), decided=fr
               "day": res.get("effective_day", op.get("day")), "requested_by": op.get("requested_by"),
               "summary": summary})
     if state is not None and today is not None:
-        v["message_when"] = business_text(state, summary, today, "en")
+        window_live = o.kind == "RECEIVE_PAYMENT" and window_is_live(live, op.get("receivable_id") if isinstance(op, dict) else None)
+        v["message_when"] = business_text(state, summary, today, "en", agreements, window_live)
         words = event_words(state, kind=o.kind, status=str(res.get("status") or ""), payload=op if isinstance(op, dict) else {},
                             message=str(res.get("message") or ""), approval_id=res.get("approval_id"),
                             day=v["day"] if isinstance(v["day"], int) else None, today=today, lang="en",
-                            decided=res.get("approval_id") in decided)
+                            decided=res.get("approval_id") in decided, agreements=agreements, window_live=window_live)
         text = words["event_text"] or v["message_when"]
         if o.kind in ("ACCEPT_OFFER", "RECORD_COMMITMENT") and res.get("status") == "EXECUTED":
             cmt = next((c for c in commitments if c.id in summary), None)
@@ -101,7 +110,7 @@ def get_trajectory(mode: str = "CONSERVATIVE") -> TodayTrajectoryView:
         s, m = rt.store.get_state(), rt.store.get_mandate()
         b = current_books(s, rt.store.commitments())
     t = project(b.state, b.with_([]), [], Mode(mode), m.horizon_days, m.min_cash_fen)
-    ahead = _first_breach_ahead(t, max(rt.day, s.as_of_day), m.min_cash_fen)
+    ahead = first_breach_ahead(t, max(rt.day, s.as_of_day), m.min_cash_fen)
     return TodayTrajectoryView(**trajectory_view(t, m.min_cash_fen).model_dump(), today=s.as_of_day,
                                first_breach_ahead_day=ahead[0] if ahead else None,
                                first_breach_ahead_cash=Money.of(ahead[1]) if ahead else None)
@@ -115,9 +124,13 @@ def get_ledger() -> dict:
     commitments = rt.store.commitments()
     # approvals the owner has answered: their "waiting" entries read in the past
     decided = frozenset(a.id for a in rt.store.approvals() if str(getattr(a.status, "value", a.status)) != "PENDING")
+    agreements = {c.id: party_name(state, c.counterparty_id) for c in commitments}
+    # which early-payment promises are still open: a receipt's "may still be settled early" is only said of those
+    live = (live_windows(reconcile(rt.store, day=rt.day), commitments, state)
+            if any(o.kind == "RECEIVE_PAYMENT" for o in ops) else None)
     return {
         "commitments": [displayed(json.loads(c.model_dump_json())) for c in commitments],
-        "operations": [_op_view(o, state, rt.day, commitments, decided) for o in ops],
+        "operations": [_op_view(o, state, rt.day, commitments, decided, agreements, live) for o in ops],
         "chain_valid": rt.store.verify_chain(),
         "chain_length": len(ops),
         "head_hash": ops[-1].entry_hash if ops else None,
