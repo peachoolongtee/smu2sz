@@ -1,9 +1,9 @@
-import type { Commitment, CommitmentStatus, Displayed, HomeView, LedgerView, NegotiationView, OperationStatus, OperationView } from "./types";
+import type { CommitmentStatus, DecisionView, OperationStatus } from "./types";
 
 /**
- * What an offer has actually done, as the verdict page shows it above the (historical) verdict. Every sentence and figure is the
- * server's (`event_text`, `amount_display`, `arrival_when`); this file only chooses which rows belong to the offer and which
- * label names the agreement. Wave 2 replaces the source with the decision record and keeps these server-shaped props.
+ * What an offer has actually done, as the verdict page shows it above the (historical) verdict. The source is the decision record
+ * (GET /decisions/{id}, ADR-0011): its `execution`, `agreement` and `settlement`. Every sentence and figure is the server's; this file
+ * only picks which parts to show and which tone names the agreement. It reads no ledger, no cash position and no click.
  */
 
 export type AgreementState = "agreed" | "settled" | "waiting" | "expired" | "revoked" | "none";
@@ -11,8 +11,9 @@ export type AgreementState = "agreed" | "settled" | "waiting" | "expired" | "rev
 export interface ExecutedFunding {
   op_id: string;
   status: OperationStatus;
-  /** The server's sentence for the operation. */
+  /** The server's sentence for the operation (empty when the record has none; the page then names the kind). */
   text: string;
+  kind: string;
 }
 
 export interface FundingLot {
@@ -23,18 +24,22 @@ export interface FundingLot {
 }
 
 export interface ExecutionSummaryData {
+  /** The server's one-sentence summary of what ran ("Agreement … recorded. Funding of ¥149,986.20 was requested and has landed."). */
+  summary_text: string;
   agreement: AgreementState;
-  /** The commitment's status as the server sent it, for a screen reader or a test. */
-  commitment_status: CommitmentStatus | null;
+  /** The agreement's status in the server's words ("Agreed", "Expired", "Early payment did not arrive"); null when there is none. */
+  agreement_text: string | null;
+  /** The record's state in words, and what it is waiting for. */
+  state_text: string;
+  waiting_text: string;
   funding: ExecutedFunding[];
-  /** The funding on the books, landed or still arriving; empty unless a funding operation of this offer executed. */
+  /** The funding the decision created, landed or still arriving. */
   lots: FundingLot[];
-  /** The agreement exists and has not been settled yet. */
-  settlement_pending: boolean;
 }
 
 const FUNDING_KINDS = new Set(["DRAW_FACILITY", "SUBMIT_INVOICE_FOR_FINANCING"]);
 
+/** The tone class of an agreement, by the commitment's status. The words are the server's. */
 export function agreementState(status: CommitmentStatus | null | undefined): AgreementState {
   switch (status) {
     case "ACCEPTED":
@@ -53,45 +58,22 @@ export function agreementState(status: CommitmentStatus | null | undefined): Agr
   }
 }
 
-/** The server's sentence for an operation; the older recordings only have the executor's. */
-export function operationText(op: Pick<OperationView, "event_text" | "message_when" | "summary" | "message">): string {
-  return op.event_text || op.message_when || op.summary || op.message;
-}
-
 /**
- * The summary for one offer, or null when the offer has done nothing (no agreement and no operation): evaluation alone.
- * An operation belongs to the offer when the negotiation returned it, or when the ledger's operation id names the offer
- * (`fund-OFF-…`) or one of its commitments (`accept-CMT-…`).
+ * The summary for one record, or null when it has done nothing (no agreement, no operation, no lot): evaluation alone.
+ * A deal that went to NO_DEAL but still funded the gap has funding and no agreement, and says both.
  */
-export function buildExecutionSummary(
-  offerId: string,
-  negotiation: Pick<NegotiationView, "operations" | "commitment"> | null,
-  ledger: Pick<LedgerView, "commitments" | "operations"> | undefined,
-  home: Pick<HomeView, "cash"> | undefined,
-): ExecutionSummaryData | null {
-  const commitments: Displayed<Commitment>[] = (ledger?.commitments ?? []).filter((c) => c.offer_id === offerId);
-  // The latest commitment for the offer is the one the owner is looking at; the session's own is the fallback when the ledger is unread.
-  const commitment = commitments[commitments.length - 1] ?? negotiation?.commitment ?? null;
-  const ids = new Set<string>([...(negotiation?.operations ?? []).map((o) => o.op_id)]);
-  const named = (opId: string) => opId.includes(offerId) || commitments.some((c) => opId.includes(c.id));
-  // The ledger's row wins over the negotiation's copy of the same operation: it carries the business sentence.
-  const byId = new Map<string, OperationView>();
-  for (const o of negotiation?.operations ?? []) byId.set(o.op_id, o);
-  for (const o of ledger?.operations ?? []) if (ids.has(o.op_id) || named(o.op_id)) byId.set(o.op_id, o);
-  const ops = [...byId.values()];
-
-  const funding = ops
+export function summaryFromRecord(d: DecisionView): ExecutionSummaryData | null {
+  const funding = d.operations
     .filter((o) => FUNDING_KINDS.has(o.kind))
-    .map((o) => ({ op_id: o.op_id, status: o.status, text: operationText(o) }));
-  const agreement = agreementState(commitment?.status);
-  if (!funding.length && agreement === "none" && !ops.length) return null;
-
-  const executedFunding = funding.some((f) => f.status === "EXECUTED");
-  const lots = executedFunding
-    ? (home?.cash.funding_lots ?? [])
-        .filter((l) => !l.opening)
-        .map((l) => ({ facility_name: l.facility_name, amount_display: l.amount_display, landed: l.landed, arrival_when: l.arrival_when }))
-    : [];
-
-  return { agreement, commitment_status: commitment?.status ?? null, funding, lots, settlement_pending: agreement === "agreed" };
+    .map((o) => ({ op_id: o.op_id, status: o.status, text: o.event_text ?? "", kind: o.kind }));
+  if (!d.operations.length && !d.agreement && !d.settlement.length) return null;
+  return {
+    summary_text: d.execution.summary_text,
+    agreement: agreementState(d.agreement?.status),
+    agreement_text: d.agreement?.status_text ?? null,
+    state_text: d.state_text,
+    waiting_text: d.waiting_for.text,
+    funding,
+    lots: d.settlement.map((l) => ({ facility_name: l.facility_name, amount_display: l.principal_display, landed: l.settled, arrival_when: l.arrival_when })),
+  };
 }

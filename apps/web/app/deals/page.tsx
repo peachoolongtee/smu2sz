@@ -7,7 +7,7 @@ import { BeforeTheyAsk } from "@/components/deals/before-they-ask";
 import { BuyerAsks } from "@/components/deals/asks";
 import { ActiveCommitments } from "@/components/deals/commitments";
 import { DealSteps } from "@/components/deals/deal-steps";
-import { ACTION_KEY, DealDecision } from "@/components/deals/decision";
+import { DealDecision } from "@/components/deals/decision";
 import { WhyRecommended } from "@/components/deals/reasons";
 import { InboxList } from "@/components/deals/inbox-list";
 import { RecommendedResponse } from "@/components/deals/response";
@@ -16,16 +16,16 @@ import { PlanCard } from "@/components/plan-card";
 import { Button, Callout, Card, EmptyState, ErrorState, Formula, LoadingBlock, PageHeader, ButtonLink } from "@/components/ui";
 import { STRATEGY_MVP } from "@/lib/config";
 import { evaluate as evaluateAndCache } from "@/lib/demo";
-import { getClock, getState, submitOffer } from "@/lib/api";
+import { dealRecordId, getClock, getState, submitOffer } from "@/lib/api";
 import { recordOffer, selectOffer, useDemo } from "@/lib/demo-store";
 import { useI18n } from "@/lib/i18n";
 import type { InboxMessage } from "@/lib/inbox";
 import { useMode } from "@/lib/mode";
 import { annotationsFor, offerItems } from "@/lib/offer-items";
-import { businessAction } from "@/lib/presentation-fallbacks";
 import type { VerdictView } from "@/lib/types";
 import { useAsync } from "@/lib/use-async";
 import { useCurrentOffer } from "@/lib/use-current";
+import { useDecisions } from "@/lib/use-decision";
 import { whenText } from "@/lib/when";
 import { Disclosure } from "@/components/business/kit";
 
@@ -50,6 +50,8 @@ export default function DealsPage() {
   // Passed down only with STRATEGY_MVP: without the flag the response card keeps its own state, exactly as before the card existed.
   const [compareFor, setCompareFor] = useState<string | null>(null);
   const books = useAsync(getState, []);
+  // The deals' records: each message's words in the inbox are its record's state, read again whenever the books or the clock move.
+  const records = useDecisions({ family: "DEAL" });
   const clock = useAsync(getClock, []);
   // The simulated clock: every day on this page is said as a distance from it.
   const today = clock.data?.day ?? books.data?.day ?? 0;
@@ -85,13 +87,10 @@ export default function DealsPage() {
     }
   }
 
-  /** The recommendation words for a message already evaluated in this session, for its inbox row. */
+  /** The state of a message's deal in the server's words ("Counter recommended", "Agreed", "Expired"), for its inbox row; null until the record has one. */
   function statusFor(docId: string): string | null {
     const o = Object.values(demo.offers).find((x) => x.documents[0]?.doc_id === docId);
-    const negotiation = o ? demo.negotiations[o.offer.offer_id] : undefined;
-    if (negotiation) return t(negotiation.outcome === "DEAL" ? "biz.deals.action.agreed" : "biz.deals.action.noDeal");
-    const verdict = o ? demo.verdicts[o.offer.offer_id] : undefined;
-    return verdict ? t(ACTION_KEY[businessAction(verdict)]) : null;
+    return o ? (records.data?.decisions.find((d) => d.id === dealRecordId(o.offer.offer_id))?.state_text ?? null) : null;
   }
 
   const offer = cur.offer;

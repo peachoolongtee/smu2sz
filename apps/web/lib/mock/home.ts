@@ -51,6 +51,9 @@ import summaryDay34NoReceipt from "../../mocks/home_summary_day34_noreceipt.json
 import summaryDay34NoReceiptZh from "../../mocks/home_summary_day34_noreceipt_zh.json";
 import summaryDay34Half from "../../mocks/home_summary_day34_half.json";
 import summaryDay34HalfZh from "../../mocks/home_summary_day34_half_zh.json";
+import summaryDay34Residual from "../../mocks/home_summary_day34_residual.json";
+import summaryDay34ResidualZh from "../../mocks/home_summary_day34_residual_zh.json";
+import trajDay34Residual from "../../mocks/trajectory_conservative_day34_residual.json";
 import trajDay34Half from "../../mocks/trajectory_conservative_day34_half.json";
 import trajDay34NoReceipt from "../../mocks/trajectory_conservative_day34_noreceipt.json";
 
@@ -67,17 +70,23 @@ export const MOVE_BOOKS_KEY = "tl-mock-books-moved";
 /**
  * Test hook, like MOVE_BOOKS_KEY: set this sessionStorage key and day 34 is read on other books than the main walk's (which has the
  * full receipt of day 2). "1": NO receipt, so cash is already under the reserve today. "half": half of the receipt, so the promise is
- * part-kept and its change row carries the four named facts. The home and the readings are the recordings taken on those books.
+ * part-kept and its change row carries the four named facts. "residual": no receipt, the cure approved and its cash landed, so the reserve is still
+ * short and the home carries the remaining task. The home and the readings are the recordings taken on those books.
  */
 export const NO_RECEIPT_KEY = "tl-mock-no-receipt";
 
-type Receipt = "none" | "half" | null;
+type Receipt = "none" | "half" | "residual" | null;
+
+/** The receipt variant the test hook selected, for the decision mock (null on the main walk). */
+export function mockReceiptVariant(): Receipt {
+  return receiptVariant();
+}
 
 function receiptVariant(): Receipt {
   if (typeof window === "undefined") return null;
   try {
     const v = window.sessionStorage.getItem(NO_RECEIPT_KEY);
-    return v === "1" ? "none" : v === "half" ? "half" : null;
+    return v === "1" ? "none" : v === "half" ? "half" : v === "residual" ? "residual" : null;
   } catch {
     return null;
   }
@@ -259,6 +268,8 @@ type StoryPoint = "day0" | "quiet" | "after_fund" | "day34" | "pending" | "after
 
 function storyPoint(dealt: boolean): StoryPoint {
   const s = load();
+  // The residual variant is one recording of its own books: the cure there ran and landed, whatever the mock's cure stage says.
+  if (s.day >= NEWS_DAY && receiptVariant() === "residual") return "day34";
   if (s.day >= NEWS_DAY) return s.stage === "approved" ? "after" : s.stage === "pending" ? "pending" : "day34";
   return s.funded ? "after_fund" : dealt ? "quiet" : "day0";
 }
@@ -267,6 +278,7 @@ function day34Summary(zh: boolean): unknown {
   const variant = receiptVariant();
   if (variant === "none") return zh ? summaryDay34NoReceiptZh : summaryDay34NoReceipt;
   if (variant === "half") return zh ? summaryDay34HalfZh : summaryDay34Half;
+  if (variant === "residual") return zh ? summaryDay34ResidualZh : summaryDay34Residual;
   return zh ? summaryDay34Zh : summaryDay34;
 }
 
@@ -294,7 +306,8 @@ export function mockTrajectory(dealt: boolean): unknown {
       day0: trajDay0,
       quiet: trajQuiet,
       after_fund: trajAfterFund,
-      day34: receiptVariant() === "none" ? trajDay34NoReceipt : receiptVariant() === "half" ? trajDay34Half : trajDay34,
+      day34:
+        receiptVariant() === "none" ? trajDay34NoReceipt : receiptVariant() === "half" ? trajDay34Half : receiptVariant() === "residual" ? trajDay34Residual : trajDay34,
       pending: trajPending,
       after: trajAfter,
     }[storyPoint(dealt)],
@@ -311,6 +324,11 @@ export function mockActDay0(): AlertActResult {
   s.funded = true;
   save();
   return { ...clone<AlertActResult>(actDay0), day: s.day };
+}
+
+/** The day-0 funding plan has run. */
+export function isFunded(): boolean {
+  return load().funded;
 }
 
 /** The day-0 funding plan ran in the chat. */

@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { ChangesBlock, DecisionsBlock, DetailsBlock, ReceivablesBlock } from "@/components/business/blocks";
 import { NextActionBlock } from "@/components/business/next-action";
+import { RemainingTaskBlock, WaitingOnBlock } from "@/components/business/open-decisions";
 import { FixResult, useFixAlert } from "@/components/home/fix-alert";
 import { StatusBlock } from "@/components/business/status-block";
 import { ErrorState, LoadingBlock } from "@/components/ui";
@@ -50,6 +51,11 @@ export default function HomePage() {
   // A read refused for want of the owner token refetches once the owner has signed in.
   useEffect(() => onSignedIn(() => bump()), []);
   const h = view.data;
+  // The decisions still open, minus the two the page already says in its own block: an approval waiting for the owner (the decisions block below
+  // has its question) and the one holding the remaining task.
+  const waitingOn = (h?.open_decisions ?? []).filter(
+    (d) => !(d.waiting_for.code === "OWNER_APPROVAL" && (h?.pending_count ?? 0) > 0) && d.id !== h?.remaining_task_decision_id,
+  );
 
   return (
     <>
@@ -61,7 +67,9 @@ export default function HomePage() {
         <div className="space-y-6" aria-busy={view.loading}>
           <StatusBlock h={h} />
           <FixResult result={fixer.result} error={fixer.error} changed={fixer.changed} />
+          {h.remaining_task ? <RemainingTaskBlock text={h.remaining_task} links={h.remaining_task_links ?? []} decisionId={h.remaining_task_decision_id} /> : null}
           {h.next_action ? <NextActionBlock a={h.next_action} stateVersion={h.state_version} fixer={fixer} /> : null}
+          {waitingOn.length ? <WaitingOnBlock decisions={waitingOn} /> : null}
           {/* An empty section is hidden: the absence of decisions or news is not itself news. */}
           {h.pending_count > 0 ? <DecisionsBlock approvals={h.approvals} primary={!h.next_action || Boolean(h.next_action.pending_approval_id)} /> : null}
           <div className={`grid gap-6 ${h.changes.length ? "lg:grid-cols-2" : ""}`}>

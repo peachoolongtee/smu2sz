@@ -1390,6 +1390,8 @@ export interface AlertChangedDetail {
 /** POST /alerts/{id}/act: the alert's cure submitted as the agent. Tier 1 executes, Tier 2 waits in the approvals queue. */
 export interface AlertActResult {
   alert_id: string;
+  /** The decision record the act wrote to. Absent in older recordings. */
+  decision_id?: string;
   day: Day;
   results: NlOperation[];
   executed: number;

@@ -103,7 +103,7 @@ function VerdictBody({
   return (
     <div className="space-y-6">
       {/* What the offer has actually done leads: the verdict below is the evaluation as it was, not a status of the transaction. */}
-      <OfferExecutionSummary offerId={offerId} negotiation={negotiation} />
+      <OfferExecutionSummary offerId={offerId} />
 
       <Card id="outcome" tone={verdict.outcome === "REJECT" ? "bad" : verdict.outcome === "ACCEPT" ? "ok" : "warn"}>
         <div className="flex flex-wrap items-start gap-x-6 gap-y-3">

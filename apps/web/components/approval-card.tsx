@@ -1,13 +1,82 @@
 "use client";
 
+import Link from "next/link";
 import { TierBadge } from "@/components/badges";
 import { Disclosure } from "@/components/business/kit";
 import { Badge, Button, Callout, Card, KeyValueList, type Tone } from "@/components/ui";
 import { approveDisabled, termsGate } from "@/lib/approval-terms";
 import { useI18n } from "@/lib/i18n";
-import type { ApprovalDecision, ApprovalView } from "@/lib/types";
+import type { ApprovalDecision, ApprovalQuote, ApprovalView } from "@/lib/types";
+
+/** Operations that carry a price. A quote that was never recorded is said for these only; an application or an agreement has no price to miss. */
+const PRICED_KINDS = new Set(["DRAW_FACILITY", "SUBMIT_INVOICE_FOR_FINANCING"]);
 
 const statusTone: Record<ApprovalView["status"], Tone> = { PENDING: "warn", APPROVED: "ok", REJECTED: "bad" };
+
+/**
+ * The price the owner was quoted when the request was made, as the server stored it: the legs when there is more than one (with the
+ * total), how the rate is billed, and, once decided, what actually happened and how it differs from the quote. A quote that was never
+ * stored says so in the server's words. Nothing here is computed: every line is a string from the decision record.
+ */
+export function QuoteBlock({ id, quote, missing, alwaysLines = false }: { id: string; quote: ApprovalQuote; missing: string | null; alwaysLines?: boolean }) {
+  const { t } = useI18n();
+  const lines = quote.lines ?? [];
+  return (
+    <section aria-labelledby={`quote-${id}`} className="mt-4 border-t border-line pt-3" data-testid="approval-quote">
+      <h3 id={`quote-${id}`} className="mb-1.5 text-xs font-medium text-ink-3">
+        {quote.recorded && quote.quoted_when ? t("appr.quote.when", { when: quote.quoted_when }) : t("appr.quote.title")}
+      </h3>
+      {missing ? (
+        <p className="text-sm text-ink-2" data-testid="approval-quote-missing">
+          {missing}
+        </p>
+      ) : (
+        <div className="space-y-2 text-sm">
+          {lines.length > 1 || (alwaysLines && lines.length) ? (
+            <ul className="space-y-1.5" data-testid="approval-quote-lines">
+              {lines.map((l) => (
+                <li key={l.op_id} className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5">
+                  <span className="min-w-0 flex-1 basis-56 break-words text-ink">{l.label}</span>
+                  <span className="font-semibold tabular-nums text-ink">
+                    {l.cost_display ?? l.amount_display}
+                    {l.rate_text ? <span className="ml-1 font-normal text-ink-3">{t("biz.costRateOnly", { rate: l.rate_text })}</span> : null}
+                  </span>
+                </li>
+              ))}
+              {quote.total_display ? (
+                <li className="flex items-baseline justify-between gap-4 border-t border-line pt-1.5 font-semibold text-ink">
+                  <span>{t("appr.quote.total")}</span>
+                  <span className="tabular-nums">{quote.total_display}</span>
+                </li>
+              ) : null}
+            </ul>
+          ) : null}
+          {quote.rate_basis ? <p className="text-xs text-ink-2">{quote.rate_basis}</p> : null}
+          {quote.cost_note ? <p className="text-xs text-ink-2">{quote.cost_note}</p> : null}
+          {quote.lands_when && !lines.length ? <p className="text-xs text-ink-2">{t("appr.quote.lands", { when: quote.lands_when })}</p> : null}
+          {quote.actual?.length ? (
+            <div data-testid="approval-quote-actual">
+              <p className="text-xs font-medium text-ink-3">{t("appr.quote.actual")}</p>
+              <ul className="mt-0.5 space-y-0.5">
+                {quote.actual.map((x) => (
+                  <li key={x.op_id} className="text-ink">
+                    <span className="font-semibold tabular-nums">{x.amount_display}</span>{" "}
+                    <span className="text-ink-2">{x.settled ? t("verdict.exec.landed") : t("verdict.exec.arriving", { when: x.arrival_when })}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+          {quote.difference_text ? (
+            <p className="text-ink" data-testid="approval-quote-difference">
+              {quote.difference_text}
+            </p>
+          ) : null}
+        </div>
+      )}
+    </section>
+  );
+}
 
 /**
  * One approval as a question the owner can answer: who with, what they would agree to, how much, what it costs, when the money
@@ -32,15 +101,21 @@ export function ApprovalCard({
   const { t, te } = useI18n();
   const isPending = a.status === "PENDING";
   const p = a.presentation;
+  // What the decision run did, in the server's words (the decision record's execution block); the older fields are the fallback.
+  const execution = a.execution?.status ?? p?.execution_status ?? a.execution_status;
+  const executionText = a.execution?.summary_text ?? null;
   // The queue's presentation says the result in business words (names, distances from today); the raw executor message
   // the page kept from the decision is the fallback until the queue has been read again.
-  const shownResult = p?.result_message || resultMessage || a.result_message || null;
+  const shownResult = executionText || p?.result_message || resultMessage || a.result_message || null;
   const op = a.operation;
   const gate = termsGate(a);
-  const execution = p?.execution_status ?? a.execution_status;
   // The owner approved and the executor then refused to run it: the authorization stands, the execution did not, and no money moved.
   const approvedButRefused = a.status === "APPROVED" && execution === "REFUSED";
-  const refusedSentence = p?.result_message?.startsWith("You approved it") ? p.result_message : null;
+  const refusedSentence = executionText && approvedButRefused ? executionText : p?.result_message?.startsWith("You approved it") ? p.result_message : null;
+  // The price as it was quoted when the request was made. Without a stored quote, the server says so ("The quoted cost was not recorded.").
+  const quote = a.quote ?? null;
+  const quoted = quote?.recorded ? quote : null;
+  const quoteMissing = quote && !quote.recorded && quote.text && PRICED_KINDS.has(a.operation_kind) ? quote.text : null;
   const refusedReason = a.result_message || resultMessage || "";
 
   const names: { k: string; v: React.ReactNode }[] = [];
@@ -54,6 +129,9 @@ export function ApprovalCard({
   const buyer = p?.counterparty_name || p?.buyer_name;
   if (gate.commercial && buyer) facts.push({ k: t("appr.buyer"), v: <span data-testid="approval-buyer">{buyer}</span> });
   if (a.amount_display) facts.push({ k: t("biz.amount"), v: a.amount_display });
+  if (!p?.cost_display && quoted?.total_display) {
+    facts.push({ k: t("biz.cost"), v: <span data-testid="approval-cost">{quoted.total_display}</span> });
+  }
   if (p?.cost_display) {
     facts.push({
       k: t("biz.cost"),
@@ -137,6 +215,9 @@ export function ApprovalCard({
           )}
         </div>
       ) : null}
+      {quoted || quoteMissing ? (
+        <QuoteBlock id={a.id} quote={quote as ApprovalQuote} missing={quoteMissing} />
+      ) : null}
       <dl className="mt-4 space-y-3 border-t border-line pt-3 text-sm">
         <div>
           <dt className="text-xs font-medium text-ink-3">{t("appr.why")}</dt>
@@ -144,18 +225,19 @@ export function ApprovalCard({
             {p?.reason || a.reason || a.detail}
           </dd>
         </div>
-        {p?.protects ? (
+        {/* The stored quote's after-state and what declining leaves win over today's recomputation: they are what the owner was quoted. */}
+        {quoted?.after || p?.protects ? (
           <div>
             <dt className="text-xs font-medium text-ink-3">{t("biz.after")}</dt>
             <dd className="text-ink" data-testid="approval-after">
-              {p.protects}
+              {quoted?.after || p?.protects}
             </dd>
           </div>
         ) : null}
         {isPending ? (
           <div>
             <dt className="text-xs font-medium text-ink-3">{t("biz.ifDecline")}</dt>
-            <dd className="text-ink-2" data-testid="approval-if-decline">{p?.if_decline || t("biz.ifDecline.body")}</dd>
+            <dd className="text-ink-2" data-testid="approval-if-decline">{quoted?.if_declined || p?.if_decline || t("biz.ifDecline.body")}</dd>
           </div>
         ) : null}
       </dl>
@@ -190,8 +272,15 @@ export function ApprovalCard({
           </Callout>
         </div>
       ) : shownResult ? (
-        <p className="mt-2 text-sm font-medium text-ink" role="status" data-testid={`approval-result-${a.id}`}>
+        <p className="mt-2 text-sm font-medium text-ink" role="status" data-testid={`approval-result-${a.id}`} data-execution={execution ?? ""}>
           {t("appr.result")}: {shownResult}
+        </p>
+      ) : null}
+      {a.decision_id ? (
+        <p className="mt-2 text-xs">
+          <Link href={`/decisions/${encodeURIComponent(a.decision_id)}`} className="font-medium text-brand-700 underline underline-offset-2" data-testid={`approval-record-${a.id}`}>
+            {t("appr.record")}
+          </Link>
         </p>
       ) : null}
 

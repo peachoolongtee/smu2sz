@@ -538,7 +538,7 @@ const TITLE_KEY: Record<string, DictKey> = {
 function useDocumentMeta(pathname: string, mode: Mode) {
   const { t, lang } = useI18n();
   useEffect(() => {
-    const key = TITLE_KEY[pathname];
+    const key = TITLE_KEY[pathname] ?? (pathname.startsWith("/decisions/") ? "rec.title" : undefined);
     const want = key && pathname !== "/" ? `${t(key)} · ${t("brand.name")}` : t("brand.name");
     const apply = () => {
       if (document.title !== want) document.title = want;

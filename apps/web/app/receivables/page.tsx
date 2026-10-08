@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { ReceiptFacts } from "@/components/receipt-facts";
 import { Badge, Card, ErrorState, LoadingBlock, PageHeader, Stat } from "@/components/ui";
 import { getHome, getReceivablesWorth, getReconciliation, getState } from "@/lib/api";
@@ -38,6 +39,16 @@ export default function ReceivablesPage() {
   // Chase payment is offered on the invoices that are late, that fall due inside the forecast's shortfall (the home read's first
   // breach to its lowest day) or whose early payment lapsed. Day numbers are compared; the handoff itself is the server's.
   const chase = chaseIds(invoices, data?.promised, shortfallStretch(home.data?.cash.first_breach_day, home.data?.cash.lowest_day));
+
+  // A link such as /receivables#RI:BUYER-1:2 (from the home's remaining task) lands on that invoice once the page has loaded. The phone list and
+  // the table both carry the id, one of them hidden: the visible one is scrolled to.
+  const loaded = Boolean(data && r);
+  useEffect(() => {
+    if (!loaded || typeof window === "undefined" || !window.location.hash) return;
+    const id = decodeURIComponent(window.location.hash.slice(1));
+    const target = Array.from(document.querySelectorAll<HTMLElement>("[id]")).find((el) => el.id === id && el.getClientRects().length > 0);
+    target?.scrollIntoView({ block: "center" });
+  }, [loaded]);
 
   return (
     <>

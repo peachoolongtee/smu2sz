@@ -28,7 +28,6 @@ import type {
   CapexRequest,
   CapexView,
   ClockView,
-  CounterChangedDetail,
   DecisionList,
   DecisionView,
   FundingView,
@@ -57,6 +56,7 @@ import type {
 } from "./types";
 
 export { ApiError };
+export { counterChanged, dealRecordId, decisionMissing } from "./decision";
 
 // Each implementation is loaded lazily, so a live build never ships the mock JSON and a mock build never ships the live client.
 const mock = () => import("./mock/handlers");
@@ -111,16 +111,6 @@ export async function getDecisions(opts: { lang: "en" | "zh"; family?: "DEAL" | 
 /** GET /decisions/{id}: one record in full. The id of a deal is `deal:{offer_id}` (`dealRecordId`). A 404 DECISION_NOT_FOUND is `decisionMissing`. */
 export async function getDecision(id: string, lang: "en" | "zh"): Promise<DecisionView> {
   return isMock ? (await mock()).getDecision(id, lang) : (await live()).getDecision(id, lang);
-}
-
-/** The record id of a buyer deal. */
-export const dealRecordId = (offerId: string): string => `deal:${offerId}`;
-
-/** True for the 404 DECISION_NOT_FOUND answer: the server has no such record (a state to say in words, not a failure). */
-export function decisionMissing(e: unknown): boolean {
-  if (!(e instanceof ApiError) || e.status !== 404) return false;
-  const d = e.detail as { code?: string } | undefined;
-  return d?.code === "DECISION_NOT_FOUND";
 }
 
 /** POST /router/plan. `lang` ("zh") makes the server write each row's `role_reason` in Chinese; English is the default. */
@@ -265,13 +255,6 @@ export async function actOnAlert(alert: AlertItem, stateVersion: number): Promis
     })),
   };
   return isMock ? (await mock()).actOnAlert(alert.id, bound) : (await live()).actOnAlert(alert.id, bound);
-}
-
-/** The detail of a 409 COUNTER_CHANGED answer (the send was refused, nothing was sent), or null for any other error. */
-export function counterChanged(e: unknown): CounterChangedDetail | null {
-  if (!(e instanceof ApiError) || e.status !== 409) return null;
-  const d = e.detail as Partial<CounterChangedDetail> | undefined;
-  return d && d.code === "COUNTER_CHANGED" ? (d as CounterChangedDetail) : null;
 }
 
 /** The detail of a 409 ALERT_CHANGED answer, or null for any other error. */

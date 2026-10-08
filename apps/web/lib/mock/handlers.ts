@@ -13,6 +13,9 @@ import type {
   AlertActResult,
   AlertsView,
   ClockView,
+  CounterChangedDetail,
+  DecisionList,
+  DecisionView,
   ApprovalDecision,
   ApprovalView,
   AuditView,
@@ -52,11 +55,13 @@ import type {
   WhatIfResult,
 } from "../types";
 
+import * as decisions from "./decisions";
 import * as home from "./home";
 import { pickByStory } from "./strategy-pick";
 import alertsJson from "../../mocks/alerts.json";
 import approvalsSeed from "../../mocks/approvals_seed.json";
 import approvalStories from "../../mocks/w1_approval_stories.json";
+import counterChangedJson from "../../mocks/w2_counter_changed.json";
 import auditSec from "../../mocks/audit_sec.json";
 import borrowerFileJson from "../../mocks/borrower_file.json";
 import capexApplyJson from "../../mocks/capex_apply.json";
@@ -101,6 +106,8 @@ type OpTemplate = {
   /** The business sentence GET /ledger wrote for the row, and its second sentence. */
   event_text?: string | null;
   event_detail?: string | null;
+  /** The decision record the row belongs to (recorded). */
+  decision_id?: string | null;
 };
 const OPS = cast<Record<string, OpTemplate>>(opsJson);
 
@@ -183,6 +190,7 @@ function append(
   const base = {
     op_id: `OP-${String(seq).padStart(4, "0")}`,
     kind: t.kind,
+    decision_id: t.decision_id ?? null,
     status: overrides.status ?? t.status,
     tier: t.tier,
     violations: [],
@@ -201,7 +209,7 @@ function append(
 }
 
 /** Books an operation the recorded API answer reports (a cure the agent ran), on the same hash chain as the rest. */
-type Recorded = { kind: string; status: OperationView["status"]; tier: OperationView["tier"]; message: string; message_when?: string | null; event_text?: string | null; event_detail?: string | null; day: number };
+type Recorded = { kind: string; status: OperationView["status"]; tier: OperationView["tier"]; message: string; message_when?: string | null; event_text?: string | null; event_detail?: string | null; decision_id?: string | null; day: number };
 export function appendRecorded(r: Recorded): void {
   seedStory();
   const s = load();
@@ -217,6 +225,7 @@ export function appendRecorded(r: Recorded): void {
     message: r.message,
     day: r.day,
     requested_by: "AGENT" as const,
+    decision_id: r.decision_id ?? null,
     summary: r.message,
     ...(r.message_when ? { message_when: r.message_when } : {}),
     ...(r.event_text ? { event_text: r.event_text, event_detail: r.event_detail ?? null } : {}),
@@ -409,6 +418,38 @@ export async function submitOffer(req: SubmitOfferRequest): Promise<OfferView> {
   return clone(match.view);
 }
 
+/** Where the recorded story stands, for the decision record's snapshots (lib/mock/decisions.ts). */
+function decisionContext(): decisions.DecisionContext {
+  seedStory();
+  const s = load();
+  return {
+    day: home.mockClock().day,
+    newsDay: home.NEWS_DAY,
+    funded: home.isFunded(),
+    stage: home.cureStage(),
+    receipt: home.mockReceiptVariant(),
+    offers: s.offers,
+    evaluated: s.evaluated,
+    negotiated: s.negotiated,
+    commitmentOffers: s.commitments.map((c) => c.offer_id),
+    approvals: s.approvals,
+  };
+}
+
+/** GET /decisions. */
+export async function getDecisions(q: { lang: "en" | "zh"; family?: "DEAL" | "FUNDING"; open?: boolean; limit?: number }): Promise<DecisionList> {
+  await delay();
+  seedApprovalStory();
+  return decisions.mockDecisions(decisionContext(), q);
+}
+
+/** GET /decisions/{id}: 404 DECISION_NOT_FOUND for a record the story has not made. */
+export async function getDecision(id: string, lang: "en" | "zh"): Promise<DecisionView> {
+  await delay();
+  seedApprovalStory();
+  return decisions.mockDecision(decisionContext(), id, lang);
+}
+
 export async function getOffer(offerId: string): Promise<OfferView> {
   await delay();
   const v = load().offers[offerId];
@@ -430,9 +471,35 @@ export async function evaluateOffer(offerId: string): Promise<VerdictView> {
   return clone(b.verdict);
 }
 
+/**
+ * Test hook for the bound send's refusal. Set this sessionStorage key just before pressing Send:
+ *   "replaced"  the verdict the owner read is no longer the latest: 409 COUNTER_CHANGED with the current counters
+ *   "moved"     the books moved after the evaluation: 409 COUNTER_CHANGED with no counters and `reevaluate` true
+ * The next bound send is answered with the API's own recorded refusal (mocks/w2_counter_changed.json), once; nothing is sent.
+ */
+export const COUNTER_CHANGED_KEY = "tl-mock-counter-changed";
+
+function counterChangedStory(): "replaced" | "moved" | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const v = window.sessionStorage.getItem(COUNTER_CHANGED_KEY);
+    if (v) window.sessionStorage.removeItem(COUNTER_CHANGED_KEY);
+    return v === "replaced" || v === "moved" ? v : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function negotiate(offerId: string, req: NegotiateRequest): Promise<NegotiationView> {
   await delay();
   const s = load();
+  if (req.verdict_id) {
+    const story = counterChangedStory();
+    if (story) {
+      const detail: CounterChangedDetail = { ...cast<Record<"replaced" | "moved", CounterChangedDetail>>(counterChangedJson)[story], offer_id: offerId };
+      throw new ApiError(409, detail.message, detail);
+    }
+  }
   if (!s.evaluated.includes(offerId) || bundleFor(offerId)?.fixture_id === SECURITY_FIXTURE) {
     throw new ApiError(409, "Evaluate a package offer before negotiating.");
   }
@@ -582,14 +649,14 @@ export async function actOnAlert(id: string, bound: ActRequest): Promise<AlertAc
   await delay();
   if (id === "ALERT-RESERVE-12") {
     const r0 = home.mockActDay0();
-    for (const op of r0.results) appendRecorded({ kind: op.kind, status: op.status, tier: op.tier, message: op.message, message_when: op.message_when, event_text: op.event_text, event_detail: op.event_detail, day: 0 });
+    for (const op of r0.results) appendRecorded({ kind: op.kind, status: op.status, tier: op.tier, message: op.message, message_when: op.message_when, event_text: op.event_text, event_detail: op.event_detail, decision_id: r0.decision_id, day: 0 });
     return clone(r0);
   }
   const r = home.mockAct(id, bound);
   // Once only: asking again while the cure waits changes nothing.
   const first = !load().approvals.some((x) => x.op_id?.startsWith("alert:"));
   ensureHomeApproval();
-  if (first) for (const o of r.results) appendRecorded({ kind: o.kind, status: o.status, tier: o.tier, message: o.message, message_when: o.message_when, event_text: o.event_text, event_detail: o.event_detail, day: r.day });
+  if (first) for (const o of r.results) appendRecorded({ kind: o.kind, status: o.status, tier: o.tier, message: o.message, message_when: o.message_when, event_text: o.event_text, event_detail: o.event_detail, decision_id: r.decision_id, day: r.day });
   return r;
 }
 
