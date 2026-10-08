@@ -660,71 +660,21 @@
       "offset_fen": null,
       "offset_display": null,
       "role": "recommended",
-      "role_reason": "The next step: it needs one approval; the cheapest plan (¥1,706.10 in all) needs 2 separate approvals."
-    },
-    {
-      "key": "full_discount",
-      "label": "Discount the whole invoice at 1.2%",
-      "components": [
-        "Buyer early-payment offer: early payment on ¥420,000.00 face of RI:BUYER-1:2 at 1.2%"
-      ],
-      "actions": [
-        {
-          "kind": "EARLY_PAY",
-          "facility_id": "FAC-EARLYPAY",
-          "day": 34,
-          "amount_fen": 42000000,
-          "receivable_id": "RI:BUYER-1:2",
-          "repay_day": null,
-          "rate_bp": 120,
-          "lands_day": null,
-          "available_from_day": null
-        }
-      ],
-      "cost_fen": 504000,
-      "cost_display": "¥5,040.00",
-      "result": "ADMISSIBLE",
-      "reasons": [],
-      "breach_day": null,
-      "note": "cost ¥5,040.00; admissible, but the owner must approve it: Buyer early-payment offer: early payment on ¥420,000.00 face of RI:BUYER-1:2 at 1.2%: effective annual cost 40.30% is above the mandate's 15.00% ceiling for what the agent may borrow alone (1.2%/(1 − 1.2%) × 365/11 = ≈40.3018%)",
-      "needs_owner_approval": true,
-      "approval_reason": "Buyer early-payment offer: early payment on ¥420,000.00 face of RI:BUYER-1:2 at 1.2%: effective annual cost 40.30% is above the mandate's 15.00% ceiling for what the agent may borrow alone (1.2%/(1 − 1.2%) × 365/11 = ≈40.3018%)",
-      "executable_now": false,
-      "not_executable_reason": "Buyer early-payment offer: early payment on ¥420,000.00 face of RI:BUYER-1:2 at 1.2%: needs the buyer's agreement to pay early",
-      "shortfall_fen": null,
-      "worst_day": null,
-      "leg_costs_fen": [
-        504000
-      ],
-      "status": "alternative",
-      "reason_kind": "buyer_early_pay",
-      "shortfall_display": null,
-      "note_when": "cost ¥5,040.00; within your limits, but you must approve it: Buyer early-payment offer: early payment on ¥420,000.00 face of the ¥420,000.00 invoice to Foshan Home Retail Co. due in 13 days at 1.2%: the yearly cost of 40.30% is above the 15.00% limit you signed for funding without your approval (1.2%/(1 − 1.2%) × 365/11 = ≈40.3018%)",
-      "not_executable_reason_when": "Buyer early-payment offer: early payment on ¥420,000.00 face of the ¥420,000.00 invoice to Foshan Home Retail Co. due in 13 days at 1.2%: needs the buyer's agreement to pay early",
-      "approval_reason_when": "Buyer early-payment offer: early payment on ¥420,000.00 face of the ¥420,000.00 invoice to Foshan Home Retail Co. due in 13 days at 1.2%: the yearly cost of 40.3% is above the 15.00% limit you signed for funding without your approval (1.2%/(1 − 1.2%) × 365/11 = ≈40.3018%).",
-      "components_when": [
-        "Buyer early-payment offer: early payment on ¥420,000.00 face of the ¥420,000.00 invoice to Foshan Home Retail Co. due in 13 days at 1.2%"
-      ],
-      "legs": [
-        {
-          "index": 0,
-          "name_display": "Buyer early-payment offer",
-          "facility_id": "FAC-EARLYPAY",
-          "amount_fen": 42000000,
-          "amount_display": "¥420,000.00",
-          "cost_fen": 504000,
-          "cost_display": "¥5,040.00"
-        }
-      ],
-      "name_display": "Buyer early-payment offer",
-      "offset_fen": null,
-      "offset_display": null,
-      "offset_label": null,
-      "total_fen": 504000,
-      "total_display": "¥5,040.00",
-      "selected": false,
-      "role": "alternative",
-      "role_reason": "Only if the buyer agrees to pay early."
+      "role_reason": "The next step: it needs one approval; the cheapest plan (¥1,706.10 in all) needs 2 separate approvals.",
+      "group": "RECOMMENDED",
+      "group_text": "Recommended",
+      "rank": 1,
+      "router_order": null,
+      "arrival_day": 37,
+      "arrival_when": "in 3 days",
+      "arrival_text": "All of the funds are available in 3 days.",
+      "available_when": null,
+      "uncovered_display": null,
+      "remaining_gap_fen": null,
+      "remaining_gap_display": null,
+      "remaining_gap_text": "Cash stays above your minimum cash reserve for the next 120 days.",
+      "basis_text": "Invoice financing is billed in whole 30-day periods until the invoice is paid.",
+      "consent_text": null
     },
     {
       "key": "router_optimum",
@@ -811,8 +761,101 @@
       "total_display": "¥1,425.75 + ¥1,069.32 = ¥1,706.10",
       "selected": true,
       "role": "alternative",
-      "role_reason": "Cheapest in all, but it needs 2 separate approvals; the recommended plan needs one."
+      "role_reason": "Cheapest in all, but it needs 2 separate approvals; the recommended plan needs one.",
+      "group": "ALTERNATIVE",
+      "group_text": "Another way to fund it",
+      "rank": 2,
+      "router_order": 1,
+      "arrival_day": 37,
+      "arrival_when": "in 3 days",
+      "arrival_text": "All of the funds are available in 3 days.",
+      "available_when": null,
+      "uncovered_display": null,
+      "remaining_gap_fen": null,
+      "remaining_gap_display": null,
+      "remaining_gap_text": "No gap is left.",
+      "basis_text": "Invoice financing is billed in whole 30-day periods until the invoice is paid.",
+      "consent_text": null
+    },
+    {
+      "key": "full_discount",
+      "label": "Discount the whole invoice at 1.2%",
+      "components": [
+        "Buyer early-payment offer: early payment on ¥420,000.00 face of RI:BUYER-1:2 at 1.2%"
+      ],
+      "actions": [
+        {
+          "kind": "EARLY_PAY",
+          "facility_id": "FAC-EARLYPAY",
+          "day": 34,
+          "amount_fen": 42000000,
+          "receivable_id": "RI:BUYER-1:2",
+          "repay_day": null,
+          "rate_bp": 120,
+          "lands_day": null,
+          "available_from_day": null
+        }
+      ],
+      "cost_fen": 504000,
+      "cost_display": "¥5,040.00",
+      "result": "ADMISSIBLE",
+      "reasons": [],
+      "breach_day": null,
+      "note": "cost ¥5,040.00; admissible, but the owner must approve it: Buyer early-payment offer: early payment on ¥420,000.00 face of RI:BUYER-1:2 at 1.2%: effective annual cost 40.30% is above the mandate's 15.00% ceiling for what the agent may borrow alone (1.2%/(1 − 1.2%) × 365/11 = ≈40.3018%)",
+      "needs_owner_approval": true,
+      "approval_reason": "Buyer early-payment offer: early payment on ¥420,000.00 face of RI:BUYER-1:2 at 1.2%: effective annual cost 40.30% is above the mandate's 15.00% ceiling for what the agent may borrow alone (1.2%/(1 − 1.2%) × 365/11 = ≈40.3018%)",
+      "executable_now": false,
+      "not_executable_reason": "Buyer early-payment offer: early payment on ¥420,000.00 face of RI:BUYER-1:2 at 1.2%: needs the buyer's agreement to pay early",
+      "shortfall_fen": null,
+      "worst_day": null,
+      "leg_costs_fen": [
+        504000
+      ],
+      "status": "alternative",
+      "reason_kind": "buyer_early_pay",
+      "shortfall_display": null,
+      "note_when": "cost ¥5,040.00; within your limits, but you must approve it: Buyer early-payment offer: early payment on ¥420,000.00 face of the ¥420,000.00 invoice to Foshan Home Retail Co. due in 13 days at 1.2%: the yearly cost of 40.30% is above the 15.00% limit you signed for funding without your approval (1.2%/(1 − 1.2%) × 365/11 = ≈40.3018%)",
+      "not_executable_reason_when": "Buyer early-payment offer: early payment on ¥420,000.00 face of the ¥420,000.00 invoice to Foshan Home Retail Co. due in 13 days at 1.2%: needs the buyer's agreement to pay early",
+      "approval_reason_when": "Buyer early-payment offer: early payment on ¥420,000.00 face of the ¥420,000.00 invoice to Foshan Home Retail Co. due in 13 days at 1.2%: the yearly cost of 40.3% is above the 15.00% limit you signed for funding without your approval (1.2%/(1 − 1.2%) × 365/11 = ≈40.3018%).",
+      "components_when": [
+        "Buyer early-payment offer: early payment on ¥420,000.00 face of the ¥420,000.00 invoice to Foshan Home Retail Co. due in 13 days at 1.2%"
+      ],
+      "legs": [
+        {
+          "index": 0,
+          "name_display": "Buyer early-payment offer",
+          "facility_id": "FAC-EARLYPAY",
+          "amount_fen": 42000000,
+          "amount_display": "¥420,000.00",
+          "cost_fen": 504000,
+          "cost_display": "¥5,040.00"
+        }
+      ],
+      "name_display": "Buyer early-payment offer",
+      "offset_fen": null,
+      "offset_display": null,
+      "offset_label": null,
+      "total_fen": 504000,
+      "total_display": "¥5,040.00",
+      "selected": false,
+      "role": "alternative",
+      "role_reason": "Only if the buyer agrees to pay early.",
+      "group": "CONDITIONAL_ON_BUYER",
+      "group_text": "Only if the buyer agrees to early payment",
+      "rank": null,
+      "router_order": 0,
+      "arrival_day": null,
+      "arrival_when": null,
+      "arrival_text": "When the cash arrives depends on the buyer agreeing to pay early.",
+      "available_when": null,
+      "uncovered_display": null,
+      "remaining_gap_fen": null,
+      "remaining_gap_display": null,
+      "remaining_gap_text": "No gap is left.",
+      "basis_text": null,
+      "consent_text": "Needs Foshan Home Retail Co. to agree to pay early; it cannot run until they do."
     }
   ],
+  "comparison_order_text": "The recommended plan first, then the other plans that can run now, cheapest first. Plans that depend on the buyer, leave a gap or are not available yet follow, and are not ranked.",
   "recommended_key": "recommended_plan"
 }

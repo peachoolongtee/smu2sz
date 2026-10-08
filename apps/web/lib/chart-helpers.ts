@@ -6,7 +6,7 @@
  * which is plotting, not reporting: it never reaches a table, a label or a tooltip.
  */
 
-import type { Displayed, Trajectory } from "./types";
+import type { Displayed, HomeSeriesPoint, Trajectory } from "./types";
 
 export interface CashRow {
   day: number;
@@ -66,4 +66,24 @@ export function dayTicks(horizon: number, every = 20): number[] {
   const out: number[] = [];
   for (let d = 0; d <= horizon; d += every) out.push(d);
   return out;
+}
+
+const MOVERS = new Set(["FLOW", "RECEIPT", "EARLY_RECEIPT", "ADVANCE", "DRAW"]);
+
+/**
+ * What one day of the forecast offers the chart as a label. A day with one event is labelled by that event. A day with several is labelled by
+ * the server's net for the day (`netWord` + `net_short`: "Net ¥320k"), never by its largest event: "Operating bill −¥100k" beside a rising line
+ * is the wrong reading when the receipt that day was bigger. The components stay in the tooltip and the table. Without a net (an older
+ * recording) each event is its own candidate. Choosing which to draw is plotting; no money is added or compared here (INVARIANT 13).
+ */
+export function dayLabelCandidates(
+  r: { day: number; cash: number; events: HomeSeriesPoint["events"]; netFen: number | null; netShort: string | null; netDisplay: string | null },
+  netWord: string,
+): { day: number; cash: number; e: HomeSeriesPoint["events"][number] }[] {
+  const moving = r.events.filter((e) => MOVERS.has(e.kind));
+  if (!moving.length) return [];
+  if (r.events.length > 1 && r.netFen !== null && r.netShort !== null) {
+    return [{ day: r.day, cash: r.cash, e: { kind: "NET", label: netWord, label_short: netWord, amount_fen: r.netFen, amount_display: r.netDisplay ?? r.netShort, amount_short: r.netShort } }];
+  }
+  return moving.map((e) => ({ day: r.day, cash: r.cash, e }));
 }

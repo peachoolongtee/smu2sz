@@ -8,10 +8,10 @@ import { buttonClass } from "./ui";
  * The one thing to do next in a multi-step task, at the top of the screen (design principle 5 in
  * docs/UI_UX_CHANGES.md). `action` is the button or link that does it.
  */
-export function NextStep({ label, children, action, testId = "next-step" }: { label: string; children: ReactNode; action?: ReactNode; testId?: string }) {
+export function NextStep({ label, children, action, testId = "next-step", className = "mb-5" }: { label: string; children: ReactNode; action?: ReactNode; testId?: string; className?: string }) {
   return (
     <div
-      className="mb-5 flex flex-wrap items-center justify-between gap-3 motion-reveal rounded-card border border-brand-100 bg-brand-50 px-4 py-3"
+      className={`${className} flex flex-wrap items-center justify-between gap-3 motion-reveal rounded-card border border-brand-100 bg-brand-50 px-4 py-3`}
       role="region"
       aria-label={label}
       data-testid={testId}

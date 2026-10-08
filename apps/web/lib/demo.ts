@@ -21,6 +21,7 @@ import {
   recordVerdict,
   selectOffer,
 } from "./demo-store";
+import { getLang } from "./i18n";
 import { SAMPLES, type SampleId } from "./samples";
 
 /**
@@ -62,7 +63,7 @@ export async function submitSample(id: SampleId): Promise<string> {
 
 /** Evaluates an offer and caches the verdict for the screens. Fixture offers pass their id so the owner-declared costs apply. */
 export async function evaluate(offerId: string): Promise<void> {
-  recordVerdict(await evaluateOffer(offerId, demoStore.get().fixtures[offerId]));
+  recordVerdict(await evaluateOffer(offerId, demoStore.get().fixtures[offerId], getLang()));
 }
 
 const noop = async () => {};

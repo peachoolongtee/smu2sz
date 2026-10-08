@@ -70,7 +70,17 @@
       "summary": "Commitment CMT-a78afaa5becb5273 is ACTIVE; forward concession ¥0.00 booked",
       "message_when": "The agreement with Foshan Home Retail Co. is ACTIVE; forward concession ¥0.00 booked",
       "event_text": "Agreement with Foshan Home Retail Co. recorded; concessions booked against your budget: ¥0.00.",
-      "event_detail": null
+      "event_detail": null,
+      "what_changed": "Agreement with Foshan Home Retail Co. recorded; concessions booked against your budget: ¥0.00.",
+      "why_it_matters": "Cash forecast is now ¥200,000.00 below your minimum in 8 days.",
+      "why_it_matters_as_of": "now",
+      "what_remains": null,
+      "approval_label": null,
+      "current_decision_state": "Fulfilled",
+      "decision_link": {
+        "decision_id": "deal:OFF-f806f79b6c21",
+        "href": "/decisions/deal:OFF-f806f79b6c21"
+      }
     },
     {
       "approval_id": null,
@@ -90,7 +100,17 @@
       "summary": "Drew ¥149,986.20 on FAC-LINE on day 0",
       "message_when": "Drew ¥149,986.20 on Bank credit line 34 days ago",
       "event_text": "¥149,986.20 drawn on the Bank credit line. Cash received 34 days ago.",
-      "event_detail": null
+      "event_detail": null,
+      "what_changed": "¥149,986.20 drawn on the Bank credit line. Cash received 34 days ago.",
+      "why_it_matters": "Cash forecast is now ¥200,000.00 below your minimum in 8 days.",
+      "why_it_matters_as_of": "now",
+      "what_remains": null,
+      "approval_label": null,
+      "current_decision_state": "Fulfilled",
+      "decision_link": {
+        "decision_id": "deal:OFF-f806f79b6c21",
+        "href": "/decisions/deal:OFF-f806f79b6c21"
+      }
     },
     {
       "approval_id": null,
@@ -110,7 +130,14 @@
       "summary": "Clock moved from day 0 to day 2: 0 scheduled flow(s) posted (net ¥0.00), 0 invoice(s) issued, 0 commitment(s) expired",
       "message_when": "Clock moved from 34 days ago to 32 days ago: 0 scheduled flow(s) posted (net ¥0.00), 0 invoice(s) issued, 0 commitment(s) expired",
       "event_text": "2 days passed; nothing was due.",
-      "event_detail": null
+      "event_detail": null,
+      "what_changed": "2 days passed; nothing was due.",
+      "why_it_matters": "Cash forecast is now ¥200,000.00 below your minimum in 8 days.",
+      "why_it_matters_as_of": "now",
+      "what_remains": null,
+      "approval_label": null,
+      "current_decision_state": null,
+      "decision_link": null
     },
     {
       "approval_id": null,
@@ -130,7 +157,14 @@
       "summary": "Received ¥255,013.80 on RCV-A (settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 still due on day 32)",
       "message_when": "Received ¥255,013.80 on the ¥420,000.00 invoice to Foshan Home Retail Co. due 2 days ago (settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 was still due 2 days ago)",
       "event_text": "Received ¥255,013.80 from Foshan Home Retail Co.",
-      "event_detail": "Settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 was still due 2 days ago."
+      "event_detail": "Settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 was still due 2 days ago.",
+      "what_changed": "Received ¥255,013.80 from Foshan Home Retail Co.",
+      "why_it_matters": "Cash forecast is now ¥200,000.00 below your minimum in 8 days.",
+      "why_it_matters_as_of": "now",
+      "what_remains": null,
+      "approval_label": null,
+      "current_decision_state": null,
+      "decision_link": null
     },
     {
       "approval_id": null,
@@ -150,7 +184,14 @@
       "summary": "Clock moved from day 2 to day 30: 2 scheduled flow(s) posted (net −¥460,000.00), 1 invoice(s) issued, 0 commitment(s) expired, 1 new scheduled flow(s) recorded",
       "message_when": "Clock moved from 32 days ago to 4 days ago: 2 scheduled flow(s) posted (net −¥460,000.00), 1 invoice(s) issued, 0 commitment(s) expired, 1 new scheduled flow(s) recorded",
       "event_text": "28 days passed: 2 scheduled cash movements were recorded and one invoice was issued.",
-      "event_detail": null
+      "event_detail": null,
+      "what_changed": "28 days passed: 2 scheduled cash movements were recorded and one invoice was issued.",
+      "why_it_matters": "Cash forecast is now ¥200,000.00 below your minimum in 8 days.",
+      "why_it_matters_as_of": "now",
+      "what_remains": null,
+      "approval_label": null,
+      "current_decision_state": null,
+      "decision_link": null
     },
     {
       "approval_id": null,
@@ -170,10 +211,32 @@
       "summary": "Clock moved from day 30 to day 34: 0 scheduled flow(s) posted (net ¥0.00), 1 invoice(s) issued, 0 commitment(s) expired, 1 existing-debt payment(s) posted (−¥45,000.00)",
       "message_when": "Clock moved from 4 days ago to today: 0 scheduled flow(s) posted (net ¥0.00), 1 invoice(s) issued, 0 commitment(s) expired, 1 existing-debt payment(s) posted (−¥45,000.00)",
       "event_text": "4 days passed: the ¥45,000.00 debt payment went out and one invoice was issued.",
-      "event_detail": null
+      "event_detail": null,
+      "what_changed": "4 days passed: the ¥45,000.00 debt payment went out and one invoice was issued.",
+      "why_it_matters": "Cash forecast is now ¥200,000.00 below your minimum in 8 days.",
+      "why_it_matters_as_of": "now",
+      "what_remains": null,
+      "approval_label": null,
+      "current_decision_state": null,
+      "decision_link": null
     }
   ],
   "chain_valid": true,
   "chain_length": 6,
-  "head_hash": "a831c14e7ff12f92cf24544d190322115cd59fd94e4862cf5f5907a5cd1f61a6"
+  "head_hash": "a831c14e7ff12f92cf24544d190322115cd59fd94e4862cf5f5907a5cd1f61a6",
+  "chain_text": "Record chain checks passed",
+  "chain_scope_text": "Every entry's hash matches the entry before it. This checks the log's own integrity; it does not confirm bank facts or buyer promises.",
+  "refusals": {
+    "anchor_id": "activity-refused",
+    "href": "/activity#activity-refused",
+    "count": 0,
+    "refused_operations": 0,
+    "security_events": 0,
+    "set_aside_text": null,
+    "is_fixture_example": false,
+    "example": {
+      "is_fixture_example": true,
+      "text": "Example only: nothing has been refused in your books yet. A message from a sender you do not know would be set aside here."
+    }
+  }
 }

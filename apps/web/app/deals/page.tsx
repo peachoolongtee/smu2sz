@@ -1,27 +1,25 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import { AnnotatedText } from "@/components/annotated-text";
+import { useEffect, useRef, useState } from "react";
 import { BeforeTheyAsk } from "@/components/deals/before-they-ask";
 import { BuyerAsks } from "@/components/deals/asks";
 import { ActiveCommitments } from "@/components/deals/commitments";
 import { DealSteps } from "@/components/deals/deal-steps";
 import { DealDecision } from "@/components/deals/decision";
-import { WhyRecommended } from "@/components/deals/reasons";
 import { InboxList } from "@/components/deals/inbox-list";
 import { RecommendedResponse } from "@/components/deals/response";
-import { NextStep, nextLinkCls, nextLinkSecondaryCls } from "@/components/next-step";
-import { PlanCard } from "@/components/plan-card";
-import { Button, Callout, Card, EmptyState, ErrorState, Formula, LoadingBlock, PageHeader, ButtonLink } from "@/components/ui";
+import { AdvancedDetails, SelectedBuyer, WorkspaceAsks, WorkspaceImpact } from "@/components/deals/workspace";
+import { NextStep, nextLinkCls } from "@/components/next-step";
+import { Button, Callout, Card, EmptyState, ErrorState, LoadingBlock, PageHeader, ButtonLink } from "@/components/ui";
 import { STRATEGY_MVP } from "@/lib/config";
 import { evaluate as evaluateAndCache } from "@/lib/demo";
-import { dealRecordId, getClock, getState, submitOffer } from "@/lib/api";
+import { dealRecordId, getClock, getLedger, getState, submitOffer } from "@/lib/api";
 import { recordOffer, selectOffer, useDemo } from "@/lib/demo-store";
 import { useI18n } from "@/lib/i18n";
-import type { InboxMessage } from "@/lib/inbox";
+import { INBOX, type InboxMessage } from "@/lib/inbox";
 import { useMode } from "@/lib/mode";
-import { annotationsFor, offerItems } from "@/lib/offer-items";
+import { offerItems } from "@/lib/offer-items";
 import type { VerdictView } from "@/lib/types";
 import { useAsync } from "@/lib/use-async";
 import { useCurrentOffer } from "@/lib/use-current";
@@ -31,26 +29,29 @@ import { whenText } from "@/lib/when";
 import { Disclosure } from "@/components/business/kit";
 
 /**
- * Deals, in the owner's order (the disclosure standard of the brief): the inbox as one thread per buyer, what the buyer
- * is asking for in plain words, the business action with the three numbers behind it (the cost of concessions against
- * the limit, the first reserve breach and the worst point, named apart), the recommended response, and then, closed:
- * why FLOW recommends it, the original message, the detailed calculations. Each fact is shown once at levels 1 to 3.
- * Every figure is a server display string; days are distances from today; the page decides nothing.
+ * Deals, one workspace for the selected buyer, in the server's order (`workspace.order`, wayfinder #65 Wave 3): a compact header (the buyer,
+ * the offer's one-line ask, when it was checked), what the buyer asks, what it costs (the immediate discount and the forward figure on their
+ * own lines), why it matters, what FLOW recommends, the one priced response with its bound send, the one Action, the agreements, and last,
+ * folded, the advanced details. The inbox folds to one row once a deal is selected. Buyer terms appear once. Every figure and sentence is
+ * the server's; days are distances from today; the page decides nothing.
  */
 export default function DealsPage() {
-  const { t, te } = useI18n();
+  const { t, te, lang } = useI18n();
   const mode = useMode();
   const cur = useCurrentOffer();
   const demo = useDemo();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [active, setActive] = useState<string | null>(null);
   // The id of the inbox message being read, or null.
   const [reading, setReading] = useState<string | null>(null);
   // Whether the other counters are shown (Option B), tied to the offer it was opened for.
   // Passed down only with STRATEGY_MVP: without the flag the response card keeps its own state, exactly as before the card existed.
   const [compareFor, setCompareFor] = useState<string | null>(null);
+  // The offer for which the owner asked for the full inbox ("Back to inbox"); selecting another deal folds it again.
+  const [inboxFor, setInboxFor] = useState<string | null>(null);
   const books = useAsync(getState, []);
+  // The books' refusal block: the set-aside line in the inbox is the ledger's count, never the page's.
+  const ledger = useAsync(() => getLedger(lang), [lang]);
   // The deals' records: each message's words in the inbox are its record's state, read again whenever the books or the clock move.
   const records = useDecisions({ family: "DEAL" });
   const clock = useAsync(getClock, []);
@@ -74,6 +75,7 @@ export default function DealsPage() {
 
   /** Opening a message reads it. One already read is just shown again, so clicking around costs nothing. */
   async function openMessage(m: InboxMessage) {
+    setInboxFor(null);
     const seen = Object.values(demo.offers).find((o) => o.documents[0]?.doc_id === m.document.doc_id);
     if (seen) return selectOffer(seen.offer.offer_id);
     setReading(m.id);
@@ -88,6 +90,24 @@ export default function DealsPage() {
     }
   }
 
+  // `?buyer=BUYER-1` (the chase dialog's thread link) selects that buyer's current deal: the one already read most recently, else the buyer's
+  // newest message is read. Once, after the books say who the known buyers are; a buyer the books do not know selects nothing.
+  const buyerParam = useRef<{ id: string | null; done: boolean } | null>(null);
+  useEffect(() => {
+    if (!buyerParam.current) buyerParam.current = { id: new URLSearchParams(window.location.search).get("buyer"), done: false };
+    const want = buyerParam.current;
+    if (!want.id || want.done || !known) return;
+    want.done = true;
+    if (!known.has(want.id)) return;
+    const mine = INBOX.filter((m) => m.counterparty_id === want.id);
+    const readOffers = Object.values(demo.offers).filter((o) => o.offer.counterparty_id === want.id);
+    if (cur.offer?.offer.counterparty_id === want.id) return;
+    const latest = readOffers[readOffers.length - 1];
+    if (latest) selectOffer(latest.offer.offer_id);
+    else if (mine[0]) void openMessage(mine[0]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- runs once, when the books arrive
+  }, [Boolean(known)]);
+
   /** The state of a message's deal in the server's words ("Counter recommended", "Agreed", "Expired"), for its inbox row; null until the record has one. */
   function statusFor(docId: string): string | null {
     const o = Object.values(demo.offers).find((x) => x.documents[0]?.doc_id === docId);
@@ -96,14 +116,18 @@ export default function DealsPage() {
 
   const offer = cur.offer;
   const v: VerdictView | null = cur.verdict;
+  const ws = v?.workspace ?? null;
   // The deal's record: where it stands (sent, agreed, lapsed, closed) is read from it, never from the answer the browser kept from a click.
   const record = useDecision(offer ? dealRecordId(offer.offer.offer_id) : null).data ?? null;
   const progress = record ? dealProgress(record.state) : null;
   const items = offer ? offerItems(offer.offer) : [];
+  const obligations = items.flatMap((i) => (i.group === "obligation" ? [i.obligation] : []));
   // The verdict's bound obligations carry the terms delta ("45 → 60 days"); before the check, the compiled offer's.
-  const asks = v?.bound_obligations?.length ? v.bound_obligations : items.flatMap((i) => (i.group === "obligation" ? [i.obligation] : []));
+  const asks = v?.bound_obligations?.length ? v.bound_obligations : obligations;
+  const inboxOpen = !offer || inboxFor === offer.offer.offer_id;
 
-  // The one thing to do next, read from the page's own state (it decides nothing).
+  // The one Action, read from the page's own state (it decides nothing): check the offer, or where the deal stands. A counter to send carries
+  // its own primary action in the priced response, so the Action then has nothing to add.
   let next: { text: string; action: React.ReactNode } | null = null;
   if (offer && !v) {
     next = {
@@ -121,26 +145,51 @@ export default function DealsPage() {
         : progress.tone === "open"
           ? { text: t("next.approval"), action: <Link href="/approvals" className={nextLinkCls}>{t("next.toApprovals")}</Link> }
           : record.state === "NO_DEAL"
-            ? { text: t("next.noDeal"), action: <a href="#inbox-list" className={nextLinkCls}>{t("next.backToOffers")}</a> }
+            ? {
+                text: t("next.noDeal"),
+                action: (
+                  <button type="button" className={nextLinkCls} onClick={() => setInboxFor(offer.offer.offer_id)}>
+                    {t("next.backToOffers")}
+                  </button>
+                ),
+              }
             : { text: t("next.closed", { state: record.state_text }), action: <a href="#commitments" className={nextLinkCls}>{t("next.seeHome")}</a> };
-  } else if (offer && v && v.counters.length && !cur.negotiation) {
-    // The response card below carries the page's one primary action ("Send this counter"); this link only leads to it.
-    next = { text: t("next.counter"), action: <a href="#counters" className={nextLinkSecondaryCls}>{t("next.toCounters")}</a> };
   }
 
   const compareOpen = Boolean(offer && compareFor === offer.offer.offer_id);
 
   const commitments = <ActiveCommitments today={today} buyerName={buyerName} hideEmpty />;
 
+  /** The offer's one-line ask: the names of what is asked, once each ("Immediate discount · Terms extension · Contingent rebate"). */
+  const oneLine = Array.from(new Set(asks.map((o) => te("obligation", o.type)))).join(" · ");
+
+  const abstentions = offer?.offer.abstentions.length ? (
+    <div className="mt-3" data-testid="deal-abstentions">
+      <Callout tone="warn" title={t("biz.deals.cannotEvaluate")}>
+        <ul className="list-disc pl-5 text-sm">
+          {offer.offer.abstentions.map((a) => (
+            <li key={a.field}>{a.reason}</li>
+          ))}
+        </ul>
+        <div className="mt-2 flex flex-wrap items-center gap-3">
+          <ButtonLink href="/chat">{t("biz.deals.clarify")}</ButtonLink>
+          <Disclosure className="text-xs" summary={t("biz.auditDetails")}>
+            <ul className="mt-1 list-disc pl-5 font-mono">
+              {offer.offer.abstentions.map((a) => (
+                <li key={a.field} className="break-all">
+                  {a.field}
+                </li>
+              ))}
+            </ul>
+          </Disclosure>
+        </div>
+      </Callout>
+    </div>
+  ) : null;
+
   return (
     <>
       <PageHeader section="deals" title={t("nav.deals")} subtitle={t("biz.deals.subtitle")} />
-      {offer ? <DealSteps /> : null}
-      {next ? (
-        <NextStep label={t("next.label")} action={next.action}>
-          {next.text}
-        </NextStep>
-      ) : null}
       <div className="space-y-6">
         <InboxList
           currentDocId={offer?.documents[0]?.doc_id ?? null}
@@ -153,6 +202,10 @@ export default function DealsPage() {
           onOpen={(m) => void openMessage(m)}
           loadError={books.error}
           onRetry={books.reload}
+          collapsed={Boolean(offer) && !inboxOpen}
+          onExpand={offer ? () => setInboxFor(offer.offer.offer_id) : undefined}
+          onCollapse={offer && inboxOpen ? () => setInboxFor(null) : undefined}
+          refusals={ledger.data?.refusals ?? null}
         />
 
         {error ? <ErrorState error={error} /> : null}
@@ -174,44 +227,30 @@ export default function DealsPage() {
           </>
         ) : (
           <>
-            <Card
-              id="deal-ask"
-              title={t("biz.deals.ask", { buyer: buyerName(offer.offer.counterparty_id) })}
-              subtitle={t("biz.deals.messageWhen", { channel: te("channel", offer.documents[0]?.channel ?? "chat"), when: whenText(offer.offer.received_day, today, t) })}
+            <SelectedBuyer
+              buyer={buyerName(offer.offer.counterparty_id)}
+              ask={oneLine}
+              received={t("biz.deals.messageWhen", { channel: te("channel", offer.documents[0]?.channel ?? "chat"), when: whenText(offer.offer.received_day, today, t) })}
+              evaluatedWhen={v ? (record?.evaluation?.evaluated_when ?? v.evaluated_when ?? null) : null}
             >
-              <BuyerAsks asks={asks} />
-              {offer.offer.abstentions.length ? (
-                <div className="mt-3" data-testid="deal-abstentions">
-                  <Callout tone="warn" title={t("biz.deals.cannotEvaluate")}>
-                    <ul className="list-disc pl-5 text-sm">
-                      {offer.offer.abstentions.map((a) => (
-                        <li key={a.field}>{a.reason}</li>
-                      ))}
-                    </ul>
-                    <div className="mt-2 flex flex-wrap items-center gap-3">
-                      <ButtonLink href="/chat">{t("biz.deals.clarify")}</ButtonLink>
-                      <Disclosure className="text-xs" summary={t("biz.auditDetails")}>
-                        <ul className="mt-1 list-disc pl-5 font-mono">
-                          {offer.offer.abstentions.map((a) => (
-                            <li key={a.field} className="break-all">
-                              {a.field}
-                            </li>
-                          ))}
-                        </ul>
-                      </Disclosure>
-                    </div>
-                  </Callout>
-                </div>
-              ) : null}
-            </Card>
+              <DealSteps />
+            </SelectedBuyer>
+
+            {ws ? (
+              <WorkspaceAsks ws={ws}>{abstentions}</WorkspaceAsks>
+            ) : (
+              <Card id="deal-ask" title={t("biz.deals.ask", { buyer: buyerName(offer.offer.counterparty_id) })}>
+                <BuyerAsks asks={asks} />
+                {abstentions}
+              </Card>
+            )}
 
             {STRATEGY_MVP ? <BeforeTheyAsk buyerId={offer.offer.counterparty_id} /> : null}
 
-            {!v ? (
-              commitments
-            ) : (
+            {v && ws ? (
               <>
-                <DealDecision v={v} today={today} record={record} />
+                <WorkspaceImpact ws={ws} v={v} today={today} settled={Boolean(record && progress?.reached)} />
+                <DealDecision v={v} record={record} text={ws.recommends.text} />
                 <RecommendedResponse
                   v={v}
                   offerId={offer.offer.offer_id}
@@ -220,67 +259,18 @@ export default function DealsPage() {
                   negotiation={cur.negotiation}
                   {...(STRATEGY_MVP ? { compareOpen, onCompareChange: (open: boolean) => setCompareFor(open ? offer.offer.offer_id : null) } : {})}
                 />
-                {commitments}
-
-                <div className="space-y-2">
-                  <Disclosure card testId="deal-why" summary={t("biz.hero.why")}>
-                    <div>
-                      <WhyRecommended v={v} today={today} />
-                    </div>
-                  </Disclosure>
-                  <Disclosure card testId="deal-original" summary={t("biz.deals.original")}>
-                    <div className="space-y-3">
-                      {offer.documents.map((doc) => (
-                        <AnnotatedText
-                          key={doc.doc_id}
-                          ariaLabel={t("inbox.annotated")}
-                          text={doc.text}
-                          annotations={annotationsFor(items, doc.doc_id, (i) => (i.group === "obligation" ? te("obligation", i.kind) : te("flag", i.kind)))}
-                          activeId={active}
-                          onActivate={setActive}
-                        />
-                      ))}
-                    </div>
-                  </Disclosure>
-                  <Disclosure card testId="deal-calc" summary={t("biz.calculation")}>
-                    <div className="space-y-4">
-                      {v.concession_values.length ? (
-                        <ul className="space-y-2">
-                          {v.concession_values.map((c) => (
-                            <li key={c.obligation_id} className="rounded-tile border border-line px-3 py-2 text-sm" data-testid="deal-calc-item">
-                              <div className="flex flex-wrap items-baseline justify-between gap-2">
-                                <span className="text-ink">{c.interpretation ?? c.basis}</span>
-                                <span className="font-semibold tabular-nums">{c.value_display}</span>
-                              </div>
-                              <Disclosure className="mt-1.5" summary={t("common.formula")}>
-                                <p className="mt-1 text-xs text-ink-3">{c.basis}</p>
-                                <div className="mt-1">
-                                  <Formula>{c.formula}</Formula>
-                                </div>
-                              </Disclosure>
-                            </li>
-                          ))}
-                        </ul>
-                      ) : null}
-                      {v.counters.map((c) => (
-                        <div key={c.id} className="rounded-tile border border-line px-3 py-2 text-sm">
-                          <p className="font-medium text-ink">{c.label}</p>
-                          <div className="mt-1.5">
-                            <Formula>{c.formula}</Formula>
-                          </div>
-                        </div>
-                      ))}
-                      {v.plan ? <PlanCard plan={v.plan} id="deal-plan" /> : null}
-                      <p className="text-xs text-ink-3">
-                        <Link href="/verdict" className="font-medium text-brand-700 underline underline-offset-2">
-                          {t("biz.deals.fullVerdict")}
-                        </Link>
-                      </p>
-                    </div>
-                  </Disclosure>
-                </div>
               </>
-            )}
+            ) : null}
+
+            {next ? (
+              <NextStep label={t("next.label")} action={next.action} className="mb-0">
+                {next.text}
+              </NextStep>
+            ) : null}
+
+            {commitments}
+
+            {v && ws ? <AdvancedDetails ws={ws} v={v} offer={offer} items={items} asks={asks} /> : null}
           </>
         )}
       </div>
