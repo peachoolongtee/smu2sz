@@ -347,7 +347,9 @@ test("the Business inbox waits for the books before it shows any sender, and say
   await expect(page.locator('[data-testid^="inbox-msg-"]')).toHaveCount(0);
   await expect(page.getByTestId("inbox-thread-BUYER-1")).toBeVisible();
   await expect(page.getByTestId("inbox-msg-SEC")).toHaveCount(0);
-  await expect(page.getByTestId("inbox-blocked")).toContainText("1 message from an unknown sender was set aside.");
+  // The set-aside line is the books' own: the ledger's count when something was refused, else the labelled example; its link is the real section.
+  await expect(page.getByTestId("inbox-blocked")).toContainText(/set aside/);
+  await expect(page.getByTestId("inbox-blocked").getByRole("link")).toHaveAttribute("href", "/activity#activity-refused");
   // The books fail to load: the error, never the unchecked list.
   await page.unroute(`${API}/state`);
   await page.route(`${API}/state`, (route) =>
@@ -611,5 +613,68 @@ test("Home: a cure that cannot restore the reserve leaves a remaining task with 
   const row = page.locator(`[id="${id}"]:visible`);
   await expect(row).toHaveCount(1);
   await expect(row).toBeInViewport();
+  await post("/demo/reset", {});
+});
+
+test("Deals: the workspace is the API's, in its order, and ?buyer= selects the buyer's deal", async ({ page, request }) => {
+  const post = ownerPost(request);
+  await post("/demo/reset", {});
+  await page.goto("/deals?buyer=BUYER-1");
+  await expect(page.locator("#deal-selected")).toContainText("Foshan Home Retail Co.");
+  await expect(page.getByTestId("inbox-collapsed")).toBeVisible();
+  await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
+  await expect(page.getByTestId("deal-recommendation")).toHaveText("Counter recommended");
+  // Every sentence below is the server's: the asks, the lines, the reasons.
+  await expect(page.getByTestId("deal-ask-IMMEDIATE_DISCOUNT")).toContainText("The buyer may pay early and take 1.20% off the ¥420,000.00 invoice");
+  await expect(page.getByTestId("deal-impact-immediate").getByTestId("deal-impact-amount")).toHaveText("¥5,040.00");
+  await expect(page.getByTestId("deal-impact-total")).toHaveText("¥28,326.92");
+  await expect(page.getByTestId("deal-impact-forward")).not.toContainText("¥5,040.00");
+  await expect(page.getByTestId("deal-why-reasons")).toContainText("Accepted as asked, cash would fall below your minimum");
+  await expect(page.getByTestId("deal-evaluated")).toHaveText("Evaluated today");
+  const tops = await page.evaluate(() => ["deal-selected", "deal-ask", "deal-impact", "deal-recommendation-card", "counters"].map((id) => document.getElementById(id)?.getBoundingClientRect().top ?? -1));
+  expect(tops).toEqual([...tops].sort((a, b) => a - b));
+  expect((await page.locator("main").innerText()).match(/60-day payment terms/g)).toHaveLength(1);
+  await post("/demo/reset", {});
+});
+
+test("Cash: the comparison arrives grouped and ordered by the API, and the forecast says what it counts", async ({ page, request }) => {
+  await ownerPost(request)("/demo/reset", {});
+  await page.goto("/cash");
+  await expect(page.getByTestId("cash-options-order")).toContainText("The recommended plan first");
+  expect(await page.getByTestId("cash-options-list").locator("[data-group]").evaluateAll((els) => els.filter((el) => (el.getAttribute("data-testid") ?? "").startsWith("cash-options-")).map((el) => el.getAttribute("data-group")))).toEqual([
+    "RECOMMENDED",
+    "CONDITIONAL_ON_BUYER",
+    "INSUFFICIENT",
+    "NOT_AVAILABLE_YET",
+  ]);
+  await expect(page.getByTestId("cash-options-RECOMMENDED")).toContainText("#1");
+  await expect(page.getByTestId("cash-options-CONDITIONAL_ON_BUYER")).not.toContainText("#");
+  await expect(page.locator("#cash-chart")).toContainText("Expected invoice payments at their due dates and committed funding; overdue payments are excluded");
+  await expect(page.getByTestId("cash-read-when")).toHaveText("Cash read today");
+  await page.getByTestId("forecast-horizon-120").click();
+  await expect(page.getByTestId("cash-forecast")).toContainText("Net ¥320k");
+});
+
+test("Activity: each row says what changed, why it matters (Now) and what remains; the approval request is history with a link; the chain words are the API's", async ({ page, request }) => {
+  const { post } = await toDay34(request);
+  await page.goto("/");
+  await runPlan(page.getByTestId("home-next-action"), "ALERT-RESERVE-42");
+  await page.getByTestId("alert-approval-link-ALERT-RESERVE-42").click();
+  await page.locator('[id^="approval-APR-"]').first().getByRole("button", { name: "Approve" }).click();
+  await expect(page.locator('[id^="approval-APR-"]').first()).toContainText("Approved");
+  await page.goto("/activity");
+  const approved = page.getByTestId("activity-SUBMIT_INVOICE_FOR_FINANCING").filter({ hasText: "You approved" });
+  await expect(approved.getByTestId("activity-event")).toHaveText("You approved ¥200,000.00 of invoice financing. Funds arrive in 3 days.");
+  await expect(approved.getByTestId("activity-why")).toContainText("Why it matters");
+  await expect(approved.getByTestId("activity-why").getByText("Now", { exact: true })).toBeVisible();
+  await expect(approved.getByTestId("activity-remains")).toContainText("Waiting for");
+  const requested = page.getByTestId("activity-SUBMIT_INVOICE_FOR_FINANCING").filter({ hasText: "Approval requested:" });
+  await expect(requested.getByTestId("activity-approval")).toContainText("Approval requested");
+  await expect(requested.getByTestId("activity-approval-state")).not.toContainText("Waiting for your approval");
+  await requested.getByTestId("activity-record").click();
+  await expect(page).toHaveURL(/\/decisions\/alert/);
+  await expect(page.getByTestId("record-state")).toBeVisible();
+  await page.goto("/activity");
+  await expect(page.getByTestId("chain-status")).toContainText("Record chain checks passed");
   await post("/demo/reset", {});
 });

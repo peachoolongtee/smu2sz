@@ -168,7 +168,8 @@ function FundingBody({ view, basis, snapshot }: { view: FundingView; basis: "COM
 
           <Card id="compare" title={t("fund.compare")} subtitle={t("fund.compare.sub")}>
             <ul className="divide-y divide-line">
-              {view.comparison.map((c) => (
+              {/* The Demo view keeps the router's own order (spec 7.4): the server sends the Business grouping, and `router_order` is the position the router gave each row. */}
+              {[...view.comparison].sort((a, b) => (a.router_order ?? -1) - (b.router_order ?? -1)).map((c) => (
                 <li key={c.label} className="flex flex-col gap-1.5 py-2">
                   <div className="min-w-0">
                     <p className={`text-sm ${c.selected ? "font-semibold" : ""}`}>{c.label}</p>

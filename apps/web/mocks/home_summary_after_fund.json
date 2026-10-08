@@ -74,19 +74,28 @@
         "day": 0,
         "closing_fen": 55000000,
         "closing_display": "¥550,000.00",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 1,
         "closing_fen": 55000000,
         "closing_display": "¥550,000.00",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 2,
         "closing_fen": 55000000,
         "closing_display": "¥550,000.00",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 3,
@@ -101,55 +110,82 @@
             "amount_display": "¥255,000.00",
             "amount_short": "¥255k"
           }
-        ]
+        ],
+        "net_fen": 25500000,
+        "net_display": "¥255,000.00",
+        "net_short": "¥255k"
       },
       {
         "day": 4,
         "closing_fen": 80500000,
         "closing_display": "¥805,000.00",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 5,
         "closing_fen": 80500000,
         "closing_display": "¥805,000.00",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 6,
         "closing_fen": 80500000,
         "closing_display": "¥805,000.00",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 7,
         "closing_fen": 80500000,
         "closing_display": "¥805,000.00",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 8,
         "closing_fen": 80500000,
         "closing_display": "¥805,000.00",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 9,
         "closing_fen": 80500000,
         "closing_display": "¥805,000.00",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 10,
         "closing_fen": 80500000,
         "closing_display": "¥805,000.00",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 11,
         "closing_fen": 80500000,
         "closing_display": "¥805,000.00",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 12,
@@ -164,49 +200,73 @@
             "amount_display": "−¥340,000.00",
             "amount_short": "−¥340k"
           }
-        ]
+        ],
+        "net_fen": -34000000,
+        "net_display": "−¥340,000.00",
+        "net_short": "−¥340k"
       },
       {
         "day": 13,
         "closing_fen": 46500000,
         "closing_display": "¥465,000.00",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 14,
         "closing_fen": 46500000,
         "closing_display": "¥465,000.00",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 15,
         "closing_fen": 46500000,
         "closing_display": "¥465,000.00",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 16,
         "closing_fen": 46500000,
         "closing_display": "¥465,000.00",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 17,
         "closing_fen": 46500000,
         "closing_display": "¥465,000.00",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 18,
         "closing_fen": 46500000,
         "closing_display": "¥465,000.00",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 19,
         "closing_fen": 46500000,
         "closing_display": "¥465,000.00",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 20,
@@ -221,61 +281,91 @@
             "amount_display": "−¥120,000.00",
             "amount_short": "−¥120k"
           }
-        ]
+        ],
+        "net_fen": -12000000,
+        "net_display": "−¥120,000.00",
+        "net_short": "−¥120k"
       },
       {
         "day": 21,
         "closing_fen": 34500000,
         "closing_display": "¥345,000.00",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 22,
         "closing_fen": 34500000,
         "closing_display": "¥345,000.00",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 23,
         "closing_fen": 34500000,
         "closing_display": "¥345,000.00",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 24,
         "closing_fen": 34500000,
         "closing_display": "¥345,000.00",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 25,
         "closing_fen": 34500000,
         "closing_display": "¥345,000.00",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 26,
         "closing_fen": 34500000,
         "closing_display": "¥345,000.00",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 27,
         "closing_fen": 34500000,
         "closing_display": "¥345,000.00",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 28,
         "closing_fen": 34500000,
         "closing_display": "¥345,000.00",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 29,
         "closing_fen": 34500000,
         "closing_display": "¥345,000.00",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 30,
@@ -290,13 +380,19 @@
             "amount_display": "−¥45,000.00",
             "amount_short": "−¥45k"
           }
-        ]
+        ],
+        "net_fen": -4500000,
+        "net_display": "−¥45,000.00",
+        "net_short": "−¥45k"
       },
       {
         "day": 31,
         "closing_fen": 30000000,
         "closing_display": "¥300,000.00",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 32,
@@ -351,91 +447,136 @@
             "amount_display": "−¥150,000.00",
             "amount_short": "−¥150k"
           }
-        ]
+        ],
+        "net_fen": 1188607,
+        "net_display": "¥11,886.07",
+        "net_short": "¥12k"
       },
       {
         "day": 33,
         "closing_fen": 31188607,
         "closing_display": "¥311,886.07",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 34,
         "closing_fen": 31188607,
         "closing_display": "¥311,886.07",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 35,
         "closing_fen": 31188607,
         "closing_display": "¥311,886.07",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 36,
         "closing_fen": 31188607,
         "closing_display": "¥311,886.07",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 37,
         "closing_fen": 31188607,
         "closing_display": "¥311,886.07",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 38,
         "closing_fen": 31188607,
         "closing_display": "¥311,886.07",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 39,
         "closing_fen": 31188607,
         "closing_display": "¥311,886.07",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 40,
         "closing_fen": 31188607,
         "closing_display": "¥311,886.07",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 41,
         "closing_fen": 31188607,
         "closing_display": "¥311,886.07",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 42,
         "closing_fen": 31188607,
         "closing_display": "¥311,886.07",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 43,
         "closing_fen": 31188607,
         "closing_display": "¥311,886.07",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 44,
         "closing_fen": 31188607,
         "closing_display": "¥311,886.07",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 45,
         "closing_fen": 31188607,
         "closing_display": "¥311,886.07",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 46,
         "closing_fen": 31188607,
         "closing_display": "¥311,886.07",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 47,
@@ -458,79 +599,118 @@
             "amount_display": "−¥100,000.00",
             "amount_short": "−¥100k"
           }
-        ]
+        ],
+        "net_fen": 32000000,
+        "net_display": "¥320,000.00",
+        "net_short": "¥320k"
       },
       {
         "day": 48,
         "closing_fen": 63188607,
         "closing_display": "¥631,886.07",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 49,
         "closing_fen": 63188607,
         "closing_display": "¥631,886.07",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 50,
         "closing_fen": 63188607,
         "closing_display": "¥631,886.07",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 51,
         "closing_fen": 63188607,
         "closing_display": "¥631,886.07",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 52,
         "closing_fen": 63188607,
         "closing_display": "¥631,886.07",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 53,
         "closing_fen": 63188607,
         "closing_display": "¥631,886.07",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 54,
         "closing_fen": 63188607,
         "closing_display": "¥631,886.07",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 55,
         "closing_fen": 63188607,
         "closing_display": "¥631,886.07",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 56,
         "closing_fen": 63188607,
         "closing_display": "¥631,886.07",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 57,
         "closing_fen": 63188607,
         "closing_display": "¥631,886.07",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 58,
         "closing_fen": 63188607,
         "closing_display": "¥631,886.07",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 59,
         "closing_fen": 63188607,
         "closing_display": "¥631,886.07",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 60,
@@ -545,103 +725,154 @@
             "amount_display": "−¥45,000.00",
             "amount_short": "−¥45k"
           }
-        ]
+        ],
+        "net_fen": -4500000,
+        "net_display": "−¥45,000.00",
+        "net_short": "−¥45k"
       },
       {
         "day": 61,
         "closing_fen": 58688607,
         "closing_display": "¥586,886.07",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 62,
         "closing_fen": 58688607,
         "closing_display": "¥586,886.07",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 63,
         "closing_fen": 58688607,
         "closing_display": "¥586,886.07",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 64,
         "closing_fen": 58688607,
         "closing_display": "¥586,886.07",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 65,
         "closing_fen": 58688607,
         "closing_display": "¥586,886.07",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 66,
         "closing_fen": 58688607,
         "closing_display": "¥586,886.07",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 67,
         "closing_fen": 58688607,
         "closing_display": "¥586,886.07",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 68,
         "closing_fen": 58688607,
         "closing_display": "¥586,886.07",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 69,
         "closing_fen": 58688607,
         "closing_display": "¥586,886.07",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 70,
         "closing_fen": 58688607,
         "closing_display": "¥586,886.07",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 71,
         "closing_fen": 58688607,
         "closing_display": "¥586,886.07",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 72,
         "closing_fen": 58688607,
         "closing_display": "¥586,886.07",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 73,
         "closing_fen": 58688607,
         "closing_display": "¥586,886.07",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 74,
         "closing_fen": 58688607,
         "closing_display": "¥586,886.07",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 75,
         "closing_fen": 58688607,
         "closing_display": "¥586,886.07",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 76,
         "closing_fen": 58688607,
         "closing_display": "¥586,886.07",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 77,
@@ -656,79 +887,118 @@
             "amount_display": "¥420,000.00",
             "amount_short": "¥420k"
           }
-        ]
+        ],
+        "net_fen": 42000000,
+        "net_display": "¥420,000.00",
+        "net_short": "¥420k"
       },
       {
         "day": 78,
         "closing_fen": 100688607,
         "closing_display": "¥1,006,886.07",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 79,
         "closing_fen": 100688607,
         "closing_display": "¥1,006,886.07",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 80,
         "closing_fen": 100688607,
         "closing_display": "¥1,006,886.07",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 81,
         "closing_fen": 100688607,
         "closing_display": "¥1,006,886.07",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 82,
         "closing_fen": 100688607,
         "closing_display": "¥1,006,886.07",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 83,
         "closing_fen": 100688607,
         "closing_display": "¥1,006,886.07",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 84,
         "closing_fen": 100688607,
         "closing_display": "¥1,006,886.07",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 85,
         "closing_fen": 100688607,
         "closing_display": "¥1,006,886.07",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 86,
         "closing_fen": 100688607,
         "closing_display": "¥1,006,886.07",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 87,
         "closing_fen": 100688607,
         "closing_display": "¥1,006,886.07",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 88,
         "closing_fen": 100688607,
         "closing_display": "¥1,006,886.07",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 89,
         "closing_fen": 100688607,
         "closing_display": "¥1,006,886.07",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 90,
@@ -743,103 +1013,154 @@
             "amount_display": "−¥45,000.00",
             "amount_short": "−¥45k"
           }
-        ]
+        ],
+        "net_fen": -4500000,
+        "net_display": "−¥45,000.00",
+        "net_short": "−¥45k"
       },
       {
         "day": 91,
         "closing_fen": 96188607,
         "closing_display": "¥961,886.07",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 92,
         "closing_fen": 96188607,
         "closing_display": "¥961,886.07",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 93,
         "closing_fen": 96188607,
         "closing_display": "¥961,886.07",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 94,
         "closing_fen": 96188607,
         "closing_display": "¥961,886.07",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 95,
         "closing_fen": 96188607,
         "closing_display": "¥961,886.07",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 96,
         "closing_fen": 96188607,
         "closing_display": "¥961,886.07",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 97,
         "closing_fen": 96188607,
         "closing_display": "¥961,886.07",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 98,
         "closing_fen": 96188607,
         "closing_display": "¥961,886.07",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 99,
         "closing_fen": 96188607,
         "closing_display": "¥961,886.07",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 100,
         "closing_fen": 96188607,
         "closing_display": "¥961,886.07",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 101,
         "closing_fen": 96188607,
         "closing_display": "¥961,886.07",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 102,
         "closing_fen": 96188607,
         "closing_display": "¥961,886.07",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 103,
         "closing_fen": 96188607,
         "closing_display": "¥961,886.07",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 104,
         "closing_fen": 96188607,
         "closing_display": "¥961,886.07",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 105,
         "closing_fen": 96188607,
         "closing_display": "¥961,886.07",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 106,
         "closing_fen": 96188607,
         "closing_display": "¥961,886.07",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 107,
@@ -854,79 +1175,118 @@
             "amount_display": "¥420,000.00",
             "amount_short": "¥420k"
           }
-        ]
+        ],
+        "net_fen": 42000000,
+        "net_display": "¥420,000.00",
+        "net_short": "¥420k"
       },
       {
         "day": 108,
         "closing_fen": 138188607,
         "closing_display": "¥1,381,886.07",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 109,
         "closing_fen": 138188607,
         "closing_display": "¥1,381,886.07",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 110,
         "closing_fen": 138188607,
         "closing_display": "¥1,381,886.07",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 111,
         "closing_fen": 138188607,
         "closing_display": "¥1,381,886.07",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 112,
         "closing_fen": 138188607,
         "closing_display": "¥1,381,886.07",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 113,
         "closing_fen": 138188607,
         "closing_display": "¥1,381,886.07",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 114,
         "closing_fen": 138188607,
         "closing_display": "¥1,381,886.07",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 115,
         "closing_fen": 138188607,
         "closing_display": "¥1,381,886.07",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 116,
         "closing_fen": 138188607,
         "closing_display": "¥1,381,886.07",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 117,
         "closing_fen": 138188607,
         "closing_display": "¥1,381,886.07",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 118,
         "closing_fen": 138188607,
         "closing_display": "¥1,381,886.07",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 119,
         "closing_fen": 138188607,
         "closing_display": "¥1,381,886.07",
-        "events": []
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
       },
       {
         "day": 120,
@@ -941,10 +1301,26 @@
             "amount_display": "−¥45,000.00",
             "amount_short": "−¥45k"
           }
-        ]
+        ],
+        "net_fen": -4500000,
+        "net_display": "−¥45,000.00",
+        "net_short": "−¥45k"
       }
     ],
     "plan_series": null,
+    "forecast_basis_text": "Expected invoice payments at their due dates and committed funding; overdue payments are excluded.",
+    "forecast_basis": {
+      "scheduled_receipts_counted": true,
+      "overdue_excluded": true,
+      "confirmed_receipts_fen": 0,
+      "confirmed_receipts_display": "¥0.00",
+      "expected_receipts_fen": 168000000,
+      "expected_receipts_display": "¥1,680,000.00",
+      "assumed_repayment_day": null,
+      "assumed_repayment_when": null
+    },
+    "last_read_when": "today",
+    "last_read_day": 0,
     "cash_display": "¥550,000.00",
     "floor_display": "¥300,000.00",
     "lowest_display": "¥300,000.00",
@@ -991,7 +1367,17 @@
       "text": "Advance ¥255,000.00 on the ¥420,000.00 invoice to Foshan Home Retail Co. due in 32 days from Invoice financing (onboarded platform) today; the cash lands in 3 days, not today",
       "event_text": "¥255,000.00 of invoice financing drawn against the Foshan Home Retail Co. invoice. Funds arrive in 3 days.",
       "event_detail": "Financed through Invoice financing (onboarded platform).",
-      "when": "today"
+      "when": "today",
+      "what_changed": "¥255,000.00 of invoice financing drawn against the Foshan Home Retail Co. invoice. Funds arrive in 3 days.",
+      "why_it_matters": "The forecast stays above your minimum.",
+      "why_it_matters_as_of": "now",
+      "what_remains": "Waiting for Invoice financing (onboarded platform) to land the funds in 3 days.",
+      "approval_label": null,
+      "current_decision_state": "Requested; the cash is on its way",
+      "decision_link": {
+        "decision_id": "alert:ALERT-RESERVE-12:v1:plan",
+        "href": "/decisions/alert:ALERT-RESERVE-12:v1:plan"
+      }
     },
     {
       "day": 0,
@@ -1001,7 +1387,17 @@
       "text": "Drew ¥150,000.00 on Bank credit line today",
       "event_text": "¥150,000.00 drawn on the Bank credit line. Cash received today.",
       "event_detail": null,
-      "when": "today"
+      "when": "today",
+      "what_changed": "¥150,000.00 drawn on the Bank credit line. Cash received today.",
+      "why_it_matters": "The forecast stays above your minimum.",
+      "why_it_matters_as_of": "now",
+      "what_remains": "Waiting for Invoice financing (onboarded platform) to land the funds in 3 days.",
+      "approval_label": null,
+      "current_decision_state": "Requested; the cash is on its way",
+      "decision_link": {
+        "decision_id": "alert:ALERT-RESERVE-12:v1:plan",
+        "href": "/decisions/alert:ALERT-RESERVE-12:v1:plan"
+      }
     }
   ],
   "receivables": {

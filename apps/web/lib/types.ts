@@ -808,7 +808,49 @@ export type VerdictView = Displayed<Verdict> & {
   /** The day the evaluation was made and the same as a distance from today. */
   evaluated_day?: Day;
   evaluated_when?: string;
+  /** The Deals workspace in the server's order (Wave 3): what the buyer asks, what it costs, why it matters, what FLOW recommends, the one priced response, the folds. */
+  workspace?: DealWorkspace;
 };
+
+export type WorkspaceSection = "buyer_asks" | "financial_impact" | "why_it_matters" | "recommends" | "priced_response" | "advanced";
+export type AdvancedKey = "parsed_obligations" | "source_text" | "checks" | "formula" | "engine_verdict" | "audit_evidence";
+
+export interface DealWorkspace {
+  order: WorkspaceSection[];
+  buyer_asks: { title: string; asks: { obligation_id: string; type: string; label: string; text: string }[] };
+  financial_impact: {
+    title: string;
+    lines: {
+      obligation_id: string;
+      type: string;
+      label: string;
+      horizon: "IMMEDIATE" | "FORWARD";
+      amount_fen: Fen | null;
+      amount_display: string | null;
+      window_text: string;
+      basis: string;
+    }[];
+    window_months: number;
+    forward_total_fen: Fen;
+    forward_total_display: string;
+    cap_display: string;
+    over_cap: boolean;
+    total_note: string;
+  };
+  why_it_matters: { text: string; reasons: string[] };
+  recommends: { action: BusinessAction; text: string };
+  priced_response: {
+    counter_id: string;
+    label: string;
+    send_scope: string;
+    supplier_cost_display: string;
+    forward_value_display: string;
+    verdict_id: string;
+    state_version: number;
+  } | null;
+  /** The existing top-level fields of the verdict that the page folds, by what the owner calls them. */
+  advanced: { keys: Record<AdvancedKey, string[]> };
+}
 
 export interface NegotiationRound {
   round: number;
@@ -830,6 +872,16 @@ export interface OperationView extends Displayed<OperationResult> {
   event_detail?: string | null;
   /** The decision record the operation belongs to (GET /ledger); null for an operation no record claims. Absent in older recordings. */
   decision_id?: string | null;
+  /** Causality (GET /ledger, Wave 3): what changed, why it matters, what remains. All absent in an older recording. */
+  what_changed?: string | null;
+  /** The cash forecast as of now ("now"), or the entry's own quote for an approval request (null). Never a per-event replay. */
+  why_it_matters?: string | null;
+  why_it_matters_as_of?: "now" | null;
+  what_remains?: string | null;
+  /** On an approval request: "Approval requested" (never "Waiting for your approval", which is today's state), with the decision's state today. */
+  approval_label?: string | null;
+  current_decision_state?: string | null;
+  decision_link?: { decision_id: string; href: string } | null;
 }
 
 export type BuyerProfile = "cooperative" | "hard_line";
@@ -956,7 +1008,30 @@ export type ComparisonRow = Displayed<{
   offset_fen?: Fen | null;
   offset_display?: string | null;
   offset_label?: string | null;
+  /** The comparison contract (Wave 3): the server's group for the row and its heading, the rank (non-null only for the recommended plan and the ranked alternatives), and the router's own position (the Demo funding view keeps that order). */
+  group?: ComparisonGroup;
+  group_text?: string;
+  rank?: number | null;
+  router_order?: number | null;
+  /** When the funds are all available: the day, as a distance from today, and a sentence. Null when it depends on someone else. */
+  arrival_day?: Day | null;
+  arrival_when?: string | null;
+  arrival_text?: string | null;
+  /** For a source that is not available yet: when it is. */
+  available_when?: string | null;
+  /** For a plan that leaves a gap: the amount left uncovered, and the gap that remains after the plan in words. */
+  uncovered_display?: string | null;
+  remaining_gap_fen?: Fen | null;
+  remaining_gap_display?: string | null;
+  remaining_gap_text?: string | null;
+  /** What the cost counts and assumes (the repayment day, the billing period). */
+  basis_text?: string | null;
+  /** Who has to agree before the plan can run ("Needs Foshan Home Retail Co. to agree to pay early"). */
+  consent_text?: string | null;
 };
+
+/** The groups of the comparison, in the server's order: the rows arrive already in it, and a group is never ranked with another. */
+export type ComparisonGroup = "RECOMMENDED" | "ALTERNATIVE" | "CONDITIONAL_ON_BUYER" | "INSUFFICIENT" | "NOT_AVAILABLE_YET" | "BLOCKED";
 
 export type ComparisonRole = "recommended" | "alternative" | "insufficient" | "unavailable" | "blocked";
 
@@ -1004,6 +1079,8 @@ export interface FundingView {
   comparison: ComparisonRow[];
   /** The key of the row whose `role` is "recommended" (the plan the home's next-step card shows); absent from older answers. */
   recommended_key?: string | null;
+  /** One sentence on how the rows are ordered ("The recommended plan first, then the other plans that can run now, cheapest first..."). */
+  comparison_order_text?: string;
 }
 
 export type TrajectoryScenario = "AS_RECEIVED" | "WITH_PLAN";
@@ -1039,12 +1116,30 @@ export interface LedgerView {
   chain_valid: boolean;
   chain_length: number;
   head_hash: string | null;
+  /** The record-chain badge's words ("Record chain checks passed"); null while the log is empty. `chain_scope_text` says what the check covers. */
+  chain_text?: string | null;
+  chain_scope_text?: string;
+  /** The refused section's anchor and the set-aside count: from the books, never from the page. */
+  refusals?: RefusalBlock;
+}
+
+export interface RefusalBlock {
+  anchor_id: string;
+  href: string;
+  count: number;
+  refused_operations: number;
+  security_events: number;
+  set_aside_text: string | null;
+  is_fixture_example: boolean;
+  example: { is_fixture_example: boolean; text: string } | null;
 }
 
 /** GET /audit */
 export interface AuditView {
   events: Displayed<SecurityEvent>[];
   refusals: OperationView[];
+  /** The same refusal block GET /ledger carries (the anchor, the count, the set-aside sentence). */
+  refusal_summary?: RefusalBlock;
   documents: SourceDocument[];
   summary: Displayed<{
     facilities_added: number;
@@ -2116,6 +2211,10 @@ export interface HomeSeriesPoint {
   closing_fen: Fen;
   closing_display: string;
   events: { kind: string; label: string; amount_fen: Fen; amount_display: string; amount_short: string; label_short?: string }[];
+  /** The day's net movement as the server added it (a day with several events is labelled by this, never by its largest component). */
+  net_fen?: Fen;
+  net_display?: string;
+  net_short?: string;
 }
 
 /**
@@ -2195,6 +2294,13 @@ export interface HomeChange {
   event_text?: string;
   /** One more sentence when there is more to say, else null. */
   event_detail?: string | null;
+  what_changed?: string | null;
+  why_it_matters?: string | null;
+  why_it_matters_as_of?: "now" | null;
+  what_remains?: string | null;
+  approval_label?: string | null;
+  current_decision_state?: string | null;
+  decision_link?: { decision_id: string; href: string } | null;
   /** On a part-paid promise's LATE row (F25): the four named facts and the window. Absent on every other row. */
   received_display?: string;
   face_cleared_display?: string;
@@ -2277,6 +2383,21 @@ export interface HomeView {
     /** The baseline projection ("if you do nothing") and the same books with the recommended plan applied. The chart draws these. */
     series: HomeSeriesPoint[];
     plan_series: HomeSeriesPoint[] | null;
+    /** What the forecast counts, in one sentence, and the same as facts. */
+    forecast_basis_text?: string;
+    forecast_basis?: {
+      scheduled_receipts_counted: boolean;
+      overdue_excluded: boolean;
+      confirmed_receipts_fen: Fen;
+      confirmed_receipts_display: string;
+      expected_receipts_fen: Fen;
+      expected_receipts_display: string;
+      assumed_repayment_day: Day | null;
+      assumed_repayment_when: string | null;
+    };
+    /** When the books were last read, as a distance from today ("today"). */
+    last_read_when?: string;
+    last_read_day?: Day;
   };
   next_action: HomeNextAction | null;
   approvals: HomeApproval[];

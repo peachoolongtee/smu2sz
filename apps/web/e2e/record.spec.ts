@@ -40,14 +40,17 @@ test("the steps follow the record: Response ready names the recommendation, a se
   // Read but not checked: the record is RECEIVED, so the line stops after the first step.
   const steps = page.getByTestId("deal-steps");
   await expect(steps).toHaveAttribute("data-state", "RECEIVED");
-  await expect(steps.getByRole("link", { name: "Received" })).toBeVisible();
-  await expect(steps.getByRole("link", { name: /Response ready/ })).toHaveCount(1);
+  await expect(steps).toContainText("Received");
+  await expect(steps).toContainText("Response ready");
+  // The line is quiet text: no step is a link.
+  await expect(steps.getByRole("link")).toHaveCount(0);
   await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
   await expect(steps).toHaveAttribute("data-state", "RESPONSE_READY");
   await expect(steps).toContainText("Response ready (Counter recommended)");
   await expect(page.getByTestId("deal-steps-outcome")).toHaveText("Agreement");
   await expect(steps).not.toContainText("Agreed");
-  // The inbox row says the record's state in the server's words.
+  // The inbox row says the record's state in the server's words (the inbox is one row until it is asked for).
+  await page.getByTestId("inbox-back").click();
   await expect(page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01")).toContainText("Showing below");
 
   await page.locator("#counters").getByTestId("deal-send").click();

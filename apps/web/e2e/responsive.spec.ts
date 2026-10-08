@@ -201,3 +201,37 @@ test("the slide-over chat fits the viewport with a long reply", async ({ page })
   // The composer stays reachable while the reply is long.
   await expect(panel.getByRole("textbox", { name: "Message" })).toBeInViewport();
 });
+
+test("Deals (checked) and Cash on a phone: no sideways scroll, the folded inbox and the comparison fit, every control reaches 44 px", async ({ page }) => {
+  await page.goto("/deals");
+  await page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01").click();
+  await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
+  await expect(page.getByTestId("deal-recommendation")).toHaveText("Counter recommended");
+  await expect(page.getByTestId("inbox-collapsed")).toBeVisible();
+  expect(await overflowX(page), "/deals overflows horizontally").toBeLessThanOrEqual(1);
+  // The workspace order is the same at every width.
+  const tops = await page.evaluate(() => ["deal-selected", "deal-ask", "deal-impact", "deal-recommendation-card", "counters", "deal-advanced"].map((id) => {
+    const el = document.getElementById(id) ?? document.querySelector(`[data-testid="${id}"]`);
+    return el ? el.getBoundingClientRect().top + scrollY : -1;
+  }));
+  expect(tops.every((y) => y >= 0)).toBe(true);
+  expect(tops).toEqual([...tops].sort((a, b) => a - b));
+  await page.goto("/cash");
+  await expect(page.getByTestId("cash-options-list")).toBeVisible();
+  expect(await overflowX(page), "/cash overflows horizontally").toBeLessThanOrEqual(1);
+  const narrow = (page.viewportSize()?.width ?? 1440) < 1024;
+  if (narrow) {
+    for (const [route, ready] of [["/deals", "inbox-collapsed"], ["/cash", "cash-options-list"]] as const) {
+      await page.goto(route);
+      await expect(page.getByTestId(ready)).toBeVisible();
+      const short = await page.evaluate(() =>
+        Array.from(document.querySelectorAll("main a, main button, main summary"))
+          .filter((el) => (el as HTMLElement).offsetParent !== null && !(el.closest("details:not([open])") && el.tagName !== "SUMMARY"))
+          // The horizon pills keep a compact look with a 44 px hit area (covered by the controls test above).
+          .filter((el) => el.getBoundingClientRect().height < 44 && !el.matches("a:not([class*=button]), summary") && !el.closest("[role=group], [role=radiogroup]"))
+          .map((el) => `${el.tagName}:${(el.textContent ?? "").trim().slice(0, 24)}`),
+      );
+      expect(short, `${route}: buttons under 44 px`).toEqual([]);
+    }
+  }
+});

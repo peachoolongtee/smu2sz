@@ -80,7 +80,6 @@ export default function CashPage() {
   const plan = useAsync(async () => (!h ? null : covered ? (snapshot ?? null) : await planFunding({}, lang)), [Boolean(h), covered, Boolean(snapshot), h?.state_version, lang]);
   // When the first breach is also the lowest point it is one fact: one tile, not the same figure and day twice.
   const breachIsWorst = unsafe && h?.cash.first_breach_day === h?.cash.lowest_day;
-  const today = h?.day ?? 0;
   const statusTone = h?.status === "CRITICAL" ? "bad" : h?.status === "SAFE" ? "ok" : "warn";
 
   /** The comparison worth showing: none when a fresh plan on covered books says "no funding needed". */
@@ -96,7 +95,7 @@ export default function CashPage() {
   ) : (
     <>
       {covered && snapshot ? <p className="mb-3 text-xs text-ink-3">{t("fund.snapshot")}</p> : null}
-      <FundingOptions rows={comparison(plan.data)} menu={plan.data.menu} today={today} recommendedKey={h?.next_action?.plan_source === "router" ? "router_optimum" : null} />
+      <FundingOptions rows={comparison(plan.data)} menu={plan.data.menu} recommendedKey={h?.next_action?.plan_source === "router" ? "router_optimum" : null} orderText={plan.data.comparison_order_text} />
       {/* A server that names each row's role has already said so in the alternative's chip, so the grey note would say it twice. */}
       {h?.next_action?.cheaper_option && !plan.data.comparison?.some((c) => c.role) ? (
         <p className="mt-3 text-xs text-ink-3" data-testid="cash-cheaper-option">
@@ -152,6 +151,12 @@ export default function CashPage() {
                   <p className="text-xl font-semibold text-ink" data-testid="cash-headline">
                     {h.headline}
                   </p>
+                  {/* How fresh the conclusion is: the server's own "when" for the read the figures come from. */}
+                  {h.cash.last_read_when ? (
+                    <p className="text-xs text-ink-3" data-testid="cash-read-when">
+                      {t("biz.cash.readWhen", { when: h.cash.last_read_when })}
+                    </p>
+                  ) : null}
                 </div>
                 <p className="mt-1 text-sm text-ink-2">{h.note}</p>
                 {curve ? (
@@ -228,7 +233,7 @@ export default function CashPage() {
           </Card>
         )}
 
-        <Card id="cash-chart" title={t("biz.cash.forecast")} subtitle={t("biz.cash.forecast.sub")}>
+        <Card id="cash-chart" title={t("biz.cash.forecast")} subtitle={h?.cash.forecast_basis_text ?? t("biz.cash.forecast.sub")}>
           {home.error ? <ErrorState error={home.error} onRetry={home.reload} /> : !h ? <LoadingBlock rows={2} /> : <CashForecast h={h} />}
           {/* The debt readings are the forecast's own footer: the same projection, read by month. */}
           {view?.trajectory.months.length ? (

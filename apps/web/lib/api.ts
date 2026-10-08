@@ -91,8 +91,8 @@ export async function getOffer(offerId: string): Promise<OfferView> {
 }
 
 /** POST /offers/{id}/evaluate. `fixtureId` lets the server use the owner-declared costs of a demo fixture. */
-export async function evaluateOffer(offerId: string, fixtureId?: string): Promise<VerdictView> {
-  return isMock ? (await mock()).evaluateOffer(offerId) : (await live()).evaluateOffer(offerId, fixtureId);
+export async function evaluateOffer(offerId: string, fixtureId?: string, lang: "en" | "zh" = "en"): Promise<VerdictView> {
+  return isMock ? (await mock()).evaluateOffer(offerId) : (await live()).evaluateOffer(offerId, fixtureId, lang);
 }
 
 /** POST /negotiate/{offer_id}: bounded rounds with the buyer kernel. */
@@ -126,9 +126,9 @@ export async function getTrajectory(mode: Mode = "CONSERVATIVE", verdict?: Verdi
   return isMock ? (await mock()).getTrajectory(mode, verdict) : (await live()).getTrajectory(mode, verdict);
 }
 
-/** GET /ledger */
-export async function getLedger(): Promise<LedgerView> {
-  return isMock ? (await mock()).getLedger() : (await live()).getLedger();
+/** GET /ledger. `lang` is the language of the chain words and the refusal block (the rows' own sentences are English). */
+export async function getLedger(lang: "en" | "zh" = "en"): Promise<LedgerView> {
+  return isMock ? (await mock()).getLedger() : (await live()).getLedger(lang);
 }
 
 /** GET /audit */

@@ -152,5 +152,72 @@
     "cap_fen": 500000,
     "cap_display": "¥5,000.00",
     "over_cap": false
+  },
+  "workspace": {
+    "order": [
+      "buyer_asks",
+      "financial_impact",
+      "why_it_matters",
+      "recommends",
+      "priced_response",
+      "advanced"
+    ],
+    "buyer_asks": {
+      "title": "What the buyer asks",
+      "asks": []
+    },
+    "financial_impact": {
+      "title": "What it costs you",
+      "lines": [],
+      "window_months": 12,
+      "forward_total_fen": 0,
+      "forward_total_display": "¥0.00",
+      "cap_display": "¥5,000.00",
+      "over_cap": false,
+      "total_note": "The 12-month figure is the forward cost only. The immediate discount is on its own line and the two are not added together."
+    },
+    "why_it_matters": {
+      "text": "Decline recommended.",
+      "reasons": [
+        "Decline recommended."
+      ]
+    },
+    "recommends": {
+      "action": "decline",
+      "text": "Decline recommended"
+    },
+    "priced_response": null,
+    "advanced": {
+      "keys": {
+        "parsed_obligations": [
+          "bound_obligations",
+          "notes"
+        ],
+        "source_text": [
+          "offer_id"
+        ],
+        "checks": [
+          "passed_checks",
+          "violations"
+        ],
+        "formula": [
+          "concession_values",
+          "annualised"
+        ],
+        "engine_verdict": [
+          "outcome",
+          "summary",
+          "summary_when",
+          "required_tier"
+        ],
+        "audit_evidence": [
+          "autonomy",
+          "decision_id",
+          "calc_version",
+          "state_version",
+          "mandate_version"
+        ]
+      }
+    }
   }
 }
