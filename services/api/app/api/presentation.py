@@ -27,7 +27,7 @@ from app.domain.models import (
     Obligation,
     ObligationType,
 )
-from app.domain.money import bp, fmt_pct, fmt_yuan, fmt_yuan_short
+from app.domain.money import bp, fmt_pct, fmt_yuan, fmt_yuan_short, post
 from app.financial.invoices import InvoiceRef, issue_terms
 
 Lang = str  # "en" | "zh"
@@ -185,6 +185,14 @@ _OWNER_LAYER: tuple[tuple[re.Pattern[str], Any], ...] = tuple((re.compile(p), w)
     (r"\bcash stays above the floor\b", "cash stays above your minimum cash reserve"),
     (r"\bthe conservative trajectory\b", "the cash forecast"),
     (r"\bThe conservative trajectory\b", "The cash forecast"),
+    # the owner's signed mandate is "your signed limits"; the version stays, in words
+    (r"\bMandate v(\d+) expires\b", r"Your signed limits (version \1) expire"),
+    (r"\bMandate v(\d+) is valid\b", r"Your signed limits (version \1) are valid"),
+    (r"\bMandate v(\d+) has been revoked\b", r"Your signed limits (version \1) have been revoked"),
+    (r"\bMandate v(\d+)\b", r"Your signed limits (version \1)"),
+    (r"\bmandate v(\d+) limit ([\d.×]+)", r"your signed limit \2 (version \1)"),
+    (r"\bmandate v(\d+), current is v(\d+)", r"your signed limits (version \1), current is version \2"),
+    (r"\bmandate v(\d+)\b", r"your signed limits (version \1)"),
     (r"\bTier 2: the owner applies; zero until committed", "Needs your approval: you apply; counted as zero until committed"),
     (r"\babove the Tier-2 threshold (¥[\d,]+(?:\.\d+)?)", r"above the \1 you allow without your approval"),
     (r"\babove the Tier-2 threshold\b", "above the limit you set for what needs your approval"),
@@ -584,6 +592,22 @@ def leg_words(state: FinancialState, kind: str, facility_id: str | None, receiva
     return f"{kind.replace('_', ' ').capitalize()} {amount}".strip()
 
 
+_KIND_TEXT = {
+    "ACCEPT_OFFER": ("Agreement recorded", "协议已记录"), "RECORD_COMMITMENT": ("Agreement recorded", "协议已记录"),
+    "DRAW_FACILITY": ("Credit line drawn", "信用额度已提款"), "SUBMIT_INVOICE_FOR_FINANCING": ("Invoice financing requested", "已申请发票融资"),
+    "RECEIVE_PAYMENT": ("Payment received", "已收到付款"), "ADVANCE_CLOCK": ("Time passed", "时间已推进"),
+    "REPAY_FACILITY": ("Repayment", "还款"), "APPLY_FOR_FACILITY": ("Facility application", "融资申请"),
+    "COUNTER_OFFER": ("Counter sent", "已发送还价"), "REVOKE_COMMITMENT": ("Agreement revoked", "协议已撤销"),
+    "ADD_FACILITY": ("Facility added", "已添加融资工具"),
+}
+
+
+def kind_text(kind: str, lang: Lang) -> str:
+    """An operation's kind in the owner's words ("Credit line drawn"); the raw `kind` stays beside it for the audit level."""
+    en, zh = _KIND_TEXT.get(kind, (kind.replace("_", " ").capitalize(), kind.replace("_", " ").capitalize()))
+    return t(lang, en, zh)
+
+
 def short_kind(kind: str, lang: Lang) -> str:
     words = {
         "SUBMIT_INVOICE_FOR_FINANCING": ("invoice financing", "发票融资"),
@@ -759,6 +783,31 @@ def economic_effect_text(commitment: Commitment, horizon_days: int | None, lang:
              f"您承诺的条款带来的未来成本：{fmt_yuan(commitment.forward_value_fen)}{window}。")
 
 
+def approve_label(state: FinancialState, commitment: Commitment, lang: Lang) -> str:
+    """The button of an agreement card, naming what the owner signs: "Approve the agreement (0.50% early-payment discount, about
+    ¥2,100.00)", or for terms alone "Approve the agreement (45-day terms)". The discount is the terms' own rate on the portion they cover."""
+    discount = next((o for o in commitment.obligations if o.type == ObligationType.IMMEDIATE_DISCOUNT), None)
+    if discount is not None:
+        portion = discount.base.amount_fen
+        if portion is None:
+            portion = receivable_face(state, discount.base.receivable_id)
+        if discount.rate_bp is not None and portion:
+            rate, money = fmt_pct(bp(discount.rate_bp)), fmt_yuan(post(Fraction(portion * discount.rate_bp, 10_000)))
+            return t(lang, f"Approve the agreement ({rate} early-payment discount, about {money})",
+                     f"批准该协议（{rate} 提前付款折扣，约 {money}）")
+        if discount.amount_fen is not None:
+            return t(lang, f"Approve the agreement ({fmt_yuan(discount.amount_fen)} early-payment discount)",
+                     f"批准该协议（{fmt_yuan(discount.amount_fen)} 提前付款折扣）")
+    ext = next((o for o in commitment.obligations if o.type == ObligationType.TERMS_EXTENSION), None)
+    if ext is not None and ext.target_terms_days is not None:
+        return t(lang, f"Approve the agreement ({ext.target_terms_days}-day terms)", f"批准该协议（{ext.target_terms_days} 天账期）")
+    if ext is not None and ext.days_delta:
+        n = abs(ext.days_delta)
+        return (t(lang, f"Approve the agreement ({n} more days to pay)", f"批准该协议（付款期延长 {n} 天）") if ext.days_delta > 0
+                else t(lang, f"Approve the agreement (paid {n} days sooner)", f"批准该协议（付款期缩短 {n} 天）"))
+    return t(lang, "Approve the agreement", "批准该协议")
+
+
 def agreement_terms(state: FinancialState, commitment: Commitment | None, today: int, lang: Lang = "en", *,
                     pending: bool = True, horizon_days: int | None = None) -> dict[str, Any]:
     """What the owner is asked to agree to, written by the server: `terms_available` (the commitment is found, readable, has
@@ -768,7 +817,7 @@ def agreement_terms(state: FinancialState, commitment: Commitment | None, today:
     Nothing here prices anything."""
     none: dict[str, Any] = {"terms_available": False, "terms_unavailable_reason": None, "terms": [], "counterparty_name": None,
                             "forward_value_display": None, "what_you_agree_to": None, "agreement_fen": None,
-                            "economic_effect_text": None}
+                            "economic_effect_text": None, "approve_label": None}
     if commitment is None:
         return {**none, "terms_unavailable_reason": t(lang, "The agreement this approval refers to could not be found.",
                                                       "找不到此批准所对应的协议。")}
@@ -792,6 +841,7 @@ def agreement_terms(state: FinancialState, commitment: Commitment | None, today:
         return {**base, "terms_unavailable_reason": t(lang, "The terms of the agreement this approval refers to could not be read.",
                                                       "无法读取此批准所对应协议的条款。")}
     return {**base, "terms_available": True, "terms": terms, "agreement_fen": agreement_face_fen(state, commitment),
+            "approve_label": approve_label(state, commitment, lang) if pending else None,
             "what_you_agree_to": ("; " if lang != "zh" else "；").join(terms) + t(lang, ".", "。")}
 
 
@@ -891,7 +941,10 @@ def approval_words(state: FinancialState, op: dict[str, Any], kind: str | None, 
                     "terms_unavailable_reason": ag.get("terms_unavailable_reason"), "terms": list(ag.get("terms") or []),
                     "counterparty_name": agreement_buyer, "forward_value_display": ag.get("forward_value_display"),
                     "economic_effect_text": ag.get("economic_effect_text"),
-                    "what_you_agree_to": ag.get("what_you_agree_to")})
+                    "what_you_agree_to": ag.get("what_you_agree_to"),
+                    "approve_label": ag.get("approve_label") if pending else None,
+                    "why_text": t(lang, "This changes the terms with a buyer, which you keep for yourself.",
+                                  "这会改变与买方的条款，这类决定由您自己保留。")})
     return out
 
 
@@ -907,7 +960,7 @@ def _sentence(text: str) -> str:
     if not text:
         return text
     text = text[0].upper() + text[1:]
-    return text if text[-1] in ".。!?" else text + ("。" if "一" <= text[-1] <= "鿿" else ".")
+    return text if text[-1] in ".。!?" else text + ("。" if any("一" <= ch <= "鿿" for ch in text) else ".")
 
 
 def _stop(text: str, lang: Lang) -> str:
@@ -993,6 +1046,8 @@ def result_words(state: FinancialState, *, kind: str, status: str, payload: dict
     if status == "REFUSED" and approval_status == "APPROVED":
         reason = (message or "").removeprefix("Refused: ").strip().rstrip(".")
         why = business_text(state, reason, today, lang, agreements) if reason else None
+        if why and lang != "zh" and why.startswith("Your "):
+            why = why[:1].lower() + why[1:]  # it follows a colon
         if why:  # an approval or operation id belongs to the audit level (the raw `result_message` keeps it)
             why = _RECORD_ID.sub(lambda m: "" if m.group(0).lstrip().startswith("(") else "this request", why).replace("  ", " ")
         return t(lang, f"You approved it, but it could not run{': ' + why.rstrip('.') if why else ''}. No money moved.",
@@ -1019,6 +1074,26 @@ def result_words(state: FinancialState, *, kind: str, status: str, payload: dict
     else:
         cash = t(lang, f"the cash arrived {when}.", f"资金已于{when}到账。")
     return t(lang, f"{asked} was requested {asked_when}; {cash}", f"{asked}已于{asked_when}提交；{cash}")
+
+
+def decided_headline(*, kind: str, status: str, execution_status: str | None, amount_display: str | None, what: str,
+                     buyer: str | None, lang: Lang) -> tuple[str, str | None, str | None]:
+    """The card of an approval the owner has answered, in the past tense: "You approved ¥155,013.80 of invoice financing.", "Approved,
+    but it did not run: ...", "You declined ...". A refused run also says what to do next (`next_step_text`, `next_step_href`)."""
+    if kind in COMMERCIAL_KINDS:
+        en_subject = f"the agreement with {buyer}" if buyer else "this agreement"
+        zh_subject = f"与{buyer}的协议" if buyer else "这项协议"
+    elif amount_display:
+        en_subject, zh_subject = f"{amount_display} of {what}", f" {amount_display} 的{what}"
+    else:
+        en_subject, zh_subject = f"this {what}", f"这项{what}"
+    stop = "" if en_subject.endswith(".") else "."  # a buyer named "... Co." already ends in one
+    if status == "REJECTED" or execution_status == "DECLINED":
+        return t(lang, f"You declined {en_subject}{stop}", f"您已拒绝{zh_subject}。"), None, None
+    if execution_status == "REFUSED":
+        return (t(lang, f"Approved, but it did not run: {en_subject}{stop}", f"已批准，但未能执行：{zh_subject.strip()}。"),
+                t(lang, "Renew your signed limits, then ask FLOW to try again.", "请续签您的授权，然后让 FLOW 重试。"), "/limits")
+    return t(lang, f"You approved {en_subject}{stop}", f"您已批准{zh_subject}。"), None, None
 
 
 def approval_result_state(*, kind: str, status: str, execution_status: str | None, lands_day: int | None, today: int,
@@ -1739,6 +1814,15 @@ def execution_summary(lang: Lang, today: int, *, family: str, state: str, buyer:
     return " ".join(parts)
 
 
+def lowest_point_words(gap_fen: int, low_day: int, now_fen: int | None, today: int, lang: Lang) -> str:
+    """The after-state of a cure that leaves the reserve short: the gap at the lowest point (the episode's minimum), and today's gap
+    beside it when the shortfall has begun, so the worst point is never read as today's. Both figures are the engine's own."""
+    when = when_text(low_day, today, lang)
+    return t(lang, f"At its lowest point, {when}, cash {'would still be' if low_day >= today else 'was still'} {fmt_yuan(gap_fen)} below your minimum cash reserve"
+                   + (f"; today it is {fmt_yuan(now_fen)} below" if now_fen is not None else "") + ".",
+             f"在最低点（{when}），现金仍比最低现金储备低 {fmt_yuan(gap_fen)}" + (f"；今天低 {fmt_yuan(now_fen)}" if now_fen is not None else "") + "。")
+
+
 def quote_view(fact: Any, state: FinancialState, today: int, quote_day: int, lang: Lang) -> dict[str, Any]:
     """A stored QUOTED fact as the owner reads it: one line per leg (what, amount, cost, rate, when it lands), the total, the
     basis of the price, the after-state and what declining leaves. Every figure is the fact's; nothing is priced here."""
@@ -1782,7 +1866,11 @@ def quote_view(fact: Any, state: FinancialState, today: int, quote_day: int, lan
         after = t(lang, f"Cash stays above your minimum cash reserve for the next {fact.horizon_days} days.",
                   f"未来 {fact.horizon_days} 天现金都保持在您的最低现金储备以上。")
     elif fact.restores_reserve is False and fact.residual_shortfall_fen is not None:
-        if fact.after_first_short_day < today:  # it began in the past: how long, not "from 6 days ago"
+        if fact.after_lowest_day is not None:  # the gap at the lowest point, and today's beside it when this is read the day it was asked
+            shortfall_now = fact.if_decline.shortfall_fen if (fact.if_decline is not None and quote_day == today and fact.alert_day is not None
+                                                              and fact.alert_day <= today) else None
+            after = lowest_point_words(fact.residual_shortfall_fen, fact.after_lowest_day, shortfall_now, today, lang)
+        elif fact.after_first_short_day < today:  # it began in the past: how long, not "from 6 days ago"
             n = today - fact.after_first_short_day
             after = t(lang, f"Cash has stayed {fmt_yuan(fact.residual_shortfall_fen)} below your minimum cash reserve for {n} {'day' if n == 1 else 'days'}.",
                       f"现金已连续 {n} 天比最低现金储备低 {fmt_yuan(fact.residual_shortfall_fen)}。")

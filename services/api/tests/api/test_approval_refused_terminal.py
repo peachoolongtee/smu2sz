@@ -17,7 +17,7 @@ def test_approving_after_the_mandate_expired_is_a_failed_record_that_waits_for_n
     assert after["status"] == "APPROVED" and after["execution"]["status"] == "REFUSED"
     assert after["decision_id"] == acted["decision_id"] and after["decision_state"] == "FAILED"
     text = after["execution"]["summary_text"]
-    assert text == "You approved it, but it could not run: Mandate v1 expired yesterday. No money moved."
+    assert text == "You approved it, but it could not run: your signed limits (version 1) expired yesterday. No money moved."
     assert "declined" not in text.lower() and after["presentation"]["lands_day"] is None
     d = client.get(f"/decisions/{acted['decision_id']}").json()
     assert d["state"] == "FAILED" and d["state_text"] == "Could not run. No money moved" and d["terminal"] is True

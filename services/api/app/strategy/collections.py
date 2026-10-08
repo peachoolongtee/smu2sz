@@ -127,7 +127,8 @@ class ReceivableWorth(Contract):
     net_saving_fen: int
     no_saving: bool  # net_saving_fen <= 0
     net_saving_text: str
-    worth_text: str  # the Receivables worth cell in one string: "Saves ¥1,374.61", "Saves nothing extra now", ...
+    worth_text: str  # the Receivables worth cell in one string: "Saves ¥1,374.61", "Overdue", "Saves nothing extra now", ...
+    overdue_text: str | None = None  # "Overdue" (the short word) when the invoice is past its due day, else None
     action: Action
     action_sentence: str  # at most 25 words
     reason_sentence: str
@@ -137,7 +138,8 @@ class ReceivableWorth(Contract):
 class WorthAnswer(Contract):
     rows: list[ReceivableWorth]  # ranked by net saving, then gross, then due day
     gross_order: list[str]  # the receivable ids by gross saving, then due day
-    top_action: str
+    top_action: str  # the overdue invoice's sentence when any is late, else the top-ranked row's
+    top_action_second: str | None = None  # the savings sentence of the top-ranked row, when an overdue sentence came first
     ranking_note: str
     first_breach_day: int | None
     source_state_version: int
@@ -483,9 +485,10 @@ def _sentences(*, lang: Lang, action: Action, who: str, r: Receivable, day: int,
               "今天收回也不会降低您的融资成本，而且在它之前到期的发票已经够用，现在去催收不会多省什么。"))
 
 
-def _worth_text(lang: Lang, action: Action, net: int, quoted: Ceiling | None) -> str:
-    """The Receivables worth cell as one string, so the page shows no gross figure beside it."""
-    nothing = t(lang, "Saves nothing extra now", "暂无额外节省")
+def _worth_text(lang: Lang, action: Action, net: int, quoted: Ceiling | None, days_late: int = 0) -> str:
+    """The Receivables worth cell as one string, so the page shows no gross figure beside it. An invoice already late says "Overdue"
+    where it would say it saves nothing extra: the saving figure stays in the payload beside it."""
+    nothing = t(lang, "Overdue", "已逾期") if days_late > 0 else t(lang, "Saves nothing extra now", "暂无额外节省")
     if action == "wait" or net <= 0:
         return nothing
     if action == "call_now":
@@ -498,6 +501,14 @@ def _worth_text(lang: Lang, action: Action, net: int, quoted: Ceiling | None) ->
         return t(lang, f"Saves {fmt_yuan(net)} at the {limit} limit; {fmt_yuan(quoted.mid_saving_fen)} if they take {mid}",
                  f"按 {limit} 的上限可省 {fmt_yuan(net)}；若对方接受 {mid}，可省 {fmt_yuan(quoted.mid_saving_fen)}")
     return t(lang, f"Saves {fmt_yuan(net)} if collected", f"收回可省 {fmt_yuan(net)}")
+
+
+def _overdue_sentence(lang: Lang, w: ReceivableWorth) -> str:
+    """"¥291,400.00 from Foshan Home Retail Co. is 2 days late: ask them to pay.": the invoice that is already late, first."""
+    n = w.days_late
+    days = t(lang, f"{n} {'day' if n == 1 else 'days'}", f"{n} 天")
+    return t(lang, f"{fmt_yuan(w.outstanding_fen)} from {w.buyer_name} is {days} late: ask them to pay.",
+             f"{w.buyer_name}的 {fmt_yuan(w.outstanding_fen)} 已逾期 {days}：请催对方付款。")
 
 
 # ---------------------------------------------------------------- the answer
@@ -563,13 +574,19 @@ def receivables_worth(books: Books, mandate: Mandate, *, store: LedgerStore, day
                 due_day=r.due_day, due_when=when_text(r.due_day, day, lang), days_late=days_late, status=r.status,
                 financed=r.status == "FINANCED", effects=effects, gross_saving_fen=gross, ceilings=ceilings,
                 mid_rate_bp=mid_rate, mid_saving_fen=mid_saving, net_saving_fen=net, no_saving=net <= 0, net_saving_text=saving_text(net, lang),
-                worth_text=_worth_text(lang, action, net, quoted), action=action,
+                worth_text=_worth_text(lang, action, net, quoted, days_late),
+                overdue_text=t(lang, "Overdue", "已逾期") if days_late > 0 else None, action=action,
                 action_sentence=sentence, reason_sentence=reason))
     ranked = sorted(rows, key=lambda w: (-w.net_saving_fen, -w.gross_saving_fen, w.due_day, w.receivable_id))
     by_gross = sorted(rows, key=lambda w: (-w.gross_saving_fen, w.due_day, w.receivable_id))
+    late = next((w for w in ranked if w.days_late > 0), None)
+    if late is not None:  # the top sentence is the overdue one; the savings sentence of the top-ranked row comes second
+        top, second = _overdue_sentence(lang, late), (ranked[0].action_sentence if ranked[0].net_saving_fen > 0 else None)
+    else:
+        top, second = (ranked[0].action_sentence if ranked else t(lang, "Nothing is waiting to be collected.", "没有待收的应收款。")), None
     return WorthAnswer(
         rows=ranked, gross_order=[w.receivable_id for w in by_gross],
-        top_action=ranked[0].action_sentence if ranked else t(lang, "Nothing is waiting to be collected.", "没有待收的应收款。"),
+        top_action=top, top_action_second=second,
         ranking_note=t(lang, "Ranked by what collecting each saves you against the cheapest funding plan, net of any "
                              "discount that earns it.",
                        "按收回每一笔相比最便宜的融资方案能为您省多少排序，已扣除为此给出的折扣。"),

@@ -21,12 +21,14 @@ from app.api.presentation import (
     approval_result_state,
     approval_words,
     business_text,
+    decided_headline,
     executed_words,
     find_agreement,
     last_read,
     party_name,
     quote_not_recorded,
     result_words,
+    short_kind,
     t,
     when_text,
 )
@@ -202,6 +204,13 @@ def _approvals_queue(rt, lang: str) -> dict:
             if terms is not None and d["amount_display"] is None:
                 d["amount_display"] = d["presentation"]["amount_display"]  # the agreement's scope, never ¥0.00
             d["presentation"]["reason"] = approval_reason_words(state, a.reason, rt.day, lang)
+            d["presentation"]["next_step_text"] = d["presentation"]["next_step_href"] = None
+            if not pending:
+                (d["presentation"]["headline"], d["presentation"]["next_step_text"],
+                 d["presentation"]["next_step_href"]) = decided_headline(
+                    kind=a.kind or "", status=d["status"], execution_status=d["presentation"]["execution_status"],
+                    amount_display=d["presentation"].get("amount_display") or d["amount_display"], what=short_kind(a.kind or "", lang),
+                    buyer=(terms or {}).get("counterparty_name"), lang=lang)
             d["presentation"]["result_state_text"], d["presentation"]["result_tone"] = approval_result_state(
                 kind=a.kind or "", status=d["status"], execution_status=d["presentation"]["execution_status"],
                 lands_day=d["presentation"]["lands_day"], today=rt.day, lang=lang)

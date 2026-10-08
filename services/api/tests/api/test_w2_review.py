@@ -296,7 +296,7 @@ def test_the_queue_is_chinese_on_request_and_english_by_default(client):
     _act(client)
     en = client.get("/approvals/queue").json()["approvals"][0]
     zh = client.get("/approvals/queue", params={"lang": "zh"}).json()["approvals"][0]
-    assert en["quote"]["after"] != zh["quote"]["after"] and "现金" in zh["quote"]["after"] and "Cash" in en["quote"]["after"]
+    assert en["quote"]["after"] != zh["quote"]["after"] and "现金" in zh["quote"]["after"] and "cash" in en["quote"]["after"]
     assert "现金" in zh["quote"]["if_declined"] and zh["execution"]["summary_text"] == "等待您批准，尚未执行。"
     assert "现金" in zh["presentation"]["if_decline"] and "批准" in zh["presentation"]["headline"]
     assert en["presentation"]["headline"].startswith("Approve")

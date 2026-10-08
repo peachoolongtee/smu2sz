@@ -205,7 +205,7 @@ def test_the_alert_titles_and_details_use_the_owners_words_with_the_right_plural
     assert said("A committed cure exists: DRAW_FACILITY FAC-LINE ¥1.00") == "A funding plan is available: draw on Bank credit line ¥1.00"
     assert said("DSCR headroom below 0.10× in month 2") == "DSCR is within 0.10× of its limit in month 2"
     assert said("DSCR 1.29× against mandate v1 limit 1.25× (headroom 0.04×); months affected: 1.") == (
-        "DSCR 1.29× against mandate v1 limit 1.25× (0.04× above the limit); months affected: 1.")
+        "DSCR 1.29× against your signed limit 1.25× (version 1) (0.04× above the limit); months affected: 1.")
     assert said("DSCR 1.13× against mandate v1 limit 1.25× (headroom −0.12×); months affected: 1.").count("0.12× below the limit") == 1
     assert said("Receivable RCV-A is 1 day(s) past due") .endswith("is 1 day past due")
     assert said("Receivable RCV-A is 2 day(s) past due").endswith("is 2 days past due")
@@ -266,8 +266,8 @@ def test_a_decided_card_says_how_long_the_reserve_has_been_short(client):
     _act(client)
     client.post(f"/approvals/{_queue(client)[0]['id']}", json={"decision": "APPROVE"})
     client.post("/clock/advance", json={"to_day": 40})
-    for lang, want in (("en", "Cash has stayed ¥300,000.00 below your minimum cash reserve for 6 days."),
-                       ("zh", "现金已连续 6 天比最低现金储备低 ¥300,000.00。")):
+    for lang, want in (("en", "At its lowest point, in 2 days, cash would still be ¥300,000.00 below your minimum cash reserve."),
+                       ("zh", "在最低点（2 天后），现金仍比最低现金储备低 ¥300,000.00。")):
         card = client.get("/approvals/queue", params={"lang": lang}).json()["approvals"][0]
         assert card["presentation"]["protects"] == card["presentation"]["residual"]["text"] == want
     home = client.get("/home").json()

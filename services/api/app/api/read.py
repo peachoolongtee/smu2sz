@@ -20,6 +20,7 @@ from app.api.presentation import (
     business_text,
     event_words,
     first_breach_ahead,
+    kind_text,
     last_read,
     live_windows,
     party_name,
@@ -57,7 +58,7 @@ def _op_view(o, state=None, today: int | None = None, commitments=(), decided=fr
     # belongs to no decision (a direct operation with no approval, a clock move, a bank receipt).
     decision = decision_id_for(op if isinstance(op, dict) else {}, o.idempotency_key, commitments,
                                approval_id=res.get("approval_id"))
-    v.update({"decision_id": decision, "seq": o.seq, "entry_hash": o.entry_hash, "prev_hash": o.prev_hash,
+    v.update({"kind_text": kind_text(o.kind, lang), "decision_id": decision, "seq": o.seq, "entry_hash": o.entry_hash, "prev_hash": o.prev_hash,
               "day": res.get("effective_day", op.get("day")), "requested_by": op.get("requested_by"),
               "summary": summary})
     if state is not None and today is not None:
