@@ -54,11 +54,14 @@ class EarlyPayContext:
     order: ExpectedOrder | None
 
 
-def _context_of(state: FinancialState, cp: str, rec: RecurringInvoice | None, day: int) -> Context | EarlyPayContext | None:
+def _context_of(state: FinancialState, cp: str, rec: RecurringInvoice | None, day: int,
+                not_yet_due: bool = False) -> Context | EarlyPayContext | None:
     opens = sorted((r for r in state.receivables if r.counterparty_id == cp and r.status == "OPEN"),
                    key=lambda r: (r.due_day, r.id))
     if rec is None and not opens:
         return None
+    if not_yet_due:  # an early payment on an overdue invoice means nothing: the earliest one still to fall due, if any
+        opens = [r for r in opens if r.due_day >= day] or opens
     orders = sorted((o for o in state.expected_orders if o.counterparty_id == cp and o.start_day >= day),
                     key=lambda o: (o.start_day, o.label))
     order = orders[0] if orders else None
@@ -83,11 +86,12 @@ def context(state: FinancialState, day: int = 0, *, buyer_id: str) -> Context | 
 
 def context(state: FinancialState, day: int = 0, buyer_id: str | None = None) -> Context | EarlyPayContext:
     """Without a buyer id: the buyer with a recurring invoice and an open receivable (golden: BUYER-1, RCV-A).
-    With one: that buyer's single recurring invoice and its earliest open receivable; a buyer with open receivables
+    With one: that buyer's single recurring invoice and its earliest open receivable not yet past due (the earliest open
+    one when every open receivable is overdue); a buyer with open receivables
     and no recurring invoice gets an `EarlyPayContext`; a buyer with neither is refused."""
     if buyer_id is not None:
         recs = [r for r in state.recurring_invoices if r.counterparty_id == buyer_id]
-        found = _context_of(state, buyer_id, recs[0] if len(recs) == 1 else None, day)
+        found = _context_of(state, buyer_id, recs[0] if len(recs) == 1 else None, day, not_yet_due=True)
         if found is None:
             name = next((c.name for c in state.counterparties if c.id == buyer_id), buyer_id)
             raise WhatIfParamError(f"FLOW has no terms or payment lever to value for {name} yet: "

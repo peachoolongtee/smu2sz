@@ -24,6 +24,7 @@ from typing import Literal, NamedTuple
 
 from pydantic import Field
 
+from app.alerts.engine import past_due_invoices
 from app.api.presentation import party_name, t, when_text
 from app.books import Books
 from app.domain.models import (
@@ -421,6 +422,7 @@ class EnvelopeFacts:
     next_terms_passes_with_early_pay: bool
     evaluations: int
     seconds: float
+    past_due: tuple[tuple[int, int], ...] = ()  # (outstanding fen, days late) of this buyer's invoices past due today
 
 
 def wall_of(p: Probe | None, *, ignore_caps: bool = False) -> str | None:
@@ -606,6 +608,10 @@ def envelope_facts(books: Books, mandate: Mandate, *, store: LedgerStore | None 
     except WhatIfParamError:
         return EnvelopeFacts(buyer_id, name, day, version, True, None, 0, 0, False, (), (), (), {}, None, None, False, 0,
                              time.perf_counter() - started)
+    today = max(day, state.as_of_day)
+    late = past_due_invoices(books, today, today + mandate.horizon_days)
+    past_due = tuple(sorted((a.amount_fen or 0, today - int(a.inputs["due_day"])) for a in late
+                            if a.inputs.get("counterparty_id") == buyer_id))
     ranges = ranges_for(ctx, mandate)
     v = _Verifier(books, mandate, trusted_owner_key_hex, day, commitments, ctx, ranges)
     cur = v.cur
@@ -644,7 +650,8 @@ def envelope_facts(books: Books, mandate: Mandate, *, store: LedgerStore | None 
         with_early = v.approved(Setting(next_terms, price=ranges.price[-1], discount=s0.discount, face=s0.face))
     return EnvelopeFacts(
         buyer_id, name, day, version, False, mandate, cur, ctx.receivable.face_fen, bool(ranges.terms), tuple(maxima),
-        tuple(zone_rows), cell_tuple, counter_costs, status_quo, next_terms, with_early, v.evaluations, time.perf_counter() - started)
+        tuple(zone_rows), cell_tuple, counter_costs, status_quo, next_terms, with_early, v.evaluations, time.perf_counter() - started,
+        past_due)
 
 
 # ---------------------------------------------------------------- the answer (words)
@@ -815,11 +822,31 @@ def _primary(facts: EnvelopeFacts, lang: str) -> str:
     return text + t(lang, ".", "。")
 
 
+def _past_due_clause(facts: EnvelopeFacts, lang: str) -> str | None:
+    """Said only when the standing position itself needs the owner and a past-due invoice from this buyer is why."""
+    sq = facts.status_quo
+    if not facts.past_due or sq is None or sq.outcome != Outcome.NEEDS_OWNER_APPROVAL.value or sq.codes:
+        return None
+    who, owed = facts.buyer_name, fmt_yuan(sum(o for o, _ in facts.past_due))
+    n = len(facts.past_due)
+    if n > 1:
+        return t(lang, f"{n} invoices from {who} are past due, so any deal with {who} needs your approval",
+                 f"{who} 有 {n} 张发票已逾期，因此与其做任何交易都需要您批准")
+    late = facts.past_due[0][1]
+    return t(lang, f"the {owed} still owed by {who} is {late} {'day' if late == 1 else 'days'} past due, so any deal with "
+                   f"{who} needs your approval",
+             f"{who} 欠款 {owed} 已逾期 {late} 天，因此与其做任何交易都需要您批准")
+
+
 def _reason(facts: EnvelopeFacts, lang: str) -> str:
-    if not facts.has_terms_lever:
-        return t(lang, "There is no recurring invoice to extend, so only an early payment can be priced.",
-                 "没有可延长的定期发票，所以只能为提前付款估值。")
     clauses: list[str] = []
+    overdue = _past_due_clause(facts, lang)
+    if overdue is not None:
+        clauses.append(overdue)
+    if not facts.has_terms_lever:
+        clauses.append(t(lang, "there is no recurring invoice to extend, so only an early payment can be priced",
+                         "没有可延长的定期发票，所以只能为提前付款估值"))
+        return _sentence(clauses, lang)
     liquid = _lever_of(facts, "terms_budget_ignored")
     if liquid is not None and liquid.beyond is not None:
         b, n = liquid.beyond, liquid.beyond.setting.terms
@@ -846,6 +873,10 @@ def _reason(facts: EnvelopeFacts, lang: str) -> str:
                              f"{what}在不加价时最多只能延长到 {alone.value} 天"))
     if not clauses:
         return t(lang, "No payment-terms step fails inside the range FLOW checks.", "FLOW 检查的范围内，没有哪一档账期被拒绝。")
+    return _sentence(clauses, lang)
+
+
+def _sentence(clauses: list[str], lang: str) -> str:
     text = t(lang, "; ", "；").join(clauses)
     if lang != "zh":
         text = text[0].upper() + text[1:]

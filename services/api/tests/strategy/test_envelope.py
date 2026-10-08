@@ -8,6 +8,7 @@ takes close to a minute, is the one test with `full_grid` in its name, so `-k "n
 from __future__ import annotations
 
 import json
+import os
 import re
 import time
 from collections.abc import Callable
@@ -128,8 +129,10 @@ def zoned(golden: Golden) -> EnvelopeAnswer:
 # ---------------------------------------------------------------- runtime
 
 
+@pytest.mark.skipif(os.environ.get("SKIP_PERF_BENCH") == "1", reason="SKIP_PERF_BENCH=1")
 def test_default_grid_runs_cold_in_under_8_seconds(cold):
     _facts, seconds = cold
+    print(f"\ndefault grid, cold: {seconds:.2f} s (limit 8 s)")
     assert seconds < 8.0, f"the default grid took {seconds:.2f} s cold"
 
 
@@ -423,8 +426,22 @@ def test_day_34_books_no_extension_passes_without_a_price_step(rt_day34, books_d
     # with a price step the engine does pass them (the verifier judges the offer's own effect, not the standing breach)
     assert by[TERMS_WITH_PRICE].maximum == 80
     assert a.primary.startswith("Up to 80-day terms if the price rises 0.95%")
-    # an early payment on the overdue RCV-A is not a lever the verifier can resolve
-    assert by[early_pay_lever(16_280_000)].maximum == 0
+    # the early-pay face is the earliest invoice not yet past due, RI:BUYER-1:2 (¥420,000 due day 47), not the overdue RCV-A
+    assert context(books_day34.state, 34, GOLDEN_BUYER).receivable.id == "RI:BUYER-1:2"
+    assert context(books_day34.state, 34).receivable.id == "RCV-A"  # the default rule is untouched
+    early = by[early_pay_lever(42_000_000)]
+    assert early.maximum == 40 and early.wall == "plan comparison" and early.face_fen == 42_000_000
+    assert early.next_step is not None and early.next_step.package.early_pay_bp == 45
+    assert early.next_step.binding_codes == ["EARLY_PAY_DEARER_THAN_PLAN"]
+    with_early = [p for p in a.packages if p.package.early_pay_bp == 40]
+    assert with_early and all(p.approved and p.package.early_pay_face_fen is None for p in with_early)
+    assert "early payment at up to 0.40% on ¥420,000.00" in a.primary
+    # the overdue invoice is why the standing position needs the owner, and the reason says so
+    assert facts.past_due == ((16_280_000, 2),)
+    assert a.reason.startswith("The ¥162,800.00 still owed by Foshan Home Retail Co. is 2 days past due, so any deal "
+                               "with Foshan Home Retail Co. needs your approval; the ¥5,000.00 budget buys no terms")
+    zh = envelope_answer(facts, "zh")
+    assert zh.reason.startswith("Foshan Home Retail Co. 欠款 ¥162,800.00 已逾期 2 天，因此与其做任何交易都需要您批准；")
     assert a.money == "Without a deal the standing plan costs ¥1,706.10."
     assert all(p.approved for p in a.packages) and not CODE_NAME.search(a.primary + a.reason + a.money)
     assert not DAY_N.search(a.primary + a.reason + a.money)
