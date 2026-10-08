@@ -218,6 +218,9 @@ test("the optional scenes run from More to show and never move the story's point
   await page.goto("/demo");
   await page.getByTestId("story-show-2").click();
   await expect(page).toHaveURL(/\/deals/);
+  // Since Wave 3 the Inbox folds to one row once a deal is selected; the story's offer is the selected one behind "Back to inbox".
+  await expect(page.getByTestId("inbox-collapsed")).toBeVisible();
+  await page.getByTestId("inbox-back").click();
   await expect(page.getByTestId("inbox-msg-EX01")).toHaveAttribute("aria-current", "true");
   await expect(stripOf(page)).toContainText(`${STORY_STEPS}/${STORY_STEPS}`);
 
