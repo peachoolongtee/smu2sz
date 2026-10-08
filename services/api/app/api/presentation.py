@@ -171,7 +171,12 @@ _OWNER_LAYER: tuple[tuple[re.Pattern[str], Any], ...] = tuple((re.compile(p), w)
      "no funding plan restores your minimum cash reserve; the plan that keeps cash at or above zero is:"),
     (r"\bNo committed plan restores the reserve; the cure that keeps cash at or above zero is:",
      "No funding plan restores your minimum cash reserve; the plan that keeps cash at or above zero is:"),
-    (r"\bReserve headroom thin\b", "Cash above your minimum is thin"),
+    (r"\bReserve headroom thin\b", "Cash is close to your minimum"),
+    # a covenant's headroom is the distance to its limit: said as above or below it
+    (r"\(headroom [−-]([\d.]+×)\)", lambda m: f"({m.group(1)} below the limit)"),
+    (r"\(headroom ([\d.]+×|undefined)\)", lambda m: f"({m.group(1)} above the limit)"),
+    (r"\b(DSCR|Leverage) headroom below 0\.10×", r"\1 is within 0.10× of its limit"),
+    (r"restore leverage headroom", "bring leverage back inside its limit"),
     (r"\bCash stays above the floor but only by (¥[\d,]+(?:\.\d+)?)", r"Cash stays above your minimum cash reserve by only \1"),
     (r"\((\d+) day\(s\) under 10% of the floor\)",
      lambda m: f"({m.group(1)} {'day' if m.group(1) == '1' else 'days'} with less than 10% of your minimum cash reserve to spare)"),
@@ -433,10 +438,23 @@ def book_names(state: FinancialState | None) -> list[str]:
     return [*(c.name for c in state.counterparties), *(f.name for f in state.facilities), *(x.label for x in state.flows)]
 
 
+_PLURAL_S = re.compile(r"\b(\d+) ([A-Za-z][A-Za-z-]*(?: [A-Za-z-]+)?)\(s\)")
+
+
+def plural(text: str) -> str:
+    """"1 day(s)" is "1 day" and "15 day(s)" is "15 days": the engine's hedged plural in the right number."""
+    def say(m: re.Match[str]) -> str:
+        return f"{m.group(1)} {m.group(2)}" + ("" if m.group(1) == "1" else "s")
+
+    return _PLURAL_S.sub(say, text)
+
+
 def in_language(text: str | None, lang: Lang, state: FinancialState | None = None) -> str | None:
-    """The owner's English sentence in the page's language: Chinese through the engine-sentence templates (`engine_zh`), English as it is.
-    A sentence no template knows passes through unchanged."""
-    return translate(text, book_names(state)) if lang == "zh" else text
+    """The owner's English sentence in the page's language: Chinese through the engine-sentence templates (`engine_zh`), English with its
+    plurals said right. A sentence no template knows passes through unchanged."""
+    if lang == "zh":
+        return translate(text, book_names(state))
+    return plural(text) if text is not None else None
 
 
 def last_read(today: int, lang: Lang) -> dict[str, Any]:
@@ -1001,6 +1019,30 @@ def result_words(state: FinancialState, *, kind: str, status: str, payload: dict
     else:
         cash = t(lang, f"the cash arrived {when}.", f"资金已于{when}到账。")
     return t(lang, f"{asked} was requested {asked_when}; {cash}", f"{asked}已于{asked_when}提交；{cash}")
+
+
+def approval_result_state(*, kind: str, status: str, execution_status: str | None, lands_day: int | None, today: int,
+                          lang: Lang) -> tuple[str, str]:
+    """One line for what came of an approval, authorization and execution together, and its tone (`warn` while the owner is awaited, `ok`,
+    `info`, `neutral`, `bad`): "Approved, cash arrives in 3 days", "Approved, did not run. No money moved.", "Declined, nothing ran"."""
+    if status == "PENDING":
+        return t(lang, "Waiting for your approval", "等待您批准"), "warn"
+    if status == "REJECTED" or execution_status == "DECLINED":
+        return t(lang, "Declined, nothing ran", "已拒绝，未执行任何操作"), "neutral"
+    if execution_status == "REFUSED":
+        return t(lang, "Approved, did not run. No money moved.", "已批准，但未能执行。资金未动。"), "bad"
+    if execution_status == "DUPLICATE":
+        return t(lang, "Approved, already done", "已批准，此前已执行"), "info"
+    if execution_status != "EXECUTED":
+        return t(lang, "Approved, waiting to run", "已批准，等待执行"), "info"
+    if kind in COMMERCIAL_KINDS:
+        return t(lang, "Approved, agreement recorded", "已批准，协议已记录"), "ok"
+    if kind in _MONEY_KINDS:
+        if lands_day is not None and lands_day > today:
+            when = when_text(lands_day, today, lang)
+            return t(lang, f"Approved, cash arrives {when}", f"已批准，资金将于{when}到账"), "info"
+        return t(lang, "Approved, cash received", "已批准，资金已到账"), "ok"
+    return t(lang, "Approved, done", "已批准，已完成"), "ok"
 
 
 def agreement_words(state: FinancialState, counterparty_id: str, forward_value_fen: int, lang: Lang = "en") -> str:
@@ -1594,16 +1636,34 @@ def business_action_text(code: str, lang: Lang) -> str:
     return t(lang, en, zh)
 
 
-def decision_state_text(family: str, state: str, lang: Lang, *, response: str | None = None) -> str:
+def decision_state_text(family: str, state: str, lang: Lang, *, response: str | None = None, residual: bool = False) -> str:
     """A decision's state in the owner's words. A deal ready for a response says what the verdict recommends ("Acceptable,
-    awaiting agreement" for an acceptable offer, never "Agreed": the agreement words follow the commitment only)."""
+    awaiting agreement" for an acceptable offer, never "Agreed": the agreement words follow the commitment only). A funding that is
+    done while the reserve is still short says so ("Funded, reserve still short"): `residual` is the decision record's own."""
     if family == "DEAL":
         if state == "RESPONSE_READY":
             return business_action_text(response or "cannot", lang)
         en, zh = _DEAL_STATE_WORDS.get(state, (state.replace("_", " ").capitalize(), state))
     else:
+        if residual and state in ("SETTLED", "EXECUTED"):
+            return t(lang, "Funded, reserve still short", "已融资，储备仍有缺口")
         en, zh = _FUNDING_STATE_WORDS.get(state, _DEAL_STATE_WORDS.get(state, (state.replace("_", " ").capitalize(), state)))
     return t(lang, en, zh)
+
+
+def decision_state_tone(state: str, *, awaited: bool, residual: bool) -> str:
+    """The colour of a decision's state, said by the server so no page colours a state itself: `bad` for a request that failed or an early
+    payment that did not arrive; `warn` whenever the owner is awaited or a residual is set; `ok` only for a deal fulfilled or a funding
+    settled with nothing left short; `info` for what is under way; `neutral` for what is closed without news."""
+    if state in ("FAILED", "MISSED"):
+        return "bad"
+    if awaited or residual:
+        return "warn"
+    if state in ("FULFILLED", "SETTLED"):
+        return "ok"
+    if state in ("DECLINED", "NO_DEAL", "EXPIRED", "REVOKED"):
+        return "neutral"
+    return "info"
 
 
 def waiting_text(code: str, party: str, day: int | None, today: int, lang: Lang, *, family: str = "DEAL") -> str:
@@ -1798,6 +1858,27 @@ def option_label(label: str | None, lang: Lang) -> str:
         return ""
     m = re.fullmatch(r"Option ([A-Z])", label)
     return t(lang, label, f"方案 {m.group(1)}") if m else label
+
+
+def funding_lines(state: FinancialState, legs: Sequence[tuple[str, str | None, int, int | None]], cost_fen: int | None, today: int,
+                  lang: Lang, *, past: bool = False) -> list[str]:
+    """What a funding plan would do, one short line per leg and one for its cost, from the plan's own figures. A leg is (kind, facility id,
+    amount in fen, the day its cash lands) with kind DRAW or FINANCE_INVOICE: "Draws ¥149,986.20 on the Bank credit line today",
+    "Requests ¥255,000.00 of invoice financing, arriving in 3 days", "Estimated cost ¥3,113.93". Nothing is priced here."""
+    out: list[str] = []
+    for kind, facility_id, amount, lands in legs:
+        money, fac = fmt_yuan(amount), facility_name(state, facility_id)
+        arrives = lands is None or lands <= today
+        when = when_text(lands if lands is not None else today, today, lang)
+        if kind == "DRAW":
+            out.append(t(lang, f"{'Drew' if past else 'Draws'} {money} on the {fac}" + (" today" if arrives else f", arriving {when}"),
+                         f"{'已' if past else ''}从{fac}提款 {money}，" + ("今天到账" if arrives else f"{when}到账")))
+        else:
+            out.append(t(lang, f"{'Requested' if past else 'Requests'} {money} of invoice financing, arriving {when}",
+                         f"{'已' if past else ''}申请 {money} 的发票融资，{when}到账"))
+    if legs and cost_fen is not None:
+        out.append(t(lang, f"Estimated cost {fmt_yuan(cost_fen)}", f"预计成本 {fmt_yuan(cost_fen)}"))
+    return out
 
 
 def send_scope_text(lang: Lang, label: str | None = None) -> str:

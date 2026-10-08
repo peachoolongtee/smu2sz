@@ -454,7 +454,7 @@ def _zero_title(m: re.Match[str]) -> str:
     return f"若不采取行动，现金将在{when_zh(m['w'])}跌破零"
 
 
-@rule(rf"Cash above your minimum is thin (?P<w>{WHEN})")
+@rule(rf"Cash is close to your minimum (?P<w>{WHEN})")
 def _thin_title(m: re.Match[str]) -> str:
     return f"{when_zh(m['w'])}现金仅略高于最低现金储备"
 
@@ -487,17 +487,17 @@ def _no_facility(m: re.Match[str]) -> str:
     return "没有已承诺的融资工具能解决这个缺口；未承诺的融资工具按零计算"
 
 
-@rule(r"(?P<kind>DSCR|Leverage) (?P<what>breach|headroom below 0\.10×) in month (?P<month>\d+)")
+@rule(r"(?P<kind>DSCR|Leverage) (?P<what>breach|is within 0\.10× of its limit) in month (?P<month>\d+)")
 def _covenant_title(m: re.Match[str]) -> str:
-    what = "已低于限值" if m["what"] == "breach" else "距限值的余量不足 0.10×"
+    what = "已低于限值" if m["what"] == "breach" else "距限值不足 0.10×"
     return f"第 {m['month']} 个月 {m['kind']} {what}"
 
 
 @rule(r"(?P<kind>DSCR|Leverage) (?P<value>[\d.×]+|undefined) against (?P<src>.+?) limit (?P<limit>[\d.×]+) "
-      r"\(headroom (?P<head>[−\-\d.×]+)\); months affected: (?P<months>[\d, ]+)")
+      r"\((?P<head>[\d.×]+|undefined) (?P<dir>above|below) the limit\); months affected: (?P<months>[\d, ]+)")
 def _covenant_detail(m: re.Match[str]) -> str:
     src = re.sub(r"mandate v(\d+)", r"授权 v\1 的", m["src"])
-    return f"{m['kind']} {m['value']}，对照{src}限值 {m['limit']}（余量 {m['head']}）；涉及的月份：{m['months']}"
+    return f"{m['kind']} {m['value']}，对照{src}限值 {m['limit']}（{'高于' if m['dir'] == 'above' else '低于'}限值 {m['head']}）；涉及的月份：{m['months']}"
 
 
 @rule(rf"Clean-down at risk on (?P<fac>{N})")
@@ -942,7 +942,7 @@ _NOTES = {
     "submit today: the invoice is open, buyer-confirmed and not yet due": "今天提交：发票未结清、已获买方确认且尚未到期",
     "Needs your approval: you apply; counted as zero until committed": "需要您批准：由您提出申请；获批前按零计算",
     "decline or counter terms that add debt service; the verifier prices it": "拒绝或还价那些会增加还本付息的条款；核验方会给出价格",
-    "reduce drawn balances to restore leverage headroom": "减少已提取的余额，以恢复杠杆余量",
+    "reduce drawn balances to bring leverage back inside its limit": "减少已提取的余额，把杠杆降回限值以内",
     "repay the line (or refinance a permanent need elsewhere)": "还清额度（或把长期需求转到别处融资）",
     "decide before expiry, or let it lapse": "请在到期前决定，或任其失效",
     "chase the buyer; record the receipt when the money lands": "向买方催收；款项到账后登记回款",

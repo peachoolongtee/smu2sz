@@ -20,7 +20,7 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from app.alerts import Alert, AlertKind, Severity, alerts, reconcile
 from app.api.auth import require_owner
-from app.api.causality import Causality, forecast_of
+from app.api.causality import Causality, forecast_of, mark_changed
 from app.api.decisions import decision_summary, load_context, remaining_links, remaining_task_view
 from app.api.display import displayed
 from app.api.presentation import (
@@ -139,8 +139,8 @@ def _headline(found: list[Alert], mandate: Mandate, traj: Any, horizon: int, tod
         at = next((d.closing_fen for d in traj.days if d.day == breach.day), None)
         # The projection counts funding already requested and in transit (its lot lands in the projection); then the worst
         # point is not "if you do nothing" (R04).
-        worst: str | None = (t(lang, f"Worst point: {fmt_short(low_fen)} {low_when} with the requested funding counted.",
-                               f"计入已申请的融资后，最低点为{low_when}的 {fmt_short(low_fen)}。") if funding_counted else
+        worst: str | None = (t(lang, f"Lowest point: {fmt_short(low_fen)} {low_when} if nothing more is done.",
+                               f"若不再采取其他行动，最低点为{low_when}的 {fmt_short(low_fen)}。") if funding_counted else
                              t(lang, f"Worst point: {fmt_short(low_fen)} {low_when} if you do nothing.",
                                f"若不采取行动，最低点为{low_when}的 {fmt_short(low_fen)}。"))
         if breach.inputs.get("cure_restores_reserve") == "false":
@@ -557,8 +557,8 @@ def next_action(state: FinancialState, obs: list[Any], mandate: Mandate, found: 
             cheaper = {"label": t(lang, " and ".join(words), "，".join(words)), "cost_total_display": fmt_yuan(c.total_cost_fen),
                        "approvals": n, "legs": [f"{x['label']}: {x['display']}" for x in _plan_lines(state, c, lang)]}
             why = t(lang, f"The cheapest option, {fmt_yuan(c.total_cost_fen)} in all{saving}, needs {n} separate approvals; "
-                          f"this one needs one. Both are on Compare options.",
-                    f"最便宜的方案合计 {fmt_yuan(c.total_cost_fen)}{saving}，但需要 {n} 次单独批准；此方案只需一次。两者都在“比较方案”中。")
+                          f"this one needs one. Both are under your funding options.",
+                    f"最便宜的方案合计 {fmt_yuan(c.total_cost_fen)}{saving}，但需要 {n} 次单独批准；此方案只需一次。两者都在“您的融资方案”中。")
         elif alert.kind == AlertKind.RESERVE_BREACH_AHEAD and alert.inputs.get("cure_restores_reserve") == "false":
             why = t(lang, "No committed funding restores the reserve; this is the cheapest way to stay above zero.",
                     "没有已承诺的融资能恢复安全线；这是保持在零以上最便宜的方式。")
@@ -890,6 +890,7 @@ def _changes(state: FinancialState, store: Any, found: list[Alert], today: int, 
         for item in items:
             if "what_changed" not in item:  # a late payment or a landing: the forecast now is its consequence
                 item.update(causality.fields(status="EXECUTED", event_text=item["event_text"], decision_id=None))
+    mark_changed(items)
     return items
 
 

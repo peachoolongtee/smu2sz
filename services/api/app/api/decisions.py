@@ -27,6 +27,7 @@ from app.api.presentation import (
     business_action,
     business_action_text,
     decision_state_text,
+    decision_state_tone,
     event_words,
     execution_summary,
     facility_name,
@@ -294,14 +295,17 @@ def residual_view(ctx: Context, ds: DecisionState, lang: str) -> dict[str, Any] 
 
 def decision_summary(ctx: Context, ds: DecisionState, inp: DecisionInputs, lang: str) -> dict[str, Any]:
     """One decision as a list row. Reused by /decisions, the home's open decisions and the approvals queue."""
+    waiting = waiting_view(ctx, ds, inp, lang)
+    residual = ds.residual is not None
     return {
         "id": ds.decision_id, "family": ds.family, "state": ds.state.value,
-        "state_text": decision_state_text(ds.family, ds.state.value, lang, response=_response_code(ds)),
+        "state_text": decision_state_text(ds.family, ds.state.value, lang, response=_response_code(ds), residual=residual),
+        "state_tone": decision_state_tone(ds.state.value, awaited=waiting["party"] == Party.OWNER.value, residual=residual),
         "terminal": ds.terminal, "headline": _headline(ctx, ds, lang), "counterparty_name": _counterparty(ctx, ds),
         "amount_display": _amount_display(ctx, ds),
         "opened_when": when_text(ds.opened_day, ctx.today, lang) if ds.opened_day is not None else None,
         "updated_when": when_text(ds.updated_day, ctx.today, lang) if ds.updated_day is not None else None,
-        "waiting_for": waiting_view(ctx, ds, inp, lang), "residual": residual_view(ctx, ds, lang),
+        "waiting_for": waiting, "residual": residual_view(ctx, ds, lang),
     }
 
 

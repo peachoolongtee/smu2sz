@@ -91,7 +91,7 @@ def test_a_plan_with_several_legs_keeps_each_legs_reason_and_figures():
 
 def test_alert_sentences_are_said_in_chinese_in_the_owners_words():
     assert _zh("Reserve breach ahead in 12 days") == "12 天后现金将低于最低现金储备"
-    assert _zh("Cash above your minimum is thin in 32 days") == "32 天后现金仅略高于最低现金储备"
+    assert _zh("Cash is close to your minimum in 32 days") == "32 天后现金仅略高于最低现金储备"
     assert _zh("Cash stays above your minimum cash reserve by only ¥15,000.00 in 32 days (15 days with less than 10% of your minimum "
                "cash reserve to spare)") == "32 天后现金仅高出最低现金储备 ¥15,000.00（共 15 天高出的部分不足最低现金储备的 10%）"
     detail = _zh("Projected cash closes at ¥60,000.00 in 12 days, ¥240,000.00 below your minimum cash reserve; the gap peaks at "
@@ -119,7 +119,7 @@ def test_the_owner_layer_terms_replace_the_engines_in_every_business_sentence(cl
     def said(text: str) -> str | None:
         return business_text(state, text, 0, "en")
 
-    assert said("Reserve headroom thin on day 30") == "Cash above your minimum is thin in 30 days"
+    assert said("Reserve headroom thin on day 30") == "Cash is close to your minimum in 30 days"
     assert said("Cash stays above the floor but only by ¥15,000.00 on day 32 (15 day(s) under 10% of the floor).") == (
         "Cash stays above your minimum cash reserve by only ¥15,000.00 in 32 days (15 days with less than 10% of your minimum cash reserve "
         "to spare).")
@@ -195,7 +195,7 @@ def test_the_home_reads_the_same_in_both_languages_with_the_alert_words_in_chine
     en, zh = _both(client, "/home", HOME_RAW)  # day 0: a breach ahead with its plan
     assert zh["warnings"] and all(w["title"] != e["title"] for w, e in zip(zh["warnings"], en["warnings"], strict=True))
     assert zh["next_action"]["detail"].startswith("预计现金将在12 天后降至 ¥60,000.00") and zh["next_action"]["detail"] != en["next_action"]["detail"]
-    assert zh["warnings"][0]["title"] == "32 天后现金仅略高于最低现金储备"
+    assert zh["warnings"][0]["title"] == "32 天后现金仅略高于最低现金储备" and en["warnings"][0]["title"] == "Cash is close to your minimum in 32 days"
     assert "headroom" not in json.dumps(en["warnings"]) and "floor" not in json.dumps(en["warnings"])
     _walk(client, to=2)  # after the deal: changes, a promise and the thin-cash warning
     _both(client, "/home", HOME_RAW)

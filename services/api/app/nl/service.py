@@ -27,9 +27,9 @@ from app.domain.models import (
 )
 from app.domain.ports import LedgerStore
 from app.nl import binding as page
+from app.nl import business, landing, plans, reads
 from app.nl import capabilities as cap
 from app.nl import classifier as clf
-from app.nl import landing, plans, reads
 from app.nl import lexicon as lx
 from app.nl.alerts import alerts_intent, alerts_turn, confirm_cure
 from app.nl.context import NlContext
@@ -132,6 +132,8 @@ def handle(req: NlRequest, *, store: LedgerStore, executor: Executor, day: int, 
         if turn.pending.intent == Intent.NEGOTIATE:
             turn.pending.data["followups"] = _followups(ctx, turn.pending.data.get("verdict_id"))
             turn.pending.data["zero_forward"] = isinstance(ctx, _TurnContext) and ctx.zero_forward  # as it was shown
+    if req.actor == "OWNER":
+        turn = business.rewrite(ctx, turn)  # Business words for the owner's reply when the request asked for them
     if not turn.guarded:
         turn.reply, _ok = ctx.guard(turn.reply, turn.recipient, allow=turn.allow)
     _update_session(session, turn)

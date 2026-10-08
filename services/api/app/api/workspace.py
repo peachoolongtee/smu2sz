@@ -9,22 +9,27 @@ sentence (INVARIANT 13).
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from typing import Any
 
 from app.api.presentation import (
     business_action_text,
     business_text,
     first_breach_ahead,
+    funding_lines,
     obligation_sentence,
     option_label,
+    party_name,
     send_scope_text,
     t,
     when_text,
 )
-from app.domain.models import FinancialState, LedgerEventKind, Mandate
+from app.domain.models import CommitmentStatus, FinancialState, LedgerEventKind, Mandate
 from app.domain.money import fmt_yuan
 
-ORDER = ("buyer_asks", "financial_impact", "why_it_matters", "recommends", "priced_response", "advanced")
+# The mission order: who is asking, what FLOW recommends and the one priced response first, then what is asked, what it costs and why it
+# matters, the agreements already in force, and the folds. The page follows this list.
+ORDER = ("buyer", "recommends", "priced_response", "buyer_asks", "financial_impact", "why_it_matters", "agreements", "advanced")
 
 _LABELS = {
     "IMMEDIATE_DISCOUNT": ("Immediate discount", "立即折扣"),
@@ -64,8 +69,29 @@ def _months(horizon_days: int) -> int:
     return max(1, round(horizon_days * 12 / 365))
 
 
-def build(view: dict[str, Any], *, bundle: Any, state: FinancialState, mandate: Mandate, today: int, lang: str) -> dict[str, Any]:
-    """The workspace for one evaluated offer. `view` is the evaluate view being returned, `bundle` the verifier's bundle."""
+_LIVE_AGREEMENT = {CommitmentStatus.PROPOSED: ("Waiting for your approval", "等待您批准"),
+                   CommitmentStatus.ACCEPTED: ("Accepted, not in force yet", "已接受，尚未生效"),
+                   CommitmentStatus.ACTIVE: ("In force", "已生效")}
+
+
+def send_scope_lines(state: FinancialState, buyer: str, send_plan: Any, today: int, lang: str) -> list[str]:
+    """The lines under "Send this counter": the agreement it records, and the funding the send would run, from the router plan's own legs and
+    cost. No funding line when none would run (the plan is empty, or it cannot run today)."""
+    lines = [t(lang, f"Records the agreement with {buyer} (needs your approval when it changes terms)",
+               f"记录与{buyer}的协议（若改变条款，需要您批准）")]
+    runnable = (send_plan is not None and send_plan.actions and send_plan.executable_now
+                and all(a.kind.value in ("DRAW", "FINANCE_INVOICE") for a in send_plan.actions))
+    if runnable:
+        legs = [(a.kind.value, a.facility_id, a.amount_fen, a.lands_day) for a in send_plan.actions]
+        lines += funding_lines(state, legs, send_plan.total_cost_fen, today, lang)
+    return lines
+
+
+def build(view: dict[str, Any], *, bundle: Any, state: FinancialState, mandate: Mandate, today: int, lang: str,
+          offer: Any = None, commitments: Sequence[Any] = (), send_plan: Any = None) -> dict[str, Any]:
+    """The workspace for one evaluated offer. `view` is the evaluate view being returned, `bundle` the verifier's bundle, `offer` the
+    compiled offer, `commitments` the books' agreements and `send_plan` the router's plan for the gap that would remain if the buyer
+    accepts the recommended counter (what the send would run)."""
     verdict = bundle.verdict
     bound = {o.id: o for o in bundle.bound_obligations}
     months = _months(mandate.forward_concession_horizon_days)
@@ -118,8 +144,19 @@ def build(view: dict[str, Any], *, bundle: Any, state: FinancialState, mandate: 
 
     counters = view.get("counters") or []
     chosen = counters[0] if counters and action == "counter" else None
+    cp = offer.counterparty_id if offer is not None else None
+    buyer_name = party_name(state, cp) or t(lang, "the buyer", "买方")
+    agreements = [{"commitment_id": c.id, "status": c.status.value, "status_text": t(lang, *_LIVE_AGREEMENT[c.status]),
+                   "forward_value_fen": c.forward_value_fen, "forward_value_display": fmt_yuan(c.forward_value_fen),
+                   "text": (t(lang, "; ", "；")).join(obligation_sentence(state, o, today, lang) for o in c.obligations)}
+                  for c in commitments if c.counterparty_id == cp and c.status in _LIVE_AGREEMENT]
     return {
         "order": list(ORDER),
+        "buyer": {"title": t(lang, "Who is asking", "提出方"), "counterparty_id": cp, "name": buyer_name,
+                  "offer_id": offer.offer_id if offer is not None else None,
+                  "received_when": when_text(offer.received_day, today, lang) if offer is not None and offer.received_day is not None else None},
+        "agreements": {"title": t(lang, f"Your agreements with {buyer_name}", f"您与{buyer_name}的协议"), "items": agreements,
+                       "empty_text": t(lang, "No agreement with this buyer is waiting or in force.", "与此买方暂无待批准或已生效的协议。")},
         "buyer_asks": {"title": t(lang, "What the buyer asks", "买方的要求"), "asks": asks},
         "financial_impact": impact,
         "why_it_matters": {"text": " ".join(reasons), "reasons": reasons},
@@ -127,6 +164,7 @@ def build(view: dict[str, Any], *, bundle: Any, state: FinancialState, mandate: 
         "priced_response": ({
             "counter_id": chosen["id"], "label": chosen["label"], "label_text": option_label(chosen["label"], lang),
             "send_scope": send_scope_text(lang, option_label(chosen["label"], lang)),
+            "send_scope_lines": send_scope_lines(state, buyer_name, send_plan, today, lang),
             "supplier_cost_display": chosen["supplier_cost_display"], "forward_value_display": chosen["forward_value_display"],
             "verdict_id": verdict.id, "state_version": view["state_version"],
         } if chosen is not None else None),

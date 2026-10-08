@@ -18,7 +18,7 @@ def _eval(client, fixture: str = "EX01_PACKAGE", lang: str = "en") -> dict:
 
 def test_the_workspace_is_in_the_pages_order(client, rt):
     ws = _eval(client)["workspace"]
-    assert ws["order"] == ["buyer_asks", "financial_impact", "why_it_matters", "recommends", "priced_response", "advanced"]
+    assert ws["order"] == ["buyer", "recommends", "priced_response", "buyer_asks", "financial_impact", "why_it_matters", "agreements", "advanced"]
     assert all(key in ws for key in ws["order"])
 
 

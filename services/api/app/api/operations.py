@@ -18,6 +18,7 @@ from app.api.presentation import (
     COMMERCIAL_KINDS,
     agreement_terms,
     approval_reason_words,
+    approval_result_state,
     approval_words,
     business_text,
     executed_words,
@@ -201,6 +202,9 @@ def _approvals_queue(rt, lang: str) -> dict:
             if terms is not None and d["amount_display"] is None:
                 d["amount_display"] = d["presentation"]["amount_display"]  # the agreement's scope, never ¥0.00
             d["presentation"]["reason"] = approval_reason_words(state, a.reason, rt.day, lang)
+            d["presentation"]["result_state_text"], d["presentation"]["result_tone"] = approval_result_state(
+                kind=a.kind or "", status=d["status"], execution_status=d["presentation"]["execution_status"],
+                lands_day=d["presentation"]["lands_day"], today=rt.day, lang=lang)
             d["presentation"]["result_message"] = (
                 (result_words(state, kind=a.kind or "", status=run.result.status.value, payload=op, day=run.result.effective_day,
                               today=rt.day, lang=lang, approval_status=d["status"], message=run.result.message,
@@ -213,6 +217,9 @@ def _approvals_queue(rt, lang: str) -> dict:
         except Exception:
             log.exception("approval %s could not be presented", a.id)
             d.setdefault("presentation", None)
+        if d.get("presentation") is not None:
+            d["result_state_text"] = d["presentation"].get("result_state_text")
+            d["result_tone"] = d["presentation"].get("result_tone")
         d.update({"decision_id": None, "decision_state": None, "quote": None, "execution": None})
         if ctx is not None and d.get("presentation") is not None:
             try:

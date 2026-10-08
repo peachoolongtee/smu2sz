@@ -226,7 +226,15 @@ def evaluate_offer(offer_id: str, body: EvaluateIn | None = None, lang: str = "e
         },
     })
     # The page's order, server-shaped (the Deals workspace): every line is a field of this view or the engine's own posting, in words.
-    view["workspace"] = build_workspace(view, bundle=bundle, state=state, mandate=mandate, today=rt.day, lang=lang)
+    send_plan = None
+    if view["counters"] and view["business_action"] == "counter":
+        try:  # the router's plan for the gap that would remain if the buyer accepts the recommended counter (what the send would run)
+            books_s = current_books(state, rt.store.commitments())
+            send_plan = plan(books_s.state, books_s.with_(list(v.counters[0].obligations)), mandate)
+        except Exception:
+            logging.getLogger("termsledger.decisions").exception("the send plan could not be read for %s", offer_id)
+    view["workspace"] = build_workspace(view, bundle=bundle, state=state, mandate=mandate, today=rt.day, lang=lang, offer=offer,
+                                        commitments=rt.store.commitments(), send_plan=send_plan)
     return view
 
 

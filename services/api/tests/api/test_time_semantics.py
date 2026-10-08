@@ -175,7 +175,7 @@ def test_with_the_cure_approved_the_headline_says_below_reserve_and_the_worst_po
     home = client.get("/home").json()
     assert home["headline"] == "Below reserve today."
     assert home["note"].startswith("Cash is ¥255k below your ¥300k minimum cash reserve")
-    assert home["worst"] == "Worst point: ¥0.00 in 8 days with the requested funding counted."  # R04: not "if you do nothing"
+    assert home["worst"] == "Lowest point: ¥0.00 in 8 days if nothing more is done."  # R04: not "if you do nothing"
     assert home["cash"]["below_reserve_today"] is True and home["cash"]["first_breach_when"] == "today"
     assert any(d.startswith("Payroll of") for d in home["cash"]["drivers"])
     lang = client.get("/home?lang=zh").json()

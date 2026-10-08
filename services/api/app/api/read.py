@@ -11,7 +11,7 @@ from fastapi.responses import PlainTextResponse
 
 from app.alerts import reconcile
 from app.api.auth import require_owner
-from app.api.causality import Causality, chain_fields, forecast_of, refusal_block
+from app.api.causality import Causality, chain_fields, forecast_of, mark_changed, refusal_block
 from app.api.decide import _counter_allow
 from app.api.decisions import load_context
 from app.api.display import displayed
@@ -171,9 +171,11 @@ def get_ledger(lang: str = "en") -> dict:
         causality = Causality(ctx, _forecast_now(rt, state, mandate, commitments, today) if ops else None, today, lang)
         refused, events = _refusal_counts(rt, ops)
         chain_valid = rt.store.verify_chain()
+        views = [_op_view(o, state, rt.day, commitments, decided, agreements, live, lang, causality) for o in ops]
+        mark_changed(views)
         return {
             "commitments": [displayed(json.loads(c.model_dump_json())) for c in commitments],
-            "operations": [_op_view(o, state, rt.day, commitments, decided, agreements, live, lang, causality) for o in ops],
+            "operations": views,
             "chain_valid": chain_valid,
             "chain_length": len(ops),
             "head_hash": ops[-1].entry_hash if ops else None,
