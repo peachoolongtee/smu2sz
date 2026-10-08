@@ -94,6 +94,12 @@ test("the recordings carry the server's strings the pages show, and no 'day N' i
     }
   }
   assert.equal(recording("worth_day34").rows[0].action, "call_now");
+  // The offer row leads with the limit and names the lower rate as the buyer's choice; the wait row says it in one sentence.
+  assert.equal(recording("worth_day0").rows[0].worth_text, "Saves ¥86.16 at the 0.85% limit; ¥1,250.06 if they take 0.40%");
+  assert.match(recording("worth_day0").rows[0].reason_sentence, /^At the 0\.85% limit it saves you ¥86\.16 against the cheapest funding plan; at 0\.40% ¥1,250\.06\. /);
+  const wait = recording("worth_day34").rows.find((r) => r.action === "wait");
+  assert.equal(wait.worth_text, "Saves nothing extra now");
+  assert.equal(wait.reason_sentence, "Collected today it would save you ¥1,706.10 and clear the shortfall, but the invoices due before it already cover what you need, so chasing it adds nothing.");
 });
 
 test("the envelope recordings are BUYER-1's, carry the server's sentences and the zone, and say no 'day N'", () => {
@@ -109,6 +115,7 @@ test("the envelope recordings are BUYER-1's, carry the server's sentences and th
   assert.match(day0.primary, /55-day/);
   assert.match(day0.primary, /0\.85%/);
   assert.equal(day0.levers.length, 6);
+  assert.match(day0.reason, /^60 days without an early payment leaves a shortfall in 47 days that no fix covers; the ¥5,000\.00 budget buys no terms without a price rise\.$/);
   // The lever table, the package lines and the zone rows are the server's strings: the card composes none of them.
   assert.deepEqual(day0.levers.map((l) => l.maximum_display), ["45 days", "55 days", "55 days, price up 0.30%", "0.70% on ¥420,000.00", "0.85% on ¥257,200.00", "1.25%"]);
   assert.equal(day0.levers[0].next_step_sentence, "50 days: over your limits; its funding cannot run today");
@@ -116,6 +123,7 @@ test("the envelope recordings are BUYER-1's, carry the server's sentences and th
   assert.ok(day0.packages.some((p) => p.summary === "55-day terms · price up 0.25% · rebate 0.60%"));
   assert.deepEqual(day0.zone.slice(0, 5).map((z) => z.lowest_price_words), ["no price rise needed", "no price rise needed", "no price rise needed", "no price rise needed", "0.10%"]);
   assert.equal(day0.zone.at(-1).lowest_price_words, "none works");
+  assert.equal(day0.zone.at(-1).min_price_bp, null);
   for (const name of ["envelope_day0", "envelope_day34", "envelope_day34_after"]) {
     const e = recording(name);
     for (const l of e.levers) for (const text of [l.maximum_display, l.wall_words ?? "", l.next_step_sentence]) assert.doesNotMatch(text, /\bday \d|[A-Z]{2,}_[A-Z]+/);
@@ -129,6 +137,8 @@ test("the envelope recordings are BUYER-1's, carry the server's sentences and th
 test("the Deals card renders the server's lever, package and zone strings and composes none", () => {
   const card = source("components/deals/before-they-ask.tsx");
   for (const field of ["maximum_display", "wall_words", "next_step_sentence", "summary", "lowest_price_words"]) assert.match(card, new RegExp(`\\.${field}\\b`), field);
+  // Where no terms work the counter-price column shows a dash; the rule price stays in the payload.
+  assert.match(card, /z\.min_price_bp === null \? "—" : \(z\.rule_price_display \?\? "-"\)/);
   assert.doesNotMatch(card, /biz\.strategy\.envelope\.(days|terms|maxWithPrice|priceUp|earlyPay|earlyOn|rebate|notApproved|noStep)\b/);
   assert.doesNotMatch(source("lib/live/index.ts"), /status === 422/);
 });
@@ -151,6 +161,8 @@ test("the Deals card says it is the most the owner can give, labels the figure a
     '"biz.strategy.envelope.packages": "Within your limits"',
     '"biz.strategy.envelope.zone": "Terms and price table"',
     '"biz.strategy.envelope.zone": "账期与价格表"',
+    '"biz.strategy.envelope.zone.counter": "Price that covers the cost"',
+    '"biz.strategy.envelope.zone.counter": "覆盖成本的价格"',
   ]) assert.ok(dictionary.includes(line), line);
   const card = source("components/deals/before-they-ask.tsx");
   assert.match(card, /<span className="text-ink-2">\{` · \$\{p\.flags\.join/);

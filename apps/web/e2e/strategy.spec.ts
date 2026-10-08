@@ -189,6 +189,9 @@ test.describe("desktop", () => {
     await expect(zone.getByTestId("envelope-zone-row").nth(3)).toContainText("no price rise needed");
     await expect(zone).toContainText("0.25%");
     await expect(zone).toContainText("none works");
+    // Where no terms work the counter-price column shows a dash, not the rule price; the column is named for what it holds.
+    await expect(zone).toContainText("Price that covers the cost");
+    await expect(zone.getByTestId("envelope-zone-row").last().locator("td").nth(1)).toHaveText("—");
     await expect(zone).not.toContainText("0.00%");
 
     // Prose rules: the owner's words, no engine day numbers, no brand fill added.
