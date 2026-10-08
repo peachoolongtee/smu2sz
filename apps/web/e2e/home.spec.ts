@@ -36,19 +36,6 @@ async function advanceTo34(page: Page) {
   await page.goto("/");
 }
 
-/** The state pill of an operation row must carry the warning look, never the success look. */
-async function expectWaitingNotSuccess(row: ReturnType<Page["getByTestId"]>) {
-  await expect(row).toHaveAttribute("data-status", "PENDING_APPROVAL");
-  const pill = row.getByTestId("op-state");
-  await expect(pill).toHaveAttribute("data-state", "PENDING_APPROVAL");
-  await expect(pill).toContainText("Waiting for your approval");
-  await expect(pill.locator(":scope > span")).toHaveClass(/text-warn-fg/);
-  await expect(pill.locator(":scope > span")).not.toHaveClass(/text-ok-fg/);
-  await expect(row).not.toContainText("Executed");
-  // The status and its link; the approval's number is on the approval card only.
-  await expect(row.getByTestId("op-waiting")).toHaveText("Open the approval card");
-}
-
 test("the Business home answers safe, do and cost on the opening books, without a demo control", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByTestId("home-status")).toHaveAttribute("data-status", "ACTION_NEEDED");
@@ -216,9 +203,12 @@ test("day 34: the fix needs approval; queuing it from the home runs nothing and 
 
   await expect(page.getByTestId("fix-open-ALERT-RESERVE-42")).toHaveText("Queue it for my approval");
   await runPlan(page, "ALERT-RESERVE-42");
-  const op = page.getByTestId("fix-result").getByTestId("chat-op-SUBMIT_INVOICE_FOR_FINANCING");
-  await expectWaitingNotSuccess(op);
+  // The agent's answer is not a card of its own when all that happened is "it waits for your approval": the next step's tile says that
+  // once (with the link), the decision row says the question once, and Recent changes keeps its row. The operation's tier, sequence
+  // and hash are under "Audit details" on the approval card (approvals.spec.ts and below).
+  await expect(page.getByTestId("fix-result")).toHaveCount(0);
   await expect(page.getByTestId("alert-waiting-ALERT-RESERVE-42")).toHaveText(/^Waiting for your approval\s*Open the approval card$/);
+  await expect(page.getByTestId("alert-approval-link-ALERT-RESERVE-42")).toHaveText("Open the approval card");
   await expect(page.getByTestId("approvals-badge")).toContainText("1 approval waiting");
   await expect(page.getByTestId("fix-open-ALERT-RESERVE-42")).toHaveCount(0);
   // Needs your decision: the question, the cost and the landing day, and a link to the card.
@@ -232,23 +222,6 @@ test("day 34: the fix needs approval; queuing it from the home runs nothing and 
   await expect(decision).toContainText("lands in 3 days");
   await expect(page.getByTestId("home-change-WAITING")).toBeVisible();
   await expect(page.getByTestId("home-in-transit")).toHaveCount(0);
-  // The agent's answer and "Recent changes" say the queued cure in the owner's words: the signed limit, days from today, never "day N".
-  // Level 1 is the business sentence and the status pill; the tier, sequence, operation id and hash are under "Audit details".
-  // The agent's answer says it once, as a status with a link and no sentence; the question is on the decision card and in the recent changes.
-  await expect(op.getByTestId("op-sentence")).toHaveCount(0);
-  await expect(op.getByTestId("op-waiting")).not.toContainText("APR-");
-  await expect(op.getByTestId("op-approval-link")).toHaveText("Open the approval card");
-  await expect(page.getByTestId("fix-result")).not.toContainText("Nothing has run yet");
-  await expect(page.getByTestId("fix-result")).not.toContainText("0 refused");
-  await expect(op).not.toContainText("what the agent may borrow alone");
-  await expect(op.getByText("Tier 2")).toBeHidden();
-  await expect(op.getByTestId("op-raw")).toBeHidden();
-  await op.getByTestId("op-audit").locator("> summary").click();
-  await expect(op.getByTestId("op-raw")).toContainText("(from in 3 days to in 13 days)");
-  await expect(op.getByTestId("op-audit")).toContainText("Tier 2");
-  await expect(op.getByTestId("op-audit")).toContainText(/seq|Sequence|\b7\b/i);
-  await expect(op.getByTestId("op-audit")).toContainText(/[0-9a-f]{8}/);
-
   await expect(page.getByTestId("home-change-WAITING")).toContainText("limit you signed");
   // The pending approval is spelled out twice on the page, not four times: the decision card and the recent changes.
   const shown = await page.locator("main").innerText();
@@ -277,10 +250,10 @@ test("day 34: the approval card is a question with the cost, the landing day and
   await expect(card.getByTestId("approval-after")).toContainText("for the next 120 days");
   await expect(card).toContainText("If you decline");
   // No day number anywhere on the card as the owner first sees it (the executor's own sentence is an audit detail, below).
-  expect(await proseOf(page)).not.toMatch(/\bday \d/i);
+  expect(await proseOf(page, ["[data-testid^=\"approval-detail-\"]"])).not.toMatch(/\bday \d/i);
   // The ids and the tier are audit details, closed by default.
-  await expect(card.getByTestId("approval-detail-APR-000001")).toHaveCount(0);
-  await card.getByTestId("approval-toggle-APR-000001").click();
+  await expect(card.getByTestId("approval-detail-APR-000001")).toBeHidden();
+  await card.getByTestId("approval-toggle-APR-000001").locator("> summary").click();
   await expect(card.getByTestId("approval-detail-APR-000001")).toContainText("Tier 2");
   await expect(card.getByTestId("approval-detail-APR-000001")).toContainText("alert:ALERT-RESERVE-42:v7:0");
 
