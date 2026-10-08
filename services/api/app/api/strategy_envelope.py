@@ -51,7 +51,7 @@ def _remember(key: str, facts: EnvelopeFacts) -> None:
 
 
 @router.get("/buyers/{buyer_id}/envelope")
-def get_envelope(buyer_id: str, zone: Literal[0, 1] = Query(0), lang: Literal["en", "zh"] = Query("en")) -> dict[str, Any]:
+def get_envelope(buyer_id: str, zone: int = Query(0, ge=0, le=1), lang: Literal["en", "zh"] = Query("en")) -> dict[str, Any]:
     require_feature("envelope")
     rt = get_runtime()
     with rt.lock:  # read the books, the mandate, the day and the commitments together; the sweep runs outside the lock

@@ -121,20 +121,9 @@ export const live = {
   /** GET /receivables/worth (flag `collections_worth`). Null when the feature is off or absent. */
   getReceivablesWorth: (lang: "en" | "zh") => nullWhenOff(() => http<ReceivablesWorthView>("GET", `/receivables/worth?lang=${lang}`)),
 
-  /**
-   * GET /buyers/{buyer_id}/envelope (flag `envelope`). Null when the feature is off or the buyer is unknown. The zone is a detail
-   * of the answer, not the answer: where the server refuses the `zone` parameter (422) the plain answer is read instead.
-   */
+  /** GET /buyers/{buyer_id}/envelope (flag `envelope`). Null when the feature is off or the buyer is unknown. The zone is a detail of the answer, read only when asked. */
   getEnvelope: (buyerId: string, lang: "en" | "zh", zone = false) =>
-    nullWhenOff(async () => {
-      const read = (z: boolean) => http<EnvelopeView>("GET", `/buyers/${enc(buyerId)}/envelope?lang=${lang}${z ? "&zone=1" : ""}`);
-      try {
-        return await read(zone);
-      } catch (e) {
-        if (zone && e instanceof ApiError && e.status === 422) return read(false);
-        throw e;
-      }
-    }),
+    nullWhenOff(() => http<EnvelopeView>("GET", `/buyers/${enc(buyerId)}/envelope?lang=${lang}${zone ? "&zone=1" : ""}`)),
 
   /** POST /nl. The owner channel sends X-Owner-Token. A buyer turn never carries the owner token; in a demo build it
    * sends the buyer's published channel key (X-Counterparty-Key), otherwise nothing, and the API treats it as a proposal. */
