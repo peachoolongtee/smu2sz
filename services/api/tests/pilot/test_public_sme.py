@@ -146,3 +146,25 @@ def test_the_three_strategy_routes_answer_200_with_the_flags_on(api: TestClient)
     worth = api.get("/receivables/worth")
     assert worth.status_code == 200, worth.text
     assert worth.json()["top_action"] and len(worth.json()["rows"]) >= 4
+
+
+def test_envelope_of_buyer_a_on_90_day_terms_is_scanned_to_100_and_the_zone_has_the_rows(runtime: Runtime) -> None:
+    """The envelope's terms range runs two steps past the terms in force (map #58, ticket #64): Buyer A's 90 days were the
+    range's own edge, so the first reading said "no longer payment terms" of the range, not of the books."""
+    from app.books import books_from_store
+    from app.strategy.envelope import envelope_answer, envelope_facts
+
+    facts = envelope_facts(books_from_store(runtime.store), runtime.store.get_mandate(), store=runtime.store, day=runtime.day,
+                           buyer_id="BUYER-A", zone=True, trusted_owner_key_hex=runtime.owner_key_hex,
+                           commitments=tuple(runtime.store.commitments()))
+    a = envelope_answer(facts, "en")
+    assert a.refused is None and facts.current_terms == 90
+    assert [z.terms_days for z in a.zone][-3:] == [90, 95, 100]
+    terms = {lv.key: lv for lv in a.levers if lv.key.startswith("terms")}
+    assert set(terms) == {"terms_alone", "terms_budget_ignored", "terms_with_price"}
+    # every terms lever passes both new steps; the engine finds no wall inside the range, so each ends at its top
+    assert all(lv.maximum == 100 and lv.confirmed and lv.wall is None and lv.next_step is None for lv in terms.values())
+    assert {p.package.terms_days for p in a.packages} == {90, 95, 100}
+    assert a.primary == ("You can live with: up to 100-day terms (the most FLOW checks), or early payment at up to 0.10% "
+                         "on ¥5,397,202.57; a rebate up to 1.50%.")
+    assert envelope_answer(facts, "zh").primary.startswith("您能接受的范围：账期最长 100 天（FLOW 检查的上限），或提前付款")

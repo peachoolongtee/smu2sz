@@ -137,6 +137,13 @@ terms · …" because the grid's minimum stands in for terms in force; the backt
 the APR cap on every ceiling (the differential and a unit test do); BUYER-2 has no expected order on the golden books, so
 the rebate-only sentence appears only on books like the test's; the zh sentences await a native reader.
 
+Two limitations the public-record fixture (`fixtures/scenarios/public_sme.json`, map #58) exposed: supplier payments by
+endorsed bank-acceptance bills are a non-cash flow that the engine treats as cash (the filing's purchases line is far below
+the cost of materials for that reason), so the books' supplier outflows are larger and earlier than the real cash; and the
+public filing states no credit terms, so that fixture's 60-, 90- and 76-day terms are calibrated from surveys, not read from
+the filing. The envelope's terms range now runs two steps past the terms in force (a buyer on 90-day terms is scanned to
+100), where the what-if sandbox's range still stops at 90.
+
 ## 9. Remaining UX debt (for Wave 8, the Impeccable finish)
 
 The phone tab bar and the Ask FLOW button overlap row text in full-page captures; the Action column is a paragraph inside a

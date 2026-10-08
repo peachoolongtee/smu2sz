@@ -168,11 +168,13 @@ every month, DSCR 9.3×. Marginal cost of funds 3.00 % (FAC-LINE); break-even ea
 
 **The three routes (day 0, English; all 200).**
 
-- `GET /buyers/BUYER-A/envelope` (what can be offered to the largest customer): "You can live with: early payment at up
-  to 0.10% on ¥5,397,202.57; a rebate up to 1.50%; no longer payment terms." Reason: "No payment-terms step fails
-  inside the range FLOW checks." Money: "Without a deal your current funding plan costs ¥8,094.96." (The sweep's range
-  ends at 90 days, which is Buyer A's current term, so "no longer payment terms" is the range's edge, not a wall; the
-  concession budget of ¥100,000 is not what binds.)
+- `GET /buyers/BUYER-A/envelope` (what can be offered to the largest customer): "You can live with: up to 100-day terms
+  (the most FLOW checks), or early payment at up to 0.10% on ¥5,397,202.57; a rebate up to 1.50%." Reason: "No
+  payment-terms step fails inside the range FLOW checks." Money: "Without a deal your current funding plan costs
+  ¥8,094.96." (The envelope's terms range runs two 5-day steps past the terms in force, so Buyer A's 90 days are scanned
+  to 100; 95 and 100 both pass with no price rise, so 100 is the range's top, not a wall. The first reading, taken when
+  the range ended at 90, said "no longer payment terms": true of the range, not of the books. The concession budget of
+  ¥100,000 is not what binds.)
 - `GET /cash/price-curve`: "Cash in the next 24 days saves you ¥18.90 of funding cost per ¥10,000 (0.19%); after that,
   earlier cash saves nothing." Bands: days 0–24 ¥18.90 (19 bp), days 25–120 ¥0.
 - `GET /receivables/worth` (who to chase): "Call Other buyers (aggregate) today for the ¥7,500,000.00: it saves you
