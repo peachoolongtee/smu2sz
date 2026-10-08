@@ -187,6 +187,7 @@ def check_worth(books: Books, mandate: Mandate, rt: Runtime, day: int) -> tuple[
         answer.rows, key=lambda w: (w.days_late <= 0, -w.outstanding_fen, w.due_day, w.receivable_id))]
     net_order = [w.receivable_id for w in answer.rows]
     stats = {"rows": len(answer.rows), "ceilings": ceilings, "actions": Counter(w.action for w in answer.rows),
+             "overdue": sum(w.days_late > 0 for w in answer.rows), "day": day,
              "comparable": len(answer.rows) >= 2, "order_differs": len(answer.rows) >= 2 and net_order != amount_order}
     return answer, bad, stats
 
@@ -316,10 +317,12 @@ def replay(quick: bool, collections: Section, curve: Section) -> None:
     transport = _load_runner().InProc()
     memo: dict[str, Analysis] = {}
     actions: Counter[str] = Counter()
+    days: set[int] = set()
     slowest: list[tuple[float, str, int]] = []
     collections.counts.update({"scenarios": len(scenarios), "turns": 0, "distinct_book_states": 0, "rows_checked": 0,
                                "ceilings_checked": 0, "turns_with_two_or_more_rows": 0,
-                               "net_order_differs_from_amount_order": 0, "turns_without_rows": 0, "non_200_turns": 0})
+                               "net_order_differs_from_amount_order": 0, "turns_without_rows": 0, "non_200_turns": 0,
+                               "overdue_rows": 0, "max_rows_in_a_turn": 0})
     curve.counts.update({"scenarios": len(scenarios), "turns": 0, "distinct_book_states": 0, "bands_checked": 0,
                          "band_end_checks": 0, "flat_turns": 0, "varies_bands": 0})
     try:
@@ -351,17 +354,19 @@ def replay(quick: bool, collections: Section, curve: Section) -> None:
                     collections.seconds += a.worth_seconds
                     curve.seconds += a.curve_seconds
                     slowest.append((a.worth_seconds + a.curve_seconds, scn["id"], n))
-                _record(scn["id"], n, a, collections, curve, actions)
+                _record(scn["id"], n, a, collections, curve, actions, days)
             print(f"[{i}/{len(scenarios)}] {scn['id']}: {len(turns)} turns, {fresh} new book states, "
                   f"{time.perf_counter() - t_scn:.1f}s", file=sys.stderr, flush=True)
     finally:
         set_runtime(None)
     collections.counts["actions"] = dict(sorted(actions.items()))
+    collections.counts["days_covered"] = sorted(days)
     collections.counts["slowest_turns"] = [{"scenario": s, "turn": n, "seconds": round(t, 2)}
                                            for t, s, n in sorted(slowest, reverse=True)[:5]]
 
 
-def _record(scn: str, n: int, a: Analysis, collections: Section, curve: Section, actions: Counter[str]) -> None:
+def _record(scn: str, n: int, a: Analysis, collections: Section, curve: Section, actions: Counter[str],
+            days: set[int]) -> None:
     collections.bump("turns")
     curve.bump("turns")
     if a.worth_error is not None:
@@ -376,6 +381,9 @@ def _record(scn: str, n: int, a: Analysis, collections: Section, curve: Section,
         collections.bump("turns_with_two_or_more_rows", int(s["comparable"]))
         collections.bump("net_order_differs_from_amount_order", int(s["order_differs"]))
         actions.update(s["actions"])
+        days.add(s["day"])
+        collections.bump("overdue_rows", s["overdue"])
+        collections.counts["max_rows_in_a_turn"] = max(collections.counts["max_rows_in_a_turn"], s["rows"])
     if a.curve_error is not None:
         curve.fail(scn, n, "price_curve", a.curve_error)
     else:
@@ -402,6 +410,7 @@ def differential() -> Section:
     oracle = json.loads(ORACLE.read_text(encoding="utf-8"))["books"]
     counts: Counter[str] = Counter()
     expected: list[str] = []
+    invariants: list[str] = []
     rt0 = _runtime()
     rt34 = _runtime()
     _replay_to_day34(rt34)
@@ -413,9 +422,16 @@ def differential() -> Section:
         def bad(figure: str, message: str, _name: str = name) -> None:
             sec.fail(_name, 0, figure, message)
 
-        answer = receivables_worth(books, mandate, store=rt.store, day=which)
-        curve = price_curve(books, mandate, store=rt.store, day=which)
+        answer, worth_bad, worth_stats = check_worth(books, mandate, rt, which)  # the replay's invariants, on these books
+        curve, curve_bad, curve_stats = check_curve(books, mandate, rt, which)
         counts[f"{name} books"] += 1
+        counts[f"{name}: invariant checks (rows, ceilings, band ends)"] += (
+            worth_stats["rows"] + worth_stats["ceilings"] + curve_stats["checks"])
+        for figure, message in worth_bad + curve_bad:
+            bad(f"invariant: {figure}", message)
+        invariants.append(f"{name}: {worth_stats['rows']} rows ({', '.join(f'{k} {v}' for k, v in sorted(worth_stats['actions'].items()))}); "
+                          f"net order differs from the amount order: {worth_stats['order_differs']}; "
+                          f"{curve_stats['bands']} bands, flat {curve_stats['flat']}")
         if {w.receivable_id for w in answer.rows} != {r["receivable"] for r in book["ranking"]}:
             bad("receivables", f"module {[w.receivable_id for w in answer.rows]} vs oracle "
                                f"{[r['receivable'] for r in book['ranking']]}")
@@ -437,7 +453,7 @@ def differential() -> Section:
                 bad(f"curve day {p['arrival_day']}",
                     f"band {band.from_day}..{band.to_day} is {band.value_fen} fen, oracle {_fen(p['worth'])}")
     sec.counts = {"checks": sum(counts.values()), "by_kind": dict(sorted(counts.items())),
-                  "expected_differences": expected}
+                  "expected_differences": expected, "invariants": invariants}
     sec.seconds = time.perf_counter() - t0
     return sec
 
@@ -525,6 +541,8 @@ def render(result: dict[str, Any]) -> str:
     verdict = "PASS" if result["failures_total"] == 0 else "FAIL"
     quick = " --quick" if result["quick"] else ""
     slowest = "; ".join(f"{x['scenario']} turn {x['turn']} {x['seconds']} s" for x in cc["slowest_turns"])
+    unseen = ", ".join(a for a in ("call_now", "escalate", "reminder", "offer_early_pay", "finance", "wait")
+                       if a not in cc["actions"]) or "none"
     actions = ", ".join(f"{k} {v}" for k, v in cc["actions"].items()) or "none"
     lines: list[str] = [
         f"# Strategy backtest, {result['date']}",
@@ -547,7 +565,9 @@ def render(result: dict[str, Any]) -> str:
          f"receivable: {cc['turns_without_rows']}."),
         (f"- Turns where the net order differs from the overdue-amount order: {cc['net_order_differs_from_amount_order']} "
          f"of {cc['turns_with_two_or_more_rows']} turns with two or more rows."),
-        f"- Actions (rows): {actions}.",
+        f"- Actions (rows): {actions}; never produced by the replay: {unseen}.",
+        (f"- Coverage: simulated days {cc['days_covered']}; overdue rows {cc['overdue_rows']}; most rows in one turn "
+         f"{cc['max_rows_in_a_turn']}."),
         f"- Scenario turns the /nl route did not answer with 200: {cc['non_200_turns']} (not a failure of this backtest).",
         f"- Analysis time: {col['seconds']:.1f} s; slowest book states: {slowest}.",
         "",
@@ -562,6 +582,8 @@ def render(result: dict[str, Any]) -> str:
         f"- Checks: {dc['checks']}, to the fen.",
     ]
     lines += [f"  - {k}: {v}" for k, v in dc["by_kind"].items()]
+    lines += ["", "The replay's invariants on the same two books (they have the multi-row, overdue and call-now cases the scenarios lack):", ""]
+    lines += [f"- {x}" for x in dc["invariants"]]
     lines += ["", "Expected differences (not failures):", ""]
     lines += [f"- {x}" for x in dc["expected_differences"]] or ["- none"]
     lines += ["", "## Envelope", "", *(f"- {n}" for n in env["notes"]), ""]
