@@ -97,7 +97,8 @@ export default function CashPage() {
     <>
       {covered && snapshot ? <p className="mb-3 text-xs text-ink-3">{t("fund.snapshot")}</p> : null}
       <FundingOptions rows={comparison(plan.data)} menu={plan.data.menu} today={today} recommendedKey={h?.next_action?.plan_source === "router" ? "router_optimum" : null} />
-      {h?.next_action?.cheaper_option ? (
+      {/* A server that names each row's role has already said so in the alternative's chip, so the grey note would say it twice. */}
+      {h?.next_action?.cheaper_option && !plan.data.comparison?.some((c) => c.role) ? (
         <p className="mt-3 text-xs text-ink-3" data-testid="cash-cheaper-option">
           {t("biz.cheaper", { cost: h.next_action.cheaper_option.cost_total_display, n: h.next_action.cheaper_option.approvals })}
         </p>
@@ -153,6 +154,11 @@ export default function CashPage() {
                   </p>
                 </div>
                 <p className="mt-1 text-sm text-ink-2">{h.note}</p>
+                {curve ? (
+                  <p className="mt-1 text-sm text-ink-2" data-testid="cash-price-sentence">
+                    {curve.sentence}
+                  </p>
+                ) : null}
               </div>
               {/* Four facts: today's cash, the reserve, when cash becomes unsafe, the worst point. The headroom is the caption of the tile it belongs to. */}
               <dl className={`grid grid-cols-2 gap-3 ${breachIsWorst ? "sm:grid-cols-3" : "sm:grid-cols-4"}`} data-testid="cash-figures">
@@ -197,11 +203,6 @@ export default function CashPage() {
                   </>
                 )}
               </dl>
-              {curve ? (
-                <p className="text-sm text-ink-2" data-testid="cash-price-sentence">
-                  {curve.sentence}
-                </p>
-              ) : null}
             </section>
 
             <FixResult result={fixer.result} error={fixer.error} changed={fixer.changed} />
@@ -224,50 +225,50 @@ export default function CashPage() {
 
         <Card id="cash-chart" title={t("biz.cash.forecast")} subtitle={t("biz.cash.forecast.sub")}>
           {home.error ? <ErrorState error={home.error} onRetry={home.reload} /> : !h ? <LoadingBlock rows={2} /> : <CashForecast h={h} />}
+          {/* The debt readings are the forecast's own footer: the same projection, read by month. */}
+          {view?.trajectory.months.length ? (
+            <Disclosure testId="cash-readings" className="mt-3 border-t border-line pt-2" summary={t("biz.readings")}>
+              <div>
+                {/* The first line is the home's own reading (the same projection as the table's first month). */}
+                {h?.cash.dscr_text || h?.cash.leverage_text ? (
+                  <p className="mb-2 text-sm text-ink" data-testid="cash-readings-now">
+                    {t("biz.readings.now", { dscr: h.cash.dscr_text ?? t("common.none"), lev: h.cash.leverage_text ?? t("common.none") })}
+                  </p>
+                ) : null}
+                <p className="mb-3 text-xs text-ink-3">{t("biz.readings.note")}</p>
+                <TableWrap label={t("biz.readings")}>
+                  <table className={tableCls}>
+                    <thead>
+                      <tr>
+                        <th scope="col" className={thCls}>{t("common.month")}</th>
+                        <th scope="col" className={`${thCls} text-right`}>{t("traj.debtService")}</th>
+                        <th scope="col" className={`${thCls} text-right`}>{t("traj.totalDebt")}</th>
+                        <th scope="col" className={`${thCls} text-right`}>{t("biz.dscr")} ({t("common.min")} {view.covenant_limits.min_dscr_display})</th>
+                        <th scope="col" className={`${thCls} text-right`}>{t("biz.leverage")} ({t("common.max")} {view.covenant_limits.max_leverage_display})</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {view.trajectory.months.map((m) => (
+                        <tr key={m.month}>
+                          <td className={`${tdCls} tabular-nums`}>{m.month}</td>
+                          <td className={`${tdCls} text-right tabular-nums`}>{m.debt_service_display}</td>
+                          <td className={`${tdCls} text-right tabular-nums`}>{m.total_debt_display}</td>
+                          <td className={`${tdCls} text-right tabular-nums`}>{m.dscr ? `${m.dscr.text}×` : t("common.none")}</td>
+                          <td className={`${tdCls} text-right tabular-nums`}>{m.leverage.text}×</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </TableWrap>
+              </div>
+            </Disclosure>
+          ) : null}
         </Card>
 
         <div className="grid gap-3 sm:grid-cols-2">
           <DoorTile id="cash-whatif" title={t("biz.cash.whatif")} sub={t("biz.cash.whatif.sub")} href="/whatif" label={t("biz.cash.whatif.open")} />
           <DoorTile id="cash-capex" title={t("biz.cash.capex")} sub={t("biz.cash.capex.sub")} href="/capex" label={t("biz.cash.capex.open")} />
         </div>
-
-        {view?.trajectory.months.length ? (
-          <Disclosure card testId="cash-readings" summary={t("biz.readings")}>
-            <div>
-              {/* The first line is the home's own reading (the same projection as the table's first month). */}
-              {h?.cash.dscr_text || h?.cash.leverage_text ? (
-                <p className="mb-2 text-sm text-ink" data-testid="cash-readings-now">
-                  {t("biz.readings.now", { dscr: h.cash.dscr_text ?? t("common.none"), lev: h.cash.leverage_text ?? t("common.none") })}
-                </p>
-              ) : null}
-              <p className="mb-3 text-xs text-ink-3">{t("biz.readings.note")}</p>
-              <TableWrap label={t("biz.readings")}>
-                <table className={tableCls}>
-                  <thead>
-                    <tr>
-                      <th scope="col" className={thCls}>{t("common.month")}</th>
-                      <th scope="col" className={`${thCls} text-right`}>{t("traj.debtService")}</th>
-                      <th scope="col" className={`${thCls} text-right`}>{t("traj.totalDebt")}</th>
-                      <th scope="col" className={`${thCls} text-right`}>{t("biz.dscr")} ({t("common.min")} {view.covenant_limits.min_dscr_display})</th>
-                      <th scope="col" className={`${thCls} text-right`}>{t("biz.leverage")} ({t("common.max")} {view.covenant_limits.max_leverage_display})</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {view.trajectory.months.map((m) => (
-                      <tr key={m.month}>
-                        <td className={`${tdCls} tabular-nums`}>{m.month}</td>
-                        <td className={`${tdCls} text-right tabular-nums`}>{m.debt_service_display}</td>
-                        <td className={`${tdCls} text-right tabular-nums`}>{m.total_debt_display}</td>
-                        <td className={`${tdCls} text-right tabular-nums`}>{m.dscr ? `${m.dscr.text}×` : t("common.none")}</td>
-                        <td className={`${tdCls} text-right tabular-nums`}>{m.leverage.text}×</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </TableWrap>
-            </div>
-          </Disclosure>
-        ) : null}
       </div>
     </>
   );

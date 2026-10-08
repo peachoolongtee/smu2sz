@@ -9,7 +9,7 @@ import { idsToNames } from "@/lib/business-words";
 import { useI18n } from "@/lib/i18n";
 import { whenText } from "@/lib/when";
 import { useAsync } from "@/lib/use-async";
-import { Disclosure } from "@/components/business/kit";
+import { Disclosure, FoldChevron } from "@/components/business/kit";
 
 /** An empty section is one quiet line under the timeline, not a card around nothing (it keeps the section's id). */
 function QuietLine({ id, title, children }: { id: string; title: string; children: string }) {
@@ -68,26 +68,41 @@ export default function ActivityPage() {
         <div className="space-y-5">
           <Card id="activity-timeline" title={t("biz.activity.timeline")} subtitle={t("biz.activity.timeline.sub")}>
             {ops.length ? (
-              <ol className="motion-rise space-y-2" data-testid="activity-list">
+              <ol className="motion-rise divide-y divide-line" data-testid="activity-list">
                 {ops.map((o) => (
-                  <li key={`${o.seq}-${o.op_id}`} className={`rounded-tile border px-3 py-2 ${o.status === "REFUSED" ? "border-bad-line bg-bad-bg/40" : "border-line"}`} data-testid={`activity-${o.kind}`} data-status={o.status}>
-                    <p className="break-words text-sm font-medium text-ink" data-testid="activity-event">{o.event_text || o.message_when || words(o.summary) || kindLabel(o.kind)}</p>
-                    {o.event_detail ? <p className="break-words text-xs text-ink-2" data-testid="activity-detail">{o.event_detail}</p> : null}
-                    <div className="mt-1 flex flex-wrap items-center gap-2">
-                      <span className="text-xs text-ink-3">{whenText(o.day, today, t)}</span>
-                      <span className="text-xs text-ink-3" data-testid="activity-op">{kindLabel(o.kind)}</span>
-                      <OpStatusBadge status={o.status} />
-                      <span className="text-xs text-ink-3">{te("actor", o.requested_by)}</span>
-                    </div>
-                    {o.violations.length ? (
-                      <div className="mt-1 flex flex-wrap gap-1">
-                        {o.violations.map((v) => (
-                          <CodeBadge key={v.code} code={v.code} tone="bad" />
-                        ))}
-                      </div>
-                    ) : null}
-                    <Disclosure className="mt-1" summary={t("biz.auditDetails")}>
-                      <dl className="mt-1 grid grid-cols-[max-content_minmax(0,1fr)] gap-x-3 gap-y-0.5 text-xs text-ink-2">
+                  <li key={`${o.seq}-${o.op_id}`} data-testid={`activity-${o.kind}`} data-status={o.status}>
+                    {/* One list row: the sentence, its meta line and, at the trailing edge, the fold that holds the record. */}
+                    <Disclosure
+                      bare
+                      summaryClass="flex cursor-pointer list-none flex-col gap-1 py-3 sm:flex-row sm:items-start sm:gap-4 [&::-webkit-details-marker]:hidden"
+                      summary={
+                        <>
+                          <span className="min-w-0 flex-1">
+                            <span className="block break-words text-sm font-medium text-ink" data-testid="activity-event">{o.event_text || o.message_when || words(o.summary) || kindLabel(o.kind)}</span>
+                            {o.event_detail ? <span className="block break-words text-xs text-ink-2" data-testid="activity-detail">{o.event_detail}</span> : null}
+                            <span className="mt-1 flex flex-wrap items-center gap-2">
+                              <span className="text-xs text-ink-3">{whenText(o.day, today, t)}</span>
+                              <span className="text-xs text-ink-3" data-testid="activity-op">{kindLabel(o.kind)}</span>
+                              {/* Time passing is not an outcome to confirm: it carries no "Executed" chip. */}
+                              {o.kind === "ADVANCE_CLOCK" && o.status === "EXECUTED" ? null : <OpStatusBadge status={o.status} />}
+                              <span className="text-xs text-ink-3">{te("actor", o.requested_by)}</span>
+                            </span>
+                            {o.violations.length ? (
+                              <span className="mt-1 flex flex-wrap gap-1">
+                                {o.violations.map((v) => (
+                                  <CodeBadge key={v.code} code={v.code} tone="bad" />
+                                ))}
+                              </span>
+                            ) : null}
+                          </span>
+                          <span className="hit flex shrink-0 items-center gap-1 self-start text-xs font-medium text-brand-700 sm:min-h-8">
+                            {t("biz.auditDetails")}
+                            <FoldChevron />
+                          </span>
+                        </>
+                      }
+                    >
+                      <dl className="grid grid-cols-[max-content_minmax(0,1fr)] gap-x-3 gap-y-0.5 pb-3 text-xs text-ink-2">
                         <dt>{t("audit.executor")}</dt>
                         <dd className="break-words" data-testid="activity-raw">{o.summary}</dd>
                         <dt>{t("audit.opId")}</dt>
@@ -126,7 +141,7 @@ export default function ActivityPage() {
                     <span>
                       <span className="font-medium text-ink">{words(c.counterparty_id)}</span>
                       <span className="block text-xs text-ink-3">
-                        {t("ledger.expires")}: {whenText(c.expires_day, today, t)} · {t("biz.activity.concessions")}: {c.forward_value_display}
+                        {t(c.expires_day < today ? "biz.activity.expired" : "biz.activity.expires", { when: whenText(c.expires_day, today, t) })} · {t("biz.activity.concessions")}: {c.forward_value_display}
                       </span>
                     </span>
                     <Badge tone={c.status === "ACTIVE" || c.status === "ACCEPTED" ? "ok" : "neutral"}>{te("commitment", c.status)}</Badge>
