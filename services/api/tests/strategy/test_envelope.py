@@ -493,6 +493,14 @@ def test_route_rejects_a_bad_query(api, monkeypatch):
     assert api.get(f"/buyers/{GOLDEN_BUYER}/envelope?lang=fr", headers=OWNER).status_code == 422
 
 
+def test_route_reads_the_zone_from_the_query_string(api, monkeypatch):
+    monkeypatch.setenv("FEATURE_ENVELOPE", "1")
+    r = api.get(f"/buyers/{GOLDEN_BUYER}/envelope?zone=1", headers=OWNER)
+    assert r.status_code == 200 and len(r.json()["zone"]) == 13
+    assert api.get(f"/buyers/{GOLDEN_BUYER}/envelope?zone=0", headers=OWNER).json()["zone"] == []
+    assert api.get(f"/buyers/{GOLDEN_BUYER}/envelope?zone=2", headers=OWNER).status_code == 422
+
+
 def test_route_answers_in_both_languages_from_one_sweep(api, monkeypatch, rt_day0):
     monkeypatch.setenv("FEATURE_ENVELOPE", "1")
     first = api.get(f"/buyers/{GOLDEN_BUYER}/envelope", headers=OWNER)
