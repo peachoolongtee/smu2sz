@@ -203,7 +203,7 @@ test("on day 34 the cure needs the owner: the alert says so, the click queues it
   const waiting = page.getByTestId("alert-waiting-ALERT-RESERVE-42");
   await expect(waiting).toHaveClass(/text-warn-fg/);
   await expect(page.getByTestId("fix-result")).toHaveCount(0);
-  await expect(waiting).toHaveText(/^Waiting for your approval\s*Open the approval card$/);
+  await expect(waiting).toHaveText("Waiting for your approval");
   await expect(page.getByTestId("home-next-action")).toBeVisible();
   await expect(page.locator('[data-testid^="home-approval-APR-"]').first()).toContainText("Approve ¥200,000.00 of invoice financing?");
 

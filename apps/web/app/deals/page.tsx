@@ -22,6 +22,7 @@ import { useMode } from "@/lib/mode";
 import { offerItems } from "@/lib/offer-items";
 import type { VerdictView } from "@/lib/types";
 import { useAsync } from "@/lib/use-async";
+import { useNarrow } from "@/lib/use-narrow";
 import { useCurrentOffer } from "@/lib/use-current";
 import { useDecision, useDecisions } from "@/lib/use-decision";
 import { dealProgress } from "@/lib/decision";
@@ -38,6 +39,8 @@ import { Disclosure } from "@/components/business/kit";
 export default function DealsPage() {
   const { t, te, lang } = useI18n();
   const mode = useMode();
+  // A phone reads the recommendation and the priced response right after the buyer's name; the inbox, the asks and the costs come after.
+  const narrow = useNarrow();
   const cur = useCurrentOffer();
   const demo = useDemo();
   const [busy, setBusy] = useState(false);
@@ -158,7 +161,7 @@ export default function DealsPage() {
 
   const compareOpen = Boolean(offer && compareFor === offer.offer.offer_id);
 
-  const commitments = <ActiveCommitments today={today} buyerName={buyerName} hideEmpty />;
+  const commitments = <ActiveCommitments key="commitments" today={today} buyerName={buyerName} hideEmpty />;
 
   /** The offer's one-line ask: the names of what is asked, once each ("Immediate discount · Terms extension · Contingent rebate"). */
   const oneLine = Array.from(new Set(asks.map((o) => te("obligation", o.type)))).join(" · ");
@@ -187,28 +190,89 @@ export default function DealsPage() {
     </div>
   ) : null;
 
+  const inbox = (
+    <InboxList
+      key="inbox"
+      currentDocId={offer?.documents[0]?.doc_id ?? null}
+      readDocIds={Object.values(demo.offers).map((o) => o.documents[0]?.doc_id)}
+      known={known}
+      busy={reading}
+      today={today}
+      mode={mode}
+      statusFor={statusFor}
+      onOpen={(m) => void openMessage(m)}
+      loadError={books.error}
+      onRetry={books.reload}
+      collapsed={Boolean(offer) && !inboxOpen}
+      onExpand={offer ? () => setInboxFor(offer.offer.offer_id) : undefined}
+      onCollapse={offer && inboxOpen ? () => setInboxFor(null) : undefined}
+      refusals={ledger.data?.refusals ?? null}
+    />
+  );
+
+  // The parts of a selected deal, each with its key so the order can differ without losing what a part holds.
+  const dealParts: Record<string, React.ReactNode> = {};
+  if (offer && !cur.error && !clock.error && !cur.loading && clock.data) {
+    dealParts.selected = (
+      <SelectedBuyer
+        key="selected"
+        buyer={buyerName(offer.offer.counterparty_id)}
+        ask={oneLine}
+        received={t("biz.deals.messageWhen", { channel: te("channel", offer.documents[0]?.channel ?? "chat"), when: whenText(offer.offer.received_day, today, t) })}
+        evaluatedWhen={v ? (record?.evaluation?.evaluated_when ?? v.evaluated_when ?? null) : null}
+        stateChip={narrow ? (record?.state_text ?? null) : null}
+      >
+        {narrow ? null : <DealSteps />}
+      </SelectedBuyer>
+    );
+    dealParts.asks = ws ? (
+      <WorkspaceAsks key="asks" ws={ws}>{abstentions}</WorkspaceAsks>
+    ) : (
+      <Card key="asks" id="deal-ask" title={t("biz.deals.ask", { buyer: buyerName(offer.offer.counterparty_id) })}>
+        <BuyerAsks asks={asks} />
+        {abstentions}
+      </Card>
+    );
+    if (STRATEGY_MVP) dealParts.before = <BeforeTheyAsk key="before" buyerId={offer.offer.counterparty_id} />;
+    if (v && ws) {
+      dealParts.impact = <WorkspaceImpact key="impact" ws={ws} v={v} today={today} settled={Boolean(record && progress?.reached)} />;
+      dealParts.decision = <DealDecision key="decision" v={v} record={record} text={ws.recommends.text} reason={narrow ? (ws.why_it_matters.reasons[0] ?? null) : null} />;
+      dealParts.response = (
+        <RecommendedResponse
+          key="response"
+          v={v}
+          offerId={offer.offer.offer_id}
+          today={today}
+          mode={mode}
+          negotiation={cur.negotiation}
+          {...(STRATEGY_MVP ? { compareOpen, onCompareChange: (open: boolean) => setCompareFor(open ? offer.offer.offer_id : null) } : {})}
+        />
+      );
+      dealParts.advanced = <AdvancedDetails key="advanced" ws={ws} v={v} offer={offer} items={items} asks={asks} />;
+    }
+    if (next) {
+      dealParts.next = (
+        <NextStep key="next" label={t("next.label")} action={next.action} className="mb-0">
+          {next.text}
+        </NextStep>
+      );
+    }
+    dealParts.commitments = commitments;
+  }
+  // The inbox is one folded row at the top at every width. A phone then reads the buyer, what FLOW recommends and the priced response before
+  // the asks, the costs and why it matters; a desktop keeps the server's order.
+  const order = narrow
+    ? ["selected", "decision", "response", "next", "asks", "before", "impact", "commitments", "advanced"]
+    : ["selected", "asks", "before", "impact", "decision", "response", "next", "commitments", "advanced"];
+  const errorNode = error ? <ErrorState key="error" error={error} /> : null;
+
   return (
     <>
       <PageHeader section="deals" title={t("nav.deals")} subtitle={t("biz.deals.subtitle")} />
       <div className="space-y-6">
-        <InboxList
-          currentDocId={offer?.documents[0]?.doc_id ?? null}
-          readDocIds={Object.values(demo.offers).map((o) => o.documents[0]?.doc_id)}
-          known={known}
-          busy={reading}
-          today={today}
-          mode={mode}
-          statusFor={statusFor}
-          onOpen={(m) => void openMessage(m)}
-          loadError={books.error}
-          onRetry={books.reload}
-          collapsed={Boolean(offer) && !inboxOpen}
-          onExpand={offer ? () => setInboxFor(offer.offer.offer_id) : undefined}
-          onCollapse={offer && inboxOpen ? () => setInboxFor(null) : undefined}
-          refusals={ledger.data?.refusals ?? null}
-        />
+        {inbox}
 
-        {error ? <ErrorState error={error} /> : null}
+        {errorNode}
 
         {cur.error || clock.error ? (
           <ErrorState
@@ -227,50 +291,7 @@ export default function DealsPage() {
           </>
         ) : (
           <>
-            <SelectedBuyer
-              buyer={buyerName(offer.offer.counterparty_id)}
-              ask={oneLine}
-              received={t("biz.deals.messageWhen", { channel: te("channel", offer.documents[0]?.channel ?? "chat"), when: whenText(offer.offer.received_day, today, t) })}
-              evaluatedWhen={v ? (record?.evaluation?.evaluated_when ?? v.evaluated_when ?? null) : null}
-            >
-              <DealSteps />
-            </SelectedBuyer>
-
-            {ws ? (
-              <WorkspaceAsks ws={ws}>{abstentions}</WorkspaceAsks>
-            ) : (
-              <Card id="deal-ask" title={t("biz.deals.ask", { buyer: buyerName(offer.offer.counterparty_id) })}>
-                <BuyerAsks asks={asks} />
-                {abstentions}
-              </Card>
-            )}
-
-            {STRATEGY_MVP ? <BeforeTheyAsk buyerId={offer.offer.counterparty_id} /> : null}
-
-            {v && ws ? (
-              <>
-                <WorkspaceImpact ws={ws} v={v} today={today} settled={Boolean(record && progress?.reached)} />
-                <DealDecision v={v} record={record} text={ws.recommends.text} />
-                <RecommendedResponse
-                  v={v}
-                  offerId={offer.offer.offer_id}
-                  today={today}
-                  mode={mode}
-                  negotiation={cur.negotiation}
-                  {...(STRATEGY_MVP ? { compareOpen, onCompareChange: (open: boolean) => setCompareFor(open ? offer.offer.offer_id : null) } : {})}
-                />
-              </>
-            ) : null}
-
-            {next ? (
-              <NextStep label={t("next.label")} action={next.action} className="mb-0">
-                {next.text}
-              </NextStep>
-            ) : null}
-
-            {commitments}
-
-            {v && ws ? <AdvancedDetails ws={ws} v={v} offer={offer} items={items} asks={asks} /> : null}
+            {order.map((k) => dealParts[k] ?? null)}
           </>
         )}
       </div>

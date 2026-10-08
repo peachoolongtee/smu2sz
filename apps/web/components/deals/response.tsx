@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { useState } from "react";
 import { obligationSentence } from "@/components/deals/commitments";
-import { Badge, Button, Callout, Card, ErrorState } from "@/components/ui";
+import { Badge, Button, Callout, Card, ErrorState, SlowNotice } from "@/components/ui";
 import { counterChanged, negotiate } from "@/lib/api";
 import { evaluate as evaluateAndCache } from "@/lib/demo";
-import { recordNegotiation } from "@/lib/demo-store";
+import { bump, recordNegotiation } from "@/lib/demo-store";
+import { isTimeout } from "@/lib/errors";
 import { useI18n } from "@/lib/i18n";
 import { errorText } from "@/lib/error-text";
 import type { Mode } from "@/lib/mode";
@@ -257,6 +258,9 @@ export function RecommendedResponse({
   const shownKey = `${v.id}:${v.state_version}`;
   const [refused, setRefused] = useState<{ key: string; detail: CounterChangedDetail } | null>(null);
   const [checking, setChecking] = useState(false);
+  // The send ran out of time: it may have landed. Retry reads the deal's record and the books again and sends nothing.
+  const [slow, setSlow] = useState(false);
+  const [rechecked, setRechecked] = useState(false);
   const changed = refused && refused.key === shownKey ? refused.detail : null;
   // What the owner is looking at, and what the send will carry: the evaluation's, or the current proposal the API sent back.
   const shown = changed && changed.counters.length ? { verdictId: changed.verdict_id ?? v.id, stateVersion: changed.state_version, counters: changed.counters as Counter[] } : { verdictId: v.id, stateVersion: v.state_version, counters: v.counters as Counter[] };
@@ -266,12 +270,17 @@ export function RecommendedResponse({
   async function send(c: Counter) {
     setSending(c.id);
     setError(null);
+    setSlow(false);
+    setRechecked(false);
     try {
       recordNegotiation(await negotiate(offerId, { buyer_profile: "cooperative", verdict_id: shown.verdictId, counter_id: c.id, state_version: shown.stateVersion }));
       setRefused(null);
     } catch (e) {
       const moved = counterChanged(e);
-      if (moved) setRefused({ key: shownKey, detail: moved });
+      if (isTimeout(e)) {
+        setSlow(true);
+        bump();
+      } else if (moved) setRefused({ key: shownKey, detail: moved });
       else setError(errorText(e, t));
     } finally {
       setSending(null);
@@ -315,6 +324,22 @@ export function RecommendedResponse({
           <CounterBusinessCard c={first} recommended today={today} action={controlFor(first, true)} />
           {compare ? rest.map((c) => <CounterBusinessCard key={c.id} c={c} recommended={false} today={today} action={controlFor(c, false)} />) : null}
         </ul>
+      ) : null}
+      {slow ? (
+        <div className="mt-3">
+          <SlowNotice
+            message={t("err.timeout_write")}
+            onRetry={() => {
+              setSlow(false);
+              setRechecked(true);
+              bump();
+            }}
+          />
+        </div>
+      ) : rechecked && !error ? (
+        <p className="mt-3 rounded-tile border border-line bg-subtle px-3.5 py-2.5 text-sm text-ink-2" role="status" data-testid="slow-checked">
+          {t("biz.slow.checked")}
+        </p>
       ) : null}
       {error ? (
         <div className="mt-3">

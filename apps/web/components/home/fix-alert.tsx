@@ -4,8 +4,9 @@ import Link from "next/link";
 import { useState } from "react";
 import { OperationList } from "@/components/chat/assistant-turn";
 import { approvalHref } from "@/components/operation-result";
-import { Badge, Button, ErrorState } from "@/components/ui";
+import { Badge, Button, ErrorState, SlowNotice } from "@/components/ui";
 import { actOnAlert, alertChanged, ApiError, getApprovals, getMandate } from "@/lib/api";
+import { isTimeout } from "@/lib/errors";
 import { bump } from "@/lib/demo-store";
 import type { DictKey } from "@/lib/dictionary";
 import { useI18n } from "@/lib/i18n";
@@ -30,17 +31,31 @@ export function useFixAlert(onDone?: () => void) {
   const [result, setResult] = useState<AlertActResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [changed, setChanged] = useState<AlertChangedDetail | null>(null);
+  // The act ran out of time: it may have landed. Retry reads the books again first (`recheck`) and sends nothing; the page then offers the
+  // action again only if it is still there (a plan that ran leaves the alert, or waits for approval).
+  const [slow, setSlow] = useState(false);
+  const [rechecked, setRechecked] = useState(false);
+
+  /** Reads the affected state again (the alerts, the queue, the home), then leaves the owner to decide from what is now true. */
+  function recheck() {
+    setSlow(false);
+    setRechecked(true);
+    bump();
+  }
 
   async function fix(alert: AlertItem, stateVersion: number) {
     setBusyId(alert.id);
     setError(null);
     setResult(null);
     setChanged(null);
+    setSlow(false);
+    setRechecked(false);
     try {
       setResult(await actOnAlert(alert, stateVersion));
     } catch (e) {
       const moved = alertChanged(e);
-      if (moved) setChanged(moved);
+      if (isTimeout(e)) setSlow(true);
+      else if (moved) setChanged(moved);
       else if (e instanceof ApiError && (e.status === 404 || e.status === 409) && !isWriteConflictDetail(e.detail)) setError(t(e.status === 404 ? "alerts.fix.err.404" : "alerts.fix.err.409"));
       else setError(errorText(e, t));
     } finally {
@@ -50,7 +65,7 @@ export function useFixAlert(onDone?: () => void) {
     }
   }
 
-  return { busyId, result, error, changed, fix };
+  return { busyId, result, error, changed, fix, slow, rechecked, recheck };
 }
 
 /** What a suggested cure costs, in the server's words: the cost, the formula (which carries the yearly rate) and, when the cost is above the ceiling, that the owner must approve it. Nothing when the server sent no cost. */
@@ -164,9 +179,27 @@ export function FixButton({ alertId, busyId, onFix }: { alertId: string; busyId:
  * alert is gone. On a Business page each operation's message is the server's `message_when` (names, the owner's words,
  * distances from today) when the API sent one; the Demo views keep the executor's sentence.
  */
-export function FixResult({ result, error, changed }: { result: AlertActResult | null; error: string | null; changed?: AlertChangedDetail | null }) {
+export function FixResult({
+  result,
+  error,
+  changed,
+  slow = false,
+  rechecked = false,
+  onRecheck,
+}: {
+  result: AlertActResult | null;
+  error: string | null;
+  changed?: AlertChangedDetail | null;
+  /** The act ran out of time: it may have landed, so Retry (`onRecheck`) reads the state first. */
+  slow?: boolean;
+  /** The state was read again after a timeout: say so, so a missing result is not read as a success. */
+  rechecked?: boolean;
+  onRecheck?: () => void;
+}) {
   const { t } = useI18n();
   const business = useBusinessShell();
+  if (slow) return <SlowNotice message={t("err.timeout_write")} onRetry={onRecheck} />;
+  if (rechecked && !result && !changed && !error) return <p className="rounded-tile border border-line bg-subtle px-3.5 py-2.5 text-sm text-ink-2" role="status" data-testid="slow-checked">{t("biz.slow.checked")}</p>;
   if (changed) return <AlertChanged changed={changed} />;
   if (error) {
     return (

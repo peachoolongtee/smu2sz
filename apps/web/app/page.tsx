@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { PartialRead } from "@/components/business/freshness";
 import { ChangesBlock, DecisionsBlock, DetailsBlock, ReceivablesBlock } from "@/components/business/blocks";
 import { NextActionBlock } from "@/components/business/next-action";
 import { RemainingTaskBlock, WaitingOnBlock } from "@/components/business/open-decisions";
@@ -12,6 +13,7 @@ import { onSignedIn } from "@/lib/auth";
 import { bump } from "@/lib/demo-store";
 import { useI18n } from "@/lib/i18n";
 import { useAsync, useStrategyAsync } from "@/lib/use-async";
+import { useNarrow } from "@/lib/use-narrow";
 
 /**
  * The owner's home: am I safe, what should I do, what does it cost, what needs my decision, what changed, who has not paid.
@@ -36,7 +38,8 @@ export default function HomePage() {
   const view = useAsync(() => getHome(lang, typeof window === "undefined" ? null : readLastVisit()), [lang]);
   // What to do about the invoice that saves the most (strategy MVP, build-time flag): null while loading, when the server has it off
   // or when the read fails, so the home is then exactly what it was; never read with the flag off.
-  const worth = useStrategyAsync(() => getReceivablesWorth(lang), [lang]).data;
+  const worthRead = useStrategyAsync(() => getReceivablesWorth(lang), [lang]);
+  const worth = worthRead.data;
   // Remember this visit once the home has loaded, so the next visit asks "since then".
   useEffect(() => {
     if (!view.data) return;
@@ -57,6 +60,25 @@ export default function HomePage() {
     (d) => !(d.waiting_for.code === "OWNER_APPROVAL" && (h?.pending_count ?? 0) > 0) && d.id !== h?.remaining_task_decision_id,
   );
 
+  // A phone reads the answer, then the priced action (or the one remaining task), then what needs the owner, then who owes and what changed: the order of the parts changes, never what they say.
+  const narrow = useNarrow();
+  const decisions = h && h.pending_count > 0 ? <DecisionsBlock key="decisions" approvals={h.approvals} primary={!h.next_action} /> : null;
+  const changes =
+    h && h.changes.length ? (
+      <ChangesBlock key="changes" changes={h.changes} sinceWhen={h.since_day !== null && h.since_day !== undefined ? t("biz.when.daysAgo", { n: Math.max(h.day - h.since_day, 0) }) : null} />
+    ) : null;
+  const receivables = h ? (
+    <div key="receivables" className="min-w-0 space-y-3">
+      {/* A failed ranking is said, with Retry: the home is then not "nothing to collect". */}
+      {worthRead.error ? (
+        <div data-testid="home-worth-failed">
+          <ErrorState error={t("biz.recv.worth.failed")} onRetry={worthRead.reload} />
+        </div>
+      ) : null}
+      <ReceivablesBlock r={h.receivables} worth={worth} />
+    </div>
+  ) : null;
+
   return (
     <>
       {view.error ? (
@@ -64,20 +86,30 @@ export default function HomePage() {
       ) : !h ? (
         <LoadingBlock rows={3} />
       ) : (
-        <div className="space-y-6" aria-busy={view.loading}>
+        <div className="space-y-4 sm:space-y-6" aria-busy={view.loading}>
           <StatusBlock h={h} />
-          <FixResult result={fixer.result} error={fixer.error} changed={fixer.changed} />
-          {h.remaining_task ? <RemainingTaskBlock text={h.remaining_task} links={h.remaining_task_links ?? []} decisionId={h.remaining_task_decision_id} /> : null}
+          <PartialRead missing={h.partial?.missing} onRetry={view.reload} />
+          <FixResult result={fixer.result} error={fixer.error} changed={fixer.changed} slow={fixer.slow} rechecked={fixer.rechecked} onRecheck={fixer.recheck} />
+          {h.remaining_task ? <RemainingTaskBlock text={h.remaining_task} links={h.remaining_task_links ?? []} decisionId={h.remaining_task_decision_id} primary={h.pending_count === 0} /> : null}
           {h.next_action ? <NextActionBlock a={h.next_action} stateVersion={h.state_version} fixer={fixer} /> : null}
-          {waitingOn.length ? <WaitingOnBlock decisions={waitingOn} /> : null}
-          {/* An empty section is hidden: the absence of decisions or news is not itself news. */}
-          {h.pending_count > 0 ? <DecisionsBlock approvals={h.approvals} primary={!h.next_action || Boolean(h.next_action.pending_approval_id)} /> : null}
-          <div className={`grid gap-6 ${h.changes.length ? "lg:grid-cols-2" : ""}`}>
-            <ReceivablesBlock r={h.receivables} worth={worth} />
-            {h.changes.length ? (
-              <ChangesBlock changes={h.changes} sinceWhen={h.since_day !== null && h.since_day !== undefined ? t("biz.when.daysAgo", { n: Math.max(h.day - h.since_day, 0) }) : null} />
-            ) : null}
-          </div>
+          {narrow ? (
+            <>
+              {decisions}
+              {waitingOn.length ? <WaitingOnBlock decisions={waitingOn} /> : null}
+              {receivables}
+              {changes}
+            </>
+          ) : (
+            <>
+              {waitingOn.length ? <WaitingOnBlock decisions={waitingOn} /> : null}
+              {/* An empty section is hidden: the absence of decisions or news is not itself news. */}
+              {decisions}
+              <div className={`grid gap-6 ${changes ? "lg:grid-cols-2" : ""}`}>
+                {receivables}
+                {changes}
+              </div>
+            </>
+          )}
           <DetailsBlock h={h} />
         </div>
       )}

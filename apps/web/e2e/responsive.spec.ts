@@ -204,11 +204,15 @@ test("Deals (checked) and Cash on a phone: no sideways scroll, the folded inbox 
   await expect(page.getByTestId("deal-recommendation")).toHaveText("Counter recommended");
   await expect(page.getByTestId("inbox-collapsed")).toBeVisible();
   expect(await overflowX(page), "/deals overflows horizontally").toBeLessThanOrEqual(1);
-  // The workspace order is the same at every width.
-  const tops = await page.evaluate(() => ["deal-selected", "deal-ask", "deal-impact", "deal-recommendation-card", "counters", "deal-advanced"].map((id) => {
+  // The workspace order: the server's on a desktop; on a phone the answer (what FLOW recommends and the priced response) comes straight after the buyer.
+  const narrowNow = (page.viewportSize()?.width ?? 1440) < 1024;
+  const ids = narrowNow
+    ? ["inbox-collapsed", "deal-selected", "deal-recommendation-card", "counters", "deal-ask", "deal-impact", "deal-advanced"]
+    : ["deal-selected", "deal-ask", "deal-impact", "deal-recommendation-card", "counters", "deal-advanced"];
+  const tops = await page.evaluate((list) => list.map((id) => {
     const el = document.getElementById(id) ?? document.querySelector(`[data-testid="${id}"]`);
     return el ? el.getBoundingClientRect().top + scrollY : -1;
-  }));
+  }), ids);
   expect(tops.every((y) => y >= 0)).toBe(true);
   expect(tops).toEqual([...tops].sort((a, b) => a - b));
   await page.goto("/cash");
@@ -229,4 +233,88 @@ test("Deals (checked) and Cash on a phone: no sideways scroll, the folded inbox 
       expect(short, `${route}: buttons under 44 px`).toEqual([]);
     }
   }
+});
+
+/**
+ * Phone priority (wayfinder #65 Wave 7, F16). At 412 x 915 the owner's answer comes first: Home's primary action, Deals' recommendation and
+ * priced response, Cash's options. The measurements are written to PHONE_MEASURE_OUT (a JSON path) when it is set. Desktop keeps the DOM order.
+ */
+const measured: Record<string, unknown> = {};
+
+async function topOf(page: Page, id: string): Promise<{ top: number; bottom: number } | null> {
+  return page.evaluate((i) => {
+    const el = document.getElementById(i) ?? document.querySelector(`[data-testid="${i}"]`);
+    if (!el) return null;
+    const r = el.getBoundingClientRect();
+    return { top: Math.round(r.top + scrollY), bottom: Math.round(r.bottom + scrollY) };
+  }, id);
+}
+
+test("phone priority: Home's primary action, Deals' priced response and Cash's options sit in the first screens at 412 x 915", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "phone", "the order is the narrow screen's; the desktop keeps the DOM order checked above");
+  await page.setViewportSize({ width: 412, height: 915 });
+  // Home: the status, then the priced action with its button above the tab bar, with no scroll.
+  await page.goto("/");
+  const alertId = await page.getByTestId("home-next-action").getAttribute("data-alert");
+  const run = page.getByTestId(`fix-open-${alertId}`);
+  await expect(run).toBeVisible();
+  const box = (await run.boundingBox())!;
+  const tab = (await page.getByTestId("tab-bar").boundingBox())!;
+  expect(box.y + box.height, "the primary action is inside the first 915 px").toBeLessThanOrEqual(915);
+  expect(box.y + box.height, "and is not behind the tab bar").toBeLessThanOrEqual(tab.y);
+  expect(await overflowX(page)).toBeLessThanOrEqual(1);
+  measured.home = { status: await topOf(page, "home-status"), action: await topOf(page, "home-next-action"), primary: { top: Math.round(box.y), bottom: Math.round(box.y + box.height) }, tabBarTop: Math.round(tab.y), pageHeight: await page.evaluate(() => document.documentElement.scrollHeight) };
+
+  // Deals, evaluated: the recommendation card's top edge and the bound Send are inside the first screen; the inbox row and the asks come after.
+  await page.goto("/deals");
+  await page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01").click();
+  await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
+  await expect(page.getByTestId("deal-recommendation")).toHaveText("Counter recommended");
+  const rec = (await topOf(page, "deal-recommendation-card"))!;
+  const send = await page.getByTestId("deal-send").boundingBox();
+  const inbox = (await topOf(page, "inbox-collapsed"))!;
+  const asks = (await topOf(page, "deal-ask"))!;
+  expect(inbox.top, "the inbox is one folded row above the buyer").toBeLessThan((await topOf(page, "deal-selected"))!.top);
+  await expect(page.getByTestId("deal-steps")).toHaveCount(0);
+  await expect(page.getByTestId("deal-state-chip")).toHaveText("Counter recommended");
+  expect(rec.top, "the recommendation card starts in the first screen").toBeLessThan(915);
+  expect(send, "the bound Send is on the page").not.toBeNull();
+  expect(send!.y + send!.height, "the Send button is inside the first 915 px").toBeLessThanOrEqual(915);
+  expect(asks.top, "the asks come after the priced response").toBeGreaterThan(send!.y + send!.height);
+  measured.deals = { recommendation: rec, send: { top: Math.round(send!.y), bottom: Math.round(send!.y + send!.height) }, inbox, asks, pageHeight: await page.evaluate(() => document.documentElement.scrollHeight) };
+
+  // Cash: the position strip, the plan, then the comparison; its options list starts inside the first two screens.
+  await page.goto("/cash");
+  await expect(page.getByTestId("cash-options-list")).toBeVisible();
+  const options = (await topOf(page, "cash-options-list"))!;
+  const plan = (await topOf(page, "home-next-action"))!;
+  const cashRun = page.getByTestId(`fix-open-${alertId}`);
+  const cashBox = (await cashRun.boundingBox())!;
+  expect(cashBox.y + cashBox.height, "Cash's primary action is inside the first 915 px").toBeLessThanOrEqual(915);
+  expect((await topOf(page, "cash-figures"))!.top, "the four facts come after the plan").toBeGreaterThan(plan.top);
+  const chart = (await topOf(page, "cash-chart"))!;
+  expect((await topOf(page, "cash-answer"))!.top).toBeLessThan(plan.top);
+  expect(plan.top).toBeLessThan(options.top);
+  expect(options.top, "the options list starts inside the first two screens").toBeLessThan(2 * 915);
+  expect(options.top).toBeLessThan(chart.top);
+  measured.cash = { answer: await topOf(page, "cash-answer"), plan, primary: { top: Math.round(cashBox.y), bottom: Math.round(cashBox.y + cashBox.height) }, facts: await topOf(page, "cash-figures"), options, chart, pageHeight: await page.evaluate(() => document.documentElement.scrollHeight) };
+
+  // The three numbers the review asks for: the bottom edge of each page's primary action (all inside 915).
+  measured.primaryBottomEdges = { home: (measured.home as { primary: { bottom: number } }).primary.bottom, deals: (measured.deals as { send: { bottom: number } }).send.bottom, cash: (measured.cash as { primary: { bottom: number } }).primary.bottom };
+
+  if (process.env.PHONE_MEASURE_OUT) {
+    const { writeFileSync } = await import("node:fs");
+    writeFileSync(process.env.PHONE_MEASURE_OUT, JSON.stringify({ viewport: "412x915", ...measured }, null, 1) + "\n");
+  }
+});
+
+test("on a desktop the Deals workspace keeps the server's order and the inbox row stays above it", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name === "phone", "a desktop check");
+  await page.goto("/deals");
+  await page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01").click();
+  await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
+  await expect(page.getByTestId("deal-recommendation")).toHaveText("Counter recommended");
+  const inbox = (await topOf(page, "inbox-collapsed"))!;
+  const selected = (await topOf(page, "deal-selected"))!;
+  expect(inbox.top).toBeLessThan(selected.top);
 });

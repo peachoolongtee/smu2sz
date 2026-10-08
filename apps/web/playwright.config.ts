@@ -45,12 +45,12 @@ export default defineConfig({
       ? [
           {
             name: "desktop",
-            testIgnore: /(live|contract)\.spec\.ts/,
+            testIgnore: /(live|contract|slow)\.spec\.ts/,
             use: { ...desktop, baseURL: `http://localhost:${MOCK_PORT}` },
           },
           {
             name: "phone",
-            testMatch: /(responsive|screenshots|strategy)\.spec\.ts/,
+            testMatch: /(responsive|screenshots|strategy|a11y)\.spec\.ts/,
             use: { ...devices["Pixel 7"], baseURL: `http://localhost:${MOCK_PORT}` },
           },
         ]
@@ -60,7 +60,7 @@ export default defineConfig({
           {
             name: "live",
             // The same demo walk and what-if spec as mock mode, plus the live-only checks and the adapter contract tests.
-            testMatch: /(demo|whatif|alerts|contract|live|chat|strategy)\.spec\.ts/,
+            testMatch: /(demo|whatif|alerts|contract|live|chat|strategy|slow)\.spec\.ts/,
             use: { ...desktop, baseURL: `http://localhost:${LIVE_PORT}` },
           },
         ]
@@ -103,6 +103,8 @@ export default defineConfig({
             env: {
               NEXT_PUBLIC_API_MODE: "live",
               NEXT_PUBLIC_API_URL: `http://localhost:${API_PORT}`,
+              // Every request gives up after 6 s in this build (20 s and 60 s in production), so e2e/slow.spec.ts can show the slow state quickly.
+              NEXT_PUBLIC_REQUEST_TIMEOUT_MS: "6000",
               NEXT_DIST_DIR: strategy ? ".next-e2e-live-strategy" : ".next-e2e-live",
               ...strategyWeb,
             },
