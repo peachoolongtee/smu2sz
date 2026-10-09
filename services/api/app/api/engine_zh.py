@@ -1228,6 +1228,218 @@ _VERDICT_PHRASES: tuple[tuple[re.Pattern[str], str], ...] = tuple((re.compile(p)
 ))
 
 
+# ---------------------------------------------------------------- the verdict's Advanced fold: passed checks and the autonomy proof
+# `passed_checks[].label / observed / limit` and `autonomy.covered / gaps / notes` are the verifier's and the compiler's English. The
+# evaluate view says each beside the original as `*_when`; these templates are what the Chinese one is made from. Figures, rates and names
+# are carried over exactly; a sentence no template knows passes through unchanged (and is recorded in `MISSES`).
+
+
+@rule(rf"Implied cost of early settlement of (?P<inv>{INV})")
+def _chk_apr(m: re.Match[str]) -> str:
+    return f"提前结算{inv(m['inv'])}的隐含成本"
+
+
+@rule(r"DSCR with the extension funded \(pro-forma estimate\)")
+def _chk_dscr_forma(m: re.Match[str]) -> str:
+    return "账期延长并融资后的偿债覆盖率 DSCR（预估）"
+
+
+@rule(r"Lowest monthly DSCR \(month (?P<n>\d+)\)")
+def _chk_dscr(m: re.Match[str]) -> str:
+    return f"最低月度偿债覆盖率 DSCR（第 {m['n']} 月）"
+
+
+@rule(r"Highest monthly leverage \(month (?P<n>\d+)\)")
+def _chk_leverage(m: re.Match[str]) -> str:
+    return f"最高月度杠杆率（第 {m['n']} 月）"
+
+
+@rule(rf"(?P<fac>{N}|[^:]+): clean-down")
+def _chk_clean_down(m: re.Match[str]) -> str:
+    return f"{m['fac']}：清零要求"
+
+
+@rule(r"(?P<n>\d+) days at zero")
+def _chk_zero_days(m: re.Match[str]) -> str:
+    return f"已有 {m['n']} 天为零"
+
+
+@rule(r"≥ (?P<n>\d+) consecutive days")
+def _chk_zero_limit(m: re.Match[str]) -> str:
+    return f"≥ 连续 {m['n']} 天"
+
+
+@rule(r"Minimum cash( with the committed plan)?")
+def _chk_min_cash(m: re.Match[str]) -> str:
+    return "采用已承诺方案后的最低现金" if m.group(1) else "最低现金"
+
+
+@rule(rf"(?P<amt>{M}) (?:on day (?P<d>\d+)|(?P<w>{WHEN}))")
+def _chk_min_cash_observed(m: re.Match[str]) -> str:
+    return f"{m['amt']}（{when_zh(m['w']) if m['w'] else '第 ' + m['d'] + ' 天'}）"
+
+
+@rule(r"Early payment against the router's plan")
+def _chk_early_vs_plan(m: re.Match[str]) -> str:
+    return "提前付款与融资路由方案的对比"
+
+
+@rule(r"no admissible plan without the offer")
+def _chk_no_plan_without(m: re.Match[str]) -> str:
+    return "没有该报价就没有可行的融资方案"
+
+
+_OBLIGATION_ZH = {
+    "immediate discount": "即时折扣", "terms extension": "账期延长", "contingent rebate": "或有返利", "volume commitment": "采购量承诺",
+    "operational concession": "运营让步", "price adjustment": "价格调整", "claimed prior concession": "声称的既有让步",
+}
+_BASE_ZH = {"future invoices": "未来发票", "period purchases": "期间采购", "per event": "每次事件", "unspecified": "未指明范围", "invoice": "发票"}
+
+
+def _covered_zh(what: str) -> str:
+    """The tail of "terms extension on future invoices +15 days": the base, its figures and the day."""
+    out = what
+    for en, zh in _BASE_ZH.items():
+        out = re.sub(rf"(?<![\w-]){en}(?![\w-])", zh, out)
+    out = re.sub(rf"\bbase ({M})", r"基数 \1", out)
+    out = re.sub(rf"\bof ({M})", r"金额 \1", out)
+    out = re.sub(rf"\bat ({PCT})", r"比例 \1", out)
+    out = re.sub(r"to (\d+)-day terms", r"改为 \1 天账期", out)
+    out = re.sub(r"([+-]\d+) days?\b", r"\1 天", out)
+    out = re.sub(rf"\b({WHEN})\b", lambda m: when_zh(m.group(1)), out)
+    return out
+
+
+@rule(r"(?P<type>" + "|".join(re.escape(k) for k in _OBLIGATION_ZH) + r") on (?P<what>.+)")
+def _covered_term(m: re.Match[str]) -> str:
+    return f"{_OBLIGATION_ZH[m['type']]}：{_covered_zh(inv(m['what']))}"
+
+
+@rule(rf"early payment of (?:(?P<amt>{M}) of )?(?P<inv>{INV}|[\w:-]+) at (?P<r>{PCT})(?: (?P<w>{WHEN}))?")
+def _covered_early_pay(m: re.Match[str]) -> str:
+    amt = f"{m['amt']}，" if m["amt"] else ""
+    when = f"，{when_zh(m['w'])}付款" if m["w"] else ""
+    return f"提前付款：{amt}{inv(m['inv'])}，折扣 {m['r']}{when}"
+
+
+@rule(r"the compiler could not account for every figure and request in the message(?:: (?P<why>.+))?")
+def _autonomy_gap(m: re.Match[str]) -> str:
+    head = "编译器无法逐项核对消息中的每个数字和请求"
+    return head + (f"：{_each(m['why'], '; ', '；')}" if m["why"] else "")
+
+
+@rule(r"(?P<id>[\w.:-]+): the message does not state the invoice amount")
+def _gap_no_amount(m: re.Match[str]) -> str:
+    return f"{m['id']}：消息没有写明发票金额"
+
+
+@rule(r"(?P<id>[\w.:-]+): the stated amount is not the whole face of an open invoice")
+def _gap_not_whole(m: re.Match[str]) -> str:
+    return f"{m['id']}：所述金额不是某张未结发票的全额"
+
+
+@rule(r"(?P<type>[A-Z_]+) leaves (?P<what>.+) unresolved")
+def _note_unresolved(m: re.Match[str]) -> str:
+    fields = {"base": "基数", "scope": "范围", "rate": "比例"}
+    what = ", ".join(fields.get(x, x) for x in m["what"].split(", "))
+    return f"{_OBLIGATION_ZH.get(m['type'].lower().replace('_', ' '), m['type'])}的 {what} 未能确定"
+
+
+@rule(r"a settlement date or window is stated but not read into the terms")
+def _note_date(m: re.Match[str]) -> str:
+    return "消息写明了结算日期或期限，但没有读入条款"
+
+
+@rule(r"(?P<doc>[\w.:-]+) holds a (?P<cue>.+) beyond the extracted terms")
+def _note_cue(m: re.Match[str]) -> str:
+    cue = {"question": "问题", "request": "请求", "condition": "附加条件", "other topic": "其他话题"}.get(m["cue"], m["cue"])
+    return f"{m['doc']} 含有超出已提取条款的{cue}"
+
+
+@rule(r"text not read into the terms: (?P<words>.+)")
+def _note_unread(m: re.Match[str]) -> str:
+    words = m["words"]
+    more = words.endswith(".")  # the compiler lists five and ends with ", ..." (a matcher above this one may have taken a dot)
+    return f"未读入条款的文字：{words.rstrip('., ') if more else words}" + (" 等" if more else "")
+
+
+@rule(r"(?P<kind>an amount|a rate|a day count|a count|a date|an invoice or document reference|a number) in (?P<doc>[\w.:-]+) is not accounted for by the extracted terms")
+def _note_mention(m: re.Match[str]) -> str:
+    kind = {"an amount": "金额", "a rate": "比例", "a day count": "天数", "a count": "数量", "a date": "日期",
+            "an invoice or document reference": "发票或文件编号", "a number": "数字"}[m["kind"]]
+    return f"{m['doc']} 中的{kind}没有被已提取的条款解释"
+
+
+@rule(r"the compilation is (?P<s>[A-Z_]+), not clean")
+def _note_status(m: re.Match[str]) -> str:
+    return f"编译状态为 {m['s']}，并不完整"
+
+
+@rule(r"a term was not read \((?P<fields>.+)\)")
+def _note_unread_term(m: re.Match[str]) -> str:
+    return f"有条款没有读入（{m['fields']}）"
+
+
+@rule(r"a discount rate is derived from a net amount, not stated")
+def _note_derived_rate(m: re.Match[str]) -> str:
+    return "折扣比例由净额推算，并非消息所述"
+
+
+@rule(r"a base amount is stated only approximately")
+def _note_approx(m: re.Match[str]) -> str:
+    return "基数金额只给出了大约数"
+
+
+@rule(r"no term was read")
+def _note_no_term(m: re.Match[str]) -> str:
+    return "没有读到任何条款"
+
+
+@rule(r"the message asserts authority or a prior agreement \((?P<kinds>.+)\)")
+def _note_authority(m: re.Match[str]) -> str:
+    return f"消息声称有权限或既有协议（{m['kinds']}）"
+
+
+@rule(r"the message asks for protected data")
+def _note_protected(m: re.Match[str]) -> str:
+    return "消息索要受保护的数据"
+
+
+@rule(r"the message carries an unsolicited funding offer")
+def _note_funding_offer(m: re.Match[str]) -> str:
+    return "消息附带未经邀请的融资推介"
+
+
+@rule(r"a concession is claimed as previously agreed")
+def _note_claimed_prior(m: re.Match[str]) -> str:
+    return "消息把某项让步说成是之前已经同意的"
+
+
+@rule(r"a discount has no stated rate")
+def _note_no_rate(m: re.Match[str]) -> str:
+    return "折扣没有写明比例"
+
+
+@rule(r"a discount does not state its invoice amount")
+def _note_no_amount(m: re.Match[str]) -> str:
+    return "折扣没有写明发票金额"
+
+
+@rule(r"non-CNY currency stated")
+def _note_currency(m: re.Match[str]) -> str:
+    return "消息使用了非人民币币种"
+
+
+@rule(r"a rate is stated per a period other than the invoice")
+def _note_period(m: re.Match[str]) -> str:
+    return "消息按发票以外的周期给出了比例"
+
+
+@rule(r"the message refers to a document that was not supplied")
+def _note_missing_doc(m: re.Match[str]) -> str:
+    return "消息提到了未随附的文件"
+
+
 # ---------------------------------------------------------------- the entry point
 
 # "Co." and "Ltd." end in a full stop without ending a sentence (a name the caller did not lift out).
