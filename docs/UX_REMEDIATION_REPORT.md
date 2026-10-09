@@ -79,7 +79,7 @@ The final gate (Wave 8 part A, head 6106c72 with only documentation commits afte
 | Cold start from a clean GitHub clone | every page 200 (`/`, `/deals`, `/cash`, `/receivables`, `/activity`, `/approvals`, an unknown record); no dev-server warning; `git status` clean |
 | Evidence chains | 49 valid |
 
-Each mission flow maps to a live test (approval: `trust.spec.ts`, `record.spec.ts`, `live.spec.ts`; counter: `record.spec.ts`, the bound send in `live.spec.ts`; funding: the day-34 cure in `live.spec.ts`; receipt: the half-receipt walk and `receivables.spec.ts`; the late-payment cure: the six scenes in `demo.spec.ts` and `live.spec.ts`; Ask FLOW: `chat.spec.ts` in en and zh); the responsive, phone, axe, record and trust specs run in the mock projects and all passed there.
+On the merged `dev` head (8041d1f) the lead re-ran the web gate with zero retries: unit 76, mock 140 and 149, live 71 and 79 (the gate record's last section). Each mission flow maps to a live test (approval: `trust.spec.ts`, `record.spec.ts`, `live.spec.ts`; counter: `record.spec.ts`, the bound send in `live.spec.ts`; funding: the day-34 cure in `live.spec.ts`; receipt: the half-receipt walk and `receivables.spec.ts`; the late-payment cure: the six scenes in `demo.spec.ts` and `live.spec.ts`; Ask FLOW: `chat.spec.ts` in en and zh); the responsive, phone, axe, record and trust specs run in the mock projects and all passed there.
 
 ## 13. Screenshots reviewed
 

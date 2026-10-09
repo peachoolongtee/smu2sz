@@ -115,3 +115,16 @@ None. No test failed, none was retried (`--retries=0` throughout), and no test w
 2. Scope: the mission list says the live run includes the responsive, phone, axe and record specs. By the Playwright config those run in the mock projects only; they were run and passed there (3a, 3b). The live project covers the Demo story, slow, lang, chat, alerts, contract, whatif, live and strategy specs.
 3. `pnpm test:unit` prints a Node `MODULE_TYPELESS_PACKAGE_JSON` warning about `lib/demo-store.ts` (performance note, tests pass).
 4. The remote branch gained one docs-only commit during the run (see Head).
+
+## The merged `dev` head (8041d1f, 10 Oct)
+
+Run by the lead from the main checkout after the owner merged `feat/ux-remediation` into `dev`, all with `--retries=0`:
+
+| Check | Result |
+| --- | --- |
+| Whole API suite on 5bb667b (the last API change before the merge; only web and docs commits followed) | 6413 passed, 37 skipped (16 min) |
+| Web unit, typecheck, lint | 76 passed; clean; clean |
+| Mock e2e, default / strategy build | 140 passed, 36 skipped / 149 passed, 27 skipped |
+| Live e2e, default / strategy build | 71 passed, 12 skipped / 79 passed, 4 skipped |
+
+A first live run on this head, made while the machine's load average was above 8, failed the two slow-path tests of `e2e/slow.spec.ts` (the hung write and the hung chat reply, each taking about 17 minutes) and the strategy build timed out waiting for `next build`; a re-run with the load at 5 to 6 passed every test. The failures are recorded here as a load effect, not a code finding; the same spec passed in the Wave 8 gate on 6106c72 and in the final web branch's own run.
