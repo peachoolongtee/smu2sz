@@ -23,6 +23,10 @@ class ApprovalAlreadyDecided(PersistenceError):
     """`decide_approval` was called on an approval that is no longer PENDING."""
 
 
+class DocumentAlreadyDecided(PersistenceError):
+    """`decide_contract_record` was called on a document that is no longer PROPOSED: the owner decides once."""
+
+
 class InvalidPayload(PersistenceError, ValueError):
     """A payload that must be JSON text is not valid JSON."""
 

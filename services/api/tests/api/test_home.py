@@ -291,6 +291,14 @@ def test_what_changed_since_the_owners_last_visit(client):
     assert client.get("/home?since_day=0").json()["changes"] == week["changes"]
 
 
+def test_document_decisions_are_not_news_on_the_home(client):
+    # the demo reset's three confirmations are on the chain but change no books; Activity and Deals show them
+    bare = client.get("/home").json()["changes"]
+    assert client.post("/demo/reset").status_code == 200
+    assert [o["kind"] for o in client.get("/ledger").json()["operations"]] == ["CONFIRM_DOCUMENT"] * 3
+    assert client.get("/home").json()["changes"] == bare
+
+
 def test_one_fix_per_alert_the_other_family_is_refused_while_the_first_waits(client):
     # a 5% ceiling: the router plan needs the owner, so "Run funding plan" queues its two legs
     rt = get_runtime()

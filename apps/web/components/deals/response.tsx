@@ -3,13 +3,13 @@
 import Link from "next/link";
 import { useState } from "react";
 import { obligationSentence } from "@/components/deals/commitments";
-import { Badge, Button, Card, ErrorState } from "@/components/ui";
+import { Badge, Button, Card, ErrorState, Segmented } from "@/components/ui";
 import { negotiate } from "@/lib/api";
 import { recordNegotiation } from "@/lib/demo-store";
 import { useI18n } from "@/lib/i18n";
 import { errorText } from "@/lib/error-text";
 import type { Mode } from "@/lib/mode";
-import type { CounterProposal, Displayed, NegotiationView, VerdictView } from "@/lib/types";
+import type { BuyerProfile, CounterProposal, Displayed, NegotiationView, VerdictView } from "@/lib/types";
 import { Disclosure } from "@/components/business/kit";
 
 type Counter = Displayed<CounterProposal> & { text_when?: string; rationale_when?: string; outbound_blocked?: boolean };
@@ -166,7 +166,9 @@ function NegotiationOutcome({ v, negotiation, today }: { v: VerdictView; negotia
  * "Recommended response": the first counter as the response to send, the next one behind "Compare another option",
  * and what the buyer answered once a counter was sent. Sending runs the bounded negotiation with the demo's buyer
  * kernel (the "Demo data" pill and the note say the reply is simulated); the counters are the verifier's, priced and
- * re-checked on the books, and the card only shows them.
+ * re-checked on the books, and the card only shows them. Sending is not a dry run (an agreement is booked and the
+ * remaining gap funded), so the owner confirms first, as with "Run funding plan", and picks how the simulated buyer leans
+ * (feat/upgrading): open to a counter, or holding firm, which refuses every counter and ends with no deal.
  */
 export function RecommendedResponse({
   v,
@@ -174,6 +176,7 @@ export function RecommendedResponse({
   today,
   mode,
   negotiation,
+  buyer,
   compareOpen,
   onCompareChange,
 }: {
@@ -182,6 +185,8 @@ export function RecommendedResponse({
   today: number;
   mode: Mode;
   negotiation: NegotiationView | null;
+  /** The buyer's name, for the confirm step's question. */
+  buyer?: string;
   /** The page may hold whether the other options are shown (Option B); without it the card keeps its own state. */
   compareOpen?: boolean;
   onCompareChange?: (open: boolean) => void;
@@ -192,13 +197,15 @@ export function RecommendedResponse({
   const setCompare = (open: boolean) => (onCompareChange ? onCompareChange(open) : setLocalCompare(open));
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [confirming, setConfirming] = useState(false);
+  const [profile, setProfile] = useState<BuyerProfile>("cooperative");
   const counters = v.counters as Counter[];
 
   async function send() {
     setSending(true);
     setError(null);
     try {
-      recordNegotiation(await negotiate(offerId, { buyer_profile: "cooperative" }));
+      recordNegotiation(await negotiate(offerId, { buyer_profile: profile }));
     } catch (e) {
       setError(errorText(e, t));
     } finally {
@@ -220,11 +227,45 @@ export function RecommendedResponse({
   const [first, ...rest] = counters;
   // The outbound guard held this counter's wording back: it cannot be sent as it stands.
   const held = Boolean(first.outbound_blocked);
-  const sendAction =
-    mode === "business" ? (
+  // The API opens with the first counter and offers the next one only after a refusal, whichever way the buyer leans.
+  const confirmStep = (
+    <div className="space-y-3 rounded-tile border border-brand-600/30 bg-surface p-4" data-testid="deal-send-confirm">
+      <p className="font-semibold text-ink">{t("biz.deals.send.title", { label: first.label, buyer: buyer ?? "" })}</p>
+      <ul className="list-disc space-y-1 pl-5 text-sm text-ink-2">
+        <li>{t("biz.deals.send.simulated")}</li>
+        <li>{t("biz.deals.send.ifAgree")}</li>
+        <li>{rest[0] ? t("biz.deals.send.ifRefuse", { next: rest[0].label }) : t("biz.deals.send.ifRefuseOne")}</li>
+      </ul>
       <div className="flex flex-wrap items-center gap-3">
-        <Button variant="primary" loading={sending} disabled={held} onClick={() => void send()} data-testid="deal-send">
-          {sending ? t("biz.deals.sending") : t("biz.deals.send")}
+        <span className="text-xs font-medium text-ink-3">{t("biz.deals.send.profile")}</span>
+        <Segmented<BuyerProfile>
+          label={t("biz.deals.send.profile")}
+          name="deal-buyer-profile"
+          value={profile}
+          onChange={setProfile}
+          options={[
+            { value: "cooperative", label: t("biz.deals.send.cooperative") },
+            { value: "hard_line", label: t("biz.deals.send.hardLine") },
+          ]}
+        />
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <Button variant="primary" loading={sending} onClick={() => void send()} data-testid="deal-send-go">
+          {sending ? t("biz.deals.send.sending") : t("biz.deals.send.confirm")}
+        </Button>
+        <Button variant="secondary" disabled={sending} onClick={() => setConfirming(false)} data-testid="deal-send-cancel">
+          {t("biz.deals.send.cancel")}
+        </Button>
+      </div>
+    </div>
+  );
+  const sendAction =
+    mode !== "business" ? undefined : confirming && !held ? (
+      confirmStep
+    ) : (
+      <div className="flex flex-wrap items-center gap-3">
+        <Button variant="primary" disabled={held} onClick={() => setConfirming(true)} data-testid="deal-send">
+          {t("biz.deals.send")}
         </Button>
         {held ? (
           <span className="text-xs font-medium text-warn-fg" role="status" data-testid="deal-send-blocked">
@@ -234,7 +275,7 @@ export function RecommendedResponse({
           <span className="text-xs text-ink-3">{t("biz.deals.send.simulated")}</span>
         )}
       </div>
-    ) : undefined;
+    );
 
   return (
     <Card id="counters" title={t("biz.deals.response")} subtitle={t("biz.deals.counters.sub")}>

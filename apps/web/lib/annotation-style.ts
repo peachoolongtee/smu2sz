@@ -4,7 +4,17 @@ import type { ObligationType } from "./types";
  * Colour AND line style per annotation kind, so the meaning never depends on colour alone:
  * obligations use solid underlines, flags use dashed/dotted ones, and every span carries a number.
  */
-export type AnnotationKind = ObligationType | "DATA_REQUEST" | "AUTHORITY_CLAIM" | "FUNDING_CLAIM";
+export type AnnotationKind =
+  | ObligationType
+  | "DATA_REQUEST"
+  | "AUTHORITY_CLAIM"
+  | "FUNDING_CLAIM"
+  // a contract or lender agreement (brief 03): the terms the agent read, by what they are, and the flags it raised
+  | "TERM_MONEY"
+  | "TERM_TIME"
+  | "TERM_PARTY"
+  | "TERM_DUTY"
+  | "DOCUMENT_FLAG";
 
 interface Style {
   mark: string;
@@ -62,5 +72,30 @@ export const ANNOTATION_STYLE: Record<AnnotationKind, Style> = {
     mark: "bg-fuchsia-100 decoration-fuchsia-600 underline decoration-dashed",
     markActive: "bg-fuchsia-200 ring-2 ring-fuchsia-600",
     chip: "border-fuchsia-300 bg-fuchsia-50 text-fuchsia-900",
+  },
+  TERM_MONEY: {
+    mark: "bg-emerald-100 decoration-emerald-600 underline decoration-solid",
+    markActive: "bg-emerald-200 ring-2 ring-emerald-600",
+    chip: "border-emerald-300 bg-emerald-50 text-emerald-900",
+  },
+  TERM_TIME: {
+    mark: "bg-blue-100 decoration-blue-600 underline decoration-solid",
+    markActive: "bg-blue-200 ring-2 ring-blue-600",
+    chip: "border-blue-300 bg-blue-50 text-blue-900",
+  },
+  TERM_PARTY: {
+    mark: "bg-stone-100 decoration-stone-500 underline decoration-solid",
+    markActive: "bg-stone-200 ring-2 ring-stone-500",
+    chip: "border-stone-300 bg-stone-50 text-stone-900",
+  },
+  TERM_DUTY: {
+    mark: "bg-indigo-100 decoration-indigo-600 underline decoration-solid",
+    markActive: "bg-indigo-200 ring-2 ring-indigo-600",
+    chip: "border-indigo-300 bg-indigo-50 text-indigo-900",
+  },
+  DOCUMENT_FLAG: {
+    mark: "bg-rose-100 decoration-rose-600 underline decoration-dashed",
+    markActive: "bg-rose-200 ring-2 ring-rose-600",
+    chip: "border-rose-300 bg-rose-50 text-rose-900",
   },
 };

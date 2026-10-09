@@ -1,5 +1,6 @@
 "use client";
 
+import { BorrowerFileSections } from "@/components/business/borrower-file";
 import Link from "next/link";
 import { useState } from "react";
 import { CheckIcon, XIcon } from "@/components/icons";
@@ -12,7 +13,6 @@ import {
   Card,
   EmptyState,
   ErrorState,
-  KeyValueList,
   PageHeader,
   Stat,
   TableWrap,
@@ -268,21 +268,7 @@ export default function CapexPage() {
               <p className="mb-3 text-xs text-ink-2" data-testid="file-as-of">
                 {t("capex.file.asOf", { when: whenText(file.generated_day, today, t) })}
               </p>
-              <div className="grid gap-4 md:grid-cols-2">
-                {file.sections.map((sec) => (
-                  <div key={sec.title} className="rounded-tile border border-line p-3">
-                    <h3 className="mb-2 text-sm font-semibold">{sec.title}</h3>
-                    <KeyValueList items={sec.rows.map((r) => ({ k: r.label, v: r.value }))} />
-                    {sec.notes?.length ? (
-                      <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-ink-2">
-                        {sec.notes.map((n) => (
-                          <li key={n}>{n}</li>
-                        ))}
-                      </ul>
-                    ) : null}
-                  </div>
-                ))}
-              </div>
+              <BorrowerFileSections sections={file.sections} />
               <div className="mt-4 flex flex-wrap items-center gap-2" data-testid="borrower-file-downloads">
                 {file.downloads ? (
                   <>

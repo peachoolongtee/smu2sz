@@ -40,7 +40,8 @@ from app.nl.pipeline import t
 from app.nl.plans import ABOVE_CEILING, approval_sentences, unrunnable_sentences
 from app.nl.turn import Turn, ask
 
-OWNER_ONLY = (Intent.COMPARE_FINANCING, Intent.RECONCILE, Intent.SHOW_RATIOS, Intent.CAPEX, Intent.BORROWER_FILE)
+OWNER_ONLY = (Intent.COMPARE_FINANCING, Intent.RECONCILE, Intent.SHOW_RATIOS, Intent.CAPEX, Intent.BORROWER_FILE,
+              Intent.SHOW_DEAL)
 MAX_FLAGGED = 5
 MAX_OUTSTANDING = 5
 
@@ -396,6 +397,30 @@ def borrower_file(ctx: NlContext, slots: Slots, text: str) -> Turn:
         f"也无需批准；由您自行提交给贷方。"))
 
 
+# ---------------------------------------------------------------- SHOW_DEAL (brief 03)
+
+
+def show_deal(ctx: NlContext, slots: Slots) -> Turn:
+    """Where a buyer's deal stands: the owner-confirmed contract beside the live books (`app.deals`). Read-only: no
+    operation, no pending plan, nothing recorded."""
+    from app.deals import deal_reply, deal_summary
+
+    if not get_settings().features.contracts:
+        return _off(ctx, Intent.SHOW_DEAL, "FEATURE_CONTRACTS")
+    state = ctx.state()
+    buyers = [c for c in state.counterparties if c.role == "BUYER"]
+    cp = slots.counterparty_id if any(c.id == slots.counterparty_id for c in buyers) else None
+    if cp is None:
+        confirmed = sorted({r.counterparty_id for r in ctx.store.contract_records()
+                            if r.kind.value == "BUYER_CONTRACT" and r.status.value == "CONFIRMED"})
+        if len(confirmed) == 1:
+            cp = confirmed[0]
+        else:
+            return ask(Intent.SHOW_DEAL, "counterparty_id", t(ctx, "Which buyer's deal?", "哪位买家的交易？"),
+                       [(str(i), c.name, c.id) for i, c in enumerate(buyers, 1)], slots)
+    return Turn(intent=Intent.SHOW_DEAL, reply=deal_reply(deal_summary(ctx.store, cp, ctx.day), ctx.lang))
+
+
 # ---------------------------------------------------------------- the nearest capability (E2)
 
 
@@ -449,6 +474,9 @@ CAPABILITY_TABLE: tuple[Capability, ...] = (
                ("设备", "机器", "购置")),
     Capability(Intent.BORROWER_FILE, "prepare a borrower file", "准备借款人资料", "prepare the borrower file", "准备借款人资料",
                ("borrower", "lender", "file", "pack", "application", "dossier"), ("借款人", "资料", "申请")),
+    Capability(Intent.SHOW_DEAL, "show where a deal stands (the signed contract and the money)", "查看交易进展（合同与回款）",
+               "where are we with Foshan?", "跟佛山的合同进展如何？",
+               ("deal", "contract", "agreement", "signed", "clause"), ("合同", "协议", "进展", "条款")),
 )
 
 
@@ -484,5 +512,6 @@ __all__ = [
     "nearest_reply",
     "needs_sign_in",
     "reconcile_receipts",
+    "show_deal",
     "show_ratios",
 ]

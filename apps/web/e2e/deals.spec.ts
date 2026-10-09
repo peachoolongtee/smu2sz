@@ -154,6 +154,7 @@ test("opening a message reads it, and the evaluated deal reads in the owner's or
   // Sending the counter: the buyer's (simulated) answer comes back in words, and the next step is the agreement.
   await expect(response).toContainText("The buyer's reply is simulated in this demo.");
   await response.getByTestId("deal-send").click();
+  await response.getByTestId("deal-send-go").click();
   await expect(page.getByTestId("deal-negotiation")).toContainText("The buyer accepted Option A. The agreement is on your books.");
   await expect(response.getByTestId("deal-send")).toHaveCount(0);
   // The outcome card: the buyer's answer, the agreement with its terms as sentences; the headline, the step and the inbox row follow.
@@ -236,4 +237,37 @@ test("a buyer who refuses every counter ends in No deal, with what happens next,
   await expect(outcome.getByTestId("deal-buyer-words")).not.toHaveAttribute("open", "");
   expect(await proseOf(page, ['[data-testid="deal-buyer-words"]', '[data-testid="deal-why"]', '[data-testid="deal-calc"]', '[data-testid="deal-original"]'])).not.toMatch(/\bday \d/i);
   await expect(inbox.getByTestId("inbox-msg-EX01")).toContainText("Showing below");
+});
+
+/** Open the Foshan offer in Business mode and check it, ready to send the recommended counter. */
+async function checkedOffer(page: import("@playwright/test").Page) {
+  await page.goto("/deals");
+  await page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01").click();
+  await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
+  await expect(page.getByTestId("deal-recommendation")).toHaveText("Counter recommended");
+  return page.locator("#counters");
+}
+
+test("sending the recommended counter asks first, says what follows a refusal, and Cancel sends nothing", async ({ page }) => {
+  const response = await checkedOffer(page);
+  await response.getByTestId("deal-send").click();
+  const confirm = response.getByTestId("deal-send-confirm");
+  await expect(confirm).toContainText("Send Option A to Foshan Home Retail Co.?");
+  await expect(confirm).toContainText("simulated");
+  await expect(confirm).toContainText("FLOW offers Option B next");
+  await confirm.getByTestId("deal-send-cancel").click();
+  await expect(response.getByTestId("deal-send-confirm")).toHaveCount(0);
+  await expect(response.getByTestId("deal-negotiation")).toHaveCount(0);
+  await expect(page.getByTestId("deal-steps")).not.toContainText("No deal");
+});
+
+test("the buyer who holds firm refuses every counter: no deal, each answer shown, the gap still funded", async ({ page }) => {
+  const response = await checkedOffer(page);
+  await response.getByTestId("deal-send").click();
+  await response.getByLabel("Holds firm").check();
+  await response.getByTestId("deal-send-go").click();
+  await expect(response.getByTestId("deal-negotiation")).toContainText("The buyer refused every counter. Nothing was agreed.");
+  await expect(response.getByTestId("deal-rounds").locator("li")).toHaveCount(3);
+  await expect(response.getByTestId("deal-gap-funded")).toBeVisible();
+  await expect(page.getByTestId("deal-recommendation")).toHaveText("No deal");
 });

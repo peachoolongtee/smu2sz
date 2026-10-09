@@ -2280,7 +2280,7 @@
   "changes": [
     {
       "day": 34,
-      "seq": 7,
+      "seq": 10,
       "kind": "WAITING",
       "actor": "AGENT",
       "text": "Queued for owner approval (APR-000001): the yearly cost of 32.52% is above the 15.00% limit you signed for funding without your approval (all charges on ¥200,000.00 held 10 days (from in 3 days to in 13 days), annualised = 32.52%)",

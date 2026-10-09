@@ -1,0 +1,38 @@
+[
+  {
+    "id": "FHR_SUPPLY_AGREEMENT",
+    "kind": "BUYER_CONTRACT",
+    "counterparty_id": "BUYER-1",
+    "title": "Supply agreement FHR-2026-07",
+    "formats": [
+      "md",
+      "docx",
+      "pdf"
+    ],
+    "link_facility_id": null
+  },
+  {
+    "id": "MB_CREDIT_LINE_AGREEMENT",
+    "kind": "LENDER_AGREEMENT",
+    "counterparty_id": "BANK-1",
+    "title": "Credit line agreement MB-CL-2026-031",
+    "formats": [
+      "md",
+      "docx",
+      "pdf"
+    ],
+    "link_facility_id": "FAC-LINE"
+  },
+  {
+    "id": "GBR_INVOICE_FINANCING_AGREEMENT",
+    "kind": "LENDER_AGREEMENT",
+    "counterparty_id": "PLATFORM-1",
+    "title": "Invoice financing agreement GBR-IF-2026-118",
+    "formats": [
+      "md",
+      "docx",
+      "pdf"
+    ],
+    "link_facility_id": "FAC-IF"
+  }
+]

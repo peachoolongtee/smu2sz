@@ -958,7 +958,7 @@
   "changes": [
     {
       "day": 0,
-      "seq": 2,
+      "seq": 5,
       "kind": "OPERATION",
       "actor": "AGENT",
       "text": "Advance ¥255,000.00 on the ¥420,000.00 invoice to Foshan Home Retail Co. due in 32 days from Invoice financing (onboarded platform) today; the cash lands in 3 days after the 3-day lead time, not today",
@@ -968,7 +968,7 @@
     },
     {
       "day": 0,
-      "seq": 1,
+      "seq": 4,
       "kind": "OPERATION",
       "actor": "AGENT",
       "text": "Drew ¥150,000.00 on Bank credit line today",

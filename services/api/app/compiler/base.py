@@ -6,7 +6,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Protocol
 
-from app.compiler.schema import OfferExtraction, TermSheetExtraction
+from app.compiler.schema import ContractExtraction, OfferExtraction, TermSheetExtraction
 from app.domain.models import SourceDocument
 
 
@@ -30,6 +30,12 @@ class TermSheetResult:
     model_id: str
 
 
+@dataclass(frozen=True)
+class ContractResult:
+    extraction: ContractExtraction  # of one chunk of a contract
+    model_id: str
+
+
 class LLMBackend(Protocol):
     """Anything that fills the extraction schema from documents. Sees documents only."""
 
@@ -37,3 +43,4 @@ class LLMBackend(Protocol):
 
     def extract_offer(self, docs: Sequence[SourceDocument]) -> OfferResult: ...
     def extract_term_sheet(self, doc: SourceDocument) -> TermSheetResult: ...
+    def extract_contract(self, chunk: SourceDocument) -> ContractResult: ...

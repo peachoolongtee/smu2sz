@@ -33,6 +33,7 @@ const DEMO_NAV: { href: string; key: DictKey; group: "story" | "engine" }[] = [
   { href: "/chat", key: "nav.chat", group: "story" },
   { href: "/mandate", key: "nav.mandate", group: "engine" },
   { href: "/inbox", key: "nav.inbox", group: "engine" },
+  { href: "/documents", key: "nav.documents", group: "engine" },
   { href: "/trajectory", key: "nav.trajectory", group: "engine" },
   { href: "/funding", key: "nav.funding", group: "engine" },
   { href: "/verdict", key: "nav.verdict", group: "engine" },

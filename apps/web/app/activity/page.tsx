@@ -123,6 +123,16 @@ export default function ActivityPage() {
                         </dd>
                       </dl>
                     </Disclosure>
+                    {/* The owner's decision on a contract the agent read: the entry opens the document it names. */}
+                    {(o.kind === "CONFIRM_DOCUMENT" || o.kind === "REJECT_DOCUMENT") && /\bDOC-\d{6}\b/.test(o.summary) ? (
+                      <Link
+                        href={`/documents?id=${/\bDOC-\d{6}\b/.exec(o.summary)![0]}`}
+                        className="-mt-2 mb-3 inline-block text-xs font-medium text-brand-700 underline underline-offset-2"
+                        data-testid="activity-document-link"
+                      >
+                        {t("deals.summary.contract")}
+                      </Link>
+                    ) : null}
                   </li>
                 ))}
               </ol>

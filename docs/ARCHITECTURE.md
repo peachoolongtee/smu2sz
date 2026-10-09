@@ -31,7 +31,7 @@ Everything lives under `services/api/app/`.
 | `financial/` | daily cash recursion, debt ledger, forward-concession valuation, amortisation schedules | `project()`, `value_concessions()`, `annuity_payment()`, `amortisation_schedule()` | domain |
 | `covenants/` | DSCR, leverage, clean-down per facility definition | `evaluate()`, `ratios()` | domain, financial |
 | `mandate/` | canonical serialisation, Ed25519 signing, validity, tiers, mandate predicates | `canonical_bytes()`, `sign()`, `verify_signature()`, `check_validity()`, `tier_for()`, `check_predicates()` | domain |
-| `compiler/` | LLM adapter (Claude + DeepSeek), prompts, schemas, fixture cache, span validation, injection/data-request detection, term-sheet mode | `compile_offer()`, `compile_term_sheet()` | domain **only** (no state, no mandate, no menu) |
+| `compiler/` | LLM adapter (Claude + DeepSeek), prompts, schemas, fixture cache, span validation, injection/data-request detection, term-sheet mode, contract mode (chunking at headings, every term grounded in its clause) | `compile_offer()`, `compile_term_sheet()`, `compile_contract()` | domain **only** (no state, no mandate, no menu) |
 | `persistence/` | SQLAlchemy tables, migrations, `LedgerStore` (SQL + in-memory) | `LedgerStore` | domain |
 | `commitments/` | commitment lifecycle state machine, terms hash, nonce, expiry | `transition()`, `terms_hash()` | domain, persistence |
 | `funding/` | funding menu view, same-basis costing, grid-search router, marginal cost, break-even | `plan()`, `marginal_cost()`, `break_even_discount()` | domain, financial, covenants, mandate |
@@ -43,6 +43,9 @@ Everything lives under `services/api/app/`.
 | `capex/` (flag) | NPV, payback, structure comparison; evaluation is side-effect free (`POST /capex/apply` is the separate owner step) | `evaluate_capex()` | domain, financial, covenants |
 | `borrower_file/` (flag) | 微业贷-style borrower file from verified state (HTML, then PDF/DOCX); read-only, with provenance (generation day, versions, evidence hash); queues nothing | `build()` | domain, financial, covenants, persistence |
 | `alerts/` (flag) | cash-flow alerts from the conservative trajectory; receipt reconciliation | `alerts()`, `reconcile()` | domain, financial |
+| `ingest/` | text from an uploaded file (Word, PDF with a text layer, plain text); refuses scans, other types and oversize files | `extract_text()` | nothing internal |
+| `contracts/` (flag) | contract records: a document read into a record, the suggested facility, the review view, the held-out scorer | `read_document()`, `record_view()`, `score()` | domain, compiler |
+| `deals/` (flag) | the deal summary: a confirmed contract beside the books, and its chat reply | `deal_summary()`, `deal_reply()` | domain, contracts, alerts (reconciliation), financial (invoice terms), operations (log reading), persistence |
 | `api/` | FastAPI routers, dependency wiring | HTTP | everything |
 
 A module may not import another module's internals, only its public functions. **Cycles are forbidden.**
@@ -131,6 +134,7 @@ Every violation carries a `formula` and `inputs` the UI can show verbatim.
 - **Tier 3:** personal guarantee, pledging collateral, equity, mandate change, and adding a facility by anyone but the owner. Always `REFUSED`.
 - The executor computes the tier itself; it never trusts a tier supplied by the caller. It also checks the mandate version, signature, expiry and revocation, then the nonce, the idempotency key, the commitment expiry and the terms hash, in that order.
 - Every result is appended to the hash-chained log, **including refusals**.
+- **Documents** (brief 03): the owner's decision on an uploaded contract's reading, `Executor.decide_document`, is logged as `CONFIRM_DOCUMENT` or `REJECT_DOCUMENT` (Tier 2, owner only, bound to the SHA-256 of the text, once). It writes the decision on the contract record and nothing else: a document never changes the books.
 
 ## LLM adapter (binding for `compiler/`)
 
@@ -158,10 +162,15 @@ Every violation carries a `formula` and `inputs` the UI can show verbatim.
 | `GET` | `/state`, `/trajectory`, `/ledger`, `/audit`, `/mandate` | read views; money pre-formatted on the server |
 | `POST` | `/demo/reset` | reload fixtures, clear the ledger |
 | `GET` | `/evidence` | JSONL execution evidence with hashes |
+| `POST` | `/documents` | flag `contracts`; owner only; a demo document, an upload (base64) or pasted text → a contract record with the agent's reading |
+| `GET` | `/documents`, `/documents/{id}` | flag `contracts`; owner only; the records, and one record's review view |
+| `POST` | `/documents/{id}/confirm`, `/documents/{id}/reject` | flag `contracts`; owner only; `{doc_hash, link_facility_id?}` → `CONFIRM_DOCUMENT` / `REJECT_DOCUMENT` |
+| `GET` | `/deals`, `/deals/{buyer}` | flag `contracts`; owner only; the deal summary (shown on Deals once a deal is agreed) |
+| `GET` | `/fixtures/contracts` | flag `contracts`; owner only; the demo documents |
 
 ## Storage
 
-SQLAlchemy 2. Tests and local dev use SQLite (`DATABASE_URL=sqlite:///...`); deploy uses Postgres via Docker Compose (ADR-0001). The same `LedgerStore` interface has an in-memory implementation for unit tests.
+SQLAlchemy 2. Tests and local dev use SQLite (`DATABASE_URL=sqlite:///...`); deploy uses Postgres via Docker Compose (ADR-0001). The same `LedgerStore` interface has an in-memory implementation for unit tests. Contract records live in `contract_records` (migration `0005_contract_records`, with row-level security on Postgres); a decision is a compare-and-swap on a PROPOSED record.
 
 ## Frontend
 

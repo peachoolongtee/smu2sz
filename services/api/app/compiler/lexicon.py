@@ -131,6 +131,22 @@ def sentence_bounds(text: str, pos: int) -> tuple[int, int]:
     return start, end
 
 
+def sentence_spans(text: str) -> list[tuple[int, int]]:
+    """Every non-blank sentence of `text` as (start, end), by the rule of `sentence_bounds` (the terminator itself
+    is in neither sentence)."""
+    out: list[tuple[int, int]] = []
+    start = 0
+    for m in _TERM.finditer(text):
+        if not _is_terminator(text, m):
+            continue
+        if text[start:m.start()].strip():
+            out.append((start, m.start()))
+        start = m.end()
+    if text[start:].strip():
+        out.append((start, len(text)))
+    return out
+
+
 # Clause boundaries inside a sentence: a comma that is not a thousands separator, a semicolon or colon, a
 # list comma, or a coordinating conjunction ("and", "but", 而且, 但是 ...).
 _CLAUSE_BOUNDARY = rx(r",(?!\d{3})|[，;；:：、]|\s(?:and|but|while|whereas|plus)\s|而且|并且|但是?|同时|另外", I)

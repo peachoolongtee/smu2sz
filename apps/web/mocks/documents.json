@@ -1,0 +1,3402 @@
+{
+  "FHR_SUPPLY_AGREEMENT": {
+    "seeded": {
+      "id": "DOC-000001",
+      "kind": "BUYER_CONTRACT",
+      "title": "Supply agreement FHR-2026-07",
+      "counterparty_id": "BUYER-1",
+      "counterparty_name": "Foshan Home Retail Co.",
+      "status": "CONFIRMED",
+      "uploaded_day": 0,
+      "decided_day": 0,
+      "decided_seq": 1,
+      "linked_facility_id": null,
+      "summary": "18 terms read, 3 left blank",
+      "blocked": false,
+      "flags": [],
+      "source": "fixture:FHR_SUPPLY_AGREEMENT",
+      "label": "Read by the agent, confirmed by you",
+      "doc_hash": "b13cf763886d8d72f874ae8809bf6002328072a7a671d625f8e0accf1bb85f86",
+      "document": {
+        "doc_id": "DOC-b13cf763886d8d72",
+        "text": "SUPPLY AGREEMENT\n\nAgreement No. FHR-2026-07\n\nSynthetic demonstration document, written to match the TermsLedger demo scenario. It is not a real agreement and binds no one.\n\nThis Supply Agreement (the \"Agreement\") is made on 1 September 2026 between:\n\n(1) Lingnan Homeware Manufacturing Co., Ltd., a company registered in Foshan, Guangdong (the \"Supplier\"); and\n\n(2) Foshan Home Retail Co., a company registered in Foshan, Guangdong (the \"Buyer\").\n\nThe Supplier and the Buyer are each a \"Party\" and together the \"Parties\".\n\n1. DEFINITIONS\n\n1.1 \"Batch\" means one delivery of Products under this Agreement.\n\n1.2 \"Products\" means the home furnishings described in Schedule 2.\n\n1.3 \"Invoice Date\" means the date printed on the Supplier's invoice for a Batch.\n\n1.4 \"Business Day\" means a day other than a Saturday, a Sunday or a public holiday in the People's Republic of China.\n\n2. TERM\n\n2.1 This Agreement takes effect on 1 September 2026 and continues for a term of twelve (12) months, until 31 August 2027.\n\n2.2 Either Party may terminate this Agreement by giving the other Party ninety (90) days' written notice.\n\n3. PRICE\n\n3.1 The Buyer shall pay the Supplier RMB 420,000 (four hundred and twenty thousand yuan) for each Batch.\n\n3.2 The price of a Batch includes delivery to the Buyer's distribution centre and value-added tax.\n\n4. INVOICING AND PAYMENT\n\n4.1 The Supplier shall invoice each Batch on the day it is delivered. Batches are delivered every thirty (30) days, the first regular Batch on 3 October 2026, as set out in Schedule 1.\n\n4.2 Each invoice is payable forty-five (45) days after the Invoice Date.\n\n4.3 The Buyer shall pay by bank transfer to the account of the Supplier stated on the invoice.\n\n4.4 Early settlement. The Buyer may settle any invoice early, within two (2) days of the Supplier's written request, at a discount of 1.2% of the invoice amount.\n\n4.5 Payment of an invoice is subject to the Buyer's receipt of the documents listed in clause 6.\n\n5. DELIVERY\n\n5.1 The Supplier shall deliver each Batch of Products to the Buyer's distribution centre in Shunde, Foshan.\n\n5.2 Each Batch shall conform to the specifications in Schedule 2 and be packed for retail display.\n\n5.3 Title to and risk in a Batch pass to the Buyer on delivery.\n\n6. DOCUMENTS FOR PAYMENT\n\n6.1 The Supplier shall provide the following documents for each Batch:\n(a) a delivery note signed by the Buyer's warehouse;\n(b) a VAT special invoice (fapiao) for the Batch; and\n(c) a quality inspection certificate for the Batch.\n\n7. QUALITY AND RETURNS\n\n7.1 The Buyer may reject any Product that does not conform to Schedule 2 by written notice within ten (10) Business Days of delivery.\n\n7.2 The Supplier shall replace rejected Products at its own cost.\n\n8. CONFIDENTIALITY\n\n8.1 Each Party shall keep the terms of this Agreement confidential and shall not disclose them to any third party except its professional advisers, its lenders or as required by law.\n\n9. AMENDMENT\n\n9.1 No amendment to this Agreement is valid unless it is made in writing and signed by both Parties.\n\n10. GOVERNING LAW AND DISPUTES\n\n10.1 This Agreement is governed by the laws of the People's Republic of China.\n\n10.2 Any dispute arising from this Agreement shall be submitted to the people's court with jurisdiction over the place where the Buyer is registered.\n\n11. GENERAL\n\n11.1 This Agreement is the entire agreement between the Parties about its subject matter.\n\n11.2 This Agreement is made in two counterparts, one for each Party, with equal effect.\n\nSCHEDULE 1. DELIVERY AND INVOICING SCHEDULE\n\n1. Opening Batch: delivered and invoiced on 18 September 2026 under invoice RCV-A for RMB 420,000.\n\n2. Regular Batches: one Batch every thirty (30) days from 3 October 2026, each invoiced on its delivery date.\n\nSCHEDULE 2. PRODUCTS AND SPECIFICATIONS\n\n1. Upholstered sofas, dining sets and mattresses in the ranges listed in the Buyer's monthly order.\n\n2. Fabrics and foams must meet national standard GB 17927.1 for furniture flammability.\n\nSigned for and on behalf of the Supplier: Chen Wei, Director. Date: 1 September 2026.\n\nSigned for and on behalf of the Buyer: Li Na, Purchasing Director. Date: 1 September 2026."
+      },
+      "ai_label": "AI-generated, for reference",
+      "ai_label_zh": "由 AI 生成，仅供参考",
+      "can_confirm": false,
+      "reading_status": "COMPILED",
+      "compiler": "fixture-cache",
+      "prompt_version": "contract-v1",
+      "chunks": 1,
+      "terms": [
+        {
+          "field": "CONTRACT_REFERENCE",
+          "label": "Agreement number",
+          "value_display": "FHR-2026-07",
+          "clause": null,
+          "quote": "Agreement No. FHR-2026-07",
+          "span": {
+            "start": 18,
+            "end": 43
+          },
+          "amount_fen": null,
+          "amount_display": null,
+          "rate_bp": null,
+          "rate_display": null,
+          "days": null,
+          "months": null,
+          "date": null,
+          "date_display": null,
+          "day": null,
+          "basis": null,
+          "unit": null,
+          "reference": null,
+          "text": "FHR-2026-07",
+          "business_days": false
+        },
+        {
+          "field": "SIGNED_DATE",
+          "label": "Signed",
+          "value_display": "1 Sep 2026 (day -30)",
+          "clause": null,
+          "quote": "This Supply Agreement (the \"Agreement\") is made on 1 September 2026 between:",
+          "span": {
+            "start": 173,
+            "end": 249
+          },
+          "amount_fen": null,
+          "amount_display": null,
+          "rate_bp": null,
+          "rate_display": null,
+          "days": null,
+          "months": null,
+          "date": "2026-09-01",
+          "date_display": "1 Sep 2026",
+          "day": -30,
+          "basis": null,
+          "unit": null,
+          "reference": null,
+          "text": null,
+          "business_days": false
+        },
+        {
+          "field": "PARTY_SUPPLIER",
+          "label": "Supplier",
+          "value_display": "Lingnan Homeware Manufacturing Co., Ltd.",
+          "clause": null,
+          "quote": "Lingnan Homeware Manufacturing Co., Ltd., a company registered in Foshan, Guangdong (the \"Supplier\")",
+          "span": {
+            "start": 255,
+            "end": 355
+          },
+          "amount_fen": null,
+          "amount_display": null,
+          "rate_bp": null,
+          "rate_display": null,
+          "days": null,
+          "months": null,
+          "date": null,
+          "date_display": null,
+          "day": null,
+          "basis": null,
+          "unit": null,
+          "reference": null,
+          "text": "Lingnan Homeware Manufacturing Co., Ltd.",
+          "business_days": false
+        },
+        {
+          "field": "PARTY_BUYER",
+          "label": "Buyer",
+          "value_display": "Foshan Home Retail Co.",
+          "clause": null,
+          "quote": "Foshan Home Retail Co., a company registered in Foshan, Guangdong (the \"Buyer\")",
+          "span": {
+            "start": 366,
+            "end": 445
+          },
+          "amount_fen": null,
+          "amount_display": null,
+          "rate_bp": null,
+          "rate_display": null,
+          "days": null,
+          "months": null,
+          "date": null,
+          "date_display": null,
+          "day": null,
+          "basis": null,
+          "unit": null,
+          "reference": null,
+          "text": "Foshan Home Retail Co.",
+          "business_days": false
+        },
+        {
+          "field": "DURATION",
+          "label": "Term",
+          "value_display": "12 months",
+          "clause": "2.1",
+          "quote": "This Agreement takes effect on 1 September 2026 and continues for a term of twelve (12) months, until 31 August 2027",
+          "span": {
+            "start": 887,
+            "end": 1003
+          },
+          "amount_fen": null,
+          "amount_display": null,
+          "rate_bp": null,
+          "rate_display": null,
+          "days": null,
+          "months": 12,
+          "date": null,
+          "date_display": null,
+          "day": null,
+          "basis": null,
+          "unit": null,
+          "reference": null,
+          "text": null,
+          "business_days": false
+        },
+        {
+          "field": "END_DATE",
+          "label": "Ends",
+          "value_display": "31 Aug 2027 (day 334)",
+          "clause": "2.1",
+          "quote": "This Agreement takes effect on 1 September 2026 and continues for a term of twelve (12) months, until 31 August 2027",
+          "span": {
+            "start": 887,
+            "end": 1003
+          },
+          "amount_fen": null,
+          "amount_display": null,
+          "rate_bp": null,
+          "rate_display": null,
+          "days": null,
+          "months": null,
+          "date": "2027-08-31",
+          "date_display": "31 Aug 2027",
+          "day": 334,
+          "basis": null,
+          "unit": null,
+          "reference": null,
+          "text": null,
+          "business_days": false
+        },
+        {
+          "field": "START_DATE",
+          "label": "Starts",
+          "value_display": "1 Sep 2026 (day -30)",
+          "clause": "2.1",
+          "quote": "This Agreement takes effect on 1 September 2026 and continues for a term of twelve (12) months, until 31 August 2027",
+          "span": {
+            "start": 887,
+            "end": 1003
+          },
+          "amount_fen": null,
+          "amount_display": null,
+          "rate_bp": null,
+          "rate_display": null,
+          "days": null,
+          "months": null,
+          "date": "2026-09-01",
+          "date_display": "1 Sep 2026",
+          "day": -30,
+          "basis": null,
+          "unit": null,
+          "reference": null,
+          "text": null,
+          "business_days": false
+        },
+        {
+          "field": "PRICE",
+          "label": "Price",
+          "value_display": "¥420,000.00 per delivery batch",
+          "clause": "3.1",
+          "quote": "The Buyer shall pay the Supplier RMB 420,000 (four hundred and twenty thousand yuan) for each Batch",
+          "span": {
+            "start": 1127,
+            "end": 1226
+          },
+          "amount_fen": 42000000,
+          "amount_display": "¥420,000.00",
+          "rate_bp": null,
+          "rate_display": null,
+          "days": null,
+          "months": null,
+          "date": null,
+          "date_display": null,
+          "day": null,
+          "basis": null,
+          "unit": "PER_DELIVERY",
+          "reference": null,
+          "text": null,
+          "business_days": false
+        },
+        {
+          "field": "INVOICING",
+          "label": "Invoicing",
+          "value_display": "Every 30 days, the first on 3 Oct 2026 (day 2)",
+          "clause": "4.1",
+          "quote": "Batches are delivered every thirty (30) days, the first regular Batch on 3 October 2026, as set out in Schedule 1",
+          "span": {
+            "start": 1425,
+            "end": 1538
+          },
+          "amount_fen": null,
+          "amount_display": null,
+          "rate_bp": null,
+          "rate_display": null,
+          "days": 30,
+          "months": null,
+          "date": "2026-10-03",
+          "date_display": "3 Oct 2026",
+          "day": 2,
+          "basis": null,
+          "unit": null,
+          "reference": null,
+          "text": null,
+          "business_days": false
+        },
+        {
+          "field": "PAYMENT_TERMS",
+          "label": "Payment terms",
+          "value_display": "45 days from the invoice date",
+          "clause": "4.2",
+          "quote": "Each invoice is payable forty-five (45) days after the Invoice Date",
+          "span": {
+            "start": 1545,
+            "end": 1612
+          },
+          "amount_fen": null,
+          "amount_display": null,
+          "rate_bp": null,
+          "rate_display": null,
+          "days": 45,
+          "months": null,
+          "date": null,
+          "date_display": null,
+          "day": null,
+          "basis": "INVOICE",
+          "unit": null,
+          "reference": null,
+          "text": null,
+          "business_days": false
+        },
+        {
+          "field": "EARLY_PAYMENT",
+          "label": "Early payment",
+          "value_display": "The buyer may settle early at 1.20% off, within 2 days",
+          "clause": "4.4",
+          "quote": "The Buyer may settle any invoice early, within two (2) days of the Supplier's written request, at a discount of 1.2% of the invoice amount",
+          "span": {
+            "start": 1733,
+            "end": 1871
+          },
+          "amount_fen": null,
+          "amount_display": null,
+          "rate_bp": 120,
+          "rate_display": "1.20%",
+          "days": 2,
+          "months": null,
+          "date": null,
+          "date_display": null,
+          "day": null,
+          "basis": null,
+          "unit": null,
+          "reference": null,
+          "text": null,
+          "business_days": false
+        },
+        {
+          "field": "DELIVERABLE",
+          "label": "Deliverable",
+          "value_display": "The Supplier shall deliver each Batch of Products to the Buyer's distribution centre in Shunde, Foshan",
+          "clause": "5.1",
+          "quote": "The Supplier shall deliver each Batch of Products to the Buyer's distribution centre in Shunde, Foshan",
+          "span": {
+            "start": 1989,
+            "end": 2091
+          },
+          "amount_fen": null,
+          "amount_display": null,
+          "rate_bp": null,
+          "rate_display": null,
+          "days": null,
+          "months": null,
+          "date": null,
+          "date_display": null,
+          "day": null,
+          "basis": null,
+          "unit": null,
+          "reference": null,
+          "text": "The Supplier shall deliver each Batch of Products to the Buyer's distribution centre in Shunde, Foshan",
+          "business_days": false
+        },
+        {
+          "field": "DELIVERABLE",
+          "label": "Deliverable",
+          "value_display": "Each Batch shall conform to the specifications in Schedule 2 and be packed for retail display",
+          "clause": "5.2",
+          "quote": "Each Batch shall conform to the specifications in Schedule 2 and be packed for retail display",
+          "span": {
+            "start": 2098,
+            "end": 2191
+          },
+          "amount_fen": null,
+          "amount_display": null,
+          "rate_bp": null,
+          "rate_display": null,
+          "days": null,
+          "months": null,
+          "date": null,
+          "date_display": null,
+          "day": null,
+          "basis": null,
+          "unit": null,
+          "reference": null,
+          "text": "Each Batch shall conform to the specifications in Schedule 2 and be packed for retail display",
+          "business_days": false
+        },
+        {
+          "field": "REQUIRED_DOCUMENT",
+          "label": "Document for payment",
+          "value_display": "a delivery note signed by the Buyer's warehouse",
+          "clause": "6.1(a)",
+          "quote": "a delivery note signed by the Buyer's warehouse",
+          "span": {
+            "start": 2360,
+            "end": 2407
+          },
+          "amount_fen": null,
+          "amount_display": null,
+          "rate_bp": null,
+          "rate_display": null,
+          "days": null,
+          "months": null,
+          "date": null,
+          "date_display": null,
+          "day": null,
+          "basis": null,
+          "unit": null,
+          "reference": null,
+          "text": "a delivery note signed by the Buyer's warehouse",
+          "business_days": false
+        },
+        {
+          "field": "REQUIRED_DOCUMENT",
+          "label": "Document for payment",
+          "value_display": "a VAT special invoice (fapiao) for the Batch",
+          "clause": "6.1(b)",
+          "quote": "a VAT special invoice (fapiao) for the Batch",
+          "span": {
+            "start": 2413,
+            "end": 2457
+          },
+          "amount_fen": null,
+          "amount_display": null,
+          "rate_bp": null,
+          "rate_display": null,
+          "days": null,
+          "months": null,
+          "date": null,
+          "date_display": null,
+          "day": null,
+          "basis": null,
+          "unit": null,
+          "reference": null,
+          "text": "a VAT special invoice (fapiao) for the Batch",
+          "business_days": false
+        },
+        {
+          "field": "REQUIRED_DOCUMENT",
+          "label": "Document for payment",
+          "value_display": "a quality inspection certificate for the Batch",
+          "clause": "6.1(c)",
+          "quote": "a quality inspection certificate for the Batch",
+          "span": {
+            "start": 2467,
+            "end": 2513
+          },
+          "amount_fen": null,
+          "amount_display": null,
+          "rate_bp": null,
+          "rate_display": null,
+          "days": null,
+          "months": null,
+          "date": null,
+          "date_display": null,
+          "day": null,
+          "basis": null,
+          "unit": null,
+          "reference": null,
+          "text": "a quality inspection certificate for the Batch",
+          "business_days": false
+        },
+        {
+          "field": "AMENDMENT",
+          "label": "Amendments",
+          "value_display": "made in writing and signed by both Parties",
+          "clause": "9.1",
+          "quote": "No amendment to this Agreement is valid unless it is made in writing and signed by both Parties",
+          "span": {
+            "start": 2964,
+            "end": 3059
+          },
+          "amount_fen": null,
+          "amount_display": null,
+          "rate_bp": null,
+          "rate_display": null,
+          "days": null,
+          "months": null,
+          "date": null,
+          "date_display": null,
+          "day": null,
+          "basis": null,
+          "unit": null,
+          "reference": null,
+          "text": "made in writing and signed by both Parties",
+          "business_days": false
+        },
+        {
+          "field": "SCHEDULED_INVOICE",
+          "label": "Scheduled invoice",
+          "value_display": "RCV-A: ¥420,000.00 issued 18 Sep 2026 (day -13)",
+          "clause": "Schedule 1, 1",
+          "quote": "Opening Batch: delivered and invoiced on 18 September 2026 under invoice RCV-A for RMB 420,000",
+          "span": {
+            "start": 3566,
+            "end": 3660
+          },
+          "amount_fen": 42000000,
+          "amount_display": "¥420,000.00",
+          "rate_bp": null,
+          "rate_display": null,
+          "days": null,
+          "months": null,
+          "date": "2026-09-18",
+          "date_display": "18 Sep 2026",
+          "day": -13,
+          "basis": null,
+          "unit": null,
+          "reference": "RCV-A",
+          "text": null,
+          "business_days": false
+        }
+      ],
+      "blanks": [
+        {
+          "field": "MILESTONE",
+          "label": "Milestone payment",
+          "reason": "The agent found no clause for this and left it blank.",
+          "multi": true
+        },
+        {
+          "field": "RETENTION",
+          "label": "Retention",
+          "reason": "The agent found no clause for this and left it blank.",
+          "multi": false
+        },
+        {
+          "field": "LATE_INTEREST",
+          "label": "Late-payment interest",
+          "reason": "The agent found no clause for this and left it blank.",
+          "multi": false
+        }
+      ],
+      "notes": [
+        {
+          "field": "INVOICING",
+          "reason": "stated more than once with the same value: read once"
+        }
+      ]
+    },
+    "seeded_operation": {
+      "op_id": "CONFIRM-DOC-000001-0-1",
+      "kind": "CONFIRM_DOCUMENT",
+      "status": "EXECUTED",
+      "tier": "TIER_2",
+      "requested_by": "OWNER",
+      "message": "Document DOC-000001 (Supply agreement FHR-2026-07) confirmed by the owner: the agent read it, the owner confirmed it; nothing in the books changed",
+      "summary": "Document DOC-000001 (Supply agreement FHR-2026-07) confirmed by the owner: the agent read it, the owner confirmed it; nothing in the books changed",
+      "message_when": "Document DOC-000001 (Supply agreement FHR-2026-07) confirmed by the owner: the agent read it, the owner confirmed it; nothing in the books changed",
+      "event_text": "Document DOC-000001 (Supply agreement FHR-2026-07) confirmed by the owner: the agent read it, the owner confirmed it; nothing in the books changed",
+      "event_detail": null
+    },
+    "reread": {
+      "id": "DOC-000004",
+      "kind": "BUYER_CONTRACT",
+      "title": "Supply agreement FHR-2026-07",
+      "counterparty_id": "BUYER-1",
+      "counterparty_name": "Foshan Home Retail Co.",
+      "status": "PROPOSED",
+      "uploaded_day": 0,
+      "decided_day": null,
+      "decided_seq": null,
+      "linked_facility_id": null,
+      "summary": "18 terms read, 3 left blank",
+      "blocked": false,
+      "flags": [],
+      "source": "fixture:FHR_SUPPLY_AGREEMENT",
+      "label": "AI-generated, for reference",
+      "doc_hash": "b13cf763886d8d72f874ae8809bf6002328072a7a671d625f8e0accf1bb85f86",
+      "document": {
+        "doc_id": "DOC-b13cf763886d8d72",
+        "text": "SUPPLY AGREEMENT\n\nAgreement No. FHR-2026-07\n\nSynthetic demonstration document, written to match the TermsLedger demo scenario. It is not a real agreement and binds no one.\n\nThis Supply Agreement (the \"Agreement\") is made on 1 September 2026 between:\n\n(1) Lingnan Homeware Manufacturing Co., Ltd., a company registered in Foshan, Guangdong (the \"Supplier\"); and\n\n(2) Foshan Home Retail Co., a company registered in Foshan, Guangdong (the \"Buyer\").\n\nThe Supplier and the Buyer are each a \"Party\" and together the \"Parties\".\n\n1. DEFINITIONS\n\n1.1 \"Batch\" means one delivery of Products under this Agreement.\n\n1.2 \"Products\" means the home furnishings described in Schedule 2.\n\n1.3 \"Invoice Date\" means the date printed on the Supplier's invoice for a Batch.\n\n1.4 \"Business Day\" means a day other than a Saturday, a Sunday or a public holiday in the People's Republic of China.\n\n2. TERM\n\n2.1 This Agreement takes effect on 1 September 2026 and continues for a term of twelve (12) months, until 31 August 2027.\n\n2.2 Either Party may terminate this Agreement by giving the other Party ninety (90) days' written notice.\n\n3. PRICE\n\n3.1 The Buyer shall pay the Supplier RMB 420,000 (four hundred and twenty thousand yuan) for each Batch.\n\n3.2 The price of a Batch includes delivery to the Buyer's distribution centre and value-added tax.\n\n4. INVOICING AND PAYMENT\n\n4.1 The Supplier shall invoice each Batch on the day it is delivered. Batches are delivered every thirty (30) days, the first regular Batch on 3 October 2026, as set out in Schedule 1.\n\n4.2 Each invoice is payable forty-five (45) days after the Invoice Date.\n\n4.3 The Buyer shall pay by bank transfer to the account of the Supplier stated on the invoice.\n\n4.4 Early settlement. The Buyer may settle any invoice early, within two (2) days of the Supplier's written request, at a discount of 1.2% of the invoice amount.\n\n4.5 Payment of an invoice is subject to the Buyer's receipt of the documents listed in clause 6.\n\n5. DELIVERY\n\n5.1 The Supplier shall deliver each Batch of Products to the Buyer's distribution centre in Shunde, Foshan.\n\n5.2 Each Batch shall conform to the specifications in Schedule 2 and be packed for retail display.\n\n5.3 Title to and risk in a Batch pass to the Buyer on delivery.\n\n6. DOCUMENTS FOR PAYMENT\n\n6.1 The Supplier shall provide the following documents for each Batch:\n(a) a delivery note signed by the Buyer's warehouse;\n(b) a VAT special invoice (fapiao) for the Batch; and\n(c) a quality inspection certificate for the Batch.\n\n7. QUALITY AND RETURNS\n\n7.1 The Buyer may reject any Product that does not conform to Schedule 2 by written notice within ten (10) Business Days of delivery.\n\n7.2 The Supplier shall replace rejected Products at its own cost.\n\n8. CONFIDENTIALITY\n\n8.1 Each Party shall keep the terms of this Agreement confidential and shall not disclose them to any third party except its professional advisers, its lenders or as required by law.\n\n9. AMENDMENT\n\n9.1 No amendment to this Agreement is valid unless it is made in writing and signed by both Parties.\n\n10. GOVERNING LAW AND DISPUTES\n\n10.1 This Agreement is governed by the laws of the People's Republic of China.\n\n10.2 Any dispute arising from this Agreement shall be submitted to the people's court with jurisdiction over the place where the Buyer is registered.\n\n11. GENERAL\n\n11.1 This Agreement is the entire agreement between the Parties about its subject matter.\n\n11.2 This Agreement is made in two counterparts, one for each Party, with equal effect.\n\nSCHEDULE 1. DELIVERY AND INVOICING SCHEDULE\n\n1. Opening Batch: delivered and invoiced on 18 September 2026 under invoice RCV-A for RMB 420,000.\n\n2. Regular Batches: one Batch every thirty (30) days from 3 October 2026, each invoiced on its delivery date.\n\nSCHEDULE 2. PRODUCTS AND SPECIFICATIONS\n\n1. Upholstered sofas, dining sets and mattresses in the ranges listed in the Buyer's monthly order.\n\n2. Fabrics and foams must meet national standard GB 17927.1 for furniture flammability.\n\nSigned for and on behalf of the Supplier: Chen Wei, Director. Date: 1 September 2026.\n\nSigned for and on behalf of the Buyer: Li Na, Purchasing Director. Date: 1 September 2026."
+      },
+      "ai_label": "AI-generated, for reference",
+      "ai_label_zh": "由 AI 生成，仅供参考",
+      "can_confirm": true,
+      "reading_status": "COMPILED",
+      "compiler": "fixture-cache",
+      "prompt_version": "contract-v1",
+      "chunks": 1,
+      "terms": [
+        {
+          "field": "CONTRACT_REFERENCE",
+          "label": "Agreement number",
+          "value_display": "FHR-2026-07",
+          "clause": null,
+          "quote": "Agreement No. FHR-2026-07",
+          "span": {
+            "start": 18,
+            "end": 43
+          },
+          "amount_fen": null,
+          "amount_display": null,
+          "rate_bp": null,
+          "rate_display": null,
+          "days": null,
+          "months": null,
+          "date": null,
+          "date_display": null,
+          "day": null,
+          "basis": null,
+          "unit": null,
+          "reference": null,
+          "text": "FHR-2026-07",
+          "business_days": false
+        },
+        {
+          "field": "SIGNED_DATE",
+          "label": "Signed",
+          "value_display": "1 Sep 2026 (day -30)",
+          "clause": null,
+          "quote": "This Supply Agreement (the \"Agreement\") is made on 1 September 2026 between:",
+          "span": {
+            "start": 173,
+            "end": 249
+          },
+          "amount_fen": null,
+          "amount_display": null,
+          "rate_bp": null,
+          "rate_display": null,
+          "days": null,
+          "months": null,
+          "date": "2026-09-01",
+          "date_display": "1 Sep 2026",
+          "day": -30,
+          "basis": null,
+          "unit": null,
+          "reference": null,
+          "text": null,
+          "business_days": false
+        },
+        {
+          "field": "PARTY_SUPPLIER",
+          "label": "Supplier",
+          "value_display": "Lingnan Homeware Manufacturing Co., Ltd.",
+          "clause": null,
+          "quote": "Lingnan Homeware Manufacturing Co., Ltd., a company registered in Foshan, Guangdong (the \"Supplier\")",
+          "span": {
+            "start": 255,
+            "end": 355
+          },
+          "amount_fen": null,
+          "amount_display": null,
+          "rate_bp": null,
+          "rate_display": null,
+          "days": null,
+          "months": null,
+          "date": null,
+          "date_display": null,
+          "day": null,
+          "basis": null,
+          "unit": null,
+          "reference": null,
+          "text": "Lingnan Homeware Manufacturing Co., Ltd.",
+          "business_days": false
+        },
+        {
+          "field": "PARTY_BUYER",
+          "label": "Buyer",
+          "value_display": "Foshan Home Retail Co.",
+          "clause": null,
+          "quote": "Foshan Home Retail Co., a company registered in Foshan, Guangdong (the \"Buyer\")",
+          "span": {
+            "start": 366,
+            "end": 445
+          },
+          "amount_fen": null,
+          "amount_display": null,
+          "rate_bp": null,
+          "rate_display": null,
+          "days": null,
+          "months": null,
+          "date": null,
+          "date_display": null,
+          "day": null,
+          "basis": null,
+          "unit": null,
+          "reference": null,
+          "text": "Foshan Home Retail Co.",
+          "business_days": false
+        },
+        {
+          "field": "DURATION",
+          "label": "Term",
+          "value_display": "12 months",
+          "clause": "2.1",
+          "quote": "This Agreement takes effect on 1 September 2026 and continues for a term of twelve (12) months, until 31 August 2027",
+          "span": {
+            "start": 887,
+            "end": 1003
+          },
+          "amount_fen": null,
+          "amount_display": null,
+          "rate_bp": null,
+          "rate_display": null,
+          "days": null,
+          "months": 12,
+          "date": null,
+          "date_display": null,
+          "day": null,
+          "basis": null,
+          "unit": null,
+          "reference": null,
+          "text": null,
+          "business_days": false
+        },
+        {
+          "field": "END_DATE",
+          "label": "Ends",
+          "value_display": "31 Aug 2027 (day 334)",
+          "clause": "2.1",
+          "quote": "This Agreement takes effect on 1 September 2026 and continues for a term of twelve (12) months, until 31 August 2027",
+          "span": {
+            "start": 887,
+            "end": 1003
+          },
+          "amount_fen": null,
+          "amount_display": null,
+          "rate_bp": null,
+          "rate_display": null,
+          "days": null,
+          "months": null,
+          "date": "2027-08-31",
+          "date_display": "31 Aug 2027",
+          "day": 334,
+          "basis": null,
+          "unit": null,
+          "reference": null,
+          "text": null,
+          "business_days": false
+        },
+        {
+          "field": "START_DATE",
+          "label": "Starts",
+          "value_display": "1 Sep 2026 (day -30)",
+          "clause": "2.1",
+          "quote": "This Agreement takes effect on 1 September 2026 and continues for a term of twelve (12) months, until 31 August 2027",
+          "span": {
+            "start": 887,
+            "end": 1003
+          },
+          "amount_fen": null,
+          "amount_display": null,
+          "rate_bp": null,
+          "rate_display": null,
+          "days": null,
+          "months": null,
+          "date": "2026-09-01",
+          "date_display": "1 Sep 2026",
+          "day": -30,
+          "basis": null,
+          "unit": null,
+          "reference": null,
+          "text": null,
+          "business_days": false
+        },
+        {
+          "field": "PRICE",
+          "label": "Price",
+          "value_display": "¥420,000.00 per delivery batch",
+          "clause": "3.1",
+          "quote": "The Buyer shall pay the Supplier RMB 420,000 (four hundred and twenty thousand yuan) for each Batch",
+          "span": {
+            "start": 1127,
+            "end": 1226
+          },
+          "amount_fen": 42000000,
+          "amount_display": "¥420,000.00",
+          "rate_bp": null,
+          "rate_display": null,
+          "days": null,
+          "months": null,
+          "date": null,
+          "date_display": null,
+          "day": null,
+          "basis": null,
+          "unit": "PER_DELIVERY",
+          "reference": null,
+          "text": null,
+          "business_days": false
+        },
+        {
+          "field": "INVOICING",
+          "label": "Invoicing",
+          "value_display": "Every 30 days, the first on 3 Oct 2026 (day 2)",
+          "clause": "4.1",
+          "quote": "Batches are delivered every thirty (30) days, the first regular Batch on 3 October 2026, as set out in Schedule 1",
+          "span": {
+            "start": 1425,
+            "end": 1538
+          },
+          "amount_fen": null,
+          "amount_display": null,
+          "rate_bp": null,
+          "rate_display": null,
+          "days": 30,
+          "months": null,
+          "date": "2026-10-03",
+          "date_display": "3 Oct 2026",
+          "day": 2,
+          "basis": null,
+          "unit": null,
+          "reference": null,
+          "text": null,
+          "business_days": false
+        },
+        {
+          "field": "PAYMENT_TERMS",
+          "label": "Payment terms",
+          "value_display": "45 days from the invoice date",
+          "clause": "4.2",
+          "quote": "Each invoice is payable forty-five (45) days after the Invoice Date",
+          "span": {
+            "start": 1545,
+            "end": 1612
+          },
+          "amount_fen": null,
+          "amount_display": null,
+          "rate_bp": null,
+          "rate_display": null,
+          "days": 45,
+          "months": null,
+          "date": null,
+          "date_display": null,
+          "day": null,
+          "basis": "INVOICE",
+          "unit": null,
+          "reference": null,
+          "text": null,
+          "business_days": false
+        },
+        {
+          "field": "EARLY_PAYMENT",
+          "label": "Early payment",
+          "value_display": "The buyer may settle early at 1.20% off, within 2 days",
+          "clause": "4.4",
+          "quote": "The Buyer may settle any invoice early, within two (2) days of the Supplier's written request, at a discount of 1.2% of the invoice amount",
+          "span": {
+            "start": 1733,
+            "end": 1871
+          },
+          "amount_fen": null,
+          "amount_display": null,
+          "rate_bp": 120,
+          "rate_display": "1.20%",
+          "days": 2,
+          "months": null,
+          "date": null,
+          "date_display": null,
+          "day": null,
+          "basis": null,
+          "unit": null,
+          "reference": null,
+          "text": null,
+          "business_days": false
+        },
+        {
+          "field": "DELIVERABLE",
+          "label": "Deliverable",
+          "value_display": "The Supplier shall deliver each Batch of Products to the Buyer's distribution centre in Shunde, Foshan",
+          "clause": "5.1",
+          "quote": "The Supplier shall deliver each Batch of Products to the Buyer's distribution centre in Shunde, Foshan",
+          "span": {
+            "start": 1989,
+            "end": 2091
+          },
+          "amount_fen": null,
+          "amount_display": null,
+          "rate_bp": null,
+          "rate_display": null,
+          "days": null,
+          "months": null,
+          "date": null,
+          "date_display": null,
+          "day": null,
+          "basis": null,
+          "unit": null,
+          "reference": null,
+          "text": "The Supplier shall deliver each Batch of Products to the Buyer's distribution centre in Shunde, Foshan",
+          "business_days": false
+        },
+        {
+          "field": "DELIVERABLE",
+          "label": "Deliverable",
+          "value_display": "Each Batch shall conform to the specifications in Schedule 2 and be packed for retail display",
+          "clause": "5.2",
+          "quote": "Each Batch shall conform to the specifications in Schedule 2 and be packed for retail display",
+          "span": {
+            "start": 2098,
+            "end": 2191
+          },
+          "amount_fen": null,
+          "amount_display": null,
+          "rate_bp": null,
+          "rate_display": null,
+          "days": null,
+          "months": null,
+          "date": null,
+          "date_display": null,
+          "day": null,
+          "basis": null,
+          "unit": null,
+          "reference": null,
+          "text": "Each Batch shall conform to the specifications in Schedule 2 and be packed for retail display",
+          "business_days": false
+        },
+        {
+          "field": "REQUIRED_DOCUMENT",
+          "label": "Document for payment",
+          "value_display": "a delivery note signed by the Buyer's warehouse",
+          "clause": "6.1(a)",
+          "quote": "a delivery note signed by the Buyer's warehouse",
+          "span": {
+            "start": 2360,
+            "end": 2407
+          },
+          "amount_fen": null,
+          "amount_display": null,
+          "rate_bp": null,
+          "rate_display": null,
+          "days": null,
+          "months": null,
+          "date": null,
+          "date_display": null,
+          "day": null,
+          "basis": null,
+          "unit": null,
+          "reference": null,
+          "text": "a delivery note signed by the Buyer's warehouse",
+          "business_days": false
+        },
+        {
+          "field": "REQUIRED_DOCUMENT",
+          "label": "Document for payment",
+          "value_display": "a VAT special invoice (fapiao) for the Batch",
+          "clause": "6.1(b)",
+          "quote": "a VAT special invoice (fapiao) for the Batch",
+          "span": {
+            "start": 2413,
+            "end": 2457
+          },
+          "amount_fen": null,
+          "amount_display": null,
+          "rate_bp": null,
+          "rate_display": null,
+          "days": null,
+          "months": null,
+          "date": null,
+          "date_display": null,
+          "day": null,
+          "basis": null,
+          "unit": null,
+          "reference": null,
+          "text": "a VAT special invoice (fapiao) for the Batch",
+          "business_days": false
+        },
+        {
+          "field": "REQUIRED_DOCUMENT",
+          "label": "Document for payment",
+          "value_display": "a quality inspection certificate for the Batch",
+          "clause": "6.1(c)",
+          "quote": "a quality inspection certificate for the Batch",
+          "span": {
+            "start": 2467,
+            "end": 2513
+          },
+          "amount_fen": null,
+          "amount_display": null,
+          "rate_bp": null,
+          "rate_display": null,
+          "days": null,
+          "months": null,
+          "date": null,
+          "date_display": null,
+          "day": null,
+          "basis": null,
+          "unit": null,
+          "reference": null,
+          "text": "a quality inspection certificate for the Batch",
+          "business_days": false
+        },
+        {
+          "field": "AMENDMENT",
+          "label": "Amendments",
+          "value_display": "made in writing and signed by both Parties",
+          "clause": "9.1",
+          "quote": "No amendment to this Agreement is valid unless it is made in writing and signed by both Parties",
+          "span": {
+            "start": 2964,
+            "end": 3059
+          },
+          "amount_fen": null,
+          "amount_display": null,
+          "rate_bp": null,
+          "rate_display": null,
+          "days": null,
+          "months": null,
+          "date": null,
+          "date_display": null,
+          "day": null,
+          "basis": null,
+          "unit": null,
+          "reference": null,
+          "text": "made in writing and signed by both Parties",
+          "business_days": false
+        },
+        {
+          "field": "SCHEDULED_INVOICE",
+          "label": "Scheduled invoice",
+          "value_display": "RCV-A: ¥420,000.00 issued 18 Sep 2026 (day -13)",
+          "clause": "Schedule 1, 1",
+          "quote": "Opening Batch: delivered and invoiced on 18 September 2026 under invoice RCV-A for RMB 420,000",
+          "span": {
+            "start": 3566,
+            "end": 3660
+          },
+          "amount_fen": 42000000,
+          "amount_display": "¥420,000.00",
+          "rate_bp": null,
+          "rate_display": null,
+          "days": null,
+          "months": null,
+          "date": "2026-09-18",
+          "date_display": "18 Sep 2026",
+          "day": -13,
+          "basis": null,
+          "unit": null,
+          "reference": "RCV-A",
+          "text": null,
+          "business_days": false
+        }
+      ],
+      "blanks": [
+        {
+          "field": "MILESTONE",
+          "label": "Milestone payment",
+          "reason": "The agent found no clause for this and left it blank.",
+          "multi": true
+        },
+        {
+          "field": "RETENTION",
+          "label": "Retention",
+          "reason": "The agent found no clause for this and left it blank.",
+          "multi": false
+        },
+        {
+          "field": "LATE_INTEREST",
+          "label": "Late-payment interest",
+          "reason": "The agent found no clause for this and left it blank.",
+          "multi": false
+        }
+      ],
+      "notes": [
+        {
+          "field": "INVOICING",
+          "reason": "stated more than once with the same value: read once"
+        }
+      ]
+    },
+    "confirmed": {
+      "result": {
+        "op_id": "CONFIRM-DOC-000004-0-4",
+        "kind": "CONFIRM_DOCUMENT",
+        "status": "EXECUTED",
+        "tier": "TIER_2",
+        "violations": [],
+        "seq": 4,
+        "entry_hash": "08012a4916e4cb34815891a10a04acb44b8709ec903e32b95c721d138cbb2670",
+        "prev_hash": "1896e5a2c31a5094e211c19e588b287b2118819d5063e526c8b7e3c0baffe7e9",
+        "effective_day": 0,
+        "approval_id": null,
+        "message": "Document DOC-000004 (Supply agreement FHR-2026-07) confirmed by the owner: the agent read it, the owner confirmed it; nothing in the books changed"
+      },
+      "document": {
+        "id": "DOC-000004",
+        "kind": "BUYER_CONTRACT",
+        "title": "Supply agreement FHR-2026-07",
+        "counterparty_id": "BUYER-1",
+        "counterparty_name": "Foshan Home Retail Co.",
+        "status": "CONFIRMED",
+        "uploaded_day": 0,
+        "decided_day": 0,
+        "decided_seq": 4,
+        "linked_facility_id": null,
+        "summary": "18 terms read, 3 left blank",
+        "blocked": false,
+        "flags": [],
+        "source": "fixture:FHR_SUPPLY_AGREEMENT",
+        "label": "Read by the agent, confirmed by you",
+        "doc_hash": "b13cf763886d8d72f874ae8809bf6002328072a7a671d625f8e0accf1bb85f86",
+        "document": {
+          "doc_id": "DOC-b13cf763886d8d72",
+          "text": "SUPPLY AGREEMENT\n\nAgreement No. FHR-2026-07\n\nSynthetic demonstration document, written to match the TermsLedger demo scenario. It is not a real agreement and binds no one.\n\nThis Supply Agreement (the \"Agreement\") is made on 1 September 2026 between:\n\n(1) Lingnan Homeware Manufacturing Co., Ltd., a company registered in Foshan, Guangdong (the \"Supplier\"); and\n\n(2) Foshan Home Retail Co., a company registered in Foshan, Guangdong (the \"Buyer\").\n\nThe Supplier and the Buyer are each a \"Party\" and together the \"Parties\".\n\n1. DEFINITIONS\n\n1.1 \"Batch\" means one delivery of Products under this Agreement.\n\n1.2 \"Products\" means the home furnishings described in Schedule 2.\n\n1.3 \"Invoice Date\" means the date printed on the Supplier's invoice for a Batch.\n\n1.4 \"Business Day\" means a day other than a Saturday, a Sunday or a public holiday in the People's Republic of China.\n\n2. TERM\n\n2.1 This Agreement takes effect on 1 September 2026 and continues for a term of twelve (12) months, until 31 August 2027.\n\n2.2 Either Party may terminate this Agreement by giving the other Party ninety (90) days' written notice.\n\n3. PRICE\n\n3.1 The Buyer shall pay the Supplier RMB 420,000 (four hundred and twenty thousand yuan) for each Batch.\n\n3.2 The price of a Batch includes delivery to the Buyer's distribution centre and value-added tax.\n\n4. INVOICING AND PAYMENT\n\n4.1 The Supplier shall invoice each Batch on the day it is delivered. Batches are delivered every thirty (30) days, the first regular Batch on 3 October 2026, as set out in Schedule 1.\n\n4.2 Each invoice is payable forty-five (45) days after the Invoice Date.\n\n4.3 The Buyer shall pay by bank transfer to the account of the Supplier stated on the invoice.\n\n4.4 Early settlement. The Buyer may settle any invoice early, within two (2) days of the Supplier's written request, at a discount of 1.2% of the invoice amount.\n\n4.5 Payment of an invoice is subject to the Buyer's receipt of the documents listed in clause 6.\n\n5. DELIVERY\n\n5.1 The Supplier shall deliver each Batch of Products to the Buyer's distribution centre in Shunde, Foshan.\n\n5.2 Each Batch shall conform to the specifications in Schedule 2 and be packed for retail display.\n\n5.3 Title to and risk in a Batch pass to the Buyer on delivery.\n\n6. DOCUMENTS FOR PAYMENT\n\n6.1 The Supplier shall provide the following documents for each Batch:\n(a) a delivery note signed by the Buyer's warehouse;\n(b) a VAT special invoice (fapiao) for the Batch; and\n(c) a quality inspection certificate for the Batch.\n\n7. QUALITY AND RETURNS\n\n7.1 The Buyer may reject any Product that does not conform to Schedule 2 by written notice within ten (10) Business Days of delivery.\n\n7.2 The Supplier shall replace rejected Products at its own cost.\n\n8. CONFIDENTIALITY\n\n8.1 Each Party shall keep the terms of this Agreement confidential and shall not disclose them to any third party except its professional advisers, its lenders or as required by law.\n\n9. AMENDMENT\n\n9.1 No amendment to this Agreement is valid unless it is made in writing and signed by both Parties.\n\n10. GOVERNING LAW AND DISPUTES\n\n10.1 This Agreement is governed by the laws of the People's Republic of China.\n\n10.2 Any dispute arising from this Agreement shall be submitted to the people's court with jurisdiction over the place where the Buyer is registered.\n\n11. GENERAL\n\n11.1 This Agreement is the entire agreement between the Parties about its subject matter.\n\n11.2 This Agreement is made in two counterparts, one for each Party, with equal effect.\n\nSCHEDULE 1. DELIVERY AND INVOICING SCHEDULE\n\n1. Opening Batch: delivered and invoiced on 18 September 2026 under invoice RCV-A for RMB 420,000.\n\n2. Regular Batches: one Batch every thirty (30) days from 3 October 2026, each invoiced on its delivery date.\n\nSCHEDULE 2. PRODUCTS AND SPECIFICATIONS\n\n1. Upholstered sofas, dining sets and mattresses in the ranges listed in the Buyer's monthly order.\n\n2. Fabrics and foams must meet national standard GB 17927.1 for furniture flammability.\n\nSigned for and on behalf of the Supplier: Chen Wei, Director. Date: 1 September 2026.\n\nSigned for and on behalf of the Buyer: Li Na, Purchasing Director. Date: 1 September 2026."
+        },
+        "ai_label": "AI-generated, for reference",
+        "ai_label_zh": "由 AI 生成，仅供参考",
+        "can_confirm": false,
+        "reading_status": "COMPILED",
+        "compiler": "fixture-cache",
+        "prompt_version": "contract-v1",
+        "chunks": 1,
+        "terms": [
+          {
+            "field": "CONTRACT_REFERENCE",
+            "label": "Agreement number",
+            "value_display": "FHR-2026-07",
+            "clause": null,
+            "quote": "Agreement No. FHR-2026-07",
+            "span": {
+              "start": 18,
+              "end": 43
+            },
+            "amount_fen": null,
+            "amount_display": null,
+            "rate_bp": null,
+            "rate_display": null,
+            "days": null,
+            "months": null,
+            "date": null,
+            "date_display": null,
+            "day": null,
+            "basis": null,
+            "unit": null,
+            "reference": null,
+            "text": "FHR-2026-07",
+            "business_days": false
+          },
+          {
+            "field": "SIGNED_DATE",
+            "label": "Signed",
+            "value_display": "1 Sep 2026 (day -30)",
+            "clause": null,
+            "quote": "This Supply Agreement (the \"Agreement\") is made on 1 September 2026 between:",
+            "span": {
+              "start": 173,
+              "end": 249
+            },
+            "amount_fen": null,
+            "amount_display": null,
+            "rate_bp": null,
+            "rate_display": null,
+            "days": null,
+            "months": null,
+            "date": "2026-09-01",
+            "date_display": "1 Sep 2026",
+            "day": -30,
+            "basis": null,
+            "unit": null,
+            "reference": null,
+            "text": null,
+            "business_days": false
+          },
+          {
+            "field": "PARTY_SUPPLIER",
+            "label": "Supplier",
+            "value_display": "Lingnan Homeware Manufacturing Co., Ltd.",
+            "clause": null,
+            "quote": "Lingnan Homeware Manufacturing Co., Ltd., a company registered in Foshan, Guangdong (the \"Supplier\")",
+            "span": {
+              "start": 255,
+              "end": 355
+            },
+            "amount_fen": null,
+            "amount_display": null,
+            "rate_bp": null,
+            "rate_display": null,
+            "days": null,
+            "months": null,
+            "date": null,
+            "date_display": null,
+            "day": null,
+            "basis": null,
+            "unit": null,
+            "reference": null,
+            "text": "Lingnan Homeware Manufacturing Co., Ltd.",
+            "business_days": false
+          },
+          {
+            "field": "PARTY_BUYER",
+            "label": "Buyer",
+            "value_display": "Foshan Home Retail Co.",
+            "clause": null,
+            "quote": "Foshan Home Retail Co., a company registered in Foshan, Guangdong (the \"Buyer\")",
+            "span": {
+              "start": 366,
+              "end": 445
+            },
+            "amount_fen": null,
+            "amount_display": null,
+            "rate_bp": null,
+            "rate_display": null,
+            "days": null,
+            "months": null,
+            "date": null,
+            "date_display": null,
+            "day": null,
+            "basis": null,
+            "unit": null,
+            "reference": null,
+            "text": "Foshan Home Retail Co.",
+            "business_days": false
+          },
+          {
+            "field": "DURATION",
+            "label": "Term",
+            "value_display": "12 months",
+            "clause": "2.1",
+            "quote": "This Agreement takes effect on 1 September 2026 and continues for a term of twelve (12) months, until 31 August 2027",
+            "span": {
+              "start": 887,
+              "end": 1003
+            },
+            "amount_fen": null,
+            "amount_display": null,
+            "rate_bp": null,
+            "rate_display": null,
+            "days": null,
+            "months": 12,
+            "date": null,
+            "date_display": null,
+            "day": null,
+            "basis": null,
+            "unit": null,
+            "reference": null,
+            "text": null,
+            "business_days": false
+          },
+          {
+            "field": "END_DATE",
+            "label": "Ends",
+            "value_display": "31 Aug 2027 (day 334)",
+            "clause": "2.1",
+            "quote": "This Agreement takes effect on 1 September 2026 and continues for a term of twelve (12) months, until 31 August 2027",
+            "span": {
+              "start": 887,
+              "end": 1003
+            },
+            "amount_fen": null,
+            "amount_display": null,
+            "rate_bp": null,
+            "rate_display": null,
+            "days": null,
+            "months": null,
+            "date": "2027-08-31",
+            "date_display": "31 Aug 2027",
+            "day": 334,
+            "basis": null,
+            "unit": null,
+            "reference": null,
+            "text": null,
+            "business_days": false
+          },
+          {
+            "field": "START_DATE",
+            "label": "Starts",
+            "value_display": "1 Sep 2026 (day -30)",
+            "clause": "2.1",
+            "quote": "This Agreement takes effect on 1 September 2026 and continues for a term of twelve (12) months, until 31 August 2027",
+            "span": {
+              "start": 887,
+              "end": 1003
+            },
+            "amount_fen": null,
+            "amount_display": null,
+            "rate_bp": null,
+            "rate_display": null,
+            "days": null,
+            "months": null,
+            "date": "2026-09-01",
+            "date_display": "1 Sep 2026",
+            "day": -30,
+            "basis": null,
+            "unit": null,
+            "reference": null,
+            "text": null,
+            "business_days": false
+          },
+          {
+            "field": "PRICE",
+            "label": "Price",
+            "value_display": "¥420,000.00 per delivery batch",
+            "clause": "3.1",
+            "quote": "The Buyer shall pay the Supplier RMB 420,000 (four hundred and twenty thousand yuan) for each Batch",
+            "span": {
+              "start": 1127,
+              "end": 1226
+            },
+            "amount_fen": 42000000,
+            "amount_display": "¥420,000.00",
+            "rate_bp": null,
+            "rate_display": null,
+            "days": null,
+            "months": null,
+            "date": null,
+            "date_display": null,
+            "day": null,
+            "basis": null,
+            "unit": "PER_DELIVERY",
+            "reference": null,
+            "text": null,
+            "business_days": false
+          },
+          {
+            "field": "INVOICING",
+            "label": "Invoicing",
+            "value_display": "Every 30 days, the first on 3 Oct 2026 (day 2)",
+            "clause": "4.1",
+            "quote": "Batches are delivered every thirty (30) days, the first regular Batch on 3 October 2026, as set out in Schedule 1",
+            "span": {
+              "start": 1425,
+              "end": 1538
+            },
+            "amount_fen": null,
+            "amount_display": null,
+            "rate_bp": null,
+            "rate_display": null,
+            "days": 30,
+            "months": null,
+            "date": "2026-10-03",
+            "date_display": "3 Oct 2026",
+            "day": 2,
+            "basis": null,
+            "unit": null,
+            "reference": null,
+            "text": null,
+            "business_days": false
+          },
+          {
+            "field": "PAYMENT_TERMS",
+            "label": "Payment terms",
+            "value_display": "45 days from the invoice date",
+            "clause": "4.2",
+            "quote": "Each invoice is payable forty-five (45) days after the Invoice Date",
+            "span": {
+              "start": 1545,
+              "end": 1612
+            },
+            "amount_fen": null,
+            "amount_display": null,
+            "rate_bp": null,
+            "rate_display": null,
+            "days": 45,
+            "months": null,
+            "date": null,
+            "date_display": null,
+            "day": null,
+            "basis": "INVOICE",
+            "unit": null,
+            "reference": null,
+            "text": null,
+            "business_days": false
+          },
+          {
+            "field": "EARLY_PAYMENT",
+            "label": "Early payment",
+            "value_display": "The buyer may settle early at 1.20% off, within 2 days",
+            "clause": "4.4",
+            "quote": "The Buyer may settle any invoice early, within two (2) days of the Supplier's written request, at a discount of 1.2% of the invoice amount",
+            "span": {
+              "start": 1733,
+              "end": 1871
+            },
+            "amount_fen": null,
+            "amount_display": null,
+            "rate_bp": 120,
+            "rate_display": "1.20%",
+            "days": 2,
+            "months": null,
+            "date": null,
+            "date_display": null,
+            "day": null,
+            "basis": null,
+            "unit": null,
+            "reference": null,
+            "text": null,
+            "business_days": false
+          },
+          {
+            "field": "DELIVERABLE",
+            "label": "Deliverable",
+            "value_display": "The Supplier shall deliver each Batch of Products to the Buyer's distribution centre in Shunde, Foshan",
+            "clause": "5.1",
+            "quote": "The Supplier shall deliver each Batch of Products to the Buyer's distribution centre in Shunde, Foshan",
+            "span": {
+              "start": 1989,
+              "end": 2091
+            },
+            "amount_fen": null,
+            "amount_display": null,
+            "rate_bp": null,
+            "rate_display": null,
+            "days": null,
+            "months": null,
+            "date": null,
+            "date_display": null,
+            "day": null,
+            "basis": null,
+            "unit": null,
+            "reference": null,
+            "text": "The Supplier shall deliver each Batch of Products to the Buyer's distribution centre in Shunde, Foshan",
+            "business_days": false
+          },
+          {
+            "field": "DELIVERABLE",
+            "label": "Deliverable",
+            "value_display": "Each Batch shall conform to the specifications in Schedule 2 and be packed for retail display",
+            "clause": "5.2",
+            "quote": "Each Batch shall conform to the specifications in Schedule 2 and be packed for retail display",
+            "span": {
+              "start": 2098,
+              "end": 2191
+            },
+            "amount_fen": null,
+            "amount_display": null,
+            "rate_bp": null,
+            "rate_display": null,
+            "days": null,
+            "months": null,
+            "date": null,
+            "date_display": null,
+            "day": null,
+            "basis": null,
+            "unit": null,
+            "reference": null,
+            "text": "Each Batch shall conform to the specifications in Schedule 2 and be packed for retail display",
+            "business_days": false
+          },
+          {
+            "field": "REQUIRED_DOCUMENT",
+            "label": "Document for payment",
+            "value_display": "a delivery note signed by the Buyer's warehouse",
+            "clause": "6.1(a)",
+            "quote": "a delivery note signed by the Buyer's warehouse",
+            "span": {
+              "start": 2360,
+              "end": 2407
+            },
+            "amount_fen": null,
+            "amount_display": null,
+            "rate_bp": null,
+            "rate_display": null,
+            "days": null,
+            "months": null,
+            "date": null,
+            "date_display": null,
+            "day": null,
+            "basis": null,
+            "unit": null,
+            "reference": null,
+            "text": "a delivery note signed by the Buyer's warehouse",
+            "business_days": false
+          },
+          {
+            "field": "REQUIRED_DOCUMENT",
+            "label": "Document for payment",
+            "value_display": "a VAT special invoice (fapiao) for the Batch",
+            "clause": "6.1(b)",
+            "quote": "a VAT special invoice (fapiao) for the Batch",
+            "span": {
+              "start": 2413,
+              "end": 2457
+            },
+            "amount_fen": null,
+            "amount_display": null,
+            "rate_bp": null,
+            "rate_display": null,
+            "days": null,
+            "months": null,
+            "date": null,
+            "date_display": null,
+            "day": null,
+            "basis": null,
+            "unit": null,
+            "reference": null,
+            "text": "a VAT special invoice (fapiao) for the Batch",
+            "business_days": false
+          },
+          {
+            "field": "REQUIRED_DOCUMENT",
+            "label": "Document for payment",
+            "value_display": "a quality inspection certificate for the Batch",
+            "clause": "6.1(c)",
+            "quote": "a quality inspection certificate for the Batch",
+            "span": {
+              "start": 2467,
+              "end": 2513
+            },
+            "amount_fen": null,
+            "amount_display": null,
+            "rate_bp": null,
+            "rate_display": null,
+            "days": null,
+            "months": null,
+            "date": null,
+            "date_display": null,
+            "day": null,
+            "basis": null,
+            "unit": null,
+            "reference": null,
+            "text": "a quality inspection certificate for the Batch",
+            "business_days": false
+          },
+          {
+            "field": "AMENDMENT",
+            "label": "Amendments",
+            "value_display": "made in writing and signed by both Parties",
+            "clause": "9.1",
+            "quote": "No amendment to this Agreement is valid unless it is made in writing and signed by both Parties",
+            "span": {
+              "start": 2964,
+              "end": 3059
+            },
+            "amount_fen": null,
+            "amount_display": null,
+            "rate_bp": null,
+            "rate_display": null,
+            "days": null,
+            "months": null,
+            "date": null,
+            "date_display": null,
+            "day": null,
+            "basis": null,
+            "unit": null,
+            "reference": null,
+            "text": "made in writing and signed by both Parties",
+            "business_days": false
+          },
+          {
+            "field": "SCHEDULED_INVOICE",
+            "label": "Scheduled invoice",
+            "value_display": "RCV-A: ¥420,000.00 issued 18 Sep 2026 (day -13)",
+            "clause": "Schedule 1, 1",
+            "quote": "Opening Batch: delivered and invoiced on 18 September 2026 under invoice RCV-A for RMB 420,000",
+            "span": {
+              "start": 3566,
+              "end": 3660
+            },
+            "amount_fen": 42000000,
+            "amount_display": "¥420,000.00",
+            "rate_bp": null,
+            "rate_display": null,
+            "days": null,
+            "months": null,
+            "date": "2026-09-18",
+            "date_display": "18 Sep 2026",
+            "day": -13,
+            "basis": null,
+            "unit": null,
+            "reference": "RCV-A",
+            "text": null,
+            "business_days": false
+          }
+        ],
+        "blanks": [
+          {
+            "field": "MILESTONE",
+            "label": "Milestone payment",
+            "reason": "The agent found no clause for this and left it blank.",
+            "multi": true
+          },
+          {
+            "field": "RETENTION",
+            "label": "Retention",
+            "reason": "The agent found no clause for this and left it blank.",
+            "multi": false
+          },
+          {
+            "field": "LATE_INTEREST",
+            "label": "Late-payment interest",
+            "reason": "The agent found no clause for this and left it blank.",
+            "multi": false
+          }
+        ],
+        "notes": [
+          {
+            "field": "INVOICING",
+            "reason": "stated more than once with the same value: read once"
+          }
+        ]
+      }
+    },
+    "rejected": {
+      "result": {
+        "op_id": "REJECT-DOC-000004-0-4",
+        "kind": "REJECT_DOCUMENT",
+        "status": "EXECUTED",
+        "tier": "TIER_2",
+        "violations": [],
+        "seq": 4,
+        "entry_hash": "4bbd23f2724696fb9ab440d529723714ce6b3e78f5d3c1601f31d3a50fbd779d",
+        "prev_hash": "1896e5a2c31a5094e211c19e588b287b2118819d5063e526c8b7e3c0baffe7e9",
+        "effective_day": 0,
+        "approval_id": null,
+        "message": "Document DOC-000004 (Supply agreement FHR-2026-07) rejected by the owner; nothing recorded from it"
+      },
+      "document": {
+        "id": "DOC-000004",
+        "kind": "BUYER_CONTRACT",
+        "title": "Supply agreement FHR-2026-07",
+        "counterparty_id": "BUYER-1",
+        "counterparty_name": "Foshan Home Retail Co.",
+        "status": "REJECTED",
+        "uploaded_day": 0,
+        "decided_day": 0,
+        "decided_seq": 4,
+        "linked_facility_id": null,
+        "summary": "18 terms read, 3 left blank",
+        "blocked": false,
+        "flags": [],
+        "source": "fixture:FHR_SUPPLY_AGREEMENT",
+        "label": "AI-generated, for reference",
+        "doc_hash": "b13cf763886d8d72f874ae8809bf6002328072a7a671d625f8e0accf1bb85f86",
+        "document": {
+          "doc_id": "DOC-b13cf763886d8d72",
+          "text": "SUPPLY AGREEMENT\n\nAgreement No. FHR-2026-07\n\nSynthetic demonstration document, written to match the TermsLedger demo scenario. It is not a real agreement and binds no one.\n\nThis Supply Agreement (the \"Agreement\") is made on 1 September 2026 between:\n\n(1) Lingnan Homeware Manufacturing Co., Ltd., a company registered in Foshan, Guangdong (the \"Supplier\"); and\n\n(2) Foshan Home Retail Co., a company registered in Foshan, Guangdong (the \"Buyer\").\n\nThe Supplier and the Buyer are each a \"Party\" and together the \"Parties\".\n\n1. DEFINITIONS\n\n1.1 \"Batch\" means one delivery of Products under this Agreement.\n\n1.2 \"Products\" means the home furnishings described in Schedule 2.\n\n1.3 \"Invoice Date\" means the date printed on the Supplier's invoice for a Batch.\n\n1.4 \"Business Day\" means a day other than a Saturday, a Sunday or a public holiday in the People's Republic of China.\n\n2. TERM\n\n2.1 This Agreement takes effect on 1 September 2026 and continues for a term of twelve (12) months, until 31 August 2027.\n\n2.2 Either Party may terminate this Agreement by giving the other Party ninety (90) days' written notice.\n\n3. PRICE\n\n3.1 The Buyer shall pay the Supplier RMB 420,000 (four hundred and twenty thousand yuan) for each Batch.\n\n3.2 The price of a Batch includes delivery to the Buyer's distribution centre and value-added tax.\n\n4. INVOICING AND PAYMENT\n\n4.1 The Supplier shall invoice each Batch on the day it is delivered. Batches are delivered every thirty (30) days, the first regular Batch on 3 October 2026, as set out in Schedule 1.\n\n4.2 Each invoice is payable forty-five (45) days after the Invoice Date.\n\n4.3 The Buyer shall pay by bank transfer to the account of the Supplier stated on the invoice.\n\n4.4 Early settlement. The Buyer may settle any invoice early, within two (2) days of the Supplier's written request, at a discount of 1.2% of the invoice amount.\n\n4.5 Payment of an invoice is subject to the Buyer's receipt of the documents listed in clause 6.\n\n5. DELIVERY\n\n5.1 The Supplier shall deliver each Batch of Products to the Buyer's distribution centre in Shunde, Foshan.\n\n5.2 Each Batch shall conform to the specifications in Schedule 2 and be packed for retail display.\n\n5.3 Title to and risk in a Batch pass to the Buyer on delivery.\n\n6. DOCUMENTS FOR PAYMENT\n\n6.1 The Supplier shall provide the following documents for each Batch:\n(a) a delivery note signed by the Buyer's warehouse;\n(b) a VAT special invoice (fapiao) for the Batch; and\n(c) a quality inspection certificate for the Batch.\n\n7. QUALITY AND RETURNS\n\n7.1 The Buyer may reject any Product that does not conform to Schedule 2 by written notice within ten (10) Business Days of delivery.\n\n7.2 The Supplier shall replace rejected Products at its own cost.\n\n8. CONFIDENTIALITY\n\n8.1 Each Party shall keep the terms of this Agreement confidential and shall not disclose them to any third party except its professional advisers, its lenders or as required by law.\n\n9. AMENDMENT\n\n9.1 No amendment to this Agreement is valid unless it is made in writing and signed by both Parties.\n\n10. GOVERNING LAW AND DISPUTES\n\n10.1 This Agreement is governed by the laws of the People's Republic of China.\n\n10.2 Any dispute arising from this Agreement shall be submitted to the people's court with jurisdiction over the place where the Buyer is registered.\n\n11. GENERAL\n\n11.1 This Agreement is the entire agreement between the Parties about its subject matter.\n\n11.2 This Agreement is made in two counterparts, one for each Party, with equal effect.\n\nSCHEDULE 1. DELIVERY AND INVOICING SCHEDULE\n\n1. Opening Batch: delivered and invoiced on 18 September 2026 under invoice RCV-A for RMB 420,000.\n\n2. Regular Batches: one Batch every thirty (30) days from 3 October 2026, each invoiced on its delivery date.\n\nSCHEDULE 2. PRODUCTS AND SPECIFICATIONS\n\n1. Upholstered sofas, dining sets and mattresses in the ranges listed in the Buyer's monthly order.\n\n2. Fabrics and foams must meet national standard GB 17927.1 for furniture flammability.\n\nSigned for and on behalf of the Supplier: Chen Wei, Director. Date: 1 September 2026.\n\nSigned for and on behalf of the Buyer: Li Na, Purchasing Director. Date: 1 September 2026."
+        },
+        "ai_label": "AI-generated, for reference",
+        "ai_label_zh": "由 AI 生成，仅供参考",
+        "can_confirm": false,
+        "reading_status": "COMPILED",
+        "compiler": "fixture-cache",
+        "prompt_version": "contract-v1",
+        "chunks": 1,
+        "terms": [
+          {
+            "field": "CONTRACT_REFERENCE",
+            "label": "Agreement number",
+            "value_display": "FHR-2026-07",
+            "clause": null,
+            "quote": "Agreement No. FHR-2026-07",
+            "span": {
+              "start": 18,
+              "end": 43
+            },
+            "amount_fen": null,
+            "amount_display": null,
+            "rate_bp": null,
+            "rate_display": null,
+            "days": null,
+            "months": null,
+            "date": null,
+            "date_display": null,
+            "day": null,
+            "basis": null,
+            "unit": null,
+            "reference": null,
+            "text": "FHR-2026-07",
+            "business_days": false
+          },
+          {
+            "field": "SIGNED_DATE",
+            "label": "Signed",
+            "value_display": "1 Sep 2026 (day -30)",
+            "clause": null,
+            "quote": "This Supply Agreement (the \"Agreement\") is made on 1 September 2026 between:",
+            "span": {
+              "start": 173,
+              "end": 249
+            },
+            "amount_fen": null,
+            "amount_display": null,
+            "rate_bp": null,
+            "rate_display": null,
+            "days": null,
+            "months": null,
+            "date": "2026-09-01",
+            "date_display": "1 Sep 2026",
+            "day": -30,
+            "basis": null,
+            "unit": null,
+            "reference": null,
+            "text": null,
+            "business_days": false
+          },
+          {
+            "field": "PARTY_SUPPLIER",
+            "label": "Supplier",
+            "value_display": "Lingnan Homeware Manufacturing Co., Ltd.",
+            "clause": null,
+            "quote": "Lingnan Homeware Manufacturing Co., Ltd., a company registered in Foshan, Guangdong (the \"Supplier\")",
+            "span": {
+              "start": 255,
+              "end": 355
+            },
+            "amount_fen": null,
+            "amount_display": null,
+            "rate_bp": null,
+            "rate_display": null,
+            "days": null,
+            "months": null,
+            "date": null,
+            "date_display": null,
+            "day": null,
+            "basis": null,
+            "unit": null,
+            "reference": null,
+            "text": "Lingnan Homeware Manufacturing Co., Ltd.",
+            "business_days": false
+          },
+          {
+            "field": "PARTY_BUYER",
+            "label": "Buyer",
+            "value_display": "Foshan Home Retail Co.",
+            "clause": null,
+            "quote": "Foshan Home Retail Co., a company registered in Foshan, Guangdong (the \"Buyer\")",
+            "span": {
+              "start": 366,
+              "end": 445
+            },
+            "amount_fen": null,
+            "amount_display": null,
+            "rate_bp": null,
+            "rate_display": null,
+            "days": null,
+            "months": null,
+            "date": null,
+            "date_display": null,
+            "day": null,
+            "basis": null,
+            "unit": null,
+            "reference": null,
+            "text": "Foshan Home Retail Co.",
+            "business_days": false
+          },
+          {
+            "field": "DURATION",
+            "label": "Term",
+            "value_display": "12 months",
+            "clause": "2.1",
+            "quote": "This Agreement takes effect on 1 September 2026 and continues for a term of twelve (12) months, until 31 August 2027",
+            "span": {
+              "start": 887,
+              "end": 1003
+            },
+            "amount_fen": null,
+            "amount_display": null,
+            "rate_bp": null,
+            "rate_display": null,
+            "days": null,
+            "months": 12,
+            "date": null,
+            "date_display": null,
+            "day": null,
+            "basis": null,
+            "unit": null,
+            "reference": null,
+            "text": null,
+            "business_days": false
+          },
+          {
+            "field": "END_DATE",
+            "label": "Ends",
+            "value_display": "31 Aug 2027 (day 334)",
+            "clause": "2.1",
+            "quote": "This Agreement takes effect on 1 September 2026 and continues for a term of twelve (12) months, until 31 August 2027",
+            "span": {
+              "start": 887,
+              "end": 1003
+            },
+            "amount_fen": null,
+            "amount_display": null,
+            "rate_bp": null,
+            "rate_display": null,
+            "days": null,
+            "months": null,
+            "date": "2027-08-31",
+            "date_display": "31 Aug 2027",
+            "day": 334,
+            "basis": null,
+            "unit": null,
+            "reference": null,
+            "text": null,
+            "business_days": false
+          },
+          {
+            "field": "START_DATE",
+            "label": "Starts",
+            "value_display": "1 Sep 2026 (day -30)",
+            "clause": "2.1",
+            "quote": "This Agreement takes effect on 1 September 2026 and continues for a term of twelve (12) months, until 31 August 2027",
+            "span": {
+              "start": 887,
+              "end": 1003
+            },
+            "amount_fen": null,
+            "amount_display": null,
+            "rate_bp": null,
+            "rate_display": null,
+            "days": null,
+            "months": null,
+            "date": "2026-09-01",
+            "date_display": "1 Sep 2026",
+            "day": -30,
+            "basis": null,
+            "unit": null,
+            "reference": null,
+            "text": null,
+            "business_days": false
+          },
+          {
+            "field": "PRICE",
+            "label": "Price",
+            "value_display": "¥420,000.00 per delivery batch",
+            "clause": "3.1",
+            "quote": "The Buyer shall pay the Supplier RMB 420,000 (four hundred and twenty thousand yuan) for each Batch",
+            "span": {
+              "start": 1127,
+              "end": 1226
+            },
+            "amount_fen": 42000000,
+            "amount_display": "¥420,000.00",
+            "rate_bp": null,
+            "rate_display": null,
+            "days": null,
+            "months": null,
+            "date": null,
+            "date_display": null,
+            "day": null,
+            "basis": null,
+            "unit": "PER_DELIVERY",
+            "reference": null,
+            "text": null,
+            "business_days": false
+          },
+          {
+            "field": "INVOICING",
+            "label": "Invoicing",
+            "value_display": "Every 30 days, the first on 3 Oct 2026 (day 2)",
+            "clause": "4.1",
+            "quote": "Batches are delivered every thirty (30) days, the first regular Batch on 3 October 2026, as set out in Schedule 1",
+            "span": {
+              "start": 1425,
+              "end": 1538
+            },
+            "amount_fen": null,
+            "amount_display": null,
+            "rate_bp": null,
+            "rate_display": null,
+            "days": 30,
+            "months": null,
+            "date": "2026-10-03",
+            "date_display": "3 Oct 2026",
+            "day": 2,
+            "basis": null,
+            "unit": null,
+            "reference": null,
+            "text": null,
+            "business_days": false
+          },
+          {
+            "field": "PAYMENT_TERMS",
+            "label": "Payment terms",
+            "value_display": "45 days from the invoice date",
+            "clause": "4.2",
+            "quote": "Each invoice is payable forty-five (45) days after the Invoice Date",
+            "span": {
+              "start": 1545,
+              "end": 1612
+            },
+            "amount_fen": null,
+            "amount_display": null,
+            "rate_bp": null,
+            "rate_display": null,
+            "days": 45,
+            "months": null,
+            "date": null,
+            "date_display": null,
+            "day": null,
+            "basis": "INVOICE",
+            "unit": null,
+            "reference": null,
+            "text": null,
+            "business_days": false
+          },
+          {
+            "field": "EARLY_PAYMENT",
+            "label": "Early payment",
+            "value_display": "The buyer may settle early at 1.20% off, within 2 days",
+            "clause": "4.4",
+            "quote": "The Buyer may settle any invoice early, within two (2) days of the Supplier's written request, at a discount of 1.2% of the invoice amount",
+            "span": {
+              "start": 1733,
+              "end": 1871
+            },
+            "amount_fen": null,
+            "amount_display": null,
+            "rate_bp": 120,
+            "rate_display": "1.20%",
+            "days": 2,
+            "months": null,
+            "date": null,
+            "date_display": null,
+            "day": null,
+            "basis": null,
+            "unit": null,
+            "reference": null,
+            "text": null,
+            "business_days": false
+          },
+          {
+            "field": "DELIVERABLE",
+            "label": "Deliverable",
+            "value_display": "The Supplier shall deliver each Batch of Products to the Buyer's distribution centre in Shunde, Foshan",
+            "clause": "5.1",
+            "quote": "The Supplier shall deliver each Batch of Products to the Buyer's distribution centre in Shunde, Foshan",
+            "span": {
+              "start": 1989,
+              "end": 2091
+            },
+            "amount_fen": null,
+            "amount_display": null,
+            "rate_bp": null,
+            "rate_display": null,
+            "days": null,
+            "months": null,
+            "date": null,
+            "date_display": null,
+            "day": null,
+            "basis": null,
+            "unit": null,
+            "reference": null,
+            "text": "The Supplier shall deliver each Batch of Products to the Buyer's distribution centre in Shunde, Foshan",
+            "business_days": false
+          },
+          {
+            "field": "DELIVERABLE",
+            "label": "Deliverable",
+            "value_display": "Each Batch shall conform to the specifications in Schedule 2 and be packed for retail display",
+            "clause": "5.2",
+            "quote": "Each Batch shall conform to the specifications in Schedule 2 and be packed for retail display",
+            "span": {
+              "start": 2098,
+              "end": 2191
+            },
+            "amount_fen": null,
+            "amount_display": null,
+            "rate_bp": null,
+            "rate_display": null,
+            "days": null,
+            "months": null,
+            "date": null,
+            "date_display": null,
+            "day": null,
+            "basis": null,
+            "unit": null,
+            "reference": null,
+            "text": "Each Batch shall conform to the specifications in Schedule 2 and be packed for retail display",
+            "business_days": false
+          },
+          {
+            "field": "REQUIRED_DOCUMENT",
+            "label": "Document for payment",
+            "value_display": "a delivery note signed by the Buyer's warehouse",
+            "clause": "6.1(a)",
+            "quote": "a delivery note signed by the Buyer's warehouse",
+            "span": {
+              "start": 2360,
+              "end": 2407
+            },
+            "amount_fen": null,
+            "amount_display": null,
+            "rate_bp": null,
+            "rate_display": null,
+            "days": null,
+            "months": null,
+            "date": null,
+            "date_display": null,
+            "day": null,
+            "basis": null,
+            "unit": null,
+            "reference": null,
+            "text": "a delivery note signed by the Buyer's warehouse",
+            "business_days": false
+          },
+          {
+            "field": "REQUIRED_DOCUMENT",
+            "label": "Document for payment",
+            "value_display": "a VAT special invoice (fapiao) for the Batch",
+            "clause": "6.1(b)",
+            "quote": "a VAT special invoice (fapiao) for the Batch",
+            "span": {
+              "start": 2413,
+              "end": 2457
+            },
+            "amount_fen": null,
+            "amount_display": null,
+            "rate_bp": null,
+            "rate_display": null,
+            "days": null,
+            "months": null,
+            "date": null,
+            "date_display": null,
+            "day": null,
+            "basis": null,
+            "unit": null,
+            "reference": null,
+            "text": "a VAT special invoice (fapiao) for the Batch",
+            "business_days": false
+          },
+          {
+            "field": "REQUIRED_DOCUMENT",
+            "label": "Document for payment",
+            "value_display": "a quality inspection certificate for the Batch",
+            "clause": "6.1(c)",
+            "quote": "a quality inspection certificate for the Batch",
+            "span": {
+              "start": 2467,
+              "end": 2513
+            },
+            "amount_fen": null,
+            "amount_display": null,
+            "rate_bp": null,
+            "rate_display": null,
+            "days": null,
+            "months": null,
+            "date": null,
+            "date_display": null,
+            "day": null,
+            "basis": null,
+            "unit": null,
+            "reference": null,
+            "text": "a quality inspection certificate for the Batch",
+            "business_days": false
+          },
+          {
+            "field": "AMENDMENT",
+            "label": "Amendments",
+            "value_display": "made in writing and signed by both Parties",
+            "clause": "9.1",
+            "quote": "No amendment to this Agreement is valid unless it is made in writing and signed by both Parties",
+            "span": {
+              "start": 2964,
+              "end": 3059
+            },
+            "amount_fen": null,
+            "amount_display": null,
+            "rate_bp": null,
+            "rate_display": null,
+            "days": null,
+            "months": null,
+            "date": null,
+            "date_display": null,
+            "day": null,
+            "basis": null,
+            "unit": null,
+            "reference": null,
+            "text": "made in writing and signed by both Parties",
+            "business_days": false
+          },
+          {
+            "field": "SCHEDULED_INVOICE",
+            "label": "Scheduled invoice",
+            "value_display": "RCV-A: ¥420,000.00 issued 18 Sep 2026 (day -13)",
+            "clause": "Schedule 1, 1",
+            "quote": "Opening Batch: delivered and invoiced on 18 September 2026 under invoice RCV-A for RMB 420,000",
+            "span": {
+              "start": 3566,
+              "end": 3660
+            },
+            "amount_fen": 42000000,
+            "amount_display": "¥420,000.00",
+            "rate_bp": null,
+            "rate_display": null,
+            "days": null,
+            "months": null,
+            "date": "2026-09-18",
+            "date_display": "18 Sep 2026",
+            "day": -13,
+            "basis": null,
+            "unit": null,
+            "reference": "RCV-A",
+            "text": null,
+            "business_days": false
+          }
+        ],
+        "blanks": [
+          {
+            "field": "MILESTONE",
+            "label": "Milestone payment",
+            "reason": "The agent found no clause for this and left it blank.",
+            "multi": true
+          },
+          {
+            "field": "RETENTION",
+            "label": "Retention",
+            "reason": "The agent found no clause for this and left it blank.",
+            "multi": false
+          },
+          {
+            "field": "LATE_INTEREST",
+            "label": "Late-payment interest",
+            "reason": "The agent found no clause for this and left it blank.",
+            "multi": false
+          }
+        ],
+        "notes": [
+          {
+            "field": "INVOICING",
+            "reason": "stated more than once with the same value: read once"
+          }
+        ]
+      }
+    }
+  },
+  "MB_CREDIT_LINE_AGREEMENT": {
+    "seeded": {
+      "id": "DOC-000002",
+      "kind": "LENDER_AGREEMENT",
+      "title": "Credit line agreement MB-CL-2026-031",
+      "counterparty_id": "BANK-1",
+      "counterparty_name": "Main bank",
+      "status": "CONFIRMED",
+      "uploaded_day": 0,
+      "decided_day": 0,
+      "decided_seq": 2,
+      "linked_facility_id": "FAC-LINE",
+      "summary": "¥150,000.00 at 6.40% · same-day funding · line at zero 30 days a year",
+      "blocked": false,
+      "flags": [],
+      "source": "fixture:MB_CREDIT_LINE_AGREEMENT",
+      "label": "Read by the agent, confirmed by you",
+      "doc_hash": "0b9e1ce4aafc6a686eaccc777a539bc0274f9cfbd22675ce41e74ae5d6aae8ac",
+      "document": {
+        "doc_id": "DOC-0b9e1ce4aafc6a68",
+        "text": "REVOLVING CREDIT LINE AGREEMENT\n\nAgreement No. MB-CL-2026-031\n\nSynthetic demonstration document, written to match the TermsLedger demo scenario. It is not a real agreement and binds no one.\n\nThis Agreement is made on 25 August 2026 between Pearl River Commercial Bank, Foshan Branch (the \"Bank\") and Lingnan Homeware Manufacturing Co., Ltd. (the \"Borrower\").\n\n1. THE FACILITY\n\n1.1 The Bank makes available to the Borrower a revolving working-capital credit line with a facility limit of RMB 150,000.\n\n1.2 The Borrower shall use each drawing for its general working capital.\n\n2. DRAWDOWN\n\n2.1 Drawdowns are funded on the same day as the drawdown request.\n\n2.2 The Borrower may repay and redraw any part of the credit line during its availability.\n\n3. INTEREST AND FEES\n\n3.1 The interest rate is 6.4% per annum, accruing daily on the amount drawn.\n\n3.2 No arrangement fee, commitment fee or other fee is payable for the credit line.\n\n4. REPAYMENT\n\n4.1 Each drawing is repaid in a single bullet payment at the end of its interest period, and may be redrawn.\n\n5. FINANCIAL COVENANTS\n\n5.1 Debt service coverage: the Borrower shall maintain a debt service coverage ratio (DSCR) of at least 1.25 times in each month.\n\n5.2 Leverage: the total debt of the Borrower shall not exceed 2.5 times its annual EBITDA.\n\n5.3 Clean-down: the outstanding balance of the credit line shall be reduced to zero for at least thirty (30) consecutive days in each year.\n\n6. SECURITY\n\n6.1 No personal guarantee, collateral or pledge is required under this Agreement.\n\n7. GOVERNING LAW\n\n7.1 This Agreement is governed by the laws of the People's Republic of China.\n\nSigned for the Bank: Zhou Min, Relationship Manager. Date: 25 August 2026.\n\nSigned for the Borrower: Chen Wei, Director. Date: 25 August 2026."
+      },
+      "ai_label": "AI-generated, for reference",
+      "ai_label_zh": "由 AI 生成，仅供参考",
+      "can_confirm": false,
+      "reading_status": "COMPILED",
+      "compiler": "fixture-cache",
+      "prompt_version": "termsheet-v3",
+      "clauses": [
+        {
+          "field": "principal",
+          "value_text": "RMB 150,000",
+          "quote": "facility limit of RMB 150,000",
+          "span": {
+            "start": 469,
+            "end": 498
+          }
+        },
+        {
+          "field": "lead_time",
+          "value_text": "on the same day",
+          "quote": "Drawdowns are funded on the same day",
+          "span": {
+            "start": 592,
+            "end": 628
+          }
+        },
+        {
+          "field": "rate",
+          "value_text": "6.4%",
+          "quote": "interest rate is 6.4% per annum",
+          "span": {
+            "start": 777,
+            "end": 808
+          }
+        },
+        {
+          "field": "covenant",
+          "value_text": "COVENANTS",
+          "quote": "FINANCIAL COVENANTS",
+          "span": {
+            "start": 1059,
+            "end": 1078
+          }
+        },
+        {
+          "field": "covenant",
+          "value_text": "Debt service coverage",
+          "quote": "5.1 Debt service coverage: the Borrower shall maintain a debt service coverage ratio (DSCR) of at least 1.25 times in each month",
+          "span": {
+            "start": 1080,
+            "end": 1208
+          }
+        },
+        {
+          "field": "covenant",
+          "value_text": "Leverage",
+          "quote": "5.2 Leverage: the total debt of the Borrower shall not exceed 2.5 times its annual EBITDA",
+          "span": {
+            "start": 1211,
+            "end": 1300
+          }
+        },
+        {
+          "field": "covenant",
+          "value_text": "Clean-down",
+          "quote": "5.3 Clean-down: the outstanding balance of the credit line shall be reduced to zero for at least thirty (30) consecutive days in each year",
+          "span": {
+            "start": 1303,
+            "end": 1441
+          }
+        }
+      ],
+      "facility": {
+        "kind": "CREDIT_LINE",
+        "summary": "¥150,000.00 at 6.40% · same-day funding · line at zero 30 days a year",
+        "all_in_rate_display": "6.40%",
+        "repayment": "BULLET",
+        "tier3": []
+      },
+      "suggested_facility_id": "FAC-LINE",
+      "compared_with": "FAC-LINE",
+      "comparison": [
+        {
+          "label": "Limit",
+          "agreement_display": "¥150,000.00",
+          "books_display": "¥150,000.00",
+          "same": true
+        },
+        {
+          "label": "Interest rate",
+          "agreement_display": "6.40%",
+          "books_display": "6.40%",
+          "same": true
+        },
+        {
+          "label": "Periodic fee",
+          "agreement_display": "none",
+          "books_display": "none",
+          "same": true
+        },
+        {
+          "label": "Upfront fee",
+          "agreement_display": "none",
+          "books_display": "none",
+          "same": true
+        },
+        {
+          "label": "Lead time",
+          "agreement_display": "0 days",
+          "books_display": "0 days",
+          "same": true
+        },
+        {
+          "label": "Advance rate",
+          "agreement_display": "none",
+          "books_display": "none",
+          "same": true
+        },
+        {
+          "label": "Minimum DSCR",
+          "agreement_display": "1.25×",
+          "books_display": "1.25×",
+          "same": true
+        },
+        {
+          "label": "Maximum leverage",
+          "agreement_display": "2.50×",
+          "books_display": "2.50×",
+          "same": true
+        },
+        {
+          "label": "Clean-down",
+          "agreement_display": "zero for 30 consecutive days a year",
+          "books_display": "zero for 30 consecutive days a year",
+          "same": true
+        }
+      ],
+      "notes": [
+        {
+          "field": "tenor",
+          "reason": "tenor not stated: all-in rate computed on a 12-month basis"
+        }
+      ]
+    },
+    "seeded_operation": {
+      "op_id": "CONFIRM-DOC-000002-0-2",
+      "kind": "CONFIRM_DOCUMENT",
+      "status": "EXECUTED",
+      "tier": "TIER_2",
+      "requested_by": "OWNER",
+      "message": "Document DOC-000002 (Credit line agreement MB-CL-2026-031) confirmed by the owner: the agent read it, the owner confirmed it; nothing in the books changed; linked to FAC-LINE for reference (the facility itself is unchanged)",
+      "summary": "Document DOC-000002 (Credit line agreement MB-CL-2026-031) confirmed by the owner: the agent read it, the owner confirmed it; nothing in the books changed; linked to FAC-LINE for reference (the facility itself is unchanged)",
+      "message_when": "Document DOC-000002 (Credit line agreement MB-CL-2026-031) confirmed by the owner: the agent read it, the owner confirmed it; nothing in the books changed; linked to Bank credit line for reference (the facility itself is unchanged)",
+      "event_text": "Document DOC-000002 (Credit line agreement MB-CL-2026-031) confirmed by the owner: the agent read it, the owner confirmed it; nothing in the books changed; linked to Bank credit line for reference (the facility itself is unchanged)",
+      "event_detail": null
+    },
+    "reread": {
+      "id": "DOC-000004",
+      "kind": "LENDER_AGREEMENT",
+      "title": "Credit line agreement MB-CL-2026-031",
+      "counterparty_id": "BANK-1",
+      "counterparty_name": "Main bank",
+      "status": "PROPOSED",
+      "uploaded_day": 0,
+      "decided_day": null,
+      "decided_seq": null,
+      "linked_facility_id": null,
+      "summary": "¥150,000.00 at 6.40% · same-day funding · line at zero 30 days a year",
+      "blocked": false,
+      "flags": [],
+      "source": "fixture:MB_CREDIT_LINE_AGREEMENT",
+      "label": "AI-generated, for reference",
+      "doc_hash": "0b9e1ce4aafc6a686eaccc777a539bc0274f9cfbd22675ce41e74ae5d6aae8ac",
+      "document": {
+        "doc_id": "DOC-0b9e1ce4aafc6a68",
+        "text": "REVOLVING CREDIT LINE AGREEMENT\n\nAgreement No. MB-CL-2026-031\n\nSynthetic demonstration document, written to match the TermsLedger demo scenario. It is not a real agreement and binds no one.\n\nThis Agreement is made on 25 August 2026 between Pearl River Commercial Bank, Foshan Branch (the \"Bank\") and Lingnan Homeware Manufacturing Co., Ltd. (the \"Borrower\").\n\n1. THE FACILITY\n\n1.1 The Bank makes available to the Borrower a revolving working-capital credit line with a facility limit of RMB 150,000.\n\n1.2 The Borrower shall use each drawing for its general working capital.\n\n2. DRAWDOWN\n\n2.1 Drawdowns are funded on the same day as the drawdown request.\n\n2.2 The Borrower may repay and redraw any part of the credit line during its availability.\n\n3. INTEREST AND FEES\n\n3.1 The interest rate is 6.4% per annum, accruing daily on the amount drawn.\n\n3.2 No arrangement fee, commitment fee or other fee is payable for the credit line.\n\n4. REPAYMENT\n\n4.1 Each drawing is repaid in a single bullet payment at the end of its interest period, and may be redrawn.\n\n5. FINANCIAL COVENANTS\n\n5.1 Debt service coverage: the Borrower shall maintain a debt service coverage ratio (DSCR) of at least 1.25 times in each month.\n\n5.2 Leverage: the total debt of the Borrower shall not exceed 2.5 times its annual EBITDA.\n\n5.3 Clean-down: the outstanding balance of the credit line shall be reduced to zero for at least thirty (30) consecutive days in each year.\n\n6. SECURITY\n\n6.1 No personal guarantee, collateral or pledge is required under this Agreement.\n\n7. GOVERNING LAW\n\n7.1 This Agreement is governed by the laws of the People's Republic of China.\n\nSigned for the Bank: Zhou Min, Relationship Manager. Date: 25 August 2026.\n\nSigned for the Borrower: Chen Wei, Director. Date: 25 August 2026."
+      },
+      "ai_label": "AI-generated, for reference",
+      "ai_label_zh": "由 AI 生成，仅供参考",
+      "can_confirm": true,
+      "reading_status": "COMPILED",
+      "compiler": "fixture-cache",
+      "prompt_version": "termsheet-v3",
+      "clauses": [
+        {
+          "field": "principal",
+          "value_text": "RMB 150,000",
+          "quote": "facility limit of RMB 150,000",
+          "span": {
+            "start": 469,
+            "end": 498
+          }
+        },
+        {
+          "field": "lead_time",
+          "value_text": "on the same day",
+          "quote": "Drawdowns are funded on the same day",
+          "span": {
+            "start": 592,
+            "end": 628
+          }
+        },
+        {
+          "field": "rate",
+          "value_text": "6.4%",
+          "quote": "interest rate is 6.4% per annum",
+          "span": {
+            "start": 777,
+            "end": 808
+          }
+        },
+        {
+          "field": "covenant",
+          "value_text": "COVENANTS",
+          "quote": "FINANCIAL COVENANTS",
+          "span": {
+            "start": 1059,
+            "end": 1078
+          }
+        },
+        {
+          "field": "covenant",
+          "value_text": "Debt service coverage",
+          "quote": "5.1 Debt service coverage: the Borrower shall maintain a debt service coverage ratio (DSCR) of at least 1.25 times in each month",
+          "span": {
+            "start": 1080,
+            "end": 1208
+          }
+        },
+        {
+          "field": "covenant",
+          "value_text": "Leverage",
+          "quote": "5.2 Leverage: the total debt of the Borrower shall not exceed 2.5 times its annual EBITDA",
+          "span": {
+            "start": 1211,
+            "end": 1300
+          }
+        },
+        {
+          "field": "covenant",
+          "value_text": "Clean-down",
+          "quote": "5.3 Clean-down: the outstanding balance of the credit line shall be reduced to zero for at least thirty (30) consecutive days in each year",
+          "span": {
+            "start": 1303,
+            "end": 1441
+          }
+        }
+      ],
+      "facility": {
+        "kind": "CREDIT_LINE",
+        "summary": "¥150,000.00 at 6.40% · same-day funding · line at zero 30 days a year",
+        "all_in_rate_display": "6.40%",
+        "repayment": "BULLET",
+        "tier3": []
+      },
+      "suggested_facility_id": "FAC-LINE",
+      "compared_with": "FAC-LINE",
+      "comparison": [
+        {
+          "label": "Limit",
+          "agreement_display": "¥150,000.00",
+          "books_display": "¥150,000.00",
+          "same": true
+        },
+        {
+          "label": "Interest rate",
+          "agreement_display": "6.40%",
+          "books_display": "6.40%",
+          "same": true
+        },
+        {
+          "label": "Periodic fee",
+          "agreement_display": "none",
+          "books_display": "none",
+          "same": true
+        },
+        {
+          "label": "Upfront fee",
+          "agreement_display": "none",
+          "books_display": "none",
+          "same": true
+        },
+        {
+          "label": "Lead time",
+          "agreement_display": "0 days",
+          "books_display": "0 days",
+          "same": true
+        },
+        {
+          "label": "Advance rate",
+          "agreement_display": "none",
+          "books_display": "none",
+          "same": true
+        },
+        {
+          "label": "Minimum DSCR",
+          "agreement_display": "1.25×",
+          "books_display": "1.25×",
+          "same": true
+        },
+        {
+          "label": "Maximum leverage",
+          "agreement_display": "2.50×",
+          "books_display": "2.50×",
+          "same": true
+        },
+        {
+          "label": "Clean-down",
+          "agreement_display": "zero for 30 consecutive days a year",
+          "books_display": "zero for 30 consecutive days a year",
+          "same": true
+        }
+      ],
+      "notes": [
+        {
+          "field": "tenor",
+          "reason": "tenor not stated: all-in rate computed on a 12-month basis"
+        }
+      ]
+    },
+    "confirmed": {
+      "result": {
+        "op_id": "CONFIRM-DOC-000004-0-4",
+        "kind": "CONFIRM_DOCUMENT",
+        "status": "EXECUTED",
+        "tier": "TIER_2",
+        "violations": [],
+        "seq": 4,
+        "entry_hash": "b814b93735005f48a02c461f861c8c04518f8f14af0f5621039ccc821a31edd9",
+        "prev_hash": "1896e5a2c31a5094e211c19e588b287b2118819d5063e526c8b7e3c0baffe7e9",
+        "effective_day": 0,
+        "approval_id": null,
+        "message": "Document DOC-000004 (Credit line agreement MB-CL-2026-031) confirmed by the owner: the agent read it, the owner confirmed it; nothing in the books changed; linked to FAC-LINE for reference (the facility itself is unchanged)"
+      },
+      "document": {
+        "id": "DOC-000004",
+        "kind": "LENDER_AGREEMENT",
+        "title": "Credit line agreement MB-CL-2026-031",
+        "counterparty_id": "BANK-1",
+        "counterparty_name": "Main bank",
+        "status": "CONFIRMED",
+        "uploaded_day": 0,
+        "decided_day": 0,
+        "decided_seq": 4,
+        "linked_facility_id": "FAC-LINE",
+        "summary": "¥150,000.00 at 6.40% · same-day funding · line at zero 30 days a year",
+        "blocked": false,
+        "flags": [],
+        "source": "fixture:MB_CREDIT_LINE_AGREEMENT",
+        "label": "Read by the agent, confirmed by you",
+        "doc_hash": "0b9e1ce4aafc6a686eaccc777a539bc0274f9cfbd22675ce41e74ae5d6aae8ac",
+        "document": {
+          "doc_id": "DOC-0b9e1ce4aafc6a68",
+          "text": "REVOLVING CREDIT LINE AGREEMENT\n\nAgreement No. MB-CL-2026-031\n\nSynthetic demonstration document, written to match the TermsLedger demo scenario. It is not a real agreement and binds no one.\n\nThis Agreement is made on 25 August 2026 between Pearl River Commercial Bank, Foshan Branch (the \"Bank\") and Lingnan Homeware Manufacturing Co., Ltd. (the \"Borrower\").\n\n1. THE FACILITY\n\n1.1 The Bank makes available to the Borrower a revolving working-capital credit line with a facility limit of RMB 150,000.\n\n1.2 The Borrower shall use each drawing for its general working capital.\n\n2. DRAWDOWN\n\n2.1 Drawdowns are funded on the same day as the drawdown request.\n\n2.2 The Borrower may repay and redraw any part of the credit line during its availability.\n\n3. INTEREST AND FEES\n\n3.1 The interest rate is 6.4% per annum, accruing daily on the amount drawn.\n\n3.2 No arrangement fee, commitment fee or other fee is payable for the credit line.\n\n4. REPAYMENT\n\n4.1 Each drawing is repaid in a single bullet payment at the end of its interest period, and may be redrawn.\n\n5. FINANCIAL COVENANTS\n\n5.1 Debt service coverage: the Borrower shall maintain a debt service coverage ratio (DSCR) of at least 1.25 times in each month.\n\n5.2 Leverage: the total debt of the Borrower shall not exceed 2.5 times its annual EBITDA.\n\n5.3 Clean-down: the outstanding balance of the credit line shall be reduced to zero for at least thirty (30) consecutive days in each year.\n\n6. SECURITY\n\n6.1 No personal guarantee, collateral or pledge is required under this Agreement.\n\n7. GOVERNING LAW\n\n7.1 This Agreement is governed by the laws of the People's Republic of China.\n\nSigned for the Bank: Zhou Min, Relationship Manager. Date: 25 August 2026.\n\nSigned for the Borrower: Chen Wei, Director. Date: 25 August 2026."
+        },
+        "ai_label": "AI-generated, for reference",
+        "ai_label_zh": "由 AI 生成，仅供参考",
+        "can_confirm": false,
+        "reading_status": "COMPILED",
+        "compiler": "fixture-cache",
+        "prompt_version": "termsheet-v3",
+        "clauses": [
+          {
+            "field": "principal",
+            "value_text": "RMB 150,000",
+            "quote": "facility limit of RMB 150,000",
+            "span": {
+              "start": 469,
+              "end": 498
+            }
+          },
+          {
+            "field": "lead_time",
+            "value_text": "on the same day",
+            "quote": "Drawdowns are funded on the same day",
+            "span": {
+              "start": 592,
+              "end": 628
+            }
+          },
+          {
+            "field": "rate",
+            "value_text": "6.4%",
+            "quote": "interest rate is 6.4% per annum",
+            "span": {
+              "start": 777,
+              "end": 808
+            }
+          },
+          {
+            "field": "covenant",
+            "value_text": "COVENANTS",
+            "quote": "FINANCIAL COVENANTS",
+            "span": {
+              "start": 1059,
+              "end": 1078
+            }
+          },
+          {
+            "field": "covenant",
+            "value_text": "Debt service coverage",
+            "quote": "5.1 Debt service coverage: the Borrower shall maintain a debt service coverage ratio (DSCR) of at least 1.25 times in each month",
+            "span": {
+              "start": 1080,
+              "end": 1208
+            }
+          },
+          {
+            "field": "covenant",
+            "value_text": "Leverage",
+            "quote": "5.2 Leverage: the total debt of the Borrower shall not exceed 2.5 times its annual EBITDA",
+            "span": {
+              "start": 1211,
+              "end": 1300
+            }
+          },
+          {
+            "field": "covenant",
+            "value_text": "Clean-down",
+            "quote": "5.3 Clean-down: the outstanding balance of the credit line shall be reduced to zero for at least thirty (30) consecutive days in each year",
+            "span": {
+              "start": 1303,
+              "end": 1441
+            }
+          }
+        ],
+        "facility": {
+          "kind": "CREDIT_LINE",
+          "summary": "¥150,000.00 at 6.40% · same-day funding · line at zero 30 days a year",
+          "all_in_rate_display": "6.40%",
+          "repayment": "BULLET",
+          "tier3": []
+        },
+        "suggested_facility_id": "FAC-LINE",
+        "compared_with": "FAC-LINE",
+        "comparison": [
+          {
+            "label": "Limit",
+            "agreement_display": "¥150,000.00",
+            "books_display": "¥150,000.00",
+            "same": true
+          },
+          {
+            "label": "Interest rate",
+            "agreement_display": "6.40%",
+            "books_display": "6.40%",
+            "same": true
+          },
+          {
+            "label": "Periodic fee",
+            "agreement_display": "none",
+            "books_display": "none",
+            "same": true
+          },
+          {
+            "label": "Upfront fee",
+            "agreement_display": "none",
+            "books_display": "none",
+            "same": true
+          },
+          {
+            "label": "Lead time",
+            "agreement_display": "0 days",
+            "books_display": "0 days",
+            "same": true
+          },
+          {
+            "label": "Advance rate",
+            "agreement_display": "none",
+            "books_display": "none",
+            "same": true
+          },
+          {
+            "label": "Minimum DSCR",
+            "agreement_display": "1.25×",
+            "books_display": "1.25×",
+            "same": true
+          },
+          {
+            "label": "Maximum leverage",
+            "agreement_display": "2.50×",
+            "books_display": "2.50×",
+            "same": true
+          },
+          {
+            "label": "Clean-down",
+            "agreement_display": "zero for 30 consecutive days a year",
+            "books_display": "zero for 30 consecutive days a year",
+            "same": true
+          }
+        ],
+        "notes": [
+          {
+            "field": "tenor",
+            "reason": "tenor not stated: all-in rate computed on a 12-month basis"
+          }
+        ]
+      }
+    },
+    "rejected": {
+      "result": {
+        "op_id": "REJECT-DOC-000004-0-4",
+        "kind": "REJECT_DOCUMENT",
+        "status": "EXECUTED",
+        "tier": "TIER_2",
+        "violations": [],
+        "seq": 4,
+        "entry_hash": "c5499f5ef52995dc29769b9925afdba58847ed43bc376e1c0ec67174919445d9",
+        "prev_hash": "1896e5a2c31a5094e211c19e588b287b2118819d5063e526c8b7e3c0baffe7e9",
+        "effective_day": 0,
+        "approval_id": null,
+        "message": "Document DOC-000004 (Credit line agreement MB-CL-2026-031) rejected by the owner; nothing recorded from it"
+      },
+      "document": {
+        "id": "DOC-000004",
+        "kind": "LENDER_AGREEMENT",
+        "title": "Credit line agreement MB-CL-2026-031",
+        "counterparty_id": "BANK-1",
+        "counterparty_name": "Main bank",
+        "status": "REJECTED",
+        "uploaded_day": 0,
+        "decided_day": 0,
+        "decided_seq": 4,
+        "linked_facility_id": null,
+        "summary": "¥150,000.00 at 6.40% · same-day funding · line at zero 30 days a year",
+        "blocked": false,
+        "flags": [],
+        "source": "fixture:MB_CREDIT_LINE_AGREEMENT",
+        "label": "AI-generated, for reference",
+        "doc_hash": "0b9e1ce4aafc6a686eaccc777a539bc0274f9cfbd22675ce41e74ae5d6aae8ac",
+        "document": {
+          "doc_id": "DOC-0b9e1ce4aafc6a68",
+          "text": "REVOLVING CREDIT LINE AGREEMENT\n\nAgreement No. MB-CL-2026-031\n\nSynthetic demonstration document, written to match the TermsLedger demo scenario. It is not a real agreement and binds no one.\n\nThis Agreement is made on 25 August 2026 between Pearl River Commercial Bank, Foshan Branch (the \"Bank\") and Lingnan Homeware Manufacturing Co., Ltd. (the \"Borrower\").\n\n1. THE FACILITY\n\n1.1 The Bank makes available to the Borrower a revolving working-capital credit line with a facility limit of RMB 150,000.\n\n1.2 The Borrower shall use each drawing for its general working capital.\n\n2. DRAWDOWN\n\n2.1 Drawdowns are funded on the same day as the drawdown request.\n\n2.2 The Borrower may repay and redraw any part of the credit line during its availability.\n\n3. INTEREST AND FEES\n\n3.1 The interest rate is 6.4% per annum, accruing daily on the amount drawn.\n\n3.2 No arrangement fee, commitment fee or other fee is payable for the credit line.\n\n4. REPAYMENT\n\n4.1 Each drawing is repaid in a single bullet payment at the end of its interest period, and may be redrawn.\n\n5. FINANCIAL COVENANTS\n\n5.1 Debt service coverage: the Borrower shall maintain a debt service coverage ratio (DSCR) of at least 1.25 times in each month.\n\n5.2 Leverage: the total debt of the Borrower shall not exceed 2.5 times its annual EBITDA.\n\n5.3 Clean-down: the outstanding balance of the credit line shall be reduced to zero for at least thirty (30) consecutive days in each year.\n\n6. SECURITY\n\n6.1 No personal guarantee, collateral or pledge is required under this Agreement.\n\n7. GOVERNING LAW\n\n7.1 This Agreement is governed by the laws of the People's Republic of China.\n\nSigned for the Bank: Zhou Min, Relationship Manager. Date: 25 August 2026.\n\nSigned for the Borrower: Chen Wei, Director. Date: 25 August 2026."
+        },
+        "ai_label": "AI-generated, for reference",
+        "ai_label_zh": "由 AI 生成，仅供参考",
+        "can_confirm": false,
+        "reading_status": "COMPILED",
+        "compiler": "fixture-cache",
+        "prompt_version": "termsheet-v3",
+        "clauses": [
+          {
+            "field": "principal",
+            "value_text": "RMB 150,000",
+            "quote": "facility limit of RMB 150,000",
+            "span": {
+              "start": 469,
+              "end": 498
+            }
+          },
+          {
+            "field": "lead_time",
+            "value_text": "on the same day",
+            "quote": "Drawdowns are funded on the same day",
+            "span": {
+              "start": 592,
+              "end": 628
+            }
+          },
+          {
+            "field": "rate",
+            "value_text": "6.4%",
+            "quote": "interest rate is 6.4% per annum",
+            "span": {
+              "start": 777,
+              "end": 808
+            }
+          },
+          {
+            "field": "covenant",
+            "value_text": "COVENANTS",
+            "quote": "FINANCIAL COVENANTS",
+            "span": {
+              "start": 1059,
+              "end": 1078
+            }
+          },
+          {
+            "field": "covenant",
+            "value_text": "Debt service coverage",
+            "quote": "5.1 Debt service coverage: the Borrower shall maintain a debt service coverage ratio (DSCR) of at least 1.25 times in each month",
+            "span": {
+              "start": 1080,
+              "end": 1208
+            }
+          },
+          {
+            "field": "covenant",
+            "value_text": "Leverage",
+            "quote": "5.2 Leverage: the total debt of the Borrower shall not exceed 2.5 times its annual EBITDA",
+            "span": {
+              "start": 1211,
+              "end": 1300
+            }
+          },
+          {
+            "field": "covenant",
+            "value_text": "Clean-down",
+            "quote": "5.3 Clean-down: the outstanding balance of the credit line shall be reduced to zero for at least thirty (30) consecutive days in each year",
+            "span": {
+              "start": 1303,
+              "end": 1441
+            }
+          }
+        ],
+        "facility": {
+          "kind": "CREDIT_LINE",
+          "summary": "¥150,000.00 at 6.40% · same-day funding · line at zero 30 days a year",
+          "all_in_rate_display": "6.40%",
+          "repayment": "BULLET",
+          "tier3": []
+        },
+        "suggested_facility_id": "FAC-LINE",
+        "compared_with": "FAC-LINE",
+        "comparison": [
+          {
+            "label": "Limit",
+            "agreement_display": "¥150,000.00",
+            "books_display": "¥150,000.00",
+            "same": true
+          },
+          {
+            "label": "Interest rate",
+            "agreement_display": "6.40%",
+            "books_display": "6.40%",
+            "same": true
+          },
+          {
+            "label": "Periodic fee",
+            "agreement_display": "none",
+            "books_display": "none",
+            "same": true
+          },
+          {
+            "label": "Upfront fee",
+            "agreement_display": "none",
+            "books_display": "none",
+            "same": true
+          },
+          {
+            "label": "Lead time",
+            "agreement_display": "0 days",
+            "books_display": "0 days",
+            "same": true
+          },
+          {
+            "label": "Advance rate",
+            "agreement_display": "none",
+            "books_display": "none",
+            "same": true
+          },
+          {
+            "label": "Minimum DSCR",
+            "agreement_display": "1.25×",
+            "books_display": "1.25×",
+            "same": true
+          },
+          {
+            "label": "Maximum leverage",
+            "agreement_display": "2.50×",
+            "books_display": "2.50×",
+            "same": true
+          },
+          {
+            "label": "Clean-down",
+            "agreement_display": "zero for 30 consecutive days a year",
+            "books_display": "zero for 30 consecutive days a year",
+            "same": true
+          }
+        ],
+        "notes": [
+          {
+            "field": "tenor",
+            "reason": "tenor not stated: all-in rate computed on a 12-month basis"
+          }
+        ]
+      }
+    }
+  },
+  "GBR_INVOICE_FINANCING_AGREEMENT": {
+    "seeded": {
+      "id": "DOC-000003",
+      "kind": "LENDER_AGREEMENT",
+      "title": "Invoice financing agreement GBR-IF-2026-118",
+      "counterparty_id": "PLATFORM-1",
+      "counterparty_name": "Invoice financing platform",
+      "status": "CONFIRMED",
+      "uploaded_day": 0,
+      "decided_day": 0,
+      "decided_seq": 3,
+      "linked_facility_id": "FAC-IF",
+      "summary": "¥350,000.00 at 7.80% · 80.00% advance · 0.25% per 30 days · 3-day lead time",
+      "blocked": false,
+      "flags": [],
+      "source": "fixture:GBR_INVOICE_FINANCING_AGREEMENT",
+      "label": "Read by the agent, confirmed by you",
+      "doc_hash": "76cfc556bff0a5ff882b89c7190b95464c7cf6ff046a8dc5c16e0177d8529bd0",
+      "document": {
+        "doc_id": "DOC-76cfc556bff0a5ff",
+        "text": "INVOICE FINANCING AGREEMENT\n\nAgreement No. GBR-IF-2026-118\n\nSynthetic demonstration document, written to match the TermsLedger demo scenario. It is not a real agreement and binds no one.\n\nThis Agreement is made on 28 August 2026 between Greater Bay Receivables Finance Co., Ltd. (the \"Financier\") and Lingnan Homeware Manufacturing Co., Ltd. (the \"Client\").\n\n1. THE FACILITY\n\n1.1 The Financier provides the Client with an invoice financing facility with a facility limit of RMB 350,000.\n\n1.2 Advance rate: the Financier advances 80% of the face amount of each eligible invoice.\n\n1.3 An invoice is eligible if it is issued to a buyer approved by the Financier, confirmed by that buyer and not overdue.\n\n2. DISBURSEMENT\n\n2.1 Each advance is disbursed within three (3) days of an accepted financing request.\n\n3. CHARGES\n\n3.1 Interest: the interest rate is 7.8% per annum on the amount advanced.\n\n3.2 Service fee: a service fee of 0.25% of each advance is charged for each period of thirty (30) days, or part of such a period, for which the advance is outstanding.\n\n4. REPAYMENT\n\n4.1 Each advance is repaid from the buyer's payment of the financed invoice, which the Client shall direct to the collection account of the Financier.\n\n5. SECURITY\n\n5.1 No personal guarantee, collateral or pledge is required under this Agreement.\n\n6. GOVERNING LAW\n\n6.1 This Agreement is governed by the laws of the People's Republic of China.\n\nSigned for the Financier: Huang Jie, Head of Client Finance. Date: 28 August 2026.\n\nSigned for the Client: Chen Wei, Director. Date: 28 August 2026."
+      },
+      "ai_label": "AI-generated, for reference",
+      "ai_label_zh": "由 AI 生成，仅供参考",
+      "can_confirm": false,
+      "reading_status": "COMPILED",
+      "compiler": "fixture-cache",
+      "prompt_version": "termsheet-v3",
+      "clauses": [
+        {
+          "field": "principal",
+          "value_text": "RMB 350,000",
+          "quote": "facility limit of RMB 350,000",
+          "span": {
+            "start": 456,
+            "end": 485
+          }
+        },
+        {
+          "field": "advance_rate",
+          "value_text": "80%",
+          "quote": "Advance rate: the Financier advances 80%",
+          "span": {
+            "start": 492,
+            "end": 532
+          }
+        },
+        {
+          "field": "lead_time",
+          "value_text": "three (3) days",
+          "quote": "disbursed within three (3) days",
+          "span": {
+            "start": 739,
+            "end": 770
+          }
+        },
+        {
+          "field": "rate",
+          "value_text": "7.8%",
+          "quote": "interest rate is 7.8% per annum",
+          "span": {
+            "start": 836,
+            "end": 867
+          }
+        },
+        {
+          "field": "fee",
+          "value_text": "0.25%",
+          "quote": "service fee of 0.25%",
+          "span": {
+            "start": 912,
+            "end": 932
+          }
+        }
+      ],
+      "facility": {
+        "kind": "INVOICE_FINANCING",
+        "summary": "¥350,000.00 at 7.80% · 80.00% advance · 0.25% per 30 days · 3-day lead time",
+        "all_in_rate_display": "10.84%",
+        "repayment": "ON_RECEIPT",
+        "tier3": []
+      },
+      "suggested_facility_id": "FAC-IF",
+      "compared_with": "FAC-IF",
+      "comparison": [
+        {
+          "label": "Limit",
+          "agreement_display": "¥350,000.00",
+          "books_display": "¥350,000.00",
+          "same": true
+        },
+        {
+          "label": "Interest rate",
+          "agreement_display": "7.80%",
+          "books_display": "7.80%",
+          "same": true
+        },
+        {
+          "label": "Periodic fee",
+          "agreement_display": "0.25% per 30 days",
+          "books_display": "0.25% per 30 days",
+          "same": true
+        },
+        {
+          "label": "Upfront fee",
+          "agreement_display": "none",
+          "books_display": "none",
+          "same": true
+        },
+        {
+          "label": "Lead time",
+          "agreement_display": "3 days",
+          "books_display": "3 days",
+          "same": true
+        },
+        {
+          "label": "Advance rate",
+          "agreement_display": "80.00%",
+          "books_display": "80.00%",
+          "same": true
+        },
+        {
+          "label": "Minimum DSCR",
+          "agreement_display": "none",
+          "books_display": "none",
+          "same": true
+        },
+        {
+          "label": "Maximum leverage",
+          "agreement_display": "none",
+          "books_display": "none",
+          "same": true
+        },
+        {
+          "label": "Clean-down",
+          "agreement_display": "none",
+          "books_display": "none",
+          "same": true
+        }
+      ],
+      "notes": [
+        {
+          "field": "tenor",
+          "reason": "tenor not stated: all-in rate computed on a 12-month basis"
+        }
+      ]
+    },
+    "seeded_operation": {
+      "op_id": "CONFIRM-DOC-000003-0-3",
+      "kind": "CONFIRM_DOCUMENT",
+      "status": "EXECUTED",
+      "tier": "TIER_2",
+      "requested_by": "OWNER",
+      "message": "Document DOC-000003 (Invoice financing agreement GBR-IF-2026-118) confirmed by the owner: the agent read it, the owner confirmed it; nothing in the books changed; linked to FAC-IF for reference (the facility itself is unchanged)",
+      "summary": "Document DOC-000003 (Invoice financing agreement GBR-IF-2026-118) confirmed by the owner: the agent read it, the owner confirmed it; nothing in the books changed; linked to FAC-IF for reference (the facility itself is unchanged)",
+      "message_when": "Document DOC-000003 (Invoice financing agreement GBR-IF-2026-118) confirmed by the owner: the agent read it, the owner confirmed it; nothing in the books changed; linked to Invoice financing (onboarded platform) for reference (the facility itself is unchanged)",
+      "event_text": "Document DOC-000003 (Invoice financing agreement GBR-IF-2026-118) confirmed by the owner: the agent read it, the owner confirmed it; nothing in the books changed; linked to Invoice financing (onboarded platform) for reference (the facility itself is unchanged)",
+      "event_detail": null
+    },
+    "reread": {
+      "id": "DOC-000004",
+      "kind": "LENDER_AGREEMENT",
+      "title": "Invoice financing agreement GBR-IF-2026-118",
+      "counterparty_id": "PLATFORM-1",
+      "counterparty_name": "Invoice financing platform",
+      "status": "PROPOSED",
+      "uploaded_day": 0,
+      "decided_day": null,
+      "decided_seq": null,
+      "linked_facility_id": null,
+      "summary": "¥350,000.00 at 7.80% · 80.00% advance · 0.25% per 30 days · 3-day lead time",
+      "blocked": false,
+      "flags": [],
+      "source": "fixture:GBR_INVOICE_FINANCING_AGREEMENT",
+      "label": "AI-generated, for reference",
+      "doc_hash": "76cfc556bff0a5ff882b89c7190b95464c7cf6ff046a8dc5c16e0177d8529bd0",
+      "document": {
+        "doc_id": "DOC-76cfc556bff0a5ff",
+        "text": "INVOICE FINANCING AGREEMENT\n\nAgreement No. GBR-IF-2026-118\n\nSynthetic demonstration document, written to match the TermsLedger demo scenario. It is not a real agreement and binds no one.\n\nThis Agreement is made on 28 August 2026 between Greater Bay Receivables Finance Co., Ltd. (the \"Financier\") and Lingnan Homeware Manufacturing Co., Ltd. (the \"Client\").\n\n1. THE FACILITY\n\n1.1 The Financier provides the Client with an invoice financing facility with a facility limit of RMB 350,000.\n\n1.2 Advance rate: the Financier advances 80% of the face amount of each eligible invoice.\n\n1.3 An invoice is eligible if it is issued to a buyer approved by the Financier, confirmed by that buyer and not overdue.\n\n2. DISBURSEMENT\n\n2.1 Each advance is disbursed within three (3) days of an accepted financing request.\n\n3. CHARGES\n\n3.1 Interest: the interest rate is 7.8% per annum on the amount advanced.\n\n3.2 Service fee: a service fee of 0.25% of each advance is charged for each period of thirty (30) days, or part of such a period, for which the advance is outstanding.\n\n4. REPAYMENT\n\n4.1 Each advance is repaid from the buyer's payment of the financed invoice, which the Client shall direct to the collection account of the Financier.\n\n5. SECURITY\n\n5.1 No personal guarantee, collateral or pledge is required under this Agreement.\n\n6. GOVERNING LAW\n\n6.1 This Agreement is governed by the laws of the People's Republic of China.\n\nSigned for the Financier: Huang Jie, Head of Client Finance. Date: 28 August 2026.\n\nSigned for the Client: Chen Wei, Director. Date: 28 August 2026."
+      },
+      "ai_label": "AI-generated, for reference",
+      "ai_label_zh": "由 AI 生成，仅供参考",
+      "can_confirm": true,
+      "reading_status": "COMPILED",
+      "compiler": "fixture-cache",
+      "prompt_version": "termsheet-v3",
+      "clauses": [
+        {
+          "field": "principal",
+          "value_text": "RMB 350,000",
+          "quote": "facility limit of RMB 350,000",
+          "span": {
+            "start": 456,
+            "end": 485
+          }
+        },
+        {
+          "field": "advance_rate",
+          "value_text": "80%",
+          "quote": "Advance rate: the Financier advances 80%",
+          "span": {
+            "start": 492,
+            "end": 532
+          }
+        },
+        {
+          "field": "lead_time",
+          "value_text": "three (3) days",
+          "quote": "disbursed within three (3) days",
+          "span": {
+            "start": 739,
+            "end": 770
+          }
+        },
+        {
+          "field": "rate",
+          "value_text": "7.8%",
+          "quote": "interest rate is 7.8% per annum",
+          "span": {
+            "start": 836,
+            "end": 867
+          }
+        },
+        {
+          "field": "fee",
+          "value_text": "0.25%",
+          "quote": "service fee of 0.25%",
+          "span": {
+            "start": 912,
+            "end": 932
+          }
+        }
+      ],
+      "facility": {
+        "kind": "INVOICE_FINANCING",
+        "summary": "¥350,000.00 at 7.80% · 80.00% advance · 0.25% per 30 days · 3-day lead time",
+        "all_in_rate_display": "10.84%",
+        "repayment": "ON_RECEIPT",
+        "tier3": []
+      },
+      "suggested_facility_id": "FAC-IF",
+      "compared_with": "FAC-IF",
+      "comparison": [
+        {
+          "label": "Limit",
+          "agreement_display": "¥350,000.00",
+          "books_display": "¥350,000.00",
+          "same": true
+        },
+        {
+          "label": "Interest rate",
+          "agreement_display": "7.80%",
+          "books_display": "7.80%",
+          "same": true
+        },
+        {
+          "label": "Periodic fee",
+          "agreement_display": "0.25% per 30 days",
+          "books_display": "0.25% per 30 days",
+          "same": true
+        },
+        {
+          "label": "Upfront fee",
+          "agreement_display": "none",
+          "books_display": "none",
+          "same": true
+        },
+        {
+          "label": "Lead time",
+          "agreement_display": "3 days",
+          "books_display": "3 days",
+          "same": true
+        },
+        {
+          "label": "Advance rate",
+          "agreement_display": "80.00%",
+          "books_display": "80.00%",
+          "same": true
+        },
+        {
+          "label": "Minimum DSCR",
+          "agreement_display": "none",
+          "books_display": "none",
+          "same": true
+        },
+        {
+          "label": "Maximum leverage",
+          "agreement_display": "none",
+          "books_display": "none",
+          "same": true
+        },
+        {
+          "label": "Clean-down",
+          "agreement_display": "none",
+          "books_display": "none",
+          "same": true
+        }
+      ],
+      "notes": [
+        {
+          "field": "tenor",
+          "reason": "tenor not stated: all-in rate computed on a 12-month basis"
+        }
+      ]
+    },
+    "confirmed": {
+      "result": {
+        "op_id": "CONFIRM-DOC-000004-0-4",
+        "kind": "CONFIRM_DOCUMENT",
+        "status": "EXECUTED",
+        "tier": "TIER_2",
+        "violations": [],
+        "seq": 4,
+        "entry_hash": "342ad2269b6acfac2b70b59d636c48a60abc776b7de2ec004871ac602e59acb3",
+        "prev_hash": "1896e5a2c31a5094e211c19e588b287b2118819d5063e526c8b7e3c0baffe7e9",
+        "effective_day": 0,
+        "approval_id": null,
+        "message": "Document DOC-000004 (Invoice financing agreement GBR-IF-2026-118) confirmed by the owner: the agent read it, the owner confirmed it; nothing in the books changed; linked to FAC-IF for reference (the facility itself is unchanged)"
+      },
+      "document": {
+        "id": "DOC-000004",
+        "kind": "LENDER_AGREEMENT",
+        "title": "Invoice financing agreement GBR-IF-2026-118",
+        "counterparty_id": "PLATFORM-1",
+        "counterparty_name": "Invoice financing platform",
+        "status": "CONFIRMED",
+        "uploaded_day": 0,
+        "decided_day": 0,
+        "decided_seq": 4,
+        "linked_facility_id": "FAC-IF",
+        "summary": "¥350,000.00 at 7.80% · 80.00% advance · 0.25% per 30 days · 3-day lead time",
+        "blocked": false,
+        "flags": [],
+        "source": "fixture:GBR_INVOICE_FINANCING_AGREEMENT",
+        "label": "Read by the agent, confirmed by you",
+        "doc_hash": "76cfc556bff0a5ff882b89c7190b95464c7cf6ff046a8dc5c16e0177d8529bd0",
+        "document": {
+          "doc_id": "DOC-76cfc556bff0a5ff",
+          "text": "INVOICE FINANCING AGREEMENT\n\nAgreement No. GBR-IF-2026-118\n\nSynthetic demonstration document, written to match the TermsLedger demo scenario. It is not a real agreement and binds no one.\n\nThis Agreement is made on 28 August 2026 between Greater Bay Receivables Finance Co., Ltd. (the \"Financier\") and Lingnan Homeware Manufacturing Co., Ltd. (the \"Client\").\n\n1. THE FACILITY\n\n1.1 The Financier provides the Client with an invoice financing facility with a facility limit of RMB 350,000.\n\n1.2 Advance rate: the Financier advances 80% of the face amount of each eligible invoice.\n\n1.3 An invoice is eligible if it is issued to a buyer approved by the Financier, confirmed by that buyer and not overdue.\n\n2. DISBURSEMENT\n\n2.1 Each advance is disbursed within three (3) days of an accepted financing request.\n\n3. CHARGES\n\n3.1 Interest: the interest rate is 7.8% per annum on the amount advanced.\n\n3.2 Service fee: a service fee of 0.25% of each advance is charged for each period of thirty (30) days, or part of such a period, for which the advance is outstanding.\n\n4. REPAYMENT\n\n4.1 Each advance is repaid from the buyer's payment of the financed invoice, which the Client shall direct to the collection account of the Financier.\n\n5. SECURITY\n\n5.1 No personal guarantee, collateral or pledge is required under this Agreement.\n\n6. GOVERNING LAW\n\n6.1 This Agreement is governed by the laws of the People's Republic of China.\n\nSigned for the Financier: Huang Jie, Head of Client Finance. Date: 28 August 2026.\n\nSigned for the Client: Chen Wei, Director. Date: 28 August 2026."
+        },
+        "ai_label": "AI-generated, for reference",
+        "ai_label_zh": "由 AI 生成，仅供参考",
+        "can_confirm": false,
+        "reading_status": "COMPILED",
+        "compiler": "fixture-cache",
+        "prompt_version": "termsheet-v3",
+        "clauses": [
+          {
+            "field": "principal",
+            "value_text": "RMB 350,000",
+            "quote": "facility limit of RMB 350,000",
+            "span": {
+              "start": 456,
+              "end": 485
+            }
+          },
+          {
+            "field": "advance_rate",
+            "value_text": "80%",
+            "quote": "Advance rate: the Financier advances 80%",
+            "span": {
+              "start": 492,
+              "end": 532
+            }
+          },
+          {
+            "field": "lead_time",
+            "value_text": "three (3) days",
+            "quote": "disbursed within three (3) days",
+            "span": {
+              "start": 739,
+              "end": 770
+            }
+          },
+          {
+            "field": "rate",
+            "value_text": "7.8%",
+            "quote": "interest rate is 7.8% per annum",
+            "span": {
+              "start": 836,
+              "end": 867
+            }
+          },
+          {
+            "field": "fee",
+            "value_text": "0.25%",
+            "quote": "service fee of 0.25%",
+            "span": {
+              "start": 912,
+              "end": 932
+            }
+          }
+        ],
+        "facility": {
+          "kind": "INVOICE_FINANCING",
+          "summary": "¥350,000.00 at 7.80% · 80.00% advance · 0.25% per 30 days · 3-day lead time",
+          "all_in_rate_display": "10.84%",
+          "repayment": "ON_RECEIPT",
+          "tier3": []
+        },
+        "suggested_facility_id": "FAC-IF",
+        "compared_with": "FAC-IF",
+        "comparison": [
+          {
+            "label": "Limit",
+            "agreement_display": "¥350,000.00",
+            "books_display": "¥350,000.00",
+            "same": true
+          },
+          {
+            "label": "Interest rate",
+            "agreement_display": "7.80%",
+            "books_display": "7.80%",
+            "same": true
+          },
+          {
+            "label": "Periodic fee",
+            "agreement_display": "0.25% per 30 days",
+            "books_display": "0.25% per 30 days",
+            "same": true
+          },
+          {
+            "label": "Upfront fee",
+            "agreement_display": "none",
+            "books_display": "none",
+            "same": true
+          },
+          {
+            "label": "Lead time",
+            "agreement_display": "3 days",
+            "books_display": "3 days",
+            "same": true
+          },
+          {
+            "label": "Advance rate",
+            "agreement_display": "80.00%",
+            "books_display": "80.00%",
+            "same": true
+          },
+          {
+            "label": "Minimum DSCR",
+            "agreement_display": "none",
+            "books_display": "none",
+            "same": true
+          },
+          {
+            "label": "Maximum leverage",
+            "agreement_display": "none",
+            "books_display": "none",
+            "same": true
+          },
+          {
+            "label": "Clean-down",
+            "agreement_display": "none",
+            "books_display": "none",
+            "same": true
+          }
+        ],
+        "notes": [
+          {
+            "field": "tenor",
+            "reason": "tenor not stated: all-in rate computed on a 12-month basis"
+          }
+        ]
+      }
+    },
+    "rejected": {
+      "result": {
+        "op_id": "REJECT-DOC-000004-0-4",
+        "kind": "REJECT_DOCUMENT",
+        "status": "EXECUTED",
+        "tier": "TIER_2",
+        "violations": [],
+        "seq": 4,
+        "entry_hash": "ea83bd3ca323cf2cb15a73aafa4ebf6fcfa1100148f1f6be8d7d24cdd4ea9ecc",
+        "prev_hash": "1896e5a2c31a5094e211c19e588b287b2118819d5063e526c8b7e3c0baffe7e9",
+        "effective_day": 0,
+        "approval_id": null,
+        "message": "Document DOC-000004 (Invoice financing agreement GBR-IF-2026-118) rejected by the owner; nothing recorded from it"
+      },
+      "document": {
+        "id": "DOC-000004",
+        "kind": "LENDER_AGREEMENT",
+        "title": "Invoice financing agreement GBR-IF-2026-118",
+        "counterparty_id": "PLATFORM-1",
+        "counterparty_name": "Invoice financing platform",
+        "status": "REJECTED",
+        "uploaded_day": 0,
+        "decided_day": 0,
+        "decided_seq": 4,
+        "linked_facility_id": null,
+        "summary": "¥350,000.00 at 7.80% · 80.00% advance · 0.25% per 30 days · 3-day lead time",
+        "blocked": false,
+        "flags": [],
+        "source": "fixture:GBR_INVOICE_FINANCING_AGREEMENT",
+        "label": "AI-generated, for reference",
+        "doc_hash": "76cfc556bff0a5ff882b89c7190b95464c7cf6ff046a8dc5c16e0177d8529bd0",
+        "document": {
+          "doc_id": "DOC-76cfc556bff0a5ff",
+          "text": "INVOICE FINANCING AGREEMENT\n\nAgreement No. GBR-IF-2026-118\n\nSynthetic demonstration document, written to match the TermsLedger demo scenario. It is not a real agreement and binds no one.\n\nThis Agreement is made on 28 August 2026 between Greater Bay Receivables Finance Co., Ltd. (the \"Financier\") and Lingnan Homeware Manufacturing Co., Ltd. (the \"Client\").\n\n1. THE FACILITY\n\n1.1 The Financier provides the Client with an invoice financing facility with a facility limit of RMB 350,000.\n\n1.2 Advance rate: the Financier advances 80% of the face amount of each eligible invoice.\n\n1.3 An invoice is eligible if it is issued to a buyer approved by the Financier, confirmed by that buyer and not overdue.\n\n2. DISBURSEMENT\n\n2.1 Each advance is disbursed within three (3) days of an accepted financing request.\n\n3. CHARGES\n\n3.1 Interest: the interest rate is 7.8% per annum on the amount advanced.\n\n3.2 Service fee: a service fee of 0.25% of each advance is charged for each period of thirty (30) days, or part of such a period, for which the advance is outstanding.\n\n4. REPAYMENT\n\n4.1 Each advance is repaid from the buyer's payment of the financed invoice, which the Client shall direct to the collection account of the Financier.\n\n5. SECURITY\n\n5.1 No personal guarantee, collateral or pledge is required under this Agreement.\n\n6. GOVERNING LAW\n\n6.1 This Agreement is governed by the laws of the People's Republic of China.\n\nSigned for the Financier: Huang Jie, Head of Client Finance. Date: 28 August 2026.\n\nSigned for the Client: Chen Wei, Director. Date: 28 August 2026."
+        },
+        "ai_label": "AI-generated, for reference",
+        "ai_label_zh": "由 AI 生成，仅供参考",
+        "can_confirm": false,
+        "reading_status": "COMPILED",
+        "compiler": "fixture-cache",
+        "prompt_version": "termsheet-v3",
+        "clauses": [
+          {
+            "field": "principal",
+            "value_text": "RMB 350,000",
+            "quote": "facility limit of RMB 350,000",
+            "span": {
+              "start": 456,
+              "end": 485
+            }
+          },
+          {
+            "field": "advance_rate",
+            "value_text": "80%",
+            "quote": "Advance rate: the Financier advances 80%",
+            "span": {
+              "start": 492,
+              "end": 532
+            }
+          },
+          {
+            "field": "lead_time",
+            "value_text": "three (3) days",
+            "quote": "disbursed within three (3) days",
+            "span": {
+              "start": 739,
+              "end": 770
+            }
+          },
+          {
+            "field": "rate",
+            "value_text": "7.8%",
+            "quote": "interest rate is 7.8% per annum",
+            "span": {
+              "start": 836,
+              "end": 867
+            }
+          },
+          {
+            "field": "fee",
+            "value_text": "0.25%",
+            "quote": "service fee of 0.25%",
+            "span": {
+              "start": 912,
+              "end": 932
+            }
+          }
+        ],
+        "facility": {
+          "kind": "INVOICE_FINANCING",
+          "summary": "¥350,000.00 at 7.80% · 80.00% advance · 0.25% per 30 days · 3-day lead time",
+          "all_in_rate_display": "10.84%",
+          "repayment": "ON_RECEIPT",
+          "tier3": []
+        },
+        "suggested_facility_id": "FAC-IF",
+        "compared_with": "FAC-IF",
+        "comparison": [
+          {
+            "label": "Limit",
+            "agreement_display": "¥350,000.00",
+            "books_display": "¥350,000.00",
+            "same": true
+          },
+          {
+            "label": "Interest rate",
+            "agreement_display": "7.80%",
+            "books_display": "7.80%",
+            "same": true
+          },
+          {
+            "label": "Periodic fee",
+            "agreement_display": "0.25% per 30 days",
+            "books_display": "0.25% per 30 days",
+            "same": true
+          },
+          {
+            "label": "Upfront fee",
+            "agreement_display": "none",
+            "books_display": "none",
+            "same": true
+          },
+          {
+            "label": "Lead time",
+            "agreement_display": "3 days",
+            "books_display": "3 days",
+            "same": true
+          },
+          {
+            "label": "Advance rate",
+            "agreement_display": "80.00%",
+            "books_display": "80.00%",
+            "same": true
+          },
+          {
+            "label": "Minimum DSCR",
+            "agreement_display": "none",
+            "books_display": "none",
+            "same": true
+          },
+          {
+            "label": "Maximum leverage",
+            "agreement_display": "none",
+            "books_display": "none",
+            "same": true
+          },
+          {
+            "label": "Clean-down",
+            "agreement_display": "none",
+            "books_display": "none",
+            "same": true
+          }
+        ],
+        "notes": [
+          {
+            "field": "tenor",
+            "reason": "tenor not stated: all-in rate computed on a 12-month basis"
+          }
+        ]
+      }
+    }
+  }
+}

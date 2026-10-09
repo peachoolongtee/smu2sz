@@ -12,6 +12,7 @@ import type { NlRequest, NlResponse } from "../types";
 import approveChat from "../../mocks/home_approve_chat.json";
 import script from "../../mocks/nl_script.json";
 import { appendRecorded, decideApproval, ensureHomeApproval, getApprovals } from "./handlers";
+import { markDealAgreed } from "./documents";
 import { markFunded, mockOpenerAnswer, openerWaiting } from "./home";
 
 type Key = keyof typeof script;
@@ -144,6 +145,8 @@ export async function mockNl(req: NlRequest): Promise<NlResponse> {
   sessions.set(sid, s);
   // The day-0 plan ran: the books now hold the draw as cash and the advance as funding in transit.
   if (key?.startsWith("fund_gap_go")) markFunded();
+  // "go ahead" on EX01 agreed the deal with the buyer (recorded): the deal summary shows on Deals from now on, as live.
+  if (key?.startsWith("negotiate_ex01")) markDealAgreed();
   // As live: a buyer's turn carries only the reply (the recorded buyer turns already have a null verdict; this stays as a guard).
   if (req.actor === "COUNTERPARTY") return { ...recorded, verdict: null, operations: [], security_events: [], session_id: sid, turn: s.turn, trace_id: `${sid}:${s.turn}` };
   return { ...recorded, session_id: sid, turn: s.turn, trace_id: `${sid}:${s.turn}` };

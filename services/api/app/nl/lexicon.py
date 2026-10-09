@@ -108,6 +108,14 @@ RATIOS = _re(
     r"\bheadroom\b.{0,25}\bcovenants?\b",
     r"\b(?:inside|within|meeting|meet|satisfy|satisfying|comply|complying|compliant|compliance)\b.{0,25}\bcovenants?\b",
     r"\bcovenants?\b.{0,20}\b(?:ratios?|compliance|tests?)\b", r"偿债覆盖", r"杠杆", r"契约")
+# Where a buyer's deal stands (brief 03): "where are we with Foshan?", "what did we sign with Foshan", 跟佛山的合同进展
+DEAL = _re(
+    r"\bwhere (?:are|do) we (?:stand )?with\b", r"\bwhat'?s (?:the|our) (?:deal|position|status) with\b",
+    r"\b(?:our|the) (?:deal|contract|agreement|supply agreement) with\b", r"\b(?:contract|agreement)s? (?:with|for)\b",
+    r"\bwhat did we (?:sign|agree)\b", r"\b(?:deal|contract) (?:status|summary|terms)\b",
+    r"\b(?:remind me (?:of|about)|show me|summari[sz]e) (?:the |our )?(?:deal|contract|agreement)\b",
+    r"\bterms (?:of|in) (?:the|our) (?:contract|agreement)\b",
+    r"(?:跟|和|与)[^，。,.?？]{1,10}?的?(?:合同|协议|交易|生意|合作)", r"合同(?:进展|条款|情况|内容)", r"签了什么", r"我们签的")
 CAPEX_ASK = _re(
     r"\b(?:buy|buying|purchase|purchasing|afford|invest(?:ing)? in|worth)\b.{0,40}\b(?:machine|machinery|equipment)\b",
     r"\b(?:machine|machinery|equipment|capex)\b.{0,40}\b(?:purchase|worth|afford|affordable|payback|npv)\b",

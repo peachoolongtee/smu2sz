@@ -30,9 +30,9 @@ Switch to **Demo** in the header, click **Start demo** and sign in as the owner 
 **3. Test.**
 
 ```bash
-cd services/api && uv run pytest                     # 5,446 passed, 33 skipped on 3 Oct 2026 (Windows, SKIP_PERF_BENCH=1: the latency benchmarks skipped; two sequential chunks, about 14 min)
+cd services/api && uv run pytest                     # 5,716 passed, 33 skipped on 8 Oct 2026 after contract ingestion was merged into the redesigned UI (Windows, SKIP_PERF_BENCH=1: the latency benchmarks skipped; one run of about 51 min with other jobs on the machine)
 cd apps/web && pnpm lint && pnpm typecheck && pnpm build && pnpm test:unit && pnpm test:e2e
-                                                     # Playwright mock e2e: 36 passed, 1 skipped (5 Oct 2026, after the UI redesign); the live project needs uv
+                                                     # Playwright mock e2e: 58 passed, 7 skipped (live project: 41 passed, 2 skipped) on 8 Oct 2026
                                                      # (once: pnpm exec playwright install chromium)
 ```
 
@@ -40,7 +40,8 @@ cd apps/web && pnpm lint && pnpm typecheck && pnpm build && pnpm test:unit && pn
 
 ```bash
 python3 scripts/run_scenarios.py --inproc                         # 49 scripted /nl tasks + evidence → services/api/evals/e2e/latest/
-cd services/api && uv run python -m app.security.attacks --report # 255 attacks (122 API + 133 chat, including the NL-CS consent attacks and each buyer attack with and without the buyer's key), 0 with harm
+cd services/api && uv run python -m app.security.attacks --report # 259 attacks (126 API + 133 chat, including the NL-CS consent attacks, each buyer attack with and without the buyer's key, and four on contract ingestion), 0 with harm
+PYTHONUTF8=1 uv run --project services/api python scripts/evaluate_contracts.py   # held-out contract readings → services/api/evals/contracts_heldout_report.md (the set is pending, so the report says so)
 uv run --project services/api python scripts/evaluate.py          # full offline evaluation (about 5 min) → services/api/evals/latest_report.md
 uv run --project services/api python scripts/evaluate.py --suite offers --heldout fixtures/heldout3   # the independent held-out set
 PYTHONUTF8=1 uv run --project services/api python scripts/certify_language_boundary.py --backend cache   # 231-item language-boundary certification; also --backend fake; WRONG_MATERIAL 0 in both. --backend live is pending an API key
@@ -73,6 +74,7 @@ Flags are environment variables read by `services/api/app/config.py` (`1` on, `0
 | Alerts and reconciliation | Cash-flow alerts from the conservative trajectory, each with an executable cure (`POST /alerts/{id}/act`); receipt reconciliation, including promised early payments (AWAITED, RECEIVED, LAPSED, SETTLED_OTHERWISE) | `FEATURE_ALERTS` | on |
 | Current books and clock | Accepted commitments change every later projection; a simulated clock (`POST /clock/advance`); partial settlement; re-verification of a verdict at the moment of commitment (ADR-0006) | core | on |
 | Expected-mode plans | Display-only expected-basis funding plan beside the committed one | `FEATURE_EXPECTED_PLANS` | on |
+| Contract ingestion and the deal summary | Upload a signed buyer contract or a lender agreement (Word, PDF with text, or text); the agent reads it with every term beside its quoted clause, labelled "AI-generated, for reference"; the owner confirms or rejects it (an owner-only operation logged in the chain, which changes no books); once a deal is agreed, the Deals page sets the confirmed contract beside the live books; `SHOW_DEAL` in chat ("where are we with Foshan?") | `FEATURE_CONTRACTS` | on |
 
 Other switches: `LLM_MODE=cache|live`, `LLM_PRIMARY=claude|deepseek`, `DATABASE_URL` (SQLite by default, `memory`, or Postgres), and `DEMO_MODE`.
 

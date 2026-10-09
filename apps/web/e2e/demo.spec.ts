@@ -159,7 +159,7 @@ test("the label toggle switches the UI to Chinese and back", async ({ page }) =>
   await expect(page.getByRole("heading", { name: "Mandate", level: 1 })).toBeVisible();
 });
 
-test("reset clears the session", async ({ page }) => {
+test("reset clears the session back to the demo's starting point", async ({ page }) => {
   await page.goto("/mandate");
   await page.getByTestId("demo-next").click();
   await expect(page).toHaveURL(/\/mandate/);
@@ -168,5 +168,9 @@ test("reset clears the session", async ({ page }) => {
   await page.getByTestId("demo-reset").click();
   await expect(page).toHaveURL(/\/demo/);
   await page.goto("/ledger");
-  await expect(page.getByText("No operations yet")).toBeVisible();
+  // The demo opens on the three demo documents read by the agent and confirmed by the owner; nothing else is logged.
+  const ops = page.locator("#operations tbody tr");
+  await expect(ops).toHaveCount(3);
+  await expect(ops.filter({ hasText: "Confirm document" })).toHaveCount(3);
+  await expect(page.getByTestId("chain-status")).toContainText("3 entries");
 });

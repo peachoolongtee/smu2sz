@@ -920,7 +920,7 @@
   "changes": [
     {
       "day": 0,
-      "seq": 2,
+      "seq": 5,
       "kind": "OPERATION",
       "actor": "AGENT",
       "text": "Drew ¥149,986.20 on Bank credit line today",
@@ -930,7 +930,7 @@
     },
     {
       "day": 0,
-      "seq": 1,
+      "seq": 4,
       "kind": "AGREEMENT",
       "actor": "AGENT",
       "text": "Agreement with Foshan Home Retail Co. recorded; concessions booked against your budget: ¥0.00.",

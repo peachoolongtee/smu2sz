@@ -109,6 +109,27 @@ shown; `POST /alerts/{id}/act` accepts them when they equal the plan the server 
 Mock mode replays summaries recorded on the demo path (`mocks/home_summary_*.json`, `lib/mock/home.ts`): the opening books,
 after the day-0 fix ran, after the deal (quiet), day 34 with the late invoice, the queued fix and the approved fix.
 
+### Documents (`/documents`)
+
+Contract ingestion (brief 03). Read a demo document (`POST /documents {fixture_id, format}`, Markdown, Word or PDF) or upload
+a file (`{kind, counterparty_id, filename, content_base64}`); the review screen (`?id=DOC-…`) highlights every clause the agent
+read with `components/annotated-text.tsx` beside the term it gave, lists the fields left blank and the flags, sets a lender
+agreement against the facility on the books, and labels the reading "AI-generated, for reference" until the owner confirms
+or rejects it (`POST /documents/{id}/confirm|reject {doc_hash, link_facility_id?}`). Confirming is logged on the chain and
+changes no books.
+
+The demo reset opens on the three demo documents read by the agent and confirmed by the owner (the first three ledger
+entries). The deal summary sits on Deals (`components/deals/deal-summary.tsx`): once both parties have agreed a deal (the
+"Terms negotiated" stage done in `GET /deals`) it follows what was agreed, the next step points at it, and it links to the
+contract. `/documents` is a Business route opened from a summary and an engine view in Demo mode; Activity links each
+confirmation to its contract. "Read again" on a demo document is a new reading to review and confirm or reject.
+
+Mock mode (`lib/mock/documents.ts`) starts from the same point and serves the three demo documents as the live API left
+them, read again, and that reading confirmed and rejected (`mocks/documents.json`), and the deal summary for each point of
+the story (`mocks/deals_*.json`: day 0 before and after the buyer agrees, day 0 after a new reading of the supply agreement is
+confirmed, then day 34 before the cure is queued, while it waits for approval and after approval). The mock marks the deal
+agreed when the negotiation (Deals, the stepper) or the chat's "go ahead" agrees it, as the live books do. Any other file needs live mode.
+
 ### Live-mode notes
 
 - The demo stepper compiles the server fixtures (`POST /offers {fixture_id}`) and passes the fixture id back
@@ -124,7 +145,7 @@ after the day-0 fix ran, after the deal (quiet), day 34 with the late invoice, t
 ## Tests
 
 `playwright.config.ts` has three projects (`PW_CHROMIUM_PATH` points them at a pre-installed Chromium when the pinned build cannot be downloaded). `desktop` and `phone` run against a mock-mode build on :3100.
-`live` runs `demo`, `whatif`, `alerts`, `chat`, `contract` and `live` specs against uvicorn (:8000, in-memory store,
+`live` runs `demo`, `whatif`, `alerts`, `chat`, `contract`, `documents` and `live` specs against uvicorn (:8000, in-memory store,
 recorded LLM cache, no Supabase) and a live-mode build on :3000. `demo.spec.ts` and `chat.spec.ts` are the same files in both
 modes and asserts the same golden numbers. `contract.spec.ts` calls the live adapters from Node against the
 running API. Mock and live builds use separate `NEXT_DIST_DIR`s (`.next-e2e-mock`, `.next-e2e-live`).

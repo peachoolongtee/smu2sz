@@ -23,9 +23,12 @@ from app.domain.ports import OperationRecord
 OPERATION_ADAPTER: TypeAdapter[Operation] = TypeAdapter(Operation)
 
 # Log entries that are not typed Operations: the owner resetting a counterparty's circuit breaker,
-# and the owner revoking a commitment (`Executor.revoke_commitment`).
+# the owner revoking a commitment (`Executor.revoke_commitment`), and the owner confirming or rejecting a document
+# the agent read (`Executor.decide_document`, brief 03; no money effect).
 RESET_CIRCUIT_KIND = "RESET_CIRCUIT"
 REVOKE_COMMITMENT_KIND = "REVOKE_COMMITMENT"
+CONFIRM_DOCUMENT_KIND = "CONFIRM_DOCUMENT"
+REJECT_DOCUMENT_KIND = "REJECT_DOCUMENT"
 
 
 @dataclass(frozen=True, slots=True)

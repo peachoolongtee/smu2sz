@@ -16,7 +16,7 @@
   "flagged": 0,
   "received_total_fen": 0,
   "expected_total_fen": 0,
-  "chain_head_hash": null,
+  "chain_head_hash": "1896e5a2c31a5094e211c19e588b287b2118819d5063e526c8b7e3c0baffe7e9",
   "chain_valid": true,
   "promised": [],
   "lapsed_promises": 0,
