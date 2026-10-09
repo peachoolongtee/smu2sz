@@ -1,6 +1,6 @@
 # UX remediation ledger, 9 October 2026 (map #65, Wave 0, ticket #67)
 
-Version 1. Written by the Wave 0 verifier. It changes no product code.
+Version 1 written by the Wave 0 verifier (9 Oct); rows updated by the lead as each wave merged. Final state (10 Oct): every row FIXED; the remediation merged into `dev` at 8041d1f (`feat/ux-remediation`, map #65); the report is `docs/UX_REMEDIATION_REPORT.md`, the gate record `ux-remediation-2026-10-09/gate/`, the screenshots `docs/screenshots/ux-remediation-2026-10-10/`. The "Not a fix list" sentence below describes version 1.
 
 ## What this ledger is
 
