@@ -2337,6 +2337,8 @@ export interface ReceiptFacts {
 export type HomeChangeKind = "OPERATION" | "RECEIPT" | "WAITING" | "REFUSED" | "LATE" | "LANDED" | "AGREEMENT";
 
 export interface HomeChange {
+  /** The row\'s own id ("op:{seq}", "alert:{id}", "lot:{id}"); `superseded_by` names one of these. */
+  id?: string | null;
   day: Day | null;
   /** The day as a distance from today, written by the server. */
   when: string;
