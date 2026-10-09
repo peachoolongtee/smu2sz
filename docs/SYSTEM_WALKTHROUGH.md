@@ -1079,6 +1079,11 @@ for other money.
 
 ## 9. Tests, evidence and how to run everything
 
+After the merge of feat/upgrading and contract ingestion into `dev` (`feat/strategy-mvp-contracts`, 10 Oct 2026): 6,712 backend
+tests passed, 37 skipped; 49 of 49 scripted chat scenarios; `scripts/demo_run.py` exit 0; 259 attacks, 0 with harm; the
+web app's lint, typecheck and unit checks (91) pass, mock e2e 159 passed (168 with the strategy
+flag) and live e2e 79 passed (87 with it).
+
 State at 10 Oct 2026, from the remediation report's section 12 (`docs/UX_REMEDIATION_REPORT.md`; `feat/ux-remediation` at `41a0add`, whose only commits after the last code commit `c87a3a6` are documents): the whole API suite 6398 passed, 37 skipped after the Wave 7 API merge, with the golden digests unchanged throughout; web, with zero retries after Wave 7: unit 76, mock e2e 135 on the default build and 144 with the strategy flag, live e2e 69 and 77; axe reports zero serious or critical findings at 412 and 1440 px. The Wave 8 gate that reruns all of this on the final head from a clean clone, on the SQLite file store and in memory, is recorded under `docs/research/ux-remediation-2026-10-09/gate/` and was not yet written when this section was refreshed. The documentation pass that refreshed this section re-ran only `tests/decisions`, `tests/api/test_demo_bank_receipt.py` and `tests/api/test_collections.py` (144 passed). Everything else in this section, including the scenario, attack, evaluation, certification and concurrency figures, is the 3 Oct record below and was not re-run.
 
 After the merge into the redesigned UI (`feat/upgrading-contracts`, 8 Oct 2026): 5,716 backend tests passed, 33 skipped;
