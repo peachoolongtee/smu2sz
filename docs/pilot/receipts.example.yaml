@@ -1,0 +1,21 @@
+# The bank receipts for a dry pilot, read by services/api/scripts/pilot_dry_run.py --receipts.
+# SYNTHETIC: every line below is an invented rehearsal of a buyer paying; none is a real payment. The receivable ids are the
+# public-record fixture's (fixtures/scenarios/public_sme.json); change them to the ids of the books you run on.
+#
+# A map of week number (1 to the run's --weeks) to a list of receipts. Each receipt is
+#   receivable_id:  a receivable on the starting books that is still open (RCV-D1)
+#   amount_fen:     whole fen above zero (254926735 is 2,549,267.35 yuan); the sum for one receivable may not pass what is owed
+#   bank_reference: the bank's own reference for the credit, 1 to 64 characters, never used twice in the file; use a synthetic
+#                   one (no account or card numbers: twelve digits in a row are refused)
+#   day:            optional, 1 to 7: the day of the week the credit arrives; the end of the week (7) when left out
+# Each receipt is posted before that week's reads, as the bank feed posts it (RECEIVE_PAYMENT, requested by SYSTEM, with the
+# bank reference), and recorded in the journal as a `receipt` entry. A week with no entry gets none: the clock never assumes
+# a receipt. A bad file is refused with the reason before anything runs.
+1:
+  - {receivable_id: RCV-D1, amount_fen: 254926735, bank_reference: SYNTH-RCPT-001}
+2:
+  - {receivable_id: RCV-B1, amount_fen: 300000000, bank_reference: SYNTH-RCPT-002, day: 3}
+4:
+  - {receivable_id: RCV-F1, amount_fen: 400000000, bank_reference: SYNTH-RCPT-003}
+6:
+  - {receivable_id: RCV-C1, amount_fen: 338466049, bank_reference: SYNTH-RCPT-004}
