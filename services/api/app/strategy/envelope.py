@@ -20,6 +20,7 @@ from __future__ import annotations
 import time
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, replace
+from fractions import Fraction
 from typing import Literal, NamedTuple
 
 from pydantic import Field
@@ -29,6 +30,7 @@ from app.api.presentation import party_name, t, when_text
 from app.books import Books
 from app.domain.models import (
     Commitment,
+    CompiledOffer,
     Contract,
     CounterProposal,
     FinancialState,
@@ -40,11 +42,14 @@ from app.domain.models import (
 )
 from app.domain.money import bp, fmt_pct, fmt_yuan
 from app.domain.ports import LedgerStore
-from app.financial import value_concessions
-from app.funding import NoPermanentSourceError, marginal_cost
+from app.financial import EngineError, value_concessions
+from app.funding import NoPermanentSourceError, marginal_cost, plan
+from app.funding.router import shared_runs
+from app.strategy.no_plan import plan_is_missing
 from app.strategy.types import CandidatePackage
 from app.verifier import bind, evaluate
 from app.verifier.counters import infeasibility, smallest_step_covering
+from app.verifier.evaluate import _evaluate, _Router
 from app.whatif.offer import Context, EarlyPayContext, RebateOnlyContext, build, context
 from app.whatif.params import (
     DISCOUNT_MAX_BP,
@@ -79,6 +84,7 @@ BuyerContext = Context | EarlyPayContext | RebateOnlyContext
 
 NO_RECURRING = "no_recurring"  # the buyer has no recurring invoice to extend
 NO_INVOICE = "no_invoice"  # the buyer has no open invoice to pay early
+NO_PLAN = "no_plan"  # no committed plan covers the shortfall: the terms and rebate levers are withheld (map #58, ticket #79)
 
 
 def face_of(ctx: BuyerContext) -> int:
@@ -188,16 +194,21 @@ def _scan_max(values: Sequence[int], ok: Callable[[int], bool]) -> Found:
 
 
 def last_true(values: Sequence[int], ok: Callable[[int], bool], *, hint: int | None = None, gallop: bool = False,
-              hint_steps: int = 2) -> Found:
+              hint_steps: int = 2, top_first: bool = False) -> Found:
     """Largest value with ok(value), assuming ok holds up to a boundary and fails after it (binary search, then the two
     values past the boundary checked; if one passes the lever is scanned whole and its largest passing value returned).
     A `hint` (a value expected to be the boundary) is tried first: it stands when it passes and the two values past it
     fail, which is the same evidence the search ends with; otherwise the search runs as if there were no hint. With
     `gallop` the search first doubles its steps up from the first value (cheap when the boundary is near it, as for
     the terms, where a long extension is also the costliest evaluation). `hint_steps` is how many values past the
-    hint must fail for it to stand (a sibling search's boundary, which had both neighbours checked, stands on one)."""
+    hint must fail for it to stand (a sibling search's boundary, which had both neighbours checked, stands on one).
+    With `top_first` the top of the range is asked once the first value has passed: when it passes too, it is the
+    largest value and nothing lies past it (a lever with no wall inside its range is read in two evaluations instead of
+    a search; a lever that passes at both ends and fails between them is read as passing, which the lever does not do)."""
     if not values or not ok(values[0]):
         return Found(None, True)
+    if top_first and len(values) > 1 and ok(values[-1]):
+        return Found(values[-1], True)
     if hint is not None and hint in values:
         i = values.index(hint)
         if ok(hint) and not any(ok(v) for v in values[i + 1: i + 1 + hint_steps]):
@@ -297,19 +308,27 @@ def _params(s: Setting) -> WhatIfParams:
 
 
 class _Verifier:
-    """`build` then `evaluate`, memoised per setting within one call, counting the evaluations it actually runs."""
+    """`build` then `evaluate`, memoised per setting within one call, counting the evaluations it actually runs.
+
+    A search asks only whether a setting passes (`quick`), and the verifier builds its counters (a second set of router
+    searches) only for an offer it refuses. So a search reads the verdict without them: a setting that passes has no
+    counters either way, and its probe goes to the memo as it stands; a setting that fails is kept apart in `failed` and
+    is evaluated whole by `probe` only if the answer needs to show it (the counters, the verifier's own outcome word)."""
 
     def __init__(self, books: Books, mandate: Mandate, key: str, day: int, commitments: Sequence[Commitment],
-                 ctx: BuyerContext, ranges: Ranges) -> None:
+                 ctx: BuyerContext, ranges: Ranges, withheld: str = "") -> None:
         self.books, self.mandate, self.key, self.day, self.commitments = books, mandate, key, day, commitments
         self.ctx, self.ranges = ctx, ranges
+        self.withheld = withheld  # why the ranges leave out the terms and rebate levers (`NO_PLAN`); empty: they are all there
         self.state: FinancialState = books.state
         self.memo: dict[Setting, Probe] = {}
+        self.failed: dict[Setting, Probe] = {}  # refused settings read without their counters (see `quick`)
+        self.routers: dict[Setting, _Router] = {}  # the router of each refused setting's quick reading, for `probe` to reuse
         self.cur = ctx.recurring.terms_days if isinstance(ctx, Context) else TERMS_MIN
 
     @property
     def evaluations(self) -> int:
-        return len(self.memo)
+        return len(self.memo) + len(self.failed)
 
     def norm(self, s: Setting) -> Setting:
         if s.discount == 0 or s.face == face_of(self.ctx):
@@ -326,6 +345,7 @@ class _Verifier:
         return s.face is None or (0 < s.face <= r.face_max_fen and s.face % FACE_STEP_FEN == 0)
 
     def probe(self, setting: Setting) -> Probe:
+        """The verifier's whole answer to a setting, counters included."""
         s = self.norm(setting)
         hit = self.memo.get(s)
         if hit is not None:
@@ -333,10 +353,46 @@ class _Verifier:
         if not self.in_range(s):
             raise ValueError(f"{s} is outside the levers' ranges")
         offer, _ = build(_params(s), self.ctx, self.day)
-        v = evaluate(offer, self.state, self.mandate, trusted_owner_key_hex=self.key, day=self.day,
-                     commitments=self.commitments, plans="committed").verdict
+        # a refused setting read before keeps its router, whose memo holds the plans that reading searched for
+        router = self.routers.pop(s, None)
+        v = self._verdict(offer, router if router is not None else _Router(self.mandate), with_counters=True)
         p = self._read(s, v)
         self.memo[s] = p
+        self.failed.pop(s, None)
+        return p
+
+    def _verdict(self, offer: CompiledOffer, router: _Router, *, with_counters: bool) -> Verdict:
+        """`evaluate` on this buyer's books, on the given router and with or without the counters. An engine error is
+        worded by `evaluate` itself (a NO_VERDICT); it never raises one."""
+        try:
+            with shared_runs():
+                return _evaluate(offer, self.state, self.mandate, trusted_owner_key_hex=self.key, day=self.day,
+                                 commitments=self.commitments, plans="committed", router=router,
+                                 with_counters=with_counters).verdict
+        except EngineError:
+            return evaluate(offer, self.state, self.mandate, trusted_owner_key_hex=self.key, day=self.day,
+                            commitments=self.commitments, plans="committed").verdict
+
+    def quick(self, setting: Setting) -> Probe:
+        """The answer to a setting for a search: the verdict without the counters. Its `passes`, `approved`,
+        `liquidity_only`, forward total and violations are the whole answer's; `counters`, `unlisted` and, for a refused
+        offer, `outcome` (the verifier words COUNTER or REJECT by whether a counter exists) are not, so a refused setting
+        is never handed to anything that shows it (`probe` evaluates it whole)."""
+        s = self.norm(setting)
+        hit = self.memo.get(s) or self.failed.get(s)
+        if hit is not None:
+            return hit
+        if not self.in_range(s):
+            raise ValueError(f"{s} is outside the levers' ranges")
+        offer, _ = build(_params(s), self.ctx, self.day)
+        router = _Router(self.mandate)
+        v = self._verdict(offer, router, with_counters=False)
+        p = self._read(s, v)
+        if v.outcome in PASSING:  # no counters are built for an offer that is not refused: the whole answer, as it is
+            self.memo[s] = p
+        else:
+            self.failed[s] = p
+            self.routers[s] = router
         return p
 
     def _read(self, s: Setting, v: Verdict) -> Probe:
@@ -365,7 +421,7 @@ class _Verifier:
             unlisted=tuple(c for c, _ in read if not self.in_range(c)))
 
     def ok(self, s: Setting) -> bool:
-        return self.probe(s).passes
+        return self.quick(s).passes
 
     def rebate_hint(self, at_zero: Probe) -> int | None:
         """Where the largest rebate probably lies, read from the verifier's own forward-concession totals: the room the
@@ -375,16 +431,19 @@ class _Verifier:
         top = self.ranges.rebate[-1]
         if top == 0:
             return None
-        base, full = self.probe(Setting(self.cur)), self.probe(Setting(self.cur, rebate=top))
+        base, full = self.quick(Setting(self.cur)), self.quick(Setting(self.cur, rebate=top))
         steps = len(self.ranges.rebate) - 1
-        per_step, rest = divmod(full.forward_total_fen - base.forward_total_fen, steps)
+        per_step = Fraction(full.forward_total_fen - base.forward_total_fen, steps)  # the verifier rounds each total to the fen
         room = self.mandate.max_aggregate_forward_concession_fen - at_zero.forward_total_fen
-        if per_step <= 0 or rest or room < 0:
+        if per_step <= 0 or room < 0:
             return None
-        return self.ranges.rebate[min(room // per_step, steps)]
+        return self.ranges.rebate[min(int(room // per_step), steps)]
 
     def approved(self, s: Setting) -> bool:
-        return self.probe(s).approved
+        return self.quick(s).approved
+
+    def liquidity_only(self, s: Setting) -> bool:
+        return self.quick(s).liquidity_only
 
     def compensating_price(self, terms: int) -> tuple[int | None, int | None]:
         """(per-invoice funding cost of the extension, the smallest 5 bp price step that covers it): the Option B rule of
@@ -468,6 +527,7 @@ class EnvelopeFacts:
     unlisted_counters: tuple[Setting, ...] = ()  # the verifier's counters to the asks that fall outside the levers' ranges
     refusal: Literal["no_lever", "out_of_range"] = "no_lever"  # why `refused` is set
     rebate_only: bool = False  # the buyer has an expected order and no invoice: the rebate is the only lever
+    no_plan: bool = False  # no committed plan covers the shortfall: terms and rebate withheld, no plan cost is priced
 
 
 def wall_of(p: Probe | None, *, ignore_caps: bool = False) -> str | None:
@@ -522,14 +582,14 @@ def _levers(v: _Verifier) -> tuple[list[Maximum], list[tuple[Setting, int | None
     pmax = r.price[-1]
 
     if has_terms:
-        f = last_true(up, lambda x: v.ok(Setting(x)), gallop=True)
+        f = last_true(up, lambda x: v.ok(Setting(x)), gallop=True, top_first=True)
         out.append(_maximum(v, TERMS_ALONE, "terms_alone", "days", f, lambda x: Setting(x), up))
-        g = last_true(up, lambda x: v.probe(Setting(x)).liquidity_only, gallop=True)
+        g = last_true(up, lambda x: v.liquidity_only(Setting(x)), gallop=True, top_first=True)
         out.append(_maximum(v, TERMS_BUDGET_IGNORED, "terms_budget_ignored", "days", g, lambda x: Setting(x), up,
                             ignore_caps=True))
         # the longest terms that any price in range makes pass (the price is monotone: the top of the range is the best
         # chance), then the smallest price that does it
-        h = last_true(up, lambda x: v.approved(Setting(x, price=pmax)), gallop=True)
+        h = last_true(up, lambda x: v.approved(Setting(x, price=pmax)), gallop=True, top_first=True)
         t_best = h.value
         hp = Found(None, True)
         if t_best is not None:
@@ -542,14 +602,15 @@ def _levers(v: _Verifier) -> tuple[list[Maximum], list[tuple[Setting, int | None
             v.probe(Setting(nxt, price=pmax)) if nxt is not None else None,
             wall_of(v.probe(Setting(nxt, price=pmax))) if nxt is not None else None, rule_price_bp=rule))
     else:
-        out += [_unavailable(TERMS_ALONE, "terms_alone", "days"),
-                _unavailable(TERMS_BUDGET_IGNORED, "terms_budget_ignored", "days"),
-                _unavailable(TERMS_WITH_PRICE, "terms_with_price", "days")]
+        why = (v.withheld or NO_RECURRING) if isinstance(ctx, Context) else NO_RECURRING  # withheld only where a lever exists
+        out += [_unavailable(TERMS_ALONE, "terms_alone", "days", why),
+                _unavailable(TERMS_BUDGET_IGNORED, "terms_budget_ignored", "days", why),
+                _unavailable(TERMS_WITH_PRICE, "terms_with_price", "days", why)]
 
     # early pay: the whole invoice, and the face of the verifier's own early-pay counter (asked for the top of the range,
     # so that the counter's rate is the break-even step and not the buyer's own)
     faces: list[int] = []
-    whole = last_true(r.discount, lambda d: v.ok(Setting(cur, discount=d)))
+    whole = last_true(r.discount, lambda d: v.ok(Setting(cur, discount=d)), gallop=True)
     if rebate_only:  # no open invoice to pay early
         whole = Found(None, True)
     elif (whole.value or 0) < top_discount:
@@ -572,10 +633,11 @@ def _levers(v: _Verifier) -> tuple[list[Maximum], list[tuple[Setting, int | None
                             found, early_at(face), r.discount, face_fen=shown))
 
     if len(r.rebate) > 1:
-        rb = last_true(r.rebate, lambda x: v.ok(Setting(cur, rebate=x)), hint=v.rebate_hint(v.probe(Setting(cur))))
+        rb = last_true(r.rebate, lambda x: v.ok(Setting(cur, rebate=x)), hint=v.rebate_hint(v.quick(Setting(cur))))
         out.append(_maximum(v, REBATE, "rebate", "bp", rb, lambda x: Setting(cur, rebate=x), r.rebate))
     else:
-        out.append(_unavailable(REBATE, "rebate", "bp", NO_RECURRING))
+        withheld = (v.withheld or NO_RECURRING) if isinstance(ctx, Context) or rebate_only else NO_RECURRING
+        out.append(_unavailable(REBATE, "rebate", "bp", withheld))
     return out, [(Setting(cur, discount=f.value or 0, face=fc), fc) for fc, f in early if f.value and fc is not None]
 
 
@@ -606,7 +668,7 @@ def _cell(v: _Verifier, base: Setting, keep_failures: bool, price_hint: int | No
     if fp.value is None:
         return v.probe(base._replace(price=r.price[-1], rebate=0)) if keep_failures else None
     priced = base._replace(price=fp.value)
-    fr = last_true(r.rebate, lambda x: v.ok(priced._replace(rebate=x)), hint=v.rebate_hint(v.probe(priced)),
+    fr = last_true(r.rebate, lambda x: v.ok(priced._replace(rebate=x)), hint=v.rebate_hint(v.quick(priced)),
                    hint_steps=1 if price_hint is not None else 2)
     return v.probe(priced._replace(rebate=fr.value or 0))
 
@@ -671,7 +733,12 @@ def envelope_facts(books: Books, mandate: Mandate, *, store: LedgerStore | None 
     past_due = tuple(sorted((a.amount_fen or 0, today - int(a.inputs["due_day"])) for a in late
                             if a.inputs.get("counterparty_id") == buyer_id))
     ranges = ranges_for(ctx, mandate)
-    v = _Verifier(books, mandate, trusted_owner_key_hex, day, commitments, ctx, ranges)
+    has_terms_lever = bool(ranges.terms)
+    with shared_runs():
+        no_plan = plan_is_missing(plan(state, books.with_([]), mandate))
+    if no_plan:  # no plan to price a longer payment term or a rebate against: only early payment is checked
+        ranges = replace(ranges, terms=(), price=(0,), rebate=(0,))
+    v = _Verifier(books, mandate, trusted_owner_key_hex, day, commitments, ctx, ranges, NO_PLAN if no_plan else "")
     cur = v.cur
     maxima, early_counter = _levers(v)
     status_quo = v.probe(Setting(cur))
@@ -695,7 +762,7 @@ def envelope_facts(books: Books, mandate: Mandate, *, store: LedgerStore | None 
     counters = set(counter_costs)
     seen = {c.setting for c in cells}
     for s in sorted(counters):
-        if s not in seen and v.probe(s).approved:
+        if s not in seen and v.approved(s):
             cells.append(v.probe(s))
     cell_tuple = tuple(Cell(p, p.setting in counters) for p in cells)
 
@@ -709,9 +776,9 @@ def envelope_facts(books: Books, mandate: Mandate, *, store: LedgerStore | None 
         s0 = early_counter[0][0]
         with_early = v.approved(Setting(next_terms, price=ranges.price[-1], discount=s0.discount, face=s0.face))
     return EnvelopeFacts(
-        buyer_id, name, day, version, False, mandate, cur, face_of(ctx), bool(ranges.terms), tuple(maxima),
+        buyer_id, name, day, version, False, mandate, cur, face_of(ctx), has_terms_lever, tuple(maxima),
         tuple(zone_rows), cell_tuple, counter_costs, status_quo, next_terms, with_early, v.evaluations, time.perf_counter() - started,
-        past_due, tuple(unlisted), rebate_only=isinstance(ctx, RebateOnlyContext))
+        past_due, tuple(unlisted), rebate_only=isinstance(ctx, RebateOnlyContext), no_plan=no_plan)
 
 
 # ---------------------------------------------------------------- the answer (words)
@@ -818,7 +885,16 @@ _LEVER_LABEL = {
 _UNAVAILABLE = {
     NO_RECURRING: ("no recurring invoice to extend", "没有可延长的定期发票"),
     NO_INVOICE: ("no open invoice to pay early", "没有可提前付款的未结发票"),
+    NO_PLAN: ("withheld while no funding plan covers the shortfall", "没有融资方案能补上缺口时不提供"),
 }
+# said by the answer when no committed plan covers the shortfall (the terms and rebate levers are withheld)
+WITHHELD = ("FLOW cannot offer longer terms or a rebate while no funding plan covers the shortfall; early payment only.",
+            "在没有融资方案能补上缺口时，FLOW 无法提供更长账期或返利；只能提前付款。")
+WITHHELD_REBATE_ONLY = ("FLOW cannot offer a rebate while no funding plan covers the shortfall.",
+                        "在没有融资方案能补上缺口时，FLOW 无法提供返利。")
+WITHHELD_NO_EARLY = (("FLOW cannot offer longer terms or a rebate while no funding plan covers the shortfall, and no early "
+                      "payment passes FLOW's checks."),
+                     "在没有融资方案能补上缺口时，FLOW 无法提供更长账期或返利，也没有提前付款方案能通过 FLOW 的检查。")
 
 
 def _lever_label(m: Maximum, lang: str) -> str:
@@ -926,7 +1002,8 @@ def _package(facts: EnvelopeFacts, p: Probe, lang: str, match: bool = False) -> 
                      early_pay_face_fen=s.face, rebate_bp=s.rebate),
         outcome=p.outcome, tier=p.tier, passes=p.passes, approved=p.approved, codes=list(p.codes),
         binding_codes=list(p.binding), forward_budget_used_fen=p.forward_total_fen, reserve_breach=breach,
-        flags=_flags(p, lang), counter_match=match, plan_cost_fen=p.plan_cost_fen, summary=_summary(s, lang))
+        flags=_flags(p, lang), counter_match=match, plan_cost_fen=None if facts.no_plan else p.plan_cost_fen,
+        summary=_summary(s, lang))
 
 
 def _lever(facts: EnvelopeFacts, m: Maximum, lang: str) -> EnvelopeLever:
@@ -976,13 +1053,15 @@ def _primary(facts: EnvelopeFacts, lang: str) -> str:
                    f"对预期订单的返利最高 {fmt_pct(bp(rebate.value))}；暂无可估值的账期或提前付款")]
     elif rebate is not None and rebate.value:
         parts.append(t(lang, f"a rebate up to {fmt_pct(bp(rebate.value))}", f"返利最高 {fmt_pct(bp(rebate.value))}"))
-    if facts.has_terms_lever:
+    if facts.has_terms_lever and not facts.no_plan:
         if facts.next_terms is not None:
             n = facts.next_terms
             parts.append(t(lang, f"not {n} days without an early payment", f"不提前付款则不能做到 {n} 天")
                          if facts.next_terms_passes_with_early_pay else t(lang, f"not {n} days", f"不能做到 {n} 天"))
         elif longest == cur:
             parts.append(t(lang, "no longer payment terms", "不能延长账期"))
+    if not parts and facts.no_plan:
+        return t(lang, *(WITHHELD_REBATE_ONLY if facts.rebate_only else WITHHELD_NO_EARLY))
     if not parts:
         return t(lang, "Nothing beyond today's terms passes FLOW's checks.", "今天的条件之外，没有任何方案能通过 FLOW 的检查。")
     text = t(lang, "You can live with: ", "您能接受的范围：") + t(lang, "; ", "；").join(parts)
@@ -1010,6 +1089,9 @@ def _reason(facts: EnvelopeFacts, lang: str) -> str:
     overdue = _past_due_clause(facts, lang)
     if overdue is not None:
         clauses.append(overdue)
+    if facts.no_plan and (facts.has_terms_lever or facts.rebate_only):  # the levers that need a plan to price are withheld
+        said = t(lang, *(WITHHELD_REBATE_ONLY if facts.rebate_only else WITHHELD))
+        return f"{_sentence(clauses, lang)}{' ' if lang != 'zh' else ''}{said}" if clauses else said
     if facts.rebate_only:
         clauses.append(t(lang, "there is no recurring invoice to extend and no open invoice to pay early, so only the "
                                "rebate on the expected order can be valued",
@@ -1062,13 +1144,21 @@ def _sentence(clauses: list[str], lang: str) -> str:
     return text + t(lang, ".", "。")
 
 
+def _now(facts: EnvelopeFacts, standing: int, lang: str) -> str:
+    """The standing plan's clause of the cost line: its cost, or that it is not priced when no committed plan exists."""
+    if facts.no_plan:
+        return t(lang, "your current funding plan is not priced because no committed plan covers the shortfall",
+                 "现行资金安排无法估值，因为没有已承诺的融资方案能补上缺口")
+    return t(lang, f"without a deal your current funding plan costs {fmt_yuan(standing)}",
+             f"不做交易时，现行资金安排的成本为 {fmt_yuan(standing)}")
+
+
 def _money(facts: EnvelopeFacts, lang: str) -> str:
     standing = facts.status_quo.plan_cost_fen if facts.status_quo is not None else None
     if standing is None:
         return ""
     if facts.rebate_only:
-        now = t(lang, f"without a deal your current funding plan costs {fmt_yuan(standing)}",
-                f"不做交易时，现行资金安排的成本为 {fmt_yuan(standing)}")
+        now = _now(facts, standing, lang)
         rebate = _lever_of(facts, "rebate")
         used = rebate.at_max.forward_total_fen - facts.status_quo.forward_total_fen \
             if rebate is not None and rebate.at_max is not None and facts.status_quo is not None else 0
@@ -1086,7 +1176,7 @@ def _money(facts: EnvelopeFacts, lang: str) -> str:
         costs.append(t(lang, f"{fmt_yuan(option_b)} with the price rise", f"加价方案 {fmt_yuan(option_b)}"))
     if option_a is not None:
         costs.append(t(lang, f"{fmt_yuan(option_a)} with the early payment", f"提前付款方案 {fmt_yuan(option_a)}"))
-    now = t(lang, f"without a deal your current funding plan costs {fmt_yuan(standing)}", f"不做交易时，现行资金安排的成本为 {fmt_yuan(standing)}")
+    now = _now(facts, standing, lang)
     if not costs:
         return (now[0].upper() + now[1:] if lang != "zh" else now) + t(lang, ".", "。")
     lead = t(lang, "Cost to you ", "您的成本：") + t(lang, ", or ", "，或").join(costs)

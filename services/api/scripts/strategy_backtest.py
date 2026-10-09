@@ -87,7 +87,8 @@ from app.strategy.envelope import (
     ranges_for,
 )
 from app.strategy.impact import marginal_impact, scenario_inflow
-from app.strategy.price_curve import WINDOW_DAYS, PriceCurve, _ceiling_fen, price_curve
+from app.strategy.no_plan import no_committed_plan
+from app.strategy.price_curve import WINDOW_DAYS, PriceCurve, _ceiling_fen, price_curve, price_sentence
 from app.verifier import evaluate
 from app.verifier.counters import infeasibility
 from app.verifier.evaluate import clear_caches
@@ -202,6 +203,10 @@ def check_worth(books: Books, mandate: Mandate, rt: Runtime, day: int) -> tuple[
             bad.append((w.receivable_id, f"the action sentence has {words} words (at most {MAX_ACTION_WORDS}): {w.action_sentence}"))
         if not w.worth_text:
             bad.append((w.receivable_id, "the row has no worth_text"))
+        elif answer.no_plan:  # no committed plan to price against (map #58, ticket #79): no row reads as a price
+            if not w.worth_text.startswith("Cannot be priced: no funding plan") or w.net_saving_fen or w.gross_saving_fen:
+                said = f"{w.worth_text!r} (net {w.net_saving_fen}, gross {w.gross_saving_fen})"
+                bad.append((w.receivable_id, f"no committed plan, yet the row says {said}"))
         elif w.action == "wait" and w.worth_text != "Saves nothing extra now":
             bad.append((w.receivable_id, f"a wait row says {w.worth_text!r}"))
         for c in w.ceilings:
@@ -215,6 +220,15 @@ def check_worth(books: Books, mandate: Mandate, rt: Runtime, day: int) -> tuple[
                 bad.append((tag, f"beats_by_fen {c.beats_by_fen} does not beat the plan"))
             elif c.cost_with_fen is None or c.cost_without_fen - c.cost_with_fen != c.beats_by_fen:
                 bad.append((tag, f"beats_by_fen {c.beats_by_fen} is not C0 {c.cost_without_fen} less C1 {c.cost_with_fen}"))
+    if answer.no_plan != no_committed_plan(books, mandate):
+        bad.append(("no_plan", f"no_plan={answer.no_plan} but the router's committed plan says otherwise"))
+    if answer.no_plan:  # the order runs on lateness, then amount, and the top sentence says why nothing is priced
+        by_lateness = [w.receivable_id for w in sorted(
+            answer.rows, key=lambda w: (-w.days_late, -w.outstanding_fen, w.due_day, w.receivable_id))]
+        if [w.receivable_id for w in answer.rows] != by_lateness:
+            bad.append(("row order", f"no committed plan, but the rows are not by lateness then amount: {by_lateness}"))
+        if not answer.top_action.startswith("No committed funding plan covers the shortfall"):
+            bad.append(("top_action", f"no committed plan, yet the top sentence is {answer.top_action!r}"))
     before = ([w.receivable_id for w in answer.rows], answer.gross_order)
     clear_caches()
     again = receivables_worth(books, mandate, store=rt.store, day=day)
@@ -245,6 +259,12 @@ def check_curve(books: Books, mandate: Mandate, rt: Runtime, day: int) -> tuple[
             pairs[d] = -mi.posted_cost_delta_fen
         return pairs[d]
 
+    if curve.no_plan != no_committed_plan(books, mandate):
+        bad.append(("no_plan", f"no_plan={curve.no_plan} but the router's committed plan says otherwise"))
+    if curve.no_plan:  # nothing is priced: no band, not flat, and the sentence says why (map #58, ticket #79)
+        if curve.bands or curve.flat or not price_sentence(curve, today=day, lang="en").startswith("No committed funding plan"):
+            bad.append(("no_plan", f"no committed plan, yet bands={len(curve.bands)}, flat={curve.flat}"))
+        return curve, bad, {"bands": 0, "varies": 0, "flat": False, "checks": 1, "no_plan": True}
     limit = _ceiling_fen(books, mandate, amount, day)  # the module's own: the cost of funds over the carry the plan holds
     checks = 0
     for b in curve.bands:
