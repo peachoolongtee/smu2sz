@@ -10,6 +10,7 @@ from typing import Any
 from app.alerts import Alert, AlertKind, Severity, SuggestedAction
 from app.api import decide as decide_module
 from app.api import decisions as decisions_module
+from app.api import home as home_module
 from app.api.presentation import quote_view
 from app.api.quotes import build_quote, rate_of
 from app.api.runtime import get_runtime
@@ -32,13 +33,15 @@ def _settled_cure(client) -> str:
 
 
 def _with_open_reserve_alert(monkeypatch, **changes: Any) -> None:
-    """The record reads today's alerts; show it the real reserve alert with other fields (another breach, another cure)."""
+    """The record reads today's alerts; show it the real reserve alert with other fields (another breach, another cure). The home runs the
+    alerts once and hands them to the record (ticket #87), so the home's own read is patched beside the record's."""
     real = decisions_module.alerts
 
     def patched(*args, **kwargs):
         return [a.model_copy(update=changes) if a.kind == AlertKind.RESERVE_BREACH_AHEAD else a for a in real(*args, **kwargs)]
 
     monkeypatch.setattr(decisions_module, "alerts", patched)
+    monkeypatch.setattr(home_module, "alerts", patched)
 
 
 # ---------------------------------------------------------------- 1. the residual belongs to its own breach
