@@ -27,7 +27,7 @@ test("risk, plan, options, forecast: one set of figures, in the owner's order", 
   const figures = page.getByTestId("cash-figures");
   await expect(figures.locator("dt")).toHaveText(["Cash today", "Minimum cash reserve", "Cash becomes unsafe", "Worst point"]);
   await expect(page.getByTestId("cash-unsafe-when")).toHaveText("in 12 days");
-  await expect(page.getByTestId("cash-headroom")).toHaveText("¥100k above your minimum");
+  await expect(page.getByTestId("cash-headroom")).toHaveText("Your cash is ¥100k above it");
   await expect(figures).toContainText("Lowest point: ¥405k below your minimum");
   await expect(figures).toContainText("−¥105k");
   const action = page.getByTestId("home-next-action");

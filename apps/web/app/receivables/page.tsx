@@ -37,6 +37,7 @@ export default function ReceivablesPage() {
   const invoices = data
     ? [...data.outstanding].sort((a, b) => (rank.get(a.receivable_id) ?? rank.size) - (rank.get(b.receivable_id) ?? rank.size) || Number(b.past_due) - Number(a.past_due) || a.due_day - b.due_day)
     : [];
+  const topRow = worth?.rows.find((r) => r.overdue_text) ?? worth?.rows[0];
   const error = recon.error ?? home.error;
   // Chase payment is offered on the invoices that are late, that fall due inside the forecast's shortfall (the home read's first
   // breach to its lowest day) or whose early payment lapsed. Day numbers are compared; the handoff itself is the server's.
@@ -65,10 +66,14 @@ export default function ReceivablesPage() {
             {/* How fresh the summary is: the report's own "when", else the home read's. */}
             <ReadWhen when={data.last_read_when ?? home.data?.cash.last_read_when} testId="recv-read-when" className="mb-2" />
             {/* What to do first, in the server's sentence, with the way to act beside it. */}
-            {worth?.rows.length && worth.top_action ? (
+            {worth?.rows.length && worth.top_action && topRow ? (
               <div className="mb-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-tile border border-line bg-surface px-4 py-3 shadow-card" data-testid="recv-top-action">
-                <p className="min-w-0 flex-1 basis-64 text-sm font-medium text-ink">{worth.top_action}</p>
-                {chase.has(worth.rows[0].receivable_id) ? <ChasePayment top receivableId={worth.rows[0].receivable_id} buyer={name(worth.rows[0].buyer_id)} /> : null}
+                <div className="min-w-0 flex-1 basis-64 text-sm text-ink">
+                  <p className="font-medium">{worth.top_action}</p>
+                  {worth.top_action_second ? <p className="mt-1 text-ink-2" data-testid="recv-top-action-second">{worth.top_action_second}</p> : null}
+                </div>
+                {/* The sentence is about the late invoice when anything is late, else the first row: Chase payment is for that one. */}
+                {chase.has(topRow.receivable_id) ? <ChasePayment top receivableId={topRow.receivable_id} buyer={name(topRow.buyer_id)} /> : null}
               </div>
             ) : null}
             <dl className="grid grid-cols-2 gap-3 sm:grid-cols-3">

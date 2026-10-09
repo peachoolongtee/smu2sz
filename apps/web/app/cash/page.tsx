@@ -82,6 +82,8 @@ export default function CashPage() {
   // snapshot is "Other plans considered", and without a snapshot there is nothing to show.
   const snapshot = demo.funding;
   const plan = useAsync(async () => (!h ? null : covered ? (snapshot ?? null) : await planFunding({}, lang)), [Boolean(h), covered, Boolean(snapshot), h?.state_version, lang]);
+  // Already under the minimum today: the tile is how far under (the shortfall), with today's cash as its caption.
+  const shortToday = h?.cash.below_reserve_today && h.cash.headroom_short !== undefined ? versusMinimum(h.cash.headroom_short, h.cash.headroom_fen, false).amount : null;
   // When the first breach is also the lowest point it is one fact: one tile, not the same figure and day twice.
   const breachIsWorst = unsafe && h?.cash.first_breach_day === h?.cash.lowest_day;
   const statusTone = h?.status === "CRITICAL" ? "bad" : h?.status === "SAFE" ? "ok" : "warn";
@@ -103,7 +105,7 @@ export default function CashPage() {
         caption={
           h.cash.headroom_short !== undefined ? (
             <>
-              <span className="font-semibold tabular-nums text-ink-2" data-testid="cash-headroom">{t(versusMinimum(h.cash.headroom_short, h.cash.headroom_fen, false).key, { amount: versusMinimum(h.cash.headroom_short, h.cash.headroom_fen, false).amount })}</span>
+              <span className="font-semibold tabular-nums text-ink-2" data-testid="cash-headroom">{t(versusMinimum(h.cash.headroom_short, h.cash.headroom_fen, false, true).key, { amount: versusMinimum(h.cash.headroom_short, h.cash.headroom_fen, false, true).amount })}</span>
             </>
           ) : undefined
         }
@@ -111,11 +113,12 @@ export default function CashPage() {
       {breachIsWorst ? (
         <Stat
           row
-          label={h.cash.below_reserve_today ? t("biz.belowReserveToday") : t("biz.firstBreachIsWorst")}
+          label={h.cash.below_reserve_today ? t("biz.shortToday") : t("biz.firstBreachIsWorst")}
           tone="bad"
-          value={h.cash.first_breach_cash_short}
+          value={shortToday ?? h.cash.first_breach_cash_short}
           caption={
             <>
+              {shortToday ? <span className="block">{t("biz.cashNow", { amount: h.cash.cash_short })}</span> : null}
               {h.cash.first_breach_when && !h.cash.below_reserve_today ? <span className="block">{h.cash.first_breach_when}</span> : null}
               <LowestHeadroom short={h.cash.lowest_headroom_short} fen={h.cash.lowest_headroom_fen} />
             </>
@@ -125,10 +128,11 @@ export default function CashPage() {
         <>
           <Stat
           row
-            label={h.cash.below_reserve_today ? t("biz.belowReserveToday") : t("biz.firstUnsafeDay")}
+            label={h.cash.below_reserve_today ? t("biz.shortToday") : t("biz.firstUnsafeDay")}
             tone={unsafe ? "bad" : "neutral"}
             testId="cash-unsafe-when"
-            value={h.cash.below_reserve_today ? h.cash.first_breach_cash_short : (h.cash.first_breach_when ?? t("biz.cash.neverUnsafe", { n: h.cash.horizon_days }))}
+            value={h.cash.below_reserve_today ? (shortToday ?? h.cash.first_breach_cash_short) : (h.cash.first_breach_when ?? t("biz.cash.neverUnsafe", { n: h.cash.horizon_days }))}
+            caption={shortToday ? t("biz.cashNow", { amount: h.cash.cash_short }) : undefined}
           />
           <Stat
           row
@@ -194,7 +198,7 @@ export default function CashPage() {
 
   return (
     <>
-      <PageHeader section="cash" title={t("nav.cash")} subtitle={t("biz.cash.subtitle")} />
+      <PageHeader section="cash" title={t("nav.cash")} subtitle={narrow ? undefined : t("biz.cash.subtitle")} />
       <div className="space-y-6">
         {home.error ? (
           <ErrorState error={home.error} onRetry={home.reload} />

@@ -29,7 +29,7 @@ import { whenText } from "@/lib/when";
 export function SelectedBuyer({ buyer, received, evaluatedWhen, state = null }: { buyer: string; received: string; evaluatedWhen: string | null; state?: { code: string; text: string; tone: Tone } | null }) {
   const { t } = useI18n();
   return (
-    <section id="deal-selected" aria-labelledby="deal-selected-title" className="motion-reveal min-w-0 rounded-card border border-line bg-surface px-4 py-3 shadow-card">
+    <section id="deal-selected" aria-labelledby="deal-selected-title" className="motion-reveal min-w-0 rounded-card border border-line bg-surface px-4 py-2.5 shadow-card sm:py-3">
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
         <h2 id="deal-selected-title" className="text-balance text-base font-semibold text-ink">
           {buyer}

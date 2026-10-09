@@ -12,9 +12,12 @@ import { isWriteConflictDetail } from "@/lib/live/retry";
 import { useI18n } from "@/lib/i18n";
 import type { ApprovalDecision } from "@/lib/types";
 import { useAsync } from "@/lib/use-async";
+import { useNarrow } from "@/lib/use-narrow";
 
 export default function ApprovalsPage() {
   const { t, lang } = useI18n();
+  // On a phone, with a decision waiting, the page's own subtitle gives way to the question: the buttons come up the screen.
+  const narrow = useNarrow();
   const read = useAsync(getApprovalsRead, [lang]);
   // The queue as before: `list.data` is the rows; the read's own freshness word rides beside it.
   const list = { data: read.data?.approvals, error: read.error, reload: read.reload };
@@ -74,7 +77,7 @@ export default function ApprovalsPage() {
         section="home"
         icon={ShieldCheckIcon}
         title={t("appr.title")}
-        subtitle={t("appr.subtitle")}
+        subtitle={narrow && pending ? undefined : t("appr.subtitle")}
         actions={list.data ? <Badge tone={pending ? "warn" : "neutral"}>{t("appr.pending", { n: pending })}</Badge> : undefined}
       />
       <ReadWhen when={read.data?.last_read_when} testId="appr-read-when" className="mb-2" />

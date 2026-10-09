@@ -61,7 +61,8 @@ test("the borrower file downloads as HTML and Word, and the owner approves the o
   const approve = page.getByRole("button", { name: "Approve" });
   await approve.first().click();
   await expect(page.getByText("0 pending")).toBeVisible();
-  await expect(page.getByText("Approved")).toHaveCount(1);
+  // The decided card says it in its title (past tense) and in its one state word.
+  await expect(page.locator("[data-testid^=approval-state-]")).toContainText("Approved");
 
   await page.goto("/ledger");
   await expect(page.getByTestId("chain-status")).toContainText("Chain valid");

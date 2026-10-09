@@ -158,7 +158,7 @@ test("Go ahead on the opening books runs the fix alone, and the home turns calm 
   await expect(page.getByTestId("home-cash")).toHaveText("¥550k");
   // The status label is the server's: a WATCH with thin headroom reads "Covered, but tight", and the headroom figures show.
   await expect(page.getByTestId("home-status-word")).toHaveText("Covered, but tight");
-  await expect(page.getByTestId("home-headroom")).toHaveText("¥250k above your minimum");
+  await expect(page.getByTestId("home-headroom")).toHaveText("Your cash is ¥250k above it");
   await expect(page.getByTestId("home-headroom-lowest")).toHaveText("Lowest point: ¥0.00 above your minimum");
   // Recent changes lead with the business sentence, never the executor's "Advance ¥… on RI:… from FAC-… on day 0".
   const changes = page.getByTestId("home-changes-list");
@@ -270,7 +270,7 @@ test("day 34: the approval card is a question with the cost, the landing day and
   await expect(page.getByTestId("home-in-transit")).toContainText("¥200k funding arriving in 3 days");
   await expect(page.getByTestId("home-arriving")).toHaveText("¥200,000.00");
   await expect(page.getByTestId("home-status-word")).toHaveText("Covered, but tight");
-  await expect(page.getByTestId("home-headroom")).toHaveText("¥0.00 above your minimum");
+  await expect(page.getByTestId("home-headroom")).toHaveText("Your cash is ¥0.00 above it");
   await expect(page.getByTestId("home-headroom-lowest")).toHaveText("Lowest point: ¥0.00 above your minimum");
   await expect(page.locator("#home-decisions")).toHaveCount(0);
   await expect(page.getByTestId("home-changes-list")).toContainText("You approved ¥200,000.00 of invoice financing. Funds arrive in 3 days.");

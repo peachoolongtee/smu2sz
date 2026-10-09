@@ -24,6 +24,9 @@ test("an agreement approval shows the buyer, the terms and the amount above the 
   await expect(card).not.toContainText("¥0.00");
   await expect(card).toContainText("¥420,000.00");
   await expect(card).not.toContainText("Accept offer");
+  // The button says what is agreed (the server's label, with the discount and its size), and why it is the owner's: the server's words.
+  await expect(card.getByRole("button", { name: "Approve the agreement (0.50% early-payment discount, about ¥2,100.00)" })).toBeVisible();
+  await expect(card.getByTestId("approval-reason")).toHaveText("This changes the terms with a buyer, which you keep for yourself.");
   // Everything the owner decides on is above the buttons, not behind "Audit details".
   const approve = card.getByRole("button", { name: /^Approve/ });
   await expect(approve).toBeEnabled();
@@ -59,8 +62,11 @@ test("an approval the executor refuses ends as 'could not run', with no buttons 
   const card = page.locator("#approval-APR-000001");
   await card.getByRole("button", { name: /^Approve/ }).click();
   const refused = card.getByTestId("approval-refused-APR-000001");
-  await expect(refused).toContainText("You approved it, but it could not run: Mandate v1 expired yesterday. No money moved.");
+  await expect(refused).toContainText("You approved it, but it could not run: your signed limits (version 1) expired yesterday. No money moved.");
   await expect(refused).not.toContainText("declined");
+  // The title is in the past tense and a refusal says where to go next (the server's sentence and route).
+  await expect(card.getByTestId("approval-headline")).toContainText("Approved, but it did not run");
+  await expect(card.getByTestId("approval-next-APR-000001")).toHaveAttribute("href", "/limits");
   await expect(card).toContainText("Approved");
   await expect(card.getByRole("button", { name: /^Approve/ })).toHaveCount(0);
   await expect(card.getByRole("button", { name: "Decline", exact: true })).toHaveCount(0);
@@ -79,12 +85,16 @@ test("day 34 without a receipt: the Home says it is below the reserve today, nev
   await expect(page.getByTestId("home-headline")).toHaveText("Below reserve today.");
   const hero = page.getByTestId("home-status");
   await expect(hero).toContainText("Below reserve today");
-  await expect(page.getByTestId("home-breach-cash")).toHaveText("¥45k");
+  // Already under the minimum: the tile is how far under (¥255k), with today's cash (¥45k) as its caption, never cash under a "below" label.
+  await expect(page.getByTestId("home-breach-cash")).toHaveText("¥255k");
+  await expect(hero).toContainText("Short of your minimum today");
+  await expect(hero).toContainText("Cash today ¥45k");
   await expect(hero).not.toContainText(/ago/);
   // The Cash page reads the same facts and starts its chart today.
   await page.goto("/cash");
-  await expect(page.getByTestId("cash-unsafe-when")).toHaveText("¥45k");
-  await expect(page.getByText("Below reserve today").first()).toBeVisible();
+  await expect(page.getByTestId("cash-unsafe-when")).toHaveText("¥255k");
+  await expect(page.getByText("Short of your minimum today").first()).toBeVisible();
+  await expect(page.getByTestId("cash-figures")).toContainText("Cash today ¥45k");
 });
 
 test("a part-paid promise: Home says it once in the server's sentence, Receivables names the four facts and the window", async ({ page }) => {

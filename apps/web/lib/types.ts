@@ -880,6 +880,8 @@ export interface OperationView extends Displayed<OperationResult> {
   /** Null when the log entry does not record who asked (for example an owner decision). */
   requested_by: Actor | null;
   summary: string;
+  /** The operation's kind in the owner's words ("Funding request", "Agreement recorded"); the raw `kind` is for the audit fold. Absent before the API sends it. */
+  kind_text?: string | null;
   /** The executor's sentence as a Business page reads it (names, the owner's words, distances from today), written by GET /ledger; `summary` stays the audit sentence. Absent in older recordings. */
   message_when?: string | null;
   /** The business sentence for what the operation did (GET /ledger); `summary` stays the executor's own sentence. Absent in older recordings. */
@@ -1248,11 +1250,17 @@ export interface ApprovalPresentation {
   lands_text?: string | null;
   /** How the decision run ended: set on every row by the API, and by decideApproval for the decision just made. */
   execution_status?: ApprovalExecutionStatus;
+  /** Once decided, the next thing to look at as a sentence and a route (the server's); absent before the API sends them. */
+  next_step_text?: string | null;
+  next_step_href?: string | null;
+  /** The label of the Approve button and the reason in the owner's words for an agreement approval; absent before the API sends them. */
+  approve_label?: string | null;
+  why_text?: string | null;
   /** The state after the decision as one phrase and its tone (the server's); the card shows these first once decided. */
   result_state_text?: string | null;
   result_tone?: StateTone | null;
   /** A cure that does not restore the reserve says what stays short. */
-  residual?: { shortfall_display: string; from_when: string; restores_reserve: boolean } | null;
+  residual?: { shortfall_display: string; from_when: string; restores_reserve: boolean; text?: string; lowest_when?: string | null; shortfall_today_display?: string | null } | null;
 }
 
 export type ApprovalExecutionStatus = "EXECUTED" | "REFUSED" | "PENDING" | "DECLINED" | "DUPLICATE";
@@ -1789,6 +1797,8 @@ export interface WorthCeiling {
 
 /** One open receivable, with what collecting it saves and the action for it. */
 export interface ReceivableWorth {
+  /** "Overdue" on a row that is late (the server's word; its `worth_text` then reads the same); absent otherwise. */
+  overdue_text?: string | null;
   receivable_id: string;
   buyer_id: string;
   buyer_name: string;
@@ -1824,8 +1834,10 @@ export interface ReceivableWorth {
 export interface ReceivablesWorthView {
   rows: ReceivableWorth[];
   gross_order: string[];
-  /** The first row's action sentence, for the home. */
+  /** The first thing to do, for the home: the overdue sentence when anything is late, else the first row's action. */
   top_action: string;
+  /** The savings sentence of the top row, shown under the first; null when it saves nothing. */
+  top_action_second?: string | null;
   ranking_note: string;
   first_breach_day: Day | null;
   hypothetical: true;
@@ -2563,6 +2575,8 @@ export interface DecisionList {
 
 export interface DecisionOperation {
   op_id: string;
+  /** The kind in the owner's words; absent before the API sends it. */
+  kind_text?: string | null;
   kind: OperationKind | string;
   status: OperationStatus;
   event_text: string | null;

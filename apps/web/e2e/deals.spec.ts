@@ -225,6 +225,9 @@ test("opening a message reads it, and the evaluated deal is one workspace in the
   await expect(page.getByTestId("deal-state-chip")).toHaveAttribute("data-state", "AGREED");
   // Money and what is left, from the record: cash received today, and the invoice still to be paid.
   await expect(page.getByTestId("deal-money-lines")).toContainText("Received ¥149,986.20 today.");
+  // The original ask is history, folded under one heading so it is not read as part of the agreement.
+  await expect(page.getByTestId("deal-original").locator("> summary")).toHaveText("The original ask (not agreed)");
+  await expect(page.getByTestId("deal-original")).not.toHaveAttribute("open", "");
   await expect(page.getByTestId("deal-left")).toContainText("Waiting for Foshan Home Retail Co. to pay");
   await page.getByTestId("inbox-back").click();
   await expect(inbox.getByTestId("inbox-msg-EX01").getByTestId("inbox-msg-status")).toHaveCount(0); // the message being read says "Showing below"

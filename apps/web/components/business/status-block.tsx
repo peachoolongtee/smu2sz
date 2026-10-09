@@ -5,7 +5,7 @@ import { Disclosure } from "@/components/business/kit";
 import { Stat } from "@/components/ui";
 import { useI18n } from "@/lib/i18n";
 import { versusMinimum } from "@/lib/minimum";
-import { useNarrow } from "@/lib/use-narrow";
+import { useNarrow, useShort } from "@/lib/use-narrow";
 import type { HomeStatus, HomeView } from "@/lib/types";
 
 /** The status word's pill on the deep block: the bright tone fills it, the ink is dark on it (9.7 to 10.2:1). The block itself never changes colour: the pill does. */
@@ -52,7 +52,12 @@ export function StatusBlock({ h }: { h: HomeView }) {
   const unsafe = h.cash.first_breach_day !== null;
   // The first breach and the lowest point can be the same day: then it is one tile (one figure, one distance), not two.
   const breachIsWorst = unsafe && h.cash.first_breach_day === h.cash.lowest_day;
-  const narrow = useNarrow();
+  // On a phone, or in a short window (a 768 px laptop), the three tiles wait behind "Why" so the priced action reaches the first screen.
+  const isNarrow = useNarrow();
+  const isShort = useShort();
+  const narrow = isNarrow || isShort;
+  // Already under the minimum today: the tile is the shortfall (how far under), with today's cash as its caption; it is never today's cash under a "below" label.
+  const shortToday = h.cash.below_reserve_today && h.cash.headroom_short !== undefined ? versusMinimum(h.cash.headroom_short, h.cash.headroom_fen, false).amount : null;
   // A row of three tiles is two columns with the first spanning both on a phone (DESIGN.md, Layout), so the third is never alone.
   const three = 1 + Number(unsafe) + Number(!breachIsWorst) === 3;
   const tiles = (
@@ -65,7 +70,7 @@ export function StatusBlock({ h }: { h: HomeView }) {
           caption={
             h.cash.headroom_short !== undefined ? (
               <>
-                <span className="font-semibold tabular-nums text-on-deep" data-testid="home-headroom">{t(versusMinimum(h.cash.headroom_short, h.cash.headroom_fen, false).key, { amount: versusMinimum(h.cash.headroom_short, h.cash.headroom_fen, false).amount })}</span>
+                <span className="font-semibold tabular-nums text-on-deep" data-testid="home-headroom">{t(versusMinimum(h.cash.headroom_short, h.cash.headroom_fen, false, true).key, { amount: versusMinimum(h.cash.headroom_short, h.cash.headroom_fen, false, true).amount })}</span>
               </>
             ) : undefined
           }
@@ -74,12 +79,13 @@ export function StatusBlock({ h }: { h: HomeView }) {
         {unsafe ? (
           <Stat
             surface="deep"
-            label={h.cash.below_reserve_today ? t("biz.belowReserveToday") : breachIsWorst ? t("biz.firstBreachIsWorst") : t("biz.breachCash")}
+            label={h.cash.below_reserve_today ? t("biz.shortToday") : breachIsWorst ? t("biz.firstBreachIsWorst") : t("biz.breachCash")}
             tone="bad"
             testId="home-breach-cash"
-            value={h.cash.first_breach_cash_short}
+            value={shortToday ?? h.cash.first_breach_cash_short}
             caption={
               <>
+                {shortToday ? <span className="block">{t("biz.cashNow", { amount: h.cash.cash_short })}</span> : null}
                 {h.cash.first_breach_when && !h.cash.below_reserve_today ? <span className="block">{h.cash.first_breach_when}</span> : null}
                 {breachIsWorst ? <HeadroomLowest short={h.cash.lowest_headroom_short} fen={h.cash.lowest_headroom_fen} /> : null}
               </>
@@ -104,7 +110,7 @@ export function StatusBlock({ h }: { h: HomeView }) {
       </dl>
   );
   return (
-    <section aria-labelledby="home-status-title" className="on-deep motion-reveal rounded-card bg-brand-900 p-4 text-on-deep sm:p-5" data-testid="home-status" data-status={h.status}>
+    <section aria-labelledby="home-status-title" className="on-deep motion-reveal rounded-card bg-brand-900 p-4 text-on-deep sm:p-5 short:sm:p-4" data-testid="home-status" data-status={h.status}>
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
         <span className={`inline-flex items-center gap-1.5 rounded-pill px-3 py-1 text-xs font-bold uppercase tracking-wide text-ink ${pill}`} data-testid="home-status-word">
           {/* The dot repeats the pill's status as a mark; it pulses once when the status asks for the owner (never on a calm one). */}
@@ -114,7 +120,7 @@ export function StatusBlock({ h }: { h: HomeView }) {
         {/* How fresh the conclusion is: the server's own "when" for the read the figures come from. */}
         <ReadWhen when={h.cash.last_read_when} testId="home-read-when" deep />
       </div>
-      <h1 id="home-status-title" className="mt-1.5 sm:mt-3 text-balance text-xl font-semibold leading-snug text-on-deep sm:text-2xl lg:text-3xl" data-testid="home-headline">
+      <h1 id="home-status-title" className="mt-1.5 sm:mt-3 text-balance text-xl font-semibold leading-snug text-on-deep sm:text-2xl lg:text-3xl short:lg:text-2xl" data-testid="home-headline">
         {h.headline}
       </h1>
       <p className="mt-1.5 max-w-3xl text-pretty text-sm text-on-deep-muted sm:text-base" data-testid="home-note">
@@ -124,7 +130,7 @@ export function StatusBlock({ h }: { h: HomeView }) {
       <div className="mt-3 flex flex-wrap items-end gap-x-8 gap-y-3 sm:mt-5 sm:gap-x-10">
         <div>
           <p className="text-sm text-on-deep-muted">{t("biz.cashToday")}</p>
-          <p className="text-3xl font-semibold leading-none tabular-nums tracking-tight text-on-deep sm:text-4xl lg:text-5xl" data-testid="home-cash">
+          <p className="text-3xl font-semibold leading-none tabular-nums tracking-tight text-on-deep sm:text-4xl lg:text-5xl short:lg:text-4xl" data-testid="home-cash">
             {h.cash.cash_short}
           </p>
         </div>

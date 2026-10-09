@@ -8,9 +8,10 @@ import { ArrowRightIcon, ResetIcon } from "@/components/icons";
 import { Badge, Button, Callout, Card, PageHeader, inputClass } from "@/components/ui";
 import { goToMore, goToStep, resetDemo } from "@/lib/demo-control";
 import { useDemo } from "@/lib/demo-store";
-import { DEMO_STEPS, ENGINE_PAGES, MORE, SCENES, type SceneId } from "@/lib/demo";
+import { DEMO_STEPS, ENGINE_PAGES, MORE, SCENES, stepRoute, type SceneId } from "@/lib/demo";
 import { stepNarration } from "@/lib/demo-text";
 import { useI18n } from "@/lib/i18n";
+import { useCureWaiting } from "@/lib/use-cure-waiting";
 
 /**
  * The judge's page: the late-payment loop in six scenes, each step one click, with the clock, the scenario switch, the optional scenes
@@ -23,8 +24,13 @@ export default function DemoPage() {
   const demo = useDemo();
   const [scenario, setScenario] = useState<"golden_sme" | "short_facilities">("golden_sme");
   const current = demo.step;
-  // The owner's own step names what it approves on its button, here as on the strip.
-  const runLabel = (id: string) => (DEMO_STEPS.find((x) => x.id === id)?.owner ? (demo.cure?.amount ? t("demo.approve", { amount: demo.cure.amount }) : t("demo.approve.plain")) : t("story.run"));
+  // The owner's own step: while the cure waits, the decision is the approval card's one filled Approve. The strip's button only opens it, and the
+  // step here shows where the decision stands instead of a second button.
+  const cureWaiting = useCureWaiting();
+  const upcomingOwner = Boolean(DEMO_STEPS[current + 1]?.owner);
+  const opensApproval = upcomingOwner && cureWaiting;
+  const runLabel = () => t("story.run");
+  const upcoming = DEMO_STEPS[current + 1] ?? null;
 
   return (
     <>
@@ -32,8 +38,8 @@ export default function DemoPage() {
         title={t("story.title")}
         subtitle={t("story.subtitle")}
         actions={
-          <Button variant="secondary" loading={demo.busy} disabled={current >= DEMO_STEPS.length - 1} onClick={() => void goToStep(current + 1, router.push)} data-testid="story-next">
-            {current < 0 ? t("demo.start") : DEMO_STEPS[current + 1]?.owner ? (demo.cure?.amount ? t("demo.approve", { amount: demo.cure.amount }) : t("demo.approve.plain")) : t("demo.next")}
+          <Button variant="secondary" loading={demo.busy} disabled={current >= DEMO_STEPS.length - 1} onClick={() => (opensApproval && upcoming ? router.push(stepRoute(upcoming, demo)) : void goToStep(current + 1, router.push))} data-testid="story-next">
+            {current < 0 ? t("demo.start") : opensApproval ? t("demo.openApproval") : t("demo.next")}
             <ArrowRightIcon />
           </Button>
         }
@@ -88,6 +94,10 @@ export default function DemoPage() {
                                     {t("story.replay")}
                                   </Button>
                                 </>
+                              ) : s.owner && cureWaiting && i === current + 1 ? (
+                                <span className="text-xs font-medium text-warn-fg" data-testid={`story-waiting-${i + 1}`}>
+                                  {t("story.waitingOwner")}
+                                </span>
                               ) : (
                                 <Button
                                   size="sm"
@@ -96,10 +106,10 @@ export default function DemoPage() {
                                   disabled={demo.busy || i > current + 1}
                                   onClick={() => void goToStep(i, router.push, { mode: "run" })}
                                   title={i > current + 1 ? t("story.run.wait") : undefined}
-                                  aria-label={`${runLabel(s.id)}, ${t("story.stepN", { n: i + 1 })}`}
+                                  aria-label={`${runLabel()}, ${t("story.stepN", { n: i + 1 })}`}
                                   data-testid={`story-run-${i + 1}`}
                                 >
-                                  {runLabel(s.id)}
+                                  {runLabel()}
                                 </Button>
                               )}
                             </span>

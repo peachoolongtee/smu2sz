@@ -229,6 +229,19 @@ export default function DealsPage() {
     if (STRATEGY_MVP) dealParts.before = <BeforeTheyAsk key="before" buyerId={offer.offer.counterparty_id} />;
     if (v && ws) {
       dealParts.financial_impact = <WorkspaceImpact key="impact" ws={ws} v={v} today={today} settled={Boolean(record && progress?.reached)} />;
+      // Once the deal has an outcome (an agreement in force, a missed payment, no deal) the offer as it was asked is history: its cost, the most the owner
+      // could give and the first reserve breach sit under one heading, folded, so they are not read as part of the agreement.
+      if (progress?.reached && progress.tone !== "open") {
+        dealParts.financial_impact = (
+          <Disclosure key="original" card testId="deal-original" summary={t("biz.deals.original.ask")}>
+            <div className="space-y-6">
+              {dealParts.before}
+              {dealParts.financial_impact}
+            </div>
+          </Disclosure>
+        );
+        dealParts.before = null;
+      }
       dealParts.recommends = <DealDecision key="decision" v={v} record={record} text={ws.recommends.text} reason={ws.why_it_matters.reasons[0] ?? null} />;
       dealParts.priced_response = (
         <RecommendedResponse

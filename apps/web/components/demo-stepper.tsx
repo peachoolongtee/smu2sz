@@ -6,8 +6,9 @@ import { useEffect, useRef } from "react";
 import { onSignedIn } from "@/lib/auth";
 import { backStep, goToStep, resetDemo, type StepMode } from "@/lib/demo-control";
 import { useDemo } from "@/lib/demo-store";
-import { DEMO_STEPS, SCENES } from "@/lib/demo";
+import { DEMO_STEPS, SCENES, stepRoute } from "@/lib/demo";
 import { stepNarration } from "@/lib/demo-text";
+import { useCureWaiting } from "@/lib/use-cure-waiting";
 import { useI18n } from "@/lib/i18n";
 import { ArrowLeftIcon, ArrowRightIcon, ResetIcon } from "./icons";
 import { Button, toggleClass } from "./ui";
@@ -46,7 +47,11 @@ export function DemoStepper() {
   );
 
   const upcoming = DEMO_STEPS[step + 1] ?? null;
-  const nextLabel = step < 0 ? t("demo.start") : upcoming?.owner ? (demo.cure?.amount ? t("demo.approve", { amount: demo.cure.amount }) : t("demo.approve.plain")) : t("demo.next");
+  // The owner's own step: while the cure waits, the decision is the card's one filled Approve, and this button only opens it.
+  const cureWaiting = useCureWaiting();
+  const opensApproval = Boolean(upcoming?.owner && cureWaiting);
+  const nextLabel = step < 0 ? t("demo.start") : opensApproval ? t("demo.openApproval") : t("demo.next");
+  const sceneNo = current ? SCENES.findIndex((x) => x.id === current.scene) + 1 : 0;
   const narration = current ? stepNarration(i18n, current.id, demo) : "";
 
   return (
@@ -88,7 +93,7 @@ export function DemoStepper() {
             <>
               <p className="truncate text-sm font-semibold text-ink" data-testid="demo-step-title">
                 <span className="mr-1.5 font-normal text-ink-3 tabular-nums">
-                  {t("demo.progress", { n: step + 1, total: DEMO_STEPS.length })}
+                  {t("demo.progress", { scene: sceneNo, scenes: SCENES.length, n: step + 1, total: DEMO_STEPS.length })}
                 </span>
                 {te("demo.step", current.id)}
               </p>
@@ -121,10 +126,10 @@ export function DemoStepper() {
           </Button>
           <Button
             size="sm"
-            variant="primary"
+            variant={opensApproval ? "secondary" : "primary"}
             loading={demo.busy}
             disabled={step >= last}
-            onClick={() => void goTo(step + 1)}
+            onClick={() => (opensApproval && upcoming ? router.push(stepRoute(upcoming, demo)) : void goTo(step + 1))}
             data-testid="demo-next"
           >
             {nextLabel}

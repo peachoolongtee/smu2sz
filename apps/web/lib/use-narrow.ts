@@ -23,3 +23,21 @@ export function useNarrow(): boolean {
     () => false,
   );
 }
+
+/** A short window (a 768 px laptop, a phone on its side): the answer must reach the first screen without the stat tiles. */
+const SHORT = "(max-height: 800px)";
+
+function subscribeShort(onChange: () => void): () => void {
+  const list = window.matchMedia(SHORT);
+  list.addEventListener("change", onChange);
+  return () => list.removeEventListener("change", onChange);
+}
+
+/** True when the window is at most 800 px tall (false while rendering on the server). Like `useNarrow`, it only changes what is folded, never what is said. */
+export function useShort(): boolean {
+  return useSyncExternalStore(
+    subscribeShort,
+    () => window.matchMedia(SHORT).matches,
+    () => false,
+  );
+}

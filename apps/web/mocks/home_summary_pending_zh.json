@@ -2590,7 +2590,7 @@
     {
       "id": "APR-000001",
       "kind": "SUBMIT_INVOICE_FOR_FINANCING",
-      "reason": "年化成本 32.5% 高于您签署的无需批准融资上限 15.00%.",
+      "reason": "年化成本 32.5% 高于您签署的无需批准融资上限 15.00%。",
       "created_day": 34,
       "amount_fen": 20000000,
       "amount_display": "¥200,000.00",

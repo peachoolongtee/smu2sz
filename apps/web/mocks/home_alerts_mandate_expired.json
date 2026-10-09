@@ -77,7 +77,7 @@
       "actionable": false,
       "basis": "CONSERVATIVE",
       "title_when": "mandate expired: the agent can no longer act",
-      "detail_when": "Mandate v1 expired 5 days ago, 5 days ago. Every operation is refused (MANDATE_EXPIRED) until the owner signs a new mandate. Renewal is an offline owner step: sign a new mandate outside the agent. The agent cannot renew or extend it, and it suggests no operation."
+      "detail_when": "Your signed limits (version 1) expired 5 days ago, 5 days ago. Every operation is refused (MANDATE_EXPIRED) until the owner signs a new mandate. Renewal is an offline owner step: sign a new mandate outside the agent. The agent cannot renew or extend it, and it suggests no operation."
     },
     {
       "id": "ALERT-RESERVE-95",

@@ -6,6 +6,7 @@ import { Disclosure } from "@/components/business/kit";
 import { Badge, Button, Callout, Card, KeyValueList, StatePill, textLinkClass, type Tone } from "@/components/ui";
 import { approveDisabled, termsGate } from "@/lib/approval-terms";
 import { useI18n } from "@/lib/i18n";
+import { useNarrow } from "@/lib/use-narrow";
 import type { ApprovalDecision, ApprovalQuote, ApprovalView } from "@/lib/types";
 
 /** Operations that carry a price. A quote that was never recorded is said for these only; an application or an agreement has no price to miss. */
@@ -101,6 +102,7 @@ export function ApprovalCard({
   onRetry?: () => void;
 }) {
   const { t, te } = useI18n();
+  const narrow = useNarrow();
   const isPending = a.status === "PENDING";
   const p = a.presentation;
   // What the decision run did, in the server's words (the decision record's execution block); the older fields are the fallback.
@@ -200,7 +202,15 @@ export function ApprovalCard({
           ) : null}
           {p?.residual ? (
             <p className="mt-1 font-medium text-warn-fg" data-testid={`approval-residual-${a.id}`}>
-              {t("appr.residual", { amount: p.residual.shortfall_display, when: p.residual.from_when })}
+              {/* The server's full sentence (the lowest point and today's gap apart); an older answer is composed from what it sent. */}
+              {p.residual.text ?? t("appr.residual", { amount: p.residual.shortfall_display, when: p.residual.from_when })}
+            </p>
+          ) : null}
+          {p?.next_step_text && p.next_step_href ? (
+            <p className="mt-1">
+              <Link href={p.next_step_href} className={textLinkClass} data-testid={`approval-next-${a.id}`}>
+                {p.next_step_text}
+              </Link>
             </p>
           ) : null}
           {/* The day of a decision is shown only when the API recorded it for that decision. */}
@@ -252,13 +262,14 @@ export function ApprovalCard({
           )}
         </div>
       ) : null}
-      {isPending ? (
+      {isPending && !narrow ? (
         quoted || quoteMissing ? <QuoteBlock id={a.id} quote={quote as ApprovalQuote} missing={quoteMissing} hideLands={landsShown} /> : null
       ) : quoted || quoteMissing ? (
+        // Decided, or waiting on a phone (where the buttons must come up the screen): what was quoted sits behind its own fold, with the after-state it promised.
         // Decided: what was quoted is history, kept behind its own fold with the after-state it promised.
         <Disclosure className="mt-3 border-t border-line pt-1" testId={`approval-quoted-${a.id}`} summary={quoted?.quoted_when ? t("appr.quote.when", { when: quoted.quoted_when }) : t("appr.quote.title")}>
           <QuoteBlock id={a.id} quote={quote as ApprovalQuote} missing={quoteMissing} hideLands={landsShown} bare />
-          {quoted?.after || p?.protects ? (
+          {!isPending && (quoted?.after || p?.protects) ? (
             <p className="mt-2 text-sm text-ink-2">
               <span className="font-medium text-ink-3">{t("biz.after")}: </span>
               <span data-testid="approval-after">{quoted?.after || p?.protects}</span>
@@ -270,7 +281,7 @@ export function ApprovalCard({
         <div>
           <dt className="text-xs font-medium text-ink-3">{t("appr.why")}</dt>
           <dd className="text-ink" data-testid="approval-reason">
-            {p?.reason || a.reason || a.detail}
+            {p?.why_text || p?.reason || a.reason || a.detail}
           </dd>
         </div>
         {/* The stored quote's after-state and what declining leaves win over today's recomputation: they are what the owner was quoted. */}
@@ -299,7 +310,7 @@ export function ApprovalCard({
             aria-describedby={gate.commercial && !gate.available ? `terms-${a.id}` : undefined}
             onClick={() => onDecide(a.id, "APPROVE")}
           >
-            {a.amount_display ? t("appr.approveAmount", { amount: a.amount_display }) : t("appr.approve")}
+            {p?.approve_label ?? (a.amount_display ? t("appr.approveAmount", { amount: a.amount_display }) : t("appr.approve"))}
           </Button>
           <Button variant="secondary" loading={busyId === `${a.id}:REJECT`} disabled={busyId !== null} onClick={() => onDecide(a.id, "REJECT")}>
             {t("appr.reject")}

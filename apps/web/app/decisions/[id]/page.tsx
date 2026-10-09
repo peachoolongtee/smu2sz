@@ -170,7 +170,7 @@ function RecordBody({ d }: { d: DecisionView }) {
           <ol className="divide-y divide-line" data-testid="record-operations">
             {d.operations.map((o) => (
               <li key={o.op_id} className="flex flex-wrap items-start gap-x-3 gap-y-1 py-2.5 text-sm">
-                <span className="min-w-0 flex-1 basis-64 break-words text-ink">{o.event_text ?? o.kind}</span>
+                <span className="min-w-0 flex-1 basis-64 break-words text-ink">{o.event_text ?? o.kind_text ?? o.kind}</span>
                 {o.when ? <span className="text-xs text-ink-3">{o.when}</span> : null}
                 <OpStatusBadge status={o.status} />
               </li>

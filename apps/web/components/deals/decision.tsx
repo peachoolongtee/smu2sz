@@ -1,6 +1,8 @@
 "use client";
 
-import { Card } from "@/components/ui";
+import Link from "next/link";
+import { ChasePayment } from "@/components/business/chase-payment";
+import { Card, textLinkClass } from "@/components/ui";
 import type { DictKey } from "@/lib/dictionary";
 import { dealProgress } from "@/lib/decision";
 import { useI18n } from "@/lib/i18n";
@@ -74,7 +76,12 @@ function DealMoney({ record }: { record: DecisionView }) {
   }));
   const landed = lines.length > 0 && lines.every((l) => l.landed);
   const left = record.remaining_task?.text;
-  if (!lines.length && !left) return null;
+  // A missed early payment leaves the shortfall to cover: the way to the funding options is always offered beside the chase (the server's own links, when it sends them, come first).
+  const sent = record.remaining_task?.links ?? [];
+  const links = record.state === "MISSED" && !sent.some((l) => l.href.startsWith("/cash")) ? [...sent, { label: t("deal.left.compare"), href: "/cash#cash-options" }] : sent;
+  // A missed early payment is the one state where the owner can chase: the invoice and the buyer come from the record's own promise.
+  const promise = record.state === "MISSED" ? (record.promises[0] as { receivable_id?: string } | undefined) : undefined;
+  if (!lines.length && !left && !links.length) return null;
   const tone: Tone = landed ? "ok" : "neutral";
   return (
     <dl className="mt-2 space-y-1.5 border-t border-line pt-2 text-sm" data-testid="deal-money" data-tone={tone}>
@@ -96,6 +103,16 @@ function DealMoney({ record }: { record: DecisionView }) {
           <dd className="text-ink" data-testid="deal-left">
             {left}
           </dd>
+        </div>
+      ) : null}
+      {links.length || promise?.receivable_id ? (
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1" data-testid="deal-left-links">
+          {links.map((l) => (
+            <Link key={l.href} href={l.href} className={textLinkClass}>
+              {l.label}
+            </Link>
+          ))}
+          {promise?.receivable_id ? <ChasePayment receivableId={promise.receivable_id} buyer={record.counterparty_name ?? ""} /> : null}
         </div>
       ) : null}
     </dl>

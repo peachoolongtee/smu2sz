@@ -93,7 +93,7 @@ export function ReceivablesTable({
 
       {/* On a phone the invoices are a list; the table needs the width of a larger screen. */}
       {shown.length ? (
-        <ul className="motion-rise divide-y divide-line sm:hidden" data-testid="recv-open-list">
+        <ul className="motion-rise divide-y divide-line lg:hidden" data-testid="recv-open-list">
           {shown.map((o) => {
             const w = worthOf.get(o.receivable_id);
             const buyer = buyerName(o.counterparty_id);
@@ -136,7 +136,7 @@ export function ReceivablesTable({
       ) : null}
 
       {shown.length ? (
-        <div className="hidden sm:block">
+        <div className="hidden lg:block">
           <TableWrap label={t("biz.recv.open")}>
             <table className={tableCls}>
               <thead>

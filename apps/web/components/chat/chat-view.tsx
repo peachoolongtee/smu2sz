@@ -99,9 +99,10 @@ function Suggestions({ prompts, disabled, compact, role }: { prompts: Prompt[]; 
   return (
     <div>
       <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-ink-3">{t("chat.suggested")}</p>
-      <ul className={`flex gap-2 ${compact ? "overflow-x-auto pb-1" : "flex-wrap"}`}>
+      {/* The chips wrap: a row that scrolls sideways hides questions off the edge. In the panel the rows are capped and scroll up and down. */}
+      <ul className={`flex flex-wrap gap-2 ${compact ? "max-h-32 overflow-y-auto pb-1" : ""}`}>
         {prompts.map((p) => (
-          <li key={p.id} className="shrink-0">
+          <li key={p.id} className="min-w-0 max-w-full">
             <button
               type="button"
               disabled={disabled}
@@ -110,7 +111,7 @@ function Suggestions({ prompts, disabled, compact, role }: { prompts: Prompt[]; 
                 if (p.counterparty) setCounterparty(p.counterparty);
                 void sendMessage(p.text, p.text, role);
               }}
-              className="motion-press max-w-72 rounded-pill border border-line-ui bg-surface px-3 py-1.5 touch:min-h-11 text-left text-xs font-medium text-ink-2 hover:bg-subtle hover:text-ink disabled:cursor-not-allowed disabled:opacity-50"
+              className="motion-press max-w-full rounded-pill border border-line-ui bg-surface px-3 py-1.5 touch:min-h-11 text-left text-xs font-medium text-ink-2 hover:bg-subtle hover:text-ink disabled:cursor-not-allowed disabled:opacity-50"
             >
               <span className="line-clamp-2 break-words">{t(p.label)}</span>
             </button>
