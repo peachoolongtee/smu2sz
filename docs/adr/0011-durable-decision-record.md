@@ -334,3 +334,24 @@ Decisions taken while building it, all inside the rules above:
 - Known: `fen_of` reads money back from the alert's display strings. And `/negotiate` funds the gap in the same call as a queued
   accept, which moves the books, so approving that accept later is refused ("The books changed since verdict ...") and the record reads
   FAILED. That is executor behaviour; it is recorded, not changed here.
+
+## Chat and direct-operation quotes (map #65, tickets #83 and #84)
+
+Decisions that start from a chat "go ahead" or a direct `POST /operations` now keep a QUOTED fact like an alert act does. Same table, same
+`record_fact`, same rule: the API layer writes it after the executor returned, never inside it, and a failed write answers `decision_recorded: false`
+on a 200.
+
+- Chat. When a turn proposes a plan, the economics shown are built into a `QuotedFact` and kept beside the plan in the owner's session
+  (`PendingPlan.quote`, `app/nl/quoting.py`): an alert's cure with `build_quote` (its decision is the alert's own, `alert:{id}:v{n}`, because the
+  cure's operation ids already carry it), a router plan, a direct draw or a repayment with `build_shown_quote` (its decision is `nl:{session}:{scope}`;
+  `alert_id` holds that id because no alert exists, and `alert_kind` is `OPERATION`, or `FACILITY_REPAYABLE` for a repayment). `POST /nl` reads the
+  plan from the session before the turn, and after the turn stores the quote when the operations it sent are the plan's. The response gains
+  `decision_id` and `decision_recorded` on such a turn. A quote that cannot be built leaves the plan without one; the plan runs as before.
+- Direct operations. A funding operation (draw, advance, repayment, application) posted to `POST /operations` that the executor queued for the owner
+  is the decision `approval:{approval_id}`. Its quote holds its own amount, facility, landing day and the rate in the executor's reason for queueing
+  it; it has no total cost, because nothing prices it. The response gains `decision_id` and `decision_recorded`.
+- A decision whose quote names no alert (`quote.alert_id == decision_id`) reads `source.kind = "OPERATION"` in `GET /decisions/{id}`.
+- Business chat. `POST /nl?mode=business` now also says alert cures and their runs, repayments and their runs, approval replies and the status read
+  without ids, tier words or codes (`app/nl/business.py`). The raw replies stay for the Demo. A pending approval is approved with "Yes, do it" (the
+  closed bare-confirm grammar takes that and "yes", not "yes, run it"); a pending plan with "Yes, run it".
+

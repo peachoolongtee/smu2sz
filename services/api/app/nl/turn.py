@@ -27,6 +27,8 @@ class Turn:
     recipient: str = "OWNER"
     allow: list[AllowedValue] = field(default_factory=list)
     guarded: bool = False  # the reply was already passed through the egress guard
+    # Typed figures and ids the Business rewrite (app/nl/business.py) says in the owner's words; nothing in the engine reads them
+    facts: dict[str, Any] = field(default_factory=dict)
 
 
 def ask(intent: Intent, slot: str, question: str, options: list[tuple[str, str, Any]], slots: Slots) -> Turn:
