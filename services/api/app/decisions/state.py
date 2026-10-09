@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 from enum import StrEnum
 from typing import Any, Protocol
 
@@ -152,6 +152,107 @@ class DecisionInputs:
     promised: tuple[PromiseLike, ...] = ()
     alerts: tuple[AlertLike, ...] = ()
     newest_reserve: bool = False
+    # The records above grouped once by decision (`RecordIndex`), shared by every decision of a request. Never part of the identity of
+    # the inputs; `derive` builds it from the records when it is not given, so a caller that derives one decision need not.
+    index: RecordIndex | None = field(default=None, compare=False, repr=False)
+
+
+@dataclass(frozen=True, slots=True)
+class RecordIndex:
+    """The request's shared records grouped once, so that deriving D decisions reads the log, the approvals, the facts, the verdicts, the
+    commitments, the promises and the lots in time linear in their size and not D times over (every decision otherwise re-scanned them
+    all). Built by `RecordIndex.of`; it answers exactly what the scans it replaces answered, in the same order.
+
+    `runs` and `runs_by_op_id` hold (log position, entry) pairs in log order; `approvals` groups by the decision the approval's queued
+    operation belongs to (an approval whose payload cannot be read belongs to `approval:{id}`); `approval_candidates` is the same
+    decision ids by the stricter rule the list of decisions uses (an unreadable approval names none); `lots` maps a funding lot's
+    operation id (the lot id, or the part before a `#`) to the positions in `state.lots`."""
+
+    runs: Mapping[str, tuple[tuple[int, LoggedRun], ...]]
+    runs_by_op_id: Mapping[str, tuple[tuple[int, LoggedRun], ...]]
+    approvals: Mapping[str, tuple[ApprovalRecord, ...]]
+    approval_payloads: Mapping[str, dict[str, Any]]
+    approval_candidates: tuple[str, ...]
+    facts: Mapping[str, tuple[DecisionFactRecord, ...]]
+    verdicts: Mapping[str, tuple[Verdict, ...]]
+    commitments: Mapping[str, tuple[Commitment, ...]]
+    promised: Mapping[str, tuple[PromiseLike, ...]]
+    lots_state: FinancialState | None
+    lots: Mapping[str, tuple[int, ...]]
+
+    @classmethod
+    def of(
+        cls, *, log: Sequence[LoggedRun], approvals: Sequence[ApprovalRecord], commitments: Sequence[Commitment],
+        facts: Sequence[DecisionFactRecord], verdicts: Sequence[Verdict], promised: Sequence[PromiseLike],
+        state: FinancialState | None = None,
+    ) -> RecordIndex:
+        runs: dict[str, list[tuple[int, LoggedRun]]] = {}
+        by_op: dict[str, list[tuple[int, LoggedRun]]] = {}
+        for pos, e in enumerate(log):
+            did = decision_id_for(e.payload, e.idempotency_key, commitments, approval_id=e.result.approval_id)
+            if did is not None:
+                runs.setdefault(did, []).append((pos, e))
+            op_id = e.payload.get("op_id")
+            if isinstance(op_id, str):
+                by_op.setdefault(op_id, []).append((pos, e))
+        grouped: dict[str, list[ApprovalRecord]] = {}
+        payloads: dict[str, dict[str, Any]] = {}
+        candidates: dict[str, None] = {}
+        for a in approvals:
+            payload = _payload_of(a)
+            payloads[a.id] = payload
+            key = payload.get("idempotency_key")
+            did = decision_id_for(payload, key if isinstance(key, str) else "", commitments, approval_id=a.id)
+            if did is not None:
+                grouped.setdefault(did, []).append(a)
+            if _readable_payload(a) and did is not None:
+                candidates[did] = None
+        by_fact: dict[str, list[DecisionFactRecord]] = {}
+        for r in sorted(facts, key=lambda r: r.seq):
+            by_fact.setdefault(r.decision_id, []).append(r)
+        by_offer_verdict: dict[str, list[Verdict]] = {}
+        for v in verdicts:
+            by_offer_verdict.setdefault(v.offer_id, []).append(v)
+        by_offer_commitment: dict[str, list[Commitment]] = {}
+        for c in commitments:
+            by_offer_commitment.setdefault(c.offer_id, []).append(c)
+        by_commitment: dict[str, list[PromiseLike]] = {}
+        for p in promised:
+            by_commitment.setdefault(p.commitment_id, []).append(p)
+        lots: dict[str, list[int]] = {}
+        if state is not None:
+            for position, lot in enumerate(state.lots):
+                for op_id in _lot_op_ids(lot.id):
+                    lots.setdefault(op_id, []).append(position)
+        return cls(
+            runs={k: tuple(v) for k, v in runs.items()}, runs_by_op_id={k: tuple(v) for k, v in by_op.items()},
+            approvals={k: tuple(v) for k, v in grouped.items()}, approval_payloads=payloads,
+            approval_candidates=tuple(candidates), facts={k: tuple(v) for k, v in by_fact.items()},
+            verdicts={k: tuple(v) for k, v in by_offer_verdict.items()},
+            commitments={k: tuple(v) for k, v in by_offer_commitment.items()},
+            promised={k: tuple(v) for k, v in by_commitment.items()}, lots_state=state,
+            lots={k: tuple(v) for k, v in lots.items()},
+        )
+
+    @classmethod
+    def for_inputs(cls, i: DecisionInputs) -> RecordIndex:
+        return cls.of(log=i.log, approvals=i.approvals, commitments=i.commitments, facts=i.facts, verdicts=i.verdicts,
+                      promised=i.promised, state=i.state)
+
+
+def _lot_op_ids(lot_id: str) -> list[str]:
+    """The operation ids a funding lot belongs to: its own id, and each prefix before a `#` (the lot of operation X is X or X#n)."""
+    ids = [lot_id]
+    cut = lot_id.find("#")
+    while cut != -1:
+        ids.append(lot_id[:cut])
+        cut = lot_id.find("#", cut + 1)
+    return ids
+
+
+def _index_of(i: DecisionInputs) -> RecordIndex:
+    return i.index if i.index is not None else RecordIndex.for_inputs(i)
+
 
 
 # ---------------------------------------------------------------- what comes out
@@ -224,13 +325,21 @@ def _payload_of(approval: ApprovalRecord) -> dict[str, Any]:
     return data if isinstance(data, dict) else {}
 
 
+def _readable_payload(approval: ApprovalRecord) -> bool:
+    """Whether the approval's queued operation is a JSON object (the list of decisions names no decision for one that is not)."""
+    try:
+        return isinstance(json.loads(approval.op_json), dict)
+    except ValueError:
+        return False
+
+
 def _is_decide_attempt(run: LoggedRun) -> bool:
     return _DECIDE_ATTEMPT in run.idempotency_key
 
 
 def _facts(i: DecisionInputs) -> list[tuple[DecisionFactRecord, Any]]:
     out = []
-    for r in sorted((r for r in i.facts if r.decision_id == i.decision_id), key=lambda r: r.seq):
+    for r in _index_of(i).facts.get(i.decision_id, ()):
         fact = parse_fact(r)
         if fact is not None:
             out.append((r, fact))
@@ -238,22 +347,15 @@ def _facts(i: DecisionInputs) -> list[tuple[DecisionFactRecord, Any]]:
 
 
 def _approval_members(i: DecisionInputs) -> list[ApprovalRecord]:
-    out = []
-    for a in i.approvals:
-        payload = _payload_of(a)
-        key = payload.get("idempotency_key")
-        if decision_id_for(payload, key if isinstance(key, str) else "", i.commitments, approval_id=a.id) == i.decision_id:
-            out.append(a)
-    return out
+    return list(_index_of(i).approvals.get(i.decision_id, ()))
 
 
 def _run_members(i: DecisionInputs, extra_op_ids: frozenset[str]) -> list[LoggedRun]:
-    out = []
-    for e in i.log:
-        did = decision_id_for(e.payload, e.idempotency_key, i.commitments, approval_id=e.result.approval_id)
-        if did == i.decision_id or (e.payload.get("op_id") in extra_op_ids):
-            out.append(e)
-    return out
+    idx = _index_of(i)
+    found = dict(idx.runs.get(i.decision_id, ()))
+    for op_id in extra_op_ids:
+        found.update(idx.runs_by_op_id.get(op_id, ()))
+    return [found[pos] for pos in sorted(found)]
 
 
 def _op_states(runs: Sequence[LoggedRun]) -> list[OpState]:
@@ -288,9 +390,14 @@ def _int(v: object) -> int | None:
     return v if isinstance(v, int) and not isinstance(v, bool) else None
 
 
-def _lots_of(state: FinancialState | None, op_ids: Sequence[str]) -> tuple[FundingLot, ...]:
+def _lots_of(state: FinancialState | None, op_ids: Sequence[str], idx: RecordIndex | None = None) -> tuple[FundingLot, ...]:
+    """The lots the operations created, in the books' order. With the request's index (built on these same books) this is a lookup per
+    operation id and not a scan of every lot."""
     if state is None:
         return ()
+    if idx is not None and idx.lots_state is state:
+        positions = sorted({pos for op_id in op_ids for pos in idx.lots.get(op_id, ())})
+        return tuple(state.lots[pos] for pos in positions)
     return tuple(
         lot for lot in state.lots if any(lot.id == op_id or lot.id.startswith(op_id + "#") for op_id in op_ids)
     )
@@ -317,13 +424,14 @@ def _derive_deal(i: DecisionInputs) -> DecisionState:
     offer_id = offer_id_of(i.decision_id)
     offers = [o for o in i.offers if o.offer_id == offer_id]
     offer = max(offers, key=lambda o: o.version) if offers else None
-    verdicts = [v for v in i.verdicts if v.offer_id == offer_id]
+    idx = _index_of(i)
+    verdicts = list(idx.verdicts.get(offer_id or "", ()))
     verdict = verdicts[-1] if verdicts else None
     facts = _facts(i)
     evaluated = next((f for _, f in reversed(facts) if isinstance(f, EvaluatedFact) and (verdict is None or f.verdict_id == verdict.id)), None)
     sents = [f for _, f in facts if isinstance(f, SentFact)]
     latest_sent = sents[-1] if sents else None
-    mine = [c for c in i.commitments if c.offer_id == offer_id]
+    mine = list(idx.commitments.get(offer_id or "", ()))
     commitment = next((c for c in mine if latest_sent is not None and c.id == latest_sent.commitment_id), None)
     if commitment is None and mine:
         commitment = mine[-1]
@@ -336,11 +444,11 @@ def _derive_deal(i: DecisionInputs) -> DecisionState:
     approval: ApprovalRecord | None = None
     accept_run: OpState | None = None
     if commitment is not None:
-        approval = next((a for a in reversed(approvals) if _matches_accept(_payload_of(a), commitment)), None)
+        approval = next((a for a in reversed(approvals) if _matches_accept(idx.approval_payloads.get(a.id) or _payload_of(a), commitment)), None)
         accept_ops = [o for o in ops if _matches_accept(_op_payload(runs, o.op_id), commitment)]
         accept_run = accept_ops[-1] if accept_ops else None
     sent_for_verdict = next((f for f in reversed(sents) if verdict is not None and f.verdict_id == verdict.id), None)
-    promised = [p for p in i.promised if commitment is not None and p.commitment_id == commitment.id]
+    promised = list(idx.promised.get(commitment.id, ())) if commitment is not None else []
 
     state = _deal_state(offer, verdict, commitment, approval, accept_run, sent_for_verdict, promised)
     terminal = state in _DEAL_TERMINAL and not (
@@ -351,7 +459,7 @@ def _derive_deal(i: DecisionInputs) -> DecisionState:
     return DecisionState(
         decision_id=i.decision_id, family="DEAL", state=state, terminal=terminal, residual=None, ops=tuple(ops),
         approvals=tuple(approvals), approval=approval, offer=offer, verdict=verdict, commitment=commitment,
-        evaluated=evaluated, sent=latest_sent, quote=None, lots=_lots_of(i.state, [o.op_id for o in funding_ops]),
+        evaluated=evaluated, sent=latest_sent, quote=None, lots=_lots_of(i.state, [o.op_id for o in funding_ops], idx),
         opened_day=opened, updated_day=updated_day, updated_seq=updated_seq,
     )
 
@@ -410,7 +518,7 @@ def _derive_funding(i: DecisionInputs) -> DecisionState:
     runs = _run_members(i, frozenset())
     ops = _op_states(runs)
     approvals = _approval_members(i)
-    lots = _lots_of(i.state, [o.op_id for o in ops])
+    lots = _lots_of(i.state, [o.op_id for o in ops], _index_of(i))
     state = _funding_state(ops, approvals, quote, lots)
     residual = _residual(i, state, quote)
     terminal = state in (FundingState.DECLINED, FundingState.FAILED, FundingState.SETTLED, FundingState.EXECUTED)
@@ -484,17 +592,36 @@ def _stamps(
 
 def derive(inputs: DecisionInputs) -> DecisionState:
     """The decision's state from the stored records alone. First matching rule of the family's table wins."""
+    if inputs.index is None:
+        inputs = replace(inputs, index=RecordIndex.for_inputs(inputs))
     if family_of(inputs.decision_id) == "DEAL":
         return _derive_deal(inputs)
     return _derive_funding(inputs)
 
 
+def index_inputs(inputs: Sequence[DecisionInputs]) -> list[DecisionInputs]:
+    """The inputs, each with the shared `RecordIndex` of the records it holds. Inputs that hold the very same record tuples (one request
+    reads the stores once and hands every decision the same ones) share one index, built once."""
+    built: dict[tuple[int, ...], RecordIndex] = {}
+    out: list[DecisionInputs] = []
+    for i in inputs:
+        if i.index is None:
+            key = (id(i.log), id(i.approvals), id(i.commitments), id(i.facts), id(i.verdicts), id(i.promised), id(i.state))
+            if key not in built:
+                built[key] = RecordIndex.for_inputs(i)
+            i = replace(i, index=built[key])
+        out.append(i)
+    return out
+
+
 def derive_all(inputs: Sequence[DecisionInputs]) -> list[DecisionState]:
     """Derive many decisions. The residual belongs to the newest reserve-breach funding record only, so a first pass finds
-    which one that is (by last event day, then log seq) and the second derives it with the residual."""
-    first = [derive(replace(i, newest_reserve=False)) for i in inputs]
-    newest = newest_reserve_decision(first, _reserve_alert(inputs[0]) if inputs else None)
-    return [derive(replace(i, newest_reserve=i.decision_id == newest)) for i in inputs]
+    which one that is (by last event day, then log seq) and the second derives it with the residual. The log, the approvals and the
+    other records are indexed once for all of them (`index_inputs`)."""
+    indexed = index_inputs(inputs)
+    first = [derive(replace(i, newest_reserve=False)) for i in indexed]
+    newest = newest_reserve_decision(first, _reserve_alert(indexed[0]) if indexed else None)
+    return [derive(replace(i, newest_reserve=i.decision_id == newest)) for i in indexed]
 
 
 def newest_reserve_decision(states: Sequence[DecisionState], alert: AlertLike | None = None) -> str | None:
@@ -527,7 +654,7 @@ def _earliest(days: Sequence[int | None]) -> int | None:
 def _agreed_wait(s: DecisionState, i: DecisionInputs) -> Waiting | None:
     c = s.commitment
     assert c is not None
-    awaited = [p for p in i.promised if p.commitment_id == c.id and p.status == "AWAITED"]
+    awaited = [p for p in _index_of(i).promised.get(c.id, ()) if p.status == "AWAITED"]
     if awaited:
         return Waiting(WaitCode.BANK_RECEIPT, Party.BUYER, _earliest([p.promised_day for p in awaited]), c.counterparty_id)
     st = i.state
@@ -547,7 +674,7 @@ def _agreed_wait(s: DecisionState, i: DecisionInputs) -> Waiting | None:
 def _missed_wait(s: DecisionState, i: DecisionInputs) -> Waiting:
     c = s.commitment
     assert c is not None
-    rids = [p.receivable_id for p in i.promised if p.commitment_id == c.id and p.status == "LAPSED"]
+    rids = [p.receivable_id for p in _index_of(i).promised.get(c.id, ()) if p.status == "LAPSED"]
     if not rids:  # the clock ended the agreement: its lapsed obligations name the invoices
         rids = [o.base.receivable_id for o in c.obligations
                 if o.id in c.lapsed_obligations and o.base.receivable_id is not None]
@@ -565,6 +692,8 @@ def _settlement_wait(s: DecisionState) -> Waiting | None:
 
 def waiting_for(state: DecisionState, inputs: DecisionInputs) -> Waiting:
     """What FLOW is waiting for, by the ADR's table; the first row that applies wins."""
+    if inputs.index is None:
+        inputs = replace(inputs, index=RecordIndex.for_inputs(inputs))
     st = state.state
     if st in (DealState.RECEIVED, DealState.RESPONSE_READY):
         return Waiting(WaitCode.OWNER_RESPONSE, Party.OWNER, None)
@@ -608,12 +737,14 @@ __all__ = [
     "OpState",
     "Party",
     "PromiseLike",
+    "RecordIndex",
     "Residual",
     "WaitCode",
     "Waiting",
     "attaches",
     "derive",
     "derive_all",
+    "index_inputs",
     "newest_reserve_decision",
     "waiting_for",
 ]
