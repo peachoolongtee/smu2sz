@@ -5,12 +5,13 @@ from __future__ import annotations
 
 import json
 import logging
+from collections.abc import Sequence
 from dataclasses import asdict
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from pydantic import BaseModel, TypeAdapter, ValidationError
 
-from app.alerts import alerts
+from app.alerts import Alert, alerts
 from app.api.auth import is_bank_feed, log_refusal, require_owner, require_owner_or_agent
 from app.api.decisions import approval_decision, execution_view, load_context, quote_for, record_fact
 from app.api.home import cure_after
@@ -100,10 +101,12 @@ def _record_direct_quote(rt, op: Operation, result: OperationResult) -> tuple[st
         return None
 
 
-def _decision_runs(records) -> dict:
+def _decision_runs(store, entries=None) -> dict:
     """Per approval id, the log entry of the owner's decision run: the first non-PENDING row that ran under it
-    (an owner-approved re-run or a decline). A non-owner's refused attempt (key `#decide:`) is not the decision."""
-    entries, _ = read_entries(records)
+    (an owner-approved re-run or a decline). A non-owner's refused attempt (key `#decide:`) is not the decision.
+    `entries` is the log already parsed by the caller, when it has it."""
+    if entries is None:
+        entries, _ = read_entries(store.operations())
     out: dict = {}
     for e in entries:
         aid = e.result.approval_id
@@ -178,7 +181,6 @@ def approvals_queue(lang: str = "en") -> dict:
 
 def _approvals_queue(rt, lang: str) -> dict:
     out = []
-    ran = _decision_runs(rt.store.operations())
     state = rt.store.get_state()
     commitments = rt.store.commitments()
     agreements = {c.id: party_name(state, c.counterparty_id) for c in commitments}
@@ -187,11 +189,17 @@ def _approvals_queue(rt, lang: str) -> dict:
     open_alerts: dict = {}
     plan_costs: dict = {}
     obs: list = []
+    found: Sequence[Alert] | None = None  # the alerts, once, when this request ran them; the decision record is handed them and does not run them again
     ctx = None
     with rt.lock:
         if any(str(getattr(a.status, "value", a.status)) == "PENDING" for a in rt.store.approvals()):
             try:
-                open_alerts = {al.id: al for al in alerts(state, rt.store.get_mandate(), rt.store, rt.day)}
+                try:
+                    found = alerts(state, rt.store.get_mandate(), rt.store, rt.day)
+                except EngineError:
+                    found = ()  # as the decision record reads them when the engine cannot
+                    raise
+                open_alerts = {al.id: al for al in found}
                 obs = current_books(state, rt.store.commitments()).with_([])
                 if rt.settings.features.debt_desk:  # a queued leg of the recommended router plan carries its cost line
                     books = current_books(state, rt.store.commitments())
@@ -200,9 +208,11 @@ def _approvals_queue(rt, lang: str) -> dict:
             except EngineError:
                 open_alerts = {}
         try:
-            ctx = load_context(rt)
+            ctx = load_context(rt, found=found)
         except Exception:
             log.exception("the decision record could not be read for the approvals queue")
+        # The log is parsed once for the request: the decision record's entries when it has them.
+        ran = _decision_runs(rt.store, ctx.entries if ctx is not None else None)
     for a in rt.store.approvals():
         d = asdict(a)
         d["status"] = str(getattr(a.status, "value", a.status))

@@ -13,7 +13,7 @@ from app.alerts import reconcile
 from app.api.auth import require_owner
 from app.api.causality import Causality, chain_fields, forecast_of, mark_changed, refusal_block
 from app.api.decide import _counter_allow
-from app.api.decisions import load_context
+from app.api.decisions import Reconciled, load_context
 from app.api.display import displayed
 from app.api.presentation import (
     agreement_words,
@@ -160,12 +160,13 @@ def get_ledger(lang: str = "en") -> dict:
         decided = frozenset(a.id for a in rt.store.approvals() if str(getattr(a.status, "value", a.status)) != "PENDING")
         agreements = {c.id: party_name(state, c.counterparty_id) for c in commitments}
         # which early-payment promises are still open: a receipt's "may still be settled early" is only said of those
-        live = (live_windows(reconcile(rt.store, day=rt.day), commitments, state)
+        reconciled = Reconciled(rt.store, lambda st, day: reconcile(st, day=day))  # once for the receipts' windows and the decision record
+        live = (live_windows(reconciled.report(rt.day), commitments, state)
                 if any(o.kind == "RECEIVE_PAYMENT" for o in ops) else None)
         # The decision record and the forecast are each read once for the request (never per entry). A failure here leaves the
         # causal sentences that need them empty; the rows themselves are unchanged.
         try:
-            ctx = load_context(rt) if ops else None
+            ctx = load_context(rt, reconciled=reconciled) if ops else None
         except Exception:
             logging.getLogger("termsledger.decisions").exception("the decision record could not be read for the ledger")
             ctx = None
