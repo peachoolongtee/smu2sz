@@ -350,9 +350,24 @@ reads wrongly **before an owner sees it**.
   `<out>/week-NN/`, prints the sentences and the open decisions, and records the week's decisions through `POST
   /pilot/journal` (`snapshot_hash` is the file's sha256, `flow_said` the displayed sentence). `<out>/summary.md` holds per week
   the sentences, the choices, the runtime, and every error with its week; an answer slower than 10 seconds is listed under
-  "Slow". It never posts an operation. Moving the clock writes one `ADVANCE_CLOCK` entry per week on the operations log (the
-  clock's own entry), so a dry run ends with that many entries and **no other**; the run reports any other entry as an
+  "Slow". The exported files leave out the routes' timing field (`computed_in_seconds`), so a file's hash depends on the books
+  alone and two runs on the same books list the same sha256; the seconds each answer took are in `summary.md` and on the
+  console only. Unless a receipts file is given (below) it posts no operation. Moving the clock writes one `ADVANCE_CLOCK`
+  entry per advance on the operations log (the clock's own entry), so a dry run ends with that many entries and **no other**
+  (plus one `RECEIVE_PAYMENT` per receipt, with a receipts file); the run reports any other entry as an
   error. (A real pilot runtime never advances its clock, so section 4 step 6's empty log still holds there.)
+- **Receipts: `--receipts receipts.yaml`.** Without it the clock never assumes a receipt and no buyer ever pays, so from week 2
+  the books drift into a stress case. A receipts file lets the rehearsal follow the role-played decisions: a map of week
+  number to a list of `{receivable_id, amount_fen, bank_reference}` and an optional `day` (1 to 7, the day of the week the
+  credit arrives; the end of the week when left out). Copy `docs/pilot/receipts.example.yaml` (it uses the public-record
+  fixture's ids). The file is checked against the run and the starting books before anything runs: a week outside the run,
+  an unknown or already settled receivable, an amount that is not above zero, a bank reference used twice, or receipts that
+  add up to more than the receivable owed, is refused with the reason (exit 2). Each receipt is then posted before that week's
+  reads, the way the bank feed posts one (`RECEIVE_PAYMENT`, requested by `SYSTEM`, with the bank reference; the clock still
+  assumes nothing), and recorded in the journal as an entry whose `answer` is `receipt`: the sentence names the receivable,
+  the amount, the operation id (`dry-receipt-wNN-n`) and the balance still outstanding, and `snapshot_hash` is the sha256 of
+  those facts. `summary.md` and the week's `sentences.md` list each receipt under its week. A receipt the executor refuses
+  is an error for that week and no journal entry. Receipts are the rehearsal's own inventions, never an owner's money.
 - **The command**, from the repository root:
 
   ```bash
@@ -361,13 +376,14 @@ reads wrongly **before an owner sees it**.
       --state <state.json> --mandate <mandate.json> --label dry-a --weeks 8 --out docs/pilot/dry-a \
       --role-play auto
   # or, with the owner's written decisions:  --decisions docs/pilot/dry-a/decisions.yaml   (instead of --role-play auto)
-  # optional: --journal-file <path> to keep the journal on a file (it must not hold entries yet), --owner-key-file <path>
+  # optional: --journal-file <path> to keep the journal on a file (it must not hold entries yet), --owner-key-file <path>,
+  #           --receipts docs/pilot/dry-a/receipts.yaml to land buyers' payments week by week (see the next item)
   ```
 
   `--state` and `--mandate` are the books and mandate of section 3 (for the synthetic templates: `docs/pilot/templates/state.example.json`
   and `mandate.example.json`). The flags and a random owner token are set by the script itself. Exit 0 means every week ran
   without an error; 1 means a week reported one (read `summary.md`); 2 means the arguments or files were refused, with a sentence.
-- **What it teaches about itself.** The runner lands no receipt and a decision never changes the books, so from week 2 the books drift into a stress case (see `docs/pilot/dry-pilot-report-2026-10-09.md`); a week on six buyers takes up to four minutes, so start it and wait.
+- **What it teaches about itself.** Without a receipts file the runner lands no receipt and a decision never changes the books, so from week 2 the books drift into a stress case (see `docs/pilot/dry-pilot-report-2026-10-09.md`); a week on six buyers takes up to four minutes, so start it and wait.
 - **No gate is read from a dry pilot.** The books are not an owner's, the decisions are written or role-played, and so no
   figure in a dry pilot counts toward any threshold in section 7; its report says what broke and what read wrongly, and is
   labelled a rehearsal.

@@ -2473,7 +2473,7 @@ export interface PilotJournalEntry {
   week: number;
   /** The SME's anonymous label. */
   sme: string;
-  answer: "envelope" | "worth" | "curve";
+  answer: "envelope" | "worth" | "curve" | "receipt";
   /** The sentence FLOW displayed, as recorded. */
   flow_said: string;
   /** sha256 of the exported answer file. */
