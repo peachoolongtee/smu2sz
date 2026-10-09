@@ -1260,7 +1260,7 @@ export interface ApprovalPresentation {
   result_state_text?: string | null;
   result_tone?: StateTone | null;
   /** A cure that does not restore the reserve says what stays short. */
-  residual?: { shortfall_display: string; from_when: string; restores_reserve: boolean } | null;
+  residual?: { shortfall_display: string; from_when: string; restores_reserve: boolean; text?: string; lowest_when?: string | null; shortfall_today_display?: string | null } | null;
 }
 
 export type ApprovalExecutionStatus = "EXECUTED" | "REFUSED" | "PENDING" | "DECLINED" | "DUPLICATE";
@@ -1797,6 +1797,8 @@ export interface WorthCeiling {
 
 /** One open receivable, with what collecting it saves and the action for it. */
 export interface ReceivableWorth {
+  /** "Overdue" on a row that is late (the server's word; its `worth_text` then reads the same); absent otherwise. */
+  overdue_text?: string | null;
   receivable_id: string;
   buyer_id: string;
   buyer_name: string;
@@ -1832,8 +1834,10 @@ export interface ReceivableWorth {
 export interface ReceivablesWorthView {
   rows: ReceivableWorth[];
   gross_order: string[];
-  /** The first row's action sentence, for the home. */
+  /** The first thing to do, for the home: the overdue sentence when anything is late, else the first row's action. */
   top_action: string;
+  /** The savings sentence of the top row, shown under the first; null when it saves nothing. */
+  top_action_second?: string | null;
   ranking_note: string;
   first_breach_day: Day | null;
   hypothetical: true;

@@ -12,5 +12,9 @@ export function useCureWaiting(): boolean {
   const demo = useDemo();
   const id = demo.cure?.approvalId ?? null;
   const rows = useAsync(() => (id ? getApprovals() : Promise.resolve([])), [id]);
-  return Boolean(id && rows.data?.some((a) => a.id === id && a.status === "PENDING"));
+  if (!id) return false;
+  // Until the queue has been read the decision is treated as waiting: the owner's step is never offered as a plain "Next" in that instant.
+  // (`data` keeps the answer of the read before: an empty one from before the cure was queued must not read as "decided".)
+  if (rows.data === undefined || rows.loading) return true;
+  return rows.data.some((a) => a.id === id && a.status === "PENDING");
 }

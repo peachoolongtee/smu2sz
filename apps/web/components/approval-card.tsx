@@ -202,7 +202,8 @@ export function ApprovalCard({
           ) : null}
           {p?.residual ? (
             <p className="mt-1 font-medium text-warn-fg" data-testid={`approval-residual-${a.id}`}>
-              {t("appr.residual", { amount: p.residual.shortfall_display, when: p.residual.from_when })}
+              {/* The server's full sentence (the lowest point and today's gap apart); an older answer is composed from what it sent. */}
+              {p.residual.text ?? t("appr.residual", { amount: p.residual.shortfall_display, when: p.residual.from_when })}
             </p>
           ) : null}
           {p?.next_step_text && p.next_step_href ? (

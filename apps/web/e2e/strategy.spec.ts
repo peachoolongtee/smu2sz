@@ -158,7 +158,9 @@ test.describe("desktop", () => {
     await expect(page.getByTestId("home-late-RCV-A")).toBeVisible();
     const line = page.getByTestId("home-top-action");
     await expect(line).toHaveCount(1);
-    await expect(line).toContainText("Call Foshan Home Retail Co.");
+    // Anything late leads: the overdue sentence first, the savings sentence under it.
+    await expect(line).toContainText("is 2 days late: ask them to pay.");
+    await expect(page.getByTestId("home-top-action-second")).toContainText("Call Foshan Home Retail Co.");
     await expect(page.locator("#home-receivables").getByTestId("home-top-action")).toHaveCount(1);
     expect(await proseOf(page)).not.toMatch(DAY_N);
     expect(await filledBrand(page)).toBeLessThanOrEqual(1);

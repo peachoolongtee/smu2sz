@@ -12,6 +12,7 @@
       "status": "EXECUTED",
       "tier": "TIER_2",
       "violations": [],
+      "kind_text": "Invoice financing requested",
       "decision_id": "alert:ALERT-RESERVE-42:v7",
       "day": 34,
       "requested_by": "AGENT",

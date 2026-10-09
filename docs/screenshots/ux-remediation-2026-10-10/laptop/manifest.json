@@ -13,18 +13,18 @@
       "url": "/",
       "width": 1366,
       "viewport_height": 768,
-      "page_height": 1291,
-      "page_height_in_viewports": 1.68,
+      "page_height": 1129,
+      "page_height_in_viewports": 1.47,
       "full_page": true,
       "loading_skeleton_still_visible": false,
       "primary_action_y_is": "document",
       "primary_action": {
         "label": "Run funding plan",
-        "top": 766,
-        "bottom": 806,
+        "top": 608,
+        "bottom": 648,
         "filled_actions_on_page": 1
       },
-      "head": "6106c72"
+      "head": "46fc218"
     },
     {
       "file": "02-home-day34-no-receipt-before-cure.png",
@@ -34,18 +34,18 @@
       "url": "/",
       "width": 1366,
       "viewport_height": 768,
-      "page_height": 1365,
-      "page_height_in_viewports": 1.78,
+      "page_height": 1183,
+      "page_height_in_viewports": 1.54,
       "full_page": true,
       "loading_skeleton_still_visible": false,
       "primary_action_y_is": "document",
       "primary_action": {
         "label": "Queue it for my approval",
-        "top": 802,
-        "bottom": 842,
+        "top": 644,
+        "bottom": 684,
         "filled_actions_on_page": 1
       },
-      "head": "6106c72"
+      "head": "46fc218"
     },
     {
       "file": "03-home-day34-no-receipt-residual.png",
@@ -55,18 +55,18 @@
       "url": "/",
       "width": 1366,
       "viewport_height": 768,
-      "page_height": 1238,
-      "page_height_in_viewports": 1.61,
+      "page_height": 1084,
+      "page_height_in_viewports": 1.41,
       "full_page": true,
       "loading_skeleton_still_visible": false,
       "primary_action_y_is": "document",
       "primary_action": {
         "label": "Compare your funding options",
-        "top": 641,
-        "bottom": 681,
+        "top": 487,
+        "bottom": 527,
         "filled_actions_on_page": 1
       },
-      "head": "6106c72"
+      "head": "46fc218"
     },
     {
       "file": "04-deals-evaluated-day0.png",
@@ -87,7 +87,7 @@
         "bottom": 725,
         "filled_actions_on_page": 1
       },
-      "head": "6106c72"
+      "head": "46fc218"
     },
     {
       "file": "05-deals-ask-flow-why-countering.png",
@@ -108,7 +108,7 @@
         "bottom": 752,
         "filled_actions_on_page": 2
       },
-      "head": "6106c72"
+      "head": "46fc218"
     },
     {
       "file": "06-deals-agreed.png",
@@ -118,13 +118,13 @@
       "url": "/deals",
       "width": 1366,
       "viewport_height": 768,
-      "page_height": 2190,
-      "page_height_in_viewports": 2.85,
+      "page_height": 1315,
+      "page_height_in_viewports": 1.71,
       "full_page": true,
       "loading_skeleton_still_visible": false,
       "primary_action_y_is": "document",
       "primary_action": null,
-      "head": "6106c72"
+      "head": "46fc218"
     },
     {
       "file": "07-deals-day34-missed-no-receipt.png",
@@ -134,13 +134,13 @@
       "url": "/deals",
       "width": 1366,
       "viewport_height": 768,
-      "page_height": 2210,
-      "page_height_in_viewports": 2.88,
+      "page_height": 1353,
+      "page_height_in_viewports": 1.76,
       "full_page": true,
       "loading_skeleton_still_visible": false,
       "primary_action_y_is": "document",
       "primary_action": null,
-      "head": "6106c72"
+      "head": "46fc218"
     },
     {
       "file": "08-cash-day0.png",
@@ -150,18 +150,18 @@
       "url": "/cash",
       "width": 1366,
       "viewport_height": 768,
-      "page_height": 2564,
-      "page_height_in_viewports": 3.34,
+      "page_height": 2556,
+      "page_height_in_viewports": 3.33,
       "full_page": true,
       "loading_skeleton_still_visible": false,
       "primary_action_y_is": "document",
       "primary_action": {
         "label": "Run funding plan",
-        "top": 670,
-        "bottom": 710,
+        "top": 666,
+        "bottom": 706,
         "filled_actions_on_page": 1
       },
-      "head": "6106c72"
+      "head": "46fc218"
     },
     {
       "file": "09-cash-day34.png",
@@ -171,18 +171,18 @@
       "url": "/cash",
       "width": 1366,
       "viewport_height": 768,
-      "page_height": 2337,
-      "page_height_in_viewports": 3.04,
+      "page_height": 2329,
+      "page_height_in_viewports": 3.03,
       "full_page": true,
       "loading_skeleton_still_visible": false,
       "primary_action_y_is": "document",
       "primary_action": {
         "label": "Queue it for my approval",
-        "top": 666,
-        "bottom": 706,
+        "top": 662,
+        "bottom": 702,
         "filled_actions_on_page": 1
       },
-      "head": "6106c72"
+      "head": "46fc218"
     },
     {
       "file": "10-receivables-day34-half-receipt-chase-dialog.png",
@@ -192,8 +192,8 @@
       "url": "/receivables",
       "width": 1366,
       "viewport_height": 768,
-      "page_height": 1307,
-      "page_height_in_viewports": 1.7,
+      "page_height": 1319,
+      "page_height_in_viewports": 1.72,
       "full_page": false,
       "loading_skeleton_still_visible": false,
       "primary_action_y_is": "viewport (the shot is the viewport, a modal is open)",
@@ -203,7 +203,7 @@
         "bottom": 632,
         "filled_actions_on_page": 1
       },
-      "head": "6106c72"
+      "head": "46fc218"
     },
     {
       "file": "11-receivables-day34-half-receipt-list.png",
@@ -213,13 +213,13 @@
       "url": "/receivables",
       "width": 1366,
       "viewport_height": 768,
-      "page_height": 1307,
-      "page_height_in_viewports": 1.7,
+      "page_height": 1319,
+      "page_height_in_viewports": 1.72,
       "full_page": true,
       "loading_skeleton_still_visible": false,
       "primary_action_y_is": "document",
       "primary_action": null,
-      "head": "6106c72"
+      "head": "46fc218"
     },
     {
       "file": "12-activity-day34-after-cure.png",
@@ -235,7 +235,7 @@
       "loading_skeleton_still_visible": false,
       "primary_action_y_is": "document",
       "primary_action": null,
-      "head": "6106c72"
+      "head": "46fc218"
     },
     {
       "file": "13-approvals-pending-agreement-terms.png",
@@ -251,12 +251,12 @@
       "loading_skeleton_still_visible": false,
       "primary_action_y_is": "document",
       "primary_action": {
-        "label": "Approve ¥420,000.00",
+        "label": "Approve the agreement (0.50% early-payment discount, about \u00a5",
         "top": 597,
         "bottom": 637,
         "filled_actions_on_page": 1
       },
-      "head": "6106c72"
+      "head": "46fc218"
     },
     {
       "file": "14-approvals-pending-funding-cure.png",
@@ -266,18 +266,13 @@
       "url": "/approvals#approval-APR-000001",
       "width": 1366,
       "viewport_height": 768,
-      "page_height": 867,
-      "page_height_in_viewports": 1.13,
+      "page_height": 887,
+      "page_height_in_viewports": 1.15,
       "full_page": true,
       "loading_skeleton_still_visible": false,
       "primary_action_y_is": "document",
-      "primary_action": {
-        "label": "Approve ¥155,013.80",
-        "top": 633,
-        "bottom": 673,
-        "filled_actions_on_page": 1
-      },
-      "head": "6106c72"
+      "primary_action": null,
+      "head": "46fc218"
     },
     {
       "file": "15-approvals-pending-funding-cure-full-receipt.png",
@@ -292,13 +287,8 @@
       "full_page": true,
       "loading_skeleton_still_visible": false,
       "primary_action_y_is": "document",
-      "primary_action": {
-        "label": "Approve ¥200,000.00",
-        "top": 633,
-        "bottom": 673,
-        "filled_actions_on_page": 1
-      },
-      "head": "6106c72"
+      "primary_action": null,
+      "head": "46fc218"
     },
     {
       "file": "16-approvals-decided-with-quote.png",
@@ -308,13 +298,13 @@
       "url": "/approvals#approval-APR-000001",
       "width": 1366,
       "viewport_height": 768,
-      "page_height": 945,
-      "page_height_in_viewports": 1.23,
+      "page_height": 985,
+      "page_height_in_viewports": 1.28,
       "full_page": true,
       "loading_skeleton_still_visible": false,
       "primary_action_y_is": "document",
       "primary_action": null,
-      "head": "6106c72"
+      "head": "46fc218"
     },
     {
       "file": "17-approvals-refused-mandate-expired.png",
@@ -324,13 +314,13 @@
       "url": "/approvals#approval-APR-000001",
       "width": 1366,
       "viewport_height": 768,
-      "page_height": 787,
-      "page_height_in_viewports": 1.02,
+      "page_height": 823,
+      "page_height_in_viewports": 1.07,
       "full_page": true,
       "loading_skeleton_still_visible": false,
       "primary_action_y_is": "document",
       "primary_action": null,
-      "head": "6106c72"
+      "head": "46fc218"
     },
     {
       "file": "18-decisions-deal-record-agreed.png",
@@ -378,7 +368,7 @@
       "loading_skeleton_still_visible": false,
       "primary_action_y_is": "document",
       "primary_action": null,
-      "head": "6106c72"
+      "head": "46fc218"
     },
     {
       "file": "21-demo-scene5-owner-approve-step.png",
@@ -394,12 +384,12 @@
       "loading_skeleton_still_visible": false,
       "primary_action_y_is": "document",
       "primary_action": {
-        "label": "Approve ¥200,000.00",
-        "top": 159,
-        "bottom": 191,
-        "filled_actions_on_page": 2
+        "label": "Approve \u00a5200,000.00",
+        "top": 760,
+        "bottom": 800,
+        "filled_actions_on_page": 1
       },
-      "head": "6106c72"
+      "head": "46fc218"
     },
     {
       "file": "22-demo-story-page-scene5.png",
@@ -409,18 +399,16 @@
       "url": "/demo",
       "width": 1366,
       "viewport_height": 768,
-      "page_height": 2059,
-      "page_height_in_viewports": 2.68,
+      "page_height": 2083,
+      "page_height_in_viewports": 2.71,
       "full_page": true,
       "loading_skeleton_still_visible": false,
       "primary_action_y_is": "document",
-      "primary_action": {
-        "label": "Approve ¥200,000.00",
-        "top": 159,
-        "bottom": 191,
-        "filled_actions_on_page": 1
-      },
-      "head": "6106c72"
+      "primary_action": null,
+      "head": "46fc218"
     }
+  ],
+  "re_captured_head": [
+    "46fc218"
   ]
 }

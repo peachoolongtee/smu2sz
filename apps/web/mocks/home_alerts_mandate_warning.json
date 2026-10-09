@@ -236,8 +236,8 @@
       "suggested": [],
       "actionable": false,
       "basis": "CONSERVATIVE",
-      "title_when": "Mandate v1 expires in 10 days",
-      "detail_when": "Mandate v1 is valid until 10 days from now; after that the agent can no longer act, although the forecast horizon runs until 40 days from now. Renewal is an offline owner step: sign a new mandate outside the agent. The agent cannot renew or extend it, and it suggests no operation."
+      "title_when": "Your signed limits (version 1) expire in 10 days",
+      "detail_when": "Your signed limits (version 1) are valid until 10 days from now; after that the agent can no longer act, although the forecast horizon runs until 40 days from now. Renewal is an offline owner step: sign a new mandate outside the agent. The agent cannot renew or extend it, and it suggests no operation."
     },
     {
       "id": "ALERT-HEADROOM-107",

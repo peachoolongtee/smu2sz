@@ -2560,7 +2560,7 @@
     "needs_owner_reason": "The yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval.",
     "authority_text": "Needs your approval: The yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval.",
     "if_nothing": "Cash goes below zero in 8 days.",
-    "after": "Prevents negative cash; cash stays ¥300k below your ¥300k minimum cash reserve from today (lowest ¥0.00 in 8 days).",
+    "after": "At its lowest point, in 8 days, cash would still be ¥300,000.00 below your minimum cash reserve; today it is ¥127,506.90 below.",
     "why": "No committed funding restores the reserve; this is the cheapest way to stay above zero.",
     "detail": "Projected cash closes at ¥172,493.10 today, ¥127,506.90 below your minimum cash reserve; the gap peaks at ¥327,506.90 in 8 days and lasts until 42 days from now. No funding plan restores your minimum cash reserve; the plan that keeps cash at or above zero is: finance an invoice on Invoice financing (onboarded platform) ¥27,506.90, cost ¥245.12 (32.5% a year for 10 days); that is above the 15.00% limit you signed for funding without your approval, so it needs your approval before it runs. It does not restore the reserve: cash stays at or above zero, but the reserve is still ¥300,000.00 short at the worst day, which needs the owner's decision. The projection lets cash run below zero only as a simulation limit; the bank does not allow an overdraft, so a negative figure is a day the books cannot pay what falls due.",
     "formula": "shortfall = floor − closing_d: ¥300,000.00 − ¥172,493.10 = ¥127,506.90 (day 34); max over days 34..76 = ¥327,506.90",

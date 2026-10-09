@@ -116,6 +116,7 @@
         {
           "op_id": "accept-CMT-a78afaa5becb5273",
           "kind": "ACCEPT_OFFER",
+          "kind_text": "Agreement recorded",
           "status": "EXECUTED",
           "event_text": null,
           "day": 0,
@@ -126,6 +127,7 @@
         {
           "op_id": "fund-OFF-f806f79b6c21-cooperative-0",
           "kind": "DRAW_FACILITY",
+          "kind_text": "Credit line drawn",
           "status": "EXECUTED",
           "event_text": "¥149,986.20 drawn on the Bank credit line. Cash received today.",
           "day": 0,
@@ -302,6 +304,7 @@
         {
           "op_id": "accept-CMT-a78afaa5becb5273",
           "kind": "ACCEPT_OFFER",
+          "kind_text": "协议已记录",
           "status": "EXECUTED",
           "event_text": null,
           "day": 0,
@@ -312,6 +315,7 @@
         {
           "op_id": "fund-OFF-f806f79b6c21-cooperative-0",
           "kind": "DRAW_FACILITY",
+          "kind_text": "信用额度已提款",
           "status": "EXECUTED",
           "event_text": "已从Bank credit line提取 ¥149,986.20。资金今天已到账。",
           "day": 0,
@@ -429,6 +433,7 @@
         {
           "op_id": "capex-apply-800fd3a69d9c1103",
           "kind": "APPLY_FOR_FACILITY",
+          "kind_text": "Facility application",
           "status": "EXECUTED",
           "event_text": "You approved an application for ¥600,000.00 on Equipment term loan.",
           "day": 0,
@@ -515,6 +520,7 @@
         {
           "op_id": "capex-apply-800fd3a69d9c1103",
           "kind": "APPLY_FOR_FACILITY",
+          "kind_text": "融资申请",
           "status": "EXECUTED",
           "event_text": "您已批准在Equipment term loan申请 ¥600,000.00。",
           "day": 0,
@@ -603,6 +609,7 @@
         {
           "op_id": "capex-apply-800fd3a69d9c1103",
           "kind": "APPLY_FOR_FACILITY",
+          "kind_text": "Facility application",
           "status": "PENDING_APPROVAL",
           "event_text": "Waiting for your approval: an application for ¥600,000.00 on Equipment term loan.",
           "day": 0,
@@ -689,6 +696,7 @@
         {
           "op_id": "capex-apply-800fd3a69d9c1103",
           "kind": "APPLY_FOR_FACILITY",
+          "kind_text": "融资申请",
           "status": "PENDING_APPROVAL",
           "event_text": "等待您批准：在Equipment term loan申请 ¥600,000.00。",
           "day": 0,
@@ -777,6 +785,7 @@
         {
           "op_id": "capex-apply-800fd3a69d9c1103",
           "kind": "APPLY_FOR_FACILITY",
+          "kind_text": "Facility application",
           "status": "REFUSED",
           "event_text": "You declined an application for ¥600,000.00 on Equipment term loan.",
           "day": 0,
@@ -863,6 +872,7 @@
         {
           "op_id": "capex-apply-800fd3a69d9c1103",
           "kind": "APPLY_FOR_FACILITY",
+          "kind_text": "融资申请",
           "status": "REFUSED",
           "event_text": "您已拒绝在Equipment term loan申请 ¥600,000.00。",
           "day": 0,
@@ -980,6 +990,7 @@
         {
           "op_id": "alert:ALERT-RESERVE-42:v7:0",
           "kind": "SUBMIT_INVOICE_FOR_FINANCING",
+          "kind_text": "Invoice financing requested",
           "status": "EXECUTED",
           "event_text": "You approved ¥200,000.00 of invoice financing. Funds arrive in 3 days.",
           "day": 34,
@@ -1105,6 +1116,7 @@
         {
           "op_id": "alert:ALERT-RESERVE-42:v7:0",
           "kind": "SUBMIT_INVOICE_FOR_FINANCING",
+          "kind_text": "已申请发票融资",
           "status": "EXECUTED",
           "event_text": "您已批准¥200,000.00 的发票融资。资金将于3 天后到账。",
           "day": 34,
@@ -1228,6 +1240,7 @@
         {
           "op_id": "alert:ALERT-RESERVE-12:v1:plan:0",
           "kind": "DRAW_FACILITY",
+          "kind_text": "Credit line drawn",
           "status": "EXECUTED",
           "event_text": "¥150,000.00 drawn on the Bank credit line. Cash received today.",
           "day": 0,
@@ -1238,6 +1251,7 @@
         {
           "op_id": "alert:ALERT-RESERVE-12:v1:plan:1",
           "kind": "SUBMIT_INVOICE_FOR_FINANCING",
+          "kind_text": "Invoice financing requested",
           "status": "EXECUTED",
           "event_text": "¥255,000.00 of invoice financing drawn against the Foshan Home Retail Co. invoice. Funds arrive in 3 days.",
           "day": 0,
@@ -1368,6 +1382,7 @@
         {
           "op_id": "alert:ALERT-RESERVE-12:v1:plan:0",
           "kind": "DRAW_FACILITY",
+          "kind_text": "信用额度已提款",
           "status": "EXECUTED",
           "event_text": "已从Bank credit line提取 ¥150,000.00。资金今天已到账。",
           "day": 0,
@@ -1378,6 +1393,7 @@
         {
           "op_id": "alert:ALERT-RESERVE-12:v1:plan:1",
           "kind": "SUBMIT_INVOICE_FOR_FINANCING",
+          "kind_text": "已申请发票融资",
           "status": "EXECUTED",
           "event_text": "已以Foshan Home Retail Co.的发票融资 ¥255,000.00。资金将于3 天后到账。",
           "day": 0,
@@ -1505,8 +1521,9 @@
         {
           "op_id": "alert:ALERT-RESERVE-42:v7:0",
           "kind": "SUBMIT_INVOICE_FOR_FINANCING",
+          "kind_text": "Invoice financing requested",
           "status": "REFUSED",
-          "event_text": "Refused: finance ¥200,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. on Invoice financing (onboarded platform). Mandate v1 expired yesterday.",
+          "event_text": "Refused: finance ¥200,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. on Invoice financing (onboarded platform). Your signed limits (version 1) expired yesterday.",
           "day": 91,
           "when": "today",
           "approval_id": "APR-000001",
@@ -1611,8 +1628,9 @@
         {
           "op_id": "alert:ALERT-RESERVE-42:v7:0",
           "kind": "SUBMIT_INVOICE_FOR_FINANCING",
+          "kind_text": "已申请发票融资",
           "status": "REFUSED",
-          "event_text": "已拒绝：以Foshan Home Retail Co. 的 ¥420,000.00 发票在Invoice financing (onboarded platform)融资 ¥200,000.00。Mandate v1 expired yesterday.",
+          "event_text": "已拒绝：以Foshan Home Retail Co. 的 ¥420,000.00 发票在Invoice financing (onboarded platform)融资 ¥200,000.00。您签署的授权（第 1 版）已于昨天到期。",
           "day": 91,
           "when": "今天",
           "approval_id": "APR-000001",
@@ -1717,6 +1735,7 @@
         {
           "op_id": "alert:ALERT-RESERVE-42:v7:0",
           "kind": "SUBMIT_INVOICE_FOR_FINANCING",
+          "kind_text": "Invoice financing requested",
           "status": "PENDING_APPROVAL",
           "event_text": "Waiting for your approval: ¥200,000.00 of invoice financing at 32.5% a year, above the 15.00% limit you signed for funding without your approval.",
           "day": 34,
@@ -1821,6 +1840,7 @@
         {
           "op_id": "alert:ALERT-RESERVE-42:v7:0",
           "kind": "SUBMIT_INVOICE_FOR_FINANCING",
+          "kind_text": "已申请发票融资",
           "status": "PENDING_APPROVAL",
           "event_text": "等待您批准：¥200,000.00 的发票融资，年化成本 32.5%，高于您签署的无需批准融资上限 15.00%。",
           "day": 34,
@@ -1918,7 +1938,7 @@
         "rate_basis": "Invoice financing is billed in whole 30-day periods until the invoice is paid.",
         "lands_day": 37,
         "lands_when": "yesterday",
-        "after": "Cash has stayed ¥300,000.00 below your minimum cash reserve for 4 days.",
+        "after": "At its lowest point, in 4 days, cash would still be ¥300,000.00 below your minimum cash reserve.",
         "if_declined": "Cash goes below zero in 4 days.",
         "needs_owner": true,
         "text": null,
@@ -1947,6 +1967,7 @@
         {
           "op_id": "alert:ALERT-RESERVE-34:v6:0",
           "kind": "SUBMIT_INVOICE_FOR_FINANCING",
+          "kind_text": "Invoice financing requested",
           "status": "EXECUTED",
           "event_text": "You approved ¥155,013.80 of invoice financing. Cash received yesterday.",
           "day": 34,
@@ -2065,7 +2086,7 @@
         "rate_basis": "发票融资按整 30 天计费，直至发票付清。",
         "lands_day": 37,
         "lands_when": "昨天",
-        "after": "现金已连续 4 天比最低现金储备低 ¥300,000.00。",
+        "after": "在最低点（4 天后），现金仍比最低现金储备低 ¥300,000.00。",
         "if_declined": "现金将在4 天后跌破零。",
         "needs_owner": true,
         "text": null,
@@ -2094,6 +2115,7 @@
         {
           "op_id": "alert:ALERT-RESERVE-34:v6:0",
           "kind": "SUBMIT_INVOICE_FOR_FINANCING",
+          "kind_text": "已申请发票融资",
           "status": "EXECUTED",
           "event_text": "您已批准¥155,013.80 的发票融资。资金已于昨天到账。",
           "day": 34,
@@ -2234,6 +2256,7 @@
         {
           "op_id": "alert:ALERT-RESERVE-42:v7:0",
           "kind": "SUBMIT_INVOICE_FOR_FINANCING",
+          "kind_text": "Invoice financing requested",
           "status": "EXECUTED",
           "event_text": "You approved ¥200,000.00 of invoice financing. Cash received yesterday.",
           "day": 34,
@@ -2359,6 +2382,7 @@
         {
           "op_id": "alert:ALERT-RESERVE-42:v7:0",
           "kind": "SUBMIT_INVOICE_FOR_FINANCING",
+          "kind_text": "已申请发票融资",
           "status": "EXECUTED",
           "event_text": "您已批准¥200,000.00 的发票融资。资金已于昨天到账。",
           "day": 34,
@@ -2518,6 +2542,7 @@
         {
           "op_id": "accept-CMT-a78afaa5becb5273",
           "kind": "ACCEPT_OFFER",
+          "kind_text": "Agreement recorded",
           "status": "EXECUTED",
           "event_text": null,
           "day": 0,
@@ -2528,6 +2553,7 @@
         {
           "op_id": "fund-OFF-f806f79b6c21-cooperative-0",
           "kind": "DRAW_FACILITY",
+          "kind_text": "Credit line drawn",
           "status": "EXECUTED",
           "event_text": "¥149,986.20 drawn on the Bank credit line. Cash received 34 days ago.",
           "day": 0,
@@ -2730,6 +2756,7 @@
         {
           "op_id": "accept-CMT-a78afaa5becb5273",
           "kind": "ACCEPT_OFFER",
+          "kind_text": "协议已记录",
           "status": "EXECUTED",
           "event_text": null,
           "day": 0,
@@ -2740,6 +2767,7 @@
         {
           "op_id": "fund-OFF-f806f79b6c21-cooperative-0",
           "kind": "DRAW_FACILITY",
+          "kind_text": "信用额度已提款",
           "status": "EXECUTED",
           "event_text": "已从Bank credit line提取 ¥149,986.20。资金已于34 天前到账。",
           "day": 0,
@@ -2944,6 +2972,7 @@
         {
           "op_id": "accept-CMT-a78afaa5becb5273",
           "kind": "ACCEPT_OFFER",
+          "kind_text": "Agreement recorded",
           "status": "EXECUTED",
           "event_text": null,
           "day": 0,
@@ -2954,6 +2983,7 @@
         {
           "op_id": "fund-OFF-f806f79b6c21-cooperative-0",
           "kind": "DRAW_FACILITY",
+          "kind_text": "Credit line drawn",
           "status": "EXECUTED",
           "event_text": "¥149,986.20 drawn on the Bank credit line. Cash received 34 days ago.",
           "day": 0,
@@ -3156,6 +3186,7 @@
         {
           "op_id": "accept-CMT-a78afaa5becb5273",
           "kind": "ACCEPT_OFFER",
+          "kind_text": "协议已记录",
           "status": "EXECUTED",
           "event_text": null,
           "day": 0,
@@ -3166,6 +3197,7 @@
         {
           "op_id": "fund-OFF-f806f79b6c21-cooperative-0",
           "kind": "DRAW_FACILITY",
+          "kind_text": "信用额度已提款",
           "status": "EXECUTED",
           "event_text": "已从Bank credit line提取 ¥149,986.20。资金已于34 天前到账。",
           "day": 0,
@@ -3353,6 +3385,7 @@
         {
           "op_id": "fund-OFF-f806f79b6c21-hard_line-0",
           "kind": "DRAW_FACILITY",
+          "kind_text": "Credit line drawn",
           "status": "EXECUTED",
           "event_text": "¥150,000.00 drawn on the Bank credit line. Cash received today.",
           "day": 0,
@@ -3363,6 +3396,7 @@
         {
           "op_id": "fund-OFF-f806f79b6c21-hard_line-1",
           "kind": "SUBMIT_INVOICE_FOR_FINANCING",
+          "kind_text": "Invoice financing requested",
           "status": "EXECUTED",
           "event_text": "¥255,000.00 of invoice financing drawn against the Foshan Home Retail Co. invoice. Funds arrive in 3 days.",
           "day": 0,
@@ -3512,6 +3546,7 @@
         {
           "op_id": "fund-OFF-f806f79b6c21-hard_line-0",
           "kind": "DRAW_FACILITY",
+          "kind_text": "信用额度已提款",
           "status": "EXECUTED",
           "event_text": "已从Bank credit line提取 ¥150,000.00。资金今天已到账。",
           "day": 0,
@@ -3522,6 +3557,7 @@
         {
           "op_id": "fund-OFF-f806f79b6c21-hard_line-1",
           "kind": "SUBMIT_INVOICE_FOR_FINANCING",
+          "kind_text": "已申请发票融资",
           "status": "EXECUTED",
           "event_text": "已以Foshan Home Retail Co.的发票融资 ¥255,000.00。资金将于3 天后到账。",
           "day": 0,
@@ -3690,6 +3726,7 @@
         {
           "op_id": "accept-CMT-a78afaa5becb5273",
           "kind": "ACCEPT_OFFER",
+          "kind_text": "Agreement recorded",
           "status": "EXECUTED",
           "event_text": null,
           "day": 0,
@@ -3700,6 +3737,7 @@
         {
           "op_id": "fund-OFF-f806f79b6c21-cooperative-0",
           "kind": "DRAW_FACILITY",
+          "kind_text": "Credit line drawn",
           "status": "EXECUTED",
           "event_text": "¥149,986.20 drawn on the Bank credit line. Cash received 34 days ago.",
           "day": 0,
@@ -3876,6 +3914,7 @@
         {
           "op_id": "accept-CMT-a78afaa5becb5273",
           "kind": "ACCEPT_OFFER",
+          "kind_text": "协议已记录",
           "status": "EXECUTED",
           "event_text": null,
           "day": 0,
@@ -3886,6 +3925,7 @@
         {
           "op_id": "fund-OFF-f806f79b6c21-cooperative-0",
           "kind": "DRAW_FACILITY",
+          "kind_text": "信用额度已提款",
           "status": "EXECUTED",
           "event_text": "已从Bank credit line提取 ¥149,986.20。资金已于34 天前到账。",
           "day": 0,

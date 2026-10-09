@@ -147,9 +147,10 @@ export function ReceivablesBlock({ r, worth }: { r: HomeReceivables; worth?: Rec
           </p>
         )}
         {worth?.rows.length && worth.top_action ? (
-          <p className="py-2.5 text-sm text-ink-2" data-testid="home-top-action">
-            {worth.top_action}
-          </p>
+          <div className="py-2.5 text-sm text-ink-2" data-testid="home-top-action">
+            <p>{worth.top_action}</p>
+            {worth.top_action_second ? <p className="mt-1" data-testid="home-top-action-second">{worth.top_action_second}</p> : null}
+          </div>
         ) : null}
       </div>
     </Card>
