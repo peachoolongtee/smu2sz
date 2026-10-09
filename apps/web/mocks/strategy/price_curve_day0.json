@@ -41,6 +41,7 @@
     }
   ],
   "flat": false,
+  "no_plan": false,
   "source_state_version": 1,
   "hypothetical": true,
   "sentence": "Cash in the next 30 days saves you ¥89.11 of funding cost per ¥10,000 (0.89%); after that, earlier cash saves nothing.",

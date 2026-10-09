@@ -301,6 +301,7 @@
   "top_action": "¥162,800.00 from Foshan Home Retail Co. is 2 days late: ask them to pay.",
   "top_action_second": "Call Foshan Home Retail Co. today for the ¥162,800.00: it saves you ¥1,374.61 and is the only free action.",
   "ranking_note": "Ranked by what collecting each saves you against the cheapest funding plan, net of any discount that earns it.",
+  "no_plan": false,
   "first_breach_day": 42,
   "source_state_version": 7,
   "computed_in_seconds": 0

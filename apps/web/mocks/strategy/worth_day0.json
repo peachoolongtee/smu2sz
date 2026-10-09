@@ -160,6 +160,7 @@
   "top_action": "On the ¥420,000.00 due in 32 days, offer early payment at up to 0.85% on ¥257,200.00, or fund it instead.",
   "top_action_second": null,
   "ranking_note": "Ranked by what collecting each saves you against the cheapest funding plan, net of any discount that earns it.",
+  "no_plan": false,
   "first_breach_day": 12,
   "source_state_version": 1,
   "computed_in_seconds": 0
