@@ -16,6 +16,9 @@ from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_vali
 from app.persistence.records import PilotJournalRecord
 
 Answer = Literal["envelope", "worth", "curve"]
+# What an entry is "against": one of the three answers, or `receipt`, a bank receipt the dry-pilot runner landed on the books
+# (docs/pilot/JOURNAL_SPEC.md section 3). A decision is only ever against an `Answer`.
+EntryAnswer = Literal["envelope", "worth", "curve", "receipt"]
 Choice = Literal["followed", "partly", "ignored", "not_applicable"]
 
 _LABEL = re.compile(r"^[A-Za-z0-9][A-Za-z0-9 _-]{0,63}$")
@@ -36,7 +39,7 @@ class JournalEntryIn(BaseModel):
 
     week: Annotated[int, Field(ge=1, le=60)]
     sme: str
-    answer: Answer
+    answer: EntryAnswer
     flow_said: Annotated[str, StringConstraints(min_length=1, max_length=2000)]
     snapshot_hash: str
     owner_did: Annotated[str, StringConstraints(min_length=1, max_length=2000)]
@@ -83,7 +86,7 @@ class JournalEntry(BaseModel):
     seq: int
     week: int
     sme: str
-    answer: Answer
+    answer: EntryAnswer
     flow_said: str
     snapshot_hash: str
     owner_did: str

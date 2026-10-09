@@ -139,6 +139,22 @@
       "a settlement date or window is stated but not read into the terms",
       "SEC-msg holds a other topic beyond the extracted terms",
       "text not read into the terms: 'urgent', 'pre', 'approved', 'fastcapital', 'reply', ..."
+    ],
+    "covered_when": [],
+    "gaps_when": [
+      "the compiler could not account for every figure and request in the message: the message asserts authority or a prior agreement (URGENCY, PRE_APPROVAL, INSTRUCTION_OVERRIDE, PRIOR_AGREEMENT); the message asks for protected data; the message carries an unsolicited funding offer; a concession is claimed as previously agreed; CLAIMED_PRIOR_CONCESSION leaves current_terms_days unresolved; an amount in SEC-msg is not accounted for by the extracted terms; a rate in SEC-msg is not accounted for by the extracted terms; a settlement date or window is stated but not read into the terms; SEC-msg holds a other topic beyond the extracted terms; text not read into the terms: 'urgent', 'pre', 'approved', 'fastcapital', 'reply', ..."
+    ],
+    "notes_when": [
+      "the message asserts authority or a prior agreement (URGENCY, PRE_APPROVAL, INSTRUCTION_OVERRIDE, PRIOR_AGREEMENT)",
+      "the message asks for protected data",
+      "the message carries an unsolicited funding offer",
+      "a concession is claimed as previously agreed",
+      "CLAIMED_PRIOR_CONCESSION leaves current_terms_days unresolved",
+      "an amount in SEC-msg is not accounted for by the extracted terms",
+      "a rate in SEC-msg is not accounted for by the extracted terms",
+      "a settlement date or window is stated but not read into the terms",
+      "SEC-msg holds a other topic beyond the extracted terms",
+      "text not read into the terms: 'urgent', 'pre', 'approved', 'fastcapital', 'reply', ..."
     ]
   },
   "annualised": [],

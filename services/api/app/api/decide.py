@@ -213,7 +213,7 @@ def evaluate_offer(offer_id: str, body: EvaluateIn | None = None, lang: str = "e
         "evaluated_when": t(lang, "today", "今天"),
         "lang": lang,
         **last_read(rt.day, lang),
-        **owner_verdict_extras(bundle, offer, state, mandate),  # passed_checks, autonomy, annualised
+        **owner_verdict_extras(bundle, offer, state, mandate, lang, rt.day),  # passed_checks, autonomy, annualised (with their *_when)
         "bound_obligations": displayed([json.loads(o.model_dump_json()) for o in bundle.bound_obligations]),
         "notes": [{**json.loads(n.model_dump_json()), "message_when": business_text(state, n.message, rt.day, lang)}
                   for n in bundle.notes],

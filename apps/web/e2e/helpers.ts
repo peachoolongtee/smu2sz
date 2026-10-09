@@ -81,3 +81,15 @@ export async function sendCounter(scope: Page | Locator, option = ""): Promise<v
   await scope.getByTestId(option ? `deal-send-${option}` : "deal-send").click();
   await scope.getByTestId(option ? `deal-send-confirm-${option}` : "deal-send-confirm").click();
 }
+
+/**
+ * The Demo story page on a phone folds "More to show", "Today" and "The books" (one closed Disclosure each, `story-fold-<card id>`); a desktop shows them as
+ * cards. Opens the named fold when there is one and it is closed, so a spec can reach the controls inside on either layout.
+ */
+export async function openStoryFold(page: Page, card: "story-more" | "story-today" | "story-reset"): Promise<void> {
+  // Below 1024 px the page swaps the cards for folds once it has hydrated; wait for them rather than find the cards still there.
+  if ((page.viewportSize()?.width ?? 1440) >= 1024) return;
+  const fold = page.getByTestId(`story-fold-${card}`);
+  await expect(fold).toBeAttached();
+  if (!(await fold.evaluate((el) => (el as HTMLDetailsElement).open))) await fold.locator("> summary").click();
+}

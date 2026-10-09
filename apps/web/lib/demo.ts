@@ -4,7 +4,6 @@ import {
   borrowerFile,
   capexApply,
   capexEvaluate,
-  decideApproval,
   dealRecordId,
   demoBankReceipt,
   demoReset,
@@ -64,6 +63,17 @@ export interface DemoStep {
   owner?: boolean;
   /** A side link shown with the step (the evidence export on the last one). */
   link?: { route: string; label: "demo.link.evidence" };
+}
+
+/**
+ * Thrown by the owner's step when the cure still waits: the step never decides for the owner, so there is nothing for it to run.
+ * The caller opens the approval card instead (the card's Approve is the one decision) and leaves the story's pointer where it was.
+ */
+export class OwnerDecisionPending extends Error {
+  constructor() {
+    super(tNow("story.waitingOwner"));
+    this.name = "OwnerDecisionPending";
+  }
 }
 
 export const stepRoute = (step: Pick<DemoStep, "route">, demo: DemoState): string => (typeof step.route === "function" ? step.route(demo) : step.route);
@@ -239,11 +249,11 @@ export const DEMO_STEPS: DemoStep[] = [
     run: async () => {
       const row = await cureRow();
       if (!row) throw new Error(tNow("demo.err.cureNotQueued"));
-      // A second Run after the decision is a Show: an approved cure is never approved again, and a declined one is not approved for the owner.
+      // This step is a Show: it reads the owner's decision and never makes it. The owner's click on the approval card is the only approval;
+      // a cure that still waits is opened (OwnerDecisionPending), a declined one is not approved for the owner, an approved one is read again.
       if (row.status === "REJECTED") throw new Error(tNow("demo.err.declined"));
-      const decided = row.status === "PENDING" ? await decideApproval(row.id, "APPROVE") : row;
-      bump();
-      return { result: decided.execution?.summary_text ?? "" };
+      if (row.status === "PENDING") throw new OwnerDecisionPending();
+      return { result: row.execution?.summary_text ?? "" };
     },
   },
   {

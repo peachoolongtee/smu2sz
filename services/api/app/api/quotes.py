@@ -9,6 +9,7 @@ hold money as the display strings the home reads, so a figure is read back exact
 from __future__ import annotations
 
 import re
+from collections.abc import Sequence
 from fractions import Fraction
 from typing import Any, Literal
 
@@ -17,7 +18,17 @@ from app.api.home import _alert_actions as alert_actions
 from app.api.home import after_facts, plan_legs
 from app.api.presentation import cure_legs
 from app.decisions.facts import IfDecline, QuotedFact, QuotedLeg
-from app.domain.models import FinancialState, FundingPlan, Mandate, Operation
+from app.decisions.identity import decision_id_for
+from app.domain.models import (
+    ApplyForFacility,
+    DrawFacility,
+    FinancialState,
+    FundingPlan,
+    Mandate,
+    Operation,
+    RepayFacility,
+    SubmitInvoiceForFinancing,
+)
 from app.domain.money import Ratio
 
 _YUAN = re.compile(r"^(?P<sign>[-−])?¥(?P<whole>[\d,]+)\.(?P<cents>\d{2})$")
@@ -109,4 +120,82 @@ def build_quote(state: FinancialState, obs: list[Any], mandate: Mandate, alert: 
     )
 
 
-__all__ = ["build_quote", "fen_of"]
+# ---------------------------------------------------------------- a quote for a chat plan or a direct operation (ticket #84)
+# Neither starts from an alert, so there is no alert to price it: the quote is the figures of what was shown (the plan's cost lines and
+# total, the executor's own reason for queueing it) and the operations' own amounts, facilities and landing days.
+
+FUNDING_OPS = (DrawFacility, SubmitInvoiceForFinancing, RepayFacility, ApplyForFacility)
+_RATE_IN_REASON = re.compile(r"effective annual cost (\d+(?:\.\d+)?%)")
+
+
+def op_leg(op: Any) -> tuple[str | None, str | None, int]:
+    """(facility id, receivable id, amount in fen) of a funding operation: an advance's amount is its `advance_fen`."""
+    if isinstance(op, SubmitInvoiceForFinancing):
+        return op.facility_id, op.receivable_id, op.advance_fen
+    return getattr(op, "facility_id", None), getattr(op, "receivable_id", None), int(getattr(op, "amount_fen", 0))
+
+
+def decision_id_of(op: Any) -> str | None:
+    """The decision an operation belongs to (`app.decisions.identity`), as the log and the queue will read it."""
+    return decision_id_for(op.model_dump(mode="json"), op.idempotency_key, ())
+
+
+def _lands(state: FinancialState, op: Any, today: int) -> int | None:
+    if not isinstance(op, DrawFacility | SubmitInvoiceForFinancing):
+        return None
+    lead = next((f.lead_time_days for f in state.facilities if f.id == op.facility_id), 0)
+    return max(today, op.day) + lead
+
+
+def build_shown_quote(state: FinancialState, mandate: Mandate, ops: Sequence[Any], today: int, *, decision_id: str,
+                      alert_kind: str = "OPERATION", plan: FundingPlan | None = None, obs: list[Any] | None = None,
+                      total_cost_fen: int | None = None, rates: Sequence[Ratio | None] = (),
+                      above_ceiling: Sequence[bool] = (), needs_owner: bool | None = None) -> QuotedFact:
+    """The QUOTED fact for operations that no alert produced: a chat plan the owner was shown, or a direct operation.
+
+    `plan` is the router plan the operations were built from, one operation per action: its cost lines give each leg its cost and rate,
+    its landing days the arrival, and (with `obs`, the live obligations) the after-state is projected as the home does. Without a plan
+    each leg carries only what is known of it: the amount, the facility, the landing day from the facility's lead time and, when given,
+    the `rates` and `above_ceiling` flags the caller read from the executor's own reason. `alert_id` is the decision's own id (there is
+    no alert) and `alert_kind` says what the quote is about ("OPERATION", or "FACILITY_REPAYABLE" for a repayment)."""
+    by_index: dict[int, dict[str, Any]] = {}
+    plan_rates: dict[int, Ratio | None] = {}
+    restores: bool | None = None
+    first_short: int | None = None
+    if plan is not None and len(plan.actions) == len(plan.costs):
+        by_index = {leg["index"]: leg for leg in plan_legs(state, plan, today, "en")}
+        plan_rates = {i: rate_of(leg["rate_text"]) for i, leg in by_index.items()}
+        if obs is not None:
+            restores, first_short, _low = after_facts(state, obs, mandate, list(plan.actions), today)
+    legs: list[QuotedLeg] = []
+    for i, op in enumerate(ops):
+        facility_id, receivable_id, amount = op_leg(op)
+        row = by_index.get(i)
+        legs.append(QuotedLeg(
+            op_id=op.op_id, kind=op.kind, facility_id=facility_id, receivable_id=receivable_id, amount_fen=amount,
+            cost_fen=row["cost_fen"] if row is not None else None,
+            annual_rate=plan_rates.get(i) if row is not None else (rates[i] if i < len(rates) else None),
+            cost_days=None, cost_end_day=row["cost_due_day"] if row is not None else None,
+            lands_day=row["lands_day"] if row is not None else _lands(state, op, today),
+            above_ceiling=bool(row["above_apr_cap"]) if row is not None else (above_ceiling[i] if i < len(above_ceiling) else False),
+        ))
+    if needs_owner is None:
+        needs_owner = plan.needs_owner_approval if plan is not None else any(leg.above_ceiling for leg in legs)
+    return QuotedFact(
+        alert_id=decision_id, alert_kind=alert_kind, alert_day=None, state_version_shown=state.state_version,
+        source="router" if plan is not None else "cure", legs=legs,
+        total_cost_fen=total_cost_fen if total_cost_fen is not None else (plan.total_cost_fen if plan is not None else None),
+        cost_note=None, needs_owner=needs_owner, max_apr_bp=mandate.max_apr_bp, projected=restores is not None,
+        restores_reserve=restores, after_first_short_day=first_short, horizon_days=mandate.horizon_days, if_decline=None,
+        residual_shortfall_fen=None,
+    )
+
+
+def reason_rate(reason: str | None) -> tuple[Ratio | None, bool]:
+    """(the yearly rate, whether it is above the ceiling) in the executor's reason for queueing a borrowing ("effective annual cost
+    32.50% is above the mandate's 15.00% ceiling ..."): the executor's own cost line, read, not recomputed."""
+    m = _RATE_IN_REASON.search(reason or "")
+    return (rate_of(m.group(1)) if m else None), bool(m) and "is above the mandate" in (reason or "")
+
+
+__all__ = ["FUNDING_OPS", "build_quote", "build_shown_quote", "decision_id_of", "fen_of", "op_leg", "reason_rate"]

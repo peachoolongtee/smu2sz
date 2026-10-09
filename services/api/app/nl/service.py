@@ -630,9 +630,11 @@ def _decide_approval(ctx: NlContext, slots: Slots, approve: bool, text: str = ""
     try:
         r: OperationResult = ctx.executor.decide(aid, approve, actor)
     except NotFound:
-        return Turn(intent=intent, reply=t(ctx, f"{aid} is not in the approvals queue.", f"{aid} 不在审批队列中。"))
+        return Turn(intent=intent, facts={"approval": "unknown", "id": aid},
+                    reply=t(ctx, f"{aid} is not in the approvals queue.", f"{aid} 不在审批队列中。"))
     except ApprovalAlreadyDecided:
-        return Turn(intent=intent, reply=t(ctx, f"{aid} was already decided.", f"{aid} 已处理。"))
+        return Turn(intent=intent, facts={"approval": "already", "id": aid},
+                    reply=t(ctx, f"{aid} was already decided.", f"{aid} 已处理。"))
     ctx.results.append(r)
     verb = t(ctx, "Approve", "批准") if approve else t(ctx, "Decline", "驳回")
     steps.result("DECIDE_APPROVAL", f"{verb} {aid} ({r.kind})", r)
@@ -647,7 +649,10 @@ def _decide_approval(ctx: NlContext, slots: Slots, approve: bool, text: str = ""
         rest = [a for a in _pending_approvals(ctx) if a.id != aid]
         if rest:
             reply += t(ctx, " Still waiting for your decision: ", " 仍待您审批：") + "; ".join(f"{a.id} ({a.reason})" for a in rest)
-    return Turn(intent=intent, reply=reply, plan=steps.items)
+    typed = parse_operation(rec.op_json) if rec is not None else None  # None for a payload the parser does not know
+    facts = {"approval": "decided", "id": aid, "approve": approve, "owner": actor == Actor.OWNER, "status": r.status, "op": typed,
+             "message": r.message}
+    return Turn(intent=intent, reply=reply, plan=steps.items, facts=facts)
 
 
 TIER3_OPS = {"SIGN_PERSONAL_GUARANTEE": SignPersonalGuarantee, "PLEDGE_COLLATERAL": PledgeCollateral,

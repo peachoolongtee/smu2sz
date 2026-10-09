@@ -105,7 +105,10 @@
         "plan": "no funding needed",
         "offer_lowest_without_funding": "¥312,900.00",
         "offer_lowest_day": "30"
-      }
+      },
+      "label_when": "Minimum cash",
+      "observed_when": "¥312,900.00 in 30 days",
+      "limit_when": "≥ ¥300,000.00"
     },
     {
       "code": "MAX_APR",
@@ -120,7 +123,10 @@
         "implied_annual_rate": "6.1139%",
         "line_plus_partial_at_offered_rate": "¥841.64 + ¥1,281.41 = ¥2,123.05",
         "router_optimum": "¥841.64 + ¥2,272.29 = ¥3,113.93"
-      }
+      },
+      "label_when": "Implied cost of early settlement of the ¥420,000.00 invoice to Foshan Home Retail Co. due in 32 days",
+      "observed_when": "6.11%",
+      "limit_when": "15.00%"
     },
     {
       "code": "EARLY_PAY_VS_PLAN",
@@ -134,7 +140,10 @@
         "cost_with_offer": "¥2,100.00",
         "cost_without_offer": "¥3,113.93",
         "legs": "RCV-A at 0.50%"
-      }
+      },
+      "label_when": "Early payment against the router's plan",
+      "observed_when": "¥2,100.00",
+      "limit_when": "< ¥3,113.93"
     },
     {
       "code": "DSCR_MIN",
@@ -142,7 +151,10 @@
       "observed": "2.00x",
       "limit": "≥ 1.25x",
       "formula": "EBITDA_m / DS_m = ¥90,000.00 / ¥45,000.00",
-      "inputs": {}
+      "inputs": {},
+      "label_when": "Lowest monthly DSCR (month 1)",
+      "observed_when": "2.00x",
+      "limit_when": "≥ 1.25x"
     },
     {
       "code": "LEVERAGE_MAX",
@@ -156,7 +168,10 @@
         "EBITDA_m": "¥90,000.00",
         "leverage_exact": "97/72",
         "definition": "DebtPosition principal + drawn balances counted in leverage, at month end"
-      }
+      },
+      "label_when": "Highest monthly leverage (month 1)",
+      "observed_when": "1.35x",
+      "limit_when": "≤ 2.50x"
     },
     {
       "code": "CLEAN_DOWN",
@@ -169,7 +184,10 @@
         "run_start_day": "0",
         "run_end_day": "120",
         "horizon_days": "120"
-      }
+      },
+      "label_when": "Bank credit line: clean-down",
+      "observed_when": "121 days at zero",
+      "limit_when": "≥ 30 consecutive days"
     }
   ],
   "autonomy": {
@@ -180,7 +198,12 @@
       "early payment of ¥420,000.00 of RCV-A at 0.50% on day 2"
     ],
     "gaps": [],
-    "notes": []
+    "notes": [],
+    "covered_when": [
+      "early payment of ¥420,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. due in 32 days at 0.50% in 2 days"
+    ],
+    "gaps_when": [],
+    "notes_when": []
   },
   "annualised": [
     {

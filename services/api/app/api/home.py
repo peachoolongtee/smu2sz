@@ -21,7 +21,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from app.alerts import Alert, AlertKind, Severity, alerts, reconcile
 from app.api.auth import require_owner
 from app.api.causality import Causality, forecast_of, mark_changed
-from app.api.decisions import decision_summary, load_context, remaining_links, remaining_task_view
+from app.api.decisions import Reconciled, decision_summary, load_context, remaining_links, remaining_task_view
 from app.api.display import displayed
 from app.api.presentation import (
     COMMERCIAL_KINDS,
@@ -60,7 +60,7 @@ from app.api.presentation import (
 )
 from app.api.runtime import get_runtime
 from app.books import current_books
-from app.decisions.identity import decision_id_for
+from app.decisions.identity import deal_id, decision_id_for
 from app.domain.models import (
     FinancialState,
     FundingAction,
@@ -380,12 +380,14 @@ def _series(state: FinancialState, traj: Any, lang: str = "en", from_day: int = 
 _EXPECTED_RECEIPTS = (LedgerEventKind.RECEIPT, LedgerEventKind.EARLY_RECEIPT)
 
 
-def forecast_basis(state: FinancialState, store: Any, traj: Any, action: dict[str, Any] | None, today: int, lang: str) -> dict[str, Any]:
+def forecast_basis(state: FinancialState, store: Any, traj: Any, action: dict[str, Any] | None, today: int, lang: str,
+                   entries: Any = None) -> dict[str, Any]:
     """What the cash chart counts, in words and in two sums (audit section 16): the invoice payments the engine expects at their due
     dates and the funding already committed; overdue payments are not counted. `confirmed_receipts_fen` is the sum of the receipts in
     the log; `expected_receipts_fen` the sum of the receipts the projection already posted from today on. Both are sums of amounts
     that exist elsewhere; nothing is projected here. The assumed repayment day of the line is the plan's own (None without one)."""
-    entries, _ = read_entries(store.operations())
+    if entries is None:  # the request's log, when the decision context has already parsed it
+        entries, _ = read_entries(store.operations())
     confirmed = sum(_receipt_fen(e.payload) for e in entries
                     if e.kind == "RECEIVE_PAYMENT" and e.result.status == OperationStatus.EXECUTED)
     expected = sum(ev.amount_fen for d in traj.days if d.day >= today for ev in d.events
@@ -718,6 +720,11 @@ def _approvals(state: FinancialState, obs: list[Any], mandate: Mandate, approval
     return out
 
 
+def _new_reconciled(store: Any) -> Reconciled:
+    """One request's reconciliation, once. It asks this module's `reconcile` at the moment it is needed (never a copy taken at import)."""
+    return Reconciled(store, lambda st, day: reconcile(st, day=day))
+
+
 class Partial:
     """The supporting reads that failed while the home was built (F21). The home never fails for one: the conclusion and the plan stand, and
     `partial` names what could not be read so the page can say "Some supporting facts could not be read: ..." beside them."""
@@ -746,9 +753,11 @@ class _Reconciliation:
     promises (`report`) and which of their windows are still open (`live`). When it cannot be read the promises read as none and the
     home says so (`Partial`)."""
 
-    def __init__(self, state: FinancialState, store: Any, today: int, partial: Partial | None = None) -> None:
+    def __init__(self, state: FinancialState, store: Any, today: int, partial: Partial | None = None,
+                 reconciled: Reconciled | None = None) -> None:
         self._state, self._store, self._today = state, store, today
         self._partial = partial
+        self._reconciled = reconciled if reconciled is not None else _new_reconciled(store)
         self._report: Any = None
         self._live: frozenset[tuple[str, str]] | None = None
 
@@ -756,7 +765,7 @@ class _Reconciliation:
     def report(self) -> Any:
         if self._report is None:
             try:
-                self._report = reconcile(self._store, day=self._today)
+                self._report = self._reconciled.report(self._today)
             except Exception:
                 logging.getLogger("termsledger.decisions").exception("the reconciliation could not be read for the home")
                 if self._partial is not None:
@@ -824,16 +833,38 @@ def _warning_words(state: FinancialState, a: Alert, recon: _Reconciliation, toda
     return {"title": title, "detail": detail}
 
 
+def _row_ids(row_id: str, *, receivable_id: Any = None, commitment_id: Any = None, decision_id: str | None = None) -> dict[str, Any]:
+    """The ids a change row carries so the web needs no reading of its sentences: its own `id`, and the invoice, the agreement and the
+    decision it is about (null where none applies). `superseded_by` is set later, by `_mark_superseded`."""
+    return {"id": row_id, "receivable_id": receivable_id if isinstance(receivable_id, str) else None,
+            "commitment_id": commitment_id if isinstance(commitment_id, str) else None, "decision_id": decision_id,
+            "superseded_by": None}
+
+
+def _mark_superseded(items: list[dict[str, Any]]) -> None:
+    """A LATE row that repeats an invoice a part-paid row already tells better says so: `superseded_by` is the `id` of that row, so the web
+    drops it without logic of its own. The part-paid row is the LATE row that carries the four facts (`window_state`: what arrived, what it
+    cleared, what remains, whether the early-payment window has ended). Only a row that is on the list can supersede, so dropping the
+    other never loses the invoice from the page; a no-receipt invoice has no such row and nothing is marked."""
+    told = {r["receivable_id"]: r["id"] for r in items
+            if r["kind"] == "LATE" and r.get("window_state") and r.get("receivable_id")}
+    for r in items:
+        if r["kind"] == "LATE" and not r.get("window_state") and r.get("receivable_id") in told:
+            r["superseded_by"] = told[r["receivable_id"]]
+
+
 def _changes(state: FinancialState, store: Any, found: list[Alert], today: int, lang: str,
-             since_day: int | None = None, causality: Causality | None = None, partial: Partial | None = None) -> list[dict[str, Any]]:
+             since_day: int | None = None, causality: Causality | None = None, partial: Partial | None = None,
+             reconciled: Reconciled | None = None, entries: Any = None) -> list[dict[str, Any]]:
     """Since the owner's last visit when the web says when that was (`since_day`), else the last week of the clock. With a `Causality`
     each row also says `what_changed`, `why_it_matters` (the forecast as of now, not a replay) and `what_remains` (the decision record's)."""
     since = since_day if since_day is not None else today - RECENT_DAYS
     items: list[dict[str, Any]] = []
     commitments = store.commitments()
     agreements = {c.id: party_name(state, c.counterparty_id) for c in commitments}
-    recon = _Reconciliation(state, store, today, partial)
-    entries, _ = read_entries(store.operations())
+    recon = _Reconciliation(state, store, today, partial, reconciled)
+    if entries is None:  # the request's log, parsed once by the decision context when it has one
+        entries, _ = read_entries(store.operations())
     # An approval the owner has answered: its "waiting" entry is history, and when the decision itself is in the window the
     # decision is the news (one operation never reads "You approved" and "Waiting for your approval" together).
     decided_ids = {a.id for a in store.approvals() if str(getattr(a.status, "value", a.status)) != "PENDING"}
@@ -855,8 +886,9 @@ def _changes(state: FinancialState, store: Any, found: list[Alert], today: int, 
             "WAITING" if e.result.status == OperationStatus.PENDING_APPROVAL else
             ("RECEIPT" if e.kind == "RECEIVE_PAYMENT" else "OPERATION"))
         text = e.result.message or e.kind.replace("_", " ").lower()
+        cmt = None
         if e.kind in ("ACCEPT_OFFER", "RECORD_COMMITMENT") and e.result.status == OperationStatus.EXECUTED:
-            cmt = next((c for c in store.commitments() if c.id in (e.result.message or "")), None)
+            cmt = next((c for c in commitments if c.id in (e.result.message or "")), None)
             if cmt is not None:
                 text = agreement_words(state, cmt.counterparty_id, cmt.forward_value_fen, lang)
                 kind = "AGREEMENT"
@@ -866,21 +898,27 @@ def _changes(state: FinancialState, store: Any, found: list[Alert], today: int, 
                              approval_id=e.result.approval_id, day=day, today=today, lang=lang,
                              decided=e.result.approval_id in decided_ids, agreements=agreements, window_live=live)
                  if kind != "AGREEMENT" else {"event_text": None, "event_detail": None})
+        did = decision_id_for(e.payload, e.idempotency_key, commitments, approval_id=e.result.approval_id)
         item: dict[str, Any] = {"day": day, "seq": e.seq, "kind": kind, "actor": who, "text": shown,
                 "event_text": words["event_text"] or shown, "event_detail": words["event_detail"],
-                "when": when_text(day, today, lang)}
+                "when": when_text(day, today, lang),
+                **_row_ids(f"op:{e.seq}", receivable_id=(e.payload or {}).get("receivable_id"),
+                           commitment_id=cmt.id if kind == "AGREEMENT" and cmt is not None else (e.payload or {}).get("commitment_id"),
+                           decision_id=did)}
         if causality is not None:
-            did = decision_id_for(e.payload, e.idempotency_key, commitments, approval_id=e.result.approval_id)
             item.update(causality.fields(status=e.result.status.value, event_text=item["event_text"], decision_id=did,
                                          decided=e.result.approval_id in decided_ids))
         items.append(item)
     for a in found:
         if a.kind == AlertKind.RECEIVABLE_PAST_DUE:
             late = business_text(state, a.detail.split(". ")[0] + ".", today, lang, agreements) or ""
+            promised = next((c for c in commitments if c.id == a.commitment_id), None) if a.commitment_id else None
             row: dict[str, Any] = {"day": a.day, "seq": None, "kind": "LATE", "actor": "", "text": late,
-                                   "event_text": late, "event_detail": None, "when": when_text(a.day, today, lang)}
+                                   "event_text": late, "event_detail": None, "when": when_text(a.day, today, lang),
+                                   **_row_ids(f"alert:{a.id}", receivable_id=a.receivable_id, commitment_id=a.commitment_id,
+                                              decision_id=deal_id(promised.offer_id) if promised is not None else None)}
             cid, oid = a.inputs.get("commitment_id"), a.inputs.get("obligation_id")
-            if cid and "did not arrive" in late:
+            if cid and "did not arrive" in a.detail.split(". ")[0]:  # the alert's own sentence, so the Chinese home reads it too
                 part = _part_arrived(state, recon.report, cid, oid, today, lang)
                 if part is not None:  # the promise was part kept: say what arrived, never "did not arrive" (F25)
                     row.update(part)
@@ -892,9 +930,10 @@ def _changes(state: FinancialState, store: Any, found: list[Alert], today: int, 
                        f"来自{facility_name(state, lot.facility_id)}的 {fmt_yuan(lot.principal_fen)} 已于{when_text(lot.arrival_day, today, lang)}到账。")
             items.append({"day": lot.arrival_day, "seq": None, "kind": "LANDED", "actor": "",
                           "when": when_text(lot.arrival_day, today, lang), "text": landed,
-                          "event_text": landed, "event_detail": None})
+                          "event_text": landed, "event_detail": None, **_row_ids(f"lot:{lot.id}")})
     items.sort(key=lambda x: (-(x["day"] or 0), -(x["seq"] or 0)))
     items = items[:MAX_CHANGES]
+    _mark_superseded(items)
     if causality is not None:
         for item in items:
             if "what_changed" not in item:  # a late payment or a landing: the forecast now is its consequence
@@ -903,9 +942,10 @@ def _changes(state: FinancialState, store: Any, found: list[Alert], today: int, 
     return items
 
 
-def _receivables(state: FinancialState, store: Any, today: int, lang: str, partial: Partial | None = None) -> dict[str, Any]:
+def _receivables(state: FinancialState, store: Any, today: int, lang: str, partial: Partial | None = None,
+                 reconciled: Reconciled | None = None) -> dict[str, Any]:
     try:
-        report = reconcile(store, day=today)
+        report = (reconciled if reconciled is not None else _new_reconciled(store)).report(today)
     except Exception:  # the block is a supporting read: it reads as unknown, never as "nothing owed", and the home says so
         logging.getLogger("termsledger.decisions").exception("the reconciliation could not be read for the receivables")
         if partial is not None:
@@ -950,10 +990,12 @@ def _in_transit(state: FinancialState, today: int, lang: str) -> dict[str, Any] 
         for lot in sorted(lots, key=lambda lt: (lt.arrival_day, lt.id))]}
 
 
-def _context(rt: Any, partial: Partial | None = None) -> Any:
-    """The decision record's context, read once for the home (None when it cannot be read: the home never goes down for it)."""
+def _context(rt: Any, partial: Partial | None = None, found: list[Alert] | None = None,
+             reconciled: Reconciled | None = None) -> Any:
+    """The decision record's context, read once for the home (None when it cannot be read: the home never goes down for it). It is given
+    the alerts and the reconciliation the home already holds, so neither runs a second time."""
     try:
-        return load_context(rt)
+        return load_context(rt, found=found, reconciled=reconciled)
     except Exception:
         logging.getLogger("termsledger.decisions").exception("the decision record could not be read for the home")
         if partial is not None:
@@ -1031,18 +1073,22 @@ def get_home(lang: str = "en", since_day: int | None = None) -> dict[str, Any]:
                                   else t(lang, "A funding plan is ready, within your signed limits. No approval is needed.",
                                          "融资方案已准备好，在您签署的授权内，无需批准。"))
         series = _series(books.state, traj, lang, today)
-        basis = forecast_basis(books.state, rt.store, traj, action, today, lang)
+        # One reconciliation, one set of alerts and one parse of the log for the whole request: the decision record is read first and the
+        # rest of the home reuses what it holds.
+        partial = Partial()
+        reconciled = _new_reconciled(rt.store)
+        record = _context(rt, partial, found, reconciled)
+        basis = forecast_basis(books.state, rt.store, traj, action, today, lang, record.entries if record is not None else None)
         queue = _approvals(books.state, books.with_([]), mandate, approvals, found, today, lang,
                            use_router=rt.settings.features.debt_desk, commitments=rt.store.commitments())
-        partial = Partial()
-        record = _context(rt, partial)
         causality = Causality(record, forecast_of(traj, today, mandate.min_cash_fen), today, lang)
-        changes = _changes(books.state, rt.store, found, today, lang, since_day, causality, partial)
-        receivables = _receivables(books.state, rt.store, today, lang, partial)
+        changes = _changes(books.state, rt.store, found, today, lang, since_day, causality, partial, reconciled,
+                           record.entries if record is not None else None)
+        receivables = _receivables(books.state, rt.store, today, lang, partial, reconciled)
         in_transit = _in_transit(books.state, today, lang)
         funding_lots = _funding_lots(books.state, today, lang)
         agreements = {c.id: party_name(state, c.counterparty_id) for c in rt.store.commitments()}
-        recon = _Reconciliation(books.state, rt.store, today, partial)
+        recon = _Reconciliation(books.state, rt.store, today, partial, reconciled)
         warnings = [{"id": a.id, "kind": a.kind.value, **_warning_words(state, a, recon, today, lang, agreements), "day": a.day,
                      "when": when_text(a.day, today, lang)} for a in found if a.severity == Severity.WARNING]
         open_decisions, remaining = _decision_record(rt, lang, record, partial)

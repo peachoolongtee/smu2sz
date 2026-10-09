@@ -810,7 +810,7 @@ economics; QUOTED: the legs, costs, landing and after-state the owner saw when a
   is a pure function of the state: owner response, buyer clarification, owner approval, bank receipt, invoice issue, funding settlement,
   owner decision, or nothing.
 - **Write points** are in the API layer only, inside the route's lock, after the canonical event: `POST /offers/{id}/evaluate` writes
-  EVALUATED, `POST /negotiate/{id}` writes SENT, `POST /alerts/{id}/act` writes QUOTED. `record_fact()` never fails a route: on a store
+  EVALUATED, `POST /negotiate/{id}` writes SENT, `POST /alerts/{id}/act` writes QUOTED, and so do a chat "go ahead" on a plan shown earlier (the quote kept in the session) and a direct `POST /operations` the executor queued (its own figures). `record_fact()` never fails a route: on a store
   error it logs and the response says `decision_recorded: false`. A missing fact reads "not recorded"; history is never recomputed from
   today's alert, plan or books. The table is insert-if-absent on `(decision_id, fact, fact_key)`, append-only, never on the hash chain,
   and cleared with the ledger by the demo reset.

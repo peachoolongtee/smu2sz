@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import json
 import logging
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field, replace
 from typing import Any
 
@@ -58,7 +58,7 @@ from app.decisions import (
 )
 from app.decisions.facts import Fact, record_for
 from app.decisions.identity import deal_id, decision_id_for, family_of, offer_id_of
-from app.decisions.state import RESERVE_ALERT, derive, newest_reserve_decision
+from app.decisions.state import RESERVE_ALERT, RecordIndex, derive, newest_reserve_decision
 from app.domain.models import CommitmentStatus, CompiledOffer, FinancialState, Mandate, OperationStatus
 from app.domain.money import fmt_yuan
 from app.financial import EngineError
@@ -104,6 +104,31 @@ def latest_verdict_for(rt: Runtime, offer_id: str):
 # ---------------------------------------------------------------- reading the stores once
 
 
+class Reconciled:
+    """`reconcile(store, day)` once per day for a request. A route that needs the reconciliation in more than one place (the home reads it
+    for its sentences, its receivables and the decision record) asks here, so the log is reconciled once and every reader sees the same
+    report. A failure is kept too and raised again to each asker, so each keeps handling it as it always did (and the work is not
+    repeated)."""
+
+    def __init__(self, store: Any, reconciler: Callable[[Any, int], Any] | None = None) -> None:
+        self._store = store
+        self._reconciler = reconciler
+        self._by_day: dict[int, Any] = {}
+        self._failed: dict[int, Exception] = {}
+
+    def report(self, day: int) -> Any:
+        if day in self._failed:
+            raise self._failed[day]
+        if day not in self._by_day:
+            try:
+                self._by_day[day] = (self._reconciler(self._store, day) if self._reconciler is not None
+                                     else reconcile(self._store, day=day))
+            except Exception as exc:
+                self._failed[day] = exc
+                raise
+        return self._by_day[day]
+
+
 @dataclass
 class Context:
     """Everything the read model needs, read once from the stores. Build it under `rt.lock`."""
@@ -122,17 +147,20 @@ class Context:
     open_alerts: tuple[Alert, ...]
     report: Any
     _states: dict[str, tuple[DecisionState, DecisionInputs]] | None = field(default=None, repr=False)
+    _index: RecordIndex | None = field(default=None, repr=False)
+
+    @property
+    def index(self) -> RecordIndex:
+        """The records grouped by decision, built once for the request (the log and the approvals are read through it, never rescanned)."""
+        if self._index is None:
+            self._index = RecordIndex.of(log=self.entries, approvals=self.approvals, commitments=self.commitments, facts=self.facts,
+                                         verdicts=self.verdicts, promised=self.promised, state=self.state)
+        return self._index
 
     def candidate_ids(self) -> list[str]:
         ids: dict[str, None] = {}
-        for e in self.entries:
-            did = decision_id_for(e.payload, e.idempotency_key, self.commitments, approval_id=e.result.approval_id)
-            if did:
-                ids[did] = None
-        for a in self.approvals:
-            did = approval_decision(a, self.commitments)
-            if did:
-                ids[did] = None
+        ids.update(dict.fromkeys(self.index.runs))
+        ids.update(dict.fromkeys(self.index.approval_candidates))
         for v in self.verdicts:
             ids[deal_id(v.offer_id)] = None
         for c in self.commitments:
@@ -153,7 +181,7 @@ class Context:
         return DecisionInputs(
             decision_id=decision_id, today=self.today, offers=(offer,) if offer is not None else (), verdicts=self.verdicts,
             commitments=self.commitments, approvals=self.approvals, log=self.entries, facts=self.facts, state=self.state,
-            promised=self.promised, alerts=self.open_alerts,
+            promised=self.promised, alerts=self.open_alerts, index=self.index,
         )
 
     def states(self) -> dict[str, tuple[DecisionState, DecisionInputs]]:
@@ -194,17 +222,21 @@ def approval_decision(a: ApprovalRecord, commitments: Any) -> str | None:
     return decision_id_for(payload, key if isinstance(key, str) else "", commitments, approval_id=a.id)
 
 
-def load_context(rt: Runtime) -> Context:
-    """Read the stores once (call under `rt.lock`)."""
+def load_context(rt: Runtime, *, found: Sequence[Alert] | None = None, reconciled: Reconciled | None = None) -> Context:
+    """Read the stores once (call under `rt.lock`). A route that has already run `alerts()` for this request passes them as `found`, and
+    one that reconciles in more than one place passes its `Reconciled`, so neither runs twice."""
     store = rt.store
     state, mandate = store.get_state(), store.get_mandate()
     commitments = tuple(store.commitments())
+    if found is not None:
+        open_found = tuple(found)
+    else:
+        try:
+            open_found = tuple(alerts(state, mandate, store, rt.day))
+        except EngineError:
+            open_found = ()
     try:
-        found = tuple(alerts(state, mandate, store, rt.day))
-    except EngineError:
-        found = ()
-    try:
-        report = reconcile(store, day=rt.day)
+        report = (reconciled if reconciled is not None else Reconciled(store)).report(rt.day)
         promised, receipts = tuple(report.promised), tuple(report.receipts)
     except Exception:  # noqa: BLE001  the record still derives; promises and receipts read as empty
         report, promised, receipts = None, (), ()
@@ -213,7 +245,7 @@ def load_context(rt: Runtime) -> Context:
     return Context(
         rt=rt, state=state, mandate=mandate, today=max(rt.day, state.as_of_day), commitments=commitments,
         approvals=tuple(store.approvals()), entries=tuple(entries), verdicts=tuple(store.verdicts()),
-        facts=tuple(facts_store.decision_facts()), promised=promised, receipts=receipts, open_alerts=found, report=report,
+        facts=tuple(facts_store.decision_facts()), promised=promised, receipts=receipts, open_alerts=open_found, report=report,
     )
 
 
@@ -532,6 +564,8 @@ def decision_detail(ctx: Context, ds: DecisionState, inp: DecisionInputs, lang: 
         o = ds.offer
         source = {"kind": "OFFER", "offer_id": o.offer_id, "version": o.version, "counterparty_name": party_name(ctx.state, o.counterparty_id),
                   "doc_ids": list(o.doc_ids), "received_day": o.received_day, "received_when": when_text(o.received_day, ctx.today, lang)}
+    elif ds.quote is not None and ds.quote.alert_id == ds.decision_id:  # a chat plan or a direct operation: no alert behind it
+        source = {"kind": "OPERATION"}
     elif ds.quote is not None:
         source = {"kind": "ALERT", "alert_id": ds.quote.alert_id, "alert_kind": ds.quote.alert_kind, "alert_day": ds.quote.alert_day}
     else:
@@ -609,4 +643,4 @@ def get_decision(decision_id: str, lang: str = "en") -> dict[str, Any]:
         return decision_detail(ctx, ds, inp, lang)
 
 
-__all__ = ["Context", "decision_detail", "decision_summary", "family_of", "load_context", "record_fact", "router"]
+__all__ = ["Context", "Reconciled", "decision_detail", "decision_summary", "family_of", "load_context", "record_fact", "router"]

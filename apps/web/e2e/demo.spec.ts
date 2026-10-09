@@ -190,6 +190,42 @@ test("the approve step needs the owner's click: nothing approves while the story
   expect(await activityRows(page, "SUBMIT_INVOICE_FOR_FINANCING")).toBe(advances);
 });
 
+test("Back then Next only shows the steps already finished: the ledger, the clock and the receipt do not move", async ({ page }) => {
+  test.setTimeout(120_000);
+  await page.goto("/demo");
+  await walkStory(page, 5); // the buyer asks, FLOW decides, the agreement acts, cash, the synthetic bank event
+  const entries = await ledgerEntries(page);
+  expect(entries).toBeGreaterThan(0);
+  expect(await activityRows(page, "RECEIVE_PAYMENT")).toBe(1);
+  await page.goto("/demo");
+  await expect(page.getByTestId("home-day")).toHaveText(/^Day \d+$/);
+  const day = await page.getByTestId("home-day").textContent();
+
+  const back = page.getByRole("button", { name: "Back" });
+  await back.click();
+  await expect(stripOf(page)).toContainText(`step 4 of ${STORY_STEPS}`);
+  await back.click();
+  await expect(stripOf(page)).toContainText(`step 3 of ${STORY_STEPS}`);
+  // Next is a Show up to the highest finished step: the pointer moves, the screen opens, nothing runs.
+  await page.getByTestId("demo-next").click();
+  await expect(stripOf(page)).toContainText(`step 4 of ${STORY_STEPS}`);
+  await expect(page).toHaveURL(/\/cash/);
+  await page.getByTestId("demo-next").click();
+  await expect(stripOf(page)).toContainText(`step 5 of ${STORY_STEPS}`);
+  await expect(page).toHaveURL(/\/receivables/);
+  expect(await ledgerEntries(page)).toBe(entries);
+  expect(await activityRows(page, "RECEIVE_PAYMENT")).toBe(1);
+  await page.goto("/demo");
+  await expect(page.getByTestId("home-day")).toHaveText(day ?? "");
+  // The story page agrees: every step up to the fifth is still done, and the next one runs (Run) rather than shows.
+  await expect(page.getByTestId("story-show-5")).toBeVisible();
+  await expect(page.getByTestId("story-run-6")).toBeEnabled();
+  // Beyond the highest finished step Next runs: the sixth step lets time pass.
+  await page.getByTestId("demo-next").click();
+  await expect(stripOf(page)).toContainText(`step 6 of ${STORY_STEPS}`);
+  await expect(page.getByTestId("demo-step-narration")).toContainText("days passed");
+});
+
 test("a step waits for the one before it: scenes and Run buttons ahead are disabled, the next one is not", async ({ page }) => {
   await page.goto("/demo");
   const jumps = page.getByRole("list", { name: "Demo scenes" }).getByRole("button");

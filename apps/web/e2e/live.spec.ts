@@ -654,14 +654,15 @@ test("Deals: the workspace is the API's, in its order, and ?buyer= selects the b
 test("Cash: the comparison arrives grouped and ordered by the API, and the forecast says what it counts", async ({ page, request }) => {
   await ownerPost(request)("/demo/reset", {});
   await page.goto("/cash");
-  await expect(page.getByTestId("cash-options-order")).toContainText("The recommended plan first");
+  // The recommended plan is the plan card's, said once; the options under it are the alternatives, with no ordering sentence that starts from the plan.
+  await expect(page.getByTestId("cash-options-list")).toBeVisible();
+  await expect(page.getByTestId("cash-options-order")).toHaveCount(0);
   expect(await page.getByTestId("cash-options-list").locator("[data-group]").evaluateAll((els) => els.filter((el) => (el.getAttribute("data-testid") ?? "").startsWith("cash-options-")).map((el) => el.getAttribute("data-group")))).toEqual([
-    "RECOMMENDED",
     "CONDITIONAL_ON_BUYER",
     "INSUFFICIENT",
     "NOT_AVAILABLE_YET",
   ]);
-  await expect(page.getByTestId("cash-options-RECOMMENDED")).toContainText("#1");
+  await expect(page.getByTestId("cash-options-RECOMMENDED")).toHaveCount(0);
   await expect(page.getByTestId("cash-options-CONDITIONAL_ON_BUYER")).not.toContainText("#");
   await expect(page.locator("#cash-chart")).toContainText("Expected invoice payments at their due dates and committed funding; overdue payments are excluded");
   await expect(page.getByTestId("cash-read-when")).toHaveText("Cash read today");

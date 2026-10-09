@@ -1,6 +1,6 @@
 import type { APIRequestContext, Page } from "@playwright/test";
 import { DEMO_TOKEN, expect, proseOf, test } from "./fixtures";
-import { filledBrand, resetBooks, runPlan } from "./helpers";
+import { filledBrand, openStoryFold, resetBooks, runPlan } from "./helpers";
 
 /**
  * The strategy MVP surfaces (wayfinder map #47, Wave 5): the cash price sentence on Cash & funding, the collections worth on
@@ -35,6 +35,7 @@ test.beforeEach(async ({ request }) => {
 /** The mock: the story page's clock moves the simulated day. */
 async function advanceMockTo34(page: Page) {
   await page.goto("/demo");
+  await openStoryFold(page, "story-today");
   await page.getByTestId("home-days").fill("34");
   await page.getByTestId("home-advance").click();
   await expect(page.getByTestId("home-day")).toHaveText("Day 34");
@@ -95,6 +96,12 @@ test.describe("desktop", () => {
     await expect(sentence).toContainText("%");
     await expect(sentence).toContainText("saves you ¥89.11 of funding cost per ¥10,000");
     await expect(page.locator("#cash-answer").getByTestId("cash-price-sentence")).toHaveCount(1);
+    // One line: the first clause. The rest of the server's sentence is one fold away, closed.
+    expect((await sentence.boundingBox())?.height ?? 99).toBeLessThanOrEqual(24);
+    const more = page.getByTestId("cash-price-more");
+    await expect(more).not.toHaveAttribute("open", "");
+    await more.locator("> summary").click();
+    await expect(page.getByTestId("cash-price-rest")).toContainText("after that, earlier cash saves nothing");
     expect(await sentence.innerText()).not.toMatch(DAY_N);
     expect(await proseOf(page)).not.toMatch(DAY_N);
     expect(await filledBrand(page)).toBeLessThanOrEqual(1);
@@ -135,11 +142,14 @@ test.describe("desktop", () => {
   test("Receivables day 34: the late invoice leads with Call now, and the existing columns and ids are intact", async ({ page, request }) => {
     await advanceTo34(page, request);
     await page.goto("/receivables");
-    const rows = page.locator("#recv-open tbody tr");
+    const rows = page.locator("#recv-open tbody tr:not([data-group])");
     await expect(rows.first()).toHaveAttribute("data-testid", "recv-RCV-A");
     // Ids are level 2: not in the row, the server's rank is a numeral, and the sentence opens from the row's chevron.
     await expect(rows.first()).not.toContainText("RCV-A");
     await expect(rows.first().locator("td").first()).toHaveText("1");
+    // The overdue invoice is pinned under its own heading; the rest sit under the ranking's, and the server's ranking note stays.
+    await expect(page.getByTestId("recv-group-overdue")).toHaveText("Overdue first");
+    await expect(page.getByTestId("recv-group-rest")).toHaveText("Ranked by what collecting saves you");
     await expect(page.getByTestId("recv-ranking-note")).toHaveCount(1);
     await expect(page.getByTestId("recv-worth-RCV-A")).toContainText("Saves ¥");
     await page.getByTestId("recv-toggle-RCV-A").click();

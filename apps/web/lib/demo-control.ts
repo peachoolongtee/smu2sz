@@ -3,8 +3,8 @@
 import { demoReset } from "./api";
 import { ApiError } from "./errors";
 import { errorMessage } from "./error-text";
-import { demoStore, recordFacts, resetSession, selectStoryOffer } from "./demo-store";
-import { DEMO_STEPS, MORE, stepRoute, type MoreId } from "./demo";
+import { demoStore, reachedOf, recordFacts, resetSession, selectStoryOffer } from "./demo-store";
+import { DEMO_STEPS, MORE, OwnerDecisionPending, stepRoute, type MoreId } from "./demo";
 import { getLang } from "./i18n";
 import { setMode } from "./mode";
 
@@ -13,11 +13,12 @@ import { setMode } from "./mode";
  * through lib/api.ts and then the caller navigates to the step's route. A 401 is reported as `"unauthorized"` so the
  * caller can resume the step once the owner has signed in; any other error is kept in the demo store for display.
  *
- * Two modes. `run` does the step's server work (and changes the books); `show` only opens the step's screen and is allowed for
- * a completed step (`target <= step`), so it can never reset the clock or the ledger. Replaying a completed step is `run`.
- * A step can only run when the one before it has: the story moves time, so a step never skips the steps that make it true.
+ * Three modes. `run` does the step's server work (and changes the books); `show` only opens the step's screen and is allowed for
+ * a finished step (`target <= reached`, the highest step ever finished, which Back does not lower), so it can never reset the clock or the
+ * ledger; `follow` is a Show that also moves the pointer to the step (what Next does after a Back). Replaying a finished step is `run`.
+ * A step can only run when the one before the finished ones has: the story moves time, so a step never skips the steps that make it true.
  */
-export type StepMode = "show" | "run";
+export type StepMode = "show" | "run" | "follow";
 export type StepOutcome = "done" | "unauthorized" | "busy" | "error" | "ignored";
 
 /**
@@ -38,14 +39,15 @@ export async function goToStep(target: number, push: (route: string) => void, op
   if (inFlight || demoStore.get().busy) return "busy";
   if (target < 0 || target > last) return "ignored";
   setMode("demo"); // the story is Demo mode: the stepper stays on every screen it visits
-  if (mode === "show") {
-    if (target > demoStore.get().step) return "ignored";
+  if (mode === "show" || mode === "follow") {
+    if (target > reachedOf(demoStore.get())) return "ignored";
     selectStoryOffer(); // an optional scene may have read another message: the story shows its own
+    if (mode === "follow") demoStore.set((s) => ({ ...s, step: target, running: null, error: null }));
     open(stepRoute(DEMO_STEPS[target], demoStore.get()), push); // read-only: the books are not touched
     return "done";
   }
   // The first step starts the story over; every other step needs the one before it.
-  if (target > demoStore.get().step + 1) return "ignored";
+  if (target > reachedOf(demoStore.get()) + 1) return "ignored";
   inFlight = true;
   demoStore.set((s) => ({ ...s, busy: true, running: target, error: null }));
   try {
@@ -53,7 +55,8 @@ export async function goToStep(target: number, push: (route: string) => void, op
     const step = DEMO_STEPS[target];
     const values = await step.run();
     if (values) recordFacts(step.id, { lang: getLang(), values });
-    demoStore.set((s) => ({ ...s, step: target, busy: false, running: null }));
+    // The first step starts the story over, so the highest finished step starts over with it.
+    demoStore.set((s) => ({ ...s, step: target, reached: target === 0 ? 0 : Math.max(reachedOf(s), target), busy: false, running: null }));
     open(stepRoute(step, demoStore.get()), push);
     return "done";
   } catch (e) {
@@ -61,11 +64,27 @@ export async function goToStep(target: number, push: (route: string) => void, op
       demoStore.set((s) => ({ ...s, busy: false, running: null }));
       return "unauthorized";
     }
+    if (e instanceof OwnerDecisionPending) {
+      // The cure still waits: the step decided nothing and is not finished. The owner's card is opened; the pointer stays where it was.
+      demoStore.set((s) => ({ ...s, busy: false, running: null }));
+      open(stepRoute(DEMO_STEPS[target], demoStore.get()), push);
+      return "done";
+    }
     demoStore.set((s) => ({ ...s, busy: false, running: null, error: errorMessage(e) }));
     return "error";
   } finally {
     inFlight = false;
   }
+}
+
+/**
+ * Next: the step after the pointer. After a Back that is a step already finished, so Next only shows it (the pointer moves, nothing runs and
+ * the books are not touched); only the step after the highest finished one is run.
+ */
+export function nextStep(push: (route: string) => void): Promise<StepOutcome> {
+  const d = demoStore.get();
+  const target = d.step + 1;
+  return goToStep(target, push, { mode: target <= reachedOf(d) ? "follow" : "run" });
 }
 
 /** Back only moves the pointer: the books already hold the step's result. */
@@ -95,7 +114,7 @@ export async function goToMore(id: MoreId, push: (route: string) => void): Promi
     if (item.run) await item.run();
     if (item.replacesBooks) {
       // The story's own state is gone with its books; what the optional scene prepared (the offers, verdicts, the answer) stays for its screens.
-      demoStore.set((s) => ({ ...s, step: -1, storyOfferId: null, cure: null, facts: {}, busy: false }));
+      demoStore.set((s) => ({ ...s, step: -1, reached: -1, storyOfferId: null, cure: null, facts: {}, busy: false }));
     } else demoStore.set((s) => ({ ...s, busy: false }));
     open(item.route, push);
     return "done";

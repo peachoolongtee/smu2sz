@@ -6,7 +6,7 @@ import { CashForecast } from "@/components/lazy-charts";
 import { CurrentFunding } from "@/components/business/current-funding";
 import { PartialRead } from "@/components/business/freshness";
 import { FacilityExplainer } from "@/components/business/facility-explainer";
-import { FundingOptions } from "@/components/business/funding-options";
+import { FundingOptions, isRecommendedRow } from "@/components/business/funding-options";
 import { NextActionBlock } from "@/components/business/next-action";
 import { RemainingTaskBlock } from "@/components/business/open-decisions";
 import { FixResult, useFixAlert } from "@/components/home/fix-alert";
@@ -19,6 +19,7 @@ import { useI18n } from "@/lib/i18n";
 import type { FundingView } from "@/lib/types";
 import { useAsync, useStrategyAsync } from "@/lib/use-async";
 import { versusMinimum } from "@/lib/minimum";
+import { splitSentence } from "@/lib/price-sentence";
 import { useNarrow } from "@/lib/use-narrow";
 import { Disclosure } from "@/components/business/kit";
 
@@ -46,6 +47,29 @@ function DoorTile({ id, title, sub, href, label }: { id: string; title: string; 
         <ChevronRightIcon />
       </Link>
     </div>
+  );
+}
+
+/**
+ * The price sentence on one line: its first clause, with the rest of the server's sentence under "More". A sentence with no break is the
+ * line alone. The two parts are the server's words cut at its own punctuation (lib/price-sentence.ts).
+ */
+function PriceSentence({ sentence }: { sentence: string }) {
+  const { t } = useI18n();
+  const { first, rest } = splitSentence(sentence);
+  return (
+    <>
+      <p className="mt-1 text-sm text-ink-2" data-testid="cash-price-sentence">
+        {first}
+      </p>
+      {rest ? (
+        <Disclosure className="mt-0.5" summary={t("biz.cash.priceMore")} testId="cash-price-more">
+          <p className="pb-1 text-sm text-ink-2" data-testid="cash-price-rest">
+            {rest}
+          </p>
+        </Disclosure>
+      ) : null}
+    </>
   );
 }
 
@@ -93,6 +117,11 @@ export default function CashPage() {
     const rows = p?.comparison ?? [];
     return rows.length === 1 && rows[0].key === "router_optimum" && !rows[0].actions?.length ? [] : rows;
   };
+  // The recommended plan is said once. While the plan card above holds it (an open gap with a plan to run), the options under it are the
+  // alternatives; once covered, the decision-time comparison is history and keeps the plan that was chosen.
+  const recommendedKey = h?.next_action?.plan_source === "router" ? "router_optimum" : null;
+  const planCard = Boolean(h?.next_action);
+  const alternatives = (p: FundingView | undefined) => (planCard ? comparison(p).filter((c) => !isRecommendedRow(c, recommendedKey)) : comparison(p));
 
   // Four facts: today's cash, the reserve, when cash becomes unsafe, the worst point. The headroom is the caption of the tile it belongs to.
   const figures = h ? (
@@ -158,7 +187,14 @@ export default function CashPage() {
   ) : (
     <>
       {covered && snapshot ? <p className="mb-3 text-xs text-ink-3">{t("fund.snapshot")}</p> : null}
-      <FundingOptions rows={comparison(plan.data)} menu={plan.data.menu} recommendedKey={h?.next_action?.plan_source === "router" ? "router_optimum" : null} orderText={plan.data.comparison_order_text} />
+      {planCard && comparison(plan.data).length > 0 && alternatives(plan.data).length === 0 ? (
+        <p className="text-sm text-ink-3" data-testid="cash-options-none">
+          {t("biz.cash.options.none")}
+        </p>
+      ) : (
+        // The server's ordering sentence starts from the recommended plan; with that plan held by the card above, it would describe a list that is not here.
+        <FundingOptions rows={alternatives(plan.data)} menu={plan.data.menu} recommendedKey={recommendedKey} orderText={planCard && alternatives(plan.data).length !== comparison(plan.data).length ? null : plan.data.comparison_order_text} />
+      )}
       {/* A server that names each row's role has already said so in the alternative's chip, so the grey note would say it twice. */}
       {h?.next_action?.cheaper_option && !plan.data.comparison?.some((c) => c.role) ? (
         <p className="mt-3 text-xs text-ink-3" data-testid="cash-cheaper-option">
@@ -230,9 +266,7 @@ export default function CashPage() {
                       </p>
                     </Disclosure>
                   ) : (
-                    <p className="mt-1 text-sm text-ink-2" data-testid="cash-price-sentence">
-                      {curve.sentence}
-                    </p>
+                    <PriceSentence sentence={curve.sentence} />
                   )
                 ) : null}
                 {/* A failed read is not "no price to show": it says so, with Retry (a feature that is off returns nothing and says nothing). */}

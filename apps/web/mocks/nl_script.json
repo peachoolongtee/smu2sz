@@ -4037,7 +4037,9 @@
     "security_events": [],
     "parse_source": "rules",
     "trace_id": "rec-fund:2",
-    "context_echo": null
+    "context_echo": null,
+    "decision_id": "nl:rec-fund:t1:e6647a56e3f3",
+    "decision_recorded": true
   },
   "status": {
     "session_id": "rec-status",
@@ -6837,7 +6839,9 @@
     "security_events": [],
     "parse_source": "rules",
     "trace_id": "rec-fund-zh:2",
-    "context_echo": null
+    "context_echo": null,
+    "decision_id": "nl:rec-fund-zh:t1:ecac102d8f9e",
+    "decision_recorded": true
   },
   "status_zh": {
     "session_id": "rec-status-zh",

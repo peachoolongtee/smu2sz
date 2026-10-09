@@ -9,6 +9,7 @@ from typing import Any
 
 from pydantic import BaseModel
 
+from app.api.presentation import Lang, business_text
 from app.domain.models import (
     CompiledOffer,
     FinancialState,
@@ -177,12 +178,30 @@ def annualised_view(obligations: Sequence[Obligation], state: FinancialState, ma
 
 
 def owner_verdict_extras(bundle: VerdictBundle, offer: CompiledOffer, state: FinancialState,
-                         mandate: Mandate) -> dict[str, Any]:
+                         mandate: Mandate, lang: str | None = None, today: int | None = None) -> dict[str, Any]:
     """What the owner's screens add to a verdict: the passed checks, the autonomy proof and the annualised cost
-    of every early-pay discount (the bound legs and each counter's)."""
+    of every early-pay discount (the bound legs and each counter's).
+
+    The English the verifier and the compiler wrote stays as it is. With `lang` (the evaluate view passes it) each passed check also carries
+    `label_when`, `observed_when` and `limit_when`, and the autonomy block `covered_when`, `gaps_when` and `notes_when`: the same sentences
+    in the owner's words and in `lang`, Chinese through the `engine_zh` templates as every other `*_when` field, so the Advanced fold can be
+    read in Chinese. Without `lang` (the /nl verdict) the view is exactly what it was."""
     legs = [*bundle.bound_obligations, *(o for c in bundle.verdict.counters for o in c.obligations)]
+    checks = [json.loads(p.model_dump_json()) for p in bundle.passed_checks]
+    autonomy = autonomy_view(offer, bundle, state)
+    if lang is not None:
+        day = state.as_of_day if today is None else today
+        language: Lang = "zh" if lang == "zh" else "en"
+
+        def said(text: str) -> str:
+            return business_text(state, text, day, language) or text
+
+        for view, p in zip(checks, bundle.passed_checks, strict=True):
+            view.update(label_when=said(p.label), observed_when=said(p.observed), limit_when=said(p.limit))
+        autonomy.update(covered_when=[said(x) for x in autonomy["covered"]], gaps_when=[said(x) for x in autonomy["gaps"]],
+                        notes_when=[said(x) for x in autonomy["notes"]])
     return {
-        "passed_checks": [json.loads(p.model_dump_json()) for p in bundle.passed_checks],
-        "autonomy": autonomy_view(offer, bundle, state),
+        "passed_checks": checks,
+        "autonomy": autonomy,
         "annualised": annualised_view(legs, state, mandate),
     }

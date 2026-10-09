@@ -27,7 +27,10 @@ export function checkCount(v: VerdictView): number {
  * The reasons an owner reads first are the workspace's own `why_it_matters` sentences; this is the evidence behind them.
  */
 export function AllChecks({ v }: { v: VerdictView }) {
+  const { lang } = useI18n();
   const all = ordered(v.violations);
+  // The passed checks are the verifier's English; in Chinese the server's own twins (`*_when`) say the same lines in Chinese.
+  const zh = lang === "zh";
   return (
     <div className="space-y-4" data-testid="deal-checks">
       {all.length ? (
@@ -37,7 +40,7 @@ export function AllChecks({ v }: { v: VerdictView }) {
           ))}
         </ul>
       ) : null}
-      {v.passed_checks.length ? <KeyValueList items={v.passed_checks.map((c) => ({ k: c.label, v: `${c.observed} ${c.limit}` }))} /> : null}
+      {v.passed_checks.length ? <KeyValueList items={v.passed_checks.map((c) => ({ k: (zh && c.label_when) || c.label, v: `${(zh && c.observed_when) || c.observed} ${(zh && c.limit_when) || c.limit}` }))} /> : null}
     </div>
   );
 }
