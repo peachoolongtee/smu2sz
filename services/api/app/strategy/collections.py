@@ -57,6 +57,7 @@ from app.funding.router import shared_runs
 from app.mandate import check_apr
 from app.strategy.faces import option_a_face
 from app.strategy.impact import marginal_impact, scenario_received
+from app.strategy.no_plan import plan_is_missing
 from app.strategy.types import MarginalImpact
 from app.verifier.bind import early_pay_lead
 from app.whatif.params import DISCOUNT_MAX_BP, FACE_STEP_FEN, RATE_STEP_BP
@@ -141,6 +142,7 @@ class WorthAnswer(Contract):
     top_action: str  # the overdue invoice's sentence when any is late, else the top-ranked row's
     top_action_second: str | None = None  # the savings sentence of the top-ranked row, when an overdue sentence came first
     ranking_note: str
+    no_plan: bool = False  # no committed plan covers the shortfall: no saving is priced, the rows run by lateness then amount
     first_breach_day: int | None
     source_state_version: int
     computed_in_seconds: float = Field(ge=0)
@@ -228,6 +230,14 @@ def _last_true(values: list[int], ok: Callable[[int], bool]) -> int | None:
     return values[lo]
 
 
+NO_PLAN_TOP = (
+    ("No committed funding plan covers the shortfall, so what collecting each invoice saves cannot be priced: collect first, "
+     "the longest overdue and the largest."),
+    "目前没有已承诺的融资方案能补上缺口，所以无法估算收回每一笔能节省多少：请先催收，先收逾期最久、金额最大的。")
+NO_PLAN_NOTE = (
+    "No committed funding plan covers the shortfall, so nothing is priced: ranked by how late each invoice is, then by amount.",
+    "没有已承诺的融资方案能补上缺口，所以不估算节省额：按逾期天数排序，其次按金额。")
+
 _FACE_LABELS: dict[str, tuple[str, str]] = {
     "whole": ("the whole invoice", "整张发票"),
     "need": ("the plan's need", "计划所需金额"),
@@ -314,7 +324,7 @@ def _quoted_ceiling(ceilings: list[Ceiling]) -> Ceiling | None:
 
 
 def _effects(books: Books, mandate: Mandate, store: LedgerStore, day: int, r: Receivable, first_breach: int | None,
-             lang: Lang) -> list[Effect]:
+             lang: Lang, priced: bool = True) -> list[Effect]:
     targets: list[tuple[EffectKind, int, str]] = [("today", day, t(lang, "if it arrived today", "如果今天到账"))]
     if r.status == "OPEN" and r.due_day > day:
         early = r.due_day - DAYS_BEFORE_DUE
@@ -332,13 +342,19 @@ def _effects(books: Books, mandate: Mandate, store: LedgerStore, day: int, r: Re
         except ValueError:
             continue
         imp = marginal_impact(books, scenario, mandate, store=store, day=day, label=label)
-        saving = -imp.posted_cost_delta_fen
+        saving = -imp.posted_cost_delta_fen if priced else 0  # with no plan to price against the delta is not a saving
         out.append(Effect(
             kind=kind, label=label, receipt_day=rday, receipt_when=when_text(rday, day, lang), saving_fen=saving,
-            no_saving=saving <= 0, saving_text=saving_text(saving, lang), need_left_fen=imp.after_need_fen,
+            no_saving=saving <= 0, saving_text=saving_text(saving, lang) if priced else cannot_price_text(lang),
+            need_left_fen=imp.after_need_fen,
             breach_days_removed=imp.breach_days_removed, alerts_removed=list(imp.alerts_removed),
             after_needs_owner=imp.after_needs_owner, after_executable_now=imp.after_executable_now, impact=imp))
     return out
+
+
+def cannot_price_text(lang: Lang = "en") -> str:
+    """What stands where a saving would, when no committed plan covers the shortfall."""
+    return t(lang, "cannot be priced", "无法估值")
 
 
 def saving_text(saving_fen: int, lang: Lang = "en") -> str:
@@ -390,7 +406,7 @@ def _decide(*, r: Receivable, day: int, days_late: int, lapsed: bool, promised: 
 
 def _sentences(*, lang: Lang, action: Action, who: str, r: Receivable, day: int, days_late: int, lapsed: bool,
                promised: bool, episode: tuple[int, int] | None, advanced: bool, ceilings: list[Ceiling], why_none: str,
-               today_effect: Effect | None) -> tuple[str, str]:
+               today_effect: Effect | None, priced: bool = True) -> tuple[str, str]:
     face = fmt_yuan(r.outstanding_fen)
     when = when_text(r.due_day, day, lang)
     due = t(lang, f"the {face} due {when}", f"{when}到期的 {face}")
@@ -398,7 +414,10 @@ def _sentences(*, lang: Lang, action: Action, who: str, r: Receivable, day: int,
     left = today_effect.need_left_fen if today_effect is not None else 0
     rest_en = f" and leave {fmt_yuan(left)} still to cover" if left > 0 else " and clear the shortfall"
     rest_zh = f"，还剩 {fmt_yuan(left)} 要筹措" if left > 0 else "，并补上缺口"
-    if today_effect is None or saving <= 0:
+    if not priced:
+        if_arrived = t(lang, "What it would save cannot be priced while no funding plan covers the shortfall.",
+                       "在没有融资方案能补上缺口时，无法估算它能节省多少。")
+    elif today_effect is None or saving <= 0:
         if_arrived = t(lang, "If it arrived today it would not lower your funding cost.",
                        "如果今天到账，不会降低您的融资成本。")
     else:
@@ -474,6 +493,10 @@ def _sentences(*, lang: Lang, action: Action, who: str, r: Receivable, day: int,
     if promised and r.due_day <= episode[1]:
         return (t(lang, f"Wait: {who} has promised to pay {due} early.", f"等待：{who} 已承诺提前支付 {due}。"),
                 t(lang, "The promised payment is still awaited.", "承诺的付款还在等待中。"))
+    if not priced:
+        return (t(lang, f"Wait: {due} is beyond the shortfall; the invoices due before it already cover what you need.",
+                  f"等待：{due}超出了缺口范围，在它之前到期的发票已经够用。"),
+                t(lang, f"Chase the earlier ones first. {if_arrived}", f"请先催收更早的几笔。{if_arrived}"))
     return (t(lang, f"Wait: {due} is beyond the shortfall; chasing it now saves nothing extra.",
               f"等待：{due}超出了缺口范围，现在去催收不会多省什么。"),
             t(lang, f"Collected today it would save you {fmt_yuan(saving)}{rest_en}, but the invoices due before it already "
@@ -501,6 +524,13 @@ def _worth_text(lang: Lang, action: Action, net: int, quoted: Ceiling | None, da
         return t(lang, f"Saves {fmt_yuan(net)} at the {limit} limit; {fmt_yuan(quoted.mid_saving_fen)} if they take {mid}",
                  f"按 {limit} 的上限可省 {fmt_yuan(net)}；若对方接受 {mid}，可省 {fmt_yuan(quoted.mid_saving_fen)}")
     return t(lang, f"Saves {fmt_yuan(net)} if collected", f"收回可省 {fmt_yuan(net)}")
+
+
+def _unpriced_text(lang: Lang, days_late: int) -> str:
+    """The worth cell of a row when no committed plan covers the shortfall: it says so, and how late the invoice is."""
+    late = (t(lang, f"; {days_late} {'day' if days_late == 1 else 'days'} late", f"；已逾期 {days_late} 天")
+            if days_late > 0 else "")
+    return t(lang, "Cannot be priced: no funding plan", "无法估值：没有融资方案") + late
 
 
 def _overdue_sentence(lang: Lang, w: ReceivableWorth) -> str:
@@ -532,6 +562,7 @@ def receivables_worth(books: Books, mandate: Mandate, *, store: LedgerStore, day
 
     with shared_runs():
         base_plan = plan(state, books.with_([]), mandate)
+        no_plan = plan_is_missing(base_plan)
         c0 = standing_cost(books, mandate)
         episode = _first_episode(books, mandate)
         first_breach = episode[0] if episode is not None else None
@@ -550,7 +581,7 @@ def receivables_worth(books: Books, mandate: Mandate, *, store: LedgerStore, day
             covered_before += r.outstanding_fen
             days_late = max(0, day - r.due_day)
             who = party_name(state, r.counterparty_id)
-            effects = _effects(books, mandate, store, day, r, first_breach, lang)
+            effects = _effects(books, mandate, store, day, r, first_breach, lang, not no_plan)
             today_effect = next((e for e in effects if e.kind == "today"), None)
             gross = today_effect.saving_fen if today_effect is not None else (effects[0].saving_fen if effects else 0)
             ceilings, why_none = _ceilings(books, mandate, r, base_plan.need_fen, c0, lang, partial(counter_face, r.id))
@@ -561,40 +592,52 @@ def receivables_worth(books: Books, mandate: Mandate, *, store: LedgerStore, day
             lapsed = r.id in lapsed_ids
             action = _decide(r=r, day=day, days_late=days_late, lapsed=lapsed, promised=r.id in awaited_ids,
                              episode=episode, beyond=beyond, need_ceiling=need_ceiling)
-            if action in ("call_now", "escalate"):
+            if no_plan:
+                net = 0  # nothing is priced: the order below runs on lateness and amount
+            elif action in ("call_now", "escalate"):
                 net = gross  # a call costs nothing: the whole saving is kept
             else:
                 net = (quoted.beats_by_fen or 0) if quoted is not None else 0
             sentence, reason = _sentences(
                 lang=lang, action=action, who=who, r=r, day=day, days_late=days_late, lapsed=lapsed,
                 promised=r.id in awaited_ids, episode=episode, advanced=r.id in advanced_ids, ceilings=ceilings,
-                why_none=why_none, today_effect=today_effect)
+                why_none=why_none, today_effect=today_effect, priced=not no_plan)
             rows.append(ReceivableWorth(
                 receivable_id=r.id, buyer_id=r.counterparty_id, buyer_name=who, outstanding_fen=r.outstanding_fen,
                 due_day=r.due_day, due_when=when_text(r.due_day, day, lang), days_late=days_late, status=r.status,
                 financed=r.status == "FINANCED", effects=effects, gross_saving_fen=gross, ceilings=ceilings,
-                mid_rate_bp=mid_rate, mid_saving_fen=mid_saving, net_saving_fen=net, no_saving=net <= 0, net_saving_text=saving_text(net, lang),
-                worth_text=_worth_text(lang, action, net, quoted, days_late),
+                mid_rate_bp=mid_rate, mid_saving_fen=mid_saving, net_saving_fen=net, no_saving=net <= 0,
+                net_saving_text=cannot_price_text(lang) if no_plan else saving_text(net, lang),
+                worth_text=_unpriced_text(lang, days_late) if no_plan else _worth_text(lang, action, net, quoted, days_late),
                 overdue_text=t(lang, "Overdue", "已逾期") if days_late > 0 else None, action=action,
                 action_sentence=sentence, reason_sentence=reason))
-    ranked = sorted(rows, key=lambda w: (-w.net_saving_fen, -w.gross_saving_fen, w.due_day, w.receivable_id))
+    if no_plan:  # the longest overdue first, then the largest amount: the order an owner would chase in
+        ranked = sorted(rows, key=lambda w: (-w.days_late, -w.outstanding_fen, w.due_day, w.receivable_id))
+    else:
+        ranked = sorted(rows, key=lambda w: (-w.net_saving_fen, -w.gross_saving_fen, w.due_day, w.receivable_id))
     by_gross = sorted(rows, key=lambda w: (-w.gross_saving_fen, w.due_day, w.receivable_id))
     late = next((w for w in ranked if w.days_late > 0), None)
-    if late is not None:  # the top sentence is the overdue one; the savings sentence of the top-ranked row comes second
+    if no_plan:  # the top sentence says why nothing is priced; the overdue invoice at the head of the list follows it
+        top = t(lang, *NO_PLAN_TOP)
+        second = _overdue_sentence(lang, late) if late is not None else None
+    elif late is not None:  # the top sentence is the overdue one; the savings sentence of the top-ranked row comes second
         top, second = _overdue_sentence(lang, late), (ranked[0].action_sentence if ranked[0].net_saving_fen > 0 else None)
     else:
         top, second = (ranked[0].action_sentence if ranked else t(lang, "Nothing is waiting to be collected.", "没有待收的应收款。")), None
     return WorthAnswer(
         rows=ranked, gross_order=[w.receivable_id for w in by_gross],
-        top_action=top, top_action_second=second,
-        ranking_note=t(lang, "Ranked by what collecting each saves you against the cheapest funding plan, net of any "
-                             "discount that earns it.",
-                       "按收回每一笔相比最便宜的融资方案能为您省多少排序，已扣除为此给出的折扣。"),
+        top_action=top, top_action_second=second, no_plan=no_plan,
+        ranking_note=t(lang, *NO_PLAN_NOTE) if no_plan else t(
+            lang, "Ranked by what collecting each saves you against the cheapest funding plan, net of any discount that "
+                  "earns it.",
+            "按收回每一笔相比最便宜的融资方案能为您省多少排序，已扣除为此给出的折扣。"),
         first_breach_day=first_breach, source_state_version=state.state_version,
         computed_in_seconds=round(time.perf_counter() - started, 3))
 
 
 __all__ = [
+    "NO_PLAN_NOTE",
+    "NO_PLAN_TOP",
     "Ceiling",
     "Effect",
     "ReceivableWorth",

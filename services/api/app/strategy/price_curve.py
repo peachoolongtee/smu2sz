@@ -33,6 +33,7 @@ from app.funding.rates import break_even_cost_share
 from app.funding.router import shared_runs
 from app.funding.search import GRID_STEP_FEN
 from app.strategy.impact import scenario_inflow
+from app.strategy.no_plan import plan_is_missing
 
 log = logging.getLogger(__name__)
 
@@ -58,6 +59,7 @@ class PriceCurve(Contract):
     day: int  # today: the first arrival day the curve covers
     bands: list[PriceBand]
     flat: bool  # no arrival day is worth anything: earlier cash saves nothing today
+    no_plan: bool = False  # no committed plan covers the shortfall: nothing is priced, `bands` is empty and `flat` is false
     source_state_version: int
     hypothetical: Literal[True] = True
 
@@ -162,6 +164,11 @@ def price_curve(books: Books, mandate: Mandate, *, store: LedgerStore, day: int)
     end = day + mandate.horizon_days
     last = end + WINDOW_DAYS  # the latest arrival day a value reads
     held = store.commitments()
+    with shared_runs():
+        standing = plan(books.state, books.with_([]), mandate)
+    if plan_is_missing(standing):  # a plan cost of 0 here is no plan, not a price: nothing can be priced against it
+        return PriceCurve(amount_fen=amount, day=day, bands=[], flat=False, no_plan=True,
+                          source_state_version=books.state.state_version)
     costs: dict[int, int] = {}
 
     def cost(arrival: int) -> int:
@@ -212,6 +219,11 @@ def price_curve(books: Books, mandate: Mandate, *, store: LedgerStore, day: int)
 # ---------------------------------------------------------------- the sentence
 
 
+NO_PLAN_SENTENCE = (
+    "No committed funding plan covers the shortfall, so earlier cash cannot be priced against borrowing: collect first.",
+    "目前没有已承诺的融资方案能补上缺口，所以无法拿更早到账的现金与借款成本比较：请先催收。")
+
+
 def _next(day_last: int, today: int, lang: Lang) -> str:
     """"in the next 30 days" for an arrival no later than `day_last` (today and tomorrow are said as such)."""
     n = day_last - today
@@ -225,6 +237,8 @@ def price_sentence(curve: PriceCurve, *, today: int, lang: Lang) -> str:
     """The curve in one sentence for the owner: the funding cost that cash saves, in yuan first and the percentage in
     brackets, until when, then nothing (business words: distances from today, never a day number, never the engine's
     vocabulary; the cost is named so that it does not read as a rate charged)."""
+    if curve.no_plan:
+        return t(lang, *NO_PLAN_SENTENCE)
     live = [b for b in curve.bands if b.value_fen > 0]
     if not live:
         return t(lang, "Earlier cash saves you nothing today.", "现在更早到账的现金不会为你节省任何费用。")

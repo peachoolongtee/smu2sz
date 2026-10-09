@@ -41,7 +41,9 @@ from app.domain.models import (
 from app.domain.money import bp, fmt_pct, fmt_yuan
 from app.domain.ports import LedgerStore
 from app.financial import value_concessions
-from app.funding import NoPermanentSourceError, marginal_cost
+from app.funding import NoPermanentSourceError, marginal_cost, plan
+from app.funding.router import shared_runs
+from app.strategy.no_plan import plan_is_missing
 from app.strategy.types import CandidatePackage
 from app.verifier import bind, evaluate
 from app.verifier.counters import infeasibility, smallest_step_covering
@@ -79,6 +81,7 @@ BuyerContext = Context | EarlyPayContext | RebateOnlyContext
 
 NO_RECURRING = "no_recurring"  # the buyer has no recurring invoice to extend
 NO_INVOICE = "no_invoice"  # the buyer has no open invoice to pay early
+NO_PLAN = "no_plan"  # no committed plan covers the shortfall: the terms and rebate levers are withheld (map #58, ticket #79)
 
 
 def face_of(ctx: BuyerContext) -> int:
@@ -300,9 +303,10 @@ class _Verifier:
     """`build` then `evaluate`, memoised per setting within one call, counting the evaluations it actually runs."""
 
     def __init__(self, books: Books, mandate: Mandate, key: str, day: int, commitments: Sequence[Commitment],
-                 ctx: BuyerContext, ranges: Ranges) -> None:
+                 ctx: BuyerContext, ranges: Ranges, withheld: str = "") -> None:
         self.books, self.mandate, self.key, self.day, self.commitments = books, mandate, key, day, commitments
         self.ctx, self.ranges = ctx, ranges
+        self.withheld = withheld  # why the ranges leave out the terms and rebate levers (`NO_PLAN`); empty: they are all there
         self.state: FinancialState = books.state
         self.memo: dict[Setting, Probe] = {}
         self.cur = ctx.recurring.terms_days if isinstance(ctx, Context) else TERMS_MIN
@@ -468,6 +472,7 @@ class EnvelopeFacts:
     unlisted_counters: tuple[Setting, ...] = ()  # the verifier's counters to the asks that fall outside the levers' ranges
     refusal: Literal["no_lever", "out_of_range"] = "no_lever"  # why `refused` is set
     rebate_only: bool = False  # the buyer has an expected order and no invoice: the rebate is the only lever
+    no_plan: bool = False  # no committed plan covers the shortfall: terms and rebate withheld, no plan cost is priced
 
 
 def wall_of(p: Probe | None, *, ignore_caps: bool = False) -> str | None:
@@ -542,9 +547,10 @@ def _levers(v: _Verifier) -> tuple[list[Maximum], list[tuple[Setting, int | None
             v.probe(Setting(nxt, price=pmax)) if nxt is not None else None,
             wall_of(v.probe(Setting(nxt, price=pmax))) if nxt is not None else None, rule_price_bp=rule))
     else:
-        out += [_unavailable(TERMS_ALONE, "terms_alone", "days"),
-                _unavailable(TERMS_BUDGET_IGNORED, "terms_budget_ignored", "days"),
-                _unavailable(TERMS_WITH_PRICE, "terms_with_price", "days")]
+        why = (v.withheld or NO_RECURRING) if isinstance(ctx, Context) else NO_RECURRING  # withheld only where a lever exists
+        out += [_unavailable(TERMS_ALONE, "terms_alone", "days", why),
+                _unavailable(TERMS_BUDGET_IGNORED, "terms_budget_ignored", "days", why),
+                _unavailable(TERMS_WITH_PRICE, "terms_with_price", "days", why)]
 
     # early pay: the whole invoice, and the face of the verifier's own early-pay counter (asked for the top of the range,
     # so that the counter's rate is the break-even step and not the buyer's own)
@@ -575,7 +581,8 @@ def _levers(v: _Verifier) -> tuple[list[Maximum], list[tuple[Setting, int | None
         rb = last_true(r.rebate, lambda x: v.ok(Setting(cur, rebate=x)), hint=v.rebate_hint(v.probe(Setting(cur))))
         out.append(_maximum(v, REBATE, "rebate", "bp", rb, lambda x: Setting(cur, rebate=x), r.rebate))
     else:
-        out.append(_unavailable(REBATE, "rebate", "bp", NO_RECURRING))
+        withheld = (v.withheld or NO_RECURRING) if isinstance(ctx, Context) or rebate_only else NO_RECURRING
+        out.append(_unavailable(REBATE, "rebate", "bp", withheld))
     return out, [(Setting(cur, discount=f.value or 0, face=fc), fc) for fc, f in early if f.value and fc is not None]
 
 
@@ -671,7 +678,12 @@ def envelope_facts(books: Books, mandate: Mandate, *, store: LedgerStore | None 
     past_due = tuple(sorted((a.amount_fen or 0, today - int(a.inputs["due_day"])) for a in late
                             if a.inputs.get("counterparty_id") == buyer_id))
     ranges = ranges_for(ctx, mandate)
-    v = _Verifier(books, mandate, trusted_owner_key_hex, day, commitments, ctx, ranges)
+    has_terms_lever = bool(ranges.terms)
+    with shared_runs():
+        no_plan = plan_is_missing(plan(state, books.with_([]), mandate))
+    if no_plan:  # no plan to price a longer payment term or a rebate against: only early payment is checked
+        ranges = replace(ranges, terms=(), price=(0,), rebate=(0,))
+    v = _Verifier(books, mandate, trusted_owner_key_hex, day, commitments, ctx, ranges, NO_PLAN if no_plan else "")
     cur = v.cur
     maxima, early_counter = _levers(v)
     status_quo = v.probe(Setting(cur))
@@ -709,9 +721,9 @@ def envelope_facts(books: Books, mandate: Mandate, *, store: LedgerStore | None 
         s0 = early_counter[0][0]
         with_early = v.approved(Setting(next_terms, price=ranges.price[-1], discount=s0.discount, face=s0.face))
     return EnvelopeFacts(
-        buyer_id, name, day, version, False, mandate, cur, face_of(ctx), bool(ranges.terms), tuple(maxima),
+        buyer_id, name, day, version, False, mandate, cur, face_of(ctx), has_terms_lever, tuple(maxima),
         tuple(zone_rows), cell_tuple, counter_costs, status_quo, next_terms, with_early, v.evaluations, time.perf_counter() - started,
-        past_due, tuple(unlisted), rebate_only=isinstance(ctx, RebateOnlyContext))
+        past_due, tuple(unlisted), rebate_only=isinstance(ctx, RebateOnlyContext), no_plan=no_plan)
 
 
 # ---------------------------------------------------------------- the answer (words)
@@ -818,7 +830,16 @@ _LEVER_LABEL = {
 _UNAVAILABLE = {
     NO_RECURRING: ("no recurring invoice to extend", "没有可延长的定期发票"),
     NO_INVOICE: ("no open invoice to pay early", "没有可提前付款的未结发票"),
+    NO_PLAN: ("withheld while no funding plan covers the shortfall", "没有融资方案能补上缺口时不提供"),
 }
+# said by the answer when no committed plan covers the shortfall (the terms and rebate levers are withheld)
+WITHHELD = ("FLOW cannot offer longer terms or a rebate while no funding plan covers the shortfall; early payment only.",
+            "在没有融资方案能补上缺口时，FLOW 无法提供更长账期或返利；只能提前付款。")
+WITHHELD_REBATE_ONLY = ("FLOW cannot offer a rebate while no funding plan covers the shortfall.",
+                        "在没有融资方案能补上缺口时，FLOW 无法提供返利。")
+WITHHELD_NO_EARLY = (("FLOW cannot offer longer terms or a rebate while no funding plan covers the shortfall, and no early "
+                      "payment passes FLOW's checks."),
+                     "在没有融资方案能补上缺口时，FLOW 无法提供更长账期或返利，也没有提前付款方案能通过 FLOW 的检查。")
 
 
 def _lever_label(m: Maximum, lang: str) -> str:
@@ -926,7 +947,8 @@ def _package(facts: EnvelopeFacts, p: Probe, lang: str, match: bool = False) -> 
                      early_pay_face_fen=s.face, rebate_bp=s.rebate),
         outcome=p.outcome, tier=p.tier, passes=p.passes, approved=p.approved, codes=list(p.codes),
         binding_codes=list(p.binding), forward_budget_used_fen=p.forward_total_fen, reserve_breach=breach,
-        flags=_flags(p, lang), counter_match=match, plan_cost_fen=p.plan_cost_fen, summary=_summary(s, lang))
+        flags=_flags(p, lang), counter_match=match, plan_cost_fen=None if facts.no_plan else p.plan_cost_fen,
+        summary=_summary(s, lang))
 
 
 def _lever(facts: EnvelopeFacts, m: Maximum, lang: str) -> EnvelopeLever:
@@ -976,13 +998,15 @@ def _primary(facts: EnvelopeFacts, lang: str) -> str:
                    f"对预期订单的返利最高 {fmt_pct(bp(rebate.value))}；暂无可估值的账期或提前付款")]
     elif rebate is not None and rebate.value:
         parts.append(t(lang, f"a rebate up to {fmt_pct(bp(rebate.value))}", f"返利最高 {fmt_pct(bp(rebate.value))}"))
-    if facts.has_terms_lever:
+    if facts.has_terms_lever and not facts.no_plan:
         if facts.next_terms is not None:
             n = facts.next_terms
             parts.append(t(lang, f"not {n} days without an early payment", f"不提前付款则不能做到 {n} 天")
                          if facts.next_terms_passes_with_early_pay else t(lang, f"not {n} days", f"不能做到 {n} 天"))
         elif longest == cur:
             parts.append(t(lang, "no longer payment terms", "不能延长账期"))
+    if not parts and facts.no_plan:
+        return t(lang, *(WITHHELD_REBATE_ONLY if facts.rebate_only else WITHHELD_NO_EARLY))
     if not parts:
         return t(lang, "Nothing beyond today's terms passes FLOW's checks.", "今天的条件之外，没有任何方案能通过 FLOW 的检查。")
     text = t(lang, "You can live with: ", "您能接受的范围：") + t(lang, "; ", "；").join(parts)
@@ -1010,6 +1034,9 @@ def _reason(facts: EnvelopeFacts, lang: str) -> str:
     overdue = _past_due_clause(facts, lang)
     if overdue is not None:
         clauses.append(overdue)
+    if facts.no_plan and (facts.has_terms_lever or facts.rebate_only):  # the levers that need a plan to price are withheld
+        said = t(lang, *(WITHHELD_REBATE_ONLY if facts.rebate_only else WITHHELD))
+        return f"{_sentence(clauses, lang)}{' ' if lang != 'zh' else ''}{said}" if clauses else said
     if facts.rebate_only:
         clauses.append(t(lang, "there is no recurring invoice to extend and no open invoice to pay early, so only the "
                                "rebate on the expected order can be valued",
@@ -1062,13 +1089,21 @@ def _sentence(clauses: list[str], lang: str) -> str:
     return text + t(lang, ".", "。")
 
 
+def _now(facts: EnvelopeFacts, standing: int, lang: str) -> str:
+    """The standing plan's clause of the cost line: its cost, or that it is not priced when no committed plan exists."""
+    if facts.no_plan:
+        return t(lang, "your current funding plan is not priced because no committed plan covers the shortfall",
+                 "现行资金安排无法估值，因为没有已承诺的融资方案能补上缺口")
+    return t(lang, f"without a deal your current funding plan costs {fmt_yuan(standing)}",
+             f"不做交易时，现行资金安排的成本为 {fmt_yuan(standing)}")
+
+
 def _money(facts: EnvelopeFacts, lang: str) -> str:
     standing = facts.status_quo.plan_cost_fen if facts.status_quo is not None else None
     if standing is None:
         return ""
     if facts.rebate_only:
-        now = t(lang, f"without a deal your current funding plan costs {fmt_yuan(standing)}",
-                f"不做交易时，现行资金安排的成本为 {fmt_yuan(standing)}")
+        now = _now(facts, standing, lang)
         rebate = _lever_of(facts, "rebate")
         used = rebate.at_max.forward_total_fen - facts.status_quo.forward_total_fen \
             if rebate is not None and rebate.at_max is not None and facts.status_quo is not None else 0
@@ -1086,7 +1121,7 @@ def _money(facts: EnvelopeFacts, lang: str) -> str:
         costs.append(t(lang, f"{fmt_yuan(option_b)} with the price rise", f"加价方案 {fmt_yuan(option_b)}"))
     if option_a is not None:
         costs.append(t(lang, f"{fmt_yuan(option_a)} with the early payment", f"提前付款方案 {fmt_yuan(option_a)}"))
-    now = t(lang, f"without a deal your current funding plan costs {fmt_yuan(standing)}", f"不做交易时，现行资金安排的成本为 {fmt_yuan(standing)}")
+    now = _now(facts, standing, lang)
     if not costs:
         return (now[0].upper() + now[1:] if lang != "zh" else now) + t(lang, ".", "。")
     lead = t(lang, "Cost to you ", "您的成本：") + t(lang, ", or ", "，或").join(costs)
