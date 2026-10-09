@@ -1,5 +1,5 @@
 import { expect, proseOf, test } from "./fixtures";
-import { runPlan } from "./helpers";
+import { runPlan, walkStory } from "./helpers";
 
 /**
  * Cash & funding (mock mode): the risk with headroom said directly, the plan, the options in two groups that are never
@@ -27,10 +27,9 @@ test("risk, plan, options, forecast: one set of figures, in the owner's order", 
   const figures = page.getByTestId("cash-figures");
   await expect(figures.locator("dt")).toHaveText(["Cash today", "Minimum cash reserve", "Cash becomes unsafe", "Worst point"]);
   await expect(page.getByTestId("cash-unsafe-when")).toHaveText("in 12 days");
-  await expect(figures).toContainText("Available headroom");
-  await expect(page.getByTestId("cash-headroom")).toHaveText("¥100k");
-  await expect(figures).toContainText("Lowest forecast headroom");
-  await expect(figures).toContainText("−¥405k");
+  await expect(page.getByTestId("cash-headroom")).toHaveText("Your cash is ¥100k above it");
+  await expect(figures).toContainText("Lowest point: ¥405k below your minimum");
+  await expect(figures).toContainText("−¥105k");
   const action = page.getByTestId("home-next-action");
   await expect(action.getByTestId("next-action-title")).toHaveText("Secure ¥405k of funding");
   await expect(action.getByTestId("next-action-cost")).toContainText("¥3,113.93");
@@ -39,46 +38,55 @@ test("risk, plan, options, forecast: one set of figures, in the owner's order", 
   expect(order[0]).toBeLessThan(order[1]);
   expect(order[1]).toBeLessThan(order[2]);
   expect(order[2]).toBeLessThan(order[3]);
-  // Two groups: the plans that fully protect cash, numbered and named by their sources; the rest apart, never numbered.
+  // The comparison is the server's: grouped and ordered as it sent them, one sentence saying how, a numeral only where the server ranked.
   const options = page.getByTestId("cash-options-list");
   await expect(options).not.toContainText("Router optimum");
   await expect(options).not.toContainText("Cheapest committed plan");
-  const full = page.getByTestId("cash-options-full");
-  await expect(full).toContainText("Plans that fully protect your cash");
-  await expect(full.getByTestId("cash-option-selected")).toContainText("Bank credit line + Invoice financing (onboarded platform)");
-  await expect(full.getByTestId("cash-option-selected")).toContainText("Recommended");
-  // Words with no cost claim the browser cannot make: the recommended row says it protects cash and can run today, the
-  // dearer ones say the server's note ("admissible but dearer than the selected plan").
-  await expect(full.getByTestId("cash-option-selected")).toContainText("Fully protects your cash and can run today");
-  await expect(full.getByTestId("cash-option-alternative-note").first()).toContainText("within your limits but dearer than the selected plan");
-  await expect(full).not.toContainText("at a higher cost");
-
-  await expect(full.getByTestId("cash-option-selected")).toContainText("¥3,113.93");
-  // Each row opens to why it ranks where it does: closed first, the server's note once it is tapped; what is uncovered stays on the line.
-  const alt = full.locator("li").nth(1);
-  await expect(alt.getByTestId("cash-option-details")).not.toHaveAttribute("open", "");
-  await expect(alt.getByTestId("cash-option-why")).toBeHidden();
-  await alt.locator("summary").click();
-  await expect(alt.getByTestId("cash-option-why")).toBeVisible();
-  await expect(alt.getByTestId("cash-option-why")).toContainText("within your limits but dearer than the selected plan");
-  await expect(full.locator("li")).toHaveCount(3);
-  // The recommended plan is #1, then the dearer alternatives in ascending cost.
-  const first = full.locator("li").first();
-  await expect(first).toHaveAttribute("data-testid", "cash-option-selected");
-  await expect(first).toContainText("#1");
-  await expect(full.locator("li").nth(1)).toContainText("#2");
-  await expect(full).toContainText("Only if the buyer agrees to pay early");
-  await expect(full).not.toContainText("Cannot run until the invoice is issued");
-  const rest = page.getByTestId("cash-options-rest");
-  await expect(rest).toContainText("Insufficient or not currently available");
-  await expect(rest.locator("li")).toHaveCount(2);
-  await expect(rest.locator("li[data-key=line_only]")).toContainText("Does not cover the gap");
-  await expect(rest.locator("li[data-key=line_only]")).toContainText("¥255,000.00 short at the worst point");
-  await expect(rest.locator("li[data-key=line_only]")).toContainText("in 12 days");
-  await expect(rest.locator("li[data-key=line_guaranteed_loan]")).toContainText("Not available");
-  await expect(rest.locator("li[data-key=line_guaranteed_loan]")).toContainText("in 12 days");
-  await expect(rest.locator("li[data-key=line_guaranteed_loan]")).not.toContainText(/\bday \d/i);
-  await expect(rest).not.toContainText("#");
+  await expect(page.getByTestId("cash-options-order")).toHaveText(
+    "The recommended plan first, then the other plans that can run now, cheapest first. Plans that depend on the buyer, leave a gap or are not available yet follow, and are not ranked.",
+  );
+  await expect(page.locator("#cash-options")).not.toContainText("ranked by cost");
+  expect(await options.locator("[data-group]").evaluateAll((els) => els.filter((el) => el.hasAttribute("data-testid") && el.getAttribute("data-testid")!.startsWith("cash-options-")).map((el) => el.getAttribute("data-group")))).toEqual([
+    "RECOMMENDED",
+    "CONDITIONAL_ON_BUYER",
+    "INSUFFICIENT",
+    "NOT_AVAILABLE_YET",
+  ]);
+  const recommended = page.getByTestId("cash-options-RECOMMENDED");
+  await expect(recommended.locator("h3")).toHaveText("Recommended");
+  const pick = recommended.getByTestId("cash-option-selected");
+  await expect(pick).toContainText("Bank credit line + Invoice financing (onboarded platform)");
+  await expect(pick).toContainText("Recommended");
+  await expect(pick).toContainText("#1");
+  // Each row: its cost, when the money arrives, what gap remains and what the cost assumes: the server's sentences.
+  await expect(pick.getByTestId("cash-option-total")).toHaveText("¥3,113.93");
+  await expect(pick.getByTestId("cash-option-arrival")).toHaveText("All of the funds are available in 3 days.");
+  await expect(pick.getByTestId("cash-option-gap")).toHaveText("No gap is left.");
+  await expect(pick.getByTestId("cash-option-basis")).toContainText("All charges to the assumed repayment day in 32 days.");
+  // Words with no cost claim the browser cannot make: the recommended row says it protects cash and can run today.
+  await pick.locator("summary").click();
+  await expect(pick.getByTestId("cash-option-why")).toContainText("Fully protects your cash and can run today");
+  // What depends on the buyer is its own group, never numbered, saying whose consent it needs; the server's order puts the cheaper first.
+  const conditional = page.getByTestId("cash-options-CONDITIONAL_ON_BUYER");
+  await expect(conditional.locator("h3")).toHaveText("Only if the buyer agrees to early payment");
+  await expect(conditional.locator("li")).toHaveCount(2);
+  await expect(conditional).not.toContainText("#");
+  await expect(conditional.getByTestId("cash-option-consent").first()).toHaveText("Needs Foshan Home Retail Co. to agree to pay early; it cannot run until they do.");
+  await expect(conditional.getByTestId("cash-option-arrival").first()).toHaveText("When the cash arrives depends on the buyer agreeing to pay early.");
+  const costs = await conditional.getByTestId("cash-option-total").allTextContents();
+  expect(costs[0]).toContain("¥3,938.81");
+  expect(costs[1]).toBe("¥5,040.00");
+  // Not ranked with the plans that can run now: the one that leaves a gap and the one not available yet carry no numeral either.
+  const insufficient = page.getByTestId("cash-options-INSUFFICIENT");
+  await expect(insufficient.locator("h3")).toHaveText("Leaves ¥255,000.00 uncovered");
+  await expect(insufficient.locator("li[data-key=line_only]")).toContainText("¥255,000.00 short at the worst point");
+  await expect(insufficient.locator("li[data-key=line_only]")).toContainText("in 12 days");
+  await expect(insufficient).not.toContainText("#");
+  const later = page.getByTestId("cash-options-NOT_AVAILABLE_YET");
+  await expect(later.locator("h3")).toHaveText("Not available yet: earliest in 21 days");
+  await expect(later.locator("li[data-key=line_guaranteed_loan]")).toContainText("All of the funds are available in 21 days.");
+  await expect(later.locator("li[data-key=line_guaranteed_loan]")).not.toContainText(/\bday \d/i);
+  await expect(later).not.toContainText("#");
   // The forecast is the home's own series: the trough the headline quotes is inside the drawn range, with short labels.
   const chart = page.getByTestId("cash-forecast");
   await expect(chart).toHaveAttribute("data-lowest", "-10500000");
@@ -87,6 +95,22 @@ test("risk, plan, options, forecast: one set of figures, in the owner's order", 
   await expect(chart).toContainText("With the recommended plan");
   await expect(chart).toContainText("Receipt from Foshan Home Retail Co.");
   await expect(chart).not.toContainText("Receipt the ¥420");
+  // The subtitle says what the line counts, in the server's words; the Basis fold has the facts behind it; the conclusion says how fresh it is.
+  await expect(page.locator("#cash-chart")).toContainText("Expected invoice payments at their due dates and committed funding; overdue payments are excluded; assumed line repayment in 32 days.");
+  await expect(page.locator("#cash-chart")).not.toContainText("confirmed receipts and committed funding only");
+  const basis = page.getByTestId("cash-forecast-basis");
+  await expect(basis).not.toHaveAttribute("open", "");
+  await basis.locator("> summary").click();
+  await expect(basis.getByTestId("forecast-basis-confirmed")).toHaveText("¥0.00");
+  await expect(basis.getByTestId("forecast-basis-expected")).toHaveText("¥1,680,000.00");
+  await expect(basis.getByTestId("forecast-basis-repayment")).toHaveText("in 32 days");
+  await expect(basis).toContainText("Overdue payments are left out.");
+  await expect(page.getByTestId("cash-read-when")).toHaveText("Cash read today");
+  // A day with several events is labelled by its net, never by its largest component: day 47's receipt (+¥420k) and operating bill (−¥100k) read "Net ¥320k".
+  await page.getByTestId("forecast-horizon-120").click();
+  await expect(chart).toContainText("Net ¥320k");
+  await expect(chart.locator("svg").first()).not.toContainText("Operating bill");
+  await page.getByTestId("forecast-horizon-60").click();
   await page.getByTestId("forecast-horizon-120").click();
   await expect(chart).toHaveAttribute("data-horizon", "120");
   await expect(page.locator("body")).not.toContainText(/\bDay \d/);
@@ -140,11 +164,8 @@ test("after the plan ran, the page states the current funding and folds the comp
 
 test("covered after the walk: the comparison taken when the plan was chosen is history, closed under Other plans considered", async ({ page }) => {
   // The guided demo's funding step records the Debt Desk as it stood when the decision was made.
-  await page.goto("/mandate");
-  for (let i = 0; i < 5; i++) {
-    await page.getByTestId("demo-next").click();
-    await expect(page.getByRole("region", { name: "Guided demo" }).locator("[aria-live=polite]")).toContainText(`${i + 1}/15`);
-  }
+  await page.goto("/demo");
+  await walkStory(page, 2); // the buyer asks, FLOW decides: the Debt Desk's view at decision time is kept
   await page.evaluate(() => localStorage.setItem("tl-mode", JSON.stringify({ mode: "business" })));
   await page.goto("/");
   await runPlan(page, "ALERT-RESERVE-12");
@@ -155,7 +176,7 @@ test("covered after the walk: the comparison taken when the plan was chosen is h
   await expect(considered.locator("> summary")).toHaveText("Other plans considered");
   await expect(considered).not.toHaveAttribute("open", "");
   await considered.locator("> summary").click();
-  await expect(considered.getByTestId("cash-options-full")).toBeVisible();
+  await expect(considered.getByTestId("cash-options-RECOMMENDED")).toBeVisible();
   await expect(considered.getByTestId("cash-plan-detail").locator("> summary")).toHaveText("Why this plan was selected");
 });
 
@@ -173,6 +194,12 @@ test("day 34 with a gap open: the options are today's plan, never the day-0 comp
   await expect(options).not.toContainText("¥255,000.00");
   await expect(options).not.toContainText(" ago");
   await expect(options).toContainText("¥1,706.10");
+  // The cheaper plan that needs two approvals is the ranked alternative (#2); what depends on the buyer follows it, unranked.
+  const alternative = page.getByTestId("cash-options-ALTERNATIVE");
+  await expect(alternative.locator("h3")).toHaveText("Another way to fund it");
+  await expect(alternative.locator('[data-key="router_optimum"]')).toContainText("#2");
+  await expect(alternative.locator('[data-key="router_optimum"]')).toContainText("¥1,706.10");
+  await expect(page.getByTestId("cash-options-CONDITIONAL_ON_BUYER")).not.toContainText("#");
   // The server's roles say it in the alternative's chip, so the grey "a cheaper option exists" note is not drawn a second time;
   // and the first row is titled with its sources, not the generic "Recommended plan".
   await expect(page.getByTestId("cash-cheaper-option")).toHaveCount(0);

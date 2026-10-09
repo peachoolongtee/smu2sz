@@ -1,0 +1,164 @@
+{
+  "probe": "f01-partial-alerts",
+  "request": {
+    "method": "GET",
+    "path": "/alerts",
+    "body": null,
+    "credential": [
+      "X-Owner-Token"
+    ]
+  },
+  "clock_day_before_request": 34,
+  "status": 200,
+  "response": {
+    "day": 34,
+    "basis": "CONSERVATIVE",
+    "state_version": 7,
+    "projected_offer_id": null,
+    "counts": {
+      "CRITICAL": 1,
+      "WARNING": 2,
+      "INFO": 0
+    },
+    "alerts": [
+      {
+        "id": "ALERT-RESERVE-34",
+        "kind": "RESERVE_BREACH_AHEAD",
+        "severity": "CRITICAL",
+        "title": "cash goes below zero on day 42 without action",
+        "detail": "Projected cash closes at ¥172,493.10 on day 34, ¥127,506.90 below the reserve floor; the gap peaks at ¥327,506.90 on day 42 and lasts to day 76. No committed plan restores the reserve; the cure that keeps cash at or above zero is: SUBMIT_INVOICE_FOR_FINANCING FAC-IF ¥27,506.90, cost ¥245.12 (32.5% a year for 10 days); that is above the 15.00% ceiling for what the agent may borrow alone, so it needs the owner's approval before it runs. It does not restore the reserve: cash stays at or above zero, but the reserve is still ¥300,000.00 short at the worst day, which needs the owner's decision. The projection lets cash run below zero only as a simulation limit; the bank does not allow an overdraft, so a negative figure is a day the books cannot pay what falls due.",
+        "formula": "shortfall = floor − closing_d: ¥300,000.00 − ¥172,493.10 = ¥127,506.90 (day 34); max over days 34..76 = ¥327,506.90",
+        "day": 34,
+        "month": null,
+        "amount_fen": 12750690,
+        "committed_cure": false,
+        "commitment_id": null,
+        "receivable_id": null,
+        "inputs": {
+          "floor": "¥300,000.00",
+          "closing": "¥172,493.10",
+          "last_day": "76",
+          "worst_day": "42",
+          "max_shortfall": "¥327,506.90",
+          "cure_end_day_0": "47",
+          "cure_cost": "¥245.12",
+          "cure_above_apr_cap": "true",
+          "cure_restores_reserve": "false",
+          "zero_day": "42",
+          "residual_shortfall": "¥300,000.00"
+        },
+        "suggested": [
+          {
+            "operation_kind": "SUBMIT_INVOICE_FOR_FINANCING",
+            "facility_id": "FAC-IF",
+            "receivable_id": "RI:BUYER-1:2",
+            "commitment_id": null,
+            "offer_id": null,
+            "amount_fen": 2750690,
+            "note": "submit today: the invoice is open, buyer-confirmed and not yet due",
+            "cost_fen": 24512,
+            "cost_days": 10,
+            "annual_rate": {
+              "num": 447344,
+              "den": 1375345,
+              "text": "0.33"
+            },
+            "cost_formula": "¥245.12 / ¥27,506.90 × 365/10 = 32.5% a year",
+            "above_apr_cap": true,
+            "executes_automatically": false,
+            "amount_display": "¥27,506.90",
+            "cost_display": "¥245.12"
+          }
+        ],
+        "actionable": true,
+        "basis": "CONSERVATIVE",
+        "amount_display": "¥127,506.90"
+      },
+      {
+        "id": "ALERT-PASTDUE-RCV-A",
+        "kind": "RECEIVABLE_PAST_DUE",
+        "severity": "WARNING",
+        "title": "Receivable RCV-A is 2 day(s) past due",
+        "detail": "¥291,400.00 outstanding from BUYER-1 was due on day 32 and is still OPEN. The conservative trajectory no longer counts on a dated receipt.",
+        "formula": "today − due_day = 34 − 32 = 2 > 0",
+        "day": 32,
+        "month": null,
+        "amount_fen": 29140000,
+        "committed_cure": null,
+        "commitment_id": null,
+        "receivable_id": "RCV-A",
+        "inputs": {
+          "receivable_id": "RCV-A",
+          "counterparty_id": "BUYER-1",
+          "due_day": "32",
+          "outstanding": "¥291,400.00"
+        },
+        "suggested": [
+          {
+            "operation_kind": "RECEIVE_PAYMENT",
+            "facility_id": null,
+            "receivable_id": "RCV-A",
+            "commitment_id": null,
+            "offer_id": null,
+            "amount_fen": 29140000,
+            "note": "chase the buyer; record the receipt when the money lands",
+            "cost_fen": null,
+            "cost_days": null,
+            "annual_rate": null,
+            "cost_formula": "",
+            "above_apr_cap": false,
+            "executes_automatically": false,
+            "amount_display": "¥291,400.00"
+          }
+        ],
+        "actionable": false,
+        "basis": "CONSERVATIVE",
+        "amount_display": "¥291,400.00"
+      },
+      {
+        "id": "ALERT-EARLYPAY-e4a4f81454d8",
+        "kind": "RECEIVABLE_PAST_DUE",
+        "severity": "WARNING",
+        "title": "Early payment on RCV-A did not arrive",
+        "detail": "The early payment promised under commitment CMT-5affdeff4e35b315 for day 2 did not arrive. RCV-A (¥291,400.00 outstanding from BUYER-1) is back on its original due day, day 32, and the conservative trajectory is projected that way.",
+        "formula": "promised day − today = 2 − 34 < 0 and outstanding = ¥291,400.00 > 0",
+        "day": 34,
+        "month": null,
+        "amount_fen": 29140000,
+        "committed_cure": null,
+        "commitment_id": "CMT-5affdeff4e35b315",
+        "receivable_id": "RCV-A",
+        "inputs": {
+          "commitment_id": "CMT-5affdeff4e35b315",
+          "receivable_id": "RCV-A",
+          "counterparty_id": "BUYER-1",
+          "promised_day": "2",
+          "due_day": "32",
+          "obligation_id": "CTR-193394b6ba8b-O2"
+        },
+        "suggested": [
+          {
+            "operation_kind": "RECEIVE_PAYMENT",
+            "facility_id": null,
+            "receivable_id": "RCV-A",
+            "commitment_id": "CMT-5affdeff4e35b315",
+            "offer_id": null,
+            "amount_fen": 29140000,
+            "note": "chase the buyer; record the receipt when the money lands",
+            "cost_fen": null,
+            "cost_days": null,
+            "annual_rate": null,
+            "cost_formula": "",
+            "above_apr_cap": false,
+            "executes_automatically": false,
+            "amount_display": "¥291,400.00"
+          }
+        ],
+        "actionable": false,
+        "basis": "CONSERVATIVE",
+        "amount_display": "¥291,400.00"
+      }
+    ],
+    "note": "A suggested operation is executed only through POST /alerts/{id}/act or POST /operations, never by itself."
+  }
+}

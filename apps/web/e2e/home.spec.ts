@@ -108,7 +108,7 @@ test("the next step is three facts and a Details fold; the first press asks, Can
   const action = page.getByTestId("home-next-action");
   await expect(action).toContainText("Recommended next step");
   // Three tiles: the estimated total cost, when the funds are available, who decides.
-  await expect(action.locator("dl").first().locator("dt")).toHaveText(["Estimated total cost", "Funds available", "Who decides"]);
+  await expect(action.locator("dl").first().locator("dt")).toHaveText(["Estimated cost", "Funds available", "Who decides"]);
   // Everything else waits behind "Details", closed.
   const details = action.getByTestId("next-action-details");
   await expect(details).not.toHaveAttribute("open", "");
@@ -119,7 +119,7 @@ test("the next step is three facts and a Details fold; the first press asks, Can
   // The first press asks, with what is received and what it costs; Cancel sends nothing.
   let acts = 0;
   page.on("request", (r) => {
-    if (r.method() === "POST" && /\/alerts\/[^/]+\/act$/.test(r.url())) acts += 1;
+    if (r.method() === "POST" && /\/alerts\/[^/]+\/act(\?|$)/.test(r.url())) acts += 1;
   });
   await page.getByTestId("fix-open-ALERT-RESERVE-12").click();
   const confirm = page.getByTestId("fix-confirm-ALERT-RESERVE-12");
@@ -142,7 +142,7 @@ test("Go ahead on the opening books runs the fix alone, and the home turns calm 
   await runPlan(page, "ALERT-RESERVE-12");
   const result = page.getByTestId("fix-result");
   await expect(result).toContainText("2 executed");
-  await expect(result).toContainText("The alert is cleared.");
+  await expect(result).toContainText("Solved: the alert is cleared.");
   // Each operation reads as its business sentence and its status; the engine's details wait behind "Audit details".
   await expect(result.getByTestId("op-sentence").first()).toHaveText("¥150,000.00 drawn on the Bank credit line. Cash received today.");
   await expect(result.getByTestId("op-state").first()).toContainText("Executed");
@@ -158,8 +158,8 @@ test("Go ahead on the opening books runs the fix alone, and the home turns calm 
   await expect(page.getByTestId("home-cash")).toHaveText("¥550k");
   // The status label is the server's: a WATCH with thin headroom reads "Covered, but tight", and the headroom figures show.
   await expect(page.getByTestId("home-status-word")).toHaveText("Covered, but tight");
-  await expect(page.getByTestId("home-headroom")).toHaveText("¥250k");
-  await expect(page.getByTestId("home-headroom-lowest")).toHaveText("¥0.00");
+  await expect(page.getByTestId("home-headroom")).toHaveText("Your cash is ¥250k above it");
+  await expect(page.getByTestId("home-headroom-lowest")).toHaveText("Lowest point: ¥0.00 above your minimum");
   // Recent changes lead with the business sentence, never the executor's "Advance ¥… on RI:… from FAC-… on day 0".
   const changes = page.getByTestId("home-changes-list");
   await expect(changes).toContainText("¥150,000.00 drawn on the Bank credit line. Cash received today.");
@@ -207,29 +207,27 @@ test("day 34: the fix needs approval; queuing it from the home runs nothing and 
   // once (with the link), the decision row says the question once, and Recent changes keeps its row. The operation's tier, sequence
   // and hash are under "Audit details" on the approval card (approvals.spec.ts and below).
   await expect(page.getByTestId("fix-result")).toHaveCount(0);
-  await expect(page.getByTestId("alert-waiting-ALERT-RESERVE-42")).toHaveText(/^Waiting for your approval\s*Open the approval card$/);
-  await expect(page.getByTestId("alert-approval-link-ALERT-RESERVE-42")).toHaveText("Open the approval card");
+  await expect(page.getByTestId("alert-waiting-ALERT-RESERVE-42")).toHaveText("Waiting for your approval");
+  await expect(page.getByTestId("alert-approval-link-ALERT-RESERVE-42")).toHaveText("Review and decide");
   await expect(page.getByTestId("approvals-badge")).toContainText("1 approval waiting");
   await expect(page.getByTestId("fix-open-ALERT-RESERVE-42")).toHaveCount(0);
   // Needs your decision: the question, the cost and the landing day, and a link to the card.
-  // The decision card's button is the page's one primary action (nothing else is left to run), filled like "Run funding plan".
-  await expect(page.getByTestId("home-review-primary")).toHaveText("Review and decide");
-  await expect(page.getByTestId("home-review-primary")).toHaveClass(/bg-brand-600/);
+  // The next step's card holds the page's one primary action while the plan waits (nothing else is left to run), filled like "Run funding plan";
+  // the decision row below is a plain row with a quiet "Review and decide" word.
+  await expect(page.getByTestId("alert-approval-link-ALERT-RESERVE-42")).toHaveText("Review and decide");
+  await expect(page.getByTestId("alert-approval-link-ALERT-RESERVE-42")).toHaveClass(/bg-brand-600/);
+  await expect(page.getByTestId("home-review-primary")).toHaveCount(0);
   await expect(page.locator("main button.bg-brand-600")).toHaveCount(0);
-  const decision = page.getByTestId("home-approval-APR-000001");
-  await expect(decision).toContainText("Approve ¥200,000.00 of invoice financing?");
-  await expect(decision).toContainText("Cost ¥1,782.19");
-  await expect(decision).toContainText("lands in 3 days");
-  await expect(page.getByTestId("home-change-WAITING")).toBeVisible();
+  // The question is the next step's card (cost, landing, the one primary): the Decisions card and the "Waiting" change row would say it again, so they are gone.
+  const decision = page.getByTestId("home-next-action");
+  await expect(decision.getByTestId("next-action-cost")).toContainText("¥1,782.19");
+  await expect(decision.getByTestId("next-action-lands")).toHaveText("in 3 days");
+  await expect(page.getByTestId("home-approval-APR-000001")).toHaveCount(0);
+  await expect(page.getByTestId("home-change-WAITING")).toHaveCount(0);
   await expect(page.getByTestId("home-in-transit")).toHaveCount(0);
-  await expect(page.getByTestId("home-change-WAITING")).toContainText("limit you signed");
-  // The pending approval is spelled out twice on the page, not four times: the decision card and the recent changes.
   const shown = await page.locator("main").innerText();
-  expect(shown.split("¥200,000.00 of invoice financing").length - 1).toBe(2);
-  expect(shown.split("Waiting for your approval").length - 1).toBeLessThanOrEqual(3); // the status pill, the next step's box, the recent changes
-  // ... and as a business sentence, not the executor's "Queued for owner approval (APR-000001): effective annual cost …".
-  const waiting = page.getByTestId("home-change-WAITING").getByTestId("home-change-text");
-  await expect(waiting).toHaveText("Waiting for your approval: ¥200,000.00 of invoice financing at 32.5% a year, above the 15.00% limit you signed for funding without your approval.");
+  expect(shown.split("¥200,000.00 of invoice financing").length - 1).toBeLessThanOrEqual(1);
+  expect(shown.split("Waiting for your approval").length - 1).toBeLessThanOrEqual(2); // the status pill and the next step's box
   await expect(page.getByTestId("home-changes-list")).not.toContainText("Queued for owner approval");
   await expect(page.getByTestId("home-changes-list")).not.toContainText("RI:");
   expect(await proseOf(page)).not.toMatch(/\bday \d/i);
@@ -242,9 +240,13 @@ test("day 34: the approval card is a question with the cost, the landing day and
   await expect(page).toHaveURL(/\/approvals#approval-APR-000001/);
   const card = page.locator("#approval-APR-000001");
   await expect(card.getByTestId("approval-headline")).toHaveText("Approve ¥200,000.00 of invoice financing?");
-  await expect(card).toContainText("Finance ¥200,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co.");
+  // The Source and Invoice facts say what the request is, so there is no sentence under the title repeating it.
+  await expect(card).toContainText("the ¥420,000.00 invoice to Foshan Home Retail Co.");
+  await expect(card).not.toContainText("Finance ¥200,000.00 of the ¥420,000.00 invoice");
+  await expect(card.getByTestId("approval-state-APR-000001")).toContainText("Waiting for your approval");
   await expect(card.getByTestId("approval-cost")).toContainText("¥1,782.19");
-  await expect(card.getByTestId("approval-lands")).toHaveText("in 3 days");
+  // A waiting row's landing is a forecast, said as one by the server.
+  await expect(card.getByTestId("approval-lands")).toHaveText("If you approve today, the cash lands in 3 days.");
   await expect(card.getByTestId("approval-reason")).toContainText("32.5%");
   await expect(card.getByTestId("approval-reason")).not.toContainText("annualised");
   await expect(card.getByTestId("approval-after")).toContainText("for the next 120 days");
@@ -268,8 +270,8 @@ test("day 34: the approval card is a question with the cost, the landing day and
   await expect(page.getByTestId("home-in-transit")).toContainText("¥200k funding arriving in 3 days");
   await expect(page.getByTestId("home-arriving")).toHaveText("¥200,000.00");
   await expect(page.getByTestId("home-status-word")).toHaveText("Covered, but tight");
-  await expect(page.getByTestId("home-headroom")).toHaveText("¥0.00");
-  await expect(page.getByTestId("home-headroom-lowest")).toHaveText("¥0.00");
+  await expect(page.getByTestId("home-headroom")).toHaveText("Your cash is ¥0.00 above it");
+  await expect(page.getByTestId("home-headroom-lowest")).toHaveText("Lowest point: ¥0.00 above your minimum");
   await expect(page.locator("#home-decisions")).toHaveCount(0);
   await expect(page.getByTestId("home-changes-list")).toContainText("You approved ¥200,000.00 of invoice financing. Funds arrive in 3 days.");
   // The decision is the news: the entry that waited for it is not repeated beside it.

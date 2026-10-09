@@ -1,49 +1,79 @@
 "use client";
 
-import Link from "next/link";
 import { CheckIcon } from "@/components/icons";
+import { Button } from "@/components/ui";
+import { dealRecordId } from "@/lib/api";
+import { dealProgress } from "@/lib/decision";
 import type { DictKey } from "@/lib/dictionary";
 import { useI18n } from "@/lib/i18n";
 import { useCurrentOffer } from "@/lib/use-current";
+import { useDecision } from "@/lib/use-decision";
 
 /**
- * Where the owner is in one buyer deal, as one quiet line: Received · Analysed · Respond · Agreed. The agent's own
- * stages (receiving and analysing) are done by the time the owner looks, so the line never dominates the page. The
- * state comes from the session's current offer only; it decides nothing.
+ * Where the owner is in one buyer deal, as one quiet line: Received · Analysed · Response ready · Sent · the outcome. Every step and the
+ * outcome's words come from the deal's decision record (`deal:{offer_id}`), read again whenever the books or the clock move; the line
+ * never reads the verdict's outcome, the session cache or a clicked button. While the record loads the line waits rather than guess.
+ * It is a quiet line of text: the steps do not link anywhere (they only say where the deal stands); the one place to go next is the
+ * Action of the workspace, or the approval when the outcome is waiting on one.
  */
-const STEPS: { key: DictKey; href: string }[] = [
-  { key: "steps.received", href: "/deals" },
-  { key: "steps.analysed", href: "/deals" },
-  { key: "steps.respond", href: "/deals#counters" },
-  { key: "steps.agreed", href: "/deals#commitments" },
-];
+const STEPS: { key: DictKey }[] = [{ key: "steps.received" }, { key: "steps.analysed" }, { key: "steps.ready" }, { key: "steps.sent" }];
 
 export function DealSteps() {
   const { t } = useI18n();
   const cur = useCurrentOffer();
-  const agreed = Boolean(cur.negotiation?.commitment) || cur.verdict?.outcome === "ACCEPT";
-  // A negotiation that ended without agreement closes the line too: the last step says so instead of "Agreed".
-  const noDeal = cur.negotiation?.outcome === "NO_DEAL";
-  const responded = Boolean(cur.negotiation) || cur.verdict?.outcome === "ACCEPT";
-  // How many steps are complete; the next one is the current step.
-  const done = !cur.offer ? 0 : !cur.verdict ? 1 : !responded ? 2 : agreed || noDeal ? 4 : 3;
+  const record = useDecision(cur.offerId ? dealRecordId(cur.offerId) : null);
+  if (record.error) {
+    return (
+      <nav aria-label={t("steps.label")} className="mt-3 flex flex-wrap items-center gap-2 text-xs text-ink-2" data-testid="deal-steps">
+        <span>{t("steps.unavailable")}</span>
+        <Button size="sm" onClick={record.reload}>
+          {t("common.retry")}
+        </Button>
+      </nav>
+    );
+  }
+  const d = record.data;
+  if (!d) return <nav aria-label={t("steps.label")} className="mt-3 min-h-6" data-testid="deal-steps" aria-busy={record.loading} />;
+  const p = dealProgress(d.state);
+  const outcomeTone =
+    p.tone === "bad" ? "font-semibold text-bad-fg" : p.tone === "closed" ? "font-semibold text-ink-2" : p.tone === "good" ? "text-ok-fg" : "font-semibold text-brand-700";
   return (
-    <nav aria-label={t("steps.label")} className="mb-4" data-testid="deal-steps">
+    <nav aria-label={t("steps.label")} className="mt-3" data-testid="deal-steps" data-state={d.state} aria-busy={record.loading}>
       <ol className="flex flex-wrap items-center gap-x-1 gap-y-1 text-xs">
         {STEPS.map((s, i) => {
-          const state = i < done ? "done" : i === done ? "current" : "todo";
-          const last = i === STEPS.length - 1;
-          const tone = noDeal && last ? "font-semibold text-ink-2" : state === "done" ? "text-ok-fg" : state === "current" ? "font-semibold text-brand-700" : "text-ink-3";
+          const state = i < p.done ? "done" : i === p.done ? "current" : "todo";
+          const tone = state === "done" ? "text-ok-fg" : state === "current" ? "font-semibold text-brand-700" : "text-ink-3";
+          // A deal that waits on the buyer (needs clarification) says so in the step it is stuck on.
+          const label =
+            state === "current" && p.stalled
+              ? d.state_text
+              : // The response that is ready says what it is ("Counter recommended", "Acceptable, awaiting agreement") until it has been sent.
+                s.key === "steps.ready" && d.state === "RESPONSE_READY"
+                ? t("steps.ready.with", { action: d.state_text })
+                : t(s.key);
           return (
             <li key={s.key} className="flex items-center gap-1">
               {i > 0 ? <span className="text-ink-3">·</span> : null}
-              <Link href={noDeal && last ? "/deals#counters" : s.href} aria-current={state === "current" ? "step" : undefined} className={`inline-flex items-center gap-1 rounded-pill px-2 py-1 ${tone}`}>
-                {state === "done" && !(noDeal && last) ? <CheckIcon /> : null}
-                {noDeal && last ? t("steps.noDeal") : t(s.key)}
-              </Link>
+              <span aria-current={state === "current" ? "step" : undefined} className={`inline-flex items-center gap-1 rounded-pill py-1 pr-2 ${tone}`}>
+                {state === "done" ? <CheckIcon /> : null}
+                {label}
+              </span>
             </li>
           );
         })}
+        <li className="flex items-center gap-1">
+          <span className="text-ink-3">·</span>
+          {p.reached ? (
+            <span aria-current={p.tone === "open" ? "step" : undefined} className={`inline-flex items-center gap-1 rounded-pill py-1 pr-2 ${outcomeTone}`} data-testid="deal-steps-outcome">
+              {p.tone === "good" ? <CheckIcon /> : null}
+              {d.state_text}
+            </span>
+          ) : (
+            <span className="inline-flex items-center rounded-pill py-1 pr-2 text-ink-3" data-testid="deal-steps-outcome">
+              {t("steps.agreement")}
+            </span>
+          )}
+        </li>
       </ol>
     </nav>
   );

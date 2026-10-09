@@ -1,0 +1,16 @@
+{
+  "probe": "f06-clock",
+  "request": {
+    "method": "GET",
+    "path": "/clock",
+    "body": null,
+    "credential": [
+      "X-Owner-Token"
+    ]
+  },
+  "clock_day_before_request": 34,
+  "status": 200,
+  "response": {
+    "day": 34
+  }
+}

@@ -12,8 +12,8 @@ const SEVERITIES: AlertSeverity[] = ["CRITICAL", "WARNING", "INFO"];
 const severityTone: Record<AlertSeverity, Tone> = { CRITICAL: "bad", WARNING: "warn", INFO: "info" };
 
 export default function AlertsPage() {
-  const { t, te } = useI18n();
-  const alerts = useAsync(getAlerts, []);
+  const { t, te, lang } = useI18n();
+  const alerts = useAsync(getAlerts, [lang]);
   const data = alerts.data;
   const fixer = useFixAlert();
   const ctx = useAlertContext();
@@ -45,7 +45,7 @@ export default function AlertsPage() {
       ) : (
         <div className="space-y-4">
           <p className="text-xs text-ink-3">{t("alerts.basis", { basis: te("traj.modeName", data.basis), day: data.day })}</p>
-          <FixResult result={fixer.result} error={fixer.error} changed={fixer.changed} />
+          <FixResult result={fixer.result} error={fixer.error} changed={fixer.changed} slow={fixer.slow} rechecked={fixer.rechecked} onRecheck={fixer.recheck} />
           {data.alerts.length === 0 ? (
             <EmptyState title={t("alerts.empty.title")} body={t("alerts.empty.body")} />
           ) : (

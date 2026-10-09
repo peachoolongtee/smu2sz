@@ -36,6 +36,16 @@ export function onSignedIn(l: Listener): () => void {
   };
 }
 
+const signedOutListeners = new Set<Listener>();
+
+/** Runs after the owner signs out, for example to drop the conversation and the draft the browser kept for them. */
+export function onSignedOut(l: Listener): () => void {
+  signedOutListeners.add(l);
+  return () => {
+    signedOutListeners.delete(l);
+  };
+}
+
 export function getOwnerToken(): string | null {
   return authStore.get().token;
 }
@@ -59,4 +69,5 @@ export function setOwnerToken(token: string): void {
 
 export function signOut(): void {
   authStore.set({ token: null, open: false, reason: null });
+  signedOutListeners.forEach((l) => l());
 }

@@ -36,6 +36,7 @@ EXPECTED_TABLES = {
     "evaluation_runs",
     "evidence_exports",
     "pilot_journal",
+    "decision_facts",
 }
 
 

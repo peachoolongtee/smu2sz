@@ -26,13 +26,27 @@ async function send(page: Page, text: string) {
 
 const turns = (page: Page) => page.getByTestId("chat-turn");
 
+/** Demo mode keeps the general prompts and the buyer role-play; Business is the owner's alone (see the Business chat specs at the end). */
+async function demoMode(page: Page) {
+  await page.addInitScript(() => localStorage.setItem("tl-mode", JSON.stringify({ mode: "demo" })));
+}
+
+/** Already signed in as the owner, exactly where the sign-in dialog would put the token (these specs do not test sign-in). */
+async function asOwner(page: Page) {
+  const token = isLive() ? DEMO_TOKEN : "mock-owner";
+  await page.addInitScript((tok) => sessionStorage.setItem("tl-owner-auth", JSON.stringify({ token: tok })), token);
+}
+
 /** The Business header keeps the language switch and sign-out inside the account menu; open it when it is there. */
 async function openAccountMenu(page: Page) {
   const menu = page.getByTestId("account-menu");
-  if ((await menu.count()) && !(await menu.evaluate((el) => (el as HTMLDetailsElement).open))) await menu.locator("> summary").click();
+  const summary = menu.locator("> summary");
+  // The Demo shell keeps the language switch and sign-out in its header, so the menu is not always on screen.
+  if ((await menu.count()) && (await summary.isVisible()) && !(await menu.evaluate((el) => (el as HTMLDetailsElement).open))) await summary.click();
 }
 
 test("owner: Evaluate EX01 is a REJECT, then go ahead lists the executed operations", async ({ page, request }) => {
+  await demoMode(page);
   await resetBooks(request);
   await page.goto("/chat");
   await signIn(page);
@@ -95,9 +109,10 @@ test("details are closed on a plain reply and open when the turn has a security 
 
 test("buyer: the FastCapital message gets only the refusal reply, no verdict, and sends no credential", async ({ page, request }) => {
   await resetBooks(request);
+  await demoMode(page);
   const sent: (string | undefined)[] = [];
   page.on("request", (r) => {
-    if (r.url() === `${API}/nl` && r.method() === "POST") sent.push(r.headers()["x-owner-token"]);
+    if (new URL(r.url()).pathname === "/nl" && r.method() === "POST") sent.push(r.headers()["x-owner-token"]);
   });
   await page.goto("/chat");
   await signIn(page); // signed in as owner on purpose: a buyer turn must still carry no token
@@ -124,6 +139,7 @@ test("buyer: the FastCapital message gets only the refusal reply, no verdict, an
 });
 
 test("clarification: options are buttons, and the chosen one is sent", async ({ page, request }) => {
+  await demoMode(page);
   await resetBooks(request);
   await page.goto("/chat");
   await signIn(page);
@@ -146,6 +162,7 @@ test("clarification: options are buttons, and the chosen one is sent", async ({ 
 
 test("correction: 'actually make it 0.8%' amends the pending plan and is marked corrected", async ({ page, request }) => {
   await resetBooks(request);
+  await demoMode(page);
   await page.goto("/chat");
   await signIn(page);
 
@@ -164,6 +181,7 @@ test("correction: 'actually make it 0.8%' amends the pending plan and is marked 
 });
 
 test("a 401 opens the owner sign-in dialog, and signing in resends the refused message", async ({ page }) => {
+  await demoMode(page);
   await page.goto("/chat");
   await expect(page.getByTestId("chat-signed-out")).toBeVisible();
 
@@ -210,7 +228,7 @@ test("the slide-over chat opens from another page, keeps the conversation, and c
   await expect(signin).toBeHidden();
 
   await page.getByTestId("chat-open").click();
-  const panel = page.getByRole("dialog", { name: "Chat with the agent" });
+  const panel = page.getByRole("dialog", { name: "Ask FLOW" });
   await expect(panel).toBeVisible();
   await panel.getByRole("textbox", { name: "Message" }).fill("status");
   await panel.getByTestId("chat-send").click();
@@ -232,6 +250,7 @@ test("the slide-over chat opens from another page, keeps the conversation, and c
 
 test("the Chinese UI offers Chinese prompts and gets a Chinese answer", async ({ page, request }) => {
   await resetBooks(request);
+  await demoMode(page);
   await page.goto("/chat");
   await signIn(page);
   await openAccountMenu(page);
@@ -245,13 +264,16 @@ test("the Chinese UI offers Chinese prompts and gets a Chinese answer", async ({
 
 test("network and credential failures are explained in the conversation and can be retried", async ({ page, request }) => {
   test.skip(!isLive(), "needs real network requests to intercept");
+  await demoMode(page);
   await resetBooks(request);
   await page.goto("/chat");
   await signIn(page);
 
   // Offline once: the error bubble offers Retry, which resends the same request.
   let calls = 0;
-  await page.route(`${API}/nl`, (route) => {
+  // The turn's address carries its language and mode (`/nl?mode=business`), so the route matches the path, not the whole address.
+  const nlPath = (url: URL) => url.pathname === "/nl" && url.port === new URL(API).port;
+  await page.route(nlPath, (route) => {
     if (route.request().method() === "OPTIONS") return route.continue();
     calls += 1;
     return calls === 1 ? route.abort() : route.continue();
@@ -261,10 +283,10 @@ test("network and credential failures are explained in the conversation and can 
   await page.getByTestId("chat-retry").click();
   await expect(turns(page).last().getByTestId("chat-intent")).toHaveText("Status");
   await expect(page.getByTestId("chat-log").getByRole("alert")).toHaveCount(0);
-  await page.unroute(`${API}/nl`);
+  await page.unroute(nlPath);
 
   // A server with no credentials configured answers 503.
-  await page.route(`${API}/nl`, (route) =>
+  await page.route(nlPath, (route) =>
     route.request().method() === "OPTIONS"
       ? route.continue()
       : route.fulfill({
@@ -278,31 +300,189 @@ test("network and credential failures are explained in the conversation and can 
   await expect(page.getByTestId("chat-log").getByRole("alert").last()).toContainText("Server credentials not configured");
 });
 
-test("the chat button says Ask FLOW, and a Business page offers its own questions first", async ({ page, request }) => {
+test("the prompt chips wrap inside the panel instead of running off its right edge", async ({ page, request }) => {
   await resetBooks(request);
+  await asOwner(page);
   await page.goto("/deals");
-  const signin = page.getByRole("dialog", { name: "Owner sign-in" });
-  if (isLive()) await expect(signin).toBeVisible();
-  else await page.getByTestId("owner-signin-open").click();
-  await signin.getByLabel("Owner token").fill(DEMO_TOKEN);
-  await signin.getByRole("button", { name: "Sign in" }).click();
-  await expect(signin).toBeHidden();
+  await page.getByTestId("chat-open").click();
+  const panel = page.getByRole("dialog", { name: "Ask FLOW" });
+  const list = panel.locator('[data-testid^="prompt-"]').first().locator("xpath=ancestor::ul[1]");
+  await expect(list).toBeVisible();
+  expect(await list.evaluate((el) => el.scrollWidth - el.clientWidth)).toBeLessThanOrEqual(1);
+  const edge = await panel.evaluate((el) => el.getBoundingClientRect().right);
+  for (const chip of await panel.locator('[data-testid^="prompt-"]').all()) {
+    const box = await chip.boundingBox();
+    if (box) expect(box.x + box.width).toBeLessThanOrEqual(edge + 1);
+  }
+});
+
+test("the chat button says Ask FLOW, and a Business page offers only the questions it can answer", async ({ page, request }) => {
+  await resetBooks(request);
+  await asOwner(page);
+  await page.goto("/deals");
 
   const open = page.getByTestId("chat-open");
   await expect(open).toContainText("Ask FLOW");
   await expect(open).not.toContainText("Ask the agent");
   await open.click();
-  const panel = page.getByRole("dialog", { name: "Chat with the agent" });
-  // The Deals questions come first; the general prompts stay after them.
+  const panel = page.getByRole("dialog", { name: "Ask FLOW" });
   const chips = panel.locator('[data-testid^="prompt-"]');
-  await expect(chips.first()).toHaveAttribute("data-testid", "prompt-page-counter");
-  await expect(panel.getByTestId("prompt-page-counter")).toHaveText("Why are we countering this?");
-  await expect(panel.getByTestId("prompt-page-accept")).toHaveText("What would happen if I accepted?");
-  await expect(panel.getByTestId("prompt-evaluate")).toBeVisible();
+  // No deal has been evaluated on this page, so the questions about one are hidden rather than shown to fail.
+  await expect(panel.getByTestId("prompt-page-waiting")).toHaveText("What are we waiting for?");
+  await expect(chips).toHaveCount(1);
   await page.keyboard.press("Escape");
 
-  // Another page, other questions: Receivables asks who is late.
+  // Another page, other questions: Receivables asks what is overdue (who to chase appears only when something is).
   await page.goto("/receivables");
   await page.getByTestId("chat-open").click();
-  await expect(page.getByRole("dialog", { name: "Chat with the agent" }).getByTestId("prompt-page-late")).toHaveText("Which payments are late?");
+  await expect(page.getByRole("dialog", { name: "Ask FLOW" }).getByTestId("prompt-page-overdue")).toHaveText("What is overdue?");
+  await page.keyboard.press("Escape");
+
+  // Home: what changed and what needs attention.
+  await page.goto("/");
+  await page.getByTestId("chat-open").click();
+  const home = page.getByRole("dialog", { name: "Ask FLOW" });
+  await expect(home.getByTestId("prompt-page-changed")).toHaveText("What changed today?");
+  await expect(home.getByTestId("prompt-page-attention")).toHaveText("What needs my attention?");
+});
+
+test("Business chat is the owner's alone: no role switch, no Tier 1 hint, no fixture or approve-it chips", async ({ page, request }) => {
+  await resetBooks(request);
+  await asOwner(page);
+  for (const route of ["/chat", "/"]) {
+    await page.goto(route);
+    if (route !== "/chat") await page.getByTestId("chat-open").click();
+    const scope = route === "/chat" ? page.locator("main") : page.getByRole("dialog", { name: "Ask FLOW" });
+    await expect(scope.getByTestId("chat-send")).toBeVisible();
+    await expect(page.getByRole("radio", { name: "Buyer (counterparty)" })).toHaveCount(0);
+    await expect(page.getByRole("radio", { name: "Owner", exact: true })).toHaveCount(0);
+    await expect(page.getByTestId("chat-counterparty")).toHaveCount(0);
+    await expect(page.locator("body")).not.toContainText("Owner channel. Tier 1 actions");
+    for (const demoOnly of ["prompt-evaluate", "prompt-amend", "prompt-approve", "prompt-fund", "prompt-goal", "prompt-vague"]) {
+      await expect(page.getByTestId(demoOnly)).toHaveCount(0);
+    }
+    expect(await scope.locator('[data-testid^="prompt-"]').count()).toBeLessThanOrEqual(4);
+  }
+  // Demo mode is where the buyer role-play and the general prompts live.
+  await page.evaluate(() => localStorage.setItem("tl-mode", JSON.stringify({ mode: "demo" })));
+  await page.goto("/chat");
+  await expect(page.getByRole("radio", { name: "Buyer (counterparty)" })).toBeVisible();
+  await expect(page.getByTestId("prompt-evaluate")).toBeVisible();
+});
+
+test("the Deals question about the deal explains the verdict the page evaluated, and the panel says what it is discussing", async ({ page, request }) => {
+  await resetBooks(request);
+  await asOwner(page);
+  await page.goto("/deals");
+  await page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01").click();
+  await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
+  await expect(page.getByTestId("deal-recommendation")).toHaveText("Counter recommended");
+
+  await page.getByTestId("chat-open").click();
+  const panel = page.getByRole("dialog", { name: "Ask FLOW" });
+  // The page holds an evaluated deal with counters, so all four Deals questions are offered.
+  await expect(panel.locator('[data-testid^="prompt-"]')).toHaveText([
+    "Why are we countering this?",
+    "What if I accept their original terms?",
+    "Why is Option A cheaper?",
+    "What are we waiting for?",
+  ]);
+  await expect(panel.getByTestId("chat-discussing")).toHaveCount(0); // nothing asked yet, nothing used yet
+
+  // The chat never evaluated anything: the answer is about the page's deal, named, with the server's own figures.
+  await panel.getByTestId("prompt-page-counter").click();
+  const why = panel.getByTestId("chat-turn").last();
+  // The live server answers in the owner's words, starting with the page's own word; the mock replays the earlier recorded template.
+  await expect(why.getByTestId("chat-reply")).toContainText(isLive() ? "FLOW recommends a counter:" : "About the Foshan Home Retail Co. offer evaluated today:");
+  await expect(why.getByTestId("chat-reply")).not.toContainText("no verdict to explain");
+  // A Business page says it in the reply, in words; the verdict panel (outcome, tier, codes) is the Demo views'.
+  await expect(why.getByTestId("chat-outcome")).toHaveCount(0);
+  await expect(panel.getByTestId("chat-discussing")).toHaveText("Discussing: the Foshan Home Retail Co. offer");
+
+  await panel.getByTestId("prompt-page-original").click();
+  const original = panel.getByTestId("chat-turn").last();
+  await expect(original.getByTestId("chat-reply")).toContainText("FLOW would not accept their original terms as written.");
+  await expect(original.getByTestId("chat-reply")).toContainText("¥28,326.92");
+  await expect(original.getByTestId("chat-reply")).toContainText("Nothing has been accepted or sent.");
+  await expect(original.getByTestId("chat-ops")).toHaveCount(0);
+
+  await panel.getByTestId("prompt-page-option").click();
+  const option = panel.getByTestId("chat-turn").last();
+  await expect(option.getByTestId("chat-reply")).toContainText("Option A:");
+  await expect(option.getByTestId("chat-reply")).toContainText("¥3,027.77");
+});
+
+test("Home's 'What changed today?' is a read of the books, not a list of what the agent can do", async ({ page, request }) => {
+  await resetBooks(request);
+  await asOwner(page);
+  await page.goto("/");
+  await page.getByTestId("chat-open").click();
+  const panel = page.getByRole("dialog", { name: "Ask FLOW" });
+  await panel.getByTestId("prompt-page-changed").click();
+  const turn = panel.getByTestId("chat-turn").last();
+  await expect(turn.getByTestId("chat-reply")).toContainText("Nothing has changed today; the forecast is unchanged:");
+  await expect(turn.getByTestId("chat-reply")).not.toContainText("I can't do that");
+  await expect(turn.getByTestId("chat-ops")).toHaveCount(0);
+});
+
+test("Business chat says one outcome in the owner's words: no verdict panel, no intent chip, no tier or operation rows, and the confirmation is 'Yes, run it'", async ({ page, request }) => {
+  await resetBooks(request);
+  await asOwner(page);
+  await page.goto("/chat");
+  await send(page, "Evaluate EX01");
+  const first = turns(page).first();
+  await expect(first.getByTestId("chat-awaiting")).toBeVisible();
+  await expect(first.getByTestId("chat-goahead")).toHaveText("Yes, run it");
+  await expect(first.getByTestId("chat-verdict")).toHaveCount(0);
+  await expect(first.getByTestId("chat-outcome")).toHaveCount(0);
+  await expect(first.getByTestId("chat-intent")).toHaveCount(0);
+  // The live server writes the Business template (no ids, no tier words); the mock replays the engine's recorded reply.
+  if (isLive()) await expect(first.getByTestId("chat-reply")).not.toContainText(/TIER|Tier \d/);
+  // Confirming runs it; the operation rows are the owner's sentences (no tier badge or hash in the row).
+  await first.getByTestId("chat-goahead").click();
+  await expect(turns(page).last().getByTestId("chat-ops")).toBeAttached();
+  // Each row is the owner's sentence; the tier, sequence and hash are behind "Audit details".
+  await expect(turns(page).last().getByTestId("op-audit").first()).toBeAttached();
+  await expect(turns(page).last().getByTestId("op-sentence").first()).toBeAttached();
+});
+
+test("a refresh keeps the draft and the conversation, and a pending plan points to the Approvals page", async ({ page, request }) => {
+  await resetBooks(request);
+  await asOwner(page);
+  await page.goto("/chat");
+  await send(page, "Evaluate EX01");
+  await expect(turns(page).first().getByTestId("chat-awaiting")).toBeVisible();
+  const session = await page.evaluate(() => JSON.parse(sessionStorage.getItem("tl-chat-session") ?? "{}").convs?.OWNER?.sessionId as string | null);
+  expect(session).toBeTruthy();
+
+  await page.getByRole("textbox", { name: "Message" }).fill("what is the reserve fl");
+  expect(await page.evaluate(() => sessionStorage.getItem("tl-chat-draft"))).toContain("what is the reserve fl");
+
+  await page.reload();
+  // The half-typed question is back, and so is the conversation, as history: the old buttons are gone.
+  await expect(page.getByRole("textbox", { name: "Message" })).toHaveValue("what is the reserve fl");
+  await expect(turns(page)).toHaveCount(1);
+  await expect(turns(page).first().getByTestId("chat-reply")).toContainText(isLive() ? "FLOW recommends a counter" : "REJECT");
+  await expect(turns(page).first().getByTestId("chat-goahead")).toHaveCount(0);
+  await expect(turns(page).first().getByTestId("chat-restored-pending")).toContainText("Your pending approvals are on the Approvals page.");
+  await expect(turns(page).first().getByRole("link", { name: "Open Approvals" })).toHaveAttribute("href", "/approvals");
+
+  // The same server session continues: the next turn keeps the id (and, live, the server still remembers the pending plan).
+  await page.getByRole("textbox", { name: "Message" }).fill("status");
+  await page.getByTestId("chat-send").click();
+  await expect(turns(page)).toHaveCount(2);
+  expect(await page.evaluate(() => JSON.parse(sessionStorage.getItem("tl-chat-session") ?? "{}").convs?.OWNER?.sessionId)).toBe(session);
+  expect(await page.evaluate(() => sessionStorage.getItem("tl-chat-draft"))).not.toContain("reserve");
+  if (isLive()) {
+    await send(page, "go ahead");
+    await expect(turns(page).last().getByTestId("chat-ops")).toBeAttached();
+  }
+
+  // Signing out takes the conversation and the draft out of the browser with the token.
+  await page.getByRole("textbox", { name: "Message" }).fill("a private note");
+  await openAccountMenu(page);
+  await page.getByTestId("owner-signout").click();
+  await expect(page.getByTestId("owner-signin-open")).toBeVisible();
+  await expect(page.getByRole("textbox", { name: "Message" })).toHaveValue("");
+  await expect(turns(page)).toHaveCount(0);
 });

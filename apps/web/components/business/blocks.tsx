@@ -87,7 +87,8 @@ export function ChangesBlock({ changes, sinceWhen }: { changes: HomeChange[]; si
   const { t } = useI18n();
   const row = (c: HomeChange, i: number) => (
     <li key={`${c.day}-${c.seq}-${i}`}>
-      <Row testId={`home-change-${c.kind}`} titleTestId="home-change-text" avatar={<Avatar tone={CHANGE_TONE[c.kind] ?? "neutral"}>{CHANGE_ICON[c.kind] ?? <CheckIcon />}</Avatar>} title={c.event_text ?? c.text} sub={c.when} />
+      <Row testId={`home-change-${c.kind}`} titleTestId="home-change-text" avatar={<Avatar tone={CHANGE_TONE[c.kind] ?? "neutral"}>{CHANGE_ICON[c.kind] ?? <CheckIcon />}</Avatar>} title={c.event_text ?? c.text} sub={c.when}>
+      </Row>
     </li>
   );
   const rest = changes.slice(CHANGES_SHOWN);
@@ -146,33 +147,22 @@ export function ReceivablesBlock({ r, worth }: { r: HomeReceivables; worth?: Rec
           </p>
         )}
         {worth?.rows.length && worth.top_action ? (
-          <p className="py-2.5 text-sm text-ink-2" data-testid="home-top-action">
-            {worth.top_action}
-          </p>
+          <div className="py-2.5 text-sm text-ink-2" data-testid="home-top-action">
+            <p>{worth.top_action}</p>
+            {worth.top_action_second ? <p className="mt-1" data-testid="home-top-action-second">{worth.top_action_second}</p> : null}
+          </div>
         ) : null}
       </div>
     </Card>
   );
 }
 
-/** Levels 3 and 4, closed by default: what is on its way, the warnings, the facilities and the debt readings. */
+/** Levels 3 and 4, closed by default: the warnings, the facilities and the debt readings. What is on its way is said once, in the hero. */
 export function DetailsBlock({ h }: { h: HomeView }) {
   const { t } = useI18n();
   return (
     <Disclosure card testId="home-details" summary={t("biz.details")}>
       <div className="space-y-5">
-        {h.cash.in_transit ? (
-          <section>
-            <h3 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-ink-3">{t("transit.title")}</h3>
-            <ul className="text-sm">
-              {h.cash.in_transit.lots.map((l, i) => (
-                <li key={i} data-testid="in-transit-lot">
-                  {t("biz.transit.lands", { amount: l.amount_display, when: l.arrival_when })} <span className="text-ink-3">· {l.facility_name}</span>
-                </li>
-              ))}
-            </ul>
-          </section>
-        ) : null}
         {h.warnings.length ? (
           <section>
             <h3 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-ink-3">{t("biz.warnings")}</h3>
@@ -231,7 +221,7 @@ export function DetailsBlock({ h }: { h: HomeView }) {
         </section>
         <p className="text-xs text-ink-3">
           {h.note_basis}{" "}
-          <Link href="/cash" className="font-medium text-brand-700 underline underline-offset-2">
+          <Link href="/cash" className={textLinkClass}>
             {t("biz.openCash")}
           </Link>
         </p>

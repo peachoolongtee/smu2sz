@@ -1,0 +1,35 @@
+[WebServer] INFO:     Started server process [21351]
+[WebServer] INFO:     Waiting for application startup.
+[WebServer] INFO:     Application startup complete.
+[WebServer] INFO:     Uvicorn running on http://127.0.0.1:8181 (Press CTRL+C to quit)
+[WebServer] $ next build
+[WebServer] $ next start -p 3253
+
+Running 23 tests using 1 worker
+
+  ✓   1 [live] › e2e/live.spec.ts:16:5 › every API request carries the owner token (1.1s)
+  ✓   2 [live] › e2e/live.spec.ts:28:5 › a 401 from the API opens the owner sign-in dialog instead of leaving a blank screen (154ms)
+  ✓   3 [live] › e2e/live.spec.ts:44:5 › the borrower file downloads as HTML and Word, and the owner approves the one pending application (968ms)
+  ✓   4 [live] › e2e/live.spec.ts:70:5 › the EX01 verdict shows each early-pay discount as a yearly rate, the offer's and Counter A's (1.1s)
+  ✓   5 [live] › e2e/live.spec.ts:82:5 › the day-0 plan: 'go ahead' brings cash now and leaves the advance in transit until its landing day (460ms)
+  ✓   6 [live] › e2e/live.spec.ts:172:5 › on day 34 the cure needs the owner: the alert says so, the click queues it, approval runs it, the cash lands on day 37 (1.7s)
+  ✓   7 [live] › e2e/live.spec.ts:257:5 › when the books move after the alert was shown, the act answers 409 and the page says so without success styling (646ms)
+  ✓   8 [live] › e2e/live.spec.ts:279:5 › an approval is refused when the server does not recognise the owner (594ms)
+  ✓   9 [live] › e2e/live.spec.ts:297:5 › the plan card shows the landing day the API sent, not one derived from the lead time (1.1s)
+  ✓  10 [live] › e2e/live.spec.ts:324:5 › a write that lost a race is sent once more after the hint, and succeeds (3.8s)
+  ✓  11 [live] › e2e/live.spec.ts:338:5 › a second conflict is not retried again: the error says the books were busy (3.1s)
+  ✓  12 [live] › e2e/live.spec.ts:353:5 › the Business inbox waits for the books before it shows any sender, and says so when they fail to load (2.0s)
+  ✓  13 [live] › e2e/live.spec.ts:382:5 › day 34 with no receipt: the Home says below the reserve today, the promise is history, and no page says 'by today' (2.2s)
+  ✓  14 [live] › e2e/live.spec.ts:403:5 › day 34 after a half receipt: the early-payment window for the rest is said as ended, not 'by today' (631ms)
+  ✓  15 [live] › e2e/live.spec.ts:421:5 › day 34 after a half receipt: Chase payment opens the API's handoff, its balance is the API's own, and the receipt row names its four facts (576ms)
+  ✓  16 [live] › e2e/live.spec.ts:445:5 › approving after the mandate has expired is refused: the card ends as 'could not run', with no buttons and no money moved (2.1s)
+  ✓  17 [live] › e2e/live.spec.ts:483:5 › a buyer's agreement that expired before the owner looked cannot be approved: the card says why and keeps Decline (553ms)
+  ✓  18 [live] › e2e/live.spec.ts:521:5 › Deals: Send carries what was shown, and the record's state follows: Agreed, then Fulfilled once the receipt came (1.5s)
+  ✓  19 [live] › e2e/live.spec.ts:555:5 › Deals: with no receipt on day 2 the line says the early payment did not arrive, and the agreement stays listed (996ms)
+  ✓  20 [live] › e2e/live.spec.ts:576:5 › Deals: if the books moved after the proposal was shown, Send is refused, nothing is sent, and Check again gets a current one (1.6s)
+  ✓  21 [live] › e2e/live.spec.ts:601:5 › Home: a cure that cannot restore the reserve leaves a remaining task with the routes it names, and the invoice link lands on its row (2.7s)
+  ✓  22 [live] › e2e/live.spec.ts:632:5 › Deals: the workspace is the API's, in its order, and ?buyer= selects the buyer's deal (560ms)
+  ✓  23 [live] › e2e/live.spec.ts:653:5 › Cash: the comparison arrives grouped and ordered by the API, and the forecast says what it counts (501ms)
+
+  23 passed (37.0s)
+EXIT 0 DURATION_S 37

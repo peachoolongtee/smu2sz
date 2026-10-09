@@ -4,6 +4,7 @@ layer only authenticates the owner and never trusts a body's claim to be the own
 from __future__ import annotations
 
 import json
+import logging
 from dataclasses import asdict
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
@@ -11,13 +12,24 @@ from pydantic import BaseModel, TypeAdapter, ValidationError
 
 from app.alerts import alerts
 from app.api.auth import is_bank_feed, log_refusal, require_owner, require_owner_or_agent
-from app.api.home import cure_after_words
+from app.api.decisions import approval_decision, execution_view, load_context, quote_for
+from app.api.home import cure_after
 from app.api.presentation import (
+    COMMERCIAL_KINDS,
+    agreement_terms,
     approval_reason_words,
+    approval_result_state,
     approval_words,
-    in_words,
-    relative_days,
+    business_text,
+    decided_headline,
+    executed_words,
+    find_agreement,
+    last_read,
+    party_name,
+    quote_not_recorded,
     result_words,
+    short_kind,
+    t,
     when_text,
 )
 from app.api.runtime import get_runtime
@@ -30,8 +42,9 @@ from app.operations import security_summary
 from app.operations.log import read_entries
 from app.persistence import ApprovalAlreadyDecided
 
+log = logging.getLogger("termsledger.decisions")
 router = APIRouter()
-_OP = TypeAdapter(Operation)
+_OP: TypeAdapter[Operation] = TypeAdapter(Operation)
 
 
 def _result(r) -> dict:
@@ -67,30 +80,101 @@ def _decision_runs(records) -> dict:
     return out
 
 
+def _execution_status(approval_status: str, run_status: str | None) -> str:
+    """What came of an approval, as one word the card can switch on: PENDING (waiting, or nothing ran yet), EXECUTED, REFUSED (the
+    owner approved but the run was refused), DUPLICATE, or DECLINED (the owner said no)."""
+    if approval_status == "REJECTED":
+        return "DECLINED"
+    return run_status if run_status in ("EXECUTED", "REFUSED", "DUPLICATE") else "PENDING"
+
+
+def _quoted_cost(view: dict, op_id: str) -> dict | None:
+    return next((x for x in view.get("lines", []) if x["op_id"] == op_id), None)
+
+
+def _decision_fields(ctx, rt, a, op: dict, status: str, pres: dict, run, lang: str = "en") -> dict:
+    """The decision record's part of a queue row: its id and state, the stored quote (a decided row never shows a price taken from
+    today's alerts), what ran, and the summary. An approval with no stored quote says so."""
+    did = approval_decision(a, ctx.commitments)
+    found = ctx.states().get(did) if did else None
+    out: dict = {"decision_id": did, "decision_state": None, "quote": None, "execution": None}
+    pending = status == "PENDING"
+    ds = found[0] if found else None
+    if ds is not None:
+        out["decision_state"] = ds.state.value
+    if a.kind not in COMMERCIAL_KINDS:
+        if ds is not None and ds.quote is not None:
+            view = quote_for(ctx, ds, lang, decided=not pending)
+            line = _quoted_cost(view, str(op.get("op_id") or ""))
+            if pending:
+                shown = pres.get("cost_display")
+                if line is not None and shown and line["cost_display"] and shown != line["cost_display"]:
+                    view["text"] = t(lang, f"Quoted when requested: {line['cost_display']}; today's price is {shown}.",
+                                     f"提交时的报价：{line['cost_display']}；今日价格为 {shown}。")
+            else:  # the price the owner approved is the one they were quoted
+                if line is not None:
+                    pres["cost_display"], pres["rate_text"], pres["cost_due_day"] = line["cost_display"], line["rate_text"], None
+                    pres["cost_due_day"] = next((q.cost_end_day for q in ds.quote.legs if q.op_id == line["op_id"]), None)
+                pres["protects"] = view["after"]
+                pres["residual"] = ({"shortfall_display": fmt_yuan(ds.quote.residual_shortfall_fen),
+                                     "from_when": when_text(ds.quote.after_first_short_day, ctx.today, lang),
+                                     "restores_reserve": False, "text": view["after"]}
+                                    if ds.quote.restores_reserve is False and ds.quote.residual_shortfall_fen is not None
+                                    and ds.quote.after_first_short_day is not None else None)
+            out["quote"] = view
+        else:
+            out["quote"] = quote_not_recorded(not pending, lang)
+    exec_status = pres.get("execution_status")
+    summary: str | None
+    if pending:
+        summary = t(lang, "Waiting for your approval. Nothing has run.", "等待您批准，尚未执行。")
+    else:
+        summary = pres.get("result_message") or (execution_view(ctx, ds, lang)["summary_text"] if ds is not None else None)
+    out["execution"] = {"status": exec_status, "summary_text": summary}
+    return out
+
+
 @router.get("/approvals/queue", dependencies=[Depends(require_owner)])
-def approvals_queue() -> dict:
+def approvals_queue(lang: str = "en") -> dict:
+    """The Tier-2 queue, read once under one lock so every row is from the same books. `lang` (en | zh, additive) is the language of
+    every sentence the server writes for the cards."""
     rt = get_runtime()
+    lang = "zh" if lang == "zh" else "en"
+    with rt.lock:
+        return _approvals_queue(rt, lang)
+
+
+def _approvals_queue(rt, lang: str) -> dict:
     out = []
     ran = _decision_runs(rt.store.operations())
     state = rt.store.get_state()
-    # The alerts whose cures are queued carry the engine's price for them; read once, only when something is pending.
+    commitments = rt.store.commitments()
+    agreements = {c.id: party_name(state, c.counterparty_id) for c in commitments}
+    # The alerts whose cures are queued carry the engine's price for them; read once, only when something is pending. A decided
+    # row is never priced from them: its quote is the fact stored when it was requested.
     open_alerts: dict = {}
     plan_costs: dict = {}
     obs: list = []
-    if any(str(getattr(a.status, "value", a.status)) == "PENDING" for a in rt.store.approvals()):
-        try:
-            with rt.lock:
+    ctx = None
+    with rt.lock:
+        if any(str(getattr(a.status, "value", a.status)) == "PENDING" for a in rt.store.approvals()):
+            try:
                 open_alerts = {al.id: al for al in alerts(state, rt.store.get_mandate(), rt.store, rt.day)}
                 obs = current_books(state, rt.store.commitments()).with_([])
                 if rt.settings.features.debt_desk:  # a queued leg of the recommended router plan carries its cost line
                     books = current_books(state, rt.store.commitments())
                     plan = runnable_plan(books.state, books.with_([]), rt.store.get_mandate())
                     plan_costs = cost_lines_by_leg(plan) if plan is not None else {}
-        except EngineError:
-            open_alerts = {}
+            except EngineError:
+                open_alerts = {}
+        try:
+            ctx = load_context(rt)
+        except Exception:
+            log.exception("the decision record could not be read for the approvals queue")
     for a in rt.store.approvals():
         d = asdict(a)
         d["status"] = str(getattr(a.status, "value", a.status))
+        pending = d["status"] == "PENDING"
         try:
             d["operation"] = json.loads(a.op_json)
         except ValueError:
@@ -100,25 +184,59 @@ def approvals_queue() -> dict:
         d.update({"tier": "TIER_2", "created_day": op.get("day"), "amount_fen": amt,
                   "amount_display": fmt_yuan(amt) if isinstance(amt, int) else None,
                   "subject": f"{(a.kind or '').replace('_', ' ').lower()} {op.get('facility_id', '')}".strip()})
-        run = ran.get(a.id)
-        if d.get("decided_day") is None and run is not None:  # decided before the record kept the day
-            d["decided_day"] = run.result.effective_day
-        d["result_message"] = run.result.message if run is not None else None
-        # Presentation fields (business words) for the owner's card: the question, names, cost and landing day.
-        alert = open_alerts.get((a.op_id or "").split(":")[1]) if (a.op_id or "").startswith("alert:") else None
-        d["presentation"] = approval_words(state, op, a.kind, rt.day, alert, "en", plan_costs,
-                                           after=cure_after_words(state, obs, rt.store.get_mandate(), alert, rt.day, "en") if alert is not None else None)
-        d["presentation"]["reason"] = approval_reason_words(state, a.reason, rt.day, "en")
-        d["presentation"]["result_message"] = (
-            (result_words(state, kind=a.kind or "", status=run.result.status.value, payload=op, day=run.result.effective_day,
-                          today=rt.day, lang="en") if run is not None else None)
-            or (relative_days(in_words(state, d["result_message"]), rt.day, "en") if d["result_message"] else None))
-        d["presentation"]["decided_when"] = (relative_days(f"on day {d['decided_day']}", rt.day, "en")
-                                             if d.get("decided_day") is not None else None)
-        d["presentation"]["created_when"] = (when_text(int(d["created_day"]), rt.day, "en")
-                                             if d.get("created_day") is not None else None)
+        try:
+            run = ran.get(a.id)
+            if d.get("decided_day") is None and run is not None:  # decided before the record kept the day
+                d["decided_day"] = run.result.effective_day
+            d["result_message"] = run.result.message if run is not None else None
+            # Presentation fields (business words) for the owner's card: the question, names, cost and landing day.
+            alert = (open_alerts.get((a.op_id or "").split(":")[1])
+                     if pending and (a.op_id or "").startswith("alert:") else None)
+            after, residual = (cure_after(state, obs, rt.store.get_mandate(), alert, rt.day, lang) if alert is not None else (None, None))
+            # An agreement row carries its terms, resolved here from the commitment it refers to (F02).
+            terms = agreement_terms(state, find_agreement(op, commitments), rt.day, lang,
+                                     pending=pending,
+                                     horizon_days=rt.store.get_mandate().forward_concession_horizon_days) if a.kind in COMMERCIAL_KINDS else None
+            d["presentation"] = approval_words(state, op, a.kind, rt.day, alert, lang, plan_costs if pending else None, after=after,
+                                               status=d["status"], agreement=terms)
+            d["presentation"]["residual"] = residual
+            d["presentation"]["execution_status"] = _execution_status(d["status"], run.result.status.value if run is not None else None)
+            if terms is not None and d["amount_display"] is None:
+                d["amount_display"] = d["presentation"]["amount_display"]  # the agreement's scope, never ¥0.00
+            d["presentation"]["reason"] = approval_reason_words(state, a.reason, rt.day, lang)
+            d["presentation"]["next_step_text"] = d["presentation"]["next_step_href"] = None
+            if not pending:
+                (d["presentation"]["headline"], d["presentation"]["next_step_text"],
+                 d["presentation"]["next_step_href"]) = decided_headline(
+                    kind=a.kind or "", status=d["status"], execution_status=d["presentation"]["execution_status"],
+                    amount_display=d["presentation"].get("amount_display") or d["amount_display"], what=short_kind(a.kind or "", lang),
+                    buyer=(terms or {}).get("counterparty_name"), lang=lang)
+            d["presentation"]["result_state_text"], d["presentation"]["result_tone"] = approval_result_state(
+                kind=a.kind or "", status=d["status"], execution_status=d["presentation"]["execution_status"],
+                lands_day=d["presentation"]["lands_day"], today=rt.day, lang=lang)
+            d["presentation"]["result_message"] = (
+                (result_words(state, kind=a.kind or "", status=run.result.status.value, payload=op, day=run.result.effective_day,
+                              today=rt.day, lang=lang, approval_status=d["status"], message=run.result.message,
+                              agreements=agreements) if run is not None else None)
+                or (business_text(state, d["result_message"], rt.day, lang, agreements) if d["result_message"] else None))
+            d["presentation"]["decided_when"] = (when_text(int(d["decided_day"]), rt.day, lang)
+                                                 if d.get("decided_day") is not None else None)
+            d["presentation"]["created_when"] = (when_text(int(d["created_day"]), rt.day, lang)
+                                                 if d.get("created_day") is not None else None)
+        except Exception:
+            log.exception("approval %s could not be presented", a.id)
+            d.setdefault("presentation", None)
+        if d.get("presentation") is not None:
+            d["result_state_text"] = d["presentation"].get("result_state_text")
+            d["result_tone"] = d["presentation"].get("result_tone")
+        d.update({"decision_id": None, "decision_state": None, "quote": None, "execution": None})
+        if ctx is not None and d.get("presentation") is not None:
+            try:
+                d.update(_decision_fields(ctx, rt, a, op, d["status"], d["presentation"], ran.get(a.id), lang))
+            except Exception:
+                log.exception("approval %s: the decision record could not be read", a.id)
         out.append(d)
-    return {"approvals": out}
+    return {"approvals": out, "lang": lang, **last_read(rt.day, lang)}
 
 
 class Decision(BaseModel):
@@ -126,8 +244,12 @@ class Decision(BaseModel):
 
 
 @router.post("/approvals/{approval_id}", dependencies=[Depends(require_owner_or_agent)])
-def decide(approval_id: str, body: Decision, request: Request, x_owner_token: str | None = Header(default=None)) -> dict:
+def decide(approval_id: str, body: Decision, request: Request, x_owner_token: str | None = Header(default=None),
+           lang: str = "en") -> dict:
+    """The owner's decision on a queued approval. `lang` (en | zh, additive) is the language of the words the server writes for the
+    result (`message_when`, `event_text`, `event_detail`); the executor's `message` stays as written."""
     rt = get_runtime()
+    lang = "zh" if lang == "zh" else "en"
     actor = Actor.OWNER if rt.is_owner(x_owner_token) else Actor.AGENT
     if rt.store.get_approval(approval_id) is None:
         log_refusal(request, f"decision on unknown approval {approval_id}")
@@ -138,7 +260,16 @@ def decide(approval_id: str, body: Decision, request: Request, x_owner_token: st
     except ApprovalAlreadyDecided:
         log_refusal(request, f"decision on already-decided approval {approval_id}")  # F-08
         raise HTTPException(409, {"code": "APPROVAL_ALREADY_DECIDED", "approval_id": approval_id}) from None
-    return {"result": _result(r)}
+    raw = _result(r)
+    words: dict = {}
+    try:  # the words are a presentation read: a failure here never changes the answer to the decision
+        approval = rt.store.get_approval(approval_id)
+        state = rt.store.get_state()
+        words = executed_words(state, payload=json.loads(approval.op_json) if approval is not None else {}, result=raw, today=rt.day,
+                               lang=lang, agreements={c.id: party_name(state, c.counterparty_id) for c in rt.store.commitments()})
+    except Exception:
+        log.exception("the words for the decision on %s could not be written", approval_id)
+    return {"result": {**raw, **words}, "lang": lang}
 
 
 @router.post("/circuit/{counterparty_id}/reset", dependencies=[Depends(require_owner_or_agent)])

@@ -4,29 +4,30 @@ import Link from "next/link";
 import { useEffect } from "react";
 import { CashForecast } from "@/components/lazy-charts";
 import { CurrentFunding } from "@/components/business/current-funding";
+import { PartialRead } from "@/components/business/freshness";
 import { FacilityExplainer } from "@/components/business/facility-explainer";
 import { FundingOptions } from "@/components/business/funding-options";
 import { NextActionBlock } from "@/components/business/next-action";
+import { RemainingTaskBlock } from "@/components/business/open-decisions";
 import { FixResult, useFixAlert } from "@/components/home/fix-alert";
 import { ChevronRightIcon } from "@/components/icons";
-import { Badge, Card, ErrorState, Formula, LoadingBlock, PageHeader, Stat, TableWrap, tableCls, tdCls, thCls } from "@/components/ui";
+import { Badge, Card, ErrorState, Formula, LoadingBlock, PageHeader, Stat, TableWrap, tableCls, tdCls, textLinkClass, thCls } from "@/components/ui";
 import { getHome, getPriceCurve, getTrajectory, planFunding } from "@/lib/api";
 import { onSignedIn } from "@/lib/auth";
 import { bump, useDemo } from "@/lib/demo-store";
 import { useI18n } from "@/lib/i18n";
 import type { FundingView } from "@/lib/types";
 import { useAsync, useStrategyAsync } from "@/lib/use-async";
+import { versusMinimum } from "@/lib/minimum";
+import { useNarrow } from "@/lib/use-narrow";
 import { Disclosure } from "@/components/business/kit";
 
 /** "Lowest forecast headroom −¥405k": the second line of the caption under the lowest point. */
-function LowestHeadroom({ short }: { short: string | undefined }) {
+function LowestHeadroom({ short, fen }: { short: string | undefined; fen?: number }) {
   const { t } = useI18n();
   if (short === undefined) return null;
-  return (
-    <span className="block">
-      {t("biz.lowestHeadroom")} <span className="font-semibold tabular-nums text-ink-2">{short}</span>
-    </span>
-  );
+  const v = versusMinimum(short, fen, true);
+  return <span className="block font-semibold tabular-nums text-ink-2">{t(v.key, { amount: v.amount })}</span>;
 }
 
 /**
@@ -59,12 +60,15 @@ function DoorTile({ id, title, sub, href, label }: { id: string; title: string; 
 export default function CashPage() {
   const { t, te, lang } = useI18n();
   const demo = useDemo();
+  // A phone reads the status, then the plan to run, then the four facts as a short list, then the options.
+  const narrow = useNarrow();
   const home = useAsync(() => getHome(lang), [lang]);
   // The monthly readings only; the chart draws the home's own series so it cannot disagree with the headline.
   const traj = useAsync(() => getTrajectory("CONSERVATIVE"), []);
   // The one sentence on what earlier cash is worth (strategy MVP, build-time flag). Null while loading, when the server has it
   // off, or when the read fails: the page then shows nothing extra, and never calls the route with the flag off.
-  const curve = useStrategyAsync(() => getPriceCurve(lang), [lang]).data;
+  const curveRead = useStrategyAsync(() => getPriceCurve(lang), [lang]);
+  const curve = curveRead.data;
   const fixer = useFixAlert();
   useEffect(() => onSignedIn(() => bump()), []);
   const h = home.data;
@@ -78,9 +82,10 @@ export default function CashPage() {
   // snapshot is "Other plans considered", and without a snapshot there is nothing to show.
   const snapshot = demo.funding;
   const plan = useAsync(async () => (!h ? null : covered ? (snapshot ?? null) : await planFunding({}, lang)), [Boolean(h), covered, Boolean(snapshot), h?.state_version, lang]);
+  // Already under the minimum today: the tile is how far under (the shortfall), with today's cash as its caption.
+  const shortToday = h?.cash.below_reserve_today && h.cash.headroom_short !== undefined ? versusMinimum(h.cash.headroom_short, h.cash.headroom_fen, false).amount : null;
   // When the first breach is also the lowest point it is one fact: one tile, not the same figure and day twice.
   const breachIsWorst = unsafe && h?.cash.first_breach_day === h?.cash.lowest_day;
-  const today = h?.day ?? 0;
   const statusTone = h?.status === "CRITICAL" ? "bad" : h?.status === "SAFE" ? "ok" : "warn";
 
   /** The comparison worth showing: none when a fresh plan on covered books says "no funding needed". */
@@ -89,6 +94,63 @@ export default function CashPage() {
     return rows.length === 1 && rows[0].key === "router_optimum" && !rows[0].actions?.length ? [] : rows;
   };
 
+  // Four facts: today's cash, the reserve, when cash becomes unsafe, the worst point. The headroom is the caption of the tile it belongs to.
+  const figures = h ? (
+    <dl className={`grid gap-2 sm:gap-3 ${breachIsWorst ? "sm:grid-cols-3" : "sm:grid-cols-4"}`} data-testid="cash-figures">
+      <Stat row label={t("biz.cashToday")} value={h.cash.cash_short} />
+      <Stat
+        row
+        label={t("biz.reserveMin")}
+        value={h.cash.floor_short}
+        caption={
+          h.cash.headroom_short !== undefined ? (
+            <>
+              <span className="font-semibold tabular-nums text-ink-2" data-testid="cash-headroom">{t(versusMinimum(h.cash.headroom_short, h.cash.headroom_fen, false, true).key, { amount: versusMinimum(h.cash.headroom_short, h.cash.headroom_fen, false, true).amount })}</span>
+            </>
+          ) : undefined
+        }
+      />
+      {breachIsWorst ? (
+        <Stat
+          row
+          label={h.cash.below_reserve_today ? t("biz.shortToday") : t("biz.firstBreachIsWorst")}
+          tone="bad"
+          value={shortToday ?? h.cash.first_breach_cash_short}
+          caption={
+            <>
+              {shortToday ? <span className="block">{t("biz.cashNow", { amount: h.cash.cash_short })}</span> : null}
+              {h.cash.first_breach_when && !h.cash.below_reserve_today ? <span className="block">{h.cash.first_breach_when}</span> : null}
+              <LowestHeadroom short={h.cash.lowest_headroom_short} fen={h.cash.lowest_headroom_fen} />
+            </>
+          }
+        />
+      ) : (
+        <>
+          <Stat
+          row
+            label={h.cash.below_reserve_today ? t("biz.shortToday") : t("biz.firstUnsafeDay")}
+            tone={unsafe ? "bad" : "neutral"}
+            testId="cash-unsafe-when"
+            value={h.cash.below_reserve_today ? (shortToday ?? h.cash.first_breach_cash_short) : (h.cash.first_breach_when ?? t("biz.cash.neverUnsafe", { n: h.cash.horizon_days }))}
+            caption={shortToday ? t("biz.cashNow", { amount: h.cash.cash_short }) : undefined}
+          />
+          <Stat
+          row
+            label={unsafe ? t("biz.worstPoint") : t("biz.lowestAhead")}
+            tone={unsafe ? "bad" : "neutral"}
+            value={h.cash.lowest_short}
+            caption={
+              <>
+                {h.cash.lowest_when ? <span className="block">{h.cash.lowest_when}</span> : null}
+                <LowestHeadroom short={h.cash.lowest_headroom_short} fen={h.cash.lowest_headroom_fen} />
+              </>
+            }
+          />
+        </>
+      )}
+    </dl>
+  ) : null;
+
   const options = plan.error ? (
     <ErrorState error={plan.error} onRetry={plan.reload} />
   ) : plan.loading || !plan.data ? (
@@ -96,7 +158,7 @@ export default function CashPage() {
   ) : (
     <>
       {covered && snapshot ? <p className="mb-3 text-xs text-ink-3">{t("fund.snapshot")}</p> : null}
-      <FundingOptions rows={comparison(plan.data)} menu={plan.data.menu} today={today} recommendedKey={h?.next_action?.plan_source === "router" ? "router_optimum" : null} />
+      <FundingOptions rows={comparison(plan.data)} menu={plan.data.menu} recommendedKey={h?.next_action?.plan_source === "router" ? "router_optimum" : null} orderText={plan.data.comparison_order_text} />
       {/* A server that names each row's role has already said so in the alternative's chip, so the grey note would say it twice. */}
       {h?.next_action?.cheaper_option && !plan.data.comparison?.some((c) => c.role) ? (
         <p className="mt-3 text-xs text-ink-3" data-testid="cash-cheaper-option">
@@ -120,7 +182,7 @@ export default function CashPage() {
             ))}
           </ul>
           <p className="text-xs text-ink-3">
-            <Link href="/funding" className="font-medium text-brand-700 underline underline-offset-2">
+            <Link href="/funding" className={textLinkClass}>
               {t("biz.cash.fullDesk")}
             </Link>
           </p>
@@ -136,7 +198,7 @@ export default function CashPage() {
 
   return (
     <>
-      <PageHeader section="cash" title={t("nav.cash")} subtitle={t("biz.cash.subtitle")} />
+      <PageHeader section="cash" title={t("nav.cash")} subtitle={narrow ? undefined : t("biz.cash.subtitle")} />
       <div className="space-y-6">
         {home.error ? (
           <ErrorState error={home.error} onRetry={home.reload} />
@@ -152,61 +214,48 @@ export default function CashPage() {
                   <p className="text-xl font-semibold text-ink" data-testid="cash-headline">
                     {h.headline}
                   </p>
+                  {/* How fresh the conclusion is: the server's own "when" for the read the figures come from. */}
+                  {h.cash.last_read_when ? (
+                    <p className="text-xs text-ink-3" data-testid="cash-read-when">
+                      {t("biz.cash.readWhen", { when: h.cash.last_read_when })}
+                    </p>
+                  ) : null}
                 </div>
                 <p className="mt-1 text-sm text-ink-2">{h.note}</p>
                 {curve ? (
-                  <p className="mt-1 text-sm text-ink-2" data-testid="cash-price-sentence">
-                    {curve.sentence}
-                  </p>
+                  narrow ? (
+                    <Disclosure className="mt-1" summary={t("biz.cash.priceFold")} testId="cash-price-fold">
+                      <p className="pb-1 text-sm text-ink-2" data-testid="cash-price-sentence">
+                        {curve.sentence}
+                      </p>
+                    </Disclosure>
+                  ) : (
+                    <p className="mt-1 text-sm text-ink-2" data-testid="cash-price-sentence">
+                      {curve.sentence}
+                    </p>
+                  )
+                ) : null}
+                {/* A failed read is not "no price to show": it says so, with Retry (a feature that is off returns nothing and says nothing). */}
+                {curveRead.error ? (
+                  <div className="mt-2" data-testid="cash-curve-failed">
+                    <ErrorState error={t("biz.cash.curve.failed")} onRetry={curveRead.reload} />
+                  </div>
                 ) : null}
               </div>
-              {/* Four facts: today's cash, the reserve, when cash becomes unsafe, the worst point. The headroom is the caption of the tile it belongs to. */}
-              <dl className={`grid grid-cols-2 gap-3 ${breachIsWorst ? "sm:grid-cols-3" : "sm:grid-cols-4"}`} data-testid="cash-figures">
-                <Stat label={t("biz.cashToday")} value={h.cash.cash_short} />
-                <Stat
-                  label={t("biz.reserveMin")}
-                  value={h.cash.floor_short}
-                  caption={
-                    h.cash.headroom_short !== undefined ? (
-                      <>
-                        {t("biz.headroom")} <span className="font-semibold tabular-nums text-ink-2" data-testid="cash-headroom">{h.cash.headroom_short}</span>
-                      </>
-                    ) : undefined
-                  }
-                />
-                {breachIsWorst ? (
-                  <Stat
-                    label={t("biz.firstBreachIsWorst")}
-                    tone="bad"
-                    value={h.cash.first_breach_cash_short}
-                    caption={
-                      <>
-                        {h.cash.first_breach_when ? <span className="block">{h.cash.first_breach_when}</span> : null}
-                        <LowestHeadroom short={h.cash.lowest_headroom_short} />
-                      </>
-                    }
-                  />
-                ) : (
-                  <>
-                    <Stat label={t("biz.firstUnsafeDay")} tone={unsafe ? "bad" : "neutral"} testId="cash-unsafe-when" value={h.cash.first_breach_when ?? t("biz.cash.neverUnsafe", { n: h.cash.horizon_days })} />
-                    <Stat
-                      label={unsafe ? t("biz.worstPoint") : t("biz.lowestAhead")}
-                      tone={unsafe ? "bad" : "neutral"}
-                      value={h.cash.lowest_short}
-                      caption={
-                        <>
-                          {h.cash.lowest_when ? <span className="block">{h.cash.lowest_when}</span> : null}
-                          <LowestHeadroom short={h.cash.lowest_headroom_short} />
-                        </>
-                      }
-                    />
-                  </>
-                )}
-              </dl>
+              {narrow ? null : figures}
             </section>
 
-            <FixResult result={fixer.result} error={fixer.error} changed={fixer.changed} />
-            {h.next_action ? <NextActionBlock a={h.next_action} stateVersion={h.state_version} fixer={fixer} /> : covered ? <CurrentFunding h={h} /> : null}
+            <PartialRead partial={h.partial} onRetry={home.reload} />
+            <FixResult result={fixer.result} error={fixer.error} changed={fixer.changed} slow={fixer.slow} rechecked={fixer.rechecked} onRecheck={fixer.recheck} />
+            {h.next_action ? (
+              <NextActionBlock a={h.next_action} stateVersion={h.state_version} fixer={fixer} />
+            ) : h.remaining_task ? (
+              // After a cure that did not restore the reserve there is no plan to run: the one remaining task takes the plan's place.
+              <RemainingTaskBlock text={h.remaining_task} links={h.remaining_task_links ?? []} decisionId={h.remaining_task_decision_id} primary={h.pending_count === 0} />
+            ) : covered ? (
+              <CurrentFunding h={h} />
+            ) : null}
+            {narrow ? figures : null}
 
           </>
         )}
@@ -223,7 +272,7 @@ export default function CashPage() {
           </Card>
         )}
 
-        <Card id="cash-chart" title={t("biz.cash.forecast")} subtitle={t("biz.cash.forecast.sub")}>
+        <Card id="cash-chart" title={t("biz.cash.forecast")} subtitle={h?.cash.forecast_basis_text ?? t("biz.cash.forecast.sub")}>
           {home.error ? <ErrorState error={home.error} onRetry={home.reload} /> : !h ? <LoadingBlock rows={2} /> : <CashForecast h={h} />}
           {/* The debt readings are the forecast's own footer: the same projection, read by month. */}
           {view?.trajectory.months.length ? (

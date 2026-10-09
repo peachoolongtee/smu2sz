@@ -1,0 +1,20 @@
+$ next dev -p 3255
+▲ Next.js 16.3.7 (Turbopack)
+- Local:         http://localhost:3255
+- Network:       http://192.7.9.160:3255
+✓ Ready in 248ms
+✓ Running next.config.mjs took 8ms
+
+✓ Generated AGENTS.md and CLAUDE.md for AI agents. Set `agentRules: false` in next.config to disable.
+ GET / 200 in 16ms (next.js: 1.6ms, application-code: 14ms)
+ GET / 200 in 12ms (next.js: 1.1ms, application-code: 11ms)
+ GET /deals 200 in 172ms (next.js: 153ms, application-code: 19ms)
+ GET /cash 200 in 356ms (next.js: 341ms, application-code: 16ms)
+ GET /receivables 200 in 133ms (next.js: 120ms, application-code: 13ms)
+ GET /activity 200 in 115ms (next.js: 102ms, application-code: 13ms)
+ GET /approvals 200 in 118ms (next.js: 104ms, application-code: 13ms)
+ GET /decisions/deal:OFF-x 200 in 285ms (next.js: 270ms, application-code: 15ms)
+ GET /decisions/deal:OFF-x 200 in 108ms (next.js: 88ms, application-code: 19ms)
+ GET /decisions/deal:OFF-x 200 in 18ms (next.js: 2ms, application-code: 15ms)
+[?25h
+[ELIFECYCLE] Command failed with exit code 143.

@@ -9,6 +9,8 @@ test or evidence file they come from. This is a simulation: lenders, the buyer a
 and nothing here moves real money. Paths are relative to `services/api/app/` unless they start with `apps/`,
 `docs/`, `fixtures/` or `scripts/`.
 
+Update of 10 Oct 2026: section 12 records the UX remediation of 9 to 10 Oct (wayfinder map #65, branch `feat/ux-remediation`, 28 audit findings closed, `docs/UX_REMEDIATION_REPORT.md`). Sections 1 to 11 keep their 3 Oct text; where the remediation added a route, a module or a page, sections 4, 5 and 6 say so in place, and section 9 carries the current test counts. The remediation changed no engine rule, so the figures in section 7 stand.
+
 Contents
 
 1. What the product is
@@ -22,6 +24,7 @@ Contents
 9. Tests, evidence and how to run everything
 10. Known limits
 11. The 3 Oct 2026 changes, each with its test file
+12. The 9 to 10 October changes (map #65)
 
 ---
 
@@ -184,15 +187,18 @@ api ─► everything; web ─► api
 | `verifier` | Screening, binding, verdict, counters, early-pay rule, autonomy gaps | all of the above | api, nl, runtime re-verify hook |
 | `commitments` | Lifecycle, terms hash, nonce | — | operations |
 | `operations` | The executor, approvals, circuit breaker, log reading | store, mandate, commitments, financial charges | api, nl, alerts act |
-| `persistence` | `LedgerStore` (in-memory and SQL), hash chain | — | everything that stores |
+| `persistence` | `LedgerStore` (in-memory and SQL), hash chain; the append-only `decision_facts` table (migration 0006) | nothing | everything that stores |
 | `clock` | Moving time; lands funding cash and posts loan instalments, existing-debt payments and maturities on their day | store, scenario events | api runtime |
 | `alerts` | Alerts, cure search and pricing, repay proposal, reconciliation, `cure_operations` | books, financial, operations log | api, nl |
 | `egress` | Outbound guard, protected set, canaries | state, mandate | nl, api |
 | `counterparties` | Simulated buyer kernel | buyer fixtures | api negotiate, nl |
 | `capex`, `borrower_file`, `whatif` | Capex evaluation, lender pack, hypothetical verdicts | financial, covenants, verifier, store | api, nl |
-| `nl` | Chat: parsing, sessions, handlers, opener | everything above | api |
+| `nl` | Chat: parsing, sessions, handlers, opener; the owner's page context (`binding.py`), the read-only Business answers (`reads.py`) and the owner-voice templates (`business.py`) | everything above | api |
 | `security` | Attack catalogue and the computed scoreboard | the running app | tests, evaluation, `/audit` |
-| `api` | HTTP routes, credentials, display strings, the runtime (store, clock, executor wiring) | everything | web, scripts |
+| `decisions` | The durable decision record (ADR-0011): three strict fact models, deterministic decision ids, the pure `derive()` and `waiting_for()`. Pure, no I/O, no money; imports only `domain` and `persistence.records`; no engine module imports it | the stored facts and the rows the API hands in | api |
+| `api` | HTTP routes, credentials, display strings, the runtime (store, clock, executor wiring); since map #65 also `decisions.py` (the record's routes and the one write helper), `quotes.py` (the quote an alert act stores), `causality.py` (Activity), `workspace.py` (the Deals block), `collections.py` (the chase handoff), `receipt_facts.py` (the four receipt facts), `engine_zh.py` (Chinese for the engine's sentences) and `demo_bank.py` (the Demo's one synthetic receipt) | everything | web, scripts |
+
+The decision record sits beside the engine, not in it: the API layer writes its facts after the canonical event and the record is read on request from the stores the engine already fills (section 12, `tests/decisions/test_isolation.py`).
 
 `api/runtime.py` holds one store, one simulated day and the owner's pinned public key, and builds the executor
 with a `reverify` hook that calls the verifier and an `admit` hook that calls `funding/admission.py` (the executor
@@ -510,6 +516,11 @@ most.
   the router plans the remaining gap on the updated books and its draws and advances execute as the agent.
 - **No deal**: the router's plan on current books funds the standing gap anyway. NO DEAL is a first-class
   outcome.
+- **The send is bound (since map #65).** `POST /negotiate/{offer_id}` may carry `verdict_id`, `counter_id` and `state_version`, the
+  three things the owner read. If any differs from the latest stored verdict, a counter in it or the books' current version, the
+  answer is 409 `COUNTER_CHANGED` and nothing is proposed, accepted or funded; a repeated identical send while its agreement stands is
+  409 `ALREADY_SENT`. A bound send offers only the chosen counter. Without the fields the send is unbound, as before (the Demo
+  stepper and older tests use it). Section 12.
 
 ### 5.9 Time, the bank feed and settlement (`clock/`, `RECEIVE_PAYMENT`)
 
@@ -608,6 +619,8 @@ Receipts in the log are replayed in order against what was outstanding when each
   AWAITED, RECEIVED (with the receipt's sequence number), LAPSED (its day passed unpaid; the invoice is back on
   its due day) or SETTLED_OTHERWISE.
 - Outstanding receivables, past-due ones marked, and whether the chain verifies.
+- Since map #65 each receipt that paid an agreed early payment also carries four named facts (received, face cleared,
+  discount, still owed) and `window_state` (open or ended), written by `api/receipt_facts.py` from the report's own rows.
 
 ### 5.12 Chat (`nl/`, `POST /nl`)
 
@@ -661,6 +674,7 @@ Receipts in the log are replayed in order against what was outstanding when each
 | CAPEX | NPV, payback, each structure, the selection; it never applies for anything (the application is `POST /capex/apply`, section 5.14) | Read only, owner token |
 | BORROWER_FILE | Builds the lender pack at once for the owner and returns its id, evidence hash and download link ("prepared, not sent"); nothing is queued or approved | Read only, owner token |
 | RECORD_FACT | The owner states a new bill, invoice, delay or figure ("we have a supplier bill of ¥80,000 due on day 30"): the reply says chat cannot record it, that the forecast is unchanged and that facts enter through the books, echoing any amount named. English and Chinese | Nothing: no operation, no pending plan, no confirmation armed |
+| CHANGES | "What changed today?" / "What changed since my last visit?" / 今天有什么变化？ (and the page questions "What are we waiting for?", "When does the money arrive?", "What is overdue?", "What happens if this payment is late?", "Why did FLOW choose this plan?", which answer under SHOW_STATUS, RECONCILE, WHAT_IF and EXPLAIN): a read of the Home read in business words, each event with its status, what it means for cash and what is left to do; with nothing new it says so and gives the forecast. The owner's page context (`context` ids, validated against the stores) points "why" and "what if I accept" at the deal the page evaluated | Nothing: read-only, owner token required |
 | AMBIGUOUS | A three-option clarification | — |
 | OUT_OF_SCOPE | A Tier-3 request is sent to the executor so its refusal is logged; anything else gets the nearest capability and an example | — |
 
@@ -682,6 +696,8 @@ accept alone, queues anything larger for the owner, or refuses. The buyer receiv
 the outbound guard, with approval ids scrubbed) and session fields: no verdict, plan, operations or codes.
 (`tests/nl/test_counterparty_channel.py`.) A recreated chat session never reuses an earlier session's idempotency
 keys, so a later command is not mistaken for a duplicate.
+
+**Since map #65 (owner channel only).** `POST /nl` may carry `context` `{page, offer_id, decision_id, invoice_id, since_day}`. `nl/binding.py` looks each id up in the stores and keeps only what it finds; a valid offer seeds the session's last offer and verdict, so "Why are we countering this?" answers about the deal the page evaluated, and the reply echoes what was used (`context_echo`). Nothing in the context carries an amount, a sentence or a verdict, and a counterparty's context is dropped. `?mode=business` (owner token) says the verdict, the plan and the confirmed run in the owner's words, without ids, tier words or reason codes. `nl/reads.py` answers the Business prompts from the Home read and the log, writing nothing: the CHANGES intent ("What changed today?", "since my last visit"), what are we waiting for, who to chase, and the explain questions. An abstention names the unresolved field from a closed list (`nl/offers.py`). Section 12.
 
 ### 5.13 The outbound guard (`egress/`)
 
@@ -768,6 +784,46 @@ outbound scan of every counter text. Nothing in it is a constant.
 The operations log, security events and verdict references are exported as JSON lines with their hashes. The
 verifier script recomputes every entry hash and link with the standard library only.
 
+### 5.19 The decision record (`decisions/`, `GET /decisions`, `GET /decisions/{id}`)
+
+A commercial decision runs from a buyer message or a cash alert through evaluation, response, approval, operations, settlement and
+receipts, and each step is stored in its own place. The record joins them on request (ADR-0011): CompiledOffer, Verdict, Commitment,
+ApprovalRecord, the hash-chained log, the funding lots, the reconciliation and today's alerts, plus one small table, `decision_facts`,
+for the three facts that cannot be re-derived (EVALUATED: the day a verdict was made; SENT: the counter shown, the books version and the
+economics; QUOTED: the legs, costs, landing and after-state the owner saw when a cure was queued). The decision id is deterministic
+(`deal:{offer_id}`, `alert:{id}:v{sv}`, `alert:{id}:v{sv}:plan`, `nl:{session}:{scope}`, `approval:{id}`).
+
+- **States** come from `derive()` in `decisions/state.py`, first matching rule wins. A deal is RECEIVED, NEEDS_CLARIFICATION,
+  RESPONSE_READY (read "Acceptable, awaiting agreement" or "Counter recommended", never "Agreed"), AUTHORIZATION_REQUIRED, DECLINED,
+  FAILED, NO_DEAL, AGREED, EXPIRED, MISSED, FULFILLED or REVOKED. A funding decision is AUTHORIZATION_REQUIRED, DECLINED, FAILED,
+  PARTIALLY_EXECUTED, SETTLEMENT_PENDING, SETTLED or EXECUTED, with residual risk as a field ("Funded, reserve still short"). `waiting_for`
+  is a pure function of the state: owner response, buyer clarification, owner approval, bank receipt, invoice issue, funding settlement,
+  owner decision, or nothing.
+- **Write points** are in the API layer only, inside the route's lock, after the canonical event: `POST /offers/{id}/evaluate` writes
+  EVALUATED, `POST /negotiate/{id}` writes SENT, `POST /alerts/{id}/act` writes QUOTED. `record_fact()` never fails a route: on a store
+  error it logs and the response says `decision_recorded: false`. A missing fact reads "not recorded"; history is never recomputed from
+  today's alert, plan or books. The table is insert-if-absent on `(decision_id, fact, fact_key)`, append-only, never on the hash chain,
+  and cleared with the ledger by the demo reset.
+- **Routes** (owner only): `GET /decisions?lang&family&open&limit` lists newest first; `GET /decisions/{id}?lang` returns the source,
+  the terms in sentences, the evaluation, the response sent, the quote, the authorization, the agreement, the operations, the execution
+  summary, the settlement, the receipts, the residual, `waiting_for` and `remaining_task`; 404 `DECISION_NOT_FOUND` for an unknown id.
+  `GET /offers/{id}` returns the stored offer with its `decision_id`. The approvals queue, evaluate, negotiate, act and the ledger
+  carry `decision_id`, and the home lists `open_decisions`, so each page links to the record.
+- **It grants nothing.** The record computes no money and cannot be approved; consent stays on the approval, the bound act and the
+  bound send.
+
+### 5.20 The chase handoff and the Demo's bank receipt (`api/collections.py`, `api/demo_bank.py`)
+
+`GET /receivables/{id}/chase?lang` is the honest handoff for one open invoice: buyer, invoice, outstanding, issued, due, lateness, the
+early-payment promise, the terms on the invoice, a payment request in the owner's voice that can be copied and sent elsewhere, and a
+link to the buyer's thread when the buyer has an agreement on file. It reads the books and `reconcile()`, writes and sends nothing, and
+is owner only (404 `RECEIVABLE_NOT_FOUND`; 422 `NOTHING_OUTSTANDING` for a paid invoice).
+
+`POST /demo/bank-receipt` exists for the guided Demo: the clock never records a receipt (ADR-0006), so the story's one early payment
+arrives through this route. It is owner only and `DEMO_MODE` only (403 `DEMO_ONLY`), posts the `RECEIVE_PAYMENT` the bank feed would post
+(requested by `SYSTEM`) for the one early payment the books are still waiting for, in the amount they promised, with bank reference
+`DEMO-RCPT-1`; a second call books nothing (409 `NO_PROMISED_RECEIPT`). The bank-feed key stays on the server.
+
 ---
 
 ## 6. The web app (`apps/web`)
@@ -780,25 +836,24 @@ need the token; a 401 or 403 opens the sign-in dialog and the interrupted action
 Since 5 Oct the app has two shells (`docs/UX_AUDIT.md`, the owner's third brief): **Business**, the owner's product, and
 **Demo**, the judge's story with the engine views. The switch is in the header.
 
-Business mode (navigation by question):
+Business mode (navigation by question). The table is the 10 Oct state after map #65; the pages the remediation did not touch (Limits)
+read as they did.
 
 | Page | Answers |
 | --- | --- |
-| `/` Home | Am I safe (a status word and one sentence from `GET /home`), what should I do (the best next action with what is received, the cost and rate, the landing day, who decides, what if nothing, the after-state; Go ahead sends the bound act), what needs my decision (approvals as questions), what changed, who has not paid, and the details (in transit, warnings, facilities, debt readings) behind a disclosure |
-| Deals | What the buyer asks for, the recommendation in two words, future give-aways against the cap, the cash effect, the counters; Why, Calculation and Original message as disclosures |
-| Cash & funding | The answer sentence, the cash line against the safe level, the ways to cover the gap with their total cost, doors to the what-if sandbox and the equipment purchase, the monthly readings as a disclosure |
-| Receivables | Open invoices by buyer name with days late, promised early payments, what arrived with the bank reference |
-| Approvals | Each pending item as a question ("Approve ¥200,000.00 of invoice financing?") with amount, cost, landing day, source, invoice, why it needs the owner, after, if declined; ids, tier and terms under Show details |
-| Activity | The timeline in the executor's sentences with names for ids, agreements, refusals and flagged messages; hashes under audit details; the evidence export |
+| `/` Home | Am I safe (a status word and one sentence from `GET /home`; "Below reserve today." when cash is already under the reserve, the series starting today, when it was read and whether any read is partial), what should I do (the next step carries the one primary button: the best action with what is received, the cost and rate, the landing day, who decides, what if nothing, the after-state, or Review and decide when an approval is pending), what is left after a partial rescue (the remaining-task card with links), what we are waiting on, what changed, who has not paid, and the details behind a disclosure |
+| Deals | One workspace in the server's order: the buyer card with a state chip from the decision record, what FLOW recommends, the priced response with a two-step bound Send and its "This will" lines, then the asks, the cost, why it matters, the agreements and one Advanced fold; the Inbox is folded to one row; `?buyer=` opens a buyer's thread |
+| Cash & funding | The answer sentence, the cash line against the safe level with its forecast basis as the subtitle and net day labels, the ways to cover the gap drawn by the server's groups and ranks, the remaining task, doors to the what-if sandbox and the equipment purchase, the monthly readings as a disclosure |
+| Receivables | The top action above the tiles with Chase payment (the dialog from `GET /receivables/{id}/chase`), open invoices by buyer name with days late, promised early payments, the four facts on every receipt, the ranking disclosure |
+| Approvals | Each pending item as a question with the terms, the economic effect and the timing above the buttons; Approve is disabled, with the reason, when the terms cannot be loaded; a decided card leads with the result in the server's tone and keeps the cost that was quoted; ids and tier under Show details |
+| Activity | What changed, why it matters (once, labelled "now") and what remains, in the executor's sentences with names for ids; "Approval requested" links to the record; the chain words "Record chain checks passed" with their scope; hashes under audit details; the evidence export |
+| Decision record (`/decisions/{id}`) | An owner page opened from Home, Activity or an approval, with no nav item of its own: the state and what FLOW is waiting for, the terms in sentences, the evaluation, what was sent, the quote, the authorization, the agreement, the operations, the settlement, the receipts and the remaining task, all from `GET /decisions/{id}` |
 | Limits | The mandate as sentences; the signature under details |
 
-Demo mode: the story page `/demo` (the fifteen steps with Run/Show, the clock, the scenario switch, the side doors), the
-story bar on every page, and the engine views as before (Mandate, Inbox, Trajectory, Funding, Verdict, What-if, Capex,
-Ledger, Alerts, Reconciliation, Security, Evidence, Chat), unchanged in content.
+On a phone (narrower than 1024 px) Home, Deals and Cash change the DOM order so the owner's primary action sits inside the first
+viewport (`lib/use-narrow.ts`; section 12); the desktop order is unchanged.
 
-The demo stepper walks: mandate → inbox (EX01) → trajectory → funding → verdict → negotiate (cooperative) →
-ledger → the hard-line walk-away → the router covering the gap → ledger → the reworded offer → capex → the
-approval → the FastCapital message → evidence.
+Demo mode: the story page `/demo` (the late-payment loop in six scenes and eleven steps with Show, Replay and Reset, the side doors under "More to show"), the story bar on every page, and the engine views as before (Mandate, Inbox, Trajectory, Funding, Verdict, What-if, Capex, Ledger, Alerts, Reconciliation, Security, Evidence, Chat), unchanged in content; the Verdict page gains the execution summary read from the record. The shell follows the mode: an engine view with Business stored shows the Demo shell. The steps are listed in `docs/DEMO_FLOW.md`. The earlier module tour survives as "More to show" (the buyer walks away, the same offer in other words, capex, the attack message, the engine pages) and as the engine reference in that document.
 
 ---
 
@@ -942,7 +997,9 @@ for other money.
 
 ## 9. Tests, evidence and how to run everything
 
-At `db097e0` on the Windows machine: 5,446 backend tests passed, 33 skipped (7 router latency benchmarks (`SKIP_PERF_BENCH=1`; their targets were set on another machine), 15 exhaustive router differential cases that run only with `ROUTER_DIFF_FULL=1`, 10 PostgreSQL concurrency cases that need `TERMSLEDGER_TEST_DATABASE_URL`, and the SQL variant of a corrupted-row test, which the attack catalogue covers (FR-12c)), run as
+State at 10 Oct 2026, from the remediation report's section 12 (`docs/UX_REMEDIATION_REPORT.md`; `feat/ux-remediation` at `41a0add`, whose only commits after the last code commit `c87a3a6` are documents): the whole API suite 6398 passed, 37 skipped after the Wave 7 API merge, with the golden digests unchanged throughout; web, with zero retries after Wave 7: unit 76, mock e2e 135 on the default build and 144 with the strategy flag, live e2e 69 and 77; axe reports zero serious or critical findings at 412 and 1440 px. The Wave 8 gate that reruns all of this on the final head from a clean clone, on the SQLite file store and in memory, is recorded under `docs/research/ux-remediation-2026-10-09/gate/` and was not yet written when this section was refreshed. The documentation pass that refreshed this section re-ran only `tests/decisions`, `tests/api/test_demo_bank_receipt.py` and `tests/api/test_collections.py` (144 passed). Everything else in this section, including the scenario, attack, evaluation, certification and concurrency figures, is the 3 Oct record below and was not re-run.
+
+The 3 Oct record, kept as written: at `db097e0` on the Windows machine: 5,446 backend tests passed, 33 skipped (7 router latency benchmarks (`SKIP_PERF_BENCH=1`; their targets were set on another machine), 15 exhaustive router differential cases that run only with `ROUTER_DIFF_FULL=1`, 10 PostgreSQL concurrency cases that need `TERMSLEDGER_TEST_DATABASE_URL`, and the SQL variant of a corrupted-row test, which the attack catalogue covers (FR-12c)), run as
 two sequential chunks (chunk A: `tests/alerts tests/api tests/books tests/borrower_file tests/capex tests/clock
 tests/commitments tests/compiler tests/counterparties tests/covenants tests/egress tests/evals tests/financial
 tests/funding`; chunk B: `tests/mandate tests/nl tests/operations tests/persistence tests/security tests/verifier
@@ -1126,7 +1183,7 @@ Test paths are under `services/api/tests/` unless they start with `apps/`.
 | Leg ordering: the router orders legs so every prefix is admissible, one leg rule shared with admission; a plan admissible only as a whole is flagged cannot run today | 5.4, 5.6 | `funding/test_planner_executor_agree.py` |
 | Capex evaluation is side-effect free; `POST /capex/apply` is the owner's explicit, state-version-bound step | 5.14 | `capex/test_api.py`, `capex/test_audit_fixes.py` |
 | The borrower file is read-only with provenance (generation day, versions, evidence hash); no GENERATE_BORROWER_FILE operation or approval; dated by the generation day | 5.15 | `borrower_file/test_api.py`, `borrower_file/test_review_gaps.py`, `nl/test_capabilities.py` |
-| Chat refuses to "record" facts: RECORD_FACT answers "cannot record, forecast unchanged" and arms nothing (20 intents) | 5.12 | `nl/test_record_fact.py` |
+| Chat refuses to "record" facts: RECORD_FACT answers "cannot record, forecast unchanged" and arms nothing (21 intents) | 5.12 | `nl/test_record_fact.py` |
 | Mandate-expiry alert: a warning 14 days ahead, critical once expired, no suggested operation | 5.10 | `alerts/test_review_gaps.py`, `nl/test_review_gaps_opener.py` |
 | Zero-floor fallback cure: when no plan restores the reserve but one keeps cash at or above zero, the alert offers it and says it does not restore the reserve | 5.10 | `alerts/test_review_gaps.py`, `nl/test_review_gaps_opener.py` |
 | The alert button is bound: `act` carries the state version and the suggestions shown, and answers 409 `ALERT_CHANGED` when either moved | 5.10, 6 | `alerts/test_review_gaps.py` |
@@ -1153,3 +1210,40 @@ Test paths are under `services/api/tests/` unless they start with `apps/`.
 | Concurrency: compare-and-swap on the state version and the log head, `BEGIN IMMEDIATE` on file SQLite, the executor and the clock rerun a lost unit (at most 8 times), a surviving conflict answers 409; eight invariants proven with two processes on SQLite, PostgreSQL pending | 9 | `concurrency/test_invariants.py`, `persistence/test_concurrency_cas.py`, `clock/test_clock_conflict.py`, `api/test_write_conflict_409.py` |
 | Language-boundary certification: a 231-item adversarial set scored on stored state through the real `POST /nl`, cache, fake and live backends; WRONG_MATERIAL 0 in the cache and fake runs, live run pending a key | 9 | `certification/test_language_boundary.py`, `scripts/certify_language_boundary.py` |
 | The evaluation oracle on the runnable rule: it classifies runnable levers itself and reports runnable optimality (the gate, 26/26) and priced optimality (26/26) separately | 9 | `evals/test_funding_oracle.py`, `evals/test_suites_smoke.py` |
+
+---
+
+## 12. The 9 to 10 October changes (map #65)
+
+The independent flow audit of 9 Oct (`docs/research/independent-flow-ux-audit-2026-10-09.md`: 4 P0, 14 P1, 10 P2, findings F01 to F28)
+was reproduced finding by finding on `dev` and closed on `feat/ux-remediation` (wayfinder map #65, eight waves). The one row per
+finding, with its cause, fix and test, is the ledger `docs/research/ux-remediation-ledger-2026-10-09.md`; the evidence and the owner's
+GO / NO-GO are in `docs/UX_REMEDIATION_REPORT.md`; the one design decision is `docs/adr/0011-durable-decision-record.md`. No engine
+rule changed: no module under `app/financial`, `app/verifier`, `app/funding`, `app/alerts`, `app/operations`, `app/clock`, `app/books`
+or `app/mandate` was edited. Every route change is additive and the defaults are unchanged. Test paths are under `services/api/tests/`
+unless they start with `apps/`.
+
+| Change | Where it is described | Test file |
+| --- | --- | --- |
+| Time semantics: the home's first breach is counted from today (`first_breach_day`, `first_breach_when`, `below_reserve_today`; the headline "Below reserve today."; the series starts today; `/trajectory` `first_breach_ahead_*`). A past early-payment deadline reads "the early-payment window for the other ¥X ended N days ago"; "may still be settled early" is said only while the promise is live in the books. The four facts of a part-paid invoice (received, face cleared, discount, still owed) with the window state, on the home and on `GET /reconciliation` | 5.9, 5.11, 6 | `api/test_time_semantics.py`, `apps/web/e2e/trust.spec.ts` |
+| Forecast basis and freshness: the chart says what it counts (scheduled payments are "expected", overdue ones excluded), each day carries its net movement, and every read says when it was read and whether it is partial (`forecast_basis*`, `last_read_*`, `partial`) | 6 | `api/test_forecast_basis.py`, `api/test_w7_language.py` |
+| The approval queue's terms: the queue resolves the agreement on the server and writes the terms as sentences (`terms`, `what_you_agree_to`, `economic_effect_text`, `lands_text`, `terms_available`); the card disables Approve with the reason when the terms cannot be loaded | 5.19, 6 | `api/test_approval_terms.py`, `apps/web/scripts/w1-trust.test.mjs`, `apps/web/e2e/trust.spec.ts` |
+| The stored quote: a decided approval keeps the cost, rate, landing and after-state the owner was queued with (the QUOTED fact), written by `POST /alerts/{id}/act`; a decision with no fact says "quoted cost was not recorded" | 5.19 | `api/test_approval_quote.py` |
+| A refused execution after approval is the record's terminal FAILED state, "You approved it, but it could not run: ... No money moved."; the web rereads the queue after every decision | 5.6, 5.19 | `api/test_approval_refused_terminal.py` |
+| The decision record (ADR-0011): `app/decisions` (three fact models, deterministic ids, pure `derive()` and `waiting_for()`), the `decision_facts` table and migration 0006 in both stores, `GET /decisions`, `GET /decisions/{id}`, `GET /offers/{id}`, `decision_id` on evaluate, negotiate, act, the queue and the ledger; the Decision record page | 4, 5.19, 6 | `decisions/test_state.py`, `decisions/test_facts.py`, `decisions/test_identity.py`, `persistence/test_decision_facts_store.py`, `persistence/test_migrations.py`, `api/test_decisions_flow.py`, `api/test_w2_review.py`, `apps/web/scripts/w2-record.test.mjs`, `apps/web/e2e/record.spec.ts` |
+| The record stays out of the engine: no engine module imports it, loading the engine does not load it, and the record imports only `app.domain` and `app.persistence.records` | 4, 5.19 | `decisions/test_isolation.py` |
+| The bound send: `POST /negotiate/{id}` takes `verdict_id`, `counter_id` and `state_version`; a mismatch is 409 `COUNTER_CHANGED` and creates nothing; the same counter sent twice is 409 `ALREADY_SENT`; the Deals Send is two steps, with the "This will" lines (`send_scope_lines`) | 5.8, 5.19 | `api/test_negotiate_binding.py`, `api/test_w2_review.py`, `apps/web/e2e/record.spec.ts` |
+| The Deals workspace and the remaining task: the evaluate view carries a `workspace` block in the page's order; after a partial rescue the home says what is left to decide (`protects`, `remaining_task` with links, `open_decisions`) | 5.5, 6 | `api/test_deals_workspace.py`, `api/test_w7_addendum.py`, `api/test_home_remaining_task.py`, `apps/web/e2e/deals.spec.ts` |
+| The comparison contract: `POST /router/plan` rows carry a `group`, a `rank` for the plans that can run only, `router_order`, arrival, remaining gap, basis and consent words; plans that depend on the buyer sit apart and unranked; the router's figures are unchanged | 5.4, 6 | `api/test_comparison_contract.py`, `apps/web/scripts/w3-flows.test.mjs`, `apps/web/e2e/cash.spec.ts` |
+| Activity causality and the chain words: each entry says what changed, why it matters (the forecast as of now, labelled "now", never a per-entry replay) and what remains (the record's `waiting_for`); a refusal says no money moved; "Record chain checks passed" with the scope it covers; a refused entry has its own anchor | 5.18, 6 | `api/test_activity_causality.py`, `api/test_ledger_events.py`, `apps/web/e2e/activity.spec.ts` |
+| The chase handoff: `GET /receivables/{id}/chase` and the Chase payment dialog; the four receipt facts on every receipt surface | 5.20, 5.11, 6 | `api/test_collections.py`, `apps/web/scripts/w5-collections.test.mjs`, `apps/web/e2e/receivables.spec.ts` |
+| Ask FLOW context: the validated page `context` on `POST /nl`, two to four page prompts in Business (hidden when their prerequisite is missing), no role radios or tier hints in Business, the CHANGES read, "What are we waiting for?" from the record, one recovery sentence instead of a capabilities list, abstentions that name the unresolved field, `?mode=business` owner-voice templates | 5.12 | `nl/test_page_context.py`, `nl/test_business_page_prompts.py`, `nl/test_specific_abstentions.py`, `nl/test_business_replies.py`, `apps/web/scripts/chat-prompts.test.mjs`, `apps/web/e2e/chat.spec.ts` |
+| The six-scene Demo: eleven steps, every step convergent (Run brings the books to at least that step's state), Show only opens a finished step, Replay and Reset mean what they say, the stepper stays locked while a step runs, the approve step is the owner's own click, narration from the server's responses | 6 | `apps/web/e2e/demo.spec.ts`, `apps/web/scripts/w6-demo.test.mjs` |
+| The Demo-only bank receipt: `POST /demo/bank-receipt` (owner token, `DEMO_MODE` only) posts the one synthetic `RECEIVE_PAYMENT` with reference `DEMO-RCPT-1`; Activity words any `DEMO-` reference as a synthetic bank event; the clock still never lands a receipt | 5.20 | `api/test_demo_bank_receipt.py`, `apps/web/e2e/demo.spec.ts` |
+| `lang` on every read: every Business route answers `?lang=zh` with the same figures, ids, statuses and days as `?lang=en`; the engine's sentences are said in the owner's words and, for zh, in Chinese by templates in `api/engine_zh.py` (a sentence no template knows passes through unchanged); the web sends `lang` with every request | 5.12, 6 | `api/test_w7_language.py`, `apps/web/e2e/lang.spec.ts` |
+| The phone order: on a screen narrower than 1024 px Home, Deals and Cash put the primary action inside the first 915 px (`lib/use-narrow.ts` changes the DOM order, so focus and reading order follow); the desktop order is unchanged | 6 | `apps/web/e2e/responsive.spec.ts` |
+| The cold start and touch targets: the documented `pnpm dev` loads (the `touch:` variant is a block, not an invalid selector), 44 px targets on a narrow or coarse-pointer screen, the reduced-motion ellipsis, 20 s request timeouts (60 s for the long reads) with a slow notice, axe on every page | 6 | `apps/web/e2e/touch.spec.ts`, `apps/web/e2e/slow.spec.ts`, `apps/web/scripts/timeout.test.mjs`, `apps/web/e2e/a11y.spec.ts` |
+
+What this section does not claim. The zh sentences are template glosses and await a native reader. The decision record's Postgres
+behaviour awaits the G4 run. No screen-reader session, zoom or real-device pass was run and no WCAG conformance is claimed. The report's
+section 14 lists the remaining debt.

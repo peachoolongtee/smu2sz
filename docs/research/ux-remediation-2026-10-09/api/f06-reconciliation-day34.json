@@ -1,0 +1,77 @@
+{
+  "probe": "f06-reconciliation-day34",
+  "request": {
+    "method": "GET",
+    "path": "/reconciliation",
+    "body": null,
+    "credential": [
+      "X-Owner-Token"
+    ]
+  },
+  "clock_day_before_request": 34,
+  "status": 200,
+  "response": {
+    "reconciliation": {
+      "as_of_day": 34,
+      "receipts": [],
+      "outstanding": [
+        {
+          "receivable_id": "RCV-A",
+          "counterparty_id": "BUYER-1",
+          "face_fen": 42000000,
+          "due_day": 32,
+          "status": "OPEN",
+          "past_due": true,
+          "face_display": "¥420,000.00"
+        },
+        {
+          "receivable_id": "RI:BUYER-1:2",
+          "counterparty_id": "BUYER-1",
+          "face_fen": 42000000,
+          "due_day": 47,
+          "status": "OPEN",
+          "past_due": false,
+          "face_display": "¥420,000.00"
+        },
+        {
+          "receivable_id": "RI:BUYER-1:32",
+          "counterparty_id": "BUYER-1",
+          "face_fen": 42000000,
+          "due_day": 77,
+          "status": "OPEN",
+          "past_due": false,
+          "face_display": "¥420,000.00"
+        }
+      ],
+      "matched": 0,
+      "flagged": 0,
+      "received_total_fen": 0,
+      "expected_total_fen": 0,
+      "chain_head_hash": "f4246541152503d82c584fdb656a55c1cadcb5864305304f1f8d775868c5c3cd",
+      "chain_valid": true,
+      "promised": [
+        {
+          "commitment_id": "CMT-b3ee1afdd62e4fb0",
+          "obligation_id": "CTR-193394b6ba8b-O2",
+          "receivable_id": "RCV-A",
+          "counterparty_id": "BUYER-1",
+          "promised_day": 2,
+          "face_fen": 25720000,
+          "discount_fen": 218620,
+          "expected_fen": 25501380,
+          "status": "LAPSED",
+          "receipt_seq": null,
+          "detail": "¥255,013.80 promised for day 2 under commitment CMT-b3ee1afdd62e4fb0 did not arrive; ¥420,000.00 of RCV-A is still outstanding and falls back to its original due day, day 32",
+          "formula": "¥257,200.00 × 85 bp = ¥2,186.20; ¥257,200.00 − ¥2,186.20 = ¥255,013.80",
+          "face_display": "¥257,200.00",
+          "discount_display": "¥2,186.20",
+          "expected_display": "¥255,013.80",
+          "detail_when": "¥255,013.80 promised 32 days ago under commitment CMT-b3ee1afdd62e4fb0 did not arrive; ¥420,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. due 2 days ago is still outstanding and falls back to its original due day, 2 days ago."
+        }
+      ],
+      "lapsed_promises": 1,
+      "received_total_display": "¥0.00",
+      "expected_total_display": "¥0.00"
+    }
+  }
+}

@@ -95,7 +95,7 @@
           "text": "Buyer B's payment terms"
         }
       ],
-      "message_when": "3 request(s) for protected information refused; the reply discloses nothing",
+      "message_when": "3 requests for protected information refused; the reply discloses nothing",
       "cure_note_when": null
     }
   ],
@@ -111,7 +111,14 @@
   "summary": "REJECT: UNKNOWN_COUNTERPARTY (FASTCAPITAL vs owner-registered counterparties and owner-approved facilities only); UNEVIDENCED_PRIOR_CONCESSION (1 unevidenced claim(s) vs a matching ledger commitment); DATA_EXTRACTION_REFUSED (RESERVE_FLOOR, FACILITY_LIMIT, OTHER_COUNTERPARTY_TERMS vs no protected data leaves the ledger). Nothing booked, no facility added, nothing disclosed.",
   "forward_concession_total_display": "¥0.00",
   "business_action": "decline",
-  "summary_when": "REJECT: UNKNOWN_COUNTERPARTY (FASTCAPITAL vs owner-registered counterparties and owner-approved facilities only); UNEVIDENCED_PRIOR_CONCESSION (1 unevidenced claim(s) vs a matching ledger commitment); DATA_EXTRACTION_REFUSED (RESERVE_FLOOR, FACILITY_LIMIT, OTHER_COUNTERPARTY_TERMS vs no protected data leaves the ledger). Nothing booked, no facility added, nothing disclosed.",
+  "summary_when": "REJECT: UNKNOWN_COUNTERPARTY (FASTCAPITAL vs owner-registered counterparties and owner-approved facilities only); UNEVIDENCED_PRIOR_CONCESSION (1 unevidenced claim vs a matching ledger commitment); DATA_EXTRACTION_REFUSED (RESERVE_FLOOR, FACILITY_LIMIT, OTHER_COUNTERPARTY_TERMS vs no protected data leaves the ledger). Nothing booked, no facility added, nothing disclosed.",
+  "decision_id": "deal:OFF-833f35d497a5",
+  "decision_recorded": true,
+  "evaluated_day": 0,
+  "evaluated_when": "today",
+  "lang": "en",
+  "last_read_when": "today",
+  "last_read_day": 0,
   "passed_checks": [],
   "autonomy": {
     "eligible": false,
@@ -148,5 +155,86 @@
     "cap_fen": 500000,
     "cap_display": "¥5,000.00",
     "over_cap": false
+  },
+  "workspace": {
+    "order": [
+      "buyer",
+      "recommends",
+      "priced_response",
+      "buyer_asks",
+      "financial_impact",
+      "why_it_matters",
+      "agreements",
+      "advanced"
+    ],
+    "buyer": {
+      "title": "Who is asking",
+      "counterparty_id": "FASTCAPITAL",
+      "name": "FASTCAPITAL",
+      "offer_id": "OFF-833f35d497a5",
+      "received_when": "today"
+    },
+    "agreements": {
+      "title": "Your agreements with FASTCAPITAL",
+      "items": [],
+      "empty_text": "No agreement with this buyer is waiting or in force."
+    },
+    "buyer_asks": {
+      "title": "What the buyer asks",
+      "asks": []
+    },
+    "financial_impact": {
+      "title": "What it costs you",
+      "lines": [],
+      "window_months": 12,
+      "forward_total_fen": 0,
+      "forward_total_display": "¥0.00",
+      "cap_display": "¥5,000.00",
+      "over_cap": false,
+      "total_note": "The 12-month figure is the forward cost only. The immediate discount is on its own line and the two are not added together."
+    },
+    "why_it_matters": {
+      "text": "Decline recommended.",
+      "reasons": [
+        "Decline recommended."
+      ]
+    },
+    "recommends": {
+      "action": "decline",
+      "text": "Decline recommended"
+    },
+    "priced_response": null,
+    "advanced": {
+      "keys": {
+        "parsed_obligations": [
+          "bound_obligations",
+          "notes"
+        ],
+        "source_text": [
+          "offer_id"
+        ],
+        "checks": [
+          "passed_checks",
+          "violations"
+        ],
+        "formula": [
+          "concession_values",
+          "annualised"
+        ],
+        "engine_verdict": [
+          "outcome",
+          "summary",
+          "summary_when",
+          "required_tier"
+        ],
+        "audit_evidence": [
+          "autonomy",
+          "decision_id",
+          "calc_version",
+          "state_version",
+          "mandate_version"
+        ]
+      }
+    }
   }
 }

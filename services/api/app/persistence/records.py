@@ -113,3 +113,22 @@ class PilotJournalRecord:
     state_version: int
     day: int
     recorded_at: str
+
+
+@dataclass(frozen=True, slots=True)
+class DecisionFactRecord:
+    """One fact of the durable decision record (ADR-0011): something the stores cannot re-derive later (the day a verdict
+    was made, the counter that was sent, the economics the owner was shown). `body_json` is the canonical JSON of a strict
+    fact model (ids, integer fen and days, exact rates; no sentence, no buyer text, no model output). `state_version` and
+    `day` stamp the books and the clock at the write. A caller leaves `seq` and `recorded_at` at their defaults: the store
+    assigns them, and returns the stored row."""
+
+    decision_id: str
+    family: str  # DEAL | FUNDING
+    fact: str  # EVALUATED | SENT | QUOTED
+    fact_key: str  # the canonical id the fact is about
+    state_version: int
+    day: int
+    body_json: str
+    recorded_at: str = ""
+    seq: int = 0

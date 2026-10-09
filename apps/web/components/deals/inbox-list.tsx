@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { CheckIcon } from "@/components/icons";
 import { Disclosure } from "@/components/business/kit";
-import { Badge, Card, Chip, ErrorState, LoadingBlock } from "@/components/ui";
+import { Badge, Button, Card, Chip, ErrorState, LoadingBlock, textLinkClass } from "@/components/ui";
 import { useI18n } from "@/lib/i18n";
 import { INBOX, type InboxMessage } from "@/lib/inbox";
 import type { Mode } from "@/lib/mode";
+import type { RefusalBlock } from "@/lib/types";
 import { whenText } from "@/lib/when";
 
 /** A fold inside the inbox list: its head spans the card, aligned with the rows. */
@@ -31,11 +32,15 @@ function threads(messages: InboxMessage[]): Thread[] {
 
 /**
  * The inbox, one thread per buyer (owner decision, wayfinder #28). Business mode shows only known contacts and says
- * in one line that a suspicious message was blocked, linking to Activity's refused section; Demo mode shows every
+ * in one line what the books hold as set aside (the server's count from `GET /ledger`, never the page's own: nothing set aside, no line, and
+ * the fixture's example says it is one), linking to Activity's refused section; Demo mode shows every
  * message, the unknown sender flagged, and keeps the "simulated" explanation. Clicking a message reads it (the page
  * does that); `statusFor` gives the words for a message already evaluated. The registry (`known`, the counterparty ids
  * on the books) decides who is a known contact, so Business mode shows no message until the books have loaded (a
  * loading block, or the error when the books failed to load): it never shows a sender it has not checked.
+ *
+ * Once a deal is selected the list folds to one row, "Inbox (N)" with a "Back to inbox" control (`collapsed`); the full list shows when
+ * nothing is selected or on request, and then offers to hide itself again.
  */
 export function InboxList({
   currentDocId,
@@ -48,6 +53,10 @@ export function InboxList({
   onOpen,
   loadError,
   onRetry,
+  collapsed = false,
+  onExpand,
+  onCollapse,
+  refusals,
 }: {
   currentDocId: string | null;
   readDocIds: (string | undefined)[];
@@ -62,15 +71,33 @@ export function InboxList({
   /** The books (the registry of known contacts) failed to load. */
   loadError?: Error;
   onRetry?: () => void;
+  /** A deal is selected and the list is folded to one row. */
+  collapsed?: boolean;
+  onExpand?: () => void;
+  /** Shown on the open list while a deal is selected: folds it again. */
+  onCollapse?: () => void;
+  /** The books' refusal block (`GET /ledger`); null or absent until it has loaded, and then no set-aside line is drawn. */
+  refusals?: RefusalBlock | null;
 }) {
   const { t, te } = useI18n();
   const business = mode === "business";
   const unknown = (m: InboxMessage) => (known ? !known.has(m.counterparty_id) : false);
   const shown = business ? INBOX.filter((m) => !unknown(m)) : INBOX;
-  const blocked = business ? INBOX.length - shown.length : 0;
+  // Business mode hides the senders the books do not know; the example line is only for a list that actually hides one.
+  const hidden = business ? INBOX.length - shown.length : 0;
   const all = threads(shown);
   const current = all.find((th) => th.messages.some((m) => m.document.doc_id === currentDocId)) ?? null;
   const others = current ? all.filter((th) => th !== current) : all;
+
+  // The set-aside line is the books' (the ledger's refusal block): a count when something was set aside, the labelled example when nothing was yet.
+  const aside: { text: string; href: string; example: boolean } | null =
+    business && refusals
+      ? refusals.count > 0 && refusals.set_aside_text
+        ? { text: refusals.set_aside_text, href: refusals.href, example: false }
+        : hidden > 0 && refusals.example?.is_fixture_example
+          ? { text: refusals.example.text, href: refusals.href, example: true }
+          : null
+      : null;
 
   function row(m: InboxMessage, inThread: boolean) {
     const isCurrent = m.document.doc_id === currentDocId;
@@ -140,6 +167,16 @@ export function InboxList({
     );
   }
 
+  if (collapsed && !(business && known === null)) {
+    return (
+      <div className="motion-reveal flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-card border border-line bg-surface px-4 py-2 shadow-card" data-testid="inbox-collapsed">
+        <h2 className="text-sm font-semibold text-ink">{business ? t("biz.deals.inboxCount", { n: shown.length }) : t("biz.deals.simulatedInboxCount", { n: shown.length })}</h2>
+        <Button size="sm" onClick={onExpand} aria-expanded={false} aria-controls="inbox-list" data-testid="inbox-back">
+          {t("biz.deals.backToInbox")}
+        </Button>
+      </div>
+    );
+  }
   if (business && known === null) {
     return (
       <Card id="inbox-list" title={t("biz.deals.inbox")}>
@@ -154,6 +191,13 @@ export function InboxList({
       id="inbox-list"
       title={business ? t("biz.deals.inbox") : t("biz.deals.simulatedInbox")}
       subtitle={business ? undefined : t("inbox.list.sub")}
+      actions={
+        onCollapse ? (
+          <Button size="sm" variant="ghost" onClick={onCollapse} aria-expanded data-testid="inbox-hide">
+            {t("biz.deals.hideInbox")}
+          </Button>
+        ) : undefined
+      }
     >
       <ul className="motion-rise -m-4 divide-y divide-line overflow-hidden rounded-b-card" aria-label={business ? t("biz.deals.inbox") : t("biz.deals.simulatedInbox")} data-testid="inbox-list">
         {current ? thread(current) : null}
@@ -166,14 +210,14 @@ export function InboxList({
         ) : (
           others.map(thread)
         )}
-        {blocked ? (
-          <li className="flex items-start gap-2 px-4 py-3 text-xs text-ink-2" data-testid="inbox-blocked">
+        {aside ? (
+          <li className="flex items-start gap-2 px-4 py-3 text-xs text-ink-2" data-testid="inbox-blocked" data-example={aside.example ? "true" : "false"}>
             <span aria-hidden className="mt-1 size-1.5 shrink-0 rounded-pill bg-bad-solid" />
             <span>
-              {t("biz.deals.blocked", { n: blocked })}{" "}
-              <Link href="/activity#refused" className="font-medium text-brand-700 underline underline-offset-2">
-              {t("biz.deals.blocked.link")}
-            </Link>
+              {aside.text}{" "}
+              <Link href={aside.href} className={textLinkClass}>
+                {t("biz.deals.blocked.link")}
+              </Link>
             </span>
           </li>
         ) : null}

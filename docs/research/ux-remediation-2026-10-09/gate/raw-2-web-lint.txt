@@ -1,0 +1,2 @@
+$ eslint .
+EXIT 0 DURATION_S 5

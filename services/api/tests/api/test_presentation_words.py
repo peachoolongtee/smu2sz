@@ -74,7 +74,9 @@ def test_relative_days_rewrites_the_engine_phrases_and_leaves_counts_alone():
     r = lambda text: relative_days(text, 34, "en")
     assert r("the cash lands on day 37 after the 3-day lead time") == "the cash lands in 3 days after the 3-day lead time"
     assert r("it will cost ¥1,782.19 by day 47") == "it will cost ¥1,782.19 within 13 days"
-    assert r("by day 35") == "by day 35".replace("by day 35", "within 1 day") and r("by day 30") == "by today"
+    # a deadline is "by today" only on the day itself; a day already past is never "by today" (F03)
+    assert r("by day 34") == "by today" and r("by day 35") == "by tomorrow" and r("by day 36") == "within 2 days"
+    assert r("by day 30") == "by a deadline that passed 4 days ago" and r("by day 33") == "by a deadline that passed yesterday"
     assert r("the gap lasts to day 41") == "the gap lasts until 7 days from now"
     assert r("repaid day 32, draw ¥150,000.00 (day 12)") == "repaid 2 days ago, draw ¥150,000.00 (22 days ago)"
     assert r("due day 47; stays above the floor for 90 days; day 0 opening") == "due in 13 days; stays above the floor for 90 days; day 0 opening"

@@ -68,13 +68,14 @@ test("one filled brand button per Business page, no gradient anywhere, the deep 
     expect(gradients, `${path} has a gradient`).toBe(0);
     if (path !== "/") expect(await page.locator('[data-testid="home-status"]').count()).toBe(0);
   }
-  // Deals once a deal is evaluated: "Send this counter" is the one; the next-step link is not filled.
+  // Deals once a deal is evaluated: "Send this counter" is the one; the page has no other filled button.
   await page.goto("/deals");
   await page.getByTestId("inbox-msg-EX01").click();
   await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
   await expect(page.getByTestId("deal-send")).toBeVisible();
   expect(await filledBrand(page)).toBe(1);
-  // The channel chip is neutral, not the "fine" green.
+  // The channel chip is neutral, not the "fine" green (the inbox is one row until it is asked for).
+  await page.getByTestId("inbox-back").click();
   expect(await bg(page.getByTestId("inbox-msg-EX01").locator("span").first())).toBe("rgb(234, 240, 247)");
 });
 
@@ -86,7 +87,7 @@ test("the day-34 pending home has one primary: the decision, and the owner's dis
   await page.goto("/");
   await page.getByTestId("fix-open-ALERT-RESERVE-42").click();
   await page.getByTestId("fix-ALERT-RESERVE-42").click();
-  await expect(page.getByTestId("home-review-primary")).toBeVisible();
+  await expect(page.getByTestId("alert-approval-link-ALERT-RESERVE-42")).toBeVisible();
   expect(await filledBrand(page)).toBe(1);
   const disc = page.getByTestId("account-menu").locator("summary span").first();
   expect(await bg(disc)).toBe("rgb(232, 240, 254)");

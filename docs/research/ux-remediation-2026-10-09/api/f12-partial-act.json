@@ -1,0 +1,57 @@
+{
+  "probe": "f12-partial-act",
+  "request": {
+    "method": "POST",
+    "path": "/alerts/ALERT-RESERVE-34/act",
+    "body": {
+      "state_version": 7,
+      "suggestions": [
+        {
+          "operation_kind": "SUBMIT_INVOICE_FOR_FINANCING",
+          "facility_id": "FAC-IF",
+          "receivable_id": "RI:BUYER-1:2",
+          "amount_fen": 2750690,
+          "amount_display": "¥27,506.90"
+        }
+      ]
+    },
+    "credential": [
+      "X-Owner-Token"
+    ]
+  },
+  "clock_day_before_request": 34,
+  "status": 200,
+  "response": {
+    "alert_id": "ALERT-RESERVE-34",
+    "day": 34,
+    "results": [
+      {
+        "op_id": "alert:ALERT-RESERVE-34:v7:0",
+        "kind": "SUBMIT_INVOICE_FOR_FINANCING",
+        "status": "PENDING_APPROVAL",
+        "tier": "TIER_2",
+        "violations": [],
+        "seq": 7,
+        "entry_hash": "b488b4c7729a2eeb75c0c125fca10992d35d3ba6aa5ab031164b361ff14fbd75",
+        "prev_hash": "4123533c6bb123f320fb099374d04100314eb05e5780336a29ce2c8332a4a280",
+        "effective_day": 34,
+        "approval_id": "APR-000001",
+        "message": "Queued for owner approval (APR-000001): effective annual cost 32.53% is above the mandate's 15.00% ceiling for what the agent may borrow alone (all charges on ¥27,506.90 held 10 days (day 37 to day 47), annualised = 32.53%)",
+        "message_when": "Queued for owner approval (APR-000001): the yearly cost of 32.53% is above the 15.00% limit you signed for funding without your approval (all charges on ¥27,506.90 held 10 days (from in 3 days to in 13 days), annualised = 32.53%)",
+        "event_text": "Waiting for your approval: ¥27,506.90 of invoice financing at 32.5% a year, above the 15.00% limit you signed for funding without your approval.",
+        "event_detail": null
+      }
+    ],
+    "executed": 0,
+    "pending_approval": 1,
+    "refused": 0,
+    "cured": false,
+    "alerts_after": {
+      "counts": {
+        "CRITICAL": 1,
+        "WARNING": 2,
+        "INFO": 0
+      }
+    }
+  }
+}

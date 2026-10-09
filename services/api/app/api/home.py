@@ -11,41 +11,56 @@ amount, day and rate is copied from an engine result.
 from __future__ import annotations
 
 import json
+import logging
 import re
-from typing import Any
+from types import SimpleNamespace
+from typing import Any, ClassVar
 
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.alerts import Alert, AlertKind, Severity, alerts, reconcile
 from app.api.auth import require_owner
+from app.api.causality import Causality, forecast_of, mark_changed
+from app.api.decisions import decision_summary, load_context, remaining_links, remaining_task_view
 from app.api.display import displayed
 from app.api.presentation import (
+    COMMERCIAL_KINDS,
     RECOMMENDED_PLAN_KEY,
+    agreement_ref,
+    agreement_terms,
     agreement_words,
     approval_reason_words,
     approval_words,
+    business_text,
     buyer_of_receivable,
     cure_legs,
+    engine_sentence,
     event_words,
     facility_name,
-    fallback_words,
+    find_agreement,
+    first_breach_ahead,
     fmt_short,
+    in_language,
     in_words,
     invoice_words,
     lead_days,
     leg_names,
     leg_words,
+    live_windows,
+    lowest_point_words,
     party_name,
     receivable_face,
     relative_days,
     t,
     when_text,
+    window_is_live,
 )
 from app.api.presentation import (
     needs_owner_reason as needs_owner_reason_words,
 )
 from app.api.runtime import get_runtime
 from app.books import current_books
+from app.decisions.identity import decision_id_for
 from app.domain.models import (
     FinancialState,
     FundingAction,
@@ -111,7 +126,8 @@ def _lowest_ahead(traj: Any, today: int) -> tuple[int, int]:
 
 
 def _headline(found: list[Alert], mandate: Mandate, traj: Any, horizon: int, today: int,
-              lang: str, low: tuple[int, int] | None = None) -> dict[str, str | None]:
+              lang: str, low: tuple[int, int] | None = None, funding_counted: bool = False,
+              state: FinancialState | None = None) -> dict[str, str | None]:
     """Level 1, conclusion first: the one-line answer, the detail that explains it (where cash goes, against the
     reserve), the worst point if nothing is done, and the plan's readiness as a separate note."""
     floor = fmt_short(mandate.min_cash_fen)
@@ -122,23 +138,41 @@ def _headline(found: list[Alert], mandate: Mandate, traj: Any, horizon: int, tod
         short = fmt_short(breach.amount_fen or 0)
         when = _distance(breach.day, today, lang)
         at = next((d.closing_fen for d in traj.days if d.day == breach.day), None)
-        worst: str | None = t(lang, f"Worst point: {fmt_short(low_fen)} {low_when} if you do nothing.",
-                              f"若不采取行动，最低点为{low_when}的 {fmt_short(low_fen)}。")
+        # The projection counts funding already requested and in transit (its lot lands in the projection); then the worst
+        # point is not "if you do nothing" (R04).
+        worst: str | None = (t(lang, f"Lowest point: {fmt_short(low_fen)} {low_when} if nothing more is done.",
+                               f"若不再采取其他行动，最低点为{low_when}的 {fmt_short(low_fen)}。") if funding_counted else
+                             t(lang, f"Worst point: {fmt_short(low_fen)} {low_when} if you do nothing.",
+                               f"若不采取行动，最低点为{low_when}的 {fmt_short(low_fen)}。"))
         if breach.inputs.get("cure_restores_reserve") == "false":
             zero = breach.inputs.get("zero_day", "")
-            head = t(lang, f"Cash goes below zero {_distance(int(zero), today, lang)} if nothing is done.",
-                     f"若不采取行动，现金将在{_distance(int(zero), today, lang)}跌破零。")
-            note = t(lang, f"Cash can be kept at or above zero, but no committed funding restores your {floor} "
-                           f"minimum cash reserve: that needs your decision.",
-                     f"现金可以保持在零以上，但没有已承诺的融资能恢复您 {floor} 的最低现金储备，需要您决定。")
+            zero_when = _distance(int(zero), today, lang)
+            if breach.day is not None and breach.day <= today:
+                # Already under the reserve (F01): the headline says so; the zero day is the note's fact.
+                head = t(lang, "Below reserve today.", "今天现金低于储备。")
+                note = t(lang, f"Cash is {short} below your {floor} minimum cash reserve and goes below zero {zero_when} "
+                               f"if nothing is done. It can be kept at or above zero, but no committed funding restores the "
+                               f"reserve: that needs your decision.",
+                         f"现金比您 {floor} 的最低现金储备低 {short}，若不采取行动将在{zero_when}跌破零。现金可以保持在零以上，"
+                         f"但没有已承诺的融资能恢复储备，需要您决定。")
+            else:
+                head = t(lang, f"Cash goes below zero {zero_when} if nothing is done.", f"若不采取行动，现金将在{zero_when}跌破零。")
+                note = t(lang, f"Cash can be kept at or above zero, but no committed funding restores your {floor} "
+                               f"minimum cash reserve: that needs your decision.",
+                         f"现金可以保持在零以上，但没有已承诺的融资能恢复您 {floor} 的最低现金储备，需要您决定。")
             return {"headline": head, "note": note, "worst": worst, "plan_note": None}
         if breach.day == low_day:
             worst = None  # the headline and note already say where cash falls; a second sentence would repeat it
-        head = t(lang, f"Your cash reserve becomes unsafe {when}.", f"您的现金储备将在{when}不再安全。")
-        note = (t(lang, f"Cash falls to {fmt_short(at)}, {short} below your {floor} minimum cash reserve.",
-                  f"现金将降至 {fmt_short(at)}，比您 {floor} 的最低现金储备低 {short}。") if at is not None
-                else t(lang, f"Cash falls {short} below your {floor} minimum cash reserve.",
-                       f"现金将比您 {floor} 的最低现金储备低 {short}。"))
+        if breach.day is not None and breach.day <= today:
+            # Already under the reserve: it is not something that "becomes" so (F01).
+            head = t(lang, "Below reserve today.", "今天现金低于储备。")
+            note = t(lang, f"Cash is {short} below your {floor} minimum cash reserve.", f"现金比您 {floor} 的最低现金储备低 {short}。")
+        else:
+            head = t(lang, f"Your cash reserve becomes unsafe {when}.", f"您的现金储备将在{when}不再安全。")
+            note = (t(lang, f"Cash falls to {fmt_short(at)}, {short} below your {floor} minimum cash reserve.",
+                      f"现金将降至 {fmt_short(at)}，比您 {floor} 的最低现金储备低 {short}。") if at is not None
+                    else t(lang, f"Cash falls {short} below your {floor} minimum cash reserve.",
+                           f"现金将比您 {floor} 的最低现金储备低 {short}。"))
         if breach.committed_cure and any(s.above_apr_cap for s in breach.suggested):
             plan_note = t(lang, "A funding plan is ready. It needs your approval because of its cost.",
                           "融资方案已准备好，因其成本需要您批准。")
@@ -165,7 +199,8 @@ def _headline(found: list[Alert], mandate: Mandate, traj: Any, horizon: int, tod
                               f"{_distance(thin.day, today, lang)}.",
                         f"但会很接近：{_distance(thin.day, today, lang)}仅高出最低现金储备 {fmt_yuan(thin.amount_fen or 0)}。")
     elif warnings:
-        note += " " + relative_days(warnings[0].title, today, lang)
+        note += " " + ((business_text(state, warnings[0].title, today, lang) or "") if state is not None
+                       else agreement_ref(relative_days(warnings[0].title, today, lang)))
     worst = t(lang, f"Lowest cash ahead: {fmt_short(low_fen)} {low_when}.",
               f"未来最低现金：{low_when}的 {fmt_short(low_fen)}。")
     return {"headline": head, "note": note, "worst": worst, "plan_note": None}
@@ -197,15 +232,18 @@ def _funding_lots(state: FinancialState, today: int, lang: str) -> list[dict[str
             for lot in sorted(ensure_lots(state).lots, key=lambda lt: (lt.arrival_day, lt.id))]
 
 
-def _drivers(state: FinancialState, traj: Any, today: int, breach_day: int | None, lang: str) -> list[str]:
+def _drivers(state: FinancialState, traj: Any, today: int, breach_day: int | None, lang: str,
+             through_day: int | None = None) -> list[str]:
     """What is driving the cash risk, from the projection's own events: the largest outflows between today and the
     first unsafe day, and the receipt that arrives only after it. At most two sentences; nothing is computed, the
-    events are the engine's."""
+    events are the engine's. When cash is already under the reserve today, the outflows that matter run to `through_day`
+    (the lowest point ahead), since "between today and today" would name none (R02)."""
     if breach_day is None:
         return []
+    last = max(breach_day, through_day) if through_day is not None and breach_day <= today else breach_day
     out: list[tuple[int, str]] = []
     for d in traj.days:
-        if today <= d.day <= breach_day:
+        if today <= d.day <= last:
             for e in d.events:
                 if e.amount_fen < 0 and e.kind in (LedgerEventKind.FLOW,):
                     label = in_words(state, e.label.split(" (")[0].split(",")[0])
@@ -231,7 +269,7 @@ def _plan_lines(state: FinancialState, p: FundingPlan, lang: str) -> list[dict[s
     """The router's cost lines, in words, plus one more line when its total is not their sum: the router's total is
     the net change in charges the plan makes to the whole projection, so a plan that lets an existing balance be
     repaid sooner carries that saving as a negative line here, and the lines always add up to the total shown."""
-    lines = [{"label": relative_days(in_words(state, cl.label), state.as_of_day, lang), "display": fmt_yuan(cl.fen),
+    lines = [{"label": engine_sentence(state, cl.label, state.as_of_day, lang), "display": fmt_yuan(cl.fen),
               "formula": cl.formula} for cl in p.costs]
     offset = p.total_cost_fen - sum(cl.fen for cl in p.costs)
     if offset != 0:
@@ -240,7 +278,7 @@ def _plan_lines(state: FinancialState, p: FundingPlan, lang: str) -> list[dict[s
     return lines
 
 
-def _plan_legs(state: FinancialState, p: FundingPlan, today: int, lang: str) -> list[dict[str, Any]]:
+def plan_legs(state: FinancialState, p: FundingPlan, today: int, lang: str) -> list[dict[str, Any]]:
     """The router plan's legs as business legs: amounts, the cost line the router wrote for each, its landing day."""
     legs: list[dict[str, Any]] = []
     for i, (a, cl) in enumerate(zip(p.actions, p.costs, strict=True)):
@@ -302,7 +340,7 @@ def _alert_actions(state: FinancialState, alert: Alert, today: int) -> list[Fund
 _FROM = re.compile(r".* from (.+)$")
 
 
-def _label_short(kind: str, label: str, lang: str) -> str:
+def _label_short(kind: str, label: str, lang: str, state: FinancialState | None = None) -> str:
     """A chart annotation's words: "Receipt from Foshan Home Retail Co.", "Payroll", "Invoice financing lands"; the
     full sentence stays in `label` for the table. Written here so the browser never truncates a sentence."""
     if kind in ("RECEIPT", "EARLY_RECEIPT"):
@@ -315,21 +353,66 @@ def _label_short(kind: str, label: str, lang: str) -> str:
         return t(lang, "Credit line draw", "信用额度提款")
     if kind == "REPAYMENT":
         return t(lang, "Repayment", "还款")
-    return label.split(" (")[0].split(",")[0].strip()
+    return in_language(label.split(" (")[0].split(", ")[0].strip(), lang, state) or ""
 
 
-def _series(state: FinancialState, traj: Any, lang: str = "en") -> list[dict[str, Any]]:
+def _series(state: FinancialState, traj: Any, lang: str = "en", from_day: int = 0) -> list[dict[str, Any]]:
     """One projection as the chart's rows: the day, its closing cash (fen for the axis, the display string for the
-    reader) and the events that moved it, with ids replaced by names and a short label for the chart."""
+    reader) and the events that moved it, with ids replaced by names and a short label for the chart. The rows start at
+    `from_day` (today): the closed days before it carry the opening cash and are not a forecast (R02)."""
     rows = []
     for d in traj.days:
+        if d.day < from_day:
+            continue
         events = []
         for e in d.events:
             label = in_words(state, e.label)
-            events.append({"kind": e.kind.value, "label": label, "label_short": _label_short(e.kind.value, label, lang),
+            events.append({"kind": e.kind.value, "label": in_language(label, lang, state), "label_short": _label_short(e.kind.value, label, lang, state),
                            "amount_fen": e.amount_fen, "amount_display": fmt_yuan(e.amount_fen), "amount_short": fmt_short(e.amount_fen)})
-        rows.append({"day": d.day, "closing_fen": d.closing_fen, "closing_display": fmt_yuan(d.closing_fen), "events": events})
+        # The day's net movement: the sum of the engine's own postings for the day, so a page can label the day by its net and never
+        # let one large outflow look like the cause of a rising line (the components stay in `events`).
+        net = sum(e.amount_fen for e in d.events)
+        rows.append({"day": d.day, "closing_fen": d.closing_fen, "closing_display": fmt_yuan(d.closing_fen), "events": events,
+                     "net_fen": net, "net_display": fmt_yuan(net), "net_short": fmt_short(net)})
     return rows
+
+
+_EXPECTED_RECEIPTS = (LedgerEventKind.RECEIPT, LedgerEventKind.EARLY_RECEIPT)
+
+
+def forecast_basis(state: FinancialState, store: Any, traj: Any, action: dict[str, Any] | None, today: int, lang: str) -> dict[str, Any]:
+    """What the cash chart counts, in words and in two sums (audit section 16): the invoice payments the engine expects at their due
+    dates and the funding already committed; overdue payments are not counted. `confirmed_receipts_fen` is the sum of the receipts in
+    the log; `expected_receipts_fen` the sum of the receipts the projection already posted from today on. Both are sums of amounts
+    that exist elsewhere; nothing is projected here. The assumed repayment day of the line is the plan's own (None without one)."""
+    entries, _ = read_entries(store.operations())
+    confirmed = sum(_receipt_fen(e.payload) for e in entries
+                    if e.kind == "RECEIVE_PAYMENT" and e.result.status == OperationStatus.EXECUTED)
+    expected = sum(ev.amount_fen for d in traj.days if d.day >= today for ev in d.events
+                   if ev.kind in _EXPECTED_RECEIPTS and ev.amount_fen > 0)
+    repay_days = [leg["cost_due_day"] for leg in (action or {}).get("legs") or []
+                  if leg.get("operation_kind") == "DRAW_FACILITY" and isinstance(leg.get("cost_due_day"), int)]
+    repay = max(repay_days) if repay_days else None
+    base = t(lang, "Expected invoice payments at their due dates and committed funding; overdue payments are excluded",
+             "按到期日预计的发票回款和已承诺的融资；已逾期未付的款项不计入")
+    tail = (t(lang, f"; assumed line repayment {when_text(repay, today, lang)}.", f"；假定额度于{when_text(repay, today, lang)}还款。")
+            if repay is not None else t(lang, ".", "。"))
+    return {
+        "forecast_basis_text": base + tail,
+        "forecast_basis": {
+            "scheduled_receipts_counted": True, "overdue_excluded": True,
+            "confirmed_receipts_fen": confirmed, "confirmed_receipts_display": fmt_yuan(confirmed),
+            "expected_receipts_fen": expected, "expected_receipts_display": fmt_yuan(expected),
+            "assumed_repayment_day": repay,
+            "assumed_repayment_when": when_text(repay, today, lang) if repay is not None else None,
+        },
+        "last_read_when": t(lang, "today", "今天"), "last_read_day": today,
+    }
+
+
+def _receipt_fen(payload: dict[str, Any]) -> int:
+    amount = payload.get("amount_fen")
+    return amount if isinstance(amount, int) else 0
 
 
 def _after_words(after: Any, floor: int, today: int, horizon: int, lang: str) -> str:
@@ -342,22 +425,75 @@ def _after_words(after: Any, floor: int, today: int, horizon: int, lang: str) ->
              f"未来 {max(first - 1 - today, 0)} 天现金都保持在最低现金储备以上。")
 
 
-def cure_after_words(state: FinancialState, obs: list[Any], mandate: Mandate, alert: Alert | None, today: int,
-                     lang: str) -> str | None:
-    """The after-state sentence for an alert's own cure, projected on the books like the home's next action: the same
-    words on the home and on the approval card, so one cure never says two horizons. None when the alert has no committed
-    cure that restores the reserve."""
-    if (alert is None or alert.kind != AlertKind.RESERVE_BREACH_AHEAD or not alert.committed_cure
-            or alert.inputs.get("cure_restores_reserve") == "false"):
-        return None
+def cure_after(state: FinancialState, obs: list[Any], mandate: Mandate, alert: Alert | None, today: int,
+               lang: str) -> tuple[str | None, dict[str, Any] | None]:
+    """The after-state of an alert's own cure, projected on the books like the home's next action: the sentence the home
+    and the approval card both say (so one cure never says two horizons) and, when the cure keeps cash up but does not restore
+    the reserve, the residual as data (`shortfall_display`, `from_when`, `restores_reserve` false). Both None when the alert has
+    no committed cure to project."""
+    if alert is None or alert.kind != AlertKind.RESERVE_BREACH_AHEAD:
+        return None, None
+    # A cure that restores the reserve is a committed one; one that only keeps cash above zero (`cure_restores_reserve` false)
+    # is still the cure the alert suggests and the owner may approve.
+    if not alert.committed_cure and alert.inputs.get("cure_restores_reserve") != "false":
+        return None, None
     actions = _alert_actions(state, alert, today)
     if not actions:
-        return None
+        return None, None
     try:
         traj = project(state, obs, actions, Mode.CONSERVATIVE, mandate.horizon_days, mandate.min_cash_fen)
     except EngineError:
-        return None
-    return _after_words(traj, mandate.min_cash_fen, today, mandate.horizon_days, lang)
+        return None, None
+    floor = mandate.min_cash_fen
+    if alert.inputs.get("cure_restores_reserve") != "false":
+        return _after_words(traj, floor, today, mandate.horizon_days, lang), None
+    # The cure does not restore the reserve: say what it does do, from its own projection (F12). The shortfall and the lowest
+    # point are those of the first stretch below the reserve (the alert's own `residual_shortfall` is that episode's minimum).
+    first = first_breach_ahead(traj, today, floor)
+    if first is None:  # the cure's own projection stays above the reserve; the alert's flag is stale
+        return _after_words(traj, floor, today, mandate.horizon_days, lang), None
+    low_fen, low_day = _episode_low(traj, first[0], floor)
+    from_when, low_when = _distance(first[0], today, lang), _distance(low_day, today, lang)
+    gap = floor - low_fen
+    now = alert.amount_fen if alert.day is not None and alert.day <= today else None  # today's gap: the alert's own first shortfall
+    if _lowest_ahead(traj, today)[0] < 0:
+        words = t(lang, f"Does not fully prevent negative cash: cash still falls to {fmt_short(_lowest_ahead(traj, today)[0])} "
+                        f"{_distance(_lowest_ahead(traj, today)[1], today, lang)}, below your {fmt_short(floor)} minimum cash reserve.",
+                  f"不能完全避免现金为负：现金仍将在{_distance(_lowest_ahead(traj, today)[1], today, lang)}降至 "
+                  f"{fmt_short(_lowest_ahead(traj, today)[0])}，低于 {fmt_short(floor)} 的最低现金储备。")
+    else:
+        words = lowest_point_words(gap, low_day, now, today, lang)
+    return words, {"shortfall_display": fmt_yuan(gap), "from_when": from_when, "restores_reserve": False, "lowest_when": low_when,
+                   "shortfall_today_display": fmt_yuan(now) if now is not None else None, "text": words}
+
+
+def _episode_low(traj: Any, first_day: int, floor: int) -> tuple[int, int]:
+    """(closing cash, day) of the lowest point of the stretch below the reserve that starts on `first_day`."""
+    episode = []
+    for d in traj.days:
+        if d.day >= first_day:
+            if d.closing_fen >= floor:
+                break
+            episode.append(d)
+    low = min(episode, key=lambda d: (d.closing_fen, d.day))
+    return low.closing_fen, low.day
+
+
+def after_facts(state: FinancialState, obs: list[Any], mandate: Mandate, actions: list[FundingAction],
+                today: int) -> tuple[bool | None, int | None, int | None]:
+    """The after-state of the legs that run, as numbers for the decision record's quote: whether cash stays at or above the
+    reserve through the horizon and, if not, the first day it is below it. The same projection `next_action` and `cure_after`
+    say in words, and the day cash is lowest in that stretch; (None, None, None) when the legs cannot be projected."""
+    if not actions:
+        return None, None, None
+    try:
+        traj = project(state, obs, actions, Mode.CONSERVATIVE, mandate.horizon_days, mandate.min_cash_fen)
+    except EngineError:
+        return None, None, None
+    first = first_breach_ahead(traj, today, mandate.min_cash_fen)
+    if first is None:
+        return True, None, None
+    return False, first[0], _episode_low(traj, first[0], mandate.min_cash_fen)[1]
 
 
 def next_action(state: FinancialState, obs: list[Any], mandate: Mandate, found: list[Alert], approvals: list[Any],
@@ -381,9 +517,9 @@ def next_action(state: FinancialState, obs: list[Any], mandate: Mandate, found: 
 
     if rec.source == "router" and rec.plan is not None:
         p = rec.plan
-        legs = _plan_legs(state, p, today, lang)
+        legs = plan_legs(state, p, today, lang)
         needs_owner = p.needs_owner_approval
-        needs_owner_reason = in_words(state, p.approval_reason) if needs_owner else None
+        needs_owner_reason = engine_sentence(state, p.approval_reason, today, lang) if needs_owner else None
         cost_total = fmt_yuan(p.total_cost_fen)
         cost_breakdown = _plan_lines(state, p, lang)
         cost_basis = _plan_basis(state, p, lang)
@@ -428,15 +564,15 @@ def next_action(state: FinancialState, obs: list[Any], mandate: Mandate, found: 
             cheaper = {"label": t(lang, " and ".join(words), "，".join(words)), "cost_total_display": fmt_yuan(c.total_cost_fen),
                        "approvals": n, "legs": [f"{x['label']}: {x['display']}" for x in _plan_lines(state, c, lang)]}
             why = t(lang, f"The cheapest option, {fmt_yuan(c.total_cost_fen)} in all{saving}, needs {n} separate approvals; "
-                          f"this one needs one. Both are on Compare options.",
-                    f"最便宜的方案合计 {fmt_yuan(c.total_cost_fen)}{saving}，但需要 {n} 次单独批准；此方案只需一次。两者都在“比较方案”中。")
+                          f"this one needs one. Both are under your funding options.",
+                    f"最便宜的方案合计 {fmt_yuan(c.total_cost_fen)}{saving}，但需要 {n} 次单独批准；此方案只需一次。两者都在“您的融资方案”中。")
         elif alert.kind == AlertKind.RESERVE_BREACH_AHEAD and alert.inputs.get("cure_restores_reserve") == "false":
             why = t(lang, "No committed funding restores the reserve; this is the cheapest way to stay above zero.",
                     "没有已承诺的融资能恢复安全线；这是保持在零以上最便宜的方式。")
         elif alert.kind == AlertKind.RESERVE_BREACH_AHEAD:
             why = t(lang, "A committed funding that covers the whole gap in time.", "能及时覆盖整个缺口的已承诺融资。")
         else:
-            why = relative_days(in_words(state, alert.detail), today, lang)
+            why = engine_sentence(state, alert.detail, today, lang)
 
     if len(legs) == 1:
         title = legs[0]["label"]
@@ -476,7 +612,7 @@ def next_action(state: FinancialState, obs: list[Any], mandate: Mandate, found: 
     if actions:
         try:
             after_traj = project(state, obs, actions, Mode.CONSERVATIVE, horizon, floor)
-            plan_series = _series(state, after_traj)
+            plan_series = _series(state, after_traj, from_day=today)
             after_lowest = min((d.closing_fen for d in after_traj.days if d.day >= today), default=None)
         except EngineError:
             after_traj = None
@@ -486,9 +622,11 @@ def next_action(state: FinancialState, obs: list[Any], mandate: Mandate, found: 
         if alert.inputs.get("cure_restores_reserve") == "false":
             zero_when = when_text(int(alert.inputs.get("zero_day", today)), today, lang)
             if_nothing = t(lang, f"Cash goes below zero {zero_when}.", f"现金将在{zero_when}跌破零。")
-            after = t(lang, f"Cash stays at or above zero, but your minimum cash reserve is still "
-                            f"{alert.inputs.get('residual_shortfall')} short on the worst day.",
-                      f"现金保持在零以上，但最差的一天仍比最低现金储备低 {alert.inputs.get('residual_shortfall')}。")
+            # the card's `protects` says the same sentence, from the same function (`cure_after`)
+            after = cure_after(state, obs, mandate, alert, today, lang)[0] or t(
+                lang, f"Cash stays at or above zero, but your minimum cash reserve is still "
+                      f"{alert.inputs.get('residual_shortfall')} short on the worst day.",
+                f"现金保持在零以上，但最差的一天仍比最低现金储备低 {alert.inputs.get('residual_shortfall')}。")
         else:
             worst_when = when_text(int(alert.inputs.get("worst_day", alert.day or today)), today, lang)
             if_nothing = t(lang, f"{short} below your minimum cash reserve {when_text(alert.day, today, lang)}; the gap peaks at "
@@ -541,8 +679,7 @@ def next_action(state: FinancialState, obs: list[Any], mandate: Mandate, found: 
         "if_nothing": if_nothing,
         "after": after,
         "why": why,
-        "detail": (fallback_words(relative_days(in_words(state, alert.detail), today, lang)) if rec.source == "router"
-                   else relative_days(in_words(state, alert.detail), today, lang)),
+        "detail": engine_sentence(state, alert.detail, today, lang, fallback=rec.source == "router"),
         "formula": alert.formula,
         "pending_approval_id": queued.id if queued is not None else None,
         "state_version": state_version,
@@ -551,7 +688,7 @@ def next_action(state: FinancialState, obs: list[Any], mandate: Mandate, found: 
     }
 
 def _approvals(state: FinancialState, obs: list[Any], mandate: Mandate, approvals: list[Any], found: list[Alert],
-               today: int, lang: str, *, use_router: bool = True) -> list[dict[str, Any]]:
+               today: int, lang: str, *, use_router: bool = True, commitments: list[Any] | None = None) -> list[dict[str, Any]]:
     by_id = {a.id: a for a in found}
     plan_costs: dict = {}
     if use_router and any(str(getattr(a.status, "value", a.status)) == "PENDING" for a in approvals):
@@ -568,20 +705,134 @@ def _approvals(state: FinancialState, obs: list[Any], mandate: Mandate, approval
         alert = None
         if (a.op_id or "").startswith("alert:"):
             alert = by_id.get(a.op_id.split(":")[1])
-        words = approval_words(state, op, a.kind, today, alert, lang, plan_costs,
-                               after=cure_after_words(state, obs, mandate, alert, today, lang))
+        after, residual = cure_after(state, obs, mandate, alert, today, lang)
+        terms = agreement_terms(state, find_agreement(op, commitments or []), today, lang,
+                                 horizon_days=mandate.forward_concession_horizon_days) if a.kind in COMMERCIAL_KINDS else None
+        words = approval_words(state, op, a.kind, today, alert, lang, plan_costs, after=after, agreement=terms)
+        words["residual"] = residual
+        words["execution_status"] = "PENDING"
         amount = op.get("amount_fen", op.get("advance_fen"))
         out.append({"id": a.id, "kind": a.kind, "reason": approval_reason_words(state, a.reason, today, lang), "created_day": op.get("day"),
                     "amount_fen": amount if isinstance(amount, int) else None,
-                    "amount_display": fmt_yuan(amount) if isinstance(amount, int) else None, **words})
+                    "amount_display": (fmt_yuan(amount) if isinstance(amount, int) else None), **words})
     return out
 
 
+class Partial:
+    """The supporting reads that failed while the home was built (F21). The home never fails for one: the conclusion and the plan stand, and
+    `partial` names what could not be read so the page can say "Some supporting facts could not be read: ..." beside them."""
+
+    LABELS: ClassVar[dict[str, tuple[str, str]]] = {"decision_record": ("the record of your decisions", "您的决策记录"),
+              "reconciliation": ("the check of receipts against promises", "收款与约定的核对")}
+
+    def __init__(self) -> None:
+        self.missing: list[str] = []
+
+    def add(self, name: str) -> None:
+        if name not in self.missing:
+            self.missing.append(name)
+
+    def view(self, lang: str) -> dict[str, Any] | None:
+        if not self.missing:
+            return None
+        names = [t(lang, self.LABELS[m][0], self.LABELS[m][1]) for m in self.missing]
+        return {"missing": list(self.missing), "missing_text": names,
+                "text": t(lang, f"Some supporting facts could not be read: {', '.join(names)}.",
+                          f"部分辅助信息未能读取：{'、'.join(names)}。")}
+
+
+class _Reconciliation:
+    """The reconciliation of the log against the books, read once and only when a sentence needs it: the early-payment
+    promises (`report`) and which of their windows are still open (`live`). When it cannot be read the promises read as none and the
+    home says so (`Partial`)."""
+
+    def __init__(self, state: FinancialState, store: Any, today: int, partial: Partial | None = None) -> None:
+        self._state, self._store, self._today = state, store, today
+        self._partial = partial
+        self._report: Any = None
+        self._live: frozenset[tuple[str, str]] | None = None
+
+    @property
+    def report(self) -> Any:
+        if self._report is None:
+            try:
+                self._report = reconcile(self._store, day=self._today)
+            except Exception:
+                logging.getLogger("termsledger.decisions").exception("the reconciliation could not be read for the home")
+                if self._partial is not None:
+                    self._partial.add("reconciliation")
+                self._report = SimpleNamespace(promised=[], receipts=[])
+        return self._report
+
+    def window_live(self, receivable_id: str | None) -> bool:
+        if self._live is None:
+            self._live = live_windows(self.report, self._store.commitments(), self._state)
+        return window_is_live(self._live, receivable_id)
+
+
+def _part_arrived(state: FinancialState, report: Any, commitment_id: str, obligation_id: str | None, today: int, lang: str) -> dict[str, Any] | None:
+    """The change row for an early-payment promise that was kept in part: four facts (what arrived and when, what it cleared,
+    what remains and whether it is overdue, whether the early-payment window has ended) from the reconciliation's own rows.
+    Several payments under one promise read as "Received 2 payments totalling ¥X (the last …)". None when nothing arrived
+    under the promise, so the alert's "did not arrive" stands. Nothing is computed here."""
+    row = next((p for p in report.promised if p.commitment_id == commitment_id and (obligation_id is None or p.obligation_id == obligation_id)
+                and p.receipt_seq is not None and p.status.value == "RECEIVED"), None)
+    if row is None:
+        return None
+    paid = sorted((r for r in report.receipts if r.commitment_id == commitment_id and r.receivable_id == row.receivable_id
+                   and r.agreed_discount_fen > 0), key=lambda r: r.seq)
+    last = paid[-1] if paid else next((r for r in report.receipts if r.seq == row.receipt_seq), None)
+    buyer = party_name(state, row.counterparty_id)
+    left = next((o for o in report.outstanding if o.receivable_id == row.receivable_id), None)
+    ended = row.promised_day is None or row.promised_day < today
+    received, cleared, discount = fmt_yuan(row.expected_fen), fmt_yuan(row.face_fen), fmt_yuan(row.discount_fen)
+    when = when_text(last.day, today, lang) if last is not None and last.day is not None else ""
+    remains = ""
+    if left is not None:
+        remains = (t(lang, f"; {fmt_yuan(left.face_fen)} remains and is overdue", f"；还有 {fmt_yuan(left.face_fen)} 未收，且已逾期") if left.past_due
+                   else t(lang, f"; {fmt_yuan(left.face_fen)} remains, due {when_text(left.due_day, today, lang)}",
+                          f"；还有 {fmt_yuan(left.face_fen)} 未收，{when_text(left.due_day, today, lang)}到期"))
+    window = (t(lang, "; the early-payment window has ended", "；提前付款期限已结束") if ended
+              else t(lang, "; the early-payment window is still open", "；提前付款期限仍未结束"))
+    if len(paid) > 1:
+        head = t(lang, f"Received {len(paid)} payments totalling {received} from {buyer}{f' (the last {when})' if when else ''}: together they",
+                 f"{when}最后一笔，共收到{buyer}的 {len(paid)} 笔付款，合计 {received}：它们共")
+    else:
+        head = t(lang, f"Received {received} from {buyer}{f' {when}' if when else ''}: it",
+                 f"{when}已收到{buyer}的 {received}：")
+    text = t(lang, f"{head} cleared {cleared} of the invoice, including a {discount} early-payment discount{remains}{window}.",
+             f"{head}抵清了发票的 {cleared}，其中含 {discount} 提前付款折扣{remains}{window}。")
+    return {"event_text": text, "received_display": received, "face_cleared_display": cleared, "discount_display": discount,
+            "remaining_display": fmt_yuan(left.face_fen) if left is not None else None,
+            "window_state": "ended" if ended else "open"}
+
+
+def _warning_words(state: FinancialState, a: Alert, recon: _Reconciliation, today: int, lang: str,
+                   agreements: dict[str, str]) -> dict[str, str | None]:
+    """A warning's title and detail in the owner's words. The early-payment alert says the promised payment "did not arrive";
+    when part of it did, the title says it was only partly paid and the detail gives the same four facts as the change row."""
+    title = business_text(state, a.title, today, lang, agreements) or ""
+    detail = business_text(state, a.detail, today, lang, agreements) or ""
+    cid = a.inputs.get("commitment_id")
+    if cid and a.kind == AlertKind.RECEIVABLE_PAST_DUE and "did not arrive" in title:
+        part = _part_arrived(state, recon.report, cid, a.inputs.get("obligation_id"), today, lang)
+        if part is not None:
+            title = title.removesuffix(" did not arrive") + " was only partly paid"
+            raw_rest = a.detail.split(". ", 1)[1] if ". " in a.detail else ""  # the alert's sentences after "did not arrive."
+            rest = business_text(state, raw_rest, today, lang, agreements) or ""
+            detail = part["event_text"] + (f" {rest[:1].upper()}{rest[1:]}" if rest else "")
+    return {"title": title, "detail": detail}
+
+
 def _changes(state: FinancialState, store: Any, found: list[Alert], today: int, lang: str,
-             since_day: int | None = None) -> list[dict[str, Any]]:
-    """Since the owner's last visit when the web says when that was (`since_day`), else the last week of the clock."""
+             since_day: int | None = None, causality: Causality | None = None, partial: Partial | None = None) -> list[dict[str, Any]]:
+    """Since the owner's last visit when the web says when that was (`since_day`), else the last week of the clock. With a `Causality`
+    each row also says `what_changed`, `why_it_matters` (the forecast as of now, not a replay) and `what_remains` (the decision record's)."""
     since = since_day if since_day is not None else today - RECENT_DAYS
     items: list[dict[str, Any]] = []
+    commitments = store.commitments()
+    agreements = {c.id: party_name(state, c.counterparty_id) for c in commitments}
+    recon = _Reconciliation(state, store, today, partial)
     entries, _ = read_entries(store.operations())
     # An approval the owner has answered: its "waiting" entry is history, and when the decision itself is in the window the
     # decision is the news (one operation never reads "You approved" and "Waiting for your approval" together).
@@ -601,25 +852,38 @@ def _changes(state: FinancialState, store: Any, found: list[Alert], today: int, 
         kind = "REFUSED" if e.result.status == OperationStatus.REFUSED else (
             "WAITING" if e.result.status == OperationStatus.PENDING_APPROVAL else
             ("RECEIPT" if e.kind == "RECEIVE_PAYMENT" else "OPERATION"))
-        text = in_words(state, e.result.message or e.kind.replace("_", " ").lower())
+        text = e.result.message or e.kind.replace("_", " ").lower()
         if e.kind in ("ACCEPT_OFFER", "RECORD_COMMITMENT") and e.result.status == OperationStatus.EXECUTED:
             cmt = next((c for c in store.commitments() if c.id in (e.result.message or "")), None)
             if cmt is not None:
                 text = agreement_words(state, cmt.counterparty_id, cmt.forward_value_fen, lang)
                 kind = "AGREEMENT"
-        shown = relative_days(text, today, lang)
+        live = e.kind == "RECEIVE_PAYMENT" and recon.window_live((e.payload or {}).get("receivable_id"))
+        shown = business_text(state, text, today, lang, agreements, live) or text
         words = (event_words(state, kind=e.kind, status=e.result.status.value, payload=e.payload, message=e.result.message,
                              approval_id=e.result.approval_id, day=day, today=today, lang=lang,
-                             decided=e.result.approval_id in decided_ids)
+                             decided=e.result.approval_id in decided_ids, agreements=agreements, window_live=live)
                  if kind != "AGREEMENT" else {"event_text": None, "event_detail": None})
-        items.append({"day": day, "seq": e.seq, "kind": kind, "actor": who, "text": shown,
-                      "event_text": words["event_text"] or shown, "event_detail": words["event_detail"],
-                      "when": when_text(day, today, lang)})
+        item: dict[str, Any] = {"day": day, "seq": e.seq, "kind": kind, "actor": who, "text": shown,
+                "event_text": words["event_text"] or shown, "event_detail": words["event_detail"],
+                "when": when_text(day, today, lang)}
+        if causality is not None:
+            did = decision_id_for(e.payload, e.idempotency_key, commitments, approval_id=e.result.approval_id)
+            item.update(causality.fields(status=e.result.status.value, event_text=item["event_text"], decision_id=did,
+                                         decided=e.result.approval_id in decided_ids))
+        items.append(item)
     for a in found:
         if a.kind == AlertKind.RECEIVABLE_PAST_DUE:
-            late = relative_days(in_words(state, a.detail.split(". ")[0] + "."), today, lang)
-            items.append({"day": a.day, "seq": None, "kind": "LATE", "actor": "", "text": late,
-                          "event_text": late, "event_detail": None, "when": when_text(a.day, today, lang)})
+            late = business_text(state, a.detail.split(". ")[0] + ".", today, lang, agreements) or ""
+            row: dict[str, Any] = {"day": a.day, "seq": None, "kind": "LATE", "actor": "", "text": late,
+                                   "event_text": late, "event_detail": None, "when": when_text(a.day, today, lang)}
+            cid, oid = a.inputs.get("commitment_id"), a.inputs.get("obligation_id")
+            if cid and "did not arrive" in late:
+                part = _part_arrived(state, recon.report, cid, oid, today, lang)
+                if part is not None:  # the promise was part kept: say what arrived, never "did not arrive" (F25)
+                    row.update(part)
+                    row["text"] = row["event_text"] = part["event_text"]
+            items.append(row)
     for lot in ensure_lots(state).lots:
         if lot.settled and since <= lot.arrival_day <= today and lot.arrival_day != lot.request_day:
             landed = t(lang, f"{fmt_yuan(lot.principal_fen)} from {facility_name(state, lot.facility_id)} landed {when_text(lot.arrival_day, today, lang)}.",
@@ -628,11 +892,24 @@ def _changes(state: FinancialState, store: Any, found: list[Alert], today: int, 
                           "when": when_text(lot.arrival_day, today, lang), "text": landed,
                           "event_text": landed, "event_detail": None})
     items.sort(key=lambda x: (-(x["day"] or 0), -(x["seq"] or 0)))
-    return items[:MAX_CHANGES]
+    items = items[:MAX_CHANGES]
+    if causality is not None:
+        for item in items:
+            if "what_changed" not in item:  # a late payment or a landing: the forecast now is its consequence
+                item.update(causality.fields(status="EXECUTED", event_text=item["event_text"], decision_id=None))
+    mark_changed(items)
+    return items
 
 
-def _receivables(state: FinancialState, store: Any, today: int, lang: str) -> dict[str, Any]:
-    report = reconcile(store, day=today)
+def _receivables(state: FinancialState, store: Any, today: int, lang: str, partial: Partial | None = None) -> dict[str, Any]:
+    try:
+        report = reconcile(store, day=today)
+    except Exception:  # the block is a supporting read: it reads as unknown, never as "nothing owed", and the home says so
+        logging.getLogger("termsledger.decisions").exception("the reconciliation could not be read for the receivables")
+        if partial is not None:
+            partial.add("reconciliation")
+        return {"open_count": 0, "open_total_display": None, "overdue_total_display": None, "past_due": [], "next_receipt": None,
+                "promised": None, "lapsed_promises": 0}
     rows: list[dict[str, Any]] = []
     for o in report.outstanding:
         rows.append({"receivable_id": o.receivable_id, "buyer_id": o.counterparty_id,
@@ -671,6 +948,50 @@ def _in_transit(state: FinancialState, today: int, lang: str) -> dict[str, Any] 
         for lot in sorted(lots, key=lambda lt: (lt.arrival_day, lt.id))]}
 
 
+def _context(rt: Any, partial: Partial | None = None) -> Any:
+    """The decision record's context, read once for the home (None when it cannot be read: the home never goes down for it)."""
+    try:
+        return load_context(rt)
+    except Exception:
+        logging.getLogger("termsledger.decisions").exception("the decision record could not be read for the home")
+        if partial is not None:
+            partial.add("decision_record")
+        return None
+
+
+def _decision_record(rt: Any, lang: str, ctx: Any = None, partial: Partial | None = None) -> tuple[list[dict[str, Any]], dict[str, Any] | None]:
+    """The decision record's two reads for the home: up to three open decisions (newest first) and, when a cure left the reserve
+    at risk, what is left to decide (F17). A failure here never takes the home down: it reads as nothing open."""
+    try:
+        ctx = ctx if ctx is not None else load_context(rt)
+        ranked = sorted(ctx.states().values(), key=lambda p: (p[0].updated_day if p[0].updated_day is not None else -1, p[0].updated_seq),
+                        reverse=True)
+        rows: list[dict[str, Any]] = []
+        for ds, inp in ranked:
+            if ds.terminal or (ds.family == "DEAL" and ds.offer is None and ds.commitment is None):
+                continue
+            try:
+                rows.append(decision_summary(ctx, ds, inp, lang))
+            except Exception:
+                logging.getLogger("termsledger.decisions").exception("decision %s could not be summarised", ds.decision_id)
+                continue
+            if len(rows) == 3:
+                break
+        remaining = None
+        for ds, inp in ranked:
+            if ds.residual is not None:
+                view = remaining_task_view(ctx, ds, inp, lang)
+                if view["code"] == "OWNER_DECISION":
+                    remaining = {"text": view["text"], "links": remaining_links(ctx, ds, lang), "decision_id": ds.decision_id}
+                break
+        return rows, remaining
+    except Exception:
+        logging.getLogger("termsledger.decisions").exception("the decision record could not be read for the home")
+        if partial is not None:
+            partial.add("decision_record")
+        return [], None
+
+
 @router.get("/home")
 def get_home(lang: str = "en", since_day: int | None = None) -> dict[str, Any]:
     rt = get_runtime()
@@ -690,10 +1011,14 @@ def get_home(lang: str = "en", since_day: int | None = None) -> dict[str, Any]:
         if since_day is not None and since_day > today:  # a marker from before a reset: the last week instead
             since_day = None
         low_fen, low_day = _lowest_ahead(traj, today)
-        words = _headline(found, mandate, traj, mandate.horizon_days, today, lang, (low_fen, low_day))
+        funding_counted = any(e.kind in (LedgerEventKind.DRAW, LedgerEventKind.ADVANCE) and e.amount_fen > 0
+                              for d in traj.days if d.day >= today for e in d.events)
+        words = _headline(found, mandate, traj, mandate.horizon_days, today, lang, (low_fen, low_day), funding_counted, books.state)
         headline, note = words["headline"], words["note"]
-        drivers = _drivers(books.state, traj, today, traj.first_breach_day, lang)
-        at_breach = next((d.closing_fen for d in traj.days if d.day == traj.first_breach_day), None) if traj.first_breach_day is not None else None
+        # The first breach is the first day from today on (never the projection's day 0 fill, F01).
+        ahead = first_breach_ahead(traj, today, mandate.min_cash_fen)
+        breach_day, at_breach = ahead if ahead is not None else (None, None)
+        drivers = _drivers(books.state, traj, today, breach_day, lang, low_day)
         action = next_action(books.state, books.with_([]), mandate, found, approvals, today, state.state_version, lang,
                               use_router=rt.settings.features.debt_desk)
         plan_series = action.pop("plan_series") if action is not None else None
@@ -703,16 +1028,22 @@ def get_home(lang: str = "en", since_day: int | None = None) -> dict[str, Any]:
                                     "融资方案已准备好，因其成本需要您批准。") if action["needs_owner"]
                                   else t(lang, "A funding plan is ready, within your signed limits. No approval is needed.",
                                          "融资方案已准备好，在您签署的授权内，无需批准。"))
-        series = _series(books.state, traj, lang)
+        series = _series(books.state, traj, lang, today)
+        basis = forecast_basis(books.state, rt.store, traj, action, today, lang)
         queue = _approvals(books.state, books.with_([]), mandate, approvals, found, today, lang,
-                           use_router=rt.settings.features.debt_desk)
-        changes = _changes(books.state, rt.store, found, today, lang, since_day)
-        receivables = _receivables(books.state, rt.store, today, lang)
+                           use_router=rt.settings.features.debt_desk, commitments=rt.store.commitments())
+        partial = Partial()
+        record = _context(rt, partial)
+        causality = Causality(record, forecast_of(traj, today, mandate.min_cash_fen), today, lang)
+        changes = _changes(books.state, rt.store, found, today, lang, since_day, causality, partial)
+        receivables = _receivables(books.state, rt.store, today, lang, partial)
         in_transit = _in_transit(books.state, today, lang)
         funding_lots = _funding_lots(books.state, today, lang)
-        warnings = [{"id": a.id, "kind": a.kind.value, "title": relative_days(in_words(state, a.title), today, lang),
-                     "detail": relative_days(in_words(state, a.detail), today, lang), "day": a.day,
+        agreements = {c.id: party_name(state, c.counterparty_id) for c in rt.store.commitments()}
+        recon = _Reconciliation(books.state, rt.store, today, partial)
+        warnings = [{"id": a.id, "kind": a.kind.value, **_warning_words(state, a, recon, today, lang, agreements), "day": a.day,
                      "when": when_text(a.day, today, lang)} for a in found if a.severity == Severity.WARNING]
+        open_decisions, remaining = _decision_record(rt, lang, record, partial)
         facilities = [{"id": f.id, "name": f.name, "status": f.status.value, "limit_display": fmt_yuan(f.limit_fen), "limit_fen": f.limit_fen,
                        "drawn_fen": f.drawn_fen, "drawn_display": fmt_yuan(f.drawn_fen),
                        "available_display": fmt_yuan(max(f.limit_fen - f.drawn_fen, 0) if f.owner_approved else 0),
@@ -745,7 +1076,8 @@ def get_home(lang: str = "en", since_day: int | None = None) -> dict[str, Any]:
             "headroom_short": fmt_short(state.cash_fen - mandate.min_cash_fen),
             "lowest_headroom_fen": low_fen - mandate.min_cash_fen,
             "lowest_headroom_short": fmt_short(low_fen - mandate.min_cash_fen),
-            "first_breach_day": traj.first_breach_day,
+            "first_breach_day": breach_day,
+            "below_reserve_today": breach_day == today,
             "first_breach_cash_fen": at_breach,
             "first_breach_cash_short": fmt_short(at_breach) if at_breach is not None else None,
             "cash_short": fmt_short(state.cash_fen),
@@ -753,7 +1085,7 @@ def get_home(lang: str = "en", since_day: int | None = None) -> dict[str, Any]:
             "lowest_short": fmt_short(low_fen),
             "drivers": drivers,
             "lowest_when": when_text(low_day, today, lang),
-            "first_breach_when": when_text(traj.first_breach_day, today, lang) if traj.first_breach_day is not None else None,
+            "first_breach_when": when_text(breach_day, today, lang) if breach_day is not None else None,
             "horizon_days": mandate.horizon_days,
             "in_transit": in_transit,
             "funding_lots": funding_lots,
@@ -765,10 +1097,15 @@ def get_home(lang: str = "en", since_day: int | None = None) -> dict[str, Any]:
             # the recommended plan applied ("with the recommended plan"). The browser draws these and computes nothing.
             "series": series,
             "plan_series": plan_series,
+            **basis,
         },
         "next_action": action,
         "approvals": queue,
         "pending_count": len(pending),
+        "open_decisions": open_decisions,
+        "remaining_task": remaining["text"] if remaining else None,
+        "remaining_task_links": remaining["links"] if remaining else [],
+        "remaining_task_decision_id": remaining["decision_id"] if remaining else None,
         "changes": changes,
         "receivables": receivables,
         "warnings": warnings,
@@ -776,4 +1113,5 @@ def get_home(lang: str = "en", since_day: int | None = None) -> dict[str, Any]:
         "counts": {s.value: sum(1 for a in found if a.severity == s) for s in Severity},
         "note_basis": t(lang, "Conservative projection of today's books: unconfirmed receipts are not counted.",
                         "基于今日账目的保守预测：未确认的收款不计入。"),
+        "partial": partial.view(lang),
     })

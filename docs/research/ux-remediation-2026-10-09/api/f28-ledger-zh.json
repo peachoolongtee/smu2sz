@@ -1,0 +1,189 @@
+{
+  "probe": "f28-ledger-zh",
+  "request": {
+    "method": "GET",
+    "path": "/ledger?lang=zh",
+    "body": null,
+    "credential": [
+      "X-Owner-Token"
+    ]
+  },
+  "clock_day_before_request": 34,
+  "status": 200,
+  "response": {
+    "commitments": [
+      {
+        "id": "CMT-f8d94f78dedff3af",
+        "offer_id": "OFF-f806f79b6c21",
+        "offer_version": 1,
+        "counterparty_id": "BUYER-1",
+        "verdict_id": "VER-a899ca66120c",
+        "terms_hash": "342e81d5572b1ecd3a1b01f177dc698c8f418ef9df1fdfd17ec4d49f6f72a280",
+        "obligations": [
+          {
+            "id": "CTR-193394b6ba8b-O2",
+            "type": "IMMEDIATE_DISCOUNT",
+            "counterparty_id": "BUYER-1",
+            "rate_bp": 85,
+            "amount_fen": null,
+            "days_delta": null,
+            "target_terms_days": null,
+            "effective_day": 2,
+            "base": {
+              "kind": "INVOICE",
+              "amount_fen": 25720000,
+              "receivable_id": "RCV-A",
+              "events_per_year": null,
+              "amount_display": "¥257,200.00"
+            },
+            "contingency": "FIRM",
+            "duration": {
+              "kind": "ONE_OFF",
+              "invoices": null,
+              "end_day": null
+            },
+            "spans": [
+              {
+                "doc_id": "CTR-193394b6ba8b",
+                "start": 34,
+                "end": 134,
+                "text": "We will accept early settlement on up to ¥257,200 of this invoice at 0.85%, paid on or before day 2."
+              }
+            ],
+            "confidence": 1.0,
+            "unresolved": [],
+            "rate_display": "0.85%"
+          }
+        ],
+        "status": "EXPIRED",
+        "nonce": "720698a6a42b6891e32356479407e5ae",
+        "expires_day": 7,
+        "mandate_version": 1,
+        "forward_value_fen": 0,
+        "lapsed_obligations": [
+          "CTR-193394b6ba8b-O2"
+        ],
+        "forward_value_display": "¥0.00"
+      }
+    ],
+    "operations": [
+      {
+        "approval_id": null,
+        "effective_day": 0,
+        "entry_hash": "25dd3f4252d94ee1c4f8da801eb0a44e8bb8357b1e702f6540046c4479059dfe",
+        "kind": "ACCEPT_OFFER",
+        "message": "Commitment CMT-f8d94f78dedff3af is ACTIVE; forward concession ¥0.00 booked",
+        "op_id": "accept-CMT-f8d94f78dedff3af",
+        "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+        "seq": 1,
+        "status": "EXECUTED",
+        "tier": "TIER_1",
+        "violations": [],
+        "day": 0,
+        "requested_by": "AGENT",
+        "summary": "Commitment CMT-f8d94f78dedff3af is ACTIVE; forward concession ¥0.00 booked",
+        "message_when": "Commitment CMT-f8d94f78dedff3af is ACTIVE; forward concession ¥0.00 booked",
+        "event_text": "Agreement with Foshan Home Retail Co. recorded; concessions booked against your budget: ¥0.00.",
+        "event_detail": null
+      },
+      {
+        "approval_id": null,
+        "effective_day": 0,
+        "entry_hash": "4346e2d3ca615cd90b7a13429a9c31c38e5f3cf70186f57113bd99e75b346d35",
+        "kind": "DRAW_FACILITY",
+        "message": "Drew ¥149,986.20 on FAC-LINE on day 0",
+        "op_id": "fund-OFF-f806f79b6c21-cooperative-0",
+        "prev_hash": "25dd3f4252d94ee1c4f8da801eb0a44e8bb8357b1e702f6540046c4479059dfe",
+        "seq": 2,
+        "status": "EXECUTED",
+        "tier": "TIER_1",
+        "violations": [],
+        "day": 0,
+        "requested_by": "AGENT",
+        "summary": "Drew ¥149,986.20 on FAC-LINE on day 0",
+        "message_when": "Drew ¥149,986.20 on Bank credit line 34 days ago",
+        "event_text": "¥149,986.20 drawn on the Bank credit line. Cash received 34 days ago.",
+        "event_detail": null
+      },
+      {
+        "approval_id": null,
+        "effective_day": 2,
+        "entry_hash": "85d5ced5acb1a7b93e13784ec24f1d72f1faeb314e9012bf6f2151115cdc12f1",
+        "kind": "ADVANCE_CLOCK",
+        "message": "Clock moved from day 0 to day 2: 0 scheduled flow(s) posted (net ¥0.00), 0 invoice(s) issued, 0 commitment(s) expired",
+        "op_id": "clock-0-2",
+        "prev_hash": "4346e2d3ca615cd90b7a13429a9c31c38e5f3cf70186f57113bd99e75b346d35",
+        "seq": 3,
+        "status": "EXECUTED",
+        "tier": "TIER_1",
+        "violations": [],
+        "day": 2,
+        "requested_by": "SYSTEM",
+        "summary": "Clock moved from day 0 to day 2: 0 scheduled flow(s) posted (net ¥0.00), 0 invoice(s) issued, 0 commitment(s) expired",
+        "message_when": "Clock moved from 34 days ago to 32 days ago: 0 scheduled flow(s) posted (net ¥0.00), 0 invoice(s) issued, 0 commitment(s) expired",
+        "event_text": "2 days passed; nothing was due.",
+        "event_detail": null
+      },
+      {
+        "approval_id": null,
+        "effective_day": 30,
+        "entry_hash": "cff4d1d2a1d6a440b266603d7d72d438cf9f7e47ef247895d120fa9840ea0782",
+        "kind": "ADVANCE_CLOCK",
+        "message": "Clock moved from day 2 to day 30: 2 scheduled flow(s) posted (net −¥460,000.00), 1 invoice(s) issued, 0 commitment(s) expired, 1 new scheduled flow(s) recorded, 1 early-payment commitment(s) ended: the promised payment did not arrive (CMT-f8d94f78dedff3af, now EXPIRED)",
+        "op_id": "clock-2-30",
+        "prev_hash": "85d5ced5acb1a7b93e13784ec24f1d72f1faeb314e9012bf6f2151115cdc12f1",
+        "seq": 4,
+        "status": "EXECUTED",
+        "tier": "TIER_1",
+        "violations": [],
+        "day": 30,
+        "requested_by": "SYSTEM",
+        "summary": "Clock moved from day 2 to day 30: 2 scheduled flow(s) posted (net −¥460,000.00), 1 invoice(s) issued, 0 commitment(s) expired, 1 new scheduled flow(s) recorded, 1 early-payment commitment(s) ended: the promised payment did not arrive (CMT-f8d94f78dedff3af, now EXPIRED)",
+        "message_when": "Clock moved from 32 days ago to 4 days ago: 2 scheduled flow(s) posted (net −¥460,000.00), 1 invoice(s) issued, 0 commitment(s) expired, 1 new scheduled flow(s) recorded, 1 early-payment commitment(s) ended: the promised payment did not arrive (CMT-f8d94f78dedff3af, now EXPIRED)",
+        "event_text": "28 days passed: 2 scheduled cash movements were recorded, one invoice was issued and one early-payment agreement ended.",
+        "event_detail": null
+      },
+      {
+        "approval_id": null,
+        "effective_day": 34,
+        "entry_hash": "f3888c6eb26c1dfac7878b78055784c67b91c24a62eba1f899b46e0cd603a8dc",
+        "kind": "ADVANCE_CLOCK",
+        "message": "Clock moved from day 30 to day 34: 0 scheduled flow(s) posted (net ¥0.00), 1 invoice(s) issued, 0 commitment(s) expired, 1 existing-debt payment(s) posted (−¥45,000.00)",
+        "op_id": "clock-30-34",
+        "prev_hash": "cff4d1d2a1d6a440b266603d7d72d438cf9f7e47ef247895d120fa9840ea0782",
+        "seq": 5,
+        "status": "EXECUTED",
+        "tier": "TIER_1",
+        "violations": [],
+        "day": 34,
+        "requested_by": "SYSTEM",
+        "summary": "Clock moved from day 30 to day 34: 0 scheduled flow(s) posted (net ¥0.00), 1 invoice(s) issued, 0 commitment(s) expired, 1 existing-debt payment(s) posted (−¥45,000.00)",
+        "message_when": "Clock moved from 4 days ago to today: 0 scheduled flow(s) posted (net ¥0.00), 1 invoice(s) issued, 0 commitment(s) expired, 1 existing-debt payment(s) posted (−¥45,000.00)",
+        "event_text": "4 days passed: the ¥45,000.00 debt payment went out and one invoice was issued.",
+        "event_detail": null
+      },
+      {
+        "approval_id": "APR-000001",
+        "effective_day": 34,
+        "entry_hash": "0ea368ff64cfbfabac475b086aa672385722849cc5e6f85c4b863a57a982fa4c",
+        "kind": "SUBMIT_INVOICE_FOR_FINANCING",
+        "message": "Queued for owner approval (APR-000001): effective annual cost 32.52% is above the mandate's 15.00% ceiling for what the agent may borrow alone (all charges on ¥155,013.80 held 10 days (day 37 to day 47), annualised = 32.52%)",
+        "op_id": "alert:ALERT-RESERVE-34:v6:0",
+        "prev_hash": "f3888c6eb26c1dfac7878b78055784c67b91c24a62eba1f899b46e0cd603a8dc",
+        "seq": 6,
+        "status": "PENDING_APPROVAL",
+        "tier": "TIER_2",
+        "violations": [],
+        "day": 34,
+        "requested_by": "AGENT",
+        "summary": "Queued for owner approval (APR-000001): effective annual cost 32.52% is above the mandate's 15.00% ceiling for what the agent may borrow alone (all charges on ¥155,013.80 held 10 days (day 37 to day 47), annualised = 32.52%)",
+        "message_when": "Queued for owner approval (APR-000001): the yearly cost of 32.52% is above the 15.00% limit you signed for funding without your approval (all charges on ¥155,013.80 held 10 days (from in 3 days to in 13 days), annualised = 32.52%)",
+        "event_text": "Waiting for your approval: ¥155,013.80 of invoice financing at 32.5% a year, above the 15.00% limit you signed for funding without your approval.",
+        "event_detail": null
+      }
+    ],
+    "chain_valid": true,
+    "chain_length": 6,
+    "head_hash": "0ea368ff64cfbfabac475b086aa672385722849cc5e6f85c4b863a57a982fa4c"
+  }
+}

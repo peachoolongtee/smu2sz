@@ -4,8 +4,9 @@ import Link from "next/link";
 import { useState } from "react";
 import { OperationList } from "@/components/chat/assistant-turn";
 import { approvalHref } from "@/components/operation-result";
-import { Badge, Button, ErrorState } from "@/components/ui";
+import { Badge, Button, ErrorState, SlowNotice } from "@/components/ui";
 import { actOnAlert, alertChanged, ApiError, getApprovals, getMandate } from "@/lib/api";
+import { isTimeout } from "@/lib/errors";
 import { bump } from "@/lib/demo-store";
 import type { DictKey } from "@/lib/dictionary";
 import { useI18n } from "@/lib/i18n";
@@ -30,17 +31,31 @@ export function useFixAlert(onDone?: () => void) {
   const [result, setResult] = useState<AlertActResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [changed, setChanged] = useState<AlertChangedDetail | null>(null);
+  // The act ran out of time: it may have landed. Retry reads the books again first (`recheck`) and sends nothing; the page then offers the
+  // action again only if it is still there (a plan that ran leaves the alert, or waits for approval).
+  const [slow, setSlow] = useState(false);
+  const [rechecked, setRechecked] = useState(false);
+
+  /** Reads the affected state again (the alerts, the queue, the home), then leaves the owner to decide from what is now true. */
+  function recheck() {
+    setSlow(false);
+    setRechecked(true);
+    bump();
+  }
 
   async function fix(alert: AlertItem, stateVersion: number) {
     setBusyId(alert.id);
     setError(null);
     setResult(null);
     setChanged(null);
+    setSlow(false);
+    setRechecked(false);
     try {
       setResult(await actOnAlert(alert, stateVersion));
     } catch (e) {
       const moved = alertChanged(e);
-      if (moved) setChanged(moved);
+      if (isTimeout(e)) setSlow(true);
+      else if (moved) setChanged(moved);
       else if (e instanceof ApiError && (e.status === 404 || e.status === 409) && !isWriteConflictDetail(e.detail)) setError(t(e.status === 404 ? "alerts.fix.err.404" : "alerts.fix.err.409"));
       else setError(errorText(e, t));
     } finally {
@@ -50,7 +65,7 @@ export function useFixAlert(onDone?: () => void) {
     }
   }
 
-  return { busyId, result, error, changed, fix };
+  return { busyId, result, error, changed, fix, slow, rechecked, recheck };
 }
 
 /** What a suggested cure costs, in the server's words: the cost, the formula (which carries the yearly rate) and, when the cost is above the ceiling, that the owner must approve it. Nothing when the server sent no cost. */
@@ -79,7 +94,8 @@ export function ZeroFloorNote({ alert }: { alert: AlertItem }) {
 
 /** What the alert cards need besides the alerts: the approvals queue (to find a cure waiting for the owner) and the yearly cost ceiling. A failed read only hides that extra. */
 export function useAlertContext(): { approvals: ApprovalView[] | undefined; cap: string | undefined } {
-  const approvals = useAsync(getApprovals, []);
+  const { lang } = useI18n();
+  const approvals = useAsync(getApprovals, [lang]);
   const mandate = useAsync(getMandate, []);
   return { approvals: approvals.data, cap: mandate.data?.mandate.max_apr_display };
 }
@@ -164,9 +180,27 @@ export function FixButton({ alertId, busyId, onFix }: { alertId: string; busyId:
  * alert is gone. On a Business page each operation's message is the server's `message_when` (names, the owner's words,
  * distances from today) when the API sent one; the Demo views keep the executor's sentence.
  */
-export function FixResult({ result, error, changed }: { result: AlertActResult | null; error: string | null; changed?: AlertChangedDetail | null }) {
+export function FixResult({
+  result,
+  error,
+  changed,
+  slow = false,
+  rechecked = false,
+  onRecheck,
+}: {
+  result: AlertActResult | null;
+  error: string | null;
+  changed?: AlertChangedDetail | null;
+  /** The act ran out of time: it may have landed, so Retry (`onRecheck`) reads the state first. */
+  slow?: boolean;
+  /** The state was read again after a timeout: say so, so a missing result is not read as a success. */
+  rechecked?: boolean;
+  onRecheck?: () => void;
+}) {
   const { t } = useI18n();
   const business = useBusinessShell();
+  if (slow) return <SlowNotice message={t("err.timeout_write")} onRetry={onRecheck} />;
+  if (rechecked && !result && !changed && !error) return <p className="rounded-tile border border-line bg-subtle px-3.5 py-2.5 text-sm text-ink-2" role="status" data-testid="slow-checked">{t("biz.slow.checked")}</p>;
   if (changed) return <AlertChanged changed={changed} />;
   if (error) {
     return (
@@ -179,14 +213,14 @@ export function FixResult({ result, error, changed }: { result: AlertActResult |
   return (
     <section aria-label={t("alerts.fix.title")} className="space-y-2 rounded-card border border-line bg-surface p-4 shadow-card" data-testid="fix-result" role="status">
       <div className="flex flex-wrap items-center gap-2">
-        <h3 className="text-xs font-semibold uppercase tracking-wide text-ink-3">{t("alerts.fix.title")}</h3>
+        <h3 className="text-sm font-semibold text-ink">{t("alerts.fix.title")}</h3>
         {/* On a Business page only the counts that are not zero: "0 refused" is noise. */}
         {!business || result.executed ? <Badge tone={result.executed ? "ok" : "neutral"}>{t("alerts.fix.executed", { n: result.executed })}</Badge> : null}
         {!business || result.pending_approval ? <Badge tone={result.pending_approval ? "warn" : "neutral"}>{t("alerts.fix.pending", { n: result.pending_approval })}</Badge> : null}
         {!business || result.refused ? <Badge tone={result.refused ? "bad" : "neutral"}>{t("alerts.fix.refused", { n: result.refused })}</Badge> : null}
       </div>
       <OperationList operations={result.results} business={business} />
-      <p className="text-xs text-ink-2">{result.cured ? t("alerts.fix.cured") : result.pending_approval ? t("alerts.waiting.body") : t("alerts.fix.notCured")}</p>
+      <p className="text-sm text-ink" data-testid="fix-outcome">{result.cured ? t("alerts.fix.cured") : result.pending_approval ? t("alerts.waiting.body") : t("alerts.fix.notCured")}</p>
     </section>
   );
 }

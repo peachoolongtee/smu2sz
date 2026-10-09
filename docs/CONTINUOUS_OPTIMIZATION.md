@@ -6,15 +6,33 @@ quantity are in `docs/FINANCIAL_SEMANTICS.md`. Audit ids (A01…, F-FIN-…, S-�
 
 Last updated: 3 Oct 2026 (night), at `db097e0` on `dev`: the API gaps, one leverage definition, the fourth and fifth red-team rounds' fixes, the evaluation speed-up, the concurrency work, the language-boundary certification harness and boundary abstentions, and the evaluation oracle on the runnable rule are merged; evidence and documents regenerated on `docs/gate-checkpoint`. The owner stopped the red-team rounds on 3 Oct (section 0, G1). Reconciled on the Mac on 5 Oct at `bac61f3` (code unchanged since `db097e0`): see the note under section 3.
 
+Section 0 was updated on 10 Oct for the UX remediation checkpoint (map #65). Its records: `docs/UX_REMEDIATION_REPORT.md`, `docs/research/ux-remediation-ledger-2026-10-09.md`, `docs/adr/0011-durable-decision-record.md`. The backlog, debt and scorecard below are as of 3 Oct; the remediation changed no engine rule, so they stand.
+
 ## 0. Engine Stability Gate (set by the owner, 3 Oct, late)
 
-**9 Oct UX audit checkpoint (presentation/workflow findings, not implemented):**
-[`independent-flow-ux-audit-2026-10-09.md`](research/independent-flow-ux-audit-2026-10-09.md) is the independent
-32-section audit and its prioritized fix plan. F01 (current cash backdated as a past breach), F02 (approval without
-reviewable essential terms), F03 (expired early-pay deadline rewritten as "today") and F04 ("Nothing is executed"
-after funding ran) are open P0 presentation/trust findings under that audit's severity system. F05 is the reproduced
-documented dev-startup blocker. The remaining 14 P1 / 10 P2 findings include that blocker and have exact evidence,
-scope, effort and acceptance criteria in the report; no engine policy or formula was changed by the audit.
+**10 Oct remediation checkpoint (presentation and workflow findings, closed on `feat/ux-remediation`, wayfinder map #65):**
+The independent flow audit of 9 Oct ([`independent-flow-ux-audit-2026-10-09.md`](research/independent-flow-ux-audit-2026-10-09.md);
+4 P0, 14 P1, 10 P2) was reproduced on `dev` finding by finding (28 confirmed, none disproved) and all 28 findings, F01 to F28, now read
+FIXED on the ledger, [`research/ux-remediation-ledger-2026-10-09.md`](research/ux-remediation-ledger-2026-10-09.md), one row per finding
+with its cause, its fix, its files and its test. The four P0 findings are among them: F01 (current cash backdated as a past breach), F02
+(approval without reviewable essential terms), F03 (an expired early-pay deadline rewritten as "today") and F04 ("Nothing is executed"
+after funding ran). The evidence and the owner's GO / NO-GO table are in [`UX_REMEDIATION_REPORT.md`](UX_REMEDIATION_REPORT.md).
+
+- **The one architectural change** is ADR-0011, [`adr/0011-durable-decision-record.md`](adr/0011-durable-decision-record.md): a decision
+  record read from the canonical stores on request, plus one small append-only table, `decision_facts` (migration 0006), for the three
+  facts that cannot be re-derived later (the day a verdict was made, the counter that was sent, the economics the owner was shown when an
+  action was queued). Every page now derives agreement, authorization, execution and settlement from stored reality, never from a clicked
+  button. The record computes no money and grants no authority.
+- **The engine stability gate held.** No module under `app/financial`, `app/verifier`, `app/funding`, `app/alerts`, `app/operations`,
+  `app/clock`, `app/books` or `app/mandate` was edited (checked with `git diff` against `dev` at `742847f`: empty), and a test pins that no
+  engine module imports the record and that loading the engine does not load it
+  (`services/api/tests/decisions/test_isolation.py`). `app/persistence` gained only the new table, its migration and the store methods that
+  read and append it. Router economics, verifier constraints, the cash projection, mandate semantics and commitment security are as they
+  were; the golden digests did not move.
+- **Items carried, still open.** The owner's decisions are on grilling #66: the wider residual-risk policy, business calendar dates, the
+  native zh reader, and the human cold readers. The known debt is the list in the report's section 14, which includes one engine change that
+  was deliberately not made (enforcing the quoted cost as a ceiling when an approval is run), a real late-payment what-if, and the
+  PostgreSQL run of the new table, which waits with G4 below.
 
 The financial engine is declared stable, and broad new financial features may be considered, only when all of these
 hold. Until then the queue below is correctness and certification only; capex stays as a supporting demo scene; the

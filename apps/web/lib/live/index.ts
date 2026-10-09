@@ -13,8 +13,10 @@ import type {
   ClockView,
   ApprovalView,
   AuditView,
+  BankReceiptResult,
   BorrowerFileRequest,
   BorrowerFileView,
+  ChaseView,
   CapexApplyRequest,
   CapexApplyResult,
   CapexRequest,
@@ -46,6 +48,7 @@ import type {
   ApprovalDecision,
 } from "../types";
 import * as approvals from "./approvals";
+import * as decisions from "./decisions";
 import { downloadFile, http } from "./http";
 import * as trajectory from "./trajectory";
 
@@ -84,12 +87,18 @@ export const live = {
       body: req.fixture_id ? { fixture_id: req.fixture_id } : { counterparty_id: req.counterparty_id, documents: req.documents },
     }),
 
-  /** The API has no read endpoint for an offer; the session cache (demo store) holds what POST /offers returned. */
-  getOffer: (offerId: string): Promise<OfferView> =>
-    Promise.reject(new ApiError(404, `Offer ${offerId} is not in this session. Submit it again from the Inbox.`, undefined, "offer_missing", { id: offerId })),
+  /** GET /offers/{id} (owner): the offer, its documents, the latest verdict id and the deal's record id. An unknown id is a 404 the page explains. */
+  getOffer: async (offerId: string): Promise<OfferView> => {
+    try {
+      return await http<OfferView>("GET", `/offers/${enc(offerId)}`);
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 404) throw new ApiError(404, `Offer ${offerId} was not found. Submit it again from the Inbox.`, e.detail, "offer_missing", { id: offerId });
+      throw e;
+    }
+  },
 
-  evaluateOffer: (offerId: string, fixtureId?: string) =>
-    http<VerdictView>("POST", `/offers/${enc(offerId)}/evaluate`, { body: fixtureId ? { fixture_id: fixtureId } : {} }),
+  evaluateOffer: (offerId: string, fixtureId?: string, lang: "en" | "zh" = "en") =>
+    http<VerdictView>("POST", `/offers/${enc(offerId)}/evaluate${lang === "zh" ? "?lang=zh" : ""}`, { body: fixtureId ? { fixture_id: fixtureId } : {} }),
 
   negotiate: async (offerId: string, req: NegotiateRequest): Promise<NegotiationView> => {
     const n = await http<NegotiationView>("POST", `/negotiate/${enc(offerId)}`, { body: req });
@@ -100,10 +109,14 @@ export const live = {
 
   getTrajectory: (mode: Mode, verdict?: VerdictView | null): Promise<TrajectoryView> => trajectory.getTrajectory(mode, verdict),
 
-  getLedger: () => http<LedgerView>("GET", "/ledger"),
+  getLedger: (lang: "en" | "zh" = "en") => http<LedgerView>("GET", `/ledger${lang === "zh" ? "?lang=zh" : ""}`),
   getAudit: () => http<AuditView>("GET", "/audit"),
 
+  getDecisions: (q: decisions.DecisionQuery) => decisions.getDecisions(q),
+  getDecision: (id: string, lang: "en" | "zh") => decisions.getDecision(id, lang),
+
   getApprovals: (): Promise<ApprovalView[]> => approvals.getApprovals(),
+  getApprovalsRead: () => approvals.getApprovalsRead(),
   decideApproval: (id: string, decision: ApprovalDecision) => approvals.decideApproval(id, decision),
 
   capexEvaluate: (req: CapexRequest) => http<CapexView>("POST", "/capex/evaluate", { body: req }),
@@ -114,8 +127,14 @@ export const live = {
   /** The owner's home read: written by the server in the language asked for; the owner token is required. */
   getHome: (lang: "en" | "zh", sinceDay: number | null = null) =>
     http<HomeView>("GET", `/home?lang=${lang}${sinceDay !== null ? `&since_day=${sinceDay}` : ""}`),
-  getReconciliation: async (): Promise<ReconciliationView> =>
-    (await http<{ reconciliation: ReconciliationView }>("GET", "/reconciliation")).reconciliation,
+  getReconciliation: async (): Promise<ReconciliationView> => {
+    const raw = await http<{ reconciliation: ReconciliationView; last_read_when?: string }>("GET", "/reconciliation");
+    // The freshness word sits beside the report or inside it, depending on the server's version; the report carries whichever there is.
+    return raw.reconciliation.last_read_when || !raw.last_read_when ? raw.reconciliation : { ...raw.reconciliation, last_read_when: raw.last_read_when };
+  },
+
+  /** GET /receivables/{id}/chase: the collection handoff for one open invoice (owner only; 404 unknown, 422 when nothing is outstanding). */
+  getChase: (receivableId: string, lang: "en" | "zh") => http<ChaseView>("GET", `/receivables/${enc(receivableId)}/chase?lang=${lang}`),
 
   /** GET /cash/price-curve (flag `price_curve`). Null when the feature is off or absent. */
   getPriceCurve: (lang: "en" | "zh") => nullWhenOff(() => http<PriceCurveView>("GET", `/cash/price-curve?lang=${lang}`)),
@@ -131,9 +150,10 @@ export const live = {
 
   /** POST /nl. The owner channel sends X-Owner-Token. A buyer turn never carries the owner token; in a demo build it
    * sends the buyer's published channel key (X-Counterparty-Key), otherwise nothing, and the API treats it as a proposal. */
-  nl: (req: NlRequest): Promise<NlResponse> =>
+  nl: (req: NlRequest, opts: { business?: boolean } = {}): Promise<NlResponse> =>
     http<NlResponse>("POST", "/nl", {
       body: req,
+      business: opts.business && req.actor !== "COUNTERPARTY",
       auth: req.actor === "COUNTERPARTY" ? "none" : "owner",
       buyerKey: req.actor === "COUNTERPARTY" ? DEMO_BUYER_KEYS[req.counterparty_id ?? ""] : undefined,
     }),
@@ -159,6 +179,9 @@ export const live = {
   demoReset: async (scenario?: string): Promise<void> => {
     await http("POST", scenario ? `/demo/reset?scenario=${encodeURIComponent(scenario)}` : "/demo/reset", { body: {} });
   },
+
+  /** The guided Demo's synthetic bank event (owner, demo mode): the server posts the promised early payment as the bank feed would. */
+  demoBankReceipt: () => http<BankReceiptResult>("POST", "/demo/bank-receipt", { body: {} }),
 
   getEvidence: () => http<string>("GET", "/evidence", { as: "text" }),
 

@@ -24,7 +24,12 @@
       "agreed_discount_display": "¥2,186.20",
       "expected_display": "¥255,013.80",
       "difference_display": "¥0.00",
-      "detail_when": "agreed early payment for ¥257,200.00 of the invoice"
+      "detail_when": "agreed early payment for ¥257,200.00 of the invoice",
+      "face_cleared_display": "¥257,200.00",
+      "discount_display": "¥2,186.20",
+      "remaining_display": "¥162,800.00",
+      "window_state": "ended",
+      "window_state_text": "The early-payment window has ended"
     }
   ],
   "outstanding": [
@@ -84,5 +89,6 @@
   ],
   "lapsed_promises": 0,
   "received_total_display": "¥255,013.80",
-  "expected_total_display": "¥255,013.80"
+  "expected_total_display": "¥255,013.80",
+  "last_read_when": "today"
 }

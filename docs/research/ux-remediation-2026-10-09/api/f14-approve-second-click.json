@@ -1,0 +1,21 @@
+{
+  "probe": "f14-second-click",
+  "request": {
+    "method": "POST",
+    "path": "/approvals/APR-000001",
+    "body": {
+      "decision": "APPROVE"
+    },
+    "credential": [
+      "X-Owner-Token"
+    ]
+  },
+  "clock_day_before_request": 91,
+  "status": 409,
+  "response": {
+    "detail": {
+      "code": "APPROVAL_ALREADY_DECIDED",
+      "approval_id": "APR-000001"
+    }
+  }
+}

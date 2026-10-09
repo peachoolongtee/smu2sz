@@ -6,17 +6,17 @@ import { useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefO
 import { apiMode, getApprovals } from "@/lib/api";
 import { useAsync } from "@/lib/use-async";
 import { getLang, setLang, useI18n } from "@/lib/i18n";
-import { getMode, setMode, shellFor, useMode, type Mode } from "@/lib/mode";
+import { getMode, OWNER_DETAIL_ROUTES, setMode, shellFor, useMode, type Mode } from "@/lib/mode";
 import type { DictKey } from "@/lib/dictionary";
 import { ChatPanel } from "./chat/chat-panel";
 import { DemoStepper } from "./demo-stepper";
-import { MenuIcon, ShieldCheckIcon, ShieldIcon, SparkIcon, XIcon } from "./icons";
+import { ArrowLeftIcon, MenuIcon, ShieldCheckIcon, ShieldIcon, SparkIcon, XIcon } from "./icons";
 import { signOut, useAuth } from "@/lib/auth";
 import { Backdrop } from "./business/backdrop";
 import { Tour, startTour } from "./business/tour";
 import { OwnerSessionControl, OwnerSignInDialog } from "./owner-auth";
 import { SECTIONS, type Section } from "./section";
-import { Badge, Button, Segmented } from "./ui";
+import { Badge, Button, Segmented, textLinkClass } from "./ui";
 
 /** Business mode: six sections, each a question the owner asks. */
 const BUSINESS_NAV: { href: string; key: DictKey }[] = [
@@ -46,9 +46,11 @@ const DEMO_NAV: { href: string; key: DictKey; group: "story" | "engine" }[] = [
   { href: "/evidence", key: "nav.evidence", group: "engine" },
 ];
 
+/** The radio shows the shell that is on screen: an engine view always renders the Demo shell, whatever mode is stored. */
 function ModeSwitch() {
   const { t } = useI18n();
-  const mode = useMode();
+  const pathname = usePathname();
+  const mode = shellFor(pathname, useMode());
   const router = useRouter();
   function change(next: Mode) {
     setMode(next);
@@ -301,6 +303,8 @@ function BusinessShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const activeIdx = BUSINESS_NAV.findIndex((n) => n.href === pathname);
   const activeSection = activeIdx < 0 ? null : TAB_SECTION[BUSINESS_NAV[activeIdx].href];
+  // A detail page the owner opened from a section (what-if, equipment) says how to get back to it.
+  const backTo = OWNER_DETAIL_ROUTES[pathname];
   const bar = useRef<HTMLElement>(null);
   useDock(bar);
   return (
@@ -346,6 +350,12 @@ function BusinessShell({ children }: { children: ReactNode }) {
         </div>
       </header>
       <main id="main" tabIndex={-1} className="dock-pad dock-pad-margin mx-auto w-full max-w-[1180px] px-4 pt-5 lg:px-6 lg:pt-6">
+        {backTo ? (
+          <Link href={backTo} className={`${textLinkClass} mb-2 -ml-2 gap-1`} data-testid="back-to-cash">
+            <ArrowLeftIcon width={14} height={14} />
+            {t("nav.backToCash")}
+          </Link>
+        ) : null}
         {children}
       </main>
       {/* Phones: a tab bar with the same five sections, as in a banking app. */}
@@ -428,6 +438,7 @@ function DemoNavLinks({ onNavigate }: { onNavigate?: () => void }) {
 
 function DemoShell({ children }: { children: ReactNode }) {
   const { t } = useI18n();
+  const stored = useMode();
   const [open, setOpen] = useState(false);
   const stepper = useRef<HTMLDivElement>(null);
   useDock(stepper);
@@ -441,7 +452,8 @@ function DemoShell({ children }: { children: ReactNode }) {
       </div>
       <div className="lg:grid lg:grid-cols-[14.5rem_minmax(0,1fr)]">
       <SkipLink />
-      <aside className="sticky top-0 hidden h-dvh flex-col gap-6 overflow-y-auto border-r border-line bg-surface px-3 py-4 lg:flex">
+      {/* The strip above is 36 px of the first screen: the footer reserves that height (pb-12) so a 768 px window never cuts it, and the column scrolls when it must. */}
+      <aside className="sticky top-0 hidden h-dvh flex-col gap-6 overflow-y-auto border-r border-line bg-surface px-3 pb-12 pt-4 lg:flex">
         <div className="px-2">
           <Brand href="/demo" />
         </div>
@@ -482,6 +494,15 @@ function DemoShell({ children }: { children: ReactNode }) {
                 <DemoAccountMenu />
               </div>
             </div>
+            {/* Business is the stored choice but this page is an engine view: say so, and offer the way back in one line. */}
+            {stored === "business" ? (
+              <div className="px-4 pb-1 lg:px-8">
+                <Link href="/" className={`${textLinkClass} -ml-2 gap-1`} data-testid="back-to-business">
+                  <ArrowLeftIcon width={14} height={14} />
+                  {t("mode.back")}
+                </Link>
+              </div>
+            ) : null}
             {open ? (
               <div id="mobile-nav" className="border-t border-line bg-surface px-3 py-3 lg:hidden">
                 <DemoNavLinks onNavigate={() => setOpen(false)} />
@@ -518,7 +539,7 @@ const TITLE_KEY: Record<string, DictKey> = {
 function useDocumentMeta(pathname: string, mode: Mode) {
   const { t, lang } = useI18n();
   useEffect(() => {
-    const key = TITLE_KEY[pathname];
+    const key = TITLE_KEY[pathname] ?? (pathname.startsWith("/decisions/") ? "rec.title" : undefined);
     const want = key && pathname !== "/" ? `${t(key)} · ${t("brand.name")}` : t("brand.name");
     const apply = () => {
       if (document.title !== want) document.title = want;

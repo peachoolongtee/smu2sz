@@ -1,11 +1,23 @@
 {
   "offer_id": "OFF-f806f79b6c21",
+  "decision_id": "deal:OFF-f806f79b6c21",
+  "decision_recorded": true,
+  "execution": {
+    "summary_text": "Agreement with Foshan Home Retail Co. recorded. Funding of ¥149,986.20 was requested and has landed.",
+    "requested_fen": 14998620,
+    "requested_display": "¥149,986.20",
+    "landed_fen": 14998620,
+    "landed_display": "¥149,986.20",
+    "in_transit_fen": 0,
+    "in_transit_display": null
+  },
   "outcome": "DEAL",
   "rounds": [
     {
       "round": 1,
       "counter_id": "CTR-193394b6ba8b",
       "counter_label": "Option A",
+      "counter_label_when": "Option A",
       "buyer_response": "ACCEPT",
       "buyer_text": "Round 1. We accept Option A as proposed."
     }
@@ -123,7 +135,8 @@
         "approval_reason": "",
         "executable_now": true,
         "not_executable_reason": "",
-        "display": "¥841.57"
+        "display": "¥841.57",
+        "label_when": "Bank credit line: draw ¥149,986.20, repaid in 32 days"
       }
     ],
     "total_cost_fen": 84157,
@@ -139,7 +152,9 @@
       {
         "label": "Discount the whole invoice at 1.2%",
         "reasons": [],
-        "note": "cost ¥1,953.60; admissible but dearer than the selected plan"
+        "note": "cost ¥1,953.60; admissible but dearer than the selected plan",
+        "label_when": "Discount the whole invoice at 1.2%",
+        "note_when": "cost ¥1,953.60; within your limits but dearer than the selected plan"
       }
     ],
     "label": "committed plan: ¥841.57",
@@ -149,8 +164,11 @@
     "not_executable_reason": "",
     "available_from_day": null,
     "need_display": "¥149,986.20",
-    "total_cost_display": "¥841.57"
+    "total_cost_display": "¥841.57",
+    "label_when": "committed plan: ¥841.57"
   },
   "message": "CTR-193394b6ba8b accepted; commitment recorded; remaining gap funded.",
+  "message_when": "Option A was accepted and the agreement is recorded; the remaining gap is funded.",
+  "lang": "en",
   "transcript_hash": "802cf1c4946c483e21d6c89444465751ef705a8ba4ff2bc6108d36b36cdeaf34"
 }
