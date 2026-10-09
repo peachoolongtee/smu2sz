@@ -8,7 +8,10 @@
  */
 
 import { nl } from "./api";
-import { onSignedIn } from "./auth";
+import { onSignedIn, onSignedOut } from "./auth";
+import { getLang } from "./i18n";
+import { getMode, shellFor } from "./mode";
+import { nlContext } from "./chat-context";
 import { ApiError } from "./errors";
 import { errorMessage } from "./error-text";
 import { createStore } from "./create-store";
@@ -19,7 +22,8 @@ export type CounterpartyId = (typeof COUNTERPARTIES)[number];
 
 export type ChatMessage =
   | { id: string; from: "user"; text: string }
-  | { id: string; from: "assistant"; response: NlResponse }
+  /** `restored`: read back from the browser after a refresh; its buttons are history, and a pending plan or approval lives on the Approvals page. */
+  | { id: string; from: "assistant"; response: NlResponse; restored?: boolean }
   | { id: string; from: "error"; text: string; status: number };
 
 interface Conversation {
@@ -40,12 +44,52 @@ interface ChatState {
 
 const empty = (generation = 0): Conversation => ({ sessionId: null, messages: [], busy: false, generation });
 
-const store = createStore<ChatState>({
-  role: "OWNER",
-  counterpartyId: "BUYER-1",
-  panelOpen: false,
-  convs: { OWNER: empty(), COUNTERPARTY: empty() },
-});
+/** How many turns a refresh brings back (the server keeps the session; this is what the panel shows again). */
+const KEEP_TURNS = 12;
+
+/**
+ * The owner's conversation survives a refresh in this tab (sessionStorage `tl-chat-session`): the session id, so the next turn
+ * continues the same server session, and the last turns, marked `restored`. The buyer's role-play, the open panel, a turn in
+ * flight and errors are not kept. It goes with the sign-out (below).
+ */
+const store = createStore<ChatState>(
+  {
+    role: "OWNER",
+    counterpartyId: "BUYER-1",
+    panelOpen: false,
+    convs: { OWNER: empty(), COUNTERPARTY: empty() },
+  },
+  {
+    storage: "session",
+    key: "tl-chat-session",
+    sanitize: (s) => ({
+      ...s,
+      role: "OWNER",
+      panelOpen: false,
+      convs: {
+        OWNER: {
+          sessionId: s.convs.OWNER.sessionId,
+          busy: false,
+          generation: 0,
+          messages: s.convs.OWNER.messages
+            .filter((m) => m.from !== "error")
+            .slice(-KEEP_TURNS)
+            .map((m): ChatMessage => (m.from === "assistant" ? { ...m, restored: true } : m)),
+        },
+        COUNTERPARTY: empty(),
+      },
+    }),
+  },
+);
+
+/** The half-typed message (sessionStorage `tl-chat-draft`), kept across a refresh and shared by the panel and the chat page. */
+const draftStore = createStore<{ text: string }>({ text: "" }, { storage: "session", key: "tl-chat-draft" });
+
+export const useDraft = (): string => draftStore.useValue().text;
+
+export function setDraft(text: string): void {
+  draftStore.set({ text });
+}
 
 export const useChat = store.useValue;
 
@@ -60,6 +104,11 @@ function newSessionId(): string {
 
 function patchConv(role: NlActor, fn: (c: Conversation) => Conversation): void {
   store.set((s) => ({ ...s, convs: { ...s.convs, [role]: fn(s.convs[role]) } }));
+}
+
+/** Whether the page the owner is on shows the Business shell: its chat then asks for the owner's wording (no ids, no tier words). */
+function onBusinessShell(): boolean {
+  return typeof window !== "undefined" && shellFor(window.location.pathname, getMode()) === "business";
 }
 
 interface Attempt {
@@ -83,8 +132,11 @@ async function run(a: Attempt): Promise<NlResponse | null> {
       actor: a.role,
       counterparty_id: a.role === "COUNTERPARTY" ? a.counterpartyId : undefined,
       text: a.text,
+      lang: getLang(),
       request_id: a.requestId,
-    });
+      // The owner's page, as ids: the deal it evaluated, the invoice row it has open, the last visit. A buyer's turn names none.
+      context: a.role === "OWNER" ? nlContext() : undefined,
+    }, { business: a.role === "OWNER" && onBusinessShell() });
     delete failed[a.role];
     patchConv(a.role, (c) =>
       c.generation !== generation ? c : { ...c, busy: false, sessionId: response.session_id, messages: [...c.messages, { id: uid("a"), from: "assistant", response }] },
@@ -103,8 +155,8 @@ async function run(a: Attempt): Promise<NlResponse | null> {
  * Sends one turn in the current role's conversation. `display` is what the bubble shows when it differs from
  * what is sent (a clarification option shows its label and sends its id).
  */
-export async function sendMessage(text: string, display?: string): Promise<void> {
-  await sendTurn(store.get().role, text, display);
+export async function sendMessage(text: string, display?: string, role: NlActor = store.get().role): Promise<void> {
+  await sendTurn(role, text, display);
 }
 
 async function sendTurn(role: NlActor, text: string, display?: string): Promise<NlResponse | null> {
@@ -170,6 +222,13 @@ export function setCounterparty(id: CounterpartyId): void {
 export function setPanelOpen(panelOpen: boolean): void {
   store.set((s) => ({ ...s, panelOpen }));
 }
+
+// Signing out takes the owner's conversation and draft out of the browser with the token.
+onSignedOut(() => {
+  delete failed.OWNER;
+  patchConv("OWNER", (c) => empty(c.generation + 1));
+  setDraft("");
+});
 
 // After the owner signs in, resend the turn that was refused with a 401 so they do not have to retype it.
 onSignedIn(() => {

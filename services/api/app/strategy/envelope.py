@@ -147,7 +147,8 @@ def open_context(state: FinancialState, day: int, buyer_id: str) -> BuyerContext
 
 
 def ranges_for(ctx: BuyerContext, mandate: Mandate) -> Ranges:
-    """The levers' own ranges: the what-if grid, with the discount held to the mandate's immediate-discount cap. A
+    """The levers' own ranges: the what-if grid (the terms run two steps past the terms in force when those reach the
+    grid's top), with the discount held to the mandate's immediate-discount cap. A
     rebate-only buyer has the rebate range alone (no terms, price or early payment, and no face)."""
     cap = DISCOUNT_MAX_BP if mandate.max_immediate_discount_bp is None else min(DISCOUNT_MAX_BP, mandate.max_immediate_discount_bp)
     rebates = tuple(range(0, REBATE_MAX_BP + 1, RATE_STEP_BP))
@@ -155,9 +156,11 @@ def ranges_for(ctx: BuyerContext, mandate: Mandate) -> Ranges:
         return Ranges(terms=(), price=(0,), discount=(0,), rebate=rebates, face_max_fen=0)
     terms: tuple[int, ...] = ()
     if isinstance(ctx, Context):
-        # the terms in force are a point of their own when they sit off the 5-day grid (32 days, or beyond 90)
-        terms = tuple(sorted({*range(min(TERMS_MIN, ctx.recurring.terms_days), TERMS_MAX + 1, TERMS_STEP),
-                              ctx.recurring.terms_days}))
+        # the range is the envelope's own, not the sandbox's: it runs two steps past the terms in force (a buyer already
+        # at 90 days is scanned to 100), and the terms in force are a point of their own when they sit off the 5-day grid
+        cur = ctx.recurring.terms_days
+        top = max(TERMS_MAX, cur + 2 * TERMS_STEP)
+        terms = tuple(sorted({*range(min(TERMS_MIN, cur), top + 1, TERMS_STEP), cur}))
     return Ranges(
         terms=terms,
         price=tuple(range(0, PRICE_MAX_BP + 1, RATE_STEP_BP)) if terms else (0,),
@@ -286,7 +289,8 @@ def _setting_of(c: CounterProposal, current_terms: int, receivable_face_fen: int
 
 def _params(s: Setting) -> WhatIfParams:
     """The what-if parameters of a setting. The terms in force may sit off the sandbox's grid (32 days): the sliders'
-    validators would refuse them, so that one setting is built unvalidated (every other value is on the grid)."""
+    validators would refuse them, as they would the steps past the sandbox's top (95, 100): those settings are built
+    unvalidated (every other value is on the grid)."""
     make = WhatIfParams if TERMS_MIN <= s.terms <= TERMS_MAX and s.terms % TERMS_STEP == 0 else WhatIfParams.model_construct
     return make(terms_days=s.terms, discount_bp=s.discount, rebate_bp=s.rebate, price_adjustment_bp=s.price,
                 settle_face_fen=s.face)
@@ -389,7 +393,7 @@ class _Verifier:
         ctx = self.ctx
         if not isinstance(ctx, Context) or terms <= ctx.recurring.terms_days:
             return None, None
-        offer, _ = build(WhatIfParams(terms_days=terms, discount_bp=0, rebate_bp=0), ctx, self.day)
+        offer, _ = build(_params(Setting(terms)), ctx, self.day)
         bound, _notes = bind(offer, self.state, None)
         try:
             ratio, _fid = marginal_cost(self.state, self.mandate)
@@ -951,8 +955,14 @@ def _primary(facts: EnvelopeFacts, lang: str) -> str:
         if terms.rule_price_bp is not None and any(
                 c.probe.setting == Setting(longest, price=terms.rule_price_bp) for c in facts.cells):
             price = terms.rule_price_bp
-        pieces.append(t(lang, f"up to {longest}-day terms if the price rises {fmt_pct(bp(price))}",
-                        f"账期最长 {longest} 天（价格上调 {fmt_pct(bp(price))}）"))
+        # a maximum at the top of the range with no wall is not a ceiling the books set: say so
+        top = terms.wall is None and facts.next_terms is None
+        if price:
+            pieces.append(t(lang, f"up to {longest}-day terms{' (the most FLOW checks)' if top else ''} if the price rises {fmt_pct(bp(price))}",
+                            f"账期最长 {longest} 天（{'FLOW 检查的上限；' if top else ''}价格上调 {fmt_pct(bp(price))}）"))
+        else:  # the longer terms pass on their own: no price rise to name
+            pieces.append(t(lang, f"up to {longest}-day terms{' (the most FLOW checks)' if top else ''}",
+                            f"账期最长 {longest} 天{'（FLOW 检查的上限）' if top else ''}"))
     early = next((m for m in facts.maxima if m.key == "early_pay_counter" and m.value), None) or \
         next((m for m in facts.maxima if m.key == "early_pay_whole" and m.value), None)
     if early is not None and early.value:

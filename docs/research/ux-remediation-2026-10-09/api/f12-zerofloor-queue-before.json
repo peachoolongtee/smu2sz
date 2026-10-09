@@ -1,0 +1,63 @@
+{
+  "probe": "f12-zerofloor-queue-before",
+  "request": {
+    "method": "GET",
+    "path": "/approvals/queue",
+    "body": null,
+    "credential": [
+      "X-Owner-Token"
+    ]
+  },
+  "clock_day_before_request": 34,
+  "status": 200,
+  "response": {
+    "approvals": [
+      {
+        "id": "APR-000001",
+        "op_id": "alert:ALERT-RESERVE-34:v6:0",
+        "kind": "SUBMIT_INVOICE_FOR_FINANCING",
+        "op_json": "{\"advance_fen\":15501380,\"day\":34,\"facility_id\":\"FAC-IF\",\"idempotency_key\":\"alert:ALERT-RESERVE-34:v6:0\",\"kind\":\"SUBMIT_INVOICE_FOR_FINANCING\",\"mandate_version\":1,\"op_id\":\"alert:ALERT-RESERVE-34:v6:0\",\"receivable_id\":\"RI:BUYER-1:2\",\"requested_by\":\"AGENT\",\"source_verdict_id\":null}",
+        "reason": "effective annual cost 32.52% is above the mandate's 15.00% ceiling for what the agent may borrow alone (all charges on ¥155,013.80 held 10 days (day 37 to day 47), annualised = 32.52%)",
+        "status": "PENDING",
+        "decided_by": null,
+        "decided_day": null,
+        "operation": {
+          "advance_fen": 15501380,
+          "day": 34,
+          "facility_id": "FAC-IF",
+          "idempotency_key": "alert:ALERT-RESERVE-34:v6:0",
+          "kind": "SUBMIT_INVOICE_FOR_FINANCING",
+          "mandate_version": 1,
+          "op_id": "alert:ALERT-RESERVE-34:v6:0",
+          "receivable_id": "RI:BUYER-1:2",
+          "requested_by": "AGENT",
+          "source_verdict_id": null
+        },
+        "tier": "TIER_2",
+        "created_day": 34,
+        "amount_fen": 15501380,
+        "amount_display": "¥155,013.80",
+        "subject": "submit invoice for financing FAC-IF",
+        "result_message": null,
+        "presentation": {
+          "headline": "Approve ¥155,013.80 of invoice financing?",
+          "what": "Finance ¥155,013.80 of the ¥420,000.00 invoice to Foshan Home Retail Co. on Invoice financing (onboarded platform)",
+          "facility_name": "Invoice financing (onboarded platform)",
+          "buyer_name": "Foshan Home Retail Co.",
+          "invoice": "the ¥420,000.00 invoice to Foshan Home Retail Co.",
+          "cost_display": "¥1,381.32",
+          "rate_text": "32.5%",
+          "cost_due_day": 47,
+          "lands_day": 37,
+          "lands_when": "in 3 days",
+          "if_decline": "Cash goes below zero in 8 days.",
+          "protects": null,
+          "reason": "The yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval.",
+          "result_message": null,
+          "decided_when": null,
+          "created_when": "today"
+        }
+      }
+    ]
+  }
+}

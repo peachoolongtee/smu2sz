@@ -1,6 +1,9 @@
 {
   "alert_id": "ALERT-RESERVE-12",
+  "decision_id": "alert:ALERT-RESERVE-12:v1:plan",
+  "decision_recorded": true,
   "day": 0,
+  "lang": "en",
   "results": [
     {
       "op_id": "alert:ALERT-RESERVE-12:v1:plan:0",

@@ -23,13 +23,20 @@ export function setMode(mode: Mode): void {
 }
 
 /**
- * Business routes: the owner's six sections, the limits and sign-in, and the contract documents a deal summary opens
- * (so following that door does not drop the owner into the Demo shell). Everything else is an engine view of the demo.
+ * Owner detail routes: pages the owner opens from a section and returns to (Cash opens what-if and equipment; a deal summary
+ * on Deals opens the contract documents). They render in the Business shell when the mode is Business, with a way back to
+ * the section.
  */
-export const BUSINESS_ROUTES = ["/", "/deals", "/documents", "/cash", "/receivables", "/approvals", "/activity", "/limits"] as const;
+export const OWNER_DETAIL_ROUTES: Record<string, string> = { "/whatif": "/cash", "/capex": "/cash", "/documents": "/deals" };
+
+/** Business routes: the owner's six sections, the limits and sign-in, and the detail routes opened from them. Everything else is an engine view of the demo. */
+export const BUSINESS_ROUTES = ["/", "/deals", "/cash", "/receivables", "/approvals", "/activity", "/limits", ...Object.keys(OWNER_DETAIL_ROUTES)] as const;
+
+/** A decision's record (`/decisions/{id}`) is an owner page opened from Home, Activity or an approval; it has no section of its own. */
+export const DECISION_ROUTE_PREFIX = "/decisions/";
 
 export function isBusinessRoute(pathname: string): boolean {
-  return (BUSINESS_ROUTES as readonly string[]).includes(pathname);
+  return (BUSINESS_ROUTES as readonly string[]).includes(pathname) || pathname.startsWith(DECISION_ROUTE_PREFIX);
 }
 
 /** The engine views and the story page always show the Demo shell; a business route shows it only in Demo mode. */

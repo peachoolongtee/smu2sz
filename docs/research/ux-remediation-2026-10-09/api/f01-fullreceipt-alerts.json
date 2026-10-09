@@ -1,0 +1,139 @@
+{
+  "probe": "f01-fullreceipt-alerts",
+  "request": {
+    "method": "GET",
+    "path": "/alerts",
+    "body": null,
+    "credential": [
+      "X-Owner-Token"
+    ]
+  },
+  "clock_day_before_request": 34,
+  "status": 200,
+  "response": {
+    "day": 34,
+    "basis": "CONSERVATIVE",
+    "state_version": 7,
+    "projected_offer_id": null,
+    "counts": {
+      "CRITICAL": 1,
+      "WARNING": 2,
+      "INFO": 0
+    },
+    "alerts": [
+      {
+        "id": "ALERT-RESERVE-42",
+        "kind": "RESERVE_BREACH_AHEAD",
+        "severity": "CRITICAL",
+        "title": "Reserve breach ahead on day 42",
+        "detail": "Projected cash closes at ¥100,000.00 on day 42, ¥200,000.00 below the reserve floor; the gap peaks at ¥200,000.00 on day 42 and lasts to day 46. A committed cure exists: SUBMIT_INVOICE_FOR_FINANCING FAC-IF ¥200,000.00, cost ¥1,782.19 (32.5% a year for 10 days); that is above the 15.00% ceiling for what the agent may borrow alone, so it needs the owner's approval before it runs.",
+        "formula": "shortfall = floor − closing_d: ¥300,000.00 − ¥100,000.00 = ¥200,000.00 (day 42); max over days 42..46 = ¥200,000.00",
+        "day": 42,
+        "month": null,
+        "amount_fen": 20000000,
+        "committed_cure": true,
+        "commitment_id": null,
+        "receivable_id": null,
+        "inputs": {
+          "floor": "¥300,000.00",
+          "closing": "¥100,000.00",
+          "last_day": "46",
+          "worst_day": "42",
+          "max_shortfall": "¥200,000.00",
+          "cure_end_day_0": "47",
+          "cure_cost": "¥1,782.19",
+          "cure_above_apr_cap": "true"
+        },
+        "suggested": [
+          {
+            "operation_kind": "SUBMIT_INVOICE_FOR_FINANCING",
+            "facility_id": "FAC-IF",
+            "receivable_id": "RI:BUYER-1:2",
+            "commitment_id": null,
+            "offer_id": null,
+            "amount_fen": 20000000,
+            "note": "submit today: the invoice is open, buyer-confirmed and not yet due",
+            "cost_fen": 178219,
+            "cost_days": 10,
+            "annual_rate": {
+              "num": 13009987,
+              "den": 40000000,
+              "text": "0.33"
+            },
+            "cost_formula": "¥1,782.19 / ¥200,000.00 × 365/10 = 32.5% a year",
+            "above_apr_cap": true,
+            "executes_automatically": false,
+            "amount_display": "¥200,000.00",
+            "cost_display": "¥1,782.19"
+          }
+        ],
+        "actionable": true,
+        "basis": "CONSERVATIVE",
+        "amount_display": "¥200,000.00"
+      },
+      {
+        "id": "ALERT-PASTDUE-RCV-A",
+        "kind": "RECEIVABLE_PAST_DUE",
+        "severity": "WARNING",
+        "title": "Receivable RCV-A is 2 day(s) past due",
+        "detail": "¥162,800.00 outstanding from BUYER-1 was due on day 32 and is still OPEN. The conservative trajectory no longer counts on a dated receipt.",
+        "formula": "today − due_day = 34 − 32 = 2 > 0",
+        "day": 32,
+        "month": null,
+        "amount_fen": 16280000,
+        "committed_cure": null,
+        "commitment_id": null,
+        "receivable_id": "RCV-A",
+        "inputs": {
+          "receivable_id": "RCV-A",
+          "counterparty_id": "BUYER-1",
+          "due_day": "32",
+          "outstanding": "¥162,800.00"
+        },
+        "suggested": [
+          {
+            "operation_kind": "RECEIVE_PAYMENT",
+            "facility_id": null,
+            "receivable_id": "RCV-A",
+            "commitment_id": null,
+            "offer_id": null,
+            "amount_fen": 16280000,
+            "note": "chase the buyer; record the receipt when the money lands",
+            "cost_fen": null,
+            "cost_days": null,
+            "annual_rate": null,
+            "cost_formula": "",
+            "above_apr_cap": false,
+            "executes_automatically": false,
+            "amount_display": "¥162,800.00"
+          }
+        ],
+        "actionable": false,
+        "basis": "CONSERVATIVE",
+        "amount_display": "¥162,800.00"
+      },
+      {
+        "id": "ALERT-HEADROOM-34",
+        "kind": "RESERVE_HEADROOM_LOW",
+        "severity": "WARNING",
+        "title": "Reserve headroom thin on day 34",
+        "detail": "Cash stays above the floor but only by ¥0.00 on day 34 (8 day(s) under 10% of the floor).",
+        "formula": "closing − floor = ¥300,000.00 − ¥300,000.00 = ¥0.00 < 10% × ¥300,000.00",
+        "day": 34,
+        "month": null,
+        "amount_fen": 0,
+        "committed_cure": null,
+        "commitment_id": null,
+        "receivable_id": null,
+        "inputs": {
+          "days": "34, 35, 36, 37, 38, 39, 40, 41"
+        },
+        "suggested": [],
+        "actionable": false,
+        "basis": "CONSERVATIVE",
+        "amount_display": "¥0.00"
+      }
+    ],
+    "note": "A suggested operation is executed only through POST /alerts/{id}/act or POST /operations, never by itself."
+  }
+}

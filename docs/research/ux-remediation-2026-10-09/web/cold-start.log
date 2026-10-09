@@ -1,0 +1,95 @@
+$ next dev -p 3132
+▲ Next.js 16.3.7 (Turbopack)
+- Local:         http://localhost:3132
+- Network:       http://192.7.9.160:3132
+✓ Ready in 255ms
+✓ Running next.config.mjs took 8ms
+
+✓ Generated AGENTS.md and CLAUDE.md for AI agents. Set `agentRules: false` in next.config to disable.
+⨯ ./app/globals.css:2376:19
+Error: Parsing CSS source code failed
+  2374 |     }
+  2375 |   }
+> 2376 |   .touch\:size-11 (pointer: coarse) {
+       |                   ^
+  2377 |     width: calc(var(--spacing) * 11);
+  2378 |     height: calc(var(--spacing) * 11);
+  2379 |   }
+
+Invalid dangling combinator in selector
+
+Generated code of PostCSS transform of file content of app/globals.css:
+./app/globals.css:2376:19
+  2374 |     }
+  2375 |   }
+> 2376 |   .touch\:size-11 (pointer: coarse) {
+       |                   ^
+  2377 |     width: calc(var(--spacing) * 11);
+  2378 |     height: calc(var(--spacing) * 11);
+  2379 |   }
+
+Import trace:
+  Client Component Browser:
+    ./app/globals.css [Client Component Browser]
+    ./app/layout.tsx [Server Component]
+
+
+
+./app/globals.css:2386:16
+Error: Parsing CSS source code failed
+  2384 |     }
+  2385 |   }
+> 2386 |   .touch\:h-11 (pointer: coarse) {
+       |                ^
+  2387 |     height: calc(var(--spacing) * 11);
+  2388 |   }
+  2389 |   @media (max-width: 63.999rem) {
+
+Invalid dangling combinator in selector
+
+Generated code of PostCSS transform of file content of app/globals.css:
+./app/globals.css:2386:16
+  2384 |     }
+  2385 |   }
+> 2386 |   .touch\:h-11 (pointer: coarse) {
+       |                ^
+  2387 |     height: calc(var(--spacing) * 11);
+  2388 |   }
+  2389 |   @media (max-width: 63.999rem) {
+
+Import trace:
+  Client Component Browser:
+    ./app/globals.css [Client Component Browser]
+    ./app/layout.tsx [Server Component]
+
+
+
+./app/globals.css:2394:20
+Error: Parsing CSS source code failed
+  2392 |     }
+  2393 |   }
+> 2394 |   .touch\:min-h-11 (pointer: coarse) {
+       |                    ^
+  2395 |     min-height: calc(var(--spacing) * 11);
+  2396 |   }
+  2397 |   @media (max-width: 63.999rem) {
+
+Invalid dangling combinator in selector
+
+Generated code of PostCSS transform of file content of app/globals.css:
+./app/globals.css:2394:20
+  2392 |     }
+  2393 |   }
+> 2394 |   .touch\:min-h-11 (pointer: coarse) {
+       |                    ^
+  2395 |     min-height: calc(var(--spacing) * 11);
+  2396 |   }
+  2397 |   @media (max-width: 63.999rem) {
+
+Import trace:
+  Client Component Browser:
+    ./app/globals.css [Client Component Browser]
+    ./app/layout.tsx [Server Component]
+
+
+ GET / 500 in 1613ms (next.js: 1566ms, application-code: 48ms)

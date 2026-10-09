@@ -200,7 +200,7 @@ export function DealSummary({ deal }: { deal: DealView }) {
       </div>
 
       <section className="border-t border-line px-4 py-3.5">
-        <DealHeading>{t("deal.money")}</DealHeading>
+        <DealHeading>{t("deals.summary.money")}</DealHeading>
         {deal.invoices?.length ? (
           <div role="region" aria-label={t("deal.invoicesLabel", { name: deal.counterparty_name })} tabIndex={0} className="overflow-x-auto">
             <table className="w-full border-collapse text-[13px] [&_tbody_tr:last-child_td]:border-b-0">

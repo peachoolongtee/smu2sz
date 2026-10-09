@@ -30,6 +30,7 @@ class Intent(StrEnum):
     EXPLAIN = "EXPLAIN"
     WHAT_IF = "WHAT_IF"
     RECORD_FACT = "RECORD_FACT"  # the owner states a new bill, invoice, delay or figure: read-only, nothing is recorded
+    CHANGES = "CHANGES"  # "what changed today?": a read of the operations log, the forecast and what is still open
     APPROVE = "APPROVE"
     REJECT = "REJECT"
     COUNTERPARTY_MESSAGE = "COUNTERPARTY_MESSAGE"
@@ -99,6 +100,30 @@ class PlanStep(_Strict):
     condition: str | None = None  # e.g. "if the buyer refuses"
 
 
+class NlPageContext(BaseModel):
+    """What the owner's page was showing when the question was asked: ids only, never an amount or a sentence. The
+    server checks every id against its own stores and ignores what it cannot find (it trusts nothing but the id).
+    `since_day` is the owner's last-visit marker (the same one GET /home takes); it only chooses where "what
+    changed" starts, and a value in the future is dropped."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    page: str = Field(max_length=64, pattern=r"^/[A-Za-z0-9/_-]{0,63}$")
+    offer_id: str | None = Field(default=None, pattern=r"^[A-Za-z0-9_.:-]{1,64}$")
+    decision_id: str | None = Field(default=None, pattern=r"^[A-Za-z0-9_.:-]{1,64}$")
+    invoice_id: str | None = Field(default=None, pattern=r"^[A-Za-z0-9_.:-]{1,64}$")
+    since_day: int | None = Field(default=None, ge=0, le=100_000)
+
+
+class ContextEcho(BaseModel):
+    """What the server actually used from the page context (so the panel can say "Discussing: the Foshan offer")."""
+
+    offer_id: str | None = None
+    counterparty_name: str | None = None
+    decision_id: str | None = None
+    invoice_id: str | None = None
+
+
 class NlRequest(BaseModel):
     """POST /nl body. `buyer_profile` picks the simulated buyer kernel in the sandbox (default: the
     counterparty's own profile). `request_id` makes a retried request replay-safe: the same id in the
@@ -113,6 +138,7 @@ class NlRequest(BaseModel):
     lang: Lang | None = None
     buyer_profile: str | None = Field(default=None, max_length=64)
     request_id: str | None = Field(default=None, pattern=r"^[A-Za-z0-9_.:-]{1,64}$")
+    context: NlPageContext | None = None  # the owner's page; a counterparty's context is ignored
 
 
 class NlResponse(BaseModel):
@@ -132,3 +158,4 @@ class NlResponse(BaseModel):
     security_events: list[str] = Field(default_factory=list)
     parse_source: str = "rules"
     trace_id: str
+    context_echo: ContextEcho | None = None  # the validated page context this turn used (owner channel only)

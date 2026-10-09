@@ -1,0 +1,110 @@
+{
+  "probe": "f04-cooperative-ledger-after-negotiate",
+  "request": {
+    "method": "GET",
+    "path": "/ledger",
+    "body": null,
+    "credential": [
+      "X-Owner-Token"
+    ]
+  },
+  "clock_day_before_request": 0,
+  "status": 200,
+  "response": {
+    "commitments": [
+      {
+        "id": "CMT-149505d44b61b149",
+        "offer_id": "OFF-f806f79b6c21",
+        "offer_version": 1,
+        "counterparty_id": "BUYER-1",
+        "verdict_id": "VER-a899ca66120c",
+        "terms_hash": "342e81d5572b1ecd3a1b01f177dc698c8f418ef9df1fdfd17ec4d49f6f72a280",
+        "obligations": [
+          {
+            "id": "CTR-193394b6ba8b-O2",
+            "type": "IMMEDIATE_DISCOUNT",
+            "counterparty_id": "BUYER-1",
+            "rate_bp": 85,
+            "amount_fen": null,
+            "days_delta": null,
+            "target_terms_days": null,
+            "effective_day": 2,
+            "base": {
+              "kind": "INVOICE",
+              "amount_fen": 25720000,
+              "receivable_id": "RCV-A",
+              "events_per_year": null,
+              "amount_display": "¥257,200.00"
+            },
+            "contingency": "FIRM",
+            "duration": {
+              "kind": "ONE_OFF",
+              "invoices": null,
+              "end_day": null
+            },
+            "spans": [
+              {
+                "doc_id": "CTR-193394b6ba8b",
+                "start": 34,
+                "end": 134,
+                "text": "We will accept early settlement on up to ¥257,200 of this invoice at 0.85%, paid on or before day 2."
+              }
+            ],
+            "confidence": 1.0,
+            "unresolved": [],
+            "rate_display": "0.85%"
+          }
+        ],
+        "status": "ACTIVE",
+        "nonce": "25186a54128bd7091c426df17f3b81c3",
+        "expires_day": 7,
+        "mandate_version": 1,
+        "forward_value_fen": 0,
+        "forward_value_display": "¥0.00"
+      }
+    ],
+    "operations": [
+      {
+        "approval_id": null,
+        "effective_day": 0,
+        "entry_hash": "796b668b81bc0e3a3e2094cb0c7344e123cabe30fc5f2aab75362fc395f2bf05",
+        "kind": "ACCEPT_OFFER",
+        "message": "Commitment CMT-149505d44b61b149 is ACTIVE; forward concession ¥0.00 booked",
+        "op_id": "accept-CMT-149505d44b61b149",
+        "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+        "seq": 1,
+        "status": "EXECUTED",
+        "tier": "TIER_1",
+        "violations": [],
+        "day": 0,
+        "requested_by": "AGENT",
+        "summary": "Commitment CMT-149505d44b61b149 is ACTIVE; forward concession ¥0.00 booked",
+        "message_when": "Commitment CMT-149505d44b61b149 is ACTIVE; forward concession ¥0.00 booked",
+        "event_text": "Agreement with Foshan Home Retail Co. recorded; concessions booked against your budget: ¥0.00.",
+        "event_detail": null
+      },
+      {
+        "approval_id": null,
+        "effective_day": 0,
+        "entry_hash": "09021c866dbd98d845612779e58d4cf2c92ff5e8e7aaa6ca4486f85631d549b5",
+        "kind": "DRAW_FACILITY",
+        "message": "Drew ¥149,986.20 on FAC-LINE on day 0",
+        "op_id": "fund-OFF-f806f79b6c21-cooperative-0",
+        "prev_hash": "796b668b81bc0e3a3e2094cb0c7344e123cabe30fc5f2aab75362fc395f2bf05",
+        "seq": 2,
+        "status": "EXECUTED",
+        "tier": "TIER_1",
+        "violations": [],
+        "day": 0,
+        "requested_by": "AGENT",
+        "summary": "Drew ¥149,986.20 on FAC-LINE on day 0",
+        "message_when": "Drew ¥149,986.20 on Bank credit line today",
+        "event_text": "¥149,986.20 drawn on the Bank credit line. Cash received today.",
+        "event_detail": null
+      }
+    ],
+    "chain_valid": true,
+    "chain_length": 2,
+    "head_hash": "09021c866dbd98d845612779e58d4cf2c92ff5e8e7aaa6ca4486f85631d549b5"
+  }
+}

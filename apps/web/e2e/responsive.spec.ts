@@ -1,5 +1,6 @@
 import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
+import { STORY_STEPS, walkStory } from "./helpers";
 
 /** Runs on a phone viewport (and desktop): no page may scroll sideways, the story bar stays reachable in Demo mode, and the Business home puts the answer first. */
 
@@ -11,15 +12,9 @@ async function overflowX(page: Page): Promise<number> {
 }
 
 test("no page overflows horizontally after the demo has run", async ({ page }) => {
-  await page.goto("/mandate");
-  for (let i = 0; i < 15; i++) {
-    const button = page.getByTestId("demo-next");
-    await expect(button).toBeEnabled();
-    await button.click();
-    // Wait for the step to finish: a click while the stepper is busy is ignored.
-    await expect(page.getByRole("region", { name: "Guided demo" }).locator("[aria-live=polite]")).toContainText(`${i + 1}/15`);
-  }
-  await expect(page).toHaveURL(/\/evidence/);
+  await page.goto("/demo");
+  await walkStory(page, STORY_STEPS);
+  await expect(page).toHaveURL(/\/activity/);
   for (const route of ENGINE_ROUTES) {
     await page.goto(route);
     await expect(page.locator("h1")).toBeVisible();
@@ -27,7 +22,7 @@ test("no page overflows horizontally after the demo has run", async ({ page }) =
     expect(await overflowX(page), `${route} overflows horizontally`).toBeLessThanOrEqual(1);
   }
   // The Business shell, with the deal of the demo on the books.
-  await page.getByLabel("Business").check();
+  await page.getByLabel("Business").click(); // the radio shows the shell on screen, so it changes once the route has
   await expect(page).toHaveURL(/\/$/);
   for (const route of BUSINESS_ROUTES) {
     await page.goto(route);
@@ -196,7 +191,7 @@ test("the slide-over chat fits the viewport with a long reply", async ({ page })
   await page.goto("/mandate");
   // Already signed in as the owner by the fixture.
   await page.getByTestId("chat-open").click();
-  const panel = page.getByRole("dialog", { name: "Chat with the agent" });
+  const panel = page.getByRole("dialog", { name: "Ask FLOW" });
   await expect(panel).toBeVisible();
   await page.getByTestId("prompt-evaluate").click();
   await expect(panel.getByTestId("chat-awaiting")).toBeVisible();
@@ -210,4 +205,188 @@ test("the slide-over chat fits the viewport with a long reply", async ({ page })
   expect(await panel.evaluate((el) => el.scrollWidth - el.clientWidth)).toBeLessThanOrEqual(1);
   // The composer stays reachable while the reply is long.
   await expect(panel.getByRole("textbox", { name: "Message" })).toBeInViewport();
+});
+
+test("Deals (checked) and Cash on a phone: no sideways scroll, the folded inbox and the comparison fit, every control reaches 44 px", async ({ page }) => {
+  await page.goto("/deals");
+  await page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01").click();
+  await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
+  await expect(page.getByTestId("deal-recommendation")).toHaveText("Counter recommended");
+  await expect(page.getByTestId("inbox-collapsed")).toBeVisible();
+  expect(await overflowX(page), "/deals overflows horizontally").toBeLessThanOrEqual(1);
+  // One workspace order at every width, the server's: the folded inbox row, the buyer, what FLOW recommends, the priced response, then the asks and the costs.
+  const ids = ["inbox-collapsed", "deal-selected", "deal-recommendation-card", "counters", "deal-ask", "deal-impact", "deal-advanced"];
+  const tops = await page.evaluate((list) => list.map((id) => {
+    const el = document.getElementById(id) ?? document.querySelector(`[data-testid="${id}"]`);
+    return el ? el.getBoundingClientRect().top + scrollY : -1;
+  }), ids);
+  expect(tops.every((y) => y >= 0)).toBe(true);
+  expect(tops).toEqual([...tops].sort((a, b) => a - b));
+  await page.goto("/cash");
+  await expect(page.getByTestId("cash-options-list")).toBeVisible();
+  expect(await overflowX(page), "/cash overflows horizontally").toBeLessThanOrEqual(1);
+  const narrow = (page.viewportSize()?.width ?? 1440) < 1024;
+  if (narrow) {
+    for (const [route, ready] of [["/deals", "inbox-collapsed"], ["/cash", "cash-options-list"]] as const) {
+      await page.goto(route);
+      await expect(page.getByTestId(ready)).toBeVisible();
+      const short = await page.evaluate(() =>
+        Array.from(document.querySelectorAll("main a, main button, main summary"))
+          .filter((el) => (el as HTMLElement).offsetParent !== null && !(el.closest("details:not([open])") && el.tagName !== "SUMMARY"))
+          // The horizon pills keep a compact look with a 44 px hit area (covered by the controls test above).
+          .filter((el) => el.getBoundingClientRect().height < 44 && !el.matches("a:not([class*=button]), summary") && !el.closest("[role=group], [role=radiogroup]"))
+          .map((el) => `${el.tagName}:${(el.textContent ?? "").trim().slice(0, 24)}`),
+      );
+      expect(short, `${route}: buttons under 44 px`).toEqual([]);
+    }
+  }
+});
+
+/**
+ * Phone priority (wayfinder #65 Wave 7, F16). At 412 x 915 the owner's answer comes first: Home's primary action, Deals' recommendation and
+ * priced response, Cash's options. The measurements are written to PHONE_MEASURE_OUT (a JSON path) when it is set. Desktop keeps the DOM order.
+ */
+const measured: Record<string, unknown> = {};
+
+async function topOf(page: Page, id: string): Promise<{ top: number; bottom: number } | null> {
+  return page.evaluate((i) => {
+    const el = document.getElementById(i) ?? document.querySelector(`[data-testid="${i}"]`);
+    if (!el) return null;
+    const r = el.getBoundingClientRect();
+    return { top: Math.round(r.top + scrollY), bottom: Math.round(r.bottom + scrollY) };
+  }, id);
+}
+
+test("phone priority: Home's primary action, Deals' priced response and Cash's options sit in the first screens at 412 x 915", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "phone", "the order is the narrow screen's; the desktop keeps the DOM order checked above");
+  await page.setViewportSize({ width: 412, height: 915 });
+  // Home: the status, then the priced action with its button above the tab bar, with no scroll.
+  await page.goto("/");
+  const alertId = await page.getByTestId("home-next-action").getAttribute("data-alert");
+  const run = page.getByTestId(`fix-open-${alertId}`);
+  await expect(run).toBeVisible();
+  const box = (await run.boundingBox())!;
+  const tab = (await page.getByTestId("tab-bar").boundingBox())!;
+  expect(box.y + box.height, "the primary action is inside the first 915 px").toBeLessThanOrEqual(915);
+  expect(box.y + box.height, "and is not behind the tab bar").toBeLessThanOrEqual(tab.y);
+  expect(await overflowX(page)).toBeLessThanOrEqual(1);
+  measured.home = { status: await topOf(page, "home-status"), action: await topOf(page, "home-next-action"), primary: { top: Math.round(box.y), bottom: Math.round(box.y + box.height) }, tabBarTop: Math.round(tab.y), pageHeight: await page.evaluate(() => document.documentElement.scrollHeight) };
+
+  // Deals, evaluated: the recommendation card's top edge and the bound Send are inside the first screen; the inbox row and the asks come after.
+  await page.goto("/deals");
+  await page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01").click();
+  await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
+  await expect(page.getByTestId("deal-recommendation")).toHaveText("Counter recommended");
+  const rec = (await topOf(page, "deal-recommendation-card"))!;
+  const send = await page.getByTestId("deal-send").boundingBox();
+  const inbox = (await topOf(page, "inbox-collapsed"))!;
+  const asks = (await topOf(page, "deal-ask"))!;
+  expect(inbox.top, "the inbox is one folded row above the buyer").toBeLessThan((await topOf(page, "deal-selected"))!.top);
+  await expect(page.getByTestId("deal-steps")).toHaveCount(0);
+  await expect(page.getByTestId("deal-state-chip")).toContainText("Counter recommended");
+  expect(rec.top, "the recommendation card starts in the first screen").toBeLessThan(915);
+  expect(send, "the bound Send is on the page").not.toBeNull();
+  expect(send!.y + send!.height, "the Send button is inside the first 915 px").toBeLessThanOrEqual(915);
+  expect(send!.y + send!.height, "and above the tab bar").toBeLessThanOrEqual(tab.y);
+  expect(asks.top, "the asks come after the priced response").toBeGreaterThan(send!.y + send!.height);
+  measured.deals = { recommendation: rec, send: { top: Math.round(send!.y), bottom: Math.round(send!.y + send!.height) }, inbox, asks, pageHeight: await page.evaluate(() => document.documentElement.scrollHeight) };
+
+  // Cash: the position strip, the plan, then the comparison; its options list starts inside the first two screens.
+  await page.goto("/cash");
+  await expect(page.getByTestId("cash-options-list")).toBeVisible();
+  const options = (await topOf(page, "cash-options-list"))!;
+  const plan = (await topOf(page, "home-next-action"))!;
+  const cashRun = page.getByTestId(`fix-open-${alertId}`);
+  const cashBox = (await cashRun.boundingBox())!;
+  expect(cashBox.y + cashBox.height, "Cash's primary action is inside the first 915 px").toBeLessThanOrEqual(915);
+  expect(cashBox.y + cashBox.height, "and above the tab bar").toBeLessThanOrEqual(tab.y);
+  expect((await topOf(page, "cash-figures"))!.top, "the four facts come after the plan").toBeGreaterThan(plan.top);
+  const chart = (await topOf(page, "cash-chart"))!;
+  expect((await topOf(page, "cash-answer"))!.top).toBeLessThan(plan.top);
+  expect(plan.top).toBeLessThan(options.top);
+  expect(options.top, "the options list starts inside the first two screens").toBeLessThan(2 * 915);
+  expect(options.top).toBeLessThan(chart.top);
+  measured.cash = { answer: await topOf(page, "cash-answer"), plan, primary: { top: Math.round(cashBox.y), bottom: Math.round(cashBox.y + cashBox.height) }, facts: await topOf(page, "cash-figures"), options, chart, pageHeight: await page.evaluate(() => document.documentElement.scrollHeight) };
+
+  // The three numbers the review asks for: the bottom edge of each page's primary action (all inside 915).
+  measured.primaryBottomEdges = { home: (measured.home as { primary: { bottom: number } }).primary.bottom, deals: (measured.deals as { send: { bottom: number } }).send.bottom, cash: (measured.cash as { primary: { bottom: number } }).primary.bottom };
+
+  if (process.env.PHONE_MEASURE_OUT) {
+    const { writeFileSync } = await import("node:fs");
+    writeFileSync(process.env.PHONE_MEASURE_OUT, JSON.stringify({ viewport: "412x915", ...measured }, null, 1) + "\n");
+  }
+});
+
+test("on a desktop the Deals workspace keeps the server's order and the inbox row stays above it", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name === "phone", "a desktop check");
+  await page.goto("/deals");
+  await page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01").click();
+  await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
+  await expect(page.getByTestId("deal-recommendation")).toHaveText("Counter recommended");
+  const inbox = (await topOf(page, "inbox-collapsed"))!;
+  const selected = (await topOf(page, "deal-selected"))!;
+  expect(inbox.top).toBeLessThan(selected.top);
+});
+
+/**
+ * Wave 8 part C: on a phone every primary ends above y 840 at 412 x 915 (the tab bar starts at 858, and a primary that ends against it reads as covered),
+ * on day 0 and on day 34 (the cure waits for the owner), including the approval's own buttons. On a 1366 x 768 laptop Home's primary ends in the first screen.
+ */
+async function toDay34(page: Page) {
+  await page.goto("/demo");
+  await page.getByTestId("home-days").fill("34");
+  await page.getByTestId("home-advance").click();
+  await expect(page.getByTestId("home-day")).toHaveText("Day 34");
+}
+
+async function bottomOf(page: Page, testId: string): Promise<number> {
+  const box = (await page.getByTestId(testId).first().boundingBox())!;
+  return Math.round(box.y + box.height);
+}
+
+test("phone: every primary ends above y 840, on day 0 and on day 34 (Home, Cash, the approval's buttons)", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "phone", "the phone's first screen");
+  await page.setViewportSize({ width: 412, height: 915 });
+  await page.goto("/cash");
+  await expect(page.getByTestId("home-next-action")).toBeVisible();
+  const alert0 = (await page.getByTestId("home-next-action").getAttribute("data-alert"))!;
+  expect(await bottomOf(page, `fix-open-${alert0}`), "Cash day 0").toBeLessThanOrEqual(840);
+  await toDay34(page);
+  await page.goto("/");
+  const alert34 = (await page.getByTestId("home-next-action").getAttribute("data-alert"))!;
+  expect(await bottomOf(page, `fix-open-${alert34}`), "Home day 34").toBeLessThanOrEqual(840);
+  await page.goto("/cash");
+  await expect(page.getByTestId(`fix-open-${alert34}`)).toBeVisible();
+  expect(await bottomOf(page, `fix-open-${alert34}`), "Cash day 34").toBeLessThanOrEqual(840);
+  await page.getByTestId(`fix-open-${alert34}`).click();
+  await page.getByTestId(`fix-${alert34}`).click();
+  await expect(page.getByTestId(`alert-waiting-${alert34}`)).toBeVisible();
+  await page.goto("/approvals");
+  const approve = page.getByRole("button", { name: /^Approve/ }).first();
+  await expect(approve).toBeVisible();
+  const box = (await approve.boundingBox())!;
+  expect(Math.round(box.y + box.height), "Approvals pending").toBeLessThanOrEqual(840);
+});
+
+test("a 1366 x 768 laptop: Home's primary ends in the first screen, with the stat tiles behind Why", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name === "phone", "a laptop check");
+  await page.setViewportSize({ width: 1366, height: 768 });
+  await page.goto("/");
+  const alertId = (await page.getByTestId("home-next-action").getAttribute("data-alert"))!;
+  expect(await bottomOf(page, `fix-open-${alertId}`)).toBeLessThanOrEqual(700);
+  // The tiles are folded behind Why (the first screen is the answer and the priced action); a taller window shows them.
+  await expect(page.getByTestId("home-floor")).toBeHidden();
+  await page.getByTestId("home-why").locator("> summary").click();
+  await expect(page.getByTestId("home-floor")).toBeVisible();
+  await page.setViewportSize({ width: 1366, height: 900 });
+  await expect(page.getByTestId("home-floor")).toBeVisible();
+});
+
+test("at tablet width (820) the open invoices are a list, so the Buyer column is never clipped", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name === "phone", "the phone has its own check");
+  await page.setViewportSize({ width: 820, height: 1180 });
+  await page.goto("/receivables");
+  await expect(page.getByTestId("recv-open-list")).toBeVisible();
+  await expect(page.locator("table")).toBeHidden();
+  expect(await overflowX(page)).toBeLessThanOrEqual(1);
 });

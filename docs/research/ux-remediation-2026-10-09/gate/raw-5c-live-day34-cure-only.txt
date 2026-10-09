@@ -1,0 +1,13 @@
+[WebServer] INFO:     Started server process [21551]
+[WebServer] INFO:     Waiting for application startup.
+[WebServer] INFO:     Application startup complete.
+[WebServer] INFO:     Uvicorn running on http://127.0.0.1:8181 (Press CTRL+C to quit)
+[WebServer] $ next build
+[WebServer] $ next start -p 3253
+
+Running 1 test using 1 worker
+
+  ✓  1 [live] › e2e/live.spec.ts:172:5 › on day 34 the cure needs the owner: the alert says so, the click queues it, approval runs it, the cash lands on day 37 (1.8s)
+
+  1 passed (8.0s)
+EXIT 0 DURATION_S 8

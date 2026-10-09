@@ -127,7 +127,7 @@ Re-run in the cloud on 5 Oct 2026 after the UI redesign (`feat/ux-redesign`, Lin
 chain, the deal summary on Deals once a deal is agreed, the documents page, `SHOW_DEAL` in chat, four attacks, the
 golden equality test and the held-out harness (the set itself is pending). The demo reset opens on the three demo
 documents confirmed by the owner (three CONFIRM_DOCUMENT ledger entries; `Runtime.reset()` alone leaves the chain empty).
-`docs/SYSTEM_WALKTHROUGH.md` sections 5.19 and 12 describe it. Its gate (8 Oct): backend 5,669 passed, 33 skipped; scenarios 49/49; 259 attacks (126 API + 133 chat) with
+`docs/SYSTEM_WALKTHROUGH.md` sections 5.21 and 13 describe it. Its gate (8 Oct): backend 5,669 passed, 33 skipped; scenarios 49/49; 259 attacks (126 API + 133 chat) with
 0 harm; `scripts/demo_run.py` exit 0; `scripts/evaluate.py` every target PASS; language-boundary certification WRONG_MATERIAL 0
 (cache and fake, unchanged); web mock e2e 45 passed (1 skipped), live e2e 40 passed (2 skipped). Merged into the redesigned
 UI (`feat/upgrading-contracts`, 8 Oct): backend 5,716 passed, 33 skipped (the first run's one failure, two golden
@@ -256,6 +256,13 @@ RESERVE_BREACH on the cash-corrected books, so the label file `fixtures/heldout/
 - Stability mode (section 4): no broad features, no new red-team rounds unless the owner asks.
 
 ## 6. What to do next, in order
+
+**Independent end-to-end FLOW UX audit, 9 Oct:** `docs/research/independent-flow-ux-audit-2026-10-09.md` contains the
+32-section report, 28 findings (4 P0, 14 P1, 10 P2), task walks and implementation order. Evidence is in
+`docs/research/flow-ux-audit-2026-10-09/`. This was an audit only: no proposed UX fixes were implemented. The original
+documented dev startup returned HTTP 500 from the malformed touch variant; the temporary correction used for inspection
+was restored. Prioritize F01/F03 time presentation, F02 essential approval terms and F04 execution-state wording, after
+restoring startup. The report distinguishes verified behavior from source-only paths and scoped test limitations.
 
 **The integration of 6 and 7 Oct (the owner's fourth brief) is done:** `docs/UX_INTEGRATION_BRIEF.md`, the wayfinder map
 (GitHub issue #13) and `docs/UX_AUDIT.md` section 18 record it; `docs/UX_INTEGRATION_REPORT.md` is the final report. The

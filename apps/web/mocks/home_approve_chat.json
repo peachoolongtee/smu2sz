@@ -37,5 +37,6 @@
   "negotiation": null,
   "security_events": [],
   "parse_source": "rules",
-  "trace_id": "rec-home-go:3"
+  "trace_id": "rec-home-go:3",
+  "context_echo": null
 }

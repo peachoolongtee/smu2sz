@@ -1,0 +1,27 @@
+# The owner's decisions for a dry pilot, read by services/api/scripts/pilot_dry_run.py --decisions.
+# SYNTHETIC: every sentence below is an invented rehearsal of what an owner might say; none is a real decision.
+#
+# One entry per week: `week: N` (1 to the run's --weeks) and `decisions`, a list. Each decision is
+#   answer:    curve | worth | envelope        which of the three answers it is against
+#   owner_did: what the owner did, in the owner's words (no bank or card numbers: the journal refuses them)
+#   choice:    followed | partly | ignored | not_applicable
+#   buyer:     envelope only: the buyer id (BUYER-1). Optional when the week has exactly one envelope.
+# A week with no entry records nothing, and the runner prints its answers as open decisions. Nothing here is ever an
+# operation: the runner records the journal and never acts.
+- week: 1
+  decisions:
+    - answer: curve
+      owner_did: "Looked at it; no early cash needed this week."
+      choice: not_applicable
+    - answer: worth
+      owner_did: "Chased Buyer B first, as the list said."
+      choice: followed
+- week: 2
+  decisions:
+    - answer: envelope
+      buyer: BUYER-1
+      owner_did: "Offered 45-day terms with no price change."
+      choice: partly
+    - answer: worth
+      owner_did: "Chased Buyer A first because of the relationship."
+      choice: ignored

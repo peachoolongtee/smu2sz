@@ -143,11 +143,15 @@ def _lowest(traj: dict[str, Any]) -> tuple[int, int]:
 # engine, see tests/funding/test_display_fields_inert.py). The golden digest is of the payload without them.
 _ROW_DISPLAY = ("status", "reason_kind", "shortfall_fen", "shortfall_display", "worst_day", "not_executable_reason",
                 "not_executable_reason_when", "note_when", "components_when",
+                "label_when",  # Wave 7 (F28): the row's label as a Business page reads it, in the page's language
                 "approval_reason_when",  # approval_reason_when: the comparison rows' approval-reason sentence (Wave 4/7)
                 # Wave 8 pass A: the row's role and why, its named legs (with their cost lines), the plan's name and the
                 # offset it nets against; `legs` goes whole (name_display, cost_display, amounts all derive from the actions)
                 "role", "role_reason", "legs", "leg_costs_fen", "name_display", "offset_fen", "offset_display",
-                "offset_label")
+                "offset_label",
+                # Wave 3 (F18): the comparison contract's group, rank and words (the golden is of the router's rows and figures)
+                "group", "group_text", "rank", "arrival_day", "arrival_when", "arrival_text", "available_when", "uncovered_display",
+                "remaining_gap_fen", "remaining_gap_display", "remaining_gap_text", "basis_text", "consent_text")
 
 
 def _strip_when(plan: dict[str, Any]) -> None:
@@ -160,6 +164,9 @@ def _strip_when(plan: dict[str, Any]) -> None:
 def _without_display_fields(plan: dict[str, Any]) -> dict[str, Any]:
     out = json.loads(json.dumps(plan))
     out.pop("recommended_key", None)  # Wave 8 pass A: names the recommended comparison row; `recommended_plan` is never a row here
+    out.pop("comparison_order_text", None)  # Wave 3: how the list is ordered
+    # Wave 3 (F18) lists the rows in the order the owner reads them; the golden is of the router's spec 7.4 order, kept as `router_order`
+    out["comparison"] = sorted(out["comparison"], key=lambda r: r.pop("router_order"))
     for key in ("committed", "expected"):
         if out.get(key):
             out[key].pop("available_from_day", None)
@@ -178,12 +185,18 @@ def _without_display_fields(plan: dict[str, Any]) -> dict[str, Any]:
 def test_no_commitments_trajectory_and_router_plan_are_unchanged(client: TestClient, rt: Runtime) -> None:
     t = client.get("/trajectory").json()
     assert t.pop("today") == 0
-    # `first_breach_cash` is a display-only field the simplification map added (Wave 1); the golden is of the rest
-    assert _digest({k: v for k, v in t.items() if k != "first_breach_cash"}) == GOLDEN_TRAJECTORY
+    # `first_breach_cash` is a display-only field the simplification map added (Wave 1), and `first_breach_ahead_*` the first
+    # breach from today on (map #65, F01); the golden is of the rest, which is the engine's own projection and has not moved
+    display_only = {"first_breach_cash", "first_breach_ahead_day", "first_breach_ahead_cash"}
+    assert _digest({k: v for k, v in t.items() if k not in display_only}) == GOLDEN_TRAJECTORY
     state, mandate = rt.store.get_state(), rt.store.get_mandate()
     raw = trajectory_view(project(state, [], [], Mode.CONSERVATIVE, mandate.horizon_days, mandate.min_cash_fen),
                           mandate.min_cash_fen).model_dump()
+    ahead = {k: t.pop(k) for k in ("first_breach_ahead_day", "first_breach_ahead_cash")}
     assert t == json.loads(json.dumps(raw))
+    # day 0: nothing is closed yet, so the first breach from today on is the engine's own
+    assert ahead["first_breach_ahead_day"] == raw["first_breach_day"]
+    assert ahead["first_breach_ahead_cash"] == json.loads(json.dumps(raw["first_breach_cash"]))
     r = client.post("/router/plan").json()
     assert r["marginal"]["extension_extra_receivables_fen"] == 21_000_000  # F x 15 / 30, the shared pro forma
     assert r["marginal"]["extension_committed_12m_fen"] == 2_432_692

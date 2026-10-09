@@ -13,11 +13,16 @@ import type {
   AlertActResult,
   AlertsView,
   ClockView,
+  CounterChangedDetail,
+  DecisionList,
+  DecisionView,
   ApprovalDecision,
   ApprovalView,
   AuditView,
+  BankReceiptResult,
   BorrowerFileRequest,
   BorrowerFileView,
+  ChaseView,
   CapexApplyRequest,
   CapexApplyResult,
   CapexRequest,
@@ -40,6 +45,7 @@ import type {
   OfferView,
   OperationView,
   PlanRequest,
+  PilotJournalView,
   PriceCurveView,
   EnvelopeView,
   ReceivablesWorthView,
@@ -57,18 +63,26 @@ import type {
 } from "../types";
 
 import * as documents from "./documents";
+import * as decisions from "./decisions";
 import * as home from "./home";
 import { pickByStory } from "./strategy-pick";
 import alertsJson from "../../mocks/alerts.json";
 import approvalsSeed from "../../mocks/approvals_seed.json";
+import approvalStories from "../../mocks/w1_approval_stories.json";
+import counterChangedJson from "../../mocks/w2_counter_changed.json";
 import auditSec from "../../mocks/audit_sec.json";
+import bankReceiptJson from "../../mocks/bank_receipt.json";
 import borrowerFileJson from "../../mocks/borrower_file.json";
 import capexApplyJson from "../../mocks/capex_apply.json";
 import capexJson from "../../mocks/capex.json";
+import capexDay38Json from "../../mocks/capex_day38.json";
 import fundingJson from "../../mocks/funding.json";
 import fundingDay34Json from "../../mocks/funding_day34.json";
 import homeApprovalApproved from "../../mocks/home_approval_approved.json";
 import homeApprovalPending from "../../mocks/home_approval_pending.json";
+import homeApprovalApprovedZh from "../../mocks/home_approval_approved_zh.json";
+import homeApprovalPendingZh from "../../mocks/home_approval_pending_zh.json";
+import { getLang } from "../i18n";
 import homeApprove from "../../mocks/home_approve.json";
 import ledgerApproved from "../../mocks/home_ledger_approved.json";
 import ledgerDay34 from "../../mocks/home_ledger_day34.json";
@@ -81,6 +95,7 @@ import offerEx01b from "../../mocks/offer_ex01b.json";
 import offerSec from "../../mocks/offer_sec.json";
 import opsJson from "../../mocks/ops.json";
 import reconciliationJson from "../../mocks/reconciliation.json";
+import summaryPending from "../../mocks/home_summary_pending.json";
 import stateJson from "../../mocks/state.json";
 import trajCons from "../../mocks/trajectory_conservative.json";
 import trajExp from "../../mocks/trajectory_expected.json";
@@ -105,6 +120,8 @@ type OpTemplate = {
   /** The business sentence GET /ledger wrote for the row, and its second sentence. */
   event_text?: string | null;
   event_detail?: string | null;
+  /** The decision record the row belongs to (recorded). */
+  decision_id?: string | null;
 };
 const OPS = cast<Record<string, OpTemplate>>(opsJson);
 
@@ -187,13 +204,34 @@ function save(): void {
 const delay = () => new Promise<void>((r) => setTimeout(r, MOCK_LATENCY_MS));
 const clone = <T>(v: T): T => JSON.parse(JSON.stringify(v)) as T;
 
+/** The causality fields of a ledger row (what changed, why it matters, what remains, the approval's label and state, the link to its record). */
+const CAUSAL_KEYS = ["what_changed", "why_it_matters", "why_it_matters_as_of", "what_remains", "approval_label", "current_decision_state", "decision_link"] as const;
+
+/**
+ * The recorded causality of the row whose business sentence is `eventText`: found in what the API recorded (the pending summary's changes
+ * first, which read the approval while it waited, then the two recorded ledgers). A row the mock books that no recording has is shown without it.
+ */
+function causalFor(eventText: string | null | undefined): Partial<Pick<OperationView, (typeof CAUSAL_KEYS)[number]>> {
+  if (!eventText) return {};
+  const pools = [
+    ...cast<{ changes: Record<string, unknown>[] }>(summaryPending).changes,
+    ...(cast<LedgerView>(ledgerApproved).operations as unknown as Record<string, unknown>[]),
+    ...(cast<LedgerView>(ledgerDay34).operations as unknown as Record<string, unknown>[]),
+  ];
+  const hit = pools.find((x) => x.event_text === eventText);
+  if (!hit) return {};
+  const out: Record<string, unknown> = {};
+  for (const k of CAUSAL_KEYS) if (k in hit) out[k] = hit[k];
+  return out;
+}
+
 function entryHash(op: Pick<OperationView, "seq" | "op_id" | "kind" | "status" | "tier" | "summary">, prev: string): string {
   return sha256(`${prev}|${op.seq}|${op.op_id}|${op.kind}|${op.status}|${op.tier}|${op.summary}`);
 }
 
 function append(
   key: keyof typeof OPS,
-  overrides: Partial<Pick<OperationView, "status" | "message" | "summary" | "requested_by">> = {},
+  overrides: Partial<Pick<OperationView, "status" | "message" | "summary" | "requested_by" | "day">> = {},
 ): OperationView {
   const s = load();
   const t = OPS[key];
@@ -202,17 +240,18 @@ function append(
   const base = {
     op_id: `OP-${String(seq).padStart(4, "0")}`,
     kind: t.kind,
+    decision_id: t.decision_id ?? null,
     status: overrides.status ?? t.status,
     tier: t.tier,
     violations: [],
     seq,
     message: overrides.message ?? t.message,
-    day: 0,
+    day: overrides.day ?? 0,
     requested_by: overrides.requested_by ?? t.requested_by,
     summary: overrides.summary ?? t.summary,
     // The recorded Business sentence travels with the row; an override of the message has no recorded twin.
     ...(overrides.message === undefined && t.message_when ? { message_when: t.message_when } : {}),
-    ...(overrides.message === undefined && t.event_text ? { event_text: t.event_text, event_detail: t.event_detail ?? null } : {}),
+    ...(overrides.message === undefined && t.event_text ? { event_text: t.event_text, event_detail: t.event_detail ?? null, ...causalFor(t.event_text) } : {}),
   };
   const op: OperationView = { ...base, prev_hash: prev, entry_hash: entryHash(base, prev) };
   s.ops.push(op);
@@ -220,7 +259,7 @@ function append(
 }
 
 /** Books an operation the recorded API answer reports (a cure the agent ran, a document the owner decided), on the same hash chain as the rest. */
-type Recorded = { kind: string; status: OperationView["status"]; tier: OperationView["tier"]; message: string; message_when?: string | null; event_text?: string | null; event_detail?: string | null; day: number; requested_by?: OperationView["requested_by"] };
+type Recorded = { kind: string; status: OperationView["status"]; tier: OperationView["tier"]; message: string; message_when?: string | null; event_text?: string | null; event_detail?: string | null; decision_id?: string | null; day: number; requested_by?: OperationView["requested_by"] };
 export function appendRecorded(r: Recorded): OperationView {
   seedStory();
   const s = load();
@@ -236,9 +275,10 @@ export function appendRecorded(r: Recorded): OperationView {
     message: r.message,
     day: r.day,
     requested_by: r.requested_by ?? ("AGENT" as const),
+    decision_id: r.decision_id ?? null,
     summary: r.message,
     ...(r.message_when ? { message_when: r.message_when } : {}),
-    ...(r.event_text ? { event_text: r.event_text, event_detail: r.event_detail ?? null } : {}),
+    ...(r.event_text ? { event_text: r.event_text, event_detail: r.event_detail ?? null, ...causalFor(r.event_text) } : {}),
   };
   const op: OperationView = { ...base, prev_hash: prev, entry_hash: entryHash(base, prev) };
   s.ops.push(op);
@@ -314,12 +354,18 @@ export async function getLedger(): Promise<LedgerView> {
   seedStory();
   const s = load();
   const head = s.ops.length ? s.ops[s.ops.length - 1].entry_hash : null;
+  const valid = chainValid(s.ops);
+  // The chain words and the refusal block are the API's own, recorded: the set-aside count is the recorded Audit's once the security scene has run.
+  const rec = cast<LedgerView>(ledgerApproved);
   return clone({
     commitments: s.commitments,
     operations: s.ops,
-    chain_valid: chainValid(s.ops),
+    chain_valid: valid,
     chain_length: s.ops.length,
     head_hash: head,
+    chain_text: !s.ops.length ? null : valid ? rec.chain_text : "Record chain checks failed",
+    chain_scope_text: rec.chain_scope_text,
+    refusals: s.securityScene ? cast<AuditView>(auditSec).refusal_summary : cast<LedgerView>(ledgerDay34).refusals,
   });
 }
 
@@ -347,9 +393,50 @@ export async function getAudit(): Promise<AuditView> {
   return clone({ ...scene, refusals });
 }
 
+/**
+ * Test hook, like home.MOVE_BOOKS_KEY: set this sessionStorage key to put one of three recorded approvals in the queue.
+ *   "agreement"  a buyer's early-payment agreement waiting for the owner, with its terms (terms_available true)
+ *   "expired"    the same agreement once it has expired: the server cannot present the terms (terms_available false, with its reason)
+ *   "refused"    the day-34 cure after the mandate has expired: Approve is answered 200 and the executor refuses to run it
+ * Each row is the API's own answer (scripts/record-mocks.mjs, mocks/w1_approval_stories.json).
+ */
+export const APPROVAL_STORY_KEY = "tl-mock-approval-story";
+
+type ApprovalStory = "agreement" | "expired" | "refused";
+const STORIES = cast<{ agreement: ApprovalView; expired: ApprovalView; refused: { pending: ApprovalView; decided: ApprovalView } }>(approvalStories);
+
+function approvalStory(): ApprovalStory | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const v = window.sessionStorage.getItem(APPROVAL_STORY_KEY);
+    return v === "agreement" || v === "expired" || v === "refused" ? v : null;
+  } catch {
+    return null;
+  }
+}
+
+/** The story's row, put in the queue once (its decided twin replaces it when the owner approves). */
+function seedApprovalStory(): void {
+  const story = approvalStory();
+  if (!story) return;
+  const s = load();
+  const row = story === "refused" ? STORIES.refused.pending : STORIES[story];
+  if (s.approvals.some((a) => a.id === row.id)) return;
+  s.approvals.push(clone(row));
+  save();
+}
+
+/** The day-34 cure's row in Chinese (recorded from `GET /approvals/queue?lang=zh`): the same operation, amounts and states as the English row, its sentences in zh. */
+function inChinese(rows: ApprovalView[]): ApprovalView[] {
+  if (getLang() !== "zh") return rows;
+  const op = cast<ApprovalView>(homeApprovalPending).op_id;
+  return rows.map((r) => (r.op_id === op ? { ...clone(cast<ApprovalView>(r.status === "PENDING" ? homeApprovalPendingZh : homeApprovalApprovedZh)), id: r.id } : r));
+}
+
 export async function getApprovals(): Promise<ApprovalView[]> {
   await delay();
-  return clone(load().approvals);
+  seedApprovalStory();
+  return inChinese(clone(load().approvals));
 }
 
 export async function getEvidence(): Promise<string> {
@@ -400,6 +487,40 @@ export async function submitOffer(req: SubmitOfferRequest): Promise<OfferView> {
   return clone(match.view);
 }
 
+/** Where the recorded story stands, for the decision record's snapshots (lib/mock/decisions.ts). */
+function decisionContext(): decisions.DecisionContext {
+  seedStory();
+  const s = load();
+  return {
+    day: home.mockClock().day,
+    newsDay: home.NEWS_DAY,
+    funded: home.isFunded(),
+    stage: home.cureStage(),
+    receipted: home.isReceipted(),
+    settledDay: home.SETTLED_DAY,
+    receipt: home.mockReceiptVariant(),
+    offers: s.offers,
+    evaluated: s.evaluated,
+    negotiated: s.negotiated,
+    commitmentOffers: s.commitments.map((c) => c.offer_id),
+    approvals: s.approvals,
+  };
+}
+
+/** GET /decisions. */
+export async function getDecisions(q: { lang: "en" | "zh"; family?: "DEAL" | "FUNDING"; open?: boolean; limit?: number }): Promise<DecisionList> {
+  await delay();
+  seedApprovalStory();
+  return decisions.mockDecisions(decisionContext(), q);
+}
+
+/** GET /decisions/{id}: 404 DECISION_NOT_FOUND for a record the story has not made. */
+export async function getDecision(id: string, lang: "en" | "zh"): Promise<DecisionView> {
+  await delay();
+  seedApprovalStory();
+  return decisions.mockDecision(decisionContext(), id, lang);
+}
+
 export async function getOffer(offerId: string): Promise<OfferView> {
   await delay();
   const v = load().offers[offerId];
@@ -421,9 +542,35 @@ export async function evaluateOffer(offerId: string): Promise<VerdictView> {
   return clone(b.verdict);
 }
 
+/**
+ * Test hook for the bound send's refusal. Set this sessionStorage key just before pressing Send:
+ *   "replaced"  the verdict the owner read is no longer the latest: 409 COUNTER_CHANGED with the current counters
+ *   "moved"     the books moved after the evaluation: 409 COUNTER_CHANGED with no counters and `reevaluate` true
+ * The next bound send is answered with the API's own recorded refusal (mocks/w2_counter_changed.json), once; nothing is sent.
+ */
+export const COUNTER_CHANGED_KEY = "tl-mock-counter-changed";
+
+function counterChangedStory(): "replaced" | "moved" | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const v = window.sessionStorage.getItem(COUNTER_CHANGED_KEY);
+    if (v) window.sessionStorage.removeItem(COUNTER_CHANGED_KEY);
+    return v === "replaced" || v === "moved" ? v : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function negotiate(offerId: string, req: NegotiateRequest): Promise<NegotiationView> {
   await delay();
   const s = load();
+  if (req.verdict_id) {
+    const story = counterChangedStory();
+    if (story) {
+      const detail: CounterChangedDetail = { ...cast<Record<"replaced" | "moved", CounterChangedDetail>>(counterChangedJson)[story], offer_id: offerId };
+      throw new ApiError(409, detail.message, detail);
+    }
+  }
   if (!s.evaluated.includes(offerId) || bundleFor(offerId)?.fixture_id === SECURITY_FIXTURE) {
     throw new ApiError(409, "Evaluate a package offer before negotiating.");
   }
@@ -453,7 +600,7 @@ export async function negotiate(offerId: string, req: NegotiateRequest): Promise
   return clone(result);
 }
 
-const APPROVAL_SEEDS = cast<Record<"apply_loan", ApprovalView>>(approvalsSeed);
+const APPROVAL_SEEDS = cast<Record<"apply_loan" | "apply_loan_approved" | "apply_loan_rejected", ApprovalView>>(approvalsSeed);
 
 function ensureApproval(key: "apply_loan"): ApprovalView {
   const s = load();
@@ -464,11 +611,29 @@ function ensureApproval(key: "apply_loan"): ApprovalView {
   return s.approvals[s.approvals.length - 1];
 }
 
+/**
+ * POST /demo/bank-receipt: the guided Demo's one synthetic bank event, the recorded answer of the real route. It posts the recorded receipt
+ * once, on the day the clock stands at (the Demo moves it to the promised day first), and only after an agreement was made.
+ */
+export async function demoBankReceipt(): Promise<BankReceiptResult> {
+  await delay();
+  const s = load();
+  const dealt = Object.values(s.negotiated).some((n) => n.outcome === "DEAL");
+  if (!dealt || home.isReceipted()) throw new ApiError(409, "No agreed early payment is waiting for the bank.", { code: "NO_PROMISED_RECEIPT" });
+  home.markReceipted();
+  const day = home.mockClock().day;
+  const op = append("receive_payment", { day });
+  save();
+  const res = clone(cast<BankReceiptResult>(bankReceiptJson));
+  return { ...res, day, op_id: op.op_id };
+}
+
 /** Side-effect free, as on the API: nothing is queued. */
 export async function capexEvaluate(_req: CapexRequest): Promise<CapexView> {
   void _req;
   await delay();
-  return clone(cast<CapexView>(capexJson));
+  // On the books the story left (day 38) the evaluation is as of that day; on the opening books it is the day-0 one.
+  return clone(cast<CapexView>(home.mockClock().day >= 38 ? capexDay38Json : capexJson));
 }
 
 /** The owner's explicit application: queues the recorded Tier-2 application once. */
@@ -498,6 +663,13 @@ export async function decideApproval(id: string, decision: ApprovalDecision): Pr
   const a = s.approvals.find((x) => x.id === id);
   if (!a) throw new ApiError(404, `Approval ${id} not found.`, undefined, "approval_missing", { id });
   if (a.status !== "PENDING") throw new ApiError(409, `Approval ${id} is already ${a.status}.`, undefined, "approval_done", { id, status: a.status });
+  if (approvalStory() === "refused" && a.id === STORIES.refused.pending.id && decision === "APPROVE") {
+    // The executor refuses to run it after the owner's approval (the mandate has expired): the row comes back APPROVED, not run, as live.
+    const decided = clone(STORIES.refused.decided);
+    Object.assign(a, decided);
+    save();
+    return decided;
+  }
   if (a.op_id?.startsWith("alert:")) {
     // The day-34 cure the alert queued: approving runs it (recorded EXECUTED, the cash lands on day 37) and clears the alert.
     if (decision === "REJECT") {
@@ -509,13 +681,15 @@ export async function decideApproval(id: string, decision: ApprovalDecision): Pr
     // The entry that waited for this approval now reads as the server words it once the decision is made (recorded).
     const waited = cast<LedgerView>(ledgerApproved).operations.find((o) => o.status === "PENDING_APPROVAL" && o.kind === done.kind);
     const row = s.ops.find((o) => o.status === "PENDING_APPROVAL" && o.kind === done.kind);
-    if (waited && row && waited.event_text) row.event_text = waited.event_text;
+    if (waited && row && waited.event_text) Object.assign(row, { event_text: waited.event_text, ...causalFor(waited.event_text) });
     home.markApproved();
     save();
     return { ...clone(a), result_message: done.message };
   }
   a.status = decision === "APPROVE" ? "APPROVED" : "REJECTED";
   const op = append(decision === "APPROVE" ? "approve_apply_loan" : "reject_apply_loan");
+  // The decided row as the server wrote it (its one state word and tone, what was agreed), keeping this session's id.
+  Object.assign(a, clone(decision === "APPROVE" ? APPROVAL_SEEDS.apply_loan_approved : APPROVAL_SEEDS.apply_loan_rejected), { id: a.id });
   save();
   return { ...clone(a), result_message: op.message };
 }
@@ -568,14 +742,14 @@ export async function actOnAlert(id: string, bound: ActRequest): Promise<AlertAc
   await delay();
   if (id === "ALERT-RESERVE-12") {
     const r0 = home.mockActDay0();
-    for (const op of r0.results) appendRecorded({ kind: op.kind, status: op.status, tier: op.tier, message: op.message, message_when: op.message_when, event_text: op.event_text, event_detail: op.event_detail, day: 0 });
+    for (const op of r0.results) appendRecorded({ kind: op.kind, status: op.status, tier: op.tier, message: op.message, message_when: op.message_when, event_text: op.event_text, event_detail: op.event_detail, decision_id: r0.decision_id, day: 0 });
     return clone(r0);
   }
   const r = home.mockAct(id, bound);
   // Once only: asking again while the cure waits changes nothing.
   const first = !load().approvals.some((x) => x.op_id?.startsWith("alert:"));
   ensureHomeApproval();
-  if (first) for (const o of r.results) appendRecorded({ kind: o.kind, status: o.status, tier: o.tier, message: o.message, message_when: o.message_when, event_text: o.event_text, event_detail: o.event_detail, day: r.day });
+  if (first) for (const o of r.results) appendRecorded({ kind: o.kind, status: o.status, tier: o.tier, message: o.message, message_when: o.message_when, event_text: o.event_text, event_detail: o.event_detail, decision_id: r.decision_id, day: r.day });
   return r;
 }
 
@@ -603,10 +777,21 @@ export async function getPriceCurve(_lang: "en" | "zh"): Promise<PriceCurveView 
   return await strategyRecording<PriceCurveView>(priceCurveRecordings);
 }
 
+/**
+ * Test hook, like APPROVAL_STORY_KEY: set this sessionStorage key to "1" and GET /receivables/worth fails (503) until it is removed,
+ * so the Receivables page's "could not be read" state and its Retry can be seen offline.
+ */
+export const WORTH_FAIL_KEY = "tl-mock-worth-fail";
+
 /** GET /receivables/worth: as above. */
 export async function getReceivablesWorth(_lang: "en" | "zh"): Promise<ReceivablesWorthView | null> {
   void _lang;
   await delay();
+  try {
+    if (typeof window !== "undefined" && window.sessionStorage.getItem(WORTH_FAIL_KEY) === "1") throw new ApiError(503, "The collections ranking is unavailable");
+  } catch (e) {
+    if (e instanceof ApiError) throw e;
+  }
   return await strategyRecording<ReceivablesWorthView>(worthRecordings);
 }
 
@@ -620,6 +805,33 @@ export async function getEnvelope(buyerId: string, _lang: "en" | "zh", zone = fa
   if (buyerId !== "BUYER-1") return null;
   const view = await strategyRecording<EnvelopeView>(envelopeRecordings);
   return zone ? view : { ...view, zone: [] };
+}
+
+/** GET /pilot/journal: the mock has no recording (the pilot journal is the shadow pilot's, against a real runtime), so it is absent. */
+export async function getPilotJournal(): Promise<PilotJournalView | null> {
+  return null;
+}
+
+/**
+ * GET /receivables/{id}/chase: a recording of the real API for each open invoice of the three books the mock walks (the opening
+ * books, day 34 after the full receipt, day 34 after the half receipt), in both languages; chosen as the reconciliation is
+ * (`home.recordedBooks`). An invoice the recording does not hold is unknown (404), as the server answers.
+ */
+export async function getChase(receivableId: string, lang: "en" | "zh"): Promise<ChaseView> {
+  await delay();
+  const books = home.recordedBooks();
+  const file = (
+    await (books === "day34_half"
+      ? import("../../mocks/chase_day34_half.json")
+      : books === "day34"
+        ? import("../../mocks/chase_day34.json")
+        : books === "day2"
+          ? import("../../mocks/chase_day2.json")
+          : import("../../mocks/chase_day0.json"))
+  ).default;
+  const found = cast<Record<"en" | "zh", Record<string, ChaseView>>>(file)[lang][receivableId];
+  if (!found) throw new ApiError(404, "Unknown receivable", { code: "RECEIVABLE_NOT_FOUND", receivable_id: receivableId });
+  return clone(found);
 }
 
 export async function getReconciliation(): Promise<ReconciliationView> {

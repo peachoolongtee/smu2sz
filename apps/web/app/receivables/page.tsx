@@ -1,12 +1,17 @@
 "use client";
 
+import { useEffect } from "react";
+import { ReceiptFacts } from "@/components/receipt-facts";
 import { Badge, Card, ErrorState, LoadingBlock, PageHeader, Stat } from "@/components/ui";
 import { getHome, getReceivablesWorth, getReconciliation, getState } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
 import { whenText } from "@/lib/when";
 import { useAsync, useStrategyAsync } from "@/lib/use-async";
+import { PartialRead, ReadWhen } from "@/components/business/freshness";
 import { Disclosure } from "@/components/business/kit";
+import { chaseIds, shortfallStretch } from "@/lib/chase";
 import { ReceivablesTable } from "@/components/business/receivables-table";
+import { ChasePayment } from "@/components/business/chase-payment";
 
 /**
  * Receivables, in the order the owner asks: who owes me and how much (the summary, from the home read), when and who is
@@ -15,12 +20,13 @@ import { ReceivablesTable } from "@/components/business/receivables-table";
  */
 export default function ReceivablesPage() {
   const { t, te, lang } = useI18n();
-  const recon = useAsync(getReconciliation, []);
+  const recon = useAsync(getReconciliation, [lang]);
   const books = useAsync(getState, []);
   const home = useAsync(() => getHome(lang), [lang]);
   // The worth of collecting each invoice (strategy MVP, build-time flag): null while loading, when the server has it off, or
   // when the read fails; the page then shows the table it always had. Matched to the invoices by receivable_id.
-  const worth = useStrategyAsync(() => getReceivablesWorth(lang), [lang]).data;
+  const worthRead = useStrategyAsync(() => getReceivablesWorth(lang), [lang]);
+  const worth = worthRead.data;
   const worthOf = new Map((worth?.rows ?? []).map((w) => [w.receivable_id, w]));
   const data = recon.data;
   const r = home.data?.receivables;
@@ -31,7 +37,21 @@ export default function ReceivablesPage() {
   const invoices = data
     ? [...data.outstanding].sort((a, b) => (rank.get(a.receivable_id) ?? rank.size) - (rank.get(b.receivable_id) ?? rank.size) || Number(b.past_due) - Number(a.past_due) || a.due_day - b.due_day)
     : [];
+  const topRow = worth?.rows.find((r) => r.overdue_text) ?? worth?.rows[0];
   const error = recon.error ?? home.error;
+  // Chase payment is offered on the invoices that are late, that fall due inside the forecast's shortfall (the home read's first
+  // breach to its lowest day) or whose early payment lapsed. Day numbers are compared; the handoff itself is the server's.
+  const chase = chaseIds(invoices, data?.promised, shortfallStretch(home.data?.cash.first_breach_day, home.data?.cash.lowest_day));
+
+  // A link such as /receivables#RI:BUYER-1:2 (from the home's remaining task) lands on that invoice once the page has loaded. The phone list and
+  // the table both carry the id, one of them hidden: the visible one is scrolled to.
+  const loaded = Boolean(data && r);
+  useEffect(() => {
+    if (!loaded || typeof window === "undefined" || !window.location.hash) return;
+    const id = decodeURIComponent(window.location.hash.slice(1));
+    const target = Array.from(document.querySelectorAll<HTMLElement>("[id]")).find((el) => el.id === id && el.getClientRects().length > 0);
+    target?.scrollIntoView({ block: "center" });
+  }, [loaded]);
 
   return (
     <>
@@ -43,6 +63,19 @@ export default function ReceivablesPage() {
       ) : (
         <div className="space-y-6">
           <section id="recv-summary" aria-label={t("nav.receivables")} data-testid="recv-summary">
+            {/* How fresh the summary is: the report's own "when", else the home read's. */}
+            <ReadWhen when={data.last_read_when ?? home.data?.cash.last_read_when} testId="recv-read-when" className="mb-2" />
+            {/* What to do first, in the server's sentence, with the way to act beside it. */}
+            {worth?.rows.length && worth.top_action && topRow ? (
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-tile border border-line bg-surface px-4 py-3 shadow-card" data-testid="recv-top-action">
+                <div className="min-w-0 flex-1 basis-64 text-sm text-ink">
+                  <p className="font-medium">{worth.top_action}</p>
+                  {worth.top_action_second ? <p className="mt-1 text-ink-2" data-testid="recv-top-action-second">{worth.top_action_second}</p> : null}
+                </div>
+                {/* The sentence is about the late invoice when anything is late, else the first row: Chase payment is for that one. */}
+                {chase.has(topRow.receivable_id) ? <ChasePayment top receivableId={topRow.receivable_id} buyer={name(topRow.buyer_id)} /> : null}
+              </div>
+            ) : null}
             <dl className="grid grid-cols-2 gap-3 sm:grid-cols-3">
               <Stat className="col-span-2 sm:col-span-1" label={t("biz.recv.sum.outstanding")} value={<span data-testid="recv-outstanding">{r.open_total_display}</span>} caption={t("biz.recv.sum.count", { n: r.open_count })} />
               <Stat
@@ -60,7 +93,15 @@ export default function ReceivablesPage() {
             {r.open_count === 0 ? <p className="mt-3 text-sm text-ink-3" data-testid="recv-none">{t("recon.outstanding.empty")}</p> : null}
           </section>
 
-          {invoices.length ? <ReceivablesTable invoices={invoices} asOfDay={data.as_of_day} buyerName={name} worth={worth} worthOf={worthOf} rank={rank} /> : null}
+          <PartialRead partial={home.data?.partial} onRetry={home.reload} />
+
+          {worthRead.error ? (
+            <div data-testid="recv-worth-failed">
+              <ErrorState error={t("biz.recv.worth.failed")} onRetry={worthRead.reload} />
+            </div>
+          ) : null}
+
+          {invoices.length ? <ReceivablesTable invoices={invoices} asOfDay={data.as_of_day} buyerName={name} worth={worth} worthOf={worthOf} rank={rank} chase={chase} /> : null}
 
           {data.promised?.length ? (
             <Card id="recv-promised" title={t("biz.recv.promised")} subtitle={t("biz.recv.promised.sub")} actions={data.lapsed_promises ? <Badge tone="bad">{`${t("recon.lapsed")}: ${data.lapsed_promises}`}</Badge> : undefined}>
@@ -93,12 +134,23 @@ export default function ReceivablesPage() {
                         <Badge tone={x.flagged ? "bad" : "ok"}>{te("recstatus", x.status)}</Badge>
                       </span>
                     </div>
-                    <p className="mt-0.5 text-xs text-ink-2">
-                      {x.day !== null ? `${whenText(x.day, data.as_of_day, t)} · ` : ""}
-                      {x.detail_when ?? x.detail}
-                    </p>
+                    {/* A part-paid invoice: a short lead and the four named facts say it once; the long sentence waits behind Audit details. */}
+                    {x.remaining_display ? (
+                      <>
+                        <p className="mt-0.5 text-sm text-ink-2" data-testid={`receipt-lead-${x.op_id}`}>
+                          {t("biz.recv.partPaid", { buyer: name(x.counterparty_id), when: x.day !== null ? whenText(x.day, data.as_of_day, t) : "" })}
+                        </p>
+                        <ReceiptFacts facts={x} testId={`receipt-facts-${x.op_id}`} windowText={x.window_state_text} />
+                      </>
+                    ) : (
+                      <p className="mt-0.5 text-xs text-ink-2">
+                        {x.day !== null ? `${whenText(x.day, data.as_of_day, t)} · ` : ""}
+                        {x.detail_when ?? x.detail}
+                      </p>
+                    )}
                     {/* The record ids (invoice, bank reference) are the audit level. */}
                     <Disclosure className="mt-1" testId={`receipt-audit-${x.op_id}`} summary={t("biz.auditDetails")}>
+                      {x.remaining_display ? <p className="mt-1 text-xs text-ink-2">{x.detail_when ?? x.detail}</p> : null}
                       <p className="mt-1 text-xs text-ink-3">
                         {x.receivable_id}
                         {x.bank_reference ? (

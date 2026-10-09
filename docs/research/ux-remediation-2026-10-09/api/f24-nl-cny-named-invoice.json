@@ -1,0 +1,37 @@
+{
+  "probe": "f24-nl-cny-named-invoice",
+  "request": {
+    "method": "POST",
+    "path": "/nl",
+    "body": {
+      "session_id": "f24-cny-named-invoice",
+      "actor": "COUNTERPARTY",
+      "counterparty_id": "BUYER-1",
+      "text": "We can pay invoice RCV-A early at 0.5% in CNY.",
+      "request_id": "f24-cny-named-invoice"
+    },
+    "credential": [
+      "X-Counterparty-Key"
+    ]
+  },
+  "clock_day_before_request": 0,
+  "status": 200,
+  "response": {
+    "session_id": "f24-cny-named-invoice",
+    "turn": 1,
+    "reply": "Thank you. Our acceptance awaits the owner's approval; we will confirm once the owner has decided.",
+    "intent": "COUNTERPARTY_MESSAGE",
+    "lang": "en",
+    "trace_id": "f24-cny-named-invoice:1",
+    "plan": [],
+    "verdict": null,
+    "operations": [],
+    "clarification": null,
+    "negotiation": null,
+    "security_events": [],
+    "parse_source": "actor",
+    "awaiting_confirmation": false,
+    "amended": false,
+    "replayed": false
+  }
+}

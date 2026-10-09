@@ -1,0 +1,999 @@
+{
+ "stack": "production build (next start :3133, NEXT_PUBLIC_API_MODE=live) + uvicorn :8033, memory store, LLM_MODE=cache, owner token in sessionStorage, tl-mode=demo",
+ "button": "[data-testid=demo-next] on /mandate; click via element.click() so a disabled button swallows the click as for a user",
+ "progress": "the 'n / 15' text in the Demo strip; null = strip shows the idle text (step -1)",
+ "note": "audit measured 17.997 s guarded; on this machine with the cached model the whole guarded walk is about 1.8 s. The restart reproduces anyway.",
+ "runs": {
+  "unguarded_15_clicks_50ms": {
+   "mode": "unguarded",
+   "clicks": 15,
+   "clicksSwallowedByDisabledButton": 9,
+   "msUntilLastClick": 830,
+   "msUntilIdle": 894,
+   "final": {
+    "busy": false,
+    "disabled": false,
+    "label": "Next",
+    "progress": 6
+   },
+   "maxProgressSeen": 6,
+   "progressSequence": [
+    null,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+   ],
+   "trace": [
+    {
+     "t": 4,
+     "busy": false,
+     "disabled": false,
+     "label": "Start demo",
+     "progress": null
+    },
+    {
+     "t": 32,
+     "busy": false,
+     "disabled": false,
+     "label": "Next",
+     "progress": 1
+    },
+    {
+     "t": 87,
+     "busy": false,
+     "disabled": false,
+     "label": "Next",
+     "progress": 2
+    },
+    {
+     "t": 140,
+     "busy": true,
+     "disabled": true,
+     "label": "\u2026Next",
+     "progress": 2
+    },
+    {
+     "t": 467,
+     "busy": false,
+     "disabled": false,
+     "label": "Next",
+     "progress": 3
+    },
+    {
+     "t": 526,
+     "busy": true,
+     "disabled": true,
+     "label": "\u2026Next",
+     "progress": 3
+    },
+    {
+     "t": 709,
+     "busy": false,
+     "disabled": false,
+     "label": "Next",
+     "progress": 4
+    },
+    {
+     "t": 746,
+     "busy": false,
+     "disabled": false,
+     "label": "Next",
+     "progress": 5
+    },
+    {
+     "t": 800,
+     "busy": true,
+     "disabled": true,
+     "label": "\u2026Next",
+     "progress": 5
+    },
+    {
+     "t": 828,
+     "busy": false,
+     "disabled": false,
+     "label": "Next",
+     "progress": 6
+    }
+   ]
+  },
+  "mash_150_clicks_50ms_8s": {
+   "mode": "mash",
+   "clicks": 151,
+   "clicksSwallowedByDisabledButton": 102,
+   "msUntilLastClick": 8011,
+   "msUntilIdle": 8276,
+   "final": {
+    "busy": false,
+    "disabled": false,
+    "label": "Next",
+    "progress": 2
+   },
+   "maxProgressSeen": 7,
+   "progressSequence": [
+    null,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    null,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    null,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    null,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    null,
+    1,
+    2,
+    3,
+    5,
+    6,
+    7,
+    null,
+    1,
+    2
+   ],
+   "trace": [
+    {
+     "t": 2,
+     "busy": false,
+     "disabled": false,
+     "label": "Start demo",
+     "progress": null
+    },
+    {
+     "t": 30,
+     "busy": false,
+     "disabled": false,
+     "label": "Next",
+     "progress": 1
+    },
+    {
+     "t": 84,
+     "busy": false,
+     "disabled": false,
+     "label": "Next",
+     "progress": 2
+    },
+    {
+     "t": 138,
+     "busy": true,
+     "disabled": true,
+     "label": "\u2026Next",
+     "progress": 2
+    },
+    {
+     "t": 388,
+     "busy": true,
+     "disabled": true,
+     "label": "\u2026Next",
+     "progress": 3
+    },
+    {
+     "t": 609,
+     "busy": false,
+     "disabled": false,
+     "label": "Next",
+     "progress": 4
+    },
+    {
+     "t": 643,
+     "busy": false,
+     "disabled": false,
+     "label": "Next",
+     "progress": 5
+    },
+    {
+     "t": 699,
+     "busy": true,
+     "disabled": true,
+     "label": "\u2026Next",
+     "progress": 5
+    },
+    {
+     "t": 726,
+     "busy": false,
+     "disabled": false,
+     "label": "Next",
+     "progress": 6
+    },
+    {
+     "t": 754,
+     "busy": false,
+     "disabled": false,
+     "label": "Next",
+     "progress": 7
+    },
+    {
+     "t": 808,
+     "busy": false,
+     "disabled": false,
+     "label": "Start demo",
+     "progress": null
+    },
+    {
+     "t": 862,
+     "busy": true,
+     "disabled": true,
+     "label": "\u2026Start demo",
+     "progress": null
+    },
+    {
+     "t": 1054,
+     "busy": true,
+     "disabled": true,
+     "label": "\u2026Next",
+     "progress": 1
+    },
+    {
+     "t": 1298,
+     "busy": false,
+     "disabled": false,
+     "label": "Next",
+     "progress": 2
+    },
+    {
+     "t": 1326,
+     "busy": true,
+     "disabled": true,
+     "label": "\u2026Next",
+     "progress": 2
+    },
+    {
+     "t": 1624,
+     "busy": false,
+     "disabled": false,
+     "label": "Next",
+     "progress": 2
+    },
+    {
+     "t": 1652,
+     "busy": true,
+     "disabled": true,
+     "label": "\u2026Next",
+     "progress": 2
+    },
+    {
+     "t": 1785,
+     "busy": true,
+     "disabled": true,
+     "label": "\u2026Next",
+     "progress": 3
+    },
+    {
+     "t": 2208,
+     "busy": false,
+     "disabled": false,
+     "label": "Next",
+     "progress": 3
+    },
+    {
+     "t": 2235,
+     "busy": false,
+     "disabled": false,
+     "label": "Next",
+     "progress": 4
+    },
+    {
+     "t": 2264,
+     "busy": false,
+     "disabled": false,
+     "label": "Next",
+     "progress": 5
+    },
+    {
+     "t": 2318,
+     "busy": true,
+     "disabled": true,
+     "label": "\u2026Next",
+     "progress": 5
+    },
+    {
+     "t": 2346,
+     "busy": false,
+     "disabled": false,
+     "label": "Next",
+     "progress": 6
+    },
+    {
+     "t": 2372,
+     "busy": false,
+     "disabled": false,
+     "label": "Next",
+     "progress": 7
+    },
+    {
+     "t": 2424,
+     "busy": true,
+     "disabled": true,
+     "label": "\u2026Next",
+     "progress": 7
+    },
+    {
+     "t": 2451,
+     "busy": false,
+     "disabled": false,
+     "label": "Start demo",
+     "progress": null
+    },
+    {
+     "t": 2504,
+     "busy": true,
+     "disabled": true,
+     "label": "\u2026Start demo",
+     "progress": null
+    },
+    {
+     "t": 2690,
+     "busy": true,
+     "disabled": true,
+     "label": "\u2026Next",
+     "progress": 1
+    },
+    {
+     "t": 2931,
+     "busy": false,
+     "disabled": false,
+     "label": "Next",
+     "progress": 2
+    },
+    {
+     "t": 2958,
+     "busy": true,
+     "disabled": true,
+     "label": "\u2026Next",
+     "progress": 2
+    },
+    {
+     "t": 3451,
+     "busy": false,
+     "disabled": false,
+     "label": "Next",
+     "progress": 3
+    },
+    {
+     "t": 3478,
+     "busy": true,
+     "disabled": true,
+     "label": "\u2026Next",
+     "progress": 3
+    },
+    {
+     "t": 3859,
+     "busy": false,
+     "disabled": false,
+     "label": "Next",
+     "progress": 3
+    },
+    {
+     "t": 3893,
+     "busy": true,
+     "disabled": true,
+     "label": "\u2026Next",
+     "progress": 3
+    },
+    {
+     "t": 3924,
+     "busy": false,
+     "disabled": false,
+     "label": "Next",
+     "progress": 4
+    },
+    {
+     "t": 3952,
+     "busy": false,
+     "disabled": false,
+     "label": "Next",
+     "progress": 5
+    },
+    {
+     "t": 4007,
+     "busy": true,
+     "disabled": true,
+     "label": "\u2026Next",
+     "progress": 5
+    },
+    {
+     "t": 4116,
+     "busy": false,
+     "disabled": false,
+     "label": "Next",
+     "progress": 5
+    },
+    {
+     "t": 4143,
+     "busy": false,
+     "disabled": false,
+     "label": "Next",
+     "progress": 6
+    },
+    {
+     "t": 4172,
+     "busy": false,
+     "disabled": false,
+     "label": "Next",
+     "progress": 7
+    },
+    {
+     "t": 4225,
+     "busy": false,
+     "disabled": false,
+     "label": "Start demo",
+     "progress": null
+    },
+    {
+     "t": 4279,
+     "busy": true,
+     "disabled": true,
+     "label": "\u2026Start demo",
+     "progress": null
+    },
+    {
+     "t": 4501,
+     "busy": false,
+     "disabled": false,
+     "label": "Next",
+     "progress": 1
+    },
+    {
+     "t": 4554,
+     "busy": true,
+     "disabled": true,
+     "label": "\u2026Next",
+     "progress": 1
+    },
+    {
+     "t": 4738,
+     "busy": false,
+     "disabled": false,
+     "label": "Next",
+     "progress": 2
+    },
+    {
+     "t": 4766,
+     "busy": true,
+     "disabled": true,
+     "label": "\u2026Next",
+     "progress": 2
+    },
+    {
+     "t": 5061,
+     "busy": false,
+     "disabled": false,
+     "label": "Next",
+     "progress": 2
+    },
+    {
+     "t": 5117,
+     "busy": true,
+     "disabled": true,
+     "label": "\u2026Next",
+     "progress": 2
+    },
+    {
+     "t": 5223,
+     "busy": false,
+     "disabled": false,
+     "label": "Next",
+     "progress": 3
+    },
+    {
+     "t": 5279,
+     "busy": true,
+     "disabled": true,
+     "label": "\u2026Next",
+     "progress": 3
+    },
+    {
+     "t": 5723,
+     "busy": false,
+     "disabled": false,
+     "label": "Next",
+     "progress": 4
+    },
+    {
+     "t": 5752,
+     "busy": false,
+     "disabled": false,
+     "label": "Next",
+     "progress": 5
+    },
+    {
+     "t": 5805,
+     "busy": true,
+     "disabled": true,
+     "label": "\u2026Next",
+     "progress": 5
+    },
+    {
+     "t": 5934,
+     "busy": false,
+     "disabled": false,
+     "label": "Next",
+     "progress": 6
+    },
+    {
+     "t": 5988,
+     "busy": false,
+     "disabled": false,
+     "label": "Next",
+     "progress": 7
+    },
+    {
+     "t": 6041,
+     "busy": false,
+     "disabled": false,
+     "label": "Start demo",
+     "progress": null
+    },
+    {
+     "t": 6096,
+     "busy": true,
+     "disabled": true,
+     "label": "\u2026Start demo",
+     "progress": null
+    },
+    {
+     "t": 6283,
+     "busy": true,
+     "disabled": true,
+     "label": "\u2026Next",
+     "progress": 1
+    },
+    {
+     "t": 6522,
+     "busy": false,
+     "disabled": false,
+     "label": "Next",
+     "progress": 2
+    },
+    {
+     "t": 6549,
+     "busy": true,
+     "disabled": true,
+     "label": "\u2026Next",
+     "progress": 2
+    },
+    {
+     "t": 6874,
+     "busy": false,
+     "disabled": false,
+     "label": "Next",
+     "progress": 2
+    },
+    {
+     "t": 6929,
+     "busy": true,
+     "disabled": true,
+     "label": "\u2026Next",
+     "progress": 2
+    },
+    {
+     "t": 7010,
+     "busy": false,
+     "disabled": false,
+     "label": "Next",
+     "progress": 3
+    },
+    {
+     "t": 7037,
+     "busy": true,
+     "disabled": true,
+     "label": "\u2026Next",
+     "progress": 3
+    },
+    {
+     "t": 7469,
+     "busy": false,
+     "disabled": false,
+     "label": "Next",
+     "progress": 3
+    },
+    {
+     "t": 7495,
+     "busy": false,
+     "disabled": false,
+     "label": "Next",
+     "progress": 5
+    },
+    {
+     "t": 7550,
+     "busy": true,
+     "disabled": true,
+     "label": "\u2026Next",
+     "progress": 5
+    },
+    {
+     "t": 7576,
+     "busy": false,
+     "disabled": false,
+     "label": "Next",
+     "progress": 6
+    },
+    {
+     "t": 7604,
+     "busy": false,
+     "disabled": false,
+     "label": "Next",
+     "progress": 7
+    },
+    {
+     "t": 7660,
+     "busy": false,
+     "disabled": false,
+     "label": "Start demo",
+     "progress": null
+    },
+    {
+     "t": 7716,
+     "busy": true,
+     "disabled": true,
+     "label": "\u2026Start demo",
+     "progress": null
+    },
+    {
+     "t": 7932,
+     "busy": false,
+     "disabled": false,
+     "label": "Next",
+     "progress": 1
+    },
+    {
+     "t": 7985,
+     "busy": true,
+     "disabled": true,
+     "label": "\u2026Next",
+     "progress": 1
+    },
+    {
+     "t": 8177,
+     "busy": false,
+     "disabled": false,
+     "label": "Next",
+     "progress": 2
+    }
+   ]
+  },
+  "guarded_busy_only": {
+   "mode": "guarded-busy",
+   "clicks": 15,
+   "clicksSwallowedByDisabledButton": 0,
+   "msUntilLastClick": 2170,
+   "msUntilIdle": 2227,
+   "final": {
+    "busy": false,
+    "disabled": false,
+    "label": "Next",
+    "progress": 6
+   },
+   "maxProgressSeen": 7,
+   "progressSequence": [
+    null,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    null,
+    1,
+    2,
+    3,
+    5,
+    6
+   ],
+   "trace": [
+    {
+     "t": 3,
+     "busy": false,
+     "disabled": false,
+     "label": "Start demo",
+     "progress": null
+    },
+    {
+     "t": 30,
+     "busy": false,
+     "disabled": false,
+     "label": "Next",
+     "progress": 1
+    },
+    {
+     "t": 58,
+     "busy": false,
+     "disabled": false,
+     "label": "Next",
+     "progress": 2
+    },
+    {
+     "t": 85,
+     "busy": true,
+     "disabled": true,
+     "label": "\u2026Next",
+     "progress": 2
+    },
+    {
+     "t": 332,
+     "busy": true,
+     "disabled": true,
+     "label": "\u2026Next",
+     "progress": 3
+    },
+    {
+     "t": 577,
+     "busy": false,
+     "disabled": false,
+     "label": "Next",
+     "progress": 4
+    },
+    {
+     "t": 606,
+     "busy": false,
+     "disabled": false,
+     "label": "Next",
+     "progress": 5
+    },
+    {
+     "t": 634,
+     "busy": false,
+     "disabled": false,
+     "label": "Next",
+     "progress": 6
+    },
+    {
+     "t": 659,
+     "busy": false,
+     "disabled": false,
+     "label": "Next",
+     "progress": 7
+    },
+    {
+     "t": 714,
+     "busy": false,
+     "disabled": false,
+     "label": "Start demo",
+     "progress": null
+    },
+    {
+     "t": 742,
+     "busy": true,
+     "disabled": true,
+     "label": "\u2026Start demo",
+     "progress": null
+    },
+    {
+     "t": 956,
+     "busy": true,
+     "disabled": true,
+     "label": "\u2026Next",
+     "progress": 1
+    },
+    {
+     "t": 1171,
+     "busy": false,
+     "disabled": false,
+     "label": "Next",
+     "progress": 2
+    },
+    {
+     "t": 1198,
+     "busy": true,
+     "disabled": true,
+     "label": "\u2026Next",
+     "progress": 2
+    },
+    {
+     "t": 1653,
+     "busy": true,
+     "disabled": true,
+     "label": "\u2026Next",
+     "progress": 3
+    },
+    {
+     "t": 2109,
+     "busy": false,
+     "disabled": false,
+     "label": "Next",
+     "progress": 5
+    },
+    {
+     "t": 2163,
+     "busy": false,
+     "disabled": false,
+     "label": "Next",
+     "progress": 6
+    }
+   ]
+  },
+  "guarded_until_step_done": {
+   "mode": "guarded-complete",
+   "clicks": 15,
+   "clicksSwallowedByDisabledButton": 0,
+   "msUntilLastClick": 1710,
+   "msUntilIdle": 1771,
+   "final": {
+    "busy": false,
+    "disabled": true,
+    "label": "Next",
+    "progress": 15
+   },
+   "maxProgressSeen": 15,
+   "progressSequence": [
+    null,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    null,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15
+   ],
+   "trace": [
+    {
+     "t": 3,
+     "busy": false,
+     "disabled": false,
+     "label": "Start demo",
+     "progress": null
+    },
+    {
+     "t": 30,
+     "busy": false,
+     "disabled": false,
+     "label": "Next",
+     "progress": 1
+    },
+    {
+     "t": 58,
+     "busy": false,
+     "disabled": false,
+     "label": "Next",
+     "progress": 2
+    },
+    {
+     "t": 86,
+     "busy": true,
+     "disabled": true,
+     "label": "\u2026Next",
+     "progress": 2
+    },
+    {
+     "t": 334,
+     "busy": false,
+     "disabled": false,
+     "label": "Next",
+     "progress": 3
+    },
+    {
+     "t": 374,
+     "busy": true,
+     "disabled": true,
+     "label": "\u2026Next",
+     "progress": 3
+    },
+    {
+     "t": 575,
+     "busy": false,
+     "disabled": false,
+     "label": "Next",
+     "progress": 4
+    },
+    {
+     "t": 604,
+     "busy": false,
+     "disabled": false,
+     "label": "Next",
+     "progress": 5
+    },
+    {
+     "t": 630,
+     "busy": false,
+     "disabled": false,
+     "label": "Next",
+     "progress": 6
+    },
+    {
+     "t": 656,
+     "busy": false,
+     "disabled": false,
+     "label": "Next",
+     "progress": 7
+    },
+    {
+     "t": 708,
+     "busy": false,
+     "disabled": false,
+     "label": "Start demo",
+     "progress": null
+    },
+    {
+     "t": 1457,
+     "busy": false,
+     "disabled": false,
+     "label": "Next",
+     "progress": 9
+    },
+    {
+     "t": 1509,
+     "busy": false,
+     "disabled": false,
+     "label": "Next",
+     "progress": 10
+    },
+    {
+     "t": 1538,
+     "busy": false,
+     "disabled": false,
+     "label": "Next",
+     "progress": 11
+    },
+    {
+     "t": 1565,
+     "busy": true,
+     "disabled": true,
+     "label": "\u2026Next",
+     "progress": 11
+    },
+    {
+     "t": 1592,
+     "busy": true,
+     "disabled": true,
+     "label": "\u2026Next",
+     "progress": 12
+    },
+    {
+     "t": 1645,
+     "busy": true,
+     "disabled": true,
+     "label": "\u2026Next",
+     "progress": 13
+    },
+    {
+     "t": 1671,
+     "busy": false,
+     "disabled": false,
+     "label": "Next",
+     "progress": 14
+    },
+    {
+     "t": 1696,
+     "busy": false,
+     "disabled": true,
+     "label": "Next",
+     "progress": 15
+    }
+   ]
+  }
+ }
+}

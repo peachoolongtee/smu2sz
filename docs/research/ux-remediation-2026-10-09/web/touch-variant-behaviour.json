@@ -1,0 +1,5 @@
+[
+ {"name":"desktop 1440 fine pointer","matches_narrow":false,"matches_coarse":false,"touch:min-h-11 computed min-height":"0px"},
+ {"name":"narrow 800 fine pointer","matches_narrow":true,"matches_coarse":false,"touch:min-h-11 computed min-height":"44px"},
+ {"name":"desktop 1440 coarse pointer (hasTouch)","matches_narrow":false,"matches_coarse":true,"touch:min-h-11 computed min-height":"44px"}
+]

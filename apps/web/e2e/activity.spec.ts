@@ -60,9 +60,9 @@ test("approving the fix reads \"You approved ...\" on Activity, never the execut
   await page.goto("/activity");
   const approved = page.getByTestId("activity-event").filter({ hasText: "You approved" });
   await expect(approved).toHaveText("You approved ¥200,000.00 of invoice financing. Funds arrive in 3 days.");
-  // One operation, one story: the entry that waited reads in the past beside the decision, never "Waiting" beside "You approved".
+  // One operation, one story (the API words the entry that waited in the past, "Approval requested", once it is decided): the entry that waited reads in the past beside the decision, never "Waiting" beside "You approved".
   const events = await page.getByTestId("activity-event").allTextContents();
-  expect(events.filter((x) => x.includes("¥200,000.00 of invoice financing")).map((x) => x.split(":")[0].split(".")[0])).toEqual(["You approved ¥200,000", "Queued for your approval"].map((x) => x));
+  expect(events.filter((x) => x.includes("¥200,000.00 of invoice financing")).map((x) => x.split(":")[0].split(".")[0])).toEqual(["You approved ¥200,000", "Approval requested"]);
   expect(events.some((x) => x.startsWith("Waiting for your approval"))).toBe(false);
   // No row leads with the executor's sentence.
   for (const text of await page.getByTestId("activity-event").allTextContents()) {
@@ -85,7 +85,84 @@ test("day 34: Activity lists the agreement Receivables lists, not 'No commitment
   await expect(agreements).toContainText("Foshan Home Retail Co.");
   await expect(agreements).not.toContainText("No commitments yet");
   await expect(page.getByTestId("activity-ACCEPT_OFFER")).toBeVisible();
-  await expect(page.getByTestId("chain-status")).toContainText("Records verified");
+  // The badge says what the check does (the log's own hash chain) and nothing wider; the scope sits in its tooltip and in a fold.
+  const chain = page.getByTestId("chain-status");
+  await expect(chain).toContainText("Record chain checks passed");
+  await expect(chain).not.toContainText("Records verified");
+  await expect(chain.locator("[title]")).toHaveAttribute("title", /does not confirm bank facts or buyer promises/);
+  const scope = page.getByTestId("activity-chain-scope");
+  await expect(scope).not.toHaveAttribute("open", "");
+  await scope.locator("> summary").click();
+  await expect(scope).toContainText("This checks the log's own integrity; it does not confirm bank facts or buyer promises.");
+});
+
+test("an empty log has no chain badge", async ({ page }) => {
+  // The demo opens on the owner's confirmation of the three demo documents (brief 03); a log with no entry at all, a business's first
+  // day, is set up here in the mock's own store.
+  await page.addInitScript(() =>
+    sessionStorage.setItem("tl-mock-store-v2", JSON.stringify({ offers: {}, evaluated: [], negotiated: {}, ops: [], commitments: [], approvals: [], securityScene: false })),
+  );
+  await page.goto("/activity");
+  await expect(page.getByTestId("activity-empty")).toBeVisible();
+  await expect(page.getByTestId("chain-status")).toHaveCount(0);
+  await expect(page.getByTestId("activity-chain-scope")).toHaveCount(0);
+});
+
+test("each event says what changed, why it matters (labelled Now when it is today's forecast) and what remains; the request reads as history with the decision's state and a link", async ({ page }) => {
+  await page.goto("/demo");
+  await page.getByTestId("home-days").fill("34");
+  await page.getByTestId("home-advance").click();
+  await expect(page.getByTestId("home-day")).toHaveText("Day 34");
+  await page.goto("/");
+  await runPlan(page, "ALERT-RESERVE-42");
+  await expect(page.getByTestId("alert-waiting-ALERT-RESERVE-42")).toBeVisible();
+
+  // While it waits: the request carries its label, the quote as the reason (not "Now": it is the entry's own quote) and what is still open.
+  await page.goto("/activity");
+  const waiting = page.getByTestId("activity-SUBMIT_INVOICE_FOR_FINANCING").first();
+  await expect(waiting.getByTestId("activity-event")).toContainText("Waiting for your approval");
+  await expect(waiting.getByTestId("activity-why")).toContainText("Why it matters");
+  await expect(waiting.getByTestId("activity-why")).toContainText("Quoted cost ¥1,782.19");
+  await expect(waiting.getByTestId("activity-why")).not.toContainText("Now");
+  await expect(waiting.getByTestId("activity-remains")).toContainText("What is left");
+  await expect(waiting.getByTestId("activity-approval")).toContainText("Approval requested");
+
+  // Approved: the history keeps "Approval requested" but says where the decision stands today and links to it; the decision row reads in the present.
+  await page.goto("/");
+  await page.getByTestId("alert-approval-link-ALERT-RESERVE-42").click();
+  await page.locator("#approval-APR-000001").getByRole("button", { name: "Approve" }).click();
+  await expect(page.locator("#approval-APR-000001")).toContainText("Approved");
+  await page.goto("/activity");
+  const requested = page.getByTestId("activity-SUBMIT_INVOICE_FOR_FINANCING").filter({ hasText: "Approval requested:" });
+  await expect(requested.getByTestId("activity-approval")).toContainText("Approval requested");
+  await expect(requested.getByTestId("activity-approval-state")).toHaveText("Now: Requested; the cash is on its way");
+  await expect(requested.getByTestId("activity-record")).toHaveAttribute("href", /^\/decisions\/alert:ALERT-RESERVE-42/);
+  const approved = page.getByTestId("activity-SUBMIT_INVOICE_FOR_FINANCING").filter({ hasText: "You approved" });
+  // Today's forecast is one sentence, labelled Now, said once above the timeline; the row does not repeat it.
+  await expect(page.getByTestId("activity-now")).toContainText("Now");
+  await expect(page.getByTestId("activity-now")).toHaveCount(1);
+  await expect(approved.getByTestId("activity-why")).toHaveCount(0);
+  await expect(approved.getByTestId("activity-remains")).toContainText("Waiting for Invoice financing");
+  // What changed, then what is left.
+  const order = await approved.evaluate((el) => ["activity-event", "activity-remains"].map((id) => el.querySelector(`[data-testid="${id}"]`)?.getBoundingClientRect().top ?? -1));
+  expect(order[0]).toBeLessThan(order[1]);
+  // The request is history once the owner has decided: it wears where the decision stands now, never "Waiting for your approval", and the decision is "You".
+  await expect(requested.getByTestId("activity-request-state")).toContainText("Requested; the cash is on its way");
+  await expect(requested.getByText("Waiting for your approval")).toHaveCount(0);
+  await expect(approved.getByTestId("activity-actor")).toHaveText("You");
+  // The decision row never reads "Waiting" beside its own approval.
+  await expect(page.getByTestId("activity-approval-state")).not.toContainText("Waiting for your approval");
+});
+
+test("the set-aside line on Deals lands on the real refused section of Activity", async ({ page }) => {
+  await page.goto("/deals");
+  const line = page.getByTestId("inbox-blocked");
+  await expect(line).toBeVisible();
+  const link = line.getByRole("link", { name: "See what was refused" });
+  await expect(link).toHaveAttribute("href", "/activity#activity-refused");
+  await link.click();
+  await expect(page).toHaveURL(/\/activity#activity-refused$/);
+  await expect(page.locator("#activity-refused")).toBeInViewport();
 });
 
 test("day 34, Business: the clock move reads in owner words and no row shows an engine term or a record id", async ({ page }) => {

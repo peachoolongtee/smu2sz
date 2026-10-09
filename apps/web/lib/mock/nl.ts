@@ -10,10 +10,11 @@ import { getOwnerToken, requestSignIn } from "../auth";
 import { ApiError } from "../errors";
 import type { NlRequest, NlResponse } from "../types";
 import approveChat from "../../mocks/home_approve_chat.json";
+import page from "../../mocks/nl_page.json";
 import script from "../../mocks/nl_script.json";
 import { appendRecorded, decideApproval, ensureHomeApproval, getApprovals } from "./handlers";
 import { markDealAgreed } from "./documents";
-import { markFunded, mockOpenerAnswer, openerWaiting } from "./home";
+import { markFunded, mockOpenerAnswer, openerWaiting, readPoint } from "./home";
 
 type Key = keyof typeof script;
 type Recorded = Omit<NlResponse, "session_id">;
@@ -32,6 +33,37 @@ const sessions = new Map<string, Session>();
 const CJK = /[㐀-鿿]/;
 const CONFIRM = /^\s*(go ahead|yes|proceed|do it|send the counters|approve|执行|确认|好的?|是)\s*[.!。]*\s*$/i;
 const CANCEL = /^\s*(cancel|no|stop|取消|算了|不要)\s*[.!。]*\s*$/i;
+
+/**
+ * The questions the Business pages suggest, replayed from what the real API answered (mocks/nl_page.json; the match is the
+ * server's closed grammar, in miniature). The deal questions are about the deal the page evaluated, so they need the page's
+ * context to name an offer, as the server does; the others are read from the books at the point of the story the mock is at.
+ */
+const DEAL_READS: [RegExp, keyof typeof page.deals][] = [
+  [/original terms|原始条款/i, "original"],
+  [/option\s+[a-d]\b|方案\s?[a-d]/i, "option"],
+  [/why.*counter|为什么要还价/i, "explain"],
+];
+const POINT_READS: [RegExp, keyof typeof page.day0][] = [
+  [/what changed|what['’]s new|since my last visit|有什么变化/i, "changes"],
+  [/waiting for|在等什么/i, "waiting"],
+  [/when does the money arrive|什么时候到账/i, "arrival"],
+  [/what is overdue|chase first|先催|逾期/i, "overdue"],
+  [/payment is late|款项延迟/i, "late"],
+  [/choose this plan|选这个方案/i, "plan"],
+];
+
+function pageRead(req: NlRequest): Recorded | null {
+  if (req.actor !== "OWNER") return null;
+  const q = req.text.trim();
+  const echo = req.context?.offer_id ? (page.deals.explain.context_echo as NlResponse["context_echo"]) : null;
+  const deal = req.context?.offer_id ? DEAL_READS.find(([re]) => re.test(q)) : undefined;
+  const recorded = deal ? page.deals[deal[1]] : (() => {
+    const hit = POINT_READS.find(([re]) => re.test(q));
+    return hit ? page[readPoint()][hit[1]] : null;
+  })();
+  return recorded ? ({ ...(JSON.parse(JSON.stringify(recorded)) as Recorded), context_echo: echo }) : null;
+}
 
 function pick(req: NlRequest, s: Session): Key | null {
   const q = req.text.trim();
@@ -130,6 +162,14 @@ export async function mockNl(req: NlRequest): Promise<NlResponse> {
       sessions.set(sid, s);
       return { ...(JSON.parse(JSON.stringify(approveChat)) as Recorded), session_id: sid, turn: s.turn, trace_id: `${sid}:${s.turn}` };
     }
+  }
+  const asked = pageRead(req);
+  if (asked) {
+    s.turn += 1;
+    s.pending = null;
+    s.clarifying = false;
+    sessions.set(sid, s);
+    return { ...asked, session_id: sid, turn: s.turn, trace_id: `${sid}:${s.turn}` };
   }
   const base = pick(req, s);
   // A Chinese request replays the Chinese recording of the same scenario when there is one.

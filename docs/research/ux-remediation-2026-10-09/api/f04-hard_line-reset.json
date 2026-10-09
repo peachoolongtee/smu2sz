@@ -1,0 +1,18 @@
+{
+  "probe": "f04-hard_line-reset",
+  "request": {
+    "method": "POST",
+    "path": "/demo/reset",
+    "body": {},
+    "credential": [
+      "X-Owner-Token"
+    ]
+  },
+  "clock_day_before_request": 0,
+  "status": 200,
+  "response": {
+    "ok": true,
+    "scenario": "golden_sme",
+    "day": 0
+  }
+}

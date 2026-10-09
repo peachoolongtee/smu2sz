@@ -19,10 +19,12 @@ from app.persistence.memory_store import InMemoryLedgerStore
 from app.persistence.records import (
     ApprovalRecord,
     ApprovalStatus,
+    DecisionFactRecord,
     EvaluationRunRecord,
     EvidenceExportRecord,
     LedgerEntry,
     LlmCallRecord,
+    PilotJournalRecord,
 )
 from app.persistence.sql_store import SqlLedgerStore
 
@@ -33,6 +35,7 @@ __all__ = [
     "ApprovalRecord",
     "ApprovalStatus",
     "ConcurrentWriteConflict",
+    "DecisionFactRecord",
     "DocumentAlreadyDecided",
     "EvaluationRunRecord",
     "EvidenceExportRecord",
@@ -44,6 +47,7 @@ __all__ = [
     "NotFound",
     "OfferVersionConflict",
     "PersistenceError",
+    "PilotJournalRecord",
     "SqlLedgerStore",
     "StateVersionConflict",
     "canonical_json",

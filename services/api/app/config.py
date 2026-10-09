@@ -1,6 +1,7 @@
 """Settings and feature flags. Every optional feature can be switched off without breaking the core
 (Terms Guard + Debt Desk committed routing + verifier + executor + /nl).
-The three strategy flags (envelope, price_curve, collections_worth) are the read-only MVP of map #47 and default off."""
+The three strategy flags (envelope, price_curve, collections_worth) are the read-only MVP of map #47 and default off;
+pilot_journal (map #58) is the shadow pilot's owner-recorded journal, also default off."""
 
 from __future__ import annotations
 
@@ -55,6 +56,7 @@ class Features:
     price_curve: bool = field(default_factory=lambda: _flag("FEATURE_PRICE_CURVE", default=False))
     collections_worth: bool = field(default_factory=lambda: _flag("FEATURE_COLLECTIONS_WORTH", default=False))
     contracts: bool = field(default_factory=lambda: _flag("FEATURE_CONTRACTS"))  # contract ingestion + deal summary
+    pilot_journal: bool = field(default_factory=lambda: _flag("FEATURE_PILOT_JOURNAL", default=False))  # map #58, default off
 
 
 @dataclass(frozen=True)

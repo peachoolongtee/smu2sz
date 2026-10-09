@@ -33,18 +33,14 @@ def clear_cache() -> None:
     _cache.clear()
 
 
-def _cannot_price(exc: Exception, lang: Literal["en", "zh"]) -> HTTPException:
-    """The curve's refusals in a sentence: no permanent funding source to measure against, a value above the cost of
-    funds (the module's own `RuntimeError`), or an engine error."""
+def _cannot_price(exc: NoPermanentSourceError | EngineError, lang: Literal["en", "zh"]) -> HTTPException:
+    """The curve's refusals in a sentence: no permanent funding source to measure against, or an engine error. A value
+    above the sanity ceiling is never one: the band is marked `above_guard` and the sentence stands."""
     if isinstance(exc, NoPermanentSourceError):
         return HTTPException(422, t(lang, "FLOW cannot price cash timing: there is no permanent funding source on the books "
                                           "to measure it against.",
                                     "FLOW 无法为资金到账时间估值：账上没有可用来比较的长期资金来源。"))
-    if isinstance(exc, EngineError):
-        return HTTPException(422, f"cannot project: {exc}")
-    return HTTPException(422, t(lang, "FLOW cannot show the cash price curve: on some days the cash would be worth more than "
-                                      "it costs to fund two billing periods, so the figures are not trusted.",
-                                "FLOW 无法显示资金价格曲线：某些日子里资金的价值高于两个计费周期的融资成本，因此这些数字不可信。"))
+    return HTTPException(422, f"cannot project: {exc}")
 
 
 @router.get("/cash/price-curve")
@@ -61,7 +57,7 @@ def get_price_curve(lang: Literal["en", "zh"] = "en") -> dict[str, Any]:
     def compute() -> PriceCurve:
         try:
             return price_curve(books, mandate, store=rt.store, day=day)
-        except (NoPermanentSourceError, EngineError, RuntimeError) as exc:
+        except (NoPermanentSourceError, EngineError) as exc:
             raise _cannot_price(exc, lang) from None
 
     curve = _cache.get_or_compute(cache_key(books.state, mandate, day, commitments), compute)

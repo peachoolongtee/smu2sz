@@ -1,0 +1,79 @@
+[
+  {
+    "name": "01-home-day0",
+    "url": "/",
+    "viewport": "1366x768",
+    "height": 1250,
+    "screens": 1.6
+  },
+  {
+    "name": "02-deals-inbox",
+    "url": "/deals",
+    "viewport": "1366x768",
+    "height": 768,
+    "screens": 1
+  },
+  {
+    "name": "03-deals-read",
+    "url": "/deals",
+    "viewport": "1366x768",
+    "height": 810,
+    "screens": 1.1
+  },
+  {
+    "name": "04-deals-evaluated",
+    "url": "/deals",
+    "viewport": "1366x768",
+    "height": 1575,
+    "screens": 2.1
+  },
+  {
+    "name": "05-cash-day0",
+    "url": "/cash",
+    "viewport": "1366x768",
+    "height": 2134,
+    "screens": 2.8
+  },
+  {
+    "name": "06-receivables-day0",
+    "url": "/receivables",
+    "viewport": "1366x768",
+    "height": 768,
+    "screens": 1
+  },
+  {
+    "name": "07-activity-day0",
+    "url": "/activity",
+    "viewport": "1366x768",
+    "height": 768,
+    "screens": 1
+  },
+  {
+    "name": "08-home-after-go-ahead",
+    "url": "/",
+    "viewport": "1366x768",
+    "height": 1267,
+    "screens": 1.6
+  },
+  {
+    "name": "09-home-funded",
+    "url": "/",
+    "viewport": "1366x768",
+    "height": 959,
+    "screens": 1.2
+  },
+  {
+    "name": "10-cash-funded",
+    "url": "/cash",
+    "viewport": "1366x768",
+    "height": 1528,
+    "screens": 2
+  },
+  {
+    "name": "11-activity-funded",
+    "url": "/activity",
+    "viewport": "1366x768",
+    "height": 768,
+    "screens": 1
+  }
+]

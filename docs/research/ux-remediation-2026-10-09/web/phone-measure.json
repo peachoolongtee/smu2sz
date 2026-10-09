@@ -1,0 +1,66 @@
+{
+ "412": {
+  "home": {
+   "hero": 131,
+   "next": 733,
+   "run": 1096,
+   "pageH": 1609
+  },
+  "deals": {
+   "inbox": 374,
+   "asks": 734,
+   "counter": 1015,
+   "response": 1421,
+   "send": 1640,
+   "pageH": 2100
+  }
+ },
+ "768": {
+  "home": {
+   "hero": 131,
+   "next": 542,
+   "run": 784,
+   "pageH": 1325
+  },
+  "deals": {
+   "inbox": 302,
+   "asks": 548,
+   "counter": 805,
+   "response": 1071,
+   "send": 1226,
+   "pageH": 1706
+  }
+ },
+ "1024": {
+  "home": {
+   "hero": 141,
+   "next": 552,
+   "run": 766,
+   "pageH": 1250
+  },
+  "deals": {
+   "inbox": 308,
+   "asks": 538,
+   "counter": 791,
+   "response": 1041,
+   "send": 1176,
+   "pageH": 1595
+  }
+ },
+ "1440": {
+  "home": {
+   "hero": 141,
+   "next": 552,
+   "run": 766,
+   "pageH": 1210
+  },
+  "deals": {
+   "inbox": 308,
+   "asks": 518,
+   "counter": 771,
+   "response": 1021,
+   "send": 1156,
+   "pageH": 1535
+  }
+ }
+}

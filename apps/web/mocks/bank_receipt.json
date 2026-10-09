@@ -1,0 +1,19 @@
+{
+  "synthetic": true,
+  "bank_reference": "DEMO-RCPT-1",
+  "day": 2,
+  "op_id": "demo-bank-receipt:CMT-a78afaa5becb5273",
+  "result": {
+    "op_id": "demo-bank-receipt:CMT-a78afaa5becb5273",
+    "kind": "RECEIVE_PAYMENT",
+    "status": "EXECUTED",
+    "tier": "TIER_1",
+    "violations": [],
+    "seq": 7,
+    "entry_hash": "992c2fafddb818507bfe644bf833c3f0cc38012178c2d1f1582f1aca36a8dd75",
+    "prev_hash": "2928b94b63c840400d9442dbcddb91269cd046a4e832fee09220dcbbe2d773cf",
+    "effective_day": 2,
+    "approval_id": null,
+    "message": "Received ¥255,013.80 on RCV-A (settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 still due on day 32)"
+  }
+}

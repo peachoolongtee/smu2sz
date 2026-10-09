@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { Disclosure } from "@/components/business/kit";
@@ -36,7 +35,7 @@ export function NextActionBlock({ a, stateVersion, fixer }: { a: HomeNextAction;
         : "";
 
   return (
-    <section aria-labelledby="home-action-title" className="rounded-card border border-line bg-surface p-4 shadow-card" data-testid="home-next-action" data-alert={a.alert_id}>
+    <section aria-labelledby="home-action-title" className="rounded-card border border-line bg-surface p-4 shadow-card short:p-3" data-testid="home-next-action" data-alert={a.alert_id}>
       <p className="text-xs font-semibold uppercase tracking-wide text-ink-3">{t("biz.recommended.short")}</p>
       <h2 id="home-action-title" className="mt-1 text-balance text-xl font-semibold leading-snug text-ink" data-testid="next-action-title">
         {a.outcome_title}
@@ -62,7 +61,7 @@ export function NextActionBlock({ a, stateVersion, fixer }: { a: HomeNextAction;
         ) : null}
         {a.lands_day !== null ? <Stat label={t("biz.fundsAvailable")} testId="next-action-lands" value={a.lands_when ?? ""} /> : null}
         {a.needs_owner ? (
-          <Stat className="col-span-2 sm:col-span-1" label={t("biz.authority")} tone="warn" tint testId="next-action-needs-owner" value={<span className="text-base">{t("biz.needsYou")}{a.needs_owner_reason ? <span className="block text-sm font-normal text-warn-fg">{a.needs_owner_reason}</span> : null}</span>} />
+          <Stat className="col-span-2 sm:col-span-1" label={t("biz.authority")} tone="warn" tint testId="next-action-needs-owner" value={<span className="text-base">{t("biz.needsYou")}{a.needs_owner_reason ? <span className="block text-sm font-normal text-warn-fg max-sm:hidden" data-testid="next-action-needs-owner-reason">{a.needs_owner_reason}</span> : null}</span>} />
         ) : (
           <Stat className="col-span-2 sm:col-span-1" label={t("biz.authority")} tone="ok" tint testId="next-action-within-limits" value={<span className="text-sm">{a.authority_text || t("biz.agentAlone")}</span>} />
         )}
@@ -87,12 +86,15 @@ export function NextActionBlock({ a, stateVersion, fixer }: { a: HomeNextAction;
 
       <div className="mt-4 flex flex-wrap items-center gap-2">
         {waiting ? (
-          <div className="rounded-tile border border-warn-line bg-warn-bg px-3 py-2 text-sm text-warn-fg" role="status" data-testid={`alert-waiting-${a.alert_id}`}>
-            <p className="font-semibold">{t("alerts.waiting.short")}</p>
-            <Link href={approvalHref(waiting)} className="mt-0.5 inline-block font-medium underline underline-offset-2" data-testid={`alert-approval-link-${a.alert_id}`}>
-              {t("alerts.waiting.open")}
-            </Link>
-          </div>
+          <>
+            <div className="rounded-tile border border-warn-line bg-warn-bg px-3 py-2 text-sm text-warn-fg" role="status" data-testid={`alert-waiting-${a.alert_id}`}>
+              <p className="font-semibold">{t("alerts.waiting.short")}</p>
+            </div>
+            {/* The one primary while the plan waits for the owner: the question to answer. */}
+            <ButtonLink href={approvalHref(waiting)} variant="primary" data-testid={`alert-approval-link-${a.alert_id}`}>
+              {t("biz.review")}
+            </ButtonLink>
+          </>
         ) : confirming ? null : (
           <Button variant="primary" onClick={() => setConfirming(true)} data-testid={`fix-open-${a.alert_id}`}>
             {a.needs_owner ? t("biz.queueForMe") : t("biz.runPlan")}
@@ -107,6 +109,12 @@ export function NextActionBlock({ a, stateVersion, fixer }: { a: HomeNextAction;
 
       <Disclosure summary={t("biz.details.plan")} className="mt-4 border-t border-line pt-2" testId="next-action-details">
         <div className="space-y-4 text-sm">
+          {/* On a phone the reason the owner must decide waits here, so the button comes up the screen; a desktop shows it in the tile. */}
+          {a.needs_owner && a.needs_owner_reason ? (
+            <p className="text-warn-fg sm:hidden" data-testid="next-action-needs-owner-reason-folded">
+              {a.needs_owner_reason}
+            </p>
+          ) : null}
           <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
             {a.receive_display ? (
               <div>

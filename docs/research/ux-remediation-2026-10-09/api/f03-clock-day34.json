@@ -1,0 +1,65 @@
+{
+  "probe": "f03-clock-day34",
+  "request": {
+    "method": "POST",
+    "path": "/clock/advance",
+    "body": {
+      "to_day": 34
+    },
+    "credential": [
+      "X-Owner-Token"
+    ]
+  },
+  "clock_day_before_request": 2,
+  "status": 200,
+  "response": {
+    "from_day": 2,
+    "to_day": 34,
+    "posted_flow_ids": [
+      "F-PAYROLL",
+      "F-SUPPLIER"
+    ],
+    "posted_net_fen": -46000000,
+    "skipped_unconfirmed_inflow_ids": [],
+    "issued_receivable_ids": [
+      "RI:BUYER-1:2",
+      "RI:BUYER-1:32"
+    ],
+    "expired_commitment_ids": [],
+    "added_flow_ids": [
+      "F-PAYROLL-M2"
+    ],
+    "result": {
+      "op_id": "clock-2-34",
+      "kind": "ADVANCE_CLOCK",
+      "status": "EXECUTED",
+      "tier": "TIER_1",
+      "violations": [],
+      "seq": 5,
+      "entry_hash": "0e9c7e25e7dcb07ed1c879b178a484a60281ca3d8df0aca8e36637046b681b99",
+      "prev_hash": "858e94b0edb346ee372642cea2cdedaa2574b65139d078398c42fa57fe556be3",
+      "effective_day": 34,
+      "approval_id": null,
+      "message": "Clock moved from day 2 to day 34: 2 scheduled flow(s) posted (net −¥460,000.00), 2 invoice(s) issued, 0 commitment(s) expired, 1 new scheduled flow(s) recorded, 1 early-payment commitment(s) ended: the promised payment did not arrive (CMT-a7f77650c81c1bbc, now EXPIRED), 1 existing-debt payment(s) posted (−¥45,000.00)"
+    },
+    "consumed_adjustment_ids": [],
+    "fulfilled_commitment_ids": [],
+    "settled_lot_ids": [],
+    "posted_debt_payments": [],
+    "lots_net_fen": 0,
+    "posted_debt_service": [
+      {
+        "debt_id": "D-EQUIP",
+        "day": 30,
+        "principal_fen": 4500000,
+        "interest_fen": 0
+      }
+    ],
+    "debt_service_fen": 4500000,
+    "lapsed_commitment_ids": [
+      "CMT-a7f77650c81c1bbc"
+    ],
+    "day": 34,
+    "posted_net_display": "−¥460,000.00"
+  }
+}

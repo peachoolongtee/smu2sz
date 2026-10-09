@@ -1,0 +1,70 @@
+{
+ "viewport": "412x915",
+ "home": {
+  "status": {
+   "top": 75,
+   "bottom": 361
+  },
+  "action": {
+   "top": 377,
+   "bottom": 871
+  },
+  "primary": {
+   "top": 741,
+   "bottom": 785
+  },
+  "tabBarTop": 858,
+  "pageHeight": 1238
+ },
+ "deals": {
+  "recommendation": {
+   "top": 335,
+   "bottom": 433
+  },
+  "send": {
+   "top": 795,
+   "bottom": 839
+  },
+  "inbox": {
+   "top": 135,
+   "bottom": 197
+  },
+  "asks": {
+   "top": 992,
+   "bottom": 1219
+  },
+  "pageHeight": 2132
+ },
+ "cash": {
+  "answer": {
+   "top": 135,
+   "bottom": 323
+  },
+  "plan": {
+   "top": 347,
+   "bottom": 841
+  },
+  "primary": {
+   "top": 711,
+   "bottom": 755
+  },
+  "facts": {
+   "top": 865,
+   "bottom": 1105
+  },
+  "options": {
+   "top": 1225,
+   "bottom": 2346
+  },
+  "chart": {
+   "top": 2499,
+   "bottom": 2949
+  },
+  "pageHeight": 3242
+ },
+ "primaryBottomEdges": {
+  "home": 785,
+  "deals": 839,
+  "cash": 755
+ }
+}

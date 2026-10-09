@@ -40,6 +40,7 @@ from app.strategy.envelope import (
     first_true,
     last_true,
     probe_packages,
+    ranges_for,
 )
 from app.verifier.evaluate import clear_caches
 from app.whatif.offer import Context, EarlyPayContext, RebateOnlyContext, build, context
@@ -666,6 +667,55 @@ def test_terms_in_force_off_the_five_day_grid_do_not_crash(golden):
     assert any(p.package.terms_days == 32 for p in a.packages)
     assert all(p.package.terms_days >= 32 for p in a.packages)
     assert a.primary.startswith("You can live with: ") and envelope_answer(facts, "zh").primary.startswith("您能接受的范围：")
+    json.loads(a.model_dump_json())
+
+
+def _terms_range(golden: Golden, days: int | None) -> tuple[int, ...]:
+    books = golden.books if days is None else _with_terms(golden, days)
+    ctx = context(books.state, golden.rt.day, GOLDEN_BUYER)
+    assert isinstance(ctx, Context)
+    return ranges_for(ctx, golden.mandate).terms
+
+
+def test_the_terms_range_runs_two_steps_past_the_terms_in_force(golden):
+    grid = tuple(range(30, 91, 5))
+    assert _terms_range(golden, None) == grid  # the golden buyer's 60 days: the range tops out where the sandbox's does
+    assert _terms_range(golden, 85) == grid + (95,)
+    assert _terms_range(golden, 90) == grid + (95, 100)
+    assert _terms_range(golden, 100) == grid + (95, 100, 105, 110)
+    assert _terms_range(golden, 88) == tuple(sorted(grid + (88, 95)))  # off the grid: the terms in force are a point of their own
+    assert _terms_range(golden, 32)[:3] == (30, 32, 35) and _terms_range(golden, 32)[-1] == 90
+
+
+def test_the_builder_takes_the_steps_past_the_sandbox_top_as_terms_extensions(golden):
+    books = _with_terms(golden, 90)
+    ctx = context(books.state, golden.rt.day, GOLDEN_BUYER)
+    assert isinstance(ctx, Context)
+    for days in (95, 100):
+        with pytest.raises(ValueError):
+            WhatIfParams(terms_days=days, discount_bp=0, rebate_bp=0)  # the sandbox still refuses them
+        offer, _ = build(WhatIfParams.model_construct(terms_days=days, discount_bp=0, rebate_bp=0, price_adjustment_bp=0,
+                                                      settle_face_fen=None), ctx, golden.rt.day)
+        ext = next(o for o in offer.obligations if o.type.value == "TERMS_EXTENSION")
+        assert ext.days_delta == days - 90 and ext.target_terms_days == days
+
+
+def test_a_buyer_on_90_day_terms_is_scanned_to_100_and_the_zone_has_the_rows(golden):
+    books = _with_terms(golden, 90)
+    facts = envelope_facts(books, golden.mandate, buyer_id=GOLDEN_BUYER, zone=True, **golden.kw())
+    a = envelope_answer(facts, "en")
+    assert a.refused is None and facts.current_terms == 90
+    assert [z.terms_days for z in a.zone][-3:] == [90, 95, 100]
+    levers = _by_lever(a)
+    alone = levers[TERMS_ALONE]  # the budget still stops the bare extension, now with a next step to show for it
+    assert alone.maximum == 90 and alone.wall == "forward budget" and alone.next_step is not None
+    assert alone.next_step.package.terms_days == 95 and not alone.next_step.passes
+    for name in (TERMS_BUDGET_IGNORED, TERMS_WITH_PRICE):  # liquidity and the price let both new steps through: the range's top
+        assert levers[name].maximum == 100 and levers[name].wall is None and levers[name].next_step is None
+    assert "up to 100-day terms (the most FLOW checks) if the price rises 0.25%" in a.primary
+    assert "no longer payment terms" not in a.primary
+    assert "账期最长 100 天（FLOW 检查的上限；价格上调 0.25%）" in envelope_answer(facts, "zh").primary
+    assert any(p.package.terms_days in (95, 100) for p in a.packages)
     json.loads(a.model_dump_json())
 
 

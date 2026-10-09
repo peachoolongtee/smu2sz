@@ -1,0 +1,13 @@
+operations 0
+decision_facts 0
+approvals 0
+commitments 0
+obligations 0
+offers 0
+evaluation_runs 0
+pilot_journal 0
+facilities 8
+counterparties 7
+organizations 1
+mandates 1
+states 1

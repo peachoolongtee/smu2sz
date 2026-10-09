@@ -2,7 +2,7 @@
 
 import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from "react";
 import { Area, AreaChart, CartesianGrid, ReferenceArea, ReferenceDot, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis, useYAxisScale, useYAxisTicks } from "recharts";
-import { axisFloor, axisYuanK } from "@/lib/chart-helpers";
+import { axisFloor, axisYuanK, dayLabelCandidates } from "@/lib/chart-helpers";
 import { useI18n } from "@/lib/i18n";
 import { SegmentedButtons } from "@/components/ui";
 import type { HomeSeriesPoint, HomeView } from "@/lib/types";
@@ -44,6 +44,10 @@ interface Row {
   plan: number | null;
   planDisplay: string | null;
   events: HomeSeriesPoint["events"];
+  /** The server's net for the day (what its events add up to), as figures and words. Absent in an older recording. */
+  netFen: number | null;
+  netDisplay: string | null;
+  netShort: string | null;
 }
 
 function rows(base: HomeSeriesPoint[], plan: HomeSeriesPoint[] | null, from: number, to: number): Row[] {
@@ -51,7 +55,7 @@ function rows(base: HomeSeriesPoint[], plan: HomeSeriesPoint[] | null, from: num
     .filter((d) => d.day >= from && d.day <= to)
     .map((d) => {
       const p = plan?.find((x) => x.day === d.day) ?? null;
-      return { day: d.day, cash: d.closing_fen, cashDisplay: d.closing_display, plan: p ? p.closing_fen : null, planDisplay: p ? p.closing_display : null, events: d.events };
+      return { day: d.day, cash: d.closing_fen, cashDisplay: d.closing_display, plan: p ? p.closing_fen : null, planDisplay: p ? p.closing_display : null, events: d.events, netFen: d.net_fen ?? null, netDisplay: d.net_display ?? null, netShort: d.net_short ?? null };
     });
 }
 
@@ -190,7 +194,8 @@ export function CashForecast({ h }: { h: HomeView }) {
   const floor = h.cash.floor_fen;
   // Axis scale only: from zero, or lower when a projection goes below zero, so the trough the headline quotes is drawn.
   const yMin = axisFloor(data.map((r) => ({ cash: r.cash, cured: r.plan })) as Parameters<typeof axisFloor>[0]);
-  const breach = h.cash.first_breach_day !== null && h.cash.first_breach_day <= to ? h.cash.first_breach_day : null;
+  // The series starts today, and so does any breach we draw: a breach before today (an older server) is not a mark on this chart.
+  const breach = h.cash.first_breach_day !== null && h.cash.first_breach_day >= today && h.cash.first_breach_day <= to ? h.cash.first_breach_day : null;
   const breachRow = breach === null ? undefined : data.find((r) => r.day === breach);
   const lowestRow = h.cash.lowest_day <= to ? data.find((r) => r.day === h.cash.lowest_day) : undefined;
   // Pixel frame of the drawing (measured), so labels are placed against what is really there and never cross its edges.
@@ -205,9 +210,7 @@ export function CashForecast({ h }: { h: HomeView }) {
   // The largest movements in the window, by the server's own event amounts (ordering fen is plotting, not reporting). A phone draws
   // the marks without labels (three at most): a tap opens the tooltip with the day's events. Wider, up to four, alternating above
   // and below the line, none within 24 px of another or of the first unsafe day and the lowest point, which carry their own label.
-  const candidates = data
-    .flatMap((r) => r.events.map((e) => ({ day: r.day, cash: r.cash, e })))
-    .filter((x) => x.e.kind === "FLOW" || x.e.kind === "RECEIPT" || x.e.kind === "EARLY_RECEIPT" || x.e.kind === "ADVANCE" || x.e.kind === "DRAW");
+  const candidates = data.flatMap((r) => dayLabelCandidates({ day: r.day, cash: r.cash, events: r.events, netFen: r.netFen, netShort: r.netShort, netDisplay: r.netDisplay }, t("biz.forecast.net")));
   // Two events that read the same (one buyer's two receipts) are one label: the later one stays a mark, and the tooltip names it.
   const seen = new Set<string>();
   const labelCandidates = candidates.filter((c) => {
@@ -312,8 +315,37 @@ export function CashForecast({ h }: { h: HomeView }) {
         <li className="flex items-center gap-1.5"><span className="inline-block w-5 border-t-2 border-dashed" style={{ borderColor: SERIES.floor.stroke }} aria-hidden />{t("biz.reserveMin")}</li>
       </ul>
 
+      {h.cash.forecast_basis ? <ForecastBasis basis={h.cash.forecast_basis} /> : null}
+
       <ForecastTable data={data} today={today} keep={[h.cash.lowest_day, breach]} baseName={baseName} />
     </figure>
+  );
+}
+
+/** What the forecast counts, as the server's facts: the scheduled receipts, the overdue left out, confirmed against expected receipts, the repayment it assumes. */
+function ForecastBasis({ basis }: { basis: NonNullable<HomeView["cash"]["forecast_basis"]> }) {
+  const { t } = useI18n();
+  return (
+    <Disclosure testId="cash-forecast-basis" className="text-xs" summary={t("biz.forecast.basis")}>
+      <div className="mt-2 space-y-2 text-ink-2">
+        <ul className="list-disc space-y-0.5 pl-5">
+          {basis.scheduled_receipts_counted ? <li>{t("biz.forecast.basis.scheduled")}</li> : null}
+          {basis.overdue_excluded ? <li>{t("biz.forecast.basis.overdue")}</li> : null}
+        </ul>
+        <dl className="grid grid-cols-[minmax(0,1fr)_max-content] gap-x-4 gap-y-1 tabular-nums">
+          <dt>{t("biz.forecast.basis.confirmed")}</dt>
+          <dd className="text-right font-medium text-ink" data-testid="forecast-basis-confirmed">{basis.confirmed_receipts_display}</dd>
+          <dt>{t("biz.forecast.basis.expected")}</dt>
+          <dd className="text-right font-medium text-ink" data-testid="forecast-basis-expected">{basis.expected_receipts_display}</dd>
+          {basis.assumed_repayment_when ? (
+            <>
+              <dt>{t("biz.forecast.basis.repayment")}</dt>
+              <dd className="text-right font-medium text-ink" data-testid="forecast-basis-repayment">{basis.assumed_repayment_when}</dd>
+            </>
+          ) : null}
+        </dl>
+      </div>
+    </Disclosure>
   );
 }
 
@@ -332,6 +364,7 @@ function ForecastTooltip({ active, payload, today, baseName }: { active?: boolea
           {row.events.map((e, i) => (
             <li key={i}>{e.label}: {e.amount_display}</li>
           ))}
+          {row.events.length > 1 && row.netDisplay ? <li className="font-medium text-ink" data-testid="forecast-tip-net">{t("biz.forecast.dayNet")}: {row.netDisplay}</li> : null}
         </ul>
       ) : null}
     </div>
@@ -360,7 +393,7 @@ function ForecastTable({ data, today, keep, baseName }: { data: Row[]; today: nu
                 <td className="px-2.5 py-1.5 tabular-nums text-ink">{r.day === today ? t("biz.when.today") : t("biz.when.inDays", { n: r.day - today })}</td>
                 <td className="px-2.5 py-1.5 tabular-nums text-ink">{r.cashDisplay}</td>
                 {data.some((x) => x.plan !== null) ? <td className="px-2.5 py-1.5 tabular-nums text-ink">{r.planDisplay ?? ""}</td> : null}
-                <td className="px-2.5 py-1.5 text-ink-2">{r.events.map((e) => `${e.label}: ${e.amount_display}`).join("; ")}</td>
+                <td className="px-2.5 py-1.5 text-ink-2">{[...r.events.map((e) => `${e.label}: ${e.amount_display}`), ...(r.events.length > 1 && r.netDisplay ? [`${t("biz.forecast.dayNet")}: ${r.netDisplay}`] : [])].join("; ")}</td>
               </tr>
             ))}
           </tbody>

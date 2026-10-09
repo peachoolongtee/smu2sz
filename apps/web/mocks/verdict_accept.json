@@ -76,7 +76,8 @@
     "not_executable_reason": "",
     "available_from_day": null,
     "need_display": "¥0.00",
-    "total_cost_display": "¥0.00"
+    "total_cost_display": "¥0.00",
+    "label_when": "no funding needed"
   },
   "required_tier": "TIER_1",
   "mandate_version": 1,
@@ -86,6 +87,13 @@
   "forward_concession_total_display": "¥0.00",
   "business_action": "accept",
   "summary_when": "ACCEPT. Forward concessions ¥0.00 against ¥5,000.00. Covenants hold: DSCR_MIN 2.00x, LEVERAGE_MAX 1.35x.",
+  "decision_id": "deal:OFF-8e944bff0cc9",
+  "decision_recorded": true,
+  "evaluated_day": 0,
+  "evaluated_when": "today",
+  "lang": "en",
+  "last_read_when": "today",
+  "last_read_day": 0,
   "passed_checks": [
     {
       "code": "MIN_CASH",
@@ -2496,7 +2504,8 @@
     "not_executable_reason": "",
     "available_from_day": null,
     "need_display": "¥0.00",
-    "total_cost_display": "¥0.00"
+    "total_cost_display": "¥0.00",
+    "label_when": "no funding needed"
   },
   "plan_expected": {
     "id": "PLAN-EXP-3eb83f5d8c1e",
@@ -2521,7 +2530,8 @@
     "not_executable_reason": "",
     "available_from_day": null,
     "need_display": "¥0.00",
-    "total_cost_display": "¥0.00"
+    "total_cost_display": "¥0.00",
+    "label_when": "no funding needed (expected plan: shown only, never relied on (uses facilities not yet committed))"
   },
   "cure_plan": null,
   "cured_trajectory": null,
@@ -2569,6 +2579,7 @@
       "components_when": [
         "Buyer early-payment offer: early payment on ¥420,000.00 face of the ¥420,000.00 invoice to Foshan Home Retail Co. due in 32 days at 0.5%"
       ],
+      "label_when": "Discount the whole invoice at 0.5%",
       "legs": [
         {
           "index": 0,
@@ -2642,6 +2653,7 @@
         "Bank credit line: draw ¥150,000.00, repaid in 32 days",
         "Buyer early-payment offer: early payment on ¥256,281.41 face of the ¥420,000.00 invoice to Foshan Home Retail Co. due in 32 days at 0.5%"
       ],
+      "label_when": "Line + early payment on part of the invoice at 0.5%",
       "legs": [
         {
           "index": 0,
@@ -2724,6 +2736,7 @@
         "Bank credit line: draw ¥150,000.00, repaid in 32 days",
         "Invoice financing (onboarded platform): advance ¥255,000.00 on the ¥420,000.00 invoice to Foshan Home Retail Co. due in 32 days"
       ],
+      "label_when": "Router optimum",
       "legs": [
         {
           "index": 0,
@@ -2806,6 +2819,7 @@
         "Bank credit line: draw ¥150,000.00, repaid in 32 days",
         "Government-guaranteed working-capital loan: draw ¥255,000.00 (arrives in 21 days)"
       ],
+      "label_when": "Line + guaranteed loan",
       "legs": [],
       "name_display": "Bank credit line + Government-guaranteed working-capital loan",
       "offset_fen": null,
@@ -2857,6 +2871,7 @@
       "components_when": [
         "Bank credit line: draw ¥150,000.00, repaid in 32 days"
       ],
+      "label_when": "Line only",
       "legs": [
         {
           "index": 0,
@@ -2880,5 +2895,105 @@
     "cap_fen": 500000,
     "cap_display": "¥5,000.00",
     "over_cap": false
+  },
+  "workspace": {
+    "order": [
+      "buyer",
+      "recommends",
+      "priced_response",
+      "buyer_asks",
+      "financial_impact",
+      "why_it_matters",
+      "agreements",
+      "advanced"
+    ],
+    "buyer": {
+      "title": "Who is asking",
+      "counterparty_id": "BUYER-1",
+      "name": "Foshan Home Retail Co.",
+      "offer_id": "OFF-8e944bff0cc9",
+      "received_when": "today"
+    },
+    "agreements": {
+      "title": "Your agreements with Foshan Home Retail Co.",
+      "items": [],
+      "empty_text": "No agreement with this buyer is waiting or in force."
+    },
+    "buyer_asks": {
+      "title": "What the buyer asks",
+      "asks": [
+        {
+          "obligation_id": "OFF-8e944bff0cc9-O1",
+          "type": "IMMEDIATE_DISCOUNT",
+          "label": "Immediate discount",
+          "text": "The buyer may pay early and take 0.50% off the ¥420,000.00 invoice to Foshan Home Retail Co. (effective in 2 days; one time)"
+        }
+      ]
+    },
+    "financial_impact": {
+      "title": "What it costs you",
+      "lines": [
+        {
+          "obligation_id": "OFF-8e944bff0cc9-O1",
+          "type": "IMMEDIATE_DISCOUNT",
+          "label": "Immediate discount",
+          "horizon": "IMMEDIATE",
+          "amount_fen": 210000,
+          "amount_display": "¥2,100.00",
+          "window_text": "Taken off the invoice when it is settled early. It is checked against its own cap and is not part of the forward figure.",
+          "basis": "immediate discount: settled in cash now and capped separately, not a forward concession",
+          "basis_when": "immediate discount: settled in cash now and capped separately, not a forward concession"
+        }
+      ],
+      "window_months": 12,
+      "forward_total_fen": 0,
+      "forward_total_display": "¥0.00",
+      "cap_display": "¥5,000.00",
+      "over_cap": false,
+      "total_note": "The 12-month figure is the forward cost only. The immediate discount is on its own line and the two are not added together."
+    },
+    "why_it_matters": {
+      "text": "Acceptable, awaiting agreement.",
+      "reasons": [
+        "Acceptable, awaiting agreement."
+      ]
+    },
+    "recommends": {
+      "action": "accept",
+      "text": "Acceptable, awaiting agreement"
+    },
+    "priced_response": null,
+    "advanced": {
+      "keys": {
+        "parsed_obligations": [
+          "bound_obligations",
+          "notes"
+        ],
+        "source_text": [
+          "offer_id"
+        ],
+        "checks": [
+          "passed_checks",
+          "violations"
+        ],
+        "formula": [
+          "concession_values",
+          "annualised"
+        ],
+        "engine_verdict": [
+          "outcome",
+          "summary",
+          "summary_when",
+          "required_tier"
+        ],
+        "audit_evidence": [
+          "autonomy",
+          "decision_id",
+          "calc_version",
+          "state_version",
+          "mandate_version"
+        ]
+      }
+    }
   }
 }

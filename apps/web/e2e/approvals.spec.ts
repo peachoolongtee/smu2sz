@@ -10,13 +10,13 @@ import { runPlan } from "./helpers";
 
 const ACCEPT_TEXT = "We will pay the full ¥420,000 invoice early at 0.5%.";
 
-test("a REJECT verdict shows the outcome only, no tier badge, and says nothing is executed", async ({ page }) => {
+test("a REJECT verdict shows the outcome only, no tier badge, and says evaluation alone makes no changes", async ({ page }) => {
   await page.goto("/inbox");
   await page.getByRole("button", { name: "Compile" }).click();
   await page.getByRole("button", { name: "Evaluate against the mandate" }).click();
   await expect(page).toHaveURL(/\/verdict/);
   await expect(page.getByTestId("outcome-badge")).toContainText("REJECT");
-  await expect(page.getByTestId("nothing-executed")).toHaveText("Nothing is executed");
+  await expect(page.getByTestId("nothing-executed")).toHaveText("Evaluation alone makes no changes.");
   const outcome = page.locator("#outcome");
   await expect(outcome).not.toContainText("Tier 1");
   await expect(outcome).not.toContainText("the agent may act");
@@ -42,8 +42,8 @@ test("a Tier 1 ACCEPT shows why the agent may accept it alone, with the server's
 });
 
 test("an approval card expands in place to the operation, the reason, the amount and who asked", async ({ page }) => {
-  await page.goto("/mandate");
-  await page.getByRole("button", { name: "Scene 3" }).click(); // runs the capex evaluation, which writes nothing
+  await page.goto("/demo");
+  await page.getByTestId("more-run-capex").click(); // runs the capex evaluation, which writes nothing
   await expect(page).toHaveURL(/\/capex/);
   await page.goto("/approvals");
   await expect(page.getByText("0 pending")).toBeVisible();
@@ -69,7 +69,7 @@ test("an approval card expands in place to the operation, the reason, the amount
   await expect(card.getByTestId("approval-if-decline")).toHaveText("Nothing runs; the request is closed.");
   await expect(card.getByRole("button", { name: "Decline", exact: true })).toBeVisible();
   await card.getByRole("button", { name: "Approve ¥600,000.00", exact: true }).click();
-  await expect(card.getByTestId("approval-result-APR-000001")).toContainText("Result:");
+  await expect(card.getByTestId("approval-outcome-APR-000001")).toContainText("Result");
   await expect(card).toContainText("Approved");
 });
 
@@ -110,14 +110,14 @@ test("an approval born of the reserve alert says what declining leaves, in days 
 });
 
 signedOut("the stepper's Start resumes by itself after the owner signs in from the dialog it opened", async ({ page }) => {
-  await page.goto("/mandate");
+  await page.goto("/demo");
   await page.getByTestId("demo-next").click(); // one click only
   const dialog = page.getByRole("dialog", { name: "Owner sign-in" });
   await expect(dialog).toBeVisible();
   await dialog.getByLabel("Owner token").fill("mock-owner");
   await dialog.getByRole("button", { name: "Sign in" }).click();
   await expect(dialog).toBeHidden();
-  await expect(page.getByRole("region", { name: "Guided demo" }).locator("[aria-live=polite]")).toContainText("1/15");
+  await expect(page.getByRole("region", { name: "Guided demo" }).locator("[aria-live=polite]")).toContainText("step 1 of 11");
 });
 
 signedOut("signed out, an owner page asks for the sign-in in words, not an error code, and opens the dialog", async ({ page }) => {

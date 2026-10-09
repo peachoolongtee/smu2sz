@@ -1,8 +1,11 @@
 "use client";
 
+import { ReadWhen } from "@/components/business/freshness";
 import { Disclosure } from "@/components/business/kit";
 import { Stat } from "@/components/ui";
 import { useI18n } from "@/lib/i18n";
+import { versusMinimum } from "@/lib/minimum";
+import { useNarrow, useShort } from "@/lib/use-narrow";
 import type { HomeStatus, HomeView } from "@/lib/types";
 
 /** The status word's pill on the deep block: the bright tone fills it, the ink is dark on it (9.7 to 10.2:1). The block itself never changes colour: the pill does. */
@@ -24,12 +27,13 @@ function InTransitLines({ transit }: { transit: NonNullable<HomeView["cash"]["in
 }
 
 /** "Lowest forecast headroom −¥200k", the second line of the caption under the lowest point. */
-function HeadroomLowest({ short }: { short: string | undefined }) {
+function HeadroomLowest({ short, fen }: { short: string | undefined; fen?: number }) {
   const { t } = useI18n();
   if (short === undefined) return null;
+  const v = versusMinimum(short, fen, true);
   return (
-    <span className="block">
-      {t("biz.lowestHeadroom")} <span className="font-semibold tabular-nums text-on-deep" data-testid="home-headroom-lowest">{short}</span>
+    <span className="block font-semibold tabular-nums text-on-deep" data-testid="home-headroom-lowest">
+      {t(v.key, { amount: v.amount })}
     </span>
   );
 }
@@ -48,48 +52,25 @@ export function StatusBlock({ h }: { h: HomeView }) {
   const unsafe = h.cash.first_breach_day !== null;
   // The first breach and the lowest point can be the same day: then it is one tile (one figure, one distance), not two.
   const breachIsWorst = unsafe && h.cash.first_breach_day === h.cash.lowest_day;
-  return (
-    <section aria-labelledby="home-status-title" className="on-deep motion-reveal rounded-card bg-brand-900 p-5 text-on-deep" data-testid="home-status" data-status={h.status}>
-      <span className={`inline-flex items-center gap-1.5 rounded-pill px-3 py-1 text-xs font-bold uppercase tracking-wide text-ink ${pill}`} data-testid="home-status-word">
-        {/* The dot repeats the pill's status as a mark; it pulses once when the status asks for the owner (never on a calm one). */}
-        <span aria-hidden className={`relative size-1.5 shrink-0 rounded-pill bg-ink text-ink ${pulses ? "motion-pulse" : ""}`} />
-        {h.status_text ?? te("homestatus", h.status)}
-      </span>
-      <h1 id="home-status-title" className="mt-3 text-balance text-2xl font-semibold leading-snug text-on-deep lg:text-3xl" data-testid="home-headline">
-        {h.headline}
-      </h1>
-      <p className="mt-1.5 max-w-3xl text-pretty text-base text-on-deep-muted" data-testid="home-note">
-        {h.note}
-      </p>
-
-      <div className="mt-5 flex flex-wrap items-end gap-x-10 gap-y-3">
-        <div>
-          <p className="text-sm text-on-deep-muted">{t("biz.cashToday")}</p>
-          <p className="text-4xl font-semibold leading-none tabular-nums tracking-tight text-on-deep lg:text-5xl" data-testid="home-cash">
-            {h.cash.cash_short}
-          </p>
-        </div>
-        {h.cash.in_transit ? (
-          <div>
-            <p className="text-sm text-on-deep-muted">{t("biz.arriving")}</p>
-            <p className="text-xl font-semibold tabular-nums text-on-deep" data-testid="home-arriving">
-              {h.cash.in_transit.total_display}
-            </p>
-          </div>
-        ) : null}
-      </div>
-      {h.cash.in_transit ? <InTransitLines transit={h.cash.in_transit} /> : null}
-
-      {/* The three facts as tiles; the headroom pair is the caption of the tile it belongs to (the reserve, and the lowest point). */}
-      <dl className={`mt-5 grid grid-cols-2 gap-3 ${1 + Number(unsafe) + Number(!breachIsWorst) === 3 ? "sm:grid-cols-3" : ""}`}>
+  // On a phone, or in a short window (a 768 px laptop), the three tiles wait behind "Why" so the priced action reaches the first screen.
+  const isNarrow = useNarrow();
+  const isShort = useShort();
+  const narrow = isNarrow || isShort;
+  // Already under the minimum today: the tile is the shortfall (how far under), with today's cash as its caption; it is never today's cash under a "below" label.
+  const shortToday = h.cash.below_reserve_today && h.cash.headroom_short !== undefined ? versusMinimum(h.cash.headroom_short, h.cash.headroom_fen, false).amount : null;
+  // A row of three tiles is two columns with the first spanning both on a phone (DESIGN.md, Layout), so the third is never alone.
+  const three = 1 + Number(unsafe) + Number(!breachIsWorst) === 3;
+  const tiles = (
+      <dl className={`${narrow ? "" : "mt-5"} grid grid-cols-2 gap-3 ${three ? "sm:grid-cols-3" : ""}`}>
         <Stat
           surface="deep"
+          className={three ? "col-span-2 sm:col-span-1" : ""}
           label={t("biz.reserveMin")}
           testId="home-floor"
           caption={
             h.cash.headroom_short !== undefined ? (
               <>
-                {t("biz.headroom")} <span className="font-semibold tabular-nums text-on-deep" data-testid="home-headroom">{h.cash.headroom_short}</span>
+                <span className="font-semibold tabular-nums text-on-deep" data-testid="home-headroom">{t(versusMinimum(h.cash.headroom_short, h.cash.headroom_fen, false, true).key, { amount: versusMinimum(h.cash.headroom_short, h.cash.headroom_fen, false, true).amount })}</span>
               </>
             ) : undefined
           }
@@ -98,14 +79,15 @@ export function StatusBlock({ h }: { h: HomeView }) {
         {unsafe ? (
           <Stat
             surface="deep"
-            label={breachIsWorst ? t("biz.firstBreachIsWorst") : t("biz.breachCash")}
+            label={h.cash.below_reserve_today ? t("biz.shortToday") : breachIsWorst ? t("biz.firstBreachIsWorst") : t("biz.breachCash")}
             tone="bad"
             testId="home-breach-cash"
-            value={h.cash.first_breach_cash_short}
+            value={shortToday ?? h.cash.first_breach_cash_short}
             caption={
               <>
-                {h.cash.first_breach_when ? <span className="block">{h.cash.first_breach_when}</span> : null}
-                {breachIsWorst ? <HeadroomLowest short={h.cash.lowest_headroom_short} /> : null}
+                {shortToday ? <span className="block">{t("biz.cashNow", { amount: h.cash.cash_short })}</span> : null}
+                {h.cash.first_breach_when && !h.cash.below_reserve_today ? <span className="block">{h.cash.first_breach_when}</span> : null}
+                {breachIsWorst ? <HeadroomLowest short={h.cash.lowest_headroom_short} fen={h.cash.lowest_headroom_fen} /> : null}
               </>
             }
           />
@@ -120,16 +102,57 @@ export function StatusBlock({ h }: { h: HomeView }) {
             caption={
               <>
                 {h.cash.lowest_when ? <span className="block" data-testid="home-lowest-when">{h.cash.lowest_when}</span> : null}
-                <HeadroomLowest short={h.cash.lowest_headroom_short} />
+                <HeadroomLowest short={h.cash.lowest_headroom_short} fen={h.cash.lowest_headroom_fen} />
               </>
             }
           />
         )}
       </dl>
+  );
+  return (
+    <section aria-labelledby="home-status-title" className="on-deep motion-reveal rounded-card bg-brand-900 p-4 text-on-deep sm:p-5 short:sm:p-4" data-testid="home-status" data-status={h.status}>
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+        <span className={`inline-flex items-center gap-1.5 rounded-pill px-3 py-1 text-xs font-bold uppercase tracking-wide text-ink ${pill}`} data-testid="home-status-word">
+          {/* The dot repeats the pill's status as a mark; it pulses once when the status asks for the owner (never on a calm one). */}
+          <span aria-hidden className={`relative size-1.5 shrink-0 rounded-pill bg-ink text-ink ${pulses ? "motion-pulse" : ""}`} />
+          {h.status_text ?? te("homestatus", h.status)}
+        </span>
+        {/* How fresh the conclusion is: the server's own "when" for the read the figures come from. */}
+        <ReadWhen when={h.cash.last_read_when} testId="home-read-when" deep />
+      </div>
+      <h1 id="home-status-title" className="mt-1.5 sm:mt-3 text-balance text-xl font-semibold leading-snug text-on-deep sm:text-2xl lg:text-3xl short:lg:text-2xl" data-testid="home-headline">
+        {h.headline}
+      </h1>
+      <p className="mt-1.5 max-w-3xl text-pretty text-sm text-on-deep-muted sm:text-base" data-testid="home-note">
+        {h.note}
+      </p>
 
-      {h.worst || h.cash.drivers.length ? (
-        <Disclosure deep summary={t("biz.hero.why")} className="mt-4 border-t border-on-deep/20 pt-2" testId="home-why">
-          <div className="space-y-2 text-sm">
+      <div className="mt-3 flex flex-wrap items-end gap-x-8 gap-y-3 sm:mt-5 sm:gap-x-10">
+        <div>
+          <p className="text-sm text-on-deep-muted">{t("biz.cashToday")}</p>
+          <p className="text-3xl font-semibold leading-none tabular-nums tracking-tight text-on-deep sm:text-4xl lg:text-5xl short:lg:text-4xl" data-testid="home-cash">
+            {h.cash.cash_short}
+          </p>
+        </div>
+        {h.cash.in_transit ? (
+          <div>
+            <p className="text-sm text-on-deep-muted">{t("biz.arriving")}</p>
+            <p className="text-lg font-semibold tabular-nums text-on-deep sm:text-xl" data-testid="home-arriving">
+              {h.cash.in_transit.total_display}
+            </p>
+          </div>
+        ) : null}
+      </div>
+      {h.cash.in_transit ? <InTransitLines transit={h.cash.in_transit} /> : null}
+
+      {/* The three facts as tiles; the headroom pair is the caption of the tile it belongs to (the reserve, and the lowest point).
+          On a phone they wait behind "Why", so the first screen is the answer and the priced action. */}
+      {narrow ? null : tiles}
+
+      {narrow || h.worst || h.cash.drivers.length ? (
+        <Disclosure deep summary={t("biz.hero.why")} className="mt-3 border-t border-on-deep/20 pt-1 sm:mt-4 sm:pt-2" testId="home-why">
+          <div className="space-y-3 text-sm">
+            {narrow ? tiles : null}
             {h.worst ? (
               <p className={unsafe ? "text-bad-bright" : "text-on-deep-muted"} data-testid="home-worst">
                 {h.worst}

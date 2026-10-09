@@ -1,0 +1,172 @@
+[
+  {
+    "step": "reset",
+    "request": {
+      "method": "POST",
+      "path": "/demo/reset",
+      "body": {},
+      "credential": [
+        "X-Owner-Token"
+      ]
+    },
+    "clock_day_before_request": 34,
+    "status": 200,
+    "result_keys": [
+      "day",
+      "ok",
+      "scenario"
+    ],
+    "result_message": null
+  },
+  {
+    "step": "offer",
+    "request": {
+      "method": "POST",
+      "path": "/offers",
+      "body": {
+        "fixture_id": "EX01_PACKAGE"
+      },
+      "credential": [
+        "X-Owner-Token"
+      ]
+    },
+    "clock_day_before_request": 0,
+    "status": 200,
+    "result_keys": [
+      "documents",
+      "offer"
+    ],
+    "result_message": null
+  },
+  {
+    "step": "evaluate",
+    "request": {
+      "method": "POST",
+      "path": "/offers/OFF-f806f79b6c21/evaluate",
+      "body": {
+        "fixture_id": "EX01_PACKAGE"
+      },
+      "credential": [
+        "X-Owner-Token"
+      ]
+    },
+    "clock_day_before_request": 0,
+    "status": 200,
+    "result_keys": [
+      "annualised",
+      "autonomy",
+      "bound_obligations",
+      "business_action",
+      "calc_version",
+      "comparison",
+      "concession_values",
+      "counters",
+      "cure_plan",
+      "cured_trajectory",
+      "forward_concession",
+      "forward_concession_total_display"
+    ],
+    "result_message": null
+  },
+  {
+    "step": "negotiate",
+    "request": {
+      "method": "POST",
+      "path": "/negotiate/OFF-f806f79b6c21",
+      "body": {
+        "buyer_profile": "cooperative"
+      },
+      "credential": [
+        "X-Owner-Token"
+      ]
+    },
+    "clock_day_before_request": 0,
+    "status": 200,
+    "result_keys": [
+      "accepted_counter_id",
+      "commitment",
+      "message",
+      "offer_id",
+      "operations",
+      "outcome",
+      "plan",
+      "rounds",
+      "transcript_hash"
+    ],
+    "result_message": null
+  },
+  {
+    "step": "clock day 2",
+    "request": {
+      "method": "POST",
+      "path": "/clock/advance",
+      "body": {
+        "to_day": 2
+      },
+      "credential": [
+        "X-Owner-Token"
+      ]
+    },
+    "clock_day_before_request": 0,
+    "status": 200,
+    "result_keys": [
+      "added_flow_ids",
+      "consumed_adjustment_ids",
+      "day",
+      "debt_service_fen",
+      "expired_commitment_ids",
+      "from_day",
+      "fulfilled_commitment_ids",
+      "issued_receivable_ids",
+      "lapsed_commitment_ids",
+      "lots_net_fen",
+      "posted_debt_payments",
+      "posted_debt_service"
+    ],
+    "result_message": "Clock moved from day 0 to day 2: 0 scheduled flow(s) posted (net ¥0.00), 0 invoice(s) issued, 0 commitment(s) expired"
+  },
+  {
+    "step": "promise before receipt",
+    "request": {
+      "method": "GET",
+      "path": "/reconciliation",
+      "body": null,
+      "credential": [
+        "X-Owner-Token"
+      ]
+    },
+    "clock_day_before_request": 2,
+    "status": 200,
+    "result_keys": [
+      "reconciliation"
+    ],
+    "result_message": null
+  },
+  {
+    "step": "bank receipt (partial)",
+    "request": {
+      "method": "POST",
+      "path": "/operations",
+      "body": {
+        "kind": "RECEIVE_PAYMENT",
+        "op_id": "f03-rcpt",
+        "idempotency_key": "f03-rcpt",
+        "mandate_version": 1,
+        "requested_by": "SYSTEM",
+        "receivable_id": "RCV-A",
+        "amount_fen": 12750690,
+        "bank_reference": "F03-1"
+      },
+      "credential": [
+        "X-Agent-Key",
+        "X-Bank-Feed-Key"
+      ]
+    },
+    "clock_day_before_request": 2,
+    "status": 200,
+    "result_keys": [
+      "result"
+    ],
+    "result_message": "Received ¥127,506.90 on RCV-A (settles ¥128,600.00 at the agreed 0.85% early-payment discount; up to ¥128,600.00 more may be settled early by day 2; ¥291,400.00 still due on day 32)"
+  }
+]

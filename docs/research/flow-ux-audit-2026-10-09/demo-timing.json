@@ -1,0 +1,89 @@
+{
+  "method": "Native Safari, cached API, warmed routes. Waited for matching step progress before each next action. No reading or narration time. Mode switches/entry/reset excluded.",
+  "complete": true,
+  "clicks": 15,
+  "elapsed_seconds": 17.997,
+  "steps": [
+    {
+      "step": 1,
+      "observed_action_seconds": 0.777,
+      "label": "Mandate"
+    },
+    {
+      "step": 2,
+      "observed_action_seconds": 1.038,
+      "label": "Inbox"
+    },
+    {
+      "step": 3,
+      "observed_action_seconds": 0.84,
+      "label": "Trajectory"
+    },
+    {
+      "step": 4,
+      "observed_action_seconds": 1.685,
+      "label": "Funding"
+    },
+    {
+      "step": 5,
+      "observed_action_seconds": 1.209,
+      "label": "Verdict"
+    },
+    {
+      "step": 6,
+      "observed_action_seconds": 0.82,
+      "label": "Negotiation"
+    },
+    {
+      "step": 7,
+      "observed_action_seconds": 0.663,
+      "label": "Ledger"
+    },
+    {
+      "step": 8,
+      "observed_action_seconds": 1.019,
+      "label": "Hard-line buyer, resets books"
+    },
+    {
+      "step": 9,
+      "observed_action_seconds": 1.136,
+      "label": "Funding"
+    },
+    {
+      "step": 10,
+      "observed_action_seconds": 0.729,
+      "label": "Ledger"
+    },
+    {
+      "step": 11,
+      "observed_action_seconds": 0.948,
+      "label": "Reworded offer"
+    },
+    {
+      "step": 12,
+      "observed_action_seconds": 1.082,
+      "label": "Capex"
+    },
+    {
+      "step": 13,
+      "observed_action_seconds": 0.969,
+      "label": "Approval queued"
+    },
+    {
+      "step": 14,
+      "observed_action_seconds": 0.507,
+      "label": "Security"
+    },
+    {
+      "step": 15,
+      "observed_action_seconds": 0.978,
+      "label": "Evidence"
+    }
+  ],
+  "earlier_attempt": {
+    "clicks": 15,
+    "elapsed_seconds": 20.848,
+    "terminal_step": 7,
+    "reason": "Scene 2 clearDemo reset busy/step, making Start demo visible during in-flight work. A fast next click restarted the story."
+  }
+}

@@ -112,7 +112,7 @@ def test_an_approval_that_was_answered_no_longer_reads_waiting(client):
     assert client.post(f"/approvals/{aid}", json={"decision": "APPROVE"}).json()["result"]["status"] == "EXECUTED"
     ops = _ops(client)
     waiting_then = next(o for o in ops if o["status"] == "PENDING_APPROVAL" and o["approval_id"] == aid)
-    assert waiting_then["event_text"].startswith("Queued for your approval: ")
+    assert waiting_then["event_text"].startswith("Approval requested: ")
     assert any(o["event_text"].startswith("You approved ") for o in ops if o["approval_id"] == aid and o["status"] == "EXECUTED")
     # the other leg is still waiting, and still says so
     others = [o for o in ops if o["status"] == "PENDING_APPROVAL" and o["approval_id"] != aid]

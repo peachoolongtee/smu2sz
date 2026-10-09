@@ -7,3 +7,6 @@ next-env.d.ts
 playwright-report/
 test-results/
 .env.local
+# Written by `next dev` (Next.js 16 agentRules); not ours to commit
+/AGENTS.md
+/CLAUDE.md
