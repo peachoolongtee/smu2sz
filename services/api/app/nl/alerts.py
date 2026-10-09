@@ -12,6 +12,7 @@ from __future__ import annotations
 import json
 
 from app.alerts import Alert, AlertKind, Severity, SuggestedAction, alerts, cure_operations
+from app.api.quotes import build_quote
 from app.domain.models import (
     ApplyForFacility,
     DrawFacility,
@@ -26,7 +27,7 @@ from app.domain.models import (
 from app.domain.money import bp, fmt_pct, fmt_yuan
 from app.financial import EngineError
 from app.funding.recommend import cost_lines_by_leg, plan_operations, recommend_for_alert
-from app.nl import landing
+from app.nl import landing, quoting
 from app.nl.context import NlContext
 from app.nl.models import Intent, Slots
 from app.nl.pipeline import Steps, t
@@ -48,6 +49,17 @@ def _facility_name(state: FinancialState, facility_id: str) -> str:
 
 def _party(state: FinancialState, party_id: str) -> str:
     return next((c.name for c in state.counterparties if c.id == party_id), party_id)
+
+
+def _as_int(value: object) -> int | None:
+    return int(value) if isinstance(value, str | int) and str(value).lstrip("-").isdigit() else None
+
+
+def _past_due_fact(state: FinancialState, a: Alert) -> dict:
+    """What the Business words need of a past-due alert: the invoice, who owes it, how much, and the days (typed, no sentence)."""
+    return {"receivable_id": a.receivable_id, "who": _party(state, a.inputs.get("counterparty_id", "")), "amount_fen": a.amount_fen or 0,
+            "due_day": a.day, "early_pay": a.commitment_id is not None, "promised_day": _as_int(a.inputs.get("promised_day")),
+            "original_due_day": _as_int(a.inputs.get("due_day"))}
 
 
 def _past_due_sentence(ctx: NlContext, state: FinancialState, a: Alert) -> str:
@@ -189,15 +201,26 @@ def _plan_cost_clause(ctx: NlContext, line, action_repay_day: int | None) -> str
     return t(ctx, f"; it will cost {cost}", f"；费用 {cost}")
 
 
-def _waiting_sentence(ctx: NlContext, state: FinancialState, mandate: Mandate, alert: Alert,
-                      ops: list[Operation], plan_costs: dict | None = None) -> str | None:
-    """The cure of this alert is already in the owner's approval queue (a pending approval whose operation id starts
-    `alert:<alert id>:`): say that it waits, its cost and rate, and how to approve it. None when nothing is queued."""
+def _queued_approval(ctx: NlContext, alert: Alert):
+    """The pending approval holding this alert's cure (an operation id that starts `alert:<alert id>:`), if any."""
     queued = [a for a in ctx.store.approvals()
               if str(getattr(a.status, "value", a.status)) == "PENDING" and (a.op_id or "").startswith(f"alert:{alert.id}:")]
-    if not queued:
+    return queued[0] if queued else None
+
+
+def _cure_quote(ctx: NlContext, alert: Alert, plan, ops: list[Operation]):
+    """The quote of the cure being proposed, from the same alert and plan the words came from (`build_quote`, as the act route builds it)."""
+    books = ctx.books()
+    return build_quote(books.state, books.with_([]), ctx.mandate(), alert, plan, ops, max(ctx.day, books.state.as_of_day))
+
+
+def _waiting_sentence(ctx: NlContext, state: FinancialState, mandate: Mandate, alert: Alert,
+                      ops: list[Operation], plan_costs: dict | None = None, facts: dict | None = None) -> str | None:
+    """The cure of this alert is already in the owner's approval queue (a pending approval whose operation id starts
+    `alert:<alert id>:`): say that it waits, its cost and rate, and how to approve it. None when nothing is queued."""
+    rec = _queued_approval(ctx, alert)
+    if rec is None:
         return None
-    rec = queued[0]
     try:
         body = json.loads(rec.op_json)
     except ValueError:
@@ -211,6 +234,9 @@ def _waiting_sentence(ctx: NlContext, state: FinancialState, mandate: Mandate, a
         what_en, what_zh = f" to {clause}", f"：{clause}"
         line = _plan_line(plan_costs, op)
         sg, end = (None, None) if line is not None else _suggestion(alert, op)
+        if facts is not None:  # what the Business words say of the queued cure: the operation and its cost
+            facts["waiting_op"] = op
+            facts["waiting_cost_fen"] = line.fen if line is not None else (sg.cost_fen if sg is not None else None)
         if line is not None:
             cost_en = f" It costs {fmt_yuan(line.fen)}" + (f", above your {fmt_pct(bp(mandate.max_apr_bp))} ceiling" if line.needs_owner_approval else "") + "."
             cost_zh = f"费用 {fmt_yuan(line.fen)}" + (f"，高于您 {fmt_pct(bp(mandate.max_apr_bp))} 的上限" if line.needs_owner_approval else "") + "。"
@@ -278,6 +304,10 @@ def alerts_turn(ctx: NlContext) -> tuple[Turn, bool]:
                                f"{'另有 ' if more else ''}{len(rest)} 项{noun_zh}：{titles}。"))
     steps = Steps()
     pending: PendingPlan | None = None
+    facts: dict = {"past_due": [_past_due_fact(state, a) for a in past_due], "others": [a.title for a in rest[:MAX_TITLES]],
+                   "more": max(0, len(rest) - MAX_TITLES),
+                   "mandate": ({"critical": mand.severity == Severity.CRITICAL, "expires_day": _as_int(mand.inputs.get("expires_day")),
+                                "days_left": _as_int(mand.inputs.get("days_left"))} if mand is not None else None)}
     if breach is None:
         parts += rest_sentence
         ops = cure_operations(repay, day=ctx.day, mandate_version=mandate.version,
@@ -297,6 +327,8 @@ def alerts_turn(ctx: NlContext) -> tuple[Turn, bool]:
                            f"截至今日利息 {interest}。我现在就可以还款。要执行吗？"))
             pending = PendingPlan(Intent.SHOW_ALERTS, Slots(), steps.items, {"alert_id": repay.id}).bind(
                 ctx, ops, _quoted_cost(repay, ops))
+            quoting.stash(pending, lambda: _cure_quote(ctx, repay, None, ops))
+            facts.update(cure="repay", facility_id=repay.inputs.get("facility_id"), amount_fen=repay.amount_fen or 0, needs_owner=False)
     else:
         zero_day = breach.inputs.get("zero_day")
         if zero_day is not None:  # no plan restores the reserve; cash itself goes below zero
@@ -326,9 +358,14 @@ def alerts_turn(ctx: NlContext) -> tuple[Turn, bool]:
         else:
             ops = cure_operations(breach, day=ctx.day, mandate_version=mandate.version,
                                   state_version=state.state_version) if breach.actionable else []
-        waiting = _waiting_sentence(ctx, state, mandate, breach, ops, plan_costs)
+        facts.update(cure="reserve", day=breach.day, shortfall_fen=breach.amount_fen or 0,
+                     zero_day=int(zero_day) if zero_day is not None else None,
+                     restores="cure_restores_reserve" not in breach.inputs, needs_owner=False)
+        waiting = _waiting_sentence(ctx, state, mandate, breach, ops, plan_costs, facts)
         if waiting is not None:  # already queued: nothing to propose, nothing stored, no second approval
             parts.append(waiting)
+            queued = _queued_approval(ctx, breach)
+            facts["waiting"] = queued.id if queued is not None else None
         elif ops:
             clauses = []
             over_cap: Operation | None = None
@@ -366,12 +403,15 @@ def alerts_turn(ctx: NlContext) -> tuple[Turn, bool]:
                            "我可以" + "，并".join(clauses) + "。" + together + cap + "要执行吗？"))
             pending = PendingPlan(Intent.SHOW_ALERTS, Slots(), steps.items, {"alert_id": breach.id}).bind(
                 ctx, ops, plan.total_cost_fen if plan is not None else _quoted_cost(breach, ops))
+            quoting.stash(pending, lambda: _cure_quote(ctx, breach, plan, ops))
+            facts["needs_owner"] = over_cap is not None
         else:
+            facts["no_cure"] = True
             parts.append(t(ctx, "No committed facility can cover it, so there is nothing I can do on my own; "
                                 "this needs your decision.",
                            "没有已承诺的额度可以覆盖，我无法自行处理；需要您来决定。"))
     return Turn(intent=Intent.SHOW_ALERTS, reply=" ".join(parts), plan=steps.items, awaiting=pending is not None,
-                pending=pending), True
+                pending=pending, facts=facts), True
 
 
 def alerts_intent(ctx: NlContext) -> Turn:
@@ -460,13 +500,16 @@ def confirm_cure(ctx: NlContext, pending: PendingPlan) -> Turn:
         after = alerts(ctx.state(), ctx.mandate(), ctx.store, ctx.day)
     except EngineError:
         after = None
+    facts: dict = {"cure": "repay" if alert.kind == AlertKind.FACILITY_REPAYABLE else "reserve", "cleared": None,
+                   "unsent": len(unsent)}
     if after is not None:
         cleared = all(a.id != alert_id for a in after)
+        facts["cleared"] = cleared
         repaid = alert.kind == AlertKind.FACILITY_REPAYABLE
         lines.append(t(ctx, ("The repayment alert" if repaid else "The reserve alert") + " is now cleared."
                        if cleared else "The alert is still open.",
                        ("还款提醒已解除。" if repaid else "储备线提醒已解除。") if cleared else "该提醒仍未解除。"))
-    return Turn(intent=Intent.SHOW_ALERTS, reply=" ".join(lines), plan=steps.items, clear_pending=True)
+    return Turn(intent=Intent.SHOW_ALERTS, reply=" ".join(lines), plan=steps.items, clear_pending=True, facts=facts)
 
 
 __all__ = ["alerts_intent", "alerts_turn", "confirm_cure"]

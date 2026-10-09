@@ -145,10 +145,10 @@ Every violation carries a `formula` and `inputs` the UI can show verbatim.
 
 | Method | Path | Purpose |
 | --- | --- | --- |
-| `POST` | `/nl` | multi-turn session: `{session_id?, actor, text, lang?, context?}` → `{reply, intent, plan, verdict?, operations[], clarification?, context_echo?}`. `context` is the owner's page `{page, offer_id?, decision_id?, invoice_id?, since_day?}`: ids only, each looked up in the stores and ignored when unknown, never an amount or a sentence; a counterparty's context is dropped. `?mode=business` (owner token only) says the verdict, the plan and the confirmed run in the owner's words, with no ids, tier words or reason codes; the default `mode=demo` keeps the engine's replies |
+| `POST` | `/nl` | multi-turn session: `{session_id?, actor, text, lang?, context?}` → `{reply, intent, plan, verdict?, operations[], clarification?, context_echo?}`. `context` is the owner's page `{page, offer_id?, decision_id?, invoice_id?, since_day?}`: ids only, each looked up in the stores and ignored when unknown, never an amount or a sentence; a counterparty's context is dropped. `?mode=business` (owner token only) says the verdict, the plan, alert cures, repayments, approval replies, the status read and the confirmed runs in the owner's words, with no ids (an approval id only in a parenthesis), tier words or reason codes; the default `mode=demo` keeps the engine's replies. A turn that sends the operations of a plan shown earlier adds `decision_id` and `decision_recorded` (the QUOTED fact it stored) |
 | `POST` | `/offers` | submit documents → `CompiledOffer` |
 | `GET` | `/offers/{id}` | the stored offer with its latest verdict id and `decision_id` (owner only) |
-| `POST` | `/offers/{id}/evaluate` | → `Verdict`; adds `decision_id`, `evaluated_when`, and a `send_scope` sentence per counter |
+| `POST` | `/offers/{id}/evaluate` | → `Verdict`; adds `decision_id`, `evaluated_when`, a `send_scope` sentence per counter, and for the Advanced fold `label_when` / `observed_when` / `limit_when` on each passed check and `covered_when` / `gaps_when` / `notes_when` on `autonomy`, in `lang` |
 | `POST` | `/negotiate/{offer_id}` | bounded rounds with the buyer kernel; optional `verdict_id`, `counter_id`, `state_version` bind the send to what the owner read (409 `COUNTER_CHANGED` otherwise; 409 `ALREADY_SENT` when the same counter's agreement stands); adds `decision_id`, `execution`, `decision_recorded` |
 | `GET` | `/decisions`, `/decisions/{id}` | the decision record, derived on request from the stores plus three stored facts (ADR-0011); owner only; every sentence per `lang` |
 | `POST` | `/router/plan` | → `FundingPlan` (committed + expected); `comparison[]` rows carry the comparison contract: `group` (RECOMMENDED, ALTERNATIVE, CONDITIONAL_ON_BUYER, INSUFFICIENT, NOT_AVAILABLE_YET, BLOCKED), a `rank` only for the plans that can run, `router_order`, arrival, remaining gap, basis and consent words. The router's figures are unchanged |
@@ -156,7 +156,7 @@ Every violation carries a `formula` and `inputs` the UI can show verbatim.
 | `POST` | `/capex/evaluate` | flag `capex`; writes nothing |
 | `POST` | `/capex/apply` | flag `capex`; owner only, bound to the evaluation's state version; queues the Tier-2 application |
 | `POST` | `/borrower-file` | flag `borrower_file`; read-only owner action |
-| `POST` | `/operations` | typed operation → `OperationResult` |
+| `POST` | `/operations` | typed operation → `OperationResult`; a funding operation the executor queued for the owner adds `decision_id` (`approval:{id}`) and `decision_recorded` (its own figures stored as the QUOTED fact) |
 | `GET`/`POST` | `/approvals`, `/approvals/{id}` | the Tier-2 queue; `GET /approvals/queue?lang=` rows carry `decision_id`, `decision_state`, `quote` (the stored one for a decided row) and `execution` |
 | `POST` | `/alerts/{id}/act` | runs the bound cure; stores the quote the owner was shown (`decision_id`, `decision_recorded`) |
 | `GET` | `/state`, `/trajectory`, `/ledger`, `/audit`, `/mandate` | read views; money pre-formatted on the server; `/ledger` operations carry `decision_id`, the causality (what changed, why it matters now, what remains), `chain_text` and `chain_scope_text` |

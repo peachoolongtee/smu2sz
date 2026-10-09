@@ -36,6 +36,9 @@ class PendingPlan:
     state_version: int | None = None
     mandate_version: int | None = None
     day: int | None = None
+    # The economics shown with the plan, as the QUOTED fact the API layer stores when the plan runs (app/nl/quoting.py); None when none
+    # could be built. Never read by a confirmation: it only describes what the owner was shown.
+    quote: Any = None
 
     def bind(self, ctx: Any, ops: Any = None, cost: int | None = None) -> PendingPlan:
         """Fix the books and the operations this plan was built on (the context supplies today's state, mandate, day)."""

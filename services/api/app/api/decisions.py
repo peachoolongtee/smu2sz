@@ -532,6 +532,8 @@ def decision_detail(ctx: Context, ds: DecisionState, inp: DecisionInputs, lang: 
         o = ds.offer
         source = {"kind": "OFFER", "offer_id": o.offer_id, "version": o.version, "counterparty_name": party_name(ctx.state, o.counterparty_id),
                   "doc_ids": list(o.doc_ids), "received_day": o.received_day, "received_when": when_text(o.received_day, ctx.today, lang)}
+    elif ds.quote is not None and ds.quote.alert_id == ds.decision_id:  # a chat plan or a direct operation: no alert behind it
+        source = {"kind": "OPERATION"}
     elif ds.quote is not None:
         source = {"kind": "ALERT", "alert_id": ds.quote.alert_id, "alert_kind": ds.quote.alert_kind, "alert_day": ds.quote.alert_day}
     else:

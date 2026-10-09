@@ -12,7 +12,7 @@ from pydantic import BaseModel, TypeAdapter, ValidationError
 
 from app.alerts import alerts
 from app.api.auth import is_bank_feed, log_refusal, require_owner, require_owner_or_agent
-from app.api.decisions import approval_decision, execution_view, load_context, quote_for
+from app.api.decisions import approval_decision, execution_view, load_context, quote_for, record_fact
 from app.api.home import cure_after
 from app.api.presentation import (
     COMMERCIAL_KINDS,
@@ -32,9 +32,11 @@ from app.api.presentation import (
     t,
     when_text,
 )
+from app.api.quotes import FUNDING_OPS, build_shown_quote, reason_rate
 from app.api.runtime import get_runtime
 from app.books import current_books
-from app.domain.models import Actor, Operation, OperationStatus
+from app.decisions.identity import decision_id_for
+from app.domain.models import Actor, Operation, OperationResult, OperationStatus, RepayFacility
 from app.domain.money import fmt_yuan
 from app.financial import EngineError
 from app.funding.recommend import cost_lines_by_leg, runnable_plan
@@ -65,7 +67,37 @@ def post_operation(body: dict, x_owner_token: str | None = Header(default=None),
     except ValidationError as e:  # malformed operations never reach the executor
         raise HTTPException(422, f"not a typed operation: {e.__class__.__name__}") from None
     with rt.lock:
-        return {"result": _result(rt.executor.execute(op))}
+        result = rt.executor.execute(op)
+        recorded = _record_direct_quote(rt, op, result)
+    out: dict = {"result": _result(result)}
+    if recorded is not None:
+        out["decision_id"], out["decision_recorded"] = recorded
+    return out
+
+
+def _record_direct_quote(rt, op: Operation, result: OperationResult) -> tuple[str, bool | str] | None:
+    """A funding operation posted directly that the executor queued for the owner is a decision with no alert and no chat plan behind it
+    (`approval:{id}`). After the executor returned, store its own figures as the QUOTED fact so that its decided card shows what it was:
+    the amount, the facility, the landing day and the executor's own cost line (the rate in its reason for queueing). API layer only; a
+    failure is logged and answered with False, never raised (ADR-0011 section 4, ticket #84)."""
+    if result.status != OperationStatus.PENDING_APPROVAL or not result.approval_id or not isinstance(op, FUNDING_OPS):
+        return None
+    try:
+        did = decision_id_for(op.model_dump(mode="json"), op.idempotency_key, rt.store.commitments(), approval_id=result.approval_id)
+        if did is None or not did.startswith("approval:"):  # an alert's or a chat plan's operations have their own decision
+            return None
+        approval = rt.store.get_approval(result.approval_id)
+        rate, above = reason_rate(approval.reason if approval is not None else None)
+        state, mandate = rt.store.get_state(), rt.store.get_mandate()
+        kind = "FACILITY_REPAYABLE" if isinstance(op, RepayFacility) else "OPERATION"
+        return did, record_fact(
+            rt, did, did,
+            lambda: build_shown_quote(state, mandate, [op], max(rt.day, state.as_of_day), decision_id=did, alert_kind=kind, rates=[rate],
+                                      above_ceiling=[above], needs_owner=True),
+            state_version=state.state_version, day=rt.day)
+    except Exception:
+        log.exception("the quote of the direct operation %s could not be recorded", op.op_id)
+        return None
 
 
 def _decision_runs(records) -> dict:
