@@ -11,24 +11,30 @@ handling; no key or a wrong key (also a security event) is a proposal only, so n
 
 from __future__ import annotations
 
-from typing import Literal
+import logging
+from typing import Any, Literal
 
 from fastapi import APIRouter, Header, HTTPException
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.api.auth import counterparty_for_key, is_agent
+from app.api.decisions import record_fact
 from app.api.display import displayed
 from app.api.home import get_home
 from app.api.offers import enforce_intake_cap
 from app.api.presentation import business_text
+from app.api.quotes import decision_id_of
 from app.api.runtime import get_runtime
 from app.api.views import owner_verdict_extras
+from app.decisions.facts import QuotedFact
 from app.nl import NlRequest, handle, opener, reset_sessions
 from app.nl.binding import OwnerReads
 from app.nl.offers import COUNTERPARTY_AUTHENTICATED
 from app.nl.service import APPROVAL_ID
+from app.nl.sessions import SESSIONS, PendingPlan
 
 router = APIRouter()
+log = logging.getLogger("termsledger.decisions")
 
 
 COUNTERPARTY_KEYS = ("session_id", "turn", "reply", "intent", "lang", "trace_id")
@@ -58,6 +64,37 @@ def _owner_reads(rt, business: bool = False) -> OwnerReads:
         return business_text(rt.store.get_state(), text, rt.day, "zh" if lang == "zh" else "en") or text
 
     return OwnerReads(home=home, words=words, latest_verdict=rt.latest_verdict, business=business)
+
+
+def _confirmable(body: NlRequest, owner: bool) -> PendingPlan | None:
+    """The plan this owner turn may confirm, if the session holds one with the quote it was shown with (ADR-0011, ticket #84). Read before
+    the turn runs, because a confirmation clears it from the session."""
+    if not owner or str(getattr(body.actor, "value", body.actor)) != "OWNER" or not body.session_id:
+        return None
+    session = SESSIONS.get(body.session_id)
+    if session is None or session.actor != "OWNER" or not session.owner_auth:
+        return None
+    pending = session.pending_plan
+    if pending is None or not pending.ops or not isinstance(pending.quote, QuotedFact):
+        return None
+    return pending
+
+
+def _record_shown_quote(rt, pending: PendingPlan, operations: list[dict[str, Any]]) -> tuple[str, bool | str] | None:
+    """After the executor returned: when the turn sent the operations of the plan that was shown, store the quote it was shown with as the
+    decision's QUOTED fact. API layer only, never inside the executor; a failure is logged and answered with False, never raised."""
+    try:
+        ran = {o.get("op_id") for o in operations}
+        if not ran & {op.op_id for op in pending.ops}:
+            return None
+        quote: QuotedFact = pending.quote
+        did = decision_id_of(pending.ops[0])
+        if did is None or did.startswith("deal:"):  # an offer's operations belong to its deal, whose SENT fact holds the quote
+            return None
+        return did, record_fact(rt, did, did, quote, state_version=quote.state_version_shown, day=rt.day)
+    except Exception:
+        log.exception("the quote of the plan shown in chat could not be recorded")
+        return None
 
 
 def _security_event(rt, kind: str, claimed: str | None, action: str, detail: str) -> None:
@@ -102,6 +139,7 @@ def post_nl(body: NlRequest, x_owner_token: str | None = Header(default=None),
                                 "counterparty message with an unknown X-Counterparty-Key")
     with rt.lock:
         token = COUNTERPARTY_AUTHENTICATED.set(channel_authenticated)
+        shown = _confirmable(body, rt.is_owner(x_owner_token)) if not is_counterparty else None
         try:
             resp = handle(body, store=rt.store, executor=rt.executor, day=rt.day, owner_key_hex=rt.owner_key_hex,
                           owner_authenticated=rt.is_owner(x_owner_token),
@@ -109,7 +147,10 @@ def post_nl(body: NlRequest, x_owner_token: str | None = Header(default=None),
                           owner_reads=_owner_reads(rt, business=mode == "business") if not is_counterparty and rt.is_owner(x_owner_token) else None)
         finally:
             COUNTERPARTY_AUTHENTICATED.reset(token)
+        recorded = _record_shown_quote(rt, shown, list(resp.operations)) if shown is not None else None
     out = resp.model_dump(mode="json")
+    if recorded is not None:
+        out["decision_id"], out["decision_recorded"] = recorded
     if is_counterparty:
         return _counterparty_view(out)
     out["verdict"] = displayed(out["verdict"]) if out["verdict"] is not None else None

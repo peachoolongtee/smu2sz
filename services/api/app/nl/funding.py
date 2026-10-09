@@ -37,7 +37,7 @@ from app.financial import project
 from app.financial.lots import ensure_lots, landed
 from app.funding import NoPermanentSourceError, break_even_discount
 from app.funding.search import Search
-from app.nl import landing
+from app.nl import landing, quoting
 from app.nl.context import NlContext
 from app.nl.models import Intent, Slots
 from app.nl.offers import buyer_options, owner_doc_for, verdict_line
@@ -162,6 +162,8 @@ def fund_gap(ctx: NlContext, slots: Slots, *, execute: bool = True) -> Turn:
         when = landing.line(ctx, legs, executed=False)
         pending = PendingPlan(Intent.FUND_GAP, slots, steps.items, {"actions": list(plan.actions)})
         pending.bind(ctx, legs, plan.total_cost_fen)
+        if legs:
+            quoting.stash(pending, lambda: quoting.of_plan(ctx, legs, plan=plan))
         return Turn(intent=Intent.FUND_GAP,
                     reply=head + (" " + when if when else "") + (" " + flagged if flagged else "")
                     + t(ctx, " Reply 'go ahead' to execute.", " 回复“执行”以执行。"),
@@ -169,6 +171,12 @@ def fund_gap(ctx: NlContext, slots: Slots, *, execute: bool = True) -> Turn:
     lines, _ok = run_legs(ctx, steps, legs)  # the same leg runner as a confirmed plan
     return Turn(intent=Intent.FUND_GAP, reply=" ".join([head, *lines]), plan=steps.items, verdict=b.verdict,
                 clear_pending=True)
+
+
+def _quoted(ctx: NlContext, pending: PendingPlan, *, alert_kind: str = "OPERATION") -> PendingPlan:
+    """A plan of bare operations (a direct draw, a repayment) with the quote of what it shows kept beside it."""
+    quoting.stash(pending, lambda: quoting.of_plan(ctx, pending.ops, alert_kind=alert_kind))
+    return pending
 
 
 def _direct_draw(ctx: NlContext, slots: Slots, steps: Steps, *, execute: bool) -> Turn:
@@ -189,7 +197,7 @@ def _direct_draw(ctx: NlContext, slots: Slots, steps: Steps, *, execute: bool) -
         return Turn(intent=Intent.FUND_GAP,
                     reply=desc + (f" ({when})" if when else "") + t(ctx, ". Reply 'go ahead' to execute.", "。回复“执行”以执行。"),
                     plan=steps.items, verdict=b.verdict, awaiting=True,
-                    pending=PendingPlan(Intent.FUND_GAP, slots, steps.items).bind(ctx, [draw]))
+                    pending=_quoted(ctx, PendingPlan(Intent.FUND_GAP, slots, steps.items).bind(ctx, [draw])))
     draw = DrawFacility(**ctx.base("DRAW_FACILITY"), facility_id=slots.facility_id, amount_fen=slots.amount_fen)
     r = ctx.execute(draw)
     steps.result("DRAW_FACILITY", desc, r)
@@ -237,7 +245,7 @@ def repay(ctx: NlContext, slots: Slots, *, execute: bool = True) -> Turn:
     on_hand = landed(lots, fac.id)
     transit = landing.not_repayable(ctx, fac.id)
     if on_hand <= 0:
-        return Turn(intent=Intent.REPAY_FACILITY, reply=t(
+        return Turn(intent=Intent.REPAY_FACILITY, facts={"repay": "nothing_landed", "facility_id": fac.id}, reply=t(
             ctx, "Nothing has landed on " + fac.name + " yet, so there is nothing to repay.",
             f"{fac.name} 上还没有资金到账，因此没有可偿还的金额。") + transit)
     amount = min(slots.amount_fen or on_hand, on_hand)
@@ -254,16 +262,18 @@ def repay(ctx: NlContext, slots: Slots, *, execute: bool = True) -> Turn:
         hint = (t(ctx, f" The most I can repay now without breaching it is {fmt_yuan(safe)}.",
                   f" 目前在不跌破储备的前提下最多可偿还 {fmt_yuan(safe)}。") if safe > 0 else
                 t(ctx, " Repay when the receivable pays (the plan's repayment day).", " 请在应收款到账后（计划还款日）再偿还。"))
-        return Turn(intent=Intent.REPAY_FACILITY, plan=steps.items, verdict=b_after.verdict, reply=t(
+        return Turn(intent=Intent.REPAY_FACILITY, plan=steps.items, verdict=b_after.verdict,
+                    facts={"repay": "blocked", "facility_id": fac.id, "low_after_fen": low_after, "safe_fen": safe}, reply=t(
             ctx, f"Not repaid: it would take projected cash to {fmt_yuan(low_after)}, below the owner's reserve.",
             f"未偿还：还款会使预测现金降至 {fmt_yuan(low_after)}，低于储备线。") + hint + transit)
     if not execute:
         steps.add("REPAY_FACILITY", desc)
         repay_op = RepayFacility(**ctx.base("REPAY_FACILITY"), facility_id=fac.id, amount_fen=amount)
-        return Turn(intent=Intent.REPAY_FACILITY,
+        return Turn(intent=Intent.REPAY_FACILITY, facts={"repay": "proposal", "facility_id": fac.id, "amount_fen": amount},
                     reply=desc + t(ctx, ". Reply 'go ahead' to execute.", "。回复“执行”。") + transit,
                     plan=steps.items, awaiting=True,
-                    pending=PendingPlan(Intent.REPAY_FACILITY, slots, steps.items).bind(ctx, [repay_op]))
+                    pending=_quoted(ctx, PendingPlan(Intent.REPAY_FACILITY, slots, steps.items).bind(ctx, [repay_op]),
+                                    alert_kind="FACILITY_REPAYABLE"))
     r = ctx.execute(RepayFacility(**ctx.base("REPAY_FACILITY"), facility_id=fac.id, amount_fen=amount))
     steps.result("REPAY_FACILITY", desc, r)
     return Turn(intent=Intent.REPAY_FACILITY, reply=r.message + transit, plan=steps.items, verdict=b_after.verdict,
@@ -373,6 +383,8 @@ def accelerate(ctx: NlContext, slots: Slots, text: str, *, amended: bool = False
         when = landing.line(ctx, legs, executed=False)
         pending = PendingPlan(Intent.ACCELERATE_RECEIPT, slots, steps.items, {"actions": list(fallback.actions)})
         pending.bind(ctx, legs, fallback.total_cost_fen)
+        if legs:
+            quoting.stash(pending, lambda: quoting.of_plan(ctx, legs, plan=fallback))
         return Turn(intent=Intent.ACCELERATE_RECEIPT, amended=amended, verdict=sq.verdict, plan=steps.items,
                     awaiting=True, pending=pending,
                     reply=head + (" " + when if when else "") + (" " + flagged if flagged else "")
@@ -562,6 +574,9 @@ def status(ctx: NlContext) -> Turn:
     live = ctx.books(state).obligations
     traj = project(state, list(live), [], Mode.CONSERVATIVE, mandate.horizon_days, floor)
     found = gaps(state, floor, mandate.horizon_days, live, from_day=max(ctx.day, state.as_of_day))
+    facts: dict = {"cash_fen": state.cash_fen, "floor_fen": floor,
+                   "gaps": [(g.low_fen, g.low_day, g.shortfall_fen) for g in found],
+                   "lowest": (traj.min_cash_fen, traj.min_cash_day)}
     lines = [t(ctx, f"Cash today (day {ctx.day}): {fmt_yuan(state.cash_fen)}. Reserve floor {fmt_yuan(floor)}.",
                f"今日（第 {ctx.day} 天）现金 {fmt_yuan(state.cash_fen)}，储备线 {fmt_yuan(floor)}。")]
     if found:
@@ -576,23 +591,28 @@ def status(ctx: NlContext) -> Turn:
         w = min(dscr, key=lambda m: m.dscr.value)  # type: ignore[union-attr]
         lim = Fraction(mandate.min_dscr_bp, BP_DENOM)
         head = _x(w.dscr.value - lim)  # type: ignore[union-attr]
+        facts["dscr"] = (w.dscr.text, w.month, _x(lim))  # type: ignore[union-attr]
         lines.append(t(ctx, f"DSCR low {w.dscr.text}× in month {w.month} (min {_x(lim)}×, headroom {head}×).",  # type: ignore[union-attr]
                        f"DSCR 最低 {w.dscr.text}×（第 {w.month} 月），下限 {_x(lim)}×，余量 {head}×。"))  # type: ignore[union-attr]
     if lev:
         w = max(lev, key=lambda m: m.leverage.value)  # type: ignore[union-attr]
         lim = Fraction(mandate.max_leverage_bp, BP_DENOM)
         head = _x(lim - w.leverage.value)  # type: ignore[union-attr]
+        facts["leverage"] = (w.leverage.text, w.month, _x(lim))  # type: ignore[union-attr]
         lines.append(t(ctx, f"Leverage high {w.leverage.text}× in month {w.month} (max {_x(lim)}×, headroom {head}×).",  # type: ignore[union-attr]
                        f"杠杆最高 {w.leverage.text}×（第 {w.month} 月），上限 {_x(lim)}×，余量 {head}×。"))  # type: ignore[union-attr]
     fc = sum(f.value_fen for f in state.forward_concessions)
     cap = mandate.max_aggregate_forward_concession_fen
+    facts["concessions"] = (fc, cap)
     lines.append(t(ctx, f"Forward concessions {fmt_yuan(fc)} of {fmt_yuan(cap)} (headroom {fmt_yuan(cap - fc)}).",
                    f"远期让步 {fmt_yuan(fc)} / 上限 {fmt_yuan(cap)}（余量 {fmt_yuan(cap - fc)}）。"))
     drawn = [f for f in state.facilities if f.drawn_fen]
+    facts["drawn"] = [(f.id, f.drawn_fen) for f in drawn]
     if drawn:
         lines.append(t(ctx, "Drawn: ", "已提款：") + ", ".join(f"{f.id} {fmt_yuan(f.drawn_fen)}" for f in drawn) + ".")
     pending = [a for a in ctx.store.approvals() if str(getattr(a.status, "value", a.status)) == "PENDING"]
     if pending:
         lines.append(t(ctx, f"{len(pending)} operation(s) await owner approval: ", f"{len(pending)} 项操作待业主审批：")
                      + ", ".join(a.id for a in pending) + ".")
-    return Turn(intent=Intent.SHOW_STATUS, reply="\n".join(lines))
+    facts["pending"] = [a.id for a in pending]
+    return Turn(intent=Intent.SHOW_STATUS, reply="\n".join(lines), facts={"status": facts})
