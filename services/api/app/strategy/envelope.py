@@ -715,6 +715,43 @@ def out_of_range_facts(books: Books, *, day: int, buyer_id: str) -> EnvelopeFact
                          {}, None, None, False, 0, 0.0, refusal="out_of_range")
 
 
+def _sweep_ranges(books: Books, mandate: Mandate, ctx: BuyerContext) -> tuple[Ranges, bool, bool]:
+    """(the ranges the sweep covers, whether the buyer has a terms lever, whether no committed plan exists). With no plan
+    to price a longer payment term or a rebate against, only early payment is checked."""
+    ranges = ranges_for(ctx, mandate)
+    has_terms_lever = bool(ranges.terms)
+    with shared_runs():
+        no_plan = plan_is_missing(plan(books.state, books.with_([]), mandate))
+    if no_plan:
+        ranges = replace(ranges, terms=(), price=(0,), rebate=(0,))
+    return ranges, has_terms_lever, no_plan
+
+
+@dataclass(frozen=True)
+class ZoneFacts:
+    """The zone table alone, cached apart from the sweep so that a read of the table after a read without it adds only
+    the table's cost."""
+
+    rows: tuple[ZoneRow, ...]
+    evaluations: int
+    seconds: float
+
+
+def envelope_zone(books: Books, mandate: Mandate, *, day: int, buyer_id: str, trusted_owner_key_hex: str,
+                  commitments: Sequence[Commitment] = ()) -> ZoneFacts:
+    """The rows `envelope_facts(..., zone=True)` puts in `zone`, without the sweep (the same verifier, a fresh memo: the
+    rows are pure in the books, so they are the same). Empty for a buyer with no terms lever or no plan."""
+    started = time.perf_counter()
+    try:
+        ctx = open_context(books.state, day, buyer_id)
+    except WhatIfParamError:
+        return ZoneFacts((), 0, time.perf_counter() - started)
+    ranges, _, no_plan = _sweep_ranges(books, mandate, ctx)
+    v = _Verifier(books, mandate, trusted_owner_key_hex, day, commitments, ctx, ranges, NO_PLAN if no_plan else "")
+    rows = tuple(_zone(v))
+    return ZoneFacts(rows, v.evaluations, time.perf_counter() - started)
+
+
 def envelope_facts(books: Books, mandate: Mandate, *, store: LedgerStore | None = None, day: int, buyer_id: str,
                    trusted_owner_key_hex: str, commitments: Sequence[Commitment] = (), zone: bool = False,
                    full_grid: bool = False) -> EnvelopeFacts:
@@ -732,12 +769,7 @@ def envelope_facts(books: Books, mandate: Mandate, *, store: LedgerStore | None 
     late = past_due_invoices(books, today, today + mandate.horizon_days)
     past_due = tuple(sorted((a.amount_fen or 0, today - int(a.inputs["due_day"])) for a in late
                             if a.inputs.get("counterparty_id") == buyer_id))
-    ranges = ranges_for(ctx, mandate)
-    has_terms_lever = bool(ranges.terms)
-    with shared_runs():
-        no_plan = plan_is_missing(plan(state, books.with_([]), mandate))
-    if no_plan:  # no plan to price a longer payment term or a rebate against: only early payment is checked
-        ranges = replace(ranges, terms=(), price=(0,), rebate=(0,))
+    ranges, has_terms_lever, no_plan = _sweep_ranges(books, mandate, ctx)
     v = _Verifier(books, mandate, trusted_owner_key_hex, day, commitments, ctx, ranges, NO_PLAN if no_plan else "")
     cur = v.cur
     maxima, early_counter = _levers(v)
@@ -1251,5 +1283,5 @@ def envelope(books: Books, mandate: Mandate, *, store: LedgerStore | None = None
                        commitments=commitments, zone=zone, full_grid=full_grid), lang)
 
 
-__all__ = ["EnvelopeAnswer", "EnvelopeFacts", "EnvelopeLever", "EnvelopePackage", "ZoneEntry", "envelope", "envelope_answer",
-           "envelope_facts", "out_of_range_facts", "probe_packages"]
+__all__ = ["EnvelopeAnswer", "EnvelopeFacts", "EnvelopeLever", "EnvelopePackage", "ZoneEntry", "ZoneFacts", "envelope",
+           "envelope_answer", "envelope_facts", "envelope_zone", "out_of_range_facts", "probe_packages"]

@@ -343,7 +343,9 @@ def _curve(out: Path, week: int) -> str:
 def test_a_landed_receipt_changes_the_next_weeks_curve_sentence(curve_with_and_without_a_receipt: dict[str, Any]) -> None:
     (_, none, none_out), (_, paid, paid_out) = curve_with_and_without_a_receipt["none"], curve_with_and_without_a_receipt["paid"]
     assert none.ok and paid.ok
-    assert _curve(none_out, 2) == "Earlier cash saves you nothing today."  # no buyer pays: the stress case of the dry-pilot report
+    # no buyer pays: the stress case of the dry-pilot report, where no committed plan covers the shortfall (ticket #79)
+    assert _curve(none_out, 2) == ("No committed funding plan covers the shortfall, so earlier cash cannot be priced against "
+                                   "borrowing: collect first.")
     assert _curve(paid_out, 2).startswith("Cash in the next 10 days saves you ")
     assert _curve(paid_out, 2) != _curve(none_out, 2)
 
@@ -490,3 +492,36 @@ def test_main_lands_the_receipts_of_the_file(
     assert dry.main(args) == 0
     shown = capsys.readouterr().out
     assert f"receipt {first['id']}: ¥1.00 on day 7, bank reference R-1" in shown and "receipt entries added 1 for 1 receipts posted (1 landed)" in shown
+
+
+def test_the_weekly_envelope_is_read_without_its_zone_and_keeps_its_file_name(role_play: tuple[Runtime, Any, Path]) -> None:
+    """The zone table is a detail opened on demand (as the web reads it), so the weekly read is `zone=0`: same file names,
+    the answer's `zone` list empty, and no zone file unless `--zone` is asked for."""
+    _, result, out = role_play
+    for week in ("week-01", "week-02"):
+        envelope = json.loads((out / week / "envelope-BUYER-1.json").read_text(encoding="utf-8"))
+        assert envelope["zone"] == []
+        assert not list((out / week).glob("*-zone.json"))
+    assert all(not w.zones for w in result.weeks)
+
+
+def test_with_zone_each_table_is_kept_beside_the_envelope_and_listed_by_hash(dry: ModuleType, tmp_path: Path) -> None:
+    out = tmp_path / "dry-z"
+    rt = _golden()
+    with pytest.MonkeyPatch.context() as mp:
+        for key in ENV:
+            mp.setenv(key, "1")
+        result = dry.run_dry(rt, label="dry-z", weeks=1, out=out, decisions=None, role_play=True, today="2026-10-19",
+                             say=lambda _line: None, zone=True)
+    week = out / "week-01"
+    assert result.ok
+    assert sorted(p.name for p in week.iterdir()) == [
+        "envelope-BUYER-1-zone.json", "envelope-BUYER-1.json", "price_curve.json", "sentences.md", "sha256.txt", "worth.json"]
+    plain = json.loads((week / "envelope-BUYER-1.json").read_text(encoding="utf-8"))
+    zoned = json.loads((week / "envelope-BUYER-1-zone.json").read_text(encoding="utf-8"))
+    assert plain["zone"] == [] and zoned["zone"] and zoned["primary"] == plain["primary"]
+    listed = dict(line.split("  ", 1)[::-1] for line in (week / "sha256.txt").read_text(encoding="utf-8").splitlines())
+    assert set(listed) == {p.name for p in week.glob("*.json")}
+    assert "Zone table (envelope, BUYER-1)" in (week / "sentences.md").read_text(encoding="utf-8")
+    assert [(e.week, e.answer) for e in journal(rt)] == [(1, "curve"), (1, "worth"), (1, "envelope")], "the table is no decision"
+    assert "Zone table, BUYER-1" in (out / "summary.md").read_text(encoding="utf-8")

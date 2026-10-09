@@ -1648,6 +1648,8 @@ export interface PriceCurveView {
   bands: PriceBand[];
   /** True when there is no breach to cure: every band is worth nothing. */
   flat: boolean;
+  /** True when no committed funding plan covers the shortfall: nothing is priced, `bands` is empty and `flat` is false; the sentence says so. Absent in older recordings. */
+  no_plan?: boolean;
   /** The one sentence the Cash page shows. */
   sentence: string;
   hypothetical: true;
@@ -1847,6 +1849,8 @@ export interface ReceivablesWorthView {
   /** The savings sentence of the top row, shown under the first; null when it saves nothing. */
   top_action_second?: string | null;
   ranking_note: string;
+  /** True when no committed funding plan covers the shortfall: no saving is priced, rows run by days late then amount and carry no effects. Absent in older recordings. */
+  no_plan?: boolean;
   first_breach_day: Day | null;
   hypothetical: true;
   state_version: number;

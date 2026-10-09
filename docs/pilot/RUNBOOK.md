@@ -175,7 +175,7 @@ record: the answers move when it does.
 | `GET /state`, `GET /mandate`, `GET /clock` | owner token | Check the books and the mandate loaded (section 2) |
 | `GET /cash/price-curve?lang=en` | owner token, `FEATURE_PRICE_CURVE` | The cash price sentence (answer 1) |
 | `GET /receivables/worth?lang=en` | owner token, `FEATURE_COLLECTIONS_WORTH` | The chase ranking (answer 2) |
-| `GET /buyers/{buyer_id}/envelope?zone=1&lang=en` | owner token, `FEATURE_ENVELOPE` | What the owner can live with for one buyer (answer 3) |
+| `GET /buyers/{buyer_id}/envelope?lang=en` (add `zone=1` for the zone table) | owner token, `FEATURE_ENVELOPE` | What the owner can live with for one buyer (answer 3); the weekly read leaves the zone out |
 | `POST /pilot/journal`, `GET /pilot/journal` | owner token, `FEATURE_PILOT_JOURNAL` | The owner's recorded decision against the answer (`docs/pilot/JOURNAL_SPEC.md`) |
 | `GET /ledger` | owner token | Step 6's check that nothing acted |
 
@@ -198,9 +198,11 @@ repository only after the approval step (section 5).
    curl -s -H "$OWN" "localhost:$P/cash/price-curve?lang=en"          > "$W/price_curve.json"
    curl -s -H "$OWN" "localhost:$P/receivables/worth?lang=en"         > "$W/worth.json"
    # one file per buyer on the books (the ids are in state.json's counterparties with role BUYER); the first read of
-   # each can take several seconds on large books, and with the zone table up to about 44 seconds: wait for it
+   # each can take several seconds on large books (about 7 to 11 s on the public-record SME): wait for it. The zone table
+   # is a detail opened on demand, so the weekly read leaves it out (zone=0 is the default); add it only when asked, to its
+   # own file: curl -s --max-time 180 -H "$OWN" "localhost:$P/buyers/$B/envelope?zone=1&lang=en" > "$W/envelope-$B-zone.json"
    for B in BUYER-1 BUYER-2; do
-     curl -s --max-time 180 -H "$OWN" "localhost:$P/buyers/$B/envelope?zone=1&lang=en" > "$W/envelope-$B.json"
+     curl -s --max-time 180 -H "$OWN" "localhost:$P/buyers/$B/envelope?zone=0&lang=en" > "$W/envelope-$B.json"
    done
    ```
 
@@ -378,12 +380,13 @@ reads wrongly **before an owner sees it**.
   # or, with the owner's written decisions:  --decisions docs/pilot/dry-a/decisions.yaml   (instead of --role-play auto)
   # optional: --journal-file <path> to keep the journal on a file (it must not hold entries yet), --owner-key-file <path>,
   #           --receipts docs/pilot/dry-a/receipts.yaml to land buyers' payments week by week (see the next item)
+  #           --zone to also read and keep each buyer's zone table (envelope-<buyer>-zone.json); the weekly read leaves it out
   ```
 
   `--state` and `--mandate` are the books and mandate of section 3 (for the synthetic templates: `docs/pilot/templates/state.example.json`
   and `mandate.example.json`). The flags and a random owner token are set by the script itself. Exit 0 means every week ran
   without an error; 1 means a week reported one (read `summary.md`); 2 means the arguments or files were refused, with a sentence.
-- **What it teaches about itself.** Without a receipts file the runner lands no receipt and a decision never changes the books, so from week 2 the books drift into a stress case (see `docs/pilot/dry-pilot-report-2026-10-09.md`); a week on six buyers takes up to four minutes, so start it and wait.
+- **What it teaches about itself.** Without a receipts file the runner lands no receipt and a decision never changes the books, so from week 2 the books drift into a stress case (see `docs/pilot/dry-pilot-report-2026-10-09.md`); a week on six buyers takes about a minute, up to a few minutes with `--zone`, so start it and wait.
 - **No gate is read from a dry pilot.** The books are not an owner's, the decisions are written or role-played, and so no
   figure in a dry pilot counts toward any threshold in section 7; its report says what broke and what read wrongly, and is
   labelled a rehearsal.

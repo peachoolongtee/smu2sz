@@ -809,3 +809,36 @@ def test_the_rebate_only_route_answers_with_the_flag_on(rebate_only_books, monke
     finally:
         set_runtime(None)
         clear_cache()
+
+
+# ---------------------------------------------------------------- the zone cached apart (map #58, follow-up of ticket #78)
+
+
+def test_the_zone_table_alone_equals_the_rows_of_a_sweep_with_the_zone(golden, zoned):
+    from app.strategy.envelope import envelope_zone
+
+    z = envelope_zone(golden.books, golden.mandate, day=golden.rt.day, buyer_id=GOLDEN_BUYER,
+                      trusted_owner_key_hex=golden.rt.owner_key_hex, commitments=tuple(golden.rt.store.commitments()))
+    assert len(z.rows) == 13 and z.evaluations > 0
+    assert envelope_answer(replace(golden.facts(), zone=z.rows), "en").zone == zoned.zone
+
+
+def test_route_reads_the_zone_after_a_read_without_it_without_a_second_sweep(api, monkeypatch):
+    monkeypatch.setenv("FEATURE_ENVELOPE", "1")
+    from app.api import strategy_envelope as route
+
+    route.clear_cache()
+    plain = api.get(f"/buyers/{GOLDEN_BUYER}/envelope", headers=OWNER).json()
+    sweeps: list[int] = []
+    zones: list[int] = []
+    real_sweep, real_zone = route.envelope_facts, route.envelope_zone
+    monkeypatch.setattr(route, "envelope_facts", lambda *a, **k: sweeps.append(1) or real_sweep(*a, **k))
+    monkeypatch.setattr(route, "envelope_zone", lambda *a, **k: zones.append(1) or real_zone(*a, **k))
+    both = api.get(f"/buyers/{GOLDEN_BUYER}/envelope?zone=1", headers=OWNER).json()
+    again = api.get(f"/buyers/{GOLDEN_BUYER}/envelope?zone=1", headers=OWNER).json()
+    assert sweeps == [] and zones == [1], "the sweep is cached; the table is computed once, and then cached too"
+    assert plain["zone"] == [] and len(both["zone"]) == 13 and both["zone"] == again["zone"]
+    assert {k: v for k, v in both.items() if k not in ("zone", "evaluations", "computed_in_seconds")} == {
+        k: v for k, v in plain.items() if k not in ("zone", "evaluations", "computed_in_seconds")}
+    assert both["evaluations"] > plain["evaluations"]
+    route.clear_cache()
